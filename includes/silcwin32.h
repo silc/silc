@@ -42,6 +42,20 @@
 #endif
 #endif
 
+# Some winsock compatiblity requirements
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x400
+#else
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x400
+#endif /* _WIN32_WINNT */
+#if !defined(SO_SYNCHRONOUS_NONALERT)
+#define SO_SYNCHRONOUS_NONALERT 0x20
+#endif
+#if !defined(SO_OPENTYPE)
+#define SO_OPENTYPE 0x7008
+#endif
+
 #undef inline
 #define inline __inline
 
