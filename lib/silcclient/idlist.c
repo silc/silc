@@ -1080,6 +1080,9 @@ void silc_client_nickname_format(SilcClient client,
       if (!client_entry->hostname)
 	break;
       len = strcspn(client_entry->hostname, ".");
+      i = strcspn(client_entry->hostname, "-");
+      if (i < len)
+        len = i;
       newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
       memcpy(&newnick[off], client_entry->hostname, len);
       off += len;
