@@ -232,6 +232,22 @@ bool silc_net_is_ip(const char *addr);
  ***/
 bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
 
+/****f* silcutil/SilcNetAPI/SilcNetResolveCallback
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcNetResolveCallback)(const char *result, 
+ *                                           void *context);
+ *
+ * DESCRIPTION
+ *
+ *    A callback function of this type is called after the asynchronous
+ *    resolving operation has been completed.  This callback is used
+ *    when asynchronously resolving IP addresses and hostnames.
+ *
+ ***/
+typedef void (*SilcNetResolveCallback)(const char *result, void *context);
+
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyname
  *
  * SYNOPSIS
@@ -241,7 +257,7 @@ bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
  *
  * DESCRIPTION
  *
- *    Resolves the IP address of the hostname indicated by the `host'
+ *    Resolves the IP address of the hostname indicated by the `host'.
  *    This returns TRUE and the IP address of the host, or FALSE
  *    if the address could not be resolved.  This is synchronous
  *    function and will block the calling process.
@@ -249,6 +265,28 @@ bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
  ***/
 bool silc_net_gethostbyname(const char *name, char *address, 
 			    uint32 address_len);
+
+/****f* silcutil/SilcNetAPI/silc_net_gethostbyname_async
+ *
+ * SYNOPSIS
+ *
+ *    void silc_net_gethostbyname_async(const char *name, 
+ *                                      SilcSchedule schedule,
+ *                                      SilcNetResolveCallback completion,
+ *                                      void *context)
+ *
+ * DESCRIPTION
+ *
+ *    Asynchronouosly resolves the IP address of the hostname indicated
+ *    by the `host'.  This function returns immediately, and the
+ *    `completion' callback will be called after the resolving is
+ *    completed.
+ *
+ ***/
+void silc_net_gethostbyname_async(const char *name, 
+				  SilcSchedule schedule,
+				  SilcNetResolveCallback completion,
+				  void *context);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyaddr
  *
@@ -259,13 +297,35 @@ bool silc_net_gethostbyname(const char *name, char *address,
  *
  * DESCRIPTION
  *
- *    Resolves the hostname of the IP address indicated by the `addr'
+ *    Resolves the hostname for the IP address indicated by the `addr'
  *    This returns TRUE and the resolved hostname, or FALSE on error.
  *    The `addr' may be either IPv4 or IPv6 address.  This is
  *    synchronous function and will block the calling process.
  *
  ***/
 bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len);
+
+/****f* silcutil/SilcNetAPI/silc_net_gethostbyaddr_async
+ *
+ * SYNOPSIS
+ *
+ *    void silc_net_gethostbyaddr_async(const char *addr, 
+ *                                      SilcSchedule schedule,
+ *                                      SilcNetResolveCallback completion,
+ *                                      void *context)
+ *
+ * DESCRIPTION
+ *
+ *    Asynchronouosly resolves the hostname for the IP address indicated
+ *    by the `addr'.  This function returns immediately, and the
+ *    `completion' callback will be called after the resolving is
+ *    completed.
+ *
+ ***/
+void silc_net_gethostbyaddr_async(const char *addr, 
+				  SilcSchedule schedule,
+				  SilcNetResolveCallback completion,
+				  void *context);
 
 /****f* silcutil/SilcNetAPI/silc_net_check_host_by_sock
  *

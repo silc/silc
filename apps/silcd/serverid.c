@@ -25,30 +25,24 @@
 /* Creates a Server ID. Newly created Server ID is returned to the
    new_id argument. */
 
-void silc_id_create_server_id(int sock, SilcRng rng, SilcServerID **new_id)
+void silc_id_create_server_id(const char *ip, uint16 port, SilcRng rng, 
+			      SilcServerID **new_id)
 {
-  struct sockaddr_in server;
-  int rval, len;
-
   SILC_LOG_DEBUG(("Creating new Server ID"));
 
   *new_id = silc_calloc(1, sizeof(**new_id));
 
-  /* Get IP address */
-  len = sizeof(server);
-  rval = getsockname(sock, (struct sockaddr *)&server, &len);
-  if (rval < 0) {
-    SILC_LOG_ERROR(("Could not get IP address: %s", strerror(errno)));
+  /* Create the ID */
+
+  if (!silc_net_addr2bin(ip, (*new_id)->ip.data, 
+			 sizeof((*new_id)->ip.data))) {
     silc_free(*new_id);
     *new_id = NULL;
     return;
   }
 
-  /* Create the ID */
-  /* XXX Does not support IPv6 */
-  memcpy((*new_id)->ip.data, &server.sin_addr.s_addr, 4);
-  (*new_id)->ip.data_len = 4;
-  (*new_id)->port = server.sin_port;
+  (*new_id)->ip.data_len = silc_net_is_ip4(ip) ? 4 : 16;
+  (*new_id)->port = htons(port);
   (*new_id)->rnd = silc_rng_get_rn16(rng);
 
   SILC_LOG_DEBUG(("New ID (%s)", silc_id_render(*new_id, SILC_ID_SERVER)));

@@ -222,11 +222,32 @@ int silc_server_init(SilcServer server)
     silc_net_set_socket_nonblock(sock[i]);
     server->sock = sock[i];
     
-    /* Create a Server ID for the server. */
-    silc_id_create_server_id(sock[i], server->rng, &id);
-    if (!id) {
-      goto err0;
+    /* Add ourselves also to the socket table. The entry allocated above
+       is sent as argument for fast referencing in the future. */
+    silc_socket_alloc(sock[i], SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
+    server->sockets[sock[i]] = newsocket;
+    
+    /* Perform name and address lookups to resolve the listenning address
+       and port. */
+    if (!silc_net_check_local_by_sock(sock[i], &newsocket->hostname, 
+				      &newsocket->ip)) {
+      if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
+	  !newsocket->ip) {
+	SILC_LOG_ERROR(("IP/DNS lookup failed for local host %s",
+			newsocket->hostname ? newsocket->hostname :
+			newsocket->ip ? newsocket->ip : ""));
+	server->stat.conn_failures++;
+	goto err0;
+      }
+      if (!newsocket->hostname)
+	newsocket->hostname = strdup(newsocket->ip);
     }
+    newsocket->port = silc_net_get_local_port(sock[i]);
+
+    /* Create a Server ID for the server. */
+    silc_id_create_server_id(newsocket->ip, newsocket->port, server->rng, &id);
+    if (!id)
+      goto err0;
     
     server->id = id;
     server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
@@ -248,33 +269,10 @@ int silc_server_init(SilcServer server)
     }
     id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     
-    /* Add ourselves also to the socket table. The entry allocated above
-       is sent as argument for fast referencing in the future. */
-    silc_socket_alloc(sock[i], SILC_SOCKET_TYPE_SERVER, id_entry, 
-		      &newsocket);
-
-    server->sockets[sock[i]] = newsocket;
-    
-    /* Perform name and address lookups to resolve the listenning address
-       and port. */
-    if (!silc_net_check_local_by_sock(sock[i], &newsocket->hostname, 
-				     &newsocket->ip)) {
-      if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
-	  !newsocket->ip) {
-	SILC_LOG_ERROR(("IP/DNS lookup failed for local host %s",
-			newsocket->hostname ? newsocket->hostname :
-			newsocket->ip ? newsocket->ip : ""));
-	server->stat.conn_failures++;
-	goto err0;
-      }
-      if (!newsocket->hostname)
-	newsocket->hostname = strdup(newsocket->ip);
-    }
-    newsocket->port = silc_net_get_local_port(sock[i]);
-
     /* Put the allocated socket pointer also to the entry allocated above 
        for fast back-referencing to the socket list. */
-    id_entry->connection = (void *)server->sockets[sock[i]];
+    newsocket->user_data = (void *)id_entry;
+    id_entry->connection = (void *)newsocket;
     server->id_entry = id_entry;
   }
 

@@ -17,6 +17,9 @@
 #undef SILC_THREADS
 #undef SILC_HAVE_PTHREAD
 
+/* IPv6 support */
+#undef HAVE_IPV6
+
 /* Default paths */
 #undef SILC_ETCDIR
 #undef SILC_HELPDIR

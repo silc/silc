@@ -224,10 +224,5 @@ void silc_socket_host_lookup(SilcSocketConnection sock,
   lookup->port = port_lookup;
 
   SILC_SET_HOST_LOOKUP(sock);
-
-#ifdef SILC_THREADS
   silc_thread_create(silc_socket_host_lookup_start, lookup, FALSE);
-#else
-  silc_socket_host_lookup_start((void *)lookup);
-#endif
 }

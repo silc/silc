@@ -1,3 +1,23 @@
+Thu Nov 29 19:31:23 EET 2001  Pekka Riikonen <priikone@silcnet.org>'
+
+	* Added IPv6 support checking to the configure.in.pre, added
+	  also --enable-ipv6 option to override the check.  Affected
+	  file configure.in.pre.
+
+	* The silc_thread_create now calls the start function
+	  directly if threads support is not compiled in.  Removes
+	  ugly #ifdef's from generic code.  Affected files are
+	  lib/silcutil/unix/silcunixthread, win32/silcwin32thread.c.
+
+	* Added silc_net_gethostby[name/addr]_async to asynchronously
+	  resolve.  Affected files are lib/silcutil/silcnet.[ch].
+
+	* Added support for rendering IPv6 based server, client and
+	  channel IDs.  Affected file lib/silcutil/silcutil.c.
+
+	* Added support for creating IPv6 based server IDs.  Affected
+	  file is silcd/serverid.c.
+
 Wed Nov 28 23:46:09 EET 2001  Pekka Riikonen <priikone@silcnet.org>'
 
 	* Added silc_net_gethostby[addr/name] into the

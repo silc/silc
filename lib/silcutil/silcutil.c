@@ -539,12 +539,16 @@ char *silc_id_render(void *id, uint16 type)
   case SILC_ID_SERVER:
     {
       SilcServerID *server_id = (SilcServerID *)id;
-      struct in_addr ipv4;
-
       if (server_id->ip.data_len > 4) {
-
+#ifdef HAVE_IPV6
+	struct in6_addr ipv6;
+	memmove(&ipv6, server_id->ip.data, sizeof(ipv6));
+	if (!inet_ntop(AF_INET6, &ipv6, tmp, sizeof(tmp)))
+	  strcat(rid, tmp);
+#endif
       } else {
-	memcpy(&ipv4.s_addr, server_id->ip.data, 4);
+	struct in_addr ipv4;
+	memmove(&ipv4.s_addr, server_id->ip.data, 4);
 	strcat(rid, inet_ntoa(ipv4));
       }
 
@@ -560,12 +564,16 @@ char *silc_id_render(void *id, uint16 type)
   case SILC_ID_CLIENT:
     {
       SilcClientID *client_id = (SilcClientID *)id;
-      struct in_addr ipv4;
-
       if (client_id->ip.data_len > 4) {
-
+#ifdef HAVE_IPV6
+	struct in6_addr ipv6;
+	memmove(&ipv6, client_id->ip.data, sizeof(ipv6));
+	if (!inet_ntop(AF_INET6, &ipv6, tmp, sizeof(tmp)))
+	  strcat(rid, tmp);
+#endif
       } else {
-	memcpy(&ipv4.s_addr, client_id->ip.data, 4);
+	struct in_addr ipv4;
+	memmove(&ipv4.s_addr, client_id->ip.data, 4);
 	strcat(rid, inet_ntoa(ipv4));
       }
 
@@ -582,12 +590,16 @@ char *silc_id_render(void *id, uint16 type)
   case SILC_ID_CHANNEL:
     {
       SilcChannelID *channel_id = (SilcChannelID *)id;
-      struct in_addr ipv4;
-
       if (channel_id->ip.data_len > 4) {
-
+#ifdef HAVE_IPV6
+	struct in6_addr ipv6;
+	memmove(&ipv6, channel_id->ip.data, sizeof(ipv6));
+	if (!inet_ntop(AF_INET6, &ipv6, tmp, sizeof(tmp)))
+	  strcat(rid, tmp);
+#endif
       } else {
-	memcpy(&ipv4.s_addr, channel_id->ip.data, 4);
+	struct in_addr ipv4;
+	memmove(&ipv4.s_addr, channel_id->ip.data, 4);
 	strcat(rid, inet_ntoa(ipv4));
       }
 

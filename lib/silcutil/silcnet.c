@@ -87,6 +87,60 @@ bool silc_net_is_ip(const char *addr)
   return silc_net_is_ip6(addr);
 }
 
+/* Internal context for async resolving */
+typedef struct {
+  SilcNetResolveCallback completion;
+  void *context;
+  SilcSchedule schedule;
+  char *input;
+  char *result;
+} *SilcNetResolveContext;
+
+SILC_TASK_CALLBACK(silc_net_resolve_completion)
+{
+  SilcNetResolveContext r = (SilcNetResolveContext)context;
+
+  /* Call the completion callback */
+  if (r->completion)
+    (*r->completion)(r->result, r->context);
+
+  silc_free(r->input);
+  silc_free(r->result);
+  silc_free(r);
+}
+
+/* Thread function to resolve the address for hostname. */
+
+static void *silc_net_gethostbyname_thread(void *context)
+{
+  SilcNetResolveContext r = (SilcNetResolveContext)context;
+  char tmp[64];
+
+  if (silc_net_gethostbyname(r->input, tmp, sizeof(tmp)))
+    r->result = strdup(tmp);
+
+  silc_schedule_task_add(r->schedule, 0, silc_net_resolve_completion, r, 0, 1,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+  silc_schedule_wakeup(r->schedule);
+  return NULL;
+}
+
+/* Thread function to resolve the hostname for address. */
+
+static void *silc_net_gethostbyaddr_thread(void *context)
+{
+  SilcNetResolveContext r = (SilcNetResolveContext)context;
+  char tmp[256];
+
+  if (silc_net_gethostbyaddr(r->input, tmp, sizeof(tmp)))
+    r->result = strdup(tmp);
+
+  silc_schedule_task_add(r->schedule, 0, silc_net_resolve_completion, r, 0, 1,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+  silc_schedule_wakeup(r->schedule);
+  return NULL;
+}
+
 /* Resolves IP address for hostname. */
 
 bool silc_net_gethostbyname(const char *name, char *address,
@@ -131,6 +185,23 @@ bool silc_net_gethostbyname(const char *name, char *address,
   return TRUE;
 }
 
+/* Resolves IP address for hostname async. */
+
+void silc_net_gethostbyname_async(const char *name, 
+				  SilcSchedule schedule,
+				  SilcNetResolveCallback completion,
+				  void *context)
+{
+  SilcNetResolveContext r = silc_calloc(1, sizeof(*r));
+
+  r->completion = completion;
+  r->context = context;
+  r->schedule = schedule;
+  r->input = strdup(name);
+
+  silc_thread_create(silc_net_gethostbyname_thread, r, FALSE);
+}
+
 /* Resolves hostname by IP address. */
 
 bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len)
@@ -163,6 +234,23 @@ bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len)
 #endif
   
   return TRUE;
+}
+
+/* Resolves hostname by IP address async. */
+
+void silc_net_gethostbyaddr_async(const char *addr, 
+				  SilcSchedule schedule,
+				  SilcNetResolveCallback completion,
+				  void *context)
+{
+  SilcNetResolveContext r = silc_calloc(1, sizeof(*r));
+
+  r->completion = completion;
+  r->context = context;
+  r->schedule = schedule;
+  r->input = strdup(addr);
+
+  silc_thread_create(silc_net_gethostbyaddr_thread, r, FALSE);
 }
 
 /* Performs lookups for remote name and IP address. This peforms reverse

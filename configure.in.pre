@@ -612,11 +612,48 @@ AC_ARG_WITH(win32,
 AM_CONDITIONAL(SILC_WIN32, test x$win32-support = xtrue)
 
 #
+# IPv6 support
+#
+AC_MSG_CHECKING(for IPv6 support)
+AC_ARG_ENABLE(ipv6,
+[  --enable-ipv6           Enable IPv6 support],
+[ case "${enableval}" in
+  yes) 
+    want_ipv6=true
+    check_ipv6=false
+    AC_DEFINE(HAVE_IPV6)
+    AC_MSG_RESULT(yes)
+    ;;
+  *)
+    want_ipv6=false
+    check_ipv6=false
+    AC_MSG_RESULT(no)
+    ;;
+esac ], check_ipv6=true)
+
+if test x$check_ipv6 = xtrue; then
+  AC_TRY_COMPILE([#ifdef HAVE_NETINET_TCP_H
+		  #include <netinet/tcp.h>
+		  #endif
+		  #ifdef HAVE_NETDB_H
+		  #include <netdb.h>
+		  #endif
+		  #include <sys/socket.h>
+		  #ifdef HAVE_NETDB_IN_H
+		  #include <netinet/in.h>
+		  #endif],
+		  [struct sockaddr_in6 sin6;
+		   int family = AF_INET6;
+		  ], [AC_DEFINE(HAVE_IPV6)
+		      AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)])
+fi
+
+#
 # Debug checking
 #
 AC_MSG_CHECKING(for enabled debugging)
 AC_ARG_ENABLE(debug,
-[  --enable-debug          Enable debugging (warning: it is heavy!)],
+[  --enable-debug          Enable debugging],
 [ case "${enableval}" in
   yes) 
     AC_MSG_RESULT(yes)

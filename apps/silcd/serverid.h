@@ -22,7 +22,8 @@
 #define SERVERID_H
 
 /* Prototypes */
-void silc_id_create_server_id(int sock, SilcRng rng, SilcServerID **new_id);
+void silc_id_create_server_id(const char *ip, uint16 port, SilcRng rng, 
+			      SilcServerID **new_id);
 bool silc_id_create_client_id(SilcServer server,
 			      SilcServerID *server_id, SilcRng rng,
 			      SilcHash md5hash, char *nickname, 

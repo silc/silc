@@ -87,10 +87,6 @@ TODO/bugs In SILC Server
    If it is, there is no reason to send it to the router, since the server
    knows it best.
 
- o Incomplete IPv6 support:
-
-	o silcd/serverid.c and its routines supports only IPv4.
-
  o New configuration file format must be added.  The new one will be
    done using the dotconf config library (lib/dotconf).  The following
    tasks relates closely to this as well and must be done at the same time
@@ -114,15 +110,7 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o Incomplete IPv6 support:
-
-	o All network routines in lib/silcutil/silcnet.[ch] does not
-	  support IPv6.
-	o silc_id_render supports only IPv4 based ID's in the file
-	  lib/silcutil/silcutil.c.
-
- o Add silc_net_gethostbyname, silc_net_gethostbyaddr,
-   silc_net_gethostbyname_async and silc_net_gethostbyaddr_async functions.
+ o See client library TODO/bugs
 
 
 TODO/Bugs in native WIN32 support (libraries)

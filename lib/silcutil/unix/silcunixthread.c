@@ -21,11 +21,10 @@
 
 #include "silcincludes.h"
 
-#ifdef SILC_THREADS
-
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 			      bool waitable)
 {
+#ifdef SILC_THREADS
   pthread_attr_t attr;
   pthread_t thread;
   int ret;
@@ -61,25 +60,38 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   SILC_LOG_DEBUG(("Created thread %p", (SilcThread)thread));
 
   return (SilcThread)thread;
+#else
+  /* Call thread callback immediately */
+  (*start_func)(context);
+  return NULL;
+#endif
 }
 
 void silc_thread_exit(void *exit_value)
 {
+#ifdef SILC_THREADS
   pthread_exit(exit_value);
+#endif
 }
 
 SilcThread silc_thread_self(void)
 {
+#ifdef SILC_THREADS
   pthread_t self = pthread_self();
   return (SilcThread)self;
+#else
+  return NULL;
+#endif
 }
 
 bool silc_thread_wait(SilcThread thread, void **exit_value)
 {
+#ifdef SILC_THREADS
   SILC_LOG_DEBUG(("Waiting for thread %p", thread));
   if (!pthread_join(*(pthread_t *)thread, exit_value))
     return TRUE;
   return FALSE;
+#else
+  return FALSE;
+#endif
 }
-
-#endif /* SILC_THREADS */

@@ -49,10 +49,12 @@ unsigned __stdcall silc_thread_win32_start(void *context)
 
   return 0;
 }
+#endif
 
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 			      bool waitable)
 {
+#ifdef SILC_THREADS
   SilcWin32Thread thread;
   unsigned id;
 
@@ -71,10 +73,16 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   }
 
   return (SilcThread)thread;
+#else
+  /* Call thread callback immediately */
+  (*start_func)(context);
+  return NULL;
+#endif
 }
 
 void silc_thread_exit(void *exit_value)
 {
+#ifdef SILC_THREADS
   SilcWin32Thread thread = TlsGetValue(silc_thread_tls);
   
   if (thread) {
@@ -89,10 +97,12 @@ void silc_thread_exit(void *exit_value)
   }
 
   _endthreadex(0);
+#endif
 }
 
 SilcThread silc_thread_self(void)
 {
+#ifdef SILC_THREADS
   SilcWin32Thread self = TlsGetValue(silc_thread_tls);
 
   if (!self) {
@@ -107,10 +117,14 @@ SilcThread silc_thread_self(void)
   }
 
   return (SilcThread)self;
+#else
+  return NULL;
+#endif
 }
 
 bool silc_thread_wait(SilcThread thread, void **exit_value)
 {
+#ifdef SILC_THREADS
   SilcWin32Thread self = (SilcWin32Thread)thread;
 
   SILC_LOG_DEBUG(("Waiting for thread %p", self));
@@ -127,6 +141,7 @@ bool silc_thread_wait(SilcThread thread, void **exit_value)
     *exit_value = NULL;
 
   return TRUE;
+#else
+  return FALSE;
+#endif
 }
-
-#endif /* SILC_THREADS */

@@ -233,6 +233,7 @@ typedef uint32 * void *;
 /* SILC util library includes */
 #include "silcmutex.h"
 #include "silcthread.h"
+#include "silcschedule.h"
 #include "silchashtable.h"
 #include "silclog.h"
 #include "silcmemory.h"
@@ -242,7 +243,6 @@ typedef uint32 * void *;
 #include "silcnet.h"
 #include "silcutil.h"
 #include "silcconfig.h"
-#include "silcschedule.h"
 #include "silcprotocol.h"
 #include "silcsockconn.h"
 
