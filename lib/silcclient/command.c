@@ -213,6 +213,7 @@ SILC_CLIENT_CMD_FUNC(whois)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
+  unsigned char count[4];
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -230,17 +231,24 @@ SILC_CLIENT_CMD_FUNC(whois)
     goto out;
   }
 
-  buffer = silc_command_payload_encode(SILC_COMMAND_WHOIS,
-				       cmd->argc - 1, ++cmd->argv,
-				       ++cmd->argv_lens, ++cmd->argv_types,
-				       0);
+  if (cmd->argc == 2) {
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
+					    ++conn->cmd_ident, 1,
+					    1, cmd->argv[1], 
+					    cmd->argv_lens[1]);
+  } else {
+    int c = atoi(cmd->argv[2]);
+    memset(count, 0, sizeof(count));
+    SILC_PUT32_MSB(c, count);
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
+					    ++conn->cmd_ident, 2,
+					    1, cmd->argv[1], cmd->argv_lens[1],
+					    2, count, sizeof(count));
+  }
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  cmd->argv--;
-  cmd->argv_lens--;
-  cmd->argv_types--;
 
   /* Notify application */
   COMMAND;
@@ -257,6 +265,7 @@ SILC_CLIENT_CMD_FUNC(whowas)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
+  unsigned char count[4];
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -271,17 +280,24 @@ SILC_CLIENT_CMD_FUNC(whowas)
     goto out;
   }
 
-  buffer = silc_command_payload_encode(SILC_COMMAND_WHOWAS,
-				       cmd->argc - 1, ++cmd->argv,
-				       ++cmd->argv_lens, ++cmd->argv_types,
-				       0);
+  if (cmd->argc == 2) {
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOWAS,
+					    ++conn->cmd_ident, 1,
+					    1, cmd->argv[1], 
+					    cmd->argv_lens[1]);
+  } else {
+    int c = atoi(cmd->argv[2]);
+    memset(count, 0, sizeof(count));
+    SILC_PUT32_MSB(c, count);
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOWAS,
+					    ++conn->cmd_ident, 2,
+					    1, cmd->argv[1], cmd->argv_lens[1],
+					    2, count, sizeof(count));
+  }
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  cmd->argv--;
-  cmd->argv_lens--;
-  cmd->argv_types--;
 
   /* Notify application */
   COMMAND;
@@ -301,6 +317,7 @@ SILC_CLIENT_CMD_FUNC(identify)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
+  unsigned char count[4];
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -310,18 +327,21 @@ SILC_CLIENT_CMD_FUNC(identify)
   if (cmd->argc < 2 || cmd->argc > 3)
     goto out;
 
-  if (cmd->argc == 2)
+  if (cmd->argc == 2) {
     buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY, 
 					    ++conn->cmd_ident, 1,
 					    1, cmd->argv[1],
 					    cmd->argv_lens[1]);
-  else
+  } else {
+    int c = atoi(cmd->argv[2]);
+    memset(count, 0, sizeof(count));
+    SILC_PUT32_MSB(c, count);
     buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY, 
 					    ++conn->cmd_ident, 2,
 					    1, cmd->argv[1],
 					    cmd->argv_lens[1],
-					    4, cmd->argv[2],
-					    cmd->argv_lens[2]);
+					    4, count, sizeof(count));
+  }
 
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,

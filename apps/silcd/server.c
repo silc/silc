@@ -2513,6 +2513,7 @@ void silc_server_free_client_data(SilcServer server,
     server->stat.cell_clients--;
   SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
   SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+  silc_schedule_task_del_by_context(server->schedule, client);
 
   /* We will not delete the client entry right away. We will take it
      into history (for WHOWAS command) for 5 minutes */

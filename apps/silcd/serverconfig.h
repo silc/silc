@@ -158,6 +158,8 @@ typedef struct {
   SilcUInt32 key_exchange_timeout;
   SilcUInt32 conn_auth_timeout;
   SilcServerConfigConnParams param;
+  bool detach_disabled;
+  SilcUInt32 detach_timeout;
   bool logging_quick;
   long logging_flushdelay;
 

@@ -227,8 +227,9 @@ List of all defined commands in SILC follows.
    1    SILC_COMMAND_WHOIS
 
         Max Arguments:  256
-            Arguments:  (1) [<nickname>[@<server>]]  (2) [<count>]
-                        (3) [<Client ID>]            (n) [...]
+            Arguments:  (1) [<nickname>[@<server>]]   (2) [<count>]
+                        (3) [<Requested Attributes>]  (4) [<Client ID>]
+                        (n) [...]
 
         Whois command is used to query various information about specific
         user.  The user may be requested by their nickname and server name.
@@ -237,7 +238,7 @@ List of all defined commands in SILC follows.
         down the number of accepted results.  If this is not defined there
         are no limit of accepted results.  The query may also be narrowed
         down by defining the server name of the nickname.  The <count> is
-        int string format.
+        32 bit MSB first order integer.
 
         It is also possible to search the user by Client ID.  If the 
         <Client ID> is provided server MUST use it as the search value
@@ -249,7 +250,7 @@ List of all defined commands in SILC follows.
         To prevent miss-use of this command wildcards in the nickname
         or in the server name are not permitted.  It is not allowed
         to request all users on some server.  The WHOIS requests MUST 
-        be based on specific nickname request.
+        be based on explicit nickname request.
 
         The WHOIS request MUST be always sent to the router by server
         so that all users are searched.  However, the server still MUST
@@ -258,6 +259,9 @@ List of all defined commands in SILC follows.
         server MUST reply to the command.  Server MUST NOT send whois
         replies to the client until it has received the reply from its
         router.
+
+        The <Requested Attributes> is defined in [ATTRS] and can be used
+        to request various information about the client.
 
         Reply messages to the command:
 
@@ -328,7 +332,7 @@ List of all defined commands in SILC follows.
         given to narrow down the number of accepted results.  If this
         is not defined there are no limit of accepted results.  The query
         may also be narrowed down by defining the server name of the 
-        nickname.  The <count> is in string format.
+        nickname.  The <count> is 32 bit MSB first order integer.
 
         To prevent miss-use of this command wildcards in the nickname
         or in the server name are not permitted.  The WHOWAS requests MUST 
@@ -380,7 +384,7 @@ List of all defined commands in SILC follows.
         The query may find multiple matching entities.  The <count> option
         may be given to narrow down the number of accepted results.  If
         this is not defined there are no limit of accepted results.  The
-        <count> is in string format.
+        <count> is 32 bit MSB first order integer.
 
         It is also possible to search the entity by its ID.  If the
         <ID Payload> is provided server must use it as the search value

@@ -154,3 +154,21 @@ least could be done.
 	  and debugging is to be disabled on EPOC.
 
  o Check whether we can fully comply with RFC 2779.
+
+
+TODO in SILC Protocol
+=====================
+
+ o Inviting and banning by public key should be made possible.  To be
+   included in protocol version 1.2.
+
+ o UTF-8 support/requirement for nicknames & channel names.  UTF-8 support
+   in terminals and OS's are so hazy that this matter is left for
+   consideration in next version of the protocol (1.2).  For good UTF-8
+   reference and tutorial see: http://www.cl.cam.ac.uk/~mgk25/unicode.html.
+   What should CLI application do if it receives nickname that it cannot
+   display without messing up the terminal?  If UTF-8 is mandatory in 
+   SILC then SILC clients cannot be allowed to start on terminals that do
+   not support UTF-8 (which renders 98% of users unable to use CLI SILC
+   app without hacking their environment).  See also site
+   http://gratrix.net/unicode/

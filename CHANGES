@@ -1,3 +1,9 @@
+Sat Apr 13 13:09:24 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added detach_disabled and detach_timeout server config
+	  options to the server.  Affected files silcd/serverconfig.[ch],
+	  silcd/command.c and silcd/packet_receive.c.
+
 Fri Apr 12 20:09:08 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	  Added resolve_cmd_ident field to the SilcClientEntry structure

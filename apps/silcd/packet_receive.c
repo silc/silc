@@ -2971,14 +2971,16 @@ void silc_server_resume_client(SilcServer server,
 	silc_server_command_pending(server, SILC_COMMAND_WHOIS,
 				    server->cmd_ident,
 				    silc_server_command_resume_resolve, r);
-      } else {
+	return;
+      }
+      if (server->server_type == SILC_SERVER) {
 	SILC_LOG_ERROR(("Client %s (%s) tried to resume un-detached client, "
 			"closing connection", sock->hostname, sock->ip));
 	silc_server_disconnect_remote(server, sock, 
 				      "Server closed connection: "
 				      "Incomplete resume information");
+	return;
       }
-      return;
     }
 
     /* Check that we have the public key of the client, if not then we must
@@ -3016,6 +3018,14 @@ void silc_server_resume_client(SilcServer server,
 	silc_buffer_free(idp);
       }
       return;
+    } else if (!silc_pkcs_public_key_compare(detached_client->data.public_key,
+					     idata->public_key)) {
+      /* We require that the connection and resuming authentication data
+	 must be using same key pair. */
+      silc_server_disconnect_remote(server, sock, 
+				    "Server closed connection: "
+				    "Incomplete resume information");
+      return;
     }
 
     /* Verify the authentication payload.  This has to be successful in
@@ -3033,6 +3043,7 @@ void silc_server_resume_client(SilcServer server,
 
     /* Now resume the client to the network */
 
+    silc_schedule_task_del_by_context(server->schedule, detached_client);
     sock->user_data = detached_client;
     detached_client->connection = sock;
 
@@ -3284,6 +3295,8 @@ void silc_server_resume_client(SilcServer server,
 	  silc_server_channel_has_global(chl->channel);
       silc_hash_table_list_reset(&htl);
     }
+
+    silc_schedule_task_del_by_context(server->schedule, detached_client);
 
     /* If the sender of this packet is server and we are router we need to
        broadcast this packet to other routers in the network. */

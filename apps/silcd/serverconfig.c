@@ -228,6 +228,12 @@ SILC_CONFIG_CALLBACK(fetch_generic)
     config->param.version_software_vendor =
       (*(char *)val ? strdup((char *) val) : NULL);
   }
+  else if (!strcmp(name, "detach_disabled")) {
+    config->detach_disabled = *(bool *)val;
+  }
+  else if (!strcmp(name, "detach_timeout")) {
+    config->detach_timeout = (SilcUInt32) *(int *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -993,6 +999,8 @@ static const SilcConfigTable table_general[] = {
   { "version_protocol",	        SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
   { "version_software",		SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
   { "version_software_vendor",	SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
+  { "detach_disabled",    	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "detach_timeout",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 

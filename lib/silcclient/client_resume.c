@@ -317,6 +317,9 @@ void silc_client_resume_session(SilcClient client,
     }
   }
 
+  if (!session->channel_count)
+    RESUME_CALL_COMPLETION(client, session, TRUE);
+
   /* Now, we wait for replies to come back and then continue with USERS,
      CMODE and TOPIC commands. */
 }

@@ -533,10 +533,11 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
 
   /* Get the max count of reply messages allowed */
   tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (tmp)
-    *count = atoi(tmp);
-  else
+  if (tmp) {
+    SILC_GET32_MSB(*count, tmp);
+  } else {
     *count = 0;
+  }
 
   return TRUE;
 }
@@ -1033,10 +1034,11 @@ silc_server_command_whowas_parse(SilcServerCommandContext cmd,
 
   /* Get the max count of reply messages allowed */
   tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (tmp)
-    *count = atoi(tmp);
-  else
+  if (tmp) {
+    SILC_GET32_MSB(*count, tmp);
+  } else {
     *count = 0;
+  }
 
   return TRUE;
 }
@@ -1587,10 +1589,11 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
   
   /* Get the max count of reply messages allowed */
   tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
-  if (tmp)
-    *count = atoi(tmp);
-  else
+  if (tmp) {
+    SILC_GET32_MSB(*count, tmp);
+  } else {
     *count = 0;
+  }
 
   return 1;
 }

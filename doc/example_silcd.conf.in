@@ -130,6 +130,15 @@ General {
  	# someone joins or leaves the channel.
 	#channel_rekey_secs = 3600;
 
+	# SILC session detachment disabling and limiting.  By default clients
+	# can detach their sessions from server.  If you set detach_disabled
+	# to true the DETACH command cannot be used by clients.  If you
+	# want to limit for how long the server keeps detached sessions you
+	# can set the time (minutes) in detach_timeout.  After that timeout
+	# the detached session is closed if it is not resumed.  By default
+	# sessions are persistent as long as server is running.
+	#detach_disabled = true;
+	#detach_timeout = 1440;
 };
 
 #
