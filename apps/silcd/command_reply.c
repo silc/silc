@@ -885,8 +885,26 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
   if (!entry) {
     entry = silc_idlist_find_server_by_id(server->global_list, server_id,
 					  TRUE, NULL);
-    if (!entry)
-      goto out;
+    if (!entry) {
+      /* entry isn't known so we IDENTIFY it. otherwise the
+       * silc_server_command_motd won't know about it and tell
+       * the client that there is no such server */
+      SilcBuffer buffer;
+      buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY,
+	  				      ++server->cmd_ident, 5,
+					      1, NULL, 0, 2, NULL, 0,
+					      3, NULL, 0, 4, NULL, 0,
+					      5, tmp, tmp_len);
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
+	  		      SILC_PACKET_COMMAND, 0, buffer->data,
+			      buffer->len, TRUE);
+      silc_server_command_pending(server, SILC_COMMAND_IDENTIFY,
+	  			  server->cmd_ident, 
+				  silc_server_command_reply_motd,
+				  cmd);
+      silc_buffer_free(buffer);
+      return;
+    }
   }
 
   /* Get the motd */

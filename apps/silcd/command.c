@@ -2559,14 +2559,14 @@ SILC_SERVER_CMD_FUNC(motd)
       packet = silc_command_reply_payload_encode_va(SILC_COMMAND_MOTD,
 						    SILC_STATUS_OK, 0,
 						    ident, 2,
-						    2, idp, idp->len,
+						    2, idp->data, idp->len,
 						    3, motd, motd_len);
     } else {
       /* No motd */
       packet = silc_command_reply_payload_encode_va(SILC_COMMAND_MOTD,
 						    SILC_STATUS_OK, 0,
 						    ident, 1,
-						    2, idp, idp->len);
+						    2, idp->data, idp->len);
     }
 
     silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
@@ -2609,7 +2609,10 @@ SILC_SERVER_CMD_FUNC(motd)
       goto out;
     }
 
-    if (!entry && !cmd->pending && !server->standalone) {
+    /* Send to primary router only if we don't know the server
+     * the client requested or if the server is not locally connected */
+    if ((!entry || !(entry->data.status & SILC_IDLIST_STATUS_LOCAL)) 
+	&& !cmd->pending && !server->standalone) {
       /* Send to the primary router */
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;
@@ -2641,10 +2644,10 @@ SILC_SERVER_CMD_FUNC(motd)
       goto out;
     }
 
-    idp = silc_id_payload_encode(server->id_entry->id, SILC_ID_SERVER);
+    idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
     packet = silc_command_reply_payload_encode_va(SILC_COMMAND_MOTD,
 						  SILC_STATUS_OK, 0, ident, 2,
-						  2, idp, idp->len,
+						  2, idp->data, idp->len,
 						  3, entry->motd,
 						  entry->motd ?
 						  strlen(entry->motd) : 0);

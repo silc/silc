@@ -1,3 +1,8 @@
+Sat Dec 06 21:35:14 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* Getting the MOTD from other servers works now. Affected
+	  files are silcd/command.c and silcd/command_reply.c
+
 Thu Dec 04 11:33:46 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Initialize the variable idletag, since it is tested in 
