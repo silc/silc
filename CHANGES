@@ -28,6 +28,10 @@ Sun Nov 24 18:26:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  notifys in Irssi SILC Client.  Affected file is
 	  irssi/src/silc/core/client_ops.c.  Bug #82.
 
+	* Applied Ville Räsänen's manual page and --mandir bugfix
+	  patch.  Affected files are configure.in.pre and Makefile.am.pre.
+	  Bug #88.
+
 Fri Nov 22 18:34:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support to backup router protocol for backup to tell
