@@ -1274,7 +1274,6 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 {
   SilcBuffer buffer = packet->buffer;
   SilcClientEntry client;
-  SilcIDCacheEntry cache;
   SilcClientID *client_id;
   SilcBuffer reply;
   SilcIDListData idata;
@@ -1291,14 +1290,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   client = (SilcClientEntry)sock->user_data;
   idata = (SilcIDListData)client;
 
-  /* Fetch the old client cache entry so that we can update it. */
-  if (!silc_idcache_find_by_context(server->local_list->clients,
-				    sock->user_data, &cache)) {
-    SILC_LOG_ERROR(("Lost client's cache entry - bad thing"));
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-                                  "Unknown client");
-    return NULL;
-  }
+  /* Remove the old cache entry */
+  silc_idcache_del_by_context(server->local_list->clients, client);
 
   /* Parse incoming packet */
   ret = silc_buffer_unformat(buffer,
@@ -1339,12 +1332,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   client->id = client_id;
   id_len = silc_id_get_len(client_id, SILC_ID_CLIENT);
 
-  /* Update the cache entry */
-  cache->id = (void *)client_id;
-  cache->type = SILC_ID_CLIENT;
-  cache->data = username;
-  cache->data_len = strlen(username);
-  silc_idcache_sort_by_data(server->local_list->clients);
+  /* Add the client again to the ID cache */
+  silc_idcache_add(server->local_list->clients, client->nickname,
+		   strlen(client->nickname), client_id, client, FALSE);
 
   /* Notify our router about new client on the SILC network */
   if (!server->standalone)
@@ -1434,7 +1424,6 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 {
   SilcBuffer buffer = packet->buffer;
   SilcServerEntry new_server;
-  SilcIDCacheEntry cache;
   SilcServerID *server_id;
   SilcIDListData idata;
   unsigned char *server_name, *id_string;
@@ -1451,12 +1440,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   new_server = (SilcServerEntry)sock->user_data;
   idata = (SilcIDListData)new_server;
 
-  /* Fetch the old server cache entry so that we can update it. */
-  if (!silc_idcache_find_by_context(server->local_list->servers,
-				    sock->user_data, &cache)) {
-    SILC_LOG_ERROR(("Lost server's cache entry - bad thing"));
-    return NULL;
-  }
+  /* Remove the old cache entry */
+  silc_idcache_del_by_context(server->local_list->servers, new_server);
 
   /* Parse the incoming packet */
   ret = silc_buffer_unformat(buffer,
@@ -1490,17 +1475,14 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   }
   silc_free(id_string);
 
-  /* Update client entry */
+  /* Update server entry */
   idata->registered = TRUE;
   new_server->server_name = server_name;
   new_server->id = server_id;
 
-  /* Update the cache entry */
-  cache->id = (void *)server_id;
-  cache->type = SILC_ID_SERVER;
-  cache->data = server_name;
-  cache->data_len = strlen(server_name);
-  silc_idcache_sort_by_data(server->local_list->servers);
+  /* Add again the entry to the ID cache. */
+  silc_idcache_add(server->local_list->servers, server_name, 
+		   strlen(server_name), server_id, server, FALSE);
 
   /* Distribute the information about new server in the SILC network
      to our router. If we are normal server we won't send anything

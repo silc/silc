@@ -88,6 +88,7 @@ bool silc_idcache_add(SilcIDCache cache, unsigned char *data,
 		      uint32 data_len, void *id, void *context, int expire);
 bool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old);
 bool silc_idcache_del_by_id(SilcIDCache cache, void *id);
+bool silc_idcache_del_by_context(SilcIDCache cache, void *context);
 bool silc_idcache_del_all(SilcIDCache cache);
 bool silc_idcache_purge(SilcIDCache cache);
 bool silc_idcache_purge_by_context(SilcIDCache cache, void *context);

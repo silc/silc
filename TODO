@@ -19,6 +19,10 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Save channel names in the ID Cache always as lowered characters,
+   though allow mixed case characters in the channel entry but the ID
+   cache does not handle loose data searching anymore.
+
  o When server quits and all clients of that server are removed from all
    channels the channel keys are re-generated for all clients.  This is
    a bug and should be done only once per channel after all clients of

@@ -132,7 +132,6 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   char *nickname, *username, *realname, *servername = NULL;
   SilcClientID *client_id;
   SilcClientEntry client;
-  SilcIDCacheEntry cache = NULL;
   char global = FALSE;
   char *nick;
   uint32 mode = 0, len, id_len;
@@ -159,11 +158,10 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
   /* Check if we have this client cached already. */
 
-  client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					 &cache);
+  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
   if (!client) {
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, &cache);
+    client = silc_idlist_find_client_by_id(server->global_list, client_id, 
+					   NULL);
     global = TRUE;
   }
 
@@ -226,13 +224,12 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     client->mode = mode;
     client->servername = servername;
 
-    if (cache) {
-      cache->data = nick;
-      cache->data_len = strlen(nick);
-      silc_idcache_sort_by_data(global ? server->global_list->clients : 
-				server->local_list->clients);
-    }
-
+    /* Remove the old cache entry and create a new one */
+    silc_idcache_del_by_context(global ? server->global_list->clients :
+				server->local_list->clients, client);
+    silc_idcache_add(global ? server->global_list->clients :
+		     server->local_list->clients, nick, strlen(nick),
+		     client->id, client, FALSE);
     silc_free(client_id);
   }
 
@@ -360,12 +357,12 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     client->username = strdup(username);
     client->servername = servername;
 
-    if (cache) {
-      cache->data = nick;
-      cache->data_len = strlen(nick);
-      silc_idcache_sort_by_data(global ? server->global_list->clients : 
-				server->local_list->clients);
-    }
+    /* Remove the old cache entry and create a new one */
+    silc_idcache_del_by_context(global ? server->global_list->clients :
+				server->local_list->clients, client);
+    silc_idcache_add(global ? server->global_list->clients :
+		     server->local_list->clients, nick, strlen(nick),
+		     client->id, client, FALSE);
   }
 
   silc_free(client_id);
@@ -410,7 +407,6 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
   char *nickname, *username;
   SilcClientID *client_id;
   SilcClientEntry client;
-  SilcIDCacheEntry cache = NULL;
   char global = FALSE;
   char *nick = NULL;
 
@@ -426,11 +422,10 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 
   /* Check if we have this client cached already. */
 
-  client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					 &cache);
+  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
   if (!client) {
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, &cache);
+    client = silc_idlist_find_client_by_id(server->global_list, client_id,
+					   NULL);
     global = TRUE;
   }
 
@@ -485,13 +480,14 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       client->username = strdup(username);
     }
 
-    if (nickname && cache) {
-      cache->data = nick;
-      cache->data_len = strlen(nick);
-      silc_idcache_sort_by_data(global ? server->global_list->clients : 
-				server->local_list->clients);
+    /* Remove the old cache entry and create a new one */
+    if (nickname) {
+      silc_idcache_del_by_context(global ? server->global_list->clients :
+				  server->local_list->clients, client);
+      silc_idcache_add(global ? server->global_list->clients :
+		       server->local_list->clients, nick, strlen(nick),
+		       client->id, client, FALSE);
     }
-
     silc_free(client_id);
   }
 

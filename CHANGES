@@ -1,3 +1,11 @@
+Fri May 18 11:18:45 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new function silc_idcache_del_by_context into the
+	  lib/silccore/idcache.[ch].
+
+	* Changed the server's ID list routines to use the new ID Cache
+	  interface.  Changes around the source tree.
+
 Fri May 18 08:35:31 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_hash_table_del[_by_context]_ext functions in to the

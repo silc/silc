@@ -212,6 +212,18 @@ bool silc_idcache_del_by_id(SilcIDCache cache, void *id)
   return silc_idcache_del(cache, c);
 }
 
+/* Deletes ID cache entry by context. */
+
+bool silc_idcache_del_by_context(SilcIDCache cache, void *context)
+{
+  SilcIDCacheEntry c;
+
+  if (!silc_hash_table_find(cache->context_table, context, NULL, (void *)&c))
+    return FALSE;
+
+  return silc_idcache_del(cache, c);
+}
+
 /* Deletes all ID entries from cache. Free's memory as well. */
 
 bool silc_idcache_del_all(SilcIDCache cache)

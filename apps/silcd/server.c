@@ -182,17 +182,17 @@ int silc_server_init(SilcServer server)
 
   /* Initialize ID caches */
   server->local_list->clients = 
-    silc_idcache_alloc(0, silc_idlist_client_destructor);
-  server->local_list->servers = silc_idcache_alloc(0, NULL);
-  server->local_list->channels = silc_idcache_alloc(0, NULL);
+    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor);
+  server->local_list->servers = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
+  server->local_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
 
   /* These are allocated for normal server as well as these hold some 
      global information that the server has fetched from its router. For 
      router these are used as they are supposed to be used on router. */
   server->global_list->clients = 
-    silc_idcache_alloc(0, silc_idlist_client_destructor);
-  server->global_list->servers = silc_idcache_alloc(0, NULL);
-  server->global_list->channels = silc_idcache_alloc(0, NULL);
+    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor);
+  server->global_list->servers = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
+  server->global_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
 
   /* Allocate the entire socket list that is used in server. Eventually 
      all connections will have entry in this table (it is a table of 
@@ -2297,8 +2297,7 @@ int silc_server_remove_clients_by_server(SilcServer server,
     silc_buffer_free(idp);
   }
 
-  if (silc_idcache_find_by_id(server->local_list->clients, 
-			      SILC_ID_CACHE_ANY, SILC_ID_CLIENT, &list)) {
+  if (silc_idcache_get_all(server->local_list->clients, &list)) {
 
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
@@ -2351,8 +2350,7 @@ int silc_server_remove_clients_by_server(SilcServer server,
     silc_idcache_list_free(list);
   }
   
-  if (silc_idcache_find_by_id(server->global_list->clients, 
-			      SILC_ID_CACHE_ANY, SILC_ID_CLIENT, &list)) {
+  if (silc_idcache_get_all(server->global_list->clients, &list)) {
 
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
@@ -3105,8 +3103,7 @@ static void silc_server_announce_get_servers(SilcServer server,
   SilcBuffer idp;
 
   /* Go through all clients in the list */
-  if (silc_idcache_find_by_id(id_list->servers, SILC_ID_CACHE_ANY, 
-			      SILC_ID_SERVER, &list)) {
+  if (silc_idcache_get_all(id_list->servers, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	entry = (SilcServerEntry)id_cache->context;
@@ -3172,8 +3169,7 @@ static void silc_server_announce_get_clients(SilcServer server,
   SilcBuffer idp;
 
   /* Go through all clients in the list */
-  if (silc_idcache_find_by_id(id_list->clients, SILC_ID_CACHE_ANY, 
-			      SILC_ID_CLIENT, &list)) {
+  if (silc_idcache_get_all(id_list->clients, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
@@ -3321,8 +3317,7 @@ void silc_server_announce_get_channels(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   /* Go through all channels in the list */
-  if (silc_idcache_find_by_id(id_list->channels, SILC_ID_CACHE_ANY, 
-			      SILC_ID_CHANNEL, &list)) {
+  if (silc_idcache_get_all(id_list->channels, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	channel = (SilcChannelEntry)id_cache->context;
