@@ -1,3 +1,9 @@
+Thu Mar 14 13:38:12 EET 2002  Timo Sirainen <tss@iki.fi>
+
+	* $usermode, $cumode and $cumode_space expandos shouldn't do
+	  anything with non-SILC server records. Affected file
+	  irssi/src/silc/core/silc-expandos.c
+
 Wed Mar 13 21:38:26 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the silc_net_check_[host/local]_by_sock to support

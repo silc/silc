@@ -47,7 +47,7 @@ static char *expando_usermode(SERVER_REC *server, void *item, int *free_ret)
 
 static char *expando_cumode(SERVER_REC *server, void *item, int *free_ret)
 {
-  if (IS_CHANNEL(item) && CHANNEL(item)->ownnick) {
+  if (IS_SILC_CHANNEL(item) && CHANNEL(item)->ownnick) {
     SILC_NICK_REC *nick = (SILC_NICK_REC *)CHANNEL(item)->ownnick;
     return (nick->op && nick->founder) ? "*@" :
       nick->op ? "@" : nick->founder ? "*" : "";
@@ -59,7 +59,12 @@ static char *expando_cumode(SERVER_REC *server, void *item, int *free_ret)
 static char *expando_cumode_space(SERVER_REC *server, void *item, 
 				  int *free_ret)
 {
-  char *ret = expando_cumode(server, item, free_ret);
+  char *ret;
+
+  if (!IS_SILC_SERVER(server))
+    return "";
+
+  ret = expando_cumode(server, item, free_ret);
   return *ret == '\0' ? " " : ret;
 }
 
