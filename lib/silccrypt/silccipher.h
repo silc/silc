@@ -241,7 +241,8 @@ char *silc_cipher_get_supported(void);
  * DESCRIPTION
  *
  *    Encrypts data from `src' into `dst' with the specified cipher and
- *    Initial Vector (IV).  The `src' and `dst' maybe same buffer.
+ *    Initial Vector (IV).  If the `iv' is NULL then the cipher's internal
+ *    IV is used.  The `src' and `dst' maybe same buffer.
  * 
  ***/
 bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
@@ -259,7 +260,8 @@ bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
  * DESCRIPTION
  *
  *    Decrypts data from `src' into `dst' with the specified cipher and
- *    Initial Vector (IV).  The `src' and `dst' maybe same buffer.
+ *    Initial Vector (IV).  If the `iv' is NULL then the cipher's internal
+ *    IV is used.  The `src' and `dst' maybe same buffer.
  *
  ***/
 bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,

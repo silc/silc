@@ -98,8 +98,7 @@ bool silc_message_payload_decrypt(unsigned char *data,
 
   /* Decrypt the message */
   silc_cipher_decrypt(cipher, data, data, data_len - iv_len - mac_len,
-		      (iv_len ? data + (data_len - iv_len - mac_len) :
-		       silc_cipher_get_iv(cipher)));
+		      (iv_len ? data + (data_len - iv_len - mac_len) : NULL));
   return TRUE;
 }
 
@@ -191,7 +190,7 @@ bool silc_message_payload_encrypt(unsigned char *data,
   /* Encrypt payload of the packet. If the IV is added to packet do
      not encrypt that. */
   silc_cipher_encrypt(cipher, data, data, data_len - iv_len,
-		      iv_len ? iv : silc_cipher_get_iv(cipher));
+		      iv_len ? iv : NULL);
 
   /* Compute the MAC of the encrypted message data */
   silc_hmac_init(hmac);

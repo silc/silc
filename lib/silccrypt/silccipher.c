@@ -315,7 +315,8 @@ bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv)
 {
-  return cipher->cipher->encrypt(cipher->context, src, dst, len, iv);
+  return cipher->cipher->encrypt(cipher->context, src, dst, len,
+				 iv ? iv : cipher->iv);
 }
 
 /* Decrypts */
@@ -324,7 +325,8 @@ bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv)
 {
-  return cipher->cipher->decrypt(cipher->context, src, dst, len, iv);
+  return cipher->cipher->decrypt(cipher->context, src, dst, len,
+				 iv ? iv : cipher->iv);
 }
 
 /* Sets the key for the cipher */

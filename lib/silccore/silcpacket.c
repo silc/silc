@@ -85,8 +85,7 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
   if (cipher) {
     SILC_LOG_DEBUG(("Encrypting packet, cipher %s, len %d", 
 		    silc_cipher_get_name(cipher), len));
-    silc_cipher_encrypt(cipher, buffer->data, buffer->data, len,
-			silc_cipher_get_iv(cipher));
+    silc_cipher_encrypt(cipher, buffer->data, buffer->data, len, NULL);
   }
 
   /* Compute HMAC. This assumes that MAC is computed from the entire
@@ -502,8 +501,8 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
     if (cipher) {
       /* Decrypt rest of the packet */
       SILC_LOG_DEBUG(("Decrypting the packet"));
-      silc_cipher_decrypt(cipher, buffer->data, buffer->data, buffer->len, 
-			  silc_cipher_get_iv(cipher));
+      silc_cipher_decrypt(cipher, buffer->data, buffer->data, buffer->len,
+			  NULL);
     }
     return 0;
 
@@ -528,8 +527,7 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 	return -1;
       }
       silc_buffer_pull(buffer, block_len);
-      silc_cipher_decrypt(cipher, buffer->data, buffer->data, len,
-			  silc_cipher_get_iv(cipher));
+      silc_cipher_decrypt(cipher, buffer->data, buffer->data, len, NULL);
     }
 
     return 1;
