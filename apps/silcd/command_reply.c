@@ -158,10 +158,11 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
   /* Check if we have this client cached already. */
 
-  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
+  client = silc_idlist_find_client_by_id(server->local_list, client_id, 
+					 FALSE, NULL);
   if (!client) {
     client = silc_idlist_find_client_by_id(server->global_list, client_id, 
-					   NULL);
+					   FALSE, NULL);
     global = TRUE;
   }
 
@@ -189,8 +190,10 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 				    strdup(username), 
 				    strdup(realname), client_id, 
 				    cmd->sock->user_data, NULL);
-    if (!client)
+    if (!client) {
+      SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
       return FALSE;
+    }
 
     client->data.registered = TRUE;
     client->mode = mode;
@@ -295,10 +298,10 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   /* Check if we have this client cached already. */
 
   client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					 &cache);
+					 FALSE, &cache);
   if (!client) {
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, &cache);
+					   client_id, FALSE, &cache);
     global = TRUE;
   }
 
@@ -326,12 +329,14 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
 				    strdup(username), strdup(realname), 
 				    silc_id_dup(client_id, SILC_ID_CLIENT), 
 				    cmd->sock->user_data, NULL);
-    if (!client)
+    if (!client) {
+      SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
       return FALSE;
+    }
 
     client->data.registered = FALSE;
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, &cache);
+					   client_id, TRUE, &cache);
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
     client->servername = servername;
   } else {
@@ -437,10 +442,10 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     SILC_LOG_DEBUG(("Received client information"));
 
     client = silc_idlist_find_client_by_id(server->local_list, 
-					   client_id, NULL);
+					   client_id, FALSE, NULL);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->global_list, client_id,
-					     NULL);
+					     FALSE, NULL);
       global = TRUE;
     }
     if (!client) {
@@ -466,6 +471,10 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       client = silc_idlist_add_client(server->global_list, nick, 
 				      info ? strdup(info) : NULL, NULL,
 				      client_id, cmd->sock->user_data, NULL);
+      if (!client) {
+	SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
+	goto error;
+      }
       client->data.registered = TRUE;
     } else {
       /* We have the client already, update the data */
@@ -516,10 +525,10 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     SILC_LOG_DEBUG(("Received server information"));
 
     server_entry = silc_idlist_find_server_by_id(server->local_list, 
-						 server_id, NULL);
+						 server_id, FALSE, NULL);
     if (!server_entry)
       server_entry = silc_idlist_find_server_by_id(server->global_list, 
-						   server_id, NULL);
+						   server_id, FALSE, NULL);
     if (!server_entry) {
       /* If router did not find such Server ID in its lists then this must
 	 be bogus client or some router in the net is buggy. */
@@ -534,6 +543,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	silc_free(server_id);
 	goto error;
       }
+      server_entry->data.registered = TRUE;
       server_id = NULL;
     }
 
@@ -637,10 +647,11 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
   if (tmp_len > 256)
     goto out;
 
-  entry = silc_idlist_find_server_by_id(server->local_list, server_id, NULL);
+  entry = silc_idlist_find_server_by_id(server->local_list, server_id, 
+					FALSE, NULL);
   if (!entry) {
     entry = silc_idlist_find_server_by_id(server->global_list, server_id, 
-					  NULL);
+					  FALSE, NULL);
     if (!entry) {
       /* Add the server to global list */
       server_id = silc_id_dup(server_id, SILC_ID_SERVER);
@@ -650,6 +661,7 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
 	silc_free(server_id);
 	goto out;
       }
+      entry->data.registered = TRUE;
     }
   }
 
@@ -688,10 +700,11 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
   if (!server_id)
     goto out;
 
-  entry = silc_idlist_find_server_by_id(server->local_list, server_id, NULL);
+  entry = silc_idlist_find_server_by_id(server->local_list, server_id, 
+					TRUE, NULL);
   if (!entry) {
     entry = silc_idlist_find_server_by_id(server->global_list, server_id, 
-					  NULL);
+					  TRUE, NULL);
     if (!entry)
       goto out;
   }
@@ -1052,10 +1065,10 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
     client_id = silc_id_payload_get_id(idp);
 
     client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					   NULL);
+					   TRUE, NULL);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, NULL);
+					     client_id, TRUE, NULL);
       if (!client)
 	goto out;
     }
@@ -1065,10 +1078,10 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
     server_id = silc_id_payload_get_id(idp);
 
     server_entry = silc_idlist_find_server_by_id(server->local_list, server_id,
-						 NULL);
+						 TRUE, NULL);
     if (!server_entry) {
       server_entry = silc_idlist_find_server_by_id(server->global_list, 
-						   server_id, NULL);
+						   server_id, TRUE, NULL);
       if (!server_entry)
 	goto out;
     }

@@ -531,13 +531,14 @@ silc_idlist_add_server(SilcIDList id_list,
 		       void *connection);
 SilcServerEntry
 silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
-			      SilcIDCacheEntry *ret_entry);
+			      bool registered, SilcIDCacheEntry *ret_entry);
 SilcServerEntry
 silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
-				SilcIDCacheEntry *ret_entry);
+				bool registered, SilcIDCacheEntry *ret_entry);
 SilcServerEntry
 silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
-				int port, SilcIDCacheEntry *ret_entry);
+				int port, bool registered,
+				SilcIDCacheEntry *ret_entry);
 SilcServerEntry
 silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 			      SilcServerID *new_id);
@@ -557,7 +558,7 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 				    uint32 *clients_count);
 SilcClientEntry
 silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
-			      SilcIDCacheEntry *ret_entry);
+			      bool registered, SilcIDCacheEntry *ret_entry);
 SilcClientEntry
 silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 			      SilcClientID *new_id);

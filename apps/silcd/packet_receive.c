@@ -141,10 +141,12 @@ void silc_server_notify(SilcServer server,
        channel will be global channel) and if it does not exist then create
        entry for the client. */
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
+					   client_id, server->server_type, 
+					   NULL);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
+					     client_id, server->server_type,
+					     NULL);
       if (!client) {
 	/* If router did not find the client the it is bogus */
 	if (server->server_type == SILC_ROUTER)
@@ -155,6 +157,7 @@ void silc_server_notify(SilcServer server,
 				 silc_id_dup(client_id, SILC_ID_CLIENT), 
 				 sock->user_data, NULL);
 	if (!client) {
+	  SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
 	  silc_free(client_id);
 	  goto out;
 	}
@@ -229,10 +232,10 @@ void silc_server_notify(SilcServer server,
 
     /* Get client entry */
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
+					   client_id, TRUE, NULL);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
+					     client_id, TRUE, NULL);
       if (!client) {
 	silc_free(client_id);
 	silc_free(channel_id);
@@ -261,10 +264,10 @@ void silc_server_notify(SilcServer server,
 
     /* Get client entry */
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, &cache);
+					   client_id, TRUE, &cache);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, &cache);
+					     client_id, TRUE, &cache);
       if (!client) {
 	silc_free(client_id);
 	goto out;
@@ -512,10 +515,10 @@ void silc_server_notify(SilcServer server,
       
       /* Get client entry */
       client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, NULL);
+					     client_id, TRUE, NULL);
       if (!client) {
 	client = silc_idlist_find_client_by_id(server->local_list, 
-					       client_id, NULL);
+					       client_id, TRUE, NULL);
 	if (!client) {
 	  silc_free(client_id);
 	  goto out;
@@ -755,10 +758,10 @@ void silc_server_notify(SilcServer server,
 
     /* Get server entry */
     server_entry = silc_idlist_find_server_by_id(server->global_list, 
-						 server_id, NULL);
+						 server_id, TRUE, NULL);
     if (!server_entry) {
       server_entry = silc_idlist_find_server_by_id(server->local_list, 
-						   server_id, NULL);
+						   server_id, TRUE, NULL);
       if (!server_entry) {
 	silc_free(server_id);
 	goto out;
@@ -818,10 +821,10 @@ void silc_server_notify(SilcServer server,
 
     /* If the the client is not in local list we check global list */
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
+					   client_id, TRUE, NULL);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
+					     client_id, TRUE, NULL);
       if (!client) {
 	silc_free(client_id);
 	goto out;
@@ -853,10 +856,10 @@ void silc_server_notify(SilcServer server,
 
       /* If the the client is not in local list we check global list */
       client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, NULL);
+					     client_id, TRUE, NULL);
       if (!client) {
 	client = silc_idlist_find_client_by_id(server->local_list, 
-					       client_id, NULL);
+					       client_id, TRUE, NULL);
 	if (!client) {
 	  silc_free(client_id);
 	  goto out;
@@ -911,10 +914,10 @@ void silc_server_notify(SilcServer server,
 
     /* Get client entry */
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
+					   client_id, TRUE, NULL);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
+					     client_id, TRUE, NULL);
       if (!client) {
 	silc_free(client_id);
 	goto out;
@@ -1158,7 +1161,7 @@ void silc_server_command_reply(SilcServer server,
     id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CLIENT);
     if (!id)
       return;
-    client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
+    client = silc_idlist_find_client_by_id(server->local_list, id, TRUE, NULL);
     if (!client) {
       SILC_LOG_ERROR(("Cannot process command reply to unknown client"));
       silc_free(id);
@@ -1241,10 +1244,10 @@ void silc_server_channel_message(SilcServer server,
     goto out;
   if (packet->src_id_type == SILC_ID_CLIENT) {
     sender_entry = silc_idlist_find_client_by_id(server->local_list, 
-						 sender, NULL);
+						 sender, TRUE, NULL);
     if (!sender_entry)
       sender_entry = silc_idlist_find_client_by_id(server->global_list, 
-						   sender, NULL);
+						   sender, TRUE, NULL);
     if (!sender_entry || !silc_server_client_on_channel(sender_entry, 
 							channel)) {
       SILC_LOG_DEBUG(("Client not on channel"));
@@ -1600,7 +1603,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 
   /* Add again the entry to the ID cache. */
   silc_idcache_add(server->local_list->servers, server_name, server_id, 
-		   server, FALSE);
+		   new_server, FALSE);
 
   /* Distribute the information about new server in the SILC network
      to our router. If we are normal server we won't send anything
@@ -1681,10 +1684,10 @@ static void silc_server_new_id_real(SilcServer server,
     void *sender_id = silc_id_str2id(packet->src_id, packet->src_id_len,
 				     packet->src_id_type);
     router = silc_idlist_find_server_by_id(server->global_list,
-					   sender_id, NULL);
+					   sender_id, TRUE, NULL);
     if (!router)
       router = silc_idlist_find_server_by_id(server->local_list,
-					     sender_id, NULL);
+					     sender_id, TRUE, NULL);
     silc_free(sender_id);
     if (!router)
       goto out;
@@ -1706,6 +1709,10 @@ static void silc_server_new_id_real(SilcServer server,
 	 list. */
       entry = silc_idlist_add_client(id_list, NULL, NULL, NULL, 
 				     id, router, NULL);
+      if (!entry) {
+	SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
+	goto out;
+      }
       entry->nickname = NULL;
       entry->data.registered = TRUE;
 
@@ -1716,24 +1723,35 @@ static void silc_server_new_id_real(SilcServer server,
     break;
 
   case SILC_ID_SERVER:
-    /* If the ID is mine, ignore it. */
-    if (SILC_ID_SERVER_COMPARE(id, server->id)) {
-      SILC_LOG_DEBUG(("Ignoring my own ID as new ID"));
-      break;
+    {
+      SilcServerEntry entry;
+
+      /* If the ID is mine, ignore it. */
+      if (SILC_ID_SERVER_COMPARE(id, server->id)) {
+	SILC_LOG_DEBUG(("Ignoring my own ID as new ID"));
+	break;
+      }
+      
+      SILC_LOG_DEBUG(("New server id(%s) from [%s] %s",
+		      silc_id_render(id, SILC_ID_SERVER),
+		      sock->type == SILC_SOCKET_TYPE_SERVER ?
+		      "Server" : "Router", sock->hostname));
+      
+      /* As a router we keep information of all global information in our 
+	 global list. Cell wide information however is kept in the local
+	 list. */
+      entry = silc_idlist_add_server(id_list, NULL, 0, id, router, 
+				     router_sock);
+      if (!entry) {
+	SILC_LOG_ERROR(("Could not add new server to the ID Cache"));
+	goto out;
+      }
+      entry->data.registered = TRUE;
+      
+      if (sock->type == SILC_SOCKET_TYPE_SERVER)
+	server->stat.cell_servers++;
+      server->stat.servers++;
     }
-
-    SILC_LOG_DEBUG(("New server id(%s) from [%s] %s",
-		    silc_id_render(id, SILC_ID_SERVER),
-		    sock->type == SILC_SOCKET_TYPE_SERVER ?
-		    "Server" : "Router", sock->hostname));
-
-    /* As a router we keep information of all global information in our global
-       list. Cell wide information however is kept in the local list. */
-    silc_idlist_add_server(id_list, NULL, 0, id, router, router_sock);
-
-    if (sock->type == SILC_SOCKET_TYPE_SERVER)
-      server->stat.cell_servers++;
-    server->stat.servers++;
     break;
 
   case SILC_ID_CHANNEL:

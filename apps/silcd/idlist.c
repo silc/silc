@@ -124,7 +124,7 @@ silc_idlist_add_server(SilcIDList id_list,
 
 SilcServerEntry
 silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
-			      SilcIDCacheEntry *ret_entry)
+			      bool registered, SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server;
@@ -144,6 +144,9 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
   if (ret_entry)
     *ret_entry = id_cache;
 
+  if (server && registered && !server->data.registered)
+    return NULL;
+
   SILC_LOG_DEBUG(("Found"));
 
   return server;
@@ -153,7 +156,7 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
 
 SilcServerEntry
 silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
-				SilcIDCacheEntry *ret_entry)
+				bool registered, SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server;
@@ -168,6 +171,9 @@ silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
   if (ret_entry)
     *ret_entry = id_cache;
 
+  if (server && registered && !server->data.registered)
+    return NULL;
+
   SILC_LOG_DEBUG(("Found"));
 
   return server;
@@ -177,7 +183,8 @@ silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
 
 SilcServerEntry
 silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
-				int port, SilcIDCacheEntry *ret_entry)
+				int port, bool registered,
+				SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
@@ -214,6 +221,9 @@ silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
 
   if (ret_entry)
     *ret_entry = id_cache;
+
+  if (server && registered && !server->data.registered)
+    return NULL;
 
   SILC_LOG_DEBUG(("Found"));
 
@@ -445,7 +455,7 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 
 SilcClientEntry
 silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
-			      SilcIDCacheEntry *ret_entry)
+			      bool registered, SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client;
@@ -470,6 +480,9 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 
   if (ret_entry)
     *ret_entry = id_cache;
+
+  if (client && registered && !client->data.registered)
+    return NULL;
 
   SILC_LOG_DEBUG(("Found"));
 

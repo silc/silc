@@ -1,3 +1,31 @@
+Sat Aug 11 00:29:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added some SILC_LOG_ERROR's to various error conditions
+	  if client could not be added to ID cache.  Affected files
+	  silcd/packet_receive.c and silcd/server.c.
+
+	* When client's sock->user_data is freed, NULL also the 
+	  client->router and client->connection pointers.  Added check
+	  for these pointers being NULL to various places around the
+	  code.  Affected file silcd/server.c.
+
+	* Added client->data.registered == TRUE checks to various
+	  places around the code to assure that unregistered client's
+	  are not handled when it is not allowed.  Affected file
+	  silcd/server.c.
+
+	* Added `bool registered' fields to all 
+	  silc_idlist_[server|client]_get_* routines to indicate whether
+	  the fetched client needs to be registered or not.  Affected
+	  file silcd/idlist.[ch].
+
+	* Add your own entry as registered to the ID cache in the
+	  server.  Affected file server.c.
+
+	* Fixed a bug in silc_server_new_server.  The SilcServer was
+	  set as the new server's context instead of SilcServerEntry.
+	  This naturally caused some weird bugs.
+
 Thu Aug  9 18:28:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not delete the channel rekey task when adding it

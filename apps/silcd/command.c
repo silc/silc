@@ -2595,6 +2595,10 @@ SILC_SERVER_CMD_FUNC(info)
     }
   }
 
+  /* Some buggy servers has sent request to router about themselves. */
+  if (server->server_type == SILC_ROUTER && cmd->sock->user_data == entry)
+    goto out;
+
   if ((!dest_server && !server_id && !entry) || (entry && 
 						 entry == server->id_entry) ||
       (dest_server && !cmd->pending && 

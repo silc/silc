@@ -236,6 +236,7 @@ int silc_server_init(SilcServer server)
       SILC_LOG_ERROR(("Could not add ourselves to cache"));
       goto err0;
     }
+    id_entry->data.registered = TRUE;
     
     /* Add ourselves also to the socket table. The entry allocated above
        is sent as argument for fast referencing in the future. */
@@ -2230,6 +2231,8 @@ void silc_server_free_client_data(SilcServer server,
 		     (void *)i, 300, 0,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   client->data.registered = FALSE;
+  client->router = NULL;
+  client->connection = NULL;
 
   /* Free the client entry and everything in it */
   server->stat.my_clients--;
@@ -3732,10 +3735,11 @@ void silc_server_save_users_on_channel(SilcServer server,
     
     /* Check if we have this client cached already. */
     client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					   NULL);
+					   server->server_type, NULL);
     if (!client)
       client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, NULL);
+					     client_id, server->server_type,
+					     NULL);
     if (!client) {
       /* If router did not find such Client ID in its lists then this must
 	 be bogus client or some router in the net is buggy. */
@@ -3751,6 +3755,7 @@ void silc_server_save_users_on_channel(SilcServer server,
 				      silc_id_dup(client_id, SILC_ID_CLIENT), 
 				      sock->user_data, NULL);
       if (!client) {
+	SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
 	silc_free(client_id);
 	continue;
       }
@@ -3801,12 +3806,9 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
 
   /* If the destination belongs to our server we don't have to route
      the packet anywhere but to send it to the local destination. */
-  client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
+  client = silc_idlist_find_client_by_id(server->local_list, id, TRUE, NULL);
   if (client) {
     silc_free(id);
-
-    if (client->data.registered == FALSE)
-      return NULL;
 
     /* If we are router and the client has router then the client is in
        our cell but not directly connected to us. */
@@ -3838,7 +3840,8 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
      and send the packet to fastest route. */
   if (server->server_type == SILC_ROUTER && !server->standalone) {
     /* Check first that the ID is valid */
-    client = silc_idlist_find_client_by_id(server->global_list, id, NULL);
+    client = silc_idlist_find_client_by_id(server->global_list, id, 
+					   TRUE, NULL);
     if (client) {
       SilcSocketConnection dst_sock;
 
@@ -3911,18 +3914,16 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
 {
   SilcClientEntry client;
 
-  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
+  client = silc_idlist_find_client_by_id(server->local_list, client_id,
+					 TRUE, NULL);
   if (!client) {
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
+					   client_id, TRUE, NULL);
     if (!client && server->server_type == SILC_ROUTER)
       return NULL;
   }
 
   if (!client && server->standalone)
-    return NULL;
-
-  if (!client->data.registered)
     return NULL;
 
   if (!client || !client->nickname || !client->username) {
