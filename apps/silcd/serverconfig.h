@@ -42,6 +42,7 @@ typedef struct {
 
 /* Holds server's administrative information from config file */
 typedef struct {
+  char *location;
   char *server_type;
   char *admin_name;
   char *admin_email;

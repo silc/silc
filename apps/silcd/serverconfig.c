@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/10 05:41:20  priikone
+ * 	Added missing token to administrative information.
+ *
  * Revision 1.2  2000/07/05 06:14:01  priikone
  * 	Global costemic changes.
  *
@@ -578,6 +581,11 @@ int silc_config_server_parse_lines(SilcConfigServer config,
 
       if (!config->admin_info)
 	config->admin_info = silc_calloc(1, sizeof(*config->admin_info));
+
+      /* Get location */
+      ret = silc_config_get_token(line, &config->admin_info->location);
+      if (ret < 0)
+	break;
 
       /* Get server type */
       ret = silc_config_get_token(line, &config->admin_info->server_type);
