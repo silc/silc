@@ -1,3 +1,11 @@
+Mon Mar 15 21:10:08 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Destroy the file transfer session in silc_client_file_close
+	  with timeout.  Affected file lib/silcclient/client_ftp.c.
+
+	* Call SFTP server monitor in READ and WRITE after the actual
+	  operations.  Affected file lib/silcsftp/sftp_server.c.
+
 Wed Mar 10 21:30:02 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Create one configure script from configure fragments

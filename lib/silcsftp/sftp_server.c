@@ -480,6 +480,11 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	break;
       }
 
+      /* Read operation */
+      server->fs->fs->sftp_read(server->fs->fs_context, sftp,
+				handle, offset, len,
+				silc_sftp_server_data, SILC_32_TO_PTR(id));
+
       /* Call monitor */
       if (server->monitors & SILC_SFTP_MONITOR_READ && server->monitor) {
 	mdata.offset = offset;
@@ -487,11 +492,6 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	(*server->monitor)(sftp, SILC_SFTP_MONITOR_READ, &mdata,
 			   server->monitor_context);
       }
-
-      /* Read operation */
-      server->fs->fs->sftp_read(server->fs->fs_context, sftp,
-				handle, offset, len,
-				silc_sftp_server_data, SILC_32_TO_PTR(id));
     }
     break;
 
@@ -525,6 +525,11 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	break;
       }
 
+      /* Write operation */
+      server->fs->fs->sftp_write(server->fs->fs_context, sftp, handle, offset,
+				 (const unsigned char *)data, data_len,
+				 silc_sftp_server_status, SILC_32_TO_PTR(id));
+
       /* Call monitor */
       if (server->monitors & SILC_SFTP_MONITOR_WRITE && server->monitor) {
 	mdata.offset = offset;
@@ -532,11 +537,6 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	(*server->monitor)(sftp, SILC_SFTP_MONITOR_WRITE, &mdata,
 			   server->monitor_context);
       }
-
-      /* Write operation */
-      server->fs->fs->sftp_write(server->fs->fs_context, sftp, handle, offset,
-				 (const unsigned char *)data, data_len,
-				 silc_sftp_server_status, SILC_32_TO_PTR(id));
     }
     break;
 

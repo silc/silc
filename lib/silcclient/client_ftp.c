@@ -1040,6 +1040,11 @@ silc_client_file_receive(SilcClient client,
   return SILC_CLIENT_FILE_OK;
 }
 
+SILC_TASK_CALLBACK(silc_client_file_close_final)
+{
+  silc_client_ftp_session_free(context);
+}
+
 /* Closes file transmission session indicated by the `session_id'.
    If file transmission is being conducted it will be aborted
    automatically. This function is also used to close the session
@@ -1076,7 +1081,10 @@ SilcClientFileError silc_client_file_close(SilcClient client,
 			session->client_entry, session->session_id,
 			session->filepath, session->monitor_context);
 
-  silc_client_ftp_session_free(session);
+  /* Destroy via timeout */
+  silc_schedule_task_add(session->client->schedule, 0,
+			 silc_client_file_close_final, session,
+			 0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   return SILC_CLIENT_FILE_OK;
 }
