@@ -65,13 +65,67 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 }
 
 
-/* Notify message to the client.  The `type' is the notify type received
-   from server.  The `msg' is a human readable message sent by the server. */
+/* Notify message to the client.  The `notify_payload' is the Notify
+   Payload received from server.  Client library may parse it to cache
+   some data received from the payload but it is the application's 
+   responsiblity to retrieve the message and arguments from the payload.
+   The message in the payload sent by server is implementation specific
+   thus it is recommended that application will generate its own message. */
+/* XXX should generate own messages based on notify type. */
 
 void silc_notify(SilcClient client, SilcClientConnection conn, 
-		 SilcNotifyType type, char *msg)
+		 SilcNotifyPayload notify_payload)
 {
-  silc_print(client, "*** %s", msg);
+  SilcNotifyType type;
+  SilcArgumentPayload args;
+  char message[4096];
+  char *msg;
+
+  type = silc_notify_get_type(notify_payload);
+  msg = silc_notify_get_message(notify_payload);
+  args = silc_notify_get_args(notify_payload);
+
+  memset(message, 0, sizeof(message));
+
+  /* Get arguments (defined by protocol in silc-pp-01 -draft) */
+  switch(type) {
+  case SILC_NOTIFY_TYPE_NONE:
+    strncat(message, msg, strlen(msg));
+    break;
+  case SILC_NOTIFY_TYPE_INVITE:
+    snprintf(message, sizeof(message), msg, 
+	     silc_argument_get_arg_type(args, 1, NULL),
+	     silc_argument_get_arg_type(args, 2, NULL));
+    break;
+  case SILC_NOTIFY_TYPE_JOIN:
+    snprintf(message, sizeof(message), msg, 
+	     silc_argument_get_arg_type(args, 2, NULL),
+	     silc_argument_get_arg_type(args, 3, NULL),
+	     silc_argument_get_arg_type(args, 4, NULL),
+	     silc_argument_get_arg_type(args, 6, NULL));
+    break;
+  case SILC_NOTIFY_TYPE_LEAVE:
+    snprintf(message, sizeof(message), msg, 
+	     silc_argument_get_arg_type(args, 1, NULL),
+	     silc_argument_get_arg_type(args, 2, NULL),
+	     silc_argument_get_arg_type(args, 4, NULL));
+    break;
+  case SILC_NOTIFY_TYPE_SIGNOFF:
+    snprintf(message, sizeof(message), msg, 
+	     silc_argument_get_arg_type(args, 1, NULL),
+	     silc_argument_get_arg_type(args, 2, NULL));
+    break;
+  case SILC_NOTIFY_TYPE_TOPIC_SET:
+    snprintf(message, sizeof(message), msg, 
+	     silc_argument_get_arg_type(args, 3, NULL),
+	     silc_argument_get_arg_type(args, 4, NULL),
+	     silc_argument_get_arg_type(args, 2, NULL));
+    break;
+  default:
+    break;
+  }
+
+  silc_print(client, "*** %s", message);
 }
 
 /* Command handler. This function is called always in the command function.
