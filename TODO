@@ -12,7 +12,7 @@ TODO/bugs In SILC Client Library
 ================================
 
  o Resolve local hostname info using IDENTIFY and not use the local
-   clinet resolving (ie. update your local info in IDENTIFY reply).
+   client resolving (ie. update your local info in IDENTIFY reply).
 
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
