@@ -24,7 +24,6 @@ DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 makerfc = ../scripts/makerfc
 
 all:
-	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
 	touch draft-riikonen-silc-spec-05.txt
 	touch draft-riikonen-silc-pp-05.txt
 	touch draft-riikonen-silc-ke-auth-05.txt
@@ -34,6 +33,7 @@ all:
 
 if SILC_DIST_CLIENT
 dist-hook:
+	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
 	rm draft-riikonen*.txt
 	touch draft-riikonen-silc-spec-05.txt
 	touch draft-riikonen-silc-pp-05.txt
@@ -68,6 +68,7 @@ toolkit-ref-pdf:
 endif
 
 dist-hook:
+	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
 	touch draft-riikonen-silc-spec-05.txt
 	touch draft-riikonen-silc-pp-05.txt
 	touch draft-riikonen-silc-ke-auth-05.txt

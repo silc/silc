@@ -10,6 +10,12 @@ my (@yodl, @men);
 $yodl2man = qx/which yodl2man/;
 chomp($yodl2man);
 
+if ($yodl2man eq "" || $yodl2man =~ m/found/) {
+  print "Yodl is needed to to generate manpages.\n";
+  print "Skipping them...\n";
+  exit;
+}
+
 @yodl = ('silc.yo', 'silcd.yo', 'silcd.conf.yo', 'silc.conf.yo');
 @men  = ('silc.1', 'silcd.8', 'silcd.conf.5', 'silc.conf.5');
 

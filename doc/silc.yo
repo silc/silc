@@ -40,8 +40,8 @@ same nickname than before detaching and remains on all channels, and it
 seems like user never left the network.
 
 The bf(silc) also supports creation of em(friends) list, which is kind of
-buddy list familiar from IM (Instant Messaging) clients.  By using the
-bf(WHOIS) SILC command with em(-details) option it possible to fetch the
+a buddy list familiar from IM (Instant Messaging) clients.  By using the
+bf(WHOIS) SILC command with em(-details) option it is possible to fetch the
 user's information such as their public keys and certificates, business
 card, pictures, and other information and save them to the friends list.
 The friends list is located at bf(~/.silc/friends/) directory.
@@ -55,9 +55,9 @@ When connecting for the first time to SILC server, user will be asked to
 accept the server's public key.  When key is accepted the bf(silc) saves
 the public key for future into bf(~/.silc/serverkeys/) directory.  The
 next time user connects to same server the public key is verified against
-the saved public key.  The purposeof this public key saving is to avoid
+the saved public key.  The purpose of this public key saving is to avoid
 man-in-the-middle attacks which could be possible if the key would have
-to be verified everytime user connects to the server.
+to be verified every time user connects to the server.
 
 manpageoptions()
 bf(-c) em(host)      Connect to given host
