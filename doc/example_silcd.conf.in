@@ -142,8 +142,8 @@ General {
 	# Quality of Service (QoS) settings.  The QoS can be used to handle
 	# the incoming data and limit its handling rate to avoid flooding.
 	# By default QoS is disabled and can be enabled by setting "qos" to
-	# true value.  The "qos_rate_limit" is the incmoing data reading
-	# per second, and if more frequently than the set limit is read the
+	# true value.  The "qos_rate_limit" is the data reads per second,
+	# and if more frequently is read due to for example data flooding,
 	# QoS is applied to the data.  The "qos_bytes_limit" is maximum bytes
 	# allowed for incoming data.  If more is received at once the QoS
 	# is applied to the data.  The "qos_limit_sec" and "qos_limit_usec"
