@@ -886,10 +886,16 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
     entry = silc_idlist_find_server_by_id(server->global_list, server_id,
 					  TRUE, NULL);
     if (!entry) {
-      /* entry isn't known so we IDENTIFY it. otherwise the
-       * silc_server_command_motd won't know about it and tell
-       * the client that there is no such server */
       SilcBuffer buffer;
+
+      /* If router did not find such Server ID in its lists then this must
+	 be bogus client or some router in the net is buggy. */
+      if (server->server_type != SILC_SERVER)
+	goto out;
+ 
+      /* entry isn't known so we IDENTIFY it. otherwise the
+         silc_server_command_motd won't know about it and tell
+         the client that there is no such server */
       buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY,
 	  				      ++server->cmd_ident, 5,
 					      1, NULL, 0, 2, NULL, 0,
