@@ -732,9 +732,16 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
     SILC_LOG_DEBUG(("We are backup router/normal server"));
   }
 
+  if (!server->config->routers) {
+    /* There wasn't a configured router, we will continue but we don't
+       have a connection to outside world.  We will be standalone server. */
+    SILC_LOG_DEBUG(("No router(s), server will be standalone"));
+    server->standalone = TRUE;
+    return;
+  }
+
   /* Create the connections to all our routes */
-  ptr = server->config->routers;
-  while (ptr) {
+  for (ptr = server->config->routers; ptr; ptr = ptr->next) {
 
     SILC_LOG_DEBUG(("%s connection [%s] %s:%d",
 		    ptr->backup_router ? "Backup router" : "Router",
@@ -761,18 +768,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 			     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
     }
-
-    if (!ptr->next)
-      return;
-
-    ptr = ptr->next;
   }
-
-  SILC_LOG_DEBUG(("No router(s), server will be standalone"));
-
-  /* There wasn't a configured router, we will continue but we don't
-     have a connection to outside world.  We will be standalone server. */
-  server->standalone = TRUE;
 }
 
 /* Second part of connecting to router(s). Key exchange protocol has been
