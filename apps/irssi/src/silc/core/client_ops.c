@@ -4,13 +4,13 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -42,14 +42,14 @@
 
 #include "core.h"
 
-static void 
+static void
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
-				const char *name, SilcSocketType conn_type, 
-				unsigned char *pk, SilcUInt32 pk_len, 
+				const char *name, SilcSocketType conn_type,
+				unsigned char *pk, SilcUInt32 pk_len,
 				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context);
 
-static void silc_get_umode_string(SilcUInt32 mode, char *buf, 
+static void silc_get_umode_string(SilcUInt32 mode, char *buf,
 				  SilcUInt32 buf_size)
 {
   if ((mode & SILC_UMODE_SERVER_OPERATOR) ||
@@ -84,7 +84,7 @@ static void silc_get_umode_string(SilcUInt32 mode, char *buf,
 }
 
 /* print "nick appears as" message to every channel of a server */
-static void 
+static void
 silc_print_nick_change_channel(SILC_SERVER_REC *server, const char *channel,
 			      const char *newnick, const char *oldnick,
 			      const char *address)
@@ -92,7 +92,7 @@ silc_print_nick_change_channel(SILC_SERVER_REC *server, const char *channel,
   if (ignore_check(SERVER(server), oldnick, address,
 		   channel, newnick, MSGLEVEL_NICKS))
     return;
-  
+
   printformat_module("fe-common/silc", server, channel, MSGLEVEL_NICKS,
 		     SILCTXT_CHANNEL_APPEARS,
 		     oldnick, newnick, channel, address);
@@ -107,7 +107,7 @@ silc_print_nick_change(SILC_SERVER_REC *server, const char *newnick,
   /* Print to each channel/query where the nick is.
      Don't print more than once to the same window. */
   windows = NULL;
-    
+
   for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
     CHANNEL_REC *channel = tmp->data;
     WINDOW_REC *window = window_item_window((WI_ITEM_REC *) channel);
@@ -132,7 +132,7 @@ void silc_say(SilcClient client, SilcClientConnection conn,
   char *str;
 
   server = conn == NULL ? NULL : conn->context;
-  
+
   va_start(va, msg);
   str = g_strdup_vprintf(msg, va);
   printtext(server, NULL, MSGLEVEL_CRAP, "%s", str);
@@ -194,17 +194,17 @@ int verify_message_signature(SilcClientEntry sender,
   else
     /* no idea, who or what signed that message ... */
     return SILC_MSG_SIGNED_UNKNOWN;
-  
+
   /* search our local client key cache */
   for (i = 0; i < strlen(fingerprint); i++)
     if (fingerprint[i] == ' ')
       fingerprint[i] = '_';
-    
+
   snprintf(file, sizeof(file) - 1, "clientkey_%s.pub", fingerprint);
-  snprintf(filename, sizeof(filename) - 1, "%s/clientkeys/%s", 
+  snprintf(filename, sizeof(filename) - 1, "%s/clientkeys/%s",
 	   get_irssi_dir(), file);
   silc_free(fingerprint);
-  
+
   if (stat(filename, &st) < 0)
     /* we don't have the public key cached ... use the one from the sig */
     ret = SILC_MSG_SIGNED_UNKNOWN;
@@ -213,9 +213,9 @@ int verify_message_signature(SilcClientEntry sender,
 
     /* try to load the file */
     if (!silc_pkcs_load_public_key(filename, &cached_pk, SILC_PKCS_FILE_PEM) &&
-	!silc_pkcs_load_public_key(filename, &cached_pk, 
+	!silc_pkcs_load_public_key(filename, &cached_pk,
 				   SILC_PKCS_FILE_BIN)) {
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_COULD_NOT_LOAD, "client");
       if (pk == NULL)
 	return SILC_MSG_SIGNED_UNKNOWN;
@@ -226,12 +226,12 @@ int verify_message_signature(SilcClientEntry sender,
     if (cached_pk) {
       if (pk)
         silc_pkcs_public_key_free(pk);
-      pk = cached_pk; 
+      pk = cached_pk;
     }
   }
 
   /* the public key is now in pk, our "level of trust" in ret */
-  if ((pk) && silc_message_signed_verify(sig, message, pk, 
+  if ((pk) && silc_message_signed_verify(sig, message, pk,
 			  		 silc_client->sha1hash)!= SILC_AUTH_OK)
     ret = SILC_MSG_SIGNED_FAILED;
 
@@ -241,7 +241,7 @@ int verify_message_signature(SilcClientEntry sender,
   return ret;
 }
 
-/* Message for a channel. The `sender' is the nickname of the sender 
+/* Message for a channel. The `sender' is the nickname of the sender
    received in the packet. The `channel_name' is the name of the channel. */
 
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
@@ -254,7 +254,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   SILC_NICK_REC *nick;
   SILC_CHANNEL_REC *chanrec;
   int verified = 0;
-  
+
   SILC_LOG_DEBUG(("Start"));
 
   if (!message)
@@ -264,7 +264,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   chanrec = silc_channel_find_entry(server, channel);
   if (!chanrec)
     return;
-  
+
   nick = silc_nicklist_find(chanrec, sender);
   if (!nick) {
     /* We didn't find client but it clearly exists, add it. */
@@ -282,7 +282,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       flags &= ~SILC_MESSAGE_FLAG_SIGNED;
     }
   }
-  
+
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     /* MIME object received, try to display it as well as we can */
     char type[128], enc[128];
@@ -315,11 +315,11 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
             information to them (if present) */
   if (flags & SILC_MESSAGE_FLAG_ACTION)
     printformat_module("fe-common/silc", server, channel->channel_name,
-		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION, 
+		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION,
                        nick == NULL ? "[<unknown>]" : nick->nick, message);
   else if (flags & SILC_MESSAGE_FLAG_NOTICE)
     printformat_module("fe-common/silc", server, channel->channel_name,
-		       MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE, 
+		       MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE,
                        nick == NULL ? "[<unknown>]" : nick->nick, message);
   else {
     if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
@@ -373,7 +373,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   SILC_SERVER_REC *server;
   char userhost[256];
   int verified = 0;
-  
+
   SILC_LOG_DEBUG(("Start"));
 
   server = conn == NULL ? NULL : conn->context;
@@ -391,7 +391,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       flags &= ~SILC_MESSAGE_FLAG_SIGNED;
     }
   }
-  
+
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     /* MIME object received, try to display it as well as we can */
     char type[128], enc[128];
@@ -485,7 +485,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   va_start(va, type);
 
   server = conn == NULL ? NULL : conn->context;
-  
+
   switch(type) {
   case SILC_NOTIFY_TYPE_NONE:
     /* Some generic notice from server */
@@ -514,7 +514,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     /*
      * Joined channel.
      */
- 
+
     SILC_LOG_DEBUG(("Notify: JOIN"));
 
     client_entry = va_arg(va, SilcClientEntry);
@@ -533,7 +533,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 	  nickrec = silc_nicklist_insert(chanrec, chu, TRUE);
       }
     }
-    
+
     memset(buf, 0, sizeof(buf));
     if (client_entry->username)
     snprintf(buf, sizeof(buf) - 1, "%s@%s",
@@ -552,13 +552,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     client_entry = va_arg(va, SilcClientEntry);
     channel = va_arg(va, SilcChannelEntry);
-    
+
     memset(buf, 0, sizeof(buf));
     if (client_entry->username)
       snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	       client_entry->username, client_entry->hostname);
     signal_emit("message part", 5, server, channel->channel_name,
-	 	client_entry->nickname,  client_entry->username ? 
+	 	client_entry->nickname,  client_entry->username ?
 		buf : "", client_entry->nickname);
 
     chanrec = silc_channel_find_entry(server, channel);
@@ -578,7 +578,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     client_entry = va_arg(va, SilcClientEntry);
     tmp = va_arg(va, char *);
-    
+
     silc_server_free_ftp(server, client_entry);
 
     /* Print only if we have the nickname.  If this cliente has just quit
@@ -590,16 +590,16 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
         snprintf(buf, sizeof(buf) - 1, "%s@%s",
 		 client_entry->username, client_entry->hostname);
       signal_emit("message quit", 4, server, client_entry->nickname,
-		  client_entry->username ? buf : "", 
+		  client_entry->username ? buf : "",
 		  tmp ? tmp : "");
     }
 
     list1 = nicklist_get_same_unique(SERVER(server), client_entry);
-    for (list_tmp = list1; list_tmp != NULL; list_tmp = 
+    for (list_tmp = list1; list_tmp != NULL; list_tmp =
 	   list_tmp->next->next) {
       CHANNEL_REC *channel = list_tmp->data;
       NICK_REC *nickrec = list_tmp->next->data;
-      
+
       nicklist_remove(channel, nickrec);
     }
     break;
@@ -615,7 +615,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     entry = va_arg(va, void *);
     tmp = va_arg(va, char *);
     channel = va_arg(va, SilcChannelEntry);
-    
+
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
       char tmp2[256], *cp, *dm = NULL;
@@ -639,7 +639,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
       silc_free(dm);
     }
-    
+
     if (idtype == SILC_ID_CLIENT) {
       client_entry = (SilcClientEntry)entry;
       memset(buf, 0, sizeof(buf));
@@ -650,7 +650,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     } else if (idtype == SILC_ID_SERVER) {
       server_entry = (SilcServerEntry)entry;
       signal_emit("message topic", 5, server, channel->channel_name,
-		  tmp, server_entry->server_name, 
+		  tmp, server_entry->server_name,
 		  server_entry->server_name);
     } else if (idtype == SILC_ID_CHANNEL) {
       channel = (SilcChannelEntry)entry;
@@ -671,14 +671,14 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     if (!strcmp(client_entry->nickname, client_entry2->nickname))
       break;
-    
+
     memset(buf, 0, sizeof(buf));
     snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	     client_entry2->username, client_entry2->hostname);
     nicklist_rename_unique(SERVER(server),
 			   client_entry, client_entry->nickname,
 			   client_entry2, client_entry2->nickname);
-    signal_emit("message nick", 4, server, client_entry2->nickname, 
+    signal_emit("message nick", 4, server, client_entry2->nickname,
 		client_entry->nickname, buf);
     break;
 
@@ -697,18 +697,18 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     channel = va_arg(va, SilcChannelEntry);
 
     tmp = silc_client_chmode(mode,
-			     channel->channel_key ? 
+			     channel->channel_key ?
 			     silc_cipher_get_name(channel->channel_key) : "",
-			     channel->hmac ? 
+			     channel->hmac ?
 			     silc_hmac_get_name(channel->hmac) : "");
-    
+
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
       g_free_not_null(chanrec->mode);
       chanrec->mode = g_strdup(tmp == NULL ? "" : tmp);
       signal_emit("channel mode changed", 1, chanrec);
     }
-    
+
     if (idtype == SILC_ID_CLIENT) {
       client_entry = (SilcClientEntry)entry;
       printformat_module("fe-common/silc", server, channel->channel_name,
@@ -752,7 +752,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
       if (client_entry2 == server->conn->local_entry)
 	chanrec->chanop = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
-      
+
       nick = silc_nicklist_find(chanrec, client_entry2);
       if (nick != NULL) {
 	nick->op = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
@@ -765,33 +765,33 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       client_entry = (SilcClientEntry)entry;
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
-			 channel->channel_name, client_entry2->nickname, 
+			 channel->channel_name, client_entry2->nickname,
 			 tmp ? tmp : "removed all",
 			 client_entry->nickname);
     } else if (idtype == SILC_ID_SERVER) {
       server_entry = (SilcServerEntry)entry;
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
-			 channel->channel_name, client_entry2->nickname, 
+			 channel->channel_name, client_entry2->nickname,
 			 tmp ? tmp : "removed all",
 			 server_entry->server_name);
     } else if (idtype == SILC_ID_CHANNEL) {
       channel2 = (SilcChannelEntry)entry;
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
-			 channel->channel_name, client_entry2->nickname, 
+			 channel->channel_name, client_entry2->nickname,
 			 tmp ? tmp : "removed all",
 			 channel2->channel_name);
     }
 
     if (mode & SILC_CHANNEL_UMODE_CHANFO)
-      printformat_module("fe-common/silc", 
+      printformat_module("fe-common/silc",
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_FOUNDER,
 			 channel->channel_name, client_entry2->nickname);
 
     if (mode & SILC_CHANNEL_UMODE_QUIET && conn->local_entry == client_entry2)
-      printformat_module("fe-common/silc", 
+      printformat_module("fe-common/silc",
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_QUIETED, channel->channel_name);
 
@@ -824,11 +824,11 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     channel = va_arg(va, SilcChannelEntry);
 
     chanrec = silc_channel_find_entry(server, channel);
-  
+
     if (client_entry == conn->local_entry) {
       printformat_module("fe-common/silc", server, channel->channel_name,
-			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED_YOU, 
-			 channel->channel_name, 
+			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED_YOU,
+			 channel->channel_name,
 			 client_entry ? client_entry2->nickname : "",
 			 tmp ? tmp : "");
       if (chanrec) {
@@ -837,9 +837,9 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       }
     } else {
       printformat_module("fe-common/silc", server, channel->channel_name,
-			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED, 
-			 client_entry->nickname, channel->channel_name, 
-			 client_entry2 ? client_entry2->nickname : "", 
+			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED,
+			 client_entry->nickname, channel->channel_name,
+			 client_entry2 ? client_entry2->nickname : "",
 			 tmp ? tmp : "");
 
       if (chanrec) {
@@ -861,28 +861,28 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     tmp = va_arg(va, char *);
     idtype = va_arg(va, int);
     entry = va_arg(va, SilcClientEntry);
-  
+
     if (client_entry == conn->local_entry) {
       if (idtype == SILC_ID_CLIENT) {
 	client_entry2 = (SilcClientEntry)entry;
 	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU,
 			   client_entry2 ? client_entry2->nickname : "",
 			   tmp ? tmp : "");
       } else if (idtype == SILC_ID_SERVER) {
 	server_entry = (SilcServerEntry)entry;
 	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU,
 			   server_entry->server_name, tmp ? tmp : "");
       } else if (idtype == SILC_ID_CHANNEL) {
 	channel = (SilcChannelEntry)entry;
 	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU,
 			   channel->channel_name, tmp ? tmp : "");
       }
     } else {
       list1 = nicklist_get_same_unique(SERVER(server), client_entry);
-      for (list_tmp = list1; list_tmp != NULL; list_tmp = 
+      for (list_tmp = list1; list_tmp != NULL; list_tmp =
 	     list_tmp->next->next) {
 	CHANNEL_REC *channel = list_tmp->data;
 	NICK_REC *nickrec = list_tmp->next->data;
@@ -892,20 +892,20 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       if (idtype == SILC_ID_CLIENT) {
 	client_entry2 = (SilcClientEntry)entry;
 	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED,
 			   client_entry->nickname,
 			   client_entry2 ? client_entry2->nickname : "",
 			   tmp ? tmp : "");
       } else if (idtype == SILC_ID_SERVER) {
 	server_entry = (SilcServerEntry)entry;
 	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED,
 			   client_entry->nickname,
 			   server_entry->server_name, tmp ? tmp : "");
       } else if (idtype == SILC_ID_CHANNEL) {
 	channel = (SilcChannelEntry)entry;
 	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED,
 			   client_entry->nickname,
 			   channel->channel_name, tmp ? tmp : "");
       }
@@ -925,11 +925,11 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       SilcUInt32 clients_count;
 
       SILC_LOG_DEBUG(("Notify: SIGNOFF"));
-      
+
       (void)va_arg(va, void *);
       clients = va_arg(va, SilcClientEntry *);
       clients_count = va_arg(va, SilcUInt32);
-  
+
       for (i = 0; i < clients_count; i++) {
 	memset(buf, 0, sizeof(buf));
 
@@ -941,14 +941,14 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 	    snprintf(buf, sizeof(buf) - 1, "%s@%s",
 		     clients[i]->username, clients[i]->hostname);
 	  signal_emit("message quit", 4, server, clients[i]->nickname,
-		      clients[i]->username ? buf : "", 
+		      clients[i]->username ? buf : "",
 		      "server signoff");
 	}
 
 	silc_server_free_ftp(server, clients[i]);
-	
+
 	list1 = nicklist_get_same_unique(SERVER(server), clients[i]);
-	for (list_tmp = list1; list_tmp != NULL; list_tmp = 
+	for (list_tmp = list1; list_tmp != NULL; list_tmp =
 	       list_tmp->next->next) {
 	  CHANNEL_REC *channel = list_tmp->data;
 	  NICK_REC *nickrec = list_tmp->next->data;
@@ -1061,13 +1061,13 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
     server->connected = TRUE;
     signal_emit("event connected", 1, server);
 
-    /* If we resumed old session check whether we need to update 
+    /* If we resumed old session check whether we need to update
        our nickname */
     if (strcmp(server->nick, conn->local_entry->nickname)) {
       char *old;
       old = g_strdup(server->nick);
       server_change_nick(SERVER(server), conn->local_entry->nickname);
-      nicklist_rename_unique(SERVER(server), 
+      nicklist_rename_unique(SERVER(server),
 			     conn->local_entry, server->nick,
 			     conn->local_entry, conn->local_entry->nickname);
       signal_emit("message own_nick", 4, server, server->nick, old, "");
@@ -1099,7 +1099,7 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn,
   if (server->conn && server->conn->local_entry) {
     nicklist_rename_unique(SERVER(server),
 			   server->conn->local_entry, server->nick,
-			   server->conn->local_entry, 
+			   server->conn->local_entry,
 			   silc_client->username);
     silc_change_nick(server, silc_client->username);
   }
@@ -1126,7 +1126,7 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn,
    after application has called the command. Just to tell application
    that the command really was processed. */
 
-void silc_command(SilcClient client, SilcClientConnection conn, 
+void silc_command(SilcClient client, SilcClientConnection conn,
 		  SilcClientCommandContext cmd_context, bool success,
 		  SilcCommand command, SilcStatus status)
 {
@@ -1145,7 +1145,7 @@ void silc_command(SilcClient client, SilcClientConnection conn,
     if (cmd_context->argc > 2)
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITING,
-			 cmd_context->argv[2], 
+			 cmd_context->argv[2],
 			 (cmd_context->argv[1][0] == '*' ?
 			  (char *)conn->current_channel->channel_name :
 			  (char *)cmd_context->argv[1]));
@@ -1160,6 +1160,11 @@ void silc_command(SilcClient client, SilcClientConnection conn,
   }
 }
 
+typedef struct {
+  SilcChannelEntry channel;
+  bool retry;
+} *SilcJoinResolve;
+
 /* Client info resolving callback when JOIN command reply is received.
    This will cache all users on the channel. */
 
@@ -1169,7 +1174,8 @@ static void silc_client_join_get_users(SilcClient client,
 				       SilcUInt32 clients_count,
 				       void *context)
 {
-  SilcChannelEntry channel = (SilcChannelEntry)context;
+  SilcJoinResolve r = context;
+  SilcChannelEntry channel = r->channel;
   SilcHashTableList htl;
   SilcChannelUser chu;
   SILC_SERVER_REC *server = conn->context;
@@ -1180,8 +1186,12 @@ static void silc_client_join_get_users(SilcClient client,
   SILC_LOG_DEBUG(("Start, channel %s, %d users", channel->channel_name,
 		  silc_hash_table_count(channel->user_list)));
 
-  if (!clients)
+  if (!clients && r->retry < 1) {
+    /* Retry to resolve */
+    silc_client_get_clients_by_channel(client, conn, channel,
+				       silc_client_join_get_users, context);
     return;
+  }
 
   chanrec = silc_channel_find(server, channel->channel_name);
   if (chanrec == NULL)
@@ -1209,13 +1219,13 @@ static void silc_client_join_get_users(SilcClient client,
 
   if (founder) {
     if (founder == conn->local_entry) {
-      printformat_module("fe-common/silc", 
+      printformat_module("fe-common/silc",
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_FOUNDER_YOU,
 			 channel->channel_name);
       signal_emit("nick mode changed", 2, chanrec, ownnick);
     } else
-      printformat_module("fe-common/silc", 
+      printformat_module("fe-common/silc",
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_FOUNDER,
 			 channel->channel_name, founder->nickname);
@@ -1234,7 +1244,7 @@ void silc_getkey_cb(bool success, void *context)
 {
   GetkeyContext getkey = (GetkeyContext)context;
   char *entity = (getkey->id_type == SILC_ID_CLIENT ? "user" : "server");
-  char *name = (getkey->id_type == SILC_ID_CLIENT ? 
+  char *name = (getkey->id_type == SILC_ID_CLIENT ?
 		((SilcClientEntry)getkey->entry)->nickname :
 		((SilcServerEntry)getkey->entry)->server_name);
 
@@ -1254,8 +1264,8 @@ void silc_getkey_cb(bool success, void *context)
 /* Parse an invite or ban list */
 void  silc_parse_inviteban_list(SilcClient client,
 				SilcClientConnection conn,
-				SILC_SERVER_REC *server, 
-				SilcChannelEntry channel, 
+				SILC_SERVER_REC *server,
+				SilcChannelEntry channel,
 				const char *list_type,
 				SilcArgumentPayload list)
 {
@@ -1271,7 +1281,7 @@ void  silc_parse_inviteban_list(SilcClient client,
 		       channel->channel_name, list_type);
     return;
   }
-  
+
   printformat_module("fe-common/silc", server,
 		     (chanrec ? chanrec->visible_name : NULL),
 		     MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_LIST,
@@ -1286,10 +1296,10 @@ void  silc_parse_inviteban_list(SilcClient client,
 	  /* an invite string */
 	  char **list;
 	  int i=0;
-		
+
 	  if (tmp[len-1] == ',')
 	    tmp[len-1] = '\0';
-	  
+
 	  list = g_strsplit(tmp, ",", -1);
 	  while (list[i])
 	    printformat_module("fe-common/silc", server,
@@ -1309,7 +1319,7 @@ void  silc_parse_inviteban_list(SilcClient client,
 	  /* tmp is Public Key Payload, take public key from it. */
 	  fingerprint = silc_hash_fingerprint(NULL, tmp + 4, len - 4);
 	  babbleprint = silc_hash_babbleprint(NULL, tmp + 4, len - 4);
-	  
+
 	  printformat_module("fe-common/silc", server,
 			     (chanrec ? chanrec->visible_name : NULL),
 			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_PUBKEY,
@@ -1317,15 +1327,15 @@ void  silc_parse_inviteban_list(SilcClient client,
 			     fingerprint, babbleprint);
 	}
 	break;
-	
+
       case 3:
 	{
 	  /* a client ID */
 	  SilcClientID *client_id;
 	  SilcClientEntry client_entry;
-	  
+
 	  client_id = silc_id_payload_parse_id(tmp, len, NULL);
-			  
+
 	  if (client_id == NULL) {
 	    silc_say_error("Invalid data in %s list encountered", list_type);
 	    break;
@@ -1348,7 +1358,7 @@ void  silc_parse_inviteban_list(SilcClient client,
 	  silc_free(client_id);
 	}
 	break;
-	
+
       default:
 	/* "trash" */
 	silc_say_error("Unkown type in %s list: %u (len %u)",
@@ -1358,7 +1368,7 @@ void  silc_parse_inviteban_list(SilcClient client,
   }
 
   if (resolving)
-    printformat_module("fe-common/silc", server, 
+    printformat_module("fe-common/silc", server,
 		       (chanrec ? chanrec->visible_name : NULL),
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_REGET,
 		       list_type, channel->channel_name);
@@ -1368,7 +1378,7 @@ void  silc_parse_inviteban_list(SilcClient client,
    function. If error occurs it will be called as well. Normal scenario
    is that it will be called after the received command data has been parsed
    and processed. The function is used to pass the received command data to
-   the application. 
+   the application.
 
    `conn' is the associated client connection. `cmd_payload' is the command
    payload data received from server and it can be ignored. It is provided
@@ -1380,7 +1390,7 @@ void  silc_parse_inviteban_list(SilcClient client,
    and each command defines the number and type of arguments it passes to the
    application (on error they are not sent). */
 
-void 
+void
 silc_command_reply(SilcClient client, SilcClientConnection conn,
 		   SilcCommandPayload cmd_payload, bool success,
 		   SilcCommand command, SilcStatus status, ...)
@@ -1403,14 +1413,14 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcBuffer channels, user_modes;
       SilcClientEntry client_entry;
       SilcDList attrs;
-      
+
       if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
 	/* Print the unknown nick for user */
 	unsigned char *tmp =
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 				     3, NULL);
 	if (tmp)
-	  silc_say_error("%s: %s", tmp, 
+	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
 	break;
       } else if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
@@ -1421,7 +1431,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 				     2, &tmp_len);
 	if (tmp) {
-	  SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, 
+	  SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len,
 							     NULL);
 	  if (client_id) {
 	    client_entry = silc_client_get_client_by_id(client, conn,
@@ -1448,10 +1458,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       fingerprint = va_arg(vp, unsigned char *);
       user_modes = va_arg(vp, SilcBuffer);
       attrs = va_arg(vp, SilcDList);
-      
+
       silc_parse_userfqdn(nickname, &nick, NULL);
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
-			 SILCTXT_WHOIS_USERINFO, nickname, 
+			 SILCTXT_WHOIS_USERINFO, nickname,
 			 client_entry->username, client_entry->hostname,
 			 nick, client_entry->nickname);
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
@@ -1473,7 +1483,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	    SilcUInt32 name_len;
 	    char *m = silc_client_chumode_char(umodes[i++]);
 	    char *name = silc_channel_get_name(entry, &name_len);
-	    
+
 	    if (m)
 	      silc_strncat(buf, sizeof(buf) - 1, m, strlen(m));
 	    silc_strncat(buf, sizeof(buf) - 1, name, name_len);
@@ -1494,7 +1504,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			   SILCTXT_WHOIS_MODES, buf);
       }
-      
+
       if (idle && nickname) {
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf) - 1, "%lu %s",
@@ -1517,18 +1527,18 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 				    client_entry);
     }
     break;
-    
+
   case SILC_COMMAND_IDENTIFY:
     {
       SilcClientEntry client_entry;
-      
+
       if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
 	/* Print the unknown nick for user */
 	unsigned char *tmp =
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 				     3, NULL);
 	if (tmp)
-	  silc_say_error("%s: %s", tmp, 
+	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
 	break;
       } else if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
@@ -1559,51 +1569,51 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   case SILC_COMMAND_WHOWAS:
     {
       char *nickname, *username, *realname;
-      
+
       if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
 	  status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
 	char *tmp;
 	tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 					 3, NULL);
 	if (tmp)
-	  silc_say_error("%s: %s", tmp, 
+	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
 	break;
       } else if (!success) {
 	silc_say_error("WHOWAS: %s", silc_get_status_message(status));
 	return;
       }
-      
+
       (void)va_arg(vp, SilcClientEntry);
       nickname = va_arg(vp, char *);
       username = va_arg(vp, char *);
       realname = va_arg(vp, char *);
-      
+
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
-			 SILCTXT_WHOWAS_USERINFO, nickname, username, 
+			 SILCTXT_WHOWAS_USERINFO, nickname, username,
 			 realname ? realname : "");
     }
     break;
-    
+
   case SILC_COMMAND_INVITE:
     {
       SilcChannelEntry channel;
       SilcBuffer payload;
       SilcArgumentPayload invite_list;
       SilcUInt32 argc;
-      
+
       if (!success)
 	return;
-      
+
       channel = va_arg(vp, SilcChannelEntry);
       payload = va_arg(vp, SilcBuffer);
 
       if (payload) {
 	SILC_GET16_MSB(argc, payload->data);
-	invite_list = silc_argument_payload_parse(payload->data + 2, 
+	invite_list = silc_argument_payload_parse(payload->data + 2,
 						  payload->len - 2, argc);
 	if (invite_list) {
-	  silc_parse_inviteban_list(client, conn, server, channel, 
+	  silc_parse_inviteban_list(client, conn, server, channel,
 				    "invite", invite_list);
 	  silc_argument_payload_free(invite_list);
 	}
@@ -1611,7 +1621,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     }
     break;
 
-  case SILC_COMMAND_JOIN: 
+  case SILC_COMMAND_JOIN:
     {
       char *channel, *mode, *topic;
       SilcUInt32 modei;
@@ -1661,35 +1671,36 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	silc_free(dm);
       }
 
-      mode = silc_client_chmode(modei, 
-				channel_entry->channel_key ? 
+      mode = silc_client_chmode(modei,
+				channel_entry->channel_key ?
 				silc_cipher_get_name(channel_entry->
 						     channel_key) : "",
-				channel_entry->hmac ? 
+				channel_entry->hmac ?
 				silc_hmac_get_name(channel_entry->hmac) : "");
       g_free_not_null(chanrec->mode);
       chanrec->mode = g_strdup(mode == NULL ? "" : mode);
       signal_emit("channel mode changed", 1, chanrec);
 
       /* Resolve the client information */
+      SilcJoinResolve r = silc_calloc(1, sizeof(*r));
+      r->channel = channel_entry;
       silc_client_get_clients_by_list(client, conn, list_count, client_id_list,
-				      silc_client_join_get_users, 
-				      channel_entry);
+				      silc_client_join_get_users, r);
 
       break;
     }
 
-  case SILC_COMMAND_NICK: 
+  case SILC_COMMAND_NICK:
     {
       char *old;
       SilcClientEntry client_entry = va_arg(vp, SilcClientEntry);
       GSList *nicks;
-      
+
       if (!success)
 	return;
 
       nicks = nicklist_get_same(SERVER(server), client_entry->nickname);
-      if ((nicks != NULL) && 
+      if ((nicks != NULL) &&
         (strcmp(SERVER(server)->nick, client_entry->nickname))) {
 	char buf[512];
 	SilcClientEntry collider, old;
@@ -1697,7 +1708,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	old = ((SILC_NICK_REC *)(nicks->next->data))->silc_user->client;
 	collider = silc_client_get_client_by_id(client, conn,
 						old->id);
-	
+
         memset(buf, 0, sizeof(buf));
         snprintf(buf, sizeof(buf) - 1, "%s@%s",
 		 collider->username, collider->hostname);
@@ -1718,17 +1729,17 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       g_free(old);
       break;
     }
-    
+
   case SILC_COMMAND_LIST:
     {
       char *topic, *name;
       int usercount;
       char users[20];
       char tmp[256], *cp, *dm = NULL;
-      
+
       if (!success)
 	return;
-      
+
       (void)va_arg(vp, SilcChannelEntry);
       name = va_arg(vp, char *);
       topic = va_arg(vp, char *);
@@ -1747,7 +1758,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			 cp, strlen(topic));
 	topic = cp;
       }
-      
+
       if (status == SILC_STATUS_LIST_START ||
 	  status == SILC_STATUS_OK)
 	printformat_module("fe-common/silc", server, NULL,
@@ -1763,17 +1774,17 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       silc_free(dm);
     }
     break;
-    
+
   case SILC_COMMAND_UMODE:
     {
       SilcUInt32 mode;
       char *reason;
-      
+
       if (!success)
 	return;
-      
+
       mode = va_arg(vp, SilcUInt32);
-      
+
       if (mode & SILC_UMODE_SERVER_OPERATOR &&
 	  !(server->umode & SILC_UMODE_SERVER_OPERATOR))
 	printformat_module("fe-common/silc", server, NULL,
@@ -1785,7 +1796,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			   MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
 
       if ((mode & SILC_UMODE_GONE) != (server->umode & SILC_UMODE_GONE)) {
-	if (mode & SILC_UMODE_GONE) {      
+	if (mode & SILC_UMODE_GONE) {
 	  if ((server->away_reason != NULL) && (server->away_reason[0] != '\0'))
 	    reason = g_strdup(server->away_reason);
 	  else
@@ -1802,7 +1813,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       signal_emit("user mode changed", 2, server, NULL);
     }
     break;
-    
+
   case SILC_COMMAND_OPER:
     if (!success)
       return;
@@ -1813,7 +1824,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_SERVER_OPER);
     break;
-    
+
   case SILC_COMMAND_SILCOPER:
     if (!success)
       return;
@@ -1824,18 +1835,18 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
     break;
-    
-  case SILC_COMMAND_USERS: 
+
+  case SILC_COMMAND_USERS:
     {
       SilcHashTableList htl;
       SilcChannelEntry channel;
       SilcChannelUser chu;
-      
+
       if (!success)
 	return;
-      
+
       channel = va_arg(vp, SilcChannelEntry);
-      
+
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_CRAP, SILCTXT_USERS_HEADER,
 			 channel->channel_name);
@@ -1847,7 +1858,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
 	if (!e->nickname)
 	  continue;
-	
+
 	memset(stat, 0, sizeof(stat));
 	mode = silc_client_chumode_char(chu->mode);
 	if (e->mode & SILC_UMODE_GONE)
@@ -1871,7 +1882,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
 	printformat_module("fe-common/silc", server, channel->channel_name,
 			   MSGLEVEL_CRAP, SILCTXT_USERS,
-			   e->nickname, stat, 
+			   e->nickname, stat,
 			   e->username ? e->username : "",
 			   e->hostname ? e->hostname : "",
 			   e->realname ? e->realname : "");
@@ -1888,26 +1899,26 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcBuffer payload;
       SilcArgumentPayload ban_list;
       SilcUInt32 argc;
-      
+
       if (!success)
 	return;
-      
+
       channel = va_arg(vp, SilcChannelEntry);
       payload = va_arg(vp, SilcBuffer);
 
       if (payload) {
 	SILC_GET16_MSB(argc, payload->data);
-	ban_list = silc_argument_payload_parse(payload->data + 2, 
+	ban_list = silc_argument_payload_parse(payload->data + 2,
 					       payload->len - 2, argc);
 	if (ban_list) {
-	  silc_parse_inviteban_list(client, conn, server, channel, 
+	  silc_parse_inviteban_list(client, conn, server, channel,
 				    "ban", ban_list);
 	  silc_argument_payload_free(ban_list);
 	}
       }
     }
     break;
-    
+
   case SILC_COMMAND_GETKEY:
     {
       SilcIdType id_type;
@@ -1917,10 +1928,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcUInt32 pk_len;
       GetkeyContext getkey;
       char *name;
-      
+
       if (!success)
 	return;
-      
+
       id_type = va_arg(vp, SilcUInt32);
       entry = va_arg(vp, void *);
       public_key = va_arg(vp, SilcPublicKey);
@@ -1935,7 +1946,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	getkey->conn = conn;
 	getkey->fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
 
-	name = (id_type == SILC_ID_CLIENT ? 
+	name = (id_type == SILC_ID_CLIENT ?
 		((SilcClientEntry)entry)->nickname :
 		((SilcServerEntry)entry)->server_name);
 
@@ -1961,7 +1972,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       if (!success)
 	return;
-      
+
       server_entry = va_arg(vp, SilcServerEntry);
       server_name = va_arg(vp, char *);
       server_info = va_arg(vp, char *);
@@ -1973,16 +1984,16 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	}
     }
     break;
-    
+
   case SILC_COMMAND_TOPIC:
     {
       SilcChannelEntry channel;
       char *topic;
       char tmp[256], *cp, *dm = NULL;
-      
+
       if (!success)
 	return;
-      
+
       channel = va_arg(vp, SilcChannelEntry);
       topic = va_arg(vp, char *);
 
@@ -2021,7 +2032,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
   case SILC_COMMAND_WATCH:
     break;
-  
+
   case SILC_COMMAND_STATS:
     {
       SilcUInt32 starttime, uptime, my_clients, my_channels, my_server_ops,
@@ -2178,7 +2189,7 @@ static void verify_public_key_completion(const char *line, void *context)
       verify->completion(TRUE, verify->context);
 
     /* Save the key for future checking */
-    silc_pkcs_save_public_key_data(verify->filename, verify->pk, 
+    silc_pkcs_save_public_key_data(verify->filename, verify->pk,
 				   verify->pk_len, SILC_PKCS_FILE_PEM);
   } else {
     /* Call the completion */
@@ -2186,7 +2197,7 @@ static void verify_public_key_completion(const char *line, void *context)
       verify->completion(FALSE, verify->context);
 
     printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_DISCARD, 
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_DISCARD,
 		       verify->entity_name ? verify->entity_name :
 		       verify->entity);
   }
@@ -2203,10 +2214,10 @@ static void verify_public_key_completion(const char *line, void *context)
    server/router public key this will check for filename that includes the
    remote host's IP address and remote host's hostname. */
 
-static void 
+static void
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
-				const char *name, SilcSocketType conn_type, 
-				unsigned char *pk, SilcUInt32 pk_len, 
+				const char *name, SilcSocketType conn_type,
+				unsigned char *pk, SilcUInt32 pk_len,
 				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context)
 {
@@ -2216,13 +2227,13 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   struct passwd *pw;
   struct stat st;
   char *entity = ((conn_type == SILC_SOCKET_TYPE_SERVER ||
-		   conn_type == SILC_SOCKET_TYPE_ROUTER) ? 
+		   conn_type == SILC_SOCKET_TYPE_ROUTER) ?
 		  "server" : "client");
   PublicKeyVerify verify;
 
   if (pk_type != SILC_SKE_PK_TYPE_SILC) {
     printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_UNSUPPORTED, 
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_UNSUPPORTED,
 		       entity, pk_type);
     if (completion)
       completion(FALSE, context);
@@ -2243,24 +2254,24 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   if (conn_type == SILC_SOCKET_TYPE_SERVER ||
       conn_type == SILC_SOCKET_TYPE_ROUTER) {
     if (!name) {
-      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
+      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity,
 	       conn->sock->ip, conn->sock->port);
-      snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s", 
+      snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s",
 	       get_irssi_dir(), entity, file);
-      
-      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
+
+      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity,
 	       conn->sock->hostname, conn->sock->port);
-      snprintf(filename2, sizeof(filename2) - 1, "%s/%skeys/%s", 
+      snprintf(filename2, sizeof(filename2) - 1, "%s/%skeys/%s",
 	       get_irssi_dir(), entity, file);
-      
+
       ipf = filename;
       hostf = filename2;
     } else {
-      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
+      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity,
 	       name, conn->sock->port);
-      snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s", 
+      snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s",
 	       get_irssi_dir(), entity, file);
-      
+
       ipf = filename;
     }
   } else {
@@ -2269,9 +2280,9 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     for (i = 0; i < strlen(fingerprint); i++)
       if (fingerprint[i] == ' ')
 	fingerprint[i] = '_';
-    
+
     snprintf(file, sizeof(file) - 1, "%skey_%s.pub", entity, fingerprint);
-    snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s", 
+    snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s",
 	     get_irssi_dir(), entity, file);
     silc_free(fingerprint);
 
@@ -2300,12 +2311,12 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   if (stat(ipf, &st) < 0 && (!hostf || stat(hostf, &st) < 0)) {
     /* Key does not exist, ask user to verify the key and save it */
 
-    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-		       SILCTXT_PUBKEY_RECEIVED,verify->entity_name ? 
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+		       SILCTXT_PUBKEY_RECEIVED,verify->entity_name ?
 		       verify->entity_name : entity);
-    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
-    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
     format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			     SILCTXT_PUBKEY_ACCEPT);
@@ -2321,22 +2332,22 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     SilcUInt32 encpk_len;
 
     /* Load the key file, try for both IP filename and hostname filename */
-    if (!silc_pkcs_load_public_key(ipf, &public_key, 
+    if (!silc_pkcs_load_public_key(ipf, &public_key,
 				   SILC_PKCS_FILE_PEM) &&
-	!silc_pkcs_load_public_key(ipf, &public_key, 
+	!silc_pkcs_load_public_key(ipf, &public_key,
 				   SILC_PKCS_FILE_BIN) &&
-	(!hostf || (!silc_pkcs_load_public_key(hostf, &public_key, 
+	(!hostf || (!silc_pkcs_load_public_key(hostf, &public_key,
 					       SILC_PKCS_FILE_PEM) &&
-		    !silc_pkcs_load_public_key(hostf, &public_key, 
+		    !silc_pkcs_load_public_key(hostf, &public_key,
 					       SILC_PKCS_FILE_BIN)))) {
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ? 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ?
 			 verify->entity_name : entity);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_COULD_NOT_LOAD, entity);
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
@@ -2350,14 +2361,14 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     /* Encode the key data */
     encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
     if (!encpk) {
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ? 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ?
 			 verify->entity_name : entity);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_MALFORMED, entity);
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
@@ -2370,18 +2381,18 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 
     /* Compare the keys */
     if (memcmp(encpk, pk, encpk_len)) {
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ? 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ?
 			 verify->entity_name : entity);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_NO_MATCH, entity);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_MAYBE_EXPIRED, entity);
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_MITM_ATTACK, entity);
 
       /* Ask user to verify the key and save it */
@@ -2408,12 +2419,12 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 
 /* Verifies received public key. The `conn_type' indicates which entity
    (server, client etc.) has sent the public key. If user decides to trust
-   the key may be saved as trusted public key for later use. The 
+   the key may be saved as trusted public key for later use. The
    `completion' must be called after the public key has been verified. */
 
-void 
+void
 silc_verify_public_key(SilcClient client, SilcClientConnection conn,
-		       SilcSocketType conn_type, unsigned char *pk, 
+		       SilcSocketType conn_type, unsigned char *pk,
 		       SilcUInt32 pk_len, SilcSKEPKType pk_type,
 		       SilcVerifyPublicKey completion, void *context)
 {
@@ -2434,7 +2445,7 @@ void ask_passphrase_completion(const char *passphrase, void *context)
   AskPassphrase p = (AskPassphrase)context;
   if (passphrase && passphrase[0] == '\0')
     passphrase = NULL;
-  p->completion((unsigned char *)passphrase, 
+  p->completion((unsigned char *)passphrase,
 		passphrase ? strlen(passphrase) : 0, p->context);
   silc_free(p);
 }
@@ -2484,7 +2495,7 @@ static void silc_get_auth_method_callback(SilcClient client,
 	(*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
 	break;
       }
-      
+
       (*internal->completion)(TRUE, auth_meth, setup->password,
 			      strlen(setup->password), internal->context);
     }
@@ -2522,7 +2533,7 @@ void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
   internal->completion = completion;
   internal->context = context;
 
-  silc_client_request_authentication_method(client, conn, 
+  silc_client_request_authentication_method(client, conn,
 					    silc_get_auth_method_callback,
 					    internal);
 }
@@ -2534,40 +2545,40 @@ void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
    must explicitly cast it to correct type.  Usually `failure' is 32 bit
    failure type (see protocol specs for all protocol failure types). */
 
-void silc_failure(SilcClient client, SilcClientConnection conn, 
+void silc_failure(SilcClient client, SilcClientConnection conn,
 		  SilcProtocol protocol, void *failure)
 {
   SILC_LOG_DEBUG(("Start"));
 
   if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
     SilcSKEStatus status = (SilcSKEStatus)failure;
-    
+
     if (status == SILC_SKE_STATUS_BAD_VERSION)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_BAD_VERSION);
     if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_UNSUPPORTED_PUBLIC_KEY);
     if (status == SILC_SKE_STATUS_UNKNOWN_GROUP)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_UNKNOWN_GROUP);
     if (status == SILC_SKE_STATUS_UNKNOWN_CIPHER)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_UNKNOWN_CIPHER);
     if (status == SILC_SKE_STATUS_UNKNOWN_PKCS)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_UNKNOWN_PKCS);
     if (status == SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_UNKNOWN_HASH_FUNCTION);
     if (status == SILC_SKE_STATUS_UNKNOWN_HMAC)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_UNKNOWN_HMAC);
     if (status == SILC_SKE_STATUS_INCORRECT_SIGNATURE)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_INCORRECT_SIGNATURE);
     if (status == SILC_SKE_STATUS_INVALID_COOKIE)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KE_INVALID_COOKIE);
   }
 
@@ -2575,7 +2586,7 @@ void silc_failure(SilcClient client, SilcClientConnection conn,
     SilcUInt32 err = (SilcUInt32)failure;
 
     if (err == SILC_AUTH_FAILED)
-      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_AUTH_FAILED);
   }
 }
@@ -2599,7 +2610,7 @@ bool silc_key_agreement(SilcClient client, SilcClientConnection conn,
   /* We will just display the info on the screen and return FALSE and user
      will have to start the key agreement with a command. */
 
-  if (hostname) 
+  if (hostname)
     snprintf(portstr, sizeof(portstr) - 1, "%d", port);
 
   if (!hostname)
@@ -2607,7 +2618,7 @@ bool silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		       SILCTXT_KEY_AGREEMENT_REQUEST, client_entry->nickname);
   else
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
-		       SILCTXT_KEY_AGREEMENT_REQUEST_HOST, 
+		       SILCTXT_KEY_AGREEMENT_REQUEST_HOST,
 		       client_entry->nickname, hostname, portstr);
 
   *completion = NULL;
@@ -2653,7 +2664,7 @@ void silc_ftp(SilcClient client, SilcClientConnection conn,
     server->current_session = ftp;
   }
 
-  if (hostname) 
+  if (hostname)
     snprintf(portstr, sizeof(portstr) - 1, "%d", port);
 
   if (!hostname)
@@ -2661,7 +2672,7 @@ void silc_ftp(SilcClient client, SilcClientConnection conn,
 		       SILCTXT_FILE_REQUEST, client_entry->nickname);
   else
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
-		       SILCTXT_FILE_REQUEST_HOST, 
+		       SILCTXT_FILE_REQUEST_HOST,
 		       client_entry->nickname, hostname, portstr);
 }
 
