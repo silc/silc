@@ -65,7 +65,7 @@ doc-install:
 	$(INSTALL_DATA) $(srcdir)/COPYING $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/CHANGES $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/CREDITS $(docdir)/
-	$(INSTALL_DATA) $(srcdir)/README $(docdir)/
+	$(INSTALL_DATA) $(srcdir)/README* $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/INSTALL $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/TODO $(docdir)/
 
