@@ -76,10 +76,9 @@ void silc_say_error(char *msg, ...)
 /* Message for a channel. The `sender' is the nickname of the sender 
    received in the packet. The `channel_name' is the name of the channel. */
 
-void 
-silc_channel_message(SilcClient client, SilcClientConnection conn,
-		     SilcClientEntry sender, SilcChannelEntry channel,
-		     SilcMessageFlags flags, char *msg)
+void silc_channel_message(SilcClient client, SilcClientConnection conn,
+			  SilcClientEntry sender, SilcChannelEntry channel,
+			  SilcMessageFlags flags, char *msg)
 {
   SILC_SERVER_REC *server;
   SILC_NICK_REC *nick;
@@ -106,9 +105,8 @@ silc_channel_message(SilcClient client, SilcClientConnection conn,
 /* Private message to the client. The `sender' is the nickname of the
    sender received in the packet. */
 
-void 
-silc_private_message(SilcClient client, SilcClientConnection conn,
-		     SilcClientEntry sender, SilcMessageFlags flags,
+void silc_private_message(SilcClient client, SilcClientConnection conn,
+			  SilcClientEntry sender, SilcMessageFlags flags,
 			  char *msg)
 {
   SILC_SERVER_REC *server;
@@ -153,7 +151,7 @@ static NOTIFY_REC notifies[] = {
 };
 
 void silc_notify(SilcClient client, SilcClientConnection conn,
-			SilcNotifyType type, ...)
+		 SilcNotifyType type, ...)
 {
   SILC_SERVER_REC *server;
   va_list va;
@@ -171,7 +169,8 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     signal_emit(signal, 2, server, va);
   } else {
     /* Unknown notify */
-    printtext(server, NULL, MSGLEVEL_CRAP, "Unknown notify type %d", type);
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_UNKNOWN_NOTIFY, type);
   }
 
   va_end(va);
@@ -181,8 +180,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
    or connecting failed.  This is also the first time application receives
    the SilcClientConnection objecet which it should save somewhere. */
 
-void 
-silc_connect(SilcClient client, SilcClientConnection conn, int success)
+void  silc_connect(SilcClient client, SilcClientConnection conn, int success)
 {
   SILC_SERVER_REC *server = conn->context;
 
@@ -198,8 +196,7 @@ silc_connect(SilcClient client, SilcClientConnection conn, int success)
 
 /* Called to indicate that connection was disconnected to the server. */
 
-void 
-silc_disconnect(SilcClient client, SilcClientConnection conn)
+void silc_disconnect(SilcClient client, SilcClientConnection conn)
 {
   SILC_SERVER_REC *server = conn->context;
 
@@ -218,21 +215,20 @@ silc_disconnect(SilcClient client, SilcClientConnection conn)
    after application has called the command. Just to tell application
    that the command really was processed. */
 
-void 
-silc_command(SilcClient client, SilcClientConnection conn, 
-	     SilcClientCommandContext cmd_context, int success,
-	     SilcCommand command)
+void silc_command(SilcClient client, SilcClientConnection conn, 
+		  SilcClientCommandContext cmd_context, int success,
+		  SilcCommand command)
 {
 }
 
 /* Client info resolving callback when JOIN command reply is received.
    This will cache all users on the channel. */
 
-void silc_client_join_get_users(SilcClient client,
-				SilcClientConnection conn,
-				SilcClientEntry *clients,
-				uint32 clients_count,
-				void *context)
+static void silc_client_join_get_users(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcClientEntry *clients,
+				       uint32 clients_count,
+				       void *context)
 {
   SilcChannelEntry channel = (SilcChannelEntry)context;
   SilcChannelUser chu;
@@ -435,17 +431,17 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       if (!success)
 	return;
       
-      /* XXX should use irssi routines */
-      
       channel = va_arg(vp, SilcChannelEntry);
       invite_list = va_arg(vp, char *);
       
       if (invite_list)
-	silc_say(client, conn, "%s invite list: %s", channel->channel_name,
-		 invite_list);
+	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_CHANNEL_INVITE_LIST, channel->channel_name,
+			   invite_list);
       else
-	silc_say(client, conn, "%s invite list not set", 
-		 channel->channel_name);
+	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_CHANNEL_NO_INVITE_LIST, 
+			   channel->channel_name);
     }
     break;
 
@@ -550,7 +546,13 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       
       mode = va_arg(vp, uint32);
       
-      /* XXX todo */
+      if (mode & SILC_UMODE_SERVER_OPERATOR)
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_SERVER_OPER);
+
+      if (mode & SILC_UMODE_ROUTER_OPERATOR)
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
     }
     break;
     
@@ -610,16 +612,17 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       if (!success)
 	return;
       
-      /* XXX should use irssi routines */
-          
       channel = va_arg(vp, SilcChannelEntry);
       ban_list = va_arg(vp, char *);
       
       if (ban_list)
-	silc_say(client, conn, "%s ban list: %s", channel->channel_name,
-		 ban_list);
+	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_CHANNEL_BAN_LIST, channel->channel_name,
+			   ban_list);
       else
-	silc_say(client, conn, "%s ban list not set", channel->channel_name);
+	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_CHANNEL_NO_BAN_LIST, 
+			   channel->channel_name);
     }
     break;
     
@@ -637,12 +640,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       
       pk = silc_pkcs_public_key_encode(public_key, &pk_len);
       
-      if (id_type == SILC_ID_CLIENT) {
+      if (id_type == SILC_ID_CLIENT)
 	silc_verify_public_key_internal(client, conn, SILC_SOCKET_TYPE_CLIENT,
 					pk, pk_len, SILC_SKE_PK_TYPE_SILC,
 					NULL, NULL);
-      }
-      
       silc_free(pk);
     }
     
@@ -707,12 +708,13 @@ static void verify_public_key_completion(const char *line, void *context)
     if (verify->completion)
       verify->completion(FALSE, verify->context);
 
-    silc_say(verify->client, 
-	     verify->conn, "Will not accept the %s key", verify->entity);
+    printformat_module("fe-common/silc", NULL, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_DISCARD, verify->entity);
   }
 
   silc_free(verify->filename);
   silc_free(verify->entity);
+  silc_free(verify->pk);
   silc_free(verify);
 }
 
@@ -723,7 +725,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				SilcVerifyPublicKey completion, void *context)
 {
   int i;
-  char file[256], filename[256], *fingerprint;
+  char file[256], filename[256], *fingerprint, *format;
   struct passwd *pw;
   struct stat st;
   char *entity = ((conn_type == SILC_SOCKET_TYPE_SERVER ||
@@ -732,8 +734,9 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   PublicKeyVerify verify;
 
   if (pk_type != SILC_SKE_PK_TYPE_SILC) {
-    silc_say(client, conn, "We don't support %s public key type %d", 
-	     entity, pk_type);
+    printformat_module("fe-common/silc", NULL, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_UNSUPPORTED, 
+		       entity, pk_type);
     if (completion)
       completion(FALSE, context);
     return;
@@ -776,7 +779,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   verify->conn = conn;
   verify->filename = strdup(filename);
   verify->entity = strdup(entity);
-  verify->pk = pk;
+  verify->pk = silc_calloc(pk_len, sizeof(*verify->pk));
+  memcpy(verify->pk, pk, pk_len);
   verify->pk_len = pk_len;
   verify->pk_type = pk_type;
   verify->completion = completion;
@@ -786,13 +790,15 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   if (stat(filename, &st) < 0) {
     /* Key does not exist, ask user to verify the key and save it */
 
-    silc_say(client, conn, "Received %s public key", entity);
-    silc_say(client, conn, "Fingerprint for the %s key is", entity);
-    silc_say(client, conn, "%s", fingerprint);
-
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+		       SILCTXT_PUBKEY_RECEIVED, entity);
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+		       SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
+    format = format_get_text("fe-common/silc", NULL, NULL, NULL,
+			     SILCTXT_PUBKEY_ACCEPT);
     keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-			    "Would you like to accept the key (y/n)? ", 0,
-			    verify);
+			    format, 0, verify);
+    g_free(format);
     silc_free(fingerprint);
     return;
   } else {
@@ -806,15 +812,17 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				   SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(filename, &public_key, 
 				     SILC_PKCS_FILE_BIN)) {
-	silc_say(client, conn, "Received %s public key", entity);
-	silc_say(client, conn, "Fingerprint for the %s key is", entity);
-	silc_say(client, conn, "%s", fingerprint);
-	silc_say(client, conn, "Could not load your local copy of the %s key",
-		 entity);
+	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			   SILCTXT_PUBKEY_RECEIVED, entity);
+	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			   SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
+	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			   SILCTXT_PUBKEY_COULD_NOT_LOAD, entity);
+	format = format_get_text("fe-common/silc", NULL, NULL, NULL,
+				 SILCTXT_PUBKEY_ACCEPT_ANYWAY);
 	keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-				"Would you like to accept the key "
-				"anyway (y/n)? ", 0,
-				verify);
+				format, 0, verify);
+	g_free(format);
 	silc_free(fingerprint);
 	return;
       }
@@ -822,36 +830,40 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     /* Encode the key data */
     encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
     if (!encpk) {
-      silc_say(client, conn, "Received %s public key", entity);
-      silc_say(client, conn, "Fingerprint for the %s key is", entity);
-      silc_say(client, conn, "%s", fingerprint);
-      silc_say(client, conn, "Your local copy of the %s key is malformed",
-	       entity);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_RECEIVED, entity);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_MALFORMED, entity);
+      format = format_get_text("fe-common/silc", NULL, NULL, NULL,
+			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
       keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-			      "Would you like to accept the key "
-			      "anyway (y/n)? ", 0,
-			      verify);
+			      format, 0, verify);
+      g_free(format);
       silc_free(fingerprint);
       return;
     }
 
     /* Compare the keys */
     if (memcmp(encpk, pk, encpk_len)) {
-      silc_say(client, conn, "Received %s public key", entity);
-      silc_say(client, conn, "Fingerprint for the %s key is", entity);
-      silc_say(client, conn, "%s", fingerprint);
-      silc_say(client, conn, "%s key does not match with your local copy",
-	       entity);
-      silc_say(client, conn, 
-	       "It is possible that the key has expired or changed");
-      silc_say(client, conn, "It is also possible that some one is performing "
-	               "man-in-the-middle attack");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_RECEIVED, entity);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_NO_MATCH, entity);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_MAYBE_EXPIRED, entity);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_MITM_ATTACK, entity);
 
       /* Ask user to verify the key and save it */
+      format = format_get_text("fe-common/silc", NULL, NULL, NULL,
+			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
       keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-			      "Would you like to accept the key "
-			      "anyway (y/n)? ", 0,
-			      verify);
+			      format, 0, verify);
+      g_free(format);
       silc_free(fingerprint);
       return;
     }
@@ -935,38 +947,44 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
    must explicitly cast it to correct type.  Usually `failure' is 32 bit
    failure type (see protocol specs for all protocol failure types). */
 
-void 
-silc_failure(SilcClient client, SilcClientConnection conn, 
-	     SilcProtocol protocol, void *failure)
+void silc_failure(SilcClient client, SilcClientConnection conn, 
+		  SilcProtocol protocol, void *failure)
 {
   if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
     SilcSKEStatus status = (SilcSKEStatus)failure;
     
     if (status == SILC_SKE_STATUS_BAD_VERSION)
-      silc_say_error("You are running incompatible client version (it may be "
-		     "too old or too new)");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_BAD_VERSION);
     if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY)
-      silc_say_error("Server does not support your public key type");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_UNSUPPORTED_PUBLIC_KEY);
     if (status == SILC_SKE_STATUS_UNKNOWN_GROUP)
-      silc_say_error("Server does not support one of your proposed KE group");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_UNKNOWN_GROUP);
     if (status == SILC_SKE_STATUS_UNKNOWN_CIPHER)
-      silc_say_error("Server does not support one of your proposed cipher");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_UNKNOWN_CIPHER);
     if (status == SILC_SKE_STATUS_UNKNOWN_PKCS)
-      silc_say_error("Server does not support one of your proposed PKCS");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_UNKNOWN_PKCS);
     if (status == SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION)
-      silc_say_error("Server does not support one of your proposed "
-		     "hash function");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_UNKNOWN_HASH_FUNCTION);
     if (status == SILC_SKE_STATUS_UNKNOWN_HMAC)
-      silc_say_error("Server does not support one of your proposed HMAC");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_UNKNOWN_HMAC);
     if (status == SILC_SKE_STATUS_INCORRECT_SIGNATURE)
-      silc_say_error("Incorrect signature");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_INCORRECT_SIGNATURE);
   }
 
   if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_CONNECTION_AUTH) {
     uint32 err = (uint32)failure;
 
     if (err == SILC_AUTH_FAILED)
-      silc_say(client, conn, "Authentication failed");
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_AUTH_FAILED);
   }
 }
 

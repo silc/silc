@@ -40,6 +40,7 @@
 #include "window-item-def.h"
 
 #include "fe-common/core/printtext.h"
+#include "fe-common/silc/module-formats.h"
 
 void silc_servers_reconnect_init(void);
 void silc_servers_reconnect_deinit(void);
@@ -97,7 +98,8 @@ static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg)
   char *nickname = NULL, *serv = NULL;
   
   if (!silc_parse_nickname(nick, &nickname, &serv, &num)) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Bad nickname: %s", nick);
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_BAD_NICK, nick);
     return;
   }
 

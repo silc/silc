@@ -685,7 +685,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     } else {
       /* Parse the typed nickname. */
       if (!silc_parse_nickname(argv[2], &nickname, &serv, &num)) {
-	silc_say(silc_client, conn, "Bad nickname");
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
 	return;
       }
       
