@@ -1,3 +1,22 @@
+Thu Dec  5 22:29:46 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed backup router bugs:  When backup resumes router and
+	  receives a CHANNEL_MESSAGE packet the backup must not act
+	  as router since the packet header decryption would be
+	  different.  Also, when relaying packets to channel, do
+	  not re-encrypt packets on backup that came from the primary
+	  since the connection isn't really router-router connection.
+	  Affected files silcd/server.c, silcd/packet_send.c.
+
+	* Added checks in encryption/decryption that encryption/decryption
+	  length sent as argument really is multiple by block size.  Helps
+	  catching really weird bugs like the above backup router bugs
+	  when packets are being decrypted in wrong way.  Affected files
+	  lib/silccore/silcpacket.c, and lib/silccrypt/silccipher.c.
+
+	* Fixed padding generation in private key file encryption.
+	  Affected file lib/silccrypt/silcpkcs.c.
+
 Thu Dec  5 16:35:23 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added ignore_message_signatures setting which can be used

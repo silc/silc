@@ -1190,7 +1190,7 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
   SilcHash sha1;
   SilcHmac sha1hmac;
   SilcBuffer buf, enc;
-  SilcUInt32 len, blocklen;
+  SilcUInt32 len, blocklen, padlen;
   unsigned char tmp[32], keymat[64];
   int i;
 
@@ -1241,8 +1241,8 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
 
   /* Allocate buffer for encryption */
   len = silc_hmac_len(sha1hmac);
-  enc = silc_buffer_alloc_size(data_len + 4 + 4 +
-			       (blocklen + (data_len % blocklen)) + len);
+  padlen = 16 + (16 - ((data_len + 4) % blocklen));
+  enc = silc_buffer_alloc_size(4 + 4 + data_len + padlen + len);
   if (!enc) {
     silc_hmac_free(sha1hmac);
     silc_hash_free(sha1);
@@ -1251,7 +1251,7 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
   }
 
   /* Generate padding */
-  for (i = 0; i < blocklen + (data_len % blocklen); i++)
+  for (i = 0; i < padlen; i++)
     tmp[i] = silc_rng_global_get_byte_fast();
 
   /* Put magic number */
@@ -1262,8 +1262,7 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
   silc_buffer_format(enc,
 		     SILC_STR_UI_INT(data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
-		     SILC_STR_UI_XNSTRING(tmp, blocklen + (data_len %
-							   blocklen)),
+		     SILC_STR_UI_XNSTRING(tmp, padlen),
 		     SILC_STR_END);
 
   /* Encrypt. */
@@ -1578,6 +1577,7 @@ bool silc_pkcs_load_private_key(const char *filename,
   /* Old support */
   struct MD5Context md5;
   bool oldsupport = FALSE;
+  int oldlen = 0;
 #endif /* 1 */
 
   SILC_LOG_DEBUG(("Loading private key `%s' with %s encoding", filename,
@@ -1729,8 +1729,13 @@ bool silc_pkcs_load_private_key(const char *filename,
   data += 4;
   len -= 4;
 
+#if 1
+  /* Old support */
+  oldlen = len - mac_len;
+#endif
+
   /* Decrypt the private key buffer */
-  silc_cipher_decrypt(aes, data, data, len - mac_len, silc_cipher_get_iv(aes));
+  silc_cipher_decrypt(aes, data, data, len - mac_len, NULL);
   SILC_GET32_MSB(i, data);
   if (i > len) {
     SILC_LOG_DEBUG(("Bad private key length in buffer!"));
@@ -1762,7 +1767,7 @@ bool silc_pkcs_load_private_key(const char *filename,
 
 #if 1
   /* Old support */
-  if (oldsupport)
+  if (oldsupport || (oldlen & 15))
     silc_pkcs_save_private_key((char *)filename, *private_key,
 			       passphrase, passphrase_len, encoding);
 #endif

@@ -83,8 +83,8 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
 
   /* Encrypt the data area of the packet. */
   if (cipher) {
-    SILC_LOG_DEBUG(("Encrypting packet, cipher %s, len %d", 
-		    silc_cipher_get_name(cipher), len));
+    SILC_LOG_DEBUG(("Encrypting packet (%d), cipher %s, len %d", 
+		    sequence, silc_cipher_get_name(cipher), len));
     silc_cipher_encrypt(cipher, buffer->data, buffer->data, len, NULL);
   }
 
@@ -501,8 +501,11 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
     if (cipher) {
       /* Decrypt rest of the packet */
       SILC_LOG_DEBUG(("Decrypting the packet"));
-      silc_cipher_decrypt(cipher, buffer->data, buffer->data, buffer->len,
-			  NULL);
+      if (!silc_cipher_decrypt(cipher, buffer->data, buffer->data,
+			       buffer->len, NULL)) {
+	SILC_LOG_ERROR(("silc_cipher_decrypt failed"));
+	return -1;
+      }
     }
     return 0;
 
@@ -527,7 +530,11 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 	return -1;
       }
       silc_buffer_pull(buffer, block_len);
-      silc_cipher_decrypt(cipher, buffer->data, buffer->data, len, NULL);
+      if (!silc_cipher_decrypt(cipher, buffer->data, buffer->data,
+			       len, NULL)) {
+	SILC_LOG_ERROR(("silc_cipher_decrypt failed"));
+	return -1;
+      }
     }
 
     return 1;
