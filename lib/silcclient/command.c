@@ -24,7 +24,7 @@
 
 #define SILC_NOT_CONNECTED(x, c) \
   x->internal->ops->say((x), (c), SILC_CLIENT_MESSAGE_ERROR, \
-	   "You are not connected to a server, use /SERVER to connect");
+	   "You are not connected to a server, please connect to server");
 
 /* Command operation that is called at the end of all commands.
    Usage: COMMAND(status); */
