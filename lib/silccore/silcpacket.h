@@ -237,10 +237,10 @@ int silc_packet_read(int sock, SilcBuffer dest);
 int silc_packet_receive(SilcSocketConnection sock);
 int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 			SilcBuffer buffer, SilcPacketContext *packet);
-int silc_packet_receive_process(SilcSocketConnection sock, 
-				SilcCipher cipher, SilcHmac hmac,
-				SilcPacketParserCallback parser, 
-				void *context);
+void silc_packet_receive_process(SilcSocketConnection sock,
+				 SilcCipher cipher, SilcHmac hmac,
+				 SilcPacketParserCallback parser,
+				 void *context);
 SilcPacketType silc_packet_parse(SilcPacketContext *ctx);
 SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx);
 

@@ -307,7 +307,7 @@ int silc_packet_read(int sock, SilcBuffer dest)
   /* Read the data from the socket. */
   len = read(sock, buf, sizeof(buf));
   if (len < 0) {
-    if (errno == EAGAIN) {
+    if (errno == EAGAIN || errno == EINTR) {
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       return -2;
     }
@@ -358,116 +358,66 @@ int silc_packet_read(int sock, SilcBuffer dest)
    and parsing. If more than one packet was received this calls the
    parser multiple times. The parser callback will get context
    SilcPacketParserContext that includes the packet and the `context'
-   sent to this function. Returns TRUE on success and FALSE on error. */
+   sent to this function. */
 
-int silc_packet_receive_process(SilcSocketConnection sock, 
-				SilcCipher cipher, SilcHmac hmac,
-				SilcPacketParserCallback parser, 
-				void *context)
+void silc_packet_receive_process(SilcSocketConnection sock,
+				 SilcCipher cipher, SilcHmac hmac,
+				 SilcPacketParserCallback parser,
+				 void *context)
 {
   SilcPacketParserContext *parse_ctx;
-  int packetlen, paddedlen, mac_len = 0;
+  int packetlen, paddedlen, count, mac_len = 0;
 
-  /* Check whether we received a whole packet. If reading went without
-     errors we either read a whole packet or the read packet is 
-     incorrect and will be dropped. */
-  SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
-  if (packetlen < SILC_PACKET_MIN_LEN) {
-    SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
-    silc_buffer_clear(sock->inbuf);
-    return FALSE;
-  }
-
-  if (sock->inbuf->len < paddedlen) {
-    /* Two cases: either we haven't read all of the data or this 
-       packet is malformed. Try to read data from the connection.
-       If it fails this packet is malformed. */
-    silc_schedule_with_fd(sock->sock, SILC_TASK_READ, 0, 1);
-    if (silc_packet_receive(sock) < 0) {
-      SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
-      silc_buffer_clear(sock->inbuf);
-      return FALSE;
-    }
-  }
+  if (hmac)
+    mac_len = hmac->hash->hash->hash_len;
 
   /* Parse the packets from the data */
-  if (sock->inbuf->len - 2 > (paddedlen + mac_len)) {
-    /* Received possibly many packets at once */
+  count = 0;
+  while (sock->inbuf->len > 2) {
+    SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
+    paddedlen += 2;
+    count++;
 
-    if (hmac)
-      mac_len = hmac->hash->hash->hash_len;
-
-    while (sock->inbuf->len > 0) {
-      SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
-
-      if (sock->inbuf->len < paddedlen) {
-	/* Two cases: either we haven't read all of the data or this 
-	   packet is malformed. Try to read data from the connection.
-	   If it fails this packet is malformed. */
-	silc_schedule_with_fd(sock->sock, SILC_TASK_READ, 0, 1);
-	if (silc_packet_receive(sock) > 0) 
-	  continue;
-
-	SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
-	return FALSE;
-      }
-
-      paddedlen += 2;
-      parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
-      parse_ctx->packet = silc_calloc(1, sizeof(*parse_ctx->packet));
-      parse_ctx->packet->buffer = silc_buffer_alloc(paddedlen + mac_len);
-      parse_ctx->sock = sock;
-      parse_ctx->cipher = cipher;
-      parse_ctx->hmac = hmac;
-      parse_ctx->context = context;
-
-      silc_buffer_pull_tail(parse_ctx->packet->buffer, 
-			    SILC_BUFFER_END(parse_ctx->packet->buffer));
-      silc_buffer_put(parse_ctx->packet->buffer, sock->inbuf->data, 
-		      paddedlen + mac_len);
-
-      SILC_LOG_HEXDUMP(("Incoming packet, len %d", 
-			parse_ctx->packet->buffer->len),
-		       parse_ctx->packet->buffer->data, 
-		       parse_ctx->packet->buffer->len);
-
-      /* Call the parser */
-      if (parser)
-	(*parser)(parse_ctx);
-
-      /* Pull the packet from inbuf thus we'll get the next one
-	 in the inbuf. */
-      silc_buffer_pull(sock->inbuf, paddedlen);
-      if (hmac)
-	silc_buffer_pull(sock->inbuf, mac_len);
+    if (packetlen < SILC_PACKET_MIN_LEN) {
+      SILC_LOG_DEBUG(("Received invalid packet, dropped"));
+      return;
     }
 
-    /* All packets are processed, return successfully. */
-    silc_buffer_clear(sock->inbuf);
-    return TRUE;
-
-  } else {
-    /* Received one packet */
-    
-    SILC_LOG_HEXDUMP(("An incoming packet, len %d", sock->inbuf->len),
-		     sock->inbuf->data, sock->inbuf->len);
+    if (sock->inbuf->len < paddedlen + mac_len) {
+      SILC_LOG_DEBUG(("Received partial packet, waiting for the rest"));
+      return;
+    }
 
     parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
     parse_ctx->packet = silc_calloc(1, sizeof(*parse_ctx->packet));
-    parse_ctx->packet->buffer = silc_buffer_copy(sock->inbuf);
+    parse_ctx->packet->buffer = silc_buffer_alloc(paddedlen + mac_len);
     parse_ctx->sock = sock;
     parse_ctx->cipher = cipher;
     parse_ctx->hmac = hmac;
     parse_ctx->context = context;
-    silc_buffer_clear(sock->inbuf);
+
+    silc_buffer_pull_tail(parse_ctx->packet->buffer, 
+			  SILC_BUFFER_END(parse_ctx->packet->buffer));
+    silc_buffer_put(parse_ctx->packet->buffer, sock->inbuf->data, 
+		    paddedlen + mac_len);
+
+    SILC_LOG_HEXDUMP(("Incoming packet, len %d", 
+		      parse_ctx->packet->buffer->len),
+		     parse_ctx->packet->buffer->data, 
+		     parse_ctx->packet->buffer->len);
 
     /* Call the parser */
     if (parser)
       (*parser)(parse_ctx);
 
-    /* Return successfully */
-    return TRUE;
+    /* Pull the packet from inbuf thus we'll get the next one
+       in the inbuf. */
+    silc_buffer_pull(sock->inbuf, paddedlen);
+    if (hmac)
+      silc_buffer_pull(sock->inbuf, mac_len);
   }
+
+  silc_buffer_clear(sock->inbuf);
 }
 
 /* Receives packet from network and reads the data into connection's
