@@ -1,3 +1,19 @@
+Mon Oct  7 18:25:35 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the silc_attribute_payload_encode to support list
+	  of attributes (function may be called several times to add
+	  a new attribute).  Removed the silc_attribute_payload_encode_list
+	  function.  The encoding function now also automatically encodes
+	  the data, so the caller does not need to do that.  Affected
+	  files lib/silccore/silcattrs.[ch].
+
+	* Added support for replying on behalf of the user to the
+	  Requested Attributes in WHOIS command in the server.  Affected
+	  file silcd/server_query.c.
+
+	* SILC_NOT_IMPLEMENTED macro use SILC_LOG_INFO now instead of
+	  SILC_LOG_DEBUG.  Affected file lib/silcutil/silclog.h.
+
 Sun Oct  6 16:48:32 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Don't swtich to become primary router if we are backup if

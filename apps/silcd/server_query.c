@@ -18,8 +18,6 @@
 */
 /* $Id$ */
 
-/* XXX TODO Requested Attributes to WHOIS */
-
 #include "serverincludes.h"
 #include "server_internal.h"
 
@@ -106,9 +104,9 @@ void silc_server_query_send_reply(SilcServer server,
 				  SilcUInt32 servers_count,
 				  SilcChannelEntry *channels,
 				  SilcUInt32 channels_count);
-unsigned char *silc_server_query_reply_attrs(SilcServer server,
-					     SilcServerQuery query,
-					     SilcUInt32 *attrs_len);
+SilcBuffer silc_server_query_reply_attrs(SilcServer server,
+					 SilcServerQuery query,
+					 SilcClientEntry client_entry);
 
 /* Free the query context structure and all allocated resources. */
 
@@ -1204,7 +1202,7 @@ void silc_server_query_send_reply(SilcServer server,
 	{
 	  unsigned char idle[4], mode[4];
 	  unsigned char *fingerprint, fempty[20], *attrs = NULL;
-	  SilcBuffer channels, umode_list = NULL;
+	  SilcBuffer channels, umode_list = NULL, tmpattrs = NULL;
 
 	  memset(fempty, 0, sizeof(fempty));
 	  memset(idle, 0, sizeof(idle));
@@ -1240,7 +1238,9 @@ void silc_server_query_send_reply(SilcServer server,
 	  len = 0;
 	  if (query->attrs) {
 	    if (!entry->attrs) {
-	      attrs = silc_server_query_reply_attrs(server, query, &len);
+	      tmpattrs = silc_server_query_reply_attrs(server, query, entry);
+	      attrs = tmpattrs->data;
+	      len = tmpattrs->len;
 	    } else {
 	      attrs = entry->attrs;
 	      len = entry->attrs_len;
@@ -1273,6 +1273,8 @@ void silc_server_query_send_reply(SilcServer server,
 
 	  if (channels)
 	    silc_buffer_free(channels);
+	  if (tmpattrs)
+	    silc_buffer_free(tmpattrs);
 	  if (umode_list) {
 	    silc_buffer_free(umode_list);
 	    umode_list = NULL;
@@ -1508,19 +1510,103 @@ void silc_server_query_send_reply(SilcServer server,
    Either client does not support Requested Attributes or isn't replying
    to them like it should. */
 
-unsigned char *silc_server_query_reply_attrs(SilcServer server,
-					     SilcServerQuery query,
-					     SilcUInt32 *attrs_len)
+SilcBuffer silc_server_query_reply_attrs(SilcServer server,
+					 SilcServerQuery query,
+					 SilcClientEntry client_entry)
 {
-  unsigned char *attrs = NULL;
-  SilcUInt32 len = 0;
+  SilcBuffer buffer = NULL;
+  SilcAttributePayload attr;
+  SilcAttribute attribute;
+  unsigned char *tmp;
+  SilcAttributeObjPk pk;
 
   SILC_LOG_DEBUG(("Constructing Requested Attributes"));
 
-  if (attrs_len)
-    *attrs_len = len;
+  /* Go through all requested attributes */
+  silc_dlist_start(query->attrs);
+  while ((attr = silc_dlist_get(query->attrs)) != SILC_LIST_END) {
+    attribute = silc_attribute_get_attribute(attr);
+    switch (attribute) {
 
-  return attrs;
+    case SILC_ATTRIBUTE_USER_INFO:
+      /* Put USER_INFO */
+      SILC_NOT_IMPLEMENTED("SILC_ATTRIBUTE_USER_INFO");
+      break;
+
+    case SILC_ATTRIBUTE_STATUS_MOOD:
+      /* Put STATUS_MOOD */
+      buffer = silc_attribute_payload_encode(buffer, attribute,
+					     SILC_ATTRIBUTE_FLAG_VALID,
+					     (void *)
+					     SILC_ATTRIBUTE_MOOD_NORMAL,
+					     sizeof(SilcUInt32));
+      break;
+
+    case SILC_ATTRIBUTE_STATUS_FREETEXT:
+      /* Put STATUS_FREETEXT.  We just tell in the message that we are
+	 replying on behalf of the client. */
+      tmp = 
+	"This information was provided by the server on behalf of the user";
+      buffer = silc_attribute_payload_encode(buffer, attribute,
+					     SILC_ATTRIBUTE_FLAG_VALID,
+					     tmp, strlen(tmp));
+      break;
+
+    case SILC_ATTRIBUTE_PREFERRED_CONTACT:
+      /* Put PREFERRED_CONTACT */
+      buffer = silc_attribute_payload_encode(buffer, attribute,
+					     SILC_ATTRIBUTE_FLAG_VALID,
+					     (void *)
+					     SILC_ATTRIBUTE_CONTACT_CHAT,
+					     sizeof(SilcUInt32));
+      break;
+
+    case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
+      /* Put USER_PUBLIC_KEY */
+      if (client_entry->data.public_key) {
+	pk.type = "silc-rsa";
+	pk.data = silc_pkcs_public_key_encode(client_entry->data.public_key,
+					      &pk.data_len);
+	buffer = silc_attribute_payload_encode(buffer, attribute, pk.data ?
+					       SILC_ATTRIBUTE_FLAG_VALID :
+					       SILC_ATTRIBUTE_FLAG_INVALID,
+					       &pk, sizeof(pk));
+	silc_free(pk.data);
+	break;
+      }
+
+      /* No public key available */
+      buffer = silc_attribute_payload_encode(buffer, attribute,
+					     SILC_ATTRIBUTE_FLAG_INVALID,
+					     NULL, 0);
+      break;
+
+    default:
+      /* Ignore SERVER_PUBLIC_KEY since we are going to put it anyway later */
+      if (attribute == SILC_ATTRIBUTE_SERVER_PUBLIC_KEY)
+	break;
+      
+      /* For other attributes we cannot reply so mark it invalid */
+      buffer = silc_attribute_payload_encode(buffer, attribute,
+					     SILC_ATTRIBUTE_FLAG_INVALID,
+					     NULL, 0);
+      break;
+    }
+  }
+
+  /* Always put our public key.  This assures that we send at least
+     something valid back always. */
+  /* XXX We should also compute digital signature */
+  pk.type = "silc-rsa";
+  pk.data = silc_pkcs_public_key_encode(server->public_key, &pk.data_len);
+  buffer = silc_attribute_payload_encode(buffer,
+					 SILC_ATTRIBUTE_SERVER_PUBLIC_KEY,
+					 pk.data ? SILC_ATTRIBUTE_FLAG_VALID :
+					 SILC_ATTRIBUTE_FLAG_INVALID,
+					 &pk, sizeof(pk));
+  silc_free(pk.data);
+
+  return buffer;
 }
 
 /* Find client by the Client ID indicated by the `client_id', and if not
