@@ -170,8 +170,8 @@ static char
 silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 {
   SilcServer server = cmd->server;
-  unsigned char *tmp, *id_data, *umodes;
-  char *nickname, *username, *realname, *servername = NULL;
+  unsigned char *id_data, *umodes;
+  char *nickname, *username, *realname, *tmp, *servername = NULL;
   unsigned char *fingerprint;
   SilcClientID *client_id;
   SilcClientEntry client;
@@ -252,7 +252,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     }
 
     /* Check username */
-    silc_parse_userfqdn(username, (char **)&tmp, NULL);
+    silc_parse_userfqdn(username, &tmp, NULL);
     if (!silc_identifier_verify(tmp, strlen(tmp), SILC_STRING_UTF8, 128)) {
       silc_free(tmp);
       silc_free(nick);
