@@ -22,9 +22,12 @@
 
 #ifndef SILC_STACKTRACE
 
+#define SILC_MAX_ALLOC (1024L * 1024L * 1024L * 2)
+
 void *silc_malloc(size_t size)
 {
   void *addr;
+  assert(size <= SILC_MAX_ALLOC);
   addr = malloc(size);
   assert(addr != NULL);
   return addr;
@@ -33,6 +36,7 @@ void *silc_malloc(size_t size)
 void *silc_calloc(size_t items, size_t size)
 {
   void *addr;
+  assert(size <= SILC_MAX_ALLOC);
   addr = calloc(items, size);
   assert(addr != NULL);
   return addr;
@@ -41,6 +45,7 @@ void *silc_calloc(size_t items, size_t size)
 void *silc_realloc(void *ptr, size_t size)
 {
   void *addr;
+  assert(size <= SILC_MAX_ALLOC);
   addr = realloc(ptr, size);
   assert(addr != NULL);
   return addr;
@@ -53,7 +58,9 @@ void silc_free(void *ptr)
 
 void *silc_memdup(const void *ptr, size_t size)
 {
-  unsigned char *addr = silc_malloc(size + 1);
+  unsigned char *addr;
+  assert(size <= SILC_MAX_ALLOC);
+  addr = silc_malloc(size + 1);
   assert(addr != NULL);
   memcpy((void *)addr, ptr, size);
   addr[size] = '\0';
