@@ -1,3 +1,9 @@
+Wed Apr  3 09:57:47 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_PROTOCOLVERSION macro to check protocol version
+	  of a socket connection.  The affected file is 
+	  lib/silcutil/silcsockconn.h.
+
 Tue Apr  2 14:55:06 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Some client implementations quit network by doing first LEAVE
