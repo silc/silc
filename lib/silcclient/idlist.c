@@ -506,10 +506,13 @@ SILC_CLIENT_CMD_FUNC(get_client_by_id_callback)
 
   /* Get the client */
   entry = silc_client_get_client_by_id(i->client, i->conn, i->client_id);
-  if (entry)
-    i->completion(i->client, i->conn, &entry, 1, i->context);
-  else
-    i->completion(i->client, i->conn, NULL, 0, i->context);
+  if (entry) {
+    if (i->completion)
+      i->completion(i->client, i->conn, &entry, 1, i->context);
+  } else {
+    if (i->completion)
+      i->completion(i->client, i->conn, NULL, 0, i->context);
+  }
 
   silc_free(i->client_id);
   silc_free(i);

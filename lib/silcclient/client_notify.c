@@ -25,11 +25,23 @@
 #include "silcclient.h"
 #include "client_internal.h"
 
+/* Context used for resolving client, channel and server info. */
 typedef struct {
-  SilcPacketContext *packet;
+  void *packet;
   void *context;
   SilcSocketConnection sock;
 } *SilcClientNotifyResolve;
+
+SILC_TASK_CALLBACK(silc_client_notify_check_client)
+{ 
+  SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
+  SilcClientConnection conn = res->context;
+  SilcClient client = conn->client;
+  SilcClientID *client_id = res->packet;
+  silc_client_get_client_by_id_resolve(client, conn, client_id, NULL, NULL);
+  silc_free(client_id);
+  silc_free(res);
+}
 
 /* Called when notify is received and some async operation (such as command)
    is required before processing the notify message. This calls again the
@@ -72,7 +84,7 @@ static void silc_client_notify_by_server_resolve(SilcClient client,
   res->context = client;
   res->sock = silc_socket_dup(conn->sock);
 
-  /* For client resolving use WHOIS, and oterhwise use IDENTIFY */
+  /* For client resolving use WHOIS, and otherwise use IDENTIFY */
   if (id_type == SILC_ID_CLIENT) {
     silc_client_command_register(client, SILC_COMMAND_WHOIS, NULL, NULL,
 				 silc_client_command_reply_whois_i, 0,
@@ -290,6 +302,20 @@ void silc_client_notify_by_server(SilcClient client,
       silc_hash_table_del(client_entry->channels, channel);
       silc_hash_table_del(channel->user_list, client_entry);
       silc_free(chu);
+    }
+
+    /* Some client implementations actually quit network by first doing
+       LEAVE and then immediately SIGNOFF.  We'll check for this by doing 
+       check for the client after 15 seconds.  If it is not valid after
+       that we'll remove the client from cache. */
+    if (!silc_hash_table_count(client_entry->channels)) {
+      SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
+      res->context = conn;
+      res->packet = silc_id_dup(client_id, SILC_ID_CLIENT);
+      silc_schedule_task_add(client->schedule, 0,
+			     silc_client_notify_check_client, conn,
+			     15, 0, SILC_TASK_TIMEOUT, 
+			     SILC_TASK_PRI_NORMAL);
     }
 
     /* Notify application. The channel entry is sent last as this notify
