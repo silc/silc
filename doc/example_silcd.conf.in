@@ -416,7 +416,10 @@ ServerConnection {
 # For normal servers only one entry maybe configured to this section.  It
 # must be the router this server will be connected to.  For router servers,
 # this section includes all configured router connections.  The first
-# configured connection is the primary route.
+# configured connection is the primary route.  The Host specifies the
+# remote hostname or IP address.  The Port specifies the remote port to
+# connect when Initiator is true.  When Initiator is false the Port
+# specifies the local port (listener port).
 #
 # The authentication data is specified by Passphrase and/or PublicKey.
 # If both are provided then both password and public key based authentication

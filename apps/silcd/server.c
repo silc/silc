@@ -1156,7 +1156,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     if (!(rconfig = silc_server_config_find_router_conn(server,
 							sock->ip, port)))
       rconfig = silc_server_config_find_router_conn(server, sock->hostname,
-						    sock->port);
+						    port);
   }
   if (!cconfig && !sconfig && !rconfig) {
     SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
