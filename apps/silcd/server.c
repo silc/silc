@@ -2277,7 +2277,7 @@ void silc_server_remove_from_channels(SilcServer server,
       }
     }
 
-    silc_id_payload_free(id_payload);
+    silc_free(id_payload);
   }
 
   if (client->channel_count)
