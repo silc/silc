@@ -202,6 +202,9 @@ void silc_dlist_del(SilcDList list, void *context)
   while ((e = (SilcDListEntry)silc_list_get(list->list)) != SILC_LIST_END) {
     if (e->context == context) {
       silc_list_del(list->list, e);
+#ifdef SILC_DEBUG
+      memset(e, 'F', sizeof(*e));
+#endif
       silc_free(e);
       break;
     }
