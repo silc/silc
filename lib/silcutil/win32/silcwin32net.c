@@ -186,3 +186,10 @@ bool silc_net_addr2bin(const char *addr, unsigned char *bin,
 
   return ret != INADDR_NONE;
 }
+
+/* Set socket to non-blocking mode. */
+
+int silc_net_set_socket_nonblock(int sock)
+{
+  return 0;
+}

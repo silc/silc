@@ -20,8 +20,9 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 noinst_LIBRARIES = libsilcunixutil.a
 
-libsilcunixutil_a_SOURCES = \
-	silcunixschedule.c
+libsilcunixutil_a_SOURCES = 	\
+	silcunixschedule.c	\
+	silcunixnet.c
 
 EXTRA_DIST = *.h
 

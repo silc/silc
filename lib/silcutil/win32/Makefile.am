@@ -20,7 +20,8 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 noinst_LIBRARIES = libsilcwin32util.a
 
-libsilcwin32util_a_SOURCES = 
+libsilcwin32util_a_SOURCES = \
+	silcwin32net.c
 
 EXTRA_DIST = *.h
 

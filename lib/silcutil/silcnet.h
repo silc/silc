@@ -1,42 +1,230 @@
-/*
-
-  silcnet.h
-
-  Author: Pekka Riikonen <priikone@silcnet.org>
-
-  Copyright (C) 1997 - 2001 Pekka Riikonen
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-*/
+/****h* silcutil/silcnet.h
+ *
+ * NAME
+ *
+ * silcnet.h
+ *
+ * COPYRIGHT
+ *
+ * Author: Pekka Riikonen <priikone@silcnet.org>
+ *
+ * Copyright (C) 1997 - 2001 Pekka Riikonen
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ */
 
 #ifndef SILCNET_H
 #define SILCNET_H
 
 /* Prototypes */
+
+/****f* silcutil/SilcNetAPI/silc_net_create_server
+ *
+ * SYNOPSIS
+ *
+ *    int silc_net_create_server(int port, char *ip_addr);
+ *
+ * DESCRIPTION
+ *
+ *    This function creates server or daemon or listener or what ever. This
+ *    does not fork a new process, it must be done by the caller if caller
+ *    wants to create a child process. This is used by the SILC server. 
+ *    If argument `ip_addr' is NULL `any' address will be used. Returns 
+ *    the created socket or -1 on error.
+ *
+ ***/
 int silc_net_create_server(int port, char *ip_addr);
+
+/****f* silcutil/SilcNetAPI/silc_net_close_server
+ *
+ * SYNOPSIS
+ *
+ *    void silc_net_close_server(int sock);
+ *
+ * DESCRIPTION
+ *
+ *    Closes the server by closing the socket connection.
+ *
+ ***/
 void silc_net_close_server(int sock);
+
+/****f* silcutil/SilcNetAPI/silc_net_create_connection
+ *
+ * SYNOPSIS
+ *
+ *    int silc_net_create_connection(int port, char *host);
+ *
+ * DESCRIPTION
+ *
+ *    Creates a connection (TCP/IP) to a remote host. Returns the connection
+ *    socket or -1 on error. This blocks the process while trying to create
+ *    the connection.
+ *
+ ***/
 int silc_net_create_connection(int port, char *host);
+
+/****f* silcutil/SilcNetAPI/silc_net_create_connection_async
+ *
+ * SYNOPSIS
+ *
+ *    int silc_net_create_connection_async(int port, char *host);
+ *
+ * DESCRIPTION
+ *
+ *    Creates a connection (TCP/IP) to a remote host. Returns the connection
+ *    socket or -1 on error. This creates non-blocking socket hence the
+ *    connection returns directly. To get the result of the connect() one
+ *    must select() the socket and read the result after it's ready.
+ *
+ ***/
 int silc_net_create_connection_async(int port, char *host);
+
+/****f* silcutil/SilcNetAPI/silc_net_close_connection
+ *
+ * SYNOPSIS
+ *
+ *    void silc_net_close_connection(int sock);
+ *
+ * DESCRIPTION
+ *
+ *    Closes the connection by closing the socket connection.
+ *
+ ***/
 void silc_net_close_connection(int sock);
+
+/****f* silcutil/SilcNetAPI/silc_net_accept_connection
+ *
+ * SYNOPSIS
+ *
+ *    int silc_net_accept_connection(int sock);
+ *
+ * DESCRIPTION
+ *
+ *    Accepts a connection from a particular socket.
+ *
+ ***/
 int silc_net_accept_connection(int sock);
-int silc_net_set_socket_nonblock(int sock);
+
+/****f* silcutil/SilcNetAPI/silc_net_set_socket_opt
+ *
+ * SYNOPSIS
+ *
+ *    int silc_net_set_socket_opt(int sock, int level, int option, int on);
+ *
+ * DESCRIPTION
+ *
+ *    Sets a option for a socket.  This function can be used to set
+ *    various options for the socket.  Some of the options might be
+ *    system specific.
+ *
+ ***/
 int silc_net_set_socket_opt(int sock, int level, int option, int on);
-int silc_net_is_ip(const char *addr);
+
+/****f* silcutil/SilcNetAPI/silc_net_is_ip
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_net_is_ip(const char *addr);
+ *
+ * DESCRIPTION
+ *
+ *    Checks whether IP address sent as argument is valid IP address.
+ *
+ ***/
+bool silc_net_is_ip(const char *addr);
+
+/****f* silcutil/SilcNetAPI/silc_net_addr2bin
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_net_addr2bin(const char *addr, unsigned char *bin,
+ *                           uint32 bin_len);
+ *
+ * DESCRIPTION
+ *
+ *    Converts the IP number string from numbers-and-dots notation to
+ *    binary form.
+ *
+ ***/
 bool silc_net_addr2bin(const char *addr, unsigned char *bin,
 		       uint32 bin_len);
+
+/****f* silcutil/SilcNetAPI/silc_net_check_host_by_sock
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
+ *
+ * DESCRIPTION
+ *
+ *    Performs lookups for remote name and IP address. This peforms reverse
+ *    lookup as well to verify that the IP has FQDN.
+ *
+ ***/
 bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
+
+/****f* silcutil/SilcNetAPI/silc_net_check_local_by_sock
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
+ *
+ * DESCRIPTION
+ *
+ *    Performs lookups for local name and IP address. This peforms reverse
+ *    lookup as well to verify that the IP has FQDN.
+ *
+ ***/
 bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
+
+/****f* silcutil/SilcNetAPI/silc_net_get_remote_port
+ *
+ * SYNOPSIS
+ *
+ *    uint16 silc_net_get_remote_port(int sock);
+ *
+ * DESCRIPTION
+ *
+ *    Return remote port by socket.
+ *
+ ***/
 uint16 silc_net_get_remote_port(int sock);
+
+/****f* silcutil/SilcNetAPI/silc_net_get_local_port
+ *
+ * SYNOPSIS
+ *
+ *    uint16 silc_net_get_local_port(int sock);
+ *
+ * DESCRIPTION
+ *
+ *    Return local port by socket.
+ *
+ ***/
 uint16 silc_net_get_local_port(int sock);
+
+/****f* silcutil/SilcNetAPI/silc_net_localhost
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_net_localhost();
+ *
+ * DESCRIPTION
+ *
+ *    Return name of localhost.  This will also attempt to resolve
+ *    the real hostname by the local host's IP address.  If unsuccessful
+ *    the first found hostname is returned.
+ *
+ ***/
 char *silc_net_localhost();
 
 #endif

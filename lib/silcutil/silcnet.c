@@ -38,7 +38,7 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on)
 
 /* Checks whether IP address sent as argument is valid IP address. */
 
-int silc_net_is_ip(const char *addr)
+bool silc_net_is_ip(const char *addr)
 {
   struct in_addr tmp;
   int len = sizeof(tmp);
