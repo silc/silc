@@ -384,21 +384,22 @@ AC_ARG_WITH(silcd-config-file,
                           server [/etc/silc/silcd.conf]],
 [ AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval") ])
 
-# XXX
-#LIBS="$LIBS -lefence"
-
+#
 # Other configure scripts
+#
 AC_CONFIG_SUBDIRS(irssi)
 AC_CONFIG_SUBDIRS(lib/dotconf)
 AC_CONFIG_SUBDIRS(lib/silcmath/gmp)
 AC_CONFIG_SUBDIRS(lib/trq)
 #AC_CONFIG_SUBDIRS(lib/zlib)
 
-# Some final substitutions
 SILC_TOP_SRCDIR=`pwd`
 AC_SUBST(SILC_TOP_SRCDIR)
 AC_SUBST(LIBS)
 
+#
+# Makefile outputs
+#
 AC_OUTPUT( \
 Makefile
 Makefile.defines
@@ -416,4 +417,3 @@ lib/silcske/Makefile
 lib/silcutil/Makefile
 silc/Makefile
 silcd/Makefile)
-

@@ -15,14 +15,12 @@ noinst_HEADERS = irssi-version.h
 
 EXTRA_DIST = \
 	autogen.sh \
-	curses.m4 \
 	README \
 	file2header.sh \
 	irssi.spec \
 	irssi.spec.in \
 	$(conf_DATA) \
-	irssi-config.in \
-	irssi-icon.png
+	irssi-config.in
 
 ## make rpms
 rpm: Makefile

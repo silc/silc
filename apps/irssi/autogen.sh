@@ -99,5 +99,5 @@ if grep "^AM_CONFIG_HEADER" configure.in >/dev/null; then
 fi
 echo "Running autoconf ..."
 autoconf
-echo "Running automake --gnu $am_opt ..."
-automake --add-missing --gnu $am_opt
+echo "Running automake $am_opt ..."
+automake --add-missing --foreign $am_opt

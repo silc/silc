@@ -19,9 +19,7 @@
 #
 # This file is intended to include all common compilation defines for the
 # SILC source tree.  All Makefile.ams in the SILC source tree are expected
-# to include this file (Makefile.defines).  Also all external packages
-# that are included in the SILC source tree and that needs the SILC
-# specific complation defines must include this file.
+# to include this file (Makefile.defines).
 #
 # Add following to your Makefile.am:
 #

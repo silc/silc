@@ -31,5 +31,6 @@ libfe_common_silc_a_SOURCES = \
 	silc-modules.c 
 
 noinst_HEADERS = \
+	module-formats.h \
 	fe-common-silc.h \
 	module.h
