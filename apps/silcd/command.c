@@ -2941,7 +2941,6 @@ SILC_SERVER_CMD_FUNC(cmode)
       hmac = channel->hmac_name;
 
       /* Delete old hmac and allocate default one */
-      silc_hmac_free(channel->hmac);
       if (!silc_hmac_alloc(hmac ? hmac : SILC_DEFAULT_HMAC, NULL, &newhmac)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
