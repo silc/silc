@@ -22,12 +22,13 @@ key and private messages with session keys.  It is also possible to use
 private channel keys and private message keys in addition of server
 generated keys.
 
-bf(Silc) supports em(passphrase) and public key authentication based on
-em(digital signatures), when connecting to SILC server.  bf(Silc) also supports
-key exchange (key agreement) between other bf(Silc) users in the SILC
-network to negotiate secret key material.  This key material then can be
-used to secure for example private messages.  It is also possible to exchange
-public keys and certificates in the SILC network between clients and servers.
+bf(Silc) supports em(passphrase) authentication and public key authentication
+based on em(digital signatures), when connecting to SILC server.  bf(Silc)
+also supports key exchange (key agreement) between other bf(Silc) users in
+the SILC network to negotiate secret key material.  This key material then
+can be used to secure for example private messages.  It is also possible to
+exchange public keys and certificates in the SILC network between clients
+and servers.
 
 The bf(silc) also supports em(detaching) from the SILC network by closing
 the connection to the server but without quitting from the network.  Next
@@ -174,7 +175,7 @@ quote(The directory holding the public keys of other users the user have
 accepted and trusted in the SILC network.  The public keys can be received
 with bf(GETKEY) SILC command or during key agreement between two users.)
 
-bf(~/.silc/clientkeys/)
+bf(~/.silc/serverkeys/)
 quote(The directory holding the public keys of servers the user have accepted
 and trusted when connecting to a server.)
 
