@@ -235,12 +235,16 @@ silc_client_get_clients_by_list function and pass the 'client_id_list' as
 argument to it.  The 'client_mode_list' includes 32-bit integers one after
 the other and they are in same order as clients in 'client_mode_list'.
 If application resolves the information with silc_client_get_clients_by_list
-parsing the 'client_mode_list' is not necessary.
+parsing the 'client_mode_list' is not necessary.  The 'founder_key' is the
+channel founder's key and may be NULL.  The 'channel_pubkeys' is Argument
+List Payload containing Public Key Payloads of all added channel public
+keys, it may be NULL.
 </td>
 <td width="50%"><small>char *channel_name, SilcChannelEntry channel,
 SilcUInt32 channel_mode, int ignored, SilcBuffer key_payload, NULL, NULL,
 char *topic, char *hmac_name, SilcUInt32 list_count, SilcBuffer client_id_list,
-SilcBuffer client_mode_list
+SilcBuffer client_mode_list, SilcPublicKey founder_key,
+SilcBuffer channel_pubkeys
 </td>
 </tr>
 

@@ -941,6 +941,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcUInt32 argc, mode = 0, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
   SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
+  SilcPublicKey founder_key = NULL;
+  SilcBufferStruct chpklist;
   int i;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1098,22 +1100,30 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   if (keyp && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
     silc_client_save_channel_key(cmd->client, conn, keyp, channel);
 
+  /* Get founder key */
+  tmp = silc_argument_get_arg_type(cmd->args, 15, &len);
+  if (tmp)
+    silc_pkcs_public_key_payload_decode(tmp, len, &founder_key);
+
+  /* Get channel public key list */
+  tmp = silc_argument_get_arg_type(cmd->args, 16, &len);
+  if (tmp)
+    silc_buffer_set(&chpklist, tmp, len);
+
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel_name, channel, mode, 0,
 		 keyp ? keyp->head : NULL, NULL,
 		 NULL, topic, hmac, list_count, client_id_list,
-		 client_mode_list));
+		 client_mode_list, founder_key, tmp ? &chpklist : NULL));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
   silc_client_command_reply_free(cmd);
-
-  if (keyp)
-    silc_buffer_free(keyp);
-  if (client_id_list)
-    silc_buffer_free(client_id_list);
-  if (client_mode_list)
-    silc_buffer_free(client_mode_list);
+  if (founder_key)
+    silc_pkcs_public_key_free(founder_key);
+  silc_buffer_free(keyp);
+  silc_buffer_free(client_id_list);
+  silc_buffer_free(client_mode_list);
 }
 
 /* Received reply for MOTD command */
