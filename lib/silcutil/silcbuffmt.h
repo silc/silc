@@ -291,7 +291,7 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
  *
  * DESCRIPTION
  *
- *   Formats a buffer from variable argument list of strings.  Eachs
+ *   Formats a buffer from variable argument list of strings.  Each
  *   string must be NULL-terminated and the variable argument list must
  *   be end with SILC_STR_END argument.  This allows that a string in
  *   the list can be NULL, in which case it is skipped.  This automatically

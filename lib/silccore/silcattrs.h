@@ -66,21 +66,21 @@ typedef SilcUInt8 SilcAttribute;
 /* All defined attributes.  See the specs for detailed information.  The
    comment is the structure or data type that must be used with the
    silc_attribute_get_object function to fetch parsed attribute. */
-#define SILC_ATTRIBUTE_NONE                     0
-#define SILC_ATTRIBUTE_USER_INFO                1 /* SilcVCard */
-#define SILC_ATTRIBUTE_SERVICE                  2 /* SilcAttributeObjService */
-#define SILC_ATTRIBUTE_STATUS_MOOD              3 /* SilcAttributeMood */
-#define SILC_ATTRIBUTE_STATUS_FREETEXT          4 /* char * (UTF-8 string) */
-#define SILC_ATTRIBUTE_STATUS_MESSAGE           5 /* SilcAttributeObjMime */
-#define SILC_ATTRIBUTE_PREFERRED_LANGUAGE       6 /* char * (UTF-8 string) */
-#define SILC_ATTRIBUTE_PREFERRED_CONTACT        7 /* SilcAttributeContact */
-#define SILC_ATTRIBUTE_TIMEZONE                 8 /* char * (UTF-8 string) */
-#define SILC_ATTRIBUTE_GEOLOCATION              9 /* SilcAttributeObjGeo */
-#define SILC_ATTRIBUTE_DEVICE_INFO              10 /* SilcAttributeObjDevice */
-#define SILC_ATTRIBUTE_EXTENSION                11 /* SilcAttributeObjMime */
-#define SILC_ATTRIBUTE_USER_PUBLIC_KEY          12 /* SilcAttributeObjPk */
-#define SILC_ATTRIBUTE_SERVER_PUBLIC_KEY        13 /* SilcAttributeObjPk */
-#define SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE   14 /* SilcAttributeObjPk */
+#define SILC_ATTRIBUTE_NONE                   0
+#define SILC_ATTRIBUTE_USER_INFO              1 /* SilcVCard */
+#define SILC_ATTRIBUTE_SERVICE                2 /* SilcAttributeObjService */
+#define SILC_ATTRIBUTE_STATUS_MOOD            3 /* SilcAttributeMood */
+#define SILC_ATTRIBUTE_STATUS_FREETEXT        4 /* char * (UTF-8 string) */
+#define SILC_ATTRIBUTE_STATUS_MESSAGE         5 /* SilcAttributeObjMime */
+#define SILC_ATTRIBUTE_PREFERRED_LANGUAGE     6 /* char * (UTF-8 string) */
+#define SILC_ATTRIBUTE_PREFERRED_CONTACT      7 /* SilcAttributeContact */
+#define SILC_ATTRIBUTE_TIMEZONE               8 /* char * (UTF-8 string) */
+#define SILC_ATTRIBUTE_GEOLOCATION            9 /* SilcAttributeObjGeo */
+#define SILC_ATTRIBUTE_DEVICE_INFO            10 /* SilcAttributeObjDevice */
+#define SILC_ATTRIBUTE_EXTENSION              11 /* SilcAttributeObjMime */
+#define SILC_ATTRIBUTE_USER_PUBLIC_KEY        12 /* SilcAttributeObjPk */
+#define SILC_ATTRIBUTE_SERVER_PUBLIC_KEY      13 /* SilcAttributeObjPk */
+#define SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE 14 /* SilcAttributeObjPk */
 #define SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE 15 /* SilcAttributeObjPk */
 /***/
 
@@ -376,11 +376,11 @@ unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
 
 /* Object structures */
 
-/****s* silccore/SilcAttributesAPI/SilcAttributesObjService
+/****s* silccore/SilcAttributesAPI/SilcAttributeObjService
  *
  * NAME
  * 
- *    typedef struct { ... } SilcAttributesObjService;
+ *    typedef struct { ... } SilcAttributeObjService;
  *
  * DESCRIPTION
  *
@@ -395,11 +395,11 @@ typedef struct {
 } SilcAttributeObjService;
 /***/
 
-/****s* silccore/SilcAttributesAPI/SilcAttributesObjMime
+/****s* silccore/SilcAttributesAPI/SilcAttributeObjMime
  *
  * NAME
  * 
- *    typedef struct { ... } SilcAttributesObjMime;
+ *    typedef struct { ... } SilcAttributeObjMime;
  *
  * DESCRIPTION
  *
@@ -414,11 +414,11 @@ typedef struct {
 } SilcAttributeObjMime;
 /***/
 
-/****s* silccore/SilcAttributesAPI/SilcAttributesObjGeo
+/****s* silccore/SilcAttributesAPI/SilcAttributeObjGeo
  *
  * NAME
  * 
- *    typedef struct { ... } SilcAttributesObjGeo;
+ *    typedef struct { ... } SilcAttributeObjGeo;
  *
  * DESCRIPTION
  *
@@ -435,11 +435,11 @@ typedef struct {
 } SilcAttributeObjGeo;
 /***/
 
-/****s* silccore/SilcAttributesAPI/SilcAttributesObjDevice
+/****s* silccore/SilcAttributesAPI/SilcAttributeObjDevice
  *
  * NAME
  * 
- *    typedef struct { ... } SilcAttributesObjDevice;
+ *    typedef struct { ... } SilcAttributeObjDevice;
  *
  * DESCRIPTION
  *
@@ -457,11 +457,11 @@ typedef struct {
 } SilcAttributeObjDevice;
 /***/
 
-/****s* silccore/SilcAttributesAPI/SilcAttributesObjPk
+/****s* silccore/SilcAttributesAPI/SilcAttributeObjPk
  *
  * NAME
  * 
- *    typedef struct { ... } SilcAttributesObjPk;
+ *    typedef struct { ... } SilcAttributeObjPk;
  *
  * DESCRIPTION
  *
