@@ -243,10 +243,10 @@ static void silc_rng_get_soft_noise(SilcRng rng)
 
 static void silc_rng_get_medium_noise(SilcRng rng)
 {
-  silc_rng_exec_command(rng, "ps -lefaww 2> /dev/null");
-  silc_rng_exec_command(rng, "ls -afiln 2> /dev/null");
+  silc_rng_exec_command(rng, "ps -leaww 2> /dev/null");
+  silc_rng_exec_command(rng, "ls -afiln ~ 2> /dev/null");
   silc_rng_exec_command(rng, "ls -afiln /proc 2> /dev/null");
-  silc_rng_exec_command(rng, "ps -asww 2> /dev/null");
+  silc_rng_exec_command(rng, "ps -axww 2> /dev/null");
 
 #ifdef SILC_RNG_DEBUG
   SILC_LOG_HEXDUMP(("pool"), rng->pool, sizeof(rng->pool));
