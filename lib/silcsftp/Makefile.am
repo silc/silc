@@ -18,9 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilcsftp.a
+noinst_LTLIBRARIES = libsilcsftp.la
 
-libsilcsftp_a_SOURCES = 	\
+libsilcsftp_la_SOURCES = 	\
 	sftp_client.c		\
 	sftp_server.c		\
 	sftp_util.c		\

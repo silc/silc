@@ -18,9 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilcunixutil.a
+noinst_LTLIBRARIES = libsilcunixutil.la
 
-libsilcunixutil_a_SOURCES = 	\
+libsilcunixutil_la_SOURCES = 	\
 	silcunixschedule.c	\
 	silcunixnet.c		\
 	silcunixutil.c		\

@@ -18,9 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilcbeosutil.a
+noinst_LTLIBRARIES = libsilcbeosutil.la
 
-libsilcbeosutil_a_SOURCES = 	\
+libsilcbeosutil_la_SOURCES = 	\
 	silcbeosschedule.c	\
 	silcbeosnet.c		\
 	silcbeosutil.c		\

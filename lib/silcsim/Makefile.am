@@ -19,12 +19,12 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 if SILC_SIM
-noinst_LIBRARIES = libsilcsim.a
+noinst_LTLIBRARIES = libsilcsim.la
 else
-noinst_LIBRARIES = 
+noinst_LTLIBRARIES = 
 endif
 
-libsilcsim_a_SOURCES = \
+libsilcsim_la_SOURCES = \
 	silcsim.c \
 	silcsimutil.c
 
@@ -53,15 +53,21 @@ if SILC_SIM
 all: $(SIM_CIPHER_OBJS) $(SIM_HASH_OBJS)
 endif
 
-$(SIM_CIPHER_OBJS): ../silccrypt/libsilccrypt.a
-	$(LTCOMPILE) -c $(srcdir)/../silccrypt/$*.c
-	$(LIBTOOL) --mode=link $(CCLD) -rpath $(silc_modulesdir) -o lib$*.la $*.lo
-	cd $(srcdir) && $(LN_S) -f $(srcdir)/.libs/lib$*.so $(srcdir)/$*.sim.so
+$(SIM_CIPHER_OBJS):
+	@if test '!' -f lib$*.la ; then \
+	  $(LIBTOOL) --mode=link $(CCLD) -rpath $(silc_modulesdir) \
+		../silccrypt/$*.lo -o lib$*.la; \
+	  cd $(srcdir) && $(LN_S) -f $(srcdir)/.libs/lib$*.so \
+		$(srcdir)/$*.sim.so; \
+	fi
 
-$(SIM_HASH_OBJS): ../silccrypt/libsilccrypt.a
-	$(LTCOMPILE) -c $(srcdir)/../silccrypt/$*.c
-	$(LIBTOOL) --mode=link $(CCLD) -rpath $(silc_modulesdir) -o lib$*.la $*.lo
-	cd $(srcdir) && $(LN_S) -f $(srcdir)/.libs/lib$*.so $(srcdir)/$*.sim.so
+$(SIM_HASH_OBJS):
+	@if test '!' -f lib$*.la ; then \
+	  $(LIBTOOL) --mode=link $(CCLD) -rpath $(silc_modulesdir) \
+		../silccrypt/$*.lo -o lib$*.la; \
+	  cd $(srcdir) && $(LN_S) -f $(srcdir)/.libs/lib$*.so \
+		$(srcdir)/$*.sim.so; \
+	fi
 
 CLEANFILES = *.sim.so *.la
 

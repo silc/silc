@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libcontrib.a
+noinst_LTLIBRARIES = libcontrib.la
 
 if HAVE_GETOPT_LONG
 GETOPT =
@@ -33,9 +33,9 @@ REGEX = regex.c
 endif
 
 if SILC_WIN32
-libcontrib_a_SOURCES =
+libcontrib_la_SOURCES =
 else
-libcontrib_a_SOURCES = \
+libcontrib_la_SOURCES = \
 	$(GETOPT) \
 	$(REGEX)
 endif

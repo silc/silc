@@ -17,9 +17,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilccore.a
+noinst_LTLIBRARIES = libsilccore.la
 
-libsilccore_a_SOURCES = \
+libsilccore_la_SOURCES = \
 	silcid.c \
 	silcidcache.c \
 	silcchannel.c \

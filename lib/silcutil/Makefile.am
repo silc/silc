@@ -43,9 +43,9 @@ SILC_DIST_SOURCE =
 SILC_DIST_HEADER =
 endif
 
-noinst_LIBRARIES = libsilcutil.a
+noinst_LTLIBRARIES = libsilcutil.la
 
-libsilcutil_a_SOURCES = \
+libsilcutil_la_SOURCES = \
 	$(SILC_DIST_SOURCE) \
 	silcbuffmt.c \
 	silcconfig.c \

@@ -24,7 +24,7 @@ else
 SUBDIRS =
 endif
 
-noinst_LIBRARIES = libsilcmath.a
+noinst_LTLIBRARIES = libsilcmath.la
 
 if SILC_MP_NSS_MPI
 MP_SOURCE = mp_mpi.c
@@ -38,7 +38,7 @@ MP_SOURCE = mp_gmp.c
 MP_HEADER =
 endif
 
-libsilcmath_a_SOURCES = \
+libsilcmath_la_SOURCES = \
 	silcprimegen.c \
 	modinv.c \
 	mpbin.c \

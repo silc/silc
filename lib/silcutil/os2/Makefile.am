@@ -18,9 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilcos2util.a
+noinst_LTLIBRARIES = libsilcos2util.la
 
-libsilcos2util_a_SOURCES = 	\
+libsilcos2util_la_SOURCES = 	\
 	silcos2schedule.c	\
 	silcos2net.c		\
 	silcos2util.c		\

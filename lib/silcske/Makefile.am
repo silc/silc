@@ -18,9 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilcske.a
+noinst_LTLIBRARIES = libsilcske.la
 
-libsilcske_a_SOURCES = \
+libsilcske_la_SOURCES = \
 	silcske.c \
 	payload.c \
         groups.c

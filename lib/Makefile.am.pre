@@ -72,8 +72,8 @@ remove:
 if SILC_DIST_TOOLKIT
 install-exec-hook:
 	-mkdir -p $(libdir)
-	-$(INSTALL) libsilc.a $(libdir)/
-	-$(INSTALL) libsilcclient.a $(libdir)/
+	-$(LIBTOOL) $(INSTALL) libsilc.la $(libdir)/
+	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(libdir)/
 else
 install-exec-hook:
 	-cd
@@ -94,12 +94,14 @@ silcclient.dll: libsilcclient.a
 endif
 
 libsilc.a:
-	find $(SILCLIB_DIRS) -type f -name *.o | xargs $(AR) cru libsilc.a
-	$(RANLIB) libsilc.a
+	find $(SILCLIB_DIRS) -type f -name *.lo | xargs \
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
+	-rpath $(libdir) -o libsilc.la
 
 libsilcclient.a:
-	find $(SILCCLIENTLIB_DIRS) -type f -name *.o | xargs $(AR) cru libsilcclient.a
-	$(RANLIB) libsilcclient.a
+	find $(SILCCLIENTLIB_DIRS) -type f -name *.lo | xargs \
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
+	-rpath $(libdir) -o libsilcclient.la
 
 if SILC_DIST_TOOLKIT
 SILC_EXTRA_DIST = doc

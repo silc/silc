@@ -18,9 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilcwin32util.a
+noinst_LTLIBRARIES = libsilcwin32util.la
 
-libsilcwin32util_a_SOURCES = 	\
+libsilcwin32util_la_SOURCES = 	\
 	silcwin32net.c		\
 	silcwin32schedule.c	\
 	silcwin32sockconn.c	\

@@ -18,9 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilccrypt.a
+noinst_LTLIBRARIES = libsilccrypt.la
 
-libsilccrypt_a_SOURCES = \
+libsilccrypt_la_SOURCES = \
 	none.c \
 	rc5.c \
 	rc6.c \

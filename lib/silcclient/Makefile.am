@@ -18,9 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilcclient.a
+noinst_LTLIBRARIES = libsilcclient.la
 
-libsilcclient_a_SOURCES = \
+libsilcclient_la_SOURCES = \
 	client.c \
 	client_keyagr.c \
 	client_notify.c \
