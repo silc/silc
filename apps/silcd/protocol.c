@@ -23,8 +23,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:13:04  priikone
+ * 	Support for SILC style public keys added.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -521,13 +524,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Public key authentication"));
 	      if (auth_data) {
 		SilcIDListUnknown *conn_data;
+		SilcPublicKey pub_key;
 		SilcPKCS pkcs;
 		
 		conn_data = (SilcIDListUnknown *)ctx->sock->user_data;
 		
 		/* Load public key from file */
 		if (silc_pkcs_load_public_key(client->auth_data,
-					      &pkcs) == FALSE) {
+					      &pub_key) == FALSE) {
 		  
 		  /* Authentication failed */
 		  SILC_LOG_ERROR(("Authentication failed "
@@ -540,6 +544,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 				    protocol, fd, 0, 300000);
 		  return;
 		}
+
+		silc_pkcs_alloc(pub_key->name, &pkcs);
 		
 		/* Verify hash value HASH from KE protocol */
 		if (pkcs->pkcs->verify(pkcs->context,
@@ -548,6 +554,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 				       ctx->ske->hash_len)
 		    == TRUE) {
 		  silc_pkcs_free(pkcs);
+		  silc_pkcs_public_key_free(pub_key);
 		  break;
 		}
 	      }
@@ -619,13 +626,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Public key authentication"));
 	      if (auth_data) {
 		SilcIDListUnknown *conn_data;
+		SilcPublicKey pub_key;
 		SilcPKCS pkcs;
 		
 		conn_data = (SilcIDListUnknown *)ctx->sock->user_data;
 		
 		/* Load public key from file */
 		if (silc_pkcs_load_public_key(serv->auth_data,
-					      &pkcs) == FALSE) {
+					      &pub_key) == FALSE) {
 		  
 		  /* Authentication failed */
 		  SILC_LOG_ERROR(("Authentication failed "
@@ -639,6 +647,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 		  return;
 		}
 		
+		silc_pkcs_alloc(pub_key->name, &pkcs);
+		
 		/* Verify hash value HASH from KE protocol */
 		if (pkcs->pkcs->verify(pkcs->context,
 				       auth_data, payload_len,
@@ -646,6 +656,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 				       ctx->ske->hash_len)
 		    == TRUE) {
 		  silc_pkcs_free(pkcs);
+		  silc_pkcs_public_key_free(pub_key);
 		  break;
 		}
 	      }
@@ -717,13 +728,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Public key authentication"));
 	      if (auth_data) {
 		SilcIDListUnknown *conn_data;
+		SilcPublicKey pub_key;
 		SilcPKCS pkcs;
 		
 		conn_data = (SilcIDListUnknown *)ctx->sock->user_data;
 		
 		/* Load public key from file */
 		if (silc_pkcs_load_public_key(serv->auth_data,
-					      &pkcs) == FALSE) {
+					      &pub_key) == FALSE) {
 		  
 		  /* Authentication failed */
 		  SILC_LOG_ERROR(("Authentication failed "
@@ -737,12 +749,15 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 		  return;
 		}
 		
+		silc_pkcs_alloc(pub_key->name, &pkcs);
+		
 		/* Verify hash value HASH from KE protocol */
 		if (pkcs->pkcs->verify(pkcs->context,
 				       auth_data, payload_len,
 				       ctx->ske->hash, 
 				       ctx->ske->hash_len)
 		    == TRUE) {
+		  silc_pkcs_public_key_free(pub_key);
 		  silc_pkcs_free(pkcs);
 		  break;
 		}
