@@ -48,6 +48,9 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o When the primary router connection is lost the server should be marked
+   standalone again untill the connection is resumed back to the router.
+
  o Add perhaps /var/run/silcd.pid for PID information for the server.
 
  o Add a timeout to handling incmoing JOIN commands.  It should be 
