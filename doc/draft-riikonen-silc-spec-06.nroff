@@ -213,10 +213,14 @@ clear.
 .ti 0
 2.1 SILC Network Topology
 
-SILC network is a cellular network as opposed to tree style network 
-topology.  The rationale for this is to have servers that can perform 
-specific kind of tasks what other servers cannot perform.  This leads 
-to two kinds of servers; normal SILC servers and SILC routers.
+SILC network forms a ring as opposed to tree style network topology that
+conferencing protocols usually have.  The network has a cells which are 
+constructed from router and zero or more servers.  The servers are 
+connected to the router in a star like network topology.  Routers in the 
+network are connected to each other forming a ring.  The rationale for 
+this is to have servers that can perform specific kind of tasks what 
+other servers cannot perform.  This leads to two kinds of servers; normal 
+SILC servers and SILC routers.
 
 A difference between normal server and router server is that routers 
 knows everything about everything in the network.  They also do the 
@@ -225,8 +229,9 @@ knows only about local information and nothing about global information.
 This makes the network faster as there are less servers that needs to 
 keep global information up to date at all time.
 
-This, on the other hand, leads to cellular like network, where routers 
-are in the center of the cell and servers are connected to the router.
+This, on the other hand, leads to kind of a cellular like network, where
+routers are in the center of the cell and servers are connected to the
+router.
 
 
 The following diagram represents SILC network topology.
@@ -443,7 +448,7 @@ from other clients by unique Client ID.  Client ID is a 128 bit ID that
 is used in the communication in the SILC network.  The client ID is 
 based on the nickname selected by the user.  User uses logical nicknames
 in communication which are then mapped to the corresponding Client ID.
-Client ID's are low level identifications and must not be seen by the
+Client ID's are low level identifications and should not be seen by the
 end user.
 
 Clients provide other information about the end user as well. Information
@@ -452,13 +457,14 @@ user and user's real name.  See section 3.2 Server for information of
 the requirements of keeping this information.
 
 The nickname selected by the user is not unique in the SILC network.
-There can be 2^8 same nicknames for one IP address.  As for comparison
-to IRC [IRC] where nicknames are unique this is a fundamental difference
-between SILC and IRC.  This causes the server names or client's host names
-to be used along with the nicknames to identify specific users when sending
-messages.  This feature of SILC makes IRC style nickname-wars obsolete as
-no one owns their nickname; there can always be someone else with the same
-nickname.  The maximum length of nickname is 128 bytes.
+There can be 2^8 same nicknames for one IP address.  As for comparison to 
+IRC [IRC] where nicknames are unique this is a fundamental difference 
+between SILC and IRC.  This typically causes the server names or client's 
+host names to be used along with the nicknames on user interface to  
+identify specific users when sending messages.  This feature of SILC 
+makes IRC style nickname-wars obsolete as no one owns their nickname; 
+there can always be someone else with the same nickname.  The maximum 
+length of nickname is 128 bytes.
 
 
 .ti 0
@@ -934,8 +940,8 @@ The header in the packet MUST NOT change during the routing of the
 packet.  The original sender, for example client, assembles the packet
 and the packet header and server or router between the sender and the
 receiver MUST NOT change the packet header.  Note however, that some
-packets such as commands may resent by a server to serve the client's
-original command.  In this case the command packet send by the server
+packets such as commands may be resent by a server to serve the client's
+original command.  In this case the command packet sent by the server
 includes the server's IDs.
 
 Note that the packet and the packet header may be encrypted with
@@ -1037,7 +1043,7 @@ o (Other router(s) do the same thing and sends the packet to
 o Server determines local clients on the channel and sends the
   packet to the client.
 
-o All clients receiving the packet decrypts the packet.
+o All clients receiving the packet decrypts it.
 
 
 .ti 0
@@ -1062,12 +1068,13 @@ SILC Key Exchange protocol is described in detail in [SILC3].
 
 Authentication is done after key exchange protocol has been successfully
 completed.  The purpose of authentication is to authenticate for example
-client connecting to the server.  However, usually clients are accepted
+client connecting to the server.  However, clients may be accepted
 to connect to server without explicit authentication.  Servers are
-required use authentication protocol when connecting.  The authentication
-may be based on passphrase (pre-shared-secret) or public key.  All
-passphrases sent in SILC protocol MUST be UTF-8 [RFC2279] encoded.
-The connection authentication protocol is described in detail in [SILC3].
+required to use authentication protocol when connecting.  The 
+authentication may be based on passphrase (pre-shared-secret) or public 
+key based on digital signatures.  All passphrases sent in SILC protocol 
+MUST be UTF-8 [RFC2279] encoded. The connection authentication protocol
+is described in detail in [SILC3].
 
 
 .ti 0
@@ -1561,7 +1568,7 @@ protocol version = <major>.<minor>
 software version = <major>[.<minor>[.<build or vendor string>]]
 .in 3
 
-Protocol version MAY provide both major and minor version.  Currently
+Protocol version MUST provide both major and minor version.  Currently
 implementations MUST set the protocol version and accept at least the 
 protocol version as SILC-1.2-<software version>.  If new protocol version 
 causes incompatibilities with older version the <minor> version number 
