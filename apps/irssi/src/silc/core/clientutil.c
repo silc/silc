@@ -294,7 +294,7 @@ int silc_client_check_silc_dir()
     
   /* 86400 is seconds in a day. */
   if (curtime >= (86400 * SILC_CLIENT_KEY_EXPIRES)) {
-    char *answer;
+    char answer;
 
     fprintf(stdout, 
 	    "----------------------------------------------------\n"
@@ -306,14 +306,16 @@ int silc_client_check_silc_dir()
 	    "----------------------------------------------------\n",
 	    SILC_CLIENT_KEY_EXPIRES, SILC_CLIENT_KEY_EXPIRES);
 
-    answer = silc_get_input("Would you like to create a new key pair "
-			    "(y/n)?: ", FALSE);
-    while (!answer) {
-      printf("Answer 'y' or 'n' and press Enter\n");
-      answer = silc_get_input("Would you like to create a new key pair "
-			      "(y/n)?: ", FALSE);
+    fprintf(stdout, "Would you like to create a new key pair (y/n)?: ");
+    answer = getchar();
+    
+    while ((answer != 'y') && (answer != 'Y') && (answer != 'n') && (answer != 'N')) {
+      while (answer != '\n') answer = getchar();
+      fprintf(stdout, "Answer 'y' or 'n' and press <Enter>\n");
+      fprintf(stdout, "Would you like to create a new key pair (y/n)?: ");
+      answer = getchar();
     }
-    if (answer[0] == 'Y' || answer[0] == 'y') {
+    if (answer == 'Y' || answer == 'y') {
       silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
 			   SILC_CLIENT_DEF_PKCS_LEN,
 			   file_public_key, file_private_key, NULL,
@@ -328,7 +330,6 @@ int silc_client_check_silc_dir()
       utime(file_private_key, &utim);
 #endif
     }
-    silc_free(answer);
   }
   
   return TRUE;
