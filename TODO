@@ -3,8 +3,6 @@ TODO for Irssi SILC Client 1.0
 
  o bugs parsing nicknames with @ in NICK_CHANGE.
 
- o UTF-8 decode WHOIS userinfos, topic, etc.
-
  o c0ffee's MIME signal
 
  o SILC protocol version 1.2 integration

@@ -1,3 +1,18 @@
+Mon Nov  4 16:02:59 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Print notify for server opers when backup router comes
+	  online.  Affected file silcd/server.c.
+
+	* Fixed the INVITE command to send the invite list in
+	  command reply.  Affected file silcd/command_reply.c.
+
+	* Fixed MOTD command reply sending.  Affected file
+	  silcd/command.c.
+
+	* UTF-8 decode the topic in TOPIC command reply and LIST
+	  command reply in Irssi SILC client.  Affected file is
+	  irssi/src/silc/core/client_ops.c.
+
 Sun Nov  3 17:59:15 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the INVITE command to not crash Irssi SILC client
