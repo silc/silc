@@ -4,6 +4,13 @@ Sun Sep 16 12:32:58 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  is something sensible in the silc_packet_decrypt_rest_special
 	  in lib/silccrypt/silcpacket.c.
 
+	* Free and NULL the allocated pointer in silc_hmac_alloc if
+	  the HMAC allocation fails.  The affected file is
+	  lib/silccrypt/silchmac.c.
+
+	* Print the selected security properties to the log files in
+	  the server.  Affected file silcd/protocol.c.
+
 Sat Sep 15 13:29:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check that the public key exists in the GETKEY command before

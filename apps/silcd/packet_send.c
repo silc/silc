@@ -743,9 +743,6 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	    memcpy(tmp, data, data_len);
 
 	    /* Decrypt the channel message (we don't check the MAC) */
-	    /* XXX this could be optimized and removed all together by
-	       taking a copy of the original data before encrypting it
-	       and thus would not required decrypting. */
 	    if (channel->channel_key &&
 		!silc_channel_message_payload_decrypt(tmp, data_len, 
 						      channel->channel_key,

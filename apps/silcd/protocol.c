@@ -280,6 +280,12 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
 
   sock->user_data = (void *)conn_data;
 
+  SILC_LOG_INFO(("%s (%s) security properties: %s %s %s", 
+		 sock->hostname, sock->ip,
+		 idata->send_key->cipher->name,
+		 idata->hmac_send->hmac->name,
+		 idata->hash->hash->name));
+
   return TRUE;
 }
 

@@ -123,6 +123,8 @@ bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac)
 
     if (!silc_hash_alloc(hname, &hash)) {
       silc_free(tmp);
+      silc_free(*new_hmac);
+      *new_hmac = NULL;
       return FALSE;
     }
 
@@ -142,6 +144,8 @@ bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac)
     }
   }
 
+  silc_free(*new_hmac);
+  *new_hmac = NULL;
   return FALSE;
 }
 

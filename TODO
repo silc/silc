@@ -53,6 +53,8 @@ TODO/bugs In SILC Server
 
  o Add perhaps /var/run/silcd.pid for PID information for the server.
 
+ o Update idle times only for private/channel messaegs.
+
  o Add a timeout to handling incmoing JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
    seconds.  Now it is possible to accept n incoming JOIN commands
