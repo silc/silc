@@ -1309,6 +1309,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   uint32 id_len;
   int ret;
   char *hostname, *nickname;
+  int nickfail = 0;
 
   SILC_LOG_DEBUG(("Creating new client"));
 
@@ -1441,8 +1442,11 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   }
 
   /* Create Client ID */
-  silc_id_create_client_id(server->id, server->rng, server->md5hash,
-			   nickname, &client_id);
+  while (!silc_id_create_client_id(server, server->id, server->rng, 
+				   server->md5hash, nickname, &client_id)) {
+    nickfail++;
+    snprintf(&nickname[strlen(nickname) - 1], 1, "%d", nickfail);
+  }
 
   /* Update client entry */
   idata->registered = TRUE;
@@ -1710,6 +1714,9 @@ static void silc_server_new_id_real(SilcServer server,
 				     id, router, NULL);
       if (!entry) {
 	SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
+
+	/* Inform the sender that the ID is not usable */
+	silc_server_send_notify_signoff(server, sock, FALSE, id, NULL);
 	goto out;
       }
       entry->nickname = NULL;

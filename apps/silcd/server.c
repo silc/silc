@@ -2942,7 +2942,13 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   channel_name = strdup(channel_name);
 
   /* Create the channel */
-  silc_id_create_channel_id(router_id, server->rng, &channel_id);
+  if (!silc_id_create_channel_id(server, router_id, server->rng, 
+				 &channel_id)) {
+    silc_free(channel_name);
+    silc_cipher_free(key);
+    silc_hmac_free(newhmac);
+    return NULL;
+  }
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
 				  NULL, key, newhmac);

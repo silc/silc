@@ -1,3 +1,16 @@
+Sat Sep  1 00:29:33 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the silc_id_create_client_id to be collision
+	  resistant.  It is now assured that there cannot be created
+	  two same client ID's.  I suspect that some weird bugs in 
+	  the server were actually caused by duplicate Client IDs.
+	  Affected file silcd/serverid.[ch].  A router receiving
+	  new ID now also assures and informs the sending server
+	  if the ID caused collision.
+
+	* Changed the silc_id_create_channel_id to also assure that
+	  there are no collisions.
+
 Wed Aug 29 17:55:01 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Statement about ignoring the Mutual Authentication flag when

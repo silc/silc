@@ -23,10 +23,12 @@
 
 /* Prototypes */
 void silc_id_create_server_id(int sock, SilcRng rng, SilcServerID **new_id);
-void silc_id_create_client_id(SilcServerID *server_id, SilcRng rng,
+bool silc_id_create_client_id(SilcServer server,
+			      SilcServerID *server_id, SilcRng rng,
 			      SilcHash md5hash, char *nickname, 
 			      SilcClientID **new_id);
-void silc_id_create_channel_id(SilcServerID *router_id, SilcRng rng,
+bool silc_id_create_channel_id(SilcServer server,
+			       SilcServerID *router_id, SilcRng rng,
 			       SilcChannelID **new_id);
 
 #endif

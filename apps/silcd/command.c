@@ -1776,6 +1776,7 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcClientID *new_id;
   char *nick;
   uint16 ident = silc_command_get_ident(cmd->payload);
+  int nickfail = 0;
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
@@ -1791,12 +1792,16 @@ SILC_SERVER_CMD_FUNC(nick)
   }
 
   if (strlen(nick) > 128)
-    nick[127] = '\0';
+    nick[128] = '\0';
 
   /* Create new Client ID */
-  silc_id_create_client_id(cmd->server->id, cmd->server->rng, 
-			   cmd->server->md5hash, nick,
-			   &new_id);
+  while (!silc_id_create_client_id(cmd->server, cmd->server->id, 
+				   cmd->server->rng, 
+				   cmd->server->md5hash, nick,
+				   &new_id)) {
+    nickfail++;
+    snprintf(&nick[strlen(nick) - 1], 1, "%d", nickfail);
+  }
 
   /* Send notify about nickname change to our router. We send the new
      ID and ask to replace it with the old one. If we are router the
