@@ -317,6 +317,7 @@ void silc_query_attributes_default(SilcClient client,
       tmp = strchr(*entry, ':') + 1;
       if (!tmp || !(*tmp))
 	continue;
+      memset(&service, 0, sizeof(service));
       service.port = atoi(tmp);
       *strchr(*entry, ':') = '\0';
       silc_strncat(service.address, sizeof(service.address), *entry,
