@@ -201,12 +201,7 @@ static void sig_connected(SILC_SERVER_REC *server)
   server->conn = conn;
 	
   fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
-  if (!silc_client_start_key_exchange(silc_client, conn, fd)) {
-    /* some internal error occured */
-    server_disconnect(SERVER(server));
-    signal_stop();
-    return;
-  }
+  silc_client_start_key_exchange(silc_client, conn, fd);
 
   server->isnickflag = isnickflag_func;
   server->ischannel = ischannel_func;

@@ -117,7 +117,6 @@ typedef struct {
   void *context;
   char *nickname;
   char *server;
-  bool found;
 } *GetClientInternal;
 
 SILC_CLIENT_CMD_FUNC(get_client_callback)
@@ -131,19 +130,11 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
 					  i->nickname, i->server,
 					  &clients_count);
   if (clients) {
-    i->completion(i->client, i->conn, clients, 
-		  clients_count, i->context);
-    i->found = TRUE;
+    i->completion(i->client, i->conn, clients, clients_count, i->context);
     silc_free(clients);
-  }
-}
-
-static void silc_client_get_client_destructor(void *context)
-{
-  GetClientInternal i = (GetClientInternal)context;
-
-  if (i->found == FALSE)
+  } else {
     i->completion(i->client, i->conn, NULL, 0, i->context);
+  }
 
   silc_free(i->nickname);
   silc_free(i->server);
@@ -202,7 +193,6 @@ void silc_client_get_clients(SilcClient client,
 
   /* Add pending callback */
   silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-			      silc_client_get_client_destructor,
 			      silc_client_command_get_client_callback, 
 			      (void *)i);
 
@@ -297,7 +287,6 @@ typedef struct {
   SilcBuffer client_id_list;
   SilcGetClientCallback completion;
   void *context;
-  int found;
 } *GetClientsByListInternal;
 
 SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
@@ -307,6 +296,7 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
   SilcBuffer client_id_list = i->client_id_list;
   SilcClientEntry *clients = NULL;
   uint32 clients_count = 0;
+  bool found = FALSE;
   int c;
 
   SILC_LOG_DEBUG(("Start"));
@@ -334,27 +324,19 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
 			     (clients_count + 1));
       clients[clients_count] = (SilcClientEntry)id_cache->context;
       clients_count++;
-      i->found = TRUE;
+      found = TRUE;
     }
 
     silc_free(client_id);
     silc_buffer_pull(client_id_list, idp_len);
   }
 
-  if (i->found) {
+  if (found) {
     i->completion(i->client, i->conn, clients, clients_count, i->context);
     silc_free(clients);
-  }
-}
-
-static void silc_client_get_clients_list_destructor(void *context)
-{
-  GetClientsByListInternal i = (GetClientsByListInternal)context;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (i->found == FALSE)
+  } else {
     i->completion(i->client, i->conn, NULL, 0, i->context);
+  }
 
   if (i->client_id_list)
     silc_buffer_free(i->client_id_list);
@@ -466,7 +448,6 @@ void silc_client_get_clients_by_list(SilcClient client,
 
     /* Process the applications request after reply has been received  */
     silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-				silc_client_get_clients_list_destructor,
 				silc_client_command_get_clients_list_callback, 
 				(void *)in);
 
@@ -516,7 +497,6 @@ typedef struct {
   SilcClientID *client_id;
   SilcGetClientCallback completion;
   void *context;
-  int found;
 } *GetClientByIDInternal;
 
 SILC_CLIENT_CMD_FUNC(get_client_by_id_callback)
@@ -525,23 +505,13 @@ SILC_CLIENT_CMD_FUNC(get_client_by_id_callback)
   SilcClientEntry entry;
 
   /* Get the client */
-  entry = silc_client_get_client_by_id(i->client, i->conn,
-				       i->client_id);
-  if (entry) {
+  entry = silc_client_get_client_by_id(i->client, i->conn, i->client_id);
+  if (entry)
     i->completion(i->client, i->conn, &entry, 1, i->context);
-    i->found = TRUE;
-  }
-}
-
-static void silc_client_get_client_by_id_destructor(void *context)
-{
-  GetClientByIDInternal i = (GetClientByIDInternal)context;
-
-  if (i->found == FALSE)
+  else
     i->completion(i->client, i->conn, NULL, 0, i->context);
 
-  if (i->client_id)
-    silc_free(i->client_id);
+  silc_free(i->client_id);
   silc_free(i);
 }
 
@@ -579,7 +549,6 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 
   /* Add pending callback */
   silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-			      silc_client_get_client_by_id_destructor,
 			      silc_client_command_get_client_by_id_callback, 
 			      (void *)i);
 }
@@ -788,7 +757,6 @@ typedef struct {
   SilcChannelID *channel_id;
   SilcGetChannelCallback completion;
   void *context;
-  int found;
 } *GetChannelByIDInternal;
 
 SILC_CLIENT_CMD_FUNC(get_channel_by_id_callback)
@@ -799,20 +767,12 @@ SILC_CLIENT_CMD_FUNC(get_channel_by_id_callback)
   SILC_LOG_DEBUG(("Start"));
 
   /* Get the channel */
-  entry = silc_client_get_channel_by_id(i->client, i->conn,
-					i->channel_id);
+  entry = silc_client_get_channel_by_id(i->client, i->conn, i->channel_id);
   if (entry) {
     i->completion(i->client, i->conn, &entry, 1, i->context);
-    i->found = TRUE;
-  }
-}
-
-static void silc_client_get_channel_by_id_destructor(void *context)
-{
-  GetChannelByIDInternal i = (GetChannelByIDInternal)context;
-
-  if (i->found == FALSE)
+  } else {
     i->completion(i->client, i->conn, NULL, 0, i->context);
+  }
 
   silc_free(i->channel_id);
   silc_free(i);
@@ -851,7 +811,6 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
 
   /* Add pending callback */
   silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-			      silc_client_get_channel_by_id_destructor,
 			      silc_client_command_get_channel_by_id_callback, 
 			      (void *)i);
 }

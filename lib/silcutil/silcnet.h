@@ -277,7 +277,7 @@ bool silc_net_gethostbyname(const char *name, char *address,
  *
  * DESCRIPTION
  *
- *    Asynchronouosly resolves the IP address of the hostname indicated
+ *    Asynchronously resolves the IP address of the hostname indicated
  *    by the `host'.  This function returns immediately, and the
  *    `completion' callback will be called after the resolving is
  *    completed.
@@ -316,7 +316,7 @@ bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len);
  *
  * DESCRIPTION
  *
- *    Asynchronouosly resolves the hostname for the IP address indicated
+ *    Asynchronously resolves the hostname for the IP address indicated
  *    by the `addr'.  This function returns immediately, and the
  *    `completion' callback will be called after the resolving is
  *    completed.

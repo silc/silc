@@ -60,7 +60,6 @@ settings = {
     use_msgs_window = "no";
     autocreate_windows = "no";
     autocreate_query_level = "none";
-    use_auto_addr = "no";
   };
   "fe-text" = { topicbar = "no"; mail_counter = "yes"; indent = "8"; };
 };

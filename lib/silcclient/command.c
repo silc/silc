@@ -93,7 +93,6 @@ void silc_client_command_call(SilcClientCommand command,
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
 				 uint16 ident,
-				 SilcClientPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context)
 {
@@ -104,7 +103,6 @@ void silc_client_command_pending(SilcClientConnection conn,
   reply->ident = ident;
   reply->context = context;
   reply->callback = callback;
-  reply->destructor = destructor;
   silc_dlist_add(conn->pending_commands, reply);
 }
 
@@ -140,7 +138,6 @@ int silc_client_command_pending_check(SilcClientConnection conn,
     if (r->reply_cmd == command && r->ident == ident) {
       ctx->context = r->context;
       ctx->callback = r->callback;
-      ctx->destructor = r->destructor;
       ctx->ident = ident;
       return TRUE;
     }
@@ -185,13 +182,6 @@ SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx)
   SILC_LOG_DEBUG(("Command context %p refcnt %d->%d", ctx, ctx->users - 1,
 		  ctx->users));
   return ctx;
-}
-
-/* Pending command destructor. */
-
-static void silc_client_command_destructor(void *context)
-{
-  silc_client_command_free((SilcClientCommandContext)context);
 }
 
 /* Command WHOIS. This command is used to query information about 
@@ -410,11 +400,9 @@ SILC_CLIENT_CMD_FUNC(nick)
      if there were no errors returned by the server. */
   silc_client_command_pending(conn, SILC_COMMAND_NICK, 
 			      cmd->conn->cmd_ident,
-			      silc_client_command_destructor,
 			      silc_client_command_nick_change,
 			      silc_client_command_dup(cmd));
   cmd->pending = TRUE;
-  return;
 
  out:
   silc_client_command_free(cmd);
@@ -618,11 +606,10 @@ SILC_CLIENT_CMD_FUNC(invite)
 	   pending command. */
 	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
 				    conn->cmd_ident,
-				    silc_client_command_destructor,
 				    silc_client_command_invite, 
 				    silc_client_command_dup(cmd));
 	cmd->pending = 1;
-	return;
+	goto out;
       }
     } else {
       invite = cmd->argv[2];
@@ -822,11 +809,10 @@ SILC_CLIENT_CMD_FUNC(kill)
        pending command. */
     silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
 				conn->cmd_ident,  
-				silc_client_command_destructor,
 				silc_client_command_kill, 
 				silc_client_command_dup(cmd));
     cmd->pending = 1;
-    return;
+    goto out;
   }
 
   /* Send the KILL command to the server */
@@ -852,7 +838,7 @@ SILC_CLIENT_CMD_FUNC(kill)
   /* Register a pending callback that will actually remove the killed
      client from our cache. */
   silc_client_command_pending(conn, SILC_COMMAND_KILL, conn->cmd_ident,
-			      NULL, silc_client_command_kill_remove,
+			      silc_client_command_kill_remove,
 			      silc_client_command_dup(cmd));
 
  out:
@@ -1479,11 +1465,10 @@ SILC_CLIENT_CMD_FUNC(cumode)
        pending command. */
     silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
 				conn->cmd_ident,  
-				silc_client_command_destructor,
 				silc_client_command_cumode, 
 				silc_client_command_dup(cmd));
     cmd->pending = 1;
-    return;
+    goto out;
   }
   
   /* Get the current mode */
@@ -2140,6 +2125,8 @@ SILC_CLIENT_CMD_FUNC(getkey)
   char *nickname = NULL;
   SilcBuffer idp, buffer;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
     COMMAND_ERROR;
@@ -2151,22 +2138,6 @@ SILC_CLIENT_CMD_FUNC(getkey)
 		     "Usage: /GETKEY <nickname or server name>");
     COMMAND_ERROR;
     goto out;
-  }
-
-  if (cmd->pending) {
-    SilcClientCommandReplyContext reply = 
-      (SilcClientCommandReplyContext)context2;
-    SilcCommandStatus status;
-    unsigned char *tmp = silc_argument_get_arg_type(reply->args, 1, NULL);
-    SILC_GET16_MSB(status, tmp);
-    
-    if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
-	status == SILC_STATUS_ERR_NO_SUCH_SERVER) {
-      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
-	  silc_client_command_status_message(status));
-      COMMAND_ERROR;
-      goto out;
-    }
   }
 
   /* Parse the typed nickname. */
@@ -2183,38 +2154,57 @@ SILC_CLIENT_CMD_FUNC(getkey)
     server_entry = silc_client_get_server(client, conn, cmd->argv[1]);
 
     if (!server_entry) {
-      if (cmd->pending) {
+      /* No. what ever user wants we don't have it, so resolve it. We
+	 will first try to resolve the client, and if that fails then
+	 we'll try to resolve the server. */
+
+      if (!cmd->pending) {
+	/* This will send the IDENTIFY command for nickname */
+	silc_idlist_get_client(client, conn, nickname, cmd->argv[1], TRUE);
+	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				    conn->cmd_ident,  
+				    silc_client_command_getkey, 
+				    silc_client_command_dup(cmd));
+	cmd->pending = 1;
+	goto out;
+      } else {
+	SilcClientCommandReplyContext reply = 
+	  (SilcClientCommandReplyContext)context2;
+	SilcCommandStatus status;
+	unsigned char *tmp = silc_argument_get_arg_type(reply->args, 1, NULL);
+	SILC_GET16_MSB(status, tmp);
+	
+	/* If nickname was not found, then resolve the server. */
+	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	  /* This sends the IDENTIFY command to resolve the server. */
+	  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, 
+				       NULL, NULL,
+				       silc_client_command_reply_identify_i, 0,
+				       ++conn->cmd_ident);
+	  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+				   conn->cmd_ident, 1, 
+				   2, cmd->argv[1], cmd->argv_lens[1]);
+	  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				      conn->cmd_ident, 
+				      silc_client_command_getkey, 
+				      silc_client_command_dup(cmd));
+	  goto out;
+	}
+
+	/* If server was not found, then we've resolved both nickname and
+	   server and did not find anybody. */
+	if (status == SILC_STATUS_ERR_NO_SUCH_SERVER) {
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
+	     silc_client_command_status_message(SILC_STATUS_ERR_NO_SUCH_NICK));
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
+           silc_client_command_status_message(status));
+	  COMMAND_ERROR;
+	  goto out;
+	}
+
 	COMMAND_ERROR;
 	goto out;
       }
-
-      /* No. what ever user wants we don't have it, so resolve it. We
-	 will try to resolve both client and server, one of them is
-	 bound to be wrong. */
-
-      /* This will send the IDENTIFY command */
-      silc_idlist_get_client(client, conn, nickname, cmd->argv[1], TRUE);
-      silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				  conn->cmd_ident,  
-				  silc_client_command_destructor,
-				  silc_client_command_getkey, 
-				  silc_client_command_dup(cmd));
-
-      /* This sends the IDENTIFY command to resolve the server. */
-      silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-				   silc_client_command_reply_identify_i, 0,
-				   ++conn->cmd_ident);
-      silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			       conn->cmd_ident, 1, 
-			       2, cmd->argv[1], cmd->argv_lens[1]);
-      silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				  conn->cmd_ident, NULL,
-				  silc_client_command_getkey, 
-				  silc_client_command_dup(cmd));
-
-      cmd->pending = 1;
-      silc_free(nickname);
-      return;
     }
 
     idp = silc_id_payload_encode(server_entry->server_id, SILC_ID_SERVER);

@@ -46,21 +46,14 @@ static void silc_client_notify_by_server_pending(void *context, void *context2)
     SilcCommandStatus status;
     unsigned char *tmp = silc_argument_get_arg_type(reply->args, 1, NULL);
     SILC_GET16_MSB(status, tmp);
-    if (status != SILC_STATUS_OK) {
-      silc_socket_free(res->sock);
-      return;
-    }
+    if (status != SILC_STATUS_OK)
+      goto out;
   }
 
   silc_client_notify_by_server(res->context, res->sock, res->packet);
+
+ out:
   silc_socket_free(res->sock);
-}
-
-/* Destructor for the pending command callback */
-
-static void silc_client_notify_by_server_destructor(void *context)
-{
-  SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
   silc_packet_context_free(res->packet);
   silc_free(res);
 }
@@ -85,7 +78,6 @@ static void silc_client_notify_by_server_resolve(SilcClient client,
   silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
 			   1, 3, idp->data, idp->len);
   silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-			      silc_client_notify_by_server_destructor,
 			      silc_client_notify_by_server_pending, res);
   silc_buffer_free(idp);
 }

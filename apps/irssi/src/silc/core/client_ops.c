@@ -40,8 +40,9 @@
 
 static void 
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
-				SilcSocketType conn_type, unsigned char *pk, 
-				uint32 pk_len, SilcSKEPKType pk_type,
+				const char *name, SilcSocketType conn_type, 
+				unsigned char *pk, uint32 pk_len, 
+				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context);
 
 void silc_say(SilcClient client, SilcClientConnection conn,
@@ -822,6 +823,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       unsigned char *pk;
       uint32 pk_len;
       GetkeyContext getkey;
+      char *name;
       
       if (!success)
 	return;
@@ -839,8 +841,12 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	getkey->client = client;
 	getkey->conn = conn;
 	getkey->fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-	
-	silc_verify_public_key_internal(client, conn, 
+
+	name = (id_type == SILC_ID_CLIENT ? 
+		((SilcClientEntry)entry)->nickname :
+		((SilcServerEntry)entry)->server_name);
+
+	silc_verify_public_key_internal(client, conn, name,
 					(id_type == SILC_ID_CLIENT ?
 					 SILC_SOCKET_TYPE_CLIENT :
 					 SILC_SOCKET_TYPE_SERVER),
@@ -909,14 +915,12 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   va_end(vp);
 }
 
-/* Internal routine to verify public key. If the `completion' is provided
-   it will be called to indicate whether public was verified or not. */
-
 typedef struct {
   SilcClient client;
   SilcClientConnection conn;
   char *filename;
   char *entity;
+  char *entity_name;
   unsigned char *pk;
   uint32 pk_len;
   SilcSKEPKType pk_type;
@@ -942,23 +946,33 @@ static void verify_public_key_completion(const char *line, void *context)
       verify->completion(FALSE, verify->context);
 
     printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_DISCARD, verify->entity);
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_DISCARD, 
+		       verify->entity_name ? verify->entity_name :
+		       verify->entity);
   }
 
   silc_free(verify->filename);
   silc_free(verify->entity);
+  silc_free(verify->entity_name);
   silc_free(verify->pk);
   silc_free(verify);
 }
 
+/* Internal routine to verify public key. If the `completion' is provided
+   it will be called to indicate whether public was verified or not. For
+   server/router public key this will check for filename that includes the
+   remote host's IP address and remote host's hostname. */
+
 static void 
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
-				SilcSocketType conn_type, unsigned char *pk, 
-				uint32 pk_len, SilcSKEPKType pk_type,
+				const char *name, SilcSocketType conn_type, 
+				unsigned char *pk, uint32 pk_len, 
+				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context)
 {
   int i;
-  char file[256], filename[256], *fingerprint, *babbleprint, *format;
+  char file[256], filename[256], filename2[256], *ipf, *hostf = NULL;
+  char *fingerprint, *babbleprint, *format;
   struct passwd *pw;
   struct stat st;
   char *entity = ((conn_type == SILC_SOCKET_TYPE_SERVER ||
@@ -983,14 +997,32 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   }
 
   memset(filename, 0, sizeof(filename));
+  memset(filename2, 0, sizeof(filename2));
   memset(file, 0, sizeof(file));
 
   if (conn_type == SILC_SOCKET_TYPE_SERVER ||
       conn_type == SILC_SOCKET_TYPE_ROUTER) {
-    snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
-	     conn->sock->ip, conn->sock->port);
-    snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
-	     pw->pw_dir, entity, file);
+    if (!name) {
+      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
+	       conn->sock->ip, conn->sock->port);
+      snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
+	       pw->pw_dir, entity, file);
+      
+      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
+	       conn->sock->hostname, conn->sock->port);
+      snprintf(filename2, sizeof(filename2) - 1, "%s/.silc/%skeys/%s", 
+	       pw->pw_dir, entity, file);
+      
+      ipf = filename;
+      hostf = filename2;
+    } else {
+      snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
+	       name, conn->sock->port);
+      snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
+	       pw->pw_dir, entity, file);
+      
+      ipf = filename;
+    }
   } else {
     /* Replace all whitespaces with `_'. */
     fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
@@ -1002,6 +1034,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
 	     pw->pw_dir, entity, file);
     silc_free(fingerprint);
+
+    ipf = filename;
   }
 
   /* Take fingerprint of the public key */
@@ -1011,8 +1045,11 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   verify = silc_calloc(1, sizeof(*verify));
   verify->client = client;
   verify->conn = conn;
-  verify->filename = strdup(filename);
+  verify->filename = strdup(ipf);
   verify->entity = strdup(entity);
+  verify->entity_name = (conn_type != SILC_SOCKET_TYPE_CLIENT ?
+			 (name ? strdup(name) : strdup(conn->sock->hostname))
+			 : NULL);
   verify->pk = silc_calloc(pk_len, sizeof(*verify->pk));
   memcpy(verify->pk, pk, pk_len);
   verify->pk_len = pk_len;
@@ -1021,11 +1058,12 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   verify->context = context;
 
   /* Check whether this key already exists */
-  if (stat(filename, &st) < 0) {
+  if (stat(ipf, &st) < 0 && (!hostf || stat(hostf, &st) < 0)) {
     /* Key does not exist, ask user to verify the key and save it */
 
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-		       SILCTXT_PUBKEY_RECEIVED, entity);
+		       SILCTXT_PUBKEY_RECEIVED,verify->entity_name ? 
+		       verify->entity_name : entity);
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 		       SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
@@ -1043,33 +1081,39 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     unsigned char *encpk;
     uint32 encpk_len;
 
-    /* Load the key file */
-    if (!silc_pkcs_load_public_key(filename, &public_key, 
-				   SILC_PKCS_FILE_PEM))
-      if (!silc_pkcs_load_public_key(filename, &public_key, 
-				     SILC_PKCS_FILE_BIN)) {
-	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			   SILCTXT_PUBKEY_RECEIVED, entity);
-	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			   SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
-	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			   SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
-	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			   SILCTXT_PUBKEY_COULD_NOT_LOAD, entity);
-	format = format_get_text("fe-common/silc", NULL, NULL, NULL,
-				 SILCTXT_PUBKEY_ACCEPT_ANYWAY);
-	keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-				format, 0, verify);
-	g_free(format);
-	silc_free(fingerprint);
-	return;
-      }
-  
+    /* Load the key file, try for both IP filename and hostname filename */
+    if (!silc_pkcs_load_public_key(ipf, &public_key, 
+				   SILC_PKCS_FILE_PEM) &&
+	!silc_pkcs_load_public_key(ipf, &public_key, 
+				   SILC_PKCS_FILE_BIN) &&
+	(!hostf || (!silc_pkcs_load_public_key(hostf, &public_key, 
+					       SILC_PKCS_FILE_PEM) &&
+		    !silc_pkcs_load_public_key(hostf, &public_key, 
+					       SILC_PKCS_FILE_BIN)))) {
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ? 
+			 verify->entity_name : entity);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_COULD_NOT_LOAD, entity);
+      format = format_get_text("fe-common/silc", NULL, NULL, NULL,
+			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
+      keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
+			      format, 0, verify);
+      g_free(format);
+      silc_free(fingerprint);
+      return;
+    }
+
     /* Encode the key data */
     encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
     if (!encpk) {
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			 SILCTXT_PUBKEY_RECEIVED, entity);
+			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ? 
+			 verify->entity_name : entity);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
@@ -1088,7 +1132,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     /* Compare the keys */
     if (memcmp(encpk, pk, encpk_len)) {
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
-			 SILCTXT_PUBKEY_RECEIVED, entity);
+			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ? 
+			 verify->entity_name : entity);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
@@ -1128,7 +1173,7 @@ silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 		       uint32 pk_len, SilcSKEPKType pk_type,
 		       SilcVerifyPublicKey completion, void *context)
 {
-  silc_verify_public_key_internal(client, conn, conn_type, pk,
+  silc_verify_public_key_internal(client, conn, NULL, conn_type, pk,
 				  pk_len, pk_type,
 				  completion, context);
 }

@@ -360,34 +360,22 @@ int silc_client_connect_to_server(SilcClient client, int port,
   return sock;
 }
 
-/* Start SILC Key Exchange (SKE) protocol to negotiate shared secret
-   key material between client and server.  This function can be called
-   directly if application is performing its own connecting and does not
-   use the connecting provided by this library. This function is normally
-   used only if the application performed the connecting outside the library.
-   The library however may use this internally. */
+/* Socket hostname and IP lookup callback that is called before actually
+   starting the key exchange.  The lookup is called from the function
+   silc_client_start_key_exchange. */
 
-bool silc_client_start_key_exchange(SilcClient client,
-				    SilcClientConnection conn,
-				    int fd)
+static void silc_client_start_key_exchange_cb(SilcSocketConnection sock,
+					      void *context)
 {
+  SilcClientConnection conn = (SilcClientConnection)context;
+  SilcClient client = conn->client;
   SilcProtocol protocol;
   SilcClientKEInternalContext *proto_ctx;
-  void *context;
 
-  /* Allocate new socket connection object */
-  silc_socket_alloc(fd, SILC_SOCKET_TYPE_SERVER, (void *)conn, &conn->sock);
-
-  /* Sometimes when doing quick reconnects the new socket may be same as
-     the old one and there might be pending stuff for the old socket. 
-     If new one is same then those pending sutff might cause problems.
-     Make sure they do not do that. */
-  silc_schedule_task_del_by_fd(client->schedule, fd);
-
-  conn->nickname = (client->nickname ? strdup(client->nickname) :
-		    strdup(client->username));
-  conn->sock->hostname = strdup(conn->remote_host);
-  conn->sock->ip = strdup(conn->remote_host);
+  if (!conn->sock->hostname)
+    conn->sock->hostname = strdup(conn->remote_host);
+  if (!conn->sock->ip)
+    conn->sock->ip = strdup(conn->remote_host);
   conn->sock->port = conn->remote_port;
 
   /* Allocate internal Key Exchange context. This is sent to the
@@ -408,7 +396,9 @@ bool silc_client_start_key_exchange(SilcClient client,
   if (!protocol) {
     client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 			       "Error: Could not start key exchange protocol");
-    return FALSE;
+    silc_net_close_connection(conn->sock->sock);
+    client->internal->ops->connect(client, conn, FALSE);
+    return;
   }
   conn->sock->protocol = protocol;
 
@@ -419,11 +409,38 @@ bool silc_client_start_key_exchange(SilcClient client,
      be set separately by calling SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT,
      later when outgoing data is available. */
   context = (void *)client;
-  SILC_CLIENT_REGISTER_CONNECTION_FOR_IO(fd);
+  SILC_CLIENT_REGISTER_CONNECTION_FOR_IO(conn->sock->sock);
 
   /* Execute the protocol */
   silc_protocol_execute(protocol, client->schedule, 0, 0);
-  return TRUE;
+}
+
+/* Start SILC Key Exchange (SKE) protocol to negotiate shared secret
+   key material between client and server.  This function can be called
+   directly if application is performing its own connecting and does not
+   use the connecting provided by this library. This function is normally
+   used only if the application performed the connecting outside the library.
+   The library however may use this internally. */
+
+void silc_client_start_key_exchange(SilcClient client,
+				    SilcClientConnection conn,
+				    int fd)
+{
+  /* Allocate new socket connection object */
+  silc_socket_alloc(fd, SILC_SOCKET_TYPE_SERVER, (void *)conn, &conn->sock);
+
+  /* Sometimes when doing quick reconnects the new socket may be same as
+     the old one and there might be pending stuff for the old socket. 
+     If new one is same then those pending sutff might cause problems.
+     Make sure they do not do that. */
+  silc_schedule_task_del_by_fd(client->schedule, fd);
+
+  conn->nickname = (client->nickname ? strdup(client->nickname) :
+		    strdup(client->username));
+
+  /* Resolve the remote hostname and IP address for our socket connection */
+  silc_socket_host_lookup(conn->sock, FALSE, silc_client_start_key_exchange_cb,
+			  conn, client->schedule);
 }
 
 /* Callback called when error has occurred during connecting to the server.
@@ -493,10 +510,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
   silc_schedule_task_del(client->schedule, ctx->task);
   silc_free(ctx);
 
-  if (!silc_client_start_key_exchange(client, conn, fd)) {
-    silc_net_close_connection(fd);
-    client->internal->ops->connect(client, conn, FALSE);
-  }
+  silc_client_start_key_exchange(client, conn, fd);
 }
 
 /* Second part of the connecting to the server. This executed 

@@ -2332,7 +2332,7 @@ SILC_SERVER_CMD_FUNC(topic)
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
     /* Send notify about topic change to all clients on the channel */
-    silc_server_send_notify_to_channel(server, NULL, channel, TRUE, 
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
 				       SILC_NOTIFY_TYPE_TOPIC_SET, 2,
 				       idp->data, idp->len,
 				       channel->topic, strlen(channel->topic));
@@ -4513,7 +4513,7 @@ SILC_SERVER_CMD_FUNC(kick)
     silc_server_send_notify_kicked(server, server->router->connection,
 				   server->server_type == SILC_ROUTER ?
 				   TRUE : FALSE, channel,
-				   target_client->id, comment);
+				   target_client->id, client->id, comment);
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Re-generate channel key */
@@ -5203,6 +5203,7 @@ SILC_SERVER_CMD_FUNC(getkey)
   uint32 tmp_len, pklen;
   SilcBuffer pk = NULL;
   SilcIdType id_type;
+  SilcPublicKey public_key;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -5271,11 +5272,12 @@ SILC_SERVER_CMD_FUNC(getkey)
     /* The client is locally connected, just get the public key and
        send it back. If they key does not exist then do not send it, 
        send just OK reply */
-    if (!client->data.public_key) {
+    public_key = client->data.public_key;
+    if (!public_key) {
       pkdata = NULL;
       pklen = 0;
     } else {
-      tmp = silc_pkcs_public_key_encode(client->data.public_key, &tmp_len);
+      tmp = silc_pkcs_public_key_encode(public_key, &tmp_len);
       pk = silc_buffer_alloc(4 + tmp_len);
       silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
       silc_buffer_format(pk,
@@ -5334,12 +5336,14 @@ SILC_SERVER_CMD_FUNC(getkey)
     }
 
     /* If they key does not exist then do not send it, send just OK reply */
-    if (!server_entry->data.public_key) {
+    public_key = (!server_entry->data.public_key ? 
+		  (server_entry == server->id_entry ? server->public_key :
+		   NULL) : server_entry->data.public_key);
+    if (!public_key) {
       pkdata = NULL;
       pklen = 0;
     } else {
-      tmp = silc_pkcs_public_key_encode(server_entry->data.public_key, 
-					&tmp_len);
+      tmp = silc_pkcs_public_key_encode(public_key, &tmp_len);
       pk = silc_buffer_alloc(4 + tmp_len);
       silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
       silc_buffer_format(pk,

@@ -66,7 +66,6 @@ struct SilcClientCommandContextStruct {
 typedef struct SilcClientCommandPendingStruct {
   SilcCommand reply_cmd;
   SilcCommandCb callback;
-  SilcClientPendingDestructor destructor;
   void *context;
   uint16 ident;
   struct SilcClientCommandPendingStruct *next;
@@ -93,19 +92,12 @@ silc_client_command_unregister(client, SILC_COMMAND_##cmd,		\
 void silc_client_command_##func(void *context, void *context2)
 
 /* Executed pending command callback */
-#define SILC_CLIENT_PENDING_EXEC(ctx, cmd)	\
-do {						\
-  if ((ctx)->callback)				\
-    (*ctx->callback)(ctx->context, ctx);	\
-} while(0)
-
-/* Execute destructor for pending command */
-#define SILC_CLIENT_PENDING_DESTRUCTOR(ctx, cmd)			\
+#define SILC_CLIENT_PENDING_EXEC(ctx, cmd)				\
 do {									\
+  if ((ctx)->callback)							\
+    (*ctx->callback)(ctx->context, ctx);				\
   silc_client_command_pending_del((ctx)->sock->user_data, (cmd),	\
 				  (ctx)->ident);			\
-  if (ctx->destructor)							\
-    (*ctx->destructor)(ctx->context);					\
 } while(0)
 
 bool silc_client_command_register(SilcClient client,

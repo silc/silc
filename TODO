@@ -1,11 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o GETKEY server will save the serverkey to the same filename as the 
-   connected server and thus destroys the key.
-
- o GETKEY server will show first, "there is no such nickname".
-
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the
@@ -37,25 +32,15 @@ TODO/bugs In SILC Client Library
 
  o Remove the assert from silc_client_file_send.
 
- o Having @ in nickname will crash the client after changing the nickname
-   back without the @.
-
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
    set the key only if application wishes to set (accept the key) it.
 
- o should /nick nick and /nick Nick cause the Nick to be Nick@host becase
-   it used to be nick??
-
  o When changing own nickname and there exists a same nickname the library
    can give the client now nickname in format nick@host.  This is new
    behaviour and maybe should be removed.  The changer should always
    get the one it wants and not have the formatted nickname.
-
- o Remove the command destructor all together from the client, it is
-   not needed and its usage is buggy when the context is registered
-   to multiple pending commands.
 
  o Additions to do after protocol version 1.1:
 
@@ -72,8 +57,6 @@ TODO/bugs In SILC Server
 
  o removing other's modes on channel seems to be possible due to some
    cumode bug.
-
- o Topic notifications seem to go double times occasionally to a channel.
 
  o Add hashed passwords to silcd.conf file.
 
@@ -176,6 +159,13 @@ describe new stuff to be added to protocol versions 1.x.
     belongs to the payload, its integrity should be protected by the
     payload MAC and not alone by packet MAC.  To be included in protocol 
     version 1.1.
+
+ 8. Remove the administrative commands from the protocol all together.
+    It does not make sense for the protocol to define how a server is
+    reconnected or shutdown, since they are implementation and 
+    configuration issues.  Besides protocol provides only limited set of
+    administrative commands and cannot define all that one could imagine.
+    To be included in protocol version 1.1.
 
 
 TODO After 1.0

@@ -670,9 +670,9 @@ void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
  *
  * SYNOPSIS
  *
- *    int silc_client_start_key_exchange(SilcClient client,
- *                                       SilcClientConnection conn,
- *                                       int fd);
+ *    void silc_client_start_key_exchange(SilcClient client,
+ *                                        SilcClientConnection conn,
+ *                                        int fd);
  *
  * DESCRIPTION
  *
@@ -685,7 +685,7 @@ void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
  *    if the key exchange could not be started.
  *
  ***/
-bool silc_client_start_key_exchange(SilcClient client,
+void silc_client_start_key_exchange(SilcClient client,
 				    SilcClientConnection conn,
 				    int fd);
 
@@ -1227,23 +1227,6 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
 			      SilcCommand command, uint16 ident,
 			      uint32 argc, ...);
 
-/****f* silcclient/SilcClientAPI/SilcClientPendingDestructor
- *
- * SYNOPSIS
- *
- *    typedef void (*SilcClientPendingDestructor)(void *context);
- *
- * DESCRIPTION
- *
- *    Pending Command callback destructor. This is called after calling the
- *    pending callback or if error occurs while processing the pending command.
- *    If error occurs then the callback won't be called at all, and only this
- *    destructor is called. The `context' is the context given for the function
- *    silc_client_command_pending. 
- *
- ***/
-typedef void (*SilcClientPendingDestructor)(void *context);
-
 /****f* silcclient/SilcClientAPI/silc_client_command_pending
  *
  * SYNOPSIS
@@ -1251,7 +1234,6 @@ typedef void (*SilcClientPendingDestructor)(void *context);
  *    void silc_client_command_pending(SilcClientConnection conn,
  *                                     SilcCommand reply_cmd,
  *                                     uint16 ident,
- *                                     SilcClientPendingDestructor destructor,
  *                                     SilcCommandCb callback,
  *                                     void *context);
  *
@@ -1271,7 +1253,6 @@ typedef void (*SilcClientPendingDestructor)(void *context);
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
 				 uint16 ident,
-				 SilcClientPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context);
 

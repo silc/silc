@@ -165,6 +165,7 @@ void silc_server_send_notify_kicked(SilcServer server,
 				    bool broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
+				    SilcClientID *kicker,
 				    char *comment);
 void silc_server_send_notify_killed(SilcServer server,
 				    SilcSocketConnection sock,

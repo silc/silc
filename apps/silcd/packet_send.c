@@ -1309,16 +1309,21 @@ void silc_server_send_notify_kicked(SilcServer server,
 				    bool broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
+				    SilcClientID *kicker,
 				    char *comment)
 {
-  SilcBuffer idp;
+  SilcBuffer idp1;
+  SilcBuffer idp2;
 
-  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  idp1 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  idp2 = silc_id_payload_encode((void *)kicker, SILC_ID_CLIENT);
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
-			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_KICKED,
-			       comment ? 2 : 1, idp->data, idp->len,
-			       comment, comment ? strlen(comment) : 0);
-  silc_buffer_free(idp);
+			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_KICKED, 3,
+			       idp1->data, idp1->len,
+			       comment, comment ? strlen(comment) : 0,
+			       idp2->data, idp2->len);
+  silc_buffer_free(idp1);
+  silc_buffer_free(idp2);
 }
 
 /* Send KILLED notify type. This tells that the `client_id' client was

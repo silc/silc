@@ -35,7 +35,6 @@ typedef struct {
   SilcPacketContext *packet;
 
   /* If defined this executes the pending command. */
-  SilcClientPendingDestructor destructor;
   SilcCommandCb callback;
   void *context;
   uint16 ident;
