@@ -151,6 +151,13 @@ describe new stuff to be added to protocol versions 1.x.
     new features without always making the command incompatible to previous
     version.  To be included in protocol version 1.1.
 
+ 5. Inviting and banning by public key should be made possible.  To be
+    included in protocol version 1.x.
+
+ 6. Add perhaps SILENCE_USERS, SILENCE_OPERS channel user modes which
+    can be used to silence (moderate) normal users and opers (this set
+    only by founder).  To be included in protocol version 1.1.
+
 
 TODO After 1.0
 ==============
