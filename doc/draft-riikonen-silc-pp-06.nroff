@@ -387,11 +387,11 @@ types.
 
 The below list of the SILC Packet types includes reference to the packet
 payload as well.  Packet payloads are the actual packet data area.  Each
-packet type defines packet payload   which usually may only be sent with
+packet type defines packet payload  which usually may only be sent with
 the specific packet type.
 
 Most of the packets are packets that must be destined directly to entity
-that is connected to the sender.  It is not allowed, for example, for
+that is connected to the sender.  It is not allowed, for example, for a
 router to send disconnect packet to client that is not directly connected
 to the router.  However, there are some special packet types that may
 be destined to some entity that the sender does not have direct
@@ -517,7 +517,7 @@ List of SILC Packet types are defined as follows.
           protect private messages between two clients.  This packet
           is sent inside the SILC network and protected with session
           keys.  There are other means of agreeing to use private message
-          keys as well, than sending this packet, which may not be
+          keys as well, than sending this packet which may not be
           desirable on all situations.  See the [SILC1] for private
           message key generation.
 
@@ -842,7 +842,7 @@ Figure 4:  Argument Payload
 
 .in 6
 o Payload Length (2 bytes) - Length of the Argument Data 
-  area not including the length of any other field in the 
+  field not including the length of any other field in the 
   payload.
 
 o Argument Type (1 byte) - Indicates the type of the argument.  
@@ -860,7 +860,7 @@ o Argument Data (variable length) - Argument data.
 .ti 0
 2.3.2.3 Channel Payload
 
-Generic Channel Payload may be used to send information about channel,
+Generic Channel Payload may be used to send information about a channel,
 its name, the Channel ID and a mode.
 
 The following diagram represents the Channel Payload.
@@ -1269,7 +1269,7 @@ Notify payload is used to send notify messages.  The payload is usually
 sent from server to client and from server to router.  It is also used
 by routers to notify other routers in the network.  This payload MAY also
 be sent to a channel.  Client MUST NOT send this payload.  If client
-receives this payload MAY ignore the contents of the payload, however,
+receives this payload it MAY ignore the contents of the payload, however,
 notify message SHOULD be audited.  Servers and routers MUST process
 notify packets.
 
@@ -1464,7 +1464,7 @@ sent inside arguments are actually Public Key Payloads.
 
       Max Arguments:  4
           Arguments:  (1) <ID Payload>        (2) <mode mask>
-                      (3) <Target Client ID>  (3) [<founder pubkey>]
+                      (3) <Target Client ID>  (4) [<founder pubkey>]
 
       The <ID Payload> is the ID (usually Client ID but it can be
       Server ID as well when the router is enforcing user's mode
