@@ -74,52 +74,52 @@ Table of Contents
 2 SILC Packet Protocol ..........................................  4
   2.1 SILC Packet ...............................................  4
   2.2 SILC Packet Header ........................................  5
-  2.3 SILC Packet Types .........................................  8
+  2.3 SILC Packet Types .........................................  7
       2.3.1 SILC Packet Payloads ................................ 15
-      2.3.2 Generic payloads .................................... 16
-            2.3.2.1 ID Payload .................................. 16
+      2.3.2 Generic payloads .................................... 15
+            2.3.2.1 ID Payload .................................. 15
             2.3.2.2 Argument Payload ............................ 16
-            2.3.2.3 Argument List Payload ....................... 16
-            2.3.2.4 Channel Payload ............................. 17
-            2.3.2.5 Public Key Payload .......................... 18
+            2.3.2.3 Argument List Payload ....................... 17
+            2.3.2.4 Channel Payload ............................. 18
+            2.3.2.5 Public Key Payload .......................... 19
             2.3.2.6 Message Payload ............................. 19
-      2.3.3 Disconnect Payload .................................. 22
+      2.3.3 Disconnect Payload .................................. 23
       2.3.4 Success Payload ..................................... 23
-      2.3.5 Failure Payload ..................................... 23
+      2.3.5 Failure Payload ..................................... 24
       2.3.6 Reject Payload ...................................... 24
       2.3.7 Notify Payload ...................................... 25
-      2.3.8 Error Payload ....................................... 32
-      2.3.9 Channel Message Payload ............................. 33
-      2.3.10 Channel Key Payload ................................ 34
-      2.3.11 Private Message Payload ............................ 35
-      2.3.12 Private Message Key Payload ........................ 36
-      2.3.13 Command Payload .................................... 38
-      2.3.14 Command Reply Payload .............................. 39
-      2.3.15 Connection Auth Request Payload .................... 39
-      2.3.16 New ID Payload ..................................... 40
-      2.3.17 New Client Payload ................................. 41
-      2.3.18 New Server Payload ................................. 42
-      2.3.19 New Channel Payload ................................ 43
-      2.3.20 Key Agreement Payload .............................. 43
-      2.3.21 Resume Router Payload .............................. 44
-      2.3.22 File Transfer Payload .............................. 45
-      2.3.23 Resume Client Payload .............................. 47
-  2.4 SILC ID Types ............................................. 48
+      2.3.8 Error Payload ....................................... 34
+      2.3.9 Channel Message Payload ............................. 34
+      2.3.10 Channel Key Payload ................................ 35
+      2.3.11 Private Message Payload ............................ 37
+      2.3.12 Private Message Key Payload ........................ 37
+      2.3.13 Command Payload .................................... 39
+      2.3.14 Command Reply Payload .............................. 40
+      2.3.15 Connection Auth Request Payload .................... 40
+      2.3.16 New ID Payload ..................................... 41
+      2.3.17 New Client Payload ................................. 42
+      2.3.18 New Server Payload ................................. 43
+      2.3.19 New Channel Payload ................................ 44
+      2.3.20 Key Agreement Payload .............................. 45
+      2.3.21 Resume Router Payload .............................. 46
+      2.3.22 File Transfer Payload .............................. 46
+      2.3.23 Resume Client Payload .............................. 48
+  2.4 SILC ID Types ............................................. 49
   2.5 Packet Encryption And Decryption .......................... 49
-      2.5.1 Normal Packet Encryption And Decryption ............. 49
+      2.5.1 Normal Packet Encryption And Decryption ............. 50
       2.5.2 Channel Message Encryption And Decryption ........... 50
       2.5.3 Private Message Encryption And Decryption ........... 51
-  2.6 Packet MAC Generation ..................................... 51
+  2.6 Packet MAC Generation ..................................... 52
   2.7 Packet Padding Generation ................................. 52
   2.8 Packet Compression ........................................ 53
   2.9 Packet Sending ............................................ 53
-  2.10 Packet Reception ......................................... 53
+  2.10 Packet Reception ......................................... 54
   2.11 Packet Routing ........................................... 54
   2.12 Packet Broadcasting ...................................... 55
 3 Security Considerations ....................................... 56
 4 References .................................................... 56
-5 Author's Address .............................................. 57
-6 Full Copyright Statement ...................................... 57
+5 Author's Address .............................................. 58
+6 Full Copyright Statement ...................................... 58
 
 .ti 0
 List of Figures
@@ -370,17 +370,14 @@ o Destination ID (variable length) - The actual destination
 
 
 
-
-
-
 .ti 0
 2.3 SILC Packet Types
 
 SILC packet types defines the contents of the packet and it is used by
 the receiver to parse the packet.  The packet type is 8 bits in length.
-The range for the packet types are from 0 - 255, where 0 is never sent and 
-255 is currently reserved for future extensions and MUST NOT be defined to 
-any other purpose.  Every SILC specification compliant implementation 
+The range for the packet types are from 0 - 255, where 0 is never sent and
+255 is currently reserved for future extensions and MUST NOT be defined to
+any other purpose.  Every SILC specification compliant implementation
 SHOULD support all the following packet types.
 
 The below list of the SILC Packet types includes reference to the packet
@@ -390,19 +387,19 @@ the specific packet type.
 
 Most of the packets are packets that must be destined directly to entity
 that is connected to the sender.  It is not allowed, for example, for a
-router to send SILC_PACKET_DISCONNECT packet to client that is not 
-directly connected to the router.  However, there are some special packet 
-types that may be destined to some entity that the sender does not have 
-direct connection with.  These packets are for example private message 
-packets, channel message packets, command packets and some other packets 
-that may be broadcasted in the SILC network.  If the packet is allowed to 
-be sent to indirectly connected entity it is defined separately in the 
-following packet description list.  Other packets MUST NOT be sent or 
+router to send SILC_PACKET_DISCONNECT packet to client that is not
+directly connected to the router.  However, there are some special packet
+types that may be destined to some entity that the sender does not have
+direct connection with.  These packets are for example private message
+packets, channel message packets, command packets and some other packets
+that may be broadcasted in the SILC network.  If the packet is allowed to
+be sent to indirectly connected entity it is defined separately in the
+following packet description list.  Other packets MUST NOT be sent or
 accepted, if sent, to indirectly connected entities.
 
 Some packets MAY be sent as lists by adding the List flag to the Packet
 Header and constructing multiple packet payloads one after the other.
-When this is allowed it is separately defined in the following list.  
+When this is allowed it is separately defined in the following list.
 Other packets MUST NOT be sent as list and the List flag MUST NOT be set.
 
 
@@ -474,7 +471,7 @@ List of SILC Packet types are defined as follows.
           This packet is used to send messages to channels.  The packet
           includes Channel ID of the channel and the actual message to
           the channel.  Messages sent to the channel are always protected
-          by channel specific keys.  This packet MAY be sent to entity 
+          by channel specific keys.  This packet MAY be sent to entity
           that is indirectly connected to the sender.
 
           Payload of the packet:  See section 2.3.9 Channel Message
@@ -484,11 +481,11 @@ List of SILC Packet types are defined as follows.
      8    SILC_PACKET_CHANNEL_KEY
 
           This packet is used to distribute new key for particular
-          channel when server generates it.  Each channel has their own 
-          independent keys that is used to protect the traffic on the 
-          channel.  It is also psosible to use channel private keys that
+          channel when server generates it.  Each channel has their own
+          independent keys that is used to protect the traffic on the
+          channel.  It is also possible to use channel private keys that
           are not server generated.  In this case this packet is not used.
-          Client MUST NOT send this packet.  This packet MAY be sent to 
+          Client MUST NOT send this packet.  This packet MAY be sent to
           entity that is indirectly connected to the sender.
 
           Payload of the packet:  See section 2.3.10 Channel Key Payload
@@ -589,8 +586,6 @@ List of SILC Packet types are defined as follows.
 
           Payload of the packet:  See section 2.3.15 Connection Auth
                                   Request Payload
-
-
 
 
      17   SILC_PACKET_CONNECTION_AUTH
@@ -748,7 +743,7 @@ All payloads resides in the main data area of the SILC packet.  However
 all payloads MUST be at the start of the data area after the SILC
 packet header and padding.  All fields in the packet payload are always
 encrypted, as they reside in the data area of the packet which is
-always encrypted.  Most of the payloads may only be sent with specific 
+always encrypted.  Most of the payloads may only be sent with specific
 packet type which is defined in the description of the payload.
 
 There are some other payloads in SILC as well.  However, they are not
@@ -888,6 +883,7 @@ o Argument Payloads (variable length) - The Argument Payloads
 
 
 
+
 .ti 0
 2.3.2.4 Channel Payload
 
@@ -940,6 +936,10 @@ o Mode Mask (4 bytes) - A mode.  This can be the mode of the
 .in 3
 
 
+
+
+
+
 .ti 0
 2.3.2.5 Public Key Payload
 
@@ -987,6 +987,14 @@ is used to send channel messages and private messages.
 The following diagram represents the Message Payload.
 
 (*) indicates that the field is not encrypted.
+
+
+
+
+
+
+
+
 
 .in 5
 .nf
@@ -1220,17 +1228,11 @@ o Success Indication (variable length) - Indication of
 .in 3
 
 
-
 .ti 0
 2.3.5 Failure Payload
 
 This is opposite of Success Payload.  Indication of failure of
 some protocol is sent in the payload.
-
-
-
-
-
 
 .in 5
 .nf
@@ -1292,7 +1294,6 @@ o Reject Indication (variable length) - Indication of
 
 
 
-
 .ti 0
 2.3.7 Notify Payload
 
@@ -1300,7 +1301,7 @@ Notify payload is used to send notify messages.  The payload is usually
 sent from server to client and from server to router.  It is also used
 by routers to notify other routers in the network.  This payload MAY also
 be sent to a channel.  Client MUST NOT send this payload.  When this
-packet is received by client it SHOULD process it.  Servers and routers 
+packet is received by client it SHOULD process it.  Servers and routers
 MUST process notify packets.
 
 The payload may only be sent with SILC_PACKET_NOTIFY packet.  It MUST
@@ -1362,7 +1363,8 @@ sent inside arguments are actually Public Key Payloads.
       Sent when an client is invited to a channel.  This is also sent
       when the invite list of the channel is changed.  This notify type
       is sent between routers and if an client was invited, to the
-      client as well.  In this case the packet is destined to the client.
+      client as well.  In this case the packet is destined to the
+      client.
 
       Max Arguments:  5
           Arguments:  (1) <Channel ID>          (2) <channel name>
@@ -1373,14 +1375,14 @@ sent inside arguments are actually Public Key Payloads.
       of the channel and is provided because the client which receives
       this notify packet may not have a way to resolve the name of the
       channel from the <Channel ID>.  The <sender Client ID> is the
-      Client ID which invited the client to the channel.  The <add | del>
-      is an argument of size of 1 byte where 0x00 means adding a client
-      to invite list, and 0x01 means deleting a client from invite list.
-      The <invite list>, if present, indicates the information to be
-      added to or removed from the invite list.  The <invite list>
-      format is defined in [SILC4] with SILC_COMMAND_INVITE command.
-      When this notify is destined to a client the <add | del> and
-      <invite list> MUST NOT be sent.
+      Client ID which invited the client to the channel.  The
+      <add | del> is an argument of size of 1 byte where 0x00 means
+      adding a client to invite list, and 0x01 means deleting a client
+      from invite list.  The <invite list>, if present, indicates the
+      information to be added to or removed from the invite list.
+      The <invite list> format is defined in [SILC4] with
+      SILC_COMMAND_INVITE command.  When this notify is destined to
+      a client the <add | del> and <invite list> MUST NOT be sent.
 
 
 2     SILC_NOTIFY_TYPE_JOIN
@@ -1389,16 +1391,16 @@ sent inside arguments are actually Public Key Payloads.
       distribute this type to the local clients on the channel and then
       send it to its primary router.  Note that, when router is joining
       the client on behalf of normal server then router MUST send this
-      notify type locally and globally.  The router or server receiving 
-      the packet distributes this type to the local clients on the channel
-      and broadcast it to the network.  This notify is sent also to the
-      client that joined the channel.
+      notify type locally and globally.  The router or server receiving
+      the packet distributes this type to the local clients on the
+      channel and broadcast it to the network.  This notify is sent
+      also to the client that joined the channel.
 
       Max Arguments:  2
           Arguments:  (1) [<Client ID>]       (2) <Channel ID>
 
-      The <Client ID> is the client that joined to the channel indicated
-      by the <Channel ID>.
+      The <Client ID> is the client that joined to the channel
+      indicated by the <Channel ID>.
 
 
 3     SILC_NOTIFY_TYPE_LEAVE
@@ -1419,31 +1421,33 @@ sent inside arguments are actually Public Key Payloads.
 4     SILC_NOTIFY_TYPE_SIGNOFF
 
       Sent when client signoff from SILC network.  The server MUST
-      distribute this type to the local clients on the channel and then
-      send it to its primary router.  The router or server receiving
-      the packet distributes this type to the local clients on the
-      channel and broadcast it to the network.  This notify MUST NOT be
-      sent to the quitting client.
+      distribute this type to the local clients on the channel and
+      then send it to its primary router.  The router or server
+      receiving the packet distributes this type to the local clients
+      on the channel and broadcast it to the network.  This notify
+      MUST NOT be sent to the quitting client.
 
       Max Arguments:  2
           Arguments:  (1) <Client ID>  (2) <message>
 
       The <Client ID> is the client which left SILC network.  The
-      <message> is free text string indicating the reason of the signoff.
+      <message> is free text string indicating the reason of the
+      signoff.
 
 
 5     SILC_NOTIFY_TYPE_TOPIC_SET
 
       Sent when topic is set/changed on a channel.  This type may be
       sent only to the clients which are joined on the channel which
-      topic was just set or changed.  The packet is destined to the 
+      topic was just set or changed.  The packet is destined to the
       channel.
 
       Max Arguments:  2
           Arguments:  (1) <ID Payload>  (2) <topic>
 
-      The <ID Payload> is the ID of the entity who set the topic.  It
-      usually is Client ID but it can be Server ID and Channel ID as well.
+      The <ID Payload> is the ID of the entity who set the topic.
+      It usually is Client ID but it can be Server ID and Channel ID
+      as well.
 
 
 6     SILC_NOTIFY_TYPE_NICK_CHANGE
@@ -1452,12 +1456,12 @@ sent inside arguments are actually Public Key Payloads.
       distribute this type only to the local clients on the channel
       and then send it to its primary router.  The router or server
       receiving the packet distributes this type to the local clients
-      on the channel and broadcast it to the network.  This packet is 
+      on the channel and broadcast it to the network.  This packet is
       destined directly to the sent entity.  This MUST be sent to those
-      clients that are joined on same channels as the client that changed
-      the nickname.  This notify MUST NOT be sent multiple times to the
-      same recipient.  This notify MUST be sent also to the client that
-      changed the nickname.
+      clients that are joined on same channels as the client that
+      changed the nickname.  This notify MUST NOT be sent multiple
+      times to the same recipient.  This notify MUST be sent also to
+      the client that changed the nickname.
 
       Max Arguments:  3
           Arguments:  (1) <Old Client ID>  (2) <New Client ID>
@@ -1466,8 +1470,8 @@ sent inside arguments are actually Public Key Payloads.
       The <Old Client ID> is the old ID of the client which changed
       the nickname.  The <New Client ID> is the new ID generated by
       the change of the nickname.  The <nickname> is the new nickname.
-      Note that it is possible to send this notify even if the nickname
-      has not changed, but client ID was changed.
+      Note that it is possible to send this notify even if the
+      nickname has not changed, but client ID was changed.
 
 
 7     SILC_NOTIFY_TYPE_CMODE_CHANGE
@@ -1497,14 +1501,15 @@ sent inside arguments are actually Public Key Payloads.
       reclaim the channel founder rights back for the channel on any
       server in the network.
 
-      The <add | del> and <channel public key> is used to add or remove
-      channel public key from the channel.  To add one public key to
-      channel the SILC_CMODE_CHANNEL_AUTH mode is set and the <add | del>
-      argument includes 0x00 value, and the <channel public key> is the
-      public key.  To remove one public key from channel public key list
-      the <add | del> includes 0x01 value and <channel pubkey> is the
-      public key to be removed.  If the SILC_CMODE_CHANNEL_AUTH mode is
-      unset (and was set earlier) all public keys are removed at once.
+      The <add | del> and <channel public key> is used to add or
+      remove channel public key from the channel.  To add one public
+      key to channel the SILC_CMODE_CHANNEL_AUTH mode is set and the
+      <add | del> argument includes 0x00 value, and the <channel
+      public key> is the public key.  To remove one public key from
+      channel public key list the <add | del> includes 0x01 value and
+      <channel pubkey> is the public key to be removed.  If the
+      SILC_CMODE_CHANNEL_AUTH mode is unset (and was set earlier)
+      all public keys are removed at once.
 
 
 8     SILC_NOTIFY_TYPE_CUMODE_CHANGE
@@ -1545,7 +1550,8 @@ sent inside arguments are actually Public Key Payloads.
       sent by router to other server to force the Channel ID change.
       The Channel ID MUST be changed to use the new one.  When sent
       to clients, this type MUST be sent only to the clients which are
-      joined on the channel.  This packet is destined to the sent entity.
+      joined on the channel.  This packet is destined to the sent
+      entity.
 
       Max Arguments:  2
           Arguments:  (1) <Old Channel ID>  (2) <New Channel ID>
@@ -1583,7 +1589,7 @@ sent inside arguments are actually Public Key Payloads.
       The client which was kicked from the channel MUST be removed
       from the channel.  The client MUST also be removed from channel's
       invite list if it is explicitly added in the list.  This packet
-      is destined to the channel.  The router or server receiving the 
+      is destined to the channel.  The router or server receiving the
       packet distributes this type to the local clients on the channel
       and broadcast it to the network.
 
@@ -1600,14 +1606,15 @@ sent inside arguments are actually Public Key Payloads.
 
       Sent when a client has been killed from the network.  This MUST
       also be sent to the client which was killed from the network.
-      This notify MUST be sent to those clients which are joined on same
-      channels as the killed client.  The client which was killed MUST
-      be removed from the network.  This packet is destined directly to 
-      the sent entity.  The router or server receiving the packet 
-      distributes this type to the local clients on  the channel and 
-      broadcast it to the network.  The client MUST also be removed from 
-      joined channels invite list if it is explicitly added in the lists.
-      This notify MUST NOT be sent multiple times to same recipient.
+      This notify MUST be sent to those clients which are joined on
+      same channels as the killed client.  The client which was killed
+      MUST be removed from the network.  This packet is destined
+      directly to the sent entity.  The router or server receiving
+      the packet distributes this type to the local clients on the
+      channel and broadcast it to the network.  The client MUST also
+      be removed from joined channels invite list if it is explicitly
+      added in the lists.  This notify MUST NOT be sent multiple
+      times to same recipient.
 
       Max Arguments:  3
           Arguments:  (1) <Client ID>           (2) [<comment>]
@@ -1653,17 +1660,17 @@ sent inside arguments are actually Public Key Payloads.
       Sent when an error occurs during processing some SILC procedure.
       This is not used when error occurs during command processing, see
       [SILC4] for more information about commands and command replies.
-      This type is sent directly to the sender of the packet whose packet
-      caused the error.  See [SILC1] for definition when this type
-      can be sent.
+      This type is sent directly to the sender of the packet whose
+      packet caused the error.  See [SILC1] for definition when this
+      type can be sent.
 
       Max Arguments:  256
           Arguments:  (1) <Status Type>        (n) [...]
 
-      The <Status Type> is the error type defined in [SILC4].  Note that
-      same types are also used with command replies to indicate the
-      status of a command.  Both commands and this notify type share
-      same status types.  Rest of the arguments are status type
+      The <Status Type> is the error type defined in [SILC4].  Note
+      that same types are also used with command replies to indicate
+      the status of a command.  Both commands and this notify type
+      share same status types.  Rest of the arguments are status type
       dependent and are specified with those status types that can be
       sent currently inside this notify type in [SILC4].  The <Status
       Type> is size of 1 byte.
@@ -1687,10 +1694,10 @@ sent inside arguments are actually Public Key Payloads.
       changed the nickname, then <nickname> is the new nickname, but
       the <Client ID> is the old client ID.  The <user mode> is the
       user's current user mode.  The <Notify Type> can be same as the
-      Notify Payload's Notify Type, and is 16 bit MSB first order value.
-      If provided it may indicate the notify that occurred for the
-      client.  If client logged in to the network the <Notify Type>
-      MUST NOT be present.
+      Notify Payload's Notify Type, and is 16 bit MSB first order
+      value.  If provided it may indicate the notify that occurred
+      for the client.  If client logged in to the network the
+      <Notify Type> MUST NOT be present.
 .in 3
 
 Notify types starting from 16384 are reserved for private notify
@@ -1704,6 +1711,9 @@ the client has, and send the SILC_NOTIFY_TYPE_WATCH notify to the
 watcher, unless the watched client in case has the user mode
 SILC_UMODE_REJECT_WATCHING set.  If the watcher client and the client
 that was watched is same the notify SHOULD NOT be sent.
+
+
+
 
 
 .ti 0
@@ -1804,6 +1814,11 @@ packet as it does not know the key.
 The payload may only be sent with SILC_PACKET_CHANNEL_KEY packet.
 It MUST NOT be sent in any other packet type.  The following diagram
 represents the Channel Key Payload.
+
+
+
+
+
 
 
 .in 5
@@ -1911,7 +1926,7 @@ negotiate the private message key with SKE protocol using the Key
 Agreement payload directly peer to peer, see section 2.3.20.
 
 This payload may only be sent by client to another client.  Server
-MUST NOT send this payload.  After sending this payload the sender of 
+MUST NOT send this payload.  After sending this payload the sender of
 private messages must set the Private Message Key flag into SILC Packet
 Header.
 
@@ -2032,7 +2047,6 @@ See [SILC4] for detailed description of different SILC commands,
 their arguments and their reply messages.
 
 
-
 .ti 0
 2.3.14 Command Reply Payload
 
@@ -2068,6 +2082,8 @@ Exchange Start Payload in [SILC3] for detailed information.
 The payload may only be sent with SILC_PACKET_CONNECTION_AUTH_REQUEST
 packet.  It MUST NOT be sent in any other packet type.  The following
 diagram represents the Connection Auth Request Payload.
+
+
 
 
 .in 5
@@ -2115,8 +2131,6 @@ o Authentication Method (2 bytes) - Indicates the authentication
   server is most likely to respond with SILC_PACKET_SUCCESS
   immediately.
 .in 3
-
-
 
 
 .ti 0
@@ -2172,6 +2186,11 @@ MUST NOT be sent in any other packet type.  The following diagram
 represents the New Client Payload.
 
 
+
+
+
+
+
 .in 5
 .nf
                      1                   2                   3
@@ -2222,6 +2241,8 @@ name of the server that is associated to the Server ID.
 The payload may only be sent with SILC_PACKET_NEW_SERVER packet.  It
 MUST NOT be sent in any other packet type.  The following diagram
 represents the New Server Payload.
+
+
 
 
 
@@ -2386,27 +2407,24 @@ o Session ID (1 bytes) - Indicates the session ID for the
 .ti 0
 2.3.22 File Transfer Payload
 
-File Transfer Payload is used to perform file transfer protocol between 
-two entities in the network.  The actual file transfer protocol is always 
-encapsulated inside the SILC Packet.  The actual data stream is also sent 
+File Transfer Payload is used to perform file transfer protocol between
+two entities in the network.  The actual file transfer protocol is always
+encapsulated inside the SILC Packet.  The actual data stream is also sent
 peer to peer outside SILC network.
 
-When an entity, usually a client wishes to perform file transfer protocol 
+When an entity, usually a client wishes to perform file transfer protocol
 with another client in the network, they perform Key Agreement protocol
-as described in the section 2.3.20 Key Agreement Payload and in [SILC3], 
-inside File Transfer Payload.  After the Key Agreement protocol has been 
-performed the subsequent packets in the data stream will be protected 
-using the new key material.  The actual file transfer protocol is also 
-initialized in this stage.  All file transfer protocol packets are always 
-encapsulated in the File Transfer Payload and protected with the 
+as described in the section 2.3.20 Key Agreement Payload and in [SILC3],
+inside File Transfer Payload.  After the Key Agreement protocol has been
+performed the subsequent packets in the data stream will be protected
+using the new key material.  The actual file transfer protocol is also
+initialized in this stage.  All file transfer protocol packets are always
+encapsulated in the File Transfer Payload and protected with the
 negotiated key material.
 
 The payload may only be sent with SILC_PACKET_FTP packet.  It MUST NOT
 be sent in any other packet type.  The following diagram represents the
 File Transfer Payload.
-
-
-
 
 
 .in 5
@@ -2554,6 +2572,7 @@ the next receiver's key.  However, there are some special packet types
 and packet payloads that require special encryption process.  These
 special cases are described in the next sections.  First is described
 the normal packet encryption process.
+
 
 
 .ti 0
