@@ -777,7 +777,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
     }
       
     strncat(uh, entry->username, strlen(entry->username));
-    if (!strchr(entry->username, '@')) {
+    if (!strchr(entry->username, '@') && entry->connection) {
       strncat(uh, "@", 1);
       hsock = (SilcSocketConnection)entry->connection;
       len = strlen(hsock->hostname);
@@ -1835,7 +1835,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 						      3, nh, strlen(nh));
       } else {
 	strncat(uh, entry->username, strlen(entry->username));
-	if (!strchr(entry->username, '@')) {
+	if (!strchr(entry->username, '@') && entry->connection) {
 	  strncat(uh, "@", 1);
 	  hsock = (SilcSocketConnection)entry->connection;
 	  len = strlen(hsock->hostname);
