@@ -10,6 +10,10 @@ Sat Sep  8 10:22:10 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  not exist.  Just silently return NULL.  Affected file is
 	  lib/silcutil/silcutil.c.
 
+	* Fixed the silc_log_output to not wine about NULL filename
+	  and to not create some bogus " " filename.  Affected file is
+	  lib/silcutil/silclog.c.
+
 Fri Sep  7 22:16:38 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed various printing bugs on the user interface in the
