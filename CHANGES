@@ -1,3 +1,11 @@
+Mon Feb  3 14:43:52 CET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed double free in CMODE command when setting new HMAC
+	  for channel.  Affected file silcd/command.c.
+
+	* Added couple of missing memset's to zero sensitive memory.
+	  Affected files silcd/command.c, lib/silcclient/command.c.
+
 Sun Jan 26 12:20:30 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a double free in INVITE command error handling in
