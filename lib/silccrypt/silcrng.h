@@ -47,5 +47,6 @@ unsigned char silc_rng_get_byte(SilcRng rng);
 unsigned short silc_rng_get_rn16(SilcRng rng);
 unsigned int silc_rng_get_rn32(SilcRng rng);
 unsigned char *silc_rng_get_rn_string(SilcRng rng, unsigned int len);
+unsigned char *silc_rng_get_rn_data(SilcRng rng, unsigned int len);
 
 #endif

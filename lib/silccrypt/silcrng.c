@@ -27,6 +27,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/10 05:36:14  priikone
+ * 	Added silc_rng_get_rng_data to get variable length binary data.
+ *
  * Revision 1.2  2000/07/05 06:08:43  priikone
  * 	Global cosmetic change.
  *
@@ -428,4 +431,19 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, unsigned int len)
     sprintf(string + 2 * i, "%02x", silc_rng_get_byte(rng));
 
   return string;
+}
+
+/* Returns random number binary data. */
+
+unsigned char *silc_rng_get_rn_data(SilcRng rng, unsigned int len)
+{
+  int i;
+  unsigned char *data;
+
+  data = silc_calloc(len + 1, sizeof(*data));
+
+  for (i = 0; i < len; i++)
+    data[i] = silc_rng_get_byte(rng);
+
+  return data;
 }
