@@ -476,6 +476,8 @@ int silc_schedule_one(int timeout_usecs)
 		 &schedule.out, 0, schedule.timeout)) {
   case -1:
     /* Error */
+    if (errno == EINTR)
+      break;
     SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
     break;
   case 0:
