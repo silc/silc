@@ -1938,7 +1938,7 @@ or pre-shared key should be used in the private message communication
 to protect the messages.  The actual key material has to be sent
 outside the SILC network, or it has to be a static or pre-shared key.
 The sender of this packet is considered to be the initiator and the
-received the responder when processing the raw key material as
+receiver the responder when processing the raw key material as
 described in the section 4.6 in [SILC1] and in the section 2.3 in
 [SILC3].
 
