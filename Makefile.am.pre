@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2002Pekka Riikonen
+#  Copyright (C) 2000 - 2003 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ if SILC_DIST_CLIENT
 install-data-hook: install-dirs-client sim-install doc-install-client etc-install-client
 else
 if SILC_DIST_TOOLKIT
-install-data-hook: install-dirs-client install-dirs-server sim-install doc-install-client doc-install-server toolkit-install examples-install etc-install-client etc-install-server generate-server-key
+install-data-hook: install-dirs-client install-dirs-server sim-install doc-install-client doc-install-server toolkit-install examples-install etc-install-client etc-install-server
 else
 install-data-hook: install-dirs-server sim-install doc-install-server examples-install etc-install-server generate-server-key
 endif
