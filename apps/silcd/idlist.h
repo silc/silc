@@ -40,17 +40,6 @@ typedef struct {
   uint32 key_len;
 } *SilcServerChannelRekey;
 
-/* Generic rekey context for connections */
-typedef struct {
-  /* Current sending encryption key, provided for re-key. The `pfs'
-     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
-  unsigned char *send_enc_key;
-  uint32 enc_key_len;
-  bool pfs;
-  uint32 timeout;
-  void *context;
-} *SilcServerRekey;
-
 /*
    Generic ID list data structure.
 
@@ -69,8 +58,11 @@ typedef struct {
   SilcCipher send_key;
   SilcCipher receive_key;
 
-  /* Re-key context */
-  SilcServerRekey rekey;
+  /* Current sending encryption key, provided for re-key. The `pfs'
+     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
+  unsigned char *send_enc_key;
+  uint32 enc_key_len;
+  bool pfs;
 
   /* Hash selected in the SKE protocol, NULL if not needed at all */
   SilcHash hash;

@@ -925,7 +925,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
-  /* Registed re-key timeout */
+  /* Register re-key timeout */
+  /* XXX this leaks memory as this is not freed anywhere, currently */
   rekey = silc_calloc(1, sizeof(*rekey));
   rekey->server = server;
   rekey->sock = sock;

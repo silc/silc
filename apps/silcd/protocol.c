@@ -71,6 +71,9 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
   conn_data = silc_calloc(1, sizeof(*conn_data));
   idata = (SilcIDListData)conn_data;
 
+  if (ske->start_payload->flags & SILC_SKE_SP_FLAG_PFS)
+    idata->pfs = TRUE;
+
   /* Allocate cipher to be used in the communication */
   if (!silc_cipher_alloc(cipher->cipher->name, &idata->send_key)) {
     silc_free(conn_data);
@@ -98,16 +101,10 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
   }
 
   /* Note that for responder the initiator's sending key is receiving key */
-  idata->rekey = silc_calloc(1, sizeof(*idata->rekey));
-  idata->rekey->send_enc_key = 
-    silc_calloc(keymat->enc_key_len / 8,
-		sizeof(*idata->rekey->send_enc_key));
-  memcpy(idata->rekey->send_enc_key, 
-	 keymat->send_enc_key, keymat->enc_key_len / 8);
-  idata->rekey->enc_key_len = keymat->enc_key_len / 8;
-
-  if (ske->start_payload->flags & SILC_SKE_SP_FLAG_PFS)
-    idata->rekey->pfs = TRUE;
+  idata->send_enc_key = silc_calloc(keymat->enc_key_len / 8,
+				    sizeof(*idata->send_enc_key));
+  memcpy(idata->send_enc_key, keymat->send_enc_key, keymat->enc_key_len / 8);
+  idata->enc_key_len = keymat->enc_key_len / 8;
 
   /* Save the remote host's public key */
   silc_pkcs_public_key_decode(ske->ke1_payload->pk_data, 
@@ -1012,8 +1009,8 @@ void silc_server_protocol_rekey_generate(SilcServer server,
 
   /* Generate the new key */
   keymat = silc_calloc(1, sizeof(*keymat));
-  silc_ske_process_key_material_data(idata->rekey->send_enc_key,
-				     idata->rekey->enc_key_len,
+  silc_ske_process_key_material_data(idata->send_enc_key,
+				     idata->enc_key_len,
 				     16, key_len, hash_len, 
 				     idata->hash, keymat);
 
@@ -1038,14 +1035,12 @@ void silc_server_protocol_rekey_generate(SilcServer server,
   silc_hmac_set_key(idata->hmac, keymat->hmac_key, keymat->hmac_key_len);
 
   /* Save the current sending encryption key */
-  memset(idata->rekey->send_enc_key, 0, idata->rekey->enc_key_len);
-  silc_free(idata->rekey->send_enc_key);
-  idata->rekey->send_enc_key = 
-    silc_calloc(keymat->enc_key_len / 8,
-		sizeof(*idata->rekey->send_enc_key));
-  memcpy(idata->rekey->send_enc_key, keymat->send_enc_key, 
-	 keymat->enc_key_len / 8);
-  idata->rekey->enc_key_len = keymat->enc_key_len / 8;
+  memset(idata->send_enc_key, 0, idata->enc_key_len);
+  silc_free(idata->send_enc_key);
+  idata->send_enc_key = silc_calloc(keymat->enc_key_len / 8,
+				    sizeof(*idata->send_enc_key));
+  memcpy(idata->send_enc_key, keymat->send_enc_key, keymat->enc_key_len / 8);
+  idata->enc_key_len = keymat->enc_key_len / 8;
 
   silc_ske_free_key_material(keymat);
 }

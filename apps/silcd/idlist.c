@@ -36,7 +36,9 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
   SilcIDListData data = (SilcIDListData)entry;
   data->send_key = idata->send_key;
   data->receive_key = idata->receive_key;
-  data->rekey = idata->rekey;
+  data->send_enc_key = idata->send_enc_key;
+  data->enc_key_len = idata->enc_key_len;
+  data->pfs = idata->pfs;
   data->hash = idata->hash;
   data->hmac = idata->hmac;
   data->public_key = idata->public_key;
@@ -54,12 +56,9 @@ void silc_idlist_del_data(void *entry)
     silc_cipher_free(idata->send_key);
   if (idata->receive_key)
     silc_cipher_free(idata->receive_key);
-  if (idata->rekey) {
-    if (idata->rekey->send_enc_key) {
-      memset(idata->rekey->send_enc_key, 0, idata->rekey->enc_key_len);
-      silc_free(idata->rekey->send_enc_key);
-    }
-    silc_free(idata->rekey);
+  if (idata->send_enc_key) {
+    memset(idata->send_enc_key, 0, idata->enc_key_len);
+    silc_free(idata->send_enc_key);
   }
   if (idata->hmac)
     silc_hmac_free(idata->hmac);
@@ -252,8 +251,6 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 
 int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 {
-  SILC_LOG_DEBUG(("Start"));
-
   if (entry) {
     /* Remove from cache */
     if (entry->id)
@@ -325,8 +322,6 @@ silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname,
 
 int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 {
-  SILC_LOG_DEBUG(("Start"));
-
   if (entry) {
     /* Remove from cache */
     if (entry->id)
@@ -615,8 +610,6 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
-  SILC_LOG_DEBUG(("Start"));
-
   if (entry) {
     SilcChannelClientEntry chl;
 
