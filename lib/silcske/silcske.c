@@ -2,7 +2,7 @@
 
   silcske.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 2000 - 2001 Pekka Riikonen
 
@@ -23,7 +23,7 @@
 #include "silcske.h"
 #include "groups_internal.h"
 
-/* Structure to hold all SKE callbacks-> */
+/* Structure to hold all SKE callbacks. */
 struct SilcSKECallbacksStruct {
   SilcSKESendPacketCb send_packet;
   SilcSKECb payload_receive;
@@ -216,6 +216,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
   status = silc_ske_payload_start_decode(ske, start_payload, &payload);
   if (status != SILC_SKE_STATUS_OK) {
     ske->status = status;
+    silc_ske_payload_start_free(ske->start_payload);
     return status;
   }
 
@@ -418,17 +419,16 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
   if (ske->status == SILC_SKE_STATUS_FREED) {
     silc_ske_free(ske);
     return;
-  } else {
-    ske->users--;
   }
-
-  payload = ske->ke2_payload;
 
   /* If the caller returns PENDING status SKE library will assume that
      the caller will re-call this callback when it is not anymore in
      PENDING status. */
   if (status == SILC_SKE_STATUS_PENDING)
     return;
+
+  ske->users--;
+  payload = ske->ke2_payload;
 
   /* If the status is an error then the public key that was verified
      by the caller is not authentic. */
@@ -762,17 +762,16 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
   if (ske->status == SILC_SKE_STATUS_FREED) {
     silc_ske_free(ske);
     return;
-  } else {
-    ske->users--;
   }
-
-  recv_payload = ske->ke1_payload;
 
   /* If the caller returns PENDING status SKE library will assume that
      the caller will re-call this callback when it is not anymore in
      PENDING status. */
   if (status == SILC_SKE_STATUS_PENDING)
     return;
+
+  ske->users--;
+  recv_payload = ske->ke1_payload;
 
   /* If the status is an error then the public key that was verified
      by the caller is not authentic. */
