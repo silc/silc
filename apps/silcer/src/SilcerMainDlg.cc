@@ -109,7 +109,7 @@ gint SilcerMainDlg::InputBoxKeyPress(GdkEventKey *key)
 
     if (msg.at(0) == '/') {
       // Command
-      SilcClientCommand *cmd;
+      SilcClientCommand cmd;
       SilcClientCommandContext ctx;
       char *tmpcmd;
       uint32 argc = 0;
@@ -118,7 +118,7 @@ gint SilcerMainDlg::InputBoxKeyPress(GdkEventKey *key)
 
       // Parse arguments
       tmpcmd = parse_command(msg.c_str());
-      cmd = silc_client_command_find((const char *)tmpcmd);
+      cmd = silc_client_command_find(silc_client, (const char *)tmpcmd);
       silc_free(tmpcmd);
       if (cmd == NULL)
 	break;
@@ -136,7 +136,7 @@ gint SilcerMainDlg::InputBoxKeyPress(GdkEventKey *key)
       ctx->argv_types = argv_types;
       
       // Execute the command
-      (*cmd->cb)(ctx, NULL);
+      silc_client_command_call(cmd, ctx);
     } else {
       // Channel message
       if (silc_client_conn->current_channel) {
