@@ -1968,7 +1968,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	}
 	if (sconn) {
 	  if (sconn->param) {
-	    param = rconn->param;
+	    param = sconn->param;
 
 	    if (!param->keepalive_secs)
 	      param->keepalive_secs = server->config->param.keepalive_secs;
