@@ -1317,7 +1317,7 @@ notify message SHOULD be audited.  Servers and routers MUST process
 notify packets.
 
 The payload may only be sent with SILC_PACKET_NOTIFY packet.  It MUST
-not be sent in any other packet type.  The following diagram represents
+NOT be sent in any other packet type.  The following diagram represents
 the Notify Payload.
 
 
