@@ -29,20 +29,20 @@
         <table cellspacing="0" cellpadding="10" border="0"><tr><td>
         <font size="2" face="Helvetica,Arial,Sans-serif">
         <li><a href="index.php?page=about">About the SILC</a>
-        <li><a href="index.php?page=faq">The SILC FAQ</a>
-        <li><a href="index.php?page=docs">SILC Documentation</a>
         <li><a href="index.php?page=history">History</a>
+        <li><a href="index.php?page=lists">SILC Mailing Lists</a>
+        <li><a href="index.php?page=docs">SILC Documentation</a>
         </font>
         </td><td>
         <font size="2" face="Helvetica,Arial,Sans-serif">
         <li><a href="index.php?page=download">Download SILC</a>
+        <li><a href="index.php?page=faq">SILC FAQ</a>
         <li><a href="index.php?page=features">SILC Features</a>
         <li><a href="changes.txt">ChangeLog</a>
-        <li><a href="todo.txt">TODO</a>
         </font>
         </td><td>
         <font size="2" face="Helvetica,Arial,Sans-serif">
-        <li><a href="index.php?page=lists">SILC Mailing Lists</a>
+        <li><a href="index.php?page=todo">TODO</a>
         <li><a href="index.php?page=contribute">Contributing</a>
         <li><a href="index.php?page=cvs">Anonymous CVS Access</a>
         <li><a href="index.php?page=copying">The General Public License (GPL)</a>
@@ -78,6 +78,9 @@ function div($a,$b) {
 return (int) ($a/$b);
 }
 
+$latest_d = filemtime($DocRoot."LATEST"); 
+$latest_date = date("l dS of F Y H:i:s", $latest_d);
+
 // read document, if it is not valid then read first page
 if (Is_File($SecurityFilter))
   require $SecurityFilter;
@@ -94,7 +97,11 @@ else
   </td>
  </tr>
 </table>
-<font size="1" face="Helvetica,Arial,Sans-serif">webpage by <a href="mailto:salo at Xtrmntr.org">salo at Xtrmntr.org</a></font>
+<font size="1" face="Helvetica,Arial,Sans-serif">webpage by <a
+href="mailto:salo at Xtrmntr.org">salo at Xtrmntr.org</a></font>
+<br>
+<font size="1" color="#2f486f">
+<? virtual("./counter.shtml"); ?>
 </center>
 
 </body>

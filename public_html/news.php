@@ -1,4 +1,5 @@
 <b>SILC <?php echo $latest; ?> Is Now Available!</b>
+<br><font size="1" color="#2f486f"><?php echo $latest_date ?></font>
 <font size="2"><p>
 The new Beta version <?php echo $latest; ?> of SILC is available for testing. 
 Read the README and INSTALL files after downloading for instructions how 

@@ -53,5 +53,6 @@ The SILC has been reported to work on, at least:
 <li>OpenBSD
 <li>HP-UX
 <li>Solaris
+<li>Windows (cygwin)
 </ul>
 </font><p>
