@@ -1,3 +1,10 @@
+Sun Apr 14 21:13:42 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the WHOIS, IDENTIFY and WHOWAS count arguments to
+	  32 bit integers.  Updated the protcol specs and the code.
+	  Affected files are silcd/command.c and
+	  lib/silcclient/command.c.
+
 Sun Apr 14 19:49:02 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Fixed a bug in library where sending a bogus authentication
