@@ -112,6 +112,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule)
 
 #ifdef SILC_THREADS
   if (pipe(internal->wakeup_pipe)) {
+    SILC_LOG_ERROR(("pipe() fails: %s", strerror(errno)));
     silc_free(internal);
     return NULL;
   }
@@ -122,6 +123,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule)
 			   0, 0, SILC_TASK_FD, 
 			   SILC_TASK_PRI_NORMAL);
   if (!internal->wakeup_task) {
+    SILC_LOG_ERROR(("Could not add a wakeup task, threads won't work"));
     close(internal->wakeup_pipe[0]);
     close(internal->wakeup_pipe[1]);
     silc_free(internal);
@@ -171,6 +173,9 @@ void silc_schedule_internal_signal_register(void *context,
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
 
+  if (!internal)
+    return;
+
   sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
@@ -194,6 +199,9 @@ void silc_schedule_internal_signal_unregister(void *context,
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
+
+  if (!internal)
+    return;
 
   sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
 
@@ -219,6 +227,9 @@ void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
 
+  if (!internal)
+    return;
+
   sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
@@ -236,6 +247,9 @@ void silc_schedule_internal_signals_call(void *context,
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
+
+  if (!internal)
+    return;
 
   sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
 
@@ -257,6 +271,10 @@ void silc_schedule_internal_signals_call(void *context,
 void silc_schedule_internal_signals_block(void *context)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
+
+  if (!internal)
+    return;
+
   sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
 }
 
@@ -265,5 +283,9 @@ void silc_schedule_internal_signals_block(void *context)
 void silc_schedule_internal_signals_unblock(void *context)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
+
+  if (!internal)
+    return;
+
   sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
 }
