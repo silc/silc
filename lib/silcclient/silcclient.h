@@ -2462,7 +2462,7 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcClientFileName)(SilcUInt32 session_id,
+ *    typedef void (*SilcClientFileName)(const char *filepath,
  *                                       void *context);
  *
  * DESCRIPTION
