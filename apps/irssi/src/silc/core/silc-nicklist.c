@@ -40,8 +40,10 @@ SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
 	rec->silc_user = user;
 	rec->unique_id = user->client;
 
-	if (user->mode & SILC_CHANNEL_UMODE_CHANOP) rec->op = TRUE;
-	if (user->mode & SILC_CHANNEL_UMODE_CHANFO) rec->founder = TRUE;
+	if (user->mode & SILC_CHANNEL_UMODE_CHANOP) 
+	  rec->op = TRUE;
+	if (user->mode & SILC_CHANNEL_UMODE_CHANFO) 
+	  rec->founder = TRUE;
 	rec->send_massjoin = send_massjoin;
 
 	nicklist_insert(CHANNEL(channel), (NICK_REC *) rec);

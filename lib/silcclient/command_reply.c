@@ -695,10 +695,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
   
   channel = (SilcChannelEntry)id_cache->context;
 
-  cmd->client->ops->say(cmd->client, conn, 
-			"Topic on channel %s: %s", channel->channel_name,
-			topic);
-
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, topic));
 

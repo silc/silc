@@ -380,12 +380,9 @@ void silc_command(SilcClient client, SilcClientConnection conn,
       break;
 
     case SILC_COMMAND_LEAVE:
-#if 0
-      if (!strncmp(conn->current_channel->channel_name, name, strlen(name))) {
-	app->screen->bottom_line->channel = NULL;
-	silc_screen_print_bottom_line(app->screen, 0);
-      }
-#endif
+      /* We won't talk anymore on this channel */
+      silc_say(client, conn, "You have left channel %s", 
+	       conn->current_channel->channel_name);
       break;
 
     }
@@ -800,8 +797,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	channel = va_arg(vp, SilcChannelEntry);
 
 	/* There are two ways to do this, either parse the list (that
-	   the command_reply sends (just take it with va_arg())) or just
-	   traverse the channel'c client list.  I'll do the latter.  See
+	   the command_reply sends (just take it with va_arg()) or just
+	   traverse the channel's client list.  I'll do the latter.  See
 	   JOIN command reply for example for the list. */
 
 	silc_say(client, conn, "Users on %s", channel->channel_name);
@@ -914,6 +911,24 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
 	silc_free(pk);
       }
+
+    case SILC_COMMAND_TOPIC:
+      {
+	SilcChannelEntry channel;
+	char *topic;
+
+	if (!success)
+	  return;
+	
+	channel = va_arg(vp, SilcChannelEntry);
+	topic = va_arg(vp, char *);
+
+	if (topic)
+	  silc_say(client, conn, 
+		   "Topic on channel %s: %s", channel->channel_name,
+		   topic);
+      }
+      break;
 
     default:
       break;

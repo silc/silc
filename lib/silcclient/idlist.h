@@ -31,7 +31,7 @@ typedef struct SilcClientEntryStruct {
   char *server;			/* SILC server name */
   char *realname;		/* Realname (userinfo) */
   uint32 num;
-  uint32 mode;		/* User mode in SILC */
+  uint32 mode;			/* User mode in SILC */
   SilcClientID *id;		/* The Client ID */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */

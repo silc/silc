@@ -7,14 +7,11 @@
 /* returns SILC_SERVER_REC if it's SILC server, NULL if it isn't */
 #define SILC_SERVER(server) \
 	PROTO_CHECK_CAST(SERVER(server), SILC_SERVER_REC, chat_type, "SILC")
-
 #define SILC_SERVER_CONNECT(conn) \
 	PROTO_CHECK_CAST(SERVER_CONNECT(conn), SILC_SERVER_CONNECT_REC, \
 			 chat_type, "SILC")
-
 #define IS_SILC_SERVER(server) \
 	(SILC_SERVER(server) ? TRUE : FALSE)
-
 #define IS_SILC_SERVER_CONNECT(conn) \
 	(SILC_SERVER_CONNECT(conn) ? TRUE : FALSE)
 

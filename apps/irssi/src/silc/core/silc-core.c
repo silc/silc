@@ -66,6 +66,54 @@ uint32 sims_count = 0;
 #endif
 
 static void silc_say(SilcClient client, SilcClientConnection conn,
+		     char *msg, ...);
+static void 
+silc_channel_message(SilcClient client, SilcClientConnection conn,
+		     SilcClientEntry sender, SilcChannelEntry channel,
+		     SilcMessageFlags flags, char *msg);
+static void 
+silc_private_message(SilcClient client, SilcClientConnection conn,
+		     SilcClientEntry sender, SilcMessageFlags flags,
+		     char *msg);
+static void silc_notify(SilcClient client, SilcClientConnection conn,
+			SilcNotifyType type, ...);
+static void 
+silc_connect(SilcClient client, SilcClientConnection conn, int success);
+static void 
+silc_disconnect(SilcClient client, SilcClientConnection conn);
+static void 
+silc_command(SilcClient client, SilcClientConnection conn, 
+	     SilcClientCommandContext cmd_context, int success,
+	     SilcCommand command);
+static void 
+silc_command_reply(SilcClient client, SilcClientConnection conn,
+		   SilcCommandPayload cmd_payload, int success,
+		   SilcCommand command, SilcCommandStatus status, ...);
+
+static int silc_verify_public_key(SilcClient client,
+				  SilcClientConnection conn, 
+				  SilcSocketType conn_type,
+				  unsigned char *pk, uint32 pk_len,
+				  SilcSKEPKType pk_type);
+static unsigned char *silc_ask_passphrase(SilcClient client,
+					  SilcClientConnection conn);
+static int 
+silc_get_auth_method(SilcClient client, SilcClientConnection conn,
+		     char *hostname, uint16 port,
+		     SilcProtocolAuthMeth *auth_meth,
+		     unsigned char **auth_data,
+		     uint32 *auth_data_len);
+static void 
+silc_failure(SilcClient client, SilcClientConnection conn, 
+	     SilcProtocol protocol, void *failure);
+static int 
+silc_key_agreement(SilcClient client, SilcClientConnection conn,
+		   SilcClientEntry client_entry, char *hostname,
+		   int port,
+		   SilcKeyAgreementCallback *completion,
+		   void **context);
+
+static void silc_say(SilcClient client, SilcClientConnection conn,
 		     char *msg, ...)
 {
   SILC_SERVER_REC *server;
@@ -77,6 +125,19 @@ static void silc_say(SilcClient client, SilcClientConnection conn,
   va_start(va, msg);
   str = g_strdup_vprintf(msg, va);
   printtext(server, "#silc", MSGLEVEL_CRAP, "%s", str);
+  g_free(str);
+  va_end(va);
+}
+
+static void silc_say_error(char *msg, ...)
+{
+  va_list va;
+  char *str;
+
+  va_start(va, msg);
+  str = g_strdup_vprintf(msg, va);
+  printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "%s", str);
+
   g_free(str);
   va_end(va);
 }
@@ -225,6 +286,38 @@ silc_command(SilcClient client, SilcClientConnection conn,
 {
 }
 
+/* Client info resolving callback when JOIN command reply is received.
+   This will cache all users on the channel. */
+
+void silc_client_join_get_users(SilcClient client,
+				SilcClientConnection conn,
+				SilcClientEntry *clients,
+				uint32 clients_count,
+				void *context)
+{
+  SilcChannelEntry channel = (SilcChannelEntry)context;
+  SilcChannelUser chu;
+  SILC_SERVER_REC *server = conn->context;
+  SILC_CHANNEL_REC *chanrec;
+  NICK_REC *ownnick;
+
+  if (!clients)
+    return;
+
+  chanrec = silc_channel_find_entry(server, channel);
+  if (chanrec == NULL)
+    return;
+
+  silc_list_start(channel->clients);
+  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END)
+    silc_nicklist_insert(chanrec, chu, FALSE);
+
+  ownnick = NICK(silc_nicklist_find(chanrec, conn->local_entry));
+  nicklist_set_own(CHANNEL(chanrec), ownnick);
+  signal_emit("channel joined", 1, chanrec);
+  fe_channels_nicklist(CHANNEL(chanrec), CHANNEL_NICKLIST_FLAG_ALL);
+}
+
 /* Command reply handler. This function is called always in the command reply
    function. If error occurs it will be called as well. Normal scenario
    is that it will be called after the received command data has been parsed
@@ -260,6 +353,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	int len;
 	uint32 idle, mode;
 	SilcBuffer channels;
+
+	/* XXX should use irssi routines */
 
 	if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
 	    status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
@@ -358,6 +453,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	char buf[1024], *nickname, *username, *realname;
 	int len;
 
+	/* XXX should use irssi routines */
+
 	if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
 	    status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
 	  char *tmp;
@@ -410,6 +507,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	if (!success)
 	  return;
 	
+	/* XXX should use irssi routines */
+
 	channel = va_arg(vp, SilcChannelEntry);
 	invite_list = va_arg(vp, char *);
 
@@ -424,24 +523,44 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
   case SILC_COMMAND_JOIN: 
     {
-      char *channel, *mode;
+      char *channel, *mode, *topic;
       uint32 modei;
       SilcChannelEntry channel_entry;
-      
+      SilcBuffer client_id_list;
+      uint32 list_count;
+
       channel = va_arg(vp, char *);
       channel_entry = va_arg(vp, SilcChannelEntry);
       modei = va_arg(vp, uint32);
-      mode = silc_client_chmode(modei, channel_entry);
-      
+      (void)va_arg(vp, uint32);
+      (void)va_arg(vp, unsigned char *);
+      (void)va_arg(vp, unsigned char *);
+      (void)va_arg(vp, unsigned char *);
+      topic = va_arg(vp, char *);
+      (void)va_arg(vp, unsigned char *);
+      list_count = va_arg(vp, uint32);
+      client_id_list = va_arg(vp, SilcBuffer);
+
+      /* XXX what an earth do I do with the topic??? */
+
+      if (!success)
+	return;
+
       chanrec = silc_channel_find(server, channel);
       if (chanrec != NULL && !success)
 	channel_destroy(CHANNEL(chanrec));
       else if (chanrec == NULL && success)
 	chanrec = silc_channel_create(server, channel, TRUE);
       
+      mode = silc_client_chmode(modei, channel_entry);
       g_free_not_null(chanrec->mode);
       chanrec->mode = g_strdup(mode == NULL ? "" : mode);
       signal_emit("channel mode changed", 1, chanrec);
+
+      /* Resolve the client information */
+      silc_client_get_clients_by_list(client, conn, list_count, client_id_list,
+				      silc_client_join_get_users, 
+				      channel_entry);
       break;
     }
 
@@ -450,17 +569,107 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcClientEntry client = va_arg(vp, SilcClientEntry);
       char *old;
       
+      if (!success)
+	return;
+
       old = g_strdup(server->nick);
       server_change_nick(SERVER(server), client->nickname);
       nicklist_rename_unique(SERVER(server),
 			     server->conn->local_entry, server->nick,
 			     client, client->nickname);
       
-      signal_emit("message own_nick", 4,
-		  server, server->nick, old, "");
+      signal_emit("message own_nick", 4, server, server->nick, old, "");
       g_free(old);
       break;
     }
+
+    case SILC_COMMAND_LIST:
+      {
+	char *topic, *name;
+	int usercount;
+	unsigned char buf[256], tmp[16];
+	int i, len;
+
+	if (!success)
+	  return;
+
+	/* XXX should use irssi routines */
+
+	(void)va_arg(vp, SilcChannelEntry);
+	name = va_arg(vp, char *);
+	topic = va_arg(vp, char *);
+	usercount = va_arg(vp, int);
+
+	if (status == SILC_STATUS_LIST_START ||
+	    status == SILC_STATUS_OK)
+	  silc_say(client, conn, 
+	  "  Channel                                  Users     Topic");
+
+	memset(buf, 0, sizeof(buf));
+	strncat(buf, "  ", 2);
+	len = strlen(name);
+	strncat(buf, name, len > 40 ? 40 : len);
+	if (len < 40)
+	  for (i = 0; i < 40 - len; i++)
+	    strcat(buf, " ");
+	strcat(buf, " ");
+
+	memset(tmp, 0, sizeof(tmp));
+	if (usercount) {
+	  snprintf(tmp, sizeof(tmp), "%d", usercount);
+	  strcat(buf, tmp);
+	}
+	len = strlen(tmp);
+	if (len < 10)
+	  for (i = 0; i < 10 - len; i++)
+	    strcat(buf, " ");
+	strcat(buf, " ");
+
+	if (topic) {
+	  len = strlen(topic);
+	  strncat(buf, topic, len);
+	}
+
+	silc_say(client, conn, "%s", buf);
+      }
+      break;
+
+    case SILC_COMMAND_UMODE:
+      {
+	uint32 mode;
+
+	if (!success)
+	  return;
+
+	mode = va_arg(vp, uint32);
+
+	/* XXX todo */
+      }
+      break;
+
+    case SILC_COMMAND_OPER:
+#if 0
+      if (status == SILC_STATUS_OK) {
+	conn->local_entry->mode |= SILC_UMODE_SERVER_OPERATOR;
+	if (app->screen->bottom_line->umode)
+	  silc_free(app->screen->bottom_line->umode);
+	app->screen->bottom_line->umode = strdup("Server Operator");;
+	silc_screen_print_bottom_line(app->screen, 0);
+      }
+#endif
+      break;
+
+    case SILC_COMMAND_SILCOPER:
+#if 0
+      if (status == SILC_STATUS_OK) {
+	conn->local_entry->mode |= SILC_UMODE_ROUTER_OPERATOR;
+	if (app->screen->bottom_line->umode)
+	  silc_free(app->screen->bottom_line->umode);
+	app->screen->bottom_line->umode = strdup("SILC Operator");;
+	silc_screen_print_bottom_line(app->screen, 0);
+      }
+#endif
+      break;
 
   case SILC_COMMAND_USERS: 
     {
@@ -468,6 +677,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcChannelUser user;
       NICK_REC *ownnick;
       
+      if (!success)
+	return;
+
       channel = va_arg(vp, SilcChannelEntry);
       chanrec = silc_channel_find_entry(server, channel);
       if (chanrec == NULL)
@@ -484,6 +696,70 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			   CHANNEL_NICKLIST_FLAG_ALL);
       break;
     }
+
+    case SILC_COMMAND_BAN:
+      {
+	SilcChannelEntry channel;
+	char *ban_list;
+
+	if (!success)
+	  return;
+
+	/* XXX should use irssi routines */
+
+	
+	channel = va_arg(vp, SilcChannelEntry);
+	ban_list = va_arg(vp, char *);
+
+	if (ban_list)
+	  silc_say(client, conn, "%s ban list: %s", channel->channel_name,
+		   ban_list);
+	else
+	  silc_say(client, conn, "%s ban list not set", channel->channel_name);
+      }
+      break;
+
+    case SILC_COMMAND_GETKEY:
+      {
+	SilcIdType id_type;
+	void *entry;
+	SilcPublicKey public_key;
+	unsigned char *pk;
+	uint32 pk_len;
+
+	id_type = va_arg(vp, uint32);
+	entry = va_arg(vp, void *);
+	public_key = va_arg(vp, SilcPublicKey);
+
+	pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+
+	if (id_type == SILC_ID_CLIENT) {
+	  silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
+				 pk, pk_len, SILC_SKE_PK_TYPE_SILC);
+	}
+
+	silc_free(pk);
+      }
+
+    case SILC_COMMAND_TOPIC:
+      {
+	SilcChannelEntry channel;
+	char *topic;
+
+	if (!success)
+	  return;
+	
+	channel = va_arg(vp, SilcChannelEntry);
+	topic = va_arg(vp, char *);
+
+	/* XXX should use irssi routines */
+
+	if (topic)
+	  silc_say(client, conn, 
+		   "Topic on channel %s: %s", channel->channel_name,
+		   topic);
+      }
+      break;
   }
   
   va_end(vp);
@@ -523,7 +799,15 @@ silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 		     unsigned char **auth_data,
 		     uint32 *auth_data_len)
 {
-  return FALSE;
+
+  /* XXX must resolve from configuration whether this connection has
+     any specific authentication data */
+
+  *auth_meth = SILC_AUTH_NONE;
+  *auth_data = NULL;
+  *auth_data_len = 0;
+
+  return TRUE;
 }
 
 /* Notifies application that failure packet was received.  This is called
@@ -541,28 +825,23 @@ silc_failure(SilcClient client, SilcClientConnection conn,
     SilcSKEStatus status = (SilcSKEStatus)failure;
     
     if (status == SILC_SKE_STATUS_BAD_VERSION)
-      silc_say(client, conn, 
-	       "You are running incompatible client version (it may be "
-	       "too old or too new)");
+      silc_say_error("You are running incompatible client version (it may be "
+		     "too old or too new)");
     if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY)
-      silc_say(client, conn, "Server does not support your public key type");
+      silc_say_error("Server does not support your public key type");
     if (status == SILC_SKE_STATUS_UNKNOWN_GROUP)
-      silc_say(client, conn, 
-	       "Server does not support one of your proposed KE group");
+      silc_say_error("Server does not support one of your proposed KE group");
     if (status == SILC_SKE_STATUS_UNKNOWN_CIPHER)
-      silc_say(client, conn, 
-	       "Server does not support one of your proposed cipher");
+      silc_say_error("Server does not support one of your proposed cipher");
     if (status == SILC_SKE_STATUS_UNKNOWN_PKCS)
-      silc_say(client, conn, 
-	       "Server does not support one of your proposed PKCS");
+      silc_say_error("Server does not support one of your proposed PKCS");
     if (status == SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION)
-      silc_say(client, conn, 
-	       "Server does not support one of your proposed hash function");
+      silc_say_error("Server does not support one of your proposed "
+		    "hash function");
     if (status == SILC_SKE_STATUS_UNKNOWN_HMAC)
-      silc_say(client, conn, 
-	       "Server does not support one of your proposed HMAC");
+      silc_say_error("Server does not support one of your proposed HMAC");
     if (status == SILC_SKE_STATUS_INCORRECT_SIGNATURE)
-      silc_say(client, conn, "Incorrect signature");
+      silc_say_error("Incorrect signature");
   }
 
   if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_CONNECTION_AUTH) {

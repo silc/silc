@@ -93,17 +93,19 @@ void silc_client_get_clients(SilcClient client,
   snprintf(ident, sizeof(ident), "IDENTIFY %s", nickname);
   silc_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
 			  &ctx->argv_types, &ctx->argc, 2);
-  ctx->command->cb(ctx);
-      
-  i->cmd = ctx;
+
+  i->cmd = silc_client_command_dup(ctx);
   i->nickname = nickname ? strdup(nickname) : NULL;
   i->server = server ? strdup(server) : NULL;
   i->completion = completion;
   i->context = context;
 
+  /* Call the command */
+  ctx->command->cb(ctx);
+
   /* Add pending callback */
   silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-			      ++conn->cmd_ident, 
+			      conn->cmd_ident, 
 			      silc_client_get_client_destructor,
 			      silc_client_command_get_client_callback, 
 			      (void *)i);

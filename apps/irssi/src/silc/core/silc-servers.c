@@ -58,8 +58,8 @@ static void silc_send_channel(SILC_SERVER_REC *server,
 }
 
 typedef struct {
-	char *nick;
-        char *msg;
+  char *nick;
+  char *msg;
 } PRIVMSG_REC;
 
 static void silc_send_msg_clients(SilcClient client,
@@ -270,8 +270,10 @@ static void command_users(const char *data, SILC_SERVER_REC *server,
 
 static void command_self(const char *data, SILC_SERVER_REC *server)
 {
-  if (!IS_SILC_SERVER(server) || !server->connected)
+  if (!IS_SILC_SERVER(server) || !server->connected) {
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Not connected to server");
     return;
+  }
 
   silc_command_exec(server, current_command, data);
   signal_stop();
@@ -302,11 +304,26 @@ void silc_server_init(void)
   signal_add("server disconnected", (SIGNAL_FUNC) sig_disconnected);
   signal_add("send text", (SIGNAL_FUNC) event_text);
   command_bind("whois", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("whowas", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("nick", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("topic", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("cmode", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("cumode", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("users", MODULE_NAME, (SIGNAL_FUNC) command_users);
+  command_bind("list", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("ban", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("silcoper", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("umode", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("invite", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("kill", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("kick", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("info", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("connect", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("ping", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("motd", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("close", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("shutdown", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
 
   command_set_options("connect", "+silcnet");
 }
@@ -319,9 +336,24 @@ void silc_server_deinit(void)
   signal_remove("server disconnected", (SIGNAL_FUNC) sig_disconnected);
   signal_remove("send text", (SIGNAL_FUNC) event_text);
   command_unbind("whois", (SIGNAL_FUNC) command_self);
+  command_unbind("whowas", (SIGNAL_FUNC) command_self);
   command_unbind("nick", (SIGNAL_FUNC) command_self);
   command_unbind("topic", (SIGNAL_FUNC) command_self);
   command_unbind("cmode", (SIGNAL_FUNC) command_self);
   command_unbind("cumode", (SIGNAL_FUNC) command_self);
   command_unbind("users", (SIGNAL_FUNC) command_users);
+  command_unbind("list", (SIGNAL_FUNC) command_self);
+  command_unbind("silcoper", (SIGNAL_FUNC) command_self);
+  command_unbind("umode", (SIGNAL_FUNC) command_self);
+  command_unbind("invite", (SIGNAL_FUNC) command_self);
+  command_unbind("kill", (SIGNAL_FUNC) command_self);
+  command_unbind("kick", (SIGNAL_FUNC) command_self);
+  command_unbind("info", (SIGNAL_FUNC) command_self);
+  command_unbind("connect", (SIGNAL_FUNC) command_self);
+  command_unbind("ping", (SIGNAL_FUNC) command_self);
+  command_unbind("motd", (SIGNAL_FUNC) command_self);
+  command_unbind("ban", (SIGNAL_FUNC) command_self);
+  command_unbind("close", (SIGNAL_FUNC) command_self);
+  command_unbind("shutdown", (SIGNAL_FUNC) command_self);
+  command_unbind("getkey", (SIGNAL_FUNC) command_self);
 }

@@ -509,14 +509,15 @@ SILC_CLIENT_CMD_FUNC(topic)
   /* Send TOPIC command to the server */
   idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
   if (cmd->argc > 2)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC, 0, 2, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC, 
+					    ++conn->cmd_ident, 2, 
 					    1, idp->data, idp->len,
 					    2, cmd->argv[2], 
 					    strlen(cmd->argv[2]));
   else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC, 1, 
-					    1, idp->data, idp->len,
-					    0);
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC, 
+					    ++conn->cmd_ident, 1,
+					    1, idp->data, idp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
@@ -930,10 +931,10 @@ SILC_CLIENT_CMD_FUNC(join)
   /* See if we have joined to the requested channel already */
   if (silc_idcache_find_by_name_one(conn->channel_cache, cmd->argv[1],
 				    &id_cache)) {
+#if 0
     cmd->client->ops->say(cmd->client, conn, 
 			  "You are talking to channel %s", cmd->argv[1]);
     conn->current_channel = (SilcChannelEntry)id_cache->context;
-#if 0
     cmd->client->screen->bottom_line->channel = cmd->argv[1];
     silc_screen_print_bottom_line(cmd->client->screen, 0);
 #endif
@@ -1951,8 +1952,8 @@ SILC_CLIENT_CMD_FUNC(leave)
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
 
-  /* We won't talk anymore on this channel */
-  cmd->client->ops->say(cmd->client, conn, "You have left channel %s", name);
+  /* Notify application */
+  COMMAND;
 
   conn->current_channel = NULL;
 
@@ -1962,9 +1963,6 @@ SILC_CLIENT_CMD_FUNC(leave)
   silc_free(channel->key);
   silc_cipher_free(channel->channel_key);
   silc_free(channel);
-
-  /* Notify application */
-  COMMAND;
 
  out:
   silc_client_command_free(cmd);
