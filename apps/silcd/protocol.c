@@ -781,7 +781,8 @@ silc_server_get_public_key_auth(SilcServer server,
 					  ske->start_payload_copy->len),
 		     SILC_STR_END);
 
-  *auth_data = silc_calloc(silc_pkcs_get_key_len(pkcs), sizeof(**auth_data));
+  *auth_data = silc_calloc((silc_pkcs_get_key_len(pkcs) / 8) + 1,
+			   sizeof(**auth_data));
   if (silc_pkcs_sign_with_hash(pkcs, ske->prop->hash, auth->data, 
 			       auth->len, *auth_data, auth_data_len)) {
     silc_buffer_free(auth);

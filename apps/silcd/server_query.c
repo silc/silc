@@ -1628,7 +1628,7 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
   /* Finally compute the digital signature of all the data we provided
      as an indication that we provided rightfull information, and this
      also authenticates our public key. */
-  if (silc_pkcs_get_key_len(server->pkcs) <= sizeof(sign) -1  &&
+  if (silc_pkcs_get_key_len(server->pkcs) / 8 <= sizeof(sign) -1  &&
       silc_pkcs_sign_with_hash(server->pkcs, server->sha1hash,
 			       buffer->data, buffer->len,
 			       sign, &sign_len)) {
