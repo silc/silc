@@ -30,6 +30,12 @@
 #undef SILC_RNG_DEBUG
 /*#define SILC_RNG_DEBUG*/
 
+/* Number of states to fetch data from pool. */
+#define SILC_RNG_STATE_NUM 4
+
+/* Byte size of the random data pool. */
+#define SILC_RNG_POOLSIZE 1024
+
 static uint32 silc_rng_get_position(SilcRng rng);
 static void silc_rng_stir_pool(SilcRng rng);
 static void silc_rng_xor(SilcRng rng, uint32 val, unsigned int pos);
