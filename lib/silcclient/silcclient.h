@@ -1306,7 +1306,7 @@ void silc_client_get_clients(SilcClient client,
 			     SilcGetClientCallback completion,
 			     void *context);
 
-/****f* silcclient/SilcClientAPI/silc_client_get_clients
+/****f* silcclient/SilcClientAPI/silc_client_get_clients_whois
  *
  * SYNOPSIS
  *
