@@ -171,9 +171,14 @@ void silc_idcache_free(SilcIDCache cache);
  *
  *    Add new entry to the cache. Returns TRUE if the entry was added and
  *    FALSE if it could not be added. The `name' is the name associated with
- *    the ID, the `id' the actual ID and the `context' a used specific context.
+ *    the ID, the `id' the actual ID and the `context' a user specific context.
  *    If the `expire' is non-zero the entry expires in that specified time.
  *    If zero the entry never expires from the cache.
+ *
+ *    The `name', `id' and `context' pointers will be saved in the cache,
+ *    and if the caller frees these pointers the caller is also responsible
+ *    of deleting the cache entry.  Otherwise the cache will have the freed
+ *    pointers stored.
  *
  *    If the `ret' is non-NULL the created ID Cache entry is returned to 
  *    that pointer.
