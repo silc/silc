@@ -357,41 +357,44 @@ void silc_server_daemonise(SilcServer server)
 {
   /* Are we executing silcd as root or a regular user? */
   if (geteuid()==0) {
-
-     struct passwd *pw;
-     struct group *gr;
-     char *user, *group;
-
-     if (!server->config->identity->user || 
-         !server->config->identity->group) {
-       SILC_LOG_DEBUG(("User and/or group not set"));
-       fprintf(stderr, "User and/or group not set, exiting\n");
-       exit(1);
-     }
-
-     /* Get the values given for user and group in configuration file */
-     user=server->config->identity->user;
-     group=server->config->identity->group;
-
-     /* Check whether the user/group information is text */ 
-     if (atoi(user)!=0 || atoi(group)!=0) {
-       SILC_LOG_DEBUG(("Invalid user and/or group information"));
-       SILC_LOG_DEBUG(("User and/or group given as number"));
-       fprintf(stderr, "Invalid user and/or group information\n");
-       fprintf(stderr, "Please assign them as names, not numbers\n");
-       exit(1);
-     }
-
-     /* Catch the nasty incident of string "0" returning 0 from atoi */
-     if (strcmp("0", user)==0 || strcmp("0", group)==0) {
-       SILC_LOG_DEBUG(("User and/or group configured to 0. Unacceptable"));
-       fprintf(stderr, "User and/or group configured to 0. Exiting\n");
-       exit(1);
-     }
-
-     pw=getpwnam(user);
-     gr=getgrnam(group);
-
+    
+    struct passwd *pw;
+    struct group *gr;
+    char *user, *group;
+    
+    if (!server->config->identity->user || 
+	!server->config->identity->group) {
+      fprintf(stderr, "Error:"
+       "\tSILC server must not be run as root.  For the security of your\n"
+       "\tsystem it is strongly suggested that you run SILC tunder dedicated\n"
+       "\tuser account.  Modify the [Identity] configuration section to run\n"
+       "\tthe server as non-root user.\n");
+      exit(1);
+    }
+    
+    /* Get the values given for user and group in configuration file */
+    user=server->config->identity->user;
+    group=server->config->identity->group;
+    
+    /* Check whether the user/group information is text */ 
+    if (atoi(user)!=0 || atoi(group)!=0) {
+      SILC_LOG_DEBUG(("Invalid user and/or group information"));
+      SILC_LOG_DEBUG(("User and/or group given as number"));
+      fprintf(stderr, "Invalid user and/or group information\n");
+      fprintf(stderr, "Please assign them as names, not numbers\n");
+      exit(1);
+    }
+    
+    /* Catch the nasty incident of string "0" returning 0 from atoi */
+    if (strcmp("0", user)==0 || strcmp("0", group)==0) {
+      SILC_LOG_DEBUG(("User and/or group configured to 0. Unacceptable"));
+      fprintf(stderr, "User and/or group configured to 0. Exiting\n");
+      exit(1);
+    }
+    
+    pw=getpwnam(user);
+    gr=getgrnam(group);
+    
     /* Check whether user and/or group is set to root. If yes, exit
        immediately. Otherwise, setgid and setuid server to user.group */
     if (gr->gr_gid==0 || pw->pw_uid==0) {
@@ -406,8 +409,8 @@ void silc_server_daemonise(SilcServer server)
         exit(0);
       } 
       setsid();
-   
-       SILC_LOG_DEBUG(("Changing to group %s", group));
+      
+      SILC_LOG_DEBUG(("Changing to group %s", group));
       if(setgid(gr->gr_gid)==0) {
         SILC_LOG_DEBUG(("Setgid to %s", group));
       } else {
@@ -436,7 +439,6 @@ void silc_server_daemonise(SilcServer server)
     setsid();
   }
 }
-
 
 /* Stops the SILC server. This function is used to shutdown the server. 
    This is usually called after the scheduler has returned. After stopping 
