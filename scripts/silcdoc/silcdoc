@@ -74,17 +74,20 @@ if [ "$TYPE" = "HTML" ]; then
     # Get library name
     name=`grep "@LIBRARY=" $i |cut -d=  -f2`
     fname=`grep "@FILENAME=" $i |cut -d=  -f2`
-    links=`grep "@LINK=" $i |cut -d=  -f2`
+    links=`grep "@LINK=" $i |cut -d=  -f2 |cut -d:  -f1`
+
+    # Generate links to template file that can be included into various
+    # places on the webpage.
+    echo ">> <A HREF="$fname">$name</A><BR>" >>$DST/index.tmpl
 
     # Generate links for this library
     for k in $links
     do
-      l=`echo $k |cut -d:  -f1`
-      n=`echo $k |cut -d:  -f2`
-      echo "<LI><A HREF="$l">$n</A>" >>$DST/$fname.links
+      n=`grep $k $i |cut -d=  -f2 |cut -d:  -f2`
+      echo "<LI><A HREF="$k">$n</A>" >>$DST/$fname.links
+      echo "&nbsp;&nbsp;> <A HREF="$k">$n</A><BR>" >>$DST/index.tmpl
     done
     sed -e "/@LINKS@/ r $DST/$fname.links" -e s/@LINKS@//g $i >$DST/$fname
-    rm -f $DST/$fname.links
 
     # Generate the TOC file for the library
     sh gen.sh gen_toc.php $DST/$fname $DST/$fname
@@ -92,6 +95,7 @@ if [ "$TYPE" = "HTML" ]; then
 
     # Generate the link for the top index.html for this library
     echo "<LI><A HREF="$fname">$name</A>" >>$DST/index.html.tmp
+    rm -f $DST/$fname.links
   done
 
   # Generate the top index.html file
