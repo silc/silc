@@ -4123,20 +4123,12 @@ SILC_SERVER_CMD_FUNC(watch)
 			      SILC_PACKET_COMMAND, cmd->packet->flags,
 			      tmpbuf->data, tmpbuf->len, TRUE);
 
-      /* If we are backup router, we're not expecting reply as router
-	 won't be sending it. */
-      if (server->server_type != SILC_BACKUP_ROUTER) {
-	/* Reprocess this packet after received reply from router */
-	silc_server_command_pending(server, SILC_COMMAND_WATCH,
-				    silc_command_get_ident(cmd->payload),
-				    silc_server_command_watch,
-				    silc_server_command_dup(cmd));
-	cmd->pending = TRUE;
-	silc_command_set_ident(cmd->payload, old_ident);
-	silc_buffer_free(tmpbuf);
-	goto out;
-      }
-
+      /* Reprocess this packet after received reply from router */
+      silc_server_command_pending(server, SILC_COMMAND_WATCH,
+				  silc_command_get_ident(cmd->payload),
+				  silc_server_command_watch,
+				  silc_server_command_dup(cmd));
+      cmd->pending = TRUE;
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
     } else if (context2) {
@@ -4148,8 +4140,8 @@ SILC_SERVER_CMD_FUNC(watch)
       silc_command_get_status(reply->payload, &status, NULL);
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH, status,
 					    0);
-      goto out;
     }
+    goto out;
   }
 
   /* We are router and keep the watch list for local cell */
