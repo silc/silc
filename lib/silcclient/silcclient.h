@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2003 Pekka Riikonen
+  Copyright (C) 2000 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -206,7 +206,7 @@ struct SilcClientEntryStruct {
   char *realname;		/* Realname (userinfo) */
 
   /* Mode, ID and other information */
-  SilcUInt32 mode;		/* User mode in SILC */
+  SilcUInt32 mode;		/* User mode in SILC, see SilcUserMode */
   SilcClientID *id;		/* The Client ID */
   SilcDList attrs;		/* Requested Attributes (maybe NULL) */
   unsigned char *fingerprint;	/* Fingerprint of client's public key */
@@ -251,7 +251,7 @@ struct SilcChannelEntryStruct {
   /* General information */
   char *channel_name;		             /* Channel name */
   SilcChannelID *id;			     /* Channel ID */
-  SilcUInt32 mode;			     /* Channel mode */
+  SilcUInt32 mode;			     /* Channel mode, ChannelModes. */
 
   /* All clients that has joined this channel.  The key to the table is the
      SilcClientEntry and the context is SilcChannelUser context. */
@@ -273,6 +273,27 @@ struct SilcChannelEntryStruct {
   SilcDList old_hmacs;
   SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
 						resolving this entry */
+};
+/***/
+
+/****s* silcclient/SilcClientAPI/SilcChannelUser
+ *
+ * NAME
+ *
+ *    typedef struct SilcChannelUserStruct { ... } *SilcChannelUser
+ *
+ * DESCRIPTION
+ *
+ *    This structure represents a client that has joined to a channel.
+ *    It shows the client and the channel and the client's mode (channel
+ *    user mode) on the channel.
+ *
+ * SOURCE
+ */
+struct SilcChannelUserStruct {
+  SilcClientEntry client;	             /* Client joined on channel */
+  SilcUInt32 mode;			     /* mode, ChannelUserModes */
+  SilcChannelEntry channel;		     /* The channel user has joined */
 };
 /***/
 
@@ -1686,7 +1707,7 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *
  * NOTES
  *
- *    This command executes the commands implemented inside the client 
+ *    This command executes the commands implemented inside the client
  *    library.  These commands are designed for command line applications,
  *    but GUI application may call them too if needed.  Alternatively
  *    application may override the library and use silc_client_command_send
@@ -1717,7 +1738,7 @@ bool silc_client_command_call(SilcClient client,
  *    the command packet directly to server.
  *
  *    Programmer should get familiar with the SILC protocol commands
- *    specification when using this function, as the arguments needs to 
+ *    specification when using this function, as the arguments needs to
  *    be encoded as specified in the protocol.
  *
  *    The variable arguments are a pair of { type, data, data_length },
