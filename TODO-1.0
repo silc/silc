@@ -67,7 +67,7 @@ least could be done.
 
 	  These naturally cause the overal memory consumption to grow
 	  but would take away many allocations that can be done several
-	  times in a second.
+	  times in a second (see also ~/silcpacket).
 
 	o Move the actual file descriptor task callback (the callback that
 	  handles the incoming data, outgoing data etc, that is implemnted
@@ -122,7 +122,10 @@ least could be done.
 
  o Rewrite SilcProtocol to be SilcFSM (see ~/silcfsm).
 
- o Do some scheduler optimizations (see ~/silcschedule).
+ o Do some scheduler optimizations and interface changes (see 
+   ~/silcschedule).
+
+ o Change the lib/silccore/silcpacket.[ch] interfaces (see ~/silcpacket).
 
  o Change SILC_TASK_CALLBACK to non-static, and remove the macro
    SILC_TASK_CALLBACK_GLOBAL.

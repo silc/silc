@@ -629,7 +629,7 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher)
     return SILC_PACKET_NONE;
 
   if (src_id_type > SILC_ID_CHANNEL || dst_id_type > SILC_ID_CHANNEL) {
-    SILC_LOG_ERROR(("Bad ID types in packet (%d and %d",
+    SILC_LOG_ERROR(("Bad ID types in packet (%d and %d)",
 		   src_id_type, dst_id_type));
     return SILC_PACKET_NONE;
   }
@@ -714,7 +714,7 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
   }
 
   if (src_id_type > SILC_ID_CHANNEL || dst_id_type > SILC_ID_CHANNEL) {
-    SILC_LOG_ERROR(("Bad ID types in packet (%d and %d",
+    SILC_LOG_ERROR(("Bad ID types in packet (%d and %d)",
 		   src_id_type, dst_id_type));
     return SILC_PACKET_NONE;
   }

@@ -190,3 +190,6 @@ describe new stuff to be added to protocol versions 1.x.
      Payload enforces that total of 256 arguments can be associated
      to a such payload.  However, command-xx draft specified much higher
      values, and these should be fixed.
+
+ 15. The LEAVE command reply should return the Channel ID of the channel
+     that was parted.
