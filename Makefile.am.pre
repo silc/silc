@@ -30,7 +30,8 @@ dist-bzip: distdir
 	-bzip2 $(distdir).tar
 	-rm -rf $(distdir)
 
-EXTRA_DIST = CHANGES CREDITS
+SILC_EXTRA_DIST = SILC_DISTRIBUTION_EXTRA
+EXTRA_DIST = CHANGES CREDITS $(SILC_EXTRA_DIST)
 
 #
 # Installing of SILC into the system

@@ -1,3 +1,16 @@
+Mon Jul 23 18:31:43 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added _EXTRA_DIST SILC distribution variable to the
+	  distributions file.  It is used to conditionally add extra
+	  files or directories to the specific distribution.  Affected
+	  files ./prepare, Makefile.am.pre and distributions.
+
+	  Removed the `_' from the start of the distribution names.
+	  It is redundant.
+
+	* Added README.WIN32 for instructions to compile the Toolkit
+	  under WIN32.
+
 Mon Jul 23 10:12:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a double free in disconnection in the server.  Affected

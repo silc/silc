@@ -66,13 +66,14 @@ echo "Preparing $distribution distribution version $version"
 # Go though the subdirs and create the Makefile.ams from the
 # Makefile.am.pre files.
 #
-subdirs=`grep _"$distribution"_SUBDIRS= distributions |cut -d=  -f2`
-sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$subdirs/" Makefile.am.pre >Makefile.am
+subdirs=`grep "$distribution"_SUBDIRS= distributions |cut -d=  -f2`
+ed=`grep "$distribution"_EXTRA_DIST= distributions |cut -d=  -f2`
+sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$subdirs/" -e "/SILC_DISTRIBUTION_EXTRA/s//$ed/" Makefile.am.pre >Makefile.am
 path=`pwd`
 for i in $subdirs
 do
   cd $i
-  sub=`grep _"$distribution"_SUBDIRS_"$i"= $path/distributions |cut -d=  -f2`
+  sub=`grep "$distribution"_SUBDIRS_"$i"= $path/distributions |cut -d=  -f2`
   if test "$sub" = ""; then
     cd $path
     continue;
@@ -101,7 +102,7 @@ dists=`grep DISTRIBUTIONS= distributions |cut -d=  -f2`
 touch am_cond
 for i in $dists
 do
-  dl=`grep _"$i"_DISTLABEL= distributions |cut -d=  -f2`
+  dl=`grep "$i"_DISTLABEL= distributions |cut -d=  -f2`
   echo "#undef $dl" >>acconfig.h
   if test "$i" = "$distribution"; then
     echo "AM_CONDITIONAL($dl, test xtrue = xtrue)" >>am_cond
@@ -111,7 +112,7 @@ do
 done
 
 sed '/SILC_DIST_DEFINE/ r am_cond' configure.in2 >configure.in3
-dl=`grep _"$distribution"_DISTLABEL= distributions |cut -d=  -f2`
+dl=`grep "$distribution"_DISTLABEL= distributions |cut -d=  -f2`
 sed -e "/SILC_DIST_DEFINE/s//$dl/" configure.in3 >configure.in
 rm -f configure.in2 configure.in3 am_cond
 
@@ -151,7 +152,6 @@ echo "#define SILC_VERSION_STRING \"$version\"" >>$file
 echo "#define SILC_DIST_VERSION_STRING \"$dist_version\"" >>$file
 echo "#define SILC_PROTOCOL_VERSION_STRING \"SILC-1.0-$version\"" >>$file
 echo "#define SILC_NAME \"SILC $distribution\"" >>$file
-
 
 # preparing irssi
 cd irssi

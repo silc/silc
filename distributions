@@ -11,21 +11,24 @@
 #
 # The format of this file is as follows:
 #
-# _<name>_SUBDIRS			Subdirs for the distribution
-# _<name>_SUBDIRS_<dir>                 Subdirs under <dir>
-# _<name>_DISTLABEL                     Preprocessor label
+# <name>_SUBDIRS                       Subdirs for the distribution
+# <name>_SUBDIRS_<dir>                 Subdirs under <dir>
+# <name>_DISTLABEL                     Preprocessor label
+# <name>_EXTRA_DIST                    List of extra files or directories
 #
 # DISTRBUTIONS=<distributions>
 #
 # The _SUBDIRS define all the subdirectories that the Makefile should
-# traverse.  The _SUBDIRS_<dir> defines all subdirectories in the 
-# subdirectory <dir>.  The _DISTLABEL defines a preprocessor label
+# traverse.  The SUBDIRS_<dir> defines all subdirectories in the 
+# subdirectory <dir>.  The DISTLABEL defines a preprocessor label
 # that can be used in the source code like `#ifdef SILC_DIST_CLIENT' to
 # define code only for the specific distribution.  The label can also be
 # used in the Makefiles by `if SILC_DIST_CLIENT' to define something in
 # the Makefile only for the specific distribution.
 #
-# The DISTRIBUTIONS defines all distributions in this file.
+# The DISTRIBUTIONS defines all distributions in this file.  The
+# EXTRA_DIST is used to add extra files or directories to the
+# distribution. The files may be in subdirectories.
 #
 # NOTE: For now this supports only one sublevel of the directories.
 #       Also make sure that the <dir> directory includes Makefile.am.pre
@@ -33,41 +36,44 @@
 #       must have DIST_SUBDIRS = SILC_DISTRIBUTIONS_SUBDIRS line in it.
 #
 # NOTE: Also note that if any subdirectory has Makefile.am.pre then you
-#       must list it here as _<name>_SUBDIRS_<dir>. To define all sub
+#       must list it here as <name>_SUBDIRS_<dir>. To define all sub
 #       directories use $(COMMONDIRS) that must be defined in the Makefile
 #       and list all subdirs.
 #
 # Example:
 #
-# _xyz_SUBDIRS=lib irssi doc includes
-# _xyz_SUBDIRS_lib=$(COMMONDIRS)
-# _xyz_DISTLABEL=SILC_DIST_XYZ
+# xyz_SUBDIRS=lib irssi doc includes
+# xyz_SUBDIRS_lib=$(COMMONDIRS)
+# xyz_DISTLABEL=SILC_DIST_XYZ
+# xyz_EXTRA_DIST=README.XYZ
 #
 # To prepare the distribution give command ./prepare xyz 1.0.4
 #
 
 # Default Toolkit distribution
-_toolkit_SUBDIRS=lib irssi silc silcd doc includes win32
-_toolkit_SUBDIRS_lib=$(COMMONDIRS)
-_toolkit_SUBDIRS_doc=$(COMMONDIRS)
-_toolkit_DISTLABEL=SILC_DIST_TOOLKIT
+toolkit_SUBDIRS=lib irssi silc silcd doc includes win32
+toolkit_SUBDIRS_lib=$(COMMONDIRS)
+toolkit_SUBDIRS_doc=$(COMMONDIRS)
+toolkit_DISTLABEL=SILC_DIST_TOOLKIT
+toolkit_EXTRA_DIST=README.CVS README.WIN32
 
 # Irssi SILC Client distribution
-_client_SUBDIRS=lib irssi doc includes
-_client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
-_client_SUBDIRS_doc=$(COMMONDIRS)
-_client_DISTLABEL=SILC_DIST_CLIENT
+client_SUBDIRS=lib irssi doc includes
+client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
+client_SUBDIRS_doc=$(COMMONDIRS)
+client_DISTLABEL=SILC_DIST_CLIENT
 
 # SILC Server distribution
-_server_SUBDIRS=lib silcd doc includes
-_server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf
-_server_SUBDIRS_doc=$(COMMONDIRS)
-_server_DISTLABEL=SILC_DIST_SERVER
+server_SUBDIRS=lib silcd doc includes
+server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf
+server_SUBDIRS_doc=$(COMMONDIRS)
+server_DISTLABEL=SILC_DIST_SERVER
 
 # Native WIN32 SILC library distribution (will include only the libraries)
-_win32dll_SUBDIRS=lib doc includes
-_win32dll_SUBDIRS_lib=silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
-_win32dll_SUBDIRS_doc=$(COMMONDIRS)
-_win32dll_DISTLABEL=SILC_DIST_WIN32DLL
+win32dll_SUBDIRS=lib doc includes
+win32dll_SUBDIRS_lib=silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
+win32dll_SUBDIRS_doc=$(COMMONDIRS)
+win32dll_DISTLABEL=SILC_DIST_WIN32DLL
+win32dll_EXTRA_DIST=README.CVS README.WIN32
 
 DISTRIBUTIONS=toolkit client server win32dll

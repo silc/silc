@@ -1,7 +1,7 @@
 Compiling SILC Toolkit on WIN32
 ===============================
 
-SILC Toolkit works on native WIN32 systems as well.  This README is
+SILC Toolkit works on native WIN32 systems as well.  This document is
 intended for those who needs to compile the Toolkit for native WIN32
 systems.  The Toolkit can be compiled for native WIN32 systems using
 generally any compiler.  However, the compilation environment is designed
