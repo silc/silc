@@ -4,7 +4,7 @@
   
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2000 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,10 @@
 #ifndef MPBIN_H
 #define MPBIN_H
 
-unsigned char *silc_mp_mp2bin(SilcInt *val, unsigned int *ret_len);
+unsigned char *silc_mp_mp2bin(SilcInt *val, unsigned int len,
+			      unsigned int *ret_len);
+void silc_mp_mp2bin_noalloc(SilcInt *val, unsigned char *dst,
+			    unsigned int dst_len);
 void silc_mp_bin2mp(unsigned char *data, unsigned int len, SilcInt *ret);
 
 #endif

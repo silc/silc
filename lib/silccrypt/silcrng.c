@@ -31,6 +31,16 @@
 #undef SILC_RNG_DEBUG
 /* #define SILC_RNG_DEBUG */
 
+static unsigned int silc_rng_get_position(SilcRng rng);
+static void silc_rng_stir_pool(SilcRng rng);
+static void silc_rng_xor(SilcRng rng, unsigned int val, unsigned int pos);
+static void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, 
+			       unsigned int len);
+static void silc_rng_exec_command(SilcRng rng, char *command);
+static void silc_rng_get_hard_noise(SilcRng rng);
+static void silc_rng_get_medium_noise(SilcRng rng);
+static void silc_rng_get_soft_noise(SilcRng rng);
+
 /* 
    SILC SilcRng State context.
 
@@ -167,7 +177,7 @@ void silc_rng_init(SilcRng rng)
 
 /* This function gets 'soft' noise from environment. */
 
-void silc_rng_get_soft_noise(SilcRng rng)
+static void silc_rng_get_soft_noise(SilcRng rng)
 {
   struct tms ptime;
   
@@ -203,7 +213,7 @@ void silc_rng_get_soft_noise(SilcRng rng)
 
 /* This function gets noise from different commands */
 
-void silc_rng_get_medium_noise(SilcRng rng)
+static void silc_rng_get_medium_noise(SilcRng rng)
 {
   silc_rng_exec_command(rng, "ps -lefaww 2> /dev/null");
   silc_rng_exec_command(rng, "ls -afiln 2> /dev/null");
@@ -218,7 +228,7 @@ void silc_rng_get_medium_noise(SilcRng rng)
 /* This function gets 'hard' noise from environment. This tries to
    get the noise from /dev/random if available. */
 
-void silc_rng_get_hard_noise(SilcRng rng)
+static void silc_rng_get_hard_noise(SilcRng rng)
 {
   char buf[32];
   int fd, len, i;
@@ -244,7 +254,7 @@ void silc_rng_get_hard_noise(SilcRng rng)
 
 /* Execs command and gets noise from its output */
 
-void silc_rng_exec_command(SilcRng rng, char *command)
+static void silc_rng_exec_command(SilcRng rng, char *command)
 {
   char buf[2048];
   FILE *fd;
@@ -277,8 +287,8 @@ void silc_rng_exec_command(SilcRng rng, char *command)
 /* This function adds the contents of the buffer as noise into random 
    pool. After adding the noise the pool is stirred. */
 
-void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, 
-			unsigned int len)
+static void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, 
+			       unsigned int len)
 {
   unsigned int i, pos;
 
@@ -297,7 +307,7 @@ void silc_rng_add_noise(SilcRng rng, unsigned char *buffer,
 
 /* XOR's data into the pool */
 
-void silc_rng_xor(SilcRng rng, unsigned int val, unsigned int pos)
+static void silc_rng_xor(SilcRng rng, unsigned int val, unsigned int pos)
 {
   assert(rng != NULL);
   rng->pool[pos] ^= val + val;
@@ -306,7 +316,7 @@ void silc_rng_xor(SilcRng rng, unsigned int val, unsigned int pos)
 /* This function stirs the random pool by encrypting buffer in CFB 
    (cipher feedback) mode with SHA1 algorithm. */
 
-void silc_rng_stir_pool(SilcRng rng)
+static void silc_rng_stir_pool(SilcRng rng)
 {
   int i;
   unsigned long iv[5];
@@ -343,7 +353,7 @@ void silc_rng_stir_pool(SilcRng rng)
 /* Returns next position where data is fetched from the pool or
    put to the pool. */
 
-unsigned int silc_rng_get_position(SilcRng rng)
+static unsigned int silc_rng_get_position(SilcRng rng)
 {
   SilcRngState next;
   unsigned int pos;
@@ -429,4 +439,63 @@ unsigned char *silc_rng_get_rn_data(SilcRng rng, unsigned int len)
     data[i] = silc_rng_get_byte(rng);
 
   return data;
+}
+
+/* Global RNG. This is global RNG that application can initialize so
+   that any part of code anywhere can use RNG without having to allocate
+   new RNG object everytime.  If this is not initialized then these routines
+   will fail.  Note: currently in SILC applications always initialize this. */
+
+SilcRng global_rng = NULL;
+
+/* Initialize global RNG. If `rng' is provided it is set as the global
+   RNG object (it can be allocated by the application for example). */
+
+int silc_rng_global_init(SilcRng rng)
+{
+  if (rng)
+    global_rng = rng;
+  else
+    global_rng = silc_rng_alloc();
+
+  return TRUE;
+}
+
+/* Uninitialize global RNG */
+
+int silc_rng_global_uninit()
+{
+  if (global_rng) {
+    silc_rng_free(global_rng);
+    global_rng = NULL;
+  }
+
+  return TRUE;
+}
+
+/* These are analogous to the functions above. */
+
+unsigned char silc_rng_global_get_byte()
+{
+  return global_rng ? silc_rng_get_byte(global_rng) : 0;
+}
+
+unsigned short silc_rng_global_get_rn16()
+{
+  return global_rng ? silc_rng_get_rn16(global_rng) : 0;
+}
+
+unsigned int silc_rng_global_get_rn32()
+{
+  return global_rng ? silc_rng_get_rn32(global_rng) : 0;
+}
+
+unsigned char *silc_rng_global_get_rn_string(unsigned int len)
+{
+  return global_rng ? silc_rng_get_rn_string(global_rng, len) : NULL;
+}
+
+unsigned char *silc_rng_global_get_rn_data(unsigned int len)
+{
+  return global_rng ? silc_rng_get_rn_data(global_rng, len) : NULL;
 }

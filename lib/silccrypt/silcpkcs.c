@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,12 +22,25 @@
 #include "silcincludes.h"
 
 #include "rsa.h"
+#include "pkcs1.h"
 
 /* List of all PKCS's in SILC. PKCS's don't support SIM's thus
    only static declarations are possible. XXX: I hope this to change
    real soon. */
 SilcPKCSObject silc_pkcs_list[] =
 {
+  /* RSA with PKCS #1 (Uses directly routines from Raw RSA operations) */
+  /*
+  { "rsa", &silc_rsa_data_context, 
+    silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
+    silc_rsa_get_private_key, silc_rsa_set_public_key,
+    silc_rsa_set_private_key, silc_rsa_context_len,
+    silc_rsa_data_context_len, silc_rsa_set_arg,
+    silc_pkcs1_encrypt, silc_pkcs1_decrypt,
+    silc_pkcs1_sign, silc_pkcs1_verify },
+  */
+
+  /* Raw RSA operations */
   { "rsa", &silc_rsa_data_context, 
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,

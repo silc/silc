@@ -1161,9 +1161,9 @@ SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Start"));
 
-  e = silc_mp_mp2bin(&ske->ke1_payload->e, &e_len);
-  f = silc_mp_mp2bin(&ske->ke2_payload->f, &f_len);
-  KEY = silc_mp_mp2bin(ske->KEY, &KEY_len);
+  e = silc_mp_mp2bin(&ske->ke1_payload->e, 0, &e_len);
+  f = silc_mp_mp2bin(&ske->ke2_payload->f, 0, &f_len);
+  KEY = silc_mp_mp2bin(ske->KEY, 0, &KEY_len);
 
   buf = silc_buffer_alloc(ske->start_payload_copy->len + 
 			  ske->pk_len + e_len + f_len + KEY_len);
@@ -1226,7 +1226,7 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
   SILC_LOG_DEBUG(("Start"));
 
   /* Encode KEY to binary data */
-  tmpbuf = silc_mp_mp2bin(ske->KEY, &klen);
+  tmpbuf = silc_mp_mp2bin(ske->KEY, 0, &klen);
 
   buf = silc_buffer_alloc(1 + klen + hash_len);
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));

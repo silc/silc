@@ -282,7 +282,7 @@ SilcSKEStatus silc_ske_payload_one_encode(SilcSKE ske,
     return SILC_SKE_STATUS_ERROR;
 
   /* Encode the integer into binary data */
-  e_str = silc_mp_mp2bin(&payload->e, &e_len);
+  e_str = silc_mp_mp2bin(&payload->e, 0, &e_len);
   if (!e_str)
     return SILC_SKE_STATUS_ERROR;
 
@@ -421,7 +421,7 @@ SilcSKEStatus silc_ske_payload_two_encode(SilcSKE ske,
     return SILC_SKE_STATUS_ERROR;
 
   /* Encode the integer into HEX string */
-  f_str = silc_mp_mp2bin(&payload->f, &f_len);
+  f_str = silc_mp_mp2bin(&payload->f, 0, &f_len);
 
   /* Allocate channel payload buffer. The length of the buffer
      is 2 + 2 + public key + 2 + f + 2 + signature. */

@@ -35,7 +35,8 @@ libsilccrypt_a_SOURCES = \
 	silchash.c \
 	silchmac.c \
 	silcrng.c \
-	silcpkcs.c
+	silcpkcs.c \
+	pkcs1.c
 
 EXTRA_DIST = *.h
 

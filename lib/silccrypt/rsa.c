@@ -54,6 +54,12 @@
      try to find the smallest possible d by doing modinv(e, lcm(phi)) instead
      of modinv(e, phi).  Note: this is not security fix but optimization.
 
+   o Tue Feb 20 13:58:58 EET 2001  Pekka
+
+     Set key->bits in rsa_generate_key.  It is the modulus length in bits.
+     The `tmplen' in encrypt, decrypt, sign and verify PKCS API functions
+     is now calculated by (key->bits + 7) / 8.  It is the length of one block.
+
 */
 
 #include "silcincludes.h"
@@ -125,8 +131,8 @@ SILC_PKCS_API_GET_PUBLIC_KEY(rsa)
   unsigned int e_len, n_len;
   unsigned char tmp[4];
 
-  e = silc_mp_mp2bin(&key->e, &e_len);
-  n = silc_mp_mp2bin(&key->n, &n_len);
+  e = silc_mp_mp2bin(&key->e, 0, &e_len);
+  n = silc_mp_mp2bin(&key->n, key->bits / 8, &n_len);
 
   *ret_len = e_len + 4 + n_len + 4;
   ret = silc_calloc(*ret_len, sizeof(unsigned char));
@@ -164,9 +170,9 @@ SILC_PKCS_API_GET_PRIVATE_KEY(rsa)
   unsigned int e_len, n_len, d_len;
   unsigned char tmp[4];
 
-  e = silc_mp_mp2bin(&key->e, &e_len);
-  n = silc_mp_mp2bin(&key->n, &n_len);
-  d = silc_mp_mp2bin(&key->d, &d_len);
+  e = silc_mp_mp2bin(&key->e, 0, &e_len);
+  n = silc_mp_mp2bin(&key->n, key->bits / 8, &n_len);
+  d = silc_mp_mp2bin(&key->d, 0, &d_len);
 
   *ret_len = e_len + 4 + n_len + 4 + d_len + 4;
   ret = silc_calloc(*ret_len, sizeof(unsigned char));
@@ -233,6 +239,8 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
 
   silc_mp_bin2mp(key_data + 4 + e_len + 4, n_len, &key->n);
 
+  key->bits = n_len * 8;
+
   return TRUE;
 }
 
@@ -279,6 +287,8 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
   }
 
   silc_mp_bin2mp(key_data + 4 + e_len + 4 + n_len + 4, d_len, &key->d);
+
+  key->bits = n_len * 8;
 
   return TRUE;
 }
@@ -341,7 +351,7 @@ SILC_PKCS_API_ENCRYPT(rsa)
   /* Encrypt */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->e, &key->n);
   
-  tmplen = (1024 + 7) / 8;
+  tmplen = (key->bits + 7) / 8;
 
   /* Format the MP int back into data */
   for (i = tmplen; i > 0; i--) {
@@ -375,7 +385,7 @@ SILC_PKCS_API_DECRYPT(rsa)
   /* Decrypt */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
 
-  tmplen = (1024 + 7) / 8;
+  tmplen = (key->bits + 7) / 8;
 
   /* Format the MP int back into data */
   for (i = tmplen; i > 0; i--) {
@@ -409,7 +419,7 @@ SILC_PKCS_API_SIGN(rsa)
   /* Sign */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
 
-  tmplen = (1024 + 7) / 8;
+  tmplen = (key->bits + 7) / 8;
 
   /* Format the MP int back into data */
   for (i = tmplen; i > 0; i--) {
@@ -486,6 +496,9 @@ void rsa_generate_keys(RsaKey *key, unsigned int bits,
   silc_mp_init(&lcm);
   silc_mp_init(&pm1);
   silc_mp_init(&qm1);
+
+  /* Set modulus length */
+  key->bits = bits;
 
   /* Set the primes */
   silc_mp_set(&key->p, p);

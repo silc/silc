@@ -34,19 +34,18 @@ typedef struct SilcRngObjectStruct *SilcRng;
 SilcRng silc_rng_alloc();
 void silc_rng_free(SilcRng rng);
 void silc_rng_init(SilcRng rng);
-void silc_rng_get_soft_noise(SilcRng rng);
-void silc_rng_get_medium_noise(SilcRng rng);
-void silc_rng_get_hard_noise(SilcRng rng);
-void silc_rng_exec_command(SilcRng rng, char *command);
-void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, 
-			unsigned int len);
-void silc_rng_xor(SilcRng rng, unsigned int val, unsigned int pos);
-void silc_rng_stir_pool(SilcRng rng);
-unsigned int silc_rng_get_position(SilcRng rng);
 unsigned char silc_rng_get_byte(SilcRng rng);
 unsigned short silc_rng_get_rn16(SilcRng rng);
 unsigned int silc_rng_get_rn32(SilcRng rng);
 unsigned char *silc_rng_get_rn_string(SilcRng rng, unsigned int len);
 unsigned char *silc_rng_get_rn_data(SilcRng rng, unsigned int len);
+
+int silc_rng_global_init(SilcRng rng);
+int silc_rng_global_uninit();
+unsigned char silc_rng_global_get_byte();
+unsigned short silc_rng_global_get_rn16();
+unsigned int silc_rng_global_get_rn32();
+unsigned char *silc_rng_global_get_rn_string(unsigned int len);
+unsigned char *silc_rng_global_get_rn_data(unsigned int len);
 
 #endif

@@ -22,12 +22,6 @@
 
 #include "silcincludes.h"
 
-/* XXX This must be temporary solution!! yucky! */
-/* Global random pool used for all prime generation. All primes generated
-   in SILC uses this same pool. Before primes can be generated one must
-   call silc_math_primegen_init. */
-static SilcRng primegen_rng;
-
 /* 
    Fixed primetable for small prime division. We use this primetable to 
    test if possible prime is divisible any of these. Primetable is NULL 
@@ -208,9 +202,6 @@ int silc_math_gen_prime(SilcInt *prime, unsigned int bits, int verbose)
   unsigned int *spmods;
   SilcInt r, base, tmp, tmp2, oprime;
 
-  /* XXX */
-  assert(primegen_rng != NULL);
-
   silc_mp_init(&r);
   silc_mp_init_set_ui(&base, 2);
   silc_mp_init(&tmp);
@@ -220,7 +211,7 @@ int silc_math_gen_prime(SilcInt *prime, unsigned int bits, int verbose)
   SILC_LOG_DEBUG(("Generating new prime"));
 
   /* Get random number */
-  numbuf = silc_rng_get_rn_string(primegen_rng, (bits / 8));
+  numbuf = silc_rng_global_get_rn_string((bits / 8));
   if (!numbuf)
     return FALSE;
 
@@ -347,25 +338,4 @@ int silc_math_prime_test(SilcInt *p)
 
   /* Number is probably a prime */
   return TRUE;
-}
-
-/* XXX This must temporary solution!! */
-/* Initializes the random pool used to generated primes */
-
-void silc_math_primegen_init()
-{
-  SILC_LOG_DEBUG(("Start"));
-
-  if (primegen_rng == NULL) {
-    primegen_rng = silc_rng_alloc();
-    silc_rng_init(primegen_rng);
-  }
-}
-
-/* XXX This must temporary solution!! */
-/* Uninitializes random pool */
-
-void silc_math_primegen_uninit()
-{
-  silc_rng_free(primegen_rng);
 }

@@ -96,7 +96,6 @@ void silc_server_free(SilcServer server)
     if (server->pending_commands)
       silc_dlist_uninit(server->pending_commands);
 
-    silc_math_primegen_uninit(); /* XXX */
     silc_free(server);
   }
 }
@@ -140,7 +139,7 @@ int silc_server_init(SilcServer server)
   /* Initialize random number generator for the server. */
   server->rng = silc_rng_alloc();
   silc_rng_init(server->rng);
-  silc_math_primegen_init(); /* XXX */
+  silc_rng_global_init(server->rng);
 
   /* Initialize hash functions for server to use */
   silc_hash_alloc("md5", &server->md5hash);
@@ -701,7 +700,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     silc_free(ctx);
-    sock->protocol = NULL;
+    if (sock)
+      sock->protocol = NULL;
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
     return;

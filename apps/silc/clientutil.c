@@ -435,7 +435,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
   rng = silc_rng_alloc();
   silc_rng_init(rng);
-  silc_math_primegen_init();
+  silc_rng_global_init(rng);
 
   if (!public_key) {
     memset(line, 0, sizeof(line));
@@ -490,7 +490,6 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   memset(key, 0, sizeof(key_len));
   silc_free(key);
 
-  silc_math_primegen_uninit();
   silc_rng_free(rng);
   silc_pkcs_free(pkcs);
 

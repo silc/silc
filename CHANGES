@@ -1,3 +1,19 @@
+Tue Feb 20 14:14:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* The RSA key length is now save to the RsaKey context in the
+	  key generation process in lib/silccrypt/rsa.c.  The key length
+	  is now used to figure out the maximum size of the block allowed
+	  to be encrypted/signed.
+
+	* Added silc_mp_mp2bin_noalloc into lib/silcmath/mpbin.[ch].  It
+	  is equivalent to the silc_mp_mp2bin but does not allocate any
+	  memory.
+
+	* Changed silc_mp_mp2bin API to take length argument.  If it is
+	  non-zero then the buffer is allocated that large.  If zero, then
+	  the size is approximated using silc_mp_sizeinbase, which however
+	  is not relieable.
+
 Mon Feb 19 19:59:28 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* The client entry's userinfo pointer must be always valid. 

@@ -1,13 +1,15 @@
+/* $Id$ */
 /* 
    PKCS #1 RSA wrapper.
 
-   Heavily modified to work under SILC, code that is not needed in SILC has
-   been removed for good, and some code was fixed and changed.
+   Heavily modified to work under SILC, rewrote all interfaces, code that
+   is not needed in SILC has been removed for good, and some code was fixed
+   and changed.
 
    For example, RSA_DecodeOneBlock was not used at all by Mozilla, however,
-   I took this code in to use after doing some fixing.  Also, OAEP is removed
-   totally for now.  I'm not sure whether OAEP could be used in the future
-   with SILC but not for now.
+   I took this code in to use after doing some fixing (it had some bugs).  
+   Also, OAEP is removed totally for now.  I'm not sure whether OAEP could
+   be used in the future with SILC but not for now.
 
    This file also implements partial SILC PKCS API for RSA with PKCS #1.
    It is partial because all the other functions but encrypt, decrypt,
@@ -32,8 +34,8 @@
 	       and RFC 2437.
 
    Copyright notice: All code, including the SILC PKCS API code that is
-   not part of the Mozilla code, falls under the same license found attached
-   to this file, below.
+   not part of the Mozilla code, falls under the same license (MPL or GPL)
+   found attached to this file, below.
 */
 
 /*
@@ -75,6 +77,7 @@
  */
 
 #include "silcincludes.h"
+#include "rsa.h"
 
 #define RSA_BLOCK_MIN_PAD_LEN		8
 #define RSA_BLOCK_FIRST_OCTET		0x00
@@ -101,7 +104,7 @@ typedef enum {
  * the rules defined in PKCS #1.
  */
 static unsigned char *
-RSA_FormatOneBlock(unsigned modulusLen, RSA_BlockType blockType,
+RSA_FormatOneBlock(unsigned int modulusLen, RSA_BlockType blockType,
 		   unsigned char *data, unsigned int data_len)
 {
     unsigned char *block;
@@ -150,7 +153,6 @@ RSA_FormatOneBlock(unsigned modulusLen, RSA_BlockType blockType,
        * Blocks intended for public-key operation.
        */
       case RSA_BlockPublic:
-
 	/*
 	 * 0x00 || BT || Pad || 0x00 || ActualData
 	 *   1      1   padLen    1      data_len
@@ -161,17 +163,15 @@ RSA_FormatOneBlock(unsigned modulusLen, RSA_BlockType blockType,
 	for (i = 0; i < padLen; i++) {
 	    /* Pad with non-zero random data. */
 	    do {
-		RNG_GenerateGlobalRandomBytes(bp + i, 1);
+		silc_rng_global_get_byte(bp + i);
 	    } while (bp[i] == RSA_BLOCK_AFTER_PAD_OCTET);
 	}
 	bp += padLen;
 	*bp++ = RSA_BLOCK_AFTER_PAD_OCTET;
 	memcpy(bp, data, data_len);
-
 	break;
 
       default:
-	assert(0);
 	silc_free(block);
 	return NULL;
     }
@@ -181,7 +181,7 @@ RSA_FormatOneBlock(unsigned modulusLen, RSA_BlockType blockType,
 
 static int
 RSA_FormatBlock(unsigned char **result, unsigned int *result_len,
-		unsigned modulusLen,
+		unsigned int modulusLen,
 		RSA_BlockType blockType, unsigned char *data,
 		unsigned int data_len)
 {
@@ -210,7 +210,7 @@ RSA_FormatBlock(unsigned char **result, unsigned int *result_len,
 	 */
 	assert(data_len <= (modulusLen - (3 + RSA_BLOCK_MIN_PAD_LEN)));
 
-	*result = RSA_FormatOneBlock(modulusLen, blockType, data);
+	*result = RSA_FormatOneBlock(modulusLen, blockType, data, data_len);
 	if (result == NULL) {
 	    *result_len = 0;
 	    return FALSE;
@@ -244,16 +244,18 @@ RSA_DecodeOneBlock(unsigned char *data,
 {
     RSA_BlockType blockType;
     unsigned char *dp, *res;
-    unsigned int i, len;
+    unsigned int i, len = 0;
 
     dp = data;
-    if (*dp++ != RSA_BLOCK_FIRST_OCTET) {
+    if (dp[0] != RSA_BLOCK_FIRST_OCTET) {
 	return NULL;
     }
 
-    blockType = (RSA_BlockType)*dp++;
+    blockType = (RSA_BlockType)dp[1];
     if (blockType != bt)
       return NULL;
+
+    dp += 2;
 
     switch (blockType) {
       case RSA_BlockPrivate0:
@@ -267,10 +269,8 @@ RSA_DecodeOneBlock(unsigned char *data,
 	    if (*dp++ != RSA_BLOCK_PRIVATE_PAD_OCTET)
 		break;
 	}
-	if ((i == modulusLen) || (*dp != RSA_BLOCK_AFTER_PAD_OCTET)) {
+	if (i == modulusLen)
 	    return NULL;
-	}
-	dp++;
 	len = modulusLen - (dp - data);
 	res = (unsigned char *) silc_malloc(len);
 	if (res == NULL) {
@@ -284,10 +284,8 @@ RSA_DecodeOneBlock(unsigned char *data,
 	    if (*dp++ == RSA_BLOCK_AFTER_PAD_OCTET)
 		break;
 	}
-	if (i == modulusLen) {
+	if (i == modulusLen)
 	    return NULL;
-	}
-	dp++;
 	len = modulusLen - (dp - data);
 	res = (unsigned char *) silc_malloc(len);
 	if (res == NULL) {
@@ -315,14 +313,13 @@ RSA_DecodeOneBlock(unsigned char *data,
 SILC_PKCS_API_ENCRYPT(pkcs1)
 {
   RsaKey *key = (RsaKey *)context;
-  int i, ret = TRUE;
   SilcInt mp_tmp;
   SilcInt mp_dst;
   unsigned char *padded;
-  unsigned int padded_len;
+  unsigned int padded_len, len = key->bits / 8;
 
   /* Pad data */
-  if (!RSA_FormatBlock(&padded, &padded_len, key->bits / 8,
+  if (!RSA_FormatBlock(&padded, &padded_len, len,
 		       RSA_BlockPublic, src, src_len))
     return FALSE;
 
@@ -336,21 +333,20 @@ SILC_PKCS_API_ENCRYPT(pkcs1)
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->e, &key->n);
   
   /* MP to data */
-  if (!silc_mp_mp2bin_noalloc(&mp_dst, dst, key->bits / 8, dst_len))
-    ret = FALSE;
+  silc_mp_mp2bin_noalloc(&mp_dst, dst, len);
+  *dst_len = len;
 
   memset(padded, 0, padded_len);
   silc_free(padded);
   silc_mp_clear(&mp_tmp);
   silc_mp_clear(&mp_dst);
 
-  return ret;
+  return TRUE;
 }
 
 SILC_PKCS_API_DECRYPT(pkcs1)
 {
   RsaKey *key = (RsaKey *)context;
-  int i, tmplen;
   SilcInt mp_tmp;
   SilcInt mp_dst;
   unsigned char *padded, *unpadded;
@@ -366,7 +362,7 @@ SILC_PKCS_API_DECRYPT(pkcs1)
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
 
   /* MP to data */
-  padded = silc_mp_mp2bin(&mp_dst, &padded_len);
+  padded = silc_mp_mp2bin(&mp_dst, key->bits / 8, &padded_len);
 
   /* Unpad data */
   unpadded = RSA_DecodeOneBlock(padded, padded_len, 0, 
@@ -396,46 +392,46 @@ SILC_PKCS_API_DECRYPT(pkcs1)
 SILC_PKCS_API_SIGN(pkcs1)
 {
   RsaKey *key = (RsaKey *)context;
-  int i, ret = TRUE;
   SilcInt mp_tmp;
   SilcInt mp_dst;
   unsigned char *padded;
   unsigned int padded_len;
+  unsigned int len = key->bits / 8;
 
   /* Pad data */
-  if (!RSA_FormatBlock(&padded, &padded_len, key->bits / 8,
-		       RSA_BlockPrivate, src, src_len))
+  if (!RSA_FormatBlock(&padded, &padded_len, len, RSA_BlockPrivate, 
+		       src, src_len))
     return FALSE;
 
   silc_mp_init_set_ui(&mp_tmp, 0);
   silc_mp_init_set_ui(&mp_dst, 0);
 
   /* Data to MP */
-  silc_mp_bin2mp(padded, padded_len, &mp_tmp);
+  silc_mp_bin2mp(padded, len, &mp_tmp);
 
   /* Sign */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
   
   /* MP to data */
-  if (!silc_mp_mp2bin_noalloc(&mp_dst, dst, key->bits / 8, dst_len))
-    ret = FALSE;
+  silc_mp_mp2bin_noalloc(&mp_dst, dst, len);
+  *dst_len = len;
 
   memset(padded, 0, padded_len);
   silc_free(padded);
   silc_mp_clear(&mp_tmp);
   silc_mp_clear(&mp_dst);
 
-  return ret;
+  return TRUE;
 }
 
 SILC_PKCS_API_VERIFY(pkcs1)
 {
   RsaKey *key = (RsaKey *)context;
-  int i, ret = TRUE;
-  SilcInt mp_tmp, mp_tmp2;
+  int ret = TRUE;
+  SilcInt mp_tmp2;
   SilcInt mp_dst;
-  unsigned char *verify, unpadded;
-  unsigned int verify_len;
+  unsigned char *verify, *unpadded;
+  unsigned int verify_len, len = key->bits / 8;
 
   silc_mp_init_set_ui(&mp_tmp2, 0);
   silc_mp_init_set_ui(&mp_dst, 0);
@@ -447,10 +443,10 @@ SILC_PKCS_API_VERIFY(pkcs1)
   rsa_en_de_crypt(&mp_dst, &mp_tmp2, &key->e, &key->n);
 
   /* MP to data */
-  verify = silc_mp_mp2bin(&mp_dst, &verify_len);
+  verify = silc_mp_mp2bin(&mp_dst, len, &verify_len);
 
   /* Unpad data */
-  unpadded = RSA_DecodeOneBlock(verify, verify_len, 0, 
+  unpadded = RSA_DecodeOneBlock(verify, len, 0, 
 				RSA_BlockPrivate, &verify_len);
   if (!unpadded) {
     memset(verify, 0, verify_len);
