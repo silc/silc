@@ -83,8 +83,10 @@ typedef struct {
   /* Output methods */
   SilcMapCommandStruct writemap;
   SilcMapCommandStruct writehtml;
-  SilcMapCommandStruct writemaphtml;
-  SilcMapCommandStruct cut;
+  SilcMapCommandStruct *writemaphtml;
+  SilcMapCommandStruct *cut;
+  SilcUInt32 writemaphtml_count;
+  SilcUInt32 cut_count;
 } *SilcMap;
 
 /* SilcMap connecetion context. */

@@ -79,6 +79,7 @@ void silc_map_free(SilcMap map)
   SilcMapConnection mapconn;
   SilcMapCommand cmd;
   char *h;
+  int i;
 
   silc_free(map->conffile);
   silc_free(map->bitmap);
@@ -127,12 +128,19 @@ void silc_map_free(SilcMap map)
     silc_dlist_uninit(map->conns);
   }
 
+  for (i = 0; i < map->writemaphtml_count; i++) {
+    silc_free(map->writemaphtml[i].filename);
+    silc_free(map->writemaphtml[i].text);
+  }
+  silc_free(map->writemaphtml);
+
+  for (i = 0; i < map->cut_count; i++)
+    silc_free(map->cut[i].filename);
+  silc_free(map->cut);
+
   silc_free(map->writemap.filename);
   silc_free(map->writehtml.filename);
   silc_free(map->writehtml.text);
-  silc_free(map->writemaphtml.filename);
-  silc_free(map->writemaphtml.text);
-  silc_free(map->cut.filename);
 
   silc_free(map);
 }

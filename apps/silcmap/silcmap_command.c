@@ -414,19 +414,24 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_writemaphtml)
   int retval = SILC_CONFIG_OK;
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
+    int i;
     if (!filename)
       return SILC_CONFIG_EMISSFIELDS;
 
-    SILC_LOG_DEBUG(("writehmaphtml: file: %s", filename));
+    SILC_LOG_DEBUG(("writemaphtml: file: %s", filename));
 
     /* Will generate HTML map page */
-    map->writemaphtml.filename = filename;
-    map->writemaphtml.text = text;
+    i = map->writemaphtml_count;
+    map->writemaphtml = silc_realloc(map->writemaphtml,
+				     sizeof(*map->writemaphtml) * (i + 1));
+    map->writemaphtml[i].filename = filename;
+    map->writemaphtml[i].text = text;
     if (lon)
-      map->writemaphtml.x = silc_map_lon2x(map, lon);
+      map->writemaphtml[i].x = silc_map_lon2x(map, lon);
     if (lat)
-      map->writemaphtml.y = silc_map_lat2y(map, lat);
-    map->writemaphtml.writemaphtml = TRUE;
+      map->writemaphtml[i].y = silc_map_lat2y(map, lat);
+    map->writemaphtml[i].writemaphtml = TRUE;
+    map->writemaphtml_count++;
 
     /* Clean up */
     silc_free(lat);
@@ -493,6 +498,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_cut)
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
     SilcMap map2;
+    int i;
 
     if (!filename || !lat || !lon || !width || !height)
       return SILC_CONFIG_EMISSFIELDS;
@@ -518,12 +524,15 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_cut)
 	  retval = SILC_CONFIG_ESILENT;
       } else {
 	/* After all connection blocks */
-	map->cut.filename = strdup(filename);
-	map->cut.x = silc_map_lon2x(map, lon);
-	map->cut.y = silc_map_lat2y(map, lat);
-	map->cut.width = width;
-	map->cut.height = height;
-	map->cut.cut = TRUE;
+	i = map->cut_count;
+	map->cut = silc_realloc(map->cut, sizeof(*map->cut) * (i + 1));
+	map->cut[i].filename = strdup(filename);
+	map->cut[i].x = silc_map_lon2x(map, lon);
+	map->cut[i].y = silc_map_lat2y(map, lat);
+	map->cut[i].width = width;
+	map->cut[i].height = height;
+	map->cut[i].cut = TRUE;
+	map->cut_count++;
       }
     } else {
       SilcMapCommand cmd = silc_calloc(1, sizeof(*cmd));
@@ -611,7 +620,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_rectangle)
       cmd->lb = lb;
       cmd->x = silc_map_lon2x(map, lon);
       cmd->y = silc_map_lat2y(map, lat);
-      cmd->text = strdup(text);
+      cmd->text = text ? strdup(text) : NULL;
       cmd->lposx = lposx;
       cmd->lposy = lposy;
       cmd->draw_rectangle = TRUE;
@@ -701,7 +710,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_circle)
       cmd->lb = lb;
       cmd->x = silc_map_lon2x(map, lon);
       cmd->y = silc_map_lat2y(map, lat);
-      cmd->text = strdup(text);
+      cmd->text = text ? strdup(text) : NULL;
       cmd->lposx = lposx;
       cmd->lposy = lposy;
       cmd->draw_circle = TRUE;
@@ -866,7 +875,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_text)
       cmd->b = b;
       cmd->x = silc_map_lon2x(map, lon);
       cmd->y = silc_map_lat2y(map, lat);
-      cmd->text = strdup(text);
+      cmd->text = text ? strdup(text) : NULL;
       cmd->draw_text = TRUE;
       cmd->color_set = color_set;
     }

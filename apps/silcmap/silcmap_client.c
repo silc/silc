@@ -39,6 +39,7 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
   SilcMapCommand cmd;
   SilcMap ret_map;
   SilcInt16 r, g, b, lr, lg, lb;
+  int i;
 
   map->conn_num++;
   SILC_LOG_DEBUG(("Processing the data from server (%d/%d)",
@@ -131,10 +132,10 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
     /* Produce output */
     if (map->writemap.writemap)
       silc_map_write_ppm(map, map->writemap.filename);
-    if (map->cut.cut) {
-      if (silc_map_cut(map, map->cut.x, map->cut.y, map->cut.width,
-		       map->cut.height, &ret_map)) {
-	silc_map_write_ppm(ret_map, map->cut.filename);
+    for (i = 0; i < map->cut_count; i++) {
+      if (silc_map_cut(map, map->cut[i].x, map->cut[i].y, map->cut[i].width,
+		       map->cut[i].height, &ret_map)) {
+	silc_map_write_ppm(ret_map, map->cut[i].filename);
 	silc_map_free(ret_map);
       }
     }
@@ -143,9 +144,8 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
     if (map->writehtml.writehtml)
       silc_map_writehtml_index(map);
 
-    /* Write the HTML map file */
-    if (map->writemaphtml.writemaphtml)
-      silc_map_writemaphtml(map);
+    /* Write the HTML map file(s) */
+    silc_map_writemaphtml(map);
 
     /* Schedule to stop */
     silc_schedule_task_add(map->client->schedule, 0,
