@@ -42,6 +42,7 @@ include_HEADERS =	\
 	silcnotify.h	\
 	silcpacket.h	\
 	silcargument.h	\
+	silcstatus.h	\
 	silcprivate.h
 endif
 
