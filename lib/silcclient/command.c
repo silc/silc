@@ -407,8 +407,53 @@ SILC_CLIENT_CMD_FUNC(nick)
   silc_client_command_free(cmd);
 }
 
+/* Command LIST. Lists channels on the current server. */
+
 SILC_CLIENT_CMD_FUNC(list)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
+  SilcBuffer buffer, idp = NULL;
+  char *name;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc == 2) {
+    name = cmd->argv[1];
+
+    /* Get the Channel ID of the channel */
+    if (silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {
+      channel = (SilcChannelEntry)id_cache->context;
+      idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
+    }
+  }
+
+  if (!idp)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_LIST, 
+					    ++conn->cmd_ident, 0);
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_LIST, 
+					    ++conn->cmd_ident, 1,
+					    1, idp->data, idp->len);
+
+  silc_client_packet_send(cmd->client, cmd->conn->sock,
+			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
+			  buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  if (idp)
+    silc_buffer_free(idp);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 /* Command TOPIC. Sets/shows topic on a channel. */
@@ -906,17 +951,22 @@ SILC_CLIENT_CMD_FUNC(motd)
     goto out;
   }
 
-  if (cmd->argc < 1 || cmd->argc > 1) {
+  if (cmd->argc < 1 || cmd->argc > 2) {
     cmd->client->ops->say(cmd->client, conn,
-			  "Usage: /MOTD");
+			  "Usage: /MOTD [<server>]");
     COMMAND_ERROR;
     goto out;
   }
 
   /* Send TOPIC command to the server */
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_MOTD, 0, 1, 
-					  2, conn->remote_host, 
-					  strlen(conn->remote_host));
+  if (cmd->argc == 1)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_MOTD, 0, 1, 
+					    1, conn->remote_host, 
+					    strlen(conn->remote_host));
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_MOTD, 0, 1, 
+					    1, cmd->argv[1], 
+					    cmd->argv_lens[1]);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);

@@ -102,13 +102,8 @@ TODO In SILC Server
 
  o TODO in command.c and in command_reply.c:
 
-	o LIST is not implemented
 	o RESTART is not implemented
 	o INVITE is probably not working correctly
-	o PING works only with local server.  It must work with any
-	  server in the network, implement the sending to other servers.
-	o MOTD works only with local server.  It must work with any
-	  server in the network, implement the sending to other servers.
 	o JOIN does not check the invite and ban lists
 	o CMODE should be rewritten as it uses a lot duplicated code.
 	  Some of the modes may still not be implemented or is implemented
@@ -119,7 +114,7 @@ TODO In SILC Server
 	  it is not called but in server, I think, it must be called.
 	  When implementing this check that all commands handle the
 	  situation correctly when it is called as pending command
-	  (it should most likely the that cmd->pending == TRUE/FALSE).
+	  (it should most likely check that cmd->pending == TRUE/FALSE).
 
  o Packet processing can be made faster. All packet function in the
    packet_receive.c has same prototypes.  Instead of calling those from

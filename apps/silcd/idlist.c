@@ -287,7 +287,8 @@ void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
-		       char *username, char *userinfo, SilcClientID *id, 
+		       unsigned int nickname_len, char *username, 
+		       char *userinfo, SilcClientID *id, 
 		       SilcServerEntry router, void *connection)
 {
   SilcClientEntry client;
@@ -304,8 +305,7 @@ silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname,
   silc_list_init(client->channels, struct SilcChannelClientEntryStruct, 
 		 client_list);
 
-  if (!silc_idcache_add(id_list->clients, nickname, 
-			nickname ? strlen(nickname) : 0,
+  if (!silc_idcache_add(id_list->clients, nickname,  nickname_len,
 			SILC_ID_CLIENT, (void *)client->id, 
 			(void *)client, TRUE, FALSE)) {
     silc_free(client);
@@ -382,6 +382,10 @@ silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 
 /* Returns all clients matching requested nickname. Number of clients is
    returned to `clients_count'. Caller must free the returned table. */
+/* XXX This actually checks the data, which can be hash of the nickname
+   but is not if the client is local client. Global client on global
+   list may have hash.  Thus, this is not fully reliable function.
+   Instead this should probably check the hash from the lists client ID's. */
 
 SilcClientEntry *
 silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
@@ -775,5 +779,42 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
   channel->id = new_id;
   id_cache->id = (void *)new_id;
 
+  SILC_LOG_DEBUG(("Replaced"));
+
   return channel;
+}
+
+/* Returns channels from the ID list. If the `channel_id' is NULL then
+   all channels are returned. */
+
+SilcChannelEntry *
+silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
+			 unsigned int *channels_count)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry *channels;
+  int i;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (!silc_idcache_find_by_id(id_list->channels, channel_id ? channel_id :
+			       SILC_ID_CACHE_ANY, SILC_ID_CHANNEL, &list))
+    return NULL;
+
+  channels = silc_calloc(silc_idcache_list_count(list), sizeof(*channels));
+
+  i = 0;
+  silc_idcache_list_first(list, &id_cache);
+  channels[i++] = (SilcChannelEntry)id_cache->context;
+
+  while (silc_idcache_list_next(list, &id_cache))
+    channels[i++] = (SilcChannelEntry)id_cache->context;
+  
+  silc_idcache_list_free(list);
+  
+  if (channels_count)
+    *channels_count = i;
+
+  return channels;
 }

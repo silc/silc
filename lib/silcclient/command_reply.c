@@ -592,8 +592,47 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   silc_client_command_reply_free(cmd);
 }
 
+/* Received reply to the LIST command. */
+
 SILC_CLIENT_CMD_REPLY_FUNC(list)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcCommandStatus status;
+  unsigned char *tmp, *name, *topic;
+  unsigned int usercount = 0;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK && 
+      status != SILC_STATUS_LIST_START &&
+      status != SILC_STATUS_LIST_ITEM &&
+      status != SILC_STATUS_LIST_END) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  name = silc_argument_get_arg_type(cmd->args, 3, NULL);
+  topic = silc_argument_get_arg_type(cmd->args, 4, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
+  if (tmp)
+    SILC_GET32_MSB(usercount, tmp);
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS, NULL, name, topic, usercount));
+
+  /* Pending callbacks are not executed if this was an list entry */
+  if (status != SILC_STATUS_OK &&
+      status != SILC_STATUS_LIST_END) {
+    silc_client_command_reply_free(cmd);
+    return;
+  }
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_LIST);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_LIST);
+  silc_client_command_reply_free(cmd);
 }
 
 /* Received reply to topic command. */
@@ -1042,13 +1081,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
-  if (argc > 2) {
+  if (argc > 3) {
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
-  if (argc == 2) {
-    motd = silc_argument_get_arg_type(cmd->args, 2, NULL);
+  if (argc == 3) {
+    motd = silc_argument_get_arg_type(cmd->args, 3, NULL);
     if (!motd) {
       COMMAND_REPLY_ERROR;
       goto out;

@@ -1,3 +1,28 @@
+Wed Mar 21 15:27:58 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed MOTD command in the server to work in router environment.
+
+	* Fixed the MOTD command in the client library to support
+	  the server argument in the command.
+
+	* Added `nickname_len' argument to the silc_idlist_add_client
+	  in the server, as the `nickname' argument may be binary data
+	  (it may be hash).
+
+	* Added silc_idlist_get_channels to return all channels from
+	  the ID list.
+
+	* Implemented LIST command to the server.  Affected file is
+	  silcd/command.c.
+
+	* Implemented the LIST command to the client library and on the
+	  user interface.
+
+	* Added [<user count>] argument to the LIST command reply.
+	  With private channels the user count is not shown.
+
+	* Updated TODO and README.
+
 Tue Mar 20 21:05:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* The client entry's data.registered must be TRUE even with

@@ -28,8 +28,7 @@ typedef struct SilcNotifyPayloadStruct *SilcNotifyPayload;
 typedef unsigned short SilcNotifyType;
 
 /* SILC notify types. Server may send these notify types to client to
-   notify of some action. Server also sends human readable notify message
-   to the client which client may ignore. */
+   notify of some action. */
 #define SILC_NOTIFY_TYPE_NONE            0 /* no specific type */
 #define SILC_NOTIFY_TYPE_INVITE          1 /* "invites you to channel" */
 #define SILC_NOTIFY_TYPE_JOIN            2 /* "has joined channel" */

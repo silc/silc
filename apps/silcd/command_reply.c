@@ -54,6 +54,7 @@ SilcServerCommandReply silc_command_reply_list[] =
   SILC_SERVER_CMD_REPLY(whowas, WHOWAS),
   SILC_SERVER_CMD_REPLY(identify, IDENTIFY),
   SILC_SERVER_CMD_REPLY(info, INFO),
+  SILC_SERVER_CMD_REPLY(motd, MOTD),
   SILC_SERVER_CMD_REPLY(join, JOIN),
   SILC_SERVER_CMD_REPLY(users, USERS),
 
@@ -187,7 +188,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be 
        global. */
-    client = silc_idlist_add_client(server->global_list, nick,
+    client = silc_idlist_add_client(server->global_list, nick, strlen(nick),
 				    strdup(username), 
 				    strdup(realname), client_id, 
 				    cmd->sock->user_data, NULL);
@@ -314,9 +315,8 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be 
        global. */
-    client = silc_idlist_add_client(server->global_list, nick,
-				    strdup(username), 
-				    strdup(realname), 
+    client = silc_idlist_add_client(server->global_list, nick, strlen(nick),
+				    strdup(username), strdup(realname), 
 				    silc_id_dup(client_id, SILC_ID_CLIENT), 
 				    cmd->sock->user_data, NULL);
     if (!client)
@@ -435,7 +435,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be 
        global. */
-    client = silc_idlist_add_client(server->global_list, nick,
+    client = silc_idlist_add_client(server->global_list, nick, strlen(nick),
 				    username ? strdup(username) : NULL, NULL,
 				    client_id, cmd->sock->user_data, NULL);
     client->data.registered = TRUE;
@@ -524,7 +524,7 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
   if (!server_id)
     goto out;
 
-  /* Get the info string */
+  /* Get the name */
   name = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
   if (tmp_len > 256)
     goto out;
@@ -557,6 +557,53 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
 
  out:
   SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INFO);
+  silc_server_command_reply_free(cmd);
+}
+
+/* Received reply fro MOTD command. */
+
+SILC_SERVER_CMD_REPLY_FUNC(motd)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcServer server = cmd->server;
+  SilcCommandStatus status;
+  SilcServerEntry entry;
+  SilcServerID *server_id;
+  unsigned int tmp_len;
+  unsigned char *tmp;
+
+  COMMAND_CHECK_STATUS;
+
+  /* Get Server ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (!tmp)
+    goto out;
+  server_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!server_id)
+    goto out;
+
+  entry = silc_idlist_find_server_by_id(server->local_list, server_id, NULL);
+  if (!entry) {
+    entry = silc_idlist_find_server_by_id(server->global_list, server_id, 
+					  NULL);
+    if (!entry)
+      goto out;
+  }
+
+  /* Get the motd */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+  if (tmp_len > 256)
+    tmp = NULL;
+
+  entry->motd = tmp;
+
+  /* Execute any pending commands */
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_MOTD);
+
+  entry->motd = NULL;
+
+ out:
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_MOTD);
   silc_server_command_reply_free(cmd);
 }
 

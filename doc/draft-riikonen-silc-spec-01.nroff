@@ -2182,24 +2182,22 @@ List of all defined commands in SILC follows.
 
    5    SILC_COMMAND_LIST
 
-        Max Arguments:  2
-            Arguments:  (1) [<Channel ID>] [<server>]
+        Max Arguments:  1
+            Arguments:  (1) [<Channel ID>]
 
-        The list command is used to list channels and their topics on
+        The list command is used to list channels and their topics on the
         current server.  If the <Channel ID> parameter is used, only the
         status of that channel is displayed.  Secret channels are not
         listed at all.  Private channels are listed with status indicating
-        that the channel is private.
-
-        If the <server> argument is specified the specified server's
-        channels are listed.  In this case the command must be sent to
-        the server who owns the channel that was requested.
+        that the channel is private.  Router may reply with all channels
+        it knows about.
 
         Reply messages to the command:
 
-        Max Arguments:  4
+        Max Arguments:  5
             Arguments:  (1) <Status Payload>  (2) <Channel ID>
-                        (3) <channel>         (4) <topic>
+                        (3) <channel>         (4) [<topic>]
+                        (5) [<user count>]
 
         This command may reply with several command reply messages to form
         a list of results.  In this case the status payload will include
@@ -2219,8 +2217,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_WILDCARDS
             SILC_STATUS_ERR_NOT_REGISTERED
             SILC_STATUS_ERR_TOO_MANY_PARAMS
-            SILC_STATUS_ERR_NO_SUCH_CHANNEL
             SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
             SILC_STATUS_ERR_NO_SUCH_SERVER
 
 
@@ -2296,6 +2294,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CHANNEL_ID
             SILC_STATUS_ERR_NOT_ON_CHANNEL
             SILC_STATUS_ERR_USER_ON_CHANNEL
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
 
 
    8    SILC_COMMAND_QUIT
@@ -2570,8 +2569,9 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  2
-            Arguments:  (1) <Status Payload>  (2) [<motd>]
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Server ID>
+                        (3) [<motd>]
 
         This command replies with the motd message if it exists.
 

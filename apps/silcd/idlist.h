@@ -107,6 +107,12 @@ typedef struct {
        the server SILC will ever need. These are also the informations
        that is broadcasted between servers and routers in the SILC network.
 
+   char *server_info
+   char *motd
+
+       Server info (from INFO command) saved temporarily and motd (from
+       MOTD command) saved temporarily.
+
    SilcServerEntry router
 
        This is a pointer back to the server list. This is the router server 
@@ -134,6 +140,7 @@ struct SilcServerEntryStruct {
   int server_type;
   SilcServerID *id;
   char *server_info;
+  char *motd;
 
   /* Pointer to the router */
   SilcServerEntry router;
@@ -489,7 +496,8 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
-		       char *username, char *userinfo, SilcClientID *id, 
+		       unsigned int nickname_len, char *username, 
+		       char *userinfo, SilcClientID *id, 
 		       SilcServerEntry router, void *connection);
 int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
 SilcClientEntry *
@@ -528,5 +536,8 @@ silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
 SilcChannelEntry
 silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
 			       SilcChannelID *new_id);
+SilcChannelEntry *
+silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
+			 unsigned int *channels_count);
 
 #endif

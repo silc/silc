@@ -148,7 +148,7 @@ void silc_server_notify(SilcServer server,
 	  goto out;
 
 	client = 
-	  silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
+	  silc_idlist_add_client(server->global_list, NULL, 0, NULL, NULL,
 				 silc_id_dup(client_id, SILC_ID_CLIENT), 
 				 sock->user_data, NULL);
 	if (!client) {
@@ -1305,8 +1305,9 @@ static void silc_server_new_id_real(SilcServer server,
 			 sizeof(unsigned char));
       memcpy(hash, ((SilcClientID *)id)->hash, 
 	     sizeof(((SilcClientID *)id)->hash));
-      entry = silc_idlist_add_client(id_list, hash, NULL, NULL, id, 
-				     router, NULL);
+      entry = silc_idlist_add_client(id_list, hash, 
+				     sizeof(((SilcClientID *)id)->hash),
+				     NULL, NULL, id, router, NULL);
       entry->nickname = NULL;
       entry->data.registered = TRUE;
 

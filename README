@@ -43,10 +43,8 @@ To run SILC server
 	./silcd -f <config file>
 
 
-Working Commands
-================
-
-Following commands has been, at least partly, implemented:
+SILC Commands
+=============
 
 
 	/SERVER [<server>[:<port>]]
@@ -92,7 +90,7 @@ Following commands has been, at least partly, implemented:
 				Add client to/remove client from ban list
 		I <username!nickname@server>	
 				Add client to/remove client from invite list
-		c <cipher>[:<keylen>]
+		c <cipher>
 				Set/unset channel's cipher
 
 		Multiple modes can be set/unset at once if the modes does not
@@ -119,6 +117,14 @@ Following commands has been, at least partly, implemented:
 				you are channel operator or channel founder.
 
 	/UMODE	+|-<modes>
+
+		Sets/unsets user mode.  Currently none of the modes can
+		be set by the user so this command can be merely used to
+		unset some mode.  Following user modes are available:
+
+		a 	Unset all modes
+		s	Unset server operator privileges
+		r	Unset router operator privileges
 
 	/MSG    <nickname> <message>
 
@@ -200,6 +206,17 @@ Following commands has been, at least partly, implemented:
 
 		Shutdowns the server.  You must be server operator to be
 		able to do this.
+
+	/MOTD	[<server>]
+
+		Display the MOTD of the server.  If server is not specified
+		the current server is used.
+
+	/LIST	[<channel>]
+
+		Lists all channels in the current server, or the channel
+		specified.  If the channel cannot be found then all
+		channels are listed.
 
 
 Features

@@ -599,6 +599,55 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
       break;
 
+    case SILC_COMMAND_LIST:
+      {
+	char *topic, *name;
+	unsigned int usercount;
+	unsigned char buf[256], tmp[16];
+	int i, len;
+
+	if (!success)
+	  return;
+
+	(void)va_arg(vp, SilcChannelEntry);
+	name = va_arg(vp, char *);
+	topic = va_arg(vp, char *);
+	usercount = va_arg(vp, unsigned int);
+
+	if (status == SILC_STATUS_LIST_START ||
+	    status == SILC_STATUS_OK)
+	  silc_say(client, conn, 
+	  "  Channel                                  Users     Topic");
+
+	memset(buf, 0, sizeof(buf));
+	strncat(buf, "  ", 2);
+	len = strlen(name);
+	strncat(buf, name, len > 40 ? 40 : len);
+	if (len < 40)
+	  for (i = 0; i < 40 - len; i++)
+	    strcat(buf, " ");
+	strcat(buf, " ");
+
+	memset(tmp, 0, sizeof(tmp));
+	if (usercount) {
+	  snprintf(tmp, sizeof(tmp), "%d", usercount);
+	  strcat(buf, tmp);
+	}
+	len = strlen(tmp);
+	if (len < 10)
+	  for (i = 0; i < 10 - len; i++)
+	    strcat(buf, " ");
+	strcat(buf, " ");
+
+	if (topic) {
+	  len = strlen(topic);
+	  strncat(buf, topic, len);
+	}
+
+	silc_say(client, conn, "%s", buf);
+      }
+      break;
+
     case SILC_COMMAND_UMODE:
       {
 	unsigned int mode;
