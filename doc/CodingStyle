@@ -283,7 +283,7 @@ General Appearance
 ==================
 
 The code should be clean and good to eye, although the function of it
-must always superseed the appearance.  However, it is nice to read code
+must always supersede the appearance.  However, it is nice to read code
 that looks good.  Here are some issues on general appearance.
 
 	o Use empty lines when appropriate but not too much.  There
@@ -312,8 +312,8 @@ Source Files
 
 All source files starts with header that includes the name of the author,
 copyright notice and the copyright policy, usually part of GNU GPL licence.
-Now, if this really isn't that important but some sort of header should
-be in all source files.
+Now, this really isn't that important but some sort of header should be in
+all source files.
 
 In the start of the source files should include the #include's that are
 needed.  All library source files must include `silcincludes.h', this is
@@ -388,7 +388,7 @@ must not be used directly.  There are functions like,
 
 You should always use silc_calloc instead of silc_malloc because
 silc_calloc automatically zeroes the allocated memory area.  This is
-imporant especially with structures because generally we want that all
+important especially with structures because generally we want that all
 fields, by default, are zero.
 
 So, instead of doing

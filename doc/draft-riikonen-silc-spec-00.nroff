@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 27 June 2000
+.ds RH 28 June 2000
 .ds CH Secure Internet Live Conferencing
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-00.txt                           27 June 2000
-Expires: 27 Jan 2001
+draft-riikonen-silc-spec-00.txt                           28 June 2000
+Expires: 28 Jan 2001
 
 .in 3
 
@@ -118,12 +118,12 @@ Table of Contents
 5 SILC Commands ................................................. 29
   5.1 SILC Commands Syntax ...................................... 29
   5.2 SILC Commands List ........................................ 31
-  5.3 SILC Command Status Types ................................. 53
-      5.3.1 SILC Command Status Payload ......................... 53
+  5.3 SILC Command Status Types ................................. 54
+      5.3.1 SILC Command Status Payload ......................... 54
       5.3.2 SILC Command Status List ............................ 54
 6 Security Considerations ....................................... 58
-7 References .................................................... 58
-8 Author's Address .............................................. 59
+7 References .................................................... 59
+8 Author's Address .............................................. 60
 
 
 .ti 0
@@ -1555,6 +1555,10 @@ The receiver always knows that, say, argument number two (2) is
 <message> argument, regardles of the ordering of the arguments in
 the Command Payload.
 
+
+
+
+
 Reply messages to the command:
 
 Max Arguments:  4
@@ -1844,6 +1848,11 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER
 
 
+
+
+
+
+
    7    SILC_COMMAND_TOPIC
 
         Max Arguments:  2
@@ -1890,6 +1899,7 @@ List of all defined commands in SILC follows.
         invited.
 
         Reply messages to the command:
+
 
         Max Arguments:  2
             Arguments:  (1) <Status Payload>
@@ -1981,6 +1991,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
             SILC_STATUS_ERR_NO_SUCH_SERVER_ID
             SILC_STATUS_ERR_NO_SUCH_SERVER
+
+
 
 
 
@@ -2078,6 +2090,11 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_AUTH_FAILED
 
 
+
+
+
+
+
    15   SILC_COMMAND_JOIN
 
         Max Arguments:  3
@@ -2171,6 +2188,10 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER
 
 
+
+
+
+
    17   SILC_COMMAND_UMODE
 
         Max Arguments:  2
@@ -2217,6 +2238,7 @@ List of all defined commands in SILC follows.
 
         This command replies with the changed client mode mask that
         the client is required to keep locally.
+
 
         Status messages:
 
@@ -2409,6 +2431,7 @@ List of all defined commands in SILC follows.
         all clients on the channel by sending SILC_COMMAND_CMODE command
         reply packet.
 
+
         Reply messages to the command:
 
         Max Arguments:  2
@@ -2502,6 +2525,8 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <Status Payload>
 
         This command replies only with Status Payload.
+
+
 
         Status messages:
 
@@ -2752,6 +2777,8 @@ List of all defined command status messages following.
         "Unknown command".  Command sent to server is unknown by the
         server.
 
+
+
    16   SILC_STATUS_ERR_WILDCARDS
 
         "Wildcards cannot be used".  Wildcards were provided but they
@@ -2778,7 +2805,6 @@ List of all defined command status messages following.
    21   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
 
         "No such Client ID".  Client ID provided does not exist.
-
 
 
    22   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
@@ -2828,8 +2854,6 @@ List of all defined command status messages following.
         "You are banned from this server".  The client tried to register
         on server that has explicitly denied this host to connect.
 
-
-
    31   SILC_STATUS_ERR_BAD_PASSWORD
 
         "Cannot join channel. Incorrect password".  Password provided for 
@@ -2849,6 +2873,8 @@ List of all defined command status messages following.
 
         "Cannot join channel. You have been banned".  The client has
         been banned from the channel.
+
+
 
    35   SILC_STATUS_ERR_UNKNOWN_MODE
 
@@ -2899,6 +2925,9 @@ Security is central to the design of this protocol, and these security
 considerations permeate the specification.
 
 
+
+
+
 .ti 0
 7 References
 
@@ -2942,6 +2971,11 @@ considerations permeate the specification.
 
 [HMAC]       Krawczyk, H., "HMAC: Keyed-Hashing for Message
              Authentication", RFC 2104, February 1997.
+
+
+
+
+
 
 
 .ti 0

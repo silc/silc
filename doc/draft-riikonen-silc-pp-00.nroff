@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 27 June 2000
+.ds RH 28 June 2000
 .ds CH SILC Packet Protocol
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-00.txt                             27 June 2000
-Expires: 27 Jan 2001
+draft-riikonen-silc-pp-00.txt                             28 June 2000
+Expires: 28 Jan 2001
 
 .in 3
 
@@ -981,7 +981,7 @@ ever is larger.
 
 The SILC header in this packet is encrypted with the session key
 of the next receiver of the packet.  Nothing else is encrypted
-with that key.  Hence, the actual packet and padding to be
+with that key.  Thus, the actual packet and padding to be
 encrypted with the session key is SILC Header plus padding to it
 to make it multiple by eight (8) or multiple by the block size
 of the cipher, which ever is larger.
@@ -995,7 +995,7 @@ the message.
 
 The payload may only be sent with SILC_PACKET_CHANNEL_MESSAGE packet.
 It  must not be sent in any other packet type.  Following diagram 
-represents the Notify Payload.
+represents the Channel Message Payload.
 
 (*) indicates that the field is not encrypted.
 
@@ -1265,7 +1265,7 @@ flag into SILC Packet Header.
 
 The payload may only be sent with SILC_PACKET_PRIVATE_MESSAGE_KEY 
 packet.  It must not be sent in any other packet type.  Following 
-diagram represents the Private Message Payload.
+diagram represents the Private Message Key Payload.
 
 
 .in 5
