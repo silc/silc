@@ -39,14 +39,14 @@
 #ifndef _LIB
 #define DLLAPI __declspec(dllimport)
 #else
-#define DLLAPI // Nada, we use .DEF
+#define DLLAPI	/* Nada, we use .DEF */
 #endif
 #else
-#define DLLAPI // Nada, we use .DEF
+#define DLLAPI	/* Nada, we use .DEF */
 #endif
 #endif
 
-# Some winsock compatiblity requirements
+/* Some winsock compatiblity requirements */
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x400
 #else
