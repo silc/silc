@@ -905,7 +905,7 @@ SILC_TASK_CALLBACK(silc_server_backup_connected_later)
     SILC_LOG_DEBUG(("Other protocol is running, wait for it to finish"));
     silc_schedule_task_add(server->schedule, 0,
 			   silc_server_backup_connected_later,
-			   proto_ctx, 10, 0,
+			   proto_ctx, 15, 0,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_NORMAL);
     return;
@@ -1474,7 +1474,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	    /* Start through scheduler */
 	    silc_schedule_task_add(server->schedule, 0,
 				   silc_server_backup_connected_later,
-				   proto_ctx, 2, 0,
+				   proto_ctx, 5, 0,
 				   SILC_TASK_TIMEOUT,
 				   SILC_TASK_PRI_NORMAL);
 	  } else {

@@ -5095,6 +5095,9 @@ SILC_SERVER_CMD_FUNC(close)
   /* Close the connection to the server */
   sock = (SilcSocketConnection)server_entry->connection;
 
+  if (server_entry->server_type == SILC_BACKUP_ROUTER)
+    server->backup_closed = TRUE;
+
   server->backup_noswitch = TRUE;
   if (server->router == server_entry) {
     server->id_entry->router = NULL;

@@ -2216,11 +2216,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       /* Statistics */
       if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER) {
 	server->stat.my_servers++;
+	server->stat.servers++;
       } else {
 	server->stat.my_routers++;
 	server->stat.routers++;
       }
-      server->stat.servers++;
 
       /* Check whether this connection is to be our primary router connection
 	 if we do not already have the primary route. */
@@ -3598,11 +3598,11 @@ void silc_server_free_sock_user_data(SilcServer server,
 	silc_idlist_del_server(server->global_list, user_data);
       if (sock->type == SILC_SOCKET_TYPE_SERVER) {
 	server->stat.my_servers--;
+	server->stat.servers--;
       } else {
 	server->stat.my_routers--;
 	server->stat.routers--;
       }
-      server->stat.servers--;
       if (server->server_type == SILC_ROUTER)
 	server->stat.cell_servers--;
 
