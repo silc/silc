@@ -1146,16 +1146,14 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 char *channel);
 
-/****f* silcclient/SilcClientAPI/silc_client_get_channel_id_resolve
+/****f* silcclient/SilcClientAPI/silc_client_get_channel_by_id
  *
  * SYNOPSIS
  *
- *    void 
- *    silc_client_get_channel_by_id_resolve(SilcClient client,
- *                                          SilcClientConnection conn,
- *                                          SilcChannelID *channel_id,
- *                                          SilcGetClientCallback completion,
- *                                          void *context);
+ *    SilcChannelEntry
+ *    silc_client_get_channel_by_id(SilcClient client,
+ *                                  SilcClientConnection conn,
+ *                                  SilcChannelID *channel_id);
  *
  * DESCRIPTION
  *
