@@ -67,7 +67,7 @@ typedef SilcUInt8 SilcAttribute;
    comment is the structure or data type that must be used with the
    silc_attribute_get_object function to fetch parsed attribute. */
 #define SILC_ATTRIBUTE_NONE                     0
-#define SILC_ATTRIBUTE_USER_INFO                1
+#define SILC_ATTRIBUTE_USER_INFO                1 /* SilcVCard */
 #define SILC_ATTRIBUTE_SERVICE                  2 /* SilcAttributeObjService */
 #define SILC_ATTRIBUTE_STATUS_MOOD              3 /* SilcAttributeMood */
 #define SILC_ATTRIBUTE_STATUS_FREETEXT          4 /* char * (UTF-8 string) */
@@ -83,6 +83,9 @@ typedef SilcUInt8 SilcAttribute;
 #define SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE   14 /* SilcAttributeObjPk */
 #define SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE 15 /* SilcAttributeObjPk */
 /***/
+
+/* Maximum length of attribute request packet */
+#define SILC_ATTRIBUTE_MAX_REQUEST_LEN (4 * 255)
 
 /****d* silccore/SilcAttributesAPI/SilcAttributeFlags
  *

@@ -56,7 +56,15 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     switch (attribute) {
 
     case SILC_ATTRIBUTE_USER_INFO:
-      SILC_NOT_IMPLEMENTED("SILC_ATTRIBUTE_USER_INFO");
+      {
+	SilcVCard vcard = object;
+	if (object_size != sizeof(*vcard))
+	  return NULL;
+	str = silc_vcard_encode(vcard, &object_size);
+	if (!str)
+	  return NULL;
+	object = str;
+      }
       break;
 
     case SILC_ATTRIBUTE_SERVICE:
@@ -333,8 +341,7 @@ SilcBuffer silc_attribute_payload_encode_data(SilcBuffer attrs,
 		     SILC_STR_UI_SHORT((SilcUInt16)data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_END);
-  if (buffer)
-    silc_buffer_push(buffer, buffer->data - buffer->head);
+  silc_buffer_push(buffer, buffer->data - buffer->head);
 
   return buffer;
 }
@@ -394,12 +401,19 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   SilcUInt16 len;
   bool ret = FALSE;
 
-  if (!object || !(*object) ||  payload->flags & SILC_ATTRIBUTE_FLAG_INVALID)
+  if (!object || !(*object) || payload->flags & SILC_ATTRIBUTE_FLAG_INVALID)
     return FALSE;
 
   switch (payload->attribute) {
   case SILC_ATTRIBUTE_USER_INFO:
-    SILC_NOT_IMPLEMENTED("SILC_ATTRIBUTE_USER_INFO");
+    {
+      SilcVCard vcard = *object;
+      if (object_size != sizeof(*vcard))
+	break;
+      if (!silc_vcard_decode(payload->data, payload->data_len, vcard))
+	break;
+      ret = TRUE;
+    }
     break;
 
   case SILC_ATTRIBUTE_SERVICE:
