@@ -1888,3 +1888,44 @@ void silc_ske_free_key_material(SilcSKEKeyMaterial *key)
   }
   silc_free(key);
 }
+
+const char *silc_ske_status_string[] = 
+{
+  /* Official */
+  "Ok",
+  "Unkown error occurred",
+  "Bad payload in packet",
+  "Unsupported group",
+  "Unsupported cipher",
+  "Unsupported PKCS",
+  "Unsupported hash function",
+  "Unsupported HMAC",
+  "Unsupported public key (or certificate)",
+  "Incorrect signature",
+  "Bad or unsupported version",
+  "Invalid cookie",
+
+  /* Other errors */
+  "Pending",
+  "Remote did not provide public key",
+  "Key exchange protocol is not active",
+  "Bad reserved field in packet",
+  "Bad payload length in packet",
+  "Incorrect hash",
+
+  NULL
+};
+
+/* Maps status to readable string and returns the string. If string is not
+   found and empty character string ("") is returned. */
+
+const char *silc_ske_map_status(SilcSKEStatus status)
+{
+  int i;
+
+  for (i = 0; silc_ske_status_string[i]; i++)
+    if (status == i)
+      return silc_ske_status_string[i];
+
+  return "";
+}

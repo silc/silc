@@ -246,5 +246,6 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 					    uint32 req_hmac_key_len,
 					    SilcSKEKeyMaterial *key);
 void silc_ske_free_key_material(SilcSKEKeyMaterial *key);
+const char *silc_ske_map_status(SilcSKEStatus status);
 
 #endif

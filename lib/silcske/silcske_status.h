@@ -43,8 +43,9 @@ typedef enum {
   SILC_SKE_STATUS_BAD_RESERVED_FIELD,
   SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH,
   SILC_SKE_STATUS_INCORRECT_HASH,
-  SILC_SKE_STATUS_INCORRECT_PUBLIC_KEY,
   SILC_SKE_STATUS_FREED,
 } SilcSKEStatus;
+
+extern const char *silc_ske_status_string[];
 
 #endif
