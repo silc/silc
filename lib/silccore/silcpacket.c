@@ -361,9 +361,11 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     /* Check MAC of the packet */
     if (!silc_packet_check_mac(hmac, sock->inbuf->data, paddedlen,
 			       sock->inbuf->data + paddedlen, sequence)) {
-      SILC_LOG_WARNING(("Packet MAC check failed %s:%d [%s] [%s]", 
+      SILC_LOG_WARNING(("Packet MAC check failed %s:%d "
+			"[%s type %d len %dB seq %d] [%s]",
 			sock->hostname, sock->port,
 			silc_get_packet_name(header[3]),
+			header[3], paddedlen, sequence,
 			(sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
 			 sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 			 sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
