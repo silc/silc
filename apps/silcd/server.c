@@ -2287,6 +2287,11 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
       server->backup_noswitch = TRUE;
 
+    if (sock->protocol && sock->protocol->protocol) {
+      SILC_LOG_INFO(("Error during %d protocol",
+		    sock->protocol->protocol->type));
+    }
+
     SILC_SET_DISCONNECTING(sock);
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock, NULL);
