@@ -1534,11 +1534,6 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
     attribute = silc_attribute_get_attribute(attr);
     switch (attribute) {
 
-    case SILC_ATTRIBUTE_USER_INFO:
-      /* Put USER_INFO */
-      SILC_NOT_IMPLEMENTED("SILC_ATTRIBUTE_USER_INFO");
-      break;
-
     case SILC_ATTRIBUTE_SERVICE:
       /* Put SERVICE.  Put only SILC service. */
       memset(&service, 0, sizeof(service));
