@@ -362,7 +362,8 @@ void silc_server_notify(SilcServer server,
     silc_schedule_task_del_by_context(server->schedule, client);
 
     /* Remove the client from all channels. */
-    silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, FALSE);
+    silc_server_remove_from_channels(server, NULL, client, TRUE,
+				     tmp, FALSE, FALSE);
 
     /* Check if anyone is watching this nickname */
     if (server->server_type == SILC_ROUTER)
@@ -1280,7 +1281,7 @@ void silc_server_notify(SilcServer server,
 
 	    /* Remove the client from all channels. */
 	    silc_server_remove_from_channels(server, NULL, client, 
-					     TRUE, NULL, FALSE);
+					     TRUE, NULL, FALSE, FALSE);
 
 	    /* Check if anyone is watching this nickname */
 	    if (server->server_type == SILC_ROUTER)
@@ -1519,7 +1520,7 @@ void silc_server_notify(SilcServer server,
 
       /* Remove the client from all channels */
       silc_server_remove_from_channels(server, NULL, client, FALSE, NULL, 
-				       FALSE);
+				       FALSE, TRUE);
 
       /* Check if anyone is watching this nickname */
       silc_server_check_watcher_list(server, client, NULL,
@@ -1698,7 +1699,7 @@ void silc_server_notify(SilcServer server,
 						 client_id, FALSE, NULL);
 	  if (client) {
 	    silc_server_remove_from_channels(server, NULL, client, TRUE, 
-					     NULL, TRUE);
+					     NULL, TRUE, FALSE);
 	    silc_idlist_del_data(client);
 	    silc_idlist_del_client(server->global_list, client);
 	  }
@@ -3658,7 +3659,8 @@ void silc_server_resume_client(SilcServer server,
     server->stat.clients--;
     if (server->stat.cell_clients)
       server->stat.cell_clients--;
-    silc_server_remove_from_channels(server, NULL, client, FALSE, NULL, FALSE);
+    silc_server_remove_from_channels(server, NULL, client, FALSE,
+				     NULL, FALSE, FALSE);
     silc_server_del_from_watcher_list(server, client);
     if (!silc_idlist_del_client(server->local_list, client))
       silc_idlist_del_client(server->global_list, client);

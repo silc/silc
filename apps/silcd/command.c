@@ -1431,6 +1431,8 @@ SILC_SERVER_CMD_FUNC(kill)
 
     /* Do normal signoff for the destination client */
     sock = remote_client->connection;
+    silc_server_remove_from_channels(server, NULL, remote_client,
+				     TRUE, (char *)"Killed", TRUE, TRUE);
     silc_server_free_client_data(server, NULL, remote_client, TRUE,
 				 comment ? comment :
 				 (unsigned char *)"Killed");

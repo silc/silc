@@ -43,7 +43,8 @@ silc_server_remove_clients_channels(SilcServer server,
     return;
 
   SILC_LOG_DEBUG(("Remove client %s from all channels",   
-		 client->nickname ? client->nickname : ""));
+		 client->nickname ? client->nickname :
+		  (unsigned char *)""));
 
   if (silc_hash_table_find(clients, client, NULL, NULL))
     silc_hash_table_del(clients, client);
@@ -1514,7 +1515,7 @@ void silc_server_kill_client(SilcServer server,
   /* Remove the client from all channels. This generates new keys to the
      channels as well. */
   silc_server_remove_from_channels(server, NULL, remote_client, FALSE, 
-				   NULL, TRUE);
+				   NULL, TRUE, FALSE);
 
   /* Remove the client entry, If it is locally connected then we will also
      disconnect the client here */
@@ -1724,7 +1725,7 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   unsigned char *tmp = NULL;
   SilcUInt32 len = 0, t;
   SilcHashTableList htl;
-  SilcBuffer entry;
+  SilcBuffer entry, idp = NULL;
   bool ret = FALSE;
 
   if (type < 1 || type > 3 || !check)
@@ -1741,10 +1742,11 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
       return FALSE;
   }
   if (type == 3) {
-    tmp = silc_id_id2str(check, SILC_ID_CLIENT);
-    if (!tmp)
+    idp = silc_id_payload_encode(check, SILC_ID_CLIENT);
+    if (!idp)
       return FALSE;
-    len = silc_id_get_len(check, SILC_ID_CLIENT);
+    tmp = idp->data;
+    len = idp->len;
   }
 
   /* Compare the list */
@@ -1764,7 +1766,9 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   }
   silc_hash_table_list_reset(&htl);
 
-  silc_free(tmp);
+  if (!idp)
+    silc_free(tmp);
+  silc_buffer_free(idp);
   return ret;
 }
 
@@ -1907,8 +1911,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
 	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
-	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
-	    silc_hash_table_del_by_context(list, (void *)2, tmp2);
+	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+	    silc_hash_table_del_by_context(list, (void *)3, tmp2);
 	    silc_buffer_free(tmp2);
 	    break;
 	  }

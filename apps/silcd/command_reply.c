@@ -148,7 +148,7 @@ silc_server_command_process_error(SilcServerCommandReplyContext cmd,
 					       client_id, FALSE, NULL);
 	if (client) {
 	  silc_server_remove_from_channels(server, NULL, client, TRUE, 
-					   NULL, TRUE);
+					   NULL, TRUE, FALSE);
 	  silc_idlist_del_data(client);
 	  silc_idlist_del_client(server->global_list, client);
 	}

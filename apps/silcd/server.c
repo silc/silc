@@ -3083,10 +3083,10 @@ void silc_server_free_client_data(SilcServer server,
   /* Remove client from all channels */
   if (notify)
     silc_server_remove_from_channels(server, NULL, client,
-				     TRUE, (char *)signoff, TRUE);
+				     TRUE, (char *)signoff, TRUE, FALSE);
   else
     silc_server_remove_from_channels(server, NULL, client,
-				     FALSE, NULL, FALSE);
+				     FALSE, NULL, FALSE, FALSE);
 
   /* Remove this client from watcher list if it is */
   silc_server_del_from_watcher_list(server, client);
@@ -3349,7 +3349,8 @@ void silc_server_remove_from_channels(SilcServer server,
 				      SilcClientEntry client,
 				      bool notify,
 				      const char *signoff_message,
-				      bool keygen)
+				      bool keygen,
+				      bool killed)
 {
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
@@ -3432,6 +3433,21 @@ void silc_server_remove_from_channels(SilcServer server,
 					 clidp->data, clidp->len,
 					 signoff_message, signoff_message ?
 					 strlen(signoff_message) : 0);
+
+    if (killed && clidp) {
+      /* Remove the client from channel's invite list */
+      if (channel->invite_list &&
+	  silc_hash_table_count(channel->invite_list)) {
+	SilcBuffer ab;
+	SilcArgumentPayload iargs;
+	ab = silc_argument_payload_encode_one(NULL, clidp->data,
+					      clidp->len, 3);
+	iargs = silc_argument_payload_parse(ab->data, ab->len, 1);
+	silc_server_inviteban_process(server, channel->invite_list, 1, iargs);
+	silc_buffer_free(ab);
+	silc_argument_payload_free(iargs);
+      }
+    }
 
     /* Don't create keys if we are shutting down */
     if (server->server_shutdown)
