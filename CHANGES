@@ -1,3 +1,36 @@
+Tue Nov  7 22:14:19 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Made basic router to router connections working.  At least they
+	  can now connect to each other but nothing really works the way
+	  they are supposed - yet.
+
+	* Added new initiator token to RouterConnection configuration
+	  file in silcd/serverconfig.[ch].  It is used to tell whether we
+	  are the initiator to the remote router or whether we'll expect
+	  the other end to connect.
+
+	* Moved registering of listener task to silc_server_init, hence
+	  the server starts listenning as soon as it is run, even if it
+	  does not have connections to other routers.  Let's see how well
+	  this will work.
+
+	* Changed default connection retry timeouts for more suitable in
+	  silcd/server.h.
+
+	* Removed cipher and such arguments from silc_idlist_add_client
+	  and silc_idlist_add_server prototypes from silcd/idlist.[ch].
+	  Added new function silc_idlist_add_data to add the keys and stuff
+	  to any ID entry.
+
+	* Added SilcIDListData structure and added it to SilcClientEntry
+	  and SilcServerEntry as their first field in the structure.  This
+	  way we can explicitly cast the ID entries to the SilcIDListData
+	  structure and get common data for the entries.  In past, we had
+	  to first check what type of connection it is and then cast it to
+	  correct ID entry type.  Now, we can directly cast the opaque
+	  pointer to the SilcIDListData (no matter what ID entry it actually
+	  is) and get the data needed.
+
 Mon Nov  6 21:56:12 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Wow, found a bug in scheduler.  The scheduler uninitialized itself
