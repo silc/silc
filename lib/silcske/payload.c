@@ -158,22 +158,14 @@ silc_ske_payload_start_decode(SilcSKE ske,
 void silc_ske_payload_start_free(SilcSKEStartPayload *payload)
 {
   if (payload) {
-    if (payload->cookie)
-      silc_free(payload->cookie);
-    if (payload->version)
-      silc_free(payload->version);
-    if (payload->ke_grp_list)
-      silc_free(payload->ke_grp_list);
-    if (payload->pkcs_alg_list)
-      silc_free(payload->pkcs_alg_list);
-    if (payload->enc_alg_list)
-      silc_free(payload->enc_alg_list);
-    if (payload->hash_alg_list)
-      silc_free(payload->hash_alg_list);
-    if (payload->hmac_alg_list)
-      silc_free(payload->hmac_alg_list);
-    if (payload->comp_alg_list)
-      silc_free(payload->comp_alg_list);
+    silc_free(payload->cookie);
+    silc_free(payload->version);
+    silc_free(payload->ke_grp_list);
+    silc_free(payload->pkcs_alg_list);
+    silc_free(payload->enc_alg_list);
+    silc_free(payload->hash_alg_list);
+    silc_free(payload->hmac_alg_list);
+    silc_free(payload->comp_alg_list);
     silc_free(payload);
   }
 }

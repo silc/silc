@@ -72,8 +72,7 @@ void silc_ske_free(SilcSKE ske)
 
     /* Free rest */
     if (ske->prop) {
-      if (ske->prop->group)
-	silc_free(ske->prop->group);
+      silc_free(ske->prop->group);
       if (ske->prop->pkcs)
 	silc_pkcs_free(ske->prop->pkcs);
       if (ske->prop->cipher)
@@ -94,8 +93,8 @@ void silc_ske_free(SilcSKE ske)
       silc_mp_uninit(ske->KEY);
       silc_free(ske->KEY);
     }
-    if (ske->hash)
-      silc_free(ske->hash);
+    silc_free(ske->hash);
+    silc_free(ske->callbacks);
     silc_free(ske);
   }
 }
@@ -661,6 +660,8 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
   /* Call the callback function. */
   if (ske->callbacks->payload_receive)
     (*ske->callbacks->payload_receive)(ske, ske->callbacks->context);
+
+  silc_ske_payload_start_free(remote_payload);
 
   return status;
 
