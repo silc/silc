@@ -1,26 +1,28 @@
+/*
+  
+  silcschedule.h
+ 
+  COPYRIGHT
+ 
+  Author: Pekka Riikonen <priikone@silcnet.org>
+ 
+  Copyright (C) 1998 - 2001 Pekka Riikonen
+ 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+ 
 /****h* silcutil/silcschedule.h
  *
- * NAME
- *
- * silcschedule.h
- *
- * COPYRIGHT
- *
- * Author: Pekka Riikonen <priikone@silcnet.org>
- *
- * Copyright (C) 1998 - 2001 Pekka Riikonen
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- # DESCRIPTION
+ * DESCRIPTION
  *
  * The SILC Scheduler is the heart of any application. The scheduler provides
  * the application's main loop that can handle incoming data, outgoing data,
@@ -63,7 +65,7 @@
  * application could be created by allocating own scheduler for each of the
  * worker threads.
  *
- */
+ ***/
 
 #ifndef SILCSCHEDULE_H
 #define SILCSCHEDULE_H
@@ -344,7 +346,7 @@ void silc_schedule_stop(SilcSchedule schedule);
  ***/
 void silc_schedule(SilcSchedule schedule);
 
-/****f* silcutil/SilcScheduleAPI/silc_schedule
+/****f* silcutil/SilcScheduleAPI/silc_schedule_one
  *
  * SYNOPSIS
  *

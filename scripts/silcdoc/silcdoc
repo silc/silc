@@ -55,7 +55,7 @@ if [ "$TYPE" = "HTML" ]; then
     sh gen.sh index.php $DST/$i.html $DST/$i.html
 
     # Generate the details and the layour
-    files=`find $DST -name ""$i"_*.html"`
+    files=`find $DST -name "$i_*.html"`
     for k in $files
     do
       sh gen.sh gen_detail.php $k $k
