@@ -22,14 +22,25 @@
         2.8 How secure SILC really is?
         2.9 Does SILC support instant messaging?
         2.10 Why SILC does not have LINKS command like in IRC?
-        2.11 Why SILC does not have STATS command like in IRC?
+        2.11 What does the session detaching/resuming mean?
         2.12 Is anyone outside a channel able to see the channel
    messages?
         2.13 How can I register my channel in SILC?
         2.14 Is it true that all messages are encrypted in SILC?
         2.15 Can server or SILC operator gain operator mode on a channel?
         2.16 Channel name doesn't have #-character or does it?
-        2.17 I have suggestions to SILC Protocol, what can I do?
+        2.17 Does SILC support moderated channels?
+        2.18 What does the "watching" mean?
+        2.19 Is it possible to reject watching?
+        2.20 Is it possible to block private messages?
+        2.21 Is it possible to block channel messages?
+        2.22 Is it possible to block invites?
+        2.23 Does SILC support multimedia messages, like video/audio
+   streaming?
+        2.24 What kind of presence modes SILC support?
+        2.25 Does SILC support anonymity?
+        2.26 Does SILC support services?
+        2.27 I have suggestions to SILC Protocol, what can I do?
 
    3. Client Questions
         3.1 Where can I find SILC clients?
@@ -58,6 +69,7 @@
    //.silc directory"
         3.20 Why /join #silc and /join silc doesn't join the same
    channel?
+        3.21 How do I detach my session from the server?
 
    4. Server Questions
         4.1 Where can I find SILC servers?
@@ -258,10 +270,12 @@
    the protocol to guard against them.
 
    Q: Does SILC support instant messaging?
-   A: SILC is not an instant message (IM) system, like ICQ and the
-   others. SILC is more IRC like system, "real-time", connection-oriented
-   chat and that kind of stuff. But I guess IRC is too sometimes called
-   an Instant Messaging system.
+   A: Officially SILC is not an instant message (IM) system as people
+   usually understands it. However, SILC supports many of the features
+   that are found in traditional IM systems. SILC can be implemented in
+   either IRC-style or IM-style system. Features that are usually found
+   only in IM systems, such as multiple presence settings, persistent
+   sessions etc. are also found in SILC.
 
    Q: Why SILC does not have LINKS command like in IRC?
    A: It was felt that this information as an own command in SILC is not
@@ -272,13 +286,24 @@
    available in other ways than providing command like LINKS, which shows
    the active server links in IRC.
 
-   Q: Why SILC does not have STATS command like in IRC?
-   A: This too was considered as information that the protocol should not
-   address. We feel that server implementations will need to implement
-   some sort of adminstrative plugin, or module which provides various
-   means of accessing statistical and other information in the server.
-   And, we do consider this implementation issue, not protocol design
-   issue.
+   Q: What does the session detaching/resuming mean?
+   A: The new SILC protocol supports a feature called session detachment.
+   This means that client can detach from the server by giving a DETACH
+   command, but still remain as valid user in the network. The connection
+   is lost to the server but the user remains in the network. User can
+   then resume the session back next time it connects a server in the
+   network, and be like he was never gone.
+
+   This feature clearly could be used in many cases. For example, if you
+   want to upgrade your current SILC client, you do not have to quit the
+   network anymore. You just give DETACH command and still remain in the
+   network. Then you upgrade your client and reconnect to the server and
+   continue business as is. If somebody gives WHOIS command to your
+   nickname he will see that you are detached. Messages that are sent to
+   you when you are detached are dropped by the server. Nice thing about
+   this feature is also that you can resume the session from any server
+   in the network; you do not have to reconnect to the same server you
+   originally were connected to.
 
    Q: Is anyone outside a channel able to see the channel messages?
    A: A short answer is simply No. A longer answer involves assumptions
@@ -292,16 +317,19 @@
    So, longer answer results into same as the short one; No.
 
    Q: How can I register my channel in SILC?
-   A: There is no channel registration in SILC. When you join a
-   non-existing channel, it is created and it will exist until the last
-   person leaves it. When you join a new channel you became the founder
-   (see also Q: What does the founder mode on channel mean, and how do I
-   set it? and Q: I am founder of invite only channel, how can I join the
-   channel after I have left it?) and you can preserve your founder
-   status while the channel exists. Cell or network wide founder status
-   or persistent founder status (preserving even empty channels for
-   limited time) is a debated TODO item and it may or may not happen. If
-   it does, its effect could be similar to channel registration.
+   A: There is not a channel registering service in SILC. However, SILC
+   does support permanent channels. When you join a non-existing channel
+   for the first time you will become the founder of the channel. You can
+   then set a special founder mode on the channel which makes the channel
+   permanent. When the last user leaves the channel when this mode is
+   set, the channel will not be destroyed. If the founder mode is not
+   set, then empty channels will be destroyed automatically. When the
+   founder mode is set and you leave the channel you can also reclaim the
+   founder rights back on the channel next time you join it. (see also Q:
+   What does the founder mode on channel mean, and how do I set it? and
+   Q: I am founder of invite only channel, how can I join the channel
+   after I have left it?). You can call this channel registering if you
+   want.
 
    Q: Is it true that all messages are encrypted in SILC?
    A: Most definitely yes. The SILC protocol makes it impossible to send
@@ -326,6 +354,86 @@
    you want it to have the character then just join to the channel with
    #-character in the name.
 
+   Q: Does SILC support moderated channels?
+   A: Yes. Channel founder can moderate both normal users and channel
+   operators so that they cannot talk on the channel. It is also possible
+   to queit one specific user on the channel if needed.
+
+   Q: What does the "watching" mean?
+   A: You can set a "watch" list for yourself in the server. This means
+   that you can watch for certain nicknames in the network. For example,
+   if you add a nickname "foo" to the watch list you will be notified
+   when the foo logins to the network, leaves the network, changes its
+   user mode or changes its nickname. This way you can watch for example
+   when does you friend login to the network.
+
+   Q: Is it possible to reject watching?
+   A: Yes. Since it is clear that not everyone wants to be spied on you
+   can set a mode for yourself which rejects watching you. Even if
+   someone is watching the nickname you have, your logins, logoffs, mode
+   changes or nickname changes will not be notified to the watcher.
+
+   Q: Is it possible to block private messages?
+   A: Yes. You can block incoming private messages by setting a mode that
+   prevents unwanted private messages. Only the private messages that are
+   secured with a private message key are delivered to you. This implies
+   that you have negotiated the private key with the sender of the
+   message, and therefore want to receive messages from that user. Other
+   private messages that are secured with normal session keys are dropped
+   when the mode is set.
+
+   Q: Is it possible to block channel messages?
+   A: Yes it is. By setting a mode that accomplishes this you can prevent
+   the server of sending any channel messages to you. There is also a
+   mode that allows blocking channel messages from normal users. This
+   means that you will receive channel messages only when it is sent by
+   channel operator or channel founder. It is also possible to block
+   channel messages sent by robots. A user on the channel can have a
+   robot mode set (which means that the user is actually a robot
+   program), and messages sent from that user can be blocked with the
+   mode.
+
+   Q: Is it possible to block invites?
+   A: It sure is. You can set a mode that prevents the server of sending
+   invite notifications to you. This can for example prevent invite
+   flooding. The downside is that it may make joining to a invite only
+   channels a bit harder.
+
+   Q: Does SILC support multimedia messages, like video/audio streaming?
+   A: Yes it does. The new version of the protocol supports sending of
+   MIME objects as messages. Since MIME objects can easily represent any
+   kind of data, such as video stream, audio stream, images, etc. it is
+   easy to send these multimedia messages in SILC. It also makes video
+   conferencing possible with SILC. It can work by sending the stream(s)
+   to a channel and everybody who joins the channel can receive the
+   stream. This feature in the protocol surely makes possible many kind
+   of multimedia applications in the future.
+
+   Q: What kind of presence modes SILC support?
+   A: By presence we mean indication of presence in the network, and SILC
+   supports several different kinds of presence modes. They can be
+   changed with the UMODE command which changes your user mode in the
+   network. Currently there is the following modes for presence: GONE
+   (I'm away), INDISPOSED (I cannot be here), BUSY (I'm busy, don't
+   bother me), PAGE (page me if you want to talk), and HYPER (I'm hyper
+   active, talk to me). When mode is not set it means you are present in
+   the network. There are many other user modes as well, but they are not
+   directly related to presence indication.
+
+   Q: Does SILC support anonymity?
+   A: The protocol has a user mode which indicates that user is anonymous
+   user. The user cannot set or unset the mode itself, but a server which
+   provides these anonymous chatting services can set the mode for the
+   user that connects to the server. User that has the mode set has their
+   username and hostname information scrambled. There are other ways of
+   making anonymity in SILC but they all are implementational methods,
+   and protocol does not handle those methods.
+
+   Q: Does SILC support services?
+   A: Yes it does. There is command called SERVICE which can be used by
+   clients and servers to negotiate a service agreement with a remote
+   server. The protocol does not however define any services currently.
+
    Q: I have suggestions to SILC Protocol, what can I do?
    A: All suggestions and improvements are of course welcome. You should
    read the protocol specifications first to check out whether your idea
@@ -336,17 +444,21 @@
    3. Client Questions
 
    Q: Where can I find SILC clients?
-   A: The SILC client is available for free download from the silcnet.org
-   web page. Some people have also mentioned words Java and Perl when
-   talking about SILC clients. Nothing has appeared yet, though.
+   A: The official SILC client is available for free download from the
+   silcnet.org web page. There is also several independent projects
+   working with the SILC Toolkit to come up with various other clients.
+   Bombyx is a cross-platform GUI client written with FLTK. Milc is also
+   a cross-platform GUI client written with WxWindows. See also our links
+   page for links to other clients.
 
    Q: Can I use SILC with IRC client and vice versa?
    A: Generally the answer would be no for both. However, there exist
    already at least one IRC client that supports SILC, the Irssi client.
    The current SILC client is actually based on the user interface of the
    Irssi client. So, yes it is possible to use SILC with some IRC clients
-   and vice versa. But, this does not mean that you can talk from SILC
-   network to IRC network, that is not possible.
+   and vice versa. You can use SILC plug-in in Irssi and have support for
+   both protocols in one client. But, this does not mean that you can
+   talk from SILC network to IRC network, that is not possible.
 
    Q: The default theme sucks, where can I find a better one?
    A: The Irssi SILC client's theme files are almost 100% compatible with
@@ -427,21 +539,25 @@
    channel wishes to preserve the channel founder mode even if he leave
    the channel he can set the founder mode for the channel.
 
-   The mode is set by giving command: /CMODE #channel +f -pubkey. This
-   will set the founder mode and will use the public key of the founder
-   as authenticator when the user is reclaiming the mode back. If the
+   The mode is set by giving command: /CMODE #channel +f. This will set
+   the founder mode and will use the public key of the founder as
+   authenticator when the user is reclaiming the mode back. If the
    founder leaves the channel he will be able to get the founder mode
    back by using JOIN or CUMODE commmands. Giving command /JOIN #channel
-   -founder -pubkey, will get the founder mode back at the same time he
-   joins the channel, or giving commmand /CUMODE #channel +f -pubkey,
-   will also give the founder mode back on the channel after he has
-   joined the channel.
+   -founder, will get the founder mode back at the same time he joins the
+   channel, or giving commmand /CUMODE #channel +f yournick, will also
+   give the founder mode back on the channel after he has joined the
+   channel.
 
-   If the channel is destroyed after the last client leaves the channel,
-   the founder mode is also reset. Who ever creates the channel after
-   that will also get the channel founder mode automatically. Note also
-   that the founder mode is local. You can reclaim the mode back only on
-   the same server where you set the founder mode in the first place.
+   The founder mode also means that the channel becomes permanent when it
+   is set. This means that when the last client leaves the channel the
+   channel is not destroyed when the founder mode is set. Next time
+   someone joins the channel he will not become the founder of the
+   channel if the channel already existed (but were empty). If the
+   founder mode is not set when last user leaves the channel, the channel
+   will be destroyed. When you set the mode for the channel and leave the
+   channel you can reclaim the founder rights to yourself back at any
+   time when you rejoin the channel.
 
    Q: I am founder of invite only channel, how can I join the channel
    after I have left it?
@@ -453,10 +569,8 @@
    as well. However, founder cannot override the passphrase of the
    channel if it is set. To get the founder mode during JOIN and to
    override the invite only condition, give command: /JOIN #channel
-   -founder -pubkey. This will join the channel and attempt to reclaim
-   the founder status back to you. Note that you need to be on the same
-   server where you gave the founder mode for the channel for this to
-   work.
+   -founder. This will join the channel and attempt to reclaim the
+   founder status back to you.
 
    Q: How can I op or deop somebody on channel?
    A: Giving operator status, or removing the operator status on a
@@ -478,17 +592,17 @@
    same key. If some user on the channel does not set the key (or does
    not know the key) he won't be able to see any messages on the channel.
    Give the command: /KEY CHANNEL #channel set verysecretkey. This
-   command will set the `verysecretkey' passphrase as key to the
-   #channel. How exactly other users will know this key is out of scope
-   of the SILC protocol. SILC does not provide yet a possibility of
-   negotiating secret key with many users at the same time. For this
-   reason the secret key on the channel is usually a passphrase or a
-   password that all users on the channel have to know. Setting a private
-   key for channel means that only the users on the channel who know the
-   key is able to encrypt and decrypt messages. Servers do not know the
-   key at all. If you remove the private key mode from the channel, all
-   users will start automatically using a new channel key to secure
-   channel messages.
+   command will set the `verysecretkey' passphrase as key to #channel.
+   How exactly other users will know this key is out of scope of the SILC
+   protocol. SILC does not provide yet a possibility of negotiating
+   secret key with many users at the same time. For this reason the
+   secret key on the channel is usually a passphrase or a password that
+   all users on the channel have to know. Setting a private key for
+   channel means that only the users on the channel who know the key is
+   able to encrypt and decrypt messages. Servers do not know the key at
+   all. If you remove the private key mode from the channel, all users
+   will start automatically using a new channel key to secure channel
+   messages.
 
    Q: How do I transfer a file?
    A: You can transfer files securely using the FILE command. This
@@ -573,6 +687,14 @@
    name is IRC feature and has nothing to do with SILC. If you have
    #-character in the channel name, then it is part of the channel name,
    just like %-character, or &-character could be part of channel name.
+
+   Q: How do I detach my session from the server?
+   A: You can detach your session by simply giving DETACH command. Your
+   connection to the server will be closed automatically. Next time you
+   connect any server in the network your session will be automatically
+   resumed. If there is an error during session resuming your connection
+   will be closed and you need to reconnect to the server. In this case
+   the old sessionn cannot be resumed anymore.
 
    4. Server Questions
 
