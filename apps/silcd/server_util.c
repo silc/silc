@@ -1772,12 +1772,6 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   return ret;
 }
 
-static void silc_server_inviteban_dummy_dest(void *key, void *context,
-					     void *user_context)
-{
-  /* Nothing */
-}
-
 /* Process invite or ban information */
 
 void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
@@ -1800,24 +1794,18 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
       if (type == 1) {
 	/* Invite string.  Get the old invite string from hash table
 	   and append this at the end of the existing one. */
-	char *string = NULL;
-	silc_hash_table_find(list, (void *)1,
-			     NULL, (void **)&string);
-	silc_hash_table_del_ext(list, (void *)1, NULL, NULL, NULL, NULL,
-				silc_server_inviteban_dummy_dest, NULL);
-	if (!string)
-	  string = silc_calloc(len + 2, sizeof(*string));
-	else
-	  string = silc_realloc(string, sizeof(*string) *
-				(strlen(string) + len + 2));
-	memset(string + strlen(string), 0, len + 2);
-	if (tmp[len - 1] == ',')
+	if (!silc_hash_table_find(list, (void *)1, NULL, (void **)&tmp2)) {
+	  tmp2 = silc_calloc(1, sizeof(*tmp2));
+	  silc_hash_table_add(list, (void *)1, tmp2);
+	}
+	if (tmp[len - 1] == ',') {
 	  tmp[len - 1] = '\0';
-	strncat(string, tmp, len);
-	strncat(string, ",", 1);
-
-	/* Add new invite string to invite list */
-	silc_hash_table_add(list, (void *)1, string);
+	  len--;
+	}
+	if (len) {
+	  silc_buffer_strformat(tmp2, tmp, len, SILC_STR_END);
+	  silc_buffer_strformat(tmp2, ",", 1, SILC_STR_END);
+	}
 
       } else if (type == 2) {
 	/* Public key.  Check first if the public key is already on the
@@ -1875,25 +1863,23 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	   the requested string. */
 	char *string = NULL, *start, *end, *n;
 
-	if (silc_hash_table_find(list, (void *)1, NULL, (void **)&string)) {
-	  if (!strncmp(string, tmp, strlen(string) - 1)) {
+	if (silc_hash_table_find(list, (void *)1, NULL, (void **)&tmp2)) {
+	  string = tmp2->head;
+	  if (tmp2->truelen && !strncmp(string, tmp, tmp2->truelen - 1)) {
+	    /* Delete entire string */
 	    silc_hash_table_del(list, (void *)1);
-	    string = NULL;
-	  } else {
+	  } else if (tmp2->truelen) {
+	    /* Delete part of the string */
 	    start = strstr(string, tmp);
 	    if (start && strlen(start) >= len) {
 	      end = start + len;
 	      n = silc_calloc(strlen(string) - len, sizeof(*n));
-	      strncat(n, string, start - string);
-	      strncat(n, end + 1, ((string + strlen(string)) - end) - 1);
-	      silc_hash_table_del(list, (void *)1);
-	      string = n;
+	      memcpy(n, string, start - string);
+	      memcpy(n, end + 1, ((string + strlen(string)) - end) - 1);
+	      silc_free(tmp2->head);
+	      silc_buffer_set(tmp2, n, strlen(n));
 	    }
 	  }
-
-	  /* Add new invite string to invite list */
-	  if (string)
-	    silc_hash_table_add(list, (void *)1, string);
 	}
 
       } else if (type == 2) {
@@ -1928,24 +1914,12 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
   }
 }
 
-/* Destructor for invite or ban list entrys */
+/* Destructor for invite and ban list entrys */
 
 void silc_server_inviteban_destruct(void *key, void *context,
 				    void *user_context)
 {
-  switch ((SilcUInt32)key) {
-  case 1:
-    /* Invite string */
-    silc_free(context);
-    break;
-  case 2:
-  case 3:
-    /* Public key/Channel ID SilcBuffer */
-    silc_buffer_free(context);
-    break;
-  default:
-    break;
-  }
+  silc_buffer_free(context);
 }
 
 /* Creates connections accoring to configuration. */
