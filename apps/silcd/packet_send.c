@@ -444,6 +444,9 @@ void silc_server_packet_send_clients(SilcServer server,
 
     /* Send to locally connected client */
     sock = (SilcSocketConnection)client->connection;
+    if (!sock)
+      continue;
+
     silc_server_packet_send_dest(server, sock, type, flags,
 				 client->id, SILC_ID_CLIENT,
 				 data, data_len, force_send);
@@ -1287,14 +1290,14 @@ void silc_server_send_notify_killed(SilcServer server,
 				    SilcSocketConnection sock,
 				    bool broadcast,
 				    SilcClientID *client_id,
-				    char *comment,
-				    SilcClientID *killer)
+				    const char *comment,
+				    void *killer, SilcIdType killer_type)
 {
   SilcBuffer idp1;
   SilcBuffer idp2;
 
-  idp1 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
-  idp2 = silc_id_payload_encode((void *)killer, SILC_ID_CLIENT);
+  idp1 = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+  idp2 = silc_id_payload_encode(killer, killer_type);
   silc_server_send_notify_dest(server, sock, broadcast, (void *)client_id,
 			       SILC_ID_CLIENT, SILC_NOTIFY_TYPE_KILLED,
 			       3, idp1->data, idp1->len,

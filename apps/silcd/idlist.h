@@ -62,6 +62,7 @@ typedef SilcUInt8 SilcIDListStatus;
 #define SILC_IDLIST_STATUS_RESOLVING    0x04    /* Entry is being resolved
 						   with WHOIS or IDENTIFY */
 #define SILC_IDLIST_STATUS_DISABLED     0x08    /* Entry is disabled */
+#define SILC_IDLIST_STATUS_RESUMED      0x10    /* Entry is resumed */
 
 /*
    Generic ID list data structure.

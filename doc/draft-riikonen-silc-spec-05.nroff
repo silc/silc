@@ -125,6 +125,7 @@ Table of Contents
   4.8 Session Key Regeneration .................................. 39
   4.9 Command Sending and Reception ............................. 40
   4.10 Closing Connection ....................................... 41
+  4.11 Detaching and Resuming a Session ......................... XXXXX
 5 Security Considerations ....................................... 41
 6 References .................................................... 42
 7 Author's Address .............................................. 44
@@ -2107,6 +2108,97 @@ from the SILC Network.  The server or router MUST also send the notify
 type SILC_NOTIFY_TYPE_SERVER_SIGNOFF to its primary router and to all
 local clients that are joined on the same channels with the remote 
 server's or router's clients.
+
+
+.ti 0
+4.11 Detaching and Resuming a Session
+
+SILC protocol provides a possibility for a client to detach itself from
+the network without actually signing off from the network.  The client
+connection to the server is closed but the client remains as valid client
+in the network.  The client may then later resume its session back from
+any server in the network.
+
+When client wishes to detach from the network it MUST send the
+SILC_COMMAND_DETACH command to its server.  The server then MUST set
+SILC_UMODE_DETACHED mode to the client and send SILC_NOTIFY_UMODE_CHANGE
+notify to its primary router, which will then MUST broadcast it further
+to other routers in the network.  This user mode indicates that the
+client is detached from the network.  Implementations MUST NOT use
+the SILC_UMODE_DETACHED flag to determine whether a packet can be sent
+to the client.  All packets MUST still be sent to the client even if
+client is detached from the network.  Only the server that originally
+had the active client connection is able to make the decision after it
+notices that the network connection is not active.  In this case the
+default case is to discard the packet.
+
+The SILC_UMODE_DETACHED flag cannot be set by client itself directly
+with SILC_COMMAND_UMODE command, but only implicitly by sending the
+SILC_COMMAND_DETACH command.  The flag also cannot be unset by the
+client, server or router with SILC_COMMAND_UMODE command, but only
+implicitly by sending and receiving the SILC_PACKET_RESUME_CLIENT
+packet.
+
+When the client wishes to resume its session in the SILC Network it
+connects to a server in the network, which MAY also be a different
+from the original server, and performs normal procedures regarding
+creating a connection as described in section 4.1.  After the SKE
+and the Connection Authentication protocols has been successfully
+completed the client MUST NOT send SILC_PACKET_NEW_CLIENT packet, but
+MUST send SILC_PACKET_RESUME_CLIENT packet.  This packet is used to
+perform the resuming procedure.  The packet MUST include the detached
+client's Client ID, which the client must know.  It also includes
+Authentication Payload which includes signature made with the client's
+private key.  The signature is computed as defined in the section
+3.9.1.  Thus, the authentication method MUST be based in public key
+authentication.
+
+When server receives the SILC_PACKET_RESUME_CLIENT packet it MUST
+verify that the Client ID is valid client and that it has the
+SILC_UMODE_DETACHED mode set.  It then MUST verify the Authentication
+Payload with the detached client's public key.  If it does not have
+the public key it MUST retrieve it by sending SILC_COMMAND_GETKEY
+command to the server that has the public key from the original
+client connection.  The server MUST NOT use the public key received
+in the SKE protocol for this connection.  If the signature is valid
+the server MUST unset the SILC_UMODE_DETACHED flag, and send the
+SILC_PACKET_RESUME_CLIENT packet to its primary router.  The routers
+MUST broadcast the packet and unset the SILC_UMODE_DETACHED flag
+when the packet is received.
+
+The servers and routers that receives the SILC_PACKET_RESUME_CLIENT
+packet MUST know whether the packet already has been received for
+the client.  It is protocol error to attempt to resume the client
+session from more than one server.  The implementations could set
+internal flag that indicates that the client is resumed.  If router
+receive SILC_PACKET_RESUME_CLIENT packet for client that is already
+resumed the client MUST be killed from the network.  This would
+indicate that the client is attempting to resume the session more
+than once which is protocol error.  In this case the router sends
+SILC_NOTIFY_TYPE_KILLED to the client.  All routers that detect
+the same situation MUST also send the notify for the client.
+
+The servers and routers that receive the SILC_PACKET_RESUME_CLIENT
+must also understand that the client may not be found behind the
+same server that it originally came from.  They must update their
+caches according this.  The server that now owns the client session
+MUST check whether the Client ID of the resumed client is based
+on the server's Server ID.  If it is not it MUST create new Client
+ID and send SILC_NOTIFY_TYPE_NICK_CHANGE to the network.  It MUST
+also send the channel keys of all channels that the client is
+joined to the client since it does not have them.  Whether the
+Client ID was changed or not the server MUST send SILC_PACKET_NEW_ID
+packet to the client.  Only after this the client is resumed back
+to the network and may start sending packets and messages.
+
+It is also possible that the server does not know about the channels
+that the client has joined.  In this case it MUST join client internally
+to the channels, generate new channel keys and distribute the keys
+to the channels as described in section 4.4.
+
+It is implementation issue for how long servers keep detached client
+sessions.  It is RECOMMENDED that the detached sessions would be
+persistent as long as the server is running.
 
 
 .ti 0

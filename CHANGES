@@ -1,3 +1,32 @@
+Thu Apr 11 16:32:08 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the UMODE's mode mask argument to be optional.  If
+	  not provided then the command merely returns the current mode
+	  mask to the client.  Updated protocol specs and the server.
+	  Affected file is silcd/command.c.
+
+	* Added SILC session detachment/resuming support.  It is possible
+	  to detach by closing the network connection and then re-connect
+	  and resume to the old client session.  Added DETACHED user
+	  mode that server will set for detached client.  Added new
+	  packet RESUME_CLIENT which is used to perform the resuming
+	  process.  Added DETACH command.  Updated the protocol specs,
+	  core library, client and server.  Protocol TODO #22.  Very
+	  many affected files around the tree.
+
+Wed Apr 10 16:32:01 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the CMODE's mode mask argument to be optional.  If
+	  not provided then the command merely returns the current mode
+	  mask to the client.  Updated protocol specs and the server.
+	  Affected file is silcd/command.c.
+
+	* Changed the Killer's Client ID in KILLED notify to be just
+	  any ID payload since router server is allowed to kill as well.
+	  Updated protocol specs, client libary and server.  Affected
+	  files are lib/silcclient/client_notify.c, silcd/packet_receive.c,
+	  and irssi/src/silc/core/client_ops.c.
+
 Tue Apr  9 17:15:42 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new user modes ANONYMOUS for special anonymous servers

@@ -100,6 +100,7 @@ typedef unsigned char SilcPacketType;
 #define SILC_PACKET_KEY_AGREEMENT        25      /* Key Agreement request */
 #define SILC_PACKET_RESUME_ROUTER        26      /* Backup router resume */
 #define SILC_PACKET_FTP                  27      /* File Transfer */
+#define SILC_PACKET_RESUME_CLIENT        28      /* Client resume */
 
 #define SILC_PACKET_PRIVATE              200     /* Private range start  */
 #define SILC_PACKET_MAX                  255     /* RESERVED */

@@ -43,7 +43,8 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
 			SilcCommand command, SilcCommandStatus status, ...);
-void silc_connect(SilcClient client, SilcClientConnection conn, int success);
+void silc_connect(SilcClient client, SilcClientConnection conn,
+		  SilcClientConnectionStatus status);
 void silc_disconnect(SilcClient client, SilcClientConnection conn);
 void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 			 SilcAskPassphrase completion, void *context);

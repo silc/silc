@@ -377,6 +377,7 @@ void silc_client_get_clients_by_list(SilcClient client,
     SilcUInt16 idp_len;
     SilcClientID *client_id;
     SilcClientEntry entry;
+    bool ret;
 
     /* Get Client ID */
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
@@ -388,16 +389,16 @@ void silc_client_get_clients_by_list(SilcClient client,
     }
 
     /* Check if we have this client cached already. */
-    id_cache = NULL;
-    silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
-				    NULL, NULL, 
-				    silc_hash_client_id_compare, NULL,
-				    &id_cache);
+    ret =
+      silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
+				      NULL, NULL, 
+				      silc_hash_client_id_compare, NULL,
+				      &id_cache);
 
     /* If we don't have the entry or it has incomplete info, then resolve
        it from the server. */
-    entry = id_cache ? (SilcClientEntry)id_cache->context : NULL;
-    if (!id_cache || !entry->nickname) {
+    if (!ret || !((SilcClientEntry)id_cache->context)->nickname) {
+      entry = ret ? (SilcClientEntry)id_cache->context : NULL;
 
       if (entry) {
 	if (entry->status & SILC_CLIENT_STATUS_RESOLVING) {

@@ -84,6 +84,12 @@ struct SilcClientInternalStruct {
   char *silc_client_version;
 };
 
+/* Session resuming callback */
+typedef void (*SilcClientResumeSessionCallback)(SilcClient client,
+						SilcClientConnection conn,
+						bool success,
+						void *context);
+
 /* Macros */
 
 /* Registers generic task for file descriptor for reading from network and
@@ -202,5 +208,15 @@ void silc_client_connection_auth_request(SilcClient client,
 void silc_client_ftp(SilcClient client,
 		     SilcSocketConnection sock,
 		     SilcPacketContext *packet);
+SilcBuffer silc_client_get_detach_data(SilcClient client,
+				       SilcClientConnection conn);
+bool silc_client_process_detach_data(SilcClient client,
+				     SilcClientConnection conn,
+				     unsigned char **old_id,
+				     SilcUInt16 *old_id_len);
+void silc_client_resume_session(SilcClient client,
+				SilcClientConnection conn,
+				SilcClientResumeSessionCallback callback,
+				void *context);
 
 #endif

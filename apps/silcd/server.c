@@ -2335,6 +2335,14 @@ void silc_server_packet_parse_type(SilcServer server,
     silc_server_ftp(server, sock, packet);
     break;
 
+  case SILC_PACKET_RESUME_CLIENT:
+    /* Resume client */
+    SILC_LOG_DEBUG(("Resume Client packet"));
+    if (packet->flags & SILC_PACKET_FLAG_LIST)
+      break;
+    silc_server_resume_client(server, sock, packet);
+    break;
+
   case SILC_PACKET_RESUME_ROUTER:
     /* Resume router packet received. This packet is received for backup
        router resuming protocol. */
@@ -2515,9 +2523,9 @@ void silc_server_free_client_data(SilcServer server,
 			 (void *)i, 300, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+  client->mode = 0;
   client->router = NULL;
   client->connection = NULL;
-  client->mode = 0;
 }
 
 /* Frees user_data pointer from socket connection object. This also sends
@@ -3974,6 +3982,9 @@ silc_server_get_client_route(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
+  if (client_entry)
+    *client_entry = NULL;
+
   /* Decode destination Client ID */
   if (!client_id) {
     id = silc_id_str2id(id_data, id_len, SILC_ID_CLIENT);
@@ -3984,9 +3995,6 @@ silc_server_get_client_route(SilcServer server,
   } else {
     id = silc_id_dup(client_id, SILC_ID_CLIENT);
   }
-
-  if (client_entry)
-    *client_entry = NULL;
 
   /* If the destination belongs to our server we don't have to route
      the packet anywhere but to send it to the local destination. */

@@ -90,6 +90,7 @@
 #define SILC_UMODE_ROBOT             0x00000080 /* Client is a robot */
 #define SILC_UMODE_ANONYMOUS         0x00000100 /* Client is anonymous */
 #define SILC_UMODE_BLOCK_PRIVMSG     0x00000200 /* Client blocks privmsgs */
+#define SILC_UMODE_DETACHED          0x00000400 /* Client is detached */
 /***/
 
 #endif

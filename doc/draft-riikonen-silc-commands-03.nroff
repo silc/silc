@@ -284,11 +284,12 @@ List of all defined commands in SILC follows.
         <count> option were defined in the query there will be only
         <count> many replies from the server.
 
-        The server may return the list of channel the client has joined.
-        In this case the list is list of Channel Payloads.  The Mode Mask
-        in the Channel Payload (see [SILC2] and section 2.3.2.3 for the
-        Channel Payload) is the client's mode on the channel.  The list
-        is encoded by adding the Channel Payloads one after the other.
+        The server may return the list of channels if the client has
+        joined channels.  In this case the list is list of Channel
+        Payloads.  The Mode Mask in the Channel Payload (see [SILC2] and
+        section 2.3.2.3 for the Channel Payload) is the client's mode
+        on the channel.  The list is encoded by adding the Channel
+        Payloads one after the other.
 
         The server may also send client's user mode, idle time, and the
         fingerprint of the client's public key.  The <fingerprint> is the
@@ -965,7 +966,7 @@ List of all defined commands in SILC follows.
    16   SILC_COMMAND_UMODE
 
         Max Arguments:  2
-            Arguments:  (1) <Client ID>  (2) <client mode mask>
+            Arguments:  (1) <Client ID>  (2) [<client mode mask>]
 
         This command is used by client to set/unset modes for itself.
         However, there are some modes that the client MUST NOT set itself,
@@ -1073,6 +1074,29 @@ List of all defined commands in SILC follows.
               service.
 
               The client MAY set and unset this mode.
+
+
+           0x00000400    SILC_UMODE_DETACHED
+
+              Marks that the client is detached from the SILC network.
+              This means that the actual network connection to the
+              client is lost but the client entry is still valid.  The
+              detached client can be resumed at a later time.  This
+              mode MUST NOT be set by client.  It can only be set when
+              client has issued command SILC_COMMAND_DETACH.  The server
+              sets this mode.  This mode cannot be unset with this
+              command.  It is unset when the client is resuming back to
+              the network and SILC_PACKET_RESUME_CLIENT packet is
+              received.
+
+              This flag MUST NOT be used to determine whether a packet
+              can be sent to the client or not.  Only the server that
+              had the original client connection can make the decision
+              by noticising that the network connection is not active.
+              In this case the default case is to discard the packet.
+
+        If the <client mode mask> was not provided this command merely
+        returns the mode mask to the client.
 
 
         Reply messages to the command:

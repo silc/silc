@@ -410,7 +410,7 @@ static void silc_client_start_key_exchange_cb(SilcSocketConnection sock,
     client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 			       "Error: Could not start key exchange protocol");
     silc_net_close_connection(conn->sock->sock);
-    client->internal->ops->connect(client, conn, FALSE);
+    client->internal->ops->connect(client, conn, SILC_CLIENT_CONN_ERROR);
     return;
   }
   conn->sock->protocol = protocol;
@@ -465,7 +465,8 @@ SILC_TASK_CALLBACK(silc_client_connect_failure)
     (SilcClientKEInternalContext *)context;
   SilcClient client = (SilcClient)ctx->client;
 
-  client->internal->ops->connect(client, ctx->sock->user_data, FALSE);
+  client->internal->ops->connect(client, ctx->sock->user_data, 
+				 SILC_CLIENT_CONN_ERROR);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
   silc_free(ctx);
@@ -515,7 +516,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
       silc_free(ctx);
 
       /* Notify application of failure */
-      client->internal->ops->connect(client, conn, FALSE);
+      client->internal->ops->connect(client, conn, SILC_CLIENT_CONN_ERROR);
       silc_client_del_connection(client, conn);
     }
     return;
@@ -670,26 +671,71 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     return;
   }
 
-  /* Send NEW_CLIENT packet to the server. We will become registered
-     to the SILC network after sending this packet and we will receive
-     client ID from the server. */
-  packet = silc_buffer_alloc(2 + 2 + strlen(client->username) + 
-			     strlen(client->realname));
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(strlen(client->username)),
-		     SILC_STR_UI_XNSTRING(client->username,
-					  strlen(client->username)),
-		     SILC_STR_UI_SHORT(strlen(client->realname)),
-		     SILC_STR_UI_XNSTRING(client->realname,
-					  strlen(client->realname)),
-		     SILC_STR_END);
+  if (conn->params.detach_data) {
+    /* Send RESUME_CLIENT packet to the server, which is used to resume
+       old detached session back. */
+    SilcBuffer auth;
+    SilcClientID *old_client_id;
+    unsigned char *old_id;
+    SilcUInt16 old_id_len;
 
-  /* Send the packet */
-  silc_client_packet_send(client, ctx->sock, SILC_PACKET_NEW_CLIENT,
-			  NULL, 0, NULL, NULL, 
-			  packet->data, packet->len, TRUE);
-  silc_buffer_free(packet);
+    if (!silc_client_process_detach_data(client, conn, &old_id, &old_id_len))
+      return;
+
+    old_client_id = silc_id_str2id(old_id, old_id_len, SILC_ID_CLIENT);
+    if (!old_client_id) {
+      silc_free(old_id);
+      return;
+    }
+
+    /* Generate authentication data that server will verify */
+    auth = silc_auth_public_key_auth_generate(client->public_key,
+					      client->private_key,
+					      client->rng, conn->hash,
+					      old_client_id, SILC_ID_CLIENT);
+    if (!auth) {
+      silc_free(old_client_id);
+      silc_free(old_id);
+      return;
+    }
+
+    packet = silc_buffer_alloc_size(2 + old_id_len + auth->len);
+    silc_buffer_format(packet,
+		       SILC_STR_UI_SHORT(old_id_len),
+		       SILC_STR_UI_XNSTRING(old_id, old_id_len),
+		       SILC_STR_UI_XNSTRING(auth->data, auth->len),
+		       SILC_STR_END);
+
+    /* Send the packet */
+    silc_client_packet_send(client, ctx->sock, SILC_PACKET_RESUME_CLIENT,
+			    NULL, 0, NULL, NULL, 
+			    packet->data, packet->len, TRUE);
+    silc_buffer_free(packet);
+    silc_buffer_free(auth);
+    silc_free(old_client_id);
+    silc_free(old_id);
+  } else {
+    /* Send NEW_CLIENT packet to the server. We will become registered
+       to the SILC network after sending this packet and we will receive
+       client ID from the server. */
+    packet = silc_buffer_alloc(2 + 2 + strlen(client->username) + 
+			       strlen(client->realname));
+    silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+    silc_buffer_format(packet,
+		       SILC_STR_UI_SHORT(strlen(client->username)),
+		       SILC_STR_UI_XNSTRING(client->username,
+					    strlen(client->username)),
+		       SILC_STR_UI_SHORT(strlen(client->realname)),
+		       SILC_STR_UI_XNSTRING(client->realname,
+					    strlen(client->realname)),
+		       SILC_STR_END);
+
+    /* Send the packet */
+    silc_client_packet_send(client, ctx->sock, SILC_PACKET_NEW_CLIENT,
+			    NULL, 0, NULL, NULL, 
+			    packet->data, packet->len, TRUE);
+    silc_buffer_free(packet);
+  }
 
   /* Save remote ID. */
   conn->remote_id = ctx->dest_id;
@@ -1480,6 +1526,34 @@ SILC_TASK_CALLBACK(silc_client_send_auto_nick)
 			   client->nickname, strlen(client->nickname));
 }
 
+/* Client session resuming callback.  If the session was resumed
+   this callback is called after the resuming is completed.  This
+   will call the `connect' client operation to the application
+   since it has not been called yet. */
+
+static void silc_client_resume_session_cb(SilcClient client,
+					  SilcClientConnection conn,
+					  bool success,
+					  void *context)
+{
+  SilcBuffer sidp;
+
+  /* Notify application that connection is created to server */
+  client->internal->ops->connect(client, conn, success ?
+				 SILC_CLIENT_CONN_SUCCESS_RESUME :
+				 SILC_CLIENT_CONN_ERROR);
+
+  /* Issue INFO command to fetch the real server name and server
+     information and other stuff. */
+  silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
+			       silc_client_command_reply_info_i, 0, 
+			       ++conn->cmd_ident);
+  sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
+  silc_client_command_send(client, conn, SILC_COMMAND_INFO,
+			   conn->cmd_ident, 1, 2, sidp->data, sidp->len);
+  silc_buffer_free(sidp);
+}
+
 /* Processes the received new Client ID from server. Old Client ID is
    deleted from cache and new one is added. */
 
@@ -1490,7 +1564,6 @@ void silc_client_receive_new_id(SilcClient client,
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   int connecting = FALSE;
   SilcClientID *client_id = silc_id_payload_get_id(idp);
-  SilcBuffer sidp;
 
   if (!conn->local_entry)
     connecting = TRUE;
@@ -1539,26 +1612,37 @@ void silc_client_receive_new_id(SilcClient client,
 		   (void *)conn->local_entry, 0, NULL);
 
   if (connecting) {
-    /* Send NICK command if the nickname was set by the application (and is
-       not same as the username). Send this with little timeout. */
-    if (client->nickname && strcmp(client->nickname, client->username))
-      silc_schedule_task_add(client->schedule, 0,
-			     silc_client_send_auto_nick, conn,
-			     1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    if (!conn->params.detach_data) {
+      SilcBuffer sidp;
 
-    /* Issue INFO command to fetch the real server name and server information
-       and other stuff. */
-    silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
-				 silc_client_command_reply_info_i, 0, 
-				 ++conn->cmd_ident);
-    sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
-    silc_client_command_send(client, conn, SILC_COMMAND_INFO,
-			     conn->cmd_ident, 1, 2, sidp->data, sidp->len);
-    silc_buffer_free(sidp);
+      /* Send NICK command if the nickname was set by the application (and is
+	 not same as the username). Send this with little timeout. */
+      if (client->nickname && strcmp(client->nickname, client->username))
+	silc_schedule_task_add(client->schedule, 0,
+			       silc_client_send_auto_nick, conn,
+			       1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
-    /* Notify application of successful connection. We do it here now that
-       we've received the Client ID and are allowed to send traffic. */
-    client->internal->ops->connect(client, conn, TRUE);
+      /* Notify application of successful connection. We do it here now that
+	 we've received the Client ID and are allowed to send traffic. */
+      client->internal->ops->connect(client, conn, SILC_CLIENT_CONN_SUCCESS);
+
+      /* Issue INFO command to fetch the real server name and server
+	 information and other stuff. */
+      silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
+				   silc_client_command_reply_info_i, 0, 
+				   ++conn->cmd_ident);
+      sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
+      silc_client_command_send(client, conn, SILC_COMMAND_INFO,
+			       conn->cmd_ident, 1, 2, sidp->data, sidp->len);
+      silc_buffer_free(sidp);
+    } else {
+      /* We are resuming session.  Start resolving informations from the
+	 server we need to set the client libary in the state before
+	 detaching the session.  The connect client operation is called
+	 after this is successfully completed */
+      silc_client_resume_session(client, conn, silc_client_resume_session_cb,
+				 NULL);
+    }
   }
 }
 
@@ -1809,56 +1893,4 @@ silc_client_request_authentication_method(SilcClient client,
 			   conn, 
 			   client->internal->params->connauth_request_secs, 0,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-}
-
-SilcBuffer silc_client_get_detach_data(SilcClient client,
-				       SilcClientConnection conn)
-{
-  SilcBuffer detach;
-  SilcHashTableList htl;
-  SilcChannelUser chu;
-
-  SILC_LOG_DEBUG(("Creating detachment data"));
-
-  /* Save the nickname, Client ID and user mode in SILC network */
-  detach = silc_buffer_alloc_size(2 + strlen(conn->nickname) +
-				  2 + conn->local_id_data_len + 4);
-  silc_buffer_format(detach,
-		     SILC_STR_UI_SHORT(strlen(conn->nickname)),
-		     SILC_STR_UI_XNSTRING(conn->nickname,
-					  strlen(conn->nickname)),
-		     SILC_STR_UI_SHORT(conn->local_id_data_len),
-		     SILC_STR_UI_XNSTRING(conn->local_id_data,
-					  conn->local_id_data_len),
-		     SILC_STR_UI_INT(conn->local_entry->mode),
-		     SILC_STR_END);
-
-  /* Save all joined channels */
-  silc_hash_table_list(conn->local_entry->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
-    unsigned char *chid = silc_id_id2str(chu->channel->id, SILC_ID_CHANNEL);
-    SilcUInt16 chid_len = silc_id_get_len(chu->channel->id, SILC_ID_CHANNEL);
-
-    detach = silc_buffer_realloc(detach, detach->truelen + 2 +
-				 strlen(chu->channel->channel_name) +
-				 2 + chid_len + 4);
-    silc_buffer_pull(detach, detach->len);
-    silc_buffer_format(detach,
-		       SILC_STR_UI_SHORT(strlen(chu->channel->channel_name)),
-		       SILC_STR_UI_XNSTRING(chu->channel->channel_name,
-					    strlen(chu->channel->channel_name)),
-		       SILC_STR_UI_SHORT(chid_len),
-		       SILC_STR_UI_XNSTRING(chid, chid_len),
-		       SILC_STR_UI_INT(chu->channel->mode),
-		       SILC_STR_END);
-
-    silc_free(chid);
-  }
-  silc_hash_table_list_reset(&htl);
-
-  silc_buffer_push(detach, detach->data - detach->head);
-
-  SILC_LOG_HEXDUMP(("Detach data"), detach->data, detach->len);
-
-  return detach;
 }

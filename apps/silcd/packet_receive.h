@@ -78,5 +78,8 @@ void silc_server_rekey(SilcServer server,
 void silc_server_ftp(SilcServer server,
 		     SilcSocketConnection sock,
 		     SilcPacketContext *packet);
+void silc_server_resume_client(SilcServer server,
+			       SilcSocketConnection sock,
+			       SilcPacketContext *packet);
 
 #endif

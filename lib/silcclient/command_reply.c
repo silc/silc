@@ -79,16 +79,6 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
 
   { 0, NULL }
 };
-/* Command reply operation that is called at the end of all command replys. 
-   Usage: COMMAND_REPLY((ARGS, argument1, argument2, etc...)), */
-#define COMMAND_REPLY(args) cmd->client->internal->ops->command_reply args
-#define ARGS cmd->client, cmd->sock->user_data,				\
-             cmd->payload, TRUE, silc_command_get(cmd->payload), cmd->status
-
-/* Error reply to application. Usage: COMMAND_REPLY_ERROR; */
-#define COMMAND_REPLY_ERROR cmd->client->internal->ops->		\
-  command_reply(cmd->client, cmd->sock->user_data, cmd->payload,	\
-  FALSE, silc_command_get(cmd->payload), cmd->status)
 
 #define SAY cmd->client->internal->ops->say
 
@@ -200,18 +190,15 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcClientID *client_id;
   SilcClientEntry client_entry = NULL;
-  int argc;
   SilcUInt32 len;
   unsigned char *id_data, *tmp;
   char *nickname = NULL, *username = NULL;
   char *realname = NULL;
   SilcUInt32 idle = 0, mode = 0;
-  SilcBuffer channels = NULL;
+  SilcBufferStruct channels;
   unsigned char *fingerprint;
   SilcUInt32 fingerprint_len;
   
-  argc = silc_argument_get_arg_num(cmd->args);
-
   id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!id_data) {
     if (notify)
@@ -236,11 +223,8 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
-  if (tmp) {
-    channels = silc_buffer_alloc(len);
-    silc_buffer_pull_tail(channels, SILC_BUFFER_END(channels));
-    silc_buffer_put(channels, tmp, len);
-  }
+  if (tmp)
+    silc_buffer_set(&channels, tmp, len);
 
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
   if (tmp)
@@ -276,10 +260,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   /* Notify application */
   if (!cmd->callback && notify)
     COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
-		   channels, mode, idle, fingerprint));
-
-  if (channels)
-    silc_buffer_free(channels);
+		   &channels, mode, idle, fingerprint));
 }
 
 /* Received reply for WHOIS command. This maybe called several times
@@ -397,15 +378,12 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
   SilcClientEntry client_entry;
   SilcServerEntry server_entry;
   SilcChannelEntry channel_entry;
-  int argc;
   SilcUInt32 len;
   unsigned char *id_data;
   char *name = NULL, *info = NULL;
   SilcIDPayload idp = NULL;
   SilcIdType id_type;
   
-  argc = silc_argument_get_arg_num(cmd->args);
-
   id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!id_data) {
     if (notify)
@@ -1379,6 +1357,36 @@ SILC_CLIENT_CMD_REPLY_FUNC(oper)
   silc_client_command_reply_free(cmd);
 }
 
+SILC_CLIENT_CMD_REPLY_FUNC(detach)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcBuffer detach;
+
+  if (cmd->error != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(cmd->error));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+  /* Generate the detachment data and deliver it to the client in the
+     detach client operation */
+  detach = silc_client_get_detach_data(cmd->client, conn);
+  if (detach) {
+    cmd->client->internal->ops->detach(cmd->client, conn, 
+				       detach->data, detach->len);
+    silc_buffer_free(detach);
+  }
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_DETACH);
+  silc_client_command_reply_free(cmd);
+}
+
 SILC_CLIENT_CMD_REPLY_FUNC(ban)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
@@ -1491,19 +1499,19 @@ static void silc_client_command_reply_users_cb(SilcClient client,
   silc_client_command_reply_users(context, NULL);
 }
 
-/* Reply to USERS command. Received list of client ID's and theirs modes
-   on the channel we requested. */
-
-SILC_CLIENT_CMD_REPLY_FUNC(users)
+static int
+silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
+				     SilcCommandStatus status,
+				     bool notify,
+				     SilcGetChannelCallback get_channel,
+				     SilcCommandCb get_clients)
 {
-  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcChannelEntry channel;
   SilcClientEntry client_entry;
   SilcChannelUser chu;
   SilcChannelID *channel_id = NULL;
-  SilcBuffer client_id_list = NULL;
-  SilcBuffer client_mode_list = NULL;
+  SilcBufferStruct client_id_list, client_mode_list;
   unsigned char *tmp;
   SilcUInt32 tmp_len, list_count;
   int i;
@@ -1511,13 +1519,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
 
   SILC_LOG_DEBUG(("Start"));
-
-  if (cmd->error != SILC_STATUS_OK) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	"%s", silc_client_command_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
-    goto out;
-  }
 
   /* Get channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
@@ -1545,10 +1546,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-
-  client_id_list = silc_buffer_alloc(tmp_len);
-  silc_buffer_pull_tail(client_id_list, tmp_len);
-  silc_buffer_put(client_id_list, tmp, tmp_len);
+  silc_buffer_set(&client_id_list, tmp, tmp_len);
 
   /* Get client mode list */
   tmp = silc_argument_get_arg_type(cmd->args, 5, &tmp_len);
@@ -1556,24 +1554,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-
-  client_mode_list = silc_buffer_alloc(tmp_len);
-  silc_buffer_pull_tail(client_mode_list, tmp_len);
-  silc_buffer_put(client_mode_list, tmp, tmp_len);
+  silc_buffer_set(&client_mode_list, tmp, tmp_len);
 
   /* Get channel entry */
   channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
   if (!channel) {
     /* Resolve the channel from server */
     silc_client_get_channel_by_id_resolve(cmd->client, conn, channel_id,
-					  silc_client_command_reply_users_cb,
-					  cmd);
+					  get_channel, cmd);
     silc_free(channel_id);
-    if (client_id_list)
-      silc_buffer_free(client_id_list);
-    if (client_mode_list)
-      silc_buffer_free(client_mode_list);
-    return;
+    return 1;
   }
 
   /* Cache the received Client ID's and modes. */
@@ -1583,22 +1573,22 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     SilcClientID *client_id;
 
     /* Client ID */
-    SILC_GET16_MSB(idp_len, client_id_list->data + 2);
+    SILC_GET16_MSB(idp_len, client_id_list.data + 2);
     idp_len += 4;
-    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len, NULL);
+    client_id = silc_id_payload_parse_id(client_id_list.data, idp_len, NULL);
     if (!client_id)
       continue;
 
     /* Mode */
-    SILC_GET32_MSB(mode, client_mode_list->data);
+    SILC_GET32_MSB(mode, client_mode_list.data);
 
     /* Check if we have this client cached already. */
     client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
     if (!client_entry || !client_entry->username || !client_entry->realname) {
       if (client_entry) {
 	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
-	  silc_buffer_pull(client_id_list, idp_len);
-	  silc_buffer_pull(client_mode_list, 4);
+	  silc_buffer_pull(&client_id_list, idp_len);
+	  silc_buffer_pull(&client_mode_list, 4);
 	  continue;
 	}
 	client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
@@ -1613,7 +1603,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
 				   (res_argc + 1));
       res_argv_types = silc_realloc(res_argv_types, sizeof(*res_argv_types) *
 				    (res_argc + 1));
-      res_argv[res_argc] = client_id_list->data;
+      res_argv[res_argc] = client_id_list.data;
       res_argv_lens[res_argc] = idp_len;
       res_argv_types[res_argc] = res_argc + 3;
       res_argc++;
@@ -1629,8 +1619,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     }
 
     silc_free(client_id);
-    silc_buffer_pull(client_id_list, idp_len);
-    silc_buffer_pull(client_mode_list, 4);
+    silc_buffer_pull(&client_id_list, idp_len);
+    silc_buffer_pull(&client_mode_list, 4);
   }
 
   /* Query the client information from server if the list included clients
@@ -1653,36 +1643,56 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
        command reply we will reprocess this command reply by re-calling this
        USERS command reply callback. */
     silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-				silc_client_command_reply_users, cmd);
+				get_clients, cmd);
 
     silc_buffer_free(res_cmd);
     silc_free(channel_id);
     silc_free(res_argv);
     silc_free(res_argv_lens);
     silc_free(res_argv_types);
-    if (client_id_list)
-      silc_buffer_free(client_id_list);
-    if (client_mode_list)
-      silc_buffer_free(client_mode_list);
-    return;
+    return 1;
   }
   
-  silc_buffer_push(client_id_list, (client_id_list->data - 
-				    client_id_list->head));
-  silc_buffer_push(client_mode_list, (client_mode_list->data - 
-				      client_mode_list->head));
+  silc_buffer_push(&client_id_list, (client_id_list.data - 
+				     client_id_list.head));
+  silc_buffer_push(&client_mode_list, (client_mode_list.data - 
+				       client_mode_list.head));
 
   /* Notify application */
-  COMMAND_REPLY((ARGS, channel, list_count, client_id_list, client_mode_list));
+  if (notify)
+    COMMAND_REPLY((ARGS, channel, list_count, &client_id_list, 
+		   &client_mode_list));
+
+ out:
+  silc_free(channel_id);
+  return 0;
+}
+
+/* Reply to USERS command. Received list of client ID's and theirs modes
+   on the channel we requested. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(users)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (cmd->error != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(cmd->error));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  if (silc_client_command_reply_users_save(cmd, cmd->status, TRUE,
+					   silc_client_command_reply_users_cb,
+					   silc_client_command_reply_users))
+    return;
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
   silc_client_command_reply_free(cmd);
-  silc_free(channel_id);
-  if (client_id_list)
-    silc_buffer_free(client_id_list);
-  if (client_mode_list)
-    silc_buffer_free(client_mode_list);
 }
 
 /* Received command reply to GETKEY command. WE've received the remote
@@ -1935,9 +1945,57 @@ SILC_CLIENT_CMD_REPLY_FUNC(info_i)
   silc_client_command_reply_free(cmd);
 }
 
+static void silc_client_command_reply_users_i_cb(SilcClient client,
+						 SilcClientConnection conn,
+						 SilcChannelEntry *channels,
+						 SilcUInt32 channels_count,
+						 void *context)
+{
+  if (!channels_count) {
+    SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+    SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+
+    cmd->status = cmd->error = SILC_STATUS_ERR_NO_SUCH_CHANNEL;
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(cmd->error));
+    COMMAND_REPLY_ERROR;
+    SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
+    silc_client_command_reply_free(cmd);
+    return;
+  }
+
+  silc_client_command_reply_users_i(context, NULL);
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(users_i)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (cmd->error != SILC_STATUS_OK)
+    goto out;
+
+  /* Save USERS info */
+  if (silc_client_command_reply_users_save(
+				    cmd, cmd->status, FALSE,
+				    silc_client_command_reply_users_i_cb,
+				    silc_client_command_reply_users_i))
+    return;
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
+
+  /* Unregister this command reply */
+  silc_client_command_unregister(cmd->client, SILC_COMMAND_USERS,
+				 NULL, silc_client_command_reply_users_i,
+				 cmd->ident);
+
+  silc_client_command_reply_free(cmd);
+}
 
 /* Private range commands, specific to this implementation (and compatible
-   with SILC Server). */
+   with SILC Server >= 0.9). */
 
 SILC_CLIENT_CMD_REPLY_FUNC(connect)
 {
@@ -1998,4 +2056,3 @@ SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_PRIV_SHUTDOWN);
   silc_client_command_reply_free(cmd);
 }
-

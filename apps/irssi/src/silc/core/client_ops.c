@@ -319,7 +319,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       signal_emit("message topic", 5, server, channel->channel_name,
 		  tmp, server_entry->server_name, 
 		  server_entry->server_name);
-    } else {
+    } else if (idtype == SILC_ID_CHANNEL) {
       channel = (SilcChannelEntry)entry;
       signal_emit("message topic", 5, server, channel->channel_name,
 		  tmp, channel->channel_name, channel->channel_name);
@@ -385,7 +385,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
 			 channel->channel_name, tmp ? tmp : "removed all",
 			 server_entry->server_name);
-    } else {
+    } else if (idtype == SILC_ID_CHANNEL) {
       channel2 = (SilcChannelEntry)entry;
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
@@ -439,7 +439,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 			 channel->channel_name, client_entry2->nickname, 
 			 tmp ? tmp : "removed all",
 			 server_entry->server_name);
-    } else {
+    } else if (idtype == SILC_ID_CHANNEL) {
       channel2 = (SilcChannelEntry)entry;
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
@@ -518,13 +518,27 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     client_entry = va_arg(va, SilcClientEntry);
     tmp = va_arg(va, char *);
-    client_entry2 = va_arg(va, SilcClientEntry);
+    idtype = va_arg(va, int);
+    entry = va_arg(va, SilcClientEntry);
   
     if (client_entry == conn->local_entry) {
-      printformat_module("fe-common/silc", server, NULL,
-			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
-			 client_entry2 ? client_entry2->nickname : "",
-			 tmp ? tmp : "");
+      if (idtype == SILC_ID_CLIENT) {
+	client_entry2 = (SilcClientEntry)entry;
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+			   client_entry2 ? client_entry2->nickname : "",
+			   tmp ? tmp : "");
+      } else if (idtype == SILC_ID_SERVER) {
+	server_entry = (SilcServerEntry)entry;
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+			   server_entry->server_name, tmp ? tmp : "");
+      } else if (idtype == SILC_ID_CHANNEL) {
+	channel = (SilcChannelEntry)entry;
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+			   channel->channel_name, tmp ? tmp : "");
+      }
     } else {
       list1 = nicklist_get_same_unique(SERVER(server), client_entry);
       for (list_tmp = list1; list_tmp != NULL; list_tmp = 
@@ -534,11 +548,26 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 	nicklist_remove(channel, nickrec);
       }
 
-      printformat_module("fe-common/silc", server, NULL,
-			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
-			 client_entry->nickname,
-			 client_entry2 ? client_entry2->nickname : "",
-			 tmp ? tmp : "");
+      if (idtype == SILC_ID_CLIENT) {
+	client_entry2 = (SilcClientEntry)entry;
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
+			   client_entry->nickname,
+			   client_entry2 ? client_entry2->nickname : "",
+			   tmp ? tmp : "");
+      } else if (idtype == SILC_ID_SERVER) {
+	server_entry = (SilcServerEntry)entry;
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
+			   client_entry->nickname,
+			   server_entry->server_name, tmp ? tmp : "");
+      } else if (idtype == SILC_ID_CHANNEL) {
+	channel = (SilcChannelEntry)entry;
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
+			   client_entry->nickname,
+			   channel->channel_name, tmp ? tmp : "");
+      }
     }
     break;
 
@@ -596,23 +625,48 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
    or connecting failed.  This is also the first time application receives
    the SilcClientConnection object which it should save somewhere. */
 
-void silc_connect(SilcClient client, SilcClientConnection conn, int success)
+void silc_connect(SilcClient client, SilcClientConnection conn,
+		  SilcClientConnectionStatus status)
 {
   SILC_SERVER_REC *server = conn->context;
 
-  if (!server && !success) {
+  if (!server && status == SILC_CLIENT_CONN_ERROR) {
     silc_client_close_connection(client, conn);
     return;
   }
 
-  if (success) {
+  switch (status) {
+  case SILC_CLIENT_CONN_SUCCESS:
+    /* We have successfully connected to server */
     server->connected = TRUE;
     signal_emit("event connected", 1, server);
-  } else {
+    break;
+
+  case SILC_CLIENT_CONN_SUCCESS_RESUME:
+    /* We have successfully resumed old detached session */
+    server->connected = TRUE;
+    signal_emit("event connected", 1, server);
+
+    /* If we resumed old session check whether we need to update 
+       our nickname */
+    if (strcmp(server->nick, conn->local_entry->nickname)) {
+      char *old;
+      old = g_strdup(server->nick);
+      server_change_nick(SERVER(server), conn->local_entry->nickname);
+      nicklist_rename_unique(SERVER(server), 
+			     conn->local_entry, server->nick,
+			     conn->local_entry, conn->local_entry->nickname);
+      signal_emit("message own_nick", 4, server, server->nick, old, "");
+      g_free(old);
+    }
+    break;
+
+  default:
     server->connection_lost = TRUE;
     if (server->conn)
       server->conn->context = NULL;
     server_disconnect(SERVER(server));
+    break;
   }
 }
 
@@ -712,6 +766,7 @@ static void silc_client_join_get_users(SilcClient client,
   ownnick = NICK(silc_nicklist_find(chanrec, conn->local_entry));
   nicklist_set_own(CHANNEL(chanrec), ownnick);
   signal_emit("channel joined", 1, chanrec);
+  chanrec->entry = channel;
 
   if (chanrec->topic)
     printformat_module("fe-common/silc", server, channel->channel_name,
@@ -889,21 +944,23 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 		 "SILC Operator" : "[Unknown mode]");
 	}
 	if (mode & SILC_UMODE_GONE)
-	  strcat(buf, " away");
+	  strcat(buf, " [away]");
 	if (mode & SILC_UMODE_INDISPOSED)
-	  strcat(buf, " indisposed");
+	  strcat(buf, " [indisposed]");
 	if (mode & SILC_UMODE_BUSY)
-	  strcat(buf, " busy");
+	  strcat(buf, " [busy]");
 	if (mode & SILC_UMODE_PAGE)
-	  strcat(buf, " page to reach");
+	  strcat(buf, " [page to reach]");
 	if (mode & SILC_UMODE_HYPER)
-	  strcat(buf, " hyper active");
+	  strcat(buf, " [hyper active]");
 	if (mode & SILC_UMODE_ROBOT)
-	  strcat(buf, " robot");
+	  strcat(buf, " [robot]");
 	if (mode & SILC_UMODE_ANONYMOUS)
-	  strcat(buf, " anonymous");
+	  strcat(buf, " [anonymous]");
 	if (mode & SILC_UMODE_BLOCK_PRIVMSG)
-	  strcat(buf, " blocks private messages");
+	  strcat(buf, " [blocks private messages]");
+	if (mode & SILC_UMODE_DETACHED)
+	  strcat(buf, " [detached]");
 
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			   SILCTXT_WHOIS_MODES, buf);
@@ -1851,7 +1908,14 @@ void
 silc_detach(SilcClient client, SilcClientConnection conn,
             const unsigned char *detach_data, SilcUInt32 detach_data_len)
 {
+  char file[256];
 
+  /* Save the detachment data to file. */
+
+  memset(file, 0, sizeof(file));
+  snprintf(file, sizeof(file) - 1, "%s/session.%s.%d", get_irssi_dir(),
+	   conn->remote_host, conn->remote_port);
+  silc_file_writefile(file, detach_data, detach_data_len);
 }
 
 

@@ -21,6 +21,8 @@
 #include "serverincludes.h"
 #include "server_internal.h"
 
+extern char *server_version;
+
 /* Removes the client from channels and possibly removes the channels
    as well.  After removing those channels that exist, their channel
    keys are regnerated. This is called only by the function
@@ -1116,4 +1118,143 @@ bool silc_server_check_umode_rights(SilcServer server,
     SILC_UMODE_STATS_UPDATE(router, SILC_UMODE_ROUTER_OPERATOR);
 
   return TRUE;
+}
+
+/* This function is used to send the notify packets and motd to the
+   incoming client connection. */
+
+void silc_server_send_connect_notifys(SilcServer server,
+				      SilcSocketConnection sock,
+				      SilcClientEntry client)
+{
+  SilcIDListData idata = (SilcIDListData)client;
+
+  /* Send some nice info to the client */
+  SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			  ("Welcome to the SILC Network %s",
+			   client->username));
+  SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			  ("Your host is %s, running version %s",
+			   server->server_name, server_version));
+
+  if (server->stat.clients && server->stat.servers + 1)
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("There are %d clients on %d servers in SILC "
+			     "Network", server->stat.clients,
+			     server->stat.servers + 1));
+  if (server->stat.cell_clients && server->stat.cell_servers + 1)
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("There are %d clients on %d server in our cell",
+			     server->stat.cell_clients,
+			     server->stat.cell_servers + 1));
+  if (server->server_type == SILC_ROUTER) {
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("I have %d clients, %d channels, %d servers and "
+			     "%d routers",
+			     server->stat.my_clients, 
+			     server->stat.my_channels,
+			     server->stat.my_servers,
+			     server->stat.my_routers));
+  } else {
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("I have %d clients and %d channels formed",
+			     server->stat.my_clients,
+			     server->stat.my_channels));
+  }
+
+  if (server->stat.server_ops || server->stat.router_ops)
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("There are %d server operators and %d router "
+			     "operators online",
+			     server->stat.server_ops,
+			     server->stat.router_ops));
+  if (server->stat.my_router_ops + server->stat.my_server_ops)
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("I have %d operators online",
+			     server->stat.my_router_ops +
+			     server->stat.my_server_ops));
+
+  SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			  ("Your connection is secured with %s cipher, "
+			   "key length %d bits",
+			   idata->send_key->cipher->name,
+			   idata->send_key->cipher->key_len));
+  SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			  ("Your current nickname is %s",
+			   client->nickname));
+
+  /* Send motd */
+  silc_server_send_motd(server, sock);
+}
+
+/* Kill the client indicated by `remote_client' sending KILLED notify
+   to the client, to all channels client has joined and to primary
+   router if needed.  The killed client is also removed from all channels. */
+
+void silc_server_kill_client(SilcServer server,
+			     SilcClientEntry remote_client,
+			     const char *comment,
+			     void *killer_id,
+			     SilcIdType killer_id_type)
+{
+  SilcBuffer killed, killer;
+
+  /* Send the KILL notify packets. First send it to the channel, then
+     to our primary router and then directly to the client who is being
+     killed right now. */
+
+  killed = silc_id_payload_encode(remote_client->id, SILC_ID_CLIENT);
+  killer = silc_id_payload_encode(killer_id, killer_id_type);
+
+  /* Send KILLED notify to the channels. It is not sent to the client
+     as it will be sent differently destined directly to the client and not
+     to the channel. */
+  silc_server_send_notify_on_channels(server, remote_client, 
+				      remote_client, SILC_NOTIFY_TYPE_KILLED,
+				      3, killed->data, killed->len,
+				      comment, comment ? strlen(comment) : 0,
+				      killer->data, killer->len);
+
+  /* Send KILLED notify to primary route */
+  if (!server->standalone)
+    silc_server_send_notify_killed(server, server->router->connection, TRUE,
+				   remote_client->id, comment, 
+				   killer_id, killer_id_type);
+
+  /* Send KILLED notify to the client directly */
+  if (remote_client->connection || remote_client->router)
+    silc_server_send_notify_killed(server, remote_client->connection ? 
+				   remote_client->connection : 
+				   remote_client->router->connection, FALSE,
+				   remote_client->id, comment, 
+				   killer_id, killer_id_type);
+
+  /* Remove the client from all channels. This generates new keys to the
+     channels as well. */
+  silc_server_remove_from_channels(server, NULL, remote_client, FALSE, 
+				   NULL, TRUE);
+
+  /* Remove the client entry, If it is locally connected then we will also
+     disconnect the client here */
+  if (remote_client->connection) {
+    /* Remove locally conneted client */
+    SilcSocketConnection sock = remote_client->connection;
+    silc_server_free_client_data(server, sock, remote_client, FALSE, NULL);
+    silc_server_close_connection(server, sock);
+  } else {
+    /* Update statistics */
+    server->stat.clients--;
+    server->stat.my_clients--;
+    if (server->stat.cell_clients)
+      server->stat.cell_clients--;
+    SILC_OPER_STATS_UPDATE(remote_client, server, SILC_UMODE_SERVER_OPERATOR);
+    SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
+
+    /* Remove remote client */
+    if (!silc_idlist_del_client(server->global_list, remote_client))
+      silc_idlist_del_client(server->local_list, remote_client);  
+}
+
+  silc_buffer_free(killer);
+  silc_buffer_free(killed);
 }

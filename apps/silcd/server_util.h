@@ -134,4 +134,19 @@ bool silc_server_check_umode_rights(SilcServer server,
 				    SilcClientEntry client,
 				    SilcUInt32 mode);
 
+/* This function is used to send the notify packets and motd to the
+   incoming client connection. */
+void silc_server_send_connect_notifys(SilcServer server,
+				      SilcSocketConnection sock,
+				      SilcClientEntry client);
+
+/* Kill the client indicated by `remote_client' sending KILLED notify
+   to the client, to all channels client has joined and to primary
+   router if needed.  The killed client is also removed from all channels. */
+void silc_server_kill_client(SilcServer server,
+			     SilcClientEntry remote_client,
+			     const char *comment,
+			     void *killer_id,
+			     SilcIdType killer_id_type);
+
 #endif /* SERVER_UTIL_H */

@@ -117,7 +117,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
    silc_client_close_connection. */
 
 static void 
-silc_connect(SilcClient client, SilcClientConnection conn, int success)
+silc_connect(SilcClient client, SilcClientConnection conn,
+	     SilcClientConnectionStatus status);
 {
 
 }

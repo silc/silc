@@ -44,6 +44,17 @@ struct SilcClientCommandReplyContextStruct {
 
 /* Macros */
 
+/* Command reply operation that is called at the end of all command replys. 
+   Usage: COMMAND_REPLY((ARGS, argument1, argument2, etc...)), */
+#define COMMAND_REPLY(args) cmd->client->internal->ops->command_reply args
+#define ARGS cmd->client, cmd->sock->user_data,				\
+             cmd->payload, TRUE, silc_command_get(cmd->payload), cmd->status
+
+/* Error reply to application. Usage: COMMAND_REPLY_ERROR; */
+#define COMMAND_REPLY_ERROR cmd->client->internal->ops->		\
+  command_reply(cmd->client, cmd->sock->user_data, cmd->payload,	\
+  FALSE, silc_command_get(cmd->payload), cmd->status)
+
 /* Macro used to declare command reply functions */
 #define SILC_CLIENT_CMD_REPLY_FUNC(func)				\
 void silc_client_command_reply_##func(void *context, void *context2)
@@ -64,6 +75,7 @@ void silc_client_command_reply_process(SilcClient client,
 				       SilcSocketConnection sock,
 				       SilcPacketContext *packet);
 char *silc_client_command_status_message(SilcCommandStatus status);
+void silc_client_command_reply_free(SilcClientCommandReplyContext cmd);
 SILC_CLIENT_CMD_REPLY_FUNC(whois);
 SILC_CLIENT_CMD_REPLY_FUNC(whowas);
 SILC_CLIENT_CMD_REPLY_FUNC(identify);
@@ -73,12 +85,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic);
 SILC_CLIENT_CMD_REPLY_FUNC(invite);
 SILC_CLIENT_CMD_REPLY_FUNC(kill);
 SILC_CLIENT_CMD_REPLY_FUNC(info);
-SILC_CLIENT_CMD_REPLY_FUNC(links);
 SILC_CLIENT_CMD_REPLY_FUNC(stats);
-SILC_CLIENT_CMD_REPLY_FUNC(users);
-SILC_CLIENT_CMD_REPLY_FUNC(connect);
 SILC_CLIENT_CMD_REPLY_FUNC(ping);
-SILC_CLIENT_CMD_REPLY_FUNC(pong);
 SILC_CLIENT_CMD_REPLY_FUNC(oper);
 SILC_CLIENT_CMD_REPLY_FUNC(join);
 SILC_CLIENT_CMD_REPLY_FUNC(motd);
@@ -87,8 +95,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode);
 SILC_CLIENT_CMD_REPLY_FUNC(cumode);
 SILC_CLIENT_CMD_REPLY_FUNC(kick);
 SILC_CLIENT_CMD_REPLY_FUNC(ban);
-SILC_CLIENT_CMD_REPLY_FUNC(close);
-SILC_CLIENT_CMD_REPLY_FUNC(shutdown);
+SILC_CLIENT_CMD_REPLY_FUNC(detach);
 SILC_CLIENT_CMD_REPLY_FUNC(silcoper);
 SILC_CLIENT_CMD_REPLY_FUNC(leave);
 SILC_CLIENT_CMD_REPLY_FUNC(users);
@@ -99,5 +106,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(quit);
 SILC_CLIENT_CMD_REPLY_FUNC(whois_i);
 SILC_CLIENT_CMD_REPLY_FUNC(identify_i);
 SILC_CLIENT_CMD_REPLY_FUNC(info_i);
+SILC_CLIENT_CMD_REPLY_FUNC(users_i);
+
+SILC_CLIENT_CMD_REPLY_FUNC(connect);
+SILC_CLIENT_CMD_REPLY_FUNC(close);
+SILC_CLIENT_CMD_REPLY_FUNC(shutdown);
 
 #endif

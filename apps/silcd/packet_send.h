@@ -172,8 +172,8 @@ void silc_server_send_notify_killed(SilcServer server,
 				    SilcSocketConnection sock,
 				    bool broadcast,
 				    SilcClientID *client_id,
-				    char *comment,
-				    SilcClientID *killer);
+				    const char *comment,
+				    void *killer, SilcIdType killer_type);
 void silc_server_send_notify_umode(SilcServer server,
 				   SilcSocketConnection sock,
 				   bool broadcast,

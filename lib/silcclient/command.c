@@ -1913,18 +1913,41 @@ SILC_CLIENT_CMD_FUNC(ban)
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
 
   /* Send the command */
-  if (ban)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 0, 2, 
-					    1, chidp->data, chidp->len,
-					    type, ban, strlen(ban));
-  else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 0, 1, 
-					    1, chidp->data, chidp->len);
-
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 
+					  ++conn->cmd_ident, 2,
+					  1, chidp->data, chidp->len,
+					  type, ban, ban ? strlen(ban) : 0);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
+}
+
+/* Command DETACH. This is used to detach from the server */
+
+SILC_CLIENT_CMD_FUNC(detach)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_DETACH,
+					  ++conn->cmd_ident, 0);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
 
   /* Notify application */
   COMMAND;
@@ -2383,6 +2406,7 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(cumode, CUMODE, "CUMODE", 5);
   SILC_CLIENT_CMD(kick, KICK, "KICK", 4);
   SILC_CLIENT_CMD(ban, BAN, "BAN", 3);
+  SILC_CLIENT_CMD(detach, DETACH, "DETACH", 0);
   SILC_CLIENT_CMD(silcoper, SILCOPER, "SILCOPER", 3);
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", 2);
   SILC_CLIENT_CMD(users, USERS, "USERS", 2);
@@ -2416,6 +2440,7 @@ void silc_client_commands_unregister(SilcClient client)
   SILC_CLIENT_CMDU(cumode, CUMODE, "CUMODE");
   SILC_CLIENT_CMDU(kick, KICK, "KICK");
   SILC_CLIENT_CMDU(ban, BAN, "BAN");
+  SILC_CLIENT_CMDU(detach, DETACH, "DETACH");
   SILC_CLIENT_CMDU(silcoper, SILCOPER, "SILCOPER");
   SILC_CLIENT_CMDU(leave, LEAVE, "LEAVE");
   SILC_CLIENT_CMDU(users, USERS, "USERS");

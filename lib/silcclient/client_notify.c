@@ -898,25 +898,53 @@ void silc_client_notify_by_server(SilcClient client,
       tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
       if (tmp) {
 	silc_free(client_id);
-	client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
-	if (!client_id)
+	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+	if (!id)
 	  goto out;
 
-	/* Find killer's client entry and if not found resolve it */
-	client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
-	if (!client_entry2) {
-	  silc_client_notify_by_server_resolve(client, conn, packet, 
-					       SILC_ID_CLIENT, client_id);
-	  goto out;
+	/* Find Client entry */
+	if (id_type == SILC_ID_CLIENT) {
+	  /* Find Client entry */
+	  client_id = id;
+	  client_entry2 = silc_client_get_client_by_id(client, conn, 
+						       client_id);
+	  if (!client_entry) {
+	    silc_client_notify_by_server_resolve(client, conn, packet, 
+						 SILC_ID_CLIENT, client_id);
+	    goto out;
+	  }
+	} else if (id_type == SILC_ID_SERVER) {
+	  /* Find Server entry */
+	  server_id = id;
+	  server = silc_client_get_server_by_id(client, conn, server_id);
+	  if (!server) {
+	    silc_client_notify_by_server_resolve(client, conn, packet, 
+						 SILC_ID_SERVER, server_id);
+	    goto out;
+	  }
+      
+	  /* Save the pointer to the client_entry pointer */
+	  client_entry2 = (SilcClientEntry)server;
 	} else {
-	  if (client_entry2 != conn->local_entry)
-	    silc_client_nickname_format(client, conn, client_entry2);
+	  /* Find Channel entry */
+	  channel_id = id;
+	  channel = silc_client_get_channel_by_id(client, conn, channel_id);
+	  if (!channel) {
+	    silc_client_notify_by_server_resolve(client, conn, packet, 
+						 SILC_ID_CHANNEL, channel_id);
+	    goto out;
+	  }
+	  
+	  /* Save the pointer to the client_entry pointer */
+	  client_entry2 = (SilcClientEntry)channel;
+	  silc_free(channel_id);
+	  channel_id = NULL;
 	}
       }
 
       /* Notify application. */
       client->internal->ops->notify(client, conn, type, client_entry, 
-				    comment, client_entry2);
+				    comment, id_type, client_entry2);
 
       if (client_entry != conn->local_entry)
 	/* Remove the client from all channels and free it */

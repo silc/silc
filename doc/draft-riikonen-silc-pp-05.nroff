@@ -102,6 +102,7 @@ Table of Contents
       2.3.20 Key Agreement Payload .............................. 43
       2.3.21 Resume Router Payload .............................. 44
       2.3.22 File Transfer Payload .............................. 44
+      2.3.23 Resume Client Payload .............................. XXXXXX
   2.4 SILC ID Types ............................................. 46
   2.5 Packet Encryption And Decryption .......................... 46
       2.5.1 Normal Packet Encryption And Decryption ............. 46
@@ -145,6 +146,7 @@ Figure 20:  New Server Payload
 Figure 21:  Key Agreement Payload
 Figure 22:  Resume Router Payload
 Figure 23:  File Transfer Payload
+Figure 24:  Resume Client Payload
 
 
 .ti 0
@@ -770,7 +772,22 @@ List of SILC Packet types are defined as follows.
           Payload of the packet:  See section 2.3.22 File Transfer Payload
 
 
-     28 - 199
+     28   SILC_PACKET_RESUME_CLIENT
+
+          This packet is used to resume a client back to the network
+          after it has been detached.  A client is able to detach from
+          the network but the client is still valid client in the network.
+          The client may then later resume its session back by sending
+          this packet to a server.  Routers also use this packet to notify
+          other routers in the network that the detached client has resumed.
+
+          This packet MUST NOT be sent as list and the List flag MUST
+          NOT be set.
+
+          Payload of the packet:  See section 2.3.23 Resume Client Payload
+
+
+     29 - 199
 
           Currently undefined commands.
 
@@ -2349,7 +2366,7 @@ protected with the negotiated key material.
 
 The payload may only be sent with SILC_PACKET_FTP packet.  It MUST NOT
 be sent in any other packet type.  The following diagram represents the
-File Transfer Payload
+File Transfer Payload.
 
 .in 5
 .nf
@@ -2391,6 +2408,64 @@ o Data (variable length) - Arbitrary file transfer data.  The
   file transfer protocol.
 .in 3
 
+
+.ti 0
+2.3.23 Resume Client Payload
+
+This payload is used by client to resume its detached session in the
+SILC Network.  A client is able to detach itself from the network by
+sending SILC_COMMAND_DETACH command to its server.  The network
+connection to the client is lost but the client remains as valid
+client in the network.  The client is able to resume the session back
+by sending this packet and including the old Client ID, and an
+Authentication Payload [SILC1] which the server uses to verify with
+the detached client's public key.  This also implies that the 
+mandatory authentication method is public key authentication.
+
+Server or router that receives this from the client also sends this,
+without the Authentication Payload, to routers in the network so that
+they know the detached client has resumed.  Refer to the [SILC1] for
+detailed description how the detaching and resuming prodecure is
+performed.
+
+The payload may only be sent with SILC_PACKET_RESUME CLIENT packet.  It
+MUST NOT be sent in any other packet type.  The following diagram
+represents the Resume Client Payload.
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Client ID Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Client ID                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                     Authentication Payload                    ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 24:  Resume Client Payload
+
+
+.in 6
+o Client ID Length (1 byte) - The length of the Client ID
+  field not including any other field.
+
+o Client ID (variable length) - The detached client's Client
+  ID.  The client that sends this payload must know the Client
+  ID.
+
+o Authentication Payload (variable length) - The authentication
+  payload that the server will verify with the detached client's
+  public key.  If the server doesn't know the public key, it must
+  retrieve it for example with SILC_COMMAND_GETKEY command.
+.in 3
 
 
 

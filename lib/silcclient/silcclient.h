@@ -254,6 +254,28 @@ typedef enum {
 } SilcClientMessageType;
 /***/
 
+/****d* silcclient/SilcClientAPI/SilcClientConnectionStatus
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcClientConnectionStatus
+ *
+ * DESCRIPTION
+ *
+ *    This type is returned to the `connect' client operation to indicate
+ *    the status of the created connection.  It can indicated if it was
+ *    successful or whether an error occurred.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_CLIENT_CONN_SUCCESS,	       /* Successfully connected */
+  SILC_CLIENT_CONN_SUCCESS_RESUME,     /* Successfully connected and
+					  resumed old detached session */
+  SILC_CLIENT_CONN_ERROR,	       /* Error occurred during connecting */
+} SilcClientConnectionStatus;
+/***/
+
 /****s* silcclient/SilcClientAPI/SilcClientOperations
  *
  * NAME
@@ -346,9 +368,11 @@ typedef struct {
   /* Called to indicate that connection was either successfully established
      or connecting failed.  This is also the first time application receives
      the SilcClientConnection object which it should save somewhere.
-     If the `success' is FALSE the application must always call the function
+     The `status' indicated whether the connection were successful.  If it
+     is error value the application must always call the function
      silc_client_close_connection. */
-  void (*connect)(SilcClient client, SilcClientConnection conn, int success);
+  void (*connect)(SilcClient client, SilcClientConnection conn,
+		  SilcClientConnectionStatus status);
 
   /* Called to indicate that connection was disconnected to the server. */
   void (*disconnect)(SilcClient client, SilcClientConnection conn);

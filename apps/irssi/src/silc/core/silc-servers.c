@@ -54,9 +54,11 @@ static void silc_send_channel(SILC_SERVER_REC *server,
   SILC_CHANNEL_REC *rec;
   
   rec = silc_channel_find(server, channel);
-  if (rec == NULL || rec->entry == NULL)
+  if (rec == NULL || rec->entry == NULL) {
+    cmd_return_error(CMDERR_NOT_JOINED);
     return;
-  
+  }
+
   silc_client_send_channel_message(silc_client, server->conn, rec->entry, 
 				   NULL, 0, msg, strlen(msg), TRUE);
 }
@@ -192,18 +194,33 @@ static void send_message(SILC_SERVER_REC *server, char *target,
 static void sig_connected(SILC_SERVER_REC *server)
 {
   SilcClientConnection conn;
+  SilcClientConnectionParams params;
+  char file[256];
   int fd;
 
   if (!IS_SILC_SERVER(server))
     return;
 
-  conn = silc_client_add_connection(silc_client, NULL,
+  /* Try to read detached session data and use it if found. */
+  memset(&params, 0, sizeof(params));
+  memset(file, 0, sizeof(file));
+  snprintf(file, sizeof(file) - 1, "%s/session.%s.%d", get_irssi_dir(),
+	   server->connrec->address, server->connrec->port);
+  params.detach_data = silc_file_readfile(file, &params.detach_data_len);
+
+  /* Add connection to the client library */
+  conn = silc_client_add_connection(silc_client, &params,
 				    server->connrec->address,
 				    server->connrec->port,
 				    server);
   server->conn = conn;
-	
+
+  silc_free(params.detach_data);
+  unlink(file);
+
   fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
+
+  /* Start key exchange with the server */
   silc_client_start_key_exchange(silc_client, conn, fd);
 
   server->ftp_sessions = silc_dlist_init();
@@ -325,6 +342,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: FILE CLOSE [<nickname>] */
 /* SYNTAX: FILE */
 /* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder <-pubkey|passwd>] */
+/* SYNTAX: DETACH */
 
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
@@ -874,6 +892,7 @@ void silc_server_init(void)
   command_bind_silc("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("sconnect", MODULE_NAME, (SIGNAL_FUNC) command_sconnect);
   command_bind_silc("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
+  command_bind_silc("detach", MODULE_NAME, (SIGNAL_FUNC) command_self);
 
   command_set_options("connect", "+silcnet");
 }
@@ -907,6 +926,7 @@ void silc_server_deinit(void)
   command_unbind("getkey", (SIGNAL_FUNC) command_self);
   command_unbind("sconnect", (SIGNAL_FUNC) command_sconnect);
   command_unbind("file", (SIGNAL_FUNC) command_file);
+  command_unbind("detach", (SIGNAL_FUNC) command_self);
 }
 
 void silc_server_free_ftp(SILC_SERVER_REC *server,

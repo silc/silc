@@ -66,6 +66,7 @@ SilcServerCommand silc_command_list[] =
   SILC_SERVER_CMD(cumode, CUMODE, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(kick, KICK, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(ban, BAN, SILC_CF_LAG_STRICT | SILC_CF_REG),
+  SILC_SERVER_CMD(detach, DETACH, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(silcoper, SILCOPER,
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER),
   SILC_SERVER_CMD(leave, LEAVE, SILC_CF_LAG_STRICT | SILC_CF_REG),
@@ -91,7 +92,7 @@ SilcServerCommand silc_command_list[] =
    of arguments. */
 #define SILC_SERVER_COMMAND_CHECK(command, context, min, max)		      \
 do {									      \
-  SilcUInt32 _argc;								      \
+  SilcUInt32 _argc;		       					      \
 									      \
   SILC_LOG_DEBUG(("Start"));						      \
 									      \
@@ -2013,6 +2014,11 @@ SILC_SERVER_CMD_FUNC(nick)
 				   cmd->server->md5hash, nick,
 				   &new_id)) {
     nickfail++;
+    if (nickfail > 9) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_NICK,
+					    SILC_STATUS_ERR_BAD_NICKNAME);
+      goto out;
+    }
     snprintf(&nick[strlen(nick) - 1], 1, "%d", nickfail);
   }
 
@@ -2639,7 +2645,7 @@ SILC_SERVER_CMD_FUNC(quit)
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
 
-  /* Get destination ID */
+  /* Get message */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
   if (len > 128)
     tmp = NULL;
@@ -2651,8 +2657,8 @@ SILC_SERVER_CMD_FUNC(quit)
 
   /* We quit the connection with little timeout */
   silc_schedule_task_add(server->schedule, sock->sock,
-		     silc_server_command_quit_cb, (void *)q,
-		     0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+			 silc_server_command_quit_cb, (void *)q,
+			 0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
  out:
   silc_server_command_free(cmd);
@@ -2670,7 +2676,6 @@ SILC_SERVER_CMD_FUNC(kill)
   SilcClientID *client_id;
   unsigned char *tmp, *comment;
   SilcUInt32 tmp_len, tmp_len2;
-  SilcBuffer killer;
   bool local;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_KILL, cmd, 1, 2);
@@ -2730,57 +2735,9 @@ SILC_SERVER_CMD_FUNC(kill)
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
 					SILC_STATUS_OK);
 
-  /* Send the KILL notify packets. First send it to the channel, then
-     to our primary router and then directly to the client who is being
-     killed right now. */
-
-  /* Send KILLED notify to the channels. It is not sent to the client
-     as it will be sent differently destined directly to the client and not
-     to the channel. */
-  killer = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-  silc_server_send_notify_on_channels(server, remote_client, 
-				      remote_client, SILC_NOTIFY_TYPE_KILLED,
-				      3, tmp, tmp_len,
-				      comment, comment ? tmp_len2 : 0,
-				      killer->data, killer->len);
-  silc_buffer_free(killer);
-
-  /* Send KILLED notify to primary route */
-  if (!server->standalone)
-    silc_server_send_notify_killed(server, server->router->connection, TRUE,
-				   remote_client->id, comment, client->id);
-
-  /* Send KILLED notify to the client directly */
-  silc_server_send_notify_killed(server, remote_client->connection ? 
-				 remote_client->connection : 
-				 remote_client->router->connection, FALSE,
-				 remote_client->id, comment, client->id);
-
-  /* Remove the client from all channels. This generates new keys to the
-     channels as well. */
-  silc_server_remove_from_channels(server, NULL, remote_client, FALSE, 
-				   NULL, TRUE);
-
-  /* Remove the client entry, If it is locally connected then we will also
-     disconnect the client here */
-  if (remote_client->connection) {
-    /* Remove locally conneted client */
-    SilcSocketConnection sock = remote_client->connection;
-    silc_server_free_client_data(server, sock, remote_client, FALSE, NULL);
-    silc_server_close_connection(server, sock);
-  } else {
-    /* Update statistics */
-    if (remote_client->connection)
-      server->stat.my_clients--;
-    if (server->stat.cell_clients)
-      server->stat.cell_clients--;
-    SILC_OPER_STATS_UPDATE(remote_client, server, SILC_UMODE_SERVER_OPERATOR);
-    SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
-
-    /* Remove remote client */
-    silc_idlist_del_client(local ? server->local_list :
-			   server->global_list, remote_client);
-  }
+  /* Now do the killing */
+  silc_server_kill_client(server, remote_client, comment, client->id,
+			  SILC_ID_CLIENT);
 
  out:
   silc_server_command_free(cmd);
@@ -3297,7 +3254,9 @@ static void silc_server_command_join_channel(SilcServer server,
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     tmp = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
-    keyp = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, tmp, 
+    keyp = silc_channel_key_payload_encode(silc_id_get_len(channel->id,
+							   SILC_ID_CHANNEL), 
+					   tmp,
 					   strlen(channel->channel_key->
 						  cipher->name),
 					   channel->channel_key->cipher->name,
@@ -3737,58 +3696,60 @@ SILC_SERVER_CMD_FUNC(umode)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   SilcBuffer packet;
-  unsigned char *tmp_mask;
-  SilcUInt32 mask;
+  unsigned char *tmp_mask, m[4];
+  SilcUInt32 mask = 0;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
+  bool set_mask = FALSE;
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_UMODE, cmd, 2, 2);
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_UMODE, cmd, 1, 2);
 
   /* Get the client's mode mask */
   tmp_mask = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (!tmp_mask) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  SILC_GET32_MSB(mask, tmp_mask);
-
-  /* Check that mode changing is allowed. */
-  if (!silc_server_check_umode_rights(server, client, mask)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
-					  SILC_STATUS_ERR_PERM_DENIED);
-    goto out;
+  if (tmp_mask) {
+    SILC_GET32_MSB(mask, tmp_mask);
+    set_mask = TRUE;
   }
 
-  /* Anonymous mode cannot be set by client */
-  if (mask & SILC_UMODE_ANONYMOUS) {
-    if (!(client->mode & SILC_UMODE_ANONYMOUS)) {
+  if (set_mask) {
+    /* Check that mode changing is allowed. */
+    if (!silc_server_check_umode_rights(server, client, mask)) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
 					    SILC_STATUS_ERR_PERM_DENIED);
       goto out;
     }
-  } else {
-    if (client->mode & SILC_UMODE_ANONYMOUS) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
-					    SILC_STATUS_ERR_PERM_DENIED);
-      goto out;
+
+    /* Anonymous mode cannot be set by client */
+    if (mask & SILC_UMODE_ANONYMOUS) {
+      if (!(client->mode & SILC_UMODE_ANONYMOUS)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					      SILC_STATUS_ERR_PERM_DENIED);
+	goto out;
+      }
+    } else {
+      if (client->mode & SILC_UMODE_ANONYMOUS) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					      SILC_STATUS_ERR_PERM_DENIED);
+	goto out;
+      }
     }
+
+    /* Change the mode */
+    client->mode = mask;
+
+    /* Send UMODE change to primary router */
+    if (!server->standalone)
+      silc_server_send_notify_umode(server, server->router->connection, TRUE,
+				    client->id, client->mode);
   }
-
-  /* Change the mode */
-  client->mode = mask;
-
-  /* Send UMODE change to primary router */
-  if (!server->standalone)
-    silc_server_send_notify_umode(server, server->router->connection, TRUE,
-				  client->id, client->mode);
 
   /* Send command reply to sender */
+  SILC_PUT32_MSB(client->mode, m);
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_UMODE,
 						SILC_STATUS_OK, 0, ident, 1,
-						2, tmp_mask, 4);
+						2, m, sizeof(m));
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
@@ -4688,6 +4649,61 @@ SILC_SERVER_CMD_FUNC(oper)
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+					SILC_STATUS_OK);
+
+ out:
+  silc_server_command_free(cmd);
+}
+
+SILC_TASK_CALLBACK(silc_server_command_detach_cb)
+{
+  QuitInternal q = (QuitInternal)context;
+  SilcClientEntry client = (SilcClientEntry)q->sock->user_data;
+
+  /* If there is pending outgoing data for the client then purge it
+     to the network before closing connection. */
+  silc_server_packet_queue_purge(q->server, q->sock);
+
+  /* Close the connection on our side */
+  client->router = NULL;
+  client->connection = NULL;
+  q->sock->user_data = NULL;
+  silc_server_close_connection(q->server, q->sock);
+
+  silc_free(q);
+}
+
+/* Server side of DETACH command.  Detached the client from the network
+   by closing the connection but preserving the session. */
+
+SILC_SERVER_CMD_FUNC(detach)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  QuitInternal q;
+
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_DETACH, cmd, 0, 0);
+
+  /* Send the user mode notify to notify that client is detached */
+  client->mode |= SILC_UMODE_DETACHED;
+  client->data.status &= ~SILC_IDLIST_STATUS_RESUMED;
+  if (!server->standalone)
+    silc_server_send_notify_umode(server, server->router->connection,
+				  server->server_type == SILC_SERVER ?
+				  FALSE : TRUE, client->id, client->mode);
+
+  q = silc_calloc(1, sizeof(*q));
+  q->server = server;
+  q->sock = cmd->sock;
+  silc_schedule_task_add(server->schedule, 0, silc_server_command_detach_cb,
+			 q, 0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+
+  /* Send reply to the sender */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_DETACH,
 					SILC_STATUS_OK);
 
  out:

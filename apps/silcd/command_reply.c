@@ -1137,6 +1137,7 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
     }
 
     client->data.public_key = public_key;
+    public_key = NULL;
   } else if (id_type == SILC_ID_SERVER) {
     server_id = silc_id_payload_get_id(idp);
 
@@ -1150,6 +1151,7 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
     }
 
     server_entry->data.public_key = public_key;
+    public_key = NULL;
   } else {
     goto out;
   }
