@@ -1,8 +1,7 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o Add support for the Requested Attributes in WHOIS (setting information
-   and displaying information).  Do /SET MY_* settings to set them.
+ o Add requested attributes public key/signature verifications.
 
  o Server password is not used at all.  It is not possible to automize
    the password authentication currently.  The silc_get_auth_method
@@ -53,8 +52,6 @@ TODO/bugs In SILC Server
 
 TODO/bugs In SILC Libraries
 ===========================
-
- o Add support for SILC_ATTRIBUTE_USER_INFo attribute (VCard).
 
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but

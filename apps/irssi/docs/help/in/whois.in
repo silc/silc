@@ -24,7 +24,7 @@ some of the information. It also possible that none of these
 informations is received.
 
 If you want to send your information in WHOIS you can set the
-information with SET command. See HELP MY and SET MY.
+information with ATTR command.  See HELP ATTR.
 
-See also: WHOWAS, CHANNEL, SET MY
+See also: WHOWAS, CHANNEL, ATTR
 

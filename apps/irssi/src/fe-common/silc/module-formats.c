@@ -151,5 +151,31 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "file_error_permission_denied", "Error during file transfer with {nick $0}: Permission denied", 1, { 0 } },
 	{ "file_close", "File transfer closed with {nick $0} - $1", 2, { 0, 0 } },
 
+	/* Requested Attributes */
+	{ NULL, "Requested Attributes", 0 },
+
+	{ "attr_header",      "Requested Attributes", 0 },
+	{ "attr_footer",      "End of Requested Attributes", 0 },
+	{ "attr_allow",       " Sending allowed    : $0", 1, { 0 } },
+	{ "attr_vcard_file",  " Business card file : $0", 1, { 0 } },
+	{ "attr_services",    " Services used      : $0", 1, { 0 } },
+	{ "attr_service",     " Service            : port [$0] address [$1] logged in [$2]", 3, { 0, 0, 0 } },
+	{ "attr_status_mood", " User's mood        : $0", 1, { 0 } },
+	{ "attr_status_text", " User's message     : $0", 1, { 0 } },
+	{ "attr_status_message",      " User's message     : $0", 1, { 0 } },
+	{ "attr_status_message_file", " Mmessage file      : $0", 1, { 0 } },
+	{ "attr_preferred_language",  " Preferred langauge : $0", 1, { 0 } },
+	{ "attr_preferred_contact",   " Preferred contact  : $0", 1, { 0 } },
+	{ "attr_geolocation",    " Geolocation        : $0", 1, { 0 } },
+	{ "attr_device_info",    " Device Info        : $0", 1, { 0 } },
+	{ "attr_public_keys",    " Public keys        : $0", 1, { 0 } },
+	{ "attr_timezone",       " Timezone           : $0", 1, { 0 } },
+	{ "attr_timezone_allow", " Sending timezone   : $0", 1, { 0 } },
+	{ "attr_user_sign_verified",  " User's signature verified successfully", 0 },
+	{ "attr_user_sign_failed",    " {hilight User's signature failed}", 0 },
+	{ "attr_user_sign_not_present",  " User did not provide digital signature", 0 },
+	{ "attr_server_sign_verified",  " Server's signature verified successfully", 0 },
+	{ "attr_server_sign_failed",    " {hilight Server's signature failed}", 0 },
+
 	{ NULL, NULL, 0 }
 };

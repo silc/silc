@@ -294,6 +294,9 @@ static void sig_connected(SILC_SERVER_REC *server)
   /* Start key exchange with the server */
   silc_client_start_key_exchange(silc_client, conn, fd);
 
+  /* Put default attributes */
+  silc_query_attributes_default(silc_client, conn);
+
   server->ftp_sessions = silc_dlist_init();
   server->isnickflag = isnickflag_func;
   server->ischannel = ischannel_func;
@@ -415,6 +418,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: DETACH */
 /* SYNTAX: WATCH [<-add | -del> <nickname>] */
 /* SYNTAX: STATS */
+/* SYNTAX: ATTR [<-del> <option> [{ <value>}]] */
 
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
@@ -968,6 +972,7 @@ void silc_server_init(void)
   command_bind_silc("detach", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("watch", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("stats", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("attr", MODULE_NAME, (SIGNAL_FUNC) command_attr);
 
   command_set_options("connect", "+silcnet");
 }
@@ -1005,6 +1010,7 @@ void silc_server_deinit(void)
   command_unbind("detach", (SIGNAL_FUNC) command_self);
   command_unbind("watch", (SIGNAL_FUNC) command_self);
   command_unbind("stats", (SIGNAL_FUNC) command_self);
+  command_unbind("attr", (SIGNAL_FUNC) command_attr);
 }
 
 void silc_server_free_ftp(SILC_SERVER_REC *server,

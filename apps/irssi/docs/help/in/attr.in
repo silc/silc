@@ -1,108 +1,121 @@
 
-My information for WHOIS command
+@SYNTAX:attr@
 
 In SILC it is possible to retrieve detailed information about a user
 with WHOIS command by giving -details option to the WHOIS.  This
 information is retrieved directly from the client, if the client
-supports it.  If client does not support it or do not want to send
+supports it.  This process is called as handling a Requested Attributes 
+in WHOIS.  If client does not support attributes or do not want to send
 anything then server may reply on behalf of the client.
 
 You may set your personal information that others may retrieve using
-WHOIS command.  These information is set with SET command, give command:
+WHOIS command.  These information is set with ATTR command. By default, 
+in SILC Client sending the information is allowed.  If you do not want to 
+allow it give command:
 
-  SET my
-
-to see all possible settings for the information.  By default, in SILC
-Client sending the information is allowed.  If you do not want to allow
-it give command:
-
-   SET my_allow_request OFF
+    ATTR allow OFF
 
 and your client will not reply to the requests.  This usually means that
 server may not send you the request anymore at all, or may do so only
 occasionally.
 
-The following settings are available:
+Adding new information is done with ATTR command as follows:
 
-  my_vcard
+    ATTR <option> { <value>}
+
+If the <option> already has a value the new value will replace the old
+value.  Deleting all added information for a option is done as follows:
+
+    ATTR -del <option>
+
+The following options to ATTR command are available:
+
+  allow
+    - Info:	Allow/Disallow sending of information
+    - Format: 	ON/OFF, ON by default
+    - Examples:
+      ATTR allow OFF
+      ATTR allow ON
+
+  vcard
     - Info:	Your personal information (business card)
     - Format: 	path to VCard file
     - Examples:
-      SET my_vcard /home/foo/.silc/vcard
+      ATTR vcard /home/foo/.silc/vcard
 
-  my_services
+  services
     - Info:	List of network services you are using
-    - Format: 	list of <service>://<address>:<port>
+    - Format: 	list of <address>:<port>
     - Examples:
-      SET my_services silc://silcnet.org:706
-      SET my_services silc://silcnet.org:706 irc://irc.org:6667
+      ATTR services silcnet.org:706
+      ATTR services silcnet.org:706 irc.org:6667
 
-  my_status_mood
+  status_mood
     - Info:	Indication of your personal mood at the present time
 		By default, setting this is aliased to MOOD command
-    - Format: 	list of moods (NORMAL, HAPPY, SAD, ANGRY, JEALOUS,
+    - Format: 	list of moods (moods: NORMAL, HAPPY, SAD, ANGRY, JEALOUS,
                                ASHAMED, INVINCIBLE, INLOVE, SLEEPY,
                                BORED, EXCITED, ANXIOUS)
     - Examples:
-      SET my_status_mood HAPPY INLOVE
+      ATTR status_mood HAPPY INLOVE
       MOOD SLEEPY BORED INVINCIBLE
 
-  my_status_text
+  status_text
     - Info:	Text message further describing your current status
     - Format: 	text string
     - Examples:
-      SET my_status_text "Not much going on, right now..."
+      ATTR status_text "Not much going on, right now..."
 
-  my_status_message
+  status_message
     - Info:	MIME message further describing your current status
     - Format: 	File path to file containing a MIME object
     - Examples:
-      SET my_status_message /home/foo/.silc/message
+      ATTR status_message /home/foo/.silc/message
 
-  my_preferred_language
+  preferred_language
     - Info:	Language you would like to use in SILC
     - Format: 	list of three letter language codes (ISO 639-2/T)
                 See http://www.loc.gov/standards/iso639-2/langcodes.html
     - Examples:
-      SET my_preferred_language fin
-      SET my_preferred_language eng fin
+      ATTR preferred_language fin
+      ATTR preferred_language eng fin
 
-  my_preferred_contact
+  preferred_contact
     - Info:	Contact method you prefer
     - Format: 	List of preferred contact methods
-		(NONE, EMAIL, CALL, PAGE, SMS, MMS, CHAT)
+		(methods: NONE, EMAIL, CALL, PAGE, SMS, MMS, CHAT)
     - Examples:
-      SET my_preferred_contact NONE
-      SET my_preferred_contact CHAT EMAIL SMS
+      ATTR preferred_contact NONE
+      ATTR preferred_contact CHAT EMAIL SMS
 
-  my_timezone
+  timezone
     - Info:	Send your local time and timezone
     - Format: 	ON/OFF, ON by default
     - Examples:
-      SET my_timezone OFF
+      ATTR timezone OFF
 
-  my_geolocation
+  geolocation
     - Info:	Your current measured global location
     - Format: 	longitude:latitude:altitude:accuracy in meters
     - Examples:
-      SET my_geolocation "60 10:24 57:251:20"
+      ATTR geolocation "60 10:24 57:251:20"
 
-  my_device_info
+  device_info
     - Info:	Type of your device you are using
-    - Format: 	Device type (COMPUTER, MOBILE_PHONE, PDA, TERMINAL)
+    - Format: 	Device type:manufacturer:version:model:language
+                (types: COMPUTER, MOBILE_PHONE, PDA, TERMINAL)
     - Examples:
-      SET my_device_info COMPUTER
-      SET my_device_info PDA
+      ATTR device_info COMPUTER:Debian:2.4:Linux:eng
+      ATTR device_info PDA:Palm, Inc.:1.0:Zire,eng
 
-  my_public_keys
+  public_keys
     - Info:	List of your public keys you want to send in the reply,
                 The client automatically sends your SILC public key
     - Format:	List of file paths to public key files with key type
                 (silc-rsa, silc-dss, ssh-rsa, ssh-dss, pgp-sign-rsa,
 		 pgp-sign-dss, x509v3-sign-rsa, x509v3-sign-dss)
     - Examples:
-      SET my_public_keys ssh-rsa:/home/priikone/.ssh2/ssh2.pub
-      SET my_public_keys pgp-sign-rsa:/home/priikone/pgp/pgp.asc
+      ATTR public_keys ssh-rsa:/home/priikone/.ssh2/ssh2.pub
+      ATTR public_keys pgp-sign-rsa:/home/priikone/pgp/pgp.asc
 
-See also: WHOIS, SET MY, MOOD
-
+See also: WHOIS, MOOD

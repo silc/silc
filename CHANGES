@@ -1,3 +1,21 @@
+Mon Oct 14 17:55:44 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Periodically remove the NOATTR status from client entry
+	  so that the client may take the attributes in use even after
+	  server has resolved them unsuccessfully earlier.  Affected
+	  file silcd/server_query.c and idlist.h.
+
+	* Moved sha1hash and md5hash from client->internal to
+	  SilcClient for application usage.  Affected files are
+	  lib/silcclient/client.h and client_internal.h.
+
+	* Fixed attribute encoding and decoding bugs.  Affected
+	  files lib/silccore/silcattrs.[ch].
+
+	* Added ATTR command to Irssi SILC Client which is used to	
+	  manage user's Requested Attributes sending and values for
+	  WHOIS command.  Affected files around Irssi SILC client.
+
 Mon Oct 14 14:33:54 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_buffer_strformat which can be used to format

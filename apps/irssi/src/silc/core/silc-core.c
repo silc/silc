@@ -40,7 +40,6 @@
 #include "fe-common/silc/module-formats.h"
 
 /* Command line option variables */
-static bool opt_create_keypair = FALSE;
 static char *opt_pkcs = NULL;
 static int opt_bits = 0;
 
@@ -154,9 +153,11 @@ static bool silc_irssi_debug_print(char *file, char *function, int line,
 	    "DEBUG: %s:%d: %s", function, line, message);
   return TRUE;
 }
+#endif
 
-static void sig_debug_setup_changed(void)
+static void sig_setup_changed(void)
 {
+#ifdef SILC_DEBUG
   bool debug = settings_get_bool("debug");
   if (debug) {
     const char *debug_string = settings_get_str("debug_string");
@@ -168,8 +169,8 @@ static void sig_debug_setup_changed(void)
   }
   if (i_debug)
     silc_debug = FALSE;
-}
 #endif
+}
 
 /* Log callbacks */
 
@@ -362,11 +363,26 @@ void silc_core_init(void)
   settings_add_int("server", "key_exchange_rekey_secs", 3600);
   settings_add_int("server", "connauth_request_secs", 2);
 
+  /* Requested Attributes settings */
+  settings_add_bool("silc", "attr_allow", TRUE);
+  settings_add_str("silc", "attr_vcard", "");
+  settings_add_str("silc", "attr_services", "");
+  settings_add_str("silc", "attr_status_mood", "NORMAL");
+  settings_add_str("silc", "attr_status_text", "");
+  settings_add_str("silc", "attr_status_message", NULL);
+  settings_add_str("silc", "attr_preferred_language", "");
+  settings_add_str("silc", "attr_preferred_contact", "CHAT");
+  settings_add_bool("silc", "attr_timezone", TRUE);
+  settings_add_str("silc", "attr_geolocation", "");
+  settings_add_str("silc", "attr_device_info", NULL);
+  settings_add_str("silc", "attr_public_keys", "");
+
 #ifdef SILC_DEBUG
   settings_add_bool("debug", "debug", FALSE);
   settings_add_str("debug", "debug_string", "");
-  signal_add("setup changed", (SIGNAL_FUNC) sig_debug_setup_changed);
 #endif
+
+  signal_add("setup changed", (SIGNAL_FUNC) sig_setup_changed);
 
   silc_init_userinfo();
 
@@ -455,10 +471,8 @@ void silc_core_deinit(void)
   if (idletag != -1) {
     signal_emit("chat protocol deinit", 1,
 		chat_protocol_find("SILC"));
-#ifdef SILC_DEBUG
-    signal_remove("setup changed", (SIGNAL_FUNC) sig_debug_setup_changed);
-#endif
-    
+    signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
+
     silc_server_deinit();
     silc_channels_deinit();
     silc_queries_deinit();

@@ -1092,6 +1092,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcUInt32 idle, mode;
       SilcBuffer channels, user_modes;
       SilcClientEntry client_entry;
+      SilcDList attrs;
       
       if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
 	/* Print the unknown nick for user */
@@ -1136,6 +1137,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       idle = va_arg(vp, SilcUInt32);
       fingerprint = va_arg(vp, unsigned char *);
       user_modes = va_arg(vp, SilcBuffer);
+      attrs = va_arg(vp, SilcDList);
       
       silc_parse_userfqdn(nickname, &nick, NULL);
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
@@ -1199,6 +1201,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			   SILCTXT_WHOIS_FINGERPRINT, fingerprint);
 	silc_free(fingerprint);
       }
+
+      if (attrs)
+	silc_query_attributes_print(server, silc_client, conn, attrs);
     }
     break;
     
