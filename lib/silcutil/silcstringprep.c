@@ -108,6 +108,8 @@ silc_stringprep(const unsigned char *bin, SilcUInt32 bin_len,
   SilcUInt32 utf8s_len;
   int ret;
 
+  SILC_LOG_DEBUG(("Preparing string"));
+
   if (!bin || !bin_len || !profile_name)
     return SILC_STRINGPREP_ERR;
 
@@ -131,7 +133,22 @@ silc_stringprep(const unsigned char *bin, SilcUInt32 bin_len,
     f |= STRINGPREP_NO_UNASSIGNED;
 
   /* Prepare */
-  ret = stringprep((char *)utf8s, utf8s_len, f, profile);
+  ret = stringprep((char *)utf8s, utf8s_len + 1, f, profile);
+  SILC_LOG_DEBUG(("stringprep() return %d", ret));
+
+  /* Since the stringprep() doesn't allocate returned buffer, and
+     stringprep_profile() doesn't do it correctly, we can't know how
+     much space we must have for the conversion.  Allocate more if it
+     fails, and try again. */
+  if (ret == STRINGPREP_TOO_SMALL_BUFFER) {
+    utf8s = silc_realloc(utf8s, sizeof(*utf8s) * (utf8s_len * 2));
+    if (!utf8s)
+      return SILC_STRINGPREP_ERR_OUT_OF_MEMORY;
+    memset(utf8s + utf8s_len, 0, utf8s_len);
+    ret = stringprep((char *)utf8s, utf8s_len * 2, f, profile);
+    SILC_LOG_DEBUG(("stringprep() return %d", ret));
+  }
+
   switch (ret) {
   case STRINGPREP_OK:
     ret = SILC_STRINGPREP_OK;
