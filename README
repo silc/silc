@@ -93,6 +93,13 @@ Following commands has been, at least partly, implemented:
 		Requests information about a server.  If argument is
 		not specified current server is used.
 
+	/AWAY	[<message>]
+
+		Sets away message.  When private message is received and
+		away message is set the client automatically replies to
+		the sender with the away message.  To remove away message
+		give the command without arguments.
+
 	/QUIT
 
 		Quits session.  Connection to remote server is closed.

@@ -242,6 +242,12 @@ not include spaces (` ').
 +                                                               +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Version String Length     |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                         Version String                        ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |   Key Exchange Grp Length     |                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
 |                                                               |
@@ -308,38 +314,47 @@ o Flags (1 byte) - Indicates flags to be used in the key
        must not be set.
 
 o Payload Length (2 bytes) - Length of the entire Key Exchange
-  Start payload.
+  Start payload, not including any other field.
 
 o Cookie (16 bytes) - Cookie that uniforms this payload so
   that each of the party cannot determine the payload before
   hand.
 
+o Version String Length (2 bytes) - The length of the Version
+  String field, not including any other field.
+
+o Version String (variable length) - Indicates the version of
+  the sender of this payload.  Initiator sets this when sending
+  the payload and responder sets this when it replies by sending
+  this payload.  See [SILC1] for definition of the version
+  string format.
+
 o Key Exchange Grp Length (2 bytes) - The length of the
-  key exchange group list, including this field as well.
+  key exchange group list, not including any other field.
 
 o Key Exchange Group (variable length) - The list of
   key exchange groups.  See the section 2.1.2 SILC Key Exchange
   Groups for definitions of these groups.
 
 o PKCS Alg Length (2 bytes) - The length of the PKCS algorithms
-  list, including this field as well.
+  list, not including any other field.
 
 o PKCS Algorithms (variable length) - The list of PKCS 
   algorithms.
 
 o Encryption Alg Length (2 bytes) - The length of the encryption
-  algorithms list, including this field as well.
+  algorithms list, not including any other field.
 
 o Encryption Algorithms (variable length) - The list of
   encryption algorithms.
 
 o Hash Alg Length (2 bytes) - The length of the Hash algorithms
-  list, including this field as well.
+  list, not including any other field.
 
 o Hash Algorithms (variable length) - The list of Hash algorithms.
 
 o Compression Alg Length (2 bytes) - The length of the
-  compression algorithms list, including this field as well.
+  compression algorithms list, not including any other field.
 
 o Compression Algorithms (variable length) - The list of 
   compression algorithms.
@@ -402,9 +417,8 @@ Figure 2:  Key Exchange 1 Payload
 
 
 .in 6
-o Public Key Length (2 bytes) - The length of the public key
-  (or certificate), including this field and public key type
-  field as well.
+o Public Key Length (2 bytes) - The length of the Public Key
+  (or certificate) field, not including any other field.
 
 o Public Key Type (2 bytes) - The public key (or certificate) 
   type.  This field indicates the type of the public key in 
@@ -426,8 +440,8 @@ o Public Key Type (2 bytes) - The public key (or certificate)
   sending SILC_PACKET_FAILURE message.
 
 o Public Data Length (2 bytes) - The length of the public
-  data computed by the responder, including this field
-  as well.
+  data computed by the responder, not including any other
+  field.
 
 o Public Data (variable length) - The public data to be
   sent to the responder.  See section 2.2 Key Exchange 
@@ -480,9 +494,8 @@ Figure 3:  Key Exchange 2 Payload
 
 
 .in 6
-o Public Key Length (2 bytes) - The length of the public key
-  (or certificate), including this field and public key type
-  field as well.
+o Public Key Length (2 bytes) - The length of the Public Key
+  (or certificate) field, not including any other field.
 
 o Public Key Type (2 bytes) - The public key (or certificate) 
   type.  This field indicates the type of the public key in 
@@ -495,8 +508,8 @@ o Public Key of the host (variable length) - The public
   is indicated by previous Public Key Type field.
 
 o Public Data Length (2 bytes) - The length of the public
-  data computed by the responder, including this field
-  as well.
+  data computed by the responder, not including any other
+  field.
 
 o Public Data (variable length) - The public data computed
   by the responder.  See section 2.2 Key Exchange Procedure
@@ -504,7 +517,7 @@ o Public Data (variable length) - The public data computed
   value is binary encoded.
 
 o Signature Length (2 bytes) - The length of the signature,
-  including the length of this field as well.
+  not including any other field.
 
 o Signature Data (variable length) - The signature signed
   by the responder.  The receiver of this signature must

@@ -106,6 +106,7 @@ Table of Contents
       3.10.3 MAC Algorithms ..................................... 20
       3.10.4 Compression Algorithms ............................. 21
   3.11 SILC Public Key .......................................... 21
+  3.12 SILC Version Detection ................................... 24
 4 SILC Procedures ............................................... 24
   4.1 Creating Client Connection ................................ 24
   4.2 Creating Server Connection ................................ 25
@@ -1217,6 +1218,39 @@ o Public Data (variable length) - Includes the actual
 
 All fields in the public key are in MSB (most significant byte first)
 order.
+
+
+.ti 0
+3.12 SILC Version Detection
+
+The version detection of both client and server is performed at the
+connection phase while executing the SILC Key Exchange protocol.  The
+version identifier is exchanged between intiator and responder.  The
+version identifier is of following format:
+
+.in 6
+SILC-<protocol version>-<software version>
+.in 3
+
+The version strings are of following format:
+
+.in 6
+protocol version = <major>.<minor>
+software version = <major>[.<minor>[.<build>]]
+.in 3
+
+Protocol version may provide both major and minor version.  Currently
+implementations must set the protocol version and accept the protocol
+version as SILC-1.0-<sotware version>. 
+
+Software version may provide major, minor and build version.  The
+software version may be freely set and accepted.
+
+Thus, the version string could be, for example:
+
+.in 6
+SILC-1.0-1.2
+.in 3
 
 
 .ti 0

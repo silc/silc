@@ -46,8 +46,6 @@
 
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
-#else
-#error getopt.h not found in the system
 #endif
 
 #ifdef HAVE_SIGNAL_H

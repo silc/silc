@@ -21,6 +21,8 @@
 #ifndef CLIENTINCLUDES_H
 #define CLIENTINCLUDES_H
 
+#include "silcdefs.h"
+
 #include <curses.h>
 #include <sys/param.h>
 #include <pwd.h>
