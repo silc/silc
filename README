@@ -71,10 +71,6 @@ Following commands has been, at least partly, implemented:
 		Leaves the channel.  If /leave * is given the client
 		leaves the current channel.
 
-	/NAMES	<channel>
-
-		Lists clients currently joined to the channel.
-
 	/MSG    <nickname> <message>
 
 		Sends private message to remote client.  Support for

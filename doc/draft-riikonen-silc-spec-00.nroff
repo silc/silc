@@ -545,13 +545,15 @@ distributing it to the router.
 .ti 0
 3.2.3 SILC Server Ports
 
-SILC uses currently TCP port 334 on SILC network.  However, this is not
-official port assigned for SILC.  Official port has been requested by 
-the IANA.
+Following ports has been assigned by IANA for the SILC protocol:
+
+.in 10
+silc            706/tcp    SILC
+silc            706/udp    SILC
+.in 3
 
 If there are needs to create new SILC networks in the future the port
-numbers must be officially assigned by the IANA.  Most convenience case
-would be to assign port numbers upwards from 334.
+numbers must be officially assigned by the IANA.
 
 Server on network above privileged ports (>1023) should not be trusted
 as they could have been set up by untrusted party.
@@ -2693,10 +2695,15 @@ List of all defined commands in SILC follows.
 
         Max Arguments:  3
             Arguments:  (1) <Status Payload>  (2) <Channel ID>
-                        (3) <name list>
+                        (3) <name list>       (4) <Client ID list>
 
-        This command replies with the comma separated list of users on
-        the channel and the Channel ID of the channel requested.
+        This command replies with the Channel ID of the requested channel,
+        comma separated list of users on the channel and Client ID list
+        of the users on the list.  The Client ID list has Client ID's
+        of all users in the list.  First Client ID in the list must be
+        the Client ID of the first user in <name list>.  The Client ID
+        List is formed by adding Client ID's each after each.  Note that
+        the Client ID list is binary data.
 
         Status messages:
 

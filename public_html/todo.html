@@ -12,6 +12,9 @@ align=center>
 <h1>TODO</h1>
 <p>
 <pre>
+TODO
+====
+
 This is more or less complete list of tasks that has to be done before
 SILC 1.0 could ever be released.  It is clear that the list does not
 include all the bugs that exists.  At the end of list are tasks that 
@@ -136,8 +139,6 @@ TODO In SILC Client
    be selected.  I'm open for ideas.
 
  o All allocations and freeing needs to be checked for memory leaks.
-   Also, return values from various allocations and functions needs to
-   checked.
 
 
 TODO In SILC Server
@@ -156,6 +157,9 @@ TODO In SILC Server
    they are too short or too long.  I haven't really tested whether they
    are suitable.  They should be tested on high load which I haven't done
    at all yet.
+
+ o INVITE command must set the channel's invite list if channel is 
+   invite-only channel.
 
  o Public and private key generation is now done everytime the program
    is run.  Now, this is only for testing period as I've been lazy to
@@ -210,8 +214,6 @@ TODO In SILC Server
    to gather some statistics.
 
  o All allocations and freeing needs to be checked for memory leaks.
-   Also, return values from various allocations and functions needs to
-   checked.
 
 
 TODO In SILC Libraries
@@ -302,12 +304,6 @@ TODO In SILC Libraries
    not so good.  Must be rewritten very soon.
 
  o All allocations and freeing needs to be checked for memory leaks.
-
- o There are also checks missing from allocations whether the allocation
-   returns valid memory or NULL.  These are missing in library as well
-   in client and server.  Either all checks has to be added or we will
-   have to make sure that silc_*alloc()s always return valid memory
-   and assert()s if the system's memory allocator (*alloc()) fails.
 
  o silc_buffer_[un]format() needs to be made more stable as it may
    crash the SILC if malformed data is sent as argument.  There are a

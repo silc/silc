@@ -1,3 +1,27 @@
+Wed Jul  5 19:19:02 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added into silcpkcs[ch]: silc_pkcs_public_key[_data]_set and
+	  silc_pkcs_private_key[_data]_set.
+
+	* Made the password and public authentication more cleaner in
+	  server's protocol.c.
+
+	* Removed historic and obsolete protocol `channel_auth' from
+	  both client and server.
+
+	* Removed wrong way of sending command status messages from
+	  server to client in server's command.c.  The old way violated
+	  protocol specification.  
+
+	  Changes to silccore/silccommand.[ch]: removed
+	  silc_command_encode_status_payload -> not needed anymore,
+	  changed silc_command_encode_payload_va to accept extra
+	  argument on variable argument list.  The argument type must
+	  now be provided to the function.  Also, added new function:
+	  silc_command_encode_reply_payload_va which is same as
+	  normal command_encode_payload_va except command status type
+	  is provided as extra argument.
+
 Tue Jul  4 18:26:39 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added ~./silc directory handling.  The directory includes the
@@ -31,7 +55,7 @@ Mon Jul  3 18:51:27 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented NAMES command on client and server.  The server side
 	  supports currently only normal server not router server yet.
-	  Some changes to NAMES definition is SILC Protocol Specification.
+	  Some changes to NAMES definition in SILC protocol specification.
 
 Sun Jul  2 18:23:01 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
