@@ -1,3 +1,27 @@
+Tue Mar 13 22:17:34 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new argument to the WHOWAS command reply, the real name.
+	  It is an optional argument.  Updated the protocol specs.
+
+	* Added SilcIDCacheDestructor callback that is registered when
+	  the SilcIDCache is allocated.  The callback is called when
+	  an cache entry in the ID Cache expires, or is purged from the
+	  cache.  Added into lib/silccore/idcache.[ch].
+
+	  Added silc_idlist_client_destructor to the silcd/idlist.[ch]
+	  to destruct the client entries when the cache entry expires.
+	  Other ID Cache's in server and in the client library ignores
+	  the destructor.
+
+	* If the ID Cache entry's `expire' field is zero then the entry
+	  never expires.  Added boolean `expire' argument to the
+	  silc_idcache_add function in the lib/silccore/idcache.[ch].
+	  If it is TRUE the default expiry value is used.
+
+	* Added silc_server_free_client_data_timeout that is registered
+	  when client disconnects.  By default for 5 minutes we preserve
+	  the client entry for history - for WHOWAS command.
+
 Tue Mar 13 13:26:18 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added support to the server to enforce that commands are not

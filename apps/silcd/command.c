@@ -903,8 +903,25 @@ SILC_SERVER_CMD_FUNC(whois)
     silc_server_command_free(cmd);
 }
 
+/* Server side of command WHOWAS. */
+
 SILC_SERVER_CMD_FUNC(whowas)
 {
+#if 0
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  int ret = 0;
+
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_WHOWAS, cmd, 1, 2);
+
+  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
+    ret = silc_server_command_whois_from_client(cmd);
+  else if ((cmd->sock->type == SILC_SOCKET_TYPE_SERVER) ||
+	   (cmd->sock->type == SILC_SOCKET_TYPE_ROUTER))
+    ret = silc_server_command_whois_from_server(cmd);
+
+  if (!ret)
+    silc_server_command_free(cmd);
+#endif
 }
 
 /******************************************************************************
@@ -1394,7 +1411,7 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Update client cache */
   silc_idcache_add(server->local_list->clients, client->nickname, 
-		   SILC_ID_CLIENT, client->id, (void *)client, TRUE);
+		   SILC_ID_CLIENT, client->id, (void *)client, TRUE, FALSE);
 
   nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 

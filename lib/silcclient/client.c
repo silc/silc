@@ -140,9 +140,9 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
   conn = silc_calloc(1, sizeof(*conn));
 
   /* Initialize ID caches */
-  conn->client_cache = silc_idcache_alloc(0);
-  conn->channel_cache = silc_idcache_alloc(0);
-  conn->server_cache = silc_idcache_alloc(0);
+  conn->client_cache = silc_idcache_alloc(0, NULL);
+  conn->channel_cache = silc_idcache_alloc(0, NULL);
+  conn->server_cache = silc_idcache_alloc(0, NULL);
   conn->client = client;
   conn->remote_host = strdup(hostname);
   conn->remote_port = port;
@@ -1129,7 +1129,7 @@ void silc_client_receive_new_id(SilcClient client,
   
   /* Put it to the ID cache */
   silc_idcache_add(conn->client_cache, conn->nickname, SILC_ID_CLIENT,
-		   conn->local_id, (void *)conn->local_entry, TRUE);
+		   conn->local_id, (void *)conn->local_entry, TRUE, FALSE);
 
   /* Notify application of successful connection. We do it here now that
      we've received the Client ID and are allowed to send traffic. */
@@ -1162,7 +1162,7 @@ SilcChannelEntry silc_client_new_channel_id(SilcClient client,
 
   /* Put it to the ID cache */
   silc_idcache_add(conn->channel_cache, channel_name, SILC_ID_CHANNEL,
-		   (void *)channel->id, (void *)channel, TRUE);
+		   (void *)channel->id, (void *)channel, TRUE, FALSE);
 
   return channel;
 }

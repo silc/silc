@@ -251,7 +251,8 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     
     /* Add client to cache */
     silc_idcache_add(conn->client_cache, client_entry->nickname,
-		     SILC_ID_CLIENT, client_id, (void *)client_entry, TRUE);
+		     SILC_ID_CLIENT, client_id, (void *)client_entry, 
+		     TRUE, FALSE);
   } else {
     client_entry = (SilcClientEntry)id_cache->context;
     if (client_entry->nickname)
@@ -379,7 +380,8 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
     
     /* Add client to cache */
     silc_idcache_add(conn->client_cache, client_entry->nickname,
-		     SILC_ID_CLIENT, client_id, (void *)client_entry, TRUE);
+		     SILC_ID_CLIENT, client_id, (void *)client_entry, 
+		     TRUE, FALSE);
   } else {
     client_entry = (SilcClientEntry)id_cache->context;
     if (client_entry->nickname)
@@ -862,7 +864,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
       client_entry = silc_calloc(1, sizeof(*client_entry));
       client_entry->id = silc_id_dup(client_id, SILC_ID_CLIENT);
       silc_idcache_add(conn->client_cache, NULL, SILC_ID_CLIENT, 
-		       client_entry->id, (void *)client_entry, FALSE);
+		       client_entry->id, (void *)client_entry, FALSE, FALSE);
     } else {
       /* Yes, we have it already */
       client_entry = (SilcClientEntry)id_cache->context;

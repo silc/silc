@@ -247,18 +247,9 @@ typedef struct SilcChannelClientEntryStruct {
        cell this client is coming from. This is used to route messages to 
        this client.
 
-   SilcCipher session_key
+   SilcList channels
 
-       The actual session key established by key exchange protcol between
-       connecting parties. This is used for both encryption and decryption.
-
-   SilcPKCS pkcs
-
-       PKCS of the client. This maybe NULL.
-
-   SilcHmac hmac
-
-       MAC key used to compute MAC's for packets. 
+       List of channels this client has joined.
 
    void *connection
 
@@ -502,6 +493,8 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 SilcClientEntry
 silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 			      SilcClientID *new_id);
+void silc_idlist_client_destructor(SilcIDCache cache,
+				   SilcIDCacheEntry entry);
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,

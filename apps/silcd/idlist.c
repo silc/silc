@@ -96,7 +96,7 @@ silc_idlist_add_server(SilcIDList id_list,
   server->connection = connection;
 
   if (!silc_idcache_add(id_list->servers, server->server_name, SILC_ID_SERVER,
-			(void *)server->id, (void *)server, TRUE)) {
+			(void *)server->id, (void *)server, TRUE, FALSE)) {
     silc_free(server);
     return NULL;
   }
@@ -282,7 +282,7 @@ silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname,
 		 client_list);
 
   if (!silc_idcache_add(id_list->clients, nickname, SILC_ID_CLIENT,
-			(void *)client->id, (void *)client, TRUE)) {
+			(void *)client->id, (void *)client, TRUE, FALSE)) {
     silc_free(client);
     return NULL;
   }
@@ -548,6 +548,30 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
   return client;
 }
 
+/* Client cache entry destructor that is called when the cache is purged. */
+
+void silc_idlist_client_destructor(SilcIDCache cache,
+				   SilcIDCacheEntry entry)
+{
+  SilcClientEntry client;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  client = (SilcClientEntry)entry->context;
+  if (client) {
+    if (client->nickname)
+      silc_free(client->nickname);
+    if (client->username)
+      silc_free(client->username);
+    if (client->userinfo)
+      silc_free(client->userinfo);
+    if (client->id)
+      silc_free(client->id);
+
+    memset(client, 'F', sizeof(*client));
+    silc_free(client);
+  }
+}
 
 /******************************************************************************
 
@@ -583,7 +607,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 
   if (!silc_idcache_add(id_list->channels, channel->channel_name, 
 			SILC_ID_CHANNEL, (void *)channel->id, 
-			(void *)channel, TRUE)) {
+			(void *)channel, TRUE, FALSE)) {
     silc_free(channel);
     return NULL;
   }

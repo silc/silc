@@ -96,7 +96,7 @@ void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock);
 void silc_server_free_client_data(SilcServer server, 
 				  SilcSocketConnection sock,
-				  SilcClientEntry user_data, char *signoff);
+				  SilcClientEntry client, char *signoff);
 void silc_server_free_sock_user_data(SilcServer server, 
 				     SilcSocketConnection sock);
 int silc_server_channel_has_global(SilcChannelEntry channel);

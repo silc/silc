@@ -221,16 +221,18 @@ int silc_server_init(SilcServer server)
   }
 
   /* Initialize ID caches */
-  server->local_list->clients = silc_idcache_alloc(0);
-  server->local_list->servers = silc_idcache_alloc(0);
-  server->local_list->channels = silc_idcache_alloc(0);
+  server->local_list->clients = 
+    silc_idcache_alloc(0, silc_idlist_client_destructor);
+  server->local_list->servers = silc_idcache_alloc(0, NULL);
+  server->local_list->channels = silc_idcache_alloc(0, NULL);
 
   /* These are allocated for normal server as well as these hold some 
      global information that the server has fetched from its router. For 
      router these are used as they are supposed to be used on router. */
-  server->global_list->clients = silc_idcache_alloc(0);
-  server->global_list->servers = silc_idcache_alloc(0);
-  server->global_list->channels = silc_idcache_alloc(0);
+  server->global_list->clients = 
+    silc_idcache_alloc(0, silc_idlist_client_destructor);
+  server->global_list->servers = silc_idcache_alloc(0, NULL);
+  server->global_list->channels = silc_idcache_alloc(0, NULL);
 
   /* Allocate the entire socket list that is used in server. Eventually 
      all connections will have entry in this table (it is a table of 
@@ -1951,27 +1953,49 @@ void silc_server_disconnect_remote(SilcServer server,
   silc_server_close_connection(server, sock);
 }
 
+typedef struct {
+  SilcServer server;
+  SilcClientEntry client;
+} *FreeClientInternal;
+
+SILC_TASK_CALLBACK(silc_server_free_client_data_timeout)
+{
+  FreeClientInternal i = (FreeClientInternal)context;
+
+  silc_idlist_del_data(i->client);
+  silc_idcache_purge_by_context(i->server->local_list->clients, i->client);
+  silc_free(i);
+}
+
 /* Frees client data and notifies about client's signoff. */
 
 void silc_server_free_client_data(SilcServer server, 
 				  SilcSocketConnection sock,
-				  SilcClientEntry user_data, char *signoff)
+				  SilcClientEntry client, char *signoff)
 {
+  FreeClientInternal i = silc_calloc(1, sizeof(*i));
+
   /* Send REMOVE_ID packet to routers. */
   if (!server->standalone && server->router)
     silc_server_send_notify_signoff(server, server->router->connection,
 				    server->server_type == SILC_SERVER ?
-				    FALSE : TRUE, user_data->id, 
+				    FALSE : TRUE, client->id, 
 				    SILC_ID_CLIENT_LEN, signoff);
 
   /* Remove client from all channels */
-  silc_server_remove_from_channels(server, sock, user_data, signoff);
+  silc_server_remove_from_channels(server, sock, client, signoff);
 
-  /* XXX must take some info to history before freeing */
+  /* We will not delete the client entry right away. We will take it
+     into history (for WHOWAS command) for 5 minutes */
+  i->server = server;
+  i->client = client;
+  silc_task_register(server->timeout_queue, 0, 
+		     silc_server_free_client_data_timeout,
+		     (void *)i, 300, 0,
+		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+  client->data.registered = FALSE;
 
   /* Free the client entry and everything in it */
-  silc_idlist_del_data(user_data);
-  silc_idlist_del_client(server->local_list, user_data);
   server->stat.my_clients--;
   server->stat.clients--;
   if (server->server_type == SILC_ROUTER)

@@ -61,12 +61,20 @@ static void silc_idcache_list_add(SilcIDCacheList list,
        is to provide faster access to the cache when searching by data.
        This is updated by silc_idcache_add and sorting functions.
 
+   SilcIDCacheDestructor destructor
+
+       Destructor callback that is called when an cache entry expires or is
+       purged from the ID cache. The application must not free cache entry
+       because the library will do it automatically. The appliation, however,
+       is responsible of freeing any data in the entry.
+
 */
 struct SilcIDCacheStruct {
   SilcIDCacheEntry cache;
   unsigned int cache_count;
   int sorted;
   int fast_access[256];
+  SilcIDCacheDestructor destructor;
 };
 
 /* 
@@ -94,7 +102,8 @@ struct SilcIDCacheListStruct {
 /* Allocates new ID cache object. The initial amount of allocated entries
    can be sent as argument. If `count' is 0 the system uses default values. */
 
-SilcIDCache silc_idcache_alloc(unsigned int count)
+SilcIDCache silc_idcache_alloc(unsigned int count,
+			       SilcIDCacheDestructor destructor)
 {
   SilcIDCache cache;
 
@@ -104,6 +113,7 @@ SilcIDCache silc_idcache_alloc(unsigned int count)
   cache->cache = silc_calloc(count ? count : 5, sizeof(*cache->cache));
   cache->cache_count = count ? count : 5;
   memset(cache->fast_access, -1, sizeof(cache->fast_access));
+  cache->destructor = destructor;
 
   return cache;
 }
@@ -381,8 +391,8 @@ int silc_idcache_find_by_context(SilcIDCache cache, void *context,
    however, it is not mandatory. */
 
 int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
-		     SilcIdType id_type,
-		     void *id, void *context, int sort)
+		     SilcIdType id_type, void *id, void *context, int sort,
+		     int expire)
 {
   int i;
   unsigned int count;
@@ -412,7 +422,7 @@ int silc_idcache_add(SilcIDCache cache, unsigned char *data,
       c[i].data = data;
       c[i].type = id_type;
       c[i].id = id;
-      c[i].expire = curtime + SILC_ID_CACHE_EXPIRE;
+      c[i].expire = (expire ? (curtime + SILC_ID_CACHE_EXPIRE) : 0);
       c[i].context = context;
       break;
     }
@@ -427,7 +437,7 @@ int silc_idcache_add(SilcIDCache cache, unsigned char *data,
     c[count].data = data;
     c[count].type = id_type;
     c[count].id = id;
-    c[count].expire = curtime + SILC_ID_CACHE_EXPIRE;
+    c[count].expire = (expire ? (curtime + SILC_ID_CACHE_EXPIRE) : 0);
     c[count].context = context;
     count += 5;
   }
@@ -511,8 +521,12 @@ int silc_idcache_purge(SilcIDCache cache)
   c = cache->cache;
 
   for (i = 0; i < cache->cache_count; i++) {
-    if (c[i].data && 
-	(c[i].expire == 0 || c[i].expire < curtime)) {
+    if (c[i].data && c[i].expire < curtime) {
+
+      /* Call the destructor */
+      if (cache->destructor)
+	cache->destructor(cache, &c[i]);
+
       c[i].id = NULL;
       c[i].data = NULL;
       c[i].type = 0;
@@ -521,6 +535,27 @@ int silc_idcache_purge(SilcIDCache cache)
     }
   }
 
+  return TRUE;
+}
+
+/* Purges the specific entry by context. */
+
+int silc_idcache_purge_by_context(SilcIDCache cache, void *context)
+{
+  SilcIDCacheEntry entry;
+
+  if (!silc_idcache_find_by_context(cache, context, &entry))
+    return FALSE;
+
+  /* Call the destructor */
+  if (cache->destructor)
+    cache->destructor(cache, entry);
+  
+  entry->id = NULL;
+  entry->data = NULL;
+  entry->type = 0;
+  entry->expire = 0;
+  entry->context = NULL;
   return TRUE;
 }
 

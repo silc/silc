@@ -178,7 +178,7 @@ void silc_client_private_message(SilcClient client,
       /* Save the client to cache */
       silc_idcache_add(conn->client_cache, remote_client->nickname,
 		       SILC_ID_CLIENT, remote_client->id, remote_client, 
-		       TRUE);
+		       TRUE, TRUE);
     } else {
       remote_client = (SilcClientEntry)id_cache->context;
     }

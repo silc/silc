@@ -46,8 +46,8 @@
 
       Time when this cache entry expires.  This is normal time() value
       plus the validity.  Cache entry has expired if current time is
-      more than value in this field, or if this field has been set to
-      zero (0) value.
+      more than value in this field.  If this value is zero (0) the
+      entry never expires.
 
    void *context
 
@@ -68,12 +68,20 @@ typedef struct SilcIDCacheStruct *SilcIDCache;
 /* Forward declaration for ID Cache List */
 typedef struct SilcIDCacheListStruct *SilcIDCacheList;
 
+/* Destructor callback that is called when an cache entry expires or is
+   purged from the ID cache. The application must not free cache entry
+   because the library will do it automatically. The appliation, however,
+   is responsible of freeing any data in the entry. */
+typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
+				      SilcIDCacheEntry entry);
+
 #define SILC_ID_CACHE_ANY ((void *)1)
 
 #define SILC_ID_CACHE_EXPIRE 3600
 
 /* Prototypes */
-SilcIDCache silc_idcache_alloc(unsigned int count);
+SilcIDCache silc_idcache_alloc(unsigned int count,
+			       SilcIDCacheDestructor destructor);
 void silc_idcache_free(SilcIDCache cache);
 void silc_idcache_sort_by_data(SilcIDCache cache);
 int silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data, 
@@ -89,13 +97,14 @@ int silc_idcache_find_by_id_one(SilcIDCache cache, void *id, SilcIdType type,
 int silc_idcache_find_by_context(SilcIDCache cache, void *context, 
 				 SilcIDCacheEntry *ret);
 int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
-		     SilcIdType id_type,
-		     void *id, void *context, int sort);
+		     SilcIdType id_type, void *id, void *context, int sort,
+		     int expire);
 int silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old);
 int silc_idcache_del_by_data(SilcIDCache cache, unsigned char *data);
 int silc_idcache_del_by_id(SilcIDCache cache, SilcIdType type, void *id);
 int silc_idcache_del_all(SilcIDCache cache);
 int silc_idcache_purge(SilcIDCache cache);
+int silc_idcache_purge_by_context(SilcIDCache cache, void *context);
 int silc_idcache_list_count(SilcIDCacheList list);
 int silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret);
 int silc_idcache_list_next(SilcIDCacheList list, SilcIDCacheEntry *ret);
