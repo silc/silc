@@ -217,7 +217,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
   /* Save public key into file */
   key = silc_pkcs_get_public_key(pkcs, &key_len);
-  pub_key = silc_pkcs_public_key_alloc(pkcs->pkcs->name, identifier,
+  pub_key = silc_pkcs_public_key_alloc(silc_pkcs_get_name(pkcs), identifier,
 				       key, key_len);
   silc_pkcs_save_public_key(pkfile, pub_key, SILC_PKCS_FILE_PEM);
   if (ret_pub_key)
@@ -228,8 +228,8 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
   /* Save private key into file */
   key = silc_pkcs_get_private_key(pkcs, &key_len);
-  prv_key = silc_pkcs_private_key_alloc(pkcs->pkcs->name, key, key_len);
-
+  prv_key = silc_pkcs_private_key_alloc(silc_pkcs_get_name(pkcs),
+					key, key_len);
   silc_pkcs_save_private_key(prvfile, prv_key, NULL, SILC_PKCS_FILE_BIN);
   if (ret_prv_key)
     *ret_prv_key = prv_key;
