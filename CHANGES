@@ -1,3 +1,9 @@
+Sun Aug  4 13:23:40 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* More fixed for not having purge timeout for global clients
+	  that are on channel.  Affected files silcd/command_reply.c
+	  and server_util.c.
+
 Sun Jul 14 21:33:32 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not process commands if the sock->user_data is NULL.

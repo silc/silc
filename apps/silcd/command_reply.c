@@ -401,6 +401,17 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
 		     client, 0, NULL);
   }
 
+  /* If client is global and is not on any channel then add that we'll
+     expire the entry after a while. */
+  if (global) {
+    silc_idlist_find_client_by_id(server->global_list, client->id,
+				  FALSE, &cache);
+    if (!silc_hash_table_count(client->channels))
+      cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+    else
+      cache->expire = 0;
+  }
+
   silc_free(client_id);
 
   return TRUE;
