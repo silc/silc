@@ -1726,7 +1726,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   }
 
   /* Check for maximum allowed connections */
-  if (server->stat.conn_num > server->config->param.connections_max) {
+  if (sock > server->config->param.connections_max) {
     SILC_LOG_ERROR(("Refusing connection, server is full"));
     server->stat.conn_failures++;
     silc_net_close_connection(sock);

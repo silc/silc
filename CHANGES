@@ -5,6 +5,9 @@ Tue Mar  9 17:11:58 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 	  server is full.  Affected files are silcd/server.c,
 	  server_internal.h and silcd.c.
 
+	* Clarified the connections_max meaning in General section
+	  in doc/example_silcd.conf.in.
+
 Wed Mar  3 15:13:49 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed crashbug in connection closing, after a protocol
