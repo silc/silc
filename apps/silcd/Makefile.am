@@ -24,6 +24,8 @@ silcd_SOURCES = \
 	protocol.c \
 	route.c \
 	server.c \
+	packet_send.c \
+	packet_receive.c \
 	idlist.c \
 	command.c \
 	command_reply.c \

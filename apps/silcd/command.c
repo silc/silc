@@ -839,7 +839,7 @@ SILC_SERVER_CMD_FUNC(topic)
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
     /* Send notify about topic change to all clients on the channel */
-    silc_server_send_notify_to_channel(server, channel,
+    silc_server_send_notify_to_channel(server, channel, TRUE,
 				       SILC_NOTIFY_TYPE_TOPIC_SET, 2,
 				       idp->data, idp->len,
 				       channel->topic, strlen(channel->topic));
@@ -1124,7 +1124,9 @@ SILC_SERVER_CMD_FUNC(ping)
 					  SILC_STATUS_ERR_NO_SERVER_ID);
     goto out;
   }
-  id = silc_id_payload_parse_id(tmp, len);
+  id = silc_id_str2id(tmp, SILC_ID_SERVER);
+  if (!id)
+    goto out;
 
   if (!SILC_ID_SERVER_COMPARE(id, server->id)) {
     /* Send our reply */
@@ -1165,9 +1167,17 @@ SILC_TASK_CALLBACK(silc_server_command_join_notify)
 
     clidp = silc_id_payload_encode(ctx->client->id, SILC_ID_CLIENT);
 
-    silc_server_send_notify_to_channel(ctx->server, ctx->channel,
+    silc_server_send_notify_to_channel(ctx->server, ctx->channel, FALSE,
 				       SILC_NOTIFY_TYPE_JOIN, 1,
 				       clidp->data, clidp->len);
+#if 0
+    /* Send NEW_CHANNEL_USER packet to primary route */
+    silc_server_send_new_channel_user(server, server->router->connection,
+				      server->server_type == SILC_SERVER ?
+				      FALSE : TRUE,
+				      channel->id, SILC_ID_CHANNEL_LEN,
+				      client->id, SILC_ID_CLIENT_LEN);
+#endif
 
     /* Send NAMES command reply to the joined channel so the user sees who
        is currently on the channel. */
@@ -1381,15 +1391,20 @@ silc_server_command_join_channel(SilcServer server,
      new user on the channel. */
   if (!(cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED)) {
     if (!cmd->pending) {
-      SilcBuffer clidp;
-
-      clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-      
-      silc_server_send_notify_to_channel(server, channel,
+      /* Send JOIN notify to clients */
+      SilcBuffer clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+      silc_server_send_notify_to_channel(server, channel, FALSE,
 					 SILC_NOTIFY_TYPE_JOIN, 1,
 					 clidp->data, clidp->len);
-      
       silc_buffer_free(clidp);
+
+      /* Send NEW_CHANNEL_USER packet to primary route */
+      if (!server->standalone)
+	silc_server_send_new_channel_user(server, server->router->connection,
+					  server->server_type == SILC_SERVER ?
+					  FALSE : TRUE,
+					  channel->id, SILC_ID_CHANNEL_LEN,
+					  client->id, SILC_ID_CLIENT_LEN);
     } else {
       /* This is pending command request. Send the notify after we have
 	 received the key for the channel from the router. */
@@ -1471,8 +1486,8 @@ SILC_SERVER_CMD_FUNC(join)
     /* If we are standalone server we don't have a router, we just create 
        the channel by ourselves. */
     if (server->standalone) {
-      channel = silc_server_new_channel(server, server->id, cipher, 
-					channel_name);
+      channel = silc_server_create_new_channel(server, server->id, cipher, 
+					       channel_name);
     } else {
 
       /* The channel does not exist on our server. We send JOIN command to
@@ -1502,8 +1517,8 @@ SILC_SERVER_CMD_FUNC(join)
 						 channel_name);
       if (!channel) {
 	/* Channel really does not exist, create it */
-	channel = silc_server_new_channel(server, server->id, cipher, 
-					  channel_name);
+	channel = silc_server_create_new_channel(server, server->id, cipher, 
+						 channel_name);
 	umode |= SILC_CHANNEL_UMODE_CHANOP;
 	umode |= SILC_CHANNEL_UMODE_CHANFO;
       }
@@ -2002,7 +2017,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Send CMODE_CHANGE notify */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, channel, 
+  silc_server_send_notify_to_channel(server, channel, TRUE,
 				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 2,
 				     cidp->data, cidp->len, 
 				     tmp_mask, tmp_len);
@@ -2114,7 +2129,7 @@ SILC_SERVER_CMD_FUNC(cumode)
 
   /* Get target client's entry */
   target_client = silc_idlist_find_client_by_id(server->local_list, client_id);
-  if (!client) {
+  if (!target_client) {
     /* XXX If target client is not one of mine send to primary route */
   }
 
@@ -2179,7 +2194,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   /* Send notify to channel, notify only if mode was actually changed. */
   if (notify) {
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-    silc_server_send_notify_to_channel(server, channel,
+    silc_server_send_notify_to_channel(server, channel, TRUE,
 				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
 				       idp->data, idp->len,
 				       tmp_mask, 4, tmp_id, tmp_len);
