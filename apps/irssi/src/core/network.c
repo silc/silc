@@ -496,7 +496,7 @@ int net_gethostbyaddr(IPADDR *ip, char **name)
                 return host_error;
         }
 
-	*name = g_strdup(ai->ai_canonname);
+	*name = g_strdup(hostname);
 
 	freeaddrinfo(ai);
 #else
