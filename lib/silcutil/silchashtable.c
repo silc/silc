@@ -91,7 +91,7 @@ static SilcUInt32 silc_hash_table_primesize(SilcUInt32 size, SilcUInt32 *index)
 {
   int i;
 
-  for (i = 0; i < sizeof(primesize); i++)
+  for (i = 0; i < sizeof(primesize) / sizeof(primesize[0]); i++)
     if (primesize[i] >= size) {
       *index = i;
       SILC_HT_DEBUG(("sizeof of the hash table is %d", primesize[*index]));
