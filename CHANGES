@@ -2,6 +2,14 @@ Sun Feb 25 20:47:29 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented CONNECT and SHUTDOWN commands in the client.
 
+	* Implemented CLOSE command to the client.
+
+	* Added the function silc_idlist_find_server_by_name into the
+	  files silcd/idlist.[ch].
+
+	  Added the function silc_idlist_find_server_by_conn into the
+	  files silcd/idlist.[ch].
+
 Sat Feb 24 23:45:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* DIE command was renamed to SHUTDOWN.  Updated the both code
