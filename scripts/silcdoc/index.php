@@ -33,7 +33,7 @@
 	<table width="100%" bgcolor="#e2e2e2" cellpadding="1" cellspacing="0" border="0" align="left">
 	<tr><td valign="top"><font face="Helvetica,Arial,Sans-serif">
 <?php
-require index.tmpl
+require "$dest/index.tmpl";
 ?>
 	</td></tr>
 	</table>

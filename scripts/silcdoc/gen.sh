@@ -1,8 +1,8 @@
 #!/bin/sh
 
 cat << EOF > tmp.php
-<?php \$page="$2"; require "$1"; ?>
+<?php \$page="$3"; \$dest="$1"; require "$2"; ?>
 EOF
-php -f tmp.php >$3.tmp
-mv $3.tmp $3
+php -f tmp.php >$4.tmp
+mv $4.tmp $4
 rm -f tmp.php
