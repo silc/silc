@@ -1,3 +1,20 @@
+Wed Mar 14 13:18:16 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented WHOWAS command to the server.  Added the functions:
+
+	  silc_server_command_whowas_parse,
+	  silc_server_command_whowas_send_reply,
+	  silc_server_command_whowas_from_client and
+	  silc_server_command_whowas_from_server
+
+	* Added <Client ID> argument to the WHOWAS command reply.  Updated
+	  the protocol specs accordingly.
+
+	* Implemented WHOWAS command and command_reply to the client
+	  library.
+
+	  Implemented the WHOWAS printing on the user interface.
+
 Tue Mar 13 22:17:34 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new argument to the WHOWAS command reply, the real name.

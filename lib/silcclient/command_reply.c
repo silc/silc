@@ -69,8 +69,8 @@ SilcClientCommandReply silc_command_reply_list[] =
 
 const SilcCommandStatusMessage silc_command_status_messages[] = {
 
-  { STAT(NO_SUCH_NICK),      "No such nickname" },
-  { STAT(NO_SUCH_CHANNEL),   "No such channel" },
+  { STAT(NO_SUCH_NICK),      "There was no such nickname" },
+  { STAT(NO_SUCH_CHANNEL),   "There was no such channel" },
   { STAT(NO_SUCH_SERVER),    "No such server" },
   { STAT(TOO_MANY_TARGETS),  "Duplicate recipients. No message delivered" },
   { STAT(NO_RECIPIENT),      "No recipient given" },
@@ -334,7 +334,72 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
 
 SILC_CLIENT_CMD_REPLY_FUNC(whowas)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  SilcClientID *client_id;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry client_entry = NULL;
+  unsigned int len;
+  unsigned char *id_data, *tmp;
+  char *nickname, *username;
+  char *realname = NULL;
 
+  SILC_LOG_DEBUG(("Start"));
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK && 
+      status != SILC_STATUS_LIST_START &&
+      status != SILC_STATUS_LIST_ITEM &&
+      status != SILC_STATUS_LIST_END) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+  
+  id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (!id_data) {
+    COMMAND_REPLY_ERROR;
+    return;
+  }
+  
+  client_id = silc_id_payload_parse_id(id_data, len);
+  if (!client_id) {
+    COMMAND_REPLY_ERROR;
+    return;
+  }
+
+  /* Get the client entry, if exists */
+  if (silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				  SILC_ID_CLIENT, &id_cache))
+    client_entry = (SilcClientEntry)id_cache->context;
+  silc_free(client_id);
+
+  nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
+  username = silc_argument_get_arg_type(cmd->args, 4, &len);
+  realname = silc_argument_get_arg_type(cmd->args, 5, &len);
+  if (!nickname || !username) {
+    COMMAND_REPLY_ERROR;
+    return;
+  }
+  /* Notify application. We don't save any history information to any
+     cache. Just pass the data to the application for displaying on 
+     the screen. */
+  COMMAND_REPLY((ARGS, client_entry, nickname, username, realname));
+
+  /* Pending callbacks are not executed if this was an list entry */
+  if (status != SILC_STATUS_OK &&
+      status != SILC_STATUS_LIST_END) {
+    silc_client_command_reply_free(cmd);
+    return;
+  }
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_WHOIS);
+  silc_client_command_reply_free(cmd);
 }
 
 static void 

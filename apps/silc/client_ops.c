@@ -429,6 +429,54 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
       break;
 
+    case SILC_COMMAND_WHOWAS:
+      {
+	char buf[1024], *nickname, *username, *realname;
+	int len;
+
+	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	  char *tmp;
+	  tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+					   3, NULL);
+	  if (tmp)
+	    client->ops->say(client, conn, "%s: %s", tmp,
+			     silc_client_command_status_message(status));
+	  else
+	    client->ops->say(client, conn, "%s",
+			     silc_client_command_status_message(status));
+	  break;
+	}
+
+	if (!success)
+	  return;
+
+	(void)va_arg(vp, SilcClientEntry);
+	nickname = va_arg(vp, char *);
+	username = va_arg(vp, char *);
+	realname = va_arg(vp, char *);
+
+	memset(buf, 0, sizeof(buf));
+
+	if (nickname) {
+	  len = strlen(nickname);
+	  strncat(buf, nickname, len);
+	  strncat(buf, " was ", 5);
+	}
+	
+	if (username) {
+	  strncat(buf, username, strlen(nickname));
+	}
+	
+	if (realname) {
+	  strncat(buf, " (", 2);
+	  strncat(buf, realname, strlen(realname));
+	  strncat(buf, ")", 1);
+	}
+
+	client->ops->say(client, conn, "%s", buf);
+      }
+      break;
+
     case SILC_COMMAND_JOIN:
       {
 	unsigned int mode;

@@ -130,6 +130,10 @@ Following commands has been, at least partly, implemented:
 		handling multiple same nicknames with this command is
 		still missing.
 
+	/WHOWAS  <nickname>[@<server>] [<count>]
+
+		Gives a little history information about a client.
+
         /KICK   <channel> <nickname>[@<server>] [<comment>]
 
                 Kicks client from channel. You have to be at least channel

@@ -268,8 +268,45 @@ SILC_CLIENT_CMD_FUNC(whois)
   silc_client_command_free(cmd);
 }
 
+/* Command WHOWAS. This command is used to query history information about
+   specific user that used to exist in the network. */
+
 SILC_CLIENT_CMD_FUNC(whowas)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2 || cmd->argc > 3) {
+    cmd->client->ops->say(cmd->client, conn, 
+	     "Usage: /WHOWAS <nickname>[@<server>] [<count>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  buffer = silc_command_payload_encode(SILC_COMMAND_WHOWAS,
+				       cmd->argc - 1, ++cmd->argv,
+				       ++cmd->argv_lens, ++cmd->argv_types,
+				       0);
+  silc_client_packet_send(cmd->client, cmd->conn->sock,
+			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
+			  buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  cmd->argv--;
+  cmd->argv_lens--;
+  cmd->argv_types--;
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 /* Command IDENTIFY. This command is used to query information about 

@@ -563,6 +563,15 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
 
+    if (entry->data.registered == FALSE) {
+      if (clients_count == 1)
+	silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
+					     SILC_STATUS_ERR_NO_SUCH_NICK,
+					     3, entry->nickname, 
+					     strlen(entry->nickname));
+      continue;
+    }
+
     if (count && i - 1 == count)
       break;
 
@@ -581,7 +590,6 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
     tmp = silc_argument_get_first_arg(cmd->args, NULL);
     
-    /* XXX */
     {
       char nh[256], uh[256];
       unsigned char idle[4];
@@ -903,25 +911,308 @@ SILC_SERVER_CMD_FUNC(whois)
     silc_server_command_free(cmd);
 }
 
+/******************************************************************************
+
+                              WHOWAS Functions
+
+******************************************************************************/
+
+static int
+silc_server_command_whowas_parse(SilcServerCommandContext cmd,
+				 char **nickname,
+				 char **server_name,
+				 int *count)
+{
+  unsigned char *tmp;
+  unsigned int len;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_WHOWAS,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    return FALSE;
+  }
+
+  /* Get the nickname@server string and parse it. */
+  if (strchr(tmp, '@')) {
+    len = strcspn(tmp, "@");
+    *nickname = silc_calloc(len + 1, sizeof(char));
+    memcpy(*nickname, tmp, len);
+    *server_name = silc_calloc(strlen(tmp) - len, sizeof(char));
+    memcpy(*server_name, tmp + len + 1, strlen(tmp) - len - 1);
+  } else {
+    *nickname = strdup(tmp);
+  }
+  /* Get the max count of reply messages allowed */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
+  if (tmp)
+    *count = atoi(tmp);
+  else
+    *count = 0;
+
+  return TRUE;
+}
+
+static void
+silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
+				      SilcClientEntry *clients,
+				      unsigned int clients_count)
+{
+  SilcServer server = cmd->server;
+  char *tmp;
+  int i, count = 0, len;
+  SilcBuffer packet, idp;
+  SilcClientEntry entry = NULL;
+  SilcCommandStatus status;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
+  char found = FALSE;
+
+  status = SILC_STATUS_OK;
+  if (clients_count > 1)
+    status = SILC_STATUS_LIST_START;
+
+  for (i = 0; i < clients_count; i++) {
+    entry = clients[i];
+
+    /* We will take only clients that are not valid anymore. They are the
+       ones that are not registered anymore but still have a ID. They
+       have disconnected us, and thus valid for WHOWAS. */
+    if (entry->data.registered == TRUE)
+      continue;
+    if (entry->id == NULL)
+      continue;
+
+    if (count && i - 1 == count)
+      break;
+
+    found = TRUE;
+
+    if (clients_count > 2)
+      status = SILC_STATUS_LIST_ITEM;
+
+    if (clients_count > 1 && i == clients_count - 1)
+      status = SILC_STATUS_LIST_END;
+
+    /* Sanity check, however these should never fail. However, as
+       this sanity check has been added here they have failed. */
+    if (!entry->nickname || !entry->username)
+      continue;
+      
+    /* Send WHOWAS reply */
+    idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
+    tmp = silc_argument_get_first_arg(cmd->args, NULL);
+    
+    {
+      char nh[256], uh[256];
+
+      memset(uh, 0, sizeof(uh));
+      memset(nh, 0, sizeof(nh));
+
+      strncat(nh, entry->nickname, strlen(entry->nickname));
+      if (!strchr(entry->nickname, '@')) {
+	strncat(nh, "@", 1);
+	len = entry->router ? strlen(entry->router->server_name) :
+	  strlen(server->server_name);
+	strncat(nh, entry->router ? entry->router->server_name :
+		server->server_name, len);
+      }
+      
+      strncat(uh, entry->username, strlen(entry->username));
+      if (!strchr(entry->username, '@')) {
+	strncat(uh, "@", 1);
+	strcat(uh, "*private*");
+      }
+      
+      packet = 
+	silc_command_reply_payload_encode_va(SILC_COMMAND_WHOWAS,
+					     status, ident, 4, 
+					     2, idp->data, idp->len,
+					     3, nh, strlen(nh),
+					     4, uh, strlen(uh),
+					     5, entry->userinfo, 
+					     strlen(entry->userinfo));
+    }
+    
+    silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
+			    0, packet->data, packet->len, FALSE);
+    
+    silc_buffer_free(packet);
+    silc_buffer_free(idp);
+  }
+
+  if (found == FALSE && entry)
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
+					 SILC_STATUS_ERR_NO_SUCH_NICK,
+					 3, entry->nickname, 
+					 strlen(entry->nickname));
+}
+
+static int
+silc_server_command_whowas_from_client(SilcServerCommandContext cmd)
+{
+  SilcServer server = cmd->server;
+  char *nick = NULL, *server_name = NULL;
+  int count = 0, clients_count = 0;
+  SilcClientEntry *clients = NULL;
+  int ret = 0;
+
+  /* Protocol dictates that we must always send the received WHOWAS request
+     to our router if we are normal server, so let's do it now unless we
+     are standalone. We will not send any replies to the client until we
+     have received reply from the router. */
+  if (server->server_type == SILC_SERVER && 
+      !cmd->pending && !server->standalone) {
+    SilcBuffer tmpbuf;
+    unsigned short old_ident;
+
+    old_ident = silc_command_get_ident(cmd->payload);
+    silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
+    tmpbuf = silc_command_payload_encode_payload(cmd->payload);
+
+    /* Send WHOWAS command to our router */
+    silc_server_packet_send(server, (SilcSocketConnection)
+			    server->router->connection,
+			    SILC_PACKET_COMMAND, cmd->packet->flags,
+			    tmpbuf->data, tmpbuf->len, TRUE);
+
+    /* Reprocess this packet after received reply from router */
+    silc_server_command_pending(server, SILC_COMMAND_WHOWAS, 
+				silc_command_get_ident(cmd->payload),
+				silc_server_command_destructor,
+				silc_server_command_whois,
+				silc_server_command_dup(cmd));
+    cmd->pending = TRUE;
+
+    silc_command_set_ident(cmd->payload, old_ident);
+
+    silc_buffer_free(tmpbuf);
+    ret = -1;
+    goto out;
+  }
+
+  /* We are ready to process the command request. Let's search for the
+     requested client and send reply to the requesting client. */
+
+  /* Parse the whowas request */
+  if (!silc_server_command_whowas_parse(cmd, &nick, &server_name, &count))
+    return 0;
+
+  /* Get all clients matching that nickname from local list */
+  clients = silc_idlist_get_clients_by_nickname(server->local_list, 
+						nick, server_name,
+						&clients_count);
+  if (!clients)
+    clients = silc_idlist_get_clients_by_hash(server->local_list, 
+					      nick, server->md5hash,
+					      &clients_count);
+  
+  /* Check global list as well */
+  if (!clients) {
+    clients = silc_idlist_get_clients_by_nickname(server->global_list, 
+						  nick, server_name,
+						  &clients_count);
+    if (!clients)
+      clients = silc_idlist_get_clients_by_hash(server->global_list, 
+						nick, server->md5hash,
+						&clients_count);
+  }
+  
+  if (!clients) {
+    /* Such client(s) really does not exist in the SILC network. */
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
+					 SILC_STATUS_ERR_NO_SUCH_NICK,
+					 3, nick, strlen(nick));
+    goto out;
+  }
+
+  /* Send the command reply to the client */
+  silc_server_command_whowas_send_reply(cmd, clients, clients_count);
+
+ out:
+  if (clients)
+    silc_free(clients);
+  if (nick)
+    silc_free(nick);
+  if (server_name)
+    silc_free(server_name);
+
+  return ret;
+}
+
+static int
+silc_server_command_whowas_from_server(SilcServerCommandContext cmd)
+{
+  SilcServer server = cmd->server;
+  char *nick = NULL, *server_name = NULL;
+  int count = 0, clients_count = 0;
+  SilcClientEntry *clients = NULL;
+  int ret = 0;
+
+  /* Parse the whowas request */
+  if (!silc_server_command_whowas_parse(cmd, &nick, &server_name, &count))
+    return 0;
+
+  /* Process the command request. Let's search for the requested client and
+     send reply to the requesting server. */
+
+  clients = silc_idlist_get_clients_by_nickname(server->local_list, 
+						nick, server_name,
+						&clients_count);
+  if (!clients)
+    clients = silc_idlist_get_clients_by_hash(server->local_list, 
+					      nick, server->md5hash,
+					      &clients_count);
+  
+  /* If we are router we will check our global list as well. */
+  if (!clients && server->server_type == SILC_ROUTER) {
+    clients = silc_idlist_get_clients_by_nickname(server->global_list, 
+						  nick, server_name,
+						  &clients_count);
+    if (!clients)
+      clients = silc_idlist_get_clients_by_hash(server->global_list, 
+						nick, server->md5hash,
+						&clients_count);
+  }
+
+  if (!clients) {
+    /* Such a client really does not exist in the SILC network. */
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
+					 SILC_STATUS_ERR_NO_SUCH_NICK,
+					 3, nick, strlen(nick));
+    goto out;
+  }
+
+  /* Send the command reply to the client */
+  silc_server_command_whowas_send_reply(cmd, clients, clients_count);
+
+ out:
+  if (clients)
+    silc_free(clients);
+  if (nick)
+    silc_free(nick);
+  if (server_name)
+    silc_free(server_name);
+
+  return ret;
+}
+
 /* Server side of command WHOWAS. */
 
 SILC_SERVER_CMD_FUNC(whowas)
 {
-#if 0
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   int ret = 0;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_WHOWAS, cmd, 1, 2);
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
-    ret = silc_server_command_whois_from_client(cmd);
+    ret = silc_server_command_whowas_from_client(cmd);
   else if ((cmd->sock->type == SILC_SOCKET_TYPE_SERVER) ||
 	   (cmd->sock->type == SILC_SOCKET_TYPE_ROUTER))
-    ret = silc_server_command_whois_from_server(cmd);
+    ret = silc_server_command_whowas_from_server(cmd);
 
   if (!ret)
     silc_server_command_free(cmd);
-#endif
 }
 
 /******************************************************************************
@@ -1004,6 +1295,15 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
+
+    if (entry->data.registered == FALSE) {
+      if (clients_count == 1)
+	silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
+					     SILC_STATUS_ERR_NO_SUCH_NICK,
+					     3, entry->nickname, 
+					     strlen(entry->nickname));
+      continue;
+    }
 
     if (count && i - 1 == count)
       break;
