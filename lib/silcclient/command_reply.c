@@ -1744,10 +1744,18 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcClientCommandReplyContext r = (SilcClientCommandReplyContext)context2;
 
   SILC_LOG_DEBUG(("Start"));
 
   if (cmd->error != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_get_status_message(cmd->error));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  if (r && !silc_command_get_status(r->payload, NULL, &cmd->error)) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
     COMMAND_REPLY_ERROR;

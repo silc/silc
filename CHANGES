@@ -1,3 +1,9 @@
+Fri Dec 20 10:47:59 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Prevent endless resolving of user informations in USERS
+	  command by checking the command reply status correctly.
+	  Affected file lib/silcclient/command_reply.c.
+
 Tue Dec 17 10:05:00 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed file writing on WIN32 to use O_BINARY flag.  Affected
