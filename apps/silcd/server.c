@@ -1507,11 +1507,11 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 
     if (ret == -1)
       SILC_LOG_ERROR(("Error receiving packet from connection "
-		      "%s:%d [%s]", sock->hostname, sock->port,  
+		      "%s:%d [%s] %s", sock->hostname, sock->port,  
 		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
 		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
-		       "Router")));
+		       "Router"), strerror(errno)));
     return;
   }    
 

@@ -171,10 +171,16 @@ SILC_LOG_DEBUG* scripts.  Warning is due here:  The debugging produced
 by both cilent and server is very heavy, thus it is common to test
 the programs as follows:
 
-	./silc -d -f configfile 2>log
-	./silcd -d -f configfile 2>log
+	./silc -d "*" -f configfile 2>log
+	./silcd -d "*" -f configfile 2>log
 
-Do not give the -d options if you do not want to dump the debugging.
+The -d option enables the debug printing.  The argument for the -d option
+is a string that is used to match the output debug.  The example "*" will
+match for everything, and all debugs will be printed.  If you want to
+limit the debugs you want to printout you can give for example a string
+like "*server*,*rng*" to match all functions, and filenames that has
+"server" or "rng" string in them.  Others will not be printed out.  You   
+can freely define regural expressions as debug string.
 
 
 Howto Clean SILC Source Tree

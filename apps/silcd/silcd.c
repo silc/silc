@@ -41,7 +41,7 @@ silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
 static struct option long_opts[] = 
 {
   { "config-file", 1, NULL, 'f' },
-  { "debug", 0, NULL, 'd' },
+  { "debug", 1, NULL, 'd' },
   { "help", 0, NULL, 'h' },
   { "version", 0, NULL,'V' },
 
@@ -70,7 +70,7 @@ Usage: silcd [options]\n\
 \n\
   Generic Options:\n\
   -f  --config-file=FILE        Alternate configuration file\n\
-  -d  --debug                   Enable debugging (no daemon)\n\
+  -d  --debug=string            Enable debugging (no daemon)\n\
   -h  --help                    Display this message\n\
   -V  --version                 Display version\n\
 \n\
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 
   /* Parse command line arguments */
   if (argc > 1) {
-    while ((opt = getopt_long(argc, argv, "cf:dhVC:",
+    while ((opt = getopt_long(argc, argv, "cf:d:hVC:",
 			      long_opts, &option_index)) != EOF) {
       switch(opt) 
 	{
@@ -125,6 +125,7 @@ int main(int argc, char **argv)
 	  break;
 	case 'd':
 	  silc_debug = TRUE;
+	  silc_log_set_debug_string(optarg);
 	  break;
 	case 'f':
 	  config_file = strdup(optarg);
