@@ -72,6 +72,7 @@ SilcServerCommand silc_command_list[] =
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER),
   SILC_SERVER_CMD(leave, LEAVE, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(users, USERS, SILC_CF_LAG | SILC_CF_REG),
+  SILC_SERVER_CMD(ban, BAN, SILC_CF_LAG_STRICT | SILC_CF_REG),
 
   { NULL, 0 },
 };
@@ -2569,11 +2570,61 @@ static void silc_server_command_join_channel(SilcServer server,
   SilcChannelClientEntry chl;
   SilcBuffer reply, chidp, clidp, keyp, user_list, mode_list;
   unsigned short ident = silc_command_get_ident(cmd->payload);
+  char check[512];
 
   SILC_LOG_DEBUG(("Start"));
 
   if (!channel)
     return;
+
+  /* Get the client entry */
+  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
+    client = (SilcClientEntry)sock->user_data;
+  } else {
+    client = silc_idlist_find_client_by_id(server->local_list, client_id, 
+					   NULL);
+    if (!client)
+      goto out;
+  }
+
+  /*
+   * Check channel modes
+   */
+
+  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
+    strncat(check, client->nickname, strlen(client->nickname));
+    if (!strchr(client->nickname, '@')) {
+      strncat(check, "@", 1);
+      strncat(check, server->server_name, strlen(server->server_name));
+    }
+    strncat(check, "!", 1);
+    strncat(check, client->username, strlen(client->username));
+    if (!strchr(client->username, '@')) {
+      strncat(check, "@", 1);
+      strncat(check, cmd->sock->hostname, strlen(cmd->sock->hostname));
+    }
+  }
+
+  /* Check invite list if channel is invite-only channel */
+  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT && 
+      channel->mode & SILC_CHANNEL_MODE_INVITE && channel->invite_list) {
+    if (!silc_string_match(channel->invite_list, check)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					    SILC_STATUS_ERR_NOT_INVITED);
+      goto out;
+    }
+  }
+
+  /* Check ban list if it exists. If the client's nickname, server,
+     username and/or hostname is in the ban list the access to the
+     channel is denied. */
+  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT && channel->ban_list) {
+    if (silc_string_match(channel->ban_list, check)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+			      SILC_STATUS_ERR_BANNED_FROM_CHANNEL);
+      goto out;
+    }
+  }
 
   /* Get passphrase */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
@@ -2582,30 +2633,10 @@ static void silc_server_command_join_channel(SilcServer server,
     memcpy(passphrase, tmp, tmp_len);
   }
   
-  /*
-   * Check channel modes
-   */
-
-  /* Check invite list if channel is invite-only channel */
-  if (channel->mode & SILC_CHANNEL_MODE_INVITE) {
-    if (channel->mode & SILC_CHANNEL_MODE_INVITE_LIST) {
-      /* Invite list is specified. Check whether client is invited in the
-	 list. If not, then check whether it has been invited otherwise. */
-
-    } else {
-      /* XXX client must be invited to be able to join the channel */
-    }
-  }
-
-  /* Check ban list if set */
-  if (channel->mode & SILC_CHANNEL_MODE_BAN) {
-
-  }
-
   /* Check the channel passphrase if set. */
   if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
-    if (!passphrase || memcmp(channel->mode_data.passphrase, passphrase,
-			      strlen(channel->mode_data.passphrase))) {
+    if (!passphrase || memcmp(channel->passphrase, passphrase,
+			      strlen(channel->passphrase))) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					    SILC_STATUS_ERR_BAD_PASSWORD);
       goto out;
@@ -2615,7 +2646,7 @@ static void silc_server_command_join_channel(SilcServer server,
   /* Check user count limit if set. */
   if (channel->mode & SILC_CHANNEL_MODE_ULIMIT) {
     if (silc_list_count(channel->user_list) + 1 > 
-	channel->mode_data.user_limit) {
+	channel->user_limit) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					    SILC_STATUS_ERR_CHANNEL_IS_FULL);
       goto out;
@@ -2625,22 +2656,6 @@ static void silc_server_command_join_channel(SilcServer server,
   /*
    * Client is allowed to join to the channel. Make it happen.
    */
-
-  /* Get the client entry */
-  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
-    client = (SilcClientEntry)sock->user_data;
-  } else {
-    client = silc_idlist_find_client_by_id(server->local_list, client_id, 
-					   NULL);
-    if (!client) {
-      /* XXX actually this is useless since router finds always cell's
-	 local clients from its local lists. */
-      client = silc_idlist_find_client_by_id(server->global_list, client_id, 
-					     NULL);
-      if (!client)
-	goto out;
-    }
-  }
 
   /* Check whether the client already is on the channel */
   if (silc_server_client_on_channel(client, channel)) {
@@ -2689,39 +2704,31 @@ static void silc_server_command_join_channel(SilcServer server,
 					 channel->channel_key->cipher->name,
 					 channel->key_len / 8, channel->key);
   silc_free(tmp);
-  if (!channel->topic) {
-    reply = 
-      silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					   SILC_STATUS_OK, ident, 9,
-					   2, channel->channel_name,
-					   strlen(channel->channel_name),
-					   3, chidp->data, chidp->len,
-					   4, clidp->data, clidp->len,
-					   5, mode, 4,
-					   6, tmp2, 4,
-					   7, keyp->data, keyp->len,
-					   12, tmp3, 4,
-					   13, user_list->data, user_list->len,
-					   14, mode_list->data, 
-					   mode_list->len);
-  } else {
-    reply = 
-      silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					   SILC_STATUS_OK, ident, 10, 
-					   2, channel->channel_name, 
-					   strlen(channel->channel_name),
-					   3, chidp->data, chidp->len,
-					   4, clidp->data, clidp->len,
-					   5, mode, 4,
-					   6, tmp2, 4,
-					   7, keyp->data, keyp->len,
-					   10, channel->topic, 
-					   strlen(channel->topic),
-					   12, tmp3, 4,
-					   13, user_list->data, user_list->len,
-					   14, mode_list->data, 
-					   mode_list->len);
-  }
+  reply = 
+    silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
+					 SILC_STATUS_OK, ident, 13,
+					 2, channel->channel_name,
+					 strlen(channel->channel_name),
+					 3, chidp->data, chidp->len,
+					 4, clidp->data, clidp->len,
+					 5, mode, 4,
+					 6, tmp2, 4,
+					 7, keyp->data, keyp->len,
+					 8, channel->ban_list, 
+					 channel->ban_list ?
+					 strlen(channel->ban_list) : 0,
+					 9, channel->invite_list,
+					 channel->invite_list ?
+					 strlen(channel->invite_list) : 0,
+					 10, channel->topic,
+					 channel->topic ?
+					 strlen(channel->topic) : 0,
+					 11, channel->hmac->hmac->name,
+					 strlen(channel->hmac->hmac->name),
+					 12, tmp3, 4,
+					 13, user_list->data, user_list->len,
+					 14, mode_list->data, 
+					 mode_list->len);
 
   /* Send command reply */
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0, 
@@ -3338,12 +3345,12 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
     } else {
       SILC_GET32_MSB(user_limit, tmp);
-      channel->mode_data.user_limit = user_limit;
+      channel->user_limit = user_limit;
     }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_ULIMIT)
       /* User limit mode is unset. Remove user limit */
-      channel->mode_data.user_limit = 0;
+      channel->user_limit = 0;
   }
 
   if (mode_mask & SILC_CHANNEL_MODE_PASSPHRASE) {
@@ -3359,66 +3366,14 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
 
       /* Save the passphrase */
-      channel->mode_data.passphrase = strdup(tmp);
+      channel->passphrase = strdup(tmp);
     }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
       /* Passphrase mode is unset. remove the passphrase */
-      if (channel->mode_data.passphrase) {
-	silc_free(channel->mode_data.passphrase);
-	channel->mode_data.passphrase = NULL;
-      }
-    }
-  }
-
-  if (mode_mask & SILC_CHANNEL_MODE_BAN) {
-    if (!(channel->mode & SILC_CHANNEL_MODE_BAN)) {
-      /* Ban list is specified for channel */
-
-      /* Get ban list */
-      tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
-      if (!tmp) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-	goto out;
-      }
-
-      /* XXX check that channel founder is not banned */
-
-      /* Save the ban list */
-      channel->mode_data.ban_list = strdup(tmp);
-    }
-  } else {
-    if (channel->mode & SILC_CHANNEL_MODE_BAN) {
-      /* Ban mode is unset. Remove the entire ban list */
-      if (channel->mode_data.ban_list) {
-	silc_free(channel->mode_data.ban_list);
-	channel->mode_data.ban_list = NULL;
-      }
-    }
-  }
-
-  if (mode_mask & SILC_CHANNEL_MODE_INVITE_LIST) {
-    if (!(channel->mode & SILC_CHANNEL_MODE_INVITE_LIST)) {
-      /* Invite list is specified for channel */
-
-      /* Get invite list */
-      tmp = silc_argument_get_arg_type(cmd->args, 6, NULL);
-      if (!tmp) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-	goto out;
-      }
-
-      /* Save the invite linst */
-      channel->mode_data.invite_list = strdup(tmp);
-    }
-  } else {
-    if (channel->mode & SILC_CHANNEL_MODE_INVITE_LIST) {
-      /* Invite list mode is unset. Remove the entire invite list */
-      if (channel->mode_data.invite_list) {
-	silc_free(channel->mode_data.invite_list);
-	channel->mode_data.invite_list = NULL;
+      if (channel->passphrase) {
+	silc_free(channel->passphrase);
+	channel->passphrase = NULL;
       }
     }
   }
@@ -3481,12 +3436,7 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (channel->mode & SILC_CHANNEL_MODE_CIPHER) {
       /* Cipher mode is unset. Remove the cipher and revert back to 
 	 default cipher */
-
-      if (channel->mode_data.cipher) {
-	silc_free(channel->mode_data.cipher);
-	channel->mode_data.cipher = NULL;
-	channel->mode_data.key_len = 0;
-      }
+      char *cipher = channel->channel_key->cipher->name;
 
       /* Generate new cipher and key for the channel */
 
@@ -3494,14 +3444,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Delete old cipher and allocate default one */
       silc_cipher_free(channel->channel_key);
-      if (!channel->cipher)
-	silc_cipher_alloc("aes-256-cbc", &channel->channel_key);
-      else {
-	if (!silc_cipher_alloc(channel->cipher, &channel->channel_key)) {
-	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-				  SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
-	  goto out;
-	}
+      if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+				   SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	goto out;
       }
 
       /* Re-generate channel key */
@@ -4420,5 +4366,141 @@ SILC_SERVER_CMD_FUNC(users)
   silc_free(id);
 
  out:
+  silc_server_command_free(cmd);
+}
+
+/* Server side of command BAN. This is used to manage the ban list of the
+   channel. To add clients and remove clients from the ban list. */
+
+SILC_SERVER_CMD_FUNC(ban)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  SilcBuffer packet;
+  SilcChannelEntry channel;
+  SilcChannelClientEntry chl;
+  SilcChannelID *channel_id = NULL;
+  unsigned char *id, *add, *del;
+  unsigned int id_len, tmp_len;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
+
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_BAN, cmd, 0, 3);
+
+  /* Get Channel ID */
+  id = silc_argument_get_arg_type(cmd->args, 1, &id_len);
+  if (id) {
+    channel_id = silc_id_payload_parse_id(id, id_len);
+    if (!channel_id) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
+					    SILC_STATUS_ERR_NO_CHANNEL_ID);
+      goto out;
+    }
+  }
+
+  /* Get channel entry. The server must know about the channel since the
+     client is expected to be on the channel. */
+  channel = silc_idlist_find_channel_by_id(server->local_list, 
+					   channel_id, NULL);
+  if (!channel) {
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
+  }
+
+  /* Check whether this client is on the channel */
+  if (!silc_server_client_on_channel(client, channel)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
+					  SILC_STATUS_ERR_NOT_ON_CHANNEL);
+    goto out;
+  }
+
+  /* Get entry to the channel user list */
+  silc_list_start(channel->user_list);
+  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
+    if (chl->client == client)
+      break;
+
+  /* The client must be at least channel operator. */
+  if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
+					  SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+    goto out;
+  }
+
+  /* Get the new ban and add it to the ban list */
+  add = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (add) {
+    if (!channel->ban_list)
+      channel->ban_list = silc_calloc(tmp_len + 2, sizeof(*channel->ban_list));
+    else
+      channel->ban_list = silc_realloc(channel->ban_list, 
+				       sizeof(*channel->ban_list) * 
+				       (tmp_len + 
+					strlen(channel->ban_list) + 2));
+    strncat(channel->ban_list, add, tmp_len);
+    strncat(channel->ban_list, ",", 1);
+  }
+
+  /* Get the ban to be removed and remove it from the list */
+  del = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+  if (del && channel->ban_list) {
+    char *start, *end, *n;
+
+    if (!strncmp(channel->ban_list, del, strlen(channel->ban_list) - 1)) {
+      silc_free(channel->ban_list);
+      channel->ban_list = NULL;
+      goto out0;
+    }
+
+    start = strstr(channel->ban_list, del);
+    if (start && strlen(start) >= tmp_len) {
+      end = start + tmp_len;
+      n = silc_calloc(strlen(channel->ban_list) - tmp_len, sizeof(*n));
+      strncat(n, channel->ban_list, start - channel->ban_list);
+      strncat(n, end + 1, ((channel->ban_list + strlen(channel->ban_list)) - 
+			   end) - 1);
+      silc_free(channel->ban_list);
+      channel->ban_list = n;
+    }
+  }
+
+ out0:
+
+  /* Send the BAN notify type to our primary router. */
+  if (!server->standalone && (add || del))
+    silc_server_send_notify_ban(server, server->router->connection,
+				server->server_type == SILC_ROUTER ?
+				TRUE : FALSE, channel, add, del);
+
+  /* Send the reply back to the client */
+  if (channel->ban_list)
+    packet = 
+      silc_command_reply_payload_encode_va(SILC_COMMAND_BAN,
+					   SILC_STATUS_OK, ident, 2,
+					   2, id, id_len,
+					   3, channel->ban_list, 
+					   strlen(channel->ban_list) - 1);
+  else
+    packet = 
+      silc_command_reply_payload_encode_va(SILC_COMMAND_BAN,
+					   SILC_STATUS_OK, ident, 1,
+					   2, id, id_len);
+
+  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
+			  packet->data, packet->len, FALSE);
+    
+  silc_buffer_free(packet);
+
+ out:
+  if (channel_id)
+    silc_free(channel_id);
   silc_server_command_free(cmd);
 }

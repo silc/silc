@@ -211,8 +211,7 @@ typedef struct SilcChannelClientEntryStruct {
 
    char username
 
-       Client's (meaning user's) real name. This is defined in following 
-       manner:
+       Client's usename. This is defined in the following manner:
 
        Server type   List type      Contents
        ====================================================
@@ -390,15 +389,10 @@ struct SilcChannelEntryStruct {
   char *topic;
   char *cipher;
 
-  /* Data that is related to different channel modes. */
-  struct {
-    unsigned int user_limit;
-    unsigned char *passphrase;
-    unsigned char *ban_list;
-    unsigned char *invite_list;
-    unsigned char *cipher;
-    unsigned int key_len;
-  } mode_data;
+  unsigned int user_limit;
+  unsigned char *passphrase;
+  char *invite_list;
+  char *ban_list;
 
   /* List of users on channel */
   SilcList user_list;

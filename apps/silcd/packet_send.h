@@ -174,6 +174,11 @@ void silc_server_send_notify_umode(SilcServer server,
 				   SilcClientID *client_id,
 				   unsigned int client_id_len,
 				   unsigned int mode_mask);
+void silc_server_send_notify_ban(SilcServer server,
+				 SilcSocketConnection sock,
+				 int broadcast,
+				 SilcChannelEntry channel,
+				 char *add, char *del);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  int broadcast,

@@ -1,3 +1,39 @@
+Sun Mar 25 13:52:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented the BAN command to the client library.
+
+	* The JOIN command in the server now checks the invite list
+	  and the ban list.
+
+	* Changed the silc_command_reply_payload_encode_va and the
+	  silc_command_payload_encode_va to support that if argument is
+	  NULL it ignores and checks the next argument.  Affected file
+	  lib/silccore/silccommand.c.
+
+	* Added silc_server_send_notify_ban to send the BAN notify
+	  type between routers.
+
+	* Chaned the silc_notify_payload_encode to support that if 
+	  argument is NULL it ignores and checks the next argument.
+	  Affected file lib/silccore/silcnotify.c.
+
+	* Tested ban lists in router environment successfully.
+
+Sat Mar 24 14:47:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented BAN command to the server, in silcd/command.[ch].
+
+	* Removed the BAN and INVITE_LIST modes from the CMODE command
+	  in the server code.
+
+	* Added function silc_string_match to regex match two strings.
+	  Affected files lib/silcutil/silcutil.[ch].
+
+Fri Mar 23 22:02:40 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Redefined parts of the SilcChannelEntry in the server to support
+	  the new ban and invite lists.
+
 Fri Mar 23 16:25:11 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Redefined the INVITE command.  The same command can be used to

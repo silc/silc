@@ -86,12 +86,7 @@ SILC Commands
 		l <limit>	Set/unset channel's user limit
 		a <passphrase>	Set/unset passphrase for channel that must
 				be provided when joining to the channel.
-		b <username!nickname@server>	
-				Add client to/remove client from ban list
-		I <username!nickname@server>	
-				Add client to/remove client from invite list
-		c <cipher>
-				Set/unset channel's cipher
+		c <cipher>      Set/unset channel's cipher
 
 		Multiple modes can be set/unset at once if the modes does not
 		require any arguments.  If mode requires an argument then only

@@ -83,27 +83,31 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, unsigned int argc,
   unsigned int *argv_lens = NULL, *argv_types = NULL;
   unsigned char *x;
   unsigned int x_len;
-  int i, len = 0;
+  int i, k, len = 0;
 
   if (argc) {
     argv = silc_calloc(argc, sizeof(unsigned char *));
     argv_lens = silc_calloc(argc, sizeof(unsigned int));
     argv_types = silc_calloc(argc, sizeof(unsigned int));
     
-    for (i = 0; i < argc; i++) {
+    for (i = 0, k = 0; i < argc; i++) {
       x = va_arg(ap, unsigned char *);
       x_len = va_arg(ap, unsigned int);
+
+      if (!x || !x_len)
+	continue;
       
-      argv[i] = silc_calloc(x_len + 1, sizeof(unsigned char));
-      memcpy(argv[i], x, x_len);
-      argv_lens[i] = x_len;
-      argv_types[i] = i + 1;
+      argv[k] = silc_calloc(x_len + 1, sizeof(unsigned char));
+      memcpy(argv[k], x, x_len);
+      argv_lens[k] = x_len;
+      argv_types[k] = i + 1;
+      k++;
     }
 
-    args = silc_argument_payload_encode(argc, argv, argv_lens, argv_types);
+    args = silc_argument_payload_encode(k, argv, argv_lens, argv_types);
     len = args->len;
 
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < k; i++)
       silc_free(argv[i]);
     silc_free(argv);
     silc_free(argv_lens);
@@ -116,10 +120,10 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, unsigned int argc,
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(type),
 		     SILC_STR_UI_SHORT(len),
-		     SILC_STR_UI_CHAR(argc),
+		     SILC_STR_UI_CHAR(k),
 		     SILC_STR_END);
 
-  if (argc) {
+  if (k) {
     silc_buffer_pull(buffer, 5);
     silc_buffer_format(buffer,
 		       SILC_STR_UI_XNSTRING(args->data, args->len),

@@ -724,6 +724,32 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     silc_free(id);
   }
 
+  /* Get the ban list */
+  tmp = silc_argument_get_arg_type(cmd->args, 8, &len);
+  if (tmp) {
+    if (entry->ban_list)
+      silc_free(entry->ban_list);
+    entry->ban_list = silc_calloc(len, sizeof(*entry->ban_list));
+    memcpy(entry->ban_list, tmp, len);
+  }
+
+  /* Get the invite list */
+  tmp = silc_argument_get_arg_type(cmd->args, 9, &len);
+  if (tmp) {
+    if (entry->invite_list)
+      silc_free(entry->invite_list);
+    entry->invite_list = silc_calloc(len, sizeof(*entry->invite_list));
+    memcpy(entry->invite_list, tmp, len);
+  }
+
+  /* Get the topic */
+  tmp = silc_argument_get_arg_type(cmd->args, 10, &len);
+  if (tmp) {
+    if (entry->topic)
+      silc_free(entry->topic);
+    entry->topic = strdup(tmp);
+  }
+
   /* If channel was not created we know there is global users on the 
      channel. */
   entry->global_users = (created == 0 ? TRUE : FALSE);

@@ -602,26 +602,21 @@ int silc_string_compare(char *string1, char *string2)
 }
 
 /* Inspects the `string' for wildcards and returns regex string that can
-   be used by the GNU regex library. This has a lot overhead but luckily
-   this is used only for short strings. */
+   be used by the GNU regex library. A comma (`,') in the `string' means
+   that the string is list. */
 
 char *silc_string_regexify(const char *string)
 {
   int i, len, count;
   char *regex;
 
-  /* If there is no wildcards then we don't need to regexify the string. */
-  if (!strchr(string, '*') && !strchr(string, '?'))
-    return strdup(string);
-
   len = strlen(string);
-  count = 0;
-
+  count = 4;
   for (i = 0; i < len; i++)
     if (string[i] == '*' || string[i] == '?')
       count++;
 
-  regex = silc_calloc(len + count + 4, sizeof(*regex));
+  regex = silc_calloc(len + count, sizeof(*regex));
 
   count = 0;
   regex[count] = '(';
@@ -631,6 +626,10 @@ char *silc_string_regexify(const char *string)
     if (string[i] == '*' || string[i] == '?') {
       regex[count] = '.';
       count++;
+    } else if (string[i] == ',') {
+      regex[count] = '|';
+      count++;
+      continue;
     }
 
     regex[count] = string[i];
@@ -656,9 +655,9 @@ char *silc_string_regex_combine(const char *string1, const char *string2)
   len2 = strlen(string2);
 
   tmp = silc_calloc(2 + len1 + len2, sizeof(*tmp));
-  memcpy(tmp, string1, len1 - 2);
-  memcpy(tmp, "|", 1);
-  memcpy(tmp, string2 + 1, len2 - 1);
+  strncat(tmp, string1, len1 - 2);
+  strncat(tmp, "|", 1);
+  strncat(tmp, string2 + 1, len2 - 1);
 
   return tmp;
 }
@@ -677,6 +676,21 @@ int silc_string_regex_match(const char *regex, const char *string)
     ret = TRUE;
 
   regfree(&preg);
+
+  return ret;
+}
+
+/* Do regex match to the two strings `string1' and `string2'. If the
+   `string2' matches the `string1' this returns TRUE. */
+
+int silc_string_match(const char *string1, const char *string2)
+{
+  char *s1;
+  int ret = FALSE;
+
+  s1 = silc_string_regexify(string1);
+  ret = silc_string_regex_match(s1, string2);
+  silc_free(s1);
 
   return ret;
 }

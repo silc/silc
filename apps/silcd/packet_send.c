@@ -1125,6 +1125,27 @@ void silc_server_send_notify_umode(SilcServer server,
   silc_buffer_free(idp);
 }
 
+/* Sends BAN notify type. This tells that `ban' has been either `add'ed
+   or `del'eted on the `channel. This function is used to send the packet
+   between routers as broadcast packet. */
+
+void silc_server_send_notify_ban(SilcServer server,
+				 SilcSocketConnection sock,
+				 int broadcast,
+				 SilcChannelEntry channel,
+				 char *add, char *del)
+{
+  SilcBuffer idp;
+
+  idp = silc_id_payload_encode((void *)channel->id, SILC_ID_CHANNEL);
+  silc_server_send_notify(server, sock, broadcast,
+			  SILC_NOTIFY_TYPE_BAN, 3,
+			  idp->data, idp->len,
+			  add, add ? strlen(add) : 0,
+			  del, del ? strlen(del) : 0);
+  silc_buffer_free(idp);
+}
+
 /* Sends notify message destined to specific entity. */
 
 void silc_server_send_notify_dest(SilcServer server,

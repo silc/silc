@@ -712,8 +712,30 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_screen_print_bottom_line(app->screen, 0);
 	  break;
 	}
-      break;
       }
+      break;
+
+    case SILC_COMMAND_BAN:
+      {
+	SilcChannelEntry channel;
+	char *ban_list;
+
+	if (!success)
+	  return;
+	
+	channel = va_arg(vp, SilcChannelEntry);
+	ban_list = va_arg(vp, char *);
+
+	if (ban_list)
+	  silc_say(client, conn, "%s ban list: %s", channel->channel_name,
+		   ban_list);
+	else
+	  silc_say(client, conn, "%s ban list not set", channel->channel_name);
+      }
+      break;
+
+    default:
+      break;
     }
 }
 

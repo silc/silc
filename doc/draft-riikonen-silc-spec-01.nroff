@@ -2264,7 +2264,7 @@ List of all defined commands in SILC follows.
    7    SILC_COMMAND_INVITE
 
         Max Arguments:  4
-            Arguments:  (1) [<Client ID>]      (2) [<Channel ID>]
+            Arguments:  (1) [<Client ID>]      (2) <Channel ID>
                         (3) [<adding client>]  (4) [<removing client>]
 
         This command is used to invite other clients to join to the
@@ -2294,12 +2294,12 @@ List of all defined commands in SILC follows.
         nickname and hostname and add to the invite list before sending
         the notify packet.
         
-        When this command is given without any arguments then the command
-        merely returns the invite list of the channel.   This command must
-        fail if the requested channel does not exist, the requested
-        <Client ID> is already on the channel or if the channel is invite
-        only channel and the caller of this command does not have at least
-        channel operator privileges.
+        When this command is given with only <Channel ID> argument then
+        the command merely returns the invite list of the channel.   This
+        command must fail if the requested channel does not exist, the
+        requested <Client ID> is already on the channel or if the channel
+        is invite only channel and the caller of this command does not
+        have at least channel operator privileges.
 
         Reply messages to the command:
 
@@ -2551,7 +2551,7 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <Status Payload>      (2) <channel> 
                         (3) <Channel ID>          (4) <Client ID>
                         (5) <channel mode mask>   (6) <created>
-                        (7) <Channel Key Payload> (8) [<ban mask>]
+                        (7) <Channel Key Payload> (8) [<ban list>]
                         (9) [<invite list>]       (10) [<topic>]
                         (11) [<hmac>]             (12) <list count>
                         (13) <Client ID list>     (14) <client mode list>
@@ -3162,7 +3162,7 @@ List of all defined commands in SILC follows.
    26   SILC_COMMAND_BAN
 
         Max Arguments:  3
-            Arguments:  (1) [<Channel ID>]       (2) [<adding client>]
+            Arguments:  (1) <Channel ID>         (2) [<adding client>]
                         (3) [<removing client>]
 
         This command is used to manage the ban list of the channel
@@ -3183,7 +3183,7 @@ List of all defined commands in SILC follows.
         from than one clients then the lists are an comma (`,') separated
         list.
 
-        If this command is executed without any arguments the command
+        If this command is executed without the ban arguments the command
         merely replies with the current ban list.
 
 
@@ -3202,6 +3202,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_REGISTERED
             SILC_STATUS_ERR_TOO_MANY_PARAMS
             SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
             SILC_STATUS_ERR_NOT_ON_CHANNEL
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
 

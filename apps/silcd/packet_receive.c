@@ -663,6 +663,74 @@ void silc_server_notify(SilcServer server,
 
     break;
 
+  case SILC_NOTIFY_TYPE_BAN:
+    /*
+     * Save the ban
+     */
+
+    SILC_LOG_DEBUG(("BAN notify"));
+    
+    /* Get Channel ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
+    
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+    silc_free(channel_id);
+
+    /* Get the new ban and add it to the ban list */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (tmp) {
+      if (!channel->ban_list)
+	channel->ban_list = silc_calloc(tmp_len + 2, 
+					sizeof(*channel->ban_list));
+      else
+	channel->ban_list = silc_realloc(channel->ban_list, 
+					 sizeof(*channel->ban_list) * 
+					 (tmp_len + 
+					  strlen(channel->ban_list) + 2));
+      strncat(channel->ban_list, tmp, tmp_len);
+      strncat(channel->ban_list, ",", 1);
+    }
+
+    /* Get the ban to be removed and remove it from the list */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    if (tmp && channel->ban_list) {
+      char *start, *end, *n;
+      
+      if (!strcmp(channel->ban_list, tmp)) {
+	silc_free(channel->ban_list);
+	channel->ban_list = NULL;
+	break;
+      }
+      
+      start = strstr(channel->ban_list, tmp);
+      if (start && strlen(start) >= tmp_len) {
+	end = start + tmp_len;
+	n = silc_calloc(strlen(channel->ban_list) - tmp_len, sizeof(*n));
+	strncat(n, channel->ban_list, start - channel->ban_list);
+	strncat(n, end + 1, ((channel->ban_list + strlen(channel->ban_list)) - 
+			     end) - 1);
+	silc_free(channel->ban_list);
+	channel->ban_list = n;
+      }
+    }
+
+    break;
+
     /* Ignore rest of the notify types for now */
   case SILC_NOTIFY_TYPE_NONE:
   case SILC_NOTIFY_TYPE_MOTD:
