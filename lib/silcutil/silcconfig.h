@@ -76,7 +76,7 @@
 #ifndef SILCCONFIG_H
 #define SILCCONFIG_H
 
-/****d* silcutil/SilcConfigAPI/errno
+/****d* silcutil/SilcConfigAPI/SilcConfigErrno
  *
  * NAME
  *
