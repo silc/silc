@@ -101,6 +101,7 @@ int main(int argc, char **argv)
   int opt, option_index;
   char *config_file = NULL;
   SilcServer silcd;
+  struct sigaction sa;
 
   silc_debug = FALSE;
 
@@ -185,6 +186,12 @@ int main(int argc, char **argv)
   ret = silc_server_init(silcd);
   if (ret == FALSE)
     goto fail;
+
+  /* Ignore SIGPIPE */
+  sa.sa_handler = SIG_IGN;
+  sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
+  sigaction(SIGPIPE, &sa, NULL);
 
   if (silc_debug == FALSE)
     /* Before running the server, fork to background and set

@@ -1,3 +1,9 @@
+Tue Jul  3 11:39:20 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Found the reason of random crashes in the server.  We weren't
+	  ignoring the SIGPIPE signal (which can be sent in write())
+	  and it crashed the server.  Affected file silcd/silcd.c.
+
 Fri Jun 29 20:05:25 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Assure that sock->user_data is not NULL in the function
