@@ -1196,7 +1196,6 @@ SILC_CLIENT_CMD_FUNC(join)
 						cmd->client->sha1hash,
 						conn->local_id,
 						SILC_ID_CLIENT);
-      i++;
     } else if (!strcasecmp(cmd->argv[i], "-auth")) {
       SilcPublicKey pubkey = cmd->client->public_key;
       SilcPrivateKey privkey = cmd->client->private_key;
@@ -1231,7 +1230,6 @@ SILC_CLIENT_CMD_FUNC(join)
 						      SILC_ID_CLIENT);
       memset(pubdata, 0, 128);
       silc_free(pubdata);
-      i++;
     } else {
       /* Passphrases must be UTF-8 encoded, so encode if it is not */
       if (!silc_utf8_valid(cmd->argv[i], cmd->argv_lens[i])) {
