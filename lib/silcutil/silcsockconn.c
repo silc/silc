@@ -196,6 +196,7 @@ static void *silc_socket_host_lookup_start(void *context)
   silc_task_register(lookup->timeout_queue, sock->sock,
 		     silc_socket_host_lookup_finish, lookup, 0, 1,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+  silc_task_queue_wakeup(lookup->timeout_queue);
 
   return NULL;
 }
