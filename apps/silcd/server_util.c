@@ -1821,10 +1821,10 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
   SilcHashTableList htl;
 
   SILC_LOG_DEBUG(("Processing invite/ban for %s action",
-		  action == 0x00 ? "ADD" : "DEL"));
+		  action == 0x01 ? "DEL" : "ADD"));
 
   /* Add the information to invite list */
-  if (action == 0x00) {
+  if (action == 0x00 || action == 0x03) {
     /* Traverse all arguments and add to the hash table according to
        their type. */
     tmp = silc_argument_get_first_arg(args, &type, &len);

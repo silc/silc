@@ -1385,6 +1385,9 @@ sent inside arguments are actually Public Key Payloads.
       The <invite list> format is defined in [SILC4] with
       SILC_COMMAND_INVITE command.  When this notify is destined to
       a client the <add | del> and <invite list> MUST NOT be sent.
+      When <add | del> is used  to announce information during server 
+      connecting phase the argument type MUST be 0x03.  See section
+      4.2.1 in [SILC1] for more information.
 
 
 2     SILC_NOTIFY_TYPE_JOIN
@@ -1665,6 +1668,9 @@ sent inside arguments are actually Public Key Payloads.
       from ban list.  The <ban list> indicates the information to be
       added to or removed from the ban list.  The <ban list> format
       format is defined in [SILC4] with SILC_COMMAND_BAN command.
+      When <add | del> is used  to announce information during server 
+      connecting phase the argument type MUST be 0x03.  See section
+      4.2.1 in [SILC1] for more information.
 
 
 16    SILC_NOTIFY_TYPE_ERROR

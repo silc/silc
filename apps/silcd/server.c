@@ -4342,6 +4342,66 @@ void silc_server_announce_get_channel_topic(SilcServer server,
   }
 }
 
+/* Returns channel's invite and ban lists */
+
+void silc_server_announce_get_inviteban(SilcServer server,
+					SilcChannelEntry channel,
+					SilcBuffer *invite,
+					SilcBuffer *ban)
+{
+  SilcBuffer list, idp, idp2, tmp2;
+  SilcUInt32 type;
+  SilcHashTableList htl;
+  const unsigned char a[1] = { 0x03 };
+
+  idp = silc_id_payload_encode((void *)channel->id, SILC_ID_CHANNEL);
+
+  /* Encode invite list */
+  if (channel->invite_list && silc_hash_table_count(channel->invite_list)) {
+    list = silc_buffer_alloc_size(2);
+    type = silc_hash_table_count(channel->invite_list);
+    SILC_PUT16_MSB(type, list->data);
+    silc_hash_table_list(channel->invite_list, &htl);
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+      list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
+                                              type);
+    silc_hash_table_list_reset(&htl);
+
+    idp2 = silc_id_payload_encode(server->id, SILC_ID_SERVER);
+    *invite =
+      silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_INVITE, 5,
+					 idp->data, idp->len,
+					 channel->channel_name,
+					 strlen(channel->channel_name),
+					 idp2->data, idp2->len,
+					 a, 1,
+				         list->data, list->len);
+    silc_buffer_free(idp2);
+    silc_buffer_free(list);
+  }
+  
+  /* Encode ban list */
+  if (channel->ban_list && silc_hash_table_count(channel->ban_list)) {
+    list = silc_buffer_alloc_size(2);
+    type = silc_hash_table_count(channel->ban_list);
+    SILC_PUT16_MSB(type, list->data);
+    silc_hash_table_list(channel->ban_list, &htl);
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+      list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
+                                              type);
+    silc_hash_table_list_reset(&htl);
+
+    *ban =
+      silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_BAN, 3,
+					 idp->data, idp->len,
+					 a, 1,
+				         list->data, list->len);
+    silc_buffer_free(list);
+  }
+
+  silc_buffer_free(idp);
+}
+
 /* Returns assembled packets for channel users of the `channel'. */
 
 void silc_server_announce_get_channel_users(SilcServer server,
@@ -4461,6 +4521,8 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcBuffer **channel_users_modes,
 				       SilcUInt32 *channel_users_modes_c,
 				       SilcBuffer **channel_topics,
+				       SilcBuffer **channel_invites,
+				       SilcBuffer **channel_bans,
 				       SilcChannelID ***channel_ids,
 				       unsigned long creation_time)
 {
@@ -4539,8 +4601,19 @@ void silc_server_announce_get_channels(SilcServer server,
 	  (*channel_topics)[i] = NULL;
 	  silc_server_announce_get_channel_topic(server, channel,
 						 &(*channel_topics)[i]);
-	  (*channel_users_modes_c)++;
 
+	  /* Channel's invite and ban list */
+	  *channel_invites = silc_realloc(*channel_invites,
+					  sizeof(**channel_invites) * (i + 1));
+	  (*channel_invites)[i] = NULL;
+	  *channel_bans = silc_realloc(*channel_bans,
+				       sizeof(**channel_bans) * (i + 1));
+	  (*channel_bans)[i] = NULL;
+	  silc_server_announce_get_inviteban(server, channel,
+					     &(*channel_invites)[i],
+					     &(*channel_bans)[i]);
+
+	  (*channel_users_modes_c)++;
 	  silc_free(cid);
 
 	  i++;
@@ -4569,6 +4642,8 @@ void silc_server_announce_channels(SilcServer server,
   SilcBuffer channels = NULL, *channel_modes = NULL, channel_users = NULL;
   SilcBuffer *channel_users_modes = NULL;
   SilcBuffer *channel_topics = NULL;
+  SilcBuffer *channel_invites = NULL;
+  SilcBuffer *channel_bans = NULL;
   SilcUInt32 channel_users_modes_c = 0;
   SilcChannelID **channel_ids = NULL;
 
@@ -4581,6 +4656,8 @@ void silc_server_announce_channels(SilcServer server,
 				    &channel_users_modes,
 				    &channel_users_modes_c,
 				    &channel_topics,
+				    &channel_invites,
+				    &channel_bans,
 				    &channel_ids, creation_time);
 
   /* Get channels and channel users in global list */
@@ -4591,6 +4668,8 @@ void silc_server_announce_channels(SilcServer server,
 				      &channel_users_modes,
 				      &channel_users_modes_c,
 				      &channel_topics,
+				      &channel_invites,
+				      &channel_bans,
 				      &channel_ids, creation_time);
 
   if (channels) {
@@ -4685,6 +4764,52 @@ void silc_server_announce_channels(SilcServer server,
       silc_buffer_free(channel_topics[i]);
     }
     silc_free(channel_topics);
+  }
+
+  if (channel_invites) {
+    int i;
+
+    for (i = 0; i < channel_users_modes_c; i++) {
+      if (!channel_invites[i])
+	continue;
+
+      silc_buffer_push(channel_invites[i],
+		       channel_invites[i]->data -
+		       channel_invites[i]->head);
+      SILC_LOG_HEXDUMP(("channel invite list"), channel_invites[i]->data,
+		       channel_invites[i]->len);
+      silc_server_packet_send_dest(server, remote,
+				   SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				   channel_ids[i], SILC_ID_CHANNEL,
+				   channel_invites[i]->data,
+				   channel_invites[i]->len,
+				   FALSE);
+      silc_buffer_free(channel_invites[i]);
+    }
+    silc_free(channel_invites);
+  }
+
+  if (channel_bans) {
+    int i;
+
+    for (i = 0; i < channel_users_modes_c; i++) {
+      if (!channel_bans[i])
+	continue;
+
+      silc_buffer_push(channel_bans[i],
+		       channel_bans[i]->data -
+		       channel_bans[i]->head);
+      SILC_LOG_HEXDUMP(("channel ban list"), channel_bans[i]->data,
+		       channel_bans[i]->len);
+      silc_server_packet_send_dest(server, remote,
+				   SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				   channel_ids[i], SILC_ID_CHANNEL,
+				   channel_bans[i]->data,
+				   channel_bans[i]->len,
+				   FALSE);
+      silc_buffer_free(channel_bans[i]);
+    }
+    silc_free(channel_bans);
   }
 
   silc_free(channel_ids);

@@ -5,6 +5,9 @@ Wed Oct  8 09:32:12 CEST 2003  Pekka Riikonen <priikone@silcnet.org>
 	  code.  Affected files silcd/packet_[send|receive].[ch], 
 	  command.c, server.c and server_util.c.
 
+	* Implemented INVITE and BAN announcing.  Affected files are
+	  silcd/server.[ch], server_util.c.
+
 Sun Oct  5 20:22:08 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Backup router protocol version 1.2 implemented.  Testing still
