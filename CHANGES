@@ -1,3 +1,10 @@
+Tue Oct 29 21:48:55 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added lib/silcutil/silcapputil.[ch] for application
+	  utility functions.  It includes routines for applications'
+	  convenience.  Added silc_create_key_pair, silc_show_public_key
+	  and silc_load_key_pair functions.
+
 Tue Oct 29 17:36:44 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Send RESUME_CLIENT packet from router to backup routers

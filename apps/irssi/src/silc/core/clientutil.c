@@ -80,174 +80,6 @@ void silc_client_list_pkcs()
   silc_free(pkcs);
 }
 
-/* Returns identifier string for public key generation. */
-
-char *silc_client_create_identifier()
-{
-  char *username = NULL, *realname = NULL;
-  char *hostname, email[256];
-  char *ident;
-  
-  /* Get realname */
-  realname = silc_get_real_name();
-
-  /* Get hostname */
-  hostname = silc_net_localhost();
-  if (!hostname)
-    return NULL;
-
-  /* Get username (mandatory) */
-  username = silc_get_username();
-  if (!username)
-    return NULL;
-
-  /* Create default email address, whether it is right or not */
-  snprintf(email, sizeof(email), "%s@%s", username, hostname);
-
-  ident = silc_pkcs_encode_identifier(username, hostname, realname, email,
-				      NULL, NULL);
-  if (realname)
-    silc_free(realname);
-  silc_free(hostname);
-  silc_free(username);
-
-  return ident;
-}
-
-/* Creates new public key and private key pair. This is used only
-   when user wants to create new key pair from command line. */
-
-int silc_client_create_key_pair(char *pkcs_name, int bits,
-				char *public_key, char *private_key,
-				char *identifier, 
-				SilcPublicKey *ret_pub_key,
-				SilcPrivateKey *ret_prv_key)
-{
-  SilcPKCS pkcs;
-  SilcPublicKey pub_key;
-  SilcPrivateKey prv_key;
-  SilcRng rng;
-  unsigned char *key;
-  SilcUInt32 key_len;
-  char line[256];
-  char *pkfile = NULL, *prvfile = NULL;
-
-  if (!pkcs_name || !public_key || !private_key)
-    printf("\
-New pair of keys will be created.  Please, answer to following questions.\n\
-");
-
-  if (!pkcs_name) {
-  again_name:
-    pkcs_name = silc_get_input("PKCS name (l to list names) [rsa]: ", FALSE);
-    if (!pkcs_name)
-      pkcs_name = strdup("rsa");
-
-    if (*pkcs_name == 'l' || *pkcs_name == 'L') {
-      silc_client_list_pkcs();
-      silc_free(pkcs_name);
-      goto again_name;
-    }
-  }
-
-  if (!silc_pkcs_is_supported(pkcs_name)) {
-    fprintf(stderr, "Unknown PKCS `%s'", pkcs_name);
-    return FALSE;
-  }
-
-  if (!bits) {
-    char *length = NULL;
-    length = silc_get_input("Key length in bits [2048]: ", FALSE);
-    if (!length)
-      bits = 2048;
-    else
-      bits = atoi(length);
-  }
-
-  if (!identifier) {
-    char *def = silc_client_create_identifier();
-
-    memset(line, 0, sizeof(line));
-    if (def)
-      snprintf(line, sizeof(line), "Identifier [%s]: ", def);
-    else
-      snprintf(line, sizeof(line),
-	       "Identifier (eg. UN=jon, HN=jon.dummy.com, "
-	       "RN=Jon Johnson, E=jon@dummy.com): ");
-
-    while (!identifier) {
-      identifier = silc_get_input(line, FALSE);
-      if (!identifier && def)
-	identifier = strdup(def);
-    }
-
-    if (def)
-      silc_free(def);
-  }
-
-  rng = silc_rng_alloc();
-  silc_rng_init(rng);
-  silc_rng_global_init(rng);
-
-  if (!public_key) {
-    memset(line, 0, sizeof(line));
-    snprintf(line, sizeof(line), "Public key filename [%s] ", 
-	     SILC_CLIENT_PUBLIC_KEY_NAME);
-    pkfile = silc_get_input(line, FALSE);
-    if (!pkfile)
-      pkfile = SILC_CLIENT_PUBLIC_KEY_NAME;
-  } else {
-    pkfile = public_key;
-  }
-
-  if (!private_key) {
-    memset(line, 0, sizeof(line));
-    snprintf(line, sizeof(line), "Public key filename [%s] ", 
-	     SILC_CLIENT_PRIVATE_KEY_NAME);
-    prvfile = silc_get_input(line, FALSE);
-    if (!prvfile)
-      prvfile = SILC_CLIENT_PRIVATE_KEY_NAME;
-  } else {
-    prvfile = private_key;
-  }
-
-  /* Generate keys */
-  silc_pkcs_alloc(pkcs_name, &pkcs);
-  silc_pkcs_generate_key(pkcs, bits, rng);
-
-  /* Save public key into file */
-  key = silc_pkcs_get_public_key(pkcs, &key_len);
-  pub_key = silc_pkcs_public_key_alloc(silc_pkcs_get_name(pkcs), identifier,
-				       key, key_len);
-  silc_pkcs_save_public_key(pkfile, pub_key, SILC_PKCS_FILE_PEM);
-  if (ret_pub_key)
-    *ret_pub_key = pub_key;
-
-  memset(key, 0, key_len);
-  silc_free(key);
-
-  /* Save private key into file */
-  key = silc_pkcs_get_private_key(pkcs, &key_len);
-  prv_key = silc_pkcs_private_key_alloc(silc_pkcs_get_name(pkcs),
-					key, key_len);
-  silc_pkcs_save_private_key(prvfile, prv_key, NULL, SILC_PKCS_FILE_BIN);
-  if (ret_prv_key)
-    *ret_prv_key = prv_key;
-
-  printf("Public key has been saved into `%s'.\n", pkfile);
-  printf("Private key has been saved into `%s'.\n", prvfile);
-  printf("Press <Enter> to continue...\n");
-  getchar();
-
-  memset(key, 0, key_len);
-  silc_free(key);
-
-  silc_rng_free(rng);
-  silc_pkcs_free(pkcs);
-
-  return TRUE;
-}
-
 /* This checks stats for various SILC files and directories. First it 
    checks if ~/.silc directory exist and is owned by the correct user. If 
    it doesn't exist, it will create the directory. After that it checks if
@@ -259,10 +91,8 @@ int silc_client_check_silc_dir()
 {
   char filename[256], file_public_key[256], file_private_key[256];
   char servfilename[256], clientfilename[256], friendsfilename[256];
-  char *identifier;
   struct stat st;
   struct passwd *pw;
-  int firstime = FALSE;
   time_t curtime, modtime;
 
   SILC_LOG_DEBUG(("Checking ~./silc directory"));
@@ -271,13 +101,9 @@ int silc_client_check_silc_dir()
   memset(file_public_key, 0, sizeof(file_public_key));
   memset(file_private_key, 0, sizeof(file_private_key));
 
-  identifier = silc_client_create_identifier();
-
   pw = getpwuid(getuid());
   if (!pw) {
     fprintf(stderr, "silc: %s\n", strerror(errno));
-    if (identifier)
-      silc_free(identifier);
     return FALSE;
   }
 
@@ -301,9 +127,6 @@ int silc_client_check_silc_dir()
 	  fprintf(stderr, "Couldn't create `%s' directory\n", filename);
 	  return FALSE;
 	}
-
-	/* Directory was created. First time running SILC */
-	firstime = TRUE;
       } else {
 	fprintf(stderr, "Couldn't create `%s' directory due to a wrong uid!\n",
 		filename);
@@ -408,30 +231,22 @@ int silc_client_check_silc_dir()
   snprintf(file_private_key, sizeof(file_private_key) - 1, "%s%s", 
 	   filename, SILC_CLIENT_PRIVATE_KEY_NAME);
   
-  /* If running SILC first time */
-  if (firstime) {
-    fprintf(stdout, "Running SILC for the first time\n");
-    silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
-				SILC_CLIENT_DEF_PKCS_LEN,
-				file_public_key, file_private_key, 
-				identifier, NULL, NULL);
-    return TRUE;
-  }
-  
   if ((stat(file_public_key, &st)) == -1) {
     /* If file doesn't exist */
     if (errno == ENOENT) {
-      fprintf(stdout, "Your public key doesn't exist\n");
-      silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
-				  SILC_CLIENT_DEF_PKCS_LEN,
-				  file_public_key, 
-				  file_private_key, identifier, NULL, NULL);
+      fprintf(stdout, "Running SILC for the first time\n");
+      silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
+			   SILC_CLIENT_DEF_PKCS_LEN,
+			   file_public_key, file_private_key, NULL,
+			   NULL, NULL, NULL, FALSE);
+      printf("Press <Enter> to continue...\n");
+      getchar();
     } else {
       fprintf(stderr, "%s\n", strerror(errno));
       return FALSE;
     }
   }
-
+  
   /* Check the owner of the public key */
   if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
     fprintf(stderr, "You don't seem to own your public key!?\n");
@@ -442,10 +257,12 @@ int silc_client_check_silc_dir()
     /* If file doesn't exist */
     if (errno == ENOENT) {
       fprintf(stdout, "Your private key doesn't exist\n");
-      silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
-				  SILC_CLIENT_DEF_PKCS_LEN,
-				  file_public_key, 
-				  file_private_key, identifier, NULL, NULL);
+      silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
+			   SILC_CLIENT_DEF_PKCS_LEN,
+			   file_public_key, file_private_key, NULL,
+			   NULL, NULL, NULL, FALSE);
+      printf("Press <Enter> to continue...\n");
+      getchar();
     } else {
       fprintf(stderr, "%s\n", strerror(errno));
       return FALSE;
@@ -492,10 +309,12 @@ int silc_client_check_silc_dir()
     answer = silc_get_input("Would you like to create a new key pair "
 			    "([y]/n)?: ", FALSE);
     if (!answer || answer[0] == 'Y' || answer[0] == 'y') {
-      silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
-				  SILC_CLIENT_DEF_PKCS_LEN,
-				  file_public_key, 
-				  file_private_key, identifier, NULL, NULL);
+      silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
+			   SILC_CLIENT_DEF_PKCS_LEN,
+			   file_public_key, file_private_key, NULL,
+			   NULL, NULL, NULL, FALSE);
+      printf("Press <Enter> to continue...\n");
+      getchar();
     } else {
 #ifdef HAVE_UTIME
       struct utimbuf utim;
@@ -507,9 +326,6 @@ int silc_client_check_silc_dir()
     silc_free(answer);
   }
   
-  if (identifier)
-    silc_free(identifier);
-
   return TRUE;
 }
 
@@ -517,7 +333,7 @@ int silc_client_check_silc_dir()
 
 int silc_client_load_keys(SilcClient client)
 {
-  char filename[256];
+  char pub[256], prv[256];
   struct passwd *pw;
 
   SILC_LOG_DEBUG(("Loading public and private keys"));
@@ -526,90 +342,14 @@ int silc_client_load_keys(SilcClient client)
   if (!pw)
     return FALSE;
 
-  memset(filename, 0, sizeof(filename));
-  snprintf(filename, sizeof(filename) - 1, "%s/%s", 
+  memset(prv, 0, sizeof(prv));
+  snprintf(prv, sizeof(prv) - 1, "%s/%s",
 	   get_irssi_dir(), SILC_CLIENT_PRIVATE_KEY_NAME);
 
-  if (silc_pkcs_load_private_key(filename, &client->private_key,
-				 SILC_PKCS_FILE_BIN) == FALSE)
-    if (silc_pkcs_load_private_key(filename, &client->private_key,
-				   SILC_PKCS_FILE_PEM) == FALSE)
-      return FALSE;
-
-  memset(filename, 0, sizeof(filename));
-  snprintf(filename, sizeof(filename) - 1, "%s/%s", 
+  memset(pub, 0, sizeof(pub));
+  snprintf(pub, sizeof(pub) - 1, "%s/%s",
 	   get_irssi_dir(), SILC_CLIENT_PUBLIC_KEY_NAME);
-
-  if (silc_pkcs_load_public_key(filename, &client->public_key,
-				SILC_PKCS_FILE_PEM) == FALSE)
-    if (silc_pkcs_load_public_key(filename, &client->public_key,
-				  SILC_PKCS_FILE_BIN) == FALSE)
-      return FALSE;
-
-  silc_pkcs_alloc(client->public_key->name, &client->pkcs);
-  silc_pkcs_public_key_set(client->pkcs, client->public_key);
-  silc_pkcs_private_key_set(client->pkcs, client->private_key);
-
-  return TRUE;
-}
-
-/* Dumps the public key on screen. Used from the command line option. */
-
-int silc_client_show_key(char *keyfile)
-{
-  SilcPublicKey public_key;
-  SilcPublicKeyIdentifier ident;
-  char *fingerprint, *babbleprint;
-  unsigned char *pk;
-  SilcUInt32 pk_len;
-  SilcPKCS pkcs;
-  int key_len = 0;
-
-  if (silc_pkcs_load_public_key(keyfile, &public_key,
-				SILC_PKCS_FILE_PEM) == FALSE)
-    if (silc_pkcs_load_public_key(keyfile, &public_key,
-				  SILC_PKCS_FILE_BIN) == FALSE) {
-      fprintf(stderr, "Could not load public key file `%s'\n", keyfile);
-      return FALSE;
-    }
-
-  ident = silc_pkcs_decode_identifier(public_key->identifier);
-
-  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
-  fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-  babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
-
-  if (silc_pkcs_alloc(public_key->name, &pkcs)) {
-    key_len = silc_pkcs_public_key_set(pkcs, public_key);
-    silc_pkcs_free(pkcs);
-  }
-
-  printf("Public key file    : %s\n", keyfile);
-  printf("Algorithm          : %s\n", public_key->name);
-  if (key_len)
-    printf("Key length (bits)  : %d\n", key_len);
-  if (ident->realname)
-    printf("Real name          : %s\n", ident->realname);
-  if (ident->username)
-    printf("Username           : %s\n", ident->username);
-  if (ident->host)
-    printf("Hostname           : %s\n", ident->host);
-  if (ident->email)
-    printf("Email              : %s\n", ident->email);
-  if (ident->org)
-    printf("Organization       : %s\n", ident->org);
-  if (ident->country)
-    printf("Country            : %s\n", ident->country);
-  printf("Fingerprint (SHA1) : %s\n", fingerprint); 
-  printf("Babbleprint (SHA1) : %s\n", babbleprint); 
-
-  fflush(stdout);
-
-  silc_free(fingerprint);
-  silc_free(babbleprint);
-  silc_free(pk);
-  silc_pkcs_public_key_free(public_key);
-  silc_pkcs_free_identifier(ident);
-
-  return TRUE;
+  
+  return silc_load_key_pair(pub, prv, &client->pkcs, &client->public_key,
+			    &client->private_key);
 }

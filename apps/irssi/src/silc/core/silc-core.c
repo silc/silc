@@ -264,7 +264,7 @@ void silc_opt_callback(poptContext con,
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
-    silc_client_show_key((char *)arg);
+    silc_show_public_key((char *)arg);
     exit(0);
   }
 
@@ -310,8 +310,8 @@ void silc_opt_callback(poptContext con,
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
-    silc_client_create_key_pair(opt_pkcs, opt_bits, 
-				NULL, NULL, NULL, NULL, NULL);
+    silc_create_key_pair(opt_pkcs, opt_bits, NULL, NULL, NULL,
+			 NULL, NULL, NULL, TRUE);
     exit(0);
   }
 }

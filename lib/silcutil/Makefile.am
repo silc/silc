@@ -59,7 +59,8 @@ libsilcutil_a_SOURCES = \
 	silchashtable.c \
 	silcsockconn.c	\
 	silcprotocol.c	\
-	silcvcard.c
+	silcvcard.c	\
+	silcapputil.c
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -82,6 +83,7 @@ include_HEADERS =	\
 	silcutil.h	\
 	silcstrutil.h	\
 	silcvcard.h	\
+	silcapputil.h	\
 	silctypes.h
 endif
 

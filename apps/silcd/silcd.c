@@ -33,11 +33,6 @@
 static SilcServer silcd;
 
 static void silc_usage(void);
-static char *silc_server_create_identifier(void);
-static int silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
-				       char *identifier,
-				       SilcPublicKey *ret_pub_key,
-				       SilcPrivateKey *ret_prv_key);
 
 /* Long command line options */
 static struct option long_opts[] =
@@ -519,12 +514,19 @@ int main(int argc, char **argv)
 
   if (opt_create_keypair == TRUE) {
     /* Create new key pair and exit */
+    char pubfile[256], prvfile[256];
+
+    memset(pubfile, 0, sizeof(pubfile));
+    memset(prvfile, 0, sizeof(prvfile));
+    snprintf(pubfile, sizeof(pubfile) - 1, "%s/silcd.pub", opt_keypath);
+    snprintf(prvfile, sizeof(prvfile) - 1, "%s/silcd.prv", opt_keypath);
+
     silc_cipher_register_default();
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
-    silc_server_create_key_pair(opt_pkcs, opt_bits, opt_keypath,
-				opt_identifier, NULL, NULL);
+    silc_create_key_pair(opt_pkcs, opt_bits, pubfile, prvfile,
+			 opt_identifier, NULL, NULL, NULL, FALSE);
     exit(0);
   }
 
@@ -605,109 +607,4 @@ int main(int argc, char **argv)
   silc_free(opt_identifier);
   silc_free(opt_keypath);
   exit(1);
-}
-
-/* Returns identifier string for public key generation. */
-
-static char *silc_server_create_identifier(void)
-{
-  char *username = NULL, *realname = NULL;
-  char hostname[256], email[256];
-
-  /* Get realname */
-  realname = silc_get_real_name();
-
-  /* Get hostname */
-  memset(hostname, 0, sizeof(hostname));
-  gethostname(hostname, sizeof(hostname));
-
-  /* Get username (mandatory) */
-  username = silc_get_username();
-  if (!username)
-    return NULL;
-
-  /* Create default email address, whether it is right or not */
-  snprintf(email, sizeof(email), "%s@%s", username, hostname);
-
-  return silc_pkcs_encode_identifier(username, hostname, realname, email,
-				     NULL, NULL);
-}
-
-/* Creates new public key and private key pair. This is used only
-   when user wants to create new key pair from command line. */
-
-static int
-silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
-			    char *identifier,
-			    SilcPublicKey *ret_pub_key,
-			    SilcPrivateKey *ret_prv_key)
-{
-  SilcPKCS pkcs;
-  SilcPublicKey pub_key;
-  SilcPrivateKey prv_key;
-  SilcRng rng;
-  unsigned char *key;
-  SilcUInt32 key_len;
-  char pkfile[256], prvfile[256];
-
-  if (!pkcs_name || !path)
-    return FALSE;
-
-  if (!silc_pkcs_is_supported(pkcs_name)) {
-    fprintf(stderr, "Unsupported PKCS `%s'", pkcs_name);
-    return FALSE;
-  }
-
-  if (!bits)
-    bits = 2048;
-
-  if (!identifier)
-    identifier = silc_server_create_identifier();
-
-  rng = silc_rng_alloc();
-  silc_rng_init(rng);
-  silc_rng_global_init(rng);
-
-  snprintf(pkfile, sizeof(pkfile) - 1, "%s%s", path,
-	   SILC_SERVER_PUBLIC_KEY_NAME);
-  snprintf(prvfile, sizeof(prvfile) - 1, "%s%s", path,
-	   SILC_SERVER_PRIVATE_KEY_NAME);
-
-  /* Generate keys */
-  silc_pkcs_alloc(pkcs_name, &pkcs);
-  silc_pkcs_generate_key(pkcs, bits, rng);
-
-  /* Save public key into file */
-  key = silc_pkcs_get_public_key(pkcs, &key_len);
-  pub_key = silc_pkcs_public_key_alloc(silc_pkcs_get_name(pkcs), identifier,
-				       key, key_len);
-  silc_pkcs_save_public_key(pkfile, pub_key, SILC_PKCS_FILE_PEM);
-  if (ret_pub_key)
-    *ret_pub_key = pub_key;
-  else
-    silc_pkcs_public_key_free(pub_key);
-
-  memset(key, 0, sizeof(key_len));
-  silc_free(key);
-
-  /* Save private key into file */
-  key = silc_pkcs_get_private_key(pkcs, &key_len);
-  prv_key = silc_pkcs_private_key_alloc(silc_pkcs_get_name(pkcs),
-					key, key_len);
-  silc_pkcs_save_private_key(prvfile, prv_key, NULL, SILC_PKCS_FILE_BIN);
-  if (ret_prv_key)
-    *ret_prv_key = prv_key;
-  else
-    silc_pkcs_private_key_free(prv_key);
-
-  printf("Public key has been saved into `%s'\n", pkfile);
-  printf("Private key has been saved into `%s'\n", prvfile);
-
-  memset(key, 0, sizeof(key_len));
-  silc_free(key);
-
-  silc_rng_free(rng);
-  silc_pkcs_free(pkcs);
-
-  return TRUE;
 }

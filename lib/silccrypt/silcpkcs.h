@@ -399,7 +399,8 @@ const char *silc_pkcs_get_name(SilcPKCS pkcs);
  *
  * DESCRIPTION
  *
- *    Returns SILC style public key.
+ *    Returns SILC style public key.  The caller must free the returned
+ *    data.
  *
  ***/
 unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
@@ -413,7 +414,8 @@ unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
  *
  * DESCRIPTION
  *
- *    Returns SILC style private key.
+ *    Returns SILC style private key.  The caller must free the returned
+ *    data and SHOULD zero the memory area before freeing.
  *
  ***/
 unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len);
