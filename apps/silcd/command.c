@@ -603,6 +603,11 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Check nickname */
   nick = silc_argument_get_arg_type(cmd->args, 1, &nick_len);
+  if (!nick) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_NICK,
+					  SILC_STATUS_ERR_BAD_NICKNAME, 0);
+    goto out;
+  }
   if (nick_len > 128)
     nick[128] = '\0';
   if (silc_server_name_bad_chars(nick, nick_len) == TRUE) {
