@@ -17,7 +17,7 @@
   GNU General Public License for more details.
 
 */
-/* $Id: */
+/* $Id$ */
 
 #include "silcincludes.h"
 
