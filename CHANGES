@@ -10,6 +10,9 @@ Sun Mar  9 16:29:20 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 	  files are lib/silcclient/client.c and 
 	  irssi/src/silc/core/client_ops.c.
 
+	* Check server private key file permissions before starting
+	  the server.  Affected file silcd/serverconfig.c.
+
 Tue Feb  4 22:53:26 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* NULL terminate allocated string in silc_buffer_strformat.
