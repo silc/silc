@@ -1,0 +1,62 @@
+Compiling SILC Toolkit on WIN32
+===============================
+
+SILC Toolkit works on native WIN32 systems as well.  This README is
+intended for those who needs to compile the Toolkit for native WIN32
+systems.  The Toolkit can be compiled for native WIN32 systems using
+generally any compiler.  However, the compilation environment is designed
+to currently work with the MSVC++ (version 6.0) and with the MinGW (under
+cygwin).
+
+
+Compiling SILC Toolkit with MSVC++
+==================================
+
+The MSVC++ workspace and project files resides in the win32/ subdirectory
+of the Toolkit package.  The `silc.dsw' file is the workspace file that
+automatically supports compiling the Toolkit and to generate the SILC Core
+DLL and SILC Client DLL libraries.
+
+The SILC Core DLL is named as libsilc and will generate libsilc.dll, and
+the SILC Client DLL is named as libsilcclient and will generate
+libsilcclient.dll.  Both of the projects also automatically generates
+libsilc.lib and libsilcclient.lib import libraries that may be used to
+link against a client application.
+
+Generally you do not need to do any specific settings to compile the
+Toolkit.  However, you must compile the libsilc before compiling the
+libsilclient, since the SILC Client DLL depends on the SILC Core DLL.
+
+You may compile the DLLs as either Release or Debug version.  Just select
+the preferred method of compilation.  The Debug version will compile the
+SILC Toolkit with debugging which you can conditionally use in your client
+application by setting the global variable silc_debug to TRUE or FALSE.
+
+
+Compiling SILC Toolkit with MinGW
+=================================
+
+To compile the Toolkit with MinGW you first need to install the cygwin and
+the MinGW into your system.  After that you can just normally give the
+./configure with the following option:
+
+	./configure --with-win32
+
+If you want to compile debug version give also the --enable-debug option
+to the ./configure.  After configuration the source tree is ready for
+compilation which you can simply start by giving the command:
+
+	make
+
+Note that some of the subdirectories in the Toolkit will not compile under
+WIN32 (namely the silcd/ that includes the SILC Server).  For this reason
+it is suggested that you will give the command make in the lib/ directory
+to compile the DLLs.  Thus, you should give the following commands after
+giving the ./configure.
+
+	cd lib
+	make
+
+After compilation there should be silc.dll and silcclient.dll files in
+the lib/ directory.  It will also generate silc.lib and silcclient.lib
+files for linking against a client application.
