@@ -189,8 +189,11 @@ bool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old)
 {
   bool ret;
 
-  ret = silc_hash_table_del_by_context(cache->data_table, old->data,
-				       old->context);
+  ret = silc_hash_table_del_by_context_ext(cache->data_table, old->data, old,
+					   silc_hash_data, 
+					   (void *)old->data_len,
+					   silc_hash_data_compare,
+					   (void *)old->data_len);
   ret = silc_hash_table_del(cache->context_table, old->context);
   ret = silc_hash_table_del(cache->id_table, old->id);
 
@@ -201,18 +204,12 @@ bool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old)
 
 bool silc_idcache_del_by_id(SilcIDCache cache, void *id)
 {
-  bool ret;
   SilcIDCacheEntry c;
 
   if (!silc_hash_table_find(cache->id_table, id, NULL, (void *)&c))
     return FALSE;
 
-  ret = silc_hash_table_del_by_context(cache->data_table, c->data,
-				       c->context);
-  ret = silc_hash_table_del(cache->context_table, c->context);
-  ret = silc_hash_table_del(cache->id_table, c->id);
-
-  return ret;
+  return silc_idcache_del(cache, c);
 }
 
 /* Deletes all ID entries from cache. Free's memory as well. */
@@ -222,6 +219,7 @@ bool silc_idcache_del_all(SilcIDCache cache)
   silc_hash_table_free(cache->id_table);
   silc_hash_table_free(cache->data_table);
   silc_hash_table_free(cache->context_table);
+
   return TRUE;
 }
 
@@ -271,7 +269,7 @@ bool silc_idcache_purge_by_context(SilcIDCache cache, void *context)
 }
 
 /* Callback that is called by the hash table routine when traversing
-   all entrys in the hash table. */
+   entrys in the hash table. */
 
 static void silc_idcache_get_all_foreach(void *key, void *context,
 					 void *user_context)
@@ -326,25 +324,21 @@ bool silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data,
 			       unsigned int data_len, SilcIDCacheList *ret)
 {
   SilcIDCacheList list;
-  void **contexts;
-  unsigned int count;
-  int i;
-
-  if (!silc_hash_table_find_all_ext(cache->data_table, data, NULL, &contexts,
-				    &count, silc_hash_data, (void *)data_len,
-				    silc_hash_data_compare, (void *)data_len))
-    return FALSE;
-
-  if (!ret) {
-    silc_free(contexts);
-    return TRUE;
-  }
 
   list = silc_idcache_list_alloc();
 
-  for (i = 0; i < count; i++)
-    silc_idcache_list_add(list, (SilcIDCacheEntry)contexts[i]);
-  silc_free(contexts);
+  if (!ret)
+    return TRUE;
+
+  silc_hash_table_find_foreach_ext(cache->data_table, data, 
+				   silc_hash_data, (void *)data_len,
+				   silc_hash_data_compare, (void *)data_len,
+				   silc_idcache_get_all_foreach, list);
+
+  if (silc_idcache_list_count(list) == 0) {
+    silc_idcache_list_free(list);
+    return FALSE;
+  }
 
   *ret = list;
 

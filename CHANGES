@@ -1,3 +1,19 @@
+Fri May 18 08:35:31 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_hash_table_del[_by_context]_ext functions in to the
+	  lib/silcutil/silchashtable.[ch].
+
+	  Removed silc_hash_table_find_all* routines and added new
+	  silc_hash_table_find_foreach to replace them.
+
+	  Added silc_hash_table_replace_ext function as extended
+	  replacing function.  Separated the simple hash table interface
+	  from the extended hash table interface in the file
+	  lib/silcutil/silchashtable.h.
+
+	* Fixed minor bugs and changed it to use some of the new
+	  hash table functions in lib/silccore/idcache.c
+
 Thu May 17 18:15:12 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new function silc_hash_table_find_all to return all keys

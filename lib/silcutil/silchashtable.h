@@ -43,7 +43,8 @@ typedef void (*SilcHashDestructor)(void *key, void *context,
    hash table using silc_hash_table_foreach. */
 typedef void (*SilcHashForeach)(void *key, void *context, void *user_context);
 
-/* Prototypes */
+/* Simple hash table interface */
+
 SilcHashTable silc_hash_table_alloc(uint32 table_size, 
 				    SilcHashFunction hash,
 				    void *hash_user_context,
@@ -55,32 +56,50 @@ void silc_hash_table_free(SilcHashTable ht);
 uint32 silc_hash_table_size(SilcHashTable ht);
 uint32 silc_hash_table_count(SilcHashTable ht);
 void silc_hash_table_add(SilcHashTable ht, void *key, void *context);
-void silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
-			     SilcHashFunction hash, void *hash_user_context);
 void silc_hash_table_replace(SilcHashTable ht, void *key, void *context);
 bool silc_hash_table_del(SilcHashTable ht, void *key);
 bool silc_hash_table_del_by_context(SilcHashTable ht, void *key, 
 				    void *context);
 bool silc_hash_table_find(SilcHashTable ht, void *key,
 			  void **ret_key, void **ret_context);
-bool silc_hash_table_find_all(SilcHashTable ht, void *key,
-			      void ***ret_keys, void ***ret_contexts,
-			      unsigned int *ret_count);
+void silc_hash_table_find_foreach(SilcHashTable ht, void *key,
+				  SilcHashForeach foreach, void *user_context);
+void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
+			     void *user_context);
+void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size);
+
+
+/* Extended hash table interface (same as above but with specific
+   hash and comparison functions). */
+
+void silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
+			     SilcHashFunction hash, void *hash_user_context);
+void silc_hash_table_replace_ext(SilcHashTable ht, void *key, void *context,
+				 SilcHashFunction hash, 
+				 void *hash_user_context);
+bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
+			     SilcHashFunction hash, 
+			     void *hash_user_context,
+			     SilcHashCompare compare, 
+			     void *compare_user_context);
+bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key, 
+					void *context,
+					SilcHashFunction hash, 
+					void *hash_user_context,
+					SilcHashCompare compare, 
+					void *compare_user_context);
 bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
 			      void **ret_key, void **ret_context,
 			      SilcHashFunction hash, 
 			      void *hash_user_context,
 			      SilcHashCompare compare, 
 			      void *compare_user_context);
-bool silc_hash_table_find_all_ext(SilcHashTable ht, void *key,
-				  void ***ret_keys, void ***ret_contexts,
-				  unsigned int *ret_count,
-				  SilcHashFunction hash, 
-				  void *hash_user_context,
-				  SilcHashCompare compare, 
-				  void *compare_user_context);
-void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
-			     void *user_context);
-void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size);
+void silc_hash_table_find_foreach_ext(SilcHashTable ht, void *key,
+				      SilcHashFunction hash, 
+				      void *hash_user_context,
+				      SilcHashCompare compare, 
+				      void *compare_user_context,
+				      SilcHashForeach foreach, 
+				      void *foreach_user_context);
 
 #endif
