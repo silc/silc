@@ -24,6 +24,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  2000/09/29 07:11:27  priikone
+ * 	Explcitly cast some va_arg()s as it requires it nowadays.
+ *
  * Revision 1.1  2000/09/13 17:45:16  priikone
  * 	Splitted SILC core library. Core library includes now only
  * 	SILC protocol specific stuff. New utility library includes the
@@ -62,14 +65,14 @@ int silc_buffer_format(SilcBuffer dst, ...)
     switch(fmt) {
     case SILC_BUFFER_PARAM_SI8_CHAR:
       {
-	char x = va_arg(ap, char);
+	char x = (char)va_arg(ap, int);
 	silc_buffer_put(dst, &x, 1);
 	silc_buffer_pull(dst, 1);
 	break;
       }
     case SILC_BUFFER_PARAM_UI8_CHAR:
       {
-	unsigned char x = va_arg(ap, unsigned char);
+	unsigned char x = (unsigned char)va_arg(ap, int);
 	silc_buffer_put(dst, &x, 1);
 	silc_buffer_pull(dst, 1);
 	break;
@@ -77,7 +80,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_SI16_SHORT:
       {
 	unsigned char xf[2];
-	short x = va_arg(ap, short);
+	short x = (short)va_arg(ap, int);
 	SILC_PUT16_MSB(x, xf);
 	silc_buffer_put(dst, xf, 2);
 	silc_buffer_pull(dst, 2);
@@ -86,7 +89,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_UI16_SHORT:
       {
 	unsigned char xf[2];
-	unsigned short x = va_arg(ap, unsigned short);
+	unsigned short x = (unsigned short)va_arg(ap, int);
 	SILC_PUT16_MSB(x, xf);
 	silc_buffer_put(dst, xf, 2);
 	silc_buffer_pull(dst, 2);
