@@ -28,7 +28,8 @@ libsilcutil_a_SOURCES = \
 	silcnet.c \
 	silcschedule.c \
 	silctask.c \
-	silcutil.c
+	silcutil.c \
+	silchashtable.c
 
 EXTRA_DIST = *.h
 

@@ -142,7 +142,7 @@ typedef unsigned char uint8;
 typedef signed char int8;
 
 #if SILC_SIZEOF_SHORT > 2
-#error "sizeof short must be 2 bytes"
+#error "size of the short must be 2 bytes"
 #endif
 
 typedef unsigned short uint16;
@@ -201,6 +201,7 @@ typedef uint32 * void *;
 #include "silcpkcs.h"
 
 /* SILC util library includes */
+#include "silchashtable.h"
 #include "silclog.h"
 #include "silcmemory.h"
 #include "silcbuffer.h"

@@ -28,9 +28,3 @@ void *silc_realloc(void *ptr, size_t size);
 void silc_free(void *ptr);
 
 #endif
-
-
-
-
-
-

@@ -25,7 +25,7 @@
 # temporary files (including these prepare* scripts) are removed.
 #
 
-SILC_VERSION=0.2.3
+SILC_VERSION=0.2.4
 
 version=$1
 if test "$version" = ""; then

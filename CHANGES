@@ -1,3 +1,9 @@
+Wed May 16 20:02:47 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented a collision resistant hash table into the
+	  lib/silcutil/silchashtable[ch].  See the header and the source
+	  for the SilcHashTable API.
+
 Tue May 15 22:05:46 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Merged dotconf version 1.0.2 into lib/dotconf.
