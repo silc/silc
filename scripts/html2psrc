@@ -21,6 +21,7 @@
   option {
     toc: bh;              /* Generate a table of contents, based on headings */
     titlepage: 1;         /* Generate a title page */
+ /*   original: 1; */
   }
   titlepage {           /* The title page content: document title, author and
                            creation date */
@@ -29,6 +30,7 @@
   }
   package {
     djpeg: 1;
+    Ghostscript: 1;
   }
   toc {
     heading: "TABLE OF CONTENTS";
