@@ -2295,6 +2295,7 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *                          void *monitor_context,
  *                          const char *local_ip,
  *                          SilcUInt32 local_port,
+ *                          bool do_not_bind,
  *                          SilcClientEntry client_entry,
  *                          const char *filepath);
  *                          SilcUInt32 *session_id);
@@ -2308,7 +2309,7 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *    transmission of the file.
  *
  *    This returns a file session ID for the file transmission to the
- *    `session_id' pointer..  It can be used to close the session (and
+ *    `session_id' pointer.  It can be used to close the session (and
  *    abort the file transmission) by calling the silc_client_file_close
  *    function.  The session ID is also returned in the `monitor' callback. 
  *
@@ -2316,9 +2317,9 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *    listener for key exchange protocol to that IP.  If `local_port' is
  *    non-zero that port is used.  If `local_ip' is NULL then this will
  *    automatically attempt to bind it to local IP address of the machine.
- *    If that fails then this does not bind to any address and port, and
- *    assume that the remote client will provide the listener for the
- *    key exchange protocol.
+ *    If `do_not_bind' is TRUE then the `local_ip' and `local_port' are
+ *    ignored and it is expected that the receiver will provide the
+ *    point of contact.  This is usefull if the sender is behind NAT.
  *
  *    If error will occur during the file transfer process the error
  *    status will be returned in the monitor callback.  In this case
@@ -2333,6 +2334,7 @@ silc_client_file_send(SilcClient client,
 		      void *monitor_context,
 		      const char *local_ip,
 		      SilcUInt32 local_port,
+		      bool do_not_bind,
 		      SilcClientEntry client_entry,
 		      const char *filepath,
 		      SilcUInt32 *session_id);

@@ -435,8 +435,8 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: PING */
 /* SYNTAX: SCONNECT <server> [<port>] */
 /* SYNTAX: USERS <channel> */
-/* SYNTAX: FILE SEND <filepath> <nickname> [<local IP> [<local port>]] */
-/* SYNTAX: FILE RECEIVE [<nickname>] */
+/* SYNTAX: FILE SEND <filepath> <nickname> [<local IP> [<local port>]] [-no-listener]*/
+/* SYNTAX: FILE ACCEPT [<nickname>] */
 /* SYNTAX: FILE CLOSE [<nickname>] */
 /* SYNTAX: FILE */
 /* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder] */
@@ -666,6 +666,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   char *local_ip = NULL;
   SilcUInt32 local_port = 0;
   SilcUInt32 session_id;
+  bool do_not_bind = FALSE;
 
   CMD_SILC_SERVER(server);
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
@@ -675,7 +676,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 
   /* Now parse all arguments */
   tmp = g_strconcat("FILE", " ", data, NULL);
-  silc_parse_command_line(tmp, &argv, &argv_lens, &argv_types, &argc, 6);
+  silc_parse_command_line(tmp, &argv, &argv_lens, &argv_types, &argc, 7);
   g_free(tmp);
 
   if (argc == 1)
@@ -684,7 +685,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   if (argc >= 2) {
     if (!strcasecmp(argv[1], "send"))
       type = 1;
-    if (!strcasecmp(argv[1], "receive"))
+    if (!strcasecmp(argv[1], "accept"))
       type = 2;
     if (!strcasecmp(argv[1], "close"))
       type = 3;
@@ -721,14 +722,26 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     client_entry = entrys[0];
     silc_free(entrys);
 
-    if (argc >= 5)
-      local_ip = argv[4];
-    if (argc >= 6)
-      local_port = atoi(argv[5]);
+    if (argc >= 5) {
+      if (!strcasecmp(argv[4], "-no-listener"))
+	do_not_bind = TRUE;
+      else
+	local_ip = argv[4];
+    }
+    if (argc >= 6) {
+      if (!strcasecmp(argv[5], "-no-listener"))
+	do_not_bind = TRUE;
+      else
+	local_port = atoi(argv[5]);
+    }
+    if (argc >= 7) {
+      if (!strcasecmp(argv[6], "-no-listener"))
+	do_not_bind = TRUE;
+    }
 
     ret = 
       silc_client_file_send(silc_client, conn, silc_client_file_monitor, 
-			    server, local_ip, local_port, 
+			    server, local_ip, local_port, do_not_bind,
 			    client_entry, argv[2], &session_id);
     if (ret == SILC_CLIENT_FILE_OK) {
       ftp = silc_calloc(1, sizeof(*ftp));

@@ -2247,18 +2247,29 @@ void silc_ftp(SilcClient client, SilcClientConnection conn,
 {
   SILC_SERVER_REC *server;
   char portstr[12];
-  FtpSession ftp = silc_calloc(1, sizeof(*ftp));
+  FtpSession ftp = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
   server = conn->context;
 
-  ftp->client_entry = client_entry;
-  ftp->session_id = session_id;
-  ftp->send = FALSE;
-  ftp->conn = conn;
-  silc_dlist_add(server->ftp_sessions, ftp);
-  server->current_session = ftp;
+  silc_dlist_start(server->ftp_sessions);
+  while ((ftp = silc_dlist_get(server->ftp_sessions)) != SILC_LIST_END) {
+    if (ftp->client_entry == client_entry &&
+	ftp->session_id == session_id) {
+      server->current_session = ftp;
+      break;
+    }
+  }
+  if (ftp == SILC_LIST_END) {
+    ftp = silc_calloc(1, sizeof(*ftp));
+    ftp->client_entry = client_entry;
+    ftp->session_id = session_id;
+    ftp->send = FALSE;
+    ftp->conn = conn;
+    silc_dlist_add(server->ftp_sessions, ftp);
+    server->current_session = ftp;
+  }
 
   if (hostname) 
     snprintf(portstr, sizeof(portstr) - 1, "%d", port);

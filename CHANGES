@@ -1,3 +1,15 @@
+Thu Nov  7 19:21:10 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added "do_not_bind" argument to silc_client_file_send what
+	  can be used to not bind locally but assume the file receiver
+	  provides the point of connect.  Usefull when sender is behind
+	  NAT device.  Affected file lib/silcclient/silcclient.h and
+	  client_ftp.c.
+
+	* Added -no-listener option to FILE SEND command in Irssi SILC
+	  client.  Affected file irssi/src/silc/core/silc-servers.c.
+	  Renamed FILE RECEIVE to FILE ACCEPT.
+
 Thu Nov  7 10:05:28 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Move silc_client_packet_send back to internal, added
