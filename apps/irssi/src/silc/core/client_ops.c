@@ -1201,12 +1201,13 @@ static void silc_client_join_get_users(SilcClient client,
 		       channel->channel_name, chanrec->topic);
 
   if (founder) {
-    if (founder == conn->local_entry)
+    if (founder == conn->local_entry) {
       printformat_module("fe-common/silc", 
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_FOUNDER_YOU,
 			 channel->channel_name);
-    else
+      signal_emit("nick mode changed", 2, chanrec, ownnick);
+    } else
       printformat_module("fe-common/silc", 
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_FOUNDER,
