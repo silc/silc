@@ -62,6 +62,12 @@ RB_Generate_Documentation (
 
       RB_Say ("generating documentation for \"%s\"\n", cur_header->name);
 
+#if 1
+     /* If MAIN_HEADER, do not create file */
+     if (cur_header->type == MAIN_HEADER)
+       continue;
+#endif
+
       if (output_mode == HTML)
         {
           sprintf(fname, "%s-%s.html", doc_base, cur_header->function_name);

@@ -100,8 +100,8 @@ if [ "$TYPE" = "HTML" ]; then
 
   # Generate index template from the DIRECTORY files. The template for
   # the generated index template is INDEX.tmpl.
-  files=`find $SRC -name "DIRECTORY"`
-  for i in $files
+  dfiles=`find $SRC -name "DIRECTORY"`
+  for i in $dfiles
   do
     # Get library name
     name=`grep "@LIBRARY=" $i |cut -d=  -f2`
@@ -177,8 +177,7 @@ if [ "$TYPE" = "HTML" ]; then
   done
 
   # Generate the index and TOC files from the DIRECTORY files
-  files=`find $SRC -name "DIRECTORY"`
-  for i in $files
+  for i in $dfiles
   do
     # Get library name
     name=`grep "@LIBRARY=" $i |cut -d=  -f2`
