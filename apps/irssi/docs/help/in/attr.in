@@ -31,89 +31,89 @@ value.  Deleting all added information for a option is done as follows:
 The following options to ATTR command are available:
 
   allow
-    - Info:	Allow/Disallow sending of information
-    - Format: 	ON/OFF, ON by default
+    - Info:     Allow/Disallow sending of information
+    - Format:   ON/OFF, ON by default
     - Examples:
       ATTR allow OFF
       ATTR allow ON
 
   vcard
-    - Info:	Your personal information (business card)
-    - Format: 	path to VCard file
+    - Info:     Your personal information (business card)
+    - Format:   path to VCard file
     - Examples:
       ATTR vcard /home/foo/.silc/vcard
 
   services
-    - Info:	List of network services you are using
-    - Format: 	list of <address>:<port>
+    - Info:     List of network services you are using
+    - Format:   list of <address>:<port>
     - Examples:
       ATTR services silcnet.org:706
       ATTR services silcnet.org:706 irc.org:6667
 
   status_mood
-    - Info:	Indication of your personal mood at the present time
-		By default, setting this is aliased to MOOD command
-    - Format: 	list of moods (moods: NORMAL, HAPPY, SAD, ANGRY, JEALOUS,
-                               ASHAMED, INVINCIBLE, INLOVE, SLEEPY,
-                               BORED, EXCITED, ANXIOUS)
+    - Info:     Indication of your personal mood at the present time
+                By default, setting this is aliased to MOOD command
+    - Format:   list of moods (moods: NORMAL, HAPPY, SAD, ANGRY,
+                               JEALOUS, ASHAMED, INVINCIBLE, INLOVE, 
+                               SLEEPY, BORED, EXCITED, ANXIOUS)
     - Examples:
       ATTR status_mood HAPPY INLOVE
       MOOD SLEEPY BORED INVINCIBLE
 
   status_text
-    - Info:	Text message further describing your current status
-    - Format: 	text string
+    - Info:     Text message further describing your current status
+    - Format:   text string
     - Examples:
       ATTR status_text "Not much going on, right now..."
 
   status_message
-    - Info:	MIME message further describing your current status
-    - Format: 	File path to file containing a MIME object
+    - Info:     MIME message further describing your current status
+    - Format:   File path to file containing a MIME object
     - Examples:
       ATTR status_message /home/foo/.silc/message
 
   preferred_language
-    - Info:	Language you would like to use in SILC
-    - Format: 	list of three letter language codes (ISO 639-2/T)
+    - Info:     Language you would like to use in SILC
+    - Format:   list of three letter language codes (ISO 639-2/T)
                 See http://www.loc.gov/standards/iso639-2/langcodes.html
     - Examples:
       ATTR preferred_language fin
       ATTR preferred_language eng fin
 
   preferred_contact
-    - Info:	Contact method you prefer
-    - Format: 	List of preferred contact methods
-		(methods: NONE, EMAIL, CALL, PAGE, SMS, MMS, CHAT)
+    - Info:     Contact method you prefer
+    - Format:   List of preferred contact methods
+                (methods: NONE, EMAIL, CALL, PAGE, SMS, MMS, CHAT)
     - Examples:
       ATTR preferred_contact NONE
       ATTR preferred_contact CHAT EMAIL SMS
 
   timezone
-    - Info:	Send your local time and timezone
-    - Format: 	ON/OFF, ON by default
+    - Info:     Send your local time and timezone
+    - Format:   ON/OFF, ON by default
     - Examples:
       ATTR timezone OFF
 
   geolocation
-    - Info:	Your current measured global location
-    - Format: 	longitude:latitude:altitude:accuracy in meters
+    - Info:     Your current measured global location
+    - Format:   longitude:latitude:altitude:accuracy in meters
     - Examples:
-      ATTR geolocation "60 10:24 57:251:20"
+      ATTR geolocation "60 10N:24 57W:251:20"
 
   device_info
-    - Info:	Type of your device you are using
-    - Format: 	Device type:manufacturer:version:model:language
+    - Info:     Type of your device you are using
+    - Format:   Device type:manufacturer:version:model:language
                 (types: COMPUTER, MOBILE_PHONE, PDA, TERMINAL)
     - Examples:
       ATTR device_info COMPUTER:Debian:2.4:Linux:eng
       ATTR device_info PDA:Palm, Inc.:1.0:Zire,eng
 
   public_keys
-    - Info:	List of your public keys you want to send in the reply,
+    - Info:     List of your public keys you want to send in the reply,
                 The client automatically sends your SILC public key
-    - Format:	List of file paths to public key files with key type
+    - Format:   List of file paths to public key files with key type
                 (silc-rsa, silc-dss, ssh-rsa, ssh-dss, pgp-sign-rsa,
-		 pgp-sign-dss, x509v3-sign-rsa, x509v3-sign-dss)
+                 pgp-sign-dss, x509v3-sign-rsa, x509v3-sign-dss)
     - Examples:
       ATTR public_keys ssh-rsa:/home/priikone/.ssh2/ssh2.pub
       ATTR public_keys pgp-sign-rsa:/home/priikone/pgp/pgp.asc
