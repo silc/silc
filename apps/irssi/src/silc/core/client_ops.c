@@ -932,12 +932,18 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   
       for (i = 0; i < clients_count; i++) {
 	memset(buf, 0, sizeof(buf));
-	if (clients[i]->username)
-	  snprintf(buf, sizeof(buf) - 1, "%s@%s",
-		   clients[i]->username, clients[i]->hostname);
-	signal_emit("message quit", 4, server, clients[i]->nickname,
-		    clients[i]->username ? buf : "", 
-		    "server signoff");
+
+	/* Print only if we have the nickname.  If this client has just quit
+	   when we were only resolving it, it is possible we don't have the
+	   nickname. */
+	if (clients[i]->nickname) {
+	  if (clients[i]->username)
+	    snprintf(buf, sizeof(buf) - 1, "%s@%s",
+		     clients[i]->username, clients[i]->hostname);
+	  signal_emit("message quit", 4, server, clients[i]->nickname,
+		      clients[i]->username ? buf : "", 
+		      "server signoff");
+	}
 
 	silc_server_free_ftp(server, clients[i]);
 	
