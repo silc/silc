@@ -538,7 +538,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	continue;
       }
 
-      if (server->server_type == SILC_SERVER && client->router)
+      if (client && client->router)
 	continue;
 
       /* Get data used in packet header encryption, keys and stuff. */
@@ -839,7 +839,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	continue;
       }
 
-      if (server->server_type == SILC_SERVER && client->router)
+      if (c && c->router)
 	continue;
 
       /* Send to locally connected client */

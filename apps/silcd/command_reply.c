@@ -399,7 +399,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcCommandStatus status;
   SilcChannelID *id;
   SilcChannelEntry entry;
-  unsigned int len;
+  unsigned int id_len, len;
   unsigned char *id_string;
   char *channel_name, *tmp;
   unsigned int mode, created;
@@ -413,7 +413,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     goto out;
 
   /* Get channel ID */
-  id_string = silc_argument_get_arg_type(cmd->args, 3, &len);
+  id_string = silc_argument_get_arg_type(cmd->args, 3, &id_len);
   if (!id_string)
     goto out;
 
@@ -437,7 +437,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
   silc_buffer_put(keyp, tmp, len);
 
-  id = silc_id_payload_parse_id(id_string, len);
+  id = silc_id_payload_parse_id(id_string, id_len);
 
   /* See whether we already have the channel. */
   entry = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
