@@ -1,18 +1,22 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
  <title> SILC Secure Internet Live Conferencing </title>
-<style TYPE="text/css">
-<!-- 
- A:link { text-decoration: none }
- A:visited { text-decoration: none }
- A:active { text-decoration: none }
--->
-</style>
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+ <style TYPE="text/css">
+ <!--
+  body { color: #000000; background: #aaaaaa; font-family: Helvetica, Arial, Sans-serif; }
+  a:link { text-decoration: none; color: #2f486f; }
+  a:visited { text-decoration: none;color: #2f486f; }
+  a:active { text-decoration: none; color: #2f486f; }
+ -->
+ </style>
 </head>
+
 <body bgcolor="#aaaaaa" text="#000000" link="#2f486f" alink="#2f486f" vlink="#2f486f">
 
 <br>
-<center>
+<div align="center">
 <table width="700" bgcolor="#000000" cellpadding="1" cellspacing="0" border="0">
  <tr>
   <td>
@@ -25,32 +29,31 @@
      <tr><td bgcolor="#000000" height="1"><img src="img/pixel.gif" alt="" height="1"></td></tr>
      <tr>
       <td>
-        <center>
-        <table cellspacing="0" cellpadding="10" border="0"><tr><td>
+        <div align="center">
+        <table cellspacing="3" cellpadding="10" border="0"><tr><td>
         <font size="2" face="Helvetica,Arial,Sans-serif">
-        <li><a href="index.php?page=about">About the SILC</a>
-        <li><a href="index.php?page=history">History</a>
-        <li><a href="index.php?page=lists">SILC Mailing Lists</a>
-        <li><a href="index.php?page=docs">SILC Documentation</a>
+        o <a href="index.php?page=about">About the SILC</a><br>
+        o <a href="index.php?page=history">History</a><br>
+        o <a href="index.php?page=lists">SILC Mailing Lists</a><br>
+        o <a href="index.php?page=docs">SILC Documentation</a><br>
         </font>
         </td><td>
         <font size="2" face="Helvetica,Arial,Sans-serif">
-        <li><a href="index.php?page=download">Download SILC</a>
-        <li><a href="index.php?page=faq">SILC FAQ</a>
-        <li><a href="index.php?page=features">SILC Features</a>
-        <li><a href="changes.txt">ChangeLog</a>
+        o <a href="index.php?page=download">Download SILC</a><br>
+        o <a href="index.php?page=faq">The SILC FAQ</a><br>
+        o <a href="index.php?page=features">SILC Features</a><br>
+        o <a href="changes.txt">ChangeLog</a><br>
         </font>
         </td><td>
         <font size="2" face="Helvetica,Arial,Sans-serif">
-        <li><a href="index.php?page=todo">TODO</a>
-        <li><a href="index.php?page=contribute">Contributing</a>
-        <li><a href="index.php?page=cvs">Anonymous CVS Access</a>
-        <li><a href="index.php?page=copying">The General Public License (GPL)</a>
+        o <a href="index.php?page=todo">TODO list</a><br>
+        o <a href="index.php?page=contribute">Contributing</a><br>
+        o <a href="index.php?page=cvs">Anonymous CVS Access</a><br>
+        o <a href="index.php?page=copying">The General Public License (GPL)</a><br>
         </font>
         </td></tr></table>
-        </center>
+        </div>
       </td>
-     <tr>
      <tr><td bgcolor="#000000" height="1"><img src="img/pixel.gif" alt="" height="1"></td></tr>
      <tr>
       <td>
@@ -97,12 +100,12 @@ else
   </td>
  </tr>
 </table>
-<font size="1" face="Helvetica,Arial,Sans-serif">webpage by <a
-href="mailto:salo at Xtrmntr.org">salo at Xtrmntr.org</a></font>
-<br>
-<font size="1" color="#2f486f">
-<? virtual("./counter.shtml"); ?>
-</center>
+<font size="1" face="Helvetica,Arial,Sans-serif">webpage by
+<a href="mailto:salo at Xtrmntr.org">salo at Xtrmntr.org</a> | 
+<b><font color="#2f486f"><? require $DocRoot."counter.php"; ?></font></b> |
+<a href="http://validator.w3.org/check/referer">W3C HTML 4.01 compliant</a>
+</font>
+</div>
 
 </body>
 </html>
