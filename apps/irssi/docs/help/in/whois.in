@@ -2,10 +2,11 @@
 @SYNTAX:whois@
 
 Shows WHOIS information of the specified client. By default,
-this is aliased to /WI. If the -details option is used WHOIS
-will retrieve as detailed information about the user as possible.
-Using this option WHOIS MAY return following information about
-the user:
+this is aliased to /WI.
+
+If the -details option is used WHOIS will retrieve as detailed
+information about the user as possible.  Using this option WHOIS
+MAY return following information about the user:
 
   o User's public key
   o Business card of the user (VCard)
@@ -18,10 +19,13 @@ the user:
   o User's geographical location
   o Information about the device user is using (computer, PDA, etc)
 
-It is also possible to receive other information. Note that all
-users do not want to send these informations or may send only
+NOTE: It is also possible to receive other information. Note that
+all users do not want to send these informations or may send only
 some of the information. It also possible that none of these
-informations is received.
+informations is received.  It also possible that some server
+responds to your request on the behalf of the user if the user
+does not want to respond to you.  In this case the returned
+information may be incomplete.
 
 If you want to send your information in WHOIS you can set the
 information with ATTR command.  See HELP ATTR.
