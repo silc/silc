@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 Pekka Riikonen
+  Copyright (C) 2003 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -215,67 +215,67 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
     if (mapconn->clients) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "Local clients</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.clients);
+	      (unsigned long)mapconn->data.clients);
     }
     if (mapconn->channels) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "Local channels</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.channels);
+	      (unsigned long)mapconn->data.channels);
     }
     if (mapconn->server_ops) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "Local server operators</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.server_ops);
+	      (unsigned long)mapconn->data.server_ops);
     }
     if (mapconn->router_ops) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "Local router operators</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.router_ops);
+	      (unsigned long)mapconn->data.router_ops);
     }
     if (mapconn->cell_clients) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "Cell clients</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.cell_clients);
+	      (unsigned long)mapconn->data.cell_clients);
     }
     if (mapconn->cell_channels) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "Cell channels</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.cell_channels);
+	      (unsigned long)mapconn->data.cell_channels);
     }
     if (mapconn->cell_servers) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "Cell servers</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.cell_servers);
+	      (unsigned long)mapconn->data.cell_servers);
     }
     if (mapconn->all_clients) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "All SILC clients</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.all_clients);
+	      (unsigned long)mapconn->data.all_clients);
     }
     if (mapconn->all_channels) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "All SILC channels</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.all_channels);
+	      (unsigned long)mapconn->data.all_channels);
     }
     if (mapconn->all_servers) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "All SILC servers</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.all_servers);
+	      (unsigned long)mapconn->data.all_servers);
     }
     if (mapconn->all_routers) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "All SILC routers</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.all_routers);
+	      (unsigned long)mapconn->data.all_routers);
     }
     if (mapconn->all_server_ops) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "All SILC server operators</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.all_server_ops);
+	      (unsigned long)mapconn->data.all_server_ops);
     }
     if (mapconn->all_router_ops) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
       fprintf(fp, "All SILC router operators</td><td>&nbsp;:</td><td>&nbsp;%ld</td></tr>\n",
-	      mapconn->data.all_router_ops);
+	      (unsigned long)mapconn->data.all_router_ops);
     }
     fprintf(fp, "</table>\n");
   }

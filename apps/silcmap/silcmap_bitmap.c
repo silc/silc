@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 Pekka Riikonen
+  Copyright (C) 2003 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,8 +43,10 @@ bool silc_map_load_ppm(SilcMap map, const char *filename)
   }
 
   /* Read width and height */
-  ret = fscanf(fp, "%s %ld %ld %ld ",
-	       type, &map->width, &map->height, &map->maxcolor);
+  ret = fscanf(fp, "%s %ld %ld %ld ", type,
+	       (unsigned long *)&map->width,
+	       (unsigned long *)&map->height,
+	       (unsigned long *)&map->maxcolor);
   if (ret < 4) {
     fprintf(stderr, "Invalid PPM file");
     retval = FALSE;
@@ -52,9 +54,9 @@ bool silc_map_load_ppm(SilcMap map, const char *filename)
   }
 
   /* Read the picture */
-  map->bitsilc_map_size = map->width * 3 * map->height;
-  map->bitmap = silc_malloc(map->bitsilc_map_size);
-  ret = fread(map->bitmap, map->bitsilc_map_size, 1, fp);
+  map->bitmap_size = map->width * 3 * map->height;
+  map->bitmap = silc_malloc(map->bitmap_size);
+  ret = fread(map->bitmap, map->bitmap_size, 1, fp);
   if (ret < 0) {
     fprintf(stderr, "fread: %s\n", strerror(errno));
     retval = FALSE;
@@ -72,7 +74,6 @@ bool silc_map_write_ppm(SilcMap map, const char *filename)
 {
   FILE *fp;
   int retval = TRUE;
-  int i, k;
 
   SILC_LOG_DEBUG(("Write PPM '%s'", filename));
 
@@ -83,10 +84,13 @@ bool silc_map_write_ppm(SilcMap map, const char *filename)
   }
 
   /* Write the header */
-  fprintf(fp, "P6 %ld %ld %ld\n", map->width, map->height, map->maxcolor);
+  fprintf(fp, "P6 %ld %ld %ld\n",
+	  (unsigned long)map->width,
+	  (unsigned long)map->height,
+	  (unsigned long)map->maxcolor);
 
   /* Write the bitmap */
-  fwrite(map->bitmap, map->bitsilc_map_size, 1, fp);
+  fwrite(map->bitmap, map->bitmap_size, 1, fp);
   fclose(fp);
 
   return retval;
@@ -106,11 +110,13 @@ bool silc_map_cut(SilcMap map, SilcInt32 x, SilcInt32 y,
 
   /* Sanity checks */
   if (height > map->height - y) {
-    fprintf(stderr, "Requesting too much height: %ld\n", height);
+    fprintf(stderr, "Requesting too much height: %ld\n",
+	    (unsigned long)height);
     return FALSE;
   }
   if (width > map->width - x) {
-    fprintf(stderr, "Requesting too much width: %ld\n", width);
+    fprintf(stderr, "Requesting too much width: %ld\n",
+	    (unsigned long)width);
     return FALSE;
   }
 
@@ -123,8 +129,8 @@ bool silc_map_cut(SilcMap map, SilcInt32 x, SilcInt32 y,
   (*ret_map)->width = width;
   (*ret_map)->height = height;
   (*ret_map)->maxcolor = map->maxcolor;
-  (*ret_map)->bitsilc_map_size = (width * 3) * height;
-  (*ret_map)->bitmap = silc_malloc((*ret_map)->bitsilc_map_size);
+  (*ret_map)->bitmap_size = (width * 3) * height;
+  (*ret_map)->bitmap = silc_malloc((*ret_map)->bitmap_size);
 
   /* Copy the requested area */
   for (i = 0; i < height; i++) {

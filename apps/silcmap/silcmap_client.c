@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 Pekka Riikonen
+  Copyright (C) 2003 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -41,125 +41,146 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
   SilcInt16 r, g, b, lr, lg, lb;
   int i;
 
-  map->conn_num++;
   SILC_LOG_DEBUG(("Processing the data from server (%d/%d)",
 		  map->conn_num, map->conns_num));
 
-  /* Change colors according to server status */
-  silc_map_parse_color(mapconn->up_color, &r, &g, &b);
-  silc_map_parse_color(mapconn->up_text_color, &lr, &lg, &lb);
-  if (mapconn->down) {
-    silc_map_parse_color(mapconn->down_color, &r, &g, &b);
-    silc_map_parse_color(mapconn->down_text_color, &lr, &lg, &lb);
+  map->conn_num++;
+  if (map->conn_num != map->conns_num)
+    return;
+
+  /* Load the map image to be processed */
+  if (!map->bitmap) {
+    if (!map->loadmap.loadmap || !map->loadmap.filename) {
+      silc_schedule_task_add(map->client->schedule, 0,
+			     silc_map_process_done, map, 0, 1,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+      return;
+    }
+
+    if (!silc_map_load_ppm(map, map->loadmap.filename)) {
+      silc_schedule_task_add(map->client->schedule, 0,
+			     silc_map_process_done, map, 0, 1,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+      return;
+    }
   }
 
-  /* Execute the map commands */
-  silc_dlist_start(mapconn->commands);
-  while ((cmd = silc_dlist_get(mapconn->commands)) != SILC_LIST_END) {
-    if (cmd->cut) {
-      if (silc_map_cut(map, cmd->x, cmd->y, cmd->width,
-		       cmd->height, &ret_map)) {
-	silc_map_write_ppm(ret_map, cmd->filename);
-	silc_map_free(ret_map);
-      }
-      continue;
+  /* Now process all received data one by one */
+  silc_dlist_start(map->conns);
+  while ((mapconn = silc_dlist_get(map->conns)) != SILC_LIST_END) {
+
+    /* Change colors according to server status */
+    silc_map_parse_color(mapconn->up_color, &r, &g, &b);
+    silc_map_parse_color(mapconn->up_text_color, &lr, &lg, &lb);
+    if (mapconn->down) {
+      silc_map_parse_color(mapconn->down_color, &r, &g, &b);
+      silc_map_parse_color(mapconn->down_text_color, &lr, &lg, &lb);
     }
 
-    if (cmd->draw_line) {
-      if (cmd->color_set) {
-	r = cmd->r;
-	g = cmd->g;
-	b = cmd->b;
+    /* Execute the map commands */
+    silc_dlist_start(mapconn->commands);
+    while ((cmd = silc_dlist_get(mapconn->commands)) != SILC_LIST_END) {
+      if (cmd->cut) {
+	if (silc_map_cut(map, cmd->x, cmd->y, cmd->width,
+		         cmd->height, &ret_map)) {
+	  silc_map_write_ppm(ret_map, cmd->filename);
+	  silc_map_free(ret_map);
+	}
+	continue;
       }
-      silc_map_draw_line(map, cmd->width, cmd->x, cmd->y, cmd->x2, cmd->y2,
-			 r, g, b);
-      continue;
-    }
 
-    if (cmd->draw_text) {
-      if (cmd->color_set) {
-	lr = cmd->r;
-	lg = cmd->g;
-	lb = cmd->b;
+      if (cmd->draw_line) {
+	if (cmd->color_set) {
+	  r = cmd->r;
+	  g = cmd->g;
+	  b = cmd->b;
+	}
+	silc_map_draw_line(map, cmd->width, cmd->x, cmd->y, cmd->x2, cmd->y2,
+			   r, g, b);
+	continue;
       }
-      silc_map_draw_text(map, cmd->text, cmd->x, cmd->y, lr, lg, lb);
 
-      continue;
-    }
-
-    if (cmd->draw_circle) {
-      if (cmd->color_set) {
-	r = cmd->r;
-	g = cmd->g;
-	b = cmd->b;
+      if (cmd->draw_text) {
+	if (cmd->color_set) {
+	  lr = cmd->r;
+	  lg = cmd->g;
+	  lb = cmd->b;
+	}
+	silc_map_draw_text(map, cmd->text, cmd->x, cmd->y, lr, lg, lb);
+	continue;
       }
-      if (cmd->lcolor_set) {
-	lr = cmd->lr;
-	lg = cmd->lg;
-	lb = cmd->lb;
+
+      if (cmd->draw_circle) {
+	if (cmd->color_set) {
+	  r = cmd->r;
+	  g = cmd->g;
+	  b = cmd->b;
+	}
+	if (cmd->lcolor_set) {
+	  lr = cmd->lr;
+	  lg = cmd->lg;
+	  lb = cmd->lb;
+	}
+	silc_map_draw_circle(map, cmd->x, cmd->y, r, g, b,
+			     cmd->text, cmd->lposx, cmd->lposy, lr, lg, lb);
+	continue;
       }
-      silc_map_draw_circle(map, cmd->x, cmd->y, r, g, b,
-			   cmd->text, cmd->lposx, cmd->lposy, lr, lg, lb);
-      continue;
-    }
 
-    if (cmd->draw_rectangle) {
-      if (cmd->color_set) {
-	r = cmd->r;
-	g = cmd->g;
-	b = cmd->b;
-      }
-      if (cmd->lcolor_set) {
-	lr = cmd->lr;
-	lg = cmd->lg;
-	lb = cmd->lb;
-      }
-      silc_map_draw_rectangle(map, cmd->x, cmd->y, r, g, b,
-			      cmd->text, cmd->lposx, cmd->lposy, lr, lg, lb);
-      continue;
-    }
-
-  }
-
-  /* Write the html data file */
-  if (map->writehtml.writehtml)
-    silc_map_writehtml(map, mapconn);
-
-  /* Write uptime reliability data */
-  if (map->writerel.writerel)
-    silc_map_writerel(map, mapconn);
-
-  /* If this was last connection, we are done and ready to quit. */
-  if (map->conn_num == map->conns_num) {
-    SILC_LOG_DEBUG(("All connections processed"));
-
-    /* Produce output */
-    if (map->writemap.writemap)
-      silc_map_write_ppm(map, map->writemap.filename);
-    for (i = 0; i < map->cut_count; i++) {
-      if (silc_map_cut(map, map->cut[i].x, map->cut[i].y, map->cut[i].width,
-		       map->cut[i].height, &ret_map)) {
-	silc_map_write_ppm(ret_map, map->cut[i].filename);
-	silc_map_free(ret_map);
+      if (cmd->draw_rectangle) {
+	if (cmd->color_set) {
+	  r = cmd->r;
+	  g = cmd->g;
+	  b = cmd->b;
+	}
+	if (cmd->lcolor_set) {
+	  lr = cmd->lr;
+	  lg = cmd->lg;
+	  lb = cmd->lb;
+	}
+	silc_map_draw_rectangle(map, cmd->x, cmd->y, r, g, b,
+				cmd->text, cmd->lposx, cmd->lposy, lr, lg, lb);
+	continue;
       }
     }
 
-    /* Write the HTML index file */
+    /* Write the html data file */
     if (map->writehtml.writehtml)
-      silc_map_writehtml_index(map);
+      silc_map_writehtml(map, mapconn);
 
-    /* Write the HTML map file(s) */
-    silc_map_writemaphtml(map);
-
-    /* Write uptime reliability graph */
+    /* Write uptime reliability data */
     if (map->writerel.writerel)
-      silc_map_writerelhtml(map);
+      silc_map_writerel(map, mapconn);
 
-    /* Schedule to stop */
-    silc_schedule_task_add(map->client->schedule, 0,
-			   silc_map_process_done, map, 0, 1,
-			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
   }
+
+  SILC_LOG_DEBUG(("All connections processed"));
+
+  /* Produce output */
+  if (map->writemap.writemap)
+    silc_map_write_ppm(map, map->writemap.filename);
+  for (i = 0; i < map->cut_count; i++) {
+    if (silc_map_cut(map, map->cut[i].x, map->cut[i].y, map->cut[i].width,
+		     map->cut[i].height, &ret_map)) {
+      silc_map_write_ppm(ret_map, map->cut[i].filename);
+      silc_map_free(ret_map);
+    }
+  }
+
+  /* Write the HTML index file */
+  if (map->writehtml.writehtml)
+    silc_map_writehtml_index(map);
+
+  /* Write the HTML map file(s) */
+  silc_map_writemaphtml(map);
+
+  /* Write uptime reliability graph */
+  if (map->writerel.writerel)
+    silc_map_writerelhtml(map);
+
+  /* Schedule to stop */
+  silc_schedule_task_add(map->client->schedule, 0,
+			 silc_map_process_done, map, 0, 1,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* Timeout callback to detect if server is down. */

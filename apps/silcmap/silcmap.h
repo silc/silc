@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 Pekka Riikonen
+  Copyright (C) 2003 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ typedef struct {
   unsigned int lcolor_set     : 1;
 
   /* Command */
+  unsigned int loadmap        : 1;
   unsigned int writemap       : 1;
   unsigned int writehtml      : 1;
   unsigned int writemaphtml   : 1;
@@ -75,13 +76,14 @@ typedef struct {
 
   /* Bitmap data */
   unsigned char *bitmap;	/* Loaded bitmap image */
-  SilcUInt32 bitsilc_map_size;	/* Size of bitmap */
+  SilcUInt32 bitmap_size;	/* Size of bitmap */
   SilcUInt32 width;		/* Bitmap width in pixels */
   SilcUInt32 height;		/* Bitmap height in pixels */
   SilcUInt32 maxcolor;		/* Max color value in bitmap */
   MapFonts font;		/* Current font */
 
   /* Output methods */
+  SilcMapCommandStruct loadmap;
   SilcMapCommandStruct writemap;
   SilcMapCommandStruct writehtml;
   SilcMapCommandStruct writerel;

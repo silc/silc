@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 Pekka Riikonen
+  Copyright (C) 2003 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -368,10 +368,17 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_loadmap)
 
     /* Destroy old bitmap if loadmaped */
     silc_free(map->bitmap);
+    map->bitmap = NULL;
 
-    /* Loadmap the bitmap image */
-    if (!silc_map_load_ppm(map, filename))
-      retval = SILC_CONFIG_ESILENT;
+    /* Execute directly if there are no connections */
+    if (map->conns_num == 0) {
+      /* Load the bitmap image */
+      if (!silc_map_load_ppm(map, filename))
+	retval = SILC_CONFIG_ESILENT;
+    } else {
+      map->loadmap.filename = strdup(filename);
+      map->loadmap.writemap = TRUE;
+    }
 
     /* Cleanup */
     silc_free(filename);
@@ -650,7 +657,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_rectangle)
     }
 
     /* Execute directly if not for connection */
-    if (!curr_conn) {
+    if (!curr_conn && map->bitmap) {
       /* Draw the rectangle */
       ret = silc_map_draw_rectangle(map, silc_map_lon2x(map, lon),
 				    silc_map_lat2y(map, lat),
@@ -740,7 +747,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_circle)
     }
 
     /* Execute directly if not for connection */
-    if (!curr_conn) {
+    if (!curr_conn && map->bitmap) {
       /* Draw the circle */
       ret = silc_map_draw_circle(map, silc_map_lon2x(map, lon),
 				 silc_map_lat2y(map, lat),
@@ -828,7 +835,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_line)
       width = 1;
 
     /* Execute directly if not for connection */
-    if (!curr_conn) {
+    if (!curr_conn && map->bitmap) {
       /* Draw the line */
       ret = silc_map_draw_line(map, width,
 			       silc_map_lon2x(map, lon),
@@ -907,7 +914,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_text)
 		    lat, lon, r, g, b, text));
 
     /* Execute directly if not for connection */
-    if (!curr_conn) {
+    if (!curr_conn && map->bitmap) {
       /* Print the text */
       ret = silc_map_draw_text(map, text,
 			       silc_map_lon2x(map, lon),
@@ -985,7 +992,7 @@ bool silc_map_commands_parse(SilcMap map, const char *filename)
   SILC_LOG_DEBUG(("Parsing status: %s", silc_config_strerror(ret)));
 
   if (ret && ret != SILC_CONFIG_ESILENT) {
-    fprintf(stderr, "Error parsing commands: %s, line %ld\n",
+    fprintf(stderr, "Error parsing commands: %s, line %d\n",
 	    silc_config_strerror(ret), silc_config_get_line(file));
     retval = FALSE;
   }
