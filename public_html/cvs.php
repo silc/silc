@@ -20,7 +20,7 @@ there might be situations when it will not.
 If you want to browse the source tree using web browser before checking
 out the tree with CVS use following link:
 <br><br>
-<a href="cvs/source/">Web Access to CVS repository
+<a href="http://cvs.silcnet.org/">Web Access to CVS repository
 </a>
 <br><br>
 Note that this is not real-time access to the CVS repository. It is

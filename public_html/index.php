@@ -40,7 +40,7 @@
         </td><td>
         <font size="2" face="Helvetica,Arial,Sans-serif">
         o <a href="index.php?page=download">Download SILC</a><br>
-        o <a href="index.php?page=faq">The SILC FAQ</a><br>
+        o <a href="index.php?page=faq">SILC FAQ</a><br>
         o <a href="index.php?page=features">SILC Features</a><br>
         o <a href="changes.txt">ChangeLog</a><br>
         </font>
@@ -76,6 +76,18 @@ if (File_Exists($DocRoot."LATEST")) {
   $latest = EReg_Replace('([^a-zA-Z0-9.])*','',FGetS($fp,255));
   FClose($fp);
 }
+// read latest release version
+if (File_Exists($DocRoot."LATEST_CLIENT")) {
+  $fp = FOpen($DocRoot."LATEST_CLIENT","r");
+  $latestc = EReg_Replace('([^a-zA-Z0-9.])*','',FGetS($fp,255));
+  FClose($fp);
+}
+// read latest release version
+if (File_Exists($DocRoot."LATEST_SERVER")) {
+  $fp = FOpen($DocRoot."LATEST_SERVER","r");
+  $latests = EReg_Replace('([^a-zA-Z0-9.])*','',FGetS($fp,255));
+  FClose($fp);
+}
 
 function div($a,$b) {
 return (int) ($a/$b);
@@ -83,6 +95,10 @@ return (int) ($a/$b);
 
 $latest_d = filemtime($DocRoot."LATEST"); 
 $latest_date = date("l dS of F Y H:i:s", $latest_d);
+$latest_dc = filemtime($DocRoot."LATEST_CLIENT"); 
+$latest_datec = date("l dS of F Y H:i:s", $latest_dc);
+$latest_ds = filemtime($DocRoot."LATEST_SERVER"); 
+$latest_dates = date("l dS of F Y H:i:s", $latest_ds);
 
 // read document, if it is not valid then read first page
 if (Is_File($SecurityFilter))
@@ -101,8 +117,8 @@ else
  </tr>
 </table>
 <font size="1" face="Helvetica,Arial,Sans-serif">webpage by
-<a href="mailto:salo at Xtrmntr.org">salo at Xtrmntr.org</a> | 
-<b><font color="#2f486f"><? require $DocRoot."counter.php"; ?></font></b> |
+<a href="mailto:salo at silcnet.org">salo at silcnet.org</a> | 
+<font color="#2f486f"><? require $DocRoot."counter.php"; ?></font> |
 <a href="http://validator.w3.org/check/referer">W3C HTML 4.01 compliant</a>
 </font>
 </div>
