@@ -840,6 +840,9 @@ RB_Generate_Item_Doc (FILE * dest_doc, char *dest_name,
   if (item_attributes[item_type] & TEXT_BODY_SHINE)
     fprintf (dest_doc, format_str,
 	     att_start_command[MAKE_SHINE][output_mode]);
+  if (item_attributes[item_type] & TEXT_BODY_DEFAULT)
+    fprintf (dest_doc, format_str,
+	     att_start_command[MAKE_DEFAULT][output_mode]);
 
   /* 
    * For some modes, the text body is always non-prop
@@ -893,6 +896,9 @@ RB_Generate_Item_Doc (FILE * dest_doc, char *dest_name,
   if (item_attributes[item_type] & TEXT_BODY_LARGE_FONT)
     fprintf (dest_doc, format_str,
 	     att_stop_command[MAKE_LARGE][output_mode]);
+  if (item_attributes[item_type] & TEXT_BODY_DEFAULT)
+    fprintf (dest_doc, format_str,
+	     att_stop_command[MAKE_DEFAULT][output_mode]);
 
   if (output_mode != HTML)
     {

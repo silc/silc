@@ -1,0 +1,27 @@
+<!--
+@LIBRARY=SILC Core Library
+@FILENAME=silccore.html
+-->
+
+<OL>
+<FONT SIZE="+3">SILC Core Library</FONT><BR><BR>
+<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
+<PRE>
+SILC Core Library includes all the core components of the SILC Protocol.
+It provides routines to encode and decode all SILC packet payloads defined
+in the protocol specification.  It provides packet assembling and parsing
+routines, and routines for sending private message and channel messages.
+</PRE>
+
+<LI><A HREF="silcauth.html">SILC Auth API</A>
+<LI><A HREF="silcchannel.html">SILC Channel API</A>
+<LI><A HREF="silccomand.html">SILC Command API</A>
+<LI><A HREF="silcid.html">SILC ID API</A>
+<LI><A HREF="silcidcache.html">SILC ID Cache API</A>
+<LI><A HREF="silcmode.html">SILC Modes</A>
+<LI><A HREF="silcnotify.html">SILC Notify API</A>
+<LI><A HREF="silcpacket.html">SILC Packet API</A>
+<LI><A HREF="silcpayload.html">SILC Payload API</A>
+<LI><A HREF="silcprivate.html">SILC Private API</A>
+<LI><A HREF="silcprotocol.html">SILC Protocol API</A>
+</OL>

@@ -42,6 +42,7 @@ if [ "$TYPE" = "HTML" ]; then
   mkdir /tmp/silcdoc.html
   cp $headers /tmp/silcdoc.html
 
+  # Generate the actual detailed documentation
   path=`pwd`
   cd /tmp/silcdoc.html
   headers=`find . -name "silc*.h" |cut -d/  -f2 |cut -d.  -f1`
@@ -55,7 +56,7 @@ if [ "$TYPE" = "HTML" ]; then
     sh gen.sh index.php $DST/$i.html $DST/$i.html
 
     # Generate the details and the layour
-    files=`find $DST -name "$i_*.html"`
+    files=`find $DST -name ""$i"_*.html"`
     for k in $files
     do
       sh gen.sh gen_detail.php $k $k
@@ -64,6 +65,28 @@ if [ "$TYPE" = "HTML" ]; then
 
     rm -f $DST/$i_index.tmpl
   done
+
+  # Generate the index and TOC files from the DIRECTORY files
+  files=`find $SRC -name "DIRECTORY"`
+  index=`find $SRC -name "INDEX"`
+  cat $index >$DST/index.html
+  for i in $files
+  do
+    # Get library name
+    name=`grep $i "@LIBRARY=" |cut -d=  -f2`
+    fname=`grep $i "@FILENAME" |cut -d=  -f2`
+
+    # Generate the TOC file for the library
+    sh gen.sh gen_toc.php $i $DST/$fname
+    sh gen.sh index.php $DST/$fname $DST/$fname
+
+    # Generate the link for the top index.html for this library
+    echo "<LI><A HREF="$fname">$name</A>" >>$DST/index.html
+  done
+
+  # Generate the top index.html file
+  sh gen.sh gen_toc.php $DST/index.html $DST/index.html
+  sh gen.sh index.php $DST/index.html $DST/index.html
 
   rm -rf /tmp/silcdoc.html
 fi

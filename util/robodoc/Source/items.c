@@ -104,7 +104,7 @@ long item_attributes[NUMBER_OF_ITEMS] =
   ITEM_NAME_LARGE_FONT | TEXT_BODY_SHINE,	/* SYNOPSIS_ITEM */
   ITEM_NAME_LARGE_FONT,		/* USAGE_ITEM */
   ITEM_NAME_LARGE_FONT,		/* FUNCTION_ITEM */
-  ITEM_NAME_LARGE_FONT,		/* DESCRIPTION_ITEM */
+  ITEM_NAME_LARGE_FONT | TEXT_BODY_DEFAULT,    	/* DESCRIPTION_ITEM */
   ITEM_NAME_LARGE_FONT,		/* PURPOSE_ITEM */
   ITEM_NAME_LARGE_FONT | TEXT_BODY_BOLD,	/* AUTHOR_ITEM */
   ITEM_NAME_LARGE_FONT | TEXT_BODY_BOLD,	/* CREATION_DATE_ITEM */
@@ -129,7 +129,7 @@ long item_attributes[NUMBER_OF_ITEMS] =
   ITEM_NAME_LARGE_FONT,		/* IDEAS_ITEM */
   ITEM_NAME_LARGE_FONT,		/* PORTABILITY_ITEM */
   ITEM_NAME_LARGE_FONT,		/* SEE_ALSO_ITEM */
-  ITEM_NAME_LARGE_FONT,		/* SOURCE_ITEM */
+  ITEM_NAME_LARGE_FONT | TEXT_BODY_SHINE,      	/* SOURCE_ITEM */
   ITEM_NAME_LARGE_FONT,		/* METHODS_ITEM */
   ITEM_NAME_LARGE_FONT,		/* NEW_METHODS_ITEM */
   ITEM_NAME_LARGE_FONT,		/* ATTRIBUTES_ITEM */
@@ -166,7 +166,7 @@ char *item_attr_names[] =
 {
 /* "NORMAL", */
   "LARGE", "ITALICS", "NONPROP", "SMALL", "BOLD",
-  "UNDERLINE", "SHINE", "HIGHLIGHT"
+  "UNDERLINE", "SHINE", "HIGHLIGHT", "DEFAULT",
 };
 
 /*************/
@@ -176,15 +176,15 @@ char *item_attr_names[] =
 
 char *att_start_command[SIZE_ATTRIBUTES][SIZE_MODES] =
 {
-  {"", "@{b}", "<FONT SIZE=\"+1\">", "{\\large ", "\\par\\fs28 "},
-  /* Large Font */
+  {"", "@{b}", "<FONT SIZE=\"+1\">", "{\\large ", "\\par\\fs28 "}, /* Large Font */
   {"", "@{i}", "<I>", "{\\it ", "\\i1 "},	/* Italics. */
   {"", "", "", "", ""},		/* NON-Proportional font. */
   {"", "", "<SMALL>", "{\\small ", "\\fs16 "},	/* Small Font. */
   {"", "@{b}", "<B>", "{\\bf ", "\\b1 "},	/* Bold. */
   {"", "@{u}", "<U>", "\\underline{", "\\ul1 "},	/* Underline */
   {"", "@{fg shine}", "<FONT FACE=\"courier\" size=\"3\">", "{\\em ", ""},/* Shine */
-  {"", "@{fg highlight}", "<EM>", "{\\em ", ""}       	/* Highlight */
+  {"", "@{fg highlight}", "<EM>", "{\\em ", ""},       	/* Highlight */
+  {"", "", "<FONT FACE=\"Helvetiva,Arial,Sans-serif\">", "", ""}       	/* Default */
 };
 
 char *att_stop_command[SIZE_ATTRIBUTES][SIZE_MODES] =
@@ -196,7 +196,8 @@ char *att_stop_command[SIZE_ATTRIBUTES][SIZE_MODES] =
   {"", "@{ub}", "</B>", "}", "\\b0 "},	/* Bold. */
   {"", "@{uu}", "</U>", "}", "\\ul0 "},		/* Underline */
   {"", "@{fg text}", "</FONT>", "}", ""},		/* Shine */
-  {"", "@{fg text}", "</EM>", "}", ""}	/* Highlight */
+  {"", "@{fg text}", "</EM>", "}", ""},	/* Highlight */
+  {"", "", "</FONT>", "", ""}	/* Normal */
 };
 
 
