@@ -83,22 +83,22 @@ do {						\
   SILC_GET32_LSB(d[3], &s[12]);			\
 } while(0);
 
-#define SILC_CBC_DEC_POST(s, d, p, t, iv)	\
+#define SILC_CBC_DEC_POST(s, d, p, t, siv)	\
 do {						\
-  s[0] ^= iv[0];				\
-  s[1] ^= iv[1];				\
-  s[2] ^= iv[2];				\
-  s[3] ^= iv[3];				\
+  s[0] ^= siv[0];				\
+  s[1] ^= siv[1];				\
+  s[2] ^= siv[2];				\
+  s[3] ^= siv[3];				\
 						\
   SILC_PUT32_LSB(s[0], &d[0]);			\
   SILC_PUT32_LSB(s[1], &d[4]);			\
   SILC_PUT32_LSB(s[2], &d[8]);			\
   SILC_PUT32_LSB(s[3], &d[12]);			\
 						\
-  iv[0] = t[0];					\
-  iv[1] = t[1];					\
-  iv[2] = t[2];					\
-  iv[3] = t[3];					\
+  siv[0] = t[0];				\
+  siv[1] = t[1];				\
+  siv[2] = t[2];				\
+  siv[3] = t[3];				\
 						\
   d += 16;					\
   p += 16;					\

@@ -75,6 +75,9 @@ TODO/bugs In SILC Libraries
    that needs to be commited (from Schneier's Yarrow-160 paper).  They 
    should make the RNG even better.
 
+ o Some of the ciphers in lib/silccrypt does not implement the SILC
+   Crypto API correctly.
+
  o SIM support for SILC PKCS API needs to made so that they could be
    used as SIM's.  At the same time some work is required on prime
    generation as the way it is done now sucks.  Read from code for
