@@ -33,7 +33,6 @@ silcd_SOURCES = \
 	serverid.c \
 	silcd.c \
 	server_version.c
-
 silcd_DEPENDENCIES = ../lib/libsilc.a
 
 if SILC_BUILD_GMP

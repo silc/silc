@@ -94,12 +94,23 @@ AC_CHECK_SIZEOF(void *, 0)
 AC_DEFINE_UNQUOTED(SILC_SIZEOF_VOID_P, $ac_cv_sizeof_void_p)
 
 # Function and library checking
-AC_CHECK_FUNCS(initscr)
-AC_CHECK_LIB(ncurses, initscr, LIBS="$LIBS -lncurses")
-AC_CHECK_FUNCS(gethostbyname)
-#AC_CHECK_LIB(nsl, gethostbyname, LIBS="$LIBS -lnsl -lresolv")
-AC_CHECK_FUNCS(socket)
-AC_CHECK_LIB(socket, socket, LIBS="$LIBS -lsocket")
+AC_CHECK_FUNC(initscr, ac_initscr_found=1, ac_initscr_found=0)
+if test x$ac_initscr_found = x0; then
+    AC_CHECK_LIB(ncurses, initscr, LIBS="$LIBS -lncurses")
+fi
+AC_CHECK_FUNC(gethostbyname, ac_gethostbyname_found=1,
+ac_gethostbyname_found=0)
+if test x$ac_gethostbyname_found = x0; then
+    AC_CHECK_LIB(nsl, gethostbyname, LIBS="$LIBS -lnsl")
+    AC_CHECK_FUNC(res_gethostbyname, ac_res_ghbn_found=1, ac_res_ghbn_found=0)
+    if test x$ac_res_ghbn_found = x0; then
+        AC_CHECK_LIB(resolv, res_gethostbyname,  LIBS="$LIBS -lresolv")
+    fi
+fi
+AC_CHECK_FUNC(socket, ac_socket_found=1, ac_socket_found=0)
+if test x$ac_socket_found = x0; then
+    AC_CHECK_LIB(socket, socket, LIBS="$LIBS -lsocket")
+fi
 AC_CHECK_FUNCS(gethostname gethostbyaddr getservbyname getservbyport)
 AC_CHECK_FUNCS(select listen bind shutdown close connect)
 AC_CHECK_FUNCS(fcntl setsockopt)

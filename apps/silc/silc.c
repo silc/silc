@@ -273,8 +273,6 @@ SILC Secure Internet Live Conferencing, version %s\n",
 
   /* Read global configuration file. */
   app->config = silc_client_config_alloc(opt_config_file);
-  if (app->config == NULL)
-    goto fail;
 
   /* XXX Read local configuration file */
 
@@ -288,11 +286,23 @@ SILC Secure Internet Live Conferencing, version %s\n",
   silc->realname = silc_get_real_name();
 
   /* Register all configured ciphers, PKCS and hash functions. */
-  app->config->client = (void *)app;
-  silc_client_config_register_ciphers(app->config);
-  silc_client_config_register_pkcs(app->config);
-  silc_client_config_register_hashfuncs(app->config);
-  silc_client_config_register_hmacs(app->config);
+  if (app->config) {
+    app->config->client = (void *)app;
+    if (!silc_client_config_register_ciphers(app->config))
+      silc_cipher_register_default();
+    if (!silc_client_config_register_pkcs(app->config))
+      silc_pkcs_register_default();
+    if (!silc_client_config_register_hashfuncs(app->config))
+      silc_hash_register_default();
+    if (!silc_client_config_register_hmacs(app->config))
+      silc_hmac_register_default();
+  } else {
+    /* Register default ciphers, pkcs, hash funtions and hmacs. */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
+  }
 
   /* Load public and private key */
   if (silc_client_load_keys(silc) == FALSE)
@@ -320,7 +330,7 @@ SILC Secure Internet Live Conferencing, version %s\n",
 		     SILC_TASK_TIMEOUT,
 		     SILC_TASK_PRI_LOW);
 
-  if (app->config->commands) {
+  if (app->config && app->config->commands) {
     /* Run user configured commands with timeout */
     silc_task_register(silc->timeout_queue, 0,
 		       silc_client_run_commands,

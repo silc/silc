@@ -26,7 +26,7 @@ SilcServerConfigSection silc_server_config_sections[] = {
   { "[Cipher]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_CIPHER, 4 },
   { "[PKCS]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_PKCS, 2 },
+    SILC_CONFIG_SERVER_SECTION_TYPE_PKCS, 1 },
   { "[Hash]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION, 4 },
   { "[hmac]", 
@@ -339,18 +339,6 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 		config->filename, pc->linenum);
 	break;
       }
-
-      /* Get key length */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: PKCS key length not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      config->pkcs->key_len = atoi(tmp);
-      silc_free(tmp);
 
       check = TRUE;
       checkmask |= (1L << pc->section->type);
@@ -1243,17 +1231,19 @@ void silc_server_config_register_ciphers(SilcServerConfig config)
   while(alg) {
 
     if (!alg->sim_name) {
-      /* Crypto module is supposed to be built in. Nothing to be done
-	 here except to test that the cipher really is built in. */
-      SilcCipher tmp = NULL;
-
-      if (silc_cipher_alloc(alg->alg_name, &tmp) == FALSE) {
-	SILC_LOG_ERROR(("Unsupported cipher `%s'", alg->alg_name));
+      int i;
+      
+      for (i = 0; silc_default_ciphers[i].name; i++)
+	if (!strcmp(silc_default_ciphers[i].name, alg->alg_name)) {
+	  silc_cipher_register(&silc_default_ciphers[i]);
+	  break;
+	}
+      
+      if (!silc_cipher_is_supported(alg->alg_name)) {
+	SILC_LOG_ERROR(("Unknown cipher `%s'", alg->alg_name));
 	silc_server_stop(server);
 	exit(1);
       }
-      silc_cipher_free(tmp);
-
 #ifdef SILC_SIM
     } else {
       /* Load (try at least) the crypto SIM module */
@@ -1316,27 +1306,28 @@ void silc_server_config_register_ciphers(SilcServerConfig config)
 }
 
 /* Registers configured PKCS's. */
-/* XXX: This really doesn't do anything now since we have statically
-   registered our PKCS's. This should be implemented when PKCS works
-   as SIM's. This checks now only that the PKCS user requested is 
-   really out there. */
 
 void silc_server_config_register_pkcs(SilcServerConfig config)
 {
   SilcServerConfigSectionAlg *alg = config->pkcs;
   SilcServer server = (SilcServer)config->server;
-  SilcPKCS tmp = NULL;
 
   SILC_LOG_DEBUG(("Registering configured PKCS"));
 
   while(alg) {
-
-    if (silc_pkcs_alloc(alg->alg_name, &tmp) == FALSE) {
-      SILC_LOG_ERROR(("Unsupported PKCS `%s'", alg->alg_name));
+    int i;
+    
+    for (i = 0; silc_default_pkcs[i].name; i++)
+      if (!strcmp(silc_default_pkcs[i].name, alg->alg_name)) {
+	silc_pkcs_register(&silc_default_pkcs[i]);
+	break;
+      }
+      
+    if (!silc_pkcs_is_supported(alg->alg_name)) {
+      SILC_LOG_ERROR(("Unknown PKCS `%s'", alg->alg_name));
       silc_server_stop(server);
       exit(1);
     }
-    silc_free(tmp);
 
     alg = alg->next;
   }
@@ -1356,16 +1347,19 @@ void silc_server_config_register_hashfuncs(SilcServerConfig config)
   while(alg) {
 
     if (!alg->sim_name) {
-      /* Hash module is supposed to be built in. Nothing to be done
-	 here except to test that the hash function really is built in. */
-      SilcHash tmp = NULL;
-
-      if (silc_hash_alloc(alg->alg_name, &tmp) == FALSE) {
-	SILC_LOG_ERROR(("Unsupported hash function `%s'", alg->alg_name));
+      int i;
+      
+      for (i = 0; silc_default_hash[i].name; i++)
+	if (!strcmp(silc_default_hash[i].name, alg->alg_name)) {
+	  silc_hash_register(&silc_default_hash[i]);
+	  break;
+	}
+      
+      if (!silc_hash_is_supported(alg->alg_name)) {
+	SILC_LOG_ERROR(("Unknown hash funtion `%s'", alg->alg_name));
 	silc_server_stop(server);
 	exit(1);
       }
-      silc_hash_free(tmp);
 
 #ifdef SILC_SIM
     } else {
@@ -1439,7 +1433,7 @@ void silc_server_config_register_hmacs(SilcServerConfig config)
     SilcHmacObject hmac;
     
     if (!silc_hash_is_supported(alg->sim_name)) {
-      SILC_LOG_ERROR(("Unsupported hash function `%s'", alg->sim_name));
+      SILC_LOG_ERROR(("Unknown hash function `%s'", alg->sim_name));
       silc_server_stop(server);
       exit(1);
     }

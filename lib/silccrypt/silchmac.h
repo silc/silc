@@ -74,13 +74,21 @@ struct SilcHmacStruct {
   uint32 key_len;
 };
 
+/* Marks for all hmacs. This can be used in silc_hmac_unregister
+   to unregister all hmacs at once. */
+#define SILC_ALL_HMACS ((SilcHmacObject *)1)
+
+/* Default hmacs for silc_hmac_register_default(). */
+extern SilcHmacObject silc_default_hmacs[];
+
 /* Prototypes */
-int silc_hmac_register(SilcHmacObject *hmac);
-int silc_hmac_unregister(SilcHmacObject *hmac);
-int silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac);
+bool silc_hmac_register(SilcHmacObject *hmac);
+bool silc_hmac_unregister(SilcHmacObject *hmac);
+bool silc_hmac_register_default(void);
+bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac);
 void silc_hmac_free(SilcHmac hmac);
-int silc_hmac_is_supported(const char *name);
-char *silc_hmac_get_supported();
+bool silc_hmac_is_supported(const char *name);
+char *silc_hmac_get_supported(void);
 uint32 silc_hmac_len(SilcHmac hmac);
 void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
 		       uint32 key_len);

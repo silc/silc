@@ -1425,6 +1425,9 @@ silc_ske_process_key_material_data(unsigned char *data,
 
   SILC_LOG_DEBUG(("Start"));
 
+  if (!req_iv_len || !req_enc_key_len || !req_hmac_key_len)
+    return SILC_SKE_STATUS_ERROR;
+
   buf = silc_buffer_alloc(1 + data_len);
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
   silc_buffer_format(buf,

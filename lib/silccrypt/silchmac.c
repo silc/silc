@@ -24,10 +24,21 @@
 /* List of dynamically registered HMACs. */
 SilcDList silc_hmac_list = NULL;
 
+/* Default hmacs for silc_hmac_register_default(). */
+SilcHmacObject silc_default_hmacs[] =
+{
+  { "hmac-sha1-96", 12 },
+  { "hmac-md5-96", 12 },
+  { "hmac-sha1", 20 },
+  { "hmac-md5", 16 },
+
+  { NULL, 0 }
+};
+
 /* Registers a new HMAC into the SILC. This function is used at the
    initialization of the SILC. */
 
-int silc_hmac_register(SilcHmacObject *hmac)
+bool silc_hmac_register(SilcHmacObject *hmac)
 {
   SilcHmacObject *new;
 
@@ -47,7 +58,7 @@ int silc_hmac_register(SilcHmacObject *hmac)
 
 /* Unregister a HMAC from the SILC. */
 
-int silc_hmac_unregister(SilcHmacObject *hmac)
+bool silc_hmac_unregister(SilcHmacObject *hmac)
 {
   SilcHmacObject *entry;
 
@@ -58,7 +69,7 @@ int silc_hmac_unregister(SilcHmacObject *hmac)
 
   silc_dlist_start(silc_hmac_list);
   while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
-    if (entry == hmac) {
+    if (hmac == SILC_ALL_HMACS || entry == hmac) {
       silc_dlist_del(silc_hmac_list, entry);
 
       if (silc_dlist_count(silc_hmac_list) == 0) {
@@ -73,12 +84,26 @@ int silc_hmac_unregister(SilcHmacObject *hmac)
   return FALSE;
 }
 
+/* Function that registers all the default hmacs (all builtin ones). 
+   The application may use this to register the default hmacs if
+   specific hmacs in any specific order is not wanted. */
+
+bool silc_hmac_register_default(void)
+{
+  int i;
+
+  for (i = 0; silc_default_hmacs[i].name; i++)
+    silc_hmac_register(&(silc_default_hmacs[i]));
+
+  return TRUE;
+}
+
 /* Allocates a new SilcHmac object of name of `name'.  The `hash' may
    be provided as argument.  If provided it is used as the hash function
    of the HMAC.  If it is NULL then the hash function is allocated and
    the name of the hash algorithm is derived from the `name'. */
 
-int silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac)
+bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac)
 {
   SilcHmacObject *entry;
 
@@ -140,7 +165,7 @@ uint32 silc_hmac_len(SilcHmac hmac)
 
 /* Returns TRUE if HMAC `name' is supported. */
 
-int silc_hmac_is_supported(const char *name)
+bool silc_hmac_is_supported(const char *name)
 {
   SilcHmacObject *entry;
 

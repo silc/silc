@@ -94,7 +94,7 @@ Howto Compile SILC Source Tree
 ==============================
 
 After checkout from CVS the SILC source tree must be prepared for 
-configuration and compilation.  To compile the source three, give,
+configuration and compilation.  To compile the source tree, give,
 
 	./prepare
 	./configure --enable-debug

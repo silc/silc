@@ -24,26 +24,25 @@
 #include "rsa.h"
 #include "pkcs1.h"
 
-/* List of all PKCS's in SILC. PKCS's don't support SIM's thus
-   only static declarations are possible. XXX: I hope this to change
-   real soon. */
-SilcPKCSObject silc_pkcs_list[] =
+/* Dynamically registered list of PKCS. */
+SilcDList silc_pkcs_list = NULL;
+
+/* Static list of PKCS for silc_pkcs_register_default(). */
+SilcPKCSObject silc_default_pkcs[] =
 {
   /* RSA with PKCS #1 (Uses directly routines from Raw RSA operations) */
-  { "rsa", &silc_rsa_data_context, 
+  { "rsa", 
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,
     silc_rsa_set_private_key, silc_rsa_context_len,
-    silc_rsa_data_context_len, silc_rsa_set_arg,
     silc_pkcs1_encrypt, silc_pkcs1_decrypt,
     silc_pkcs1_sign, silc_pkcs1_verify },
 
   /* Raw RSA operations */
-  { "rsa-raw", &silc_rsa_data_context, 
+  { "rsa-raw", 
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,
     silc_rsa_set_private_key, silc_rsa_context_len,
-    silc_rsa_data_context_len, silc_rsa_set_arg,
     silc_rsa_encrypt, silc_rsa_decrypt,
     silc_rsa_sign, silc_rsa_verify },
 
@@ -51,35 +50,102 @@ SilcPKCSObject silc_pkcs_list[] =
     NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
-/* Allocates a new SilcPKCS object. The new allocated object is returned
-   to the 'new_pkcs' argument. This function also initializes the data
-   context structure. Function returns 1 on success and 0 on error.
+/* Register a new PKCS into SILC. This is used at the initialization of
+   the SILC. */
 
-*/
-int silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
+bool silc_pkcs_register(SilcPKCSObject *pkcs)
+{
+  SilcPKCSObject *new;
+
+  SILC_LOG_DEBUG(("Registering new PKCS `%s'", pkcs->name));
+
+  new = silc_calloc(1, sizeof(*new));
+  new->name = strdup(pkcs->name);
+  new->init = pkcs->init;
+  new->clear_keys = pkcs->clear_keys;
+  new->get_public_key = pkcs->get_public_key;
+  new->get_private_key = pkcs->get_private_key;
+  new->set_public_key = pkcs->set_public_key;
+  new->set_private_key = pkcs->set_private_key;
+  new->context_len = pkcs->context_len;
+  new->encrypt = pkcs->encrypt;
+  new->decrypt = pkcs->decrypt;
+  new->sign = pkcs->sign;
+  new->verify = pkcs->verify;
+
+  /* Add to list */
+  if (silc_pkcs_list == NULL)
+    silc_pkcs_list = silc_dlist_init();
+  silc_dlist_add(silc_pkcs_list, new);
+
+  return TRUE;
+}
+
+/* Unregister a PKCS from the SILC. */
+
+bool silc_pkcs_unregister(SilcPKCSObject *pkcs)
+{
+  SilcPKCSObject *entry;
+
+  SILC_LOG_DEBUG(("Unregistering PKCS"));
+
+  if (!silc_pkcs_list)
+    return FALSE;
+
+  silc_dlist_start(silc_pkcs_list);
+  while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
+    if (pkcs == SILC_ALL_PKCS || entry == pkcs) {
+      silc_dlist_del(silc_pkcs_list, entry);
+
+      if (silc_dlist_count(silc_pkcs_list) == 0) {
+	silc_dlist_uninit(silc_pkcs_list);
+	silc_pkcs_list = NULL;
+      }
+
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/* Function that registers all the default PKCS (all builtin PKCS). 
+   The application may use this to register the default PKCS if specific
+   PKCS in any specific order is not wanted. */
+
+bool silc_pkcs_register_default(void)
 {
   int i;
 
-  SILC_LOG_DEBUG(("Allocating new PKCS object"));
-
-  for (i = 0; silc_pkcs_list[i].name; i++) {
-    if (!strcmp(silc_pkcs_list[i].name, name))
-      break;
-  }
-
-  if (silc_pkcs_list[i].name == NULL)
-    return FALSE;
-
-  *new_pkcs = silc_calloc(1, sizeof(**new_pkcs));
-
-  /* Set the pointers */
-  (*new_pkcs)->pkcs = &silc_pkcs_list[i];
-  (*new_pkcs)->pkcs->data_context = 
-    silc_calloc(1, (*new_pkcs)->pkcs->data_context_len());
-  (*new_pkcs)->context = silc_calloc(1, (*new_pkcs)->pkcs->context_len());
-  (*new_pkcs)->get_key_len = silc_pkcs_get_key_len;
+  for (i = 0; silc_default_pkcs[i].name; i++)
+    silc_pkcs_register(&(silc_default_pkcs[i]));
 
   return TRUE;
+}
+
+/* Allocates a new SilcPKCS object. The new allocated object is returned
+   to the 'new_pkcs' argument. */
+
+bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
+{
+  SilcPKCSObject *entry;
+
+  SILC_LOG_DEBUG(("Allocating new PKCS object"));
+
+  if (silc_pkcs_list) {
+    silc_dlist_start(silc_pkcs_list);
+    while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, name)) {
+	*new_pkcs = silc_calloc(1, sizeof(**new_pkcs));
+	(*new_pkcs)->pkcs = entry;
+	(*new_pkcs)->context = silc_calloc(1, entry->context_len());
+	(*new_pkcs)->get_key_len = silc_pkcs_get_key_len;
+	return TRUE;
+      }
+    }
+  }
+
+  return FALSE;
 }
 
 /* Free's the PKCS object */
@@ -88,20 +154,21 @@ void silc_pkcs_free(SilcPKCS pkcs)
 {
   if (pkcs)
     silc_free(pkcs->context);
+  silc_free(pkcs);
 }
 
 /* Return TRUE if PKCS algorithm `name' is supported. */
 
 int silc_pkcs_is_supported(const unsigned char *name)
 {
-  int i;
+  SilcPKCSObject *entry;
 
-  if (!name)
-    return FALSE;
-
-  for (i = 0; silc_pkcs_list[i].name; i++) {
-    if (!strcmp(silc_pkcs_list[i].name, name))
-      return TRUE;
+  if (silc_pkcs_list) {
+    silc_dlist_start(silc_pkcs_list);
+    while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, name))
+	return TRUE;
+    }
   }
 
   return FALSE;
@@ -109,20 +176,24 @@ int silc_pkcs_is_supported(const unsigned char *name)
 
 /* Returns comma separated list of supported PKCS algorithms */
 
-char *silc_pkcs_get_supported()
+char *silc_pkcs_get_supported(void)
 {
+  SilcPKCSObject *entry;
   char *list = NULL;
-  int i, len;
+  int len;
 
   len = 0;
-  for (i = 0; silc_pkcs_list[i].name; i++) {
-    len += strlen(silc_pkcs_list[i].name);
-    list = silc_realloc(list, len + 1);
-
-    memcpy(list + (len - strlen(silc_pkcs_list[i].name)), 
-	   silc_pkcs_list[i].name, strlen(silc_pkcs_list[i].name));
-    memcpy(list + len, ",", 1);
-    len++;
+  if (silc_pkcs_list) {
+    silc_dlist_start(silc_pkcs_list);
+    while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
+      len += strlen(entry->name);
+      list = silc_realloc(list, len + 1);
+      
+      memcpy(list + (len - strlen(entry->name)), 
+	     entry->name, strlen(entry->name));
+      memcpy(list + len, ",", 1);
+      len++;
+    }
   }
 
   list[len - 1] = 0;
@@ -586,9 +657,9 @@ int silc_pkcs_public_key_decode(unsigned char *data, uint32 data_len,
       pkcs_len + identifier_len > totlen)
     goto err;
 
-  /* See if we support this algorithm */
-  if (!silc_pkcs_is_supported(pkcs_name)) {
-    SILC_LOG_DEBUG(("Unsupported PKCS %s", pkcs_name));
+  /* See if we support this algorithm (check only if PKCS are registered) */
+  if (silc_pkcs_list && !silc_pkcs_is_supported(pkcs_name)) {
+    SILC_LOG_DEBUG(("Unknown PKCS %s", pkcs_name));
     goto err;
   }
 
@@ -610,11 +681,14 @@ int silc_pkcs_public_key_decode(unsigned char *data, uint32 data_len,
     goto err;
 
   /* Try to set the key. If this fails the key must be malformed. This
-     code assumes that the PKCS routine checks the format of the key. */
-  silc_pkcs_alloc(pkcs_name, &alg);
-  if (!alg->pkcs->set_public_key(alg->context, key_data, key_len))
-    goto err;
-  silc_pkcs_free(alg);
+     code assumes that the PKCS routine checks the format of the key. 
+     (check only if PKCS are registered) */
+  if (silc_pkcs_list) {
+    silc_pkcs_alloc(pkcs_name, &alg);
+    if (!alg->pkcs->set_public_key(alg->context, key_data, key_len))
+      goto err;
+    silc_pkcs_free(alg);
+  }
   
   if (public_key) {
     *public_key = silc_calloc(1, sizeof(**public_key));
@@ -725,9 +799,11 @@ int silc_pkcs_private_key_decode(unsigned char *data, uint32 data_len,
   if (pkcs_len < 1 || pkcs_len > buf->truelen)
     goto err;
 
-  /* See if we support this algorithm */
-  if (!silc_pkcs_is_supported(pkcs_name))
+  /* See if we support this algorithm (check only if PKCS are registered). */
+  if (silc_pkcs_list && !silc_pkcs_is_supported(pkcs_name)) {
+    SILC_LOG_DEBUG(("Unknown PKCS `%s'", pkcs_name));
     goto err;
+  }
 
   /* Get key data. We assume that rest of the buffer is key data. */
   silc_buffer_pull(buf, 2 + pkcs_len);
@@ -739,11 +815,14 @@ int silc_pkcs_private_key_decode(unsigned char *data, uint32 data_len,
     goto err;
 
   /* Try to set the key. If this fails the key must be malformed. This
-     code assumes that the PKCS routine checks the format of the key. */
-  silc_pkcs_alloc(pkcs_name, &alg);
-  if (!alg->pkcs->set_private_key(alg->context, key_data, key_len))
-    goto err;
-  silc_pkcs_free(alg);
+     code assumes that the PKCS routine checks the format of the key. 
+     (check only if PKCS are registered) */
+  if (silc_pkcs_list) {
+    silc_pkcs_alloc(pkcs_name, &alg);
+    if (!alg->pkcs->set_private_key(alg->context, key_data, key_len))
+      goto err;
+    silc_pkcs_free(alg);
+  }
   
   if (private_key) {
     *private_key = silc_calloc(1, sizeof(**private_key));

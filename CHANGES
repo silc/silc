@@ -1,3 +1,88 @@
+Tue May  1 14:18:13 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the silc_verify_public_key client operation function to
+	  save the public keys differently.  The fingerprint is now 
+	  used as filename and not the hostname.  This way also the
+	  client keys are saved uniquely and not with hostnames.  The
+	  affected file is silc/client_ops.c.
+
+	* Trimmed the silc_hash_fingerprint function to remove extra
+	  whitespaces from the end of the fingerprint.  The affected
+	  file is lib/silccrypt/silchash.c.
+
+	* Updated TODO.
+
+	* Added silc_cipher_register_default function to register all
+	  default ciphers.  It can be used when configuration files
+	  does not exist and the application does not want any specific
+	  ciphers in any specific order.
+
+	  The SilcDList is now used as silc_cipher_list dynamically
+	  allocated cipher list.  Removed the static list all together
+	  and now all ciphers must be allocated to the dynamic list.
+	  The silc_cipher_alloc routine was changed to check only the
+	  dynamic list.
+
+	  All silc_cipher_* routines that used to return int returns
+	  now bool.
+
+	  The affected files lib/silccrypt/silccrypt.[ch].
+
+	* The same thing was done to silc_hash_* as for silc_cipher_*
+	  routines.  Affected files lib/silccrypt/silchash.[ch].
+
+	* The same thing was done to silc_pkcs_* as for silc_cipher_*
+	  routines.  Affected files lib/silccrypt/silcpkcs.[ch].
+	  Added also silc_pkcs_[un]register[_default] functions.
+	  Removed the data_context from the PKCS API.
+
+	* Added silc_hmac_register_default function to register default
+	  hmacs.  Affected files lib/silccrypt/silchmac.[ch].  Added also
+	  SILC_ALL_HMACS macro that can be used with silc_hmac_unregister
+	  to unregister all hmacs at once.
+
+	* Register the default ciphers, hash functions, PKCSs and HMACs
+	  if client's configuration file does not exist.  The affected
+	  file silc/silc.c.
+
+	* The client did not load the hash functions from the SIM
+	  modules at all.  Added support for this.  Affected file is
+	  silc/clientconfig.c.
+
+	* When decoding public key with silc_pkcs_public_key_decode, check
+	  the supported algorithm only if PKCS are registered.  Affected
+	  file lib/silccrypt/silcpkcs.c.  The same was done with the
+	  silc_pkcs_private_key_decode.
+
+	* Fixed the SILC List routines to keep the list always in order.
+	  It used to change the list's order when traversing the list but
+	  not it preserves the order.  Affected file lib/trq/silclist.h.
+
+Mon Apr 30 17:29:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added the client library to use the SilcSocketConnection's
+	  reference counter (by silc_socket_dup) to prevent the bug that
+	  the socket object may be freed underneath async operation.
+
+	* The name resolv library checking fixes in the configure.in.pre.
+	  The patch by salo.
+
+	* Created new version of the protocol drafts for future
+	  development. The -03 drafts are the ones that will be changed
+	  in the trunk now and the -02 will remain as they are.
+
+	* Send list of CUMODE notifys to the router when announcing
+	  the channel users to the router.  Affected file silcd/server.c.
+	  If the router receiving channel founder CUMODE for a channel
+	  that already has channel founder it will send CUMODE notify
+	  to the sender to remove the channel founder rights from the
+	  announced client.  Affected file silcd/packet_receive.c.
+
+	* The CUMODE notify may now use Server ID as well as the entity
+	  who changes the mode.  Updated protocool specs.
+
+	* Updated INSTALL and README files.
+
 Sun Apr 29 23:17:50 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* New web pages in the http://silc.pspt.fi.  The pages was

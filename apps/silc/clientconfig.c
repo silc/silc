@@ -29,7 +29,7 @@ SilcClientConfigSection silc_client_config_sections[] = {
   { "[cipher]", 
     SILC_CLIENT_CONFIG_SECTION_TYPE_CIPHER, 4 },
   { "[pkcs]", 
-    SILC_CLIENT_CONFIG_SECTION_TYPE_PKCS, 2 },
+    SILC_CLIENT_CONFIG_SECTION_TYPE_PKCS, 1 },
   { "[hash]", 
     SILC_CLIENT_CONFIG_SECTION_TYPE_HASH_FUNCTION, 4 },
   { "[hmac]", 
@@ -97,7 +97,7 @@ int silc_client_config_parse(SilcClientConfig config, SilcBuffer buffer,
 			     SilcClientConfigParse *return_config)
 {
   int i, begin;
-  uint32 linenum;
+  int linenum;
   char line[1024], *cp;
   SilcClientConfigSection *cptr = NULL;
   SilcClientConfigParse parse = *return_config, first = NULL;
@@ -326,18 +326,6 @@ int silc_client_config_parse_lines(SilcClientConfig config,
 		config->filename, pc->linenum);
 	break;
       }
-
-      /* Get key length */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: PKCS key length not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      config->pkcs->key_len = atoi(tmp);
-      silc_free(tmp);
 
       check = TRUE;
       break;
@@ -581,7 +569,7 @@ int silc_client_config_parse_lines(SilcClientConfig config,
 /* Registers configured ciphers. These can then be allocated by the
    client when needed. */
 
-void silc_client_config_register_ciphers(SilcClientConfig config)
+bool silc_client_config_register_ciphers(SilcClientConfig config)
 {
   SilcClientConfigSectionAlg *alg;
   SilcClientInternal app = (SilcClientInternal)config->client;
@@ -589,20 +577,28 @@ void silc_client_config_register_ciphers(SilcClientConfig config)
 
   SILC_LOG_DEBUG(("Registering configured ciphers"));
 
+  if (!config->cipher)
+    return FALSE;
+
   alg = config->cipher;
   while(alg) {
 
     if (!alg->sim_name) {
-      /* Crypto module is supposed to be built in. Nothing to be done
-	 here except to test that the cipher really is built in. */
-      SilcCipher tmp = NULL;
+      /* Crypto module is supposed to be built in. Get the pointer to the
+	 built in cipher and register it. */
+      int i;
 
-      if (silc_cipher_alloc(alg->alg_name, &tmp) == FALSE) {
-	SILC_LOG_ERROR(("Unsupported cipher `%s'", alg->alg_name));
+      for (i = 0; silc_default_ciphers[i].name; i++)
+	if (!strcmp(silc_default_ciphers[i].name, alg->alg_name)) {
+	  silc_cipher_register(&silc_default_ciphers[i]);
+	  break;
+	}
+
+      if (!silc_cipher_is_supported(alg->alg_name)) {
+	SILC_LOG_ERROR(("Unknown cipher `%s'", alg->alg_name));
 	silc_client_stop(client);
 	exit(1);
       }
-      silc_cipher_free(tmp);
 
 #ifdef SILC_SIM
     } else {
@@ -631,7 +627,7 @@ void silc_client_config_register_ciphers(SilcClientConfig config)
 	SILC_LOG_DEBUG(("set_key=%p", cipher.set_key));
 	cipher.set_key_with_string = 
 	  silc_sim_getsym(sim, silc_sim_symname(alg_name, 
-						SILC_CIPHER_SIM_SET_KEY_WITH_STRING));
+		                         SILC_CIPHER_SIM_SET_KEY_WITH_STRING));
 	SILC_LOG_DEBUG(("set_key_with_string=%p", cipher.set_key_with_string));
 	cipher.encrypt = 
 	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
@@ -667,40 +663,48 @@ void silc_client_config_register_ciphers(SilcClientConfig config)
 
     alg = alg->next;
   }
+
+  return TRUE;
 }
 
 /* Registers configured PKCS's. */
-/* XXX: This really doesn't do anything now since we have statically
-   registered our PKCS's. This should be implemented when PKCS works
-   as SIM's. This checks now only that the PKCS user requested is 
-   really out there. */
 
-void silc_client_config_register_pkcs(SilcClientConfig config)
+bool silc_client_config_register_pkcs(SilcClientConfig config)
 {
   SilcClientConfigSectionAlg *alg = config->pkcs;
   SilcClientInternal app = (SilcClientInternal)config->client;
   SilcClient client = app->client;
-  SilcPKCS tmp = NULL;
 
   SILC_LOG_DEBUG(("Registering configured PKCS"));
 
-  while(alg) {
+  if (!alg)
+    return FALSE;
 
-    if (silc_pkcs_alloc(alg->alg_name, &tmp) == FALSE) {
-      SILC_LOG_ERROR(("Unsupported PKCS `%s'", alg->alg_name));
+  while(alg) {
+    int i;
+    
+    for (i = 0; silc_default_pkcs[i].name; i++)
+      if (!strcmp(silc_default_pkcs[i].name, alg->alg_name)) {
+	silc_pkcs_register(&silc_default_pkcs[i]);
+	break;
+      }
+    
+    if (!silc_pkcs_is_supported(alg->alg_name)) {
+      SILC_LOG_ERROR(("Unknown PKCS `%s'", alg->alg_name));
       silc_client_stop(client);
       exit(1);
     }
-    silc_free(tmp);
 
     alg = alg->next;
   }
+
+  return TRUE;
 }
 
 /* Registers configured hash funtions. These can then be allocated by the
    client when needed. */
 
-void silc_client_config_register_hashfuncs(SilcClientConfig config)
+bool silc_client_config_register_hashfuncs(SilcClientConfig config)
 {
   SilcClientConfigSectionAlg *alg;
   SilcClientInternal app = (SilcClientInternal)config->client;
@@ -708,24 +712,84 @@ void silc_client_config_register_hashfuncs(SilcClientConfig config)
 
   SILC_LOG_DEBUG(("Registering configured hash functions"));
 
+  if (!config->hash_func)
+    return FALSE;
+
   alg = config->hash_func;
   while(alg) {
     if (!alg->sim_name) {
+      int i;
+      
+      for (i = 0; silc_default_hash[i].name; i++)
+	if (!strcmp(silc_default_hash[i].name, alg->alg_name)) {
+	  silc_hash_register(&silc_default_hash[i]);
+	  break;
+	}
+      
       if (!silc_hash_is_supported(alg->alg_name)) {
-	SILC_LOG_ERROR(("Unsupported hash function `%s'", 
-			alg->alg_name));
+	SILC_LOG_ERROR(("Unknown hash function `%s'", alg->alg_name));
 	silc_client_stop(client);
 	exit(1);
       }
+#ifdef SILC_SIM
+    } else {
+      /* Load (try at least) the hash SIM module */
+      SilcHashObject hash;
+      SilcSimContext *sim;
+
+      memset(&hash, 0, sizeof(hash));
+      hash.name = alg->alg_name;
+      hash.block_len = alg->block_len;
+      hash.hash_len = alg->key_len;
+
+      sim = silc_sim_alloc();
+      sim->type = SILC_SIM_HASH;
+      sim->libname = alg->sim_name;
+
+      if ((silc_sim_load(sim))) {
+	hash.init = 
+	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name, 
+						SILC_HASH_SIM_INIT));
+	SILC_LOG_DEBUG(("init=%p", hash.init));
+	hash.update = 
+	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+						SILC_HASH_SIM_UPDATE));
+	SILC_LOG_DEBUG(("update=%p", hash.update));
+        hash.final = 
+	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+						SILC_HASH_SIM_FINAL));
+	SILC_LOG_DEBUG(("final=%p", hash.final));
+        hash.context_len = 
+	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+						SILC_HASH_SIM_CONTEXT_LEN));
+	SILC_LOG_DEBUG(("context_len=%p", hash.context_len));
+
+	/* Put the SIM to the table of all SIM's in client */
+	app->sim = silc_realloc(app->sim,
+				   sizeof(*app->sim) * 
+				   (app->sim_count + 1));
+	app->sim[app->sim_count] = sim;
+	app->sim_count++;
+      } else {
+	SILC_LOG_ERROR(("Error configuring hash functions"));
+	silc_client_stop(client);
+	exit(1);
+      }
+
+      /* Register the hash function */
+      silc_hash_register(&hash);
+#endif
     }
     alg = alg->next;
   }
+
+  return TRUE;
 }
 
 /* Registers configured HMACs. These can then be allocated by the
    client when needed. */
 
-void silc_client_config_register_hmacs(SilcClientConfig config)
+bool silc_client_config_register_hmacs(SilcClientConfig config)
 {
   SilcClientConfigSectionAlg *alg;
   SilcClientInternal app = (SilcClientInternal)config->client;
@@ -733,20 +797,16 @@ void silc_client_config_register_hmacs(SilcClientConfig config)
 
   SILC_LOG_DEBUG(("Registering configured HMACs"));
 
-  if (!config->hmac) {
-    SILC_LOG_ERROR(("HMACs are not configured. SILC cannot work without "
-		    "HMACs"));
-    silc_client_stop(client);
-    exit(1);
-  }
+  if (!config->hmac)
+    return FALSE;
 
   alg = config->hmac;
   while(alg) {
     SilcHmacObject hmac;
     
     if (!silc_hash_is_supported(alg->sim_name)) {
-      SILC_LOG_ERROR(("Unsupported hash function `%s'", 
-		      alg->sim_name));
+      SILC_LOG_ERROR(("Unknown hash function `%s' for HMAC `%s'", 
+		      alg->sim_name, alg->alg_name));
       silc_client_stop(client);
       exit(1);
     }
@@ -759,6 +819,8 @@ void silc_client_config_register_hmacs(SilcClientConfig config)
 
     alg = alg->next;
   }
+
+  return TRUE;
 }
 
 SilcClientConfigSectionConnection *

@@ -513,12 +513,38 @@ void silc_server_notify(SilcServer server,
 
     /* Get entry to the channel user list */
     silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
+    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+      SilcChannelClientEntry chl2 = NULL;
+
+      /* If the mode is channel founder and we already find a client 
+	 to have that mode on the channel we will enforce the sender
+	 to change the channel founder mode away. There can be only one
+	 channel founder on the channel. */
+      if (server->server_type == SILC_ROUTER &&
+	  mode & SILC_CHANNEL_UMODE_CHANFO &&
+	  chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	silc_server_send_notify_cumode(server, sock, FALSE, channel,
+				       (mode & (~SILC_CHANNEL_UMODE_CHANFO)),
+				       server->id, SILC_ID_SERVER, 
+				       SILC_ID_SERVER_LEN,
+				       client->id, SILC_ID_CLIENT_LEN);
+	silc_free(channel_id);
+
+	/* Change the mode back if we changed it */
+	if (chl2)
+	  chl2->mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	goto out;
+      }
+
       if (chl->client == client) {
 	/* Change the mode */
 	chl->mode = mode;
-	break;
+	if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
+	  break;
+
+	chl2 = chl;
       }
+    }
 
     /* Send the same notify to the channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
@@ -658,16 +684,24 @@ void silc_server_notify(SilcServer server,
       }
 
     if (channel_id2) {
-      SilcBuffer users = NULL;
+      SilcBuffer users = NULL, users_modes = NULL;
       
       /* Re-announce our clients on the channel as the ID has changed now */
-      silc_server_announce_get_channel_users(server, channel, &users);
+      silc_server_announce_get_channel_users(server, channel, &users,
+					     &users_modes);
       if (users) {
 	silc_buffer_push(users, users->data - users->head);
 	silc_server_packet_send(server, sock,
 				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
 				users->data, users->len, FALSE);
 	silc_buffer_free(users);
+      }
+      if (users_modes) {
+	silc_buffer_push(users_modes, users_modes->data - users_modes->head);
+	silc_server_packet_send(server, sock,
+				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				users_modes->data, users_modes->len, FALSE);
+	silc_buffer_free(users_modes);
       }
     }
 
@@ -1795,7 +1829,7 @@ void silc_server_new_channel(SilcServer server,
       /* The channel exist by that name, check whether the ID's match.
 	 If they don't then we'll force the server to use the ID we have.
 	 We also create a new key for the channel. */
-      SilcBuffer users = NULL;
+      SilcBuffer users = NULL, users_modes = NULL;
 
       if (!channel->id)
 	channel_id = silc_id_dup(channel_id, SILC_ID_CHANNEL);
@@ -1851,13 +1885,21 @@ void silc_server_new_channel(SilcServer server,
       /* Since the channel is coming from server and we also know about it
 	 then send the JOIN notify to the server so that it see's our
 	 users on the channel "joining" the channel. */
-      silc_server_announce_get_channel_users(server, channel, &users);
+      silc_server_announce_get_channel_users(server, channel, &users,
+					     &users_modes);
       if (users) {
 	silc_buffer_push(users, users->data - users->head);
 	silc_server_packet_send(server, sock,
 				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
 				users->data, users->len, FALSE);
 	silc_buffer_free(users);
+      }
+      if (users_modes) {
+	silc_buffer_push(users_modes, users_modes->data - users_modes->head);
+	silc_server_packet_send(server, sock,
+				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				users_modes->data, users_modes->len, FALSE);
+	silc_buffer_free(users_modes);
       }
     }
   }

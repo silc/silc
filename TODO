@@ -1,16 +1,9 @@
 TODO/bugs In SILC Client Library
 ================================
 
- o Client library crashes if for example server timeouts protocol
-   execution and disconnects the client.  The client, on the other hand
-   may still assume that the connection is active, even after receiving
-   the EOF.  Reason for this is that the clien library does not handle
-   the SilcSocketConnection reference counter at all.  This must be
-   fixed.
-
- o When receiving client's public key with GETKEY or in key agreement
-   protoocl it probably should be saved using the nickname and the real
-   name of the client instead of the host name of the client.
+ o Add local commands to list the current server and client public keys
+   that the user has.  And a local command to dump the contents of the
+   public key to the screen.
 
  o Add client library parameters or options that handle what kind of
    messages the library should print out (using `say' client operation,
@@ -25,10 +18,6 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
-
- o Send SILC_NOTIFY_TYPE_CUMODE_CHANGE when received announced channels
-   and channel users and we (router) already has a channel founder on the
-   channel.
 
  o When server quits and all clients of that server are removed from all
    channels the channel keys are re-generated for all clients.  This is
@@ -45,6 +34,9 @@ TODO/bugs In SILC Server
    times, like with channel messages (twice at least).  Some sort of
    hash tables should replace the lists.  Thus, the ID cache should be
    rewritten to use hash tables internally.
+
+ o New configuration file format must be added.  The new one will be
+   done using the dotconf config library.
 
  o The backup router support described in the protocol specification
    should be done at some point.
@@ -65,17 +57,8 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o Remove the static lists from SILC ciphers, PKCS and hash functions
-   in the crypto library.  The currently acceptable code is used in the
-   HMAC library, look from there.  The config file must decide the order
-   of the algorithms, not the static lists, as they are doing now.
-   Actually the way to do this is to keep the static lists, but register
-   the algorithms to the dynamic list and make the alloc routines to 
-   check only the dynamic list.  Also, replace the lists used by these 
-   routines with SilcList.  Also, for applications it might be nice
-   to export a function that registers default algorithms, if application
-   does not want to register them one by one (if for example SILC client
-   is run without config files at all).
+ o Some of the ciphers in lib/silccrypt does not implement the SILC
+   Crypto API correctly.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
@@ -83,15 +66,7 @@ TODO/bugs In SILC Libraries
    not in distribution), but it is not used yet, and it requires some
    tweaking on the Makefiles (we want static lib not shared).
 
- o Some of the ciphers in lib/silccrypt does not implement the SILC
-   Crypto API correctly.
-
  o IPv6 support for ID's and into the code.
-
- o SIM support for SILC PKCS API needs to made so that they could be
-   used as SIM's.  At the same time some work is required on prime
-   generation as the way it is done now sucks.  Read from code for
-   more (silcpkcs.h).
 
 
 TODO After 1.0

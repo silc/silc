@@ -33,6 +33,7 @@ static void silc_client_notify_by_server_pending(void *context)
 {
   SilcPacketContext *p = (SilcPacketContext *)context;
   silc_client_notify_by_server(p->context, p->sock, p);
+  silc_socket_free(p->sock);
 }
 
 /* Destructor for the pending command callback */
@@ -53,7 +54,7 @@ static void silc_client_notify_by_server_resolve(SilcClient client,
   SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
 
   p->context = (void *)client;
-  p->sock = conn->sock;
+  p->sock = silc_socket_dup(conn->sock);
 
   silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, ++conn->cmd_ident,
 			   1, 3, idp->data, idp->len);

@@ -3975,7 +3975,7 @@ SILC_SERVER_CMD_FUNC(cumode)
 				     server->server_type == SILC_ROUTER ? 
 				     TRUE : FALSE, channel,
 				     target_mask, client->id, 
-				     SILC_ID_CLIENT_LEN,
+				     SILC_ID_CLIENT, SILC_ID_CLIENT_LEN,
 				     target_client->id, 
 				     SILC_ID_CLIENT_LEN);
   }

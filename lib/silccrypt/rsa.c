@@ -298,40 +298,6 @@ SILC_PKCS_API_CONTEXT_LEN(rsa)
   return sizeof(RsaKey);
 }
 
-SILC_PKCS_API_DATA_CONTEXT_LEN(rsa)
-{
-  return sizeof(RsaDataContext);
-}
-
-SILC_PKCS_API_SET_ARG(rsa)
-{
-  RsaDataContext *data_ctx = (RsaDataContext *)data_context;
-
-  switch(argnum) {
-  case 1:
-    data_ctx->src = val;
-    return TRUE;
-    break;
-  case 2:
-    data_ctx->dst = val;
-    return TRUE;
-    break;
-  case 3:
-    data_ctx->exp = val;
-    return TRUE;
-    break;
-  case 4:
-    data_ctx->mod = val;
-    return TRUE;
-    break;
-  default:
-    return FALSE;
-    break;
-  }
-
-  return FALSE;
-}
-
 SILC_PKCS_API_ENCRYPT(rsa)
 {
   RsaKey *key = (RsaKey *)context;

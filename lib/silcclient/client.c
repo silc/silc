@@ -191,21 +191,21 @@ void silc_client_add_socket(SilcClient client, SilcSocketConnection sock)
 
   if (!client->sockets) {
     client->sockets = silc_calloc(1, sizeof(*client->sockets));
-    client->sockets[0] = sock;
+    client->sockets[0] = silc_socket_dup(sock);
     client->sockets_count = 1;
     return;
   }
 
   for (i = 0; i < client->sockets_count; i++) {
     if (client->sockets[i] == NULL) {
-      client->sockets[i] = sock;
+      client->sockets[i] = silc_socket_dup(sock);
       return;
     }
   }
 
   client->sockets = silc_realloc(client->sockets, sizeof(*client->sockets) *
 				 (client->sockets_count + 1));
-  client->sockets[client->sockets_count] = sock;
+  client->sockets[client->sockets_count] = silc_socket_dup(sock);
   client->sockets_count++;
 }
 
@@ -220,6 +220,7 @@ void silc_client_del_socket(SilcClient client, SilcSocketConnection sock)
 
   for (i = 0; i < client->sockets_count; i++) {
     if (client->sockets[i] == sock) {
+      silc_socket_free(sock);
       client->sockets[i] = NULL;
       return;
     }
@@ -319,7 +320,7 @@ int silc_client_start_key_exchange(SilcClient client,
      protocol as context. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->client = (void *)client;
-  proto_ctx->sock = conn->sock;
+  proto_ctx->sock = silc_socket_dup(conn->sock);
   proto_ctx->rng = client->rng;
   proto_ctx->responder = FALSE;
   proto_ctx->send_packet = silc_client_protocol_ke_send_packet;
@@ -434,6 +435,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     ctx->sock->protocol = NULL;
+    silc_socket_free(ctx->sock);
 
     /* Notify application of failure */
     client->ops->connect(client, ctx->sock->user_data, FALSE);
@@ -519,6 +521,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     conn->sock->protocol = NULL;
+    silc_socket_free(ctx->sock);
 
     /* Notify application of failure */
     client->ops->connect(client, ctx->sock->user_data, FALSE);
@@ -565,6 +568,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     silc_free(ctx->auth_data);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
+  silc_socket_free(ctx->sock);
   silc_free(ctx);
   conn->sock->protocol = NULL;
 }
@@ -1645,7 +1649,7 @@ SILC_TASK_CALLBACK(silc_client_rekey_callback)
      to the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->client = (void *)client;
-  proto_ctx->sock = sock;
+  proto_ctx->sock = silc_socket_dup(sock);
   proto_ctx->responder = FALSE;
   proto_ctx->pfs = conn->rekey->pfs;
       
@@ -1689,6 +1693,7 @@ SILC_TASK_CALLBACK(silc_client_rekey_final)
       silc_packet_context_free(ctx->packet);
     if (ctx->ske)
       silc_ske_free(ctx->ske);
+    silc_socket_free(ctx->sock);
     silc_free(ctx);
     return;
   }
@@ -1700,5 +1705,6 @@ SILC_TASK_CALLBACK(silc_client_rekey_final)
     silc_packet_context_free(ctx->packet);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
+  silc_socket_free(ctx->sock);
   silc_free(ctx);
 }

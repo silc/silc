@@ -1077,15 +1077,15 @@ void silc_server_send_notify_cumode(SilcServer server,
 				    int broadcast,
 				    SilcChannelEntry channel,
 				    uint32 mode_mask,
-				    SilcClientID *client_id,
-				    uint32 client_id_len,
+				    void *id, SilcIdType id_type,
+				    uint32 id_len,
 				    SilcClientID *target,
 				    uint32 target_len)
 {
   SilcBuffer idp1, idp2;
   unsigned char mode[4];
 
-  idp1 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  idp1 = silc_id_payload_encode((void *)id, id_type);
   idp2 = silc_id_payload_encode((void *)target, SILC_ID_CLIENT);
   SILC_PUT32_MSB(mode_mask, mode);
 

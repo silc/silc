@@ -25,8 +25,6 @@
    any PKCS in SILC. */
 typedef struct SilcPKCSObjectStruct {
   char *name;
-  void *data_context;
-
   int (*init)(void *, uint32, SilcRng);
   void (*clear_keys)(void *);
   unsigned char *(*get_public_key)(void *, uint32 *);
@@ -34,8 +32,6 @@ typedef struct SilcPKCSObjectStruct {
   uint32 (*set_public_key)(void *, unsigned char *, uint32);
   int (*set_private_key)(void *, unsigned char *, uint32);
   uint32 (*context_len)();
-  uint32 (*data_context_len)();
-  int (*set_arg)(void *, void *, int, SilcInt);
   int (*encrypt)(void *, unsigned char *, uint32,
 		 unsigned char *, uint32 *);
   int (*decrypt)(void *, unsigned char *, uint32,
@@ -55,9 +51,6 @@ typedef struct SilcPKCSStruct {
 
   uint32 (*get_key_len)(struct SilcPKCSStruct *);
 } *SilcPKCS;
-
-/* List of all PKCS in SILC. */
-extern SilcPKCSObject silc_pkcs_list[];
 
 /* SILC style public key object. Public key is read from file to this
    object. Public keys received from network must be in this format as 
@@ -98,6 +91,13 @@ typedef struct {
 /* Public and private key file encoding types */
 #define SILC_PKCS_FILE_BIN 0
 #define SILC_PKCS_FILE_PEM 1
+
+/* Marks for all PKCS in silc. This can be used in silc_pkcs_unregister
+   to unregister all PKCS at once. */
+#define SILC_ALL_PKCS ((SilcPKCSObject *)1)
+
+/* Static list of PKCS for silc_pkcs_register_default(). */
+extern SilcPKCSObject silc_default_pkcs[];
 
 /* Macros */
 
@@ -143,13 +143,6 @@ int silc_##pkcs##_set_private_key(void *context, unsigned char *key_data, \
                                   uint32 key_len)
 #define SILC_PKCS_API_CONTEXT_LEN(pkcs) \
 uint32 silc_##pkcs##_context_len()
-#define SILC_PKCS_API_DATA_CONTEXT_LEN(pkcs) \
-uint32 silc_##pkcs##_data_context_len()
-#define SILC_PKCS_API_SET_ARG(pkcs) \
-int silc_##pkcs##_set_arg(void *context, \
-			  void *data_context, \
-			  int argnum, \
-			  SilcInt val)
 #define SILC_PKCS_API_ENCRYPT(pkcs) \
 int silc_##pkcs##_encrypt(void *context, \
 			  unsigned char *src, \
@@ -176,10 +169,13 @@ int silc_##pkcs##_verify(void *context, \
 			 uint32 data_len)
 
 /* Prototypes */
-int silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs);
+bool silc_pkcs_register(SilcPKCSObject *pkcs);
+bool silc_pkcs_unregister(SilcPKCSObject *pkcs);
+bool silc_pkcs_register_default(void);
+bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs);
 void silc_pkcs_free(SilcPKCS pkcs);
 int silc_pkcs_is_supported(const unsigned char *name);
-char *silc_pkcs_get_supported();
+char *silc_pkcs_get_supported(void);
 uint32 silc_pkcs_get_key_len(SilcPKCS self);
 unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, uint32 *len);
 unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, uint32 *len);

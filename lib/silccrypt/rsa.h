@@ -23,16 +23,6 @@
 
 #include "rsa_internal.h"
 
-/* Data context for RSA */
-typedef struct {
-  SilcInt src;
-  SilcInt dst;
-  SilcInt exp;
-  SilcInt mod;
-} RsaDataContext;
-
-RsaDataContext *silc_rsa_data_context;
-
 /*
  * SILC PKCS API for RSA
  */
@@ -44,8 +34,6 @@ SILC_PKCS_API_GET_PRIVATE_KEY(rsa);
 SILC_PKCS_API_SET_PUBLIC_KEY(rsa);
 SILC_PKCS_API_SET_PRIVATE_KEY(rsa);
 SILC_PKCS_API_CONTEXT_LEN(rsa);
-SILC_PKCS_API_DATA_CONTEXT_LEN(rsa);
-SILC_PKCS_API_SET_ARG(rsa);
 SILC_PKCS_API_ENCRYPT(rsa);
 SILC_PKCS_API_DECRYPT(rsa);
 SILC_PKCS_API_SIGN(rsa);

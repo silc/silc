@@ -116,10 +116,10 @@ int silc_client_config_parse_lines(SilcClientConfig config,
 				   SilcClientConfigParse parse_config);
 int silc_client_config_check_sections(uint32 checkmask);
 void silc_client_config_setlogfiles(SilcClientConfig config);
-void silc_client_config_register_ciphers(SilcClientConfig config);
-void silc_client_config_register_pkcs(SilcClientConfig config);
-void silc_client_config_register_hashfuncs(SilcClientConfig config);
-void silc_client_config_register_hmacs(SilcClientConfig config);
+bool silc_client_config_register_ciphers(SilcClientConfig config);
+bool silc_client_config_register_pkcs(SilcClientConfig config);
+bool silc_client_config_register_hashfuncs(SilcClientConfig config);
+bool silc_client_config_register_hmacs(SilcClientConfig config);
 SilcClientConfigSectionConnection *
 silc_client_config_find_connection(SilcClientConfig config, 
 				   char *host, int port);

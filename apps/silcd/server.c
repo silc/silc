@@ -3228,24 +3228,26 @@ void silc_server_announce_clients(SilcServer server)
 }
 
 static SilcBuffer 
-silc_server_announce_encode_join(uint32 argc, ...)
+silc_server_announce_encode_notify(SilcNotifyType notify, uint32 argc, ...)
 {
   va_list ap;
 
   va_start(ap, argc);
-  return silc_notify_payload_encode(SILC_NOTIFY_TYPE_JOIN, argc, ap);
+  return silc_notify_payload_encode(notify, argc, ap);
 }
 
 /* Returns assembled packets for channel users of the `channel'. */
 
 void silc_server_announce_get_channel_users(SilcServer server,
 					    SilcChannelEntry channel,
-					    SilcBuffer *channel_users)
+					    SilcBuffer *channel_users,
+					    SilcBuffer *channel_users_modes)
 {
   SilcChannelClientEntry chl;
   SilcBuffer chidp, clidp;
   SilcBuffer tmp;
   int len;
+  unsigned char mode[4];
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -3254,8 +3256,11 @@ void silc_server_announce_get_channel_users(SilcServer server,
   silc_list_start(channel->user_list);
   while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
     clidp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
-    tmp = silc_server_announce_encode_join(2, clidp->data, clidp->len,
-					   chidp->data, chidp->len);
+
+    /* JOIN Notify */
+    tmp = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_JOIN, 2, 
+					     clidp->data, clidp->len,
+					     chidp->data, chidp->len);
     len = tmp->len;
     *channel_users = 
       silc_buffer_realloc(*channel_users, 
@@ -3267,8 +3272,28 @@ void silc_server_announce_get_channel_users(SilcServer server,
     
     silc_buffer_put(*channel_users, tmp->data, tmp->len);
     silc_buffer_pull(*channel_users, len);
-    silc_buffer_free(clidp);
     silc_buffer_free(tmp);
+
+    /* CUMODE notify for mode change on the channel */
+    SILC_PUT32_MSB(chl->mode, mode);
+    tmp = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CUMODE_CHANGE, 
+					     3, clidp->data, clidp->len,
+					     mode, 4,
+					     clidp->data, clidp->len);
+    len = tmp->len;
+    *channel_users_modes = 
+      silc_buffer_realloc(*channel_users_modes, 
+			  (*channel_users_modes ? 
+			   (*channel_users_modes)->truelen + len : len));
+    silc_buffer_pull_tail(*channel_users_modes, 
+			  ((*channel_users_modes)->end - 
+			   (*channel_users_modes)->data));
+    
+    silc_buffer_put(*channel_users_modes, tmp->data, tmp->len);
+    silc_buffer_pull(*channel_users_modes, len);
+    silc_buffer_free(tmp);
+
+    silc_buffer_free(clidp);
   }
   silc_buffer_free(chidp);
 }
@@ -3280,7 +3305,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
 void silc_server_announce_get_channels(SilcServer server,
 				       SilcIDList id_list,
 				       SilcBuffer *channels,
-				       SilcBuffer *channel_users)
+				       SilcBuffer *channel_users,
+				       SilcBuffer *channel_users_modes)
 {
   SilcIDCacheList list;
   SilcIDCacheEntry id_cache;
@@ -3318,7 +3344,8 @@ void silc_server_announce_get_channels(SilcServer server,
 	silc_buffer_pull(*channels, len);
 
 	silc_server_announce_get_channel_users(server, channel,
-					       channel_users);
+					       channel_users,
+					       channel_users_modes);
 
 	silc_free(cid);
 
@@ -3337,17 +3364,19 @@ void silc_server_announce_get_channels(SilcServer server,
 
 void silc_server_announce_channels(SilcServer server)
 {
-  SilcBuffer channels = NULL, channel_users = NULL;
+  SilcBuffer channels = NULL, channel_users = NULL, channel_users_modes = NULL;
 
   SILC_LOG_DEBUG(("Announcing channels and channel users"));
 
   /* Get channels and channel users in local list */
   silc_server_announce_get_channels(server, server->local_list,
-				    &channels, &channel_users);
+				    &channels, &channel_users,
+				    &channel_users_modes);
 
   /* Get channels and channel users in global list */
   silc_server_announce_get_channels(server, server->global_list,
-				    &channels, &channel_users);
+				    &channels, &channel_users,
+				    &channel_users_modes);
 
   if (channels) {
     silc_buffer_push(channels, channels->data - channels->head);
@@ -3374,6 +3403,22 @@ void silc_server_announce_channels(SilcServer server)
 			    FALSE);
 
     silc_buffer_free(channel_users);
+  }
+
+  if (channel_users_modes) {
+    silc_buffer_push(channel_users_modes, 
+		     channel_users_modes->data - channel_users_modes->head);
+    SILC_LOG_HEXDUMP(("channel users modes"), channel_users_modes->data, 
+		     channel_users_modes->len);
+
+    /* Send the packet */
+    silc_server_packet_send(server, server->router->connection,
+			    SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+			    channel_users_modes->data, 
+			    channel_users_modes->len,
+			    FALSE);
+
+    silc_buffer_free(channel_users_modes);
   }
 }
 

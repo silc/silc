@@ -44,11 +44,12 @@ typedef struct SilcHashStruct {
 		    uint32, unsigned char *);
 } *SilcHash;
 
-extern struct SilcHashListStruct *silc_hash_list;
-
 /* Marks for all hash functions. This can be used in silc_hash_unregister
    to unregister all hash function at once. */
 #define SILC_ALL_HASH_FUNCTIONS ((SilcHashObject *)1)
+
+/* Default hash functions for silc_hash_register_default(). */
+extern SilcHashObject silc_default_hash[];
 
 /* Macros */
 
@@ -80,13 +81,14 @@ void silc_##hash##_transform(uint32 *state,			\
 uint32 silc_##hash##_context_len()
 
 /* Prototypes */
-int silc_hash_register(SilcHashObject *hash);
-int silc_hash_unregister(SilcHashObject *hash);
-int silc_hash_alloc(const unsigned char *name, SilcHash *new_hash);
+bool silc_hash_register(SilcHashObject *hash);
+bool silc_hash_unregister(SilcHashObject *hash);
+bool silc_hash_register_default(void);
+bool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash);
 void silc_hash_free(SilcHash hash);
 uint32 silc_hash_len(SilcHash hash);
-int silc_hash_is_supported(const unsigned char *name);
-char *silc_hash_get_supported();
+bool silc_hash_is_supported(const unsigned char *name);
+char *silc_hash_get_supported(void);
 void silc_hash_make(SilcHash hash, const unsigned char *data,
 		    uint32 len, unsigned char *return_hash);
 char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,

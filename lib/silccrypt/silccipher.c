@@ -23,20 +23,11 @@
 
 #include "ciphers.h"		/* Includes cipher definitions */
 
-/* List of all ciphers in SILC. You can dynamically add new ciphers
-   into the list. At the initialization of SILC this list is filled with
-   the configured ciphers. */
-struct SilcCipherListStruct {
-  SilcCipherObject *cipher;
-  struct SilcCipherListStruct *next;
-};
-
 /* Dynamically registered list of ciphers. */
-struct SilcCipherListStruct *silc_cipher_list = NULL;
+SilcDList silc_cipher_list = NULL;
 
-/* Staticly declared list of ciphers. This is used if system doesn't
-   support SIM's. */
-SilcCipherObject silc_cipher_builtin_list[] =
+/* Static list of ciphers for silc_cipher_register_default(). */
+SilcCipherObject silc_default_ciphers[] =
 {
   { "aes-256-cbc", 16, 256, silc_aes_set_key, 
     silc_aes_set_key_with_string, silc_aes_encrypt_cbc,
@@ -89,91 +80,70 @@ SilcCipherObject silc_cipher_builtin_list[] =
    registered. Therefore, if memory has been allocated for the object sent
    as argument it has to be free'd after this function returns succesfully. */
 
-int silc_cipher_register(SilcCipherObject *cipher)
+bool silc_cipher_register(SilcCipherObject *cipher)
 {
-  struct SilcCipherListStruct *new, *c;
+  SilcCipherObject *new;
 
   SILC_LOG_DEBUG(("Registering new cipher `%s'", cipher->name));
 
   new = silc_calloc(1, sizeof(*new));
-  new->cipher = silc_calloc(1, sizeof(*new->cipher));
+  new->name = strdup(cipher->name);
+  new->block_len = cipher->block_len;
+  new->key_len = cipher->key_len;
+  new->set_key = cipher->set_key;
+  new->set_key_with_string = cipher->set_key_with_string;
+  new->encrypt = cipher->encrypt;
+  new->decrypt = cipher->decrypt;
+  new->context_len = cipher->context_len;
 
-  /* Set the pointers */
-  new->cipher->name = strdup(cipher->name);
-  new->cipher->block_len = cipher->block_len;
-  new->cipher->key_len = cipher->key_len;
-  new->cipher->set_key = cipher->set_key;
-  new->cipher->set_key_with_string = cipher->set_key_with_string;
-  new->cipher->encrypt = cipher->encrypt;
-  new->cipher->decrypt = cipher->decrypt;
-  new->cipher->context_len = cipher->context_len;
-  new->next = NULL;
-
-  /* Add the new cipher to the list */
-  if (!silc_cipher_list) {
-    silc_cipher_list = new;
-    return TRUE;
-  }
-
-  c = silc_cipher_list;
-  while (c) {
-    if (!c->next) {
-      c->next = new;
-      break;
-    }
-    c = c->next;
-  }
+  /* Add to list */
+  if (silc_cipher_list == NULL)
+    silc_cipher_list = silc_dlist_init();
+  silc_dlist_add(silc_cipher_list, new);
 
   return TRUE;
 }
 
 /* Unregister a cipher from the SILC. */
 
-int silc_cipher_unregister(SilcCipherObject *cipher)
+bool silc_cipher_unregister(SilcCipherObject *cipher)
 {
-  struct SilcCipherListStruct *c, *tmp;
+  SilcCipherObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering cipher"));
 
-  c = silc_cipher_list;
-  
-  if (cipher == SILC_ALL_CIPHERS) {
-    /* Unregister all ciphers */
-    while (c) {
-      tmp = c->next;
-      silc_free(c->cipher->name);
-      silc_free(c);
-      c = tmp;
-    }
+  if (!silc_cipher_list)
+    return FALSE;
 
-    return TRUE;
-  }
+  silc_dlist_start(silc_cipher_list);
+  while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+    if (cipher == SILC_ALL_CIPHERS || entry == cipher) {
+      silc_dlist_del(silc_cipher_list, entry);
 
-  /* Unregister the cipher */
-  if (c->cipher == cipher) {
-    tmp = c->next;
-    silc_free(c->cipher->name);
-    silc_free(c);
-    silc_cipher_list = tmp;
-    
-    return TRUE;
-  }
-
-  while (c) {
-    if (c->next->cipher == cipher) {
-
-      tmp = c->next->next;
-      silc_free(c->cipher->name);
-      silc_free(c);
-      c->next = tmp;
+      if (silc_dlist_count(silc_cipher_list) == 0) {
+	silc_dlist_uninit(silc_cipher_list);
+	silc_cipher_list = NULL;
+      }
 
       return TRUE;
     }
-
-    c = c->next;
   }
 
   return FALSE;
+}
+
+/* Function that registers all the default ciphers (all builtin ciphers). 
+   The application may use this to register the default ciphers if specific
+   ciphers in any specific order is not wanted. */
+
+bool silc_cipher_register_default(void)
+{
+  int i;
+
+  for (i = 0; silc_default_ciphers[i].name; i++)
+    silc_cipher_register(&(silc_default_ciphers[i]));
+
+  return TRUE;
 }
 
 /* Allocates a new SILC cipher object. Function returns 1 on succes and 0 
@@ -181,62 +151,29 @@ int silc_cipher_unregister(SilcCipherObject *cipher)
    caller must set the key to the cipher after this function has returned
    by calling the ciphers set_key function. */
 
-int silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
+bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 {
-  struct SilcCipherListStruct *c;
-  int i;
+  SilcCipherObject *entry;
 
   SILC_LOG_DEBUG(("Allocating new cipher object"));
-
-  /* Allocate the new object */
-  *new_cipher = silc_calloc(1, sizeof(**new_cipher));
   
   if (silc_cipher_list) {
-
-    c = silc_cipher_list;
-    while (c) {
-      if (!strcmp(c->cipher->name, name))
-	break;
-      c = c->next;
+    silc_dlist_start(silc_cipher_list);
+    while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, name)) {
+	*new_cipher = silc_calloc(1, sizeof(**new_cipher));
+	(*new_cipher)->cipher = entry; 
+	(*new_cipher)->context = silc_calloc(1, entry->context_len());
+	(*new_cipher)->set_iv = silc_cipher_set_iv;
+	(*new_cipher)->get_iv = silc_cipher_get_iv;
+	(*new_cipher)->get_key_len = silc_cipher_get_key_len;
+	(*new_cipher)->get_block_len = silc_cipher_get_block_len;
+	return TRUE;
+      }
     }
-
-    if (!c || !c->cipher->context_len)
-      goto check_builtin;
-
-    /* Set the pointers */
-    (*new_cipher)->cipher = c->cipher;
-    (*new_cipher)->context = silc_calloc(1, c->cipher->context_len());
-    (*new_cipher)->set_iv = silc_cipher_set_iv;
-    (*new_cipher)->get_iv = silc_cipher_get_iv;
-    (*new_cipher)->get_key_len = silc_cipher_get_key_len;
-    (*new_cipher)->get_block_len = silc_cipher_get_block_len;
-    
-    return TRUE;
   }
 
- check_builtin:
-
-  for (i = 0; silc_cipher_builtin_list[i].name; i++)
-    if (!strcmp(silc_cipher_builtin_list[i].name, name))
-      break;
-
-  if (silc_cipher_builtin_list[i].name == NULL) {
-    silc_free(*new_cipher);
-    *new_cipher = NULL;
-    return FALSE;
-  }
-
-  /* Set the pointers */
-  (*new_cipher)->cipher = &silc_cipher_builtin_list[i];
-  (*new_cipher)->context = 
-    silc_calloc(1, (*new_cipher)->cipher->context_len());
-  (*new_cipher)->set_iv = silc_cipher_set_iv;
-  (*new_cipher)->get_iv = silc_cipher_get_iv;
-  (*new_cipher)->get_key_len = silc_cipher_get_key_len;
-  (*new_cipher)->get_block_len = silc_cipher_get_block_len;
-  memset(&(*new_cipher)->iv, 0, sizeof((*new_cipher)->iv));
-
-  return TRUE;
+  return FALSE;
 }
 
 /* Free's the given cipher. */
@@ -251,62 +188,41 @@ void silc_cipher_free(SilcCipher cipher)
 
 /* Returns TRUE if cipher `name' is supported. */
 
-int silc_cipher_is_supported(const unsigned char *name)
+bool silc_cipher_is_supported(const unsigned char *name)
 {
-  struct SilcCipherListStruct *c;
-  int i;
+  SilcCipherObject *entry;
 
   if (silc_cipher_list) {
-    c = silc_cipher_list;
-
-    while (c) {
-      if (!strcmp(c->cipher->name, name))
+    silc_dlist_start(silc_cipher_list);
+    while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, name))
 	return TRUE;
-      c = c->next;
     }
   }
-
-  for (i = 0; silc_cipher_builtin_list[i].name; i++)
-    if (!strcmp(silc_cipher_builtin_list[i].name, name))
-      return TRUE;
 
   return FALSE;
 }
 
 /* Returns comma separated list of supported ciphers. */
 
-char *silc_cipher_get_supported()
+char *silc_cipher_get_supported(void)
 {
+  SilcCipherObject *entry;
   char *list = NULL;
-  int i, len;
-  struct SilcCipherListStruct *c;
+  int len;
 
   len = 0;
   if (silc_cipher_list) {
-    c = silc_cipher_list;
-
-    while (c) {
-      len += strlen(c->cipher->name);
+    silc_dlist_start(silc_cipher_list);
+    while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+      len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
       
-      memcpy(list + (len - strlen(c->cipher->name)), 
-	     c->cipher->name, strlen(c->cipher->name));
+      memcpy(list + (len - strlen(entry->name)), 
+	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
-      
-      c = c->next;
     }
-  }
-
-  for (i = 0; silc_cipher_builtin_list[i].name; i++) {
-    len += strlen(silc_cipher_builtin_list[i].name);
-    list = silc_realloc(list, len + 1);
-    
-    memcpy(list + (len - strlen(silc_cipher_builtin_list[i].name)), 
-	   silc_cipher_builtin_list[i].name, 
-	   strlen(silc_cipher_builtin_list[i].name));
-    memcpy(list + len, ",", 1);
-    len++;
   }
 
   list[len - 1] = 0;
@@ -316,26 +232,26 @@ char *silc_cipher_get_supported()
 
 /* Encrypts */
 
-int silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
-			unsigned char *dst, uint32 len, 
-			unsigned char *iv)
+bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
+			 unsigned char *dst, uint32 len, 
+			 unsigned char *iv)
 {
   return cipher->cipher->encrypt(cipher->context, src, dst, len, iv);
 }
 
 /* Decrypts */
 
-int silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
-			unsigned char *dst, uint32 len, 
-			unsigned char *iv)
+bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
+			 unsigned char *dst, uint32 len, 
+			 unsigned char *iv)
 {
   return cipher->cipher->decrypt(cipher->context, src, dst, len, iv);
 }
 
 /* Sets the key for the cipher */
 
-int silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
-			uint32 keylen)
+bool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
+			 uint32 keylen)
 {
   return cipher->cipher->set_key(cipher->context, key, keylen);
 }

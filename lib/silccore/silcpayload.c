@@ -125,7 +125,7 @@ void *silc_id_payload_parse_id(unsigned char *data, uint32 len)
   SilcBuffer buffer;
   SilcIdType type;
   uint16 idlen;
-  unsigned char *id_data;
+  unsigned char *id_data = NULL;
   int ret;
   void *id;
 

@@ -24,19 +24,11 @@
 #include "md5.h"
 #include "sha1.h"
 
-/* List of all hash functions in SILC. You can dynamically add new hash
-   functions into the list. At the initialization of SILC this list is 
-   filled with the configured hash functions. */
-struct SilcHashListStruct {
-  SilcHashObject *hash;
-  struct SilcHashListStruct *next;
-};
-
 /* List of dynamically registered hash functions. */
-struct SilcHashListStruct *silc_hash_list = NULL;
+SilcDList silc_hash_list = NULL;
 
-/* Statically declared list of hash functions. */
-SilcHashObject silc_hash_builtin_list[] = 
+/* Default hash functions for silc_hash_register_default(). */
+SilcHashObject silc_default_hash[] = 
 {
   { "sha1", 20, 64, silc_sha1_init, silc_sha1_update, silc_sha1_final,
     silc_sha1_transform, silc_sha1_context_len },
@@ -49,140 +41,95 @@ SilcHashObject silc_hash_builtin_list[] =
 /* Registers a new hash function into the SILC. This function is used at
    the initialization of the SILC. */
 
-int silc_hash_register(SilcHashObject *hash)
+bool silc_hash_register(SilcHashObject *hash)
 {
-  struct SilcHashListStruct *new, *h;
+  SilcHashObject *new;
 
   SILC_LOG_DEBUG(("Registering new hash function `%s'", hash->name));
 
   new = silc_calloc(1, sizeof(*new));
-  new->hash = silc_calloc(1, sizeof(*new->hash));
+  new->name = strdup(hash->name);
+  new->hash_len = hash->hash_len;
+  new->block_len = hash->block_len;
+  new->init = hash->init;
+  new->update = hash->update;
+  new->final = hash->final;
+  new->transform = hash->transform;
+  new->context_len = hash->context_len;
 
-  /* Set the pointers */
-  new->hash->name = strdup(hash->name);
-  new->hash->hash_len = hash->hash_len;
-  new->hash->block_len = hash->block_len;
-  new->hash->init = hash->init;
-  new->hash->update = hash->update;
-  new->hash->final = hash->final;
-  new->hash->context_len = hash->context_len;
-  new->next = NULL;
-
-  /* Add the new hash function to the list */
-  if (!silc_hash_list) {
-    silc_hash_list = new;
-    return TRUE;
-  }
-
-  h = silc_hash_list;
-  while (h) {
-    if (!h->next) {
-      h->next = new;
-      break;
-    }
-    h = h->next;
-  }
+  /* Add to list */
+  if (silc_hash_list == NULL)
+    silc_hash_list = silc_dlist_init();
+  silc_dlist_add(silc_hash_list, new);
 
   return TRUE;
 }
 
 /* Unregister a hash function from the SILC. */
 
-int silc_hash_unregister(SilcHashObject *hash)
+bool silc_hash_unregister(SilcHashObject *hash)
 {
-  struct SilcHashListStruct *h, *tmp;
+  SilcHashObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering hash function"));
 
-  h = silc_hash_list;
+  if (!silc_hash_list)
+    return FALSE;
 
-  /* Unregister all hash functions */
-  if (hash == SILC_ALL_HASH_FUNCTIONS) {
-    /* Unregister all ciphers */
-    while (h) {
-      tmp = h->next;
-      silc_free(h->hash->name);
-      silc_free(h);
-      h = tmp;
-    }
+  silc_dlist_start(silc_hash_list);
+  while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
+    if (hash == SILC_ALL_HASH_FUNCTIONS || entry == hash) {
+      silc_dlist_del(silc_hash_list, entry);
 
-    return TRUE;
-  }
+      if (silc_dlist_count(silc_hash_list) == 0) {
+	silc_dlist_uninit(silc_hash_list);
+	silc_hash_list = NULL;
+      }
 
-  /* Unregister the hash function */
-  if (h->hash == hash) {
-    tmp = h->next;
-    silc_free(h->hash->name);
-    silc_free(h);
-    silc_hash_list = tmp;
-
-    return TRUE;
-  }
-
-  while (h) {
-    if (h->next->hash == hash) {
-      tmp = h->next->next;
-      silc_free(h->hash->name);
-      silc_free(h);
-      h->next = tmp;
       return TRUE;
     }
-
-    h = h->next;
   }
 
   return FALSE;
 }
 
+/* Function that registers all the default hash funcs (all builtin ones). 
+   The application may use this to register the default hash funcs if
+   specific hash funcs in any specific order is not wanted. */
+
+bool silc_hash_register_default(void)
+{
+  int i;
+
+  for (i = 0; silc_default_hash[i].name; i++)
+    silc_hash_register(&(silc_default_hash[i]));
+
+  return TRUE;
+}
+
 /* Allocates a new SilcHash object. New object is returned into new_hash
    argument. */
 
-int silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
+bool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 {
-  struct SilcHashListStruct *h;
-  int i;
+  SilcHashObject *entry;
   
   SILC_LOG_DEBUG(("Allocating new hash object"));
 
-  /* Allocate the new object */
-  *new_hash = silc_calloc(1, sizeof(**new_hash));
-
   if (silc_hash_list) {
-    h = silc_hash_list;
-    while (h) {
-      if (!strcmp(h->hash->name, name))
-	break;
-      h = h->next;
+    silc_dlist_start(silc_hash_list);
+    while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, name)) {
+	*new_hash = silc_calloc(1, sizeof(**new_hash));
+	(*new_hash)->hash = entry;
+	(*new_hash)->context = silc_calloc(1, entry->context_len());
+	(*new_hash)->make_hash = silc_hash_make;
+	return TRUE;
+      }
     }
-
-    if (!h || !h->hash->context_len)
-      goto check_builtin;
-
-    /* Set the pointers */
-    (*new_hash)->hash = h->hash;
-    (*new_hash)->context = silc_calloc(1, h->hash->context_len());
-    (*new_hash)->make_hash = silc_hash_make;
-
-    return TRUE;
   }
 
- check_builtin:
-  for (i = 0; silc_hash_builtin_list[i].name; i++)
-    if (!strcmp(silc_hash_builtin_list[i].name, name))
-      break;
-
-  if (silc_hash_builtin_list[i].name == NULL) {
-    silc_free(*new_hash);
-    *new_hash = NULL;
-    return FALSE;
-  }
-  
-  /* Set the pointers */
-  (*new_hash)->hash = &silc_hash_builtin_list[i];
-  (*new_hash)->context = silc_calloc(1, (*new_hash)->hash->context_len());
-  (*new_hash)->make_hash = silc_hash_make;
-  
-  return TRUE;
+  return FALSE;
 }
 
 /* Free's the SilcHash object */
@@ -204,65 +151,41 @@ uint32 silc_hash_len(SilcHash hash)
 
 /* Returns TRUE if hash algorithm `name' is supported. */
 
-int silc_hash_is_supported(const unsigned char *name)
+bool silc_hash_is_supported(const unsigned char *name)
 {
-  struct SilcHashListStruct *h;
-  int i;
+  SilcHashObject *entry;
 
-  if (!name)
-    return FALSE;
-  
   if (silc_hash_list) {
-    h = silc_hash_list;
-
-    while (h) {
-      if (!strcmp(h->hash->name, name))
+    silc_dlist_start(silc_hash_list);
+    while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, name))
 	return TRUE;
-      h = h->next;
     }
   }
-
-  for (i = 0; silc_hash_builtin_list[i].name; i++)
-    if (!strcmp(silc_hash_builtin_list[i].name, name))
-      return TRUE;
 
   return FALSE;
 }
 
 /* Returns comma separated list of supported hash functions. */
 
-char *silc_hash_get_supported()
+char *silc_hash_get_supported(void)
 {
+  SilcHashObject *entry;
   char *list = NULL;
-  int i, len;
-  struct SilcHashListStruct *h;
+  int len;
 
   len = 0;
   if (silc_hash_list) {
-    h = silc_hash_list;
-
-    while (h) {
-      len += strlen(h->hash->name);
+    silc_dlist_start(silc_hash_list);
+    while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
+      len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
       
-      memcpy(list + (len - strlen(h->hash->name)), 
-	     h->hash->name, strlen(h->hash->name));
+      memcpy(list + (len - strlen(entry->name)), 
+	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
-      
-      h = h->next;
     }
-  }
-
-  for (i = 0; silc_hash_builtin_list[i].name; i++) {
-    len += strlen(silc_hash_builtin_list[i].name);
-    list = silc_realloc(list, len + 1);
-    
-    memcpy(list + (len - strlen(silc_hash_builtin_list[i].name)), 
-	   silc_hash_builtin_list[i].name, 
-	   strlen(silc_hash_builtin_list[i].name));
-    memcpy(list + len, ",", 1);
-    len++;
   }
 
   list[len - 1] = 0;
@@ -308,6 +231,11 @@ char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
     if ((i + 1) % 10 == 0)
       snprintf(cp++, sizeof(fingerprint), " ");
   }
+  i--;
+  if ((i + 1) % 2 == 0)
+    cp[-2] = 0;
+  if ((i + 1) % 10 == 0)
+    cp[-1] = 0;
   
   return strdup(fingerprint);
 }
