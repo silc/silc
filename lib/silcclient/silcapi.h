@@ -411,11 +411,11 @@ int silc_client_del_private_message_key(SilcClient client,
    function. The IV's are not returned as they are not important. */
 typedef struct {
   SilcClientEntry client_entry;       /* The remote client entry */
-  unsigned char *send_key;     	      /* The raw key data */
-  unsigned int send_key_len;   	      /* The key length */
-  unsigned char *receive_key;	      /* The raw key data */
-  unsigned int receive_key_len;	      /* The key length */
-  int generated;		      /* TRUE if library generated the key */
+  unsigned char *key;		      /* The original key, If the appliation
+					 provided it. This is NULL if the
+					 library generated the key or if
+					 the SKE key material was used. */
+  unsigned int key_len;		      /* The key length */
 } *SilcPrivateMessageKeys;
 
 /* Returns array of set private message keys associated to the connection
