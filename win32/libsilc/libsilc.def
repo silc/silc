@@ -107,13 +107,13 @@ EXPORTS
 	silc_command_set_ident @ 324 ; 
 	silc_config_open @ 327 ; 
 	silc_debug @ 328 DATA ; 
-	silc_decode_pem @ 329 ; 
+	silc_pem_decode @ 329 ; 
 	silc_default_ciphers @ 330 DATA ; 
 	silc_default_hash @ 331 DATA ; 
 	silc_default_hmacs @ 332 DATA ; 
 	silc_default_pkcs @ 333 DATA ; 
-	silc_encode_pem @ 334 ; 
-	silc_encode_pem_file @ 335 ; 
+	silc_pem_encode @ 334 ; 
+	silc_pem_encode_file @ 335 ; 
 	silc_file_readfile @ 336 ; 
 	silc_file_writefile @ 337 ; 
 	silc_file_writefile_mode @ 338 ; 
@@ -552,4 +552,16 @@ EXPORTS
 	silc_debug_hexdump @ 850 DATA ;
 	silc_memdup @ 851 ;
 	silc_command_get_status @ 852 ;
-
+	silc_utf8_encode @ 853 ;
+	silc_utf8_decode @ 854 ;
+	silc_utf8_encoded_len @ 855 ;
+	silc_utf8_valid @ 856 ;
+	silc_mime_parse @ 857 ;
+	silc_get_status_message @ 858 ;
+	silc_get_mode_list @ 859 ;
+	silc_hash_table_find_by_context @ 860 ;
+	silc_channel_message_payload_encrypt @ 861 ;
+	silc_string_is_ascii @ 862 ;
+	silc_parse_version_string @ 863 ;
+	silc_version_to_num @ 864 ;
+	silc_fingerprint @ 865 ;

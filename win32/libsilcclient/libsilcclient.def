@@ -83,7 +83,6 @@ EXPORTS
 	silc_client_command_reply_whowas @ 66 ; 
 	silc_client_command_shutdown @ 67 ; 
 	silc_client_command_silcoper @ 68 ; 
-	silc_client_command_status_message @ 69 ; 
 	silc_client_command_topic @ 70 ; 
 	silc_client_command_umode @ 71 ; 
 	silc_client_command_users @ 72 ; 
@@ -145,7 +144,6 @@ EXPORTS
 	silc_client_send_private_message_key @ 129 ; 
 	silc_client_start_key_exchange @ 131 ; 
 	silc_client_stop @ 132 ; 
-	silc_command_status_messages @ 135 DATA ; 
 	silc_idlist_get_client @ 137 ; 
 	silc_client_abort_key_agreement @ 138 ; 
 	silc_client_set_away_message @ 139 ; 
@@ -161,3 +159,4 @@ EXPORTS
 	silc_client_command_reply_quit @ 149 ;
 	silc_client_run_one @ 150 ;
 	silc_client_on_channel @ 151 ;
+	silc_client_current_channel_private_key @ 152;

@@ -191,6 +191,10 @@ SOURCE=..\..\lib\silcutil\silcsockconn.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silcstrutil.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silcutil.c
 # End Source File
 # Begin Source File

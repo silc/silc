@@ -779,8 +779,11 @@ void mem_readdir(void *context, SilcSFTP sftp,
     if (strrchr(date, ':'))
       *strrchr(date, ':') = '\0';
 
-    if (!entry->directory)
+    if (!entry->directory) {
       filesize = silc_file_size(entry->data + 7);
+      memset(&stats, 0, sizeof(stats));
+      stat(entry->data + 7, &stats);
+    }
 
     /* Long name format is:
        drwx------   1   324210 Apr  8 08:40 mail/

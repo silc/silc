@@ -120,6 +120,10 @@ SOURCE=..\..\lib\silcclient\client_prvmsg.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcclient\client_resume.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcclient\command.c
 # End Source File
 # Begin Source File
