@@ -1645,7 +1645,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     if (!id_cache || !((SilcClientEntry)id_cache->context)->username) {
       /* No we don't have it (or it is incomplete in information), query
 	 it from the server. Assemble argument table that will be sent
-	 for the IDENTIFY command later. */
+	 for the WHOIS command later. */
       res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
 			      (res_argc + 1));
       res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
@@ -1677,18 +1677,18 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   if (res_argc) {
     SilcBuffer res_cmd;
 
-    /* Send the IDENTIFY command to server */
-    res_cmd = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
+    /* Send the WHOIS command to server */
+    res_cmd = silc_command_payload_encode(SILC_COMMAND_WHOIS,
 					  res_argc, res_argv, res_argv_lens,
 					  res_argv_types, ++conn->cmd_ident);
     silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, 
 			    NULL, 0, NULL, NULL, res_cmd->data, res_cmd->len,
 			    TRUE);
 
-    /* Register pending command callback. After we've received the IDENTIFY
+    /* Register pending command callback. After we've received the WHOIS
        command reply we will reprocess this command reply by re-calling this
        USERS command reply callback. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
+    silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
 				NULL, silc_client_command_reply_users, cmd);
 
     silc_buffer_free(res_cmd);

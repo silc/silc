@@ -11,7 +11,7 @@ Mon Jun  4 17:57:16 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  not have username resolved.  The affected file is
 	  lib/silcclient/command_reply.c.  Also, changed the IDENTIFY
 	  command to WHOIS command to really resolve stuff.  The USERS
-	  is not used any more in any critical section so WHOIS can
+	  is not used an ymore in any critical section so WHOIS can
 	  be used even though it might be slower than IDENTIFY.
 
 Sun Jun  3 14:21:32 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>

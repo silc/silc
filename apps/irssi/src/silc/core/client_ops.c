@@ -100,7 +100,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   else
     signal_emit("message public", 6, server, msg,
 		nick == NULL ? "[<unknown>]" : nick->nick,
-		nick == NULL ? NULL : nick->host,
+		nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
 		chanrec->name, nick);
 }
 
