@@ -244,10 +244,13 @@ SILC_CLIENT_CMD_FUNC(whois)
     goto out;
   }
 
-  if (cmd->argc < 2 || cmd->argc > 3) {
-    cmd->client->ops->say(cmd->client, conn, 
-	     "Usage: /WHOIS <nickname>[@<server>] [<count>]");
-    COMMAND_ERROR;
+  /* Given without arguments fetches client's own information */
+  if (cmd->argc < 2) {
+    buffer = silc_id_payload_encode(cmd->conn->local_id, SILC_ID_CLIENT);
+    silc_client_send_command(cmd->client, cmd->conn, SILC_COMMAND_WHOIS, 
+			     ++conn->cmd_ident,
+			     1, 3, buffer->data, buffer->len);
+    silc_buffer_free(buffer);
     goto out;
   }
 
@@ -861,9 +864,6 @@ SILC_CLIENT_CMD_FUNC(ping)
     goto out;
   }
 
-  if (cmd->argc == 1 || !strcmp(cmd->argv[1], conn->remote_host))
-    name = strdup(conn->remote_host);
-
   /* Send the command */
   buffer = silc_command_payload_encode_va(SILC_COMMAND_PING, 0, 1, 
 					  1, conn->remote_id_data, 
@@ -886,7 +886,7 @@ SILC_CLIENT_CMD_FUNC(ping)
     if (conn->ping[i].dest_id == NULL) {
       conn->ping[i].start_time = time(NULL);
       conn->ping[i].dest_id = id;
-      conn->ping[i].dest_name = name;
+      conn->ping[i].dest_name = strdup(conn->remote_host);
       conn->ping_count++;
       break;
     }
@@ -896,7 +896,7 @@ SILC_CLIENT_CMD_FUNC(ping)
     conn->ping = silc_realloc(conn->ping, sizeof(*conn->ping) * (i + 1));
     conn->ping[i].start_time = time(NULL);
     conn->ping[i].dest_id = id;
-    conn->ping[i].dest_name = name;
+    conn->ping[i].dest_name = strdup(conn->remote_host);
     conn->ping_count++;
   }
   

@@ -1,7 +1,7 @@
 
 @SYNTAX:ping@
 
-Sends PING to specified server.  If server is not provided
-the ping is sent to the current server.
+Sends PING to the connected server.
+
 
 

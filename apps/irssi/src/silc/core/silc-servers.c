@@ -277,7 +277,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: NICK <nickname> */
 /* SYNTAX: NOTICE <message> */
 /* SYNTAX: PART [<channel>] */
-/* SYNTAX: PING [<server>] */
+/* SYNTAX: PING */
 /* SYNTAX: SCONNECT <server> [<port>] */
 /* SYNTAX: USERS <channel> */
 

@@ -1,15 +1,7 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o /cmode #c +p says "not channel operator" even though is operator.
-
- o /WHOIS without arguments should so client's own info.
-
- o Do not let the Irssi show the passphrase of the channel on the screen.
-
- o Do not execute PING for invalid entities.
-
- o Do not let irssi u pdate the status bar on JOIN until the join command
+ o Do not let irssi update the status bar on JOIN until the join command
    is successful, so that it does not update that I'm on the channel
    even though I could not join the channel.
 
