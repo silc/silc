@@ -136,13 +136,13 @@ typedef enum {
  *
  ***/
 typedef struct {
-  SilcUInt32 flags;			/* Flags to indicate present attributes */
-  SilcUInt64 size;			/* Sife of the file in bytes */
-  SilcUInt32 uid;			/* Unix user ID */
-  SilcUInt32 gid;			/* Unix group ID */
-  SilcUInt32 permissions;		/* POSIX file permission bitmask */
-  SilcUInt32 atime;			/* Access time of file */
-  SilcUInt32 mtime;			/* Modification time of file */
+  SilcUInt32 flags;	       	/* Flags to indicate present attributes */
+  SilcUInt64 size;	       	/* Sife of the file in bytes */
+  SilcUInt32 uid;      	        /* Unix user ID */
+  SilcUInt32 gid;      		/* Unix group ID */
+  SilcUInt32 permissions;      	/* POSIX file permission bitmask */
+  SilcUInt32 atime;    		/* Access time of file */
+  SilcUInt32 mtime;	       	/* Modification time of file */
 
   SilcUInt32 extended_count;	/* Extended type and data count */
   SilcBuffer *extended_type;
@@ -163,7 +163,7 @@ typedef struct {
  *    example when reading the contents of a directory.
  *
  ***/
-typedef struct  {
+typedef struct {
   char **filename;
   char **long_filename;
   SilcSFTPAttributes *attrs;

@@ -54,13 +54,18 @@ SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet,
   int ret;
 
   if (packet_buf) {
-    if (packet_buf->truelen < 4 + 1 + len)
+    if (packet_buf->truelen < 4 + 1 + len) {
       packet_buf = silc_buffer_realloc(packet_buf, 4 + 1 + len);
+      if (!packet_buf)
+	return NULL;
+    }
 
     buffer = packet_buf;
     dyn = FALSE;
   } else {
     buffer = silc_buffer_alloc(4 + 1 + len);
+    if (!buffer)
+      return NULL;
     dyn = TRUE;
   }
 
@@ -148,6 +153,8 @@ SilcBuffer silc_sftp_attr_encode(SilcSFTPAttributes attr)
   }
 
   buffer = silc_buffer_alloc(len);
+  if (!buffer)
+    return NULL;
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
 
   silc_buffer_format(buffer, 
@@ -218,6 +225,8 @@ SilcSFTPAttributes silc_sftp_attr_decode(SilcBuffer buffer)
   SilcSFTPAttributes attr;
 
   attr = silc_calloc(1, sizeof(*attr));
+  if (!attr)
+    return NULL;
 
   if (silc_buffer_unformat(buffer, 
 			   SILC_STR_UI_INT(&attr->flags), 
@@ -278,6 +287,9 @@ SilcSFTPAttributes silc_sftp_attr_decode(SilcBuffer buffer)
 				      sizeof(*attr->extended_type));
     attr->extended_data = silc_calloc(attr->extended_count, 
 				      sizeof(*attr->extended_data));
+    if (!attr->extended_type || !attr->extended_data)
+      return NULL;
+
     for (i = 0; i < attr->extended_count; i++) {
       unsigned char *tmp, *tmp2;
       SilcUInt32 tmp_len, tmp2_len;
@@ -290,6 +302,8 @@ SilcSFTPAttributes silc_sftp_attr_decode(SilcBuffer buffer)
 
       attr->extended_type[i] = silc_buffer_alloc(tmp_len);
       attr->extended_data[i] = silc_buffer_alloc(tmp2_len);
+      if (!attr->extended_type[i] || !attr->extended_data[i])
+	return NULL;
       silc_buffer_put(attr->extended_type[i], tmp, tmp_len);
       silc_buffer_put(attr->extended_data[i], tmp2, tmp2_len);
 
@@ -331,6 +345,8 @@ void silc_sftp_name_add(SilcSFTPName name, const char *short_name,
 				     (name->count + 1));
   name->attrs = silc_realloc(name->attrs, sizeof(*name->attrs) *
 			     (name->count + 1));
+  if (!name->filename || !name->long_filename || !name->attrs)
+    return;
 
   name->filename[name->count] = strdup(short_name);
   name->long_filename[name->count] = strdup(long_name);
@@ -348,13 +364,20 @@ SilcBuffer silc_sftp_name_encode(SilcSFTPName name)
   SilcBuffer *attr_buf;
 
   attr_buf = silc_calloc(name->count, sizeof(*attr_buf));
+  if (!attr_buf)
+    return NULL;
+
   for (i = 0; i < name->count; i++) {
     len += (8 + strlen(name->filename[i]) + strlen(name->long_filename[i]));
     attr_buf[i] = silc_sftp_attr_encode(name->attrs[i]);
+    if (attr_buf[i])
+      return NULL;
     len += attr_buf[i]->len;
   }
 
   buffer = silc_buffer_alloc(len);
+  if (!buffer)
+    return NULL;
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
 
   silc_buffer_format(buffer,
@@ -394,9 +417,15 @@ SilcSFTPName silc_sftp_name_decode(SilcUInt32 count, SilcBuffer buffer)
   int ret;
 
   name = silc_calloc(1, sizeof(*name));
+  if (!name)
+    return NULL;
   name->filename = silc_calloc(count, sizeof(*name->filename));
   name->long_filename = silc_calloc(count, sizeof(*name->filename));
   name->attrs = silc_calloc(count, sizeof(*name->attrs));
+  if (!name->filename || !name->long_filename || !name->attrs) {
+    silc_sftp_name_free(name);
+    return NULL;
+  }
   name->count = count;
 
   for (i = 0; i < count; i++) {
@@ -415,6 +444,10 @@ SilcSFTPName silc_sftp_name_decode(SilcUInt32 count, SilcBuffer buffer)
     /* Decode attributes, this will pull the `buffer' to correct place
        for next round automatically. */
     name->attrs[i] = silc_sftp_attr_decode(buffer);
+    if (!name->attrs[i]) {
+      silc_sftp_name_free(name);
+      return NULL;
+    }
   }
 
   return name;

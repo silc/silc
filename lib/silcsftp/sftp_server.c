@@ -220,6 +220,10 @@ static void silc_sftp_server_attr(SilcSFTP sftp,
   }
 
   attr_buf = silc_sftp_attr_encode(attrs);
+  if (!attr_buf) {
+    silc_sftp_send_error(server, SILC_SFTP_STATUS_FAILURE, id);
+    return;
+  }
 
   silc_sftp_send_packet(server, SILC_SFTP_ATTRS, 4 + attr_buf->len,
 			SILC_STR_UI_INT(id),
@@ -266,6 +270,8 @@ SilcSFTP silc_sftp_server_start(SilcSFTPSendPacketCallback send_packet,
   SilcSFTPServer server;
 
   server = silc_calloc(1, sizeof(*server));
+  if (!server)
+    return NULL;
   server->send_packet = send_packet;
   server->send_context = send_context;
   server->fs = fs;
@@ -383,8 +389,12 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (attr_len) {
 	silc_buffer_set(&tmpbuf, attr_buf, attr_len);
 	attrs = silc_sftp_attr_decode(&tmpbuf);
+	if (!attrs)
+	  goto failure;
       } else {
 	attrs = silc_calloc(1, sizeof(*attrs));
+	if (!attrs)
+	  goto failure;
       }
 
       /* Call monitor */
@@ -606,8 +616,12 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (attr_len) {
 	silc_buffer_set(&tmpbuf, attr_buf, attr_len);
 	attrs = silc_sftp_attr_decode(&tmpbuf);
+	if (!attrs)
+	  goto failure;
       } else {
 	attrs = silc_calloc(1, sizeof(*attrs));
+	if (!attrs)
+	  goto failure;
       }
 
       /* Call monitor */
@@ -822,8 +836,12 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (attr_len) {
 	silc_buffer_set(&tmpbuf, attr_buf, attr_len);
 	attrs = silc_sftp_attr_decode(&tmpbuf);
+	if (!attrs)
+	  goto failure;
       } else {
 	attrs = silc_calloc(1, sizeof(*attrs));
+	if (!attrs)
+	  goto failure;
       }
 
       /* Call monitor */
@@ -863,8 +881,12 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (attr_len) {
 	silc_buffer_set(&tmpbuf, attr_buf, attr_len);
 	attrs = silc_sftp_attr_decode(&tmpbuf);
+	if (!attrs)
+	  goto failure;
       } else {
 	attrs = silc_calloc(1, sizeof(*attrs));
+	if (!attrs)
+	  goto failure;
       }
 
       /* Get the handle */
