@@ -1,3 +1,8 @@
+Fri Feb 13 14:19:14 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Use conn->cmd_ident for all silc_client_command_call()s.  Affected
+	  file lib/silcclient/command.c
+
 Fri Feb 13 13:53:45 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Convert all commands to UTF-8 before passing them to the
