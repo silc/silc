@@ -21,80 +21,133 @@
 
 #include "silcincludes.h"
 
-/* Our "select()" for WIN32. This actually is not the select() and does
-   not call Winsock's select() (since it cannot be used for our purposes)
-   but mimics the functions of select(). 
+/* Our "select()" for WIN32. This mimics the behaviour of select() system
+   call. It does not call the Winsock's select() though. Its functions
+   are derived from GLib's g_poll() and from some old Xemacs's sys_select().
 
-   This is taken from the GLib and is the g_poll function in the Glib.
-   It has been *heavily* modified to be select() like and fit for SILC. */
+   This makes following assumptions, which I don't know whether they
+   are correct or not:
+
+   o writefds are ignored, if set this will return immediately.
+   o exceptfds are ignored totally
+   o If all arguments except timeout are NULL then this will register
+     a timeout with SetTimer and will wait just for Windows messages
+     with WaitMessage.
+   o MsgWaitForMultipleObjects is used to wait all kind of events, this
+     includes SOCKETs and Windows messages.
+   o All Windows messages are dispatched from this function.
+   o The Operating System has Winsock 2.
+
+   MSDN References:
+
+   o http://msdn.microsoft.com/library/default.asp?
+     url=/library/en-us/winui/hh/winui/messques_77zk.asp 
+
+*/
 
 int silc_select(int n, fd_set *readfds, fd_set *writefds,
 		fd_set *exceptfds, struct timeval *timeout)
 {
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
-  DWORD ready;
-  int nhandles = 0;
-  int timeo, i;
+  DWORD ready, curtime, timeo;
+  int nhandles = 0, i;
+  MSG msg;
 
-  /* Check fd sets (ignoring the exceptfds for now) */
-
+  /* Check fd sets (ignoring the exceptfds) */
   if (readfds) {
     for (i = 0; i < n - 1; i++)
       if (FD_ISSET(i, readfds))
 	handles[nhandles++] = (HANDLE)i;
+
+    FD_ZERO(readfds);
   }
 
+  /* If writefds is set then return immediately */
   if (writefds) {
-    /* If write fd is set then we just return */
     for (i = 0; i < n - 1; i++)
       if (FD_ISSET(i, writefds))
 	return 1;
   }
 
-  if (!timeout)
-    timeo = INFINITE;
-  else
-    timeo = (timeout.tv_sec * 1000) + (timeout.tv_usec / 1000);
+  timeo = (timeout ? (timeout.tv_sec * 1000) + (timeout.tv_usec / 1000) :
+	   INFINITE);
+
+  /* If we have nothing to wait and timeout is set then register a timeout
+     and wait just for windows messages. */
+  if (nhandles == 0 && timeout) {
+    UINT timer = SetTimer(NULL, 0, timeo, NULL);
+    if (timer) {
+      WaitMessage();
+      KillTimer(NULL, timer);
+
+      while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+	TranslateMessage(&msg); 
+	DispatchMessage(&msg); 
+      }
+
+      return 0;
+    }
+  }
 
  retry:
-  if (nhandles == 0)
-    return -1;
-  else
-    ready = WaitForMultipleObjects(nhandles, handles, FALSE, timeo,
-				   QS_ALLINPUT);
+  curtime = GetTickCount();
+  ready = MsgWaitForMultipleObjects(nhandles, handles, FALSE, timeo, 
+				    QS_ALLINPUT);
 
   if (ready == WAIT_FAILED) {
+    /* Wait failed with error */
     SILC_LOG_WARNING(("WaitForMultipleObjects() failed"));
     return -1;
+
+  } else if (ready >= WAIT_ABANDONED_0 &&
+	     ready < WAIT_ABANDONED_0 + nhandles) {
+    /* Signal abandoned */
+    SILC_LOG_WARNING(("WaitForMultipleObjects() failed (ABANDONED)"));
+    return -1;
   } else if (ready == WAIT_TIMEOUT) {
+    /* Timeout */
     return 0;
   } else if (ready == WAIT_OBJECT_0 + nhandles) {
-    /* For Windows messages. The MSDN online says that if the application
+    /* Windows messages. The MSDN online says that if the application
        creates a window then its main loop (and we're assuming that
        it is our SILC Scheduler) must handle the Windows messages, so do
-       it here as the MSDN suggests. -Pekka */
-    /* For reference: http://msdn.microsoft.com/library/default.asp?
-       url=/library/en-us/winui/hh/winui/messques_77zk.asp */
-    MSG msg;
-
+       it here as the MSDN suggests. */
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
       TranslateMessage(&msg); 
       DispatchMessage(&msg); 
     }
 
-    /* Bad thing is that I don't know what to return, since actually
-       nothing for us happened. So, make another try with the waiting
-       and do not return. This of course may fuck up the timeouts! */
-    goto retry;
-  } else if (ready >= WAIT_OBJECT_0 && ready < WAIT_OBJECT_0 + nhandles &&
-	     readfds) {
-    for (i = 0; i < n - 1; i++) {
-      if (ready - WAIT_OBJECT_0 != i)
-	FD_CLR(i, readfds);
+    /* If timeout is set then we must update the timeout since we won't
+       return and we will give the wait another try. */
+    if (timeo != INFINITE) {
+      timeo -= GetTickCount() - curtime;
+      if (timeo < 0)
+	timeo = 0;
     }
 
-    /* Always one entry in the fd set. */
-    return 1;
+    /* Give the wait another try */
+   goto retry;
+  } else if (ready >= WAIT_OBJECT_0 && ready < WAIT_OBJECT_0 + nhandles &&
+	     readfds) {
+    /* Some other event, like SOCKET or something. */
+
+    /* Go through all fds even though only one was set. This is to avoid
+       starvation of high numbered fds. */
+    ready -= WAIT_OBJECT_0;
+    i = 0;
+    do {
+      /* Set the handle to fd set */
+      FD_SET(handle[ready], readfds);
+      i++;
+
+      /* Check the status of the next handle and set it's fd to the fd
+	 set if data is available. */
+      while (++ready < n)
+	if (WaitForSingleObject(handle[ready], 0) == WAIT_OBJECT_0)
+	  break;
+    } while (ready < n);
+
+    return i;
   }
 
   return -1;
