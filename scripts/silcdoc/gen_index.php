@@ -48,6 +48,7 @@
     <a href="http://silcnet.org">SILC Project Website</a></small></td>
   <td align="right"><small>
    <a href="index.html">SILC Toolkit Reference Manual</a><br />
+   <a href="toolkit_index.html">Index</a></small></td>
    </small></td>
  </tr>
 </table>
