@@ -46,17 +46,32 @@
 #include "silc-commands.h"
 
 void sig_mime(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
-               const char *blob, const char *enc, const char *type,
-               const char *nick)
+               const char *blob, const char *nick, int verified)
 {
+  char type[128], enc[128];
+  unsigned char *data, *message;
+  SilcUInt32 data_len, message_len;
 
   if (!(IS_SILC_SERVER(server)))
     return;
+
+  message = silc_unescape_data(blob, &message_len);
+
+  memset(type, 0, sizeof(type));
+  memset(enc, 0, sizeof(enc));
   
+  if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
+      		 enc, sizeof(enc) - 1, &data, &data_len)) {
+    silc_free(message);
+    return;
+  }
+
   printformat_module("fe-common/silc", server, 
-                        channel == NULL ? NULL : channel->name,
-                        MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
-                        nick == NULL ? "[<unknown>]" : nick, type);
+                      channel == NULL ? NULL : channel->name,
+                      MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
+                      nick == NULL ? "[<unknown>]" : nick, type);
+
+  silc_free(message);
 
 }
 

@@ -1,3 +1,21 @@
+Thu Oct 21 09:43:17 CEST 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+        * Modified the MIME parsing to allow \n and \r\n as delimiters.
+	  Affected files lib/silcutil/silcstrutil.c
+	
+	* Cleaned up the escape/unescape functions for correctness and
+	  speed. Affected file irssi/src/silc/core/client_ops.c
+
+	* Removed handling for data messages with Content-Type: text/*,
+	  moved parsing of MIME headers to the signal handler, added
+	  support for signing and verifying data messages. Affected 
+	  files are irssi/docs/signals.txt, irssi/src/silc/core/client_ops.c,
+	  irssi/src/silc/core/silc-{servers,channels}.c
+
+	* Added a perl script for handling data messages based on
+	  information read from Mailcap files. New file 
+	  irssi/scripts/silc-mime.pl
+	
 Mon Oct 20 16:08:22 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new SILC_MESSAGE_FLAG_ACK that can  be used to

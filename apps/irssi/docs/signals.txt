@@ -329,7 +329,7 @@ SILC
 ---
 
 silc-channels.c:
- "mime", SERVER_REC, CHANNEL_REC, char *blob, char *enc, char *type, char *nick
+ "mime", SERVER_REC, CHANNEL_REC, char *blob, char *nick, int verified
 
 silc-servers.c:
- "mime-send", SERVER_REC, WI_ITEM_REC, char *blob, char *enc, char *type
+ "mime-send", SERVER_REC, WI_ITEM_REC, char *blob, int sign

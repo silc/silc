@@ -290,61 +290,70 @@ int verify_message_signature(SilcClientEntry sender,
 
 char * silc_unescape_data(const char *escaped_data, SilcUInt32 *length)
 {
-  SilcUInt32 ctr, dest=0;
-  char *data;
+    char *data, *ptr;
+    int i = 0, j = 0, len = strlen(escaped_data);
 
-  data = silc_calloc(strlen(escaped_data), sizeof(char));
+    data = silc_calloc(len, sizeof(char));
+
+    while (i < len) {
+        ptr = memchr(escaped_data + i, 1, len - i);
+        if (ptr) {
+            int inc = (ptr - escaped_data) - i;
+            memcpy(data + j, escaped_data + i, inc);
+            j += inc;
+            i += inc + 2;
+            data[j++] = *(ptr + 1) - 1;
+        } else {
+            memcpy(data + j, escaped_data + i, len - i);
+            j += (len - i);
+            break;
+        }
+    }
   
-  for (ctr = 0; ctr < strlen(escaped_data); ctr++)
-    if (escaped_data[ctr] == 1)
-      data[dest++] = escaped_data[++ctr] - 1;
-    else
-      data[dest++] = escaped_data[ctr];
-
-  *length = dest;
-  return data;
+    *length = j;
+    return data;
 }
 
 char * silc_escape_data(const char *data, SilcUInt32 len)
 {
-  char *escaped_data;
-  SilcUInt32 ctr, zeros=0;
+    char *escaped_data, *ptr, *ptr0, *ptr1;
+    int i = 0, j = 0;
+  
+    escaped_data = silc_calloc(2 * len, sizeof(char));
 
-  for (ctr = 0; ctr < len; ctr++)
-    if (data[ctr] == 0 || data[ctr] == 1)
-      zeros++;
+    while (i < len) {
+        ptr0 = memchr(data + i, 0, len - i);
+        ptr1 = memchr(data + i, 1, len - i);
 
-  escaped_data = silc_calloc(zeros + len, sizeof(char));
-
-  zeros=0;
-  for (ctr = 0; ctr < len; ctr++)
-    switch (data[ctr]) {
-      case 0:
-	escaped_data[zeros++] = 1;
-	escaped_data[zeros++] = 1;
-	break;
-
-      case 1:
-	escaped_data[zeros++] = 1;
-	escaped_data[zeros++] = 2;
-	break;
-
-      default:
-	escaped_data[zeros++] = data[ctr];
-    } 
-
+        ptr = (ptr0 < ptr1 ? (ptr0 ? ptr0 : ptr1) : (ptr1 ? ptr1 : ptr0));
+    
+        if (ptr) {
+            int inc = (ptr - data) - i;
+            if (inc) 
+                memcpy(escaped_data + j, data + i, inc);
+            j += inc;
+            i += inc;
+            escaped_data[j++] = 1;
+            escaped_data[j++] = *(data + i++) + 1;
+        } else {
+            memcpy(escaped_data + j, data + i, len - i);
+            j += (len - i);
+            break;
+        }
+    }
+	  
     return escaped_data;
 }
 
 void silc_emit_mime_sig(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
-               const char *data, SilcUInt32 data_len,
-               const char *encoding, const char *type, const char *nick)
+               const char *data, SilcUInt32 data_len, const char *nick,
+	       int verified)
 {
    char *escaped_data;
 
    escaped_data = silc_escape_data(data, data_len);
 
-   signal_emit("mime", 6, server, channel, escaped_data, encoding, type, nick);
+   signal_emit("mime", 4, server, channel, escaped_data, nick, verified);
  
    silc_free(escaped_data);
 }
@@ -393,27 +402,10 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   }
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
-    /* MIME object received, try to display it as well as we can */
-    char type[128], enc[128];
-    unsigned char *data;
-    SilcUInt32 data_len;
-
-    memset(type, 0, sizeof(type));
-    memset(enc, 0, sizeof(enc));
-    if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
-			 enc, sizeof(enc) - 1, &data, &data_len))
-      return;
-
-    /* Then figure out what we can display */
-    if (strstr(type, "text/") && !strstr(type, "text/t140") &&
-	!strstr(type, "text/vnd")) {
-      /* It is something textual, display it */
-      message = (const unsigned char *)data;
-    } else {
-      silc_emit_mime_sig(server, chanrec, data, data_len,
-      		enc, type, nick == NULL ? NULL : nick->nick);
-      message = NULL;
-    }
+    silc_emit_mime_sig(server, chanrec, message, message_len,
+		nick == NULL ? NULL : nick->nick,
+		flags & SILC_MESSAGE_FLAG_SIGNED ? verified : -1);
+    message = NULL;
   }
 
   if (!message)
@@ -535,28 +527,10 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   }
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
-    /* MIME object received, try to display it as well as we can */
-    char type[128], enc[128];
-    unsigned char *data;
-    SilcUInt32 data_len;
-
-    memset(type, 0, sizeof(type));
-    memset(enc, 0, sizeof(enc));
-    if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
-			 enc, sizeof(enc) - 1, &data, &data_len))
-      return;
-
-    /* Then figure out what we can display */
-    if (strstr(type, "text/") && !strstr(type, "text/t140") &&
-	!strstr(type, "text/vnd")) {
-      /* It is something textual, display it */
-      message = (const unsigned char *)data;
-    } else {
-      silc_emit_mime_sig(server, NULL, data, data_len,
-      			enc, type, sender->nickname ? sender->nickname :
-				   "[<unknown>]");
-      message = NULL;
-    }
+    silc_emit_mime_sig(server, NULL, message, message_len,
+      		sender->nickname ? sender->nickname : "[<unknown>]",
+		flags & SILC_MESSAGE_FLAG_SIGNED ? verified : -1);
+    message = NULL;
   }
 
   if (!message)

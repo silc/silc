@@ -175,50 +175,32 @@ static int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
 }
 
 void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
-		    const char *data,
-		    const char *enc, const char *type)
+		    const char *data, int sign)
 {
   SILC_CHANNEL_REC *channel;
   QUERY_REC *query;
   char *unescaped_data;
   SilcUInt32 unescaped_data_len;
-  char *mime_data;
-  int mime_data_len;
 
-  if (!(IS_SILC_SERVER(server)) || (data == NULL) || (to == NULL) ||
-      (enc == NULL) || (type == NULL))
+  if (!(IS_SILC_SERVER(server)) || (data == NULL) || (to == NULL))
     return;
 
   unescaped_data = silc_unescape_data(data, &unescaped_data_len);
 
-#define SILC_MIME_HEADER "MIME-Version: 1.0\r\nContent-Type: %s\r\nContent-Transfer-Encoding: %s\r\n\r\n"
-
-  mime_data_len = unescaped_data_len + strlen(SILC_MIME_HEADER) - 4
-    + strlen(enc) + strlen(type);
-  if (mime_data_len >= SILC_PACKET_MAX_LEN)
-    return;
-
-  /* we risk to large packets here... */
-  mime_data = silc_calloc(mime_data_len, sizeof(*mime_data));
-  snprintf(mime_data, mime_data_len, SILC_MIME_HEADER, type, enc);
-  memmove(mime_data + strlen(SILC_MIME_HEADER) - 4 + strlen(enc) + strlen(type),
-	  unescaped_data, unescaped_data_len);
-
-#undef SILC_MIME_HEADER
-
   if (IS_SILC_CHANNEL(to)) {
     channel = SILC_CHANNEL(to);
     silc_client_send_channel_message(silc_client, server->conn, channel->entry,
-				     NULL, SILC_MESSAGE_FLAG_DATA,
-				     mime_data, mime_data_len, TRUE);
+				     NULL, SILC_MESSAGE_FLAG_DATA |
+				     (sign ? SILC_MESSAGE_FLAG_SIGNED : 0),
+				     unescaped_data, unescaped_data_len, TRUE);
   } else if (IS_SILC_QUERY(to)) {
     query = SILC_QUERY(to);
-    silc_send_msg(server, query->name, mime_data, mime_data_len,
-		  SILC_MESSAGE_FLAG_DATA);
+    silc_send_msg(server, query->name, unescaped_data, unescaped_data_len,
+		  SILC_MESSAGE_FLAG_DATA | 
+		  (sign ? SILC_MESSAGE_FLAG_SIGNED : 0));
 
   }
 
-  silc_free(mime_data);
   silc_free(unescaped_data);
 }
 
