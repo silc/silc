@@ -26,6 +26,7 @@ COMMONDIRS = \
 	silcmath \
 	silcske \
 	silcutil \
+	silcclient \
 	dotconf \
 	trq
 #        zlib
@@ -52,7 +53,15 @@ SILCCLIENTLIB_DIRS = \
 CLEANFILES = libsilc.a libsilcclient.a
 DISTCLEANFILES = libsilc.a libsilcclient.a
 
+if SILC_DIST_CLIENT
 all:  remove libsilc.a libsilcclient.a
+else
+if SILC_DIST_TOOLKIT
+all:  remove libsilc.a libsilcclient.a
+else
+all:  remove libsilc.a
+endif
+endif
 
 remove:
 	-rm -rf libsilc.a
