@@ -363,7 +363,6 @@ EXPORTS
 	silc_pkcs_register @ 586 ; 
 	silc_pkcs_register_default @ 587 ; 
 	silc_pkcs_save_private_key @ 588 ; 
-	silc_pkcs_save_private_key_data @ 589 ; 
 	silc_pkcs_save_public_key @ 590 ; 
 	silc_pkcs_save_public_key_data @ 591 ; 
 	silc_pkcs_sign @ 592 ; 
@@ -580,3 +579,7 @@ EXPORTS
         silc_attribute_get_flags @ 878 ;
         silc_attribute_get_verify_data @ 879 ;
         silc_hash_get_name @ 880 ;
+	silc_create_key_pair @ 881 ;
+	silc_load_key_pair @ 882 ;
+	silc_show_public_key @ 883 ;
+	silc_change_private_key_passphrase @ 884 ;
