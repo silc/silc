@@ -60,7 +60,7 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
 
   /* Check fd sets (ignoring the exceptfds) */
   if (readfds) {
-    for (i = 0; i < n - 1; i++)
+    for (i = 0; i < n; i++)
       if (FD_ISSET(i, readfds))
 	handles[nhandles++] = (HANDLE)i;
 
@@ -69,7 +69,7 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
 
   /* If writefds is set then return immediately */
   if (writefds) {
-    for (i = 0; i < n - 1; i++)
+    for (i = 0; i < n; i++)
       if (FD_ISSET(i, writefds))
 	return 1;
   }
