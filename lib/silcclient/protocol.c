@@ -22,7 +22,8 @@
  */
 /* $Id$ */
 
-#include "clientlibincludes.h"
+#include "silcincludes.h"
+#include "silcclient.h"
 #include "client_internal.h"
 
 SILC_TASK_CALLBACK(silc_client_protocol_connection_auth);

@@ -47,7 +47,6 @@ INCLUDES = @EXTRA_GNOME_CFLAGS@ -DENABLE_NLS \
 	-I$(silc_top_srcdir)/lib/silcclient \
 	-I$(silc_top_srcdir)/lib/contrib \
         -I$(silc_top_srcdir)/includes \
-        -I$(silc_top_srcdir)/doc \
-	-I$(silc_top_srcdir)/lib/trq
+        -I$(silc_top_srcdir)/doc
 
 EXTRA_DIST = 

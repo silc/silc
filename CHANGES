@@ -1,3 +1,21 @@
+Wed Feb 20 20:41:01 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added automatic extern "C" { ... } for C++ compilers so the
+	  application does not need to define them.  Affected file
+	  includes/silcincludes.h.
+
+	* Renamed lib/silcclient/silcapi.h to silcclient.h as the
+	  old name went against naming convention.  Applications now
+	  include "silcclient.h" instead of "clientlibincludes.h".
+	  Removed includes/clientlibincludes.h, it is redundant now.
+
+	* Renamed includes/version.h to silcversion.h.
+
+	* Added really preliminary support for OS/2 into the util
+	  library.  Only thread & mutex API is implemented, others
+	  are still to be implemented.  Created the lib/silcutil/os2/
+	  directory.  Created also file includes/silcos2.h.
+
 Wed Feb 20 18:48:49 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added preliminary BeOS support into the util library.

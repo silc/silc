@@ -21,7 +21,8 @@
    important packets sent by the server. They tell different things to the
    client such as nick changes, mode changes etc. */
 
-#include "clientlibincludes.h"
+#include "silcincludes.h"
+#include "silcclient.h"
 #include "client_internal.h"
 
 typedef struct {

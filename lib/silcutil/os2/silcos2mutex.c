@@ -1,6 +1,6 @@
 /*
 
-  silcbeosmutex.c 
+  silcos2mutex.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -25,43 +25,43 @@
 
 /* SILC Mutex structure */
 struct SilcMutexStruct {
-  sem_id sema;
+  HMTX mutex;
 };
 
 bool silc_mutex_alloc(SilcMutex *mutex)
 {
-  int ret;
+  char name[64];
 
   *mutex = silc_calloc(1, sizeof(**mutex));
   if (*mutex == NULL)
     return FALSE;
 
-  ret = create_sem(0, "SILC_MUTEX");
-  if (ret < B_NO_ERROR) {
+  /* Create the lock. Is the name working? :) */
+  memset(name, 0, sizeof(name));
+  snprintf(name, sizeof(name) - 1, "%p/SEM32/SILC1234$", *mutex);
+  if (!DosCreateMutexSem(name, &(*mutex)->mutex, DC_SEM_SHARED, FALSE)) {
     silc_free(*mutex);
     return FALSE;
   }
-
-  (*mutex)->sema = ret;
 
   return TRUE;
 }
 
 void silc_mutex_free(SilcMutex mutex)
 {
-  delete_sem(mutex->sema);
+  DosCloseMutexSem(mutex->mutex);
   silc_free(mutex);
 }
 
 void silc_mutex_lock(SilcMutex mutex)
 {
-  if (acquire_sem(mutex->sema) < B_NO_ERROR)
+  if (!DosRequestMutexSem(mutex->mutex, SEM_INDEFINITE_WAIT))
     assert(FALSE);
 }
 
 void silc_mutex_unlock(SilcMutex mutex)
 {
-  if (release_sem(mutex->sema) < B_NO_ERROR)
+  if (!DosReleaseMutexSem(mutex->mutex)
     assert(FALSE);
 }
 

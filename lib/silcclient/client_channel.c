@@ -22,7 +22,8 @@
    channel key receiving and setting, and channel private key handling 
    routines. */
 
-#include "clientlibincludes.h"
+#include "silcincludes.h"
+#include "silcclient.h"
 #include "client_internal.h"
 
 /* Sends packet to the `channel'. Packet to channel is always encrypted

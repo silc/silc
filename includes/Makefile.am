@@ -24,19 +24,17 @@ all:
 if SILC_DIST_TOOLKIT
 include_HEADERS = \
 	bitmove.h \
-	clientlibincludes.h \
 	silcincludes.h \
 	silcwin32.h \
-	version.h \
-	version_internal.h \
+	silcversion.h \
+	silcversion_internal.h \
 	silcdefs.h
 endif
 
 EXTRA_DIST = \
 	bitmove.h \
-	clientlibincludes.h \
 	silcincludes.h \
 	silcwin32.h \
-	version.h \
-	version_internal.h \
+	silcversion.h \
+	silcversion_internal.h \
 	silcdefs.h.in

@@ -28,6 +28,10 @@
 /* Automatically generated configuration header */
 #include "silcdefs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef WIN32
 #ifndef SILC_WIN32
 #define SILC_WIN32
@@ -50,6 +54,12 @@
 #endif
 #endif
 
+#if defined(OS2)
+#ifndef SILC_OS2
+#define SILC_OS2
+#endif
+#endif
+
 /* Platform specific includes */
 
 #ifdef SILC_WIN32
@@ -62,6 +72,10 @@
 
 #ifdef SILC_BEOS
 #include "silcbeos.h"
+#endif
+
+#ifdef SILC_OS2
+#include "silcos2.h"
 #endif
 
 #ifndef DLLAPI
@@ -314,4 +328,8 @@ typedef uint32 * void *;
 #include "silcsftp.h"
 #include "silcsftp_fs.h"
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SILCINCLUDES_H */

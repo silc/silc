@@ -20,11 +20,6 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-/* Forward declarations */
-typedef struct SilcClientCommandStruct *SilcClientCommand;
-typedef struct SilcClientCommandContextStruct *SilcClientCommandContext;
-
-#include "silcapi.h"
 #include "command_reply.h"
 
 /* Structure holding one command and pointer to its function. This

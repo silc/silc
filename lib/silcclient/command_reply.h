@@ -27,7 +27,7 @@ typedef struct {
 } SilcClientCommandReply;
 
 /* Context sent as argument to all command reply functions */
-typedef struct {
+struct SilcClientCommandReplyContextStruct {
   SilcClient client;
   SilcSocketConnection sock;
   SilcCommandPayload payload;
@@ -38,7 +38,7 @@ typedef struct {
   SilcCommandCb callback;
   void *context;
   uint16 ident;
-} *SilcClientCommandReplyContext;
+};
 
 /* Macros */
 

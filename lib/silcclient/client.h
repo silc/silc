@@ -21,17 +21,7 @@
 #define CLIENT_H
 
 /* Forward declarations */
-typedef struct SilcClientStruct *SilcClient;
 typedef struct SilcClientInternalStruct *SilcClientInternal;
-typedef struct SilcClientConnectionStruct *SilcClientConnection;
-typedef struct SilcClientPingStruct SilcClientPing;
-typedef struct SilcClientAwayStruct SilcClientAway;
-typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
-typedef struct SilcClientFtpSessionStruct *SilcClientFtpSession;
-
-#include "idlist.h"
-#include "command.h"
-#include "silcapi.h"
 
 /* Generic rekey context for connections */
 typedef struct {

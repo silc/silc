@@ -16,7 +16,7 @@
 #  GNU General Public License for more details.
 #
 
-AC_INIT(includes/version.h)
+AC_INIT(includes/silcversion.h)
 
 #
 # Put here any platform specific stuff
@@ -621,6 +621,11 @@ AM_CONDITIONAL(SILC_EPOC, test xfalse = xtrue)
 AM_CONDITIONAL(SILC_BEOS, test xfalse = xtrue)
 
 #
+# Native OS2 support (disabled by default)
+#
+AM_CONDITIONAL(SILC_OS2, test xfalse = xtrue)
+
+#
 # IPv6 support
 #
 AC_MSG_CHECKING(for IPv6 support)
@@ -765,7 +770,9 @@ fi
 #
 # Other configure scripts
 #
+if test "x$silc_dist" = "xsilc-client"; then
 AC_CONFIG_SUBDIRS(irssi)
+fi
 AC_CONFIG_SUBDIRS(lib/silcmath/mpi)
 #AC_CONFIG_SUBDIRS(lib/zlib)
 

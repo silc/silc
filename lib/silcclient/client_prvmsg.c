@@ -21,7 +21,8 @@
 /* This file includes the private message sending and receiving routines
    and private message key handling routines. */
 
-#include "clientlibincludes.h"
+#include "silcincludes.h"
+#include "silcclient.h"
 #include "client_internal.h"
 
 /* Sends private message to remote client. If private message key has

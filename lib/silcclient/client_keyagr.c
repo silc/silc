@@ -24,7 +24,8 @@
    and in protocol.c. This file implements the client-to-client key 
    agreement as defined by the SILC protocol. */
 
-#include "clientlibincludes.h"
+#include "silcincludes.h"
+#include "silcclient.h"
 #include "client_internal.h"
 
 SILC_TASK_CALLBACK(silc_client_key_agreement_final);

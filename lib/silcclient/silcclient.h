@@ -1,16 +1,15 @@
 /*
 
-  silcapi.h
-  
+  silcclient.h 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
-  
-  Copyright (C) 2000 - 2001 Pekka Riikonen
-  
+
+  Copyright (C) 2000 - 2002 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
- 
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -48,10 +47,29 @@
  *
  ***/
 
-#ifndef SILCAPI_H
-#define SILCAPI_H
+#ifndef SILCCLIENT_H
+#define SILCCLIENT_H
 
-#include "clientlibincludes.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Forward declarations */
+typedef struct SilcClientStruct *SilcClient;
+typedef struct SilcClientConnectionStruct *SilcClientConnection;
+typedef struct SilcClientPingStruct SilcClientPing;
+typedef struct SilcClientAwayStruct SilcClientAway;
+typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
+typedef struct SilcClientFtpSessionStruct *SilcClientFtpSession;
+typedef struct SilcClientEntryStruct *SilcClientEntry;
+typedef struct SilcChannelEntryStruct *SilcChannelEntry;
+typedef struct SilcServerEntryStruct *SilcServerEntry;
+typedef struct SilcClientCommandStruct *SilcClientCommand;
+typedef struct SilcClientCommandContextStruct *SilcClientCommandContext;
+typedef struct SilcClientCommandReplyContextStruct 
+                                           *SilcClientCommandReplyContext;
+typedef struct SilcChannelPrivateKeyStruct *SilcChannelPrivateKey;
+typedef struct SilcChannelUserStruct *SilcChannelUser;
 
 /* General definitions */
 
@@ -2018,4 +2036,14 @@ SilcClientFileError silc_client_file_close(SilcClient client,
 					   SilcClientConnection conn,
 					   uint32 session_id);
 
+#include "client.h"
+#include "command.h"
+#include "command_reply.h"
+#include "idlist.h"
+#include "protocol.h"
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SILCCLIENT_H */

@@ -23,10 +23,8 @@
 #include "SilcerMainDlg.hh"
 #include "silcer_gladehelper.hh"
 
-extern "C" {
 #include "silcincludes.h"
-#include "clientlibincludes.h"
-}
+#include "silcclient.h"
 
 #include <fstream>
 #include <glade/glade-xml.h>

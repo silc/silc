@@ -19,6 +19,7 @@
 */
 /* These routines are based on GLib's WIN32 gthread implementation and
    thus credits should go there. */
+/* XXX Is the use of Tls necessary?? */
 /* $Id$ */
 
 #include "silcincludes.h"
@@ -44,8 +45,7 @@ unsigned __stdcall silc_thread_win32_start(void *context)
   SilcWin32Thread thread = (SilcWin32Thread)context;
 
   TlsSetValue(silc_thread_tls, context);
-  thread->start_func(thread->context);
-  silc_thread_exit(NULL);
+  silc_thread_exit(thread->start_func(thread->context));
 
   return 0;
 }

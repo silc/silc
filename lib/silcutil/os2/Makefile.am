@@ -1,9 +1,9 @@
 #
 #  Makefile.am
 #
-#  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+#  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 Pekka Riikonen
+#  Copyright (C) 2002 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,30 +18,14 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilcclient.a
+noinst_LIBRARIES = libsilcos2util.a
 
-libsilcclient_a_SOURCES = \
-	client.c \
-	client_keyagr.c \
-	client_notify.c \
-	client_prvmsg.c \
-	client_channel.c \
-	client_ftp.c	\
-	command.c \
-	command_reply.c \
-	idlist.c \
-	protocol.c
-
-if SILC_DIST_TOOLKIT
-include_HEADERS= 	\
-	client.h 	\
-	command.h	\
-	command_reply.h	\
-	idlist.h	\
-	protocol.h	\
-	silcclient.h
-endif
-
-EXTRA_DIST = *.h client_ops_example.c
+libsilcos2util_a_SOURCES = 	\
+	silcos2schedule.c	\
+	silcos2net.c		\
+	silcos2util.c		\
+	silcos2sockconn.c	\
+	silcos2mutex.c		\
+	silcos2thread.c
 
 include $(top_srcdir)/Makefile.defines.in

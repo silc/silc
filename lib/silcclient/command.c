@@ -18,7 +18,8 @@
 */
 /* $Id$ */
 
-#include "clientlibincludes.h"
+#include "silcincludes.h"
+#include "silcclient.h"
 #include "client_internal.h"
 
 #define SILC_NOT_CONNECTED(x, c) \

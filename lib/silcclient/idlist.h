@@ -20,8 +20,6 @@
 #ifndef IDLIST_H
 #define IDLIST_H
 
-typedef struct SilcChannelEntryStruct *SilcChannelEntry;
-
 /* Client entry status */
 typedef enum {
   SILC_CLIENT_STATUS_NONE       = 0x0000,
@@ -32,7 +30,7 @@ typedef enum {
    (it receives its ID, for example, by IDENTIFY request) we create new
    client entry. This entry also includes the private message keys if
    they are used. */
-typedef struct {
+struct SilcClientEntryStruct {
   char *nickname;		/* nickname */
   char *username;		/* username */
   char *hostname;		/* hostname */
@@ -54,22 +52,22 @@ typedef struct {
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
   SilcClientStatus status;	/* Status mask */
   SilcHashTable channels;	/* All channels client has joined */
-} *SilcClientEntry;
+};
 
 /* Client and its mode on a channel */
-typedef struct SilcChannelUserStruct {
+struct SilcChannelUserStruct {
   SilcClientEntry client;
   uint32 mode;
   SilcChannelEntry channel;
-} *SilcChannelUser;
+};
 
 /* Structure to hold one channel private key. */
-typedef struct {
+struct SilcChannelPrivateKeyStruct {
   SilcCipher cipher;		      /* The cipher and key */
   SilcHmac hmac;		      /* The HMAC and hmac key */
   unsigned char *key;		      /* The key data */
   uint32 key_len;		      /* The key length */
-} *SilcChannelPrivateKey;
+};
 
 /* Channel entry context. This is allocate for every channel client has
    joined to. This includes for example the channel specific keys */
@@ -101,11 +99,11 @@ struct SilcChannelEntryStruct {
 /* Server entry context. This represents one server. When server information
    is resolved with INFO command the server info is saved in this context. 
    Also the connected servers are saved here. */
-typedef struct {
+struct SilcServerEntryStruct {
   char *server_name;
   char *server_info;
   SilcServerID *server_id;
-} *SilcServerEntry;
+};
 
 /* Prototypes. These are used only by the library. Application should not
    call these directly. */

@@ -1,6 +1,6 @@
 /*
 
-  silcbeosthread.c 
+  silcos2thread.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -19,29 +19,30 @@
 /* I used Apache's APR code as a reference here. */
 /* $Id$ */
 
+#include "silcincludes.h"
+
 /* XXX This leaks memory. Perhaps the SilcThread API should be changed
    since the silc_thread_self() causes that BeOS and OS/2 is hard to
    do to support this SilcThread API */
 
-#include "silcincludes.h"
-
 #ifdef SILC_THREADS
 
-/* Thread structure for BeOS */
+/* Thread structure for OS/2 */
 typedef struct {
-  thread_id thread;
+  unsigned long thread;
   SilcThreadStart start_func;
   void *context;
   bool waitable;
-} *SilcBeosThread;
+} *SilcOs2Thread;
 
-/* Actual routine that is called by BeOS when the thread is created.
-   We will call the start_func from here. */
+/* Actual routine that is called by OS/2 when the thread is created.
+   We will call the start_func from here. When this returns the thread
+   is destroyed. */
 
-static void *silc_thread_beos_start(void *context)
+static void silc_thread_os2_start(void *context)
 {
-  SilcBeosThread thread = (SilcBeosThread)context;
-  return (*thread->start_func)(thread->context);
+  SilcOs2Thread thread = (SilcOs2Thread)context;
+  silc_thread_exit((*thread->start_func)(thread->context));
 }
 
 #endif
@@ -51,7 +52,7 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 {
 #ifdef SILC_THREADS
   int ret;
-  SilcBeosThread thread = silc_calloc(1, sizeof(*thread));
+  SilcOs2Thread thread = silc_calloc(1, sizeof(*thread));
   if (!thread)
     return NULL;
 
@@ -60,10 +61,8 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   thread->waitable = waitable;
 
   /* Create the thread, and run it */
-  thread->thread = spawn_thread((thread_func)silc_thread_beos_start,
-				B_NORMAL_PRIORITY, thread);
-  ret = resume_thread(thread->thread);
-  if (ret < B_NO_ERROR) {
+  thread->thread = _beginthread(silc_thread_os2_start, NULL, 65536, thread);
+  if (thread->thread < 0) {
     SILC_LOG_ERROR(("Could not create new thread"));
     silc_free(thread);
     return NULL;
@@ -80,14 +79,17 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 void silc_thread_exit(void *exit_value)
 {
 #ifdef SILC_THREADS
-  exit_thread((status_t)exit_value);
+  _endthread();
 #endif
 }
 
 SilcThread silc_thread_self(void)
 {
 #ifdef SILC_THREADS
-  return (SilcThread)find_thread(NULL);
+  PIB *pib;
+  TIB *tib;
+  DosGetInfoBlocks(&tib, &pib);
+  return (SilcThread)tib->tib_ptib2->tib2_ultid;
 #else
   return NULL;
 #endif
@@ -96,12 +98,11 @@ SilcThread silc_thread_self(void)
 bool silc_thread_wait(SilcThread thread, void **exit_value)
 {
 #ifdef SILC_THREADS
-  status_t ret, retval;
 
-  ret = wait_for_thread((thread_id)thread, &retval);
-  if (ret == B_NO_ERROR) {
+  if (DosWaitThread((unsigned long)thread, DCWW_WAIT) !=
+      ERROR_INVALID_THREADID) {
     if (exit_value)
-      *exit_value = retval;
+      *exit_value = NULL;
     return TRUE;
   }
 

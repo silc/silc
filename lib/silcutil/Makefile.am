@@ -26,7 +26,11 @@ else
 if SILC_BEOS
 SUBDIRS=beos
 else
+if SILC_OS2
+SUBDIRS=os2
+else
 SUBDIRS=unix
+endif
 endif
 endif
 endif

@@ -13,14 +13,14 @@ common and core compomnent of SILC protocol from the lib/silccore, SKE
 from lib/silcske and general utility routines from lib/silcutil.
 
 <br />&nbsp;<br />
-The `silcapi.h' file defines the function prototypes that application
+The `silcclient.h' file defines the function prototypes that application
 must implement in order to be able to create the user interface with the
 library.  The idea is that the application can implement whatever user
 interface routines in the functions and display the data whatever way
 it wants.  The library is entirely transparent to the user interface and
 it does not include any user interface specific issues such as window
 handling or item handling on the screen etc.  These does not interest
-the library.  The `silcapi.h' also defines the client libary interface
+the library.  The `silcclient.h' also defines the client libary interface
 the application can call.  The interface includes for example functions
 for sending channel and private messages, client and channel retrieval
 and other utility functions.
@@ -35,19 +35,7 @@ get access all SILC Client Library routines:
 <br />&nbsp;<br />
 <tt>
 #include "silcincludes.h"<br />
-#include "clientlibincludes.h"
-</tt>
-
-<br />&nbsp;<br />
-If you are compiling with C++ compiler then you need to include the 
-headers as follows:
-
-<br />&nbsp;<br />
-<tt>
-extern "C" {<br />
-#include "silcincludes.h"<br />
-#include "clientlibincludes.h"<br &/>
-}
+#include "silcclient.h"
 </tt>
 
 
@@ -66,7 +54,7 @@ The client object is SilcClient which is usually allocated in following
 manner:
 
 <br />&nbsp;<br />
-<tt>&nbsp;&nbsp;SilcClient client = silc_client_alloc(&ops, params, context, version);</tt>
+<tt>&nbsp;&nbsp;SilcClient client = silc_client_alloc(&ops, params, context, silc_version_string);</tt>
 
 <br />&nbsp;<br />
 `ops' is the static structure of client operations that library will call.
@@ -75,6 +63,10 @@ the SilcClient object.  It is up to the caller to free this context.
 SilcClient is always passed to the application thus the application
 specific context can be retrieved from the SilcClient object.  See 
 `client.h' file for detailed definition of SilcClient object.
+
+<br />&nbsp;<br />
+The `silc_version_string' is the current protocol version string, and you
+can get it by including `silcversion.h' header in your source code.
 
 <br />&nbsp;<br />
 `ops' can be defined for example as follows:
@@ -301,7 +293,7 @@ the connections.  The SilcClientOperations are expected to be implemented.
 <br />&nbsp;<br />
 <pre>
 #include "silcincludes.h"
-#include "silcapi.h"
+#include "silcclient.h"
 
 int main()
 {

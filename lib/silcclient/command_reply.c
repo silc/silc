@@ -32,7 +32,8 @@
  * received but ID entry does not exist, NULL is sent.
  */
 
-#include "clientlibincludes.h"
+#include "silcincludes.h"
+#include "silcclient.h"
 #include "client_internal.h"
 
 const SilcCommandStatusMessage silc_command_status_messages[] = {

@@ -27,7 +27,7 @@
 
 #include "serverincludes.h"
 #include "server_internal.h"
-#include "version.h"
+#include "silcversion.h"
 
 /* For now, we'll have this one server context global for this module. */
 static SilcServer silcd;

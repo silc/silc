@@ -2,7 +2,7 @@
 @LIBRARY=SILC Client Library
 @FILENAME=silcclientlib.html
 @LINK=silcclient_using.html:Using SILC Client Library
-@LINK=silcapi.html:Client Library Interface
+@LINK=silcclient.html:Client Library Interface
 -->
 
 <BIG><B>SILC Client Library</B></BIG>
@@ -19,7 +19,7 @@ application which it can use to implement generally whatever user interface
 it wants.
 
 <BR /><BR />
-The `silcapi.h' file defines the function prototypes that application must
+The `silcclient.h' file defines the function prototypes that application must
 implement in order to be able to create the user interface with the
 library.  The idea is that the application can implement whatever user
 interface routines in the functions and display the data whatever way

@@ -18,7 +18,8 @@
 */
 /* $Id$ */
 
-#include "clientlibincludes.h"
+#include "silcincludes.h"
+#include "silcclient.h"
 #include "client_internal.h"
 
 /* Static task callback prototypes */

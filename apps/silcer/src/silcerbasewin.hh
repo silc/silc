@@ -22,10 +22,8 @@
 
 #include "silcer_gladehelper.hh"
 
-extern "C" {
 #include "silcincludes.h"
-#include "clientlibincludes.h"
-}
+#include "silcclient.h"
 
 #include <sigc++/signal_system.h>
 #include <sigc++/object_slot.h>

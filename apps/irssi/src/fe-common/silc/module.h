@@ -5,5 +5,5 @@
 #undef PACKAGE
 #undef VERSION
 #include "silcincludes.h"
-#include "clientlibincludes.h"
+#include "silcclient.h"
 #include "silc-core.h"
