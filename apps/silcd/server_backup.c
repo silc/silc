@@ -944,7 +944,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
   SilcServerBackupProtocolContext ctx = protocol->context;
   SilcServer server = ctx->server;
   SilcServerEntry server_entry;
-  SilcSocketConnection sock;
+  SilcSocketConnection sock = NULL;
   unsigned char data[2];
   int i;
 
@@ -1133,7 +1133,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 					   server->router, TRUE);
 
       /* We as primary router now must send RESUMED packets to all servers
-	 and routers so that they know we are back. */
+	 and routers so that they know we are back.   For backup router we
+	 send the packet last so that we give the backup as much time as
+	 possible to deal with message routing at this critical moment. */
       for (i = 0; i < server->config->param.connections_max; i++) {
 	sock = server->sockets[i];
 	if (!sock || !sock->user_data ||
@@ -1142,6 +1144,11 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	     sock->type != SILC_SOCKET_TYPE_SERVER))
 	  continue;
 
+	/* Send to backup last */
+	if (sock == ctx->sock)
+	  continue;
+
+      send_to_backup:
 	server_entry = sock->user_data;
 	server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 
@@ -1156,6 +1163,13 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	silc_server_packet_send(server, sock, SILC_PACKET_RESUME_ROUTER, 0,
 				data, sizeof(data), FALSE);
 	silc_server_packet_queue_purge(server,sock);
+      }
+
+      /* Now send the same packet to backup */
+      if (sock != ctx->sock) {
+	sleep(1);
+	sock = ctx->sock;
+	goto send_to_backup;
       }
 
       /* We are now resumed and are back as primary router in the cell. */
