@@ -540,7 +540,8 @@ do {									\
     if (f) {								\
       f = (char *)mime + (f - header) + field_len;			\
       for (i = 0; i < (mime_len - (f - (char *)mime)); i++) {		\
-        if (f[i] == '\r' || f[i] == '\n' || i == dest_size)		\
+        if ((i == dest_size) ||						\
+	    (((f[i] == '\n') || (f[i] == '\r')) && !(f[i+1] == '\t')))	\
           break;							\
         dest[i] = f[i];							\
       }									\
@@ -557,30 +558,35 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
                 char *transfer_encoding, SilcUInt32 transfer_encoding_size,
                 unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len)
 { 
+  char *header;
   int i;
-  char header[256];
-   
-  memcpy(header, mime, 256 > mime_len ? mime_len : 256);
-  header[sizeof(header) - 1] = '\0';
 
-  /* Check for mandatory Content-Type field */
-  if (!strstr(header, MIME_CONTENT_TYPE))
-    return FALSE;
-  
   /* Get the pointer to the data area in the object */
   for (i = 0; i < mime_len; i++) {
-    if (mime_len >= i + 4 &&
-	mime[i    ] == '\r' && mime[i + 1] == '\n' &&
-	mime[i + 2] == '\r' && mime[i + 3] == '\n')
+    if ((mime_len >= i + 4 &&
+	 mime[i    ] == '\r' && mime[i + 1] == '\n' &&
+	 mime[i + 2] == '\r' && mime[i + 3] == '\n') ||
+	(mime_len >= i + 2 &&
+	 mime[i    ] == '\n' && mime[i + 1] == '\n'))
       break;
   }
   if (i >= mime_len)
     return FALSE;
 
   if (mime_data_ptr)
-    *mime_data_ptr = (unsigned char *)mime + i + 4;
+    *mime_data_ptr = (unsigned char *)mime + i + 
+	    (mime[i] == '\n' ? 2 : 4);
   if (mime_data_len)
-    *mime_data_len = mime_len - ((mime + i + 4) - mime);
+    *mime_data_len = mime_len - (i + (mime[i] == '\n' ? 2 : 4));
+
+  header = silc_calloc(i + 1, 1);
+  memcpy(header, mime, i);
+
+  /* Check for mandatory Content-Type field */
+  if (!strstr(header, MIME_CONTENT_TYPE)) {
+    silc_free(header);
+    return FALSE;
+  }
   
   /* Get MIME version, Content-Type and Transfer Encoding fields */
   MIME_GET_FIELD(header, mime, mime_len,
@@ -592,6 +598,8 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
   MIME_GET_FIELD(header, mime, mime_len,
 		 MIME_TRANSFER_ENCODING, MIME_TRANSFER_ENCODING_LEN,
 		 transfer_encoding, transfer_encoding_size);
+
+  silc_free(header);
 
   return TRUE;
 }
