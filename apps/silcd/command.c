@@ -1936,14 +1936,19 @@ SILC_SERVER_CMD_FUNC(identify)
 
 static int silc_server_command_bad_chars(char *nick)
 {
-  if (strchr(nick, '\\')) return TRUE;
-  if (strchr(nick, '\"')) return TRUE;
-  if (strchr(nick, '´')) return TRUE;
-  if (strchr(nick, '`')) return TRUE;
-  if (strchr(nick, '\'')) return TRUE;
-  if (strchr(nick, '*')) return TRUE;
-  if (strchr(nick, '/')) return TRUE;
-  if (strchr(nick, '@')) return TRUE;
+  int i;
+
+  for (i = 0; i < strlen(nick); i++) {
+    if (!isalpha(nick[i]))
+      return TRUE;
+    if (nick[i] == ' ') return TRUE;
+    if (nick[i] == '\\') return TRUE;
+    if (nick[i] == '\"') return TRUE;
+    if (nick[i] == '*') return TRUE;
+    if (nick[i] == '?') return TRUE;
+    if (nick[i] == ',') return TRUE;
+    if (nick[i] == '@') return TRUE;
+  }
 
   return FALSE;
 }
