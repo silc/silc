@@ -124,10 +124,14 @@ silc_connect(SilcClient client, SilcClientConnection conn,
 }
 
 
-/* Called to indicate that connection was disconnected to the server. */
+/* Called to indicate that connection was disconnected to the server.
+   The `status' may tell the reason of the disconnection, and if the
+   `message' is non-NULL it may include the disconnection message
+   received from server. */
 
 static void
-silc_disconnect(SilcClient client, SilcClientConnection conn)
+silc_disconnect(SilcClient client, SilcClientConnection conn,
+		SilcStatus status, const char *message)
 {
 
 }

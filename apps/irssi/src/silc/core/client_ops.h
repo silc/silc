@@ -45,7 +45,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommand command, SilcStatus status, ...);
 void silc_connect(SilcClient client, SilcClientConnection conn,
 		  SilcClientConnectionStatus status);
-void silc_disconnect(SilcClient client, SilcClientConnection conn);
+void silc_disconnect(SilcClient client, SilcClientConnection conn,
+		     SilcStatus status, const char *message);
 void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 			 SilcAskPassphrase completion, void *context);
 void silc_verify_public_key(SilcClient client, SilcClientConnection conn,

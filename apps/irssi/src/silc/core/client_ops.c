@@ -875,7 +875,8 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
 
 /* Called to indicate that connection was disconnected to the server. */
 
-void silc_disconnect(SilcClient client, SilcClientConnection conn)
+void silc_disconnect(SilcClient client, SilcClientConnection conn,
+		     SilcStatus status, const char *message)
 {
   SILC_SERVER_REC *server = conn->context;
 
@@ -891,6 +892,12 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn)
 			   silc_client->username);
     silc_change_nick(server, silc_client->username);
   }
+
+  if (message)
+    silc_say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+	     "Server closed connection: %s (%d) %s",
+	     silc_get_status_message(status), status,
+	     message ? message : "");
 
   server->conn->context = NULL;
   server->conn = NULL;

@@ -12,6 +12,10 @@ Sat Jun 22 17:06:58 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  fixed some CMODE_CHANGE notify handling in server and router.
 	  Affected file is silcd/packet_receive.c.
 
+	* Changed "disconnect" client operation to include the
+	  reason of the disconnection and optional disconnection
+	  message.  Affected file lib/silcclient/silcclient.h.
+
 Sat Jun 22 12:49:21 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* All CMODE_CHANGE and CUMODE_CHANGE notifys are now sent back

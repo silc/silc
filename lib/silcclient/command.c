@@ -651,7 +651,7 @@ SILC_TASK_CALLBACK(silc_client_command_quit_cb)
   QuitInternal q = (QuitInternal)context;
 
   /* Close connection */
-  q->client->internal->ops->disconnect(q->client, q->conn);
+  q->client->internal->ops->disconnect(q->client, q->conn, 0, NULL);
   silc_client_close_connection(q->client, q->conn->sock->user_data);
 
   silc_free(q);

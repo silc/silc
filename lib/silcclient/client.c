@@ -864,14 +864,14 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
 	 close the connection */
       if (SILC_IS_DISCONNECTING(sock)) {
 	if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
-	  client->internal->ops->disconnect(client, conn);
+	  client->internal->ops->disconnect(client, conn, 0, NULL);
 	silc_client_close_connection_real(client, sock, conn);
 	return;
       }
       
       SILC_LOG_DEBUG(("EOF from connection %d", sock->sock));
       if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
-	client->internal->ops->disconnect(client, conn);
+	client->internal->ops->disconnect(client, conn, 0, NULL);
       silc_client_close_connection_real(client, sock, conn);
       return;
     }
@@ -1476,16 +1476,11 @@ void silc_client_close_connection(SilcClient client,
 SILC_TASK_CALLBACK(silc_client_disconnected_by_server_later)
 {
   SilcClient client = (SilcClient)context;
-  SilcClientConnection conn;
   SilcSocketConnection sock;
 
   SILC_CLIENT_GET_SOCK(client, fd, sock);
   if (sock == NULL)
     return;
-
-  conn = (SilcClientConnection)sock->user_data;
-  if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
-    client->internal->ops->disconnect(client, conn);
 
   silc_client_close_connection_real(client, sock, sock->user_data);
 }
@@ -1498,6 +1493,7 @@ void silc_client_disconnected_by_server(SilcClient client,
 					SilcSocketConnection sock,
 					SilcBuffer packet)
 {
+  SilcClientConnection conn;
   SilcStatus status;
   char *message = NULL;
 
@@ -1512,11 +1508,10 @@ void silc_client_disconnected_by_server(SilcClient client,
       silc_utf8_valid(packet->data + 1, packet->len - 1))
     message = silc_memdup(packet->data + 1, packet->len - 1);
 
-  client->internal->ops->say(client, sock->user_data, 
-			     SILC_CLIENT_MESSAGE_AUDIT, 
-			     "Server closed connection: %s (%d) %s",
-			     silc_get_status_message(status), status,
-			     message ? message : "");
+  conn = (SilcClientConnection)sock->user_data;
+  if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
+    client->internal->ops->disconnect(client, conn, status, message);
+
   silc_free(message);
 
   SILC_SET_DISCONNECTED(sock);

@@ -376,8 +376,12 @@ typedef struct {
   void (*connect)(SilcClient client, SilcClientConnection conn,
 		  SilcClientConnectionStatus status);
 
-  /* Called to indicate that connection was disconnected to the server. */
-  void (*disconnect)(SilcClient client, SilcClientConnection conn);
+  /* Called to indicate that connection was disconnected to the server.
+     The `status' may tell the reason of the disconnection, and if the
+     `message' is non-NULL it may include the disconnection message
+     received from server. */
+  void (*disconnect)(SilcClient client, SilcClientConnection conn,
+		     SilcStatus status, const char *message);
 
   /* Find authentication method and authentication data by hostname and
      port. The hostname may be IP address as well. When the authentication
