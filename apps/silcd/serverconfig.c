@@ -430,6 +430,10 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check for mandatory inputs */
+    if (!server_info->public_key || !server_info->private_key) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
     return SILC_CONFIG_OK;
   }
   if (!strcmp(name, "hostname")) {
@@ -1215,7 +1219,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* obtain a config file object */
   file = silc_config_open(filename);
   if (!file) {
-    SILC_SERVER_LOG_ERROR(("\nError: can't open config file `%s'\n", 
+    SILC_SERVER_LOG_ERROR(("\nError: can't open config file `%s'\n",
 			   filename));
     return NULL;
   }
@@ -1241,7 +1245,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.\n",
 			     silc_config_strerror(ret)));
       linebuf = silc_config_read_line(file, line);
-      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename, 
+      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename,
 			     line, linebuf));
       silc_free(linebuf);
     }
@@ -1265,7 +1269,6 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* Set default to configuration parameters */
   silc_server_config_set_defaults(config_new);
 
-  config_new->refcount = 1;
   return config_new;
 }
 
@@ -1288,8 +1291,16 @@ void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
 
 void silc_server_config_unref(SilcServerConfigRef *ref)
 {
-  if (ref->ref_ptr)
-    silc_server_config_destroy(ref->config);
+  SilcServerConfig config = ref->config;
+
+  if (ref->ref_ptr) {
+    config->refcount--;
+    SILC_LOG_DEBUG(("Unreferencing config [%p] refcnt %hu->%hu", config,
+		    config->refcount + 1, config->refcount));
+    if (!config->refcount)
+      silc_server_config_destroy(config);
+    ref->ref_ptr = NULL;
+  }
 }
 
 /* Destroy a config object with all his children lists */
@@ -1297,12 +1308,6 @@ void silc_server_config_unref(SilcServerConfigRef *ref)
 void silc_server_config_destroy(SilcServerConfig config)
 {
   void *tmp;
-
-  config->refcount--;
-  SILC_LOG_DEBUG(("Unreferencing config [%p] refcnt %hu->%hu", config,
-		  config->refcount + 1, config->refcount));
-  if (config->refcount > 0)
-    return;
 
   SILC_LOG_DEBUG(("Freeing config context"));
 
@@ -1331,6 +1336,8 @@ void silc_server_config_destroy(SilcServerConfig config)
     silc_free(si->group);
     silc_free(si->motd_file);
     silc_free(si->pid_file);
+    silc_pkcs_public_key_free(si->public_key);
+    silc_pkcs_private_key_free(si->private_key);
   }
 
   /* Now let's destroy the lists */
