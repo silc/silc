@@ -1032,6 +1032,13 @@ AC_ARG_WITH(silcd,
     AC_MSG_RESULT(yes)
   ])
 
+# Irssi perl support
+#
+AC_ARG_WITH(perl,
+  [[  --with-perl[=yes|no|module]  Build with Perl support - also specifies
+                               if it should be built into main silc binary
+                               (static, default) or as a module]])
+
 libtoolfix=true
 AC_MSG_CHECKING(whether to do libtoolfix)
 AC_ARG_WITH(libtoolfix,
