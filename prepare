@@ -89,7 +89,16 @@ sed -e "/SILC_VERSION/s//$dist_version/" configure.in.pre >>configure.in2
 sed -e "/SILC_PACKAGE/s//silc-"$distribution"/" configure.in2 >configure.in
 rm -f configure.in2
 
+#
+# Prepare the Makefile.defines and Makefile.defines_int
+#
+cp Makefile.defines.pre Makefile.defines.in
 cp Makefile.defines.in Makefile.defines
+cp Makefile.defines.in irssi
+cp Makefile.defines.in irssi/Makefile.defines
+cp Makefile.defines_int Makefile.defines_int.in
+cp Makefile.defines_int.in irssi
+cp Makefile.defines_int.in irssi/Makefile.defines_int
 
 aclocal
 autoconf
