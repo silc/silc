@@ -1296,6 +1296,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   if (!silc_idcache_find_by_context(server->local_list->clients,
 				    sock->user_data, &cache)) {
     SILC_LOG_ERROR(("Lost client's cache entry - bad thing"));
+    silc_server_disconnect_remote(server, sock, "Server closed connection: "
+                                  "Unknown client");
     return NULL;
   }
 
@@ -1309,6 +1311,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       silc_free(username);
     if (realname)
       silc_free(realname);
+    silc_server_disconnect_remote(server, sock, "Server closed connection: "
+                                  "Incomplete client information");
     return NULL;
   }
 

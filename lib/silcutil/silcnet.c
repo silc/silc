@@ -267,6 +267,11 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
      the who it says it is */
   memset(host_name, 0, sizeof(host_name));
   memcpy(host_name, dest->h_name, strlen(dest->h_name));
+
+  *hostname = silc_calloc(strlen(host_name) + 1, sizeof(char));
+  memcpy(*hostname, host_name, strlen(host_name));
+  SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
+
   dest = gethostbyname(host_name);
   if (!dest)
     return;
@@ -283,9 +288,6 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   if (!host_ip)
     return;
 
-  *hostname = silc_calloc(strlen(host_name) + 1, sizeof(char));
-  memcpy(*hostname, host_name, strlen(host_name));
-  SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
   *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
   memcpy(*ip, host_ip, strlen(host_ip));
   SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));

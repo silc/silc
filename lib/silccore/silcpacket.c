@@ -478,7 +478,7 @@ static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer)
 
     /* Compare the HMAC's (buffer->tail has the packet's HMAC) */
     if (memcmp(mac, buffer->tail, mac_len)) {
-      SILC_LOG_DEBUG(("MAC failed"));
+      SILC_LOG_ERROR(("MAC failed"));
       return FALSE;
     }
     
@@ -607,7 +607,7 @@ int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 
     /* Check MAC */
     if (!silc_packet_check_mac(hmac, buffer))
-      return FALSE;
+      return -1;
 
     return 0;
   } else {
@@ -618,7 +618,7 @@ int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 
     /* Check MAC */
     if (!silc_packet_check_mac(hmac, buffer))
-      return FALSE;
+      return -1;
 
     return 1;
   }

@@ -25,15 +25,6 @@
 #include "serverincludes.h"
 #include "server_internal.h"
 
-/* Internal context that holds the packet data and packet sending function
-   callbacks when the packet is sent with timeout.  This is used when
-   the server is performing re-key protocol.  During re-key we will prevent
-   sending of any other than re-key packets so that the packets would not
-   be encrypted with wrong keys.  Other than that, this is not used at all. */
-typedef struct {
-  
-} *SilcServerSendPacket;
-
 /* Routine that sends packet or marks packet to be sent. This is used
    directly only in special cases. Normal cases should use
    silc_server_packet_send. Returns < 0 error. */

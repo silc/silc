@@ -514,6 +514,9 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   SilcServerKEInternalContext *proto_ctx;
   int sock;
 
+  SILC_LOG_INFO(("Connecting to the router %s on port %d", 
+		 sconn->remote_host, sconn->remote_port));
+
   /* Connect to remote host */
   sock = silc_net_create_connection(sconn->remote_port, 
 				    sconn->remote_host);
@@ -855,7 +858,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 
   /* Add the connected router to local server list */
   server->standalone = FALSE;
-  id_entry = silc_idlist_add_server(server->local_list, sock->hostname,
+  id_entry = silc_idlist_add_server(server->local_list, strdup(sock->hostname),
 				    SILC_ROUTER, ctx->dest_id, NULL, sock);
   if (!id_entry) {
     if (ctx->dest_id)
@@ -1991,7 +1994,12 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
-  SILC_LOG_DEBUG(("Closing connection %d", sock->sock));
+  SILC_LOG_INFO(("Closing connection %s:%d [%s] (%d)", sock->hostname,
+		 sock->port,  
+		 (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		  sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		  sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		  "Router"), sock->sock));
 
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(sock->sock);
@@ -2796,7 +2804,7 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
 
   silc_task_register(server->timeout_queue, 0, 
 		     silc_server_channel_key_rekey,
-		     (void *)rekey, 3600 + 5, 0,
+		     (void *)rekey, 3600, 0,
 		     SILC_TASK_TIMEOUT,
 		     SILC_TASK_PRI_NORMAL);
 }
@@ -2867,7 +2875,7 @@ void silc_server_create_channel_key(SilcServer server,
 				     silc_server_channel_key_rekey);
     silc_task_register(server->timeout_queue, 0, 
 		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 3600 + 5, 0,
+		       (void *)channel->rekey, 3600, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }
@@ -2972,7 +2980,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 				     silc_server_channel_key_rekey);
     silc_task_register(server->timeout_queue, 0, 
 		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 3600 + 5, 0,
+		       (void *)channel->rekey, 3600, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }

@@ -50,14 +50,20 @@ sim-install:
 	-cp -fR $(srcdir)/lib/silcsim/modules/*.so $(modulesdir)/
 
 doc-install:
-	-cp -fR $(srcdir)/doc/* $(docdir)/
-	-cp -fR $(srcdir)/COPYING $(docdir)/
-	-cp -fR $(srcdir)/README $(docdir)/
-	-cp -fR $(srcdir)/INSTALL $(docdir)/
-	-cp -fR $(srcdir)/TODO $(docdir)/
+	$(INSTALL_DATA) $(srcdir)/doc/* $(docdir)/
+	$(INSTALL_DATA) $(srcdir)/COPYING $(docdir)/
+	$(INSTALL_DATA) $(srcdir)/README $(docdir)/
+	$(INSTALL_DATA) $(srcdir)/INSTALL $(docdir)/
+	$(INSTALL_DATA) $(srcdir)/TODO $(docdir)/
 
 etc-install:
-	-cp -fR $(srcdir)/doc/example_silcd.conf $(etcdir)/silcd.conf
-	-cp -fR $(srcdir)/doc/example_silc.conf $(etcdir)/silc.conf
+	-@if test '!' -f $(etcdir)/silcd.conf ; then \
+	  $(INSTALL_DATA) $(srcdir)/doc/example_silcd.conf \
+	  $(etcdir)/silcd.conf; \
+	fi
+	-@if test '!' -f $(etcdir)silc.conf ; then \
+	  $(INSTALL_DATA) $(srcdir)/doc/example_silc.conf \
+	  $(etcdir)/silc.conf; \
+	fi
 
 install-data-hook: install-dirs generate-server-key sim-install doc-install etc-install

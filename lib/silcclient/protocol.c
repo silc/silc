@@ -742,7 +742,7 @@ silc_client_protocol_rekey_send_packet(SilcSKE ske,
 
   /* Send the packet immediately */
   silc_client_packet_send(client, ctx->sock, type, NULL, 0, NULL, NULL,
-			  packet->data, packet->len, TRUE);
+			  packet->data, packet->len, FALSE);
 }
 
 /* Performs re-key as defined in the SILC protocol specification. */
@@ -830,7 +830,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 
 	/* Start the re-key by sending the REKEY packet */
 	silc_client_packet_send(client, ctx->sock, SILC_PACKET_REKEY, 
-				NULL, 0, NULL, NULL, NULL, 0, TRUE);
+				NULL, 0, NULL, NULL, NULL, 0, FALSE);
 
 	if (ctx->pfs == TRUE) {
 	  /* 
@@ -865,9 +865,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	   * Do normal and simple re-key.
 	   */
 
-	  /* The protocol ends in next stage. We have sent the REKEY packet
-	     and now we just wait that the responder send REKEY_DONE and
-	     the we'll generate the new key, simple. */
+	  /* Send the REKEY_DONE to indicate we will take new keys into use 
+	     now. */ 
+	  silc_client_packet_send(client, ctx->sock, 
+				  SILC_PACKET_REKEY_DONE, 
+				  NULL, 0, NULL, NULL, NULL, 0, FALSE);
+
+	  /* The protocol ends in next stage. */
 	  protocol->state = SILC_PROTOCOL_STATE_END;
 	}
       }
@@ -944,16 +948,6 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
       /* Error in protocol */
       protocol->state = SILC_PROTOCOL_STATE_ERROR;
       protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
-    }
-
-    if (ctx->responder == FALSE) {
-      if (ctx->pfs == FALSE) {
-	/* Send the REKEY_DONE to indicate we will take new keys into use 
-	   now. */ 
-	silc_client_packet_send(client, ctx->sock, 
-				SILC_PACKET_REKEY_DONE, 
-				NULL, 0, NULL, NULL, NULL, 0, FALSE);
-      }
     }
 
     /* Protocol has ended, call the final callback */

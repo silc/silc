@@ -1,3 +1,15 @@
+Tue Apr 10 16:20:34 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* When MAC computation fails the silc_packet_decrypt returned 0
+	  even though it was supposed to return -1.  Fixed this.  The
+	  affected file is lib/silccore/silcpacket.c.
+
+	* Do not replace the config files in /etc/silc (in make install)
+	  if they already exist.  Affected file ./Makefile.am.
+
+	* Do not send re-key packets immediately but through packet queue.
+	  Affected file silcd/protocol.c and lib/silcclient/protocol.c.
+
 Mon Apr  9 21:54:44 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_pkcs_decode_identifier to decode the public key's
