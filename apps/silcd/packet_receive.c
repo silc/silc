@@ -1087,9 +1087,10 @@ void silc_server_notify(SilcServer server,
 	goto out;
 
       if (action == 0 && !channel->invite_list)
-	channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						     NULL, NULL, NULL,
-						     NULL, NULL, TRUE);
+	channel->invite_list =
+	  silc_hash_table_alloc(0, silc_hash_ptr,
+				NULL, NULL, NULL,
+				silc_server_inviteban_destruct, channel, TRUE);
 
       /* Proces the invite action */
       silc_server_inviteban_process(server, channel->invite_list, action,
@@ -1661,9 +1662,10 @@ void silc_server_notify(SilcServer server,
 	goto out;
 
       if (action == 0 && !channel->ban_list)
-	channel->ban_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						  NULL, NULL, NULL,
-						  NULL, NULL, TRUE);
+	channel->ban_list =
+	  silc_hash_table_alloc(0, silc_hash_ptr,
+				NULL, NULL, NULL,
+				silc_server_inviteban_destruct, channel, TRUE);
 
       /* Proces the ban action */
       silc_server_inviteban_process(server, channel->ban_list, action,

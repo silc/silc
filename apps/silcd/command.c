@@ -1133,9 +1133,10 @@ SILC_SERVER_CMD_FUNC(invite)
 
     /* Allocate hash table for invite list if it doesn't exist yet */
     if (!channel->invite_list)
-      channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						   NULL, NULL, NULL,
-						   NULL, NULL, TRUE);
+      channel->invite_list =
+	silc_hash_table_alloc(0, silc_hash_ptr,
+			      NULL, NULL, NULL,
+			      silc_server_inviteban_destruct, channel, TRUE);
 
     /* Check if the ID is in the list already */
     silc_hash_table_list(channel->invite_list, &htl);
@@ -1190,9 +1191,11 @@ SILC_SERVER_CMD_FUNC(invite)
       if (tmp[0] == 0x00) {
 	/* Allocate hash table for invite list if it doesn't exist yet */
 	if (!channel->invite_list)
-	  channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						       NULL, NULL, NULL,
-						       NULL, NULL, TRUE);
+	  channel->invite_list =
+	    silc_hash_table_alloc(0, silc_hash_ptr,
+				  NULL, NULL, NULL,
+				  silc_server_inviteban_destruct, channel,
+				  TRUE);
     
 	/* Check for resource limit */
 	if (silc_hash_table_count(channel->invite_list) > 64) {
@@ -4183,9 +4186,11 @@ SILC_SERVER_CMD_FUNC(ban)
       if (tmp[0] == 0x00) {
 	/* Allocate hash table for ban list if it doesn't exist yet */
 	if (!channel->ban_list)
-	  channel->ban_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						    NULL, NULL, NULL,
-						    NULL, NULL, TRUE);
+	  channel->ban_list =
+	    silc_hash_table_alloc(0, silc_hash_ptr,
+				  NULL, NULL, NULL,
+				  silc_server_inviteban_destruct, channel,
+				  TRUE);
     
 	/* Check for resource limit */
 	if (silc_hash_table_count(channel->ban_list) > 64) {
