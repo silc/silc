@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/05 06:13:38  priikone
+ * 	Added PING, INVITE and NAMES command.
+ *
  * Revision 1.3  2000/07/03 05:52:22  priikone
  * 	Implemented LEAVE command.
  *
@@ -27,7 +30,7 @@
  * 	Shorter timeout for channel joining notify.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -349,8 +352,7 @@ SILC_SERVER_CMD_FUNC(identify)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   char *tmp, *nick = NULL, *server = NULL;
   unsigned int argc, count = 0, len;
-  SilcClientList *entry;
-  SilcBuffer sp_buf, packet;
+  SilcClientList *entry;  SilcBuffer sp_buf, packet;
   unsigned char *id_string;
 
   SILC_LOG_DEBUG(("Start"));
@@ -590,8 +592,96 @@ SILC_SERVER_CMD_FUNC(topic)
 {
 }
 
+/* Server side of INVITE command. Invites some client to join some channel. */
+
 SILC_SERVER_CMD_FUNC(invite)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcSocketConnection sock = cmd->sock, dest_sock;
+  SilcClientList *sender, *dest;
+  SilcClientID *dest_id;
+  SilcChannelList *channel;
+  SilcChannelID *channel_id;
+  unsigned int argc, len;
+  unsigned char *id_string;
+
+  /* Check number of arguments */
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc < 1) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  if (argc > 2) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
+    goto out;
+  }
+
+  /* Get destination ID */
+  id_string = silc_command_get_arg_type(cmd->payload, 1, &len);
+  if (!id_string) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_NO_CLIENT_ID);
+    goto out;
+  }
+  dest_id = silc_id_str2id(id_string, SILC_ID_CLIENT);
+
+  /* Get Channel ID */
+  id_string = silc_command_get_arg_type(cmd->payload, 2, &len);
+  if (!id_string) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
+  channel_id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
+
+  /* Check whether the channel exists */
+  channel = silc_idlist_find_channel_by_id(server->local_list->channels, 
+					   channel_id);
+  if (!channel) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+    goto out;
+  }
+
+  /* Check whether the sender of this command is on the channel. */
+  sender = (SilcClientList *)sock->user_data;
+  if (!silc_server_client_on_channel(sender, channel)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_NOT_ON_CHANNEL);
+    goto out;
+  }
+
+  /* Check whether the channel is invite-only channel. If yes then the
+     sender of this command must be at least channel operator. */
+  /* XXX */
+
+  /* Check whether the requested client is already on the channel. */
+  /* XXX if we are normal server we don't know about global clients on
+     the channel thus we must request it (NAMES command), check from
+     local cache as well. */
+
+  /* Find the connection data for the destination. If it is local we will
+     send it directly otherwise we will send it to router for routing. */
+  dest = silc_idlist_find_client_by_id(server->local_list->clients, dest_id);
+  if (dest)
+    dest_sock = (SilcSocketConnection)dest->connection;
+  else
+    dest_sock = silc_server_get_route(server, dest_id, SILC_ID_CLIENT);
+
+  /* Send notify to the client that is invited to the channel */
+  silc_server_send_notify_dest(server, dest_sock, dest_id, SILC_ID_CLIENT,
+			       "%s invites you to channel %s",
+			       sender->nickname, channel->channel_name);
+
+  /* Send command reply */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					SILC_STATUS_OK);
+
+ out:
+  silc_server_command_free(cmd);
 }
 
 /* Quits connection to client. This gets called if client won't
@@ -640,8 +730,51 @@ SILC_SERVER_CMD_FUNC(connect)
 {
 }
 
+/* Server side of command PING. This just replies to the ping. */
+
 SILC_SERVER_CMD_FUNC(ping)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcServerID *id;
+  unsigned int argc;
+  unsigned char *id_string;
+
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc < 1) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  if (argc > 2) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
+					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
+    goto out;
+  }
+
+  /* Get Server ID */
+  id_string = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  if (!id_string) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
+					  SILC_STATUS_ERR_NO_SERVER_ID);
+    goto out;
+  }
+  id = silc_id_str2id(id_string, SILC_ID_SERVER);
+
+  if (!SILC_ID_SERVER_COMPARE(id, server->id)) {
+    /* Send our reply */
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
+					  SILC_STATUS_OK);
+  } else {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
+					  SILC_STATUS_ERR_NO_SUCH_SERVER);
+    goto out;
+  }
+
+  silc_free(id);
+
+ out:
+  silc_server_command_free(cmd);
 }
 
 SILC_SERVER_CMD_FUNC(oper)
@@ -672,6 +805,33 @@ SILC_TASK_CALLBACK(silc_server_command_join_notify)
 		       silc_server_command_join_notify, context,
 		       0, 300000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   }
+}
+
+/* Assembles NAMES command and executes it. This is called when client
+   joins to a channel and we wan't to send NAMES command reply to the 
+   client. */
+
+void silc_server_command_send_names(SilcServer server,
+				    SilcSocketConnection sock,
+				    SilcChannelList *channel)
+{
+  SilcServerCommandContext cmd;
+  SilcBuffer buffer;
+  unsigned char *id_string;
+
+  id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+  buffer = silc_command_encode_payload_va(SILC_COMMAND_NAMES, 1,
+					  id_string, SILC_ID_CHANNEL_LEN);
+
+  cmd = silc_calloc(1, sizeof(*cmd));
+  cmd->payload = silc_command_parse_payload(buffer);
+  cmd->server = server;
+  cmd->sock = sock;
+  cmd->pending = FALSE;
+
+  silc_server_command_names((void *)cmd);
+  silc_free(id_string);
+  silc_free(buffer);
 }
 
 /* Server side of command JOIN. Joins client into requested channel. If 
@@ -902,6 +1062,10 @@ SILC_SERVER_CMD_FUNC(join)
     }
   }
 
+  /* Send NAMES command reply to the joined channel so the user sees who
+     is currently on the channel. */
+  silc_server_command_send_names(server, sock, channel);
+
  out:
   silc_server_command_free(cmd);
 #undef LCC
@@ -951,9 +1115,9 @@ SILC_SERVER_CMD_FUNC(silcoper)
 SILC_SERVER_CMD_FUNC(leave)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
   SilcSocketConnection sock = cmd->sock;
   SilcClientList *id_entry = (SilcClientList *)cmd->sock->user_data;
-  SilcServer server = cmd->server;
   SilcChannelID *id;
   SilcChannelList *channel;
   SilcBuffer packet;
@@ -974,18 +1138,29 @@ SILC_SERVER_CMD_FUNC(leave)
     goto out;
   }
 
+  /* Get Channel ID */
   tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
   if (!tmp) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					  SILC_STATUS_ERR_BAD_CHANNEL_ID);
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
     goto out;
   }
-
-  /* Get Channel ID */
   id = silc_id_str2id(tmp, SILC_ID_CHANNEL);
 
   /* Get channel entry */
   channel = silc_idlist_find_channel_by_id(server->local_list->channels, id);
+  if (!channel) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
+					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+    goto out;
+  }
+
+  /* Check whether this client is on the channel */
+  if (!silc_server_client_on_channel(id_entry, channel)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
+					  SILC_STATUS_ERR_NOT_ON_CHANNEL);
+    goto out;
+  }
 
   /* Remove client from channel */
   i = silc_server_remove_from_one_channel(server, sock, channel, id_entry);
@@ -1040,6 +1215,88 @@ SILC_SERVER_CMD_FUNC(leave)
   silc_server_command_free(cmd);
 }
 
+/* Server side of command NAMES. Resolves clients and their names currently
+   joined on the requested channel. The name list is sent back to the
+   client. */
+
 SILC_SERVER_CMD_FUNC(names)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcChannelList *channel;
+  SilcChannelID *id;
+  unsigned int i, len, len2, argc;
+  unsigned char *tmp;
+  char *name_list = NULL, *n;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc < 1) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_NAMES,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  if (argc > 2) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_NAMES,
+					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
+    goto out;
+  }
+
+  /* Get Channel ID */
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
+  id = silc_id_str2id(tmp, SILC_ID_CHANNEL);
+
+  /* Check whether the channel exists. If we are normal server and the
+     channel does not exist we will send this same command to our router
+     which will know if the channel exists. */
+  channel = silc_idlist_find_channel_by_id(server->local_list->channels, id);
+  if (!channel) {
+    if (server->server_type == SILC_SERVER && !server->standalone) {
+      /* XXX Send names command */
+
+      cmd->pending = TRUE;
+      silc_server_command_pending(SILC_COMMAND_NAMES, 
+				  silc_server_command_names, context);
+      return;
+    }
+
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+    goto out;
+  }
+
+  /* Assemble the name list now */
+  name_list = NULL;
+  len = 0;
+  for (i = 0; i < channel->user_list_count; i++) {
+    n = channel->user_list[i].client->nickname;
+    if (n) {
+      len2 = strlen(n);
+      len += len2;
+      name_list = silc_realloc(name_list, sizeof(*name_list) * (len + 1));
+      memcpy(name_list + (len - len2), n, len2);
+      name_list[len] = 0;
+
+      if (i == channel->user_list_count - 1)
+	break;
+      memcpy(name_list + len, ",", 1);
+      len++;
+    }
+  }
+
+  /* Send the reply */
+  silc_server_command_send_status_msg(cmd, SILC_COMMAND_NAMES, SILC_STATUS_OK,
+				      name_list, strlen(name_list));
+
+  silc_free(name_list);
+  silc_free(id);
+
+ out:
+  silc_server_command_free(cmd);
 }
