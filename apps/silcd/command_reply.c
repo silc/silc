@@ -55,6 +55,7 @@ SilcServerCommandReply silc_command_reply_list[] =
   SILC_SERVER_CMD_REPLY(info, INFO),
   SILC_SERVER_CMD_REPLY(motd, MOTD),
   SILC_SERVER_CMD_REPLY(join, JOIN),
+  SILC_SERVER_CMD_REPLY(stats, STATS),
   SILC_SERVER_CMD_REPLY(users, USERS),
   SILC_SERVER_CMD_REPLY(getkey, GETKEY),
   SILC_SERVER_CMD_REPLY(list, LIST),
@@ -872,19 +873,14 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
     /* If the channel is found from global list we must move it to the
        local list. */
-    entry = silc_idlist_find_channel_by_name(server->global_list, 
+    entry = silc_idlist_find_channel_by_name(server->global_list,
 					     channel_name, &cache);
-    if (entry) {
-      if (entry->rekey) {
-	silc_schedule_task_del_by_context(server->schedule, entry->rekey);
-	SILC_LOG_ERROR(("global_list->channels: entry->rekey != NULL, inform Pekka now!!!"));
-      }
+    if (entry)
       silc_idlist_del_channel(server->global_list, entry);
-    }
 
     /* Add the channel to our local list. */
-    entry = silc_idlist_add_channel(server->local_list, strdup(channel_name), 
-				    SILC_CHANNEL_MODE_NONE, id, 
+    entry = silc_idlist_add_channel(server->local_list, strdup(channel_name),
+				    SILC_CHANNEL_MODE_NONE, id,
 				    server->router, NULL, hmac, 0);
     if (!entry) {
       silc_free(id);
@@ -970,6 +966,46 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     silc_buffer_free(client_id_list);
   if (client_mode_list)
     silc_buffer_free(client_mode_list);
+}
+
+/* Received reply to STATS command.  */
+
+SILC_SERVER_CMD_REPLY_FUNC(stats)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcServer server = cmd->server;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+  SilcUInt32 tmp_len;
+  SilcBufferStruct buf;
+
+  COMMAND_CHECK_STATUS;
+
+  /* Get statistics structure */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+  if (server->server_type == SILC_SERVER && tmp) {
+    silc_buffer_set(&buf, tmp, tmp_len);
+    silc_buffer_unformat(&buf,
+			 SILC_STR_UI_INT(NULL),
+			 SILC_STR_UI_INT(NULL),
+			 SILC_STR_UI_INT(NULL),
+			 SILC_STR_UI_INT(NULL),
+			 SILC_STR_UI_INT(NULL),
+			 SILC_STR_UI_INT(NULL),
+			 SILC_STR_UI_INT(&server->stat.cell_clients),
+			 SILC_STR_UI_INT(&server->stat.cell_channels),
+			 SILC_STR_UI_INT(&server->stat.cell_servers),
+			 SILC_STR_UI_INT(&server->stat.clients),
+			 SILC_STR_UI_INT(&server->stat.channels),
+			 SILC_STR_UI_INT(&server->stat.servers),
+			 SILC_STR_UI_INT(&server->stat.routers),
+			 SILC_STR_UI_INT(&server->stat.server_ops),
+			 SILC_STR_UI_INT(&server->stat.router_ops),
+			 SILC_STR_END);
+  }
+
+ out:
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
 }
 
 SILC_SERVER_CMD_REPLY_FUNC(users)

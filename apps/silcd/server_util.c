@@ -216,7 +216,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 
 	/* Update statistics */
 	server->stat.clients--;
-	if (server->server_type == SILC_ROUTER)
+	if (server->stat.cell_clients)
 	  server->stat.cell_clients--;
 	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
@@ -280,7 +280,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 
 	/* Update statistics */
 	server->stat.clients--;
-	if (server->server_type == SILC_ROUTER)
+	if (server->stat.cell_clients)
 	  server->stat.cell_clients--;
 	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);

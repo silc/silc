@@ -44,6 +44,7 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote);
 SILC_TASK_CALLBACK(silc_server_channel_key_rekey);
 SILC_TASK_CALLBACK(silc_server_failure_callback);
 SILC_TASK_CALLBACK(silc_server_rekey_callback);
+SILC_TASK_CALLBACK(silc_server_get_stats);
 
 /* Allocates a new SILC server object. This has to be done before the server
    can be used. After allocation one must call silc_server_init to initialize
@@ -147,6 +148,8 @@ bool silc_server_init(SilcServer server)
   SilcSocketConnection newsocket = NULL;
 
   SILC_LOG_DEBUG(("Initializing server"));
+
+  server->starttime = time(NULL);
 
   /* Take config object for us */
   silc_server_config_ref(&server->config_ref, server->config, 
@@ -337,6 +340,13 @@ bool silc_server_init(SilcServer server)
 			 silc_idlist_purge,
 			 (void *)purge, purge->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+
+  /* If we are normal server we'll retrieve network statisticial information
+     once in a while from the router. */
+  if (server->server_type == SILC_SERVER)
+    silc_schedule_task_add(purge->schedule, 0, silc_server_get_stats,
+			   server, 10, 0, SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_LOW);
 
   SILC_LOG_DEBUG(("Server initialized"));
 
@@ -1425,8 +1435,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       /* Statistics */
       server->stat.my_clients++;
       server->stat.clients++;
-      if (server->server_type == SILC_ROUTER)
-	server->stat.cell_clients++;
+      server->stat.cell_clients++;
 
       /* Get connection parameters */
       if (conn->param) {
@@ -2492,7 +2501,7 @@ void silc_server_free_client_data(SilcServer server,
   /* Update statistics */
   server->stat.my_clients--;
   server->stat.clients--;
-  if (server->server_type == SILC_ROUTER)
+  if (server->stat.cell_clients)
     server->stat.cell_clients--;
   SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
   SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
@@ -4206,4 +4215,31 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   if (ctx->ske)
     silc_ske_free(ctx->ske);
   silc_free(ctx);
+}
+
+/* Task callback used to retrieve network statistical information from
+   router server once in a while. */
+
+SILC_TASK_CALLBACK(silc_server_get_stats)
+{
+  SilcServer server = (SilcServer)context;
+  SilcBuffer idp, packet;
+
+  SILC_LOG_DEBUG(("Retrieving stats from router"));
+
+  if (!server->standalone) {
+    idp = silc_id_payload_encode(server->router->id, SILC_ID_SERVER);
+    packet = silc_command_payload_encode_va(SILC_COMMAND_STATS, 
+					    ++server->cmd_ident, 1,
+					    1, idp->data, idp->len);
+    silc_server_packet_send(server, server->router->connection,
+			    SILC_PACKET_COMMAND, 0, packet->data,
+			    packet->len, FALSE);
+    silc_buffer_free(packet);
+    silc_buffer_free(idp);
+  }
+
+  silc_schedule_task_add(server->schedule, 0, silc_server_get_stats,
+			 server, 120, 0, SILC_TASK_TIMEOUT,
+			 SILC_TASK_PRI_LOW);
 }

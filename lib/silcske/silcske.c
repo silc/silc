@@ -81,6 +81,7 @@ void silc_ske_free(SilcSKE ske)
       silc_ske_payload_ke_free(ske->ke1_payload);
     if (ske->ke2_payload)
       silc_ske_payload_ke_free(ske->ke2_payload);
+    silc_free(ske->remote_version);
 
     /* Free rest */
     if (ske->prop) {
@@ -1216,6 +1217,8 @@ silc_ske_select_security_properties(SilcSKE ske,
     }
   }
 
+  ske->remote_version = silc_memdup(rp->version, rp->version_len);
+
   /* Flags are returned unchanged. */
   payload->flags = rp->flags;
 
@@ -2006,7 +2009,7 @@ bool silc_ske_parse_version(SilcSKE ske,
 			    char **software_version_string,
 			    char **vendor_version)
 {
-  return silc_parse_version_string(ske->start_payload->version,
+  return silc_parse_version_string(ske->remote_version,
 				   protocol_version, 
 				   protocol_version_string, 
 				   software_version,

@@ -299,7 +299,10 @@ bool silc_channel_message_payload_decrypt(unsigned char *data,
 
     /* Check the MAC of the message */
     SILC_LOG_DEBUG(("Checking channel message MACs"));
-    silc_hmac_make(hmac, dst, (data_len - iv_len - mac_len), mac2, &mac_len);
+    silc_hmac_init(hmac);
+    silc_hmac_update(hmac, dst, (data_len - iv_len - mac_len));
+    silc_hmac_update(hmac, data + (data_len - iv_len), iv_len);
+    silc_hmac_final(hmac, mac2, &mac_len);
     if (memcmp(mac, mac2, mac_len)) {
       SILC_LOG_DEBUG(("Channel message MACs does not match"));
       silc_free(dst);
@@ -395,7 +398,10 @@ bool silc_channel_message_payload_encrypt(unsigned char *data,
   SilcBufferStruct buf;
 
   /* Compute the MAC of the channel message data */
-  silc_hmac_make(hmac, data, data_len, mac, &mac_len);
+  silc_hmac_init(hmac);
+  silc_hmac_update(hmac, data, data_len);
+  silc_hmac_update(hmac, iv, iv_len);
+  silc_hmac_final(hmac, mac, &mac_len);
 
   /* Put rest of the data to the payload */
   silc_buffer_set(&buf, data, true_len);

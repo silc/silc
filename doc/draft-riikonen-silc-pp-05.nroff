@@ -1647,12 +1647,12 @@ o Padding (variable length) - The padding that MUST be
   other parts of the packet.
 
 o MAC (variable length) - The MAC computed from the
-  Message Length, Message Data, Padding Length and Padding
-  fields.  This protects the integrity of the plaintext
-  channel message.  The receiver can verify from the MAC
-  whether the message decrypted correctly.  Also, if more than
-  one private key has been set for the channel, the receiver
-  can verify which of the keys decrypted the message 
+  Message Length, Message Data, Padding Length, Padding and
+  Initial Vector fields.  This protects the integrity of the
+  plaintext channel message.  The receiver can verify from
+  the MAC whether the message decrypted correctly.  Also, if
+  more than one private key has been set for the channel, the
+  receiver can verify which of the keys decrypted the message 
   correctly.  Note that, this field is encrypted and MUST
   be added to the padding calculation.
 

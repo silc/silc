@@ -709,7 +709,59 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SERVER_ID
 
 
-   11   <deprecated command>
+   11   SILC_COMMAND_STATS
+
+        Max Arguments:  1
+            Arguments:  (1) <Server ID>
+
+        This command is used to fetch various statistical information
+        from the server indicated by <Server ID>, which is the ID of
+        server where sender is connected to.  Server receiving this
+        command MAY also send this further to its router for fetching
+        other cell and network wide statistics to accompany the reply.
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>          (2) <Server ID>
+                        (3) [<statistics structure>]
+
+        This command replies with the Server ID of the server and 
+        optional statistics structure which includes 32 bit MSB first
+        ordered integer values to represent various statistical
+        information.  The structure is as follows:
+
+          starttime      - time when server was started
+          uptime         - uptime of the server
+          my clients     - number of locally connected clients
+          my channels    - number of locally created channels
+          my server ops  - number of local server operators
+          my router ops  - number of local router operators
+          cell clients   - number of clients in local cell
+          cell channels  - number of channels in local cell
+          cell servers   - number of servers in local cell
+          clients        - number of client in SILC network
+          channels       - number of channels in SILC network
+          servers        - number of servers in SILC network
+          routers        - number of routers in SILC network
+          server ops     - number of server operators in SILC network
+          router ops     - number of router operators in SILC network
+
+        If some value is unknown it is set to zero (0) value.  The
+        "starttime" is the start time of the server, and is seconds
+        since Epoch (POSIX.1).  The "uptime" is time difference of
+        current time and "starttime" in the server, and is seconds
+        in value.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER
+            SILC_STATUS_ERR_NO_SERVER_ID
 
 
    12   SILC_COMMAND_PING

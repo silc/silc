@@ -331,7 +331,7 @@ void silc_server_notify(SilcServer server,
 
     /* Update statistics */
     server->stat.clients--;
-    if (server->server_type == SILC_ROUTER)
+    if (server->stat.cell_clients)
       server->stat.cell_clients--;
     SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
     SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
@@ -1039,7 +1039,7 @@ void silc_server_notify(SilcServer server,
 
 	    /* Update statistics */
 	    server->stat.clients--;
-	    if (server->server_type == SILC_ROUTER)
+	    if (server->stat.cell_clients)
 	      server->stat.cell_clients--;
 	    SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	    SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
@@ -1917,15 +1917,18 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your host is %s, running version %s",
 			   server->server_name, server_version));
-  if (server->server_type == SILC_ROUTER) {
+
+  if (server->stat.clients && server->stat.servers + 1)
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("There are %d clients on %d servers in SILC "
 			     "Network", server->stat.clients,
 			     server->stat.servers + 1));
+  if (server->stat.cell_clients && server->stat.cell_servers + 1)
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("There are %d clients on %d server in our cell",
 			     server->stat.cell_clients,
 			     server->stat.cell_servers + 1));
+  if (server->server_type == SILC_ROUTER) {
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("I have %d clients, %d channels, %d servers and "
 			     "%d routers",
@@ -1933,24 +1936,25 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 			     server->stat.my_channels,
 			     server->stat.my_servers,
 			     server->stat.my_routers));
-    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			    ("There are %d server operators and %d router "
-			     "operators online",
-			     server->stat.server_ops,
-			     server->stat.router_ops));
-    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			    ("I have %d operators online",
-			     server->stat.my_router_ops +
-			     server->stat.my_server_ops));
   } else {
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("I have %d clients and %d channels formed",
 			     server->stat.my_clients,
 			     server->stat.my_channels));
-    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			    ("%d operators online",
-			     server->stat.my_server_ops));
   }
+
+  if (server->stat.server_ops || server->stat.router_ops)
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("There are %d server operators and %d router "
+			     "operators online",
+			     server->stat.server_ops,
+			     server->stat.router_ops));
+  if (server->stat.my_router_ops + server->stat.my_server_ops)
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("I have %d operators online",
+			     server->stat.my_router_ops +
+			     server->stat.my_server_ops));
+
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your connection is secured with %s cipher, "
 			   "key length %d bits",

@@ -134,6 +134,7 @@ typedef unsigned char SilcCommand;
 #define SILC_COMMAND_QUIT		8
 #define SILC_COMMAND_KILL		9
 #define SILC_COMMAND_INFO		10
+#define SILC_COMMAND_STATS		11
 #define SILC_COMMAND_PING		12
 #define SILC_COMMAND_OPER		13
 #define SILC_COMMAND_JOIN		14

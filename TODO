@@ -135,25 +135,14 @@ describe new stuff to be added to protocol versions 1.x.
     new features without always making the command incompatible to previous
     version.  To be included in protocol version 1.1.
 
- 5. Inviting and banning by public key should be made possible.  To be
-    included in protocol version 1.x.
-
- 7. Channel Message Payload needs slight redesining to include the IV
-    field to the MAC generation of the payload.  It is authenticated
-    by the packet's MAC but not by the payload's MAC.  Since the IV
-    belongs to the payload, its integrity should be protected by the
-    payload MAC and not alone by packet MAC.  To be included in protocol 
-    version 1.1.
-
- 16. Add STATS command after all to the protocol for providing practically
-     same information client gets when connects to a server.  Normal
-     server would send this to router always when received from client.
-
  17. Cell wide channel founder support, and permanent channels when
      founder mode set.
 
  18. Describe the SSH public key, X509, OpenPGP and SPKI certificates
      encoding format in SKE (from their respective definitions).
+
+ o Inviting and banning by public key should be made possible.  To be
+   included in protocol version 1.2.
 
  o UTF-8 support/requirement for nicknames & channel names.  UTF-8 support
    in terminals and OS's are so hazy that this matter is left for

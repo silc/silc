@@ -69,6 +69,7 @@ struct SilcServerStruct {
   SilcUInt32 id_string_len;
   SilcIdType id_type;
 
+  SilcUInt32 starttime;
   bool standalone;		     /* TRUE if server is standalone, and
 					does not have connection to network. */
   bool listenning;		     /* TRUE if server is listenning for

@@ -306,7 +306,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Some client implementations actually quit network by first doing
        LEAVE and then immediately SIGNOFF.  We'll check for this by doing 
-       check for the client after 5 - 14 seconds.  If it is not valid after
+       check for the client after 5 - 34 seconds.  If it is not valid after
        that we'll remove the client from cache. */
     if (!silc_hash_table_count(client_entry->channels)) {
       SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
@@ -314,7 +314,7 @@ void silc_client_notify_by_server(SilcClient client,
       res->packet = silc_id_dup(client_id, SILC_ID_CLIENT);
       silc_schedule_task_add(client->schedule, 0,
 			     silc_client_notify_check_client, conn,
-			     (5 + (silc_rng_get_rn16(client->rng) % 9)),
+			     (5 + (silc_rng_get_rn16(client->rng) % 29)),
 			     0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     }
 

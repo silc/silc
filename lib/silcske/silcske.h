@@ -335,6 +335,7 @@ struct SilcSKEStruct {
   SilcSKEStartPayload *start_payload;
   SilcSKEKEPayload *ke1_payload;
   SilcSKEKEPayload *ke2_payload;
+  unsigned char *remote_version;
 
   /* Temporary copy of the KE Start Payload used in the
      HASH computation. */

@@ -56,6 +56,7 @@ SilcServerCommand silc_command_list[] =
   SILC_SERVER_CMD(quit, QUIT, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(kill, KILL, SILC_CF_LAG_STRICT | SILC_CF_REG | SILC_CF_OPER),
   SILC_SERVER_CMD(info, INFO, SILC_CF_LAG | SILC_CF_REG),
+  SILC_SERVER_CMD(stats, STATS, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(ping, PING, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(oper, OPER, SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER),
   SILC_SERVER_CMD(join, JOIN, SILC_CF_LAG_STRICT | SILC_CF_REG),
@@ -2776,7 +2777,7 @@ SILC_SERVER_CMD_FUNC(kill)
     /* Update statistics */
     if (remote_client->connection)
       server->stat.my_clients--;
-    if (server->server_type == SILC_ROUTER)
+    if (server->stat.cell_clients)
       server->stat.cell_clients--;
     SILC_OPER_STATS_UPDATE(remote_client, server, SILC_UMODE_SERVER_OPERATOR);
     SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
@@ -2985,6 +2986,102 @@ SILC_SERVER_CMD_FUNC(ping)
   }
 
   silc_free(id);
+
+ out:
+  silc_server_command_free(cmd);
+}
+
+/* Server side of command STATS. */
+
+SILC_SERVER_CMD_FUNC(stats)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcServerID *server_id;
+  unsigned char *tmp;
+  SilcUInt32 tmp_len;
+  SilcBuffer packet, stats;
+  SilcUInt16 ident = silc_command_get_ident(cmd->payload);
+  SilcUInt32 uptime;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_STATS, cmd, 1, 1);
+
+  /* Get Server ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
+					  SILC_STATUS_ERR_NO_SERVER_ID);
+    goto out;
+  }
+  server_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+  if (!server_id)
+    goto out;
+
+  /* The ID must be ours */
+  if (!SILC_ID_SERVER_COMPARE(server->id, server_id)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
+					  SILC_STATUS_ERR_NO_SUCH_SERVER);
+    silc_free(server_id);
+    goto out;
+  }
+  silc_free(server_id);
+
+  /* If we are router then just send everything we got. If we are normal
+     server then we'll send this to our router to get all the latest
+     statistical information. */
+  if (!cmd->pending && server->server_type != SILC_ROUTER && 
+      !server->standalone) {
+    /* Send request to our router */
+    SilcBuffer idp = silc_id_payload_encode(server->router->id, 
+					    SILC_ID_SERVER);
+    packet = silc_command_payload_encode_va(SILC_COMMAND_STATS, 
+					    ++server->cmd_ident, 1,
+					    1, idp->data, idp->len);
+    silc_server_packet_send(server, server->router->connection,
+			    SILC_PACKET_COMMAND, 0, packet->data,
+			    packet->len, FALSE);
+
+    /* Reprocess this packet after received reply from router */
+    silc_server_command_pending(server, SILC_COMMAND_STATS, 
+				server->cmd_ident,
+				silc_server_command_stats,
+				silc_server_command_dup(cmd));
+    cmd->pending = TRUE;
+    silc_buffer_free(packet);
+    silc_buffer_free(idp);
+    goto out;
+  }
+
+  /* Send our reply to sender */
+  uptime = time(NULL) - server->starttime;
+
+  stats = silc_buffer_alloc_size(60);
+  silc_buffer_format(stats,
+		     SILC_STR_UI_INT(server->starttime),
+		     SILC_STR_UI_INT(uptime),
+		     SILC_STR_UI_INT(server->stat.my_clients),
+		     SILC_STR_UI_INT(server->stat.my_channels),
+		     SILC_STR_UI_INT(server->stat.my_server_ops),
+		     SILC_STR_UI_INT(server->stat.my_router_ops),
+		     SILC_STR_UI_INT(server->stat.cell_clients),
+		     SILC_STR_UI_INT(server->stat.cell_channels),
+		     SILC_STR_UI_INT(server->stat.cell_servers),
+		     SILC_STR_UI_INT(server->stat.clients),
+		     SILC_STR_UI_INT(server->stat.channels),
+		     SILC_STR_UI_INT(server->stat.servers),
+		     SILC_STR_UI_INT(server->stat.routers),
+		     SILC_STR_UI_INT(server->stat.server_ops),
+		     SILC_STR_UI_INT(server->stat.router_ops),
+		     SILC_STR_END);
+
+  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_STATS, 
+						SILC_STATUS_OK, ident, 2,
+						2, tmp, tmp_len,
+						3, stats->data, stats->len);
+  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
+			  0, packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
+  silc_buffer_free(stats);
 
  out:
   silc_server_command_free(cmd);
@@ -3470,8 +3567,7 @@ SILC_SERVER_CMD_FUNC(join)
 
   /* Check whether the channel was created by our router */
   if (cmd->pending && context2) {
-    SilcServerCommandReplyContext reply = 
-      (SilcServerCommandReplyContext)context2;
+    SilcServerCommandReplyContext reply = context2;
 
     if (silc_command_get(reply->payload) == SILC_COMMAND_JOIN) {
       tmp = silc_argument_get_arg_type(reply->args, 6, NULL);
