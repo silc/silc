@@ -473,7 +473,10 @@ multiple same attributes in the packet.
      user's public key, and it MUST be present if also the
      ATTRIBUTE_USER_DIGITAL_SIGNATURE is present.  Note that the
      recipient of this attribute SHOULD verify the public key from
-     a third party, for example from Certification Authority.
+     a third party, for example from Certification Authority.  If
+     there are more than one ATTRIBUTE_USER_PUBLIC_KEY attributes set
+     and ATTRIBUTE_USER_DIGITAL_SIGNATURE is also set, the digital
+     signature SHOULD be verifiable with the first set public key.
 
      Length       Type       Value
      variable     string     Public key/certificate type
@@ -510,7 +513,10 @@ multiple same attributes in the packet.
      key or CA certificate and MUST be present if the attribute
      ATTRIBUTE_SERVER_DIGITAL_SIGNATURE is also present.  The format
      for this attribute is identical to the ATTRIBUTE_USER_PUBLIC_KEY 
-     attribute.
+     attribute.  If there are more than one ATTRIBUTE_SERVER_PUBLIC_KEY
+     attributes set and ATTRIBUTE_SERVER_DIGITAL_SIGNATURE is also set,
+     the digital signature SHOULD be verifiable with the first set public
+     key.
 
 
 14   ATTRIBUTE_USER_DIGITAL_SIGNATURE
