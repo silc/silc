@@ -108,12 +108,12 @@ EXPORTS
 	silc_config_check_num_token @ 325 ; 
 	silc_config_get_token @ 326 ; 
 	silc_config_open @ 327 ; 
-	silc_debug @ 328 ; 
+	silc_debug @ 328 DATA ; 
 	silc_decode_pem @ 329 ; 
-	silc_default_ciphers @ 330 ; 
-	silc_default_hash @ 331 ; 
-	silc_default_hmacs @ 332 ; 
-	silc_default_pkcs @ 333 ; 
+	silc_default_ciphers @ 330 DATA ; 
+	silc_default_hash @ 331 DATA ; 
+	silc_default_hmacs @ 332 DATA ; 
+	silc_default_pkcs @ 333 DATA ; 
 	silc_encode_pem @ 334 ; 
 	silc_encode_pem_file @ 335 ; 
 	silc_file_readfile @ 336 ; 
@@ -553,6 +553,7 @@ EXPORTS
 	silc_log_reset_all @ 844 ;
 	silc_log_flush_all @ 845 ;
 	silc_log_get_file @ 846 ;
-	silc_log_quick @ 847 ;
-	silc_log_flushdelay @ 848 ;
+	silc_log_quick @ 847 DATA ;
+	silc_log_flushdelay @ 848 DATA ;
 	silc_hash_table_list_reset @ 849 ;
+	silc_debug_hexdump @ 850 DATA ;

@@ -54,7 +54,7 @@ typedef struct {
 
 /* Status messages returned by the server */
 #define STAT(x) SILC_STATUS_ERR_##x
-extern const SilcCommandStatusMessage silc_command_status_messages[];
+DLLAPI extern const SilcCommandStatusMessage silc_command_status_messages[];
 
 /* Prototypes */
 

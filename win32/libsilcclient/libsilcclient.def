@@ -146,7 +146,7 @@ EXPORTS
 	silc_client_send_private_message_key @ 129 ; 
 	silc_client_start_key_exchange @ 131 ; 
 	silc_client_stop @ 132 ; 
-	silc_command_status_messages @ 135 ; 
+	silc_command_status_messages @ 135 DATA ; 
 	silc_idlist_get_channel_by_id @ 136 ; 
 	silc_idlist_get_client @ 137 ; 
 	silc_client_abort_key_agreement @ 138 ; 

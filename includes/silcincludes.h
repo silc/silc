@@ -38,6 +38,10 @@
 #include "silcwin32.h"
 #endif
 
+#ifndef DLLAPI
+#define DLLAPI
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -49,7 +49,7 @@ typedef struct SilcHashStruct {
 #define SILC_ALL_HASH_FUNCTIONS ((SilcHashObject *)1)
 
 /* Default hash functions for silc_hash_register_default(). */
-extern SilcHashObject silc_default_hash[];
+extern DLLAPI SilcHashObject silc_default_hash[];
 
 /* Default HASH function in the SILC protocol */
 #define SILC_DEFAULT_HASH "sha1"

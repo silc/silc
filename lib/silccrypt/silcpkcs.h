@@ -97,7 +97,7 @@ typedef struct {
 #define SILC_ALL_PKCS ((SilcPKCSObject *)1)
 
 /* Static list of PKCS for silc_pkcs_register_default(). */
-extern SilcPKCSObject silc_default_pkcs[];
+extern DLLAPI SilcPKCSObject silc_default_pkcs[];
 
 /* Default PKXS in the SILC protocol */
 #define SILC_DEFAULT_PKCS "rsa"

@@ -1,3 +1,9 @@
+Fri Feb  1 14:55:00 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined DLLAPI into silcincludes.h and silcwin32.h for
+	  Win32 DLL.  extern's in header files are now declared with
+	  DLLAPI.
+
 Thu Jan 31 23:34:33 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed private message handling.  It used some old code that

@@ -34,6 +34,14 @@
 #define strncasecmp strncmp
 #endif
 
+#ifdef WIN32
+#ifndef DLL
+#define DLLAPI __declspec(dllimport)
+#else
+#define DLLAPI // Nada, we use .DEF
+#endif
+#endif
+
 #undef inline
 #define inline __inline
 

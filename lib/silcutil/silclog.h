@@ -160,7 +160,7 @@ typedef bool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  *    silc_log_flush_all() after setting this variable to TRUE.
  *
  ***/
-extern bool silc_log_quick;
+extern DLLAPI bool silc_log_quick;
 
 /****v* silcutil/SilcLogAPI/silc_log_flushdelay
  *
@@ -177,7 +177,7 @@ extern bool silc_log_quick;
  *    take effect.
  *
  ***/
-extern long silc_log_flushdelay;
+extern DLLAPI long silc_log_flushdelay;
 
 /****v* silcutil/SilcLogAPI/silc_debug
  *
@@ -196,7 +196,7 @@ extern long silc_log_flushdelay;
  *    SILC_LOG_DEBUG
  *
  ***/
-extern bool silc_debug;
+extern DLLAPI bool silc_debug;
 
 /****v* silcutil/SilcLogAPI/silc_debug_hexdump
  *
@@ -215,7 +215,7 @@ extern bool silc_debug;
  *    SILC_LOG_HEXDUMP
  *
  ***/
-extern bool silc_debug_hexdump;
+extern DLLAPI bool silc_debug_hexdump;
 
 /* Macros */
 
