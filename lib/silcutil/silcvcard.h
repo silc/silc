@@ -62,7 +62,7 @@ typedef struct {
   char *org_name;	    /* organization name, string */
   char *org_unit;	    /* organization unit, string */
   char *categories;	    /* application category, string */
-  char *class;		    /* class (public, private, confidental), string */
+  char *catclass;	    /* class (public, private, confidental), string */
   char *url;		    /* home page, URI string */
   char *label;		    /* formatted address label, string (same
 			       format as for 'addr' but comma sep.) */

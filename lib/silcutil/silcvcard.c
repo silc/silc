@@ -69,9 +69,9 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
     silc_buffer_strformat(&buffer,
 			  "CATEGORIES:", vcard->categories, "\n",
 			  SILC_STR_END);
-  if (vcard->class)
+  if (vcard->catclass)
     silc_buffer_strformat(&buffer,
-			  "CLASS:", vcard->class, "\n",
+			  "CLASS:", vcard->catclass, "\n",
 			  SILC_STR_END);
   if (vcard->url)
     silc_buffer_strformat(&buffer,
@@ -204,7 +204,7 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
     VCARD_FIELD(val, "TITLE:", vcard->title);
     VCARD_FIELD(val, "ROLE:", vcard->role);
     VCARD_FIELD(val, "CATEGORIES:", vcard->categories);
-    VCARD_FIELD(val, "CLASS:", vcard->class);
+    VCARD_FIELD(val, "CLASS:", vcard->catclass);
     VCARD_FIELD(val, "URL:", vcard->url);
     VCARD_FIELD(val, "LABEL;", vcard->label);
     VCARD_FIELD(val, "NOTE:", vcard->note);
@@ -363,7 +363,7 @@ void silc_vcard_free(SilcVCard vcard)
   silc_free(vcard->org_name);
   silc_free(vcard->org_unit);
   silc_free(vcard->categories);
-  silc_free(vcard->class);
+  silc_free(vcard->catclass);
   silc_free(vcard->url);
   silc_free(vcard->label);
   for (i = 0; i < vcard->num_addrs; i++) {
@@ -427,8 +427,8 @@ void silc_vcard_fprintf(SilcVCard vcard, FILE *stream)
 	    vcard->org_unit ? vcard->org_unit : "");
   if (vcard->categories)
     fprintf(stream, "CATEGORIES:%s\n", vcard->categories);
-  if (vcard->class)
-    fprintf(stream, "CLASS:%s\n", vcard->class);
+  if (vcard->catclass)
+    fprintf(stream, "CLASS:%s\n", vcard->catclass);
   if (vcard->url)
     fprintf(stream, "URL:%s\n", vcard->url);
   if (vcard->label)
