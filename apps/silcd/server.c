@@ -3672,14 +3672,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     return;
   }
 
-#if 0
-  /* Take the keys into use */
-  if (ctx->pfs == TRUE)
-    silc_server_protocol_rekey_generate_pfs(server, ctx);
-  else
-    silc_server_protocol_rekey_generate(server, ctx);
-#endif
-
   /* Cleanup */
   silc_protocol_free(protocol);
   sock->protocol = NULL;
