@@ -59,7 +59,7 @@
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f3_10" class="normal">
 3.1 Where can I find SILC clients?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f3_20" class="normal">
-3.2 Can I use SILC with IRC client and vice versa?</a><br/>
+3.2 Can I use SILC with IRC client and vice versa?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f3_25" class="normal">
 3.3 The default theme sucks, where can I find a better one?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f3_30" class="normal">
