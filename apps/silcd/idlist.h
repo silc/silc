@@ -229,6 +229,14 @@ typedef struct SilcChannelClientEntryStruct {
 
        Generic data structure to hold data common to all ID entries.
 
+   unsigned char *nickname
+
+       The nickname of the client.
+
+   char *servername
+
+       The name of the server where the client is from. MAy be NULL.
+
    char username
 
        Client's usename. This is defined in the following manner:
@@ -307,6 +315,7 @@ struct SilcClientEntryStruct {
   SilcIDListDataStruct data;
 
   unsigned char *nickname;
+  char *servername;
   char *username;
   char *userinfo;
   SilcClientID *id;

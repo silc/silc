@@ -1,3 +1,15 @@
+Thu Apr 19 11:40:20 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added `sender_entry' argument to the function
+	  silc_server_packet_relay_to_channel so that we can check
+	  whether some destination actually belongs to the same route
+	  the sender belongs (ie, we must not resend the packet to the
+	  sender).  Affected file silcd/packet_send.[ch].
+
+	* Added `servername' field to the SilcClientEntry in the server
+	  to hold the name of the server where client is from.  Affected
+	  file is silcd/idlist.h.
+
 Wed Apr 18 22:19:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Moved the channel message encrypting in the router betwen

@@ -129,7 +129,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 {
   SilcServer server = cmd->server;
   unsigned char *tmp, *id_data;
-  char *nickname, *username, *realname;
+  char *nickname, *username, *realname, *servername = NULL;
   SilcClientID *client_id;
   SilcClientEntry client;
   SilcIDCacheEntry cache = NULL;
@@ -177,7 +177,9 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     if (strchr(nickname, '@')) {
       int len = strcspn(nickname, "@");
       nick = silc_calloc(len + 1, sizeof(char));
+      servername = silc_calloc((strlen(nickname) - len) + 1, sizeof(char));
       memcpy(nick, nickname, len);
+      memcpy(servername, nickname + len + 1, strlen(nickname) - len);
     } else {
       nick = strdup(nickname);
     }
@@ -194,6 +196,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
     client->data.registered = TRUE;
     client->mode = mode;
+    client->servername = servername;
   } else {
     /* We have the client already, update the data */
 
@@ -203,7 +206,9 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     if (strchr(nickname, '@')) {
       int len = strcspn(nickname, "@");
       nick = silc_calloc(len + 1, sizeof(char));
+      servername = silc_calloc((strlen(nickname) - len) + 1, sizeof(char));
       memcpy(nick, nickname, len);
+      memcpy(servername, nickname + len + 1, strlen(nickname) - len);
     } else {
       nick = strdup(nickname);
     }
@@ -219,6 +224,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     client->username = strdup(username);
     client->userinfo = strdup(realname);
     client->mode = mode;
+    client->servername = servername;
 
     if (cache) {
       cache->data = nick;
@@ -270,7 +276,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   SilcServer server = cmd->server;
   uint32 len, id_len;
   unsigned char *id_data;
-  char *nickname, *username, *realname;
+  char *nickname, *username, *realname, *servername = NULL;
   SilcClientID *client_id;
   SilcClientEntry client;
   SilcIDCacheEntry cache = NULL;
@@ -309,7 +315,9 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     if (strchr(nickname, '@')) {
       int len = strcspn(nickname, "@");
       nick = silc_calloc(len + 1, sizeof(char));
+      servername = silc_calloc((strlen(nickname) - len) + 1, sizeof(char));
       memcpy(nick, nickname, len);
+      memcpy(servername, nickname + len + 1, strlen(nickname) - len);
     } else {
       nick = strdup(nickname);
     }
@@ -328,6 +336,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     client = silc_idlist_find_client_by_id(server->global_list, 
 					   client_id, &cache);
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+    client->servername = servername;
   } else {
     /* We have the client already, update the data */
 
@@ -335,7 +344,9 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     if (strchr(nickname, '@')) {
       int len = strcspn(nickname, "@");
       nick = silc_calloc(len + 1, sizeof(char));
+      servername = silc_calloc((strlen(nickname) - len) + 1, sizeof(char));
       memcpy(nick, nickname, len);
+      memcpy(servername, nickname + len + 1, strlen(nickname) - len);
     } else {
       nick = strdup(nickname);
     }
@@ -347,6 +358,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     
     client->nickname = nick;
     client->username = strdup(username);
+    client->servername = servername;
 
     if (cache) {
       cache->data = nick;

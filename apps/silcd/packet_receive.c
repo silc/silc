@@ -1148,6 +1148,7 @@ void silc_server_channel_message(SilcServer server,
   SilcChannelClientEntry chl;
   SilcChannelID *id = NULL;
   void *sender = NULL;
+  void *sender_entry = NULL;
 
   SILC_LOG_DEBUG(("Processing channel message"));
 
@@ -1178,12 +1179,13 @@ void silc_server_channel_message(SilcServer server,
 			  packet->src_id_type);
   if (!sender)
     goto out;
-  if (sock->type != SILC_SOCKET_TYPE_ROUTER && 
-      packet->src_id_type == SILC_ID_CLIENT) {
+  if (packet->src_id_type == SILC_ID_CLIENT) {
     silc_list_start(channel->user_list);
     while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-      if (chl->client && !SILC_ID_CLIENT_COMPARE(chl->client->id, sender))
+      if (chl->client && !SILC_ID_CLIENT_COMPARE(chl->client->id, sender)) {
+	sender_entry = chl->client;
 	break;
+      }
     }
     if (chl == SILC_LIST_END) {
       SILC_LOG_DEBUG(("Client not on channel"));
@@ -1191,11 +1193,10 @@ void silc_server_channel_message(SilcServer server,
     }
   }
 
-
   /* Distribute the packet to our local clients. This will send the
      packet for further routing as well, if needed. */
   silc_server_packet_relay_to_channel(server, sock, channel, sender,
-				      packet->src_id_type,
+				      packet->src_id_type, sender_entry,
 				      packet->buffer->data,
 				      packet->buffer->len, FALSE);
 
@@ -1536,8 +1537,24 @@ static void silc_server_new_id_real(SilcServer server,
   else
     id_list = server->global_list;
 
-  router_sock = sock;
-  router = sock->user_data;
+  /* If the packet is coming from router then use the sender as the
+     origin of the the packet. If it came from router then check the real
+     sender of the packet and use that as he origin. */
+  if (sock->type == SILC_SOCKET_TYPE_SERVER) {
+    router_sock = sock;
+    router = sock->user_data;
+  } else {
+    void *sender_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+				     packet->src_id_type);
+    router = silc_idlist_find_server_by_id(server->global_list,
+					   sender_id, NULL);
+    if (!router)
+      router = silc_idlist_find_server_by_id(server->local_list,
+					     sender_id, NULL);
+    assert(router != NULL);
+    router_sock = sock;
+    silc_free(sender_id);
+  }
 
   switch(id_type) {
   case SILC_ID_CLIENT:

@@ -592,10 +592,14 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
     strncat(nh, entry->nickname, strlen(entry->nickname));
     if (!strchr(entry->nickname, '@')) {
       strncat(nh, "@", 1);
-      len = entry->router ? strlen(entry->router->server_name) :
-	strlen(server->server_name);
-      strncat(nh, entry->router ? entry->router->server_name :
-	      server->server_name, len);
+      if (entry->servername) {
+	strncat(nh, entry->servername, strlen(entry->servername));
+      } else {
+	len = entry->router ? strlen(entry->router->server_name) :
+	  strlen(server->server_name);
+	strncat(nh, entry->router ? entry->router->server_name :
+		server->server_name, len);
+      }
     }
       
     strncat(uh, entry->username, strlen(entry->username));
@@ -1064,10 +1068,14 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
     strncat(nh, entry->nickname, strlen(entry->nickname));
     if (!strchr(entry->nickname, '@')) {
       strncat(nh, "@", 1);
-      len = entry->router ? strlen(entry->router->server_name) :
-	strlen(server->server_name);
-      strncat(nh, entry->router ? entry->router->server_name :
-	      server->server_name, len);
+      if (entry->servername) {
+	strncat(nh, entry->servername, strlen(entry->servername));
+      } else {
+	len = entry->router ? strlen(entry->router->server_name) :
+	  strlen(server->server_name);
+	strncat(nh, entry->router ? entry->router->server_name :
+		server->server_name, len);
+      }
     }
       
     strncat(uh, entry->username, strlen(entry->username));
@@ -1393,10 +1401,14 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
     strncat(nh, entry->nickname, strlen(entry->nickname));
     if (!strchr(entry->nickname, '@')) {
       strncat(nh, "@", 1);
-      len = entry->router ? strlen(entry->router->server_name) :
-	strlen(server->server_name);
-      strncat(nh, entry->router ? entry->router->server_name :
-	      server->server_name, len);
+      if (entry->servername) {
+	strncat(nh, entry->servername, strlen(entry->servername));
+      } else {
+	len = entry->router ? strlen(entry->router->server_name) :
+	  strlen(server->server_name);
+	strncat(nh, entry->router ? entry->router->server_name :
+		server->server_name, len);
+      }
     }
       
     if (!entry->username) {

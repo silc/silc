@@ -72,6 +72,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					 SilcChannelEntry channel,
 					 void *sender, 
 					 SilcIdType sender_type,
+					 void *sender_entry,
 					 unsigned char *data,
 					 uint32 data_len,
 					 int force_send);
