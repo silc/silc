@@ -10,9 +10,33 @@ TODO/bugs in Irssi SILC client
    that the user has.  And a local command to dump the contents of the
    public key to the screen.  Something like LISTKEYS, SHOWKEY...
 
+ o Set different kind of settings, like, /set mutual_authentication,
+   /set key_exchange_timeout, /set conn_auth_timeout etc etc.
+
+ o Extend the /HELP command to support sub commands or something.  So
+   that user can say /help set mutual_authentication they would get
+   help of the mutual_authentication setting.
+
+ o We should get rid of the clientconfig.[ch] in Irssi SILC and move the
+   cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
+   file.
+
 
 TODO/bugs In SILC Client Library
 ================================
+
+ o All protocol execution timeouts are hard coded. They should be 
+   configurable and the Irssi SILC client should be able to set them
+   with for example /set key_exchange_timeout etc.  The silc_client_alloc
+   should take a Params structure or something as argument.
+
+ o silc_client_close_connection leaks memory.  Read the XXX from code.
+
+ o Move the silc_client_[chmode|chumode|chumode_char] away from the library,
+   may be to util library.
+
+ o Some of the ops->say's should be removed and moved to the application
+   from the library.  Go through these.
 
  o The client library must manage somehow when receiving client that has
    same nickname, same server, same username but different Client ID than
@@ -28,9 +52,6 @@ TODO/bugs In SILC Client Library
    appliation could for example set that it handles all command printing
    but all error printing should be handled by the library, etc...
    This is not a showstopper.
-
- o Input line on UI is buggy.  Cursor movement etc bugs.  Too lazy to
-   fix it.
 
 
 TODO/bugs In SILC Server

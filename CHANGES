@@ -1,3 +1,10 @@
+Fri Jun  1 10:28:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Updated TODO.
+
+	* Removed silc_client_packet_send_flush from the client library
+	  as it is not needed.  Affected file lib/silcclient/client.[ch].
+
 Thu May 31 13:57:33 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new distribution feature, DISTLABEL.  Every distribution

@@ -481,10 +481,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
   silc_free(ctx);
   sock->protocol = NULL;
 
-  /* Allocate the authentication protocol. This is allocated here
-     but we won't start it yet. We will be receiving party of this
-     protocol thus we will wait that connecting party will make
-     their first move. */
+  /* Allocate the authenteication protocol and execute it. */
   silc_protocol_alloc(SILC_PROTOCOL_CLIENT_CONNECTION_AUTH, 
 		      &sock->protocol, (void *)proto_ctx, 
 		      silc_client_connect_to_server_final);
@@ -888,8 +885,6 @@ void silc_client_packet_parse_type(SilcClient client,
     } else {
       SILC_LOG_ERROR(("Received Key Exchange packet but no key exchange "
 		      "protocol active, packet dropped."));
-
-      /* XXX Trigger KE protocol?? Rekey actually! */
     }
     break;
 
@@ -1139,107 +1134,6 @@ void silc_client_packet_send(SilcClient client,
 
   /* Now actually send the packet */
   silc_client_packet_send_real(client, sock, force_send, FALSE);
-}
-
-void silc_client_packet_send_flush(SilcClient client, 
-				   SilcSocketConnection sock,
-				   SilcPacketType type, 
-				   void *dst_id,
-				   SilcIdType dst_id_type,
-				   SilcCipher cipher,
-				   SilcHmac hmac,
-				   unsigned char *data, 
-				   uint32 data_len)
-{
-  SilcPacketContext packetdata;
-
-  /* First flush the packet queue. */
-  
-  if (sock->outbuf->data - sock->outbuf->head)
-    silc_buffer_push(sock->outbuf, 
-		     sock->outbuf->data - sock->outbuf->head);
-  
-  silc_client_packet_send_real(client, sock, TRUE, TRUE);
-  
-  /* The packet has been sent and now it is time to set the connection
-     back to only for input. When there is again some outgoing data 
-     available for this connection it will be set for output as well. 
-     This call clears the output setting and sets it only for input. */
-  SILC_CLIENT_SET_CONNECTION_FOR_INPUT(sock->sock);
-  SILC_UNSET_OUTBUF_PENDING(sock);
-  silc_buffer_clear(sock->outbuf);
-
-  SILC_LOG_DEBUG(("Sending packet, type %d", type));
-
-  /* Get data used in the packet sending, keys and stuff */
-  if ((!cipher || !hmac || !dst_id) && sock->user_data) {
-    if (!cipher && ((SilcClientConnection)sock->user_data)->send_key)
-      cipher = ((SilcClientConnection)sock->user_data)->send_key;
-
-    if (!hmac && ((SilcClientConnection)sock->user_data)->hmac_send)
-      hmac = ((SilcClientConnection)sock->user_data)->hmac_send;
-
-    if (!dst_id && ((SilcClientConnection)sock->user_data)->remote_id) {
-      dst_id = ((SilcClientConnection)sock->user_data)->remote_id;
-      dst_id_type = SILC_ID_SERVER;
-    }
-  }
-
-  /* Set the packet context pointers */
-  packetdata.flags = 0;
-  packetdata.type = type;
-  if (sock->user_data && 
-      ((SilcClientConnection)sock->user_data)->local_id_data) {
-    packetdata.src_id = ((SilcClientConnection)sock->user_data)->local_id_data;
-    packetdata.src_id_len = 
-      silc_id_get_len(((SilcClientConnection)sock->user_data)->local_id,
-		      SILC_ID_CLIENT);
-  } else { 
-    packetdata.src_id = silc_calloc(SILC_ID_CLIENT_LEN, sizeof(unsigned char));
-    packetdata.src_id_len = SILC_ID_CLIENT_LEN;
-  }
-  packetdata.src_id_type = SILC_ID_CLIENT;
-  if (dst_id) {
-    packetdata.dst_id = silc_id_id2str(dst_id, dst_id_type);
-    packetdata.dst_id_len = silc_id_get_len(dst_id, dst_id_type);
-    packetdata.dst_id_type = dst_id_type;
-  } else {
-    packetdata.dst_id = NULL;
-    packetdata.dst_id_len = 0;
-    packetdata.dst_id_type = SILC_ID_NONE;
-  }
-  packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
-    packetdata.src_id_len + packetdata.dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
-
-  /* Prepare outgoing data buffer for packet sending */
-  silc_packet_send_prepare(sock, 
-			   SILC_PACKET_HEADER_LEN +
-			   packetdata.src_id_len + 
-			   packetdata.dst_id_len,
-			   packetdata.padlen,
-			   data_len);
-
-  SILC_LOG_DEBUG(("Putting data to outgoing buffer, len %d", data_len));
-
-  packetdata.buffer = sock->outbuf;
-
-  /* Put the data to the buffer */
-  if (data && data_len)
-    silc_buffer_put(sock->outbuf, data, data_len);
-
-  /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata);
-
-  /* Encrypt the packet */
-  if (cipher)
-    silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
-
-  SILC_LOG_HEXDUMP(("Packet, len %d", sock->outbuf->len),
-		   sock->outbuf->data, sock->outbuf->len);
-
-  /* Now actually send the packet */
-  silc_client_packet_send_real(client, sock, TRUE, TRUE);
 }
 
 /* Closes connection to remote end. Free's all allocated data except
