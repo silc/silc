@@ -788,7 +788,7 @@ void silc_server_remove_channel_user(SilcServer server,
 {
   SilcBuffer buffer = packet->buffer;
   unsigned char *tmp1 = NULL, *tmp2 = NULL;
-  unsigned int tmp1_len, tmp2_len;
+  unsigned short tmp1_len, tmp2_len;
   SilcClientID *client_id = NULL;
   SilcChannelID *channel_id = NULL;
   SilcChannelEntry channel;

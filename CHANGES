@@ -34,6 +34,9 @@ Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  not check whether the client was locally connected or not.  It
 	  does that now.  Fixed a bug related to LEAVE command.
 
+	* Fixed Remove Channel User payload parsing bug in server's
+	  silcd/packet_receive.c.  Fixed a bug related to LEAVE command.
+
 Tue Feb 13 19:55:59 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added --with-gmp configuration option.  If set the GMP
