@@ -28,8 +28,7 @@
 
 <?php
 /* Get the actual data for the page */
-if (Is_Readable($page.".html"))
-  require $page.".html";
+require "$page";
 ?>
 
 </font>

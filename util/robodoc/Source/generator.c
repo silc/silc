@@ -10,7 +10,7 @@
 #include "links.h"
 #include "generator.h"
 #include "analyser.h"
-
+#include <errno.h>
 
 /****f* ROBODoc/RB_Generate_Documentation [3.0h]
  * NAME
@@ -66,6 +66,11 @@ RB_Generate_Documentation (
         {
           sprintf(fname, "%s_%s.html", doc_base, cur_header->function_name);
           dest_doc = fopen(fname, "w");
+          if (!dest_doc)
+            {
+	      fprintf(stderr, "%s\n", strerror(errno));
+	      exit(1);
+	    }
         }
 
       RB_Generate_Header_Start (dest_doc, cur_header);
@@ -108,6 +113,9 @@ RB_Generate_Documentation (
 		whoami, cur_header->name);
 
       RB_Generate_Header_End (dest_doc, cur_header);
+
+      if (output_mode == HTML)
+        fclose(dest_doc);
     }
 
   dest_doc = orig_doc;
@@ -266,6 +274,11 @@ RB_Generate_Doc_Start (
 	  /* Generate quick index file, for fast referencing */
 	  sprintf(iname, "%s_index.tmpl", doc_base);
           index = fopen(iname, "w");
+          if (!index)
+	    {
+	      fprintf(stderr, "%s\n", strerror(errno));
+	      exit(1);
+	    }
 
 	  for (cur_header = first_header;
 	       cur_header;

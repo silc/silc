@@ -29,8 +29,7 @@
 
 <?php
 /* Get the actual data for the page */
-if (Is_Readable($page.".html"))
-  require $page.".html";
+require "$page";
 ?>
 
 </font>
@@ -46,9 +45,7 @@ width="99%" align=center>
 /* Get the index for this page */
 $len = strcspn($page, "_");
 $fname = substr($page, 0, $len);
-if (Is_Readable($fname."_index.tmpl"))
-  require $fname."_index.tmpl";
-eit
+require "$fname"."_index.tmpl";
 ?>
 
 </font>

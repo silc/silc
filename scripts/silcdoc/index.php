@@ -1,14 +1,3 @@
-<?php
-
-// directories where SILC documents are located
-$DocRoot = "/home/www/silcnet.org/d/";
-$HTMLRoot = $DocRoot;
-
-// remove dangerous characters, only alphanumerical characters are passed
-$SecurityFilter = $HTMLRoot.EReg_Replace('([^a-zA-Z0-9_.])*','',$page);
-
-?>
-
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -26,18 +15,6 @@ $SecurityFilter = $HTMLRoot.EReg_Replace('([^a-zA-Z0-9_.])*','',$page);
   a:active { text-decoration: none; color: #2f486f; }
   -->
  </style>
-
- <title> SILC Secure Internet Live Conferencing - 
-<?php
-
-if (Is_Readable($SecurityFilter.".php"))
-  echo $page;
-else
-  echo "news";
-
-?>
- </title>
-
 </head>
 
 <body bgcolor="#aaaaaa" text="#000000" link="#2f486f" alink="#2f486f" vlink="#2f486f">
@@ -59,11 +36,7 @@ else
         <table width="100%" bgcolor="#e2e2e2" cellpadding="10" cellspacing="0" border="0">
         <tr><td><font face="Helvetica,Arial,Sans-serif">
 <?php
-// read document, if it is not valid then read opening page
-if (Is_Readable($SecurityFilter))
-  require $SecurityFilter;
-else
-  require $HTMLRoot."news.php";
+require "$page";
 ?>
            </font>
           </td>

@@ -42,8 +42,6 @@ if [ "$TYPE" = "HTML" ]; then
   mkdir /tmp/silcdoc.html
   cp $headers /tmp/silcdoc.html
 
-  # Generate the first pass of the documentation. This will generate
-  # the HTML from the headers.
   path=`pwd`
   cd /tmp/silcdoc.html
   headers=`find . -name "silc*.h" |cut -d/  -f2 |cut -d.  -f1`
@@ -54,21 +52,15 @@ if [ "$TYPE" = "HTML" ]; then
 
     # Generate the TOC file
     sh gen.sh gen_toc.php $DST/$i.html $DST/$i.html
+    sh gen.sh index.php $DST/$i.html $DST/$i.html
 
-    # Generate the details
-    files=`find $DST -name "silc_*.html"`
+    # Generate the details and the layour
+    files=`find $DST -name "$i*_*.html"`
     for k in $files
     do
-      sh gen.sg gen_detail.php $k $k
+      sh gen.sh gen_detail.php $k $k
+      sh gen.sh index.php $k $k
     done
-  done
-
-  # Make the second pass to create the actual layout for the files
-  rm -f $DST/*.tmpl
-  files=`find $DST -name "silc*.html"`
-  for i in $files
-  do
-    sh gen.sh index.php $i $i
   done
 
   rm -rf /tmp/silcdoc.html
