@@ -40,6 +40,9 @@ TODO/bugs In SILC Server
    own resolver stuff (through scheduler, if possible without writing
    too much own stuff) or use threads.
 
+ o The backup router support described in the protocol specification
+   should be done at some point.
+
  o Server says that it is able to listen on multiple ports but currently
    that is bogus.  It can, but internals are for single server.
 
