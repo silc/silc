@@ -2185,8 +2185,11 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 
     channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
     if (!channel) {
-      SILC_LOG_ERROR(("Received key for non-existent channel"));
-      goto out;
+      channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
+      if (!channel) {
+	SILC_LOG_ERROR(("Received key for non-existent channel"));
+	goto out;
+      }
     }
   }
 

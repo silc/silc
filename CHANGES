@@ -37,6 +37,10 @@ Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Fixed Remove Channel User payload parsing bug in server's
 	  silcd/packet_receive.c.  Fixed a bug related to LEAVE command.
 
+	* The server's silc_server_save_channel_key now checks also the
+	  global ID list for the channel as it might not be in the local
+	  list.  Fixed a bug related to LEAVE command.
+
 Tue Feb 13 19:55:59 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added --with-gmp configuration option.  If set the GMP
