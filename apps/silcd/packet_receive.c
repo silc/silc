@@ -1682,7 +1682,34 @@ void silc_server_channel_message(SilcServer server,
   if (!channel) {
     channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
     if (!channel) {
-      SILC_LOG_DEBUG(("Could not find channel"));
+      SilcBuffer idp;
+      unsigned char error;
+
+      /* Send SILC_NOTIFY_TYPE_ERROR to indicate that such destination ID
+	 does not exist or is invalid. */
+      idp = silc_id_payload_encode_data(packet->dst_id,
+					packet->dst_id_len,
+					packet->dst_id_type);
+      if (!idp)
+	goto out;
+
+      error = SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID;
+      if (packet->src_id_type == SILC_ID_CLIENT) {
+	SilcClientID *client_id = silc_id_str2id(packet->src_id,
+						 packet->src_id_len,
+						 packet->src_id_type);
+	silc_server_send_notify_dest(server, sock, FALSE,
+				     client_id, SILC_ID_CLIENT,
+				     SILC_NOTIFY_TYPE_ERROR, 2,
+				     &error, 1, idp->data, idp->len);
+	silc_free(client_id);
+      } else {
+	silc_server_send_notify(server, sock, FALSE,
+				SILC_NOTIFY_TYPE_ERROR, 2,
+				&error, 1, idp->data, idp->len);
+      }
+      
+      silc_buffer_free(idp);
       goto out;
     }
   }

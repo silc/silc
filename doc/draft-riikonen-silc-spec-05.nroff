@@ -922,7 +922,10 @@ tell to where the packet needs to be sent and where it is coming from.
 The header in the packet MUST NOT change during the routing of the
 packet.  The original sender, for example client, assembles the packet
 and the packet header and server or router between the sender and the
-receiver MUST NOT change the packet header.
+receiver MUST NOT change the packet header.  Note however, that some
+packets such as commands may resent by a server to serve the client's
+original command.  In this case the command packet send by the server
+includes the server's IDs.
 
 Note that the packet and the packet header may be encrypted with
 different keys.  For example, packets to channels are encrypted with
@@ -1975,8 +1978,8 @@ it should have cached the Client ID from the SILC Packet Header.
 
 If server receives a private message packet which includes invalid
 destionation Client ID the server MUST send SILC_NOTIFY_TYPE_ERROR
-notify to the client with error status indicating that such ID does
-not exist to the client.
+notify to the client with error status indicating that such Client ID
+does not exist.
 
 See [SILC2] for description of private message encryption and decryption
 process.
@@ -2007,8 +2010,10 @@ ignored.  After processing the key material it is employed as defined
 in [SILC3], however, the HMAC key material MUST be discarded.
 
 If the key is pre-shared-key or randomly generated the implementations
-should use the SILC protocol's mandatory cipher as the cipher.  If the
-SKE was used to negotiate key material the cipher was negotiated as well.
+SHOULD use the SILC protocol's mandatory cipher as the cipher.  If the
+SKE was used to negotiate key material the cipher was negotiated as well,
+and may be different from default cipher.
+
 
 .ti 0
 4.7 Channel Message Sending and Reception
@@ -2022,11 +2027,13 @@ as Destination ID in the SILC Packet Header.  The server MUST then
 distribute the message to all clients on the channel by sending the
 channel message destined explicitly to a client on the channel.
 
-See the [SILC2] for description of channel messege routing for router
-servers.
+If server receives a channel message packet which includes invalid
+destionation Channel ID the server MUST send SILC_NOTIFY_TYPE_ERROR
+notify to the sender with error status indicating that such Channel ID
+does not exist.
 
-See [SILC2] for description of channel message encryption and decryption
-process.
+See the [SILC2] for description of channel messege routing for router
+servers, and channel message encryption and decryption process.
 
 
 .ti 0
@@ -2071,7 +2078,8 @@ MUST be protected with the new key.
 
 Client usually sends the commands in the SILC network.  In this case
 the client simply sends the command packet to server and the server
-processes it and replies with command reply packet.
+processes it and replies with command reply packet.  See the [SILC3]
+for detailed description of all commands.
 
 However, if the server is not able to process the command, it is sent 
 to the server's router.  This is case for example with commands such

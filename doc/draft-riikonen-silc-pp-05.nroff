@@ -1706,7 +1706,7 @@ o Initial Vector (variable length) - The initial vector
   initial vector.  This field is not encrypted.  This field
   is not included into the padding calculation.  Length
   of this field equals the cipher's block size.  This field
-  is, however, authenticated.
+  is, however authenticated.
 .in 3
 
 

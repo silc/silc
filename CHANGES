@@ -1,3 +1,10 @@
+Tue Apr 16 09:34:40 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined that channel message to unknown Channel ID must
+	  cause SILC_NOTIFY_TYPE_ERROR notify message to the sender.
+	  Updated the protocol specs and the code in server.  The
+	  affected file is silcd/packet_receive.c.
+
 Mon Apr 15 19:57:57 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new notify type SILC_NOTIFY_TYPE_ERROR and specified

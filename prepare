@@ -126,14 +126,14 @@ cp Makefile.defines.in lib/silcmath/mpi
 cp Makefile.defines_int.in lib/silcmath/mpi
 
 aclocal
-autoconf
+/home/silc/share/bin/autoconf
 autoheader >/dev/null 2>/dev/null
 automake
 
 echo "Preparing mpi"
 cd lib/silcmath/mpi
 aclocal
-autoconf
+/home/silc/share/bin/autoconf
 autoheader </dev/null 2>/dev/null
 automake >/dev/null 2>/dev/null
 cd ../../..
