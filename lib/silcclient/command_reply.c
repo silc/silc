@@ -1818,6 +1818,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
       goto out;
     }
 
+    /* Save fingerprint */
+    if (!client_entry->fingerprint) {
+      client_entry->fingerprint = silc_calloc(20, sizeof(unsigned char));
+      client_entry->fingerprint_len = 20;
+      silc_hash_make(cmd->client->sha1hash, tmp + 4, len - 4,
+		     client_entry->fingerprint);
+    }
+
     /* Notify application */
     COMMAND_REPLY((SILC_ARGS, id_type, client_entry, public_key));
   } else if (id_type == SILC_ID_SERVER) {
