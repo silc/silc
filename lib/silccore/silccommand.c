@@ -17,52 +17,35 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.3  2000/07/06 07:11:06  priikone
- * 	Removed status paylaod encoding functions -> not needed anymore.
- * 	Added encode_reply_payload_va to encode reply packets only.
- * 	Normal encode_payload_va accepts now argument type as variable
- * 	argument as well.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 #include "silccommand.h"
+
+/******************************************************************************
+
+                              Command Payload
+
+******************************************************************************/
 
 /* Command Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcCommandPayloadStruct {
   SilcCommand cmd;
-  unsigned int argc;
-  unsigned char **argv;
-  unsigned int *argv_lens;
-  unsigned int *argv_types;
-  unsigned int pos;
+  unsigned short ident;
+  SilcArgumentPayload args;
 };
 
 /* Length of the command payload */
-#define SILC_COMMAND_PAYLOAD_LEN 4
+#define SILC_COMMAND_PAYLOAD_LEN 6
 
 /* Parses command payload returning new command payload structure */
 
-SilcCommandPayload silc_command_parse_payload(SilcBuffer buffer)
+SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer)
 {
   SilcCommandPayload new;
-  unsigned short payload_len = 0;
-  unsigned char args_num = 0;
-  unsigned char arg_num = 0;
-  unsigned int arg_type = 0;
-  unsigned int pull_len = 0;
-  int i = 0;
+  unsigned char args_num;
+  unsigned short payload_len;
 
   SILC_LOG_DEBUG(("Parsing command payload"));
 
@@ -70,132 +53,74 @@ SilcCommandPayload silc_command_parse_payload(SilcBuffer buffer)
 
   /* Parse the Command Payload */
   silc_buffer_unformat(buffer, 
+		       SILC_STR_UI_SHORT(&payload_len),
 		       SILC_STR_UI_CHAR(&new->cmd),
 		       SILC_STR_UI_CHAR(&args_num),
-		       SILC_STR_UI_SHORT(&payload_len),
+		       SILC_STR_UI_SHORT(&new->ident),
 		       SILC_STR_END);
 
   if (payload_len != buffer->len) {
     SILC_LOG_ERROR(("Incorrect command payload in packet, packet dropped"));
+    silc_free(new);
     return NULL;
   }
 
-  if (new->cmd == 0)
+  if (new->cmd == 0) {
+    silc_free(new);
     return NULL;
-
-  if (args_num && payload_len) {
-
-    new->argv = silc_calloc(args_num, sizeof(unsigned char *));
-    new->argv_lens = silc_calloc(args_num, sizeof(unsigned int));
-    new->argv_types = silc_calloc(args_num, sizeof(unsigned int));
-
-    silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
-    pull_len += SILC_COMMAND_PAYLOAD_LEN;
-
-    /* Parse Command Argument Payloads */
-    arg_num = 1;
-    while(arg_num) {
-      silc_buffer_unformat(buffer,
-			   SILC_STR_UI_CHAR(&arg_num),
-			   SILC_STR_UI_CHAR(&arg_type),
-			   SILC_STR_UI_SHORT(&payload_len),
-			   SILC_STR_END);
-
-      /* Check that argument number is correct */
-      if (arg_num != i + 1)
-	goto err;
-
-      new->argv_lens[i] = payload_len;
-      new->argv_types[i] = arg_type;
-
-      /* Get argument data */
-      silc_buffer_pull(buffer, 4);
-      silc_buffer_unformat(buffer,
-			   SILC_STR_UI_XNSTRING_ALLOC(&new->argv[i], 
-						      payload_len),
-			   SILC_STR_END);
-      silc_buffer_pull(buffer, payload_len);
-      pull_len += 4 + payload_len;
-
-      i++;
-
-      if (i == args_num)
-	break;
-    }
-
-    /* Check the number of arguments */
-    if (arg_num != args_num)
-      goto err;
   }
 
-  new->argc = i;
-  new->pos = 0;
-
-  silc_buffer_push(buffer, pull_len);
+  silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
+  new->args = silc_argument_payload_parse(buffer, args_num);
+  if (!new->args) {
+    silc_free(new);
+    return NULL;
+  }
+  silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
 
   return new;
-
- err:
-  if (i) {
-    int k;
-
-    for (k = 0; k < i; k++)
-      silc_free(new->argv[k]);
-  }
-
-  silc_free(new->argv);
-  silc_free(new->argv_lens);
-  silc_free(new->argv_types);
-
-  if (new)
-    silc_free(new);
-
-  return NULL;
 }
 
 /* Encodes Command Payload returning it to SilcBuffer. */
 
-SilcBuffer silc_command_encode_payload(SilcCommand cmd,
+SilcBuffer silc_command_payload_encode(SilcCommand cmd,
 				       unsigned int argc,
 				       unsigned char **argv,
 				       unsigned int *argv_lens,
-				       unsigned int *argv_types)
+				       unsigned int *argv_types,
+				       unsigned short ident)
 {
   SilcBuffer buffer;
-  unsigned int len;
-  int i;
+  SilcBuffer args = NULL;
+  unsigned int len = 0;
 
   SILC_LOG_DEBUG(("Encoding command payload"));
 
-  len = 1 + 1 + 2;
-  for (i = 0; i < argc; i++)
-    len += 1 + 1 + 2 + argv_lens[i];
+  if (argc) {
+    args = silc_argument_payload_encode(argc, argv, argv_lens, argv_types);
+    len = args->len;
+  }
 
+  len += SILC_COMMAND_PAYLOAD_LEN;
   buffer = silc_buffer_alloc(len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
 
   /* Create Command payload */
   silc_buffer_format(buffer,
+		     SILC_STR_UI_SHORT(len),
 		     SILC_STR_UI_CHAR(cmd),
 		     SILC_STR_UI_CHAR(argc),
-		     SILC_STR_UI_SHORT(len),
+		     SILC_STR_UI_SHORT(ident),
 		     SILC_STR_END);
 
-  /* Put arguments */
+  /* Add arguments */
   if (argc) {
-    silc_buffer_pull(buffer, 4);
-   
-    for (i = 0; i < argc; i++) {
-      silc_buffer_format(buffer,
-			 SILC_STR_UI_CHAR(i + 1),
-			 SILC_STR_UI_CHAR(argv_types[i]),
-			 SILC_STR_UI_SHORT(argv_lens[i]),
-			 SILC_STR_UI_XNSTRING(argv[i], argv_lens[i]),
-			 SILC_STR_END);
-      silc_buffer_pull(buffer, 4 + argv_lens[i]);
-    }
-
-    silc_buffer_push(buffer, len);
+    silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
+    silc_buffer_format(buffer,
+		       SILC_STR_UI_XNSTRING(args->data, args->len),
+		       SILC_STR_END);
+    silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
+    silc_free(args);
   }
 
   return buffer;
@@ -209,7 +134,8 @@ SilcBuffer silc_command_encode_payload(SilcCommand cmd,
    equals two (2), and so on. This has to be preserved or bad things
    will happen. The variable arguments is: {type, data, data_len}. */
 
-SilcBuffer silc_command_encode_payload_va(SilcCommand cmd, 
+SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
+					  unsigned short ident, 
 					  unsigned int argc, ...)
 {
   va_list ap;
@@ -238,8 +164,8 @@ SilcBuffer silc_command_encode_payload_va(SilcCommand cmd,
     argv_types[i] = x_type;
   }
 
-  buffer = silc_command_encode_payload(cmd, argc, argv, 
-				       argv_lens, argv_types);
+  buffer = silc_command_payload_encode(cmd, argc, argv, 
+				       argv_lens, argv_types, ident);
 
   for (i = 0; i < argc; i++)
     silc_free(argv[i]);
@@ -256,8 +182,9 @@ SilcBuffer silc_command_encode_payload_va(SilcCommand cmd,
    as on argument. */
 
 SilcBuffer 
-silc_command_encode_reply_payload_va(SilcCommand cmd, 
+silc_command_reply_payload_encode_va(SilcCommand cmd, 
 				     SilcCommandStatus status,
+				     unsigned short ident,
 				     unsigned int argc, ...)
 {
   va_list ap;
@@ -294,8 +221,8 @@ silc_command_encode_reply_payload_va(SilcCommand cmd,
     argv_types[i] = x_type;
   }
 
-  buffer = silc_command_encode_payload(cmd, argc, argv, 
-				       argv_lens, argv_types);
+  buffer = silc_command_payload_encode(cmd, argc, argv, 
+				       argv_lens, argv_types, ident);
 
   for (i = 0; i < argc; i++)
     silc_free(argv[i]);
@@ -310,75 +237,29 @@ silc_command_encode_reply_payload_va(SilcCommand cmd,
 
 void silc_command_free_payload(SilcCommandPayload payload)
 {
-  int i;
-
   if (payload) {
-    for (i = 0; i < payload->argc; i++)
-      silc_free(payload->argv[i]);
-
-    silc_free(payload->argv);
+    silc_argument_payload_free(payload->args);
     silc_free(payload);
   }
 }
 
-/* Returns the command type in payload */
+/* Returns command */
 
 SilcCommand silc_command_get(SilcCommandPayload payload)
 {
   return payload->cmd;
 }
 
-/* Returns number of arguments in payload */
+/* Retuns arguments payload */
 
-unsigned int silc_command_get_arg_num(SilcCommandPayload payload)
+SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload)
 {
-  return payload->argc;
+  return payload->args;
 }
 
-/* Returns first argument from payload. */
+/* Returns identifier */
 
-unsigned char *silc_command_get_first_arg(SilcCommandPayload payload,
-					  unsigned int *ret_len)
+unsigned short silc_command_get_ident(SilcCommandPayload payload)
 {
-  payload->pos = 0;
-
-  if (ret_len)
-    *ret_len = payload->argv_lens[payload->pos];
-
-  return payload->argv[payload->pos++];
-}
-
-/* Returns next argument from payload or NULL if no more arguments. */
-
-unsigned char *silc_command_get_next_arg(SilcCommandPayload payload,
-					 unsigned int *ret_len)
-{
-  if (payload->pos >= payload->argc)
-    return NULL;
-
-  if (ret_len)
-    *ret_len = payload->argv_lens[payload->pos];
-
-  return payload->argv[payload->pos++];
-}
-
-/* Returns argument which type is `type'. */
-
-unsigned char *silc_command_get_arg_type(SilcCommandPayload payload,
-					 unsigned int type,
-					 unsigned int *ret_len)
-{
-  int i;
-
-  for (i = 0; i < payload->argc; i++)
-    if (payload->argv_types[i] == type)
-      break;
-
-  if (i >= payload->argc)
-    return NULL;
-
-  if (ret_len)
-    *ret_len = payload->argv_lens[i];
-
-  return payload->argv[i];
+  return payload->ident;
 }

@@ -17,46 +17,30 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* Channel Payload and Channel Key Payload implementations. */
+/* $Id$ */
 
 #include "silcincludes.h"
 #include "silcchannel.h"
 
+/******************************************************************************
+
+                              Channel Payload
+
+******************************************************************************/
+
 /* Channel Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcChannelPayloadStruct {
-  unsigned short nick_len;
-  unsigned char *nick;
   unsigned short data_len;
   unsigned char *data;
   unsigned short iv_len;
   unsigned char *iv;
 };
 
-/* Channel Key Payload structrue. Channel keys are parsed from SILC
-   packets into this structure. */
-struct SilcChannelKeyPayloadStruct {
-  unsigned short id_len;
-  unsigned char *id;
-  unsigned short cipher_len;
-  unsigned char *cipher;
-  unsigned short key_len;
-  unsigned char *key;
-};
-
 /* Parses channel payload returning new channel payload structure */
 
-SilcChannelPayload silc_channel_parse_payload(SilcBuffer buffer)
+SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer)
 {
   SilcChannelPayload new;
 
@@ -67,12 +51,11 @@ SilcChannelPayload silc_channel_parse_payload(SilcBuffer buffer)
   /* Parse the Channel Payload. Ignore padding and IV, we don't need
      them. */
   silc_buffer_unformat(buffer,
-		       SILC_STR_UI16_NSTRING_ALLOC(&new->nick, &new->nick_len),
 		       SILC_STR_UI16_NSTRING_ALLOC(&new->data, &new->data_len),
 		       SILC_STR_UI16_NSTRING_ALLOC(NULL, NULL),
 		       SILC_STR_END);
 
-  if (new->data_len < 1) {
+  if (new->data_len < 1 || new->data_len > buffer->len) {
     SILC_LOG_ERROR(("Incorrect channel payload in packet, packet dropped"));
     goto err;
   }
@@ -80,8 +63,6 @@ SilcChannelPayload silc_channel_parse_payload(SilcBuffer buffer)
   return new;
 
  err:
-  if (new->nick)
-    silc_free(new->nick);
   if (new->data)
     silc_free(new->data);
   if (new->iv)
@@ -95,9 +76,7 @@ SilcChannelPayload silc_channel_parse_payload(SilcBuffer buffer)
    encrypted separately from other parts of the packet padding must
    be applied to the payload. */
 
-SilcBuffer silc_channel_encode_payload(unsigned short nick_len,
-				       unsigned char *nick,
-				       unsigned short data_len,
+SilcBuffer silc_channel_payload_encode(unsigned short data_len,
 				       unsigned char *data,
 				       unsigned short iv_len,
 				       unsigned char *iv,
@@ -112,7 +91,7 @@ SilcBuffer silc_channel_encode_payload(unsigned short nick_len,
 
   /* Calculate length of padding. IV is not included into the calculation
      since it is not encrypted. */
-  len = 2 + nick_len + 2 + data_len + 2;
+  len = 2 + data_len + 2;
   pad_len = SILC_PACKET_PADLEN((len + 2));
 
   /* Allocate channel payload buffer */
@@ -127,8 +106,6 @@ SilcBuffer silc_channel_encode_payload(unsigned short nick_len,
 
   /* Encode the Channel Payload */
   silc_buffer_format(buffer, 
-		     SILC_STR_UI_SHORT(nick_len),
-		     SILC_STR_UI_XNSTRING(nick, nick_len),
 		     SILC_STR_UI_SHORT(data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_UI_SHORT(pad_len),
@@ -142,7 +119,7 @@ SilcBuffer silc_channel_encode_payload(unsigned short nick_len,
 
 /* Free's Channel Payload */
 
-void silc_channel_free_payload(SilcChannelPayload payload)
+void silc_channel_payload_free(SilcChannelPayload payload)
 {
   if (payload) {
     if (payload->data)
@@ -151,17 +128,6 @@ void silc_channel_free_payload(SilcChannelPayload payload)
       silc_free(payload->iv);
     silc_free(payload);
   }
-}
-
-/* Return nickname */
-
-unsigned char *silc_channel_get_nickname(SilcChannelPayload payload,
-					 unsigned int *nick_len)
-{
-  if (nick_len)
-    *nick_len = payload->nick_len;
-
-  return payload->nick;
 }
 
 /* Return data */
@@ -186,9 +152,26 @@ unsigned char *silc_channel_get_iv(SilcChannelPayload payload,
   return payload->iv;
 }
 
+/******************************************************************************
+
+                             Channel Key Payload
+
+******************************************************************************/
+
+/* Channel Key Payload structrue. Channel keys are parsed from SILC
+   packets into this structure. */
+struct SilcChannelKeyPayloadStruct {
+  unsigned short id_len;
+  unsigned char *id;
+  unsigned short cipher_len;
+  unsigned char *cipher;
+  unsigned short key_len;
+  unsigned char *key;
+};
+
 /* Parses channel key payload returning new channel key payload structure */
 
-SilcChannelKeyPayload silc_channel_key_parse_payload(SilcBuffer buffer)
+SilcChannelKeyPayload silc_channel_key_payload_parse(SilcBuffer buffer)
 {
   SilcChannelKeyPayload new;
 
@@ -225,7 +208,7 @@ SilcChannelKeyPayload silc_channel_key_parse_payload(SilcBuffer buffer)
 /* Encodes channel key payload into a buffer and returns it. This is used 
    to add channel key payload into a packet. */
 
-SilcBuffer silc_channel_key_encode_payload(unsigned short id_len,
+SilcBuffer silc_channel_key_payload_encode(unsigned short id_len,
 					   unsigned char *id,
 					   unsigned short cipher_len,
 					   unsigned char *cipher,
@@ -263,7 +246,7 @@ SilcBuffer silc_channel_key_encode_payload(unsigned short id_len,
 
 /* Free's Channel Key Payload */
 
-void silc_channel_key_free_payload(SilcChannelKeyPayload payload)
+void silc_channel_key_payload_free(SilcChannelKeyPayload payload)
 {
   if (payload) {
     if (payload->id)

@@ -127,27 +127,24 @@ typedef unsigned short SilcCommandStatus;
 #define SILC_STATUS_ERR_AUTH_FAILED         43
 
 /* Prototypes */
-SilcCommandPayload silc_command_parse_payload(SilcBuffer buffer);
-SilcBuffer silc_command_encode_payload(SilcCommand cmd,
+SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);
+SilcBuffer silc_command_payload_encode(SilcCommand cmd,
 				       unsigned int argc,
 				       unsigned char **argv,
 				       unsigned int *argv_lens,
-				       unsigned int *argv_types);
-SilcBuffer silc_command_encode_payload_va(SilcCommand cmd, 
+				       unsigned int *argv_types,
+				       unsigned short ident);
+SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
+					  unsigned short ident, 
 					  unsigned int argc, ...);
 SilcBuffer 
-silc_command_encode_reply_payload_va(SilcCommand cmd, 
+silc_command_reply_payload_encode_va(SilcCommand cmd, 
 				     SilcCommandStatus status,
+				     unsigned short ident,
 				     unsigned int argc, ...);
 void silc_command_free_payload(SilcCommandPayload payload);
 SilcCommand silc_command_get(SilcCommandPayload payload);
-unsigned int silc_command_get_arg_num(SilcCommandPayload payload);
-unsigned char *silc_command_get_first_arg(SilcCommandPayload payload,
-					  unsigned int *ret_len);
-unsigned char *silc_command_get_next_arg(SilcCommandPayload payload,
-					 unsigned int *ret_len);
-unsigned char *silc_command_get_arg_type(SilcCommandPayload payload,
-					 unsigned int type,
-					 unsigned int *ret_len);
+SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload);
+unsigned short silc_command_get_ident(SilcCommandPayload payload);
 
 #endif

@@ -42,29 +42,25 @@ typedef struct SilcChannelKeyPayloadStruct *SilcChannelKeyPayload;
 #define SILC_CHANNEL_UMODE_CHANOP    0x0002 /* channel operator */
 
 /* Prototypes */
-SilcChannelPayload silc_channel_parse_payload(SilcBuffer buffer);
-SilcBuffer silc_channel_encode_payload(unsigned short nick_len,
-				       unsigned char *nick,
-				       unsigned short data_len,
+SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);
+SilcBuffer silc_channel_payload_encode(unsigned short data_len,
 				       unsigned char *data,
 				       unsigned short iv_len,
 				       unsigned char *iv,
 				       SilcRng rng);
-void silc_channel_free_payload(SilcChannelPayload payload);
-unsigned char *silc_channel_get_nickname(SilcChannelPayload payload,
-					 unsigned int *nick_len);
+void silc_channel_payload_free(SilcChannelPayload payload);
 unsigned char *silc_channel_get_data(SilcChannelPayload payload,
 				     unsigned int *data_len);
 unsigned char *silc_channel_get_iv(SilcChannelPayload payload,
 				   unsigned int *iv_len);
-SilcChannelKeyPayload silc_channel_key_parse_payload(SilcBuffer buffer);
-SilcBuffer silc_channel_key_encode_payload(unsigned short id_len,
+SilcChannelKeyPayload silc_channel_key_payload_parse(SilcBuffer buffer);
+SilcBuffer silc_channel_key_payload_encode(unsigned short id_len,
 					   unsigned char *id,
 					   unsigned short cipher_len,
 					   unsigned char *cipher,
 					   unsigned short key_len,
 					   unsigned char *key);
-void silc_channel_key_free_payload(SilcChannelKeyPayload payload);
+void silc_channel_key_payload_free(SilcChannelKeyPayload payload);
 unsigned char *silc_channel_key_get_id(SilcChannelKeyPayload payload, 
 				       unsigned int *id_len);
 unsigned char *silc_channel_key_get_cipher(SilcChannelKeyPayload payload,
