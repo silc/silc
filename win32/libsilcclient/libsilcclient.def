@@ -140,7 +140,7 @@ EXPORTS
 	silc_client_run @ 123 ; 
 	silc_client_save_channel_key @ 124 ; 
 	silc_client_send_channel_message @ 125 ; 
-	silc_client_send_command @ 126 ; 
+	silc_client_command_send @ 126 ; 
 	silc_client_send_key_agreement @ 127 ; 
 	silc_client_send_private_message @ 128 ; 
 	silc_client_send_private_message_key @ 129 ; 
@@ -157,4 +157,9 @@ EXPORTS
 	silc_client_file_send @ 141 ;
 	silc_client_file_receive @ 142 ;
 	silc_client_file_close @ 143 ;
-	
+	silc_client_command_register @ 144 ;
+	silc_client_command_unregister @ 145 ;
+	silc_client_commands_register @ 146 ;
+	silc_client_commands_unregister @ 147 ;
+	silc_client_command_call @ 148 ;
+	silc_client_command_reply_quit @ 149 ;

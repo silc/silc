@@ -1796,7 +1796,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 
     /* Process all valid client entries and send command replies */
 
-    if (len > 1)
+    if (valid_count > 1)
       status = SILC_STATUS_LIST_START;
 
     for (i = 0, k = 0; i < clients_count; i++) {

@@ -30,11 +30,18 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o N/A
+ o When changing own nickname and there exists a same nickname the library
+   can give the client now nickname in format nick@host.  This is new
+   behaviour and maybe should be removed.  The changer should always
+   get the one it wants and not have the formatted nickname.
 
 
 TODO/bugs In SILC Server
 ========================
+
+ o If auto-reconnecting to router and EOF is received during the
+   connecting phase the server will not try to auto-reconnect anymore
+   after that.  Fix to auto-reconnect.
 
  o Backup router related issues
 
@@ -74,6 +81,9 @@ TODO/bugs In SILC Libraries
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but
    is not actually async currently.
+
+ o Rewrite the lib/silcsim/silcsim.h.  The SilcSimContext should be
+   private and silc_sim_alloc should take necessary arguments.
 
 
 TODO in SILC Protocol

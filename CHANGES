@@ -1,3 +1,9 @@
+Sun Dec  9 22:18:50 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed minor bug in IDENTIFY command reply sending, which
+	  caused various weird problems during JOIN when it was
+	  resolving names for users.  Affected file silcd/command.c.
+
 Sun Dec  9 19:18:41 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the IDENTIFY command reply sending to chech better valid
