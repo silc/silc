@@ -1,3 +1,23 @@
+Tue Jul  4 18:26:39 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added ~./silc directory handling.  The directory includes the
+	  public and private keys for the client.
+
+	  Added silc_client_check_silc_dir, silc_client_create_identifier
+	  and silc_client_load_keys.
+
+	* Implemented SILC protocol compliant public key.  Added public
+	  and private key saving to and loading from files.
+
+	  Added into silcpkcs.[ch]: silc_pkcs_encode_identifier,
+	  silc_pkcs_public_key_encode[_data], silc_pkcs_public_key_decode,
+	  silc_pkcs_private_key_encode[_data], silc_pkcs_private_key_decode,
+	  silc_pkcs_public_key_alloc, silc_pkcs_public_key_free,
+	  silc_pkcs_private_key_alloc and silc_pkcs_private_key_free.
+
+	  Implemented: silc_pkcs_save_[public/private]_key[_data] and
+	  silc_pkcs_load_[public/private]_key.
+
 Mon Jul  3 18:51:27 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_server_get_route (route.[ch]) to get connection

@@ -427,6 +427,9 @@ should be set to NULL if appropriate, ptr = NULL.
 Note that some functions in the SILC library handles the zeroing of
 the memory area automatically, like for example, silc_buffer_free.
 
+Also note that all allocation routines assert()'s if the memory allocation
+fails, ie. system does not have free memory.
+
 
 Callback Programming
 ====================
