@@ -1559,7 +1559,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
     /* We received the REKEY_DONE packet and all packets after this is
        encrypted with the new key so set the decryption key to the new key */
-    silc_server_protocol_rekey_generate(server, ctx, FALSE);
+    if (ctx->pfs == TRUE)
+      silc_server_protocol_rekey_generate_pfs(server, ctx, FALSE);
+    else
+      silc_server_protocol_rekey_generate(server, ctx, FALSE);
 
     /* Assure that after calling final callback there cannot be pending
        executions for this protocol anymore. This just unregisters any 
