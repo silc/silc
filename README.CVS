@@ -3,7 +3,7 @@ Anonymous CVS Access
 
 Anonymous CVS access is now available to SILC CVS repository. The
 repository includes everything related to SILC project; source codes,
-documentation and even these web pages.
+documentation and web pages.
 
 Also note that this is the closest to real time development you can get
 thus you cannot expect that the source tree would work or even compile.
