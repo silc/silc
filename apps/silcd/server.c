@@ -962,6 +962,45 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
+/* callback for async connection to remote router */
+
+SILC_TASK_CALLBACK(silc_server_connect_router); /* forward decl */
+
+SILC_TASK_CALLBACK(silc_server_connection_established)
+{
+  SilcServer server = app_context;
+  SilcServerConnection sconn = (SilcServerConnection)context;
+  int sock = fd;
+  int opt = EINVAL, optlen = sizeof(opt);
+
+  silc_schedule_task_del_by_fd(server->schedule, sock);
+  silc_schedule_unset_listen_fd(server->schedule, sock);
+
+  if (silc_net_get_socket_opt(sock, SOL_SOCKET, SO_ERROR, &opt, &optlen) || 
+      (opt != 0)) {
+    SILC_LOG_ERROR(("Could not connect to router %s:%d: %s",
+		    sconn->remote_host, sconn->remote_port,
+		    strerror(opt)));
+    if (!sconn->no_reconnect)
+      silc_schedule_task_add(server->schedule, 0,
+			     silc_server_connect_to_router_retry,
+			     context, 0, 1, SILC_TASK_TIMEOUT,
+			     SILC_TASK_PRI_NORMAL);
+    else {
+      silc_server_config_unref(&sconn->conn);
+      silc_free(sconn->remote_host);
+      silc_free(sconn->backup_replace_ip);
+      silc_free(sconn);
+    }
+    return;
+  }
+
+  SILC_LOG_DEBUG(("Connection to router %s:%d established", sconn->remote_host,
+		  sconn->remote_port));
+
+  /* Continue with key exchange protocol */
+  silc_server_start_key_exchange(server, sconn, sock);
+}
 /* Generic routine to use connect to a router. */
 
 SILC_TASK_CALLBACK(silc_server_connect_router)
@@ -998,7 +1037,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   silc_server_config_ref(&sconn->conn, server->config, (void *)rconn);
 
   /* Connect to remote host */
-  sock = silc_net_create_connection(
+  sock = silc_net_create_connection_async(
 		 (!server->config->server_info->primary ? NULL :
 		  server->config->server_info->primary->server_ip),
 		 sconn->remote_port, sconn->remote_host);
@@ -1019,8 +1058,13 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
     return;
   }
 
-  /* Continue with key exchange protocol */
-  silc_server_start_key_exchange(server, sconn, sock);
+  /* wait for the connection to be established */
+  silc_schedule_task_add(server->schedule, sock,
+  			 silc_server_connection_established,
+			 context, 0, 0, SILC_TASK_FD,
+			 SILC_TASK_PRI_NORMAL);
+  silc_schedule_set_listen_fd(server->schedule, sock,
+  			      SILC_TASK_WRITE, FALSE);
 }
 
 /* This function connects to our primary router or if we are a router this

@@ -1,3 +1,9 @@
+Fri Feb 13 12:04:41 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* use asynchronous connect() to establish router connections.
+	  Fixes problem when the primary router goes down.  Affected files
+	  silcd/server.c, silcd/server_backup.c
+
 Tue Feb  3 23:25:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Surrogates not allowed in UTF-8 strings, updated decoder.

@@ -780,6 +780,48 @@ void silc_server_backup_resume_router(SilcServer server,
   }
 }
 
+/* callback for async connection to remote router */
+
+SILC_TASK_CALLBACK(silc_server_backup_connect_to_router); /* forward decl */
+
+SILC_TASK_CALLBACK(silc_server_backup_connection_established)
+{
+  SilcServer server = app_context;
+  SilcServerConnection sconn = (SilcServerConnection)context;
+  int sock = fd;
+  int opt = EINVAL, optlen = sizeof(opt);
+
+  silc_schedule_task_del_by_fd(server->schedule, sock);
+  silc_schedule_unset_listen_fd(server->schedule, sock);
+
+  if (silc_net_get_socket_opt(sock, SOL_SOCKET, SO_ERROR, &opt, &optlen) || 
+      (opt != 0)) {
+    SILC_LOG_DEBUG(("Could not connect to router %s:%d: %s", sconn->remote_host,
+		    sconn->remote_port, strerror(opt)));
+		    
+    if (server->server_type == SILC_SERVER) {
+      sconn->retry_count++;
+      if (sconn->retry_count > 3) {
+	silc_free(sconn->remote_host);
+	silc_free(sconn);
+	return;
+      }
+    }
+    silc_schedule_task_add(server->schedule, 0,
+			   silc_server_backup_connect_to_router,
+			   context, 10, 0, SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_NORMAL);
+    return;
+  }
+
+  SILC_LOG_DEBUG(("Connection to router %s:%d established", sconn->remote_host,
+		  sconn->remote_port));
+
+  /* Continue with key exchange protocol */
+  silc_server_start_key_exchange(server, sconn, sock);
+}
+
+
 /* Timeout task callback to connect to remote router */
 
 SILC_TASK_CALLBACK(silc_server_backup_connect_to_router)
@@ -795,8 +837,8 @@ SILC_TASK_CALLBACK(silc_server_backup_connect_to_router)
   /* Connect to remote host */
   server_ip = server->config->server_info->primary == NULL ? NULL :
     server->config->server_info->primary->server_ip;
-  sock = silc_net_create_connection(server_ip, sconn->remote_port,
-				    sconn->remote_host);
+  sock = silc_net_create_connection_async(server_ip, sconn->remote_port,
+				          sconn->remote_host);
   if (sock < 0) {
     if (server->server_type == SILC_SERVER) {
       sconn->retry_count++;
@@ -813,8 +855,13 @@ SILC_TASK_CALLBACK(silc_server_backup_connect_to_router)
     return;
   }
 
-  /* Continue with key exchange protocol */
-  silc_server_start_key_exchange(server, sconn, sock);
+  /* wait for the connection to be established */
+  silc_schedule_task_add(server->schedule, sock,
+  			 silc_server_backup_connection_established,
+			 context, 0, 0, SILC_TASK_FD,
+			 SILC_TASK_PRI_NORMAL);
+  silc_schedule_set_listen_fd(server->schedule, sock,
+  			      SILC_TASK_WRITE, FALSE);
 }
 
 /* Constantly tries to reconnect to a primary router indicated by the
