@@ -4,13 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2001 Pekka Riikonen
+  Copyright (C) 1998 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,7 +23,7 @@
 
 /* Calls normal select() system call. */
 
-int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, 
+int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count,
 		struct timeval *timeout)
 {
   fd_set in, out;
@@ -119,10 +118,10 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
     return NULL;
   }
 
-  internal->wakeup_task = 
+  internal->wakeup_task =
     silc_schedule_task_add(schedule, internal->wakeup_pipe[0],
 			   silc_schedule_wakeup_cb, internal,
-			   0, 0, SILC_TASK_FD, 
+			   0, 0, SILC_TASK_FD,
 			   SILC_TASK_PRI_NORMAL);
   if (!internal->wakeup_task) {
     SILC_LOG_ERROR(("Could not add a wakeup task, threads won't work"));
@@ -180,7 +179,9 @@ void silc_schedule_internal_signal_register(void *context,
   if (!internal)
     return;
 
-  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
+  SILC_LOG_DEBUG(("Registering signal %d", signal));
+
+  silc_schedule_internal_signals_block(context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (!internal->signal_call[i].signal) {
@@ -192,7 +193,7 @@ void silc_schedule_internal_signal_register(void *context,
     }
   }
 
-  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
+  silc_schedule_internal_signals_unblock(context);
   sigaddset(&internal->signals, signal);
 }
 
@@ -207,7 +208,9 @@ void silc_schedule_internal_signal_unregister(void *context,
   if (!internal)
     return;
 
-  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
+  SILC_LOG_DEBUG(("Unregistering signal %d", signal));
+
+  silc_schedule_internal_signals_block(context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].signal == signal &&
@@ -220,7 +223,7 @@ void silc_schedule_internal_signal_unregister(void *context,
     }
   }
 
-  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
+  silc_schedule_internal_signals_unblock(context);
   sigdelset(&internal->signals, signal);
 }
 
@@ -234,16 +237,19 @@ void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
   if (!internal)
     return;
 
-  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
+  silc_schedule_internal_signals_block(context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
-    if (internal->signal_call[i].signal == signal)
+    if (internal->signal_call[i].signal == signal) {
       internal->signal_call[i].call = TRUE;
+      SILC_LOG_DEBUG(("Scheduling signal %d to be called",
+		      internal->signal_call[i].signal));
+    }
   }
 
-  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
+  silc_schedule_internal_signals_unblock(context);
 }
-                                        
+
 /* Call all signals */
 
 void silc_schedule_internal_signals_call(void *context,
@@ -252,14 +258,18 @@ void silc_schedule_internal_signals_call(void *context,
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!internal)
     return;
 
-  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
+  silc_schedule_internal_signals_block(context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].call &&
         internal->signal_call[i].callback) {
+      SILC_LOG_DEBUG(("Calling signal %d callback",
+		      internal->signal_call[i].signal));
       internal->signal_call[i].callback(schedule, internal->app_context,
 					SILC_TASK_INTERRUPT,
 					internal->signal_call[i].signal,
@@ -268,7 +278,7 @@ void silc_schedule_internal_signals_call(void *context,
     }
   }
 
-  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
+  silc_schedule_internal_signals_unblock(context);
 }
 
 /* Block registered signals in scheduler. */
