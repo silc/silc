@@ -864,6 +864,22 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 	/* Any host */
 	config->admins->host = strdup("*");
 
+      /* Get username */
+      ret = silc_config_get_token(line, &config->admins->username);
+      if (ret < 0)
+	break;
+      if (ret == 0)
+	/* Any username */
+	config->admins->username = strdup("*");
+
+      /* Get nickname */
+      ret = silc_config_get_token(line, &config->admins->nickname);
+      if (ret < 0)
+	break;
+      if (ret == 0)
+	/* Any nickname */
+	config->admins->nickname = strdup("*");
+
       /* Get authentication method */
       ret = silc_config_get_token(line, &tmp);
       if (ret < 0)
@@ -889,20 +905,6 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       ret = silc_config_get_token(line, &config->admins->auth_data);
       if (ret < 0)
 	break;
-
-      /* Get nickname */
-      ret = silc_config_get_token(line, &config->admins->nickname);
-      if (ret < 0)
-	break;
-
-      /* Get class number */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->admins->class = atoi(tmp);
-	silc_free(tmp);
-      }
 
       check = TRUE;
       checkmask |= (1L << pc->section->type);
@@ -1382,6 +1384,42 @@ silc_server_config_find_router_conn(SilcServerConfig config,
     return NULL;
 
   return serv;
+}
+
+/* Returns Admin connection configuration by host, username and/or 
+   nickname. */
+
+SilcServerConfigSectionAdminConnection *
+silc_server_config_find_admin(SilcServerConfig config,
+			      char *host, char *username, char *nickname)
+{
+  SilcServerConfigSectionAdminConnection *admin = NULL;
+  int i;
+
+  if (!config->admins)
+    return NULL;
+
+  if (!host)
+    host = "*";
+  if (!username)
+    username = "*";
+  if (nickname)
+    nickname = "*";
+
+  admin = config->admins;
+  for (i = 0; admin; i++) {
+    if (silc_string_compare(admin->host, host) &&
+	silc_string_compare(admin->username, username) &&
+	silc_string_compare(admin->nickname, nickname))
+      break;
+
+    admin = admin->next;
+  }
+
+  if (!admin)
+    return NULL;
+
+  return admin;
 }
 
 /* Prints out example configuration file with default built in

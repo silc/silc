@@ -1115,7 +1115,8 @@ o Authentication Data (variable length) - Authentication
 
 If the authentication method is password based, the Authentication
 Data field includes the plaintext password.  It is safe to send
-plaintext password since the entire payload is encrypted.
+plaintext password since the entire payload is encrypted.  In this
+case the Public Data Lenght is set to zero (0).
 
 If the authentication method is public key based (or certificate)
 the Authentication Data is computed as follows:

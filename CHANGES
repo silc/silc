@@ -1,3 +1,13 @@
+Wed Mar 14 16:10:30 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed the format of AdminConnection configuration section
+	  in the server.  Added username of the admin to the format.
+	  Affected files silcd/serverconfig.[ch].
+
+	  Added silc_server_config_find_admin into silcd/serverconfig.[ch]
+	  to return admin configuration data by host, username and/or
+	  nickname.
+
 Wed Mar 14 13:18:16 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented WHOWAS command to the server.  Added the functions:

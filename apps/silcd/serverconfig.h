@@ -106,10 +106,10 @@ typedef struct SilcServerConfigSectionClientConnectionStruct {
 /* Hols all server's administrators authentication data from config file */
 typedef struct SilcServerConfigSectionAdminConnectionStruct {
   char *host;
+  char *username;
+  char *nickname;
   int auth_meth;
   char *auth_data;
-  char *nickname;
-  unsigned int class;
   struct SilcServerConfigSectionAdminConnectionStruct *next;
   struct SilcServerConfigSectionAdminConnectionStruct *prev;
 } SilcServerConfigSectionAdminConnection;
@@ -266,6 +266,9 @@ silc_server_config_find_server_conn(SilcServerConfig config,
 SilcServerConfigSectionServerConnection *
 silc_server_config_find_router_conn(SilcServerConfig config, 
 				    char *host, int port);
+SilcServerConfigSectionAdminConnection *
+silc_server_config_find_admin(SilcServerConfig config,
+			      char *host, char *username, char *nickname);
 void silc_server_config_print();
 
 #endif
