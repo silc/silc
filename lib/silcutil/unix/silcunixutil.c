@@ -2,7 +2,7 @@
 
   silcunixutil.c
 
-  Author: Pekka Riikonen <priikone@sillcnet.org>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
