@@ -14,20 +14,19 @@ different compared to IRC.
 Running SILC
 ============
 
-The development version is still preliminary version and requires some
-work to get it working.  You should, first of all, check the example
-configuration files in ./doc/ directory.  Change them according to your
-needs.
+After installing the SILC to the system the SILC client is started by
+giving command:
 
-To run SILC client:
+	silc
 
-	cd silc
-	./silc -f <config file>
+If you want to run with specific configuration file give -f option.
 
-To run SILC server
+To run the server you should configure the server first.  To run the
+server give the command:
 
-	cd silcd
-	./silcd -f <config file>
+	silcd
+
+This will launch the server on to the background.
 
 
 SILC Commands
