@@ -1,3 +1,10 @@
+Sun Nov 18 01:34:41 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_client_channel_message to not try to decrypt
+	  the message twice if it resolved the destination client
+	  information.  This could cause of dropping one channel
+	  message.  Affected file lib/silcclient/client_channel.c.
+
 Wed Nov 14 23:44:56 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_client_run_one into lib/silcclient/silcapi.h and

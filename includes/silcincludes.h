@@ -211,7 +211,9 @@ typedef uint32 * void *;
 #endif
 
 #ifndef bool
+#ifndef CXX
 #define bool unsigned char
+#endif
 #endif
 
 /* Generic global SILC includes */

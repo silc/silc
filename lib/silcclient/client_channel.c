@@ -155,17 +155,41 @@ void silc_client_send_channel_message(SilcClient client,
   silc_free(id_string);
 }
 
+typedef struct {
+  SilcChannelMessagePayload payload;
+  SilcChannelID *channel_id;
+} *SilcChannelClientResolve;
+
 static void silc_client_channel_message_cb(SilcClient client,
 					   SilcClientConnection conn,
 					   SilcClientEntry *clients,
 					   uint32 clients_count,
 					   void *context)
 {
-  SilcPacketContext *packet = (SilcPacketContext *)context;
+  SilcChannelClientResolve res = (SilcChannelClientResolve)context;
 
-  if (clients)
-    silc_client_channel_message(client, conn->sock, packet);
-  silc_packet_context_free(packet);
+  if (clients_count == 1) {
+    SilcIDCacheEntry id_cache = NULL;
+    SilcChannelEntry channel;
+    unsigned char *message;
+
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, res->channel_id, 
+				     &id_cache))
+      goto out;
+
+    channel = (SilcChannelEntry)id_cache->context;
+    message = silc_channel_message_get_data(res->payload, NULL);
+    
+    /* Pass the message to application */
+    client->ops->channel_message(client, conn, clients[0], channel,
+				 silc_channel_message_get_flags(res->payload),
+				 message);
+  }
+
+ out:
+  silc_channel_message_payload_free(res->payload);
+  silc_free(res->channel_id);
+  silc_free(res);
 }
 
 /* Process received message to a channel (or from a channel, really). This
@@ -257,9 +281,14 @@ void silc_client_channel_message(SilcClient client,
 
   if (!found) {
     /* Resolve the client info */
+    SilcChannelClientResolve res = silc_calloc(1, sizeof(*res));
+    res->payload = payload;
+    res->channel_id = id;
     silc_client_get_client_by_id_resolve(client, conn, client_id,
 					 silc_client_channel_message_cb,
-					 silc_packet_context_dup(packet));
+					 res);
+    payload = NULL;
+    id = NULL;
     goto out;
   }
 

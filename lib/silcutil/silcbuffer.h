@@ -196,7 +196,7 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, uint32 len)
   unsigned char *old_data = sb->data;
 
 #ifdef SILC_DEBUG
-  assert(len <= (sb->tail - sb->data));
+  assert(len <= (uint32)(sb->tail - sb->data));
 #endif
 
   sb->data += len;
@@ -260,7 +260,7 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, uint32 len)
   unsigned char *old_tail = sb->tail;
 
 #ifdef SILC_DEBUG
-  assert((sb->end - sb->tail) >= len);
+  assert((uint32)(sb->end - sb->tail) >= len);
 #endif
 
   sb->tail += len;
@@ -318,7 +318,7 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 				    uint32 len)
 {
 #ifdef SILC_DEBUG
-  assert((sb->data - sb->head) >= len);
+  assert((uint32)(sb->data - sb->head) >= len);
 #endif
   return (unsigned char *)memcpy(sb->head, data, len);
 }
@@ -340,7 +340,7 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 			       uint32 len)
 {
 #ifdef SILC_DEBUG
-  assert((sb->tail - sb->data) >= len);
+  assert((uint32)(sb->tail - sb->data) >= len);
 #endif
   return (unsigned char *)memcpy(sb->data, data, len);
 }
@@ -362,7 +362,7 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
 				    uint32 len)
 {
 #ifdef SILC_DEBUG
-  assert((sb->end - sb->tail) >= len);
+  assert((uint32)(sb->end - sb->tail) >= len);
 #endif
   return (unsigned char *)memcpy(sb->tail, data, len);
 }
