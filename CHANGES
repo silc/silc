@@ -15,6 +15,13 @@ Sat Nov  2 21:26:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  to be called after the arguments and UI is initialized.
 	  Affected file irssi/src/silc/core/silc-core.c.  Bug #31.
 
+	* Added -P option to Irssi SILC client which can be used
+	  to change the passphrase of the private key.  Affected
+	  file irssi/src/silc/core/silc-core.c.
+
+	* Added silc_change_private_key_passphrase apputil routine
+	  to lib/silcutil/silcapputil.[ch].
+
 Sat Nov  2 12:53:09 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed connection closing in client library to not crash.

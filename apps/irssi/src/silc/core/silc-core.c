@@ -257,16 +257,6 @@ void silc_opt_callback(poptContext con,
 		       const struct poptOption *opt,
 		       const char *arg, void *data)
 {
-  if (strcmp(opt->longName, "show-key") == 0) {
-    /* Dump the key */
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
-    silc_show_public_key((char *)arg);
-    exit(0);
-  }
-
   if (strcmp(opt->longName, "list-ciphers") == 0) {
     silc_cipher_register_default();
     silc_client_list_ciphers();
@@ -313,6 +303,26 @@ void silc_opt_callback(poptContext con,
 			 NULL, NULL, NULL, NULL, TRUE);
     exit(0);
   }
+
+  if (strcmp(opt->longName, "passphrase-change") == 0) {
+    /* Change the passphrase of the private key file */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
+    silc_change_private_key_passphrase(arg, NULL, NULL);
+    exit(0);
+  }
+
+  if (strcmp(opt->longName, "show-key") == 0) {
+    /* Dump the key */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
+    silc_show_public_key((char *)arg);
+    exit(0);
+  }
 }
 
 static void sig_init_finished(void)
@@ -342,8 +352,6 @@ void silc_core_init(void)
 {
   static struct poptOption silc_options[] = {
     { NULL, '\0', POPT_ARG_CALLBACK, (void *)&silc_opt_callback, '\0', NULL },
-    { "show-key", 'S', POPT_ARG_STRING, NULL, 0,
-      "Show the contents of the public key", "FILE" },
     { "list-ciphers", 0, POPT_ARG_NONE, NULL, 0,
       "List supported ciphers", NULL },
     { "list-hash-funcs", 0, POPT_ARG_NONE, NULL, 0,
@@ -360,6 +368,10 @@ void silc_core_init(void)
       "Set the PKCS of the public key pair (-C)", "PKCS" },
     { "bits", 0, POPT_ARG_INT, &opt_bits, 0,
       "Set the length of the public key pair (-C)", "VALUE" },
+    { "passphrase-change", 'P', POPT_ARG_STRING, NULL, 0,
+      "Change the passphrase of private key file", "FILE" },
+    { "show-key", 'S', POPT_ARG_STRING, NULL, 0,
+      "Show the contents of the public key", "FILE" },
     { NULL, '\0', 0, NULL }
   };
 
