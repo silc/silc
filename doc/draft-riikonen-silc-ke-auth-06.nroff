@@ -339,7 +339,7 @@ o Payload Length (2 bytes) - Length of the entire Key Exchange
 
 o Cookie (16 bytes) - Cookie that randomize this payload so
   that each of the party cannot determine the payload before
-  hand.
+  hand.  This field MUST be present.
 
 o Version String Length (2 bytes) - The length of the Version
   String field, not including any other field.
@@ -348,46 +348,48 @@ o Version String (variable length) - Indicates the version of
   the sender of this payload.  Initiator sets this when sending
   the payload and responder sets this when it replies by sending
   this payload.  See [SILC1] for definition of the version
-  string format.
+  string format.  This field MUST be present and include valid
+  version string.
 
 o Key Exchange Grp Length (2 bytes) - The length of the
   key exchange group list, not including any other field.
 
 o Key Exchange Group (variable length) - The list of
   key exchange groups.  See the section 2.4 SILC Key Exchange
-  Groups for definitions of these groups.
+  Groups for definitions of these groups.  This field MUST
+  be present.
 
 o PKCS Alg Length (2 bytes) - The length of the PKCS algorithms
   list, not including any other field.
 
 o PKCS Algorithms (variable length) - The list of PKCS 
-  algorithms.
+  algorithms.  This field MUST be present.
 
 o Encryption Alg Length (2 bytes) - The length of the encryption
   algorithms list, not including any other field.
 
 o Encryption Algorithms (variable length) - The list of
-  encryption algorithms.
+  encryption algorithms.  This field MUST be present.
 
 o Hash Alg Length (2 bytes) - The length of the Hash algorithm
   list, not including any other field.
 
 o Hash Algorithms (variable length) - The list of Hash
   algorithms.  The hash algorithms are mainly used in the
-  SKE protocol.
+  SKE protocol.  This field MUST be present.
 
 o HMAC Length (2 bytes) - The length of the HMAC list, not
   including any other field.
 
 o HMACs (variable length) - The list of HMACs.  The HMAC's
   are used to compute the Message Authentication Codes (MAC)
-  of the SILC packets.
+  of the SILC packets.  This field MUST be present.
 
 o Compression Alg Length (2 bytes) - The length of the
   compression algorithms list, not including any other field.
 
 o Compression Algorithms (variable length) - The list of 
-  compression algorithms.
+  compression algorithms.  This field MAY be omitted.
 .in 3
 
 

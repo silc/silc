@@ -147,6 +147,16 @@ silc_ske_payload_start_decode(SilcSKE ske,
     goto err;
   }
 
+  /* Check for mandatory fields */
+  if (!payload->cookie || !payload->version_len ||
+      !payload->ke_grp_len || !payload->pkcs_alg_len ||
+      !payload->enc_alg_len || !payload->hash_alg_len ||
+      !payload->hmac_alg_len) {
+    SILC_LOG_ERROR(("KE Start Payload is missing mandatory fields"));
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
+    goto err;
+  }
+
   /* Return the payload */
   *return_payload = payload;
 
@@ -276,9 +286,9 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
     goto err;
   }
 
-  if (ske->start_payload && 
-      (payload->pk_type < SILC_SKE_PK_TYPE_SILC || 
-       payload->pk_type > SILC_SKE_PK_TYPE_SPKI)) {
+  if (ske->start_payload &&
+      ((payload->pk_type < SILC_SKE_PK_TYPE_SILC || 
+	payload->pk_type > SILC_SKE_PK_TYPE_SPKI) || !payload->pk_len)) {
     SILC_LOG_ERROR(("Malformed public key in KE payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
@@ -304,8 +314,8 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
   tot_len += x_len + 2;
   tot_len += payload->sign_len + 2;
 
-  if (x_len < 3) {
-    SILC_LOG_ERROR(("Too short signature in KE Payload"));
+  if (x_len < 16) {
+    SILC_LOG_ERROR(("Too short DH value in KE Payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }

@@ -1,7 +1,16 @@
+Sat Nov 16 13:14:45 EET 20022  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the KE Start Payload parsing to check that mandatory
+	  fields are present.  Affected file lib/silcske/payload.c.
+
+	* Fixed compilation warnigs in Irssi SILC Client.  Affected
+	  files are irssi/src/silc/core/silc-query.c. client_ops.c.
+
 Thu Nov 14 19:33:28 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Print "nick now appears as newnick" and update Irssi's nicklist
 	  when you change your nick to "nick". Closes #62
+
 	* Never format your own nick. Closes #63
 
 Thu Nov 14 09:44:54 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>

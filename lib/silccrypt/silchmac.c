@@ -185,7 +185,7 @@ bool silc_hmac_unregister_all(void)
    of the HMAC.  If it is NULL then the hash function is allocated and
    the name of the hash algorithm is derived from the `name'. */
 
-bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac)
+bool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
 {
   SILC_LOG_DEBUG(("Allocating new HMAC"));
 
