@@ -50,8 +50,12 @@ Mean:          500 cycles =    51.2 mbits/sec
 
 SILC_CIPHER_API_SET_KEY(aes)
 {
-  rijndael_set_key((RijndaelContext *)context, (uint32 *)key, keylen);
-  return 1;
+  uint32 k[8];
+
+  SILC_GET_WORD_KEY(key, k, keylen);
+  rijndael_set_key((RijndaelContext *)context, k, keylen);
+
+  return TRUE;
 }
 
 /* Sets the string as a new key for the cipher. The string is first
@@ -82,36 +86,22 @@ SILC_CIPHER_API_CONTEXT_LEN(aes)
 
 SILC_CIPHER_API_ENCRYPT_CBC(aes)
 {
-  uint32 *in, *out, *tiv;
-  uint32 tmp[4];
+  uint32 tiv[4];
   int i;
 
-  in = (uint32 *)src;
-  out = (uint32 *)dst;
-  tiv = (uint32 *)iv;
+  SILC_CBC_GET_IV(tiv, iv);
 
-  tmp[0] = in[0] ^ tiv[0];
-  tmp[1] = in[1] ^ tiv[1];
-  tmp[2] = in[2] ^ tiv[2];
-  tmp[3] = in[3] ^ tiv[3];
-  rijndael_encrypt((RijndaelContext *)context, tmp, out);
-  in += 4;
-  out += 4;
+  SILC_CBC_ENC_PRE(tiv, src);
+  rijndael_encrypt((RijndaelContext *)context, tiv, tiv);
+  SILC_CBC_ENC_POST(tiv, dst, src);
 
   for (i = 16; i < len; i += 16) {
-    tmp[0] = in[0] ^ out[0 - 4];
-    tmp[1] = in[1] ^ out[1 - 4];
-    tmp[2] = in[2] ^ out[2 - 4];
-    tmp[3] = in[3] ^ out[3 - 4];
-    rijndael_encrypt((RijndaelContext *)context, tmp, out);
-    in += 4;
-    out += 4;
+    SILC_CBC_ENC_PRE(tiv, src);
+    rijndael_encrypt((RijndaelContext *)context, tiv, tiv);
+    SILC_CBC_ENC_POST(tiv, dst, src);
   }
 
-  tiv[0] = out[0 - 4];
-  tiv[1] = out[1 - 4];
-  tiv[2] = out[2 - 4];
-  tiv[3] = out[3 - 4];
+  SILC_CBC_PUT_IV(tiv, iv);
 
   return TRUE;
 }
@@ -121,48 +111,22 @@ SILC_CIPHER_API_ENCRYPT_CBC(aes)
 
 SILC_CIPHER_API_DECRYPT_CBC(aes)
 {
-  uint32 *tiv, *in, *out;
-  uint32 tmp[4], tmp2[4];
+  uint32 tmp[4], tmp2[4], tiv[4];
   int i;
 
-  in = (uint32 *)src;
-  out = (uint32 *)dst;
-  tiv = (uint32 *)iv;
+  SILC_CBC_GET_IV(tiv, iv);
 
-  tmp[0] = in[0];
-  tmp[1] = in[1];
-  tmp[2] = in[2];
-  tmp[3] = in[3];
-  rijndael_decrypt((RijndaelContext *)context, in, out);
-  out[0] ^= tiv[0];
-  out[1] ^= tiv[1];
-  out[2] ^= tiv[2];
-  out[3] ^= tiv[3];
-  in += 4;
-  out += 4;
+  SILC_CBC_DEC_PRE(tmp, src);
+  rijndael_decrypt((RijndaelContext *)context, tmp, tmp2);
+  SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
 
   for (i = 16; i < len; i += 16) {
-    tmp2[0] = tmp[0];
-    tmp2[1] = tmp[1];
-    tmp2[2] = tmp[2];
-    tmp2[3] = tmp[3];
-    tmp[0] = in[0];
-    tmp[1] = in[1];
-    tmp[2] = in[2];
-    tmp[3] = in[3];
-    rijndael_decrypt((RijndaelContext *)context, in, out);
-    out[0] ^= tmp2[0];
-    out[1] ^= tmp2[1];
-    out[2] ^= tmp2[2];
-    out[3] ^= tmp2[3];
-    in += 4;
-    out += 4;
+    SILC_CBC_DEC_PRE(tmp, src);
+    rijndael_decrypt((RijndaelContext *)context, tmp, tmp2);
+    SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
   }
 
-  tiv[0] = tmp[0];
-  tiv[1] = tmp[1];
-  tiv[2] = tmp[2];
-  tiv[3] = tmp[3];
+  SILC_CBC_PUT_IV(tiv, iv);
 
   return TRUE;
 }
