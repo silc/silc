@@ -158,8 +158,7 @@ typedef struct {
      the library to perform the key agreement protocol and FALSE if it is not
      desired. */
   int (*key_agreement)(SilcClient client, SilcClientConnection conn,
-		       SilcClientEntry client_entry, char *hostname,
-		       int port);
+		       SilcClientEntry client_entry);
 } SilcClientOperations;
 
 
@@ -371,9 +370,10 @@ void silc_client_command_pending(SilcClientConnection conn,
 
 /* Adds private message key to the client library. The key will be used to
    encrypt all private message between the client and the remote client
-   indicated by the `client_entry'. If the `key' is NULL and the boolean
-   value `generate_key' is TRUE the library will generate random key.
-   The `key' maybe for example pre-shared-key, passphrase or similar.
+   indicated by the `client_entry'.  If `key' is NULL and the boolean value
+   `generate_key' is TRUE then the library will generate random key.  
+   Otherwise the `key' provided by the application will be used.  It maybe
+   random key or pre-shared-key.
 
    It is not necessary to set key for normal private message usage. If the
    key is not set then the private messages are encrypted using normal
@@ -392,14 +392,6 @@ int silc_client_add_private_message_key(SilcClient client,
 					unsigned int key_len,
 					int generate_key);
 
-/* Same as above but takes the key material from the SKE key material
-   structure. This structure is received if the application uses the
-   silc_client_send_key_agreement to negotiate the key material. */
-int silc_client_add_private_message_key_ske(SilcClient client,
-					    SilcClientConnection conn,
-					    SilcClientConnection client_entry,
-					    SilcSKEKeyMaterial *key);
-
 /* Removes the private message from the library. The key won't be used
    after this to protect the private messages with the remote `client_entry'
    client. Returns FALSE on error, TRUE otherwise. */
@@ -409,14 +401,12 @@ int silc_client_del_private_message_key(SilcClient client,
 
 /* Structure to hold the list of private message keys. The array of this
    structure is returned by the silc_client_list_private_message_keys
-   function. */
+   function.  */
 typedef struct {
   SilcClientEntry client_entry;       /* The remote client entry */
-  unsigned char *key;		      /* The original key, If the appliation
-					 provided it. This is NULL if the
-					 library generated the key or if
-					 the SKE key material was used. */
+  unsigned char *key;		      /* The raw key data */
   unsigned int key_len;		      /* The key length */
+  int generated;		      /* TRUE if library generated the key */
 } *SilcPrivateMessageKeys;
 
 /* Returns array of set private message keys associated to the connection
@@ -456,14 +446,8 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
    be tried in order to find the correct decryption key. However, setting
    a few keys does not have big impact to the decryption performace. 
 
-   NOTE: that this is entirely local setting. The key set using this function
-   is not sent to the network at any phase.
-
-   NOTE: If the key material was originated by the SKE protocol (using
-   silc_client_send_key_agreement) then the `key' MUST be the
-   key->send_enc_key as this is dictated by the SILC protocol. However,
-   currently it is not expected that the SKE key material would be used
-   as channel private key. However, this API allows it. */
+   Note that this is entirely local setting. The key set using this function
+   is not sent to the network at any phase. */
 int silc_client_add_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
@@ -516,12 +500,12 @@ void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
    key agreement protocol. The `key' is the allocated key material and
    the caller is responsible of freeing it. The `key' is NULL if error
    has occured. The application can freely use the `key' to whatever
-   purpose it needs. See lib/silcske/silcske.h for the definition of
-   the SilcSKEKeyMaterial structure. */
+   purpose it needs. */
 typedef void (*SilcKeyAgreementCallback)(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
-					 SilcSKEKeyMaterial *key,
+					 unsigned char *key,
+					 unsigned int key_len,
 					 void *context);
 
 /* Sends key agreement request to the remote client indicated by the
@@ -537,21 +521,15 @@ typedef void (*SilcKeyAgreementCallback)(SilcClient client,
    the same packet including its hostname and port. If the library receives
    the reply from the remote client the `key_agreement' client operation
    callback will be called to verify whether the user wants to perform the
-   key agreement or not. 
+   key agreement or not.
 
-   NOTE: If the application provided the `hostname' and the `port' and the 
-   remote side initiates the key agreement protocol it is not verified
-   from the user anymore whether the protocol should be executed or not.
-   By setting the `hostname' and `port' the user gives permission to
-   perform the protocol.
-
-   NOTE: If the remote side decides not to initiate the key agreement
+   Note, that if the remote side decides not to initiate the key agreement
    or decides not to reply with the key agreement packet then we cannot
    perform the key agreement at all. If the key agreement protocol is
    performed the `completion' callback with `context' will be called.
    If remote side decides to ignore the request the `completion' will never
    be called and the caller is responsible of freeing the `context' memory. 
-   The application can do this by setting, for example, timeout. */
+   Application can do this by setting for example timeout. */
 void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcClientEntry client_entry,
