@@ -22,7 +22,7 @@
 
 #ifndef SILC_STACKTRACE
 
-#define SILC_MAX_ALLOC (1024L * 1024L * 1024L * 2)
+#define SILC_MAX_ALLOC (1024 * 1024L * 1024L)
 
 void *silc_malloc(size_t size)
 {
@@ -36,7 +36,7 @@ void *silc_malloc(size_t size)
 void *silc_calloc(size_t items, size_t size)
 {
   void *addr;
-  assert(size <= SILC_MAX_ALLOC);
+  assert(size * items <= SILC_MAX_ALLOC);
   addr = calloc(items, size);
   assert(addr != NULL);
   return addr;
