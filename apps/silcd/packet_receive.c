@@ -1900,11 +1900,6 @@ void silc_server_command_reply(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Source must be server or router */
-  if (packet->src_id_type != SILC_ID_SERVER &&
-      sock->type != SILC_SOCKET_TYPE_ROUTER)
-    return;
-
   if (packet->dst_id_type == SILC_ID_CHANNEL)
     return;
 

@@ -290,6 +290,25 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   return TRUE;
 }
 
+/* Handle requested attributes reply in WHOIS from client */
+
+static char
+silc_server_command_reply_whois_save_client(SilcServerCommandReplyContext cmd)
+{
+  unsigned char *tmp;
+  SilcUInt32 len;
+  SilcClientEntry client = cmd->sock->user_data;
+
+  /* Take Requested Attributes if set. */
+  tmp = silc_argument_get_arg_type(cmd->args, 11, &len);
+  if (tmp && client) {
+    silc_free(client->attrs);
+    client->attrs = silc_memdup(tmp, len);
+  }
+
+  return TRUE;
+}
+
 /* Reiceved reply for WHOIS command. We sent the whois request to our
    primary router, if we are normal server, and thus has now received reply
    to the command. We will figure out what client originally sent us the
@@ -303,8 +322,13 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
 
   COMMAND_CHECK_STATUS;
 
-  if (!silc_server_command_reply_whois_save(cmd))
-    goto out;
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT) {
+    if (!silc_server_command_reply_whois_save(cmd))
+      goto out;
+  } else {
+    if (!silc_server_command_reply_whois_save_client(cmd))
+      goto out;
+  }
 
   /* Pending callbacks are not executed if this was an list entry */
   if (status != SILC_STATUS_OK &&
