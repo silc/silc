@@ -746,6 +746,8 @@ SilcPacketContext *silc_packet_context_alloc()
 SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx)
 {
   ctx->users++;
+  SILC_LOG_DEBUG(("Packet context %p rfcnt %d->%d", ctx, ctx->users - 1,
+		  ctx->users));
   return ctx;
 }
 
@@ -755,6 +757,8 @@ SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx)
 void silc_packet_context_free(SilcPacketContext *ctx)
 {
   ctx->users--;
+  SILC_LOG_DEBUG(("Packet context %p rfcnt %d->%d", ctx, ctx->users + 1,
+		  ctx->users));
   if (ctx->users < 1)
     {
       if (ctx->buffer)
