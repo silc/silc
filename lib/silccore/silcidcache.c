@@ -305,6 +305,9 @@ static void silc_idcache_purge_foreach(void *key, void *context,
   SilcUInt32 curtime = time(NULL);
   SilcIDCacheEntry c = (SilcIDCacheEntry)context;
 
+  if (!context)
+    return;
+
   if (c->expire && c->expire < curtime) {
     /* Remove the entry from the hash tables */
     if (c->name)
@@ -373,6 +376,8 @@ static void silc_idcache_get_all_foreach(void *key, void *context,
 					 void *user_context)
 {
   SilcIDCacheList list = (SilcIDCacheList)user_context;
+  if (!context)
+    return;
   silc_idcache_list_add(list, (SilcIDCacheEntry)context);
 }
 
