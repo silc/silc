@@ -110,12 +110,12 @@ Table of Contents
       3.10.3 Hash Functions ..................................... 26
       3.10.4 MAC Algorithms ..................................... 27
       3.10.5 Compression Algorithms ............................. 27
-  3.11 SILC Public Key .......................................... 27
+  3.11 SILC Public Key .......................................... 28
   3.12 SILC Version Detection ................................... 30
-  3.13 Backup Routers ........................................... 30
+  3.13 Backup Routers ........................................... 31
       3.13.1 Switching to Backup Router ......................... 32
       3.13.2 Resuming Primary Router ............................ 33
-      3.13.3 Discussion on Backup Router Scheme ................. 35
+      3.13.3 Discussion on Backup Router Scheme ................. 36
 4 SILC Procedures ............................................... 36
   4.1 Creating Client Connection ................................ 36
   4.2 Creating Server Connection ................................ 38
@@ -127,7 +127,7 @@ Table of Contents
   4.7 Channel Message Sending and Reception ..................... 43
   4.8 Session Key Regeneration .................................. 43
   4.9 Command Sending and Reception ............................. 44
-  4.10 Closing Connection ....................................... 44
+  4.10 Closing Connection ....................................... 45
   4.11 Detaching and Resuming a Session ......................... 45
 5 Security Considerations ....................................... 47
 6 References .................................................... 48
@@ -1312,7 +1312,10 @@ delivered to the recipient.  This mode increases the ciphertext size by
 one ciphertext block.  Note also that some data payloads in SILC are
 capable of delivering the IV to the recipient.  When explicitly
 encrypting these payloads with randomized CBC the IV MUST NOT be appended
-at the end of the ciphertext.
+at the end of the ciphertext.  When encrypting these payloads with
+"cbc" mode they implicitly become randomized CBC since the IV is
+usually selected random and included in the ciphertext.  In these
+cases using either CBC or randomized CBC is actually equivalent.
 
 
 .ti 0
@@ -1415,6 +1418,7 @@ zlib        GNU ZLIB (LZ77) compression  (OPTIONAL)
 .in 3
 
 Additional compression algorithms MAY be defined to be used in SILC.
+
 
 
 .ti 0
@@ -1567,7 +1571,6 @@ is fully incompatible.
 Software version MAY provide major, minor and build (vendor) version.
 The software version MAY be freely set and accepted.  The version string 
 MUST consist of printable US-ASCII characters.
-
 
 Thus, the version strings could be, for example:
 
@@ -1818,6 +1821,8 @@ packet:
 If any other value is found in the type field the packet must be 
 discarded.  The SILC_PACKET_RESUME_ROUTER packet and its payload
 is defined in [SILC2].
+
+
 
 
 .ti 0
@@ -2073,7 +2078,6 @@ channel in the command reply.  Note that the channel key is never
 generated if the SILC_CMODE_PRIVKEY mode is set.
 
 
-
 .ti 0
 4.4 Channel Key Generation
 
@@ -2264,6 +2268,7 @@ destination of the packet.  However, servers and routers MUST NOT route
 command reply packets to clients coming from other server.  Client
 MUST NOT accept command reply packet originated from anyone else but
 from its own server.
+
 
 
 .ti 0
