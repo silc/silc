@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:05:56  priikone
+ * 	Assert if system is out of memory.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -30,34 +33,46 @@
 
 void *silc_malloc(size_t size)
 {
+  void *addr;
 #ifdef HAVE_MLOCK
-  void *addr = malloc(size);
+  addr = malloc(size);
+  assert(addr != NULL);
   mlock(addr, size);
   return addr;
 #else
-  return malloc(size);
+  addr = malloc(size);
+  assert(addr != NULL);
+  return addr;
 #endif
 }
 
 void *silc_calloc(size_t items, size_t size)
 {
+  void *addr;
 #ifdef HAVE_MLOCK
-  void *addr = calloc(items, size);
+  addr = calloc(items, size);
+  assert(addr != NULL);
   mlock(addr, size);
   return addr;
 #else
-  return calloc(items, size);
+  addr = calloc(items, size);
+  assert(addr != NULL);
+  return addr;
 #endif
 }
 
 void *silc_realloc(void *ptr, size_t size)
 {
+  void *addr;
 #ifdef HAVE_MLOCK
-  void *addr = realloc(ptr, size);
+  addr = realloc(ptr, size);
+  assert(addr != NULL);
   mlock(addr, size);
   return addr;
 #else
-  return realloc(ptr, size);
+  addr = realloc(ptr, size);
+  assert(addr != NULL);
+  return addr;
 #endif
 }
 
