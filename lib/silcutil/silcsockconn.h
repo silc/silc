@@ -300,7 +300,7 @@ int silc_socket_read(SilcSocketConnection sock);
  *
  * SYNOPSIS
  *
- *    int silc_socket_read(SilcSocketConnection sock);
+ *    int silc_socket_write(SilcSocketConnection sock);
  *
  * DESCRIPTION
  *
@@ -324,7 +324,7 @@ int silc_socket_write(SilcSocketConnection sock);
  * DESCRIPTION
  *
  *    Returns human readable error message into the `error' buffer if
- *    the socket is int error status.  Returns TRUE if error message was
+ *    the socket is in error status.  Returns TRUE if error message was
  *    written into the buffer and FALSE if there is not socket error.
  *
  ***/

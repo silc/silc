@@ -143,7 +143,11 @@ SilcRng silc_rng_alloc()
   memset(new->pool, 0, sizeof(new->pool));
   memset(new->key, 0, sizeof(new->key));
   new->state = NULL;
-  silc_hash_alloc("sha1", &new->sha1);
+  if (!silc_hash_alloc("sha1", &new->sha1)) {
+    silc_free(new);
+    SILC_LOG_ERROR(("Could not allocate sha1 hash, probably not registered"));
+    return NULL;
+  }
 
   new->devrandom = strdup("/dev/random");
 

@@ -645,7 +645,7 @@ void silc_client_notify_by_server(SilcClient client,
       break;
 
     /* Save the mode */
-    chu = silc_client_on_channel(channel, client_entry);
+    chu = silc_client_on_channel(channel, client_entry2);
     if (chu)
       chu->mode = mode;
 
