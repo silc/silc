@@ -241,9 +241,7 @@ void silc_client_channel_message(SilcClient client,
        we will use the old key in decryption. If that fails too then we
        cannot do more and will drop the packet. */
     if (!payload) {
-      SILC_LOG_ERROR(("decr failed"));
       if (!channel->old_channel_key) {
-      SILC_LOG_ERROR(("no old key"));
 	goto out;
       }
 
@@ -251,7 +249,6 @@ void silc_client_channel_message(SilcClient client,
 						   channel->old_channel_key,
 						   channel->old_hmac);
       if (!payload) {
-      SILC_LOG_ERROR(("old decr failed"));
 	goto out;
       }
     }
