@@ -4206,8 +4206,21 @@ SILC_SERVER_CMD_FUNC(cmode)
 
 	/* Save the public key */
 	channel->founder_key = silc_pkcs_public_key_copy(idata->public_key);
+        if (!channel->founder_key) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+						SILC_STATUS_ERR_AUTH_FAILED,
+						0);
+	  goto out;
+        }
+
 	founder_key = channel->founder_key;
 	fkey = silc_pkcs_public_key_encode(founder_key, &fkey_len);
+        if (!fkey) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+						SILC_STATUS_ERR_AUTH_FAILED,
+						0);
+	  goto out;
+        }
       }
     }
   } else {
@@ -4423,6 +4436,11 @@ SILC_SERVER_CMD_FUNC(cumode)
       notify = TRUE;
       founder_key = channel->founder_key;
       fkey = silc_pkcs_public_key_encode(founder_key, &fkey_len);
+      if (!fkey) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					      SILC_STATUS_ERR_AUTH_FAILED, 0);
+	goto out;
+      }
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {

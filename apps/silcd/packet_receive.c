@@ -634,6 +634,17 @@ void silc_server_notify(SilcServer server,
       }
     }
 
+    if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH && !channel->founder_key &&
+	server->server_type == SILC_ROUTER) {
+      SILC_LOG_DEBUG(("Enforcing sender to change channel mode"));
+      mode &= ~SILC_CHANNEL_MODE_FOUNDER_AUTH;
+      silc_server_send_notify_cmode(server, sock, FALSE, channel,
+				    mode, server->id, SILC_ID_SERVER,
+				    channel->cipher, 
+				    channel->hmac_name,
+				    channel->passphrase, NULL);
+    }
+
     /* Change mode */
     channel->mode = mode;
 

@@ -1,3 +1,8 @@
+Fri May 17 08:33:41 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed watcher list checking during server signoff.  It
+	  crashed the server.  Affected file silcd/server_util.c.
+
 Thu May 16 13:05:13 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* The nickname argument to watch notify can be optional.

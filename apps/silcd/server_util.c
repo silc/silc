@@ -194,10 +194,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
-	  silc_idlist_del_client(server->local_list, client);
-
 	  /* Remove this client from watcher list if it is */
 	  silc_server_del_from_watcher_list(server, client);
+	  silc_idlist_del_client(server->local_list, client);
 	}
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -1266,7 +1265,6 @@ void silc_server_kill_client(SilcServer server,
     if (!silc_idlist_del_client(server->global_list, remote_client)) {
       /* Remove this client from watcher list if it is */
       silc_server_del_from_watcher_list(server, remote_client);
-
       silc_idlist_del_client(server->local_list, remote_client);  
     }
   }
