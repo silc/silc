@@ -368,12 +368,17 @@ void silc_packet_receive_process(SilcSocketConnection sock,
   SilcPacketParserContext *parse_ctx;
   int packetlen, paddedlen, count, mac_len = 0;
 
+  /* We need at least 2 bytes of data to be able to start processing
+     the packet. */
+  if (sock->inbuf->len < 2)
+    return;
+
   if (hmac)
     mac_len = hmac->hash->hash->hash_len;
 
   /* Parse the packets from the data */
   count = 0;
-  while (sock->inbuf->len > 2) {
+  while (sock->inbuf->len > 0) {
     SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
     paddedlen += 2;
     count++;

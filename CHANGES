@@ -1,3 +1,11 @@
+Sat Sep 30 16:57:42 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Removed the function just added to lib/silcutil/silcschedule.[ch].
+
+	* Cras fixed and optimized the packet handling even further and
+	  it should work now.  Minor change to the prototype of function
+	  silc_packet_receive_process in lib/silccore/silcpacket.[ch].
+
 Sat Sep 30 08:48:47 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new function into lib/silcutil/silcschedule.[ch]:
