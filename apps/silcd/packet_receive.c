@@ -1907,6 +1907,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     SILC_LOG_INFO(("Unauthenticated client attempted to register to network"));
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_NOT_AUTHENTICATED, NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
     return NULL;
   }
 
@@ -1924,6 +1926,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION, 
 				  NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
     return NULL;
   }
 
@@ -1935,6 +1939,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				  NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
     return NULL;
   }
 
@@ -1971,6 +1977,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       silc_server_disconnect_remote(server, sock, 
 				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				    NULL);
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
       return NULL;
     }
     
@@ -1991,6 +1999,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       silc_server_disconnect_remote(server, sock, 
 				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				    NULL);
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
       return NULL;
     }
     
@@ -2039,6 +2049,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     if (nickfail > 9) {
       silc_server_disconnect_remote(server, sock, 
 				    SILC_STATUS_ERR_BAD_NICKNAME, NULL);
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
       return NULL;
     }
     snprintf(&nickname[strlen(nickname) - 1], 1, "%d", nickfail);
@@ -2117,6 +2129,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 				 "server" : "router")));
       silc_server_disconnect_remote(server, sock, 
 				    SILC_STATUS_ERR_NOT_AUTHENTICATED, NULL);
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
       return NULL;
     }
     local = FALSE;
@@ -2129,16 +2143,24 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 							 &name_len),
 			     SILC_STR_END);
   if (ret == -1) {
-    if (id_string)
-      silc_free(id_string);
-    if (server_name)
-      silc_free(server_name);
+    silc_free(id_string);
+    silc_free(server_name);
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				  NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
     return NULL;
   }
 
   if (id_len > buffer->len) {
     silc_free(id_string);
     silc_free(server_name);
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				  NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
     return NULL;
   }
 
@@ -2150,6 +2172,11 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   if (!server_id) {
     silc_free(id_string);
     silc_free(server_name);
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				  NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
     return NULL;
   }
   silc_free(id_string);
@@ -2160,6 +2187,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 		   sock->ip, sock->hostname));
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_BAD_SERVER_ID, NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
     silc_free(server_name);
     return NULL;
   }

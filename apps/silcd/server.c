@@ -2532,30 +2532,29 @@ void silc_server_free_client_data(SilcServer server,
      to the network before removing the client entry. */
   silc_server_packet_queue_purge(server, sock);
 
-  if (!client->id)
-    return;
+  if (client->id) {
+    /* Send SIGNOFF notify to routers. */
+    if (notify && !server->standalone && server->router)
+      silc_server_send_notify_signoff(server, server->router->connection,
+				      server->server_type == SILC_SERVER ?
+				      FALSE : TRUE, client->id, signoff);
 
-  /* Send SIGNOFF notify to routers. */
-  if (notify && !server->standalone && server->router)
-    silc_server_send_notify_signoff(server, server->router->connection,
-				    server->server_type == SILC_SERVER ?
-				    FALSE : TRUE, client->id, signoff);
+    /* Remove client from all channels */
+    if (notify)
+      silc_server_remove_from_channels(server, NULL, client,
+				       TRUE, (char *)signoff, TRUE);
+    else
+      silc_server_remove_from_channels(server, NULL, client,
+				       FALSE, NULL, FALSE);
 
-  /* Remove client from all channels */
-  if (notify)
-    silc_server_remove_from_channels(server, NULL, client,
-				     TRUE, (char *)signoff, TRUE);
-  else
-    silc_server_remove_from_channels(server, NULL, client,
-				     FALSE, NULL, FALSE);
+    /* Check if anyone is watching this nickname */
+    if (server->server_type == SILC_ROUTER)
+      silc_server_check_watcher_list(server, client, NULL,
+				     SILC_NOTIFY_TYPE_SIGNOFF);
 
-  /* Check if anyone is watching this nickname */
-  if (server->server_type == SILC_ROUTER)
-    silc_server_check_watcher_list(server, client, NULL,
-				   SILC_NOTIFY_TYPE_SIGNOFF);
-
-  /* Remove this client from watcher list if it is */
-  silc_server_del_from_watcher_list(server, client);
+    /* Remove this client from watcher list if it is */
+    silc_server_del_from_watcher_list(server, client);
+  }
 
   /* Update statistics */
   server->stat.my_clients--;
