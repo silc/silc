@@ -1,3 +1,8 @@
+Mon Jan 03 16:04:29 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Incorrectly reported error when client had to be resolved from
+	  server in /SMSG.  Affected file irssi/src/silc/core/silc-servers.c
+
 Sat Jan  3 16:37:15 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed whois public key hash table deleting and adding in

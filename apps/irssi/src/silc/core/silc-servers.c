@@ -164,7 +164,7 @@ static int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
     silc_client_get_clients(silc_client, server->conn,
 			    nickname, NULL, silc_send_msg_clients, rec);
     silc_free(nickname);
-    return FALSE;
+    return TRUE;
   }
 
   /* Send the private message directly */
