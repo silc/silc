@@ -41,6 +41,9 @@ NOTE for 'toolkit' distribution:  The toolkit version is defined in the
 'prepare' file itself.  Edit the SILC_VERSION variable inside the 
 'prepare' script, and then run the prepare without the version argument.
 
+NOTE:  You may have to run prepare twice to produce valid Makfiles for
+distribution due to (known but not fixed) bugs in automake.
+
 
 Configuring and compiling the distribution
 ==========================================
