@@ -620,17 +620,20 @@ esac ])
 
 AM_CONDITIONAL(SILC_THREADS, test x$want_threads = xtrue)
 if test x$want_threads = xtrue; then
-  AC_DEFINE(SILC_THREADS)
   TMP_LIBS="$LIBS"
   LIBS="-lpthread"
   AC_TRY_LINK([#include <pthread.h>],
-  	      [pthread_attr_t attr; pthread_attr_init(&attr);], ,
+  	      [pthread_attr_t attr; pthread_attr_init(&attr);], 
+  AC_DEFINE(SILC_THREADS),
   LIBS="-L/usr/pkg/lib -lpthread"
   AC_TRY_LINK([#include <pthread.h>],
-  	      [pthread_attr_t attr; pthread_attr_init(&attr);], ,
+  	      [pthread_attr_t attr; pthread_attr_init(&attr);],
+  AC_DEFINE(SILC_THREADS),
   LIBS="-L/usr/contrib/lib -lpthread"
   AC_TRY_LINK([#include <pthread.h>],
-  	      [pthread_attr_t attr; pthread_attr_init(&attr);], , LIBS=""
+  	      [pthread_attr_t attr; pthread_attr_init(&attr);], 
+  AC_DEFINE(SILC_THREADS),
+  LIBS=""
   )))
 
   CFLAGS="$CFLAGS -D_REENTRANT"
@@ -693,7 +696,6 @@ lib/silcclient/Makefile
 lib/silccore/Makefile
 lib/silccrypt/Makefile
 lib/silcmath/Makefile
-lib/silcmath/mpi/Makefile
 lib/silcmath/mpi/Makefile.defines
 lib/silcmath/mpi/Makefile.defines_int
 lib/silcsim/Makefile
