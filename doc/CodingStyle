@@ -570,6 +570,62 @@ ass sometimes.  But after the grand idea behind callback functions
 becomes clear they are a wonderful tool.
 
 
+Lists
+=====
+
+SILC has two different list API's.  The List API and the Dynamic List API.
+Both are based on the TRQ library.  For definitions of List API see
+lib/trq/silclist.h and for Dynamic List API see lib/trq/silcdlist.h. 
+Following short example of the List API.
+
+List API
+
+typedef struct SilcDummyStruct {
+  int dummy;
+  void *context;
+  struct SilcDummyStruct *next;
+} SilcDummy;
+
+int main()
+{
+  SilcList list;
+  SilcDummy *dummy;
+  SilcDummy *entry;
+
+  /* Initialize the list */
+  silc_list_init(list, struct SilcDummyStruct, next);
+
+  /* Allocate one list entry */	
+  dummy = silc_calloc(1, sizeof(*dummy));
+  dummy->dummy = 100;
+  dummy->context = NULL;
+
+  /* Add the entry to the list */
+  silc_list_add(list, dummy);
+
+  /* Allocate second list entry */	
+  dummy = silc_calloc(1, sizeof(*dummy));
+  dummy->dummy = 3000;
+  dummy->context = NULL;
+
+  /* Add the entry to the list */
+  silc_list_add(list, dummy);
+	
+  /* Then traverse the list, print the values, remove from list and free
+     memory */
+  silc_list_start(list)
+  while ((entry = silc_list_get(list)) != SILC_LIST_END) {
+    fprintf(stderr, "%d\n", entry->dummy);
+
+    /* Remove from list and free memory */
+    silc_list_del(list, entry);  
+    silc_free(entry);
+  }
+
+  return 0;
+}
+
+
 Copyrights of the Code
 ======================
 
