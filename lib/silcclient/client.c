@@ -557,7 +557,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->remote_id_data_len = SILC_ID_SERVER_LEN;
 
   /* Register re-key timeout */
-  conn->rekey->timeout = 3600; /* XXX hardcoded */
+  conn->rekey->timeout = 60; /* XXX hardcoded */
   conn->rekey->context = (void *)client;
   silc_task_register(client->timeout_queue, conn->sock->sock, 
 		     silc_client_rekey_callback,

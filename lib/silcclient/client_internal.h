@@ -67,6 +67,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process);
 SILC_TASK_CALLBACK_GLOBAL(silc_client_failure_callback);
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
-				 int force_send);
+				 bool force_send,
+				 bool flush);
 
 #endif

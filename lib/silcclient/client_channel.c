@@ -146,7 +146,7 @@ void silc_client_send_channel_message(SilcClient client,
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
-  silc_client_packet_send_real(client, sock, force_send);
+  silc_client_packet_send_real(client, sock, force_send, FALSE);
   silc_buffer_free(payload);
   silc_free(id_string);
 }

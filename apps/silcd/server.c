@@ -121,12 +121,14 @@ int silc_server_init(SilcServer server)
   assert(server->config);
 
   /* Set public and private keys */
-  server->public_key = server->config->server_keys->public_key;
-  server->private_key = server->config->server_keys->private_key;
-  if (!server->public_key || !server->private_key) {
+  if (!server->config->server_keys ||
+      !server->config->server_keys->public_key || 
+      !server->config->server_keys->private_key) {
     SILC_LOG_ERROR(("Server public key and/or private key does not exist"));
     return FALSE;
   }
+  server->public_key = server->config->server_keys->public_key;
+  server->private_key = server->config->server_keys->private_key;
 
   /* XXX After server is made as Silc Server Library this can be given
      as argument, for now this is hard coded */
@@ -882,12 +884,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
      timeout!! */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
-  silc_socket_set_heartbeat(sock, 60, hb_context,
+  silc_socket_set_heartbeat(sock, 600, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
   /* Register re-key timeout */
-  idata->rekey->timeout = 60; /* XXX hardcoded */
+  idata->rekey->timeout = 3600; /* XXX hardcoded */
   idata->rekey->context = (void *)server;
   silc_task_register(server->timeout_queue, sock->sock, 
 		     silc_server_rekey_callback,
@@ -1257,7 +1259,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
      timeout!! */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
-  silc_socket_set_heartbeat(sock, 60, hb_context,
+  silc_socket_set_heartbeat(sock, 600, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
@@ -2809,7 +2811,7 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
 
   silc_task_register(server->timeout_queue, 0, 
 		     silc_server_channel_key_rekey,
-		     (void *)rekey, 60, 0,
+		     (void *)rekey, 3600, 0,
 		     SILC_TASK_TIMEOUT,
 		     SILC_TASK_PRI_NORMAL);
 }
@@ -2880,7 +2882,7 @@ void silc_server_create_channel_key(SilcServer server,
 				     silc_server_channel_key_rekey);
     silc_task_register(server->timeout_queue, 0, 
 		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 60, 0,
+		       (void *)channel->rekey, 3600, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }
@@ -2985,7 +2987,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 				     silc_server_channel_key_rekey);
     silc_task_register(server->timeout_queue, 0, 
 		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 60, 0,
+		       (void *)channel->rekey, 3600, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }
