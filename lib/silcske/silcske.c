@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/06 07:12:39  priikone
+ * 	Support for SILC style public keys added.
+ *
  * Revision 1.2  2000/07/05 06:05:15  priikone
  * 	Global cosmetic change.
  *
@@ -319,7 +322,8 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   SILC_LOG_DEBUG(("Verifying signature"));
 
   /* Verify signature */
-  silc_pkcs_set_public_key(ske->prop->pkcs, payload->pk_data, payload->pk_len);
+  silc_pkcs_public_key_data_set(ske->prop->pkcs, payload->pk_data, 
+				payload->pk_len);
   if (ske->prop->pkcs->pkcs->verify(ske->prop->pkcs->context,
 				    payload->sign_data, payload->sign_len,
 				    hash, hash_len) == FALSE) {
@@ -596,7 +600,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   SILC_LOG_DEBUG(("Signing HASH value"));
 
   /* Sign the hash value */
-  silc_pkcs_set_private_key(ske->prop->pkcs, prv, prv_len);
+  silc_pkcs_private_key_data_set(ske->prop->pkcs, prv, prv_len);
   ske->prop->pkcs->pkcs->sign(ske->prop->pkcs->context,
 			      hash, hash_len,
 			      sign, &sign_len);
