@@ -39,8 +39,10 @@ void silc_server_notify(SilcServer server,
   SilcArgumentPayload args;
   SilcChannelID *channel_id, *channel_id2;
   SilcClientID *client_id, *client_id2;
+  SilcServerID *server_id;
   SilcChannelEntry channel;
   SilcClientEntry client;
+  SilcServerEntry server_entry;
   SilcChannelClientEntry chl;
   SilcIDCacheEntry cache;
   unsigned int mode;
@@ -680,7 +682,43 @@ void silc_server_notify(SilcServer server,
     break;
 
   case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
-    SILC_LOG_DEBUG(("SERVER SIGNOFF notify (not-impl XXX)"));
+    /* 
+     * Remove the server entry and all clients that this server owns.
+     */
+
+    SILC_LOG_DEBUG(("SERVER SIGNOFF notify"));
+
+    /* Get Server ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    server_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!server_id)
+      goto out;
+
+    /* Get server entry */
+    server_entry = silc_idlist_find_server_by_id(server->global_list, 
+						 server_id, NULL);
+    if (!server_entry) {
+      server_entry = silc_idlist_find_server_by_id(server->local_list, 
+						   server_id, NULL);
+      if (!server_entry) {
+	silc_free(server_id);
+	goto out;
+      }
+    }
+    silc_free(server_id);
+
+    /* Free all client entries that this server owns as they will
+       become invalid now as well. */
+    silc_server_remove_clients_by_server(server, server_entry, TRUE);
+
+    /* Remove the server entry */
+    if (!silc_idlist_del_server(server->global_list, server_entry))
+      silc_idlist_del_server(server->local_list, server_entry);
+
+    /* XXX update statistics */
+
     break;
 
   case SILC_NOTIFY_TYPE_KICKED:
@@ -1301,6 +1339,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   cache->id = (void *)client_id;
   cache->type = SILC_ID_CLIENT;
   cache->data = username;
+  cache->data_len = strlen(username);
   silc_idcache_sort_by_data(server->local_list->clients);
 
   /* Notify our router about new client on the SILC network */

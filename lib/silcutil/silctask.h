@@ -135,33 +135,10 @@ typedef enum {
        For non-timeout tasks this priority behaves same way. Tasks are run 
        in FIFO (First-In-First-Out) order.
 
-   SILC_TASK_PRI_HIGH
-   
-       High priority for important tasks. This priority should be used only
-       for important tasks. Life is very fair for tasks with this priority.
-       These tasks are run as soon as its timeout has expired. They are run 
-       before normal or lower tasks, respectively. For non-timeout tasks
-       this priority behaves same way. Tasks are run in FIFO order.
-
-   SILC_TASK_PRI_REALTIME
-
-       Highest priority. This priority should be used very carefully because
-       it can make the scheduler extremely unfair to other tasks. The task
-       will be run as soon as its timeout has expired. The task is run before
-       any other task. It is also quaranteed that the last registered task
-       with this priority is the first task to be run when its timeout
-       expires. Tasks are run in LIFO (Last-In-First-Out) order. To make
-       scheduler fair there should never be more than one task in the queue
-       with this priority. Currently none of the tasks in SILC are important
-       enough to use this priority. For non-timeout tasks this priority
-       behaves same way.
-
 */
 typedef enum {
   SILC_TASK_PRI_LOW,
   SILC_TASK_PRI_NORMAL,
-  SILC_TASK_PRI_HIGH,
-  SILC_TASK_PRI_REALTIME,
 } SilcTaskPriority;
 
 /* 
@@ -206,94 +183,12 @@ typedef enum {
        task queue this is not defined. This is meant only for internal
        use and it should be considered to be read-only field.
 
-   SilcTask (*register_task)(SilcTaskQueue, int, 
-                             SilcTaskCallback, void *, 
-			     long, long, 
-			     SilcTaskType,
-			     SilcTaskPriority)
-
-       Registers a new task to the task queue. Arguments are as follows:
-
-       SilcTaskQueue queue        Queue where the task is to be registered
-       int fd                     File descriptor
-       SilcTaskCallback cb        Callback function to call
-       void *context              Context to be passed to callback function
-       long seconds               Seconds to timeout
-       long useconds              Microseconds to timeout
-       SilcTaskType type          Type of the task
-       SilcTaskPriority priority  Priority of the task
-
-       The same function is used to register all types of tasks. The type
-       argument tells what type of the task is. Note that when registering
-       non-timeout tasks one should also pass 0 as timeout as timeout will
-       be ignored anyway. Also, note, that one cannot register timeout task
-       with 0 timeout. There cannot be zero timeouts, passing zero means
-       no timeout is used for the task and SILC_TASK_FD_TASK is used as
-       default task type in this case.
-
-       One should be careful not to register timeout tasks to the non-timeout
-       task queue, because they will never expire. As one should not register
-       non-timeout tasks to timeout task queue because they will never get
-       scheduled.
-
-       There is a one distinct difference between timeout and non-timeout
-       tasks when they are executed. Non-timeout tasks remain on the task
-       queue after execution. Timeout tasks, however, are removed from the
-       task queue after they have expired. It is safe to re-register a task 
-       in its own callback function. It is also safe to unregister a task 
-       in a callback function.
-
-       Generic tasks apply to all file descriptors, however, one still must
-       pass the correct file descriptor to the function when registering
-       generic tasks.
-
-   void (*unregister_task)(SilcTaskQueue, SilcTask)
-
-       Unregisters a task already in the queue. Arguments are as follows:
-
-       SilcTaskQueue queue      Queue where from the task is unregistered
-       SilcTask task            Task to be unregistered
-
-       The same function is used to unregister timeout and non-timeout 
-       tasks. One can also unregister all tasks from the queue by passing
-       SILC_ALL_TASKS as task to the function. It is safe to unregister
-       a task in a callback function.
-
-   void (*set_iotype)(SilcTask, int type)
-
-       Sets the I/O type of the task. The scheduler checks for this value
-       and a task must always have at least one of the I/O types set at 
-       all time. When registering new task the type is set by default to
-       SILC_TASK_READ. If the task doesn't perform reading one must reset
-       the value to SILC_TASK_WRITE.
-
-       The type sent as argumenet is masked into the task. If the tasks 
-       I/O mask already includes this type this function has no effect. 
-       Only one I/O type can be added at once. If the task must perform
-       both reading and writing one must call this function for value
-       SILC_TASK_WRITE as well.
-
-   void (*reset_iotype)(SilcTask, int type)
-
-       Resets the mask to the type sent as argument. Note that this resets
-       the previous values to zero and then adds the type sent as argument.
-       This function can be used to remove one of the types masked earlier
-       to the task.
-
 */
 
 typedef struct SilcTaskQueueStruct {
   SilcTask task;
   int valid;
   struct timeval timeout;
-
-  /* Method functions */
-  SilcTask (*register_task)(struct SilcTaskQueueStruct *, int, 
-			    SilcTaskCallback, void *, long, long, 
-			    SilcTaskType, SilcTaskPriority);
-  void (*unregister_task)(struct SilcTaskQueueStruct *, SilcTask);
-  void (*set_iotype)(SilcTask, int type);
-  void (*reset_iotype)(SilcTask, int type);
 } SilcTaskQueueObject;
 
 typedef SilcTaskQueueObject *SilcTaskQueue;

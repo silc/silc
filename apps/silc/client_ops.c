@@ -321,6 +321,31 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     }
     break;
 
+  case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
+    {
+      SilcClientEntry *clients;
+      unsigned int clients_count;
+      int i;
+
+      (void)va_arg(vp, void *);
+      clients = va_arg(vp, SilcClientEntry *);
+      clients_count = va_arg(vp, unsigned int);
+
+      for (i = 0; i < clients_count; i++) {
+	if (clients[i]->server)
+	  snprintf(message, sizeof(message), "Server signoff: %s@%s %s%s%s", 
+		   clients[i]->nickname, clients[i]->server,
+		   tmp ? "(" : "", tmp ? tmp : "", tmp ? ")" : "");
+	else
+	  snprintf(message, sizeof(message), "Server signoff: %s %s%s%s", 
+		   clients[i]->nickname,
+		   tmp ? "(" : "", tmp ? tmp : "", tmp ? ")" : "");
+	silc_print(client, "*** %s", message);
+	memset(message, 0, sizeof(message));
+      }
+      return;
+    }
+
   default:
     break;
   }

@@ -135,6 +135,35 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, unsigned int argc,
   return buffer;
 }
 
+/* Same as above but takes argument from the `args' Argument Payload. */
+
+SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
+					   unsigned int argc,
+					   SilcBuffer args)
+{
+  SilcBuffer buffer;
+  int len;
+
+  len = 5 + (args ? args->len : 0);
+  buffer = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  silc_buffer_format(buffer,
+		     SILC_STR_UI_SHORT(type),
+		     SILC_STR_UI_SHORT(len),
+		     SILC_STR_UI_CHAR(argc),
+		     SILC_STR_END);
+
+  if (args) {
+    silc_buffer_pull(buffer, 5);
+    silc_buffer_format(buffer,
+		       SILC_STR_UI_XNSTRING(args->data, args->len),
+		       SILC_STR_END);
+    silc_buffer_push(buffer, 5);
+  }
+
+  return buffer;
+}
+
 /* Free's notify payload */
 
 void silc_notify_payload_free(SilcNotifyPayload payload)

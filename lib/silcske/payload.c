@@ -250,7 +250,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_ERROR;
   SilcSKEKEPayload *payload;
-  unsigned char *x;
+  unsigned char *x = NULL;
   unsigned short x_len;
   unsigned int tot_len = 0, len2;
   int ret;
@@ -331,6 +331,8 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
     silc_free(payload->pk_data);
   if (payload->sign_data)
     silc_free(payload->sign_data);
+  if (x)
+    silc_free(x);
   silc_free(payload);
   ske->status = status;
   return status;

@@ -1282,10 +1282,15 @@ ID's sent in arguments are sent inside ID Payload.
       Sent when server quits SILC network.  Those clients from this server
       that are on channels must be removed from the channel.
 
-      Max Arguments:  1
-          Arguments:  (1) <Server ID>
+      Max Arguments:  2000
+          Arguments:  (1) <Server ID>   (n) [<Client ID>   [...]
 
-      The <Server ID> is the server's ID.
+      The <Server ID> is the server's ID.  The rest of the arguments are
+      the Client ID's of the client's who are coming from this server and
+      are thus quitting the SILC network also.  If the maximum number of
+      arguments are reached another SILC_NOTIFY_TYPE_SERVER_SIGNOFF notify
+      packet must be sent.  When this notify packet is sent between routers
+      the Client ID's may be omitted.
 
 
 12    SILC_NOTIFY_TYPE_KICKED

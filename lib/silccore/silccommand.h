@@ -79,13 +79,12 @@ typedef enum {
 #define SILC_COMMAND_CMODE		17
 #define SILC_COMMAND_CUMODE		18
 #define SILC_COMMAND_KICK		19
-#define	SILC_COMMAND_RESTART	        20
+#define SILC_COMMAND_BAN		20
 #define	SILC_COMMAND_CLOSE		21
 #define	SILC_COMMAND_SHUTDOWN		22
 #define SILC_COMMAND_SILCOPER	        23
 #define SILC_COMMAND_LEAVE		24
 #define SILC_COMMAND_USERS		25
-#define SILC_COMMAND_BAN		26
 
 /* Reserved */
 #define SILC_COMMAND_RESERVED           255

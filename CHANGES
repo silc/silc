@@ -1,3 +1,48 @@
+Tue Apr  3 16:39:19 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented the sending of the SERVER_SIGNOFF notify in the
+	  server.  Affected file is silcd/server.c.
+
+	* Added silc_server_send_notify_args into silcd/packet_send.[ch].
+	  Added also silc_notify_payload_encode_args into the
+	  lib/silccore/silcnotify.[ch].
+
+	* Implemented ther SERVER_SIGNOFF notify handling in the server.
+	  Affected file silcd/packet_receive.c.
+
+	* Implemented the SERVER_SIGNOFF notify handling in the client
+	  library.  Affected file lib/silcclient/client_notify.c.  Also,
+	  implemnted the printing of the SERVER_SIGNOFF info to the
+	  application.  Affected file silc/client_ops.c.
+
+	* The silc_idlist_del_server now returns TRUE or FALSE to indicate
+	  if the deleting was successful.  Affected file silcd/idlist.[ch].
+
+	* Added support for public key authentication in the connection
+	  authentication protocol in the client library.  Affected file
+	  lib/silcclient/protocol.c.
+
+	* Changed the server's silc_idlist_get_clients_by_* interface
+	  to support already allocated array so that new entries may be
+	  added to pre-allocated array.  Affected file silcd/idlist.[ch].
+	  This fixes some bugs with WHOIS, WHOWAS and IDENTIFY commands
+	  and command replies.
+
+	* All command reply functions in the server now calls the 
+	  pending command callback even if error occured.  This way the
+	  error will be delivered to the client as well.  Affected files
+	  silcd/command.c and silcd/command_reply.c.
+
+	* Fixed INFO command to return local server's info if no server
+	  was provided.  Affected file lib/silcclient/command.c.
+
+	* Removed RESTART command for good.  Updated the code and the
+	  protocol specs.
+
+	* Rewrote parts of the task system.  It is a bit simpler now.
+	  Removed unsued task priorities. The affected files are
+	  lib/silcutil/silctask.[ch].
+
 Mon Apr  2 20:02:33 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Moved the USERS printing from the library to the application.

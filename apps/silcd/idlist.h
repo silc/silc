@@ -520,20 +520,21 @@ silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
 SilcServerEntry
 silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 			      SilcServerID *new_id);
-void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);
+int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
 		       unsigned int nickname_len, char *username, 
 		       char *userinfo, SilcClientID *id, 
 		       SilcServerEntry router, void *connection);
 int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
-SilcClientEntry *
-silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
-				    char *server, unsigned int *clients_count);
-SilcClientEntry *
-silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
-				SilcHash md5hash,
-				unsigned int *clients_count);
+int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
+					char *server, 
+					SilcClientEntry **clients,
+					unsigned int *clients_count);
+int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
+				    SilcHash md5hash,
+				    SilcClientEntry **clients,
+				    unsigned int *clients_count);
 SilcClientEntry
 silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
 				SilcHash md5hash, SilcIDCacheEntry *ret_entry);

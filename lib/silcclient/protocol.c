@@ -428,6 +428,53 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
  * Connection Authentication protocol functions
  */
 
+static int
+silc_client_get_public_key_auth(SilcClient client,
+				char *filepath,
+				unsigned char *auth_data,
+				unsigned int *auth_data_len,
+				SilcSKE ske)
+{
+  int len;
+  SilcPKCS pkcs;
+  SilcBuffer auth;
+  SilcPublicKey pub_key;
+
+  if (!silc_pkcs_load_public_key(filepath,&pub_key, SILC_PKCS_FILE_PEM))
+    if (!silc_pkcs_load_public_key(filepath, &pub_key, SILC_PKCS_FILE_BIN))
+      return FALSE;
+
+  silc_pkcs_alloc(pub_key->name, &pkcs);
+  if (!silc_pkcs_public_key_set(pkcs, pub_key)) {
+    silc_pkcs_free(pkcs);
+    silc_pkcs_public_key_free(pub_key);
+    return FALSE;
+  }
+
+  /* Make the authentication data. Protocol says it is HASH plus
+     KE Start Payload. */
+  len = ske->hash_len + ske->start_payload_copy->len;
+  auth = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(auth, len);
+  silc_buffer_format(auth,
+		     SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
+		     SILC_STR_UI_XNSTRING(ske->start_payload_copy->data,
+					  ske->start_payload_copy->len),
+		     SILC_STR_END);
+
+  if (silc_pkcs_sign(pkcs, auth->data, auth->len, auth_data, auth_data_len)) {
+    silc_pkcs_free(pkcs);
+    silc_buffer_free(auth);
+    silc_pkcs_public_key_free(pub_key);
+    return TRUE;
+  }
+
+  silc_pkcs_free(pkcs);
+  silc_buffer_free(auth);
+  silc_pkcs_public_key_free(pub_key);
+  return FALSE;
+}
+
 SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 {
   SilcProtocol protocol = (SilcProtocol)context;
@@ -474,8 +521,17 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	break;
 
       case SILC_AUTH_PUBLIC_KEY:
-	/* XXX */
-	break;
+	{
+	  unsigned char sign[1024];
+
+	  /* Public key authentication */
+	  silc_client_get_public_key_auth(client, ctx->auth_data,
+					  sign, &auth_data_len, 
+					  ctx->ske);
+	  auth_data = silc_calloc(auth_data_len, sizeof(*auth_data));
+	  memcpy(auth_data, sign, auth_data_len);
+	  break;
+	}
       }
 
       payload_len = 4 + auth_data_len;

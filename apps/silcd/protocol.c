@@ -875,6 +875,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    silc_server_get_public_key_auth(server, ctx->auth_data,
 					    sign, &auth_data_len,
 					    ctx->ske);
+	    auth_data = silc_calloc(auth_data_len, sizeof(*auth_data));
+	    memcpy(auth_data, sign, auth_data_len);
 	    break;
 	  }
 	}

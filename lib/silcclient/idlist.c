@@ -298,8 +298,6 @@ void silc_client_get_clients_by_list(SilcClient client,
     silc_free(client_id);
     silc_buffer_pull(client_id_list, idp_len);
   }
-  silc_buffer_push(client_id_list, client_id_list->data - 
-		   client_id_list->head);
 
   /* Query the client information from server if the list included clients
      that we don't know about. */
@@ -320,12 +318,17 @@ void silc_client_get_clients_by_list(SilcClient client,
 				silc_client_command_get_clients_list_callback, 
 				(void *)in);
 
+    silc_buffer_push(client_id_list, client_id_list->data - 
+		     client_id_list->head);
     silc_buffer_free(res_cmd);
     silc_free(res_argv);
     silc_free(res_argv_lens);
     silc_free(res_argv_types);
     return;
   }
+
+  silc_buffer_push(client_id_list, client_id_list->data - 
+		   client_id_list->head);
 
   /* We have the clients in cache, get them and call the completion */
   silc_client_command_get_clients_list_callback((void *)in);

@@ -50,6 +50,9 @@ typedef unsigned short SilcNotifyType;
 SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer);
 SilcBuffer silc_notify_payload_encode(SilcNotifyType type, unsigned int argc, 
 				      va_list ap);
+SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
+					   unsigned int argc,
+					   SilcBuffer args);
 void silc_notify_payload_free(SilcNotifyPayload payload);
 SilcNotifyType silc_notify_get_type(SilcNotifyPayload payload);
 unsigned int silc_notify_get_arg_num(SilcNotifyPayload payload);

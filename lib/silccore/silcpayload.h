@@ -27,8 +27,6 @@ typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
 
 /* Prototypes */
 SilcIDPayload silc_id_payload_parse(SilcBuffer buffer);
-SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
-						unsigned int argc);
 SilcIDPayload silc_id_payload_parse_data(unsigned char *data, 
 					 unsigned int len);
 void *silc_id_payload_parse_id(unsigned char *data, unsigned int len);
@@ -38,6 +36,8 @@ SilcIdType silc_id_payload_get_type(SilcIDPayload payload);
 void *silc_id_payload_get_id(SilcIDPayload payload);
 unsigned char *silc_id_payload_get_data(SilcIDPayload payload);
 unsigned int silc_id_payload_get_len(SilcIDPayload payload);
+SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
+						unsigned int argc);
 SilcBuffer silc_argument_payload_encode(unsigned int argc,
 					unsigned char **argv,
 					unsigned int *argv_lens,

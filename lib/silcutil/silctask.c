@@ -35,10 +35,6 @@ void silc_task_queue_alloc(SilcTaskQueue *new, int valid)
   /* Set the pointers */
   (*new)->valid = valid;
   (*new)->task = NULL;
-  (*new)->register_task = silc_task_register;
-  (*new)->unregister_task = silc_task_unregister;
-  (*new)->set_iotype = silc_task_set_iotype;
-  (*new)->reset_iotype = silc_task_reset_iotype;
 }
 
 /* Free's a task queue. */
@@ -75,8 +71,7 @@ SilcTask silc_task_add(SilcTaskQueue queue, SilcTask new,
        but after tasks with higher priority. */
     prev = task->prev;
     while(prev != task) {
-      if (prev->priority > SILC_TASK_PRI_LOW &&
-	  prev->priority <= SILC_TASK_PRI_REALTIME)
+      if (prev->priority > SILC_TASK_PRI_LOW)
 	break;
       prev = prev->prev;
     }
@@ -99,49 +94,6 @@ SilcTask silc_task_add(SilcTaskQueue queue, SilcTask new,
       prev->next = new;
       next->prev = new;
     }
-    break;
-  case SILC_TASK_PRI_HIGH:
-    /* High priority. The task is added before lower priority tasks
-       but after tasks with higher priority. */
-    prev = task->prev;
-    while(prev != task) {
-      if (prev->priority > SILC_TASK_PRI_NORMAL &&
-	  prev->priority <= SILC_TASK_PRI_REALTIME)
-	break;
-      prev = prev->prev;
-    }
-    if (prev == task) {
-      /* There are only lower priorities in the list, we will
-	 sit before them and become the first task in the queue. */
-      prev = task->prev;
-      new->prev = prev;
-      new->next = task;
-      task->prev = new;
-      prev->next = new;
-
-      /* We are now the first task in queue */
-      queue->task = new;
-    } else {
-      /* Found a spot from the list, add the task to the list. */
-      next = prev->next;
-      new->prev = prev;
-      new->next = next;
-      prev->next = new;
-      next->prev = new;
-    }
-    break;
-  case SILC_TASK_PRI_REALTIME:
-    /* Highest priority. The task is added at the head of the list. 
-       The last registered task is added to the very head of the list
-       thus we get the LIFO (Last-In-First-Out) order. */
-    prev = task->prev;
-    new->prev = prev;
-    new->next = task;
-    prev->next = new;
-    task->prev = new;
-
-    /* We are the first task in the queue */
-    queue->task = new;
     break;
   default:
     silc_free(new);
@@ -150,32 +102,6 @@ SilcTask silc_task_add(SilcTaskQueue queue, SilcTask new,
 
   return new;
 }
-
-#if 0
-void dump_tasks(SilcTaskQueue queue)
-{
-  SilcTask first, prev;
-
-  if (!queue->task)
-    return;
-
-  first = queue->task;
-
-  fprintf(stderr, "\nqueue->task:\t%p\t%d\n", queue->task,
-	  queue->task->timeout.tv_sec);
-
-  prev = first->prev;
-  while (1) {
-    if (first == prev)
-      break;
-
-    fprintf(stderr, "task       :\t%p\t%d\n", prev, prev->timeout.tv_sec);
-
-    prev = prev->prev;
-  }
-  fprintf(stderr, "\n");
-}
-#endif
 
 /* Return the timeout task with smallest timeout. */
 
@@ -291,92 +217,48 @@ SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask new,
       queue->task = new;
     }
     break;
-  case SILC_TASK_PRI_HIGH:
-    /* High priority. The task is added before lower priority tasks
-       but after tasks with higher priority. */
-    while(prev != task) {
-
-      /* If we have longer timeout than with the task head of us
-	 we have found our spot. */
-      if (silc_task_timeout_compare(&prev->timeout, &new->timeout))
-	break;
-
-      /* If we are equal size of timeout, priority kicks in place. */
-      if (!silc_task_timeout_compare(&new->timeout, &prev->timeout))
-	if (prev->priority >= SILC_TASK_PRI_HIGH)
-	  break;
-
-      /* We have shorter timeout or higher priority, compare to next one. */
-      prev = prev->prev;
-    }
-    /* Found a spot from the list, add the task to the list. */
-    next = prev->next;
-    new->prev = prev;
-    new->next = next;
-    prev->next = new;
-    next->prev = new;
-    
-    if (prev == task) {
-      /* Check if we are going to be the first task in the queue */
-      if (silc_task_timeout_compare(&prev->timeout, &new->timeout))
-	break;
-      if (!silc_task_timeout_compare(&new->timeout, &prev->timeout))
-	if (prev->priority >= SILC_TASK_PRI_HIGH)
-	  break;
-
-      /* We are now the first task in queue */
-      queue->task = new;
-    }
-    break;
-  case SILC_TASK_PRI_REALTIME:
-    /* Highest priority. The task is added at the head of the list. 
-       The last registered task is added to the very head of the list
-       thus we get the LIFO (Last-In-First-Out) order. */
-    next = task->next;
-    while(next != task) {
-
-      /* If we have shorter timeout than the next task we've found
-	 our spot. */
-      if (silc_task_timeout_compare(&new->timeout, &next->timeout))
-	break;
-
-      /* If we are equal size of timeout we will be first. */
-      if (!silc_task_timeout_compare(&next->timeout, &new->timeout))
-	break;
-
-      /* We have longer timeout, compare to next one. */
-      next = next->next;
-    }
-    /* Found a spot from the list, add the task to the list. */
-    prev = next->prev;
-    new->next = next;
-    new->prev = prev;
-    prev->next = new;
-    next->prev = new;
-    
-    if (next == task) {
-      /* Check if we are going to be the first task in the queue */
-      if (silc_task_timeout_compare(&next->timeout, &new->timeout))
-	break;
-
-      /* We are now the first task in queue */
-      queue->task = new;
-    }
   default:
     silc_free(new);
     return NULL;
   }
 
-#if 0
-  dump_tasks(queue);
-#endif
-
   return new;
 }
 
-/* Registers a new task into the task queue. The task becomes valid
-   automatically when it is registered. Returns a pointer to the 
-   registered task. */
+/* Registers a new task to the task queue. Arguments are as follows:
+      
+   SilcTaskQueue queue        Queue where the task is to be registered
+   int fd                     File descriptor
+   SilcTaskCallback cb        Callback function to call
+   void *context              Context to be passed to callback function
+   long seconds               Seconds to timeout
+   long useconds              Microseconds to timeout
+   SilcTaskType type          Type of the task
+   SilcTaskPriority priority  Priority of the task
+   
+   The same function is used to register all types of tasks. The type
+   argument tells what type of the task is. Note that when registering
+   non-timeout tasks one should also pass 0 as timeout as timeout will
+   be ignored anyway. Also, note, that one cannot register timeout task
+   with 0 timeout. There cannot be zero timeouts, passing zero means
+   no timeout is used for the task and SILC_TASK_FD_TASK is used as
+   default task type in this case.
+   
+   One should be careful not to register timeout tasks to the non-timeout
+   task queue, because they will never expire. As one should not register
+   non-timeout tasks to timeout task queue because they will never get
+   scheduled.
+   
+   There is a one distinct difference between timeout and non-timeout
+   tasks when they are executed. Non-timeout tasks remain on the task
+   queue after execution. Timeout tasks, however, are removed from the
+   task queue after they have expired. It is safe to re-register a task 
+   in its own callback function. It is also safe to unregister a task 
+   in a callback function.
+   
+   Generic tasks apply to all file descriptors, however, one still must
+   pass the correct file descriptor to the function when registering
+   generic tasks. */
 
 SilcTask silc_task_register(SilcTaskQueue queue, int fd, 
 			    SilcTaskCallback cb, void *context, 
@@ -499,12 +381,7 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
 	queue->task = NULL;
       if (queue->task == old)
 	queue->task = silc_task_get_first(queue, next);
-      /*queue->task = next;*/
       
-#if 0
-      dump_tasks(queue);
-#endif
-
       silc_free(old);
       return TRUE;
     }
@@ -515,9 +392,15 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
   }
 }
 
-/* Unregisters a task from the task queue. This is the unregister_task
-   function pointer in task queue object. One should use this function
-   to unregister tasks. This function invalidates the task. */
+/* Unregisters a task already in the queue. Arguments are as follows:
+   
+   SilcTaskQueue queue      Queue where from the task is unregistered
+   SilcTask task            Task to be unregistered
+   
+   The same function is used to unregister timeout and non-timeout 
+   tasks. One can also unregister all tasks from the queue by passing
+   SILC_ALL_TASKS as task to the function. It is safe to unregister
+   a task in a callback function. */
 
 void silc_task_unregister(SilcTaskQueue queue, SilcTask task)
 {
@@ -616,15 +499,27 @@ void silc_task_unregister_by_context(SilcTaskQueue queue, void *context)
   }
 }
 
-/* Sets the I/O mask for the task. Only one I/O type can be set at a
-   time. */
+/* Sets the I/O type of the task. The scheduler checks for this value
+   and a task must always have at least one of the I/O types set at 
+   all time. When registering new task the type is set by default to
+   SILC_TASK_READ. If the task doesn't perform reading one must reset
+   the value to SILC_TASK_WRITE.
+   
+   The type sent as argumenet is masked into the task. If the tasks 
+   I/O mask already includes this type this function has no effect. 
+   Only one I/O type can be added at once. If the task must perform
+   both reading and writing one must call this function for value
+   SILC_TASK_WRITE as well. */
 
 void silc_task_set_iotype(SilcTask task, int type)
 {
   task->iomask |= (1L << type);
 }
 
-/* Resets the I/O mask to the type sent as argument. */
+/* Resets the mask to the type sent as argument. Note that this resets
+   the previous values to zero and then adds the type sent as argument.
+   This function can be used to remove one of the types masked earlier
+   to the task. */
 
 void silc_task_reset_iotype(SilcTask task, int type)
 {

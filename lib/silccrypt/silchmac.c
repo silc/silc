@@ -250,6 +250,7 @@ void silc_hmac_make_internal(SilcHmac hmac, unsigned char *data,
   hash->hash->final(hash_context, mac);
   memcpy(return_hash, mac, hmac->hmac->len);
   memset(mac, 0, sizeof(mac));
+  silc_free(hash_context);
 }
 
 /* Create the HMAC. This is thee make_hmac function pointer.  This

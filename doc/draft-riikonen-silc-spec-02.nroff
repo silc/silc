@@ -3008,26 +3008,52 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CLIENT_ID
 
 
-   20   SILC_COMMAND_RESTART
+   20   SILC_COMMAND_BAN
 
-        Max Arguments:  0
-            Arguments:  None
+        Max Arguments:  3
+            Arguments:  (1) <Channel ID>         (2) [<adding client>]
+                        (3) [<removing client>]
 
-        This command may only be used by server operator to force a
-        server to restart itself.
+        This command is used to manage the ban list of the channel
+        indicated by the <Channel ID>.  A client that is banned from
+        channel is no longer able to join the channel.  The client which
+        is executing this command must have at least channel operator
+        privileges on the channel.
+
+        The <adding client> and <removing client> are used to add to and
+        remove from the ban list.  The format of the <adding client> and
+        the <removing client> is of following format:
+
+            [<nickname>[@<server>]!][<username>]@[<hostname>]
+
+        The server must send the notify type SILC_NOTIFY_TYPE_BAN to its
+        primary router after adding to or removing from the ban list.
+        The wildcards may be used with this command.  If adding or removing
+        from than one clients then the lists are an comma (`,') separated
+        list.
+
+        If this command is executed without the ban arguments the command
+        merely replies with the current ban list.
+
 
         Reply messages to the command:
 
-        Max Arguments:  1
-            Arguments:  (1) <Status Payload>
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) [<ban list>]
 
-        This command replies only with Status Payload.
+        This command replies with the <Channel ID> of the channel and
+        the current <ban list> of the channel if it exists.
 
         Status messages:
 
             SILC_STATUS_OK
             SILC_STATUS_ERR_NOT_REGISTERED
-            SILC_STATUS_ERR_NO_SERVER_PRIV
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
 
 
    21   SILC_COMMAND_CLOSE
@@ -3198,54 +3224,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_BAD_CHANNEL_ID
             SILC_STATUS_ERR_NO_CHANNEL_ID
             SILC_STATUS_ERR_NOT_ON_CHANNEL
-
-
-   26   SILC_COMMAND_BAN
-
-        Max Arguments:  3
-            Arguments:  (1) <Channel ID>         (2) [<adding client>]
-                        (3) [<removing client>]
-
-        This command is used to manage the ban list of the channel
-        indicated by the <Channel ID>.  A client that is banned from
-        channel is no longer able to join the channel.  The client which
-        is executing this command must have at least channel operator
-        privileges on the channel.
-
-        The <adding client> and <removing client> are used to add to and
-        remove from the ban list.  The format of the <adding client> and
-        the <removing client> is of following format:
-
-            [<nickname>[@<server>]!][<username>]@[<hostname>]
-
-        The server must send the notify type SILC_NOTIFY_TYPE_BAN to its
-        primary router after adding to or removing from the ban list.
-        The wildcards may be used with this command.  If adding or removing
-        from than one clients then the lists are an comma (`,') separated
-        list.
-
-        If this command is executed without the ban arguments the command
-        merely replies with the current ban list.
-
-
-        Reply messages to the command:
-
-        Max Arguments:  3
-            Arguments:  (1) <Status Payload>  (2) <Channel ID>
-                        (3) [<ban list>]
-
-        This command replies with the <Channel ID> of the channel and
-        the current <ban list> of the channel if it exists.
-
-        Status messages:
-
-            SILC_STATUS_OK
-            SILC_STATUS_ERR_NOT_REGISTERED
-            SILC_STATUS_ERR_TOO_MANY_PARAMS
-            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
-            SILC_STATUS_ERR_NO_CHANNEL_ID
-            SILC_STATUS_ERR_NOT_ON_CHANNEL
-            SILC_STATUS_ERR_NO_CHANNEL_PRIV
 
 
    27 - 199

@@ -248,13 +248,14 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 
 /* Removes and free's server entry from ID list */
 
-void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
+int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 {
   if (entry) {
     /* Remove from cache */
     if (entry->id)
-      silc_idcache_del_by_id(id_list->servers, SILC_ID_SERVER, 
-			     (void *)entry->id);
+      if (!silc_idcache_del_by_id(id_list->servers, SILC_ID_SERVER, 
+				  (void *)entry->id))
+	return FALSE;
 
     /* Free data */
     if (entry->server_name)
@@ -264,7 +265,10 @@ void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 
     memset(entry, 'F', sizeof(*entry));
     silc_free(entry);
+    return TRUE;
   }
+
+  return FALSE;
 }
 
 /******************************************************************************
@@ -346,35 +350,36 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 /* Returns all clients matching requested nickname. Number of clients is
    returned to `clients_count'. Caller must free the returned table. */
 
-SilcClientEntry *
-silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
-				    char *server, unsigned int *clients_count)
+int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
+					char *server, 
+					SilcClientEntry **clients,
+					unsigned int *clients_count)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
-  SilcClientEntry *clients;
   int i;
 
   SILC_LOG_DEBUG(("Start"));
 
   if (!silc_idcache_find_by_data(id_list->clients, nickname, &list))
-    return NULL;
+    return FALSE;
 
-  clients = silc_calloc(silc_idcache_list_count(list), sizeof(*clients));
+  *clients = silc_realloc(*clients, 
+			  (silc_idcache_list_count(list) + *clients_count) * 
+			  sizeof(**clients));
 
   i = 0;
   silc_idcache_list_first(list, &id_cache);
-  clients[i++] = (SilcClientEntry)id_cache->context;
+  (*clients)[i++] = (SilcClientEntry)id_cache->context;
 
   while (silc_idcache_list_next(list, &id_cache))
-    clients[i++] = (SilcClientEntry)id_cache->context;
+    (*clients)[i++] = (SilcClientEntry)id_cache->context;
   
   silc_idcache_list_free(list);
   
-  if (clients_count)
-    *clients_count = i;
+  *clients_count += i;
 
-  return clients;
+  return TRUE;
 }
 
 /* Returns all clients matching requested nickname. Number of clients is
@@ -384,14 +389,13 @@ silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
    list may have hash.  Thus, this is not fully reliable function.
    Instead this should probably check the hash from the list of client ID's. */
 
-SilcClientEntry *
-silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
-				SilcHash md5hash,
-				unsigned int *clients_count)
+int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
+				    SilcHash md5hash,
+				    SilcClientEntry **clients,
+				    unsigned int *clients_count)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
-  SilcClientEntry *clients;
   unsigned char hash[32];
   int i;
 
@@ -400,23 +404,24 @@ silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   silc_hash_make(md5hash, nickname, strlen(nickname), hash);
 
   if (!silc_idcache_find_by_data(id_list->clients, hash, &list))
-    return NULL;
+    return FALSE;
 
-  clients = silc_calloc(silc_idcache_list_count(list), sizeof(*clients));
+  *clients = silc_realloc(*clients, 
+			  (silc_idcache_list_count(list) + *clients_count) * 
+			  sizeof(**clients));
 
   i = 0;
   silc_idcache_list_first(list, &id_cache);
-  clients[i++] = (SilcClientEntry)id_cache->context;
+  (*clients)[i++] = (SilcClientEntry)id_cache->context;
 
   while (silc_idcache_list_next(list, &id_cache))
-    clients[i++] = (SilcClientEntry)id_cache->context;
+    (*clients)[i++] = (SilcClientEntry)id_cache->context;
   
   silc_idcache_list_free(list);
   
-  if (clients_count)
-    *clients_count = i;
+  *clients_count += i;
 
-  return clients;
+  return TRUE;
 }
 
 /* Finds client by nickname hash. */

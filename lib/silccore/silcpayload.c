@@ -125,8 +125,9 @@ void *silc_id_payload_parse_id(unsigned char *data, unsigned int len)
   SilcBuffer buffer;
   SilcIdType type;
   unsigned short idlen;
-  unsigned char *id;
+  unsigned char *id_data;
   int ret;
+  void *id;
 
   buffer = silc_buffer_alloc(len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
@@ -145,14 +146,16 @@ void *silc_id_payload_parse_id(unsigned char *data, unsigned int len)
     goto err;
 
   ret = silc_buffer_unformat(buffer,
-			     SILC_STR_UI_XNSTRING_ALLOC(&id, idlen),
+			     SILC_STR_UI_XNSTRING_ALLOC(&id_data, idlen),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
 
   silc_buffer_free(buffer);
 
-  return silc_id_str2id(id, idlen, type);
+  id = silc_id_str2id(id_data, idlen, type);
+  silc_free(id_data);
+  return id;
 
  err:
   silc_buffer_free(buffer);
@@ -192,6 +195,7 @@ void silc_id_payload_free(SilcIDPayload payload)
 {
   if (payload) {
     silc_free(payload->id);
+    silc_free(payload);
   }
 }
 
@@ -401,6 +405,8 @@ void silc_argument_payload_free(SilcArgumentPayload payload)
       silc_free(payload->argv[i]);
 
     silc_free(payload->argv);
+    silc_free(payload->argv_lens);
+    silc_free(payload->argv_types);
     silc_free(payload);
   }
 }

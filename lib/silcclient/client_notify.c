@@ -688,9 +688,7 @@ void silc_client_notify_by_server(SilcClient client,
     /* Get comment */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
 
-    /* Notify application. The channel entry is sent last as this notify
-       is for channel but application don't know it from the arguments
-       sent by server. */
+    /* Notify application. */
     client->ops->notify(client, conn, type, client_entry, tmp);
 
     if (client_entry != conn->local_entry) {
@@ -713,6 +711,68 @@ void silc_client_notify_by_server(SilcClient client,
 
     break;
     
+  case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
+    {
+      /*
+       * A server quit the SILC network and some clients must be removed
+       * from channels as they quit as well.
+       */
+      SilcClientEntry *clients = NULL;
+      unsigned int clients_count = 0;
+      int i;
+
+      for (i = 1; i < silc_argument_get_arg_num(args); i++) {
+	/* Get Client ID */
+	tmp = silc_argument_get_arg_type(args, i + 1, &tmp_len);
+	if (tmp) {
+	  client_id = silc_id_payload_parse_id(tmp, tmp_len);
+	  if (!client_id)
+	    goto out;
+	  
+	  /* Get the client entry */
+	  client_entry = silc_client_get_client_by_id(client, conn, client_id);
+	  if (client_entry) {
+	    clients = silc_realloc(clients, sizeof(*clients) * 
+				   (clients_count + 1));
+	    clients[clients_count] = client_entry;
+	    clients_count++;
+	  }
+	  silc_free(client_id);
+	}
+      }
+      client_id = NULL;
+
+      /* Notify application. We don't keep server entries so the server
+	 entry is returned as NULL. The client's are returned as array
+	 of SilcClientEntry pointers. */
+      client->ops->notify(client, conn, type, NULL, clients, clients_count);
+
+      for (i = 0; i < clients_count; i++) {
+	/* Remove client from all channels */
+	client_entry = clients[i];
+	if (client_entry == conn->local_entry)
+	  continue;
+
+	silc_client_remove_from_channels(client, conn, client_entry);
+	silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
+			       client_entry->id);
+	if (client_entry->nickname)
+	  silc_free(client_entry->nickname);
+	if (client_entry->server)
+	  silc_free(client_entry->server);
+	if (client_entry->id)
+	  silc_free(client_entry->id);
+	if (client_entry->send_key)
+	  silc_cipher_free(client_entry->send_key);
+	if (client_entry->receive_key)
+	  silc_cipher_free(client_entry->receive_key);
+	silc_free(client_entry);
+      }
+      silc_free(clients);
+
+    }
+    break;
+
   default:
     break;
   }

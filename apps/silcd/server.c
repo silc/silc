@@ -2087,18 +2087,9 @@ void silc_server_free_sock_user_data(SilcServer server,
     {
       SilcServerEntry user_data = (SilcServerEntry)sock->user_data;
 
-      /* Send REMOVE_ID packet to routers. */
-      if (!server->standalone && server->router)
-	silc_server_send_notify_server_signoff(server, 
-					       server->router->connection,
-					       server->server_type == 
-					       SILC_SERVER ?
-					       FALSE : TRUE, user_data->id, 
-					       SILC_ID_SERVER_LEN);
-
-      /* Then also free all client entries that this server owns as
-	 they will become invalid now as well. */
-      silc_server_remove_clients_by_server(server, user_data);
+      /* Free all client entries that this server owns as they will
+	 become invalid now as well. */
+      silc_server_remove_clients_by_server(server, user_data, TRUE);
 
       /* If this was our primary router connection then we're lost to
 	 the outside world. */
@@ -2132,16 +2123,37 @@ void silc_server_free_sock_user_data(SilcServer server,
 
 /* This function is used to remove all client entries by the server `entry'.
    This is called when the connection is lost to the server. In this case
-   we must invalidate all the client entries owned by the server `entry'. */
+   we must invalidate all the client entries owned by the server `entry'. 
+   If the `server_signoff' is TRUE then the SERVER_SIGNOFF notify is
+   distributed to our local clients. */
 
 int silc_server_remove_clients_by_server(SilcServer server, 
-					 SilcServerEntry entry)
+					 SilcServerEntry entry,
+					 int server_signoff)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client = NULL;
+  SilcBuffer idp;
+  SilcClientEntry *clients = NULL;
+  unsigned int clients_c = 0;
+  unsigned char **argv = NULL;
+  unsigned int *argv_lens = NULL, *argv_types = NULL, argc = 0;
+  int i;
 
   SILC_LOG_DEBUG(("Start"));
+
+  if (server_signoff) {
+    idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
+    argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+    argv_lens = silc_realloc(argv_lens,  sizeof(*argv_lens) * (argc + 1));
+    argv_types = silc_realloc(argv_types, sizeof(*argv_types) * (argc + 1));
+    argv[argc] = idp->data;
+    argv_lens[argc] = idp->len;
+    argv_types[argc] = argc + 1;
+    argc++;
+    silc_buffer_free(idp);
+  }
 
   if (silc_idcache_find_by_id(server->local_list->clients, 
 			      SILC_ID_CACHE_ANY, SILC_ID_CLIENT, &list)) {
@@ -2151,15 +2163,37 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	client = (SilcClientEntry)id_cache->context;
 	
 	if (client->router != entry) {
+	  if (server_signoff && client->connection) {
+	    clients = silc_realloc(clients, 
+				   sizeof(*clients) * (clients_c + 1));
+	    clients[clients_c] = client;
+	    clients_c++;
+	  }
+
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
 	    continue;
 	}
 
+	if (server_signoff) {
+	  idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+	  argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+	  argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
+				   (argc + 1));
+	  argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
+				    (argc + 1));
+	  argv[argc] = silc_calloc(idp->len, sizeof(*argv[0]));
+	  memcpy(argv[argc], idp->data, idp->len);
+	  argv_lens[argc] = idp->len;
+	  argv_types[argc] = argc + 1;
+	  argc++;
+	  silc_buffer_free(idp);
+	}
+
 	/* Remove the client entry */
-	silc_server_remove_from_channels(server, NULL, client, TRUE, 
-					 NULL, TRUE);
+	silc_server_remove_from_channels(server, NULL, client, FALSE, 
+					 NULL, FALSE);
 	silc_idlist_del_client(server->local_list, client);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -2177,15 +2211,37 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	client = (SilcClientEntry)id_cache->context;
 	
 	if (client->router != entry) {
+	  if (server_signoff && client->connection) {
+	    clients = silc_realloc(clients, 
+				   sizeof(*clients) * (clients_c + 1));
+	    clients[clients_c] = client;
+	    clients_c++;
+	  }
+
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
 	    continue;
 	}
 
+	if (server_signoff) {
+	  idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+	  argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+	  argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
+				   (argc + 1));
+	  argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
+				    (argc + 1));
+	  argv[argc] = silc_calloc(idp->len, sizeof(*argv[0]));
+	  memcpy(argv[argc], idp->data, idp->len);
+	  argv_lens[argc] = idp->len;
+	  argv_types[argc] = argc + 1;
+	  argc++;
+	  silc_buffer_free(idp);
+	}
+
 	/* Remove the client entry */
-	silc_server_remove_from_channels(server, NULL, client, TRUE,
-					 NULL, TRUE);
+	silc_server_remove_from_channels(server, NULL, client, FALSE,
+					 NULL, FALSE);
 	silc_idlist_del_client(server->global_list, client);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -2194,7 +2250,40 @@ int silc_server_remove_clients_by_server(SilcServer server,
     }
     silc_idcache_list_free(list);
   }
-  
+
+  /* Send the SERVER_SIGNOFF notify */
+  if (server_signoff) {
+    SilcBuffer args;
+
+    /* Send SERVER_SIGNOFF notify to our primary router */
+    if (!server->standalone && server->router) {
+      args = silc_argument_payload_encode(1, argv, argv_lens,
+					  argv_types);
+      silc_server_send_notify_args(server, 
+				   server->router->connection,
+				   server->server_type == 
+				   SILC_SERVER ? FALSE : TRUE, 
+				   SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
+				   argc, args);
+      silc_buffer_free(args);
+    }
+
+    args = silc_argument_payload_encode(argc, argv, argv_lens,
+					argv_types);
+    /* Send to local clients */
+    for (i = 0; i < clients_c; i++) {
+      silc_server_send_notify_args(server, clients[i]->connection,
+				   FALSE, SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
+				   argc, args);
+    }
+
+    silc_free(clients);
+    silc_buffer_free(args);
+    silc_free(argv);
+    silc_free(argv_lens);
+    silc_free(argv_types);
+  }
+
   return TRUE;
 }
 
@@ -2353,7 +2442,7 @@ void silc_server_remove_from_channels(SilcServer server,
       silc_server_create_channel_key(server, channel, 0);
       
       /* Send the channel key to the channel. The key of course is not sent
-	 to the client who was removed f rom the channel. */
+	 to the client who was removed from the channel. */
       silc_server_send_channel_key(server, client->connection, channel, 
 				   server->server_type == SILC_ROUTER ? 
 				   FALSE : !server->standalone);

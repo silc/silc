@@ -526,10 +526,8 @@ SilcBuffer silc_channel_key_payload_encode(unsigned short id_len,
 void silc_channel_key_payload_free(SilcChannelKeyPayload payload)
 {
   if (payload) {
-    if (payload->id)
-      silc_free(payload->id);
-    if (payload->cipher)
-      silc_free(payload->cipher);
+    silc_free(payload->id);
+    silc_free(payload->cipher);
     if (payload->key) {
       memset(payload->key, 0, payload->key_len);
       silc_free(payload->key);

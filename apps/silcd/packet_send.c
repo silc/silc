@@ -860,6 +860,24 @@ void silc_server_send_notify(SilcServer server,
   silc_buffer_free(packet);
 }
 
+/* Sends notify message and gets the arguments from the `args' Argument
+   Payloads. */
+
+void silc_server_send_notify_args(SilcServer server,
+				  SilcSocketConnection sock,
+				  int broadcast,
+				  SilcNotifyType type,
+				  unsigned int argc,
+				  SilcBuffer args)
+{
+  SilcBuffer packet;
+
+  packet = silc_notify_payload_encode_args(type, argc, args);
+  silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY, 0, 
+			  packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
+}
+
 /* Send CHANNEL_CHANGE notify type. This tells the receiver to replace the
    `old_id' with the `new_id'. */
 
@@ -1022,24 +1040,6 @@ void silc_server_send_notify_signoff(SilcServer server,
 			  SILC_NOTIFY_TYPE_SIGNOFF,
 			  message ? 2 : 1, idp->data, idp->len,
 			  message, message ? strlen(message): 0);
-  silc_buffer_free(idp);
-}
-
-/* Sends SERVER_SIGNOFF notify type. This tells that `server_id' server
-   has quit SILC network. */
-
-void silc_server_send_notify_server_signoff(SilcServer server,
-					    SilcSocketConnection sock,
-					    int broadcast,
-					    SilcServerID *server_id,
-					    unsigned int server_id_len)
-{
-  SilcBuffer idp;
-
-  idp = silc_id_payload_encode((void *)server_id, SILC_ID_SERVER);
-  silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
-			  1, idp->data, idp->len);
   silc_buffer_free(idp);
 }
 

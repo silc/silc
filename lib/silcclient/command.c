@@ -48,8 +48,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(cmode, CMODE, "CMODE", SILC_CF_LAG | SILC_CF_REG, 4),
   SILC_CLIENT_CMD(cumode, CUMODE, "CUMODE", SILC_CF_LAG | SILC_CF_REG, 5),
   SILC_CLIENT_CMD(kick, KICK, "KICK", SILC_CF_LAG | SILC_CF_REG, 4),
-  SILC_CLIENT_CMD(restart, RESTART, "RESTART",
-		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
+  SILC_CLIENT_CMD(ban, BAN, "BAN", SILC_CF_LAG | SILC_CF_REG, 3),
   SILC_CLIENT_CMD(close, CLOSE, "CLOSE",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 3),
   SILC_CLIENT_CMD(shutdown, SHUTDOWN, "SHUTDOWN",
@@ -58,7 +57,6 @@ SilcClientCommand silc_command_list[] =
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER, 3),
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(users, USERS, "USERS", SILC_CF_LAG | SILC_CF_REG, 2),
-  SILC_CLIENT_CMD(ban, BAN, "BAN", SILC_CF_LAG | SILC_CF_REG, 3),
 
   { NULL, 0, NULL, 0, 0 },
 };
@@ -808,7 +806,7 @@ SILC_CLIENT_CMD_FUNC(info)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
-  char *name;
+  char *name = NULL;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -816,17 +814,21 @@ SILC_CLIENT_CMD_FUNC(info)
     goto out;
   }
 
-  if (cmd->argc < 2)
-    name = strdup(conn->remote_host);
-  else
+  if (cmd->argc == 2)
     name = strdup(cmd->argv[1]);
 
   /* Send the command */
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_INFO, 0, 1, 
-					  1, name, strlen(name));
+  if (name)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_INFO, 0, 1, 
+					    1, name, strlen(name));
+  else
+    buffer = silc_command_payload_encode(SILC_COMMAND_INFO, 0,
+					 NULL, NULL, NULL, 0);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
+  if (name)
+    silc_free(name);
 
   /* Notify application */
   COMMAND;
@@ -1741,13 +1743,16 @@ SILC_CLIENT_CMD_FUNC(connect)
   silc_client_command_free(cmd);
 }
 
-/* RESTART command. Restarts the server. You must be server operator
-   to be able to use this command. */
+/* Command BAN. This is used to manage the ban list of the channel. */
 
-SILC_CLIENT_CMD_FUNC(restart)
+SILC_CLIENT_CMD_FUNC(ban)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-  SilcBuffer buffer;
+  SilcClientConnection conn = cmd->conn;
+  SilcChannelEntry channel;
+  SilcBuffer buffer, chidp;
+  int type = 0;
+  char *name, *ban = NULL;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1755,12 +1760,58 @@ SILC_CLIENT_CMD_FUNC(restart)
     goto out;
   }
 
-  buffer = silc_command_payload_encode(SILC_COMMAND_RESTART, 0,
-				       NULL, NULL, NULL, 0);
-  silc_client_packet_send(cmd->client, cmd->conn->sock, SILC_PACKET_COMMAND, 
-			  NULL, 0, NULL, NULL, 
-			  buffer->data, buffer->len, TRUE);
+  if (cmd->argc < 2) {
+    cmd->client->ops->say(cmd->client, conn, 
+		   "Usage: /BAN <channel> "
+		   "[+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argv[1][0] == '*') {
+    if (!conn->current_channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+
+    channel = conn->current_channel;
+  } else {
+    name = cmd->argv[1];
+
+    channel = silc_client_get_channel(cmd->client, conn, name);
+    if (!channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are on that channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+  }
+
+  if (cmd->argc == 3) {
+    if (cmd->argv[2][0] == '+')
+      type = 2;
+    else
+      type = 3;
+
+    ban = cmd->argv[2];
+    ban++;
+  }
+
+  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+
+  /* Send the command */
+  if (ban)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 0, 2, 
+					    1, chidp->data, chidp->len,
+					    type, ban, strlen(ban));
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 0, 1, 
+					    1, chidp->data, chidp->len);
+
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
+  silc_buffer_free(chidp);
 
   /* Notify application */
   COMMAND;
@@ -1991,83 +2042,6 @@ SILC_CLIENT_CMD_FUNC(users)
     cmd->pending = TRUE;
     return;
   }
-
-  /* Notify application */
-  COMMAND;
-
- out:
-  silc_client_command_free(cmd);
-}
-
-/* Command BAN. This is used to manage the ban list of the channel. */
-
-SILC_CLIENT_CMD_FUNC(ban)
-{
-  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-  SilcClientConnection conn = cmd->conn;
-  SilcChannelEntry channel;
-  SilcBuffer buffer, chidp;
-  int type = 0;
-  char *name, *ban = NULL;
-
-  if (!cmd->conn) {
-    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  if (cmd->argc < 2) {
-    cmd->client->ops->say(cmd->client, conn, 
-		   "Usage: /BAN <channel> "
-		   "[+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]");
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  if (cmd->argv[1][0] == '*') {
-    if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
-      COMMAND_ERROR;
-      goto out;
-    }
-
-    channel = conn->current_channel;
-  } else {
-    name = cmd->argv[1];
-
-    channel = silc_client_get_channel(cmd->client, conn, name);
-    if (!channel) {
-      cmd->client->ops->say(cmd->client, conn, "You are on that channel");
-      COMMAND_ERROR;
-      goto out;
-    }
-  }
-
-  if (cmd->argc == 3) {
-    if (cmd->argv[2][0] == '+')
-      type = 2;
-    else
-      type = 3;
-
-    ban = cmd->argv[2];
-    ban++;
-  }
-
-  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
-
-  /* Send the command */
-  if (ban)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 0, 2, 
-					    1, chidp->data, chidp->len,
-					    type, ban, strlen(ban));
-  else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 0, 1, 
-					    1, chidp->data, chidp->len);
-
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
-			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
-  silc_buffer_free(buffer);
-  silc_buffer_free(chidp);
 
   /* Notify application */
   COMMAND;
