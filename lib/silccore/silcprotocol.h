@@ -39,6 +39,9 @@ typedef unsigned char SilcProtocolState;
 #define SILC_PROTOCOL_CONN_AUTH_PASSWORD 1
 #define SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY 2
 
+/* Type definition for above auth methods */
+typedef unsigned char SilcProtocolAuthMeth;
+
 /* 
    SILC Protocol Object.
 

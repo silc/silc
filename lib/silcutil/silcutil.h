@@ -35,5 +35,13 @@ char *silc_encode_pem(unsigned char *data, unsigned int len);
 char *silc_encode_pem_file(unsigned char *data, unsigned int data_len);
 unsigned char *silc_decode_pem(unsigned char *pem, unsigned int pem_len,
 			       unsigned int *ret_len);
+int silc_parse_nickname(char *string, char **nickname, char **server,
+			unsigned int *num);
+void silc_parse_command_line(unsigned char *buffer, 
+			     unsigned char ***parsed,
+			     unsigned int **parsed_lens,
+			     unsigned int **parsed_types,
+			     unsigned int *parsed_num,
+			     unsigned int max_args);
 
 #endif

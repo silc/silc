@@ -18,19 +18,22 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LIBRARIES = libsilccore.a
+noinst_LIBRARIES = libsilcutil.a
 
-libsilccore_a_SOURCES = \
-	id.c \
-	idcache.c \
-	silcchannel.c \
-	silccommand.c \
-	silcpacket.c \
-	silcprotocol.c \
-	silcsockconn.c
+libsilcutil_a_SOURCES = \
+	silcbuffer.c \
+	silcbuffmt.c \
+	silcbufutil.c \
+	silcconfig.c \
+	silclog.c \
+	silcmemory.c \
+	silcnet.c \
+	silcschedule.c \
+	silctask.c \
+	silcutil.c
 
 EXTRA_DIST = *.h
 
 INCLUDES = -I. -I.. -I../silccrypt -I../silcmath -I../silcske \
-	-I../silcsim -I../.. -I../silcutil -I../../includes \
+	-I../silcsim -I../.. -I../silccore -I../../includes \
 	-I../silcmath/gmp

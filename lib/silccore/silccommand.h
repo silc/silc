@@ -80,16 +80,6 @@ typedef enum {
 #define SILC_COMMAND_LEAVE		23
 #define SILC_COMMAND_NAMES		24
 
-/* Local commands. Local commands are unofficial commands and
-   are implementation specific commands. These are used only by the
-   SILC client to extend user commands. */
-#define SILC_COMMAND_HELP		100
-#define SILC_COMMAND_CLEAR		101
-#define SILC_COMMAND_VERSION		102
-#define SILC_COMMAND_SERVER             103
-#define SILC_COMMAND_MSG 	        104
-#define SILC_COMMAND_AWAY		105
-
 /* Reserved */
 #define SILC_COMMAND_RESERVED           255
 

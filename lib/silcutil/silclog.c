@@ -17,28 +17,12 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.5  2000/07/17 16:46:37  priikone
- * 	Still bug fix in silc_log_format :)
- *
- * Revision 1.4  2000/07/17 16:44:57  priikone
- * 	Buffer overflow bug fixe in silc_log_format.
- *
- * Revision 1.3  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.2  2000/07/03 05:53:58  priikone
- * 	Fixed file purging bug.  The purging should work now ok.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
+
+/* Set TRUE/FALSE to enable/disable debugging */
+int silc_debug;
 
 /* SILC Log name strings. These strings are printed to the log file. */
 const SilcLogTypeName silc_log_types[] =
@@ -59,6 +43,17 @@ unsigned int log_info_size;
 unsigned int log_warning_size;
 unsigned int log_error_size;
 unsigned int log_fatal_size;
+
+/* Log callbacks. If these are set by the application these are used
+   instead of the default functions in this file. */
+static SilcLogCb info_cb = NULL;
+static SilcLogCb warning_cb = NULL;
+static SilcLogCb error_cb = NULL;
+static SilcLogCb fatal_cb = NULL;
+
+/* Debug callbacks. If set these are used instead of default ones. */
+static SilcDebugCb debug_cb = NULL;
+static SilcDebugHexdumpCb debug_hexdump_cb = NULL;
 
 /* Formats arguments to a string and returns it after allocating memory
    for it. It must be remembered to free it later. */
@@ -83,6 +78,38 @@ void silc_log_output(const char *filename, unsigned int maxsize,
 {
   FILE *fp;
   const SilcLogTypeName *np;
+
+  switch(type)
+    {
+    case SILC_LOG_INFO:
+      if (info_cb) {
+	(*info_cb)(string);
+	silc_free(string);
+	return;
+      }
+      break;
+    case SILC_LOG_WARNING:
+      if (warning_cb) {
+	(*warning_cb)(string);
+	silc_free(string);
+	return;
+      }
+      break;
+    case SILC_LOG_ERROR:
+      if (error_cb) {
+	(*error_cb)(string);
+	silc_free(string);
+	return;
+      }
+      break;
+    case SILC_LOG_FATAL:
+      if (fatal_cb) {
+	(*fatal_cb)(string);
+	silc_free(string);
+	return;
+      }
+      break;
+    }
 
   /* Purge the log file if the max size is defined. */
   if (maxsize) {
@@ -124,6 +151,18 @@ void silc_log_output(const char *filename, unsigned int maxsize,
 void silc_log_output_debug(char *file, char *function, 
 			   int line, char *string)
 {
+  if (!silc_debug) {
+    silc_free(string);
+    return;
+  }
+
+  if (debug_cb)
+    {
+      (*debug_cb)(file, function, line, string);
+      silc_free(string);
+      return;
+    }
+
   /* fprintf(stderr, "%s:%s:%d: %s\n", file, function, line, string); */
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
   fflush(stderr);
@@ -139,6 +178,18 @@ void silc_log_output_hexdump(char *file, char *function,
   int i, k;
   int off, pos, count;
   unsigned char *data = (unsigned char *)data_in;
+
+  if (!silc_debug) {
+    silc_free(string);
+    return;
+  }
+
+  if (debug_hexdump_cb)
+    {
+      (*debug_hexdump_cb)(file, function, line, data_in, len, string);
+      silc_free(string);
+      return;
+    }
 
   /* fprintf(stderr, "%s:%s:%d: %s\n", file, function, line, string); */
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
@@ -217,4 +268,39 @@ void silc_log_set_files(char *info, unsigned int info_size,
   log_warning_size = warning_size;
   log_error_size = error_size;
   log_fatal_size = fatal_size;
+}
+
+/* Sets log callbacks */
+
+void silc_log_set_callbacks(SilcLogCb info, SilcLogCb warning,
+			    SilcLogCb error, SilcLogCb fatal)
+{
+  info_cb = info;
+  warning_cb = warning;
+  error_cb = error;
+  fatal_cb = fatal;
+}
+
+/* Resets log callbacks */
+
+void silc_log_reset_callbacks()
+{
+  info_cb = warning_cb = error_cb = fatal_cb = NULL;
+}
+
+/* Sets debug callbacks */
+
+void silc_log_set_debug_callbacks(SilcDebugCb debug, 
+				  SilcDebugHexdumpCb debug_hexdump)
+{
+  debug_cb = debug;
+  debug_hexdump_cb = debug_hexdump;
+}
+
+/* Resets debug callbacks */
+
+void silc_log_reset_debug_callbacks()
+{
+  debug_cb = NULL;
+  debug_hexdump_cb = NULL;
 }

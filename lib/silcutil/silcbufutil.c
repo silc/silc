@@ -20,6 +20,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.1  2000/09/13 17:45:16  priikone
+ * 	Splitted SILC core library. Core library includes now only
+ * 	SILC protocol specific stuff. New utility library includes the
+ * 	old stuff from core library that is more generic purpose stuff.
+ *
  * Revision 1.3  2000/07/14 06:08:49  priikone
  * 	Added silc_buffer_realloc. Fixed silc_buffer_clone.
  *

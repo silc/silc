@@ -24,6 +24,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.1  2000/09/13 17:45:16  priikone
+ * 	Splitted SILC core library. Core library includes now only
+ * 	SILC protocol specific stuff. New utility library includes the
+ * 	old stuff from core library that is more generic purpose stuff.
+ *
  * Revision 1.4  2000/07/19 07:04:04  priikone
  * 	Minor bug fix in silc_encode_pem
  *
@@ -432,4 +437,113 @@ unsigned char *silc_decode_pem(unsigned char *pem, unsigned int pem_len,
     *ret_len = j;
 
   return data;
+}
+
+/* Parse nickname string. The format may be <num>!<nickname>@<server> to
+   support multiple same nicknames. The <num> is the final unifier if same
+   nickname is on same server. Note, this is only local format and server
+   does not know anything about these. */
+
+int silc_parse_nickname(char *string, char **nickname, char **server,
+			unsigned int *num)
+{
+  unsigned int tlen;
+  char tmp[256];
+
+  if (!string)
+    return FALSE;
+
+  if (strchr(string, '!')) {
+    tlen = strcspn(string, "!");
+    memset(tmp, 0, sizeof(tmp));
+    memcpy(tmp, string, tlen);
+
+    if (num)
+      *num = atoi(tmp);
+
+    if (tlen >= strlen(string))
+      return FALSE;
+
+    string += tlen + 1;
+  }
+
+  if (strchr(string, '@')) {
+    tlen = strcspn(string, "@");
+    
+    if (nickname) {
+      *nickname = silc_calloc(tlen + 1, sizeof(char));
+      memcpy(*nickname, string, tlen);
+    }
+    
+    if (server) {
+      *server = silc_calloc(strlen(string) - tlen, sizeof(char));
+      memcpy(*server, string + tlen + 1, strlen(string) - tlen - 1);
+    }
+  } else {
+    if (nickname)
+      *nickname = strdup(string);
+  }
+
+  return TRUE;
+}
+
+/* Parses command line. At most `max_args' is taken. Rest of the line
+   will be allocated as the last argument if there are more than `max_args'
+   arguments in the line. Note that the command name is counted as one
+   argument and is saved. */
+
+void silc_parse_command_line(unsigned char *buffer, 
+			     unsigned char ***parsed,
+			     unsigned int **parsed_lens,
+			     unsigned int **parsed_types,
+			     unsigned int *parsed_num,
+			     unsigned int max_args)
+{
+  int i, len = 0;
+  int argc = 0;
+  const char *cp = buffer;
+
+  *parsed = silc_calloc(1, sizeof(**parsed));
+  *parsed_lens = silc_calloc(1, sizeof(**parsed_lens));
+
+  /* Get the command first */
+  len = strcspn(cp, " ");
+  (*parsed)[0] = silc_to_upper((char *)cp);
+  (*parsed_lens)[0] = len;
+  cp += len + 1;
+  argc++;
+
+  /* Parse arguments */
+  if (strchr(cp, ' ') || strlen(cp) != 0) {
+    for (i = 1; i < max_args; i++) {
+
+      if (i != max_args - 1)
+	len = strcspn(cp, " ");
+      else
+	len = strlen(cp);
+      
+      *parsed = silc_realloc(*parsed, sizeof(**parsed) * (argc + 1));
+      *parsed_lens = silc_realloc(*parsed_lens, 
+				  sizeof(**parsed_lens) * (argc + 1));
+      (*parsed)[argc] = silc_calloc(len + 1, sizeof(char));
+      memcpy((*parsed)[argc], cp, len);
+      (*parsed_lens)[argc] = len;
+      argc++;
+
+      cp += len;
+      if (strlen(cp) == 0)
+	break;
+      else
+	cp++;
+    }
+  }
+
+  /* Save argument types. Protocol defines all argument types but
+     this implementation makes sure that they are always in correct
+     order hence this simple code. */
+  *parsed_types = silc_calloc(argc, sizeof(**parsed_types));
+  for (i = 0; i < argc; i++)
+    (*parsed_types)[i] = i;
+
+  *parsed_num = argc;
 }

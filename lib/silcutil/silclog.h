@@ -21,6 +21,9 @@
 #ifndef SILCLOG_H
 #define SILCLOG_H
 
+/* Set TRUE/FALSE to enable/disable debugging */
+extern int silc_debug;
+
 /* SILC Log types */
 typedef enum {
   SILC_LOG_INFO,
@@ -34,6 +37,18 @@ typedef struct {
   char *name;
   SilcLogType type;
 } SilcLogTypeName;
+
+/* Log function callback. */
+typedef void (*SilcLogCb)(char *message);
+
+/* Debug function callback. */
+typedef void (*SilcDebugCb)(char *file, char *function, 
+			    int line, char *message);
+
+/* Debug hexdump function callback. */
+typedef void (*SilcDebugHexdumpCb)(char *file, char *function, 
+				   int line, unsigned char *data,
+				   unsigned int data_len, char *message);
 
 /* Default log filenames */
 #define SILC_LOG_FILE_INFO "silcd.log"
@@ -100,5 +115,11 @@ void silc_log_set_files(char *info, unsigned int info_size,
 			char *warning, unsigned int warning_size,
 			char *error, unsigned int error_size,
                         char *fatal, unsigned int fatal_size);
+void silc_log_set_callbacks(SilcLogCb info, SilcLogCb warning,
+			    SilcLogCb error, SilcLogCb fatal);
+void silc_log_reset_callbacks();
+void silc_log_set_debug_callbacks(SilcDebugCb debug, 
+				  SilcDebugHexdumpCb debug_hexdump);
+void silc_log_reset_debug_callbacks();
 
 #endif

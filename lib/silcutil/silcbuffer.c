@@ -20,6 +20,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.1  2000/09/13 17:45:15  priikone
+ * 	Splitted SILC core library. Core library includes now only
+ * 	SILC protocol specific stuff. New utility library includes the
+ * 	old stuff from core library that is more generic purpose stuff.
+ *
  * Revision 1.2  2000/07/05 06:06:35  priikone
  * 	Global cosmetic change.
  *

@@ -20,6 +20,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.1  2000/09/13 17:45:16  priikone
+ * 	Splitted SILC core library. Core library includes now only
+ * 	SILC protocol specific stuff. New utility library includes the
+ * 	old stuff from core library that is more generic purpose stuff.
+ *
  * Revision 1.3  2000/07/18 06:51:58  priikone
  * 	Debug version bug fixes.
  *
@@ -41,20 +46,32 @@ static SilcSchedule schedule;
    the timeout task queue hook. This must be called before the schedule
    is able to work. */
 
-void silc_schedule_init(SilcTaskQueue fd_queue,
-			SilcTaskQueue timeout_queue,
-			SilcTaskQueue generic_queue,
+void silc_schedule_init(SilcTaskQueue *fd_queue,
+			SilcTaskQueue *timeout_queue,
+			SilcTaskQueue *generic_queue,
 			int max_fd)
 {
   int i;
 
   SILC_LOG_DEBUG(("Initializing scheduler"));
 
+  /* Register the task queues if they are not registered already. In SILC
+     we have by default three task queues. One task queue for non-timeout
+     tasks which perform different kind of I/O on file descriptors, timeout
+     task queue for timeout tasks, and, generic non-timeout task queue whose
+     tasks apply to all connections. */
+  if (!*fd_queue)
+    silc_task_queue_alloc(fd_queue, TRUE);
+  if (!*timeout_queue)
+    silc_task_queue_alloc(timeout_queue, TRUE);
+  if (!*generic_queue)
+    silc_task_queue_alloc(generic_queue, TRUE);
+
   /* Initialize the schedule */
   memset(&schedule, 0, sizeof(schedule));
-  schedule.fd_queue = fd_queue;
-  schedule.timeout_queue = timeout_queue;
-  schedule.generic_queue = generic_queue;
+  schedule.fd_queue = *fd_queue;
+  schedule.timeout_queue = *timeout_queue;
+  schedule.generic_queue = *generic_queue;
   schedule.fd_list.fd = silc_calloc(max_fd, sizeof(int));
   schedule.fd_list.last_fd = 0;
   schedule.fd_list.max_fd = max_fd;

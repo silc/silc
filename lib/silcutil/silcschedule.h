@@ -110,9 +110,9 @@ typedef struct {
 typedef SilcScheduleObject SilcSchedule;
 
 /* Prototypes */
-void silc_schedule_init(SilcTaskQueue fd_queue,
-			SilcTaskQueue timeout_queue,
-			SilcTaskQueue generic_queue,
+void silc_schedule_init(SilcTaskQueue *fd_queue,
+			SilcTaskQueue *timeout_queue,
+			SilcTaskQueue *generic_queue,
 			int max_fd);
 int silc_schedule_uninit();
 void silc_schedule_stop();
