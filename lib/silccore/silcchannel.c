@@ -221,6 +221,7 @@ unsigned int silc_channel_get_mode(SilcChannelPayload payload)
 /* Channel Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcChannelMessagePayloadStruct {
+  unsigned short flags;
   unsigned short data_len;
   unsigned char *data;
   unsigned char *mac;
@@ -295,6 +296,7 @@ silc_channel_message_payload_parse(SilcBuffer buffer,
 
   /* Parse the Channel Message Payload. Ignore the padding. */
   ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_SHORT(&new->flags),
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->data, 
 							 &new->data_len),
 			     SILC_STR_UI16_NSTRING(NULL, NULL),
@@ -322,13 +324,13 @@ silc_channel_message_payload_parse(SilcBuffer buffer,
    encrypted separately from other parts of the packet padding must
    be applied to the payload. */
 
-SilcBuffer silc_channel_message_payload_encode(unsigned short data_len,
+SilcBuffer silc_channel_message_payload_encode(unsigned short flags,
+					       unsigned short data_len,
 					       unsigned char *data,
 					       unsigned short iv_len,
 					       unsigned char *iv,
 					       SilcCipher cipher,
-					       SilcHmac hmac,
-					       SilcRng rng)
+					       SilcHmac hmac)
 {
   int i;
   SilcBuffer buffer;
@@ -341,7 +343,7 @@ SilcBuffer silc_channel_message_payload_encode(unsigned short data_len,
   /* Calculate length of padding. IV is not included into the calculation
      since it is not encrypted. */
   mac_len = silc_hmac_len(hmac);
-  len = 4 + data_len + mac_len;
+  len = 6 + data_len + mac_len;
   pad_len = SILC_PACKET_PADLEN((len + 2));
 
   /* Allocate channel payload buffer */
@@ -349,11 +351,12 @@ SilcBuffer silc_channel_message_payload_encode(unsigned short data_len,
   buffer = silc_buffer_alloc(len);
 
   /* Generate padding */
-  for (i = 0; i < pad_len; i++) pad[i] = silc_rng_get_byte(rng);
+  for (i = 0; i < pad_len; i++) pad[i] = silc_rng_global_get_byte();
 
   /* Encode the Channel Message Payload */
-  silc_buffer_pull_tail(buffer, 4 + data_len + pad_len);
+  silc_buffer_pull_tail(buffer, 6 + data_len + pad_len);
   silc_buffer_format(buffer, 
+		     SILC_STR_UI_SHORT(flags),
 		     SILC_STR_UI_SHORT(data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_UI_SHORT(pad_len),
@@ -365,12 +368,12 @@ SilcBuffer silc_channel_message_payload_encode(unsigned short data_len,
 
   /* Put rest of the data to the payload */
   silc_buffer_pull_tail(buffer, mac_len + iv_len);
-  silc_buffer_pull(buffer, 4 + data_len + pad_len);
+  silc_buffer_pull(buffer, 6 + data_len + pad_len);
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_XNSTRING(mac, mac_len),
 		     SILC_STR_UI_XNSTRING(iv, iv_len),
 		     SILC_STR_END);
-  silc_buffer_push(buffer, 4 + data_len + pad_len);
+  silc_buffer_push(buffer, 6 + data_len + pad_len);
 
   /* Encrypt payload of the packet. This is encrypted with the channel key. */
   silc_cipher_encrypt(cipher, buffer->data, buffer->data, 

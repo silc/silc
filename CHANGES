@@ -2,7 +2,8 @@ Wed Mar 28 20:50:47 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Redefined the Private Message Payload to support private message
 	  keys and to support the new private message flags.  Updated
-	  the protocol specs.
+	  the protocol specs.  Flags makes it possible to have for example
+	  CTCP style messages.
 
 	* Added new type SilcPrivateMessagePayload and defined an API
 	  for it in the lib/silcclient/silcprivate.[ch].
@@ -10,6 +11,14 @@ Wed Mar 28 20:50:47 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Tested private message private keys successfully.  Tested the
 	  private message key set, unset and list commands with the new
 	  KEY command.
+
+	* Redefined the Channel Message Payload to include the channel
+	  message flags (equal with private message flags) to support
+	  for example CTCP style messages.
+
+	* Defined some of the message (for channel and private message)
+	  flags.  Updated the protocol specs and added the flags to the
+	  lib/silccore/silcchannel.h.
 
 Wed Mar 28 15:52:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 

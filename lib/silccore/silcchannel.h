@@ -35,6 +35,17 @@ typedef struct SilcChannelMessagePayloadStruct *SilcChannelMessagePayload;
    actual structure is defined in source file and is private data. */
 typedef struct SilcChannelKeyPayloadStruct *SilcChannelKeyPayload;
 
+/* The Message flag type */
+typedef unsigned short SilcMessageFlags;
+
+/* The message flags (shared by both channel and private messages) */
+#define SILC_MESSAGE_FLAG_NONE        0x0000
+#define SILC_MESSAGE_FLAG_AUTOREPLY   0x0001
+#define SILC_MESSAGE_FLAG_NOREPLY     0x0002
+#define SILC_MESSAGE_FLAG_ACTION      0x0004
+#define SILC_MESSAGE_FLAG_RESERVED    0x0008 /* to 0x0200 */
+#define SILC_MESSAGE_FLAG_PRIVATE     0x0400 /* to 0x8000 */
+
 /* Prototypes */
 SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);
 SilcDList silc_channel_payload_parse_list(SilcBuffer buffer);
@@ -59,13 +70,13 @@ SilcChannelMessagePayload
 silc_channel_message_payload_parse(SilcBuffer buffer,
 				   SilcCipher cipher,
 				   SilcHmac hmac);
-SilcBuffer silc_channel_message_payload_encode(unsigned short data_len,
+SilcBuffer silc_channel_message_payload_encode(unsigned short flags,
+					       unsigned short data_len,
 					       unsigned char *data,
 					       unsigned short iv_len,
 					       unsigned char *iv,
 					       SilcCipher cipher,
-					       SilcHmac hmac,
-					       SilcRng rng);
+					       SilcHmac hmac);
 void silc_channel_message_payload_free(SilcChannelMessagePayload payload);
 unsigned char *silc_channel_message_get_data(SilcChannelMessagePayload payload,
 				     unsigned int *data_len);
