@@ -661,7 +661,7 @@ void mem_opendir(void *context, SilcSFTP sftp,
   MemFSFileHandle handle;
 
   if (!path || !strlen(path))
-    path = (const char *)strdup("/");
+    path = (const char *)DIR_SEPARATOR;
 
   /* Find such directory */
   entry = mem_find_entry_path(fs->root, path);
@@ -800,7 +800,7 @@ void mem_stat(void *context, SilcSFTP sftp,
   struct stat stats;
 
   if (!path || !strlen(path))
-    path = (const char *)strdup("/");
+    path = (const char *)DIR_SEPARATOR;
 
   /* Find such directory */
   entry = mem_find_entry_path(fs->root, path);
@@ -850,7 +850,7 @@ void mem_lstat(void *context, SilcSFTP sftp,
   struct stat stats;
 
   if (!path || !strlen(path))
-    path = (const char *)strdup("/");
+    path = (const char *)DIR_SEPARATOR;
 
   /* Find such directory */
   entry = mem_find_entry_path(fs->root, path);
@@ -984,7 +984,7 @@ void mem_realpath(void *context, SilcSFTP sftp,
   SilcSFTPName name;
 
   if (!path || !strlen(path))
-    path = (const char *)strdup("/");
+    path = (const char *)DIR_SEPARATOR;
 
   realpath = mem_expand_path(fs->root, path);
   if (!realpath) {

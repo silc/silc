@@ -110,6 +110,9 @@ TODO/bugs In SILC Libraries
  o Rewrite the lib/silcsim/silcsim.h.  The SilcSimContext should be
    private and silc_sim_alloc should take necessary arguments.
 
+ o lib/silcsftp/sftp_fs_memory.c use directly open(), close() etc. 
+   routines.  Change to use silc_file_* routines.
+
 
 TODO in SILC Protocol
 =====================
