@@ -2540,18 +2540,20 @@ SILC_SERVER_CMD_FUNC(invite)
     strncat(channel->invite_list, invite, len);
     strncat(channel->invite_list, ",", 1);
 
-    /* Send notify to the client that is invited to the channel */
-    idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
-    idp2 = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
-    silc_server_send_notify_dest(server, dest_sock, FALSE, dest_id, 
-				 SILC_ID_CLIENT,
-				 SILC_NOTIFY_TYPE_INVITE, 3, 
-				 idp->data, idp->len, 
-				 channel->channel_name, 
-				 strlen(channel->channel_name),
-				 idp2->data, idp2->len);
-    silc_buffer_free(idp);
-    silc_buffer_free(idp2);
+    if (!(dest->mode & SILC_UMODE_BLOCK_INVITE)) {
+      /* Send notify to the client that is invited to the channel */
+      idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
+      idp2 = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
+      silc_server_send_notify_dest(server, dest_sock, FALSE, dest_id, 
+				   SILC_ID_CLIENT,
+				   SILC_NOTIFY_TYPE_INVITE, 3, 
+				   idp->data, idp->len, 
+				   channel->channel_name, 
+				   strlen(channel->channel_name),
+				   idp2->data, idp2->len);
+      silc_buffer_free(idp);
+      silc_buffer_free(idp2);
+    }
   }
 
   /* Add the client to the invite list of the channel */

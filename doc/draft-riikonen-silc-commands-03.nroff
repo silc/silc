@@ -1126,6 +1126,15 @@ List of all defined commands in SILC follows.
               certain users.  However, this document does not specify
               such service.
 
+
+           0x00001000    SILC_UMODE_BLOCK_INVITE
+
+              Marks that the client wishes to block incoming invite
+              notifications.  Client MAY set and unset this mode.
+              When set server does not deliver invite notifications
+              to the client.  Note that this mode may make it harder
+              to join invite-only channels.
+
         If the <client mode mask> was not provided this command merely
         returns the mode mask to the client.
 

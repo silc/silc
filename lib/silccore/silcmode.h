@@ -97,6 +97,7 @@
 #define SILC_UMODE_BLOCK_PRIVMSG     0x00000200 /* Client blocks privmsgs */
 #define SILC_UMODE_DETACHED          0x00000400 /* Client is detached */
 #define SILC_UMODE_REJECT_WATCHING   0x00000800 /* Client rejects watching */
+#define SILC_UMODE_BLOCK_INVITE      0x00001000 /* Client blocks invites */
 /***/
 
 #endif

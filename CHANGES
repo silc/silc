@@ -1,3 +1,10 @@
+Mon Apr 22 09:09:44 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added BLOCK_INVITE user mode to be able to block incoming
+	  invite notifications.  Protoocol TODO #26.  Affected files
+	  are lib/silccore/silcmode.h, lib/silcclient/command.c and
+	  silcd/command.c.
+
 Sun Apr 21 19:44:38 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Disconnect Payload includes now the status type.  Updated

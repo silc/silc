@@ -23,5 +23,7 @@ modes are available:
              This can be used to block unwanted private
              messages.
     w        Set/unset to reject anyone from watching you
+    I        Set/unset invitite blocking.  When set server
+             does not send invitie notifications to you
 
 See also: CMODE, CUMODE, AWAY

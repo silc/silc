@@ -1238,6 +1238,12 @@ SILC_CLIENT_CMD_FUNC(umode)
       else
 	mode &= ~SILC_UMODE_REJECT_WATCHING;
       break;
+    case 'I':
+      if (add)
+	mode |= SILC_UMODE_BLOCK_INVITE;
+      else
+	mode &= ~SILC_UMODE_BLOCK_INVITE;
+      break;
     default:
       COMMAND_ERROR(SILC_STATUS_ERR_UNKNOWN_MODE);
       goto out;

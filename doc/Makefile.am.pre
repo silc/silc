@@ -29,7 +29,6 @@ all:
 	touch draft-riikonen-silc-ke-auth-05.txt
 	touch draft-riikonen-silc-commands-03.txt
 	touch draft-riikonen-silc-flags-payloads-00.txt
-	-cd ..
 
 if SILC_DIST_CLIENT
 dist-hook:
