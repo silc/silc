@@ -72,7 +72,7 @@ static char *errorstrs[] = {
   "Expected data but not found",		/* SILC_CONFIG_EEXPECTED */
   "Expected '='",				/* SILC_CONFIG_EEXPECTEDEQUAL */
   "Unexpected data",				/* SILC_CONFIG_EUNEXPECTED */
-  "Missing needed fields",			/* SILC_CONFIG_EMISSFIELDS */
+  "Missing mandatory fields",			/* SILC_CONFIG_EMISSFIELDS */
   "Missing ';'",				/* SILC_CONFIG_EMISSCOLON */
 };
 
@@ -377,9 +377,10 @@ static void silc_config_destroy(SilcConfigEntity ent)
   silc_free(ent);
 }
 
-/* Registers a new option in the specified entity */
+/* Registers a new option in the specified entity.
+ * Returns TRUE on success, FALSE if already registered. */
 
-void silc_config_register(SilcConfigEntity ent, const char *name,
+bool silc_config_register(SilcConfigEntity ent, const char *name,
 			  SilcConfigType type, SilcConfigCallback cb,
 			  const SilcConfigTable *subtable, void *context)
 {
@@ -387,17 +388,18 @@ void silc_config_register(SilcConfigEntity ent, const char *name,
   SILC_CONFIG_DEBUG(("Register new option=\"%s\" type=%u cb=0x%08x context=0x%08x",
 		name, type, (uint32) cb, (uint32) context));
 
-  if (!ent || !name)
-    return;
   /* if we are registering a block, make sure there is a specified sub-table */
-  if ((type == SILC_CONFIG_ARG_BLOCK) && !subtable)
-    return;
-  /* refuse special tag */
+  if (!ent || !name || ((type == SILC_CONFIG_ARG_BLOCK) && !subtable))
+    return FALSE;
+
+  /* don't register a reserved tag */
   if (!strcasecmp(name, "include"))
-    return;
+    return FALSE;
+
+  /* check if an option was previously registered */
   if (silc_config_find_option(ent, name)) {
-    fprintf(stderr, "Internal Error: Option double registered\n");
-    abort();
+    SILC_LOG_DEBUG(("Error: Can't register \"%s\" twice.", name));
+    return FALSE;
   }
 
   /* allocate and append the new option */
@@ -408,6 +410,7 @@ void silc_config_register(SilcConfigEntity ent, const char *name,
   newopt->subtable = subtable;
   newopt->context = context;
 
+  /* append this option to the list */
   if (!ent->opts)
     ent->opts = newopt;
   else {
@@ -415,21 +418,25 @@ void silc_config_register(SilcConfigEntity ent, const char *name,
     for (tmp = ent->opts; tmp->next; tmp = tmp->next);
     tmp->next = newopt;
   }
+  return TRUE;
 }
 
 /* Register a new option table in the specified config entity */
 
-void silc_config_register_table(SilcConfigEntity ent,
+bool silc_config_register_table(SilcConfigEntity ent,
 				const SilcConfigTable table[], void *context)
 {
   int i;
-  if (!ent || !table) return;
+  if (!ent || !table)
+    return FALSE;
   SILC_CONFIG_DEBUG(("Registering table"));
-  /* FIXME: some potability checks needed */
+  /* XXX FIXME: some potability checks needed - really? */
   for (i = 0; table[i].name; i++) {
-    silc_config_register(ent, table[i].name, table[i].type,
-			 table[i].callback, table[i].subtable, context);
+    if (!silc_config_register(ent, table[i].name, table[i].type,
+			      table[i].callback, table[i].subtable, context))
+      return FALSE;
   }
+  return TRUE;
 }
 
 /* ... */
@@ -544,9 +551,14 @@ static int silc_config_main_internal(SilcConfigEntity ent)
 
       /* now call block clean-up callback (if any) */
       if (thisopt->cb) {
-	SILC_CONFIG_DEBUG(("Now calling clean-up callback (if any)"));
-	thisopt->cb(thisopt->type, thisopt->name, file->line,
-		    NULL, thisopt->context);
+	int ret;
+	SILC_CONFIG_DEBUG(("Now calling clean-up callback"));
+	ret = thisopt->cb(thisopt->type, thisopt->name, file->line, NULL,
+			  thisopt->context);
+	if (ret) {
+	  SILC_CONFIG_DEBUG(("Callback refused the value [ret=%d]", ret));
+	  return ret;
+	}
       }
       /* Do we want ';' to be mandatory after close brace? */
       if (*(*p)++ != ';')

@@ -520,6 +520,7 @@ SILC_CONFIG_CALLBACK(fetch_client)
   silc_free(tmp->host);
   my_free_authdata(tmp->passphrase, tmp->publickey);
   silc_free(tmp);
+  config->tmp = NULL;
   return got_errno;
 }
 
@@ -584,6 +585,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   silc_free(tmp->nick);
   my_free_authdata(tmp->passphrase, tmp->publickey);
   silc_free(tmp);
+  config->tmp = NULL;
   return got_errno;
 }
 
@@ -636,6 +638,7 @@ SILC_CONFIG_CALLBACK(fetch_deny)
   silc_free(tmp->host);
   silc_free(tmp->reason);
   silc_free(tmp);
+  config->tmp = NULL;
   return got_errno;
 }
 
@@ -704,6 +707,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
   silc_free(tmp->version);
   my_free_authdata(tmp->passphrase, tmp->publickey);
   silc_free(tmp);
+  config->tmp = NULL;
   return got_errno;
 }
 
@@ -783,6 +787,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   silc_free(tmp->backup_replace_ip);
   my_free_authdata(tmp->passphrase, tmp->publickey);
   silc_free(tmp);
+  config->tmp = NULL;
   return got_errno;
 }
 

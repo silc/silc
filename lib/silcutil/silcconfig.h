@@ -104,7 +104,7 @@ enum {
   SILC_CONFIG_EEXPECTED,	/* Expected data but not found */
   SILC_CONFIG_EEXPECTEDEQUAL,	/* Expected '=' */
   SILC_CONFIG_EUNEXPECTED,	/* Unexpected data */
-  SILC_CONFIG_EMISSFIELDS,	/* Missing needed fields */
+  SILC_CONFIG_EMISSFIELDS,	/* Missing mandatory fields */
   SILC_CONFIG_EMISSCOLON,	/* Missing ';' */
 };
 /***/
@@ -383,7 +383,7 @@ char *silc_config_read_current_line(SilcConfigFile *file);
  *
  * SYNOPSIS
  *
- *    void silc_config_register(SilcConfigEntity ent, const char *name,
+ *    bool silc_config_register(SilcConfigEntity ent, const char *name,
  *                              SilcConfigType type, SilcConfigCallback cb,
  *                              const SilcConfigTable *subtable,
  *                              void *context);
@@ -394,14 +394,17 @@ char *silc_config_read_current_line(SilcConfigFile *file);
  *    will be called with the *val pointer pointing to an internally
  *    allocated storage of type described by `type'.
  *    If `type' is SILC_CONFIG_ARG_BLOCK, then `subtable' must be a valid
- *    pointer to a SilcConfigTable array specified the options in the
+ *    pointer to a SilcConfigTable array specifying the options in the
  *    sub-block.
+ *    If the option `name' was already registered in this sub-block or it
+ *    matches the reserved word "Include", then this function returns FALSE,
+ *    otherwise it returns TRUE.
  *
  * SEE ALSO
  *    silc_config_register_table
  *
  ***/
-void silc_config_register(SilcConfigEntity ent, const char *name,
+bool silc_config_register(SilcConfigEntity ent, const char *name,
 			  SilcConfigType type, SilcConfigCallback cb,
 			  const SilcConfigTable *subtable, void *context);
 
@@ -409,7 +412,7 @@ void silc_config_register(SilcConfigEntity ent, const char *name,
  *
  * SYNOPSIS
  *
- *    void silc_config_register_table(SilcConfigEntity ent,
+ *    bool silc_config_register_table(SilcConfigEntity ent,
  *                                    const SilcConfigTable table[],
  *                                    void *context);
  *
@@ -420,12 +423,16 @@ void silc_config_register(SilcConfigEntity ent, const char *name,
  *    all with the same context `context'.
  *    The `table' array must be terminated with an entry with the name field
  *    set to NULL.
+ *    If the table contains invalid data this function returns FALSE, otherwise
+ *    it returns TRUE.  If a calling to this function failed, you must destroy
+ *    and recreate the entity before retrying, as it's impossible to detect
+ *    the point at the function stopped the registering process.
  *
  * SEE ALSO
  *    SilcConfigTable
  *
  ***/
-void silc_config_register_table(SilcConfigEntity ent,
+bool silc_config_register_table(SilcConfigEntity ent,
 				const SilcConfigTable table[], void *context);
 
 /****f* silcutil/SilcConfigAPI/silc_config_main
