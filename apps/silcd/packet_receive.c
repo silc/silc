@@ -462,6 +462,15 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     return NULL;
   }
 
+  if (!username) {
+    silc_free(username);
+    if (realname)
+      silc_free(realname);
+    silc_server_disconnect_remote(server, sock, "Server closed connection: "
+                                  "Incomplete client information");
+    return NULL;
+  }
+
   /* Create Client ID */
   silc_id_create_client_id(server->id, server->rng, server->md5hash,
 			   username, &client_id);

@@ -1819,6 +1819,13 @@ void silc_server_disconnect_remote(SilcServer server,
 
   SILC_LOG_DEBUG(("Disconnecting remote host"));
 
+  SILC_LOG_INFO(("Disconnecting %s:%d (%s) [%s]", sock->hostname,
+                  sock->port,
+                  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+                   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+                   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+                   "Router")));
+
   /* Notify remote end that the conversation is over. The notify message
      is tried to be sent immediately. */
   silc_server_packet_send(server, sock, SILC_PACKET_DISCONNECT, 0,  
