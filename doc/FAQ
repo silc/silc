@@ -4,13 +4,12 @@ Frequently Asked Questions
 Q: What is SILC?
 A: SILC (Secure Internet Live Conferencing) is a protocol which provides
    secure conferencing services in the Internet over insecure channel.
-   SILC is IRC like although internally they are very different.  Biggest
-   similiarity between SILC and IRC is that they both provide conferencing
-   services and that SILC has almost same commands as IRC.  Other than
-   that they are nothing alike.
-
-   Biggest differences are that SILC is secure what IRC is not in any
-   way.  The network model is also entirely different compared to IRC.
+   SILC superficially resembles IRC although internally they are very
+   different.  Biggest similarity between SILC and IRC is that they both
+   provide conferencing services and that SILC has almost same commands
+   as IRC.  Other than that they are nothing alike.  Biggest differences
+   are that SILC is secure what IRC is not in any way.  The network model
+   is also entirely different compared to IRC.
 
 
 Q: Why SILC in the first place?
@@ -34,7 +33,7 @@ A: Sure, that is possible, although, does that secure the entire IRC
    specific private message are secured.? Does that provide security
    where some specific channel messages are secured?  Security is not
    just about applying encryption to traffic and SILC is not just about
-   `encrypting the traffic`.  You cannot make insecure protocol suddenly
+   `encrypting the traffic'.  You cannot make insecure protocol suddenly
    secure just by encrypting the traffic.  SILC is not meant to be IRC
    replacement.  IRC is good for some things, SILC is good for same and
    some other things.

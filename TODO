@@ -271,9 +271,6 @@ TODO In SILC Libraries
    (silclog.[ch] in core).  The actual output of logs should be done
    by callback function in the application not in lib.
 
- o I don't like the ID cache system currenly implemented.  Ugly and
-   not so good.  Must be rewritten very soon.
-
  o All allocations and freeing needs to be checked for memory leaks.
 
  o silc_buffer_[un]format() needs to be made more stable as it may

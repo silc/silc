@@ -1,3 +1,21 @@
+Tue Jul 11 20:27:26 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Rewrote major parts of the ID cache system.  Don't know 
+	  whether it is better now or not but at least the API is more
+	  cleaner now.
+
+	* Major rewrite on ID cache stuff on client because of the ID
+	  cache API changes.  Added idlist.c to client.
+
+	* Also major rewrite on ID cache stuff on server as well.
+	  Major rewrite of idlist.[ch]. SilcXXXList's are now named
+	  SilcXXXEntry's.  We won't keep anymore idlist specific pointers
+	  in hand, instead they are all put into the ID cache system now.
+	  All server_idlist_* routines uses ID cache now instead of
+	  traversing its own lists (those lists does not exist anymore).
+	  SilcIDList though still exists.  Also, SilcXXXEntry's are
+	  now pointers.
+
 Sun Jul  9 15:19:24 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Finally made the SKE implementation compliant to the protocol

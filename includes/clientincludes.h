@@ -30,14 +30,14 @@
 #include "silcincludes.h"
 
 /* SILC Client includes */
-#include "idlist.h"
 #include "screen.h"
 #include "clientconfig.h"
 #include "client.h"
-#include "clientutil.h"
-#include "protocol.h"
 #include "command.h"
 #include "command_reply.h"
+#include "idlist.h"
+#include "clientutil.h"
+#include "protocol.h"
 #include "silc.h"
 
 #endif
