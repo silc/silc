@@ -1,3 +1,0 @@
-/* automatically created by autogen.sh */
-#define IRSSI_VERSION "@VERSION@"
-#define IRSSI_VERSION_DATE "20010524"

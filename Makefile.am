@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-SUBDIRS = lib silcd silc doc includes
+SUBDIRS = lib silc silcd doc includes
 
 dist-bzip: distdir
 	-chmod -R a+r $(distdir)

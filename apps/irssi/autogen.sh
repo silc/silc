@@ -101,5 +101,3 @@ echo "Running autoconf ..."
 autoconf
 echo "Running automake --gnu $am_opt ..."
 automake --add-missing --gnu $am_opt
-
-conf_flags="--enable-maintainer-mode --enable-compile-warnings" #--enable-iso-c
