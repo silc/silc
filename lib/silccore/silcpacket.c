@@ -23,6 +23,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/18 06:51:58  priikone
+ * 	Debug version bug fixes.
+ *
  * Revision 1.3  2000/07/14 06:10:15  priikone
  * 	Moved all the generic packet sending, enryption, reception,
  * 	decryption and processing function from client and server to
@@ -98,8 +101,9 @@ int silc_packet_send(SilcSocketConnection sock, int force_send)
     /* Write to network */
     ret = silc_packet_write(sock->sock, sock->outbuf);
 
-    if (ret == -1)
+    if (ret == -1) {
       SILC_LOG_ERROR(("Error sending packet, dropped"));
+    }
     if (ret != -2)
       return ret;
 
@@ -487,8 +491,9 @@ int silc_packet_receive(SilcSocketConnection sock)
   ret = silc_packet_read(sock->sock, sock->inbuf);
 
   /* Error */
-  if (ret == -1)
+  if (ret == -1) {
     SILC_LOG_ERROR(("Error reading packet, dropped"));
+  }
 
   return ret;
 }

@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/18 06:51:58  priikone
+ * 	Debug version bug fixes.
+ *
  * Revision 1.2  2000/07/05 06:06:35  priikone
  * 	Global cosmetic change.
  *
@@ -468,9 +471,10 @@ void silc_schedule()
       break;
     }
 
-    if (schedule.timeout)
+    if (schedule.timeout) {
       SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule.timeout->tv_sec,
 		      schedule.timeout->tv_usec));
+    }
 
     /* This is the main select(). The program blocks here until some
        of the selected file descriptors change status or the selected
