@@ -1,3 +1,9 @@
+Fri Oct 24 16:43:40 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed file transfer connection closing when SIGNOFF for
+	  the client is received from server.  Affected file is
+	  lib/silcclient/client_ftp.c.
+
 Tue Oct 21 13:35:57 CEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check for disconnected socket in QUIT callback.  Affected

@@ -713,11 +713,8 @@ void silc_client_ftp_session_free_client(SilcClientConnection conn,
   silc_dlist_start(conn->internal->ftp_sessions);
   while ((session = silc_dlist_get(conn->internal->ftp_sessions))
 	 != SILC_LIST_END) {
-    if (session->client_entry == client_entry) {
-      if (session->sock)
-	session->sock->user_data = NULL;
+    if (session->client_entry == client_entry)
       silc_client_ftp_session_free(session);
-    }
   }
 }
 
