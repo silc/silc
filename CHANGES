@@ -6,6 +6,11 @@ Wed Dec 11 10:01:26 CET 2002 Pekka Riikonen <priikone@silcnet.org>
 	* Save the fingerprint to new SilcClientEntry after changing 
 	  nickname.  Affected file lib/silcclient/client_notify.c.
 
+	* Print SIGNOFF in Irssi SILC client only if the nickname is
+	  known.  Prevents asserts in Irssi core.  It is possible we
+	  don't have the nick if it was just being resolved when it
+	  quit.  Affected file irssi/src/silc/core/client_ops.c.
+
 Tue Dec 10 21:47:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in invite list adding code when adding
