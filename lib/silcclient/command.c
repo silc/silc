@@ -1181,10 +1181,22 @@ SILC_CLIENT_CMD_FUNC(names)
     goto out;
   }
 
-  if (cmd->argv[1][0] == '*')
+  if (cmd->argv[1][0] == '*') {
+    if (!conn->current_channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      COMMAND_ERROR;
+      goto out;
+    }
     name = conn->current_channel->channel_name;
-  else
+  } else {
     name = cmd->argv[1];
+  }
+
+  if (!conn->current_channel) {
+    cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
+    COMMAND_ERROR;
+    goto out;
+  }
 
   /* Get the Channel ID of the channel */
   if (!silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {

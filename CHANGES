@@ -1,3 +1,46 @@
+Sat Dec 23 21:55:07 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed a bug in Client library.  IDENTIFY and WHOIS reply functions
+	  now correctly save the received data.
+
+	* silc_server_free_sock_user_data now notifies routers in the 
+	  network about entities leaving the network.
+
+	  At the same time implemented functions silc_server_remove_id
+	  and silc_server_send_remove_id to receive and send REMOVE_ID
+	  packets.  The packet is used to notify routers in the network
+	  about leaving entities.  The ID removed will become invalid in
+	  the network.
+
+	* Added function silc_idlist_del_server into server. Removes and
+	  free's server entry from ID list.
+
+	* silc_server_private_message function now checks, if we are router,
+	  that the destination ID really is valid ID, naturally.
+
+	* In router when NEW_ID packet is received (for new client) the
+	  hash of the Client ID is saved in the ID Cache but the
+	  client->nickname is set to NULL, instead of putting the hash
+	  to it as well.
+
+	  IDENTIFY command now also checks that client->nickname must be
+	  valid. If it is not if will request the data from the server who
+	  owns the client.  Added new function 
+	  silc_server_command_identify_check.
+
+	* Added silc_command_set_command into lib/silccore/silcommand.[ch]
+	  to set the command to already allocated Command Payload.
+
+	* Tested private message sending in router environment with two
+	  routers, two servers and two clients.  Fixed minor bugs and now
+	  it works fine.
+
+	* Fixed segfault from client's NAMES command. Used to crash if
+	  not on any channel.
+
+	* Forwarded packets must not be routed even if it is not destined
+	  to the receiver.  Changed server code comply with this.
+
 Sun Dec 17 14:40:08 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added `require_reverse_mapping' boolean value to ServerParams

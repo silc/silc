@@ -681,7 +681,7 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
      mandatory fields that WHOIS command reply requires. Check for these and
      make query from the server who owns the client if some fields are 
      missing. */
-  if (!cmd->pending && server->server_type == SILC_ROUTER &&
+  if (server->server_type == SILC_ROUTER &&
       !silc_server_command_whois_check(cmd, clients, clients_count)) {
     ret = -1;
     goto out;
@@ -782,6 +782,55 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
       return FALSE;
     }
     *count = atoi(tmp);
+  }
+
+  return TRUE;
+}
+
+/* Checks that all mandatory fields are present. If not then send WHOIS 
+   request to the server who owns the client. We use WHOIS because we want
+   to get as much information as possible at once. */
+
+static char
+silc_server_command_identify_check(SilcServerCommandContext cmd,
+				   SilcClientEntry *clients,
+				   unsigned int clients_count)
+{
+  SilcServer server = cmd->server;
+  int i;
+  SilcClientEntry entry;
+
+  for (i = 0; i < clients_count; i++) {
+    entry = clients[i];
+
+    if (!entry->nickname) {
+      SilcBuffer tmpbuf;
+      unsigned short old_ident;
+      
+      old_ident = silc_command_get_ident(cmd->payload);
+      silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
+      silc_command_set_command(cmd->payload, SILC_COMMAND_WHOIS);
+      tmpbuf = silc_command_payload_encode_payload(cmd->payload);
+      
+      /* Send WHOIS request. We send WHOIS since we're doing the requesting
+	 now anyway so make it a good one. */
+      silc_server_packet_send(server, entry->router->connection,
+			      SILC_PACKET_COMMAND, cmd->packet->flags,
+			      tmpbuf->data, tmpbuf->len, TRUE);
+      
+      /* Reprocess this packet after received reply */
+      silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
+				  silc_command_get_ident(cmd->payload),
+				  silc_server_command_identify, (void *)cmd);
+      cmd->pending = TRUE;
+      
+      /* Put old data back to the Command Payload we just changed */
+      silc_command_set_ident(cmd->payload, old_ident);
+      silc_command_set_command(cmd->payload, SILC_COMMAND_IDENTIFY);
+
+      silc_buffer_free(tmpbuf);
+      return FALSE;
+    }
   }
 
   return TRUE;
@@ -956,6 +1005,14 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
     goto out;
   }
 
+  /* Check that all mandatory fields are present and request those data
+     from the server who owns the client if necessary. */
+  if (!cmd->pending && server->server_type == SILC_ROUTER &&
+      !silc_server_command_identify_check(cmd, clients, clients_count)) {
+    ret = -1;
+    goto out;
+  }
+
   /* Send the command reply to the client */
   silc_server_command_identify_send_reply(cmd, clients, clients_count);
 
@@ -1036,7 +1093,15 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
     goto out;
   }
 
-  /* Send the command reply to the client */
+  /* Check that all mandatory fields are present and request those data
+     from the server who owns the client if necessary. */
+  if (!cmd->pending && server->server_type == SILC_ROUTER &&
+      !silc_server_command_identify_check(cmd, clients, clients_count)) {
+    ret = -1;
+    goto out;
+  }
+
+  /* Send the command reply */
   silc_server_command_identify_send_reply(cmd, clients, clients_count);
 
  out:
@@ -1427,7 +1492,6 @@ SILC_SERVER_CMD_FUNC(info)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcBuffer packet, idp;
-  unsigned int argc;
   char info_string[256], *dest_server;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INFO, cmd, 1, 1);
@@ -1652,6 +1716,8 @@ static void silc_server_command_join_channel(SilcServer server,
   SilcClientEntry client;
   SilcChannelClientEntry chl;
   SilcBuffer reply, chidp, clidp;
+
+  SILC_LOG_DEBUG(("Start"));
 
   if (!channel)
     return;

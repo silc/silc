@@ -156,6 +156,24 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
   return server;
 }
 
+/* Removes and free's server entry from ID list */
+
+void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
+{
+  if (entry) {
+    /* Remove from cache */
+    if (entry->id)
+      silc_idcache_del_by_id(id_list->servers, SILC_ID_SERVER, 
+			     (void *)entry->id);
+
+    /* Free data */
+    if (entry->server_name)
+      silc_free(entry->server_name);
+    if (entry->id)
+      silc_free(entry->id);
+  }
+}
+
 /******************************************************************************
 
                           Client entry functions
@@ -167,8 +185,8 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
    called when new client connection is accepted to the server. */
 
 SilcClientEntry
-silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
-		       char *userinfo, SilcClientID *id, 
+silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
+		       char *username, char *userinfo, SilcClientID *id, 
 		       SilcServerEntry router, void *connection)
 {
   SilcClientEntry client;
@@ -185,7 +203,7 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
   silc_list_init(client->channels, struct SilcChannelClientEntryStruct, 
 		 client_list);
 
-  if (!silc_idcache_add(id_list->clients, client->nickname, SILC_ID_CLIENT,
+  if (!silc_idcache_add(id_list->clients, nickname, SILC_ID_CLIENT,
 			(void *)client->id, (void *)client, TRUE)) {
     silc_free(client);
     return NULL;
@@ -427,8 +445,7 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
      replace it with the hash of new Client ID */
   if (id_cache->data && !SILC_ID_COMPARE_HASH(old_id, id_cache->data)) {
     silc_free(id_cache->data);
-    id_cache->data = silc_calloc(sizeof(new_id->hash), 
-				 sizeof(unsigned char));
+    id_cache->data = silc_calloc(sizeof(new_id->hash), sizeof(unsigned char));
     memcpy(id_cache->data, new_id->hash, sizeof(new_id->hash));
     silc_idcache_sort_by_data(id_list->clients);
   }

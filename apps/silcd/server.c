@@ -1059,9 +1059,8 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   SILC_LOG_DEBUG(("Processing packet"));
 
   /* Packet sending */
-  if (type == SILC_TASK_WRITE) {
-    SILC_LOG_DEBUG(("Writing data to connection"));
 
+  if (type == SILC_TASK_WRITE) {
     if (sock->outbuf->data - sock->outbuf->head)
       silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
 
@@ -1084,7 +1083,6 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   }
 
   /* Packet receiving */
-  SILC_LOG_DEBUG(("Reading data from connection"));
 
   /* Read some data from connection */
   ret = silc_packet_receive(sock);
@@ -1167,6 +1165,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
     /* Route the packet if it is not destined to us. Other ID types but
        server are handled separately after processing them. */
     if (packet->dst_id_type == SILC_ID_SERVER &&
+	!(packet->flags & SILC_PACKET_FLAG_FORWARDED) && 
 	sock->type != SILC_SOCKET_TYPE_CLIENT &&
 	SILC_ID_SERVER_COMPARE(packet->dst_id, server->id_string)) {
       
@@ -1294,7 +1293,7 @@ void silc_server_packet_parse_type(SilcServer server,
   case SILC_PACKET_CHANNEL_MESSAGE:
     /*
      * Received channel message. Channel messages are special packets
-     * (although probably most common ones) hence they are handled
+     * (although probably most common ones) thus they are handled
      * specially.
      */
     SILC_LOG_DEBUG(("Channel Message packet"));
@@ -1317,7 +1316,8 @@ void silc_server_packet_parse_type(SilcServer server,
      */
   case SILC_PACKET_COMMAND:
     /*
-     * Recived command. Allocate command context and execute the command.
+     * Recived command. Processes the command request and allocates the
+     * command context and calls the command.
      */
     SILC_LOG_DEBUG(("Command packet"));
     silc_server_command_process(server, sock, packet);
@@ -1325,10 +1325,9 @@ void silc_server_packet_parse_type(SilcServer server,
 
   case SILC_PACKET_COMMAND_REPLY:
     /*
-     * Received command reply packet. Servers never send commands thus
-     * they don't receive command reply packets either, except in cases
-     * where server has forwarded command packet coming from client. 
-     * This must be the case here or we will ignore the packet.
+     * Received command reply packet. Received command reply to command. It
+     * may be reply to command sent by us or reply to command sent by client
+     * that we've forwarded.
      */
     SILC_LOG_DEBUG(("Command Reply packet"));
     silc_server_command_reply(server, sock, packet);
@@ -1348,7 +1347,7 @@ void silc_server_packet_parse_type(SilcServer server,
 
   case SILC_PACKET_PRIVATE_MESSAGE_KEY:
     /*
-     * XXX
+     * Private message key packet.
      */
     break;
 
@@ -1427,9 +1426,12 @@ void silc_server_packet_parse_type(SilcServer server,
     break;
 
   case SILC_PACKET_CONNECTION_AUTH_REQUEST:
-    /* If we receive this packet we will send to the other end information
-       about our mandatory authentication method for the connection. 
-       This packet maybe received at any time. */
+    /*
+     * Connection authentication request packet. When we receive this packet
+     * we will send to the other end information about our mandatory
+     * authentication method for the connection. This packet maybe received
+     * at any time. 
+     */
     SILC_LOG_DEBUG(("Connection authentication request packet"));
     break;
 
@@ -1540,6 +1542,7 @@ void silc_server_packet_parse_type(SilcServer server,
      * Received remove ID Packet. 
      */
     SILC_LOG_DEBUG(("Remove ID packet"));
+    silc_server_remove_id(server, sock, packet);
     break;
 
   case SILC_PACKET_REMOVE_CHANNEL_USER:
@@ -1606,9 +1609,9 @@ void silc_server_disconnect_remote(SilcServer server,
   silc_server_close_connection(server, sock);
 }
 
-/* Free's user_data pointer from socket connection object. As this 
-   pointer maybe anything we wil switch here to find the correct
-   data type and free it the way it needs to be free'd. */
+/* Free's user_data pointer from socket connection object. This also sends
+   appropriate notify packets to the network to inform about leaving
+   entities. */
 
 void silc_server_free_sock_user_data(SilcServer server, 
 				     SilcSocketConnection sock)
@@ -1625,6 +1628,12 @@ void silc_server_free_sock_user_data(SilcServer server,
 
       /* XXX must take some info to history before freeing */
 
+      /* Send REMOVE_ID packet to routers. */
+      silc_server_send_remove_id(server, server->router->connection,
+				 server->server_type == SILC_SERVER ?
+				 FALSE : TRUE, user_data->id, 
+				 SILC_ID_CLIENT_LEN, SILC_ID_CLIENT);
+
       /* Free the client entry and everything in it */
       silc_idlist_del_data(user_data);
       silc_idlist_del_client(server->local_list, user_data);
@@ -1633,7 +1642,13 @@ void silc_server_free_sock_user_data(SilcServer server,
   case SILC_SOCKET_TYPE_SERVER:
   case SILC_SOCKET_TYPE_ROUTER:
     {
+      SilcServerEntry user_data = (SilcServerEntry)sock->user_data;
 
+      /* Send REMOVE_ID packet to routers. */
+      silc_server_send_remove_id(server, server->router->connection,
+				 server->server_type == SILC_SERVER ?
+				 FALSE : TRUE, user_data->id, 
+				 SILC_ID_SERVER_LEN, SILC_ID_SERVER);
       break;
     }
     break;
@@ -1868,12 +1883,15 @@ void silc_server_create_channel_key(SilcServer server,
   unsigned char channel_key[32];
   unsigned int len;
 
+  if (!channel->channel_key)
+    return;
+
   if (key_len)
     len = key_len;
   else if (channel->key_len)
     len = channel->key_len / 8;
   else
-    len = 32;
+    len = sizeof(channel_key);
 
   /* Create channel key */
   for (i = 0; i < len; i++) channel_key[i] = silc_rng_get_byte(server->rng);

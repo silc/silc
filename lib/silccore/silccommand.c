@@ -356,3 +356,10 @@ void silc_command_set_ident(SilcCommandPayload payload, unsigned short ident)
 {
   payload->ident = ident;
 }
+
+/* Function to set the command to already allocated Command Payload. */
+
+void silc_command_set_command(SilcCommandPayload payload, SilcCommand command)
+{
+  payload->cmd = command;
+}

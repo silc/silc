@@ -1164,3 +1164,25 @@ void silc_server_send_command(SilcServer server,
 			  packet->data, packet->len, TRUE);
   silc_buffer_free(packet);
 }
+
+/* Function used to send REMOVE_ID packet. The packet is used to notify
+   routers that certain ID should be removed. After that the ID will become
+   invalid.  If the argument `broadcast' is TRUE then the packet is sent as
+   broadcast packet. */
+
+void silc_server_send_remove_id(SilcServer server,
+				SilcSocketConnection sock,
+				int broadcast,
+				void *id, unsigned int id_len,
+				SilcIdType id_type)
+{
+  SilcBuffer idp;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  idp = silc_id_payload_encode(id, id_type);
+  silc_server_packet_send(server, sock, SILC_PACKET_REMOVE_ID, 
+			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
+			  idp->data, idp->len, FALSE);
+  silc_buffer_free(idp);
+}

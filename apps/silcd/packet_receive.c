@@ -45,10 +45,8 @@ void silc_server_private_message(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!packet->dst_id) {
-    SILC_LOG_ERROR(("Bad Client ID in private message packet, dropped"));
+  if (!packet->dst_id)
     goto err;
-  }
 
   /* Decode destination Client ID */
   id = silc_id_str2id(packet->dst_id, SILC_ID_CLIENT);
@@ -72,7 +70,7 @@ void silc_server_private_message(SilcServer server,
 	 we will send the packet to that server. */
       router = (SilcServerEntry)dst_sock->user_data;
       idata = (SilcIDListData)router;
-      //      assert(client->router == server->id_entry);
+      //assert(client->router == server->id_entry);
 
       silc_server_send_private_message(server, dst_sock,
 				       idata->send_key,
@@ -108,16 +106,20 @@ void silc_server_private_message(SilcServer server,
   /* We are router and we will perform route lookup for the destination 
      and send the message to fastest route. */
   if (server->server_type == SILC_ROUTER && !server->standalone) {
-    dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
-    router = (SilcServerEntry)dst_sock->user_data;
-    idata = (SilcIDListData)router;
+    /* Check first that the ID is valid */
+    client = silc_idlist_find_client_by_id(server->global_list, id, NULL);
+    if (client) {
+      dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
+      router = (SilcServerEntry)dst_sock->user_data;
+      idata = (SilcIDListData)router;
 
-    /* Get fastest route and send packet. */
-    if (router)
-      silc_server_send_private_message(server, dst_sock, 
-				       idata->send_key,
-				       idata->hmac, packet);
-    return;
+      /* Get fastest route and send packet. */
+      if (router)
+	silc_server_send_private_message(server, dst_sock, 
+					 idata->send_key,
+					 idata->hmac, packet);
+      return;
+    }
   }
 
  err:
@@ -673,35 +675,41 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 
   switch(id_type) {
   case SILC_ID_CLIENT:
-    SILC_LOG_DEBUG(("New client id(%s) from [%s] %s",
-		    silc_id_render(id, SILC_ID_CLIENT),
-		    sock->type == SILC_SOCKET_TYPE_SERVER ?
-		    "Server" : "Router", sock->hostname));
+    {
+      SilcClientEntry entry;
+
+      SILC_LOG_DEBUG(("New client id(%s) from [%s] %s",
+		      silc_id_render(id, SILC_ID_CLIENT),
+		      sock->type == SILC_SOCKET_TYPE_SERVER ?
+		      "Server" : "Router", sock->hostname));
     
-    /* As a router we keep information of all global information in our global
-       list. Cell wide information however is kept in the local list. The
-       client is put to global list and we will take the hash value of the
-       Client ID and save it to the ID Cache system for fast searching in the 
-       future. */
-    hash = silc_calloc(sizeof(((SilcClientID *)id)->hash), 
-		       sizeof(unsigned char));
-    memcpy(hash, ((SilcClientID *)id)->hash, 
-	   sizeof(((SilcClientID *)id)->hash));
-    silc_idlist_add_client(id_list, hash, NULL, NULL, id, router, router_sock);
+      /* As a router we keep information of all global information in our
+	 global list. Cell wide information however is kept in the local
+	 list. The client is put to global list and we will take the hash
+	 value of the Client ID and save it to the ID Cache system for fast
+	 searching in the future. */
+      hash = silc_calloc(sizeof(((SilcClientID *)id)->hash), 
+			 sizeof(unsigned char));
+      memcpy(hash, ((SilcClientID *)id)->hash, 
+	     sizeof(((SilcClientID *)id)->hash));
+      entry = silc_idlist_add_client(id_list, hash, NULL, NULL, id, 
+				     router, router_sock);
+      entry->nickname = NULL;
 
 #if 0
-    /* XXX Adding two ID's with same IP number replaces the old entry thus
-       gives wrong route. Thus, now disabled until figured out a better way
-       to do this or when removed the whole thing. This could be removed
-       because entry->router->connection gives always the most optimal route
-       for the ID anyway (unless new routes (faster perhaps) are established
-       after receiving this ID, this we don't know however). */
-    /* Add route cache for this ID */
-    silc_server_route_add(silc_server_route_hash(
-			  ((SilcClientID *)id)->ip.s_addr,
-			  server->id->port), ((SilcClientID *)id)->ip.s_addr,
-			  router);
+      /* XXX Adding two ID's with same IP number replaces the old entry thus
+	 gives wrong route. Thus, now disabled until figured out a better way
+	 to do this or when removed the whole thing. This could be removed
+	 because entry->router->connection gives always the most optimal route
+	 for the ID anyway (unless new routes (faster perhaps) are established
+	 after receiving this ID, this we don't know however). */
+      /* Add route cache for this ID */
+      silc_server_route_add(silc_server_route_hash(
+			    ((SilcClientID *)id)->ip.s_addr,
+			    server->id->port), ((SilcClientID *)id)->ip.s_addr,
+			    router);
 #endif
+    }
     break;
 
   case SILC_ID_SERVER:
@@ -1062,4 +1070,97 @@ void silc_server_new_channel_user(SilcServer server,
     silc_free(channel_id);
   silc_free(tmpid1);
   silc_free(tmpid2);
+}
+
+/* Processes incoming REMOVE_ID packet. The packet is used to notify routers
+   that certain ID should be removed. After that the ID will become invalid. */
+
+void silc_server_remove_id(SilcServer server,
+			   SilcSocketConnection sock,
+			   SilcPacketContext *packet)
+{
+  SilcIDList id_list;
+  SilcIDPayload idp;
+  SilcIdType id_type;
+  void *id, *id_entry;
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      server->server_type == SILC_SERVER ||
+      packet->src_id_type != SILC_ID_SERVER)
+    return;
+
+  idp = silc_id_payload_parse(packet->buffer);
+  if (!idp)
+    return;
+
+  id_type = silc_id_payload_get_type(idp);
+
+  id = silc_id_payload_get_id(idp);
+  if (!id)
+    goto out;
+
+  /* If the sender of this packet is server and we are router we need to
+     broadcast this packet to other routers in the network. */
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received Remove ID packet"));
+    silc_server_packet_send(server, server->router->connection,
+			    packet->type, 
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			    packet->buffer->data, packet->buffer->len, FALSE);
+  }
+
+  if (sock->type == SILC_SOCKET_TYPE_SERVER)
+    id_list = server->local_list;
+  else
+    id_list = server->global_list;
+
+  /* Remove the ID */
+  switch(id_type) {
+  case SILC_ID_CLIENT:
+    id_entry = silc_idlist_find_client_by_id(id_list, (SilcClientID *)id, 
+					     NULL);
+    if (id_entry) {
+      silc_idlist_del_client(id_list, (SilcClientEntry)id_entry);
+
+      SILC_LOG_DEBUG(("Removed client id(%s) from [%s] %s",
+		      silc_id_render(id, SILC_ID_CLIENT),
+		      sock->type == SILC_SOCKET_TYPE_SERVER ?
+		      "Server" : "Router", sock->hostname));
+    }
+    break;
+
+  case SILC_ID_SERVER:
+    id_entry = silc_idlist_find_server_by_id(id_list, (SilcServerID *)id,
+					     NULL);
+    if (id_entry) {
+      silc_idlist_del_server(id_list, (SilcServerEntry)id_entry);
+
+      SILC_LOG_DEBUG(("Removed server id(%s) from [%s] %s",
+		      silc_id_render(id, SILC_ID_SERVER),
+		      sock->type == SILC_SOCKET_TYPE_SERVER ?
+		      "Server" : "Router", sock->hostname));
+    }
+    break;
+
+  case SILC_ID_CHANNEL:
+    id_entry = silc_idlist_find_channel_by_id(id_list, (SilcChannelID *)id,
+					      NULL);
+    if (id_entry) {
+      silc_idlist_del_channel(id_list, (SilcChannelEntry)id_entry);
+
+      SILC_LOG_DEBUG(("Removed channel id(%s) from [%s] %s",
+		      silc_id_render(id, SILC_ID_CHANNEL),
+		      sock->type == SILC_SOCKET_TYPE_SERVER ?
+		      "Server" : "Router", sock->hostname));
+    }
+    break;
+
+  default:
+    break;
+  }
+
+ out:
+  silc_id_payload_free(idp);
 }

@@ -153,5 +153,6 @@ SilcCommand silc_command_get(SilcCommandPayload payload);
 SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload);
 unsigned short silc_command_get_ident(SilcCommandPayload payload);
 void silc_command_set_ident(SilcCommandPayload payload, unsigned short ident);
+void silc_command_set_command(SilcCommandPayload payload, SilcCommand command);
 
 #endif
