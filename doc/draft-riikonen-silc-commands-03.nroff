@@ -282,7 +282,9 @@ List of all defined commands in SILC follows.
         include STATUS_LIST_START status in the first reply and
         STATUS_LIST_END in the last reply to indicate the end of the
         list.  If there are only one reply the status is set to normal
-        STATUS_OK.
+        STATUS_OK.  If multiple Client IDs was requested then each found
+        and unfound client must cause successful or error reply,
+        respectively.
 
         The command replies include the Client ID of the nickname,
         nickname and server name, user name and host name and user's real
@@ -422,7 +424,9 @@ List of all defined commands in SILC follows.
         a list of results.  In this case the status payload will include
         STATUS_LIST_START status in the first reply and STATUS_LIST_END in 
         the last reply to indicate the end of the list.  If there are only 
-        one reply the status is set to normal STATUS_OK.
+        one reply the status is set to normal STATUS_OK.  If multiple Client
+        IDs was requested then each found and unfound client must cause
+        successful or error reply, respectively.
 
         When querying clients the <entity's name> must include the client's
         nickname in the following format: nickname[@server].  The
@@ -1992,7 +1996,9 @@ send both list of successful replies and list of error
 replies at the same time, however in this case the
 list of error replies MUST be sent after the successful
 replies.  This way the recipient may ignore the multiple
-errors if it wishes to do so.
+errors if it wishes to do so.  Also note that in this
+case the successful and error replies belong to the
+same list.
 
 All Status messages are described in the next section.
 

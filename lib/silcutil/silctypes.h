@@ -263,8 +263,10 @@ typedef SilcUInt32 * void *;
  * SOURCE
  */
 #define SILC_GET16_MSB(l, cp)				\
+do {							\
 	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0] << 8)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[1])
+	    | ((SilcUInt32)(SilcUInt8)(cp)[1]);		\
+} while(0)
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET32_MSB
@@ -280,10 +282,12 @@ typedef SilcUInt32 * void *;
  * SOURCE
  */
 #define SILC_GET32_MSB(l, cp)				\
+do {							\
 	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
 	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)	\
 	    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[3])
+	    | ((SilcUInt32)(SilcUInt8)(cp)[3]);		\
+} while(0)
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET64_MSB
@@ -299,8 +303,10 @@ typedef SilcUInt32 * void *;
  * SOURCE
  */
 #define SILC_GET64_MSB(l, cp)				\
+do {							\
        (l) = ((((SilcUInt64)GET_WORD((cp))) << 32) |	\
-	      ((SilcUInt64)GET_WORD((cp) + 4)))
+	      ((SilcUInt64)GET_WORD((cp) + 4)));       	\
+} while(0)
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET16_LSB
@@ -316,8 +322,10 @@ typedef SilcUInt32 * void *;
  * SOURCE
  */
 #define SILC_GET16_LSB(l, cp)				\
+do {							\
 	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)
+	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8);	\
+} while(0)
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET32_LSB
@@ -333,10 +341,12 @@ typedef SilcUInt32 * void *;
  * SOURCE
  */
 #define SILC_GET32_LSB(l, cp)				\
+do {							\
 	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
 	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)	\
 	    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24)
+	    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24);	\
+} while(0)
 
 /* Same as upper but XOR the result always. Special purpose macro. */
 #define SILC_GET32_X_LSB(l, cp)				\
@@ -359,8 +369,10 @@ typedef SilcUInt32 * void *;
  * SOURCE
  */
 #define SILC_PUT16_MSB(l, cp)			\
+do {						\
 	(cp)[0] = l >> 8;			\
-	(cp)[1] = l;
+	(cp)[1] = l;				\
+} while(0)
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT32_MSB
@@ -376,10 +388,12 @@ typedef SilcUInt32 * void *;
  * SOURCE
  */
 #define SILC_PUT32_MSB(l, cp)			\
+do {						\
 	(cp)[0] = l >> 24;			\
 	(cp)[1] = l >> 16;			\
 	(cp)[2] = l >> 8;			\
-	(cp)[3] = l;
+	(cp)[3] = l;				\
+} while(0)
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT64_MSB
@@ -414,8 +428,10 @@ do {								\
  * SOURCE
  */
 #define SILC_PUT16_LSB(l, cp)			\
+do  {						\
 	(cp)[0] = l;				\
-	(cp)[1] = l >> 8;
+	(cp)[1] = l >> 8;			\
+} while(0)
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT32_LSB
@@ -431,10 +447,12 @@ do {								\
  * SOURCE
  */
 #define SILC_PUT32_LSB(l, cp)			\
+do {						\
 	(cp)[0] = l;				\
 	(cp)[1] = l >> 8;			\
 	(cp)[2] = l >> 16;			\
-	(cp)[3] = l >> 24;
+	(cp)[3] = l >> 24;			\
+} while(0)
 /***/
 
 #endif /* SILCTYPES_H */

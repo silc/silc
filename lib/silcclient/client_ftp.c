@@ -313,12 +313,8 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
 
   /* Open the actual local file */
   memset(path, 0, sizeof(path));
-  if (session->path && strlen(session->path) < sizeof(path))
-    strncat(path, session->path, strlen(session->path));
-  if (strlen(session->filepath) > sizeof(path) - strlen(path))
-    strncat(path, session->filepath, sizeof(path) - strlen(path) - 1);
-  else
-    strncat(path, session->filepath, strlen(session->filepath));
+  snprintf(path, sizeof(path) - 1, "%s%s", session->path ?
+	   session->path : "", session->filepath);
   session->fd = silc_file_open(path, O_RDWR | O_CREAT | O_EXCL);
   if (session->fd < 0) {
     /* Call monitor callback */
