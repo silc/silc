@@ -20,7 +20,7 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "payload_internal.h"
+#include "silcske.h"
 #include "groups_internal.h"
 
 /* Structure to hold all SKE callbacks-> */

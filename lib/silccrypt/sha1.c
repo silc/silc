@@ -5,6 +5,7 @@ By Steve Reid <steve@edmweb.com>
 */
 
 #include "silcincludes.h"
+#include "sha1_internal.h"
 #include "sha1.h"
 
 /* 

@@ -38,6 +38,22 @@ libsilcutil_a_SOURCES = \
 	silchashtable.c \
 	silcsockconn.c
 
+include_HEADERS =	\
+	silcbuffer.h	\
+	silcbuffmt.h	\
+	silcbufutil.h	\
+	silcconfig.h	\
+	silchashtable.h	\
+	silclog.h	\
+	silcmemory.h	\
+	silcmutex.h	\
+	silcnet.h	\
+	silcschedule.h	\
+	silcsockconn.h	\
+	silctask.h	\
+	silcthread.h	\
+	silcutil.h
+
 EXTRA_DIST = *.h
 
 include $(top_srcdir)/Makefile.defines.in

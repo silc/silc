@@ -34,6 +34,7 @@
  */
 
 #include "silcincludes.h"
+#include "blowfish_internal.h"
 #include "blowfish.h"
 
 /* 

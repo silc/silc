@@ -22,7 +22,6 @@
 #define GROUPS_H
 
 #include "silcske_status.h"
-#include "groups_internal.h"
 
 /* Forward declaration */
 typedef struct SilcSKEDiffieHellmanGroupStruct *SilcSKEDiffieHellmanGroup;

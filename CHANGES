@@ -1,3 +1,21 @@
+Mon Jul 16 22:55:26 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed various compilation problems under WIN32.  Affected
+	  files lib/silcutil/win32/silcwin32thread.c and
+	  lib/silcutil/win32/silcwin32schedule.c.
+
+	* Removed all _internal.h #includes from public header
+	  files.  Internal headers must never be included from
+	  public headers.
+
+	  Removed also the lib/silcske/payload_internal.h file.
+
+	* All include files that may be needed (public and some others
+	  included by the public headers) by application developers are
+	  now copied to the ./includes directory.  It does not copy any
+	  internal headers.  Affected file Makefile.defines.pre and all
+	  Makefile.am's under lib/ and subdirs.
+
 Thu Jul 12 17:49:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not change the ~/.silc directory's permissions automatically.

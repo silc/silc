@@ -75,6 +75,8 @@ $(SIM_HASH_OBJS): ../silccrypt/libsilccrypt.a
 
 CLEANFILES = $(SIM_MODULES_DIR)/*.sim.so
 
+include_HEADERS = silcsim.h silcsimutil.h
+
 EXTRA_DIST = *.h
 
 include $(top_srcdir)/Makefile.defines.in

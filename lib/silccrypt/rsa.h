@@ -21,8 +21,6 @@
 #ifndef RSA_H
 #define RSA_H
 
-#include "rsa_internal.h"
-
 /*
  * SILC PKCS API for RSA
  */

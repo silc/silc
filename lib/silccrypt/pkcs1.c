@@ -77,6 +77,7 @@
  */
 
 #include "silcincludes.h"
+#include "rsa_internal.h"
 #include "rsa.h"
 
 #define RSA_BLOCK_MIN_PAD_LEN		8

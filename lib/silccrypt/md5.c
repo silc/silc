@@ -19,6 +19,7 @@
  */
 
 #include "silcincludes.h"
+#include "md5_internal.h"
 #include "md5.h"
 
 /* 

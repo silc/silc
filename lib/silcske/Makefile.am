@@ -25,6 +25,12 @@ libsilcske_a_SOURCES = \
 	payload.c \
         groups.c
 
+include_HEADERS = 	\
+	groups.h	\
+	payload.h	\
+	silcske.h	\
+	silcske_status.h
+
 EXTRA_DIST = *.h
 
 include $(top_srcdir)/Makefile.defines.in

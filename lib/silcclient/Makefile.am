@@ -31,6 +31,14 @@ libsilcclient_a_SOURCES = \
 	idlist.c \
 	protocol.c
 
+include_HEADERS= 	\
+	client.h 	\
+	command.h	\
+	command_reply.h	\
+	idlist.h	\
+	protocol.h	\
+	silcapi.h
+
 EXTRA_DIST = *.h
 
 include $(top_srcdir)/Makefile.defines.in

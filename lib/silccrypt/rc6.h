@@ -17,19 +17,9 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/06/27 11:36:54  priikone
- * Initial revision
- *
- *
- */
 
 #ifndef RC6_H
 #define RC6_H
-
-#include "rc6_internal.h"
 
 /* 
  * SILC Crypto API for RC6

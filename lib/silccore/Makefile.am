@@ -32,6 +32,19 @@ libsilccore_a_SOURCES = \
 	silcauth.c \
 	silcprivate.c
 
+include_HEADERS =	\
+	silcauth.h	\
+	silcchannel.h	\
+	silccommand.h	\
+	silcidcache.h	\
+	silcid.h	\
+	silcmode.h	\
+	silcnotify.h	\
+	silcpacket.h	\
+	silcpayload.h	\
+	silcprivate.h	\
+	silcprotocol.h
+
 EXTRA_DIST = *.h
 
 include $(top_srcdir)/Makefile.defines.in

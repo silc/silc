@@ -37,6 +37,7 @@ Mean:          249 cycles =   103.0 mbits/sec
 */
 
 #include "silcincludes.h"
+#include "rc6_internal.h"
 #include "rc6.h"
 
 /* 

@@ -38,6 +38,12 @@ libsilcmath_a_SOURCES = \
 	mpbin.c \
 	$(MP_SOURCE)
 
+include_HEADERS = 	\
+	mp_gmp.h	\
+	mp_mpi.h	\
+	silcmath.h	\
+	silcmp.h
+
 EXTRA_DIST = *.h
 
 include $(top_srcdir)/Makefile.defines.in

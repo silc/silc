@@ -21,8 +21,6 @@
 #ifndef RIJNDAEL_H
 #define RIJNDAEL_H
 
-#include "rijndael_internal.h"
-
 /* 
  * SILC Crypto API for Rijndael
  */

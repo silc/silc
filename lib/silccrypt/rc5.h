@@ -21,8 +21,6 @@
 #ifndef RC5_H
 #define RC5_H
 
-#include "rc5_internal.h"
-
 /* 
  * SILC Crypto API for RC5
  */

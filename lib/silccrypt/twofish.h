@@ -17,19 +17,9 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
- *
- *
- */
 
 #ifndef TWOFISH_H
 #define TWOFISH_H
-
-#include "twofish_internal.h"
 
 /* 
  * SILC Crypto API for Twofish

@@ -21,8 +21,6 @@
 #ifndef BLOWFISH_H
 #define BLOWFISH_H
 
-#include "blowfish_internal.h"
-
 /* 
  * SILC Crypto API for Blowfish
  */

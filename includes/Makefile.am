@@ -21,4 +21,12 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 all:
 	-cd ..
 
-EXTRA_DIST = *.h
+include_HEADERS = \
+	bitmove.h \
+	clientlibincludes.h \
+	silcdefs.h \
+	silcincludes.h \
+	silcwin32.h \
+	version.h \
+	version_internal.h
+

@@ -17,19 +17,9 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
- *
- *
- */
 
 #ifndef MD5_H
 #define MD5_H
-
-#include "md5_internal.h"
 
 /* 
  * SILC Hash API for MD5

@@ -39,6 +39,7 @@ Mean:          373 cycles =    68.7 mbits/sec
 */
 
 #include "silcincludes.h"
+#include "mars_internal.h"
 #include "mars.h"
 
 /* 

@@ -39,6 +39,28 @@ libsilccrypt_a_SOURCES = \
 	silcpkcs.c \
 	pkcs1.c
 
+include_HEADERS =	\
+	aes.h		\
+	blowfish.h	\
+	cast.h		\
+	ciphers_def.h	\
+	ciphers.h	\
+	mars.h		\
+	md5.h		\
+	none.h		\
+	pkcs1.h		\
+	rc5.h		\
+	rc6.h		\
+	rsa.h		\
+	sha1.h		\
+	silccipher.h	\
+	silcdh.h	\
+	silchash.h	\
+	silchmac.h	\
+	silcpkcs.h	\
+	silcrng.h	\
+	twofish.h
+
 EXTRA_DIST = *.h
 
 include $(top_srcdir)/Makefile.defines.in

@@ -59,6 +59,7 @@ Mean:          674 cycles =    38.0 mbits/sec
 */
 
 #include "silcincludes.h"
+#include "cast_internal.h"
 #include "cast.h"
 
 #define io_swap

@@ -22,7 +22,52 @@
 #define PAYLOAD_H
 
 #include "silcske_status.h"
-#include "payload_internal.h"
+
+/* Forward declarations */
+typedef struct SilcSKEStartPayloadStruct SilcSKEStartPayload;
+typedef struct SilcSKEKEPayloadStruct SilcSKEKEPayload;
+
+/* SILC Key Exchange Start Payload */
+struct SilcSKEStartPayloadStruct {
+  unsigned char flags;
+  uint16 len;
+
+  unsigned char *cookie;
+  uint16 cookie_len;
+
+  unsigned char *version;
+  uint16 version_len;
+
+  uint16 ke_grp_len;
+  unsigned char *ke_grp_list;
+
+  uint16 pkcs_alg_len;
+  unsigned char *pkcs_alg_list;
+
+  uint16 enc_alg_len;
+  unsigned char *enc_alg_list;
+  
+  uint16 hash_alg_len;
+  unsigned char *hash_alg_list;
+
+  uint16 hmac_alg_len;
+  unsigned char *hmac_alg_list;
+
+  uint16 comp_alg_len;
+  unsigned char *comp_alg_list;
+};
+
+/* SILC Key Exchange Payload */
+struct SilcSKEKEPayloadStruct {
+  uint16 pk_len;
+  unsigned char *pk_data;
+  uint16 pk_type;
+
+  SilcMPInt x;
+
+  uint16 sign_len;
+  unsigned char *sign_data;
+};
 
 /* Prototypes */
 SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,

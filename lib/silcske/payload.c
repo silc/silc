@@ -20,7 +20,6 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "payload_internal.h"
 
 /* Encodes Key Exchange Start Payload into a SILC Buffer to be sent
    to the other end. */

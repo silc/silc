@@ -21,8 +21,6 @@
 #ifndef CAST_H
 #define CAST_H
 
-#include "cast_internal.h"
-
 /* 
  * SILC Crypto API for Cast-256
  */

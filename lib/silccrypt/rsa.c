@@ -64,6 +64,7 @@
 */
 
 #include "silcincludes.h"
+#include "rsa_internal.h"
 #include "rsa.h"
 
 /*

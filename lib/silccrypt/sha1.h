@@ -17,19 +17,9 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
- *
- *
- */
 
 #ifndef SHA1_H
 #define SHA1_H
-
-#include "sha1_internal.h"
 
 /* 
  * SILC Hash API for SHA1
