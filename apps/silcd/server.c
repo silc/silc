@@ -2543,8 +2543,10 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
-  if (!server->sockets[sock->sock])
+  if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
+    silc_socket_free(sock);
     return;
+  }
 
   SILC_LOG_INFO(("Closing connection %s:%d [%s]", sock->hostname,
                   sock->port,
