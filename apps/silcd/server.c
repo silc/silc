@@ -3377,7 +3377,7 @@ void silc_server_announce_get_channels(SilcServer server,
 	(*channel_ids)[i] = NULL;
 	silc_server_announce_get_channel_users(server, channel,
 					       channel_users,
-					       &(*channel_users_modes)[i]);
+					       channel_users_modes[i]);
 	(*channel_ids)[i] = channel->id;
 	i++;
 
