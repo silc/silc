@@ -1,3 +1,10 @@
+Tue Sep 10 09:50:08 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Assure that endless loop cannot happen with detached client
+	  resolving on normal server.  Added idlist status
+	  SILC_IDLIST_STATUS_RESUME_RES.   Affected files are
+	  silcd/idlist.h and silcd/packet_receive.c.
+
 Mon Sep  9 12:18:18 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Incoming file transfer request cannot use same session as

@@ -26,9 +26,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Possibility of endless loop with detached client resolving in server.
-   Has happened once.  Check the logic.
-
  o Backup router can accidently free its own id_entry and ID?  Could happen
    when some server is connecting and connecting fails (like too many
    connections, etc).  Some weird crashes relating to this occurred.

@@ -3385,6 +3385,8 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
 	silc_server_free_sock_user_data(server, sock, NULL);
       goto out;
     }
+
+    client->data.status |= SILC_IDLIST_STATUS_RESUME_RES;
   }
 
   /* Reprocess the packet */
@@ -3492,6 +3494,8 @@ void silc_server_resume_client(SilcServer server,
       resolve = TRUE;
     if (!detached_client->nickname)
       resolve = TRUE;
+    if (detached_client->data.status & SILC_IDLIST_STATUS_RESUME_RES)
+      resolve = FALSE;
 
     if (resolve) {
       if (server->server_type == SILC_SERVER && !server->standalone) {
@@ -3611,6 +3615,7 @@ void silc_server_resume_client(SilcServer server,
     silc_idlist_add_data(detached_client, idata);
     detached_client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
+    detached_client->data.status &= ~SILC_IDLIST_STATUS_RESUME_RES;
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     server->stat.my_detached--;
 

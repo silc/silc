@@ -64,6 +64,8 @@ typedef SilcUInt8 SilcIDListStatus;
 #define SILC_IDLIST_STATUS_DISABLED     0x08    /* Entry is disabled */
 #define SILC_IDLIST_STATUS_RESUMED      0x10    /* Entry is resumed */
 #define SILC_IDLIST_STATUS_LOCAL        0x20    /* Entry locally connected */
+#define SILC_IDLIST_STATUS_RESUME_RES   0x40    /* Entry resolved while
+						   resuming */
 
 /*
    Generic ID list data structure.
