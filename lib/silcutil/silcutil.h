@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -334,7 +334,8 @@ bool silc_hash_data_compare(void *key1, void *key2, void *user_context);
  *
  * SYNOPSIS
  *
- *    bool silc_hash_public_key_compare(void *key1, void *key2, void *user_context);
+ *    bool silc_hash_public_key_compare(void *key1, void *key2,
+ *                                      void *user_context);
  *
  * DESCRIPTION
  *
@@ -482,7 +483,7 @@ int silc_gettimeofday(struct timeval *p);
  *
  * SYNOPSIS
  *
- *    bool silc_compare_timeval(struct timeval *smaller, 
+ *    bool silc_compare_timeval(struct timeval *smaller,
  *                              struct timeval *bigger)
  *
  * DESCRIPTION
@@ -491,7 +492,7 @@ int silc_gettimeofday(struct timeval *p);
  *    time value is smaller than the second time value.
  *
  ***/
-bool silc_compare_timeval(struct timeval *smaller, 
+bool silc_compare_timeval(struct timeval *smaller,
 			  struct timeval *bigger);
 
 /****f* silcutil/SilcUtilAPI/silc_string_regexify

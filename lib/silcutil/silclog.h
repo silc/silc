@@ -379,8 +379,8 @@ extern DLLAPI bool silc_debug_hexdump;
 #define SILC_NOT_IMPLEMENTED(string) \
   SILC_LOG_INFO(("*********** %s: NOT IMPLEMENTED YET", string));
 #else
-#define SILC_LOG_DEBUG(fmt)
-#define SILC_NOT_IMPLEMENTED(string)
+#define SILC_LOG_DEBUG(fmt) do { } while(0)
+#define SILC_NOT_IMPLEMENTED(string) do { } while(0)
 #endif	/* SILC_DEBUG */
 /***/
 
@@ -418,7 +418,7 @@ extern DLLAPI bool silc_debug_hexdump;
 				(void *)(data), (len),			   \
 				silc_format fmt)
 #else
-#define SILC_LOG_HEXDUMP(fmt, data, len)
+#define SILC_LOG_HEXDUMP(fmt, data, len) do { } while(0)
 #endif	/* SILC_DEBUG */
 /***/
 
