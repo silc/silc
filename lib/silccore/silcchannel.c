@@ -334,7 +334,7 @@ SilcBuffer silc_channel_message_payload_encode(uint16 flags,
 {
   int i;
   SilcBuffer buffer;
-  uint32 len, pad_len, mac_len;
+  uint32 len, pad_len, mac_len, block_len;
   unsigned char pad[SILC_PACKET_MAX_PADLEN];
   unsigned char mac[32];
 
@@ -343,8 +343,9 @@ SilcBuffer silc_channel_message_payload_encode(uint16 flags,
   /* Calculate length of padding. IV is not included into the calculation
      since it is not encrypted. */
   mac_len = silc_hmac_len(hmac);
+  block_len = silc_cipher_get_block_len(cipher);
   len = 6 + data_len + mac_len;
-  pad_len = SILC_PACKET_PADLEN((len + 2));
+  pad_len = SILC_PACKET_PADLEN(len, block_len);
 
   /* Allocate channel payload buffer */
   len += pad_len + iv_len;

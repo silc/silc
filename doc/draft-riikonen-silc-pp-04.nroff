@@ -209,17 +209,16 @@ Figure 1:  Typical SILC Packet
 SILC Header is always the first part of the packet and its purpose
 is to provide information about the packet.  It provides for example
 the packet type, origin of the packet and the destination of the packet.
-The header is variable in length and first two (2) bytes of the
-header (thus first two bytes of the packet) are not encrypted.  The
-first two (2) bytes are the length of the packet which is not encrypted.
-See the following section for description of SILC Packet header.  Packets
-without SILC header or with malformed SILC header MUST be dropped.
+The header is variable in length.  See the following section for
+description of SILC Packet header.  Packets without SILC header or
+with malformed SILC header MUST be dropped.
 
 Padding follows the packet header.  The purpose of the padding is to
 make the packet multiple by eight (8) or by the block size of the
 cipher used in the encryption, which ever is larger.  The maximum
 length of padding is currently 16 bytes.  The padding is always
-encrypted.
+encrypted.  See the section 2.7 Padding Generation for more detailed
+information.
 
 Data payload area follows padding and it is the actual data of the
 packet.  The packet data is the packet payloads defined in this
@@ -245,15 +244,14 @@ detailed information about the packet.  The receiver of the packet
 uses the packet header to parse the packet and gain other relevant
 parameters of the packet.
 
-The following diagram represents the SILC packet header.  (*) indicates
-that this field is never encrypted.  Other fields are always encrypted.
+The following diagram represents the SILC packet header.
 
 .in 5
 .nf
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Payload Length *       |     Flags     |  Packet Type  |
+|         Payload Length        |     Flags     |  Packet Type  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |        Source ID Length       |     Destination ID Length     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -277,8 +275,7 @@ Figure 2:  SILC Packet Header
 
 .in 6
 o Payload Length (2 bytes) - Is the length of the packet
-  not including the padding of the packet.  This field must
-  not be encrypted but must always be authenticated.
+  not including the padding of the packet.
 
 o Flags (1 byte) - Indicates flags to be used in packet
   processing.  Several flags may be set by ORing the flags
@@ -2398,12 +2395,6 @@ any of the special cases described in the following sections the packet
 decryption is special.  If the packet type is not among those special
 packet types rest of the packet can be decrypted with the same key.
 
-Also, note that two bytes of the SILC Packet header are not encrypted
-thus it must be noticed in the decryption process by starting the
-decryption from the second byte of the header.  This sets some rules
-to padding generation as well, see the section 2.7 Packet Padding
-Generation.
-
 With out a doubt, this sort of decryption processing causes some
 overhead to packet decryption, but never the less, is required.
 
@@ -2512,7 +2503,11 @@ Hence, packet's MAC generation is as follows:
 The MAC key is negotiated during the SKE protocol.  The sequence number
 is a 32 bit MSB first value starting from zero for first packet and
 increasing for subsequent packets, finally wrapping after 2^32 packets.
-The value is never reset, not even after rekey has been performed.
+The value is never reset, not even after rekey has been performed.  Note
+that the sequence number is incremented only when MAC is computed for a
+packet.  If packet is not encrypted and MAC is not computed then the
+sequence number is not incremented.  Hence, the sequence number is zero
+for first encrypted packet.
 
 See [SILC1] for defined and allowed MAC algorithms.
 
@@ -2529,23 +2524,21 @@ and between the Data Payload area.  The padding for normal packets
 are calculated as follows:
 
 .in 6
-padding length = 16 - ((packet length - 2) mod 16)
+padding length = 16 - (packet_length mod block_size)
 .in 3
 
-The 16 is the maximum padding allowed in SILC packet.  Two (2) is 
-subtracted from the true length of the packet because two (2) bytes
-is not encrypted in SILC Packet Header, see section 2.2 SILC Packet
-Header.  Those two bytes that are not encrypted MUST NOT be calculated
-to the padding length.
+The `block_size' is the block size of the cipher.  The maximum padding
+length is 16 bytes, and minimum is 1 byte.  The above algorithm calculates
+the padding to the next block size, and always returns the padding
+length between 1 - 16 bytes.
 
-For special packets the padding calculation MAY be different as special
+For special packets the padding calculation is different as special
 packets may be encrypted differently.  In these cases the encrypted
 data area MUST already be multiple by the block size thus in this case
 the padding is calculated only for SILC Packet Header, not for any
 other area of the packet.  The same algorithm works in this case as
 well, except that the `packet length' is now the SILC Packet Header
-length.  In this case, as well, two (2) is subtracted from the
-length.
+length. 
 
 The padding MUST be random data, preferably, generated by 
 cryptographically strong random number generator.

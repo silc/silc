@@ -66,8 +66,10 @@ void silc_idlist_del_data(void *entry)
     }
     silc_free(idata->rekey);
   }
-  if (idata->hmac_send)		/* Same as idata->hmac_receive */
+  if (idata->hmac_send)
     silc_hmac_free(idata->hmac_send);
+  if (idata->hmac_receive)
+    silc_hmac_free(idata->hmac_receive);
   if (idata->public_key)
     silc_pkcs_public_key_free(idata->public_key);
 }

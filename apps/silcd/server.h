@@ -126,7 +126,8 @@ void silc_server_stop(SilcServer server);
 void silc_server_start_key_exchange(SilcServer server,
 				    SilcServerConnection sconn,
 				    int sock);
-void silc_server_packet_parse(SilcPacketParserContext *parser_context);
+void silc_server_packet_parse(SilcPacketParserContext *parser_context,
+			      void *context);
 void silc_server_packet_parse_type(SilcServer server, 
 				   SilcSocketConnection sock,
 				   SilcPacketContext *packet);

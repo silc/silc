@@ -45,6 +45,7 @@ void silc_client_send_private_message(SilcClient client,
   SilcPacketContext packetdata;
   SilcCipher cipher;
   SilcHmac hmac;
+  int block_len;
 
   SILC_LOG_DEBUG(("Sending private message"));
 
@@ -69,6 +70,7 @@ void silc_client_send_private_message(SilcClient client,
   /* Get data used in the encryption */
   cipher = client_entry->send_key;
   hmac = conn->hmac_send;
+  block_len = silc_cipher_get_block_len(cipher);
 
   /* Set the packet context pointers. */
   packetdata.flags = SILC_PACKET_FLAG_PRIVMSG_KEY;
@@ -83,7 +85,7 @@ void silc_client_send_private_message(SilcClient client,
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 					  packetdata.src_id_len +
-					  packetdata.dst_id_len));
+					  packetdata.dst_id_len), block_len);
 
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 
@@ -99,11 +101,12 @@ void silc_client_send_private_message(SilcClient client,
   silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
 
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata);
+  silc_packet_assemble(&packetdata, cipher);
 
   /* Encrypt the header and padding of the packet. */
   cipher = conn->send_key;
-  silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
+  silc_packet_encrypt(cipher, hmac, conn->psn_send++,
+		      sock->outbuf, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
 

@@ -97,6 +97,8 @@ struct SilcClientConnectionStruct {
   SilcHmac hmac_send;
   SilcHmac hmac_receive;
   SilcHash hash;
+  uint32 psn_send;
+  uint32 psn_receive;
 
   /* Client ID and Channel ID cache. Messages transmitted in SILC network
      are done using different unique ID's. These are the cache for

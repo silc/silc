@@ -1,3 +1,21 @@
+Tue Oct 16 20:45:49 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the SILC packet header to have the first two bytes
+	  (the packet length) encrypted.  Affected files aroung the
+	  code tree, lib/silccore/silcpacket.[ch].  Removed the
+	  SilcPacketCheckDecrypt callback.  It is not needed anymore
+	  since the silc_packet_receive_process will determine now
+	  whether the packet is normal or special.
+
+	* Implemented the unidirectional MAC keys.  Affected files
+	  lib/silcske/silcske.c, silcd/protocol.c and
+	  lib/silcclient/protocol.c.
+
+	* Implemented the packet sequence number to the MAC computation.
+	  Affected files lib/silccore/silcpacket.c, silcd/protocol.c,
+	  silcd/packet_send.c, silcd/server.c, lib/silcclient/client.c,
+	  lib/silcclient/protocol.c.
+
 Mon Oct 15 17:42:55 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Allow backup router to announce servers.  All servers

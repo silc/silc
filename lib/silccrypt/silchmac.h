@@ -415,4 +415,7 @@ void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
 void silc_hmac_final(SilcHmac hmac, unsigned char *return_hash,
 		     uint32 *return_len);
 
+void silc_hmac_set_b(SilcHmac hmac);
+bool silc_hmac_get_b(SilcHmac hmac);
+
 #endif

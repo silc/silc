@@ -1448,6 +1448,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   SilcIDListData idata;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
+  uint32 sequence = 0;
   int ret;
 
   if (!sock)
@@ -1548,46 +1549,14 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   if (idata) {
     cipher = idata->receive_key;
     hmac = idata->hmac_receive;
+    sequence = idata->psn_receive;
   }
  
   /* Process the packet. This will call the parser that will then
      decrypt and parse the packet. */
-  silc_packet_receive_process(sock, cipher, hmac, silc_server_packet_parse, 
-			      server);
-}
-
-/* Callback function that the silc_packet_decrypt will call to make the
-   decision whether the packet is normal or special packet. We will 
-   return TRUE if it is normal and FALSE if it is special */
-
-static int silc_server_packet_decrypt_check(SilcPacketType packet_type,
-					    SilcBuffer buffer,
-					    SilcPacketContext *packet,
-					    void *context)
-{
-  SilcPacketParserContext *parse_ctx = (SilcPacketParserContext *)context;
-  SilcServer server = (SilcServer)parse_ctx->context;
-
-  /* Packet is normal packet, if: 
-
-     1) packet is private message packet and does not have private key set
-     2) is other packet than channel message packet
-     3) is channel message packet and remote is router and we are router 
-
-     all other packets are special packets 
-  */
-
-  if (packet_type == SILC_PACKET_PRIVATE_MESSAGE &&
-      (buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY))
-    return FALSE;
-
-  if (packet_type != SILC_PACKET_CHANNEL_MESSAGE || 
-      (packet_type == SILC_PACKET_CHANNEL_MESSAGE &&
-       parse_ctx->sock->type == SILC_SOCKET_TYPE_ROUTER &&
-       server->server_type == SILC_ROUTER))
-    return TRUE;
-
-  return FALSE;
+  silc_packet_receive_process(sock, server->server_type == SILC_ROUTER ? 
+			      TRUE : FALSE, cipher, hmac, sequence, 
+			      silc_server_packet_parse, server);
 }
   
 /* Parses whole packet, received earlier. */
@@ -1603,29 +1572,15 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Decrypt the received packet */
-  ret = silc_packet_decrypt(idata ? idata->receive_key : NULL, 
-			    idata ? idata->hmac_receive : NULL, 
-			    packet->buffer, packet,
-			    silc_server_packet_decrypt_check, parse_ctx);
-  if (ret < 0) {
-    SILC_LOG_WARNING(("Packet decryption failed for connection "
-		      "%s:%d [%s]", sock->hostname, sock->port,  
-		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
-		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
-		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
-		       "Router")));
-    goto out;
-  }
+  /* XXX backwards support for 0.5.x
+     XXX remove in 0.7.x */
+  packet->sock = sock;
 
-  if (ret == 0) {
-    /* Parse the packet. Packet type is returned. */
-    ret = silc_packet_parse(packet);
-  } else {
-    /* Parse the packet header in special way as this is "special"
-       packet type. */
-    ret = silc_packet_parse_special(packet);
-  }
+  /* Parse the packet */
+  if (parse_ctx->normal)
+    ret = silc_packet_parse(packet, idata ? idata->receive_key : NULL);
+  else
+    ret = silc_packet_parse_special(packet, idata ? idata->receive_key : NULL);
 
   /* If entry is disabled ignore what we got. */
   if (ret != SILC_PACKET_RESUME_ROUTER &&
@@ -1699,10 +1654,15 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 /* Parser callback called by silc_packet_receive_process. This merely
    registers timeout that will handle the actual parsing when appropriate. */
 
-void silc_server_packet_parse(SilcPacketParserContext *parser_context)
+void silc_server_packet_parse(SilcPacketParserContext *parser_context,
+			      void *context)
 {
-  SilcServer server = (SilcServer)parser_context->context;
+  SilcServer server = (SilcServer)context;
   SilcSocketConnection sock = parser_context->sock;
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
+
+  if (idata)
+    idata->psn_receive = parser_context->packet->sequence + 1;
 
   switch (sock->type) {
   case SILC_SOCKET_TYPE_UNKNOWN:

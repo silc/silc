@@ -35,12 +35,12 @@
 #define SILC_PACKET_DEFAULT_SIZE SILC_SOCKET_BUF_SIZE
 
 /* Header length without source and destination ID's. */
-#define SILC_PACKET_HEADER_LEN 8 + 2
+#define SILC_PACKET_HEADER_LEN 10
 
 /* Minimum length of SILC Packet Header. This much is decrypted always
    when packet is received to be able to get all the relevant data out
    from the header. */
-#define SILC_PACKET_MIN_HEADER_LEN 16 + 2
+#define SILC_PACKET_MIN_HEADER_LEN 16
 
 /* Maximum padding length */
 #define SILC_PACKET_MAX_PADLEN 16
@@ -227,6 +227,10 @@ typedef struct {
   int users;
 
   uint32 sequence;
+
+  /* XXX backwards support for 0.5.c
+     XXX remove in 0.7.x */
+  bool back;
 } SilcPacketContext;
 
 /****s* silccore/SilcPacketAPI/SilcPacketParserContext
@@ -237,10 +241,11 @@ typedef struct {
  *
  * DESCRIPTION
  *
- *    This context is used in packet reception when silc_packet_receive_process
- *    function calls parser callback that performs the actual packet decryption
- *    and parsing. This context is sent as argument to the parser function.
- *    This context must be free'd by the parser callback function.
+ *    This context is used in packet reception when the function
+ *    silc_packet_receive_process calls parser callback that performs
+ *    the actual packet decryption and parsing. This context is sent as
+ *    argument to the parser function. This context must be free'd by
+ *    the parser callback function.
  *
  *    Following description of the fields:
  *
@@ -249,6 +254,11 @@ typedef struct {
  *      The actual packet received from the network. In this phase the
  *      context is not parsed, only the packet->buffer is allocated and
  *      it includes the raw packet data, which is encrypted.
+ *
+ *    bool normal
+ *
+ *      Indicates whether the received packet is normal or special packet.
+ *      If special the parsing process is special also.
  *
  *    SilcSocketConnection sock
  *
@@ -263,6 +273,7 @@ typedef struct {
  ***/
 typedef struct {
   SilcPacketContext *packet;
+  bool normal;
   SilcSocketConnection sock;
   void *context;
 } SilcPacketParserContext;
@@ -286,41 +297,7 @@ typedef struct {
  *
  ***/
 typedef void (*SilcPacketParserCallback)(SilcPacketParserContext 
-					 *parse_context);
-
-/****f* silccore/SilcPacketAPI/SilcPacketCheckDecrypt
- *
- * SYNOPSIS
- *
- *    typedef int (*SilcPacketCheckDecrypt)(SilcPacketType packet_type,
- *                                          SilcBuffer buffer,
- *                                          SilcPacketContext *packet,
- *                                          void *context);
- *
- * DESCRIPTION
- *
- *    This callback function relates to the checking whether the packet is
- *    normal packet or special packet and how it should be processed.  If
- *    the callback returns TRUE the packet is normal and FALSE if the packet
- *    is special and requires special procesing. Some of the packets in
- *    SILC are special (like channel message packets that are encrypted
- *    using channel specific keys) and requires special processing. That
- *    is the reason for this callback function.
- *
- *    The library will call this function if provided for the
- *    silc_packet_decrypt function. The `packet_type' is the type of
- *    packet received (this is also actually the first time application
- *    receives information of the received packet, next time it receives
- *    it is when the SilcPacketParserCallback function is called),
- *    the `buffer' is the raw packet data the `packet' the allocated
- *    SilcPacketContext that is filled when parsing the packet and `context'
- *    is application specific user context.
- *
- ***/
-typedef int (*SilcPacketCheckDecrypt)(SilcPacketType packet_type,
-				      SilcBuffer buffer,
-				      SilcPacketContext *packet,
-				      void *context);
+					 *parse_context, void *context);
 
 /* Macros */
 
@@ -332,17 +309,15 @@ typedef int (*SilcPacketCheckDecrypt)(SilcPacketType packet_type,
  *
  * DESCRIPTION
  *
- *    Returns true length of the packet and padded length of the packet.
- *    This is primarily used by the libary in packet parsing phase but
- *    the application may use it as well if needed.
+ *    Returns true length of the packet. This is primarily used by the
+ *    libary in packet parsing phase but the application may use it as
+ *    well if needed.
  *
  * SOURCE
  */
-#define SILC_PACKET_LENGTH(__packet, __ret_truelen, __ret_padlen)	     \
-do {									     \
-  SILC_GET16_MSB((__ret_truelen), (__packet)->data);			     \
-  (__ret_padlen) = (((__ret_truelen) - 2) +				     \
-		    SILC_PACKET_MAX_PADLEN) & ~(SILC_PACKET_MAX_PADLEN - 1); \
+#define SILC_PACKET_LENGTH(__packet, __ret_truelen)	\
+do {							\
+  SILC_GET16_MSB((__ret_truelen), (__packet)->data);	\
 } while(0)
 /***/
 
@@ -359,9 +334,16 @@ do {									     \
  *
  * SOURCE
  */
-#define SILC_PACKET_PADLEN(__packetlen)					 \
-  SILC_PACKET_MAX_PADLEN - ((__packetlen) - 2) % SILC_PACKET_MAX_PADLEN;
+#define SILC_PACKET_PADLEN(__packetlen, __blocklen)		\
+  SILC_PACKET_MAX_PADLEN - (__packetlen) %			\
+    ((__blocklen) ? (__blocklen) : SILC_PACKET_MAX_PADLEN)
 /***/
+
+/* XXX Backwards support for 0.5.x
+   XXX Remove in 0.7.x */
+#define SILC_PACKET_PADLEN2(__packetlen, __blocklen)		\
+  SILC_PACKET_MAX_PADLEN - ((__packetlen) - 2 ) %		\
+    ((__blocklen) ? (__blocklen) : SILC_PACKET_MAX_PADLEN)
 
 /* Prototypes */
 
@@ -401,7 +383,7 @@ int silc_packet_send(SilcSocketConnection sock, bool force_send);
  *    cannot be used. 
  *
  ***/
-void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, 
+void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, uint32 sequence,
 			 SilcBuffer buffer, uint32 len);
 
 /****f* silccore/SilcPacketAPI/silc_packet_assemble
@@ -457,7 +439,7 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac,
  *    the packet.
  *
  ***/
-void silc_packet_assemble(SilcPacketContext *ctx);
+void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher);
 
 /****f* silccore/SilcPacketAPI/silc_packet_send_prepare
  *
@@ -499,60 +481,38 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
  ***/
 int silc_packet_receive(SilcSocketConnection sock);
 
-/****f* silccore/SilcPacketAPI/silc_packet_decrypt
- *
- * SYNOPSIS
- *
- *    int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
- *                            SilcBuffer buffer, SilcPacketContext *packet,
- *                            SilcPacketCheckDecrypt check_packet,
- *                            void *context);
- *
- * DESCRIPTION
- *
- *    Decrypts a packet. This assumes that typical SILC packet is the
- *    packet to be decrypted and thus checks for normal and special SILC
- *    packets and can handle both of them. This also computes and checks
- *    the HMAC of the packet. If any other special or customized decryption
- *    processing is required this function cannot be used. This returns
- *    -1 on error, 0 when packet is normal packet and 1 when the packet
- *    is special and requires special processing. 
- *
- *    The `check_packet' is a callback funtion that this function will 
- *    call.  The callback relates to the checking whether the packet is
- *    normal packet or special packet and how it should be processed.  If
- *    the callback return TRUE the packet is normal and FALSE if the packet
- *    is special and requires special procesing.
- *
- ***/
-int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
-			SilcBuffer buffer, SilcPacketContext *packet,
-			SilcPacketCheckDecrypt check_packet,
-			void *context);
-
 /****f* silccore/SilcPacketAPI/silc_packet_receive_process
  *
  * SYNOPSIS
  *
  *    void silc_packet_receive_process(SilcSocketConnection sock,
+ *                                     bool local_is_router,
  *                                     SilcCipher cipher, SilcHmac hmac,
  *                                     SilcPacketParserCallback parser,
- *                                     void *context);
+ *                                     void *parser_context);
  *
  * DESCRIPTION
  *
- *    Processes the received data. This checks the received data and 
- *    calls parser callback that handles the actual packet decryption
- *    and parsing. If more than one packet was received this calls the
- *    parser multiple times. The parser callback will get context
- *    SilcPacketParserContext that includes the packet and the `context'
- *    sent to this function.
+ *    Processes and decrypts the incmoing data, and calls parser callback
+ *    for each received packet that will handle the actual packet parsing.
+ *    If more than one packet was received this calls the parser multiple
+ *    times.  The parser callback will get context SilcPacketParserContext
+ *    that includes the packet and the `parser_context' sent to this
+ *    function. 
+ *
+ *    The `local_is_router' indicates whether the caller is router server
+ *    in which case the receiving process of a certain packet types may
+ *    be special.  Normal server and client must set it to FALSE.  The
+ *    SilcPacketParserContext will indicate also whether the received
+ *    packet was normal or special packet.
  *
  ***/
 void silc_packet_receive_process(SilcSocketConnection sock,
+				 bool local_is_router,
 				 SilcCipher cipher, SilcHmac hmac,
+				 uint32 sequence,
 				 SilcPacketParserCallback parser,
-				 void *context);
+				 void *parser_context);
 
 /****f* silccore/SilcPacketAPI/silc_packet_parse
  *
@@ -569,7 +529,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
  *    buffer is parsed, not head or tail sections.
  *
  ***/
-SilcPacketType silc_packet_parse(SilcPacketContext *ctx);
+SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher);
 
 /****f* silccore/SilcPacketAPI/silc_packet_parse_special
  *
@@ -586,7 +546,8 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx);
  *    and parses the header and padding area only.
  *
  ***/
-SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx);
+SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
+					 SilcCipher cipher);
 
 /****f* silccore/SilcPacketAPI/silc_packet_context_alloc
  *

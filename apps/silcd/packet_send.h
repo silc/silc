@@ -87,6 +87,7 @@ void silc_server_send_private_message(SilcServer server,
 				      SilcSocketConnection dst_sock,
 				      SilcCipher cipher,
 				      SilcHmac hmac,
+				      uint32 sequence,
 				      SilcPacketContext *packet);
 void silc_server_send_motd(SilcServer server,
 			   SilcSocketConnection sock);
@@ -221,6 +222,7 @@ void silc_server_relay_packet(SilcServer server,
 			      SilcSocketConnection dst_sock,
 			      SilcCipher cipher,
 			      SilcHmac hmac,
+			      uint32 sequence,
 			      SilcPacketContext *packet,
 			      bool force_send);
 void silc_server_send_connection_auth_request(SilcServer server,

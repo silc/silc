@@ -49,6 +49,7 @@ void silc_client_send_channel_message(SilcClient client,
   SilcHmac hmac;
   unsigned char *id_string;
   uint32 iv_len;
+  int block_len;
 
   SILC_LOG_DEBUG(("Sending packet to channel"));
 
@@ -86,6 +87,8 @@ void silc_client_send_channel_message(SilcClient client,
   if (!cipher || !hmac)
     return;
 
+  block_len = silc_cipher_get_block_len(cipher);
+
   /* Generate IV */
   iv_len = silc_cipher_get_block_len(cipher);
   if (channel->iv[0] == '\0')
@@ -118,7 +121,7 @@ void silc_client_send_channel_message(SilcClient client,
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 					  packetdata.src_id_len +
-					  packetdata.dst_id_len));
+					  packetdata.dst_id_len), block_len);
 
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 
@@ -134,11 +137,12 @@ void silc_client_send_channel_message(SilcClient client,
   silc_buffer_put(sock->outbuf, payload->data, payload->len);
 
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata);
+  silc_packet_assemble(&packetdata, cipher);
 
   /* Encrypt the header and padding of the packet. This is encrypted 
      with normal session key shared with our server. */
-  silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
+  silc_packet_encrypt(cipher, hmac, conn->psn_send++,
+		      sock->outbuf, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
 

@@ -90,7 +90,7 @@ SilcBuffer silc_private_message_payload_encode(uint16 flags,
 {
   int i;
   SilcBuffer buffer;
-  uint32 len, pad_len = 0;
+  uint32 len, pad_len = 0, block_len;
   unsigned char pad[SILC_PACKET_MAX_PADLEN];
 
   SILC_LOG_DEBUG(("Encoding private message payload"));
@@ -99,7 +99,8 @@ SilcBuffer silc_private_message_payload_encode(uint16 flags,
 
   if (cipher) {
     /* Calculate length of padding. */
-    pad_len = SILC_PACKET_PADLEN((len + 2));
+    block_len = silc_cipher_get_block_len(cipher);
+    pad_len = SILC_PACKET_PADLEN(len, block_len);
     len += pad_len;
 
     /* Generate padding */

@@ -227,6 +227,32 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
     return FALSE;
   }
   
+  if (!silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, 
+		       &idata->hmac_send)) {
+    silc_cipher_free(idata->send_key);
+    silc_cipher_free(idata->receive_key);
+    silc_free(conn_data);
+    return FALSE;
+  }
+
+  if (!silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, 
+		       &idata->hmac_receive)) {
+    silc_cipher_free(idata->send_key);
+    silc_cipher_free(idata->receive_key);
+    silc_hmac_free(idata->hmac_send);
+    silc_free(conn_data);
+    return FALSE;
+  }
+
+  /* XXX backwards support for old MAC thingy
+     XXX Remove ing 0.7.x */
+  if (ske->backward_version) {
+    silc_hmac_set_b(idata->hmac_send);
+    silc_hmac_set_b(idata->hmac_receive);
+    idata->send_key->back = TRUE;
+    idata->receive_key->back = TRUE;
+  }
+
   if (is_responder == TRUE) {
     silc_cipher_set_key(idata->send_key, keymat->receive_enc_key, 
 			keymat->enc_key_len);
@@ -234,6 +260,10 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
     silc_cipher_set_key(idata->receive_key, keymat->send_enc_key, 
 			keymat->enc_key_len);
     silc_cipher_set_iv(idata->receive_key, keymat->send_iv);
+    silc_hmac_set_key(idata->hmac_send, keymat->receive_hmac_key, 
+		      keymat->hmac_key_len);
+    silc_hmac_set_key(idata->hmac_receive, keymat->send_hmac_key, 
+		      keymat->hmac_key_len);
   } else {
     silc_cipher_set_key(idata->send_key, keymat->send_enc_key, 
 			keymat->enc_key_len);
@@ -241,6 +271,10 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
     silc_cipher_set_key(idata->receive_key, keymat->receive_enc_key, 
 			keymat->enc_key_len);
     silc_cipher_set_iv(idata->receive_key, keymat->receive_iv);
+    silc_hmac_set_key(idata->hmac_send, keymat->send_hmac_key, 
+		      keymat->hmac_key_len);
+    silc_hmac_set_key(idata->hmac_receive, keymat->receive_hmac_key, 
+		      keymat->hmac_key_len);
   }
 
   idata->rekey = silc_calloc(1, sizeof(*idata->rekey));
@@ -255,29 +289,19 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
     idata->rekey->pfs = TRUE;
   idata->rekey->ske_group = silc_ske_group_get_number(group);
 
-  /* Save the remote host's public key */
-  silc_pkcs_public_key_decode(ske->ke1_payload->pk_data, 
-			      ske->ke1_payload->pk_len, &idata->public_key);
-
   /* Save the hash */
   if (!silc_hash_alloc(hash->hash->name, &idata->hash)) {
     silc_cipher_free(idata->send_key);
     silc_cipher_free(idata->receive_key);
+    silc_hmac_free(idata->hmac_send);
+    silc_hmac_free(idata->hmac_receive);
     silc_free(conn_data);
     return FALSE;
   }
 
-  /* Save HMAC key to be used in the communication. */
-  if (!silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, 
-		       &idata->hmac_send)) {
-    silc_cipher_free(idata->send_key);
-    silc_cipher_free(idata->receive_key);
-    silc_hash_free(idata->hash);
-    silc_free(conn_data);
-    return FALSE;
-  }
-  silc_hmac_set_key(idata->hmac_send, keymat->hmac_key, keymat->hmac_key_len);
-  idata->hmac_receive = idata->hmac_send;
+  /* Save the remote host's public key */
+  silc_pkcs_public_key_decode(ske->ke1_payload->pk_data, 
+			      ske->ke1_payload->pk_len, &idata->public_key);
 
   sock->user_data = (void *)conn_data;
 
@@ -344,6 +368,11 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
     status = SILC_SKE_STATUS_BAD_VERSION;
   if (min > min2)
     status = SILC_SKE_STATUS_BAD_VERSION;
+
+  /* Backwards support for 0.5.x for various MAC related issues.
+     XXX Remove in 0.7.x */
+  if (maj == 0 && min < 6)
+    ske->backward_version = 1;
 
   return status;
 }
@@ -1211,31 +1240,29 @@ silc_server_protocol_rekey_validate(SilcServer server,
       silc_cipher_set_key(idata->send_key, keymat->receive_enc_key, 
 			  keymat->enc_key_len);
       silc_cipher_set_iv(idata->send_key, keymat->receive_iv);
+      silc_hmac_set_key(idata->hmac_send, keymat->receive_hmac_key, 
+			keymat->hmac_key_len);
     } else {
       silc_cipher_set_key(idata->receive_key, keymat->send_enc_key, 
 			  keymat->enc_key_len);
       silc_cipher_set_iv(idata->receive_key, keymat->send_iv);
+      silc_hmac_set_key(idata->hmac_receive, keymat->send_hmac_key, 
+			keymat->hmac_key_len);
     }
   } else {
     if (send) {
       silc_cipher_set_key(idata->send_key, keymat->send_enc_key, 
 			  keymat->enc_key_len);
       silc_cipher_set_iv(idata->send_key, keymat->send_iv);
+      silc_hmac_set_key(idata->hmac_send, keymat->send_hmac_key, 
+			keymat->hmac_key_len);
     } else {
       silc_cipher_set_key(idata->receive_key, keymat->receive_enc_key, 
 			  keymat->enc_key_len);
       silc_cipher_set_iv(idata->receive_key, keymat->receive_iv);
+      silc_hmac_set_key(idata->hmac_receive, keymat->receive_hmac_key, 
+			keymat->hmac_key_len);
     }
-  }
-
-  if (send) {
-    silc_hmac_alloc((char *)silc_hmac_get_name(idata->hmac_send), NULL, 
-		    &idata->hmac_send);
-    silc_hmac_set_key(idata->hmac_send, keymat->hmac_key, 
-		      keymat->hmac_key_len);
-  } else {
-    silc_hmac_free(idata->hmac_receive);
-    idata->hmac_receive = idata->hmac_send;
   }
 
   /* Save the current sending encryption key */

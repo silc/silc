@@ -30,7 +30,8 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real);
 SILC_TASK_CALLBACK(silc_client_rekey_callback);
 SILC_TASK_CALLBACK(silc_client_rekey_final);
 
-static void silc_client_packet_parse(SilcPacketParserContext *parser_context);
+static void silc_client_packet_parse(SilcPacketParserContext *parser_context,
+				     void *context);
 static void silc_client_packet_parse_type(SilcClient client, 
 					  SilcSocketConnection sock,
 					  SilcPacketContext *packet);
@@ -748,40 +749,13 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
     /* Process the packet. This will call the parser that will then
        decrypt and parse the packet. */
     if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
-      silc_packet_receive_process(sock, conn->receive_key, conn->hmac_receive,
+      silc_packet_receive_process(sock, FALSE, conn->receive_key, 
+				  conn->hmac_receive, conn->psn_receive,
 				  silc_client_packet_parse, client);
     else
-      silc_packet_receive_process(sock, NULL, NULL,
+      silc_packet_receive_process(sock, FALSE, NULL, NULL, 0, 
 				  silc_client_packet_parse, client);
   }
-}
-
-/* Callback function that the silc_packet_decrypt will call to make the
-   decision whether the packet is normal or special packet. We will 
-   return TRUE if it is normal and FALSE if it is special */
-
-static int silc_client_packet_decrypt_check(SilcPacketType packet_type,
-					    SilcBuffer buffer,
-					    SilcPacketContext *packet,
-					    void *context)
-{
-
-  /* Packet is normal packet, if: 
-
-     1) packet is private message packet and does not have private key set
-     2) is other packet than channel message packet
-
-     all other packets are special packets 
-  */
-
-  if (packet_type == SILC_PACKET_PRIVATE_MESSAGE &&
-      (buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY))
-    return FALSE;
-
-  if (packet_type != SILC_PACKET_CHANNEL_MESSAGE)
-    return TRUE;
-
-  return FALSE;
 }
 
 /* Parses whole packet, received earlier. */
@@ -791,33 +765,17 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real)
   SilcPacketParserContext *parse_ctx = (SilcPacketParserContext *)context;
   SilcClient client = (SilcClient)parse_ctx->context;
   SilcPacketContext *packet = parse_ctx->packet;
-  SilcBuffer buffer = packet->buffer;
   SilcSocketConnection sock = parse_ctx->sock;
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   int ret;
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Decrypt the received packet */
-  if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
-    ret = silc_packet_decrypt(conn->receive_key, conn->hmac_receive, 
-			      buffer, packet,
-			      silc_client_packet_decrypt_check, parse_ctx);
+  /* Parse the packet */
+  if (parse_ctx->normal)
+    ret = silc_packet_parse(packet, conn->receive_key);
   else
-    ret = silc_packet_decrypt(NULL, NULL, buffer, packet,
-			      silc_client_packet_decrypt_check, parse_ctx);
-
-  if (ret < 0)
-    goto out;
-
-  if (ret == 0) {
-    /* Parse the packet. Packet type is returned. */
-    ret = silc_packet_parse(packet);
-  } else {
-    /* Parse the packet header in special way as this is "special"
-       packet type. */
-    ret = silc_packet_parse_special(packet);
-  }
+    ret = silc_packet_parse_special(packet, conn->receive_key);
 
   if (ret == SILC_PACKET_NONE)
     goto out;
@@ -834,9 +792,15 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real)
 /* Parser callback called by silc_packet_receive_process. Thie merely
    registers timeout that will handle the actual parsing when appropriate. */
 
-void silc_client_packet_parse(SilcPacketParserContext *parser_context)
+void silc_client_packet_parse(SilcPacketParserContext *parser_context,
+			      void *context)
 {
-  SilcClient client = (SilcClient)parser_context->context;
+  SilcClient client = (SilcClient)context;
+  SilcSocketConnection sock = parser_context->sock;
+  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+
+  if (conn && conn->hmac_receive)
+    conn->psn_receive = parser_context->packet->sequence + 1;
 
   /* Parse the packet */
   silc_schedule_task_add(client->schedule, parser_context->sock->sock, 
@@ -1135,6 +1099,8 @@ void silc_client_packet_send(SilcClient client,
 			     int force_send)
 {
   SilcPacketContext packetdata;
+  int block_len;
+  uint32 sequence = 0;
 
   if (!sock)
     return;
@@ -1153,7 +1119,12 @@ void silc_client_packet_send(SilcClient client,
       dst_id = ((SilcClientConnection)sock->user_data)->remote_id;
       dst_id_type = SILC_ID_SERVER;
     }
+
+    if (hmac)
+      sequence = ((SilcClientConnection)sock->user_data)->psn_send++;
   }
+
+  block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
 
   /* Set the packet context pointers */
   packetdata.flags = 0;
@@ -1180,7 +1151,7 @@ void silc_client_packet_send(SilcClient client,
   }
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
+  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 
@@ -1199,11 +1170,12 @@ void silc_client_packet_send(SilcClient client,
     silc_buffer_put(sock->outbuf, data, data_len);
 
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata);
+  silc_packet_assemble(&packetdata, cipher);
 
   /* Encrypt the packet */
   if (cipher)
-    silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
+    silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, 
+			sock->outbuf->len);
 
   SILC_LOG_HEXDUMP(("Packet, len %d", sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
@@ -1326,8 +1298,10 @@ void silc_client_close_connection(SilcClient client,
       silc_cipher_free(conn->send_key);
     if (conn->receive_key)
       silc_cipher_free(conn->receive_key);
-    if (conn->hmac_send)	/* conn->hmac_receive is same */
+    if (conn->hmac_send)
       silc_hmac_free(conn->hmac_send);
+    if (conn->hmac_receive)
+      silc_hmac_free(conn->hmac_receive);
     if (conn->pending_commands)
       silc_dlist_uninit(conn->pending_commands);
     if (conn->rekey)

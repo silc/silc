@@ -101,7 +101,8 @@ typedef struct {
   unsigned char *send_enc_key;
   unsigned char *receive_enc_key;
   uint32 enc_key_len;
-  unsigned char *hmac_key;
+  unsigned char *send_hmac_key;
+  unsigned char *receive_hmac_key;
   uint32 hmac_key_len;
 } SilcSKEKeyMaterial;
 
@@ -178,6 +179,9 @@ struct SilcSKEStruct {
 
   /* SKE callbacks. */
   SilcSKECallbacks callbacks;
+
+  /* Backwards support version indicator */
+  uint32 backward_version;
 };
 
 /* Prototypes */

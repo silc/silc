@@ -71,7 +71,8 @@ void silc_server_notify(SilcServer server,
     if (dst_sock)
       /* Relay the packet */
       silc_server_relay_packet(server, dst_sock, idata->send_key,
-			       idata->hmac_receive, packet, TRUE);
+			       idata->hmac_receive, idata->psn_send++,
+			       packet, TRUE);
   }
 
   /* Parse the Notify Payload */
@@ -1161,7 +1162,8 @@ void silc_server_private_message(SilcServer server,
 
   /* Send the private message */
   silc_server_send_private_message(server, dst_sock, idata->send_key,
-				   idata->hmac_send, packet);
+				   idata->hmac_send, idata->psn_send++,
+				   packet);
 }
 
 /* Received private message key packet.. This packet is never for us. It is to
@@ -1193,7 +1195,7 @@ void silc_server_private_message_key(SilcServer server,
 
   /* Relay the packet */
   silc_server_relay_packet(server, dst_sock, idata->send_key,
-			   idata->hmac_send, packet, FALSE);
+			   idata->hmac_send, idata->psn_send++, packet, FALSE);
 }
 
 /* Processes incoming command reply packet. The command reply packet may
@@ -1257,8 +1259,8 @@ void silc_server_command_reply(SilcServer server,
     idata = (SilcIDListData)client;
     
     /* Encrypt packet */
-    silc_packet_encrypt(idata->send_key, idata->hmac_send, dst_sock->outbuf, 
-			buffer->len);
+    silc_packet_encrypt(idata->send_key, idata->hmac_send, idata->psn_send++,
+			dst_sock->outbuf, buffer->len);
     
     /* Send the packet */
     silc_server_packet_send_real(server, dst_sock, TRUE);
@@ -2344,7 +2346,8 @@ void silc_server_key_agreement(SilcServer server,
 
   /* Relay the packet */
   silc_server_relay_packet(server, dst_sock, idata->send_key,
-			   idata->hmac_send, packet, FALSE);
+			   idata->hmac_send, idata->psn_send++,
+			   packet, FALSE);
 }
 
 /* Received connection auth request packet that is used during connection

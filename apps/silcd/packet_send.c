@@ -140,8 +140,10 @@ void silc_server_packet_send_dest(SilcServer server,
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
+  uint32 sequence = 0;
   unsigned char *dst_id_data = NULL;
   uint32 dst_id_len = 0;
+  int block_len = 0;
 
   /* If disconnecting, ignore the data */
   if (SILC_IS_DISCONNECTING(sock))
@@ -158,6 +160,13 @@ void silc_server_packet_send_dest(SilcServer server,
     dst_id_len = silc_id_get_len(dst_id, dst_id_type);
   }
 
+  if (idata) {
+    cipher = idata->send_key;
+    hmac = idata->hmac_send;
+    sequence = idata->psn_send++;
+    block_len = silc_cipher_get_block_len(cipher);
+  }
+
   /* Set the packet context pointers */
   packetdata.type = type;
   packetdata.flags = flags;
@@ -169,7 +178,7 @@ void silc_server_packet_send_dest(SilcServer server,
   packetdata.dst_id_type = dst_id_type;
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
+  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 
@@ -188,17 +197,13 @@ void silc_server_packet_send_dest(SilcServer server,
     silc_buffer_put(sock->outbuf, data, data_len);
 
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata);
-
-  if (idata) {
-    cipher = idata->send_key;
-    hmac = idata->hmac_send;
-  }
+  silc_packet_assemble(&packetdata, cipher);
 
   /* Encrypt the packet */
-  silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
+  silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, sock->outbuf->len);
 
-  SILC_LOG_HEXDUMP(("Outgoing packet, len %d", sock->outbuf->len),
+  SILC_LOG_HEXDUMP(("Outgoing packet (%d), len %d", sequence, 
+		    sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
@@ -234,10 +239,12 @@ void silc_server_packet_send_srcdest(SilcServer server,
   SilcIDListData idata;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
+  uint32 sequence = 0;
   unsigned char *dst_id_data = NULL;
   uint32 dst_id_len = 0;
   unsigned char *src_id_data = NULL;
   uint32 src_id_len = 0;
+  int block_len = 0;
 
   SILC_LOG_DEBUG(("Sending packet, type %d", type));
 
@@ -254,6 +261,13 @@ void silc_server_packet_send_srcdest(SilcServer server,
     src_id_len = silc_id_get_len(src_id, src_id_type);
   }
 
+  if (idata) {
+    cipher = idata->send_key;
+    hmac = idata->hmac_send;
+    sequence = idata->psn_send++;
+    block_len = silc_cipher_get_block_len(cipher);
+  }
+
   /* Set the packet context pointers */
   packetdata.type = type;
   packetdata.flags = flags;
@@ -265,7 +279,7 @@ void silc_server_packet_send_srcdest(SilcServer server,
   packetdata.dst_id_type = dst_id_type;
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
+  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 
@@ -284,17 +298,13 @@ void silc_server_packet_send_srcdest(SilcServer server,
     silc_buffer_put(sock->outbuf, data, data_len);
 
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata);
-
-  if (idata) {
-    cipher = idata->send_key;
-    hmac = idata->hmac_send;
-  }
+  silc_packet_assemble(&packetdata, cipher);
 
   /* Encrypt the packet */
-  silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
+  silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, sock->outbuf->len);
 
-  SILC_LOG_HEXDUMP(("Outgoing packet, len %d", sock->outbuf->len),
+  SILC_LOG_HEXDUMP(("Outgoing packet (%d), len %d", sequence, 
+		    sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
@@ -330,10 +340,11 @@ void silc_server_packet_broadcast(SilcServer server,
     silc_buffer_push(buffer, buffer->data - buffer->head);
     silc_packet_send_prepare(sock, 0, 0, buffer->len); 
     silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
-    silc_packet_encrypt(idata->send_key, idata->hmac_send, 
+    silc_packet_encrypt(idata->send_key, idata->hmac_send, idata->psn_send++,
 			sock->outbuf, sock->outbuf->len);
 
-    SILC_LOG_HEXDUMP(("Broadcasted packet, len %d", sock->outbuf->len),
+    SILC_LOG_HEXDUMP(("Broadcasted packet (%d), len %d", idata->psn_send - 1,
+		      sock->outbuf->len),
 		     sock->outbuf->data, sock->outbuf->len);
 
     /* Now actually send the packet */
@@ -364,10 +375,11 @@ void silc_server_packet_route(SilcServer server,
   silc_buffer_push(buffer, buffer->data - buffer->head);
   silc_packet_send_prepare(sock, 0, 0, buffer->len); 
   silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
-  silc_packet_encrypt(idata->send_key, idata->hmac_send, 
+  silc_packet_encrypt(idata->send_key, idata->hmac_send, idata->psn_send++,
 		      sock->outbuf, sock->outbuf->len);
 
-  SILC_LOG_HEXDUMP(("Routed packet, len %d", sock->outbuf->len),
+  SILC_LOG_HEXDUMP(("Routed packet (%d), len %d", idata->psn_send - 1, 
+		    sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
@@ -385,13 +397,26 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 					SilcPacketContext *packet,
 					SilcCipher cipher,
 					SilcHmac hmac,
+					uint32 sequence,
 					unsigned char *data,
 					uint32 data_len,
-					int channel_message,
+					bool channel_message,
 					bool force_send)
 {
+  int block_len = 0;
   packet->truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packet->src_id_len + packet->dst_id_len;
+
+  if (cipher) {
+    block_len = silc_cipher_get_block_len(cipher);
+
+    if (channel_message)
+      packet->padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
+					   packet->src_id_len +
+					   packet->dst_id_len), block_len);
+    else
+      packet->padlen = SILC_PACKET_PADLEN(packet->truelen, block_len);
+  }
 
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 
@@ -407,15 +432,17 @@ silc_server_packet_send_to_channel_real(SilcServer server,
      is encrypted with normal session key shared with the client, unless
      the `channel_message' is TRUE. */
   silc_buffer_put(sock->outbuf, data, data_len);
-  silc_packet_assemble(packet);
+  silc_packet_assemble(packet, cipher);
   if (channel_message)
-    silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
-			packet->src_id_len + packet->dst_id_len +
-			packet->padlen);
+    silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, 
+			SILC_PACKET_HEADER_LEN + packet->src_id_len + 
+			packet->dst_id_len + packet->padlen);
   else
-    silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
+    silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, 
+			sock->outbuf->len);
     
-  SILC_LOG_HEXDUMP(("Channel packet, len %d", sock->outbuf->len),
+  SILC_LOG_HEXDUMP(("Channel packet (%d), len %d", sequence, 
+		    sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
@@ -465,9 +492,6 @@ void silc_server_packet_send_to_channel(SilcServer server,
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_type = SILC_ID_CHANNEL;
-  packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
-    packetdata.src_id_len + packetdata.dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
 
   /* If there are global users in the channel we will send the message
      first to our router for further routing. */
@@ -486,6 +510,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      idata->send_key, 
 					      idata->hmac_send, 
+					      idata->psn_send++,
 					      data, data_len, FALSE, 
 					      force_send);
     }
@@ -532,6 +557,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      idata->send_key, 
 					      idata->hmac_send, 
+					      idata->psn_send++,
 					      data, data_len, FALSE, 
 					      force_send);
 
@@ -556,6 +582,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
     silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					    idata->send_key, 
 					    idata->hmac_send, 
+					    idata->psn_send++, 
 					    data, data_len, FALSE, 
 					    force_send);
   }
@@ -667,9 +694,6 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_type = SILC_ID_CHANNEL;
-  packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
-					  packetdata.src_id_len +
-					  packetdata.dst_id_len));
 
   /* If there are global users in the channel we will send the message
      first to our router for further routing. */
@@ -689,6 +713,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      idata->send_key, 
 					      idata->hmac_send, 
+					      idata->psn_send++, 
 					      data, data_len, TRUE, 
 					      force_send);
     }
@@ -814,6 +839,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      idata->send_key, 
 					      idata->hmac_send, 
+					      idata->psn_send++, 
 					      data, data_len, TRUE, 
 					      force_send);
 
@@ -838,6 +864,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
     silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					    idata->send_key, 
 					    idata->hmac_send, 
+					    idata->psn_send++, 
 					    data, data_len, TRUE, 
 					    force_send);
   }
@@ -892,6 +919,7 @@ void silc_server_send_private_message(SilcServer server,
 				      SilcSocketConnection dst_sock,
 				      SilcCipher cipher,
 				      SilcHmac hmac,
+				      uint32 sequence,
 				      SilcPacketContext *packet)
 {
   SilcBuffer buffer = packet->buffer;
@@ -905,7 +933,7 @@ void silc_server_send_private_message(SilcServer server,
     silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
 
     /* Re-encrypt packet */
-    silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, buffer->len);
+    silc_packet_encrypt(cipher, hmac, sequence, dst_sock->outbuf, buffer->len);
 
     /* Send the packet */
     silc_server_packet_send_real(server, dst_sock, FALSE);
@@ -918,7 +946,7 @@ void silc_server_send_private_message(SilcServer server,
     silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
 
     /* Encrypt header */
-    silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, 
+    silc_packet_encrypt(cipher, hmac, sequence, dst_sock->outbuf, 
 			SILC_PACKET_HEADER_LEN + packet->src_id_len + 
 			packet->dst_id_len + packet->padlen);
 
@@ -1391,6 +1419,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
   uint32 data_len;
   bool force_send = FALSE;
   va_list ap;
+  int block_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1442,18 +1471,21 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	/* Get data used in packet header encryption, keys and stuff. */
 	sock = (SilcSocketConnection)c->router->connection;
 	idata = (SilcIDListData)c->router;
-	
+	block_len = idata->send_key ? 
+	  silc_cipher_get_block_len(idata->send_key) : 0;
+
 	packetdata.dst_id = silc_id_id2str(c->router->id, SILC_ID_SERVER);
 	packetdata.dst_id_len = silc_id_get_len(c->router->id, SILC_ID_SERVER);
 	packetdata.dst_id_type = SILC_ID_SERVER;
 	packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
 	  packetdata.src_id_len + packetdata.dst_id_len;
-	packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
+	packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
 	/* Send the packet */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 						idata->send_key, 
 						idata->hmac_send, 
+						idata->psn_send++, 
 						data, data_len, FALSE, 
 						force_send);
 	
@@ -1475,18 +1507,21 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	/* Get data used in packet header encryption, keys and stuff. */
 	sock = (SilcSocketConnection)c->connection;
 	idata = (SilcIDListData)c;
+	block_len = idata->send_key ? 
+	  silc_cipher_get_block_len(idata->send_key) : 0;
 	
 	packetdata.dst_id = silc_id_id2str(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_len = silc_id_get_len(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_type = SILC_ID_CLIENT;
 	packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
 	  packetdata.src_id_len + packetdata.dst_id_len;
-	packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
+	packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
 	/* Send the packet */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 						idata->send_key, 
 						idata->hmac_send, 
+						idata->psn_send++, 
 						data, data_len, FALSE, 
 						force_send);
 
@@ -1654,6 +1689,7 @@ void silc_server_relay_packet(SilcServer server,
 			      SilcSocketConnection dst_sock,
 			      SilcCipher cipher,
 			      SilcHmac hmac,
+			      uint32 sequence,
 			      SilcPacketContext *packet,
 			      bool force_send)
 {
@@ -1664,7 +1700,8 @@ void silc_server_relay_packet(SilcServer server,
   silc_buffer_put(dst_sock->outbuf, packet->buffer->data, packet->buffer->len);
   
   /* Re-encrypt packet */
-  silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, packet->buffer->len);
+  silc_packet_encrypt(cipher, hmac, sequence, dst_sock->outbuf, 
+		      packet->buffer->len);
   
   /* Send the packet */
   silc_server_packet_send_real(server, dst_sock, force_send);

@@ -1813,13 +1813,19 @@ silc_ske_process_key_material_data(unsigned char *data,
     key->enc_key_len = req_enc_key_len;
   }
 
-  /* Take HMAC key */
+  /* Take HMAC keys */
   memset(hashd, 0, sizeof(hashd));
   buf->data[0] = 4;
   silc_hash_make(hash, buf->data, buf->len, hashd);
-  key->hmac_key = silc_calloc(req_hmac_key_len, sizeof(unsigned char));
-  memcpy(key->hmac_key, hashd, req_hmac_key_len);
+  key->send_hmac_key = silc_calloc(req_hmac_key_len, sizeof(unsigned char));
+  memcpy(key->send_hmac_key, hashd, req_hmac_key_len);
+  memset(hashd, 0, sizeof(hashd));
+  buf->data[0] = 5;
+  silc_hash_make(hash, buf->data, buf->len, hashd);
+  key->receive_hmac_key = silc_calloc(req_hmac_key_len, sizeof(unsigned char));
+  memcpy(key->receive_hmac_key, hashd, req_hmac_key_len);
   key->hmac_key_len = req_hmac_key_len;
+  memset(hashd, 0, sizeof(hashd));
 
   silc_buffer_free(buf);
 
@@ -1856,6 +1862,14 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 					      req_hmac_key_len, 
 					      ske->prop->hash, key);
 
+  /* Backwards support for old MAC keys */
+  /* XXX Remove in 0.7.x */
+  if (ske->backward_version == 1) {
+    silc_free(key->receive_hmac_key);
+    key->receive_hmac_key = silc_calloc(1, sizeof(*key->receive_hmac_key));
+    memcpy(key->receive_hmac_key, key->send_hmac_key, key->hmac_key_len);
+  }
+
   memset(tmpbuf, 0, klen);
   silc_free(tmpbuf);
   silc_buffer_free(buf);
@@ -1882,9 +1896,13 @@ void silc_ske_free_key_material(SilcSKEKeyMaterial *key)
     memset(key->receive_enc_key, 0, key->enc_key_len / 8);
     silc_free(key->receive_enc_key);
   }
-  if (key->hmac_key) {
-    memset(key->hmac_key, 0, key->hmac_key_len);
-    silc_free(key->hmac_key);
+  if (key->send_hmac_key) {
+    memset(key->send_hmac_key, 0, key->hmac_key_len);
+    silc_free(key->send_hmac_key);
+  }
+  if (key->receive_hmac_key) {
+    memset(key->receive_hmac_key, 0, key->hmac_key_len);
+    silc_free(key->receive_hmac_key);
   }
   silc_free(key);
 }

@@ -293,7 +293,7 @@ void silc_server_backup_broadcast(SilcServer server,
 
     silc_packet_send_prepare(sock, 0, 0, buffer->len); 
     silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
-    silc_packet_encrypt(idata->send_key, idata->hmac_send, 
+    silc_packet_encrypt(idata->send_key, idata->hmac_send, idata->psn_send++, 
 			sock->outbuf, sock->outbuf->len);
 
     SILC_LOG_HEXDUMP(("Broadcasted packet, len %d", sock->outbuf->len),
