@@ -47,6 +47,10 @@ Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  and WHOIS command.  At least, this was a clear bug and a cause
 	  of one type of [<unknown>] buglet.
 
+	* WHOIS and IDENTIFY commands call the function
+	  silc_server_command_[whois/identify]_check function even if
+	  we are not router server.
+
 Tue Feb 13 19:55:59 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added --with-gmp configuration option.  If set the GMP

@@ -403,7 +403,7 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
 
-    if (!entry->nickname || !entry->username || !entry->userinfo) {
+    if (!entry->nickname || !entry->username) {
       SilcBuffer tmpbuf;
       unsigned short old_ident;
 
@@ -464,6 +464,11 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
     if (clients_count > 1 && i == clients_count - 1)
       status = SILC_STATUS_LIST_END;
 
+    /* Sanity check, however these should never fail. However, as
+       this sanity check has been added here they have failed. */
+    if (!entry->nickname || !entry->username)
+      continue;
+      
     /* Send WHOIS reply */
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
     tmp = silc_argument_get_first_arg(cmd->args, NULL);
@@ -476,7 +481,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
 
       memset(uh, 0, sizeof(uh));
       memset(nh, 0, sizeof(nh));
-      
+
       strncat(nh, entry->nickname, strlen(entry->nickname));
       if (!strchr(entry->nickname, '@')) {
 	strncat(nh, "@", 1);
@@ -636,8 +641,7 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
      mandatory fields that WHOIS command reply requires. Check for these and
      make query from the server who owns the client if some fields are 
      missing. */
-  if (server->server_type == SILC_ROUTER &&
-      !silc_server_command_whois_check(cmd, clients, clients_count)) {
+  if (!silc_server_command_whois_check(cmd, clients, clients_count)) {
     ret = -1;
     goto out;
   }
@@ -747,8 +751,7 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
      mandatory fields that WHOIS command reply requires. Check for these and
      make query from the server who owns the client if some fields are 
      missing. */
-  if (server->server_type == SILC_ROUTER &&
-      !silc_server_command_whois_check(cmd, clients, clients_count)) {
+  if (!silc_server_command_whois_check(cmd, clients, clients_count)) {
     ret = -1;
     goto out;
   }
@@ -1041,7 +1044,7 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
-  if (!cmd->pending && server->server_type == SILC_ROUTER &&
+  if (!cmd->pending && 
       !silc_server_command_identify_check(cmd, clients, clients_count)) {
     ret = -1;
     goto out;
@@ -1149,7 +1152,7 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
-  if (!cmd->pending && server->server_type == SILC_ROUTER &&
+  if (!cmd->pending && 
       !silc_server_command_identify_check(cmd, clients, clients_count)) {
     ret = -1;
     goto out;
