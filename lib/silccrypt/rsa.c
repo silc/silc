@@ -43,6 +43,7 @@
  * everything else too about cryptography.
  *
  */
+/* $Id$ */
 
 #include "silcincludes.h"
 #include "rsa.h"
@@ -111,29 +112,27 @@ SILC_PKCS_API_GET_PUBLIC_KEY(rsa)
   RsaKey *key = (RsaKey *)context;
   unsigned char *e, *n, *ret;
   unsigned int e_len, n_len;
-  unsigned char tmp[2];
+  unsigned char tmp[4];
 
   e = silc_mp_mp2bin(&key->e, &e_len);
   n = silc_mp_mp2bin(&key->n, &n_len);
 
-  *ret_len = e_len + 2 + n_len + 2;
+  *ret_len = e_len + 4 + n_len + 4;
   ret = silc_calloc(*ret_len, sizeof(unsigned char));
 
   /* Put the length of the e. */
-  tmp[0] = e_len >> 8;
-  tmp[1] = e_len;
-  memcpy(ret, tmp, 2);
+  SILC_PUT32_MSB(e_len, tmp);
+  memcpy(ret, tmp, 4);
 
   /* Put the e. */
-  memcpy(ret + 2, e, e_len);
+  memcpy(ret + 4, e, e_len);
 
   /* Put the length of the n. */
-  tmp[0] = n_len >> 8;
-  tmp[1] = n_len;
-  memcpy(ret + 2 + e_len, tmp, 2);
+  SILC_PUT32_MSB(n_len, tmp);
+  memcpy(ret + 4 + e_len, tmp, 4);
 
   /* Put the n. */
-  memcpy(ret + 2 + e_len + 2, n, n_len);
+  memcpy(ret + 4 + e_len + 4, n, n_len);
 
   memset(e, 0, e_len);
   memset(n, 0, n_len);
@@ -152,38 +151,35 @@ SILC_PKCS_API_GET_PRIVATE_KEY(rsa)
   RsaKey *key = (RsaKey *)context;
   unsigned char *e, *n, *d, *ret;
   unsigned int e_len, n_len, d_len;
-  unsigned char tmp[2];
+  unsigned char tmp[4];
 
   e = silc_mp_mp2bin(&key->e, &e_len);
   n = silc_mp_mp2bin(&key->n, &n_len);
   d = silc_mp_mp2bin(&key->d, &d_len);
 
-  *ret_len = e_len + 2 + n_len + 2 + d_len + 2;
+  *ret_len = e_len + 4 + n_len + 4 + d_len + 4;
   ret = silc_calloc(*ret_len, sizeof(unsigned char));
 
   /* Put the length of the e. */
-  tmp[0] = e_len >> 8;
-  tmp[1] = e_len;
-  memcpy(ret, tmp, 2);
+  SILC_PUT32_MSB(e_len, tmp);
+  memcpy(ret, tmp, 4);
 
   /* Put the e. */
-  memcpy(ret + 2, e, e_len);
+  memcpy(ret + 4, e, e_len);
 
   /* Put the length of the n. */
-  tmp[0] = n_len >> 8;
-  tmp[1] = n_len;
-  memcpy(ret + 2 + e_len, tmp, 2);
+  SILC_PUT32_MSB(n_len, tmp);
+  memcpy(ret + 4 + e_len, tmp, 4);
 
   /* Put the n. */
-  memcpy(ret + 2 + e_len + 2, n, n_len);
+  memcpy(ret + 4 + e_len + 4, n, n_len);
 
   /* Put the length of the d. */
-  tmp[0] = d_len >> 8;
-  tmp[1] = d_len;
-  memcpy(ret + 2 + e_len + 2 + n_len, tmp, 2);
+  SILC_PUT32_MSB(d_len, tmp);
+  memcpy(ret + 4 + e_len + 4 + n_len, tmp, 4);
 
   /* Put the n. */
-  memcpy(ret + 2 + e_len + 2 + n_len + 2, d, d_len);
+  memcpy(ret + 4 + e_len + 4 + n_len + 4, d, d_len);
 
   memset(e, 0, e_len);
   memset(n, 0, n_len);
@@ -200,31 +196,31 @@ SILC_PKCS_API_GET_PRIVATE_KEY(rsa)
 SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
-  unsigned char tmp[2];
-  unsigned short e_len, n_len;
+  unsigned char tmp[4];
+  unsigned int e_len, n_len;
 
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
 
-  memcpy(tmp, key_data, 2);
-  e_len = ((unsigned int)tmp[0] << 8) | ((unsigned int)tmp[1]);
+  memcpy(tmp, key_data, 4);
+  SILC_GET32_MSB(e_len, tmp);
   if (e_len > key_len) {
     silc_mp_clear(&key->e);
     silc_mp_clear(&key->n);
     return FALSE;
   }
 
-  silc_mp_bin2mp(key_data + 2, e_len, &key->e);
+  silc_mp_bin2mp(key_data + 4, e_len, &key->e);
   
-  memcpy(tmp, key_data + 2 + e_len, 2);
-  n_len = ((unsigned int)tmp[0] << 8) | ((unsigned int)tmp[1]);
+  memcpy(tmp, key_data + 4 + e_len, 4);
+  SILC_GET32_MSB(n_len, tmp);
   if (e_len + n_len > key_len) {
     silc_mp_clear(&key->e);
     silc_mp_clear(&key->n);
     return FALSE;
   }
 
-  silc_mp_bin2mp(key_data + 2 + e_len + 2, n_len, &key->n);
+  silc_mp_bin2mp(key_data + 4 + e_len + 4, n_len, &key->n);
 
   return TRUE;
 }
@@ -236,42 +232,42 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
 SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
-  unsigned char tmp[2];
-  unsigned short e_len, n_len, d_len;
+  unsigned char tmp[4];
+  unsigned int e_len, n_len, d_len;
 
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
   silc_mp_init(&key->d);
 
-  memcpy(tmp, key_data, 2);
-  e_len = ((unsigned int)tmp[0] << 8) | ((unsigned int)tmp[1]);
+  memcpy(tmp, key_data, 4);
+  SILC_GET32_MSB(e_len, tmp);
   if (e_len > key_len) {
     silc_mp_clear(&key->e);
     silc_mp_clear(&key->n);
     return FALSE;
   }
 
-  silc_mp_bin2mp(key_data + 2, e_len, &key->e);
+  silc_mp_bin2mp(key_data + 4, e_len, &key->e);
   
-  memcpy(tmp, key_data + 2 + e_len, 2);
-  n_len = ((unsigned int)tmp[0] << 8) | ((unsigned int)tmp[1]);
+  memcpy(tmp, key_data + 4 + e_len, 4);
+  SILC_GET32_MSB(n_len, tmp);
   if (e_len + n_len > key_len) {
     silc_mp_clear(&key->e);
     silc_mp_clear(&key->n);
     return FALSE;
   }
 
-  silc_mp_bin2mp(key_data + 2 + e_len + 2, n_len, &key->n);
+  silc_mp_bin2mp(key_data + 4 + e_len + 4, n_len, &key->n);
 
-  memcpy(tmp, key_data + 2 + e_len + 2 + n_len, 2);
-  d_len = ((unsigned int)tmp[0] << 8) | ((unsigned int)tmp[1]);
+  memcpy(tmp, key_data + 4 + e_len + 4 + n_len, 4);
+  SILC_GET32_MSB(d_len, tmp);
   if (e_len + n_len + d_len > key_len) {
     silc_mp_clear(&key->e);
     silc_mp_clear(&key->n);
     return FALSE;
   }
 
-  silc_mp_bin2mp(key_data + 2 + e_len + 2 + n_len + 2, d_len, &key->d);
+  silc_mp_bin2mp(key_data + 4 + e_len + 4 + n_len + 4, d_len, &key->d);
 
   return TRUE;
 }

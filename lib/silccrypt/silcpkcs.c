@@ -17,6 +17,7 @@
   GNU General Public License for more details.
 
 */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -342,7 +343,7 @@ silc_pkcs_public_key_encode(SilcPublicKey public_key, unsigned int *len)
 		     SILC_STR_UI_SHORT(strlen(public_key->identifier)),
 		     SILC_STR_UI32_STRING(public_key->identifier),
 		     SILC_STR_UI_XNSTRING(public_key->pk, 
-					    public_key->pk_len),
+					  public_key->pk_len),
 		     SILC_STR_END);
   if (len)
     *len = public_key->len;
@@ -758,7 +759,7 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
       break;
     }
 
-    if (!silc_pkcs_public_key_decode(data, len, public_key)) {
+    if (!data || !silc_pkcs_public_key_decode(data, len, public_key)) {
       memset(old, 0, data_len);
       silc_free(old);
       return FALSE;
@@ -810,7 +811,7 @@ int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
       break;
     }
 
-    if (!silc_pkcs_private_key_decode(data, len, private_key)) {
+    if (!data || !silc_pkcs_private_key_decode(data, len, private_key)) {
       memset(old, 0, data_len);
       silc_free(old);
       return FALSE;
