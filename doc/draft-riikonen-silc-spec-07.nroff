@@ -1181,7 +1181,7 @@ The receiver will compute the signature using the random data received
 in the payload, the ID associated to the connection and the public key
 (or certificate) received in the SKE protocol.  After computing the
 receiver MUST verify the signature.  Also in case of public key
-authenticatio this payload is encrypted.
+authentication this payload is encrypted.
 
 
 .ti 0
