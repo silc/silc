@@ -99,7 +99,7 @@ int mybot_start(void)
 
      Oh, and if the key pair doesn't exist, we create one here
      automatically, and save them to files for future. */
-  if (!silc_load_key_pair("mybot.pub", "mybot.prv", NULL,
+  if (!silc_load_key_pair("mybot.pub", "mybot.prv", "",
 			  &mybot->client->pkcs,
 			  &mybot->client->public_key,
 			  &mybot->client->private_key)) {
@@ -107,7 +107,7 @@ int mybot_start(void)
        nice ready routine for that too.  Let's do 2048 bit RSA key pair. */
     fprintf(stdout, "MyBot: Key pair does not exist, generating it.\n");
     if (!silc_create_key_pair("rsa", 2048, "mybot.pub", "mybot.prv", NULL,
-			      NULL, &mybot->client->pkcs,
+			      "", &mybot->client->pkcs,
 			      &mybot->client->public_key,
 			      &mybot->client->private_key, FALSE)) {
       perror("Could not generated key pair");
