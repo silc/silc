@@ -28,7 +28,7 @@ E: bostik@lut.fi
 W: http://www.lut.fi/~bostik
 D: Server runs as a daemon on dedicated account
 D: Fixed inconsistencies in server side code routine names
-D: Transition to new configuration file format
+D: Man-pages
 S: Skinnarilankatu 28 E 2
 S: 53850 Lappeenranta
 S: Finland

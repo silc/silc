@@ -5,8 +5,6 @@ TODO for Irssi SILC Client 1.0
 
  o UTF-8 decode WHOIS userinfos, topic, etc.
 
- o Manaul file for silc(1) and silc.conf.
-
  o c0ffee's MIME signal
 
  o SILC protocol version 1.2 integration
@@ -25,8 +23,6 @@ TODO for SILC Server 1.0
 
  	o Add special handling in router and server for "connection
 	  timed out" error.  Be optimistic.
-
- o Manual file for silcd(8) and silcd.conf.
 
  o SILC protocol version 1.2 integration
 

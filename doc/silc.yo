@@ -22,12 +22,13 @@ key and private messages with session keys.  It is also possible to use
 private channel keys and private message keys in addition of server
 generated keys.
 
-bf(Silc) supports em(passphrase) and public key authentication based on
-em(digital signatures), when connecting to SILC server.  bf(Silc) also supports
-key exchange (key agreement) between other bf(Silc) users in the SILC
-network to negotiate secret key material.  This key material then can be
-used to secure for example private messages.  It is also possible to exchange
-public keys and certificates in the SILC network between clients and servers.
+bf(Silc) supports em(passphrase) authentication and public key authentication
+based on em(digital signatures), when connecting to SILC server.  bf(Silc)
+also supports key exchange (key agreement) between other bf(Silc) users in
+the SILC network to negotiate secret key material.  This key material then
+can be used to secure for example private messages.  It is also possible to
+exchange public keys and certificates in the SILC network between clients
+and servers.
 
 The bf(silc) also supports em(detaching) from the SILC network by closing
 the connection to the server but without quitting from the network.  Next
@@ -135,6 +136,29 @@ bf(--pkcs)=em(PKCS)       Set the public key algorithm of key pair.  For example
 bf(--bits)=em(VALUE)       Set the length of public key pair, in bits.
 
 
+manpagesection(CONFIGURATION FILE)
+The bf(silc) configuration file is bf(~/.silc/silc.conf) and can be used
+to configure the behavriou of the client.  The configuration file format
+is equivalent to Irssi IRC client's configuration file.  See the 
+documentation for the configuration file at bf(http://irssi.org).
+
+There are a few bf(silc) configuration settings in em(silc.conf) which
+can be configured in em(settings) section under em("server") block.
+They can be set also with the bf(/SET) command in the bf(silc) client.
+
+bf(crypto_default_cipher)
+quote(The default cipher to use to secure the session to the server.
+Values can be for example bf(aes-256-cbc), bf(aes-192-cbc), bf(aes-128-cbc),
+bf(twofish-256-cbc), bf(twofish-192-cbc), bf(twofish-128-cbc).)
+
+bf(crypto_default_hash)
+quote(The default hash function to use in session with the server. Values
+can be bf(sha1) or bf(md5).)
+
+bf(crypto_default_hmac)
+quote(The default HMAC to be use in session with the server.  Value can
+be bf(hmac-sha1-96), bf(hmac-md5-96), bf(hmac-sha1) or bf(hmac-md5).)
+
 
 manpagefiles()
 bf(~/.silc/silc.conf)
@@ -163,7 +187,7 @@ other information.)
 
 
 manpageseealso()
-bf(silcd(8)) bf(silc(1))
+bf(silcd(8)) bf(silcd.conf(5))
 
 
 manpagesection(NETWORK RESOURCES)

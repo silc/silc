@@ -91,12 +91,12 @@ dist-hook:
 endif
 
 if SILC_DIST_TOOLKIT
-SILC_EXTRA_DIST = toolkit examples
+SILC_EXTRA_DIST = toolkit examples silc.1 silcd.8 silcd.conf.5
 else
 if SILC_DIST_SERVER
-SILC_EXTRA_DIST = examples
+SILC_EXTRA_DIST = examples silcd.8 silcd.conf.5
 else
-SILC_EXTRA_DIST =
+SILC_EXTRA_DIST = silc.1
 endif
 endif
 
