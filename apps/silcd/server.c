@@ -1167,7 +1167,7 @@ static void
 silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 					 void *context)
 {
-  SilcServerKEInternalContext *proto_ctx = 
+  SilcServerKEInternalContext *proto_ctx =
     (SilcServerKEInternalContext *)context;
   SilcServer server = (SilcServer)proto_ctx->server;
   SilcServerConfigClient *cconfig = NULL;
@@ -1216,7 +1216,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     /* The connection is denied */
     SILC_LOG_INFO(("Connection %s (%s) is denied",
 		   sock->hostname, sock->ip));
-    silc_server_disconnect_remote(server, sock, 
+    silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_BANNED_FROM_SERVER,
 				  deny->reason);
     server->stat.conn_failures++;
@@ -1241,7 +1241,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
 		   sock->ip));
     silc_server_disconnect_remote(server, sock,
-				  SILC_STATUS_ERR_BANNED_FROM_SERVER);
+				  SILC_STATUS_ERR_BANNED_FROM_SERVER, NULL);
     server->stat.conn_failures++;
     silc_free(proto_ctx);
     return;
