@@ -87,6 +87,8 @@ struct SilcServerStruct {
 				        router to a backup router. */
   unsigned int backup_noswitch: 1;   /* Set if we've won't switch to
 					become primary (we are backup) */
+  unsigned int backup_closed  : 1;   /* Set if backup closed connection.
+					Do not allow resuming in this case. */
   unsigned int wait_backup    : 1;   /* Set if we are waiting for backup
 				        router to connect to us. */
   unsigned int server_shutdown: 1;   /* Set when shutting down */

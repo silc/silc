@@ -596,7 +596,7 @@ void silc_server_notify(SilcServer server,
 				      SILC_ID_SERVER, channel->cipher,
 				      channel->hmac_name,
 				      channel->passphrase,
-				      channel->founder_key);
+				      channel->founder_key, NULL);
       }
 
       /* If we received same mode from our primary check whether founder
@@ -617,6 +617,48 @@ void silc_server_notify(SilcServer server,
 					    &channel->founder_key);
       }
 
+      /* Check also for channel public key list */
+      if (server->server_type == SILC_SERVER &&
+	  sock == SILC_PRIMARY_ROUTE(server) &&
+	  mode & SILC_CHANNEL_MODE_CHANNEL_AUTH) {
+	SilcBuffer chpklist;
+	SilcBuffer sidp;
+	unsigned char mask[4];
+
+	SILC_LOG_DEBUG(("Channel public key list received from router"));
+	tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
+	if (!tmp)
+	  break;
+
+	/* Set the router's list, and send the notify to channel too so that
+	   channel gets the list */
+	silc_server_set_channel_pk_list(server, sock, channel, tmp, tmp_len);
+	chpklist = silc_server_get_channel_pk_list(server, channel,
+						   FALSE, FALSE);
+	if (!chpklist)
+	  break;
+	sidp = silc_id_payload_encode(server->router->id, SILC_ID_SERVER);
+	SILC_PUT32_MSB(channel->mode, mask);
+	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+					   SILC_NOTIFY_TYPE_CMODE_CHANGE, 7,
+					   sidp->data, sidp->len,
+					   mask, 4,
+					   channel->cipher,
+					   channel->cipher ?
+					   strlen(channel->cipher) : 0,
+					   channel->hmac_name,
+					   channel->hmac_name ?
+					   strlen(channel->hmac_name) : 0,
+					   channel->passphrase,
+					   channel->passphrase ?
+					   strlen(channel->passphrase) : 0,
+					   NULL, 0,
+					   chpklist->data, chpklist->len);
+	silc_buffer_free(sidp);
+	silc_buffer_free(chpklist);
+	goto out;
+      }
+
       break;
     }
 
@@ -631,7 +673,7 @@ void silc_server_notify(SilcServer server,
 				      SILC_ID_SERVER, channel->cipher,
 				      channel->hmac_name,
 				      channel->passphrase,
-				      channel->founder_key);
+				      channel->founder_key, NULL);
 	goto out;
       }
     } else {
@@ -646,7 +688,7 @@ void silc_server_notify(SilcServer server,
 				      SILC_ID_SERVER, channel->cipher,
 				      channel->hmac_name,
 				      channel->passphrase,
-				      channel->founder_key);
+				      channel->founder_key, NULL);
 	goto out;
       }
 
@@ -665,7 +707,7 @@ void silc_server_notify(SilcServer server,
 					  SILC_ID_SERVER, channel->cipher,
 					  channel->hmac_name,
 					  channel->passphrase,
-					  channel->founder_key);
+					  channel->founder_key, NULL);
 	    silc_hash_table_list_reset(&htl);
 	    goto out;
 	  }
@@ -728,7 +770,7 @@ void silc_server_notify(SilcServer server,
 				      mode, server->id, SILC_ID_SERVER,
 				      channel->cipher,
 				      channel->hmac_name,
-				      channel->passphrase, NULL);
+				      channel->passphrase, NULL, NULL);
 	if (channel->founder_key)
 	  silc_pkcs_public_key_free(channel->founder_key);
 	channel->founder_key = NULL;
@@ -743,7 +785,27 @@ void silc_server_notify(SilcServer server,
 				    mode, server->id, SILC_ID_SERVER,
 				    channel->cipher,
 				    channel->hmac_name,
-				    channel->passphrase, NULL);
+				    channel->passphrase, NULL, NULL);
+    }
+
+    /* Process channel public key(s). */
+    tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
+    if (tmp && mode & SILC_CHANNEL_MODE_CHANNEL_AUTH) {
+      SilcStatus ret =
+	silc_server_set_channel_pk_list(server, sock, channel, tmp, tmp_len);
+
+      /* If list was set already we will enforce the same list to server. */
+      if (ret == SILC_STATUS_ERR_OPERATION_ALLOWED) {
+	SilcBuffer chpklist = silc_server_get_channel_pk_list(server, channel,
+							      TRUE, FALSE);
+	silc_server_send_notify_cmode(server, sock, FALSE, channel,
+				      mode, server->id, SILC_ID_SERVER,
+				      channel->cipher,
+				      channel->hmac_name,
+				      channel->passphrase, NULL,
+				      chpklist);
+	silc_buffer_free(chpklist);
+      }
     }
 
     /* Send the same notify to the channel */
@@ -754,10 +816,18 @@ void silc_server_notify(SilcServer server,
     /* Change mode */
     channel->mode = mode;
 
+    /* Cleanup if some modes are removed */
+
     if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) &&
 	channel->founder_key) {
       silc_pkcs_public_key_free(channel->founder_key);
       channel->founder_key = NULL;
+    }
+
+    if (!(channel->mode & SILC_CHANNEL_MODE_CHANNEL_AUTH) &&
+	channel->channel_pubkeys) {
+      silc_hash_table_free(channel->channel_pubkeys);
+      channel->channel_pubkeys = NULL;
     }
 
     break;
@@ -1304,9 +1374,9 @@ void silc_server_notify(SilcServer server,
 	sock = server_entry->connection;
 	SILC_LOG_DEBUG(("Closing connection %s after SERVER_SIGNOFF",
 		       sock->hostname));
-	SILC_SET_DISCONNECTING(sock);
 	if (sock->user_data)
 	  silc_server_free_sock_user_data(server, sock, NULL);
+	SILC_SET_DISCONNECTING(sock);
 	silc_server_close_connection(server, sock);
       }
 
@@ -2550,21 +2620,15 @@ SilcServerEntry silc_server_new_server(SilcServer server,
      protocol has been completed. */
   if (sock->type == SILC_SOCKET_TYPE_ROUTER &&
       silc_server_backup_replaced_get(server, server_id, NULL)) {
-    /* Send packet to the server indicating that it cannot use this
+    /* Send packet to the router indicating that it cannot use this
        connection as it has been replaced by backup router. */
-    SilcBuffer packet = silc_buffer_alloc(2);
-    silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-    silc_buffer_format(packet,
-		       SILC_STR_UI_CHAR(SILC_SERVER_BACKUP_REPLACED),
-		       SILC_STR_UI_CHAR(0),
-		       SILC_STR_END);
-    silc_server_packet_send(server, sock,
-			    SILC_PACKET_RESUME_ROUTER, 0,
-			    packet->data, packet->len, TRUE);
-    silc_buffer_free(packet);
+    SILC_LOG_DEBUG(("Remote router has been replaced by backup router, "
+		    "disabling its connection"));
+
+    silc_server_backup_send_replaced(server, sock);
 
     /* Mark the router disabled. The data sent earlier will go but nothing
-       after this does not go to this connection. */
+       after this goes to this connection. */
     idata->status |= SILC_IDLIST_STATUS_DISABLED;
   } else {
     /* If it is router announce our stuff to it. */

@@ -291,8 +291,6 @@ bool silc_server_init(SilcServer server)
   if (server->config->debug_string) {
     silc_debug = TRUE;
     silc_log_set_debug_string(server->config->debug_string);
-  } else {
-    silc_debug = FALSE;
   }
 #endif /* SILC_DEBUG */
 
@@ -436,10 +434,7 @@ bool silc_server_init(SilcServer server)
   /* Register protocols */
   silc_server_protocols_register();
 
-  /* Add the first task to the scheduler. This is task that is executed by
-     timeout. It expires as soon as the caller calls silc_server_run. This
-     task performs authentication protocol and key exchange with our
-     primary router. */
+  /* Create connections to configured routers. */
   silc_server_create_connections(server);
 
   /* Add listener task to the scheduler. This task receives new connections
@@ -784,6 +779,8 @@ void silc_server_stop(SilcServer server)
 
 	silc_schedule_task_del_by_context(server->schedule,
 					  server->sockets[i]);
+	silc_schedule_task_del_by_fd(server->schedule,
+				     server->sockets[i]->sock);
 	silc_server_disconnect_remote(server, server->sockets[i],
 				      SILC_STATUS_OK,
 				      "Server is shutting down");
@@ -1304,8 +1301,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_free(ctx->dest_id);
+    sock->protocol = NULL;
     silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
 				  NULL);
+    sock->protocol = protocol;
 
     /* Try reconnecting if configuration wants it */
     if (!sconn->no_reconnect) {
@@ -1375,8 +1374,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   if (!id_entry) {
     silc_free(ctx->dest_id);
     SILC_LOG_ERROR(("Cannot add new server entry to cache"));
+    sock->protocol = NULL;
     silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
 				  NULL);
+    sock->protocol = protocol;
     goto out;
   }
 
@@ -1411,6 +1412,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       SILC_LOG_DEBUG(("This connection is our primary router"));
       server->id_entry->router = id_entry;
       server->router = id_entry;
+      server->router->server_type = SILC_ROUTER;
       server->standalone = FALSE;
 
       /* If we are router then announce our possible servers.  Backup
@@ -1432,6 +1434,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
     }
   } else {
     /* Add this server to be our backup router */
+    id_entry->server_type = SILC_BACKUP_ROUTER;
     silc_server_backup_add(server, id_entry, sconn->backup_replace_ip,
 			   sconn->backup_replace_port, FALSE);
   }
@@ -1673,7 +1676,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   if ((protocol->state == SILC_PROTOCOL_STATE_ERROR) ||
       (protocol->state == SILC_PROTOCOL_STATE_FAILURE)) {
     /* Error occured during protocol */
-    SILC_LOG_DEBUG(("Error key exchange protocol"));
+    SILC_LOG_DEBUG(("Error in key exchange protocol"));
     silc_protocol_free(protocol);
     sock->protocol = NULL;
     silc_ske_free_key_material(ctx->keymat);
@@ -1686,9 +1689,19 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     silc_server_config_unref(&ctx->sconfig);
     silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
-    silc_server_disconnect_remote(server, sock,
-				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED,
-				  NULL);
+
+    if (!SILC_IS_DISCONNECTING(sock)) {
+      SILC_LOG_INFO(("Key exchange failed for %s:%d [%s]", sock->hostname,
+		     sock->port,
+		     (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		      sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		      sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		      "Router")));
+      silc_server_disconnect_remote(server, sock,
+				    SILC_STATUS_ERR_KEY_EXCHANGE_FAILED,
+				    NULL);
+    }
+
     server->stat.auth_failures++;
     return;
   }
@@ -1804,8 +1817,17 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     silc_server_config_unref(&ctx->sconfig);
     silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
-    silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
-				  NULL);
+
+    if (!SILC_IS_DISCONNECTING(sock)) {
+      SILC_LOG_INFO(("Authentication failed for %s:%d [%s]", sock->hostname,
+		     sock->port,
+		     (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		      sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		      sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		      "Router")));
+      silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
+				    NULL);
+    }
     server->stat.auth_failures++;
     return;
   }
@@ -1840,6 +1862,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 					    router->backup_replace_ip, 0)) {
 	  SILC_LOG_INFO(("Will not accept connections because we do "
 			 "not have backup router connection established"));
+	  sock->protocol = NULL;
 	  silc_server_disconnect_remote(server, sock,
 					SILC_STATUS_ERR_PERM_DENIED,
 					"We do not have connection to backup "
@@ -1868,6 +1891,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (!client) {
 	SILC_LOG_ERROR(("Could not add new client to cache"));
 	silc_free(sock->user_data);
+	sock->protocol = NULL;
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_AUTH_FAILED, NULL);
 	server->stat.auth_failures++;
@@ -1923,6 +1947,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  !SILC_PRIMARY_ROUTE(server)) {
 	SILC_LOG_INFO(("Will not accept server connection because we do "
 		       "not have primary router connection established"));
+	sock->protocol = NULL;
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_PERM_DENIED,
 				      "We do not have connection to primary "
@@ -2011,6 +2036,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 					    router->backup_replace_ip, 0)) {
 	  SILC_LOG_INFO(("Will not accept connections because we do "
 			 "not have backup router connection established"));
+	  sock->protocol = NULL;
 	  silc_server_disconnect_remote(server, sock,
 					SILC_STATUS_ERR_PERM_DENIED,
 					"We do not have connection to backup "
@@ -2056,6 +2082,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (!new_server) {
 	SILC_LOG_ERROR(("Could not add new server to cache"));
 	silc_free(sock->user_data);
+	sock->protocol = NULL;
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_AUTH_FAILED, NULL);
 	server->stat.auth_failures++;
@@ -2176,7 +2203,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 
   if (type == SILC_TASK_WRITE) {
     /* Do not send data to disconnected connection */
-    if (SILC_IS_DISCONNECTED(sock)) {
+    if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
       SILC_LOG_DEBUG(("Disconnected socket connection, cannot send"));
       return;
     }
@@ -2207,9 +2234,9 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router")));
 
-      SILC_SET_DISCONNECTING(sock);
       if (sock->user_data)
 	silc_server_free_sock_user_data(server, sock, NULL);
+      SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
     }
     return;
@@ -2229,9 +2256,9 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router"), strerror(errno)));
 
-      SILC_SET_DISCONNECTING(sock);
       if (sock->user_data)
 	silc_server_free_sock_user_data(server, sock, NULL);
+      SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
     }
     return;
@@ -2251,10 +2278,18 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     }
 
     SILC_LOG_DEBUG(("Premature EOF from connection %d", sock->sock));
-    SILC_SET_DISCONNECTING(sock);
 
     if (sock->user_data) {
       char tmp[128];
+
+      /* If backup disconnected then mark that resuming willl not be allowed */
+      if (server->server_type == SILC_ROUTER && !server->backup_router &&
+	  sock->type == SILC_SOCKET_TYPE_SERVER && sock->user_data) {
+	SilcServerEntry server_entry = sock->user_data;
+	if (server_entry->server_type == SILC_BACKUP_ROUTER)
+	  server->backup_closed = TRUE;
+      }
+
       if (silc_socket_get_error(sock, tmp, sizeof(tmp) - 1))
 	silc_server_free_sock_user_data(server, sock, tmp);
       else
@@ -2264,6 +2299,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
       silc_server_create_connections(server);
     }
 
+    SILC_SET_DISCONNECTING(sock);
     silc_server_close_connection(server, sock);
     return;
   }
@@ -2307,9 +2343,9 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
       server->backup_noswitch = TRUE;
 
-    SILC_SET_DISCONNECTING(sock);
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock, NULL);
+    SILC_SET_DISCONNECTING(sock);
     silc_server_close_connection(server, sock);
   }
 }
@@ -2450,9 +2486,9 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
       if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
 	server->backup_noswitch = TRUE;
 
-      SILC_SET_DISCONNECTING(sock);
       if (sock->user_data)
 	silc_server_free_sock_user_data(server, sock, NULL);
+      SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
     }
 
@@ -2522,10 +2558,18 @@ void silc_server_packet_parse_type(SilcServer server,
       /* Do not switch to backup in case of error */
       server->backup_noswitch = (status == SILC_STATUS_OK ? FALSE : TRUE);
 
+      /* If backup disconnected then mark that resuming willl not be allowed */
+      if (server->server_type == SILC_ROUTER && !server->backup_router &&
+	  sock->type == SILC_SOCKET_TYPE_SERVER && sock->user_data) {
+	SilcServerEntry server_entry = sock->user_data;
+	if (server_entry->server_type == SILC_BACKUP_ROUTER)
+	  server->backup_closed = TRUE;
+      }
+
       /* Handle the disconnection from our end too */
-      SILC_SET_DISCONNECTING(sock);
       if (sock->user_data && SILC_IS_LOCAL(sock->user_data))
 	silc_server_free_sock_user_data(server, sock, NULL);
+      SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
       server->backup_noswitch = FALSE;
     }
@@ -2554,6 +2598,19 @@ void silc_server_packet_parse_type(SilcServer server,
     if (sock->protocol) {
       sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
       silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
+      break;
+    }
+
+    /* Check for failure START_USE from backup router */
+    if (server->server_type == SILC_SERVER &&
+	server->backup_primary && packet->buffer->len == 4) {
+      SilcUInt32 type;
+      SILC_GET32_MSB(type, packet->buffer->data);
+      if (type == SILC_SERVER_BACKUP_START_USE) {
+	/* Attempt to reconnect to primary */
+	SILC_LOG_DEBUG(("Received failed START_USE from backup %s", sock->ip));
+	silc_server_create_connections(server);
+      }
     }
     break;
 
@@ -2944,8 +3001,11 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
   SilcServer server = app_context;
   SilcSocketConnection sock = context;
 
+  SILC_LOG_DEBUG(("Deleting socket %p", sock));
+
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);
+  server->sockets[sock->sock] = NULL;
 
   /* We won't listen for this connection anymore */
   silc_schedule_task_del_by_fd(server->schedule, sock->sock);
@@ -2961,53 +3021,49 @@ void silc_server_close_connection(SilcServer server,
 {
   char tmp[128];
 
-  if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
+  if (SILC_IS_DISCONNECTED(sock)) {
+    silc_schedule_task_del_by_fd(server->schedule, sock->sock);
     silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_close_connection_final,
 			   (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_NORMAL);
+    server->sockets[sock->sock] = NULL;
+    return;
+  }
+
+  /* If any protocol is active cancel its execution. It will call
+     the final callback which will finalize the disconnection. */
+  if (sock->protocol && sock->protocol->protocol &&
+      sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
+    SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
+    silc_protocol_cancel(sock->protocol, server->schedule);
+    sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
+    silc_protocol_execute_final(sock->protocol, server->schedule);
+    sock->protocol = NULL;
     return;
   }
 
   memset(tmp, 0, sizeof(tmp));
   silc_socket_get_error(sock, tmp, sizeof(tmp));
   SILC_LOG_INFO(("Closing connection %s:%d [%s] %s", sock->hostname,
-                  sock->port,
-                  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
-                   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
-                   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
-                   "Router"), tmp[0] ? tmp : ""));
+		 sock->port,
+		 (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		  sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		  sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		  "Router"), tmp[0] ? tmp : ""));
 
-  /* Unregister all tasks */
-  silc_schedule_task_del_by_fd(server->schedule, sock->sock);
-
-  server->sockets[sock->sock] = NULL;
-
-  /* If sock->user_data is NULL then we'll check for active protocols
-     here since the silc_server_free_sock_user_data has not been called
-     for this connection. */
-  if (!sock->user_data) {
-    /* If any protocol is active cancel its execution. It will call
-       the final callback which will finalize the disconnection. */
-    if (sock->protocol && sock->protocol->protocol &&
-	sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
-      SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
-      silc_protocol_cancel(sock->protocol, server->schedule);
-      sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
-      silc_protocol_execute_final(sock->protocol, server->schedule);
-      sock->protocol = NULL;
-      return;
-    }
-  }
-
+  SILC_SET_DISCONNECTED(sock);
   silc_schedule_task_add(server->schedule, sock->sock,
 			 silc_server_close_connection_final,
 			 (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
+  server->sockets[sock->sock] = NULL;
 }
 
 /* Sends disconnect message to remote connection and disconnects the
-   connection. */
+   connection.  NOTE: If this is called from protocol callback
+   then sock->protocol must be set NULL before calling this, since
+   this routine dispatches protocol callbacks too. */
 
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
@@ -3022,7 +3078,8 @@ void silc_server_disconnect_remote(SilcServer server,
   if (!sock)
     return;
 
-  if (SILC_IS_DISCONNECTED(sock)) {
+  if (SILC_IS_DISCONNECTING(sock)) {
+    SILC_SET_DISCONNECTED(sock);
     silc_server_close_connection(server, sock);
     return;
   }
@@ -3061,7 +3118,7 @@ void silc_server_disconnect_remote(SilcServer server,
   silc_server_packet_queue_purge(server, sock);
 
   /* Mark the connection to be disconnected */
-  SILC_SET_DISCONNECTED(sock);
+  SILC_SET_DISCONNECTING(sock);
   silc_server_close_connection(server, sock);
 }
 
@@ -3151,6 +3208,17 @@ void silc_server_free_sock_user_data(SilcServer server,
 				     SilcSocketConnection sock,
 				     const char *signoff_message)
 {
+
+  /* If any protocol is active cancel its execution */
+  if (sock->protocol && sock->protocol->protocol &&
+      sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
+    SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
+    silc_protocol_cancel(sock->protocol, server->schedule);
+    sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
+    silc_protocol_execute_final(sock->protocol, server->schedule);
+    sock->protocol = NULL;
+  }
+
   switch (sock->type) {
   case SILC_SOCKET_TYPE_CLIENT:
     {
@@ -3197,15 +3265,21 @@ void silc_server_free_sock_user_data(SilcServer server,
 	    server->router = backup_router;
 	    server->router_connect = time(0);
 	    server->backup_primary = TRUE;
+	    backup_router->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
+
+	    /* Send START_USE to backup router to indicate we have switched */
+	    silc_server_backup_send_start_use(server,
+					      backup_router->connection,
+					      FALSE);
 	  } else {
 	    SILC_LOG_INFO(("We are now new primary router in this cell"));
 	    server->id_entry->router = NULL;
 	    server->router = NULL;
 	    server->standalone = TRUE;
-
-	    /* We stop here to take a breath */
-	    sleep(2);
 	  }
+
+	  /* We stop here to take a breath */
+	  sleep(2);
 
 	  if (server->server_type == SILC_BACKUP_ROUTER) {
 	    server->server_type = SILC_ROUTER;
@@ -3347,16 +3421,6 @@ void silc_server_free_sock_user_data(SilcServer server,
       silc_free(user_data);
       break;
     }
-  }
-
-  /* If any protocol is active cancel its execution */
-  if (sock->protocol && sock->protocol->protocol &&
-      sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
-    SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
-    silc_protocol_cancel(sock->protocol, server->schedule);
-    sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
-    silc_protocol_execute_final(sock->protocol, server->schedule);
-    sock->protocol = NULL;
   }
 
   sock->user_data = NULL;
@@ -4289,7 +4353,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
   SilcBuffer chidp, clidp, csidp;
-  SilcBuffer tmp, fkey = NULL;
+  SilcBuffer tmp, fkey = NULL, chpklist;
   int len;
   unsigned char mode[4];
   char *hmac;
@@ -4298,6 +4362,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
 
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   csidp = silc_id_payload_encode(server->id, SILC_ID_SERVER);
+  chpklist = silc_server_get_channel_pk_list(server, channel, TRUE, FALSE);
 
   /* CMODE notify */
   SILC_PUT32_MSB(channel->mode, mode);
@@ -4306,7 +4371,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
     fkey = silc_pkcs_public_key_payload_encode(channel->founder_key);
   tmp =
     silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CMODE_CHANGE,
-				       6, csidp->data, csidp->len,
+				       7, csidp->data, csidp->len,
 				       mode, sizeof(mode),
 				       NULL, 0,
 				       hmac, hmac ? strlen(hmac) : 0,
@@ -4314,7 +4379,9 @@ void silc_server_announce_get_channel_users(SilcServer server,
 				       channel->passphrase ?
 				       strlen(channel->passphrase) : 0,
 				       fkey ? fkey->data : NULL,
-				       fkey ? fkey->len : 0);
+				       fkey ? fkey->len : 0,
+				       chpklist ? chpklist->data : NULL,
+				       chpklist ? chpklist->len : 0);
   len = tmp->len;
   *channel_modes =
     silc_buffer_realloc(*channel_modes,
