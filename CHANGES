@@ -1,3 +1,8 @@
+Tue Apr  2 13:39:04 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Merged version 1.1.4 of zlib. Even if it not currently in use,
+	  it's good not to have security holes here.
+
 Mon Apr  1 20:15:10 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* ROBOdoc documented lib/silcutil/silcutil.h.
