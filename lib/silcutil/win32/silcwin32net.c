@@ -156,10 +156,54 @@ int silc_net_create_connection(int port, char *host)
 
 int silc_net_create_connection_async(int port, char *host)
 {
+  SOCKET sock;
+  int rval, err;
+  struct hostent *dest;
+  struct sockaddr_in desthost;
+
   SILC_LOG_DEBUG(("Creating connection (async) to host %s port %d", 
 		  host, port));
 
-  return silc_net_create_connection(port, host);
+  /* Do host lookup */
+  dest = gethostbyname(host);
+  if (!dest) {
+    SILC_LOG_ERROR(("Network (%s) unreachable", host));
+    return -1;
+  }
+
+  /* Set socket information */
+  memset(&desthost, 0, sizeof(desthost));
+  desthost.sin_port = htons(port);
+  desthost.sin_family = AF_INET;
+  memcpy(&desthost.sin_addr, dest->h_addr_list[0], sizeof(desthost.sin_addr));
+
+  /* Create the connection socket */
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock == INVALID_SOCKET) {
+    SILC_LOG_ERROR(("Cannot create socket"));
+    return -1;
+  }
+
+  /* Set socket to nonblocking mode */
+  silc_net_set_socket_nonblock(sock);
+
+  /* Connect to the host */
+  rval = connect(sock, (struct sockaddr *)&desthost, sizeof(desthost));
+  err = WSAGetLastError();
+  if (rval == SOCKET_ERROR && err != WSAEWOULDBLOCK) {
+    SILC_LOG_ERROR(("Cannot connect to remote host"));
+    shutdown(sock, 2);
+    closesocket(sock);
+    return -1;
+  }
+
+  /* Set appropriate options */
+  silc_net_set_socket_opt(sock, IPPROTO_TCP, TCP_NODELAY, 1);
+  silc_net_set_socket_opt(sock, SOL_SOCKET, SO_KEEPALIVE, 1);
+
+  SILC_LOG_DEBUG(("Connection created"));
+
+  return sock;
 }
 
 /* Closes the connection by closing the socket connection. */
@@ -191,5 +235,6 @@ bool silc_net_addr2bin(const char *addr, unsigned char *bin,
 
 int silc_net_set_socket_nonblock(int sock)
 {
-  return 0;
+  unsigned long on = 1;
+  return ioctlsocket(sock, FIONBIO, &on);
 }
