@@ -39,10 +39,10 @@ silc_server_remove_clients_channels(SilcServer server,
   SilcChannelClientEntry chl, chl2;
   SilcHashTableList htl, htl2;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (!client)
     return;
+
+  SILC_LOG_DEBUG(("Remove client from all channels"));
 
   if (silc_hash_table_find(clients, client, NULL, NULL))
     silc_hash_table_del(clients, client);
@@ -119,13 +119,13 @@ silc_server_remove_clients_channels(SilcServer server,
   silc_hash_table_list_reset(&htl);
 }
 
-/* This function is used to remove all client entries by the server `entry'.
-   This is called when the connection is lost to the server. In this case
-   we must invalidate all the client entries owned by the server `entry'. 
-   If the `server_signoff' is TRUE then the SERVER_SIGNOFF notify is
+/* This function removes all client entries that are originated from
+   `router' and are owned by `entry'.  `router' and `entry' can be same
+   too.  If `server_signoff' is TRUE then SERVER_SIGNOFF notify is 
    distributed to our local clients. */
 
-bool silc_server_remove_clients_by_server(SilcServer server, 
+bool silc_server_remove_clients_by_server(SilcServer server,
+					  SilcServerEntry router,
 					  SilcServerEntry entry,
 					  bool server_signoff)
 {
@@ -143,7 +143,11 @@ bool silc_server_remove_clients_by_server(SilcServer server,
   if (!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return FALSE;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Removing clients by %s",
+		  entry->server_name ? entry->server_name : "server"));
+
+  if (!router)
+    router = entry;
 
   /* Allocate the hash table that holds the channels that require
      channel key re-generation after we've removed this server's clients
@@ -167,18 +171,15 @@ bool silc_server_remove_clients_by_server(SilcServer server,
   }
 
   if (silc_idcache_get_all(server->local_list->clients, &list)) {
-
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
 
-	if (client->router != entry) {
+	/* If client is not registered, is not originated from `router'
+	   or is not owned by `entry', skip it. */
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	    client->router != router ||
+	    !SILC_ID_COMPARE(client->id, entry->id, client->id->ip.data_len)) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
@@ -231,14 +232,12 @@ bool silc_server_remove_clients_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
-	
-	if (client->router != entry) {
+
+	/* If client is not registered, is not originated from `router'
+	   or is not owned by `entry', skip it. */
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	    client->router != router ||
+	    !SILC_ID_COMPARE(client->id, entry->id, client->id->ip.data_len)) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
@@ -290,8 +289,8 @@ bool silc_server_remove_clients_by_server(SilcServer server,
   if (server_signoff) {
     SilcBuffer args, not;
 
-    SILC_LOG_DEBUG(("Sending SERVER_SIGNOFF for %d clients",
-		    argc - 1));
+    SILC_LOG_DEBUG(("Sending SERVER_SIGNOFF for %s with %d clients",
+		    silc_id_render(entry->id, SILC_ID_SERVER), argc - 1));
 
     /* Send SERVER_SIGNOFF notify to our primary router */
     if (server->router != entry) {
@@ -614,7 +613,7 @@ void silc_server_update_clients_by_server(SilcServer server,
     /* Now remove the clients that are still marked as orignated from the
        `from'. These are the clients that really was owned by the `from' and
        not just exist behind the `from'. */
-    silc_server_remove_clients_by_server(server, from, TRUE);
+    silc_server_remove_clients_by_server(server, from, from, TRUE);
 }
 
 /* Updates servers that are from `from' to be originated from `to'.  This
@@ -781,6 +780,79 @@ void silc_server_local_servers_toggle_enabled(SilcServer server,
     silc_idcache_list_free(list);
   }
 }
+
+/* Removes servers that are originated from the `from'.  The server
+   entry is deleted in this function.  If `remove_clients' is TRUE then
+   all clients originated from the server are removed too, and server
+   signoff is sent.  Note that this does not remove the `from'.  This
+   also does not remove locally connected servers. */
+
+void silc_server_remove_servers_by_server(SilcServer server,
+					  SilcServerEntry from,
+					  bool remove_clients)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcServerEntry server_entry = NULL;
+
+  SILC_LOG_DEBUG(("Removing servers by %s",
+		  from->server_name ? from->server_name : "server"));
+
+  if (silc_idcache_get_all(server->local_list->servers, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	server_entry = (SilcServerEntry)id_cache->context;
+	if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
+	  server_entry->router != from || server_entry == from) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
+
+	/* Remove clients owned by this server */
+	if (remove_clients)
+	  silc_server_remove_clients_by_server(server, from, server_entry,
+					       TRUE);
+
+	/* Remove the server */
+	silc_idlist_del_server(server->local_list, server_entry);
+
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+
+  if (silc_idcache_get_all(server->global_list->servers, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	server_entry = (SilcServerEntry)id_cache->context;
+	if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
+	  server_entry->router != from || server_entry == from) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
+
+	/* Remove clients owned by this server */
+	if (remove_clients)
+	  silc_server_remove_clients_by_server(server, from, server_entry,
+					       TRUE);
+
+	/* Remove the server */
+	silc_idlist_del_server(server->global_list, server_entry);
+
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+}
+
 /* Removes channels that are from `from. */
 
 void silc_server_remove_channels_by_server(SilcServer server, 

@@ -1,3 +1,13 @@
+Wed Jun 26 15:14:12 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Stop for a couple seconds after badkup router has become
+	  primary router.  Affected file silcd/server.c.
+
+	* Added silc_server_remove_servers_by_server, which is used
+	  to remove servers originated from some other server.  Also
+	  clients of those servers can be removed too.  Affected file
+	  silcd/server_util.[ch].
+
 Wed Jun 26 10:38:11 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a bug in silc_string_regexify which did not add '^'

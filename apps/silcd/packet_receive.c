@@ -1298,9 +1298,14 @@ void silc_server_notify(SilcServer server,
     if (SILC_IS_LOCAL(server_entry))
       break;
 
-    /* Free all client entries that this server owns as they will
-       become invalid now as well. */
-    silc_server_remove_clients_by_server(server, server_entry, TRUE);
+    /* Remove all servers that are originated from this server, and
+       remove the clients of those servers too. */
+    silc_server_remove_servers_by_server(server, server_entry, TRUE);
+
+    /* Remove the clients that this server owns as they will become
+       invalid now too. */
+    silc_server_remove_clients_by_server(server, server_entry,
+					 server_entry, TRUE);
     silc_server_backup_del(server, server_entry);
 
     /* Remove the server entry */

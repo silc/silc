@@ -97,7 +97,8 @@ void silc_server_packet_send(SilcServer server,
     return;
 
   /* If entry is disabled do not sent anything. */
-  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
+  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED) ||
+      sock->user_data == server->id_entry) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;
   }
@@ -159,7 +160,8 @@ void silc_server_packet_send_dest(SilcServer server,
   idata = (SilcIDListData)sock->user_data;
 
   /* If entry is disabled do not sent anything. */
-  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
+  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED) ||
+      sock->user_data == server->id_entry) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;
   }
@@ -257,6 +259,20 @@ void silc_server_packet_send_srcdest(SilcServer server,
   /* Get data used in the packet sending, keys and stuff */
   idata = (SilcIDListData)sock->user_data;
 
+  /* If entry is disabled do not sent anything. */
+  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED) ||
+      sock->user_data == server->id_entry) {
+    SILC_LOG_DEBUG(("Connection is disabled"));
+    return;
+  }
+
+  if (idata) {
+    cipher = idata->send_key;
+    hmac = idata->hmac_send;
+    sequence = idata->psn_send++;
+    block_len = silc_cipher_get_block_len(cipher);
+  }
+
   if (dst_id) {
     dst_id_data = silc_id_id2str(dst_id, dst_id_type);
     dst_id_len = silc_id_get_len(dst_id, dst_id_type);
@@ -265,13 +281,6 @@ void silc_server_packet_send_srcdest(SilcServer server,
   if (src_id) {
     src_id_data = silc_id_id2str(src_id, src_id_type);
     src_id_len = silc_id_get_len(src_id, src_id_type);
-  }
-
-  if (idata) {
-    cipher = idata->send_key;
-    hmac = idata->hmac_send;
-    sequence = idata->psn_send++;
-    block_len = silc_cipher_get_block_len(cipher);
   }
 
   /* Set the packet context pointers */

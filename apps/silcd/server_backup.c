@@ -183,7 +183,7 @@ void silc_server_backup_replaced_add(SilcServer server,
     server->backup->replaced_count = 1;
   }
 
-  SILC_LOG_DEBUG(("Replacing router %s with %s backup",
+  SILC_LOG_DEBUG(("Replacing router %s with %s",
 		  silc_id_render(server_id, SILC_ID_SERVER),
 		  server_entry->server_name));
 

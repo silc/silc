@@ -893,20 +893,15 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
   SilcServerConnection sconn;
   SilcServerConfigRouter *ptr;
 
-  SILC_LOG_DEBUG(("Connecting to router(s)"));
-
-  if (server->server_type == SILC_SERVER) {
-    SILC_LOG_DEBUG(("We are normal server"));
-  } else if (server->server_type == SILC_ROUTER) {
-    SILC_LOG_DEBUG(("We are router"));
-  } else {
-    SILC_LOG_DEBUG(("We are backup router/normal server"));
-  }
+  SILC_LOG_DEBUG(("We are %s",
+		  (server->server_type == SILC_SERVER ?
+		   "normal server" : server->server_type == SILC_ROUTER ?
+		   "router" : "backup router/normal server")));
 
   if (!server->config->routers) {
     /* There wasn't a configured router, we will continue but we don't
        have a connection to outside world.  We will be standalone server. */
-    SILC_LOG_DEBUG(("No router(s), server will be standalone"));
+    SILC_LOG_DEBUG(("No router(s), we are standalone"));
     server->standalone = TRUE;
     return;
   }
@@ -2996,6 +2991,9 @@ void silc_server_free_sock_user_data(SilcServer server,
 	    server->id_entry->router = NULL;
 	    server->router = NULL;
 	    server->standalone = TRUE;
+
+	    /* We stop here to take a breath */
+	    sleep(2);
 	  }
 
 	  if (server->server_type == SILC_BACKUP_ROUTER) {
@@ -3024,24 +3022,38 @@ void silc_server_free_sock_user_data(SilcServer server,
       }
 
       if (!backup_router) {
-	/* As router, remove clients and channels always.  As normal server
-	   remove only if it is our primary router.  Other connections
-	   may be backup routers and these normal server don't handle here. */
-	if (server->server_type != SILC_SERVER ||
-	    server->standalone || sock == SILC_PRIMARY_ROUTE(server)) {
-	  /* Free all client entries that this server owns as they will
-	     become invalid now as well. */
-	  silc_server_remove_clients_by_server(server, user_data, TRUE);
-	  if (server->server_type == SILC_SERVER)
-	    silc_server_remove_channels_by_server(server, user_data);
-	}
+	/* Remove all servers that are originated from this server, and
+	   remove the clients of those servers too. */
+	silc_server_remove_servers_by_server(server, user_data, TRUE);
+
+	/* Remove the clients that this server owns as they will become
+	   invalid now too. */
+	silc_server_remove_clients_by_server(server, user_data,
+					     user_data, TRUE);
+
+	/* Remove channels owned by this server */
+	if (server->server_type == SILC_SERVER)
+	  silc_server_remove_channels_by_server(server, user_data);
       } else {
-	/* Update the client entries of this server to the new backup
-	   router. This also removes the clients that *really* was owned
-	   by the primary router and went down with the router.  */
+	/* Enable local server connections that may be disabled */
 	silc_server_local_servers_toggle_enabled(server, TRUE);
-	silc_server_update_clients_by_server(server, user_data, backup_router,
-					     TRUE, TRUE);
+
+	/* If we are router and just lost our primary router (now standlaone)
+	   we remove everything that was behind it, since we don't know
+	   any better. */
+	if (server->server_type == SILC_ROUTER && server->standalone)
+	  /* Remove all servers that are originated from this server, and
+	     remove the clients of those servers too. */
+	  silc_server_remove_servers_by_server(server, user_data, TRUE);
+
+	/* Update the client entries of this server to the new backup
+	   router.  If we are the backup router we also resolve the real
+	   servers for the clients.  After updating is over this also
+	   removes the clients that this server explicitly owns. */
+	silc_server_update_clients_by_server(server, user_data,
+					     backup_router, TRUE, TRUE);
+
+	/* Update our server cache to use the new backup router too. */
 	silc_server_update_servers_by_server(server, user_data, backup_router);
 	if (server->server_type == SILC_SERVER)
 	  silc_server_update_channels_by_server(server, user_data,
@@ -4828,8 +4840,6 @@ SILC_TASK_CALLBACK(silc_server_rekey_callback)
   SilcProtocol protocol;
   SilcServerRekeyInternalContext *proto_ctx;
 
-  SILC_LOG_DEBUG(("Start"));
-
   /* Allocate internal protocol context. This is sent as context
      to the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
@@ -4846,6 +4856,8 @@ SILC_TASK_CALLBACK(silc_server_rekey_callback)
 
   /* Run the protocol */
   silc_protocol_execute(protocol, server->schedule, 0, 0);
+
+  SILC_LOG_DEBUG(("Rekey protocol completed"));
 
   /* Re-register re-key timeout */
   silc_schedule_task_add(server->schedule, sock->sock,

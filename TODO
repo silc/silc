@@ -43,6 +43,10 @@ TODO/bugs In SILC Server
 	    not the server's ID, which it should include.  The notify
 	    is sent by backup.
 
+	o When removing clients by server in signoff, EOF etc, find also
+	  the client's real server (based on the Client ID's IP), and
+	  remove the server too.
+
 	o Testing
 
  o Close unconfigured client connections in rehash.

@@ -20,12 +20,12 @@
 #ifndef SERVER_UTIL_H
 #define SERVER_UTIL_H
 
-/* This function is used to remove all client entries by the server `entry'.
-   This is called when the connection is lost to the server. In this case
-   we must invalidate all the client entries owned by the server `entry'. 
-   If the `server_signoff' is TRUE then the SERVER_SIGNOFF notify is
+/* This function removes all client entries that are originated from
+   `router' and are owned by `entry'.  `router' and `entry' can be same
+   too.  If `server_signoff' is TRUE then SERVER_SIGNOFF notify is 
    distributed to our local clients. */
-bool silc_server_remove_clients_by_server(SilcServer server, 
+bool silc_server_remove_clients_by_server(SilcServer server,
+					  SilcServerEntry router,
 					  SilcServerEntry entry,
 					  bool server_signoff);
 
@@ -56,6 +56,15 @@ void silc_server_update_servers_by_server(SilcServer server,
    dropped if `toggle_enabled' is FALSE, after this function is called. */
 void silc_server_local_servers_toggle_enabled(SilcServer server,
 					      bool toggle_enabled);
+
+/* Removes servers that are originated from the `from'.  The server
+   entry is deleted in this function.  If `remove_clients' is TRUE then
+   all clients originated from the server are removed too, and server
+   signoff is sent.  Note that this does not remove the `from'.  This
+   also does not remove locally connected servers. */
+void silc_server_remove_servers_by_server(SilcServer server,
+					  SilcServerEntry from,
+					  bool remove_clients);
 
 /* Removes channels that are from `from. */
 void silc_server_remove_channels_by_server(SilcServer server, 
