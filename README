@@ -166,6 +166,22 @@ Following commands has been, at least partly, implemented:
 
 		Shows client version.
 
+	/CONNECT <server> [<port>]
+
+		Connects to server the remote <server>.  You must be
+		server operator to be able to do this.
+
+
+	/CLOSE <server>
+
+		Closes connection to the <server>.  You must be server
+		operator to be able to do this.
+
+	/SHUTDOWN
+
+		Shutdowns the server.  You must be server operator to be
+		able to do this.
+
 
 Features
 ========
