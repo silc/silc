@@ -24,6 +24,65 @@ secure what IRC is not in any way.  The network model is also entirely
 different compared to IRC.
 
 
+Running SILC
+============
+
+The development version is still preliminary version and requires some
+work to get it working.  You should, first of all, check the example
+configuration files in ./doc/ directory.  Change them according to your
+needs.
+
+To run SILC client:
+
+	cd silc
+	./silc -f <config file>
+
+To run SILC server
+
+	cd silcd
+	./silcd -f <config file>
+
+
+Working Commands
+================
+
+Following commands has been, at least partly, implemented:
+
+
+	/SERVER [<server>[:<port>]]
+
+		Connects to remote SILC server.
+
+	/NICK   [<nickname>]
+
+		Changes/sets nickname.  Note that in SILC there can be
+		multiple same nicknames.  However, the logic on working
+		with multiple nicknams on user interface is pretty much
+		still missing.  Also note that nicknames in SILC are
+		case-sensitive.
+
+	/JOIN   <channel>
+
+		Joins to a channel.  Channel names start with `#'
+		character.
+
+	/MSG    <nickname> <message>
+
+		Sends private message to remote client.  Support for
+		handling multiple same nicknames with /MSG command is
+		still missing.
+
+	/WHOIS  <nickname>[@<server>] [<count>]
+
+		Gives a little information about a client.  Support for
+		handling multiple same nicknames with this command is
+		still missing.
+
+	/QUIT
+
+		Quits session.  Connection to remote server is closed.
+
+
 Features
 ========
 
