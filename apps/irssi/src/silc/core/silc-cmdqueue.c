@@ -12,7 +12,7 @@ void silc_queue_init(void)
 
 static void cmd_list_remove_cb(char *cmd)
 {
-  silc_free(cmd);
+  g_free(cmd);
 }
 
 static int cmd_queue_remove_cb(void *key, GSList *list)
