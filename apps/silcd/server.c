@@ -3161,6 +3161,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  server->id_entry->router = NULL;
 	  server->router = NULL;
 	  server->standalone = TRUE;
+	  server->backup_primary = FALSE;
 	  backup_router = NULL;
 	} else {
 	  if (server->id_entry != backup_router) {
@@ -5061,7 +5062,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
-    SILC_LOG_ERROR(("Error occurred during rekey protocol"));
+    SILC_LOG_ERROR(("Error occurred during rekey protocol with
+		   %s (%s)", sock->hostname, sock->ip));
     silc_protocol_cancel(protocol, server->schedule);
     silc_protocol_free(protocol);
     sock->protocol = NULL;

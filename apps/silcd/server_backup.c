@@ -712,6 +712,8 @@ static void silc_server_backup_connect_primary(SilcServer server,
   idata = (SilcIDListData)server_entry;
 
   SILC_LOG_DEBUG(("Sending CONNECTED packet (session %d)", ctx->session));
+  SILC_LOG_INFO(("Sending CONNECTED (session %d) to backup router",
+		ctx->session));
 
   /* Send the CONNECTED packet back to the backup router. */
   buffer = silc_buffer_alloc(2);
@@ -914,7 +916,14 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	 to be back online. We send the CONNECTED packet after we've
 	 established the connection to the primary router. */
       primary = silc_server_config_get_primary_router(server);
-      if (primary && server->backup_primary) {
+      if (primary && server->backup_primary &&
+	  !silc_server_num_sockets_by_remote(server,
+					     silc_net_is_ip(primary->host) ?
+					     primary->host : NULL,
+					     silc_net_is_ip(primary->host) ?
+					     NULL : primary->host,
+					     primary->port,
+					     SILC_SOCKET_TYPE_ROUTER)) {
 	SILC_LOG_DEBUG(("Received START (session %d), reconnect to router",
 			ctx->session));
 	silc_server_backup_reconnect(server,
@@ -925,6 +934,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	/* Nowhere to connect just return the CONNECTED packet */
 	SILC_LOG_DEBUG(("Received START (session %d), send CONNECTED back",
 			ctx->session));
+	SILC_LOG_INFO(("Sending CONNECTED (session %d) to backup router",
+		      ctx->session));
 
 	/* Send the CONNECTED packet back to the backup router. */
 	packet = silc_buffer_alloc(2);
@@ -1149,6 +1160,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	  SILC_LOG_INFO(("Resuming the use of primary router %s",
 			 router->server_name));
 	}
+	server->backup_primary = FALSE;
 
 	/* Update the client entries of the backup router to the new 
 	   router */
