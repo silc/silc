@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/09/28 11:28:20  priikone
+ * 	Changed cipher list order.
+ *
  * Revision 1.2  2000/07/05 06:08:43  priikone
  * 	Global cosmetic change.
  *
@@ -50,9 +53,6 @@ struct SilcCipherListStruct *silc_cipher_list = NULL;
    support SIM's. */
 SilcCipherObject silc_cipher_builtin_list[] =
 {
-  { "none", 0, 0, silc_none_set_key, silc_none_set_key_with_string,
-    silc_none_encrypt_cbc, silc_none_decrypt_cbc, 
-    silc_none_context_len },
   { "twofish", 16, 16, silc_twofish_set_key, silc_twofish_set_key_with_string,
     silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc, 
     silc_twofish_context_len },
@@ -62,6 +62,9 @@ SilcCipherObject silc_cipher_builtin_list[] =
   { "mars", 16, 16, silc_mars_set_key, silc_mars_set_key_with_string,
     silc_mars_encrypt_cbc, silc_mars_decrypt_cbc, 
     silc_mars_context_len },
+  { "none", 0, 0, silc_none_set_key, silc_none_set_key_with_string,
+    silc_none_encrypt_cbc, silc_none_decrypt_cbc, 
+    silc_none_context_len },
 
   { NULL, 0, 0, NULL, NULL, NULL, NULL, NULL }
 };
