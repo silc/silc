@@ -66,7 +66,6 @@ authenticated.
 
 
 
-
 .ti 0
 Table of Contents
 
@@ -79,45 +78,45 @@ Table of Contents
   2.3 SILC Packet Types .........................................  7
       2.3.1 SILC Packet Payloads ................................ 16
       2.3.2 Generic payloads .................................... 16
-            2.3.2.1 ID Payload .................................. 16
-            2.3.2.2 Argument Payload ............................ 17
+            2.3.2.1 ID Payload .................................. 17
+            2.3.2.2 Argument Payload ............................ 18
             2.3.2.3 Channel Payload ............................. 18
             2.3.2.4 Public Key Payload .......................... 19
-      2.3.3 Disconnect Payload .................................. 19
-      2.3.4 Success Payload ..................................... 19
-      2.3.5 Failure Payload ..................................... 20
-      2.3.6 Reject Payload ...................................... 21
+      2.3.3 Disconnect Payload .................................. 20
+      2.3.4 Success Payload ..................................... 21
+      2.3.5 Failure Payload ..................................... 21
+      2.3.6 Reject Payload ...................................... 22
       2.3.7 Notify Payload ...................................... 22
-      2.3.8 Error Payload ....................................... 21
-      2.3.9 Channel Message Payload ............................. 28
-      2.3.10 Channel Key Payload ................................ 31
-      2.3.11 Private Message Payload ............................ 33
-      2.3.12 Private Message Key Payload ........................ 34
-      2.3.13 Command Payload .................................... 36
-      2.3.14 Command Reply Payload .............................. 37
-      2.3.15 Connection Auth Request Payload .................... 37
-      2.3.16 New ID Payload ..................................... 38
-      2.3.17 New Client Payload ................................. 39
-      2.3.18 New Server Payload ................................. 40
-      2.3.19 New Channel Payload ................................ 41
-      2.3.20 Key Agreement Payload .............................. 42
-      2.3.21 Resume Router Payload .............................. 43
-      2.3.22 File Transfer Payload .............................. 43
-  2.4 SILC ID Types ............................................. 44
-  2.5 Packet Encryption And Decryption .......................... 44
-      2.5.1 Normal Packet Encryption And Decryption ............. 45
-      2.5.2 Channel Message Encryption And Decryption ........... 45
-      2.5.3 Private Message Encryption And Decryption ........... 46
-  2.6 Packet MAC Generation ..................................... 47
-  2.7 Packet Padding Generation ................................. 47
-  2.8 Packet Compression ........................................ 48
-  2.9 Packet Sending ............................................ 48
-  2.10 Packet Reception ......................................... 49
-  2.11 Packet Routing ........................................... 49
-  2.12 Packet Broadcasting ...................................... 50
-3 Security Considerations ....................................... 50
-4 References .................................................... 50
-5 Author's Address .............................................. 52
+      2.3.8 Error Payload ....................................... 28
+      2.3.9 Channel Message Payload ............................. 29
+      2.3.10 Channel Key Payload ................................ 32
+      2.3.11 Private Message Payload ............................ 34
+      2.3.12 Private Message Key Payload ........................ 35
+      2.3.13 Command Payload .................................... 37
+      2.3.14 Command Reply Payload .............................. 38
+      2.3.15 Connection Auth Request Payload .................... 38
+      2.3.16 New ID Payload ..................................... 39
+      2.3.17 New Client Payload ................................. 40
+      2.3.18 New Server Payload ................................. 41
+      2.3.19 New Channel Payload ................................ 42
+      2.3.20 Key Agreement Payload .............................. 43
+      2.3.21 Resume Router Payload .............................. 44
+      2.3.22 File Transfer Payload .............................. 44
+  2.4 SILC ID Types ............................................. 46
+  2.5 Packet Encryption And Decryption .......................... 46
+      2.5.1 Normal Packet Encryption And Decryption ............. 46
+      2.5.2 Channel Message Encryption And Decryption ........... 47
+      2.5.3 Private Message Encryption And Decryption ........... 48
+  2.6 Packet MAC Generation ..................................... 48
+  2.7 Packet Padding Generation ................................. 49
+  2.8 Packet Compression ........................................ 50
+  2.9 Packet Sending ............................................ 50
+  2.10 Packet Reception ......................................... 51
+  2.11 Packet Routing ........................................... 51
+  2.12 Packet Broadcasting ...................................... 52
+3 Security Considerations ....................................... 53
+4 References .................................................... 53
+5 Author's Address .............................................. 54
 
 .ti 0
 List of Figures
@@ -569,6 +568,8 @@ List of SILC Packet types are defined as follows.
                                   Payload
 
 
+
+
      13   SILC_PACKET_KEY_EXCHANGE
 
           This packet is used to start SILC Key Exchange Protocol, 
@@ -824,17 +825,6 @@ packet payloads.
 This payload can be used to send an ID.  ID's are variable in length
 thus this payload provides a way to send variable length ID's.
 
-
-
-
-
-
-
-
-
-
-
-
 The following diagram represents the ID Payload.
 
 .in 5
@@ -874,6 +864,12 @@ associated with a packet MUST be indicated by the packet payload which
 needs the arguments.  Argument Payloads MUST always reside right after
 the packet payload needing the arguments.  Incorrect amount of argument
 payloads MUST cause rejection of the packet.
+
+
+
+
+
+
 
 The following diagram represents the Argument Payload.
 
@@ -918,6 +914,16 @@ Generic Channel Payload may be used to send information about channel,
 its name, the Channel ID and a mode.
 
 The following diagram represents the Channel Payload.
+
+
+
+
+
+
+
+
+
+
 
 
 .in 5
@@ -970,6 +976,9 @@ Generic Public Key Payload may be used to send different types of
 public keys and certificates.
 
 The following diagram represents the Public Key Payload.
+
+
+
 
 
 .in 5
@@ -1147,6 +1156,9 @@ the contents of the payload, however, notify message SHOULD be audited.
 The payload may only be sent with SILC_PACKET_NOTIFY packet.  It MUST
 not be sent in any other packet type.  The following diagram represents
 the Notify Payload.
+
+
+
 
 .in 5
 .nf
@@ -1750,6 +1762,12 @@ packet.  It MUST NOT be sent in any other packet type.  The following
 diagram represents the Private Message Payload.
 
 
+
+
+
+
+
+
 .in 5
 .nf
                      1                   2                   3
@@ -2343,6 +2361,8 @@ o Data (variable length) - Arbitrary file transfer data.  The
 .in 3
 
 
+
+
 .ti 0
 2.4 SILC ID Types
 
@@ -2370,6 +2390,10 @@ network.
      Channel ID to associate channels.  See the format of
      this ID in [SILC1].
 .in 3
+
+When encoding different IDs into the ID Payload, all fields are always
+in MSB first order.  The IP address, port, and/or the random number
+are encoded in the MSB first order.
 
 
 .ti 0

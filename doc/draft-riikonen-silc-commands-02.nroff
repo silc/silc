@@ -293,7 +293,7 @@ List of all defined commands in SILC follows.
         binary hash digest of the public key.  The fingerprint MUST NOT
         be sent if the server has not verified the proof of posession of
         the corresponding private key.  Server can do this during the
-        SILC Key Exchange protocol.
+        SILC Key Exchange protocol.  The <fingerprint> is SHA1 digest.
 
         Status messages:
 

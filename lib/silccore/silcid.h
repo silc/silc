@@ -52,10 +52,10 @@
 typedef uint16 SilcIdType;
 
 /* The SILC ID Types */
-#define SILC_ID_NONE 0
-#define SILC_ID_SERVER 1
-#define SILC_ID_CLIENT 2
-#define SILC_ID_CHANNEL 3
+#define SILC_ID_NONE        0
+#define SILC_ID_SERVER      1
+#define SILC_ID_CLIENT      2
+#define SILC_ID_CHANNEL     3
 /***/
 
 /* The ID Lenghts. These are IPv4 based and should be noted if used directly

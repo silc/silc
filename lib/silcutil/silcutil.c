@@ -544,7 +544,7 @@ char *silc_id_render(void *id, uint16 type)
       if (server_id->ip.data_len > 4) {
 
       } else {
-	SILC_GET32_MSB(ipv4.s_addr, server_id->ip.data);
+	memcpy(&ipv4.s_addr, server_id->ip.data, 4);
 	strcat(rid, inet_ntoa(ipv4));
       }
 
@@ -565,7 +565,7 @@ char *silc_id_render(void *id, uint16 type)
       if (client_id->ip.data_len > 4) {
 
       } else {
-	SILC_GET32_MSB(ipv4.s_addr, client_id->ip.data);
+	memcpy(&ipv4.s_addr, client_id->ip.data, 4);
 	strcat(rid, inet_ntoa(ipv4));
       }
 
@@ -587,7 +587,7 @@ char *silc_id_render(void *id, uint16 type)
       if (channel_id->ip.data_len > 4) {
 
       } else {
-	SILC_GET32_MSB(ipv4.s_addr, channel_id->ip.data);
+	memcpy(&ipv4.s_addr, channel_id->ip.data, 4);
 	strcat(rid, inet_ntoa(ipv4));
       }
 
@@ -903,4 +903,32 @@ char *silc_client_chumode_char(uint32 mode)
     strncat(string, "@", 1);
 
   return strdup(string);
+}
+
+/* Creates fingerprint from data, usually used with SHA1 digests */
+
+char *silc_fingerprint(const unsigned char *data, uint32 data_len)
+{
+  char fingerprint[64], *cp;
+  int i;
+
+  memset(fingerprint, 0, sizeof(fingerprint));
+  cp = fingerprint;
+  for (i = 0; i < data_len; i++) {
+    snprintf(cp, sizeof(fingerprint), "%02X", data[i]);
+    cp += 2;
+    
+    if ((i + 1) % 2 == 0)
+      snprintf(cp++, sizeof(fingerprint), " ");
+
+    if ((i + 1) % 10 == 0)
+      snprintf(cp++, sizeof(fingerprint), " ");
+  }
+  i--;
+  if ((i + 1) % 2 == 0)
+    cp[-2] = 0;
+  if ((i + 1) % 10 == 0)
+    cp[-1] = 0;
+  
+  return strdup(fingerprint);
 }

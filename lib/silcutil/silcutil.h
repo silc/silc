@@ -67,5 +67,6 @@ char *silc_client_chmode(uint32 mode, const char *cipher, const char *hmac);
 char *silc_client_chumode(uint32 mode);
 char *silc_client_chumode_char(uint32 mode);
 int silc_gettimeofday(struct timeval *p);
+char *silc_fingerprint(const unsigned char *data, uint32 data_len);
 
 #endif

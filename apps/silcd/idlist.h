@@ -93,6 +93,7 @@ typedef struct {
 
   /* Public key */
   SilcPublicKey public_key;
+  unsigned char fingerprint[20];
 
   /* Re-key context */
   SilcServerRekey rekey;

@@ -287,7 +287,7 @@ silc_channel_message_payload_parse(SilcBuffer buffer,
 
   /* Decrypt the payload */
   ret = silc_channel_message_payload_decrypt(buffer->data, buffer->len,
-				     cipher, hmac);
+					     cipher, hmac);
   if (ret == FALSE)
     return NULL;
 

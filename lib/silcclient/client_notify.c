@@ -204,6 +204,9 @@ void silc_client_notify_by_server(SilcClient client,
       client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
       silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
+    } else {
+      if (client_entry != conn->local_entry)
+	silc_client_nickname_format(client, conn, client_entry);
     }
 
     /* Get Channel ID */
@@ -406,6 +409,9 @@ void silc_client_notify_by_server(SilcClient client,
     if (!client_entry2) {
       silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
+    } else {
+      if (client_entry2 != conn->local_entry)
+	silc_client_nickname_format(client, conn, client_entry2);
     }
 
     /* Remove the old from cache */

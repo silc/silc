@@ -205,7 +205,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
 /* Called to indicate that connection was either successfully established
    or connecting failed.  This is also the first time application receives
-   the SilcClientConnection objecet which it should save somewhere. */
+   the SilcClientConnection object which it should save somewhere. */
 
 void silc_connect(SilcClient client, SilcClientConnection conn, int success)
 {
@@ -401,6 +401,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   case SILC_COMMAND_WHOIS:
     {
       char buf[1024], *nickname, *username, *realname, *nick;
+      unsigned char *fingerprint;
       uint32 idle, mode;
       SilcBuffer channels;
       SilcClientEntry client_entry;
@@ -426,6 +427,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       channels = va_arg(vp, SilcBuffer);
       mode = va_arg(vp, uint32);
       idle = va_arg(vp, uint32);
+      fingerprint = va_arg(vp, unsigned char *);
       
       silc_parse_userfqdn(nickname, &nick, NULL);
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
@@ -485,6 +487,13 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			   SILCTXT_WHOIS_IDLE, buf);
+      }
+
+      if (fingerprint) {
+	fingerprint = silc_fingerprint(fingerprint, 20);
+	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_WHOIS_FINGERPRINT, fingerprint);
+	silc_free(fingerprint);
       }
     }
     break;
@@ -633,7 +642,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_LIST_HEADER);
 
-      snprintf(users, sizeof(users) - 1, "%d", usercount);
+      if (!usercount)
+	snprintf(users, sizeof(users) - 1, "N/A");
+      else
+	snprintf(users, sizeof(users) - 1, "%d", usercount);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_LIST,
 			 name, users, topic ? topic : "");

@@ -349,6 +349,29 @@ SILC_CLIENT_CMD_FUNC(identify)
   silc_client_command_free(cmd);
 }
 
+/* Pending callbcak that will be called after the NICK command was
+   replied by the server.  This sets the nickname if there were no
+   errors. */
+
+SILC_CLIENT_CMD_FUNC(nick_change)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcClientCommandReplyContext reply = 
+    (SilcClientCommandReplyContext)context2;
+  SilcCommandStatus status;
+
+  SILC_GET16_MSB(status, silc_argument_get_arg_type(reply->args, 1, NULL));
+  if (status == SILC_STATUS_OK) {
+    /* Set the nickname */
+    if (conn->nickname)
+      silc_free(conn->nickname);
+    conn->nickname = strdup(cmd->argv[1]);
+  }
+
+  silc_client_command_free(cmd);
+}
+
 /* Command NICK. Shows current nickname/sets new nickname on current
    window. */
 
@@ -392,7 +415,7 @@ SILC_CLIENT_CMD_FUNC(nick)
   if (cmd->argv_lens[1] > 128)
     cmd->argv_lens[1] = 128;
 
-  /* Set new nickname */
+  /* Send the NICK command */
   buffer = silc_command_payload_encode(SILC_COMMAND_NICK, 1,
 				       &cmd->argv[1],
 				       &cmd->argv_lens[1], 
@@ -402,9 +425,15 @@ SILC_CLIENT_CMD_FUNC(nick)
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  if (conn->nickname)
-    silc_free(conn->nickname);
-  conn->nickname = strdup(cmd->argv[1]);
+
+  /* Register pending callback that will actually set the new nickname
+     if there were no errors returned by the server. */
+  silc_client_command_pending(conn, SILC_COMMAND_NICK, 
+			      cmd->conn->cmd_ident,
+			      silc_client_command_destructor,
+			      silc_client_command_nick_change,
+			      silc_client_command_dup(cmd));
+  cmd->pending = 1;
 
   /* Notify application */
   COMMAND;
@@ -933,7 +962,6 @@ SILC_CLIENT_CMD_FUNC(ping)
       conn->ping[i].start_time = time(NULL);
       conn->ping[i].dest_id = id;
       conn->ping[i].dest_name = strdup(conn->remote_host);
-      conn->ping_count++;
       break;
     }
   }

@@ -127,6 +127,11 @@ int main(int argc, char **argv)
 	  silc_debug = TRUE;
 	  silc_debug_hexdump = TRUE;
 	  silc_log_set_debug_string(optarg);
+#ifndef SILC_DEBUG
+	  fprintf(stdout, 
+		  "Run-time debugging is not enabled. To enable it recompile\n"
+		  "the server with --enable-debug configuration option.\n");
+#endif
 	  break;
 	case 'f':
 	  config_file = strdup(optarg);

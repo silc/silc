@@ -42,6 +42,7 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
   data->psn_receive = idata->psn_receive;
   data->hash = idata->hash;
   data->public_key = idata->public_key;
+  memcpy(data->fingerprint, idata->fingerprint, sizeof(data->fingerprint));
   data->rekey = idata->rekey;
   data->last_receive = idata->last_receive;
   data->last_sent = idata->last_sent;

@@ -622,6 +622,57 @@ void silc_server_update_servers_by_server(SilcServer server,
   }
 }
 
+/* Removes channels that are from `from. */
+
+void silc_server_remove_channels_by_server(SilcServer server, 
+					   SilcServerEntry from)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (silc_idcache_get_all(server->global_list->channels, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	channel = (SilcChannelEntry)id_cache->context;
+	if (channel->router == from)
+	  silc_idlist_del_channel(server->global_list, channel);
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+}
+
+/* Updates channels that are from `from' to be originated from `to'.  */
+
+void silc_server_update_channels_by_server(SilcServer server, 
+					   SilcServerEntry from,
+					   SilcServerEntry to)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (silc_idcache_get_all(server->global_list->channels, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	channel = (SilcChannelEntry)id_cache->context;
+	if (channel->router == from)
+	  channel->router = to;
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+}
+
 /* Checks whether given channel has global users.  If it does this returns
    TRUE and FALSE if there is only locally connected clients on the channel. */
 

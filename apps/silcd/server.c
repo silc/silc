@@ -726,7 +726,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   /* We now have the key material as the result of the key exchange
      protocol. Take the key material into use. Free the raw key material
      as soon as we've set them into use. */
-  if (!silc_server_protocol_ke_set_keys(ctx->ske, ctx->sock, ctx->keymat,
+  if (!silc_server_protocol_ke_set_keys(server, ctx->ske, 
+					ctx->sock, ctx->keymat,
 					ctx->ske->prop->cipher,
 					ctx->ske->prop->pkcs,
 					ctx->ske->prop->hash,
@@ -1183,7 +1184,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   /* We now have the key material as the result of the key exchange
      protocol. Take the key material into use. Free the raw key material
      as soon as we've set them into use. */
-  if (!silc_server_protocol_ke_set_keys(ctx->ske, ctx->sock, ctx->keymat,
+  if (!silc_server_protocol_ke_set_keys(server, ctx->ske, 
+					ctx->sock, ctx->keymat,
 					ctx->ske->prop->cipher,
 					ctx->ske->prop->pkcs,
 					ctx->ske->prop->hash,
@@ -2390,6 +2392,8 @@ void silc_server_free_sock_user_data(SilcServer server,
 	   become invalid now as well. */
 	if (user_data->id)
 	  silc_server_remove_clients_by_server(server, user_data, TRUE);
+	if (server->server_type == SILC_SERVER)
+	  silc_server_remove_channels_by_server(server, user_data);
       } else {
 	/* Update the client entries of this server to the new backup
 	   router. This also removes the clients that *really* was owned
@@ -2397,6 +2401,9 @@ void silc_server_free_sock_user_data(SilcServer server,
 	silc_server_update_clients_by_server(server, user_data, backup_router,
 					     TRUE, TRUE);
 	silc_server_update_servers_by_server(server, user_data, backup_router);
+	if (server->server_type == SILC_SERVER)
+	  silc_server_update_channels_by_server(server, user_data, 
+						backup_router);
       }
 
       /* Free the server entry */
@@ -3420,11 +3427,12 @@ void silc_server_announce_channels(SilcServer server,
 				    &channel_ids, creation_time);
 
   /* Get channels and channel users in global list */
-  silc_server_announce_get_channels(server, server->global_list,
-				    &channels, &channel_users,
-				    &channel_users_modes,
-				    &channel_users_modes_c,
-				    &channel_ids, creation_time);
+  if (server->server_type != SILC_SERVER)
+    silc_server_announce_get_channels(server, server->global_list,
+				      &channels, &channel_users,
+				      &channel_users_modes,
+				      &channel_users_modes_c,
+				      &channel_ids, creation_time);
 
   if (channels) {
     silc_buffer_push(channels, channels->data - channels->head);

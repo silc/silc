@@ -244,20 +244,8 @@ static void silc_client_protocol_ke_continue(SilcSKE ske,
   SILC_LOG_DEBUG(("Start"));
 
   if (ske->status != SILC_SKE_STATUS_OK) {
-    if (ske->status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY) {
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-		       "Received unsupported server %s public key",
-		       ctx->sock->hostname);
-    } else if (ske->status == SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED) {
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
-		       "Remote host did not send its public key, even though "
-		       "it must send it");
-    } else {
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "Error during key exchange protocol with server %s",
-		       ctx->sock->hostname);
-    }
-    
+    /* Call failure client operation */
+    client->ops->failure(client, conn, protocol, (void *)ske->status);
     protocol->state = SILC_PROTOCOL_STATE_ERROR;
     silc_protocol_execute(protocol, client->schedule, 0, 0);
     return;

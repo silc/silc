@@ -917,7 +917,7 @@ void silc_client_nickname_format(SilcClient client,
 
   len = 0;
   for (i = 0; i < clients_count; i++)
-    if (clients[i]->valid)
+    if (clients[i]->valid && clients[i] != client_entry)
       len++;
   if (!len)
     return;

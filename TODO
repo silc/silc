@@ -1,9 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o /NAMES kees showing things wrong after JOIN and after ppl has left
-   channel.
-
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the
@@ -37,14 +34,6 @@ TODO/bugs in Irssi SILC client
 
 TODO/bugs In SILC Client Library
 ================================
-
- o key agreement with itself causes the packet sequence numbers go grazy.
-
- o WHOIS shows the formatted nickname wrong in some circumstances.
-
- o Set incrorrect key and /MSG him, screen gets screwed.
-
- o Crashes if lots of concurrent /PING's.
 
  o JOIN command's argument handling is buggy.  See the XXX in the code.
 
@@ -89,11 +78,6 @@ TODO/bugs In SILC Server
    it should be checked also whether the requested information is local.
    If it is, there is no reason to send it to the router, since the server
    knows it best.
-
- o Add support for sending the LIST command to primary router on normal
-   server to receive all the created channels.  Currently the command
-   returns only the channels the server knows about.  The protocol spec
-   does not prohibit of sending the LIST to the router.
 
  o Incomplete IPv6 support:
 

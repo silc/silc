@@ -397,6 +397,19 @@ bool silc_client_start_key_exchange(SilcClient client,
   return TRUE;
 }
 
+/* Callback called when error has occurred during connecting to the server.
+   The `connect' client operation will be called. */
+
+SILC_TASK_CALLBACK(silc_client_connect_failure)
+{
+  SilcClientKEInternalContext *ctx = 
+    (SilcClientKEInternalContext *)context;
+  SilcClient client = (SilcClient)ctx->client;
+
+  client->ops->connect(client, ctx->sock->user_data, FALSE);
+  silc_free(ctx);
+}
+
 /* Start of the connection to the remote server. This is called after
    succesful TCP/IP connection has been established to the remote host. */
 
@@ -485,8 +498,9 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
     silc_socket_free(ctx->sock);
 
     /* Notify application of failure */
-    client->ops->connect(client, ctx->sock->user_data, FALSE);
-    silc_free(ctx);
+    silc_schedule_task_add(client->schedule, ctx->sock->sock,
+			   silc_client_connect_failure, ctx,
+			   0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     return;
   }
 
@@ -591,8 +605,9 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     silc_socket_free(ctx->sock);
 
     /* Notify application of failure */
-    client->ops->connect(client, ctx->sock->user_data, FALSE);
-    silc_free(ctx);
+    silc_schedule_task_add(client->schedule, ctx->sock->sock,
+			   silc_client_connect_failure, ctx,
+			   0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     return;
   }
 
@@ -1408,6 +1423,7 @@ void silc_client_receive_new_id(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   int connecting = FALSE;
+  SilcClientID *client_id = silc_id_payload_get_id(idp);
   SilcBuffer sidp;
 
   if (!conn->local_entry)
@@ -1415,6 +1431,12 @@ void silc_client_receive_new_id(SilcClient client,
 
   /* Delete old ID from ID cache */
   if (conn->local_id) {
+    /* Check whether they are different */
+    if (SILC_ID_CLIENT_COMPARE(conn->local_id, client_id)) {
+      silc_free(client_id);
+      return;
+    }
+
     silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
     silc_free(conn->local_id);
   }
@@ -1424,7 +1446,7 @@ void silc_client_receive_new_id(SilcClient client,
   if (conn->local_id_data)
     silc_free(conn->local_id_data);
 
-  conn->local_id = silc_id_payload_get_id(idp);
+  conn->local_id = client_id;
   conn->local_id_data = silc_id_payload_get_data(idp);
   conn->local_id_data_len = silc_id_payload_get_len(idp);;
 
@@ -1444,17 +1466,18 @@ void silc_client_receive_new_id(SilcClient client,
   silc_idcache_add(conn->client_cache, strdup(conn->nickname), conn->local_id, 
 		   (void *)conn->local_entry, FALSE);
 
-  /* Issue INFO command to fetch the real server name and server information
-     and other stuff. */
-  sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
-  silc_client_send_command(client, conn, SILC_COMMAND_INFO,
-			   ++conn->cmd_ident, 1, 2, sidp->data, sidp->len);
-  silc_buffer_free(sidp);
+  if (connecting) {
+    /* Issue INFO comqmand to fetch the real server name and server information
+       and other stuff. */
+    sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
+    silc_client_send_command(client, conn, SILC_COMMAND_INFO,
+			     ++conn->cmd_ident, 1, 2, sidp->data, sidp->len);
+    silc_buffer_free(sidp);
 
-  /* Notify application of successful connection. We do it here now that
-     we've received the Client ID and are allowed to send traffic. */
-  if (connecting)
+    /* Notify application of successful connection. We do it here now that
+       we've received the Client ID and are allowed to send traffic. */
     client->ops->connect(client, conn, TRUE);
+  }
 }
 
 /* Processed received Channel ID for a channel. This is called when client

@@ -90,8 +90,8 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
       server->backup->servers[i].local = local;
       memset(server->backup->servers[i].ip.data, 0,
 	     sizeof(server->backup->servers[i].ip.data));
-      silc_net_addr2bin_ne(ip, server->backup->servers[i].ip.data,
-			   sizeof(server->backup->servers[i].ip.data));
+      silc_net_addr2bin(ip, server->backup->servers[i].ip.data,
+			sizeof(server->backup->servers[i].ip.data));
       //server->backup->servers[i].port = port;
       return;
     }
@@ -105,8 +105,8 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
   server->backup->servers[i].local = local;
   memset(server->backup->servers[i].ip.data, 0,
 	 sizeof(server->backup->servers[i].ip.data));
-  silc_net_addr2bin_ne(ip, server->backup->servers[i].ip.data,
-		       sizeof(server->backup->servers[i].ip.data));
+  silc_net_addr2bin(ip, server->backup->servers[i].ip.data,
+		    sizeof(server->backup->servers[i].ip.data));
   //server->backup->servers[i].port = server_id->port;
   server->backup->servers_count++;
 }
@@ -987,6 +987,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 					   server->router);
       silc_server_update_clients_by_server(server, ctx->sock->user_data,
 					   server->router, TRUE, FALSE);
+      if (server->server_type == SILC_SERVER)
+	silc_server_update_channels_by_server(server, ctx->sock->user_data, 
+					      server->router);
 
       packet = silc_buffer_alloc(2);
       silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
@@ -1125,7 +1128,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	silc_server_update_servers_by_server(server, backup_router, router);
 	silc_server_update_clients_by_server(server, backup_router,
 					     router, TRUE, FALSE);
-	silc_server_backup_replaced_del(server, backup_router);
+	if (server->server_type == SILC_SERVER)
+	  silc_server_update_channels_by_server(server, backup_router, router);
+ 	silc_server_backup_replaced_del(server, backup_router);
 	silc_server_backup_add(server, backup_router, 
 			       ctx->sock->ip, ctx->sock->port,
 			       backup_router->server_type != SILC_ROUTER ?

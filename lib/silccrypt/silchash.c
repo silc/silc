@@ -209,34 +209,13 @@ void silc_hash_make(SilcHash hash, const unsigned char *data,
 char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
 			    uint32 data_len)
 {
-  char fingerprint[64], *cp;
   unsigned char h[32];
-  int i;
 
   if (!hash)
     silc_hash_alloc("sha1", &hash);
 
   silc_hash_make(hash, data, data_len, h);
-  
-  memset(fingerprint, 0, sizeof(fingerprint));
-  cp = fingerprint;
-  for (i = 0; i < hash->hash->hash_len; i++) {
-    snprintf(cp, sizeof(fingerprint), "%02X", h[i]);
-    cp += 2;
-    
-    if ((i + 1) % 2 == 0)
-      snprintf(cp++, sizeof(fingerprint), " ");
-
-    if ((i + 1) % 10 == 0)
-      snprintf(cp++, sizeof(fingerprint), " ");
-  }
-  i--;
-  if ((i + 1) % 2 == 0)
-    cp[-2] = 0;
-  if ((i + 1) % 10 == 0)
-    cp[-1] = 0;
-  
-  return strdup(fingerprint);
+  return silc_fingerprint(h, hash->hash->hash_len);
 }
 
 static const char vo[]= "aeiouy";

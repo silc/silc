@@ -157,12 +157,11 @@ void silc_log_output_debug(char *file, char *function,
     return;
   }
 
-  if (debug_cb)
-    {
-      (*debug_cb)(file, function, line, string);
-      silc_free(string);
-      return;
-    }
+  if (debug_cb) {
+    (*debug_cb)(file, function, line, string);
+    silc_free(string);
+    return;
+  }
 
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
   fflush(stderr);
@@ -191,12 +190,11 @@ void silc_log_output_hexdump(char *file, char *function,
     return;
   }
 
-  if (debug_hexdump_cb)
-    {
-      (*debug_hexdump_cb)(file, function, line, data_in, len, string);
-      silc_free(string);
-      return;
-    }
+  if (debug_hexdump_cb) {
+    (*debug_hexdump_cb)(file, function, line, data_in, len, string);
+    silc_free(string);
+    return;
+  }
 
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
   silc_free(string);
@@ -316,8 +314,9 @@ void silc_log_reset_debug_callbacks()
 void silc_log_set_debug_string(const char *debug_string)
 {
   silc_free(silc_debug_string);
-  if (strchr(debug_string, '(') &&
-      strchr(debug_string, ')'))
+  if ((strchr(debug_string, '(') &&
+       strchr(debug_string, ')')) ||
+      strchr(debug_string, '$'))
     silc_debug_string = strdup(debug_string);
   else
     silc_debug_string = silc_string_regexify(debug_string);

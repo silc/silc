@@ -200,26 +200,10 @@ bool silc_net_is_ip(const char *addr);
  * DESCRIPTION
  *
  *    Converts the IP number string from numbers-and-dots notation to
- *    binary form.
- *
- ***/
-bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
-
-/****f* silcutil/SilcNetAPI/silc_net_addr2bin_ne
- *
- * SYNOPSIS
- *
- *    bool silc_net_addr2bin_ne(const char *addr, unsigned char *bin,
- *                             uint32 bin_len);
- *
- * DESCRIPTION
- *
- *    Converts the IP number string from numbers-and-dots notation to
  *    binary form in network byte order.
  *
  ***/
-bool silc_net_addr2bin_ne(const char *addr, unsigned char *bin,
-			  uint32 bin_len);
+bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_check_host_by_sock
  *

@@ -57,6 +57,7 @@ SilcServerCommandReply silc_command_reply_list[] =
   SILC_SERVER_CMD_REPLY(join, JOIN),
   SILC_SERVER_CMD_REPLY(users, USERS),
   SILC_SERVER_CMD_REPLY(getkey, GETKEY),
+  SILC_SERVER_CMD_REPLY(list, LIST),
 
   { NULL, 0 },
 };
@@ -537,7 +538,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       /* We don't have that server anywhere, add it. */
       channel = silc_idlist_add_channel(server->global_list, strdup(name),
 					SILC_CHANNEL_MODE_NONE, channel_id, 
-					server->router->connection, 
+					server->router, 
 					NULL, NULL);
       if (!channel) {
 	silc_free(channel_id);
@@ -1065,13 +1066,77 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
   }
 
  out:
-  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_USERS);
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_GETKEY);
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_GETKEY);
   if (idp)
     silc_id_payload_free(idp);
   silc_free(client_id);
   silc_free(server_id);
   if (public_key)
     silc_pkcs_public_key_free(public_key);
+  silc_server_command_reply_free(cmd);
+}
+
+SILC_SERVER_CMD_REPLY_FUNC(list)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcServer server = cmd->server;
+  SilcCommandStatus status;
+  SilcChannelID *channel_id = NULL;
+  SilcChannelEntry channel;
+  uint32 len;
+  unsigned char *tmp, *name, *topic;
+  uint32 usercount = 0;
+
+  COMMAND_CHECK_STATUS_LIST;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  channel_id = silc_id_payload_parse_id(tmp, len);
+  if (!channel_id)
+    goto out;
+
+  name = silc_argument_get_arg_type(cmd->args, 3, NULL);
+  topic = silc_argument_get_arg_type(cmd->args, 4, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
+  if (tmp)
+    SILC_GET32_MSB(usercount, tmp);
+
+  /* Add the channel entry if we do not have it already */
+  channel = silc_idlist_find_channel_by_id(server->local_list, 
+					   channel_id, NULL);
+  if (!channel)
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+  if (!channel) {
+    /* If router did not find such Channel ID in its lists then this must
+       be bogus channel or some router in the net is buggy. */
+    if (server->server_type != SILC_SERVER)
+      goto out;
+    
+    channel = silc_idlist_add_channel(server->global_list, strdup(name),
+				      SILC_CHANNEL_MODE_NONE, channel_id, 
+				      server->router, 
+				      NULL, NULL);
+    if (!channel)
+      goto out;
+    channel_id = NULL;
+  }
+
+  if (topic) {
+    silc_free(channel->topic);
+    channel->topic = strdup(topic);
+  }
+
+  /* Pending callbacks are not executed if this was an list entry */
+  if (status != SILC_STATUS_OK &&
+      status != SILC_STATUS_LIST_END) {
+    silc_server_command_reply_free(cmd);
+    return;
+  }
+
+ out:
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_GETKEY);
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_GETKEY);
+  silc_free(channel_id);
   silc_server_command_reply_free(cmd);
 }

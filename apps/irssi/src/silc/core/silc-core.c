@@ -195,7 +195,7 @@ void silc_core_init(void)
     { "list-pkcs", 'P', POPT_ARG_NONE, &opt_list_pkcs, 0,
       "List supported PKCSs", NULL },
     { "debug", 'd', POPT_ARG_STRING, &opt_debug, 0,
-      "Enable debugging", NULL },
+      "Enable debugging", "STRING" },
     { "version", 'V', POPT_ARG_NONE, &opt_version, 0,
       "Show version", NULL },
     { NULL, '\0', 0, NULL }
@@ -275,6 +275,11 @@ void silc_core_init_finish(void)
     silc_log_set_debug_string(opt_debug);
     silc_log_set_callbacks(silc_log_info, silc_log_warning,
 			   silc_log_error, NULL);
+#ifndef SILC_DEBUG
+    fprintf(stdout, 
+	    "Run-time debugging is not enabled. To enable it recompile\n"
+	    "the client with --enable-debug configuration option.\n");
+#endif
   }
 
   /* Do some irssi initializing */

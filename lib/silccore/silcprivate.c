@@ -64,12 +64,12 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
 							 &new->message_len),
 			     SILC_STR_END);
   if (ret == -1) {
-    SILC_LOG_ERROR(("Incorrect private message payload"));
+    SILC_LOG_DEBUG(("Incorrect private message payload"));
     goto err;
   }
 
   if ((new->message_len < 1 || new->message_len > buffer->len)) {
-    SILC_LOG_ERROR(("Incorrect private message payload in packet, "
+    SILC_LOG_DEBUG(("Incorrect private message payload in packet, "
 		    "packet dropped"));
     goto err;
   }

@@ -1,3 +1,82 @@
+Sun Nov 11 10:49:10 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Use ++server->cmd_ident when sending commands in server,
+	  instead of random number.  Affected file silcd/command.c.
+
+	* Fixed GETKEY command reply to call actually GETKEY pending
+	  command callbacks.  Affected file silcd/command_reply.c.
+
+	* A bit stricter check for nicknames.  Check for same nickname
+	  in NICK command also.  Affected file silcd/command.c.
+
+	* Do not call INFO command everytime client ID changes, only
+	  during first connecting.  Affected file lib/silcclient/client.c.
+
+	* Set the new nickname only after successful command reply for
+	  NICK command is returned by server.  Affected file
+	  lib/silcclient/command.c.
+
+	* Remove nicknames from nicklist during server_signoff notify.
+	  Should fix /NAMES bit more.  The affected file is
+	  irssi/src/silc/core/silc-channels.c.
+
+	* Added `fingerprint' field to the SilcIDListData in the 
+	  silcd/idlist.h to hold the fingerprint of the client's
+	  public key.
+
+	  Send the fingerprint of the client's public key in WHOIS
+	  command reply.
+
+	  Affected files silcd/command.c, and silcd/idlist.[ch].
+
+	* Added silc_fingerprint into lib/silcutil/silcutil.[ch] to
+	  create fingerprint from given data.
+
+	* Show the fingerprint of the client's public key in WHOIS.
+	  Affected files irssi/src/module-formats.[ch] and
+	  irssi/src/silc/core/client_ops.c.
+
+	* Format the multiple same nicknames also during JOIN and
+	  NICK_CHANGE notifys.  Affected file is
+	  lib/silcclient/client_notify.c.
+
+	* Do not print error on screen for invalid private message
+	  payload since it can come if someone is sending private
+	  messages with wrong key.  Affected file
+	  lib/silccore/silcprivate.c.
+
+	* Fixed multiple concurrent /PING crash.  Affected file
+	  lib/silcclient/command.c.
+
+	* Changed the wrong ID encoding.  All IP addresses must be
+	  in MSB first order in encoded format.  They were encoded
+	  wrong and was in LSB format.  Affected files are
+	  silcd/serverid.c, lib/silcutil/silcutil.c.
+
+	* Remove silc_net_addr2bin_ne from lib/silcutil/silcnet.[ch].
+
+	* Call the `connect' client operation through the scheduler
+	  in case of error.  Affected file lib/silcclient/client.c.
+
+	* Call the `failure' client operation even if the error
+	  occurred locally during a protocol.  Affected file is
+	  lib/silcclient/protocol.c.
+
+	* Added support of sending LIST command to router from normal
+	  server.  This way normal server can get list of all channels
+	  in the network too.  Fixed the channel list sending in the
+	  server too.  Affected files are silcd/command.c, and
+	  silcd/command_reply.[ch].
+
+	* Added silc_server_update_channels_by_server and
+	  silc_server_remove_channels_by_server.  They are used during
+	  disconnection of primary router and in backup router protocol.
+	  Affected file silcd/server_util.[ch], silcd/server.c and
+	  silcd/server_backup.c.
+
+	* Fixed channel adding to global list in IDENTIFY command
+	  reply in server.  Affected file silcd/command_reply.c.
+
 Sat Nov 10 21:39:22 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* If the incoming packet type is REKEY or REKEY_DONE process

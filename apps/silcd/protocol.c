@@ -206,7 +206,8 @@ static void silc_server_protocol_ke_send_packet(SilcSKE ske,
 
 /* Sets the negotiated key material into use for particular connection. */
 
-int silc_server_protocol_ke_set_keys(SilcSKE ske,
+int silc_server_protocol_ke_set_keys(SilcServer server,
+				     SilcSKE ske,
 				     SilcSocketConnection sock,
 				     SilcSKEKeyMaterial *keymat,
 				     SilcCipher cipher,
@@ -300,6 +301,9 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
   /* Save the remote host's public key */
   silc_pkcs_public_key_decode(ske->ke1_payload->pk_data, 
 			      ske->ke1_payload->pk_len, &idata->public_key);
+  if (ske->prop->flags & SILC_SKE_SP_FLAG_MUTUAL)
+    silc_hash_make(server->sha1hash, ske->ke1_payload->pk_data,
+		   ske->ke1_payload->pk_len, idata->fingerprint);
 
   sock->user_data = (void *)conn_data;
 

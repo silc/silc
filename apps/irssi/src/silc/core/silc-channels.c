@@ -449,6 +449,8 @@ static void event_server_signoff(SILC_SERVER_REC *server, va_list va)
   clients_count = va_arg(va, uint32);
   
   for (i = 0; i < clients_count; i++) {
+    GSList *nicks, *tmp;
+
     memset(userhost, 0, sizeof(userhost));
     if (clients[i]->username)
       snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
@@ -456,6 +458,13 @@ static void event_server_signoff(SILC_SERVER_REC *server, va_list va)
     signal_emit("message quit", 4, server, clients[i]->nickname,
 		clients[i]->username ? userhost : "", 
 		"server signoff");
+
+    nicks = nicklist_get_same_unique(SERVER(server), clients[i]);
+    for (tmp = nicks; tmp != NULL; tmp = tmp->next->next) {
+      CHANNEL_REC *channel = tmp->data;
+      NICK_REC *nickrec = tmp->next->data;
+      nicklist_remove(channel, nickrec);
+    }
   }
 }
 

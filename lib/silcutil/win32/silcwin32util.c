@@ -21,6 +21,27 @@
 
 #include "silcincludes.h"
 
+/* XXX GNU regex may work on Win32 too!! */
+char *silc_string_regexify(const char *string)
+{
+  return strdup(string);
+}
+
+char *silc_string_regex_combine(const char *string1, const char *string2)
+{
+  return strdup(string1);
+}
+
+int silc_string_regex_match(const char *regex, const char *string)
+{
+  return TRUE;
+}
+
+int silc_string_match(const char *string1, const char *string2)
+{
+  return TRUE;
+}
+
 #define FILETIME_1970 0x019db1ded53e8000
 const BYTE DWLEN = sizeof(DWORD) * 8;
 

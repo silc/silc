@@ -311,7 +311,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   /* Notify application */
   if (!cmd->callback)
     COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
-		   channels, mode, idle));
+		   channels, mode, idle, fingerprint));
 
   if (channels)
     silc_buffer_free(channels);
@@ -598,7 +598,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   silc_client_receive_new_id(cmd->client, cmd->sock, idp);
     
   /* Notify application */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_NICK);
   COMMAND_REPLY((ARGS, conn->local_entry));
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_NICK);
+  silc_client_command_reply_free(cmd);
+  return;
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_NICK);

@@ -284,22 +284,3 @@ bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len)
   memcpy(bin, (unsigned char *)&tmp.s_addr, 4);
   return ret != 0;
 }
-
-/* Converts the IP number string from numbers-and-dots notation to
-   binary form in network byte order. */
-
-bool silc_net_addr2bin_ne(const char *addr, unsigned char *bin,
-			  uint32 bin_len)
-{
-  struct in_addr tmp;
-  int ret;
-
-  ret = inet_aton(addr, &tmp);
-
-  if (bin_len < 4)
-    return FALSE;
-
-  SILC_PUT32_MSB(tmp.s_addr, bin);
-
-  return ret != 0;
-}

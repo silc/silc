@@ -106,7 +106,8 @@ typedef struct {
 /* Prototypes */
 void silc_server_protocols_register(void);
 void silc_server_protocols_unregister(void);
-int silc_server_protocol_ke_set_keys(SilcSKE ske,
+int silc_server_protocol_ke_set_keys(SilcServer server,
+				     SilcSKE ske,
 				     SilcSocketConnection sock,
 				     SilcSKEKeyMaterial *keymat,
 				     SilcCipher cipher,

@@ -50,6 +50,15 @@ void silc_server_update_servers_by_server(SilcServer server,
 					  SilcServerEntry from,
 					  SilcServerEntry to);
 
+/* Removes channels that are from `from. */
+void silc_server_remove_channels_by_server(SilcServer server, 
+					   SilcServerEntry from);
+
+/* Updates channels that are from `from' to be originated from `to'.  */
+void silc_server_update_channels_by_server(SilcServer server, 
+					   SilcServerEntry from,
+					   SilcServerEntry to);
+
 /* Checks whether given channel has global users.  If it does this returns
    TRUE and FALSE if there is only locally connected clients on the channel. */
 bool silc_server_channel_has_global(SilcChannelEntry channel);
