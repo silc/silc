@@ -82,7 +82,7 @@ static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
 /* Registers a new HMAC into the SILC. This function is used at the
    initialization of the SILC. */
 
-bool silc_hmac_register(SilcHmacObject *hmac)
+bool silc_hmac_register(const SilcHmacObject *hmac)
 {
 #ifndef SILC_EPOC
   SilcHmacObject *new;
@@ -152,7 +152,7 @@ bool silc_hmac_register_default(void)
   int i;
 
   for (i = 0; silc_default_hmacs[i].name; i++)
-    silc_hmac_register((SilcHmacObject *)&(silc_default_hmacs[i]));
+    silc_hmac_register(&(silc_default_hmacs[i]));
 
 #endif /* SILC_EPOC */
   return TRUE;

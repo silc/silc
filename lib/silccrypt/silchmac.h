@@ -84,7 +84,7 @@ extern DLLAPI const SilcHmacObject silc_default_hmacs[];
  *
  * SYNOPSIS
  *
- *    bool silc_hmac_register(SilcHmacObject *hmac);
+ *    bool silc_hmac_register(const SilcHmacObject *hmac);
  *
  * DESCRIPTION
  *
@@ -97,7 +97,7 @@ extern DLLAPI const SilcHmacObject silc_default_hmacs[];
  *    that are builtin the sources.  Returns FALSE on error.
  *
  ***/
-bool silc_hmac_register(SilcHmacObject *hmac);
+bool silc_hmac_register(const SilcHmacObject *hmac);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_unregister
  *

@@ -58,7 +58,7 @@ const SilcPKCSObject silc_default_pkcs[] =
 /* Register a new PKCS into SILC. This is used at the initialization of
    the SILC. */
 
-bool silc_pkcs_register(SilcPKCSObject *pkcs)
+bool silc_pkcs_register(const SilcPKCSObject *pkcs)
 {
 #ifndef SILC_EPOC
   SilcPKCSObject *new;
@@ -128,7 +128,7 @@ bool silc_pkcs_register_default(void)
   int i;
 
   for (i = 0; silc_default_pkcs[i].name; i++)
-    silc_pkcs_register((SilcPKCSObject *)&(silc_default_pkcs[i]));
+    silc_pkcs_register(&(silc_default_pkcs[i]));
 
 #endif /* SILC_EPOC */
   return TRUE;

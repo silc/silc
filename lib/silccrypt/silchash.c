@@ -43,7 +43,7 @@ const SilcHashObject silc_default_hash[] =
 /* Registers a new hash function into the SILC. This function is used at
    the initialization of the SILC. */
 
-bool silc_hash_register(SilcHashObject *hash)
+bool silc_hash_register(const SilcHashObject *hash)
 {
 #ifndef SILC_EPOC
   SilcHashObject *new;
@@ -119,7 +119,7 @@ bool silc_hash_register_default(void)
   int i;
 
   for (i = 0; silc_default_hash[i].name; i++)
-    silc_hash_register((SilcHashObject *)&(silc_default_hash[i]));
+    silc_hash_register(&(silc_default_hash[i]));
 
 #endif /* SILC_EPOC */
   return TRUE;

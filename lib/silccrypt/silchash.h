@@ -84,7 +84,7 @@ void silc_##hash##_transform(SilcUInt32 *state,			\
 SilcUInt32 silc_##hash##_context_len()
 
 /* Prototypes */
-bool silc_hash_register(SilcHashObject *hash);
+bool silc_hash_register(const SilcHashObject *hash);
 bool silc_hash_unregister(SilcHashObject *hash);
 bool silc_hash_register_default(void);
 bool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash);

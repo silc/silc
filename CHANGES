@@ -1,3 +1,23 @@
+Sat Mar 30 18:15:55 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the object argument for silc_cipher_register,
+	  silc_hash_register, silc_hmac_register and silc_pkcs_register
+	  to const.  Affected files are lib/silccrypt/silccipher.[ch],
+	  silchash.[ch], silchmac.[ch] and silcpkcs.[ch].
+
+	* Changed the silc_get_username and silc_get_real_name to
+	  never fail.  Affected file lib/silcutil/unix/silcunixutil.c.
+
+	* Fixed the Irssi SILC Client to use the silc_get_username and
+	  silc_get_real_name insted of glib routines since the glib
+	  routines only corrupt stack.  Fixes the Irssi SILC to work in
+	  Cygwin.  Affected file irssi/src/silc/core/silc-core.c.
+
+	* Fixed the Irssi to not use g_get_home_dir since it crashes
+	  or returns garbage on cygwin and corrupts stack.  Added function
+	  get_home_dir to Irssi routines.  Affected files are
+	  irssi/src/core/misc.[ch] and irssi/src/core/core.c.
+
 Fri Mar 29 21:55:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Made some structure optimizations.  SFTP memory FS MemFSEntry

@@ -172,7 +172,7 @@ int silc_##pkcs##_verify(void *context, \
 			 SilcUInt32 data_len)
 
 /* Prototypes */
-bool silc_pkcs_register(SilcPKCSObject *pkcs);
+bool silc_pkcs_register(const SilcPKCSObject *pkcs);
 bool silc_pkcs_unregister(SilcPKCSObject *pkcs);
 bool silc_pkcs_register_default(void);
 bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs);

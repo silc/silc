@@ -117,7 +117,7 @@ bool silc_##cipher##_decrypt_cbc(void *context,			\
 SilcUInt32 silc_##cipher##_context_len()
 
 /* Prototypes */
-bool silc_cipher_register(SilcCipherObject *cipher);
+bool silc_cipher_register(const SilcCipherObject *cipher);
 bool silc_cipher_unregister(SilcCipherObject *cipher);
 bool silc_cipher_register_default(void);
 bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);

@@ -90,7 +90,7 @@ const SilcCipherObject silc_default_ciphers[] =
    registered. Therefore, if memory has been allocated for the object sent
    as argument it has to be free'd after this function returns succesfully. */
 
-bool silc_cipher_register(SilcCipherObject *cipher)
+bool silc_cipher_register(const SilcCipherObject *cipher)
 {
 #ifndef SILC_EPOC
   SilcCipherObject *new;
@@ -168,7 +168,7 @@ bool silc_cipher_register_default(void)
   int i;
 
   for (i = 0; silc_default_ciphers[i].name; i++)
-    silc_cipher_register((SilcCipherObject *)&(silc_default_ciphers[i]));
+    silc_cipher_register(&(silc_default_ciphers[i]));
 
 #endif /* SILC_EPOC */
   return TRUE;

@@ -140,11 +140,9 @@ char *silc_get_username()
       struct passwd *pw;
 
       pw = getpwuid(getuid());
-      if (!pw) {
-	fprintf(stderr, "silc_get_username: %s\n", strerror(errno));
-	return NULL;
-      }
-      
+      if (!pw)
+	return strdup("foo");
+
       logname = pw->pw_name;
     }
   }
@@ -160,10 +158,8 @@ char *silc_get_real_name()
   struct passwd *pw;
     
   pw = getpwuid(getuid());
-  if (!pw) {
-    fprintf(stderr, "silc_get_username: %s\n", strerror(errno));
-    return NULL;
-  }
+  if (!pw)
+     return strdup("Foo T. Bar");
 
   if (strchr(pw->pw_gecos, ','))
     *strchr(pw->pw_gecos, ',') = 0;

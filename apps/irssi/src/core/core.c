@@ -192,9 +192,10 @@ void core_init_paths(int argc, char *argv[])
 	args_register(options);
 
         if (irssi_dir == NULL)
-		irssi_dir = g_strdup_printf(IRSSI_DIR_FULL, g_get_home_dir());
+		irssi_dir = g_strdup_printf(IRSSI_DIR_FULL, get_home_dir());
 	if (irssi_config_file == NULL)
-		irssi_config_file = g_strdup_printf("%s/"IRSSI_HOME_CONFIG, irssi_dir);
+		irssi_config_file = g_strdup_printf("%s/"IRSSI_HOME_CONFIG, 
+						    irssi_dir);
 
 	session_set_binary(argv[0]);
 }
