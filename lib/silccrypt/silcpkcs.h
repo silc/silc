@@ -1,16 +1,15 @@
 /*
 
-  silcpkcs.h
+  silcpkcs.h 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +19,39 @@
 
 #ifndef SILCPKCS_H
 #define SILCPKCS_H
+
+/****h* silccrypt/SILC PKCS Interface
+ *
+ * DESCRIPTION
+ *
+ *    This is the interface for public key cryptosystems, and various
+ *    utility functions related to public keys and private keys.  This
+ *    interface also defines the actual PKCS objects, public keys and
+ *    private keys.  The interface is generic PKCS interface, which has
+ *    capability of supporting any kind of public key algorithm.  This
+ *    interface also implements the SILC Public Key and routines for
+ *    encoding and decoding SILC Public Key (as defined by the SILC
+ *    protocol specification).  Interface or encrypting, decrypting,
+ *    producing digital signatures and verifying digital signatures are
+ *    also defined in this header.
+ *
+ ***/
+
+/****s* silccrypt/SilcPKCSAPI/SilcPKCS
+ *
+ * NAME
+ * 
+ *    typedef struct SilcPKCSStruct *SilcPKCS;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual PKCS context and is allocated
+ *    by silc_pkcs_alloc and given as argument usually to all
+ *    silc_pkcs _* functions.  It is freed by the silc_pkcs_free
+ *    function.
+ *
+ ***/
+typedef struct SilcPKCSStruct *SilcPKCS;
 
 /* The default SILC PKCS (Public Key Cryptosystem) object to represent
    any PKCS in SILC. */
@@ -42,19 +74,23 @@ typedef struct SilcPKCSObjectStruct {
 		unsigned char *, SilcUInt32);
 } SilcPKCSObject;
 
-/* The main SILC PKCS structure. Use SilcPKCS instead of SilcPKCSStruct.
-   Also remember that SilcPKCS is a pointer. */
-typedef struct SilcPKCSStruct {
-  void *context;
-  SilcPKCSObject *pkcs;
-  SilcUInt32 key_len;
-
-  SilcUInt32 (*get_key_len)(struct SilcPKCSStruct *);
-} *SilcPKCS;
-
-/* SILC style public key object. Public key is read from file to this
-   object. Public keys received from network must be in this format as 
-   well. */
+/****s* silccrypt/SilcPKCSAPI/SilcPublicKey
+ *
+ * NAME
+ * 
+ *    typedef struct { ... } *SilcPublicKey;
+ *
+ * DESCRIPTION
+ *
+ *    SILC style public key object.  Public key is read from file to this
+ *    object.  Public keys received from network must be in this format as 
+ *    well.  The format is defined by the SILC protocol specification.
+ *    This object is allocated by silc_pkcs_public_key_alloc and freed
+ *    by silc_pkcs_public_key_free.  The object is given as argument to
+ *    all silc_pkcs_public_key_* functions.
+ *
+ * SOURCE
+ */
 typedef struct {
   SilcUInt32 len;
   char *name;
@@ -62,17 +98,24 @@ typedef struct {
   unsigned char *pk;
   SilcUInt32 pk_len;
 } *SilcPublicKey;
+/***/
 
-/* SILC style private key object. Private key is read from file to this
-   object. */
-typedef struct {
-  char *name;
-  unsigned char *prv;
-  SilcUInt32 prv_len;
-} *SilcPrivateKey;
-
-/* Decoded SILC Public Key identifier. Note that some of the fields 
-   may be NULL. */
+/****s* silccrypt/SilcPKCSAPI/SilcPublicKeyIdentifier
+ *
+ * NAME
+ * 
+ *    typedef struct { ... } *SilcPublicKeyIdentifier;
+ *
+ * DESCRIPTION
+ *
+ *    Decoded SILC Public Key identifier.  Note that some of the fields 
+ *    may be NULL.  This context is allcated by the function
+ *    silc_pkcs_decode_identifier and freed by silc_pkcs_free_identifier.
+ *    The identifier in SilcPublicKey is the 'identifier' field, which
+ *    can be given as argument to silc_pkcs_decode_identifier.
+ *
+ * SOURCE
+ */
 typedef struct {
   char *username;
   char *host;
@@ -81,6 +124,27 @@ typedef struct {
   char *org;
   char *country;
 } *SilcPublicKeyIdentifier;
+/***/
+
+/****s* silccrypt/SilcPKCSAPI/SilcPrivateKey
+ *
+ * NAME
+ * 
+ *    typedef struct { ... } *SilcPrivateKey;
+ *
+ * DESCRIPTION
+ *
+ *    SILC style private key object.  Public key is read from file to this
+ *    object.  This object is allocated by silc_pkcs_private_key_alloc and
+ *    freed by silc_pkcs_private_key_free.  The object is given as argument
+ *    to all silc_pkcs_private_key_* functions.
+ *
+ ***/
+typedef struct {
+  char *name;
+  unsigned char *prv;
+  SilcUInt32 prv_len;
+} *SilcPrivateKey;
 
 /* Public and private key file headers */
 #define SILC_PKCS_PUBLIC_KEYFILE_BEGIN "-----BEGIN SILC PUBLIC KEY-----\n"
@@ -172,7 +236,26 @@ int silc_##pkcs##_verify(void *context, \
 			 SilcUInt32 data_len)
 
 /* Prototypes */
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_register
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_pkcs_register(const SilcPKCSObject *pkcs);
+ *
+ * DESCRIPTION
+ *
+ *    Registers a new PKCS into the SILC.  This function is used
+ *    at the initialization of the SILC.  All registered PKCSs
+ *    should be unregistered with silc_pkcs_unregister.  The `pkcs' includes
+ *    the name of the PKCS and member functions for the algorithm.  Usually
+ *    this function is not called directly.  Instead, application can call
+ *    the silc_pkcs_register_default to register all PKCSs that are
+ *    builtin the sources.  Returns FALSE on error.
+ *
+ ***/
 bool silc_pkcs_register(const SilcPKCSObject *pkcs);
+
 bool silc_pkcs_unregister(SilcPKCSObject *pkcs);
 bool silc_pkcs_register_default(void);
 bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs);
@@ -182,6 +265,7 @@ char *silc_pkcs_get_supported(void);
 int silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
 			   SilcRng rng);
 SilcUInt32 silc_pkcs_get_key_len(SilcPKCS self);
+const char *silc_pkcs_get_name(SilcPKCS pkcs);
 unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
 unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len);
 SilcUInt32 silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key);
@@ -211,11 +295,13 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 				  char *email, char *org, char *country);
 SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier);
 void silc_pkcs_free_identifier(SilcPublicKeyIdentifier identifier);
-SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
-					 unsigned char *pk, 
+SilcPublicKey silc_pkcs_public_key_alloc(const char *name, 
+					 const char *identifier,
+					 const unsigned char *pk, 
 					 SilcUInt32 pk_len);
 void silc_pkcs_public_key_free(SilcPublicKey public_key);
-SilcPrivateKey silc_pkcs_private_key_alloc(char *name, unsigned char *prv,
+SilcPrivateKey silc_pkcs_private_key_alloc(const char *name,
+					   const unsigned char *prv,
 					   SilcUInt32 prv_len);
 void silc_pkcs_private_key_free(SilcPrivateKey private_key);
 unsigned char *
@@ -252,4 +338,4 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
 int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
 			       SilcUInt32 encoding);
 
-#endif
+#endif /* SILCPKCS_H */

@@ -1,16 +1,15 @@
 /*
 
-  silcpkcs.c
+  silcpkcs.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -23,6 +22,13 @@
 
 #include "rsa.h"
 #include "pkcs1.h"
+
+/* The main SILC PKCS structure. */
+struct SilcPKCSStruct {
+  void *context;
+  SilcPKCSObject *pkcs;
+  SilcUInt32 key_len;
+};
 
 #ifndef SILC_EPOC
 /* Dynamically registered list of PKCS. */
@@ -168,7 +174,6 @@ bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
     *new_pkcs = silc_calloc(1, sizeof(**new_pkcs));
     (*new_pkcs)->pkcs = entry;
     (*new_pkcs)->context = silc_calloc(1, entry->context_len());
-    (*new_pkcs)->get_key_len = silc_pkcs_get_key_len;
     return TRUE;
   }
 
@@ -266,6 +271,11 @@ int silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
 SilcUInt32 silc_pkcs_get_key_len(SilcPKCS pkcs)
 {
   return pkcs->key_len;
+}
+
+const char *silc_pkcs_get_name(SilcPKCS pkcs)
+{
+  return pkcs->pkcs->name;
 }
 
 /* Returns SILC style public key */
@@ -560,8 +570,9 @@ void silc_pkcs_free_identifier(SilcPublicKeyIdentifier identifier)
 /* Allocates SILC style public key formed from sent arguments. All data
    is duplicated. */
 
-SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
-					 unsigned char *pk, 
+SilcPublicKey silc_pkcs_public_key_alloc(const char *name, 
+					 const char *identifier,
+					 const unsigned char *pk, 
 					 SilcUInt32 pk_len)
 {
   SilcPublicKey public_key;
@@ -602,7 +613,8 @@ void silc_pkcs_public_key_free(SilcPublicKey public_key)
 /* Allocates SILC private key formed from sent arguments. All data is
    duplicated. */
 
-SilcPrivateKey silc_pkcs_private_key_alloc(char *name, unsigned char *prv,
+SilcPrivateKey silc_pkcs_private_key_alloc(const char *name,
+					   const unsigned char *prv,
 					   SilcUInt32 prv_len)
 {
   SilcPrivateKey private_key;
