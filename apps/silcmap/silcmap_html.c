@@ -313,11 +313,11 @@ bool silc_map_writehtml_index(SilcMap map)
 	  "class=\"%s\" border=\"0\">\n", class);
   fprintf(fp,
 	  "<tr>\n"
-	  "<td align=\"center\" class=\"%s\"><b>Hostname</b></td>\n"
-	  "<td align=\"center\" class=\"%s\"><b>IPv4 Address</b></td>\n"
-	  "<td align=\"center\" class=\"%s\"><b>Port</b></td>\n"
-	  "<td align=\"center\" class=\"%s\"><b>Country</b></td>\n"
-	  "<td align=\"center\" class=\"%s\"><b>Oper</b></td>\n"
+	  "<td align=\"center\" class=\"%s_header\"><b>Hostname</b></td>\n"
+	  "<td align=\"center\" class=\"%s_header\"><b>IPv4 Address</b></td>\n"
+	  "<td align=\"center\" class=\"%s_header\"><b>Port</b></td>\n"
+	  "<td align=\"center\" class=\"%s_header\"><b>Country</b></td>\n"
+	  "<td align=\"center\" class=\"%s_header\"><b>Oper</b></td>\n"
 	  "</tr>\n", class, class, class, class, class);
 
   silc_dlist_start(map->conns);
