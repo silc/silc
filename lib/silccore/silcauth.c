@@ -79,6 +79,12 @@ SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
     return NULL;
   }
 
+  /* If public key authentication, random data must be at least 128 bytes */
+  if (newp->auth_method == SILC_AUTH_PUBLIC_KEY && newp->random_len < 128) {
+    silc_auth_payload_free(newp);
+    return NULL;
+  }
+
   return newp;
 }
 
