@@ -302,11 +302,8 @@ void silc_opt_callback(poptContext con,
     sleep(1);
 #endif
   }
-}
 
-static void sig_init_read_settings(void)
-{
-  if (opt_create_keypair) {
+  if (strcmp(opt->longName, "create-key-pair") == 0) {
     /* Create new key pair and exit */
     silc_cipher_register_default();
     silc_pkcs_register_default();
@@ -336,12 +333,7 @@ void silc_core_init(void)
       "List supported PKCSs", NULL },
     { "debug", 'd', POPT_ARG_STRING, NULL, 0,
       "Enable debugging", "STRING" },
-    { NULL, '\0', 0, NULL }
-  };
-
-  static struct poptOption options[] = {
-    { NULL, '\0', POPT_ARG_INCLUDE_TABLE, silc_options, 0, NULL, NULL },
-    { "create-key-pair", 'C', POPT_ARG_NONE, &opt_create_keypair, 0,
+    { "create-key-pair", 'C', POPT_ARG_NONE, NULL, 0,
       "Create new public key pair", NULL },
     { "pkcs", 0, POPT_ARG_STRING, &opt_pkcs, 0,
       "Set the PKCS of the public key pair (-C)", "PKCS" },
@@ -354,8 +346,7 @@ void silc_core_init(void)
   SilcClientParams params;
   const char *def_cipher, *def_hash, *def_hmac;
 
-  args_register(options);
-  signal_add("irssi init read settings", (SIGNAL_FUNC) sig_init_read_settings);
+  args_register(silc_options);
 
   /* Settings */
   settings_add_bool("server", "skip_motd", FALSE);
@@ -464,8 +455,6 @@ void silc_core_deinit(void)
   if (idletag != -1) {
     signal_emit("chat protocol deinit", 1,
 		chat_protocol_find("SILC"));
-    signal_remove("irssi init read settings", 
-		  (SIGNAL_FUNC) sig_init_read_settings);
 #ifdef SILC_DEBUG
     signal_remove("setup changed", (SIGNAL_FUNC) sig_debug_setup_changed);
 #endif

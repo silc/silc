@@ -175,7 +175,7 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   chanrec->left = TRUE;
   silc_command_exec(server, "LEAVE", chanrec->name);
   signal_stop();
-  
+
   channel_destroy(CHANNEL(chanrec));
 }
 
