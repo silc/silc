@@ -2898,8 +2898,8 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   SilcIDListData idata = (SilcIDListData)client;
-  SilcChannelID *channel_id;
-  SilcClientID *client_id;
+  SilcChannelID *channel_id = NULL;
+  SilcClientID *client_id = NULL;
   SilcChannelEntry channel;
   SilcClientEntry target_client;
   SilcChannelClientEntry chl;
@@ -3244,11 +3244,11 @@ SILC_SERVER_CMD_FUNC(cumode)
 			  packet->data, packet->len, FALSE);
     
   silc_buffer_free(packet);
-  silc_free(channel_id);
-  silc_free(client_id);
   silc_buffer_free(idp);
 
  out:
+  silc_free(channel_id);
+  silc_free(client_id);
   silc_free(fkey);
   silc_server_command_free(cmd);
 }

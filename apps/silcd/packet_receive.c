@@ -3669,6 +3669,8 @@ void silc_server_resume_client(SilcServer server,
     if (!silc_idlist_del_client(server->local_list, client))
       silc_idlist_del_client(server->global_list, client);
     client = detached_client;
+    silc_free(client->servername);
+    client->servername = strdup(server->server_name);
 
     /* If the ID is not based in our ID then change it */
     if (!SILC_ID_COMPARE(client->id, server->id, server->id->ip.data_len)) {

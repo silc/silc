@@ -292,6 +292,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   if (tmp) {
     silc_free(client->attrs);
     client->attrs = silc_memdup(tmp, len);
+    client->attrs_len = len;
   }
 
   return TRUE;

@@ -875,6 +875,21 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
     for (i = 0; i < query->querylist_count; i++) {
       r = &query->querylist[i];
 
+      /* If Requested Attributes were present put them to this resolving */
+      if (query->attrs && query->querycmd == SILC_COMMAND_WHOIS) {
+	len = r->argc + 1;
+	r->arg = silc_realloc(r->arg, sizeof(*r->arg) * len);
+	r->arg_lens = silc_realloc(r->arg_lens, sizeof(*r->arg_lens) * len);
+	r->arg_types = silc_realloc(r->arg_types, sizeof(*r->arg_types) * len);
+
+	tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+	if (tmp)
+	  r->arg[r->argc] = silc_memdup(tmp, len);
+	r->arg_lens[r->argc] = len;
+	r->arg_types[r->argc] = 3;
+	r->argc++;
+      }
+
       /* Send WHOIS command */
       res_cmd = silc_command_payload_encode(SILC_COMMAND_WHOIS,
 					    r->argc, r->arg, r->arg_lens,
@@ -924,7 +939,7 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
     case SILC_COMMAND_WHOIS:
     case SILC_COMMAND_IDENTIFY:
       /* Take existing query context if exist for this connection */
-      for (i = 0; i < query->queries_count; i++)
+      for (i = 0; i < query->querylist_count; i++)
 	if (query->querylist[i].sock == sock) {
 	  r = &query->querylist[i];
 	  break;
@@ -942,21 +957,6 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
 	r->ident = ident;
 	if (SILC_IS_LOCAL(client_entry))
 	  r->timeout = 3;
-      }
-
-      /* If Requested Attributes were present put them to this resolving */
-      if (query->attrs && query->querycmd == SILC_COMMAND_WHOIS) {
-	len = r->argc + 1;
-	r->arg = silc_realloc(r->arg, sizeof(*r->arg) * len);
-	r->arg_lens = silc_realloc(r->arg_lens, sizeof(*r->arg_lens) * len);
-	r->arg_types = silc_realloc(r->arg_types, sizeof(*r->arg_types) * len);
-
-	tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
-	if (tmp)
-	  r->arg[r->argc] = silc_memdup(tmp, len);
-	r->arg_lens[r->argc] = len;
-	r->arg_types[r->argc] = 3;
-	r->argc++;
       }
 
       len = r->argc + 1;
@@ -1251,7 +1251,7 @@ void silc_server_query_send_reply(SilcServer server,
 	     attributes we will reply to them on behalf of the client. */
 	  len = 0;
 	  if (query->attrs) {
-	    if (!entry->attrs) {
+	    if (!entry->attrs && SILC_IS_LOCAL(entry)) {
 	      tmpattrs = silc_server_query_reply_attrs(server, query, entry);
 	      entry->attrs = silc_memdup(tmpattrs->data, tmpattrs->len);
 	      entry->attrs_len = tmpattrs->len;
