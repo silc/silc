@@ -639,7 +639,7 @@ void silc_client_notify_by_server(SilcClient client,
     client_entry2->fingerprint = client_entry->fingerprint;
     client_entry2->fingerprint_len = client_entry->fingerprint_len;
     client_entry->fingerprint = NULL;
-    client_entry->fingerprint_len = NULL;
+    client_entry->fingerprint_len = 0;
     silc_client_update_client(client, conn, client_entry2, tmp, NULL, NULL,
 			      client_entry->mode);
 

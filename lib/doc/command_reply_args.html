@@ -1,0 +1,373 @@
+<big><b>Command Reply Arguments</b></big>
+
+<br />&nbsp;<br />
+The SILC Client Library 'command_reply client operation (which is part of the
+<a href="silcclient-SilcClientOperations.html">
+SilcClientOperation</a> callback functions) returns command replies
+from the SILC Server for commands that the client has earlier sent to the
+server.  The 'command_reply' client operation implementation has a variable
+argument list to deliver <a href="silccommand-SilcCommand.html">SilcCommand</a>
+specific arguments to the application.  This document describes these
+arguments for all command replies to help SILC client software developers
+to process them.
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>command_reply Client Library operation</b>
+
+<br />&nbsp;<br />
+The 'command_reply' client operation callback function prototype is as follows:
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;
+void (*command_reply)(SilcClient client, SilcClientConnection conn,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SilcCommandPayload cmd_payload, bool success, SilcCommand command,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SilcStatus status, ...);
+</tt>
+
+<br />&nbsp;<br />
+The first argument 'client' is the SILC Client Library context, the 'conn' 
+is the context for the connection to the remote server, the 'cmd_payload'
+is the raw SilcCommandPayload and application usually ignores it, the
+'success' boolean value indicates whether the earlier command was a success
+or not, the 'command' is the command reply enumeration, and the 'status'
+indicates the status of the command reply.  If 'success' is FALSE then
+'status' includes error status.
+
+<br />&nbsp;<br />
+Rest of the arguments are 'command' specific and implementation should
+handle them by the SilcCommand for example in a <tt>switch</tt> statement.
+The commands are defined in lib/silccore/silccomand.h header file.  A short 
+example:
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;switch(type)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_COMMAND_WHOIS:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_COMMAND_WHOWAS:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_COMMAND_NICK:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</tt>
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Arguments</b>
+
+<br />&nbsp;<br />
+The following table describes all commands and arguments that the client
+library sends in the 'command_reply' client operation to the application.  
+By default all arguments that the library sends to application are valid 
+pointers.  However, it is possible that some pointers may be NULL.  If 
+this is the case it is separately mentioned that the argument may be NULL.  
+In this case application must ignore that argument.  The 'command_reply'
+arguments per SilcCommand is as follows:
+
+<br />&nbsp;<br />
+<table border="1" width="100%" cellpadding="3" cellspacing="0">
+
+<tr>
+<td><small>Name</td>
+<td><small>Description</td>
+<td width="50%"><small>Variable Arguments</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_WHOIS</td>
+<td><small>
+Returns information about user. The following pointers may be NULL: 'channels',
+'fingerprint', 'channel_usermodes' and 'attrs'.  If 'fingerprint' is valid its
+length is 20 bytes. If 'channels' is valid it can be parsed with
+silc_channel_payload_parse_list function. It is the list of channels user
+has joined. If the 'channel_usermodes' is valid it can be parsed with
+silc_get_mode_list function. It is the list of the user's modes on the
+joined channels. The 'attr' is the Requested Attributes that may have been
+returned by the client and it can be parsed by traversing the SilcDList
+and using silc_attribute_get_attribute function.
+</td>
+<td width="50%"><small>SilcClientEntry client_entry, char *nickname,
+char *username, char *realname, SilcBuffer channels, SilcUInt32 usermode,
+SilcUInt32 idletime, unsigned char *fingerprint, SilcBuffer channel_usermodes,
+SilcDList attrs
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_WHOWAS</td>
+<td><small>
+Returns history information about user. The 'client_entry' and 'realname'
+may be NULL.
+</td>
+<td width="50%"><small>SilcClientEntry client_entry, char *nickname,
+char *username, char *realname
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_IDENTIFY</td>
+<td><small>
+Returns information about user, channel or server.  This is similar to
+WHOIS command but does not return so much information and can be used to
+get information about channels and servers too.  Application should ignore
+this command reply.  The 'name' and 'info' may be NULL.
+</td>
+<td width="50%"><small>void *entry, char *name, char *info
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_NICK</td>
+<td><small>
+Returns the new Client ID after user has changed nickname.
+</td>
+<td width="50%"><small>SilcClientEntry local_entry, char *nickname
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_LIST</td>
+<td><small>
+Returns the list of channel in the SILC network. Each call of command reply
+returns one channel. This means that the command reply is called multiple
+times to return list of channels.  The 'channel_topic' may be NULL.
+</td>
+<td width="50%"><small>SilcChannelEntry channel, char *channel_name,
+char *channel_topic, SilcUInt32 user_count
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_TOPIC</td>
+<td><small>
+Returns the topic of the channel.
+</td>
+<td width="50%"><small>SilcChannelEntry channel, char *topic
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_INVITE</td>
+<td><small>
+Returns the invite list of the channel.  Called also even if invite list
+was not modified but SILC_COMMAND_INVITE command was used to invite a user
+into a channel.  In this case the invite list is not returned by the
+server and 'invite_list' is NULL.  The 'invite_list' is list of
+SilcArgumentPayloads.  The first 2 bytes are the number of arguments in
+the list and can be parsed with SILC_GET16_MSB macro.  The list can be
+parsed with silc_argument_payload_parse function.
+</td>
+<td width="50%"><small>SilcChannelEntry channel, SilcBuffer invite_list
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_KILL</td>
+<td><small>
+Called after killing a client.  There is no arguments to this reply.
+</td>
+<td width="50%"><small>none
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_INFO</td>
+<td><small>
+Returns information about the server user is connected to.
+</td>
+<td width="50%"><small>SilcServerEntry server, char *server_name,
+char *server_info
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_STATS</td>
+<td><small>
+Returns network statistics from the server.  The 'stats_buffer' of length of
+'buffer_length' bytes includes 32-bit integers one after the other each
+representing some statistics.  The integers can be parsed for example with
+SILC_GET32_MSB macro.  The integers in the buffer are: starttime, uptime,
+local_clients, local_channels, local_serverops, local_routerops, cell_clients,
+cell_channels, cell_servers, all_clients, all_channel, all_servers,
+all_routers, all_serverops, all_routerops.  All integers are always present.
+</td>
+<td width="50%"><small>unsigned char *stats_buffer, SilcUInt32 buffer_length
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_PING</td>
+<td><small>
+Returns reply to earlier ping.  There is no arguments to this reply.
+</td>
+<td width="50%"><small>none
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_OPER</td>
+<td><small>
+Returns reply to earlier SILC_COMMAND_OPER command.  There is no arguments
+to this reply.
+</td>
+<td width="50%"><small>none
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_JOIN</td>
+<td><small>
+Reply received when user joined a channel.  The 'ignored' argument can
+be ignored by the application.  The 'topic' and 'hmac_name' may be NULL.
+The 'key_payload' is usually ignored by the application.  The 'list_count'
+is the number of entries in both 'client_id_list' and 'client_mode_list'.
+The 'client_id_list' is a list of clients on the channel and 'client_mode_list'
+includes those clients' modes on the channel.  If application likes to
+resolve information about the clients on the channel it may call
+silc_client_get_clients_by_list function and pass the 'client_id_list' as
+argument to it.  The 'client_mode_list' includes 32-bit integers one after
+the other and they are in same order as clients in 'client_mode_list'.
+If application resolves the information with silc_client_get_clients_by_list
+parsing the 'client_mode_list' is not necessary.
+</td>
+<td width="50%"><small>char *channel_name, SilcChannelEntry channel,
+SilcUInt32 channel_mode, int ignored, SilcBuffer key_payload, NULL, NULL,
+char *topic, char *hmac_name, SilcUInt32 list_count, SilcBuffer client_id_list,
+SilcBuffer client_mode_list
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_MOTD</td>
+<td><small>
+Returns the Message of the Day from the server.  The 'motd' may be NULL.
+</td>
+<td width="50%"><small>char *motd
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_UMODE</td>
+<td><small>
+Returns the user mode after changing it.
+</td>
+<td width="50%"><small>SilcUInt32 user_mode
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_CMODE</td>
+<td><small>
+Returns channel's mode after changing it.
+</td>
+<td width="50%"><small>SilcChannelEntry channel, SilcUInt32 mode
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_CUMODE</td>
+<td><small>
+Returns user's mode on channel after changing it.
+</td>
+<td width="50%"><small>SilcUInt32 mode, SilcChannelEntry channel,
+SilcClientEntry target_client
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_KICK</td>
+<td><small>
+Called after kicking a client.  There is no arguments to this reply.
+</td>
+<td width="50%"><small>none
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_BAN</td>
+<td><small>
+Returns channel's ban list.  The 'ban_list' may be NULL.  The construction
+of that list is equivalent to invite list.  See description of
+SILC_COMMAND_INVITE command reply.
+</td>
+<td width="50%"><small>SilcChannelEntry channel, SilcBuffer ban_list
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_DETACH</td>
+<td><small>
+Called after being detached from the SILC network. There is no arguments
+to this reply.
+</td>
+<td width="50%"><small>none
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_WATCH</td>
+<td><small>
+Called after modifying the watch list in the server.  There is no arguments
+to this reply.
+</td>
+<td width="50%"><small>none
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_SILCOPER</td>
+<td><small>
+Returns reply to earlier SILC_COMMAND_SILCOPER command.  There is no
+arguments to this reply.
+</td>
+<td width="50%"><small>none
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_LEAVE</td>
+<td><small>
+Called after leaving the channel.
+</td>
+<td width="50%"><small>SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_USERS</td>
+<td><small>
+Returns list of users in channel.  If application wishes not to parse
+the raw lists the channel->user_list hash table is updated before calling
+this command reply and application may traverse that table instead of
+parssing the raw lists.
+</td>
+<td width="50%"><small>SilcChannelEntry channel, SilcUInt32 list_count,
+SilcBuffer client_id_list, SilcBuffer client_mode_list
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_COMMAND_GETKEY</td>
+<td><small>
+Returns public key of client or server.  The 'public_key' may be NULL.
+The 'entry_type' is used to check what type of pointer the entry' is.  For 
+SILC_ID_CLIENT SilcClientEntry and for SILC_ID_SERVER SilcServerEntry.
+</td>
+<td width="50%"><small>SilcIdType entry_type, void *entry,
+SilcPublicKey public_key
+</td>
+</tr>
+
+</table>
+
+<br />&nbsp;<br />
+SILC protocol defines some additional commands but command replies to 
+those commands are not delivered to the application.  Only the command
+replies listed above are delivered to application.

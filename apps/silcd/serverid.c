@@ -42,7 +42,7 @@ void silc_id_create_server_id(const char *ip, SilcUInt16 port, SilcRng rng,
   }
 
   (*new_id)->ip.data_len = silc_net_is_ip4(ip) ? 4 : 16;
-  (*new_id)->port = htons(port);
+  (*new_id)->port = SILC_SWAB_16(port);
   (*new_id)->rnd = silc_rng_get_rn16(rng);
 
   SILC_LOG_DEBUG(("New ID (%s)", silc_id_render(*new_id, SILC_ID_SERVER)));

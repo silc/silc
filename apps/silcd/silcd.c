@@ -306,6 +306,37 @@ SILC_TASK_CALLBACK(dump_stats)
 #undef STAT_OUTPUT
 
 #ifdef SILC_DEBUG
+  /* Dump internal flags */
+  fprintf(fdd, "\nDumping internal flags\n");
+  fprintf(fdd, "  server_type            : %d\n", silcd->server_type);
+  fprintf(fdd, "  standalone             : %d\n", silcd->standalone);
+  fprintf(fdd, "  listenning             : %d\n", silcd->listenning);
+  fprintf(fdd, "  background             : %d\n", silcd->background);
+  fprintf(fdd, "  backup_router          : %d\n", silcd->backup_router);
+  fprintf(fdd, "  backup_primary         : %d\n", silcd->backup_primary);
+  fprintf(fdd, "  backup_noswitch        : %d\n", silcd->backup_noswitch);
+  fprintf(fdd, "  wait_backup            : %d\n", silcd->wait_backup);
+  if (silcd->router)
+    fprintf(fdd, "  primary router         : %s\n", 
+      silcd->router->server_name ? silcd->router->server_name : "");
+
+  /* Dump socket connections */
+  {
+    int i;
+    SilcSocketConnection s;
+
+    fprintf(fdd, "\nDumping socket connections\n");
+    for (i = 0; i < silcd->config->param.connections_max; i++) {
+      s = silcd->sockets[i];
+      if (!s)
+        continue;
+      fprintf(fdd, "  %d: host %s ip %s port %d type %d flags 0x%x\n",
+	      s->sock, s->hostname ? s->hostname : "N/A",
+	      s->ip ? s->ip : "N/A", s->port, s->type,
+	      (unsigned int)s->flags);
+    }
+  }
+
   /* Dump lists */
   {
     SilcIDCacheList list = NULL;

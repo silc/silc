@@ -1,7 +1,7 @@
 Quick Installation
 ==================
 
-   To configure and compile SILC package give the comands:
+   To configure and compile SILC package give the commands:
 
 	./configure
 	make (or gmake)
@@ -10,6 +10,9 @@ Quick Installation
    This will install the SILC binaries and configuration files into the
 /usr/local/silc/ directory.  System wide configuration files are installed
 into the /etc/silc/ directory.
+
+You may need to add the /usr/local/silc path to your PATH environment
+variable after the installation.
 
 Some Configuration Options
 ==========================

@@ -532,9 +532,12 @@ int silc_buffer_strformat(SilcBuffer dst, ...)
       goto ok;
 
     dst->head = silc_realloc(dst->head, sizeof(*dst->head) *
-			     (strlen(string) + len));
+			     (strlen(string) + len + 1));
+    if (!dst->head)
+      return -1;
     memcpy(dst->head + len, string, strlen(string));
     len += strlen(string);
+    dst->head[len] = '\0';
   }
 
   SILC_LOG_DEBUG(("Error occured while formatting buffer"));
@@ -543,9 +546,9 @@ int silc_buffer_strformat(SilcBuffer dst, ...)
 
  ok:
   dst->end = dst->head + len;
-  dst->tail = dst->data = dst->end;
-  dst->len = 0;
-  dst->truelen = len;
+  dst->data = dst->head;
+  dst->tail = dst->end;
+  dst->len = dst->truelen = len;
 
   va_end(va);
   return len;

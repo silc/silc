@@ -2005,6 +2005,7 @@ void silc_server_packet_queue_purge(SilcServer server,
 {
   if (sock && SILC_IS_OUTBUF_PENDING(sock) && 
       (SILC_IS_DISCONNECTED(sock) == FALSE)) {
+    SILC_LOG_DEBUG(("Purging ourgoing queue"));
     server->stat.packets_sent++;
     silc_packet_send(sock, TRUE);
     SILC_UNSET_OUTBUF_PENDING(sock);

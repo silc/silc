@@ -455,7 +455,8 @@ manpageauthor()
 SILC is designed and written by Pekka Riikonen <priikone@iki.fi> and rest
 of the SILC Project.
 
-Configuration file format and parser is by Johnny Mnemonic.
+Configuration file format and parser is by Giovanni Giacobbi
+<giovanni@giacobbi.net>.
 
 This manpage was written by Mika 'Bostik' Boström <bostik@lut.fi>
 

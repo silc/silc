@@ -527,7 +527,8 @@ typedef struct {
      message to a specific connection.  `conn', however, may be NULL. 
      The `type' indicates the type of the message sent by the library.
      The application can for example filter the message according the
-     type. */
+     type.  The variable argument list is arguments to the formatted
+     message that `msg' may be. */
   void (*say)(SilcClient client, SilcClientConnection conn, 
 	      SilcClientMessageType type, char *msg, ...);
 

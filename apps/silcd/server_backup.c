@@ -96,7 +96,7 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
     if (!server->backup->servers[i].server) {
       server->backup->servers[i].server = backup_server;
       server->backup->servers[i].local = local;
-      server->backup->servers[i].port = htons(port);
+      server->backup->servers[i].port = SILC_SWAB_16(port);
       memset(server->backup->servers[i].ip.data, 0,
 	     sizeof(server->backup->servers[i].ip.data));
       silc_net_addr2bin(ip, server->backup->servers[i].ip.data,
@@ -111,7 +111,7 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
 					 (i + 1));
   server->backup->servers[i].server = backup_server;
   server->backup->servers[i].local = local;
-  server->backup->servers[i].port = htons(port);
+  server->backup->servers[i].port = SILC_SWAB_16(port);
   memset(server->backup->servers[i].ip.data, 0,
 	 sizeof(server->backup->servers[i].ip.data));
   silc_net_addr2bin(ip, server->backup->servers[i].ip.data,
@@ -1054,6 +1054,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
 	    SILC_LOG_DEBUG(("Sending RESUMED to %s",
 			    server_entry->server_name));
+	    SILC_LOG_INFO(("Sending RESUMED to %s",
+			   server_entry->server_name));
 
 	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 
@@ -1091,6 +1093,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
 	    SILC_LOG_DEBUG(("Sending RESUMED to %s",
 			    server_entry->server_name));
+	    SILC_LOG_INFO(("Sending RESUMED to %s",
+			   server_entry->server_name));
 
 	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 
@@ -1257,16 +1261,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 		protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
 	      server->backup_noswitch = TRUE;
 	      server->server_type = SILC_BACKUP_ROUTER;
+	      if (ctx->sock == sock)
+		ctx->sock = NULL;
 
 	      if (sock->user_data)
 		silc_server_free_sock_user_data(server, sock, NULL);
 	      silc_server_close_connection(server, sock);
-
-	      silc_schedule_task_add(server->schedule, 0,
-				     silc_server_connect_to_router,
-				     server, 1, 0,
-				     SILC_TASK_TIMEOUT,
-				     SILC_TASK_PRI_NORMAL);
+	      silc_server_create_connections(server);
 
 	      if (!silc_idcache_list_next(list, &id_cache))
 		break;
@@ -1300,16 +1301,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 		protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
 	      server->backup_noswitch = TRUE;
 	      server->server_type = SILC_BACKUP_ROUTER;
+	      if (ctx->sock == sock)
+		ctx->sock = NULL;
 
 	      if (sock->user_data)
 		silc_server_free_sock_user_data(server, sock, NULL);
 	      silc_server_close_connection(server, sock);
-
-	      silc_schedule_task_add(server->schedule, 0,
-				     silc_server_connect_to_router,
-				     server, 1, 0,
-				     SILC_TASK_TIMEOUT,
-				     SILC_TASK_PRI_NORMAL);
+	      silc_server_create_connections(server);
 
 	      if (!silc_idcache_list_next(list, &id_cache))
 		break;
@@ -1332,7 +1330,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
       protocol->state != SILC_PROTOCOL_STATE_FAILURE)
     SILC_LOG_INFO(("Backup resuming protocol ended successfully"));
 
-  if (ctx->sock->protocol)
+  if (ctx->sock && ctx->sock->protocol)
     ctx->sock->protocol = NULL;
   silc_protocol_free(protocol);
   silc_free(ctx->sessions);

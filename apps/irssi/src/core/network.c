@@ -27,7 +27,7 @@
 #  define INADDR_NONE INADDR_BROADCAST
 #endif
 
-union sockaddr_union {
+union irssi_sockaddr_union {
 	struct sockaddr sa;
 	struct sockaddr_in sin;
 #ifdef HAVE_IPV6
@@ -71,7 +71,7 @@ G_INLINE_FUNC
 #else
 static
 #endif
-void sin_set_ip(union sockaddr_union *so, const IPADDR *ip)
+void sin_set_ip(union irssi_sockaddr_union *so, const IPADDR *ip)
 {
 	if (ip == NULL) {
 #ifdef HAVE_IPV6
@@ -93,7 +93,7 @@ void sin_set_ip(union sockaddr_union *so, const IPADDR *ip)
 		memcpy(&so->sin.sin_addr, &ip->ip, 4);
 }
 
-void sin_get_ip(const union sockaddr_union *so, IPADDR *ip)
+void sin_get_ip(const union irssi_sockaddr_union *so, IPADDR *ip)
 {
 	ip->family = so->sin.sin_family;
 
@@ -110,7 +110,7 @@ G_INLINE_FUNC
 #else
 static
 #endif
-void sin_set_port(union sockaddr_union *so, int port)
+void sin_set_port(union irssi_sockaddr_union *so, int port)
 {
 #ifdef HAVE_IPV6
 	if (so->sin.sin_family == AF_INET6)
@@ -125,7 +125,7 @@ G_INLINE_FUNC
 #else
 static
 #endif
-int sin_get_port(union sockaddr_union *so)
+int sin_get_port(union irssi_sockaddr_union *so)
 {
 #ifdef HAVE_IPV6
 	if (so->sin.sin_family == AF_INET6)
@@ -173,7 +173,7 @@ GIOChannel *net_connect(const char *addr, int port, IPADDR *my_ip)
 /* Connect to socket with ip address */
 GIOChannel *net_connect_ip(IPADDR *ip, int port, IPADDR *my_ip)
 {
-	union sockaddr_union so;
+	union irssi_sockaddr_union so;
 	int handle, ret, opt = 1;
 
 	if (my_ip != NULL && ip->family != my_ip->family) {
@@ -274,7 +274,7 @@ void net_disconnect(GIOChannel *handle)
    address. */
 GIOChannel *net_listen(IPADDR *my_ip, int *port)
 {
-	union sockaddr_union so;
+	union irssi_sockaddr_union so;
 	int ret, handle, opt = 1;
 	socklen_t len;
 
@@ -331,7 +331,7 @@ GIOChannel *net_listen(IPADDR *my_ip, int *port)
 /* Accept a connection on a socket */
 GIOChannel *net_accept(GIOChannel *handle, IPADDR *addr, int *port)
 {
-	union sockaddr_union so;
+	union irssi_sockaddr_union so;
 	int ret;
 	socklen_t addrlen;
 
@@ -391,7 +391,7 @@ int net_transmit(GIOChannel *handle, const char *data, int len)
 /* Get socket address/port */
 int net_getsockname(GIOChannel *handle, IPADDR *addr, int *port)
 {
-	union sockaddr_union so;
+	union irssi_sockaddr_union so;
 	socklen_t addrlen;
 
 	g_return_val_if_fail(handle != NULL, -1);
@@ -414,7 +414,7 @@ int net_getsockname(GIOChannel *handle, IPADDR *addr, int *port)
 int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 {
 #ifdef HAVE_IPV6
-	union sockaddr_union *so;
+	union irssi_sockaddr_union *so;
 	struct addrinfo hints, *ai, *ailist;
 	int ret, count;
 #else
@@ -437,7 +437,7 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 
         count = 0;
 	for (ai = ailist; ai != NULL && count < 2; ai = ai->ai_next) {
-		so = (union sockaddr_union *) ai->ai_addr;
+		so = (union irssi_sockaddr_union *) ai->ai_addr;
 
 		if (ai->ai_family == AF_INET6 && ip6->family == 0) {
 			sin_get_ip(so, ip6);

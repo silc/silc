@@ -182,6 +182,7 @@ static void key_send_line(void)
 {
 	HISTORY_REC *history;
         char *str, *add_history;
+	gint flags = (redir ? redir->flags : 0);
 
 	str = gui_entry_get_text(active_entry);
 
@@ -197,9 +198,13 @@ static void key_send_line(void)
 			    active_win->active_server,
 			    active_win->active);
 	} else {
-		if (redir->flags & ENTRY_REDIRECT_FLAG_HIDDEN)
+		if (flags & ENTRY_REDIRECT_FLAG_HIDDEN && add_history) {
+			memset(add_history, 0, strlen(add_history));
                         g_free_and_null(add_history);
+		}
 		handle_entry_redirect(str);
+		if (flags & ENTRY_REDIRECT_FLAG_HIDDEN && str)
+			memset(str, 0, strlen(str));
 	}
 
 	if (add_history != NULL) {

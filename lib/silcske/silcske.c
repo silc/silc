@@ -201,17 +201,15 @@ SilcSKEStatus silc_ske_initiator_start(SilcSKE ske, SilcRng rng,
   if (status != SILC_SKE_STATUS_OK)
     return status;
 
-  /* Take a copy of the payload buffer for future use. It is used to
-     compute the HASH value. */
-  ske->start_payload_copy = silc_buffer_copy(payload_buf);
-  ske->start_payload = start_payload;
-
   /* Send the packet. */
   if (ske->callbacks->send_packet)
     (*ske->callbacks->send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE, 
 				   ske->callbacks->context);
 
-  silc_buffer_free(payload_buf);
+  /* Save the the payload buffer for future use. It is later used to 
+     compute the HASH value. */
+  ske->start_payload_copy = payload_buf;
+  ske->start_payload = start_payload;
 
   return status;
 }
@@ -427,10 +425,9 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
       ske->status = SILC_SKE_STATUS_SIGNATURE_ERROR;
       return ske->status;
     }
-    payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
-    memcpy(payload->sign_data, sign, sign_len);
-    memset(sign, 0, sizeof(sign));
+    payload->sign_data = silc_memdup(sign, sign_len);
     payload->sign_len = sign_len;
+    memset(sign, 0, sizeof(sign));
   }
 
   status = silc_ske_payload_ke_encode(ske, payload, &payload_buf);
@@ -514,8 +511,7 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
     if (status != SILC_SKE_STATUS_OK)
       goto err;
 
-    ske->hash = silc_calloc(hash_len, sizeof(unsigned char));
-    memcpy(ske->hash, hash, hash_len);
+    ske->hash = silc_memdup(hash, hash_len);
     ske->hash_len = hash_len;
 
     SILC_LOG_DEBUG(("Verifying signature (HASH)"));
@@ -627,8 +623,8 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
     
     ske->users++;
     (*ske->callbacks->verify_key)(ske, payload->pk_data, payload->pk_len,
-				 payload->pk_type, ske->callbacks->context,
-				 silc_ske_initiator_finish_final, NULL);
+				  payload->pk_type, ske->callbacks->context,
+				  silc_ske_initiator_finish_final, NULL);
     
     /* We will continue to the final state after the public key has
        been verified by the caller. */
@@ -726,8 +722,7 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
  err:
   if (remote_payload)
     silc_ske_payload_start_free(remote_payload);
-  if (payload)
-    silc_free(payload);
+  silc_free(payload);
 
   if (status == SILC_SKE_STATUS_OK)
     return SILC_SKE_STATUS_ERROR;
@@ -1056,8 +1051,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
     if (status != SILC_SKE_STATUS_OK)
       goto err;
 
-    ske->hash = silc_calloc(hash_len, sizeof(unsigned char));
-    memcpy(ske->hash, hash, hash_len);
+    ske->hash = silc_memdup(hash, hash_len);
     ske->hash_len = hash_len;
     
     SILC_LOG_DEBUG(("Signing HASH value"));
@@ -1070,10 +1064,9 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
       status = SILC_SKE_STATUS_SIGNATURE_ERROR;
       goto err;
     }
-    ske->ke2_payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
-    memcpy(ske->ke2_payload->sign_data, sign, sign_len);
-    memset(sign, 0, sizeof(sign));
+    ske->ke2_payload->sign_data = silc_memdup(sign, sign_len);
     ske->ke2_payload->sign_len = sign_len;
+    memset(sign, 0, sizeof(sign));
   }
   ske->ke2_payload->pk_type = pk_type;
 
@@ -1112,22 +1105,17 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 
 SilcSKEStatus silc_ske_end(SilcSKE ske)
 {
-  SilcBuffer packet;
+  SilcBufferStruct packet;
+  unsigned char data[4];
 
   SILC_LOG_DEBUG(("Start"));
 
-  packet = silc_buffer_alloc_size(4);
-  if (!packet)
-    return SILC_SKE_STATUS_OUT_OF_MEMORY;
-  silc_buffer_format(packet,
-		     SILC_STR_UI_INT((SilcUInt32)SILC_SKE_STATUS_OK),
-		     SILC_STR_END);
+  SILC_PUT32_MSB((SilcUInt32)SILC_SKE_STATUS_OK, data);
+  silc_buffer_set(&packet, data, 4);
 
   if (ske->callbacks->send_packet)
-    (*ske->callbacks->send_packet)(ske, packet, SILC_PACKET_SUCCESS, 
+    (*ske->callbacks->send_packet)(ske, &packet, SILC_PACKET_SUCCESS, 
 				   ske->callbacks->context);
-
-  silc_buffer_free(packet);
 
   return SILC_SKE_STATUS_OK;
 }
@@ -1138,25 +1126,20 @@ SilcSKEStatus silc_ske_end(SilcSKE ske)
 
 SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status)
 {
-  SilcBuffer packet;
+  SilcBufferStruct packet;
+  unsigned char data[4];
 
   SILC_LOG_DEBUG(("Start"));
 
   if (status > SILC_SKE_STATUS_INVALID_COOKIE)
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
 
-  packet = silc_buffer_alloc_size(4);
-  if (!packet)
-    return SILC_SKE_STATUS_OUT_OF_MEMORY;
-  silc_buffer_format(packet,
-		     SILC_STR_UI_INT((SilcUInt32)status),
-		     SILC_STR_END);
+  SILC_PUT32_MSB((SilcUInt32)status, data);
+  silc_buffer_set(&packet, data, 4);
 
   if (ske->callbacks->send_packet)
-    (*ske->callbacks->send_packet)(ske, packet, SILC_PACKET_FAILURE, 
+    (*ske->callbacks->send_packet)(ske, &packet, SILC_PACKET_FAILURE, 
 				   ske->callbacks->context);
-
-  silc_buffer_free(packet);
 
   return SILC_SKE_STATUS_OK;
 }

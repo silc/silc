@@ -687,8 +687,9 @@ silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len)
   SilcBuffer buf;
   unsigned char *ret;
 
-  buf = silc_buffer_alloc(public_key->len + 4);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  buf = silc_buffer_alloc_size(public_key->len + 4);
+  if (!buf)
+    return NULL;
 
   silc_buffer_format(buf,
 		     SILC_STR_UI_INT(public_key->len),
@@ -699,13 +700,9 @@ silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len)
 		     SILC_STR_UI_XNSTRING(public_key->pk, 
 					  public_key->pk_len),
 		     SILC_STR_END);
-  if (len)
-    *len = public_key->len + 4;
 
-  ret = silc_calloc(buf->len, sizeof(*ret));
-  memcpy(ret, buf->data, buf->len);
+  ret = silc_buffer_steal(buf, len);
   silc_buffer_free(buf);
-
   return ret;
 }
 
@@ -721,8 +718,9 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
   SilcUInt32 totlen;
 
   totlen = 2 + strlen(pkcs) + 2 + strlen(identifier) + pk_len;
-  buf = silc_buffer_alloc(totlen + 4);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  buf = silc_buffer_alloc_size(totlen + 4);
+  if (!buf)
+    return NULL;
 
   silc_buffer_format(buf,
 		     SILC_STR_UI_INT(totlen),
@@ -732,13 +730,9 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
 		     SILC_STR_UI32_STRING(identifier),
 		     SILC_STR_UI_XNSTRING(pk, pk_len),
 		     SILC_STR_END);
-  if (len)
-    *len = totlen + 4;
 
-  ret = silc_calloc(buf->len, sizeof(*ret));
-  memcpy(ret, buf->data, buf->len);
+  ret = silc_buffer_steal(buf, len);
   silc_buffer_free(buf);
-
   return ret;
 }
 
@@ -748,40 +742,34 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
 bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
 				 SilcPublicKey *public_key)
 {
-  SilcBuffer buf;
+  SilcBufferStruct buf;
   SilcPKCS alg;
   SilcUInt16 pkcs_len, identifier_len;
   SilcUInt32 totlen, key_len;
   unsigned char *pkcs_name = NULL, *ident = NULL, *key_data = NULL;
   int ret;
 
-  buf = silc_buffer_alloc(data_len);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
-  silc_buffer_put(buf, data, data_len);
+  silc_buffer_set(&buf, data, data_len);
 
   /* Get length */
-  ret = silc_buffer_unformat(buf,
+  ret = silc_buffer_unformat(&buf,
 			     SILC_STR_UI_INT(&totlen),
 			     SILC_STR_END);
-  if (ret == -1) {
-    silc_buffer_free(buf);
+  if (ret == -1)
     return FALSE;
-  }
 
 #if 1 /* Backwards support, remove! */
   if (totlen == data_len)
     totlen -= 4;
 #endif
 
-  if (totlen + 4 != data_len) {
-    silc_buffer_free(buf);
+  if (totlen + 4 != data_len)
     return FALSE;
-  }
 
   /* Get algorithm name and identifier */
-  silc_buffer_pull(buf, 4);
+  silc_buffer_pull(&buf, 4);
   ret =
-    silc_buffer_unformat(buf,
+    silc_buffer_unformat(&buf,
 			 SILC_STR_UI16_NSTRING_ALLOC(&pkcs_name, &pkcs_len),
 			 SILC_STR_UI16_NSTRING_ALLOC(&ident, &identifier_len),
 			 SILC_STR_END);
@@ -807,9 +795,9 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
   }
 
   /* Get key data. We assume that rest of the buffer is key data. */
-  silc_buffer_pull(buf, 2 + pkcs_len + 2 + identifier_len);
-  key_len = buf->len;
-  ret = silc_buffer_unformat(buf,
+  silc_buffer_pull(&buf, 2 + pkcs_len + 2 + identifier_len);
+  key_len = buf.len;
+  ret = silc_buffer_unformat(&buf,
 			     SILC_STR_UI_XNSTRING_ALLOC(&key_data, key_len),
 			     SILC_STR_END);
   if (ret == -1)
@@ -835,17 +823,12 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
     (*public_key)->pk_type = SILC_SKE_PK_TYPE_SILC;
   }
 
-  silc_buffer_free(buf);
   return TRUE;
 
  err:
-  if (pkcs_name)
-    silc_free(pkcs_name);
-  if (ident)
-    silc_free(ident);
-  if (key_data)
-    silc_free(key_data);
-  silc_buffer_free(buf);
+  silc_free(pkcs_name);
+  silc_free(ident);
+  silc_free(key_data);
   return FALSE;
 }
 
@@ -971,8 +954,9 @@ silc_pkcs_private_key_encode(SilcPrivateKey private_key, SilcUInt32 *len)
   SilcUInt32 totlen;
 
   totlen = 2 + strlen(private_key->name) + private_key->prv_len;
-  buf = silc_buffer_alloc(totlen);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  buf = silc_buffer_alloc_size(totlen);
+  if (!buf)
+    return NULL;
 
   silc_buffer_format(buf,
 		     SILC_STR_UI_SHORT(strlen(private_key->name)),
@@ -980,14 +964,9 @@ silc_pkcs_private_key_encode(SilcPrivateKey private_key, SilcUInt32 *len)
 		     SILC_STR_UI_XNSTRING(private_key->prv, 
 					  private_key->prv_len),
 		     SILC_STR_END);
-  if (len)
-    *len = totlen;
 
-  ret = silc_calloc(buf->len, sizeof(*ret));
-  memcpy(ret, buf->data, buf->len);
-  silc_buffer_clear(buf);
+  ret = silc_buffer_steal(buf, len);
   silc_buffer_free(buf);
-
   return ret;
 }
 
@@ -1002,22 +981,18 @@ silc_pkcs_private_key_data_encode(unsigned char *prv, SilcUInt32 prv_len,
   SilcUInt32 totlen;
 
   totlen = 2 + strlen(pkcs) + prv_len;
-  buf = silc_buffer_alloc(totlen);
-  silc_buffer_pull_tail(buf, totlen);
+  buf = silc_buffer_alloc_size(totlen);
+  if (!buf)
+    return NULL;
 
   silc_buffer_format(buf,
 		     SILC_STR_UI_SHORT(strlen(pkcs)),
 		     SILC_STR_UI32_STRING(pkcs),
 		     SILC_STR_UI_XNSTRING(prv, prv_len),
 		     SILC_STR_END);
-  if (len)
-    *len = totlen;
 
-  ret = silc_calloc(buf->len, sizeof(*ret));
-  memcpy(ret, buf->data, buf->len);
-  silc_buffer_clear(buf);
+  ret = silc_buffer_steal(buf, len);
   silc_buffer_free(buf);
-
   return ret;
 }
 
@@ -1027,20 +1002,18 @@ silc_pkcs_private_key_data_encode(unsigned char *prv, SilcUInt32 prv_len,
 bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
 				  SilcPrivateKey *private_key)
 {
-  SilcBuffer buf;
+  SilcBufferStruct buf;
   SilcPKCS alg;
   SilcUInt16 pkcs_len;
   SilcUInt32 key_len;
   unsigned char *pkcs_name = NULL, *key_data = NULL;
   int ret;
 
-  buf = silc_buffer_alloc(data_len);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
-  silc_buffer_put(buf, data, data_len);
+  silc_buffer_set(&buf, data, data_len);
 
   /* Get algorithm name and identifier */
   ret = 
-    silc_buffer_unformat(buf,
+    silc_buffer_unformat(&buf,
 			 SILC_STR_UI16_NSTRING_ALLOC(&pkcs_name, &pkcs_len),
 			 SILC_STR_END);
   if (ret == -1) {
@@ -1048,7 +1021,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
     goto err;
   }
 
-  if (pkcs_len < 1 || pkcs_len > buf->truelen) {
+  if (pkcs_len < 1 || pkcs_len > buf.truelen) {
     SILC_LOG_DEBUG(("Malformed private key buffer"));
     goto err;
   }
@@ -1060,9 +1033,9 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
   }
 
   /* Get key data. We assume that rest of the buffer is key data. */
-  silc_buffer_pull(buf, 2 + pkcs_len);
-  key_len = buf->len;
-  ret = silc_buffer_unformat(buf,
+  silc_buffer_pull(&buf, 2 + pkcs_len);
+  key_len = buf.len;
+  ret = silc_buffer_unformat(&buf,
 			     SILC_STR_UI_XNSTRING_ALLOC(&key_data, key_len),
 			     SILC_STR_END);
   if (ret == -1)
@@ -1087,17 +1060,11 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
     (*private_key)->prv_len = key_len;
   }
 
-  silc_buffer_clear(buf);
-  silc_buffer_free(buf);
   return TRUE;
 
  err:
-  if (pkcs_name)
-    silc_free(pkcs_name);
-  if (key_data)
-    silc_free(key_data);
-  silc_buffer_clear(buf);
-  silc_buffer_free(buf);
+  silc_free(pkcs_name);
+  silc_free(key_data);
   return FALSE;
 }
 
@@ -1110,20 +1077,24 @@ static bool silc_pkcs_save_public_key_internal(const char *filename,
 {
   SilcBuffer buf;
   SilcUInt32 len;
+  unsigned char *tmp = NULL;
 
   switch(encoding) {
   case SILC_PKCS_FILE_BIN:
     break;
   case SILC_PKCS_FILE_PEM:
-    data = silc_pem_encode_file(data, data_len);
+    tmp = data = silc_pem_encode_file(data, data_len);
     data_len = strlen(data);
     break;
   }
 
   len = data_len + (strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) +
 		    strlen(SILC_PKCS_PUBLIC_KEYFILE_END));
-  buf = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  buf = silc_buffer_alloc_size(len);
+  if (!buf) {
+    silc_free(tmp);
+    return FALSE;
+  }
 
   silc_buffer_format(buf,
 		     SILC_STR_UI32_STRING(SILC_PKCS_PUBLIC_KEYFILE_BEGIN),
@@ -1133,10 +1104,12 @@ static bool silc_pkcs_save_public_key_internal(const char *filename,
 
   /* Save into file */
   if (silc_file_writefile(filename, buf->data, buf->len)) {
+    silc_free(tmp);
     silc_buffer_free(buf);
     return FALSE;
   }
 
+  silc_free(tmp);
   silc_buffer_free(buf);
   return TRUE;
 }

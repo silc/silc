@@ -2,7 +2,7 @@
 
   serverconfig.c
 
-  Author: Johnny Mnemonic <johnny@themnemonic.org>
+  Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
   Copyright (C) 1997 - 2002 Pekka Riikonen
 
@@ -495,22 +495,40 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigServerInfoInterface);
   SilcServerConfigServerInfo *server_info = config->server_info;
 
-  /* if there isn't the struct alloc it */
+  SERVER_CONFIG_DEBUG(("Received SERVERINFO type=%d name=\"%s\" (val=%x)",
+		       type, name, context));
+
+  /* if there isn't the main struct alloc it */
   if (!server_info)
     config->server_info = server_info = (SilcServerConfigServerInfo *)
 		silc_calloc(1, sizeof(*server_info));
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
     if (!strcmp(name, "primary")) {
+      if (server_info->primary) {
+	SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			       "Double primary specification."));
+	got_errno = SILC_CONFIG_EPRINTLINE;
+	goto got_err;
+      }
       CONFIG_IS_DOUBLE(server_info->primary);
-      if (!tmp)
-	return SILC_CONFIG_OK;
+
+      /* now check the temporary struct, don't accept empty block and
+         make sure all fields are there */
+      if (!tmp || !tmp->server_ip || !tmp->port) {
+	got_errno = SILC_CONFIG_EMISSFIELDS;
+	goto got_err;
+      }
       server_info->primary = tmp;
       config->tmp = NULL;
       return SILC_CONFIG_OK;
     } else if (!strcmp(name, "secondary")) {
       if (!tmp)
 	return SILC_CONFIG_OK;
+      if (!tmp || !tmp->server_ip || !tmp->port) {
+	got_errno = SILC_CONFIG_EMISSFIELDS;
+	goto got_err;
+      }
       SILC_SERVER_CONFIG_LIST_APPENDTMP(server_info->secondary);
       config->tmp = NULL;
       return SILC_CONFIG_OK;
@@ -603,9 +621,13 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   return SILC_CONFIG_OK;
 
  got_err:
-  silc_free(tmp);
-  silc_free(config->tmp);
-  config->tmp = NULL;
+  /* here we need to check if tmp exists because this function handles
+   * misc data (multiple fields and single-only fields) */
+  if (tmp) {
+    silc_free(tmp->server_ip);
+    silc_free(tmp);
+    config->tmp = NULL;
+  }
   return got_errno;
 }
 
@@ -1438,6 +1460,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
       }
     }
     silc_server_config_destroy(config_new);
+    silc_config_close(file);
     return NULL;
   }
 

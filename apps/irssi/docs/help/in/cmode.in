@@ -5,27 +5,28 @@ This command is used to manage the modes of the channel.  Most
 of the modes require special privileges, such as channel operator
 or channel founder privileges to work.  The mode is added by
 adding + before the option(s) and removed by adding - before the
-option(s).  The following modes are available:
+option(s).  The (*) mark below means that only founder may set/unset
+that mode.  Other modes both channel operator and founder may manage.
+
+The following modes are available:
 
     p               Set/unset channel as private channel
     s               Set/unset channel as secret channel
-    k               Set/unset that channel uses private channel key
+    k               Enable/disable channel private key usage (*)
     i               Set/unset channel as invite only channel
     t               Set/unset that only channel operator or 
                     founder may set channel topic
     m               Set/unset user silencing.  Normal users
-                    are not able to talk on channel.  Only
-                    channel founder may set this mode
+                    are not able to talk on channel. (*)
     M               Set/unset operator silencing.  Operators
-                    are not able to talk on channel.  Only
-                    channel founder may set this mode
+                    are not able to talk on channel. (*)
     l <limit>       Set/unset channel's user limit
     a <passphrase>  Set/unset passphrase for channel that must
-                    be provided when joining to the channel.
-    c <cipher>      Set/unset channel's cipher
-    h <hmac>        Set/unset channel's hmac
+                    be provided when joining to the channel. (*)
+    c <cipher>      Set/unset channel's cipher (*)
+    h <hmac>        Set/unset channel's hmac (*)
     f [<pubkeyfile> <privkeyfile> [<privkey passphrase>]]
-                    Set/unset channel founder authentication.
+                    Set/unset channel founder authentication. (*)
                     Channel founder may set this mode so that
                     if the client leaves the channel it can
                     claim the founder rights when it returns
@@ -45,4 +46,10 @@ Multiple modes can be set/unset at once if the modes does not
 require any arguments.  If mode requires an argument then only
 one mode can be set at once.
 
-See also: CUMODE, UMODE, JOIN
+When the +k (channel private key mode) mode is set the channel's
+default cipher and HMAC are not used.  The private key (see /HELP KEY
+for help how to set the private key) defines the cipher and HMAC for
+the channel while +k mode is set.  Also the +c and +h modes are ignored
+when channel private key is set.
+
+See also: CUMODE, UMODE, JOIN, KEY

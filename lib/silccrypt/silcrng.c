@@ -554,7 +554,7 @@ SilcUInt16 silc_rng_get_rn16(SilcRng rng)
 SilcUInt32 silc_rng_get_rn32(SilcRng rng)
 {
   unsigned char rn[4];
-  SilcUInt16 num;
+  SilcUInt32 num;
 
   rn[0] = silc_rng_get_byte(rng);
   rn[1] = silc_rng_get_byte(rng);

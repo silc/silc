@@ -317,7 +317,7 @@ SILC_PKCS_API_ENCRYPT(pkcs1)
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
   unsigned char *padded;
-  SilcUInt32 padded_len, len = key->bits / 8;
+  SilcUInt32 padded_len, len = (key->bits + 7) / 8;
 
   /* Pad data */
   if (!RSA_FormatBlock(&padded, &padded_len, len,
@@ -326,8 +326,6 @@ SILC_PKCS_API_ENCRYPT(pkcs1)
 
   silc_mp_init(&mp_tmp);
   silc_mp_init(&mp_dst);
-  silc_mp_set_ui(&mp_tmp, 0);
-  silc_mp_set_ui(&mp_dst, 0);
 
   /* Data to MP */
   silc_mp_bin2mp(padded, padded_len, &mp_tmp);
@@ -357,8 +355,6 @@ SILC_PKCS_API_DECRYPT(pkcs1)
 
   silc_mp_init(&mp_tmp);
   silc_mp_init(&mp_dst);
-  silc_mp_set_ui(&mp_tmp, 0);
-  silc_mp_set_ui(&mp_dst, 0);
 
   /* Data to MP */
   silc_mp_bin2mp(src, src_len, &mp_tmp);
@@ -367,7 +363,7 @@ SILC_PKCS_API_DECRYPT(pkcs1)
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
 
   /* MP to data */
-  padded = silc_mp_mp2bin(&mp_dst, key->bits / 8, &padded_len);
+  padded = silc_mp_mp2bin(&mp_dst, (key->bits + 7) / 8, &padded_len);
 
   /* Unpad data */
   unpadded = RSA_DecodeOneBlock(padded, padded_len, 0, 
@@ -401,7 +397,7 @@ SILC_PKCS_API_SIGN(pkcs1)
   SilcMPInt mp_dst;
   unsigned char *padded;
   SilcUInt32 padded_len;
-  SilcUInt32 len = key->bits / 8;
+  SilcUInt32 len = (key->bits + 7) / 8;
 
   /* Pad data */
   if (!RSA_FormatBlock(&padded, &padded_len, len, RSA_BlockPrivate, 
@@ -410,8 +406,6 @@ SILC_PKCS_API_SIGN(pkcs1)
 
   silc_mp_init(&mp_tmp);
   silc_mp_init(&mp_dst);
-  silc_mp_set_ui(&mp_tmp, 0);
-  silc_mp_set_ui(&mp_dst, 0);
 
   /* Data to MP */
   silc_mp_bin2mp(padded, len, &mp_tmp);
@@ -438,12 +432,10 @@ SILC_PKCS_API_VERIFY(pkcs1)
   SilcMPInt mp_tmp2;
   SilcMPInt mp_dst;
   unsigned char *verify, *unpadded;
-  SilcUInt32 verify_len, len = key->bits / 8;
+  SilcUInt32 verify_len, len = (key->bits + 7) / 8;
 
   silc_mp_init(&mp_tmp2);
   silc_mp_init(&mp_dst);
-  silc_mp_set_ui(&mp_tmp2, 0);
-  silc_mp_set_ui(&mp_dst, 0);
 
   /* Format the signature into MP int */
   silc_mp_bin2mp(signature, signature_len, &mp_tmp2);

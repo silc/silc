@@ -1175,6 +1175,8 @@ SILC_CLIENT_CMD_FUNC(join)
   silc_buffer_free(idp);
   if (auth)
     silc_buffer_free(auth);
+  if (passphrase)
+    memset(passphrase, 0, strlen(passphrase));
   silc_free(passphrase);
 
   /* Notify application */
@@ -1935,6 +1937,7 @@ static void silc_client_command_oper_send(unsigned char *data,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
 
   silc_buffer_free(buffer);
+  silc_buffer_clear(auth);
   silc_buffer_free(auth);
 
   /* Notify application */
@@ -2006,6 +2009,7 @@ static void silc_client_command_silcoper_send(unsigned char *data,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
 
   silc_buffer_free(buffer);
+  silc_buffer_clear(auth);
   silc_buffer_free(auth);
 
   /* Notify application */

@@ -160,6 +160,7 @@ SILC_TASK_CALLBACK(silc_server_command_process_timeout)
     SILC_LOG_DEBUG(("Client entry is invalid"));
     silc_server_command_free(timeout->ctx);
     silc_free(timeout);
+    return;
   }
 
   /* Update access time */
@@ -239,6 +240,7 @@ void silc_server_command_process(SilcServer server,
     if (!client) {
       SILC_LOG_DEBUG(("Client entry is invalid"));
       silc_server_command_free(ctx);
+      return;
     }
 
     timeout = silc_calloc(1, sizeof(*timeout));
@@ -1106,8 +1108,6 @@ SILC_SERVER_CMD_FUNC(invite)
 				  silc_server_command_invite, 
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
-      silc_free(channel_id);
-      silc_free(dest_id);
       goto out;
     }
 
@@ -1222,14 +1222,9 @@ SILC_SERVER_CMD_FUNC(invite)
 					  channel->invite_list)),
 		       SILC_STR_END);
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
-      if (type == 1)
-	list = silc_argument_payload_encode_one(list, (char *)tmp2,
-						strlen((char *)tmp2), type);
-      else
-	list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
-						type);
-    }
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+      list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
+					      type);
     silc_hash_table_list_reset(&htl);
   }
 
@@ -2050,17 +2045,10 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply)) {
-      if (tmp_len == 1)
-	invite_list = silc_argument_payload_encode_one(invite_list,
-						       (char *)reply,
-						       strlen((char *)reply),
-						       tmp_len);
-      else
-	invite_list = silc_argument_payload_encode_one(invite_list,
-						       reply->data,
-						       reply->len, tmp_len);
-    }
+    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply))
+      invite_list = silc_argument_payload_encode_one(invite_list,
+						     reply->data,
+						     reply->len, tmp_len);
     silc_hash_table_list_reset(&htl);
   }
 
@@ -2076,17 +2064,10 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply)) {
-      if (tmp_len == 1)
-	ban_list = silc_argument_payload_encode_one(ban_list,
-						    (char *)reply,
-						    strlen((char *)reply),
-						    tmp_len);
-      else
-	ban_list = silc_argument_payload_encode_one(ban_list,
-						    reply->data,
-						    reply->len, tmp_len);
-    }
+    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply))
+      ban_list = silc_argument_payload_encode_one(ban_list,
+						  reply->data,
+						  reply->len, tmp_len);
     silc_hash_table_list_reset(&htl);
   }
 
@@ -2184,6 +2165,8 @@ static void silc_server_command_join_channel(SilcServer server,
   silc_buffer_free(ban_list);
 
  out:
+  if (passphrase)
+    memset(passphrase, 0, strlen(passphrase));
   silc_free(passphrase);
 }
 
@@ -2939,7 +2922,6 @@ SILC_SERVER_CMD_FUNC(cmode)
       hmac = channel->hmac_name;
 
       /* Delete old hmac and allocate default one */
-      silc_hmac_free(channel->hmac);
       if (!silc_hmac_alloc(hmac ? hmac : SILC_DEFAULT_HMAC, NULL, &newhmac)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
@@ -4214,14 +4196,9 @@ SILC_SERVER_CMD_FUNC(ban)
 					  channel->ban_list)),
 		       SILC_STR_END);
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
-      if (type == 1)
-	list = silc_argument_payload_encode_one(list, (char *)tmp2,
-						strlen((char *)tmp2), type);
-      else
-	list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
-						type);
-    }
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+      list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
+					      type);
     silc_hash_table_list_reset(&htl);
   }
 
@@ -4770,17 +4747,19 @@ SILC_SERVER_CMD_FUNC(close)
   /* Close the connection to the server */
   sock = (SilcSocketConnection)server_entry->connection;
 
-  /* If we shutdown primary router connection manually then don't trigger
-     any reconnect or backup router connections, by setting the router
-     to NULL here. */
+  server->backup_noswitch = TRUE;
   if (server->router == server_entry) {
     server->id_entry->router = NULL;
     server->router = NULL;
     server->standalone = TRUE;
   }
-  silc_server_free_sock_user_data(server, sock, NULL);
-  silc_server_close_connection(server, sock);
-  
+  silc_server_disconnect_remote(server, sock,
+				SILC_STATUS_ERR_BANNED_FROM_SERVER,
+				"Closed by administrator");
+  if (sock->user_data)
+    silc_server_free_sock_user_data(server, sock, NULL);
+  server->backup_noswitch = FALSE;
+
  out:
   silc_server_command_free(cmd);
 }

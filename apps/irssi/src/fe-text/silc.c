@@ -310,7 +310,9 @@ static void winsock_init(void)
 int main(int argc, char **argv)
 {
 	static struct poptOption options[] = {
+#if 0 /* --dummy is not available in SILC Client */
 		{ "dummy", 'd', POPT_ARG_NONE, &dummy, 0, "Use the dummy terminal mode", NULL },
+#endif
 		{ NULL, '\0', 0, NULL }
 	};
 

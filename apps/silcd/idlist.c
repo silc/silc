@@ -227,7 +227,7 @@ silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
     
     if (sock && ((sock->hostname && !strcasecmp(sock->hostname, hostname)) ||
 		 (sock->ip && !strcasecmp(sock->ip, hostname)))
-	&& server->id->port == htons(port))
+	&& server->id->port == SILC_SWAB_16(port))
       break;
 
     id_cache = NULL;

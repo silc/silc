@@ -210,11 +210,41 @@ void silc_buffer_free(SilcBuffer sb)
 {
   if (sb) {
 #if defined(SILC_DEBUG)
-    memset(sb->head, 'F', sb->truelen);
+    if (sb->head)
+      memset(sb->head, 'F', sb->truelen);
 #endif
     silc_free(sb->head);
     silc_free(sb);
   }
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_steal
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    unsigned char *silc_buffer_steal(SilcBuffer sb, SilcUInt32 *data_len);
+ *
+ * DESCRIPTION
+ *
+ *    Steals the data from the buffer `sb'.  This returns pointer to the
+ *    start of the buffer and the true length of that buffer.  The `sb'
+ *    cannot be used anymore after calling this function because the
+ *    data buffer was stolen.  The `sb' must be freed with silc_buffer_free.
+ *    The caller is responsible of freeing the stolen data buffer with
+ *    silc_free.
+ *
+ ***/
+
+static inline
+unsigned char *silc_buffer_steal(SilcBuffer sb, SilcUInt32 *data_len)
+{
+  unsigned char *buf = sb->head;
+  if (data_len)
+    *data_len = sb->truelen;
+  sb->head = sb->data = sb->tail = sb->end = NULL;
+  sb->len = sb->truelen = 0;
+  return buf;
 }
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_set

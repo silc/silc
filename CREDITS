@@ -33,12 +33,12 @@ S: Skinnarilankatu 28 E 2
 S: 53850 Lappeenranta
 S: Finland
 
-N: Johnny Mnemonic
+N: Giovanni Giacobbi
+E: giovanni@giacobbi.net
 E: johnny@themnemonic.org
-W: http://www.themnemonic.org/
-P: 1024D/34E2AB40 9AC6 1460 A5D0 4DB7 70D0  5DA5 C17F 50CD 34E2 AB40
+P: 1024D/B2D79FC1 6247 640C 1C90 1EE4 D800  E4E2 2D58 3DF1 B2D7 9FC1
+D: silcconfig, silclog, various patches around
 D: RPM packages
-D: silclog, misc bugfixes
 S: 35100 Padova
 S: Italy
 

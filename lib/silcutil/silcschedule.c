@@ -399,12 +399,13 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 
       task = schedule->generic_queue->task;
       while(1) {
-	/* Validity of the task is checked always before and after
+	/* Validity of the task and fd is checked always before and after
 	   execution beacuse the task might have been unregistered
 	   in the callback function, ie. it is not valid anymore. */
 
 	/* Is the task ready for reading */				
-	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
+	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ &&
+	    fd == schedule->fd_list[i].fd) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
 	  task->callback(schedule, schedule->app_context,
@@ -414,7 +415,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	}
 
 	/* Is the task ready for writing */				
-	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE) {
+	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE &&
+	    fd == schedule->fd_list[i].fd) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
 	  task->callback(schedule, schedule->app_context,
@@ -718,9 +720,6 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   if (!schedule->valid)
     return NULL;
 
-  SILC_LOG_DEBUG(("Registering new task, fd=%d type=%d priority=%d", fd, 
-		  type, priority));
-
   queue = SILC_SCHEDULE_GET_QUEUE(type);
     
   /* If the task is generic task, we check whether this task has already
@@ -728,6 +727,9 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
      the same task applies to all file descriptors to be registered. */
   if (type == SILC_TASK_GENERIC) {
     silc_mutex_lock(queue->lock);
+
+    SILC_LOG_DEBUG(("Registering new task, fd=%d type=%d priority=%d", fd, 
+		    type, priority));
 
     if (queue->task) {
       SilcTask task = queue->task;
@@ -754,6 +756,12 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   }
 
   newtask = silc_calloc(1, sizeof(*newtask));
+  if (!newtask)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Registering new task %p, fd=%d type=%d priority=%d",
+		  newtask, fd, type, priority));
+
   newtask->fd = fd;
   newtask->context = context;
   newtask->callback = callback;
@@ -1223,7 +1231,7 @@ static int silc_schedule_task_remove(SilcTaskQueue queue, SilcTask task)
     return TRUE;
   }
 
-  SILC_LOG_DEBUG(("Removing task"));
+  SILC_LOG_DEBUG(("Removing task %p", task));
 
   /* Unregister the task */
   old = first;

@@ -1,0 +1,60 @@
+<big><b>Platform Implementations</b></big>
+
+<br />&nbsp;<br />
+This document describes the implementation issues with different platforms
+that the SILC Toolkit support.  Some of the supported platforms does not
+support all the features delivered with the Toolkit or they may behave
+differently from other platforms.  This document descibres these
+differences between platforms.
+
+<br />&nbsp;<br />
+<li><a href="#unix">Unix & Linux Implementation</a><br />
+<li><a href="#windows">Windows Implementation</a><br />
+<li><a href="#macosx">Mac OS X Implementation</a>
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Supported Platforms</b>
+
+<br />&nbsp;<br />
+SILC Toolkit supports by default all Unix and Linux platforms, Windows 
+platforms from Windows 98 and newer, and Mac OS X.  In the future there is
+also plans to add support for other platforms such as Symbian OS (EPOC).
+
+<br />&nbsp;<br />&nbsp;<br />
+<b><a name="unix"></a>Unix Implementation</b>
+
+<br />&nbsp;<br />
+All features and components delivered with the SILC Toolkit work on all
+Unix and Linux platforms.  There are no special Unix platform related
+implementation issues with current version of SILC Toolkit.
+
+
+<br />&nbsp;<br />&nbsp;<br />
+<b><a name="windows"></a>Windows Implementation</b>
+
+<br />&nbsp;<br />
+By default all features and components delivered with SILC Toolkit are
+supported on Windows.  However, there are some certain issues with the
+Windows version of the SILC Toolkit.
+
+<br />&nbsp;<br />
+<li>Toolkit users should not use <tt>silc_client_run</tt> function to
+execute the Client Library.  Instead the <tt>silc_client_run_one</tt> should
+be used, for example as an timer task and the Windows application's own
+message loop should be used as the main message loop.
+
+<li>The function <tt>silc_net_create_connection_async</tt> is not actually
+asynchronous on Windows, but synchronous and it will block the process
+while the connection is created.  This means also that the function
+<tt>silc_client_connect_to_server</tt> is not asynchronous but
+synchronous.
+
+
+<br />&nbsp;<br />&nbsp;<br />
+<b><a name="macosx"></a>Mac OS X Implementation</b>
+
+<br />&nbsp;<br />
+All features and components delivered with the SILC Toolkit work on Mac
+OS X platform.  There are no special Mac OS X platform related
+implementation issues with current version of SILC Toolkit.
+

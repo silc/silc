@@ -350,7 +350,9 @@ static void sig_init_finished(void)
 void session_init(void)
 {
 	static struct poptOption options[] = {
+#if 0 /* --session is not available in SILC Client */
 		{ "session", 0, POPT_ARG_STRING, &session_file, 0, "Used by /UPGRADE command", "PATH" },
+#endif
 		{ NULL, '\0', 0, NULL }
 	};
 

@@ -2,9 +2,9 @@
 
   silcconfig.c
 
-  Author: Johnny Mnemonic <johnny@themnemonic.org>
+  Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2003 Giovanni Giacobbi
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -172,7 +172,8 @@ static SilcConfigOption *silc_config_find_option(SilcConfigEntity ent,
   }
   return NULL;
 }
-/* ... */
+/* Converts a string in the type specified. returns a dynamically
+ * allocated pointer. */
 static void *silc_config_marshall(SilcConfigType type, const char *val)
 {
   void *pt;
@@ -578,7 +579,7 @@ static int silc_config_main_internal(SilcConfigEntity ent)
     }
     else {
       void *pt;
-      int ret;
+      int ret = 0;	/* very important in case of no cb */
 
       if (*(*p)++ != '=')
 	return SILC_CONFIG_EEXPECTEDEQUAL;
@@ -594,15 +595,17 @@ static int silc_config_main_internal(SilcConfigEntity ent)
       pt = silc_config_marshall(thisopt->type, buf);
       if (!pt)
 	return SILC_CONFIG_EINVALIDTEXT;
-      if (thisopt->cb) {
+      if (thisopt->cb)
 	ret = thisopt->cb(thisopt->type, thisopt->name, file->line,
 			  pt, thisopt->context);
-	if (ret) {
-	  SILC_CONFIG_DEBUG(("Callback refused the value [ret=%d]", ret));
-	  return ret;
-	}
-      }
+
+      /* since we have to free "pt" both on failure and on success, we
+         assume that ret == 0 if we didn't actually call any cb. */
       silc_free(pt);
+      if (ret) {
+	SILC_CONFIG_DEBUG(("Callback refused the value [ret=%d]", ret));
+	return ret;
+      }
     }
     continue;
 

@@ -28,6 +28,13 @@ of the Toolkit always delivers the latest version of this reference manual.
 <li><a href="intro_reference.html">Introduction to the Manual</a><br />
 <li><a href="programming_conv.html">Programming Conventions</a><br />
 <li><a href="building.html">Building the Toolkit</a>
+<li><a href="platforms.html">Platform Implementations</a>
+
+<br /><br />
+<b>Guides & Tutorials</b>
+<br /><br />
+<li><a href="silcclientlib.html">Client Library Guides & Reference</a>
+<li><a href="silcrng_intro.html">Introduction to SILC Random Number Generator</a>
 
 <br /><br />
 <b>Toolkit Reference</b>

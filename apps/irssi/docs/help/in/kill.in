@@ -16,15 +16,15 @@ SILC operator -pubkey has no effect.
 
 Examples:
 
-	/KILL myself -pubkey
+        /KILL myself -pubkey
 
-		Kill yourself with nickname "myself" from network.
+            Kill yourself with nickname "myself" from network.
 
-	/SILCOPER user
-	/KILL someclient You have been killed
+        /SILCOPER user
+        /KILL someclient You have been killed
 
-		Become SILC operator and kill client named
-                "someclient", with comment "You have been killed".
+            Become SILC operator and kill client named
+            "someclient", with comment "You have been killed".
 
 See also: OPER, SILCOPER
 

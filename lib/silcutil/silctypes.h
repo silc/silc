@@ -216,8 +216,8 @@ typedef signed long SilcInt64;
 typedef unsigned long long SilcUInt64;
 typedef signed long long SilcInt64;
 #else
-typedef SilcUInt32 SilcUInt64; /* XXX Use Windows's own 64 bit types */
-typedef SilcInt32 SilcInt64;
+typedef unsigned __int64 SilcUInt64;
+typedef signed __int64 SilcInt64;
 #endif
 #else
 typedef SilcUInt32 SilcUInt64;
@@ -245,9 +245,9 @@ typedef SilcUInt32 * void *;
 
 /* Macros */
 
-#define GET_WORD(cp) ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
-		    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)	\
-		    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)	\
+#define SILC_GET_WORD(cp) ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
+		    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)		\
+		    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)		\
 		    | ((SilcUInt32)(SilcUInt8)(cp)[3])
 
 /****d* silcutil/SILCTypes/SILC_GET16_MSB
@@ -302,10 +302,10 @@ do {							\
  *
  * SOURCE
  */
-#define SILC_GET64_MSB(l, cp)				\
-do {							\
-       (l) = ((((SilcUInt64)GET_WORD((cp))) << 32) |	\
-	      ((SilcUInt64)GET_WORD((cp) + 4)));       	\
+#define SILC_GET64_MSB(l, cp)					\
+do {								\
+       (l) = ((((SilcUInt64)SILC_GET_WORD((cp))) << 32) |	\
+	      ((SilcUInt64)SILC_GET_WORD((cp) + 4)));		\
 } while(0)
 /***/
 
@@ -453,6 +453,42 @@ do {						\
 	(cp)[2] = (SilcUInt8)((l) >> 16);	\
 	(cp)[3] = (SilcUInt8)((l) >> 24);	\
 } while(0)
+/***/
+
+/****d* silcutil/SILCTypes/SILC_SWAB_16
+ *
+ * NAME
+ *
+ *    #define SILC_SWAB_16 ...
+ *
+ * DESCRIPTION
+ *
+ *    Swabs 16-bit unsigned integer byte order.
+ *
+ * SOURCE
+ */
+#define SILC_SWAB_16(l)						\
+  ((SilcUInt16)(((SilcUInt16)(l) & (SilcUInt16)0x00FFU) << 8) |	\
+               (((SilcUInt16)(l) & (SilcUInt16)0xFF00U) >> 8))
+/***/
+
+/****d* silcutil/SILCTypes/SILC_SWAB_32
+ *
+ * NAME
+ *
+ *    #define SILC_SWAB_32 ...
+ *
+ * DESCRIPTION
+ *
+ *    Swabs 32-bit unsigned integer byte order.
+ *
+ * SOURCE
+ */
+#define SILC_SWAB_32(l)							\
+  ((SilcUInt32)(((SilcUInt32)(l) & (SilcUInt32)0x000000FFUL) << 24) |	\
+               (((SilcUInt32)(l) & (SilcUInt32)0x0000FF00UL) << 8)  |	\
+               (((SilcUInt32)(l) & (SilcUInt32)0x00FF0000UL) >> 8)  |	\
+               (((SilcUInt32)(l) & (SilcUInt32)0xFF000000UL) >> 24))
 /***/
 
 #endif /* SILCTYPES_H */

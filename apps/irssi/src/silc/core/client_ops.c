@@ -1688,7 +1688,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	return;
 
       nicks = nicklist_get_same(SERVER(server), client_entry->nickname);
-      if (nicks != NULL) {
+      if ((nicks != NULL) && 
+        (strcmp(SERVER(server)->nick, client_entry->nickname))) {
 	char buf[512];
 	SilcClientEntry collider, old;
 

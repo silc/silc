@@ -39,6 +39,7 @@ AM_INIT_AUTOMAKE(SILC_PACKAGE, SILC_VERSION)
 AC_PREREQ(2.52)
 AC_CONFIG_HEADERS(includes/silcdefs.h)
 
+CFLAGS=
 AC_PROG_CC
 AC_C_INLINE
 AC_C_CONST
@@ -46,23 +47,18 @@ AC_C_CONST
 AC_PROG_LN_S
 AC_SUBST(LN_S)
 
-# Distribution definition. ./prepare will automatically add here a correct
-# value. Do not edit!
-#
+##
+## Distribution definition. ./prepare will automatically add here a correct
+## value. Do not edit!
+##
 silc_dist=SILC_PACKAGE
 SILC_DIST_SUBDIRS="SILC_DISTRIBUTION_SUBDIRS"
 AC_DEFINE(SILC_DIST_DEFINE)
 
-# XXX
-# Compiler flags
-#
-if test "$GCC"; then
-  CFLAGS="-Wall -finline-functions $CFLAGS"
-fi
 
-#
-# Library versioning.
-#
+##
+## Library versioning.
+##
 # Do the releases and library versioning according to following rules:
 #
 #  - If any code has changed in library, increment [LIB]_REVISION
@@ -205,7 +201,6 @@ AM_CONDITIONAL(HAVE_REGEX, test x$have_regex = x1)
 AC_CHECK_FUNC(getopt_long, have_getopt_long=1, have_getopt_long=0)
 AM_CONDITIONAL(HAVE_GETOPT_LONG, test x$have_getopt_long = x1)
 
-
 ##
 ##  Enable/disable checking
 ##
@@ -277,17 +272,14 @@ AC_ARG_ENABLE(debug,
       yes)
         AC_MSG_RESULT(yes)
         AC_DEFINE(SILC_DEBUG)
-        CFLAGS="-O -g $CFLAGS"
 	summary_debug="yes"
         ;;
       *)
         AC_MSG_RESULT(no)
-        CFLAGS="-O2 -g $CFLAGS"
         ;;
     esac
   ],
   [
-    CFLAGS="-O2 -g $CFLAGS"
     AC_MSG_RESULT(no)
   ])
 
@@ -325,6 +317,49 @@ AC_ARG_ENABLE(asm,
     AC_MSG_RESULT(yes)
     summary_asm="yes"
   ])
+
+
+##
+## Compiler and compiler flag checks
+##
+
+# Function to check if compiler flag works
+# Usage: SILC_ADD_CFLAGS(FLAGS, [ACTION-IF-FAILED])
+AC_DEFUN(SILC_ADD_CFLAGS,
+[ tmp_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $1"
+  AC_MSG_CHECKING(whether $CC accepts $1 flag)
+  AC_TRY_LINK(, , AC_MSG_RESULT(yes), [AC_MSG_RESULT(no)
+				       CFLAGS="$tmp_CFLAGS"
+				       $2])
+  unset tmp_CFLAGS
+])
+
+if test "$GCC"; then
+  # GCC specific options
+  if test "x$summary_debug" = "xyes"; then
+    SILC_ADD_CFLAGS(-g -O)
+  else
+    SILC_ADD_CFLAGS(-g -O2)
+  fi
+  SILC_ADD_CFLAGS(-Wall -finline-functions)
+else
+  # Other compilers
+  case "$target" in
+    alpha*-dec-osf*)
+      SILC_ADD_CFLAGS(-g3 -O2, SILC_ADD_CFLAGS(-g3 -O, SILC_ADD_CFLAGS(-O)))
+      ;;
+    *)
+      SILC_ADD_CFLAGS(-g)
+      SILC_ADD_CFLAGS(-O2, SILC_ADD_CFLAGS(-O))
+      ;;
+  esac
+
+  # Intel C++ Compiler needs -restrict
+  if test "x$CC" = "xicc"; then
+    SILC_ADD_CFLAGS(-restrict)
+  fi
+fi
 
 
 ##
@@ -1141,6 +1176,7 @@ echo ""
 echo " Installation prefix ...........: $prefix"
 echo " bin directory .................: $s_bindir"
 echo " sbin directory ................: $s_sbindir"
+echo " etc directory .................: $ETCDIR"
 echo " man directory .................: $s_mandir"
 echo " help directory ................: $HELPDIR"
 echo " doc directory .................: $DOCDIR"
@@ -1174,8 +1210,14 @@ if test x$sim_support = xfalse; then
 else
   sim_support="yes"
 fi
+if test x$has_iconv = xfalse; then
+  iconv_support="no"
+else
+  iconv_support="yes"
+fi
 echo " SIM support ...................: $sim_support"
 echo " IPv6 support ..................: $summary_ipv6"
+echo " Iconv support .................: $iconv_support"
 echo " Assembler optimizations .......: $summary_asm"
 
 mp="MPI"

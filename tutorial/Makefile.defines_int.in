@@ -17,7 +17,7 @@
 
 silc_install_prefix=@prefix@
 SILC_COMMON_LIBS= @LIBS@ -L$(silc_install_prefix)/lib \
-	-L/usr/local/silc/lib -lsilc -lsilcclient
+	-L/usr/local/silc/lib -lsilc -lsilcclient -lsilc
 SILC_CFLAGS=@CFLAGS@
 CC=@CC@
 LIBTOOL = @LIBTOOL@
