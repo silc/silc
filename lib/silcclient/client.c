@@ -1403,11 +1403,15 @@ void silc_client_channel_message(SilcClient client,
   SilcChannelID *id = NULL;
   SilcChannelEntry channel;
   SilcIDCacheEntry id_cache = NULL;
+  SilcClientID *client_id = NULL;
+  int i;
+  char *nickname;
 
   /* Sanity checks */
   if (packet->dst_id_type != SILC_ID_CHANNEL)
     goto out;
 
+  client_id = silc_id_str2id(packet->src_id, SILC_ID_CLIENT);
   id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
 
   /* Find the channel entry from channels on this connection */
@@ -1430,10 +1434,19 @@ void silc_client_channel_message(SilcClient client,
   if (!payload)
     goto out;
 
+  nickname = silc_channel_get_nickname(payload, NULL);
+  if (!nickname)
+    goto out;
+  
+  for (i = 0; i < channel->clients_count; i++) {
+    if (channel->clients[i] && 
+	!SILC_ID_CLIENT_COMPARE(channel->clients[i]->id, client_id))
+      nickname = channel->clients[i]->nickname;
+  }
+
   /* Pass the message to application */
   if (packet->src_id_type == SILC_ID_CLIENT) {
-    client->ops->channel_message(client, conn, 
-				 silc_channel_get_nickname(payload, NULL),
+    client->ops->channel_message(client, conn, nickname,
 				 channel->channel_name,
 				 silc_channel_get_data(payload, NULL));
   } else {
@@ -1445,6 +1458,8 @@ void silc_client_channel_message(SilcClient client,
  out:
   if (id)
     silc_free(id);
+  if (client_id)
+    silc_free(client_id);
   if (payload)
     silc_channel_free_payload(payload);
 }

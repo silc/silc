@@ -176,6 +176,46 @@ void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
   }
 }
 
+static void 
+silc_client_command_reply_whois_print(SilcClientCommandReplyContext cmd,
+				      SilcCommandStatus status)
+{
+  char buf[256];
+  int argc, len;
+  unsigned char *id_data;
+  char *nickname = NULL, *username = NULL;
+  char *realname = NULL;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  
+  memset(buf, 0, sizeof(buf));
+  
+  argc = silc_command_get_arg_num(cmd->payload);
+  id_data = silc_command_get_arg_type(cmd->payload, 2, NULL);
+  
+  nickname = silc_command_get_arg_type(cmd->payload, 3, &len);
+  if (nickname) {
+    strncat(buf, nickname, len);
+    strncat(buf, " is ", 4);
+  }
+  
+  username = silc_command_get_arg_type(cmd->payload, 4, &len);
+  if (username) {
+    strncat(buf, username, len);
+  }
+  
+  realname = silc_command_get_arg_type(cmd->payload, 5, &len);
+  if (realname) {
+    strncat(buf, " (", 2);
+    strncat(buf, realname, len);
+    strncat(buf, ")", 1);
+  }
+  
+  cmd->client->ops->say(cmd->client, conn, "%s", buf);
+  
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+}
+
 /* Received reply for WHOIS command. This maybe called several times
    for one WHOIS command as server may reply with list of results. */
 /* Sends to application: (no arguments) */
@@ -191,7 +231,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
 
   tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
   SILC_GET16_MSB(status, tmp);
-  if (status != SILC_STATUS_OK) {
+  if (status != SILC_STATUS_OK && 
+      status != SILC_STATUS_LIST_START &&
+      status != SILC_STATUS_LIST_ITEM &&
+      status != SILC_STATUS_LIST_END) {
     if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
       /* Take nickname which may be provided */
       tmp = silc_command_get_arg_type(cmd->payload, 3, NULL);
@@ -213,59 +256,20 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
 
   /* Display one whois reply */
   if (status == SILC_STATUS_OK) {
-    char buf[256];
-    int argc, len;
-    unsigned char *id_data;
-    char *nickname = NULL, *username = NULL;
-    char *realname = NULL;
-
-    memset(buf, 0, sizeof(buf));
-
-    argc = silc_command_get_arg_num(cmd->payload);
-    id_data = silc_command_get_arg_type(cmd->payload, 2, NULL);
-
-    nickname = silc_command_get_arg_type(cmd->payload, 3, &len);
-    if (nickname) {
-      strncat(buf, nickname, len);
-      strncat(buf, " is ", 4);
-    }
-
-    username = silc_command_get_arg_type(cmd->payload, 4, &len);
-    if (username) {
-      strncat(buf, username, len);
-    }
-
-    realname = silc_command_get_arg_type(cmd->payload, 5, &len);
-    if (realname) {
-      strncat(buf, " (", 2);
-      strncat(buf, realname, len);
-      strncat(buf, ")", 1);
-    }
-
-#if 0
-    /* Save received Client ID to ID cache */
-    /* XXX Maybe should not be saved as /MSG will get confused */
-    id = silc_id_str2id(id_data, SILC_ID_CLIENT);
-    client->current_conn->client_id_cache_count[(int)nickname[0] - 32] =
-    silc_idcache_add(&client->current_conn->
-		     client_id_cache[(int)nickname[0] - 32],
-		     client->current_conn->
-		     client_id_cache_count[(int)nickname[0] - 32],
-		     strdup(nickname), SILC_ID_CLIENT, id, NULL);
-#endif
-
-    cmd->client->ops->say(cmd->client, conn, "%s", buf);
-
-    /* Notify application */
-    COMMAND_REPLY((ARGS));
+    silc_client_command_reply_whois_print(cmd, status);
   }
 
+  /* XXX list should not be displayed untill all items has been received. */
   if (status == SILC_STATUS_LIST_START) {
+    silc_client_command_reply_whois_print(cmd, status);
+  }
 
+  if (status == SILC_STATUS_LIST_ITEM) {
+    silc_client_command_reply_whois_print(cmd, status);
   }
 
   if (status == SILC_STATUS_LIST_END) {
-
+    silc_client_command_reply_whois_print(cmd, status);
   }
 
   SILC_CLIENT_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_WHOIS);
@@ -392,8 +396,69 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
 {
 }
 
+/* Received reply to topic command. */
+/* Sends to application: SilcChannelID * (channel_id) and char * (topic) */
+
 SILC_CLIENT_CMD_REPLY_FUNC(topic)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  SilcChannelEntry channel;
+  SilcChannelID *channel_id = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  unsigned char *tmp, *id_string;
+  char *topic;
+  int argc;
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    silc_client_command_reply_free(cmd);
+    COMMAND_REPLY_ERROR;
+    return;
+  }
+
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc < 1 || argc > 3) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Take Channel ID */
+  id_string = silc_command_get_arg_type(cmd->payload, 2, NULL);
+  if (!id_string)
+    goto out;
+
+  channel_id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
+
+  /* Take topic */
+  topic = silc_command_get_arg_type(cmd->payload, 3, NULL);
+  if (!topic)
+    goto out;
+
+  /* Get the channel name */
+  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				   SILC_ID_CHANNEL, &id_cache)) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+  
+  channel = (SilcChannelEntry)id_cache->context;
+
+  cmd->client->ops->say(cmd->client, conn, 
+			"Topic on channel %s: %s", channel->channel_name,
+			topic);
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS, channel_id, topic));
+
+ out:
+  if (channel_id)
+    silc_free(channel_id);
+  silc_client_command_reply_free(cmd);
 }
 
 /* Received reply to invite command. */
@@ -554,7 +619,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   }
 
   argc = silc_command_get_arg_num(cmd->payload);
-  if (argc < 3 || argc > 4) {
+  if (argc < 3 || argc > 5) {
     cmd->client->ops->say(cmd->client, conn,
 	     "Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;
@@ -605,8 +670,65 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   silc_client_command_reply_free(cmd);
 }
 
+/* Received reply for MOTD command */
+/* Sends to application: char * (motd) */
+
 SILC_CLIENT_CMD_REPLY_FUNC(motd)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  unsigned int argc, i;
+  unsigned char *tmp;
+  char *motd = NULL, *cp, line[256];
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    return;
+  }
+
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc > 2) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  if (argc == 2) {
+    motd = silc_command_get_arg_type(cmd->payload, 2, NULL);
+    if (!motd) {
+      COMMAND_REPLY_ERROR;
+      goto out;
+    }
+
+    i = 0;
+    cp = motd;
+    while(cp[i] != 0) {
+      if (cp[i++] == '\n') {
+	memset(line, 0, sizeof(line));
+	strncat(line, cp, i - 1);
+	cp += i;
+	
+	if (i == 2)
+	  line[0] = ' ';
+	
+	cmd->client->ops->say(cmd->client, conn, "%s", line);
+	
+	if (!strlen(cp))
+	  break;
+	i = 0;
+      }
+    }
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS, motd));
+
+ out:
+  silc_client_command_reply_free(cmd);
 }
 
 SILC_CLIENT_CMD_REPLY_FUNC(umode)
@@ -675,8 +797,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   SilcChannelID *channel_id = NULL;
   SilcBuffer client_id_list;
   unsigned char *tmp;
-  char *name_list;
-  int i, len1, len2, list_count = 0;
+  char *name_list, *cp;
+  int i, k, len1, len2, list_count = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -752,14 +874,19 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
 	name_list[i] = ' ';
 	list_count++;
       }
+    list_count++;
+  }
 
-    cmd->client->ops->say(cmd->client, conn,
-			  "Users on %s: %s", channel->channel_name, name_list);
+  if (channel->clients) {
+    silc_free(channel->clients);
+    channel->clients = NULL;
+    channel->clients_count = 0;
   }
 
   /* Cache the received name list and client ID's. This cache expires
      whenever server sends notify message to channel. It means two things;
      some user has joined or leaved the channel. */
+  cp = name_list;
   for (i = 0; i < list_count; i++) {
     int nick_len = strcspn(name_list, " ");
     char *nickname = silc_calloc(nick_len, sizeof(*nickname));
@@ -774,11 +901,70 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
     client->id = client_id;
     client->nickname = nickname;
 
+    /* Add client to cache */
     silc_idcache_add(conn->client_cache, nickname, SILC_ID_CLIENT,
 		     client_id, (void *)client, TRUE);
     name_list = name_list + nick_len + 1;
+
+    /* Add client to channel */
+    channel->clients = silc_realloc(channel->clients, 
+				    sizeof(*channel->clients) * 
+				    (channel->clients_count + 1));
+    channel->clients[channel->clients_count] = client;
+    channel->clients_count++;
   }
 
+  name_list = cp;
+  for (i = 0; i < list_count; i++) {
+    int c;
+    int nick_len = strcspn(name_list, " ");
+    char *nickname = silc_calloc(nick_len, sizeof(*nickname));
+    memcpy(nickname, name_list, nick_len);
+
+    for (c = 0, k = 0; k < channel->clients_count; k++) {
+      if (channel->clients[k] && 
+	  !strncmp(channel->clients[k]->nickname, 
+		   nickname, strlen(channel->clients[k]->nickname))) {
+	char t[8];
+	
+	if (!c) {
+	  c++;
+	  continue;
+	}
+	
+	memset(t, 0, sizeof(t));
+	channel->clients[k]->nickname = 
+	  silc_calloc(strlen(nickname) + 8, 
+		      sizeof(*channel->clients[k]->nickname));
+	strncat(channel->clients[k]->nickname, nickname, strlen(nickname));
+	snprintf(t, sizeof(t), "[%d]", c++);
+	strncat(channel->clients[k]->nickname, t, strlen(t));
+      }
+    }
+
+    silc_free(nickname);
+  }
+
+  name_list = NULL;
+  len1 = 0;
+  for (k = 0; k < channel->clients_count; k++) {
+    char *n = channel->clients[k]->nickname;
+    len2 = strlen(n);
+    len1 += len2;
+    name_list = silc_realloc(name_list, sizeof(*name_list) * (len1 + 1));
+    memcpy(name_list + (len1 - len2), n, len2);
+    name_list[len1] = 0;
+    
+    if (k == channel->clients_count - 1)
+      break;
+    memcpy(name_list + len1, " ", 1);
+    len1++;
+  }
+
+  cmd->client->ops->say(cmd->client, conn,
+			"Users on %s: %s", channel->channel_name, name_list);
+
+  silc_free(name_list);
   silc_buffer_free(client_id_list);
 
  out:

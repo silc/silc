@@ -30,7 +30,7 @@ SilcClientCommand silc_command_list[] =
 		  SILC_CF_LAG | SILC_CF_REG, 3),
   SILC_CLIENT_CMD(nick, NICK, "NICK", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(list, LIST, "LIST", SILC_CF_LAG | SILC_CF_REG, 2),
-  SILC_CLIENT_CMD(topic, TOPIC, "TOPIC", SILC_CF_LAG | SILC_CF_REG, 2),
+  SILC_CLIENT_CMD(topic, TOPIC, "TOPIC", SILC_CF_LAG | SILC_CF_REG, 3),
   SILC_CLIENT_CMD(invite, INVITE, "INVITE", SILC_CF_LAG | SILC_CF_REG, 3),
   SILC_CLIENT_CMD(quit, QUIT, "QUIT", SILC_CF_LAG | SILC_CF_REG, 1),
   SILC_CLIENT_CMD(kill, KILL, "KILL", 
@@ -303,8 +303,76 @@ SILC_CLIENT_CMD_FUNC(list)
 {
 }
 
+/* Command TOPIC. Sets/shows topic on a channel. */
+
 SILC_CLIENT_CMD_FUNC(topic)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
+  SilcBuffer buffer;
+  unsigned char *id_string;
+  char *name;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2 || cmd->argc > 3) {
+    cmd->client->ops->say(cmd->client, conn,
+			  "Usage: /TOPIC <channel> [<topic>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argv[1][0] == '*') {
+    if (!conn->current_channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+    name = conn->current_channel->channel_name;
+  } else {
+    name = cmd->argv[1];
+  }
+
+  if (!conn->current_channel) {
+    cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Get the Channel ID of the channel */
+  if (!silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {
+    cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  channel = (SilcChannelEntry)id_cache->context;
+
+  /* Send TOPIC command to the server */
+  id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
+  if (cmd->argc > 2)
+    buffer = silc_command_encode_payload_va(SILC_COMMAND_TOPIC, 2, 
+					    1, id_string, SILC_ID_CHANNEL_LEN,
+					    2, cmd->argv[2], 
+					    strlen(cmd->argv[2]));
+  else
+    buffer = silc_command_encode_payload_va(SILC_COMMAND_TOPIC, 1, 
+					    1, id_string, SILC_ID_CHANNEL_LEN);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 /* Command INVITE. Invites specific client to join a channel. */
@@ -583,6 +651,36 @@ SILC_CLIENT_CMD_FUNC(join)
 
 SILC_CLIENT_CMD_FUNC(motd)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 1 || cmd->argc > 1) {
+    cmd->client->ops->say(cmd->client, conn,
+			  "Usage: /MOTD");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Send TOPIC command to the server */
+  buffer = silc_command_encode_payload_va(SILC_COMMAND_MOTD, 1, 
+					  2, conn->remote_host, 
+					  strlen(conn->remote_host));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 SILC_CLIENT_CMD_FUNC(umode)
@@ -639,7 +737,7 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, "You are not on any chanenl");
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }

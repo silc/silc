@@ -49,6 +49,9 @@ typedef struct SilcChannelEntryStruct {
   unsigned int mode;
   int on_channel;
 
+  SilcClientEntry *clients;
+  unsigned int clients_count;
+
   /* Channel keys */
   SilcCipher channel_key;
   unsigned char *key;
