@@ -157,6 +157,10 @@ General {
 	#qos_bytes_limit = 2048;
 	#qos_limit_sec = 0;
 	#qos_limit_usec = 500000;
+
+	# Debug string.  Debug string can be set to print debugging from
+	# the running server.  The debug is redirected to stderr.
+	# debug_string = "";
 };
 
 #
@@ -477,7 +481,7 @@ ServerConnection {
 # must be the router this server will be connected to.  For router servers,
 # this section includes all configured router connections.  The first
 # configured connection is the primary route.  The Host (mandatory) specifies
-# the remote hostname or IP address.  The Port specifies the remote port 
+# the remote hostname or IP address.  The Port specifies the remote port
 # to connect when Initiator is true.  When Initiator is false the Port
 # specifies the local port (listener port).
 #
