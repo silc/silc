@@ -1478,7 +1478,7 @@ void silc_client_receive_new_id(SilcClient client,
   
   /* Put it to the ID cache */
   silc_idcache_add(conn->client_cache, strdup(conn->nickname), conn->local_id, 
-		   (void *)conn->local_entry, FALSE);
+		   (void *)conn->local_entry, 0, NULL);
 
   if (connecting) {
     /* Issue INFO comqmand to fetch the real server name and server information
@@ -1518,7 +1518,7 @@ SilcChannelEntry silc_client_new_channel_id(SilcClient client,
 
   /* Put it to the ID cache */
   silc_idcache_add(conn->channel_cache, channel->channel_name, 
-		   (void *)channel->id, (void *)channel, FALSE);
+		   (void *)channel->id, (void *)channel, 0, NULL);
 
   return channel;
 }

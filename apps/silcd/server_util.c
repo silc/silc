@@ -371,7 +371,7 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	    SILC_LOG_DEBUG(("Moving client to local list"));
 	    silc_idcache_add(server->local_list->clients, client_cache->name,
 			     client_cache->id, client_cache->context,
-			     client_cache->expire);
+			     client_cache->expire, NULL);
 	    silc_idcache_del_by_context(server->global_list->clients, client);
 	  }
 	  server_entry = server_entry->router;
@@ -382,7 +382,7 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	    SILC_LOG_DEBUG(("Moving client to local list"));
 	    silc_idcache_add(server->local_list->clients, client_cache->name,
 			     client_cache->id, client_cache->context,
-			     client_cache->expire);
+			     client_cache->expire, NULL);
 	    silc_idcache_del_by_context(server->global_list->clients, client);
 	  }
 	}
@@ -418,7 +418,7 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	    SILC_LOG_DEBUG(("Moving client to global list"));
 	    silc_idcache_add(server->global_list->clients, client_cache->name,
 			     client_cache->id, client_cache->context,
-			     client_cache->expire);
+			     client_cache->expire, NULL);
 	    silc_idcache_del_by_context(server->local_list->clients, client);
 	  }
 	  server_entry = server_entry->router;
@@ -429,7 +429,7 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	    SILC_LOG_DEBUG(("Moving client to global list"));
 	    silc_idcache_add(server->global_list->clients, client_cache->name,
 			     client_cache->id, client_cache->context,
-			     client_cache->expire);
+			     client_cache->expire, NULL);
 	    silc_idcache_del_by_context(server->local_list->clients, client);
 	  }
 	}

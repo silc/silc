@@ -492,7 +492,8 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
       
       /* Add server to cache */
       silc_idcache_add(conn->server_cache, server_entry->server_name,
-		       server_entry->server_id, (void *)server_entry, FALSE);
+		       server_entry->server_id, (void *)server_entry, 
+		       0, NULL);
     } else {
       server_entry = (SilcServerEntry)id_cache->context;
     }
@@ -837,7 +838,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
 
     /* Add it to the cache */
     silc_idcache_add(conn->server_cache, server->server_name,
-		     server->server_id, (void *)server, FALSE);
+		     server->server_id, (void *)server, 0, NULL);
 
     if (SILC_ID_SERVER_COMPARE(server_id, conn->remote_id))
       goto out;

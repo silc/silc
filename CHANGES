@@ -1,3 +1,34 @@
+Mon Dec  3 18:49:45 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not print "you are now server operator" or similar when
+	  giving /away command.  Affected files are
+	  irssi/src/silc/core/client_ops.c, silc-servers.h.
+
+	* Made the silc_server_command_pending_error_check to send
+	  the same command reply payload it received back to the
+	  original sender of the command.  This way all arguments
+	  that was received by the server will be received by the
+	  client too.  Affected file silcd/command.c.
+
+	* Added the silc_idcache_add to return the created cache entry
+	  to a pointer.  Affected file lib/silccore/silcidcache.[ch].
+
+	* Add global clients to expire if they are not on any channel.
+	  This is because normal server will never know if they signoff
+	  if they are not on any channel.  The cache expiry will take
+	  case of these entries.  This is done by normal servers only.
+	  The affected files are silcd/command_reply.c,
+	  silcd/idlist.[ch], silcd/server and silcd/packet_receive.c.
+
+	* If server receives invalid ID notification for WHOIS or
+	  IDENTIFY and the ID exists in the lists, it is removed.
+	  Affected file silcd/command_reply.c.
+
+	* If NO_SUCH_CLIENT_ID is received for WHOIS or IDENTIFY command
+	  in client then client entry that it matches is searched and
+	  the nickname is printed on the screen for user.  Affected
+	  file irssi/src/silc/core/client_ops.c.
+
 Mon Dec  3 11:56:59 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Use cache entry expire time in the LIST command reply to

@@ -1769,6 +1769,32 @@ void silc_server_send_command_reply(SilcServer server,
   va_end(ap);
 }
 
+/* Generic function to send any command reply. The arguments must be sent
+   already encoded into correct form in correct order. */
+
+void silc_server_send_dest_command_reply(SilcServer server, 
+					 SilcSocketConnection sock,
+					 void *dst_id,
+					 SilcIdType dst_id_type,
+					 SilcCommand command, 
+					 SilcCommandStatus status,
+					 uint16 ident,
+					 uint32 argc, ...)
+{
+  SilcBuffer packet;
+  va_list ap;
+
+  va_start(ap, argc);
+
+  packet = silc_command_reply_payload_encode_vap(command, status, ident, 
+						 argc, ap);
+  silc_server_packet_send_dest(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
+			       dst_id, dst_id_type, packet->data, 
+			       packet->len, TRUE);
+  silc_buffer_free(packet);
+  va_end(ap);
+}
+
 /* Send the heartbeat packet. */
 
 void silc_server_send_heartbeat(SilcServer server,

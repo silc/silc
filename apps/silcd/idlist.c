@@ -88,7 +88,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_idlist_purge)
   silc_idcache_purge(i->cache);
   silc_schedule_task_add(i->schedule, 0, 
 			 silc_idlist_purge,
-			 (void *)i, 600, 0,
+			 (void *)i, i->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 }
 
@@ -121,7 +121,7 @@ silc_idlist_add_server(SilcIDList id_list,
   server->connection = connection;
 
   if (!silc_idcache_add(id_list->servers, server->server_name, 
-			(void *)server->id, (void *)server, FALSE)) {
+			(void *)server->id, (void *)server, 0, NULL)) {
     silc_free(server);
     return NULL;
   }
@@ -270,7 +270,7 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
   server->id = new_id;
 
   silc_idcache_add(id_list->servers, server->server_name, server->id, 
-		   server, FALSE);
+		   server, 0, NULL);
 
   SILC_LOG_DEBUG(("Found"));
 
@@ -319,7 +319,8 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username, 
 		       char *userinfo, SilcClientID *id, 
-		       SilcServerEntry router, void *connection)
+		       SilcServerEntry router, void *connection,
+		       int expire)
 {
   SilcClientEntry client;
 
@@ -336,7 +337,7 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 					   NULL, NULL, NULL, NULL, TRUE);
 
   if (!silc_idcache_add(id_list->clients, nickname, (void *)client->id, 
-			(void *)client, FALSE)) {
+			(void *)client, expire, NULL)) {
     silc_hash_table_free(client->channels);
     silc_free(client);
     return NULL;
@@ -522,7 +523,7 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
   silc_free(client->id);
   client->id = new_id;
 
-  silc_idcache_add(id_list->clients, NULL, client->id, client, FALSE);
+  silc_idcache_add(id_list->clients, NULL, client->id, client, 0, NULL);
 
   SILC_LOG_DEBUG(("Replaced"));
 
@@ -561,7 +562,8 @@ void silc_idlist_client_destructor(SilcIDCache cache,
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
-			SilcCipher channel_key, SilcHmac hmac)
+			SilcCipher channel_key, SilcHmac hmac,
+			int expire)
 {
   SilcChannelEntry channel;
 
@@ -585,7 +587,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 					     NULL, NULL, NULL, TRUE);
 
   if (!silc_idcache_add(id_list->channels, channel->channel_name, 
-			(void *)channel->id, (void *)channel, FALSE)) {
+			(void *)channel->id, (void *)channel, expire, NULL)) {
     silc_hmac_free(channel->hmac);
     silc_hash_table_free(channel->user_list);
     silc_free(channel);
@@ -731,7 +733,7 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
   channel->id = new_id;
 
   silc_idcache_add(id_list->channels, channel->channel_name, channel->id, 
-		   channel, FALSE);
+		   channel, 0, NULL);
 
   SILC_LOG_DEBUG(("Replaced"));
 

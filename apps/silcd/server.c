@@ -329,18 +329,20 @@ int silc_server_init(SilcServer server)
   purge = silc_calloc(1, sizeof(*purge));
   purge->cache = server->local_list->clients;
   purge->schedule = server->schedule;
+  purge->timeout = 600;
   silc_schedule_task_add(purge->schedule, 0, 
 			 silc_idlist_purge,
-			 (void *)purge, 600, 0,
+			 (void *)purge, purge->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
   /* Clients global list */
   purge = silc_calloc(1, sizeof(*purge));
   purge->cache = server->global_list->clients;
   purge->schedule = server->schedule;
+  purge->timeout = 300;
   silc_schedule_task_add(purge->schedule, 0, 
 			 silc_idlist_purge,
-			 (void *)purge, 300, 0,
+			 (void *)purge, purge->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
   SILC_LOG_DEBUG(("Server initialized"));
@@ -1319,7 +1321,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	 and other information is created after we have received NEW_CLIENT
 	 packet from client. */
       client = silc_idlist_add_client(server->local_list, 
-				      NULL, NULL, NULL, NULL, NULL, sock);
+				      NULL, NULL, NULL, NULL, NULL, sock, 0);
       if (!client) {
 	SILC_LOG_ERROR(("Could not add new client to cache"));
 	silc_free(sock->user_data);
@@ -2773,7 +2775,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   }
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
-				  NULL, key, newhmac);
+				  NULL, key, newhmac, 0);
   if (!entry) {
     silc_free(channel_name);
     silc_cipher_free(key);
@@ -2844,7 +2846,7 @@ silc_server_create_new_channel_with_id(SilcServer server,
   /* Create the channel */
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
-				  NULL, key, newhmac);
+				  NULL, key, newhmac, 0);
   if (!entry) {
     silc_free(channel_name);
     return NULL;
@@ -3666,13 +3668,14 @@ void silc_server_save_users_on_channel(SilcServer server,
 				       uint32 user_count)
 {
   int i;
+  uint16 idp_len;
+  uint32 mode;
+  SilcClientID *client_id;
+  SilcClientEntry client;
+  SilcIDCacheEntry cache;
+  bool global;
 
   for (i = 0; i < user_count; i++) {
-    uint16 idp_len;
-    uint32 mode;
-    SilcClientID *client_id;
-    SilcClientEntry client;
-
     /* Client ID */
     SILC_GET16_MSB(idp_len, user_list->data + 2);
     idp_len += 4;
@@ -3689,14 +3692,18 @@ void silc_server_save_users_on_channel(SilcServer server,
       silc_free(client_id);
       continue;
     }
+
+    global = FALSE;
     
     /* Check if we have this client cached already. */
     client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					   server->server_type, NULL);
-    if (!client)
+					   server->server_type, &cache);
+    if (!client) {
       client = silc_idlist_find_client_by_id(server->global_list, 
 					     client_id, server->server_type,
-					     NULL);
+					     &cache);
+      global = TRUE;
+    }
     if (!client) {
       /* If router did not find such Client ID in its lists then this must
 	 be bogus client or some router in the net is buggy. */
@@ -3710,7 +3717,7 @@ void silc_server_save_users_on_channel(SilcServer server,
 	 global. */
       client = silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
 				      silc_id_dup(client_id, SILC_ID_CLIENT), 
-				      sock->user_data, NULL);
+				      sock->user_data, NULL, 0);
       if (!client) {
 	SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
 	silc_free(client_id);
@@ -3718,6 +3725,11 @@ void silc_server_save_users_on_channel(SilcServer server,
       }
 
       client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
+    } else {
+      /* Found, if it is from global list we'll assure that we won't
+	 expire it now that the entry is on channel. */
+      if (global)
+	cache->expire = 0;
     }
 
     silc_free(client_id);

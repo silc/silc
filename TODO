@@ -1,9 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o Setting /away prints server/router operator modes as well.
-   Print modes that was just set only.
-
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the
@@ -33,16 +30,20 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o N/A
+ o Process the NO_SUCH_CLIENT_ID for WHOIS and IDENTIFY, since it can
+   be received for example after sending MSG to non-existent client.
+   It actually should be done always when it is received and the old
+   entry should be removed.
+
+   Doing this now however causes that /msg nick might give "no such nick"
+   for the first time, and then after the entry is removed /msg nick
+   may actually to go any nick client, which is not desired behaviour.
+   The /msg must be fixed to use the specific nickname user typed 
+   (nick must not match nick@host).
 
 
 TODO/bugs In SILC Server
 ========================
-
- o Make the silc_server_command_pending_error_check function to
-   take all arguments it received and put them to the reply it is 
-   sending.  Otherwise for example WHOIS on normal server for bogus
-   nickname does not print anything in the client.
 
  o Backup router related issues
 

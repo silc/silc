@@ -587,7 +587,7 @@ silc_client_add_client(SilcClient client, SilcClientConnection conn,
   
   /* Add client to cache, the non-formatted nickname is saved to cache */
   if (!silc_idcache_add(conn->client_cache, nick, client_entry->id, 
-			(void *)client_entry, FALSE)) {
+			(void *)client_entry, 0, NULL)) {
     silc_free(client_entry->nickname);
     silc_free(client_entry->username);
     silc_free(client_entry->hostname);
@@ -629,7 +629,7 @@ void silc_client_update_client(SilcClient client,
     /* Remove the old cache entry and create a new one */
     silc_idcache_del_by_context(conn->client_cache, client_entry);
     silc_idcache_add(conn->client_cache, nick, client_entry->id, 
-		     client_entry, FALSE);
+		     client_entry, 0, NULL);
   }
 }
 

@@ -45,6 +45,10 @@ o Library
 	  when necessary.  This way we can move the data handling in one 
 	  place.
 
+	o Add silc_id_str2id to accept the destination buffer as argument
+	  and thus not require any memory allocation.  Same will happen
+	  with silc_id_payload_* functions.
+
 o Server
 
 	o When processing the decrypted and parsed packet we call the

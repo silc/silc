@@ -180,7 +180,7 @@ void silc_server_notify(SilcServer server,
 	client = 
 	  silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
 				 silc_id_dup(client_id, SILC_ID_CLIENT), 
-				 sock->user_data, NULL);
+				 sock->user_data, NULL, 0);
 	if (!client) {
 	  SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
 	  silc_free(client_id);
@@ -1220,9 +1220,22 @@ void silc_server_private_message(SilcServer server,
     if (!idp)
       return;
 
-    silc_server_send_command_reply(server, sock, SILC_COMMAND_IDENTIFY,
-				   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0, 1,
-				   2, idp, idp->len);
+    if (packet->src_id_type == SILC_ID_CLIENT) {
+      SilcClientID *client_id = silc_id_str2id(packet->src_id,
+					       packet->src_id_len,
+					       packet->src_id_type);
+      silc_server_send_dest_command_reply(server, sock, 
+					  client_id, SILC_ID_CLIENT,
+					  SILC_COMMAND_IDENTIFY,
+					  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 
+					  0, 1, 2, idp->data, idp->len);
+      silc_free(client_id);
+    } else {
+      silc_server_send_command_reply(server, sock, SILC_COMMAND_IDENTIFY,
+				     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 
+				     0, 1, 2, idp->data, idp->len);
+    }
+
     silc_buffer_free(idp);
     return;
   }
@@ -1611,7 +1624,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Add the client again to the ID cache */
   silc_idcache_add(server->local_list->clients, client->nickname,
-		   client_id, client, FALSE);
+		   client_id, client, 0, NULL);
 
   /* Notify our router about new client on the SILC network */
   if (!server->standalone)
@@ -1779,7 +1792,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   /* Add again the entry to the ID cache. */
   silc_idcache_add(local ? server->local_list->servers : 
 		   server->global_list->servers, server_name, server_id, 
-		   new_server, FALSE);
+		   new_server, 0, NULL);
 
   /* Distribute the information about new server in the SILC network
      to our router. If we are normal server we won't send anything
@@ -1925,7 +1938,7 @@ static void silc_server_new_id_real(SilcServer server,
 	 global list. Cell wide information however is kept in the local
 	 list. */
       entry = silc_idlist_add_client(id_list, NULL, NULL, NULL, 
-				     id, router, NULL);
+				     id, router, NULL, 0);
       if (!entry) {
 	SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
 
@@ -2164,7 +2177,7 @@ void silc_server_new_channel(SilcServer server,
 		      sock->hostname));
     
       silc_idlist_add_channel(server->global_list, strdup(channel_name), 
-			      0, channel_id, sock->user_data, NULL, NULL);
+			      0, channel_id, sock->user_data, NULL, NULL, 0);
       server->stat.channels++;
     }
   } else {

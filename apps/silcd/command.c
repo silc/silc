@@ -439,8 +439,16 @@ silc_server_command_pending_error_check(SilcServerCommandContext cmd,
       status != SILC_STATUS_LIST_START &&
       status != SILC_STATUS_LIST_ITEM &&
       status != SILC_STATUS_LIST_END) {
-    /* Send the error message */
-    silc_server_command_send_status_reply(cmd, command, status);
+    SilcBuffer buffer;
+
+    /* Send the same command reply payload */
+    silc_command_set_ident(cmdr->payload, 
+			   silc_command_get_ident(cmd->payload));
+    buffer = silc_command_payload_encode_payload(cmdr->payload);
+    silc_server_packet_send(cmd->server, cmd->sock,
+			    SILC_PACKET_COMMAND_REPLY, 0, 
+			    buffer->data, buffer->len, FALSE);
+    silc_buffer_free(buffer);
     return TRUE;
   }
 
@@ -2018,7 +2026,7 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Update client cache */
   silc_idcache_add(server->local_list->clients, client->nickname, 
-		   client->id, (void *)client, FALSE);
+		   client->id, (void *)client, 0, NULL);
 
   nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 

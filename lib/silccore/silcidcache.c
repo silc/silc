@@ -142,10 +142,9 @@ void silc_idcache_free(SilcIDCache cache)
    the entry never expires from the cache. */
 
 bool silc_idcache_add(SilcIDCache cache, char *name, void *id, 
-		      void *context, int expire)
+		      void *context, int expire, SilcIDCacheEntry *ret)
 {
   SilcIDCacheEntry c;
-  uint32 curtime = time(NULL);
 
   SILC_LOG_DEBUG(("Adding cache entry"));
 
@@ -153,7 +152,7 @@ bool silc_idcache_add(SilcIDCache cache, char *name, void *id,
   c = silc_calloc(1, sizeof(*c));
   c->id = id;
   c->name = name;
-  c->expire = (expire ? (curtime + SILC_ID_CACHE_EXPIRE) : 0);
+  c->expire = expire;
   c->context = context;
 
   /* Add the new entry to the hash tables */
@@ -172,6 +171,9 @@ bool silc_idcache_add(SilcIDCache cache, char *name, void *id,
     silc_hash_table_rehash(cache->name_table, 0);
     silc_hash_table_rehash(cache->context_table, 0);
   }
+
+  if (ret)
+    *ret = c;
 
   return TRUE;
 }

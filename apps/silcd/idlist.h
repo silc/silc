@@ -31,6 +31,7 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 typedef struct {
   SilcIDCache cache;
   SilcSchedule schedule;
+  uint32 timeout;
 } *SilcIDListPurge;
 
 /* Channel key re-key context. */
@@ -579,7 +580,8 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username, 
 		       char *userinfo, SilcClientID *id, 
-		       SilcServerEntry router, void *connection);
+		       SilcServerEntry router, void *connection,
+		       int expire);
 int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
 int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 					char *server, 
@@ -600,7 +602,8 @@ void silc_idlist_client_destructor(SilcIDCache cache,
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
-			SilcCipher channel_key, SilcHmac hmac);
+			SilcCipher channel_key, SilcHmac hmac,
+			int expire);
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry);
 SilcChannelEntry
 silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,

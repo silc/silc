@@ -172,12 +172,15 @@ void silc_idcache_free(SilcIDCache cache);
  *    Add new entry to the cache. Returns TRUE if the entry was added and
  *    FALSE if it could not be added. The `name' is the name associated with
  *    the ID, the `id' the actual ID and the `context' a used specific context.
- *    If the `expire' is TRUE the entry expires in default time and if FALSE
- *    the entry never expires from the cache.
+ *    If the `expire' is non-zero the entry expires in that specified time.
+ *    If zero the entry never expires from the cache.
+ *
+ *    If the `ret' is non-NULL the created ID Cache entry is returned to 
+ *    that pointer.
  *
  ***/
 bool silc_idcache_add(SilcIDCache cache, char *name, void *id, 
-		      void *context, int expire);
+		      void *context, int expire, SilcIDCacheEntry *ret);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_del
  *

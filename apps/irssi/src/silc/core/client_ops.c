@@ -406,15 +406,33 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcBuffer channels;
       SilcClientEntry client_entry;
       
-      if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
-	  status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
-	char *tmp;
-	tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-					 3, NULL);
+      if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	/* Print the unknown nick for user */
+	unsigned char *tmp =
+	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+				     3, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp, 
 			 silc_client_command_status_message(status));
 	break;
+      } else if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+	/* Try to find the entry for the unknown client ID, since we
+	   might have, and print the nickname of it for user. */
+	uint32 tmp_len;
+	unsigned char *tmp =
+	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+				     2, &tmp_len);
+	if (tmp) {
+	  SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len);
+	  if (client_id) {
+	    client_entry = silc_client_get_client_by_id(client, conn,
+							client_id);
+	    if (client_entry && client_entry->nickname)
+	      silc_say_error("%s: %s", client_entry->nickname,
+			     silc_client_command_status_message(status));
+	    silc_free(client_id);
+	  }
+	}
       }
       
       if (!success)
@@ -499,6 +517,45 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     }
     break;
     
+  case SILC_COMMAND_IDENTIFY:
+    {
+      SilcClientEntry client_entry;
+      
+      /* Identify command is used only internally by the client library
+	 but it still might send some interesting stuff for user interface
+	 so let's print errors. */
+      
+      if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	/* Print the unknown nick for user */
+	unsigned char *tmp =
+	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+				     3, NULL);
+	if (tmp)
+	  silc_say_error("%s: %s", tmp, 
+			 silc_client_command_status_message(status));
+	break;
+      } else if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+	/* Try to find the entry for the unknown client ID, since we
+	   might have, and print the nickname of it for user. */
+	uint32 tmp_len;
+	unsigned char *tmp =
+	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+				     2, &tmp_len);
+	if (tmp) {
+	  SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len);
+	  if (client_id) {
+	    client_entry = silc_client_get_client_by_id(client, conn,
+							client_id);
+	    if (client_entry && client_entry->nickname)
+	      silc_say_error("%s: %s", client_entry->nickname,
+			     silc_client_command_status_message(status));
+	    silc_free(client_id);
+	  }
+	}
+      }
+    }
+    break;
+
   case SILC_COMMAND_WHOWAS:
     {
       char *nickname, *username, *realname;
@@ -662,13 +719,17 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       
       mode = va_arg(vp, uint32);
       
-      if (mode & SILC_UMODE_SERVER_OPERATOR)
+      if (mode & SILC_UMODE_SERVER_OPERATOR &&
+	  !(server->umode & SILC_UMODE_SERVER_OPERATOR))
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_SERVER_OPER);
 
-      if (mode & SILC_UMODE_ROUTER_OPERATOR)
+      if (mode & SILC_UMODE_ROUTER_OPERATOR &&
+	  !(server->umode & SILC_UMODE_ROUTER_OPERATOR))
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
+
+      server->umode = mode;
     }
     break;
     

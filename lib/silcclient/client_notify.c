@@ -724,7 +724,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Add the channel entry again to ID cache */
     silc_idcache_add(conn->channel_cache, channel->channel_name, 
-		     channel->id, channel, FALSE);
+		     channel->id, channel, 0, NULL);
 
     /* Notify application */
     client->ops->notify(client, conn, type, channel, channel);

@@ -56,6 +56,7 @@ typedef struct {
   
   gpointer chanqueries;
   SilcClientConnection conn;
+  uint32 umode;
 } SILC_SERVER_REC;
 
 SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn);
