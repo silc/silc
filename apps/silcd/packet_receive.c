@@ -2094,9 +2094,12 @@ void silc_server_channel_key(SilcServer server,
 
   /* Save the channel key */
   channel = silc_server_save_channel_key(server, buffer, NULL);
-  if (!channel)
+  if (!channel) {
+    SILC_LOG_ERROR(("Bad channel key from %s (%s)",
+		    sock->hostname, sock->ip));
     return;
-
+  }
+    
   /* Distribute the key to everybody who is on the channel. If we are router
      we will also send it to locally connected servers. */
   silc_server_send_channel_key(server, sock, channel, FALSE);
