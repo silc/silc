@@ -1493,7 +1493,12 @@ o Flags (2 bytes) - Includes the flags of the channel
           The message is for example and informational notice
           type message.
 
-  0x0010 - 0x0200 RESERVED
+  0x0010  SILC_MESSAGE_FLAG_REQUEST
+
+          This is a generic request flag to send request
+          messages.
+
+  0x0020 - 0x0200 RESERVED
 
           Reserved for future flags
 

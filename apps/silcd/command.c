@@ -2947,6 +2947,12 @@ SILC_SERVER_CMD_FUNC(join)
       if (server->standalone) {
 	channel = silc_server_create_new_channel(server, server->id, cipher, 
 						 hmac, channel_name, TRUE);
+	if (!channel) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+				     SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	  goto out;
+	}
+
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	created = TRUE;
 
@@ -2988,6 +2994,12 @@ SILC_SERVER_CMD_FUNC(join)
 	  /* Channel really does not exist, create it */
 	  channel = silc_server_create_new_channel(server, server->id, cipher, 
 						   hmac, channel_name, TRUE);
+	  if (!channel) {
+	    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	    goto out;
+	  }
+
 	  umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	  created = TRUE;
 	}
@@ -3012,6 +3024,12 @@ SILC_SERVER_CMD_FUNC(join)
 	/* Channel really does not exist, create it */
 	channel = silc_server_create_new_channel(server, server->id, cipher, 
 						 hmac, channel_name, TRUE);
+	if (!channel) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	  goto out;
+	}
+
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	created = TRUE;
       }

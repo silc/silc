@@ -4,6 +4,9 @@ Thu Mar 29 19:10:28 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  crashed since it did not handle the fact that there is no cipher
 	  called "3" and didn't check the error condition.  Now fixed.
 
+	* Added SILC_MESSAGE_FLAG_REQUEST message flag as generic request
+	  flag.  It can be used to send message requests.
+
 Thu Mar 29 12:26:25 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented the RESTART command in the client.
