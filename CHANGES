@@ -1,3 +1,21 @@
+Fri Oct 11 23:52:17 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Some strncat -> silc_strncat changes our the core and
+	  client library.
+
+	* Added SILC_SKE_STATUS_SIGNATURE_ERROR and OUT_OF_MEMORY
+	  errors.  Added better error printing to SKE library.
+	  Affected files lib/silcske/silcske.c, silcske_status.h and
+	  payload.c.
+
+	* Save the PKCS key length even if only private key is set to	
+	  SilcPKCS.  Affected file lib/silccrypt/silcpkcs.[ch] and rsa.c.
+
+	* Fixed the usage of silc_pkcs_get_key_len since it returns the
+	  length in bits not in bytes.  Affected files are
+	  lib/silcske/silcske.c, lib/silccore/silcauth.c and
+	  silcd/server_query.c.
+
 Wed Oct  9 17:22:57 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_attribute_payload_encode_data to directly encode
