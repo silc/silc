@@ -34,6 +34,14 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
+ o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
+   though).  This should be added and perhaps new client operation
+   should be added to notify application that it was received and
+   set the key only if application wishes to set (accept the key) it.
+
+ o should /nick nick and /nick Nick cause the Nick to be Nick@host becase
+   it used to be nick??
+
  o When changing own nickname and there exists a same nickname the library
    can give the client now nickname in format nick@host.  This is new
    behaviour and maybe should be removed.  The changer should always
@@ -51,6 +59,15 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
+
+ o User modes did not show correctly on normal server but looked ok
+   on router.  Join channel from normal server, join same from router
+   and see the user modes.  The founder of the channel (on normal server)
+   appears correctly on router but incorrectly (no modes) on normal 
+   server.
+
+ o LIST command reply sending is broken.  It is possible it does not
+   end the list with LIST_END, but sends LIST_ENTRY as last entry.
 
  o Backup router related issues
 
