@@ -404,7 +404,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	   in the callback function, ie. it is not valid anymore. */
 
 	/* Is the task ready for reading */				
-	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
+	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ &&
+	    fd == schedule->fd_list[i].fd) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
 	  task->callback(schedule, schedule->app_context,
