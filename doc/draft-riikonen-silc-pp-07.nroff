@@ -65,6 +65,7 @@ assures that the contents of the packets are secured and authenticated.
 
 
 
+
 .ti 0
 Table of Contents
 
@@ -171,8 +172,7 @@ is assured by computed MACs.  The protocol defines several packet types
 and packet payloads.  Each packet type usually has a specific packet
 payload that actually defines the contents of the packet.  Each packet
 also includes a default SILC Packet Header that provides sufficient
-information about the origin of the packet and destination of the
-packet.
+information about the origin and the destination of the packet.
 
 
 .ti 0
@@ -195,7 +195,6 @@ default SILC Packet Header, Padding, Packet Payload data, and, packet
 MAC.
 
 The following diagram illustrates typical SILC packet.
-
 
 .in 5
 .nf
@@ -274,10 +273,9 @@ The following diagram represents the SILC packet header.
 .ce
 Figure 2:  SILC Packet Header
 
-
 .in 6
-o Payload Length (2 bytes) - Is the length of the packet
-  not including the padding of the packet.
+o Payload Length (2 bytes) - Indicates the length of the
+  packet not including the padding of the packet.
 
 o Flags (1 byte) - Indicates flags to be used in packet
   processing.  Several flags may be set by ORing the flags
