@@ -136,16 +136,9 @@ static void got_hup(int z)
 
 static void stop_server(int z)
 {
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Flush log files */
-  silc_log_flush_all();
-
-  /* Gracefully stop the server */
-  /*  silc_server_stop(silcd); */
-  /* XXX do this for now since doing graceful exit now can remove
-     the scheduler underneath the server too early and crash it. */
-  exit(0);
+  /* Stop scheduler, the program will stop eventually after noticing
+     that the scheduler is down. */
+  silc_schedule_stop(silcd->schedule); 
 }
 
 int main(int argc, char **argv)
@@ -284,7 +277,8 @@ int main(int argc, char **argv)
      and we will exit. */
   silc_server_run(silcd);
   
-  /* The server was stopped, free it now */
+  /* Stop the server and free it. */
+  silc_server_stop(silcd);
   silc_server_free(silcd);
 
   /* Flush the logging system */

@@ -257,9 +257,7 @@ bool silc_schedule_uninit(SilcSchedule schedule)
 void silc_schedule_stop(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Stopping scheduler"));
-  silc_mutex_lock(schedule->lock);
   schedule->valid = FALSE;
-  silc_mutex_unlock(schedule->lock);
 }
 
 /* Executes nontimeout tasks. It then checks whether any of ther fd tasks

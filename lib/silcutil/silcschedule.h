@@ -326,7 +326,10 @@ bool silc_schedule_uninit(SilcSchedule schedule);
  *
  *    Stops the scheduler even if it is not supposed to be stopped yet. 
  *    After calling this, one must call silc_schedule_uninit (after the 
- *    silc_schedule has returned).
+ *    silc_schedule has returned).  After this is called it is guaranteed
+ *    that next time the scheduler enters the main loop it will be stopped.
+ *    However, untill it enters the main loop it will not detect that
+ *    it is stopped for example if this is called from another thread.
  *
  ***/
 void silc_schedule_stop(SilcSchedule schedule);
