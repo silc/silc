@@ -209,7 +209,7 @@ int verify_message_signature(SilcClientEntry sender,
     /* we don't have the public key cached ... use the one from the sig */
     ret = SILC_MSG_SIGNED_UNKNOWN;
   else {
-    SilcPublicKey cached_pk;
+    SilcPublicKey cached_pk=NULL;
 
     /* try to load the file */
     if (!silc_pkcs_load_public_key(filename, &cached_pk, SILC_PKCS_FILE_PEM) &&
@@ -223,14 +223,16 @@ int verify_message_signature(SilcClientEntry sender,
 	ret = SILC_MSG_SIGNED_UNKNOWN;
     }
 
-    if (pk)
-      silc_pkcs_public_key_free(pk);
-    pk = cached_pk; 
+    if (cached_pk) {
+      if (pk)
+        silc_pkcs_public_key_free(pk);
+      pk = cached_pk; 
+    }
   }
 
   /* the public key is now in pk, our "level of trust" in ret */
-  if (silc_message_signed_verify(sig, message, pk, silc_client->sha1hash) 
-      != SILC_AUTH_OK)
+  if ((pk) && silc_message_signed_verify(sig, message, pk, 
+			  		 silc_client->sha1hash)!= SILC_AUTH_OK)
     ret = SILC_MSG_SIGNED_FAILED;
 
   if (pk)
