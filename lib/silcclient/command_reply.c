@@ -1162,7 +1162,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
       silc_free(channel_id);
 
     silc_free(res_argv);
-    silc_free(res_argv);
     silc_free(res_argv_lens);
     silc_free(res_argv_types);
     return;
