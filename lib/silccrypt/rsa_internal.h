@@ -24,8 +24,8 @@
 /* RSA Keys, includes both Private and Public key */
 typedef struct {
   int bits;			/* bits in key */
-  SilcMPInt p;			/* prime p */
-  SilcMPInt q;			/* prime q */
+  char pub_set;			/* TRUE is n and e is set */
+  char prv_set;			/* TRUE if d is set */
   SilcMPInt n;			/* modulus */
   SilcMPInt e;			/* public exponent */
   SilcMPInt d;			/* private exponent */

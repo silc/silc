@@ -2194,6 +2194,9 @@ SILC_SERVER_CMD_FUNC(list)
   silc_server_command_list_send_reply(cmd, lchannels, lch_count, 
 				      gchannels, gch_count);
 
+  silc_free(lchannels);
+  silc_free(gchannels);
+
  out:
   silc_server_command_free(cmd);
 }
@@ -4031,7 +4034,7 @@ SILC_SERVER_CMD_FUNC(cmode)
     
   silc_buffer_free(packet);
   silc_free(channel_id);
-  silc_free(cidp);
+  silc_buffer_free(cidp);
 
  out:
   silc_server_command_free(cmd);

@@ -1444,6 +1444,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcClientID *client_id;
   SilcBuffer reply;
   SilcIDListData idata;
+  SilcIDCacheEntry id_cache = NULL;
   char *username = NULL, *realname = NULL, *id_string;
   uint32 id_len;
   int ret;
@@ -1459,7 +1460,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   client = (SilcClientEntry)sock->user_data;
   idata = (SilcIDListData)client;
 
-  /* Remove the old cache entry */
+  /* Remove the old cache entry. */
   if (!silc_idcache_del_by_context(server->local_list->clients, client)) {
     SILC_LOG_ERROR(("Lost client's cache entry - bad thing"));
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
@@ -2517,4 +2518,3 @@ void silc_server_ftp(SilcServer server,
 			   idata->hmac_send, idata->psn_send++,
 			   packet, FALSE);
 }
-

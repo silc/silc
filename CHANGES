@@ -1,3 +1,21 @@
+Sat Dec  1 12:52:39 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Memory leak fixes in:
+
+	  lib/silcutil/silcsockconn.c
+	  lib/silcske/silcske.c
+	  lib/silcske/groups.c
+	  lib/silccrypt/rsa.c
+	  lib/silccrypt/silcpkcs.c
+	  lib/silccore/silccommand.c
+	  lib/silccore/silcidcache.c
+	  silcd/idlist.c
+	  silcd/packet_send.c
+	  silcd/command.c
+
+	* ROBOdoc documented the lib/silcske/groups.h file and a
+	  bit changed the interface for better.
+
 Thu Nov 29 22:12:50 EET 2001  Pekka Riikonen <priikone@silcnet.org>'
 
 	* Update the client entry context in the ID cache after

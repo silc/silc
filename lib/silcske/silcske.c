@@ -72,7 +72,8 @@ void silc_ske_free(SilcSKE ske)
 
     /* Free rest */
     if (ske->prop) {
-      silc_free(ske->prop->group);
+      if (ske->prop->group)
+	silc_ske_group_free(ske->prop->group);
       if (ske->prop->pkcs)
 	silc_pkcs_free(ske->prop->pkcs);
       if (ske->prop->cipher)
@@ -249,7 +250,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
      the callback function. */
   ske->prop = prop = silc_calloc(1, sizeof(*prop));
   prop->flags = payload->flags;
-  status = silc_ske_get_group_by_name(payload->ke_grp_list, &group);
+  status = silc_ske_group_get_by_name(payload->ke_grp_list, &group);
   if (status != SILC_SKE_STATUS_OK)
     goto err;
 
@@ -288,7 +289,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
   if (payload)
     silc_ske_payload_start_free(payload);
 
-  silc_free(group);
+  silc_ske_group_free(group);
 
   if (prop->pkcs)
     silc_pkcs_free(prop->pkcs);
@@ -695,7 +696,7 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
      only for this negotiation and will be free'd after KE is over. */
   ske->prop = prop = silc_calloc(1, sizeof(*prop));
   prop->flags = start_payload->flags;
-  status = silc_ske_get_group_by_name(start_payload->ke_grp_list, &group);
+  status = silc_ske_group_get_by_name(start_payload->ke_grp_list, &group);
   if (status != SILC_SKE_STATUS_OK)
     goto err;
 
@@ -741,7 +742,7 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
 
  err:
   if (group)
-    silc_free(group);
+    silc_ske_group_free(group);
 
   if (prop->pkcs)
     silc_pkcs_free(prop->pkcs);
@@ -1217,7 +1218,7 @@ silc_ske_select_security_properties(SilcSKE ske,
 
       SILC_LOG_DEBUG(("Proposed KE group `%s'", item));
 
-      if (silc_ske_get_group_by_name(item, NULL) == SILC_SKE_STATUS_OK) {
+      if (silc_ske_group_get_by_name(item, NULL) == SILC_SKE_STATUS_OK) {
 	SILC_LOG_DEBUG(("Found KE group `%s'", item));
 
 	payload->ke_grp_len = len;

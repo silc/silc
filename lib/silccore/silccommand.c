@@ -130,7 +130,7 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
 		       SILC_STR_UI_XNSTRING(args->data, args->len),
 		       SILC_STR_END);
     silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
-    silc_free(args);
+    silc_buffer_free(args);
   }
 
   return buffer;
@@ -173,7 +173,7 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
 		       SILC_STR_UI_XNSTRING(args->data, args->len),
 		       SILC_STR_END);
     silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
-    silc_free(args);
+    silc_buffer_free(args);
   }
 
   return buffer;

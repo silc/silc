@@ -1604,6 +1604,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
   silc_free(routed);
   silc_free(sent_clients);
   silc_free(packetdata.src_id);
+  silc_buffer_free(packet);
   va_end(ap);
 }
 

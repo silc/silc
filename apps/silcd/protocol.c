@@ -1410,7 +1410,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	  ctx->ske = silc_ske_alloc();
 	  ctx->ske->rng = server->rng;
 	  ctx->ske->prop = silc_calloc(1, sizeof(*ctx->ske->prop));
-	  silc_ske_get_group_by_number(idata->rekey->ske_group,
+	  silc_ske_group_get_by_number(idata->rekey->ske_group,
 				       &ctx->ske->prop->group);
 
 	  silc_ske_set_callbacks(ctx->ske, 
@@ -1466,7 +1466,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	  ctx->ske = silc_ske_alloc();
 	  ctx->ske->rng = server->rng;
 	  ctx->ske->prop = silc_calloc(1, sizeof(*ctx->ske->prop));
-	  silc_ske_get_group_by_number(idata->rekey->ske_group,
+	  silc_ske_group_get_by_number(idata->rekey->ske_group,
 				       &ctx->ske->prop->group);
 
 	  silc_ske_set_callbacks(ctx->ske, 

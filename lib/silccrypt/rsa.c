@@ -220,6 +220,12 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
   unsigned char tmp[4];
   uint32 e_len, n_len;
 
+  if (key->pub_set) {
+    silc_mp_uninit(&key->e);
+    silc_mp_uninit(&key->e);
+    key->pub_set = FALSE;
+  }
+
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
 
@@ -244,6 +250,7 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
   silc_mp_bin2mp(key_data + 4 + e_len + 4, n_len, &key->n);
 
   key->bits = n_len * 8;
+  key->pub_set = TRUE;
 
   return key->bits;
 }
@@ -258,6 +265,17 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
   unsigned char tmp[4];
   uint32 e_len, n_len, d_len;
 
+  if (key->prv_set) {
+    silc_mp_uninit(&key->d);
+    key->prv_set = FALSE;
+  }
+
+  if (key->pub_set) {
+    silc_mp_uninit(&key->e);
+    silc_mp_uninit(&key->n);
+    key->pub_set = FALSE;
+  }
+
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
   silc_mp_init(&key->d);
@@ -267,6 +285,7 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
   if (e_len > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
+    silc_mp_uninit(&key->d);
     return FALSE;
   }
 
@@ -277,6 +296,7 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
   if (e_len + n_len > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
+    silc_mp_uninit(&key->d);
     return FALSE;
   }
 
@@ -287,12 +307,15 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
   if (e_len + n_len + d_len > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
+    silc_mp_uninit(&key->d);
     return FALSE;
   }
 
   silc_mp_bin2mp(key_data + 4 + e_len + 4 + n_len + 4, d_len, &key->d);
 
   key->bits = n_len * 8;
+  key->prv_set = TRUE;
+  key->pub_set = TRUE;
 
   return TRUE;
 }
@@ -464,8 +487,6 @@ void rsa_generate_keys(RsaKey *key, uint32 bits,
   SilcMPInt pm1, qm1;
   
   /* Initialize variables */
-  silc_mp_init(&key->p);
-  silc_mp_init(&key->q);
   silc_mp_init(&key->n);
   silc_mp_init(&key->e);
   silc_mp_init(&key->d);
@@ -479,16 +500,12 @@ void rsa_generate_keys(RsaKey *key, uint32 bits,
   /* Set modulus length */
   key->bits = bits;
 
-  /* Set the primes */
-  silc_mp_set(&key->p, p);
-  silc_mp_set(&key->q, q);
-
   /* Compute modulus, n = p * q */
-  silc_mp_mul(&key->n, &key->p, &key->q);
+  silc_mp_mul(&key->n, p, q);
   
   /* phi = (p - 1) * (q - 1) */
-  silc_mp_sub_ui(&pm1, &key->p, 1);
-  silc_mp_sub_ui(&qm1, &key->q, 1);
+  silc_mp_sub_ui(&pm1, p, 1);
+  silc_mp_sub_ui(&qm1, q, 1);
   silc_mp_mul(&phi, &pm1, &qm1);
   
   /* Set e, the public exponent. We try to use same public exponent
@@ -522,11 +539,12 @@ void rsa_generate_keys(RsaKey *key, uint32 bits,
 void rsa_clear_keys(RsaKey *key)
 {
   key->bits = 0;
-  silc_mp_uninit(&key->p);
-  silc_mp_uninit(&key->q);
-  silc_mp_uninit(&key->n);
-  silc_mp_uninit(&key->e);
-  silc_mp_uninit(&key->d);
+  if (key->pub_set) {
+    silc_mp_uninit(&key->n);
+    silc_mp_uninit(&key->e);
+  }
+  if (key->prv_set)
+    silc_mp_uninit(&key->d);
 }
 
 /* RSA encrypt/decrypt function. cm = ciphertext or plaintext,

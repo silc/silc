@@ -60,12 +60,12 @@ endif
 $(SIM_CIPHER_OBJS): ../silccrypt/libsilccrypt.a
 	$(LTCOMPILE) -c $(srcdir)/../silccrypt/$*.c
 	$(LIBTOOL) --mode=link $(LINK) -rpath $(silc_modulesdir) -o lib$*.la $*.lo
-	cd $(srcdir)/$(SIM_MODULES_DIR) && $(LN_S) $(srcdir)/../.libs/lib$*.so $(srcdir)/$*.sim.so
+	cd $(srcdir)/$(SIM_MODULES_DIR) && $(LN_S) -f $(srcdir)/../.libs/lib$*.so $(srcdir)/$*.sim.so
 
 $(SIM_HASH_OBJS): ../silccrypt/libsilccrypt.a
 	$(LTCOMPILE) -c $(srcdir)/../silccrypt/$*.c
 	$(LIBTOOL) --mode=link $(LINK) -rpath $(silc_modulesdir) -o lib$*.la $*.lo
-	cd $(srcdir)/$(SIM_MODULES_DIR) && $(LN_S) $(srcdir)/../.libs/lib$*.so $(srcdir)/$*.sim.so
+	cd $(srcdir)/$(SIM_MODULES_DIR) && $(LN_S) -f $(srcdir)/../.libs/lib$*.so $(srcdir)/$*.sim.so
 
 CLEANFILES = $(SIM_MODULES_DIR)/*.sim.so *.la
 

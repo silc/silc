@@ -71,6 +71,8 @@ void silc_idlist_del_data(void *entry)
     silc_hmac_free(idata->hmac_send);
   if (idata->hmac_receive)
     silc_hmac_free(idata->hmac_receive);
+  if (idata->hash)
+    silc_hash_free(idata->hash);
   if (idata->public_key)
     silc_pkcs_public_key_free(idata->public_key);
 }
@@ -361,6 +363,7 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
     silc_free(entry->username);
     silc_free(entry->userinfo);
     silc_free(entry->id);
+    silc_hash_table_free(entry->channels);
 
     memset(entry, 'F', sizeof(*entry));
     silc_free(entry);
@@ -533,18 +536,13 @@ void silc_idlist_client_destructor(SilcIDCache cache,
 {
   SilcClientEntry client;
 
-  SILC_LOG_DEBUG(("Start"));
-
   client = (SilcClientEntry)entry->context;
   if (client) {
-    if (client->nickname)
-      silc_free(client->nickname);
-    if (client->username)
-      silc_free(client->username);
-    if (client->userinfo)
-      silc_free(client->userinfo);
-    if (client->id)
-      silc_free(client->id);
+    silc_free(client->nickname);
+    silc_free(client->username);
+    silc_free(client->userinfo);
+    silc_free(client->id);
+    silc_hash_table_free(client->channels);
 
     memset(client, 'F', sizeof(*client));
     silc_free(client);
@@ -634,6 +632,8 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
       silc_free(entry->key);
     }
     silc_free(entry->cipher);
+    if (entry->hmac)
+      silc_hmac_free(entry->hmac);
     silc_free(entry->hmac_name);
     silc_free(entry->rekey);
 

@@ -198,6 +198,8 @@ bool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old)
     ret = silc_hash_table_del(cache->context_table, old->context);
   if (old->id)
     ret = silc_hash_table_del(cache->id_table, old->id);
+  else
+    silc_free(old);
 
   return ret;
 }
@@ -263,6 +265,8 @@ bool silc_idcache_del_by_context(SilcIDCache cache, void *context)
     ret = silc_hash_table_del(cache->context_table, c->context);
   if (c->id)
     ret = silc_hash_table_del_by_context(cache->id_table, c->id, c);
+  else
+    silc_free(c);
 
   return ret;
 }

@@ -152,8 +152,10 @@ bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
 
 void silc_pkcs_free(SilcPKCS pkcs)
 {
-  if (pkcs)
+  if (pkcs) {
+    pkcs->pkcs->clear_keys(pkcs->context);
     silc_free(pkcs->context);
+  }
   silc_free(pkcs);
 }
 

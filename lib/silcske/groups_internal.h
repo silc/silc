@@ -39,4 +39,7 @@ struct SilcSKEDiffieHellmanGroupStruct {
   SilcMPInt generator;
 };
 
+/* List of defined groups. */
+extern const struct SilcSKEDiffieHellmanGroupDefStruct silc_ske_groups[];
+
 #endif

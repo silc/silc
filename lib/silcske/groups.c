@@ -72,7 +72,7 @@ const struct SilcSKEDiffieHellmanGroupDefStruct silc_ske_groups[] =
 
 /* Returns Diffie Hellman group by group number */
 
-SilcSKEStatus silc_ske_get_group_by_number(int number,
+SilcSKEStatus silc_ske_group_get_by_number(int number,
 					   SilcSKEDiffieHellmanGroup *ret)
 {
   int i;
@@ -106,7 +106,7 @@ SilcSKEStatus silc_ske_get_group_by_number(int number,
 
 /* Returns Diffie Hellman group by name */
 
-SilcSKEStatus silc_ske_get_group_by_name(const char *name,
+SilcSKEStatus silc_ske_group_get_by_name(const char *name,
 					 SilcSKEDiffieHellmanGroup *ret)
 {
   int i;
@@ -138,6 +138,16 @@ SilcSKEStatus silc_ske_get_group_by_name(const char *name,
   return SILC_SKE_STATUS_OK;
 }
 
+/* Free group */
+
+void silc_ske_group_free(SilcSKEDiffieHellmanGroup group)
+{
+  silc_mp_uninit(&group->group);
+  silc_mp_uninit(&group->group_order);
+  silc_mp_uninit(&group->generator);
+  silc_free(group);
+}
+
 /* Returns comma separated list of supported groups */
 
 char *silc_ske_get_supported_groups()
@@ -166,4 +176,11 @@ char *silc_ske_get_supported_groups()
 int silc_ske_group_get_number(SilcSKEDiffieHellmanGroup group)
 {
   return group->number;
+}
+
+/* Returns the name of the `group'. */
+
+const char *silc_ske_group_get_name(SilcSKEDiffieHellmanGroup group)
+{
+  return group->name;
 }
