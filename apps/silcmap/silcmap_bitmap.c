@@ -86,14 +86,9 @@ bool silc_map_write_ppm(SilcMap map, const char *filename)
   fprintf(fp, "P6 %ld %ld %ld\n", map->width, map->height, map->maxcolor);
 
   /* Write the bitmap */
-  for (i = 0; i < map->height; i++)
-    for (k = 0; k < map->width; k++) {
-      putc(map->bitmap[i * (map->width * 3) + (k * 3)    ], fp);   /* R */
-      putc(map->bitmap[i * (map->width * 3) + (k * 3) + 1], fp);   /* G */
-      putc(map->bitmap[i * (map->width * 3) + (k * 3) + 2], fp);   /* B */
-    }
-
+  fwrite(map->bitmap, map->bitsilc_map_size, 1, fp);
   fclose(fp);
+
   return retval;
 }
 
