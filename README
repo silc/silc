@@ -132,7 +132,7 @@ Feedback and comments are welcome.  Bug reports should be sent to the
 development mailing list.
 
 Official SILC project web site      : http://silcnet.org/
-FTP archive for SILC project        : ftp://silc.pspt.fi/pub/silc/
+FTP archive for SILC project        : ftp://ftp.silcnet.org/
 Development mailing list address    : silc-devel@lists.sourceforge.net
 
-				Pekka Riikonen <priikone@poseidon.pspt.fi>
+				Pekka Riikonen <priikone@silcnet.org>
