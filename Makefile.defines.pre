@@ -57,12 +57,11 @@ INCLUDES = $(ADD_INCLUDES) $(SILC_CFLAGS) \
         -I$(silc_top_srcdir)/doc \
 	-I$(silc_top_srcdir)/lib/trq
 
-includes-install: Makefile
-	for i in $(include_HEADERS); \
-	do \
-	   s=$(srcdir)/$$i; \
-	   d=$(silc_top_srcdir)/includes/$$i; \
-	   ln $$s $$d 2>/dev/null || (rm -f $$d; cp -p $$s $$d;); \
-	done;
-
-all-local: includes-install
+#
+#includes-install: Makefile
+#	for i in $(include_HEADERS); do s=$(srcdir)/$$i;
+#d=$(silc_top_srcdir)/includes/$$i; \
+#	   ln $$s $$d 2>/dev/null || (rm -f $$d; cp -p $$s $$d;); \
+#	done;
+#
+#all-local: includes-install
