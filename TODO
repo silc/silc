@@ -72,10 +72,6 @@ TODO/bugs In SILC Server
  	o IP address fields in configuration file should accept mask
 	  format as well, IP/MASK, and not just plain IP.
 
-	o Connection classes should be actually implemented in
-	  serverconfig.c.  They can be defined but they are totally
-	  ignored currently.  And they should be redefined also.
-
  o If client's public key is saved in the server (and doing public key
    authentication) then the hostname and the username information could
    be taken from the public key.  Should be a configuration option!
