@@ -4577,7 +4577,8 @@ void silc_server_save_users_on_channel(SilcServer server,
   SilcIDCacheEntry cache;
   SilcChannelClientEntry chl;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Saving %d users on %s channel", user_count,
+		  channel->channel_name));
 
   for (i = 0; i < user_count; i++) {
     /* Client ID */

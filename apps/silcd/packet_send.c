@@ -215,10 +215,8 @@ void silc_server_packet_send_dest(SilcServer server,
   silc_server_packet_send_real(server, sock, force_send);
 
  out:
-  if (packetdata.src_id)
-    silc_free(packetdata.src_id);
-  if (packetdata.dst_id)
-    silc_free(packetdata.dst_id);
+  silc_free(packetdata.src_id);
+  silc_free(packetdata.dst_id);
 }
 
 /* Assembles a new packet to be sent out to network. This doesn't actually
@@ -318,10 +316,8 @@ void silc_server_packet_send_srcdest(SilcServer server,
   silc_server_packet_send_real(server, sock, force_send);
 
  out:
-  if (packetdata.src_id)
-    silc_free(packetdata.src_id);
-  if (packetdata.dst_id)
-    silc_free(packetdata.dst_id);
+  silc_free(packetdata.src_id);
+  silc_free(packetdata.dst_id);
 }
 
 /* Broadcast received packet to our primary route. This function is used
