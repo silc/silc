@@ -94,14 +94,14 @@ typedef unsigned char SilcPacketFlags;
        Packet flags. Flags are defined above.
 
    unsigned char *src_id
-   unsigned int src_id_len
+   unsigned short src_id_len
    unsigned char src_id_type
 
        Source ID, its length and type. On packet reception retuned ID's
        are always the hash values of the ID's from the packet.
 
   unsigned char *dst_id;
-  unsigned int dst_id_len;
+  unsigned short dst_id_len;
   unsigned char src_id_type;
 
        Destination ID, its length and type. On packet reception retuned
@@ -119,15 +119,15 @@ typedef struct {
   SilcPacketFlags flags;
 
   unsigned char *src_id;
-  unsigned int src_id_len;
+  unsigned short src_id_len;
   unsigned char src_id_type;
 
   unsigned char *dst_id;
-  unsigned int dst_id_len;
+  unsigned short dst_id_len;
   unsigned char dst_id_type;
 
-  unsigned int truelen;
-  unsigned int padlen;
+  unsigned short truelen;
+  unsigned short padlen;
 
   /* For padding generation */
   SilcRng rng;

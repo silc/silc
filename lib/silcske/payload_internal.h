@@ -24,7 +24,7 @@
 /* SILC Key Exchange Start Payload */
 typedef struct {
   unsigned char flags;
-  unsigned int len;
+  unsigned short len;
 
   unsigned char *cookie;
   unsigned short cookie_len;

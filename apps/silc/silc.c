@@ -426,17 +426,19 @@ SILC_TASK_CALLBACK(silc_client_process_key_press)
     break;
   case CTRL('a'):
   case KEY_HOME:
+#ifdef KEY_BEG
   case KEY_BEG:
+#endif
     /* Beginning, Home */
     silc_screen_input_cursor_home(app->screen);
     break;
   case CTRL('e'):
+#ifdef KEY_END
   case KEY_END:
-    /* End */
-    silc_screen_input_cursor_end(app->screen);
-    break;
+#endif
   case KEY_LL:
     /* End */
+    silc_screen_input_cursor_end(app->screen);
     break;
   case CTRL('g'):
     /* Bell, Ctrl^g */
@@ -481,8 +483,12 @@ static int silc_client_bad_keys(unsigned char key)
   case KEY_B2:
   case KEY_C1:
   case KEY_C3:
+#ifdef KEY_UNDO
   case KEY_UNDO:
+#endif
+#ifdef KEY_EXIT
   case KEY_EXIT:
+#endif
   case '\v':           /* VT */
   case '\E':           /* we ignore ESC */
     return TRUE;

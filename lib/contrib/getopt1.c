@@ -16,16 +16,6 @@
    along with this program; if not, write to the Free Software
    Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-#ifdef HAVE_CONFIG_H
-#if defined (emacs) || defined (CONFIG_BROKETS)
-/* We use <config.h> instead of "config.h" so that a compilation
-   using -I. -I$srcdir will use ./config.h rather than $srcdir/config.h
-   (which it would do because it found this file in $srcdir).  */
-#include <config.h>
-#else
-#include "config.h"
-#endif
-#endif
 
 #include "getopt.h"
 
