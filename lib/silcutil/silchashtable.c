@@ -215,9 +215,13 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 				  void *foreach_user_context)
 {
   SilcHashTableEntry *entry;
+  bool auto_rehash;
   uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
+
+  auto_rehash = ht->auto_rehash;
+  ht->auto_rehash = FALSE;
 
   entry = &ht->table[i];
   if (compare) {
@@ -233,6 +237,8 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
       entry = &(*entry)->next;
     }
   }
+
+  ht->auto_rehash = auto_rehash;
 }
 
 /* Internal routine to add new key to the hash table */
@@ -712,10 +718,13 @@ void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
 {
   SilcHashTableEntry e, tmp;
   int i;
+  bool auto_rehash;
 
   if (!foreach)
     return;
 
+  auto_rehash = ht->auto_rehash;
+  ht->auto_rehash = FALSE;
   for (i = 0; i < primesize[ht->table_size]; i++) {
     e = ht->table[i];
     while (e) {
@@ -725,6 +734,7 @@ void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
       e = tmp;
     }
   }
+  ht->auto_rehash = auto_rehash;
 }
 
 /* Rehashs the hash table. The size of the new hash table is provided
