@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.7  2000/07/07 06:55:24  priikone
+ * 	Do not allow client to join twice on same channel.
+ *
  * Revision 1.6  2000/07/06 10:20:59  priikone
  * 	Cipher name in joining is not mandatory, removed check.
  *
@@ -950,28 +953,38 @@ SILC_SERVER_CMD_FUNC(join)
 
  join_channel:
 
-  /* XXX must check whether the client already is on the channel */
+  /* If the JOIN request was forwarded to us we will make a bit slower
+     query to get the client pointer. Otherwise, we get the client pointer
+     real easy. */
+  if (!(cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED)) {
+    client = (SilcClientList *)sock->user_data;
+  } else {
+    void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
+    client = silc_idlist_find_client_by_id(server->local_list->clients, id);
+    if (!client) {
+      /* XXX */
+      goto out;
+    }
+    silc_free(id);
+  }
+
+  /* Check whether the client already is on the channel */
+  if (silc_server_client_on_channel(client, channel)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_USER_ON_CHANNEL);
+    silc_free(channel_name);
+    goto out;
+  }
 
   /* Join the client to the channel */
   i = channel->user_list_count;
   channel->user_list = silc_realloc(channel->user_list, 
 				    sizeof(*channel->user_list) * (i + 1));
   channel->user_list[i].mode = SILC_CHANNEL_UMODE_NONE;
-
-  /* If the JOIN request was forwarded to us we will make a bit slower
-     query to get the client pointer. Otherwise, we get the client pointer
-     real easy. */
-  if (!(cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED)) {
-    client = (SilcClientList *)sock->user_data;
-    channel->user_list[i].client = client;
-  } else {
-    void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
-    client = silc_idlist_find_client_by_id(server->local_list->clients, id);
-    channel->user_list[i].client = client;
-    silc_free(id);
-  }
+  channel->user_list[i].client = client;
   channel->user_list_count++;
 
+  /* Add the channel to client's channel list */
   i = client->channel_count;
   client->channel = silc_realloc(client->channel, 
 				 sizeof(*client->channel) * (i + 1));
