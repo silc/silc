@@ -24,7 +24,7 @@
 /* The default SILC PKCS (Public Key Cryptosystem) object to represent
    any PKCS in SILC. */
 typedef struct SilcPKCSObjectStruct {
-  unsigned char *name;
+  char *name;
   void *data_context;
 
   int (*init)(void *, unsigned int, SilcRng);
@@ -58,6 +58,25 @@ typedef struct SilcPKCSStruct {
 
 /* List of all PKCS in SILC. */
 extern SilcPKCSObject silc_pkcs_list[];
+
+/* SILC style public key object. Public key is read from file to this
+   object. Public keys received from network must be in this format as 
+   well. */
+typedef struct {
+  unsigned int len;
+  char *name;
+  char *identifier;
+  unsigned char *pk;
+  unsigned int pk_len;
+} *SilcPublicKey;
+
+/* SILC style private key object. Private key is read from file to this
+   object. */
+typedef struct {
+  char *name;
+  unsigned char *prv;
+  unsigned int prv_len;
+} *SilcPrivateKey;
 
 /* Public and private key file headers */
 #define SILC_PKCS_PUBLIC_KEYFILE_BEGIN "-----BEGIN SILC PUBLIC KEY-----\n"
@@ -153,12 +172,39 @@ int silc_pkcs_set_public_key(SilcPKCS pkcs, unsigned char *pk,
 			     unsigned int pk_len);
 int silc_pkcs_set_private_key(SilcPKCS pkcs, unsigned char *prv, 
 			      unsigned int prv_len);
-int silc_pkcs_save_public_key(SilcPKCS pkcs, char *filename,
-			      unsigned char *pk, unsigned int pk_len);
-int silc_pkcs_save_private_key(SilcPKCS pkcs, char *filename,
-			       unsigned char *prv, unsigned int prv_len,
-			       char *passphrase);
-int silc_pkcs_load_public_key(char *filename, SilcPKCS *ret_pkcs);
-int silc_pkcs_load_private_key(char *filename, SilcPKCS *ret_pkcs);
+char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
+				  char *email, char *org, char *country);
+SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
+					 unsigned char *pk, 
+					 unsigned int pk_len);
+void silc_pkcs_public_key_free(SilcPublicKey public_key);
+SilcPrivateKey silc_pkcs_private_key_alloc(char *name, unsigned char *prv,
+					   unsigned int prv_len);
+void silc_pkcs_private_key_free(SilcPrivateKey private_key);
+unsigned char *
+silc_pkcs_public_key_encode(SilcPublicKey public_key, unsigned int *len);
+unsigned char *
+silc_pkcs_public_key_data_encode(unsigned char *pk, unsigned int pk_len,
+				 char *pkcs, char *identifier, 
+				 unsigned int *len);
+int silc_pkcs_public_key_decode(unsigned char *data, unsigned int data_len,
+				SilcPublicKey *public_key);
+unsigned char *
+silc_pkcs_private_key_encode(SilcPrivateKey private_key, unsigned int *len);
+unsigned char *
+silc_pkcs_private_key_data_encode(unsigned char *prv, unsigned int prv_len,
+				  char *pkcs, unsigned int *len);
+int silc_pkcs_private_key_decode(unsigned char *data, unsigned int data_len,
+				 SilcPrivateKey *private_key);
+int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key);
+int silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
+				   unsigned int data_len);
+int silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
+			       unsigned char *passphrase);
+int silc_pkcs_save_private_key_data(char *filename, unsigned char *data, 
+				    unsigned int data_len,
+				    unsigned char *passphrase);
+int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key);
+int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key);
 
 #endif

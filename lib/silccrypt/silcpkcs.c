@@ -59,10 +59,6 @@ int silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
     return FALSE;
 
   *new_pkcs = silc_calloc(1, sizeof(**new_pkcs));
-  if (*new_pkcs == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new PKCS object"));
-    return FALSE;
-  }
 
   /* Set the pointers */
   (*new_pkcs)->pkcs = &silc_pkcs_list[i];
@@ -141,7 +137,6 @@ unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, unsigned int *len)
 }
 
 /* Sets public key */
-/* XXX rewrite */
 
 int silc_pkcs_set_public_key(SilcPKCS pkcs, unsigned char *pk, 
 			     unsigned int pk_len)
@@ -157,87 +152,622 @@ int silc_pkcs_set_private_key(SilcPKCS pkcs, unsigned char *prv,
   return pkcs->pkcs->set_private_key(pkcs->context, prv, prv_len);
 }
 
-/* Saves public key into file */
+/* Encodes and returns SILC public key identifier. If some of the 
+   arguments as NULL those are not encoded into the identifier string.
+   Protocol says that at least username and host must be provided. */
 
-int silc_pkcs_save_public_key(SilcPKCS pkcs, char *filename,
-			      unsigned char *pk, unsigned int pk_len)
+char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
+				  char *email, char *org, char *country)
 {
   SilcBuffer buf;
-  int ret = TRUE;
+  char *identifier;
+  unsigned int len, tlen = 0;
 
-  buf = silc_buffer_alloc(strlen(pkcs->pkcs->name) + 2 + pk_len
-			  + strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) 
-			  + strlen(SILC_PKCS_PUBLIC_KEYFILE_END));
+  if (!username || !host)
+    return NULL;
 
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  len = (username ? strlen(username) : 0) +
+	(host     ? strlen(host)     : 0) +
+	(realname ? strlen(realname) : 0) +
+	(email    ? strlen(email)    : 0) +
+	(org      ? strlen(org)      : 0) +
+	(country  ? strlen(country)  : 0);
+  
+  if (len < 3)
+    return NULL;
+
+  len += 3 + 5 + 5 + 4 + 4 + 4;
+  buf = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(buf, len);
+
+  if (username) {
+    silc_buffer_format(buf,
+		       SILC_STR_UI32_STRING("UN="),
+		       SILC_STR_UI32_STRING(username),
+		       SILC_STR_END);
+    silc_buffer_pull(buf, 3 + strlen(username));
+    tlen = 3 + strlen(username); 
+  }
+    
+  if (host) {
+    silc_buffer_format(buf,
+		       SILC_STR_UI32_STRING(", "),
+		       SILC_STR_UI32_STRING("HN="),
+		       SILC_STR_UI32_STRING(host),
+		       SILC_STR_END);
+    silc_buffer_pull(buf, 5 + strlen(host));
+    tlen += 5 + strlen(host); 
+  }
+
+  if (realname) {
+    silc_buffer_format(buf,
+		       SILC_STR_UI32_STRING(", "),
+		       SILC_STR_UI32_STRING("RN="),
+		       SILC_STR_UI32_STRING(realname),
+		       SILC_STR_END);
+    silc_buffer_pull(buf, 5 + strlen(realname));
+    tlen += 5 + strlen(realname); 
+  }
+
+  if (email) {
+    silc_buffer_format(buf,
+		       SILC_STR_UI32_STRING(", "),
+		       SILC_STR_UI32_STRING("E="),
+		       SILC_STR_UI32_STRING(email),
+		       SILC_STR_END);
+    silc_buffer_pull(buf, 4 + strlen(email));
+    tlen += 4 + strlen(email); 
+  }
+
+  if (org) {
+    silc_buffer_format(buf,
+		       SILC_STR_UI32_STRING(", "),
+		       SILC_STR_UI32_STRING("O="),
+		       SILC_STR_UI32_STRING(org),
+		       SILC_STR_END);
+    silc_buffer_pull(buf, 4 + strlen(org));
+    tlen += 4 + strlen(org); 
+  }
+
+  if (country) {
+    silc_buffer_format(buf,
+		       SILC_STR_UI32_STRING(", "),
+		       SILC_STR_UI32_STRING("C="),
+		       SILC_STR_UI32_STRING(country),
+		       SILC_STR_END);
+    silc_buffer_pull(buf, 4 + strlen(country));
+    tlen += 4 + strlen(country); 
+  }
+
+  silc_buffer_push(buf, buf->data - buf->head);
+  identifier = silc_calloc(tlen, sizeof(*identifier));
+  memcpy(identifier, buf->data, tlen);
+  silc_buffer_free(buf);
+
+  return identifier;
+}
+
+/* Allocates SILC style public key formed from sent arguments. All data
+   is duplicated. */
+
+SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
+					 unsigned char *pk, 
+					 unsigned int pk_len)
+{
+  SilcPublicKey public_key;
+
+  public_key = silc_calloc(1, sizeof(*public_key));
+  public_key->len = 4 + 2 + strlen(name) + 2 + strlen(identifier) + pk_len;
+  public_key->name = strdup(name);
+  public_key->identifier = strdup(identifier);
+  public_key->pk_len = pk_len;
+  public_key->pk = silc_calloc(pk_len, sizeof(*public_key->pk));
+  memcpy(public_key->pk, pk, pk_len);
+
+  return public_key;
+}
+
+/* Free's public key */
+
+void silc_pkcs_public_key_free(SilcPublicKey public_key)
+{
+  if (public_key) {
+    silc_free(public_key->name);
+    silc_free(public_key->identifier);
+    silc_free(public_key->pk);
+    silc_free(public_key);
+  }
+}
+
+/* Allocates SILC private key formed from sent arguments. All data is
+   duplicated. */
+
+SilcPrivateKey silc_pkcs_private_key_alloc(char *name, unsigned char *prv,
+					   unsigned int prv_len)
+{
+  SilcPrivateKey private_key;
+
+  private_key = silc_calloc(1, sizeof(*private_key));
+  private_key->name = strdup(name);
+  private_key->prv_len = prv_len;
+  private_key->prv = silc_calloc(prv_len, sizeof(*private_key->prv));
+  memcpy(private_key->prv, prv, prv_len);
+
+  return private_key;
+}
+
+/* Free's private key */
+
+void silc_pkcs_private_key_free(SilcPrivateKey private_key)
+{
+  if (private_key) {
+    silc_free(private_key->name);
+    silc_free(private_key->prv);
+    silc_free(private_key);
+  }
+}
+
+/* Encodes SILC style public key from SilcPublicKey. Returns the encoded
+   data. */
+
+unsigned char *
+silc_pkcs_public_key_encode(SilcPublicKey public_key, unsigned int *len)
+{
+  SilcBuffer buf;
+  unsigned char *ret;
+
+  buf = silc_buffer_alloc(public_key->len);
+  silc_buffer_pull_tail(buf, public_key->len);
+
+  silc_buffer_format(buf,
+		     SILC_STR_UI_INT(public_key->len),
+		     SILC_STR_UI_SHORT(strlen(public_key->name)),
+		     SILC_STR_UI32_STRING(public_key->name),
+		     SILC_STR_UI_SHORT(strlen(public_key->identifier)),
+		     SILC_STR_UI32_STRING(public_key->identifier),
+		     SILC_STR_UI_XNSTRING(public_key->pk, 
+					    public_key->pk_len),
+		     SILC_STR_END);
+  if (len)
+    *len = public_key->len;
+
+  ret = silc_calloc(buf->len, sizeof(*ret));
+  memcpy(ret, buf->data, buf->len);
+  silc_buffer_free(buf);
+
+  return ret;
+}
+
+/* Encodes SILC style public key. Returns the encoded data. */
+
+unsigned char *
+silc_pkcs_public_key_data_encode(unsigned char *pk, unsigned int pk_len,
+				 char *pkcs, char *identifier, 
+				 unsigned int *len)
+{
+  SilcBuffer buf;
+  unsigned char *ret;
+  unsigned int totlen;
+
+  totlen = 4 + 2 + strlen(pkcs) + 2 + strlen(identifier) + pk_len;
+  buf = silc_buffer_alloc(totlen);
+  silc_buffer_pull_tail(buf, totlen);
+
+  silc_buffer_format(buf,
+		     SILC_STR_UI_INT(totlen),
+		     SILC_STR_UI_SHORT(strlen(pkcs)),
+		     SILC_STR_UI32_STRING(pkcs),
+		     SILC_STR_UI_SHORT(strlen(identifier)),
+		     SILC_STR_UI32_STRING(identifier),
+		     SILC_STR_UI_XNSTRING(pk, pk_len),
+		     SILC_STR_END);
+  if (len)
+    *len = totlen;
+
+  ret = silc_calloc(buf->len, sizeof(*ret));
+  memcpy(ret, buf->data, buf->len);
+  silc_buffer_free(buf);
+
+  return ret;
+}
+
+/* Decodes SILC style public key. Returns TRUE if the decoding was
+   successful. Allocates new public key as well. */
+
+int silc_pkcs_public_key_decode(unsigned char *data, unsigned int data_len,
+				SilcPublicKey *public_key)
+{
+  SilcBuffer buf;
+  SilcPKCS alg;
+  unsigned short pkcs_len, identifier_len;
+  unsigned int totlen, key_len;
+  unsigned char *pkcs_name = NULL, *ident = NULL, *key_data = NULL;
+
+  buf = silc_buffer_alloc(data_len);
+  silc_buffer_pull_tail(buf, data_len);
+  silc_buffer_put(buf, data, data_len);
+
+  /* Get length */
+  silc_buffer_unformat(buf,
+		       SILC_STR_UI_INT(&totlen),
+		       SILC_STR_END);
+
+  if (totlen != data_len) {
+    silc_buffer_free(buf);
+    return FALSE;
+  }
+
+  /* Get algorithm name and identifier */
+  silc_buffer_pull(buf, 4);
+  silc_buffer_unformat(buf,
+		       SILC_STR_UI16_NSTRING_ALLOC(&pkcs_name, &pkcs_len),
+		       SILC_STR_UI16_NSTRING_ALLOC(&ident, &identifier_len),
+		       SILC_STR_END);
+
+  if (pkcs_len < 1 || identifier_len < 3 || 
+      pkcs_len + identifier_len > totlen)
+    goto err;
+
+  /* See if we support this algorithm */
+  if (!silc_pkcs_is_supported(pkcs_name))
+    goto err;
+
+  /* Protocol says that at least UN and HN must be provided as identifier,
+     check for these. */
+  if (!strstr(ident, "UN=") && !strstr(ident, "HN="))
+    goto err;
+
+  /* Get key data. We assume that rest of the buffer is key data. */
+  silc_buffer_pull(buf, 2 + pkcs_len + 2 + identifier_len);
+  key_len = buf->len;
+  silc_buffer_unformat(buf,
+		       SILC_STR_UI_XNSTRING_ALLOC(&key_data, key_len),
+		       SILC_STR_END);
+
+  /* Try to set the key. If this fails the key must be malformed. This
+     code assumes that the PKCS routine checks the format of the key. */
+  silc_pkcs_alloc(pkcs_name, &alg);
+  if (!alg->pkcs->set_public_key(alg->context, key_data, key_len))
+    goto err;
+  silc_pkcs_free(alg);
+  
+  if (public_key) {
+    *public_key = silc_calloc(1, sizeof(**public_key));
+    (*public_key)->len = totlen;
+    (*public_key)->name = pkcs_name;
+    (*public_key)->identifier = ident;
+    (*public_key)->pk = key_data;
+    (*public_key)->pk_len = key_len;
+  }
+
+  silc_buffer_free(buf);
+  return TRUE;
+
+ err:
+  if (pkcs_name)
+    silc_free(pkcs_name);
+  if (ident)
+    silc_free(ident);
+  if (key_data)
+    silc_free(key_data);
+  silc_buffer_free(buf);
+  return FALSE;
+}
+
+/* Encodes SILC private key from SilcPrivateKey. Returns the encoded data. */
+
+unsigned char *
+silc_pkcs_private_key_encode(SilcPrivateKey private_key, unsigned int *len)
+{
+  SilcBuffer buf;
+  unsigned char *ret;
+  unsigned int totlen;
+
+  totlen = 2 + strlen(private_key->name) + private_key->prv_len;
+  buf = silc_buffer_alloc(totlen);
+  silc_buffer_pull_tail(buf, totlen);
+
+  silc_buffer_format(buf,
+		     SILC_STR_UI_SHORT(strlen(private_key->name)),
+		     SILC_STR_UI32_STRING(private_key->name),
+		     SILC_STR_UI_XNSTRING(private_key->prv, 
+					  private_key->prv_len),
+		     SILC_STR_END);
+  if (len)
+    *len = totlen;
+
+  ret = silc_calloc(buf->len, sizeof(*ret));
+  memcpy(ret, buf->data, buf->len);
+  silc_buffer_free(buf);
+
+  return ret;
+}
+
+/* Encodes SILC private key. Returns the encoded data. */
+
+unsigned char *
+silc_pkcs_private_key_data_encode(unsigned char *prv, unsigned int prv_len,
+				  char *pkcs, unsigned int *len)
+{
+  SilcBuffer buf;
+  unsigned char *ret;
+  unsigned int totlen;
+
+  totlen = 2 + strlen(pkcs) + prv_len;
+  buf = silc_buffer_alloc(totlen);
+  silc_buffer_pull_tail(buf, totlen);
+
+  silc_buffer_format(buf,
+		     SILC_STR_UI_SHORT(strlen(pkcs)),
+		     SILC_STR_UI32_STRING(pkcs),
+		     SILC_STR_UI_XNSTRING(prv, prv_len),
+		     SILC_STR_END);
+  if (len)
+    *len = totlen;
+
+  ret = silc_calloc(buf->len, sizeof(*ret));
+  memcpy(ret, buf->data, buf->len);
+  silc_buffer_free(buf);
+
+  return ret;
+}
+
+/* Decodes SILC style public key. Returns TRUE if the decoding was
+   successful. Allocates new private key as well. */
+
+int silc_pkcs_private_key_decode(unsigned char *data, unsigned int data_len,
+				 SilcPrivateKey *private_key)
+{
+  SilcBuffer buf;
+  SilcPKCS alg;
+  unsigned short pkcs_len;
+  unsigned int key_len;
+  unsigned char *pkcs_name = NULL, *key_data = NULL;
+
+  buf = silc_buffer_alloc(data_len);
+  silc_buffer_pull_tail(buf, data_len);
+  silc_buffer_put(buf, data, data_len);
+
+  /* Get algorithm name and identifier */
+  silc_buffer_unformat(buf,
+		       SILC_STR_UI16_NSTRING_ALLOC(&pkcs_name, &pkcs_len),
+		       SILC_STR_END);
+
+  if (pkcs_len < 1 || pkcs_len > buf->truelen)
+    goto err;
+
+  /* See if we support this algorithm */
+  if (!silc_pkcs_is_supported(pkcs_name))
+    goto err;
+
+  /* Get key data. We assume that rest of the buffer is key data. */
+  silc_buffer_pull(buf, 2 + pkcs_len);
+  key_len = buf->len;
+  silc_buffer_unformat(buf,
+		       SILC_STR_UI_XNSTRING_ALLOC(&key_data, key_len),
+		       SILC_STR_END);
+
+  /* Try to set the key. If this fails the key must be malformed. This
+     code assumes that the PKCS routine checks the format of the key. */
+  silc_pkcs_alloc(pkcs_name, &alg);
+  if (!alg->pkcs->set_private_key(alg->context, key_data, key_len))
+    goto err;
+  silc_pkcs_free(alg);
+  
+  if (private_key) {
+    *private_key = silc_calloc(1, sizeof(**private_key));
+    (*private_key)->name = pkcs_name;
+    (*private_key)->prv = key_data;
+    (*private_key)->prv_len = key_len;
+  }
+
+  silc_buffer_free(buf);
+  return TRUE;
+
+ err:
+  if (pkcs_name)
+    silc_free(pkcs_name);
+  if (key_data)
+    silc_free(key_data);
+  silc_buffer_free(buf);
+  return FALSE;
+}
+
+/* Internal routine to save public key */
+
+static int silc_pkcs_save_public_key_internal(char *filename,
+					      unsigned char *data,
+					      unsigned int data_len)
+{
+  SilcBuffer buf;
+  unsigned int len;
+
+  len = data_len + (strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) +
+		    strlen(SILC_PKCS_PUBLIC_KEYFILE_END));
+  buf = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(buf, len);
 
   silc_buffer_format(buf,
 		     SILC_STR_UI32_STRING(SILC_PKCS_PUBLIC_KEYFILE_BEGIN),
-		     SILC_STR_UI32_STRING(pkcs->pkcs->name),
-		     SILC_STR_UI_SHORT(pk_len),
-		     SILC_STR_UI_XNSTRING(pk, pk_len),
+		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_UI32_STRING(SILC_PKCS_PUBLIC_KEYFILE_END),
 		     SILC_STR_END);
 
   /* Save into a file */
   if (silc_file_write(filename, buf->data, buf->len)) {
-    ret = FALSE;
-    goto out;
+    memset(data, 0, data_len);
+    silc_free(data);
+    silc_buffer_free(buf);
+    return FALSE;
   }
 
- out:
+  memset(data, 0, data_len);
+  silc_free(data);
   silc_buffer_free(buf);
-  return ret;
+  return TRUE;
 }
 
-/* XXX The buffer should be encrypted */
-/* XXX rewrite */
+/* Saves public key into file */
+/* XXX encoding should be defined (PEM or binary). */
 
-int silc_pkcs_save_private_key(SilcPKCS pkcs, char *filename,
-			       unsigned char *prv, unsigned int prv_len,
-			       char *passphrase)
+int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key)
+{
+  unsigned char *data;
+  unsigned int data_len;
+
+  data = silc_pkcs_public_key_encode(public_key, &data_len);
+  return silc_pkcs_save_public_key_internal(filename, data, data_len);
+}
+
+/* Saves public key into file */
+/* XXX encoding should be defined (PEM or binary). */
+
+int silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
+				   unsigned int data_len)
+{
+  return silc_pkcs_save_public_key_internal(filename, data, data_len);
+}
+
+/* Internal routine to save private key. */
+
+static int silc_pkcs_save_private_key_internal(char *filename,
+					       unsigned char *data,
+					       unsigned int data_len)
 {
   SilcBuffer buf;
-  int ret = TRUE;
+  unsigned int len;
 
-  buf = silc_buffer_alloc(strlen(pkcs->pkcs->name) + 2 + prv_len
-			  + strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN) 
-			  + strlen(SILC_PKCS_PRIVATE_KEYFILE_END));
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  len = data_len + (strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN) +
+		    strlen(SILC_PKCS_PRIVATE_KEYFILE_END));
+  buf = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(buf, len);
 
   silc_buffer_format(buf,
 		     SILC_STR_UI32_STRING(SILC_PKCS_PRIVATE_KEYFILE_BEGIN),
-		     SILC_STR_UI32_STRING(pkcs->pkcs->name),
-		     SILC_STR_UI_SHORT(prv_len),
-		     SILC_STR_UI_XNSTRING(prv, prv_len),
+		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_UI32_STRING(SILC_PKCS_PRIVATE_KEYFILE_END),
 		     SILC_STR_END);
 
   /* Save into a file */
-  if (silc_file_write(filename, buf->data, buf->len)) {
-    ret = FALSE;
-    goto out;
+  if (silc_file_write_mode(filename, buf->data, buf->len, 0600)) {
+    memset(data, 0, data_len);
+    silc_free(data);
+    silc_buffer_free(buf);
+    return FALSE;
   }
 
- out:
+  memset(data, 0, data_len);
+  silc_free(data);
   silc_buffer_free(buf);
-  return ret;
-}
-
-/* Loads public key from file and allocates new PKCS object and
-   sets the loaded key into it. */
-
-int silc_pkcs_load_public_key(char *filename, SilcPKCS *ret_pkcs)
-{
-
   return TRUE;
 }
 
-/* Loads private key from file and allocates new PKCS object and
-   sets the loaded key into it. */
+/* Saves private key into file. */
+/* XXX The buffer should be encrypted if passphrase is provided. */
+/* XXX encoding should be defined (PEM or binary). */
 
-int silc_pkcs_load_private_key(char *filename, SilcPKCS *ret_pkcs)
+int silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
+			       unsigned char *passphrase)
 {
+  unsigned char *data;
+  unsigned int data_len;
 
+  data = silc_pkcs_private_key_encode(private_key, &data_len);
+  return silc_pkcs_save_private_key_internal(filename, data, data_len);
+}
+
+/* Saves private key into file. */
+/* XXX The buffer should be encrypted if passphrase is provided. */
+/* XXX encoding should be defined (PEM or binary). */
+
+int silc_pkcs_save_private_key_data(char *filename, unsigned char *data, 
+				    unsigned int data_len,
+				    unsigned char *passphrase)
+{
+  return silc_pkcs_save_private_key_internal(filename, data, data_len);
+}
+
+/* Loads public key from file and allocates new public key. Returns TRUE
+   is loading was successful. */
+/* XXX Encoding should be defined. */
+
+int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key)
+{
+  unsigned char *cp, *old, *data, byte;
+  unsigned int i, data_len, len;
+
+  old = data = silc_file_read(filename, &data_len);
+  if (!data)
+    return FALSE;
+
+  /* Check start of file and remove header from the data. */
+  len = strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN);
+  cp = data;
+  for (i = 0; i < len; i++) {
+    byte = cp[0];
+    cp++;
+    if (byte != SILC_PKCS_PUBLIC_KEYFILE_BEGIN[i]) {
+      memset(old, 0, data_len);
+      silc_free(old);
+    }
+  }
+  data = cp;
+
+  /* Decode public key */
+  if (public_key) {
+    len = data_len - (strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) +
+		      strlen(SILC_PKCS_PUBLIC_KEYFILE_END));
+    if (!silc_pkcs_public_key_decode(data, len, public_key)) {
+      memset(old, 0, data_len);
+      silc_free(old);
+      return FALSE;
+    }
+  }
+
+  memset(old, 0, data_len);
+  silc_free(old);
+  return TRUE;
+}
+
+/* Load private key from file and allocates new private key. Returns TRUE
+   if loading was successful. */
+/* XXX Encoding should be defined. */
+/* XXX Should support encrypted private key files */
+
+int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key)
+{
+  unsigned char *cp, *old, *data, byte;
+  unsigned int i, data_len, len;
+
+  old = data = silc_file_read(filename, &data_len);
+  if (!data)
+    return FALSE;
+
+  /* Check start of file and remove header from the data. */
+  len = strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN);
+  cp = data;
+  for (i = 0; i < len; i++) {
+    byte = cp[0];
+    cp++;
+    if (byte != SILC_PKCS_PRIVATE_KEYFILE_BEGIN[i]) {
+      memset(old, 0, data_len);
+      silc_free(old);
+    }
+  }
+  data = cp;
+
+  /* Decode private key */
+  if (private_key) {
+    len = data_len - (strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN) +
+		      strlen(SILC_PKCS_PRIVATE_KEYFILE_END));
+    if (!silc_pkcs_private_key_decode(data, len, private_key)) {
+      memset(old, 0, data_len);
+      silc_free(old);
+      return FALSE;
+    }
+  }
+
+  memset(old, 0, data_len);
+  silc_free(old);
   return TRUE;
 }
