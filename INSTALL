@@ -19,12 +19,25 @@ give --help command to the `configure' to see all of them.  Here is listed
 few options that you might want to use.  Please refer to the rest of this
 file for more generic installation instructions.
 
-`--with-gmp=PATH'
+`--with-gmp[=DIR]'
 
    If you wish to use GMP library for arbitrary precision arithmetic
 library instead of using the MPI library included in the package, you can
-give the --with-gmp=PATH option to the `configure'.  The PATH is the path
-to the GMP library in your system.
+give the --with-gmp[=DIR] option to the `configure'.  The DIR is the upper
+path in your system which contains lib/ and include/ for GMP library.
+
+'--with-iconv[=DIR]'
+
+   If your system doesn't provide iconv() function in its native libraries
+(usually libc) or if this function is broken (e.g. older Solaris systems),
+you may want to use libiconv instead.  The DIR is the upper path in your
+system which contains lib/ and include/ for libiconv (e.g. /usr/local).
+
+`--without-pthreads'
+
+   If you do not want to compile the programs with POSIX multi-threads
+support you can give --without-pthreads option.  In this case all compiled
+programs will work in single thread only.
 
 `--disable-asm'
 
@@ -37,12 +50,6 @@ optimized code is not compiled in.
 
    If you would like to enable the debugging for the compiled programs
 you can give this option to the `configure'.
-
-`--disable-threads'
-
-   If you do not want to compile the programs with multi threads support
-you can give --disable-threads option.  In this case all compiled programs
-will work in single thread only.
 
 `--enable-ipv6'
 

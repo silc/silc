@@ -60,13 +60,22 @@ this option when you are doing development with Toolkit.  It is helpful
 to enable run-time debugging.
 
 <br />&nbsp;<br />
-<tt>--with-gmp=PATH</tt>
+<tt>--with-gmp[=DIR]</tt>
 
 <br />&nbsp;<br />
 If you wish to use GMP library for arbitrary precision arithmetic
 library instead of using the MPI library included in the package, you can
-give the --with-gmp=PATH option to the `configure'.  The PATH is the path
-to the GMP library in your system.
+give the --with-gmp[=DIR] option to the `configure'. The DIR is the upper
+path in your system which contains lib/ and include/ for GMP library. 
+
+<br />&nbsp;<br />
+<tt>--with-iconv[=DIR]</tt>
+
+<br />&nbsp;<br />
+If your system doesn't provide iconv() function in its native libraries
+(usually libc) or if this function is broken (e.g. older Solaris systems),
+you may want to use libiconv instead.  The DIR is the upper path in your
+system which contains lib/ and include/ for libiconv (e.g. /usr/local).
 
 <br />&nbsp;<br />
 <tt>--without-irssi</tt><br />
@@ -81,6 +90,16 @@ to not compile SILC Server (silcd/ directory).  Other applications
 the Toolkit does not build automatically.
 
 <br />&nbsp;<br />
+<tt>--without-pthreads</tt>
+
+<br />&nbsp;<br />
+If you do not want to compile the programs with POSIX multi-threads support
+you can give --without-pthreads option.  This will disable the SILC Thread
+API and SILC Mutex API.  Furthermore if SILC Thread API is used when this
+option is used, the routines work, but do not work in threads (are run
+in the calling process and can block the process).
+
+<br />&nbsp;<br />
 <tt>--disable-asm</tt>
 
 <br />&nbsp;<br />
@@ -88,16 +107,6 @@ If you have trouble compiling the assembler optimized code in the
 package or does not want to use them, you can give the --disable-asm
 option to the `configure' script.  This will assure that assembler
 optimized code is not compiled in.
-
-<br />&nbsp;<br />
-<tt>--disable-threads</tt>
-
-<br />&nbsp;<br />
-If you do not want to compile the programs with multi threads support
-you can give --disable-threads option.  This will disable the SILC Thread
-API and SILC Mutex API.  Furthermore if SILC Thread API is used when this
-option is used, the routines work, but do not work in threads (are run
-in the calling process and can block the process).
 
 <br />&nbsp;<br />
 <tt>--enable-ipv6</tt>
