@@ -296,5 +296,6 @@ int main(int argc, char **argv)
 static void end_test(void)
 {
   SILC_LOG_DEBUG(("Testing was %s", success ? "SUCCESS" : "FAILURE"));
+  fprintf(stderr, "Testing was %s\n", success ? "SUCCESS" : "FAILURE");
   exit(success);
 }
