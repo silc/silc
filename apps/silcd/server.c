@@ -730,6 +730,16 @@ bool silc_server_rehash(SilcServer server)
   server->config = newconfig;
   silc_server_config_ref(&server->config_ref, server->config, server->config);
 
+#ifdef SILC_DEBUG
+  /* Set debugging on if configured */
+  if (server->config->debug_string) {
+    silc_debug = TRUE;
+    silc_log_set_debug_string(server->config->debug_string);
+  } else {
+    silc_debug = FALSE;
+  }
+#endif /* SILC_DEBUG */
+
   SILC_LOG_DEBUG(("Server rehashed"));
 
   return TRUE;
