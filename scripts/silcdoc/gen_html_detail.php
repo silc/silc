@@ -34,25 +34,6 @@ require "$page";
 
 </font>
 </td>
-
-<td bgcolor="#dddddd">
-<table bgcolor="#dddddd" cellpadding=4 cellspacing=0 border=0 
-width="99%" align=center>
-<tr><td>
-<font face="Helvetica,Arial,Sans-serif" size="1">
-
-<?php
-/* Get the index for this page */
-$len = strcspn($page, "__");
-$fname = substr($page, 0, $len);
-require "$fname"."__index.tmpl";
-?>
-
-</font>
-</td></tr>
-</table>
-</td>
-
 </tr>
 </table>
 </div>

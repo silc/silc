@@ -42,6 +42,6 @@ include_HEADERS= 	\
 	silcapi.h
 endif
 
-EXTRA_DIST = *.h client_ops_example.c
+EXTRA_DIST = *.h client_ops_example.c *.html
 
 include $(top_srcdir)/Makefile.defines.in

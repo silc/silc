@@ -1,7 +1,8 @@
 <!--
 @LIBRARY=SILC Client Library
 @FILENAME=silcclientlib.html
-@LINK=silcapi.html:SILC Client API
+@LINK=silcclient_using.html:Using SILC Client Library
+@LINK=silcapi.html:Client Library Interface
 -->
 
 <FONT SIZE="+3">SILC Client Library</FONT><BR><BR>

@@ -46,10 +46,13 @@ headers=`find $SRC -name "silc*.h"`
 # HTML documentation
 #
 if [ "$TYPE" = "HTML" ]; then
+  rm -rf /tmp/silcdoc.html
+  rm -rf /tmp/silcdoc_html.html
   mkdir /tmp/silcdoc.html
+  mkdir /tmp/silcdoc_html.html
   cp $headers /tmp/silcdoc.html
 
-  # Generate indes template from the DIRECTORY files
+  # Generate index template from the DIRECTORY files
   files=`find $SRC -name "DIRECTORY"`
   for i in $files
   do
@@ -69,6 +72,26 @@ if [ "$TYPE" = "HTML" ]; then
     done
   done
 
+  # Copy all HTML files to destination
+  htmlfiles=`find $SRC -name "silc*.html"`
+  for i in $htmlfiles
+  do
+    cp $i /tmp/silcdoc_html.html
+  done
+  path=`pwd`
+  cd /tmp/silcdoc_html.html
+  htmlfiles=`find . -name "silc*.html" | cut -d/  -f2`
+  cd $path
+  for i in $htmlfiles
+  do
+    # Generate the details and the layout
+    f="/tmp/silcdoc_html.html/$i"
+    sh gen.sh $DST gen_html_detail.php $f $f
+    sh gen.sh $DST index.php $f $f
+    cp /tmp/silcdoc_html.html/$i $DST
+echo $f
+  done
+
   # Generate the actual detailed documentation
   path=`pwd`
   cd /tmp/silcdoc.html
@@ -82,15 +105,15 @@ if [ "$TYPE" = "HTML" ]; then
     sh gen.sh $DST gen_toc.php $DST/$i.html $DST/$i.html
     sh gen.sh $DST index.php $DST/$i.html $DST/$i.html
 
-    # Generate the details and the layour
-    files=`find $DST -name ""$i"_*.html"`
+    # Generate the details and the layout
+    files=`find $DST -name ""$i"__*.html"`
     for k in $files
     do
       sh gen.sh $DST gen_detail.php $k $k
       sh gen.sh $DST index.php $k $k
     done
 
-    rm -f $DST/$i_index.tmpl
+    rm -f $DST/$i__index.tmpl
   done
 
   # Generate the index and TOC files from the DIRECTORY files
@@ -115,11 +138,13 @@ if [ "$TYPE" = "HTML" ]; then
 
   # Generate the top index.html file
   index=`find $SRC -name "LIBINDEX"`
+  version=`grep SILC_VERSION_STRING $SRC/../includes/version_internal.h |cut -d\"  -f2`
   curdate=`date`
-  sed -e "/@DATE@/s//$curdate/" -e "/@BODY@/ r $DST/index.html.tmp" -e s/@BODY@//g $index >$DST/index.html
+  sed -e "/@VERSION@/s//$version/" -e "/@DATE@/s//$curdate/" -e "/@BODY@/ r $DST/index.html.tmp" -e s/@BODY@//g $index >$DST/index.html
   sh gen.sh $DST gen_toc.php $DST/index.html $DST/index.html
   sh gen.sh $DST index.php $DST/index.html $DST/index.html
 
   rm -rf $DST/index.html.tmp
   rm -rf /tmp/silcdoc.html
+  rm -rf /tmp/silcdoc_html.html
 fi

@@ -5,11 +5,19 @@
 
 <FONT SIZE="+3" COLOR="#000044"><B>SILC Toolkit Reference Manual</B></FONT>
 <BR>
-Copyright (C) GNU GPL 2001 The SILC Project<BR>
-Version: 0.7.1<BR>
+Copyright (C) 2001 - 2002 The SILC Project<BR>
+Version: @VERSION@<BR>
 Updated: @DATE@
 <BR><BR>
 <B><FONT SIZE="2">Note that this document is still under work and does not
-include yet all references for SILC Toolkit interfaces.  </FONT></B>
+include yet all references for SILC Toolkit interfaces.</FONT></B>
 <BR><BR>
 @BODY@
+
+<BR><BR>
+<FONT SIZE="+2" COLOR="#000044"><B>Resource Links</B></FONT>
+<BR><BR>
+<LI><A HREF="http://silcnet.org">SILC Project Website</a><BR>
+<LI><A HREF="http://silcnet.org/?page=docs">SILC Protocol Documentation</a><BR>
+<LI><A HREF="http://silcnet.org/?page=whitepaper">SILC White Paper</a><BR>
+<LI><A HREF="http://silcnet.org/?page=faq">SILC FAQ</a><BR>

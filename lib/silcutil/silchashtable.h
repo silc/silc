@@ -341,7 +341,7 @@ bool silc_hash_table_find(SilcHashTable ht, void *key,
  *
  * NOTES
  *
- *    The hash table will not be rehashed during the traversing of the list,
+ *    The hash table will not be rehashed during the traversing of the table,
  *    even if the table was marked as auto rehashable.  The caller also must
  *    not call silc_hash_table_rehash while traversing the table.
  *
@@ -363,7 +363,7 @@ void silc_hash_table_find_foreach(SilcHashTable ht, void *key,
  *
  * NOTES
  *
- *    The hash table will not be rehashed during the traversing of the list,
+ *    The hash table will not be rehashed during the traversing of the table,
  *    even if the table was marked as auto rehashable.  The caller also must
  *    not call silc_hash_table_rehash while traversing the table.
  *
@@ -618,7 +618,7 @@ bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
  *
  * NOTES
  *
- *    The hash table will not be rehashed during the traversing of the list,
+ *    The hash table will not be rehashed during the traversing of the table,
  *    even if the table was marked as auto rehashable.  The caller also must
  *    not call silc_hash_table_rehash while traversing the table.
  *

@@ -1,11 +1,11 @@
+<br />
+<font size="+2">Using SILC Client Library</font>
 
-                      SILC Client Library Manual
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.0 Introduction</b>
 
-                             Version 0.7.4
-
-1.0 Introduction
-
-SILC Client library is a full featured SILC Client protocolimplementation.
+<br />&nbsp;<br />
+SILC Client library is a full featured SILC Client protocol implementation.
 The library has been designed to be complete SILC client without actual
 user interface.  The library provides the API for the appliation which
 it can use to implement generally whatever user interface it wants.  The
@@ -13,6 +13,7 @@ SILC Client Library recides in the lib/silcclient/ directory.  It uses
 common and core compomnent of SILC protocol from the lib/silccore, SKE
 from lib/silcske and general utility routines from lib/silcutil.
 
+<br />&nbsp;<br />
 The `silcapi.h' file defines the function prototypes that application
 must implement in order to be able to create the user interface with the
 library.  The idea is that the application can implement whatever user
@@ -25,37 +26,50 @@ the application can call.  The interface includes for example functions
 for sending channel and private messages, client and channel retrieval
 and other utility functions.
 
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.0.1 Including Library Headers</b>
 
-1.0.1 Including Library Headers
-
+<br />&nbsp;<br />
 Your application must include the following includes in your sources to 
 get access all SILC Client Library routines:
 
-#include "silcincludes.h"
+<br />&nbsp;<br />
+<tt>
+#include "silcincludes.h"<br />
 #include "clientlibincludes.h"
+</tt>
 
+<br />&nbsp;<br />
 If you are compiling with C++ compiler then you need to include the 
 headers as follows:
 
-extern "C" {
-#include "silcincludes.h"
-#include "clientlibincludes.h"
+<br />&nbsp;<br />
+<tt>
+extern "C" {<br />
+#include "silcincludes.h"<br />
+#include "clientlibincludes.h"<br &/>
 }
+</tt>
 
 
-1.1 Creating Client
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.1 Creating Client</b>
 
+<br />&nbsp;<br />
 The client is context or entity based, so several client entitites can
 be created in the application if needed.  However, it should be noted
 that they are completely independent from each other and can be seen
 as different applications.  Usually only one client entity is needed
 per application.
 
+<br />&nbsp;<br />
 The client object is SilcClient which is usually allocated in following
 manner:
 
-	SilcClient client = silc_client_alloc(&ops, context, version);
+<br />&nbsp;<br />
+<tt>&nbsp;&nbsp;SilcClient client = silc_client_alloc(&ops, params, context, version);</tt>
 
+<br />&nbsp;<br />
 `ops' is the static structure of client operations that library will call.
 `context' can be some application specific context that will be saved into
 the SilcClient object.  It is up to the caller to free this context.
@@ -63,75 +77,95 @@ SilcClient is always passed to the application thus the application
 specific context can be retrieved from the SilcClient object.  See 
 `client.h' file for detailed definition of SilcClient object.
 
+<br />&nbsp;<br />
 `ops' can be defined for example as follows:
 
-SilcClientOperations ops = {
-  silc_say,
-  silc_channel_message,
-  silc_private_message,
-  silc_notify,
-  silc_command,
-  silc_command_reply,
-  silc_connect,
-  silc_disconnect,
-  silc_get_auth_method,
-  silc_verify_public_key,
-  silc_ask_passphrase,
-  silc_failure,
-  silc_key_agreement,
-};
+<br />&nbsp;<br />
+<tt>
+SilcClientOperations ops = {<br />
+&nbsp;&nbsp;  silc_say,<br />
+&nbsp;&nbsp;  silc_channel_message,<br />
+&nbsp;&nbsp;  silc_private_message,<br />
+&nbsp;&nbsp;  silc_notify,<br />
+&nbsp;&nbsp;  silc_command,<br />
+&nbsp;&nbsp;  silc_command_reply,<br />
+&nbsp;&nbsp;  silc_connect,<br />
+&nbsp;&nbsp;  silc_disconnect,<br />
+&nbsp;&nbsp;  silc_get_auth_method,<br />
+&nbsp;&nbsp;  silc_verify_public_key,<br />
+&nbsp;&nbsp;  silc_ask_passphrase,<br />
+&nbsp;&nbsp;  silc_failure,<br />
+&nbsp;&nbsp;  silc_key_agreement,<br />
+};<br />
+</tt>
 
+<br />&nbsp;<br />
 Please see the `client_ops_example.c' source file in lib/silcclient/
 directory for predefined structure and stub functions for your
-convenince.  It is provided for programmers so that they can copy
+convenience.  It is provided for programmers so that they can copy
 it and use it directly in their application.
 
 
-1.2 Initializing the Client
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.2 Initializing the Client</b>
 
+<br />&nbsp;<br />
 The client must be initialized before running.  However, there are also
 some other tasks that must be done before initializing the client.
 The following pointers must be set by the application  before calling
 the initializing function:
 
-	client->username
-	client->hostname
-	client->realname
-	client->pkcs
-	client->public_key
-	client->private_key
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;client->username<br />
+&nbsp;&nbsp;client->hostname<br />
+&nbsp;&nbsp;client->realname<br />
+&nbsp;&nbsp;client->pkcs<br />
+&nbsp;&nbsp;client->public_key<br />
+&nbsp;&nbsp;client->private_key
+</tt>
 
+<br />&nbsp;<br />
 You may also set client->nickname if you want.  If it is set then the
 library will change the nickname to that one after the client is connected
 to the server.  If not set, then server will initially give the nickname
 which is same as the username.
 
+<br />&nbsp;<br />
 After setting the pointers one must call:
 
-	silc_client_init(client);
+<br />&nbsp;<br />
+<tt>&nbsp;&nbsp;silc_client_init(client);</tt>
 
+<br />&nbsp;<br />
 which then initializes the client library for the `client'.  If the
 pointers mentioned above are not initialized the silc_client_init will
 fail.  The application should check the return value of the silc_client_init
 function.
 
 
-1.3 Running the Client
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.3 Running the Client</b>
 
+<br />&nbsp;<br />
 The client is run by calling silc_client_run.  The function will call
 the scheduler from utility library that will be run until the program is
 ended.  When silc_client_run returns the application is ended.  Thus,
 to run the client, call:
 
-	silc_client_run(client);
+<br />&nbsp;<br />
+<tt>&nbsp;&nbsp;silc_client_run(client);</tt>
 
+<br />&nbsp;<br />
 Usually application may do some other initializations before calling
 this function.  For example before calling this function application
 should initialize the user interface.
 
 
-1.3.1 Running the Client in GUI application
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.3.1 Running the Client in GUI application</b>
 
+<br />&nbsp;<br />
 Many GUI applications has their own main loop or event loop, which they 
 would like to use or are forced to use by the underlaying system.  If you 
 are developing for example GUI application on Unix system, and you are 
@@ -142,6 +176,7 @@ client library once, and returns immediately.  During that running it can
 process incoming data and send outgoing data, but it is guaranteed that it 
 will not block the calling process.
 
+<br />&nbsp;<br />
 It is suggested that you would call this function as many times in a 
 second as possible to provide smooth action for the client library.  You 
 can use an timeout task, or an idle task provided by your GUI library to 
@@ -152,48 +187,64 @@ there is GTK-- GUI example in silcer/ directory.  That example calls the
 silc_client_run_one every 50 milliseconds, and it should be sufficient for 
 smooth working.
 
+<br />&nbsp;<br />
 For Win32 the silc_client_run can be used instead of using the Windows's 
 own event loop.  However, if you would like to use the silc_client_run_one 
 also on Win32 systems it is possible.
 
 
-1.3.1.1 Running Client in GTK--
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.3.1.1 Running Client in GTK--</b>
 
+<br />&nbsp;<br />
 Here is a short example how to run the SILC Client libary under the 
 Gnome/GTK--'s main loop:
 
-gint YourClass::silc_scheduler()
-{
-  // Run the SILC client once, and return immediately.  This function
-  // is called every 50 milliseconds by the Gnome main loop, to process
-  // SILC stuff.  This function will read data, and write data to network,
-  // etc.  Makes the client library tick! :)
-  silc_client_run_one(silc_client);
-  return 1;
-}
+<br />&nbsp;<br />
+<tt>
+gint YourClass::silc_scheduler()<br />
+{<br />
+&nbsp;&nbsp;  // Run the SILC client once, and return immediately.  This function<br />
+&nbsp;&nbsp;  // is called every 50 milliseconds by the Gnome main loop, to process<br />
+&nbsp;&nbsp;  // SILC stuff.  This function will read data, and write data to network,<br />
+&nbsp;&nbsp;  // etc.  Makes the client library tick! :)<br />
+&nbsp;&nbsp;  silc_client_run_one(silc_client);<br />
+&nbsp;&nbsp;  return 1;<br />
+}<br />
+</tt>
 
+<br />&nbsp;<br />
 then, during initialization of the SILC Client call:
 
-  // Setup SILC scheduler as timeout task. This will handle the SILC
-  // client library every 50 milliseconds.  It will actually make the
-  // SILC client work on background.
-  Gnome::Main::timeout.connect(slot(this, &YourClass::silc_scheduler), 50);
+<br />&nbsp;<br />
+<tt>
+// Setup SILC scheduler as timeout task. This will handle the SILC<br />
+// client library every 50 milliseconds.  It will actually make the<br />
+// SILC client work on background.<br />
+Gnome::Main::timeout.connect(slot(this, &YourClass::silc_scheduler), 50);<br />
+</tt>
 
+<br />&nbsp;<br />
 This will call the function silc_scheduler every 50 millisecconds, which 
 on the otherhand will call silc_client_run_one, which will make the SILC 
 Client library work on the background of the GUI application.
 
 
-1.4 Creating Connection to Server
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.4 Creating Connection to Server</b>
 
+<br />&nbsp;<br />
 Connection to remote SILC server is done by calling:
 
-	silc_client_connect_to_server(client, port, hostname, context);
+<br />&nbsp;<br />
+<tt>&nbsp;&nbsp;silc_client_connect_to_server(client, port, hostname, context);</tt>
 
+<br />&nbsp;<br />
 The function will create the connection asynchronously to the server, ie.
 the function will return before the actual connection is created.  After
 the connection is created the client->ops->connect operation is called.
 
+<br />&nbsp;<br />
 Generally speaking the connections are associated with windows' on the
 screen.  IRC is usually implemented this way, however it is not the
 necessary way to associate the client's connections.  SilcClientConnection
@@ -205,8 +256,10 @@ thus perhaps associate the connection with what ever object in
 application (window or something else).
 
 
-1.4.1 Using Own Connecting
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.4.1 Using Own Connecting</b>
 
+<br />&nbsp;<br />
 Application might not want to use silc_client_connect_to_server function
 if it wants to perform its own connecting for some reason.  In this case
 application must call function silc_client_start_key_exchange after it
@@ -214,29 +267,40 @@ has created the connection by itself.  This function starts the key
 exhange protocol between the client and server and the library takes care
 of everything after that.
 
+<br />&nbsp;<br />
 After connection has been created application must call:
 
-	SilcClientConnection conn;
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;SilcClientConnection conn;
 
-	/* Add new connection to client */
-	conn = silc_client_add_connection(client, hostname, port, context);
+<br />&nbsp;<br />
+&nbsp;&nbsp;/* Add new connection to client */<br />
+&nbsp;&nbsp;conn = silc_client_add_connection(client, hostname, port, context);
 
-	/* Start key exchange and let the library handle everything
-	   after this point on. */
-	silc_client_start_key_exchange(client, conn, sock);
+<br />&nbsp;<br />
+&nbsp;&nbsp;/* Start key exchange and let the library handle everything<br />
+&nbsp;&nbsp;   after this point on. */<br />
+&nbsp;&nbsp;silc_client_start_key_exchange(client, conn, sock);
+</tt>
 
+<br />&nbsp;<br />
 NOTE: These calls are performed only and only if application did not call
 silc_client_connect_to_server function, but performed the connecting 
 process manually.
 
 
-1.5 Example Client
+<br />&nbsp;<br />&nbsp;<br />
+<b>1.5 Example Client</b>
 
+<br />&nbsp;<br />
 This section includes an example SILC client implementation in pseudo-like
 C code.  It creates and initializes the client and sets up an imaginary
 user interface.  The user will use the user interface then to create
 the connections.  The SilcClientOperations are expected to be implemented.
 
+<br />&nbsp;<br />
+<pre>
 #include "silcincludes.h"
 #include "silcapi.h"
 
@@ -303,3 +367,4 @@ int main()
 	/* Client is ended */
 	return 0;
 }
+</pre>
