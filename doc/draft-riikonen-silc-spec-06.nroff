@@ -1427,6 +1427,13 @@ o Public Data (variable length) - Includes the actual
 All fields in the public key are in MSB (most significant byte first)
 order.  All strings in the public key are UTF-8 encoded.
 
+If an external protocol need to refer to SILC Public Key by name, the
+name "silc-rsa" and "silc-dss" for SILC Public Key based on RSA algorithm
+and SILC Public Key based on DSS algorithm, respectively, are to be used.
+However, this SILC specification does not use these names directly, and 
+they are defined here for external protocols (protocols that may like 
+to use SILC Public Key).
+
 
 .ti 0
 3.12 SILC Version Detection
