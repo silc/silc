@@ -1101,7 +1101,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   SilcServerKEInternalContext *ctx = 
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
-  SilcSocketConnection sock = server->sockets[fd];
+  SilcSocketConnection sock = ctx->sock;
   SilcServerConnAuthInternalContext *proto_ctx;
 
   SILC_LOG_DEBUG(("Start"));
