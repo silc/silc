@@ -77,7 +77,7 @@ The 'command_reply' arguments in case of error are as follows:
 <tr>
 <td><small>Name</td>
 <td><small>Description</td>
-<td width="50%"><small>Error Arguments</td>
+<td width="40%"><small>Error Arguments</td>
 </tr>
 
 <tr>
@@ -85,7 +85,7 @@ The 'command_reply' arguments in case of error are as follows:
 <td><small>
 No error.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -94,7 +94,7 @@ No error.
 <td><small>
 Requested nickname does not exist.  Argument is the unknown name.
 </td>
-<td width="50%"><small>const char *nickname
+<td width="40%"><small>const char *nickname
 </td>
 </tr>
 
@@ -103,7 +103,7 @@ Requested nickname does not exist.  Argument is the unknown name.
 <td><small>
 The requested channel does not exist.  Argument is the unknown name.
 </td>
-<td width="50%"><small>const char *channel_name
+<td width="40%"><small>const char *channel_name
 </td>
 </tr>
 
@@ -112,7 +112,7 @@ The requested channel does not exist.  Argument is the unknown name.
 <td><small>
 The requested server does not exist.  Argument is the unknown name.
 </td>
-<td width="50%"><small>const char *server_name
+<td width="40%"><small>const char *server_name
 </td>
 </tr>
 
@@ -120,7 +120,7 @@ The requested server does not exist.  Argument is the unknown name.
 <td><small>SILC_STATUS_ERR_NO_RECIPIENT</td>
 <td><small>
 Command required recipient but none was provided.  No arguments returned.
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -130,7 +130,7 @@ Command required recipient but none was provided.  No arguments returned.
 Command sent to server is unknown or unsupported by the server.  No
 arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -139,7 +139,7 @@ arguments returned.
 <td><small>
 Wildcards were provided by they were not permitted.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -149,7 +149,7 @@ Wildcards were provided by they were not permitted.  No arguments returned.
 Client ID was expected as command parameter but was not found.  No
 arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -159,7 +159,7 @@ arguments returned.
 Channel ID was expected as command parameter but was not found.  No
 arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -169,7 +169,7 @@ arguments returned.
 Server ID was expected as command parameter but was not found.  No
 arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -178,7 +178,7 @@ arguments returned.
 <td><small>
 Client ID provided was malformed.  Returns the malformed ID.
 </td>
-<td width="50%"><small>const SilcClientID *client_id
+<td width="40%"><small>const SilcClientID *client_id
 </td>
 </tr>
 
@@ -187,7 +187,7 @@ Client ID provided was malformed.  Returns the malformed ID.
 <td><small>
 Channel ID provided was malformed.  Returns the malformed ID.
 </td>
-<td width="50%"><small>const SilcChannelID *channel_id
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -196,7 +196,7 @@ Channel ID provided was malformed.  Returns the malformed ID.
 <td><small>
 Server ID provided was malformed.  Returns the malformed ID.
 </td>
-<td width="50%"><small>const SilcServerID *server_id
+<td width="40%"><small>const SilcServerID *server_id
 </td>
 </tr>
 
@@ -205,7 +205,7 @@ Server ID provided was malformed.  Returns the malformed ID.
 <td><small>
 Client ID provided does not exist.  The unknown ID is returned.
 </td>
-<td width="50%"><small>const SilcClientID *client_id
+<td width="40%"><small>const SilcClientID *client_id
 </td>
 </tr>
 
@@ -214,7 +214,7 @@ Client ID provided does not exist.  The unknown ID is returned.
 <td><small>
 Channel ID provided does not exist.  The unknown ID is returned.
 </td>
-<td width="50%"><small>const SilcChannelID *channel_id
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -223,7 +223,7 @@ Channel ID provided does not exist.  The unknown ID is returned.
 <td><small>
 Server ID provided does not exist.  The unknown ID is returned.
 </td>
-<td width="50%"><small>const SilcServerID *server_id
+<td width="40%"><small>const SilcServerID *server_id
 </td>
 </tr>
 
@@ -233,7 +233,7 @@ Server ID provided does not exist.  The unknown ID is returned.
 The command required for you to be on channel but you were not.
 The channel ID is returned.
 </td>
-<td width="50%"><small>const SilcChannelID *channel_id
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -243,7 +243,7 @@ The channel ID is returned.
 The requested target client is not on requested channel.  Returns the
 target client ID and channel ID.
 </td>
-<td width="50%"><small>const SilcClientID *client_id,
+<td width="40%"><small>const SilcClientID *client_id,
 const SilcChannelID *channel_id
 </td>
 </tr>
@@ -254,7 +254,7 @@ const SilcChannelID *channel_id
 User were invited on channel they already are on.  Returns the
 target client ID and channel ID.
 </td>
-<td width="50%"><small>const SilcClientID *client_id,
+<td width="40%"><small>const SilcClientID *client_id,
 const SilcChannelID *channel_id
 </td>
 </tr>
@@ -265,7 +265,7 @@ const SilcChannelID *channel_id
 User executed command that requires the client to be registered on the
 server before it may be executed.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -274,7 +274,7 @@ server before it may be executed.  No arguments returned.
 <td><small>
 Command required more parameters than provided.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -283,7 +283,7 @@ Command required more parameters than provided.  No arguments returned.
 <td><small>
 Too many parameters provided for the command.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -293,7 +293,7 @@ Too many parameters provided for the command.  No arguments returned.
 Generic permission denied error status, to indicat disallowed access.
 No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -302,7 +302,7 @@ No arguments returned.
 <td><small>
 Password provided for channel were not accepted.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -312,7 +312,7 @@ Password provided for channel were not accepted.  No arguments returned.
 The channel is full and client cannot join the channel.  Returns the
 channel ID.
 </td>
-<td width="50%"><small>const SilcChannelID *channel_id
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -322,7 +322,7 @@ channel ID.
 The channel is invite only channel and client has not been invited.
 Returns the channel ID.
 </td>
-<td width="50%"><small>const SilcChannelID *channel_id
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -331,7 +331,7 @@ Returns the channel ID.
 <td><small>
 The client has been banned from the channel.  Returns the channel ID.
 </td>
-<td width="50%"><small>const SilcChannelID *channel_id
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -341,7 +341,7 @@ The client has been banned from the channel.  Returns the channel ID.
 Mode provided by the client was unknown to or unsupported by the server.
 No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -351,7 +351,7 @@ No arguments returned.
 User tried to change someone else's mode which is not allowed.
 No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -361,7 +361,7 @@ No arguments returned.
 Command may be executed only by channel operator.  The next argument is
 the channel ID.
 </td>
-<td width="50%"><small>const SilcChannelID *channel_id
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -371,7 +371,7 @@ the channel ID.
 Command may be executed only by channel founder.  The next argument is
 the channel ID.
 </td>
-<td width="50%"><small>const SilcChannelID *channel_id
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -380,7 +380,7 @@ the channel ID.
 <td><small>
 Command may be executed only by server operator.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -389,7 +389,7 @@ Command may be executed only by server operator.  No arguments returned.
 <td><small>
 Command may be executed only by router (SILC) operator.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -399,7 +399,7 @@ Command may be executed only by router (SILC) operator.  No arguments returned.
 Nickname requested contained illegal characters or was malformed.  No
 arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -409,7 +409,7 @@ arguments returned.
 Channel name requested contained illegal characters or was malformed.  No
 arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -419,7 +419,7 @@ arguments returned.
 The authentication data (passphrase or digital signature) sent as argument
 was wrong and thus authentication failed.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -429,7 +429,7 @@ was wrong and thus authentication failed.  No arguments returned.
 The server does not support requested algorithm.  Returns the unknown
 algorithm.
 </td>
-<td width="50%"><small>const char *alg_name
+<td width="40%"><small>const char *alg_name
 </td>
 </tr>
 
@@ -439,7 +439,7 @@ algorithm.
 Server cannot or will not accept the action due to resource limitations.
 No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -449,7 +449,7 @@ No arguments returned.
 Requestes service identifier is unknown.  Returns the unknown service
 identifier.
 </td>
-<td width="50%"><small>const char *service_identifier
+<td width="40%"><small>const char *service_identifier
 </td>
 </tr>
 
@@ -460,7 +460,7 @@ Operation (command execution) or service request timed out, and thus was
 not processed.  This usually happens due to network failure between servers
 and routers in the network.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 <tr>
@@ -470,7 +470,7 @@ and routers in the network.  No arguments returned.
 The public key or certificate type is not supported in ths implementation.
 No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
@@ -479,7 +479,7 @@ No arguments returned.
 A operation, for example a command, is not allowed or it's execution is
 not allowed.  No arguments returned.
 </td>
-<td width="50%"><small>N/A
+<td width="40%"><small>N/A
 </td>
 </tr>
 
