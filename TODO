@@ -70,7 +70,12 @@ TODO/bugs In SILC Libraries
 	o All network routines in lib/silcutil/silcnet.[ch] does not
 	  support IPv6.
 
- o Hash tables must be implemented.
+ o Hash tables must be implemented.  The requirement for this is that
+   the hash table is collision resistant so that it can be used in 
+   critical positions as well.  It probably works the 95% of the time
+   fine without collisions but the last 5% of the cases must be
+   handled.  Maybe two interfaces could be done, one for normal static
+   hash tables and one for collision resistant hash table.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
