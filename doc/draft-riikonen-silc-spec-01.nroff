@@ -443,38 +443,46 @@ user and user's real name.  See section 3.2 Server for information of
 the requirements of keeping this information.
 
 The nickname selected by the user is not unique in the SILC network.
-There can be 2^8 same nicknames for one IP address. As for comparison to
-IRC [IRC] where nicknames are unique this is a fundamental difference
+There can be 2^8 same nicknames for one IP address.  As for comparison
+to IRC [IRC] where nicknames are unique this is a fundamental difference
 between SILC and IRC.  This causes the server names to be used along
 with the nicknames to identify specific users when sending messages.
 This feature of SILC makes IRC style nickname-wars obsolete as no one
 owns their nickname; there can always be someone else with the same
-nickname.  Another difference is that there are no limit of the length
-of the nickname in the SILC.
+nickname.  The maximum length of nickname is 128 characters.
 
 
 .ti 0
 3.1.1 Client ID
 
 Client ID is used to identify users in the SILC network.  The Client ID
-is unique to the extent that there can be 2^128 different Client ID's.
-Collisions are not expected to happen.  The Client ID is defined as 
-follows.
+is unique to the extent that there can be 2^128 different Client ID's,
+and ID's based on IPv6 addresses extends this to 2^224 different Client
+ID's.  Collisions are not expected to happen.  The Client ID is defined
+as follows.
 
 .in 6
 128 bit Client ID based on IPv4 addresses:
 
-32 bit  ServerID IP address (bits 1-32)
- 8 bit  Random number
+32 bit  Server ID IP address (bits 1-32)
+ 8 bit  Random number or counter
 88 bit  Truncated MD5 hash value of the nickname
+
+224 bit Client ID based on IPv6 addresses:
+
+128 bit  Server ID IP address (bits 1-128)
+  8 bit  Random number or counter
+ 88 bit  Truncated MD5 hash value of the nickname
 
 o Server ID IP address - Indicates the server where this
   client is coming from.  The IP address hence equals the
   server IP address where to the client has connected.
 
-o Random number - Random number to further randomize the
-  Client ID.  This makes it possible to have 2^8 same
-  nicknames from the same server IP address.
+o Random number or counter - Random number to further 
+  randomize the Client ID.  Another choice is to use
+  a counter starting from the zero (0).  This makes it
+  possible to have 2^8 same nicknames from the same
+  server IP address.
 
 o MD5 hash - MD5 hash value of the nickname is truncated
   taking 88 bits from the start of the hash value.  This
@@ -568,10 +576,11 @@ channel list       - All channels in server
 .ti 0
 3.2.2 Server ID
 
-Servers are distinguished from other servers by unique 64 bit Server ID.
-The Server ID is used in the SILC to route messages to correct servers.
-Server ID's also provide information for Client ID's, see section 3.1.1
-Client ID.  Server ID is defined as follows.
+Servers are distinguished from other servers by unique 64 bit Server ID 
+(for IPv4) or 160 bit Server ID (for IPv6).  The Server ID is used in
+the SILC to route messages to correct servers.  Server ID's also provide
+information for Client ID's, see section 3.1.1 Client ID.  Server ID is
+defined as follows.
 
 .in 6
 64 bit Server ID based on IPv4 addresses:
@@ -579,6 +588,12 @@ Client ID.  Server ID is defined as follows.
 32 bit  IP address of the server
 16 bit  Port
 16 bit  Random number
+
+160 bit Server ID based on IPv6 addresses:
+
+128 bit  IP address of the server
+ 16 bit  Port
+ 16 bit  Random number
 
 o IP address of the server - This is the real IP address of
   the server.
@@ -723,11 +738,10 @@ can reference it using the name of the channel.
 
 Channel names are unique although the real uniqueness comes from 64 bit
 Channel ID that unifies each channel.  However, channel names are still
-unique and no two global channels with same name may exist.  Channel name
-is a string which begins with `#' character.  There is no limit on the
-length of the channel name.  Channel names may not contain any spaces
-(`  '), any non-printable ASCII characters, commas (`,') and wildcard
-characters.
+unique and no two global channels with same name may exist.  The Channel
+name is a string of maximum length of 256 characters.  Channel names may
+not contain any spaces (`  '), any non-printable ASCII characters,
+commas (`,') and wildcard characters.
 
 Channels can have operators that can administrate the channel and
 operate all of its modes.  Following operators on channel exist on SILC
@@ -764,10 +778,11 @@ o Channel operator - When client joins to channel that has not existed
 3.4.1 Channel ID
 
 Channels are distinguished from other channels by unique Channel ID.
-The Channel ID is a 64 bit ID and collisions are not expected to happen
-in any conditions.  Channel names are just for logical use of channels.
-The Channel ID is created by the server where the channel is created.
-The Channel ID is defined as follows.
+The Channel ID is a 64 bit ID (for IPv4) or 160 bit ID (for IPv6), and
+collisions are not expected to happen in any conditions.  Channel names
+are just for logical use of channels.  The Channel ID is created by the
+server where the channel is created.  The Channel ID is defined as
+follows.
 
 .in 6
 64 bit Channel ID based on IPv4 addresses:
@@ -775,6 +790,12 @@ The Channel ID is defined as follows.
 32 bit  Router's Server ID IP address (bits 1-32)
 16 bit  Router's Server ID port (bits 33-48)
 16 bit  Random number
+
+160 bit Channel ID based on IPv6 addresses:
+
+128 bit  Router's Server ID IP address (bits 1-128)
+ 16 bit  Router's Server ID port (bits 129-144)
+ 16 bit  Random number
 
 o Router's Server ID IP address - Indicates the IP address of 
   the router of the cell where this channel is created.  This is 
@@ -815,10 +836,7 @@ to set nickname, join to channel, change modes and many other things.
 Client usually sends the commands and server replies by sending a reply
 packet to the command.  Server may also send commands usually to serve
 the original client's request.  However, server may not send command
-to client and there are some commands that server must not send.  Server
-is also able to send the forwarded command packets.  For example, 
-SILC_COMMAND_JOIN is always forwarded packet.  See [SILC2] for more
-about packet forwarding.
+to client and there are some commands that server must not send.
 
 Note that the command reply is usually sent only after client has sent
 the command request but server is allowed to send command reply packet
@@ -1400,11 +1418,11 @@ and reverse IP address lookup to assure that the origin host really is
 who it claims to be.  Client, host, connecting to server must have 
 both valid IP address and fully qualified domain name (FQDN).
 
-After that client and server performs SILC Key Exchange protocol which
-will provide the key material used later in the communication.  The
-key exchange protocol must be completed successfully before the connection
-registration may continue.  The SILC Key Exchange protocol is described
-in [SILC3].
+After that the client and server performs SILC Key Exchange protocol
+which will provide the key material used later in the communication.
+The key exchange protocol must be completed successfully before the
+connection registration may continue.  The SILC Key Exchange protocol
+is described in [SILC3].
 
 Typical server implementation would keep a list of connections that it
 allows to connect to the server.  The implementation would check, for
@@ -1500,16 +1518,18 @@ server must check its local list whether this channel already exists
 locally.  This would indicate that some client connected to the server
 has already joined to the channel.  If this is case the client is
 joined to the client, new channel key is created and information about
-newly joined channel is sent to the router.  The new channel key is
-also distributed to the router and to all clients on the channel.
+newly joined channel is sent to the router.  The router is informed
+by sending SILC_NOTIFY_TYPE_JOIN notify type.  The notify type must
+also be sent to the local clients on the channel.  The new channel key
+is also sent to the router and to local clients on the channel.
 
-If the channel does not exist in the local list the command must be
-forwarded to the router which will then perform the actual joining
+If the channel does not exist in the local list the client's command
+must be sent to the router which will then perform the actual joining
 procedure.  When server receives the reply to the command from the
-router it must be distributed to the client who sent the command
-originally.  Server will also receive the channel key from the server
-that it must distribute to the client who originally requested the
-join command.  The server must also save the channel key.
+router it must be sent to the client who sent the command originally.
+Server will also receive the channel key from the server that it must
+send to the client who originally requested the join command.  The server
+must also save the channel key.
 
 If the receiver of the join command is router it must first check its
 local list whether anyone in the cell has already joined to the channel.
@@ -1517,7 +1537,9 @@ If this is the case the client is joined to the channel and reply is
 sent to the client.  If the command was sent by server the command reply
 is sent to the server who sent it.  Then the router must also create
 new channel key and distribute it to all clients on the channel and
-all servers that has clients on the channel.
+all servers that has clients on the channel.  Router must also send
+the SILC_NOTIFY_TYPE_JOIN notify type to local clients on the channel
+and to local servers that has clients on the channel.
 
 If the channel does not exist on the router's local list it must
 check the global list whether the channel exists at all.  If it does
@@ -1528,12 +1550,19 @@ distributed as previously described.  The client joining to the created
 channel is made automatically channel founder and both channel founder
 and channel operator privileges is set for the client.
 
-When the router joins the client to the channel it must send 
-information about newly joined client to all routers in the SILC 
-network.  Also, if the channel was created in the process, information
-about newly created channel must also be distributed to all routers.
-The distribution of newly created channel is done by sending packet
-SILC_PACKET_NEW_CHANNEL.
+If the router created the channel in the process, information about the
+new channel must be broadcasted to all routers.  This is done by 
+broadcasting SILC_PACKET_NEW_CHANNEL packet to the router's primary
+route.  When the router joins the client to the channel it must also
+send information about newly joined client to all routers in the SILC
+network.  This is done by broadcasting the SILC_NOTIFY_TYPE_JOIN notify
+type to the router's primary route. 
+
+After joining the client to the channel server or router must send
+command reply packet for SILC_COMMAND_USERS command.  This way the
+client gets the list of users on the channel.  If the router joined
+the client to the channel then the router sends this command reply
+to the server which must send it further to the original client.
 
 It is important to note that new channel key is created always when
 new client joins to channel, whether the channel has existed previously
@@ -1542,14 +1571,6 @@ any of the old traffic on the channel.  Client who receives the reply to
 the join command must start using the received Channel ID in the channel
 message communication thereafter.  Client also receives the key for the
 channel in the command reply.
-
-If client wants to know the other clients currently on the channel
-the client must send SILC_COMMAND_USERS command to receive a list of
-channel users.  Server implementation, however, may send command reply
-packet to SILC_COMMAND_USERS command after client has joined to the
-channel even if the client has not sent the command.  Server should also
-send SILC_NOTIFY_TYPE_JOIN to all clients on the channel about a new
-client on the channel.
 
 
 .ti 0
@@ -1844,7 +1865,7 @@ List of all defined commands in SILC follows.
         to request all users on some server.  The WHOIS requests must 
         be based on specific nickname request.
 
-        The WHOIS request must be always forwarded to router by server
+        The WHOIS request must be always sent to the router by server
         so that all users are searched.  However, the server still must
         search its locally connected clients.  The router must send
         this command to the server who owns the requested client.  That
@@ -1906,7 +1927,7 @@ List of all defined commands in SILC follows.
         or in the servername are not permitted.  The WHOWAS requests must 
         be based on specific nickname request.
 
-        The WHOWAS request must be always forwarded to router by server
+        The WHOWAS request must be always sent to the router by server
         so that all users are searched.  However, the server still must
         search its locally connected clients.
 
@@ -1973,7 +1994,7 @@ List of all defined commands in SILC follows.
         However, it must be implemented as it is used with private message
         sending.
 
-        The IDENTIFY must be always forwarded to router by server so that
+        The IDENTIFY must be always sent to the router by server so that
         all users are searched.  However, server must still search its
         locally connected clients.
 
@@ -2341,10 +2362,10 @@ List of all defined commands in SILC follows.
 
         Join to channel/create new channel.  This command is used to
         join to a channel.  If the channel does not exist the channel is
-        created.  If server is normal server this command must be forwarded
-        to router who will create the channel.  The channel may be protected
-        with passphrase.  If this is the case the passphrase must be sent
-        along the join command.
+        created.  If server is normal server this command must be sent
+        to router who will create the channel.  The channel may be
+        protected with passphrase.  If this is the case the passphrase
+        must be sent along the join command.
 
         The name of the <channel> must not include any spaces (` '),
         non-printable characters, commas (`,') or any wildcard characters.
@@ -3294,6 +3315,18 @@ security of this protocol.
 [IRC]        Oikarinen, J., and Reed D., "Internet Relay Chat Protocol",
              RFC 1459, May 1993.
 
+[IRC-ARCH]   Kalt, C., "Internet Relay Chat: Architecture", RFC 2810,
+             April 2000.
+
+[IRC-CHAN]   Kalt, C., "Internet Relay Chat: Channel Management", RFC
+             2811, April 2000.
+
+[IRC-CLIENT] Kalt, C., "Internet Relay Chat: Client Protocol", RFC
+             2812, April 2000.
+
+[IRC-SERVER] Kalt, C., "Internet Relay Chat: Server Protocol", RFC
+             2813, April 2000.
+
 [SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol", 
              Internet Draft.
 
@@ -3326,6 +3359,8 @@ security of this protocol.
 [HMAC]       Krawczyk, H., "HMAC: Keyed-Hashing for Message
              Authentication", RFC 2104, February 1997.
 
+[PKCS1]      Kalinski, B., and Staddon, J., "PKCS #1 RSA Cryptography
+             Specifications, Version 2.0", RFC 2437, October 1998.
 
 
 .ti 0

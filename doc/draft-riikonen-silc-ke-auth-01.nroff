@@ -1012,6 +1012,18 @@ security of this protocol.
 [IRC]        Oikarinen, J., and Reed D., "Internet Relay Chat Protocol",
              RFC 1459, May 1993.
 
+[IRC-ARCH]   Kalt, C., "Internet Relay Chat: Architecture", RFC 2810,
+             April 2000.
+
+[IRC-CHAN]   Kalt, C., "Internet Relay Chat: Channel Management", RFC
+             2811, April 2000.
+
+[IRC-CLIENT] Kalt, C., "Internet Relay Chat: Client Protocol", RFC
+             2812, April 2000.
+
+[IRC-SERVER] Kalt, C., "Internet Relay Chat: Server Protocol", RFC
+             2813, April 2000.
+
 [SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol", 
              Internet Draft.
 
@@ -1043,6 +1055,9 @@ security of this protocol.
 
 [HMAC]       Krawczyk, H., "HMAC: Keyed-Hashing for Message
              Authentication", RFC 2104, February 1997.
+
+[PKCS1]      Kalinski, B., and Staddon, J., "PKCS #1 RSA Cryptography
+             Specifications, Version 2.0", RFC 2437, October 1998.
 
 
 .ti 0
