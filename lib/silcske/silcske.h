@@ -150,11 +150,6 @@ struct SilcSKEStruct {
      HASH computation. */
   SilcBuffer start_payload_copy;
 
-  /* If initiator, this is responders public key. If responder this
-     is our own public key. */
-  unsigned char *pk;
-  uint32 pk_len;
-
   /* Random number x, 1 < x < q. This is the secret exponent
      used in Diffie Hellman computations. */
   SilcMPInt *x;

@@ -86,8 +86,6 @@ void silc_ske_free(SilcSKE ske)
     }
     if (ske->start_payload_copy)
       silc_buffer_free(ske->start_payload_copy);
-    if (ske->pk)
-      silc_free(ske->pk);
     if (ske->x) {
       silc_mp_uninit(ske->x);
       silc_free(ske->x);
@@ -382,8 +380,8 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   /* Send the packet. */
   if (ske->callbacks->send_packet)
     (*ske->callbacks->send_packet)(ske, payload_buf, 
-				  SILC_PACKET_KEY_EXCHANGE_1, 
-				  ske->callbacks->context);
+				   SILC_PACKET_KEY_EXCHANGE_1, 
+				   ske->callbacks->context);
 
   silc_buffer_free(payload_buf);
 
@@ -912,10 +910,10 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
 
       ske->users++;
       (*ske->callbacks->verify_key)(ske, recv_payload->pk_data, 
-				   recv_payload->pk_len,
-				   recv_payload->pk_type, 
-				   ske->callbacks->context,
-				   silc_ske_responder_phase2_final, NULL);
+				    recv_payload->pk_len,
+				    recv_payload->pk_type, 
+				    ske->callbacks->context,
+				    silc_ske_responder_phase2_final, NULL);
 
       /* We will continue to the final state after the public key has
 	 been verified by the caller. */
@@ -1562,15 +1560,17 @@ SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
     KEY = silc_mp_mp2bin(ske->KEY, 0, &KEY_len);
     
     buf = silc_buffer_alloc(ske->start_payload_copy->len + 
-			    ske->pk_len + e_len + f_len + KEY_len);
+			    ske->ke2_payload->pk_len + e_len + 
+			    f_len + KEY_len);
     silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
-    
+
     /* Format the buffer used to compute the hash value */
     ret = 
       silc_buffer_format(buf,
 			 SILC_STR_UI_XNSTRING(ske->start_payload_copy->data,
 					      ske->start_payload_copy->len),
-			 SILC_STR_UI_XNSTRING(ske->pk, ske->pk_len),
+			 SILC_STR_UI_XNSTRING(ske->ke2_payload->pk_data, 
+					      ske->ke2_payload->pk_len),
 			 SILC_STR_UI_XNSTRING(e, e_len),
 			 SILC_STR_UI_XNSTRING(f, f_len),
 			 SILC_STR_UI_XNSTRING(KEY, KEY_len),
@@ -1596,7 +1596,7 @@ SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
     e = silc_mp_mp2bin(&ske->ke1_payload->x, 0, &e_len);
 
     buf = silc_buffer_alloc(ske->start_payload_copy->len + 
-			    ske->pk_len + e_len);
+			    ske->ke1_payload->pk_len + e_len);
     silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
     
     /* Format the buffer used to compute the hash value */
@@ -1604,7 +1604,8 @@ SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
       silc_buffer_format(buf,
 			 SILC_STR_UI_XNSTRING(ske->start_payload_copy->data,
 					      ske->start_payload_copy->len),
-			 SILC_STR_UI_XNSTRING(ske->pk, ske->pk_len),
+			 SILC_STR_UI_XNSTRING(ske->ke1_payload->pk_data, 
+					      ske->ke1_payload->pk_len),
 			 SILC_STR_UI_XNSTRING(e, e_len),
 			 SILC_STR_END);
     if (ret == -1) {

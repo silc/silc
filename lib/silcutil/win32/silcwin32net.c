@@ -182,9 +182,6 @@ int silc_net_create_connection_async(int port, char *host)
     return -1;
   }
 
-  /* Set socket to nonblocking mode */
-  silc_net_set_socket_nonblock(sock);
-
   /* Connect to the host */
   rval = connect(sock, (struct sockaddr *)&desthost, sizeof(desthost));
   err = WSAGetLastError();
@@ -194,6 +191,9 @@ int silc_net_create_connection_async(int port, char *host)
     closesocket(sock);
     return -1;
   }
+
+  /* Set socket to nonblocking mode */
+  silc_net_set_socket_nonblock(sock);
 
   /* Set appropriate options */
   silc_net_set_socket_opt(sock, IPPROTO_TCP, TCP_NODELAY, 1);
@@ -235,4 +235,33 @@ int silc_net_set_socket_nonblock(int sock)
 {
   unsigned long on = 1;
   return ioctlsocket(sock, FIONBIO, &on);
+}
+
+/* Init Winsock2. */
+
+bool silc_net_win32_init(void)
+{
+  int ret, sopt = SO_SYNCHRONOUS_NONALERT;
+  WSADATA wdata;
+  WORD ver = MAKEWORD(1, 1);
+
+  ret = WSAStartup(ver, &wdata);
+  if (ret)
+    return FALSE;
+
+  /* Allow using the SOCKET's as file descriptors so that we can poll
+     them with SILC Scheduler. */
+  ret = setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char *)&sopt,
+		   sizeof(sopt));
+  if (ret)
+    return FALSE;
+
+  return TRUE;
+}
+
+/* Uninit Winsock2 */
+
+void silc_net_win32_uninit(void)
+{
+  WSACleanup();
 }

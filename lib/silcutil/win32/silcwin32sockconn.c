@@ -41,9 +41,11 @@ int silc_socket_write(SilcSocketConnection sock)
       err = WSAGetLastError();
       if (err == WSAEWOULDBLOCK) {
 	SILC_LOG_DEBUG(("Could not write immediately, will do it later"));
+	silc_net_set_socket_nonblock(fd);
 	return -2;
       }
       SILC_LOG_ERROR(("Cannot write to socket: %d", (int)fd));
+      silc_net_set_socket_nonblock(fd);
       return -1;
     }
 
@@ -52,6 +54,7 @@ int silc_socket_write(SilcSocketConnection sock)
 
   SILC_LOG_DEBUG(("Wrote data %d bytes", ret));
 
+  silc_net_set_socket_nonblock(fd);
   return ret;
 }
 
@@ -74,11 +77,15 @@ int silc_socket_read(SilcSocketConnection sock)
     err = WSAGetLastError();
     if (err == WSAEWOULDBLOCK || err == WSAEINTR) {
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
+      silc_net_set_socket_nonblock(fd);
       return -2;
     }
     SILC_LOG_ERROR(("Cannot read from socket: %d", (int)fd));
+    silc_net_set_socket_nonblock(fd);
     return -1;
   }
+
+  silc_net_set_socket_nonblock(fd);
 
   if (!len)
     return 0;

@@ -255,4 +255,43 @@ uint16 silc_net_get_local_port(int sock);
  ***/
 char *silc_net_localhost();
 
+#ifdef WIN32
+
+/****f* silcutil/SilcNetAPI/silc_net_win32_init
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_net_win32_init(void);
+ *
+ * DESCRIPTION
+ *
+ *    This is WIN32 system specific function and is used to initialize
+ *    the network.  This must be called by all WIN32 applications.  It
+ *    is usually called at the application's main() or WinMain() before
+ *    calling any other SILC routine.  The application must also call
+ *    the silc_net_win32_uninit when exiting the application.  Returns
+ *    FALSE on error.  The network will not work if this function returns
+ *    FALSE.
+ *
+ ***/
+bool silc_net_win32_init(void);
+
+/****f* silcutil/SilcNetAPI/silc_net_win32_uninit
+ *
+ * SYNOPSIS
+ *
+ *    void silc_net_win32_init(void);
+ *
+ * DESCRIPTION
+ *
+ *    This is WIN32 system specific function and is used to uninitialize
+ *    the network.  This must be called by all WIN32 applications.  It
+ *    is usually called when the application is exiting.  After calling
+ *    this function the SILC Net API routines will not work anymore.
+ *
+ ***/
+void silc_net_win32_init(void);
+
+#endif
+
 #endif

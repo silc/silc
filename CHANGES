@@ -1,3 +1,21 @@
+Tue Jul 17 16:53:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Found a bug in the SKE implementation.  The HASH value,
+	  specified by the protocol, was not computed correctly.  The
+	  public key of the responder was not added to the computation
+	  even though it is mandatory.  Affected file lib/silcske/silcske.c.
+	  This unfortunately causes incompatibilities with older
+	  clients and servers.
+
+	* Added WIN32 specific network init and uninit functions:
+	  silc_net_win32_init and silc_net_win32_uninit to init and uninit
+	  the Winsock2.  Affected file lib/silcutil/silcnet.h and
+	  lib/silcutil/win32/silcwin32net.c.
+
+	* Set the socket always to nonblocking mode on WIN32 after
+	  reading data or writing data.  Affected file is
+	  lib/silcutil/win32/silcwin32sockconn.c.
+
 Mon Jul 16 22:55:26 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed various compilation problems under WIN32.  Affected
