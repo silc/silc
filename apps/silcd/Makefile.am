@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-sbin_PROGRAMS = silcd
+sbin_PROGRAMS = silcd testi
 
 silcd_SOURCES = \
 	protocol.c \
@@ -34,6 +34,8 @@ silcd_SOURCES = \
 	silcd.c \
 	server_version.c
 silcd_DEPENDENCIES = ../lib/libsilc.a
+
+testi_SOURCES = testi.c
 
 LIBS = $(SILC_COMMON_LIBS)
 LDADD =

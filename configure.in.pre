@@ -18,9 +18,6 @@
 
 AC_INIT(includes/version.h)
 
-# Compiler settings
-CFLAGS="-Wall $CFLAGS"
-
 #
 # Put here any platform specific stuff
 #
@@ -50,10 +47,7 @@ AC_DEFINE(SILC_DIST_DEFINE)
 # XXX
 # Compiler flags
 if test "$GCC"; then
-  CFLAGS="-finline-functions $CFLAGS"
-else
-  # Currently GCC is only supported compiler
-  AC_MSG_ERROR(GCC is only supported compiler currently)
+  CFLAGS="-Wall -finline-functions $CFLAGS"
 fi
 
 # Program checking

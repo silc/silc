@@ -151,7 +151,7 @@ u4byte *rc6_set_key(RC6Context *ctx,
 
         l[k] = in_key[k];
 
-    t = (key_len / 32) - 1; // t = (key_len / 32);
+    t = (key_len / 32) - 1; /* t = (key_len / 32); */
 
     a = b = i = j = 0;
 
@@ -159,8 +159,8 @@ u4byte *rc6_set_key(RC6Context *ctx,
     {   a = rotl(l_key[i] + a + b, 3); b += a;
         b = rotl(l[j] + b, b);
         l_key[i] = a; l[j] = b;
-        i = (i == 43 ? 0 : i + 1); // i = (i + 1) % 44;  
-        j = (j == t ? 0 : j + 1);  // j = (j + 1) % t;
+        i = (i == 43 ? 0 : i + 1); /* i = (i + 1) % 44; */
+        j = (j == t ? 0 : j + 1);  /* j = (j + 1) % t; */
     }
 
     return l_key;

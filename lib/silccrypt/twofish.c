@@ -420,27 +420,27 @@ u4byte mds_rem(u4byte p0, u4byte p1)
 
     for(i = 0; i < 8; ++i)
     {
-        t = p1 >> 24;   // get most significant coefficient
+        t = p1 >> 24;   /* get most significant coefficient */
         
-        p1 = (p1 << 8) | (p0 >> 24); p0 <<= 8;  // shift others up
+        p1 = (p1 << 8) | (p0 >> 24); p0 <<= 8;  /* shift others up */
             
-        // multiply t by a (the primitive element - i.e. left shift)
+        /* multiply t by a (the primitive element - i.e. left shift) */
 
         u = (t << 1); 
         
-        if(t & 0x80)            // subtract modular polynomial on overflow
+        if(t & 0x80)            /* subtract modular polynomial on overflow */
         
             u ^= G_MOD; 
 
-        p1 ^= t ^ (u << 16);    // remove t * (a * x^2 + 1)  
+        p1 ^= t ^ (u << 16);    /* remove t * (a * x^2 + 1) */
 
-        u ^= (t >> 1);          // form u = a * t + t / a = t * (a + 1 / a); 
+        u ^= (t >> 1);          /* form u = a * t + t / a = t * (a + 1 / a); */
         
-        if(t & 0x01)            // add the modular polynomial on underflow
+        if(t & 0x01)            /* add the modular polynomial on underflow */
         
             u ^= G_MOD >> 1;
 
-        p1 ^= (u << 24) | (u << 8); // remove t * (a + 1/a) * (x^3 + x)
+        p1 ^= (u << 24) | (u << 8); /* remove t * (a + 1/a) * (x^3 + x) */
     }
 
     return p1;

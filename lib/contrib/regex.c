@@ -72,13 +72,7 @@ ifdef HAVE_CONFIG_H
 #include <strings.h>
 #endif
 
-#ifdef STDC_HEADERS
 #include <stdlib.h>
-#else
-char *malloc ();
-char *realloc ();
-#endif
-
 
 /* Define the syntax stuff for \<, \>, etc.  */
 
