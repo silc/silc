@@ -1,3 +1,9 @@
+Wed Mar  3 15:13:49 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed crashbug in connection closing, after a protocol
+	  completion callback, which might have closed it already.
+	  Affected file silcd/server.c.
+
 Sat Feb 28 16:25:09 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* The silc_client_add_channel_private_key now returns the
