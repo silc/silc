@@ -1,0 +1,20 @@
+----------------------------------------------------------------------------
+
+This is the credits file of people that have contributed to the SILC
+project.  It is supposed to by sorted by name and of the following format:
+name (N), email (E), web-address (W), PGP key ID and fingerprint (P),
+description (D), and snail-mail address (S).  The format is from the Linux
+kernel credits file. :)
+
+----------------------------------------------------------------------------
+
+N: Pekka Riikonen
+E: priikone@poseidon.pspt.fi
+E: priikone@ssh.com
+D: Protocol architet
+D: Main developer
+S: Kasarmikatu 11 A4
+S: 70110 Kuopio
+S: Finland
+
+----------------------------------------------------------------------------
