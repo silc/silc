@@ -1,0 +1,37 @@
+Silcer Gnome SILC Client
+========================
+
+This is Silcer, the Gnome SILC Client.  It is only provided with SILC 
+Toolkit package as an example GUI application, to show how to program with 
+SILC Toolkit.  It is a good example for all GUI programmers to figure out 
+how to hook up SILC Toolkit, and in the end the SILC Client Library to a 
+GUI application.
+
+The silcer.png file found in this package is a screenshot of the 
+application in action.  You can compile it by running first the 
+./autogen.sh script and then giving command `make' or `gmake'.
+
+When you run the silcer you must run it by giving command src/silcer 
+because it will attempt to look for GUI files in the ui/ directory found 
+in this package.  So, do not enter src/ directory, but run it directly 
+from the root where you gave the make command.
+
+When the program starts it will attempt to connect directly to 
+silc.silcnet.org router on port 706.  After it has connected you can 
+freely use it as any SILC client.  In the input box on the screen you can 
+give commands.  Commands, such as /nick, /join, etc.  The application is 
+only an example so all features has not been implemented.  For example 
+various command notifications and other notifications are not implemented 
+on the screen.  This means that when you give command /nick you won't 
+actually see whether your nickname changed or not.  But it did. :)  Same 
+is when you join to a channel by giving command /join you won't get list 
+of users or other familiar things.  This is because those notifications 
+has not been implemented.  They are left as an excerise for Toolkit 
+programmers.  You can still converse on a channel.  You will see other 
+users' messages on the channel and you can talk to the channel, so you can 
+test the application if you like.
+
+The sources resides in the src/ directory and are C++.  The GUI files 
+resides in ui/ directory and was done with glade.
+
+Happy hacking!
