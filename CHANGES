@@ -1,3 +1,21 @@
+Wed Dec  4 21:08:52 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* Verify signature payload for signed messages. Affected files
+	  irssi/src/silc/core/client_ops.h, irssi/src/silc/core/silc-servers.c,
+	  irssi/src/silc/core/silc-core.h
+
+	* Display signature verification result in public and private
+	  messages using theme abstracts. See irssi/default.theme for
+	  examples on their usage. Affected files
+	  irssi/default.theme, irssi/src/fe-common/silc/fe-messages.h,
+	  irssi/src/fe-common/silc/module-formats.[ch],
+	  irssi/src/fe-common/silc/fe-common-silc.c,
+	  irssi/src/fe-common/silc/Makefile.am
+	  irssi/src/fe-common/core/fe-messages.[ch]
+
+	* Fixed bugs in Irssi's theme parsing. Affected files
+	  irssi/src/fe-common/core/themes.c
+	  
 Wed Dec  4 18:29:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Calculate the correct length for signed messages before
