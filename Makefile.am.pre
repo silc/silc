@@ -55,7 +55,7 @@ generate-server-key:
 	fi
 
 sim-install:
-	$(INSTALL_DATA) $(srcdir)/lib/silcsim/*.so $(modulesdir)/
+	-$(INSTALL_DATA) $(srcdir)/lib/silcsim/*.so $(modulesdir)/
 
 doc-install:
 	$(INSTALL_DATA) $(srcdir)/doc/CodingStyle $(docdir)/
