@@ -1356,6 +1356,10 @@ bool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
   unsigned char *cp, *old, *data, byte;
   SilcUInt32 i, data_len, len;
 
+  SILC_LOG_DEBUG(("Loading public key `%s' with %s encoding", filename,
+		  encoding == SILC_PKCS_FILE_PEM ? "Base64" :
+		  encoding == SILC_PKCS_FILE_BIN ? "Binary" : "Unkonwn"));
+  
   old = data = silc_file_readfile(filename, &data_len);
   if (!data)
     return FALSE;

@@ -153,8 +153,8 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
 				 NULL, silc_hash_public_key, NULL,
 				 silc_hash_public_key_compare, NULL)) {
       silc_pkcs_public_key_free(public_key);
-      SILC_SERVER_LOG_WARNING(("Warning: file \"%s\" contains a double "
-			       "public key (key discarded)", p));
+      SILC_SERVER_LOG_WARNING(("Warning: public key file \"%s\" already "
+			       "configured, ignoring this key", p));
       return TRUE; /* non fatal error */
     }
 
