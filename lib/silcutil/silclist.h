@@ -117,7 +117,7 @@ typedef struct {
  *
  ***/
 #define silc_list_init(list, type, field) \
-  __silc_list_init(&(list), offsetof(type, field))
+  __silc_list_init(&(list), silc_offsetof(type, field))
 
 static inline void __silc_list_init(SilcList *list, int offset)
 {

@@ -86,10 +86,7 @@
 #endif
 /***/
 
-/* Define offsetof */
-#ifndef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-#endif
+#define silc_offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 
 #if SILC_SIZEOF_SHORT > 2
 #error "size of the short must be 2 bytes"
