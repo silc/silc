@@ -136,7 +136,7 @@ silc_hash_table_find_internal(SilcHashTable ht, void *key,
 }
 
 /* Internal routine to find entry in the hash table by `key' and `context'.
-   Returns the previous entry (if exists) as well. */
+   Returns the previous entry (if exists) as well to `prev_entry'. */
 
 static inline SilcHashTableEntry *
 silc_hash_table_find_internal_context(SilcHashTable ht, void *key,
@@ -170,7 +170,8 @@ silc_hash_table_find_internal_context(SilcHashTable ht, void *key,
     }
   }
 
-  *prev_entry = prev;
+  if (prev_entry)
+    *prev_entry = prev;
   return entry;
 }
 
@@ -679,6 +680,27 @@ bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
     *ret_key = (*entry)->key;
   if (ret_context)
     *ret_context = (*entry)->context;
+
+  return TRUE;
+}
+
+/* Same as silc_hash_table_find but finds with specific context. */
+
+bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
+				     void *context, void **ret_key)
+{
+  SilcHashTableEntry *entry;
+  
+  entry = silc_hash_table_find_internal_context(ht, key, context, NULL,
+						ht->hash, 
+						ht->hash_user_context,
+						ht->compare,
+						ht->compare_user_context);
+  if (!entry || !(*entry))
+    return FALSE;
+
+  if (ret_key)
+    *ret_key = (*entry)->key;
 
   return TRUE;
 }

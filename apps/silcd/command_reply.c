@@ -1262,3 +1262,15 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   silc_free(channel_id);
   silc_server_command_reply_free(cmd);
 }
+
+SILC_SERVER_CMD_REPLY_FUNC(watch)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcStatus status, error;
+
+  COMMAND_CHECK_STATUS;
+
+ out:
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WATCH);
+  silc_server_command_reply_free(cmd);
+}

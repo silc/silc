@@ -21,6 +21,7 @@
 
 #include "serverincludes.h"
 #include "idlist.h"
+#include "server_internal.h"
 
 /******************************************************************************
 
@@ -420,10 +421,13 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   SilcIDCacheEntry id_cache = NULL;
   unsigned char hash[32];
   SilcClientID client_id;
+  char nick[128 + 1];
 
   SILC_LOG_DEBUG(("Start"));
 
-  silc_hash_make(md5hash, nickname, strlen(nickname), hash);
+  memset(nick, 0, sizeof(nick));
+  silc_to_lower(nickname, nick, sizeof(nick) - 1);
+  silc_hash_make(md5hash, nick, strlen(nick), hash);
 
   /* As the Client ID is hashed in the ID cache by hashing only the hash
      from the Client ID, we can do a lookup with only the hash not the
@@ -493,7 +497,8 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 /* Replaces old Client ID with new one */
 
 SilcClientEntry
-silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
+silc_idlist_replace_client_id(SilcServer server,
+			      SilcIDList id_list, SilcClientID *old_id,
 			      SilcClientID *new_id, const char *nickname)
 {
   SilcIDCacheEntry id_cache = NULL;
@@ -520,6 +525,11 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 
   if (!silc_idcache_del_by_context(id_list->clients, client))
     return NULL;
+
+  /* Check if anyone is watching this nickname */
+  if (server->server_type == SILC_ROUTER)
+    silc_server_check_watcher_list(server, client, nickname,
+				   SILC_NOTIFY_TYPE_NICK_CHANGE);
 
   silc_free(client->id);
   silc_free(client->nickname);

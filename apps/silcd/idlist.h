@@ -598,7 +598,8 @@ SilcClientEntry
 silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 			      bool registered, SilcIDCacheEntry *ret_entry);
 SilcClientEntry
-silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
+silc_idlist_replace_client_id(SilcServer server,
+			      SilcIDList id_list, SilcClientID *old_id,
 			      SilcClientID *new_id, const char *nickname);
 void silc_idlist_client_destructor(SilcIDCache cache,
 				   SilcIDCacheEntry entry);

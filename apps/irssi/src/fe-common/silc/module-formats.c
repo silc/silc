@@ -119,6 +119,11 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "set_away", "You have been marked as being away (away message: {hilight $0})", 1, { 0 } },
 	{ "unset_away", "You are no longer marked as being away", 0 },
 	{ "auth_meth_unresolved", "Could not resolve authentication method to use, assume no authentication", 0 },
+	{ "watch_present", "Watch: {nick $0} is now present in the network", 1, { 0 } },
+	{ "watch_signoff", "Watch: {nick $0} left the network", 1, { 0 } },
+	{ "watch_killed", "Watch: {nick $0} was killed from the network", 1, { 0 } },
+	{ "watch_umode_change", "Watch: {nick $0} is now {hilight $1}", 2, { 0, 0 } },
+	{ "watch_nick_change", "Watch: {nick $0} changed nickname to {nick $1}", 2, { 0, 0 } },
 
 	/* File transfer messages */
 	{ NULL, "FileTransfer", 0 },

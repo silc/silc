@@ -1,0 +1,18 @@
+
+@SYNTAX:detach@
+
+This command is used to detach from the SILC Network without actually
+loosing the SILC session in the network.  This means that the network
+connection to the server is closed but the client remains in the network.
+After giving this command the connection to the server is closed, and
+a resume data is saved in ~/.silc/ directory.  Next time connection
+is created into a server (which may be different from the original server)
+the resume data is used to resume back to the network.
+
+When this command is called the server sets a detached mode to your
+client.  If other users give WHOIS to your nickname they will see that
+you are detached from the network.  Also, all messages that are sent
+to you will be lost since server cannot deliver them to you.
+
+
+See also: UMODE, QUIT, DISCONNECT

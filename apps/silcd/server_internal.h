@@ -94,6 +94,7 @@ struct SilcServerStruct {
   /* ID lists. */
   SilcIDList local_list;
   SilcIDList global_list;
+  SilcHashTable watcher_list;
 
   /* Table of connected sockets */
   SilcSocketConnection *sockets;
@@ -208,5 +209,7 @@ do {						\
 
 /* Prototypes */
 SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final);
+void silc_server_watcher_list_destroy(void *key, void *context,
+				      void *user_context);
 
 #endif

@@ -76,14 +76,27 @@ char *silc_get_time();
  *
  * SYNOPSIS
  *
- *    char *silc_to_upper(char *string);
+ *    bool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size);
  *
  * DESCRIPTION
  *
  *    Converts string to capital characters.
  *
  ***/
-char *silc_to_upper(char *string);
+bool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size);
+
+/****f* silcutil/SilcUtilAPI/silc_to_lower
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size);
+ *
+ * DESCRIPTION
+ *
+ *    Converts string to capital characters.
+ *
+ ***/
+bool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size);
 
 /****f* silcutil/SilcUtilAPI/silc_parse_userfqdn
  *
@@ -219,6 +232,19 @@ SilcUInt32 silc_hash_ptr(void *key, void *user_context);
  *
  ***/
 SilcUInt32 silc_hash_id(void *key, void *user_context);
+
+/****f* silcutil/SilcUtilAPI/silc_hash_client_id_hash
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context)
+ *
+ * DESCRIPTION
+ *
+ *    Hash Client ID's hash.
+ *
+ ***/
+SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_data
  *

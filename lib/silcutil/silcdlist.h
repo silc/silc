@@ -36,10 +36,6 @@
    allocated already and the new list entry requires one additional memory 
    allocation.  The memory allocation and free'ing is done automatically in
    the API and does not show to the caller.
-
-   I left sorting functions out because I don't know whether we need them.
-   If needed, just copy them from silclist.h
-
 */
 
 /* SilcDList object. This is the actual SilcDList object that is used by

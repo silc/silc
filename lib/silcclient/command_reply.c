@@ -1398,6 +1398,26 @@ SILC_CLIENT_CMD_REPLY_FUNC(detach)
   silc_client_command_reply_free(cmd);
 }
 
+SILC_CLIENT_CMD_REPLY_FUNC(watch)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+
+  if (cmd->error != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_status_message(cmd->error));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WATCH);
+  silc_client_command_reply_free(cmd);
+}
+
 SILC_CLIENT_CMD_REPLY_FUNC(ban)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;

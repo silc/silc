@@ -190,6 +190,12 @@ void silc_server_send_notify_invite(SilcServer server,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
 				    char *add, char *del);
+void silc_server_send_notify_watch(SilcServer server,
+				   SilcSocketConnection sock,
+				   SilcClientEntry watcher,
+				   SilcClientEntry client,
+				   const char *nickname,
+				   SilcNotifyType type);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  bool broadcast,

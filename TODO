@@ -112,8 +112,6 @@ TODO in SILC Protocol
  17. Cell wide channel founder support, and permanent channels when
      founder mode set.
 
- 21. Subscription/IRC's notify kind support?
-
  24. Implement the <Requested Attributes> and the Attribute Payload to
      the core library, client and server.
 

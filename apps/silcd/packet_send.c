@@ -721,7 +721,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   SilcPacketContext packetdata;
   SilcClientEntry client = NULL;
   SilcServerEntry *routed = NULL;
-  SilcChannelClientEntry chl;
+  SilcChannelClientEntry chl, chl_sender;
   SilcUInt32 routed_count = 0;
   SilcIDListData idata;
   SilcHashTableList htl;
@@ -729,6 +729,9 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   int k;
 
   SILC_LOG_DEBUG(("Relaying packet to channel"));
+
+  if (!silc_server_client_on_channel(sender_entry, channel, &chl_sender))
+    return;
 
   /* This encrypts the packet, if needed. It will be encrypted if
      it came from the router thus it needs to be encrypted with the
@@ -784,8 +787,18 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
-    if (!client || client == sender_entry || 
-	chl->mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES)
+    if (!client || client == sender_entry)
+      continue;
+
+    /* Check whether message sending is blocked */
+    if (chl->mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES)
+      continue;
+    if (chl->mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES_USERS &&
+	!(chl_sender->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	!(chl_sender->mode & SILC_CHANNEL_UMODE_CHANFO))
+      continue;
+    if (chl->mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS &&
+	sender_entry->mode & SILC_UMODE_ROBOT)
       continue;
 
     /* If the client has set router it means that it is not locally
@@ -1376,6 +1389,32 @@ void silc_server_send_notify_invite(SilcServer server,
 			  del, del ? strlen(del) : 0);
   silc_buffer_free(idp);
   silc_buffer_free(idp2);
+}
+
+/* Sends WATCH notify type. This tells that the `client' was watched and
+   its status in the network has changed. */
+
+void silc_server_send_notify_watch(SilcServer server,
+				   SilcSocketConnection sock,
+				   SilcClientEntry watcher,
+				   SilcClientEntry client,
+				   const char *nickname,
+				   SilcNotifyType type)
+{
+  SilcBuffer idp;
+  unsigned char mode[4], n[2];
+
+  idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+  SILC_PUT16_MSB(type, n);
+  SILC_PUT32_MSB(client->mode, mode);
+  silc_server_send_notify_dest(server, sock, FALSE, watcher->id,
+			       SILC_ID_CLIENT, SILC_NOTIFY_TYPE_WATCH,
+			       4, idp->data, idp->len,
+			       nickname, strlen(nickname),
+			       mode, sizeof(mode), 
+			       type != SILC_NOTIFY_TYPE_NONE ?
+			       n : NULL, sizeof(n));
+  silc_buffer_free(idp);
 }
 
 /* Sends notify message destined to specific entity. */

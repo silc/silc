@@ -1063,6 +1063,77 @@ void silc_client_notify_by_server(SilcClient client,
     }
     break;
 
+  case SILC_NOTIFY_TYPE_WATCH:
+    {
+      /*
+       * Received notify about some client we are watching
+       */
+      SilcNotifyType notify = 0;
+
+      SILC_LOG_DEBUG(("Notify: WATCH"));
+
+      /* Get sender Client ID */
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!tmp)
+	goto out;
+      client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+      if (!client_id)
+	goto out;
+
+      /* Find Client entry and if not found query it */
+      client_entry = silc_client_get_client_by_id(client, conn, client_id);
+      if (!client_entry) {
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CLIENT, client_id);
+	goto out;
+      }
+
+      /* Get user mode */
+      tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+      if (!tmp || tmp_len != 4)
+	goto out;
+      SILC_GET32_MSB(mode, tmp);
+
+      /* Get notify type */
+      tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
+      if (tmp && tmp_len != 2)
+	goto out;
+      if (tmp)
+	SILC_GET16_MSB(notify, tmp);
+
+      /* Get nickname */
+      tmp = silc_argument_get_arg_type(args, 2, NULL);
+      if (tmp) {
+	char *tmp_nick = NULL;
+
+	if (client->internal->params->nickname_parse)
+	  client->internal->params->nickname_parse(client_entry->nickname,
+						   &tmp_nick);
+	else
+	  tmp_nick = strdup(tmp);
+
+	/* If same nick, the client was new to us and has become "present"
+	   to network.  Send NULL as nick to application. */
+	if (!strcmp(tmp, tmp_nick))
+	  tmp = NULL;
+
+	silc_free(tmp_nick);
+      }
+
+      /* Notify application. */
+      client->internal->ops->notify(client, conn, type, client_entry,
+				    tmp, mode, notify);
+
+      client_entry->mode = mode;
+
+      /* If nickname was changed, remove the client entry unless the
+	 client is on some channel */
+      if (tmp && notify == SILC_NOTIFY_TYPE_NICK_CHANGE &&
+	  !silc_hash_table_count(client_entry->channels))
+	silc_client_del_client(client, conn, client_entry);
+    }
+    break;
+
   default:
     break;
   }

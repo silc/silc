@@ -338,6 +338,11 @@ void silc_server_notify(SilcServer server,
     /* Remove the client from all channels. */
     silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, FALSE);
 
+    /* Check if anyone is watching this nickname */
+    if (server->server_type == SILC_ROUTER)
+      silc_server_check_watcher_list(server, client, NULL,
+				     SILC_NOTIFY_TYPE_SIGNOFF);
+
     client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
     break;
@@ -402,8 +407,9 @@ void silc_server_notify(SilcServer server,
     /* Get user's channel entry and check that topic set is allowed. */
     if (!silc_server_client_on_channel(client, channel, &chl))
       goto out;
-    if (chl->mode == SILC_CHANNEL_UMODE_NONE && 
-	channel->mode & SILC_CHANNEL_MODE_TOPIC) {
+    if (channel->mode & SILC_CHANNEL_MODE_TOPIC &&
+	!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
       SILC_LOG_DEBUG(("Topic change is not allowed"));
       goto out;
     }
@@ -455,10 +461,12 @@ void silc_server_notify(SilcServer server,
       nickname = silc_argument_get_arg_type(args, 3, &nickname_len);;
 
       /* Replace the Client ID */
-      client = silc_idlist_replace_client_id(server->global_list, client_id,
+      client = silc_idlist_replace_client_id(server,
+					     server->global_list, client_id,
 					     client_id2, nickname);
       if (!client)
-	client = silc_idlist_replace_client_id(server->local_list, client_id, 
+	client = silc_idlist_replace_client_id(server,
+					       server->local_list, client_id, 
 					       client_id2, nickname);
 
       if (client) {
@@ -583,8 +591,7 @@ void silc_server_notify(SilcServer server,
       /* Set the HMAC key out of current channel key. The client must do
 	 this locally. */
       silc_hash_make(silc_hmac_get_hash(channel->hmac), channel->key, 
-		     channel->key_len / 8, 
-		     hash);
+		     channel->key_len / 8, hash);
       silc_hmac_set_key(channel->hmac, hash, 
 			silc_hash_len(silc_hmac_get_hash(channel->hmac)));
       memset(hash, 0, sizeof(hash));
@@ -688,7 +695,8 @@ void silc_server_notify(SilcServer server,
 	
 	if (client != client2) {
 	  /* Sender must be operator */
-	  if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
+	  if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	      !(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
 	    SILC_LOG_DEBUG(("CUMODE change is not allowed"));
 	    goto out;
 	  }
@@ -828,8 +836,9 @@ void silc_server_notify(SilcServer server,
     /* Get user's channel entry and check that inviting is allowed. */
     if (!silc_server_client_on_channel(client, channel, &chl))
       goto out;
-    if (chl->mode == SILC_CHANNEL_UMODE_NONE && 
-	channel->mode & SILC_CHANNEL_MODE_INVITE) {
+    if (channel->mode & SILC_CHANNEL_MODE_INVITE &&
+	!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
       SILC_LOG_DEBUG(("Inviting is not allowed"));
       goto out;
     }
@@ -1047,6 +1056,15 @@ void silc_server_notify(SilcServer server,
 	    silc_server_remove_from_channels(server, NULL, client, 
 					     TRUE, NULL, FALSE);
 
+	    /* Check if anyone is watching this nickname */
+	    if (server->server_type == SILC_ROUTER)
+	      silc_server_check_watcher_list(server, client, NULL,
+					     SILC_NOTIFY_TYPE_SERVER_SIGNOFF);
+
+	    /* Remove this client from watcher list if it is */
+	    if (local)
+	      silc_server_del_from_watcher_list(server, client);
+
 	    /* Remove the client */
 	    silc_idlist_del_client(local ? server->local_list :
 				   server->global_list, client);
@@ -1148,7 +1166,8 @@ void silc_server_notify(SilcServer server,
       /* Kicker must be operator on channel */
       if (!silc_server_client_on_channel(client2, channel, &chl))
 	goto out;
-      if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
+      if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	  !(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
 	SILC_LOG_DEBUG(("Kicking is not allowed"));
 	goto out;
       }
@@ -1249,6 +1268,11 @@ void silc_server_notify(SilcServer server,
       silc_server_remove_from_channels(server, NULL, client, FALSE, NULL, 
 				       FALSE);
 
+      /* Check if anyone is watching this nickname */
+      if (server->server_type == SILC_ROUTER)
+	silc_server_check_watcher_list(server, client, NULL,
+				       SILC_NOTIFY_TYPE_KILLED);
+
       break;
     }
 
@@ -1298,6 +1322,11 @@ void silc_server_notify(SilcServer server,
 
     /* Change the mode */
     client->mode = mode;
+
+    /* Check if anyone is watching this nickname */
+    if (server->server_type == SILC_ROUTER)
+      silc_server_check_watcher_list(server, client, NULL,
+				     SILC_NOTIFY_TYPE_UMODE_CHANGE);
 
     break;
 
@@ -1736,7 +1765,9 @@ void silc_server_channel_message(SilcServer server,
 
     /* If channel is moderated check that client is allowed to send
        messages. */
-    if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS && !chl->mode) {
+    if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS && 
+	!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
       SILC_LOG_DEBUG(("Channel is silenced from normal users"));
       goto out;
     }
@@ -1994,6 +2025,10 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Send some nice info to the client */
   silc_server_send_connect_notifys(server, sock, client);
+
+  /* Check if anyone is watching this nickname */
+  if (server->server_type == SILC_ROUTER)
+    silc_server_check_watcher_list(server, client, NULL, 0);
 
   return client;
 }
@@ -2269,6 +2304,10 @@ static void silc_server_new_id_real(SilcServer server,
       if (sock->type == SILC_SOCKET_TYPE_SERVER)
 	server->stat.cell_clients++;
       server->stat.clients++;
+
+      /* Check if anyone is watching this nickname */
+      if (server->server_type == SILC_ROUTER && id_list == server->local_list)
+	silc_server_check_watcher_list(server, entry, NULL, 0);
     }
     break;
 

@@ -230,6 +230,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
 	  silc_idlist_del_client(server->local_list, client);
+
+	  /* Remove this client from watcher list if it is */
+	  silc_server_del_from_watcher_list(server, client);
 	}
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -1251,10 +1254,119 @@ void silc_server_kill_client(SilcServer server,
     SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
 
     /* Remove remote client */
-    if (!silc_idlist_del_client(server->global_list, remote_client))
+    if (!silc_idlist_del_client(server->global_list, remote_client)) {
+      /* Remove this client from watcher list if it is */
+      silc_server_del_from_watcher_list(server, remote_client);
+
       silc_idlist_del_client(server->local_list, remote_client);  
-}
+    }
+  }
 
   silc_buffer_free(killer);
   silc_buffer_free(killed);
+}
+
+typedef struct {
+  SilcServer server;
+  SilcClientEntry client;
+  SilcNotifyType notify;
+  const char *new_nick;
+} WatcherNotifyContext;
+
+static void 
+silc_server_check_watcher_list_foreach(void *key, void *context, 
+				       void *user_context)
+{
+  WatcherNotifyContext *notify = user_context;
+  SilcClientEntry entry = context;
+  SilcSocketConnection sock;
+
+  if (entry == notify->client)
+    return;
+
+  sock = silc_server_get_client_route(notify->server, NULL, 0, entry->id,
+				      NULL, NULL);
+  if (sock) {
+    SILC_LOG_DEBUG(("Sending WATCH notify to %s",
+		    silc_id_render(entry->id, SILC_ID_CLIENT)));
+
+    /* Send the WATCH notify */
+    silc_server_send_notify_watch(notify->server, sock, entry, 
+				  notify->client, 
+				  notify->new_nick ? notify->new_nick :
+				  notify->client->nickname, notify->notify);
+  }
+}
+
+/* This function checks whether the `client' nickname is being watched
+   by someone, and notifies the watcher of the notify change of notify
+   type indicated by `notify'. */
+
+bool silc_server_check_watcher_list(SilcServer server,
+				    SilcClientEntry client,
+				    const char *new_nick,
+				    SilcNotifyType notify)
+{
+  unsigned char hash[16];
+  WatcherNotifyContext n;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* If the watching is rejected by the client do nothing */
+  if (client->mode & SILC_UMODE_REJECT_WATCHING)
+    return FALSE;
+
+  /* Make hash from the nick, or take it from Client ID */
+  if (client->nickname) {
+    char nick[128 + 1];
+    memset(nick, 0, sizeof(nick));
+    silc_to_lower(client->nickname, nick, sizeof(nick) - 1);
+    silc_hash_make(server->md5hash, nick, strlen(nick), hash);
+  } else {
+    memset(hash, 0, sizeof(hash));
+    memcpy(hash, client->id->hash, sizeof(client->id->hash));
+  }
+
+  n.server = server;
+  n.client = client;
+  n.new_nick = new_nick;
+  n.notify = notify;
+
+  /* Send notify to all watchers */
+  silc_hash_table_find_foreach(server->watcher_list, hash,
+			       silc_server_check_watcher_list_foreach, &n);
+
+  return TRUE;
+}
+
+/* Remove the `client' from watcher list. After calling this the `client'
+   is not watching any nicknames. */
+
+bool silc_server_del_from_watcher_list(SilcServer server,
+				       SilcClientEntry client)
+{
+  SilcHashTableList htl;
+  void *key;
+  SilcClientEntry entry;
+  bool found = FALSE;
+
+  silc_hash_table_list(server->watcher_list, &htl);
+  while (silc_hash_table_get(&htl, &key, (void **)&entry)) {
+    if (entry == client) {
+      silc_hash_table_del_by_context(server->watcher_list, key, client);
+
+      SILC_LOG_DEBUG(("Removing %s from WATCH list",
+		      silc_id_render(client->id, SILC_ID_CLIENT)));
+
+      /* Now check whether there still exists entries with this key, if not
+	 then free the key to not leak memory. */
+      if (!silc_hash_table_find(server->watcher_list, key, NULL, NULL))
+	silc_free(key);
+
+      found = TRUE;
+    }
+  }
+  silc_hash_table_list_reset(&htl);
+
+  return found;
 }

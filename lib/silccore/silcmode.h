@@ -68,6 +68,11 @@
 #define SILC_CHANNEL_UMODE_CHANFO          0x00000001 /* channel founder */
 #define SILC_CHANNEL_UMODE_CHANOP          0x00000002 /* channel operator */
 #define SILC_CHANNEL_UMODE_BLOCK_MESSAGES  0x00000004 /* messages blocked */
+#define SILC_CHANNEL_UMODE_BLOCK_MESSAGES_USERS  0x00000008 /* Block messages
+							       from normal
+							       users */
+#define SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS 0x00000010 /* Block messages
+							       from robots */
 /***/
 
 /****d* silccore/Modes/SilcUserMode
@@ -91,6 +96,7 @@
 #define SILC_UMODE_ANONYMOUS         0x00000100 /* Client is anonymous */
 #define SILC_UMODE_BLOCK_PRIVMSG     0x00000200 /* Client blocks privmsgs */
 #define SILC_UMODE_DETACHED          0x00000400 /* Client is detached */
+#define SILC_UMODE_REJECT_WATCHING   0x00000800 /* Client rejects watching */
 /***/
 
 #endif

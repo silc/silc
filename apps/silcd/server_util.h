@@ -149,4 +149,17 @@ void silc_server_kill_client(SilcServer server,
 			     void *killer_id,
 			     SilcIdType killer_id_type);
 
+/* This function checks whether the `client' nickname is being watched
+   by someone, and notifies the watcher of the notify change of notify
+   type indicated by `notify'. */
+bool silc_server_check_watcher_list(SilcServer server,
+				    SilcClientEntry client,
+				    const char *new_nick,
+				    SilcNotifyType notify);
+
+/* Remove the `client' from watcher list. After calling this the `client'
+   is not watching any nicknames. */
+bool silc_server_del_from_watcher_list(SilcServer server,
+				       SilcClientEntry client);
+
 #endif /* SERVER_UTIL_H */

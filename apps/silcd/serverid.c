@@ -61,13 +61,16 @@ bool silc_id_create_client_id(SilcServer server,
 {
   unsigned char hash[16];
   bool finding = FALSE;
+  char nick[128 + 1];
 
   SILC_LOG_DEBUG(("Creating new Client ID"));
 
   *new_id = silc_calloc(1, sizeof(**new_id));
 
   /* Create hash of the nickanem */
-  silc_hash_make(md5hash, nickname, strlen(nickname), hash);
+  memset(nick, 0, sizeof(nick));
+  silc_to_lower(nickname, nick, sizeof(nick) - 1);
+  silc_hash_make(md5hash, nick, strlen(nick), hash);
 
   /* Create the ID */
   memcpy((*new_id)->ip.data, server_id->ip.data, server_id->ip.data_len);

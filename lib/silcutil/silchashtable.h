@@ -324,6 +324,27 @@ bool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
 bool silc_hash_table_find(SilcHashTable ht, void *key,
 			  void **ret_key, void **ret_context);
 
+/****f* silcutil/SilcHashTableAPI/silc_hash_table_find_by_context
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
+ *                                         void *context, void **ret_key);
+ *
+ * DESCRIPTION
+ *
+ *    Finds the entry in the hash table by the provided `key' and
+ *    `context' as fast as possible.  This is handy function when there
+ *    can be multiple same keys in the hash table.  By using this function
+ *    the specific key with specific context can be found.  Return
+ *    TRUE if the entry with the key and context was found and FALSE
+ *    otherwise.  The function returns only the key to `ret_key' since
+ *    the caller already knows the context.
+ *
+ ***/
+bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
+				     void *context, void **ret_key);
+
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_find_foreach
  *
  * SYNOPSIS

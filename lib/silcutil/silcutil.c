@@ -94,15 +94,32 @@ char *silc_get_time()
 
 /* Converts string to capital characters. */
 
-char *silc_to_upper(char *string)
+bool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size)
 {
   int i;
-  char *ret = silc_calloc(strlen(string) + 1, sizeof(char));
+
+  if (strlen(string) > dest_size)
+    return FALSE;
 
   for (i = 0; i < strlen(string); i++)
-    ret[i] = toupper(string[i]);
+    dest[i] = toupper(string[i]);
 
-  return ret;
+  return TRUE;
+}
+
+/* Converts string to lower letter characters. */
+
+bool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size)
+{
+  int i;
+
+  if (strlen(string) > dest_size)
+    return FALSE;
+
+  for (i = 0; i < strlen(string); i++)
+    dest[i] = tolower(string[i]);
+
+  return TRUE;
 }
 
 /* Parse userfqdn string which is in user@fqdn format. */
@@ -162,7 +179,10 @@ void silc_parse_command_line(unsigned char *buffer,
 
   /* Get the command first */
   len = strcspn(cp, " ");
-  tmp = silc_to_upper((char *)cp);
+  tmp = silc_calloc(strlen(cp) + 1, sizeof(*tmp));
+  if (!tmp)
+    return;
+  silc_to_upper(cp, tmp, strlen(cp));
   (*parsed)[0] = silc_calloc(len + 1, sizeof(char));
   memcpy((*parsed)[0], tmp, len);
   silc_free(tmp);
@@ -468,22 +488,12 @@ SilcUInt32 silc_hash_id(void *key, void *user_context)
   case SILC_ID_CLIENT:
     {
       SilcClientID *id = (SilcClientID *)key;
-      SilcUInt32 g;
 
       /* The client ID is hashed by hashing the hash of the ID
 	 (which is a truncated MD5 hash of the nickname) so that we
 	 can access the entry from the cache with both Client ID but
 	 with just a hash from the ID as well. */
-
-      for (i = 0; i < sizeof(id->hash); i++) {
-	h = (h << 4) + id->hash[i];
-	if ((g = h & 0xf0000000)) {
-	  h = h ^ (g >> 24);
-	  h = h ^ g;
-	}
-      }
-
-      return h;
+      return silc_hash_client_id_hash(id->hash, NULL);
     }
     break;
   case SILC_ID_SERVER:
@@ -510,6 +520,25 @@ SilcUInt32 silc_hash_id(void *key, void *user_context)
     break;
   default:
     break;
+  }
+
+  return h;
+}
+
+/* Hash Client ID's hash. */
+
+SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context)
+{
+  int i;
+  unsigned char *hash = key;
+  SilcUInt32 h = 0, g;
+
+  for (i = 0; i < CLIENTID_HASH_LEN; i++) {
+    h = (h << 4) + hash[i];
+    if ((g = h & 0xf0000000)) {
+      h = h ^ (g >> 24);
+      h = h ^ g;
+    }
   }
 
   return h;
@@ -654,6 +683,12 @@ char *silc_client_chumode(SilcUInt32 mode)
 
   if (mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES)
     strncat(string, "b", 1);
+
+  if (mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES_USERS)
+    strncat(string, "u", 1);
+
+  if (mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS)
+    strncat(string, "r", 1);
 
   return strdup(string);
 }

@@ -1166,6 +1166,14 @@ SILC_CLIENT_CMD_FUNC(umode)
 	mode = 0;
 	mode |= SILC_UMODE_SERVER_OPERATOR;
 	mode |= SILC_UMODE_ROUTER_OPERATOR;
+	mode |= SILC_UMODE_GONE;
+	mode |= SILC_UMODE_INDISPOSED;
+	mode |= SILC_UMODE_BUSY;
+	mode |= SILC_UMODE_PAGE;
+	mode |= SILC_UMODE_HYPER;
+	mode |= SILC_UMODE_ROBOT;
+	mode |= SILC_UMODE_BLOCK_PRIVMSG;
+	mode |= SILC_UMODE_REJECT_WATCHING;
       } else {
 	mode = SILC_UMODE_NONE;
       }
@@ -1223,6 +1231,12 @@ SILC_CLIENT_CMD_FUNC(umode)
 	mode |= SILC_UMODE_BLOCK_PRIVMSG;
       else
 	mode &= ~SILC_UMODE_BLOCK_PRIVMSG;
+      break;
+    case 'w':
+      if (add)
+	mode |= SILC_UMODE_REJECT_WATCHING;
+      else
+	mode &= ~SILC_UMODE_REJECT_WATCHING;
       break;
     default:
       COMMAND_ERROR(SILC_STATUS_ERR_UNKNOWN_MODE);
@@ -1590,6 +1604,8 @@ SILC_CLIENT_CMD_FUNC(cumode)
 	mode |= SILC_CHANNEL_UMODE_CHANFO;
 	mode |= SILC_CHANNEL_UMODE_CHANOP;
 	mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
+	mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES_USERS;
+	mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS;
       } else {
 	mode = SILC_CHANNEL_UMODE_NONE;
       }
@@ -1625,6 +1641,18 @@ SILC_CLIENT_CMD_FUNC(cumode)
 	mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
       else
 	mode &= ~SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
+      break;
+    case 'u':
+      if (add)
+	mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES_USERS;
+      else
+	mode &= ~SILC_CHANNEL_UMODE_BLOCK_MESSAGES_USERS;
+      break;
+    case 'r':
+      if (add)
+	mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS;
+      else
+	mode &= ~SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS;
       break;
     default:
       COMMAND_ERROR(SILC_STATUS_ERR_UNKNOWN_MODE);
@@ -1998,6 +2026,55 @@ SILC_CLIENT_CMD_FUNC(detach)
   COMMAND(SILC_STATUS_OK);
 
  out:
+  silc_client_command_free(cmd);
+}
+
+/* Command WATCH. */
+
+SILC_CLIENT_CMD_FUNC(watch)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer, idp = NULL;
+  int type = 0;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
+    goto out;
+  }
+
+  if (cmd->argc < 3) {
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
+
+  if (!strcasecmp(cmd->argv[1], "-add")) {
+    type = 2;
+  } else if (!strcasecmp(cmd->argv[1], "-del")) {
+    type = 3;
+  } else {
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_WATCH, 
+					  ++conn->cmd_ident, 2,
+					  1, idp->data, idp->len,
+					  type, cmd->argv[2],
+					  cmd->argv_lens[2]);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND(SILC_STATUS_OK);
+
+ out:
+  if (idp)
+    silc_buffer_free(idp);
   silc_client_command_free(cmd);
 }
 
@@ -2452,6 +2529,7 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(kick, KICK, "KICK", 4);
   SILC_CLIENT_CMD(ban, BAN, "BAN", 3);
   SILC_CLIENT_CMD(detach, DETACH, "DETACH", 0);
+  SILC_CLIENT_CMD(watch, WATCH, "WATCH", 3);
   SILC_CLIENT_CMD(silcoper, SILCOPER, "SILCOPER", 3);
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", 2);
   SILC_CLIENT_CMD(users, USERS, "USERS", 2);
@@ -2486,6 +2564,7 @@ void silc_client_commands_unregister(SilcClient client)
   SILC_CLIENT_CMDU(kick, KICK, "KICK");
   SILC_CLIENT_CMDU(ban, BAN, "BAN");
   SILC_CLIENT_CMDU(detach, DETACH, "DETACH");
+  SILC_CLIENT_CMDU(watch, WATCH, "WATCH");
   SILC_CLIENT_CMDU(silcoper, SILCOPER, "SILCOPER");
   SILC_CLIENT_CMDU(leave, LEAVE, "LEAVE");
   SILC_CLIENT_CMDU(users, USERS, "USERS");

@@ -1,3 +1,37 @@
+Fri Apr 19 17:35:15 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined that the nickname hash in Client ID MUST be from
+	  lowercase nickname.  This effectively changes nicknames in
+	  SILC to case-insensitive.  Updated the protocol specs and
+          the code.  Affected files are lib/silcutil/silcutil.[ch],
+          silcd/serverid.c, and silcd/idlist.c.
+
+	* Added new channel user modes BLOCK_MESSAGES_USERS and
+	  BLOCK_MESSAGES_ROBOTS.  Updated the protocol specs and the
+	  code.  Affected files are lib/silccore/silcmode.h,
+	  lib/silcclient/command.c, and silcd/packet_send.c.
+
+	* Added new error status ERR_RESOURCE_LIMIT.  Updated protocol
+	  specs and code.  Affected file lib/silccore/silcstatus.h.
+
+	* Added support for watch list.  It is possible to add nicknames
+	  to be watched, and when they come to network, leave network
+	  or user mode changes the watcher will be notified of this
+	  change.  Added SILC_COMMAND_WATCH command, added new
+	  notify type SILC_NOTIFY_TYPE_WATCH to deliver the watch
+	  notifications.  Updated the protocol specs and implemented
+	  this to library, client and server.  Protocol TODO #21.
+	  Affected files are lib/silccore/silccomand.h,
+	  lib/silccore/silcnotify.h, lib/silcclient/command[_reply].[ch],
+	  silcd/command[_reply].[ch], lib/silcclient/client_notify.c,
+	  silcd/packet_send.[ch], silcd/packet_receive.c, and
+	  irssi/src/silc/core/client_ops.c.
+
+	* Added user mode SILC_UMODE_REJECT_WATCHING to reject
+	  somebody watching you.  Updated the protocol specs and the
+	  code.  Affected files are lib/silccore/silcmode.h, and
+	  lib/silcclient/command.c.
+
 Fri Apr 19 09:02:20 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added service support to SILC protocol.  Added new command

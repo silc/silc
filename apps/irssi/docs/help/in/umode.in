@@ -22,5 +22,6 @@ modes are available:
              private messages server automatically discards.
              This can be used to block unwanted private
              messages.
+    w        Set/unset to reject anyone from watching you
 
 See also: CMODE, CUMODE, AWAY

@@ -108,6 +108,7 @@ void silc_server_free(SilcServer server)
     silc_idcache_free(server->global_list->clients);
     silc_idcache_free(server->global_list->servers);
     silc_idcache_free(server->global_list->channels);
+    silc_hash_table_free(server->watcher_list);
 
     silc_free(server->sockets);
     silc_free(server);
@@ -207,6 +208,14 @@ bool silc_server_init(SilcServer server)
     silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor);
   server->global_list->servers = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
   server->global_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
+
+  /* Init watcher list */
+  server->watcher_list = 
+    silc_hash_table_alloc(1, silc_hash_client_id_hash, NULL,
+			  silc_hash_data_compare, (void *)CLIENTID_HASH_LEN,
+			  NULL, NULL, TRUE);
+  if (!server->watcher_list)
+    goto err;
 
   /* Create a listening server */
   if (!silc_server_listen(server, &sock))
@@ -2505,6 +2514,14 @@ void silc_server_free_client_data(SilcServer server,
   else
     silc_server_remove_from_channels(server, NULL, client,
 				     FALSE, NULL, FALSE);
+
+  /* Check if anyone is watching this nickname */
+  if (server->server_type == SILC_ROUTER)
+    silc_server_check_watcher_list(server, client, NULL,
+				   SILC_NOTIFY_TYPE_SIGNOFF);
+
+  /* Remove this client from watcher list if it is */
+  silc_server_del_from_watcher_list(server, client);
 
   /* Update statistics */
   server->stat.my_clients--;

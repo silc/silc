@@ -47,6 +47,36 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context);
 
+static void silc_get_umode_string(SilcUInt32 mode, char *buf, 
+				  SilcUInt32 buf_size)
+{
+  if ((mode & SILC_UMODE_SERVER_OPERATOR) ||
+      (mode & SILC_UMODE_ROUTER_OPERATOR)) {
+    strcat(buf, (mode & SILC_UMODE_SERVER_OPERATOR) ?
+	   "[server operator]" :
+	   (mode & SILC_UMODE_ROUTER_OPERATOR) ?
+	   "[SILC operator]" : "[unknown mode]");
+  }
+  if (mode & SILC_UMODE_GONE)
+    strcat(buf, " [away]");
+  if (mode & SILC_UMODE_INDISPOSED)
+    strcat(buf, " [indisposed]");
+  if (mode & SILC_UMODE_BUSY)
+    strcat(buf, " [busy]");
+  if (mode & SILC_UMODE_PAGE)
+    strcat(buf, " [page to reach]");
+  if (mode & SILC_UMODE_HYPER)
+    strcat(buf, " [hyper active]");
+  if (mode & SILC_UMODE_ROBOT)
+    strcat(buf, " [robot]");
+  if (mode & SILC_UMODE_ANONYMOUS)
+    strcat(buf, " [anonymous]");
+  if (mode & SILC_UMODE_BLOCK_PRIVMSG)
+    strcat(buf, " [blocks private messages]");
+  if (mode & SILC_UMODE_DETACHED)
+    strcat(buf, " [detached]");
+}
+
 void silc_say(SilcClient client, SilcClientConnection conn,
 	      SilcClientMessageType type, char *msg, ...)
 {
@@ -212,7 +242,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   SilcIdType idtype;
   void *entry;
   SilcUInt32 mode;
-  char userhost[512];
+  char buf[512];
   char *name, *tmp;
   GSList *list1, *list_tmp;
 
@@ -239,11 +269,11 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     name = va_arg(va, char *);
     client_entry = va_arg(va, SilcClientEntry);
 
-    memset(userhost, 0, sizeof(userhost));
-    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+    memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	     client_entry->username, client_entry->hostname);
     signal_emit("message invite", 4, server, channel ? channel->channel_name :
-		name, client_entry->nickname, userhost);
+		name, client_entry->nickname, buf);
     break;
 
   case SILC_NOTIFY_TYPE_JOIN:
@@ -270,13 +300,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       }
     }
     
-    memset(userhost, 0, sizeof(userhost));
+    memset(buf, 0, sizeof(buf));
     if (client_entry->username)
-    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+    snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	     client_entry->username, client_entry->hostname);
     signal_emit("message join", 4, server, channel->channel_name,
 		client_entry->nickname,
-		client_entry->username == NULL ? "" : userhost);
+		client_entry->username == NULL ? "" : buf);
     break;
 
   case SILC_NOTIFY_TYPE_LEAVE:
@@ -289,13 +319,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     client_entry = va_arg(va, SilcClientEntry);
     channel = va_arg(va, SilcChannelEntry);
     
-    memset(userhost, 0, sizeof(userhost));
+    memset(buf, 0, sizeof(buf));
     if (client_entry->username)
-      snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+      snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	       client_entry->username, client_entry->hostname);
     signal_emit("message part", 5, server, channel->channel_name,
 		client_entry->nickname,  client_entry->username ? 
-		userhost : "", client_entry->nickname);
+		buf : "", client_entry->nickname);
     
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
@@ -317,12 +347,12 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     
     silc_server_free_ftp(server, client_entry);
     
-    memset(userhost, 0, sizeof(userhost));
+    memset(buf, 0, sizeof(buf));
     if (client_entry->username)
-      snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+      snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	       client_entry->username, client_entry->hostname);
     signal_emit("message quit", 4, server, client_entry->nickname,
-		client_entry->username ? userhost : "", 
+		client_entry->username ? buf : "", 
 		tmp ? tmp : "");
     
     list1 = nicklist_get_same_unique(SERVER(server), client_entry);
@@ -356,11 +386,11 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     
     if (idtype == SILC_ID_CLIENT) {
       client_entry = (SilcClientEntry)entry;
-      memset(userhost, 0, sizeof(userhost));
-      snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+      memset(buf, 0, sizeof(buf));
+      snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	       client_entry->username, client_entry->hostname);
       signal_emit("message topic", 5, server, channel->channel_name,
-		  tmp, client_entry->nickname, userhost);
+		  tmp, client_entry->nickname, buf);
     } else if (idtype == SILC_ID_SERVER) {
       server_entry = (SilcServerEntry)entry;
       signal_emit("message topic", 5, server, channel->channel_name,
@@ -386,14 +416,14 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     if (!strcmp(client_entry->nickname, client_entry2->nickname))
       break;
     
-    memset(userhost, 0, sizeof(userhost));
-    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+    memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	     client_entry2->username, client_entry2->hostname);
     nicklist_rename_unique(SERVER(server),
 			   client_entry, client_entry->nickname,
 			   client_entry2, client_entry2->nickname);
     signal_emit("message nick", 4, server, client_entry2->nickname, 
-		client_entry->nickname, userhost);
+		client_entry->nickname, buf);
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
@@ -640,12 +670,12 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       clients_count = va_arg(va, SilcUInt32);
   
       for (i = 0; i < clients_count; i++) {
-	memset(userhost, 0, sizeof(userhost));
+	memset(buf, 0, sizeof(buf));
 	if (clients[i]->username)
-	  snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	  snprintf(buf, sizeof(buf) - 1, "%s@%s",
 		   clients[i]->username, clients[i]->hostname);
 	signal_emit("message quit", 4, server, clients[i]->nickname,
-		    clients[i]->username ? userhost : "", 
+		    clients[i]->username ? buf : "", 
 		    "server signoff");
 
 	silc_server_free_ftp(server, clients[i]);
@@ -667,6 +697,64 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
       silc_say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 		"%s", silc_client_status_message(error));
+    }
+    break;
+
+  case SILC_NOTIFY_TYPE_WATCH:
+    {
+      SilcNotifyType notify;
+
+      client_entry = va_arg(va, SilcClientEntry);
+      name = va_arg(va, char *);          /* Maybe NULL */
+      mode = va_arg(va, SilcUInt32);
+      notify = va_arg(va, int);
+
+      if (notify == SILC_NOTIFY_TYPE_NICK_CHANGE) {
+	if (name)
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_WATCH_NICK_CHANGE,
+			     client_entry->nickname, name);
+	else
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_WATCH_PRESENT,
+			     client_entry->nickname);
+      } else if (notify == SILC_NOTIFY_TYPE_UMODE_CHANGE) {
+	/* See if client was away and is now present */
+	if (!(mode & (SILC_UMODE_GONE | SILC_UMODE_INDISPOSED |
+		      SILC_UMODE_BUSY | SILC_UMODE_PAGE |
+		      SILC_UMODE_DETACHED)) &&
+	    (client_entry->mode & SILC_UMODE_GONE ||
+	     client_entry->mode & SILC_UMODE_INDISPOSED ||
+	     client_entry->mode & SILC_UMODE_BUSY ||
+	     client_entry->mode & SILC_UMODE_PAGE ||
+	     client_entry->mode & SILC_UMODE_DETACHED)) {
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_WATCH_PRESENT,
+			     client_entry->nickname);
+	}
+
+	if (mode) {
+	  memset(buf, 0, sizeof(buf));
+	  silc_get_umode_string(mode, buf, sizeof(buf) - 1);
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_WATCH_UMODE_CHANGE,
+			     client_entry->nickname, buf);
+	}
+      } else if (notify == SILC_NOTIFY_TYPE_KILLED) {
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_WATCH_KILLED,
+			   client_entry->nickname);
+      } else if (notify == SILC_NOTIFY_TYPE_SIGNOFF ||
+		 notify == SILC_NOTIFY_TYPE_SERVER_SIGNOFF) {
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_WATCH_SIGNOFF,
+			   client_entry->nickname);
+      } else if (notify == SILC_NOTIFY_TYPE_NONE) {
+	/* Client logged in to the network */
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_WATCH_PRESENT,
+			   client_entry->nickname);
+      }
     }
     break;
 
@@ -1003,33 +1091,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       
       if (mode) {
 	memset(buf, 0, sizeof(buf));
-
-	if ((mode & SILC_UMODE_SERVER_OPERATOR) ||
-	    (mode & SILC_UMODE_ROUTER_OPERATOR)) {
-	  strcat(buf, (mode & SILC_UMODE_SERVER_OPERATOR) ?
-		 "Server Operator" :
-		 (mode & SILC_UMODE_ROUTER_OPERATOR) ?
-		 "SILC Operator" : "[Unknown mode]");
-	}
-	if (mode & SILC_UMODE_GONE)
-	  strcat(buf, " [away]");
-	if (mode & SILC_UMODE_INDISPOSED)
-	  strcat(buf, " [indisposed]");
-	if (mode & SILC_UMODE_BUSY)
-	  strcat(buf, " [busy]");
-	if (mode & SILC_UMODE_PAGE)
-	  strcat(buf, " [page to reach]");
-	if (mode & SILC_UMODE_HYPER)
-	  strcat(buf, " [hyper active]");
-	if (mode & SILC_UMODE_ROBOT)
-	  strcat(buf, " [robot]");
-	if (mode & SILC_UMODE_ANONYMOUS)
-	  strcat(buf, " [anonymous]");
-	if (mode & SILC_UMODE_BLOCK_PRIVMSG)
-	  strcat(buf, " [blocks private messages]");
-	if (mode & SILC_UMODE_DETACHED)
-	  strcat(buf, " [detached]");
-
+	silc_get_umode_string(mode, buf, sizeof(buf - 1));
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			   SILCTXT_WHOIS_MODES, buf);
       }
@@ -1465,6 +1527,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     }
     break;
 
+  case SILC_COMMAND_WATCH:
+    break;
   }
 
   va_end(vp);

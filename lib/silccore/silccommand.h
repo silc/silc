@@ -145,6 +145,7 @@ typedef unsigned char SilcCommand;
 #define SILC_COMMAND_KICK		19
 #define SILC_COMMAND_BAN		20
 #define SILC_COMMAND_DETACH		21
+#define SILC_COMMAND_WATCH		22
 #define SILC_COMMAND_SILCOPER	        23
 #define SILC_COMMAND_LEAVE		24
 #define SILC_COMMAND_USERS		25

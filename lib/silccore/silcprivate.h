@@ -130,8 +130,8 @@ silc_private_message_get_flags(SilcPrivateMessagePayload payload);
  * SYNOPSIS
  *
  *    unsigned char *
- *    silc_private_message_get_nickname(SilcPrivateMessagePayload payload,
- *                                      SilcUInt32 *nickname_len);
+ *    silc_private_message_get_message(SilcPrivateMessagePayload payload,
+ *                                     SilcUInt32 *message_len);
  *
  * DESCRIPTION
  *

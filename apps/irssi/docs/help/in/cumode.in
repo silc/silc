@@ -39,5 +39,21 @@ are available:
         to the client.  This mode can be used to block
         unwanted messages if desired.
 
+    u <nickname>[@<server>]
+
+        Set/unset channel message blocking for messages
+        sent by normal users.  When set the server will
+        only deliver messages sent by channel founder or
+        channel operator.  Client may set this mode only
+        to itself.
+
+    r <nickname>[@<server>]
+
+        Set/unset channel message blocking for messages
+        sent by robots.  When set the server will not
+        deliver message from users that has been marked
+        as robots.  Client may set this mode only to
+        itself.
+
 
 See also: CMODE, UMODE

@@ -490,10 +490,11 @@ o Random number or counter - Random number to further
   possible to have 2^8 same nicknames from the same
   server IP address.
 
-o MD5 hash - MD5 hash value of the nickname is truncated
-  taking 88 bits from the start of the hash value.  This
-  hash value is used to search the user's Client ID from
-  the ID lists.
+o MD5 hash - MD5 hash value of the lowercase nickname is
+  truncated taking 88 bits from the start of the hash value.
+  This hash value is used to search the user's Client ID
+  from the ID lists.  Note that the nickname MUST be in
+  lowercase format.
 
 .in 3
 Collisions could occur when more than 2^8 clients using same nickname
@@ -1775,6 +1776,10 @@ Server MUST also distribute the information about newly registered
 client to its router (or if the server is router, to all routers in
 the SILC network).  More information about this in [SILC2].
 
+Router server MUST also check whether some client in the local cell
+is watching for the nickname this new client has, and send the 
+SILC_NOTIFY_TYPE_WATCH to the watcher.
+
 
 .ti 0
 4.2 Creating Server Connection
@@ -2122,6 +2127,11 @@ from the SILC Network.  The server or router MUST also send the notify
 type SILC_NOTIFY_TYPE_SERVER_SIGNOFF to its primary router and to all
 local clients that are joined on the same channels with the remote 
 server's or router's clients.
+
+Router server MUST also check whether some client in the local cell
+is watching for the nickname this client has, and send the 
+SILC_NOTIFY_TYPE_WATCH to the watcher, unless the client which left
+the network has the SILC_UMODE_REJECT_WATCHING user mode set.
 
 
 .ti 0

@@ -462,9 +462,7 @@ List of all defined commands in SILC follows.
 
         Set/change nickname.  This command is used to set nickname for
         user.  Nickname MUST NOT include any spaces (` '), non-printable
-        characters, commas (`,') and any wildcard characters.  Note that
-        nicknames in SILC are case-sensitive which must be taken into
-        account when searching clients by nickname.
+        characters, commas (`,') and any wildcard characters.
 
         When nickname is changed new Client ID is generated.  Server MUST
         distribute SILC_NOTIFY_TYPE_NICK_CHANGE to local clients on the
@@ -637,6 +635,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_ON_CHANNEL
             SILC_STATUS_ERR_USER_ON_CHANNEL
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_RESOURCE_LIMIT
 
 
    8    SILC_COMMAND_QUIT
@@ -1082,7 +1081,9 @@ List of all defined commands in SILC follows.
               Message Key flag is set in the SILC packet header.
               If this mode is set server MUST NOT deliver private
               messages to the client without the Private Message
-              Key flag being set.
+              Key flag being set.  The Private Message Key flag set
+              indicates that the private message is protected with
+              a key shared between the sender and the recipient.
 
               A separate service could provide additional filtering
               features for accepting private messages from certain
@@ -1110,6 +1111,21 @@ List of all defined commands in SILC follows.
               had the original client connection can make the decision
               by knowing that the network connection is not active.
               In this case the default case is to discard the packet.
+
+
+           0x00000800    SILC_UMODE_REJECT_WATCHING
+
+              Marks that the client rejects that it could be watched
+              by someone else.  If this mode is set notifications about
+              this client is not send, even if someone is watching the
+              same nickname this client has.  Client MAY set and unset
+              this mode.  Any changes for this client MUST NOT be
+              notified to any watcher when this mode is set.
+
+              A separate service could provide additional filtering
+              features for rejecting and accepting the watching from
+              certain users.  However, this document does not specify
+              such service.
 
         If the <client mode mask> was not provided this command merely
         returns the mode mask to the client.
@@ -1444,6 +1460,33 @@ List of all defined commands in SILC follows.
               service.
 
 
+           0x00000008    SILC_CUMODE_BLOCK_MESSAGES_USERS
+
+              Marks that the client wishes not to receive any channel
+              messages sent from normal users.  Only messages sent by
+              channel founder or channel operator is accepted.  Client
+              MAY set and unset this mode to itself.  Client MUST NOT
+              set it to anyone else.  When this mode is set server MUST
+              NOT deliver channel messages that are sent by normal users
+              to this client.
+
+              A separate service could provide additional filtering
+              features for accepting channel messages from certain
+              sender.  However, this document does not specify such
+              service.
+
+
+           0x00000010    SILC_CUMODE_BLOCK_MESSAGES_ROBOTS
+
+              Marks that the client wishes not to receive any channel
+              messages sent from robots.  Messages sent by Users with
+              the SILC_UMODE_ROBOT user mode set are not delivered.
+              Client MAY set and unset this mode to itself.  Client MUST
+              NOT set it to anyone else.  When this mode is set server
+              MUST NOT deliver channel messages that are sent by robots
+              to this client.
+
+
         Reply messages to the command:
 
         Max Arguments:  4
@@ -1552,12 +1595,89 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CHANNEL_ID
             SILC_STATUS_ERR_NOT_ON_CHANNEL
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_RESOURCE_LIMIT
 
 
-   21   <deprecated command>
+   21   SILC_COMMAND_DETACH
+
+        Max Arguments:  0
+            Arguments:
+
+        This command is used to detach from the network.  Client can
+        send this command to its server to indicate that it will be
+        detached.  By detaching the client remains in the network but
+        the actual network connection to the server is closed.  The
+        client may then later resume the old session back.
+
+        When this command is received the server MUST check that the
+        client is locally connected client, and set the user mode
+        SILC_UMODE_DETACHED flag.  The SILC_NOTIFY_TYPE_UMODE_CHANGE
+        MUST be also sent to routers.  The server then sends command
+        reply to this command and closes the network connection.
+        The server MUST NOT remove the client from its lists, or send
+        any signoff notifications for this client.  See the [SILC1]
+        for detailed information about detaching.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with the status indication.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
 
 
-   22   <deprecated command>
+   22   SILC_COMMAND_WATCH
+
+        Max Arguments:  3
+            Arguments:  (1) <Client ID>       (2) [<add nickname>]
+                        (3) [<del nickname>]
+
+        This command is used to set up a watch for <add nickname>
+        nickname.  When a user in the network appears with the
+        nickname, or signoffs the network or user's mode is changed
+        the client which set up the watch will be notified about
+        this change.  This can be used to watch for certain nicknames
+        in the network and receive notifications when for example a
+        friend appears in the network or leaves the network.
+
+        The <del nickname> is a nickname that has been previously
+        added to watch list and is now removed from it.  Notifications
+        for that nickname will not be delivered anymore.
+
+        The <Client ID> is the Client ID of the sender of this command.
+
+        The nickname set to watch MUST NOT include any wildcards.
+        Note also that a nickname may match several users since
+        nicknames are not unique.  Implementations MAY set limits
+        for how many nicknames client can watch.
+
+        When normal server receives this command from client it
+        MUST send it to its router.  Router will process the command
+        and actually keeps the watch list.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with the status indication.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_BAD_NICKNAME
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_RESOURCE_LIMIT
+            SILC_STATUS_ERR_NO_SUCH_NICK
+            SILC_STATUS_ERR_NICKNAME_IN_USE
 
 
    23   SILC_COMMAND_SILCOPER
@@ -2102,6 +2222,11 @@ List of all defined status types:
         "No such Server ID".  Server ID provided does not exist.
         The unknown Server ID MUST be provided as next argument
         in the reply.
+
+   48   SILC_STATUS_ERR_RESOURCE_LIMIT
+
+        "No more resources available".  This can mean that server cannot
+        or will not accept something due to resource limitations.
 
    49   SILC_STATUS_ERR_NO_SUCH_SERVICE
 

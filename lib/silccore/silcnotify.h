@@ -80,6 +80,7 @@ typedef SilcUInt16 SilcNotifyType;
 #define SILC_NOTIFY_TYPE_UMODE_CHANGE    14 /* user mode was changed */
 #define SILC_NOTIFY_TYPE_BAN             15 /* ban list change */
 #define SILC_NOTIFY_TYPE_ERROR           16 /* error notify */
+#define SILC_NOTIFY_TYPE_WATCH           17 /* watch notify */
 /***/
 
 /* Prototypes */

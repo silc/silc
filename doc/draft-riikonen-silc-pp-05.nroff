@@ -1496,10 +1496,41 @@ UTF-8 [RFC2279] encoded.
       sent currently inside this notify type in [SILC3].  The <Status
       Type> is of size of 1 byte.
 
+
+17    SILC_NOTIFY_TYPE_WATCH
+
+      Sent to indicate change in a watched user.  Client can set
+      nicknames to be watched with SILC_COMMAND_WATCH command, and
+      receive notifications when they login to network, signoff from
+      the network or their user mode is changed.  This notify type
+      is used to deliver these notifications.  The notify type is
+      sent directly to the watching client.
+
+      Max Arguments:  4
+          Arguments:  (1) <Client ID>        (2) [<nickname>]
+                      (3) <user mode>        (4) [<Notify Type>]
+
+      The <Client ID> is the user's Client ID which is being watched,
+      and the <nickname> is its nickname.  If the client just
+      changed the nickname, then <nickname> is the new nickname.
+      The <user mode> is the user's current user mode.  The <Notify
+      Type> can be same as the Notify Payload's Notify Type, and is
+      16 bit MSB first order value.  If provided it may indicate the
+      notify that occurred for the client.  If client logged in to the
+      network the <Notify Type> MUST NOT be present.
 .in 3
 
 Notify types starting from 16384 are reserved for private notify
 message types.
+
+Router server which receives SILC_NOTIFY_TYPE_SIGNOFF, 
+SILC_NOTIFY_TYPE_SERVER_SIGNOFF, SILC_NOTIFY_TYPE_KILLED,
+SILC_NOTIFY_TYPE_NICK_CHANGE and SILC_NOTIFY_TYPE_UMODE_CHANGE
+MUST chech whether someone in the local cell is watching the nickname
+the client has, and send the SILC_NOTIFY_TYPE_WATCH notify to the
+watcher, unless the client in case has the SILC_UMODE_REJECT_WATCHING
+user mode set.  If the watcher client and the client that was
+watched is same the notify SHOULD NOT be sent.
 
 
 .ti 0

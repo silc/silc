@@ -289,7 +289,7 @@ typedef struct {
  *
  *      n bit ServerID IP address [bits 1-32 or bits 1-128]
  *      8 bit random number
- *     88 bit hash value from nickname
+ *     88 bit hash value from lowercase nickname
  *
  * SOURCE
  */

@@ -1,0 +1,20 @@
+
+@SYNTAX:watch@
+
+This command is used to add nicknames to your watch list in the server.
+When the watched nickname appears in the network, leaves the network
+or its user mode is changed you will be notified for this change.  This
+same command can be used also to remove nicknames from being watched.
+
+Note that some users may have a user mode set that rejects you from
+receiving notifications about them.  Also note that since nicknames are
+not unique it is possible that same nickname matches several users in
+the network.  In this case you will receive notifications about all
+of those users.
+
+Examples:
+
+    /WATCH -add foobar
+    /WATCH -del foobar
+
+See also: WHOIS
