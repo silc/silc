@@ -55,8 +55,8 @@ info_eol = "false";
 
 # these characters are automatically replaced with specified color
 # (dark grey by default)
-replaces = { "()=" = "%K$*%n"; };
-#replaces = {};
+#replaces = { "()=" = "%K$*%n"; };
+replaces = {};
 
 abstracts = {
   ##
