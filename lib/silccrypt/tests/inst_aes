@@ -1,7 +1,7 @@
 gcc -I.. \
 -I../../../includes -I../../silccore -I../../trq -I../../silcske \
 -I../.. -I../../silccore -I../../silcmath -I../../silcutil \
--I../../silcmath/gmp -I../../silcske -I../../silcsim \
--Wall -finline-functions \
+-I../../silcmath/mpi -I../../silcske -I../../silcsim \
+-I../../silcsftp -Wall -finline-functions \
 -o test_aes test_aes.c -L../.. -lsilc
 
