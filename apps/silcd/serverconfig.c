@@ -984,6 +984,10 @@ SILC_CONFIG_CALLBACK(fetch_server)
     /* check the temporary struct's fields */
     if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
+    if (!tmp->host) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
 
     /* the temporary struct is ok, append it to the list */
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->servers);
@@ -1047,6 +1051,10 @@ SILC_CONFIG_CALLBACK(fetch_router)
   if (type == SILC_CONFIG_ARG_BLOCK) {
     if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
+    if (!tmp->host) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
 
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->routers);
     config->tmp = NULL;
