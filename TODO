@@ -34,6 +34,9 @@ TODO/bugs In SILC Libraries
 
  o Test cases for math library routines in lib/silcmath/
 
+ o Implement new version of SFTP protocol (missing versions 4 and 5, we
+   have version 3).
+
 
 TODO in Toolkit Documentation
 =============================
