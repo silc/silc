@@ -119,8 +119,6 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_final)
     silc_ske_free(ctx->ske);
   if (ctx->dest_id)
     silc_free(ctx->dest_id);
-  silc_task_unregister_by_callback(client->timeout_queue,
-				   silc_client_failure_callback);
   silc_task_unregister_by_fd(client->io_queue, ke->fd);
   silc_schedule_unset_listen_fd(ke->fd);
   silc_net_close_connection(ke->fd);
@@ -245,8 +243,6 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
     silc_socket_free(ke->sock);
   }
   ke->client_entry->ke = NULL;
-  silc_task_unregister_by_callback(ke->client->timeout_queue,
-				   silc_client_failure_callback);
   if (ke->fd)
     silc_task_unregister_by_fd(ke->client->io_queue, ke->fd);
   silc_schedule_unset_listen_fd(ke->fd);

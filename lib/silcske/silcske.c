@@ -810,7 +810,7 @@ SilcSKEStatus silc_ske_end(SilcSKE ske,
   packet = silc_buffer_alloc(4);
   silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
   silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(SILC_SKE_STATUS_OK),
+		     SILC_STR_UI_INT((uint32)SILC_SKE_STATUS_OK),
 		     SILC_STR_END);
 
   if (send_packet)
@@ -836,7 +836,7 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status,
   packet = silc_buffer_alloc(4);
   silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
   silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(status),
+		     SILC_STR_UI_INT((uint32)status),
 		     SILC_STR_END);
 
   if (send_packet)

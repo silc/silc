@@ -1195,7 +1195,40 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 void silc_failure(SilcClient client, SilcClientConnection conn, 
 		  SilcProtocol protocol, void *failure)
 {
+  if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
+    SilcSKEStatus status = (SilcSKEStatus)failure;
+    
+    if (status == SILC_SKE_STATUS_BAD_VERSION)
+      silc_say(client, conn, 
+	       "You are running incompatible client version (it may be "
+	       "too old or too new)");
+    if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY)
+      silc_say(client, conn, "Server does not support your public key type");
+    if (status == SILC_SKE_STATUS_UNKNOWN_GROUP)
+      silc_say(client, conn, 
+	       "Server does not support one of your proposed KE group");
+    if (status == SILC_SKE_STATUS_UNKNOWN_CIPHER)
+      silc_say(client, conn, 
+	       "Server does not support one of your proposed cipher");
+    if (status == SILC_SKE_STATUS_UNKNOWN_PKCS)
+      silc_say(client, conn, 
+	       "Server does not support one of your proposed PKCS");
+    if (status == SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION)
+      silc_say(client, conn, 
+	       "Server does not support one of your proposed hash function");
+    if (status == SILC_SKE_STATUS_UNKNOWN_HMAC)
+      silc_say(client, conn, 
+	       "Server does not support one of your proposed HMAC");
+    if (status == SILC_SKE_STATUS_INCORRECT_SIGNATURE)
+      silc_say(client, conn, "Incorrect signature");
+  }
 
+  if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_CONNECTION_AUTH) {
+    uint32 err = (uint32)failure;
+
+    if (err == SILC_AUTH_FAILED)
+      silc_say(client, conn, "Authentication failed");
+  }
 }
 
 /* Asks whether the user would like to perform the key agreement protocol.

@@ -1,3 +1,15 @@
+Fri Apr 13 17:12:46 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added printing of error messages during SKE protocol from the
+	  failure packet sent by server during SKE.  Affected file
+	  silc/client_ops.c.
+
+	* Removed the client's failure_callback handling with timeout
+	  and handle it immediately when received.
+
+	* The SKE library returned wrong type in SUCCESS and FAILURE 
+	  packets.  They must be 32 bit MSB not 16 bit MSB.
+
 Fri Apr 13 00:09:08 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Ok, rewrote the logic of the re-key and now it seems to work.

@@ -434,8 +434,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     ctx->sock->protocol = NULL;
-    silc_task_unregister_by_callback(client->timeout_queue,
-				     silc_client_failure_callback);
 
     /* Notify application of failure */
     client->ops->connect(client, ctx->sock->user_data, FALSE);
@@ -521,8 +519,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     conn->sock->protocol = NULL;
-    silc_task_unregister_by_callback(client->timeout_queue,
-				     silc_client_failure_callback);
 
     /* Notify application of failure */
     client->ops->connect(client, ctx->sock->user_data, FALSE);
@@ -564,8 +560,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 		     (void *)conn->sock, conn->rekey->timeout, 0,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
-  silc_task_unregister_by_callback(client->timeout_queue,
-				   silc_client_failure_callback);
   silc_protocol_free(protocol);
   if (ctx->auth_data)
     silc_free(ctx->auth_data);
@@ -1626,30 +1620,6 @@ char *silc_client_chumode_char(uint32 mode)
   return strdup(string);
 }
 
-/* Failure timeout callback. If this is called then we will immediately
-   process the received failure. We always process the failure with timeout
-   since we do not want to blindly trust to received failure packets. 
-   This won't be called (the timeout is cancelled) if the failure was
-   bogus (it is bogus if remote does not close the connection after sending
-   the failure). */
-
-SILC_TASK_CALLBACK_GLOBAL(silc_client_failure_callback)
-{
-  SilcClientFailureContext *f = (SilcClientFailureContext *)context;
-
-  if (f->sock->protocol) {
-    f->sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
-    f->sock->protocol->execute(f->client->timeout_queue, 0,
-			       f->sock->protocol, f->sock->sock, 0, 0);
-    
-    /* Notify application */
-    f->client->ops->failure(f->client, f->sock->user_data, f->sock->protocol,
-			    (void *)f->failure);
-  }
-
-  silc_free(f);
-}
-
 /* Registers failure timeout to process the received failure packet
    with timeout. */
 
@@ -1657,22 +1627,15 @@ void silc_client_process_failure(SilcClient client,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet)
 {
-  SilcClientFailureContext *f;
   uint32 failure = 0;
 
   if (sock->protocol) {
     if (packet->buffer->len >= 4)
       SILC_GET32_MSB(failure, packet->buffer->data);
 
-    f = silc_calloc(1, sizeof(*f));
-    f->client = client;
-    f->sock = sock;
-    f->failure = failure;
-
-    /* We will wait 5 seconds to process this failure packet */
-    silc_task_register(client->timeout_queue, sock->sock,
-		       silc_client_failure_callback, (void *)f, 5, 0,
-		       SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    /* Notify application */
+    client->ops->failure(client, sock->user_data, sock->protocol,
+			 (void *)failure);
   }
 }
 

@@ -52,19 +52,9 @@ struct SilcClientAwayStruct {
   struct SilcClientAwayStruct *next;
 };
 
-/* Failure context. This is allocated when failure packet is received.
-   Failure packets are processed with timeout and data is saved in this
-   structure. */
-typedef struct {
-  SilcClient client;
-  SilcSocketConnection sock;
-  uint32 failure;
-} SilcClientFailureContext;
-
 /* Protypes */
 
 SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process);
-SILC_TASK_CALLBACK_GLOBAL(silc_client_failure_callback);
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
 				 bool force_send,
