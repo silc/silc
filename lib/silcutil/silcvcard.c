@@ -23,7 +23,7 @@
 
 #define VCARD_HEADER "BEGIN:VCARD\n"
 #define VCARD_VERSION "VERSION:3.0\n"
-#define VCARD_FOOTER "END:VCARD"
+#define VCARD_FOOTER "END:VCARD\n"
 
 /* Encode VCard */
 
@@ -161,10 +161,14 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
   
   val = (unsigned char *)data;
   while (val) {
-    if (!strchr(val, '\n'))
-      break;
-    len = strchr(val, '\n') - (char *)val;
-    if (len > data_len - (val - data))
+    len = 0;
+    for (i = (val - data); i < data_len; i++) {
+      if (data[i] == '\0' || data[i] == '\n') {
+	len = i - (val - data);
+	break;
+      }
+    }
+    if (!len || len > data_len - (val - data))
       break;
 
     if (!strncasecmp(val, VCARD_HEADER, strlen(VCARD_HEADER))) {
@@ -249,6 +253,7 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
     } else if (!strncasecmp(val, "ADR;", 4)) {
       vcard->addrs = silc_realloc(vcard->addrs, sizeof(*vcard->addrs) *
 				  (vcard->num_addrs + 1));
+      memset(&vcard->addrs[vcard->num_addrs], 0, sizeof(*vcard->addrs));
       if (len - 4) {
 	off = 4;
 	for (i = off; i < len; i++)
@@ -267,6 +272,7 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
     } else if (!strncasecmp(val, "TEL;", 4)) {
       vcard->tels = silc_realloc(vcard->tels, sizeof(*vcard->tels) *
 				 (vcard->num_tels + 1));
+      memset(&vcard->tels[vcard->num_tels], 0, sizeof(*vcard->tels));
       if (len - 4) {
 	off = 4;
 	for (i = off; i < len; i++)
@@ -281,6 +287,7 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
     } else if (!strncasecmp(val, "EMAIL;", 6)) {
       vcard->emails = silc_realloc(vcard->emails, sizeof(*vcard->emails) *
 				   (vcard->num_emails + 1));
+      memset(&vcard->emails[vcard->num_emails], 0, sizeof(*vcard->emails));
       if (len - 6) {
 	off = 6;
 	for (i = off; i < len; i++)
@@ -379,9 +386,11 @@ void silc_vcard_free(SilcVCard vcard)
   silc_free(vcard->emails);
   silc_free(vcard->note);
   silc_free(vcard->rev);
+  if (!vcard->dynamic)
+    memset(vcard, 0, sizeof(*vcard));
 
   if (vcard->dynamic) {
-    memset(vcard, 'F', sizeof(*vcard));
+    memset(vcard, 0, sizeof(*vcard));
     silc_free(vcard);
   }
 }
