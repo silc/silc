@@ -75,6 +75,7 @@ void silc_client_notify_by_server(SilcClient client,
   SilcNotifyType type;
   SilcArgumentPayload args;
 
+  SilcIDPayload idp;
   SilcClientID *client_id = NULL;
   SilcChannelID *channel_id = NULL;
   SilcClientEntry client_entry;
@@ -423,15 +424,28 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!client_id)
+    idp = silc_id_payload_parse_data(tmp, tmp_len);
+    if (!idp)
       goto out;
 
     /* Find Client entry */
-    client_entry = 
-      silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry)
-      goto out;
+    if (silc_id_payload_get_type(idp) == SILC_ID_CLIENT) {
+      client_id = silc_id_payload_parse_id(tmp, tmp_len);
+      if (!client_id) {
+	silc_id_payload_free(idp);
+	goto out;
+      }
+
+      client_entry = silc_client_get_client_by_id(client, conn, client_id);
+      if (!client_entry) {
+	silc_id_payload_free(idp);
+	goto out;
+      }
+    } else {
+      client_entry = NULL;
+    }
+
+    silc_id_payload_free(idp);
 
     /* Get the mode */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
@@ -584,7 +598,6 @@ void silc_client_notify_by_server(SilcClient client,
     channel = (SilcChannelEntry)id_cache->context;
 
     /* Free the old ID */
-    silc_free(channel_id);
     silc_free(channel->id);
 
     /* Get the new ID */

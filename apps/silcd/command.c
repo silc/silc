@@ -2517,21 +2517,47 @@ SILC_SERVER_CMD_FUNC(info)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcBuffer packet, idp;
+  unsigned char *tmp;
+  unsigned int tmp_len;
   char *dest_server, *server_info = NULL, *server_name;
   unsigned short ident = silc_command_get_ident(cmd->payload);
   SilcServerEntry entry = NULL;
+  SilcServerID *server_id = NULL;
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INFO, cmd, 1, 1);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INFO, cmd, 0, 2);
 
   /* Get server name */
   dest_server = silc_argument_get_arg_type(cmd->args, 1, NULL);
-  if (!dest_server) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
-					  SILC_STATUS_ERR_NO_SUCH_SERVER);
-    goto out;
+
+  /* Get Server ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (tmp) {
+    server_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!server_id) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
+					    SILC_STATUS_ERR_NO_SERVER_ID);
+      goto out;
+    }
   }
 
-  if (!strncasecmp(dest_server, server->server_name, strlen(dest_server))) {
+  if (server_id) {
+    /* Check whether we have this server cached */
+    entry = silc_idlist_find_server_by_id(server->local_list,
+					  server_id, NULL);
+    if (!entry) {
+      entry = silc_idlist_find_server_by_id(server->global_list,
+					    server_id, NULL);
+      if (!entry && server->server_type == SILC_ROUTER) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
+					      SILC_STATUS_ERR_NO_SUCH_SERVER);
+	goto out;
+      }
+    }
+  }
+
+  if ((!dest_server && !server_id) || 
+      (dest_server && !cmd->pending && 
+       !strncasecmp(dest_server, server->server_name, strlen(dest_server)))) {
     /* Send our reply */
     char info_string[256];
 
@@ -2547,14 +2573,17 @@ SILC_SERVER_CMD_FUNC(info)
     entry = server->id_entry;
   } else {
     /* Check whether we have this server cached */
-    entry = silc_idlist_find_server_by_name(server->global_list,
-					    dest_server, NULL);
-    if (!entry) {
-      entry = silc_idlist_find_server_by_name(server->local_list,
+    if (!entry && dest_server) {
+      entry = silc_idlist_find_server_by_name(server->global_list,
 					      dest_server, NULL);
+      if (!entry) {
+	entry = silc_idlist_find_server_by_name(server->local_list,
+						dest_server, NULL);
+      }
     }
 
-    if (server->server_type == SILC_ROUTER && entry && !entry->server_info) {
+    if (!cmd->pending &&
+	server->server_type == SILC_ROUTER && entry && !entry->server_info) {
       /* Send to the server */
       SilcBuffer tmpbuf;
       unsigned short old_ident;
@@ -2605,6 +2634,9 @@ SILC_SERVER_CMD_FUNC(info)
     }
   }
 
+  if (server_id)
+    silc_free(server_id);
+
   if (!entry) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
 					  SILC_STATUS_ERR_NO_SUCH_SERVER);
@@ -2614,7 +2646,7 @@ SILC_SERVER_CMD_FUNC(info)
   idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
   if (!server_info)
     server_info = entry->server_info;
-  server_name = dest_server;
+  server_name = entry->server_name;
 
   /* Send the reply */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INFO,
@@ -3637,7 +3669,8 @@ SILC_SERVER_CMD_FUNC(cmode)
     silc_server_send_notify_cmode(server, server->router->connection,
 				  server->server_type == SILC_ROUTER ? 
 				  TRUE : FALSE, channel,
-				  mode_mask, client->id, SILC_ID_CLIENT_LEN,
+				  mode_mask, client->id, SILC_ID_CLIENT,
+				  SILC_ID_CLIENT_LEN,
 				  cipher, hmac);
 
   /* Send command reply to sender */

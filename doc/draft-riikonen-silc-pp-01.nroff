@@ -1160,11 +1160,7 @@ ID's sent in arguments are sent inside ID Payload.
           Arguments:  (1) [<Client ID>]       (2) <Channel ID>
 
       The <Client ID> is the client that joined to the channel indicated
-      by the <Channel ID>.  The <adding client> and <removing client>
-      indicates the added or removed client in the current invite list.
-      The format of the <adding client> and the <removing client> is
-      defined in the [SILC1] with SILC_COMMAND_INVITE command.  If the
-      <Client ID> is not provided then this
+      by the <Channel ID>.
 
 
 3     SILC_NOTIFY_TYPE_LEAVE
