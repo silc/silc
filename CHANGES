@@ -1,3 +1,9 @@
+Fri Jul  6 09:39:35 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not show the error "Error receiving packet bla bla"
+	  in server if it really was not an error (-2 means that reading
+	  is pending).  Affected file silcd/server.c.
+
 Thu Jul  5 21:22:32 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a possible crash in silc_server_remove_clients_by_server

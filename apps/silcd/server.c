@@ -1421,12 +1421,14 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   /* Read some data from connection */
   ret = silc_packet_receive(sock);
   if (ret < 0) {
-    SILC_LOG_ERROR(("Error receiving packet from connection "
-		    "%s:%d [%s]", sock->hostname, sock->port,  
-		    (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
-		     sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
-		     sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
-		     "Router")));
+
+    if (ret == -1)
+      SILC_LOG_ERROR(("Error receiving packet from connection "
+		      "%s:%d [%s]", sock->hostname, sock->port,  
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
     return;
   }    
 
