@@ -527,13 +527,13 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
       len = (((SilcUInt8)buffer->data[4] + (SilcUInt8)buffer->data[6] + 
 	      (SilcUInt8)buffer->data[7] + SILC_PACKET_HEADER_LEN) -
 	     block_len);
+      silc_buffer_pull(buffer, block_len);
 
       if (len > buffer->len) {
 	SILC_LOG_ERROR(("Garbage in header of packet, bad packet length, "
 			"packet dropped"));
 	return -1;
       }
-      silc_buffer_pull(buffer, block_len);
       if (!silc_cipher_decrypt(cipher, buffer->data, buffer->data,
 			       len, NULL)) {
 	SILC_LOG_ERROR(("silc_cipher_decrypt failed"));
