@@ -69,7 +69,7 @@ SILC Commands
 		Leaves the channel.  If /leave * is given the client
 		leaves the current channel.
 
-	/CMODE	<channel> [+|-<modes> [{ <arguments>}]]
+	/CMODE	<channel> +|-<modes> [{ <arguments>}]
 
 		Changes/sets channel mode.  Most of the modes require
 		special privileges, such as channel operator or channel
