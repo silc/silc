@@ -1,3 +1,19 @@
+Sat Jun  2 10:45:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed a bug in Irssi SILC client; do not show that you are
+	  server/router operator if you really are not.  Affected file is
+	  irssi/src/silc/core/client_ops.c.
+
+	* Renamed silc_command_free_payload to silc_command_payload_free.
+	  Affected file lib/silccore/silccommand.h
+
+	* Changed the following headers to ROBODoc format:
+
+		lib/silccore/silcchannel.h
+		lib/silccore/silccommand.h
+		lib/silccore/silcid.h
+		lib/silccore/silcidcache.h
+
 Fri Jun  1 22:19:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added checking to the server code not to start the server if

@@ -59,7 +59,7 @@
  *
  * NAME
  *
- *    SilcKeyAgreementStatus
+ *    typedef enum { ... } SilcKeyAgreementStatus;
  *
  * DESCRIPTION
  *
@@ -110,7 +110,7 @@ typedef void (*SilcKeyAgreementCallback)(SilcClient client,
  *
  * NAME
  *
- *    SilcPrivateMessageKeys
+ *    typedef struct { ... } SilcPrivateMessageKeys;
  *
  * DESCRIPTION
  *
@@ -170,7 +170,7 @@ typedef void (*SilcVerifyPublicKey)(bool success, void *context);
  *
  * NAME
  *
- *    SilcClientOperations
+ *    typedef struct { ... } SilcClientOperations;
  *
  * DESCRIPTION
  *
@@ -311,10 +311,10 @@ typedef struct {
  *
  * DESCRIPTION
  *
- * Allocates new client object. This has to be done before client may
- * work. After calling this one must call silc_client_init to initialize
- * the client. The `application' is application specific user data pointer
- * and caller must free it.
+ *    Allocates new client object. This has to be done before client may
+ *    work. After calling this one must call silc_client_init to initialize
+ *    the client. The `application' is application specific user data pointer
+ *    and caller must free it.
  *
  ***/
 SilcClient silc_client_alloc(SilcClientOperations *ops, void *application);

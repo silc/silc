@@ -557,11 +557,17 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     break;
     
   case SILC_COMMAND_OPER:
+    if (!success)
+      return;
+
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_SERVER_OPER);
     break;
     
   case SILC_COMMAND_SILCOPER:
+    if (!success)
+      return;
+
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
     break;

@@ -122,7 +122,7 @@ SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
   return cache;
 }
 
-/* Free's ID cache object and cache entries */
+/* Frees ID cache object and cache entries */
 
 void silc_idcache_free(SilcIDCache cache)
 {
@@ -134,7 +134,11 @@ void silc_idcache_free(SilcIDCache cache)
   }
 }
 
-/* Add new entry to the cache. */
+/* Add new entry to the cache. Returns TRUE if the entry was added and
+   FALSE if it could not be added. The `name' is the name associated with
+   the ID, the `id' the actual ID and the `context' a used specific context.
+   If the `expire' is TRUE the entry expires in default time and if FALSE
+   the entry never expires from the cache. */
 
 bool silc_idcache_add(SilcIDCache cache, char *name, void *id, 
 		      void *context, int expire)
@@ -559,7 +563,7 @@ bool silc_idcache_list_next(SilcIDCacheList list, SilcIDCacheEntry *ret)
   return TRUE;
 }
 
-/* Free's ID cache list. User must free the list object returned by
+/* Frees ID cache list. User must free the list object returned by
    any of the searching functions. */
 
 void silc_idcache_list_free(SilcIDCacheList list)

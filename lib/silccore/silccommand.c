@@ -336,9 +336,9 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
   return buffer;
 }
 
-/* Free's Command Payload */
+/* Frees Command Payload */
 
-void silc_command_free_payload(SilcCommandPayload payload)
+void silc_command_payload_free(SilcCommandPayload payload)
 {
   if (payload) {
     silc_argument_payload_free(payload->args);

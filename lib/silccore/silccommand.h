@@ -1,38 +1,83 @@
-/*
-
-  silccommand.h
-
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
-
-  Copyright (C) 1997 - 2000 Pekka Riikonen
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-*/
+/****h* silccore/silccommand.h
+ *
+ * NAME
+ *
+ * silccommand.h
+ *
+ * COPYRIGHT
+ *
+ * Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+ *
+ * Copyright (C) 1997 - 2000 Pekka Riikonen
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * DESCRIPTION
+ *
+ * Implementation of the Command Payload. The Command Payload is used to
+ * send commands and also command replies usually between client and
+ * server.
+ *
+ ***/
 
 #ifndef SILCCOMMAND_H
 #define SILCCOMMAND_H
 
-/* Command function callback. The actual command function pointer. */
+/****f* silccore/SilcCommandAPI/SilcCommandCb
+ *
+ * SYNOPSIS
+ *
+ *    SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);
+ *
+ * DESCRIPTION
+ *
+ *    Command function callback. The actual command function pointer.
+ *    This is generic command callback that the application may choose to
+ *    use with its command routines.
+ *
+ ***/
 typedef void (*SilcCommandCb)(void *context);
 
-/* Typedefinition for SILC commands. */
-typedef unsigned char SilcCommand;
-
-/* Forward declaration for Command Payload parsed from packet. The
-   actual structure is defined in source file and is private data. */
+/****s* silccore/SilcCommandAPI/SilcCommandPayload
+ *
+ * NAME
+ * 
+ *    typedef struct SilcCommandPayloadStruct *SilcCommandPayload;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual Command Payload and is allocated
+ *    by silc_command_payload_parse and given as argument usually to
+ *    all silc_command_payload_* functions.  It is freed by the
+ *    silc_command_payload_free function.
+ *
+ ***/
 typedef struct SilcCommandPayloadStruct *SilcCommandPayload;
 
-/* Command flags. These set how the commands behave on different
-   situations. These can be OR'ed together to set multiple flags. */
+/****d* silccore/SilcCommandAPI/SilcCommandFlags
+ *
+ * NAME
+ * 
+ *    typedef enum { ... } SilcCommandFlags;
+ *
+ * DESCRIPTION
+ *
+ *    Command flags that set how the commands behave on different
+ *    situations. These can be OR'es together to set multiple flags.
+ *    The application is resoponsible of implementing the behaviour
+ *    of these flags. These are here just to define generic flags.
+ *    The server usually makes use of these flags.
+ *
+ * SOURCE
+ */
 typedef enum {
   SILC_CF_NONE           = 0,
 
@@ -56,9 +101,26 @@ typedef enum {
   SILC_CF_SILC_OPER      = (1L << 5),
 
 } SilcCommandFlag;
+/***/
+
+/****d* silccore/SilcCommandAPI/SilcCommand
+ *
+ * NAME
+ * 
+ *    typedef unsigned char SilcCommand;
+ *
+ * DESCRIPTION
+ *
+ *    The SilcCommand type definition and the commands. The commands
+ *    listed here are the official SILC Commands and they have client
+ *    and server counterparts.
+ *
+ * SOURCE
+ */
+typedef unsigned char SilcCommand;
 
 /* All SILC commands. These are commands that have client and server
-   counterparts. These are pretty much the same as in IRC. */
+   counterparts. */
 #define SILC_COMMAND_NONE               0
 #define SILC_COMMAND_WHOIS		1
 #define SILC_COMMAND_WHOWAS		2
@@ -89,8 +151,22 @@ typedef enum {
 
 /* Reserved */
 #define SILC_COMMAND_RESERVED           255
+/***/
 
-/* Command Status type */
+/****d* silccore/SilcCommandAPI/SilcCommandStatus
+ *
+ * NAME
+ * 
+ *    typedef uint16 SilcCommandStatus;
+ *
+ * DESCRIPTION
+ *
+ *    The SilcCommandStatus type definition and the status defines.
+ *    The server returns a status in each Command Payload indicating
+ *    the status of the command.
+ *
+ * SOURCE
+ */
 typedef uint16 SilcCommandStatus;
 
 /* Command Status messages */
@@ -136,32 +212,212 @@ typedef uint16 SilcCommandStatus;
 #define SILC_STATUS_ERR_AUTH_FAILED         45
 #define SILC_STATUS_ERR_UNKNOWN_ALGORITHM   46
 #define SILC_STATUS_ERR_NO_SUCH_SERVER_ID   47
+/***/
 
 /* Prototypes */
+
+/****f* silccore/SilcCommandAPI/silc_command_payload_parse
+ *
+ * SYNOPSIS
+ *
+ *    SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);
+ *
+ * DESCRIPTION
+ *
+ *    Parses command payload returning new command payload structure. The
+ *    `buffer' is the raw payload.
+ *
+ ***/
 SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);
+
+/****f* silccore/SilcCommandAPI/silc_command_payload_encode
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer silc_command_payload_encode(SilcCommand cmd,
+ *                                           uint32 argc,
+ *                                           unsigned char **argv,
+ *                                           uint32 *argv_lens,
+ *                                           uint32 *argv_types,
+ *                                           uint16 ident);
+ *
+ * DESCRIPTION
+ *
+ *     Encodes Command Payload returning it to SilcBuffer.
+ *
+ ***/
 SilcBuffer silc_command_payload_encode(SilcCommand cmd,
 				       uint32 argc,
 				       unsigned char **argv,
 				       uint32 *argv_lens,
 				       uint32 *argv_types,
 				       uint16 ident);
+
+/****f* silccore/SilcCommandAPI/silc_command_payload_encode_payload
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer 
+ *    silc_command_payload_encode_payload(SilcCommandPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_command_payload_encode but encodes the buffer from
+ *    SilcCommandPayload structure instead of raw data.
+ *
+ ***/
 SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload);
+
+/****f* silccore/SilcCommandAPI/silc_command_payload_encode_va
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
+ *                                              uint16 ident, 
+ *                                              uint32 argc, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Encodes Command payload with variable argument list. The arguments
+ *    must be: uint32, unsigned char *, unsigned int, ... One 
+ *    {uint32, unsigned char * and unsigned int} forms one argument, 
+ *    thus `argc' in case when sending one {uint32, unsigned char * 
+ *    and uint32} equals one (1) and when sending two of those it
+ *    equals two (2), and so on. This has to be preserved or bad things
+ *    will happen. The variable arguments is: {type, data, data_len}.
+ *
+ ***/
 SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
 					  uint16 ident, 
 					  uint32 argc, ...);
+
+/****f* silccore/SilcCommandAPI/silc_command_payload_encode_vap
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
+ *                                               uint16 ident, 
+ *                                               uint32 argc, va_list ap);
+ *
+ * DESCRIPTION
+ *
+ *    This is equivalent to the silc_command_payload_encode_va except
+ *    takes the va_list as argument.
+ *
+ ***/
 SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
 					   uint16 ident, 
 					   uint32 argc, va_list ap);
+
+/****f* silccore/SilcCommandAPI/silc_command_reply_payload_encode_va
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer 
+ *    silc_command_reply_payload_encode_va(SilcCommand cmd, 
+ *                                         SilcCommandStatus status,
+ *                                         uint16 ident,
+ *                                         uint32 argc, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_command_payload_encode_va except that this is used to 
+ *    encode strictly command reply packets. The command status message
+ *    to be returned is sent as extra argument to this function. The `argc'
+ *    must not count `status' as on argument.
+ *
+ ***/
 SilcBuffer 
 silc_command_reply_payload_encode_va(SilcCommand cmd, 
 				     SilcCommandStatus status,
 				     uint16 ident,
 				     uint32 argc, ...);
-void silc_command_free_payload(SilcCommandPayload payload);
+
+/****f* silccore/SilcCommandAPI/silc_command_free
+ *
+ * SYNOPSIS
+ *
+ *    void silc_command_payload_free(SilcCommandPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Frees the Command Payload and all data in it.
+ *
+ ***/
+void silc_command_payload_free(SilcCommandPayload payload);
+
+/****f* silccore/SilcCommandAPI/silc_command_get
+ *
+ * SYNOPSIS
+ *
+ *    SilcCommand silc_command_get(SilcCommandPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Return the command from the payload.
+ *
+ ***/
 SilcCommand silc_command_get(SilcCommandPayload payload);
+
+/****f* silccore/SilcCommandAPI/silc_command_get_args
+ *
+ * SYNOPSIS
+ *
+ *    SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Return the Arguments Payload containing the arguments from the
+ *    Command Payload. The caller must not free it.
+ *
+ ***/
 SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload);
+
+/****f* silccore/SilcCommandAPI/silc_command_get_ident
+ *
+ * SYNOPSIS
+ *
+ *    uint16 silc_command_get_ident(SilcCommandPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Return the command identifier from the payload. The identifier can
+ *    be used to identify which command reply belongs to which command.
+ *    The client sets the identifier to the payload and server must return
+ *    the same identifier in the command reply.
+ *
+ ***/
 uint16 silc_command_get_ident(SilcCommandPayload payload);
+
+/****f* silccore/SilcCommandAPI/silc_command_set_ident
+ *
+ * SYNOPSIS
+ *
+ *    void silc_command_set_ident(SilcCommandPayload payload, uint16 ident);
+ *
+ * DESCRIPTION
+ *
+ *    Function to set identifier to already allocated Command Payload. Command
+ *    payloads are frequentlly resent in SILC and thusly this makes it easy
+ *    to set the identifier without encoding new Command Payload. 
+ *
+ ***/
 void silc_command_set_ident(SilcCommandPayload payload, uint16 ident);
+
+/****f* silccore/SilcCommandAPI/silc_command_set_command
+ *
+ * SYNOPSIS
+ *
+ *    void silc_command_set_command(SilcCommandPayload payload, 
+ *                                  SilcCommand command);
+ *
+ * DESCRIPTION
+ *
+ *    Function to set the command to already allocated Command Payload. This
+ *    makes it easy to change the command in the payload without encoding new
+ *    Command Payload.
+ *
+ ***/
 void silc_command_set_command(SilcCommandPayload payload, SilcCommand command);
 
 #endif

@@ -249,7 +249,7 @@ void silc_server_command_free(SilcServerCommandContext ctx)
 		  ctx->users));
   if (ctx->users < 1) {
     if (ctx->payload)
-      silc_command_free_payload(ctx->payload);
+      silc_command_payload_free(ctx->payload);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
     if (ctx->sock)

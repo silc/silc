@@ -115,7 +115,7 @@ void silc_server_command_reply_process(SilcServer server,
 void silc_server_command_reply_free(SilcServerCommandReplyContext cmd)
 {
   if (cmd) {
-    silc_command_free_payload(cmd->payload);
+    silc_command_payload_free(cmd->payload);
     if (cmd->sock)
       silc_socket_free(cmd->sock); /* Decrease the reference counter */
     silc_free(cmd);

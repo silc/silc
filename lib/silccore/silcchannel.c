@@ -147,7 +147,7 @@ SilcBuffer silc_channel_payload_encode(unsigned char *channel_name,
   return buffer;
 }
 
-/* Free's Channel Payload */
+/* Frees Channel Payload */
 
 void silc_channel_payload_free(SilcChannelPayload payload)
 {
@@ -221,7 +221,7 @@ uint32 silc_channel_get_mode(SilcChannelPayload payload)
 /* Channel Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcChannelMessagePayloadStruct {
-  uint16 flags;
+  SilcMessageFlags flags;
   uint16 data_len;
   unsigned char *data;
   unsigned char *mac;
@@ -398,7 +398,7 @@ void silc_channel_message_payload_free(SilcChannelMessagePayload payload)
 
 /* Return flags */
 
-uint16 
+SilcMessageFlags
 silc_channel_message_get_flags(SilcChannelMessagePayload payload)
 {
   return payload->flags;
@@ -521,7 +521,7 @@ SilcBuffer silc_channel_key_payload_encode(uint16 id_len,
   return buffer;
 }
 
-/* Free's Channel Key Payload */
+/* Frees Channel Key Payload */
 
 void silc_channel_key_payload_free(SilcChannelKeyPayload payload)
 {

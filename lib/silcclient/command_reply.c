@@ -193,7 +193,7 @@ char *silc_client_command_status_message(SilcCommandStatus status)
 void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
 {
   if (cmd) {
-    silc_command_free_payload(cmd->payload);
+    silc_command_payload_free(cmd->payload);
     silc_free(cmd);
   }
 }
