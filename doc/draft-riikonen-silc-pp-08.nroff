@@ -1344,12 +1344,12 @@ o Argument Nums (1 byte) - Indicates the number of Argument
   arguments to be sent along the notify message.
 .in 3
 
-The following list of currently defined notify types.  The format for
+Following the list of currently defined notify types.  The format for
 notify arguments is same as in SILC commands described in [SILC4].
 Note that all IDs sent in arguments are sent inside ID Payload.  Also
-note that all passphrases that may be sent inside arguments MUST be
-UTF-8 [RFC2279] encoded.  Also note that all public keys or certificates
-sent inside arguments are actually Public Key Payloads.
+note that all strings sent as arguments MUST be UTF-8 [RFC3629] encoded,
+unless otherwise defined.  Also note that all public keys or
+certificates sent inside arguments are actually Public Key Payloads.
 
 
 .in 6
@@ -1361,7 +1361,7 @@ sent inside arguments are actually Public Key Payloads.
       Max Arguments:  1
           Arguments:  (1) <message>
 
-      The <message> is implementation specific free UTF-8 text string.
+      The <message> is implementation specific free text string.
       Receiver MAY ignore this message.
 
 
@@ -1372,7 +1372,7 @@ sent inside arguments are actually Public Key Payloads.
       is sent to local servers on the channel, but MUST NOT be sent
       to clients on the channel.  Router MUST broadcast this to its
       primary router and to local servers on the channel.  When a client
-      was directly invited to the channel this is also sent to that 
+      was directly invited to the channel this is also sent to that
       client.  In this case the packet is destined to the client.
 
       Max Arguments:  5
@@ -1392,7 +1392,7 @@ sent inside arguments are actually Public Key Payloads.
       The <invite list> format is defined in [SILC4] with
       SILC_COMMAND_INVITE command.  When this notify is destined to
       a client the <add | del> and <invite list> MUST NOT be sent.
-      When <add | del> is used  to announce information during server 
+      When <add | del> is used  to announce information during server
       connecting phase the argument type MUST be 0x03.  See section
       4.2.1 in [SILC1] for more information.
 
@@ -1560,7 +1560,7 @@ sent inside arguments are actually Public Key Payloads.
           Arguments:  (1) <motd>
 
       The <motd> is the Message of the Day.  This notify MAY be
-      ignored.
+      ignored and is OPTIONAL.
 
 
 10    SILC_NOTIFY_TYPE_CHANNEL_CHANGE
@@ -1618,8 +1618,8 @@ sent inside arguments are actually Public Key Payloads.
                       (3) <Kicker's Client ID>
 
       The <Client ID> is the client which was kicked from the channel.
-      The kicker may have set the <comment> to indicate the reason for
-      the kicking.  The <Kicker's Client ID> is the kicker.
+      The kicker may have set the <comment> string to indicate the
+      reason for the kicking.  The <Kicker's Client ID> is the kicker.
 
 
 13    SILC_NOTIFY_TYPE_KILLED
@@ -1641,9 +1641,9 @@ sent inside arguments are actually Public Key Payloads.
                       (3) <Killer's ID>
 
       The <Client ID> is the client which was killed from the network.
-      The killer may have set the <comment> to indicate the reason for
-      the killing.  The <Killer's ID> is the killer, which may be
-      client but also router server.
+      The killer may have set the  <comment> string to indicate the
+      reason for the killing.  The <Killer's ID> is the killer, which
+      may be client but also router server.
 
 
 14    SILC_NOTIFY_TYPE_UMODE_CHANGE
@@ -1675,7 +1675,7 @@ sent inside arguments are actually Public Key Payloads.
       from ban list.  The <ban list> indicates the information to be
       added to or removed from the ban list.  The <ban list> format
       format is defined in [SILC4] with SILC_COMMAND_BAN command.
-      When <add | del> is used  to announce information during server 
+      When <add | del> is used  to announce information during server
       connecting phase the argument type MUST be 0x03.  See section
       4.2.1 in [SILC1] for more information.
 
@@ -1769,7 +1769,7 @@ Figure 14:  Error Payload
 
 .in 6
 o Error Message (variable length) - Human readable error
-  message as UTF-8 string.
+  message.
 .in 3
 
 
@@ -2377,9 +2377,9 @@ o Hostname Length (2 bytes) - Indicates the length of the
   Hostname field.
 
 o Hostname (variable length) - The hostname or IP address where
-  the SKE protocol is running.  The sender MAY fill this field
-  when sending the payload.  If the receiver sends this payload
-  as reply to the request it MUST fill this field.
+  the SKE protocol is running, as UTF-8 encoded string.  The sender
+  MAY fill this field when sending the payload.  If the receiver
+  sends this payload as reply to the request it MUST fill this field.
 
 o Port (4 bytes) - The port where the SKE protocol is bound.
   The sender MAY fill this field when sending the payload.  If
@@ -3002,8 +3002,8 @@ security of this protocol.
 [SFTP]       Ylonen T., and Lehtinen S., "Secure Shell File Transfer
              Protocol", Internet Draft, March 2001.
 
-[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
-             10646", RFC 2279, January 1998.
+[RFC3629]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 3629, November 2003.
 
 
 .ti 0

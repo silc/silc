@@ -213,10 +213,9 @@ ID, length of the ID and the actual ID data.  This way variable length
 ID's can be sent as arguments.
 
 All passphrases that may be sent in commands as arguments MUST be
-UTF-8 [RFC2279] encoded.  All strings, with exeption of nicknames and
-channel names [SILC1], are UTF-8 encoded.  This includes strings like
-algorithm names, quit, kick and kill messages, service identifiers and
-others.
+UTF-8 [RFC3629] encoded.  All strings sent as arguments in command and
+command reply are also UTF-8 encoded, unless otherwise defined.  See
+the [SILC1] for general UTF-8 definition in SILC protocol.
 
 All public keys and certificates that are sent as arguments are actually
 Public Key Payloads [SILC2].  This way it is possible to send different
@@ -260,9 +259,9 @@ List of all defined commands in SILC follows.
 
         It is also possible to search the user by Client ID.  If the
         <Client ID> is provided server MUST use it as the search value
-        instead of the <nickname>.  It is also possible to define multiple 
-        Client ID's to search multiple users sending only one WHOIS 
-        command.  In this case the Client ID's are appended as normal 
+        instead of the <nickname>.  It is also possible to define multiple
+        Client ID's to search multiple users sending only one WHOIS
+        command.  In this case the Client ID's are appended as normal
         arguments.
 
         The <Requested Attributes> is defined in [ATTRS] and can be used
@@ -280,8 +279,8 @@ List of all defined commands in SILC follows.
         to request all users on some server.  The WHOIS requests MUST
         be based on explicit nickname request.
 
-        The WHOIS request MUST be always sent to the router by normal 
-        server so that all users are searched.  However, the server still 
+        The WHOIS request MUST be always sent to the router by normal
+        server so that all users are searched.  However, the server still
         MUST search its locally connected clients.  The router MUST send
         this command to the server which owns the requested client, if
         the router is unable to provide all mandatory information about
@@ -489,9 +488,8 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <nickname>
 
         Set/change nickname.  This command is used to set nickname for
-        user.  Nickname MUST NOT include any whitespaces (` '),
-        non-printable characters, commas (`,'), '@', '!' or any wildcard
-        characters.
+        user.  See [SILC1] for definition of correctly formatted
+        nickname.
 
         When nickname is changed new Client ID is generated.  Server MUST
         distribute SILC_NOTIFY_TYPE_NICK_CHANGE to local clients on the
@@ -932,10 +930,8 @@ List of all defined commands in SILC follows.
         created.  If server is normal server this command MUST be sent
         to router which will create the channel.  The channel MAY be
         protected with passphrase.  If this is the case the passphrase
-        MUST be sent along the join command.
-
-        The name of the <channel> MUST NOT include any spaces (` '),
-        non-printable characters, commas (`,') or any wildcard characters.
+        MUST be sent along the join command.  See the [SILC1] for
+        definition of correctly formatted channel name, <channel>.
 
         The second argument <Client ID> is the Client ID of the client
         which is joining to the client.  When client sends this command
@@ -2004,7 +2000,7 @@ List of all defined commands in SILC follows.
         remote service.  The authentication to a service may be based
         on previous agreement with the requester and the service
         provider.  The command MAY also take additional service
-        specific arguments.  The <service name> is UTF-8 string.
+        specific arguments.
 
         This document does not specify any services.  How the services
         are configured and put available in a server is also out of
@@ -2524,8 +2520,8 @@ security of this protocol.
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
-[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
-             10646", RFC 2279, January 1998.
+[RFC3629]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 3629, November 2003.
 
 [ATTRS]      Riikonen, P., "User Online Presence and Information
              Attributes", Internet Draft, May 2002.

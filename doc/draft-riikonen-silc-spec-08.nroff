@@ -113,9 +113,11 @@ Table of Contents
       3.10.5 Compression Algorithms ............................. 28
   3.11 SILC Public Key .......................................... 29
   3.12 SILC Version Detection ................................... 31
-  3.13 Backup Routers ........................................... 31
-      3.13.1 Switching to Backup Router ......................... 33
-      3.13.2 Resuming Primary Router ............................ 34
+  3.13 UTF-8 Strings in SILC .................................... XXXX
+      3.13.1 UTF-8 Nicknames and Channel Names .................. XXXX
+  3.14 Backup Routers ........................................... 31
+      3.14.1 Switching to Backup Router ......................... 33
+      3.14.2 Resuming Primary Router ............................ 34
 4 SILC Procedures ............................................... 36
   4.1 Creating Client Connection ................................ 37
   4.2 Creating Server Connection ................................ 38
@@ -466,8 +468,8 @@ host names to be used along with the nicknames on user interface to
 identify specific users when sending messages.  This feature of SILC
 makes IRC style nickname-wars obsolete as no one owns their nickname;
 there can always be someone else with the same nickname.  Also, any kind
-of nickname registering service becomes obsolete.  The maximum length of
-nickname is 128 bytes.
+of nickname registering service becomes obsolete.  See the section 3.13.1
+for more information about nicknames.
 
 
 .ti 0
@@ -506,7 +508,11 @@ o MD5 hash - MD5 hash value of the lowercase nickname is
   truncated taking 88 bits from the start of the hash value.
   This hash value is used to search the user's Client ID
   from the ID lists.  Note that the nickname MUST be in
-  lowercase format.
+  lowercase format before computing the hash value.  Since
+  nicknames are UTF-8 encoded, some characters cannot be
+  converted to lower case.  All characters that has a
+  lowercase alternative in the Unicode standard MUST be
+  converted to lowercase.
 
 .in 3
 Collisions could occur when more than 2^8 clients using same nickname
@@ -754,14 +760,12 @@ channel.
 
 Channel names are unique although the real uniqueness comes from 64 bit
 Channel ID.  However, channel names are still unique and no two global
-channels with same name may exist.  The channel name is a string of
-maximum length of 256 bytes.  Channel names MUST NOT contain any
-whitespaces (`  '), any non-printable ASCII characters, commas (`,')
-and wildcard characters.
+channels with same name may exist.  See the section 3.13.1 for more
+information about channel names.
 
-Channels can have operators that can administrate the channel and
-operate all of its modes.  The following operators on channel exist on
-the SILC network.
+Channels can have operators that can administrate the channel and operate
+all of its modes.  The following operators on channel exist on the
+SILC network.
 
 .in 6
 o Channel founder - When channel is created the joining client becomes
@@ -1082,7 +1086,7 @@ to connect to server without explicit authentication.  Servers are
 REQUIRED to use authentication protocol when connecting.  The
 authentication may be based on passphrase (pre-shared secret) or public
 key based on digital signatures.  All passphrases sent in SILC protocol
-MUST be UTF-8 [RFC2279] encoded. The connection authentication protocol
+MUST be UTF-8 [RFC3629] encoded. The connection authentication protocol
 is described in detail in [SILC3].
 
 
@@ -1621,7 +1625,70 @@ SILC-1.2-2.4.5 Vendor Limited
 
 
 .ti 0
-3.13 Backup Routers
+3.13 UTF-8 Strings in SILC
+
+By default all strings that are sent in SILC protocol MUST be UTF-8
+[RFC3269] encoded, unless otherwise defined.  This means that any string
+sent inside, for example, command, command reply, notify or any packet
+payload is UTF-8 encoded.  Also nicknames, channel names, server names,
+and hostnames are UTF-8 encoded.  This definition does not affect
+messages sent in SILC, as the Message Payload provides its own mechanism
+to indicate whether a message is UTF-8 text message, data message, which
+might use its own character encoding, or pure binary message [SILC2].
+
+Certain limitations are imposed on the UTF-8 encoded strings in SILC.
+The UTF-8 encoded strings MUST NOT include any characters that are
+marked in the Unicode standard as control codes, Unicode noncharacters,
+reserved or private range characters, or any other illegal Unicode
+characters.  Also the BOM (Byte-Order Mark) MUST NOT be used as byte
+order signature in UTF-8 encoded strings.
+
+Because of these limitations on the UTF-8 encoded strings the
+implementation may need to have access to full Unicode implementation
+to be able to validate the contents of the strings.  This is especially
+important in server implementation because server must verify that,
+for example, nicknames does not include any prohibited characters.
+Server also need to have the capability to convert character case from
+upper case to lower case characters, when applicable.
+
+On user interface where UTF-8 strings are displayed the implementation
+is RECOMMENDED to escape any character that it is unable to render
+properly.  The escaping may be done for example as described in
+[RFC2253].
+
+
+.ti 0
+3.13.1 UTF-8 Nicknames and Channel Names
+
+The nicknames and channel names are also UTF-8 encoded in SILC protocol.
+As these strings may be used as message destination indicator on the
+user interface certain additional limitations has been imposed to it.
+In addition of general UTF-8 string limitations described in previous
+section, the UTF-8 encoded nickname and channel name strings MUST NOT
+include any characters that has been marked in the Unicode standard as
+space (white space) characters, line and paragraph separators,
+mathematical and currency symbol characters, or any other symbol
+characters, special characters or tags.  In addition nicknames and
+channel names MUST NOT include commas (','), '@', '!' or any wildcard
+characters.
+
+This definition means that these strings generally may only include
+letters, numbers, most punctuation characters and some other characters.
+For practical reasons all symbol characters and many other special
+characters are prohibited.  Conforming implementation MUST treat
+strings with prohibited characters as malformed strings.
+
+The length of a nickname string in SILC MUST NOT exceed 128 bytes.
+The length of a channel name string in SILC MUST NOT exceed 256 bytes.
+Since these strings are UTF-8 encoded the length of one character
+may be longer than one byte.  This means that the character length
+of these strings may be shorter than the maximum length of the string
+in bytes.  The minimum length of these strings MUST be at least one
+character, which may be one byte or more in length.
+
+
+.ti 0
+3.14 Backup Routers
 
 Backup routers may exist in the cell in addition to the primary router.
 However, they must not be active routers or act as routers in the cell.
@@ -1702,7 +1769,7 @@ router as described above.
 
 
 .ti 0
-3.13.1 Switching to Backup Router
+3.14.1 Switching to Backup Router
 
 When the primary router of the cell becomes unresponsive, for example
 by sending EOF to the connection, all the parties of this protocol MUST
@@ -1750,7 +1817,7 @@ and Servers.
 
 
 .ti 0
-3.13.2 Resuming Primary Router
+3.14.2 Resuming Primary Router
 
 Usually the primary router is unresponsive only a short period of time
 and it is intended that the original router of the cell will resume
@@ -2009,7 +2076,7 @@ MUST be announced by compiling a list of Notify Payloads with the
 SILC_NOTIFY_TOPIC_SET notify type into the SILC_PACKET_NOTIFY packet.
 Also, channel's invite and ban lists MUST be announced by compiling list
 of Notify Payloads with the SILC_NOTIFY_TYPE_INVITE and
-SILC_NOTIFY_TYPE_BAN notify types, respectively, into the 
+SILC_NOTIFY_TYPE_BAN notify types, respectively, into the
 SILC_PACKET_NOTIFY packet.
 
 The router which receives these lists MUST process them and broadcast
@@ -2539,8 +2606,8 @@ should have a forum to discuss the cell management issues.
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
-[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
-             10646", RFC 2279, January 1998.
+[RFC3629]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 3629, November 2003.
 
 [RFC1321]    Rivest R., "The MD5 Message-Digest Algorithm", RFC 1321,
              April 1992.
