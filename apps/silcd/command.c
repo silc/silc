@@ -1237,13 +1237,23 @@ SILC_SERVER_CMD_FUNC(invite)
 			 silc_argument_get_arg_type(cmd->args, 3, NULL),
 			 list);
 
+  /* Send invite list back only if the list was modified, or now arguments
+     was given. */
+  type = 0;
+  argc = silc_argument_get_arg_num(cmd->args);
+  if (argc == 1)
+    type = 1;
+  if (silc_argument_get_arg_type(cmd->args, 3, &len))
+    type = 1;
+
   /* Send command reply */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INVITE,
 						SILC_STATUS_OK, 0, ident, 2,
 						2, tmp, len,
-						3, list ? list->data : NULL,
-						list ? list->len : 0);
+						3, type && list ? 
+						list->data : NULL,
+						type && list ? list->len : 0);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);

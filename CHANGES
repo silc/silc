@@ -1,3 +1,9 @@
+Wed Nov 27 16:01:11 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not send invite list back unless asked (when sending
+	  no arguments) or when list was modified.  Affected file
+	  silcd/command.c.
+
 Mon Nov 25 18:21:43 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* The silc_argument_get_[first/next] now return the argument
