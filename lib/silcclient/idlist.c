@@ -976,6 +976,8 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 {
   SilcServerEntry server_entry;
 
+  SILC_LOG_DEBUG(("Start"));
+
   server_entry = silc_calloc(1, sizeof(*server_entry));
   if (!server_entry || !server_id)
     return NULL;
@@ -1010,6 +1012,34 @@ bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
   silc_free(server->server_id);
   silc_free(server);
   return ret;
+}
+
+/* Updates the `server_entry' with the new information sent as argument. */
+
+void silc_client_update_server(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcServerEntry server_entry,
+			       const char *server_name,
+			       const char *server_info)
+{
+  SILC_LOG_DEBUG(("Start"));
+
+  if (server_name && (!server_entry->server_name ||
+		      strcmp(server_entry->server_name, server_name))) {
+
+    silc_idcache_del_by_context(conn->server_cache, server_entry);
+    silc_free(server_entry->server_name);
+    server_entry->server_name = strdup(server_name);
+    silc_idcache_add(conn->server_cache, server_entry->server_name,
+		     server_entry->server_id,
+		     server_entry, 0, NULL);
+  }
+
+  if (server_info && (!server_entry->server_info ||
+		      strcmp(server_entry->server_info, server_info))) {
+    silc_free(server_entry->server_info);
+    server_entry->server_info = strdup(server_info);
+  }
 }
 
 /* Formats the nickname of the client specified by the `client_entry'.

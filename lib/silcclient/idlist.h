@@ -24,7 +24,7 @@
 typedef enum {
   SILC_CLIENT_STATUS_NONE       = 0x0000,
   SILC_CLIENT_STATUS_RESOLVING  = 0x0001,
-} SilcClientStatus;
+} SilcEntryStatus;
 
 /* Client entry context. When client receives information about new client
    (it receives its ID, for example, by IDENTIFY request) we create new
@@ -43,7 +43,7 @@ struct SilcClientEntryStruct {
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
-  SilcClientStatus status;	/* Status mask */
+  SilcEntryStatus status;	/* Status mask */
   SilcHashTable channels;	/* All channels client has joined */
   unsigned char *key;		/* Set only if appliation provided the
 				   key material. NULL if the library 
@@ -67,6 +67,7 @@ struct SilcChannelEntryStruct {
   char *channel_name;
   SilcChannelID *id;
   SilcUInt32 mode;
+  SilcUInt16 resolve_cmd_ident;
 
   /* All clients that has joined this channel */
   SilcHashTable user_list;
@@ -74,7 +75,7 @@ struct SilcChannelEntryStruct {
   /* Channel keys */
   SilcCipher channel_key;                    /* The channel key */
   unsigned char *key;			     /* Raw key data */
-  SilcUInt32 key_len;
+  SilcUInt32 key_len;		             /* Raw key data length */
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
   SilcHmac hmac;			     /* Current HMAC */
   SilcDList private_keys;		     /* List of private keys or NULL */
@@ -95,6 +96,7 @@ struct SilcServerEntryStruct {
   char *server_name;
   char *server_info;
   SilcServerID *server_id;
+  SilcUInt16 resolve_cmd_ident;
 };
 
 /* Prototypes. These are used only by the library. Application should not
@@ -129,6 +131,11 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 				       const char *server_name,
 				       const char *server_info,
 				       SilcServerID *server_id);
+void silc_client_update_server(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcServerEntry server_entry,
+			       const char *server_name,
+			       const char *server_info);
 bool silc_client_replace_channel_id(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcChannelEntry channel,

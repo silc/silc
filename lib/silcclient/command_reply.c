@@ -432,7 +432,11 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 	  COMMAND_REPLY_ERROR;
 	return;
       }
+    } else {
+      silc_client_update_server(client, conn, server_entry, name, info);
     }
+
+    server_entry->resolve_cmd_ident = 0;
 
     /* Notify application */
     if (notify)
