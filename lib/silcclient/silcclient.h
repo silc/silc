@@ -647,6 +647,7 @@ int silc_client_init(SilcClient client);
  *
  *    Runs the client. This starts the scheduler from the utility library.
  *    When this functions returns the execution of the appliation is over.
+ *    The client must be initialized before calling this.
  *
  ***/
 void silc_client_run(SilcClient client);
