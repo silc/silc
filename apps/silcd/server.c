@@ -2837,6 +2837,9 @@ void silc_server_send_notify_on_channels(SilcServer server,
   for (i = 0; i < client->channel_count; i++) {
     channel = client->channel[i];
 
+    if (!channel)
+      continue;
+
     /* Send the message to clients on the channel's client list. */
     silc_list_start(channel->user_list);
     while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
