@@ -16,8 +16,6 @@
 # <name>_DISTLABEL                     Preprocessor label
 # <name>_EXTRA_DIST                    List of extra files or directories
 #
-# DISTRIBUTIONS=<distributions>
-#
 # The _SUBDIRS define all the subdirectories that the Makefile should
 # traverse.  The SUBDIRS_<dir> defines all subdirectories in the 
 # subdirectory <dir>.  The DISTLABEL defines a preprocessor label
