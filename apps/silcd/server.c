@@ -2782,8 +2782,11 @@ void silc_server_send_notify_dest(SilcServer server,
 				  const char *fmt, ...)
 {
   va_list ap;
+  char *cp;
   unsigned char buf[4096];
   SilcBuffer packet;
+
+  cp = (char *)fmt;
 
   if (argc)
     va_start(ap, fmt);
@@ -2793,9 +2796,10 @@ void silc_server_send_notify_dest(SilcServer server,
     vsprintf(buf, fmt, ap);
     va_end(ap);
     argc = 0;
+    cp = buf;
   }
 
-  packet = silc_notify_payload_encode(type, (char *)fmt, argc, ap);
+  packet = silc_notify_payload_encode(type, cp, argc, ap);
   silc_server_packet_send_dest(server, sock, SILC_PACKET_NOTIFY, 0, 
 			       dest_id, dest_id_type,
 			       packet->data, packet->len, FALSE);
@@ -2813,8 +2817,11 @@ void silc_server_send_notify_to_channel(SilcServer server,
 					const char *fmt, ...)
 {
   va_list ap;
+  char *cp;
   unsigned char buf[4096];
   SilcBuffer packet;
+
+  cp = (char *)fmt;
 
   if (argc)
     va_start(ap, fmt);
@@ -2824,9 +2831,10 @@ void silc_server_send_notify_to_channel(SilcServer server,
     vsprintf(buf, fmt, ap);
     va_end(ap);
     argc = 0;
+    cp = buf;
   }
 
-  packet = silc_notify_payload_encode(type, (char *)fmt, argc, ap);
+  packet = silc_notify_payload_encode(type, cp, argc, ap);
   silc_server_packet_send_to_channel(server, channel, 
 				     SILC_PACKET_NOTIFY,
 				     packet->data, packet->len, FALSE);
