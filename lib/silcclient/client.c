@@ -771,22 +771,11 @@ void silc_client_packet_parse(SilcPacketParserContext *parser_context)
   SilcClient client = (SilcClient)parser_context->context;
 
   /* Parse the packet */
-
-#if 0
-  /* If REKEY protocol is active we must proccess the packets synchronously
-     since we must assure that incoming packets that are encrypted with
-     the old key is processed before the new keys is set to use. */
-  if (SILC_CLIENT_IS_REKEY(parser_context->sock))
-    silc_client_packet_parse_real(client->timeout_queue, SILC_TASK_READ,
-				  (void *)parser_context, 
-				  parser_context->sock->sock);
-  else
-#endif
-    silc_task_register(client->timeout_queue, parser_context->sock->sock, 
-		       silc_client_packet_parse_real,
-		       (void *)parser_context, 0, 1, 
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_NORMAL);
+  silc_task_register(client->timeout_queue, parser_context->sock->sock, 
+		     silc_client_packet_parse_real,
+		     (void *)parser_context, 0, 1, 
+		     SILC_TASK_TIMEOUT,
+		     SILC_TASK_PRI_NORMAL);
 }
 
 /* Parses the packet type and calls what ever routines the packet type

@@ -272,17 +272,11 @@ void silc_server_notify(SilcServer server,
     if (tmp_len > 128)
       tmp = NULL;
 
-    /* Remove the client from all channels */
-    silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, TRUE);
+    /* Remove the client from all channels. */
+    silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, FALSE);
 
     client->data.registered = FALSE;
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
-
-#if 0
-    /* Remove the client entry */
-    if (!silc_idlist_del_client(server->global_list, client))
-      silc_idlist_del_client(server->local_list, client);
-#endif
     break;
 
   case SILC_NOTIFY_TYPE_TOPIC_SET:

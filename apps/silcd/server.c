@@ -1517,19 +1517,11 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context)
 
   switch (sock->type) {
   case SILC_SOCKET_TYPE_UNKNOWN:
+  case SILC_SOCKET_TYPE_CLIENT:
     /* Parse the packet with timeout */
     silc_task_register(server->timeout_queue, sock->sock,
 		       silc_server_packet_parse_real,
 		       (void *)parser_context, 0, 100000,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_NORMAL);
-    break;
-  case SILC_SOCKET_TYPE_CLIENT:
-    /* Parse the packet with timeout (unless protocol is active) */
-    silc_task_register(server->timeout_queue, sock->sock,
-		       silc_server_packet_parse_real,
-		       (void *)parser_context, 0, 
-		       (sock->protocol ? 1 : 100000),
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
     break;
