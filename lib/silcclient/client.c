@@ -1285,17 +1285,17 @@ char *silc_client_chmode(unsigned int mode, SilcChannelEntry channel)
     strncat(string, "a", 1);
 
   if (mode & SILC_CHANNEL_MODE_CIPHER) {
-    char cipher[50];
+    char cipher[30];
     memset(cipher, 0, sizeof(cipher));
-    snprintf(cipher, sizeof(cipher), "c (%s)", 
+    snprintf(cipher, sizeof(cipher), " c (%s)", 
 	     channel->channel_key->cipher->name);
     strncat(string, cipher, strlen(cipher));
   }
 
   if (mode & SILC_CHANNEL_MODE_HMAC) {
-    char hmac[50];
+    char hmac[30];
     memset(hmac, 0, sizeof(hmac));
-    snprintf(hmac, sizeof(hmac), "h (%s)", 
+    snprintf(hmac, sizeof(hmac), " h (%s)", 
 	     channel->hmac->hmac->name);
     strncat(string, hmac, strlen(hmac));
   }

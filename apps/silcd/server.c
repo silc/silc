@@ -2477,6 +2477,9 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
     return NULL;
   }
 
+  entry->cipher = strdup(cipher);
+  entry->hmac_name = strdup(hmac);
+
   /* Now create the actual key material */
   silc_server_create_channel_key(server, entry, 
 				 silc_cipher_get_key_len(key) / 8);
@@ -2669,6 +2672,10 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
     channel = NULL;
     goto out;
   }
+
+  if (channel->cipher)
+    silc_free(channel->cipher);
+  channel->cipher = strdup(cipher);
 
   /* Save the key */
   channel->key_len = tmp_len * 8;

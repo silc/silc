@@ -947,7 +947,8 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcChannelEntry channel,
 				   unsigned int mode_mask,
 				   SilcClientID *client_id,
-				   unsigned int client_id_len)
+				   unsigned int client_id_len,
+				   char *cipher, char *hmac)
 {
   SilcBuffer idp;
   unsigned char mode[4];
@@ -957,8 +958,10 @@ void silc_server_send_notify_cmode(SilcServer server,
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
-			       2, idp->data, idp->len,
-			       mode, 4);
+			       4, idp->data, idp->len,
+			       mode, 4,
+			       cipher, cipher ? strlen(cipher) : 0,
+			       hmac, hmac ? strlen(hmac) : 0);
   silc_buffer_free(idp);
 }
 

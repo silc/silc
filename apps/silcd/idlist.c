@@ -629,6 +629,10 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
       memset(entry->key, 0, entry->key_len / 8);
       silc_free(entry->key);
     }
+    if (entry->cipher)
+      silc_free(entry->cipher);
+    if (entry->hmac_name)
+      silc_free(entry->hmac_name);
 
     /* Free all data, free also any reference from the client's channel
        list since they share the same memory. */

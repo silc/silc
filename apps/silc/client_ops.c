@@ -183,10 +183,15 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
     client_entry = va_arg(vp, SilcClientEntry);
-    tmp = silc_client_chmode(va_arg(vp, unsigned int));
+    tmp_int = va_arg(vp, unsigned int);
+    (void)va_arg(vp, char *);
+    (void)va_arg(vp, char *);
     channel_entry = va_arg(vp, SilcChannelEntry);
+    
+    tmp = silc_client_chmode(tmp_int, channel_entry);
+    
     if (tmp)
-      snprintf(message, sizeof(message), "%s changed channel mode to +%s", 
+      snprintf(message, sizeof(message), "%s changed channel mode to +%s",
 	       client_entry->nickname, tmp);
     else
       snprintf(message, sizeof(message), "%s removed all channel modes", 
@@ -596,7 +601,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  client->ops->say(client, conn, "Topic for %s: %s", 
 			   app->screen->bottom_line->channel, topic);
 	
-	app->screen->bottom_line->channel_mode = silc_client_chmode(mode);
+	app->screen->bottom_line->channel_mode = 
+	  silc_client_chmode(mode, channel);
 	silc_screen_print_bottom_line(app->screen, 0);
 
 	/* Resolve the client information */

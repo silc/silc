@@ -1229,11 +1229,16 @@ ID's sent in arguments are sent inside ID Payload.
       Sent when channel mode has changed.  This type must be sent only to
       the clients who is joined on the channel whose mode was changed.
 
-      Max Arguments:  2
+      Max Arguments:  4
           Arguments:  (1) <Client ID>  (2) <mode mask>
+                      (3) [<cipher>]   (4) <[hmac>]     
 
       The <Client ID> is the client who changed the mode.  The <mode mask>
-      is the new mode mask of the channel.
+      is the new mode mask of the channel.  The client can safely ignore
+      the <cipher> argument since the SILC_PACKET_CHANNEL_KEY packet will
+      force the new channel key change anyway.  The <hmac> argument is
+      important since the client is responsible of setting the new HMAC
+      and the hmac key into use.
 
 
 8     SILC_NOTIFY_TYPE_CUMODE_CHANGE

@@ -356,6 +356,11 @@ struct SilcClientEntryStruct {
        Default cipher of the channel. If this is NULL then server picks
        the cipher to be used. This can be set at SILC_COMMAND_JOIN.
 
+   char *hmac_name
+
+       Default hmac of the channel. If this is NULL then server picks
+       the cipher to be used. This can be set at SILC_COMMAND_JOIN.
+
    SilcServerEntry router
 
        This is a pointer to the server list. This is the router server 
@@ -388,6 +393,7 @@ struct SilcChannelEntryStruct {
   int global_users;
   char *topic;
   char *cipher;
+  char *hmac_name;
 
   unsigned int user_limit;
   unsigned char *passphrase;

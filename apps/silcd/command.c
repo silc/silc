@@ -3311,6 +3311,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcChannelClientEntry chl;
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask;
+  char *cipher = NULL, *hmac = NULL;
   unsigned int argc, mode_mask, tmp_len, tmp_len2;
   unsigned short ident = silc_command_get_ident(cmd->payload);
 
@@ -3392,45 +3393,24 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (mode_mask & SILC_CHANNEL_MODE_PRIVKEY) {
     /* Channel uses private keys to protect traffic. Client(s) has set the
        key locally they want to use, server does not know that key. */
-    /* Nothing interesting to do here now */
+    /* Nothing interesting to do here */
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
       /* The mode is removed and we need to generate and distribute
 	 new channel key. Clients are not using private channel keys
 	 anymore after this. */
 
-      /* XXX Duplicated code, make own function for this!! LEAVE uses this
-	 as well */
-
       /* Re-generate channel key */
       silc_server_create_channel_key(server, channel, 0);
       
-      /* Encode channel key payload to be distributed on the channel */
-      packet = 
-	silc_channel_key_payload_encode(tmp_len2, tmp_id,
-					strlen(channel->channel_key->
-					       cipher->name),
-					channel->channel_key->cipher->name,
-					channel->key_len / 8, channel->key);
-      
-      /* If we are normal server then we will send it to our router.  If we
-	 are router we will send it to all local servers that has clients on
-	 the channel */
-      if (server->server_type == SILC_SERVER) {
-	if (!server->standalone)
-	  silc_server_packet_send(server, 
-				  cmd->server->router->connection,
-				  SILC_PACKET_CHANNEL_KEY, 0, packet->data,
-				  packet->len, TRUE);
-      } else {
-	
-      }
-      
-      /* Send to locally connected clients on the channel */
-      silc_server_packet_send_local_channel(server, channel, 
-					    SILC_PACKET_CHANNEL_KEY, 0,
-					    packet->data, packet->len, FALSE);
-      silc_buffer_free(packet);
+      /* Send the channel key. This sends it to our local clients and if
+	 we are normal server to our router as well. */
+      silc_server_send_channel_key(server, NULL, channel, 
+				   server->server_type == SILC_ROUTER ? 
+				   FALSE : !server->standalone);
+
+      cipher = channel->channel_key->cipher->name;
+      hmac = channel->hmac->hmac->name;
     }
   }
   
@@ -3484,70 +3464,42 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (mode_mask & SILC_CHANNEL_MODE_CIPHER) {
     if (!(channel->mode & SILC_CHANNEL_MODE_CIPHER)) {
       /* Cipher to use protect the traffic */
-      unsigned int key_len;
 
       /* Get cipher */
-      tmp = silc_argument_get_arg_type(cmd->args, 8, NULL);
-      if (!tmp) {
+      cipher = silc_argument_get_arg_type(cmd->args, 5, NULL);
+      if (!cipher) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
 
-      /* XXX Duplicated code, make own function for this!! */
-    
       /* Delete old cipher and allocate the new one */
       silc_cipher_free(channel->channel_key);
-      if (!silc_cipher_alloc(tmp, &channel->channel_key)) {
+      if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	goto out;
       }
-      key_len = silc_cipher_get_key_len(channel->channel_key) / 8;
 
       /* Re-generate channel key */
-      silc_server_create_channel_key(server, channel, key_len);
+      silc_server_create_channel_key(server, channel, 0);
     
-      /* Encode channel key payload to be distributed on the channel */
-      packet = 
-	silc_channel_key_payload_encode(tmp_len2, tmp_id,
-					strlen(channel->channel_key->
-					       cipher->name),
-					channel->channel_key->cipher->name,
-					channel->key_len / 8, channel->key);
-    
-      /* If we are normal server then we will send it to our router.  If we
-	 are router we will send it to all local servers that has clients on
-	 the channel */
-      if (server->server_type == SILC_SERVER) {
-	if (!server->standalone)
-	  silc_server_packet_send(server, 
-				  cmd->server->router->connection,
-				  SILC_PACKET_CHANNEL_KEY, 0, packet->data,
-				  packet->len, TRUE);
-      } else {
-	
-      }
-    
-      /* Send to locally connected clients on the channel */
-      silc_server_packet_send_local_channel(server, channel, 
-					    SILC_PACKET_CHANNEL_KEY, 0,
-					  packet->data, packet->len, FALSE);
-      silc_buffer_free(packet);
+      /* Send the channel key. This sends it to our local clients and if
+	 we are normal server to our router as well. */
+      silc_server_send_channel_key(server, NULL, channel, 
+				   server->server_type == SILC_ROUTER ? 
+				   FALSE : !server->standalone);
     }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_CIPHER) {
       /* Cipher mode is unset. Remove the cipher and revert back to 
 	 default cipher */
-      char *cipher = channel->channel_key->cipher->name;
-
-      /* Generate new cipher and key for the channel */
-
-      /* XXX Duplicated code, make own function for this!! */
+      cipher = channel->cipher;
 
       /* Delete old cipher and allocate default one */
       silc_cipher_free(channel->channel_key);
-      if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
+      if (!silc_cipher_alloc(cipher ? cipher : "aes-256-cbc", 
+			     &channel->channel_key)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				   SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	goto out;
@@ -3556,32 +3508,66 @@ SILC_SERVER_CMD_FUNC(cmode)
       /* Re-generate channel key */
       silc_server_create_channel_key(server, channel, 0);
       
-      /* Encode channel key payload to be distributed on the channel */
-      packet = 
-	silc_channel_key_payload_encode(tmp_len2, tmp_id,
-					strlen(channel->channel_key->
-					       cipher->name),
-					channel->channel_key->cipher->name,
-					channel->key_len / 8, channel->key);
-      
-      /* If we are normal server then we will send it to our router.  If we
-	 are router we will send it to all local servers that has clients on
-	 the channel */
-      if (server->server_type == SILC_SERVER) {
-	if (!server->standalone)
-	  silc_server_packet_send(server, 
-				  cmd->server->router->connection,
-				  SILC_PACKET_CHANNEL_KEY, 0, packet->data,
-				  packet->len, TRUE);
-      } else {
-	
+      /* Send the channel key. This sends it to our local clients and if
+	 we are normal server to our router as well. */
+      silc_server_send_channel_key(server, NULL, channel, 
+				   server->server_type == SILC_ROUTER ? 
+				   FALSE : !server->standalone);
+    }
+  }
+
+  if (mode_mask & SILC_CHANNEL_MODE_HMAC) {
+    if (!(channel->mode & SILC_CHANNEL_MODE_HMAC)) {
+      /* HMAC to use protect the traffic */
+      unsigned char hash[32];
+
+      /* Get hmac */
+      hmac = silc_argument_get_arg_type(cmd->args, 6, NULL);
+      if (!hmac) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	goto out;
       }
-      
-      /* Send to locally connected clients on the channel */
-      silc_server_packet_send_local_channel(server, channel, 
-					    SILC_PACKET_CHANNEL_KEY, 0,
-					    packet->data, packet->len, FALSE);
-      silc_buffer_free(packet);
+
+      /* Delete old hmac and allocate the new one */
+      silc_hmac_free(channel->hmac);
+      if (!silc_hmac_alloc(hmac, NULL, &channel->hmac)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	goto out;
+      }
+
+      /* Set the HMAC key out of current channel key. The client must do
+	 this locally. */
+      silc_hash_make(channel->hmac->hash, channel->key, channel->key_len / 8, 
+		     hash);
+      silc_hmac_set_key(channel->hmac, hash, 
+			silc_hash_len(channel->hmac->hash));
+      memset(hash, 0, sizeof(hash));
+    }
+  } else {
+    if (channel->mode & SILC_CHANNEL_MODE_HMAC) {
+      /* Hmac mode is unset. Remove the hmac and revert back to 
+	 default hmac */
+      unsigned char hash[32];
+      hmac = channel->hmac_name;
+
+      /* Delete old hmac and allocate default one */
+      silc_hmac_free(channel->hmac);
+      if (!silc_hmac_alloc(hmac ? hmac : "hmac-sha1-96", NULL, 
+			   &channel->hmac)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	goto out;
+      }
+
+      /* Set the HMAC key out of current channel key. The client must do
+	 this locally. */
+      silc_hash_make(channel->hmac->hash, channel->key, channel->key_len / 8, 
+		     hash);
+      silc_hmac_set_key(channel->hmac, hash, 
+			silc_hash_len(channel->hmac->hash));
+      memset(hash, 0, sizeof(hash));
     }
   }
 
@@ -3591,16 +3577,19 @@ SILC_SERVER_CMD_FUNC(cmode)
   /* Send CMODE_CHANGE notify */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 2,
+				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 4,
 				     cidp->data, cidp->len, 
-				     tmp_mask, tmp_len);
+				     tmp_mask, tmp_len,
+				     cipher, cipher ? strlen(cipher) : 0,
+				     hmac, hmac ? strlen(hmac) : 0);
 
   /* Set CMODE notify type to network */
   if (!server->standalone)
     silc_server_send_notify_cmode(server, server->router->connection,
 				  server->server_type == SILC_ROUTER ? 
 				  TRUE : FALSE, channel,
-				  mode_mask, client->id, SILC_ID_CLIENT_LEN);
+				  mode_mask, client->id, SILC_ID_CLIENT_LEN,
+				  cipher, hmac);
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,

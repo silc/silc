@@ -1217,11 +1217,21 @@ SILC_CLIENT_CMD_FUNC(cmode)
     case 'c':
       if (add) {
 	mode |= SILC_CHANNEL_MODE_CIPHER;
-	type = 8;
+	type = 5;
 	arg = cmd->argv[3];
 	arg_len = cmd->argv_lens[3];
       } else {
 	mode &= ~SILC_CHANNEL_MODE_CIPHER;
+      }
+      break;
+    case 'h':
+      if (add) {
+	mode |= SILC_CHANNEL_MODE_HMAC;
+	type = 6;
+	arg = cmd->argv[3];
+	arg_len = cmd->argv_lens[3];
+      } else {
+	mode &= ~SILC_CHANNEL_MODE_HMAC;
       }
       break;
     default:

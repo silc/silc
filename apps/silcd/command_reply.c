@@ -722,6 +722,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     silc_free(id);
   }
 
+  if (entry->hmac_name && hmac) {
+    silc_free(entry->hmac_name);
+    entry->hmac_name = strdup(hmac->hmac->name);
+  }
+
   /* Get the ban list */
   tmp = silc_argument_get_arg_type(cmd->args, 8, &len);
   if (tmp) {

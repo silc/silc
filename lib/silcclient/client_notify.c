@@ -454,10 +454,28 @@ void silc_client_notify_by_server(SilcClient client,
     /* Save the new mode */
     channel->mode = mode;
 
+    /* Get the hmac */
+    tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
+    if (tmp) {
+      unsigned char hash[32];
+
+      if (channel->hmac)
+	silc_hmac_free(channel->hmac);
+      if (!silc_hmac_alloc(tmp, NULL, &channel->hmac))
+	goto out;
+
+      silc_hash_make(channel->hmac->hash, channel->key, channel->key_len / 8,
+		     hash);
+      silc_hmac_set_key(channel->hmac, hash, 
+			silc_hash_len(channel->hmac->hash));
+      memset(hash, 0, sizeof(hash));
+    }
+
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->ops->notify(client, conn, type, client_entry, mode, channel);
+    client->ops->notify(client, conn, type, client_entry, mode, NULL, 
+			tmp, channel);
     break;
 
   case SILC_NOTIFY_TYPE_CUMODE_CHANGE:

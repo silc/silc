@@ -74,9 +74,6 @@ TODO In SILC Server
  o TODO in commands (command.c and command_reply.c):
 
 	o RESTART is not implemented
-	o CMODE should be rewritten as it uses a lot duplicated code.
-	  Some of the modes may still not be implemented or is implemented
-	  the wrong way.
 	o In servers all command reply funtions should still call the
 	  pending command reply even if the reply was error.  In client
 	  it is not called but in server, I think, it must be called.

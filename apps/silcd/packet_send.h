@@ -127,7 +127,8 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcChannelEntry channel,
 				   unsigned int mode_mask,
 				   SilcClientID *client_id,
-				   unsigned int client_id_len);
+				   unsigned int client_id_len,
+				   char *cipher, char *hmac);
 void silc_server_send_notify_cumode(SilcServer server,
 				    SilcSocketConnection sock,
 				    int broadcast,

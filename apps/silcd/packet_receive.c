@@ -425,6 +425,26 @@ void silc_server_notify(SilcServer server,
     /* Change mode */
     channel->mode = mode;
     silc_free(channel_id);
+
+    /* Get the hmac */
+    tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
+    if (tmp) {
+      unsigned char hash[32];
+
+      if (channel->hmac)
+	silc_hmac_free(channel->hmac);
+      if (!silc_hmac_alloc(tmp, NULL, &channel->hmac))
+	goto out;
+
+      /* Set the HMAC key out of current channel key. The client must do
+	 this locally. */
+      silc_hash_make(channel->hmac->hash, channel->key, channel->key_len / 8, 
+		     hash);
+      silc_hmac_set_key(channel->hmac, hash, 
+			silc_hash_len(channel->hmac->hash));
+      memset(hash, 0, sizeof(hash));
+    }
+
     break;
 
   case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
