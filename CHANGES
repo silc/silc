@@ -1,3 +1,10 @@
+Thu Nov  7 10:05:28 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Move silc_client_packet_send back to internal, added
+	  silc_client_send_packet, a bit simpler function for application.
+	  Affected files lib/silcclient/silcclient.h, client.c and
+	  client_internal.h.
+
 Wed Nov  6 17:18:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed manual page installation patch by Ville Räsänen.
