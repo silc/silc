@@ -199,7 +199,7 @@ void silc_dlist_add(SilcDList list, void *context)
 {
   SilcDListEntry e = (SilcDListEntry)silc_malloc(sizeof(*e));
   if (!e)
-    return NULL;
+    return;
   e->context = context;
   silc_list_add(list->list, e);
 }

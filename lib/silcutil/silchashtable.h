@@ -89,8 +89,8 @@ typedef struct SilcHashTableListStruct SilcHashTableList;
 struct SilcHashTableListStruct {
   SilcHashTable ht;
   void *entry;
-  SilcUInt32 index;
-  bool auto_rehash;
+  unsigned int index        : 31;
+  unsigned int auto_rehash  : 1;
 };
 /***/
 
@@ -138,7 +138,7 @@ typedef bool (*SilcHashCompare)(void *key1, void *key2, void *user_context);
  * DESCRIPTION
  *
  *    A destructor callback that the library will call to destroy the 
- *    `key' and `context'.  The appliation provides the function when
+ *    `key' and `context'.  The application provides the function when
  *    allocating a new hash table. The `user_context' is application
  *    specific context and is delivered to the callback.
  *
