@@ -17,15 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
- *
- *
- */
 
 #include "serverincludes.h"
 
-const char server_version[] = "27062000";
+const char server_version[] = "28062000";
