@@ -51,7 +51,7 @@ static void silc_send_channel(SILC_SERVER_REC *server,
   SILC_CHANNEL_REC *rec;
   
   rec = silc_channel_find(server, channel);
-  if (rec == NULL)
+  if (rec == NULL || rec->entry == NULL)
     return;
   
   silc_client_send_channel_message(silc_client, server->conn, rec->entry, 

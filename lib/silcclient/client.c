@@ -1051,6 +1051,9 @@ void silc_client_packet_send(SilcClient client,
 {
   SilcPacketContext packetdata;
 
+  if (!sock)
+    return;
+
   SILC_LOG_DEBUG(("Sending packet, type %d", type));
 
   /* Get data used in the packet sending, keys and stuff */

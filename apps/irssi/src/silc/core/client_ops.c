@@ -656,6 +656,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 					NULL, NULL);
       silc_free(pk);
     }
+    break;
     
   case SILC_COMMAND_TOPIC:
     {

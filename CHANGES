@@ -1,3 +1,15 @@
+Thu Jun  7 08:57:16 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Close log file after open.  Affected file 
+	  lib/silcutil/silclog.c.
+
+	* Check whether sock == NULL in silc_client_send_packet and return
+	  if it is.  Affected file lib/silcclient/silcclient.c.
+
+	* Check rec->entry == NULL in the Irssi SILC Client before
+	  sending the channel message.  Affecte file is
+	  irssi/src/silc/core/silc-servers.c.
+
 Tue Jun  5 08:08:21 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Merged a splitted window bugfix from Irssi CVS tree.  The 

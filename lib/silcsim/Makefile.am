@@ -60,14 +60,14 @@ endif
 
 $(SIM_CIPHER_OBJS): ../silccrypt/libsilccrypt.a
 	rm -rf $*.c $*.o
-	$(LN_S) $(srcdir)/../silccrypt/$*.c
+	$(LN_S) $(srcdir)/../silccrypt/$*.c $*.c
 	$(COMPILE) $(SIM_CFLAGS) $*.c -o $(SIM_MODULES_DIR)/$*.sim.so
 	$(LN_S) $(srcdir)/$(SIM_MODULES_DIR)/$*.sim.so $*.o
 	rm -rf $*.c
 
 $(SIM_HASH_OBJS): ../silccrypt/libsilccrypt.a
 	rm -rf $*.c $*.o
-	$(LN_S) $(srcdir)/../silccrypt/$*.c
+	$(LN_S) $(srcdir)/../silccrypt/$*.c $*.c
 	$(COMPILE) $(SIM_CFLAGS) $*.c -o $(SIM_MODULES_DIR)/$*.sim.so
 	$(LN_S) $(srcdir)/$(SIM_MODULES_DIR)/$*.sim.so $*.o
 	rm -rf $*.c
