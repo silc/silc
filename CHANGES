@@ -1,3 +1,9 @@
+Tue Dec 17 10:05:00 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed file writing on WIN32 to use O_BINARY flag.  Affected
+	  file is lib/silcutil/silcfileutil.c.  A patch by Matthew
+	  Aldous <Matthew@Aldous.com>.
+
 Mon Dec 16 19:33:05 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in async host lookup code.  Affected file

@@ -65,8 +65,14 @@ int silc_file_writefile(const char *filename, const char *buffer,
 			SilcUInt32 len)
 {
   int fd;
+  int flags = O_CREAT | O_WRONLY | O_TRUNC;
 
-  if ((fd = creat(filename, 0644)) == -1) {
+#if defined(O_BINARY)
+  flags |= O_BINARY;
+#endif /* O_BINARY */
+
+  if ((fd = open(filename, flags, 0644))
+     == -1) {
     SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
 		    strerror(errno)));
     return -1;
@@ -90,8 +96,14 @@ int silc_file_writefile_mode(const char *filename, const char *buffer,
 			     SilcUInt32 len, int mode)
 {
   int fd;
+  int flags = O_CREAT | O_WRONLY | O_TRUNC;
 
-  if ((fd = creat(filename, mode)) == -1) {
+#if defined(O_BINARY)
+  flags |= O_BINARY;
+#endif /* O_BINARY */
+
+  if ((fd = open(filename, flags, 0644))
+      == -1) {
     SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
 		    strerror(errno)));
     return -1;
