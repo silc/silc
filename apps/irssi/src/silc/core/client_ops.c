@@ -944,6 +944,7 @@ void silc_command(SilcClient client, SilcClientConnection conn,
   }
 
   switch (command) {
+
   case SILC_COMMAND_INVITE:
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITING,
@@ -952,6 +953,11 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 			(char *)conn->current_channel->channel_name :
 			(char *)cmd_context->argv[1]));
     break;
+
+  case SILC_COMMAND_DETACH:
+    server->no_reconnect = TRUE;
+    break;
+
   default:
     break;
   }
