@@ -1,3 +1,8 @@
+Thu Nov 28 16:19:18 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added library versioning for shared libraries.  Affected
+	  files configure.in.pre and lib/Makefile.am.pre.
+
 Wed Nov 27 21:51:52 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Display INVITE and BAN lists as specified by SILC 1.2

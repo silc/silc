@@ -61,6 +61,47 @@ if test "$GCC"; then
 fi
 
 #
+# Library versioning.
+#
+# Do the releases and library versioning according to following rules:
+#
+#  - If any code has changed in library, increment [LIB]_REVISION
+#  - If functions were added, set [LIB]_REVISION to 0
+#  - If functions were added, removed or changed, increment [LIB]_CURRENT
+#  - If functions were added, increment [LIB]_AGE
+#  - If functions were removed, set [LIB]_AGE to 0
+#
+# where [LIB] is LIBSILC and LIBSILCCLIENT, and where "functions" means
+# functions public interfaces.
+#
+# The LIB_BASE_VERSION defines the SILC software major.minor version and 
+# it is increment only when these version numbers actually change.
+#
+
+# Base version for libraries.  Do not change this unless SILC version
+# changes too.
+LIB_BASE_VERSION=1.0
+
+# libsilc versions
+LIBSILC_CURRENT=0
+LIBSILC_REVISION=0
+LIBSILC_AGE=0
+
+# libsilcclient versions
+LIBSILCCLIENT_CURRENT=0
+LIBSILCCLIENT_REVISION=0
+LIBSILCCLIENT_AGE=0
+
+# Substitute the version numbers
+AC_SUBST(LIB_BASE_VERSION)
+AC_SUBST(LIBSILC_CURRENT)
+AC_SUBST(LIBSILC_REVISION)
+AC_SUBST(LIBSILC_AGE)
+AC_SUBST(LIBSILCCLIENT_CURRENT)
+AC_SUBST(LIBSILCCLIENT_REVISION)
+AC_SUBST(LIBSILCCLIENT_AGE)
+
+#
 # Program checking
 #
 AC_PROG_INSTALL
@@ -1085,7 +1126,7 @@ if test "x$silc_dist" = "xsilc-server" ||
    test "x$silc_dist" = "xsilc-toolkit"; then
   silcd="yes"
   if test x$without_silcd = xtrue; then
-    without_silcd="no"
+    silcd="no"
   fi
 echo " Compile SILC Server ...........: $silcd"
 echo " Server configuration file .....: $summary_silcd_configfile"

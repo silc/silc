@@ -88,15 +88,25 @@ silcclient.dll: libsilcclient.a
 	-mno-cygwin -o silcclient.dll libsilcclient.a -L. -lsilc -lwsock32
 endif
 
+LIB_BASE_VERSION=@LIB_BASE_VERSION@
+LIBSILC_CURRENT=@LIBSILC_CURRENT@
+LIBSILC_REVISION=@LIBSILC_REVISION@
+LIBSILC_AGE=@LIBSILC_AGE@
+LIBSILCCLIENT_CURRENT=@LIBSILCCLIENT_CURRENT@
+LIBSILCCLIENT_REVISION=@LIBSILCCLIENT_REVISION@
+LIBSILCCLIENT_AGE=@LIBSILCCLIENT_AGE@
+
 libsilc.a:
 	find $(SILCLIB_DIRS) -type f -name *.lo | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
-	-rpath $(libdir) -o libsilc.la
+	-version-info $(LIBSILC_CURRENT):$(LIBSILC_REVISION):$(LIBSILC_AGE) \
+	-release $(LIB_BASE_VERSION) -rpath $(libdir) -o libsilc.la
 
 libsilcclient.a:
 	find $(SILCCLIENTLIB_DIRS) -type f -name *.lo | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
-	-rpath $(libdir) -o libsilcclient.la
+	-version-info $(LIBSILCCLIENT_CURRENT):$(LIBSILCCLIENT_REVISION):$(LIBSILCCLIENT_AGE) \
+	-release $(LIB_BASE_VERSION) -rpath $(libdir) -o libsilcclient.la
 
 if SILC_DIST_TOOLKIT
 SILC_EXTRA_DIST = doc
