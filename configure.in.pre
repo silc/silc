@@ -93,16 +93,21 @@ AC_DEFINE_UNQUOTED(SILC_SIZEOF_CHAR, $ac_cv_sizeof_char)
 AC_CHECK_SIZEOF(void *, 0)
 AC_DEFINE_UNQUOTED(SILC_SIZEOF_VOID_P, $ac_cv_sizeof_void_p)
 
-# Function checking
+# Function and library checking
+AC_CHECK_FUNCS(initscr)
+AC_CHECK_LIB(ncurses, initscr, LIBS="$LIBS -lncurses")
+AC_CHECK_FUNCS(gethostbyname)
+AC_CHECK_LIB(nsl, gethostbyname, LIBS="$LIBS -lnsl -lresolv")
+AC_CHECK_FUNCS(socket)
+AC_CHECK_LIB(socket, socket, LIBS="$LIBS -lsocket")
+AC_CHECK_FUNCS(gethostname gethostbyaddr getservbyname getservbyport)
+AC_CHECK_FUNCS(select listen bind shutdown close connect)
+AC_CHECK_FUNCS(fcntl setsockopt)
+AC_CHECK_FUNCS(getopt_long time)
+AC_CHECK_FUNCS(mlock munlock)
 AC_CHECK_FUNCS(chmod stat fstat getenv putenv strerror ctime gettimeofday)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
 AC_CHECK_FUNCS(strchr strstr strcpy strncpy memcpy memset memmove)
-AC_CHECK_FUNCS(gethostname gethostbyname gethostbyaddr)
-AC_CHECK_FUNCS(select socket listen bind shutdown close connect)
-AC_CHECK_FUNCS(fcntl setsockopt)
-AC_CHECK_FUNCS(getservbyname getservbyport)
-AC_CHECK_FUNCS(getopt_long time)
-AC_CHECK_FUNCS(mlock munlock)
 
 # SIM support checking
 # XXX These needs to be changed as more supported platforms appear.
