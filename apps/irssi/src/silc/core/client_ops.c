@@ -678,6 +678,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	printformat_module("fe-common/silc", server, channel->channel_name,
 			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_TOPIC,
 			   channel->channel_name, topic);
+      } else {
+	printformat_module("fe-common/silc", server, channel->channel_name,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_TOPIC_NOT_SET,
+			   channel->channel_name);
       }
     }
     break;

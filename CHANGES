@@ -1,10 +1,12 @@
 Tue Jun  5 08:08:21 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Merged a splitted window bug from Irssi CVS tree.  The affected
-	  file is irssi/src/fe-text/textbuffer-view.c.
+	* Merged a splitted window bugfix from Irssi CVS tree.  The 
+	  affected file is irssi/src/fe-text/textbuffer-view.c.
 
 	* Fixed the ME, ACTION and NOTICE printing in Irssi Client.
 	  It did not print nickname.
+
+	* Improved the distributions system a bit.
 
 Mon Jun  4 17:57:16 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
