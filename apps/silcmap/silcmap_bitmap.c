@@ -46,7 +46,7 @@ bool silc_map_load_ppm(SilcMap map, const char *filename)
   ret = fscanf(fp, "%s %ld %ld %ld ",
 	       type, &map->width, &map->height, &map->maxcolor);
   if (ret < 4) {
-    fprintf(stderr, "fscanf: %s\n", strerror(errno));
+    fprintf(stderr, "Invalid PPM file");
     retval = FALSE;
     goto out;
   }
@@ -56,7 +56,7 @@ bool silc_map_load_ppm(SilcMap map, const char *filename)
   map->bitmap = silc_malloc(map->bitsilc_map_size);
   ret = fread(map->bitmap, map->bitsilc_map_size, 1, fp);
   if (ret < 0) {
-    fprintf(stderr, "fscanf: %s\n", strerror(errno));
+    fprintf(stderr, "fread: %s\n", strerror(errno));
     retval = FALSE;
     goto out;
   }
