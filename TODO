@@ -28,7 +28,7 @@ TODO/bugs In SILC Server
    and router does not have founder on channel (founder is left or there's
    no founder on channel at all), the router will accept the server's
    founder mode change, even though it perhaps should not do that (Fix 
-   this to 0.9) (Protocol TODO #17 relates).
+   this to 0.9).
 
  o Implement the SILC_CUMODE_QUIET user mode (Do this to 0.9.x).
 
