@@ -106,7 +106,7 @@ The following options to ATTR command are available:
                 (types: COMPUTER, MOBILE_PHONE, PDA, TERMINAL)
     - Examples:
       ATTR device_info COMPUTER:Debian:2.4:Linux:eng
-      ATTR device_info PDA:Palm, Inc.:1.0:Zire,eng
+      ATTR device_info PDA:Palm, Inc.:1.0:Zire:eng
 
   public_keys
     - Info:     List of your public keys you want to send in the reply,
@@ -114,6 +114,8 @@ The following options to ATTR command are available:
     - Format:   List of file paths to public key files with key type
                 (silc-rsa, silc-dss, ssh-rsa, ssh-dss, pgp-sign-rsa,
                  pgp-sign-dss, x509v3-sign-rsa, x509v3-sign-dss)
+                NOTE: CURRENTLY SILC CLIENT SUPPORT ONLY "silc-rsa"
+                PUBLIC KEY TYPE!
     - Examples:
       ATTR public_keys ssh-rsa:/home/priikone/.ssh2/ssh2.pub
       ATTR public_keys pgp-sign-rsa:/home/priikone/pgp/pgp.asc
