@@ -23,7 +23,7 @@
  * DESCRIPTION
  *
  * Interface for SILC Thread implementation. This is platform independent
- * implementation of threads for applications that need concurrent execution
+ * interface of threads for applications that need concurrent execution
  * with the application's main thread. The threads created with this 
  * interface executes concurrently with the calling thread.
  *
