@@ -304,7 +304,7 @@ abstracts = {
   # ownmsgnick_signed = "{msgnick {flag_signed} $1-}";
   # ownprivmsgnick_signed = "{msgnick {flag_signed} $*}";
   #
-  flag_signed = "[%GS%n]";
+  flag_signed = "[%cS%n]";
   flag_unknown = "[%Y?%n]";
   flag_failed = "[%RF%n]";
 
