@@ -21,6 +21,7 @@
 #include "silcincludes.h"
 #include "silcclient.h"
 #include "client_internal.h"
+#include "silcversion.h"
 
 /* Static task callback prototypes */
 SILC_TASK_CALLBACK(silc_client_connect_to_server_start);
@@ -58,6 +59,8 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
   new_client->internal->ops = ops;
   new_client->internal->params = 
     silc_calloc(1, sizeof(*new_client->internal->params));
+  if (!silc_version)
+    silc_version = silc_version_string;
   new_client->internal->silc_client_version = strdup(silc_version);
 
   if (params)
@@ -101,6 +104,14 @@ void silc_client_free(SilcClient client)
 int silc_client_init(SilcClient client)
 {
   SILC_LOG_DEBUG(("Initializing client"));
+
+  /* Initialize the crypto library.  If application has done this already
+     this has no effect.  Also, we will not be overriding something
+     application might have registered earlier. */
+  silc_cipher_register_default();
+  silc_pkcs_register_default();
+  silc_hash_register_default();
+  silc_hmac_register_default();
 
   /* Initialize hash functions for client to use */
   silc_hash_alloc("md5", &client->md5hash);
