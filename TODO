@@ -144,6 +144,10 @@ TODO/bugs In SILC Libraries
    only cosmetic changes but at some point must be done to make the
    payload interfaces consistent.
 
+ o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
+   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
+   in separately.
+
 
 TODO After 1.0
 ==============
