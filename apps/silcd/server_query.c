@@ -1,10 +1,10 @@
 /*
 
-  server_query.c 
+  server_query.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -163,7 +163,7 @@ void silc_server_query_send_error(SilcServer server,
 
   /* Send the command reply with error */
   silc_server_send_command_reply(server, query->cmd->sock,
-				 query->querycmd, error, 0, 
+				 query->querycmd, error, 0,
 				 silc_command_get_ident(query->cmd->payload),
 				 argc, data_type, data, data_len);
   va_end(va);
@@ -292,7 +292,7 @@ void silc_server_query_send_router(SilcServer server, SilcServerQuery query)
   old_ident = silc_command_get_ident(query->cmd->payload);
   silc_command_set_ident(query->cmd->payload, ++server->cmd_ident);
   tmpbuf = silc_command_payload_encode_payload(query->cmd->payload);
-  silc_server_packet_send(server, 
+  silc_server_packet_send(server,
 			  SILC_PRIMARY_ROUTE(server),
 			  SILC_PACKET_COMMAND, 0,
 			  tmpbuf->data, tmpbuf->len, TRUE);
@@ -329,7 +329,7 @@ void silc_server_query_send_router_reply(void *context, void *reply)
 			   silc_command_get_ident(query->cmd->payload));
     buffer = silc_command_payload_encode_payload(cmdr->payload);
     silc_server_packet_send(server, query->cmd->sock,
-			    SILC_PACKET_COMMAND_REPLY, 0, 
+			    SILC_PACKET_COMMAND_REPLY, 0,
 			    buffer->data, buffer->len, FALSE);
     silc_buffer_free(buffer);
     silc_server_query_free(query);
@@ -591,20 +591,20 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 
   if (query->nickname) {
     /* Get all clients matching nickname from local list */
-    if (!silc_idlist_get_clients_by_hash(server->local_list, 
+    if (!silc_idlist_get_clients_by_hash(server->local_list,
 					 query->nickname, server->md5hash,
 					 &clients, &clients_count))
-      silc_idlist_get_clients_by_nickname(server->local_list, 
+      silc_idlist_get_clients_by_nickname(server->local_list,
 					  query->nickname,
 					  query->nick_server,
 					  &clients, &clients_count);
 
     /* Check global list as well */
     if (check_global) {
-      if (!silc_idlist_get_clients_by_hash(server->global_list, 
+      if (!silc_idlist_get_clients_by_hash(server->global_list,
 					   query->nickname, server->md5hash,
 					   &clients, &clients_count))
-	silc_idlist_get_clients_by_nickname(server->global_list, 
+	silc_idlist_get_clients_by_nickname(server->global_list,
 					    query->nickname,
 					    query->nick_server,
 					    &clients, &clients_count);
@@ -717,6 +717,10 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
       }
     }
   }
+
+  SILC_LOG_DEBUG(("Querying %d clients", clients_count));
+  SILC_LOG_DEBUG(("Querying %d servers", servers_count));
+  SILC_LOG_DEBUG(("Querying %d channels", channels_count));
 
   /* If nothing was found, then just send the errors */
   if (!clients && !channels && !servers) {
@@ -965,7 +969,7 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
       if (!r) {
 	/* Allocate new temp query list context */
 	query->querylist = silc_realloc(query->querylist,
-					sizeof(*query->querylist) * 
+					sizeof(*query->querylist) *
 					(query->querylist_count + 1));
 	r = &query->querylist[query->querylist_count];
 	query->querylist_count++;
@@ -1140,6 +1144,8 @@ void silc_server_query_send_reply(SilcServer server,
     SilcClientEntry entry;
     SilcSocketConnection hsock;
 
+    SILC_LOG_DEBUG(("Sending %d clients", clients_count));
+
     /* Mark all invalid entries */
     for (i = 0, valid_count = 0; i < clients_count; i++) {
       entry = clients[i];
@@ -1195,7 +1201,7 @@ void silc_server_query_send_reply(SilcServer server,
 
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
-      if (valid_count > 1 && k == valid_count - 1 
+      if (valid_count > 1 && k == valid_count - 1
 	  && !servers_count && !channels_count && !query->errors_count)
 	status = SILC_STATUS_LIST_END;
       if (query->reply_count && k - 1 == query->reply_count)
@@ -1226,9 +1232,9 @@ void silc_server_query_send_reply(SilcServer server,
 		       server->server_name, len);
 	}
       }
-      
+
       switch (query->querycmd) {
-	
+
       case SILC_COMMAND_WHOIS:
 	{
 	  unsigned char idle[4], mode[4];
@@ -1248,11 +1254,11 @@ void silc_server_query_send_reply(SilcServer server,
 
 	  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
 	    channels =
-	      silc_server_get_client_channel_list(server, entry, FALSE, 
+	      silc_server_get_client_channel_list(server, entry, FALSE,
 						  FALSE, &umode_list);
 	  else
 	    channels =
-	      silc_server_get_client_channel_list(server, entry, TRUE, 
+	      silc_server_get_client_channel_list(server, entry, TRUE,
 						  TRUE, &umode_list);
 
 	  if (memcmp(entry->data.fingerprint, fempty, sizeof(fempty)))
@@ -1284,7 +1290,7 @@ void silc_server_query_send_reply(SilcServer server,
 					 2, idp->data, idp->len,
 					 3, nh, strlen(nh),
 					 4, uh, strlen(uh),
-					 5, entry->userinfo, 
+					 5, entry->userinfo,
 					 strlen(entry->userinfo),
 					 6, channels ? channels->data : NULL,
 					 channels ? channels->len : 0,
@@ -1353,8 +1359,8 @@ void silc_server_query_send_reply(SilcServer server,
 				       2, idp->data, idp->len,
 				       3, nh, strlen(nh),
 				       4, uh, strlen(uh),
-				       5, entry->userinfo, 
-				       entry->userinfo ? 
+				       5, entry->userinfo,
+				       entry->userinfo ?
 				       strlen(entry->userinfo) : 0);
 	sent_reply = TRUE;
 	break;
@@ -1381,13 +1387,15 @@ void silc_server_query_send_reply(SilcServer server,
   if (query->querycmd == SILC_COMMAND_IDENTIFY && servers_count) {
     SilcServerEntry entry;
 
+    SILC_LOG_DEBUG(("Sending %d servers", servers_count));
+
     if (status == SILC_STATUS_OK && servers_count > 1)
       status = SILC_STATUS_LIST_START;
 
     k = 0;
     for (i = 0; i < servers_count; i++) {
       entry = servers[i];
-      
+
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
       if (servers_count > 1 && k == servers_count - 1 && !channels_count &&
@@ -1395,7 +1403,7 @@ void silc_server_query_send_reply(SilcServer server,
 	status = SILC_STATUS_LIST_END;
       if (query->reply_count && k - 1 == query->reply_count)
 	status = SILC_STATUS_LIST_END;
-      
+
       SILC_LOG_DEBUG(("%s: server %s",
 		      (status == SILC_STATUS_OK ?         "   OK" :
 		       status == SILC_STATUS_LIST_START ? "START" :
@@ -1408,13 +1416,13 @@ void silc_server_query_send_reply(SilcServer server,
       idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
       silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_IDENTIFY,
 				     status, 0, ident, 2,
-				     2, idp->data, idp->len, 
-				     3, entry->server_name, 
-				     entry->server_name ? 
+				     2, idp->data, idp->len,
+				     3, entry->server_name,
+				     entry->server_name ?
 				     strlen(entry->server_name) : 0);
       silc_buffer_free(idp);
       sent_reply = TRUE;
-      
+
       if (status == SILC_STATUS_LIST_END)
 	break;
       k++;
@@ -1425,13 +1433,15 @@ void silc_server_query_send_reply(SilcServer server,
   if (query->querycmd == SILC_COMMAND_IDENTIFY && channels_count) {
     SilcChannelEntry entry;
 
+    SILC_LOG_DEBUG(("Sending %d channels", channels_count));
+
     if (status == SILC_STATUS_OK && channels_count > 1)
       status = SILC_STATUS_LIST_START;
 
     k = 0;
     for (i = 0; i < channels_count; i++) {
       entry = channels[i];
-      
+
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
       if (channels_count > 1 && k == channels_count - 1 &&
@@ -1439,7 +1449,7 @@ void silc_server_query_send_reply(SilcServer server,
 	status = SILC_STATUS_LIST_END;
       if (query->reply_count && k - 1 == query->reply_count)
 	status = SILC_STATUS_LIST_END;
-      
+
       SILC_LOG_DEBUG(("%s: channel %s",
 		      (status == SILC_STATUS_OK ?         "   OK" :
 		       status == SILC_STATUS_LIST_START ? "START" :
@@ -1452,13 +1462,13 @@ void silc_server_query_send_reply(SilcServer server,
       idp = silc_id_payload_encode(entry->id, SILC_ID_CHANNEL);
       silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_IDENTIFY,
 				     status, 0, ident, 2,
-				     2, idp->data, idp->len, 
-				     3, entry->channel_name, 
-				     entry->channel_name ? 
+				     2, idp->data, idp->len,
+				     3, entry->channel_name,
+				     entry->channel_name ?
 				     strlen(entry->channel_name) : 0);
       silc_buffer_free(idp);
       sent_reply = TRUE;
-      
+
       if (status == SILC_STATUS_LIST_END)
 	break;
       k++;
@@ -1468,6 +1478,8 @@ void silc_server_query_send_reply(SilcServer server,
   /* Send errors */
   if (query->errors_count) {
     int type;
+
+    SILC_LOG_DEBUG(("Sending %d errors", query->errors_count));
 
     if (status == SILC_STATUS_OK && query->errors_count > 1)
       status = SILC_STATUS_LIST_START;
@@ -1502,6 +1514,8 @@ void silc_server_query_send_reply(SilcServer server,
 
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
+      if (query->errors_count == 1 && status != SILC_STATUS_OK)
+	status = SILC_STATUS_LIST_END;
       if (query->errors_count > 1 && k == query->errors_count - 1)
 	status = SILC_STATUS_LIST_END;
       if (query->reply_count && k - 1 == query->reply_count)
@@ -1512,7 +1526,7 @@ void silc_server_query_send_reply(SilcServer server,
 		       status == SILC_STATUS_LIST_START ? "START" :
 		       status == SILC_STATUS_LIST_ITEM  ? " ITEM" :
 		       status == SILC_STATUS_LIST_END  ?  "  END" :
-		       "      : "), 
+		       "      : "),
 		      silc_get_status_message(query->errors[i].error),
 		      query->errors[i].error));
 
@@ -1596,7 +1610,7 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
     case SILC_ATTRIBUTE_STATUS_FREETEXT:
       /* Put STATUS_FREETEXT.  We just tell in the message that we are
 	 replying on behalf of the client. */
-      tmp = 
+      tmp =
 	"This information was provided by the server on behalf of the user";
       buffer = silc_attribute_payload_encode(buffer, attribute,
 					     SILC_ATTRIBUTE_FLAG_VALID,
@@ -1645,7 +1659,7 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
       if (attribute == SILC_ATTRIBUTE_SERVER_PUBLIC_KEY ||
 	  attribute == SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE)
 	break;
-      
+
       /* For other attributes we cannot reply so mark it invalid */
       buffer = silc_attribute_payload_encode(buffer, attribute,
 					     SILC_ATTRIBUTE_FLAG_INVALID,
