@@ -2969,6 +2969,11 @@ SILC_SERVER_CMD_FUNC(cmode)
 						0);
 	  goto out;
 	}
+      } else {
+	/* If key was not sent and the channel mode has already founder
+	   then the key was not to be changed. */
+	if (channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)
+	  goto has_founder;
       }
 
       /* Set the founder authentication */
@@ -3013,6 +3018,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 	channel->founder_key = NULL;
 	goto out;
       }
+    has_founder:
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
