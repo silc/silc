@@ -1375,15 +1375,18 @@ UTF-8 [RFC2279] encoded.
       sent only to the clients which is joined on the channel where
       the target client is on.
 
-      Max Arguments:  3
-          Arguments:  (1) <ID Payload>  (2) <mode mask>
-                      (3) <Target Client ID>
+      Max Arguments:  4
+          Arguments:  (1) <ID Payload>        (2) <mode mask>
+                      (3) <Target Client ID>  (3) [<founder pubkey>]
 
       The <ID Payload> is the ID (usually Client ID but it can be
       Server ID as well when the router is enforcing user's mode
       change) of the entity which changed the mode.  The <mode mask>
       is the new mode mask of the channel.  The <Target Client ID>
-      is the client which mode was changed.
+      is the client which mode was changed.  The <founder pubkey>
+      is the public key of the channel founder and is sent only
+      when first setting the channel founder mode using the
+      SILC_COMMAND_CUMODE command, and when sending this notify.
 
 
 9     SILC_NOTIFY_TYPE_MOTD

@@ -347,7 +347,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: FILE RECEIVE [<nickname>] */
 /* SYNTAX: FILE CLOSE [<nickname>] */
 /* SYNTAX: FILE */
-/* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder <-pubkey|passwd>] */
+/* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder] */
 /* SYNTAX: DETACH */
 /* SYNTAX: WATCH [<-add | -del> <nickname>] */
 

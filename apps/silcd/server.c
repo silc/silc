@@ -2790,7 +2790,6 @@ void silc_server_remove_from_channels(SilcServer server,
 
       silc_schedule_task_del_by_context(server->schedule, channel->rekey);
       silc_server_channel_delete(server, channel);
-      silc_buffer_free(clidp);
       continue;
     }
 
@@ -3551,7 +3550,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
   SilcBuffer chidp, clidp;
   SilcBuffer tmp;
   int len;
-  unsigned char mode[4];
+  unsigned char mode[4], *fkey = NULL;
+  SilcUInt32 fkey_len = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -3580,10 +3580,13 @@ void silc_server_announce_get_channel_users(SilcServer server,
 
     /* CUMODE notify for mode change on the channel */
     SILC_PUT32_MSB(chl->mode, mode);
+    if (chl->mode & SILC_CHANNEL_UMODE_CHANFO && channel->founder_key)
+      fkey = silc_pkcs_public_key_encode(channel->founder_key, &fkey_len);
     tmp = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CUMODE_CHANGE,
-					     3, clidp->data, clidp->len,
+					     4, clidp->data, clidp->len,
 					     mode, 4,
-					     clidp->data, clidp->len);
+					     clidp->data, clidp->len,
+					     fkey, fkey_len);
     len = tmp->len;
     *channel_users_modes =
       silc_buffer_realloc(*channel_users_modes,
@@ -3596,7 +3599,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
     silc_buffer_put(*channel_users_modes, tmp->data, tmp->len);
     silc_buffer_pull(*channel_users_modes, len);
     silc_buffer_free(tmp);
-
+    silc_free(fkey);
     silc_buffer_free(clidp);
   }
   silc_hash_table_list_reset(&htl);

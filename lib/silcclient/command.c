@@ -991,18 +991,14 @@ SILC_CLIENT_CMD_FUNC(join)
     } else if (!strcasecmp(cmd->argv[i], "-hmac") && cmd->argc > i + 1) {
       hmac = cmd->argv[i + 1];
       i++;
-    } else if (!strcasecmp(cmd->argv[i], "-founder") && cmd->argc > i + 1) {
-      if (!strcasecmp(cmd->argv[i + 1], "-pubkey")) {
-	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
-						  cmd->client->private_key,
-						  cmd->client->rng, conn->hash,
-						  conn->local_id,
-						  SILC_ID_CLIENT);
-      } else {
-	auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
-					cmd->argv[i + 1], 
-					cmd->argv_lens[i + 1]);
-      }
+    } else if (!strcasecmp(cmd->argv[i], "-founder")) {
+      auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+						cmd->client->private_key,
+						cmd->client->rng, 
+						cmd->client->internal->
+						sha1hash,
+						conn->local_id,
+						SILC_ID_CLIENT);
       i++;
     } else {
       /* Passphrases must be UTF-8 encoded, so encode if it is not */
@@ -1416,7 +1412,8 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						  cmd->client->private_key,
 						  cmd->client->rng, 
-						  conn->hash,
+						  cmd->client->internal->
+						  sha1hash,
 						  conn->local_id,
 						  SILC_ID_CLIENT);
 	arg = auth->data;
@@ -1568,19 +1565,13 @@ SILC_CLIENT_CMD_FUNC(cumode)
       break;
     case 'f':
       if (add) {
-	if (cmd->argc == 5) {
-	  if (!strcasecmp(cmd->argv[4], "-pubkey")) {
-	    auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
-						      cmd->client->private_key,
-						      cmd->client->rng,
-						      conn->hash,
-						      conn->local_id,
-						      SILC_ID_CLIENT);
-	  } else {
-	    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
-					    cmd->argv[4], cmd->argv_lens[4]);
-	  }
-	}
+	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+						  cmd->client->private_key,
+						  cmd->client->rng,
+						  cmd->client->internal->
+						  sha1hash,
+						  conn->local_id,
+						  SILC_ID_CLIENT);
 	mode |= SILC_CHANNEL_UMODE_CHANFO;
       } else {
 	mode &= ~SILC_CHANNEL_UMODE_CHANFO;

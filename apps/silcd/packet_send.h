@@ -150,7 +150,8 @@ void silc_server_send_notify_cumode(SilcServer server,
 				    SilcChannelEntry channel,
 				    SilcUInt32 mode_mask,
 				    void *id, SilcIdType id_type,
-				    SilcClientID *target);
+				    SilcClientID *target,
+				    SilcPublicKey founder_key);
 void silc_server_send_notify_signoff(SilcServer server,
 				     SilcSocketConnection sock,
 				     bool broadcast,

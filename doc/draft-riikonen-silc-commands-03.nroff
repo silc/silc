@@ -893,7 +893,8 @@ List of all defined commands in SILC follows.
         privileges the same way as the client had given the
         SILC_COMMAND_CUMODE command to gain founder privileges.  The
         client is still able to join the channel even if the founder
-        privileges could not be gained.
+        privileges could not be gained.  The hash function used with
+        the <founder payload> MUST be sha1.
 
         The server MUST check whether the user is allowed to join to
         the requested channel.  Various modes set to the channel affect
@@ -1338,7 +1339,8 @@ List of all defined commands in SILC follows.
               used to verify the payload is the public key of the
               client sending this command.  The mode may be set only
               if the <auth payload> was verified successfully.  The
-              server also MUST save the founder's public key.
+              server also MUST save the founder's public key.  The
+              hash function used with the <auth payload> MUST be sha1.
 
               The public key of the founder is sent in the
               SILC_NOTIFY_TYPE_CMODE_CHANGE notify type so that other

@@ -3223,8 +3223,8 @@ static void silc_server_command_join_channel(SilcServer server,
 				     idata->public_key)) {
       /* Check whether the client is to become founder */
       if (silc_auth_verify_data(auth, auth_len, SILC_AUTH_PUBLIC_KEY,
-				channel->founder_key, 0,
-				idata->hash, client->id, SILC_ID_CLIENT)) {
+				channel->founder_key, 0, server->sha1hash,
+				client->id, SILC_ID_CLIENT)) {
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	founder = TRUE;
       }
@@ -3424,24 +3424,27 @@ static void silc_server_command_join_channel(SilcServer server,
       /* Distribute the channel key to all backup routers. */
       silc_server_backup_send(server, NULL, SILC_PACKET_CHANNEL_KEY, 0,
 			      keyp->data, keyp->len, FALSE, TRUE);
-  }
 
-  /* If client became founder by providing correct founder auth data
-     notify the mode change to the channel. */
-  if (founder) {
-    SILC_PUT32_MSB(chl->mode, mode);
-    silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
-				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
-				       clidp->data, clidp->len,
-				       mode, 4, clidp->data, clidp->len);
+    /* If client became founder by providing correct founder auth data
+       notify the mode change to the channel. */
+    if (founder) {
+      SILC_PUT32_MSB(chl->mode, mode);
+      tmp = silc_pkcs_public_key_encode(channel->founder_key, &tmp_len);
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
+					 SILC_NOTIFY_TYPE_CUMODE_CHANGE, 4,
+					 clidp->data, clidp->len,
+					 mode, 4, clidp->data, clidp->len,
+					 tmp, tmp_len);
+      silc_free(tmp);
       
-    /* Set CUMODE notify type to network */
-    if (!server->standalone)
-      silc_server_send_notify_cumode(server, server->router->connection,
-				     server->server_type == SILC_ROUTER ? 
-				     TRUE : FALSE, channel,
-				     chl->mode, client->id, SILC_ID_CLIENT,
-				     client->id);
+      /* Set CUMODE notify type to network */
+      if (!server->standalone)
+	silc_server_send_notify_cumode(server, server->router->connection,
+				       server->server_type == SILC_ROUTER ? 
+				       TRUE : FALSE, channel,
+				       chl->mode, client->id, SILC_ID_CLIENT,
+				       client->id, channel->founder_key);
+    }
   }
 
   silc_buffer_free(reply);
@@ -4193,7 +4196,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
 	/* Verify the payload before setting the mode */
 	if (!silc_auth_verify_data(tmp, tmp_len, SILC_AUTH_PUBLIC_KEY, 
-				   idata->public_key, 0, idata->hash,
+				   idata->public_key, 0, server->sha1hash,
 				   client->id, SILC_ID_CLIENT)) {
 	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 						SILC_STATUS_ERR_AUTH_FAILED,
@@ -4275,6 +4278,9 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcUInt32 target_mask, sender_mask = 0, tmp_len, tmp_ch_len;
   int notify = FALSE;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
+  SilcPublicKey founder_key = NULL;
+  unsigned char *fkey = NULL;
+  SilcUInt32 fkey_len = 0;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CUMODE, cmd, 3, 4);
 
@@ -4406,7 +4412,7 @@ SILC_SERVER_CMD_FUNC(cumode)
 
       /* Verify the authentication payload */
       if (!silc_auth_verify_data(tmp_auth, tmp_auth_len, SILC_AUTH_PUBLIC_KEY,
-				 channel->founder_key, 0, idata->hash,
+				 channel->founder_key, 0, server->sha1hash,
 				 client->id, SILC_ID_CLIENT)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
 					      SILC_STATUS_ERR_AUTH_FAILED, 0);
@@ -4415,6 +4421,8 @@ SILC_SERVER_CMD_FUNC(cumode)
 
       sender_mask = chl->mode |= SILC_CHANNEL_UMODE_CHANFO;
       notify = TRUE;
+      founder_key = channel->founder_key;
+      fkey = silc_pkcs_public_key_encode(founder_key, &fkey_len);
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
@@ -4538,10 +4546,11 @@ SILC_SERVER_CMD_FUNC(cumode)
   /* Send notify to channel, notify only if mode was actually changed. */
   if (notify) {
     silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
-				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
+				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 4,
 				       idp->data, idp->len,
 				       tmp_mask, 4, 
-				       tmp_id, tmp_len);
+				       tmp_id, tmp_len,
+				       fkey, fkey_len);
 
     /* Set CUMODE notify type to network */
     if (!server->standalone)
@@ -4550,7 +4559,7 @@ SILC_SERVER_CMD_FUNC(cumode)
 				     TRUE : FALSE, channel,
 				     target_mask, client->id, 
 				     SILC_ID_CLIENT,
-				     target_client->id);
+				     target_client->id, founder_key);
   }
 
   /* Send command reply to sender */
@@ -4568,6 +4577,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   silc_buffer_free(idp);
 
  out:
+  silc_free(fkey);
   silc_server_command_free(cmd);
 }
 

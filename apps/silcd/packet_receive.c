@@ -757,6 +757,7 @@ void silc_server_notify(SilcServer server,
 	  server->server_type == SILC_ROUTER) {
 	/* Check whether this client is allowed to be channel founder on
 	   this channel. */
+	SilcPublicKey founder_key;
 
 	/* If channel doesn't have founder auth mode then it's impossible
 	   that someone would be getting founder rights with CUMODE command.
@@ -784,14 +785,29 @@ void silc_server_notify(SilcServer server,
 	if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
 	  break;
 
-	/* XXX Founder not found of the channel.  Since the founder auth mode
+	/* Founder not found of the channel.  Since the founder auth mode
 	   is set on the channel now check whether this is the client that
-	   originally set the mode. If we don't have the public key it
-	   is resolved first.
+	   originally set the mode. */
+
+	/* Get public key that must be present in notify */
+	tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
+	if (!tmp || !silc_pkcs_public_key_decode(tmp, tmp_len,
+						 &founder_key)) {
+	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	  silc_server_force_cumode_change(server, sock, channel, chl, mode);
+	  notify_sent = TRUE;
+	  break;
+	}
+
+	/* Now match the public key we have cached and publick key sent.
+	   They must match. */
 	if (!silc_pkcs_public_key_compare(channel->founder_key,
-					  client->data.public_key))
-	*/
- 
+					  client->data.public_key)) {
+	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	  silc_server_force_cumode_change(server, sock, channel, chl, mode);
+	  notify_sent = TRUE;
+	  break;
+	}
       }
 
       SILC_LOG_DEBUG(("Changing the channel user mode"));
@@ -3169,7 +3185,8 @@ void silc_server_resume_client(SilcServer server,
 
     /* Verify the authentication payload.  This has to be successful in
        order to allow the resuming */
-    if (!silc_auth_verify_data(auth, auth_len, SILC_AUTH_PUBLIC_KEY,
+    if (!idata->hash ||
+	!silc_auth_verify_data(auth, auth_len, SILC_AUTH_PUBLIC_KEY,
 			       detached_client->data.public_key, 0,
 			       idata->hash, detached_client->id, 
 			       SILC_ID_CLIENT)) {

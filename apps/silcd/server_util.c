@@ -1208,6 +1208,9 @@ void silc_server_kill_client(SilcServer server,
 {
   SilcBuffer killed, killer;
 
+  SILC_LOG_DEBUG(("Killing client %s", 
+		  silc_id_render(remote_client->id, SILC_ID_CLIENT)));
+
   /* Send the KILL notify packets. First send it to the channel, then
      to our primary router and then directly to the client who is being
      killed right now. */
@@ -1390,9 +1393,11 @@ bool silc_server_force_cumode_change(SilcServer server,
   SilcBuffer idp1, idp2;
   unsigned char cumode[4];
 
+  SILC_LOG_DEBUG(("Start"));
+
   silc_server_send_notify_cumode(server, sock, FALSE, channel, forced_mode,
 				 server->id, SILC_ID_SERVER,
-				 chl->client->id);
+				 chl->client->id, NULL);
 
   idp1 = silc_id_payload_encode(server->id, SILC_ID_SERVER);
   idp2 = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
@@ -1404,4 +1409,6 @@ bool silc_server_force_cumode_change(SilcServer server,
 				     idp2->data, idp2->len);
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
+
+  return TRUE;
 }

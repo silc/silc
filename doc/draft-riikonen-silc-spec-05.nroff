@@ -1157,7 +1157,8 @@ the Authentication Data is computed as follows:
   Authentication Data = sign(HASH);
 
 The hash() and the sign() are the hash function and the public key
-cryptography function selected in the SKE protocol.  The public key
+cryptography function selected in the SKE protocol, unless otherwise
+stated in the context where this payload is used.  The public key
 is SILC style public key unless certificates are used.  The ID is the
 entity's ID (Client or Server ID) which is authenticating itself.  The
 ID encoding is described in [SILC2].  The random bytes are non-zero

@@ -1,3 +1,10 @@
+Tue May  7 11:07:16 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added the founder's public key delivery to the
+	  CUMODE_CHANGE notify type as well.  Updated the protocol
+	  specs and the code.  Affected files are silcd/packet_send.[ch],
+	  silcd/packet_receive.c and silcd/command.c.
+
 Mon May  6 19:46:12 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_pkcs_public_key_copy function into the

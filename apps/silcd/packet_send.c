@@ -1190,7 +1190,7 @@ void silc_server_send_notify_cmode(SilcServer server,
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
-			       5, idp->data, idp->len,
+			       6, idp->data, idp->len,
 			       mode, 4,
 			       cipher, cipher ? strlen(cipher) : 0,
 			       hmac, hmac ? strlen(hmac) : 0,
@@ -1211,21 +1211,27 @@ void silc_server_send_notify_cumode(SilcServer server,
 				    SilcChannelEntry channel,
 				    SilcUInt32 mode_mask,
 				    void *id, SilcIdType id_type,
-				    SilcClientID *target)
+				    SilcClientID *target,
+				    SilcPublicKey founder_key)
 {
   SilcBuffer idp1, idp2;
-  unsigned char mode[4];
+  unsigned char mode[4], *key = NULL;
+  SilcUInt32 key_len = 0;
 
   idp1 = silc_id_payload_encode((void *)id, id_type);
   idp2 = silc_id_payload_encode((void *)target, SILC_ID_CLIENT);
   SILC_PUT32_MSB(mode_mask, mode);
+  if (founder_key)
+    key = silc_pkcs_public_key_encode(founder_key, &key_len);
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, 
-			       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3, 
+			       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 4, 
 			       idp1->data, idp1->len,
 			       mode, 4,
-			       idp2->data, idp2->len);
+			       idp2->data, idp2->len,
+			       key, key_len);
+  silc_free(key);
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 }
