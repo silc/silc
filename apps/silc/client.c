@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/03 05:49:48  priikone
+ * 	Implemented LEAVE command.  Minor bug fixes.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -2200,6 +2203,7 @@ void silc_client_receive_new_id(SilcClient client,
 void silc_client_new_channel_id(SilcClient client,
 				SilcSocketConnection sock,
 				char *channel_name,
+				unsigned int mode,
 				unsigned char *id_string)
 {
   SilcClientWindow win = (SilcClientWindow)sock->user_data;
@@ -2215,6 +2219,7 @@ void silc_client_new_channel_id(SilcClient client,
   channel = silc_calloc(1, sizeof(*channel));
   channel->channel_name = channel_name;
   channel->id = id;
+  channel->mode = mode;
   win->current_channel = channel;
   
   /* Put it to the ID cache */

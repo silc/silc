@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/03 05:49:49  priikone
+ * 	Implemented LEAVE command.  Minor bug fixes.
+ *
  * Revision 1.2  2000/06/27 19:38:40  priikone
  * 	Added missing goto flag.
  *
@@ -79,6 +82,9 @@ SilcClientCommand silc_command_list[] =
 
   { NULL, 0, NULL, 0},
 };
+
+#define SILC_NOT_CONNECTED(x) \
+  silc_say((x), "You are not connected to a server, use /SERVER to connect");
 
 /* List of pending commands. */
 SilcClientCommandPending *silc_command_pending = NULL;
@@ -169,8 +175,7 @@ SILC_CLIENT_CMD_FUNC(whois)
   }
 
   if (!cmd->client->current_win->sock) {
-    silc_say(cmd->client, 
-	     "You are not connected to a server, use /SERVER to connect");
+    SILC_NOT_CONNECTED(cmd->client);
     goto out;
   }
 
@@ -207,8 +212,7 @@ SILC_CLIENT_CMD_FUNC(identify)
   }
 
   if (!cmd->client->current_win->sock) {
-    silc_say(cmd->client, 
-	     "You are not connected to a server, use /SERVER to connect");
+    SILC_NOT_CONNECTED(cmd->client);
     goto out;
   }
 
@@ -237,8 +241,7 @@ SILC_CLIENT_CMD_FUNC(nick)
   SilcBuffer buffer;
 
   if (!cmd->sock) {
-    silc_say(cmd->client, 
-	     "You are not connected to a server, use /SERVER to connect");
+    SILC_NOT_CONNECTED(cmd->client);
     goto out;
   }
 
@@ -301,7 +304,6 @@ SILC_CLIENT_CMD_FUNC(server)
     port = atoi(cmd->argv[1] + 1 + len);
   } else {
     hostname = cmd->argv[1];
-    /* XXX */
     port = 334;
   }
 
@@ -332,8 +334,7 @@ SILC_CLIENT_CMD_FUNC(quit)
   SilcBuffer buffer;
 
   if (!cmd->client->current_win->sock) {
-    silc_say(cmd->client, 
-	     "You are not connected to a server, use /SERVER to connect");
+    SILC_NOT_CONNECTED(cmd->client);
     goto out;
   }
 
@@ -401,8 +402,7 @@ SILC_CLIENT_CMD_FUNC(join)
     /* Show channels currently joined to */
     if (!cmd->client->current_win->sock) {
       silc_say(cmd->client, "No current channel for this window");
-      silc_say(cmd->client, 
-	       "You are not connected to a server, use /SERVER to connect");
+      SILC_NOT_CONNECTED(cmd->client);
       goto out;
 
     }
@@ -411,8 +411,7 @@ SILC_CLIENT_CMD_FUNC(join)
   }
 
   if (!cmd->client->current_win->sock) {
-    silc_say(cmd->client, 
-	     "You are not connected to a server, use /SERVER to connect");
+    SILC_NOT_CONNECTED(cmd->client);
     goto out;
   }
 
@@ -480,8 +479,76 @@ SILC_CLIENT_CMD_FUNC(silcoper)
 {
 }
 
+/* LEAVE command. Leaves a channel. Client removes itself from a channel. */
+
 SILC_CLIENT_CMD_FUNC(leave)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientWindow win = NULL;
+  SilcIDCache *id_cache = NULL;
+  SilcBuffer buffer;
+  unsigned char *id_string;
+  char *name;
+
+#define CIDC(x) win->channel_id_cache[(x) - 32]
+#define CIDCC(x) win->channel_id_cache_count[(x) - 32]
+
+  if (cmd->argc != 2) {
+    silc_say(cmd->client, "Usage: /LEAVE <channel>");
+    goto out;
+  }
+
+  if (!cmd->client->current_win->sock) {
+    SILC_NOT_CONNECTED(cmd->client);
+    goto out;
+  }
+
+  win = (SilcClientWindow)cmd->sock->user_data;
+
+  if (!win->current_channel) {
+    silc_say(cmd->client, "You are not on that channel", name);
+    goto out;
+  }
+
+  if (cmd->argv[1][0] == '*')
+    name = win->current_channel->channel_name;
+  else
+    name = cmd->argv[1];
+
+  /* Get the Channel ID of the channel */
+  silc_idcache_find_by_data(CIDC(name[0]), CIDCC(name[0]), name, &id_cache);
+  if (!id_cache) {
+    silc_say(cmd->client, "You are not on that channel", name);
+    goto out;
+  }
+
+  /* Send LEAVE command to the server */
+  id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
+  buffer = silc_command_encode_payload_va(SILC_COMMAND_LEAVE, 1, 
+					  id_string, SILC_ID_CHANNEL_LEN);
+  silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
+			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
+			  buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* We won't talk anymore on this channel */
+  silc_say(cmd->client, "You have left channel %s", name);
+  cmd->client->screen->bottom_line->channel = NULL;
+  silc_screen_print_bottom_line(cmd->client->screen, 0);
+
+  silc_idcache_del_by_id(CIDC(name[0]), CIDCC(name[0]),
+			 SILC_ID_CHANNEL, win->current_channel->id);
+  silc_free(win->current_channel->channel_name);
+  silc_free(win->current_channel->id);
+  silc_free(win->current_channel->key);
+  silc_cipher_free(win->current_channel->channel_key);
+  silc_free(win->current_channel);
+  win->current_channel = NULL;
+
+ out:
+  silc_client_command_free(cmd);
+#undef CIDC
+#undef CIDCC
 }
 
 SILC_CLIENT_CMD_FUNC(names)
@@ -535,8 +602,7 @@ SILC_CLIENT_CMD_FUNC(msg)
   }
 
   if (!cmd->client->current_win->sock) {
-    silc_say(cmd->client, 
-	     "You are not connected to a server, use /SERVER to connect");
+    SILC_NOT_CONNECTED(cmd->client);
     goto out;
   }
 
@@ -578,6 +644,7 @@ SILC_CLIENT_CMD_FUNC(msg)
   silc_client_packet_send_private_message(client, cmd->sock, id_cache->context,
 					  cmd->argv[2], cmd->argv_lens[2],
 					  TRUE);
+
  out:
   silc_client_command_free(cmd);
 #undef CIDC

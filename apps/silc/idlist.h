@@ -44,6 +44,7 @@ typedef SilcClientEntryObject *SilcClientEntry;
 typedef struct SilcChannelEntryStruct {
   char *channel_name;
   SilcChannelID *id;
+  unsigned int mode;
   int on_channel;
 
   /* Channel keys */

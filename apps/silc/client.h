@@ -239,6 +239,7 @@ void silc_client_receive_new_id(SilcClient client,
 void silc_client_new_channel_id(SilcClient client,
 				SilcSocketConnection sock,
 				char *channel_name,
+				unsigned int mode,
 				unsigned char *id_string);
 void silc_client_receive_channel_key(SilcClient client,
 				     SilcSocketConnection sock,

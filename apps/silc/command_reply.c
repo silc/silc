@@ -24,8 +24,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/03 05:49:49  priikone
+ * 	Implemented LEAVE command.  Minor bug fixes.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -414,7 +417,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClient client = cmd->client;
   SilcCommandStatus status;
-  unsigned int argc;
+  unsigned int argc, mode;
   unsigned char *id_string;
   char *topic, *tmp, *channel_name;
 
@@ -437,14 +440,19 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   tmp = silc_command_get_arg_type(cmd->payload, 2, NULL);
   channel_name = strdup(tmp);
 
-  /* Get channel ID */
+  /* Get Channel ID */
   id_string = silc_command_get_arg_type(cmd->payload, 3, NULL);
 
+  /* Get channel mode */
+  tmp = silc_command_get_arg_type(cmd->payload, 4, NULL);
+  SILC_GET32_MSB(mode, tmp);
+
   /* Get topic */
-  topic = silc_command_get_arg_type(cmd->payload, 4, NULL);
+  topic = silc_command_get_arg_type(cmd->payload, 5, NULL);
 
   /* Save received Channel ID */
-  silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, id_string);
+  silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, 
+			     mode, id_string);
 
   /* Print channel name on screen */
   client->screen->bottom_line->channel = channel_name;
