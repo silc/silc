@@ -37,7 +37,8 @@
  *
  * SYNOPSIS
  *
- *    int silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose);
+ *    int silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
+ *                            SilcRng);
  *
  * DESCRIPTION
  *

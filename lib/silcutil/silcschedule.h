@@ -592,7 +592,7 @@ void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal);
  * SYNOPSIS
  *
  *    void silc_schedule_signal_unregister(SilcSchedule schedule, 
- *                                       SilcUInt32 signal);
+ *                                         SilcUInt32 signal);
  *
  * DESCRIPTION
  *
