@@ -32,6 +32,8 @@ SilcClientConfigSection silc_client_config_sections[] = {
     SILC_CLIENT_CONFIG_SECTION_TYPE_PKCS, 2 },
   { "[hash]", 
     SILC_CLIENT_CONFIG_SECTION_TYPE_HASH_FUNCTION, 4 },
+  { "[hmac]", 
+    SILC_CLIENT_CONFIG_SECTION_TYPE_HMAC, 3 },
   { "[connection]", 
     SILC_CLIENT_CONFIG_SECTION_TYPE_CONNECTION, 4 },
   { "[commands]", 
@@ -399,6 +401,57 @@ int silc_client_config_parse_lines(SilcClientConfig config,
       check = TRUE;
       break;
 
+    case SILC_CLIENT_CONFIG_SECTION_TYPE_HMAC:
+
+      if (!config->hmac) {
+	config->hmac = silc_calloc(1, sizeof(*config->hmac));
+	config->hmac->next = NULL;
+	config->hmac->prev = NULL;
+      } else {
+	if (!config->hmac->next) {
+	  config->hmac->next = 
+	    silc_calloc(1, sizeof(*config->hmac->next));
+	  config->hmac->next->next = NULL;
+	  config->hmac->next->prev = config->hmac;
+	  config->hmac = config->hmac->next;
+	}
+      }
+
+      /* Get HMAC name */
+      ret = silc_config_get_token(line, &config->hmac->alg_name);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: HMAC name not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+      
+      /* Get Hash function name */
+      ret = silc_config_get_token(line, &config->hmac->sim_name);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: Hash function name not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+
+      /* Get MAC length */
+      ret = silc_config_get_token(line, &tmp);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: HMAC's MAC length not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+      config->hmac->key_len = atoi(tmp);
+      silc_free(tmp);
+
+      check = TRUE;
+      break;
+
     case SILC_CLIENT_CONFIG_SECTION_TYPE_CONNECTION:
 
       if (!config->conns) {
@@ -513,6 +566,8 @@ int silc_client_config_parse_lines(SilcClientConfig config,
     config->pkcs = config->pkcs->prev;
   while (config->hash_func && config->hash_func->prev)
     config->hash_func = config->hash_func->prev;
+  while (config->hmac && config->hmac->prev)
+    config->hmac = config->hmac->prev;
   while (config->conns && config->conns->prev)
     config->conns = config->conns->prev;
   while (config->commands && config->commands->prev)
@@ -642,7 +697,7 @@ void silc_client_config_register_pkcs(SilcClientConfig config)
   }
 }
 
-/* Registers configured hash functions. These can then be allocated by the
+/* Registers configured hash funtions. These can then be allocated by the
    client when needed. */
 
 void silc_client_config_register_hashfuncs(SilcClientConfig config)
@@ -655,73 +710,56 @@ void silc_client_config_register_hashfuncs(SilcClientConfig config)
 
   alg = config->hash_func;
   while(alg) {
-
     if (!alg->sim_name) {
-      /* Hash module is supposed to be built in. Nothing to be done
-	 here except to test that the hash function really is built in. */
-      SilcHash tmp = NULL;
-
-      if (silc_hash_alloc(alg->alg_name, &tmp) == FALSE) {
-	SILC_LOG_ERROR(("Unsupported hash function `%s'", alg->alg_name));
+      if (!silc_hash_is_supported(alg->alg_name)) {
+	SILC_LOG_ERROR(("Unsupported hash function `%s'", 
+			alg->alg_name));
 	silc_client_stop(client);
 	exit(1);
       }
-      silc_free(tmp);
-
-#ifdef SILC_SIM
-    } else {
-      /* Load (try at least) the hash SIM module */
-      SilcHashObject hash;
-      SilcSimContext *sim;
-
-      memset(&hash, 0, sizeof(hash));
-      hash.name = alg->alg_name;
-      hash.block_len = alg->block_len;
-      hash.hash_len = alg->key_len;
-
-      sim = silc_sim_alloc();
-      sim->type = SILC_SIM_HASH;
-      sim->libname = alg->sim_name;
-
-      if ((silc_sim_load(sim))) {
-	hash.init = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name, 
-						SILC_HASH_SIM_INIT));
-	SILC_LOG_DEBUG(("init=%p", hash.init));
-	hash.update = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
-						SILC_HASH_SIM_UPDATE));
-	SILC_LOG_DEBUG(("update=%p", hash.update));
-        hash.final = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
-						SILC_HASH_SIM_FINAL));
-	SILC_LOG_DEBUG(("final=%p", hash.final));
-        hash.context_len = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
-						SILC_HASH_SIM_CONTEXT_LEN));
-	SILC_LOG_DEBUG(("context_len=%p", hash.context_len));
-
-	/* Put the SIM to the table of all SIM's in client */
-	app->sim = silc_realloc(app->sim,
-				   sizeof(*app->sim) * 
-				   (app->sim_count + 1));
-	app->sim[app->sim_count] = sim;
-	app->sim_count++;
-      } else {
-	SILC_LOG_ERROR(("Error configuring hash functions"));
-	silc_client_stop(client);
-	exit(1);
-      }
-
-      /* Register the cipher */
-      silc_hash_register(&hash);
-#endif
     }
-
     alg = alg->next;
   }
 }
 
+/* Registers configured HMACs. These can then be allocated by the
+   client when needed. */
+
+void silc_client_config_register_hmacs(SilcClientConfig config)
+{
+  SilcClientConfigSectionAlg *alg;
+  SilcClientInternal app = (SilcClientInternal)config->client;
+  SilcClient client = app->client;
+
+  SILC_LOG_DEBUG(("Registering configured HMACs"));
+
+  if (!config->hmac) {
+    SILC_LOG_ERROR(("HMACs are not configured. SILC cannot work without "
+		    "HMACs"));
+    silc_client_stop(client);
+    exit(1);
+  }
+
+  alg = config->hmac;
+  while(alg) {
+    SilcHmacObject hmac;
+    
+    if (!silc_hash_is_supported(alg->sim_name)) {
+      SILC_LOG_ERROR(("Unsupported hash function `%s'", 
+		      alg->sim_name));
+      silc_client_stop(client);
+      exit(1);
+    }
+    
+    /* Register the HMAC */
+    memset(&hmac, 0, sizeof(hmac));
+    hmac.name = alg->alg_name;
+    hmac.len = alg->key_len;
+    silc_hmac_register(&hmac);
+
+    alg = alg->next;
+  }
+}
 
 SilcClientConfigSectionConnection *
 silc_client_config_find_connection(SilcClientConfig config, 

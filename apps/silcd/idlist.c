@@ -561,7 +561,7 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
-			SilcCipher channel_key)
+			SilcCipher channel_key, char *hmac)
 {
   SilcChannelEntry channel;
 
@@ -571,6 +571,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   channel->id = id;
   channel->router = router;
   channel->channel_key = channel_key;
+  channel->hmac = hmac ? strdup(hmac) : strdup("hmac-sha1-96");
   silc_list_init(channel->user_list, struct SilcChannelClientEntryStruct, 
 		 channel_list);
 

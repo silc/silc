@@ -93,7 +93,7 @@ int silc_cipher_register(SilcCipherObject *cipher)
 {
   struct SilcCipherListStruct *new, *c;
 
-  SILC_LOG_DEBUG(("Registering new cipher"));
+  SILC_LOG_DEBUG(("Registering new cipher `%s'", cipher->name));
 
   new = silc_calloc(1, sizeof(*new));
   new->cipher = silc_calloc(1, sizeof(*new->cipher));
@@ -314,6 +314,24 @@ char *silc_cipher_get_supported()
   return list;
 }
 
+/* Encrypts */
+
+int silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
+			unsigned char *dst, unsigned int len, 
+			unsigned char *iv)
+{
+  return cipher->cipher->encrypt(cipher->context, src, dst, len, iv);
+}
+
+/* Decrypts */
+
+int silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
+			unsigned char *dst, unsigned int len, 
+			unsigned char *iv)
+{
+  return cipher->cipher->decrypt(cipher->context, src, dst, len, iv);
+}
+
 /* Sets the key for the cipher */
 
 int silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
@@ -340,8 +358,7 @@ void silc_cipher_get_iv(SilcCipher cipher, unsigned char *iv)
 
 /* Returns the key length of the cipher. */
 
-unsigned int silc_cipher_get_key_len(SilcCipher cipher, 
-				     const unsigned char *name)
+unsigned int silc_cipher_get_key_len(SilcCipher cipher)
 {
   return cipher->cipher->key_len;
 }

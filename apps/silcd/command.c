@@ -1937,7 +1937,7 @@ static void silc_server_command_join_channel(SilcServer server,
 					   4, mode, 4,
 					   5, tmp2, 4,
 					   6, keyp->data, keyp->len,
-					   8, channel->topic, 
+					   9, channel->topic, 
 					   strlen(channel->topic));
   }
 
@@ -1982,7 +1982,7 @@ SILC_SERVER_CMD_FUNC(join)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   int tmp_len;
-  char *tmp, *channel_name = NULL, *cipher = NULL;
+  char *tmp, *channel_name = NULL, *cipher, *hmac;
   SilcChannelEntry channel;
   unsigned int umode = 0;
   int created = FALSE;
@@ -2020,8 +2020,9 @@ SILC_SERVER_CMD_FUNC(join)
     goto out;
   }
 
-  /* Get cipher name */
+  /* Get cipher and hmac name */
   cipher = silc_argument_get_arg_type(cmd->args, 4, NULL);
+  hmac = silc_argument_get_arg_type(cmd->args, 5, NULL);
 
   /* See if the channel exists */
   channel = silc_idlist_find_channel_by_name(server->local_list, 
@@ -2046,7 +2047,7 @@ SILC_SERVER_CMD_FUNC(join)
 	 the channel by ourselves. */
       if (server->standalone) {
 	channel = silc_server_create_new_channel(server, server->id, cipher, 
-						 channel_name, TRUE);
+						 hmac, channel_name, TRUE);
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	created = TRUE;
 
@@ -2087,7 +2088,7 @@ SILC_SERVER_CMD_FUNC(join)
 	if (!channel) {
 	  /* Channel really does not exist, create it */
 	  channel = silc_server_create_new_channel(server, server->id, cipher, 
-						   channel_name, TRUE);
+						   hmac, channel_name, TRUE);
 	  umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	  created = TRUE;
 	}
@@ -2111,7 +2112,7 @@ SILC_SERVER_CMD_FUNC(join)
       if (!channel) {
 	/* Channel really does not exist, create it */
 	channel = silc_server_create_new_channel(server, server->id, cipher, 
-						 channel_name, TRUE);
+						 hmac, channel_name, TRUE);
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	created = TRUE;
       }
@@ -2464,21 +2465,14 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (mode_mask & SILC_CHANNEL_MODE_CIPHER) {
     if (!(channel->mode & SILC_CHANNEL_MODE_CIPHER)) {
       /* Cipher to use protect the traffic */
-      unsigned int key_len = 256;
-      char *cp;
+      unsigned int key_len;
 
       /* Get cipher */
       tmp = silc_argument_get_arg_type(cmd->args, 8, NULL);
       if (!tmp) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					      SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
-      }
-
-      cp = strchr(tmp, ':');
-      if (cp) {
-	key_len = atoi(cp);
-	*cp = '\0';
       }
 
       /* XXX Duplicated code, make own function for this!! */
@@ -2490,10 +2484,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	goto out;
       }
-
-      key_len /= 8;
-      if (key_len > 32)
-	key_len = 32;
+      key_len = silc_cipher_get_key_len(channel->channel_key) / 8;
 
       /* Re-generate channel key */
       silc_server_create_channel_key(server, channel, key_len);

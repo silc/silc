@@ -20,6 +20,7 @@
 /* $Id$ */
 
 #include "clientlibincludes.h"
+#include "client_internal.h"
 
 /* Client command list. */
 SilcClientCommand silc_command_list[] =
@@ -41,7 +42,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(ping, PING, "PING", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(oper, OPER, "OPER",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
-  SILC_CLIENT_CMD(join, JOIN, "JOIN", SILC_CF_LAG | SILC_CF_REG, 4),
+  SILC_CLIENT_CMD(join, JOIN, "JOIN", SILC_CF_LAG | SILC_CF_REG, 5),
   SILC_CLIENT_CMD(motd, MOTD, "MOTD", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(umode, UMODE, "UMODE", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(cmode, CMODE, "CMODE", SILC_CF_LAG | SILC_CF_REG, 4),

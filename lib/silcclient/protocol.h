@@ -34,13 +34,16 @@ typedef struct {
   SilcRng rng;
   int responder;
 
-  /* Destinations ID taken from authenticataed packet so that we can
-     get the destinations ID. */
-  void *dest_id;
-  SilcIdType dest_id_type;
+  void *dest_id;		    /* Destination ID from packet */
+  SilcIdType dest_id_type;	    /* Destination ID type */
 
+  SilcTask timeout_task;
   SilcPacketContext *packet;
-  SilcSKE ske;
+
+  SilcSKESendPacketCb send_packet;  /* SKE's packet sending callback */
+  SilcSKE ske;			    /* The SKE object */
+  SilcSKEKeyMaterial *keymat;	    /* The negotiated key material */
+  void *context;		    /* Internal context */
 } SilcClientKEInternalContext;
 
 /* Internal context for connection authentication protocol */
@@ -71,5 +74,16 @@ typedef struct {
 /* Prototypes */
 void silc_client_protocols_register(void);
 void silc_client_protocols_unregister(void);
+void silc_client_protocol_ke_send_packet(SilcSKE ske,
+					 SilcBuffer packet,
+					 SilcPacketType type,
+					 void *context);
+void silc_client_protocol_ke_set_keys(SilcSKE ske,
+				      SilcSocketConnection sock,
+				      SilcSKEKeyMaterial *keymat,
+				      SilcCipher cipher,
+				      SilcPKCS pkcs,
+				      SilcHash hash,
+				      SilcHmac hmac);
 
 #endif

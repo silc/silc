@@ -20,6 +20,7 @@
 /* $Id$ */
 
 #include "clientincludes.h"
+#include "client_internal.h"
 
 /* Local commands. */
 SilcClientCommand silc_local_command_list[] =

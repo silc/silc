@@ -325,7 +325,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
   GetClientByIDInternal i = silc_calloc(1, sizeof(*i));
 
   idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-  silc_client_send_command(client, conn, SILC_COMMAND_IDENTIFY, 
+  silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, 
 			   ++conn->cmd_ident,
 			   1, 3, idp->data, idp->len);
   silc_buffer_free(idp);
@@ -337,7 +337,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
   i->context = context;
       
   /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+  silc_client_command_pending(conn, SILC_COMMAND_WHOIS, 
 			      ++conn->cmd_ident, 
 			      silc_client_get_client_by_id_destructor,
 			      silc_client_command_get_client_by_id_callback, 

@@ -44,6 +44,9 @@ typedef struct {
   unsigned short hash_alg_len;
   unsigned char *hash_alg_list;
 
+  unsigned short hmac_alg_len;
+  unsigned char *hmac_alg_list;
+
   unsigned short comp_alg_len;
   unsigned char *comp_alg_list;
 } SilcSKEStartPayload;

@@ -34,6 +34,7 @@
 /* $Id$ */
 
 #include "clientlibincludes.h"
+#include "client_internal.h"
 
 /* Client command reply list. */
 SilcClientCommandReply silc_command_reply_list[] =
@@ -743,8 +744,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcClient client = cmd->client;
   SilcCommandStatus status;
   SilcIDPayload idp = NULL;
+  SilcChannelEntry channel;
   unsigned int argc, mode, len;
-  char *topic, *tmp, *channel_name = NULL;
+  char *topic, *tmp, *channel_name = NULL, *hmac;
   SilcBuffer keyp;
 
   SILC_LOG_DEBUG(("Start"));
@@ -810,15 +812,28 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   silc_buffer_put(keyp, tmp, len);
 
   /* Get topic */
-  topic = silc_argument_get_arg_type(cmd->args, 8, NULL);
+  topic = silc_argument_get_arg_type(cmd->args, 9, NULL);
 
-  /* Save received Channel ID */
-  silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, 
-			     mode, idp);
+  /* Save received Channel ID. This actually creates the channel */
+  channel = silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, 
+				       mode, idp);
   silc_id_payload_free(idp);
 
+  /* Get hmac */
+  hmac = silc_argument_get_arg_type(cmd->args, 10, NULL);
+  if (hmac) {
+    if (!silc_hmac_alloc(hmac, NULL, &channel->hmac)) {
+      cmd->client->ops->say(cmd->client, conn, 
+			    "Cannot join channel: Unsupported HMAC `%s'",
+			    hmac);
+      COMMAND_REPLY_ERROR;
+      silc_free(channel_name);
+      goto out;
+    }
+  }
+
   /* Save channel key */
-  silc_client_save_channel_key(conn, keyp, conn->current_channel);
+  silc_client_save_channel_key(conn, keyp, channel);
   silc_buffer_free(keyp);
 
   if (topic)
@@ -826,8 +841,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 		     "Topic for %s: %s", channel_name, topic);
 
   /* Notify application */
-  COMMAND_REPLY((ARGS, channel_name, conn->current_channel, mode,
-		 NULL, NULL, topic));
+  COMMAND_REPLY((ARGS, channel_name, channel, mode, NULL, NULL, topic, hmac));
 
   /* Execute any pending command callbacks */
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);

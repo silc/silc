@@ -49,5 +49,9 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 			 unsigned int *auth_data_len);
 void silc_failure(SilcClient client, SilcClientConnection conn, 
 		  SilcProtocol protocol, void *failure);
-
+int silc_key_agreement(SilcClient client, SilcClientConnection conn,
+		       SilcClientEntry client_entry, char *hostname,
+		       int port,
+		       SilcKeyAgreementCallback *completion,
+		       void **context);
 #endif

@@ -275,6 +275,7 @@ SILC Secure Internet Live Conferencing, version %s\n",
   silc_client_config_register_ciphers(app->config);
   silc_client_config_register_pkcs(app->config);
   silc_client_config_register_hashfuncs(app->config);
+  silc_client_config_register_hmacs(app->config);
 
   /* Load public and private key */
   if (silc_client_load_keys(silc) == FALSE)

@@ -104,8 +104,9 @@ Table of Contents
   3.10 Algorithms ............................................... 20
       3.10.1 Ciphers ............................................ 20
       3.10.2 Public Key Algorithms .............................. 21
-      3.10.3 MAC Algorithms ..................................... 21
-      3.10.4 Compression Algorithms ............................. 22
+      3.10.3 Hash Functions ..................................... XXX
+      3.10.4 MAC Algorithms ..................................... XXX
+      3.10.5 Compression Algorithms ............................. XXX
   3.11 SILC Public Key .......................................... 22
   3.12 SILC Version Detection ................................... 24
 4 SILC Procedures ............................................... 25
@@ -1212,8 +1213,21 @@ is always in PKCS #1 version 1.5 format.
 Additional public key algorithms may be defined to be used in SILC.
 
 
+.ti0
+3.10.3 Hash Functions
+
+Hash functions are used as part of MAC algorithms defined in the next
+section.  They are also used in the SILC Key Exchange protocol defined
+in the [SILC3].
+
+Following Hash algorithm are defined in SILC protocol:
+
+sha1             SHA-1, length = 20      (mandatory)
+md5              MD5, length = 16        (optional)
+
+
 .ti 0
-3.10.3 MAC Algorithms
+3.10.4 MAC Algorithms
 
 Data integrity is protected by computing a message authentication code
 (MAC) of the packet data.  See [SILC2] for details how to compute the
@@ -1222,7 +1236,9 @@ MAC.
 Following MAC algorithms are defined in SILC protocol:
 
 .in 6
-hmac-sha1        HMAC-SHA1, length = 20  (mandatory)
+hmac-sha1-96     HMAC-SHA1, length = 12  (mandatory)
+hmac-md5-96      HMAC-MD5, length = 12   (optional)
+hmac-sha1        HMAC-SHA1, length = 20  (optional)
 hmac-md5         HMAC-MD5, length = 16   (optional)
 none             No MAC                  (optional)
 .in 3
@@ -1240,7 +1256,7 @@ Additional MAC algorithms may be defined to be used in SILC.
 
 
 .ti 0
-3.10.4 Compression Algorithms
+3.10.5 Compression Algorithms
 
 SILC protocol supports compression that may be applied to unencrypted
 data.  It is recommended to use compression on slow links as it may
@@ -1601,6 +1617,17 @@ using the new key.  If server creates the new key the server must also
 send the new key to its router.  See [SILC2] on more information about
 how channel messages must be encrypted and decrypted when router is
 processing them.
+
+When client receives the SILC_PACKET_CHANNEL_KEY packet with the
+Channel Key Payload it must process the key data to create encryption
+and decryption key, and to create the HMAC key that is used to compute
+the MACs of the channel messages.  The processing is as follows:
+
+  channel_key  = raw key data
+  HMAC key     = hash(raw key data)
+
+The raw key data is the key data received in the Channel Key Payload.
+The hash() function is the hash function used in the HMAC of the channel.
 
 
 .ti 0
@@ -2361,9 +2388,10 @@ List of all defined commands in SILC follows.
 
    14   SILC_COMMAND_JOIN
 
-        Max Arguments:  4
+        Max Arguments:  5
             Arguments:  (1) <channel>       (2) <Client ID>
                         (3) [<passphrase>]  (4) [<cipher>]
+                        (5) [<hmac>]
 
         Join to channel/create new channel.  This command is used to
         join to a channel.  If the channel does not exist the channel is
@@ -2383,7 +2411,9 @@ List of all defined commands in SILC follows.
         requested by sending the name of the requested <cipher>.  This
         is used only if the channel does not exist and is created.  If
         the channel already exists the cipher set previously for the
-        channel will be used to secure the traffic.
+        channel will be used to secure the traffic.  The computed MACs
+        of the channel message are produced by the default HMAC or by
+        the <hmac> provided for the command.
 
         The server must check whether the user is allowed to join to
         the requested channel.  Various modes set to the channel affect
@@ -2403,12 +2433,12 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  9
+        Max Arguments:  10
             Arguments:  (1) <Status Payload>  (2) <channel> 
                         (3) <Channel ID>      (4) <channel mode mask>
                         (5) <created>         (6) <Channel Key Payload>
                         (7) [<ban mask>]      (8) [<invite list>]
-                        (9) [<topic>]
+                        (9) [<topic>]        (10) [<hmac>]
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
@@ -2522,11 +2552,11 @@ List of all defined commands in SILC follows.
 
    17   SILC_COMMAND_CMODE
 
-        Max Arguments:  7
+        Max Arguments:  8
             Arguments:  (1) <Channel ID>    (2) <channel mode mask>
                         (3) [<user limit>]  (4) [<passphrase>]
                         (5) [<ban mask>]    (6) [<invite list>]
-                        (7) [<cipher>[:<key len>]]
+                        (7) [<cipher>]      (8) [<hmac>]
 
         This command is used by client to set or change channel flags on
         a channel.  Channel has several modes that set various properties
@@ -2698,13 +2728,21 @@ List of all defined commands in SILC follows.
               Sets specific cipher to be used to protect channel
               traffic.  The <cipher> argument is the requested cipher.
               When set or unset the server must re-generate new
-              channel key.  If <key len> argument is specified with
-              <cipher> argument the new key is generated of <key len>
-              length in bits.  Only channel founder may set the cipher of 
+              channel key.  Only channel founder may set the cipher of 
               the channel.  When unset the new key is generated using
               default cipher for the channel.
 
               Typical implementation would use [+|-]c on user interface
+              to set/unset this mode.
+
+
+           0x0400    SILC_CMODE_HMAC
+
+              Sets specific hmac to be used to compute the MACs of the
+              channel message.  The <hmac> argument is the requested hmac.
+              Only channel founder may set the hmac of the channel.
+
+              Typical implementation would use [+|-]h on user interface
               to set/unset this mode.
 
 

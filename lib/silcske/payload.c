@@ -62,6 +62,9 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
 			   SILC_STR_UI_SHORT(payload->hash_alg_len),
 			   SILC_STR_UI_XNSTRING(payload->hash_alg_list,
 						payload->hash_alg_len),
+			   SILC_STR_UI_SHORT(payload->hmac_alg_len),
+			   SILC_STR_UI_XNSTRING(payload->hmac_alg_list,
+						payload->hmac_alg_len),
 			   SILC_STR_UI_SHORT(payload->comp_alg_len),
 			   SILC_STR_UI_XNSTRING(payload->comp_alg_list,
 						payload->comp_alg_len),
@@ -204,7 +207,7 @@ silc_ske_payload_start_decode(SilcSKE ske,
     silc_buffer_unformat(buffer,
 			 SILC_STR_UI_XNSTRING_ALLOC(&payload->hash_alg_list, 
 						    payload->hash_alg_len),
-			 SILC_STR_UI_SHORT(&payload->comp_alg_len),
+			 SILC_STR_UI_SHORT(&payload->hmac_alg_len),
 			 SILC_STR_END);
   if (ret == -1) {
     status = SILC_SKE_STATUS_ERROR;
@@ -212,6 +215,21 @@ silc_ske_payload_start_decode(SilcSKE ske,
   }
 
   len2 += len = payload->hash_alg_len + 2;
+  silc_buffer_pull(buffer, len);
+
+  /* Parse HMAC list */
+  ret = 
+    silc_buffer_unformat(buffer,
+			 SILC_STR_UI_XNSTRING_ALLOC(&payload->hmac_alg_list, 
+						    payload->hmac_alg_len),
+			 SILC_STR_UI_SHORT(&payload->comp_alg_len),
+			 SILC_STR_END);
+  if (ret == -1) {
+    status = SILC_SKE_STATUS_ERROR;
+    goto err;
+  }
+
+  len2 += len = payload->hmac_alg_len + 2;
   silc_buffer_pull(buffer, len);
 
   /* Parse compression alg list */
@@ -258,6 +276,8 @@ void silc_ske_payload_start_free(SilcSKEStartPayload *payload)
       silc_free(payload->enc_alg_list);
     if (payload->hash_alg_list)
       silc_free(payload->hash_alg_list);
+    if (payload->hmac_alg_list)
+      silc_free(payload->hmac_alg_list);
     if (payload->comp_alg_list)
       silc_free(payload->comp_alg_list);
     silc_free(payload);

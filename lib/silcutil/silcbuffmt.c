@@ -145,6 +145,9 @@ int silc_buffer_format(SilcBuffer dst, ...)
 
  fail:
   SILC_LOG_DEBUG(("Error occured while formatting data"));
+#ifdef SILC_DEBUG
+  assert(FALSE);
+#endif
   return -1;
 
  ok:
@@ -367,6 +370,9 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 
  fail:
   SILC_LOG_DEBUG(("Error occured while unformatting buffer"));
+#ifdef SILC_DEBUG
+  assert(FALSE);
+#endif
   return -1;
 
  ok:

@@ -1,3 +1,166 @@
+Thu Mar  8 21:39:03 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added assert()s to buffer formatting and unformatting routines
+	  to assert (if --enable-debug) when error occurs.  Affected
+	  file: lib/silcutil/silcbuffmt.c.
+
+	* Changed to auto-reconnect to check whether the remote host is
+	  router and register the re-connect timeout if it is.  It used 
+	  to check that whether we are normal server, but router must do
+	  auto-reconnect with another router as well.  Affected file
+	  silcd/server.c.
+
+	* Removed the [<key len>] option from CMODE command as the cipher
+	  name decides the key length, nowadays.  See the defined ciphers
+	  from the protocol specification.
+
+	* Added [<hmac>] option to the CMODE command to define the HMAC
+	  for the channel.  Added SILC_CMODE_HMAC channel mode.
+
+	* Added [<hmac>] option for the JOIN command so that user can
+	  select which HMAC is used to compute the MACs of the channel
+	  messages.
+
+	* Added Hmac field to the Channel Message Payload.  The integrity
+	  of plaintext channel messages are now protected by computing
+	  MAC of the message and attaching the MAC to the payload.  The
+	  MAC is not encrypted.  Now, it is clear that this causes some
+	  overhead to the size of the packet but rationale for this is that
+	  now the receiver can verify whether the channel message decrypted
+	  correctly and also when private keys are set for the channel the
+	  receiver can decrypt the packet with several keys and check from
+	  the MAC which key decrypted the message correctly.
+
+	* Added silc_cipher_encrypt and silc_cipher_decrypt into the
+	  lib/silccrypt/silccipher.[ch].
+
+	* Added silc_hash_len to return the digest length into the
+	  lib/silcrypt/silchash.[ch].
+
+	* Rewrote parts of Silc Channel Payload interface in the
+	  lib/silccore/silcchannel.[ch].  The encode function now also
+	  encrypts the packet and parse function decrypts it.
+
+	* Channel message delivery between routers was broken after the
+	  channel key distribution was fixed earlier.  The channel key
+	  was used be to distributed to other routers as well which is not
+	  allowed by the protocol.  Now this is fixed and channel keys
+	  really are cell specific and the channel message delivery between
+	  routers comply with the protocol specification.
+
+Wed Mar  7 20:58:50 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed a minor formatting bug in the SKE's key material processing.
+	  It actually might have processed the keys wrong way resulting
+	  into wrong keys.
+
+	* Redefined the mandatory HMAC algorithms and added new algorithms.
+	  Added hmac-sha1-96 and hmac-md5-96 which are normal hmac-sha1
+	  and hmac-md5 truncated to 96 bits.  The mandatory is now 
+	  hmac-sha1-96.  Rest are optional (including the one that used
+	  to be mandatory).  Rationale for this is that the truncated HMAC
+	  length is sufficient from security point of view and can actually
+	  make the attack against the HMAC harder.  Also, the truncated
+	  HMAC causes less overhead to the packets.  See the RFC2104 for
+	  more information.
+
+	* Added new [hmac] configuration section.  The SKE used to use
+	  the hash names (md5 and sha1) in the SKE proposal as HMCAS which
+	  is of course wrong.  The official names that must be proposed in
+	  the SKE are the ones defined in the protocol specification
+	  (hmac-sha1-96 for example).  The user can configure any hmac
+	  using any hash function configured in the [hash] section.  At
+	  least, the mandatory must be configured.
+
+	  Rewrote the HMAC interface in lib/silccrypt/silchmac.[ch].
+
+	* Added HMAC list to the SKE proposal list.  It has now both
+	  hash algorithm list and HMAC list.  This makes the protocol
+	  incompatible with previous versions.  The SKE now seems to work
+	  the way it is supposed to work, for the first time actually.
+
+	* Defined plain Hash algorithms to the protocol specification.
+	  Added sha1 and md5.
+
+Tue Mar  6 15:36:11 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented support for key agreement packets into the server.
+	  Added functions silc_server_key_agreement and
+	  silc_server_send_key_agreement.  Other than these functions,
+	  server has nothing to do with this packet.
+
+	* Added support for private message key packets into the server.
+	  Added functions silc_server_private_message_key and
+	  silc_server_send_private_message_key.
+
+	* Updated TODO.
+
+	* Changed the silc_[client|server]_protocol_ke_set_keys to be
+	  called in the protocol's final callback instead in the END
+	  protocol state.  This makes a little more sense and in the same
+	  time in client we can use the same protocol routines for normal
+	  key exchange and to key agreement packet handling as well.
+
+	* Added to both client's and server's KE protocol context the
+	  SilcSKEKeyMaterial pointer to save the key material.  We will
+	  bring the key material to the protocol's final callback by doing
+	  this.  The final callback must free the key material.
+
+	* Added SKE's packet_send callback into client's KE protocol
+	  context so that the caller can choose what packet sending function
+	  is used.  This way we can use different packet sending when
+	  doing normal SKE when doing key agreement packet handling (in
+	  the key agreement packet handling we do not want to encrypt
+	  the packets).
+
+	* Implemented the responder side of the key agreement routines
+	  in the client.  The client can now bind to specified port and
+	  accept incoming key negotiation.  The key material is passed
+	  to the application after the protocol is over.
+
+	* Implemented the processing of incoming Key Agreement packet
+	  in the client.  Added function silc_client_key_agreement to
+	  process the packet.
+
+	* Implemented the intiator side of the key agreement routines
+	  in the client.  The client can now initiate key agreement with
+	  another remote client.  The key material is passed to the
+	  application after the protocol is over.
+
+	* Created client_keyagr.c to include all the key agreement 
+	  routines.
+
+	* Added macro SILC_TASK_CALLBACK_GLOBAL which is equal to the
+	  SILC_TASK_CALLBACK except that it is not static.
+
+	* Created client_notify.c and moved the Notify packet handling
+	  from the client.[ch] into that file.
+
+	* Created client_prvmsg.c and moved all private message and
+	  private message key routines from the client.[ch] into that file.
+
+	* Create client_channel.c and moved all channel message and
+	  channel private key routines from the client.[ch] into that file.
+
+	* Changed silc_client_get_client_by_id_resolve to resolve with
+	  WHOIS command instead of IDENTIFY command, in the file
+	  lib/silclient/idlist.c.
+
+Mon Mar  5 18:39:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented the SKE's responder side to the Client library.
+
+	* When FAILURE is received to the protocol do not trust it
+	  blindly.  Register a timeout to wait whether the remote closes
+	  the connection as it should do it, only after that process the
+	  actual failure.  This was changed to both client and server.
+
+	* Added client_internal.h to include some of the structures
+	  there instead of client.h in lib/silcclient/.
+
+	* Added function silc_task_unregister_by_callback to unregister
+	  timeouts by the callback function.
+
 Sat Mar  3 19:15:43 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Some "Incomplete WHOIS info" errors has been appearing on the

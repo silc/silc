@@ -8,7 +8,7 @@ designed to be complete SILC Client implementation without actual user
 interface.  The library provides the API for the application which it can
 use to implement generally whatever user interface it wants.
 
-The `ops.h' file defines the function prototypes that application must
+The `silcapi.h' file defines the function prototypes that application must
 implement in order to be able to create the user interface with the
 library.  The idea is that the application can implement whatever user
 interface routines in the functions and display the data whatever way

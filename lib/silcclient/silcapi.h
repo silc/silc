@@ -35,6 +35,19 @@
    of how to use the SILC Client Library.
 */
 
+/* Key agreement callback that is called after the key agreement protocol
+   has been performed. This is called also if error occured during the
+   key agreement protocol. The `key' is the allocated key material and
+   the caller is responsible of freeing it. The `key' is NULL if error
+   has occured. The application can freely use the `key' to whatever
+   purpose it needs. See lib/silcske/silcske.h for the definition of
+   the SilcSKEKeyMaterial structure. */
+typedef void (*SilcKeyAgreementCallback)(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcClientEntry client_entry,
+					 SilcSKEKeyMaterial *key,
+					 void *context);
+
 /******************************************************************************
 
                            SILC Client Operations
@@ -154,10 +167,13 @@ typedef struct {
      reply to our key agreement packet. This returns TRUE if the user wants
      the library to perform the key agreement protocol and FALSE if it is not
      desired (application may start it later by calling the function
-     silc_client_perform_key_agreement). */
+     silc_client_perform_key_agreement). If TRUE is returned also the
+     `completion' and `context' arguments must be set by the application. */
   int (*key_agreement)(SilcClient client, SilcClientConnection conn,
 		       SilcClientEntry client_entry, char *hostname,
-		       int port);
+		       int port,
+		       SilcKeyAgreementCallback *completion,
+		       void **context);
 } SilcClientOperations;
 
 
@@ -172,7 +188,7 @@ typedef struct {
 
 ******************************************************************************/
 
-/* Initialization functions */
+/* Initialization functions (client.c) */
 
 /* Allocates new client object. This has to be done before client may
    work. After calling this one must call silc_client_init to initialize
@@ -197,7 +213,7 @@ void silc_client_run(SilcClient client);
 void silc_client_stop(SilcClient client);
 
 
-/* Connecting functions */
+/* Connecting functions (client.c) */
 
 /* Connects to remote server. This is the main routine used to connect
    to SILC server. Returns -1 on error and the created socket otherwise. 
@@ -240,7 +256,7 @@ void silc_client_close_connection(SilcClient client,
 				  SilcClientConnection conn);
 
 
-/* Message sending functions */
+/* Message sending functions (client_channel.c and client_prvmsg.c) */
 
 /* Sends packet to the `channel'. Packet to channel is always encrypted
    differently from "normal" packets. SILC header of the packet is 
@@ -270,7 +286,7 @@ void silc_client_send_private_message(SilcClient client,
 				      int force_send);
 
 
-/* Client and Channel entry retrieval */
+/* Client and Channel entry retrieval (idlist.c) */
 
 /* Callback function given to the silc_client_get_client function. The
    found entries are allocated into the `clients' array. The array must
@@ -328,7 +344,7 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 					 char *channel);
 
 
-/* Command management */
+/* Command management (command.c) */
 
 /* Allocate Command Context. The context is defined in `command.h' file.
    The context is used by the library commands and applications should use
@@ -374,7 +390,7 @@ void silc_client_command_pending(SilcClientConnection conn,
 				 void *context);
 
 
-/* Private Message key management */
+/* Private Message key management (client_prvmsg.c) */
 
 /* Adds private message key to the client library. The key will be used to
    encrypt all private message between the client and the remote client
@@ -462,7 +478,7 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
 					   unsigned int key_count);
 
 
-/* Channel private key management */
+/* Channel private key management (client_channel.c) */
 
 /* Adds private key for channel. This may be set only if the channel's mode
    mask includes the SILC_CHANNEL_MODE_PRIVKEY. This returns FALSE if the
@@ -529,27 +545,14 @@ SilcChannelPrivateKey *
 silc_client_list_channel_private_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
-				      unsigned int key_count);
+				      unsigned int *key_count);
 
 /* Frees the SilcChannelPrivateKey array. */
 void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
 					   unsigned int key_count);
 
 
-/* Key Agreement routines */
-
-/* Key agreement callback that is called after the key agreement protocol
-   has been performed. This is called also if error occured during the
-   key agreement protocol. The `key' is the allocated key material and
-   the caller is responsible of freeing it. The `key' is NULL if error
-   has occured. The application can freely use the `key' to whatever
-   purpose it needs. See lib/silcske/silcske.h for the definition of
-   the SilcSKEKeyMaterial structure. */
-typedef void (*SilcKeyAgreementCallback)(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcClientEntry client_entry,
-					 SilcSKEKeyMaterial *key,
-					 void *context);
+/* Key Agreement routines (client_keyagr.c) */
 
 /* Sends key agreement request to the remote client indicated by the
    `client_entry'. If the caller provides the `hostname' and the `port'
@@ -576,14 +579,19 @@ typedef void (*SilcKeyAgreementCallback)(SilcClient client,
    or decides not to reply with the key agreement packet then we cannot
    perform the key agreement at all. If the key agreement protocol is
    performed the `completion' callback with the `context' will be called.
-   If remote side decides to ignore the request the `completion' will never
-   be called and the caller is responsible of freeing the `context' memory. 
-   The application can do this by setting, for example, timeout. */
+   If remote side decides to ignore the request the `completion' will be
+   called after the specified timeout, `timeout_secs'. 
+
+   NOTE: There can be only one active key agreement for one client entry.
+   Before setting new one, the old one must be finished (it is finished
+   after calling the completion callback) or the function 
+   silc_client_abort_key_agreement must be called. */
 void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcClientEntry client_entry,
 				    char *hostname,
 				    int port,
+				    unsigned long timeout_secs,
 				    SilcKeyAgreementCallback completion,
 				    void *context);
 
@@ -593,7 +601,7 @@ void silc_client_send_key_agreement(SilcClient client,
    and did not return TRUE from it.
 
    The `hostname' is the remote hostname (or IP address) and the `port'
-   is the remote port. The `completion' callblack with the `context' will
+   is the remote port. The `completion' callback with the `context' will
    be called after the key agreement protocol.
    
    NOTE: If the application returns TRUE in the `key_agreement' client
@@ -613,6 +621,17 @@ void silc_client_perform_key_agreement(SilcClient client,
 				       int port,
 				       SilcKeyAgreementCallback completion,
 				       void *context);
+
+/* Same as above but application has created already the connection to 
+   the remote host. The `sock' is the socket to the remote connection. 
+   Application can use this function if it does not want the client library
+   to create the connection. */
+void silc_client_perform_key_agreement_fd(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcClientEntry client_entry,
+					  int sock,
+					  SilcKeyAgreementCallback completion,
+					  void *context);
 
 /* This function can be called to unbind the hostname and the port for
    the key agreement protocol. However, this function has effect only 

@@ -54,17 +54,17 @@ static void silc_server_protocol_ke_send_packet(SilcSKE ske,
 
 /* Sets the negotiated key material into use for particular connection. */
 
-static int silc_server_protocol_ke_set_keys(SilcSKE ske,
-					    SilcSocketConnection sock,
-					    SilcSKEKeyMaterial *keymat,
-					    SilcCipher cipher,
-					    SilcPKCS pkcs,
-					    SilcHash hash,
-					    int is_responder)
+int silc_server_protocol_ke_set_keys(SilcSKE ske,
+				     SilcSocketConnection sock,
+				     SilcSKEKeyMaterial *keymat,
+				     SilcCipher cipher,
+				     SilcPKCS pkcs,
+				     SilcHash hash,
+				     SilcHmac hmac,
+				     int is_responder)
 {
   SilcUnknownEntry conn_data;
   SilcIDListData idata;
-  SilcHash nhash;
 
   SILC_LOG_DEBUG(("Setting new key into use"));
 
@@ -114,13 +114,12 @@ static int silc_server_protocol_ke_set_keys(SilcSKE ske,
 #endif
 
   /* Save HMAC key to be used in the communication. */
-  if (!silc_hash_alloc(hash->hash->name, &nhash)) {
+  if (!silc_hmac_alloc(hmac->hmac->name, NULL, &idata->hmac)) {
     silc_cipher_free(idata->send_key);
     silc_cipher_free(idata->receive_key);
     silc_free(conn_data);
     return FALSE;
   }
-  silc_hmac_alloc(nhash, &idata->hmac);
   silc_hmac_set_key(idata->hmac, keymat->hmac_key, keymat->hmac_key_len);
 
   sock->user_data = (void *)conn_data;
@@ -346,32 +345,25 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
        * End protocol
        */
       SilcSKEKeyMaterial *keymat;
-      int key_len = silc_cipher_get_key_len(ctx->ske->prop->cipher, NULL);
+      int key_len = silc_cipher_get_key_len(ctx->ske->prop->cipher);
       int hash_len = ctx->ske->prop->hash->hash->hash_len;
-
-      /* Send Ok to the other end if we are responder. If we are 
-	 initiator we have sent this already. */
-      if (ctx->responder == TRUE)
-	silc_ske_end(ctx->ske, silc_server_protocol_ke_send_packet, context);
 
       /* Process the key material */
       keymat = silc_calloc(1, sizeof(*keymat));
-      silc_ske_process_key_material(ctx->ske, 16, key_len, hash_len,
-				    keymat);
-
-      /* Take the new keys into use. */
-      if (!silc_server_protocol_ke_set_keys(ctx->ske, ctx->sock, keymat,
-					    ctx->ske->prop->cipher,
-					    ctx->ske->prop->pkcs,
-					    ctx->ske->prop->hash,
-					    ctx->responder)) {
+      status = silc_ske_process_key_material(ctx->ske, 16, key_len, hash_len,
+					     keymat);
+      if (status != SILC_SKE_STATUS_OK) {
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	protocol->execute(server->timeout_queue, 0, protocol, fd, 0, 300000);
 	silc_ske_free_key_material(keymat);
 	return;
       }
+      ctx->keymat = keymat;
 
-      silc_ske_free_key_material(keymat);
+      /* Send Ok to the other end if we are responder. If we are initiator
+	 we have sent this already. */
+      if (ctx->responder == TRUE)
+	silc_ske_end(ctx->ske, silc_server_protocol_ke_send_packet, context);
 
       /* Unregister the timeout task since the protocol has ended. 
 	 This was the timeout task to be executed if the protocol is

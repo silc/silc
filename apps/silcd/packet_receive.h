@@ -32,6 +32,9 @@ void silc_server_notify_list(SilcServer server,
 void silc_server_private_message(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
+void silc_server_private_message_key(SilcServer server,
+				     SilcSocketConnection sock,
+				     SilcPacketContext *packet);
 void silc_server_command_reply(SilcServer server,
 			       SilcSocketConnection sock,
 			       SilcPacketContext *packet);
@@ -63,5 +66,8 @@ void silc_server_remove_id(SilcServer server,
 void silc_server_remove_id_list(SilcServer server,
 				SilcSocketConnection sock,
 				SilcPacketContext *packet);
+void silc_server_key_agreement(SilcServer server,
+			       SilcSocketConnection sock,
+			       SilcPacketContext *packet);
 
 #endif

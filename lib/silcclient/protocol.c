@@ -23,6 +23,7 @@
 /* $Id$ */
 
 #include "clientlibincludes.h"
+#include "client_internal.h"
 
 SILC_TASK_CALLBACK(silc_client_protocol_connection_auth);
 SILC_TASK_CALLBACK(silc_client_protocol_key_exchange);
@@ -35,10 +36,10 @@ extern char *silc_version_string;
 
 /* Function that is called when SKE protocol sends packets to network. */
 
-static void silc_client_protocol_ke_send_packet(SilcSKE ske,
-						SilcBuffer packet,
-						SilcPacketType type,
-						void *context)
+void silc_client_protocol_ke_send_packet(SilcSKE ske,
+					 SilcBuffer packet,
+					 SilcPacketType type,
+					 void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
   SilcClientKEInternalContext *ctx = 
@@ -78,15 +79,15 @@ silc_client_protocol_ke_verify_key(SilcSKE ske,
 
 /* Sets the negotiated key material into use for particular connection. */
 
-static void silc_client_protocol_ke_set_keys(SilcSKE ske,
-					     SilcSocketConnection sock,
-					     SilcSKEKeyMaterial *keymat,
-					     SilcCipher cipher,
-					     SilcPKCS pkcs,
-					     SilcHash hash)
+void silc_client_protocol_ke_set_keys(SilcSKE ske,
+				      SilcSocketConnection sock,
+				      SilcSKEKeyMaterial *keymat,
+				      SilcCipher cipher,
+				      SilcPKCS pkcs,
+				      SilcHash hash,
+				      SilcHmac hmac)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  SilcHash nhash;
 
   SILC_LOG_DEBUG(("Setting new keys into use"));
 
@@ -114,8 +115,7 @@ static void silc_client_protocol_ke_set_keys(SilcSKE ske,
 #endif
 
   /* Save HMAC key to be used in the communication. */
-  silc_hash_alloc(hash->hash->name, &nhash);
-  silc_hmac_alloc(nhash, &conn->hmac);
+  silc_hmac_alloc(hmac->hmac->name, NULL, &conn->hmac);
   silc_hmac_set_key(conn->hmac, keymat->hmac_key, keymat->hmac_key_len);
 }
 
@@ -179,17 +179,11 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       ske->user_data = (void *)client;
       
       if (ctx->responder == TRUE) {
-#if 0
-	SilcBuffer start_payload;
-
-
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
-					  start_payload,
-					  silc_client_protocol_ke_send_packet,
-					  context);
-#endif
+					  silc_version_string,
+					  ctx->packet->buffer, NULL, NULL);
       } else {
 	SilcSKEStartPayload *start_payload;
 
@@ -202,7 +196,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	   to the remote end. */
 	status = silc_ske_initiator_start(ske, ctx->rng, ctx->sock,
 					  start_payload,
-					  silc_client_protocol_ke_send_packet,
+					  ctx->send_packet,
 					  context);
       }
 
@@ -217,8 +211,10 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	return;
       }
 
-      /* Advance the state of the protocol. */
+      /* Advance protocol state and call the next state if we are responder */
       protocol->state++;
+      if (ctx->responder == TRUE)
+	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 100000);
     }
     break;
   case 2:
@@ -227,13 +223,12 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
        * Phase 1 
        */
       if (ctx->responder == TRUE) {
-#if 0
+	/* Sends the selected security properties to the initiator. */
 	status = 
 	  silc_ske_responder_phase_1(ctx->ske, 
 				     ctx->ske->start_payload,
-				     silc_server_protocol_ke_send_packet,
+				     ctx->send_packet,
 				     context);
-#endif
       } else {
 	/* Call Phase-1 function. This processes the Key Exchange Start
 	   paylaod reply we just got from the responder. The callback
@@ -254,9 +249,10 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	return;
       }
 
-      /* Advance the state of the protocol and call the next state. */
+      /* Advance protocol state and call next state if we are initiator */
       protocol->state++;
-      protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
+      if (ctx->responder == FALSE)
+	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 100000);
     }
     break;
   case 3:
@@ -265,13 +261,11 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
        * Phase 2 
        */
       if (ctx->responder == TRUE) {
-#if 0
-	status = 
-	  silc_ske_responder_phase_2(ctx->ske, 
-				     ctx->ske->start_payload,
-				     silc_server_protocol_ke_send_packet,
-				     context);
-#endif
+	/* Process the received Key Exchange 1 Payload packet from
+	   the initiator. This also creates our parts of the Diffie
+	   Hellman algorithm. */
+	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
+					    NULL, NULL);
       } else {
 	/* Call the Phase-2 function. This creates Diffie Hellman
 	   key exchange parameters and sends our public part inside
@@ -279,7 +273,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	status = 
 	  silc_ske_initiator_phase_2(ctx->ske,
 				     client->public_key,
-				     silc_client_protocol_ke_send_packet,
+				     ctx->send_packet,
 				     context);
       }
 
@@ -294,8 +288,10 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	return;
       }
 
-      /* Advance the state of the protocol. */
+      /* Advance protocol state and call the next state if we are responder */
       protocol->state++;
+      if (ctx->responder == TRUE)
+	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 100000);
     }
     break;
   case 4:
@@ -304,14 +300,15 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
        * Finish protocol
        */
       if (ctx->responder == TRUE) {
-	status = 0;
-#if 0
+	/* This creates the key exchange material and sends our
+	   public parts to the initiator inside Key Exchange 2 Payload. */
 	status = 
-	  silc_ske_responder_phase_2(ctx->ske, 
-				     ctx->ske->start_payload,
-				     silc_server_protocol_ke_send_packet,
-				     context);
-#endif
+	  silc_ske_responder_finish(ctx->ske, 
+				    client->public_key, client->private_key,
+				    SILC_SKE_PK_TYPE_SILC,
+				    ctx->send_packet,
+				    context);
+	status = 0;
       } else {
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. */
@@ -338,7 +335,8 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       
       /* Send Ok to the other end. We will end the protocol as server
 	 sends Ok to us when we will take the new keys into use. */
-      silc_ske_end(ctx->ske, silc_client_protocol_ke_send_packet, context);
+      if (ctx->responder == FALSE)
+	silc_ske_end(ctx->ske, ctx->send_packet, context);
       
       /* End the protocol on the next round */
       protocol->state = SILC_PROTOCOL_STATE_END;
@@ -351,21 +349,31 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
        * End protocol
        */
       SilcSKEKeyMaterial *keymat;
-      int key_len = silc_cipher_get_key_len(ctx->ske->prop->cipher, NULL);
+      int key_len = silc_cipher_get_key_len(ctx->ske->prop->cipher);
       int hash_len = ctx->ske->prop->hash->hash->hash_len;
 
       /* Process the key material */
       keymat = silc_calloc(1, sizeof(*keymat));
-      silc_ske_process_key_material(ctx->ske, 16, key_len, hash_len, 
-				    keymat);
+      status = silc_ske_process_key_material(ctx->ske, 16, key_len, hash_len,
+					     keymat);
+      if (status != SILC_SKE_STATUS_OK) {
+	protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 300000);
+	silc_ske_free_key_material(keymat);
+	return;
+      }
+      ctx->keymat = keymat;
 
-      /* Take the negotiated keys into use. */
-      silc_client_protocol_ke_set_keys(ctx->ske, ctx->sock, keymat,
-				       ctx->ske->prop->cipher,
-				       ctx->ske->prop->pkcs,
-				       ctx->ske->prop->hash);
+      /* Send Ok to the other end if we are responder. If we are initiator
+	 we have sent this already. */
+      if (ctx->responder == TRUE)
+	silc_ske_end(ctx->ske, ctx->send_packet, context);
 
-      silc_ske_free_key_material(keymat);
+      /* Unregister the timeout task since the protocol has ended. 
+	 This was the timeout task to be executed if the protocol is
+	 not completed fast enough. */
+      if (ctx->timeout_task)
+	silc_task_unregister(client->timeout_queue, ctx->timeout_task);
 
       /* Protocol has ended, call the final callback */
       if (protocol->final_callback)
@@ -382,8 +390,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
     
     /* Send abort notification */
     silc_ske_abort(ctx->ske, ctx->ske->status, 
-		   silc_client_protocol_ke_send_packet,
-		   context);
+		   ctx->send_packet, context);
 
     /* On error the final callback is always called. */
     if (protocol->final_callback)
@@ -396,6 +403,12 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
     /*
      * Received failure from remote.
      */
+
+    /* Unregister the timeout task since the protocol has ended. 
+       This was the timeout task to be executed if the protocol is
+       not completed fast enough. */
+    if (ctx->timeout_task)
+      silc_task_unregister(client->timeout_queue, ctx->timeout_task);
 
     /* On error the final callback is always called. */
     if (protocol->final_callback)

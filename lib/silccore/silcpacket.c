@@ -112,13 +112,14 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac,
 			 SilcBuffer buffer, unsigned int len)
 {
   unsigned char mac[32];
+  unsigned int mac_len;
 
   /* Compute HMAC. This assumes that HMAC is created from the entire
      data area thus this uses the length found in buffer, not the length
      sent as argument. */
   if (hmac) {
-    silc_hmac_make(hmac, buffer->data, buffer->len, mac);
-    silc_buffer_put_tail(buffer, mac, hmac->hash->hash->hash_len);
+    silc_hmac_make(hmac, buffer->data, buffer->len, mac, &mac_len);
+    silc_buffer_put_tail(buffer, mac, mac_len);
     memset(mac, 0, sizeof(mac));
   }
 
@@ -133,7 +134,7 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac,
 
   /* Pull the HMAC into the visible data area in the buffer */
   if (hmac)
-    silc_buffer_pull_tail(buffer, hmac->hash->hash->hash_len);
+    silc_buffer_pull_tail(buffer, mac_len);
 }
 
 /* Assembles a new packet to be ready for send out. The buffer sent as
@@ -378,7 +379,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     return;
 
   if (hmac)
-    mac_len = hmac->hash->hash->hash_len;
+    mac_len = hmac->hmac->len;
 
   /* Parse the packets from the data */
   count = 0;
@@ -465,15 +466,16 @@ static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer)
   /* Check MAC */
   if (hmac) {
     unsigned char mac[32];
+    unsigned int mac_len;
     
     SILC_LOG_DEBUG(("Verifying MAC"));
 
     /* Compute HMAC of packet */
     memset(mac, 0, sizeof(mac));
-    silc_hmac_make(hmac, buffer->data, buffer->len, mac);
+    silc_hmac_make(hmac, buffer->data, buffer->len, mac, &mac_len);
 
     /* Compare the HMAC's (buffer->tail has the packet's HMAC) */
-    if (memcmp(mac, buffer->tail, hmac->hash->hash->hash_len)) {
+    if (memcmp(mac, buffer->tail, mac_len)) {
       SILC_LOG_DEBUG(("MAC failed"));
       return FALSE;
     }
@@ -497,8 +499,8 @@ static int silc_packet_decrypt_rest(SilcCipher cipher, SilcHmac hmac,
 
     /* Pull MAC from packet before decryption */
     if (hmac) {
-      if ((buffer->len - hmac->hash->hash->hash_len) > SILC_PACKET_MIN_LEN) {
-	silc_buffer_push_tail(buffer, hmac->hash->hash->hash_len);
+      if ((buffer->len - hmac->hmac->len) > SILC_PACKET_MIN_LEN) {
+	silc_buffer_push_tail(buffer, hmac->hmac->len);
       } else {
 	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
 	return FALSE;
@@ -537,8 +539,8 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 
     /* Pull MAC from packet before decryption */
     if (hmac) {
-      if ((buffer->len - hmac->hash->hash->hash_len) > SILC_PACKET_MIN_LEN) {
-	silc_buffer_push_tail(buffer, hmac->hash->hash->hash_len);
+      if ((buffer->len - hmac->hmac->len) > SILC_PACKET_MIN_LEN) {
+	silc_buffer_push_tail(buffer, hmac->hmac->len);
       } else {
 	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
 	return FALSE;

@@ -1308,6 +1308,10 @@ represents the Channel Message Payload.
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
+~                              MAC                              ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
 ~                       Initial Vector *                        ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1332,6 +1336,16 @@ o Padding Length (2 bytes) - Indicates the length of the
 o Padding (variable length) - The padding that must be
   applied because this payload is encrypted separately from
   other parts of the packet.
+
+o MAC (variable legnth) - The MAC computed from the
+  Message Length, Message Data, Padding Length and Padding
+  fields.  This protects the integrity of the plaintext
+  channel message.  The receiver can verify from the MAC
+  whether the message decrypted correctly.  Also, if more than
+  one private key has been set for the channel, the receiver
+  can verify which of the keys decrypted the message 
+  correctly.  Note that, this field is encrypted and must
+  be added to the padding calculation.
 
 o Initial Vector (variable length) - The initial vector
   that has been used in packet encryption.  It needs to be
@@ -2080,7 +2094,7 @@ As the receiver founds the packet to be channel message, rest of the
 packet processing is special.  Rest of the SILC Packet header is
 decrypted with the same session key along with the padding of the
 packet.  After that the packet is protected with the channel specific
-key and hence can be decrypted only if the receiver is the client on
+key and thus can be decrypted only if the receiver is the client on
 the channel.  See section 2.7 Packet Padding Generation for more
 information about padding on special packets.
 

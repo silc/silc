@@ -92,7 +92,8 @@ struct SilcSKESecurityPropertiesStruct {
   SilcPKCS pkcs;
   SilcCipher cipher;
   SilcHash hash;
-  /* XXX SilcCompression comp; */
+  SilcHmac hmac;
+  /* XXX SilcZip comp; */
 };
 
 struct SilcSKEStruct {

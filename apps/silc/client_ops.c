@@ -632,6 +632,23 @@ void silc_failure(SilcClient client, SilcClientConnection conn,
 
 }
 
+/* Asks whether the user would like to perform the key agreement protocol.
+   This is called after we have received an key agreement packet or an
+   reply to our key agreement packet. This returns TRUE if the user wants
+   the library to perform the key agreement protocol and FALSE if it is not
+   desired (application may start it later by calling the function
+   silc_client_perform_key_agreement). */
+
+int silc_key_agreement(SilcClient client, SilcClientConnection conn,
+		       SilcClientEntry client_entry, char *hostname,
+		       int port,
+		       SilcKeyAgreementCallback *completion,
+		       void **context)
+{
+
+  return FALSE;
+}
+
 /* SILC client operations */
 SilcClientOperations ops = {
   say:                  silc_say,
@@ -646,4 +663,5 @@ SilcClientOperations ops = {
   verify_server_key:    silc_verify_server_key,
   ask_passphrase:       silc_ask_passphrase,
   failure:              silc_failure,
+  key_agreement:        silc_key_agreement,
 };

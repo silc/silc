@@ -66,6 +66,8 @@ void silc_ske_free(SilcSKE ske)
 	silc_cipher_free(ske->prop->cipher);
       if (ske->prop->hash)
 	silc_hash_free(ske->prop->hash);
+      if (ske->prop->hmac)
+	silc_hmac_free(ske->prop->hmac);
       silc_free(ske->prop);
     }
     if (ske->start_payload_copy)
@@ -181,6 +183,11 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
     goto err;
   }
 
+  if (silc_hmac_alloc(payload->hmac_alg_list, NULL, &prop->hmac) == FALSE) {
+    status = SILC_SKE_STATUS_UNKNOWN_HMAC;
+    goto err;
+  }
+
   ske->start_payload = payload;
 
   /* Return the received payload by calling the callback function. */
@@ -201,6 +208,8 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
     silc_cipher_free(prop->cipher);
   if (prop->hash)
     silc_hash_free(prop->hash);
+  if (prop->hmac)
+    silc_hmac_free(prop->hmac);
   silc_free(prop);
   ske->prop = NULL;
 
@@ -501,6 +510,12 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
     goto err;
   }
 
+  if (silc_hmac_alloc(start_payload->hmac_alg_list, NULL,
+		      &prop->hmac) == FALSE) {
+    status = SILC_SKE_STATUS_UNKNOWN_HMAC;
+    goto err;
+  }
+
   /* Encode the payload */
   status = silc_ske_payload_start_encode(ske, start_payload, &payload_buf);
   if (status != SILC_SKE_STATUS_OK)
@@ -524,6 +539,8 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
     silc_cipher_free(prop->cipher);
   if (prop->hash)
     silc_hash_free(prop->hash);
+  if (prop->hmac)
+    silc_hmac_free(prop->hmac);
   silc_free(prop);
   ske->prop = NULL;
 
@@ -791,6 +808,10 @@ silc_ske_assemble_security_properties(SilcSKE ske,
   rp->hash_alg_list = silc_hash_get_supported();
   rp->hash_alg_len = strlen(rp->hash_alg_list);
 
+  /* Get supported HMACs */
+  rp->hmac_alg_list = silc_hmac_get_supported();
+  rp->hmac_alg_len = strlen(rp->hmac_alg_list);
+
   /* XXX */
   /* Get supported compression algorithms */
   rp->comp_alg_list = "";
@@ -800,7 +821,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
     2 + rp->version_len +
     2 + rp->ke_grp_len + 2 + rp->pkcs_alg_len + 
     2 + rp->enc_alg_len + 2 + rp->hash_alg_len + 
-    2 + rp->comp_alg_len;
+    2 + rp->hmac_alg_len + 2 + rp->comp_alg_len;
 
   *return_payload = rp;
 
@@ -1056,6 +1077,64 @@ silc_ske_select_security_properties(SilcSKE ske,
     payload->hash_alg_list = strdup(rp->hash_alg_list);
   }
 
+  /* Get supported HMACs */
+  cp = rp->hmac_alg_list;
+  if (cp && strchr(cp, ',')) {
+    while(cp) {
+      char *item;
+
+      len = strcspn(cp, ",");
+      item = silc_calloc(len + 1, sizeof(char));
+      memcpy(item, cp, len);
+
+      SILC_LOG_DEBUG(("Proposed HMAC `%s'", item));
+
+      if (silc_hmac_is_supported(item) == TRUE) {
+	SILC_LOG_DEBUG(("Found HMAC `%s'", item));
+
+	payload->hmac_alg_len = len;
+	payload->hmac_alg_list = item;
+	break;
+      }
+
+      cp += len;
+      if (strlen(cp) == 0)
+	cp = NULL;
+      else
+	cp++;
+
+      if (item)
+	silc_free(item);
+    }
+
+    if (!payload->hmac_alg_len && !payload->hmac_alg_list) {
+      SILC_LOG_DEBUG(("Could not find supported HMAC"));
+      silc_free(payload->ke_grp_list);
+      silc_free(payload->pkcs_alg_list);
+      silc_free(payload->enc_alg_list);
+      silc_free(payload->hash_alg_list);
+      silc_free(payload);
+      return SILC_SKE_STATUS_UNKNOWN_HMAC;
+    }
+  } else {
+
+    if (!rp->hmac_alg_len) {
+      SILC_LOG_DEBUG(("HMAC not defined in payload"));
+      silc_free(payload->ke_grp_list);
+      silc_free(payload->pkcs_alg_list);
+      silc_free(payload->enc_alg_list);
+      silc_free(payload->hash_alg_list);
+      silc_free(payload);
+      return SILC_SKE_STATUS_BAD_PAYLOAD;
+    }
+
+    SILC_LOG_DEBUG(("Proposed HMAC `%s' and selected it",
+		    rp->hmac_alg_list));
+
+    payload->hmac_alg_len = rp->hmac_alg_len;
+    payload->hmac_alg_list = strdup(rp->hmac_alg_list);
+  }
+
 #if 0
   /* Get supported compression algorithms */
   cp = rp->hash_alg_list;
@@ -1105,7 +1184,7 @@ silc_ske_select_security_properties(SilcSKE ske,
     2 + payload->version_len + 
     2 + payload->ke_grp_len + 2 + payload->pkcs_alg_len + 
     2 + payload->enc_alg_len + 2 + payload->hash_alg_len + 
-    2 + payload->comp_alg_len;
+    2 + payload->hmac_alg_len + 2 + payload->comp_alg_len;
 
   return SILC_SKE_STATUS_OK;
 }
@@ -1271,6 +1350,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     
     /* Take third round */
     dist = silc_buffer_realloc(dist, data_len + hash_len + hash_len);
+    silc_buffer_pull_tail(dist, hash_len);
     silc_buffer_pull(dist, data_len + hash_len);
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(k2, hash_len),
@@ -1330,6 +1410,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     
     /* Take third round */
     dist = silc_buffer_realloc(dist, data_len + hash_len + hash_len);
+    silc_buffer_pull_tail(dist, hash_len);
     silc_buffer_pull(dist, data_len + hash_len);
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(k2, hash_len),
@@ -1417,6 +1498,9 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 
 void silc_ske_free_key_material(SilcSKEKeyMaterial *key)
 {
+  if (!key)
+    return;
+
   if (key->send_iv)
     silc_free(key->send_iv);
   if (key->receive_iv)

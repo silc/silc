@@ -122,12 +122,17 @@ int silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
 void silc_cipher_free(SilcCipher cipher);
 int silc_cipher_is_supported(const unsigned char *name);
 char *silc_cipher_get_supported();
+int silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
+			unsigned char *dst, unsigned int len, 
+			unsigned char *iv);
+int silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
+			unsigned char *dst, unsigned int len, 
+			unsigned char *iv);
 int silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
 			unsigned int keylen);
 void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv);
 void silc_cipher_get_iv(SilcCipher cipher, unsigned char *iv);
-unsigned int silc_cipher_get_key_len(SilcCipher cipher, 
-				     const unsigned char *name);
+unsigned int silc_cipher_get_key_len(SilcCipher cipher);
 unsigned int silc_cipher_get_block_len(SilcCipher cipher);
 
 #endif

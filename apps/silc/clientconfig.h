@@ -69,6 +69,7 @@ typedef struct {
   SilcClientConfigSectionAlg *cipher;
   SilcClientConfigSectionAlg *pkcs;
   SilcClientConfigSectionAlg *hash_func;
+  SilcClientConfigSectionAlg *hmac;
   SilcClientConfigSectionConnection *conns;
   SilcClientConfigSectionCommand *commands;
 } SilcClientConfigObject;
@@ -81,6 +82,7 @@ typedef enum {
   SILC_CLIENT_CONFIG_SECTION_TYPE_CIPHER,
   SILC_CLIENT_CONFIG_SECTION_TYPE_PKCS,
   SILC_CLIENT_CONFIG_SECTION_TYPE_HASH_FUNCTION,
+  SILC_CLIENT_CONFIG_SECTION_TYPE_HMAC,
   SILC_CLIENT_CONFIG_SECTION_TYPE_CONNECTION,
   SILC_CLIENT_CONFIG_SECTION_TYPE_COMMAND = 253, /* Special section */
 } SilcClientConfigSectionType;
@@ -117,6 +119,7 @@ void silc_client_config_setlogfiles(SilcClientConfig config);
 void silc_client_config_register_ciphers(SilcClientConfig config);
 void silc_client_config_register_pkcs(SilcClientConfig config);
 void silc_client_config_register_hashfuncs(SilcClientConfig config);
+void silc_client_config_register_hmacs(SilcClientConfig config);
 SilcClientConfigSectionConnection *
 silc_client_config_find_connection(SilcClientConfig config, 
 				   char *host, int port);

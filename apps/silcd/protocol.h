@@ -45,6 +45,7 @@ typedef struct {
   SilcTask timeout_task;
   SilcPacketContext *packet;
   SilcSKE ske;
+  SilcSKEKeyMaterial *keymat;
 } SilcServerKEInternalContext;
 
 /* Internal context for connection authentication protocol */
@@ -82,5 +83,13 @@ typedef struct {
 /* Prototypes */
 void silc_server_protocols_register(void);
 void silc_server_protocols_unregister(void);
+int silc_server_protocol_ke_set_keys(SilcSKE ske,
+				     SilcSocketConnection sock,
+				     SilcSKEKeyMaterial *keymat,
+				     SilcCipher cipher,
+				     SilcPKCS pkcs,
+				     SilcHash hash,
+				     SilcHmac hmac,
+				     int is_responder);
 
 #endif

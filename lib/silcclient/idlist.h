@@ -39,6 +39,7 @@ typedef struct SilcClientEntryStruct {
 				   generated the key. */
   unsigned int key_len;
   int generated;		/* TRUE if library generated the key */
+  SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
 } *SilcClientEntry;
 
 /* Client and its mode on a channel */
@@ -66,6 +67,7 @@ typedef struct SilcChannelEntryStruct {
   unsigned char *key;
   unsigned int key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+  SilcHmac hmac;
 } *SilcChannelEntry;
 
 /* Prototypes (some functions are defined in the silcapi.h) */

@@ -1,0 +1,368 @@
+/*
+
+  client_channel.c
+
+  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+  Copyright (C) 1997 - 2001 Pekka Riikonen
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+/* $Id$ */
+/* This file includes channel message sending and receiving routines,
+   channel key receiving and setting, and channel private key handling 
+   routines. */
+
+#include "clientlibincludes.h"
+#include "client_internal.h"
+
+/* Sends packet to the `channel'. Packet to channel is always encrypted
+   differently from "normal" packets. SILC header of the packet is 
+   encrypted with the next receiver's key and the rest of the packet is
+   encrypted with the channel specific key. Padding and HMAC is computed
+   with the next receiver's key. The `data' is the channel message. If
+   the `force_send' is TRUE then the packet is sent immediately. */
+
+void silc_client_send_channel_message(SilcClient client, 
+				      SilcClientConnection conn,
+				      SilcChannelEntry channel,
+				      unsigned char *data, 
+				      unsigned int data_len, 
+				      int force_send)
+{
+  int i;
+  SilcSocketConnection sock = conn->sock;
+  SilcBuffer payload;
+  SilcPacketContext packetdata;
+  SilcCipher cipher;
+  SilcHmac hmac;
+  unsigned char *id_string;
+  unsigned int iv_len;
+
+  SILC_LOG_DEBUG(("Sending packet to channel"));
+
+  if (!channel || !channel->key || !channel->hmac) {
+    client->ops->say(client, conn, 
+		     "Cannot talk to channel: key does not exist");
+    return;
+  }
+
+  /* Generate IV */
+  iv_len = silc_cipher_get_block_len(channel->channel_key);
+  if (channel->iv[0] == '\0')
+    for (i = 0; i < iv_len; i++) channel->iv[i] = 
+				   silc_rng_get_byte(client->rng);
+  else
+    silc_hash_make(client->md5hash, channel->iv, iv_len, channel->iv);
+
+  /* Encode the channel payload. This also encrypts the message payload. */
+  payload = silc_channel_payload_encode(data_len, data, iv_len, 
+					channel->iv, channel->channel_key,
+					channel->hmac, client->rng);
+
+  /* Get data used in packet header encryption, keys and stuff. */
+  cipher = conn->send_key;
+  hmac = conn->hmac;
+  id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+
+  /* Set the packet context pointers. The destination ID is always
+     the Channel ID of the channel. Server and router will handle the
+     distribution of the packet. */
+  packetdata.flags = 0;
+  packetdata.type = SILC_PACKET_CHANNEL_MESSAGE;
+  packetdata.src_id = conn->local_id_data;
+  packetdata.src_id_len = SILC_ID_CLIENT_LEN;
+  packetdata.src_id_type = SILC_ID_CLIENT;
+  packetdata.dst_id = id_string;
+  packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
+  packetdata.dst_id_type = SILC_ID_CHANNEL;
+  packetdata.truelen = payload->len + SILC_PACKET_HEADER_LEN + 
+    packetdata.src_id_len + packetdata.dst_id_len;
+  packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
+					  packetdata.src_id_len +
+					  packetdata.dst_id_len));
+
+  /* Prepare outgoing data buffer for packet sending */
+  silc_packet_send_prepare(sock, 
+			   SILC_PACKET_HEADER_LEN +
+			   packetdata.src_id_len + 
+			   packetdata.dst_id_len,
+			   packetdata.padlen,
+			   payload->len);
+
+  packetdata.buffer = sock->outbuf;
+
+  /* Put the channel message payload to the outgoing data buffer */
+  silc_buffer_put(sock->outbuf, payload->data, payload->len);
+
+  /* Create the outgoing packet */
+  silc_packet_assemble(&packetdata);
+
+  /* Encrypt the header and padding of the packet. This is encrypted 
+     with normal session key shared with our server. */
+  silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
+		      packetdata.src_id_len + packetdata.dst_id_len +
+		      packetdata.padlen);
+
+  SILC_LOG_HEXDUMP(("Packet to channel, len %d", sock->outbuf->len),
+		   sock->outbuf->data, sock->outbuf->len);
+
+  /* Now actually send the packet */
+  silc_client_packet_send_real(client, sock, force_send);
+  silc_buffer_free(payload);
+  silc_free(id_string);
+}
+
+/* Process received message to a channel (or from a channel, really). This
+   decrypts the channel message with channel specific key and parses the
+   channel payload. Finally it displays the message on the screen. */
+
+void silc_client_channel_message(SilcClient client, 
+				 SilcSocketConnection sock, 
+				 SilcPacketContext *packet)
+{
+  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  SilcBuffer buffer = packet->buffer;
+  SilcChannelPayload payload = NULL;
+  SilcChannelID *id = NULL;
+  SilcChannelEntry channel;
+  SilcChannelUser chu;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientID *client_id = NULL;
+  int found = FALSE;
+  unsigned char *message;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Sanity checks */
+  if (packet->dst_id_type != SILC_ID_CHANNEL)
+    goto out;
+
+  client_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+			     SILC_ID_CLIENT);
+  if (!client_id)
+    goto out;
+  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL);
+  if (!id)
+    goto out;
+
+  /* Find the channel entry from channels on this connection */
+  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
+				   SILC_ID_CHANNEL, &id_cache))
+    goto out;
+
+  channel = (SilcChannelEntry)id_cache->context;
+
+  /* Parse the channel message payload. This also decrypts the payload */
+  payload = silc_channel_payload_parse(buffer, channel->channel_key,
+				       channel->hmac);
+  if (!payload)
+    goto out;
+
+  message = silc_channel_get_data(payload, NULL);
+
+  /* Find client entry */
+  silc_list_start(channel->clients);
+  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+    if (!SILC_ID_CLIENT_COMPARE(chu->client->id, client_id)) {
+      found = TRUE;
+      break;
+    }
+  }
+
+  /* Pass the message to application */
+  client->ops->channel_message(client, conn, found ? chu->client : NULL,
+			       channel, message);
+
+ out:
+  if (id)
+    silc_free(id);
+  if (client_id)
+    silc_free(client_id);
+  if (payload)
+    silc_channel_payload_free(payload);
+}
+
+/* Saves channel key from encoded `key_payload'. This is used when we
+   receive Channel Key Payload and when we are processing JOIN command 
+   reply. */
+
+void silc_client_save_channel_key(SilcClientConnection conn,
+				  SilcBuffer key_payload, 
+				  SilcChannelEntry channel)
+{
+  unsigned char *id_string, *key, *cipher, hash[32];
+  unsigned int tmp_len;
+  SilcChannelID *id;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelKeyPayload payload;
+
+  payload = silc_channel_key_payload_parse(key_payload);
+  if (!payload)
+    return;
+
+  id_string = silc_channel_key_get_id(payload, &tmp_len);
+  if (!id_string) {
+    silc_channel_key_payload_free(payload);
+    return;
+  }
+
+  id = silc_id_str2id(id_string, tmp_len, SILC_ID_CHANNEL);
+  if (!id) {
+    silc_channel_key_payload_free(payload);
+    return;
+  }
+
+  /* Find channel. */
+  if (!channel) {
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
+				     SILC_ID_CHANNEL, &id_cache))
+      goto out;
+    
+    /* Get channel entry */
+    channel = (SilcChannelEntry)id_cache->context;
+  }
+
+  /* Save the key */
+  key = silc_channel_key_get_key(payload, &tmp_len);
+  cipher = silc_channel_key_get_cipher(payload, NULL);
+  channel->key_len = tmp_len * 8;
+  channel->key = silc_calloc(tmp_len, sizeof(*channel->key));
+  memcpy(channel->key, key, tmp_len);
+
+  if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
+    conn->client->ops->say(conn->client, conn,
+		     "Cannot talk to channel: unsupported cipher %s", cipher);
+    goto out;
+  }
+
+  /* Set the cipher key */
+  silc_cipher_set_key(channel->channel_key, key, channel->key_len);
+
+  /* Generate HMAC key from the channel key data and set it */
+  if (!channel->hmac)
+    silc_hmac_alloc("hmac-sha1-96", NULL, &channel->hmac);
+  silc_hash_make(channel->hmac->hash, key, tmp_len, hash);
+  silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
+  memset(hash, 0, sizeof(hash));
+
+  /* Client is now joined to the channel */
+  channel->on_channel = TRUE;
+
+ out:
+  silc_free(id);
+  silc_channel_key_payload_free(payload);
+}
+
+/* Processes received key for channel. The received key will be used
+   to protect the traffic on the channel for now on. Client must receive
+   the key to the channel before talking on the channel is possible. 
+   This is the key that server has generated, this is not the channel
+   private key, it is entirely local setting. */
+
+void silc_client_receive_channel_key(SilcClient client,
+				     SilcSocketConnection sock,
+				     SilcBuffer packet)
+{
+  SILC_LOG_DEBUG(("Received key for channel"));
+
+  /* Save the key */
+  silc_client_save_channel_key(sock->user_data, packet, NULL);
+}
+
+/* Adds private key for channel. This may be set only if the channel's mode
+   mask includes the SILC_CHANNEL_MODE_PRIVKEY. This returns FALSE if the
+   mode is not set. When channel has private key then the messages are
+   encrypted using that key. All clients on the channel must also know the
+   key in order to decrypt the messages. However, it is possible to have
+   several private keys per one channel. In this case only some of the
+   clients on the channel may now the one key and only some the other key.
+
+   The private key for channel is optional. If it is not set then the
+   channel messages are encrypted using the channel key generated by the
+   server. However, setting the private key (or keys) for the channel 
+   significantly adds security. If more than one key is set the library
+   will automatically try all keys at the message decryption phase. Note:
+   setting many keys slows down the decryption phase as all keys has to
+   be tried in order to find the correct decryption key. However, setting
+   a few keys does not have big impact to the decryption performace. 
+
+   NOTE: that this is entirely local setting. The key set using this function
+   is not sent to the network at any phase.
+
+   NOTE: If the key material was originated by the SKE protocol (using
+   silc_client_send_key_agreement) then the `key' MUST be the
+   key->send_enc_key as this is dictated by the SILC protocol. However,
+   currently it is not expected that the SKE key material would be used
+   as channel private key. However, this API allows it. */
+
+int silc_client_add_channel_private_key(SilcClient client,
+					SilcClientConnection conn,
+					SilcChannelEntry channel,
+					char *cipher,
+					unsigned char *key,
+					unsigned int key_len)
+{
+
+  return TRUE;
+}
+
+/* Removes all private keys from the `channel'. The old channel key is used
+   after calling this to protect the channel messages. Returns FALSE on
+   on error, TRUE otherwise. */
+
+int silc_client_del_channel_private_keys(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel)
+{
+
+  return TRUE;
+}
+
+/* Removes and frees private key `key' from the channel `channel'. The `key'
+   is retrieved by calling the function silc_client_list_channel_private_keys.
+   The key is not used after this. If the key was last private key then the
+   old channel key is used hereafter to protect the channel messages. This
+   returns FALSE on error, TRUE otherwise. */
+
+int silc_client_del_channel_private_key(SilcClient client,
+					SilcClientConnection conn,
+					SilcChannelEntry channel,
+					SilcChannelPrivateKey key)
+{
+
+  return TRUE;
+}
+
+/* Returns array (pointers) of private keys associated to the `channel'.
+   The caller must free the array by calling the function
+   silc_client_free_channel_private_keys. The pointers in the array may be
+   used to delete the specific key by giving the pointer as argument to the
+   function silc_client_del_channel_private_key. */
+
+SilcChannelPrivateKey *
+silc_client_list_channel_private_keys(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcChannelEntry channel,
+				      unsigned int *key_count)
+{
+
+  return NULL;
+}
+
+/* Frees the SilcChannelPrivateKey array. */
+
+void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
+					   unsigned int key_count)
+{
+
+}

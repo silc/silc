@@ -38,29 +38,28 @@ struct SilcHashListStruct *silc_hash_list = NULL;
 /* Statically declared list of hash functions. */
 SilcHashObject silc_hash_builtin_list[] = 
 {
-  { "md5", 16, 64, silc_md5_init, silc_md5_update, silc_md5_final,
-    silc_md5_transform, silc_md5_context_len },
   { "sha1", 20, 64, silc_sha1_init, silc_sha1_update, silc_sha1_final,
     silc_sha1_transform, silc_sha1_context_len },
+  { "md5", 16, 64, silc_md5_init, silc_md5_update, silc_md5_final,
+    silc_md5_transform, silc_md5_context_len },
 
   { NULL, 0, 0, NULL, NULL, NULL, NULL, NULL }
 };
 
-/* Registers a ned hash function into the SILC. This function is used at
+/* Registers a new hash function into the SILC. This function is used at
    the initialization of the SILC. */
 
 int silc_hash_register(SilcHashObject *hash)
 {
   struct SilcHashListStruct *new, *h;
 
-  SILC_LOG_DEBUG(("Registering new hash function"));
+  SILC_LOG_DEBUG(("Registering new hash function `%s'", hash->name));
 
   new = silc_calloc(1, sizeof(*new));
   new->hash = silc_calloc(1, sizeof(*new->hash));
 
   /* Set the pointers */
-  new->hash->name = silc_calloc(1, strlen(hash->name));
-  memcpy(new->hash->name, hash->name, strlen(hash->name));
+  new->hash->name = strdup(hash->name);
   new->hash->hash_len = hash->hash_len;
   new->hash->block_len = hash->block_len;
   new->hash->init = hash->init;
@@ -196,12 +195,22 @@ void silc_hash_free(SilcHash hash)
   }
 }
 
+/* Returns the length of the hash digest. */
+
+unsigned int silc_hash_len(SilcHash hash)
+{
+  return hash->hash->hash_len;
+}
+
 /* Returns TRUE if hash algorithm `name' is supported. */
 
 int silc_hash_is_supported(const unsigned char *name)
 {
   struct SilcHashListStruct *h;
   int i;
+
+  if (!name)
+    return FALSE;
   
   if (silc_hash_list) {
     h = silc_hash_list;

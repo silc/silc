@@ -263,7 +263,13 @@ not include spaces (` ').
 |       Hash Alg Length         |                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
 |                                                               |
-~                        Hash Algorithms                        ~
+~                         Hash Algorithms                       ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         HMAC Length           |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                             HMACs                             ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |    Compression Alg Length     |                               |
@@ -342,10 +348,19 @@ o Encryption Alg Length (2 bytes) - The length of the encryption
 o Encryption Algorithms (variable length) - The list of
   encryption algorithms.
 
-o Hash Alg Length (2 bytes) - The length of the Hash algorithms
+o Hash Alg Length (2 bytes) - The length of the Hash algorithm
   list, not including any other field.
 
-o Hash Algorithms (variable length) - The list of Hash algorithms.
+o Hash Algorithms (variable length) - The list of Hash
+  algorithms.  The hash algorithms are mainly used in the
+  SKE protocol.
+
+o HMAC Length (2 bytes) - The length of the HMAC list, not
+  including any other field.
+
+o HMACs (variable length) - The list of HMACs.  The HMAC's
+  are used to compute the Message Authentication Codes (MAC)
+  of the SILC packets.
 
 o Compression Alg Length (2 bytes) - The length of the
   compression algorithms list, not including any other field.
@@ -431,7 +446,8 @@ o Public Key Type (2 bytes) - The public key (or certificate)
   certificate specification in [PGP].  See SPKI certificate
   specification in [SPKI].  If this field includes zero (0)
   or unsupported type number the protocol must be aborted
-  sending SILC_PACKET_FAILURE message.
+  sending SILC_PACKET_FAILURE message and the connection should
+  be closed immediately.
 
 o Public Data Length (2 bytes) - The length of the public
   data computed by the responder, not including any other
@@ -574,10 +590,10 @@ Setup:  p is a large and public safe prime.  This is one of the
 
 
 If any of these phases is to fail SILC_PACKET_FAILURE is sent to
-indicate that the key exchange protocol failed.  Any other packets must
-not be sent or accepted during the key exchange except the
-SILC_PACKET_KEY_EXCHANGE_*, SILC_PACKET_DISCONNECT, SILC_PACKET_FAILURE
-and/or SILC_PACKET_SUCCESS packets.
+indicate that the key exchange protocol has failed, and the connection
+should be closed immediately.  Any other packets must not be sent or
+accepted during the key exchange except the SILC_PACKET_KEY_EXCHANGE_*,
+SILC_PACKET_FAILURE and SILC_PACKET_SUCCESS packets.
 
 The result of this protocol is a shared secret key material KEY and
 a hash value HASH.  The key material itself is not fit to be used as 
@@ -791,17 +807,22 @@ defined:
     None of the provided hash functions were supported.
 
 
-7   SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY
+7   SILC_SKE_STATUS_UNSUPPORTED_HMAC
+
+    None of the provided HMACs were supported.
+
+
+8   SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY
 
     Provided public key type is not supported.
 
 
-8   SILC_SKE_STATUS_INCORRECT_SIGNATURE
+9   SILC_SKE_STATUS_INCORRECT_SIGNATURE
 
     Provided signature was incorrect.
 
 
-9   SILC_SKE_STATUS_BAD_VERSION
+10   SILC_SKE_STATUS_BAD_VERSION
 
     Provided version string was not acceptable.
 .in 3

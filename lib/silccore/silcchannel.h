@@ -21,7 +21,7 @@
 #ifndef SILCCHANNEL_H
 #define SILCCHANNEL_H
 
-/* Forward declaration for Channel Payload parsed from packet. The
+/* Forward declaration for Channel Message Payload parsed from packet. The
    actual structure is defined in source file and is private data. */
 typedef struct SilcChannelPayloadStruct *SilcChannelPayload;
 
@@ -30,17 +30,21 @@ typedef struct SilcChannelPayloadStruct *SilcChannelPayload;
 typedef struct SilcChannelKeyPayloadStruct *SilcChannelKeyPayload;
 
 /* Prototypes */
-SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);
+SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
+					      SilcCipher cipher,
+					      SilcHmac hmac);
 SilcBuffer silc_channel_payload_encode(unsigned short data_len,
 				       unsigned char *data,
 				       unsigned short iv_len,
 				       unsigned char *iv,
+				       SilcCipher cipher,
+				       SilcHmac hmac,
 				       SilcRng rng);
 void silc_channel_payload_free(SilcChannelPayload payload);
 unsigned char *silc_channel_get_data(SilcChannelPayload payload,
 				     unsigned int *data_len);
-unsigned char *silc_channel_get_iv(SilcChannelPayload payload,
-				   unsigned int *iv_len);
+unsigned char *silc_channel_get_mac(SilcChannelPayload payload);
+unsigned char *silc_channel_get_iv(SilcChannelPayload payload);
 SilcChannelKeyPayload silc_channel_key_payload_parse(SilcBuffer buffer);
 SilcBuffer silc_channel_key_payload_encode(unsigned short id_len,
 					   unsigned char *id,

@@ -96,6 +96,9 @@ int silc_pkcs_is_supported(const unsigned char *name)
 {
   int i;
 
+  if (!name)
+    return FALSE;
+
   for (i = 0; silc_pkcs_list[i].name; i++) {
     if (!strcmp(silc_pkcs_list[i].name, name))
       return TRUE;

@@ -329,7 +329,7 @@ SilcBuffer silc_key_agreement_payload_encode(char *hostname,
 					     unsigned int port)
 {
   SilcBuffer buffer;
-  unsigned int len = strlen(hostname);
+  unsigned int len = hostname ? strlen(hostname) : 0;
 
   SILC_LOG_DEBUG(("Encoding Key Agreement Payload"));
 

@@ -25,36 +25,71 @@
 
 /******************************************************************************
 
-                              Channel Payload
+                          Channel Message Payload
 
 ******************************************************************************/
 
-/* Channel Payload structure. Contents of this structure is parsed
+/* Channel Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcChannelPayloadStruct {
   unsigned short data_len;
   unsigned char *data;
-  unsigned short iv_len;
+  unsigned char *mac;
   unsigned char *iv;
 };
 
-/* Parses channel payload returning new channel payload structure */
+/* Parses channel payload returning new channel payload structure. This
+   also decrypts it and checks the MAC. */
 
-SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer)
+SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
+					      SilcCipher cipher,
+					      SilcHmac hmac)
 {
   SilcChannelPayload new;
   int ret;
+  unsigned int iv_len, mac_len;
+  unsigned char *mac, mac2[32];
 
   SILC_LOG_DEBUG(("Parsing channel payload"));
 
+  /* Decrypt the channel message. First push the IV out of the packet.
+     The IV is used in the decryption process. Then decrypt the message.
+     After decyprtion, take the MAC from the decrypted packet, compute MAC
+     and compare the MACs.  If they match, the decryption was successfull
+     and we have the channel message ready to be displayed. */
+
+  /* Push the IV out of the packet (it will be in buffer->tail) */
+  iv_len = silc_cipher_get_block_len(cipher);
+  silc_buffer_push_tail(buffer, iv_len);
+
+  /* Decrypt the channel message */
+  silc_cipher_decrypt(cipher, buffer->data, buffer->data,
+		      buffer->len, buffer->tail);
+
+  /* Take the MAC */
+  mac_len = silc_hmac_len(hmac);
+  silc_buffer_push_tail(buffer, mac_len);
+  mac = buffer->tail;
+
+  /* Check the MAC of the message */
+  SILC_LOG_DEBUG(("Checking channel message MACs"));
+  silc_hmac_make(hmac, buffer->data, buffer->len, mac2, &mac_len);
+  if (memcmp(mac, mac2, mac_len)) {
+    SILC_LOG_DEBUG(("Channel message MACs does not match"));
+    return NULL;
+  }
+  SILC_LOG_DEBUG(("MAC is Ok"));
+  silc_buffer_pull_tail(buffer, iv_len + mac_len);
+
   new = silc_calloc(1, sizeof(*new));
 
-  /* Parse the Channel Payload. Ignore padding and IV, we don't need
-     them. */
+  /* Parse the Channel Payload. Ignore the padding. */
   ret = silc_buffer_unformat(buffer,
-			     SILC_STR_UI16_NSTRING_ALLOC(&new->data, 
-							 &new->data_len),
-			     SILC_STR_UI16_NSTRING_ALLOC(NULL, NULL),
+			     SILC_STR_UI16_NSTRING(&new->data, 
+						   &new->data_len),
+			     SILC_STR_UI16_NSTRING(NULL, NULL),
+			     SILC_STR_UI_XNSTRING(&new->mac, mac_len),
+			     SILC_STR_UI_XNSTRING(&new->iv, iv_len),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
@@ -67,10 +102,6 @@ SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer)
   return new;
 
  err:
-  if (new->data)
-    silc_free(new->data);
-  if (new->iv)
-    silc_free(new->iv);
   silc_free(new);
   return NULL;
 }
@@ -84,38 +115,59 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
 				       unsigned char *data,
 				       unsigned short iv_len,
 				       unsigned char *iv,
+				       SilcCipher cipher,
+				       SilcHmac hmac,
 				       SilcRng rng)
 {
   int i;
   SilcBuffer buffer;
-  unsigned int len, pad_len;
+  unsigned int len, pad_len, mac_len;
   unsigned char pad[SILC_PACKET_MAX_PADLEN];
+  unsigned char mac[32];
 
   SILC_LOG_DEBUG(("Encoding channel payload"));
 
   /* Calculate length of padding. IV is not included into the calculation
      since it is not encrypted. */
-  len = 2 + data_len + 2;
+  mac_len = silc_hmac_len(hmac);
+  len = 4 + data_len + mac_len;
   pad_len = SILC_PACKET_PADLEN((len + 2));
 
   /* Allocate channel payload buffer */
-  len += pad_len;
-  buffer = silc_buffer_alloc(len + iv_len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  len += pad_len + iv_len;
+  buffer = silc_buffer_alloc(len);
 
   /* Generate padding */
   for (i = 0; i < pad_len; i++) pad[i] = silc_rng_get_byte(rng);
 
   /* Encode the Channel Payload */
+  silc_buffer_pull_tail(buffer, 4 + data_len + pad_len);
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_SHORT(data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_UI_SHORT(pad_len),
 		     SILC_STR_UI_XNSTRING(pad, pad_len),
-		     SILC_STR_UI_XNSTRING(iv, iv_len),
 		     SILC_STR_END);
 
-  memset(pad, 0, pad_len);
+  /* Compute the MAC of the channel message data */
+  silc_hmac_make(hmac, buffer->data, buffer->len, mac, &mac_len);
+
+  /* Put rest of the data to the payload */
+  silc_buffer_pull_tail(buffer, mac_len + iv_len);
+  silc_buffer_pull(buffer, 4 + data_len + pad_len);
+  silc_buffer_format(buffer, 
+		     SILC_STR_UI_XNSTRING(mac, mac_len),
+		     SILC_STR_UI_XNSTRING(iv, iv_len),
+		     SILC_STR_END);
+  silc_buffer_push(buffer, 4 + data_len + pad_len);
+
+  /* Encrypt payload of the packet. This is encrypted with the channel key. */
+  silc_cipher_encrypt(cipher, buffer->data, buffer->data, 
+		      buffer->len - iv_len, iv);
+
+  memset(pad, 0, sizeof(pad));
+  memset(mac, 0, sizeof(mac));
+
   return buffer;
 }
 
@@ -123,13 +175,8 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
 
 void silc_channel_payload_free(SilcChannelPayload payload)
 {
-  if (payload) {
-    if (payload->data)
-      silc_free(payload->data);
-    if (payload->iv)
-      silc_free(payload->iv);
+  if (payload)
     silc_free(payload);
-  }
 }
 
 /* Return data */
@@ -143,14 +190,17 @@ unsigned char *silc_channel_get_data(SilcChannelPayload payload,
   return payload->data;
 }
 
-/* Return initial vector */
+/* Return MAC. The caller knows the length of the MAC */
 
-unsigned char *silc_channel_get_iv(SilcChannelPayload payload,
-				   unsigned int *iv_len)
+unsigned char *silc_channel_get_mac(SilcChannelPayload payload)
 {
-  if (iv_len)
-    *iv_len = payload->iv_len;
+  return payload->mac;
+}
 
+/* Return IV. The caller knows the length of the IV */
+
+unsigned char *silc_channel_get_iv(SilcChannelPayload payload)
+{
   return payload->iv;
 }
 

@@ -189,5 +189,15 @@ void silc_server_send_command(SilcServer server,
 			      unsigned int argc, ...);
 void silc_server_send_heartbeat(SilcServer server,
 				SilcSocketConnection sock);
+void silc_server_send_key_agreement(SilcServer server,
+				    SilcSocketConnection dst_sock,
+				    SilcCipher cipher,
+				    SilcHmac hmac,
+				    SilcPacketContext *packet);
+void silc_server_send_private_message_key(SilcServer server,
+					  SilcSocketConnection dst_sock,
+					  SilcCipher cipher,
+					  SilcHmac hmac,
+					  SilcPacketContext *packet);
 
 #endif

@@ -164,6 +164,7 @@ typedef struct {
   SilcServerConfigSectionAlg *cipher;
   SilcServerConfigSectionAlg *pkcs;
   SilcServerConfigSectionAlg *hash_func;
+  SilcServerConfigSectionAlg *hmac;
   SilcServerConfigSectionServerInfo *server_info;
   SilcServerConfigSectionAdminInfo *admin_info;
   SilcServerConfigSectionListenPort *listen_port;
@@ -187,6 +188,7 @@ typedef enum {
   SILC_CONFIG_SERVER_SECTION_TYPE_CIPHER,
   SILC_CONFIG_SERVER_SECTION_TYPE_PKCS,
   SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION,
+  SILC_CONFIG_SERVER_SECTION_TYPE_HMAC,
   SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO,
   SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO,
   SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT,
@@ -254,6 +256,7 @@ void silc_server_config_setlogfiles(SilcServerConfig config);
 void silc_server_config_register_ciphers(SilcServerConfig config);
 void silc_server_config_register_pkcs(SilcServerConfig config);
 void silc_server_config_register_hashfuncs(SilcServerConfig config);
+void silc_server_config_register_hmacs(SilcServerConfig config);
 SilcServerConfigSectionClientConnection *
 silc_server_config_find_client_conn(SilcServerConfig config, 
 				    char *host, int port);

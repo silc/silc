@@ -30,9 +30,27 @@
    routines were created according to RFC2104. Following short description 
    of the fields:
 
+   SilcHmacObject:
+
+   char *name
+
+       Name of the HMAC.
+
+   unsigned int len
+
+       Length of the MAC the HMAC is to produce (bytes).
+
+
+   SilcHmac:
+
    SilcHash hash
 
        The hash object to tell what hash function to use with this HMAC.
+
+   char allocated_hash
+
+       TRUE if the `hash' was allocated and FALSE if it is static and
+       must not be freed.
 
    unsigned char *key
    unsigned int len
@@ -40,65 +58,40 @@
        The key and its length used to make the HMAC. This is set
        with silc_hmac_set_key function.
 
-   void (*set_key)(SilcHmac, const unsigned char *, unsigned int)
-
-       Function used to set the key for the HMAC. Second argument is
-       the key to be set and last argument is the length of the key.
-
-   void (*make_hmac)(SilcHmac, unsigned char *, unsigned int,
-                     unsigned char *)
-
-       Function what is used to create HMAC's. User can also use directly
-       silc_hmac_make fuction. Although, one needs to allocate a SilcHmac
-       object before doing it, naturally. This uses the key set with
-       silc_hmac_set_key function.
-
-   void (*make_hmac_with_key)(SilcHmac, unsigned char *, unsigned int,
-                              unsigned char *, unsigned int, unsigned char *)
-
-       Same function as above except that the key used in the HMAC
-       creation is sent as argument. The key set with silc_hmac_set_key
-       is ignored in this case.
-
-   void (*make_hmac_truncated)(SilcHmac, unsigned char *, unsigned int,
-			       unsigned int, unsigned char *)
-
-       Same function as above except that the output hash value is truncated
-       to the length sent as argument (second last argument). This makes
-       variable truncations possible, however, one should not truncate
-       hash values to less than half of the length of the hash value.
-
 */
 typedef struct SilcHmacStruct *SilcHmac;
 
+typedef struct {
+  char *name;
+  unsigned int len;
+} SilcHmacObject;
+
 struct SilcHmacStruct {
+  SilcHmacObject *hmac;
   SilcHash hash;
+  char allocated_hash;
   unsigned char *key;
   unsigned int key_len;
-  void (*set_key)(SilcHmac, const unsigned char *, unsigned int);
-  void (*make_hmac)(SilcHmac, unsigned char *, unsigned int,
-		    unsigned char *);
-  void (*make_hmac_with_key)(SilcHmac, unsigned char *, unsigned int,
-			     unsigned char *, unsigned int, unsigned char *);
-  void (*make_hmac_truncated)(SilcHmac, unsigned char *, 
-			      unsigned int, unsigned int, unsigned char *);
 };
 
 /* Prototypes */
-int silc_hmac_alloc(SilcHash hash, SilcHmac *new_hmac);
+int silc_hmac_register(SilcHmacObject *hmac);
+int silc_hmac_unregister(SilcHmacObject *hmac);
+int silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac);
 void silc_hmac_free(SilcHmac hmac);
+int silc_hmac_is_supported(const char *name);
+char *silc_hmac_get_supported();
+unsigned int silc_hmac_len(SilcHmac hmac);
 void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
 		       unsigned int key_len);
-void silc_hmac_make(SilcHmac hmac, 
-		    unsigned char *data, 
-		    unsigned int data_len,
-		    unsigned char *return_hash);
-void silc_hmac_make_with_key(SilcHmac hmac, 
-			     unsigned char *data, 
-			     unsigned int data_len,
-			     unsigned char *key, 
-			     unsigned int key_len, 
-			     unsigned char *return_hash);
+void silc_hmac_make(SilcHmac hmac, unsigned char *data,
+		    unsigned int data_len, unsigned char *return_hash,
+		    unsigned int *return_len);
+void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
+			     unsigned int data_len, 
+			     unsigned char *key, unsigned int key_len,
+			     unsigned char *return_hash,
+			     unsigned int *return_len);
 void silc_hmac_make_truncated(SilcHmac hmac, 
 			      unsigned char *data, 
 			      unsigned int data_len,

@@ -21,37 +21,20 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-/* Forward declaration for client */
-typedef struct SilcClientObject *SilcClient;
-
-/* Forward declaration for client connection */
-typedef struct SilcClientConnectionObject *SilcClientConnection;
+/* Forward declarations */
+typedef struct SilcClientStruct *SilcClient;
+typedef struct SilcClientConnectionStruct *SilcClientConnection;
+typedef struct SilcClientPingStruct SilcClientPing;
+typedef struct SilcClientAwayStruct SilcClientAway;
+typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
 
 #include "idlist.h"
 #include "command.h"
 #include "silcapi.h"
 
-/* Structure to hold ping time information. Every PING command will 
-   add entry of this structure and is removed after reply to the ping
-   as been received. */
-typedef struct SilcClientPingStruct {
-  time_t start_time;
-  void *dest_id;
-  char *dest_name;
-} SilcClientPing;
-
-/* Structure to hold away messages set by user. This is mainly created
-   for future extensions where away messages could be set according filters
-   such as nickname and hostname. For now only one away message can 
-   be set in one connection. */
-typedef struct SilcClientAwayStruct {
-  char *away;
-  struct SilcClientAwayStruct *next;
-} SilcClientAway;
-
 /* Connection structure used in client to associate all the important
    connection specific data to this structure. */
-struct SilcClientConnectionObject {
+struct SilcClientConnectionStruct {
   /*
    * Local data 
    */
@@ -132,7 +115,7 @@ struct SilcClientConnectionObject {
 };
 
 /* Main client structure. */
-struct SilcClientObject {
+struct SilcClientStruct {
   /*
    * Public data. All the following pointers must be set by the allocator
    * of this structure.
@@ -240,16 +223,14 @@ void silc_client_disconnected_by_server(SilcClient client,
 void silc_client_error_by_server(SilcClient client,
 				 SilcSocketConnection sock,
 				 SilcBuffer message);
-void silc_client_notify_by_server(SilcClient client,
-				  SilcSocketConnection sock,
-				  SilcPacketContext *packet);
 void silc_client_receive_new_id(SilcClient client,
 				SilcSocketConnection sock,
 				SilcIDPayload idp);
-void silc_client_new_channel_id(SilcClient client,
-				SilcSocketConnection sock,
-				char *channel_name,
-				unsigned int mode, SilcIDPayload idp);
+SilcChannelEntry silc_client_new_channel_id(SilcClient client,
+					    SilcSocketConnection sock,
+					    char *channel_name,
+					    unsigned int mode, 
+					    SilcIDPayload idp);
 void silc_client_save_channel_key(SilcClientConnection conn,
 				  SilcBuffer key_payload, 
 				  SilcChannelEntry channel);
@@ -257,9 +238,6 @@ void silc_client_receive_channel_key(SilcClient client,
 				     SilcSocketConnection sock,
 				     SilcBuffer packet);
 void silc_client_channel_message(SilcClient client, 
-				 SilcSocketConnection sock, 
-				 SilcPacketContext *packet);
-void silc_client_private_message(SilcClient client, 
 				 SilcSocketConnection sock, 
 				 SilcPacketContext *packet);
 void silc_client_remove_from_channels(SilcClient client,
@@ -272,5 +250,16 @@ void silc_client_replace_from_channels(SilcClient client,
 char *silc_client_chmode(unsigned int mode);
 char *silc_client_chumode(unsigned int mode);
 char *silc_client_chumode_char(unsigned int mode);
-
+void silc_client_process_failure(SilcClient client,
+				 SilcSocketConnection sock,
+				 SilcPacketContext *packet);
+void silc_client_key_agreement(SilcClient client,
+			       SilcSocketConnection sock,
+			       SilcPacketContext *packet);
+void silc_client_notify_by_server(SilcClient client,
+				  SilcSocketConnection sock,
+				  SilcPacketContext *packet);
+void silc_client_private_message(SilcClient client, 
+				 SilcSocketConnection sock, 
+				 SilcPacketContext *packet);
 #endif

@@ -22,6 +22,10 @@ noinst_LIBRARIES = libsilcclient.a
 
 libsilcclient_a_SOURCES = \
 	client.c \
+	client_keyagr.c \
+	client_notify.c \
+	client_prvmsg.c \
+	client_channel.c \
 	command.c \
 	command_reply.c \
 	idlist.c \

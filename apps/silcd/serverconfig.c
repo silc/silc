@@ -22,148 +22,15 @@
 #include "serverincludes.h"
 #include "server_internal.h"
 
-/*  XXX
-   All possible configuration sections for SILC server. 
-
-   <Cipher>
-
-       Format:
-
-       +<Cipher name>:<SIM path>
-
-   <PKCS>
-
-       Format:
-
-       +<PKCS name>:<key length>
-
-   <HashFunction>
-
-       Format:
-
-       +<Hash function name>:<SIM path>
-
-   <ServerInfo>
-
-       This section is used to set the server informations.
-
-       Format:
-
-       +<Server DNS name>:<Server IP>:<Geographic location>:<Port>
-
-   <AdminInfo>
-
-       This section is used to set the server's administrative information.
-
-       Format:
-
-       +<Location>:<Server type>:<Admin's name>:<Admin's email address>
-
-   <ListenPort>
-
-       This section is used to set ports the server is listenning.
-
-       Format:
-
-       +<Local IP/UNIX socket path>:<Remote IP>:<Port>
-
-   <Identity>
-
-       This section is used to set both the user and group which silcd
-       sets itself upon starting.
-
-       Format:
-
-       <user>:<group>
-
-   <Logging>
-
-       This section is used to set various logging files, their paths
-       and maximum sizes. All the other directives except those defined
-       below are ignored in this section. Log files are purged after they
-       reach the maximum set byte size.
-
-       Format:
-
-       +infologfile:<path>:<max byte size>
-       +errorlogfile:<path>:<max byte size>
-
-   <ConnectionClass>
-
-       This section is used to define connection classes. These can be
-       used to optimize the server and the connections.
-
-       Format:
-
-       +<Class number>:<Ping freq>:<Connect freq>:<Max links>
-
-   <ClientAuth>
-
-       This section is used to define client authentications.
-
-       Format:
-
-       +<Remote address or name>:<auth method>:<password/cert/key/???>:<Port>:<Class>
-
-   <AdminAuth>
-
-       This section is used to define the server's administration 
-       authentications.
-
-       Format:
-
-       +<Hostname>:<auth method>:<password/cert/key/???>:<Nickname hash>:<Class>
-
-   <ServerConnection>
-
-       This section is used to define the server connections to this
-       server/router. Only routers can have normal server connections.
-       Normal servers leave this section epmty. The remote server cannot be
-       older than specified Version ID.
-
-       Format:
-
-       +<Remote address or name>:<auth method>:<password/key/???>:<Port>:<Version ID>:<Class>
-
-   <RouterConnection>
-
-       This section is used to define the router connections to this
-       server/router. Both normal server and router can have router
-       connections. Normal server usually has only one connection while
-       a router can have multiple. The remote server cannot be older than
-       specified Version ID.
-
-       Format:
-
-       +<Remote address or name>:<auth method>:<password/key/???>:
-       <Port>:<Version ID>:<Class>:<Initiator>
-
-   <DenyConnection>
-
-       This section is used to deny specific connections to your server. This
-       can be used to deny both clients and servers.
-
-       Format:
-
-       +<Remote address or name or nickname>:<Time interval>:<Comment>:<Port>
-
-   <RedirectClient>
-
-       This section is used to set the alternate servers that clients will be
-       redirected to when our server is full.
-
-       Format:
-
-       +<Remote address or name>:<Port>
-
-*/
 SilcServerConfigSection silc_server_config_sections[] = {
   { "[Cipher]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_CIPHER, 4 },
   { "[PKCS]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_PKCS, 2 },
-  { "[HashFunction]", 
+  { "[Hash]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION, 4 },
+  { "[hmac]", 
+    SILC_CONFIG_SERVER_SECTION_TYPE_HMAC, 3 },
   { "[ServerInfo]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO, 4 },
   { "[AdminInfo]", 
@@ -530,6 +397,46 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 	break;
       }
       config->hash_func->key_len = atoi(tmp);
+      silc_free(tmp);
+
+      check = TRUE;
+      checkmask |= (1L << pc->section->type);
+      break;
+
+    case SILC_CONFIG_SERVER_SECTION_TYPE_HMAC:
+
+      SILC_SERVER_CONFIG_LIST_ALLOC(config->hmac);
+
+      /* Get HMAC name */
+      ret = silc_config_get_token(line, &config->hmac->alg_name);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: HMAC name not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+
+      /* Get hash name */
+      ret = silc_config_get_token(line, &config->hmac->sim_name);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: Hash function name not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+      
+      /* Get MAC length */
+      ret = silc_config_get_token(line, &tmp);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: HMAC's MAC length not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+      config->hmac->key_len = atoi(tmp);
       silc_free(tmp);
 
       check = TRUE;
@@ -1063,6 +970,8 @@ int silc_server_config_parse_lines(SilcServerConfig config,
     config->pkcs = config->pkcs->prev;
   while (config->hash_func && config->hash_func->prev)
     config->hash_func = config->hash_func->prev;
+  while (config->hmac && config->hmac->prev)
+    config->hmac = config->hmac->prev;
   while (config->listen_port && config->listen_port->prev)
     config->listen_port = config->listen_port->prev;
   while (config->logging && config->logging->prev)
@@ -1298,7 +1207,7 @@ void silc_server_config_register_hashfuncs(SilcServerConfig config)
 	silc_server_stop(server);
 	exit(1);
       }
-      silc_free(tmp);
+      silc_hash_free(tmp);
 
 #ifdef SILC_SIM
     } else {
@@ -1341,10 +1250,47 @@ void silc_server_config_register_hashfuncs(SilcServerConfig config)
 	exit(1);
       }
 
-      /* Register the cipher */
+      /* Register the hash function */
       silc_hash_register(&hash);
 #endif
     }
+
+    alg = alg->next;
+  }
+}
+
+/* Registers configure HMACs. These can then be allocated by the server
+   when needed. */
+
+void silc_server_config_register_hmacs(SilcServerConfig config)
+{
+  SilcServerConfigSectionAlg *alg;
+  SilcServer server = (SilcServer)config->server;
+
+  SILC_LOG_DEBUG(("Registering configured HMACs"));
+
+  if (!config->hmac) {
+    SILC_LOG_ERROR(("HMACs are not configured. SILC cannot work without "
+		    "HMACs"));
+    silc_server_stop(server);
+    exit(1);
+  }
+
+  alg = config->hmac;
+  while(alg) {
+    SilcHmacObject hmac;
+    
+    if (!silc_hash_is_supported(alg->sim_name)) {
+      SILC_LOG_ERROR(("Unsupported hash function `%s'", alg->sim_name));
+      silc_server_stop(server);
+      exit(1);
+    }
+    
+    /* Register the HMAC */
+    memset(&hmac, 0, sizeof(hmac));
+    hmac.name = alg->alg_name;
+    hmac.len = alg->key_len;
+    silc_hmac_register(&hmac);
 
     alg = alg->next;
   }

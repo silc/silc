@@ -92,6 +92,7 @@ void silc_protocol_alloc(SilcProtocolType type, SilcProtocol *new_protocol,
 
   if (!protocol) {
     SILC_LOG_ERROR(("Requested protocol does not exists"));
+    *new_protocol = NULL;
     return;
   }
 

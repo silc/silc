@@ -38,6 +38,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final);
 SILC_TASK_CALLBACK(silc_server_packet_process);
 SILC_TASK_CALLBACK(silc_server_packet_parse_real);
 SILC_TASK_CALLBACK(silc_server_timeout_remote);
+SILC_TASK_CALLBACK(silc_server_failure_callback);
 
 /* Allocates a new SILC server object. This has to be done before the server
    can be used. After allocation one must call silc_server_init to initialize
@@ -135,6 +136,7 @@ int silc_server_init(SilcServer server)
   silc_server_config_register_ciphers(server->config);
   silc_server_config_register_pkcs(server->config);
   silc_server_config_register_hashfuncs(server->config);
+  silc_server_config_register_hmacs(server->config);
 
   /* Initialize random number generator for the server. */
   server->rng = silc_rng_alloc();
@@ -273,8 +275,6 @@ int silc_server_init(SilcServer server)
        is sent as argument for fast referencing in the future. */
     silc_socket_alloc(sock[i], SILC_SOCKET_TYPE_SERVER, id_entry, 
 		      &newsocket);
-    if (!newsocket)
-      goto err0;
 
     server->sockets[sock[i]] = newsocket;
 
@@ -693,6 +693,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR) {
     /* Error occured during protocol */
     silc_protocol_free(protocol);
+    silc_ske_free_key_material(ctx->keymat);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
     if (ctx->ske)
@@ -700,13 +701,39 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     silc_free(ctx);
-    if (sock)
-      sock->protocol = NULL;
+    silc_task_unregister_by_callback(server->timeout_queue,
+				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
     return;
   }
   
+  /* We now have the key material as the result of the key exchange
+     protocol. Take the key material into use. Free the raw key material
+     as soon as we've set them into use. */
+  if (!silc_server_protocol_ke_set_keys(ctx->ske, ctx->sock, ctx->keymat,
+					ctx->ske->prop->cipher,
+					ctx->ske->prop->pkcs,
+					ctx->ske->prop->hash,
+					ctx->ske->prop->hmac,
+					ctx->responder)) {
+    silc_protocol_free(protocol);
+    silc_ske_free_key_material(ctx->keymat);
+    if (ctx->packet)
+      silc_packet_context_free(ctx->packet);
+    if (ctx->ske)
+      silc_ske_free(ctx->ske);
+    if (ctx->dest_id)
+      silc_free(ctx->dest_id);
+    silc_free(ctx);
+    silc_task_unregister_by_callback(server->timeout_queue,
+				     silc_server_failure_callback);
+    silc_server_disconnect_remote(server, sock, "Server closed connection: "
+				  "Key exchange failed");
+    return;
+  }    
+  silc_ske_free_key_material(ctx->keymat);
+
   /* Allocate internal context for the authentication protocol. This
      is sent as context for the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
@@ -1002,6 +1029,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR) {
     /* Error occured during protocol */
     silc_protocol_free(protocol);
+    silc_ske_free_key_material(ctx->keymat);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
     if (ctx->ske)
@@ -1009,13 +1037,40 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     silc_free(ctx);
-    if (sock)
-      sock->protocol = NULL;
+    silc_task_unregister_by_callback(server->timeout_queue,
+				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
     server->stat.auth_failures++;
     return;
   }
+
+  /* We now have the key material as the result of the key exchange
+     protocol. Take the key material into use. Free the raw key material
+     as soon as we've set them into use. */
+  if (!silc_server_protocol_ke_set_keys(ctx->ske, ctx->sock, ctx->keymat,
+					ctx->ske->prop->cipher,
+					ctx->ske->prop->pkcs,
+					ctx->ske->prop->hash,
+					ctx->ske->prop->hmac,
+					ctx->responder)) {
+    silc_protocol_free(protocol);
+    silc_ske_free_key_material(ctx->keymat);
+    if (ctx->packet)
+      silc_packet_context_free(ctx->packet);
+    if (ctx->ske)
+      silc_ske_free(ctx->ske);
+    if (ctx->dest_id)
+      silc_free(ctx->dest_id);
+    silc_free(ctx);
+    silc_task_unregister_by_callback(server->timeout_queue,
+				     silc_server_failure_callback);
+    silc_server_disconnect_remote(server, sock, "Server closed connection: "
+				  "Key exchange failed");
+    server->stat.auth_failures++;
+    return;
+  }    
+  silc_ske_free_key_material(ctx->keymat);
 
   /* Allocate internal context for the authentication protocol. This
      is sent as context for the protocol. */
@@ -1081,6 +1136,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     silc_free(ctx);
     if (sock)
       sock->protocol = NULL;
+    silc_task_unregister_by_callback(server->timeout_queue,
+				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Authentication failed");
     server->stat.auth_failures++;
@@ -1192,6 +1249,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
+  silc_task_unregister_by_callback(server->timeout_queue,
+				   silc_server_failure_callback);
   silc_protocol_free(protocol);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
@@ -1278,11 +1337,11 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 
     /* If the closed connection was our primary router connection the
        start re-connecting phase. */
-    if (!server->standalone && server->server_type == SILC_SERVER && 
+    if (!server->standalone && sock->type == SILC_SOCKET_TYPE_ROUTER && 
 	sock == server->router->connection)
       silc_task_register(server->timeout_queue, 0, 
 			 silc_server_connect_to_router,
-			 context, 0, 500000,
+			 context, 1, 0,
 			 SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
 
@@ -1458,10 +1517,15 @@ void silc_server_packet_parse_type(SilcServer server,
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     if (sock->protocol) {
-      /* XXX Audit the failure type */
-      sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
-      sock->protocol->execute(server->timeout_queue, 0,
-			      sock->protocol, sock->sock, 0, 0);
+      SilcServerFailureContext f;
+      f = silc_calloc(1, sizeof(*f));
+      f->server = server;
+      f->sock = sock;
+      
+      /* We will wait 5 seconds to process this failure packet */
+      silc_task_register(server->timeout_queue, sock->sock,
+			 silc_server_failure_callback, (void *)f, 5, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     }
     break;
 
@@ -1558,6 +1622,7 @@ void silc_server_packet_parse_type(SilcServer server,
      */
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
+    silc_server_private_message_key(server, sock, packet);
     break;
 
     /*
@@ -1745,6 +1810,16 @@ void silc_server_packet_parse_type(SilcServer server,
     SILC_LOG_DEBUG(("Heartbeat packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
+    break;
+
+  case SILC_PACKET_KEY_AGREEMENT:
+    /*
+     * Received heartbeat.
+     */
+    SILC_LOG_DEBUG(("Key agreement packet"));
+    if (packet->flags & SILC_PACKET_FLAG_LIST)
+      break;
+    silc_server_key_agreement(server, sock, packet);
     break;
 
   default:
@@ -2231,6 +2306,7 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
 SilcChannelEntry silc_server_create_new_channel(SilcServer server, 
 						SilcServerID *router_id,
 						char *cipher, 
+						char *hmac,
 						char *channel_name,
 						int broadcast)
 {
@@ -2242,6 +2318,8 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 
   if (!cipher)
     cipher = "aes-256-cbc";
+  if (!hmac)
+    hmac = "hmac-sha1-96";
 
   /* Allocate cipher */
   if (!silc_cipher_alloc(cipher, &key))
@@ -2253,14 +2331,15 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   silc_id_create_channel_id(router_id, server->rng, &channel_id);
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
-				  NULL, key);
+				  NULL, key, hmac);
   if (!entry) {
     silc_free(channel_name);
     return NULL;
   }
 
   /* Now create the actual key material */
-  silc_server_create_channel_key(server, entry, 32);
+  silc_server_create_channel_key(server, entry, 
+				 silc_cipher_get_key_len(key) / 8);
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
@@ -2279,6 +2358,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 SilcChannelEntry 
 silc_server_create_new_channel_with_id(SilcServer server, 
 				       char *cipher, 
+				       char *hmac,
 				       char *channel_name,
 				       SilcChannelID *channel_id,
 				       int broadcast)
@@ -2290,6 +2370,8 @@ silc_server_create_new_channel_with_id(SilcServer server,
 
   if (!cipher)
     cipher = "aes-256-cbc";
+  if (!hmac)
+    hmac = "hmac-sha1-96";
 
   /* Allocate cipher */
   if (!silc_cipher_alloc(cipher, &key))
@@ -2300,14 +2382,15 @@ silc_server_create_new_channel_with_id(SilcServer server,
   /* Create the channel */
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
-				  NULL, key);
+				  NULL, key, hmac);
   if (!entry) {
     silc_free(channel_name);
     return NULL;
   }
 
   /* Now create the actual key material */
-  silc_server_create_channel_key(server, entry, 32);
+  silc_server_create_channel_key(server, entry, 
+				 silc_cipher_get_key_len(key) / 8);
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
@@ -2334,14 +2417,15 @@ void silc_server_create_channel_key(SilcServer server,
   unsigned int len;
 
   if (!channel->channel_key)
-    silc_cipher_alloc("aes-256-cbc", &channel->channel_key);
+    if (!silc_cipher_alloc("aes-256-cbc", &channel->channel_key))
+      return;
 
   if (key_len)
     len = key_len;
   else if (channel->key_len)
     len = channel->key_len / 8;
   else
-    len = sizeof(channel_key);
+    len = silc_cipher_get_key_len(channel->channel_key) / 8;
 
   /* Create channel key */
   for (i = 0; i < len; i++) channel_key[i] = silc_rng_get_byte(server->rng);
@@ -2734,4 +2818,24 @@ void silc_server_announce_channels(SilcServer server)
 
     silc_buffer_free(channel_users);
   }
+}
+
+/* Failure timeout callback. If this is called then we will immediately
+   process the received failure. We always process the failure with timeout
+   since we do not want to blindly trust to received failure packets. 
+   This won't be called (the timeout is cancelled) if the failure was
+   bogus (it is bogus if remote does not close the connection after sending
+   the failure). */
+
+SILC_TASK_CALLBACK(silc_server_failure_callback)
+{
+  SilcServerFailureContext f = (SilcServerFailureContext)context;
+
+  if (f->sock->protocol) {
+    f->sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
+    f->sock->protocol->execute(f->server->timeout_queue, 0,
+			       f->sock->protocol, f->sock->sock, 0, 0);
+  }
+
+  silc_free(f);
 }

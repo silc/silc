@@ -571,6 +571,29 @@ void silc_task_unregister_by_fd(SilcTaskQueue queue, int fd)
   }
 }
 
+/* Unregister a task by callback function. This invalidates the task. */
+
+void silc_task_unregister_by_callback(SilcTaskQueue queue, 
+				      SilcTaskCallback callback)
+{
+  SilcTask next;
+
+  SILC_LOG_DEBUG(("Unregister task by callback"));
+
+  if (queue->task == NULL)
+    return;
+
+  next = queue->task;
+
+  while(1) {
+    if (next->callback == callback)
+      next->valid = FALSE;
+    if (queue->task == next->next)
+      break;
+    next = next->next;
+  }
+}
+
 /* Sets the I/O mask for the task. Only one I/O type can be set at a
    time. */
 

@@ -331,6 +331,8 @@ typedef SilcTaskQueueObject *SilcTaskQueue;
    with name 'func' as a task callback function. */
 #define SILC_TASK_CALLBACK(func) \
 static void func(void *qptr, int type, void *context, int fd)
+#define SILC_TASK_CALLBACK_GLOBAL(func) \
+void func(void *qptr, int type, void *context, int fd)
 
 /* Prototypes */
 void silc_task_queue_alloc(SilcTaskQueue *new, int valid);
@@ -347,6 +349,8 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
 int silc_task_remove(SilcTaskQueue queue, SilcTask task);
 void silc_task_unregister(SilcTaskQueue queue, SilcTask task);
 void silc_task_unregister_by_fd(SilcTaskQueue queue, int fd);
+void silc_task_unregister_by_callback(SilcTaskQueue queue, 
+				      SilcTaskCallback callback);
 void silc_task_set_iotype(SilcTask task, int type);
 void silc_task_reset_iotype(SilcTask task, int type);
 int silc_task_timeout_compare(struct timeval *smaller, 

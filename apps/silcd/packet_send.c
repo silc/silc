@@ -1258,3 +1258,45 @@ void silc_server_send_heartbeat(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_HEARTBEAT, 0,
 			  NULL, 0, FALSE);
 }
+
+/* Routine used to send (relay, route) key agreement packets to some 
+   destination. */
+
+void silc_server_send_key_agreement(SilcServer server,
+				    SilcSocketConnection dst_sock,
+				    SilcCipher cipher,
+				    SilcHmac hmac,
+				    SilcPacketContext *packet)
+{
+  silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
+		   + packet->dst_id_len + packet->padlen);
+  silc_packet_send_prepare(dst_sock, 0, 0, packet->buffer->len);
+  silc_buffer_put(dst_sock->outbuf, packet->buffer->data, packet->buffer->len);
+  
+  /* Re-encrypt packet */
+  silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, packet->buffer->len);
+  
+  /* Send the packet */
+  silc_server_packet_send_real(server, dst_sock, FALSE);
+}
+
+/* Routine used to send (relay, route) private message key packets to some 
+   destination. */
+
+void silc_server_send_private_message_key(SilcServer server,
+					  SilcSocketConnection dst_sock,
+					  SilcCipher cipher,
+					  SilcHmac hmac,
+					  SilcPacketContext *packet)
+{
+  silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
+		   + packet->dst_id_len + packet->padlen);
+  silc_packet_send_prepare(dst_sock, 0, 0, packet->buffer->len);
+  silc_buffer_put(dst_sock->outbuf, packet->buffer->data, packet->buffer->len);
+  
+  /* Re-encrypt packet */
+  silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, packet->buffer->len);
+  
+  /* Send the packet */
+  silc_server_packet_send_real(server, dst_sock, FALSE);
+}
