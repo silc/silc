@@ -249,7 +249,7 @@ static void silc_client_protocol_ke_continue(SilcSKE ske,
      function. */
   if (ctx->responder == TRUE) {
     protocol->state++;
-    silc_protocol_execute(protocol, client->schedule, 0, 100000);
+    silc_protocol_execute(protocol, client->schedule, 0, 1);
   }
 }
 
@@ -327,7 +327,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       /* Advance protocol state and call the next state if we are responder */
       protocol->state++;
       if (ctx->responder == TRUE)
-	silc_protocol_execute(protocol, client->schedule, 0, 100000);
+	silc_protocol_execute(protocol, client->schedule, 0, 1);
     }
     break;
   case 2:
@@ -360,7 +360,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       /* Advance protocol state and call next state if we are initiator */
       protocol->state++;
       if (ctx->responder == FALSE)
-	silc_protocol_execute(protocol, client->schedule, 0, 100000);
+	silc_protocol_execute(protocol, client->schedule, 0, 1);
     }
     break;
   case 3:
