@@ -165,7 +165,7 @@ void silc_idcache_sort_by_data(SilcIDCache cache)
 /* Find ID Cache entry by data. The data maybe anything that must
    match exactly. Returns list of cache entries. */
 
-int silc_idcache_find_by_data(SilcIDCache cache, char *data, 
+int silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data, 
 			      SilcIDCacheList *ret)
 {
   int i;
@@ -179,6 +179,9 @@ int silc_idcache_find_by_data(SilcIDCache cache, char *data,
   if (cache->sorted)
     i = cache->fast_access[(int)data[0]];
   else
+    i = 0;
+
+  if (i == -1)
     i = 0;
 
   for (i = i; i < cache->cache_count; i++) {
@@ -205,7 +208,7 @@ int silc_idcache_find_by_data(SilcIDCache cache, char *data,
 /* Find ID Cache entry by data. The data maybe anything that must
    match exactly. Returns one cache entry. */
 
-int silc_idcache_find_by_data_one(SilcIDCache cache, char *data,
+int silc_idcache_find_by_data_one(SilcIDCache cache, unsigned char *data,
 				  SilcIDCacheEntry *ret)
 {
   int i;
@@ -216,6 +219,9 @@ int silc_idcache_find_by_data_one(SilcIDCache cache, char *data,
   if (cache->sorted)
     i = cache->fast_access[(int)data[0]];
   else
+    i = 0;
+
+  if (i == -1)
     i = 0;
 
   for (i = i; i < cache->cache_count; i++)
@@ -233,7 +239,7 @@ int silc_idcache_find_by_data_one(SilcIDCache cache, char *data,
    match. This ignores data case-sensitivity when searching with this
    function. Returns list of cache entries. */
 
-int silc_idcache_find_by_data_loose(SilcIDCache cache, char *data, 
+int silc_idcache_find_by_data_loose(SilcIDCache cache, unsigned char *data, 
 				    SilcIDCacheList *ret)
 {
   int i, c;
@@ -249,6 +255,9 @@ int silc_idcache_find_by_data_loose(SilcIDCache cache, char *data,
   if (cache->sorted)
     i = cache->fast_access[c];
   else
+    i = 0;
+
+  if (i == -1)
     i = 0;
 
   for (i = i; i < cache->cache_count; i++) {
@@ -371,7 +380,8 @@ int silc_idcache_find_by_context(SilcIDCache cache, void *context,
    cache must be sorted in order for the fast access feature to work,
    however, it is not mandatory. */
 
-int silc_idcache_add(SilcIDCache cache, char *data, SilcIdType id_type,
+int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
+		     SilcIdType id_type,
 		     void *id, void *context, int sort)
 {
   int i;
@@ -443,7 +453,7 @@ int silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old)
 
 /* XXX */
 
-int silc_idcache_del_by_data(SilcIDCache cache, char *data)
+int silc_idcache_del_by_data(SilcIDCache cache, unsigned char *data)
 {
 
   return TRUE;

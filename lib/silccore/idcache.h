@@ -29,7 +29,7 @@
    filled with ID cache utility functions. The ID cache system does not
    allocate any of these fields nor free them.
 
-   char *data
+   unsigned char *data
 
       The data that is usually used to find the data from the cache.
       For example for Client ID's this is nickname.
@@ -55,7 +55,7 @@
 
 */
 typedef struct {
-  char *data;
+  unsigned char *data;
   SilcIdType type;
   void *id;
   unsigned long expire;
@@ -76,11 +76,11 @@ typedef struct SilcIDCacheListStruct *SilcIDCacheList;
 SilcIDCache silc_idcache_alloc(unsigned int count);
 void silc_idcache_free(SilcIDCache cache);
 void silc_idcache_sort_by_data(SilcIDCache cache);
-int silc_idcache_find_by_data(SilcIDCache cache, char *data, 
+int silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data, 
 			      SilcIDCacheList *ret);
-int silc_idcache_find_by_data_one(SilcIDCache cache, char *data,
+int silc_idcache_find_by_data_one(SilcIDCache cache, unsigned char *data,
 				  SilcIDCacheEntry *ret);
-int silc_idcache_find_by_data_loose(SilcIDCache cache, char *data, 
+int silc_idcache_find_by_data_loose(SilcIDCache cache, unsigned char *data, 
 				    SilcIDCacheList *ret);
 int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
 			    SilcIDCacheList *ret);
@@ -88,10 +88,11 @@ int silc_idcache_find_by_id_one(SilcIDCache cache, void *id, SilcIdType type,
 				SilcIDCacheEntry *ret);
 int silc_idcache_find_by_context(SilcIDCache cache, void *context, 
 				 SilcIDCacheEntry *ret);
-int silc_idcache_add(SilcIDCache cache, char *data, SilcIdType id_type,
+int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
+		     SilcIdType id_type,
 		     void *id, void *context, int sort);
 int silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old);
-int silc_idcache_del_by_data(SilcIDCache cache, char *data);
+int silc_idcache_del_by_data(SilcIDCache cache, unsigned char *data);
 int silc_idcache_del_by_id(SilcIDCache cache, SilcIdType type, void *id);
 int silc_idcache_del_all(SilcIDCache cache);
 int silc_idcache_purge(SilcIDCache cache);
