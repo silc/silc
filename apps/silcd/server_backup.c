@@ -792,7 +792,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	    ctx->sessions[ctx->sessions_count].connected = FALSE;
 	    ctx->sessions[ctx->sessions_count].server_entry = server_entry;
 
-	    SILC_LOG_DEBUG(("Sending START to %s (session %d)", 
+	    SILC_LOG_DEBUG(("Sending START to %s (session %d)",
+			    server_entry->server_name, ctx->sessions_count));
+	    SILC_LOG_INFO(("Expecting CONNECTED from %s (session %d)",
 			    server_entry->server_name, ctx->sessions_count));
 
 	    /* This connection is performing this protocol too now */
@@ -838,6 +840,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	    ctx->sessions[ctx->sessions_count].server_entry = server_entry;
 
 	    SILC_LOG_DEBUG(("Sending START to %s (session %d)", 
+			    server_entry->server_name, ctx->sessions_count));
+	    SILC_LOG_INFO(("Expecting CONNECTED from %s (session %d)",
 			    server_entry->server_name, ctx->sessions_count));
 
 	    /* This connection is performing this protocol too now */
@@ -940,11 +944,13 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	break;
       }
 
-      SILC_LOG_DEBUG(("Received CONNECTED (session %d)", ctx->session));
-
       for (i = 0; i < ctx->sessions_count; i++) {
 	if (ctx->sessions[i].session == ctx->session) {
 	  ctx->sessions[i].connected = TRUE;
+	  SILC_LOG_INFO(("Received CONNECTED from %s (session %d)",
+			 ctx->sessions[i].server_entry->server_name,
+			 ctx->session));
+	  SILC_LOG_DEBUG(("Received CONNECTED (session %d)", ctx->session));
 	  break;
 	}
       }
@@ -954,7 +960,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	  return;
       }
 
-      SILC_LOG_DEBUG(("All sessions has returned CONNECTED packets"));
+      SILC_LOG_INFO(("All sessions have returned CONNECTED packets, "
+		     "continuing"));
       SILC_LOG_DEBUG(("Sending ENDING packet to primary router"));
 
       /* Send with a timeout */
@@ -1101,7 +1108,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	break;
       }
 
-      SILC_LOG_DEBUG(("Received RESUMED from new primary router"));
+      SILC_LOG_INFO(("Received RESUMED from new primary router"));
 
       if (server->backup_router)
 	server->server_type = SILC_BACKUP_ROUTER;
@@ -1241,7 +1248,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
     silc_idcache_list_free(list);
   }
 
-  SILC_LOG_DEBUG(("Backup resuming protocol has ended"));
+  SILC_LOG_INFO(("Backup resuming protocol ended successfully"));
 
   if (ctx->sock->protocol)
     ctx->sock->protocol = NULL;

@@ -3082,7 +3082,6 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  SilcIDListData idata = (SilcIDListData)client;
   SilcChannelID *channel_id = NULL;
   SilcClientID *client_id = NULL;
   SilcChannelEntry channel;
