@@ -1,3 +1,14 @@
+Fri Apr 30 19:40:28 CEST 2004  Patrik Weiskircher <pat@icore.at>
+
+	* Added check to ignore Port value if Initiator is FALSE. 
+	  Remote router coudln't connect if Port was set. Affected file
+	  silcd/serverconfig.c
+
+	* If some client tries to resume more than once at the same time,
+	  server crashed. Router didn't crash, but showed odd behaviour
+	  (didn't allow clients to join anymore, ..). Affected files
+	  silcd/packet_receive.c silcd/idlist.h
+
 Mon Mar 15 21:10:08 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Destroy the file transfer session in silc_client_file_close
