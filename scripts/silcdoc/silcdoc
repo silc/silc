@@ -77,7 +77,7 @@ if [ "$TYPE" = "PS" ]; then
 
   cd $path
 
-#  rm -rf /tmp/silcdoc.tex
+  rm -rf /tmp/silcdoc.tex
 fi
 
 #
