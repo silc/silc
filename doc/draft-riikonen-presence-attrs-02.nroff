@@ -397,6 +397,7 @@ multiple same attributes in the packet.
      0x00000008   CONTACT_SMS      SMS is preferred
      0x00000010   CONTACT_MMS      MMS is preferred
      0x00000020   CONTACT_CHAT     Chatting is preferred
+     0x00000040   CONTACT_VIDEO    Video conferencing is preferred
 
 
 8    ATTRIBUTE_TIMEZONE

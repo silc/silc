@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 20 June 2003
+.ds RH 30 June 2003
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-07.txt                               20 June 2003
-Expires: 20 December 2003
+draft-riikonen-silc-pp-07.txt                               30 June 2003
+Expires: 30 December 2003
 
 .in 3
 
@@ -53,11 +53,10 @@ Abstract
 
 This memo describes a Packet Protocol used in the Secure Internet Live
 Conferencing (SILC) protocol, specified in the Secure Internet Live
-Conferencing, Protocol Specification Internet Draft [SILC1].  This
-protocol describes the packet types and packet payloads which defines
-the contents of the packets.  The protocol provides secure binary packet
-protocol that assures that the contents of the packets are secured and
-authenticated.
+Conferencing, Protocol Specification [SILC1].  This protocol describes
+the packet types and packet payloads which defines the contents of the
+packets.  The protocol provides secure binary packet protocol that
+assures that the contents of the packets are secured and authenticated.
 
 
 
@@ -157,15 +156,15 @@ Figure 24:  Resume Client Payload
 
 This document describes a Packet Protocol used in the Secure Internet
 Live Conferencing (SILC) protocol specified in the Secure Internet Live
-Conferencing, Protocol Specification Internet Draft [SILC1].  This
-protocol describes the packet types and packet payloads which defines
-the contents of the packets.  The protocol provides secure binary packet
-protocol that assures that the contents of the packets are secured and
-authenticated.  The packet protocol is designed to be compact to avoid
-unnecessary overhead as much as possible.  This makes the SILC suitable
-also in environment of low bandwidth requirements such as mobile networks.
-All packet payloads can also be compressed to further reduce the size
-of the packets.
+Conferencing, Protocol Specification [SILC1].  This protocol describes
+the packet types and packet payloads which defines the contents of the
+packets.  The protocol provides secure binary packet protocol that
+assures that the contents of the packets are secured and authenticated.
+The packet protocol is designed to be compact to avoid unnecessary
+overhead as much as possible.  This makes the SILC suitable also in
+environment of low bandwidth requirements such as mobile networks.  All
+packet payloads can also be compressed to further reduce the size of
+the packets.
 
 All packets in SILC network are always encrypted and their integrity
 is assured by computed MACs.  The protocol defines several packet types
@@ -1400,9 +1399,12 @@ sent inside arguments are actually Public Key Payloads.
 
       Sent when client has joined to a channel.  The server MUST
       distribute this type to the local clients on the channel and then
-      send it to its primary router.  The router or server receiving the
-      packet distributes this type to the local clients on the channel
-      and broadcast it to the network.
+      send it to its primary router.  Note that, when router is joining
+      the client on behalf of normal server then router MUST send this
+      notify type locally and globally.  The router or server receiving 
+      the packet distributes this type to the local clients on the channel
+      and broadcast it to the network.  This notify is sent also to the
+      client that joined the channel.
 
       Max Arguments:  2
           Arguments:  (1) [<Client ID>]       (2) <Channel ID>
@@ -2955,6 +2957,7 @@ security of this protocol.
 
 [RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
              10646", RFC 2279, January 1998.
+
 
 .ti 0
 5 Author's Address
