@@ -1028,7 +1028,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (protocol->state == SILC_PROTOCOL_STATE_ERROR) {
+  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_protocol_free(protocol);
     silc_ske_free_key_material(ctx->keymat);
@@ -1126,7 +1127,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (protocol->state == SILC_PROTOCOL_STATE_ERROR) {
+  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_protocol_free(protocol);
     if (ctx->packet)
