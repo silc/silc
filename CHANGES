@@ -1,3 +1,12 @@
+Thu Apr 12 14:42:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* If re-key protocol is active then process the incoming packets
+	  synchronously since we must assure that icoming packets encrypted
+	  with the old key is processed before the new keys is set to
+	  use.  This is true other packets than for REKEY packets.
+	  Affected file silcd/server.c.  The same was done to client library
+	  as well, affected file lib/silcclient/client.c.
+
 Thu Apr 12 12:01:52 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed bug in client and server to accept the force send if

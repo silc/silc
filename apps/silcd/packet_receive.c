@@ -2060,5 +2060,5 @@ void silc_server_rekey(SilcServer server,
 
   if (proto_ctx->pfs == FALSE)
     /* Run the protocol */
-    protocol->execute(server->timeout_queue, 0, protocol, sock->sock, 0, 0);
+    protocol->execute(server->timeout_queue, 0, protocol, sock->sock, 0, 1);
 }

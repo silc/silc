@@ -294,4 +294,14 @@ void silc_client_notify_by_server(SilcClient client,
 void silc_client_private_message(SilcClient client, 
 				 SilcSocketConnection sock, 
 				 SilcPacketContext *packet);
+
+void silc_client_packet_send_flush(SilcClient client, 
+				   SilcSocketConnection sock,
+				   SilcPacketType type, 
+				   void *dst_id,
+				   SilcIdType dst_id_type,
+				   SilcCipher cipher,
+				   SilcHmac hmac,
+				   unsigned char *data, 
+				   uint32 data_len);
 #endif
