@@ -1,8 +1,6 @@
 TODO for Irssi SILC Client 1.0
 ==============================
 
- o Check make install with static/shared libs
-
  o Testing - See test plan:
      http://silcnet.org/docs/silc-client-1.0-test.pdf
      http://silcnet.org/docs/silc-client-1.0-test.ps
