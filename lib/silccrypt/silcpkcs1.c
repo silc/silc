@@ -20,6 +20,9 @@
 #include "silcincludes.h"
 #include "silcpkcs1.h"
 
+/* Minimum padding in block */
+#define SILC_PKCS1_MIN_PADDING 8
+
 /* Encodes PKCS#1 data block from the `data' according to the block type
    indicated by `bt'.  When encoding signatures the `bt' must be
    SILC_PKCS1_BT_PRV1 and when encoding encryption blocks the `bt' must
@@ -52,7 +55,7 @@ bool silc_pkcs1_encode(SilcPkcs1BlockType bt,
   dest_data[1] = (unsigned char)bt;
 
   padlen = (SilcInt32)dest_data_size - (SilcInt32)data_len - 3;
-  if (padlen < 8) {
+  if (padlen < SILC_PKCS1_MIN_PADDING) {
     SILC_LOG_DEBUG(("Data to be encoded is too long"));
     return FALSE;
   }
@@ -67,14 +70,14 @@ bool silc_pkcs1_encode(SilcPkcs1BlockType bt,
 
   case SILC_PKCS1_BT_PUB:
     /* Encryption */
-    for (i = 2; i < padlen; i++) {
-      /* It is guaranteed this routine does not return zero byte. */
-      if (rng)
-	dest_data[i] = silc_rng_get_byte_fast(rng);
-      else
-	dest_data[i] = silc_rng_global_get_byte_fast();
-    }
 
+    /* It is guaranteed this routine does not return zero byte. */
+    if (rng)
+      for (i = 2; i < padlen; i++)
+	dest_data[i] = silc_rng_get_byte_fast(rng);
+    else
+      for (i = 2; i < padlen; i++)
+	dest_data[i] = silc_rng_global_get_byte_fast();
     break;
   }
 
@@ -132,11 +135,18 @@ bool silc_pkcs1_decode(SilcPkcs1BlockType bt,
   }
 
   /* Sanity checks */
-  if (data[i] != 0x00 || i < 10 - 2)
+  if (data[i++] != 0x00) {
+    SILC_LOG_DEBUG(("Malformed block"));
     return FALSE;
-  i++;
-  if (dest_data_size < data_len - i)
+  }
+  if (i - 1 < SILC_PKCS1_MIN_PADDING) {
+    SILC_LOG_DEBUG(("Malformed block"));
     return FALSE;
+  }
+  if (dest_data_size < data_len - i) {
+    SILC_LOG_DEBUG(("Destination buffer too small"));
+    return FALSE;
+  }
 
   /* Copy the data */
   memcpy(dest_data, data + i, data_len - i);
