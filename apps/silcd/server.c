@@ -982,6 +982,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       }
 
       server->stat.my_clients++;
+      server->stat.clients++;
 
       id_entry = (void *)client;
       break;
