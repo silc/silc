@@ -717,7 +717,7 @@ void silc_client_notify_by_server(SilcClient client,
       /* Find Client entry */
       client_id = id;
       client_entry = silc_client_get_client_by_id(client, conn, client_id);
-      if (!client_entry) {
+      if (!client_entry || !client_entry->nickname) {
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
 	silc_client_notify_by_server_resolve(client, conn, packet, 
@@ -841,7 +841,7 @@ void silc_client_notify_by_server(SilcClient client,
       /* Find Client entry */
       client_id = id;
       client_entry = silc_client_get_client_by_id(client, conn, client_id);
-      if (!client_entry) {
+      if (!client_entry || !client_entry->nickname) {
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
 	silc_client_notify_by_server_resolve(client, conn, packet, 
