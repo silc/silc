@@ -1508,33 +1508,6 @@ int silc_client_add_private_message_key_ske(SilcClient client,
 					    SilcSKEKeyMaterial *key,
 					    bool responder);
 
-/****f* silcclient/SilcClientAPI/silc_client_send_private_message_key
- *
- * SYNOPSIS
- *
- *    int silc_client_send_private_message_key(SilcClient client,
- *                                             SilcClientConnection conn,
- *                                             SilcClientEntry client_entry,
- *                                             int force_send);
- *
- * DESCRIPTION
- *
- *    Sends private message key payload to the remote client indicated by
- *    the `client_entry'. If the `force_send' is TRUE the packet is sent
- *    immediately. Returns FALSE if error occurs, TRUE otherwise. The
- *    application should call this function after setting the key to the
- *    client.
- *
- *    Note that the key sent using this function is sent to the remote client
- *    through the SILC network. The packet is protected using normal session
- *    keys. 
- *
- ***/
-int silc_client_send_private_message_key(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcClientEntry client_entry,
-					 int force_send);
-
 /****f* silcclient/SilcClientAPI/silc_client_del_private_message_key
  *
  * SYNOPSIS
