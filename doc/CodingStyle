@@ -342,7 +342,7 @@ Using gotos
 
 Gotos are used in the SILC code quite often.  If you know how to use
 goto's properly then it is ok to use them for example to optimize the
-code.  However, if you don' know how to use goto's do not use them.
+code.  However, if you don't know how to use goto's do not use them.
 
 
 Debug Messages

@@ -57,7 +57,7 @@ Following commands has been, at least partly, implemented:
 
 		Changes/sets nickname.  Note that in SILC there can be
 		multiple same nicknames.  However, the logic on working
-		with multiple nicknams on user interface is pretty much
+		with multiple nicknames on user interface is pretty much
 		still missing.  Also note that nicknames in SILC are
 		case-sensitive.
 
