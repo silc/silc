@@ -575,6 +575,12 @@ AC_ARG_WITH(silcd-config-file,
                           server [/etc/silc/silcd.conf]],
 [ AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval") ])
 
+AC_ARG_WITH(silcd-pid-file,
+[  --with-silcd-pid-file[=PATH]
+                          Use PATH as default pid file in SILC
+                          server [/var/run/silcd.pid]],
+[ AC_DEFINE_UNQUOTED(SILC_SERVER_PID_FILE, "$withval") ])
+
 #
 # Native WIN32 compilation under cygwin
 #

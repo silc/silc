@@ -200,10 +200,10 @@ int main(int argc, char **argv)
     silc_server_daemonise(silcd);
 
   /* Set /var/run/silcd.pid */
-  unlink("/var/run/silcd/pid");
+  unlink(SILC_SERVER_PID_FILE);
   memset(pid, 0, sizeof(pid));
   snprintf(pid, sizeof(pid) - 1, "%d\n", getpid());
-  silc_file_writefile("/var/run/silcd.pid", pid, strlen(pid));
+  silc_file_writefile(SILC_SERVER_PID_FILE, pid, strlen(pid));
   
   /* Run the server. When this returns the server has been stopped
      and we will exit. */

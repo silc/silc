@@ -28,6 +28,10 @@
 #define SILC_SERVER_CONFIG_FILE "/etc/silc/silcd.conf"
 #endif
 
+#ifndef SILC_SERVER_PID_FILE
+#define SILC_SERVER_PID_FILE "/var/run/silcd.pid"
+#endif
+
 #define SILC_SERVER_PUBLIC_KEY_NAME "/silcd.pub"
 #define SILC_SERVER_PRIVATE_KEY_NAME "/silcd.prv"
 
