@@ -226,57 +226,6 @@ typedef SilcUInt32 * void *;
 	    | ((SilcUInt32)(SilcUInt8)(cp)[1])
 /***/
 
-/****d* silcutil/SILCTypes/SILC_PUT16_MSB
- *
- * NAME
- *
- *    #define SILC_PUT16_MSB ...
- *
- * DESCRIPTION
- *
- *    Put two 8-bit bytes, most significant bytes first.
- *
- * SOURCE
- */
-#define SILC_PUT16_MSB(l, cp)			\
-	(cp)[0] = l >> 8;			\
-	(cp)[1] = l;
-/***/
-
-/****d* silcutil/SILCTypes/SILC_GET16_LSB
- *
- * NAME
- *
- *    #define SILC_GET16_MSB ...
- *
- * DESCRIPTION
- *
- *    Return two 8-bit bytes, least significant bytes first.
- *
- * SOURCE
- */
-#define SILC_GET16_LSB(l, cp)				\
-	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)
-/***/
-
-/****d* silcutil/SILCTypes/SILC_PUT16_LSB
- *
- * NAME
- *
- *    #define SILC_PUT16_LSB ...
- *
- * DESCRIPTION
- *
- *    Put two 8-bit bytes, least significant bytes first.
- *
- * SOURCE
- */
-#define SILC_PUT16_LSB(l, cp)			\
-	(cp)[0] = l;				\
-	(cp)[1] = l >> 8;
-/***/
-
 /****d* silcutil/SILCTypes/SILC_GET32_MSB
  *
  * NAME
@@ -296,23 +245,38 @@ typedef SilcUInt32 * void *;
 	    | ((SilcUInt32)(SilcUInt8)(cp)[3])
 /***/
 
-/****d* silcutil/SILCTypes/SILC_PUT32_MSB
+/****d* silcutil/SILCTypes/SILC_GET64_MSB
  *
  * NAME
  *
- *    #define SILC_PUT32_MSB ...
+ *    #define SILC_GET64_MSB ...
  *
  * DESCRIPTION
  *
- *    Put four 8-bit bytes, most significant bytes first.
+ *    Return eight 8-bit bytes, most significant bytes first.
  *
  * SOURCE
  */
-#define SILC_PUT32_MSB(l, cp)			\
-	(cp)[0] = l >> 24;			\
-	(cp)[1] = l >> 16;			\
-	(cp)[2] = l >> 8;			\
-	(cp)[3] = l;
+#define SILC_GET64_MSB(l, cp)				\
+       (l) = ((((SilcUInt64)GET_WORD((cp))) << 32) |	\
+	      ((SilcUInt64)GET_WORD((cp) + 4)))
+/***/
+
+/****d* silcutil/SILCTypes/SILC_GET16_LSB
+ *
+ * NAME
+ *
+ *    #define SILC_GET16_MSB ...
+ *
+ * DESCRIPTION
+ *
+ *    Return two 8-bit bytes, least significant bytes first.
+ *
+ * SOURCE
+ */
+#define SILC_GET16_LSB(l, cp)				\
+	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET32_LSB
@@ -341,40 +305,40 @@ typedef SilcUInt32 * void *;
 	    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24)
 /***/
 
-/****d* silcutil/SILCTypes/SILC_PUT32_LSB
+/****d* silcutil/SILCTypes/SILC_PUT16_MSB
  *
  * NAME
  *
- *    #define SILC_PUT32_LSB ...
+ *    #define SILC_PUT16_MSB ...
  *
  * DESCRIPTION
  *
- *    Put four 8-bit bytes, least significant bytes first.
+ *    Put two 8-bit bytes, most significant bytes first.
  *
  * SOURCE
  */
-#define SILC_PUT32_LSB(l, cp)			\
-	(cp)[0] = l;				\
-	(cp)[1] = l >> 8;			\
-	(cp)[2] = l >> 16;			\
-	(cp)[3] = l >> 24;
+#define SILC_PUT16_MSB(l, cp)			\
+	(cp)[0] = l >> 8;			\
+	(cp)[1] = l;
 /***/
 
-/****d* silcutil/SILCTypes/SILC_GET64_MSB
+/****d* silcutil/SILCTypes/SILC_PUT32_MSB
  *
  * NAME
  *
- *    #define SILC_GET64_MSB ...
+ *    #define SILC_PUT32_MSB ...
  *
  * DESCRIPTION
  *
- *    Return eight 8-bit bytes, most significant bytes first.
+ *    Put four 8-bit bytes, most significant bytes first.
  *
  * SOURCE
  */
-#define SILC_GET64_MSB(l, cp)				\
-       (l) = ((((SilcUInt64)GET_WORD((cp))) << 32) |	\
-	      ((SilcUInt64)GET_WORD((cp) + 4)))
+#define SILC_PUT32_MSB(l, cp)			\
+	(cp)[0] = l >> 24;			\
+	(cp)[1] = l >> 16;			\
+	(cp)[2] = l >> 8;			\
+	(cp)[3] = l;
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT64_MSB
@@ -394,6 +358,42 @@ do {								\
   SILC_PUT32_MSB((SilcUInt32)((SilcUInt64)(l) >> 32), (cp));	\
   SILC_PUT32_MSB((SilcUInt32)(l), (cp) + 4);			\
 } while(0)
+/***/
+
+/****d* silcutil/SILCTypes/SILC_PUT16_LSB
+ *
+ * NAME
+ *
+ *    #define SILC_PUT16_LSB ...
+ *
+ * DESCRIPTION
+ *
+ *    Put two 8-bit bytes, least significant bytes first.
+ *
+ * SOURCE
+ */
+#define SILC_PUT16_LSB(l, cp)			\
+	(cp)[0] = l;				\
+	(cp)[1] = l >> 8;
+/***/
+
+/****d* silcutil/SILCTypes/SILC_PUT32_LSB
+ *
+ * NAME
+ *
+ *    #define SILC_PUT32_LSB ...
+ *
+ * DESCRIPTION
+ *
+ *    Put four 8-bit bytes, least significant bytes first.
+ *
+ * SOURCE
+ */
+#define SILC_PUT32_LSB(l, cp)			\
+	(cp)[0] = l;				\
+	(cp)[1] = l >> 8;			\
+	(cp)[2] = l >> 16;			\
+	(cp)[3] = l >> 24;
 /***/
 
 #endif /* SILCTYPES_H */
