@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ typedef unsigned char SilcPacketFlags;
 /* All defined packet flags */
 #define SILC_PACKET_FLAG_NONE             0x00
 #define SILC_PACKET_FLAG_PRIVMSG_KEY      0x01
-#define SILC_PACKET_FLAG_LIST             0x04
+#define SILC_PACKET_FLAG_LIST             0x02
 #define SILC_PACKET_FLAG_BROADCAST        0x04
 #define SILC_PACKET_FLAG_TUNNELED         0x08
 /* Rest of flags still available
