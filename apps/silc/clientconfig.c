@@ -20,8 +20,12 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/03 05:49:11  priikone
+ * 	Remove ':' from the end of line when in commands section.  Command
+ * 	execution should work now from config file ok.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -490,7 +494,9 @@ int silc_client_config_parse_lines(SilcClientConfig config,
       /* Get command line (this may include parameters as well. They
 	 will be parsed later with standard command parser when
 	 executing particular command.) */
-      config->commands->command = strdup(line->data);
+      config->commands->command = silc_calloc(strlen(line->data), 
+					      sizeof(char));
+      memcpy(config->commands->command, line->data, strlen(line->data) - 1);
       if (ret < 0)
 	break;
 
