@@ -1,3 +1,36 @@
+Sun Oct 28 18:46:27 EST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SilcClietFileError enum to indicate error in
+	  file transfer.  Added SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT
+	  and SILC_CLIENT_FILE_MONITOR_ERROR new monitor statuses.
+	  Affected files lib/silcclient/silcapi.h and
+	  lib/silcclient/client_ftp.c.
+
+	* Check that newsize in silc_buffer_realloc is larger than
+	  the old buffer's size.  Affected file lib/silcutil/silcbufutil.h.
+
+	* Added better monitor of file transfers.  It now monitors
+	  key agreement protocol during the file transfer too.  Added
+	  error reporting too.  Affected files
+	  irssi/src/silc/core/silc-servers.c,
+	  irssi/src/fe-common/silc/module-formats.[ch].
+
+	* Wrote a help file for FILE command.
+
+	* Added silc_rng_global_get_byte_fast to get not-so-secure
+	  random data as fast as possible.  Random data is read from
+	  /dev/urandom if available and from the SILC RNG if not
+	  available.  It is used in padding generation.  Affected file
+	  lib/silccrypt/silcrng.[ch].
+
+	* All packets in client library are now processed synchronously.
+	  Optimized packet processing a lot.  Affected file
+	  lib/silcclient/client.c.
+
+	* All server connection packets are processing synchronously
+	  now in server, to optimize packet processing.  Affected file
+	  silcd/server.c.
+
 Thu Oct 25 22:44:06 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Assure that silc_client_notify_by_server_resolve does not

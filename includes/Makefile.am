@@ -21,6 +21,7 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 all:
 	-cd ..
 
+if SILC_DIST_TOOLKIT
 include_HEADERS = \
 	bitmove.h \
 	clientlibincludes.h \
@@ -28,6 +29,7 @@ include_HEADERS = \
 	silcwin32.h \
 	version.h \
 	version_internal.h
+endif
 
 EXTRA_DIST = \
 	silcdefs.h.in
