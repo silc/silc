@@ -136,24 +136,40 @@ unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, unsigned int *len)
   return pkcs->pkcs->get_private_key(pkcs->context, len);
 }
 
-/* Sets public key */
+/* Sets public key from SilcPublicKey. */
 
-int silc_pkcs_set_public_key(SilcPKCS pkcs, unsigned char *pk, 
-			     unsigned int pk_len)
+int silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key)
+{
+  return pkcs->pkcs->set_public_key(pkcs->context, public_key->pk, 
+				    public_key->pk_len);
+}
+
+/* Sets public key from data. */
+
+int silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
+				  unsigned int pk_len)
 {
   return pkcs->pkcs->set_public_key(pkcs->context, pk, pk_len);
 }
 
-/* Sets private key */
+/* Sets private key from SilcPrivateKey. */
 
-int silc_pkcs_set_private_key(SilcPKCS pkcs, unsigned char *prv, 
-			      unsigned int prv_len)
+int silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key)
+{
+  return pkcs->pkcs->set_private_key(pkcs->context, private_key->prv, 
+				     private_key->prv_len);
+}
+
+/* Sets private key from data. */
+
+int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
+				   unsigned int prv_len)
 {
   return pkcs->pkcs->set_private_key(pkcs->context, prv, prv_len);
 }
 
 /* Encodes and returns SILC public key identifier. If some of the 
-   arguments as NULL those are not encoded into the identifier string.
+   arguments is NULL those are not encoded into the identifier string.
    Protocol says that at least username and host must be provided. */
 
 char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,

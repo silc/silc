@@ -168,10 +168,12 @@ char *silc_pkcs_get_supported();
 unsigned int silc_pkcs_get_key_len(SilcPKCS self);
 unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, unsigned int *len);
 unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, unsigned int *len);
-int silc_pkcs_set_public_key(SilcPKCS pkcs, unsigned char *pk, 
-			     unsigned int pk_len);
-int silc_pkcs_set_private_key(SilcPKCS pkcs, unsigned char *prv, 
-			      unsigned int prv_len);
+int silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key);
+int silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
+				  unsigned int pk_len);
+int silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key);
+int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
+				   unsigned int prv_len);
 char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 				  char *email, char *org, char *country);
 SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
