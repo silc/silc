@@ -21,7 +21,7 @@ include $(top_srcdir)/Makefile.defines.in
 confdir = $(silc_etcdir)
 conf_DATA = silc.conf
 
-themedir = $(datadir)/irssi/themes
+themedir = $(datadir)/silc/themes
 theme_DATA = default.theme
 
 noinst_HEADERS = irssi-version.h.in
@@ -30,7 +30,6 @@ EXTRA_DIST = \
 	autogen.sh \
 	curses.m4 \
 	README \
-	README.cygwin \
 	file2header.sh \
 	irssi.spec \
 	irssi.spec.in \

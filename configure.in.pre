@@ -770,7 +770,8 @@ fi
 #
 # Other configure scripts
 #
-if test "x$silc_dist" = "xsilc-client"; then
+if test "x$silc_dist" = "xsilc-client" || 
+   test "x$silc_dist" = "xsilc-toolkit"; then
 AC_CONFIG_SUBDIRS(irssi)
 fi
 AC_CONFIG_SUBDIRS(lib/silcmath/mpi)

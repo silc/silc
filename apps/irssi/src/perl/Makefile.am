@@ -23,7 +23,7 @@ INCLUDES = \
 	-I$(top_srcdir)/src/fe-common/core \
 	-I$(top_srcdir)/src/fe-common/silc \
 	$(GLIB_CFLAGS) \
-	-DSCRIPTDIR=\""$(libdir)/irssi/scripts"\" \
+	-DSCRIPTDIR=\""$(libdir)/silc/scripts"\" \
 	-DPERL_USE_LIB=\""$(PERL_USE_LIB)"\" \
 	-DPERL_STATIC_LIBS=$(PERL_STATIC_LIBS) \
 	$(PERL_CFLAGS)

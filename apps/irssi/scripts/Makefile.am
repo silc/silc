@@ -1,4 +1,4 @@
-scriptdir = $(datadir)/irssi/scripts
+scriptdir = $(datadir)/silc/scripts
 
 script_DATA = \
 	autoop.pl \

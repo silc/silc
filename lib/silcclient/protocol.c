@@ -212,10 +212,6 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   if (maj != maj2)
     status = SILC_SKE_STATUS_BAD_VERSION;
 
-  /* XXX backward support for 0.6.1 */
-  if (maj == 0 && min == 6 && build < 2)
-    ske->backward_version = 1;
-
   if (status != SILC_SKE_STATUS_OK)
     client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 			       "We don't support server version `%s'", 

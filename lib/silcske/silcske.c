@@ -1607,18 +1607,20 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
     KEY = silc_mp_mp2bin(ske->KEY, 0, &KEY_len);
     
     /* Format the buffer used to compute the hash value */
-    /* XXX Backward support for 0.6.1 */
-    if (ske->backward_version == 1) {
-      SILC_LOG_DEBUG(("*********** Using old KE payload"));
-      buf = silc_buffer_alloc(ske->start_payload_copy->len + 
-			      ske->ke2_payload->pk_len + e_len + 
-			      f_len + KEY_len);
-      silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+    buf = silc_buffer_alloc(ske->start_payload_copy->len + 
+			    ske->ke2_payload->pk_len + 
+			    ske->ke1_payload->pk_len + 
+			    e_len + f_len + KEY_len);
+    silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
 
+    /* Initiator is not required to send its public key */
+    if (!ske->ke1_payload->pk_data) {
       ret = 
 	silc_buffer_format(buf,
-			   SILC_STR_UI_XNSTRING(ske->start_payload_copy->data,
-						ske->start_payload_copy->len),
+			   SILC_STR_UI_XNSTRING(ske->start_payload_copy->
+						data,
+						ske->start_payload_copy->
+						len),
 			   SILC_STR_UI_XNSTRING(ske->ke2_payload->pk_data, 
 						ske->ke2_payload->pk_len),
 			   SILC_STR_UI_XNSTRING(e, e_len),
@@ -1626,43 +1628,20 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
 			   SILC_STR_UI_XNSTRING(KEY, KEY_len),
 			   SILC_STR_END);
     } else {
-      /* Initiator is not required to send its public key */
-      SILC_LOG_DEBUG(("*********** Using new KE payload"));
-      buf = silc_buffer_alloc(ske->start_payload_copy->len + 
-			      ske->ke2_payload->pk_len + 
-			      ske->ke1_payload->pk_len + 
-			      e_len + f_len + KEY_len);
-      silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
-
-      if (!ske->ke1_payload->pk_data) {
-	ret = 
-	  silc_buffer_format(buf,
-			     SILC_STR_UI_XNSTRING(ske->start_payload_copy->
-						  data,
-						  ske->start_payload_copy->
-						  len),
-			     SILC_STR_UI_XNSTRING(ske->ke2_payload->pk_data, 
-						  ske->ke2_payload->pk_len),
-			     SILC_STR_UI_XNSTRING(e, e_len),
-			     SILC_STR_UI_XNSTRING(f, f_len),
-			     SILC_STR_UI_XNSTRING(KEY, KEY_len),
-			     SILC_STR_END);
-      } else {
-	ret = 
-	  silc_buffer_format(buf,
-			     SILC_STR_UI_XNSTRING(ske->start_payload_copy->
-						  data,
-						  ske->start_payload_copy->
-						  len),
-			     SILC_STR_UI_XNSTRING(ske->ke2_payload->pk_data, 
-						  ske->ke2_payload->pk_len),
-			     SILC_STR_UI_XNSTRING(ske->ke1_payload->pk_data, 
-						  ske->ke1_payload->pk_len),
-			     SILC_STR_UI_XNSTRING(e, e_len),
-			     SILC_STR_UI_XNSTRING(f, f_len),
-			     SILC_STR_UI_XNSTRING(KEY, KEY_len),
-			     SILC_STR_END);
-      }
+      ret = 
+	silc_buffer_format(buf,
+			   SILC_STR_UI_XNSTRING(ske->start_payload_copy->
+						data,
+						ske->start_payload_copy->
+						len),
+			   SILC_STR_UI_XNSTRING(ske->ke2_payload->pk_data, 
+						ske->ke2_payload->pk_len),
+			   SILC_STR_UI_XNSTRING(ske->ke1_payload->pk_data, 
+						ske->ke1_payload->pk_len),
+			   SILC_STR_UI_XNSTRING(e, e_len),
+			   SILC_STR_UI_XNSTRING(f, f_len),
+			   SILC_STR_UI_XNSTRING(KEY, KEY_len),
+			   SILC_STR_END);
     }
     if (ret == -1) {
       silc_buffer_free(buf);
