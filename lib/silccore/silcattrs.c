@@ -126,27 +126,28 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     case SILC_ATTRIBUTE_GEOLOCATION:
       {
 	SilcAttributeObjGeo *geo = object;
+	int len1, len2, len3, len4;
 	if (object_size != sizeof(*geo))
 	  return NULL;
-	len =
-	  (geo->longitude ? strlen(geo->longitude) : 0) +
-	  (geo->latitude  ? strlen(geo->latitude)  : 0) +
-	  (geo->altitude  ? strlen(geo->altitude)  : 0) +
-	  (geo->accuracy  ? strlen(geo->accuracy)  : 0);
-	if (!len)
+	len1 = (geo->longitude ? strlen(geo->longitude) : 0);
+	len2 = (geo->latitude  ? strlen(geo->latitude)  : 0);
+	len3 = (geo->altitude  ? strlen(geo->altitude)  : 0);
+	len4 = (geo->accuracy  ? strlen(geo->accuracy)  : 0);
+	if (len1 + len2 + len3 + len4 == 0)
 	  return NULL;
+	len = len1 + len2 + len3 + len4;
 	tmpbuf = silc_buffer_alloc_size(8 + len);
 	if (!tmpbuf)
 	  return NULL;
 	silc_buffer_format(tmpbuf,
-			   SILC_STR_UI_SHORT(strlen(geo->longitude)),
-			   SILC_STR_UI16_STRING(geo->longitude),
-			   SILC_STR_UI_SHORT(strlen(geo->latitude)),
-			   SILC_STR_UI16_STRING(geo->latitude),
-			   SILC_STR_UI_SHORT(strlen(geo->altitude)),
-			   SILC_STR_UI16_STRING(geo->altitude),
-			   SILC_STR_UI_SHORT(strlen(geo->accuracy)),
-			   SILC_STR_UI16_STRING(geo->accuracy),
+			   SILC_STR_UI_SHORT(len1),
+			   SILC_STR_UI16_STRING(len1 ? geo->longitude : ""),
+			   SILC_STR_UI_SHORT(len2),
+			   SILC_STR_UI16_STRING(len ? geo->latitude : ""),
+			   SILC_STR_UI_SHORT(len3),
+			   SILC_STR_UI16_STRING(len3 ? geo->altitude : ""),
+			   SILC_STR_UI_SHORT(len4),
+			   SILC_STR_UI16_STRING(len4 ? geo->accuracy : ""),
 			   SILC_STR_END);
 	object = tmpbuf->data;
 	object_size = tmpbuf->len;
@@ -156,26 +157,29 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     case SILC_ATTRIBUTE_DEVICE_INFO:
       {
 	SilcAttributeObjDevice *dev = object;
+	int len1, len2, len3, len4;
 	if (object_size != sizeof(*dev))
 	  return NULL;
-	len =
-	  (dev->manufacturer ? strlen(dev->manufacturer) : 0) +
-	  (dev->version      ? strlen(dev->version)      : 0) +
-	  (dev->model        ? strlen(dev->model)        : 0) +
-	  (dev->language     ? strlen(dev->language)     : 0);
+	len1 = (dev->manufacturer ? strlen(dev->manufacturer) : 0);
+	len2 = (dev->version      ? strlen(dev->version)      : 0);
+	len3 = (dev->model        ? strlen(dev->model)        : 0);
+	len4 = (dev->language     ? strlen(dev->language)     : 0);
+	if (len1 + len2 + len3 + len4 == 0)
+	  return NULL;
+	len = len1 + len2 + len3 + len4;
 	tmpbuf = silc_buffer_alloc_size(4 + 8 + len);
 	if (!tmpbuf)
 	  return NULL;
 	silc_buffer_format(tmpbuf,
 			   SILC_STR_UI_INT(dev->type),
-			   SILC_STR_UI_SHORT(strlen(dev->manufacturer)),
-			   SILC_STR_UI16_STRING(dev->manufacturer),
-			   SILC_STR_UI_SHORT(strlen(dev->version)),
-			   SILC_STR_UI16_STRING(dev->version),
-			   SILC_STR_UI_SHORT(strlen(dev->model)),
-			   SILC_STR_UI16_STRING(dev->model),
-			   SILC_STR_UI_SHORT(strlen(dev->language)),
-			   SILC_STR_UI16_STRING(dev->language),
+			   SILC_STR_UI_SHORT(len1),
+			   SILC_STR_UI16_STRING(len ? dev->manufacturer : ""),
+			   SILC_STR_UI_SHORT(len2),
+			   SILC_STR_UI16_STRING(len ? dev->version : ""),
+			   SILC_STR_UI_SHORT(len3),
+			   SILC_STR_UI16_STRING(len3 ? dev->model : ""),
+			   SILC_STR_UI_SHORT(len4),
+			   SILC_STR_UI16_STRING(len4 ? dev->language : ""),
 			   SILC_STR_END);
 	object = tmpbuf->data;
 	object_size = tmpbuf->len;
