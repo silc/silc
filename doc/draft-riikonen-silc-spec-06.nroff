@@ -1242,11 +1242,12 @@ When signatures are computed in SILC the computing of the signature is
 represented as sign().  The signature computing procedure is dependent
 of the public key algorithm, and the public key or certificate encoding.
 When using SILC public key the signature is computed as described in
-previous section for RSA and DSS keys.  When using SSH2 public keys
-the signature is computed as described in [SSH-TRANS].  When using
-X.509 version 3 certificates the signature is computed as described
-in [PKCS7].  When using OpenPGP certificates the signature is computed
-as described in [PGP].
+previous paragraph for RSA and DSS keys.  If the hash function is not
+specified separately for signing process sha1 MUST be used.  When using
+SSH2 public keys the signature is computed as described in [SSH-TRANS].
+When using X.509 version 3 certificates the signature is computed as
+described in [PKCS7].  When using OpenPGP certificates the signature is
+computed as described in [PGP].
 
 
 .ti 0
