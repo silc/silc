@@ -284,3 +284,86 @@ int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
 
   return ret;
 }
+
+/******************************************************************************
+
+                            Key Agreement Payload
+
+******************************************************************************/
+
+/* The Key Agreement protocol structure */
+struct SilcKeyAgreementPayloadStruct {
+  unsigned short hostname_len;
+  unsigned char *hostname;
+  unsigned int port;
+};
+
+/* Parses and returns an allocated Key Agreement payload. */
+
+SilcKeyAgreementPayload silc_key_agreement_payload_parse(SilcBuffer buffer)
+{
+  SilcKeyAgreementPayload new;
+  int ret;
+
+  SILC_LOG_DEBUG(("Parsing Key Agreement Payload"));
+
+  new = silc_calloc(1, sizeof(*new));
+
+  /* Parse the payload */
+  ret = silc_buffer_unformat(buffer, 
+			     SILC_STR_UI16_NSTRING_ALLOC(&new->hostname,
+							 &new->hostname_len),
+			     SILC_STR_UI_INT(&new->port),
+			     SILC_STR_END);
+  if (ret == -1) {
+    silc_free(new);
+    return NULL;
+  }
+
+  return new;
+}
+
+/* Encodes the Key Agreement protocol and returns the encoded buffer */
+
+SilcBuffer silc_key_agreement_payload_encode(char *hostname,
+					     unsigned int port)
+{
+  SilcBuffer buffer;
+  unsigned int len = strlen(hostname);
+
+  SILC_LOG_DEBUG(("Encoding Key Agreement Payload"));
+
+  buffer = silc_buffer_alloc(2 + len + 4);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  silc_buffer_format(buffer,
+		     SILC_STR_UI_SHORT(len),
+		     SILC_STR_UI_XNSTRING(hostname, len),
+		     SILC_STR_UI_INT(port),
+		     SILC_STR_END);
+
+  return buffer;
+}
+
+/* Frees the Key Agreement protocol */
+
+void silc_key_agreement_payload_free(SilcKeyAgreementPayload payload)
+{
+  if (payload) {
+    silc_free(payload->hostname);
+    silc_free(payload);
+  }
+}
+
+/* Returns the hostname in the payload */
+
+char *silc_key_agreement_get_hostname(SilcKeyAgreementPayload payload)
+{
+  return payload->hostname;
+}
+
+/* Returns the port in the payload */
+
+unsigned int silc_key_agreement_get_port(SilcKeyAgreementPayload payload)
+{
+  return payload->port;
+}

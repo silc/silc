@@ -1,3 +1,15 @@
+Tue Feb 27 11:28:31 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new packet type: SILC_PACKET_KEY_AGREEMENT.  This packet
+          is used by clients to request key negotiation  between another
+          client in the SILC network.  If the negotiation is started it
+          is performed using the SKE protocol.  The result of the
+          negotiation, the secret key material, can be used for example
+          as private message key.
+
+	  Implemented the Key Agreement payload into the files
+	  lib/silccore/silauth.[ch].
+
 Mon Feb 26 12:13:58 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Redefined ciphers for the SILC protocol.  Added some new ciphers

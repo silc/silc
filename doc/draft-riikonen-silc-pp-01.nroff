@@ -97,6 +97,7 @@ Table of Contents
       2.3.17 New Client Payload ................................. 31
       2.3.18 New Server Payload ................................. 32
       2.3.19 New Channel Payload ................................ 33
+      2.3.20 Key Agreement Payload .............................. XXX
   2.4 SILC ID Types ............................................. 39
   2.5 Packet Encryption And Decryption .......................... 39
       2.5.1 Normal Packet Encryption And Decryption ............. 39
@@ -648,7 +649,7 @@ List of SILC Packet types are defined as follows.
           This packet must not be sent as list and the List flag must
 	  not be set.
 
-          Payload of the packet:  See section 2.3.19 New Client Payload
+          Payload of the packet:  See section 2.3.17 New Client Payload
 
 
      20   SILC_PACKET_NEW_SERVER
@@ -664,7 +665,7 @@ List of SILC Packet types are defined as follows.
           This packet must not be sent as list and the List flag must
 	  not be set.
 
-          Payload of the packet:  See section 2.3.20 New Server Payload
+          Payload of the packet:  See section 2.3.18 New Server Payload
 
 
      21   SILC_PACKET_NEW_CHANNEL
@@ -676,7 +677,7 @@ List of SILC Packet types are defined as follows.
           packet.  This packet maybe sent to entity that is indirectly
           connected to the sender.
 
-          Payload of the packet:  See section 2.3.21 New Channel Payload
+          Payload of the packet:  See section 2.3.19 New Channel Payload
 
 
      22   SILC_PACKET_REKEY
@@ -713,7 +714,19 @@ List of SILC Packet types are defined as follows.
 	  not be set.
 
 
-     25 - 199
+     25   SILC_PACKET_KEY_AGREEMENT
+
+          This packet is used by clients to request key negotiation 
+          between another client in the SILC network.  If the negotiation
+          is started it is performed using the SKE protocol.  The result of
+          the negotiation, the secret key material, can be used for
+          example as private message key.  The server and router must not
+          send this packet.
+
+          Payload of the packet:  See section 2.3.20 Key Agreement Payload
+
+
+     26 - 199
 
          Currently undefined commands.
 
@@ -1725,7 +1738,7 @@ The packet uses generic ID Payload as New ID Payload.  See section
 
 
 .ti 0
-2.3.18 New Client Payload
+2.3.17 New Client Payload
 
 When client is connected to the server, keys has been exchanged and
 connection has been authenticated client must register itself to the 
@@ -1786,7 +1799,7 @@ o Real Name (variable length) - The real name of the user
 
 
 .ti 0
-2.3.19 New Server Payload
+2.3.18 New Server Payload
 
 This payload is sent by server when it has completed successfully both
 key exchange and connection authentication protocols.  The server
@@ -1841,7 +1854,7 @@ o Server Name (variable length) - The server name.
 
 
 .ti 0
-2.3.20 New Channel Payload
+2.3.19 New Channel Payload
 
 Information about newly created channel is broadcasted to all routers
 in the SILC network by sending this packet payload.  Channels are
@@ -1855,8 +1868,6 @@ this packet.
 The payload may only be sent with SILC_PACKET_NEW_CHANNEL packet.
 It must not be sent in any other packet type.  The following diagram
 represents the New Channel Payload.
-
-
 
 
 .in 5
@@ -1892,6 +1903,67 @@ o Channel Name (variable length) - The name of the created
 o Channel ID Length (2 bytes) - Length of the Channel ID.
 
 o Channel ID (variable length) - The created Channel ID.
+.in 3
+
+
+.ti 0
+2.3.20 Key Agreement Payload
+
+This payload is used by clients to request key negotiation between
+another client in the SILC Network.  The key agreement protocol used
+is the SKE protocol.  The result of the protocol, the secret key
+material, can be used for example as private message key between the
+two clients.  This significantly adds security as the key agreement
+is performed outside the SILC network.  The server and router must not
+send this payload.
+
+The sender may tell the receiver of this payload the hostname and the
+port where the SKE protocol is running in the sender's end.  The 
+receiver may then initiate the SKE negotiation with the sender.  The
+sender may also optionally not to include the hostname and the port
+of its SKE protocol.  In this case the receiver may reply to the
+request by sending the same payload filled with the receiver's hostname
+and the port where the SKE protocol is running.  The sender may then
+initiate the SKE negotiation with the receiver.
+
+The payload may only be sent with SILC_PACKET_KEY_AGREEMENT packet.
+It must not be sent in any other packet type.  The following diagram
+represents the Key Agreement Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Hostname Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Hostname                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                             Port                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 20:  Key Agreement Payload
+
+
+
+.in 6
+o Hostname Length (2 bytes) - Indicates the length of the Hostname
+  field.
+
+o Hostname (variable length) - The hostname or IP address where
+  the SKE protocol is running.  The sender may fill this field
+  when sending the payload.  If the receiver sends this payload
+  as reply to the request it must fill this field.
+
+o Port (4 bytes) - The port where the SKE protocol is bound.
+  The sender may fill this field when sending the payload.  If
+  the receiver sends this payload as reply to the request it 
+  must fill this field.  This is a 32 bit MSB first order value.
 .in 3
 
 

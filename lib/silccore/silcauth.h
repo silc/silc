@@ -24,6 +24,9 @@
 /* Forward declaration of the Authentication Payload */
 typedef struct SilcAuthPayloadStruct *SilcAuthPayload;
 
+/* Forward declaration of the Key Agreement Payload */
+typedef struct SilcKeyAgreementPayloadStruct *SilcKeyAgreementPayload;
+
 /* Authentication method type */
 typedef unsigned short SilcAuthMethod;
 
@@ -54,5 +57,11 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
 					  SilcPKCS pkcs, SilcHash hash,
 					  void *id, SilcIdType type);
+SilcKeyAgreementPayload silc_key_agreement_payload_parse(SilcBuffer buffer);
+SilcBuffer silc_key_agreement_payload_encode(char *hostname,
+					     unsigned int port);
+void silc_key_agreement_payload_free(SilcKeyAgreementPayload payload);
+char *silc_key_agreement_get_hostname(SilcKeyAgreementPayload payload);
+unsigned int silc_key_agreement_get_port(SilcKeyAgreementPayload payload);
 
 #endif

@@ -213,6 +213,7 @@ typedef void (*SilcPacketParserCallback)(SilcPacketParserContext
 #define SILC_PACKET_REKEY                22      /* Re-key start */
 #define SILC_PACKET_REKEY_DONE           23      /* Re-key done */
 #define SILC_PACKET_HEARTBEAT            24      /* Heartbeat */
+#define SILC_PACKET_KEY_AGREEMENT        25      /* Key Agreement request */
 
 #define SILC_PACKET_PRIVATE              200     /* Private range start  */
 #define SILC_PACKET_MAX                  255     /* RESERVED */
