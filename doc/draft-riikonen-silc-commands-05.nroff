@@ -53,11 +53,11 @@ Abstract
 
 This memo describes the commands used in the Secure Internet Live
 Conferencing (SILC) protocol, specified in the Secure Internet Live
-Conferencing, Protocol Specification Internet Draft [SILC1].  The
-SILC Commands are very important part of the SILC protocol.  Usually
-the commands are used by SILC clients to manage the SILC session, but
-also SILC servers may use the commands.  This memo specifies detailed
-command messages and command reply messages.
+Conferencing, Protocol Specification [SILC1].  The SILC Commands are
+very important part of the SILC protocol.  Usually the commands are used
+by SILC clients to manage the SILC session, but also SILC servers may
+use the commands.  This memo specifies detailed command messages and
+command reply messages.
 
 
 
@@ -90,8 +90,8 @@ Full Copyright Statement ........................................ 53
 
 This document describes the commands used in the Secure Internet Live
 Conferencing (SILC) protocol, specified in the Secure Internet Live
-Conferencing, Protocol Specification Internet Draft [SILC1].  This
-document specifies detailed command messages and command reply messages.
+Conferencing, Protocol Specification [SILC1].  This document specifies
+detailed command messages and command reply messages.
 
 Commands are very important part on SILC network especially for client
 which uses commands to operate on the SILC network.  Commands are used
