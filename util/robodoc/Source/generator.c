@@ -322,7 +322,7 @@ RB_Generate_Doc_Start (
 
 		      if (index)
 			{
-			  fprintf (index, "<A HREF=\"%s\">%s</A><BR>\n",
+			  fprintf (index, " >> <A HREF=\"%s\">%s</A><BR>\n",
 				   name, cur_header->function_name);
 			}
 		    }
@@ -331,7 +331,7 @@ RB_Generate_Doc_Start (
 		      fprintf (dest_doc, "<LI><A HREF=\"%s\">%s</A>\n",
 			       fname, cur_header->name);
 		      if (index)
-			fprintf (index, "<A HREF=\"%s\">%s</A><BR>\n",
+			fprintf (index, " >> <A HREF=\"%s\">%s</A><BR>\n",
 				 fname, cur_header->function_name);
 		    }
 
