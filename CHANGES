@@ -1,3 +1,8 @@
+Tue Nov 19 22:30:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Don't wait for EOF after socket error has occurred, but
+	  close the connection.  Affected file is silcd/server.c.
+
 Mon Nov 18 18:58:26 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for setting FOUNDER mode on channel with

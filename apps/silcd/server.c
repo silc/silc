@@ -2199,6 +2199,11 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router")));
+
+      SILC_SET_DISCONNECTING(sock);
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_server_close_connection(server, sock);
     }
     return;
   }
@@ -2209,13 +2214,19 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   ret = silc_packet_receive(sock);
   if (ret < 0) {
 
-    if (ret == -1)
+    if (ret == -1) {
       SILC_LOG_ERROR(("Error receiving packet from connection "
 		      "%s:%d [%s] %s", sock->hostname, sock->port,
 		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
 		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router"), strerror(errno)));
+
+      SILC_SET_DISCONNECTING(sock);
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_server_close_connection(server, sock);
+    }
     return;
   }
 
