@@ -366,7 +366,9 @@ void silc_server_command_pending_del(SilcServer server,
 
   silc_dlist_start(server->pending_commands);
   while ((r = silc_dlist_get(server->pending_commands)) != SILC_LIST_END) {
-    if (r->reply_cmd == reply_cmd && r->ident == ident) {
+    if ((r->reply_cmd == reply_cmd || (r->reply_cmd == SILC_COMMAND_NONE &&
+                                       r->reply_check))
+        && r->ident == ident) {
       silc_dlist_del(server->pending_commands, r);
       silc_free(r);
     }
@@ -394,6 +396,7 @@ silc_server_command_pending_check(SilcServer server,
       callbacks = silc_realloc(callbacks, sizeof(*callbacks) * (i + 1));
       callbacks[i].context = r->context;
       callbacks[i].callback = r->callback;
+      r->reply_check = TRUE;
       ctx->ident = ident;
       i++;
     }

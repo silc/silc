@@ -1,3 +1,10 @@
+Sun Jun 30 01:30:22 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed pending command deletion in server and client library
+	  to check the whole list instead of breaking after first found.
+	  The affected files are silcd/command.[ch] and 
+	  lib/silcclient/command.[ch].
+
 Sat Jun 29 17:40:12 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Return NO_SUCH_CHANNEL error in USERS for channel that is

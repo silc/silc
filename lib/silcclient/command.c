@@ -124,10 +124,11 @@ void silc_client_command_pending_del(SilcClientConnection conn,
 
   silc_dlist_start(conn->pending_commands);
   while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
-    if (r->reply_cmd == reply_cmd && r->ident == ident) {
+    if ((r->reply_cmd == reply_cmd || (r->reply_cmd == SILC_COMMAND_NONE &&
+				       r->reply_check))
+	&& r->ident == ident) {
       silc_dlist_del(conn->pending_commands, r);
       silc_free(r);
-      break;
     }
   }
 }
@@ -153,6 +154,7 @@ silc_client_command_pending_check(SilcClientConnection conn,
       callbacks = silc_realloc(callbacks, sizeof(*callbacks) * (i + 1));
       callbacks[i].context = r->context;
       callbacks[i].callback = r->callback;
+      r->reply_check = TRUE;
       ctx->ident = ident;
       i++;
     }

@@ -63,9 +63,10 @@ typedef struct {
 typedef struct SilcServerCommandPendingStruct {
   SilcServer server;
   SilcCommand reply_cmd;
+  SilcUInt16 ident;
+  unsigned int reply_check : 8;
   SilcCommandCb callback;
   void *context;
-  SilcUInt16 ident;
   struct SilcServerCommandPendingStruct *next;
 } SilcServerCommandPending;
 

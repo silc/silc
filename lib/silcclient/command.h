@@ -60,9 +60,10 @@ struct SilcClientCommandContextStruct {
    executed after command reply has been executed. */
 typedef struct SilcClientCommandPendingStruct {
   SilcCommand reply_cmd;
+  SilcUInt16 ident;
+  unsigned int reply_check : 8;
   SilcCommandCb callback;
   void *context;
-  SilcUInt16 ident;
   struct SilcClientCommandPendingStruct *next;
 } SilcClientCommandPending;
 
