@@ -1,0 +1,46 @@
+The SILC Map
+============
+
+SILC Map is a utility which can be used to visualize the topology of a
+SILC network.  It can create maps which indicate the exact global position
+of the servers and it can create HTML pages out of the information it 
+gathers from the servers.  It is also possible to create a HTML map 
+page which allows the user to click the servers on the map image to get
+more detailed information of the server.  The links between the routers
+and servers can also be drawn on the map image.
+
+The HTML pages that SILC Map creates are by default crude looking.  This
+is intentional feature to allow the user to easily embed the data pages
+into existing web site.  This can be done for example by using PHP, server
+side includes or similar method.
+
+
+SILC Map Config File
+====================
+
+By default the SILC Map reads the silcmap.conf file.  Please read the
+example silcmap.conf file to learn all the possible commands and 
+configuration options you can use to alter the behavior of the SILC Map.
+
+
+Running the SILC Map
+====================
+
+After you have configured the silcmap.conf file, simply run the ./silcmap
+program.  It reads the file, the source map image, creates the connections
+to SILC servers and producess the target image and HTML pages.  After the
+map is created the silcmap program exits.  If you want to periodically run 
+the silcmap to generate maps you may create for example an at (see at(1)) 
+job on your local system.
+
+
+Contact
+=======
+
+Feedback and comments are welcome.  Bug reports should be sent to the
+SILC development mailing list.
+
+Official SILC project web site      : http://silcnet.org/
+FTP archive for SILC project        : ftp://ftp.silcnet.org/
+Development mailing list address    : silc-devel@lists.silcnet.org
+
