@@ -31,7 +31,7 @@
 #ifndef SILCMUTEX_H
 #define SILCMUTEX_H
 
-#ifdef SILC_THREADS
+#if defined(SILC_THREADS)
 
 /****s* silcutil/SilcMutexAPI/SilcMutex
  *

@@ -34,7 +34,7 @@
 #ifndef SILCMP_H
 #define SILCMP_H
 
-#ifdef SILC_MP_GMP
+#if defined(SILC_MP_GMP)
 #include "mp_gmp.h"		/* SILC_MP_GMP */
 #else
 #include "mp_mpi.h"		/* SILC_MP_NSS_MPI */

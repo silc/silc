@@ -236,7 +236,7 @@ extern DLLAPI bool silc_debug_hexdump;
 
 /* Macros */
 
-#ifdef SILC_WIN32
+#if defined(SILC_WIN32)
 #ifndef __FUNCTION__
 #define __FUNCTION__ ""
 #endif
@@ -343,7 +343,7 @@ extern DLLAPI bool silc_debug_hexdump;
  *
  * SOURCE
  */
-#ifdef SILC_DEBUG
+#if defined(SILC_DEBUG)
 #define SILC_LOG_DEBUG(fmt) silc_log_output_debug(__FILE__, \
 				__FUNCTION__, \
 				__LINE__, \
@@ -383,7 +383,7 @@ extern DLLAPI bool silc_debug_hexdump;
  *
  * SOURCE
  */
-#ifdef SILC_DEBUG
+#if defined(SILC_DEBUG)
 #define SILC_LOG_HEXDUMP(fmt, data, len) silc_log_output_hexdump(__FILE__, \
 				__FUNCTION__, \
 				__LINE__, \
