@@ -27,6 +27,8 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o KICKing doesn't work.
+
  o Configuration file additions (Do this to 0.8.x):
 
 	o Add incoming connection frequency, incoming connection frequency
