@@ -1,3 +1,9 @@
+Wed Feb 21 00:10:00 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Associated the ID (client or server ID) to the Authentication
+	  Payload to avoid any possibility of forging.  Updated the
+	  protocol specification and the code accordingly.
+
 Tue Feb 20 14:14:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* The RSA key length is now save to the RsaKey context in the

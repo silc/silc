@@ -132,21 +132,30 @@ void silc_auth_payload_free(SilcAuthPayload payload)
    dictates. */
 
 static unsigned char *
-silc_auth_public_key_encode(SilcPKCS pkcs, unsigned char *random,
-			    unsigned int random_len, unsigned int *ret_len)
+silc_auth_public_key_encode_data(SilcPKCS pkcs, unsigned char *random,
+				 unsigned int random_len, void *id,
+				 SilcIdType type, unsigned int *ret_len)
 {
   SilcBuffer buf;
-  unsigned char *pk, *ret;
-  unsigned int pk_len;
+  unsigned char *pk, *id_data, *ret;
+  unsigned int pk_len, id_len;
 
   pk = silc_pkcs_get_public_key(pkcs, &pk_len);
   if (!pk)
     return NULL;
 
+  id_data = silc_id_id2str(id, type);
+  if (!id_data) {
+    silc_free(pk);
+    return NULL;
+  }
+  id_len = silc_id_get_len(type);
+
   buf = silc_buffer_alloc(random_len + pk_len);
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
   silc_buffer_format(buf,
 		     SILC_STR_UI_XNSTRING(random, random_len),
+		     SILC_STR_UI_XNSTRING(id_data, id_len),
 		     SILC_STR_UI_XNSTRING(pk, pk_len),
 		     SILC_STR_END);
   
@@ -157,6 +166,7 @@ silc_auth_public_key_encode(SilcPKCS pkcs, unsigned char *random,
     *ret_len = buf->len;
 
   silc_buffer_free(buf);
+  silc_free(id_data);
   silc_free(pk);
 
   return ret;
@@ -167,7 +177,8 @@ silc_auth_public_key_encode(SilcPKCS pkcs, unsigned char *random,
    and the actual authentication data. Returns NULL on error. */
 
 SilcBuffer silc_auth_public_key_auth_generate(SilcPKCS pkcs,
-					      SilcHash hash)
+					      SilcHash hash,
+					      void *id, SilcIdType type)
 {
   unsigned char *random;
   unsigned char auth_data[32];
@@ -184,7 +195,8 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPKCS pkcs,
     return NULL;
   
   /* Encode the auth data */
-  tmp = silc_auth_public_key_encode(pkcs, random, 256, &tmp_len);
+  tmp = silc_auth_public_key_encode_data(pkcs, random, 256, id, type, 
+					 &tmp_len);
   if (!tmp)
     return NULL;
 
@@ -215,7 +227,8 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPKCS pkcs,
    successfull. */
 
 int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
-				     SilcPKCS pkcs, SilcHash hash)
+				     SilcPKCS pkcs, SilcHash hash,
+				     void *id, SilcIdType type)
 {
   unsigned char *tmp;
   unsigned int tmp_len;
@@ -223,8 +236,9 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
   SILC_LOG_DEBUG(("Verifying authentication data"));
 
   /* Encode auth data */
-  tmp = silc_auth_public_key_encode(pkcs, payload->random_data, 
-				    payload->random_len, &tmp_len);
+  tmp = silc_auth_public_key_encode_data(pkcs, payload->random_data, 
+					 payload->random_len, 
+					 id, type, &tmp_len);
   if (!tmp) {
     SILC_LOG_DEBUG(("Authentication failed"));
     return FALSE;
@@ -251,7 +265,8 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 /* Same as above but the payload is not parsed yet. This will parse it. */
 
 int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
-					  SilcPKCS pkcs, SilcHash hash)
+					  SilcPKCS pkcs, SilcHash hash,
+					  void *id, SilcIdType type)
 {
   SilcAuthPayload auth_payload;
   int ret;
@@ -262,7 +277,8 @@ int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
     return FALSE;
   }
 
-  ret = silc_auth_public_key_auth_verify(auth_payload, pkcs, hash);
+  ret = silc_auth_public_key_auth_verify(auth_payload, pkcs, hash, 
+					 id, type);
 
   silc_auth_payload_free(auth_payload);
 

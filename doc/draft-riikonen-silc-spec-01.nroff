@@ -1101,18 +1101,22 @@ plaintext password since the entire payload is encrypted.
 If the authentication method is public key based (or certificate)
 the Authentication Data is computed as follows:
 
-  HASH = hash(random bytes | public key (or certificate));
+  HASH = hash(random bytes | ID | public key (or certificate));
   Authentication Data = sign(HASH);
 
-The hash() and sign() are the hash funtion and the public key cryptography
-function selected in the SKE protocol.  The public key is SILC style
-public key unless certificates are used.  The random bytes are non-zero
-random bytes of length between 128 and 4096 bytes, and will be included
-into the Public Data field as is.  The receiver will compute the signature
-using the random data received in the payload and the public key (or
-certificate) received in the SKE protocol.  After computing the receiver
-must verify the signature.  In this case also, the entire payload is
-encrypted.
+The hash() and the sign() are the hash funtion and the public key
+cryptography function selected in the SKE protocol.  The public key
+is SILC style public key unless certificates are used.  The ID is the
+entity's ID (Client or Server ID) who is authenticating itself.  The ID
+is raw ID data.  The random bytes are non-zero random bytes of length
+between 128 and 4096 bytes, and will be included into the Public Data
+field as is.
+
+The receiver will compute the signature using the random data received
+in the payload, the ID associated to the connection and the public key
+(or certificate) received in the SKE protocol.  After computing the
+receiver must verify the signature.  In this case also, the entire
+payload is encrypted.
 
 
 .ti 0

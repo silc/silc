@@ -46,10 +46,13 @@ SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
 				    unsigned short auth_len);
 void silc_auth_payload_free(SilcAuthPayload payload);
 SilcBuffer silc_auth_public_key_auth_generate(SilcPKCS pkcs,
-					      SilcHash hash);
-int silc_auth_public_key_auth_verify(SilcAuthPayload paylaod,
-				     SilcPKCS pkcs, SilcHash hash);
+					      SilcHash hash,
+					      void *id, SilcIdType type);
+int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
+				     SilcPKCS pkcs, SilcHash hash,
+				     void *id, SilcIdType type);
 int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
-					  SilcPKCS pkcs, SilcHash hash);
+					  SilcPKCS pkcs, SilcHash hash,
+					  void *id, SilcIdType type);
 
 #endif
