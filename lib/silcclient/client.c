@@ -1119,15 +1119,12 @@ void silc_client_send_private_message(SilcClient client,
   hmac = conn->hmac;
 
   /* Set the packet context pointers. */
-  packetdata.flags = 0;
+  packetdata.flags = SILC_PACKET_FLAG_PRIVMSG_KEY;
   packetdata.type = SILC_PACKET_PRIVATE_MESSAGE;
   packetdata.src_id = conn->local_id_data;
   packetdata.src_id_len = SILC_ID_CLIENT_LEN;
   packetdata.src_id_type = SILC_ID_CLIENT;
-  if (client_entry)
-    packetdata.dst_id = silc_id_id2str(client_entry->id, SILC_ID_CLIENT);
-  else
-    packetdata.dst_id = conn->local_id_data;
+  packetdata.dst_id = silc_id_id2str(client_entry->id, SILC_ID_CLIENT);
   packetdata.dst_id_len = SILC_ID_CLIENT_LEN;
   packetdata.dst_id_type = SILC_ID_CLIENT;
   packetdata.truelen = buffer->len + SILC_PACKET_HEADER_LEN + 
@@ -1147,7 +1144,7 @@ void silc_client_send_private_message(SilcClient client,
   packetdata.buffer = sock->outbuf;
 
   /* Encrypt payload of the packet. Encrypt with private message specific
-     key if it exist, otherwise with session key. */
+     key */
   cipher->cipher->encrypt(cipher->context, buffer->data, buffer->data,
 			  buffer->len, cipher->iv);
       
@@ -1158,6 +1155,7 @@ void silc_client_send_private_message(SilcClient client,
   silc_packet_assemble(&packetdata);
 
   /* Encrypt the header and padding of the packet. */
+  cipher = conn->send_key;
   silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
@@ -2372,4 +2370,504 @@ char *silc_client_chumode_char(unsigned int mode)
     strncat(string, "@", 1);
 
   return strdup(string);
+}
+
+/* Function that actually employes the received private message key */
+
+static void silc_client_private_message_key_cb(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcClientEntry *clients,
+					       unsigned int clients_count,
+					       void *context)
+{
+  SilcPacketContext *packet = (SilcPacketContext *)context;
+  unsigned char *key;
+  unsigned short key_len;
+  unsigned char *cipher;
+  int ret;
+
+  if (!clients)
+    goto out;
+
+  /* Parse the private message key payload */
+  ret = silc_buffer_unformat(packet->buffer,
+			     SILC_STR_UI16_NSTRING(&key, &key_len),
+			     SILC_STR_UI16_STRING(&cipher),
+			     SILC_STR_END);
+  if (!ret)
+    goto out;
+
+  if (key_len > packet->buffer->len)
+    goto out;
+
+  /* Now take the key in use */
+  if (!silc_client_add_private_message_key(client, conn, clients[0],
+					   cipher, key, key_len, FALSE))
+    goto out;
+
+  /* Print some info for application */
+  client->ops->say(client, conn, 
+		   "Received private message key from %s%s%s %s%s%s", 
+		   clients[0]->nickname,
+		   clients[0]->server ? "@" : "",
+		   clients[0]->server ? clients[0]->server : "",
+		   clients[0]->username ? "(" : "",
+		   clients[0]->username ? clients[0]->username : "",
+		   clients[0]->username ? ")" : "");
+
+ out:
+  silc_packet_context_free(packet);
+}
+
+/* Processes incoming Private Message Key payload. The libary always
+   accepts the key and takes it into use. */
+
+void silc_client_private_message_key(SilcClient client,
+				     SilcSocketConnection sock,
+				     SilcPacketContext *packet)
+{
+  SilcClientID *remote_id;
+
+  if (packet->src_id_type != SILC_ID_CLIENT)
+    return;
+
+  remote_id = silc_id_str2id(packet->src_id, packet->src_id_len, 
+			     SILC_ID_CLIENT);
+  if (!remote_id)
+    return;
+
+  silc_client_get_client_by_id_resolve(client, sock->user_data, remote_id,
+				       silc_client_private_message_key_cb,
+				       silc_packet_context_dup(packet));
+  silc_free(remote_id);
+}
+
+/* Adds private message key to the client library. The key will be used to
+   encrypt all private message between the client and the remote client
+   indicated by the `client_entry'. If the `key' is NULL and the boolean
+   value `generate_key' is TRUE the library will generate random key.
+   The `key' maybe for example pre-shared-key, passphrase or similar.
+   The `cipher' MAY be provided but SHOULD be NULL to assure that the
+   requirements of the SILC protocol are met. The API, however, allows
+   to allocate any cipher.
+
+   It is not necessary to set key for normal private message usage. If the
+   key is not set then the private messages are encrypted using normal
+   session keys. Setting the private key, however, increases the security. 
+
+   Returns FALSE if the key is already set for the `client_entry', TRUE
+   otherwise. */
+
+int silc_client_add_private_message_key(SilcClient client,
+					SilcClientConnection conn,
+					SilcClientEntry client_entry,
+					char *cipher,
+					unsigned char *key,
+					unsigned int key_len,
+					int generate_key)
+{
+  unsigned char private_key[32];
+  unsigned int len;
+  int i;
+  SilcSKEKeyMaterial *keymat;
+
+  assert(client_entry);
+
+  /* Return FALSE if key already set */
+  if (client_entry->send_key && client_entry->receive_key)
+    return FALSE;
+
+  if (!cipher)
+    cipher = "aes-256-cbc";
+
+  /* Check the requested cipher */
+  if (!silc_cipher_is_supported(cipher))
+    return FALSE;
+
+  /* Generate key if not provided */
+  if (!key && generate_key == TRUE) {
+    len = 32;
+    for (i = 0; i < len; i++) private_key[i] = silc_rng_get_byte(client->rng);
+    key = private_key;
+    key_len = len;
+    client_entry->generated = TRUE;
+  }
+
+  /* Save the key */
+  client_entry->key = silc_calloc(key_len, sizeof(*client_entry->key));
+  memcpy(client_entry->key, key, key_len);
+  client_entry->key_len = key_len;
+
+  /* Produce the key material as the protocol defines */
+  keymat = silc_calloc(1, sizeof(*keymat));
+  if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
+					 client->md5hash, keymat) 
+      != SILC_SKE_STATUS_OK)
+    return FALSE;
+
+  /* Allocate the ciphers */
+  silc_cipher_alloc(cipher, &client_entry->send_key);
+  silc_cipher_alloc(cipher, &client_entry->receive_key);
+
+  /* Set the keys */
+  silc_cipher_set_key(client_entry->send_key, keymat->send_enc_key,
+		      keymat->enc_key_len);
+  silc_cipher_set_iv(client_entry->send_key, keymat->send_iv);
+  silc_cipher_set_key(client_entry->receive_key, keymat->receive_enc_key,
+		      keymat->enc_key_len);
+  silc_cipher_set_iv(client_entry->receive_key, keymat->receive_iv);
+
+  /* Free the key material */
+  silc_ske_free_key_material(keymat);
+
+  return TRUE;
+}
+
+/* Same as above but takes the key material from the SKE key material
+   structure. This structure is received if the application uses the
+   silc_client_send_key_agreement to negotiate the key material. The
+   `cipher' SHOULD be provided as it is negotiated also in the SKE
+   protocol. */
+
+int silc_client_add_private_message_key_ske(SilcClient client,
+					    SilcClientConnection conn,
+					    SilcClientEntry client_entry,
+					    char *cipher,
+					    SilcSKEKeyMaterial *key)
+{
+  assert(client_entry);
+
+  /* Return FALSE if key already set */
+  if (client_entry->send_key && client_entry->receive_key)
+    return FALSE;
+
+  if (!cipher)
+    cipher = "aes-256-cbc";
+
+  /* Check the requested cipher */
+  if (!silc_cipher_is_supported(cipher))
+    return FALSE;
+
+  /* Allocate the ciphers */
+  silc_cipher_alloc(cipher, &client_entry->send_key);
+  silc_cipher_alloc(cipher, &client_entry->receive_key);
+
+  /* Set the keys */
+  silc_cipher_set_key(client_entry->send_key, key->send_enc_key,
+		      key->enc_key_len);
+  silc_cipher_set_iv(client_entry->send_key, key->send_iv);
+  silc_cipher_set_key(client_entry->receive_key, key->receive_enc_key,
+		      key->enc_key_len);
+  silc_cipher_set_iv(client_entry->receive_key, key->receive_iv);
+
+  return TRUE;
+}
+
+/* Sends private message key payload to the remote client indicated by
+   the `client_entry'. If the `force_send' is TRUE the packet is sent
+   immediately. Returns FALSE if error occurs, TRUE otherwise. The
+   application should call this function after setting the key to the
+   client.
+
+   Note that the key sent using this function is sent to the remote client
+   through the SILC network. The packet is protected using normal session
+   keys. */
+
+int silc_client_send_private_message_key(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcClientEntry client_entry,
+					 int force_send)
+{
+  SilcSocketConnection sock = conn->sock;
+  SilcBuffer buffer;
+  int cipher_len;
+
+  if (!client_entry->send_key || !client_entry->key)
+    return FALSE;
+
+  SILC_LOG_DEBUG(("Sending private message key"));
+
+  cipher_len = strlen(client_entry->send_key->cipher->name);
+
+  /* Create private message key payload */
+  buffer = silc_buffer_alloc(2 + client_entry->key_len);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  silc_buffer_format(buffer,
+		     SILC_STR_UI_SHORT(client_entry->key_len),
+		     SILC_STR_UI_XNSTRING(client_entry->key, 
+					  client_entry->key_len),
+		     SILC_STR_UI_SHORT(cipher_len),
+		     SILC_STR_UI_XNSTRING(client_entry->send_key->cipher->name,
+					  cipher_len),
+		     SILC_STR_END);
+
+  /* Send the packet */
+  silc_client_packet_send(client, sock, SILC_PACKET_PRIVATE_MESSAGE_KEY,
+			  client_entry->id, SILC_ID_CLIENT, NULL, NULL,
+			  buffer->data, buffer->len, force_send);
+  silc_free(buffer);
+
+  return TRUE;
+}
+
+/* Removes the private message from the library. The key won't be used
+   after this to protect the private messages with the remote `client_entry'
+   client. Returns FALSE on error, TRUE otherwise. */
+
+int silc_client_del_private_message_key(SilcClient client,
+					SilcClientConnection conn,
+					SilcClientEntry client_entry)
+{
+  assert(client_entry);
+
+  if (!client_entry->send_key && !client_entry->receive_key)
+    return FALSE;
+
+  silc_cipher_free(client_entry->send_key);
+  silc_cipher_free(client_entry->receive_key);
+
+  if (client_entry->key) {
+    memset(client_entry->key, 0, client_entry->key_len);
+    silc_free(client_entry->key);
+  }
+
+  client_entry->send_key = NULL;
+  client_entry->receive_key = NULL;
+  client_entry->key = NULL;
+
+  return TRUE;
+}
+
+/* Returns array of set private message keys associated to the connection
+   `conn'. Returns allocated SilcPrivateMessageKeys array and the array
+   count to the `key_count' argument. The array must be freed by the caller
+   by calling the silc_client_free_private_message_keys function. Note: 
+   the keys returned in the array is in raw format. It might not be desired
+   to show the keys as is. The application might choose not to show the keys
+   at all or to show the fingerprints of the keys. */
+
+SilcPrivateMessageKeys
+silc_client_list_private_message_keys(SilcClient client,
+				      SilcClientConnection conn,
+				      unsigned int *key_count)
+{
+  SilcPrivateMessageKeys keys;
+  unsigned int count = 0;
+  SilcIDCacheEntry id_cache;
+  SilcIDCacheList list;
+  SilcClientEntry entry;
+
+  if (!silc_idcache_find_by_id(conn->client_cache, SILC_ID_CACHE_ANY, 
+			       SILC_ID_CLIENT, &list))
+    return NULL;
+
+  if (!silc_idcache_list_count(list)) {
+    silc_idcache_list_free(list);
+    return NULL;
+  }
+
+  keys = silc_calloc(silc_idcache_list_count(list), sizeof(*keys));
+
+  silc_idcache_list_first(list, &id_cache);
+  while (id_cache) {
+    entry = (SilcClientEntry)id_cache->context;
+
+    if (entry->send_key) {
+      keys[count].client_entry = entry;
+      keys[count].cipher = entry->send_key->cipher->name;
+      keys[count].key = entry->generated == FALSE ? entry->key : NULL;
+      keys[count].key_len = entry->generated == FALSE ? entry->key_len : 0;
+      count++;
+    }
+
+    if (!silc_idcache_list_next(list, &id_cache))
+      break;
+  }
+
+  if (key_count)
+    *key_count = count;
+
+  return keys;
+}
+
+/* Frees the SilcPrivateMessageKeys array returned by the function
+   silc_client_list_private_message_keys. */
+
+void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
+					   unsigned int key_count)
+{
+  silc_free(keys);
+}
+
+/* Adds private key for channel. This may be set only if the channel's mode
+   mask includes the SILC_CHANNEL_MODE_PRIVKEY. This returns FALSE if the
+   mode is not set. When channel has private key then the messages are
+   encrypted using that key. All clients on the channel must also know the
+   key in order to decrypt the messages. However, it is possible to have
+   several private keys per one channel. In this case only some of the
+   clients on the channel may now the one key and only some the other key.
+
+   The private key for channel is optional. If it is not set then the
+   channel messages are encrypted using the channel key generated by the
+   server. However, setting the private key (or keys) for the channel 
+   significantly adds security. If more than one key is set the library
+   will automatically try all keys at the message decryption phase. Note:
+   setting many keys slows down the decryption phase as all keys has to
+   be tried in order to find the correct decryption key. However, setting
+   a few keys does not have big impact to the decryption performace. 
+
+   NOTE: that this is entirely local setting. The key set using this function
+   is not sent to the network at any phase.
+
+   NOTE: If the key material was originated by the SKE protocol (using
+   silc_client_send_key_agreement) then the `key' MUST be the
+   key->send_enc_key as this is dictated by the SILC protocol. However,
+   currently it is not expected that the SKE key material would be used
+   as channel private key. However, this API allows it. */
+
+int silc_client_add_channel_private_key(SilcClient client,
+					SilcClientConnection conn,
+					SilcChannelEntry channel,
+					char *cipher,
+					unsigned char *key,
+					unsigned int key_len)
+{
+
+  return TRUE;
+}
+
+/* Removes all private keys from the `channel'. The old channel key is used
+   after calling this to protect the channel messages. Returns FALSE on
+   on error, TRUE otherwise. */
+
+int silc_client_del_channel_private_keys(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel)
+{
+
+  return TRUE;
+}
+
+/* Removes and frees private key `key' from the channel `channel'. The `key'
+   is retrieved by calling the function silc_client_list_channel_private_keys.
+   The key is not used after this. If the key was last private key then the
+   old channel key is used hereafter to protect the channel messages. This
+   returns FALSE on error, TRUE otherwise. */
+
+int silc_client_del_channel_private_key(SilcClient client,
+					SilcClientConnection conn,
+					SilcChannelEntry channel,
+					SilcChannelPrivateKey key)
+{
+
+  return TRUE;
+}
+
+/* Returns array (pointers) of private keys associated to the `channel'.
+   The caller must free the array by calling the function
+   silc_client_free_channel_private_keys. The pointers in the array may be
+   used to delete the specific key by giving the pointer as argument to the
+   function silc_client_del_channel_private_key. */
+
+SilcChannelPrivateKey *
+silc_client_list_channel_private_keys(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcChannelEntry channel,
+				      unsigned int key_count)
+{
+
+  return NULL;
+}
+
+/* Frees the SilcChannelPrivateKey array. */
+
+void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
+					   unsigned int key_count)
+{
+
+}
+
+/* Sends key agreement request to the remote client indicated by the
+   `client_entry'. If the caller provides the `hostname' and the `port'
+   arguments then the library will bind the client to that hostname and
+   that port for the key agreement protocol. It also sends the `hostname'
+   and the `port' in the key agreement packet to the remote client. This
+   would indicate that the remote client may initiate the key agreement
+   protocol to the `hostname' on the `port'.
+
+   If the `hostname' and `port' is not provided then empty key agreement
+   packet is sent to the remote client. The remote client may reply with
+   the same packet including its hostname and port. If the library receives
+   the reply from the remote client the `key_agreement' client operation
+   callback will be called to verify whether the user wants to perform the
+   key agreement or not. 
+
+   NOTE: If the application provided the `hostname' and the `port' and the 
+   remote side initiates the key agreement protocol it is not verified
+   from the user anymore whether the protocol should be executed or not.
+   By setting the `hostname' and `port' the user gives permission to
+   perform the protocol (we are responder in this case).
+
+   NOTE: If the remote side decides not to initiate the key agreement
+   or decides not to reply with the key agreement packet then we cannot
+   perform the key agreement at all. If the key agreement protocol is
+   performed the `completion' callback with the `context' will be called.
+   If remote side decides to ignore the request the `completion' will never
+   be called and the caller is responsible of freeing the `context' memory. 
+   The application can do this by setting, for example, timeout. */
+
+void silc_client_send_key_agreement(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcClientEntry client_entry,
+				    char *hostname,
+				    int port,
+				    SilcKeyAgreementCallback completion,
+				    void *context)
+{
+
+}
+
+/* Performs the actual key agreement protocol. Application may use this
+   to initiate the key agreement protocol. This can be called for example
+   after the application has received the `key_agreement' client operation,
+   and did not return TRUE from it.
+
+   The `hostname' is the remote hostname (or IP address) and the `port'
+   is the remote port. The `completion' callblack with the `context' will
+   be called after the key agreement protocol.
+   
+   NOTE: If the application returns TRUE in the `key_agreement' client
+   operation the library will automatically start the key agreement. In this
+   case the application must not call this function. However, application
+   may choose to just ignore the `key_agreement' client operation (and
+   merely just print information about it on the screen) and call this
+   function when the user whishes to do so (by, for example, giving some
+   specific command). Thus, the API provides both, automatic and manual
+   initiation of the key agreement. Calling this function is the manual
+   initiation and returning TRUE in the `key_agreement' client operation
+   is the automatic initiation. */
+
+void silc_client_perform_key_agreement(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcClientEntry client_entry,
+				       char *hostname,
+				       int port,
+				       SilcKeyAgreementCallback completion,
+				       void *context)
+{
+
+}
+
+/* This function can be called to unbind the hostname and the port for
+   the key agreement protocol. However, this function has effect only 
+   before the key agreement protocol has been performed. After it has
+   been performed the library will automatically unbind the port. The 
+   `client_entry' is the client to which we sent the key agreement 
+   request. */
+
+void silc_client_abort_key_agreement(SilcClient client,
+				     SilcClientConnection conn,
+				     SilcClientEntry client_entry)
+{
+
 }

@@ -1543,6 +1543,12 @@ diagram represents the Private Message Key Payload.
 ~                      Private Message Key                      ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Cipher Name Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                          Cipher Name                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
 .ce
@@ -1557,8 +1563,16 @@ o Private Message Key Length (2 bytes) - Indicates the length
   any other field.
 
 o Private Message Key (variable length) - The actual private
-  message key material.  This key is used as such as key material 
-  for encryption function.
+  message key material.
+
+o Cipher Name Length (2 bytes) - Indicates the length of the
+  Cipher Name field in the payload, not including any other
+  field.
+
+o Cipher Name (variable length) - Name of the cipher to use
+  in the private message encryption.  If this field does not
+  exist then the default cipher of the SILC protocol is used.
+  See the [SILC1] for defined ciphers.
 .in 3
 
 
@@ -1972,10 +1986,9 @@ After the key material has been received from the SKE protocol it is
 processed as the [SILC3] describes.  If the key material is used as
 channel private key then the Sending Encryption Key, as defined in
 [SILC3] is used as the channel private key.  Other key material must
-be discarded.  If the key material is used as private message key then
-the keys and the IV's are used as defined in the [SILC3].  The HMAC
-key, however, must be discarded.  Any other use for the key material
-is undefined.
+be discarded.  The [SILC1] defines the way to use the key material if
+it is intended to be used as private message keys.  Any other use for
+the key material is undefined.
 
 
 .ti 0

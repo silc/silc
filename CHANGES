@@ -1,3 +1,35 @@
+Tue Feb 27 20:24:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_ske_process_key_material_data as generic routine
+	  to process any key material as the SILC protocol dictates.  The
+	  function is used by the actual SKE library but can be used by
+	  applications as well.  This relates to the private message keys
+	  and the channel private keys since they must be processed the
+	  same way the normal SILC session keys.  The protocol dictates
+	  this.  Affected files: lib/silcske/silcske.[ch].
+
+	  Added also silc_ske_free_key_material to free the
+	  SilcSKEKeyMaterial structure.
+
+	* Defined silc_cipher_set_key function to set the key for
+	  cipher without using the object's method function.  The affected
+	  files: lib/silccrypt/silccipher.[ch].
+
+	* Implemented silc silc_client_add_private_message_key,
+	  silc_client_add_private_message_key_ske, 
+	  silc_client_del_private_message_key,
+	  silc_client_list_private_message_keys and
+	  silc_client_free_private_message_keys functions in the
+	  client library.
+
+	  Added functions silc_client_send_private_message_key to send
+	  the Private Message Key payload and silc_client_private_message_key
+	  to handle incoming Private Message Key payload.
+
+	* Added Cipher field to the Private Message Key payload to set
+	  the cipher to be used.  If ignored, the default cipher defined
+	  in the SILC protocol (aes-256-cbc) is used.
+
 Tue Feb 27 13:30:52 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Removed lib/silcclient/ops.h file.
@@ -11,8 +43,8 @@ Tue Feb 27 13:30:52 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  SILC Client Library.  Other files need not be included by
 	  the application anymore.
 
-	* Added new key_agreement client callback and also defined the
-	  Key Agreement library API for the application.
+	* Added new key_agreement client operation callback and also
+	  defined the Key Agreement library API for the application.
 
 Tue Feb 27 11:28:31 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 

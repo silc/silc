@@ -26,17 +26,19 @@
    client entry. This entry also includes the private message keys if
    they are used. */
 typedef struct SilcClientEntryStruct {
-  char *nickname;             /* nickname */
-  char *username;	      /* username[@host] */
-  char *server;		      /* SILC server name */
-  char *realname;
+  char *nickname;		/* nickname */
+  char *username;		/* username[@host] */
+  char *server;			/* SILC server name */
+  char *realname;		/* Realname (userinfo) */
   unsigned int num;
-  SilcClientID *id;
-
-  /* Keys, these are defined if private message key has been defined 
-     with the remote client. */
-  SilcCipher send_key;
-  SilcCipher receive_key;
+  SilcClientID *id;		/* The Client ID */
+  SilcCipher send_key;		/* Private message key for sending */
+  SilcCipher receive_key;	/* Private message key for receiving */
+  unsigned char *key;		/* Set only if appliation provided the
+				   key material. NULL if the library 
+				   generated the key. */
+  unsigned int key_len;
+  int generated;		/* TRUE if library generated the key */
 } *SilcClientEntry;
 
 /* Client and its mode on a channel */
@@ -65,10 +67,6 @@ typedef struct SilcChannelEntryStruct {
   unsigned int key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
 } *SilcChannelEntry;
-
-/* Command identifier used by ID list routines when sending WHOIS/IDENTIFY
-   commands to routers. */
-#define SILC_IDLIST_IDENT 3333
 
 /* Prototypes (some functions are defined in the silcapi.h) */
 

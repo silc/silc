@@ -1650,10 +1650,14 @@ The key material used as private message key is implementation issue.
 However, SILC_PACKET_KEY_AGREEMENT packet may be used to negotiate
 the key material.  If the key is normal pre-shared-key or randomly
 generated key, and the SILC_PACKET_KEY_AGREEMENT was not used, then
-the key material should be processed as defined in the [SILC3].  After
-processing the key material it is employed as defined in [SILC3],
-however, the HMAC key material must be discarded.
+the key material should be processed as defined in the [SILC3].  In
+the processing, however, the HASH, as defined in [SILC3] must be 
+ignored.  After processing the key material it is employed as defined
+in [SILC3], however, the HMAC key material must be discarded.
 
+If the key is pre-shared-key or randomly generated the implementations
+should use the SILC protocol's mandatory cipher as the cipher.  If the
+SKE was used to negotiate key material the cipher was negotiated as well.
 
 .ti 0
 4.7 Channel Message Sending and Reception

@@ -41,7 +41,8 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
 					  i->nickname, i->server,
 					  &clients_count);
   if (clients) {
-    i->completion(i->cmd->client, i->cmd->conn, NULL, 0, i->context);
+    i->completion(i->cmd->client, i->cmd->conn, clients, 
+		  clients_count, i->context);
     i->found = TRUE;
     silc_free(clients);
   }
@@ -126,8 +127,10 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   if (!silc_idcache_find_by_data_loose(conn->client_cache, nickname, &list))
     return NULL;
 
-  if (silc_idcache_list_count(list) == 0)
+  if (!silc_idcache_list_count(list)) {
+    silc_idcache_list_free(list);
     return NULL;
+  }
 
   clients = silc_calloc(silc_idcache_list_count(list), sizeof(*clients));
   *clients_count = silc_idcache_list_count(list);
@@ -271,6 +274,74 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
   SILC_LOG_DEBUG(("Found"));
 
   return (SilcClientEntry)id_cache->context;
+}
+
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  SilcClientID *client_id;
+  SilcGetClientCallback completion;
+  void *context;
+  int found;
+} *GetClientByIDInternal;
+
+SILC_CLIENT_CMD_FUNC(get_client_by_id_callback)
+{
+  GetClientByIDInternal i = (GetClientByIDInternal)context;
+  SilcClientEntry entry;
+
+  /* Get the client */
+  entry = silc_client_get_client_by_id(i->client, i->conn,
+				       i->client_id);
+  if (entry) {
+    i->completion(i->client, i->conn, &entry, 1, i->context);
+    i->found = TRUE;
+  }
+}
+
+static void silc_client_get_client_by_id_destructor(void *context)
+{
+  GetClientByIDInternal i = (GetClientByIDInternal)context;
+
+  if (i->found == FALSE)
+    i->completion(i->client, i->conn, NULL, 0, i->context);
+
+  if (i->client_id)
+    silc_free(i->client_id);
+  silc_free(i);
+}
+
+/* Same as above but will always resolve the information from the server.
+   Use this only if you know that you don't have the entry and the only
+   thing you know about the client is its ID. */
+
+void silc_client_get_client_by_id_resolve(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcClientID *client_id,
+					  SilcGetClientCallback completion,
+					  void *context)
+{
+  SilcBuffer idp;
+  GetClientByIDInternal i = silc_calloc(1, sizeof(*i));
+
+  idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+  silc_client_send_command(client, conn, SILC_COMMAND_IDENTIFY, 
+			   ++conn->cmd_ident,
+			   1, 3, idp->data, idp->len);
+  silc_buffer_free(idp);
+
+  i->client = client;
+  i->conn = conn;
+  i->client_id = silc_id_dup(client_id, SILC_ID_CLIENT);
+  i->completion = completion;
+  i->context = context;
+      
+  /* Add pending callback */
+  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+			      ++conn->cmd_ident, 
+			      silc_client_get_client_by_id_destructor,
+			      silc_client_command_get_client_by_id_callback, 
+			      (void *)i);
 }
 
 /* Finds entry for channel by the channel name. Returns the entry or NULL

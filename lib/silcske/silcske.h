@@ -204,6 +204,14 @@ SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n,
 SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
 				 unsigned char *return_hash,
 				 unsigned int *return_hash_len);
+SilcSKEStatus 
+silc_ske_process_key_material_data(unsigned char *data,
+				   unsigned int data_len,
+				   unsigned int req_iv_len,
+				   unsigned int req_enc_key_len,
+				   unsigned int req_hmac_key_len,
+				   SilcHash hash,
+				   SilcSKEKeyMaterial *key);
 SilcSKEStatus silc_ske_process_key_material(SilcSKE ske, 
 					    unsigned int req_iv_len,
 					    unsigned int req_enc_key_len,
@@ -212,4 +220,6 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 SilcSKEStatus silc_ske_check_version(SilcSKE ske,
 				     unsigned char *version,
 				     unsigned int version_len);
+void silc_ske_free_key_material(SilcSKEKeyMaterial *key);
+
 #endif

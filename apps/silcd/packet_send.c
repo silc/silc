@@ -628,7 +628,7 @@ void silc_server_send_private_message(SilcServer server,
 {
   SilcBuffer buffer = packet->buffer;
 
-  /* Send and re-encrypt if private messge key does not exist */
+  /* Re-encrypt and send if private messge key does not exist */
   if ((packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY) == FALSE) {
 
     silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 

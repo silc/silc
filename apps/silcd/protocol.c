@@ -367,8 +367,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 					    ctx->responder)) {
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	protocol->execute(server->timeout_queue, 0, protocol, fd, 0, 300000);
+	silc_ske_free_key_material(keymat);
 	return;
       }
+
+      silc_ske_free_key_material(keymat);
 
       /* Unregister the timeout task since the protocol has ended. 
 	 This was the timeout task to be executed if the protocol is

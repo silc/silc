@@ -1203,53 +1203,43 @@ SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
   return status;
 }
 
-/* Processes negotiated key material as protocol specifies. This returns
-   the actual keys to be used in the SILC. */
+/* Processes the provided key material `data' as the SILC protocol 
+   specification specifies. */
 
-SilcSKEStatus silc_ske_process_key_material(SilcSKE ske, 
-					    unsigned int req_iv_len,
-					    unsigned int req_enc_key_len,
-					    unsigned int req_hmac_key_len,
-					    SilcSKEKeyMaterial *key)
+SilcSKEStatus 
+silc_ske_process_key_material_data(unsigned char *data,
+				   unsigned int data_len,
+				   unsigned int req_iv_len,
+				   unsigned int req_enc_key_len,
+				   unsigned int req_hmac_key_len,
+				   SilcHash hash,
+				   SilcSKEKeyMaterial *key)
 {
-  int klen;
   SilcBuffer buf;
-  unsigned char *tmpbuf;
-  unsigned char hash[32];
-  unsigned int hash_len = ske->prop->hash->hash->hash_len;
+  unsigned char hashd[32];
+  unsigned int hash_len = req_hmac_key_len;
   unsigned int enc_key_len = req_enc_key_len / 8;
-  int ret;
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Encode KEY to binary data */
-  tmpbuf = silc_mp_mp2bin(ske->KEY, 0, &klen);
-
-  buf = silc_buffer_alloc(1 + klen + hash_len);
+  buf = silc_buffer_alloc(1 + data_len);
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
-  ret = silc_buffer_format(buf,
-			   SILC_STR_UI_CHAR(0),
-			   SILC_STR_UI_XNSTRING(tmpbuf, klen),
-			   SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
-			   SILC_STR_END);
-  if (ret == -1) {
-    memset(tmpbuf, 0, klen);
-    silc_free(tmpbuf);
-    silc_buffer_free(buf);
-    return SILC_SKE_STATUS_ERROR;
-  }
+  silc_buffer_format(buf,
+		     SILC_STR_UI_CHAR(0),
+		     SILC_STR_UI_XNSTRING(data, data_len),
+		     SILC_STR_END);
 
   /* Take IVs */
-  memset(hash, 0, sizeof(hash));
+  memset(hashd, 0, sizeof(hashd));
   buf->data[0] = 0;
-  silc_hash_make(ske->prop->hash, buf->data, buf->len, hash);
+  silc_hash_make(hash, buf->data, buf->len, hashd);
   key->send_iv = silc_calloc(req_iv_len, sizeof(unsigned char));
-  memcpy(key->send_iv, hash, req_iv_len);
-  memset(hash, 0, sizeof(hash));
+  memcpy(key->send_iv, hashd, req_iv_len);
+  memset(hashd, 0, sizeof(hashd));
   buf->data[0] = 1;
-  silc_hash_make(ske->prop->hash, buf->data, buf->len, hash);
+  silc_hash_make(hash, buf->data, buf->len, hashd);
   key->receive_iv = silc_calloc(req_iv_len, sizeof(unsigned char));
-  memcpy(key->receive_iv, hash, req_iv_len);
+  memcpy(key->receive_iv, hashd, req_iv_len);
   key->iv_len = req_iv_len;
 
   /* Take the encryption keys. If requested key size is more than
@@ -1267,27 +1257,27 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
     
     /* Take first round */
     memset(k1, 0, sizeof(k1));
-    silc_hash_make(ske->prop->hash, buf->data, buf->len, k1);
+    silc_hash_make(hash, buf->data, buf->len, k1);
     
     /* Take second round */
-    dist = silc_buffer_alloc(klen + hash_len);
+    dist = silc_buffer_alloc(data_len + hash_len);
     silc_buffer_pull_tail(dist, SILC_BUFFER_END(dist));
     silc_buffer_format(dist,
-		       SILC_STR_UI_XNSTRING(tmpbuf, klen),
+		       SILC_STR_UI_XNSTRING(data, data_len),
 		       SILC_STR_UI_XNSTRING(k1, hash_len),
 		       SILC_STR_END);
     memset(k2, 0, sizeof(k2));
-    silc_hash_make(ske->prop->hash, dist->data, dist->len, k2);
+    silc_hash_make(hash, dist->data, dist->len, k2);
     
     /* Take third round */
-    dist = silc_buffer_realloc(dist, klen + hash_len + hash_len);
-    silc_buffer_pull(dist, klen + hash_len);
+    dist = silc_buffer_realloc(dist, data_len + hash_len + hash_len);
+    silc_buffer_pull(dist, data_len + hash_len);
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(k2, hash_len),
 		       SILC_STR_END);
-    silc_buffer_push(dist, klen + hash_len);
+    silc_buffer_push(dist, data_len + hash_len);
     memset(k3, 0, sizeof(k3));
-    silc_hash_make(ske->prop->hash, dist->data, dist->len, k3);
+    silc_hash_make(hash, dist->data, dist->len, k3);
 
     /* Then, save the keys */
     dtmp = silc_calloc((3 * hash_len), sizeof(unsigned char));
@@ -1307,10 +1297,10 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
     silc_buffer_free(dist);
   } else {
     /* Take normal hash as key */
-    memset(hash, 0, sizeof(hash));
-    silc_hash_make(ske->prop->hash, buf->data, buf->len, hash);
+    memset(hashd, 0, sizeof(hashd));
+    silc_hash_make(hash, buf->data, buf->len, hashd);
     key->send_enc_key = silc_calloc(enc_key_len, sizeof(unsigned char));
-    memcpy(key->send_enc_key, hash, enc_key_len);
+    memcpy(key->send_enc_key, hashd, enc_key_len);
     key->enc_key_len = req_enc_key_len;
   }
 
@@ -1326,27 +1316,27 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
     
     /* Take first round */
     memset(k1, 0, sizeof(k1));
-    silc_hash_make(ske->prop->hash, buf->data, buf->len, k1);
+    silc_hash_make(hash, buf->data, buf->len, k1);
     
     /* Take second round */
-    dist = silc_buffer_alloc(klen + hash_len);
+    dist = silc_buffer_alloc(data_len + hash_len);
     silc_buffer_pull_tail(dist, SILC_BUFFER_END(dist));
     silc_buffer_format(dist,
-		       SILC_STR_UI_XNSTRING(tmpbuf, klen),
+		       SILC_STR_UI_XNSTRING(data, data_len),
 		       SILC_STR_UI_XNSTRING(k1, hash_len),
 		       SILC_STR_END);
     memset(k2, 0, sizeof(k2));
-    silc_hash_make(ske->prop->hash, dist->data, dist->len, k2);
+    silc_hash_make(hash, dist->data, dist->len, k2);
     
     /* Take third round */
-    dist = silc_buffer_realloc(dist, klen + hash_len + hash_len);
-    silc_buffer_pull(dist, klen + hash_len);
+    dist = silc_buffer_realloc(dist, data_len + hash_len + hash_len);
+    silc_buffer_pull(dist, data_len + hash_len);
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(k2, hash_len),
 		       SILC_STR_END);
-    silc_buffer_push(dist, klen + hash_len);
+    silc_buffer_push(dist, data_len + hash_len);
     memset(k3, 0, sizeof(k3));
-    silc_hash_make(ske->prop->hash, dist->data, dist->len, k3);
+    silc_hash_make(hash, dist->data, dist->len, k3);
 
     /* Then, save the keys */
     dtmp = silc_calloc((3 * hash_len), sizeof(unsigned char));
@@ -1366,23 +1356,81 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
     silc_buffer_free(dist);
   } else {
     /* Take normal hash as key */
-    memset(hash, 0, sizeof(hash));
-    silc_hash_make(ske->prop->hash, buf->data, buf->len, hash);
+    memset(hashd, 0, sizeof(hashd));
+    silc_hash_make(hash, buf->data, buf->len, hashd);
     key->receive_enc_key = silc_calloc(enc_key_len, sizeof(unsigned char));
-    memcpy(key->receive_enc_key, hash, enc_key_len);
+    memcpy(key->receive_enc_key, hashd, enc_key_len);
     key->enc_key_len = req_enc_key_len;
   }
 
   /* Take HMAC key */
-  memset(hash, 0, sizeof(hash));
+  memset(hashd, 0, sizeof(hashd));
   buf->data[0] = 4;
-  silc_hash_make(ske->prop->hash, buf->data, buf->len, hash);
+  silc_hash_make(hash, buf->data, buf->len, hashd);
   key->hmac_key = silc_calloc(req_hmac_key_len, sizeof(unsigned char));
-  memcpy(key->hmac_key, hash, req_hmac_key_len);
+  memcpy(key->hmac_key, hashd, req_hmac_key_len);
   key->hmac_key_len = req_hmac_key_len;
+
+  silc_buffer_free(buf);
+
+  return SILC_SKE_STATUS_OK;
+}
+
+/* Processes negotiated key material as protocol specifies. This returns
+   the actual keys to be used in the SILC. */
+
+SilcSKEStatus silc_ske_process_key_material(SilcSKE ske, 
+					    unsigned int req_iv_len,
+					    unsigned int req_enc_key_len,
+					    unsigned int req_hmac_key_len,
+					    SilcSKEKeyMaterial *key)
+{
+  SilcSKEStatus status;
+  SilcBuffer buf;
+  unsigned char *tmpbuf;
+  int klen;
+
+  /* Encode KEY to binary data */
+  tmpbuf = silc_mp_mp2bin(ske->KEY, 0, &klen);
+
+  buf = silc_buffer_alloc(klen + ske->hash_len);
+  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  silc_buffer_format(buf,
+		     SILC_STR_UI_XNSTRING(tmpbuf, klen),
+		     SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
+		     SILC_STR_END);
+
+  /* Process the key material */
+  status = silc_ske_process_key_material_data(buf->data, buf->len,
+					      req_iv_len, req_enc_key_len,
+					      req_hmac_key_len, 
+					      ske->prop->hash, key);
 
   memset(tmpbuf, 0, klen);
   silc_free(tmpbuf);
+  silc_buffer_free(buf);
 
-  return SILC_SKE_STATUS_OK;
+  return status;
+}
+
+/* Free key material structure */
+
+void silc_ske_free_key_material(SilcSKEKeyMaterial *key)
+{
+  if (key->send_iv)
+    silc_free(key->send_iv);
+  if (key->receive_iv)
+    silc_free(key->receive_iv);
+  if (key->send_enc_key) {
+    memset(key->send_enc_key, 0, key->enc_key_len);
+    silc_free(key->send_enc_key);
+  }
+  if (key->receive_enc_key) {
+    memset(key->receive_enc_key, 0, key->enc_key_len);
+    silc_free(key->receive_enc_key);
+  }
+  if (key->hmac_key) {
+    memset(key->hmac_key, 0, key->hmac_key_len);
+    silc_free(key->hmac_key);
+  }
 }

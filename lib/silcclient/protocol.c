@@ -365,6 +365,8 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 				       ctx->ske->prop->pkcs,
 				       ctx->ske->prop->hash);
 
+      silc_ske_free_key_material(keymat);
+
       /* Protocol has ended, call the final callback */
       if (protocol->final_callback)
 	protocol->execute_final(client->timeout_queue, 0, protocol, fd);
