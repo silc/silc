@@ -1585,7 +1585,8 @@ o Command Unifier (2 bytes) - Unifies this command at the
   can identify which command reply belongs to which originally
   sent command.  What this field includes is implementation
   issue but it is recommended that wrapping counter value is
-  used in the field.
+  used in the field.  Value zero (0) in this field means that
+  no specific value is set.
 .in 3
 
 See [SILC1] for detailed description of different SILC commands,

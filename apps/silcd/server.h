@@ -103,6 +103,9 @@ void silc_server_packet_forward(SilcServer server,
 				SilcSocketConnection sock,
 				unsigned char *data, unsigned int data_len,
 				int force_send);
+void silc_server_packet_broadcast(SilcServer server,
+				  SilcSocketConnection sock,
+				  SilcPacketContext *packet);
 void silc_server_packet_send_to_channel(SilcServer server,
 					SilcChannelEntry channel,
 					SilcPacketType type,

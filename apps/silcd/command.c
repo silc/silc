@@ -76,7 +76,7 @@ SilcServerCommand silc_command_list[] =
 };
 
 /* List of pending commands. */
-SilcServerCommandPending *silc_command_pending = NULL;
+SilcDList silc_command_pending;
 
 /* Returns TRUE if the connection is registered. Unregistered connections
    usually cannot send commands hence the check. */
@@ -170,59 +170,61 @@ void silc_server_command_process(SilcServer server,
   silc_buffer_free(packet->buffer);
 }
 
-/* Add new pending command to the list of pending commands. Currently
-   pending commands are executed from command replies, thus we can
-   execute any command after receiving some specific command reply.
-
-   The argument `reply_cmd' is the command reply from where the callback
-   function is to be called, thus, it IS NOT the command to be executed. */
+/* Add new pending command to be executed when reply to a command has been
+   received. The `reply_cmd' is the command that will call the `callback'
+   with `context' when reply has been received.  If `ident' is non-zero
+   the `callback' will be executed when received reply with command
+   identifier `ident'. */
 
 void silc_server_command_pending(SilcCommand reply_cmd,
+				 unsigned short ident,
 				 SilcCommandCb callback,
 				 void *context)
 {
-  SilcServerCommandPending *reply, *r;
+  SilcServerCommandPending *reply;
 
   reply = silc_calloc(1, sizeof(*reply));
   reply->reply_cmd = reply_cmd;
+  reply->ident = ident;
   reply->context = context;
   reply->callback = callback;
+  silc_dlist_add(silc_command_pending, reply);
+}
 
-  if (silc_command_pending == NULL) {
-    silc_command_pending = reply;
-    return;
-  }
+/* Deletes pending command by reply command type. */
 
-  for (r = silc_command_pending; r; r = r->next) {
-    if (r->next == NULL) {
-      r->next = reply;
+void silc_server_command_pending_del(SilcCommand reply_cmd,
+				     unsigned short ident)
+{
+  SilcServerCommandPending *r;
+
+  while ((r = silc_dlist_get(silc_command_pending)) != SILC_LIST_END) {
+    if (r->reply_cmd == reply_cmd && r->ident == ident) {
+      silc_dlist_del(silc_command_pending, r);
       break;
     }
   }
 }
 
-/* Deletes pending command by reply command type. */
+/* Checks for pending commands and marks callbacks to be called from
+   the command reply function. Returns TRUE if there were pending command. */
 
-void silc_server_command_pending_del(SilcCommand reply_cmd)
+int silc_server_command_pending_check(SilcServerCommandReplyContext ctx,
+				      SilcCommand command, 
+				      unsigned short ident)
 {
-  SilcServerCommandPending *r, *tmp;
-  
-  if (silc_command_pending) {
-    if (silc_command_pending->reply_cmd == reply_cmd) {
-      silc_free(silc_command_pending);
-      silc_command_pending = NULL;
-      return;
-    }
+  SilcServerCommandPending *r;
 
-    for (r = silc_command_pending; r; r = r->next) {
-      if (r->next && r->next->reply_cmd == reply_cmd) {
-	tmp = r->next;
-	r->next = r->next->next;
-	silc_free(tmp);
-	break;
-      }
+  while ((r = silc_dlist_get(silc_command_pending)) != SILC_LIST_END) {
+    if (r->reply_cmd == command && r->ident == ident) {
+      ctx->context = r->context;
+      ctx->callback = r->callback;
+      ctx->ident = ident;
+      return TRUE;
     }
   }
+
+  return FALSE;
 }
 
 /* Free's the command context allocated before executing the command */
@@ -347,27 +349,38 @@ SILC_SERVER_CMD_FUNC(whois)
     count = atoi(tmp);
   }
 
-  /* Get all clients matching that nickname */
-  if (!use_id) {
-    clients = silc_idlist_get_clients_by_nickname(server->local_list, 
-						  nick, server_name,
-						  &clients_count);
+  /* Protocol dictates that we must always send the received WHOIS request
+     to our router if we are normal server, so let's do it now unless we
+     are standalone. We will not send any replies to the client until we
+     have received reply from the router. */
+  if (!server->standalone) {
+    SilcBuffer tmpbuf;
+
+    silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
+    tmpbuf = silc_command_payload_encode_payload(cmd->payload);
+
+    /* Send WHOIS command to our router */
+    silc_server_packet_send(server, (SilcSocketConnection)
+			    server->id_entry->router->connection,
+			    SILC_PACKET_COMMAND, cmd->packet->flags,
+			    tmpbuf->data, tmpbuf->len, TRUE);
+    return;
   } else {
-    entry = silc_idlist_find_client_by_id(server->local_list, client_id);
-    if (entry) {
-      clients = silc_calloc(1, sizeof(*clients));
-      clients[0] = entry;
-      clients_count = 1;
-    }
-  }
+    /* We are standalone, let's just do local search and send reply to
+       requesting client. */
 
-  if (!clients) {
-    
-    /* If we are normal server and are connected to a router we will
-       make global query from the router. */
-    if (server->server_type == SILC_SERVER && !server->standalone) {
-
-      goto ok;
+    /* Get all clients matching that nickname */
+    if (!use_id) {
+      clients = silc_idlist_get_clients_by_nickname(server->local_list, 
+						    nick, server_name,
+						    &clients_count);
+    } else {
+      entry = silc_idlist_find_client_by_id(server->local_list, client_id);
+      if (entry) {
+	clients = silc_calloc(1, sizeof(*clients));
+	clients[0] = entry;
+	clients_count = 1;
+      }
     }
     
     /* If we are router then we will check our global list as well. */
@@ -383,17 +396,18 @@ SILC_SERVER_CMD_FUNC(whois)
       }
       goto ok;
     }
-
+      
+#if 0
     silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
 					 SILC_STATUS_ERR_NO_SUCH_NICK,
 					 3, tmp, strlen(tmp));
     goto out;
+#endif
   }
 
+  /* We are standalone and will send reply to client */
  ok:
-
-  /* XXX, works only for local server info */
-
+ 
   status = SILC_STATUS_OK;
   if (clients_count > 1)
     status = SILC_STATUS_LIST_START;
@@ -1286,7 +1300,7 @@ SILC_SERVER_CMD_FUNC(join)
       /* Add the command to be pending. It will be re-executed after
 	 router has replied back to us. */
       cmd->pending = TRUE;
-      silc_server_command_pending(SILC_COMMAND_JOIN, 
+      silc_server_command_pending(SILC_COMMAND_JOIN, 0,
 				  silc_server_command_join, context);
       return;
     }
@@ -2360,7 +2374,7 @@ SILC_SERVER_CMD_FUNC(names)
       /* XXX Send names command */
 
       cmd->pending = TRUE;
-      silc_server_command_pending(SILC_COMMAND_NAMES, 
+      silc_server_command_pending(SILC_COMMAND_NAMES, 0,
 				  silc_server_command_names, context);
       return;
     }

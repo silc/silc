@@ -968,8 +968,7 @@ void silc_client_packet_send_to_channel(SilcClient client,
 
   /* Generate IV */
   if (!channel->iv)
-    for (i = 0; i < 16; i++)
-      channel->iv[i] = silc_rng_get_byte(client->rng);
+    for (i = 0; i < 16; i++) channel->iv[i] = silc_rng_get_byte(client->rng);
   else
     silc_hash_make(client->md5hash, channel->iv, 16, channel->iv);
 

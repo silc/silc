@@ -1580,14 +1580,14 @@ Client usually sends the commands in the SILC network.  In this case
 the client simply sends the command packet to server and the server
 processes it and replies with command reply packet.
 
-However, if the server is not able to process the command, it is usually
-sent to the server's router.  This is case for example with commands such
+However, if the server is not able to process the command, it is sent 
+to the server's router.  This is case for example with commands such
 as, SILC_COMMAND_JOIN and SILC_COMMAND_WHOIS commands.  However, there
 are other commands as well.  For example, if client sends the WHOIS
 command requesting specific information about some client the server must
 send the WHOIS command to router so that all clients in SILC network
 are searched.  The router, on the other hand, sends the WHOIS command
-to further to receive the exact information about the requested client.
+further to receive the exact information about the requested client.
 The WHOIS command travels all the way to the server who owns the client
 and it replies with command reply packet.  Finally, the server who
 sent the command receives the command reply and it must be able to
@@ -1736,7 +1736,7 @@ List of all defined commands in SILC follows.
 
         It is also possible to search the user by Client ID.  If <Client ID>
         is provided server must use it as the search value instead of
-        the <nickname>.
+        the <nickname>.  One of the arguments must be given.
 
         To prevent miss-use of this service wildcards in the nickname
         or in the servername are not permitted.  It is not allowed
@@ -1745,9 +1745,11 @@ List of all defined commands in SILC follows.
 
         The WHOIS request must be always forwarded to router by server
         so that all users are searched.  However, the server still must
-        search its locally connected clients.  The server must send
+        search its locally connected clients.  The router must send
         this command to the server who owns the requested client.  That
-        server must reply to the command.
+        server must reply to the command.  Server should not send whois
+	replies to the client until it has received the reply from its
+	router.
 
         Reply messages to the command:
 

@@ -21,6 +21,8 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include "command_reply.h"
+
 /* 
    Structure holding one command and pointer to its function. 
 
@@ -58,20 +60,14 @@ typedef struct {
 } *SilcServerCommandContext;
 
 /* Structure holding pending commands. If command is pending it will be
-   executed after command reply has been received and executed. 
-   Pending commands are used in cases where the original command request
-   had to be forwarded to router. After router replies the pending
-   command is re-executed. */
+   executed after command reply has been received and executed. */
 typedef struct SilcServerCommandPendingStruct {
   SilcCommand reply_cmd;
-  void *context;
   SilcCommandCb callback;
-
+  void *context;
+  unsigned short ident;
   struct SilcServerCommandPendingStruct *next;
 } SilcServerCommandPending;
-
-/* List of pending commands */
-extern SilcServerCommandPending *silc_command_pending;
 
 /* Macros */
 
@@ -83,30 +79,12 @@ extern SilcServerCommandPending *silc_command_pending;
 #define SILC_SERVER_CMD_FUNC(func) \
 void silc_server_command_##func(void *context)
 
-/* Checks for pending commands */
-#define SILC_SERVER_COMMAND_CHECK_PENDING(ctx)		\
-do {							\
-  if (silc_command_pending) {				\
-    SilcServerCommandPending *r;			\
-    SilcCommand cmd;					\
-							\
-    cmd = silc_command_get(payload);			\
-    for (r = silc_command_pending; r; r = r->next) {	\
-      if (r->reply_cmd == cmd) {			\
-	ctx->context = r->context;			\
-	ctx->callback = r->callback;			\
-	break;						\
-      }							\
-    }							\
-  }							\
-} while(0)
-
 /* Executed pending command */
 #define SILC_SERVER_COMMAND_EXEC_PENDING(ctx, cmd)	\
 do {							\
   if (ctx->callback) {					\
     (*ctx->callback)(ctx->context);			\
-    silc_server_command_pending_del(cmd);		\
+    silc_server_command_pending_del(cmd, ctx->ident);	\
   }							\
 } while(0)
 
@@ -115,9 +93,14 @@ void silc_server_command_process(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
 void silc_server_command_pending(SilcCommand reply_cmd,
+				 unsigned short ident,
 				 SilcCommandCb callback,
 				 void *context);
-void silc_server_command_pending_del(SilcCommand reply_cmd);
+void silc_server_command_pending_del(SilcCommand reply_cmd,
+				     unsigned short ident);
+int silc_server_command_pending_check(SilcServerCommandReplyContext ctx,
+				      SilcCommand command, 
+				      unsigned short ident);
 SILC_SERVER_CMD_FUNC(whois);
 SILC_SERVER_CMD_FUNC(whowas);
 SILC_SERVER_CMD_FUNC(identify);

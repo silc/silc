@@ -544,3 +544,57 @@ char *silc_format(char *fmt, ...)
 
   return strdup(buf);
 }
+
+/* Renders ID to suitable to print for example to log file. */
+
+char *silc_id_render(void *id, unsigned short type)
+{
+  char rid[256], tmp[100];
+  unsigned char tmps[2];
+
+  memset(rid, 0, sizeof(rid));
+  switch(type) {
+  case SILC_ID_SERVER:
+    {
+      SilcServerID *server_id = (SilcServerID *)id;
+      strcat(rid, inet_ntoa(server_id->ip));
+      memset(tmp, 0, sizeof(tmp));
+      snprintf(tmp, sizeof(tmp), ",%d,", ntohs(server_id->port));
+      strcat(rid, tmp);
+      SILC_PUT16_MSB(server_id->rnd, tmps);
+      memset(tmp, 0, sizeof(tmp));
+      snprintf(tmp, sizeof(tmp), "[%02x %02x]", tmps[0], tmps[1]);
+      strcat(rid, tmp);
+    }
+    break;
+  case SILC_ID_CLIENT:
+    {
+      SilcClientID *client_id = (SilcClientID *)id;
+      strcat(rid, inet_ntoa(client_id->ip));
+      memset(tmp, 0, sizeof(tmp));
+      snprintf(tmp, sizeof(tmp), ",%02x,", client_id->rnd);
+      strcat(rid, tmp);
+      memset(tmp, 0, sizeof(tmp));
+      snprintf(tmp, sizeof(tmp), "[%02x %02x %02x %02x...]", 
+	       client_id->hash[0], client_id->hash[1],
+	       client_id->hash[2], client_id->hash[3]);
+      strcat(rid, tmp);
+    }
+    break;
+  case SILC_ID_CHANNEL:
+    {
+      SilcChannelID *channel_id = (SilcChannelID *)id;
+      strcat(rid, inet_ntoa(channel_id->ip));
+      memset(tmp, 0, sizeof(tmp));
+      snprintf(tmp, sizeof(tmp), ",%d,", ntohs(channel_id->port));
+      strcat(rid, tmp);
+      SILC_PUT16_MSB(channel_id->rnd, tmps);
+      memset(tmp, 0, sizeof(tmp));
+      snprintf(tmp, sizeof(tmp), "[%02x %02x]", tmps[0], tmps[1]);
+      strcat(rid, tmp);
+    }
+    break;
+  }
+
+  return strdup(rid);
+}

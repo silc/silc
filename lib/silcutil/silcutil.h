@@ -44,5 +44,6 @@ void silc_parse_command_line(unsigned char *buffer,
 			     unsigned int *parsed_num,
 			     unsigned int max_args);
 char *silc_format(char *fmt, ...);
+char *silc_id_render(void *id, unsigned short type);
 
 #endif

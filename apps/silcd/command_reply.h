@@ -40,6 +40,7 @@ typedef struct {
   /* If defined this executes the pending command. */
   void *context;
   SilcCommandCb callback;
+  unsigned short ident;
 } *SilcServerCommandReplyContext;
 
 /* Macros */
@@ -52,28 +53,12 @@ typedef struct {
 #define SILC_SERVER_CMD_REPLY_FUNC(func) \
 void silc_server_command_reply_##func(void *context)
 
-/* Macro used to execute command replies */
-#define SILC_SERVER_COMMAND_REPLY_EXEC(ctx)		\
-do {							\
-  SilcServerCommandReply *cmd;				\
-							\
-  for (cmd = silc_command_reply_list; cmd->cb; cmd++)	\
-    if (cmd->cmd == silc_command_get(ctx->payload)) {	\
-      cmd->cb(ctx);					\
-      break;						\
-    }							\
-							\
-  if (cmd == NULL) {					\
-    silc_free(ctx);					\
-    return;						\
-  }							\
-} while(0)
-
 /* Prototypes */
 void silc_server_command_reply_process(SilcServer server,
 				       SilcSocketConnection sock,
 				       SilcBuffer buffer);
 SILC_SERVER_CMD_REPLY_FUNC(join);
+SILC_SERVER_CMD_REPLY_FUNC(whois);
 SILC_SERVER_CMD_REPLY_FUNC(identify);
 
 #endif

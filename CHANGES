@@ -1,3 +1,39 @@
+Thu Nov  9 21:12:39 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed silc_command_pending list to SilcDList.  Also, added
+	  `ident' field to SilcServerCommandPending structure to identify
+	  the reply and to call correct callback.
+
+	  Added silc_server_command_pending_check function to replace the
+	  corresnponding macro.  The silc_command_pending list is not
+	  extern anymore.
+
+	* Added silc_command_set_ident into lib/silccore/silccommand.[ch]
+	  to set identifier to previously allocated Command Payload.  It
+	  is used to set identifier for command when resending Command
+	  Payload.
+
+	* Added silc_command_payload_encode_payload to encode Command
+	  Payload buffer from SilcCommandPayload structure.
+
+	* Added silc_argument_payload_encode_payload to encode Argument
+	  payload buffer from SilcArgumentPayload structure.
+
+Wed Nov  8 21:03:28 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed WHOIS command to support router connection on server side.
+	  The whois request is always sent to router unless the server is
+	  standalone server.  After server has received the reply from the
+	  router will it send the reply to the client.
+
+	* Added silc_server_packet_broadcast into silcd/server.[ch] to
+	  broadcast received broadcast packet.  The function is used only
+	  by router.  The broadcast packet is always sent to the router's
+	  primary route.
+
+	* Added silc_id_render function in lib/silcutil/silcutil.[ch] to
+	  render given ID to printable string, for log files for example.
+
 Tue Nov  7 22:14:19 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Made basic router to router connections working.  At least they
