@@ -43,6 +43,7 @@ static struct option long_opts[] =
   { "config-file", 1, NULL, 'f' },
   { "debug", 1, NULL, 'd' },
   { "help", 0, NULL, 'h' },
+  { "foreground", 0, NULL, 'F' },
   { "version", 0, NULL,'V' },
 
   /* Key management options */
@@ -70,8 +71,9 @@ Usage: silcd [options]\n\
 \n\
   Generic Options:\n\
   -f  --config-file=FILE        Alternate configuration file\n\
-  -d  --debug=string            Enable debugging (no daemon)\n\
+  -d  --debug=string            Enable debugging (Implies --foreground)\n\
   -h  --help                    Display this message\n\
+  -F  --foreground              Dont fork\n\
   -V  --version                 Display version\n\
 \n\
   Key Management Options:\n\
@@ -99,6 +101,7 @@ int main(int argc, char **argv)
 {
   int ret;
   int opt, option_index;
+  int foreground = FALSE;
   char *config_file = NULL;
   SilcServer silcd;
   struct sigaction sa;
@@ -108,7 +111,7 @@ int main(int argc, char **argv)
 
   /* Parse command line arguments */
   if (argc > 1) {
-    while ((opt = getopt_long(argc, argv, "cf:d:hVC:",
+    while ((opt = getopt_long(argc, argv, "cf:d:hFVC:",
 			      long_opts, &option_index)) != EOF) {
       switch(opt) 
 	{
@@ -135,6 +138,9 @@ int main(int argc, char **argv)
 	  break;
 	case 'f':
 	  config_file = strdup(optarg);
+	  break;
+	case 'F':
+	  foreground = TRUE;
 	  break;
 
 	  /*
@@ -201,17 +207,23 @@ int main(int argc, char **argv)
   sigemptyset(&sa.sa_mask);
   sigaction(SIGPIPE, &sa, NULL);
 
-  if (silc_debug == FALSE)
-    /* Before running the server, fork to background and set
-       both user and group no non-root */    
+  if ((silc_debug == FALSE) && (foreground == FALSE))
+    /* Before running the server, fork to background. */    
     silc_server_daemonise(silcd);
 
   /* Set /var/run/silcd.pid */
   unlink(SILC_SERVER_PID_FILE);
   memset(pid, 0, sizeof(pid));
   snprintf(pid, sizeof(pid) - 1, "%d\n", getpid());
-  silc_file_writefile(SILC_SERVER_PID_FILE, pid, strlen(pid));
+  if (silcd->config->pidfile && silcd->config->pidfile->pid_file) {
+    silc_file_writefile(silcd->config->pidfile->pid_file, pid, strlen(pid));
+  } else {
+    silc_file_writefile(SILC_SERVER_PID_FILE, pid, strlen(pid));
+  }
   
+  /* Drop root. */
+  silc_server_drop(silcd);
+
   /* Run the server. When this returns the server has been stopped
      and we will exit. */
   silc_server_run(silcd);

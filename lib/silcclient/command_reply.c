@@ -838,6 +838,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
     /* Add it to the cache */
     silc_idcache_add(conn->server_cache, server->server_name,
 		     server->server_id, (void *)server, FALSE);
+
+    if (SILC_ID_SERVER_COMPARE(server_id, conn->remote_id))
+      goto out;
   } else {
     server = (SilcServerEntry)id_cache->context;
   }

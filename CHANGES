@@ -7,6 +7,12 @@ Wed Nov 14 16:22:25 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	  to run server on foreground.  A patch by debolaz.
 	  Affected files silcd/server.c, silcd/silcd.c.
 
+	* Fixed MOTD to return the MOTD file server name.  Affected
+	  file silcd/command.c.
+
+	* Added INFO command reply handling to the Irssi SILC Client.
+	  Affected file irssi/src/silc/core/client_ops.c.
+
 Wed Nov 14 00:18:08 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the silc_idcache_list_* routines to really support

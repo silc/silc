@@ -41,8 +41,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o MOTD and INFO does not work with server name.
-
  o After backup resume protocol the TOPIC_SET was not handled correctly
    by all (unknown Channel ID).
 

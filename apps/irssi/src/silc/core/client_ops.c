@@ -791,6 +791,27 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
     }
     break;
+
+  case SILC_COMMAND_INFO:
+    {
+      SilcServerEntry server_entry;
+      char *server_name;
+      char *server_info;
+
+      if (!success)
+	return;
+      
+      server_entry = va_arg(vp, SilcServerEntry);
+      server_name = va_arg(vp, char *);
+      server_info = va_arg(vp, char *);
+
+      if (server_name && server_info )
+	{
+	  printtext(server, NULL, MSGLEVEL_CRAP, "Server: %s", server_name);
+	  printtext(server, NULL, MSGLEVEL_CRAP, "%s", server_info);
+	}
+    }
+    break;
     
   case SILC_COMMAND_TOPIC:
     {

@@ -29,11 +29,11 @@
 #include "silcincludes.h"
 
 #ifdef HAVE_GETSID
-extern __pid_t getsid (__pid_t __pid);
+extern pid_t getsid (pid_t __pid);
 #endif
 
 #ifdef HAVE_GETPGID
-extern __pid_t getpgid (__pid_t __pid);
+extern pid_t getpgid (pid_t __pid);
 #endif
 
 #undef SILC_RNG_DEBUG

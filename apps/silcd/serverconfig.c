@@ -57,6 +57,8 @@ SilcServerConfigSection silc_server_config_sections[] = {
     SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION, 3 },
   { "[motd]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_MOTD, 1 },
+  { "[pid]",
+    SILC_CONFIG_SERVER_SECTION_TYPE_PID, 1},
   
   { NULL, SILC_CONFIG_SERVER_SECTION_TYPE_NONE, 0 }
 };
@@ -121,6 +123,7 @@ void silc_server_config_free(SilcServerConfig config)
     silc_free(config->routers);
     silc_free(config->denied);
     silc_free(config->motd);
+    silc_free(config->pidfile);
     silc_free(config);
   }
 }
@@ -1106,6 +1109,19 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       check = TRUE;
       checkmask |= (1L << pc->section->type);
       break;
+
+    case SILC_CONFIG_SERVER_SECTION_TYPE_PID:
+
+       if (!config->pidfile)
+          config->pidfile = silc_calloc(1, sizeof(*config->pidfile));
+          
+       ret = silc_config_get_token(line, &config->pidfile->pid_file);
+       if (ret < 0)
+          break;
+          
+       check = TRUE;
+       checkmask |= (1L << pc->section->type);
+       break;
 
     case SILC_CONFIG_SERVER_SECTION_TYPE_NONE:
     default:

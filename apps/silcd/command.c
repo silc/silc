@@ -3474,7 +3474,6 @@ SILC_SERVER_CMD_FUNC(motd)
 						    SILC_STATUS_OK, ident, 2,
 						    2, idp, idp->len,
 						    3, motd, motd_len);
-      goto out;
     } else {
       /* No motd */
       packet = silc_command_reply_payload_encode_va(SILC_COMMAND_MOTD,

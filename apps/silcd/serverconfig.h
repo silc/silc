@@ -154,6 +154,11 @@ typedef struct {
   char *motd_file;
 } SilcServerConfigSectionMotd;
 
+/* holds pid file */
+typedef struct {
+   char *pid_file;
+} SilcServerConfigSectionPid;
+
 /* 
    SILC Server Config object. 
 
@@ -186,6 +191,7 @@ typedef struct {
   SilcServerConfigSectionAdminConnection *admins;
   SilcServerConfigSectionDenyConnection *denied;
   SilcServerConfigSectionMotd *motd;
+  SilcServerConfigSectionPid *pidfile;
 } SilcServerConfigObject;
 
 typedef SilcServerConfigObject *SilcServerConfig;
@@ -210,6 +216,7 @@ typedef enum {
   SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_CONNECTION,
   SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION,
   SILC_CONFIG_SERVER_SECTION_TYPE_MOTD,
+  SILC_CONFIG_SERVER_SECTION_TYPE_PID,
 } SilcServerConfigSectionType;
 
 /* SILC Configuration Section structure. */
