@@ -1797,18 +1797,18 @@ resuming protocol is executed.  The protocol is advanced as follows:
 
   5. Backup router MUST wait for all packets with type value 2 before
      it continues with the protocol.  It knows from the session ID values
-     set in the packet when it have received all packets.  The session
-     value should be different in all packets it have sent earlier.
-     After the packets is received the backup router sends the
+     set in the packet when it has received all packets.  The session
+     value should be different in all packets it has sent earlier.
+     After the packets are received the backup router sends the
      SILC_PACKET_RESUME_ROUTER packet with type value 3 to the
      primary router that came back online.  This packet will indicate
      that the backup router is now ready to resign as being primary
      router.  The session ID value in this packet MUST be the same as
-     in first packet sent to the primary router.  During this time
+     in the first packet sent to the primary router.  During this time
      the backup router must still route all packets it is receiving
      from server connections.
 
-  6. The primary router receives the packet and send the
+  6. The primary router receives the packet and send the packet
      SILC_PACKET_RESUME_ROUTER with type value 4 to all connected servers
      including the backup router.  It also sends the packet with type
      value 4 to its primary router, and to the router that is using
@@ -1816,32 +1816,32 @@ resuming protocol is executed.  The protocol is advanced as follows:
      SHOULD be zero (0).
 
   7. Any server and router that receives the SILC_PACKET_RESUME_ROUTER
-     with type value 4 must switch their primary route to the new
+     packet with type value 4 must switch their primary route to the new
      primary router and remove the route for the backup router, since
-     it is not anymore the primary router of the cell.  They must also
+     it is no longer the primary router of the cell.  They must also
      update their local database to understand that the clients are
      not originated from the backup router but from the locally connected
      servers.  After that they MUST announce their channels, channel
      users, modes etc. to the primary router.  They MUST NOT use the
      backup router connection after this and the connection is considered
-     to be passive connection.  The implementation SHOULD be able
+     to be a passive connection.  The implementation SHOULD be able
      to disable the connection without closing the actual link.
 
-After this protocol is executed the backup router is now again normal
+After this protocol is executed the backup router is now again a normal
 server in the cell that has the backup link to the primary router.  The
 primary router feeds the router specific data again to the backup router.
-All server connections in the backup router are considered passive
+All server connections to the backup router are considered passive
 connections.
 
 When the primary router of the cell comes back online and connects
-to its primary router, the remote primary router MUST send the
-SILC_PACKET_RESUME_ROUTER with type value 20 indicating that the
+to its remote primary router, the remote primary router MUST send the
+SILC_PACKET_RESUME_ROUTER packet with type value 20 indicating that the
 connection is not allowed since the router has been replaced by an
-backup router.  The session ID value in this packet SHOULD be zero (0).
-When the router receives this packet it MUST NOT use the connection
-as active connection but to understand that it cannot act as primary
-router in the cell.  It must wait that the backup router connects to
-it, and the backup resuming protocol is executed.
+backup router in the cell.  The session ID value in this packet SHOULD be 
+zero (0).  When the primary router receives this packet it MUST NOT use 
+the connection as active connection but must understand that it cannot
+act as primary router in the cell, until the backup resuming protocol has
+been executed.
 
 The following type values has been defined for SILC_PACKET_RESUME_ROUTER
 packet:
@@ -1863,8 +1863,8 @@ is defined in [SILC2].
 
 This section describes various SILC procedures such as how the
 connections are created and registered, how channels are created and
-so on.  The [SILC2], [SILC3] and [SILC4] permeate this section's
-definitions.
+so on.  The references [SILC2], [SILC3] and [SILC4] permeate this 
+section's definitions.
 
 
 
@@ -1872,11 +1872,11 @@ definitions.
 .ti 0
 4.1 Creating Client Connection
 
-This section describes the procedure when client connects to SILC server.
-When client connects to server the server MUST perform IP address lookup
-and reverse IP address lookup to assure that the origin host really is
-who it claims to be.  Client, a host, connecting to server SHOULD have
-both valid IP address and fully qualified domain name (FQDN).
+This section describes the procedure when a client connects to SILC
+server.  When client connects to server the server MUST perform IP
+address lookup and reverse IP address lookup to assure that the origin 
+host really is who it claims to be.  Client, a host, connecting to server 
+SHOULD have both valid IP address and fully qualified domain name (FQDN).
 
 After that the client and server performs SILC Key Exchange protocol
 which will provide the key material used later in the communication.
@@ -1887,11 +1887,11 @@ is described in [SILC3].
 Typical server implementation would keep a list of connections that it
 allows to connect to the server.  The implementation would check, for
 example, the connecting client's IP address from the connection list
-before the SILC Key Exchange protocol has been started.  Reason for
+before the SILC Key Exchange protocol has been started.  The reason for
 this is that if the host is not allowed to connect to the server there
 is no reason to perform the key exchange protocol.
 
-After successful key exchange protocol the client and server performs
+After successful key exchange protocol the client and server perform
 connection authentication protocol.  The purpose of the protocol is to
 authenticate the client connecting to the server.  Flexible
 implementation could also accept the client to connect to the server
@@ -1904,10 +1904,10 @@ in [SILC3].
 After successful key exchange and authentication protocol the client
 MUST register itself by sending SILC_PACKET_NEW_CLIENT packet to the
 server.  This packet includes various information about the client
-that the server uses to create the client.  Server creates the client
-and sends SILC_PACKET_NEW_ID to the client which includes the created
-Client ID that the client MUST start using after that.  After that
-all SILC packets from the client MUST have the Client ID as the
+that the server uses to register the client.  Server registers the
+client and sends SILC_PACKET_NEW_ID to the client which includes the 
+created Client ID that the client MUST start using after that.  After
+that all SILC packets from the client MUST have the Client ID as the
 Source ID in the SILC Packet Header, described in [SILC2].
 
 Client MUST also get the server's Server ID that is to be used as
@@ -1920,14 +1920,14 @@ command reply.
 
 Server MAY choose not to use the information received in the
 SILC_PACKET_NEW_CLIENT packet.  For example, if public key or
-certificate were used in the authentication, server MAY use those
-informations rather than what it received from client.  This is suitable
+certificate were used in the authentication, server MAY use that
+information rather than what it received from client.  This is a suitable
 way to get the true information about client if it is available.
 
 The nickname of client is initially set to the username sent in the
-SILC_PACKET_NEW_CLIENT packet.  User may set the nickname to more
-suitable by sending SILC_COMMAND_NICK command.  However, this is not
-required as part of registration process.
+SILC_PACKET_NEW_CLIENT packet.  User may set the nickname to something
+more desirable by sending SILC_COMMAND_NICK command.  However, this is
+not required as part of registration process.
 
 Server MUST also distribute the information about newly registered
 client to its router (or if the server is router, to all routers in
@@ -1943,15 +1943,15 @@ SILC_NOTIFY_TYPE_WATCH to the watcher.
 
 This section describes the procedure when server connects to its
 router (or when router connects to other router, the cases are
-equivalent).  The procedure is very much alike when client connects
-to the server thus it is not repeated here.
+equivalent).  The procedure is very much alike to when a client
+connects to the server thus it is not repeated here.
 
 One difference is that server MUST perform connection authentication
 protocol with proper authentication.  A proper authentication is based
 on passphrase authentication or public key authentication based on
 digital signatures.
 
-After server and router has successfully performed the key exchange
+After server and router have successfully performed the key exchange
 and connection authentication protocol, the server MUST register itself
 to the router by sending SILC_PACKET_NEW_SERVER packet.  This packet
 includes the server's Server ID that it has created by itself and
@@ -1961,11 +1961,11 @@ server's real IP address.
 
 After router has received the SILC_PACKET_NEW_SERVER packet it
 distributes the information about newly registered server to all routers
-in the SILC network.  More information about this in [SILC2].
+in the SILC network.  More information about this in in [SILC2].
 
-As client needed to resolve the destination ID this MUST be done by the
-server that connected to the router, as well.  The way to resolve it is
-to get the ID from previously received packet.  The server MAY also
+As the client needed to resolve the destination ID this MUST be done by 
+the server that connected to the router, as well.  The way to resolve it 
+is to get the ID from previously received packet.  The server MAY also
 use SILC_COMMAND_INFO command to resolve the ID.  Server MUST also start
 using its own Server ID as Source ID in SILC Packet Header and the
 router's Server ID as Destination when communicating with the router.
@@ -1996,12 +1996,12 @@ ID Payloads into the SILC_PACKET_NEW_ID packet.
 
 Also, clients' modes (user modes in SILC) MUST be announced.  This is
 done by compiling a list of Notify Payloads with SILC_NOTIFY_UMODE_CHANGE
-notify type into the SILC_PACKET_NOTIFY packet.  Also, channel's topics
+notify type into the SILC_PACKET_NOTIFY packet.  Also, channels' topics
 MUST be announced by compiling a list of Notify Payloads with the
 SILC_NOTIFY_TOPIC_SET notify type into the SILC_PACKET_NOTIFY packet.
 
 The router which receives these lists MUST process them and broadcast
-the packets to its primary route.  When processing the announced channels
+the packets to its primary router.  When processing the announced channels
 and channel users the router MUST check whether a channel exists already
 with the same name.  If channel exists with the same name it MUST check
 whether the Channel ID is different.  If the Channel ID is different the
@@ -2015,10 +2015,10 @@ The router MUST also generate new channel key and distribute it to the
 channel.  The key MUST NOT be generated if the SILC_CMODE_PRIVKEY mode
 is set.
 
-If the channel has channel founder on the router the router MUST send
-the notify type SILC_NOTIFY_TYPE_CUMODE_CHANGE to the server to force
-the mode change for the channel founder on the server.  The channel
-founder privileges MUST be removed.
+If the channel has channel founder already on the router, the router
+MUST send the notify type SILC_NOTIFY_TYPE_CUMODE_CHANGE to the server
+to force the mode change for the channel founder on the server.  The
+channel founder privileges MUST be removed.
 
 The router processing the channels MUST also compile a list of
 Notify Payloads with the SILC_NOTIFY_TYPE_JOIN notify type into the
@@ -2035,7 +2035,7 @@ Client joins to channel by sending command SILC_COMMAND_JOIN to the
 server.  If the receiver receiving join command is normal server the
 server MUST check its local list whether this channel already exists
 locally.  This would indicate that some client connected to the server
-has already joined to the channel.  If this is case the client is
+has already joined to the channel.  If this is the case, the client is
 joined to the channel, new channel key is created and information about
 newly joined channel is sent to the router.  The router is informed
 by sending SILC_NOTIFY_TYPE_JOIN notify type.  The notify type MUST
@@ -2052,13 +2052,13 @@ server MUST also save the channel key.
 
 If the receiver of the join command is router it MUST first check its
 local list whether anyone in the cell has already joined to the channel.
-If this is the case the client is joined to the channel and reply is
+If this is the case, the client is joined to the channel and reply is
 sent to the client.  If the command was sent by server the command reply
 is sent to the server which sent it.  Then the router MUST also create
 new channel key and distribute it to all clients on the channel and
-all servers that has clients on the channel.  Router MUST also send
+all servers that have clients on the channel.  Router MUST also send
 the SILC_NOTIFY_TYPE_JOIN notify type to local clients on the channel
-and to local servers that has clients on the channel.
+and to local servers that have clients on the channel.
 
 If the channel does not exist on the router's local list it MUST
 check the global list whether the channel exists at all.  If it does
@@ -2067,10 +2067,10 @@ the channel does not exist the channel is created and the client
 is joined to the channel.  The channel key is also created and
 distributed as previously described.  The client joining to the created
 channel is made automatically channel founder and both channel founder
-and channel operator privileges is set for the client.
+and channel operator privileges are set for the client.
 
 If the router created the channel in the process, information about the
-new channel MUST be broadcasted to all routers.  This is done by
+new channel MUST be broadcast to all routers.  This is done by
 broadcasting SILC_PACKET_NEW_CHANNEL packet to the router's primary
 route.  When the router joins the client to the channel it MUST also
 send information about newly joined client to all routers in the SILC
@@ -2104,16 +2104,16 @@ the key is created only on the cell where the client, which left the
 channel, exists.  While the server or router is creating the new channel
 key, no other client may join to the channel.  Messages that are sent
 while creating the new key are still processed with the old key.  After
-server has sent the SILC_PACKET_CHANNEL_KEY packet MUST client start
+server has sent the SILC_PACKET_CHANNEL_KEY packet client MUST start
 using the new key.  If server creates the new key the server MUST also
-send the new key to its router.  See [SILC2] on more information about
+send the new key to its router.  See [SILC2] for more information about
 how channel messages must be encrypted and decrypted when router is
 processing them.
 
 If the key changes very often due to joining traffic on the channel it
 is RECOMMENDED that client implementation would cache some of the old
 channel keys for short period of time so that it is able to decrypt all
-channel messages it receives.  It is possible that on heavy traffic
+channel messages it receives.  It is possible that on a heavy traffic
 channel a message encrypted with channel key that was just changed
 is received by client after the new key was set into use.  This is
 possible because not all clients may receive the new key at the same
@@ -2170,17 +2170,17 @@ is used in the private message communication between those clients.
 The key sent inside the payload SHOULD be randomly generated.  This
 packet MUST NOT be used to send pre-shared keys.
 
-Other choice is to entirely use keys that are not sent through
+Another choice is to entirely use keys that are not sent through
 the SILC network at all.  This significantly adds security.  This key
 could be a pre-shared key that is known by both of the clients.  Both
-agree about using the key and starts sending packets that indicate
+agree about using the key and start sending packets that indicate
 that the private message is secured using private message key.  In
 case of pre-shared keys (static keys) the IV used in encryption SHOULD
 be chosen randomly.
 
 It is also possible to negotiate fresh key material by performing
 Key Agreement.  The SILC_PACKET_KEY_AGREEMENT packet MAY be used to
-negotiate the fresh key material.  In this case the resulted key
+negotiate the fresh key material.  In this case the resulting key
 material is used to secure the private messages.  Also, the IV used
 in encryption is used as defined in [SILC3], unless otherwise stated
 by the encryption mode used.  By performing Key Agreement the clients
@@ -2199,12 +2199,12 @@ mandatory cipher and HMAC in private message encryption.
 .ti 0
 4.7 Channel Message Sending and Reception
 
-Channel messages are delivered to group of users.  The group forms a
+Channel messages are delivered to a group of users.  The group forms a
 channel and all clients on the channel receives messages sent to the
 channel.  The Source ID in the SILC Packet Header MUST be the ID
 of the sender of the message.
 
-Channel messages are destined to channel by specifying the Channel ID
+Channel messages are destined to a channel by specifying the Channel ID
 as Destination ID in the SILC Packet Header.  The server MUST then
 distribute the message to all clients on the channel by sending the
 channel message destined explicitly to a client on the channel.  However,
@@ -2250,7 +2250,7 @@ the initial data for the hash function is the current sending encryption
 key and not the SKE's KEY and HASH values.  Other than that, the key
 processing is equivalent to normal SKE negotiation.
 
-After both parties has regenerated the session key, both MUST send
+After both parties have regenerated the session key, both MUST send
 SILC_PACKET_REKEY_DONE packet to each other.  These packets are still
 secured with the old key.  After these packets, the subsequent packets
 MUST be protected with the new key.
@@ -2265,7 +2265,7 @@ processes it and replies with command reply packet.  See the [SILC4]
 for detailed description of all commands.
 
 However, if the server is not able to process the command, it is sent to
-the server's router.  This is case for example with commands such as,
+the server's router.  This is case for example with commands such as
 SILC_COMMAND_JOIN and SILC_COMMAND_WHOIS commands.  However, there are
 other commands as well [SILC4].  For example, if client sends the WHOIS
 command requesting specific information about some client the server must
@@ -2285,7 +2285,7 @@ to process the command.  However, it is preferred to destine the command
 as precisely as it is possible.  In this case, other routers en route
 MUST route the command packet by checking the true sender and true
 destination of the packet.  However, servers and routers MUST NOT route
-command reply packets to clients coming from other server.  Client
+command reply packets to clients coming from other servers.  Client
 MUST NOT accept command reply packet originated from anyone else but
 from its own server.
 
@@ -2325,7 +2325,7 @@ any server in the network.
 When client wishes to detach from the network it MUST send the
 SILC_COMMAND_DETACH command to its server.  The server then MUST set
 SILC_UMODE_DETACHED mode to the client and send SILC_NOTIFY_UMODE_CHANGE
-notify to its primary router, which will then MUST broadcast it further
+notify to its primary router, which then MUST broadcast it further
 to other routers in the network.  This user mode indicates that the
 client is detached from the network.  Implementations MUST NOT use
 the SILC_UMODE_DETACHED flag to determine whether a packet can be sent
@@ -2356,7 +2356,7 @@ client's private key.  The signature is computed as defined in the
 section 3.9.1.  Thus, the authentication method MUST be based in
 public key authentication.
 
-When server receives the SILC_PACKET_RESUME_CLIENT packet it MUST
+When server receive the SILC_PACKET_RESUME_CLIENT packet it MUST
 do the following:  Server checks that the Client ID is valid client
 and that it has the SILC_UMODE_DETACHED mode set.  Then it verifies
 the Authentication Payload with the detached client's public key.
@@ -2373,35 +2373,35 @@ server whom owned the detached client.
 
 The servers and routers that receives the SILC_PACKET_RESUME_CLIENT
 packet MUST know whether the packet already has been received for
-the client.  It is protocol error to attempt to resume the client
+the client.  It is a protocol error to attempt to resume the client
 session from more than one server.  The implementations could set
 internal flag that indicates that the client is resumed.  If router
 receive SILC_PACKET_RESUME_CLIENT packet for client that is already
 resumed the client MUST be killed from the network.  This would
 indicate that the client is attempting to resume the session more
-than once which is protocol error.  In this case the router sends
+than once which is a protocol error.  In this case the router sends
 SILC_NOTIFY_TYPE_KILLED to the client.  All routers that detect
 the same situation MUST also send the notify for the client.
 
 The servers and routers that receive the SILC_PACKET_RESUME_CLIENT
 must also understand that the client may not be found behind the
 same server that it originally came from.  They must update their
-caches according this.  The server that now owns the client session
+caches according to this.  The server that now owns the client session
 MUST check whether the Client ID of the resumed client is based
 on the server's Server ID.  If it is not it creates a new Client
 ID and send SILC_NOTIFY_TYPE_NICK_CHANGE to the network.  It MUST
-also send the channel keys of all channels that the client is
+also send the channel keys of all channels that the client has	
 joined to the client since it does not have them.  Whether the
 Client ID was changed or not the server MUST send SILC_PACKET_NEW_ID
-packet to the client.  Only after this the client is resumed back
+packet to the client.  Only after this is the client resumed back
 to the network and may start sending packets and messages.
 
 It is also possible that the server did not know about the global
-channels before the client resumed.  In this case it join the client
-to the channels, generate new channel keys and distribute the keys
+channels before the client resumed.  In this case it joins the client
+to the channels, generates new channel keys and distributes the keys
 to the channels as described in section 4.4.
 
-It is implementation issue for how long servers keep detached client
+It is an implementation issue for how long servers keep detached client
 sessions.  It is RECOMMENDED that the detached sessions would be
 persistent as long as the server is running.
 
@@ -2415,12 +2415,12 @@ such as keeping private keys truly private and using adequate lengths for
 symmetric and asymmetric keys must be followed in order to maintain the
 security of this protocol.
 
-Special attention must also be paid on the servers and routers that are
+Special attention must also be paid to the servers and routers that are
 running the SILC service.  The SILC protocol's security depends greatly
 on the security and the integrity of the servers and administrators that
 are running the service.  It is recommended that some form of registration
-is required by the server and router administrator prior acceptance to
-the SILC Network.  Even though, the SILC protocol is secure in a network
+is required by the server and router administrator prior to acceptance to
+the SILC Network.  Even though the SILC protocol is secure in a network
 of mutual distrust between clients, servers, routers and administrators
 of the servers, the client should be able to trust the servers they are
 using if they wish to do so.
@@ -2432,23 +2432,23 @@ either using SKE or some other key exchange protocol, or to use some
 other external means for distributing the keys.  This applies for all
 messages, private messages and channel messages.
 
-It is important to note that SILC, like any other security protocol is
-not full proof system; the SILC servers and routers could very well be
-compromised.  However, to provide acceptable level of security and
-usability for end user the protocol use many times session keys or other
-keys generated by the servers to secure the messages.  This is
-intentional design feature to allow ease of use for end user.  This way
+It is important to note that SILC, like any other security protocol, is
+not a foolproof system; the SILC servers and routers could very well be
+compromised.  However, to provide an acceptable level of security and
+usability for end users, the protocol uses many times session keys or 
+other keys generated by the servers to secure the messages.  This is an
+intentional design feature to allow ease of use for end users.  This way
 the network is still usable, and remains encrypted even if the external
 means of distributing the keys is not working.  The implementation,
 however, may like to not follow this design feature, and may always
-negotiate the keys outside SILC network.  This is acceptable solution and
-many times recommended.  The implementation still must be able to work
-with the server generated keys.
+negotiate the keys outside SILC network.  This is an acceptable solution 
+and many times recommended.  The implementation still must be able to
+work with the server generated keys.
 
 If this is unacceptable for the client or end user, the private keys
 negotiated outside the SILC Network should always be used.  In the end
-it is implementor's choice whether to negotiate private keys by default or
-whether to use the keys generated by the servers.
+it is the implementor's choice whether to negotiate private keys by 
+default or whether to use the keys generated by the servers.
 
 It is also recommended that router operators in the SILC Network would
 form a joint forum to discuss the router and SILC Network management
