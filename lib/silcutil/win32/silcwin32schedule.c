@@ -44,6 +44,8 @@
      url=/library/en-us/winui/hh/winui/messques_77zk.asp 
    o http://msdn.microsoft.com/library/default.asp?
      url=/library/en-us/winsock/hh/winsock/apistart_9g1e.asp
+   o http://msdn.microsoft.com/library/default.asp?
+     url=/library/en-us/dnmgmt/html/msdn_getpeek.asp
    o http://developer.novell.com/support/winsock/doc/toc.htm
 
 */
