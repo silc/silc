@@ -1,3 +1,12 @@
+Tue Jan 15 18:49:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_mp_sizeinbase to return the value correctly with
+	  MPI.  Affected file lib/silcmath/mp_mpi.c.
+
+	* Fixed the stop_server signal to correctly stop the scheduler
+	  and gracefully stop the server when SIGTERM or SIGINT signals
+	  are received.  Affected file silcd/silcd.c.
+
 Mon Jan  7 23:38:19 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Simple handling of TERM and HUP signals. Also added some log
