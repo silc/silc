@@ -1,3 +1,8 @@
+Sun Nov 30 19:47:02 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* Fixed signed channel messages across cells. Affected file
+	  silcd/packet_send.c
+
 Fri Nov 28 19:13:21 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the SILC_LOG_* macros to not be empty if SILC_DEBUG

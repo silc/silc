@@ -759,6 +759,7 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 {
   SilcUInt32 mac_len, iv_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+  SilcUInt16 totlen, len;
 
   /* If we are router and the packet came from router and private key
      has not been set for the channel then we must encrypt the packet
@@ -784,10 +785,24 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
       return FALSE;
     }
 
+    totlen = 2;
+    SILC_GET16_MSB(len, data + totlen);
+    totlen += 2 + len;
+    if (totlen + iv_len + mac_len + 2 > data_len) {
+      SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
+      return FALSE;
+    }
+    SILC_GET16_MSB(len, data + totlen);
+    totlen += 2 + len;
+    if (totlen + iv_len + mac_len > data_len) {
+      SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
+      return FALSE;
+    }
+
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
-    silc_message_payload_encrypt(data, data_len - iv_len - mac_len,
-                                 data_len - mac_len, iv, iv_len,
-                                 channel->channel_key, channel->hmac);
+    silc_message_payload_encrypt(data, totlen, data_len - mac_len, 
+                                 iv, iv_len, channel->channel_key, 
+				 channel->hmac);
   }
 
   return TRUE;
