@@ -1,10 +1,10 @@
 /*
 
-  client_internal.h 
+  client_internal.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2001, 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,14 +31,14 @@ typedef struct {
 
 /* Generic rekey context for connections */
 typedef struct {
-  /* Current sending encryption key, provided for re-key. The `pfs'   
+  /* Current sending encryption key, provided for re-key. The `pfs'
      is TRUE if the Perfect Forward Secrecy is performed in re-key. */
   unsigned char *send_enc_key;
   SilcUInt32 enc_key_len;
   int ske_group;
   bool pfs;
   SilcUInt32 timeout;
-  void *context;   
+  void *context;
 } *SilcClientRekey;
 
 /* Internal context for connection process. This is needed as we
@@ -54,7 +54,7 @@ typedef struct {
   void *context;
 } SilcClientInternalConnectContext;
 
-/* Structure to hold ping time information. Every PING command will 
+/* Structure to hold ping time information. Every PING command will
    add entry of this structure and is removed after reply to the ping
    as been received. */
 struct SilcClientPingStruct {
@@ -65,7 +65,7 @@ struct SilcClientPingStruct {
 
 /* Structure to hold away messages set by user. This is mainly created
    for future extensions where away messages could be set according filters
-   such as nickname and hostname. For now only one away message can 
+   such as nickname and hostname. For now only one away message can
    be set in one connection. */
 struct SilcClientAwayStruct {
   char *away;
@@ -161,7 +161,7 @@ typedef void (*SilcClientResumeSessionCallback)(SilcClient client,
 /* Macros */
 
 /* Registers generic task for file descriptor for reading from network and
-   writing to network. As being generic task the actual task is allocated 
+   writing to network. As being generic task the actual task is allocated
    only once and after that the same task applies to all registered fd's. */
 #define SILC_CLIENT_REGISTER_CONNECTION_FOR_IO(fd)	\
 do {							\
@@ -176,7 +176,7 @@ do {							\
 do {									\
   silc_schedule_set_listen_fd((s), (fd), SILC_TASK_READ, FALSE);	\
 } while(0)
-     
+
 #define SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(s, fd)			\
 do {									\
   silc_schedule_set_listen_fd((s), (fd), (SILC_TASK_READ |		\
@@ -243,18 +243,18 @@ void silc_client_receive_new_id(SilcClient client,
 				SilcIDPayload idp);
 void silc_client_save_channel_key(SilcClient client,
 				  SilcClientConnection conn,
-				  SilcBuffer key_payload, 
+				  SilcBuffer key_payload,
 				  SilcChannelEntry channel);
 void silc_client_receive_channel_key(SilcClient client,
 				     SilcSocketConnection sock,
 				     SilcBuffer packet);
-void silc_client_channel_message(SilcClient client, 
-				 SilcSocketConnection sock, 
+void silc_client_channel_message(SilcClient client,
+				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
 void silc_client_remove_from_channels(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry);
-void silc_client_replace_from_channels(SilcClient client, 
+void silc_client_replace_from_channels(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry old,
 				       SilcClientEntry newclient);
@@ -267,8 +267,8 @@ void silc_client_key_agreement(SilcClient client,
 void silc_client_notify_by_server(SilcClient client,
 				  SilcSocketConnection sock,
 				  SilcPacketContext *packet);
-void silc_client_private_message(SilcClient client, 
-				 SilcSocketConnection sock, 
+void silc_client_private_message(SilcClient client,
+				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
 void silc_client_connection_auth_request(SilcClient client,
 					 SilcSocketConnection sock,
@@ -289,6 +289,8 @@ void silc_client_resume_session(SilcClient client,
 SilcBuffer silc_client_attributes_process(SilcClient client,
 					  SilcSocketConnection sock,
 					  SilcDList attrs);
+void silc_client_packet_queue_purge(SilcClient client,
+				    SilcSocketConnection sock);
 SILC_TASK_CALLBACK_GLOBAL(silc_client_rekey_callback);
 
 #endif
