@@ -106,10 +106,16 @@ size_t silc_mp_size(SilcMPInt *mp);
  *
  * DESCRIPTION
  *
- *    Return the size of the integer in base `base'. Note that this size
- *    is probably only an approximation.  However, it is guaranteed that
- *    the returned size is always at least the size of the integer, however,
- *    it may be larger.
+ *    Return the size of the integer in base `base'.
+ *
+ * NOTES
+ *
+ *    For any other base but 2 this function usually returns only an
+ *    approximated size in the base.  It is however guaranteed that the
+ *    the returned size is always at least the size of the integer or
+ *    larger.
+ *
+ *    For base 2 this returns the exact bit-size of the integer.
  *
  ***/
 size_t silc_mp_sizeinbase(SilcMPInt *mp, int base);
@@ -167,6 +173,11 @@ void silc_mp_set_si(SilcMPInt *dst, SilcInt32 si);
  *    Set `dst' integer from string `str' of base `base'. The `dst' must
  *    already be initialized.
  *
+ * NOTES
+ *
+ *    For base 2 the string must be in ASCII bit presentation, not in
+ *    binary.  Use the silc_mp_bin2mp to decode binary into integer.
+ *
  ***/
 void silc_mp_set_str(SilcMPInt *dst, const char *str, int base);
 
@@ -194,6 +205,11 @@ SilcUInt32 silc_mp_get_ui(SilcMPInt *mp);
  *    Converts integer `mp' into a string of base `base'. The `str'
  *    must already have space allocated. The function returns the same
  *    as `str' or NULL on error.
+ *
+ * NOTES
+ *
+ *    For base 2 the returned string is in ASCII bit presentation, not
+ *    in binary.  Use the silc_mp_mp2bin to encode integer into binary.
  *
  ***/
 char *silc_mp_get_str(char *str, SilcMPInt *mp, int base);
