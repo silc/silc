@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/04 08:28:03  priikone
+ * 	Added INVITE, PING and NAMES command.
+ *
  * Revision 1.3  2000/07/03 05:49:49  priikone
  * 	Implemented LEAVE command.  Minor bug fixes.
  *
@@ -44,7 +47,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(nick, NICK, "NICK", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(list, LIST, "LIST", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(topic, TOPIC, "TOPIC", SILC_CF_LAG | SILC_CF_REG, 2),
-  SILC_CLIENT_CMD(invite, INVITE, "INVITE", SILC_CF_LAG | SILC_CF_REG, 2),
+  SILC_CLIENT_CMD(invite, INVITE, "INVITE", SILC_CF_LAG | SILC_CF_REG, 3),
   SILC_CLIENT_CMD(quit, QUIT, "QUIT", SILC_CF_LAG | SILC_CF_REG, 1),
   SILC_CLIENT_CMD(kill, KILL, "KILL", 
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
@@ -322,8 +325,81 @@ SILC_CLIENT_CMD_FUNC(topic)
 {
 }
 
+/* Command INVITE. Invites specific client to join a channel. */
+
 SILC_CLIENT_CMD_FUNC(invite)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientWindow win = NULL;
+  SilcBuffer buffer;
+  SilcIDCache *id_cache;
+  unsigned char *client_id, *channel_id;
+
+#define CIDC(x) win->client_id_cache[(x) - 32], \
+                win->client_id_cache_count[(x) - 32]
+#define CHIDC(x) win->channel_id_cache[(x) - 32], \
+                 win->channel_id_cache_count[(x) - 32]
+
+  if (cmd->argc != 3) {
+    silc_say(cmd->client, "Usage: /INVITE <nickname>[@<server>] <channel>");
+    goto out;
+  }
+
+  if (!cmd->client->current_win->sock) {
+    SILC_NOT_CONNECTED(cmd->client);
+    goto out;
+  }
+
+  win = (SilcClientWindow)cmd->sock->user_data;
+
+  /* Get client ID of the client to be invited. If we don't have it
+     we will request it and cache it. This same command will be called
+     again after we have received the reply (ie. pending). */
+  if (!silc_idcache_find_by_data(CIDC(cmd->argv[1][0]), cmd->argv[1], 
+				&id_cache)) {
+    SilcClientCommandContext ctx;
+    char ident[512];
+
+    ctx = silc_calloc(1, sizeof(*ctx));
+    ctx->client = cmd->client;
+    ctx->sock = cmd->sock;
+    memset(ident, 0, sizeof(ident));
+    snprintf(ident, sizeof(ident), "/IDENTIFY %s", cmd->argv[1]);
+    silc_client_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
+				   &ctx->argv_types, &ctx->argc, 2);
+    silc_client_command_identify(ctx);
+    silc_client_command_pending(SILC_COMMAND_IDENTIFY, 
+				silc_client_command_invite, context);
+    return;
+  }
+
+  client_id = silc_id_id2str(id_cache->id, SILC_ID_CLIENT);
+
+  /* Get Channel ID of the channel. */
+  if (!silc_idcache_find_by_data(CHIDC(cmd->argv[2][0]), cmd->argv[2],
+				 &id_cache)) {
+    silc_say(cmd->client, "You are not on that channel");
+    silc_free(client_id);
+    goto out;
+  }
+
+  channel_id = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
+
+  buffer = silc_command_encode_payload_va(SILC_COMMAND_INVITE, 2,
+					  client_id, SILC_ID_CLIENT_LEN,
+					  channel_id, SILC_ID_CHANNEL_LEN);
+  silc_client_packet_send(cmd->client, cmd->sock,
+			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
+			  buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  silc_say(cmd->client, "Inviting %s to channel %s", cmd->argv[1], 
+	   cmd->argv[2]);
+
+ out:
+  silc_client_command_free(cmd);
+#undef CIDC
+#undef CHIDC
 }
 
 /* Command QUIT. Closes connection with current server. */
@@ -370,8 +446,60 @@ SILC_CLIENT_CMD_FUNC(connect)
 {
 }
 
+/* Command PING. Sends ping to server. This is used to test the 
+   communication channel. */
+
 SILC_CLIENT_CMD_FUNC(ping)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientWindow win = NULL;
+  SilcBuffer buffer;
+  void *id;
+  int i;
+  char *name = NULL;
+
+  if (!cmd->sock) {
+    SILC_NOT_CONNECTED(cmd->client);
+    goto out;
+  }
+
+  win = (SilcClientWindow)cmd->sock->user_data;
+
+  if (cmd->argc == 1 || !strcmp(cmd->argv[1], win->remote_host))
+    name = strdup(win->remote_host);
+
+  id = silc_id_str2id(win->remote_id_data, SILC_ID_SERVER);
+
+  /* Send the command */
+  buffer = silc_command_encode_payload_va(SILC_COMMAND_PING, 1, 
+					  win->remote_id_data, 
+					  SILC_ID_SERVER_LEN);
+  silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
+			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
+			  buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Start counting time */
+  for (i = 0; i < win->ping_count; i++) {
+    if (win->ping[i].dest_id == NULL) {
+      win->ping[i].start_time = time(NULL);
+      win->ping[i].dest_id = id;
+      win->ping[i].dest_name = name;
+      win->ping_count++;
+      break;
+    }
+  }
+  if (i >= win->ping_count) {
+    i = win->ping_count;
+    win->ping = silc_realloc(win->ping, sizeof(*win->ping) * (i + 1));
+    win->ping[i].start_time = time(NULL);
+    win->ping[i].dest_id = id;
+    win->ping[i].dest_name = name;
+    win->ping_count++;
+  }
+  
+ out:
+  silc_client_command_free(cmd);
 }
 
 SILC_CLIENT_CMD_FUNC(oper)
@@ -505,15 +633,15 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   win = (SilcClientWindow)cmd->sock->user_data;
 
-  if (!win->current_channel) {
-    silc_say(cmd->client, "You are not on that channel", name);
-    goto out;
-  }
-
   if (cmd->argv[1][0] == '*')
     name = win->current_channel->channel_name;
   else
     name = cmd->argv[1];
+
+  if (!win->current_channel) {
+    silc_say(cmd->client, "You are not on that channel", name);
+    goto out;
+  }
 
   /* Get the Channel ID of the channel */
   silc_idcache_find_by_data(CIDC(name[0]), CIDCC(name[0]), name, &id_cache);
@@ -544,6 +672,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   silc_cipher_free(win->current_channel->channel_key);
   silc_free(win->current_channel);
   win->current_channel = NULL;
+  silc_free(id_string);
 
  out:
   silc_client_command_free(cmd);
@@ -551,8 +680,60 @@ SILC_CLIENT_CMD_FUNC(leave)
 #undef CIDCC
 }
 
+/* Command NAMES. Requests the names of the clients joined on requested
+   channel. */
+
 SILC_CLIENT_CMD_FUNC(names)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientWindow win = NULL;
+  SilcIDCache *id_cache = NULL;
+  SilcBuffer buffer;
+  char *name;
+  unsigned char *id_string;
+
+#define CIDC(x) win->channel_id_cache[(x) - 32]
+#define CIDCC(x) win->channel_id_cache_count[(x) - 32]
+
+  if (cmd->argc != 2) {
+    silc_say(cmd->client, "Usage: /NAMES <channel>");
+    goto out;
+  }
+
+  if (!cmd->client->current_win->sock) {
+    SILC_NOT_CONNECTED(cmd->client);
+    goto out;
+  }
+
+  win = (SilcClientWindow)cmd->sock->user_data;
+
+  if (cmd->argv[1][0] == '*')
+    name = win->current_channel->channel_name;
+  else
+    name = cmd->argv[1];
+
+  /* Get the Channel ID of the channel */
+  silc_idcache_find_by_data(CIDC(name[0]), CIDCC(name[0]), name, &id_cache);
+  if (!id_cache) {
+    /* XXX should resolve the channel ID; LIST command */
+    silc_say(cmd->client, "You are not on that channel", name);
+    goto out;
+  }
+
+  /* Send NAMES command to the server */
+  id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
+  buffer = silc_command_encode_payload_va(SILC_COMMAND_NAMES, 1, 
+					  id_string, SILC_ID_CHANNEL_LEN);
+  silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
+			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
+			  buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_free(id_string);
+
+ out:
+  silc_client_command_free(cmd);
+#undef CIDC
+#undef CIDCC
 }
 
 /*
@@ -592,9 +773,10 @@ SILC_CLIENT_CMD_FUNC(msg)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientWindow win = NULL;
   SilcClient client = cmd->client;
-  SilcBuffer buffer;
   SilcIDCache *id_cache;
-  unsigned int nick_len;
+
+#define CIDC(x) win->client_id_cache[(x) - 32], \
+                win->client_id_cache_count[(x) - 32]
 
   if (cmd->argc < 3) {
     silc_say(cmd->client, "Usage: /MSG <nickname> <message>");
@@ -607,9 +789,6 @@ SILC_CLIENT_CMD_FUNC(msg)
   }
 
   win = (SilcClientWindow)cmd->sock->user_data;
-
-#define CIDC(x) win->client_id_cache[(x) - 32], \
-                win->client_id_cache_count[(x) - 32]
 
   /* Find ID from cache */
   if (silc_idcache_find_by_data(CIDC(cmd->argv[1][0]), cmd->argv[1], 
