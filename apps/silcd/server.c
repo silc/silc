@@ -180,6 +180,7 @@ void silc_server_free(SilcServer server)
   silc_idcache_free(server->global_list->servers);
   silc_idcache_free(server->global_list->channels);
   silc_hash_table_free(server->watcher_list);
+  silc_hash_table_free(server->watcher_list_pk);
 
   silc_hash_free(server->md5hash);
   silc_hash_free(server->sha1hash);
@@ -353,12 +354,18 @@ bool silc_server_init(SilcServer server)
   server->global_list->servers = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
   server->global_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
 
-  /* Init watcher list */
+  /* Init watcher lists */
   server->watcher_list =
     silc_hash_table_alloc(1, silc_hash_client_id_hash, NULL,
 			  silc_hash_data_compare, (void *)CLIENTID_HASH_LEN,
 			  NULL, NULL, TRUE);
   if (!server->watcher_list)
+    goto err;
+  server->watcher_list_pk =
+    silc_hash_table_alloc(1, silc_hash_public_key, NULL,
+			  silc_hash_public_key_compare, NULL,
+			  NULL, NULL, TRUE);
+  if (!server->watcher_list_pk)
     goto err;
 
   /* Init public key list */

@@ -1704,9 +1704,9 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
   }
 }
 
-/* This function checks whether the `client' nickname is being watched
-   by someone, and notifies the watcher of the notify change of notify
-   type indicated by `notify'. */
+/* This function checks whether the `client' nickname and/or 'client' 
+   public key is being watched by someone, and notifies the watcher of the 
+   notify change of notify type indicated by `notify'. */
 
 bool silc_server_check_watcher_list(SilcServer server,
 				    SilcClientEntry client,
@@ -1739,9 +1739,16 @@ bool silc_server_check_watcher_list(SilcServer server,
   n.new_nick = new_nick;
   n.notify = notify;
 
-  /* Send notify to all watchers */
+  /* Send notify to all watchers watching this nickname */
   silc_hash_table_find_foreach(server->watcher_list, hash,
 			       silc_server_check_watcher_list_foreach, &n);
+
+  /* Send notify to all watchers watching this public key */
+  if (client->data.public_key)
+    silc_hash_table_find_foreach(server->watcher_list_pk,
+				 client->data.public_key,
+			         silc_server_check_watcher_list_foreach, 
+				 &n);
 
   return TRUE;
 }

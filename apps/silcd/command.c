@@ -4007,9 +4007,9 @@ SILC_SERVER_CMD_FUNC(watch)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   char *add_nick, *del_nick;
-  SilcUInt32 add_nick_len, del_nick_len, tmp_len;
+  SilcUInt32 add_nick_len, del_nick_len, tmp_len, pk_len;
   char nick[128 + 1];
-  unsigned char hash[16], *tmp;
+  unsigned char hash[16], *tmp,  *pk;
   SilcClientEntry client;
   SilcClientID *client_id = NULL;
 
@@ -4081,10 +4081,13 @@ SILC_SERVER_CMD_FUNC(watch)
     goto out;
   }
 
+  /* Take public key for watching by public key */
+  pk = silc_argument_get_arg_type(cmd->args, 3, &pk_len);
+
   /* Take nickname */
   add_nick = silc_argument_get_arg_type(cmd->args, 2, &add_nick_len);
   del_nick = silc_argument_get_arg_type(cmd->args, 3, &del_nick_len);
-  if (!add_nick && !del_nick) {
+  if (!add_nick && !del_nick && !pk) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
 					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
 					  0);
@@ -4160,6 +4163,92 @@ SILC_SERVER_CMD_FUNC(watch)
        then free the key to not leak memory. */
     if (!silc_hash_table_find(server->watcher_list, hash, NULL, NULL))
       silc_free(tmp);
+  }
+
+  /* Add/del public key */
+  if (pk) {
+    SilcUInt16 pkargc;
+    SilcArgumentPayload pkargs;
+    SilcUInt32 type;
+    SilcPublicKey public_key, pkkey;
+
+    if (pk_len < 2) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					    0);
+      goto out;
+    }
+
+    /* Get the argument from the Argument List Payload */
+    SILC_GET16_MSB(pkargc, pk);
+    pkargs = silc_argument_payload_parse(pk + 2, pk_len - 2, pkargc);
+    if (!pkargs) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					    0);
+      goto out;
+    }
+   
+    pk = silc_argument_get_next_arg(pkargs, &type, &pk_len);
+    while (pk) {
+      if (!silc_pkcs_public_key_payload_decode(pk, pk_len, &public_key))
+	continue;
+      if (type == 0x03)
+        type = 0x00;
+
+      if (type == 0x00) {
+	/* Add public key to watch list */
+
+	/* Check whether this client is already watching this public key */
+ 	if (silc_hash_table_find_by_context(server->watcher_list_pk,
+					    public_key, client, NULL)) {
+	  silc_pkcs_public_key_free(public_key);
+	  silc_server_command_send_status_reply(
+				cmd, SILC_COMMAND_WATCH,
+				SILC_STATUS_ERR_NICKNAME_IN_USE, 0);
+	  goto out;
+	}
+
+	/* Get the public key from the watcher list and use the same key in
+	   new entries as well.  If key doesn't exist then create it. */
+	pkkey = NULL;
+	if (!silc_hash_table_find(server->watcher_list_pk, public_key,
+				  (void *)&pkkey, NULL))
+	  pkkey = public_key;
+	else
+	  silc_pkcs_public_key_free(public_key);
+
+	/* Add the client to the watcher list with the specified public
+	   key. */
+	silc_hash_table_add(server->watcher_list, public_key, client);
+
+      } else if (type == 0x01) {
+	/* Delete public key from watch list */
+
+	/* Check that this client is watching this public key */
+ 	if (silc_hash_table_find_by_context(server->watcher_list_pk,
+					    public_key, client,
+					    (void *)&pkkey)) {
+	  silc_pkcs_public_key_free(public_key);
+	  silc_server_command_send_status_reply(
+				cmd, SILC_COMMAND_WATCH,
+				SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
+	  goto out;
+	}
+
+	/* Delete the public key from the watcher list. */
+	silc_hash_table_del_by_context(server->watcher_list_pk,
+				       public_key, client);
+
+	/* Now check whether there still exists entries with this key, if 
+	   not then free the key to not leak memory. */
+	if (!silc_hash_table_find(server->watcher_list, hash, NULL, NULL))
+	  silc_pkcs_public_key_free(pkkey);
+        silc_pkcs_public_key_free(public_key);
+      }
+
+      pk = silc_argument_get_next_arg(pkargs, &type, &pk_len);
+    }
   }
 
   /* Distribute the watch list to backup routers too */

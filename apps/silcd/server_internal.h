@@ -111,6 +111,7 @@ struct SilcServerStruct {
   SilcIDList local_list;
   SilcIDList global_list;
   SilcHashTable watcher_list;
+  SilcHashTable watcher_list_pk;
 
   /* Table of connected sockets */
   SilcSocketConnection *sockets;
