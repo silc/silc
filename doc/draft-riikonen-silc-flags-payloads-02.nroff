@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 6 December 2002
+.ds RH 7 December 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-flags-payloads-02.txt                     6 December 2003
-Expires: 6 May 2003
+draft-riikonen-flags-payloads-02.txt                     7 December 2003
+Expires: 7 May 2003
 
 .in 3
 
@@ -268,7 +268,7 @@ hash function to be used is defined in the key type specific
 definitions.  See the key type specific references in [SILC3].
 
 If the public key of the sender is included in the payload the
-recipient SHOULD verify before accepting the public key.  Recipient
+recipient SHOULD verify it before accepting the public key.  Recipient
 SHOULD verify the signature before accepting a public key.  With
 certificates the certificate verification may be done before
 verifying the signature.  If the signature verification fails the
@@ -283,8 +283,8 @@ the public key type.
 
 Implementations that do not support this flag can still process the
 message payload in normal manner.  These implementations merely parse
-the decrypted payload in normal manner and ignore rest of the data
-in the payload.
+the decrypted payload in normal manner and ignore the extra data in
+the payload.
 
 This flag MAY be masked with any other Message Flag including those that
 define additional payloads.  As long as the defined payload resides in
@@ -418,4 +418,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 6 May 2003
+This Internet-Draft expires 7 May 2003
