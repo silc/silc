@@ -1442,14 +1442,14 @@ void silc_server_notify(SilcServer server,
     /* Update statistics */
     if (server->server_type == SILC_ROUTER) {
       if (mode & SILC_UMODE_GONE) {
-	if (!client->mode & SILC_UMODE_GONE)
+	if (!(client->mode & SILC_UMODE_GONE))
 	  server->stat.aways++;
       } else {
 	if (client->mode & SILC_UMODE_GONE)
 	  server->stat.aways--;
       }
       if (mode & SILC_UMODE_DETACHED) {
-	if (!client->mode & SILC_UMODE_DETACHED)
+	if (!(client->mode & SILC_UMODE_DETACHED))
 	  server->stat.detached++;
       } else {
 	if (client->mode & SILC_UMODE_DETACHED)
@@ -3369,6 +3369,7 @@ void silc_server_resume_client(SilcServer server,
     detached_client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
     detached_client->mode &= ~SILC_UMODE_DETACHED;
+    server->stat.my_detached--;
 
     /* Send the RESUME_CLIENT packet to our primary router so that others
        know this client isn't detached anymore. */

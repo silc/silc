@@ -3868,18 +3868,11 @@ SILC_SERVER_CMD_FUNC(umode)
 
     /* Update statistics */
     if (mask & SILC_UMODE_GONE) {
-      if (!client->mode & SILC_UMODE_GONE)
+      if (!(client->mode & SILC_UMODE_GONE))
 	server->stat.my_aways++;
     } else {
       if (client->mode & SILC_UMODE_GONE)
 	server->stat.my_aways--;
-    }
-    if (mask & SILC_UMODE_DETACHED) {
-      if (!client->mode & SILC_UMODE_DETACHED)
-	server->stat.my_detached++;
-    } else {
-      if (client->mode & SILC_UMODE_DETACHED)
-	server->stat.my_detached--;
     }
 
     /* Change the mode */
@@ -4982,6 +4975,7 @@ SILC_SERVER_CMD_FUNC(detach)
     silc_server_send_notify_umode(server, server->router->connection,
 				  server->server_type == SILC_SERVER ?
 				  FALSE : TRUE, client->id, client->mode);
+  server->stat.my_detached++;
 
   /* Check if anyone is watching this nickname */
   if (server->server_type == SILC_ROUTER)
