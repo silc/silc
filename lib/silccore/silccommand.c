@@ -64,12 +64,13 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
 			     SILC_STR_UI_SHORT(&newp->ident),
 			     SILC_STR_END);
   if (ret == -1) {
+    SILC_LOG_ERROR(("Incorrect command payload in packet"));
     silc_free(newp);
     return NULL;
   }
 
   if (p_len != buffer.len) {
-    SILC_LOG_ERROR(("Incorrect command payload in packet, packet dropped"));
+    SILC_LOG_ERROR(("Incorrect command payload in packet"));
     silc_free(newp);
     return NULL;
   }
