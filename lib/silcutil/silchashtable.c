@@ -215,7 +215,7 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 				  void *foreach_user_context)
 {
   SilcHashTableEntry *entry, *tmp;
-  bool auto_rehash;
+  bool auto_rehash, found = FALSE;
   SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
@@ -231,6 +231,7 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
       if (compare((*entry)->key, key, compare_user_context)) {
 	tmp = &(*entry)->next;
 	foreach((*entry)->key, (*entry)->context, foreach_user_context);
+	found = TRUE;
 	entry = tmp;
 	continue;
       }
@@ -241,12 +242,17 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
       if ((*entry)->key == key) {
 	tmp = &(*entry)->next;
 	foreach((*entry)->key, (*entry)->context, foreach_user_context);
+	found = TRUE;
 	entry = tmp;
 	continue;
       }
       entry = &(*entry)->next;
     }
   }
+
+  /* If nothing was found call with NULL context the callback */
+  if (!found)
+    foreach(key, NULL, foreach_user_context);
 
   ht->auto_rehash = auto_rehash;
 }

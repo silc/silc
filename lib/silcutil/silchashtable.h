@@ -358,7 +358,9 @@ bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
  *    As the hash table is collision resistant it is possible to save duplicate
  *    keys to the hash table. This function can be used to find all keys
  *    and contexts from the hash table that are found using the `key'. The
- *    `foreach' is called for every found key.
+ *    `foreach' is called for every found key. If no entries can be found
+ *    the `foreach' will be called once with the context set NULL and
+ *    `key' and `user_context' sent to the function.
  *
  * NOTES
  *
@@ -630,7 +632,9 @@ bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
  *    As the hash table is collision resistant it is possible to save duplicate
  *    keys to the hash table. This function can be used to find all keys
  *    and contexts from the hash table that are found using the `key'. The
- *    `foreach' is called for every found key.
+ *    `foreach' is called for every found key. If no entries can be found
+ *    the `foreach' will be called once with the context set NULL and
+ *    `key' and `user_context' sent to the function.
  *
  *    The `hash' and `hash_user_context' are application specified hash
  *    function. If not provided the hash table's default is used.
