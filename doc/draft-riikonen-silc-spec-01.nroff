@@ -2621,8 +2621,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_BAD_CLIENT_ID
             SILC_STATUS_ERR_NOT_YOU
+            SILC_STATUS_ERR_PERM_DENIED
             SILC_STATUS_ERR_UNKNOWN_MODE
-            SILC_STATUS_ERR_NO_RECIPIENT
             SILC_STATUS_ERR_NO_CLIENT_ID
 
 
@@ -2830,7 +2830,6 @@ List of all defined commands in SILC follows.
         all clients on the channel by sending SILC_NOTIFY_TYPE_CMODE_CHANGE
         notify type.
 
-
         Reply messages to the command:
 
         Max Arguments:  2
@@ -2893,7 +2892,6 @@ List of all defined commands in SILC follows.
               Sets channel operator privileges on the channel for a
               client on the channel.  Channel founder and channel operator
               may set/unset (promote/demote) this mode.
-
 
         Reply messages to the command:
 
@@ -3340,8 +3338,8 @@ List of all defined command status messages following.
 
    31   SILC_STATUS_ERR_PERM_DENIED
 
-        "Your host is not among the privileged".  The client tried to
-        register on server that does not allow this host to connect.
+        "Permission denied".  Generic permission denied error status
+        to indicate disallowed access.
 
    32   SILC_STATUS_ERR_BANNED_FROM_SERVER
 

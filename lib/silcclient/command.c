@@ -928,11 +928,91 @@ SILC_CLIENT_CMD_FUNC(motd)
   silc_client_command_free(cmd);
 }
 
-/* UMODE. Set user mode in SILC. */
+/* UMODE. Set/unset user mode in SILC. This is used mainly to unset the
+   modes as client cannot set itself server/router operator privileges. */
 
 SILC_CLIENT_CMD_FUNC(umode)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer, idp;
+  unsigned char *cp, modebuf[4];
+  unsigned int mode, add, len;
+  int i;
 
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    cmd->client->ops->say(cmd->client, conn, 
+	       	  "Usage: /UMODE +|-<modes>");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  mode = conn->local_entry->mode;
+
+  /* Are we adding or removing mode */
+  if (cmd->argv[1][0] == '-')
+    add = FALSE;
+  else
+    add = TRUE;
+
+  /* Parse mode */
+  cp = cmd->argv[1] + 1;
+  len = strlen(cp);
+  for (i = 0; i < len; i++) {
+    switch(cp[i]) {
+    case 'a':
+      if (add) {
+	mode = 0;
+	mode |= SILC_UMODE_SERVER_OPERATOR;
+	mode |= SILC_UMODE_ROUTER_OPERATOR;
+      } else {
+	mode = SILC_UMODE_NONE;
+      }
+      break;
+    case 's':
+      if (add)
+	mode |= SILC_UMODE_SERVER_OPERATOR;
+      else
+	mode &= ~SILC_UMODE_SERVER_OPERATOR;
+      break;
+    case 'r':
+      if (add)
+	mode |= SILC_UMODE_ROUTER_OPERATOR;
+      else
+	mode &= ~SILC_UMODE_ROUTER_OPERATOR;
+      break;
+    default:
+      COMMAND_ERROR;
+      goto out;
+      break;
+    }
+  }
+
+  idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
+  SILC_PUT32_MSB(mode, modebuf);
+
+  /* Send the command packet. We support sending only one mode at once
+     that requires an argument. */
+  buffer = 
+    silc_command_payload_encode_va(SILC_COMMAND_UMODE, ++conn->cmd_ident, 2, 
+				   1, idp->data, idp->len, 
+				   2, modebuf, sizeof(modebuf));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_buffer_free(idp);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 /* CMODE command. Sets channel mode. Modes that does not require any arguments

@@ -90,7 +90,7 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
   { STAT(NOT_REGISTERED),    "You have not registered" },
   { STAT(NOT_ENOUGH_PARAMS), "Not enough parameters" },
   { STAT(TOO_MANY_PARAMS),   "Too many parameters" },
-  { STAT(PERM_DENIED),       "Your host is not among the privileged" },
+  { STAT(PERM_DENIED),       "Permission denied" },
   { STAT(BANNED_FROM_SERVER),"You are banned from this server" },
   { STAT(BAD_PASSWORD),      "Cannot join channel. Incorrect password" },
   { STAT(CHANNEL_IS_FULL),   "Cannot join channel. Channel is full" },
@@ -696,10 +696,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(kill)
   COMMAND_REPLY((ARGS));
 
   /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CLOSE);
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_KILL);
 
  out:
-  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_CLOSE);
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_KILL);
   silc_client_command_reply_free(cmd);
 }
 
@@ -1059,8 +1059,43 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
   silc_client_command_reply_free(cmd);
 }
 
+/* Received reply tot he UMODE command. Save the current user mode */
+
 SILC_CLIENT_CMD_REPLY_FUNC(umode)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+  unsigned int mode;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
+  if (!tmp) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  SILC_GET32_MSB(mode, tmp);
+  conn->local_entry->mode = mode;
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS, mode));
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_UMODE);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_UMODE);
+  silc_client_command_reply_free(cmd);
 }
 
 /* Received reply for CMODE command. */

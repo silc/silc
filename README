@@ -118,6 +118,8 @@ Following commands has been, at least partly, implemented:
 				Set/unset channel operator.  Requires that 
 				you are channel operator or channel founder.
 
+	/UMODE	+|-<modes>
+
 	/MSG    <nickname> <message>
 
 		Sends private message to remote client.  Support for

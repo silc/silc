@@ -114,6 +114,20 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     snprintf(message, sizeof(message), "%s (%s) has joined channel %s", 
 	     client_entry->nickname, client_entry->username, 
 	     channel_entry->channel_name);
+    if (client_entry == conn->local_entry) {
+      SilcChannelUser chu;
+
+      silc_list_start(channel_entry->clients);
+      while ((chu = silc_list_get(channel_entry->clients)) != SILC_LIST_END) {
+	if (chu->client == client_entry) {
+	  if (app->screen->bottom_line->mode)
+	    silc_free(app->screen->bottom_line->mode);
+	  app->screen->bottom_line->mode = silc_client_chumode_char(chu->mode);
+	  silc_screen_print_bottom_line(app->screen, 0);
+	  break;
+	}
+      }
+    }
     break;
 
   case SILC_NOTIFY_TYPE_LEAVE:
@@ -547,6 +561,56 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
       break;
 
+    case SILC_COMMAND_UMODE:
+      {
+	unsigned int mode;
+
+	if (!success)
+	  return;
+
+	mode = va_arg(vp, unsigned int);
+
+	if (!mode && app->screen->bottom_line->umode) {
+	  silc_free(app->screen->bottom_line->umode);
+	  app->screen->bottom_line->umode = NULL;
+	}
+
+	if (mode & SILC_UMODE_SERVER_OPERATOR) {
+	  if (app->screen->bottom_line->umode)
+	    silc_free(app->screen->bottom_line->umode);
+	  app->screen->bottom_line->umode = strdup("Server Operator");;
+	}
+
+	if (mode & SILC_UMODE_ROUTER_OPERATOR) {
+	  if (app->screen->bottom_line->umode)
+	    silc_free(app->screen->bottom_line->umode);
+	  app->screen->bottom_line->umode = strdup("SILC Operator");;
+	}
+
+	silc_screen_print_bottom_line(app->screen, 0);
+      }
+      break;
+
+    case SILC_COMMAND_OPER:
+      if (status == SILC_STATUS_OK) {
+	conn->local_entry->mode |= SILC_UMODE_SERVER_OPERATOR;
+	if (app->screen->bottom_line->umode)
+	  silc_free(app->screen->bottom_line->umode);
+	app->screen->bottom_line->umode = strdup("Server Operator");;
+	silc_screen_print_bottom_line(app->screen, 0);
+      }
+      break;
+
+    case SILC_COMMAND_SILCOPER:
+      if (status == SILC_STATUS_OK) {
+	conn->local_entry->mode |= SILC_UMODE_ROUTER_OPERATOR;
+	if (app->screen->bottom_line->umode)
+	  silc_free(app->screen->bottom_line->umode);
+	app->screen->bottom_line->umode = strdup("SILC Operator");;
+	silc_screen_print_bottom_line(app->screen, 0);
+      }
+      break;
+
     case SILC_COMMAND_USERS:
       if (!success)
 	return;
@@ -557,8 +621,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	if (chu->client == conn->local_entry) {
 	  if (app->screen->bottom_line->mode)
 	    silc_free(app->screen->bottom_line->mode);
-	  app->screen->bottom_line->mode = 
-	    silc_client_chumode_char(chu->mode);
+	  app->screen->bottom_line->mode = silc_client_chumode_char(chu->mode);
 	  silc_screen_print_bottom_line(app->screen, 0);
 	  break;
 	}

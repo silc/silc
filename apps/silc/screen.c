@@ -215,6 +215,14 @@ void silc_screen_print_bottom_line(SilcScreen screen, int win_index)
     strncat(buf, ")", 2);
   }
 
+  if (line->umode) {
+    len = strlen(line->umode);
+    strncat(buf, " [", 2);
+    strncat(buf, line->umode, len > SILC_SCREEN_MAX_UMODE_LEN ?
+	    SILC_SCREEN_MAX_UMODE_LEN : len);
+    strncat(buf, "]", 2);
+  }
+
   if (line->away)
     strncat(buf, " (away)", 8);
 

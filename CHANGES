@@ -1,3 +1,20 @@
+Mon Mar 19 18:43:06 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the mode printing on the user interface on joining.
+	  Affected file silc/client_ops.c.
+
+	* Implemented the UMODE command and user modes in general to the
+	  client library and to the user interface.
+
+	* Implemented the UMODE command to the server.
+
+	* The server now sends UNKNOWN_COMMAND error status if client sends
+	  unknown command.  Affected file silcd/command.c.
+
+	* All server commands now handle the command identifier the right
+	  way when sending the command reply to the client.  The client can
+	  use to identify the command replies with the identifier.
+
 Mon Mar 19 16:13:07 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_server_get_client_route to resolve the route to

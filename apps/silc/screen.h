@@ -27,6 +27,7 @@ typedef struct {
   char *connection;
   char *channel;
   char *channel_mode;
+  char *umode;
   int away;
 } *SilcScreenBottomLine;
 
@@ -76,6 +77,9 @@ typedef SilcScreenObject *SilcScreen;
 
 /* Maximum length of connection name that will be shown on the screen */
 #define SILC_SCREEN_MAX_CONN_LEN 20
+
+/* Maximum length of user mode that will be shown on the screen */
+#define SILC_SCREEN_MAX_UMODE_LEN 20
 
 /* Macros */
 

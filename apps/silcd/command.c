@@ -150,6 +150,7 @@ void silc_server_command_process(SilcServer server,
 {
   SilcServerCommandContext ctx;
   SilcServerCommand *cmd;
+  SilcCommand command;
 
   /* Allocate command context. This must be free'd by the
      command routine receiving it. */
@@ -169,14 +170,16 @@ void silc_server_command_process(SilcServer server,
     return;
   }
   ctx->args = silc_command_get_args(ctx->payload);
-  
+
   /* Get the command */
+  command = silc_command_get(ctx->payload);
   for (cmd = silc_command_list; cmd->cb; cmd++)
-    if (cmd->cmd == silc_command_get(ctx->payload))
+    if (cmd->cmd == command)
       break;
 
   if (cmd == NULL) {
-    SILC_LOG_ERROR(("Unknown command, packet dropped"));
+    silc_server_command_send_status_reply(ctx, command,
+					  SILC_STATUS_ERR_UNKNOWN_COMMAND);
     silc_server_command_free(ctx);
     return;
   }
@@ -351,7 +354,10 @@ silc_server_command_send_status_reply(SilcServerCommandContext cmd,
 
   SILC_LOG_DEBUG(("Sending command status %d", status));
 
-  buffer = silc_command_reply_payload_encode_va(command, status, 0, 0);
+  buffer = 
+    silc_command_reply_payload_encode_va(command, status, 
+					 silc_command_get_ident(cmd->payload),
+					 0);
   silc_server_packet_send(cmd->server, cmd->sock,
 			  SILC_PACKET_COMMAND_REPLY, 0, 
 			  buffer->data, buffer->len, FALSE);
@@ -373,8 +379,10 @@ silc_server_command_send_status_data(SilcServerCommandContext cmd,
 
   SILC_LOG_DEBUG(("Sending command status %d", status));
 
-  buffer = silc_command_reply_payload_encode_va(command, status, 0, 1,
-						arg_type, arg, arg_len);
+  buffer = 
+    silc_command_reply_payload_encode_va(command, status, 
+					 silc_command_get_ident(cmd->payload),
+					 1, arg_type, arg, arg_len);
   silc_server_packet_send(cmd->server, cmd->sock,
 			  SILC_PACKET_COMMAND_REPLY, 0, 
 			  buffer->data, buffer->len, FALSE);
@@ -1629,6 +1637,7 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcBuffer packet, nidp, oidp;
   SilcClientID *new_id;
   char *nick;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
@@ -1693,7 +1702,7 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Send the new Client ID as reply command back to client */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_NICK, 
-						SILC_STATUS_OK, 0, 1, 
+						SILC_STATUS_OK, ident, 1, 
 						2, nidp->data, nidp->len);
   silc_server_packet_send(cmd->server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			  0, packet->data, packet->len, FALSE);
@@ -1724,6 +1733,7 @@ SILC_SERVER_CMD_FUNC(topic)
   SilcBuffer packet, idp;
   unsigned char *tmp;
   unsigned int argc, tmp_len;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_TOPIC, cmd, 1, 2);
 
@@ -1811,13 +1821,13 @@ SILC_SERVER_CMD_FUNC(topic)
   idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
   if (channel->topic)
     packet = silc_command_reply_payload_encode_va(SILC_COMMAND_TOPIC, 
-						  SILC_STATUS_OK, 0, 2, 
+						  SILC_STATUS_OK, ident, 2, 
 						  2, idp->data, idp->len,
 						  3, channel->topic, 
 						  strlen(channel->topic));
   else
     packet = silc_command_reply_payload_encode_va(SILC_COMMAND_TOPIC, 
-						  SILC_STATUS_OK, 0, 1, 
+						  SILC_STATUS_OK, ident, 1, 
 						  2, idp->data, idp->len);
   silc_server_packet_send(cmd->server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			  0, packet->data, packet->len, FALSE);
@@ -2631,8 +2641,70 @@ SILC_SERVER_CMD_FUNC(motd)
   silc_server_command_free(cmd);
 }
 
+/* Server side of command UMODE. Client can use this command to set/unset
+   user mode. Client actually cannot set itself to be as server/router
+   operator so this can be used only to unset the modes. */
+
 SILC_SERVER_CMD_FUNC(umode)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  SilcBuffer packet;
+  unsigned char *tmp_mask;
+  unsigned int mask;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
+
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_UMODE, cmd, 2, 2);
+
+  /* Get the client's mode mask */
+  tmp_mask = silc_argument_get_arg_type(cmd->args, 2, NULL);
+  if (!tmp_mask) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  SILC_GET32_MSB(mask, tmp_mask);
+
+  /* 
+   * Change the mode 
+   */
+
+  if (mask & SILC_UMODE_SERVER_OPERATOR) {
+    /* Cannot operator mode */
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					  SILC_STATUS_ERR_PERM_DENIED);
+    goto out;
+  } else {
+    if (client->mode & SILC_UMODE_SERVER_OPERATOR)
+      /* Remove the server operator rights */
+      client->mode &= ~SILC_UMODE_SERVER_OPERATOR;
+  }
+
+  if (mask & SILC_UMODE_ROUTER_OPERATOR) {
+    /* Cannot operator mode */
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					  SILC_STATUS_ERR_PERM_DENIED);
+    goto out;
+  } else {
+    if (client->mode & SILC_UMODE_ROUTER_OPERATOR)
+      /* Remove the router operator rights */
+      client->mode &= ~SILC_UMODE_ROUTER_OPERATOR;
+  }
+
+  /* Send command reply to sender */
+  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_UMODE,
+						SILC_STATUS_OK, ident, 1,
+						2, tmp_mask, 4);
+  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
+			  packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
+
+ out:
+  silc_server_command_free(cmd);
 }
 
 /* Checks that client has rights to add or remove channel modes. If any
@@ -2703,6 +2775,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask;
   unsigned int argc, mode_mask, tmp_len, tmp_len2;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -3055,7 +3128,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
-						SILC_STATUS_OK, 0, 1,
+						SILC_STATUS_OK, ident, 1,
 						2, tmp_mask, 4);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
@@ -3084,6 +3157,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   unsigned char *tmp_id, *tmp_ch_id, *tmp_mask;
   unsigned int target_mask, sender_mask, tmp_len, tmp_ch_len;
   int notify = FALSE;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CUMODE, cmd, 3, 3);
 
@@ -3249,7 +3323,7 @@ SILC_SERVER_CMD_FUNC(cumode)
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CUMODE,
-						SILC_STATUS_OK, 0, 2,
+						SILC_STATUS_OK, ident, 2,
 						2, tmp_mask, 4,
 						3, tmp_id, tmp_len);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
