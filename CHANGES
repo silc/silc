@@ -1,3 +1,9 @@
+Mon Oct 20 16:08:22 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added new SILC_MESSAGE_FLAG_ACK that can  be used to
+	  acknowledge recepetion of a message to the sender.  Updated
+	  protocol specs.
+
 Sat Oct 18 11:55:33 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Unregister channel key saving callback when deleting channel.

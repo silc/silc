@@ -1091,11 +1091,18 @@ o Message Flags (2 bytes) - Includes the Message Flags of the
           this flag SHOULD be used.  When this flag is used the
           text sent as message MUST be UTF-8 encoded.
 
-  0x0200 - 0x0800 RESERVED
+  0x0200  SILC_MESSAGE_FLAG_ACK
+
+          This flag indicates the sender requires the recpipient
+          to acknowledge the received message.  This same flag
+          is used in the acknowledgement.  A separate document
+          should define how the acknowledgement is performed.
+
+  0x0400 - 0x1000 RESERVED
 
           Reserved for future flags.
 
-  0x1000 - 0x8000 PRIVATE RANGE
+  0x2000 - 0x8000 PRIVATE RANGE
 
           Private range for free use.
 
