@@ -30,6 +30,9 @@ typedef struct SilcServerStruct *SilcServer;
 
 /* General definitions */
 
+/* SILC port */
+#define SILC_PORT 768;
+
 /* Server and router. Used internally by the code. */
 #define SILC_SERVER 0
 #define SILC_ROUTER 1

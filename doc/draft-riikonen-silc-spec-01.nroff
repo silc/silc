@@ -2855,12 +2855,11 @@ List of all defined commands in SILC follows.
 
    21   SILC_COMMAND_CLOSE
 
-        Max Arguments:  1
-            Arguments:  (1) <Server ID>
+        Max Arguments:  2
+            Arguments:  (1) <remote server/router>  (2) [<port>]
 
         This command is used only by operator to close connection to a
-        remote site.  The <Server ID> argument is the ID of the remote
-        site and must be valid.
+        remote site.
 
         Reply messages to the command:
 

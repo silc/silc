@@ -680,10 +680,6 @@ SILC_CLIENT_CMD_FUNC(ping)
   silc_client_command_free(cmd);
 }
 
-SILC_CLIENT_CMD_FUNC(trace)
-{
-}
-
 SILC_CLIENT_CMD_FUNC(notice)
 {
 }
@@ -1277,9 +1273,50 @@ SILC_CLIENT_CMD_FUNC(connect)
 SILC_CLIENT_CMD_FUNC(restart)
 {
 }
+
+/* CLOSE command. Close server connection to the remote server */
  
 SILC_CLIENT_CMD_FUNC(close)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+  unsigned char port[4];
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    cmd->client->ops->say(cmd->client, conn, 
+			  "Usage: /CLOSE <server> [<port>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc == 3)
+    SILC_PUT32_MSB(atoi(cmd->argv[2]), port);
+
+  if (cmd->argc == 3)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_CLOSE, 0, 2, 
+					    1, cmd->argv[1], 
+					    strlen(cmd->argv[1]),
+					    2, port, 4);
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_CLOSE, 0, 1,
+					    1, cmd->argv[1], 
+					    strlen(cmd->argv[1]));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
  
 /* SHUTDOWN command. Shutdowns the server. */

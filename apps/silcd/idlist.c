@@ -131,6 +131,75 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
   return server;
 }
 
+/* Find server by name */
+
+SilcServerEntry
+silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
+				SilcIDCacheEntry *ret_entry)
+{
+  SilcIDCacheEntry id_cache = NULL;
+  SilcServerEntry server;
+
+  SILC_LOG_DEBUG(("Server by name `%s'", name));
+
+  if (!silc_idcache_find_by_data_one(id_list->servers, name, &id_cache))
+    return NULL;
+
+  server = (SilcServerEntry)id_cache->context;
+  
+  if (ret_entry)
+    *ret_entry = id_cache;
+
+  return server;
+}
+
+/* Find server by connection parameters, hostname and port */
+
+SilcServerEntry
+silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
+				int port, SilcIDCacheEntry *ret_entry)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcServerEntry server = NULL;
+  SilcSocketConnection sock;
+ 
+  SILC_LOG_DEBUG(("Server by hostname %s and port %d", hostname, port));
+
+  if (!silc_idcache_find_by_id(id_list->servers, SILC_ID_CACHE_ANY, 
+			       SILC_ID_SERVER, &list))
+    return NULL;
+
+  if (!silc_idcache_list_first(list, &id_cache)) {
+    silc_idcache_list_free(list);
+    return NULL;
+  }
+
+  while (id_cache) {
+    server = (SilcServerEntry)id_cache->context;
+    sock = (SilcSocketConnection)server->connection;
+    
+    if (sock && (!strcmp(sock->hostname, hostname) ||
+		 !strcmp(sock->ip, hostname)) && sock->port == port)
+      break;
+
+    id_cache = NULL;
+    server = NULL;
+
+    if (!silc_idcache_list_next(list, &id_cache))
+      break;
+  }
+  
+  silc_idcache_list_free(list);
+
+  if (ret_entry)
+    *ret_entry = id_cache;
+
+  SILC_LOG_DEBUG(("Found"));
+
+  return server;
+}
+
 /* Replaces old Server ID with new one */ 
 
 SilcServerEntry

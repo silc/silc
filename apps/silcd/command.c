@@ -2985,14 +2985,14 @@ SILC_SERVER_CMD_FUNC(connect)
 
   /* Check whether client has the permissions. */
   if (client->mode == SILC_UMODE_NONE) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
 					  SILC_STATUS_ERR_NO_SERVER_PRIV);
     goto out;
   }
 
   if (server->server_type == SILC_ROUTER && 
       client->mode & SILC_UMODE_SERVER_OPERATOR) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
 					  SILC_STATUS_ERR_NO_ROUTER_PRIV);
     goto out;
   }
@@ -3000,7 +3000,7 @@ SILC_SERVER_CMD_FUNC(connect)
   /* Get the remote server */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
   if (!tmp) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
 					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
@@ -3014,7 +3014,7 @@ SILC_SERVER_CMD_FUNC(connect)
   silc_server_create_connection(server, tmp, port);
 
   /* Send reply to the sender */
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
 					SILC_STATUS_OK);
 
  out:
@@ -3032,10 +3032,11 @@ SILC_SERVER_CMD_FUNC(close)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  SilcServerID *server_id;
   SilcServerEntry server_entry;
   unsigned char *tmp;
   unsigned int tmp_len;
+  unsigned char *name;
+  unsigned int port = SILC_PORT;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CLOSE, cmd, 0, 0);
 
@@ -3049,25 +3050,21 @@ SILC_SERVER_CMD_FUNC(close)
     goto out;
   }
 
-  /* Get the server ID */
-  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-  if (!tmp) {
+  /* Get the remote server */
+  name = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!name) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
-					  SILC_STATUS_ERR_NO_SERVER_ID);
-    goto out;
-  }
-  server_id = silc_id_payload_parse_id(tmp, tmp_len);
-  if (!server_id) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
-					  SILC_STATUS_ERR_NO_SERVER_ID);
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
-  /* Check that the server ID is valid and that I have an active
-     connection to it. Check only local list as it holds the local
-     connections. */
-  server_entry = silc_idlist_find_server_by_id(server->local_list,
-					       server_id, NULL);
+  /* Get port */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (tmp)
+    SILC_GET32_MSB(port, tmp);
+
+  server_entry = silc_idlist_find_server_by_conn(server->local_list,
+						 name, port, NULL);
   if (!server_entry) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
 					  SILC_STATUS_ERR_NO_SERVER_ID);
@@ -3081,7 +3078,7 @@ SILC_SERVER_CMD_FUNC(close)
 				"Closed by operator");
   
   /* Send reply to the sender */
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
 					SILC_STATUS_OK);
 
  out:
@@ -3113,7 +3110,7 @@ SILC_SERVER_CMD_FUNC(shutdown)
   silc_server_stop(server);
 
   /* Send reply to the sender */
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_SHUTDOWN,
 					SILC_STATUS_OK);
 
  out:

@@ -1034,18 +1034,110 @@ SILC_CLIENT_CMD_REPLY_FUNC(oper)
 
 SILC_CLIENT_CMD_REPLY_FUNC(connect)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CONNECT);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_CONNECT);
+  silc_client_command_reply_free(cmd);
 }
 
 SILC_CLIENT_CMD_REPLY_FUNC(restart)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_RESTART);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_RESTART);
+  silc_client_command_reply_free(cmd);
 }
  
 SILC_CLIENT_CMD_REPLY_FUNC(close)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CLOSE);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_CLOSE);
+  silc_client_command_reply_free(cmd);
 }
  
 SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_SHUTDOWN);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_SHUTDOWN);
+  silc_client_command_reply_free(cmd);
 }
  
 /* Reply to LEAVE command. */

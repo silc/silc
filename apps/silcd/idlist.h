@@ -463,6 +463,12 @@ SilcServerEntry
 silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
 			      SilcIDCacheEntry *ret_entry);
 SilcServerEntry
+silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
+				SilcIDCacheEntry *ret_entry);
+SilcServerEntry
+silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
+				int port, SilcIDCacheEntry *ret_entry);
+SilcServerEntry
 silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 			      SilcServerID *new_id);
 void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);

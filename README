@@ -172,7 +172,7 @@ Following commands has been, at least partly, implemented:
 		server operator to be able to do this.
 
 
-	/CLOSE <server>
+	/CLOSE <server> [<port>]
 
 		Closes connection to the <server>.  You must be server
 		operator to be able to do this.
