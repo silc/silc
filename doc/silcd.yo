@@ -1,11 +1,11 @@
-manpage(SILCD) (8) (October 31 2002) (silc-server) (silc-server)
+manpage(SILCD) (8) (November 20 2003) (silc-server) (silc-server)
 
 
 manpagename(silcd) (SILC server)
 
 
 manpagesynopsis()
-bf(silcd) bf([) -f em(file) | -d | -D | -x | -h | -F | -C | -V bf(])
+bf(silcd) bf([) -f em(file) | -d | -D | -x | -h | -F | -C em(path) | -V bf(])
 
 
 manpagedescription()
@@ -13,41 +13,42 @@ Silcd is a server for SILC, Secure Internet Live Conferencing network.
 
 
 manpageoptions()
-bf(-f) em(FILE)    Read configuration from em(FILE).
+bf(-f) em(FILE)   Read configuration from em(FILE)
 
-bf(-d)         Enable debugging (Implies -F).
+bf(-d)        Enable debugging (Implies -F)
 
-bf(-D) em(LEVEL)   Enable debug messages of level em(LEVEL) and lower (Implies -F).
+bf(-D) em(LEVEL)  Enable debug messages of level em(LEVEL) and lower (Implies -F)
 
-bf(-x)         Enable hexdumps (Implies -d).
+bf(-x)        Enable hexdumps (Implies -d)
 
-bf(-F)         Don't fork.  Run silcd on foreground.
+bf(-F)        Don't fork.  Run silcd on foreground.
 
-bf(-h)         Display help message.
+bf(-h)        Display help message
 
-bf(-V)         Display version.
+bf(-V)        Display version
 
-bf(-C)         Create new public key pair. See bf(KEY GENERATION) for options.
+bf(-C) em(PATH)   Create new public key pair. See bf(KEY GENERATION) for options.
 
 manpagesection(LONG OPTIONS)
-bf(--config-file)=em(FILE)    Same as bf(-f).
+bf(--config-file)=em(FILE)      Same as bf(-f)
 
-bf(--debug)=em(STRING)        Same as bf(-d), limit to messages *em(STRING)*.
+bf(--debug)=em(STRING)          Same as bf(-d), limit to messages *em(STRING)*
 
-bf(--debug-level)=em(LEVEL)   Same as bf(-D).
+bf(--debug-level)=em(LEVEL)     Same as bf(-D)
 
-bf(--hexdump)             Same as bf(-x).
+bf(--hexdump)               Same as bf(-x)
 
-bf(--foreground)          Same as bf(-F).
+bf(--foreground)            Same as bf(-F)
 
-bf(--version)             Same as bf(-V).
+bf(--version)               Same as bf(-V)
 
-bf(--create-key-pair)     Same as bf(-C).
+bf(--create-key-pair)=em(PATH)  Same as bf(-C)
 
 
 manpagesection(KEY GENERATION)
-When generating new key pair for silcd (bf(-C)), the following extra switches
-apply:
+bf(-C) must be followed directly with a path to directory into which the
+private and public keys will be written to. When generating new key pair 
+for silcd (bf(-C)), the following extra switches apply:
 
 bf(--pkcs)=em(PKCS)       Set the public key algorithm of public key pair.  For example bf(rsa).
 
@@ -65,8 +66,8 @@ If no bf(--identifier) is used, an identifier will be created automatically.
 
 Example:
 
-bf(silcd -C --identifier)="UN=foobar, HN=foo.bar.com, RN=Foo T. Bar,
-E=foo@bar.com, C=FI"
+bf(silcd -C /etc/silcd --identifier)="UN=foobar, HN=foo.bar.com, 
+RN=Foo T. Bar, E=foo@bar.com, C=FI"
 
 
 manpagefiles()
