@@ -1,3 +1,20 @@
+Tue Jul 25 20:46:13 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the private message sending between server and router.
+	  The private message sending should now work inside a cell.
+
+	* Added silc_server_replace_id into server.[ch] to replace
+	  existing ID in the SILC network.
+
+	* Added silc_idlist_find_server_by, silc_idlist_replace_client_id
+	  and silc_idlist_replace_server_id into idlist.[ch] in server.
+
+Mon Jul 24 18:33:31 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the server to server connections.  Server can again now
+	  connect to router.  Router to router connections probably does
+	  not work just yet.
+
 Thu Jul 20 13:15:01 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added dynamic protocol registering support.  Now protocols can

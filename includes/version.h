@@ -33,8 +33,8 @@ typedef unsigned char SilcVersion;
 #define SILC_VERSION_1 '\1'
 
 /* SILC version string */
-const char *silc_version = "19072000";
-const char *silc_version_string = "SILC-1.0-19072000";
+const char *silc_version = "26072000";
+const char *silc_version_string = "SILC-1.0-26072000";
 const char *silc_name = "SILC";
 const char *silc_fullname = "Secure Internet Live Conferencing";
 

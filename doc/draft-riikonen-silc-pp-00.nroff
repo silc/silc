@@ -448,7 +448,8 @@ List of SILC Packet types are defined as follows.
           This packet is sent when an error occurs.  Server may
           send this packet.  Client never sends this packet.  The
           client may entirely ignore the packet, however, server is
-          most likely to take action anyway.
+          most likely to take action anyway.  This packet may be sent
+          to entity that is indirectly connected to the sender.
 
           Payload of the packet:  See section 2.3.7 Error Payload.
 
