@@ -35,6 +35,9 @@ TODO for SILC Server 1.0
 TODO/bugs In SILC Libraries
 ===========================
 
+ o Add the compilation flags for Toolkit apps to check, ala:
+   _SILC_TOOLKIT_ENABLE_DEBUG, etc.
+
  o Test cases for all payload encoding and decoding routins in lib/silccore/
 
  o Test cases for math library routines in lib/silcmath/
