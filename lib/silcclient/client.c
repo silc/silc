@@ -379,7 +379,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (protocol->state == SILC_PROTOCOL_STATE_ERROR) {
+  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     SILC_LOG_DEBUG(("Error during KE protocol"));
     silc_protocol_free(protocol);
@@ -450,7 +451,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (protocol->state == SILC_PROTOCOL_STATE_ERROR) {
+  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     SILC_LOG_DEBUG(("Error during authentication protocol"));
     silc_protocol_free(protocol);
