@@ -39,16 +39,6 @@
 #include "fe-common/core/fe-channels.h"
 
 /* Command line option variables */
-static char *opt_server = NULL;
-static int opt_port = 0;
-static char *opt_nickname = NULL;
-static char *opt_channel = NULL;
-static char *opt_cipher = NULL;
-static char *opt_public_key = NULL;
-static char *opt_private_key = NULL;
-static char *opt_config_file = NULL;
-static bool opt_no_silcrc = FALSE;
-
 static bool opt_create_keypair = FALSE;
 static char *opt_pkcs = NULL;
 static char *opt_keyfile = NULL;
@@ -547,8 +537,6 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       list_count = va_arg(vp, uint32);
       client_id_list = va_arg(vp, SilcBuffer);
 
-      /* XXX what an earth do I do with the topic??? */
-
       if (!success)
 	return;
 
@@ -558,6 +546,13 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       else if (chanrec == NULL && success)
 	chanrec = silc_channel_create(server, channel, TRUE);
       
+      if (topic) {
+	g_free_not_null(chanrec->topic);
+	chanrec->topic = *topic == '\0' ? NULL : g_strdup(topic);
+	signal_emit("channel topic changed", 1, chanrec);
+	silc_say(client, conn, "Topic for %s: %s", channel, topic);
+      }
+
       mode = silc_client_chmode(modei, channel_entry);
       g_free_not_null(chanrec->mode);
       chanrec->mode = g_strdup(mode == NULL ? "" : mode);

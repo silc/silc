@@ -45,35 +45,9 @@
 /* Asks yes/no from user on the input line. Returns TRUE on "yes" and
    FALSE on "no". */
 
-int silc_client_ask_yes_no(SilcClient client, char *prompt)
+void silc_client_ask_yes_no(char *prompt, SIGNAL_FUNC func)
 {
-  char answer[4];
-  int ret;
-
- again:
-  /* Print prompt */
-  attroff(A_INVIS);
-  //  silc_screen_input_print_prompt(app->screen, prompt);
-
-  /* Get string */
-  memset(answer, 0, sizeof(answer));
-  echo();
-  getnstr(answer, sizeof(answer));
-  if (!strncasecmp(answer, "yes", strlen(answer)) ||
-      !strncasecmp(answer, "y", strlen(answer))) {
-    ret = TRUE;
-  } else if (!strncasecmp(answer, "no", strlen(answer)) ||
-	     !strncasecmp(answer, "n", strlen(answer))) {
-    ret = FALSE;
-  } else {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Type yes or no");
-    goto again;
-  }
-  noecho();
-
-  //  silc_screen_input_reset(app->screen);
-
-  return ret;
+  keyboard_entry_redirect(func, prompt, 0, NULL);
 }
 
 /* Lists supported (builtin) ciphers */
@@ -105,36 +79,9 @@ void silc_client_list_pkcs()
 
 /* Displays input prompt on command line and takes input data from user */
 
-char *silc_client_get_input(const char *prompt)
+void silc_client_get_input(char *prompt, SIGNAL_FUNC func)
 {
-#if 0
-  char input[2048];
-  int fd;
-
-  fd = open("/dev/tty", O_RDONLY);
-  if (fd < 0) {
-    fprintf(stderr, "silc: %s\n", strerror(errno));
-    return NULL;
-  }
-
-  memset(input, 0, sizeof(input));
-
-  printf("%s", prompt);
-  fflush(stdout);
-
-  if ((read(fd, input, sizeof(input))) < 0) {
-    fprintf(stderr, "silc: %s\n", strerror(errno));
-    return NULL;
-  }
-
-  if (strlen(input) <= 1)
-    return NULL;
-
-  if (strchr(input, '\n'))
-    *strchr(input, '\n') = '\0';
-  return strdup(input);
-#endif
-  return NULL;
+  keyboard_entry_redirect(func, prompt, 0, NULL);
 }
 
 /* Returns identifier string for public key generation. */
