@@ -41,7 +41,7 @@ int silc_socket_write(SilcSocketConnection sock)
   if (src->len > 0) {
     ret = write(fd, src->data, src->len);
     if (ret < 0) {
-      if (errno == EAGAIN) {
+      if (errno == EAGAIN || errno == EINTR) {
 	SILC_LOG_DEBUG(("Could not write immediately, will do it later"));
 	return -2;
       }

@@ -161,9 +161,11 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
 	SilcUInt32 len = va_arg(ap, SilcUInt32);
-	MY_HAS_SPACE(dst, len);
-	silc_buffer_put(dst, x, len);
-	silc_buffer_pull(dst, len);
+	if (x && len) {
+	  MY_HAS_SPACE(dst, len);
+	  silc_buffer_put(dst, x, len);
+	  silc_buffer_pull(dst, len);
+	}
 	break;
       }
     case SILC_BUFFER_PARAM_END:
