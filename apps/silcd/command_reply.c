@@ -489,6 +489,9 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     break;
 
   case SILC_ID_SERVER:
+    if (!name)
+      goto error;
+
     server_id = silc_id_payload_get_id(idp);
     if (!server_id)
       goto error;
@@ -524,25 +527,20 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     break;
 
   case SILC_ID_CHANNEL:
+    if (!name)
+      goto error;
+
     channel_id = silc_id_payload_get_id(idp);
     if (!channel_id)
       goto error;
 
     SILC_LOG_DEBUG(("Received channel information"));
 
-    if (name) {
-      channel = silc_idlist_find_channel_by_name(server->local_list, 
+    channel = silc_idlist_find_channel_by_name(server->local_list, 
+					       name, NULL);
+    if (!channel)
+      channel = silc_idlist_find_channel_by_name(server->global_list, 
 						 name, NULL);
-      if (!channel)
-	channel = silc_idlist_find_channel_by_name(server->global_list, 
-						   name, NULL);
-    } else {
-      channel = silc_idlist_find_channel_by_id(server->local_list, 
-					       channel_id, NULL);
-      if (!channel)
-	channel = silc_idlist_find_channel_by_id(server->global_list, 
-						 channel_id, NULL);
-    }
     if (!channel) {
       /* If router did not find such Channel ID in its lists then this must
 	 be bogus channel or some router in the net is buggy. */
