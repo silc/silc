@@ -151,3 +151,9 @@ describe new stuff to be added to protocol versions 1.x.
  16. Add STATS command after all to the protocol for providing practically
      same information client gets when connects to a server.  Normal
      server would send this to router always when received from client.
+
+ 17. Cell wide channel founder support, and permanent channels when
+     founder mode set.
+
+ 18. UTF-8 requirement checkings for all specifications, when strings
+     are sent.
