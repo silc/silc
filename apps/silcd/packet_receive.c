@@ -648,8 +648,10 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 /* Processes incoming New ID packet. New ID Payload is used to distribute
    information about newly registered clients and servers. */
 
-void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
-			SilcPacketContext *packet)
+static void silc_server_new_id_real(SilcServer server, 
+				    SilcSocketConnection sock,
+				    SilcPacketContext *packet,
+				    int broadcast)
 {
   SilcBuffer buffer = packet->buffer;
   SilcIDList id_list;
@@ -683,7 +685,7 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 
   /* If the sender of this packet is server and we are router we need to
      broadcast this packet to other routers in the network. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
+  if (broadcast && !server->standalone && server->server_type == SILC_ROUTER &&
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received New ID packet"));
@@ -780,6 +782,16 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
   silc_id_payload_free(idp);
 }
 
+
+/* Processes incoming New ID packet. New ID Payload is used to distribute
+   information about newly registered clients and servers. */
+
+void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
+			SilcPacketContext *packet)
+{
+  silc_server_new_id_real(server, sock, packet, TRUE);
+}
+
 /* Receoved New Id List packet, list of New ID payloads inside one
    packet. Process the New ID payloads one by one. */
 
@@ -795,6 +807,19 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       packet->src_id_type != SILC_ID_SERVER)
     return;
+
+  /* If the sender of this packet is server and we are router we need to
+     broadcast this packet to other routers in the network. Broadcast
+     this list packet instead of multiple New ID packets. */
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received New ID List packet"));
+    silc_server_packet_send(server, server->router->connection,
+			    packet->type, 
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			    packet->buffer->data, packet->buffer->len, FALSE);
+  }
 
   /* Make copy of the original packet context, except for the actual
      data buffer, which we will here now fetch from the original buffer. */
@@ -821,7 +846,7 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
     silc_buffer_put(idp, packet->buffer->data, 4 + id_len);
 
     /* Process the New ID */
-    silc_server_new_id(server, sock, new_id);
+    silc_server_new_id_real(server, sock, new_id, FALSE);
 
     silc_buffer_push_tail(idp, 4 + id_len);
     silc_buffer_pull(packet->buffer, 4 + id_len);
@@ -906,7 +931,7 @@ void silc_server_new_channel(SilcServer server,
     if (!channel) {
       channel = silc_server_create_new_channel_with_id(server, NULL,
 						       channel_name,
-						       channel_id);
+						       channel_id, FALSE);
       if (!channel)
 	return;
 
@@ -955,6 +980,11 @@ void silc_server_new_channel(SilcServer server,
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
 			      chk->data, chk->len, FALSE);
       silc_buffer_free(chk);
+
+      /* Since the channel is coming from server and we also know about it
+	 then send the JOIN notify to the server so that it see's our
+	 users on the channel "joining" the channel. */
+      /* XXX TODO **/
     }
   }
 
@@ -978,6 +1008,19 @@ void silc_server_new_channel_list(SilcServer server,
       packet->src_id_type != SILC_ID_SERVER ||
       server->server_type == SILC_SERVER)
     return;
+
+  /* If the sender of this packet is server and we are router we need to
+     broadcast this packet to other routers in the network. Broadcast
+     this list packet instead of multiple New Channel packets. */
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received New Channel List packet"));
+    silc_server_packet_send(server, server->router->connection,
+			    packet->type, 
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			    packet->buffer->data, packet->buffer->len, FALSE);
+  }
 
   /* Make copy of the original packet context, except for the actual
      data buffer, which we will here now fetch from the original buffer. */
@@ -1010,6 +1053,202 @@ void silc_server_new_channel_list(SilcServer server,
 
     /* Process the New Channel */
     silc_server_new_channel(server, sock, new);
+
+    silc_buffer_push_tail(buffer, 4 + len1 + len2);
+    silc_buffer_pull(packet->buffer, 4 + len1 + len2);
+  }
+
+  silc_buffer_free(buffer);
+  silc_free(new);
+}
+
+/* Received new channel user packet. Information about new users on a
+   channel are distributed between routers using this packet.  The
+   router receiving this will redistribute it and also sent JOIN notify
+   to local clients on the same channel. Normal server sends JOIN notify
+   to its local clients on the channel. */
+
+static void silc_server_new_channel_user_real(SilcServer server,
+					      SilcSocketConnection sock,
+					      SilcPacketContext *packet,
+					      int broadcast)
+{
+  unsigned char *tmpid1, *tmpid2;
+  SilcClientID *client_id = NULL;
+  SilcChannelID *channel_id = NULL;
+  unsigned short channel_id_len;
+  unsigned short client_id_len;
+  SilcClientEntry client;
+  SilcChannelEntry channel;
+  SilcChannelClientEntry chl;
+  SilcBuffer clidp;
+  int ret;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      server->server_type != SILC_ROUTER ||
+      packet->src_id_type != SILC_ID_SERVER)
+    return;
+
+  /* Parse payload */
+  ret = silc_buffer_unformat(packet->buffer, 
+			     SILC_STR_UI16_NSTRING_ALLOC(&tmpid1, 
+							 &channel_id_len),
+			     SILC_STR_UI16_NSTRING_ALLOC(&tmpid2, 
+							 &client_id_len),
+			     SILC_STR_END);
+  if (ret == -1) {
+    if (tmpid1)
+      silc_free(tmpid1);
+    if (tmpid2)
+      silc_free(tmpid2);
+    return;
+  }
+
+  /* Decode the channel ID */
+  channel_id = silc_id_str2id(tmpid1, channel_id_len, SILC_ID_CHANNEL);
+  if (!channel_id)
+    goto out;
+
+  /* Decode the client ID */
+  client_id = silc_id_str2id(tmpid2, client_id_len, SILC_ID_CLIENT);
+  if (!client_id)
+    goto out;
+
+  /* If we are router and this packet is not already broadcast packet
+     we will broadcast it. */
+  if (broadcast && !server->standalone && server->server_type == SILC_ROUTER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received New Channel User packet"));
+    silc_server_packet_send(server, server->router->connection, packet->type,
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+			    packet->buffer->data, packet->buffer->len, FALSE);
+  }
+
+  /* Find the channel */
+  channel = silc_idlist_find_channel_by_id(server->local_list, 
+					   channel_id, NULL);
+  if (!channel) {
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel)
+      goto out;
+  }
+
+  /* Get client entry */
+  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
+  if (!client) {
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client)
+      goto out;
+  }
+
+  /* Join the client to the channel by adding it to channel's user list.
+     Add also the channel to client entry's channels list for fast cross-
+     referencing. */
+  chl = silc_calloc(1, sizeof(*chl));
+  chl->client = client;
+  chl->channel = channel;
+  silc_list_add(channel->user_list, chl);
+  silc_list_add(client->channels, chl);
+
+  server->stat.chanclients++;
+
+  /* Send JOIN notify to local clients on the channel. As we are router
+     it is assured that this is sent only to our local clients and locally
+     connected servers if needed. */
+  clidp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+  silc_server_send_notify_to_channel(server, sock, channel, FALSE,
+				     SILC_NOTIFY_TYPE_JOIN, 
+				     1, clidp->data, clidp->len);
+  silc_buffer_free(clidp);
+
+  client_id = NULL;
+
+ out:
+  if (client_id)
+    silc_free(client_id);
+  if (channel_id)
+    silc_free(channel_id);
+  silc_free(tmpid1);
+  silc_free(tmpid2);
+}
+
+/* Received new channel user packet. Information about new users on a
+   channel are distributed between routers using this packet.  The
+   router receiving this will redistribute it and also sent JOIN notify
+   to local clients on the same channel. Normal server sends JOIN notify
+   to its local clients on the channel. */
+
+void silc_server_new_channel_user(SilcServer server,
+				  SilcSocketConnection sock,
+				  SilcPacketContext *packet)
+{
+  silc_server_new_channel_user_real(server, sock, packet, TRUE);
+}
+
+/* Received New Channel User List packet, list of New Channel User payloads
+   inside one packet.  Process the payloads one by one. */
+
+void silc_server_new_channel_user_list(SilcServer server,
+				       SilcSocketConnection sock,
+				       SilcPacketContext *packet)
+{
+  SilcPacketContext *new;
+  SilcBuffer buffer;
+  unsigned short len1, len2;
+
+  SILC_LOG_DEBUG(("Processing New Channel User List"));
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type != SILC_ID_SERVER ||
+      server->server_type == SILC_SERVER)
+    return;
+
+  /* If we are router and this packet is not already broadcast packet
+     we will broadcast it. Brodcast this list packet instead of multiple
+     New Channel User packets. */
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received New Channel User List packet"));
+    silc_server_packet_send(server, server->router->connection, packet->type,
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+			    packet->buffer->data, packet->buffer->len, FALSE);
+  }
+
+  /* Make copy of the original packet context, except for the actual
+     data buffer, which we will here now fetch from the original buffer. */
+  new = silc_packet_context_alloc();
+  new->type = SILC_PACKET_NEW_CHANNEL_USER;
+  new->flags = packet->flags;
+  new->src_id = packet->src_id;
+  new->src_id_len = packet->src_id_len;
+  new->src_id_type = packet->src_id_type;
+  new->dst_id = packet->dst_id;
+  new->dst_id_len = packet->dst_id_len;
+  new->dst_id_type = packet->dst_id_type;
+
+  buffer = silc_buffer_alloc(256);
+  new->buffer = buffer;
+
+  while (packet->buffer->len) {
+    SILC_GET16_MSB(len1, packet->buffer->data);
+    if ((len1 > packet->buffer->len) ||
+	(len1 > buffer->truelen))
+      break;
+
+    SILC_GET16_MSB(len2, packet->buffer->data + 2 + len1);
+    if ((len2 > packet->buffer->len) ||
+	(len2 > buffer->truelen))
+      break;
+
+    silc_buffer_pull_tail(buffer, 4 + len1 + len2);
+    silc_buffer_put(buffer, packet->buffer->data, 4 + len1 + len2);
+
+    /* Process the New Channel User */
+    silc_server_new_channel_user_real(server, sock, new, FALSE);
 
     silc_buffer_push_tail(buffer, 4 + len1 + len2);
     silc_buffer_pull(packet->buffer, 4 + len1 + len2);
@@ -1100,64 +1339,6 @@ void silc_server_remove_channel_user(SilcServer server,
     silc_free(client_id);
   if (channel_id)
     silc_free(channel_id);
-}
-
-/* Received New Channel User List packet, list of New Channel User payloads
-   inside one packet.  Process the payloads one by one. */
-
-void silc_server_new_channel_user_list(SilcServer server,
-				       SilcSocketConnection sock,
-				       SilcPacketContext *packet)
-{
-  SilcPacketContext *new;
-  SilcBuffer buffer;
-  unsigned short len1, len2;
-
-  SILC_LOG_DEBUG(("Processing New Channel User List"));
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      packet->src_id_type != SILC_ID_SERVER ||
-      server->server_type == SILC_SERVER)
-    return;
-
-  /* Make copy of the original packet context, except for the actual
-     data buffer, which we will here now fetch from the original buffer. */
-  new = silc_packet_context_alloc();
-  new->type = SILC_PACKET_NEW_CHANNEL_USER;
-  new->flags = packet->flags;
-  new->src_id = packet->src_id;
-  new->src_id_len = packet->src_id_len;
-  new->src_id_type = packet->src_id_type;
-  new->dst_id = packet->dst_id;
-  new->dst_id_len = packet->dst_id_len;
-  new->dst_id_type = packet->dst_id_type;
-
-  buffer = silc_buffer_alloc(256);
-  new->buffer = buffer;
-
-  while (packet->buffer->len) {
-    SILC_GET16_MSB(len1, packet->buffer->data);
-    if ((len1 > packet->buffer->len) ||
-	(len1 > buffer->truelen))
-      break;
-
-    SILC_GET16_MSB(len2, packet->buffer->data + 2 + len1);
-    if ((len2 > packet->buffer->len) ||
-	(len2 > buffer->truelen))
-      break;
-
-    silc_buffer_pull_tail(buffer, 4 + len1 + len2);
-    silc_buffer_put(buffer, packet->buffer->data, 4 + len1 + len2);
-
-    /* Process the New Channel User */
-    silc_server_new_channel_user(server, sock, new);
-
-    silc_buffer_push_tail(buffer, 4 + len1 + len2);
-    silc_buffer_pull(packet->buffer, 4 + len1 + len2);
-  }
-
-  silc_buffer_free(buffer);
-  silc_free(new);
 }
 
 /* Received notify packet. Server can receive notify packets from router. 
@@ -1439,119 +1620,6 @@ void silc_server_notify(SilcServer server,
 
  out:
   silc_notify_payload_free(payload);
-}
-
-/* Received new channel user packet. Information about new users on a
-   channel are distributed between routers using this packet.  The
-   router receiving this will redistribute it and also sent JOIN notify
-   to local clients on the same channel. Normal server sends JOIN notify
-   to its local clients on the channel. */
-
-void silc_server_new_channel_user(SilcServer server,
-				  SilcSocketConnection sock,
-				  SilcPacketContext *packet)
-{
-  unsigned char *tmpid1, *tmpid2;
-  SilcClientID *client_id = NULL;
-  SilcChannelID *channel_id = NULL;
-  unsigned short channel_id_len;
-  unsigned short client_id_len;
-  SilcClientEntry client;
-  SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
-  SilcBuffer clidp;
-  int ret;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      server->server_type != SILC_ROUTER ||
-      packet->src_id_type != SILC_ID_SERVER)
-    return;
-
-  /* Parse payload */
-  ret = silc_buffer_unformat(packet->buffer, 
-			     SILC_STR_UI16_NSTRING_ALLOC(&tmpid1, 
-							 &channel_id_len),
-			     SILC_STR_UI16_NSTRING_ALLOC(&tmpid2, 
-							 &client_id_len),
-			     SILC_STR_END);
-  if (ret == -1) {
-    if (tmpid1)
-      silc_free(tmpid1);
-    if (tmpid2)
-      silc_free(tmpid2);
-    return;
-  }
-
-  /* Decode the channel ID */
-  channel_id = silc_id_str2id(tmpid1, channel_id_len, SILC_ID_CHANNEL);
-  if (!channel_id)
-    goto out;
-
-  /* Decode the client ID */
-  client_id = silc_id_str2id(tmpid2, client_id_len, SILC_ID_CLIENT);
-  if (!client_id)
-    goto out;
-
-  /* Find the channel */
-  channel = silc_idlist_find_channel_by_id(server->local_list, 
-					   channel_id, NULL);
-  if (!channel) {
-    channel = silc_idlist_find_channel_by_id(server->global_list, 
-					     channel_id, NULL);
-    if (!channel)
-      goto out;
-  }
-
-  /* If we are router and this packet is not already broadcast packet
-     we will broadcast it. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received New Channel User packet"));
-    silc_server_packet_send(server, server->router->connection, packet->type,
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-			    packet->buffer->data, packet->buffer->len, FALSE);
-  }
-
-  /* Get client entry */
-  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
-  if (!client) {
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
-    if (!client)
-      goto out;
-  }
-
-  /* Join the client to the channel by adding it to channel's user list.
-     Add also the channel to client entry's channels list for fast cross-
-     referencing. */
-  chl = silc_calloc(1, sizeof(*chl));
-  chl->client = client;
-  chl->channel = channel;
-  silc_list_add(channel->user_list, chl);
-  silc_list_add(client->channels, chl);
-
-  server->stat.chanclients++;
-
-  /* Send JOIN notify to local clients on the channel. As we are router
-     it is assured that this is sent only to our local clients and locally
-     connected servers if needed. */
-  clidp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, sock, channel, FALSE,
-				     SILC_NOTIFY_TYPE_JOIN, 
-				     1, clidp->data, clidp->len);
-  silc_buffer_free(clidp);
-
-  client_id = NULL;
-
- out:
-  if (client_id)
-    silc_free(client_id);
-  if (channel_id)
-    silc_free(channel_id);
-  silc_free(tmpid1);
-  silc_free(tmpid2);
 }
 
 /* Processes incoming REMOVE_ID packet. The packet is used to notify routers

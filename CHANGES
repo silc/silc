@@ -1,3 +1,14 @@
+Sat Feb 17 13:15:35 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* When receiving NEW_CHANNEL_LIST, NEW_CHANNEL_USER_LIST,
+	  NEW_ID_LIST and SET_MODE_LIST packets, broadcast the list packet
+	  (if needs broadcasting) instead of broadcasting the packets one
+	  by one which would make a burst in the network traffic.
+
+	* Added `broadcast' argument to the functions in silcd/server.[ch]
+	  silc_server_create_new_channel[_with_id] to indicate whether
+	  to send New Channel packet to primary router.
+
 Sat Feb 17 01:06:44 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new function into the silcd/server.[ch] files:

@@ -2199,7 +2199,8 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
 SilcChannelEntry silc_server_create_new_channel(SilcServer server, 
 						SilcServerID *router_id,
 						char *cipher, 
-						char *channel_name)
+						char *channel_name,
+						int broadcast)
 {
   SilcChannelID *channel_id;
   SilcChannelEntry entry;
@@ -2230,7 +2231,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
-  if (server->standalone == FALSE) {
+  if (broadcast && server->standalone == FALSE) {
     silc_server_send_new_channel(server, server->router->connection, TRUE, 
 				 channel_name, entry->id, SILC_ID_CHANNEL_LEN);
   }
@@ -2246,7 +2247,8 @@ SilcChannelEntry
 silc_server_create_new_channel_with_id(SilcServer server, 
 				       char *cipher, 
 				       char *channel_name,
-				       SilcChannelID *channel_id)
+				       SilcChannelID *channel_id,
+				       int broadcast)
 {
   SilcChannelEntry entry;
   SilcCipher key;
@@ -2275,7 +2277,7 @@ silc_server_create_new_channel_with_id(SilcServer server,
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
-  if (server->standalone == FALSE) {
+  if (broadcast && server->standalone == FALSE) {
     silc_server_send_new_channel(server, server->router->connection, TRUE, 
 				 channel_name, entry->id, SILC_ID_CHANNEL_LEN);
   }

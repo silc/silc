@@ -110,12 +110,14 @@ void silc_server_disconnect_remote(SilcServer server,
 SilcChannelEntry silc_server_create_new_channel(SilcServer server, 
 						SilcServerID *router_id,
 						char *cipher, 
-						char *channel_name);
+						char *channel_name,
+						int broadcast);
 SilcChannelEntry 
 silc_server_create_new_channel_with_id(SilcServer server, 
 				       char *cipher, 
 				       char *channel_name,
-				       SilcChannelID *channel_id);
+				       SilcChannelID *channel_id,
+				       int broadcast);
 void silc_server_create_channel_key(SilcServer server, 
 				    SilcChannelEntry channel,
 				    unsigned int key_len);

@@ -1775,7 +1775,8 @@ This payload is used, for example, when server is connected to router
 and the server wants to distribute all of its locally connected clients
 and locally created channels to the router.  It is convenient in this
 case to use this payload instead of sending all the information one
-by one using New ID Payload.
+by one using New ID Payload.  Also, when router redistributes the
+packet by broadcasting it, it is convenient to send only one packet.
 
 There is no specific payload for this packet type.  The packet type
 uses same payload as described in previous section.  To form a list
@@ -2020,7 +2021,9 @@ o Client ID (variable length) - The Client ID of the client
 This payload is used to distribute list of new channels from server
 to routers.  It might be convenient to send list of new channels when
 existing server connects to router, instead of sending them one
-by one.
+by one.  Also, when router redistributes the packet by broadcasting it,
+it is convenient to send only one packet.
+
 
 There is no specific payload for this packet type.  The packet type
 uses same payload as described in 2.3.19 New Channel Payload.  To form
@@ -2040,6 +2043,8 @@ This payload is used to distribute list of channel users on a channel
 from server to routers.  It might convenient to send list of channel
 users when existing server connects to router, instead of sending them
 one by one.  One list may include users for several different channels.
+Also, when router redistributes the packet by broadcasting it, it is
+convenient to send only one packet.
 
 There is no specific payload for this packet type.  The packet type
 uses same payload as described in 2.3.20 New Channel User Payload.
@@ -2269,7 +2274,8 @@ one packet.  When server announces channels and client's on those
 channels to its primary router when it connects to it, it is convenient
 to send list of Set Mode payloads to set the modes for the channel
 and clients on those channel.  One list may include several mode
-types.
+types.  Also, when router redistributes the packet by broadcasting it,
+it is convenient to send only one packet.
 
 There is no specific payload for this packet type.  The packet type
 uses same payload as described in 2.3.27 Set Mode Payload.  To form a
