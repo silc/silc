@@ -366,6 +366,10 @@ struct SilcClientEntryStruct {
   /* data.status is RESOLVING and this includes the resolving command
      reply identifier. */
   SilcUInt16 resolve_cmd_ident;
+
+  /* we need this so nobody can resume more than once at the same time - 
+   * server crashes, really odd behaviour, ... */
+  SilcClientEntry resuming_client;
 };
 
 /*
