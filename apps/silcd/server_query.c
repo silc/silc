@@ -426,7 +426,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
     /* Get requested attributes if set */
     tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-    if (tmp)
+    if (tmp && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN)
       query->attrs = silc_attribute_payload_parse(tmp, tmp_len);
     break;
 
@@ -746,6 +746,11 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	}
       }
 
+      /* Remove the NOATTR status periodically */
+      if (client_entry->data.status & SILC_IDLIST_STATUS_NOATTR &&
+	  client_entry->updated + 600 < time(NULL))
+	client_entry->data.status &= ~SILC_IDLIST_STATUS_NOATTR;
+
       /* When requested attributes is present and local client is detached
 	 we cannot send the command to the client, we'll reply on behalf of
 	 the client instead. */
@@ -977,6 +982,7 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
   client_entry->data.status |= SILC_IDLIST_STATUS_RESOLVING;
   client_entry->data.status &= ~SILC_IDLIST_STATUS_RESOLVED;
   client_entry->resolve_cmd_ident = ident;
+  client_entry->updated = time(NULL);
 
   /* Save the queried ID, which we will reprocess after we get this and
      all other queries back. */
@@ -1545,6 +1551,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
       buffer = silc_attribute_payload_encode(buffer, attribute,
 					     SILC_ATTRIBUTE_FLAG_VALID,
 					     &service, sizeof(service));
+      if (!buffer)
+	return NULL;
       break;
 
     case SILC_ATTRIBUTE_STATUS_MOOD:
@@ -1554,6 +1562,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 					     (void *)
 					     SILC_ATTRIBUTE_MOOD_NORMAL,
 					     sizeof(SilcUInt32));
+      if (!buffer)
+	return NULL;
       break;
 
     case SILC_ATTRIBUTE_STATUS_FREETEXT:
@@ -1564,6 +1574,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
       buffer = silc_attribute_payload_encode(buffer, attribute,
 					     SILC_ATTRIBUTE_FLAG_VALID,
 					     tmp, strlen(tmp));
+      if (!buffer)
+	return NULL;
       break;
 
     case SILC_ATTRIBUTE_PREFERRED_CONTACT:
@@ -1573,6 +1585,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 					     (void *)
 					     SILC_ATTRIBUTE_CONTACT_CHAT,
 					     sizeof(SilcUInt32));
+      if (!buffer)
+	return NULL;
       break;
 
     case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
@@ -1586,6 +1600,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 					       SILC_ATTRIBUTE_FLAG_INVALID,
 					       &pk, sizeof(pk));
 	silc_free(pk.data);
+	if (!buffer)
+	  return NULL;
 	break;
       }
 
@@ -1593,6 +1609,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
       buffer = silc_attribute_payload_encode(buffer, attribute,
 					     SILC_ATTRIBUTE_FLAG_INVALID,
 					     NULL, 0);
+      if (!buffer)
+	return NULL;
       break;
 
     default:
@@ -1605,6 +1623,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
       buffer = silc_attribute_payload_encode(buffer, attribute,
 					     SILC_ATTRIBUTE_FLAG_INVALID,
 					     NULL, 0);
+      if (!buffer)
+	return NULL;
       break;
     }
   }
@@ -1619,6 +1639,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 					 SILC_ATTRIBUTE_FLAG_INVALID,
 					 &pk, sizeof(pk));
   silc_free(pk.data);
+  if (!buffer)
+    return NULL;
 
   /* Finally compute the digital signature of all the data we provided
      as an indication that we provided rightfull information, and this
@@ -1636,6 +1658,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 				    SILC_ATTRIBUTE_FLAG_VALID,
 				    &pk, sizeof(pk));
   }
+  if (!buffer)
+    return NULL;
 
   return buffer;
 }

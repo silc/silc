@@ -360,6 +360,9 @@ struct SilcClientEntryStruct {
   /* Connection data */
   void *connection;
 
+  /* Last time updated/accessed */
+  unsigned long updated;
+
   /* data.status is RESOLVING and this includes the resolving command 
      reply identifier. */
   SilcUInt16 resolve_cmd_ident;
