@@ -1246,10 +1246,14 @@ void silc_client_notify_by_server(SilcClient client,
 				  SilcBuffer message)
 {
   char *msg;
+  SilcNotifyType type;
+
+  SILC_GET16_MSB(type, message->data);
+  silc_buffer_pull(message, 2);
 
   msg = silc_calloc(message->len + 1, sizeof(char));
   memcpy(msg, message->data, message->len);
-  client->ops->say(client, sock->user_data, msg);
+  client->ops->notify(client, sock->user_data, type, msg);
   silc_free(msg);
 }
 
@@ -1395,7 +1399,7 @@ void silc_client_channel_message(SilcClient client,
 
   id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
 
-  /* Find the channel entry from channels on this window */
+  /* Find the channel entry from channels on this connection */
   if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
 				   SILC_ID_CHANNEL, &id_cache))
     goto out;

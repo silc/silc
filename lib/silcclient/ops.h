@@ -37,6 +37,8 @@ typedef struct {
 			  char *sender, char *channel_name, char *msg);
   void (*private_message)(SilcClient client, SilcClientConnection conn,
 			  char *sender, char *msg);
+  void (*notify)(SilcClient client, SilcClientConnection conn, 
+		 SilcNotifyType type, char *msg);
   void (*command)(SilcClient client, SilcClientConnection conn, 
 		  SilcClientCommandContext cmd_context, int success,
 		  SilcCommand command);
@@ -78,6 +80,13 @@ typedef struct {
 
    Private message to the client. The `sender' is the nickname of the
    sender received in the packet.
+
+
+   void (*notify)(SilcClient client, SilcClientConnection conn, 
+		  SilcNotifyType type, char *msg);
+
+   Notify message to the client.  The `type' is the notify type received
+   from server.  The `msg' is a human readable message sent by the server.
 
 
    void (*command)(SilcClient client, SilcClientConnection conn, 

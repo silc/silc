@@ -46,6 +46,7 @@ SilcClientOperations ops = {
   say:                  silc_say,
   channel_message:      silc_channel_message,
   private_message:      silc_private_message,
+  notify:               silc_notify,
   command:              silc_command,
   command_reply:        silc_command_reply,
   connect:              silc_connect,

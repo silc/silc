@@ -64,6 +64,16 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   silc_print(client, "*%s* %s", sender, msg);
 }
 
+
+/* Notify message to the client.  The `type' is the notify type received
+   from server.  The `msg' is a human readable message sent by the server. */
+
+void silc_notify(SilcClient client, SilcClientConnection conn, 
+		 SilcNotifyType type, char *msg)
+{
+  silc_print(client, "*** %s", msg);
+}
+
 /* Command handler. This function is called always in the command function.
    If error occurs it will be called as well. `conn' is the associated
    client connection. `cmd_context' is the command context that was
@@ -401,6 +411,7 @@ SilcClientOperations ops = {
   say:                  silc_say,
   channel_message:      silc_channel_message,
   private_message:      silc_private_message,
+  notify:               silc_notify,
   command:              silc_command,
   command_reply:        silc_command_reply,
   connect:              silc_connect,
