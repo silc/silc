@@ -164,7 +164,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "attr_status_text", " User's message     : $0", 1, { 0 } },
 	{ "attr_status_message",      " User's message     : $0", 1, { 0 } },
 	{ "attr_status_message_file", " Message file       : $0", 1, { 0 } },
-	{ "attr_preferred_language",  " Preferred langauge : $0", 1, { 0 } },
+	{ "attr_preferred_language",  " Preferred language : $0", 1, { 0 } },
 	{ "attr_preferred_contact",   " Preferred contact  : $0", 1, { 0 } },
 	{ "attr_geolocation",    " Geolocation        : $0", 1, { 0 } },
 	{ "attr_device_info",    " Device Info        : $0", 1, { 0 } },

@@ -176,7 +176,7 @@ void command_attr(const char *data, SILC_SERVER_REC *server,
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_STATUS_MESSAGE, NULL);
       settings_set_str("attr_status_message", "");
-    } else if (!strcasecmp(argv[1], "preferred_langauge")) {
+    } else if (!strcasecmp(argv[1], "preferred_language")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_PREFERRED_LANGUAGE, NULL);
       settings_set_str("attr_preferred_language", "");
@@ -218,7 +218,7 @@ void command_attr(const char *data, SILC_SERVER_REC *server,
     settings_set_str("attr_status_text", argv[2]);
   } else if (!strcasecmp(argv[1], "status_message")) {
     settings_set_str("attr_status_message", argv[2]);
-  } else if (!strcasecmp(argv[1], "preferred_langauge")) {
+  } else if (!strcasecmp(argv[1], "preferred_language")) {
     settings_set_str("attr_preferred_language", argv[2]);
   } else if (!strcasecmp(argv[1], "preferred_contact")) {
     settings_set_str("attr_preferred_contact", argv[2]);
@@ -334,10 +334,10 @@ void silc_query_attributes_default(SilcClient client,
 	mask |= SILC_ATTRIBUTE_MOOD_EXCITED;
       if (!strcasecmp(*entry, "ANXIOUS"))
 	mask |= SILC_ATTRIBUTE_MOOD_ANXIOUS;
-      silc_client_attribute_add(silc_client, conn,
-				SILC_ATTRIBUTE_STATUS_MOOD, (void *)mask,
-				sizeof(SilcUInt32));
     }
+    silc_client_attribute_add(silc_client, conn,
+			      SILC_ATTRIBUTE_STATUS_MOOD, (void *)mask,
+			      sizeof(SilcUInt32));
     g_strfreev(list);
   }
 
@@ -404,10 +404,10 @@ void silc_query_attributes_default(SilcClient client,
 	mask |= SILC_ATTRIBUTE_CONTACT_MMS;
       if (!strcasecmp(*entry, "CHAT"))
 	mask |= SILC_ATTRIBUTE_CONTACT_CHAT;
-      silc_client_attribute_add(silc_client, conn,
-				SILC_ATTRIBUTE_PREFERRED_CONTACT, (void *)mask,
-				sizeof(SilcUInt32));
     }
+    silc_client_attribute_add(silc_client, conn,
+			      SILC_ATTRIBUTE_PREFERRED_CONTACT, (void *)mask,
+			      sizeof(SilcUInt32));
     g_strfreev(list);
   }
 
