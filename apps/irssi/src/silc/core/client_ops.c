@@ -934,12 +934,13 @@ void silc_command(SilcClient client, SilcClientConnection conn,
   switch (command) {
 
   case SILC_COMMAND_INVITE:
-    printformat_module("fe-common/silc", server, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITING,
-		       cmd_context->argv[2], 
-		       (cmd_context->argv[1][0] == '*' ?
-			(char *)conn->current_channel->channel_name :
-			(char *)cmd_context->argv[1]));
+    if (cmd_context->argc > 2)
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITING,
+			 cmd_context->argv[2], 
+			 (cmd_context->argv[1][0] == '*' ?
+			  (char *)conn->current_channel->channel_name :
+			  (char *)cmd_context->argv[1]));
     break;
 
   case SILC_COMMAND_DETACH:
