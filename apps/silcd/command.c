@@ -750,17 +750,6 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
     if (!entry)
       continue;
 
-#if 1
-    /* XXX REMOVE */
-    /* Sanity check, however these should never fail. However, as
-       this sanity check has been added here they have failed. */
-    if (!entry->nickname || !entry->username || !entry->userinfo) {
-      SILC_LOG_ERROR(("********* if (!entry->nickname || !entry->username "
-		      "|| !entry->userinfo) triggered: should have not!"));
-      continue;
-    }
-#endif
-
     if (k >= 1)
       status = SILC_STATUS_LIST_ITEM;
     if (valid_count > 1 && k == valid_count - 1)
@@ -1131,25 +1120,6 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
     if (clients_count > 1 && i == clients_count - 1)
       status = SILC_STATUS_LIST_END;
 
-    /* Sanity check, however these should never fail. However, as
-       this sanity check has been added here they have failed. */
-    if (!entry->nickname || !entry->username || !entry->userinfo) {
-      SILC_LOG_ERROR(("********* if (!entry->nickname || !entry->username "
-		      "|| !entry->userinfo) triggered: should have not!"));
-      continue;
-    }
-
-#if 1
-    /* XXX REMOVE */
-    /* Sanity check, however these should never fail. However, as
-       this sanity check has been added here they have failed. */
-    if (!entry->nickname || !entry->username) {
-      SILC_LOG_ERROR(("********* if (!entry->nickname || !entry->username) "
-		      "triggered: should have not!"));
-      continue;
-    }
-#endif
-      
     /* Send WHOWAS reply */
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
     tmp = silc_argument_get_first_arg(cmd->args, NULL);
