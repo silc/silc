@@ -1,3 +1,19 @@
+Sun Sep 22 14:54:05 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Rewrote WHOIS, WHOWAS and IDENTIFY commands in the server.
+	  Added server_query.[ch] which provides one interface for
+	  querying information using all three commands.
+
+	* Changed all "typedef unsigned char" in core library to
+	  "typedef SilcUInt8".
+
+Sat Sep 21 21:36:45 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_strncat into lib/silcutil/silcstrutil.[ch].
+
+	* Renamed silc_server_get_client_resolve to
+	  silc_server_query_resolve and moved to server_query.[ch].
+
 Wed Sep 18 18:28:04 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Resumed client packet handling from server put the resumed

@@ -61,7 +61,7 @@
  *
  * NAME
  * 
- *    typedef unsigned char SilcPacketType;
+ *    typedef SilcUInt8 SilcPacketType;
  *
  * DESCRIPTION
  *
@@ -69,7 +69,7 @@
  *
  * SOURCE
  */
-typedef unsigned char SilcPacketType;
+typedef SilcUInt8 SilcPacketType;
 
 /* SILC Packet types. */
 #define SILC_PACKET_NONE		 0       /* NULL, never sent */
@@ -110,20 +110,20 @@ typedef unsigned char SilcPacketType;
  *
  * NAME
  * 
- *    typedef unsigned char SilcPacketVersion;
+ *    typedef SilcUInt8 SilcPacketVersion;
  *
  * DESCRIPTION
  *
  *    SILC packet version type definition.
  *
  ***/
-typedef unsigned char SilcPacketVersion;
+typedef SilcUInt8 SilcPacketVersion;
 
 /****d* silccore/SilcPacketAPI/SilcPacketFlags
  *
  * NAME
  * 
- *    typedef unsigned char SilcPacketFlags;
+ *    typedef SilcUInt8 SilcPacketFlags;
  *
  * DESCRIPTION
  *
@@ -131,7 +131,7 @@ typedef unsigned char SilcPacketVersion;
  *
  * SOURCE
  */
-typedef unsigned char SilcPacketFlags;
+typedef SilcUInt8 SilcPacketFlags;
 
 /* All defined packet flags */
 #define SILC_PACKET_FLAG_NONE             0x00    /* No flags */

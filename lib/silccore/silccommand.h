@@ -109,7 +109,7 @@ typedef enum {
  *
  * NAME
  * 
- *    typedef unsigned char SilcCommand;
+ *    typedef SilcUInt8 SilcCommand;
  *
  * DESCRIPTION
  *
@@ -119,7 +119,7 @@ typedef enum {
  *
  * SOURCE
  */
-typedef unsigned char SilcCommand;
+typedef SilcUInt8 SilcCommand;
 
 /* All SILC commands. These are commands that have client and server
    counterparts. */

@@ -64,6 +64,8 @@ typedef SilcUInt8 SilcIDListStatus;
 #define SILC_IDLIST_STATUS_LOCAL        0x20  /* Entry locally connected */
 #define SILC_IDLIST_STATUS_RESUME_RES   0x40  /* Entry resolved while
 						 resuming */
+#define SILC_IDLIST_STATUS_NOATTR       0x80  /* Entry does not support
+						 attributes in WHOIS */
 
 /*
    Generic ID list data structure.

@@ -50,7 +50,7 @@ typedef struct SilcAttributePayloadStruct *SilcAttributePayload;
  *
  * NAME
  * 
- *    typedef unsigned char SilcAttribute;
+ *    typedef SilcUInt8 SilcAttribute;
  *
  * DESCRIPTION
  *
@@ -61,7 +61,7 @@ typedef struct SilcAttributePayloadStruct *SilcAttributePayload;
  *
  * SOURCE
  */
-typedef unsigned char SilcAttribute;
+typedef SilcUInt8 SilcAttribute;
 
 /* All defined attributes.  See the specs for detailed information.  The
    comment is the structure or data type that must be used with the
@@ -88,7 +88,7 @@ typedef unsigned char SilcAttribute;
  *
  * NAME
  * 
- *    typedef unsigned char SilcAttributeFlags;
+ *    typedef SilcUInt8 SilcAttributeFlags;
  *
  * DESCRIPTION
  *
@@ -96,7 +96,7 @@ typedef unsigned char SilcAttribute;
  *
  * SOURCE
  */
-typedef unsigned char SilcAttributeFlags;
+typedef SilcUInt8 SilcAttributeFlags;
 
 /* All defined flags */
 #define SILC_ATTRIBUTE_FLAG_NONE          0x00    /* No flags */

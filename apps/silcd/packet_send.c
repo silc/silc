@@ -1805,7 +1805,7 @@ void silc_server_send_command(SilcServer server,
 
   packet = silc_command_payload_encode_vap(command, ident, argc, ap);
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND, 0,
-			  packet->data, packet->len, TRUE);
+			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
   va_end(ap);
 }
@@ -1856,7 +1856,7 @@ void silc_server_send_dest_command_reply(SilcServer server,
 						 ident, argc, ap);
   silc_server_packet_send_dest(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
 			       dst_id, dst_id_type, packet->data, 
-			       packet->len, TRUE);
+			       packet->len, FALSE);
   silc_buffer_free(packet);
   va_end(ap);
 }

@@ -1,6 +1,12 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o Server password is not used at all.  It is not possible to automize
+   the password authentication currently.  The silc_get_auth_method
+   in irssi/src/silc/core/client_ops.c should find the connection's
+   password, only if not found then continue resolving the auth method.
+   Alternatively it can do it after resolving in the callback.
+
  o UTF-8 encode/decode WHOIS userinfos, topic, etc.
 
  o Testing
@@ -23,8 +29,6 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
-
- o WHOIS may not send reply in certain situations.
 
  o Add support for the <Requested Attributes> in WHOIS.  Sending and
    reception, with clients and servers should be added.

@@ -376,6 +376,8 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
       return FALSE;
     }
 
+    client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
+    client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
     client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED; 
     client->servername = servername;
   } else {
@@ -386,10 +388,13 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
 
     silc_free(client->nickname);
     silc_free(client->username);
+    silc_free(client->servername);
     
     client->nickname = nick;
     client->username = strdup(username);
     client->servername = servername;
+    client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
+    client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
 
     /* Remove the old cache entry and create a new one */
     silc_idcache_del_by_context(global ? server->global_list->clients :
@@ -436,8 +441,13 @@ SILC_SERVER_CMD_REPLY_FUNC(whowas)
   }
 
  out:
+  silc_server_command_process_error(cmd, error);
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WHOWAS);
+  silc_server_command_reply_free(cmd);
+  return;
+
  err:
+  silc_server_command_process_error(cmd, error);
   silc_server_command_reply_free(cmd);
 }
 
