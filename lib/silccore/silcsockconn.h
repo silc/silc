@@ -76,6 +76,13 @@ typedef enum {
        indicate several different status that can affect the use of the
        socket object.
 
+   char *hostname
+   char *ip
+   unsigned short port
+
+       Resolved hostname, IP address and port of the connection who owns
+       this object.
+
    SilcBuffer inbuf
    SilcBuffer outbuf
 

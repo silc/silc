@@ -1,7 +1,7 @@
 Coding Style in SILC source tree
 ================================
 
-This documents describes the coding style and coding conventions used
+This document describes the coding style and coding conventions used
 in the SILC source tree.  The purpose of the document is to describe the
 common way to program for SILC and thus should be learned when programming
 new code.  The document describes various conventions regarding variable
@@ -420,7 +420,7 @@ by memset() before freeing the memory.  Common way to do is,
 	memset(ptr, 'F', sizeof(*ptr));
 	silc_free(ptr);
 
-Where 'F' indicates free'd memory if you ever check it with debugger.
+Where 'F' indicates free'd memory if you'd ever check it with debugger.
 Other choice is to use 0 instead of 'F'.  The pointer after freeing 
 should be set to NULL if appropriate, ptr = NULL.
 

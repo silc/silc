@@ -55,30 +55,30 @@ typedef enum {
 /* All SILC commands. These are commands that have client and server
    counterparts. These are pretty much the same as in IRC. */
 #define SILC_COMMAND_NONE               0
-#define SILC_COMMAND_WHOIS		2
-#define SILC_COMMAND_WHOWAS		3
-#define SILC_COMMAND_IDENTIFY           4
-#define SILC_COMMAND_NICK		5
-#define SILC_COMMAND_LIST		6
-#define SILC_COMMAND_TOPIC		7
-#define SILC_COMMAND_INVITE		8
-#define SILC_COMMAND_QUIT		9
-#define SILC_COMMAND_KILL		10
-#define SILC_COMMAND_INFO		11
-#define SILC_COMMAND_CONNECT	        12
-#define SILC_COMMAND_PING		13
-#define SILC_COMMAND_OPER		14
-#define SILC_COMMAND_JOIN		15
-#define SILC_COMMAND_MOTD		16
-#define SILC_COMMAND_UMODE		17
-#define SILC_COMMAND_CMODE		18
-#define SILC_COMMAND_KICK		19
-#define	SILC_COMMAND_RESTART	        20
-#define	SILC_COMMAND_CLOSE		21
-#define	SILC_COMMAND_DIE		22
-#define SILC_COMMAND_SILCOPER	        23
-#define SILC_COMMAND_LEAVE		24
-#define SILC_COMMAND_NAMES		25
+#define SILC_COMMAND_WHOIS		1
+#define SILC_COMMAND_WHOWAS		2
+#define SILC_COMMAND_IDENTIFY           3
+#define SILC_COMMAND_NICK		4
+#define SILC_COMMAND_LIST		5
+#define SILC_COMMAND_TOPIC		6
+#define SILC_COMMAND_INVITE		7
+#define SILC_COMMAND_QUIT		8
+#define SILC_COMMAND_KILL		9
+#define SILC_COMMAND_INFO		10
+#define SILC_COMMAND_CONNECT	        11
+#define SILC_COMMAND_PING		12
+#define SILC_COMMAND_OPER		13
+#define SILC_COMMAND_JOIN		14
+#define SILC_COMMAND_MOTD		15
+#define SILC_COMMAND_UMODE		16
+#define SILC_COMMAND_CMODE		17
+#define SILC_COMMAND_KICK		18
+#define	SILC_COMMAND_RESTART	        19
+#define	SILC_COMMAND_CLOSE		20
+#define	SILC_COMMAND_DIE		21
+#define SILC_COMMAND_SILCOPER	        22
+#define SILC_COMMAND_LEAVE		23
+#define SILC_COMMAND_NAMES		24
 
 /* Local commands. Local commands are unofficial commands and
    are implementation specific commands. These are used only by the

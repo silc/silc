@@ -1651,19 +1651,23 @@ List of all defined commands in SILC follows.
         None.  This is reserved command and must not be sent.
 
 
-   2    SILC_COMMAND_WHOIS
+   1    SILC_COMMAND_WHOIS
 
-        Max Arguments:  2
-            Arguments:  (1) <nickname>[@<server>]  (2) [<count>]
+        Max Arguments:  3
+            Arguments:  (1) <nickname>[@<server>]  (2) [<Client ID>]
+                        (3) [<count>]
 
-        Whois.  Whois command is used to query various information about
-        specific user.  The user maybe requested by their nickname and
-        server name.  The query may find multiple matching users as
-        there are no unique nicknames in the SILC.  The <count> option
-        maybe given to narrow down the number of accepted results.  If
-        this is not defined there are no limit of accepted results.
-        The query may also be narrowed down by defining the server name
-        of the nickname.
+        Whois command is used to query various information about specific
+        user.  The user maybe requested by their nickname and server name.
+        The query may find multiple matching users as there are no unique
+        nicknames in the SILC.  The <count> option maybe given to narrow
+        down the number of accepted results.  If this is not defined there
+        are no limit of accepted results.  The query may also be narrowed
+        down by defining the server name of the nickname.
+
+        It is also possible to search the user by Client ID.  If <Client ID>
+        is provided server must use it as the search value instead of
+        the <nickname>.
 
         To prevent miss-use of this service wildcards in the nickname
         or in the servername are not permitted.  It is not allowed
@@ -1709,7 +1713,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
 
 
-   3    SILC_COMMAND_WHOWAS
+   2    SILC_COMMAND_WHOWAS
 
         Max Arguments:  2
             Arguments:  (1) <nickname>[@<server>]  (2) [<count>]
@@ -1758,7 +1762,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
 
 
-   4    SILC_COMMAND_IDENTIFY
+   3    SILC_COMMAND_IDENTIFY
 
         Max Arguments:  2
             Arguments:  (1) <nickname>[@<server>]  (2) [<count>]
@@ -1781,7 +1785,7 @@ List of all defined commands in SILC follows.
         be based on specific nickname request.
 
         Implementations may not want to give interface access to this
-        commands as it is hardly a command that would be used a end user.
+        command as it is hardly a command that would be used a end user.
         However, it must be implemented as it is used with private message
         sending.
 
@@ -1817,7 +1821,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
 
 
-   5    SILC_COMMAND_NICK
+   4    SILC_COMMAND_NICK
 
         Max Arguments:  1
             Arguments:  (1) <nickname>
@@ -1851,7 +1855,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
 
 
-   6    SILC_COMMAND_LIST
+   5    SILC_COMMAND_LIST
 
         Max Arguments:  2
             Arguments:  (1) [<Channel ID>] [<server>]
@@ -1895,7 +1899,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER
 
 
-   7    SILC_COMMAND_TOPIC
+   6    SILC_COMMAND_TOPIC
 
         Max Arguments:  2
             Arguments:  (1) <Channel ID>  (2) [<server>]]
@@ -1929,7 +1933,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
 
 
-   8    SILC_COMMAND_INVITE
+   7    SILC_COMMAND_INVITE
 
         Max Arguments:  2
             Arguments:  (1) <Client ID>  (2) <Channel ID>
@@ -1964,7 +1968,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_USER_ON_CHANNEL
 
 
-   9    SILC_COMMAND_QUIT
+   8    SILC_COMMAND_QUIT
 
         Max Arguments:  1
             Arguments:  (1) [<quit message>]
@@ -1979,7 +1983,7 @@ List of all defined commands in SILC follows.
         This command does not reply anything.
 
 
-   10   SILC_COMMAND_KILL
+    9   SILC_COMMAND_KILL
 
         Max Arguments:  2
             Arguments:  (1) <Client ID>  (2) [<comment>]
@@ -2012,7 +2016,7 @@ List of all defined commands in SILC follows.
 
 
 
-   11   SILC_COMMAND_INFO
+   10   SILC_COMMAND_INFO
 
         Max Arguments:  1
             Arguments:  (1) [<server>]
@@ -2040,7 +2044,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER
 
 
-   12   SILC_COMMAND_CONNECT
+   11   SILC_COMMAND_CONNECT
 
         Max Arguments:  2
             Arguments:  (1) <Server ID>  
@@ -2073,7 +2077,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_ROUTER_PRIV
 
 
-   13   SILC_COMMAND_PING
+   12   SILC_COMMAND_PING
 
         Max Arguments:  1
             Arguments:  (1) <Server ID>
@@ -2101,7 +2105,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_REGISTERED
 
 
-   14   SILC_COMMAND_OPER
+   13   SILC_COMMAND_OPER
 
         Max Arguments:  2
             Arguments:  (1) <username>  (2) <authentication data>
@@ -2136,7 +2140,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_AUTH_FAILED
 
 
-   15   SILC_COMMAND_JOIN
+   14   SILC_COMMAND_JOIN
 
         Max Arguments:  3
             Arguments:  (1) <channel>  (2) [<passphrase>] 
@@ -2207,7 +2211,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_USER_ON_CHANNEL
 
 
-   16   SILC_COMMAND_MOTD
+   15   SILC_COMMAND_MOTD
 
         Max Arguments:  1
             Arguments:  (1) <server>
@@ -2230,7 +2234,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER
 
 
-   17   SILC_COMMAND_UMODE
+   16   SILC_COMMAND_UMODE
 
         Max Arguments:  2
             Arguments:  (1) <Client ID>  (2) <client mode mask>
@@ -2292,7 +2296,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CLIENT_ID
 
 
-   18   SILC_COMMAND_CMODE
+   17   SILC_COMMAND_CMODE
 
         Max Arguments:  8
             Arguments:  (1) <Channel ID>    (2) <channel mode mask>
@@ -2512,7 +2516,7 @@ List of all defined commands in SILC follows.
 
 
 
-   19   SILC_COMMAND_KICK
+   18   SILC_COMMAND_KICK
 
         Max Arguments:  3
             Arguments:  (1) <channel>  (2) <Client ID>  
@@ -2543,7 +2547,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CLIENT_ID
 
 
-   20   SILC_COMMAND_RESTART
+   19   SILC_COMMAND_RESTART
 
         Max Arguments:  0
             Arguments:  None
@@ -2567,7 +2571,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SERVER_PRIV
 
 
-   21   SILC_COMMAND_CLOSE
+   20   SILC_COMMAND_CLOSE
 
         Max Arguments:  1
             Arguments:  (1) <Server ID>
@@ -2596,7 +2600,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER_ID
 
 
-   22   SILC_COMMAND_DIE
+   21   SILC_COMMAND_DIE
 
         Max Arguments:  0
             Arguments:  None
@@ -2621,7 +2625,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SERVER_PRIV
 
 
-   23   SILC_COMMAND_SILCOPER
+   22   SILC_COMMAND_SILCOPER
 
         Max Arguments:  2
             Arguments:  (1) <username>  (2) <authentication data>
@@ -2661,7 +2665,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_AUTH_FAILED
 
 
-   24   SILC_COMMAND_LEAVE
+   23   SILC_COMMAND_LEAVE
 
         Max Arguments:  1
             Arguments:  (1) <Channel ID>
@@ -2689,7 +2693,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CHANNEL_ID
 
 
-   25   SILC_COMMAND_NAMES
+   24   SILC_COMMAND_NAMES
 
         Max Arguments:  1
             Arguments:  (1) <Channel ID>
@@ -2732,7 +2736,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_ON_CHANNEL
 
 
-   26 - 254
+   25 - 254
 
         Currently undefined commands.
 

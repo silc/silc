@@ -1,3 +1,8 @@
+Sat Jul 15 15:33:48 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added command lagging support in server. Client may execute
+	  commands now only once in two seconds.
+
 Thu Jul 13 22:10:21 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Optimized packet reception. MAC computation and checking is now

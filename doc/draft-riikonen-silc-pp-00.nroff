@@ -1312,8 +1312,9 @@ o Private Message Key (variable length) - The actual private
 .ti 0
 2.3.12 Command Payload
 
-Command Payload is used to send SILC commands from client to server.  
-Following diagram represents the Command Payload.
+Command Payload is used to send SILC commands from client to server.
+Also server may send commands to other servers.  Following diagram
+represents the Command Payload.
 
 
 .in 5
@@ -1321,8 +1322,10 @@ Following diagram represents the Command Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-| SILC Command  | Arguments Num |         Payload Length        |
+|         Payload Length        | SILC Command  | Arguments Num |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Command Unifier        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
 .ce
@@ -1330,6 +1333,10 @@ Figure 13:  Command Payload
 
 
 .in 6
+o Payload Length (2 bytes) - Length of the entire command 
+  payload including any command argument payloads associated 
+  with this payload.
+
 o SILC Command (1 byte) - SILC Command identifier.  This must 
   be set to non-zero value.  If zero (0) value is found in this 
   field the packet must be discarded.
@@ -1339,9 +1346,14 @@ o Arguments Num (1 byte) - Indicates the number of arguments
   field is set to zero (0).  The arguments must follow the 
   command payload.
 
-o Payload Length (2 bytes) - Length of the entire command 
-  payload including any command argument payloads associated 
-  with this payload.
+o Command Unifier (2 bytes) - Unifies this command at the
+  sender's end.  The entity who replies to this command must
+  set the value found from this field into the Command Payload
+  used to send the reply to the sender.  This way the sender
+  can identify which command reply belongs to which originally
+  sent command.  What this field includes is implementation
+  issue but it is recommended that wrapping counter value is
+  used in the field.
 .in 3
 
 See [SILC1] for detailed description of different SILC commands,
@@ -1405,11 +1417,15 @@ o Argument Data (variable length) - Argument data.
 .ti 0
 2.3.13 Command Reply Payload
 
-Command Reply Payload is used to send replies to the commands sent
-by the client.  The Command Reply Payload is identical to the
-Command Payload hence see the upper sections for Command Payload
-and for Command Argument Payload specifications.  Command Reply
-message uses the Command Argument Payload as well.
+Command Reply Payload is used to send replies to the commands.  The
+Command Reply Payload is identical to the Command Payload thus see the
+upper sections for Command Payload and for Command Argument Payload
+specifications.  Command Reply message uses the Command Argument Payload
+as well.
+
+The entity who sends the reply packet must set the Command Unifier
+field in the reply packet's Command Payload to the value it received
+in the original command packet.
 
 See SILC Commands in [SILC1] for detailed description of different
 SILC commands, their arguments and their reply messages.

@@ -26,6 +26,9 @@ all:
 
 dist-hook:
 	-rm -f draft-riikonen*.txt
+	touch draft-riikonen-silc-spec-00.txt
+	touch draft-riikonen-silc-pp-00.txt
+	touch draft-riikonen-silc-ke-auth-00.txt
 	./makerfc draft-riikonen-silc-spec-00.nroff \
 		draft-riikonen-silc-spec-00.txt
 	./makerfc draft-riikonen-silc-pp-00.nroff \

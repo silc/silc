@@ -33,7 +33,7 @@ case "$target" in
     ;;
 esac
 
-AM_INIT_AUTOMAKE(silc, 10072000)
+AM_INIT_AUTOMAKE(silc, 14072000)
 AC_PREREQ(2.3)
 AM_CONFIG_HEADER(includes/silcdefs.h)
 
