@@ -314,6 +314,14 @@ have compiled the Toolkit with --enable-debug option so that run-time
 debugging is enabled.
 
 <br />&nbsp;<br />
+Then, to say in your application you would like to use the debugging use
+the SILC_ENABLE_DEBUG macro.  Put this macro to your main header file, or
+some other file that needs the debugging enabled.  After using this macro
+you are able to use the debugging routines provided by the SILC Toolkit.  
+Note that, the Toolkit library must be compiled with --enable-debug for
+this macro to have any effect.
+
+<br />&nbsp;<br />
 To turn on the run-time debugging set the global variable "silc_debug" to
 TRUE.  To see packet hexdumps you can set also "silc_debug_hexdump" to TRUE.
 Hexdumps can create more debug log so not setting it to TRUE by default is

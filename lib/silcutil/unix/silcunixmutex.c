@@ -21,39 +21,47 @@
 
 #include "silcincludes.h"
 
-#ifdef SILC_THREADS
-
 /* SILC Mutex structure */
 struct SilcMutexStruct {
+#ifdef SILC_THREADS
   pthread_mutex_t mutex;
+#else
+  void *tmp;
+#endif /* SILC_THREADS */
 };
 
 bool silc_mutex_alloc(SilcMutex *mutex)
 {
+#ifdef SILC_THREADS
   *mutex = silc_calloc(1, sizeof(**mutex));
   if (*mutex == NULL)
     return FALSE;
 
   pthread_mutex_init(&(*mutex)->mutex, NULL);
+#endif /* SILC_THREADS */
   return TRUE;
 }
 
 void silc_mutex_free(SilcMutex mutex)
 {
+#ifdef SILC_THREADS
   pthread_mutex_destroy(&mutex->mutex);
   silc_free(mutex);
+#endif /* SILC_THREADS */
 }
 
 void silc_mutex_lock(SilcMutex mutex)
 {
+#ifdef SILC_THREADS
   if (pthread_mutex_lock(&mutex->mutex))
     assert(FALSE);
+#endif /* SILC_THREADS */
 }
 
 void silc_mutex_unlock(SilcMutex mutex)
 {
+#ifdef SILC_THREADS
   if (pthread_mutex_unlock(&mutex->mutex))
     assert(FALSE);
-}
-
 #endif /* SILC_THREADS */
+}

@@ -1002,6 +1002,9 @@ win32/libsilcclient/Makefile
 )
 fi
 
+# Use our configuration in compilation
+CFLAGS="-DHAVE_SILCDEFS_H $CFLAGS"
+
 AC_OUTPUT
 
 s_bindir=`eval echo $bindir`;s_bindir=`eval echo $s_bindir`

@@ -26,8 +26,7 @@ include_HEADERS = \
 	silcbeos.h \
 	silcos2.h \
 	silcversion.h \
-	version_internal.h \
-	silcdefs.h
+	version_internal.h
 endif
 
 EXTRA_DIST = \

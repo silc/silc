@@ -64,24 +64,26 @@ extern "C" {
 #endif
 #endif
 
+#if defined(HAVE_SILCDEFS_H)
 /* Automatically generated configuration header */
 #include "silcdefs.h"
+#endif /* HAVE_SILCDEFS_H */
 
 /* Platform specific includes */
 
-#ifdef SILC_WIN32
+#if defined(SILC_WIN32)
 #include "silcwin32.h"
 #endif
 
-#ifdef SILC_EPOC
+#if defined(SILC_EPOC)
 #include "silcepoc.h"
 #endif
 
-#ifdef SILC_BEOS
+#if defined(SILC_BEOS)
 #include "silcbeos.h"
 #endif
 
-#ifdef SILC_OS2
+#if defined(SILC_OS2)
 #include "silcos2.h"
 #endif
 
@@ -122,7 +124,7 @@ extern "C" {
 #error assert.h not found in the system
 #endif
 
-#ifndef SILC_WIN32
+#if !defined(SILC_WIN32)
 
 #include <unistd.h>
 #include <sys/time.h>
@@ -270,7 +272,7 @@ extern "C" {
 #include "silcvcard.h"
 #include "silcapputil.h"
 
-#ifdef SILC_SIM
+#if defined(SILC_SIM)
 /* SILC Module library includes */
 #include "silcsim.h"
 #include "silcsimutil.h"
