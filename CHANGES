@@ -1,3 +1,9 @@
+Tue Apr  3 21:52:42 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Defined uint8, int8, uint16, int16, uint32, int32, uint64 and
+	  int64 of at least the xintXX size.  If void * is less that 4
+	  bytes uint32 * will be used.  Defined bool as boolean.
+
 Tue Apr  3 16:39:19 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented the sending of the SERVER_SIGNOFF notify in the

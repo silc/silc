@@ -97,7 +97,7 @@ int silc_client_config_parse(SilcClientConfig config, SilcBuffer buffer,
 			     SilcClientConfigParse *return_config)
 {
   int i, begin;
-  unsigned int linenum;
+  int linenum;
   char line[1024], *cp;
   SilcClientConfigSection *cptr = NULL;
   SilcClientConfigParse parse = *return_config, first = NULL;

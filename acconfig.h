@@ -15,6 +15,14 @@
 #undef HAVE_RTLD_NOW
 #undef HAVE_RTLD_LAZY
 
+/* Types */
+#undef SILC_SIZEOF_LONG_LONG
+#undef SILC_SIZEOF_LONG
+#undef SILC_SIZEOF_INT
+#undef SILC_SIZEOF_SHORT
+#undef SILC_SIZEOF_CHAR
+#undef SILC_SIZEOF_VOID_P
+
 /* Redefs for SOCKS5 library */
 #undef SOCKS
 #undef SOCKS5

@@ -128,6 +128,62 @@
 #define FALSE 0
 #endif
 
+/* Define types. The types must be at least of the specified size */
+#undef uint8
+#undef uint16
+#undef uint32
+#undef uin64
+#undef int8
+#undef int16
+#undef int32
+#undef int64
+
+typedef unsigned char uint8;
+typedef signed char int8;
+
+#if SILC_SIZEOF_SHORT > 2
+#error "size of the short must be 2 bytes"
+#endif
+
+typedef unsigned short uint16;
+typedef signed short int16;
+
+#if SILC_SIZEOF_LONG == 4
+typedef unsigned long uint32;
+typedef signed long int32;
+#else
+#if SILC_SIZEOF_INT == 4
+typedef unsigned long uint32;
+typedef signed long int32;
+#else
+#if SILC_SIZEOF_LONG_LONG >= 4
+typedef unsigned long long uint32;
+typedef signed long long int32;
+#endif
+#endif
+#endif
+
+#if SILC_SIZEOF_LONG >= 8
+typedef unsigned long uint64;
+typedef signed long int64;
+#else
+#if SILC_SIZEOF_LONG_LONG >= 8
+typedef unsigned long long uint64;
+typedef signed long long int64;
+#else
+typedef uint32 uint64;
+typedef int32 int64;
+#endif
+#endif
+
+#if SILC_SIZEOF_VOID_P < 4
+typedef uint32 * void *;
+#endif
+
+#ifndef bool
+#define bool unsigned char
+#endif
+
 /* Generic global SILC includes */
 #include "bitmove.h"
 
