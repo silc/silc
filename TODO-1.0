@@ -124,6 +124,14 @@ least could be done.
 	  SIGNOFF of notify at all (using SIGNOFF takes the idea about
 	  SERVER_SIGNOFF away entirely).
 
+        o Another SERVER_SIGNOFF opt/bugfix:  Currently the signoff is
+          sent to a client if it is on same channel as the client that
+          signoffed.  However, the entire SERVER_SIGNOFF list is sent to
+          the client, ie. it may receive clients that was not on the 
+          same channel.  This is actually against the specs.  It must be
+          done per channel.  It shouldn't receive the whole list just
+          because one client happened to be on same channel.
+
 	o See also ~/silcserver
 
  o Add SilcAsyncOperation to utility library.  Any function that takes
