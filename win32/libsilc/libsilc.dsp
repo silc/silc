@@ -330,130 +330,6 @@ SOURCE=..\..\lib\silccrypt\silcrng.c
 SOURCE=..\..\lib\silccrypt\twofish.c
 # End Source File
 # End Group
-# Begin Group "trq"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_sort.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_001.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_002.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_003.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_004.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_005.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_006.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_007.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_008.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_009.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x_010.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_sort.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_001.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_002.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_003.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_004.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_005.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_006.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_007.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_008.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_009.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_010.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_011.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_012.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_013.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_014.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_015.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x_016.c
-# End Source File
-# End Group
 # Begin Group "silcsftp No. 1"
 
 # PROP Default_Filter ""
@@ -567,7 +443,15 @@ SOURCE=..\..\lib\silcutil\silcconfig.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silcdlist.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silchashtable.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silclist.h
 # End Source File
 # Begin Source File
 
@@ -782,46 +666,6 @@ SOURCE=..\..\lib\silccrypt\twofish.h
 SOURCE=..\..\lib\silccrypt\twofish_internal.h
 # End Source File
 # End Group
-# Begin Group "trq No. 1"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\lib\trq\silcdlist.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\silclist.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_conf.h.sample
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_f.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_deque_x.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_f.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\trq\trq_list_x.h
-# End Source File
-# End Group
 # Begin Group "silcsftp"
 
 # PROP Default_Filter ""
@@ -841,10 +685,6 @@ SOURCE=..\..\lib\silcsftp\silcsftp_fs.h
 # Begin Source File
 
 SOURCE=..\silcdefs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\trq_conf.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
