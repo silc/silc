@@ -130,6 +130,8 @@ describe new stuff to be added to protocol versions 1.x.
 
  21. Subscription/IRC's notify kind support?
 
+ 22. Session detachment/resume
+
  o Inviting and banning by public key should be made possible.  To be
    included in protocol version 1.2.
 

@@ -84,7 +84,7 @@
 #define SILC_UMODE_BUSY                0x00000010 /* Client is busy */
 #define SILC_UMODE_PAGE                0x00000020 /* Client requests paging */
 #define SILC_UMODE_HYPER               0x00000040 /* Client is hyper active */
-#define SILC_UMODE_ROBOT               0x00000080 /* Client is really robot */
+#define SILC_UMODE_ROBOT               0x00000080 /* Client is a robot */
 /***/
 
 #endif
