@@ -84,6 +84,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   SILC_NICK_REC *nick;
   SILC_CHANNEL_REC *chanrec;
   
+  SILC_LOG_DEBUG(("Start"));
+
   server = conn == NULL ? NULL : conn->context;
   chanrec = silc_channel_find_entry(server, channel);
   if (!chanrec)
@@ -128,6 +130,8 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   SILC_SERVER_REC *server;
   char userhost[256];
   
+  SILC_LOG_DEBUG(("Start"));
+
   server = conn == NULL ? NULL : conn->context;
   memset(userhost, 0, sizeof(userhost));
   if (sender->username)
@@ -177,6 +181,8 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   SILC_SERVER_REC *server;
   va_list va;
   
+  SILC_LOG_DEBUG(("Start"));
+
   server = conn == NULL ? NULL : conn->context;
   va_start(va, type);
   
@@ -226,6 +232,8 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn)
 {
   SILC_SERVER_REC *server = conn->context;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (server->conn) {
     nicklist_rename_unique(SERVER(server),
 			   server->conn->local_entry, server->nick,
@@ -254,6 +262,8 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 		  SilcCommand command)
 {
   SILC_SERVER_REC *server = conn->context;
+
+  SILC_LOG_DEBUG(("Start"));
 
   if (!success)
     return;
@@ -384,6 +394,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   va_list vp;
 
   va_start(vp, status);
+
+  SILC_LOG_DEBUG(("Start"));
 
   switch(command) {
   case SILC_COMMAND_WHOIS:
@@ -1063,6 +1075,8 @@ static void silc_get_auth_method_callback(SilcClient client,
 {
   InternalGetAuthMethod internal = (InternalGetAuthMethod)context;
 
+  SILC_LOG_DEBUG(("Start"));
+
   switch (auth_meth) {
   case SILC_AUTH_NONE:
     /* No authentication required. */
@@ -1097,6 +1111,8 @@ void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 {
   InternalGetAuthMethod internal;
 
+  SILC_LOG_DEBUG(("Start"));
+
   /* XXX must resolve from configuration whether this connection has
      any specific authentication data */
 
@@ -1122,6 +1138,8 @@ void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 void silc_failure(SilcClient client, SilcClientConnection conn, 
 		  SilcProtocol protocol, void *failure)
 {
+  SILC_LOG_DEBUG(("Start"));
+
   if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
     SilcSKEStatus status = (SilcSKEStatus)failure;
     
@@ -1171,11 +1189,13 @@ void silc_failure(SilcClient client, SilcClientConnection conn,
    silc_client_perform_key_agreement). */
 
 int silc_key_agreement(SilcClient client, SilcClientConnection conn,
-		       SilcClientEntry client_entry, char *hostname,
+		       SilcClientEntry client_entry, const char *hostname,
 		       uint16 port, SilcKeyAgreementCallback *completion,
 		       void **context)
 {
   char portstr[12];
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* We will just display the info on the screen and return FALSE and user
      will have to start the key agreement with a command. */
@@ -1197,6 +1217,19 @@ int silc_key_agreement(SilcClient client, SilcClientConnection conn,
   return FALSE;
 }
 
+void silc_ftp(SilcClient client, SilcClientConnection conn,
+	      SilcClientEntry client_entry, uint32 session_id,
+	      const char *hostname, uint16 port)
+{
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* XXX */
+  silc_client_file_receive(client, conn, NULL, NULL, client_entry,
+			   session_id);
+
+}
+
 /* SILC client operations */
 SilcClientOperations ops = {
   silc_say,
@@ -1212,4 +1245,5 @@ SilcClientOperations ops = {
   silc_ask_passphrase,
   silc_failure,
   silc_key_agreement,
+  silc_ftp,
 };

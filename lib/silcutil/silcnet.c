@@ -215,7 +215,7 @@ uint16 silc_net_get_local_port(int sock)
 
 /* Return name of localhost. */
 
-char *silc_net_localhost()
+char *silc_net_localhost(void)
 {
   char hostname[256];
   struct hostent *dest;

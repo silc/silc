@@ -75,5 +75,8 @@ void silc_server_connection_auth_request(SilcServer server,
 void silc_server_rekey(SilcServer server,
 		       SilcSocketConnection sock,
 		       SilcPacketContext *packet);
+void silc_server_ftp(SilcServer server,
+		     SilcSocketConnection sock,
+		     SilcPacketContext *packet);
 
 #endif

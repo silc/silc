@@ -1,3 +1,8 @@
+Mon Oct 22 12:50:08 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Relay the SILC_PACKET_FTP in the server.  Affected files
+	  silcd/server.c and silcd/packet_receive.c.
+
 Sun Oct 21 20:21:02 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Renamed silc_file_read and silc_file_write to functions

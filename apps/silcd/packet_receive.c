@@ -2433,3 +2433,37 @@ void silc_server_rekey(SilcServer server,
     /* Run the protocol */
     silc_protocol_execute(protocol, server->schedule, 0, 0);
 }
+
+/* Received file transger packet. This packet is never for us. It is to
+   the client in the packet's destination ID. Sending of this sort of packet
+   equals sending private message, ie. it is sent point to point from
+   one client to another. */
+
+void silc_server_ftp(SilcServer server,
+		     SilcSocketConnection sock,
+		     SilcPacketContext *packet)
+{
+  SilcSocketConnection dst_sock;
+  SilcIDListData idata;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (packet->src_id_type != SILC_ID_CLIENT ||
+      packet->dst_id_type != SILC_ID_CLIENT)
+    return;
+
+  if (!packet->dst_id)
+    return;
+
+  /* Get the route to the client */
+  dst_sock = silc_server_get_client_route(server, packet->dst_id,
+					  packet->dst_id_len, NULL, &idata);
+  if (!dst_sock)
+    return;
+
+  /* Relay the packet */
+  silc_server_relay_packet(server, dst_sock, idata->send_key,
+			   idata->hmac_send, idata->psn_send++,
+			   packet, FALSE);
+}
+

@@ -280,7 +280,7 @@ uint16 silc_net_get_local_port(int sock);
  *
  * SYNOPSIS
  *
- *    char *silc_net_localhost();
+ *    char *silc_net_localhost(void);
  *
  * DESCRIPTION
  *
@@ -289,7 +289,7 @@ uint16 silc_net_get_local_port(int sock);
  *    the first found hostname is returned.
  *
  ***/
-char *silc_net_localhost();
+char *silc_net_localhost(void);
 
 #ifdef WIN32
 

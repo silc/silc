@@ -399,6 +399,90 @@ static void event_text(const char *line, SILC_SERVER_REC *server,
   signal_stop();
 }
 
+typedef struct {
+  SILC_SERVER_REC *server;
+  char *data;
+  WI_ITEM_REC *item;
+} *FileGetClients;
+
+SILC_CLIENT_CMD_FUNC(file_get_clients)
+{
+  FileGetClients internal = (FileGetClients)context;
+  signal_emit("command file", 3, internal->data, internal->server,
+	      internal->item);
+  silc_free(internal->data);
+  silc_free(internal);
+}
+
+static void command_file(const char *data, SILC_SERVER_REC *server,
+			 WI_ITEM_REC *item)
+{
+  SilcClientConnection conn;
+  SilcClientEntry client_entry;
+  char *nickname, *tmp;
+  unsigned char **argv;
+  uint32 argc;
+  uint32 *argv_lens, *argv_types;
+  int type;
+
+  if (!server || !IS_SILC_SERVER(server) || !server->connected)
+    cmd_return_error(CMDERR_NOT_CONNECTED);
+
+  conn = server->conn;
+
+  /* Now parse all arguments */
+  tmp = g_strconcat("KEY", " ", data, NULL);
+  silc_parse_command_line(tmp, &argv, &argv_lens, &argv_types, &argc, 4);
+  g_free(tmp);
+
+  type = 0;
+  if (!strcasecmp(argv[1], "send"))
+    type = 1;
+  if (!strcasecmp(argv[1], "receive"))
+    type = 2;
+  
+  /* Parse the typed nickname. */
+  if (!silc_parse_userfqdn(argv[3], &nickname, NULL)) {
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
+    return;
+  }
+
+  /* Find client entry */
+  client_entry = silc_idlist_get_client(silc_client, conn, nickname, 
+					argv[3], TRUE);
+  if (!client_entry) {
+    FileGetClients inter = silc_calloc(1, sizeof(*inter));
+    inter->server = server;
+    inter->data = strdup(data);
+    inter->item = item;
+    
+    /* Client entry not found, it was requested thus mark this to be
+       pending command. */
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				conn->cmd_ident, 
+				NULL, silc_client_command_file_get_clients, 
+				inter);
+    goto out;
+  }
+
+  switch (type) {
+  case 1:
+    silc_client_file_send(silc_client, conn, NULL, NULL, client_entry,
+			  argv[2]);
+    break;
+
+  case 2:
+    break;
+
+  default:
+    break;
+  }
+
+ out:
+  silc_free(nickname);
+}
+
 void silc_server_init(void)
 {
   silc_servers_reconnect_init();
@@ -428,6 +512,7 @@ void silc_server_init(void)
   command_bind("shutdown", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("sconnect", MODULE_NAME, (SIGNAL_FUNC) command_sconnect);
+  command_bind("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
 
   command_set_options("connect", "+silcnet");
 }
@@ -461,4 +546,5 @@ void silc_server_deinit(void)
   command_unbind("shutdown", (SIGNAL_FUNC) command_self);
   command_unbind("getkey", (SIGNAL_FUNC) command_self);
   command_unbind("sconnect", (SIGNAL_FUNC) command_sconnect);
+  command_unbind("file", (SIGNAL_FUNC) command_file);
 }

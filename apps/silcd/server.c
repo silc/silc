@@ -2096,7 +2096,11 @@ void silc_server_packet_parse_type(SilcServer server,
     break;
 
   case SILC_PACKET_FTP:
-    /* Ignored */
+    /* FTP packet */
+    SILC_LOG_DEBUG(("FTP packet"));
+    if (packet->flags & SILC_PACKET_FLAG_LIST)
+      break;
+    silc_server_ftp(server, sock, packet);
     break;
 
   case SILC_PACKET_RESUME_ROUTER:
