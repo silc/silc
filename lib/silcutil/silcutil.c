@@ -21,28 +21,7 @@
  * These are general utility functions that doesn't belong to any specific
  * group of routines.
  */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/09/13 17:45:16  priikone
- * 	Splitted SILC core library. Core library includes now only
- * 	SILC protocol specific stuff. New utility library includes the
- * 	old stuff from core library that is more generic purpose stuff.
- *
- * Revision 1.4  2000/07/19 07:04:04  priikone
- * 	Minor bug fix in silc_encode_pem
- *
- * Revision 1.3  2000/07/10 05:34:40  priikone
- * 	Added PEM encoding/decoding functions.
- *
- * Revision 1.2  2000/07/05 06:06:12  priikone
- * 	Added file saving with specific mode.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -84,8 +63,10 @@ char *silc_file_read(const char *filename, int *return_len)
 
   close(fd);
   buffer[filelen] = EOF;
-  
-  *return_len = filelen;
+
+  if (return_len)
+    *return_len = filelen;
+
   return buffer;
 }
 
