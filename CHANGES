@@ -21,6 +21,9 @@ Sun Nov 24 18:26:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  Check it after changing the owner of the client not before.
 	  Affected file silcd/packet_receive.c.
 
+	* Fixed few double frees from client library.  Fixes at least
+	  Bug #81, possibly others too.
+
 Fri Nov 22 18:34:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support to backup router protocol for backup to tell
