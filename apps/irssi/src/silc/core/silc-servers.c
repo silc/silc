@@ -43,6 +43,8 @@
 #include "fe-common/core/printtext.h"
 #include "fe-common/silc/module-formats.h"
 
+#include "silc-commands.h"
+
 void silc_servers_reconnect_init(void);
 void silc_servers_reconnect_deinit(void);
 
@@ -369,6 +371,8 @@ void silc_command_exec(SILC_SERVER_REC *server,
 static void command_self(const char *data, SILC_SERVER_REC *server,
 			 WI_ITEM_REC *item)
 {
+  CMD_SILC_SERVER(server);
+
   if (!IS_SILC_SERVER(server) || !server->connected) {
     printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Not connected to server");
     return;
@@ -390,6 +394,7 @@ static void command_self(const char *data, SILC_SERVER_REC *server,
 
 static void command_sconnect(const char *data, SILC_SERVER_REC *server)
 {
+  CMD_SILC_SERVER(server);
   if (!IS_SILC_SERVER(server) || !server->connected) {
     printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Not connected to server");
     return;
@@ -571,6 +576,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   SilcUInt32 local_port = 0;
   SilcUInt32 session_id;
 
+  CMD_SILC_SERVER(server);
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
@@ -845,29 +851,29 @@ void silc_server_init(void)
 
   signal_add_first("server connected", (SIGNAL_FUNC) sig_connected);
   signal_add("server disconnected", (SIGNAL_FUNC) sig_disconnected);
-  command_bind("whois", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("whowas", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("nick", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("topic", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("cmode", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("cumode", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("users", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("list", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("ban", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("oper", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("silcoper", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("umode", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("invite", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("kill", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("kick", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("info", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("ping", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("motd", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("close", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("shutdown", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("sconnect", MODULE_NAME, (SIGNAL_FUNC) command_sconnect);
-  command_bind("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
+  command_bind_silc("whois", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("whowas", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("nick", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("topic", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("cmode", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("cumode", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("users", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("list", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("ban", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("oper", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("silcoper", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("umode", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("invite", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("kill", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("kick", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("info", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("ping", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("motd", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("close", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("shutdown", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("sconnect", MODULE_NAME, (SIGNAL_FUNC) command_sconnect);
+  command_bind_silc("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
 
   command_set_options("connect", "+silcnet");
 }

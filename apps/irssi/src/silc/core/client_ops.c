@@ -38,6 +38,8 @@
 #include "fe-common/core/keyboard.h"
 #include "fe-common/silc/module-formats.h"
 
+#include "core.h"
+
 static void 
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				const char *name, SilcSocketType conn_type, 
@@ -1373,21 +1375,21 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     if (!name) {
       snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
 	       conn->sock->ip, conn->sock->port);
-      snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
-	       pw->pw_dir, entity, file);
+      snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s", 
+	       get_irssi_dir(), entity, file);
       
       snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
 	       conn->sock->hostname, conn->sock->port);
-      snprintf(filename2, sizeof(filename2) - 1, "%s/.silc/%skeys/%s", 
-	       pw->pw_dir, entity, file);
+      snprintf(filename2, sizeof(filename2) - 1, "%s/%skeys/%s", 
+	       get_irssi_dir(), entity, file);
       
       ipf = filename;
       hostf = filename2;
     } else {
       snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
 	       name, conn->sock->port);
-      snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
-	       pw->pw_dir, entity, file);
+      snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s", 
+	       get_irssi_dir(), entity, file);
       
       ipf = filename;
     }
@@ -1399,8 +1401,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 	fingerprint[i] = '_';
     
     snprintf(file, sizeof(file) - 1, "%skey_%s.pub", entity, fingerprint);
-    snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
-	     pw->pw_dir, entity, file);
+    snprintf(filename, sizeof(filename) - 1, "%s/%skeys/%s", 
+	     get_irssi_dir(), entity, file);
     silc_free(fingerprint);
 
     ipf = filename;

@@ -1,3 +1,16 @@
+Thu Mar 21 19:12:22 EET 2002  Timo Sirainen <tss@iki.fi>
+
+	* Changed hardcoded ~/.silc paths to use get_irssi_dir() so you
+          can specify different directory with --home command line
+	  parameter. Affected files irssi/src/silc/core/client_ops.c,
+          clientutil.c
+
+        * SILC-specific commands aren't now executed if the active server
+          isn't of SILC-type, so there won't be problems with having
+          IRC and SILC protocol support in same client. Affected files
+          irssi/src/silc/core/silc-channels.c, silc-servers.c,
+	  silc-commands.h
+
 Wed Mar 20 11:06:57 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Improved the signal support in SILC Schedule.  Added new

@@ -43,6 +43,8 @@
 #include "fe-common/core/printtext.h"
 #include "fe-common/silc/module-formats.h"
 
+#include "silc-commands.h"
+
 SILC_CHANNEL_REC *silc_channel_create(SILC_SERVER_REC *server,
 				      const char *name, int automatic)
 {
@@ -132,6 +134,8 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   SILC_CHANNEL_REC *chanrec;
   char userhost[256];
   
+  CMD_SILC_SERVER(server);
+
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
@@ -170,6 +174,8 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
   SilcUInt32 *argv_lens, *argv_types;
   int i;
  
+  CMD_SILC_SERVER(server);
+
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
@@ -218,6 +224,7 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
   SilcUInt32 *argv_lens, *argv_types;
   int i;
  
+  CMD_SILC_SERVER(server);
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
@@ -265,6 +272,7 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
   SilcUInt32 *argv_lens, *argv_types;
   int i;
  
+  CMD_SILC_SERVER(server);
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
@@ -307,6 +315,8 @@ static void command_away(const char *data, SILC_SERVER_REC *server,
 			 WI_ITEM_REC *item)
 {
   bool set;
+
+  CMD_SILC_SERVER(server);
 
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
@@ -461,6 +471,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   SilcUInt32 *argv_lens, *argv_types;
   char *bindhost = NULL;
  
+  CMD_SILC_SERVER(server);
+
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
@@ -901,13 +913,13 @@ void silc_channels_init(void)
   signal_add("server connected", (SIGNAL_FUNC) sig_connected);
   signal_add("server quit", (SIGNAL_FUNC) sig_server_quit);
 
-  command_bind("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
-  command_bind("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
-  command_bind("action", MODULE_NAME, (SIGNAL_FUNC) command_action);
-  command_bind("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
-  command_bind("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
-  command_bind("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
-  command_bind("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
+  command_bind_silc("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
+  command_bind_silc("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
+  command_bind_silc("action", MODULE_NAME, (SIGNAL_FUNC) command_action);
+  command_bind_silc("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
+  command_bind_silc("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
+  command_bind_silc("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
+  command_bind_silc("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
 
   silc_nicklist_init();
 }

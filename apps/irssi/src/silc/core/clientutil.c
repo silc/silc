@@ -42,6 +42,8 @@
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/keyboard.h"
 
+#include "core.h"
+
 /* Lists supported ciphers */
 
 void silc_client_list_ciphers()
@@ -314,11 +316,11 @@ int silc_client_check_silc_dir()
   }
 
   /* We'll take home path from /etc/passwd file to be sure. */
-  snprintf(filename, sizeof(filename) - 1, "%s/.silc/", pw->pw_dir);
-  snprintf(servfilename, sizeof(servfilename) - 1, "%s/.silc/serverkeys", 
-	   pw->pw_dir);
-  snprintf(clientfilename, sizeof(clientfilename) - 1, "%s/.silc/clientkeys", 
-	   pw->pw_dir);
+  snprintf(filename, sizeof(filename) - 1, "%s/", get_irssi_dir());
+  snprintf(servfilename, sizeof(servfilename) - 1, "%s/serverkeys", 
+	   get_irssi_dir());
+  snprintf(clientfilename, sizeof(clientfilename) - 1, "%s/clientkeys", 
+	   get_irssi_dir());
 
   /*
    * Check ~/.silc directory
@@ -519,8 +521,8 @@ int silc_client_load_keys(SilcClient client)
     return FALSE;
 
   memset(filename, 0, sizeof(filename));
-  snprintf(filename, sizeof(filename) - 1, "%s/.silc/%s", 
-	   pw->pw_dir, SILC_CLIENT_PRIVATE_KEY_NAME);
+  snprintf(filename, sizeof(filename) - 1, "%s/%s", 
+	   get_irssi_dir(), SILC_CLIENT_PRIVATE_KEY_NAME);
 
   if (silc_pkcs_load_private_key(filename, &client->private_key,
 				 SILC_PKCS_FILE_BIN) == FALSE)
@@ -529,8 +531,8 @@ int silc_client_load_keys(SilcClient client)
       return FALSE;
 
   memset(filename, 0, sizeof(filename));
-  snprintf(filename, sizeof(filename) - 1, "%s/.silc/%s", 
-	   pw->pw_dir, SILC_CLIENT_PUBLIC_KEY_NAME);
+  snprintf(filename, sizeof(filename) - 1, "%s/%s", 
+	   get_irssi_dir(), SILC_CLIENT_PUBLIC_KEY_NAME);
 
   if (silc_pkcs_load_public_key(filename, &client->public_key,
 				SILC_PKCS_FILE_PEM) == FALSE)
