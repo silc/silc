@@ -330,13 +330,11 @@ bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv)
 {
-#if 0 /* Remove to 0.9.11 */
 #ifdef SILC_DEBUG
   assert((len & (cipher->cipher->block_len - 1)) == 0);
 #endif
   if (len & (cipher->cipher->block_len - 1))
     return FALSE;
-#endif
   return cipher->cipher->decrypt(cipher->context, src, dst, len,
 				 iv ? iv : cipher->iv);
 }
