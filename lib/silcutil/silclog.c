@@ -96,7 +96,7 @@ static SilcLog silc_log_find_by_type(SilcLogType type)
 }
 
 /* Given an open log file, checks the size and rotates it if there is a
- * max size set less then the current size */
+ * max size set lower then the current size */
 static void silc_log_checksize(SilcLog log)
 {
   char newname[127];
@@ -104,12 +104,13 @@ static void silc_log_checksize(SilcLog log)
 
   if (!log || !log->fp || !log->maxsize)
     return; /* we are not interested */
+
   if ((size = ftell(log->fp)) < 0) {
     /* OMG, EBADF is here.. we'll try our best.. */
     FILE *oldfp = log->fp;
     fclose(oldfp); /* we can discard the error */
     log->fp = NULL; /* make sure we don't get here recursively */
-    SILC_LOG_ERROR(("Error while checking size of the log file %s, fp=%d",
+    SILC_LOG_ERROR(("Error while checking size of the log file %s, fp=%p",
 		    log->filename, oldfp));
     return;
   }
@@ -148,6 +149,7 @@ static bool silc_log_reset(SilcLog log)
 		      log->filename, log->typename, strerror(errno)));
     return FALSE;
   }
+
   return TRUE;
 }
 
@@ -221,7 +223,7 @@ void silc_log_output(SilcLogType type, char *string)
   fprintf(fp, "[%s] [%s] %s\n", silc_get_time(), typename, string);
   if (silc_log_quick || silc_log_starting) {
     fflush(fp);
-    if (log)
+    if (log) /* we may have been redirected to stderr */
       silc_log_checksize(log);
   }
 
@@ -269,12 +271,10 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
     }
   }
 
-  /* remove old file */
+  /* clean the logging channel */
   if (log->filename) {
-    if (log->fp) {
-      fflush(fp);
-      fclose(fp);
-    }
+    if (log->fp)
+      fclose(log->fp);
     silc_free(log->filename);
     log->filename = NULL;
     log->fp = NULL;

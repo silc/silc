@@ -10,7 +10,7 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,11 +20,6 @@
 
 #ifndef SERVER_H
 #define SERVER_H
-
-/* Forward declaration for SILC Server object. The actual object is
-   defined in internal header file for server routines. I want to keep
-   the object private hence this declaration. */
-typedef struct SilcServerStruct *SilcServer;
 
 /* Forward declaration of backup server context */
 typedef struct SilcServerBackupStruct *SilcServerBackup;
@@ -48,9 +43,8 @@ typedef struct {
   int backup_replace_port;
   bool no_reconnect;
 
-  /* Connection configuration (maybe NULL), and connection params */
-  void *conn;
-  void *param;
+  /* Connection configuration (maybe NULL) */
+  SilcServerConfigRef conn;
 
   /* Current connection retry info */
   SilcUInt32 retry_count;
@@ -110,41 +104,49 @@ do {								\
   (sock->protocol && sock->protocol->protocol && 			\
    sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)
 
+/* Output an error message wether to stderr or LOG_ERROR if we are in the
+   background. */
+#define SILC_SERVER_LOG_ERROR(fmt) silc_server_stderr(silc_format fmt)
+
+
+
 /* Prototypes */
 int silc_server_alloc(SilcServer *new_server);
 void silc_server_free(SilcServer server);
-int silc_server_init(SilcServer server);
-void silc_server_daemonise(SilcServer server);
+bool silc_server_init(SilcServer server);
+bool silc_server_rehash(SilcServer server);
 void silc_server_drop(SilcServer server);
+void silc_server_daemonise(SilcServer server);
 void silc_server_run(SilcServer server);
 void silc_server_stop(SilcServer server);
+void silc_server_stderr(char *message);
 void silc_server_start_key_exchange(SilcServer server,
 				    SilcServerConnection sconn,
 				    int sock);
 bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
 			      void *context);
-void silc_server_packet_parse_type(SilcServer server, 
+void silc_server_packet_parse_type(SilcServer server,
 				   SilcSocketConnection sock,
 				   SilcPacketContext *packet);
 void silc_server_create_connection(SilcServer server,
 				   const char *remote_host, SilcUInt32 port);
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock);
-void silc_server_free_client_data(SilcServer server, 
+void silc_server_free_client_data(SilcServer server,
 				  SilcSocketConnection sock,
-				  SilcClientEntry client, 
+				  SilcClientEntry client,
 				  int notify,
 				  const char *signoff);
-void silc_server_free_sock_user_data(SilcServer server, 
+void silc_server_free_sock_user_data(SilcServer server,
 				     SilcSocketConnection sock,
 				     const char *signoff_message);
-void silc_server_remove_from_channels(SilcServer server, 
+void silc_server_remove_from_channels(SilcServer server,
 				      SilcSocketConnection sock,
 				      SilcClientEntry client,
 				      int notify,
 				      char *signoff_message,
 				      int keygen);
-int silc_server_remove_from_one_channel(SilcServer server, 
+int silc_server_remove_from_one_channel(SilcServer server,
 					SilcSocketConnection sock,
 					SilcChannelEntry channel,
 					SilcClientEntry client,
@@ -152,20 +154,20 @@ int silc_server_remove_from_one_channel(SilcServer server,
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
 				   const char *fmt, ...);
-SilcChannelEntry silc_server_create_new_channel(SilcServer server, 
+SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 						SilcServerID *router_id,
-						char *cipher, 
+						char *cipher,
 						char *hmac,
 						char *channel_name,
 						int broadcast);
-SilcChannelEntry 
-silc_server_create_new_channel_with_id(SilcServer server, 
-				       char *cipher, 
+SilcChannelEntry
+silc_server_create_new_channel_with_id(SilcServer server,
+				       char *cipher,
 				       char *hmac,
 				       char *channel_name,
 				       SilcChannelID *channel_id,
 				       int broadcast);
-bool silc_server_create_channel_key(SilcServer server, 
+bool silc_server_create_channel_key(SilcServer server,
 				    SilcChannelEntry channel,
 				    SilcUInt32 key_len);
 SilcChannelEntry silc_server_save_channel_key(SilcServer server,

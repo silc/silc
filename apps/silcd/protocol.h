@@ -45,9 +45,9 @@ typedef struct {
   SilcIdType dest_id_type;
 
   /* Pointer to the configurations. */
-  void *cconfig;
-  void *sconfig;
-  void *rconfig;
+  SilcServerConfigRef cconfig;
+  SilcServerConfigRef sconfig;
+  SilcServerConfigRef rconfig;
 
   SilcTask timeout_task;
   SilcPacketContext *packet;
@@ -80,9 +80,9 @@ typedef struct {
   SilcIdType dest_id_type;
 
   /* Pointer to the configurations. */
-  void *cconfig;
-  void *sconfig;
-  void *rconfig;
+  SilcServerConfigRef cconfig;
+  SilcServerConfigRef sconfig;
+  SilcServerConfigRef rconfig;
 
   SilcTask timeout_task;
   SilcPacketContext *packet;

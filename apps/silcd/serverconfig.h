@@ -149,6 +149,9 @@ typedef struct SilcServerConfigRouterStruct {
 typedef struct {
   void *tmp;
 
+  /* Reference count (when this reaches zero, config object is destroyed) */
+  SilcUInt16 refcount;
+
   /* The General section */
   char *module_path;
   bool prefer_passphrase_auth;
@@ -157,6 +160,8 @@ typedef struct {
   SilcUInt32 key_exchange_timeout;
   SilcUInt32 conn_auth_timeout;
   SilcServerConfigConnParams param;
+  bool logging_quick;
+  long logging_flushdelay;
 
   /* Other configuration sections */
   SilcServerConfigCipher *cipher;
@@ -176,11 +181,19 @@ typedef struct {
   SilcServerConfigRouter *routers;
 } *SilcServerConfig;
 
+typedef struct {
+  SilcServerConfig config;
+  void *ref_ptr;
+} SilcServerConfigRef;
+
 /* Prototypes */
 
 /* Basic config operations */
 SilcServerConfig silc_server_config_alloc(char *filename);
 void silc_server_config_destroy(SilcServerConfig config);
+void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
+			    void *ref_ptr);
+void silc_server_config_unref(SilcServerConfigRef *ref);
 
 /* Algorithm registering and reset functions */
 bool silc_server_config_register_ciphers(SilcServer server);
@@ -193,7 +206,7 @@ void silc_server_config_setlogfiles(SilcServer server);
 SilcServerConfigClient *
 silc_server_config_find_client(SilcServer server, char *host);
 SilcServerConfigAdmin *
-silc_server_config_find_admin(SilcServer server, char *host, char *user, 
+silc_server_config_find_admin(SilcServer server, char *host, char *user,
 			      char *nick);
 SilcServerConfigDeny *
 silc_server_config_find_denied(SilcServer server, char *host);
@@ -204,6 +217,5 @@ silc_server_config_find_router_conn(SilcServer server, char *host, int port);
 bool silc_server_config_is_primary_route(SilcServer server);
 SilcServerConfigRouter *
 silc_server_config_get_primary_router(SilcServer server);
-bool silc_server_config_set_defaults(SilcServer server);
 
 #endif	/* !SERVERCONFIG_H */

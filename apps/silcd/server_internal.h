@@ -56,7 +56,7 @@ typedef struct {
   SilcUInt32 packets_received;	  /* Received packets */
 } SilcServerStatistics;
 
-/* 
+/*
    SILC Server Object.
 
 */
@@ -73,6 +73,7 @@ struct SilcServerStruct {
 					does not have connection to network. */
   bool listenning;		     /* TRUE if server is listenning for
 					incoming connections. */
+  bool background;
   SilcServerEntry id_entry;	     /* Server's own ID entry */
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */
@@ -111,6 +112,8 @@ struct SilcServerStruct {
 
   /* Configuration object */
   SilcServerConfig config;
+  SilcServerConfigRef config_ref;
+  char *config_file;
 
   /* Random pool */
   SilcRng rng;

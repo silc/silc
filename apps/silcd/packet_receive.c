@@ -1877,8 +1877,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 			   username));
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your host is %s, running version %s",
-			   server->config->server_info->server_name,
-			   server_version));
+			   server->server_name, server_version));
   if (server->server_type == SILC_ROUTER) {
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("There are %d clients on %d servers in SILC "

@@ -34,18 +34,18 @@ static SilcServer silcd;
 
 static void silc_usage(void);
 static char *silc_server_create_identifier(void);
-static int
-silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
-			    char *identifier,
-			    SilcPublicKey *ret_pub_key,
-			    SilcPrivateKey *ret_prv_key);
+static int silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
+				       char *identifier,
+				       SilcPublicKey *ret_pub_key,
+				       SilcPrivateKey *ret_prv_key);
 
 /* Long command line options */
 static struct option long_opts[] =
 {
   { "config-file", 1, NULL, 'f' },
   { "passphrase", 1, NULL, 'p' },
-  { "debug", 1, NULL, 'd' },
+  { "debug", 2, NULL, 'd' },
+  { "hexdump", 0, NULL, 'x' },
   { "help", 0, NULL, 'h' },
   { "foreground", 0, NULL, 'F' },
   { "version", 0, NULL,'V' },
@@ -70,34 +70,35 @@ static int opt_bits = 1024;
 
 static void silc_usage(void)
 {
-  printf("\
-Usage: silcd [options]\n\
-\n\
-  Generic Options:\n\
-  -f  --config-file=FILE        Alternate configuration file\n\
-  -d  --debug=string            Enable debugging (Implies --foreground)\n\
-  -h  --help                    Display this message\n\
-  -F  --foreground              Dont fork\n\
-  -V  --version                 Display version\n\
-\n\
-  Key Management Options:\n\
-  -C, --create-key-pair=PATH    Create new public key pair\n\
-      --pkcs=PKCS               Set the PKCS of the public key pair\n\
-      --bits=VALUE              Set length of the public key pair\n\
-      --identifier=IDENTIFIER   Public key identifier\n\
-\n\
-      The public key identifier may be of the following format:\n\
-\n\
-      UN=<username>, HN=<hostname or IP>, RN=<real name>, E=<email>,\n\
-      O=<organization>, C=<country>\n\
-\n\
-      The UN and HN must be provided, the others are optional.  If the\n\
-      --identifier option is not used an identifier will be created for\n\
-      the public key automatically.\n\
-\n\
-      Example identifier: \"UN=foobar, HN=foo.bar.com, RN=Foo T. Bar, \n\
-                           E=foo@bar.com, C=FI\"\n\
-\n");
+  printf(""
+"Usage: silcd [options]\n"
+"\n"
+"  Generic Options:\n"
+"  -f  --config-file=FILE        Alternate configuration file\n"
+"  -d  --debug=string            Enable debugging (Implies --foreground)\n"
+"  -x  --hexdump                 Enable hexdumps (Implies --debug)\n"
+"  -h  --help                    Display this message\n"
+"  -F  --foreground              Dont fork\n"
+"  -V  --version                 Display version\n"
+"\n"
+"  Key Management Options:\n"
+"  -C, --create-key-pair=PATH    Create new public key pair\n"
+"      --pkcs=PKCS               Set the PKCS of the public key pair\n"
+"      --bits=VALUE              Set length of the public key pair\n"
+"      --identifier=IDENTIFIER   Public key identifier\n"
+"\n"
+"      The public key identifier may be of the following format:\n"
+"\n"
+"      UN=<username>, HN=<hostname or IP>, RN=<real name>, E=<email>,\n"
+"      O=<organization>, C=<country>\n"
+"\n"
+"      The UN and HN must be provided, the others are optional.  If the\n"
+"      --identifier option is not used an identifier will be created for\n"
+"      the public key automatically.\n"
+"\n"
+"      Example identifier: \"UN=foobar, HN=foo.bar.com, RN=Foo T. Bar, \n"
+"                           E=foo@bar.com, C=FI\"\n"
+"\n");
   exit(0);
 }
 
@@ -138,27 +139,40 @@ static void signal_handler(int sig)
 SILC_TASK_CALLBACK(got_hup)
 {
   /* First, reset all log files (they might have been deleted) */
+  /* XXX this may be redundant with the silc_server_config_setlogfiles() call.
+   * merge these two with the appropriate checking. */
   silc_log_reset_all();
-  silc_log_flush_all();
+  /* Rehash the configuration file */
+  silc_server_rehash(silcd);
 }
 
 SILC_TASK_CALLBACK(stop_server)
 {
   /* Stop scheduler, the program will stop eventually after noticing
      that the scheduler is down. */
-  silc_schedule_stop(silcd->schedule); 
+  silc_schedule_stop(silcd->schedule);
+}
+
+void silc_server_stderr(char *message)
+{
+  if (silcd->background)
+    silc_log_output(SILC_LOG_ERROR, message);
+  else {
+    fprintf(stderr, "%s", message);
+    silc_free(message);
+  }
 }
 
 int main(int argc, char **argv)
 {
   int ret, opt, option_index;
-  char *config_file = NULL;
   bool foreground = FALSE;
+  char *silcd_config_file = NULL;
   struct sigaction sa;
 
   /* Parse command line arguments */
   if (argc > 1) {
-    while ((opt = getopt_long(argc, argv, "f:d:hFVC:",
+    while ((opt = getopt_long(argc, argv, "f:p:d::xhFVC:",
 			      long_opts, &option_index)) != EOF) {
       switch(opt)
 	{
@@ -176,18 +190,30 @@ int main(int argc, char **argv)
 	case 'd':
 #ifdef SILC_DEBUG
 	  silc_debug = TRUE;
-	  silc_debug_hexdump = TRUE;
-	  silc_log_set_debug_string(optarg);
-	  foreground = TRUE;
-	  silc_log_quick = TRUE;
+	  if (optarg)
+	    silc_log_set_debug_string(optarg);
+	  foreground = TRUE; /* implied */
+	  silc_log_quick = TRUE; /* implied */
 #else
-	  fprintf(stdout,
+	  fprintf(stderr,
+		  "Run-time debugging is not enabled. To enable it recompile\n"
+		  "the server with --enable-debug configuration option.\n");
+#endif
+	  break;
+	case 'x':
+#ifdef SILC_DEBUG
+	  silc_debug_hexdump = TRUE;
+	  silc_debug = TRUE; /* implied */
+	  foreground = TRUE; /* implied */
+	  silc_log_quick = TRUE; /* implied */
+#else
+	  fprintf(stderr,
 		  "Run-time debugging is not enabled. To enable it recompile\n"
 		  "the server with --enable-debug configuration option.\n");
 #endif
 	  break;
 	case 'f':
-	  config_file = strdup(optarg);
+	  silcd_config_file = strdup(optarg);
 	  break;
 	case 'F':
 	  foreground = TRUE;
@@ -233,8 +259,8 @@ int main(int argc, char **argv)
   }
 
   /* Default configuration file */
-  if (!config_file)
-    config_file = strdup(SILC_SERVER_CONFIG_FILE);
+  if (!silcd_config_file)
+    silcd_config_file = strdup(SILC_SERVER_CONFIG_FILE);
 
   /* Create SILC Server object */
   ret = silc_server_alloc(&silcd);
@@ -242,16 +268,18 @@ int main(int argc, char **argv)
     goto fail;
 
   /* Read configuration files */
-  silcd->config = silc_server_config_alloc(config_file);
+  silcd->config = silc_server_config_alloc(silcd_config_file);
   if (silcd->config == NULL)
     goto fail;
+  silc_server_config_ref(&silcd->config_ref, silcd->config,
+			 (void *)silcd->config);
+  silcd->config_file = silcd_config_file;
 
   /* Check for another silcd running */
   silc_server_checkpid(silcd);
 
   /* Initialize the server */
-  ret = silc_server_init(silcd);
-  if (ret == FALSE)
+  if (silc_server_init(silcd) == FALSE)
     goto fail;
 
   /* Ignore SIGPIPE */
@@ -267,25 +295,26 @@ int main(int argc, char **argv)
   silc_schedule_signal_register(silcd->schedule, SIGTERM, stop_server, NULL);
   silc_schedule_signal_register(silcd->schedule, SIGINT, stop_server, NULL);
 
-  /* Before running the server, fork to background. */
-  if (!foreground)
+  if (!foreground) {
+    /* Drop root. */
+    silc_server_drop(silcd);
+
+    /* Before running the server, fork to background. */
     silc_server_daemonise(silcd);
 
-  /* If set, write pid to file */
-  if (silcd->config->server_info->pid_file) {
-    char buf[10], *pidfile = silcd->config->server_info->pid_file;
-    unlink(pidfile);
-    snprintf(buf, sizeof(buf) - 1, "%d\n", getpid());
-    silc_file_writefile(pidfile, buf, strlen(buf));
+    /* If set, write pid to file */
+    if (silcd->config->server_info->pid_file) {
+      char buf[10], *pidfile = silcd->config->server_info->pid_file;
+      unlink(pidfile);
+      snprintf(buf, sizeof(buf) - 1, "%d\n", getpid());
+      silc_file_writefile(pidfile, buf, strlen(buf));
+    }
   }
-
-  /* Drop root. */
-  silc_server_drop(silcd);
 
   /* Run the server. When this returns the server has been stopped
      and we will exit. */
   silc_server_run(silcd);
-  
+
   /* Stop the server and free it. */
   silc_server_stop(silcd);
   silc_server_free(silcd);
@@ -304,7 +333,7 @@ static char *silc_server_create_identifier(void)
 {
   char *username = NULL, *realname = NULL;
   char hostname[256], email[256];
-  
+
   /* Get realname */
   realname = silc_get_real_name();
 
@@ -327,9 +356,9 @@ static char *silc_server_create_identifier(void)
 /* Creates new public key and private key pair. This is used only
    when user wants to create new key pair from command line. */
 
-static int 
+static int
 silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
-			    char *identifier, 
+			    char *identifier,
 			    SilcPublicKey *ret_pub_key,
 			    SilcPrivateKey *ret_prv_key)
 {

@@ -70,7 +70,7 @@ static void my_free_public_key(void *key, void *context, void *user_data)
 }
 
 /* Set default values to those parameters that have not been defined */
-static void 
+static void
 my_set_param_defaults(SilcServerConfigConnParams *params,
 		      SilcServerConfigConnParams *defaults)
 {
@@ -85,6 +85,8 @@ my_set_param_defaults(SilcServerConfigConnParams *params,
   SET_PARAM_DEFAULT(reconnect_interval, SILC_SERVER_RETRY_INTERVAL_MIN);
   SET_PARAM_DEFAULT(reconnect_interval_max, SILC_SERVER_RETRY_INTERVAL_MAX);
   SET_PARAM_DEFAULT(key_exchange_rekey, SILC_SERVER_REKEY);
+
+#undef SET_PARAM_DEFAULT
 }
 
 /* Find connection parameters by the parameter block name. */
@@ -98,8 +100,8 @@ my_find_param(SilcServerConfig config, const char *name, SilcUInt32 line)
       return param;
   }
 
-  fprintf(stderr, "\nError while parsing config file at line %lu: "
-	  "Cannot find Param \"%s\".\n", line, name);
+  SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line %lu: "
+			 "Cannot find Param \"%s\".\n", line, name));
 
   return NULL;
 }
@@ -121,23 +123,23 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
 
     if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_BIN)) {
-	fprintf(stderr, "\nError while parsing config file at line %lu: "
-		"Could not load public key file!\n", line);
+	SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line %lu: "
+			       "Could not load public key file!\n", line));
 	return FALSE;
       }
 
     /* The auth_data is a pointer to the hash table of public keys. */
     if (auth_data) {
       if (*auth_data == NULL)
-	*auth_data = silc_hash_table_alloc(1, silc_hash_public_key, NULL, 
-					   NULL, NULL, 
-					   my_free_public_key, NULL, 
+	*auth_data = silc_hash_table_alloc(1, silc_hash_public_key, NULL,
+					   NULL, NULL,
+					   my_free_public_key, NULL,
 					   TRUE);
       silc_hash_table_add(*auth_data, public_key, public_key);
     }
   } else {
-    fprintf(stderr, "\nError while parsing config file at line %lu: "
-	    "Unknown authentication method.\n", line);
+    SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line %lu: "
+			   "Unknown authentication method.\n", line));
     return FALSE;
   }
   return TRUE;
@@ -378,7 +380,7 @@ SILC_CONFIG_CALLBACK(fetch_pkcs)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigPkcs);
 
-  SERVER_CONFIG_DEBUG(("Received PKCS type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received PKCS type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
@@ -441,7 +443,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   else if (!strcmp(name, "port")) {
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
-      fprintf(stderr, "Invalid port number!\n");
+      SILC_SERVER_LOG_ERROR(("Error: line %lu: Invalid port number!\n", line));
       return SILC_CONFIG_ESILENT;
     }
     server_info->port = (SilcUInt16) port;
@@ -479,28 +481,28 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     server_info->pid_file = strdup((char *) val);
   }
   else if (!strcmp(name, "publickey")) {
-    char *tmp = (char *) val;
+    char *file_tmp = (char *) val;
 
     /* try to load specified file, if fail stop config parsing */
-    if (!silc_pkcs_load_public_key(tmp, &server_info->public_key,
+    if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
 				   SILC_PKCS_FILE_PEM))
-      if (!silc_pkcs_load_public_key(tmp, &server_info->public_key,
+      if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
 				     SILC_PKCS_FILE_BIN)) {
-	fprintf(stderr, "\nError: Could not load public key file.");
-	fprintf(stderr, "\n  line %lu: file \"%s\"\n", line, tmp);
+	SILC_SERVER_LOG_ERROR(("Error: Could not load public key file.\n"));
+	SILC_SERVER_LOG_ERROR(("   line %lu: file \"%s\"\n", line, file_tmp));
 	return SILC_CONFIG_ESILENT;
       }
   }
   else if (!strcmp(name, "privatekey")) {
-    char *tmp = (char *) val;
+    char *file_tmp = (char *) val;
 
     /* try to load specified file, if fail stop config parsing */
-    if (!silc_pkcs_load_private_key(tmp, &server_info->private_key,
+    if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
 				    SILC_PKCS_FILE_BIN))
-      if (!silc_pkcs_load_private_key(tmp, &server_info->private_key,
+      if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
 				      SILC_PKCS_FILE_PEM)) {
-	fprintf(stderr, "\nError: Could not load private key file.");
-	fprintf(stderr, "\n  line %lu: file \"%s\"\n", line, tmp);
+	SILC_SERVER_LOG_ERROR(("Error: Could not load private key file.\n"));
+	SILC_SERVER_LOG_ERROR(("   line %lu: file \"%s\"\n", line, file_tmp));
 	return SILC_CONFIG_ESILENT;
       }
   }
@@ -520,16 +522,16 @@ SILC_CONFIG_CALLBACK(fetch_logging)
   int got_errno;
 
   if (!strcmp(name, "quicklogs")) {
-    silc_log_quick = *(bool *)val;
+    config->logging_quick = *(bool *)val;
   }
   else if (!strcmp(name, "flushdelay")) {
     int flushdelay = *(int *)val;
     if (flushdelay < 2) { /* this value was taken from silclog.h (min delay) */
-      fprintf(stderr, "Error: line %lu: invalid flushdelay value, use "
-		"quicklogs if you want real-time logging.\n", line);
+      SILC_SERVER_LOG_ERROR(("Error: line %lu: Invalid flushdelay value, use "
+			"quicklogs if you want real-time logging.\n", line));
       return SILC_CONFIG_ESILENT;
     }
-    silc_log_flushdelay = (long) flushdelay;
+    config->logging_flushdelay = (long) flushdelay;
   }
 #define FETCH_LOGGING_CHAN(__chan__, __member__)		\
   else if (!strcmp(name, __chan__)) {				\
@@ -938,7 +940,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "port")) {
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
-      fprintf(stderr, "Invalid port number!\n");
+      SILC_SERVER_LOG_ERROR(("Error: line %lu: Invalid port number!\n", line));
       return SILC_CONFIG_ESILENT;
     }
     tmp->port = (SilcUInt16) port;
@@ -983,7 +985,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "backupport")) {
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
-      fprintf(stderr, "Invalid port number!\n");
+      SILC_SERVER_LOG_ERROR(("Error: line %lu: Invalid port number!\n", line));
       return SILC_CONFIG_ESILENT;
     }
     tmp->backup_replace_port = (SilcUInt16) port;
@@ -1175,34 +1177,53 @@ static const SilcConfigTable table_main[] = {
   { 0, 0, 0, 0 }
 };
 
+/* Set default values to stuff that was not configured. */
+
+static void silc_server_config_set_defaults(SilcServerConfig config)
+{
+  my_set_param_defaults(&config->param, NULL);
+
+  config->channel_rekey_secs = (config->channel_rekey_secs ?
+				config->channel_rekey_secs :
+				SILC_SERVER_CHANNEL_REKEY);
+  config->key_exchange_timeout = (config->key_exchange_timeout ?
+				  config->key_exchange_timeout :
+				  SILC_SERVER_SKE_TIMEOUT);
+  config->conn_auth_timeout = (config->conn_auth_timeout ?
+			       config->conn_auth_timeout :
+			       SILC_SERVER_CONNAUTH_TIMEOUT);
+}
+
 /* Allocates a new configuration object, opens configuration file and
  * parses it. The parsed data is returned to the newly allocated
  * configuration object. */
 
 SilcServerConfig silc_server_config_alloc(char *filename)
 {
-  SilcServerConfig config;
+  SilcServerConfig config_new;
   SilcConfigEntity ent;
   SilcConfigFile *file;
   int ret;
   SILC_LOG_DEBUG(("Loading config data from `%s'", filename));
 
   /* alloc a config object */
-  config = (SilcServerConfig) silc_calloc(1, sizeof(*config));
+  config_new = (SilcServerConfig) silc_calloc(1, sizeof(*config_new));
   /* obtain a config file object */
   file = silc_config_open(filename);
   if (!file) {
-    fprintf(stderr, "\nError: can't open config file `%s'\n", filename);
+    SILC_SERVER_LOG_ERROR(("\nError: can't open config file `%s'\n", filename));
     return NULL;
   }
   /* obtain a SilcConfig entity, we can use it to start the parsing */
   ent = silc_config_init(file);
+
   /* load the known configuration options, give our empty object as context */
-  silc_config_register_table(ent, table_main, (void *) config);
+  silc_config_register_table(ent, table_main, (void *) config_new);
+
   /* enter the main parsing loop.  When this returns, we have the parsing
    * result and the object filled (or partially, in case of errors). */
   ret = silc_config_main(ent);
-  SILC_LOG_DEBUG(("Parser returned [ret=%d]: %s", ret, 
+  SILC_LOG_DEBUG(("Parser returned [ret=%d]: %s", ret,
 		  silc_config_strerror(ret)));
 
   /* Check if the parser returned errors */
@@ -1211,26 +1232,65 @@ SilcServerConfig silc_server_config_alloc(char *filename)
     if (ret != SILC_CONFIG_ESILENT) {
       char *linebuf, *filename = silc_config_get_filename(file);
       SilcUInt32 line = silc_config_get_line(file);
-      fprintf(stderr, "\nError while parsing config file: %s.\n",
-		silc_config_strerror(ret));
+      SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.\n",
+			     silc_config_strerror(ret)));
       linebuf = silc_config_read_line(file, line);
-      fprintf(stderr, "  file %s line %lu:  %s\n\n", filename, line, linebuf);
+      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename, line, linebuf));
       silc_free(linebuf);
     }
+    silc_server_config_destroy(config_new);
     return NULL;
   }
   /* close (destroy) the file object */
   silc_config_close(file);
 
-  /* XXX FIXME: check for missing mandatory fields */
-  if (!config->server_info) {
-    fprintf(stderr, "\nError: Missing mandatory block `server_info'\n");
+  /* If config_new is incomplete, abort the object and return NULL */
+  if (!config_new->server_info) {
+    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block `server_info'\n"));
+    silc_server_config_destroy(config_new);
     return NULL;
   }
-  return config;
+
+  /* XXX are there any other mandatory sections in the config file? */
+
+  /* Set default to configuration parameters */
+  silc_server_config_set_defaults(config_new);
+
+  return config_new;
 }
 
-/* ... */
+/* Increments the reference counter of a config object */
+
+void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
+			    void *ref_ptr)
+{
+  if (ref_ptr) {
+    config->refcount++;
+    ref->config = config;
+    ref->ref_ptr = ref_ptr;
+    SILC_LOG_DEBUG(("Referencing config [%p] New Ref=%hu", config,
+		    config->refcount));
+  }
+}
+
+/* Decrements the reference counter of a config object.  If the counter
+   reaches 0, the config object is destroyed. */
+
+void silc_server_config_unref(SilcServerConfigRef *ref)
+{
+  SilcServerConfig config = ref->config;
+
+  if (config) {
+    config->refcount--;
+    SILC_LOG_DEBUG(("Unreferencing config [%p] New Ref=%hu", config,
+		    config->refcount));
+    if (!config->refcount)
+      silc_server_config_destroy(config);
+    memset(ref, 0, sizeof(*ref));
+  }
+}
+
+/* Destroy a config object with all his children lists */
 
 void silc_server_config_destroy(SilcServerConfig config)
 {
@@ -1317,6 +1377,9 @@ void silc_server_config_destroy(SilcServerConfig config)
     CONFIG_FREE_AUTH(di);
     silc_free(di);
   }
+
+  memset(config, 'F', sizeof(*config));
+  silc_free(config);
 }
 
 /* Registers configured ciphers. These can then be allocated by the
@@ -1378,7 +1441,7 @@ bool silc_server_config_register_ciphers(SilcServer server)
 	  silc_sim_getsym(sim, 
 	    silc_sim_symname(alg_name,
 	      SILC_CIPHER_SIM_SET_KEY_WITH_STRING));
-	SILC_LOG_DEBUG(("set_key_with_string=%p", 
+	SILC_LOG_DEBUG(("set_key_with_string=%p",
 	  cipher_obj.set_key_with_string));
 	cipher_obj.encrypt =
 	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
@@ -1571,19 +1634,22 @@ void silc_server_config_setlogfiles(SilcServer server)
   SilcServerConfig config = server->config;
   SilcServerConfigLogging *this;
 
-  SILC_LOG_DEBUG(("Setting configured log file names"));
+  SILC_LOG_DEBUG(("Setting configured log file names and options"));
 
-  if ((this = config->logging_info))
-    silc_log_set_file(SILC_LOG_INFO, this->file, this->maxsize, 
-		      server->schedule);
-  if ((this = config->logging_warnings))
-    silc_log_set_file(SILC_LOG_WARNING, this->file, this->maxsize, 
+  silc_log_quick = config->logging_quick;
+  silc_log_flushdelay = config->logging_flushdelay;
+
+  if ((this = config->logging_fatals))
+    silc_log_set_file(SILC_LOG_FATAL, this->file, this->maxsize,
 		      server->schedule);
   if ((this = config->logging_errors))
     silc_log_set_file(SILC_LOG_ERROR, this->file, this->maxsize,
 		      server->schedule);
-  if ((this = config->logging_fatals))
-    silc_log_set_file(SILC_LOG_FATAL, this->file, this->maxsize, 
+  if ((this = config->logging_warnings))
+    silc_log_set_file(SILC_LOG_WARNING, this->file, this->maxsize,
+		      server->schedule);
+  if ((this = config->logging_info))
+    silc_log_set_file(SILC_LOG_INFO, this->file, this->maxsize,
 		      server->schedule);
 }
 
@@ -1755,25 +1821,4 @@ silc_server_config_get_primary_router(SilcServer server)
   }
 
   return NULL;
-}
-
-/* Set default values to stuff that was not configured. */
-
-bool silc_server_config_set_defaults(SilcServer server)
-{
-  SilcServerConfig config = server->config;
-
-  my_set_param_defaults(&config->param, NULL);
-
-  config->channel_rekey_secs = (config->channel_rekey_secs ? 
-				config->channel_rekey_secs :
-				SILC_SERVER_CHANNEL_REKEY);
-  config->key_exchange_timeout = (config->key_exchange_timeout ? 
-				  config->key_exchange_timeout :
-				  SILC_SERVER_SKE_TIMEOUT);
-  config->conn_auth_timeout = (config->conn_auth_timeout ? 
-			       config->conn_auth_timeout :
-			       SILC_SERVER_CONNAUTH_TIMEOUT);
-
-  return TRUE;
 }

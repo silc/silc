@@ -24,10 +24,15 @@
 /* Generic includes */
 #include "silcincludes.h"
 
+/* Forward declaration for SILC Server object. The actual object is
+   defined in internal header file for server routines. I want to keep
+   the object private hence this declaration. */
+typedef struct SilcServerStruct *SilcServer;
+
 /* SILC Server includes */
 #include "idlist.h"
-#include "server.h"
 #include "serverconfig.h"
+#include "server.h"
 #include "serverid.h"
 #include "server_util.h"
 #include "packet_send.h"

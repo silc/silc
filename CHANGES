@@ -1,3 +1,33 @@
+Thu Mar 28 09:58:16 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Added functions silc_server_config_[ref/unref], these are used
+	  to prevent that the config object is destroyed.
+
+	  No longer directly affect global variables silc_log_quick and
+	  silc_log_delay, they are first cached inside the config object
+	  and then applied with silc_server_config_setlogfiles().
+
+	  silc_server_config_set_defaults() is now internal to
+	  serverconfig.c, there are no reasons to show this internal stuff
+	  to the server.
+
+	  Affected files are silcd/serverconfig.[ch].
+
+	* Added macro SILC_SERVER_LOG_STDERR(), this should replace most
+	  fprintf's to stderr, since some code may be executed again after
+	  the server went into the background.  Affected files are
+	  silcd/server.[ch].
+
+	* Added rehash support. Added function silc_server_rehash() that
+	  will perform all the basic tasks of the rehashing procedure.
+
+	* Added command line option `-x, --hexdump'. This will enable the
+	  SILC_LOG_HEXDUMP calls that are no longer enabled with `--debug'.
+	  The option `--hexdump' implies `--debug'.
+
+	* Fixed a bad bug in the logging APIs (silcutil library) where
+	  the application would crash after calling silc_log_reset_all().
+
 Wed Mar 27 19:43:16 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the KICKED notify handling in client library to

@@ -175,8 +175,8 @@ silc_server_protocol_ke_verify_key(SilcSKE ske,
   if (silc_verify_public_key_internal(server, ctx->sock, 
 				      (ctx->responder == FALSE ?
 				       SILC_SOCKET_TYPE_ROUTER:
-				       ctx->sconfig ? SILC_SOCKET_TYPE_SERVER :
-				       ctx->rconfig ? SILC_SOCKET_TYPE_ROUTER :
+				       ctx->sconfig.ref_ptr ? SILC_SOCKET_TYPE_SERVER :
+				       ctx->rconfig.ref_ptr ? SILC_SOCKET_TYPE_ROUTER :
 				       SILC_SOCKET_TYPE_CLIENT),
 				      pk_data, pk_len, pk_type))
     completion(ske, SILC_SKE_STATUS_OK, completion_context);
@@ -952,8 +952,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	/* Remote end is client */
 	if (conn_type == SILC_SOCKET_TYPE_CLIENT) {
-	  SilcServerConfigClient *client = ctx->cconfig;
-	  
+	  SilcServerConfigClient *client = ctx->cconfig.ref_ptr;
+
 	  if (client) {
 	    ret = silc_server_get_authentication(ctx, client->passphrase,
 						 client->publickeys,
@@ -979,8 +979,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is server */
 	if (conn_type == SILC_SOCKET_TYPE_SERVER) {
-	  SilcServerConfigServer *serv = ctx->sconfig;
-	  
+	  SilcServerConfigServer *serv = ctx->sconfig.ref_ptr;
+
 	  if (serv) {
 	    ret = silc_server_get_authentication(ctx, serv->passphrase,
 						 serv->publickeys,
@@ -1006,7 +1006,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is router */
 	if (conn_type == SILC_SOCKET_TYPE_ROUTER) {
-	  SilcServerConfigRouter *serv = ctx->rconfig;
+	  SilcServerConfigRouter *serv = ctx->rconfig.ref_ptr;
 
 	  if (serv) {
 	    ret = silc_server_get_authentication(ctx, serv->passphrase,
