@@ -19,8 +19,6 @@ TODO/bugs in Irssi SILC client
    cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
    file.
 
- o Add PERL scripting support from Irssi CVS.
-
  o Extend the /HELP command to support sub commands or something.  So
    that user can say /help set mutual_authentication they would get
    help of the mutual_authentication setting.
