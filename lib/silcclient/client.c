@@ -437,8 +437,8 @@ silc_client_connect_to_server_internal(SilcClientInternalConnectContext *ctx)
    done the `connect' client operation is called. */
 
 bool silc_client_connect_to_server(SilcClient client,
-                                  SilcClientConnectionParams *params,
-                                  int port, char *host, void *context)
+				   SilcClientConnectionParams *params,
+				   int port, char *host, void *context)
 {
   SilcClientInternalConnectContext *ctx;
   SilcClientConnection conn;
@@ -636,7 +636,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
 
       /* Notify application of failure */
       client->internal->ops->connected(client, conn, SILC_CLIENT_CONN_ERROR);
-      silc_client_del_connection(client, conn);
     }
     return;
   }

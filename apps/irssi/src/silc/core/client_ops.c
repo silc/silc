@@ -1110,7 +1110,8 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn,
 	     silc_get_status_message(status), status,
 	     message ? message : "");
 
-  server->conn->context = NULL;
+  if (server->conn)
+    server->conn->context = NULL;
   server->conn = NULL;
   server->connection_lost = TRUE;
   server_disconnect(SERVER(server));

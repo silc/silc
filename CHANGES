@@ -4,6 +4,12 @@ Sun Mar  9 16:29:20 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 	  purging outgoing queue.  Prevents the "Error in select()"
 	  floods.  Affected file silcd/packet_send.c.
 
+	* Fixed incorrect connection deletion from client library
+	  after calling "connect" client operation.  Could cause
+	  crashes for example during reconnect timeouts.  Affected
+	  files are lib/silcclient/client.c and 
+	  irssi/src/silc/core/client_ops.c.
+
 Tue Feb  4 22:53:26 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* NULL terminate allocated string in silc_buffer_strformat.
