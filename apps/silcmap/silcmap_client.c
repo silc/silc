@@ -170,8 +170,32 @@ SILC_TASK_CALLBACK(silc_map_connect_timeout)
 
   SILC_LOG_DEBUG(("Connection timeout"));
 
+  silc_schedule_task_del_by_context(mapconn->map->client->schedule, mapconn);
+
   /* The server is down. */
   mapconn->down = TRUE;
+
+  /* Continue to produce the data and the map. */
+  silc_map_process_data(mapconn->map, mapconn);
+}
+
+/* Timeout callback to detect if server is down. */
+
+SILC_TASK_CALLBACK(silc_map_data_timeout)
+{
+  SilcMapConnection mapconn = context;
+
+  SILC_LOG_DEBUG(("data timeout"));
+
+  silc_schedule_task_del_by_context(mapconn->map->client->schedule, mapconn);
+
+  /* The server is down. */
+  mapconn->down = TRUE;
+
+  /* Close connection, we didn't get any data. */
+  SILC_LOG_DEBUG(("Closing connection to %s:%d", mapconn->conn->remote_host,
+		  mapconn->conn->remote_port));
+  silc_client_close_connection(mapconn->conn->client, mapconn->conn);
 
   /* Continue to produce the data and the map. */
   silc_map_process_data(mapconn->map, mapconn);
@@ -398,6 +422,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   if (!mapconn->stats_received)
     return;
 
+  silc_schedule_task_del_by_context(client->schedule, mapconn);
+
   /* All data is gathered, time to disconnect from the server. */
   silc_schedule_task_add(client->schedule, 0,
 			 silc_map_connect_close, mapconn, 0, 1,
@@ -458,6 +484,12 @@ silc_connected(SilcClient client, SilcClientConnection conn,
     silc_strncat(motd, sizeof(motd), hostname, strlen(hostname));
     silc_client_command_call(client, conn, motd);
   }
+
+  /* Set data timeout to detect if the server is down. */
+  silc_schedule_task_add(map->client->schedule, 0,
+			 silc_map_data_timeout, mapconn,
+			 mapconn->connect_timeout, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 
