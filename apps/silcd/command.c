@@ -537,7 +537,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   SilcClientEntry entry;
   SilcCommandStatus status;
   uint16 ident = silc_command_get_ident(cmd->payload);
-  char nh[128], uh[128];
+  char nh[256], uh[256];
   unsigned char idle[4], mode[4];
   SilcSocketConnection hsock;
 

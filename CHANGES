@@ -1,3 +1,8 @@
+Sat Jun  9 12:51:27 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* silc_server_whois_send_reply crashed the server if the nickname
+	  was 127 characters long.  Affected file silcd/command.c.
+
 Thu Jun  7 16:29:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added sanity check to the silc_server_new_client. If the hostname
