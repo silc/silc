@@ -411,7 +411,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	}
 	
 	if (username) {
-	  strncat(buf, username, strlen(nickname));
+	  strncat(buf, username, strlen(username));
 	}
 	
 	if (realname) {
