@@ -17,66 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.14  2000/09/29 07:13:04  priikone
- * 	Added support for notify type sending in notify payload.
- * 	Removed Log headers from the file.
- * 	Enabled debug messages by default for server.
- *
- * Revision 1.13  2000/08/21 14:21:21  priikone
- * 	Fixed channel joining and channel message sending inside a
- * 	SILC cell. Added silc_server_send_remove_channel_user and
- * 	silc_server_remove_channel_user functions.
- *
- * Revision 1.12  2000/07/26 07:05:11  priikone
- * 	Fixed the server to server (server to router actually) connections
- * 	and made the private message work inside a cell. Added functin
- * 	silc_server_replace_id.
- *
- * Revision 1.11  2000/07/19 07:08:09  priikone
- * 	Added version detection support to SKE.
- *
- * Revision 1.10  2000/07/17 11:47:30  priikone
- * 	Added command lagging support. Added idle counting support.
- *
- * Revision 1.9  2000/07/12 05:59:41  priikone
- * 	Major rewrite of ID Cache system. Support added for the new
- * 	ID cache system. Major rewrite of ID List stuff on server.  All
- * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
- * 	by default. A lot rewritten ID list functions.
- *
- * Revision 1.8  2000/07/10 05:42:59  priikone
- * 	Removed command packet processing from server.c and added it to
- * 	command.c.
- * 	Implemented INFO command. Added support for testing that
- * 	connections are registered before executing commands.
- *
- * Revision 1.7  2000/07/07 06:55:24  priikone
- * 	Do not allow client to join twice on same channel.
- *
- * Revision 1.6  2000/07/06 10:20:59  priikone
- * 	Cipher name in joining is not mandatory, removed check.
- *
- * Revision 1.5  2000/07/06 07:16:43  priikone
- * 	Fixed a wrong way of sending command replies. The fixed way
- * 	does comply with the protocol.
- *
- * Revision 1.4  2000/07/05 06:13:38  priikone
- * 	Added PING, INVITE and NAMES command.
- *
- * Revision 1.3  2000/07/03 05:52:22  priikone
- * 	Implemented LEAVE command.
- *
- * Revision 1.2  2000/06/28 05:06:38  priikone
- * 	Shorter timeout for channel joining notify.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 #include "server_internal.h"
@@ -302,9 +243,6 @@ static void silc_server_command_free(SilcServerCommandContext cmd)
     silc_free(cmd);
   }
 }
-
-#define SILC_COMMAND_STATUS_DATA(x) \
-  (
 
 /* Sends simple status message as command reply packet */
 
@@ -737,7 +675,7 @@ SILC_SERVER_CMD_FUNC(nick)
 
   silc_free(id_string);
   silc_buffer_free(packet);
-
+  
  out:
   silc_server_command_free(cmd);
 }
@@ -746,8 +684,78 @@ SILC_SERVER_CMD_FUNC(list)
 {
 }
 
+/* Server side of TOPIC command. Sets topic for channel and/or returns
+   current topic to client. */
+
 SILC_SERVER_CMD_FUNC(topic)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  SilcChannelID *channel_id;
+  SilcChannelEntry channel;
+  unsigned char *tmp;
+  unsigned int argc;
+
+  /* Check number of arguments */
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc < 1) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  if (argc > 2) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
+    goto out;
+  }
+
+  /* Get Channel ID */
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
+  channel_id = silc_id_str2id(tmp, SILC_ID_CHANNEL);
+
+  if (argc > 1) {
+    /* Get the topic */
+    tmp = silc_command_get_arg_type(cmd->payload, 2, NULL);
+    if (!tmp) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+      goto out;
+    }
+
+    /* Check whether the channel exists */
+    channel = silc_idlist_find_channel_by_id(server->local_list, channel_id);
+    if (!channel) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
+
+    /* Set the topic for channel */
+    channel->topic = strdup(tmp);
+
+    /* Send notify about topic change to all clients on the channel */
+    silc_server_send_notify_to_channel(server, channel,
+				       SILC_NOTIFY_TYPE_TOPIC_SET,
+				       "%s@%s set topic: %s",
+				       client->nickname, 
+				       cmd->sock->hostname ?
+				       cmd->sock->hostname : cmd->sock->ip, 
+				       tmp);
+  }
+
+  /* Send the topic to client as reply packet */
+  silc_server_command_send_status_data(cmd, SILC_COMMAND_TOPIC,
+				       SILC_STATUS_OK,
+				       2, tmp, strlen(tmp));
+
+ out:
+  silc_server_command_free(cmd);
 }
 
 /* Server side of INVITE command. Invites some client to join some channel. */
@@ -1311,7 +1319,7 @@ SILC_SERVER_CMD_FUNC(join)
   silc_server_command_free(cmd);
 }
 
-/* Server side of command MOTD. Sends servers current "message of the
+/* Server side of command MOTD. Sends server's current "message of the
    day" to the client. */
 
 SILC_SERVER_CMD_FUNC(motd)
