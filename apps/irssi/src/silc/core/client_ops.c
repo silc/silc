@@ -1683,10 +1683,13 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       signal_emit("channel mode changed", 1, chanrec);
 
       /* Resolve the client information */
-      SilcJoinResolve r = silc_calloc(1, sizeof(*r));
-      r->channel = channel_entry;
-      silc_client_get_clients_by_list(client, conn, list_count, client_id_list,
-				      silc_client_join_get_users, r);
+      {
+	SilcJoinResolve r = silc_calloc(1, sizeof(*r));
+	r->channel = channel_entry;
+	silc_client_get_clients_by_list(client, conn, list_count,
+					client_id_list,
+					silc_client_join_get_users, r);
+      }
 
       break;
     }
