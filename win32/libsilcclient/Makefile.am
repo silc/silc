@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-EXTRA_DIST = *.dsp
+EXTRA_DIST = *.dsp *.def
 
 include $(top_srcdir)/Makefile.defines.in
 

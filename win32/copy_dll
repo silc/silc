@@ -1,0 +1,51 @@
+#!/bin/sh
+
+# Copy compiled libraries
+
+mkdir _libsilc
+mkdir _libsilc/Debug
+mkdir _libsilc/Release
+
+mkdir _libsilcclient
+mkdir _libsilcclient/Debug
+mkdir _libsilcclient/Release
+
+cp libsilc/Debug/libsilc.dll _libsilc/Debug
+cp libsilc/Debug/libsilc.exp _libsilc/Debug
+cp libsilc/Debug/libsilc.lib _libsilc/Debug
+cp libsilc/Release/libsilc.dll _libsilc/Release
+cp libsilc/Release/libsilc.exp _libsilc/Release
+cp libsilc/Release/libsilc.lib _libsilc/Release
+
+cp libsilcclient/Debug/libsilcclient.dll _libsilcclient/Debug
+cp libsilcclient/Debug/libsilcclient.exp _libsilcclient/Debug
+cp libsilcclient/Debug/libsilcclient.lib _libsilcclient/Debug
+cp libsilcclient/Release/libsilcclient.dll _libsilcclient/Release
+cp libsilcclient/Release/libsilcclient.exp _libsilcclient/Release
+cp libsilcclient/Release/libsilcclient.lib _libsilcclient/Release
+
+rm -rf libsilc/Debug
+rm -rf libsilc/Release
+rm -rf libsilcclient/Debug
+rm -rf libsilcclient/Release
+
+mv _libsilc/Debug libsilc
+mv _libsilc/Release libsilc
+mv _libsilcclient/Debug libsilcclient
+mv _libsilcclient/Release libsilcclient
+
+rm -rf _libsilc
+rm -rf _libsilcclient
+
+# Cleanup for distribution
+rm -rf *.ncb
+rm -rf *.opt
+rm -rf libsilc/*.ncb
+rm -rf libsilc/*.opt
+rm -rf libsilc/*.plg
+rm -rf libsilcclient/*.ncb
+rm -rf libsilcclient/*.opt
+rm -rf libsilcclient/*.plg
+rm -rf Debug
+rm -rf Release
+

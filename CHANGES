@@ -1,3 +1,8 @@
+Thu Jul 26 11:32:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed MSVC++ project files and added missing files to
+	  Makefiles under win32/.
+
 Wed Jul 25 18:43:54 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not add TCP_NODELAY flag if the operating system
