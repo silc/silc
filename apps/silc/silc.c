@@ -59,6 +59,7 @@ static struct option long_opts[] =
   { "create-key-pair", 0, NULL, 'C' },
   { "pkcs", 1, NULL, 10 },
   { "bits", 1, NULL, 11 },
+  { "show-key", 1, NULL, 'S' },
 
   { NULL, 0, NULL, 0 }
 };
@@ -75,7 +76,9 @@ static char *opt_config_file = NULL;
 static bool opt_no_silcrc = FALSE;
 
 static bool opt_create_keypair = FALSE;
+static bool opt_show_key = FALSE;
 static char *opt_pkcs = NULL;
+static char *opt_keyfile = NULL;
 static int opt_bits = 0;
 
 /* SILC Client operations */
@@ -109,6 +112,7 @@ Usage: silc [options]\n\
   -C, --create-key-pair        Create new public key pair\n\
       --pkcs=PKCS              Set the PKCS of the public key pair\n\
       --bits=VALUE             Set length of the public key pair\n\
+  -S, --show-key=FILE          Show the contents of the public key\n\
 \n");
 }
 
@@ -125,7 +129,7 @@ int main(int argc, char **argv)
     {
       while ((opt = 
 	      getopt_long(argc, argv,
-			  "s:p:n:c:b:k:f:qdhVC",
+			  "s:p:n:c:b:k:f:qdhVCS:",
 			  long_opts, &option_index)) != EOF)
 	{
 	  switch(opt) 
@@ -210,6 +214,11 @@ SILC Secure Internet Live Conferencing, version %s\n",
 	      if (optarg)
 		opt_bits = atoi(optarg);
 	      break;
+	    case 'S':
+	      opt_show_key = TRUE;
+	      if (optarg)
+		opt_keyfile = strdup(optarg);
+	      break;
 
 	    default:
 	      exit(0);
@@ -239,6 +248,14 @@ SILC Secure Internet Live Conferencing, version %s\n",
     /* Create new key pair and exit */
     silc_client_create_key_pair(opt_pkcs, opt_bits, 
 				NULL, NULL, NULL, NULL, NULL);
+    silc_free(opt_pkcs);
+    exit(0);
+  }
+
+  if (opt_show_key == TRUE) {
+    /* Dump the key */
+    silc_client_show_key(opt_keyfile);
+    silc_free(opt_keyfile);
     exit(0);
   }
 

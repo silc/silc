@@ -727,8 +727,10 @@ int silc_client_show_key(char *keyfile)
   if (silc_pkcs_load_public_key(keyfile, &public_key,
 				SILC_PKCS_FILE_PEM) == FALSE)
     if (silc_pkcs_load_public_key(keyfile, &public_key,
-				  SILC_PKCS_FILE_BIN) == FALSE)
+				  SILC_PKCS_FILE_BIN) == FALSE) {
+      fprintf(stderr, "Could not load public key file `%s'\n", keyfile);
       return FALSE;
+    }
 
   ident = silc_pkcs_decode_identifier(public_key->identifier);
 

@@ -41,5 +41,6 @@ int silc_client_create_key_pair(char *pkcs_name, int bits,
 				SilcPrivateKey *ret_prv_key);
 int silc_client_check_silc_dir();
 int silc_client_load_keys(SilcClient client);
+int silc_client_show_key(char *keyfile);
 
 #endif

@@ -224,7 +224,7 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
   if (e_len > key_len) {
     silc_mp_clear(&key->e);
     silc_mp_clear(&key->n);
-    return FALSE;
+    return 0;
   }
 
   silc_mp_bin2mp(key_data + 4, e_len, &key->e);
@@ -234,14 +234,14 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
   if (e_len + n_len > key_len) {
     silc_mp_clear(&key->e);
     silc_mp_clear(&key->n);
-    return FALSE;
+    return 0;
   }
 
   silc_mp_bin2mp(key_data + 4 + e_len + 4, n_len, &key->n);
 
   key->bits = n_len * 8;
 
-  return TRUE;
+  return key->bits;
 }
 
 /* Set private key. This derives the public key from the private

@@ -31,7 +31,7 @@ typedef struct SilcPKCSObjectStruct {
   void (*clear_keys)(void *);
   unsigned char *(*get_public_key)(void *, uint32 *);
   unsigned char *(*get_private_key)(void *, uint32 *);
-  int (*set_public_key)(void *, unsigned char *, uint32);
+  uint32 (*set_public_key)(void *, unsigned char *, uint32);
   int (*set_private_key)(void *, unsigned char *, uint32);
   uint32 (*context_len)();
   uint32 (*data_context_len)();
@@ -77,6 +77,17 @@ typedef struct {
   unsigned char *prv;
   uint32 prv_len;
 } *SilcPrivateKey;
+
+/* Decoded SILC Public Key identifier. Note that some of the fields 
+   may be NULL. */
+typedef struct {
+  char *username;
+  char *host;
+  char *realname;
+  char *email;
+  char *org;
+  char *country;
+} *SilcPublicKeyIdentifier;
 
 /* Public and private key file headers */
 #define SILC_PKCS_PUBLIC_KEYFILE_BEGIN "-----BEGIN SILC PUBLIC KEY-----\n"
@@ -125,8 +136,8 @@ unsigned char *silc_##pkcs##_get_public_key(void *context, \
 unsigned char *silc_##pkcs##_get_private_key(void *context, \
                                              uint32 *ret_len)
 #define SILC_PKCS_API_SET_PUBLIC_KEY(pkcs) \
-int silc_##pkcs##_set_public_key(void *context, unsigned char *key_data, \
-                                 uint32 key_len)
+uint32 silc_##pkcs##_set_public_key(void *context, unsigned char *key_data, \
+                                    uint32 key_len)
 #define SILC_PKCS_API_SET_PRIVATE_KEY(pkcs) \
 int silc_##pkcs##_set_private_key(void *context, unsigned char *key_data, \
                                   uint32 key_len)
@@ -172,9 +183,9 @@ char *silc_pkcs_get_supported();
 uint32 silc_pkcs_get_key_len(SilcPKCS self);
 unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, uint32 *len);
 unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, uint32 *len);
-int silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key);
-int silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
-				  uint32 pk_len);
+uint32 silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key);
+uint32 silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
+				     uint32 pk_len);
 int silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key);
 int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
 				   uint32 prv_len);
@@ -197,6 +208,8 @@ int silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
 			       uint32 data_len);
 char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 				  char *email, char *org, char *country);
+SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier);
+void silc_pkcs_free_identifier(SilcPublicKeyIdentifier identifier);
 SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
 					 unsigned char *pk, 
 					 uint32 pk_len);

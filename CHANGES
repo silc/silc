@@ -1,3 +1,16 @@
+Mon Apr  9 16:54:44 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_pkcs_decode_identifier to decode the public key's
+	  identifier.  Affected file lib/silccrypt/silpkcs.[ch].
+	  Added also silc_pkcs_free_identifier.  Added also new context
+	  SilcPublicKeyIdentifier.
+
+	* Added -S option to the silc client.  It is used to dump the
+	  contents of the specified public key file.
+
+	* Changed the PKCS api to return the public key length when
+	  setting the public key.
+
 Sun Apr  8 19:30:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Made the key generation options to the silcd program.  Added

@@ -916,6 +916,7 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
     if (byte != SILC_PKCS_PUBLIC_KEYFILE_BEGIN[i]) {
       memset(old, 0, data_len);
       silc_free(old);
+      return FALSE;
     }
   }
   data = cp;
@@ -968,6 +969,7 @@ int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
     if (byte != SILC_PKCS_PRIVATE_KEYFILE_BEGIN[i]) {
       memset(old, 0, data_len);
       silc_free(old);
+      return FALSE;
     }
   }
   data = cp;
