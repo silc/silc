@@ -874,6 +874,111 @@ SilcSFTP silc_sftp_server_start(SilcSocketConnection sock,
  ***/
 void silc_sftp_server_shutdown(SilcSFTP sftp);
 
+/****d* silcsftp/SilcSFTPAPI/SilcSFTPMonitors
+ *
+ * NAME
+ * 
+ *    typedef enum { ... } SilcSFTPMonitors;
+ *
+ * DESCRIPTION
+ *
+ *    SFTP server monitor types. These can be masked together to monitor
+ *    various client requests.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_SFTP_MONITOR_INIT        = 0x0001,
+  SILC_SFTP_MONITOR_OPEN        = 0x0002,
+  SILC_SFTP_MONITOR_CLOSE       = 0x0004,
+  SILC_SFTP_MONITOR_READ        = 0x0008,
+  SILC_SFTP_MONITOR_WRITE       = 0x0010,
+  SILC_SFTP_MONITOR_REMOVE      = 0x0020,
+  SILC_SFTP_MONITOR_RENAME      = 0x0040,
+  SILC_SFTP_MONITOR_MKDIR       = 0x0080,
+  SILC_SFTP_MONITOR_RMDIR       = 0x0100,
+  SILC_SFTP_MONITOR_OPENDIR     = 0x0200,
+  SILC_SFTP_MONITOR_READDIR     = 0x0400,
+  SILC_SFTP_MONITOR_STAT        = 0x0800,
+  SILC_SFTP_MONITOR_LSTAT       = 0x1000,
+  SILC_SFTP_MONITOR_FSTAT       = 0x2000,
+  SILC_SFTP_MONITOR_SETSTAT     = 0x4000,
+  SILC_SFTP_MONITOR_FSETSTAT    = 0x8000,
+  SILC_SFTP_MONITOR_READLINK    = 0x10000,
+  SILC_SFTP_MONITOR_SYMLINK     = 0x20000,
+  SILC_SFTP_MONITOR_REALPATH    = 0x40000,
+  SILC_SFTP_MONITOR_EXTENDED    = 0x80000,
+} SilcSFTPMonitors;
+/***/
+
+/****s* silcsftp/SilcSFTPAPI/SilcSFTP
+ *
+ * NAME
+ * 
+ *    typedef struct { ... } *SilcSFTPMonitorData, SilcSFTPMonitorDataStruct;
+ *
+ * DESCRIPTION
+ *
+ *    This structure includes the monitor type specific data.  The
+ *    application can check what the client has requested from this
+ *    structure.
+ *
+ * SOURCE
+ */
+typedef struct {
+  SilcSFTPVersion version;	/* _INIT */
+  char *name;			/* _OPEN, _REMOVE, _RENAME, _MKDIR,
+				   _RMDIR, _OPENDIR, _STAT, _LSTAT,
+				   _SETSTAT, _READLINK, _SYMLINK, _REALPATH */
+  char *name2;			/* _RENAME, _SYMLINK */
+  SilcSFTPFileOperation pflags;	/* _OPEN */
+  uint64 offset;		/* _READ, _WRITE */
+  uint32 data_len;		/* _READ, _WRITE */
+  SilcSFTPName names;		/* _READDIR, _READLINK, _REALPATH */
+} *SilcSFTPMonitorData, SilcSFTPMonitorDataStruct;
+/***/
+
+/****f* silcsftp/SilcSFTPAPI/silc_sftp_server_set_monitor
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcSFTPMonitor)(SilcSFTP sftp
+ *                                    SilcSFTPMonitors type,
+ *                                    void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Monitor callback that is called when an specified request is
+ *    received from client.  The `type' is the requested type that
+ *    was being monitored.
+ *
+ ***/
+typedef void (*SilcSFTPMonitor)(SilcSFTP sftp,
+				SilcSFTPMonitors type,
+				const SilcSFTPMonitorData data,
+				void *context);
+
+/****f* silcsftp/SilcSFTPAPI/silc_sftp_server_set_monitor
+ *
+ * SYNOPSIS
+ *
+ *    void silc_sftp_server_set_monitor(SilcSFTP sftp,
+ *                                      SilcSFTPMonitors monitors,
+ *                                      SilcSFTPMonitor monitor, 
+ *                                      void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Sets monitor callback to monitor various request sent by an client.
+ *    When request that has been set in the `monitors' is received the
+ *    monitor callback will be called to notify the caller.
+ *
+ ***/
+void silc_sftp_server_set_monitor(SilcSFTP sftp,
+				  SilcSFTPMonitors monitors,
+				  SilcSFTPMonitor monitor, 
+				  void *context);
+
 /* Function that is called to process the incmoing SFTP packet. */
 /* XXX Some day this will go away and we have automatic receive callbacks
    for SilcSocketConnection API or SilcPacketContext API. */

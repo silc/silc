@@ -30,7 +30,7 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real);
 SILC_TASK_CALLBACK(silc_client_rekey_callback);
 SILC_TASK_CALLBACK(silc_client_rekey_final);
 
-static void silc_client_packet_parse(SilcPacketParserContext *parser_context,
+static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
 				     void *context);
 static void silc_client_packet_parse_type(SilcClient client, 
 					  SilcSocketConnection sock,
@@ -499,7 +499,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
 				   ctx->ske->prop->pkcs,
 				   ctx->ske->prop->hash,
 				   ctx->ske->prop->hmac,
-				   ctx->ske->prop->group);
+				   ctx->ske->prop->group,
+				   ctx->responder);
   silc_ske_free_key_material(ctx->keymat);
 
   /* Allocate internal context for the authentication protocol. This
@@ -741,14 +742,14 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
       /* If connection is disconnecting already we will finally
 	 close the connection */
       if (SILC_IS_DISCONNECTING(sock)) {
-	if (sock == conn->sock)
+	if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
 	  client->ops->disconnect(client, conn);
 	silc_client_close_connection(client, sock, conn);
 	return;
       }
       
       SILC_LOG_DEBUG(("EOF from connection %d", sock->sock));
-      if (sock == conn->sock)
+      if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
 	client->ops->disconnect(client, conn);
       silc_client_close_connection(client, sock, conn);
       return;
@@ -800,8 +801,8 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real)
 /* Parser callback called by silc_packet_receive_process. Thie merely
    registers timeout that will handle the actual parsing when appropriate. */
 
-void silc_client_packet_parse(SilcPacketParserContext *parser_context,
-			      void *context)
+static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
+				     void *context)
 {
   SilcClient client = (SilcClient)context;
   SilcSocketConnection sock = parser_context->sock;
@@ -810,12 +811,37 @@ void silc_client_packet_parse(SilcPacketParserContext *parser_context,
   if (conn && conn->hmac_receive)
     conn->psn_receive = parser_context->packet->sequence + 1;
 
+  /* If protocol for this connection is key exchange or rekey then we'll
+     process all packets synchronously, since there might be packets in
+     queue that we are not able to decrypt without first processing the
+     packets before them. */
+  if (sock->protocol && sock->protocol->protocol && 
+      (sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE ||
+       sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY)) {
+    silc_client_packet_parse_real(client->schedule, 0, sock->sock,
+				  parser_context);
+
+    /* Reprocess the buffer since we'll return FALSE. This is because
+       the `conn->receive_key' might have become valid bu processing
+       the previous packet */
+    if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
+      silc_packet_receive_process(sock, FALSE, conn->receive_key, 
+				  conn->hmac_receive, conn->psn_receive,
+				  silc_client_packet_parse, client);
+    else
+      silc_packet_receive_process(sock, FALSE, NULL, NULL, 0, 
+				  silc_client_packet_parse, client);
+    return FALSE;
+  }
+
   /* Parse the packet */
-  silc_schedule_task_add(client->schedule, parser_context->sock->sock, 
+  silc_schedule_task_add(client->schedule, sock->sock, 
 			 silc_client_packet_parse_real,
 			 (void *)parser_context, 0, 1, 
 			 SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
+
+  return TRUE;
 }
 
 /* Parses the packet type and calls what ever routines the packet type
@@ -1185,7 +1211,7 @@ void silc_client_packet_send(SilcClient client,
     silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, 
 			sock->outbuf->len);
 
-  SILC_LOG_HEXDUMP(("Packet, len %d", sock->outbuf->len),
+  SILC_LOG_HEXDUMP(("Packet (%d), len %d", sequence, sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
@@ -1314,6 +1340,14 @@ void silc_client_close_connection(SilcClient client,
       silc_dlist_uninit(conn->pending_commands);
     if (conn->rekey)
       silc_free(conn->rekey);
+
+    if (conn->active_session) {
+      sock->user_data = NULL;
+      silc_client_ftp_session_free(conn->active_session);
+      conn->active_session = NULL;
+    }
+
+    silc_client_ftp_free_sessions(client, conn);
 
     memset(conn, 0, sizeof(*conn));
     silc_client_del_connection(client, conn);

@@ -291,6 +291,19 @@ uint16 silc_net_get_local_port(int sock);
  ***/
 char *silc_net_localhost(void);
 
+/****f* silcutil/SilcNetAPI/silc_net_localip
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_net_localip(void)
+ *
+ * DESCRIPTION
+ *
+ *    Return IP of localhost.  
+ *
+ ***/
+char *silc_net_localip(void);
+
 #ifdef WIN32
 
 /****f* silcutil/SilcNetAPI/silc_net_win32_init

@@ -279,7 +279,7 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcPacketParserCallback)(SilcPacketParserContext 
+ *    typedef bool (*SilcPacketParserCallback)(SilcPacketParserContext 
  *                                             *parse_context);
  *
  * DESCRIPTION
@@ -292,8 +292,16 @@ typedef struct {
  *    context. The application receiving the SilcPacketParserContext
  *    must free it.
  *
+ *    This returns TRUE if the library should continue packet processing
+ *    (assuming there is more data to be processed), and FALSE if the
+ *    upper layer does not want the library to continue but to leave the
+ *    rest of the data is the packet queue untouched.  Application may
+ *    want to do this for example if the cipher is not ready before 
+ *    processing a certain packet.  In this case the application wants
+ *    to recall the processing function with the correct cipher.
+ *
  ***/
-typedef void (*SilcPacketParserCallback)(SilcPacketParserContext 
+typedef bool (*SilcPacketParserCallback)(SilcPacketParserContext 
 					 *parse_context, void *context);
 
 /* Macros */

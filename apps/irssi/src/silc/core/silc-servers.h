@@ -21,6 +21,14 @@ typedef struct {
 #include "server-connect-rec.h"
 } SILC_SERVER_CONNECT_REC;
 
+typedef struct {
+  SilcClientEntry client_entry;
+  SilcClientConnection conn;
+  uint32 session_id;
+  char *filepath;
+  bool send;
+} *FtpSession;
+
 #define STRUCT_SERVER_CONNECT_REC SILC_SERVER_CONNECT_REC
 typedef struct {
 #include "server-rec.h"
@@ -36,6 +44,9 @@ typedef struct {
   
   GSList *idles;	/* Idle queue - send these commands to server
 			   if there's nothing else to do */
+
+  SilcDList ftp_sessions;
+  FtpSession current_session;
   
   gpointer chanqueries;
   SilcClientConnection conn;
@@ -50,5 +61,7 @@ void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args);
 void silc_server_init(void);
 void silc_server_deinit(void);
+void silc_server_free_ftp(SILC_SERVER_REC *server,
+			  SilcClientEntry client_entry);
 
 #endif

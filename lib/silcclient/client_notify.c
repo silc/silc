@@ -305,7 +305,7 @@ void silc_client_notify_by_server(SilcClient client,
     client->ops->notify(client, conn, type, client_entry, tmp);
 
     /* Free data */
-    silc_client_del_client_entry(client, client_entry);
+    silc_client_del_client_entry(client, conn, client_entry);
     break;
 
   case SILC_NOTIFY_TYPE_TOPIC_SET:
@@ -406,7 +406,7 @@ void silc_client_notify_by_server(SilcClient client,
     client->ops->notify(client, conn, type, client_entry, client_entry2);
 
     /* Free data */
-    silc_client_del_client_entry(client, client_entry);
+    silc_client_del_client_entry(client, conn, client_entry);
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:

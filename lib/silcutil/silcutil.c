@@ -32,7 +32,7 @@ int silc_file_open(const char *filename, int flags)
 {
   int fd;
 
-  fd = open(filename, flags);
+  fd = open(filename, flags, 0600);
 
   return fd;
 }
@@ -156,6 +156,20 @@ char *silc_file_readfile(const char *filename, uint32 *return_len)
     *return_len = filelen;
 
   return buffer;
+}
+
+/* Returns files size. Returns 0 on error. */
+
+uint64 silc_file_size(const char *filename)
+{
+  int ret;
+  struct stat stats;
+
+  ret = lstat(filename, &stats);
+  if (ret < 0)
+    return 0;
+
+  return (uint64)stats.st_size;
 }
 
 /* Gets line from a buffer. Stops reading when a newline or EOF occurs.

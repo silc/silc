@@ -1650,7 +1650,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 /* Parser callback called by silc_packet_receive_process. This merely
    registers timeout that will handle the actual parsing when appropriate. */
 
-void silc_server_packet_parse(SilcPacketParserContext *parser_context,
+bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
 			      void *context)
 {
   SilcServer server = (SilcServer)context;
@@ -1659,6 +1659,31 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context,
 
   if (idata)
     idata->psn_receive = parser_context->packet->sequence + 1;
+
+  /* If protocol for this connection is key exchange or rekey then we'll
+     process all packets synchronously, since there might be packets in
+     queue that we are not able to decrypt without first processing the
+     packets before them. */
+  if (sock->protocol && sock->protocol->protocol && 
+      (sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE ||
+       sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)) {
+    silc_server_packet_parse_real(server->schedule, 0, sock->sock,
+				  parser_context);
+
+    /* Reprocess data since we'll return FALSE here.  This is because
+       the idata->receive_key might have become valid in the last packet
+       and we want to call this processor with valid cipher. */
+    if (idata)
+      silc_packet_receive_process(sock, server->server_type == SILC_ROUTER ? 
+				  TRUE : FALSE, idata->receive_key, 
+				  idata->hmac_receive, idata->psn_receive, 
+				  silc_server_packet_parse, server);
+    else
+      silc_packet_receive_process(sock, server->server_type == SILC_ROUTER ? 
+				  TRUE : FALSE, NULL, NULL, 0, 
+				  silc_server_packet_parse, server);
+    return FALSE;
+  }
 
   switch (sock->type) {
   case SILC_SOCKET_TYPE_UNKNOWN:
@@ -1680,8 +1705,10 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context,
 			   SILC_TASK_PRI_NORMAL);
     break;
   default:
-    return;
+    return TRUE;
   }
+
+  return TRUE;
 }
 
 /* Parses the packet type and calls what ever routines the packet type

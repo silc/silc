@@ -30,7 +30,6 @@
 #include "client.h"
 #include "command.h"
 #include "command_reply.h"
-#include "client_ftp.h"
 #include "idlist.h"
 #include "protocol.h"
 #include "silcapi.h"

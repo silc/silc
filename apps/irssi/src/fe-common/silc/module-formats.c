@@ -116,5 +116,21 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "unset_away", "You are no longer marked as being away", 0 },
 	{ "auth_meth_unresolved", "Could not resolve authentication method to use, assume no authentication", 0 },
 
+	/* File transfer messages */
+	{ NULL, "FileTransfer", 0 },
+
+	{ "file_send", "File transfer request sent to {nick $0} for $1", 2, { 0, 0 } },
+	{ "file_transmit", "Transmitting file {hilight $0} [$1kB] to {nick $2}", 3, { 0, 0, 0 } },
+	{ "file_transmitted", "Transmitted file {hilight $0} [$1kB] to {nick $2} [{hilight $3kB/s}]", 4, { 0, 0, 0, 0 } },
+	{ "file_receive", "Receiving file {hilight $0} [$1kB] from {nick $2}", 3, { 0, 0 } },
+	{ "file_received", "Received file {hilight $0} [$1kB] from {nick $2} [{hilight $3kB/s}]", 4, { 0, 0 } },
+	{ "file_request", "File transfer request from {nick $0}", 1, { 0 } },
+	{ "file_request_host", "File transfer request from {nick $0} [$1 port $2]", 3, { 0, 0, 0 } },
+	{ "file_key_exchange", "Negotiating keys for file transfer with {nick $0}", 1, { 0 } },
+	{ "file_na", "No file transfers available", 0 },
+	{ "file_client_na", "No file transfer offered by {nick $0}", 1, { 0 } },
+	{ "file_show_header", "File transfers", 0 },
+	{ "file_show_line", "  $0 $1 ($2)", 3, { 0, 0, 0 } },
+
 	{ NULL, NULL, 0 }
 };

@@ -332,7 +332,8 @@ void silc_packet_receive_process(SilcSocketConnection sock,
   SilcPacketParserContext *parse_ctx;
   int packetlen, paddedlen, mac_len = 0;
   int block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
-
+  bool cont = TRUE;
+  
   if (sock->inbuf->len < SILC_PACKET_MIN_HEADER_LEN)
     return;
 
@@ -340,7 +341,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     mac_len = silc_hmac_len(hmac);
 
   /* Parse the packets from the data */
-  while (sock->inbuf->len > 0) {
+  while (sock->inbuf->len > 0 && cont) {
 
     /* Decrypt first 16 bytes of the packet */
     if (!SILC_IS_INBUF_PENDING(sock) && cipher)
@@ -404,14 +405,16 @@ void silc_packet_receive_process(SilcSocketConnection sock,
       silc_packet_decrypt(cipher, hmac, parse_ctx->packet->sequence, 
 			  parse_ctx->packet->buffer, parse_ctx->normal);
 
-    /* Call the parser */
-    if (parser)
-      (*parser)(parse_ctx, parser_context);
-
     /* Pull the packet from inbuf thus we'll get the next one
        in the inbuf. */
     silc_buffer_pull(sock->inbuf, paddedlen + mac_len);
+
+    /* Call the parser */
+    cont = (*parser)(parse_ctx, parser_context);
   }
+
+  if (cont == FALSE && sock->inbuf->len > 0)
+    return;
 
   SILC_LOG_DEBUG(("Clearing inbound buffer"));
   silc_buffer_clear(sock->inbuf);

@@ -58,5 +58,10 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process);
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
 				 bool force_send);
+void silc_client_ftp_free_sessions(SilcClient client,
+				   SilcClientConnection conn);
+void silc_client_ftp_session_free(SilcClientFtpSession session);
+void silc_client_ftp_session_free_client(SilcClientConnection conn,
+					 SilcClientEntry client_entry);
 
 #endif

@@ -118,6 +118,7 @@ void silc_client_update_client(SilcClient client,
 			       const char *userinfo,
 			       uint32 mode);
 void silc_client_del_client_entry(SilcClient client, 
+				  SilcClientConnection conn,
 				  SilcClientEntry client_entry);
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,

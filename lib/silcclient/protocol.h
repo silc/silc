@@ -105,6 +105,7 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      SilcPKCS pkcs,
 				      SilcHash hash,
 				      SilcHmac hmac,
-				      SilcSKEDiffieHellmanGroup group);
+				      SilcSKEDiffieHellmanGroup group,
+				      bool is_responder);
 
 #endif

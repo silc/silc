@@ -1,3 +1,37 @@
+Mon Oct 22 16:35:05 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_net_localip to return local host's IP address.
+	  Affected file lib/silcutil/silcnet.[ch].
+
+	* If key exchange or rekey protocol is active for a connection
+	  parse all packets syncronously since there might be packets
+	  in packet queue that we are not able to process without first
+	  processing packets before them.  Affected file silcd/server,
+	  lib/silcclient/client.c.
+
+	* SilcPacketParserCallback now returns TRUE or FALSE to indicate
+	  whether library should continue processing the packet. 
+	  Affected file lib/silccore/silcpacket.h.
+
+	* Added SilcSFTPMonitor callback, SilcSFTPMonitors and
+	  SilcSFTPMonitorData to SFTP server to monitor various
+	  SFTP client requests.  Affected file lib/silcsftp/silcsftp.h,
+	  lib/silcsftp/sftp_server.c.
+
+	* Added silc_file_size to return file size.  Affected file
+	  lib/silcutil/silcutil.[ch].
+
+	* Implemented the file transfer support for the client library.
+	  Added preliminary support for simple client to client one-file
+	  transmission.  Affected file lib/silcclient/client_ftp.c,
+	  lib/silccilent/client.[ch].
+
+	* Added new local command FILE to the Irssi SILC Client.
+	  It is used to perform the file transfer.  It has subcommands
+	  SEND, RECEIVE, SHOW and CLOSE.  Affected files
+	  irssi/src/silc/core/client_ops.c, 
+	  irssi/src/silc/core/silc-server.[ch].
+
 Mon Oct 22 12:50:08 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Relay the SILC_PACKET_FTP in the server.  Affected files

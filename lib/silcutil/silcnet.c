@@ -229,3 +229,25 @@ char *silc_net_localhost(void)
 
   return strdup(dest->h_name);
 }
+
+/* Returns local IP address */
+
+char *silc_net_localip(void)
+{
+  char hostname[256];
+  struct hostent *dest;
+  struct in_addr ip;
+  char *ips;
+
+  if (gethostname(hostname, sizeof(hostname)))
+    return NULL;
+
+  dest = gethostbyname(hostname);
+  if (!dest)
+    return NULL;
+
+  SILC_GET32_LSB(ip.s_addr, dest->h_addr_list[0]);
+  ips = inet_ntoa(ip);
+
+  return strdup(ips);
+}

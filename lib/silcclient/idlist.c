@@ -20,6 +20,7 @@
 /* $Id$ */
 
 #include "clientlibincludes.h"
+#include "client_internal.h"
 
 typedef struct {
   SilcClientCommandContext cmd;
@@ -631,6 +632,7 @@ void silc_client_update_client(SilcClient client,
 /* Deletes the client entry and frees all memory. */
 
 void silc_client_del_client_entry(SilcClient client, 
+				  SilcClientConnection conn,
 				  SilcClientEntry client_entry)
 {
   SILC_LOG_DEBUG(("Start"));
@@ -645,6 +647,7 @@ void silc_client_del_client_entry(SilcClient client,
   if (client_entry->receive_key)
     silc_cipher_free(client_entry->receive_key);
   silc_free(client_entry->key);
+  silc_client_ftp_session_free_client(conn, client_entry);
   silc_free(client_entry);
 }
 
@@ -654,7 +657,7 @@ bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 			    SilcClientEntry client_entry)
 {
   bool ret = silc_idcache_del_by_context(conn->client_cache, client_entry);
-  silc_client_del_client_entry(client, client_entry);
+  silc_client_del_client_entry(client, conn, client_entry);
   return ret;
 }
 

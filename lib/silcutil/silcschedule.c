@@ -747,7 +747,7 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 
 void silc_schedule_task_del_by_fd(SilcSchedule schedule, uint32 fd)
 {
-  SILC_LOG_DEBUG(("Unregister task by fd"));
+  SILC_LOG_DEBUG(("Unregister task by fd %d", fd));
 
   silc_task_del_by_fd(schedule->timeout_queue, fd);
   silc_task_del_by_fd(schedule->fd_queue, fd);
@@ -818,6 +818,8 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, uint32 fd)
   int i;
 
   silc_mutex_lock(schedule->lock);
+
+  SILC_LOG_DEBUG(("Unset listen fd %d", fd));
 
   for (i = 0; i < schedule->max_fd; i++)
     if (schedule->fd_list[i].fd == fd) {

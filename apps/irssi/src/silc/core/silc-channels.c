@@ -216,6 +216,8 @@ static void event_signoff(SILC_SERVER_REC *server, va_list va)
   client = va_arg(va, SilcClientEntry);
   message = va_arg(va, char *);
 
+  silc_server_free_ftp(server, client);
+
   memset(userhost, 0, sizeof(userhost));
   if (client->username)
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
@@ -248,6 +250,8 @@ static void event_topic(SILC_SERVER_REC *server, va_list va)
   client = va_arg(va, SilcClientEntry);
   topic = va_arg(va, char *);
   channel = va_arg(va, SilcChannelEntry);
+
+  silc_server_free_ftp(server, client);
 
   chanrec = silc_channel_find_entry(server, channel);
   if (chanrec != NULL) {
@@ -761,7 +765,7 @@ static void keyagr_completion(SilcClient client,
 
   switch(status) {
   case SILC_KEY_AGREEMENT_OK:
-    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_OK, client_entry->nickname);
 
     if (i->type == 1) {
@@ -769,7 +773,7 @@ static void keyagr_completion(SilcClient client,
       silc_client_del_private_message_key(client, conn, client_entry);
       silc_client_add_private_message_key_ske(client, conn, client_entry,
 					      NULL, key, i->responder);
-      printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+      printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KEY_AGREEMENT_PRIVMSG, 
 			 client_entry->nickname);
       silc_ske_free_key_material(key);
@@ -778,17 +782,17 @@ static void keyagr_completion(SilcClient client,
     break;
     
   case SILC_KEY_AGREEMENT_ERROR:
-    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_ERROR, client_entry->nickname);
     break;
     
   case SILC_KEY_AGREEMENT_FAILURE:
-    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_FAILURE, client_entry->nickname);
     break;
     
   case SILC_KEY_AGREEMENT_TIMEOUT:
-    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_TIMEOUT, client_entry->nickname);
     break;
     
@@ -850,12 +854,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   silc_parse_command_line(tmp, &argv, &argv_lens, &argv_types, &argc, 7);
   g_free(tmp);
 
-  if (argc < 4) {
-    silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO,
-	     "Usage: /KEY msg|channel <nickname|channel> "
-	     "set|unset|agreement|negotiate [<arguments>]");
-    return;
-  }
+  if (argc < 4)
+    cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
   /* Get type */
   if (!strcasecmp(argv[1], "msg"))
@@ -863,12 +863,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   if (!strcasecmp(argv[1], "channel"))
     type = 2;
 
-  if (type == 0) {
-    silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO,
-	     "Usage: /KEY msg|channel <nickname|channel> "
-	     "set|unset|agreement|negotiate [<arguments>]");
-    return;
-  }
+  if (type == 0)
+    cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
   if (type == 1) {
     if (argv[2][0] == '*') {
@@ -1185,7 +1181,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   }
 
   if (command == 4 && client_entry) {
-    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_NOTICES,
+    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT, argv[2]);
     internal->responder = TRUE;
     silc_client_send_key_agreement(silc_client, conn, client_entry, hostname, 
@@ -1196,7 +1192,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   }
 
   if (command == 5 && client_entry && hostname) {
-    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_NOTICES,
+    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_NEGOTIATE, argv[2]);
     internal->responder = FALSE;
     silc_client_perform_key_agreement(silc_client, conn, client_entry, 

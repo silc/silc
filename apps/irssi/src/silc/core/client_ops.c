@@ -1204,10 +1204,10 @@ int silc_key_agreement(SilcClient client, SilcClientConnection conn,
     snprintf(portstr, sizeof(portstr) - 1, "%d", port);
 
   if (!hostname)
-    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_NOTICES,
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_REQUEST, client_entry->nickname);
   else
-    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_NOTICES,
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_REQUEST_HOST, 
 		       client_entry->nickname, hostname, portstr);
 
@@ -1221,13 +1221,31 @@ void silc_ftp(SilcClient client, SilcClientConnection conn,
 	      SilcClientEntry client_entry, uint32 session_id,
 	      const char *hostname, uint16 port)
 {
+  SILC_SERVER_REC *server;
+  char portstr[12];
+  FtpSession ftp = silc_calloc(1, sizeof(*ftp));
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* XXX */
-  silc_client_file_receive(client, conn, NULL, NULL, client_entry,
-			   session_id);
+  server = conn->context;
 
+  ftp->client_entry = client_entry;
+  ftp->session_id = session_id;
+  ftp->send = FALSE;
+  ftp->conn = conn;
+  silc_dlist_add(server->ftp_sessions, ftp);
+  server->current_session = ftp;
+
+  if (hostname) 
+    snprintf(portstr, sizeof(portstr) - 1, "%d", port);
+
+  if (!hostname)
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+		       SILCTXT_FILE_REQUEST, client_entry->nickname);
+  else
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+		       SILCTXT_FILE_REQUEST_HOST, 
+		       client_entry->nickname, hostname, portstr);
 }
 
 /* SILC client operations */

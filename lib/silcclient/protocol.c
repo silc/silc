@@ -112,7 +112,8 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      SilcPKCS pkcs,
 				      SilcHash hash,
 				      SilcHmac hmac,
-				      SilcSKEDiffieHellmanGroup group)
+				      SilcSKEDiffieHellmanGroup group,
+				      bool is_responder)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
 
@@ -124,16 +125,29 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
   silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, &conn->hmac_send);
   silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, &conn->hmac_receive);
 
-  silc_cipher_set_key(conn->send_key, keymat->send_enc_key, 
-		      keymat->enc_key_len);
-  silc_cipher_set_iv(conn->send_key, keymat->send_iv);
-  silc_cipher_set_key(conn->receive_key, keymat->receive_enc_key, 
-		      keymat->enc_key_len);
-  silc_cipher_set_iv(conn->receive_key, keymat->receive_iv);
-  silc_hmac_set_key(conn->hmac_send, keymat->send_hmac_key, 
-		    keymat->hmac_key_len);
-  silc_hmac_set_key(conn->hmac_receive, keymat->receive_hmac_key, 
-		    keymat->hmac_key_len);
+  if (is_responder == TRUE) {
+    silc_cipher_set_key(conn->send_key, keymat->receive_enc_key, 
+			keymat->enc_key_len);
+    silc_cipher_set_iv(conn->send_key, keymat->receive_iv);
+    silc_cipher_set_key(conn->receive_key, keymat->send_enc_key, 
+			keymat->enc_key_len);
+    silc_cipher_set_iv(conn->receive_key, keymat->send_iv);
+    silc_hmac_set_key(conn->hmac_send, keymat->receive_hmac_key, 
+		      keymat->hmac_key_len);
+    silc_hmac_set_key(conn->hmac_receive, keymat->send_hmac_key, 
+		      keymat->hmac_key_len);
+  } else {
+    silc_cipher_set_key(conn->send_key, keymat->send_enc_key, 
+			keymat->enc_key_len);
+    silc_cipher_set_iv(conn->send_key, keymat->send_iv);
+    silc_cipher_set_key(conn->receive_key, keymat->receive_enc_key, 
+			keymat->enc_key_len);
+    silc_cipher_set_iv(conn->receive_key, keymat->receive_iv);
+    silc_hmac_set_key(conn->hmac_send, keymat->send_hmac_key, 
+		      keymat->hmac_key_len);
+    silc_hmac_set_key(conn->hmac_receive, keymat->receive_hmac_key, 
+		      keymat->hmac_key_len);
+  }
 
   /* Rekey stuff */
   conn->rekey = silc_calloc(1, sizeof(*conn->rekey));

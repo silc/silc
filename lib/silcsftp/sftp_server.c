@@ -28,6 +28,9 @@ typedef struct {
   SilcSocketConnection sock;
   SilcSFTPSendPacketCallback send_packet;
   void *send_context;
+  SilcSFTPMonitors monitors;
+  SilcSFTPMonitor monitor;
+  void *monitor_context;
   SilcSFTPFilesystem fs;
 } *SilcSFTPServer;
 
@@ -285,6 +288,19 @@ void silc_sftp_server_shutdown(SilcSFTP sftp)
   silc_free(server);
 }
 
+/* Sets monitor callback */
+
+void silc_sftp_server_set_monitor(SilcSFTP sftp,
+				  SilcSFTPMonitors monitors,
+				  SilcSFTPMonitor monitor, 
+				  void *context)
+{
+  SilcSFTPServer server = (SilcSFTPServer)sftp;
+  server->monitors = monitors;
+  server->monitor = monitor;
+  server->monitor_context = context;
+}
+
 /* Function that is called to process the incmoing SFTP packet. */
 /* XXX Some day this will go away and we have automatic receive callbacks
    for SilcSocketConnection API or SilcPacketContext API. */
@@ -303,6 +319,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
   uint32 id;
   SilcSFTPAttributes attrs;
   SilcSFTPHandle handle;
+  SilcSFTPMonitorDataStruct mdata;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -313,6 +330,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
     return;
 
   silc_buffer_set(&buf, (unsigned char *)payload, payload_len);
+
+  memset(&mdata, 0, sizeof(mdata));
 
   switch (type) {
   case SILC_SFTP_INIT:
@@ -326,6 +345,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 				 SILC_STR_END);
       if (ret < 0)
 	break;
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_INIT && server->monitor) {
+	mdata.version = version;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_INIT, &mdata,
+			   server->monitor_context);
+      }
 
       silc_sftp_send_packet(server, SILC_SFTP_VERSION, 4,
 			    SILC_STR_UI_INT(SILC_SFTP_PROTOCOL_VERSION),
@@ -357,6 +383,14 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	attrs = silc_sftp_attr_decode(&tmpbuf);
       } else {
 	attrs = silc_calloc(1, sizeof(*attrs));
+      }
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_OPEN && server->monitor) {
+	mdata.name = filename;
+	mdata.pflags = pflags;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_OPEN, &mdata,
+			   server->monitor_context);
       }
 
       /* Open operation */
@@ -392,6 +426,12 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	break;
       }
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_CLOSE && server->monitor) {
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_CLOSE, &mdata,
+			   server->monitor_context);
+      }
+
       /* Close operation */
       server->fs->fs->sftp_close(server->fs->fs_context, sftp, handle,
 				 silc_sftp_server_status, (void *)id);
@@ -424,6 +464,14 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (!handle) {
 	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
 	break;
+      }
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_READ && server->monitor) {
+	mdata.offset = offset;
+	mdata.data_len = len;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_READ, &mdata,
+			   server->monitor_context);
       }
 
       /* Read operation */
@@ -463,6 +511,14 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	break;
       }
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_WRITE && server->monitor) {
+	mdata.offset = offset;
+	mdata.data_len = data_len;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_WRITE, &mdata,
+			   server->monitor_context);
+      }
+
       /* Write operation */
       server->fs->fs->sftp_write(server->fs->fs_context, sftp, handle, offset, 
 				 (const unsigned char *)data, data_len,
@@ -480,6 +536,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 				 SILC_STR_END);
       if (ret < 0)
 	goto failure;
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_REMOVE && server->monitor) {
+	mdata.name = filename;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_REMOVE, &mdata,
+			   server->monitor_context);
+      }
 
       /* Remove operation */
       server->fs->fs->sftp_remove(server->fs->fs_context, sftp, filename,
@@ -503,8 +566,17 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (ret < 0)
 	goto failure;
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_RENAME && server->monitor) {
+	mdata.name = filename;
+	mdata.name2 = newname;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_RENAME, &mdata,
+			   server->monitor_context);
+      }
+
       /* Rename operation */
-      server->fs->fs->sftp_rename(server->fs->fs_context, sftp, filename, newname,
+      server->fs->fs->sftp_rename(server->fs->fs_context, sftp, 
+				  filename, newname,
 				  silc_sftp_server_status, (void *)id);
 
       silc_free(filename);
@@ -536,6 +608,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	attrs = silc_calloc(1, sizeof(*attrs));
       }
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_MKDIR && server->monitor) {
+	mdata.name = path;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_MKDIR, &mdata,
+			   server->monitor_context);
+      }
+
       /* Mkdir operation */
       server->fs->fs->sftp_mkdir(server->fs->fs_context, sftp, path, attrs,
 				 silc_sftp_server_status, (void *)id);
@@ -556,6 +635,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (ret < 0)
 	goto failure;
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_RMDIR && server->monitor) {
+	mdata.name = path;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_RMDIR, &mdata,
+			   server->monitor_context);
+      }
+
       /* Rmdir operation */
       server->fs->fs->sftp_rmdir(server->fs->fs_context, sftp, path,
 				 silc_sftp_server_status, (void *)id);
@@ -574,6 +660,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 				 SILC_STR_END);
       if (ret < 0)
 	goto failure;
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_OPENDIR && server->monitor) {
+	mdata.name = path;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_OPENDIR, &mdata,
+			   server->monitor_context);
+      }
 
       /* Opendir operation */
       server->fs->fs->sftp_opendir(server->fs->fs_context, sftp, path,
@@ -607,6 +700,12 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	break;
       }
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_READDIR && server->monitor) {
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_READDIR, &mdata,
+			   server->monitor_context);
+      }
+
       /* Readdir operation */
       server->fs->fs->sftp_readdir(server->fs->fs_context, sftp, handle,
 				   silc_sftp_server_name, (void *)id);
@@ -623,6 +722,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 				 SILC_STR_END);
       if (ret < 0)
 	goto failure;
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_STAT && server->monitor) {
+	mdata.name = path;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_STAT, &mdata,
+			   server->monitor_context);
+      }
 
       /* Stat operation */
       server->fs->fs->sftp_stat(server->fs->fs_context, sftp, path,
@@ -642,6 +748,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 				 SILC_STR_END);
       if (ret < 0)
 	goto failure;
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_LSTAT && server->monitor) {
+	mdata.name = path;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_LSTAT, &mdata,
+			   server->monitor_context);
+      }
 
       /* Lstat operation */
       server->fs->fs->sftp_lstat(server->fs->fs_context, sftp, path,
@@ -675,6 +788,12 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	break;
       }
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_FSTAT && server->monitor) {
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_FSTAT, &mdata,
+			   server->monitor_context);
+      }
+
       /* Fstat operation */
       server->fs->fs->sftp_fstat(server->fs->fs_context, sftp, handle,
 				 silc_sftp_server_attr, (void *)id);
@@ -703,6 +822,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	attrs = silc_sftp_attr_decode(&tmpbuf);
       } else {
 	attrs = silc_calloc(1, sizeof(*attrs));
+      }
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_SETSTAT && server->monitor) {
+	mdata.name = path;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_SETSTAT, &mdata,
+			   server->monitor_context);
       }
 
       /* Setstat operation */
@@ -748,8 +874,15 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	break;
       }
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_FSETSTAT && server->monitor) {
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_FSETSTAT, &mdata,
+			   server->monitor_context);
+      }
+
       /* Fsetstat operation */
-      server->fs->fs->sftp_fsetstat(server->fs->fs_context, sftp, handle, attrs,
+      server->fs->fs->sftp_fsetstat(server->fs->fs_context, sftp, 
+				    handle, attrs,
 				    silc_sftp_server_status, (void *)id);
 
       silc_sftp_attr_free(attrs);
@@ -766,6 +899,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 				 SILC_STR_END);
       if (ret < 0)
 	goto failure;
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_READLINK && server->monitor) {
+	mdata.name = path;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_READLINK, &mdata,
+			   server->monitor_context);
+      }
 
       /* Readlink operation */
       server->fs->fs->sftp_readlink(server->fs->fs_context, sftp, path,
@@ -789,6 +929,14 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (ret < 0)
 	goto failure;
 
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_SYMLINK && server->monitor) {
+	mdata.name = path;
+	mdata.name2 = target;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_SYMLINK, &mdata,
+			   server->monitor_context);
+      }
+
       /* Symlink operation */
       server->fs->fs->sftp_symlink(server->fs->fs_context, sftp, path, target,
 				   silc_sftp_server_status, (void *)id);
@@ -808,6 +956,13 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 				 SILC_STR_END);
       if (ret < 0)
 	goto failure;
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_REALPATH && server->monitor) {
+	mdata.name = path;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_REALPATH, &mdata,
+			   server->monitor_context);
+      }
 
       /* Realpath operation */
       server->fs->fs->sftp_realpath(server->fs->fs_context, sftp, path,
@@ -840,6 +995,12 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       if (ret < 0)
 	goto failure;
       data_len = buf.len;
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_EXTENDED && server->monitor) {
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_EXTENDED, &mdata,
+			   server->monitor_context);
+      }
 
       /* Extended operation */
       server->fs->fs->sftp_extended(server->fs->fs_context, sftp, 
