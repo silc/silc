@@ -450,9 +450,13 @@ from the CVS as well.
 
 <a name="f3_10"></a>
 <samp class="highlight">Q: Where can I find SILC clients?</samp><br />
-A: The SILC client is available for free download from the silcnet.org web 
-page. Some people have also mentioned words Java and Perl when talking 
-about SILC clients. Nothing has appeared yet, though.
+A: The official SILC client is available for free download from the
+silcnet.org web page.  There is also several independent projects working 
+with the SILC Toolkit to come up with various other clients.           
+<a href="http://bombyx.sourceforge.net" class="normal">Bombyx</a> is a 
+cross-platform GUI client written with FLTK.  <a 
+href="http://milc.sourceforge.net" class="normal">Milc</a> 
+is also a cross-platform GUI client written with WxWindows.  
 <br />&nbsp;<br />
 
 <a name="f3_20"></a>
