@@ -639,8 +639,11 @@ if test x$check_iconv = xtrue; then
         [
           echo "yes"
           AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
-          has_iconv=true 
-          check_iconv=true 
+          has_iconv=true
+          check_iconv=false
+        ],
+        [
+          echo "no"
         ])
      ])
 fi
@@ -690,6 +693,7 @@ if test x$check_iconv = xtrue; then
               AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
             ],
             [
+              echo "no"
               has_iconv=false
             ])
          ])
@@ -732,7 +736,7 @@ if test x$has_iconv = xtrue; then
     )
 
   if test x$ac_iconv_good = xno; then
-    AC_MSG_ERROR(Try using libiconv instead.)
+    AC_MSG_RESULT(Try using libiconv instead.)
   fi
 fi
 
