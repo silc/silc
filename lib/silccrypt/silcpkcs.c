@@ -1371,6 +1371,8 @@ bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
      to be the old-style private keys that are not encrypted. */
   SILC_GET32_MSB(magic, data);
   if (magic != SILC_PKCS_PRIVATE_KEY_MAGIC) {
+    SILC_LOG_DEBUG(("Private key does not have correct magic!"));
+
     /* Now decode the actual private key */
     if (!silc_pkcs_private_key_decode(data, len, private_key)) {
       memset(old, 0, data_len);

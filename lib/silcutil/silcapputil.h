@@ -140,4 +140,24 @@ bool silc_load_key_pair(const char *pub_filename,
  ***/
 bool silc_show_public_key(const char *pub_filename);
 
+/****f* silcutil/SilcAppUtil/silc_change_private_key_passphrase
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_change_private_key_passphrase(const char *prv_filename,
+ *                                            const char *old_passphrase,
+ *                                            const char *new_passphrase);
+ *
+ * DESCRIPTION
+ *
+ *    This routine can be used to change the passphrase of the private
+ *    key file, which is used to encrypt the private key.  If the old
+ *    and new passphrase is not provided for this function this will
+ *    prompt for them.
+ *
+ ***/
+bool silc_change_private_key_passphrase(const char *prv_filename,
+					const char *old_passphrase,
+					const char *new_passphrase);
+
 #endif /* SILCAPPUTIL_H */

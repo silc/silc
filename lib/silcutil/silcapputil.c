@@ -253,6 +253,7 @@ bool silc_load_key_pair(const char *pub_filename,
     if (silc_pkcs_load_public_key((char *)pub_filename, return_public_key,
 				  SILC_PKCS_FILE_BIN) == FALSE) {
       memset(pass, 0, strlen(pass));
+      silc_free(pass);
       return FALSE;
     }
 
@@ -269,6 +270,7 @@ bool silc_load_key_pair(const char *pub_filename,
 				   (unsigned char *)pass, strlen(pass),
 				   SILC_PKCS_FILE_PEM) == FALSE) {
       memset(pass, 0, strlen(pass));
+      silc_free(pass);
       return FALSE;
     }
 
@@ -279,6 +281,7 @@ bool silc_load_key_pair(const char *pub_filename,
   }
 
   memset(pass, 0, strlen(pass));
+  silc_free(pass);
   return TRUE;
 }
 
@@ -340,5 +343,60 @@ bool silc_show_public_key(const char *pub_filename)
   silc_pkcs_public_key_free(public_key);
   silc_pkcs_free_identifier(ident);
 
+  return TRUE;
+}
+
+/* Change private key passphrase */
+
+bool silc_change_private_key_passphrase(const char *prv_filename,
+					const char *old_passphrase,
+					const char *new_passphrase)
+{
+  SilcPrivateKey private_key;
+  bool base64 = FALSE;
+  char *pass;
+
+  pass = old_passphrase ? strdup(old_passphrase) : NULL;
+  if (!pass) {
+    pass = silc_get_input("Old passphrase: ", TRUE);
+    if (!pass)
+      pass = strdup("");
+  }
+
+  if (silc_pkcs_load_private_key((char *)prv_filename, &private_key,
+				 (unsigned char *)pass, strlen(pass),
+				 SILC_PKCS_FILE_BIN) == FALSE) {
+    base64 = TRUE;
+    if (silc_pkcs_load_private_key((char *)prv_filename, &private_key,
+				   (unsigned char *)pass, strlen(pass),
+				   SILC_PKCS_FILE_PEM) == FALSE) {
+      memset(pass, 0, strlen(pass));
+      silc_free(pass);
+      fprintf(stderr, "Could not load private key `%s' file\n", prv_filename);
+      return FALSE;
+    }
+  }
+
+  memset(pass, 0, strlen(pass));
+  silc_free(pass);
+
+  pass = new_passphrase ? strdup(new_passphrase) : NULL;
+  if (!pass) {
+    fprintf(stdout, "\n");
+    pass = silc_get_input("New passphrase: ", TRUE);
+    if (!pass)
+      pass = strdup("");
+  }
+
+  silc_pkcs_save_private_key(prv_filename, private_key,
+			     (unsigned char *)pass, strlen(pass),
+			     base64 ? SILC_PKCS_FILE_PEM : SILC_PKCS_FILE_BIN);
+
+  fprintf(stdout, "\nPassphrase changed\n");
+
+  memset(pass, 0, strlen(pass));
+  silc_free(pass);
+
+  silc_pkcs_private_key_free(private_key);
   return TRUE;
 }
