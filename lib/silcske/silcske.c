@@ -615,6 +615,11 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Start"));
 
+  if (!public_key || !private_key) {
+    status = SILC_SKE_STATUS_ERROR;
+    goto err;
+  }
+
   SILC_LOG_DEBUG(("Computing KEY = e ^ x mod p"));
 
   /* Compute the shared secret key */
