@@ -466,6 +466,30 @@ SilcUInt8 silc_rng_get_byte(SilcRng rng)
   return rng->pool[silc_rng_get_position(rng)];
 }
 
+/* Return random byte as fast as possible. Reads from /dev/urandom if
+   available. If not then return from normal RNG (not so fast). */
+
+SilcUInt8 silc_rng_get_byte_fast(SilcRng rng)
+{
+#ifndef SILC_WIN32
+  unsigned char buf[1];
+
+  if (rng->fd_devurandom == -1) {
+    rng->fd_devurandom = open("/dev/urandom", O_RDONLY);
+    if (rng < 0)
+      return silc_rng_get_byte(rng);
+    fcntl(rng->fd_devurandom, F_SETFL, O_NONBLOCK);
+  }
+
+  if (read(rng->fd_devurandom, buf, sizeof(buf)) < 0)
+    return silc_rng_get_byte(rnf);
+
+  return buf[0];
+#else
+  return silc_rng_get_byte(rng);
+#endif
+}
+
 /* Returns 16 bit random number */
 
 SilcUInt16 silc_rng_get_rn16(SilcRng rng)
@@ -570,26 +594,7 @@ SilcUInt8 silc_rng_global_get_byte(void)
 
 SilcUInt8 silc_rng_global_get_byte_fast(void)
 {
-#ifndef SILC_WIN32
-  unsigned char buf[1];
-
-  if (!global_rng)
-    return 0;
-
-  if (global_rng->fd_devurandom == -1) {
-    global_rng->fd_devurandom = open("/dev/urandom", O_RDONLY);
-    if (global_rng < 0)
-      return silc_rng_global_get_byte();
-    fcntl(global_rng->fd_devurandom, F_SETFL, O_NONBLOCK);
-  }
-
-  if (read(global_rng->fd_devurandom, buf, sizeof(buf)) < 0)
-    return silc_rng_global_get_byte();
-
-  return buf[0];
-#else
-  return silc_rng_global_get_byte();
-#endif
+  return global_rng ? silc_rng_get_byte_fast(global_rng) : 0;
 }
 
 SilcUInt16 silc_rng_global_get_rn16(void)

@@ -118,6 +118,27 @@ void silc_rng_init(SilcRng rng);
  ***/
 SilcUInt8 silc_rng_get_byte(SilcRng rng);
 
+/****f* silccrypt/SilcRNGAPI/silc_rng_get_byte_fast
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt8 silc_rng_get_byte_fast(SilcRng rng);
+ *
+ * DESCRIPTION
+ *
+ *    Returns one 8-bit random byte from the random number generator as
+ *    fast as possible.
+ *
+ * NOTES
+ *
+ *    This will read the data from /dev/urandom if it is available in the
+ *    operating system, since this may be faster than retrieving a byte
+ *    from the SILC RNG.  If /dev/urandom is not available this will take
+ *    the byte from SILC RNG and is effectively same as silc_rng_get_byte.
+ *
+ ***/
+SilcUInt8 silc_rng_get_byte_fast(SilcRng rng);
+
 /****f* silccrypt/SilcRNGAPI/silc_rng_get_rn16
  *
  * SYNOPSIS
