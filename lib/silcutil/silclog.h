@@ -220,7 +220,7 @@ extern DLLAPI bool silc_debug_hexdump;
 
 /* Macros */
 
-#ifdef WIN32
+#ifdef SILC_WIN32
 #define __FUNCTION__ ""
 #endif
 

@@ -418,7 +418,7 @@ char *silc_net_localhost(void);
  ***/
 char *silc_net_localip(void);
 
-#ifdef WIN32
+#ifdef SILC_WIN32
 
 /****f* silcutil/SilcNetAPI/silc_net_win32_init
  *

@@ -389,10 +389,10 @@ Example with three routers in the network:
 
 .in 16
 .nf
-    S/R1 - > - > - > - > - > - > - S/R2
+    S/R1 - < - < - < - < - < - < - S/R2
      \\                               /
-      ^                             v
-       \\ - < -  < - S/R3 - < - < - /
+      v                             ^
+       \\ - > -  > - S/R3 - > - > - /
 .in 3
 
 

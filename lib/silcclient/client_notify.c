@@ -99,8 +99,8 @@ void silc_client_notify_by_server(SilcClient client,
   SilcClientID *client_id = NULL;
   SilcChannelID *channel_id = NULL;
   SilcServerID *server_id = NULL;
-  SilcClientEntry client_entry;
-  SilcClientEntry client_entry2;
+  SilcClientEntry client_entry = NULL;
+  SilcClientEntry client_entry2 = NULL;
   SilcChannelEntry channel;
   SilcChannelUser chu;
   SilcServerEntry server;
@@ -744,21 +744,20 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Get the kicker */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
-    if (!tmp)
-      goto out;
+    if (tmp) {
+      client_id = silc_id_payload_parse_id(tmp, tmp_len);
+      if (!client_id)
+	goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!client_id)
-      goto out;
-
-    /* Find kicker's client entry and if not found resolve it */
-    client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry2) {
-      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
-      goto out;
-    } else {
-      if (client_entry2 != conn->local_entry)
-	silc_client_nickname_format(client, conn, client_entry2);
+      /* Find kicker's client entry and if not found resolve it */
+      client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
+      if (!client_entry2) {
+	silc_client_notify_by_server_resolve(client, conn, packet, client_id);
+	goto out;
+      } else {
+	if (client_entry2 != conn->local_entry)
+	  silc_client_nickname_format(client, conn, client_entry2);
+      }
     }
 
     /* Get comment */

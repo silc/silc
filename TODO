@@ -105,7 +105,7 @@ Manual.
 
  o Write "Platform Implementations" document to describe what platforms
    Toolkit support, what has been implemented, what has not been, what
-   wors differently etc.
+   works differently etc.
 
 
 TODO in SILC Protocol
@@ -186,9 +186,6 @@ describe new stuff to be added to protocol versions 1.x.
      describe the problems of trusting the payload, and to indicate that
      the receiver may not accept the key in the payload, and to describe
      other means of distributing a key.
-
- 12. The router to router connection diagram in spec-xx is showing the
-     primary routers direction to wrong direction.  Swap it.
 
  13. Add the killer's client ID to the KILLED notify.  To be included in 
      protocol version 1.1.

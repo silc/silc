@@ -875,8 +875,10 @@ authentication is required.
 
 If authentication method is passphrase the authentication data is
 plaintext passphrase.  As the payload is entirely encrypted it is safe
-to have plaintext passphrase.  See the section 3.2.1 Passphrase
-Authentication for more information.
+to have plaintext passphrase.  It is also provided as plaintext passphrase
+because the receiver may need to pass the entire passphrase into a
+passphrase checker, and hash digest of the passphrase would prevent this.
+See the section 3.2.1 Passphrase Authentication for more information.
 
 If authentication method is public key authentication the authentication
 data is a signature of the hash value of hash HASH plus Key Exchange

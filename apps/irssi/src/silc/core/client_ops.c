@@ -459,7 +459,8 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     if (client_entry == conn->local_entry) {
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED_YOU, 
-			 channel->channel_name, client_entry2->nickname,
+			 channel->channel_name, 
+			 client_entry ? client_entry2->nickname : "",
 			 tmp ? tmp : "");
       if (chanrec) {
 	chanrec->kicked = TRUE;
@@ -469,7 +470,8 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED, 
 			 client_entry->nickname, channel->channel_name, 
-			 client_entry2->nickname, tmp ? tmp : "");
+			 client_entry2 ? client_entry2->nickname : "", 
+			 tmp ? tmp : "");
 
       if (chanrec) {
 	SILC_NICK_REC *nickrec = silc_nicklist_find(chanrec, client_entry);
