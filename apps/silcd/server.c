@@ -25,6 +25,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.11  2000/07/20 10:17:25  priikone
+ * 	Added dynamic protocol registering/unregistering support.  The
+ * 	patch was provided by cras.
+ *
  * Revision 1.10  2000/07/17 11:47:30  priikone
  * 	Added command lagging support. Added idle counting support.
  *
@@ -315,6 +319,9 @@ int silc_server_init(SilcServer server)
     goto err1;
   }
 
+  /* Register protocols */
+  silc_server_protocols_register();
+
   /* Initialize the scheduler */
   silc_schedule_init(server->io_queue, server->timeout_queue, 
 		     server->generic_queue, 
@@ -366,6 +373,8 @@ void silc_server_stop(SilcServer server)
      as well. */
   silc_schedule_stop();
   silc_schedule_uninit();
+
+  silc_server_protocols_unregister();
 
   SILC_LOG_DEBUG(("Server stopped"));
 }

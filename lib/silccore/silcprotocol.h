@@ -91,15 +91,17 @@ typedef unsigned char SilcProtocolState;
 */
 typedef SilcTaskCallback SilcProtocolCallback;
 
-typedef struct {
+typedef struct SilcProtocolObjectStruct {
   SilcProtocolType type;
   SilcProtocolCallback callback;
+
+  struct SilcProtocolObjectStruct *next;
 } SilcProtocolObject;
 
 typedef SilcTaskCallback SilcProtocolFinalCallback;
 typedef SilcTaskCallback SilcProtocolExecute;
 
-typedef struct SilcProtocolObjectStruct {
+typedef struct SilcProtocolStruct {
   SilcProtocolObject *protocol;
   SilcProtocolState state;
   void *context;
@@ -110,12 +112,11 @@ typedef struct SilcProtocolObjectStruct {
   SilcProtocolFinalCallback final_callback;
 } *SilcProtocol;
 
-/* Definition for SILC protocol list. This list includes all the
-   protocols in the SILC. SILC server and client defined own list of
-   protocols. */
-extern const SilcProtocolObject silc_protocol_list[];
-
 /* Prototypes */
+void silc_protocol_register(SilcProtocolType type,
+			    SilcProtocolCallback callback);
+void silc_protocol_unregister(SilcProtocolType type,
+                              SilcProtocolCallback callback);
 void silc_protocol_alloc(SilcProtocolType type, SilcProtocol *new_protocol,
 			 void *context, SilcProtocolFinalCallback callback);
 void silc_protocol_free(SilcProtocol protocol);

@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.13  2000/07/20 10:17:25  priikone
+ * 	Added dynamic protocol registering/unregistering support.  The
+ * 	patch was provided by cras.
+ *
  * Revision 1.12  2000/07/19 07:07:34  priikone
  * 	Save packet on private message's command context.
  *
@@ -178,6 +182,9 @@ int silc_client_init(SilcClient client)
     goto err1;
   }
 
+  /* Register protocols */
+  silc_client_protocols_register();
+
   /* Initialize the scheduler */
   silc_schedule_init(client->io_queue, client->timeout_queue, 
 		     client->generic_queue, 5000);
@@ -246,6 +253,8 @@ void silc_client_stop(SilcClient client)
      as well. */
   silc_schedule_stop();
   silc_schedule_uninit();
+
+  silc_client_protocols_unregister();
 
   SILC_LOG_DEBUG(("Client client"));
 }

@@ -23,6 +23,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.9  2000/07/20 10:17:25  priikone
+ * 	Added dynamic protocol registering/unregistering support.  The
+ * 	patch was provided by cras.
+ *
  * Revision 1.8  2000/07/19 07:08:09  priikone
  * 	Added version detection support to SKE.
  *
@@ -64,17 +68,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth);
 SILC_TASK_CALLBACK(silc_server_protocol_key_exchange);
 
 extern char *silc_version_string;
-
-/* SILC client protocol list */
-const SilcProtocolObject silc_protocol_list[] =
-{
-  { SILC_PROTOCOL_SERVER_CONNECTION_AUTH, 
-    silc_server_protocol_connection_auth },
-  { SILC_PROTOCOL_SERVER_KEY_EXCHANGE, 
-    silc_server_protocol_key_exchange },
-
-  { SILC_PROTOCOL_SERVER_NONE, NULL },
-};
 
 /*
  * Key Exhange protocol functions
@@ -923,4 +916,24 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
   case SILC_PROTOCOL_STATE_UNKNOWN:
     break;
   }
+}
+
+/* Registers protocols used in server. */
+
+void silc_server_protocols_register(void)
+{
+  silc_protocol_register(SILC_PROTOCOL_SERVER_CONNECTION_AUTH,
+			 silc_server_protocol_connection_auth);
+  silc_protocol_register(SILC_PROTOCOL_SERVER_KEY_EXCHANGE,
+			 silc_server_protocol_key_exchange);
+}
+
+/* Unregisters protocols */
+
+void silc_server_protocols_unregister(void)
+{
+  silc_protocol_unregister(SILC_PROTOCOL_SERVER_CONNECTION_AUTH,
+			   silc_server_protocol_connection_auth);
+  silc_protocol_unregister(SILC_PROTOCOL_SERVER_KEY_EXCHANGE,
+			   silc_server_protocol_key_exchange);
 }

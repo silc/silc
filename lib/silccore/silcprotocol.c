@@ -23,6 +23,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/20 10:17:25  priikone
+ * 	Added dynamic protocol registering/unregistering support.  The
+ * 	patch was provided by cras.
+ *
  * Revision 1.2  2000/07/05 06:06:35  priikone
  * 	Global cosmetic change.
  *
@@ -35,6 +39,55 @@
 #include "silcincludes.h"
 #include "silcprotocol.h"
 
+/* Dynamically registered protocols */
+SilcProtocolObject *silc_protocol_list = NULL;
+
+/* Dynamically registers new protocol. The protocol is added into protocol
+   list and can be unregistered with silc_protocol_unregister. */
+
+void silc_protocol_register(SilcProtocolType type,
+			    SilcProtocolCallback callback)
+{
+  SilcProtocolObject *new;
+
+  new = silc_calloc(1, sizeof(*new));
+  new->type = type;
+  new->callback = callback;
+
+  if (!silc_protocol_list)
+    silc_protocol_list = new;
+  else {
+    new->next = silc_protocol_list;
+    silc_protocol_list = new;
+  }
+}
+
+/* Unregisters protocol. The unregistering is done by both protocol type
+   and the protocol callback. */
+
+void silc_protocol_unregister(SilcProtocolType type,
+                              SilcProtocolCallback callback)
+{
+  SilcProtocolObject *protocol, *prev;
+
+  protocol = silc_protocol_list;
+  prev = NULL;
+  while (protocol && (protocol->type != type && 
+                      protocol->callback != callback)) {
+    prev = protocol;
+    protocol = protocol->next;
+  }
+
+  if (protocol) {
+    if (prev)
+      prev->next = protocol->next;
+    else
+      silc_protocol_list = protocol->next;
+
+    silc_free(protocol);
+  }
+}
+
 /* Allocates a new protocol object. The new allocated and initialized 
    protocol is returned to the new_protocol argument. The argument context
    is the context to be sent as argument for the protocol. The callback
@@ -43,21 +96,21 @@
 void silc_protocol_alloc(SilcProtocolType type, SilcProtocol *new_protocol,
 			 void *context, SilcProtocolFinalCallback callback)
 {
-  int i;
+  SilcProtocolObject *protocol;
 
   SILC_LOG_DEBUG(("Allocating new protocol type %d", type));
 
-  for (i = 0; silc_protocol_list[i].callback; i++)
-    if (silc_protocol_list[i].type == type)
-      break;
+  protocol = silc_protocol_list;
+  while (protocol && protocol->type != type)
+    protocol = protocol->next;
 
-  if (!silc_protocol_list[i].callback) {
+  if (!protocol) {
     SILC_LOG_ERROR(("Requested protocol does not exists"));
     return;
   }
 
   *new_protocol = silc_calloc(1, sizeof(**new_protocol));
-  (*new_protocol)->protocol = (SilcProtocolObject *)&silc_protocol_list[i];
+  (*new_protocol)->protocol = protocol;
   (*new_protocol)->state = SILC_PROTOCOL_STATE_UNKNOWN;
   (*new_protocol)->context = context;
   (*new_protocol)->execute = silc_protocol_execute;

@@ -69,5 +69,7 @@ typedef struct {
 } SilcClientConnAuthInternalContext;
 
 /* Prototypes */
+void silc_client_protocols_register(void);
+void silc_client_protocols_unregister(void);
 
 #endif

@@ -1,3 +1,8 @@
+Thu Jul 20 13:15:01 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added dynamic protocol registering support.  Now protocols can
+	  registered and unregistered on the fly.  Patch by cras.
+
 Wed Jul 19 19:08:46 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added lib/contrib directory to hold routines that some platforms
