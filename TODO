@@ -52,6 +52,9 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o LIST command reply sending is broken.  It is possible it does not
+   end the list with LIST_END, but sends LIST_ENTRY as last entry.
+
  o Backup router related issues
 
  	o Channel user mode changes are notified unnecessarely when
@@ -86,6 +89,9 @@ TODO/bugs In SILC Server
 
 TODO/bugs In SILC Libraries
 ===========================
+
+ o make install copies the symblic links from lib/silcsim/ and not
+   modules.
 
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but

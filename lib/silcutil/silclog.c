@@ -25,6 +25,7 @@
 bool silc_debug = FALSE;
 bool silc_debug_hexdump = FALSE;
 char *silc_debug_string = NULL;
+bool log_file_open_error = FALSE;
 
 /* SILC Log name strings. These strings are printed to the log file. */
 const SilcLogTypeName silc_log_types[] =
@@ -119,10 +120,13 @@ void silc_log_output(const char *filename, uint32 maxsize,
     
     /* Open the log file */
     if ((fp = fopen(filename, "a+")) == NULL) {
-      fprintf(stderr, "warning: could not open log file "
-	      "%s: %s\n", filename, strerror(errno));
-      fprintf(stderr, "warning: log messages will be displayed on "
-	      "the screen\n");
+      if (!log_file_open_error) {
+	fprintf(stderr, "warning: could not open log file "
+		"%s: %s\n", filename, strerror(errno));
+	fprintf(stderr, "warning: log messages will be displayed on "
+		"the screen\n");
+      }
+      log_file_open_error = TRUE;
       fp = stderr;
     }
   }
