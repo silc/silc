@@ -245,7 +245,7 @@ static void event_topic(SILC_SERVER_REC *server, va_list va)
   char userhost[256];
   SilcIdType idtype;
 
-  idtype = va_arg(va, SilcIdType);
+  idtype = va_arg(va, int);
   entry = va_arg(va, void *);
   topic = va_arg(va, char *);
   channel = va_arg(va, SilcChannelEntry);

@@ -74,6 +74,9 @@ install-exec-hook:
 	-mkdir -p $(libdir)
 	-$(INSTALL) libsilc.a $(libdir)/
 	-$(INSTALL) libsilcclient.a $(libdir)/
+else
+install-exec-hook:
+	-cd
 endif
 
 if SILC_DIST_WIN32DLL
