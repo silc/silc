@@ -2,7 +2,7 @@
 
   silcd.c
   
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 		 "version %s (base: SILC Toolkit %s)\n",
                  silc_dist_version, silc_version);
 	  printf("(c) 1997 - 2001 Pekka Riikonen "
-		 "<priikone@poseidon.pspt.fi>\n");
+		 "<priikone@silcnet.org>\n");
 	  exit(0);
 	  break;
 	case 'd':

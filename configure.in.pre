@@ -506,18 +506,45 @@ if test "x$socks" = "x5"; then
 fi
 
 #
-# MP library checking. First check whether system has GMP. If it has that
-# then use it. If not then compile the MPI library in the source tree.
+# MP library checking. First check whether user wants to use GMP and use
+# it if found. If not or not defined then compile the MPI library in the
+# source tree.
 #
-mp_gmp=false
-AC_CHECK_HEADER(gmp.h,
-  AC_CHECK_LIB(gmp, __gmpz_init,
-    mp_gmp=true
-    AC_DEFINE(SILC_MP_GMP)
-    LIBS="$LIBS -L/usr/lib -L/usr/local/lib -lgmp"
-    AC_MSG_RESULT(Using GMP as MP library)
-  )
+AC_MSG_CHECKING(whether to support GMP)
+AC_ARG_WITH(gmp,
+[  --with-gmp[=PATH]       Compile with GMP support instead of MPI],
+[ case "$withval" in
+  no)
+    AC_MSG_RESULT(no)
+    mp_gmp=false
+    ;;
+  *)
+    AC_MSG_RESULT(yes)
+
+    if test -d "$withval/include"; then
+      CFLAGS="$CFLAGS -I$withval/include"
+    else
+      CFLAGS="$CFLAGS -I$withval"
+    fi
+    if test -d "$withval/lib"; then
+      withval="-L$withval/lib -lgmp"
+    else
+      withval="-L$withval -lgmp"
+    fi
+
+    LIBS="$withval $LIBS"
+    mp_gmp=false
+    AC_CHECK_LIB(gmp, __gmpz_init,
+      mp_gmp=true
+      AC_DEFINE(SILC_MP_GMP)
+      AC_MSG_RESULT(Using GMP as MP library)
+    )
+      ;;
+  esac ],
+  AC_MSG_RESULT(no)
+  mp_gmp=false
 )
+
 AM_CONDITIONAL(SILC_MP_GMP, test x$mp_gmp = xtrue)
 if test x$mp_gmp = xfalse; then
   AM_CONDITIONAL(SILC_MP_NSS_MPI, test x$mp_gmp = xfalse)

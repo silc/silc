@@ -40,13 +40,11 @@ size_t silc_mp_size(SilcMPInt *mp)
 
 size_t silc_mp_sizeinbase(SilcMPInt *mp, int base)
 {
-  return mp_radix_size(mp, base) - 2; /* XXX this is wrong but it looks like
-					 the MPI always returns the correct
-					 value plus one as opposed what the
-					 GMP does, it returns always one less,
-					 and SILC code expects that. Bad thing
-					 is that the condition "returns always
-					 correct value" cannot be trusted! */
+  return mp_radix_size(mp, base) - 2; /* XXX This is actually wrong since
+					 this might produce wrong balue.
+					 But, it looks like MPI always returns
+					 correct value plus one, whereas
+					 GMP returns always the right value. */
 }
 
 void silc_mp_set(SilcMPInt *dst, SilcMPInt *src)
