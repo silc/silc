@@ -449,7 +449,9 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
  *    `assembled_packet' pointer sent by the caller.  The `assembled_packet'
  *    is a reference to the socket connection's outgoing buffer.  The
  *    returned packet can be encrypted, and then sent to network by calling
- *    silc_packet_send function.
+ *    silc_packet_send function.  The `assembled_packet' may be freely
+ *    modified (like encrypted etc.) but it must not be freed, since it is
+ *    reference from `sock' outgoing buffer, and it is const.
  *
  ***/
 bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
@@ -481,7 +483,9 @@ bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
  *    This returns the prepared data area into the `packet' pointer provided
  *    caller, which can be used then to add data to it, and later encrypt
  *    it.  The `packet' includes reference to the socket connection's
- *    outgoing buffer.
+ *    outgoing buffer.  The `packet' may be freely modified (like 
+ *    encrypted etc.) but it must not be freed, since it is reference from 
+ *    `sock' outgoing buffer, and it is const.
  *
  ***/
 bool silc_packet_send_prepare(SilcSocketConnection sock,
