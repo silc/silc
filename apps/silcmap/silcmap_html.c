@@ -135,9 +135,9 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
       fprintf(fp, "Country</td><td>&nbsp;:</td><td>&nbsp;%s</td></tr>\n", ident->country);
     }
     fprintf(fp, "<tr><td>&nbsp;&nbsp;");
-    fprintf(fp, "Fingerprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;<small>%s</small></td></tr>\n", fingerprint);
+    fprintf(fp, "Fingerprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;<tt>%s</tt></td></tr>\n", fingerprint);
     fprintf(fp, "<tr><td>&nbsp;&nbsp;");
-    fprintf(fp, "Babbleprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;<small>%s</small></td></tr>\n", babbleprint);
+    fprintf(fp, "Babbleprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;<tt>%s</tt></td></tr>\n", babbleprint);
     fprintf(fp, "</table>\n");
 
     pd = fopen(mapconn->public_key, "r");
