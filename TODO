@@ -8,6 +8,7 @@ TODO for SILC Client 1.0 branch
    #1    Ignore ALL doesn't ignore target using /me
    #2    specification of the silc network
    (#3    expired private key dialogue doesn't work)
+   #4    silc client allows setting non-utf8 topics
 
 
 TODO for SILC Server 1.0
