@@ -118,7 +118,7 @@
 #ifndef HAVE_REGEX_H
 #include "../lib/contrib/regex.h"
 #else
-#include <regex.h"
+#include <regex.h>
 #endif
 
 #ifndef TRUE
