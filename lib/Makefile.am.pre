@@ -78,9 +78,11 @@ else
 install-exec-hook:
 	-mkdir -p $(libdir)
 	-$(LIBTOOL) $(INSTALL) libsilc.la $(libdir)/
-	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(libdir)/
 	-rm -rf $(libdir)/libsilc.a
+if SILC_DIST_CLIENT
+	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(libdir)/
 	-rm -rf $(libdir)/libsilcclient.a
+endif
 endif
 
 if SILC_DIST_WIN32DLL
