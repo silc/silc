@@ -77,8 +77,6 @@ install-exec-hook:
 else
 install-exec-hook:
 	-mkdir -p $(libdir)
-	# Install libraries only if static were not compiled.  Assume
-	# that shared is wanted only if binary is not static.
 	-@if test '!' -f $(top_srcdir)/lib/.libs/libsilc.a ; then \
 	   $(LIBTOOL) $(INSTALL) libsilc.la $(libdir)/ \
 	fi
