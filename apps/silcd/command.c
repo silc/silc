@@ -2184,6 +2184,8 @@ static void silc_server_command_join_channel(SilcServer server,
   silc_buffer_free(ban_list);
 
  out:
+  if (passphrase)
+    memset(passphrase, 0, strlen(passphrase));
   silc_free(passphrase);
 }
 
