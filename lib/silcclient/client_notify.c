@@ -35,11 +35,12 @@ typedef struct {
 SILC_TASK_CALLBACK(silc_client_notify_check_client)
 { 
   SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
-  SilcClientConnection conn = res->context;
-  SilcClient client = conn->client;
+  SilcClient client = res->context;
+  SilcClientConnection conn = res->sock->user_data;
   SilcClientID *client_id = res->packet;
   silc_client_get_client_by_id_resolve(client, conn, client_id, NULL, NULL);
   silc_free(client_id);
+  silc_socket_free(res->sock);
   silc_free(res);
 }
 
@@ -87,7 +88,7 @@ static void silc_client_notify_by_server_resolve(SilcClient client,
 				 silc_client_command_reply_whois_i, 0,
 				 ++conn->cmd_ident);
     silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-			     1, 3, idp->data, idp->len);
+			     1, 4, idp->data, idp->len);
     silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
 				silc_client_notify_by_server_pending, res);
   } else {
@@ -308,10 +309,11 @@ void silc_client_notify_by_server(SilcClient client,
        that we'll remove the client from cache. */
     if (!silc_hash_table_count(client_entry->channels)) {
       SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
-      res->context = conn;
+      res->context = client;
+      res->sock = silc_socket_dup(conn->sock);
       res->packet = silc_id_dup(client_id, SILC_ID_CLIENT);
       silc_schedule_task_add(client->schedule, 0,
-			     silc_client_notify_check_client, conn,
+			     silc_client_notify_check_client, res,
 			     (5 + (silc_rng_get_rn16(client->rng) % 29)),
 			     0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     }

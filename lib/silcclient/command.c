@@ -227,7 +227,7 @@ SILC_CLIENT_CMD_FUNC(whois)
     buffer = silc_id_payload_encode(cmd->conn->local_id, SILC_ID_CLIENT);
     silc_client_command_send(cmd->client, cmd->conn, SILC_COMMAND_WHOIS, 
 			     ++conn->cmd_ident,
-			     1, 3, buffer->data, buffer->len);
+			     1, 4, buffer->data, buffer->len);
     silc_buffer_free(buffer);
     goto out;
   }

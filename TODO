@@ -106,12 +106,5 @@ Manual (Do these to 0.9 and 1.0).
 TODO in SILC Protocol
 =====================
 
- 2. Define that WHOIS and IDENTIFY commands must send list of errors
-    if multiple Client ID (or Channel ID and Server ID for IDENTIFY) was
-    requested and was not found.  Each unfound entry must cause an error
-    command reply to the sender.  Also define that errors must be sent
-    *after* sending successfully found entries (this way receiver may
-    ignore them).  To be included in protocol version 1.1.
-
  17. Cell wide channel founder support, and permanent channels when
      founder mode set.
