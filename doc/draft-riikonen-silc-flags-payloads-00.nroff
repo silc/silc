@@ -95,7 +95,7 @@ Message Flags to the Private Message Payload and Channel Message Payload
 and how it should be interpreted.  Some of the Message Flags may define 
 additional payloads to be associated with the flag, but the [SILC2] does 
 not define them.  This memo defines the payloads for those Message Flags 
-that was marked to include additional payloads in [SILC1].
+that was marked to include additional payloads in [SILC2].
 
 By defining the payloads for the Message Flags the SILC message payloads 
 can be augmented to support any kind of data, which can be easily 
