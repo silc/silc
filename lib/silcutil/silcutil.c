@@ -768,3 +768,83 @@ char *silc_get_real_name()
 
   return realname;
 }
+
+/* Basic has function to hash strings. May be used with the SilcHashTable. */
+
+uint32 silc_hash_string(void *key)
+{
+  char *s = (char *)key;
+  uint32 h = 0, g;
+  
+  while (*s != '\0') {
+    h = (h << 4) + toupper(*s);
+    if ((g = h & 0xf0000000)) {
+      h = h ^ (g >> 24);
+      h = h ^ g;
+    }
+    s++;
+  }
+  
+  return h;
+}
+
+/* Basic hash function to hash integers. May be used with the SilcHashTable. */
+
+uint32 silc_hash_uint(void *key)
+{
+  return *(uint32 *)key;
+}
+
+/* Basic hash funtion to hash pointers. May be used with the SilcHashTable. */
+
+uint32 silc_hash_ptr(void *key)
+{
+  return (uint32)key;
+}
+
+/* Hash a Server ID. */
+
+uint32 silc_hash_server_id(void *key)
+{
+  SilcServerID *id = (SilcServerID *)key;
+  int i;
+  uint32 h;
+
+  h = id->port * id->rnd;
+  for (i = 0; i < id->ip.data_len; i++)
+    h ^= id->ip.data[i];
+
+  return h;
+}
+
+/* Hash a Client ID. */
+
+uint32 silc_hash_client_id(void *key)
+{
+  SilcClientID *id = (SilcClientID *)key;
+  int i;
+  uint32 h;
+
+  h = id->rnd;
+  for (i = 0; i < sizeof(id->hash); i++)
+    h ^= id->hash[i];
+  for (i = 0; i < id->ip.data_len; i++)
+    h ^= id->ip.data[i];
+
+  return h;
+}
+
+/* Hash a Channel ID. */
+
+uint32 silc_hash_channel_id(void *key)
+{
+  SilcChannelID *id = (SilcChannelID *)key;
+  int i;
+  uint32 h;
+
+  h = id->port * id->rnd;
+  for (i = 0; i < id->ip.data_len; i++)
+    h ^= id->ip.data[i];
+
+  return h;
+}

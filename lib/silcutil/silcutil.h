@@ -50,5 +50,11 @@ int silc_string_regex_match(const char *regex, const char *string);
 int silc_string_match(const char *string1, const char *string2);
 char *silc_get_username();
 char *silc_get_real_name();
+uint32 silc_hash_string(void *key);
+uint32 silc_hash_uint(void *key);
+uint32 silc_hash_ptr(void *key);
+uint32 silc_hash_server_id(void *key);
+uint32 silc_hash_client_id(void *key);
+uint32 silc_hash_channel_id(void *key);
 
 #endif

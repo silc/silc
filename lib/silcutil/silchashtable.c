@@ -43,6 +43,7 @@ typedef struct SilcHashTableEntryStruct {
 struct SilcHashTableStruct {
   SilcHashTableEntry *table;
   uint32 table_size;
+  uint32 entry_count;
   SilcHashFunction hash;
   SilcHashCompare compare;
   SilcHashDestructor destructor;
@@ -136,14 +137,19 @@ SilcHashTable silc_hash_table_alloc(uint32 table_size,
 
 void silc_hash_table_free(SilcHashTable ht)
 {
+  SilcHashTableEntry e, tmp;
   int i;
 
-  for (i = 0; i < primesize[ht->table_size]; i++)
-    if (ht->table[i]) {
+  for (i = 0; i < primesize[ht->table_size]; i++) {
+    e = ht->table[i];
+    while (e) {
       if (ht->destructor)
-	ht->destructor(ht->table[i]->key, ht->table[i]->context);
-      silc_free(ht->table[i]);
+	ht->destructor(e->key, e->context);
+      tmp = e;
+      e = e->next;
+      silc_free(tmp);
     }
+  }
 
   silc_free(ht->table);
   silc_free(ht);
@@ -154,6 +160,15 @@ void silc_hash_table_free(SilcHashTable ht)
 uint32 silc_hash_table_size(SilcHashTable ht)
 {
   return primesize[ht->table_size];
+}
+
+/* Returns the number of the entires in the hash table. If there is more
+   entries in the table thatn the size of the hash table calling the
+   silc_hash_table_rehash is recommended. */
+
+uint32 silc_hash_table_count(SilcHashTable ht)
+{
+  return ht->entry_count;
 }
 
 /* Adds new entry to the hash table. The `key' is hashed using the
@@ -182,11 +197,13 @@ void silc_hash_table_add(SilcHashTable ht, void *key, void *context)
     e->next = silc_calloc(1, sizeof(*e->next));
     e->next->key = key;
     e->next->context = context;
+    ht->entry_count++;
   } else {
     /* New key */
     *entry = silc_calloc(1, sizeof(**entry));
     (*entry)->key = key;
     (*entry)->context = context;
+    ht->entry_count++;
   }
 }
 
@@ -209,6 +226,7 @@ void silc_hash_table_replace(SilcHashTable ht, void *key, void *context)
   } else {
     /* New key */
     *entry = silc_calloc(1, sizeof(**entry));
+    ht->entry_count++;
   }
 
   (*entry)->key = key;
@@ -241,6 +259,8 @@ bool silc_hash_table_del(SilcHashTable ht, void *key)
   if (ht->destructor)
     ht->destructor(e->key, e->context);
   silc_free(e);
+
+  ht->entry_count--;
 
   return TRUE;
 }
@@ -275,5 +295,35 @@ bool silc_hash_table_find(SilcHashTable ht, void *key,
 
 void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size)
 {
+  int i;
+  SilcHashTableEntry *table, e, tmp;
+  uint32 table_size, size_index;
 
+  /* Take old hash table */
+  table = ht->table;
+  table_size = ht->table_size;
+
+  /* Allocate new table */
+  ht->table = silc_calloc(new_size ? silc_hash_table_primesize(new_size,
+							       &size_index) :
+			  silc_hash_table_primesize(ht->entry_count,
+						    &size_index),
+			  sizeof(*ht->table));
+  ht->table_size = size_index;
+
+  /* Rehash */
+  for (i = 0; i < primesize[table_size]; i++) {
+    e = table[i];
+    while (e) {
+      silc_hash_table_add(ht, e->key, e->context);
+      tmp = e;
+      e = e->next;
+
+      /* Remove old entry */
+      silc_free(tmp);
+    }
+  }
+
+  /* Remove old table */
+  silc_free(table);
 }

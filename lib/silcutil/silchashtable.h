@@ -45,6 +45,7 @@ SilcHashTable silc_hash_table_alloc(uint32 table_size,
 				    SilcHashDestructor destructor);
 void silc_hash_table_free(SilcHashTable ht);
 uint32 silc_hash_table_size(SilcHashTable ht);
+uint32 silc_hash_table_count(SilcHashTable ht);
 void silc_hash_table_add(SilcHashTable ht, void *key, void *context);
 void silc_hash_table_replace(SilcHashTable ht, void *key, void *context);
 bool silc_hash_table_del(SilcHashTable ht, void *key);

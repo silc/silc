@@ -1,3 +1,16 @@
+Wed May 16 23:03:30 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added entry_count field to the SilcHashTable to keep the number
+	  of the entries in the table.  Implemented the function
+	  silc_hash_table_rehash.  Added new function
+	  silc_hash_table_count.  Affected file lib/silcutil/silchashtable.c.
+
+	  Fixed a minor bug in silc_hash_table_free.
+
+	* Added silc_hash_string, silc_hash_uint, silc_hash_ptr,
+	  silc_hash_client_id, silc_hash_server_id and silc_hash_channel_id
+	  into the lib/silcutil/silcutil.[ch].
+
 Wed May 16 20:02:47 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented a collision resistant hash table into the
