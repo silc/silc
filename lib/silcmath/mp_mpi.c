@@ -86,7 +86,7 @@ void silc_mp_add(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   (void)mp_add(mp1, mp2, dst);
 }
 
-void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, mp_digit ui)
+void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
 {
   mp_add_d(mp1, ui, dst);
 }
