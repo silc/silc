@@ -30,10 +30,8 @@
 #define SILC_CHANNEL_MODE_TOPIC       0x0010 /* topic setting by operator */
 #define SILC_CHANNEL_MODE_ULIMIT      0x0020 /* user limit set */
 #define SILC_CHANNEL_MODE_PASSPHRASE  0x0040 /* passphrase set */
-#define SILC_CHANNEL_MODE_BAN         0x0080 /* ban list set */
-#define SILC_CHANNEL_MODE_INVITE_LIST 0x0100 /* invite list set */
-#define SILC_CHANNEL_MODE_CIPHER      0x0200 /* sets cipher of the channel */
-#define SILC_CHANNEL_MODE_HMAC        0x0400 /* sets hmac of the channel */
+#define SILC_CHANNEL_MODE_CIPHER      0x0080 /* sets cipher of the channel */
+#define SILC_CHANNEL_MODE_HMAC        0x0100 /* sets hmac of the channel */
 
 /* User modes on channel */
 #define SILC_CHANNEL_UMODE_NONE       0x0000 /* Normal user */

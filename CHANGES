@@ -1,3 +1,25 @@
+Fri Mar 23 16:25:11 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Redefined the INVITE command.  The same command can be used to
+	  invite individuals to the channel but also to manage the invite
+	  list of the channel (to add to and remove from the invite list).
+	  Updated the protocol specs.
+
+	* Added new command SILC_COMMAND_BAN that can be used to manage
+	  the ban list of the channel.  Updated the protocol specs.
+
+	* Removed the channel modes: the SILC_CMODE_BAN and the 
+	  SILC_CMODE_INVITE_LIST as they were a bit kludge to be included
+	  in the CMODE command.  The equivalent features are now available
+	  using INVITE and BAN commands.  Updated the protocol specs.
+
+	* Added new SILC_NOTIFY_TYPE_BAN notify type to notify routers
+	  in the network about change in the current ban list.  The notify
+	  type is not used by the client.
+
+	* Redefined parts of the SILC_NOTIFY_TYPE_INVITE command to 
+	  support the invite lists.
+
 Thu Mar 22 22:52:23 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new function silc_string_regexify that converts string

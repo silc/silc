@@ -2263,17 +2263,43 @@ List of all defined commands in SILC follows.
 
    7    SILC_COMMAND_INVITE
 
-        Max Arguments:  2
-            Arguments:  (1) <Client ID>  (2) <Channel ID>
+        Max Arguments:  4
+            Arguments:  (1) [<Client ID>]      (2) [<Channel ID>]
+                        (3) [<adding client>]  (4) [<removing client>]
 
         This command is used to invite other clients to join to the
         channel.  The <Client ID> argument is the target client's ID that
         is being invited.  The <Channel ID> is the Channel ID of the
         requested channel.  The sender of this command must be on the
-        channel.  This command must fail if the requested channel does
-        not exist, the requested client is already on the channel or if
-        the channel is invite only channel and the caller of this command
-        does not have at least channel operator privileges.
+        channel.  The server must also send the notify type
+        SILC_NOTIFY_TYPE_INVITE to its primary router and then to the
+        client indicated by the <Client ID>.
+
+        The <adding client> and <removing client> can be used to add to
+        and remove from the invite list.  The format of the <adding client>
+        and <removing client> is as follows:
+
+            [<nickname>[@<server>]!][<username>]@[<hostname>]
+
+        When adding to or removing from the invite list the server must
+        send the notify type SILC_NOTIFY_TYPE_INVITE to its primary router
+        and must not send it to the client which was added to the list.
+        The client which executes this command must have at least channel
+        operator privileges to be able to add to or remove from the invite
+        list.  The wildcards may be used with this command.  If adding or
+        removing from than one clients then the lists are an comma (`,')
+        separated list.
+
+        Note that the <Client ID> provided must be resolved into correct
+        nickname and hostname and add to the invite list before sending
+        the notify packet.
+        
+        When this command is given without any arguments then the command
+        merely returns the invite list of the channel.   This command must
+        fail if the requested channel does not exist, the requested
+        <Client ID> is already on the channel or if the channel is invite
+        only channel and the caller of this command does not have at least
+        channel operator privileges.
 
         Reply messages to the command:
 
@@ -2653,11 +2679,10 @@ List of all defined commands in SILC follows.
 
    17   SILC_COMMAND_CMODE
 
-        Max Arguments:  8
+        Max Arguments:  6
             Arguments:  (1) <Channel ID>    (2) <channel mode mask>
                         (3) [<user limit>]  (4) [<passphrase>]
-                        (5) [<ban mask>]    (6) [<invite list>]
-                        (7) [<cipher>]      (8) [<hmac>]
+                        (5) [<cipher>]      (6) [<hmac>]
 
         This command is used by client to set or change channel flags on
         a channel.  Channel has several modes that set various properties
@@ -2785,46 +2810,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0080    SILC_CMODE_BAN
-
-              Ban mask has been set to the channel.  The ban mask
-              may be used to ban specific clients to join the channel.
-              The <ban mask> argument is the set ban mask.  When
-              unsetting a ban mask the mask must be provided as
-              argument.  Channel founder and channel operator may
-              set/unset this mode.  Channel founder may not be
-              added to the ban list.  <ban mask> is an comma (`,')
-              separated list of banned clients in the following format:
-
-                [<nickname>[@<server>]!][<username>]@[<hostname>]
-
-              Wildcards maybe used when banning clients.
-
-              Typical implementation would use [+|-]b on user interface
-              to set/unset this mode.
-
-
-           0x0100    SILC_CMODE_INVITE_LIST
-
-              Invite list has been set to the channel.  The invite list
-              can be used to mark the clients that is able to join
-              channel without being invited when the channel is set to
-              be invite-only channel.  The <invite list> argument is the
-              set invite mask.  When unsetting entry from the invite list
-              the entry must be provided as argument.  Channel founder and
-              channel operator may set/unset this mode.  The <invite list>
-              is command (`,') separated list of invited clients in the
-              following format:
-
-                [<nickname>[@<server>]!][<username>]@[<hostname>]
-
-              Wildcards maybe used when setting the invite list.
-
-              Typical implementation would use [+|-]I on user interface
-              to set/unset this mode.
-
-        
-           0x0200    SILC_CMODE_CIPHER
+           0x0080    SILC_CMODE_CIPHER
 
               Sets specific cipher to be used to protect channel
               traffic.  The <cipher> argument is the requested cipher.
@@ -2837,7 +2823,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0400    SILC_CMODE_HMAC
+           0x0100    SILC_CMODE_HMAC
 
               Sets specific hmac to be used to compute the MACs of the
               channel message.  The <hmac> argument is the requested hmac.
@@ -2878,7 +2864,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
 
 
-   19   SILC_COMMAND_CUMODE
+   18   SILC_COMMAND_CUMODE
 
         Max Arguments:  3
             Arguments:  (1) <Channel ID>  (2) <mode mask>
@@ -3173,7 +3159,54 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_ON_CHANNEL
 
 
-   26 - 199
+   26   SILC_COMMAND_BAN
+
+        Max Arguments:  3
+            Arguments:  (1) [<Channel ID>]       (2) [<adding client>]
+                        (3) [<removing client>]
+
+        This command is used to manage the ban list of the channel
+        indicated by the <Channel ID>.  A client that is banned from
+        channel is no longer able to join the channel.  The client which
+        is executing this command must have at least channel operator
+        privileges on the channel.
+
+        The <adding client> and <removing client> are used to add to and
+        remove from the ban list.  The format of the <adding client> and
+        the <removing client> is of following format:
+
+            [<nickname>[@<server>]!][<username>]@[<hostname>]
+
+        The server must send the notify type SILC_NOTIFY_TYPE_BAN to its
+        primary router after adding to or removing from the ban list.
+        The wildcards may be used with this command.  If adding or removing
+        from than one clients then the lists are an comma (`,') separated
+        list.
+
+        If this command is executed without any arguments the command
+        merely replies with the current ban list.
+
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) [<ban list>]
+
+        This command replies with the <Channel ID> of the channel and
+        the current <ban list> of the channel if it exists.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
+
+
+   27 - 199
 
         Currently undefined commands.
 

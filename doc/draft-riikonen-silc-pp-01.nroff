@@ -1123,14 +1123,25 @@ ID's sent in arguments are sent inside ID Payload.
 
 1     SILC_NOTIFY_TYPE_INVITE
 
-      Sent when receiver has been invited to a channel.  This type must be
-      sent directly to the invited client.
+      Sent when an client is invited to a channel.  This is also sent
+      when the invite list of the channel is changed.  This notify type
+      is sent between routers and if the <Client ID> is argument is
+      provided to the client as well.
 
-      Max Arguments:  2
-          Arguments:  (1) <Client ID>  (2) <Channel ID>
+      Max Arguments:  4
+          Arguments:  (1) [<Client ID>]       (2) <Channel ID>
+                      (3) [<adding client>]   (4) [<removing client>]
 
-      The <Client ID> is the client who invites the receiver of this type 
-      to channel indicated by <Channel ID>.
+      The <Client ID> is the client which was invited to the channel.
+      The <Channel ID> is the channel.  The <adding client> and the
+      <removing client> indicates the added or removed client from the
+      channel's invite list.  The format of the <adding client and the
+      <removing client> is defined in the [SILC1] with SILC_COMMAND_INVITE
+      command.
+
+      The <adding client> and <removing client> is never sent to the
+      client indicated by the <Client ID>.  Also note that the lists
+      include the <Client ID> already.
 
 
 2     SILC_NOTIFY_TYPE_JOIN
@@ -1142,10 +1153,14 @@ ID's sent in arguments are sent inside ID Payload.
       broadcast it to the network.
 
       Max Arguments:  2
-          Arguments:  (1) <Client ID>  (2) <Channel ID>
+          Arguments:  (1) [<Client ID>]       (2) <Channel ID>
 
       The <Client ID> is the client that joined to the channel indicated
-      by the <Channel ID>.
+      by the <Channel ID>.  The <adding client> and <removing client>
+      indicates the added or removed client in the current invite list.
+      The format of the <adding client> and the <removing client> is
+      defined in the [SILC1] with SILC_COMMAND_INVITE command.  If the
+      <Client ID> is not provided then this
 
 
 3     SILC_NOTIFY_TYPE_LEAVE
@@ -1312,6 +1327,23 @@ ID's sent in arguments are sent inside ID Payload.
 
       The <Client ID> is the client which mode was changed.  The <mode mask>
       is the new mode mask.
+
+
+15    SILC_NOTIFY_TYPE_BAN
+
+      Sent when the ban list of the channel is changed.  This type is sent
+      only between routers as broadcast packet.
+
+      Max Arguments:  3
+          Arguments:  (1) <Channel ID>         (2) [<adding client>]
+                      (3) [<removing client>]
+
+      The <Channel ID> is the channel which ban list was changed.  The
+      <adding client> is used to indicate the a ban was added and the
+      <removing client> is used to indicate that a ban was removed from
+      the ban list.  The format of the <adding client> and the 
+      <removing client> is defined in the [SILC1] with SILC_COMMAND_BAN
+      command.
 
 .in 3
 

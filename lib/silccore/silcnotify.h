@@ -30,7 +30,7 @@ typedef unsigned short SilcNotifyType;
 /* SILC notify types. Server may send these notify types to client to
    notify of some action. */
 #define SILC_NOTIFY_TYPE_NONE            0 /* no specific type */
-#define SILC_NOTIFY_TYPE_INVITE          1 /* "invites you to channel" */
+#define SILC_NOTIFY_TYPE_INVITE          1 /* invites/invite list change */
 #define SILC_NOTIFY_TYPE_JOIN            2 /* "has joined channel" */
 #define SILC_NOTIFY_TYPE_LEAVE           3 /* "has left channel" */
 #define SILC_NOTIFY_TYPE_SIGNOFF         4 /* "signoff" */
@@ -44,6 +44,7 @@ typedef unsigned short SilcNotifyType;
 #define SILC_NOTIFY_TYPE_KICKED          12 /* Kicked from channel */
 #define SILC_NOTIFY_TYPE_KILLED          13 /* Killed from the network */
 #define SILC_NOTIFY_TYPE_UMODE_CHANGE    14 /* user mode was changed */
+#define SILC_NOTIFY_TYPE_BAN             15 /* ban list change */
 
 /* Prototypes */
 SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer);

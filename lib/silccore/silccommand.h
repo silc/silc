@@ -85,6 +85,7 @@ typedef enum {
 #define SILC_COMMAND_SILCOPER	        23
 #define SILC_COMMAND_LEAVE		24
 #define SILC_COMMAND_USERS		25
+#define SILC_COMMAND_BAN		26
 
 /* Reserved */
 #define SILC_COMMAND_RESERVED           255
