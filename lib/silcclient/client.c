@@ -104,6 +104,10 @@ int silc_client_init(SilcClient client)
 {
   SILC_LOG_DEBUG(("Initializing client"));
 
+  assert(client->username);
+  assert(client->hostname);
+  assert(client->realname);
+
   /* Initialize the crypto library.  If application has done this already
      this has no effect.  Also, we will not be overriding something
      application might have registered earlier. */
@@ -162,6 +166,10 @@ void silc_client_stop(SilcClient client)
 void silc_client_run(SilcClient client)
 {
   SILC_LOG_DEBUG(("Running client"));
+
+  assert(client->pkcs);
+  assert(client->public_key);
+  assert(client->private_key);
 
   /* Start the scheduler, the heart of the SILC client. When this returns
      the program will be terminated. */
@@ -458,6 +466,10 @@ void silc_client_start_key_exchange(SilcClient client,
 				    SilcClientConnection conn,
 				    int fd)
 {
+  assert(client->pkcs);
+  assert(client->public_key);
+  assert(client->private_key);
+
   /* Allocate new socket connection object */
   silc_socket_alloc(fd, SILC_SOCKET_TYPE_SERVER, (void *)conn, &conn->sock);
 
