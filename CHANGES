@@ -1,3 +1,9 @@
+Sat Sep  7 22:26:50 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* If normal server is standalone and found existing but disabled
+	  channel, do not re-create the channel since it creates
+	  duplicate same channels.  Affected file silcd/server.c.
+
 Sat Sep  7 16:02:09 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* In JOIN notify handling, mark that the cache entry of the

@@ -176,7 +176,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	client = (SilcClientEntry)id_cache->context;
 
 	/* If client is not registered, is not originated from `router'
-	   or is not owned by `entry', skip it. */
+	   and is not owned by `entry', skip it. */
 	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
 	    client->router != router ||
 	    (router != entry && !SILC_ID_COMPARE(client->id, entry->id,
@@ -236,7 +236,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	client = (SilcClientEntry)id_cache->context;
 
 	/* If client is not registered, is not originated from `router'
-	   or is not owned by `entry', skip it. */
+	   and is not owned by `entry', skip it. */
 	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
 	    client->router != router ||
 	    (router != entry && !SILC_ID_COMPARE(client->id, entry->id,

@@ -1,8 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o /NAMES list is not emptied when /LEAVEin the channel.
-
  o UTF-8 encode/decode WHOIS userinfos, topic, etc.
 
  o Add STATS.
@@ -24,6 +22,10 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
+
+ o Backup router can accidently free its own id_entry and ID?  Could happen
+   when some server is connecting and connecting fails (like too many
+   connections, etc).  Some weird crashes relating to this occurred.
 
  o Implement the <Requested Attributes> and the Attribute Payload to
    the core library, client and server.  Maybe implementations of

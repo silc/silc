@@ -1369,6 +1369,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   if (!sconn->backup) {
     /* Mark this router our primary router if we're still standalone */
     if (server->standalone) {
+      SILC_LOG_DEBUG(("This connection is our primary router"));
       server->id_entry->router = id_entry;
       server->router = id_entry;
       server->standalone = FALSE;
