@@ -24,6 +24,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/10 05:38:32  priikone
+ * 	Added INFO command.
+ *
  * Revision 1.5  2000/07/06 07:14:36  priikone
  * 	Fixes to NAMES command handling.
  * 	Fixes when leaving from channel.
@@ -431,8 +434,40 @@ SILC_CLIENT_CMD_REPLY_FUNC(kill)
 {
 }
 
+/* Received reply to INFO command. We receive the server ID and some
+   information about the server user requested. */
+
 SILC_CLIENT_CMD_REPLY_FUNC(info)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClient client = cmd->client;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    silc_say(cmd->client, "%s", silc_client_command_status_message(status));
+    silc_client_command_reply_free(cmd);
+    return;
+  }
+
+  /* Get server ID */
+  tmp = silc_command_get_arg_type(cmd->payload, 2, NULL);
+  if (!tmp)
+    goto out;
+
+  /* XXX save server id */
+
+  /* Get server info */
+  tmp = silc_command_get_arg_type(cmd->payload, 3, NULL);
+  if (!tmp)
+    goto out;
+
+  silc_say(client, "Info: %s", tmp);
+
+ out:
+  silc_client_command_reply_free(cmd);
 }
 
 SILC_CLIENT_CMD_REPLY_FUNC(away)
@@ -699,7 +734,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   }
 
   /* Cache the received name list and client ID's. This cache expires
-     whenever server sends notify message to channel. It means to things;
+     whenever server sends notify message to channel. It means two things;
      some user has joined or leaved the channel. */
   for (i = 0; i < list_count; i++) {
     int nick_len = strcspn(name_list, " ");
