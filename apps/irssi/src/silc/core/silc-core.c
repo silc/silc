@@ -1090,6 +1090,8 @@ void silc_core_init_finish(void)
     exit(0);
   }
 
+  silc_init_userinfo();
+
   /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, NULL);
 
@@ -1157,7 +1159,6 @@ void silc_core_init_finish(void)
   chat_protocol_register(rec);
   g_free(rec);
 
-  silc_init_userinfo();
   silc_server_init();
   silc_channels_init();
   silc_queries_init();
