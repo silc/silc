@@ -1,3 +1,21 @@
+Wed Jun 27 00:10:33 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a fatal bug in private message sending and reception
+	  encryption and decryption when using private message keys.
+	  The implementation was incorrect and did not follow the
+	  specification.  It causd that some of the message were
+	  lost since it did not use the sending and receiving keys
+	  as the protocol suggests.  This has been fixed and will cause
+	  incompatibilities with older clients when sending private
+	  message encrypted with private message keys.  Affected files
+	  lib/silcclient/client_prvmsg.c, lib/silcclient/client_keyagr.c
+	  and various other in Irssi SILC Client.
+
+	  Added `responder' boolean argument to the functions
+	  silc_client_add_private_message_key[_ske] to indicate when
+	  the key is added as responder or initiator of the key
+	  negotiation.
+
 Tue Jun 26 19:23:07 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed the silc_ske_check_version function and created
@@ -19,6 +37,11 @@ Tue Jun 26 19:23:07 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  in client library so that we can abort the SKE if it
 	  is in process when we get timeout.  Affected file is
 	  lib/silcclient/client_keyagr.c.
+
+	* Do not resolve the client ID forever if it returns in the
+	  first time that such client does not exist.  This was done
+	  for example with private message.  Affected file is
+	  lib/silcclient/client_prvmsg.c.
 
 Mon Jun 25 21:42:51 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 

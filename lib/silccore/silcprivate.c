@@ -61,8 +61,10 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->message, 
 							 &new->message_len),
 			     SILC_STR_END);
-  if (ret == -1)
+  if (ret == -1) {
+    SILC_LOG_ERROR(("Incorrect private message payload"));
     goto err;
+  }
 
   if ((new->message_len < 1 || new->message_len > buffer->len)) {
     SILC_LOG_ERROR(("Incorrect private message payload in packet, "

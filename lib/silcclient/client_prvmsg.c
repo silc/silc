@@ -126,6 +126,11 @@ static void silc_client_private_message_cb(SilcClient client,
 {
   SilcPacketContext *packet = (SilcPacketContext *)context;
 
+  if (!clients) {
+    silc_packet_context_free(packet);
+    return;
+  }
+
   silc_client_private_message(client, conn->sock, packet);
   silc_packet_context_free(packet);
 }
@@ -168,7 +173,7 @@ void silc_client_private_message(SilcClient client,
 
   /* Parse the payload and decrypt it also if private message key is set */
   payload = silc_private_message_payload_parse(packet->buffer,
-					       remote_client->send_key);
+					       remote_client->receive_key);
   if (!payload) {
     silc_free(remote_id);
     return;
@@ -233,7 +238,7 @@ static void silc_client_private_message_key_cb(SilcClient client,
 
   /* Now take the key in use */
   if (!silc_client_add_private_message_key(client, conn, clients[0],
-					   cipher, key, key_len, FALSE))
+					   cipher, key, key_len, FALSE, TRUE))
     goto out;
 
   /* Print some info for application */
@@ -282,6 +287,11 @@ void silc_client_private_message_key(SilcClient client,
    requirements of the SILC protocol are met. The API, however, allows
    to allocate any cipher.
 
+   If `responder' is TRUE then the sending and receiving keys will be
+   set according the client being the receiver of the private key.  If
+   FALSE the client is being the sender (or negotiator) of the private
+   key.
+
    It is not necessary to set key for normal private message usage. If the
    key is not set then the private messages are encrypted using normal
    session keys. Setting the private key, however, increases the security. 
@@ -295,7 +305,8 @@ int silc_client_add_private_message_key(SilcClient client,
 					char *cipher,
 					unsigned char *key,
 					uint32 key_len,
-					int generate_key)
+					bool generate_key,
+					bool responder)
 {
   unsigned char private_key[32];
   uint32 len;
@@ -341,12 +352,21 @@ int silc_client_add_private_message_key(SilcClient client,
   silc_cipher_alloc(cipher, &client_entry->receive_key);
 
   /* Set the keys */
-  silc_cipher_set_key(client_entry->send_key, keymat->send_enc_key,
-		      keymat->enc_key_len);
-  silc_cipher_set_iv(client_entry->send_key, keymat->send_iv);
-  silc_cipher_set_key(client_entry->receive_key, keymat->receive_enc_key,
-		      keymat->enc_key_len);
-  silc_cipher_set_iv(client_entry->receive_key, keymat->receive_iv);
+  if (responder == TRUE) {
+    silc_cipher_set_key(client_entry->send_key, keymat->receive_enc_key,
+			keymat->enc_key_len);
+    silc_cipher_set_iv(client_entry->send_key, keymat->receive_iv);
+    silc_cipher_set_key(client_entry->receive_key, keymat->send_enc_key,
+			keymat->enc_key_len);
+    silc_cipher_set_iv(client_entry->receive_key, keymat->send_iv);
+  } else {
+    silc_cipher_set_key(client_entry->send_key, keymat->send_enc_key,
+			keymat->enc_key_len);
+    silc_cipher_set_iv(client_entry->send_key, keymat->send_iv);
+    silc_cipher_set_key(client_entry->receive_key, keymat->receive_enc_key,
+			keymat->enc_key_len);
+    silc_cipher_set_iv(client_entry->receive_key, keymat->receive_iv);
+  }
 
   /* Free the key material */
   silc_ske_free_key_material(keymat);
@@ -364,7 +384,8 @@ int silc_client_add_private_message_key_ske(SilcClient client,
 					    SilcClientConnection conn,
 					    SilcClientEntry client_entry,
 					    char *cipher,
-					    SilcSKEKeyMaterial *key)
+					    SilcSKEKeyMaterial *key,
+					    bool responder)
 {
   assert(client_entry);
 
@@ -384,12 +405,21 @@ int silc_client_add_private_message_key_ske(SilcClient client,
   silc_cipher_alloc(cipher, &client_entry->receive_key);
 
   /* Set the keys */
-  silc_cipher_set_key(client_entry->send_key, key->send_enc_key,
-		      key->enc_key_len);
-  silc_cipher_set_iv(client_entry->send_key, key->send_iv);
-  silc_cipher_set_key(client_entry->receive_key, key->receive_enc_key,
-		      key->enc_key_len);
-  silc_cipher_set_iv(client_entry->receive_key, key->receive_iv);
+  if (responder == TRUE) {
+    silc_cipher_set_key(client_entry->send_key, key->receive_enc_key,
+			key->enc_key_len);
+    silc_cipher_set_iv(client_entry->send_key, key->receive_iv);
+    silc_cipher_set_key(client_entry->receive_key, key->send_enc_key,
+			key->enc_key_len);
+    silc_cipher_set_iv(client_entry->receive_key, key->send_iv);
+  } else {
+    silc_cipher_set_key(client_entry->send_key, key->send_enc_key,
+			key->enc_key_len);
+    silc_cipher_set_iv(client_entry->send_key, key->send_iv);
+    silc_cipher_set_key(client_entry->receive_key, key->receive_enc_key,
+			key->enc_key_len);
+    silc_cipher_set_iv(client_entry->receive_key, key->receive_iv);
+  }
 
   return TRUE;
 }

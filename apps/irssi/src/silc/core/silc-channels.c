@@ -688,6 +688,7 @@ static void command_away(const char *data, SILC_SERVER_REC *server,
 
 typedef struct {
   int type;			/* 1 = msg, 2 = channel */
+  bool responder;
   SILC_SERVER_REC *server;
 } *KeyInternal;
 
@@ -717,7 +718,7 @@ static void keyagr_completion(SilcClient client,
       /* Set the private key for this client */
       silc_client_del_private_message_key(client, conn, client_entry);
       silc_client_add_private_message_key_ske(client, conn, client_entry,
-					      NULL, key);
+					      NULL, key, i->responder);
       printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
 			 SILCTXT_KEY_AGREEMENT_PRIVMSG, 
 			 client_entry->nickname);
@@ -889,13 +890,13 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 					      argv[5], argv[4],
 					      argv_lens[4],
 					      (argv[4][0] == '*' ?
-					       TRUE : FALSE));
+					       TRUE : FALSE), FALSE);
 	else
 	  silc_client_add_private_message_key(silc_client, conn, client_entry,
 					      NULL, argv[4],
 					      argv_lens[4],
 					      (argv[4][0] == '*' ?
-					       TRUE : FALSE));
+					       TRUE : FALSE), FALSE);
 
 	/* Send the key to the remote client so that it starts using it
 	   too. */
@@ -1135,14 +1136,18 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   if (command == 4 && client_entry) {
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_NOTICES,
 		       SILCTXT_KEY_AGREEMENT, argv[2]);
+    internal->responder = TRUE;
     silc_client_send_key_agreement(silc_client, conn, client_entry, hostname, 
 				   port, 120, keyagr_completion, internal);
+    if (!hostname)
+      silc_free(internal);
     goto out;
   }
 
   if (command == 5 && client_entry && hostname) {
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_NOTICES,
 		       SILCTXT_KEY_AGREEMENT_NEGOTIATE, argv[2]);
+    internal->responder = FALSE;
     silc_client_perform_key_agreement(silc_client, conn, client_entry, 
 				      hostname, port, keyagr_completion, 
 				      internal);

@@ -283,6 +283,10 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
    If remote side decides to ignore the request the `completion' will be
    called after the specified timeout, `timeout_secs'. 
 
+   NOTE: If the `hostname' and the `port' was not provided the `completion'
+   will not be called at all since this does nothing more than sending
+   a packet to the remote host.
+
    NOTE: There can be only one active key agreement for one client entry.
    Before setting new one, the old one must be finished (it is finished
    after calling the completion callback) or the function 

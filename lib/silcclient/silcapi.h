@@ -910,7 +910,8 @@ void silc_client_command_pending(SilcClientConnection conn,
  *                                            char *cipher,
  *                                            unsigned char *key,
  *                                            uint32 key_len,
- *                                            int generate_key);
+ *                                            bool generate_key,
+ *                                            bool responder);
  *
  * DESCRIPTION
  *
@@ -922,6 +923,11 @@ void silc_client_command_pending(SilcClientConnection conn,
  *    The `cipher' MAY be provided but SHOULD be NULL to assure that the
  *    requirements of the SILC protocol are met. The API, however, allows
  *    to allocate any cipher.
+ *
+ *    If `responder' is TRUE then the sending and receiving keys will be
+ *    set according the client being the receiver of the private key.  If
+ *    FALSE the client is being the sender (or negotiator) of the private
+ *    key.
  *
  *    It is not necessary to set key for normal private message usage. If the
  *    key is not set then the private messages are encrypted using normal
@@ -937,7 +943,8 @@ int silc_client_add_private_message_key(SilcClient client,
 					char *cipher,
 					unsigned char *key,
 					uint32 key_len,
-					int generate_key);
+					bool generate_key,
+					bool responder);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_private_message_key_ske
  *
@@ -951,18 +958,19 @@ int silc_client_add_private_message_key(SilcClient client,
  *
  * DESCRIPTION
  *
- *    Same as above but takes the key material from the SKE key material
- *    structure. This structure is received if the application uses the
- *    silc_client_send_key_agreement to negotiate the key material. The
- *    `cipher' SHOULD be provided as it is negotiated also in the SKE
- *    protocol. 
+ *    Same as silc_client_add_private_message_key but takes the key material
+ *    from the SKE key material structure. This structure is received if
+ *    the application uses the silc_client_send_key_agreement to negotiate
+ *    the key material. The `cipher' SHOULD be provided as it is negotiated
+ *    also in the SKE protocol. 
  *
  ***/
 int silc_client_add_private_message_key_ske(SilcClient client,
 					    SilcClientConnection conn,
 					    SilcClientEntry client_entry,
 					    char *cipher,
-					    SilcSKEKeyMaterial *key);
+					    SilcSKEKeyMaterial *key,
+					    bool responder);
 
 /****f* silcclient/SilcClientAPI/silc_client_send_private_message_key
  *
@@ -1237,6 +1245,10 @@ void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
  *    performed the `completion' callback with the `context' will be called.
  *    If remote side decides to ignore the request the `completion' will be
  *    called after the specified timeout, `timeout_secs'. 
+ *
+ *    NOTE: If the `hostname' and the `port' was not provided the `completion'
+ *    will not be called at all since this does nothing more than sending
+ *    a packet to the remote host.
  *
  *    NOTE: There can be only one active key agreement for one client entry.
  *    Before setting new one, the old one must be finished (it is finished
