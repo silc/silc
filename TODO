@@ -17,6 +17,9 @@ TODO/bugs in Irssi SILC client
    that user can say /help set mutual_authentication they would get
    help of the mutual_authentication setting.
 
+ o Do some /set show_mail_notification that would show a notification
+   on screen when new email is received.
+
  o We should get rid of the clientconfig.[ch] in Irssi SILC and move the
    cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
    file.
