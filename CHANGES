@@ -1,3 +1,8 @@
+Fri Oct 24 21:24:12 CEST 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed race condition between silc_client_init and 
+          my_silc_scheduler. Affected file irssi/src/silc/core/silc-core.c
+
 Fri Oct 24 16:43:40 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed file transfer connection closing when SIGNOFF for
