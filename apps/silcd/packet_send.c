@@ -587,8 +587,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       sock = (SilcSocketConnection)client->connection;
       idata = (SilcIDListData)client;
 
-      SILC_LOG_DEBUG(("Sending packet to client %s", 
-		      sock->hostname ? sock->hostname : sock->ip));
+      SILC_LOG_DEBUG(("Sending packet to client %s (%s)", 
+		      sock->hostname, sock->ip));
 
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,

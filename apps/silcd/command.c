@@ -461,8 +461,8 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       if (!strchr(entry->username, '@')) {
 	strncat(uh, "@", 1);
 	hsock = (SilcSocketConnection)entry->connection;
-	len = hsock->hostname ? strlen(hsock->hostname) : strlen(hsock->ip);
-	strncat(uh, hsock->hostname ? hsock->hostname : hsock->ip, len);
+	len = strlen(hsock->hostname);
+	strncat(uh, hsock->hostname, len);
       }
       
       SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
@@ -847,8 +847,8 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 	if (!strchr(entry->username, '@')) {
 	  strncat(uh, "@", 1);
 	  hsock = (SilcSocketConnection)entry->connection;
-	  len = hsock->hostname ? strlen(hsock->hostname) : strlen(hsock->ip);
-	  strncat(uh, hsock->hostname ? hsock->hostname : hsock->ip, len);
+	  len = strlen(hsock->hostname);
+	  strncat(uh, hsock->hostname, len);
 	}
       
 	packet = silc_command_reply_payload_encode_va(SILC_COMMAND_IDENTIFY,

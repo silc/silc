@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/12/17 13:07:35  priikone
+ * 	Added require_reverse_mapping for ServerParams.
+ *
  * Revision 1.2  2000/10/31 19:48:32  priikone
  * 	A LOT updates. Cannot separate. :)
  *
@@ -254,7 +257,8 @@ int silc_net_is_ip(const char *addr)
   return inet_aton(addr, &tmp);
 }
 
-/* Performs lookups for remote name and IP address. */
+/* Performs lookups for remote name and IP address. This peforms reverse
+   lookup as well to verify that the IP has FQDN. */
 
 void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 {
@@ -282,7 +286,7 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   if (!dest)
     return;
 
-  /* Get same hsot by name to see that the remote host really is
+  /* Get same host by name to see that the remote host really is
      the who it says it is */
   memset(host_name, 0, sizeof(host_name));
   memcpy(host_name, dest->h_name, strlen(dest->h_name));

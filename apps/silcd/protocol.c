@@ -514,9 +514,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	unsigned short conn_type;
 	unsigned char *auth_data;
 
-	SILC_LOG_INFO(("Performing authentication protocol for %s",
-		       ctx->sock->hostname ? ctx->sock->hostname :
-		       ctx->sock->ip));
+	SILC_LOG_INFO(("Performing authentication protocol for %s (%s)",
+		       ctx->sock->hostname, ctx->sock->ip));
 
 	/* Parse the received authentication data packet. The received
 	   payload is Connection Auth Payload. */

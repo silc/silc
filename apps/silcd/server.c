@@ -80,11 +80,13 @@ void silc_server_free(SilcServer server)
     if (server->rng)
       silc_rng_free(server->rng);
 
+#ifdef SILC_SIM
     while ((sim = silc_dlist_get(server->sim)) != SILC_LIST_END) {
       silc_dlist_del(server->sim, sim);
       silc_sim_free(sim);
     }
     silc_dlist_uninit(server->sim);
+#endif
 
     if (server->params)
       silc_free(server->params);
@@ -122,6 +124,7 @@ int silc_server_init(SilcServer server)
   server->params->retry_interval_max = SILC_SERVER_RETRY_INTERVAL_MAX;
   server->params->retry_keep_trying = FALSE;
   server->params->protocol_timeout = 60;
+  server->params->require_reverse_mapping = FALSE;
 
   /* Set log files where log message should be saved. */
   server->config->server = server;
@@ -219,11 +222,9 @@ int silc_server_init(SilcServer server)
   server->local_list->servers = silc_idcache_alloc(0);
   server->local_list->channels = silc_idcache_alloc(0);
 
-  /* XXX for now these are allocated for normal server as well as these
-     hold some global information that the server has fetched from its
-     router. For router these are used as they are supposed to be used
-     on router. The XXX can be remoevd later if this is the way we are
-     going to do this in the normal server as well. */
+  /* These are allocated for normal server as well as these hold some 
+     global information that the server has fetched from its router. For 
+     router these are used as they are supposed to be used on router. */
   server->global_list->clients = silc_idcache_alloc(0);
   server->global_list->servers = silc_idcache_alloc(0);
   server->global_list->channels = silc_idcache_alloc(0);
@@ -365,7 +366,9 @@ void silc_server_stop(SilcServer server)
   SILC_LOG_DEBUG(("Server stopped"));
 }
 
-/* The heart of the server. This runs the scheduler thus runs the server. */
+/* The heart of the server. This runs the scheduler thus runs the server. 
+   When this returns the server has been stopped and the program will
+   be terminated. */
 
 void silc_server_run(SilcServer server)
 {
@@ -722,8 +725,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 
   /* Add the connected router to local server list */
   server->standalone = FALSE;
-  id_entry = silc_idlist_add_server(server->local_list, 
-				    sock->hostname ? sock->hostname : sock->ip,
+  id_entry = silc_idlist_add_server(server->local_list, sock->hostname,
 				    SILC_ROUTER, ctx->dest_id, NULL, sock);
   if (!id_entry) {
     if (ctx->dest_id)
@@ -797,13 +799,15 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   /* XXX This MUST be done async as this will block the entire server
      process. Either we have to do our own resolver stuff or in the future
      we can use threads. */
-  /* Perform mandatory name and address lookups for the remote host. */
+  /* Perform name and address lookups for the remote host. */
   silc_net_check_host_by_sock(sock, &newsocket->hostname, &newsocket->ip);
-  if (!newsocket->ip || !newsocket->hostname) {
-    SILC_LOG_DEBUG(("IP lookup/DNS lookup failed"));
-    SILC_LOG_ERROR(("IP lookup/DNS lookup failed"));
+  if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
+      !newsocket->ip) {
+    SILC_LOG_ERROR(("IP/DNS lookup failed"));
     return;
   }
+  if (!newsocket->hostname)
+    newsocket->hostname = strdup(newsocket->ip);
 
   SILC_LOG_INFO(("Incoming connection from %s (%s)", newsocket->hostname,
 		 newsocket->ip));

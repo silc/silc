@@ -55,10 +55,12 @@ typedef struct {
   unsigned long retry_interval_min;
   unsigned long retry_interval_min_usec;
   unsigned long retry_interval_max;
-  unsigned int retry_keep_trying;
+  char retry_keep_trying;
 
   unsigned long protocol_timeout;
   unsigned long protocol_timeout_usec;
+
+  char require_reverse_mapping;
 } *SilcServerParams;
 
 /* Macros */
