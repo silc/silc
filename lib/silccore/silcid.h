@@ -29,7 +29,7 @@
  * channels are identified by the these ID's.
  *
  * The ID's are based on IP addresses. The IP address provides a good
- * way to distinguish the ID's from other ID's. The ID's support both
+ * way to distinguish the ID's from other ID's. The ID's supports both
  * IPv4 and IPv6.
  *
  ***/
