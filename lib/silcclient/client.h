@@ -167,6 +167,10 @@ struct SilcClientStruct {
      touch this. This the context sent as argument to silc_client_alloc. */
   void *application;
 
+  /* Generic hash context for application usage */
+  SilcHash md5hash;
+  SilcHash sha1hash;
+
   /* Internal data for client library. Application cannot access this
      data at all. */
   SilcClientInternal internal;

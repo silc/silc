@@ -22,6 +22,10 @@
 #include "silcclient.h"
 #include "client_internal.h"
 
+typedef struct {
+  SilcBuffer buffer;
+} SilcAttrForeach;
+
 /* Add one attribute that was found from hash table */
 
 static void silc_client_attributes_process_foreach(void *key, void *context,
@@ -29,7 +33,7 @@ static void silc_client_attributes_process_foreach(void *key, void *context,
 {
   SilcAttribute attribute = (SilcAttribute)(SilcUInt32)key;
   SilcAttributePayload attr = context;
-  SilcBuffer buffer = user_context;
+  SilcAttrForeach *f = user_context;
   const unsigned char *data;
   SilcUInt32 data_len;
 
@@ -41,17 +45,28 @@ static void silc_client_attributes_process_foreach(void *key, void *context,
       return;
 
     /* The requested attribute was not found */
-    buffer = silc_attribute_payload_encode(buffer, attribute,
-					   SILC_ATTRIBUTE_FLAG_INVALID,
-					   NULL, 0);
+    f->buffer = silc_attribute_payload_encode(f->buffer, attribute,
+					      SILC_ATTRIBUTE_FLAG_INVALID,
+					      NULL, 0);
     return;
   }
 
   SILC_LOG_DEBUG(("Attribute %d found", attribute));
   data = silc_attribute_get_data(attr, &data_len);
-  buffer = silc_attribute_payload_encode_data(buffer, attribute,
+
+  /* We replace the TIMEZONE with valid value here */
+  if (attribute == SILC_ATTRIBUTE_TIMEZONE) {
+    data = (const unsigned char *)silc_get_time(0);
+    data_len = strlen(data);
+    f->buffer = silc_attribute_payload_encode(f->buffer, attribute,
 					      SILC_ATTRIBUTE_FLAG_VALID,
-					      data, data_len);
+					      (void *)data, data_len);
+    return;
+  }
+
+  f->buffer = silc_attribute_payload_encode_data(f->buffer, attribute,
+						 SILC_ATTRIBUTE_FLAG_VALID,
+						 data, data_len);
 }
 
 /* Process list of attributes.  Returns reply to the requested attributes. */
@@ -62,6 +77,7 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
 {
   SilcClientConnection conn = sock->user_data;
   SilcBuffer buffer = NULL;
+  SilcAttrForeach f;
   SilcAttribute attribute;
   SilcAttributePayload attr;
   SilcAttributeObjPk pk;
@@ -86,6 +102,7 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
   silc_free(pk.data);
 
   /* Go through all requested attributes */
+  f.buffer = buffer;
   silc_dlist_start(attrs);
   while ((attr = silc_dlist_get(attrs)) != SILC_LIST_END) {
     /* Put all attributes of this type */
@@ -97,11 +114,12 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
 
     silc_hash_table_find_foreach(conn->attrs, (void *)(SilcUInt32)attribute,
 				 silc_client_attributes_process_foreach,
-				 buffer);
+				 &f);
   }
+  buffer = f.buffer;
 
   /* Finally compute the digital signature of all the data we provided. */
-  if (silc_pkcs_sign_with_hash(client->pkcs, client->internal->sha1hash,
+  if (silc_pkcs_sign_with_hash(client->pkcs, client->sha1hash,
 			       buffer->data, buffer->len,
 			       sign, &sign_len)) {
     pk.type = NULL;
@@ -146,17 +164,42 @@ SilcAttributePayload silc_client_attribute_add(SilcClient client,
   return attr;
 }
 
+static void silc_client_attribute_del_foreach(void *key, void *context,
+					      void *user_context)
+{
+  SilcClientConnection conn = user_context;
+  SilcAttributePayload attr = context;
+  SilcAttribute attribute;
+  if (!attr)
+    return;
+  attribute = silc_attribute_get_attribute(attr);
+  silc_hash_table_del_by_context(conn->attrs,
+				 (void *)(SilcUInt32)attribute, attr);
+}
+
 /* Delete one attribute */
 
 bool silc_client_attribute_del(SilcClient client,
 			       SilcClientConnection conn,
+			       SilcAttribute attribute,
 			       SilcAttributePayload attr)
 {
-  SilcAttribute attribute = silc_attribute_get_attribute(attr);
   bool ret;
 
-  ret = silc_hash_table_del_by_context(conn->attrs,
-				       (void *)(SilcUInt32)attribute, attr);
+  if (!conn->attrs)
+    return FALSE;
+
+  if (attr) {
+    attribute = silc_attribute_get_attribute(attr);
+    ret = silc_hash_table_del_by_context(conn->attrs,
+					 (void *)(SilcUInt32)attribute, attr);
+  } else if (attribute) {
+    silc_hash_table_find_foreach(conn->attrs, (void *)(SilcUInt32)attribute,
+				 silc_client_attribute_del_foreach, conn);
+    ret = TRUE;
+  } else{
+    return FALSE;
+  }
 
   if (ret)
     if (!silc_hash_table_count(conn->attrs)) {

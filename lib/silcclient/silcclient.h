@@ -2242,18 +2242,24 @@ SilcAttributePayload silc_client_attribute_add(SilcClient client,
  *
  *    bool silc_client_attribute_del(SilcClient client,
  *                                   SilcClientConnection conn,
+ *                                   SilcAttribute attribute,
  *                                   SilcAttributePayload attr);
  *
  * DESCRIPTION
  *
- *    Delete the Requested Attribute indicated by `attribute' from the
- *    client.  You may get all added attributes with the function
- *    silc_client_attributes_get.  Returns TRUE if the attribute was
- *    found and deleted.
+ *    Delete a Requested Attribute from the client.  If the `attribute'
+ *    is non-zero then all attributes of that type are deleted and the
+ *    `attr' is ignored.  If `attr' is non-NULL then that specific
+ *    attribute is deleted and `attribute' is ignored.
+ *    
+ *    You may get all added attributes with the function
+ *    silc_client_attributes_get and to get the SilcAttributePayload.
+ *    This function Returns TRUE if the attribute was found and deleted.
  *
  ***/
 bool silc_client_attribute_del(SilcClient client,
 			       SilcClientConnection conn,
+			       SilcAttribute attribute,
 			       SilcAttributePayload attr);
 
 /****f* silcclient/SilcClientAPI/silc_client_attributes_get

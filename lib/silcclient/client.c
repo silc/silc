@@ -103,8 +103,8 @@ int silc_client_init(SilcClient client)
   SILC_LOG_DEBUG(("Initializing client"));
 
   /* Initialize hash functions for client to use */
-  silc_hash_alloc("md5", &client->internal->md5hash);
-  silc_hash_alloc("sha1", &client->internal->sha1hash);
+  silc_hash_alloc("md5", &client->md5hash);
+  silc_hash_alloc("sha1", &client->sha1hash);
 
   /* Initialize none cipher */
   silc_cipher_alloc("none", &client->internal->none_cipher);

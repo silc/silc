@@ -1018,8 +1018,7 @@ SILC_CLIENT_CMD_FUNC(join)
       auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						cmd->client->private_key,
 						cmd->client->rng, 
-						cmd->client->internal->
-						sha1hash,
+						cmd->client->sha1hash,
 						conn->local_id,
 						SILC_ID_CLIENT);
       i++;
@@ -1431,8 +1430,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						  cmd->client->private_key,
 						  cmd->client->rng, 
-						  cmd->client->internal->
-						  sha1hash,
+						  cmd->client->sha1hash,
 						  conn->local_id,
 						  SILC_ID_CLIENT);
 	arg = auth->data;
@@ -1583,8 +1581,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
 	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						  cmd->client->private_key,
 						  cmd->client->rng,
-						  cmd->client->internal->
-						  sha1hash,
+						  cmd->client->sha1hash,
 						  conn->local_id,
 						  SILC_ID_CLIENT);
 	mode |= SILC_CHANNEL_UMODE_CHANFO;

@@ -114,8 +114,7 @@ void silc_client_send_channel_message(SilcClient client,
     for (i = 0; i < iv_len; i++) channel->iv[i] = 
 				   silc_rng_get_byte(client->rng);
   else
-    silc_hash_make(client->internal->md5hash, channel->iv, iv_len, 
-		   channel->iv);
+    silc_hash_make(client->md5hash, channel->iv, iv_len, channel->iv);
 
   /* Encode the channel payload. This also encrypts the message payload. */
   payload = silc_channel_message_payload_encode(flags, data_len, data, iv_len, 
@@ -513,7 +512,7 @@ int silc_client_add_channel_private_key(SilcClient client,
   /* Produce the key material */
   keymat = silc_calloc(1, sizeof(*keymat));
   if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
-					 client->internal->md5hash, keymat) 
+					 client->md5hash, keymat) 
       != SILC_SKE_STATUS_OK)
     return FALSE;
 

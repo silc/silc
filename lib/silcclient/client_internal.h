@@ -75,8 +75,6 @@ struct SilcClientInternalStruct {
 
   /* Generic cipher and hash objects. */
   SilcCipher none_cipher;
-  SilcHash md5hash;
-  SilcHash sha1hash;
   SilcHmac md5hmac;
   SilcHmac sha1hmac;
 

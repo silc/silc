@@ -357,7 +357,7 @@ int silc_client_add_private_message_key(SilcClient client,
   /* Produce the key material as the protocol defines */
   keymat = silc_calloc(1, sizeof(*keymat));
   if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
-					 client->internal->md5hash, keymat) 
+					 client->md5hash, keymat) 
       != SILC_SKE_STATUS_OK)
     return FALSE;
 
