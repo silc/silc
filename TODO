@@ -38,6 +38,9 @@ TODO/bugs In SILC Libraries
    than on Unix.  Do it with threads on WIN32.  The function works but
    is not actually async currently (Fix this to 0.9.x).
 
+ o Private key encryption to silc_pkcs_[save/load]_private_key[_data]
+   function.
+
 
 TODO in Toolkit Documentation
 =============================
@@ -46,8 +49,6 @@ Stuff that needs to be done in order to complete the Tooolkit Reference
 Manual (Do these to 0.9.x).
 
  o ROBOdoc documenting missing from lib/silccrypt/silccipher.h.
-
- o ROBOdoc documenting missing from lib/silccrypt/silcpkcs.h.
 
  o Write "Programming with Toolkit" document, describing how to build
    Toolkit, how the build system works, where is everything, how

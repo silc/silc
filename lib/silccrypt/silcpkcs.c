@@ -223,7 +223,7 @@ void silc_pkcs_free(SilcPKCS pkcs)
 
 /* Return TRUE if PKCS algorithm `name' is supported. */
 
-int silc_pkcs_is_supported(const unsigned char *name)
+bool silc_pkcs_is_supported(const unsigned char *name)
 {
 #ifndef SILC_EPOC
   SilcPKCSObject *entry;
@@ -290,8 +290,8 @@ char *silc_pkcs_get_supported(void)
 
 /* Generate new key pair into the `pkcs' context. */
 
-int silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
-			   SilcRng rng)
+bool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
+			    SilcRng rng)
 {
   return pkcs->pkcs->init(pkcs->context, bits_key_len, rng);
 }
@@ -366,33 +366,33 @@ SilcUInt32 silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
 
 /* Encrypts */
 
-int silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
-		      unsigned char *dst, SilcUInt32 *dst_len)
+bool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
+		       unsigned char *dst, SilcUInt32 *dst_len)
 {
   return pkcs->pkcs->encrypt(pkcs->context, src, src_len, dst, dst_len);
 }
 
 /* Decrypts */
 
-int silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
-		      unsigned char *dst, SilcUInt32 *dst_len)
+bool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
+		       unsigned char *dst, SilcUInt32 *dst_len)
 {
   return pkcs->pkcs->decrypt(pkcs->context, src, src_len, dst, dst_len);
 }
 
 /* Generates signature */
 
-int silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
-		   unsigned char *dst, SilcUInt32 *dst_len)
+bool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
+		    unsigned char *dst, SilcUInt32 *dst_len)
 {
   return pkcs->pkcs->sign(pkcs->context, src, src_len, dst, dst_len);
 }
 
 /* Verifies signature */
 
-int silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature, 
-		     SilcUInt32 signature_len, unsigned char *data, 
-		     SilcUInt32 data_len)
+bool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature, 
+		      SilcUInt32 signature_len, unsigned char *data, 
+		      SilcUInt32 data_len)
 {
   return pkcs->pkcs->verify(pkcs->context, signature, signature_len, 
 			    data, data_len);
@@ -400,9 +400,9 @@ int silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
 
 /* Generates signature with hash. The hash is signed. */
 
-int silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
-			     unsigned char *src, SilcUInt32 src_len,
-			     unsigned char *dst, SilcUInt32 *dst_len)
+bool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
+			      unsigned char *src, SilcUInt32 src_len,
+			      unsigned char *dst, SilcUInt32 *dst_len)
 {
   unsigned char hashr[32];
   SilcUInt32 hash_len;
@@ -422,11 +422,11 @@ int silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
 /* Verifies signature with hash. The `data' is hashed and verified against
    the `signature'. */
 
-int silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash, 
-			       unsigned char *signature, 
-			       SilcUInt32 signature_len, 
-			       unsigned char *data, 
-			       SilcUInt32 data_len)
+bool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash, 
+				unsigned char *signature, 
+				SilcUInt32 signature_len, 
+				unsigned char *data, 
+				SilcUInt32 data_len)
 {
   unsigned char hashr[32];
   SilcUInt32 hash_len;
@@ -744,8 +744,8 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
 /* Decodes SILC style public key. Returns TRUE if the decoding was
    successful. Allocates new public key as well. */
 
-int silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
-				SilcPublicKey *public_key)
+bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
+				 SilcPublicKey *public_key)
 {
   SilcBuffer buf;
   SilcPKCS alg;
@@ -938,11 +938,11 @@ silc_pkcs_private_key_data_encode(unsigned char *prv, SilcUInt32 prv_len,
   return ret;
 }
 
-/* Decodes SILC style public key. Returns TRUE if the decoding was
+/* Decodes SILC style private key. Returns TRUE if the decoding was
    successful. Allocates new private key as well. */
 
-int silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
-				 SilcPrivateKey *private_key)
+bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
+				  SilcPrivateKey *private_key)
 {
   SilcBuffer buf;
   SilcPKCS alg;
@@ -1012,10 +1012,10 @@ int silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
 
 /* Internal routine to save public key */
 
-static int silc_pkcs_save_public_key_internal(char *filename,
-					      unsigned char *data,
-					      SilcUInt32 data_len,
-					      SilcUInt32 encoding)
+static bool silc_pkcs_save_public_key_internal(char *filename,
+					       unsigned char *data,
+					       SilcUInt32 data_len,
+					       SilcUInt32 encoding)
 {
   SilcBuffer buf;
   SilcUInt32 len;
@@ -1052,8 +1052,8 @@ static int silc_pkcs_save_public_key_internal(char *filename,
 
 /* Saves public key into file */
 
-int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
-			      SilcUInt32 encoding)
+bool silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
+			       SilcUInt32 encoding)
 {
   unsigned char *data;
   SilcUInt32 data_len;
@@ -1065,9 +1065,9 @@ int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
 
 /* Saves public key into file */
 
-int silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
-				   SilcUInt32 data_len,
-				   SilcUInt32 encoding)
+bool silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
+				    SilcUInt32 data_len,
+				    SilcUInt32 encoding)
 {
   return silc_pkcs_save_public_key_internal(filename, data, data_len,
 					    encoding);
@@ -1075,10 +1075,10 @@ int silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
 
 /* Internal routine to save private key. */
 
-static int silc_pkcs_save_private_key_internal(char *filename,
-					       unsigned char *data,
-					       SilcUInt32 data_len,
-					       SilcUInt32 encoding)
+static bool silc_pkcs_save_private_key_internal(char *filename,
+						unsigned char *data,
+						SilcUInt32 data_len,
+						SilcUInt32 encoding)
 {
   SilcBuffer buf;
   SilcUInt32 len;
@@ -1116,9 +1116,9 @@ static int silc_pkcs_save_private_key_internal(char *filename,
 /* Saves private key into file. */
 /* XXX The buffer should be encrypted if passphrase is provided. */
 
-int silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
-			       unsigned char *passphrase,
-			       SilcUInt32 encoding)
+bool silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
+				unsigned char *passphrase,
+				SilcUInt32 encoding)
 {
   unsigned char *data;
   SilcUInt32 data_len;
@@ -1131,20 +1131,20 @@ int silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key,
 /* Saves private key into file. */
 /* XXX The buffer should be encrypted if passphrase is provided. */
 
-int silc_pkcs_save_private_key_data(char *filename, unsigned char *data, 
-				    SilcUInt32 data_len,
-				    unsigned char *passphrase,
-				    SilcUInt32 encoding)
+bool silc_pkcs_save_private_key_data(char *filename, unsigned char *data, 
+				     SilcUInt32 data_len,
+				     unsigned char *passphrase,
+				     SilcUInt32 encoding)
 {
   return silc_pkcs_save_private_key_internal(filename, data, data_len,
 					     encoding);
 }
 
 /* Loads public key from file and allocates new public key. Returns TRUE
-   is loading was successful. */
+   if loading was successful. */
 
-int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
-			      SilcUInt32 encoding)
+bool silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
+			       SilcUInt32 encoding)
 {
   unsigned char *cp, *old, *data, byte;
   SilcUInt32 i, data_len, len;
@@ -1200,8 +1200,8 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
    if loading was successful. */
 /* XXX Should support encrypted private key files */
 
-int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
-			       SilcUInt32 encoding)
+bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
+				SilcUInt32 encoding)
 {
   unsigned char *cp, *old, *data, byte;
   SilcUInt32 i, data_len, len;
