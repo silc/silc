@@ -57,7 +57,7 @@
 typedef SILC_MP_INT SilcMPInt;
 /***/
 
-/****f* silcmath/SilcMPAPI/silc_mp_alloc
+/****f* silcmath/SilcMPAPI/silc_mp_init
  *
  * SYNOPSIS
  *
@@ -72,7 +72,7 @@ typedef SILC_MP_INT SilcMPInt;
  ***/
 void silc_mp_init(SilcMPInt *mp);
 
-/****f* silcmath/SilcMPAPI/silc_mp_free
+/****f* silcmath/SilcMPAPI/silc_mp_uninit
  *
  * SYNOPSIS
  *
