@@ -1,3 +1,8 @@
+Thu Mar 22 15:29:42 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Imported GNU regex to the soruce tree into lib/contrib.
+	  Fixed some compiler warning from the regex.c.
+
 Wed Mar 21 15:27:58 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed MOTD command in the server to work in router environment.

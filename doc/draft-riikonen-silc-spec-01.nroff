@@ -2235,7 +2235,7 @@ List of all defined commands in SILC follows.
 
         After setting the topic the server must send the notify type
         SILC_NOTIFY_TYPE_TOPIC_SET to its primary router and then to
-        the channel which mode was changed.
+        the channel which topic was changed.
 
         Reply messages to the command:
 
@@ -2527,8 +2527,8 @@ List of all defined commands in SILC follows.
                         (5) <channel mode mask>   (6) <created>
                         (7) <Channel Key Payload> (8) [<ban mask>]
                         (9) [<invite list>]       (10) [<topic>]
-                       (11) [<hmac>]              (12) <list count>
-                       (13) <Client ID list>      (14) <client mode list>
+                        (11) [<hmac>]             (12) <list count>
+                        (13) <Client ID list>     (14) <client mode list>
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
@@ -2539,8 +2539,10 @@ List of all defined commands in SILC follows.
         and/or invite list is set they are sent as well.
 
         The <list count>, <Client ID list> and <client mode list> are
-        the clients curerntly on the channel and their modes on the
-        channel.
+        the clients currently on the channel and their modes on the
+        channel.  The <Client ID list> is formed by adding the ID Payloads
+        one after the other.  The <client mode list> is formed by adding
+        32 bit MSB first order values one after the other.
 
         Client receives the channel key in the reply message as well
         inside <Channel Key Payload>.

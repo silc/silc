@@ -70,7 +70,7 @@ AC_CHECK_HEADERS(unistd.h string.h getopt.h errno.h fcntl.h assert.h)
 AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h)
 AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h netdb.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
-AC_CHECK_HEADERS(ncurses.h signal.h ctype.h)
+AC_CHECK_HEADERS(ncurses.h signal.h ctype.h regex.h)
 AC_CHECK_HEADERS(arpa/inet.h sys/mman.h)
 
 # Data type checking

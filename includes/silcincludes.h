@@ -115,6 +115,12 @@
 #include "../lib/contrib/getopt.h"
 #endif
 
+#ifndef HAVE_REGEX_H
+#include "../lib/contrib/regex.h"
+#else
+#include <regex.h"
+#endif
+
 #ifndef TRUE
 #define TRUE 1
 #endif

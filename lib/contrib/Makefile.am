@@ -22,7 +22,8 @@ noinst_LIBRARIES = libcontrib.a
 
 libcontrib_a_SOURCES = \
 	getopt.c \
-	getopt1.c
+	getopt1.c \
+	regex.c
 
 EXTRA_DIST = *.h
 
