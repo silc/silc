@@ -1,3 +1,9 @@
+Sat Jun  9 20:17:30 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Check in the silc_server_timeout_remote if protocol is active
+	  and make sure that the protocol's final callback is called so
+	  that all memory if freed.  Affected file silcd/server.c.
+
 Sat Jun  9 12:51:27 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* silc_server_whois_send_reply crashed the server if the nickname

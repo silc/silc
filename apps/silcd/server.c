@@ -2712,14 +2712,23 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
   SilcServer server = (SilcServer)context;
   SilcSocketConnection sock = server->sockets[fd];
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!sock)
     return;
+
+  /* If we have protocol active we must assure that we call the protocol's
+     final callback so that all the memory is freed. */
+  if (sock->protocol) {
+    sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
+    silc_protocol_execute_final(sock->protocol, server->timeout_queue);
+    return;
+  }
 
   if (sock->user_data)
     silc_server_free_sock_user_data(server, sock);
 
-  silc_server_disconnect_remote(server, sock, 
-				"Server closed connection: "
+  silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				"Connection timeout");
 }
 
