@@ -177,18 +177,16 @@ static void silc_nickname_format_parse(const char *nickname,
 static void silc_register_cipher(SilcClient client, const char *cipher)
 {
   int i;
-
-  if (cipher) {
-    for (i = 0; silc_default_ciphers[i].name; i++)
-      if (!strcmp(silc_default_ciphers[i].name, cipher)) {
-	silc_cipher_register(&silc_default_ciphers[i]);
-	break;
-      }
-    
-    if (!silc_cipher_is_supported(cipher)) {
-      SILC_LOG_ERROR(("Unknown cipher `%s'", cipher));
-      exit(1);
+  
+  for (i = 0; silc_default_ciphers[i].name; i++)
+    if (!strcmp(silc_default_ciphers[i].name, cipher)) {
+      silc_cipher_register(&silc_default_ciphers[i]);
+      break;
     }
+
+  if (!silc_cipher_is_supported(cipher)) {
+    SILC_LOG_ERROR(("Unknown cipher `%s'", cipher));
+    exit(1);
   }
 
   /* Register other defaults */
@@ -198,18 +196,16 @@ static void silc_register_cipher(SilcClient client, const char *cipher)
 static void silc_register_hash(SilcClient client, const char *hash)
 {
   int i;
-
-  if (hash) {
-    for (i = 0; silc_default_hash[i].name; i++)
-      if (!strcmp(silc_default_hash[i].name, hash)) {
-	silc_hash_register(&silc_default_hash[i]);
-	break;
-      }
-    
-    if (!silc_hash_is_supported(hash)) {
-      SILC_LOG_ERROR(("Unknown hash function `%s'", hash));
-      exit(1);
+  
+  for (i = 0; silc_default_hash[i].name; i++)
+    if (!strcmp(silc_default_hash[i].name, hash)) {
+      silc_hash_register(&silc_default_hash[i]);
+      break;
     }
+  
+  if (!silc_hash_is_supported(hash)) {
+    SILC_LOG_ERROR(("Unknown hash function `%s'", hash));
+    exit(1);
   }
 
   /* Register other defaults */
@@ -219,18 +215,16 @@ static void silc_register_hash(SilcClient client, const char *hash)
 static void silc_register_hmac(SilcClient client, const char *hmac)
 {
   int i;
-
-  if (hmac) {
-    for (i = 0; silc_default_hmacs[i].name; i++)
-      if (!strcmp(silc_default_hmacs[i].name, hmac)) {
-	silc_hmac_register(&silc_default_hmacs[i]);
-	break;
-      }
-    
-    if (!silc_hmac_is_supported(hmac)) {
-      SILC_LOG_ERROR(("Unknown HMAC `%s'", hmac));
-      exit(1);
+  
+  for (i = 0; silc_default_hmacs[i].name; i++)
+    if (!strcmp(silc_default_hmacs[i].name, hmac)) {
+      silc_hmac_register(&silc_default_hmacs[i]);
+      break;
     }
+  
+  if (!silc_hmac_is_supported(hmac)) {
+    SILC_LOG_ERROR(("Unknown HMAC `%s'", hmac));
+    exit(1);
   }
 
   /* Register other defaults */
@@ -312,31 +306,32 @@ void silc_core_init_finish(SERVER_REC *server)
 #endif
   }
 
-  /* Settings */
+  /* Do some irssi initializing */
   settings_add_bool("server", "skip_motd", FALSE);
   settings_add_str("server", "alternate_nick", NULL);
+  
+  /* Initialize the auto_addr variables Is "server" the best choice for
+   * this?  No existing category seems to apply.
+   */
   settings_add_bool("server", "use_auto_addr", FALSE);
   settings_add_str("server", "auto_bind_ip", "");
   settings_add_str("server", "auto_public_ip", "");
   settings_add_int("server", "auto_bind_port", 0);
-  settings_add_str("server", "crypto_default_cipher", SILC_DEFAULT_CIPHER);
-  settings_add_str("server", "crypto_default_hash", SILC_DEFAULT_HASH);
-  settings_add_str("server", "crypto_default_hmac", SILC_DEFAULT_HMAC);
-  settings_add_int("server", "key_exchange_timeout_secs", 120);
-  settings_add_int("server", "key_exchange_rekey_secs", 3600);
-  settings_add_int("server", "connauth_request_secs", 2);
-
+        	    	    	
   silc_init_userinfo();
 
   /* Initialize client parameters */
   memset(&params, 0, sizeof(params));
   strcat(params.nickname_format, "%n@%h%a");
   params.nickname_parse = silc_nickname_format_parse;
-  params.rekey_secs = settings_get_int("key_exchange_rekey_secs");
-  params.connauth_request_secs = settings_get_int("connauth_request_secs");
 
   /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);
+
+  /* Crypto settings */
+  settings_add_str("server", "crypto_default_cipher", "aes-256-cbc");
+  settings_add_str("server", "crypto_default_hash", "sha1");
+  settings_add_str("server", "crypto_default_hmac", "hmac-sha1-96");
 
   /* Get the ciphers and stuff from config file */
   def_cipher = settings_get_str("crypto_default_cipher");
