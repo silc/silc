@@ -57,6 +57,7 @@ int silc_server_alloc(SilcServer *new_server)
   server->standalone = TRUE;
   server->local_list = silc_calloc(1, sizeof(*server->local_list));
   server->global_list = silc_calloc(1, sizeof(*server->global_list));
+  server->pending_commands = silc_dlist_init();
 #ifdef SILC_SIM
   server->sim = silc_dlist_init();
 #endif
@@ -89,6 +90,9 @@ void silc_server_free(SilcServer server)
 
     if (server->params)
       silc_free(server->params);
+
+    if (server->pending_commands)
+      silc_dlist_uninit(server->pending_commands);
 
     silc_math_primegen_uninit(); /* XXX */
     silc_free(server);
@@ -1674,13 +1678,12 @@ void silc_server_packet_forward(SilcServer server,
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 0, 0, data_len);
 
-  /* Mungle the packet flags and add the FORWARDED flag */
-  if (data)
-    data[2] |= (unsigned char)SILC_PACKET_FLAG_FORWARDED;
-
   /* Put the data to the buffer */
   if (data && data_len)
     silc_buffer_put(sock->outbuf, data, data_len);
+
+  /* Add the FORWARDED flag to packet flags */
+  sock->outbuf->data[2] |= (unsigned char)SILC_PACKET_FLAG_FORWARDED;
 
   if (idata) {
     cipher = idata->send_key;
@@ -3099,12 +3102,11 @@ SilcChannelEntry silc_server_new_channel(SilcServer server,
 					 SilcServerID *router_id,
 					 char *cipher, char *channel_name)
 {
-  int i, channel_len, key_len;
+  int i, key_len;
   SilcChannelID *channel_id;
   SilcChannelEntry entry;
   SilcCipher key;
-  unsigned char channel_key[32], *id_string;
-  SilcBuffer packet;
+  unsigned char channel_key[32];
 
   SILC_LOG_DEBUG(("Creating new channel"));
 
@@ -3139,26 +3141,9 @@ SilcChannelEntry silc_server_new_channel(SilcServer server,
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
   if (server->standalone == FALSE) {
-    channel_len = strlen(channel_name);
-    id_string = silc_id_id2str(entry->id, SILC_ID_CHANNEL);
-    packet = silc_buffer_alloc(2 + SILC_ID_CHANNEL_LEN);
-
-    silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-    silc_buffer_format(packet,
-		       SILC_STR_UI_SHORT(channel_len),
-		       SILC_STR_UI_XNSTRING(channel_name, channel_len),
-		       SILC_STR_UI_SHORT(SILC_ID_CHANNEL_LEN),
-		       SILC_STR_UI_XNSTRING(id_string, SILC_ID_CHANNEL_LEN),
-		       SILC_STR_END);
-
-    /* Send the packet to our router. */
-    silc_server_packet_send(server, (SilcSocketConnection) 
-			    server->id_entry->router->connection,
-			    SILC_PACKET_NEW_CHANNEL_USER, 0, 
-			    packet->data, packet->len, TRUE);
-    
-    silc_free(id_string);
-    silc_buffer_free(packet);
+    silc_server_send_new_id(server, server->id_entry->router->connection,
+			    server->server_type == SILC_SERVER ? FALSE : TRUE,
+			    entry->id, SILC_ID_CHANNEL, SILC_ID_CHANNEL_LEN);
   }
 
   return entry;

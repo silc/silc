@@ -62,6 +62,7 @@ typedef struct {
 /* Structure holding pending commands. If command is pending it will be
    executed after command reply has been received and executed. */
 typedef struct SilcServerCommandPendingStruct {
+  SilcServer server;
   SilcCommand reply_cmd;
   SilcCommandCb callback;
   void *context;
@@ -80,25 +81,28 @@ typedef struct SilcServerCommandPendingStruct {
 void silc_server_command_##func(void *context)
 
 /* Executed pending command */
-#define SILC_SERVER_COMMAND_EXEC_PENDING(ctx, cmd)	\
-do {							\
-  if (ctx->callback) {					\
-    (*ctx->callback)(ctx->context);			\
-    silc_server_command_pending_del(cmd, ctx->ident);	\
-  }							\
+#define SILC_SERVER_COMMAND_EXEC_PENDING(ctx, cmd)			\
+do {									\
+  if (ctx->callback) {							\
+    (*ctx->callback)(ctx->context);					\
+    silc_server_command_pending_del(ctx->server, cmd, ctx->ident);	\
+  }									\
 } while(0)
 
 /* Prototypes */
 void silc_server_command_process(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
-void silc_server_command_pending(SilcCommand reply_cmd,
+void silc_server_command_pending(SilcServer server,
+				 SilcCommand reply_cmd,
 				 unsigned short ident,
 				 SilcCommandCb callback,
 				 void *context);
-void silc_server_command_pending_del(SilcCommand reply_cmd,
+void silc_server_command_pending_del(SilcServer server,
+				     SilcCommand reply_cmd,
 				     unsigned short ident);
-int silc_server_command_pending_check(SilcServerCommandReplyContext ctx,
+int silc_server_command_pending_check(SilcServer server,
+				      SilcServerCommandReplyContext ctx,
 				      SilcCommand command, 
 				      unsigned short ident);
 SILC_SERVER_CMD_FUNC(whois);

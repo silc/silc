@@ -97,6 +97,9 @@ struct SilcServerStruct {
   /* Server statistics */
   SilcServerStatistics stats;
 
+  /* Pending command queue */
+  SilcDList pending_commands;
+
   /* Default parameteres for server */
   SilcServerParams params;
 

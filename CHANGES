@@ -1,3 +1,11 @@
+Mon Nov 20 23:47:03 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Made joining to a channel working in router environment.
+
+	* Cleaned up JOIN command on server side and create function
+	  silc_server_command_join_channel internal routine to make the
+	  joining happen.
+
 Thu Nov  9 21:12:39 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed silc_command_pending list to SilcDList.  Also, added

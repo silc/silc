@@ -67,6 +67,8 @@ void silc_server_command_reply_process(SilcServer server,
   SilcCommand command;
   unsigned short ident;
 
+  SILC_LOG_DEBUG(("Start"));
+
   /* Get command reply payload from packet */
   payload = silc_command_payload_parse(buffer);
   if (!payload) {
@@ -85,8 +87,8 @@ void silc_server_command_reply_process(SilcServer server,
   ident = silc_command_get_ident(ctx->payload);
       
   /* Check for pending commands and mark to be exeucted */
-  silc_server_command_pending_check(ctx, silc_command_get(ctx->payload),
-				    ident);
+  silc_server_command_pending_check(server, ctx, 
+				    silc_command_get(ctx->payload), ident);
 
   /* Execute command reply */
   command = silc_command_get(ctx->payload);
@@ -267,9 +269,12 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     goto out;
 
   channel_name = strdup(tmp);
+  id = silc_id_payload_parse_id(id_string, len);
+
+  SILC_LOG_DEBUG(("Adding new channel %s id(%s)", channel_name,
+		  silc_id_render(id, SILC_ID_CHANNEL)));
 
   /* Add the channel to our local list. */
-  id = silc_id_payload_parse_id(id_string, len);
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, id, 
 				  server->id_entry->router, NULL);
@@ -279,10 +284,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     goto out;
   }
 
-  entry->global_users = TRUE;
+  //entry->global_users = TRUE;
 
   /* Execute pending JOIN command so that the client who originally
      wanted to join the channel will be joined after all. */
+  SILC_LOG_DEBUG(("Re-executing JOIN command"));
   SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_JOIN);
 
  out:

@@ -38,6 +38,9 @@ silc_server_command_send_status_data(SilcServerCommandContext cmd,
 				     unsigned char *arg,
 				     unsigned int arg_len);
 static void silc_server_command_free(SilcServerCommandContext cmd);
+void silc_server_command_send_names(SilcServer server,
+				    SilcSocketConnection sock,
+				    SilcChannelEntry channel);
 
 /* Server command list. */
 SilcServerCommand silc_command_list[] =
@@ -74,9 +77,6 @@ SilcServerCommand silc_command_list[] =
 
   { NULL, 0 },
 };
-
-/* List of pending commands. */
-SilcDList silc_command_pending;
 
 /* Returns TRUE if the connection is registered. Unregistered connections
    usually cannot send commands hence the check. */
@@ -176,7 +176,8 @@ void silc_server_command_process(SilcServer server,
    the `callback' will be executed when received reply with command
    identifier `ident'. */
 
-void silc_server_command_pending(SilcCommand reply_cmd,
+void silc_server_command_pending(SilcServer server,
+				 SilcCommand reply_cmd,
 				 unsigned short ident,
 				 SilcCommandCb callback,
 				 void *context)
@@ -188,19 +189,21 @@ void silc_server_command_pending(SilcCommand reply_cmd,
   reply->ident = ident;
   reply->context = context;
   reply->callback = callback;
-  silc_dlist_add(silc_command_pending, reply);
+  silc_dlist_add(server->pending_commands, reply);
 }
 
 /* Deletes pending command by reply command type. */
 
-void silc_server_command_pending_del(SilcCommand reply_cmd,
+void silc_server_command_pending_del(SilcServer server,
+				     SilcCommand reply_cmd,
 				     unsigned short ident)
 {
   SilcServerCommandPending *r;
 
-  while ((r = silc_dlist_get(silc_command_pending)) != SILC_LIST_END) {
+  silc_dlist_start(server->pending_commands);
+  while ((r = silc_dlist_get(server->pending_commands)) != SILC_LIST_END) {
     if (r->reply_cmd == reply_cmd && r->ident == ident) {
-      silc_dlist_del(silc_command_pending, r);
+      silc_dlist_del(server->pending_commands, r);
       break;
     }
   }
@@ -209,13 +212,15 @@ void silc_server_command_pending_del(SilcCommand reply_cmd,
 /* Checks for pending commands and marks callbacks to be called from
    the command reply function. Returns TRUE if there were pending command. */
 
-int silc_server_command_pending_check(SilcServerCommandReplyContext ctx,
+int silc_server_command_pending_check(SilcServer server,
+				      SilcServerCommandReplyContext ctx,
 				      SilcCommand command, 
 				      unsigned short ident)
 {
   SilcServerCommandPending *r;
 
-  while ((r = silc_dlist_get(silc_command_pending)) != SILC_LIST_END) {
+  silc_dlist_start(server->pending_commands);
+  while ((r = silc_dlist_get(server->pending_commands)) != SILC_LIST_END) {
     if (r->reply_cmd == command && r->ident == ident) {
       ctx->context = r->context;
       ctx->callback = r->callback;
@@ -1169,12 +1174,17 @@ SILC_TASK_CALLBACK(silc_server_command_join_notify)
 				       SILC_NOTIFY_TYPE_JOIN, 1,
 				       clidp->data, clidp->len);
 
+    /* Send NAMES command reply to the joined channel so the user sees who
+       is currently on the channel. */
+    silc_server_command_send_names(ctx->server, ctx->client->connection, 
+				   ctx->channel);
+
     silc_buffer_free(clidp);
     silc_free(ctx);
   } else {
     silc_task_register(ctx->server->timeout_queue, fd,
 		       silc_server_command_join_notify, context,
-		       0, 300000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+		       0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   }
 }
 
@@ -1205,55 +1215,26 @@ void silc_server_command_send_names(SilcServer server,
   silc_free(idp);
 }
 
-/* Server side of command JOIN. Joins client into requested channel. If 
-   the channel does not exist it will be created. */
+/* Internal routine to join channel. The channel sent to this function
+   has been either created or resolved from ID lists. This joins the sent
+   client to the channel. */
 
-SILC_SERVER_CMD_FUNC(join)
+static void
+silc_server_command_join_channel(SilcServer server, 
+				 SilcServerCommandContext cmd,
+				 SilcChannelEntry channel,
+				 unsigned int umode)
 {
-  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  SilcServer server = cmd->server;
   SilcSocketConnection sock = cmd->sock;
-  SilcBuffer buffer = cmd->packet->buffer;
-  int argc, i, k, tmp_len;
-  char *tmp, *channel_name = NULL, *cipher = NULL;
+  unsigned char *tmp;
+  unsigned int tmp_len;
   unsigned char *passphrase = NULL, mode[4];
-  unsigned int umode = 0;
-  SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
-  SilcServerID *router_id;
-  SilcBuffer packet, idp;
   SilcClientEntry client;
+  SilcChannelClientEntry chl;
+  SilcBuffer packet, idp;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Check number of parameters */
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 3) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
-
-  /* Get channel name */
-  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-  if (!tmp) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  channel_name = tmp;
-
-  if (silc_server_command_bad_chars(channel_name) == TRUE) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_BAD_CHANNEL);
-    silc_free(channel_name);
-    goto out;
-  }
+  if (!channel)
+    return;
 
   /* Get passphrase */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
@@ -1262,67 +1243,6 @@ SILC_SERVER_CMD_FUNC(join)
     memcpy(passphrase, tmp, tmp_len);
   }
   
-  /* Get cipher name */
-  cipher = silc_argument_get_arg_type(cmd->args, 3, NULL);
-
-  /* See if the channel exists */
-  channel = 
-    silc_idlist_find_channel_by_name(server->local_list, channel_name);
-  if (!channel) {
-    /* Channel not found */
-
-    /* If we are standalone server we don't have a router, we just create 
-       the channel by  ourselves. */
-    if (server->standalone) {
-      router_id = server->id;
-      channel = silc_server_new_channel(server, router_id, cipher, 
-					channel_name);
-      umode |= SILC_CHANNEL_UMODE_CHANOP;
-      umode |= SILC_CHANNEL_UMODE_CHANFO;
-      if (!channel)
-	goto out;
-
-      goto join_channel;
-    }
-
-    /* No channel ID found, the channel does not exist on our server.
-       We send JOIN command to our router which will handle the joining
-       procedure (either creates the channel if it doesn't exist or
-       joins the client to it) - if we are normal server. */
-    if (server->server_type == SILC_SERVER) {
-
-      /* Forward the original JOIN command to the router */
-      silc_buffer_push(buffer, buffer->data - buffer->head);
-      silc_server_packet_forward(server, (SilcSocketConnection)
-				 server->id_entry->router->connection,
-				 buffer->data, buffer->len, TRUE);
-      
-      /* Add the command to be pending. It will be re-executed after
-	 router has replied back to us. */
-      cmd->pending = TRUE;
-      silc_server_command_pending(SILC_COMMAND_JOIN, 0,
-				  silc_server_command_join, context);
-      return;
-    }
-  }
-
-  /* If we are router and the channel does not exist we will check our
-     global list for the channel. */
-  if (!channel && server->server_type == SILC_ROUTER) {
-
-    /* Notify all routers about the new channel in SILC network. */
-    if (!server->standalone) {
-#if 0
-      silc_server_send_new_id(server, server->id_entry->router->connection, 
-			      TRUE,
-			      xxx, SILC_ID_CHANNEL, SILC_ID_CHANNEL_LEN);
-#endif
-    }
-
-  }
-
- join_channel:
-
   /*
    * Check channel modes
    */
@@ -1416,16 +1336,16 @@ SILC_SERVER_CMD_FUNC(join)
       packet = 
 	silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
 					     SILC_STATUS_OK, 0, 3,
-					     2, channel_name, 
-					     strlen(channel_name),
+					     2, channel->channel_name,
+					     strlen(channel->channel_name),
 					     3, idp->data, idp->len,
 					     4, mode, 4);
     else
       packet = 
 	silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
 					     SILC_STATUS_OK, 0, 4, 
-					     2, channel_name, 
-					     strlen(channel_name),
+					     2, channel->channel_name, 
+					     strlen(channel->channel_name),
 					     3, idp->data, idp->len,
 					     4, mode, 4,
 					     5, channel->topic, 
@@ -1477,7 +1397,7 @@ SILC_SERVER_CMD_FUNC(join)
       /* This is pending command request. Send the notify after we have
 	 received the key for the channel from the router. */
       JoinInternalContext *ctx = silc_calloc(1, sizeof(*ctx));
-      ctx->channel_name = channel_name;
+      ctx->channel_name = channel->channel_name;
       ctx->nickname = client->nickname;
       ctx->username = client->username;
       ctx->hostname = sock->hostname ? sock->hostname : sock->ip;
@@ -1488,11 +1408,112 @@ SILC_SERVER_CMD_FUNC(join)
 			 silc_server_command_join_notify, ctx,
 			 0, 10000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
     }
+
+    /* Send NAMES command reply to the joined channel so the user sees who
+       is currently on the channel. */
+    silc_server_command_send_names(server, sock, channel);
   }
 
-  /* Send NAMES command reply to the joined channel so the user sees who
-     is currently on the channel. */
-  silc_server_command_send_names(server, sock, channel);
+ out:
+  if (passphrase)
+    silc_free(passphrase);
+}
+
+/* Server side of command JOIN. Joins client into requested channel. If 
+   the channel does not exist it will be created. */
+
+SILC_SERVER_CMD_FUNC(join)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  int argc, tmp_len;
+  char *tmp, *channel_name = NULL, *cipher = NULL;
+  SilcChannelEntry channel;
+  unsigned int umode = SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Check number of parameters */
+  argc = silc_argument_get_arg_num(cmd->args);
+  if (argc < 1) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  if (argc > 3) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
+    goto out;
+  }
+
+  /* Get channel name */
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  channel_name = tmp;
+
+  if (silc_server_command_bad_chars(channel_name) == TRUE) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_BAD_CHANNEL);
+    silc_free(channel_name);
+    goto out;
+  }
+
+  /* Get cipher name */
+  cipher = silc_argument_get_arg_type(cmd->args, 3, NULL);
+
+  /* See if the channel exists */
+  channel = silc_idlist_find_channel_by_name(server->local_list, channel_name);
+  if (!channel) {
+    /* Channel not found */
+
+    /* If we are standalone server we don't have a router, we just create 
+       the channel by ourselves. */
+    if (server->standalone) {
+      channel = silc_server_new_channel(server, server->id, cipher, 
+					channel_name);
+    } else {
+
+      /* The channel does not exist on our server. We send JOIN command to
+	 our router which will handle the joining procedure (either creates
+	 the channel if it doesn't exist or joins the client to it) - if we
+	 are normal server. */
+      if (server->server_type == SILC_SERVER) {
+	SilcBuffer buffer = cmd->packet->buffer;
+	
+	/* Forward the original JOIN command to the router */
+	silc_buffer_push(buffer, buffer->data - buffer->head);
+	silc_server_packet_forward(server, (SilcSocketConnection)
+				   server->id_entry->router->connection,
+				   buffer->data, buffer->len, TRUE);
+	
+	/* Add the command to be pending. It will be re-executed after
+	   router has replied back to us. */
+	cmd->pending = TRUE;
+	silc_server_command_pending(server, SILC_COMMAND_JOIN, 0,
+				    silc_server_command_join, context);
+	return;
+      }
+      
+      /* We are router and the channel does not seem exist so we will check
+	 our global list as well for the channel. */
+      channel = silc_idlist_find_channel_by_name(server->global_list, 
+						 channel_name);
+      if (!channel) {
+	/* Channel really does not exist, create it */
+	channel = silc_server_new_channel(server, server->id, cipher, 
+					  channel_name);
+	umode |= SILC_CHANNEL_UMODE_CHANOP;
+	umode |= SILC_CHANNEL_UMODE_CHANFO;
+      }
+    }
+  }
+
+  /* Join to the channel */
+  silc_server_command_join_channel(server, cmd, channel, umode);
 
  out:
   silc_server_command_free(cmd);
@@ -2374,7 +2395,7 @@ SILC_SERVER_CMD_FUNC(names)
       /* XXX Send names command */
 
       cmd->pending = TRUE;
-      silc_server_command_pending(SILC_COMMAND_NAMES, 0,
+      silc_server_command_pending(server, SILC_COMMAND_NAMES, 0,
 				  silc_server_command_names, context);
       return;
     }
