@@ -1803,8 +1803,6 @@ void silc_server_packet_parse_type(SilcServer server,
     } else {
       SILC_LOG_ERROR(("Received Key Exchange packet but no key exchange "
 		      "protocol active, packet dropped."));
-
-      /* XXX Trigger KE protocol?? Rekey actually, maybe. */
     }
     break;
 

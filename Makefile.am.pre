@@ -51,7 +51,7 @@ install-dirs:
 
 generate-server-key:
 	-@if test '!' -f $(etcdir)/silcd.pub ; then \
-	  $(sbindir)/silcd -C $(etcdir)	\
+	  $(sbindir)/silcd -C $(etcdir); \
 	fi
 
 sim-install:
