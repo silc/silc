@@ -747,6 +747,8 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 
   entry = (SilcChannelEntry)id_cache->context;
 
+  SILC_LOG_DEBUG(("Found"));
+
   return entry;
 }
 
@@ -768,6 +770,8 @@ SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
     return NULL;
 
   entry = (SilcChannelEntry)id_cache->context;
+
+  SILC_LOG_DEBUG(("Found"));
 
   return entry;
 }

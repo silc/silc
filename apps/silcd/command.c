@@ -297,9 +297,11 @@ silc_server_command_dup(SilcServerCommandContext ctx)
    with `context' when reply has been received.  It can be SILC_COMMAND_NONE
    to match any command with the `ident'.  If `ident' is non-zero
    the `callback' will be executed when received reply with command
-   identifier `ident'. */
+   identifier `ident'. If there already exists pending command for the
+   specified command, ident, callback and context this function has no
+   effect. */
 
-void silc_server_command_pending(SilcServer server,
+bool silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
 				 uint16 ident,
 				 SilcServerPendingDestructor destructor,
@@ -308,6 +310,16 @@ void silc_server_command_pending(SilcServer server,
 {
   SilcServerCommandPending *reply;
 
+  /* Check whether identical pending already exists for same command,
+     ident, callback and callback context. If it does then it would be
+     error to register it again. */
+  silc_dlist_start(server->pending_commands);
+  while ((reply = silc_dlist_get(server->pending_commands)) != SILC_LIST_END) {
+    if (reply->reply_cmd == reply_cmd && reply->ident == ident &&
+	reply->callback == callback && reply->context == context)
+      return FALSE;
+  }
+
   reply = silc_calloc(1, sizeof(*reply));
   reply->reply_cmd = reply_cmd;
   reply->ident = ident;
@@ -315,6 +327,8 @@ void silc_server_command_pending(SilcServer server,
   reply->callback = callback;
   reply->destructor = destructor;
   silc_dlist_add(server->pending_commands, reply);
+
+  return TRUE;
 }
 
 /* Deletes pending command by reply command type. */

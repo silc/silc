@@ -207,31 +207,33 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
 					   uint16 ident, 
 					   uint32 argc, va_list ap)
 {
-  unsigned char **argv;
+  unsigned char **argv = NULL;
   uint32 *argv_lens = NULL, *argv_types = NULL;
   unsigned char *x;
   uint32 x_len;
   uint32 x_type;
   SilcBuffer buffer;
-  int i, k;
+  int i, k = 0;
 
-  argv = silc_calloc(argc, sizeof(unsigned char *));
-  argv_lens = silc_calloc(argc, sizeof(uint32));
-  argv_types = silc_calloc(argc, sizeof(uint32));
+  if (argc) {
+    argv = silc_calloc(argc, sizeof(unsigned char *));
+    argv_lens = silc_calloc(argc, sizeof(uint32));
+    argv_types = silc_calloc(argc, sizeof(uint32));
 
-  for (i = 0, k = 0; i < argc; i++) {
-    x_type = va_arg(ap, uint32);
-    x = va_arg(ap, unsigned char *);
-    x_len = va_arg(ap, uint32);
-
-    if (!x_type || !x || !x_len)
-      continue;
-
-    argv[k] = silc_calloc(x_len + 1, sizeof(unsigned char));
-    memcpy(argv[k], x, x_len);
-    argv_lens[k] = x_len;
-    argv_types[k] = x_type;
-    k++;
+    for (i = 0, k = 0; i < argc; i++) {
+      x_type = va_arg(ap, uint32);
+      x = va_arg(ap, unsigned char *);
+      x_len = va_arg(ap, uint32);
+      
+      if (!x_type || !x || !x_len)
+	continue;
+      
+      argv[k] = silc_calloc(x_len + 1, sizeof(unsigned char));
+      memcpy(argv[k], x, x_len);
+      argv_lens[k] = x_len;
+      argv_types[k] = x_type;
+      k++;
+    }
   }
 
   buffer = silc_command_payload_encode(cmd, k, argv, argv_lens, 

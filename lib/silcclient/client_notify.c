@@ -41,6 +41,8 @@ static void silc_client_notify_by_server_pending(void *context, void *context2)
   SilcClientCommandReplyContext reply = 
     (SilcClientCommandReplyContext)context2;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (reply) {
     SilcCommandStatus status;
     unsigned char *tmp = silc_argument_get_arg_type(reply->args, 1, NULL);
@@ -472,26 +474,37 @@ void silc_client_notify_by_server(SilcClient client,
     /* Find Client entry and if not found resolve it */
     client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry2) {
+      /* Resolve the entry information */
       silc_client_notify_by_server_resolve(client, conn, packet, client_id);
-      goto out;
+
+      /* Add the new entry even though we resolved it. This is because we
+	 want to replace the old entry with the new entry here right now. */
+      client_entry2 = 
+	silc_client_add_client(client, conn, NULL, NULL, NULL, 
+			       silc_id_dup(client_id, SILC_ID_CLIENT), 
+			       client_entry->mode);
+
+      /* Replace old ID entry with new one on all channels. */
+      silc_client_replace_from_channels(client, conn, client_entry,
+					client_entry2);
     } else {
       if (client_entry2 != conn->local_entry)
 	silc_client_nickname_format(client, conn, client_entry2);
+
+      /* Remove the old from cache */
+      silc_idcache_del_by_context(conn->client_cache, client_entry);
+
+      /* Replace old ID entry with new one on all channels. */
+      silc_client_replace_from_channels(client, conn, client_entry,
+					client_entry2);
+
+      /* Notify application */
+      client->internal->ops->notify(client, conn, type, 
+				    client_entry, client_entry2);
+
+      /* Free data */
+      silc_client_del_client_entry(client, conn, client_entry);
     }
-
-    /* Remove the old from cache */
-    silc_idcache_del_by_context(conn->client_cache, client_entry);
-
-    /* Replace old ID entry with new one on all channels. */
-    silc_client_replace_from_channels(client, conn, client_entry,
-				      client_entry2);
-
-    /* Notify application */
-    client->internal->ops->notify(client, conn, type, 
-				  client_entry, client_entry2);
-
-    /* Free data */
-    silc_client_del_client_entry(client, conn, client_entry);
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:

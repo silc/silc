@@ -689,6 +689,9 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 	sconn->backup_replace_port = ptr->backup_replace_port;
       }
 
+      if (!server->router_conn && !sconn->backup)
+	server->router_conn = sconn;
+
       silc_schedule_task_add(server->schedule, fd, 
 			     silc_server_connect_router,
 			     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
@@ -988,6 +991,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
     silc_free(sconn->backup_replace_ip);
     silc_free(sconn);
   }
+  if (sconn == server->router_conn)
+    server->router_conn = NULL;
 
   /* Free the protocol object */
   if (sock->protocol == protocol)
@@ -1556,6 +1561,14 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock);
+    else if (server->router_conn && server->router_conn->sock == sock &&
+	     !server->router && server->standalone)
+      silc_schedule_task_add(server->schedule, 0, 
+			     silc_server_connect_to_router, 
+			     server, 1, 0,
+			     SILC_TASK_TIMEOUT,
+			     SILC_TASK_PRI_NORMAL);
+
     silc_server_close_connection(server, sock);
     return;
   }
@@ -2365,7 +2378,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	/* Check whether we have a backup router connection */
 	if (!backup_router || backup_router == user_data) {
 	  silc_schedule_task_add(server->schedule, 0, 
-				 silc_server_connect_to_router,
+				 silc_server_connect_to_router, 
 				 server, 1, 0,
 				 SILC_TASK_TIMEOUT,
 				 SILC_TASK_PRI_NORMAL);

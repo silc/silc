@@ -17,6 +17,10 @@ TODO/bugs in Irssi SILC client
    cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
    file.
 
+ o Add auto-nick support to Irssi, so that the user specified nickname
+   would be sent to the server immediately (automatically) after the
+   client is connected to the server.
+
  o Add PERL scripting support from Irssi CVS.
 
  o Extend the /HELP command to support sub commands or something.  So
@@ -35,17 +39,18 @@ TODO/bugs In SILC Client Library
    behaviour and maybe should be removed.  The changer should always
    get the one it wants and not have the formatted nickname.
 
+ o Additions to do after protocol version 1.1:
+
+	o Fix the NICK_CHANGE notify handling not to create new entry
+	  for the changed client, but take the nickname from the notify
+	  (removes need for resolving as well).  Protocol TODO entry 3.
+
+	o Add support for list of errors in command replies.  Protocol
+	  TODO entry 1.
+
 
 TODO/bugs In SILC Server
 ========================
-
- o It is possible that IDENTIFy's check_client will register two pending	
-   callbacks for same ident, which must not happen.  Check same for WHOIS
-   as well.
-
- o If auto-reconnecting to router and EOF is received during the
-   connecting phase the server will not try to auto-reconnect anymore
-   after that.  Fix to auto-reconnect.
 
  o Backup router related issues
 
@@ -93,34 +98,45 @@ TODO/bugs In SILC Libraries
 TODO in SILC Protocol
 =====================
 
- o Add "request parameters" or similar to the WHOIS command, which can
-   be used to request various parameters (something not returned by
-   standard WHOIS command) about clients (info that could be fetched
-   even from clients).  Additional specification (or appendix) should 
-   be done to define the payload and the parameters.  It could be used
-   to make the WHOIS command support various search conditions as well.
-   This would be the way to extend the WHOIS command to support various
-   new features without always making the command incompatible to previous
-   version.  To be included in protocol version 1.1.
+Current protocol version is 1.0.  However, it is far from being perfect,
+and needs to include additional features.  Following protocol TODO entries
+describe new stuff to be added to protocol versions 1.x.
 
- o Re-define the Status Payload: it is now 16 bits, split it into two
-   8 bits fields.  First field includes status types from 0 - 9 and
-   10 - n *if* it is not an list of errors.  If it is list of errors then
-   the first field includes 1, 2 and/or 3, and the second field includes
-   the error status 10 - n.  This way it is possible to send multiple
-   errors (list of errors) and we have a way to tell the receiver that
-   there will be other errors as well.  The second field is used only
-   if there is list of errors.  If normal status, or normal (single)
-   error status the second field is set to zero, and must be ignored.
-   Hence, the status works same way as now except for list of errors.
-   To be included in protocol version 1.1.
+ 1. Re-define the Status Payload: it is now 16 bits, split it into two
+    8 bits fields.  First field includes status types from 0 - 9 and
+    10 - n *if* it is not an list of errors.  If it is list of errors then
+    the first field includes 1, 2 and/or 3, and the second field includes
+    the error status 10 - n.  This way it is possible to send multiple
+    errors (list of errors) and we have a way to tell the receiver that
+    there will be other errors as well.  The second field is used only
+    if there is list of errors.  If normal status, or normal (single)
+    error status the second field is set to zero, and must be ignored.
+    Hence, the status works same way as now except for list of errors.
+    To be included in protocol version 1.1.
 
- o Define that WHOIS and IDENTIFY commands must send list of errors
-   if multiple Client ID (or Channel ID and Server ID for IDENTIFY) was
-   requested and was not found.  Each unfound entry must cause an error
-   command reply to the sender.  Also define that errors must be sent
-   *after* sending successfully found entries (this way receiver may
-   ignore them).  To be included in protocol version 1.1.
+ 2. Define that WHOIS and IDENTIFY commands must send list of errors
+    if multiple Client ID (or Channel ID and Server ID for IDENTIFY) was
+    requested and was not found.  Each unfound entry must cause an error
+    command reply to the sender.  Also define that errors must be sent
+    *after* sending successfully found entries (this way receiver may
+    ignore them).  To be included in protocol version 1.1.
+
+ 3. Define the NICK_CHANGE notify to send the changed nickname as a new
+    third argument.  This will make the NICK_CHANGE notify handling easier
+    in the receiver's end (client primarily) since it removes the
+    requirement that receiver must resolve (using IDENTIFY or WHOIS) the
+    new Client ID received in the notify (because of the new nickname is
+    unknown).  To be included in protocol version 1.1.
+
+ 4. Add "request parameters" or similar to the WHOIS command, which can
+    be used to request various parameters (something not returned by
+    standard WHOIS command) about clients (info that could be fetched
+    even from clients).  Additional specification (or appendix) should 
+    be done to define the payload and the parameters.  It could be used
+    to make the WHOIS command support various search conditions as well.
+    This would be the way to extend the WHOIS command to support various
+    new features without always making the command incompatible to previous
+    version.  To be included in protocol version 1.1.
 
 
 TODO After 1.0

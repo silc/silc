@@ -122,7 +122,7 @@ SilcServerCommandContext silc_server_command_alloc();
 void silc_server_command_free(SilcServerCommandContext ctx);
 SilcServerCommandContext 
 silc_server_command_dup(SilcServerCommandContext ctx);
-void silc_server_command_pending(SilcServer server,
+bool silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
 				 uint16 ident,
 				 SilcServerPendingDestructor destructor,

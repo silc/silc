@@ -1,3 +1,33 @@
+Mon Dec 17 18:24:27 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed JOIN command parsing not to crash.  Affected file
+	  lib/silcclient/command.c.
+
+	* Fied the NICK_CHANGE notify to add the new client entry
+	  even it is resolved.  This removes an <[unknown]> nick
+	  thingy bug in the client.  Affected file is 
+	  lib/silcclient/client_notify.c.
+
+	* Do not try to allocate 0 bytes (efence does not like it)
+	  in lib/silccore/silccomand.c when encoding payload.
+
+	* Do not take IRCNICK as nickname in Irssi SILC client since
+	  it is not possible to set nickname before hand connecting
+	  the server (TODO has an entry about adding auto-nicking
+	  support).
+
+	* Changed the silc_server_command_pending to check whether
+	  there already exists an pending entry with the specified
+	  command, command identifier and pending callback.  This is
+	  to fix IDENTIFY and WHOIS related crashes that may register
+	  multiple pending commands with same identifier.  Affected
+	  file silcd/command.c.
+
+	* Fixed the server to reconnect to the router even if it
+	  was already reconnecting and EOF was received.  This to
+	  fix a possibility that the server wouldn't ever try to
+	  auto-reconnect to the router.  Affected file silcd/server.c.
+
 Sat Dec 15 20:31:50 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the server's password authentication to use the

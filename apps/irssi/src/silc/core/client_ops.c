@@ -93,7 +93,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   
   nick = silc_nicklist_find(chanrec, sender);
   if (!nick) {
-    /* We didn't find client but it clearly exists, add it. */
+    /* We didn't find client but it clearly exists, add it. It must be
+       found on the channel->clients list. */
     SilcChannelUser chu;
 
     silc_list_start(channel->clients);

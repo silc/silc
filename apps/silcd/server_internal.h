@@ -80,6 +80,8 @@ struct SilcServerStruct {
   bool backup_router;		     /* TRUE if this is backup router */
   bool backup_primary;		     /* TRUE if we've switched our primary
 				        router to a backup router. */
+  SilcServerConnection router_conn; /* non-NULL when connecting to the
+				       primary router, and NULL otherwise. */
 
   /* Current command identifier, 0 not used */
   uint16 cmd_ident;

@@ -120,13 +120,15 @@ static void silc_init_userinfo(void)
     
     user_name = settings_get_str("user_name");
   }
-         
+
   /* nick */
+  /* Actually take SILCUSER or IRCUSER since nickname cannot be set
+     beforehand in SILC (XXX auto-nicking support should be added to Irssi). */
   nick = settings_get_str("nick");
   if (nick == NULL || *nick == '\0') {
-    str = g_getenv("SILCNICK");
+    str = g_getenv("SILCUSER");
     if (!str)
-      str = g_getenv("IRCNICK");
+      str = g_getenv("IRCUSER");
     settings_set_str("nick", str != NULL ? str : user_name);
     
     nick = settings_get_str("nick");

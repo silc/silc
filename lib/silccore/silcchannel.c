@@ -429,7 +429,7 @@ unsigned char *silc_channel_message_get_data(SilcChannelMessagePayload payload,
 
 /* Return MAC. The caller knows the length of the MAC */
 
-unsigned char *silc_channel_mesage_get_mac(SilcChannelMessagePayload payload)
+unsigned char *silc_channel_message_get_mac(SilcChannelMessagePayload payload)
 {
   return payload->mac;
 }

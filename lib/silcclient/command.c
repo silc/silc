@@ -997,13 +997,13 @@ SILC_CLIENT_CMD_FUNC(join)
   name = cmd->argv[1];
 
   for (i = 2; i < cmd->argc; i++) {
-    if (!strcasecmp(cmd->argv[i], "-cipher") && cmd->argc >= i + 1) {
+    if (!strcasecmp(cmd->argv[i], "-cipher") && cmd->argc > i + 1) {
       cipher = cmd->argv[i + 1];
       i++;
-    } else if (!strcasecmp(cmd->argv[i], "-hmac") && cmd->argc >= i + 1) {
+    } else if (!strcasecmp(cmd->argv[i], "-hmac") && cmd->argc > i + 1) {
       hmac = cmd->argv[i + 1];
       i++;
-    } else if (!strcasecmp(cmd->argv[i], "-founder") && cmd->argc >= i + 1) {
+    } else if (!strcasecmp(cmd->argv[i], "-founder") && cmd->argc > i + 1) {
       if (!strcasecmp(cmd->argv[i + 1], "-pubkey")) {
 	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						  cmd->client->private_key,
