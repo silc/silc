@@ -38,12 +38,24 @@ int silc_server_packet_send_real(SilcServer server,
   if (SILC_IS_DISCONNECTING(sock))
     return -1;
 
-  /* We do not force anymore packet sending */
-  force_send = FALSE;
-
   /* Send the packet */
-  ret = silc_packet_send(sock, force_send);
+  ret = silc_packet_send(sock, FALSE);
   if (ret != -2) {
+    if (ret == -1) {
+      SILC_LOG_ERROR(("Error sending packet to connection "
+		      "%s:%d [%s]", sock->hostname, sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
+
+      SILC_SET_DISCONNECTING(sock);
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_server_close_connection(server, sock);
+      return ret;
+    }
+
     server->stat.packets_sent++;
     return ret;
   }
@@ -1995,7 +2007,6 @@ void silc_server_packet_queue_purge(SilcServer server,
       (SILC_IS_DISCONNECTED(sock) == FALSE)) {
     server->stat.packets_sent++;
     silc_packet_send(sock, TRUE);
-    SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
     SILC_UNSET_OUTBUF_PENDING(sock);
     silc_buffer_clear(sock->outbuf);
   }

@@ -295,8 +295,10 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
     if (!silc_idcache_del_by_context(id_list->servers, entry))
       return FALSE;
 
-    SILC_LOG_DEBUG(("Deleting server %s", entry->server_name ?
-		    entry->server_name : ""));
+    SILC_LOG_DEBUG(("Deleting server %s id %s", entry->server_name ?
+		    entry->server_name : "",
+		    entry->id ?
+		    silc_id_render(entry->id, SILC_ID_SERVER) : ""));
 
     /* Free data */
     silc_free(entry->server_name);

@@ -1,3 +1,25 @@
+Mon Dec 16 19:33:05 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed double free in async host lookup code.  Affected file
+	  lib/silcutil/silcsockconn.c.
+
+	* On backup router handle now the SERVER_SIGNOFF from router
+	  for local connected servers too, and close the connections.
+
+	  Do not process them as normally signing off servers when they
+	  really signoff by sending EOF fe, but always assume that
+	  router sends the SERVER_SIGNOFF.
+
+	  Affected files silcd/server.c and silcd/packet_receive.c.
+
+	* Fixed socket unsetting when closing connections.  Affected
+	  files silcd/server.c and silcd/packet_send.c.
+
+	* Do not print the nickname in SERVER_SIGNOFF if we do not
+	  have it.  Prevents asserts in Irssi core.  It is possible we
+	  don't have the nick if it was just being resolved when server
+	  signoff.  Affected file irssi/src/silc/core/client_ops.c.
+
 Thu Dec 12 23:22:50 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed autonick crashbug in client library.  Affected file

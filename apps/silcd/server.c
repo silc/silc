@@ -2929,6 +2929,8 @@ void silc_server_close_connection(SilcServer server,
   char tmp[128];
 
   if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
+    silc_schedule_unset_listen_fd(server->schedule, sock->sock);
+    silc_schedule_task_del_by_fd(server->schedule, sock->sock);
     silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_close_connection_final,
 			   (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
@@ -2944,9 +2946,6 @@ void silc_server_close_connection(SilcServer server,
                    sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
                    sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
                    "Router"), tmp[0] ? tmp : ""));
-
-  /* We won't listen for this connection anymore */
-  silc_schedule_unset_listen_fd(server->schedule, sock->sock);
 
   /* Unregister all tasks */
   silc_schedule_task_del_by_fd(server->schedule, sock->sock);
@@ -2971,6 +2970,9 @@ void silc_server_close_connection(SilcServer server,
       return;
     }
   }
+
+  /* We won't listen for this connection anymore */
+  silc_schedule_unset_listen_fd(server->schedule, sock->sock);
 
   silc_schedule_task_add(server->schedule, sock->sock,
 			 silc_server_close_connection_final,
@@ -3209,11 +3211,15 @@ void silc_server_free_sock_user_data(SilcServer server,
 			       SILC_TASK_PRI_NORMAL);
       }
 
+      SILC_SERVER_SEND_OPERS(server, FALSE, TRUE, SILC_NOTIFY_TYPE_NONE,
+			     ("Server %s signoff", user_data->server_name));
+
       if (!backup_router) {
 	/* Remove all servers that are originated from this server, and
 	   remove the clients of those servers too. */
 	silc_server_remove_servers_by_server(server, user_data, TRUE);
 
+#if 0
 	/* Remove the clients that this server owns as they will become
 	   invalid now too.  For backup router the server is actually
 	   coming from the primary router, so mark that as the owner
@@ -3223,6 +3229,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  silc_server_remove_clients_by_server(server, server->router,
 					       user_data, TRUE);
 	else
+#endif
 	  silc_server_remove_clients_by_server(server, user_data,
 					       user_data, TRUE);
 
