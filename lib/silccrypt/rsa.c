@@ -327,14 +327,9 @@ SILC_PKCS_API_ENCRYPT(rsa)
     silc_mp_add_ui(&mp_tmp, &mp_tmp, src[i]);
   }
 
-  silc_mp_out_str(stderr, 16, &mp_tmp);
-
   /* Encrypt */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->e, &key->n);
   
-  fprintf(stderr, "\n");
-  silc_mp_out_str(stderr, 16, &mp_dst);
-
   tmplen = (1024 + 7) / 8;
 
   /* Format the MP int back into data */
@@ -366,13 +361,8 @@ SILC_PKCS_API_DECRYPT(rsa)
     silc_mp_add_ui(&mp_tmp, &mp_tmp, src[i]);
   }
 
-  silc_mp_out_str(stderr, 16, &mp_tmp);
-
   /* Decrypt */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
-
-  fprintf(stderr, "\n");
-  silc_mp_out_str(stderr, 16, &mp_dst);
 
   tmplen = (1024 + 7) / 8;
 

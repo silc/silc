@@ -20,21 +20,7 @@
 /*
  * Created: Tue Nov 25 19:25:33 GMT+0200 1997
  */
-/*
- * $Id$
- * $Log$
- * Revision 1.3  2000/07/20 10:17:25  priikone
- * 	Added dynamic protocol registering/unregistering support.  The
- * 	patch was provided by cras.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 #include "silcprotocol.h"

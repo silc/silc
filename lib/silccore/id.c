@@ -17,17 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -72,13 +62,18 @@ unsigned char *silc_id_id2str(void *id, SilcIdType type)
 
 /* Converts string to a ID */
 
-void *silc_id_str2id(unsigned char *id, SilcIdType type) 
+void *silc_id_str2id(unsigned char *id, unsigned int id_len, SilcIdType type)
 {
 
   switch(type) {
   case SILC_ID_SERVER:
     {
-      SilcServerID *server_id = silc_calloc(1, sizeof(*server_id));
+      SilcServerID *server_id;
+
+      if (id_len != SILC_ID_SERVER_LEN)
+	return NULL;
+
+      server_id = silc_calloc(1, sizeof(*server_id));
       SILC_GET32_MSB(server_id->ip.s_addr, id);
       SILC_GET16_MSB(server_id->port, &id[4]);
       SILC_GET16_MSB(server_id->rnd, &id[6]);
@@ -87,7 +82,12 @@ void *silc_id_str2id(unsigned char *id, SilcIdType type)
     break;
   case SILC_ID_CLIENT:
     {
-      SilcClientID *client_id = silc_calloc(1, sizeof(*client_id));
+      SilcClientID *client_id;
+
+      if (id_len != SILC_ID_CLIENT_LEN)
+	return NULL;
+
+      client_id = silc_calloc(1, sizeof(*client_id));
       SILC_GET32_MSB(client_id->ip.s_addr, id);
       client_id->rnd = id[4];
       memcpy(client_id->hash, &id[5], CLIENTID_HASH_LEN);
@@ -96,7 +96,12 @@ void *silc_id_str2id(unsigned char *id, SilcIdType type)
     break;
   case SILC_ID_CHANNEL:
     {
-      SilcChannelID *channel_id = silc_calloc(1, sizeof(*channel_id));
+      SilcChannelID *channel_id;
+
+      if (id_len != SILC_ID_CHANNEL_LEN)
+	return NULL;
+
+      channel_id = silc_calloc(1, sizeof(*channel_id));
       SILC_GET32_MSB(channel_id->ip.s_addr, id);
       SILC_GET16_MSB(channel_id->port, &id[4]);
       SILC_GET16_MSB(channel_id->rnd, &id[6]);

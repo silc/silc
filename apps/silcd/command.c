@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -351,6 +351,10 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
 
     *client_id = silc_calloc(1, sizeof(**client_id));
     (*client_id)[0] = silc_id_payload_parse_id(tmp, len);
+    if ((*client_id)[0] == NULL) {
+      silc_free(*client_id);
+      return FALSE;
+    }
     *client_id_count = 1;
 
     /* Take all ID's from the command packet */
@@ -360,8 +364,15 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
 	if (tmp) {
 	  *client_id = silc_realloc(*client_id, sizeof(**client_id) *
 				    (*client_id_count + 1));
-	  (*client_id)[k++] = silc_id_payload_parse_id(tmp, len);
+	  (*client_id)[k] = silc_id_payload_parse_id(tmp, len);
+	  if ((*client_id)[k] == NULL) {
+	    for (i = 0; i < k; i++)
+	      silc_free((*client_id)[i]);
+	    silc_free(*client_id);
+	    return FALSE;
+	  }
 	  (*client_id_count)++;
+	  k++;
 	}
       }
     }
@@ -1309,6 +1320,11 @@ SILC_SERVER_CMD_FUNC(topic)
     goto out;
   }
   channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!channel_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
 
   /* Check whether the channel exists */
   channel = silc_idlist_find_channel_by_id(server->local_list, 
@@ -1411,6 +1427,11 @@ SILC_SERVER_CMD_FUNC(invite)
     goto out;
   }
   dest_id = silc_id_payload_parse_id(tmp, len);
+  if (!dest_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_NO_CLIENT_ID);
+    goto out;
+  }
 
   /* Get Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
@@ -1420,6 +1441,11 @@ SILC_SERVER_CMD_FUNC(invite)
     goto out;
   }
   channel_id = silc_id_payload_parse_id(tmp, len);
+  if (!channel_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
 
   /* Check whether the channel exists */
   channel = silc_idlist_find_channel_by_id(server->local_list, 
@@ -1610,7 +1636,7 @@ SILC_SERVER_CMD_FUNC(ping)
 					  SILC_STATUS_ERR_NO_SERVER_ID);
     goto out;
   }
-  id = silc_id_str2id(tmp, SILC_ID_SERVER);
+  id = silc_id_str2id(tmp, len, SILC_ID_SERVER);
   if (!id)
     goto out;
 
@@ -1660,6 +1686,13 @@ void silc_server_command_send_users(SilcServer server,
 
   cmd = silc_calloc(1, sizeof(*cmd));
   cmd->payload = silc_command_payload_parse(buffer);
+  if (!cmd->payload) {
+    silc_free(cmd);
+    silc_buffer_free(buffer);
+    silc_buffer_free(idp);
+    silc_packet_context_free(packet);
+    return;
+  }
   cmd->args = silc_command_get_args(cmd->payload);
   cmd->server = server;
   cmd->sock = sock;
@@ -1674,16 +1707,16 @@ void silc_server_command_send_users(SilcServer server,
     silc_server_command_pending(server, SILC_COMMAND_USERS, 0,
 				silc_server_command_users, (void *)cmd);
     cmd->pending = TRUE;
-    silc_free(buffer);
-    silc_free(idp);
+    silc_buffer_free(buffer);
+    silc_buffer_free(idp);
     return;
   }
 
   /* Process USERS command. */
   silc_server_command_users((void *)cmd);
  
-  silc_free(buffer);
-  silc_free(idp);
+  silc_buffer_free(buffer);
+  silc_buffer_free(idp);
   silc_packet_context_free(packet);
 }
 
@@ -1916,8 +1949,11 @@ SILC_SERVER_CMD_FUNC(join)
     goto out;
   }
   client_id = silc_id_payload_parse_id(tmp, tmp_len);
-  if (!client_id)
+  if (!client_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
+  }
 
   /* Get cipher name */
   cipher = silc_argument_get_arg_type(cmd->args, 4, NULL);
@@ -2165,6 +2201,11 @@ SILC_SERVER_CMD_FUNC(cmode)
     goto out;
   }
   channel_id = silc_id_payload_parse_id(tmp_id, tmp_len2);
+  if (!channel_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
 
   /* Get the channel mode mask */
   tmp_mask = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
@@ -2519,6 +2560,11 @@ SILC_SERVER_CMD_FUNC(cumode)
     goto out;
   }
   channel_id = silc_id_payload_parse_id(tmp_id, tmp_len);
+  if (!channel_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
 
   /* Get channel entry */
   channel = silc_idlist_find_channel_by_id(server->local_list, 
@@ -2569,6 +2615,11 @@ SILC_SERVER_CMD_FUNC(cumode)
     goto out;
   }
   client_id = silc_id_payload_parse_id(tmp_id, tmp_len);
+  if (!client_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
 
   /* Get target client's entry */
   target_client = silc_idlist_find_client_by_id(server->local_list, 
@@ -2707,6 +2758,11 @@ SILC_SERVER_CMD_FUNC(leave)
     goto out;
   }
   id = silc_id_payload_parse_id(tmp, len);
+  if (!id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
 
   /* Get channel entry */
   channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
@@ -2807,6 +2863,11 @@ SILC_SERVER_CMD_FUNC(users)
     goto out;
   }
   id = silc_id_payload_parse_id(channel_id, channel_id_len);
+  if (!id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
 
   /* If we are server and we don't know about this channel we will send
      the command to our router. If we know about the channel then we also

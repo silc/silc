@@ -43,6 +43,7 @@ struct SilcChannelPayloadStruct {
 SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer)
 {
   SilcChannelPayload new;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing channel payload"));
 
@@ -50,10 +51,13 @@ SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer)
 
   /* Parse the Channel Payload. Ignore padding and IV, we don't need
      them. */
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI16_NSTRING_ALLOC(&new->data, &new->data_len),
-		       SILC_STR_UI16_NSTRING_ALLOC(NULL, NULL),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI16_NSTRING_ALLOC(&new->data, 
+							 &new->data_len),
+			     SILC_STR_UI16_NSTRING_ALLOC(NULL, NULL),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   if (new->data_len < 1 || new->data_len > buffer->len) {
     SILC_LOG_ERROR(("Incorrect channel payload in packet, packet dropped"));
@@ -97,11 +101,10 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
   /* Allocate channel payload buffer */
   len += pad_len;
   buffer = silc_buffer_alloc(len + iv_len);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
 
   /* Generate padding */
   for (i = 0; i < pad_len; i++) pad[i] = silc_rng_get_byte(rng);
-
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
 
   /* Encode the Channel Payload */
   silc_buffer_format(buffer, 
@@ -173,18 +176,22 @@ struct SilcChannelKeyPayloadStruct {
 SilcChannelKeyPayload silc_channel_key_payload_parse(SilcBuffer buffer)
 {
   SilcChannelKeyPayload new;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing channel key payload"));
 
   new = silc_calloc(1, sizeof(*new));
 
   /* Parse the Channel Key Payload */
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI16_NSTRING_ALLOC(&new->id, &new->id_len),
-		       SILC_STR_UI16_NSTRING_ALLOC(&new->cipher, 
-						   &new->cipher_len),
-		       SILC_STR_UI16_NSTRING_ALLOC(&new->key, &new->key_len),
-		       SILC_STR_END);
+  ret =
+    silc_buffer_unformat(buffer,
+			 SILC_STR_UI16_NSTRING_ALLOC(&new->id, &new->id_len),
+			 SILC_STR_UI16_NSTRING_ALLOC(&new->cipher, 
+						     &new->cipher_len),
+			 SILC_STR_UI16_NSTRING_ALLOC(&new->key, &new->key_len),
+			 SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   if (new->id_len < 1 || new->key_len < 1 || new->cipher_len < 1) {
     SILC_LOG_ERROR(("Incorrect channel key payload in packet"));
@@ -218,10 +225,6 @@ SilcBuffer silc_channel_key_payload_encode(unsigned short id_len,
   unsigned int len;
 
   SILC_LOG_DEBUG(("Encoding channel key payload"));
-
-  /* Sanity checks */
-  if (!id_len || !key_len || !id || !key || !cipher_len || !cipher)
-    return NULL;
 
   /* Allocate channel payload buffer. Length is 2 + id + 2 + key + 
      2 + cipher */

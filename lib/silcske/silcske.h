@@ -119,10 +119,10 @@ struct SilcSKEStruct {
 
   /* Random number x, 1 < x < q. This is the secret exponent
      used in Diffie Hellman computations. */
-  SilcInt x;
+  SilcInt *x;
   
   /* The secret shared key */
-  SilcInt KEY;
+  SilcInt *KEY;
   
   /* The hash value HASH of the key exchange */
   unsigned char *hash;

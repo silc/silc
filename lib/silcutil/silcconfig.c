@@ -17,22 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/09/13 17:45:16  priikone
- * 	Splitted SILC core library. Core library includes now only
- * 	SILC protocol specific stuff. New utility library includes the
- * 	old stuff from core library that is more generic purpose stuff.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -70,7 +55,6 @@ int silc_config_get_token(SilcBuffer buffer, char **dest)
     len = strcspn(buffer->data, ":");
     if (len) {
       *dest = silc_calloc(len + 1, sizeof(char));
-      memset(*dest, 0, len + 1);
       memcpy(*dest, buffer->data, len);
     }
     silc_buffer_pull(buffer, len + 1);

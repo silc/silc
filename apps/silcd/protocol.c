@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -54,13 +54,13 @@ static void silc_server_protocol_ke_send_packet(SilcSKE ske,
 
 /* Sets the negotiated key material into use for particular connection. */
 
-static void silc_server_protocol_ke_set_keys(SilcSKE ske,
-					     SilcSocketConnection sock,
-					     SilcSKEKeyMaterial *keymat,
-					     SilcCipher cipher,
-					     SilcPKCS pkcs,
-					     SilcHash hash,
-					     int is_responder)
+static int silc_server_protocol_ke_set_keys(SilcSKE ske,
+					    SilcSocketConnection sock,
+					    SilcSKEKeyMaterial *keymat,
+					    SilcCipher cipher,
+					    SilcPKCS pkcs,
+					    SilcHash hash,
+					    int is_responder)
 {
   SilcUnknownEntry conn_data;
   SilcIDListData idata;
@@ -72,8 +72,14 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
   idata = (SilcIDListData)conn_data;
 
   /* Allocate cipher to be used in the communication */
-  silc_cipher_alloc(cipher->cipher->name, &idata->send_key);
-  silc_cipher_alloc(cipher->cipher->name, &idata->receive_key);
+  if (!silc_cipher_alloc(cipher->cipher->name, &idata->send_key)) {
+    silc_free(conn_data);
+    return FALSE;
+  }
+  if (!silc_cipher_alloc(cipher->cipher->name, &idata->receive_key)) {
+    silc_free(conn_data);
+    return FALSE;
+  }
   
   if (is_responder == TRUE) {
     idata->send_key->cipher->set_key(idata->send_key->context, 
@@ -108,11 +114,18 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
 #endif
 
   /* Save HMAC key to be used in the communication. */
-  silc_hash_alloc(hash->hash->name, &nhash);
+  if (!silc_hash_alloc(hash->hash->name, &nhash)) {
+    silc_cipher_free(idata->send_key);
+    silc_cipher_free(idata->receive_key);
+    silc_free(conn_data);
+    return FALSE;
+  }
   silc_hmac_alloc(nhash, &idata->hmac);
   silc_hmac_set_key(idata->hmac, keymat->hmac_key, keymat->hmac_key_len);
 
   sock->user_data = (void *)conn_data;
+
+  return TRUE;
 }
 
 /* Check remote host version string */
@@ -344,11 +357,15 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       silc_ske_process_key_material(ctx->ske, 16, (16 * 8), 16, keymat);
 
       /* Take the new keys into use. */
-      silc_server_protocol_ke_set_keys(ctx->ske, ctx->sock, keymat,
-				       ctx->ske->prop->cipher,
-				       ctx->ske->prop->pkcs,
-				       ctx->ske->prop->hash,
-				       ctx->responder);
+      if (!silc_server_protocol_ke_set_keys(ctx->ske, ctx->sock, keymat,
+					    ctx->ske->prop->cipher,
+					    ctx->ske->prop->pkcs,
+					    ctx->ske->prop->hash,
+					    ctx->responder)) {
+	protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	protocol->execute(server->timeout_queue, 0, protocol, fd, 0, 300000);
+	return;
+      }
 
       /* Unregister the timeout task since the protocol has ended. 
 	 This was the timeout task to be executed if the protocol is
@@ -519,13 +536,18 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	/* Parse the received authentication data packet. The received
 	   payload is Connection Auth Payload. */
-	silc_buffer_unformat(ctx->packet->buffer,
-			     SILC_STR_UI_SHORT(&payload_len),
-			     SILC_STR_UI_SHORT(&conn_type),
-			     SILC_STR_END);
+	ret = silc_buffer_unformat(ctx->packet->buffer,
+				   SILC_STR_UI_SHORT(&payload_len),
+				   SILC_STR_UI_SHORT(&conn_type),
+				   SILC_STR_END);
+	if (ret == -1) {
+	  SILC_LOG_DEBUG(("Bad payload in authentication packet"));
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  protocol->execute(server->timeout_queue, 0, protocol, fd, 0, 300000);
+	  return;
+	}
 	
 	if (payload_len != ctx->packet->buffer->len) {
-	  SILC_LOG_ERROR(("Bad payload in authentication packet"));
 	  SILC_LOG_DEBUG(("Bad payload in authentication packet"));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  protocol->execute(server->timeout_queue, 0, protocol, fd, 0, 300000);
@@ -537,7 +559,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	if (conn_type < SILC_SOCKET_TYPE_CLIENT || 
 	    conn_type > SILC_SOCKET_TYPE_ROUTER) {
 	  SILC_LOG_ERROR(("Bad connection type %d", conn_type));
-	  SILC_LOG_DEBUG(("Bad connection type %d", conn_type));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  protocol->execute(server->timeout_queue, 0, protocol, fd, 0, 300000);
 	  return;
@@ -546,10 +567,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	if (payload_len > 0) {
 	  /* Get authentication data */
 	  silc_buffer_pull(ctx->packet->buffer, 4);
-	  silc_buffer_unformat(ctx->packet->buffer,
-			       SILC_STR_UI_XNSTRING_ALLOC(&auth_data, 
-							  payload_len),
-			       SILC_STR_END);
+	  ret = silc_buffer_unformat(ctx->packet->buffer,
+				     SILC_STR_UI_XNSTRING_ALLOC(&auth_data, 
+								payload_len),
+				     SILC_STR_END);
+	  if (ret == -1) {
+	    SILC_LOG_DEBUG(("Bad payload in authentication packet"));
+	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	    protocol->execute(server->timeout_queue, 0, 
+			      protocol, fd, 0, 300000);
+	    return;
+	  }
 	} else {
 	  auth_data = NULL;
 	}

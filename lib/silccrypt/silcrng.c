@@ -17,6 +17,7 @@
   GNU General Public License for more details.
 
 */
+/* $Id$ */
 /*
  * Created: Sun Mar  9 00:09:18 1997
  *
@@ -24,20 +25,6 @@
  */
 /* XXX: Some operations block resulting slow initialization.
  * XXX: I have some pending changes to make this better. */
-/*
- * $Id$
- * $Log$
- * Revision 1.3  2000/07/10 05:36:14  priikone
- * 	Added silc_rng_get_rng_data to get variable length binary data.
- *
- * Revision 1.2  2000/07/05 06:08:43  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
 
 #include "silcincludes.h"
 
@@ -164,10 +151,6 @@ void silc_rng_init(SilcRng rng)
       (i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM));
     next->pos =
       (i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM)) + 8;
-#if 0
-    next->pos = sizeof(rng->pool) - 
-      ((i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM))) + 8;
-#endif
     next->next = rng->state;
     rng->state = next;
   }

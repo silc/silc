@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -142,6 +142,8 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     return FALSE;
 
   client_id = silc_id_payload_parse_id(id_data, id_len);
+  if (!client_id)
+    return FALSE;
 
   /* Check if we have this client cached already. */
 
@@ -227,25 +229,6 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
   if (!silc_server_command_reply_whois_save(cmd))
     goto out;
 
-  /* XXX */
-
-  /* Process one identify reply */
-  if (status == SILC_STATUS_OK) {
-
-  }
-
-  if (status == SILC_STATUS_LIST_START) {
-
-  }
-
-  if (status == SILC_STATUS_LIST_ITEM) {
-
-  }
-
-  if (status == SILC_STATUS_LIST_END) {
-
-  }
-
   /* Execute any pending commands */
   SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_WHOIS);
 
@@ -275,6 +258,8 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     return FALSE;
 
   client_id = silc_id_payload_parse_id(id_data, id_len);
+  if (!client_id)
+    return FALSE;
 
   /* Check if we have this client cached already. */
 
@@ -363,24 +348,6 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
   if (!silc_server_command_reply_identify_save(cmd))
     goto out;
 
-  /* XXX */
-
-  if (status == SILC_STATUS_OK) {
-
-  }
-
-  if (status == SILC_STATUS_LIST_START) {
-
-  }
-
-  if (status == SILC_STATUS_LIST_ITEM) {
-
-  }
-
-  if (status == SILC_STATUS_LIST_END) {
-
-  }
-
   /* Execute any pending commands */
   SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_IDENTIFY);
 
@@ -428,6 +395,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   if (!tmp)
     goto out;
   SILC_GET32_MSB(created, tmp);
+  if (created != 0 && created != 1)
+    goto out;
 
   /* Get channel key */
   tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
@@ -438,6 +407,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   silc_buffer_put(keyp, tmp, len);
 
   id = silc_id_payload_parse_id(id_string, id_len);
+  if (!id)
+    goto out;
 
   /* See whether we already have the channel. */
   entry = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
@@ -505,6 +476,8 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
   if (!tmp)
     goto out;
   channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!channel_id)
+    goto out;
 
   /* Get the list count */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
@@ -553,6 +526,8 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
     client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
+    if (!client_id)
+      continue;
     silc_buffer_pull(client_id_list, idp_len);
     
     /* Mode */
@@ -577,6 +552,10 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
       client = silc_idlist_add_client(server->global_list, NULL, NULL, 
 				      NULL, client_id, cmd->sock->user_data, 
 				      NULL);
+      if (!client) {
+	silc_free(client_id);
+	continue;
+      }
     } else {
       /* We have the client already. */
       silc_free(client_id);

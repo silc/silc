@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,20 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.3  2000/07/14 09:12:24  priikone
- * 	Fixed bug in silc_hmac_make.
- *
- * Revision 1.2  2000/07/05 06:08:43  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -49,7 +36,7 @@ int silc_hmac_alloc(SilcHash hash, SilcHmac *new_hmac)
   (*new_hmac)->make_hmac_with_key = silc_hmac_make_with_key;
   (*new_hmac)->make_hmac_truncated = silc_hmac_make_truncated;
 
-  return 1;
+  return TRUE;
 }
 
 /* Free's the SilcHmac object. */

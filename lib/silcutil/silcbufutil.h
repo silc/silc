@@ -21,8 +21,7 @@
 #ifndef SILCBUFUTIL_H
 #define SILCBUFUTIL_H
 
-#ifndef SILC_DEBUG		/* When we are not doing debugging we use
-				   optimized inline buffer functions. */
+#include "silcbuffer.h"
 
 /* Clears and initialiazes the buffer to the state as if it was just
    allocated by silc_buffer_alloc. */
@@ -91,15 +90,5 @@ SilcBuffer silc_buffer_realloc(SilcBuffer sb, unsigned int newsize)
 
   return sb_new;
 }
-
-#endif /* !SILC_DEBUG */
-
-/* Prototypes */
-#ifdef SILC_DEBUG
-void silc_buffer_clear(SilcBuffer sb);
-SilcBuffer silc_buffer_copy(SilcBuffer sb);
-SilcBuffer silc_buffer_clone(SilcBuffer sb);
-SilcBuffer silc_buffer_realloc(SilcBuffer sb, unsigned int newsize);
-#endif
 
 #endif

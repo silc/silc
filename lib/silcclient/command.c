@@ -589,7 +589,13 @@ SILC_CLIENT_CMD_FUNC(ping)
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
 
-  id = silc_id_str2id(conn->remote_id_data, SILC_ID_SERVER);
+  id = silc_id_str2id(conn->remote_id_data, conn->remote_id_data_len,
+		      SILC_ID_SERVER);
+  if (!id) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
 
   /* Start counting time */
   for (i = 0; i < conn->ping_count; i++) {

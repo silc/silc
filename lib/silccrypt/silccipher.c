@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,26 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.5  2000/10/09 11:37:21  priikone
- * 	bugfixes. Made public/private keys protocol compliant.
- *
- * Revision 1.4  2000/10/02 18:31:46  priikone
- * 	Added rijndael (AES) to cipher list.
- *
- * Revision 1.3  2000/09/28 11:28:20  priikone
- * 	Changed cipher list order.
- *
- * Revision 1.2  2000/07/05 06:08:43  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:54  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 

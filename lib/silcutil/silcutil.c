@@ -270,7 +270,7 @@ int silc_string_compare(char *string1, char *string2)
   return FALSE;
 }
 
-unsigned char pem_enc[64] =
+static unsigned char pem_enc[64] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* Encodes data into PEM encoding. Returns NULL terminated PEM encoded
@@ -457,7 +457,7 @@ int silc_parse_nickname(char *string, char **nickname, char **server,
     }
     
     if (server) {
-      *server = silc_calloc(strlen(string) - tlen, sizeof(char));
+      *server = silc_calloc((strlen(string) - tlen) + 1, sizeof(char));
       memcpy(*server, string + tlen + 1, strlen(string) - tlen - 1);
     }
   } else {

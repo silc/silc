@@ -40,16 +40,19 @@ SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer)
 {
   SilcNotifyPayload new;
   unsigned short len;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing Notify payload"));
 
   new = silc_calloc(1, sizeof(*new));
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_SHORT(&new->type),
-		       SILC_STR_UI_SHORT(&len),
-		       SILC_STR_UI_CHAR(&new->argc),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_SHORT(&new->type),
+			     SILC_STR_UI_SHORT(&len),
+			     SILC_STR_UI_CHAR(&new->argc),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   if (len > buffer->len)
     goto err;

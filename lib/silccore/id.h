@@ -110,7 +110,7 @@ typedef struct {
 
 /* Prototypes */
 unsigned char *silc_id_id2str(void *id, SilcIdType type);
-void *silc_id_str2id(unsigned char *id, SilcIdType type);
+void *silc_id_str2id(unsigned char *id, unsigned int id_len, SilcIdType type);
 unsigned int silc_id_get_len(SilcIdType type);
 
 #endif

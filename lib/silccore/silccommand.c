@@ -46,18 +46,23 @@ SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer)
   SilcCommandPayload new;
   unsigned char args_num;
   unsigned short payload_len;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing command payload"));
 
   new = silc_calloc(1, sizeof(*new));
 
   /* Parse the Command Payload */
-  silc_buffer_unformat(buffer, 
-		       SILC_STR_UI_SHORT(&payload_len),
-		       SILC_STR_UI_CHAR(&new->cmd),
-		       SILC_STR_UI_CHAR(&args_num),
-		       SILC_STR_UI_SHORT(&new->ident),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer, 
+			     SILC_STR_UI_SHORT(&payload_len),
+			     SILC_STR_UI_CHAR(&new->cmd),
+			     SILC_STR_UI_CHAR(&args_num),
+			     SILC_STR_UI_SHORT(&new->ident),
+			     SILC_STR_END);
+  if (ret == -1) {
+    silc_free(new);
+    return NULL;
+  }
 
   if (payload_len != buffer->len) {
     SILC_LOG_ERROR(("Incorrect command payload in packet, packet dropped"));

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1098,6 +1098,9 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
        it later. */
     if (ret == -2)
       return;
+
+    if (ret == -1)
+      return;
     
     /* The packet has been sent and now it is time to set the connection
        back to only for input. When there is again some outgoing data 
@@ -1209,7 +1212,10 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 	SILC_ID_SERVER_COMPARE(packet->dst_id, server->id_string)) {
       
       /* Route the packet to fastest route for the destination ID */
-      void *id = silc_id_str2id(packet->dst_id, packet->dst_id_type);
+      void *id = silc_id_str2id(packet->dst_id, packet->dst_id_len, 
+				packet->dst_id_type);
+      if (!id)
+	goto out;
       silc_server_packet_route(server,
 			       silc_server_route_get(server, id,
 						     packet->dst_id_type),
@@ -1427,7 +1433,10 @@ void silc_server_packet_parse_type(SilcServer server,
 
       proto_ctx->packet = silc_packet_context_dup(packet);
       proto_ctx->dest_id_type = packet->src_id_type;
-      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
+      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+					  packet->src_id_type);
+      if (!proto_ctx->dest_id)
+	break;
 
       /* Let the protocol handle the packet */
       sock->protocol->execute(server->timeout_queue, 0, 
@@ -1452,7 +1461,10 @@ void silc_server_packet_parse_type(SilcServer server,
 
       proto_ctx->packet = silc_packet_context_dup(packet);
       proto_ctx->dest_id_type = packet->src_id_type;
-      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
+      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+					  packet->src_id_type);
+      if (!proto_ctx->dest_id)
+	break;
 
       /* Let the protocol handle the packet */
       sock->protocol->execute(server->timeout_queue, 0, 
@@ -1689,6 +1701,8 @@ void silc_server_free_sock_user_data(SilcServer server,
       silc_idlist_del_client(server->local_list, user_data);
       server->stat.my_clients--;
       server->stat.clients--;
+      if (server->server_type == SILC_ROUTER)
+	server->stat.cell_clients--;
       break;
     }
   case SILC_SOCKET_TYPE_SERVER:
@@ -1708,6 +1722,8 @@ void silc_server_free_sock_user_data(SilcServer server,
       silc_idlist_del_server(server->local_list, user_data);
       server->stat.my_servers--;
       server->stat.servers--;
+      if (server->server_type == SILC_ROUTER)
+	server->stat.cell_servers--;
       break;
     }
   default:
@@ -1925,16 +1941,16 @@ int silc_server_client_on_channel(SilcClientEntry client,
 
 SILC_TASK_CALLBACK(silc_server_timeout_remote)
 {
-  SilcServerConnection sconn = (SilcServerConnection)context;
-  SilcSocketConnection sock = sconn->server->sockets[fd];
+  SilcServer server = (SilcServer)context;
+  SilcSocketConnection sock = server->sockets[fd];
 
   if (!sock)
     return;
 
   if (sock->user_data)
-    silc_server_free_sock_user_data(sconn->server, sock);
+    silc_server_free_sock_user_data(server, sock);
 
-  silc_server_disconnect_remote(sconn->server, sock, 
+  silc_server_disconnect_remote(server, sock, 
 				"Server closed connection: "
 				"Connection timeout");
 }
@@ -2057,7 +2073,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 
     /* Get channel ID */
     tmp = silc_channel_key_get_id(payload, &tmp_len);
-    id = silc_id_str2id(tmp, SILC_ID_CHANNEL);
+    id = silc_id_str2id(tmp, tmp_len, SILC_ID_CHANNEL);
     if (!id) {
       channel = NULL;
       goto out;

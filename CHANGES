@@ -1,3 +1,47 @@
+Sat Feb 10 21:13:45 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* A big code auditing weekend happening.  Auditing code for 
+	  obvious mistakes, bugs and errors.  Also, removing any code
+	  that is obsolete.
+
+	  Removed files for being obsolete:
+
+	  o lib/silcutil/silcbuffer.c (the buffer interface is entirely in
+	  inline in the file lib/silcutil/silcbuffer.h)
+
+	  o lib/silcutil/silcbufutil.c (the header has inline versions)
+
+	  Changed code to fix possible error conditions:
+
+	  o The buffer formatting routines now check that the destination
+	  buffer really has enough space to add the data.  This applies for
+	  both buffer formatting and unformatting 
+	  (lib/silcutil/silcbuffmt.[ch]).  Also, the entire buffer
+	  unformatting was changed to accomodate following rules: 
+	  XXX_*STRING_ALLOC will allocate space for the data into the pointer
+	  sent to the function while XXX_*STRING will not allocate or copy 
+	  the data into the buffer.  Instead it sets the pointer from the
+	  buffer into the pointer sent as argument (XXX_*STRING used to
+	  require that the pointer must be allocated already).  This change
+	  makes this whole thing a bit more consistent and more optimized
+	  (note that the data returned in the unformatting with XXX_*STRING
+	  must not be freed now).  The routines return now -1 on error.
+
+	  o Tried to find all code that use buffer_format and buffer_unformat
+	  and added return value checking to prevent formatting and
+	  especially unformatting errors and possible subsequent fatal
+	  errors.
+
+	  o Changed ske->x and ske->KEY to mallocated pointers in
+	  lib/silcske/silcske.h.  Fixed possible data and memory leak.
+
+	  o Added return value checking to all *_parse* functions.  Fixed
+	  many memory leaks as well.
+
+	  o Added length argument to silc_id_str2id in lib/silccore/id.[ch]
+	  so that buffer overflows would not happen.  All code now also
+	  checks the return value as it can fail.
+
 Mon Feb  5 20:08:30 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added reconnection support to server if the normal server looses

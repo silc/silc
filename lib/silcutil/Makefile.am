@@ -21,9 +21,7 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 noinst_LIBRARIES = libsilcutil.a
 
 libsilcutil_a_SOURCES = \
-	silcbuffer.c \
 	silcbuffmt.c \
-	silcbufutil.c \
 	silcconfig.c \
 	silclog.c \
 	silcmemory.c \

@@ -41,17 +41,20 @@ SilcSetModePayload silc_set_mode_payload_parse(SilcBuffer buffer)
 {
   SilcSetModePayload new;
   unsigned short len;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing Set Mode payload"));
 
   new = silc_calloc(1, sizeof(*new));
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_SHORT(&new->mode_type),
-		       SILC_STR_UI_SHORT(&len),
-		       SILC_STR_UI_INT(&new->mode_mask),
-		       SILC_STR_UI_CHAR(&new->argc),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_SHORT(&new->mode_type),
+			     SILC_STR_UI_SHORT(&len),
+			     SILC_STR_UI_INT(&new->mode_mask),
+			     SILC_STR_UI_CHAR(&new->argc),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   if (len > buffer->len)
     goto err;

@@ -17,20 +17,8 @@
   GNU General Public License for more details.
 
 */
-/*
- * Created: Mon Dec  8 16:35:37 GMT+0200 1997
- */
-/*
- * $Id$
- * $Log$
- * Revision 1.2  2000/07/05 06:06:52  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:51  priikone
- * 	Importet from internal CVS/Added Log headers.
- *
- *
- */
+/* Created: Mon Dec  8 16:35:37 GMT+0200 1997 */
+/* $Id$ */
 
 #include "silcincludes.h"
 

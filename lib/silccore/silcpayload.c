@@ -41,24 +41,30 @@ struct SilcIDPayloadStruct {
 SilcIDPayload silc_id_payload_parse(SilcBuffer buffer)
 {
   SilcIDPayload new;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing ID payload"));
 
   new = silc_calloc(1, sizeof(*new));
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_SHORT(&new->type),
-		       SILC_STR_UI_SHORT(&new->len),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_SHORT(&new->type),
+			     SILC_STR_UI_SHORT(&new->len),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   silc_buffer_pull(buffer, 4);
 
   if (new->len > buffer->len)
     goto err;
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
+
   silc_buffer_push(buffer, 4);
 
   return new;
@@ -75,6 +81,7 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
 {
   SilcIDPayload new;
   SilcBuffer buffer;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing ID payload"));
 
@@ -84,19 +91,23 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
 
   new = silc_calloc(1, sizeof(*new));
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_SHORT(&new->type),
-		       SILC_STR_UI_SHORT(&new->len),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_SHORT(&new->type),
+			     SILC_STR_UI_SHORT(&new->len),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   silc_buffer_pull(buffer, 4);
 
   if (new->len > buffer->len)
     goto err;
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   silc_buffer_free(buffer);
   return new;
@@ -115,28 +126,33 @@ void *silc_id_payload_parse_id(unsigned char *data, unsigned int len)
   SilcIdType type;
   unsigned short idlen;
   unsigned char *id;
+  int ret;
 
   buffer = silc_buffer_alloc(len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
   silc_buffer_put(buffer, data, len);
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_SHORT(&type),
-		       SILC_STR_UI_SHORT(&idlen),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_SHORT(&type),
+			     SILC_STR_UI_SHORT(&idlen),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   silc_buffer_pull(buffer, 4);
 
   if (idlen > buffer->len)
     goto err;
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_XNSTRING_ALLOC(&id, idlen),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_XNSTRING_ALLOC(&id, idlen),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
 
   silc_buffer_free(buffer);
 
-  return silc_id_str2id(id, type);
+  return silc_id_str2id(id, idlen, type);
 
  err:
   silc_buffer_free(buffer);
@@ -188,7 +204,7 @@ SilcIdType silc_id_payload_get_type(SilcIDPayload payload)
 
 void *silc_id_payload_get_id(SilcIDPayload payload)
 {
-  return silc_id_str2id(payload->id, payload->type);
+  return silc_id_str2id(payload->id, payload->len, payload->type);
 }
 
 /* Get raw ID data. Data is duplicated. */
@@ -231,7 +247,7 @@ SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
   unsigned char arg_num = 0;
   unsigned char arg_type = 0;
   unsigned int pull_len = 0;
-  int i = 0;
+  int i = 0, ret;
 
   SILC_LOG_DEBUG(("Parsing argument payload"));
 
@@ -243,10 +259,12 @@ SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
   /* Get arguments */
   arg_num = 1;
   for (i = 0; i < argc; i++) {
-    silc_buffer_unformat(buffer,
-			 SILC_STR_UI_SHORT(&payload_len),
-			 SILC_STR_UI_CHAR(&arg_type),
-			 SILC_STR_END);
+    ret = silc_buffer_unformat(buffer,
+			       SILC_STR_UI_SHORT(&payload_len),
+			       SILC_STR_UI_CHAR(&arg_type),
+			       SILC_STR_END);
+    if (ret == -1)
+      goto err;
     
     new->argv_lens[i] = payload_len;
     new->argv_types[i] = arg_type;
@@ -256,10 +274,12 @@ SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
     
     /* Get argument data */
     silc_buffer_pull(buffer, 3);
-    silc_buffer_unformat(buffer,
-			 SILC_STR_UI_XNSTRING_ALLOC(&new->argv[i], 
-						    payload_len),
-			 SILC_STR_END);
+    ret = silc_buffer_unformat(buffer,
+			       SILC_STR_UI_XNSTRING_ALLOC(&new->argv[i], 
+							  payload_len),
+			       SILC_STR_END);
+    if (ret == -1)
+      goto err;
 
     silc_buffer_pull(buffer, payload_len);
     pull_len += 3 + payload_len;
@@ -361,56 +381,6 @@ SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload)
 
   return buffer;
 }
-
-#if 0
-/* Encodes Argument payload with variable argument list. The arguments
-   must be: unsigned int, unsigned char *, unsigned int, ... One 
-   {unsigned int, unsigned char * and unsigned int} forms one argument, 
-   thus `argc' in case when sending one {unsigned int, unsigned char * 
-   and unsigned int} equals one (1) and when sending two of those it
-   equals two (2), and so on. This has to be preserved or bad things
-   will happen. The variable arguments is: {type, data, data_len}. */
-
-SilcBuffer silc_command_encode_payload_va(unsigned int argc, ...)
-{
-  va_list ap;
-  unsigned char **argv;
-  unsigned int *argv_lens = NULL, *argv_types = NULL;
-  unsigned char *x;
-  unsigned int x_len;
-  unsigned int x_type;
-  SilcBuffer buffer;
-  int i;
-
-  va_start(ap, argc);
-
-  argv = silc_calloc(argc, sizeof(unsigned char *));
-  argv_lens = silc_calloc(argc, sizeof(unsigned int));
-  argv_types = silc_calloc(argc, sizeof(unsigned int));
-
-  for (i = 0; i < argc; i++) {
-    x_type = va_arg(ap, unsigned int);
-    x = va_arg(ap, unsigned char *);
-    x_len = va_arg(ap, unsigned int);
-
-    argv[i] = silc_calloc(x_len + 1, sizeof(unsigned char));
-    memcpy(argv[i], x, x_len);
-    argv_lens[i] = x_len;
-    argv_types[i] = x_type;
-  }
-
-  buffer = silc_argument_payload_encode(argc, argv, 
-					argv_lens, argv_types);
-
-  for (i = 0; i < argc; i++)
-    silc_free(argv[i]);
-  silc_free(argv);
-  silc_free(argv_lens);
-  silc_free(argv_types);
-
-  return buffer;
-}
-#endif
 
 /* Free's Command Payload */
 

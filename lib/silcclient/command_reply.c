@@ -229,6 +229,10 @@ silc_client_command_reply_whois_print(SilcClientCommandReplyContext cmd,
   }
   
   client_id = silc_id_payload_parse_id(id_data, len);
+  if (!client_id) {
+    COMMAND_REPLY_ERROR;
+    return;
+  }
   
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
   if (nickname) {
@@ -410,6 +414,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
     if (!id_data)
       goto out;
     client_id = silc_id_payload_parse_id(id_data, len);
+    if (!client_id)
+      goto out;
 
     nickname = silc_argument_get_arg_type(cmd->args, 3, NULL);
     username = silc_argument_get_arg_type(cmd->args, 4, NULL);
@@ -495,6 +501,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   /* Take received Client ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   idp = silc_id_payload_parse_data(tmp, len);
+  if (!idp) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
   silc_client_receive_new_id(cmd->client, cmd->sock, idp);
     
   /* Notify application */
@@ -551,6 +561,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
     goto out;
 
   channel_id = silc_id_payload_parse_id(tmp, len);
+  if (!channel_id)
+    goto out;
 
   /* Get the channel name */
   if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
@@ -681,7 +693,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
   }
 
   curtime = time(NULL);
-  id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
+  id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_len,
+		      cmd->packet->src_id_type);
+  if (!id) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
 
   for (i = 0; i < conn->ping_count; i++) {
     if (!SILC_ID_SERVER_COMPARE(conn->ping[i].dest_id, id)) {
@@ -767,6 +784,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     goto out;
   }
   idp = silc_id_payload_parse_data(tmp, len);
+  if (!idp) {
+    COMMAND_REPLY_ERROR;
+    silc_free(channel_name);
+    goto out;
+  }
 
   /* Get channel mode */
   tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
@@ -948,6 +970,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
     goto out;
   }
   client_id = silc_id_payload_parse_id(id, len);
+  if (!client_id) {
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
   
   /* Get client entry */
   if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
@@ -1050,6 +1076,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   if (!tmp)
     goto out;
   channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!channel_id)
+    goto out;
 
   /* Get the list count */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
@@ -1103,6 +1131,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
     client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
+    if (!client_id)
+      continue;
 
     /* Mode */
     SILC_GET32_MSB(mode, client_mode_list->data);

@@ -17,14 +17,18 @@
   GNU General Public License for more details.
 
 */
-/* XXX: These routines needs to be made more stable as these can crash
-   if the data (for unformatting for example) is malformed or the buffer
-   is too short. Must be fixed. There are some other obvious bugs as
-   well. */
-/*
- * $Id$ */
+/* $Id$ */
 
 #include "silcincludes.h"
+
+/* Macro to check whether there is enough free space to add the
+   required amount of data. For unformatting this means that there must
+   be the data that is to be extracted. */
+#define HAS_SPACE(x, req)			\
+do {						\
+  if (req > (x)->len)				\
+    goto fail;					\
+} while(0)
 
 /* Formats the arguments sent and puts them into the buffer sent as
    argument. The buffer must be initialized beforehand and it must have
@@ -49,6 +53,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_SI8_CHAR:
       {
 	char x = (char)va_arg(ap, int);
+	HAS_SPACE(dst, 1);
 	silc_buffer_put(dst, &x, 1);
 	silc_buffer_pull(dst, 1);
 	break;
@@ -56,6 +61,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_UI8_CHAR:
       {
 	unsigned char x = (unsigned char)va_arg(ap, int);
+	HAS_SPACE(dst, 1);
 	silc_buffer_put(dst, &x, 1);
 	silc_buffer_pull(dst, 1);
 	break;
@@ -64,6 +70,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
       {
 	unsigned char xf[2];
 	short x = (short)va_arg(ap, int);
+	HAS_SPACE(dst, 2);
 	SILC_PUT16_MSB(x, xf);
 	silc_buffer_put(dst, xf, 2);
 	silc_buffer_pull(dst, 2);
@@ -73,6 +80,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
       {
 	unsigned char xf[2];
 	unsigned short x = (unsigned short)va_arg(ap, int);
+	HAS_SPACE(dst, 2);
 	SILC_PUT16_MSB(x, xf);
 	silc_buffer_put(dst, xf, 2);
 	silc_buffer_pull(dst, 2);
@@ -82,6 +90,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
       {
 	unsigned char xf[4];
 	int x = va_arg(ap, int);
+	HAS_SPACE(dst, 4);
 	SILC_PUT32_MSB(x, xf);
 	silc_buffer_put(dst, xf, 4);
 	silc_buffer_pull(dst, 4);
@@ -91,6 +100,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
       {
 	unsigned char xf[4];
 	unsigned int x = va_arg(ap, unsigned int);
+	HAS_SPACE(dst, 4);
 	SILC_PUT32_MSB(x, xf);
 	silc_buffer_put(dst, xf, 4);
 	silc_buffer_pull(dst, 4);
@@ -102,8 +112,10 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_UI32_STRING_ALLOC:
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
-	silc_buffer_put(dst, x, strlen(x));
-	silc_buffer_pull(dst, strlen(x));
+	int tmp_len = strlen(x);
+	HAS_SPACE(dst, tmp_len);
+	silc_buffer_put(dst, x, tmp_len);
+	silc_buffer_pull(dst, tmp_len);
 	break;
       }
     case SILC_BUFFER_PARAM_UI16_NSTRING:
@@ -115,6 +127,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
 	unsigned int len = va_arg(ap, unsigned int);
+	HAS_SPACE(dst, len);
 	silc_buffer_put(dst, x, len);
 	silc_buffer_pull(dst, len);
 	break;
@@ -123,7 +136,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
       goto ok;
       break;
     default:
-      SILC_LOG_ERROR(("Bad buffer formatting type `%d'. Could not "
+      SILC_LOG_DEBUG(("Bad buffer formatting type `%d'. Could not "
 		      "format the data.", fmt));
       goto fail;
       break;
@@ -131,8 +144,8 @@ int silc_buffer_format(SilcBuffer dst, ...)
   }
 
  fail:
-  SILC_LOG_ERROR(("Error occured while formatting data"));
-  return FALSE;
+  SILC_LOG_DEBUG(("Error occured while formatting data"));
+  return -1;
 
  ok:
   /* Push the buffer back to where it belongs. */
@@ -162,6 +175,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
     case SILC_BUFFER_PARAM_SI8_CHAR:
       {
 	char *x = va_arg(ap, char *);
+	HAS_SPACE(src, 1);
 	if (x)
 	  *x = src->data[0];
 	silc_buffer_pull(src, 1);
@@ -170,6 +184,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
     case SILC_BUFFER_PARAM_UI8_CHAR:
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
+	HAS_SPACE(src, 1);
 	if (x)
 	  *x = src->data[0];
 	silc_buffer_pull(src, 1);
@@ -178,6 +193,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
     case SILC_BUFFER_PARAM_SI16_SHORT:
       {
 	short *x = va_arg(ap, short *);
+	HAS_SPACE(src, 2);
 	if (x)
 	  SILC_GET16_MSB(*x, src->data);
 	silc_buffer_pull(src, 2);
@@ -186,6 +202,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
     case SILC_BUFFER_PARAM_UI16_SHORT:
       {
 	unsigned short *x = va_arg(ap, unsigned short *);
+	HAS_SPACE(src, 2);
 	if (x)
 	  SILC_GET16_MSB(*x, src->data);
 	silc_buffer_pull(src, 2);
@@ -194,6 +211,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
     case SILC_BUFFER_PARAM_SI32_INT:
       {
 	int *x = va_arg(ap, int *);
+	HAS_SPACE(src, 4);
 	if (x)
 	  SILC_GET32_MSB(*x, src->data);
 	silc_buffer_pull(src, 4);
@@ -202,6 +220,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
     case SILC_BUFFER_PARAM_UI32_INT:
       {
 	unsigned int *x = va_arg(ap, unsigned int *);
+	HAS_SPACE(src, 4);
 	if (x)
 	  SILC_GET32_MSB(*x, src->data);
 	silc_buffer_pull(src, 4);
@@ -211,14 +230,12 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       {
 	unsigned short len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
+	HAS_SPACE(src, 2);
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
-	if ((len2 > src->len))
-	  goto fail;
-	if (len2 < 1)
-	  break;
+	HAS_SPACE(src, len2);
 	if (x)
-	  memcpy(x, src->data, len2);
+	  *x = src->data;
 	silc_buffer_pull(src, len2);
 	break;
       }
@@ -226,12 +243,10 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       {
 	unsigned short len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
+	HAS_SPACE(src, 2);
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
-	if ((len2 > src->len))
-	  goto fail;
-	if (len2 < 1)
-	  break;
+	HAS_SPACE(src, len2);
 	if (x) {
 	  *x = silc_calloc(len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
@@ -243,14 +258,12 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       {
 	unsigned int len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
+	HAS_SPACE(src, 4);
 	SILC_GET32_MSB(len2, src->data);
 	silc_buffer_pull(src, 4);
-	if ((len2 > src->len))
-	  goto fail;
-	if (len2 < 1)
-	  break;
+	HAS_SPACE(src, len2);
 	if (x)
-	  memcpy(x, src->data, len2);
+	  *x = src->data;
 	silc_buffer_pull(src, len2);
 	break;
       }
@@ -258,12 +271,10 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       {
 	unsigned int len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
+	HAS_SPACE(src, 4);
 	SILC_GET32_MSB(len2, src->data);
 	silc_buffer_pull(src, 4);
-	if ((len2 > src->len))
-	  goto fail;
-	if (len2 < 1)
-	  break;
+	HAS_SPACE(src, len2);
 	if (x) {
 	  *x = silc_calloc(len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
@@ -276,16 +287,14 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 	unsigned short len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
 	unsigned short *len = va_arg(ap, unsigned short *);
+	HAS_SPACE(src, 2);
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
-	if ((len2 > src->len))
-	  break;
-	if (len2 < 1)
-	  break;
+	HAS_SPACE(src, len2);
 	if (len)
 	  *len = len2;
 	if (x)
-	  memcpy(x, src->data, len2);
+	  *x = src->data;
 	silc_buffer_pull(src, len2);
 	break;
       }
@@ -294,12 +303,10 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 	unsigned short len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
 	unsigned short *len = va_arg(ap, unsigned short *);
+	HAS_SPACE(src, 2);
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
-	if ((len2 > src->len))
-	  break;
-	if (len2 < 1)
-	  break;
+	HAS_SPACE(src, len2);
 	if (len)
 	  *len = len2;
 	if (x) {
@@ -314,23 +321,32 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 	unsigned int len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
 	unsigned int *len = va_arg(ap, unsigned int *);
+	HAS_SPACE(src, 4);
 	SILC_GET32_MSB(len2, src->data);
 	silc_buffer_pull(src, 4);
-	if ((len2 > src->len))
-	  goto fail;
-	if (len2 < 1)
-	  break;
+	HAS_SPACE(src, len2);
 	if (len)
 	  *len = len2;
 	if (x)
-	  memcpy(x, src->data, len2);
+	  *x = src->data;
 	silc_buffer_pull(src, len2);
+	break;
+      }
+    case SILC_BUFFER_PARAM_UI_XNSTRING:
+      {
+	unsigned char **x = va_arg(ap, unsigned char **);
+	unsigned int len = va_arg(ap, unsigned int);
+	HAS_SPACE(src, len);
+	if (len && x)
+	  *x = src->data;
+	silc_buffer_pull(src, len);
 	break;
       }
     case SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC:
       {
 	unsigned char **x = va_arg(ap, unsigned char **);
 	unsigned int len = va_arg(ap, unsigned int);
+	HAS_SPACE(src, len);
 	if (len && x) {
 	  *x = silc_calloc(len + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len);
@@ -338,20 +354,11 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 	silc_buffer_pull(src, len);
 	break;
       }
-    case SILC_BUFFER_PARAM_UI_XNSTRING:
-      {
-	unsigned char **x = va_arg(ap, unsigned char **);
-	unsigned int len = va_arg(ap, unsigned int);
-	if (len && x)
-	  memcpy(x, src->data, len);
-	silc_buffer_pull(src, len);
-	break;
-      }
     case SILC_BUFFER_PARAM_END:
       goto ok;
       break;
     default:
-      SILC_LOG_ERROR(("Bad buffer formatting type `%d'. Could not "
+      SILC_LOG_DEBUG(("Bad buffer formatting type `%d'. Could not "
 		      "format the data.", fmt));
       goto fail;
       break;
@@ -359,8 +366,8 @@ int silc_buffer_unformat(SilcBuffer src, ...)
   }
 
  fail:
-  SILC_LOG_ERROR(("Error occured while unformatting buffer"));
-  return FALSE;
+  SILC_LOG_DEBUG(("Error occured while unformatting buffer"));
+  return -1;
 
  ok:
   /* Push the buffer back to the start. */

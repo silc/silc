@@ -17,6 +17,8 @@
   GNU General Public License for more details.
 
 */
+/* $Id$ */
+/* Optimized buffer managing routines.  These are short inline functions. */
 
 #ifndef SILCBUFFER_H
 #define SILCBUFFER_H
@@ -126,32 +128,24 @@ typedef SilcBufferObject *SilcBuffer;
    the buffer area to the end of the buffer. */
 #define SILC_BUFFER_END(x) ((x)->end - (x)->head)
 
-#ifndef SILC_DEBUG		/* When we are not doing debugging we use
-				   optimized inline buffer functions. */
-/* 
- * Optimized buffer managing routines.  These are short inline
- * functions.
- */
+/* Inline functions */
 
 extern inline
 SilcBuffer silc_buffer_alloc(unsigned int len)
 {
   SilcBuffer sb;
-  unsigned char *data;
 
   /* Allocate new SilcBuffer */
   sb = silc_calloc(1, sizeof(*sb));
 
   /* Allocate the actual data area */
-  data = silc_calloc(len, sizeof(*data));
+  sb->head = silc_calloc(len, sizeof(*sb->head));
 
   /* Set pointers to the new buffer */
   sb->truelen = len;
-  sb->len = 0;
-  sb->head = data;
-  sb->data = data;
-  sb->tail = data;
-  sb->end = data + sb->truelen;
+  sb->data = sb->head;
+  sb->tail = sb->head;
+  sb->end = sb->head + sb->truelen;
 
   return sb;
 }
@@ -190,7 +184,9 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, unsigned int len)
 {
   unsigned char *old_data = sb->data;
 
+#ifdef SILC_DEBUG
   assert(len <= (sb->tail - sb->data));
+#endif
 
   sb->data += len;
   sb->len -= len;
@@ -220,7 +216,9 @@ unsigned char *silc_buffer_push(SilcBuffer sb, unsigned int len)
 {
   unsigned char *old_data = sb->data;
 
+#ifdef SILC_DEBUG
   assert((sb->data - len) >= sb->head);
+#endif
 
   sb->data -= len;
   sb->len += len;
@@ -250,7 +248,9 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, unsigned int len)
 {
   unsigned char *old_tail = sb->tail;
 
+#ifdef SILC_DEBUG
   assert((sb->end - sb->tail) >= len);
+#endif
 
   sb->tail += len;
   sb->len += len;
@@ -280,7 +280,9 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, unsigned int len)
 {
   unsigned char *old_tail = sb->tail;
 
+#ifdef SILC_DEBUG
   assert((sb->tail - len) >= sb->data);
+#endif
 
   sb->tail -= len;
   sb->len -= len;
@@ -304,7 +306,9 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 				    unsigned char *data,
 				    unsigned int len)
 {
+#ifdef SILC_DEBUG
   assert((sb->data - sb->head) >= len);
+#endif
   return memcpy(sb->head, data, len);
 }
 
@@ -324,7 +328,9 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 			       unsigned char *data,
 			       unsigned int len)
 {
+#ifdef SILC_DEBUG
   assert((sb->tail - sb->data) >= len);
+#endif
   return memcpy(sb->data, data, len);
 }
 
@@ -344,29 +350,10 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
 				    unsigned char *data,
 				    unsigned int len)
 {
+#ifdef SILC_DEBUG
   assert((sb->end - sb->tail) >= len);
+#endif
   return memcpy(sb->tail, data, len);
 }
-
-#endif /* !SILC_DEBUG */
-
-/* Prototypes */
-#ifdef SILC_DEBUG
-SilcBuffer silc_buffer_alloc(unsigned int len);
-void silc_buffer_free(SilcBuffer sb);
-unsigned char *silc_buffer_pull(SilcBuffer sb, unsigned int len);
-unsigned char *silc_buffer_push(SilcBuffer sb, unsigned int len);
-unsigned char *silc_buffer_pull_tail(SilcBuffer sb, unsigned int len);
-unsigned char *silc_buffer_push_tail(SilcBuffer sb, unsigned int len);
-unsigned char *silc_buffer_put_head(SilcBuffer sb, 
-				    unsigned char *data,
-				    unsigned int len);
-unsigned char *silc_buffer_put(SilcBuffer sb, 
-			       unsigned char *data,
-			       unsigned int len);
-unsigned char *silc_buffer_put_tail(SilcBuffer sb, 
-				    unsigned char *data,
-				    unsigned int len);
-#endif
 
 #endif

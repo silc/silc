@@ -781,7 +781,10 @@ void silc_client_packet_parse_type(SilcClient client,
 
       proto_ctx->packet = silc_packet_context_dup(packet);
       proto_ctx->dest_id_type = packet->src_id_type;
-      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
+      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+					  packet->src_id_type);
+      if (!proto_ctx->dest_id)
+	break;
 
       /* Let the protocol handle the packet */
       sock->protocol->execute(client->timeout_queue, 0,
@@ -812,7 +815,10 @@ void silc_client_packet_parse_type(SilcClient client,
 
       proto_ctx->packet = silc_packet_context_dup(packet);
       proto_ctx->dest_id_type = packet->src_id_type;
-      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
+      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+					  packet->src_id_type);
+      if (!proto_ctx->dest_id)
+	break;
 
       /* Let the protocol handle the packet */
       sock->protocol->execute(client->timeout_queue, 0,
@@ -834,6 +840,8 @@ void silc_client_packet_parse_type(SilcClient client,
       SilcIDPayload idp;
 
       idp = silc_id_payload_parse(buffer);
+      if (!idp)
+	break;
       if (silc_id_payload_get_type(idp) != SILC_ID_CLIENT)
 	break;
 
@@ -1295,6 +1303,9 @@ void silc_client_notify_by_server(SilcClient client,
   unsigned int tmp_len, mode;
 
   payload = silc_notify_payload_parse(buffer);
+  if (!payload)
+    goto out;
+
   type = silc_notify_get_type(payload);
   args = silc_notify_get_args(payload);
   if (!args)
@@ -1319,6 +1330,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find Client entry and if not found query it */
     client_entry = silc_idlist_get_client_by_id(client, conn, client_id, TRUE);
@@ -1337,6 +1350,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
 
     /* XXX Will ALWAYS fail because currently we don't have way to resolve
        channel information for channel that we're not joined to. */
@@ -1365,6 +1380,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find Client entry and if not found query it */
     client_entry = silc_idlist_get_client_by_id(client, conn, client_id, TRUE);
@@ -1378,7 +1395,10 @@ void silc_client_notify_by_server(SilcClient client,
     }
 
     /* Get channel entry */
-    channel_id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				SILC_ID_CHANNEL);
+    if (!channel_id)
+      goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
 				     SILC_ID_CHANNEL, &id_cache))
       break;
@@ -1411,6 +1431,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find Client entry */
     client_entry = 
@@ -1419,7 +1441,10 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Get channel entry */
-    channel_id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				SILC_ID_CHANNEL);
+    if (!channel_id)
+      goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
 				     SILC_ID_CHANNEL, &id_cache))
       break;
@@ -1453,6 +1478,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find Client entry */
     client_entry = 
@@ -1494,6 +1521,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find Client entry */
     client_entry = 
@@ -1507,7 +1536,10 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Get channel entry */
-    channel_id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				SILC_ID_CHANNEL);
+    if (!channel_id)
+      goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
 				     SILC_ID_CHANNEL, &id_cache))
       break;
@@ -1534,6 +1566,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Ignore my ID */
     if (!SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
@@ -1557,6 +1591,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find old Client entry */
     client_entry = 
@@ -1599,6 +1635,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find Client entry */
     client_entry = 
@@ -1614,7 +1652,10 @@ void silc_client_notify_by_server(SilcClient client,
     SILC_GET32_MSB(mode, tmp);
 
     /* Get channel entry */
-    channel_id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				SILC_ID_CHANNEL);
+    if (!channel_id)
+      goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
 				     SILC_ID_CHANNEL, &id_cache))
       break;
@@ -1641,6 +1682,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find Client entry */
     client_entry = 
@@ -1662,6 +1705,8 @@ void silc_client_notify_by_server(SilcClient client,
 
     silc_free(client_id);
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Find target Client entry */
     client_entry2 = 
@@ -1670,7 +1715,10 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Get channel entry */
-    channel_id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				SILC_ID_CHANNEL);
+    if (!channel_id)
+      goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
 				     SILC_ID_CHANNEL, &id_cache))
       break;
@@ -1810,7 +1858,11 @@ void silc_client_save_channel_key(SilcClientConnection conn,
     return;
   }
 
-  id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
+  id = silc_id_str2id(id_string, tmp_len, SILC_ID_CHANNEL);
+  if (!id) {
+    silc_channel_key_payload_free(payload);
+    return;
+  }
 
   /* Find channel. */
   if (!channel) {
@@ -1883,8 +1935,13 @@ void silc_client_channel_message(SilcClient client,
   if (packet->dst_id_type != SILC_ID_CHANNEL)
     goto out;
 
-  client_id = silc_id_str2id(packet->src_id, SILC_ID_CLIENT);
-  id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
+  client_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+			     SILC_ID_CLIENT);
+  if (!client_id)
+    goto out;
+  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL);
+  if (!id)
+    goto out;
 
   /* Find the channel entry from channels on this connection */
   if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
@@ -1941,13 +1998,17 @@ void silc_client_private_message(SilcClient client,
   SilcBuffer buffer = packet->buffer;
   unsigned short nick_len;
   unsigned char *nickname, *message;
+  int ret;
 
   /* Get nickname */
-  silc_buffer_unformat(buffer, 
-		       SILC_STR_UI16_NSTRING_ALLOC(&nickname, &nick_len),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer, 
+			     SILC_STR_UI16_NSTRING_ALLOC(&nickname, &nick_len),
+			     SILC_STR_END);
+  if (ret == -1)
+    return;
+
   silc_buffer_pull(buffer, 2 + nick_len);
-     
+
   message = silc_calloc(buffer->len + 1, sizeof(char));
   memcpy(message, buffer->data, buffer->len);
 
@@ -1964,7 +2025,8 @@ void silc_client_private_message(SilcClient client,
     if (packet->src_id_type != SILC_ID_CLIENT)
       goto out;
 
-    remote_id = silc_id_str2id(packet->src_id, SILC_ID_CLIENT);
+    remote_id = silc_id_str2id(packet->src_id, packet->src_id_len, 
+			       SILC_ID_CLIENT);
     if (!remote_id)
       goto out;
 

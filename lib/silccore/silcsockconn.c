@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2001/02/11 14:09:34  priikone
+ * 	Code auditing weekend results and fixes committing.
+ *
  * Revision 1.2  2000/07/05 06:06:35  priikone
  * 	Global cosmetic change.
  *
@@ -56,7 +59,6 @@ void silc_socket_alloc(int sock, SilcSocketType type, void *user_data,
 void silc_socket_free(SilcSocketConnection sock)
 {
   if (sock) {
-    //    silc_protocol_free(sock->protocol);
     silc_buffer_free(sock->inbuf);
     silc_buffer_free(sock->outbuf);
     silc_free(sock);

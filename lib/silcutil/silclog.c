@@ -147,7 +147,6 @@ void silc_log_output_debug(char *file, char *function,
       return;
     }
 
-  /* fprintf(stderr, "%s:%s:%d: %s\n", file, function, line, string); */
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
   fflush(stderr);
   silc_free(string);
@@ -175,7 +174,6 @@ void silc_log_output_hexdump(char *file, char *function,
       return;
     }
 
-  /* fprintf(stderr, "%s:%s:%d: %s\n", file, function, line, string); */
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
   silc_free(string);
 

@@ -4,7 +4,7 @@
   
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,22 +23,7 @@
  * This is the main program for the SILC daemon. This parses command
  * line arguments and creates the server object.
  */
-/*
- * $Id$
- * $Log$
- * Revision 1.3  2000/09/29 07:13:05  priikone
- * 	Added support for notify type sending in notify payload.
- * 	Removed Log headers from the file.
- * 	Enabled debug messages by default for server.
- *
- * Revision 1.2  2000/07/05 06:14:01  priikone
- * 	Global costemic changes.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 #include "server_internal.h"

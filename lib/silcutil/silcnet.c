@@ -17,31 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.3  2000/12/17 13:07:35  priikone
- * 	Added require_reverse_mapping for ServerParams.
- *
- * Revision 1.2  2000/10/31 19:48:32  priikone
- * 	A LOT updates. Cannot separate. :)
- *
- * Revision 1.1  2000/09/13 17:45:16  priikone
- * 	Splitted SILC core library. Core library includes now only
- * 	SILC protocol specific stuff. New utility library includes the
- * 	old stuff from core library that is more generic purpose stuff.
- *
- * Revision 1.3  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.2  2000/06/30 10:49:48  priikone
- * 	Added SOCKS4 and SOCKS5 support for SILC client.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 #include "silcnet.h"

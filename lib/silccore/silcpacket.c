@@ -568,10 +568,6 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 			SilcBuffer buffer, SilcPacketContext *packet)
 {
-#if 0
-  SILC_LOG_DEBUG(("Decrypting packet, cipher %s, len %d (%d)", 
-		  cipher->cipher->name, len, len - 2));
-#endif
 
   /* Decrypt start of the packet header */
   if (cipher)
@@ -597,7 +593,8 @@ int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
   } else {
     /* Packet requires special handling, decrypt rest of the header.
        This only decrypts. */
-    silc_packet_decrypt_rest_special(cipher, hmac, buffer);
+    if (!silc_packet_decrypt_rest_special(cipher, hmac, buffer))
+      return -1;
 
     /* Check MAC */
     if (!silc_packet_check_mac(hmac, buffer))
@@ -616,7 +613,7 @@ int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 SilcPacketType silc_packet_parse(SilcPacketContext *ctx)
 {
   SilcBuffer buffer = ctx->buffer;
-  int len;
+  int len, ret;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));
 
@@ -635,6 +632,8 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx)
 			     SILC_STR_UI_SHORT(&ctx->dst_id_len),
 			     SILC_STR_UI_CHAR(&ctx->src_id_type),
 			     SILC_STR_END);
+  if (len == -1)
+    return SILC_PACKET_NONE;
 
   if (ctx->src_id_len > SILC_PACKET_MAX_ID_LEN ||
       ctx->dst_id_len > SILC_PACKET_MAX_ID_LEN) {
@@ -646,14 +645,17 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx)
   ctx->padlen = SILC_PACKET_PADLEN(ctx->truelen);
 
   silc_buffer_pull(buffer, len);
-  silc_buffer_unformat(buffer, 
-		       SILC_STR_UI_XNSTRING_ALLOC(&ctx->src_id,
-						  ctx->src_id_len),
-		       SILC_STR_UI_CHAR(&ctx->dst_id_type),
-		       SILC_STR_UI_XNSTRING_ALLOC(&ctx->dst_id,
-						  ctx->dst_id_len),
-		       SILC_STR_UI_XNSTRING(NULL, ctx->padlen),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer, 
+			     SILC_STR_UI_XNSTRING_ALLOC(&ctx->src_id,
+							ctx->src_id_len),
+			     SILC_STR_UI_CHAR(&ctx->dst_id_type),
+			     SILC_STR_UI_XNSTRING_ALLOC(&ctx->dst_id,
+							ctx->dst_id_len),
+			     SILC_STR_UI_XNSTRING(NULL, ctx->padlen),
+			     SILC_STR_END);
+  if (ret == -1)
+    return SILC_PACKET_NONE;
+
   silc_buffer_push(buffer, len);
 
   SILC_LOG_HEXDUMP(("parsed packet, len %d", ctx->buffer->len), 
@@ -677,7 +679,7 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx)
 SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx)
 {
   SilcBuffer buffer = ctx->buffer;
-  int len, tmplen;
+  int len, tmplen, ret;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));
 
@@ -696,6 +698,8 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx)
 			     SILC_STR_UI_SHORT(&ctx->dst_id_len),
 			     SILC_STR_UI_CHAR(&ctx->src_id_type),
 			     SILC_STR_END);
+  if (len == -1)
+    return SILC_PACKET_NONE;
 
   if (ctx->src_id_len > SILC_PACKET_MAX_ID_LEN ||
       ctx->dst_id_len > SILC_PACKET_MAX_ID_LEN) {
@@ -710,14 +714,17 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx)
   ctx->padlen = SILC_PACKET_PADLEN(tmplen);
 
   silc_buffer_pull(buffer, len);
-  silc_buffer_unformat(buffer, 
-		       SILC_STR_UI_XNSTRING_ALLOC(&ctx->src_id,
-						  ctx->src_id_len),
-		       SILC_STR_UI_CHAR(&ctx->dst_id_type),
-		       SILC_STR_UI_XNSTRING_ALLOC(&ctx->dst_id,
-						  ctx->dst_id_len),
-		       SILC_STR_UI_XNSTRING(NULL, ctx->padlen),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer, 
+			     SILC_STR_UI_XNSTRING_ALLOC(&ctx->src_id,
+							ctx->src_id_len),
+			     SILC_STR_UI_CHAR(&ctx->dst_id_type),
+			     SILC_STR_UI_XNSTRING_ALLOC(&ctx->dst_id,
+							ctx->dst_id_len),
+			     SILC_STR_UI_XNSTRING(NULL, ctx->padlen),
+			     SILC_STR_END);
+  if (ret == -1)
+    return SILC_PACKET_NONE;
+
   silc_buffer_push(buffer, len);
 
   SILC_LOG_HEXDUMP(("parsed packet, len %d", ctx->buffer->len), 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -197,7 +197,7 @@ void silc_server_packet_broadcast(SilcServer server,
 
   /* If the packet is originated from our primary route we are
      not allowed to send the packet. */
-  id = silc_id_str2id(packet->src_id, packet->src_id_type);
+  id = silc_id_str2id(packet->src_id, packet->src_id_len, packet->src_id_type);
   if (id && SILC_ID_SERVER_COMPARE(id, server->router->id)) {
     idata = (SilcIDListData)sock->user_data;
 

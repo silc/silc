@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,17 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.2  2001/02/02 13:34:45  priikone
- * 	updates.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Importet from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 
@@ -42,10 +32,6 @@ void silc_id_create_server_id(int sock, SilcRng rng, SilcServerID **new_id)
   SILC_LOG_DEBUG(("Creating new Server ID"));
 
   *new_id = silc_calloc(1, sizeof(**new_id));
-  if (*new_id == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new Server ID"));
-    return;
-  }
 
   /* Get IP address */
   len = sizeof(server);
@@ -76,10 +62,6 @@ void silc_id_create_client_id(SilcServerID *server_id, SilcRng rng,
   SILC_LOG_DEBUG(("Creating new Client ID"));
 
   *new_id = silc_calloc(1, sizeof(**new_id));
-  if (*new_id == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new Client ID"));
-    return;
-  }
 
   /* Create hash of the nickanem */
   silc_hash_make(md5hash, nickname, strlen(nickname), hash);
@@ -100,10 +82,6 @@ void silc_id_create_channel_id(SilcServerID *router_id, SilcRng rng,
   SILC_LOG_DEBUG(("Creating new Channel ID"));
 
   *new_id = silc_calloc(1, sizeof(**new_id));
-  if (*new_id == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new Channel ID"));
-    return;
-  }
 
   /* Create the ID */
   (*new_id)->ip.s_addr = router_id->ip.s_addr;

@@ -26,6 +26,13 @@
    _SI_ = signed
    _UI_ = unsigned
 
+  Any XXX_STRING_ALLOC types will allocate space for the data and
+  memcpy the data to the pointer sent as argument (in unformatting).
+
+  Any XXX_STRING will not allocate or copy any data.  Instead it
+  will set the pointer to the data.  Note that the data pointer 
+  returned (in unformatting) must not be freed.
+
 */
 typedef enum {
   SILC_BUFFER_PARAM_SI8_CHAR,
@@ -37,16 +44,16 @@ typedef enum {
   SILC_BUFFER_PARAM_SI32_INT,
   SILC_BUFFER_PARAM_UI32_INT,
 
-  SILC_BUFFER_PARAM_UI16_STRING,
-  SILC_BUFFER_PARAM_UI16_STRING_ALLOC,
-  SILC_BUFFER_PARAM_UI32_STRING,
-  SILC_BUFFER_PARAM_UI32_STRING_ALLOC,
-  SILC_BUFFER_PARAM_UI16_NSTRING,
-  SILC_BUFFER_PARAM_UI16_NSTRING_ALLOC,
-  SILC_BUFFER_PARAM_UI32_NSTRING,
-  SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC,
-  SILC_BUFFER_PARAM_UI_XNSTRING,
-  SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC,
+  SILC_BUFFER_PARAM_UI16_STRING,        /* No copy */
+  SILC_BUFFER_PARAM_UI16_STRING_ALLOC,	/* Alloc + memcpy */
+  SILC_BUFFER_PARAM_UI32_STRING,	/* No copy */
+  SILC_BUFFER_PARAM_UI32_STRING_ALLOC,	/* Alloc + memcpy */
+  SILC_BUFFER_PARAM_UI16_NSTRING,	/* No copy */
+  SILC_BUFFER_PARAM_UI16_NSTRING_ALLOC,	/* Alloc + memcpy */
+  SILC_BUFFER_PARAM_UI32_NSTRING,	/* No copy */
+  SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC,	/* Alloc + memcpy */
+  SILC_BUFFER_PARAM_UI_XNSTRING,	/* No copy */
+  SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC,	/* Alloc + memcpy */
 
   SILC_BUFFER_PARAM_END
 } SilcBufferParamType;

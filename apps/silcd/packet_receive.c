@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ void silc_server_private_message(SilcServer server,
     goto err;
 
   /* Decode destination Client ID */
-  id = silc_id_str2id(packet->dst_id, SILC_ID_CLIENT);
+  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CLIENT);
   if (!id) {
     SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
     goto err;
@@ -152,7 +152,9 @@ void silc_server_command_reply(SilcServer server,
 
   if (packet->dst_id_type == SILC_ID_CLIENT) {
     /* Destination must be one of ours */
-    id = silc_id_str2id(packet->dst_id, SILC_ID_CLIENT);
+    id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CLIENT);
+    if (!id)
+      return;
     client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
     if (!client) {
       SILC_LOG_ERROR(("Cannot process command reply to unknown client"));
@@ -216,7 +218,9 @@ void silc_server_channel_message(SilcServer server,
   }
 
   /* Find channel entry */
-  id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
+  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL);
+  if (!id)
+    goto out;
   channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
   if (!channel) {
     channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
@@ -230,7 +234,10 @@ void silc_server_channel_message(SilcServer server,
      from router we won't do the check as the message is from client that
      we don't know about. Also, if the original sender is not client
      (as it can be server as well) we don't do the check. */
-  sender = silc_id_str2id(packet->src_id, packet->src_id_type);
+  sender = silc_id_str2id(packet->src_id, packet->src_id_len, 
+			  packet->src_id_type);
+  if (!sender)
+    goto out;
   if (sock->type != SILC_SOCKET_TYPE_ROUTER && 
       packet->src_id_type == SILC_ID_CLIENT) {
     silc_list_start(channel->user_list);
@@ -291,6 +298,7 @@ void silc_server_replace_id(SilcServer server,
   SilcIdType old_id_type, new_id_type;
   unsigned short old_id_len, new_id_len;
   void *id = NULL, *id2 = NULL;
+  int ret;
 
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       packet->src_id_type == SILC_ID_CLIENT)
@@ -298,12 +306,14 @@ void silc_server_replace_id(SilcServer server,
 
   SILC_LOG_DEBUG(("Replacing ID"));
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_SHORT(&old_id_type),
-		       SILC_STR_UI16_NSTRING_ALLOC(&old_id, &old_id_len),
-		       SILC_STR_UI_SHORT(&new_id_type),
-		       SILC_STR_UI16_NSTRING_ALLOC(&new_id, &new_id_len),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_SHORT(&old_id_type),
+			     SILC_STR_UI16_NSTRING_ALLOC(&old_id, &old_id_len),
+			     SILC_STR_UI_SHORT(&new_id_type),
+			     SILC_STR_UI16_NSTRING_ALLOC(&new_id, &new_id_len),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto out;
 
   if (old_id_type != new_id_type)
     goto out;
@@ -312,11 +322,11 @@ void silc_server_replace_id(SilcServer server,
       new_id_len != silc_id_get_len(new_id_type))
     goto out;
 
-  id = silc_id_str2id(old_id, old_id_type);
+  id = silc_id_str2id(old_id, old_id_len, old_id_type);
   if (!id)
     goto out;
 
-  id2 = silc_id_str2id(new_id, new_id_type);
+  id2 = silc_id_str2id(new_id, new_id_len, new_id_type);
   if (!id2)
     goto out;
 
@@ -412,6 +422,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcBuffer reply;
   SilcIDListData idata;
   char *username = NULL, *realname = NULL, *id_string;
+  int ret;
 
   SILC_LOG_DEBUG(("Creating new client"));
 
@@ -430,10 +441,17 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   }
 
   /* Parse incoming packet */
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI16_STRING_ALLOC(&username),
-		       SILC_STR_UI16_STRING_ALLOC(&realname),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI16_STRING_ALLOC(&username),
+			     SILC_STR_UI16_STRING_ALLOC(&realname),
+			     SILC_STR_END);
+  if (ret == -1) {
+    if (username)
+      silc_free(username);
+    if (realname)
+      silc_free(realname);
+    return NULL;
+  }
 
   /* Create Client ID */
   silc_id_create_client_id(server->id, server->rng, server->md5hash,
@@ -545,6 +563,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   SilcIDListData idata;
   unsigned char *server_name, *id_string;
   unsigned short id_len;
+  int ret;
 
   SILC_LOG_DEBUG(("Creating new server"));
 
@@ -564,10 +583,17 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   }
 
   /* Parse the incoming packet */
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI16_NSTRING_ALLOC(&id_string, &id_len),
-		       SILC_STR_UI16_STRING_ALLOC(&server_name),
-		       SILC_STR_END);
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI16_NSTRING_ALLOC(&id_string, &id_len),
+			     SILC_STR_UI16_STRING_ALLOC(&server_name),
+			     SILC_STR_END);
+  if (ret == -1) {
+    if (id_string)
+      silc_free(id_string);
+    if (server_name)
+      silc_free(server_name);
+    return NULL;
+  }
 
   if (id_len > buffer->len) {
     silc_free(id_string);
@@ -576,7 +602,12 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   }
 
   /* Get Server ID */
-  server_id = silc_id_str2id(id_string, SILC_ID_SERVER);
+  server_id = silc_id_str2id(id_string, id_len, SILC_ID_SERVER);
+  if (!server_id) {
+    silc_free(id_string);
+    silc_free(server_name);
+    return NULL;
+  }
   silc_free(id_string);
 
   /* Update client entry */
@@ -751,10 +782,12 @@ void silc_server_remove_channel_user(SilcServer server,
 {
   SilcBuffer buffer = packet->buffer;
   unsigned char *tmp1 = NULL, *tmp2 = NULL;
+  unsigned int tmp1_len, tmp2_len;
   SilcClientID *client_id = NULL;
   SilcChannelID *channel_id = NULL;
   SilcChannelEntry channel;
   SilcClientEntry client;
+  int ret;
 
   SILC_LOG_DEBUG(("Removing user from channel"));
 
@@ -762,16 +795,15 @@ void silc_server_remove_channel_user(SilcServer server,
       server->server_type == SILC_SERVER)
     return;
 
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI16_STRING_ALLOC(&tmp1),
-		       SILC_STR_UI16_STRING_ALLOC(&tmp2),
-		       SILC_STR_END);
-
-  if (!tmp1 || !tmp2)
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI16_NSTRING_ALLOC(&tmp1, &tmp1_len),
+			     SILC_STR_UI16_NSTRING_ALLOC(&tmp2, &tmp2_len),
+			     SILC_STR_END);
+  if (ret == -1)
     goto out;
 
-  client_id = silc_id_str2id(tmp1, SILC_ID_CLIENT);
-  channel_id = silc_id_str2id(tmp2, SILC_ID_CHANNEL);
+  client_id = silc_id_str2id(tmp1, tmp1_len, SILC_ID_CLIENT);
+  channel_id = silc_id_str2id(tmp2, tmp2_len, SILC_ID_CHANNEL);
   if (!client_id || !channel_id)
     goto out;
 
@@ -833,6 +865,7 @@ void silc_server_new_channel(SilcServer server,
   SilcChannelID *channel_id;
   unsigned short channel_id_len;
   char *channel_name;
+  int ret;
 
   SILC_LOG_DEBUG(("Processing New Channel"));
 
@@ -842,17 +875,20 @@ void silc_server_new_channel(SilcServer server,
     return;
 
   /* Parse payload */
-  if (!silc_buffer_unformat(packet->buffer, 
-			    SILC_STR_UI16_STRING_ALLOC(&channel_name),
-			    SILC_STR_UI16_NSTRING_ALLOC(&id, &channel_id_len),
-			    SILC_STR_END))
+  ret = silc_buffer_unformat(packet->buffer, 
+			     SILC_STR_UI16_STRING_ALLOC(&channel_name),
+			     SILC_STR_UI16_NSTRING_ALLOC(&id, &channel_id_len),
+			     SILC_STR_END);
+  if (ret == -1) {
+    if (channel_name)
+      silc_free(channel_name);
+    if (id)
+      silc_free(id);
     return;
+  }
     
-  if (!channel_name || !id)
-    return;
-
   /* Decode the channel ID */
-  channel_id = silc_id_str2id(id, SILC_ID_CHANNEL);
+  channel_id = silc_id_str2id(id, channel_id_len, SILC_ID_CHANNEL);
   if (!channel_id)
     return;
   silc_free(id);
@@ -916,7 +952,8 @@ void silc_server_notify(SilcServer server,
      */
     SILC_LOG_DEBUG(("JOIN notify"));
 
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_type);
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
     if (!channel_id)
       goto out;
 
@@ -935,6 +972,10 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id) {
+      silc_free(channel_id);
+      goto out;
+    }
 
     /* Send to channel */
     silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
@@ -951,9 +992,15 @@ void silc_server_notify(SilcServer server,
 
       client = silc_idlist_find_client_by_id(server->global_list, 
 					     client_id, NULL);
-      if (!client)
+      if (!client) {
 	client = silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
 					client_id, sock->user_data, sock);
+	if (!client) {
+	  silc_free(channel_id);
+	  silc_free(client_id);
+	  goto out;
+	}
+      }
 
       /* The channel is global now */
       channel->global_users = TRUE;
@@ -975,7 +1022,8 @@ void silc_server_notify(SilcServer server,
      */
     SILC_LOG_DEBUG(("LEAVE notify"));
 
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_type);
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
     if (!channel_id)
       goto out;
 
@@ -994,6 +1042,10 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id) {
+      silc_free(channel_id);
+      goto out;
+    }
 
     /* Send to channel */
     silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
@@ -1007,6 +1059,7 @@ void silc_server_notify(SilcServer server,
       client = silc_idlist_find_client_by_id(server->local_list, 
 					     client_id, NULL);
       if (!client) {
+	silc_free(client_id);
 	silc_free(channel_id);
 	goto out;
       }
@@ -1028,6 +1081,8 @@ void silc_server_notify(SilcServer server,
     if (!tmp)
       goto out;
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
 
     /* Get client entry */
     client = silc_idlist_find_client_by_id(server->global_list, 
@@ -1063,12 +1118,16 @@ void silc_server_notify(SilcServer server,
       if (!id)
 	goto out;
       client_id = silc_id_payload_parse_id(id, tmp_len);
+      if (!client_id)
+	goto out;
       
       /* Get new client ID */
       id2 = silc_argument_get_arg_type(args, 2, &tmp_len);
       if (!id2)
 	goto out;
       client_id2 = silc_id_payload_parse_id(id2, tmp_len);
+      if (!client_id2)
+	goto out;
       
       SILC_LOG_DEBUG(("Old Client ID id(%s)", 
 		      silc_id_render(client_id, SILC_ID_CLIENT)));
@@ -1147,6 +1206,7 @@ void silc_server_new_channel_user(SilcServer server,
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcBuffer clidp;
+  int ret;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1156,24 +1216,27 @@ void silc_server_new_channel_user(SilcServer server,
     return;
 
   /* Parse payload */
-  if (!silc_buffer_unformat(packet->buffer, 
-			    SILC_STR_UI16_NSTRING_ALLOC(&tmpid1, 
-							&channel_id_len),
-			    SILC_STR_UI16_NSTRING_ALLOC(&tmpid2, 
-							&client_id_len),
-			    SILC_STR_END))
+  ret = silc_buffer_unformat(packet->buffer, 
+			     SILC_STR_UI16_NSTRING_ALLOC(&tmpid1, 
+							 &channel_id_len),
+			     SILC_STR_UI16_NSTRING_ALLOC(&tmpid2, 
+							 &client_id_len),
+			     SILC_STR_END);
+  if (ret == -1) {
+    if (tmpid1)
+      silc_free(tmpid1);
+    if (tmpid2)
+      silc_free(tmpid2);
     return;
-
-  if (!tmpid1 || !tmpid2)
-    return;
+  }
 
   /* Decode the channel ID */
-  channel_id = silc_id_str2id(tmpid1, SILC_ID_CHANNEL);
+  channel_id = silc_id_str2id(tmpid1, channel_id_len, SILC_ID_CHANNEL);
   if (!channel_id)
     goto out;
 
   /* Decode the client ID */
-  client_id = silc_id_str2id(tmpid2, SILC_ID_CLIENT);
+  client_id = silc_id_str2id(tmpid2, client_id_len, SILC_ID_CLIENT);
   if (!client_id)
     goto out;
 
