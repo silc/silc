@@ -1,3 +1,8 @@
+Sun Nov  9 20:44:56 EET 200  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed nickname formatting when changing only case of the
+	  nickname.  Affected file lib/silcclient/idlist.c.
+
 Sun Nov  9 19:33:59 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Fixed a memory leak and incorrect printing of the "appears as"
