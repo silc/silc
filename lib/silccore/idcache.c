@@ -204,8 +204,10 @@ int silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data,
       silc_idcache_list_add(list, &(cache->cache[i]));
   }
 
-  if (!silc_idcache_list_count(list))
+  if (!silc_idcache_list_count(list)) {
+    silc_idcache_list_free(list);
     return FALSE;
+  }
 
   if (ret)
     *ret = list;
@@ -295,8 +297,10 @@ int silc_idcache_find_by_data_loose(SilcIDCache cache, unsigned char *data,
     }
   }
     
-  if (!silc_idcache_list_count(list))
+  if (!silc_idcache_list_count(list)) {
+    silc_idcache_list_free(list);
     return FALSE;
+  }
 
   if (ret)
     *ret = list;
@@ -332,8 +336,10 @@ int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
 	silc_idcache_list_add(list, &(cache->cache[i]));
   }
 
-  if (!silc_idcache_list_count(list))
+  if (!silc_idcache_list_count(list)) {
+    silc_idcache_list_free(list);
     return FALSE;
+  }
 
   if (ret)
     *ret = list;

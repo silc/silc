@@ -106,16 +106,22 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
 			       SilcSocketConnectionHBCb hb_callback,
 			       void *timeout_queue)
 {
-  SilcSocketConnectionHB hb = silc_calloc(1, sizeof(*hb));
 
-  hb->heartbeat = heartbeat;
-  hb->hb_context = hb_context;
-  hb->hb_callback = hb_callback;
-  hb->timeout_queue = timeout_queue;
-  hb->sock = sock;
-  hb->hb_task = silc_task_register(timeout_queue, sock->sock, 
-				   silc_socket_heartbeat,
-				   (void *)hb, heartbeat, 0,
-				   SILC_TASK_TIMEOUT,
-				   SILC_TASK_PRI_LOW);
+  if (sock->hb) {
+    silc_task_unregister(sock->hb->timeout_queue, sock->hb->hb_task);
+    silc_free(sock->hb->hb_context);
+    silc_free(sock->hb);
+  }
+
+  sock->hb = silc_calloc(1, sizeof(*sock->hb));
+  sock->hb->heartbeat = heartbeat;
+  sock->hb->hb_context = hb_context;
+  sock->hb->hb_callback = hb_callback;
+  sock->hb->timeout_queue = timeout_queue;
+  sock->hb->sock = sock;
+  sock->hb->hb_task = silc_task_register(timeout_queue, sock->sock,
+                                         silc_socket_heartbeat,
+                                         (void *)sock->hb, heartbeat, 0,
+                                         SILC_TASK_TIMEOUT,
+                                         SILC_TASK_PRI_LOW);
 }
