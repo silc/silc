@@ -139,7 +139,8 @@ char *topic, SilcChannelEntry channel
 Sent when someone changes their nickname.  The 'old_client_entry' includes
 the old nickname and the 'new_client_entry' includes the new nickname.
 Application must understand that the 'old_client_entry' pointer becomes
-invalid after returning from the function.
+invalid after returning from the function.  Note that this notify is not
+delivered when user changes its own nickname.
 </td>
 <td width="50%"><small>SilcClientEntry old_client_entry,
 SilcClientEntry new_client_entry

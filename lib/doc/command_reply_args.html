@@ -344,7 +344,8 @@ arguments to this reply.
 <tr>
 <td><small>SILC_COMMAND_LEAVE</td>
 <td><small>
-Called after leaving the channel.
+Called after leaving the channel.  Note that the `channel' will become
+invalid after command_reply client operation returns.
 </td>
 <td width="50%"><small>SilcChannelEntry channel
 </td>
