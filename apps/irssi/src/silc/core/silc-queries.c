@@ -613,7 +613,7 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 	snprintf(tmp, sizeof(tmp) - 1, "%s:%d (logged %s) idle %d seconds",
 		 service.address, (unsigned int)service.port,
 		 service.status ? "in" : "out",
-		 service.idle);
+		 (unsigned int)service.idle);
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_SERVICES, tmp);
       }
