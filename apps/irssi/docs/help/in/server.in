@@ -23,6 +23,4 @@ where the server is connected (ie. /window new hide;
 
 /SERVER REMOVE <address> [<port>]
 
-/SERVER LIST
-
 See also: RMRECONNS, DISCONNECT, RECONNECT, CONNECT
