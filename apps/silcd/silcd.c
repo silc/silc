@@ -63,7 +63,7 @@ static struct option long_opts[] =
 static char *opt_keypath = NULL;
 static char *opt_pkcs = "rsa";
 static char *opt_identifier = NULL;
-static int opt_bits = 1024;
+static int opt_bits = 2048;
 
 /* Prints out the usage of silc client */
 
@@ -489,7 +489,7 @@ silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
   }
 
   if (!bits)
-    bits = 1024;
+    bits = 2048;
 
   if (!identifier)
     identifier = silc_server_create_identifier();
