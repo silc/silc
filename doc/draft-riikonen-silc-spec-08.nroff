@@ -1641,7 +1641,8 @@ The UTF-8 encoded strings MUST NOT include any characters that are
 marked in the Unicode standard as control codes, Unicode noncharacters,
 reserved or private range characters, or any other illegal Unicode
 characters.  Also the BOM (Byte-Order Mark) MUST NOT be used as byte
-order signature in UTF-8 encoded strings.
+order signature in UTF-8 encoded strings.  A string containing these
+characters MUST be treated as malformed UTF-8 encoding.
 
 Because of these limitations on the UTF-8 encoded strings the
 implementation may need to have access to full Unicode implementation
@@ -1651,10 +1652,29 @@ for example, nicknames does not include any prohibited characters.
 Server also need to have the capability to convert character case from
 upper case to lower case characters, when applicable.
 
+The ISO 10646 defines that malformed sequences shall be signalled
+by replacing the sequence with a replacement character.  Even though,
+in case of SILC these strings may not be malformed UTF-8 encodings
+they MUST be treated as malformed strings.  Implementation MAY use
+a replacement character, however, the ISO 10646 defined character is
+prohibited with nicknames and channel names in SILC.  Implementation
+MAY use some other replacement character or the ISO 10646 defined
+character when it is applicable.  It is, however, RECOMMENDED that an
+error is returned instead of using replacement character if it is
+possible.  For example, when setting a nickname with SILC_COMMAND_NICK
+command, implementation is able to send error indication back to the
+command sender.  It must be noted that on server implementation if
+a character sequence is merely outside of current character subset,
+but is otherwise valid character, it MUST NOT be replaced by a
+replacement character.  Server SHOULD inspect the UTF-8 strings without
+regard to current system character subset.
+
 On user interface where UTF-8 strings are displayed the implementation
 is RECOMMENDED to escape any character that it is unable to render
 properly.  The escaping may be done for example as described in
-[RFC2253].
+[RFC2253].  The escaping makes it possible to retrieve the original
+UTF-8 encoding.  Alternatively, a replacement character may be used
+if it does not cause practical problems to the implementation.
 
 
 .ti 0
