@@ -206,7 +206,12 @@ void silc_server_command_process(SilcServer server,
   ctx->payload = silc_command_payload_parse(packet->buffer->data,
 					    packet->buffer->len);
   if (!ctx->payload) {
-    SILC_LOG_ERROR(("Bad command payload, packet dropped"));
+    SILC_LOG_ERROR(("Bad command payload, dropped (%s:%d [%s])",
+		   sock->hostname, sock->port,
+		   (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		    sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		    sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		    "Router")));
     silc_packet_context_free(packet);
     silc_socket_free(ctx->sock);
     silc_free(ctx);
