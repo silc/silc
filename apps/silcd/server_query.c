@@ -426,8 +426,16 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
     /* Get requested attributes if set */
     tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-    if (tmp && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN)
+    if (tmp && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN) {
       query->attrs = silc_attribute_payload_parse(tmp, tmp_len);
+
+      /* When Requested Attributes is present we will assure that this
+	 client cannot execute the WHOIS command too fast.  This would be
+	 same as having SILC_CF_LAG_STRICT. */
+      if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT &&
+	  cmd->sock->user_data)
+	((SilcClientEntry)cmd->sock->user_data)->fast_command = 6;
+    }
     break;
 
   case SILC_COMMAND_WHOWAS:
