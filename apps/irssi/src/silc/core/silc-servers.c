@@ -174,32 +174,45 @@ static int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
   return TRUE;
 }
 
-void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
+void silc_send_mime(SILC_SERVER_REC *server, int channel, const char *to,
 		    const char *data, int sign)
 {
-  SILC_CHANNEL_REC *channel;
-  QUERY_REC *query;
   char *unescaped_data;
   SilcUInt32 unescaped_data_len;
+  int target_type;
 
   if (!(IS_SILC_SERVER(server)) || (data == NULL) || (to == NULL))
     return;
 
+  if (channel) {
+    target_type = SEND_TARGET_CHANNEL;
+  } else {
+    target_type = server_ischannel(SERVER(server), to) ?
+      SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+  }
+
   unescaped_data = silc_unescape_data(data, &unescaped_data_len);
 
-  if (IS_SILC_CHANNEL(to)) {
-    channel = SILC_CHANNEL(to);
-    silc_client_send_channel_message(silc_client, server->conn, channel->entry,
+  if (target_type == SEND_TARGET_CHANNEL) {
+    SILC_CHANNEL_REC *rec;
+
+    rec = silc_channel_find(server, to);
+    if (rec == NULL || rec->entry == NULL) {
+      cmd_return_error(CMDERR_NOT_JOINED);
+    }
+
+    silc_client_send_channel_message(silc_client, server->conn, rec->entry,
 				     NULL, SILC_MESSAGE_FLAG_DATA |
 				     (sign ? SILC_MESSAGE_FLAG_SIGNED : 0),
 				     unescaped_data, unescaped_data_len, TRUE);
-  } else if (IS_SILC_QUERY(to)) {
-    query = SILC_QUERY(to);
-    silc_send_msg(server, query->name, unescaped_data, unescaped_data_len,
+  } else {
+    silc_send_msg(server, to, unescaped_data, unescaped_data_len,
 		  SILC_MESSAGE_FLAG_DATA | 
 		  (sign ? SILC_MESSAGE_FLAG_SIGNED : 0));
 
   }
+
+  signal_stop();
 
   silc_free(unescaped_data);
 }

@@ -345,7 +345,7 @@ char * silc_escape_data(const char *data, SilcUInt32 len)
     return escaped_data;
 }
 
-void silc_emit_mime_sig(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
+void silc_emit_mime_sig(SILC_SERVER_REC *server, WI_ITEM_REC *item,
                const char *data, SilcUInt32 data_len, const char *nick,
 	       int verified)
 {
@@ -353,7 +353,7 @@ void silc_emit_mime_sig(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
 
    escaped_data = silc_escape_data(data, data_len);
 
-   signal_emit("mime", 4, server, channel, escaped_data, nick, verified);
+   signal_emit("mime", 4, server, item, escaped_data, nick, verified);
  
    silc_free(escaped_data);
 }
@@ -402,7 +402,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   }
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
-    silc_emit_mime_sig(server, chanrec, message, message_len,
+    silc_emit_mime_sig(server, (WI_ITEM_REC *)chanrec, message, message_len,
 		nick == NULL ? NULL : nick->nick,
 		flags & SILC_MESSAGE_FLAG_SIGNED ? verified : -1);
     message = NULL;
@@ -527,7 +527,10 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   }
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
-    silc_emit_mime_sig(server, NULL, message, message_len,
+    silc_emit_mime_sig(server,
+		sender->nickname ? 
+		(WI_ITEM_REC *)query_find(server, sender->nickname) : NULL,
+		message, message_len,
       		sender->nickname ? sender->nickname : "[<unknown>]",
 		flags & SILC_MESSAGE_FLAG_SIGNED ? verified : -1);
     message = NULL;
