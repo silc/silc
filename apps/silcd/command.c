@@ -3280,7 +3280,7 @@ SILC_SERVER_CMD_FUNC(kick)
   silc_buffer_free(idp);
 
   /* Remove the client from the channel. If the channel does not exist
-     after removing the client then the client kicked itself of the channel
+     after removing the client then the client kicked itself off the channel
      and we don't have to send anything after that. */
   if (!silc_server_remove_from_one_channel(server, NULL, channel, 
 					   target_client, FALSE))
@@ -3298,7 +3298,7 @@ SILC_SERVER_CMD_FUNC(kick)
   silc_server_create_channel_key(server, channel, 0);
 
   /* Send the channel key to the channel. The key of course is not sent
-     to the client who joined the channel. */
+     to the client who was kicked off the channel. */
   silc_server_send_channel_key(server, target_client->connection, channel, 
 			       server->server_type == SILC_ROUTER ? 
 			       FALSE : !server->standalone);
