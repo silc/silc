@@ -122,4 +122,5 @@ bool silc_socket_get_error(SilcSocketConnection sock, char *error,
 
   memset(error, 0, error_len);
   memcpy(error, err, strlen(err));
+  return TRUE;
 }

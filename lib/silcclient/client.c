@@ -374,8 +374,10 @@ static void silc_client_start_key_exchange_cb(SilcSocketConnection sock,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!conn->sock->hostname)
-    conn->sock->hostname = strdup(conn->remote_host);
+  /* XXX We should most likely use the resolved host name instead of the
+     one user provided for us. */
+  silc_free(conn->sock->hostname);
+  conn->sock->hostname = strdup(conn->remote_host);
   if (!conn->sock->ip)
     conn->sock->ip = strdup(conn->remote_host);
   conn->sock->port = conn->remote_port;
