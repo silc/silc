@@ -79,7 +79,12 @@ SILC_TASK_CALLBACK(silc_socket_heartbeat)
 }
 
 /* Sets the heartbeat timeout and prepares the socket for performing
-   heartbeat in `heartbeat' intervals (seconds). */
+   heartbeat in `heartbeat' intervals (seconds). The `hb_context' is
+   allocated by the application and will be sent as argument to the
+   `hb_callback' function that is called when the `heartbeat' timeout
+   expires.  The callback `hb_context' won't be touched by the library
+   but will be freed automatically when calling silc_socket_free.  The
+   `timeout_queue' is the application's scheduler timeout queue. */
 
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
 			       unsigned long heartbeat,
