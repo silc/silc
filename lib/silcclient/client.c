@@ -328,7 +328,8 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
       silc_free(conn->internal->rekey);
 
       if (conn->internal->active_session) {
-	conn->sock->user_data = NULL;
+	if (conn->sock)
+	  conn->sock->user_data = NULL;
 	silc_client_ftp_session_free(conn->internal->active_session);
 	conn->internal->active_session = NULL;
       }
@@ -898,7 +899,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
    is used directly only in special cases. Normal cases should use
    silc_server_packet_send. Returns < 0 on error. */
 
-bool silc_client_packet_send_real(SilcClient client,
+int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
 				 bool force_send)
 {
@@ -1525,6 +1526,12 @@ void silc_client_close_connection_real(SilcClient client,
     del = TRUE;
   if (!sock)
     sock = conn->sock;
+
+  if (!sock) {
+    if (del && conn)
+      silc_client_del_connection(client, conn);
+    return;
+  }
 
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(client->schedule, sock->sock);

@@ -221,7 +221,7 @@ void silc_client_packet_send(SilcClient client,
                              unsigned char *data,
                              SilcUInt32 data_len,
                              bool force_send);
-bool silc_client_packet_send_real(SilcClient client,
+int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
 				 bool force_send);
 void silc_client_ftp_free_sessions(SilcClient client,
