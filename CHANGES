@@ -19,6 +19,9 @@ Thu Apr  5 17:42:30 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added the re-key support with and without PFS to the client
 	  library.  Re-key is performed once in an hour, by default.
 
+	  Added new protocol type SILC_PROTOCOL_CLIENT_REKEY.
+	  Added silc_server_client_callback and silc_client_rekey_final.
+
 	* Removed the `hmac_key' and `hmac_key_len' fields from the
 	  SilcClientConnection structure; not needed.  Affected file is
 	  lib/silcclient/client.h.
