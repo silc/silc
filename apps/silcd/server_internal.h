@@ -177,6 +177,7 @@ do {						\
       server->stat.my_ ## type ## _ops--;	\
     if (server->server_type == SILC_ROUTER)	\
       server->stat. type ## _ops--;		\
+    (c)->mode &= ~(mod);			\
   }						\
 } while(0)
 
