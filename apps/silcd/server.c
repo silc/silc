@@ -56,6 +56,9 @@ int silc_server_alloc(SilcServer *new_server)
   server->standalone = FALSE;
   server->local_list = silc_calloc(1, sizeof(*server->local_list));
   server->global_list = silc_calloc(1, sizeof(*server->global_list));
+#ifdef SILC_SIM
+  server->sim = silc_dlist_init();
+#endif
 
   *new_server = server;
 
@@ -68,12 +71,20 @@ int silc_server_alloc(SilcServer *new_server)
 void silc_server_free(SilcServer server)
 {
   if (server) {
+    SilcSimContext *sim;
+
     if (server->local_list)
       silc_free(server->local_list);
     if (server->global_list)
       silc_free(server->global_list);
     if (server->rng)
       silc_rng_free(server->rng);
+
+    while ((sim = silc_dlist_get(server->sim)) != SILC_LIST_END) {
+      silc_dlist_del(server->sim, sim);
+      silc_sim_free(sim);
+    }
+    silc_dlist_uninit(server->sim);
 
     silc_math_primegen_uninit(); /* XXX */
     silc_free(server);
@@ -1786,7 +1797,6 @@ void silc_server_packet_send_to_channel(SilcServer server,
 					unsigned int data_len,
 					int force_send)
 {
-  int i;
   SilcSocketConnection sock = NULL;
   SilcPacketContext packetdata;
   SilcClientEntry client = NULL;
@@ -1875,8 +1885,6 @@ void silc_server_packet_send_to_channel(SilcServer server,
     /* Send to locally connected client */
     if (client) {
 
-      /* XXX Check client's mode on the channel. */
-
       /* Get data used in packet header encryption, keys and stuff. */
       sock = (SilcSocketConnection)client->connection;
       cipher = client->send_key;
@@ -1913,7 +1921,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					 unsigned int data_len,
 					 int force_send)
 {
-  int i, found = FALSE;
+  int found = FALSE;
   SilcSocketConnection sock = NULL;
   SilcPacketContext packetdata;
   SilcClientEntry client = NULL;
@@ -2051,7 +2059,6 @@ void silc_server_packet_send_local_channel(SilcServer server,
 					   unsigned int data_len,
 					   int force_send)
 {
-  int i;
   SilcClientEntry client;
   SilcChannelClientEntry chl;
   SilcSocketConnection sock = NULL;
@@ -2245,7 +2252,6 @@ void silc_server_remove_from_channels(SilcServer server,
 				      SilcSocketConnection sock,
 				      SilcClientEntry client)
 {
-  int i, k;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcBuffer chidp, clidp;
@@ -2259,52 +2265,43 @@ void silc_server_remove_from_channels(SilcServer server,
 
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
-  for (i = 0; i < client->channel_count; i++) {
-    channel = client->channel[i];
-    if (!channel)
-      continue;
-
+  silc_list_start(client->channels);
+  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {
+    channel = chl->channel;
     chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
 
-    /* Remove from channel */
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-      if (chl->client == client) {
+    /* Remove from list */
+    silc_list_del(client->channels, chl);
 
-	/* If this client is last one on the channel the channel
-	   is removed all together. */
-	if (silc_list_count(channel->user_list) == 1) {
+    /* If this client is last one on the channel the channel
+       is removed all together. */
+    if (silc_list_count(channel->user_list) < 2) {
 
-	  /* However, if the channel has marked global users then the 
-	     channel is not created locally, and this does not remove the
-	     channel globally from SILC network, in this case we will
-	     notify that this client has left the channel. */
-	  if (channel->global_users)
-	    silc_server_send_notify_to_channel(server, channel,
-					       SILC_NOTIFY_TYPE_SIGNOFF, 1,
-					       clidp->data, clidp->len);
-
-	  silc_idlist_del_channel(server->local_list, channel);
-	  break;
-	}
-
-	silc_list_del(channel->user_list, chl);
-	silc_free(chl);
-
-	/* Send notify to channel about client leaving SILC and thus
-	   the entire channel. */
+      /* However, if the channel has marked global users then the 
+	 channel is not created locally, and this does not remove the
+	 channel globally from SILC network, in this case we will
+	 notify that this client has left the channel. */
+      if (channel->global_users)
 	silc_server_send_notify_to_channel(server, channel,
 					   SILC_NOTIFY_TYPE_SIGNOFF, 1,
 					   clidp->data, clidp->len);
-      }
+      
+      silc_idlist_del_channel(server->local_list, channel);
+      continue;
     }
 
+    /* Remove from list */
+    silc_list_del(channel->user_list, chl);
+    silc_free(chl);
+
+    /* Send notify to channel about client leaving SILC and thus
+       the entire channel. */
+    silc_server_send_notify_to_channel(server, channel,
+				       SILC_NOTIFY_TYPE_SIGNOFF, 1,
+				       clidp->data, clidp->len);
     silc_buffer_free(chidp);
   }
 
-  if (client->channel_count)
-    silc_free(client->channel);
-  client->channel = NULL;
   silc_buffer_free(clidp);
 }
 
@@ -2320,7 +2317,6 @@ int silc_server_remove_from_one_channel(SilcServer server,
 					SilcClientEntry client,
 					int notify)
 {
-  int i, k;
   SilcChannelEntry ch;
   SilcChannelClientEntry chl;
   SilcBuffer clidp;
@@ -2331,43 +2327,41 @@ int silc_server_remove_from_one_channel(SilcServer server,
 
   /* Remove the client from the channel. The client is removed from
      the channel's user list. */
-  for (i = 0; i < client->channel_count; i++) {
-    ch = client->channel[i];
-    if (!ch || ch != channel)
+  silc_list_start(client->channels);
+  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {
+    if (chl->channel != channel)
       continue;
 
-    client->channel[i] = NULL;
+    ch = chl->channel;
 
-    /* Remove from channel */
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-      if (chl->client == client) {
-	
-	/* If this client is last one on the channel the channel
-	   is removed all together. */
-	if (silc_list_count(channel->user_list) == 1) {
-	  /* Notify about leaving client if this channel has global users,
-	     ie. the channel is not created locally. */
-	  if (notify && channel->global_users)
-	    silc_server_send_notify_to_channel(server, channel,
-					       SILC_NOTIFY_TYPE_LEAVE, 1,
-					       clidp->data, clidp->len);
+    /* Remove from list */
+    silc_list_del(client->channels, chl);
 
-	  silc_idlist_del_channel(server->local_list, channel);
-	  silc_buffer_free(clidp);
-	  return FALSE;
-	}
-	
-	silc_list_del(channel->user_list, chl);
-	silc_free(chl);
-
-	/* Send notify to channel about client leaving the channel */
-	if (notify)
-	  silc_server_send_notify_to_channel(server, channel,
-					     SILC_NOTIFY_TYPE_LEAVE, 1,
-					     clidp->data, clidp->len);
-      }
+    /* If this client is last one on the channel the channel
+       is removed all together. */
+    if (silc_list_count(channel->user_list) < 2) {
+      /* Notify about leaving client if this channel has global users,
+	 ie. the channel is not created locally. */
+      if (notify && channel->global_users)
+	silc_server_send_notify_to_channel(server, channel,
+					   SILC_NOTIFY_TYPE_LEAVE, 1,
+					   clidp->data, clidp->len);
+      
+      silc_idlist_del_channel(server->local_list, channel);
+      silc_buffer_free(clidp);
+      return FALSE;
     }
+
+    /* Remove from list */
+    silc_list_del(channel->user_list, chl);
+    silc_free(chl);
+
+    /* Send notify to channel about client leaving the channel */
+    if (notify)
+      silc_server_send_notify_to_channel(server, channel,
+					 SILC_NOTIFY_TYPE_LEAVE, 1,
+					 clidp->data, clidp->len);
+    break;
   }
 
   silc_buffer_free(clidp);
@@ -2382,15 +2376,15 @@ int silc_server_remove_from_one_channel(SilcServer server,
 int silc_server_client_on_channel(SilcClientEntry client,
 				  SilcChannelEntry channel)
 {
-  int i;
+  SilcChannelClientEntry chl;
 
   if (!client || !channel)
     return FALSE;
 
-  for (i = 0; i < client->channel_count; i++) {
-    if (client->channel[i] == channel)
+  silc_list_start(client->channels);
+  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END)
+    if (chl->channel == channel)
       return TRUE;
-  }
 
   return FALSE;
 }
@@ -2552,11 +2546,9 @@ void silc_server_channel_message(SilcServer server,
 {
   SilcChannelEntry channel = NULL;
   SilcChannelClientEntry chl;
-  SilcClientEntry client = NULL;
   SilcChannelID *id = NULL;
   void *sender = NULL;
   SilcBuffer buffer = packet->buffer;
-  int i;
 
   SILC_LOG_DEBUG(("Processing channel message"));
 
@@ -2624,7 +2616,6 @@ void silc_server_channel_key(SilcServer server,
   unsigned char *tmp;
   unsigned int tmp_len;
   char *cipher;
-  int i;
 
   if (packet->src_id_type != SILC_ID_SERVER &&
       sock->type != SILC_SOCKET_TYPE_ROUTER)
@@ -2800,7 +2791,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
 					 SilcNotifyType type,
 					 unsigned int argc, ...)
 {
-  int i, j, k;
+  int k;
   SilcSocketConnection sock = NULL;
   SilcPacketContext packetdata;
   SilcClientEntry c;
@@ -2809,7 +2800,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
   SilcServerEntry *routed = NULL;
   unsigned int routed_count = 0;
   SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
+  SilcChannelClientEntry chl, chl2;
   SilcCipher cipher;
   SilcHmac hmac;
   SilcBuffer packet;
@@ -2818,7 +2809,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
   int force_send = FALSE;
   va_list ap;
 
-  if (!client->channel_count)
+  if (!silc_list_count(client->channels))
     return;
 
   va_start(ap, argc);
@@ -2834,16 +2825,14 @@ void silc_server_send_notify_on_channels(SilcServer server,
   packetdata.src_id_type = SILC_ID_SERVER;
   packetdata.rng = server->rng;
 
-  for (i = 0; i < client->channel_count; i++) {
-    channel = client->channel[i];
+  silc_list_start(client->channels);
+  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {
+    channel = chl->channel;
 
-    if (!channel)
-      continue;
-
-    /* Send the message to clients on the channel's client list. */
+    /* Send the message to all clients on the channel's client list. */
     silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-      c = chl->client;
+    while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+      c = chl2->client;
       
       /* Check if we have sent the packet to this client already */
       for (k = 0; k < sent_clients_count; k++)
@@ -3150,12 +3139,6 @@ SilcChannelEntry silc_server_new_channel(SilcServer server,
     silc_free(channel_name);
     return NULL;
   }
-
-#if 0
-  /* Add to cache */
-  silc_idcache_add(server->local_list->channels, channel_name,
-		   SILC_ID_CHANNEL, channel_id, (void *)entry, TRUE);
-#endif
 
   entry->key = silc_calloc(key_len, sizeof(*entry->key));
   entry->key_len = key_len * 8;

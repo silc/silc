@@ -110,6 +110,44 @@ struct SilcServerEntryStruct {
 };
 
 /* 
+   SILC Channel Client entry structure.
+
+   This entry used only by the SilcChannelEntry object and it holds
+   information about current clients (ie. users) on channel. Following
+   short description  of the fields:
+
+   SilcClientEntry client
+
+       Pointer to the client list. This is the client currently on channel.
+
+   unsigned int mode
+
+       Client's current mode on the channel.
+
+   SilcChannelEntry channel
+
+       Back pointer back to channel. As this structure is also used by
+       SilcClientEntry we have this here for fast access to the channel when
+       used by SilcClientEntry.
+
+  struct SilcChannelClientEntryStruct *client_list
+  struct SilcChannelClientEntryStruct *channel_list
+
+       List member pointers. This structure is used by channel entry and
+       client entry thus we must have separate list member pointers for
+       them since we are using same entry for both lists (the entry is not
+       duplicated). SilcList requires this.
+
+*/
+typedef struct SilcChannelClientEntryStruct {
+  SilcClientEntry client;
+  unsigned int mode;
+  SilcChannelEntry channel;
+  struct SilcChannelClientEntryStruct *client_list;
+  struct SilcChannelClientEntryStruct *channel_list;
+} *SilcChannelClientEntry;
+
+/* 
    SILC Client entry object.
 
    This entry holds information about connected clients ie. users in the SILC
@@ -233,8 +271,7 @@ struct SilcClientEntryStruct {
   SilcServerEntry router;
 
   /* List of channels client has joined to */
-  SilcChannelEntry *channel;
-  unsigned int channel_count;
+  SilcList channels;
 
   /* Keys */
   SilcCipher send_key;
@@ -246,28 +283,6 @@ struct SilcClientEntryStruct {
   /* Connection data */
   void *connection;
 };
-
-/* 
-   SILC Channel Client entry structure.
-
-   This entry used only by the SilcChannelEntry object and it holds
-   information about current clients (ie. users) on channel. Following
-   short description  of the fields:
-
-   SilcClientEntry client
-
-       Pointer to the client list. This is the client currently on channel.
-
-   unsigned int mode
-
-       Client's current mode on the channel.
-
-*/
-typedef struct SilcChannelClientEntryStruct {
-  SilcClientEntry client;
-  unsigned int mode;
-  struct SilcChannelClientEntryStruct *next;
-} *SilcChannelClientEntry;
 
 /* 
    SILC Channel entry object.

@@ -148,6 +148,8 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
   client->hmac = hmac;
   client->public_key = public_key;
   client->connection = connection;
+  silc_list_init(client->channels, struct SilcChannelClientEntryStruct, 
+		 client_list);
 
   if (!silc_idcache_add(id_list->clients, client->nickname, SILC_ID_CLIENT,
 			(void *)client->id, (void *)client, TRUE)) {
@@ -378,7 +380,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   channel->router = router;
   channel->channel_key = channel_key;
   silc_list_init(channel->user_list, struct SilcChannelClientEntryStruct, 
-		 next);
+		 channel_list);
 
   if (!silc_idcache_add(id_list->channels, channel->channel_name, 
 			SILC_ID_CHANNEL, (void *)channel->id, 

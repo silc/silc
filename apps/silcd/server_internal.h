@@ -82,9 +82,8 @@ typedef struct SilcServerObjectStruct {
   SilcServerStatistics stats;
 
 #ifdef SILC_SIM
-  /* SIM (SILC Module) table */
-  SilcSimContext **sim;
-  unsigned int sim_count;
+  /* SIM (SILC Module) list */
+  SilcDList sim;
 #endif
 } SilcServerObject;
 

@@ -20,6 +20,13 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/11/02 22:15:23  priikone
+ * 	Some bugfixes.
+ * 	Changed server->sim to SilcDList and code accordingly.
+ * 	Changes SilcClientEntry->channel to SilcList and added
+ * 	back-pointer to SilcChannelClientEntry which is now used by both
+ * 	client entry and channel entry
+ *
  * Revision 1.4  2000/10/06 08:10:23  priikone
  * 	Added WHOIS to send multiple replies if multiple nicknames are
  * 	found.
@@ -1203,12 +1210,8 @@ void silc_config_server_register_ciphers(SilcConfigServer config)
 						SILC_CIPHER_SIM_CONTEXT_LEN));
 	SILC_LOG_DEBUG(("context_len=%p", cipher.context_len));
 
-	/* Put the SIM to the table of all SIM's in server */
-	server->sim = silc_realloc(server->sim,
-				   sizeof(*server->sim) * 
-				   (server->sim_count + 1));
-	server->sim[server->sim_count] = sim;
-	server->sim_count++;
+	/* Put the SIM to the list of all SIM's in server */
+	silc_dlist_add(server->sim, sim);
       } else {
 	SILC_LOG_ERROR(("Error configuring ciphers"));
 	silc_server_stop(server);
@@ -1310,11 +1313,7 @@ void silc_config_server_register_hashfuncs(SilcConfigServer config)
 	SILC_LOG_DEBUG(("context_len=%p", hash.context_len));
 
 	/* Put the SIM to the table of all SIM's in server */
-	server->sim = silc_realloc(server->sim,
-				   sizeof(*server->sim) * 
-				   (server->sim_count + 1));
-	server->sim[server->sim_count] = sim;
-	server->sim_count++;
+	silc_dlist_add(server->sim, sim);
       } else {
 	SILC_LOG_ERROR(("Error configuring hash functions"));
 	silc_server_stop(server);

@@ -486,8 +486,9 @@ SILC_SERVER_CMD_FUNC(whois)
     
     silc_buffer_free(packet);
     silc_buffer_free(idp);
-    silc_free(clients);
   }
+
+  silc_free(clients);
 
   if (client_id)
     silc_free(client_id);
@@ -1387,27 +1388,15 @@ SILC_SERVER_CMD_FUNC(join)
     goto out;
   }
 
-  /* Join the client to the channel by adding it to channel's user list */
+  /* Join the client to the channel by adding it to channel's user list.
+     Add also the channel to client entry's channels list for fast cross-
+     referencing. */
   chl = silc_calloc(1, sizeof(*chl));
   chl->mode = umode;
   chl->client = client;
+  chl->channel = channel;
   silc_list_add(channel->user_list, chl);
-
-  /* Add the channel to client's channel list */
-  i = client->channel_count;
-  for (k = 0; k < client->channel_count; k++) {
-    if (client->channel[k] == NULL) {
-      client->channel[k] = channel;
-      break;
-    }
-  }
-  if (k >= i) {
-    i = client->channel_count;
-    client->channel = silc_realloc(client->channel, 
-				   sizeof(*client->channel) * (i + 1));
-    client->channel[i] = channel;
-    client->channel_count++;
-  }
+  silc_list_add(client->channels, chl);
 
   /* Notify router about new user on channel. If we are normal server
      we send it to our router, if we are router we send it to our
