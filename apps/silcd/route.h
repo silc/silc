@@ -73,7 +73,7 @@ void silc_server_route_add(unsigned int index, unsigned int dest,
 			   SilcServerEntry router);
 SilcServerEntry silc_server_route_check(unsigned int dest, 
 					unsigned short port);
-SilcSocketConnection silc_server_get_route(SilcServer server, void *id,
+SilcSocketConnection silc_server_route_get(SilcServer server, void *id,
 					   SilcIdType id_type);
 
 #endif

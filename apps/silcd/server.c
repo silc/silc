@@ -249,6 +249,8 @@ int silc_server_init(SilcServer server)
     }
     
     server->id = id;
+    server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
+    server->id_string_len = silc_id_get_len(SILC_ID_SERVER);
     server->id_type = SILC_ID_SERVER;
     server->server_name = server->config->server_info->server_name;
 
@@ -1134,14 +1136,13 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   SilcServer server = (SilcServer)parse_ctx->context;
   SilcSocketConnection sock = parse_ctx->sock;
   SilcPacketContext *packet = parse_ctx->packet;
-  SilcBuffer buffer = packet->buffer;
   int ret;
 
   SILC_LOG_DEBUG(("Start"));
 
   /* Decrypt the received packet */
   ret = silc_packet_decrypt(parse_ctx->cipher, parse_ctx->hmac, 
-			    buffer, packet);
+			    packet->buffer, packet);
   if (ret < 0)
     goto out;
 
@@ -1157,12 +1158,29 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   if (ret == SILC_PACKET_NONE)
     goto out;
 
-  /* Broadcast packet if it is marked as broadcast packet and it is
-     originated from router and we are router. */
-  if (server->server_type == SILC_ROUTER && 
-      sock->type == SILC_SOCKET_TYPE_ROUTER &&
-      packet->flags & SILC_PACKET_FLAG_BROADCAST) {
-    silc_server_packet_broadcast(server, server->router->connection, packet);
+  if (server->server_type == SILC_ROUTER) {
+    /* Route the packet if it is not destined to us. Other ID types but
+       server are handled separately after processing them. */
+    if (packet->dst_id_type == SILC_ID_SERVER &&
+	sock->type != SILC_SOCKET_TYPE_CLIENT &&
+	SILC_ID_SERVER_COMPARE(packet->dst_id, server->id_string)) {
+      
+      /* Route the packet to fastest route for the destination ID */
+      void *id = silc_id_str2id(packet->dst_id, packet->dst_id_type);
+      silc_server_packet_route(server,
+			       silc_server_route_get(server, id,
+						     packet->dst_id_type),
+			       packet);
+      silc_free(id);
+      goto out;
+    }
+    
+    /* Broadcast packet if it is marked as broadcast packet and it is
+       originated from router and we are router. */
+    if (sock->type == SILC_SOCKET_TYPE_ROUTER &&
+	packet->flags & SILC_PACKET_FLAG_BROADCAST) {
+      silc_server_packet_broadcast(server, server->router->connection, packet);
+    }
   }
 
   /* Parse the incoming packet type */

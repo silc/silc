@@ -62,7 +62,7 @@ SilcServerEntry silc_server_route_check(unsigned int dest,
    If we are normal server then this just returns our primary route. If
    we are router we will do route lookup. */
 
-SilcSocketConnection silc_server_get_route(SilcServer server, void *id,
+SilcSocketConnection silc_server_route_get(SilcServer server, void *id,
 					   SilcIdType id_type)
 {
   if (server->server_type == SILC_ROUTER) {

@@ -267,6 +267,33 @@ void silc_server_packet_broadcast(SilcServer server,
   silc_free(id);
 }
 
+/* Routes received packet to `sock'. This is used to route the packets that
+   router receives but are not destined to it. */
+
+void silc_server_packet_route(SilcServer server,
+			      SilcSocketConnection sock,
+			      SilcPacketContext *packet)
+{
+  SilcBuffer buffer = packet->buffer;
+  SilcIDListData idata;
+
+  SILC_LOG_DEBUG(("Routing received packet"));
+
+  idata = (SilcIDListData)sock->user_data;
+
+  silc_buffer_push(buffer, buffer->data - buffer->head);
+  silc_packet_send_prepare(sock, 0, 0, buffer->len); 
+  silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
+  silc_packet_encrypt(idata->send_key, idata->hmac, 
+		      sock->outbuf, sock->outbuf->len);
+
+  SILC_LOG_HEXDUMP(("Routed packet, len %d", sock->outbuf->len),
+		   sock->outbuf->data, sock->outbuf->len);
+
+  /* Now actually send the packet */
+  silc_server_packet_send_real(server, sock, TRUE);
+}
+
 /* Internal routine to actually create the channel packet and send it
    to network. This is common function in channel message sending. If
    `channel_message' is TRUE this encrypts the message as it is strictly

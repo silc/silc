@@ -108,7 +108,7 @@ void silc_server_private_message(SilcServer server,
   /* We are router and we will perform route lookup for the destination 
      and send the message to fastest route. */
   if (server->server_type == SILC_ROUTER && !server->standalone) {
-    dst_sock = silc_server_get_route(server, id, SILC_ID_CLIENT);
+    dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
     router = (SilcServerEntry)dst_sock->user_data;
     idata = (SilcIDListData)router;
 

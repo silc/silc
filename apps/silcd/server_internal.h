@@ -55,6 +55,8 @@ struct SilcServerStruct {
   int standalone;
   int listenning;
   SilcServerID *id;
+  unsigned char *id_string;
+  unsigned int id_string_len;
   SilcIdType id_type;
 
   /* Server's own ID entry. */

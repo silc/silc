@@ -123,10 +123,12 @@ void silc_server_command_reply_free(SilcServerCommandReplyContext cmd)
 static char
 silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 {
+  SilcServer server = cmd->server;
   int len, id_len;
   unsigned char *id_data;
   char *nickname, *username, *realname;
   SilcClientID *client_id;
+  SilcClientEntry client;
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -137,6 +139,31 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
   client_id = silc_id_payload_parse_id(id_data, id_len);
 
+  /* Check if we have this client cached already. */
+
+  client = silc_idlist_find_client_by_id(server->local_list, client_id);
+  if (!client && server->server_type == SILC_ROUTER)
+    client = silc_idlist_find_client_by_id(server->global_list, client_id);
+
+  if (!client) {
+    /* We don't have that client anywhere, add it. The client is added
+       to global list since server or router didn't have it in the lists
+       so it must be global. */
+    silc_idlist_add_client(server->global_list, strdup(nickname),
+			   username, realname, client_id, NULL, NULL);
+  } else {
+    /* We have the client already, update the data */
+
+    if (client->username)
+      silc_free(client->username);
+    if (client->userinfo)
+      silc_free(client->userinfo);
+    
+    client->username = strdup(username);
+    client->userinfo = strdup(realname);
+  }
+
+  silc_free(client_id);
 
   return TRUE;
 }
@@ -150,12 +177,16 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 SILC_SERVER_CMD_REPLY_FUNC(whois)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
-  SilcServer server = cmd->server;
   SilcCommandStatus status;
 
   SILC_LOG_DEBUG(("Start"));
 
   COMMAND_CHECK_STATUS_LIST;
+
+  if (!silc_server_command_reply_whois_save(cmd))
+    goto out;
+
+  /* XXX */
 
   /* Process one identify reply */
   if (status == SILC_STATUS_OK) {

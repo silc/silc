@@ -49,6 +49,9 @@ void silc_server_packet_forward(SilcServer server,
 void silc_server_packet_broadcast(SilcServer server,
 				  SilcSocketConnection sock,
 				  SilcPacketContext *packet);
+void silc_server_packet_route(SilcServer server,
+			      SilcSocketConnection sock,
+			      SilcPacketContext *packet);
 void silc_server_packet_send_to_channel(SilcServer server,
 					SilcChannelEntry channel,
 					SilcPacketType type,

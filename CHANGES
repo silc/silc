@@ -2,6 +2,28 @@ Thu Dec 14 15:55:35 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Add route cache for received ID for fast routing.
 
+	* Added silc_server_packet_route to route received packet on router
+	  that is not destined to us.
+
+	* Renamed silc_server_get_route to silc_server_route_get.
+
+	* Added id_string and id_string_len fields into SilcServer to
+	  include encoded ServerID for fast comparing without excess
+	  encoding of the ID's.
+
+	* Cleaned up WHOIS command on server side. Added following static
+	  functions:
+
+	  silc_server_command_whois_parse
+	  silc_server_command_whois_check
+	  silc_server_command_whois_send_reply
+	  silc_server_command_whois_from_client
+	  silc_server_command_whois_from_server
+
+	* Added macro SILC_SERVER_COMMAND_CHECK_ARGC to check mandatory
+	  arguments in command replies. All command functions should be
+	  updated to use this macro.
+
 Sun Dec 10 23:52:00 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Minor typo fixes on command reply handling on server.
