@@ -126,6 +126,55 @@ typedef struct {
   SilcRng rng;
 } SilcPacketContext;
 
+/* 
+   Silc Packet Parser context.
+
+   This context is used in packet reception when silc_packet_receive_process
+   function calls parser callback that performs the actual packet decryption
+   and parsing. This context is sent as argument to the parser function.
+   This context must be free'd by the parser callback function.
+
+   Following description of the fields:
+
+   SilcPacketContext *packet
+
+       The actual packet received from the network. In this phase the
+       context is not parsed, only the packet->buffer is allocated and
+       it includes the raw packet data, which is encrypted.
+
+   SilcSocketConnection sock
+
+       The associated connection.
+
+   SilcCipher cipher
+
+       The cipher to be used in the decryption.
+
+   SilcHmac hmac
+
+       The HMAC to be used in the decryption.
+
+   void *context
+
+       User context that is sent to the silc_packet_receive_process
+       function. This usually includes application and connection specific
+       data.
+
+*/
+
+typedef struct {
+  SilcPacketContext *packet;
+  SilcSocketConnection sock;
+  SilcCipher cipher;
+  SilcHmac hmac;
+  void *context;
+} SilcPacketParserContext;
+
+/* The parser callback function. */
+typedef void (*SilcPacketParserCallback)(SilcPacketParserContext 
+					 *parse_context);
+
+
 /* SILC Packet types. */
 #define SILC_PACKET_NONE		 0       /* NULL, never sent */
 #define SILC_PACKET_DISCONNECT		 1	 /* Disconnection */
@@ -173,13 +222,23 @@ do {									     \
 
 /* Prototypes */
 int silc_packet_write(int sock, SilcBuffer src);
+int silc_packet_send(SilcSocketConnection sock, int force_send);
+void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, 
+			 SilcBuffer buffer, unsigned int len);
+void silc_packet_assemble(SilcPacketContext *ctx);
+void silc_packet_send_prepare(SilcSocketConnection sock,
+			      unsigned int header_len,
+			      unsigned int padlen,
+			      unsigned int data_len);
 int silc_packet_read(int sock, SilcBuffer dest);
-void silc_packet_encrypt(SilcCipher cipher, SilcBuffer buffer,
-			 unsigned int len);
-void silc_packet_decrypt(SilcCipher cipher, SilcBuffer buffer, 
-			 unsigned int len);
+int silc_packet_receive(SilcSocketConnection sock);
+int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
+			SilcBuffer buffer, SilcPacketContext *packet);
+int silc_packet_receive_process(SilcSocketConnection sock, 
+				SilcCipher cipher, SilcHmac hmac,
+				SilcPacketParserCallback parser, 
+				void *context);
 SilcPacketType silc_packet_parse(SilcPacketContext *ctx);
 SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx);
-void silc_packet_assemble(SilcPacketContext *ctx);
 
 #endif

@@ -23,6 +23,14 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/14 06:10:15  priikone
+ * 	Moved all the generic packet sending, enryption, reception,
+ * 	decryption and processing function from client and server to
+ * 	here as they were duplicated code in the applications. Now they
+ * 	are generic code over generic API. Some functions were rewritter;
+ * 	packet reception and HMAC computation and checking is now more
+ * 	optimized.
+ *
  * Revision 1.2  2000/07/05 06:06:35  priikone
  * 	Global cosmetic change.
  *
@@ -33,6 +41,12 @@
  */
 
 #include "silcincludes.h"
+
+/******************************************************************************
+
+                          Packet Sending Routines
+
+******************************************************************************/
 
 /* Writes data from encrypted buffer to the socket connection. If the
    data cannot be written at once, it will be written later with a timeout. 
@@ -64,6 +78,227 @@ int silc_packet_write(int sock, SilcBuffer src)
 
   return ret;
 }
+
+/* Actually sends the packet. This flushes the connections outgoing data
+   buffer. If data is sent directly to the network this returns the bytes
+   written, if error occured this returns -1 and if the data could not
+   be written directly to the network at this time this returns -2, in
+   which case the data should be queued by the caller and sent at some
+   later time. If `force_send' is TRUE this attempts to write the data
+   directly to the network, if FALSE, this returns -2. */
+
+int silc_packet_send(SilcSocketConnection sock, int force_send)
+{
+  /* Send now if forced to do so */
+  if (force_send == TRUE) {
+    int ret;
+
+    SILC_LOG_DEBUG(("Forcing packet send, packet sent immediately"));
+
+    /* Write to network */
+    ret = silc_packet_write(sock->sock, sock->outbuf);
+
+    if (ret == -1)
+      SILC_LOG_ERROR(("Error sending packet, dropped"));
+    if (ret != -2)
+      return ret;
+
+    SILC_LOG_DEBUG(("Could not force the send, packet put to queue"));
+  }  
+
+  SILC_LOG_DEBUG(("Packet in queue"));
+
+  return -2;
+}
+
+/* Encrypts a packet. This also creates HMAC of the packet before 
+   encryption and adds the HMAC at the end of the buffer. This assumes
+   that there is enough free space at the end of the buffer to add the
+   computed HMAC. This is the normal way of encrypting packets, if some
+   other process of HMAC computing and encryption is needed this function
+   cannot be used. */
+
+void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, 
+			 SilcBuffer buffer, unsigned int len)
+{
+  unsigned char mac[32];
+
+  if (cipher) {
+    SILC_LOG_DEBUG(("Encrypting packet, cipher %s, len %d (%d)", 
+		    cipher->cipher->name, len, len - 2));
+  }
+
+  /* Compute HMAC. This assumes that HMAC is created from the entire
+     data area thus this uses the length found in buffer, not the length
+     sent as argument. */
+  if (hmac) {
+    silc_hmac_make(hmac, buffer->data, buffer->len, mac);
+    silc_buffer_put_tail(buffer, mac, hmac->hash->hash->hash_len);
+    memset(mac, 0, sizeof(mac));
+  }
+
+  /* Encrypt the data area of the packet. 2 bytes of the packet
+     are not encrypted. */
+  if (cipher)
+    cipher->cipher->encrypt(cipher->context, buffer->data + 2, 
+			    buffer->data + 2, len - 2, cipher->iv);
+
+  /* Pull the HMAC into the visible data area in the buffer */
+  if (hmac)
+    silc_buffer_pull_tail(buffer, hmac->hash->hash->hash_len);
+}
+
+/* Assembles a new packet to be ready for send out. The buffer sent as
+   argument must include the data to be sent and it must not be encrypted. 
+   The packet also must have enough free space so that the SILC header
+   and padding maybe added to the packet. The packet is encrypted after 
+   this function has returned.
+
+   The buffer sent as argument should be something like following:
+
+   --------------------------------------------
+   | head             | data           | tail |
+   --------------------------------------------
+   ^                  ^
+   58 bytes           x bytes
+
+   So that the SILC header and 1 - 16 bytes of padding can fit to
+   the buffer. After assembly the buffer might look like this:
+
+   --------------------------------------------
+   | data                              |      |
+   --------------------------------------------
+   ^                                   ^
+   Start of assembled packet
+
+   Packet construct is as follows (* = won't be encrypted):
+
+   x bytes       SILC Header
+      2 bytes     Payload length  (*)
+      1 byte      Flags
+      1 byte      Packet type
+      1 byte      Source ID Type
+      2 bytes     Source ID Length
+      x bytes     Source ID
+      1 byte      Destination ID Type
+      2 bytes     Destination ID Length
+      x bytes     Destination ID
+
+   1 - 16 bytes    Padding
+
+   x bytes        Data payload
+
+   All fields in the packet will be authenticated by MAC. The MAC is
+   not computed here, it must be computed differently before encrypting
+   the packet.
+
+*/
+
+void silc_packet_assemble(SilcPacketContext *ctx)
+{
+  unsigned char tmppad[SILC_PACKET_MAX_PADLEN];
+  int i;
+
+  SILC_LOG_DEBUG(("Assembling outgoing packet"));
+  
+  /* Get the true length of the packet. This is saved as payload length
+     into the packet header. This does not include the length of the
+     padding. */
+  if (!ctx->truelen)
+    ctx->truelen = ctx->buffer->len + SILC_PACKET_HEADER_LEN + 
+      ctx->src_id_len + ctx->dst_id_len;
+
+  /* Calculate the length of the padding. The padding is calculated from
+     the data that will be encrypted. As protocol states 3 first bytes
+     of the packet are not encrypted they are not included in the
+     padding calculation. */
+  if (!ctx->padlen)
+    ctx->padlen = SILC_PACKET_PADLEN(ctx->truelen);
+
+  /* Put the start of the data section to the right place. */
+  silc_buffer_push(ctx->buffer, SILC_PACKET_HEADER_LEN + 
+		   ctx->src_id_len + ctx->dst_id_len + ctx->padlen);
+
+  /* Get random padding */
+#if 1
+  for (i = 0; i < ctx->padlen; i++)
+    tmppad[i] = silc_rng_get_byte(ctx->rng);
+#else
+  /* XXX: For testing - to be removed */
+  memset(tmppad, 65, sizeof(tmppad));
+#endif
+
+  /* Create the packet. This creates the SILC header and adds padding,
+     rest of the buffer remains as it is. */
+  silc_buffer_format(ctx->buffer, 
+		     SILC_STR_UI_SHORT(ctx->truelen),
+		     SILC_STR_UI_CHAR(ctx->flags),
+		     SILC_STR_UI_CHAR(ctx->type),
+		     SILC_STR_UI_SHORT(ctx->src_id_len),
+		     SILC_STR_UI_SHORT(ctx->dst_id_len),
+		     SILC_STR_UI_CHAR(ctx->src_id_type),
+		     SILC_STR_UI_XNSTRING(ctx->src_id, ctx->src_id_len),
+		     SILC_STR_UI_CHAR(ctx->dst_id_type),
+		     SILC_STR_UI_XNSTRING(ctx->dst_id, ctx->dst_id_len),
+		     SILC_STR_UI_XNSTRING(tmppad, ctx->padlen),
+		     SILC_STR_END);
+
+  SILC_LOG_HEXDUMP(("Assembled packet, len %d", ctx->buffer->len), 
+		   ctx->buffer->data, ctx->buffer->len);
+
+  SILC_LOG_DEBUG(("Outgoing packet assembled"));
+}
+
+/* Prepare outgoing data buffer for packet sending. This moves the data
+   area so that new packet may be added into it. If needed this allocates
+   more space to the buffer. This handles directly the connection's
+   outgoing buffer in SilcSocketConnection object. */
+
+void silc_packet_send_prepare(SilcSocketConnection sock,
+			      unsigned int header_len,
+			      unsigned int padlen,
+			      unsigned int data_len)
+{
+  int totlen, oldlen;
+
+  totlen = header_len + padlen + data_len;
+
+  /* Prepare the outgoing buffer for packet sending. */
+  if (!sock->outbuf) {
+    /* Allocate new buffer. This is done only once per connection. */
+    SILC_LOG_DEBUG(("Allocating outgoing data buffer"));
+    
+    sock->outbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
+    silc_buffer_pull_tail(sock->outbuf, totlen);
+    silc_buffer_pull(sock->outbuf, header_len + padlen);
+  } else {
+    if (SILC_IS_OUTBUF_PENDING(sock)) {
+      /* There is some pending data in the buffer. */
+
+      /* Allocate more space if needed */
+      if ((sock->outbuf->end - sock->outbuf->tail) < data_len) {
+	SILC_LOG_DEBUG(("Reallocating outgoing data buffer"));
+	sock->outbuf = silc_buffer_realloc(sock->outbuf, 
+					   sock->outbuf->truelen + totlen);
+      }
+
+      oldlen = sock->outbuf->len;
+      silc_buffer_pull_tail(sock->outbuf, totlen);
+      silc_buffer_pull(sock->outbuf, header_len + padlen + oldlen);
+    } else {
+      /* Buffer is free for use */
+      silc_buffer_clear(sock->outbuf);
+      silc_buffer_pull_tail(sock->outbuf, totlen);
+      silc_buffer_pull(sock->outbuf, header_len + padlen);
+    }
+  }
+}
+
+/******************************************************************************
+
+                         Packet Reception Routines
+
+******************************************************************************/
 
 /* Reads data from the socket connection into the incoming data buffer.
    However, this does not parse the packet, it only reads some amount from
@@ -101,8 +336,9 @@ int silc_packet_read(int sock, SilcBuffer dest)
     return 0;
 
   /* Insert the data to the buffer. If the data doesn't fit to the 
-     buffer space is allocated for the buffer.  
-     XXX: I don't like this. -Pekka */
+     buffer space is allocated for the buffer. */
+  /* XXX: This may actually be bad thing as if there is pending data in
+     the buffer they will be lost! */
   if (dest) {
 
     /* If the data doesn't fit we just have to allocate a whole new 
@@ -134,34 +370,284 @@ int silc_packet_read(int sock, SilcBuffer dest)
   return len;
 }
 
-/* Encrypts a packet. */
+/* Processes the received data. This checks the received data and 
+   calls parser callback that handles the actual packet decryption
+   and parsing. If more than one packet was received this calls the
+   parser multiple times. The parser callback will get context
+   SilcPacketParserContext that includes the packet and the `context'
+   sent to this function. Returns TRUE on success and FALSE on error. */
 
-void silc_packet_encrypt(SilcCipher cipher, SilcBuffer buffer,
-			 unsigned int len)
+int silc_packet_receive_process(SilcSocketConnection sock, 
+				SilcCipher cipher, SilcHmac hmac,
+				SilcPacketParserCallback parser, 
+				void *context)
 {
-  SILC_LOG_DEBUG(("Encrypting packet, cipher %s, len %d (%d)", 
-		  cipher->cipher->name, len, len - 2));
+  SilcPacketParserContext *parse_ctx;
+  int packetlen, paddedlen, mac_len = 0;
 
-  /* Encrypt the data area of the packet. 3 bytes of the packet
-     are not encrypted. */
-  cipher->cipher->encrypt(cipher->context, buffer->data + 2, 
-			  buffer->data + 2, len - 2, cipher->iv);
+  /* Check whether we received a whole packet. If reading went without
+     errors we either read a whole packet or the read packet is 
+     incorrect and will be dropped. */
+  SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
+  if (sock->inbuf->len < paddedlen || (packetlen < SILC_PACKET_MIN_LEN)) {
+    SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
+    silc_buffer_clear(sock->inbuf);
+    return FALSE;
+  }
 
+  /* Parse the packets from the data */
+  if (sock->inbuf->len - 2 > (paddedlen + mac_len)) {
+    /* Received possibly many packets at once */
+
+    if (hmac)
+      mac_len = hmac->hash->hash->hash_len;
+
+    while(sock->inbuf->len > 0) {
+      SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
+
+      if (sock->inbuf->len < paddedlen) {
+	SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
+	return FALSE;
+      }
+
+      paddedlen += 2;
+      parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
+      parse_ctx->packet = silc_calloc(1, sizeof(*parse_ctx->packet));
+      parse_ctx->packet->buffer = silc_buffer_alloc(paddedlen + mac_len);
+      parse_ctx->sock = sock;
+      parse_ctx->cipher = cipher;
+      parse_ctx->hmac = hmac;
+      parse_ctx->context = context;
+
+      silc_buffer_pull_tail(parse_ctx->packet->buffer, 
+			    SILC_BUFFER_END(parse_ctx->packet->buffer));
+      silc_buffer_put(parse_ctx->packet->buffer, sock->inbuf->data, 
+		      paddedlen + mac_len);
+
+      SILC_LOG_HEXDUMP(("Incoming packet, len %d", 
+			parse_ctx->packet->buffer->len),
+		       parse_ctx->packet->buffer->data, 
+		       parse_ctx->packet->buffer->len);
+
+      /* Call the parser */
+      if (parser)
+	(*parser)(parse_ctx);
+
+      /* Pull the packet from inbuf thus we'll get the next one
+	 in the inbuf. */
+      silc_buffer_pull(sock->inbuf, paddedlen);
+      if (hmac)
+	silc_buffer_pull(sock->inbuf, mac_len);
+    }
+
+    /* All packets are processed, return successfully. */
+    silc_buffer_clear(sock->inbuf);
+    return TRUE;
+
+  } else {
+    /* Received one packet */
+    
+    SILC_LOG_HEXDUMP(("An incoming packet, len %d", sock->inbuf->len),
+		     sock->inbuf->data, sock->inbuf->len);
+
+    parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
+    parse_ctx->packet = silc_calloc(1, sizeof(*parse_ctx->packet));
+    parse_ctx->packet->buffer = silc_buffer_copy(sock->inbuf);
+    parse_ctx->sock = sock;
+    parse_ctx->cipher = cipher;
+    parse_ctx->hmac = hmac;
+    parse_ctx->context = context;
+    silc_buffer_clear(sock->inbuf);
+
+    /* Call the parser */
+    if (parser)
+      (*parser)(parse_ctx);
+
+    /* Return successfully */
+    return TRUE;
+  }
 }
 
-/* Decrypts a packet. */
+/* Receives packet from network and reads the data into connection's
+   incoming data buffer. If the data was read directly this returns the
+   read bytes, if error occured this returns -1, if the data could not
+   be read directly at this time this returns -2 in which case the data
+   should be read again at some later time, or If EOF occured this returns
+   0. */
 
-void silc_packet_decrypt(SilcCipher cipher, SilcBuffer buffer, 
-			 unsigned int len)
+int silc_packet_receive(SilcSocketConnection sock)
 {
+  int ret;
+
+  /* Allocate the incoming data buffer if not done already. */
+  if (!sock->inbuf)
+    sock->inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
+  
+  /* Read some data from connection */
+  ret = silc_packet_read(sock->sock, sock->inbuf);
+
+  /* Error */
+  if (ret == -1)
+    SILC_LOG_ERROR(("Error reading packet, dropped"));
+
+  return ret;
+}
+
+/* Checks MAC in the packet. Returns TRUE if MAC is Ok. This is called
+   after packet has been totally decrypted and parsed. */
+
+static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer)
+{
+  /* Check MAC */
+  if (hmac) {
+    unsigned char mac[32];
+    
+    SILC_LOG_DEBUG(("Verifying MAC"));
+
+    /* Compute HMAC of packet */
+    memset(mac, 0, sizeof(mac));
+    silc_hmac_make(hmac, buffer->data, buffer->len, mac);
+
+    /* Compare the HMAC's (buffer->tail has the packet's HMAC) */
+    if (memcmp(mac, buffer->tail, hmac->hash->hash->hash_len)) {
+      SILC_LOG_DEBUG(("MAC failed"));
+      return FALSE;
+    }
+    
+    SILC_LOG_DEBUG(("MAC is Ok"));
+    memset(mac, 0, sizeof(mac));
+  }
+  
+  return TRUE;
+}
+
+/* Decrypts rest of the packet (after decrypting just the SILC header).
+   After calling this function the packet is ready to be parsed by calling 
+   silc_packet_parse. If everything goes without errors this returns TRUE,
+   if packet is malformed this returns FALSE. */
+
+static int silc_packet_decrypt_rest(SilcCipher cipher, SilcHmac hmac,
+				    SilcBuffer buffer)
+{
+  if (cipher) {
+
+    /* Pull MAC from packet before decryption */
+    if (hmac) {
+      if ((buffer->len - hmac->hash->hash->hash_len) > SILC_PACKET_MIN_LEN) {
+	silc_buffer_push_tail(buffer, hmac->hash->hash->hash_len);
+      } else {
+	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
+	return FALSE;
+      }
+    }
+
+    SILC_LOG_DEBUG(("Decrypting rest of the packet"));
+
+    /* Decrypt rest of the packet */
+    silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
+    cipher->cipher->decrypt(cipher->context, buffer->data + 2,
+			    buffer->data + 2, buffer->len - 2,
+			    cipher->iv);
+    silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
+
+    SILC_LOG_HEXDUMP(("Fully decrypted packet, len %d", buffer->len),
+		     buffer->data, buffer->len);
+  }
+
+  return TRUE;
+}
+
+/* Decrypts rest of the SILC Packet header that has been decrypted partly
+   already. This decrypts the padding of the packet also. After calling 
+   this function the packet is ready to be parsed by calling function 
+   silc_packet_parse. This is used in special packet reception (protocol
+   defines the way of decrypting special packets). */
+
+static int silc_packet_decrypt_rest_special(SilcCipher cipher,
+					    SilcHmac hmac,
+					    SilcBuffer buffer)
+{
+  /* Decrypt rest of the header plus padding */
+  if (cipher) {
+    unsigned short truelen, len1, len2, padlen;
+
+    /* Pull MAC from packet before decryption */
+    if (hmac) {
+      if ((buffer->len - hmac->hash->hash->hash_len) > SILC_PACKET_MIN_LEN) {
+	silc_buffer_push_tail(buffer, hmac->hash->hash->hash_len);
+      } else {
+	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
+	return FALSE;
+      }
+    }
+  
+    SILC_LOG_DEBUG(("Decrypting rest of the header"));
+
+    SILC_GET16_MSB(len1, &buffer->data[4]);
+    SILC_GET16_MSB(len2, &buffer->data[6]);
+
+    truelen = SILC_PACKET_HEADER_LEN + len1 + len2;
+    padlen = SILC_PACKET_PADLEN(truelen);
+    len1 = (truelen + padlen) - (SILC_PACKET_MIN_HEADER_LEN - 2);
+
+    silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
+    cipher->cipher->decrypt(cipher->context, buffer->data + 2,
+			    buffer->data + 2, len1 - 2,
+			    cipher->iv);
+    silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
+  }
+
+  return TRUE;
+}
+
+/* Decrypts a packet. This assumes that typical SILC packet is the
+   packet to be decrypted and thus checks for normal and special SILC
+   packets and can handle both of them. This also computes and checks
+   the HMAC of the packet. If any other special or customized decryption
+   processing is required this function cannot be used. This returns
+   -1 on error, 0 when packet is normal packet and 1 when the packet
+   is special and requires special processing. */
+
+int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
+			SilcBuffer buffer, SilcPacketContext *packet)
+{
+#if 0
   SILC_LOG_DEBUG(("Decrypting packet, cipher %s, len %d (%d)", 
 		  cipher->cipher->name, len, len - 2));
+#endif
 
-  /* Decrypt the data area of the packet. 2 bytes of the packet
-     are not decrypted (they are not encrypted). */
-  cipher->cipher->decrypt(cipher->context, buffer->data + 2, 
-			  buffer->data + 2, len - 2, cipher->iv);
+  /* Decrypt start of the packet header */
+  if (cipher)
+    cipher->cipher->decrypt(cipher->context, buffer->data + 2,
+			    buffer->data + 2, SILC_PACKET_MIN_HEADER_LEN - 2,
+			    cipher->iv);
 
+  /* If the packet type is not any special type lets decrypt rest
+     of the packet here. */
+  if ((buffer->data[3] == SILC_PACKET_PRIVATE_MESSAGE &&
+      !(buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY)) ||
+      buffer->data[3] != SILC_PACKET_CHANNEL_MESSAGE) {
+
+    /* Normal packet, decrypt rest of the packet */
+    if (!silc_packet_decrypt_rest(cipher, hmac, buffer))
+      return -1;
+
+    /* Check MAC */
+    if (!silc_packet_check_mac(hmac, buffer))
+      return FALSE;
+
+    return 0;
+  } else {
+    /* Packet requires special handling, decrypt rest of the header.
+       This only decrypts. */
+    silc_packet_decrypt_rest_special(cipher, hmac, buffer);
+
+    /* Check MAC */
+    if (!silc_packet_check_mac(hmac, buffer))
+      return FALSE;
+
+    return 1;
+  }
 }
 
 /* Parses the packet. This is called when a whole packet is ready to be
@@ -287,105 +773,4 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx)
   SILC_LOG_DEBUG(("Incoming packet type: %d", ctx->type));
 
   return ctx->type;
-}
-
-/* Assembles a new packet to be ready for send out. The buffer sent as
-   argument must include the data to be sent and it must not be encrypted. 
-   The packet also must have enough free space so that the SILC header
-   and padding maybe added to the packet. The packet is encrypted after 
-   this function has returned.
-
-   The buffer sent as argument should be something like following:
-
-   --------------------------------------------
-   | head             | data           | tail |
-   --------------------------------------------
-   ^                  ^
-   58 bytes           x bytes
-
-   So that the SILC header and 1 - 16 bytes of padding can fit to
-   the buffer. After assembly the buffer might look like this:
-
-   --------------------------------------------
-   | data                              |      |
-   --------------------------------------------
-   ^                                   ^
-   Start of assembled packet
-
-   Packet construct is as follows (* = won't be encrypted):
-
-   x bytes       SILC Header
-      2 bytes     Payload length  (*)
-      1 byte      Flags           (*)
-      1 byte      Packet type
-      1 byte      Source ID Type
-      2 bytes     Source ID Length
-      x bytes     Source ID
-      1 byte      Destination ID Type
-      2 bytes     Destination ID Length
-      x bytes     Destination ID
-
-   1 - 16 bytes    Padding
-
-   x bytes        Data payload
-
-   All fields in the packet will be authenticated by MAC. The MAC is
-   not computed here, it must be computed differently before encrypting
-   the packet.
-
-*/
-
-void silc_packet_assemble(SilcPacketContext *ctx)
-{
-  unsigned char tmppad[SILC_PACKET_MAX_PADLEN];
-  int i;
-
-  SILC_LOG_DEBUG(("Assembling outgoing packet"));
-  
-  /* Get the true length of the packet. This is saved as payload length
-     into the packet header. This does not include the length of the
-     padding. */
-  if (!ctx->truelen)
-    ctx->truelen = ctx->buffer->len + SILC_PACKET_HEADER_LEN + 
-      ctx->src_id_len + ctx->dst_id_len;
-
-  /* Calculate the length of the padding. The padding is calculated from
-     the data that will be encrypted. As protocol states 3 first bytes
-     of the packet are not encrypted they are not included in the
-     padding calculation. */
-  if (!ctx->padlen)
-    ctx->padlen = SILC_PACKET_PADLEN(ctx->truelen);
-
-  /* Put the start of the data section to the right place. */
-  silc_buffer_push(ctx->buffer, SILC_PACKET_HEADER_LEN + 
-		   ctx->src_id_len + ctx->dst_id_len + ctx->padlen);
-
-  /* Get random padding */
-#if 1
-  for (i = 0; i < ctx->padlen; i++)
-    tmppad[i] = silc_rng_get_byte(ctx->rng);
-#else
-  /* XXX: For testing - to be removed */
-  memset(tmppad, 65, sizeof(tmppad));
-#endif
-
-  /* Create the packet. This creates the SILC header and adds padding,
-     rest of the buffer remains as it is. */
-  silc_buffer_format(ctx->buffer, 
-		     SILC_STR_UI_SHORT(ctx->truelen),
-		     SILC_STR_UI_CHAR(ctx->flags),
-		     SILC_STR_UI_CHAR(ctx->type),
-		     SILC_STR_UI_SHORT(ctx->src_id_len),
-		     SILC_STR_UI_SHORT(ctx->dst_id_len),
-		     SILC_STR_UI_CHAR(ctx->src_id_type),
-		     SILC_STR_UI_XNSTRING(ctx->src_id, ctx->src_id_len),
-		     SILC_STR_UI_CHAR(ctx->dst_id_type),
-		     SILC_STR_UI_XNSTRING(ctx->dst_id, ctx->dst_id_len),
-		     SILC_STR_UI_XNSTRING(tmppad, ctx->padlen),
-		     SILC_STR_END);
-
-  SILC_LOG_HEXDUMP(("Assembled packet, len %d", ctx->buffer->len), 
-		   ctx->buffer->data, ctx->buffer->len);
-
-  SILC_LOG_DEBUG(("Outgoing packet assembled"));
 }
