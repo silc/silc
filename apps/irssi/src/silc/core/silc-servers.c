@@ -273,6 +273,8 @@ static void sig_connected(SILC_SERVER_REC *server)
   memset(file, 0, sizeof(file));
   snprintf(file, sizeof(file) - 1, "%s/session", get_irssi_dir());
   params.detach_data = silc_file_readfile(file, &params.detach_data_len);
+  if (params.detach_data)
+    params.detach_data[params.detach_data_len] = 0;
 
   /* Add connection to the client library */
   conn = silc_client_add_connection(silc_client, &params,

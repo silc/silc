@@ -267,10 +267,13 @@ void silc_query_attributes_default(SilcClient client,
     silc_client_attribute_del(silc_client, conn,
 			      SILC_ATTRIBUTE_USER_INFO, NULL);
     tmp = silc_file_readfile(sv, &tmp_len);
-    if (tmp && silc_vcard_decode(tmp, tmp_len, &vcard))
-      silc_client_attribute_add(silc_client, conn,
-				SILC_ATTRIBUTE_USER_INFO, (void *)&vcard,
-				sizeof(vcard));
+    if (tmp) {
+      tmp[tmp_len] = 0;
+      if (silc_vcard_decode(tmp, tmp_len, &vcard))
+	silc_client_attribute_add(silc_client, conn,
+				  SILC_ATTRIBUTE_USER_INFO, (void *)&vcard,
+				  sizeof(vcard));
+    }
     silc_vcard_free(&vcard);
     silc_free(tmp);
   }
@@ -355,6 +358,7 @@ void silc_query_attributes_default(SilcClient client,
 			      SILC_ATTRIBUTE_STATUS_MESSAGE, NULL);
     tmp = silc_file_readfile(sv, &tmp_len);
     if (tmp) {
+      tmp[tmp_len] = 0;
       mime.mime = (const unsigned char *)tmp;
       mime.mime_len = tmp_len;
       silc_client_attribute_add(silc_client, conn,
@@ -498,6 +502,7 @@ void silc_query_attributes_default(SilcClient client,
       if (!strncasecmp(*entry, "silc-rsa:", 8)) {
 	tmp = silc_file_readfile((*entry) + 8, &tmp_len);
 	if (tmp) {
+	  tmp[tmp_len] = 0;
 	  pk.type = "silc-rsa";
 	  pk.data = tmp;
 	  pk.data_len = tmp_len;
@@ -522,6 +527,7 @@ typedef struct {
   SilcVCardStruct vcard;
   SilcAttributeObjMime message;
   SilcAttributeObjMime extension;
+  bool nopk;
 } *AttrVerify;
 
 void silc_query_attributes_print(SILC_SERVER_REC *server,
@@ -571,6 +577,7 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     case SILC_ATTRIBUTE_SERVICE:
       {
 	SilcAttributeObjService service;
+	memset(&service, 0, sizeof(service));
 	if (!silc_attribute_get_object(attr, (void *)&service,
 				       sizeof(service)))
 	  continue;
@@ -837,14 +844,15 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     }
   }
 
-  if (!verify->userpk.type || !usersign.data)
-    printformat_module("fe-common/silc", server, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_ATTR_FOOTER);
-
-  silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
-			 verify->userpk.data, verify->userpk.data_len, 
-			 SILC_SKE_PK_TYPE_SILC,
-			 silc_query_attributes_print_final, verify);
+  if (verify->userpk.data) {
+    silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
+			   verify->userpk.data, verify->userpk.data_len, 
+			   SILC_SKE_PK_TYPE_SILC,
+			   silc_query_attributes_print_final, verify);
+  } else {
+    verify->nopk = TRUE;
+    silc_query_attributes_print_final(FALSE, verify);
+  }
 }
 
 static void silc_query_attributes_print_final(bool success, void *context)
@@ -857,14 +865,16 @@ static void silc_query_attributes_print_final(bool success, void *context)
   struct stat st;
   int i;
 
-  if (success) {
-    printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_VERIFIED, "user",
-		       verify->name);
-  } else {
-    printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_NOTVERIFIED, "user",
-		       verify->name);
+  if (!verify->nopk) {
+    if (success) {
+      printformat_module("fe-common/silc", NULL, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_PUBKEY_VERIFIED, "user",
+			 verify->name);
+    } else {
+      printformat_module("fe-common/silc", NULL, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_PUBKEY_NOTVERIFIED, "user",
+			 verify->name);
+    }
   }
 
   printformat_module("fe-common/silc", server, NULL,
