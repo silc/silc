@@ -137,6 +137,9 @@ void silc_server_send_replace_id(SilcServer server,
 				 unsigned int old_id_len,
 				 void *new_id, SilcIdType new_id_type,
 				 unsigned int new_id_len);
+void silc_server_replace_id(SilcServer server,
+			    SilcSocketConnection sock,
+			    SilcPacketContext *packet);
 SilcChannelEntry silc_server_new_channel(SilcServer server, 
 					 SilcServerID *router_id,
 					 char *cipher, char *channel_name);

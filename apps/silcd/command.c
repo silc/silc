@@ -20,6 +20,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.12  2000/07/26 07:05:11  priikone
+ * 	Fixed the server to server (server to router actually) connections
+ * 	and made the private message work inside a cell. Added functin
+ * 	silc_server_replace_id.
+ *
  * Revision 1.11  2000/07/19 07:08:09  priikone
  * 	Added version detection support to SKE.
  *
@@ -552,47 +557,44 @@ SILC_SERVER_CMD_FUNC(identify)
     count = atoi(tmp);
   }
 
-  /* Then, make the query from our local client list */
+  /* Find client */
   entry = silc_idlist_find_client_by_nickname(server->local_list,
 					      nick, NULL);
-  if (!entry) {
+  if (!entry)
+    entry = silc_idlist_find_client_by_hash(server->global_list,
+					    nick, server->md5hash);
 
-    /* If we are normal server and are connected to a router we will
-       make global query from the router. */
-    if (server->server_type == SILC_SERVER && !server->standalone) {
-      SilcBuffer buffer = cmd->packet->buffer;
-
-      SILC_LOG_DEBUG(("Requesting identify from router"));
-
-      /* Send IDENTIFY command to our router */
-      silc_buffer_push(buffer, buffer->data - buffer->head);
-      silc_server_packet_forward(server, (SilcSocketConnection)
-				 server->id_entry->router->connection,
-				 buffer->data, buffer->len, TRUE);
-      goto out;
-    }
+  /* If client was not found and if we are normal server and are connected
+     to a router we will make global query from the router. */
+  if (!entry && server->server_type == SILC_SERVER && !server->standalone &&
+      !cmd->pending) {
+    SilcBuffer buffer = cmd->packet->buffer;
     
-    /* If we are router then we will check our global list as well. */
-    if (server->server_type == SILC_ROUTER) {
-      entry = 
-	silc_idlist_find_client_by_nickname(server->global_list,
-					    nick, NULL);
-      if (!entry) {
-	silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
-					     SILC_STATUS_ERR_NO_SUCH_NICK,
-					     3, tmp, strlen(tmp));
-	goto out;
-      }
-      goto ok;
-    }
+    SILC_LOG_DEBUG(("Requesting identify from router"));
+    
+    /* Send IDENTIFY command to our router */
+    silc_buffer_push(buffer, buffer->data - buffer->head);
+    silc_server_packet_forward(server, (SilcSocketConnection)
+			       server->id_entry->router->connection,
+			       buffer->data, buffer->len, TRUE);
+    return;
+  }
 
+  /* If we are router we have checked our local list by nickname and our
+     global list by hash so far. It is possible that the client is still not
+     found and we'll check it from local list by hash. */
+  if (!entry && server->server_type == SILC_ROUTER)
+    entry = silc_idlist_find_client_by_hash(server->local_list,
+					    nick, server->md5hash);
+
+  if (!entry) {
+    /* The client definitely does not exist */
     silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
 					 SILC_STATUS_ERR_NO_SUCH_NICK,
 					 3, tmp, strlen(tmp));
     goto out;
   }
 
- ok:
   /* Send IDENTIFY reply */
   id_string = silc_id_id2str(entry->id, SILC_ID_CLIENT);
   tmp = silc_command_get_first_arg(cmd->payload, NULL);
@@ -601,7 +603,6 @@ SILC_SERVER_CMD_FUNC(identify)
 						2, id_string, 
 						SILC_ID_CLIENT_LEN,
 						3, nick, strlen(nick));
-#if 0
   if (cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
     void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
     silc_server_packet_send_dest(server, cmd->sock, 
@@ -609,11 +610,11 @@ SILC_SERVER_CMD_FUNC(identify)
 				 id, cmd->packet->src_id_type,
 				 packet->data, packet->len, FALSE);
     silc_free(id);
-  } else
-#endif
+  } else {
     silc_server_packet_send(server, cmd->sock, 
 			    SILC_PACKET_COMMAND_REPLY, 0, 
 			    packet->data, packet->len, FALSE);
+  }
 
   silc_free(id_string);
   silc_buffer_free(packet);

@@ -20,6 +20,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/26 07:05:11  priikone
+ * 	Fixed the server to server (server to router actually) connections
+ * 	and made the private message work inside a cell. Added functin
+ * 	silc_server_replace_id.
+ *
  * Revision 1.4  2000/07/12 05:59:41  priikone
  * 	Major rewrite of ID Cache system. Support added for the new
  * 	ID cache system. Major rewrite of ID List stuff on server.  All
@@ -165,24 +170,25 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
 
   /* Process one identify reply */
   if (status == SILC_STATUS_OK) {
+    SilcClientID *client_id;
     unsigned char *id_data;
-    char *nickname;
+    char *nickname, *username;
 
     id_data = silc_command_get_arg_type(cmd->payload, 2, NULL);
     nickname = silc_command_get_arg_type(cmd->payload, 3, NULL);
     if (!id_data || !nickname)
       goto out;
 
-#if 0
-    /* Allocate client entry */
-    client_entry = silc_calloc(1, sizeof(*client_entry));
-    client_entry->id = silc_id_str2id(id_data, SILC_ID_CLIENT);
-    client_entry->nickname = strdup(nickname);
+    username = silc_command_get_arg_type(cmd->payload, 4, NULL);
 
-    /* Save received Client ID to ID cache */
-    silc_idcache_add(win->client_cache, client_entry->nickname,
-		     SILC_ID_CLIENT, client_entry->id, client_entry, TRUE);
-#endif
+    client_id = silc_id_str2id(id_data, SILC_ID_CLIENT);
+
+    /* Add the client always to our global list. If normal or router server
+       ever gets here it means they don't have this client's information
+       in their cache. */
+    silc_idlist_add_client(server->global_list, strdup(nickname),
+			   username, NULL, client_id, NULL, NULL, NULL,
+			   NULL, NULL, NULL, NULL);
   }
 
   if (status == SILC_STATUS_LIST_START) {

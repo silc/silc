@@ -25,6 +25,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.12  2000/07/26 07:05:11  priikone
+ * 	Fixed the server to server (server to router actually) connections
+ * 	and made the private message work inside a cell. Added functin
+ * 	silc_server_replace_id.
+ *
  * Revision 1.11  2000/07/20 10:17:25  priikone
  * 	Added dynamic protocol registering/unregistering support.  The
  * 	patch was provided by cras.
@@ -242,11 +247,14 @@ int silc_server_init(SilcServer server)
   server->local_list->servers = silc_idcache_alloc(0);
   server->local_list->channels = silc_idcache_alloc(0);
 
-  if (server->server_type == SILC_ROUTER) {
-    server->global_list->clients = silc_idcache_alloc(0);
-    server->global_list->servers = silc_idcache_alloc(0);
-    server->global_list->channels = silc_idcache_alloc(0);
-  }
+  /* XXX for now these are allocated for normal server as well as these
+     hold some global information that the server has fetched from its
+     router. For router these are used as they are supposed to be used
+     on router. The XXX can be remoevd later if this is the way we are
+     going to do this in the normal server as well. */
+  server->global_list->clients = silc_idcache_alloc(0);
+  server->global_list->servers = silc_idcache_alloc(0);
+  server->global_list->channels = silc_idcache_alloc(0);
 
   /* Allocate the entire socket list that is used in server. Eventually 
      all connections will have entry in this table (it is a table of 
@@ -1506,10 +1514,36 @@ void silc_server_packet_parse_type(SilcServer server,
   case SILC_PACKET_NEW_SERVER:
     /*
      * Received new server packet. This includes Server ID and some other
-     * information that we may save. This is after server as connected to us.
+     * information that we may save. This is received after server has 
+     * connected to us.
      */
     SILC_LOG_DEBUG(("New Server packet"));
     silc_server_new_server(server, sock, packet);
+    break;
+
+  case SILC_PACKET_NEW_CHANNEL:
+    break;
+
+  case SILC_PACKET_NEW_CHANNEL_USER:
+    break;
+
+  case SILC_PACKET_NEW_CHANNEL_LIST:
+    break;
+
+  case SILC_PACKET_NEW_CHANNEL_USER_LIST:
+    break;
+
+  case SILC_PACKET_REPLACE_ID:
+    /*
+     * Received replace ID packet. This sends the old ID that is to be
+     * replaced with the new one included into the packet. Client must not
+     * send this packet.
+     */
+    SILC_LOG_DEBUG(("Replace ID packet"));
+    silc_server_replace_id(server, sock, packet);
+    break;
+
+  case SILC_PACKET_REMOVE_ID:
     break;
 
   default:
@@ -2447,9 +2481,15 @@ void silc_server_private_message(SilcServer server,
     /* If we are router and the client has router then the client is in
        our cell but not directly connected to us. */
     if (server->server_type == SILC_ROUTER && client->router) {
+      /* We are of course in this case the client's router thus the real
+	 "router" of the client is the server who owns the client. Thus
+	 we will send the packet to that server. */
+      router = (SilcServerEntry)dst_sock->user_data;
+      assert(client->router == server->id_entry);
+
       silc_server_private_message_send_internal(server, dst_sock,
-						client->router->send_key,
-						client->router->hmac,
+						router->send_key,
+						router->hmac,
 						packet);
       goto out;
     }
@@ -2789,6 +2829,81 @@ void silc_server_send_replace_id(SilcServer server,
   silc_buffer_free(packet);
 }
 
+/* Received packet to replace a ID. This checks that the requested ID
+   exists and replaces it with the new one. */
+
+void silc_server_replace_id(SilcServer server,
+			    SilcSocketConnection sock,
+			    SilcPacketContext *packet)
+{
+  SilcBuffer buffer = packet->buffer;
+  unsigned char *old_id = NULL, *new_id = NULL;
+  SilcIdType old_id_type, new_id_type;
+  unsigned short old_id_len, new_id_len;
+  void *id = NULL, *id2 = NULL;
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type == SILC_ID_CLIENT)
+    return;
+
+  SILC_LOG_DEBUG(("Replacing ID"));
+
+  silc_buffer_unformat(buffer,
+		       SILC_STR_UI_SHORT(&old_id_type),
+		       SILC_STR_UI16_NSTRING_ALLOC(&old_id, &old_id_len),
+		       SILC_STR_UI_SHORT(&new_id_type),
+		       SILC_STR_UI16_NSTRING_ALLOC(&new_id, &new_id_len),
+		       SILC_STR_END);
+
+  if (old_id_type != new_id_type)
+    goto out;
+
+  if (old_id_len != silc_id_get_len(old_id_type) ||
+      new_id_len != silc_id_get_len(new_id_type))
+    goto out;
+
+  id = silc_id_str2id(old_id, old_id_type);
+  if (!id)
+    goto out;
+
+  id2 = silc_id_str2id(new_id, new_id_type);
+  if (!id2)
+    goto out;
+
+  /* Replace the old ID */
+  switch(old_id_type) {
+  case SILC_ID_CLIENT:
+    if (silc_idlist_replace_client_id(server->local_list, id, id2) == NULL)
+      if (server->server_type == SILC_ROUTER)
+	silc_idlist_replace_client_id(server->global_list, id, id2);
+    break;
+
+  case SILC_ID_SERVER:
+    if (silc_idlist_replace_server_id(server->local_list, id, id2) == NULL)
+      if (server->server_type == SILC_ROUTER)
+	silc_idlist_replace_server_id(server->global_list, id, id2);
+    break;
+
+  case SILC_ID_CHANNEL:
+    /* XXX Hmm... Basically this cannot occur. Channel ID's cannot be
+       re-generated. */
+    silc_free(id2);
+    break;
+
+  default:
+    silc_free(id2);
+    break;
+  }
+
+ out:
+  if (id)
+    silc_free(id);
+  if (old_id)
+    silc_free(old_id);
+  if (new_id)
+    silc_free(new_id);
+}
+
 /* Creates new channel. */
 
 SilcChannelEntry silc_server_new_channel(SilcServer server, 
@@ -3032,14 +3147,18 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 			SilcPacketContext *packet)
 {
   SilcBuffer buffer = packet->buffer;
+  SilcIDList id_list;
+  SilcServerEntry tmpserver, router;
+  SilcSocketConnection router_sock;
   SilcIdType id_type;
   unsigned char *id_string;
-  void *id;
+  void *id, *tmpid;
 
   SILC_LOG_DEBUG(("Processing new ID"));
 
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      server->server_type == SILC_SERVER)
+      server->server_type == SILC_SERVER ||
+      packet->src_id_type != SILC_ID_SERVER)
     return;
 
   silc_buffer_unformat(buffer,
@@ -3055,11 +3174,23 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
   if (!id)
     goto out;
 
-  /* XXX Do check whether the packet is coming outside the cell or
-     from someone inside the cell.  If outside use global lists otherwise
-     local lists. */
-  /* XXX If using local list set the idlist->connection to the sender's
-     socket connection as it is used in packet sending */
+  /* If the packet is originated from the one who sent it to us we know
+     that the ID belongs to our cell, unless the sender was router. */
+  tmpid = silc_id_str2id(packet->src_id, SILC_ID_SERVER);
+  tmpserver = (SilcServerEntry)sock->user_data;
+
+  if (!SILC_ID_SERVER_COMPARE(tmpid, tmpserver->id) &&
+      sock->type == SILC_SOCKET_TYPE_SERVER) {
+    id_list = server->local_list;
+    router_sock = sock;
+    router = server->id_entry;
+  } else {
+    id_list = server->global_list;
+    router_sock = (SilcSocketConnection)server->id_entry->router->connection;
+    router = server->id_entry->router;
+  }
+
+  silc_free(tmpid);
 
   switch(id_type) {
   case SILC_ID_CLIENT:
@@ -3068,9 +3199,9 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 
       /* Add the client to our local list. We are router and we keep
 	 cell specific local database of all clients in the cell. */
-      idlist = silc_idlist_add_client(server->local_list, NULL, NULL, NULL,
-				      id, sock->user_data, NULL, NULL, 
-				      NULL, NULL, NULL, sock);
+      idlist = silc_idlist_add_client(id_list, NULL, NULL, NULL,
+				      id, router, NULL, NULL, 
+				      NULL, NULL, NULL, router_sock);
     }
     break;
 
@@ -3080,17 +3211,17 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 
       /* Add the server to our local list. We are router and we keep
 	 cell specific local database of all servers in the cell. */
-      idlist = silc_idlist_add_server(server->local_list, NULL, 0,
-				      id, server->id_entry, NULL, NULL, 
-				      NULL, NULL, NULL, sock);
+      idlist = silc_idlist_add_server(id_list, NULL, 0,
+				      id, router, NULL, NULL, 
+				      NULL, NULL, NULL, router_sock);
     }
     break;
 
   case SILC_ID_CHANNEL:
     /* Add the channel to our local list. We are router and we keep
        cell specific local database of all channels in the cell. */
-    silc_idlist_add_channel(server->local_list, NULL, 0, id, 
-			    server->id_entry, NULL);
+    silc_idlist_add_channel(id_list, NULL, 0, id, 
+			    router, NULL);
     break;
 
   default:
