@@ -34,6 +34,12 @@ typedef struct {
   SilcSocketConnection sock;
   SilcRng rng;
   int responder;
+
+  /* Destinations ID taken from authenticataed packet so that we can
+     get the destinations ID. */
+  void *dest_id;
+  SilcIdType dest_id_type;
+
   SilcBuffer packet;
   SilcSKE ske;
 } SilcClientKEInternalContext;
@@ -49,6 +55,10 @@ typedef struct {
   /* Auth method that must be used. This is resolved before this
      connection authentication protocol is started. */
   unsigned int auth_meth;
+
+  /* Destinations ID from KE protocol context */
+  void *dest_id;
+  SilcIdType dest_id_type;
 
   /* Authentication data if we alreay know it. This is filled before
      starting the protocol if we know the authentication data. Otherwise
