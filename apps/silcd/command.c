@@ -368,6 +368,7 @@ void silc_server_command_pending_del(SilcServer server,
   while ((r = silc_dlist_get(server->pending_commands)) != SILC_LIST_END) {
     if (r->reply_cmd == reply_cmd && r->ident == ident) {
       silc_dlist_del(server->pending_commands, r);
+      silc_free(r);
       break;
     }
   }
@@ -1617,6 +1618,7 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 	break;
       }
 
+      silc_id_payload_free(idp);
       silc_free(id);
     }
   }
@@ -4289,6 +4291,8 @@ SILC_SERVER_CMD_FUNC(cmode)
 	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 						SILC_STATUS_ERR_AUTH_FAILED,
 						0);
+	  silc_pkcs_public_key_free(channel->founder_key);
+	  channel->founder_key = NULL;
 	  goto out;
         }
       }
@@ -4927,7 +4931,7 @@ SILC_SERVER_CMD_FUNC(oper)
   client->mode |= SILC_UMODE_SERVER_OPERATOR;
 
   /* Update statistics */
-  if (client->connection)
+  if (SILC_IS_LOCAL(client))
     server->stat.my_server_ops++;
   if (server->server_type == SILC_ROUTER)
     server->stat.server_ops++;
@@ -5018,8 +5022,8 @@ SILC_SERVER_CMD_FUNC(detach)
 
   /* Remove operator privileges, since the client may resume in some
      other server which to it does not have operator privileges. */
-  client->mode &= ~(SILC_UMODE_SERVER_OPERATOR |
-		    SILC_UMODE_ROUTER_OPERATOR);
+  SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+  SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
   /* Send the user mode notify to notify that client is detached */
   client->mode |= SILC_UMODE_DETACHED;
@@ -5318,7 +5322,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   client->mode |= SILC_UMODE_ROUTER_OPERATOR;
 
   /* Update statistics */
-  if (client->connection)
+  if (SILC_IS_LOCAL(client))
     server->stat.my_router_ops++;
   if (server->server_type == SILC_ROUTER)
     server->stat.router_ops++;

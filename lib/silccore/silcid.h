@@ -113,7 +113,8 @@ typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
  * DESCRIPTION
  *
  *    Parses buffer and return ID payload into payload structure. The
- *    `buffer' is raw payload buffer.
+ *    `buffer' is raw payload buffer.  The caller must free the returned
+ *    payload.
  *
  ***/
 SilcIDPayload silc_id_payload_parse(const unsigned char *payload,

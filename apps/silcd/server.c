@@ -675,7 +675,8 @@ void silc_server_stop(SilcServer server)
       if (!server->sockets[i])
 	continue;
       if (!SILC_IS_LISTENER(server->sockets[i])) {
-	SilcIDListData idata = server->sockets[i]->user_data;
+	SilcSocketConnection sock = server->sockets[i];
+	SilcIDListData idata = sock->user_data;
 
 	if (idata)
 	  idata->status &= ~SILC_IDLIST_STATUS_DISABLED;
@@ -685,6 +686,10 @@ void silc_server_stop(SilcServer server)
 	silc_server_disconnect_remote(server, server->sockets[i], 
 				      SILC_STATUS_OK, 
 				      "Server is shutting down");
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock,
+					  "Server is shutting down");
+	silc_socket_free(sock);
       } else {
 	silc_socket_free(server->sockets[i]);
 	server->sockets[i] = NULL;
@@ -798,6 +803,15 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
   SilcServerConfigConnParams *param =
 		(conn->param ? conn->param : &server->config->param);
 
+  /* Don't retry if we are shutting down. */
+  if (server->server_shutdown) {
+    silc_server_config_unref(&sconn->conn);
+    silc_free(sconn->remote_host);
+    silc_free(sconn->backup_replace_ip);
+    silc_free(sconn);
+    return;
+  }
+
   SILC_LOG_INFO(("Retrying connecting to a router"));
 
   /* Calculate next timeout */
@@ -843,6 +857,14 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   SilcServer server = sconn->server;
   SilcServerConfigRouter *rconn;
   int sock;
+
+  /* Don't connect if we are shutting down. */
+  if (server->server_shutdown) {
+    silc_free(sconn->remote_host);
+    silc_free(sconn->backup_replace_ip);
+    silc_free(sconn);
+    return;
+  }
 
   SILC_LOG_INFO(("Connecting to the %s %s on port %d",
 		 (sconn->backup ? "backup router" : "router"),
@@ -894,6 +916,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
   SilcServer server = (SilcServer)context;
   SilcServerConnection sconn;
   SilcServerConfigRouter *ptr;
+
+  /* Don't connect if we are shutting down. */
+  if (server->server_shutdown)
+    return;
 
   SILC_LOG_DEBUG(("We are %s",
 		  (server->server_type == SILC_SERVER ?
@@ -1311,7 +1337,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
  out:
   /* Call the completion callback to indicate that we've connected to
      the router */
-  if (sconn->callback)
+  if (sconn && sconn->callback)
     (*sconn->callback)(server, id_entry, sconn->callback_context);
 
   /* Free the temporary connection data context */
@@ -2891,8 +2917,6 @@ void silc_server_free_client_data(SilcServer server,
 				  int notify,
 				  const char *signoff)
 {
-  FreeClientInternal i = silc_calloc(1, sizeof(*i));
-
   SILC_LOG_DEBUG(("Freeing client data"));
 
 #if 1
@@ -2943,18 +2967,26 @@ void silc_server_free_client_data(SilcServer server,
   silc_schedule_task_del_by_context(server->schedule, client);
 
   /* We will not delete the client entry right away. We will take it
-     into history (for WHOWAS command) for 5 minutes */
-  i->server = server;
-  i->client = client;
-  silc_schedule_task_add(server->schedule, 0,
-			 silc_server_free_client_data_timeout,
-			 (void *)i, 300, 0,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
-  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
-  client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
-  client->mode = 0;
-  client->router = NULL;
-  client->connection = NULL;
+     into history (for WHOWAS command) for 5 minutes, unless we're
+     shutting down server. */
+  if (!server->server_shutdown) {
+    FreeClientInternal i = silc_calloc(1, sizeof(*i));
+    i->server = server;
+    i->client = client;
+    silc_schedule_task_add(server->schedule, 0,
+			   silc_server_free_client_data_timeout,
+			   (void *)i, 300, 0,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+    client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+    client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
+    client->mode = 0;
+    client->router = NULL;
+    client->connection = NULL;
+  } else {
+    /* Delete directly since we're shutting down server */
+    silc_idlist_del_data(client);
+    silc_idlist_del_client(server->local_list, client);
+  }
 }
 
 /* Frees user_data pointer from socket connection object. This also sends

@@ -218,6 +218,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
+	  silc_idlist_del_data(client);
 	  silc_idlist_del_client(server->local_list, client);
 	}
 
@@ -277,6 +278,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
+	  silc_idlist_del_data(client);
 	  silc_idlist_del_client(server->global_list, client);
 	}
 
@@ -285,6 +287,21 @@ bool silc_server_remove_clients_by_server(SilcServer server,
       }
     }
     silc_idcache_list_free(list);
+  }
+
+  /* Return now if we are shutting down */
+  if (server->server_shutdown) {
+    silc_hash_table_free(channels);
+
+    if (server_signoff) {
+      for (i = 0; i < argc; i++)
+	silc_free(argv[i]);
+      silc_free(argv);
+      silc_free(argv_lens);
+      silc_free(argv_types);
+      silc_hash_table_free(clients);
+    }
+    return TRUE;
   }
 
   /* Send the SERVER_SIGNOFF notify */
@@ -323,12 +340,6 @@ bool silc_server_remove_clients_by_server(SilcServer server,
     silc_free(argv_lens);
     silc_free(argv_types);
     silc_hash_table_free(clients);
-  }
-
-  /* Return now if we are shutting down */
-  if (server->server_shutdown) {
-    silc_hash_table_free(channels);
-    return TRUE;
   }
 
   /* We must now re-generate the channel key for all channels that had
@@ -926,7 +937,7 @@ bool silc_server_channel_delete(SilcServer server,
   SilcHashTableList htl;
   bool delchan = !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH);
 
-  if (delchan) {
+  if (delchan || server->server_shutdown) {
     /* Update statistics */
     if (server->server_type == SILC_ROUTER)
       server->stat.chanclients -= channel->user_count;
@@ -1518,6 +1529,7 @@ void silc_server_kill_client(SilcServer server,
     }
 
     /* Remove remote client */
+    silc_idlist_del_data(remote_client);
     if (!silc_idlist_del_client(server->global_list, remote_client)) {
       /* Remove this client from watcher list if it is */
       silc_server_del_from_watcher_list(server, remote_client);

@@ -49,6 +49,10 @@ typedef struct {
   SilcUInt32 detached;		          /* All clients detached */
   SilcUInt32 server_ops;		  /* All server operators */
   SilcUInt32 router_ops;		  /* All router operators */
+  /* More to add
+  SilcUInt32 secret_channels;
+  SilcUInt32 private_channels;
+  */
 
   /* General */
   SilcUInt32 conn_attempts;		  /* Connection attempts */

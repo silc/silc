@@ -173,8 +173,10 @@ void silc_server_notify(SilcServer server,
 					     NULL);
       if (!client) {
 	/* If router did not find the client the it is bogus */
-	if (server->server_type != SILC_SERVER)
+	if (server->server_type != SILC_SERVER) {
+	  silc_free(client_id);
 	  goto out;
+	}
 
 	client = 
 	  silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
@@ -189,6 +191,7 @@ void silc_server_notify(SilcServer server,
 	client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
       }
     }
+    silc_free(client_id);
 
     /* Do not process the notify if the client is not registered */
     if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED))
@@ -233,7 +236,6 @@ void silc_server_notify(SilcServer server,
 
     silc_hash_table_add(channel->user_list, client, chl);
     silc_hash_table_add(client->channels, channel, chl);
-    silc_free(client_id);
     channel->user_count++;
     channel->disabled = FALSE;
 
@@ -422,6 +424,7 @@ void silc_server_notify(SilcServer server,
 	goto out;
       }
     }
+    silc_free(channel_id);
 
     if (channel->topic && !strcmp(channel->topic, tmp)) {
       SILC_LOG_DEBUG(("Topic is already set and same"));
@@ -448,7 +451,6 @@ void silc_server_notify(SilcServer server,
     silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
 				       FALSE, packet->buffer->data, 
 				       packet->buffer->len, FALSE);
-    silc_free(channel_id);
     break;
 
   case SILC_NOTIFY_TYPE_NICK_CHANGE:
@@ -475,8 +477,10 @@ void silc_server_notify(SilcServer server,
       if (!id2)
 	goto out;
       client_id2 = silc_id_payload_parse_id(id2, tmp_len, NULL);
-      if (!client_id2)
+      if (!client_id2) {
+	silc_free(client_id);
 	goto out;
+      }
       
       SILC_LOG_DEBUG(("Old Client ID id(%s)", 
 		      silc_id_render(client_id, SILC_ID_CLIENT)));
@@ -1284,6 +1288,7 @@ void silc_server_notify(SilcServer server,
 	      silc_server_del_from_watcher_list(server, client);
 
 	    /* Remove the client */
+	    silc_idlist_del_data(client);
 	    silc_idlist_del_client(local ? server->local_list :
 				   server->global_list, client);
 	  }
@@ -1578,6 +1583,8 @@ void silc_server_notify(SilcServer server,
 	  server->stat.detached--;
       }
     }
+    SILC_UMODE_STATS_UPDATE(server, SILC_UMODE_SERVER_OPERATOR);
+    SILC_UMODE_STATS_UPDATE(router, SILC_UMODE_ROUTER_OPERATOR);
 
     /* Change the mode */
     client->mode = mode;
@@ -1684,6 +1691,7 @@ void silc_server_notify(SilcServer server,
 	  if (client) {
 	    silc_server_remove_from_channels(server, NULL, client, TRUE, 
 					     NULL, TRUE);
+	    silc_idlist_del_data(client);
 	    silc_idlist_del_client(server->global_list, client);
 	  }
 	  silc_free(client_id);
