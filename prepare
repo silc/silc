@@ -30,7 +30,7 @@ echo "Preparing SILC source tree for configuration and compilation..."
 version=`date +%Y%m%d`
 
 # Replace version string and create configure.in
-sed -e "1,/YYYYMMDD/s//$version/" configure.in.pre >configure.in
+sed -e "/YYYYMMDD/s//$version/" configure.in.pre >configure.in
 
 aclocal
 autoconf
