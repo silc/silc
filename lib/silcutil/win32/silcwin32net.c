@@ -139,7 +139,9 @@ int silc_net_create_connection(int port, char *host)
   }
 
   /* Set appropriate options */
+#if defined(TCP_NODELAY)
   silc_net_set_socket_opt(sock, IPPROTO_TCP, TCP_NODELAY, 1);
+#endif
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_KEEPALIVE, 1);
 
   SILC_LOG_DEBUG(("Connection created"));
@@ -196,7 +198,9 @@ int silc_net_create_connection_async(int port, char *host)
   silc_net_set_socket_nonblock(sock);
 
   /* Set appropriate options */
+#if defined(TCP_NODELAY)
   silc_net_set_socket_opt(sock, IPPROTO_TCP, TCP_NODELAY, 1);
+#endif
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_KEEPALIVE, 1);
 
   SILC_LOG_DEBUG(("Connection created"));

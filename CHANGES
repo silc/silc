@@ -1,3 +1,9 @@
+Wed Jul 25 18:43:54 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not add TCP_NODELAY flag if the operating system
+	  does not have it defined.  Affected files are
+	  lib/silcutil/[unix/win32]/silc[unix/win32]net.c.
+
 Wed Jul 25 16:04:35 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not enable SILC_THREADS if the linking with libpthread
