@@ -1309,15 +1309,17 @@ void silc_server_notify(SilcServer server,
     /* For local entrys SERVER_SIGNOFF is processed only on backup router.
        It is possible that router sends server signoff for a server.  If
        backup router has it as local connection it will be closed. */
-    if (SILC_IS_LOCAL(server_entry) &&
-	server->server_type == SILC_BACKUP_ROUTER) {
-      sock = server_entry->connection;
-      SILC_LOG_DEBUG(("Closing connection %s after SERVER_SIGNOFF",
-		      sock->hostname));
-      SILC_SET_DISCONNECTING(sock);
-      if (sock->user_data)
-	silc_server_free_sock_user_data(server, sock, NULL);
-      silc_server_close_connection(server, sock);
+    if (SILC_IS_LOCAL(server_entry)) {
+      if (server->server_type == SILC_BACKUP_ROUTER) {
+	sock = server_entry->connection;
+	SILC_LOG_DEBUG(("Closing connection %s after SERVER_SIGNOFF",
+		       sock->hostname));
+	SILC_SET_DISCONNECTING(sock);
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock, NULL);
+	silc_server_close_connection(server, sock);
+      }
+
       break;
     }
 
