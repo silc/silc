@@ -2795,7 +2795,7 @@ SILC_SERVER_CMD_FUNC(users)
   unsigned int list_count = 0;
   unsigned short ident = silc_command_get_ident(cmd->payload);
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_USERS, cmd, 1, 2);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_USERS, cmd, 1, 1);
 
   /* Get Channel ID */
   channel_id = silc_argument_get_arg_type(cmd->args, 1, &channel_id_len);

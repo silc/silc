@@ -502,8 +502,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     silc_free(ctx->auth_data);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
-  if (ctx->dest_id)
-    silc_free(ctx->dest_id);
   silc_free(ctx);
   conn->sock->protocol = NULL;
 }
