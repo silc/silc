@@ -1,3 +1,8 @@
+Sat May  5 13:56:33 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed memory leak in silc_encode_pem_file in the file
+	  lib/silcutil/silcutil.c.
+
 Thu May  3 21:23:50 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Check minor version as well in the SKE.  Affected files are

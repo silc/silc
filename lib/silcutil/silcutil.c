@@ -274,6 +274,7 @@ char *silc_encode_pem_file(unsigned char *data, uint32 data_len)
     pem2[i] = pem[j++];
   }
 
+  silc_free(pem);
   return pem2;
 }
 
