@@ -1,6 +1,6 @@
 /*
 
-  server.c
+  server.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -8,8 +8,7 @@
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation; version 2 of the License.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -96,6 +95,7 @@ void silc_server_free(SilcServer server)
   }
 #endif
 
+  silc_server_backup_free(server);
   silc_server_config_unref(&server->config_ref);
   if (server->rng)
     silc_rng_free(server->rng);
@@ -2244,13 +2244,9 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
     ret = silc_packet_parse_special(packet, idata ? idata->receive_key : NULL);
 
   /* If entry is disabled ignore what we got. */
-  if (ret != SILC_PACKET_RESUME_ROUTER &&
-      idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
-    SILC_LOG_DEBUG(("Connection is disabled"));
-    goto out;
-  }
-  if (ret != SILC_PACKET_HEARTBEAT &&
-      idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
+  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED && 
+      ret != SILC_PACKET_HEARTBEAT && ret != SILC_PACKET_RESUME_ROUTER &&
+      ret != SILC_PACKET_REKEY && ret != SILC_PACKET_REKEY_DONE) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     goto out;
   }
@@ -3083,6 +3079,9 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  backup_router == server->id_entry &&
 	  sock->type != SILC_SOCKET_TYPE_ROUTER)
 	backup_router = NULL;
+
+      if (server->server_shutdown)
+      	backup_router = NULL;
 
       /* If this was our primary router connection then we're lost to
 	 the outside world. */

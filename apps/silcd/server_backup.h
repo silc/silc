@@ -45,6 +45,11 @@ SilcServerEntry silc_server_backup_get(SilcServer server,
 /* Deletes the backup server `server_entry'. */
 void silc_server_backup_del(SilcServer server, SilcServerEntry server_entry);
 
+/* Frees all data allocated for backup routers.  Call this after deleting
+   all backup routers and when new routers are added no more, for example
+   when shutting down the server. */
+void silc_server_backup_free(SilcServer server);
+
 /* Marks the IP address and port from the `server_id' as  being replaced
    by backup router indicated by the `server'. If the router connects at
    a later time we can check whether it has been replaced by an backup

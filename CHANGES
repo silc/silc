@@ -1,8 +1,19 @@
-Sun Aug  4 13:23:40 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
+Sun Aug  4 15:55:40 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* More fixed for not having purge timeout for global clients
 	  that are on channel.  Affected files silcd/command_reply.c
 	  and server_util.c.
+
+	* Fixed the rekey protocol to work with backup router connections.
+	  Rekey packets are now allowed on disabled connections as
+	  well.  Affected files silcd/packet_send.c and server.c.
+
+	* Do not switch to be as backup router when shutting down and
+	  closing the primary connection.  Affected file silcd/server.c.
+
+	* Fixed memory leaks in backup router deleting.  Added
+	  silc_server_backup_free to free all data during shutdown of
+	  server.  Affected files silcd/server_backup.[ch].
 
 Sun Jul 14 21:33:32 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 

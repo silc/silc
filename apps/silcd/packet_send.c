@@ -1,6 +1,6 @@
 /*
 
-  packet_send.c
+  packet_send.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -8,9 +8,8 @@
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -96,9 +95,11 @@ void silc_server_packet_send(SilcServer server,
   if (SILC_IS_DISCONNECTING(sock))
     return;
 
-  /* If entry is disabled do not sent anything. */
+  /* If entry is disabled do not sent anything.  Allow hearbeat and
+     rekeys, though */
   if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
-       type != SILC_PACKET_HEARTBEAT) ||
+       type != SILC_PACKET_HEARTBEAT && type != SILC_PACKET_REKEY && 
+       type != SILC_PACKET_REKEY_DONE) ||
       sock->user_data == server->id_entry) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;

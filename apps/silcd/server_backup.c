@@ -149,7 +149,7 @@ void silc_server_backup_del(SilcServer server, SilcServerEntry server_entry)
   int i;
 
   if (!server->backup)
-    return ;
+    return;
 
   for (i = 0; i < server->backup->servers_count; i++) {
     if (server->backup->servers[i].server == server_entry) {
@@ -161,6 +161,28 @@ void silc_server_backup_del(SilcServer server, SilcServerEntry server_entry)
 	     sizeof(server->backup->servers[i].ip.data));
     }
   }
+}
+
+/* Frees all data allocated for backup routers.  Call this after deleting
+   all backup routers and when new routers are added no more, for example
+   when shutting down the server. */
+
+void silc_server_backup_free(SilcServer server)
+{
+  int i;
+
+  if (!server->backup)
+    return;
+
+  /* Delete existing servers if caller didn't do it */
+  for (i = 0; i < server->backup->servers_count; i++) {
+    if (server->backup->servers[i].server)
+      silc_server_backup_del(server, server->backup->servers[i].server);
+  }
+
+  silc_free(server->backup->servers);
+  silc_free(server->backup);
+  server->backup = NULL;
 }
 
 /* Marks the IP address and port from the `server_id' as  being replaced
