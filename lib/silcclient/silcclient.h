@@ -1077,6 +1077,12 @@ void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
  *    library. The library however may use this internally.  After the
  *    key exchange is performed the `connect' client operation is called.
  *
+ * NOTES
+ *
+ *    The silc_client_add_connection must be called before calling this
+ *    function to create the SilcClientConnection context for this
+ *    connection.
+ *
  ***/
 void silc_client_start_key_exchange(SilcClient client,
 				    SilcClientConnection conn,
