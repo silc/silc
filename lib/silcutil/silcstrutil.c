@@ -206,14 +206,13 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
       ocp = (char *)utf8;
       inlen = bin_len;
       outlen = utf8_size;
-      if (icd != (iconv_t)-1 && 
-	  (iconv(icd, &icp, &inlen, &ocp, &outlen) != -1)) {
-	utf8_size -= outlen;
-	iconv_close(icd);
-	return utf8_size;
-      } else {
-	if (icd != (iconv_t)-1)
+      if (icp && ocp && icd != (iconv_t)-1) {
+	if (iconv(icd, &icp, &inlen, &ocp, &outlen) != -1) {
+	  utf8_size -= outlen;
 	  iconv_close(icd);
+	  return utf8_size;
+	}
+	iconv_close(icd);
       }
     }
 #endif
@@ -350,14 +349,13 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       ocp = (char *)bin;
       inlen = utf8_len;
       outlen = bin_size;
-      if (icd != (iconv_t)-1 && 
-	  (iconv(icd, &icp, &inlen, &ocp, &outlen) != -1)) {
-	bin_size -= outlen;
-	iconv_close(icd);
-	return bin_size;
-      } else {
-	if (icd != (iconv_t)-1)
+      if (icp && ocp && icd != (iconv_t)-1) {
+	if (iconv(icd, &icp, &inlen, &ocp, &outlen) != -1) {
+	  bin_size -= outlen;
 	  iconv_close(icd);
+	  return bin_size;
+	}
+	iconv_close(icd);
       }
     }
 #endif
