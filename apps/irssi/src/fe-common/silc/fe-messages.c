@@ -223,6 +223,21 @@ static void sig_signed_message_own_private(SERVER_REC * server,
   g_free_not_null(freemsg);
 }
 
+static void sig_signed_message_query(SERVER_REC *server, const char *msg,
+				const char *nick, const char *address,
+				int verified)
+{
+	QUERY_REC *query;
+
+	/* create query window if needed */
+	query = privmsg_get_query(server, nick, FALSE, MSGLEVEL_MSGS);
+
+	/* reset the query's last_unread_msg timestamp */
+        if (query != NULL)
+		query->last_unread_msg = time(NULL);
+}
+
+
 void fe_silc_messages_init(void)
 {
   signal_add_last("message signed_public",
@@ -233,6 +248,9 @@ void fe_silc_messages_init(void)
 		  (SIGNAL_FUNC) sig_signed_message_own_public);
   signal_add_last("message signed_own_private",
 		  (SIGNAL_FUNC) sig_signed_message_own_private);
+
+  signal_add_first("message signed_private",
+  		   (SIGNAL_FUNC) sig_signed_message_query);
 }
 
 void fe_silc_messages_deinit(void)
@@ -245,4 +263,7 @@ void fe_silc_messages_deinit(void)
 		(SIGNAL_FUNC) sig_signed_message_own_public);
   signal_remove("message signed_own_private",
 		(SIGNAL_FUNC) sig_signed_message_own_private);
+
+  signal_remove("message signed_private",
+  		(SIGNAL_FUNC) sig_signed_message_query);
 }

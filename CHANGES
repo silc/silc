@@ -1,3 +1,12 @@
+Thu Jan 01 20:11:32 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* /SMSG and /MMSG now correctly create new queries. Affected files
+	  irssi/src/fe-common/silc/fe-messages.c, irssi/scripts/silc-mime.pl
+
+	* Add basic support for SILC protocol specific variables in perl.
+	  Affected files irssi/src/perl/silc/*, irssi/configure.in,
+	  irssi/src/perl/Makefile.am
+
 Wed Dec 31 17:06:55 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Don't use silc_get_input, it's obviously not reliable.  Fixes

@@ -14,6 +14,8 @@ $VERSION = "1.2";
     changed	=> "Wed Aug 29 10:45 CET 2003",
 );
 
+use Irssi::Silc;
+
 use MIME::Parser;
 use Mail::Field;
 use Mail::Cap;
@@ -67,6 +69,25 @@ sub read_mime_database {
 }
 
 ##
+# privmsg_get_query
+#
+# get or create query
+#
+sub privmsg_get_query {
+  my ($server, $target, $own) = @_;
+
+  $dest = $server->query_find($target);
+  if (not defined $dest && 
+      (Irssi::level2bits(settings_get_str("autocreate_query_level")) &
+       MSGLEVEL_MSGS) &&
+      (!$own || Irssi::settings_get_bool("autocreate_own_query"))) {
+      $dest = Irssi::Silc::Server::query_create($server->{tag}, $target, 1);
+  }
+
+  return $dest;
+}
+
+##
 # unescape
 #
 # Removes the null-byte escaping from a data block.  Returns the
@@ -99,7 +120,7 @@ sub escape {
 # fork and execute
 #
 sub background_exec {
-  my ($witem, $signed, $sender, $type, $cmd) = @_;
+  my ($server, $witem, $signed, $sender, $type, $cmd) = @_;
 
   if ($signed == -1) {
     $format = "mime_data_received";
@@ -111,14 +132,20 @@ sub background_exec {
     $format = "mime_data_received_failed";
   }
 
-  if ($witem->{type}) {
-    $witem->printformat(MSGLEVEL_CRAP, $format, $sender, $type);
-  } else {
-    Irssi::printformat(MSGLEVEL_CRAP, $format, $sender, $type);
+  if (not $witem->{type}) {
+    $witem = privmsg_get_query($server, $sender, 0);
   }
 
-  Irssi::command("EXEC " . Irssi::settings_get_str("mime_exec_param") .
-		 $cmd);
+  if ($witem->{type}) {
+    $witem->printformat(MSGLEVEL_CRAP, $format, $sender, $type);
+    $witem->window()->command("EXEC " . Irssi::settings_get_str("mime_exec_param") . " " .
+    		    $cmd);
+  } else {
+    Irssi::printformat(MSGLEVEL_CRAP, $format, $sender, $type);
+    Irssi::command("EXEC " . Irssi::settings_get_str("mime_exec_param") . " " .
+  		   $cmd);
+  }
+
 }
 
 my %partial;
@@ -128,7 +155,7 @@ my %partial;
 #
 # -1 failure, 0 success
 sub process_mime_entity {
-  my ($witem, $signed, $sender, $entity) = @_;
+  my ($server, $witem, $signed, $sender, $entity) = @_;
 
   my ($mimetype, $fh, $tempfile, $parser, $ret, $io, $mcap, $cmd);  
 
@@ -227,7 +254,7 @@ sub process_mime_entity {
     $parser->output_dir(Irssi::settings_get_str("mime_temp_dir"));
     $mime = $parser->parse_open($tempfile);
 
-    $ret = process_mime_entity($witem, $signed, $sender, $mime);
+    $ret = process_mime_entity($server, $witem, $signed, $sender, $mime);
 
     $parser->filer->purge;
     unlink $tempfile;
@@ -251,7 +278,7 @@ sub process_mime_entity {
     $cmd = $mcap->viewCmd($mimetype->type, $tempfile);
     next if not defined $cmd;
 
-    background_exec($witem, $signed, $sender, $mimetype->type, $cmd);
+    background_exec($server, $witem, $signed, $sender, $mimetype->type, $cmd);
     return 1;
   }
 
@@ -278,7 +305,7 @@ sub sig_mime {
     $parser->output_dir(Irssi::settings_get_str("mime_temp_dir"));
     $mime = $parser->parse_data(unescape($blob));
 
-    $ret = process_mime_entity($witem, $verified, $sender, $mime);
+    $ret = process_mime_entity($server, $witem, $verified, $sender, $mime);
 
     $parser->filer->purge;
 
@@ -287,6 +314,9 @@ sub sig_mime {
     } elsif  ($ret == -1) {
         return;
     } else {
+    	if (not $witem->{type}) {
+	  $witem = privmsg_get_query($server, $sender, 0);
+	}
         $theme = $witem->{theme} || Irssi::current_theme;
 	$format = $theme->get_format("fe-common/silc", "message_data");
 	$format =~ s/\$0/$sender/;
@@ -392,7 +422,7 @@ sub cmd_mmsg {
     if ($is_channel) {
       $dest = $server->channel_find($target);
     } else {
-      $dest = $server->query_find($target);
+      $dest = privmsg_get_query($server, $target, 1);
     }
 
     
@@ -459,7 +489,7 @@ Irssi::settings_add_str("misc", "mime_default_encoding", "binary");
 Irssi::settings_add_bool("misc", "mime_verbose", 0);
 Irssi::settings_add_str("misc", "mime_temp_dir", "/tmp");
 Irssi::settings_add_str("misc", "mime_magic", "");
-Irssi::settings_add_str("misc", "mime_exec_param", "");
+Irssi::settings_add_str("misc", "mime_exec_param", "-");
 
 # Init
 Irssi::theme_register(['load_mailcap', 'Loading mailcaps from {hilight $0}',
