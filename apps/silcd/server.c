@@ -452,7 +452,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
      protocol. */
   silc_socket_alloc(sock, SILC_SOCKET_TYPE_UNKNOWN, NULL, &newsocket);
   server->sockets[sock] = newsocket;
-  newsocket->hostname = sconn->remote_host;
+  newsocket->hostname = strdup(sconn->remote_host);
   newsocket->port = sconn->remote_port;
   sconn->sock = newsocket;
 
@@ -981,8 +981,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	break;
       }
 
+      /* Statistics */
       server->stat.my_clients++;
       server->stat.clients++;
+      if (server->server_type == SILC_ROUTER)
+	server->stat.cell_clients++;
 
       id_entry = (void *)client;
       break;
@@ -1015,6 +1018,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	break;
       }
 
+      /* Statistics */
       if (sock->type == SILC_SOCKET_TYPE_SERVER)
 	server->stat.my_servers++;
       else
@@ -1127,6 +1131,16 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     }
       
     SILC_LOG_DEBUG(("Premature EOF from connection %d", sock->sock));
+
+    /* If the closed connection was our primary router connection the
+       start re-connecting phase. */
+    if (!server->standalone && server->server_type == SILC_SERVER && 
+	sock == server->router->connection)
+      silc_task_register(server->timeout_queue, 0, 
+			 silc_server_connect_to_router,
+			 context, 0, 500000,
+			 SILC_TASK_TIMEOUT,
+			 SILC_TASK_PRI_NORMAL);
 
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock);
@@ -1585,7 +1599,7 @@ void silc_server_packet_parse_type(SilcServer server,
      */
     SILC_LOG_DEBUG(("Set Mode packet"));
     silc_server_set_mode(server, sock, packet);
-    break
+    break;
 
   default:
     SILC_LOG_ERROR(("Incorrect packet type %d, packet dropped", type));

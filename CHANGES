@@ -1,3 +1,10 @@
+Mon Feb  5 20:08:30 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added reconnection support to server if the normal server looses
+	  its connection to the router (for example if router is rebooted).
+	  The server performs normal reconnection strategy implemented
+	  to the server.  Affected file silcd/server.c.
+
 Sun Feb  4 13:18:32 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new packet type SILC_PACKET_SET_MODE that is used to

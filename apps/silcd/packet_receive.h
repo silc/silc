@@ -61,5 +61,8 @@ void silc_server_new_channel_user(SilcServer server,
 void silc_server_remove_id(SilcServer server,
 			   SilcSocketConnection sock,
 			   SilcPacketContext *packet);
+void silc_server_set_mode(SilcServer server,
+			  SilcSocketConnection sock,
+			  SilcPacketContext *packet);
 
 #endif
