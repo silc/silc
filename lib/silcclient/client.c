@@ -373,7 +373,7 @@ int silc_client_connect_to_server(SilcClient client,
   ctx->client = client;
   ctx->conn = conn;
   ctx->host = strdup(host);
-  ctx->port = port;
+  ctx->port = port ? port : 706;
   ctx->tries = 0;
 
   /* Do the actual connecting process */
