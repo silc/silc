@@ -965,6 +965,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
       silc_free(id);
       goto out;
     }
+    hmac = NULL;
     server->stat.my_channels++;
     server->stat.channels++;
   } else {
@@ -991,9 +992,9 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     founder_key = NULL;
   }
 
-  if (entry->hmac_name && hmac) {
+  if (entry->hmac_name && (hmac || (!hmac && entry->hmac))) {
     silc_free(entry->hmac_name);
-    entry->hmac_name = strdup(silc_hmac_get_name(hmac));
+    entry->hmac_name = strdup(silc_hmac_get_name(hmac ? hmac : entry->hmac));
   }
 
   /* Get the ban list */
@@ -1047,6 +1048,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
  err:
+  if (hmac)
+    silc_hmac_free(hmac);
   silc_free(client_id);
   silc_server_command_reply_free(cmd);
 
