@@ -232,7 +232,7 @@ SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload)
 ******************************************************************************/
 
 /* Calculates padding length for message payload */
-#define SILC_CHANNEL_MESSAGE_PAD(__payloadlen) (16 - (__payloadlen) % 16)
+#define SILC_CHANNEL_MESSAGE_PAD(__payloadlen) (16 - ((__payloadlen) % 16))
 
 /* Header length plus maximum padding length */
 #define SILC_CHANNEL_MESSAGE_HLEN 6 + 16

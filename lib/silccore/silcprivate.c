@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* Calculates padding length for message payload */
-#define SILC_PRIVATE_MESSAGE_PAD(__payloadlen) (16 - (__payloadlen) % 16)
+#define SILC_PRIVATE_MESSAGE_PAD(__payloadlen) (16 - ((__payloadlen) % 16))
 
 /* Header length plus maximum padding length */
 #define SILC_PRIVATE_MESSAGE_HLEN 4 + 16
