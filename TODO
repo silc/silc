@@ -8,6 +8,8 @@ TODO/bugs in Irssi SILC client
    in (fe.) /usr/local/share but binary checks from /usr/local/lib and
    never from share.
 
+ o /KEY is broken?  KEY is broken when negotiating with itself.
+
 
 TODO/bugs In SILC Client Library
 ================================

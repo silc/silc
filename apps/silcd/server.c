@@ -1160,7 +1160,8 @@ static void
 silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 					 void *context)
 {
-  SilcServerKEInternalContext *proto_ctx = (SilcServerKEInternalContext *)context;
+  SilcServerKEInternalContext *proto_ctx = 
+    (SilcServerKEInternalContext *)context;
   SilcServer server = (SilcServer)proto_ctx->server;
   SilcServerConfigClient *cconfig = NULL;
   SilcServerConfigServer *sconfig = NULL;
@@ -1197,7 +1198,8 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   SILC_LOG_INFO(("Incoming connection %s (%s)", sock->hostname,
 		 sock->ip));
 
-  port = server->sockets[(SilcUInt32)proto_ctx->context]->port; /* Listenning port */
+  /* Listenning port */
+  port = server->sockets[(SilcUInt32)proto_ctx->context]->port;
 
   /* Check whether this connection is denied to connect to us. */
   deny = silc_server_config_find_denied(server, sock->ip);

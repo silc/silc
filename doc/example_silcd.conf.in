@@ -146,11 +146,25 @@ General {
 #
 ServerInfo {
 	#
-	# Server FQDN and IP address
+	# Server name (FQDN)
 	#
 	hostname = "lassi.kuo.fi.ssh.com";
-	ip = "10.2.1.6";
-	port = 706;
+
+	#
+	# Primary listener.  Specify the IP address and the port to bind
+	# the server.
+	#
+	Primary {
+		ip = "10.2.1.6";
+		port = 706;
+	};
+
+	#
+	# Secondary listener(s).  If you need to bind your server into
+	# several interfaces use the Secondary to specify the listener(s).
+	#
+	#Secondary { ip = "10.2.1.60"; port = 706; };
+	#Secondary { ip = "10.2.1.160"; port = 706; };
 
 	#
 	# ServerType field specifies the purpose of this server
