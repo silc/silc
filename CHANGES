@@ -2,6 +2,9 @@ Tue May  8 09:04:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a va_arg in silc/client_ops.c.
 
+	* Oops, RC5 routines were named AES and caused some problems
+	  when not using SIM's.  Affected file lib/silccrypt/rc5.c.
+
 Sun May  6 13:59:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new SilcIDIP structure into the lib/silccore/id.h and

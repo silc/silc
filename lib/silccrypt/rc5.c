@@ -47,7 +47,7 @@
 
 /* Sets the key for the cipher. */
 
-SILC_CIPHER_API_SET_KEY(aes)
+SILC_CIPHER_API_SET_KEY(rc5)
 {
   uint32 k[8];
 
@@ -60,7 +60,7 @@ SILC_CIPHER_API_SET_KEY(aes)
 /* Sets the string as a new key for the cipher. The string is first
    hashed and then used as a new key. */
 
-SILC_CIPHER_API_SET_KEY_WITH_STRING(aes)
+SILC_CIPHER_API_SET_KEY_WITH_STRING(rc5)
 {
   /*  unsigned char key[md5_hash_len];
   SilcMarsContext *ctx = (SilcMarsContext *)context;
@@ -75,7 +75,7 @@ SILC_CIPHER_API_SET_KEY_WITH_STRING(aes)
 
 /* Returns the size of the cipher context. */
 
-SILC_CIPHER_API_CONTEXT_LEN(aes)
+SILC_CIPHER_API_CONTEXT_LEN(rc5)
 {
   return sizeof(RC5Context);
 }
@@ -83,7 +83,7 @@ SILC_CIPHER_API_CONTEXT_LEN(aes)
 /* Encrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_ENCRYPT_CBC(aes)
+SILC_CIPHER_API_ENCRYPT_CBC(rc5)
 {
   uint32 tiv[4];
   int i;
@@ -108,7 +108,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(aes)
 /* Decrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_DECRYPT_CBC(aes)
+SILC_CIPHER_API_DECRYPT_CBC(rc5)
 {
   uint32 tmp[4], tmp2[4], tiv[4];
   int i;
