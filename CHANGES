@@ -1,3 +1,8 @@
+Sun Nov  9 19:33:59 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed a memory leak and incorrect printing of the "appears as"
+	  message.  Affected file irssi/src/silc/core/client_ops.c
+
 Sun Nov  9 17:45:11 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added CRT (Chinese Remainder Theorem) supported RSA

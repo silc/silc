@@ -1850,16 +1850,21 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	collider = silc_client_get_client_by_id(client, conn,
 						old->id);
 
-        memset(buf, 0, sizeof(buf));
-        snprintf(buf, sizeof(buf) - 1, "%s@%s",
-		 collider->username, collider->hostname);
-	nicklist_rename_unique(SERVER(server),
-			       old, old->nickname,
-			       collider, collider->nickname);
-	silc_print_nick_change(server, collider->nickname,
-			       client_entry->nickname, buf);
-	g_slist_free(nicks);
+	if (collider != client_entry) {
+
+          memset(buf, 0, sizeof(buf));
+          snprintf(buf, sizeof(buf) - 1, "%s@%s",
+	  	   collider->username, collider->hostname);
+	  nicklist_rename_unique(SERVER(server),
+			         old, old->nickname,
+			         collider, collider->nickname);
+	  silc_print_nick_change(server, collider->nickname,
+			         client_entry->nickname, buf);
+	}
       }
+
+      if (nicks != NULL)
+	g_slist_free(nicks);
 
       old = g_strdup(server->nick);
       server_change_nick(SERVER(server), client_entry->nickname);
