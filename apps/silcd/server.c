@@ -1220,6 +1220,10 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   /* Packet sending */
 
   if (type == SILC_TASK_WRITE) {
+    /* Do not send data to disconnected connection */
+    if (SILC_IS_DISCONNECTED(sock))
+      return;
+
     server->stat.packets_sent++;
 
     if (sock->outbuf->data - sock->outbuf->head)
@@ -1267,6 +1271,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     }
       
     SILC_LOG_DEBUG(("Premature EOF from connection %d", sock->sock));
+    SILC_SET_DISCONNECTING(sock);
 
     /* If the closed connection was our primary router connection the
        start re-connecting phase. */
@@ -1287,7 +1292,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   /* If connection is disconnecting or disconnected we will ignore
      what we read. */
   if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
-    SILC_LOG_DEBUG(("Ignoring read data from invalid connection"));
+    SILC_LOG_DEBUG(("Ignoring read data from disonnected connection"));
     return;
   }
 

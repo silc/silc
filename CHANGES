@@ -31,6 +31,27 @@ Mon Feb 19 14:26:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  in command sending and with pending commands.  The affected file
 	  is silcd/idlist.h.
 
+	* Added reference counter to the SilcSocketConnection objecet to
+	  indicate the usage count of the object.  The object won't be
+	  freed untill the reference counter hits zero.  Currently only
+	  server uses this, and client ignores it.  The client must be
+	  set to use this too later.  The affected files are
+	  lib/silccore/silcsockconn.[ch].  Added also the function
+	  silc_socket_dup to increase the reference counter.
+
+	  This was mainly added because it is possible that the socket
+	  is removed underneath of pending command or other async
+	  operation.  Now it won't be free'd and proper DISCONNECTING
+	  flags, etc. can be set to avoid sending data to connection that
+	  is not valid anymore.
+
+	* Added SILC_SET_DISCONNECTING to server.c when EOF is read from
+	  the connection.  After that it sets SILC_SET_DISCONNECTED.
+	  It is, however, possible that the socket data is not still freed.
+	  The silc_server_packet_process now checks that data is not
+	  read or written to connection that is DISCONNECTED.  The socket
+	  get's freed when the reference counter hits zero.
+
 Mon Feb 19 00:50:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed the client operation API: channel_message operation's

@@ -484,7 +484,8 @@ SILC_CLIENT_CMD_FUNC(invite)
 				silc_client_command_destructor,
 				silc_client_command_invite, 
 				silc_client_command_dup(cmd));
-    goto out;
+    cmd->pending = 1;
+    return;
   }
 
   /* Find channel entry */
@@ -1035,7 +1036,8 @@ SILC_CLIENT_CMD_FUNC(cumode)
 				silc_client_command_destructor,
 				silc_client_command_cumode, 
 				silc_client_command_dup(cmd));
-    goto out;
+    cmd->pending = 1;
+    return;
   }
   
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
@@ -1280,7 +1282,7 @@ SILC_CLIENT_CMD_FUNC(users)
 				silc_client_command_users, 
 				silc_client_command_dup(cmd));
     cmd->pending = TRUE;
-    goto out;
+    return;
   }
 
   if (cmd->pending) {

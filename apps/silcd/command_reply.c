@@ -84,7 +84,7 @@ void silc_server_command_reply_process(SilcServer server,
      command reply routine receiving it. */
   ctx = silc_calloc(1, sizeof(*ctx));
   ctx->server = server;
-  ctx->sock = sock;
+  ctx->sock = silc_socket_dup(sock);
   ctx->payload = payload;
   ctx->args = silc_command_get_args(ctx->payload);
   ident = silc_command_get_ident(ctx->payload);
@@ -113,6 +113,8 @@ void silc_server_command_reply_free(SilcServerCommandReplyContext cmd)
 {
   if (cmd) {
     silc_command_free_payload(cmd->payload);
+    if (cmd->sock)
+      silc_socket_free(cmd->sock); /* Decrease the reference counter */
     silc_free(cmd);
   }
 }

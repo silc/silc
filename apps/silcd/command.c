@@ -152,7 +152,7 @@ void silc_server_command_process(SilcServer server,
      command routine receiving it. */
   ctx = silc_server_command_alloc();
   ctx->server = server;
-  ctx->sock = sock;
+  ctx->sock = silc_socket_dup(sock);
   ctx->packet = silc_packet_context_dup(packet); /* Save original packet */
   
   /* Parse the command payload in the packet */
@@ -209,6 +209,8 @@ void silc_server_command_free(SilcServerCommandContext ctx)
       silc_command_free_payload(ctx->payload);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
+    if (ctx->sock)
+      silc_socket_free(ctx->sock); /* Decrease reference counter */
     silc_free(ctx);
   }
 }
@@ -566,7 +568,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   }
 }
 
-static void
+static int
 silc_server_command_whois_from_client(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
@@ -575,7 +577,7 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
   SilcClientEntry *clients = NULL, entry;
   SilcClientID **client_id = NULL;
   unsigned int client_id_count = 0;
-  int i;
+  int i, ret = 0;
 
   /* Protocol dictates that we must always send the received WHOIS request
      to our router if we are normal server, so let's do it now unless we
@@ -607,6 +609,7 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
     silc_command_set_ident(cmd->payload, old_ident);
 
     silc_buffer_free(tmpbuf);
+    ret = -1;
     goto out;
   }
 
@@ -617,7 +620,7 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
   if (!silc_server_command_whois_parse(cmd, &client_id, &client_id_count, 
 				       &nick, &server_name, &count,
 				       SILC_COMMAND_WHOIS))
-    return;
+    return 0;
 
   /* Get all clients matching that ID or nickname from local list */
   if (client_id_count) {
@@ -678,8 +681,10 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
      mandatory fields that WHOIS command reply requires. Check for these and
      make query from the server who owns the client if some fields are 
      missing. */
-  if (!silc_server_command_whois_check(cmd, clients, clients_count))
+  if (!silc_server_command_whois_check(cmd, clients, clients_count)) {
+    ret = -1;
     goto out;
+  }
 
   /* Send the command reply to the client */
   silc_server_command_whois_send_reply(cmd, clients, clients_count);
@@ -696,9 +701,11 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
     silc_free(nick);
   if (server_name)
     silc_free(server_name);
+
+  return ret;
 }
 
-static void
+static int
 silc_server_command_whois_from_server(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
@@ -707,13 +714,13 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
   SilcClientEntry *clients = NULL, entry;
   SilcClientID **client_id = NULL;
   unsigned int client_id_count = 0;
-  int i;
+  int i, ret = 0;
 
   /* Parse the whois request */
   if (!silc_server_command_whois_parse(cmd, &client_id, &client_id_count, 
 				       &nick, &server_name, &count,
 				       SILC_COMMAND_WHOIS))
-    return;
+    return 0;
 
   /* Process the command request. Let's search for the requested client and
      send reply to the requesting server. */
@@ -784,8 +791,10 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
      mandatory fields that WHOIS command reply requires. Check for these and
      make query from the server who owns the client if some fields are 
      missing. */
-  if (!silc_server_command_whois_check(cmd, clients, clients_count))
+  if (!silc_server_command_whois_check(cmd, clients, clients_count)) {
+    ret = -1;
     goto out;
+  }
 
   /* Send the command reply to the client */
   silc_server_command_whois_send_reply(cmd, clients, clients_count);
@@ -802,6 +811,8 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
     silc_free(nick);
   if (server_name)
     silc_free(server_name);
+
+  return ret;
 }
 
 /* Server side of command WHOIS. Processes user's query and sends found 
@@ -810,15 +821,18 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
 SILC_SERVER_CMD_FUNC(whois)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  int ret = 0;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_WHOIS, cmd, 1, 3328);
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
-    silc_server_command_whois_from_client(cmd);
-  else
-    silc_server_command_whois_from_server(cmd);
+    ret = silc_server_command_whois_from_client(cmd);
+  else if ((cmd->sock->type == SILC_SOCKET_TYPE_SERVER) ||
+	   (cmd->sock->type == SILC_SOCKET_TYPE_ROUTER))
+    ret = silc_server_command_whois_from_server(cmd);
 
-  silc_server_command_free(cmd);
+  if (!ret)
+    silc_server_command_free(cmd);
 }
 
 SILC_SERVER_CMD_FUNC(whowas)
@@ -966,7 +980,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
   }
 }
 
-static void
+static int
 silc_server_command_identify_from_client(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
@@ -975,7 +989,7 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
   SilcClientEntry *clients = NULL, entry;
   SilcClientID **client_id = NULL;
   unsigned int client_id_count = 0;
-  int i;
+  int i, ret = 0;
 
   /* Protocol dictates that we must always send the received IDENTIFY request
      to our router if we are normal server, so let's do it now unless we
@@ -1007,6 +1021,7 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
     silc_command_set_ident(cmd->payload, old_ident);
 
     silc_buffer_free(tmpbuf);
+    ret = -1;
     goto out;
   }
 
@@ -1017,7 +1032,7 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
   if (!silc_server_command_whois_parse(cmd, &client_id, &client_id_count,
 				       &nick, &server_name, &count,
 				       SILC_COMMAND_IDENTIFY))
-    return;
+    return 0;
 
   /* Get all clients matching that ID or nickname from local list */
   if (client_id_count) { 
@@ -1075,8 +1090,10 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
-  if (!silc_server_command_identify_check(cmd, clients, clients_count))
+  if (!silc_server_command_identify_check(cmd, clients, clients_count)) {
+    ret = -1;
     goto out;
+  }
 
   /* Send the command reply to the client */
   silc_server_command_identify_send_reply(cmd, clients, clients_count);
@@ -1093,9 +1110,11 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
     silc_free(nick);
   if (server_name)
     silc_free(server_name);
+
+  return ret;
 }
 
-static void
+static int
 silc_server_command_identify_from_server(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
@@ -1104,13 +1123,13 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
   SilcClientEntry *clients = NULL, entry;
   SilcClientID **client_id = NULL;
   unsigned int client_id_count = 0;
-  int i;
+  int i, ret = 0;
 
   /* Parse the IDENTIFY request */
   if (!silc_server_command_whois_parse(cmd, &client_id, &client_id_count,
 				       &nick, &server_name, &count,
 				       SILC_COMMAND_IDENTIFY))
-    return;
+    return 0;
 
   /* Process the command request. Let's search for the requested client and
      send reply to the requesting server. */
@@ -1178,8 +1197,10 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
-  if (!silc_server_command_identify_check(cmd, clients, clients_count))
+  if (!silc_server_command_identify_check(cmd, clients, clients_count)) {
+    ret = -1;
     goto out;
+  }
 
   /* Send the command reply */
   silc_server_command_identify_send_reply(cmd, clients, clients_count);
@@ -1196,20 +1217,25 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
     silc_free(nick);
   if (server_name)
     silc_free(server_name);
+
+  return ret;
 }
 
 SILC_SERVER_CMD_FUNC(identify)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  int ret = 0;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_IDENTIFY, cmd, 1, 3328);
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
-    silc_server_command_identify_from_client(cmd);
-  else
-    silc_server_command_identify_from_server(cmd);
+    ret = silc_server_command_identify_from_client(cmd);
+  else if ((cmd->sock->type == SILC_SOCKET_TYPE_SERVER) |
+	   (cmd->sock->type == SILC_SOCKET_TYPE_ROUTER))
+    ret = silc_server_command_identify_from_server(cmd);
 
-  silc_server_command_free(cmd);
+  if (!ret)
+    silc_server_command_free(cmd);
 }
 
 /* Checks string for bad characters and returns TRUE if they are found. */
@@ -1718,7 +1744,7 @@ void silc_server_command_send_users(SilcServer server,
   }
   cmd->args = silc_command_get_args(cmd->payload);
   cmd->server = server;
-  cmd->sock = sock;
+  cmd->sock = silc_socket_dup(sock);
   cmd->packet = silc_packet_context_dup(packet);
   cmd->pending = FALSE;
 
@@ -1732,13 +1758,14 @@ void silc_server_command_send_users(SilcServer server,
 				silc_server_command_users,
 				silc_server_command_dup(cmd));
     cmd->pending = TRUE;
-    goto out;
+    silc_buffer_free(buffer);
+    silc_buffer_free(idp);
+    return;
   }
 
   /* Process USERS command. */
   silc_server_command_users((void *)cmd);
 
- out:
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
   silc_packet_context_free(packet);
@@ -2036,7 +2063,7 @@ SILC_SERVER_CMD_FUNC(join)
 				      silc_server_command_join,
 				      silc_server_command_dup(cmd));
 	  cmd->pending = TRUE;
-	  goto out;
+	  return;
 	}
 	
 	/* We are router and the channel does not seem exist so we will check
@@ -2923,7 +2950,7 @@ SILC_SERVER_CMD_FUNC(users)
       
       silc_buffer_free(tmpbuf);
       silc_free(id);
-      goto out;
+      return;
     }
 
     /* We are router and we will check the global list as well. */
