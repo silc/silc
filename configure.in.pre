@@ -267,9 +267,9 @@ AC_ARG_WITH(silcd-config-file,
 
 # Other configure scripts
 #AC_CONFIG_SUBDIRS(lib/zlib)
-#AC_CONFIG_SUBDIRS(lib/dotconf)
-#AC_CONFIG_SUBDIRS(lib/silcmath/gmp)
-#AC_CONFIG_SUBDIRS(lib/trq)
+AC_CONFIG_SUBDIRS(lib/dotconf)
+AC_CONFIG_SUBDIRS(lib/silcmath/gmp)
+AC_CONFIG_SUBDIRS(lib/trq)
 
 AC_OUTPUT( \
 Makefile
