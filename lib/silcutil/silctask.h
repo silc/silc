@@ -174,7 +174,7 @@ typedef enum {
 
    SilcTask task
 
-       Pointer to the tasks in the queue.
+       Pointer to the current (first) task in the queue.
 
    int valid
 
@@ -196,6 +196,7 @@ struct SilcTaskQueueStruct {
   SilcTask task;
   int valid;
   struct timeval timeout;
+  SILC_MUTEX_DEFINE(lock);
 };
 
 /* Marks for all tasks in a task queue. This can be passed to 

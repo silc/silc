@@ -28,11 +28,14 @@ struct SilcMutexStruct {
   pthread_mutex_t mutex;
 };
 
-SilcMutex silc_mutex_alloc(void)
+bool silc_mutex_alloc(SilcMutex *mutex)
 {
-  SilcMutex mutex = silc_calloc(1, sizeof(*mutex));
-  pthread_mutex_init(&mutex->mutex, NULL);
-  return mutex;
+  *mutex = silc_calloc(1, sizeof(**mutex));
+  if (*mutex == NULL)
+    return FALSE;
+
+  pthread_mutex_init(&(*mutex)->mutex, NULL);
+  return TRUE;
 }
 
 void silc_mutex_free(SilcMutex mutex)

@@ -18,6 +18,7 @@
 
 */
 /* $Id$ */
+/* XXX on multi-threads the task queue locking is missing here. */
 
 #include "silcincludes.h"
 
@@ -108,6 +109,7 @@ struct SilcScheduleStruct {
   fd_set in;
   fd_set out;
   int max_fd;
+  SILC_MUTEX_DEFINE(lock);
 };
 
 /* Initializes the scheduler. Sets the non-timeout task queue hook and
@@ -154,6 +156,7 @@ SilcSchedule silc_schedule_init(SilcTaskQueue *fd_queue,
   schedule->max_fd = -1;
   for (i = 0; i < max_fd; i++)
     schedule->fd_list.fd[i] = -1;
+  silc_mutex_alloc(&schedule->lock);
 
   return schedule;
 }
@@ -193,6 +196,8 @@ bool silc_schedule_uninit(SilcSchedule schedule)
     silc_free(schedule->fd_list.fd);
   }
 
+  silc_mutex_free(schedule->lock);
+
   return TRUE;
 }
 
@@ -203,9 +208,7 @@ bool silc_schedule_uninit(SilcSchedule schedule)
 void silc_schedule_stop(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Stopping scheduler"));
-
-  if (schedule->valid == TRUE)
-    schedule->valid = FALSE;
+  schedule->valid = FALSE;
 }
 
 /* Sets a file descriptor to be listened by select() in scheduler. One can
@@ -214,16 +217,22 @@ void silc_schedule_stop(SilcSchedule schedule)
 
 void silc_schedule_set_listen_fd(SilcSchedule schedule, int fd, uint32 iomask)
 {
+  silc_mutex_lock(schedule->lock);
+
   schedule->fd_list.fd[fd] = iomask;
   
   if (fd > schedule->fd_list.last_fd)
     schedule->fd_list.last_fd = fd;
+
+  silc_mutex_unlock(schedule->lock);
 }
 
 /* Removes a file descriptor from listen list. */
 
 void silc_schedule_unset_listen_fd(SilcSchedule schedule, int fd)
 {
+  silc_mutex_lock(schedule->lock);
+
   schedule->fd_list.fd[fd] = -1;
   
   if (fd == schedule->fd_list.last_fd) {
@@ -235,6 +244,8 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, int fd)
 
     schedule->fd_list.last_fd = i < 0 ? 0 : i;
   }
+
+  silc_mutex_unlock(schedule->lock);
 }
 
 /* Executes tasks matching the file descriptor set by select(). The task
@@ -303,8 +314,8 @@ do {									   \
 
 #define SILC_SCHEDULE_SELECT_TASKS				\
 do {								\
-  for (i = 0; i <= schedule->fd_list.last_fd; i++) {	       	\
-    if (schedule->fd_list.fd[i] != -1) {				\
+  for (i = 0; i <= schedule->fd_list.last_fd; i++) {		\
+    if (schedule->fd_list.fd[i] != -1) {			\
 								\
       /* Set the max fd value for select() to listen */		\
       if (i > schedule->max_fd)					\
@@ -318,7 +329,7 @@ do {								\
       if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_WRITE)))	\
 	FD_SET(i, &schedule->out);				\
     }								\
-  }                                                             \
+  }								\
 } while(0)
 
 /* Executes all tasks whose timeout has expired. The task is removed from
@@ -385,7 +396,7 @@ do {									\
 
 #define SILC_SCHEDULE_SELECT_TIMEOUT					    \
 do {									    \
-  if (schedule->timeout_queue && schedule->timeout_queue->valid == TRUE) {    \
+  if (schedule->timeout_queue && schedule->timeout_queue->valid == TRUE) {  \
     queue = schedule->timeout_queue;					    \
     task = NULL;							    \
 									    \
@@ -416,13 +427,13 @@ do {									    \
           queue->timeout.tv_sec = task->timeout.tv_sec - curtime.tv_sec;    \
           queue->timeout.tv_usec = task->timeout.tv_usec - curtime.tv_usec; \
 	  if (queue->timeout.tv_sec < 0)				    \
-            queue->timeout.tv_sec = 0; 					    \
+            queue->timeout.tv_sec = 0;					    \
 									    \
           /* We wouldn't want to go under zero, check for it. */	    \
           if (queue->timeout.tv_usec < 0) {				    \
             queue->timeout.tv_sec -= 1;					    \
 	    if (queue->timeout.tv_sec < 0)				    \
-              queue->timeout.tv_sec = 0; 				    \
+              queue->timeout.tv_sec = 0;				    \
             queue->timeout.tv_usec += 1000000L;				    \
           }								    \
         }								    \
@@ -451,15 +462,16 @@ do {									    \
 do {									     \
   if (is_run == FALSE) {						     \
     SILC_LOG_DEBUG(("Running generic tasks"));				     \
+    silc_mutex_lock(schedule->lock);					     \
     for (i = 0; i <= schedule->fd_list.last_fd; i++)			     \
       if (schedule->fd_list.fd[i] != -1) {				     \
 									     \
 	/* Check whether this fd is select()ed. */			     \
-	if ((FD_ISSET(i, &schedule->in)) || (FD_ISSET(i, &schedule->out))) {   \
+	if ((FD_ISSET(i, &schedule->in)) || (FD_ISSET(i, &schedule->out))) { \
 									     \
 	  /* It was selected. Now find the tasks from task queue and execute \
 	     all generic tasks. */					     \
-	  if (schedule->generic_queue && schedule->generic_queue->valid) {     \
+	  if (schedule->generic_queue && schedule->generic_queue->valid) {   \
 	    queue = schedule->generic_queue;				     \
 									     \
 	    if (!queue->task)						     \
@@ -474,16 +486,22 @@ do {									     \
 									     \
 	      if (task->valid && schedule->fd_list.fd[i] != -1) {	     \
 		/* Task ready for reading */				     \
-		if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_READ)))	     \
+		if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_READ))) {    \
+                  silc_mutex_unlock(schedule->lock);			     \
 		  task->callback(queue, SILC_TASK_READ,			     \
 				 task->context, i);			     \
+                  silc_mutex_lock(schedule->lock);			     \
+	        }							     \
 	      }								     \
 									     \
 	      if (task->valid && schedule->fd_list.fd[i] != -1) {	     \
 		/* Task ready for writing */				     \
-		if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_WRITE)))	     \
+		if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_WRITE))) {   \
+                  silc_mutex_unlock(schedule->lock);			     \
 		  task->callback(queue, SILC_TASK_WRITE,		     \
 				 task->context, i);			     \
+                  silc_mutex_lock(schedule->lock);			     \
+	        }							     \
 	      }								     \
 									     \
 	      if (!task->valid) {					     \
@@ -508,6 +526,7 @@ do {									     \
 	  }								     \
 	}								     \
       }									     \
+    silc_mutex_unlock(schedule->lock);					     \
   }									     \
 } while(0)
 
@@ -539,9 +558,13 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
      when at earliest some of the timeout tasks expire. */
   SILC_SCHEDULE_SELECT_TIMEOUT;
 
+  silc_mutex_lock(schedule->lock);
+
   /* Add the file descriptors to the fd sets. These are the non-timeout
      tasks. The select() listens to these file descriptors. */
   SILC_SCHEDULE_SELECT_TASKS;
+
+  silc_mutex_unlock(schedule->lock);
 
   if (schedule->max_fd == -1 && !schedule->timeout)
     return FALSE;

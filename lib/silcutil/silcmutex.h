@@ -69,15 +69,17 @@ typedef struct SilcMutexStruct *SilcMutex;
  *
  * SYNOPSIS
  *
- *    SilcMutex silc_mutex_alloc(void);
+ *    bool silc_mutex_alloc(SilcMutex *mutex);
  *
  * DESCRIPTION
  *
  *    Allocates SILC Mutex object.  The mutex object must be allocated
  *    before it can be used.  It is freed by the silc_mutex_free function.
+ *    This returns TRUE and allocated mutex in to the `mutex' and FALSE
+ *    on error.
  *
  ***/
-SilcMutex silc_mutex_alloc(void);
+bool silc_mutex_alloc(SilcMutex *mutex);
 
 /****f* silcutil/SilcMutexAPI/silc_mutex_free
  *
@@ -136,10 +138,10 @@ void silc_mutex_unlock(SilcMutex mutex);
 #else
 
 #define SILC_MUTEX_DEFINE(name)
-#define silc_mutex_alloc()
-#define silc_mutex_free(mutex)
-#define silc_mutex_lock(mutex)
-#define silc_mutex_unlock(mutex)
+#define silc_mutex_alloc(mutex) (void)0
+#define silc_mutex_free(mutex) (void)0
+#define silc_mutex_lock(mutex) (void)0
+#define silc_mutex_unlock(mutex) (void)0
 
 #endif         /* SILC_THREADS */
 

@@ -28,15 +28,15 @@ struct SilcMutexStruct {
   HANDLE mutex;
 };
 
-SilcMutex silc_mutex_alloc(void)
+bool silc_mutex_alloc(SilcMutex *mutex)
 {
-  SilcMutex mutex = silc_calloc(1, sizeof(*mutex));
-  mutex->mutex = CreateMutex(NULL, FALSE, NULL);
-  if (!mutex->mutex) {
-    silc_free(mutex);
-    return NULL;
+  *mutex = silc_calloc(1, sizeof(**mutex));
+  (*mutex)->mutex = CreateMutex(NULL, FALSE, NULL);
+  if (!(*mutex)->mutex) {
+    silc_free(*mutex);
+    return FALSE;
   }
-  return mutex;
+  return TRUE;
 }
 
 void silc_mutex_free(SilcMutex mutex)

@@ -35,12 +35,17 @@ void silc_task_queue_alloc(SilcSchedule schedule, SilcTaskQueue *new,
   /* Set the pointers */
   (*new)->schedule = schedule;
   (*new)->valid = valid;
+  silc_mutex_alloc(&(*new)->lock);
 }
 
 /* Free's a task queue. */
 
 void silc_task_queue_free(SilcTaskQueue queue)
 {
+  silc_mutex_lock(queue->lock);
+  queue->valid = FALSE;
+  silc_mutex_unlock(queue->lock);
+  silc_mutex_free(queue->lock);
   silc_free(queue);
 }
 
@@ -273,26 +278,32 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
   /* If the task is generic task, we check whether this task has already
      been registered. Generic tasks are registered only once and after that
      the same task applies to all file descriptors to be registered. */
-  if ((type == SILC_TASK_GENERIC) && queue->task) {
-    SilcTask task;
+  if (type == SILC_TASK_GENERIC) {
+    silc_mutex_lock(queue->lock);
 
-    task = queue->task;
-    while(1) {
-      if ((task->callback == cb) && (task->context == context)) {
-	SILC_LOG_DEBUG(("Found matching generic task, using the match"));
+    if (queue->task) {
+      SilcTask task = queue->task;
+      while(1) {
+	if ((task->callback == cb) && (task->context == context)) {
+	  SILC_LOG_DEBUG(("Found matching generic task, using the match"));
+	  
+	  silc_mutex_unlock(queue->lock);
 
-	/* Add the fd to be listened, the task found now applies to this
-	   fd as well. */
-	silc_schedule_set_listen_fd(queue->schedule, 
-				    fd, (1L << SILC_TASK_READ));
-	return task;
+	  /* Add the fd to be listened, the task found now applies to this
+	     fd as well. */
+	  silc_schedule_set_listen_fd(queue->schedule, 
+				      fd, (1L << SILC_TASK_READ));
+	  return task;
+	}
+	
+	if (queue->task == task->next)
+	  break;
+	
+	task = task->next;
       }
-
-      if (queue->task == task->next)
-	break;
-      
-      task = task->next;
     }
+
+    silc_mutex_unlock(queue->lock);
   }
 
   new = silc_calloc(1, sizeof(*new));
@@ -304,11 +315,6 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
   new->iomask = (1L << SILC_TASK_READ);
   new->next = new;
   new->prev = new;
-
-  /* If the task is non-timeout task we have to tell the scheduler that we
-     would like to have these tasks scheduled at some odd distant future. */
-  if (type != SILC_TASK_TIMEOUT)
-    silc_schedule_set_listen_fd(queue->schedule, fd, (1L << SILC_TASK_READ));
 
   /* Create timeout if marked to be timeout task */
   if (((seconds + useconds) > 0) && (type == SILC_TASK_TIMEOUT)) {
@@ -322,16 +328,28 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
     timeout = TRUE;
   }
 
+  /* If the task is non-timeout task we have to tell the scheduler that we
+     would like to have these tasks scheduled at some odd distant future. */
+  if (type != SILC_TASK_TIMEOUT)
+    silc_schedule_set_listen_fd(queue->schedule, fd, (1L << SILC_TASK_READ));
+
+  silc_mutex_lock(queue->lock);
+
   /* Is this first task of the queue? */
   if (queue->task == NULL) {
     queue->task = new;
+    silc_mutex_unlock(queue->lock);
     return new;
   }
 
   if (timeout)
-    return silc_task_add_timeout(queue, new, priority);
+    new = silc_task_add_timeout(queue, new, priority);
   else
-    return silc_task_add(queue, new, priority);
+    new = silc_task_add(queue, new, priority);
+
+  silc_mutex_unlock(queue->lock);
+
+  return new;
 }
 
 /* Removes (unregisters) a task from particular task queue. This function
@@ -343,8 +361,15 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
 {
   SilcTask first, old, next;
 
-  if (!queue || !queue->task)
+  if (!queue)
     return FALSE;
+
+  silc_mutex_lock(queue->lock);
+
+  if (!queue->task) {
+    silc_mutex_unlock(queue->lock);
+    return FALSE;
+  }
 
   first = queue->task;
 
@@ -361,6 +386,7 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
     }
 
     queue->task = NULL;
+    silc_mutex_unlock(queue->lock);
     return TRUE;
   }
 
@@ -383,12 +409,15 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
 	queue->task = silc_task_get_first(queue, next);
       
       silc_free(old);
+      silc_mutex_unlock(queue->lock);
       return TRUE;
     }
     old = old->prev;
 
-    if (old == first)
+    if (old == first) {
+      silc_mutex_unlock(queue->lock);
       return FALSE;
+    }
   }
 }
 
@@ -410,8 +439,12 @@ void silc_task_unregister(SilcTaskQueue queue, SilcTask task)
     SilcTask next;
     SILC_LOG_DEBUG(("Unregistering all tasks at once"));
 
-    if (queue->task == NULL)
+    silc_mutex_lock(queue->lock);
+
+    if (!queue->task) {
+      silc_mutex_unlock(queue->lock);
       return;
+    }
 
     next = queue->task;
     
@@ -422,6 +455,8 @@ void silc_task_unregister(SilcTaskQueue queue, SilcTask task)
 	break;
       next = next->next;
     }
+
+    silc_mutex_unlock(queue->lock);
     return;
   }
 
@@ -440,8 +475,12 @@ void silc_task_unregister_by_fd(SilcTaskQueue queue, int fd)
 
   SILC_LOG_DEBUG(("Unregister task by fd"));
 
-  if (queue->task == NULL)
+  silc_mutex_lock(queue->lock);
+
+  if (!queue->task) {
+    silc_mutex_unlock(queue->lock);
     return;
+  }
 
   next = queue->task;
 
@@ -452,6 +491,8 @@ void silc_task_unregister_by_fd(SilcTaskQueue queue, int fd)
       break;
     next = next->next;
   }
+
+  silc_mutex_unlock(queue->lock);
 }
 
 /* Unregister a task by callback function. This invalidates the task. */
@@ -463,8 +504,12 @@ void silc_task_unregister_by_callback(SilcTaskQueue queue,
 
   SILC_LOG_DEBUG(("Unregister task by callback"));
 
-  if (queue->task == NULL)
+  silc_mutex_lock(queue->lock);
+
+  if (!queue->task) {
+    silc_mutex_unlock(queue->lock);
     return;
+  }
 
   next = queue->task;
 
@@ -475,6 +520,8 @@ void silc_task_unregister_by_callback(SilcTaskQueue queue,
       break;
     next = next->next;
   }
+
+  silc_mutex_unlock(queue->lock);
 }
 
 /* Unregister a task by context. This invalidates the task. */
@@ -485,8 +532,12 @@ void silc_task_unregister_by_context(SilcTaskQueue queue, void *context)
 
   SILC_LOG_DEBUG(("Unregister task by context"));
 
-  if (queue->task == NULL)
+  silc_mutex_lock(queue->lock);
+
+  if (!queue->task) {
+    silc_mutex_unlock(queue->lock);
     return;
+  }
 
   next = queue->task;
 
@@ -497,6 +548,8 @@ void silc_task_unregister_by_context(SilcTaskQueue queue, void *context)
       break;
     next = next->next;
   }
+
+  silc_mutex_unlock(queue->lock);
 }
 
 /* Sets the I/O type of the task. The scheduler checks for this value

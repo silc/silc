@@ -91,8 +91,6 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o Complete the SILC Mutex API and SILC Thread API.
-
  o Incomplete IPv6 support:
 
 	o All network routines in lib/silcutil/silcnet.[ch] does not
