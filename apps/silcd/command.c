@@ -116,12 +116,12 @@ void silc_server_command_process(SilcServer server,
     SilcClientEntry client = (SilcClientEntry)sock->user_data;
 
     if (!client)
-      goto out;
+      return;
 
     /* Allow only one command executed in 2 seconds. */
     curtime = time(NULL);
     if (client->last_command && (curtime - client->last_command) < 2)
-      goto out;
+      return;
 
     /* Update access time */
     client->last_command = curtime;
@@ -133,13 +133,14 @@ void silc_server_command_process(SilcServer server,
   ctx = silc_calloc(1, sizeof(*ctx));
   ctx->server = server;
   ctx->sock = sock;
-  ctx->packet = packet;	/* Save original packet */
+  ctx->packet = silc_packet_context_dup(packet); /* Save original packet */
   
   /* Parse the command payload in the packet */
   ctx->payload = silc_command_payload_parse(packet->buffer);
   if (!ctx->payload) {
     SILC_LOG_ERROR(("Bad command payload, packet dropped"));
     silc_buffer_free(packet->buffer);
+    silc_packet_context_free(packet);
     silc_free(ctx);
     return;
   }
@@ -162,12 +163,9 @@ void silc_server_command_process(SilcServer server,
 
   if (cmd == NULL) {
     SILC_LOG_ERROR(("Unknown command, packet dropped"));
-    silc_free(ctx);
-    goto out;
+    silc_server_command_free(ctx);
+    return;
   }
-
- out:
-  silc_buffer_free(packet->buffer);
 }
 
 /* Add new pending command to be executed when reply to a command has been
@@ -237,7 +235,10 @@ int silc_server_command_pending_check(SilcServer server,
 static void silc_server_command_free(SilcServerCommandContext cmd)
 {
   if (cmd) {
-    silc_command_free_payload(cmd->payload);
+    if (cmd->payload)
+      silc_command_free_payload(cmd->payload);
+    if (cmd->packet)
+      silc_packet_context_free(cmd->packet);
     silc_free(cmd);
   }
 }
@@ -366,7 +367,7 @@ SILC_SERVER_CMD_FUNC(whois)
 
     /* Send WHOIS command to our router */
     silc_server_packet_send(server, (SilcSocketConnection)
-			    server->id_entry->router->connection,
+			    server->router->connection,
 			    SILC_PACKET_COMMAND, cmd->packet->flags,
 			    tmpbuf->data, tmpbuf->len, TRUE);
     return;
@@ -592,7 +593,7 @@ SILC_SERVER_CMD_FUNC(identify)
     /* Send IDENTIFY command to our router */
     silc_buffer_push(buffer, buffer->data - buffer->head);
     silc_server_packet_forward(server, (SilcSocketConnection)
-			       server->id_entry->router->connection,
+			       server->router->connection,
 			       buffer->data, buffer->len, TRUE);
     return;
   }
@@ -697,18 +698,12 @@ SILC_SERVER_CMD_FUNC(nick)
 			   &new_id);
 
   /* Send notify about nickname change to our router. We send the new
-     ID and ask to replace it with the old one. */
-  if (cmd->server->server_type == SILC_SERVER && !cmd->server->standalone)
-    silc_server_send_replace_id(server, server->id_entry->router->connection, 
-				FALSE, client->id,
-				SILC_ID_CLIENT, SILC_ID_CLIENT_LEN,
-				new_id, SILC_ID_CLIENT, SILC_ID_CLIENT_LEN);
-
-  /* If we are router we have to distribute the new Client ID to all 
-     routers in SILC. */
-  if (cmd->server->server_type == SILC_ROUTER && !cmd->server->standalone)
-    silc_server_send_replace_id(server, server->id_entry->router->connection,  
-				TRUE, client->id,
+     ID and ask to replace it with the old one. If we are router the
+     packet is broadcasted. */
+  if (!cmd->server->standalone)
+    silc_server_send_replace_id(server, server->router->connection, 
+				server->server_type == SILC_SERVER ? 
+				FALSE : TRUE, client->id,
 				SILC_ID_CLIENT, SILC_ID_CLIENT_LEN,
 				new_id, SILC_ID_CLIENT, SILC_ID_CLIENT_LEN);
 
@@ -1297,6 +1292,8 @@ silc_server_command_join_channel(SilcServer server,
     client = silc_idlist_find_client_by_id(server->local_list, id);
     if (!client) {
       /* XXX */
+      SILC_LOG_ERROR(("Forwarded join command did not find the client who "
+		      "wanted to join the channel"));
       goto out;
     }
     silc_free(id);
@@ -1407,6 +1404,7 @@ silc_server_command_join_channel(SilcServer server,
       silc_task_register(server->timeout_queue, sock->sock,
 			 silc_server_command_join_notify, ctx,
 			 0, 10000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+      goto out;
     }
 
     /* Send NAMES command reply to the joined channel so the user sees who
@@ -1487,7 +1485,7 @@ SILC_SERVER_CMD_FUNC(join)
 	/* Forward the original JOIN command to the router */
 	silc_buffer_push(buffer, buffer->data - buffer->head);
 	silc_server_packet_forward(server, (SilcSocketConnection)
-				   server->id_entry->router->connection,
+				   server->router->connection,
 				   buffer->data, buffer->len, TRUE);
 	
 	/* Add the command to be pending. It will be re-executed after
@@ -1751,7 +1749,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       if (server->server_type == SILC_SERVER) {
 	if (!server->standalone)
 	  silc_server_packet_send(server, 
-				  cmd->server->id_entry->router->connection,
+				  cmd->server->router->connection,
 				  SILC_PACKET_CHANNEL_KEY, 0, packet->data,
 				  packet->len, TRUE);
       } else {
@@ -1921,7 +1919,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       if (server->server_type == SILC_SERVER) {
 	if (!server->standalone)
 	  silc_server_packet_send(server, 
-				  cmd->server->id_entry->router->connection,
+				  cmd->server->router->connection,
 				  SILC_PACKET_CHANNEL_KEY, 0, packet->data,
 				  packet->len, TRUE);
       } else {
@@ -1984,7 +1982,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       if (server->server_type == SILC_SERVER) {
 	if (!server->standalone)
 	  silc_server_packet_send(server, 
-				  cmd->server->id_entry->router->connection,
+				  cmd->server->router->connection,
 				  SILC_PACKET_CHANNEL_KEY, 0, packet->data,
 				  packet->len, TRUE);
       } else {
@@ -2287,7 +2285,7 @@ SILC_SERVER_CMD_FUNC(leave)
      of clients on the channel. */
   if (!server->standalone)
     silc_server_send_remove_channel_user(server, 
-					 server->id_entry->router->connection,
+					 server->router->connection,
 					 server->server_type == SILC_ROUTER ?
 					 TRUE : FALSE, id_entry->id, id);
 
@@ -2326,7 +2324,7 @@ SILC_SERVER_CMD_FUNC(leave)
   if (server->server_type == SILC_SERVER) {
     if (!server->standalone)
       silc_server_packet_send(server, 
-			      cmd->server->id_entry->router->connection,
+			      cmd->server->router->connection,
 			      SILC_PACKET_CHANNEL_KEY, 0, packet->data,
 			      packet->len, TRUE);
   } else {

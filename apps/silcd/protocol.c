@@ -160,7 +160,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
 					  silc_version_string,
-					  ctx->packet, NULL, NULL);
+					  ctx->packet->buffer, NULL, NULL);
       } else {
 	SilcSKEStartPayload *start_payload;
 
@@ -211,10 +211,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   paylaod reply we just got from the responder. The callback
 	   function will receive the processed payload where we will
 	   save it. */
-	status = 
-	  silc_ske_initiator_phase_1(ctx->ske,
-				     ctx->packet,
-				     NULL, NULL);
+	status = silc_ske_initiator_phase_1(ctx->ske, ctx->packet->buffer,
+					    NULL, NULL);
       }
 
       if (status != SILC_SKE_STATUS_OK) {
@@ -243,8 +241,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	/* Process the received Key Exchange 1 Payload packet from
 	   the initiator. This also creates our parts of the Diffie
 	   Hellman algorithm. */
-	status = 
-	  silc_ske_responder_phase_2(ctx->ske, ctx->packet, NULL, NULL);
+	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
+					    NULL, NULL);
       } else {
 	/* Call the Phase-2 function. This creates Diffie Hellman
 	   key exchange parameters and sends our public part inside
@@ -290,9 +288,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       } else {
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. */
-	status = 
-	  silc_ske_initiator_finish(ctx->ske,
-				    ctx->packet, NULL, NULL, NULL, NULL);
+	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer, 
+					   NULL, NULL, NULL, NULL);
       }
 
       if (status != SILC_SKE_STATUS_OK) {
@@ -509,12 +506,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	/* Parse the received authentication data packet. The received
 	   payload is Connection Auth Payload. */
-	silc_buffer_unformat(ctx->packet,
+	silc_buffer_unformat(ctx->packet->buffer,
 			     SILC_STR_UI_SHORT(&payload_len),
 			     SILC_STR_UI_SHORT(&conn_type),
 			     SILC_STR_END);
 	
-	if (payload_len != ctx->packet->len) {
+	if (payload_len != ctx->packet->buffer->len) {
 	  SILC_LOG_ERROR(("Bad payload in authentication packet"));
 	  SILC_LOG_DEBUG(("Bad payload in authentication packet"));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -535,8 +532,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	if (payload_len > 0) {
 	  /* Get authentication data */
-	  silc_buffer_pull(ctx->packet, 4);
-	  silc_buffer_unformat(ctx->packet,
+	  silc_buffer_pull(ctx->packet->buffer, 4);
+	  silc_buffer_unformat(ctx->packet->buffer,
 			       SILC_STR_UI_XNSTRING_ALLOC(&auth_data, 
 							  payload_len),
 			       SILC_STR_END);

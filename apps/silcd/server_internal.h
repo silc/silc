@@ -56,7 +56,12 @@ struct SilcServerStruct {
   int listenning;
   SilcServerID *id;
   SilcIdType id_type;
+
+  /* Server's own ID entry. */
   SilcServerEntry id_entry;
+
+  /* Back pointer to the primary router of this server. */
+  SilcServerEntry router;
 
   /* SILC server task queues */
   SilcTaskQueue io_queue;

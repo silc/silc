@@ -277,7 +277,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   /* Add the channel to our local list. */
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, id, 
-				  server->id_entry->router, NULL);
+				  server->router, NULL);
   if (!entry) {
     silc_free(channel_name);
     silc_free(id);

@@ -43,7 +43,7 @@ typedef struct {
   SilcIdType dest_id_type;
 
   SilcTask timeout_task;
-  SilcBuffer packet;
+  SilcPacketContext *packet;
   SilcSKE ske;
 } SilcServerKEInternalContext;
 
@@ -75,7 +75,7 @@ typedef struct {
   SilcIdType dest_id_type;
 
   SilcTask timeout_task;
-  SilcBuffer packet;
+  SilcPacketContext *packet;
   unsigned short conn_type;
 } SilcServerConnAuthInternalContext;
 

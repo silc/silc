@@ -585,7 +585,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     /* Error occured during protocol */
     silc_protocol_free(protocol);
     if (ctx->packet)
-      silc_buffer_free(ctx->packet);
+      silc_packet_context_free(ctx->packet);
     if (ctx->ske)
       silc_ske_free(ctx->ske);
     if (ctx->dest_id)
@@ -634,7 +634,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   /* Free old protocol as it is finished now */
   silc_protocol_free(protocol);
   if (ctx->packet)
-    silc_buffer_free(ctx->packet);
+    silc_packet_context_free(ctx->packet);
   silc_free(ctx);
   sock->protocol = NULL;
 
@@ -738,6 +738,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   sock->user_data = (void *)id_entry;
   sock->type = SILC_SOCKET_TYPE_ROUTER;
   server->id_entry->router = id_entry;
+  server->router = id_entry;
 
  out:
   /* Free the temporary connection data context */
@@ -747,7 +748,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   /* Free the protocol object */
   silc_protocol_free(protocol);
   if (ctx->packet)
-    silc_buffer_free(ctx->packet);
+    silc_packet_context_free(ctx->packet);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
   silc_free(ctx);
@@ -863,7 +864,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     /* Error occured during protocol */
     silc_protocol_free(protocol);
     if (ctx->packet)
-      silc_buffer_free(ctx->packet);
+      silc_packet_context_free(ctx->packet);
     if (ctx->ske)
       silc_ske_free(ctx->ske);
     if (ctx->dest_id)
@@ -889,7 +890,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   /* Free old protocol as it is finished now */
   silc_protocol_free(protocol);
   if (ctx->packet)
-    silc_buffer_free(ctx->packet);
+    silc_packet_context_free(ctx->packet);
   silc_free(ctx);
   sock->protocol = NULL;
 
@@ -931,7 +932,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     /* Error occured during protocol */
     silc_protocol_free(protocol);
     if (ctx->packet)
-      silc_buffer_free(ctx->packet);
+      silc_packet_context_free(ctx->packet);
     if (ctx->ske)
       silc_ske_free(ctx->ske);
     if (ctx->dest_id)
@@ -1002,8 +1003,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (server->standalone && sock->type == SILC_SOCKET_TYPE_ROUTER) {
 	SILC_LOG_DEBUG(("We are not standalone server anymore"));
 	server->standalone = FALSE;
-	if (!server->id_entry->router)
+	if (!server->id_entry->router) {
 	  server->id_entry->router = id_entry;
+	  server->router = id_entry;
+	}
       }
       break;
     }
@@ -1024,7 +1027,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
   silc_protocol_free(protocol);
   if (ctx->packet)
-    silc_buffer_free(ctx->packet);
+    silc_packet_context_free(ctx->packet);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
   if (ctx->dest_id)
@@ -1195,8 +1198,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   if (server->server_type == SILC_ROUTER && 
       sock->type == SILC_SOCKET_TYPE_ROUTER &&
       packet->flags & SILC_PACKET_FLAG_BROADCAST) {
-    silc_server_packet_broadcast(server, server->id_entry->router->connection,
-				 packet);
+    silc_server_packet_broadcast(server, server->router->connection, packet);
   }
 
   /* Parse the incoming packet type */
@@ -1204,11 +1206,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 
  out:
   silc_buffer_clear(sock->inbuf);
-  if (packet->src_id)
-    silc_free(packet->src_id);
-  if (packet->dst_id)
-    silc_free(packet->dst_id);
-  silc_free(packet);
+  silc_packet_context_free(packet);
   silc_free(parse_ctx);
 }
 
@@ -1251,7 +1249,6 @@ void silc_server_packet_parse_type(SilcServer server,
 				   SilcSocketConnection sock,
 				   SilcPacketContext *packet)
 {
-  SilcBuffer buffer = packet->buffer;
   SilcPacketType type = packet->type;
 
   SILC_LOG_DEBUG(("Parsing packet type %d", type));
@@ -1261,6 +1258,7 @@ void silc_server_packet_parse_type(SilcServer server,
   case SILC_PACKET_DISCONNECT:
     SILC_LOG_DEBUG(("Disconnect packet"));
     break;
+
   case SILC_PACKET_SUCCESS:
     /*
      * Success received for something. For now we can have only
@@ -1273,6 +1271,7 @@ void silc_server_packet_parse_type(SilcServer server,
 			      sock->protocol, sock->sock, 0, 0);
     }
     break;
+
   case SILC_PACKET_FAILURE:
     /*
      * Failure received for something. For now we can have only
@@ -1287,9 +1286,17 @@ void silc_server_packet_parse_type(SilcServer server,
 			      sock->protocol, sock->sock, 0, 0);
     }
     break;
+
   case SILC_PACKET_REJECT:
     SILC_LOG_DEBUG(("Reject packet"));
     return;
+    break;
+
+  case SILC_PACKET_NOTIFY:
+    /*
+     * Received notify packet.
+     */
+    SILC_LOG_DEBUG(("Notify packet"));
     break;
 
     /* 
@@ -1364,7 +1371,7 @@ void silc_server_packet_parse_type(SilcServer server,
       SilcServerKEInternalContext *proto_ctx = 
 	(SilcServerKEInternalContext *)sock->protocol->context;
 
-      proto_ctx->packet = buffer;
+      proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
       sock->protocol->execute(server->timeout_queue, 0, 
@@ -1386,9 +1393,9 @@ void silc_server_packet_parse_type(SilcServer server,
 	(SilcServerKEInternalContext *)sock->protocol->context;
 
       if (proto_ctx->packet)
-	silc_buffer_free(proto_ctx->packet);
+	silc_packet_context_free(proto_ctx->packet);
 
-      proto_ctx->packet = buffer;
+      proto_ctx->packet = silc_packet_context_dup(packet);
       proto_ctx->dest_id_type = packet->src_id_type;
       proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
 
@@ -1411,9 +1418,9 @@ void silc_server_packet_parse_type(SilcServer server,
 	(SilcServerKEInternalContext *)sock->protocol->context;
 
       if (proto_ctx->packet)
-	silc_buffer_free(proto_ctx->packet);
+	silc_packet_context_free(proto_ctx->packet);
 
-      proto_ctx->packet = buffer;
+      proto_ctx->packet = silc_packet_context_dup(packet);
       proto_ctx->dest_id_type = packet->src_id_type;
       proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
 
@@ -1431,6 +1438,8 @@ void silc_server_packet_parse_type(SilcServer server,
     /* If we receive this packet we will send to the other end information
        about our mandatory authentication method for the connection. 
        This packet maybe received at any time. */
+    SILC_LOG_DEBUG(("Connection authentication request packet"));
+    break;
 
     /*
      * Connection Authentication protocol packets
@@ -1445,7 +1454,7 @@ void silc_server_packet_parse_type(SilcServer server,
       SilcServerConnAuthInternalContext *proto_ctx = 
 	(SilcServerConnAuthInternalContext *)sock->protocol->context;
 
-      proto_ctx->packet = buffer;
+      proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
       sock->protocol->execute(server->timeout_queue, 0, 
@@ -1510,6 +1519,10 @@ void silc_server_packet_parse_type(SilcServer server,
     break;
 
   case SILC_PACKET_REMOVE_ID:
+    /*
+     * Received remove ID Packet. 
+     */
+    SILC_LOG_DEBUG(("Remove ID packet"));
     break;
 
   case SILC_PACKET_REMOVE_CHANNEL_USER:
@@ -1703,8 +1716,7 @@ void silc_server_packet_forward(SilcServer server,
 /* Broadcast received packet to our primary route. This function is used
    by router to further route received broadcast packet. It is expected
    that the broadcast flag from the packet is checked before calling this
-   function. This does not check for the broadcast flag. The `sock' must
-   be the socket of the primary route. */
+   function. This does not test or set the broadcast flag. */
 
 void silc_server_packet_broadcast(SilcServer server,
 				  SilcSocketConnection sock,
@@ -1719,9 +1731,11 @@ void silc_server_packet_broadcast(SilcServer server,
   /* If the packet is originated from our primary route we are
      not allowed to send the packet. */
   id = silc_id_str2id(packet->src_id, packet->src_id_type);
-  if (id && SILC_ID_SERVER_COMPARE(id, server->id_entry->router->id)) {
+  if (id && SILC_ID_SERVER_COMPARE(id, server->router->id)) {
     idata = (SilcIDListData)sock->user_data;
-    silc_packet_send_prepare(sock, 0, 0, buffer->len);
+
+    silc_buffer_push(buffer, buffer->data - buffer->head);
+    silc_packet_send_prepare(sock, 0, 0, buffer->len); 
     silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
     silc_packet_encrypt(idata->send_key, idata->hmac, 
 			sock->outbuf, sock->outbuf->len);
@@ -1834,7 +1848,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
     SilcServerEntry router;
 
     /* Get data used in packet header encryption, keys and stuff. */
-    router = server->id_entry->router;
+    router = server->router;
     sock = (SilcSocketConnection)router->connection;
     idata = (SilcIDListData)router;
     
@@ -1952,7 +1966,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       channel->global_users) {
     SilcServerEntry router;
 
-    router = server->id_entry->router;
+    router = server->router;
 
     /* Check that the sender is not our router. */
     if (sender_sock != (SilcSocketConnection)router->connection) {
@@ -2101,11 +2115,11 @@ void silc_server_packet_relay_command_reply(SilcServer server,
   /* Source must be server or router */
   if (packet->src_id_type != SILC_ID_SERVER &&
       sock->type != SILC_SOCKET_TYPE_ROUTER)
-    goto out;
+    return;
 
   /* Destination must be client */
   if (packet->dst_id_type != SILC_ID_CLIENT)
-    goto out;
+    return;
 
   /* Execute command reply locally for the command */
   silc_server_command_reply_process(server, sock, buffer);
@@ -2115,8 +2129,9 @@ void silc_server_packet_relay_command_reply(SilcServer server,
   /* Destination must be one of ours */
   client = silc_idlist_find_client_by_id(server->local_list, id);
   if (!client) {
+    SILC_LOG_ERROR(("Cannot relay command reply to unknown client"));
     silc_free(id);
-    goto out;
+    return;
   }
 
   /* Relay the packet to the client */
@@ -2135,12 +2150,9 @@ void silc_server_packet_relay_command_reply(SilcServer server,
 		      buffer->len);
     
   /* Send the packet */
-  silc_server_packet_send_real(server, dst_sock, FALSE);
+  silc_server_packet_send_real(server, dst_sock, TRUE);
 
   silc_free(id);
-
- out:
-  silc_buffer_free(buffer);
 }
 
 /* Closes connection to socket connection */
@@ -2441,7 +2453,6 @@ void silc_server_private_message(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet)
 {
-  SilcBuffer buffer = packet->buffer;
   SilcClientID *id;
   SilcServerEntry router;
   SilcSocketConnection dst_sock;
@@ -2483,7 +2494,7 @@ void silc_server_private_message(SilcServer server,
 						idata->send_key,
 						idata->hmac,
 						packet);
-      goto out;
+      return;
     }
 
     /* Seems that client really is directly connected to us */
@@ -2491,13 +2502,13 @@ void silc_server_private_message(SilcServer server,
     silc_server_private_message_send_internal(server, dst_sock, 
 					      idata->send_key,
 					      idata->hmac, packet);
-    goto out;
+    return;
   }
 
   /* Destination belongs to someone not in this server. If we are normal
      server our action is to send the packet to our router. */
   if (server->server_type == SILC_SERVER && !server->standalone) {
-    router = server->id_entry->router;
+    router = server->router;
 
     /* Send to primary route */
     if (router) {
@@ -2507,7 +2518,7 @@ void silc_server_private_message(SilcServer server,
 						idata->send_key,
 						idata->hmac, packet);
     }
-    goto out;
+    return;
   }
 
   /* We are router and we will perform route lookup for the destination 
@@ -2522,15 +2533,12 @@ void silc_server_private_message(SilcServer server,
       silc_server_private_message_send_internal(server, dst_sock, 
 						idata->send_key,
 						idata->hmac, packet);
-
-    goto out;
+    return;
   }
 
  err:
   silc_server_send_error(server, sock, 
 			 "No such nickname: Private message not sent");
- out:
-  silc_buffer_free(buffer);
 }
 
 /* Process received channel message. The message can be originated from
@@ -2544,7 +2552,6 @@ void silc_server_channel_message(SilcServer server,
   SilcChannelClientEntry chl;
   SilcChannelID *id = NULL;
   void *sender = NULL;
-  SilcBuffer buffer = packet->buffer;
 
   SILC_LOG_DEBUG(("Processing channel message"));
 
@@ -2591,7 +2598,6 @@ void silc_server_channel_message(SilcServer server,
     silc_free(sender);
   if (id)
     silc_free(id);
-  silc_buffer_free(buffer);
 }
 
 /* Received channel key packet. We distribute the key to all of our locally
@@ -2608,7 +2614,6 @@ void silc_server_channel_key(SilcServer server,
   SilcChannelID *id = NULL;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
-  SilcClientEntry client;
   unsigned char *tmp;
   unsigned int tmp_len;
   char *cipher;
@@ -2647,31 +2652,24 @@ void silc_server_channel_key(SilcServer server,
   if (!silc_cipher_alloc(cipher, &channel->channel_key))
     goto out;
 
+  /* Distribute the key to all clients on the channel */
+  silc_list_start(channel->user_list);
+  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    silc_server_packet_send(server, chl->client->connection,
+			    SILC_PACKET_CHANNEL_KEY, 0,
+			    buffer->data, buffer->len, TRUE);
+  }
+
   channel->key_len = tmp_len * 8;
   channel->key = silc_calloc(tmp_len, sizeof(unsigned char));
   memcpy(channel->key, tmp, tmp_len);
   channel->channel_key->cipher->set_key(channel->channel_key->context, 
 					tmp, tmp_len);
-
-  /* Distribute the key to all clients on the channel */
-  /* XXX Some other sender should be used, I think this is not correct */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    client = chl->client;
-
-    if (client)
-      silc_server_packet_send_dest(server, client->connection,
-				   SILC_PACKET_CHANNEL_KEY, 0,
-				   client->id, SILC_ID_CLIENT,
-				   buffer->data, buffer->len, FALSE);
-  }
-
  out:
   if (id)
     silc_free(id);
   if (payload)
     silc_channel_key_payload_free(payload);
-  silc_buffer_free(buffer);
 }
 
 /* Sends current motd to client */
@@ -3062,6 +3060,19 @@ void silc_server_replace_id(SilcServer server,
   if (!id2)
     goto out;
 
+  /* If we are router and this packet is not already broadcast packet
+     we will broadcast it. The sending socket really cannot be router or
+     the router is buggy. If this packet is coming from router then it must
+     have the broadcast flag set already and we won't do anything. */
+  if (server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received Replace ID packet"));
+    silc_server_packet_send(server, server->router->connection, packet->type,
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+			    buffer->data, buffer->len, FALSE);
+  }
+
   /* Replace the old ID */
   switch(old_id_type) {
   case SILC_ID_CLIENT:
@@ -3141,7 +3152,7 @@ SilcChannelEntry silc_server_new_channel(SilcServer server,
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
   if (server->standalone == FALSE) {
-    silc_server_send_new_id(server, server->id_entry->router->connection,
+    silc_server_send_new_id(server, server->router->connection,
 			    server->server_type == SILC_SERVER ? FALSE : TRUE,
 			    entry->id, SILC_ID_CHANNEL, SILC_ID_CHANNEL_LEN);
   }
@@ -3207,7 +3218,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   /* Notify our router about new client on the SILC network */
   if (!server->standalone)
     silc_server_send_new_id(server, (SilcSocketConnection) 
-			    server->id_entry->router->connection, 
+			    server->router->connection, 
 			    server->server_type == SILC_ROUTER ? TRUE : FALSE,
 			    client->id, SILC_ID_CLIENT, SILC_ID_CLIENT_LEN);
   
@@ -3316,8 +3327,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
      to our router. If we are normal server we won't send anything
      since this connection must be our router connection. */
   if (server->server_type == SILC_ROUTER && !server->standalone &&
-      server->id_entry->router->connection != sock)
-    silc_server_send_new_id(server, server->id_entry->router->connection,
+      server->router->connection != sock)
+    silc_server_send_new_id(server, server->router->connection,
 			    TRUE, new_server->id, SILC_ID_SERVER, 
 			    SILC_ID_SERVER_LEN);
 
@@ -3362,10 +3373,11 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 
   /* If the sender of this packet is server and we are router we need to
      broadcast this packet to other routers in the network. */
-  if (!server->standalone && sock->type == SILC_SOCKET_TYPE_SERVER &&
-      server->server_type == SILC_ROUTER) {
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received New ID packet"));
-    silc_server_packet_send(server, server->id_entry->router->connection,
+    silc_server_packet_send(server, server->router->connection,
 			    packet->type, 
 			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
 			    buffer->data, buffer->len, FALSE);
@@ -3384,8 +3396,8 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
     /*    router = server->id_entry; */
   } else {
     id_list = server->global_list;
-    router_sock = (SilcSocketConnection)server->id_entry->router->connection;
-    router = server->id_entry->router;
+    router_sock = (SilcSocketConnection)server->router->connection;
+    router = server->router;
   }
 
   silc_free(tmpid);
@@ -3475,6 +3487,19 @@ void silc_server_remove_channel_user(SilcServer server,
   channel_id = silc_id_str2id(tmp2, SILC_ID_CHANNEL);
   if (!client_id || !channel_id)
     goto out;
+
+  /* If we are router and this packet is not already broadcast packet
+     we will broadcast it. The sending socket really cannot be router or
+     the router is buggy. If this packet is coming from router then it must
+     have the broadcast flag set already and we won't do anything. */
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received Remove Channel User packet"));
+    silc_server_packet_send(server, server->router->connection, packet->type,
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+			    buffer->data, buffer->len, FALSE);
+  }
 
   /* XXX routers should check server->global_list as well */
   /* Get channel entry */
