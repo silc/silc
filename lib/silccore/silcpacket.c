@@ -162,23 +162,23 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac,
 
    Packet construct is as follows (* = won't be encrypted):
 
-   x bytes       SILC Header
+   n bytes       SILC Header
       2 bytes     Payload length  (*)
       1 byte      Flags
       1 byte      Packet type
-      1 byte      Source ID Type
       2 bytes     Source ID Length
-      x bytes     Source ID
-      1 byte      Destination ID Type
       2 bytes     Destination ID Length
-      x bytes     Destination ID
+      1 byte      Source ID Type
+      n bytes     Source ID
+      1 byte      Destination ID Type
+      n bytes     Destination ID
 
    1 - 16 bytes    Padding
 
-   x bytes        Data payload
+   n bytes        Data payload
 
    All fields in the packet will be authenticated by MAC. The MAC is
-   not computed here, it must be computed differently before encrypting
+   not computed here, it must be computed separately before encrypting
    the packet.
 
 */

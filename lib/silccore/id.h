@@ -52,7 +52,7 @@ typedef uint16 SilcIdType;
    ID depends of the length of the IP address.
 */
 typedef struct {
-  unsigned char data[16];	/* IP data */
+  unsigned char data[16];	/* IP data (in MSB first order) */
   uint8 data_len;		/* Length of the data (4 or 16) */
 } SilcIDIP;
 
