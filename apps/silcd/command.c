@@ -5114,18 +5114,24 @@ SILC_SERVER_CMD_FUNC(getkey)
     }
 
     /* The client is locally connected, just get the public key and
-       send it back. */
-    tmp = silc_pkcs_public_key_encode(client->data.public_key, &tmp_len);
-    pk = silc_buffer_alloc(4 + tmp_len);
-    silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
-    silc_buffer_format(pk,
-		       SILC_STR_UI_SHORT(tmp_len),
-		       SILC_STR_UI_SHORT(SILC_SKE_PK_TYPE_SILC),
-		       SILC_STR_UI_XNSTRING(tmp, tmp_len),
-		       SILC_STR_END);
-    silc_free(tmp);
-    pkdata = pk->data;
-    pklen = pk->len;
+       send it back. If they key does not exist then do not send it, 
+       send just OK reply */
+    if (!client->data.public_key) {
+      pkdata = NULL;
+      pklen = 0;
+    } else {
+      tmp = silc_pkcs_public_key_encode(client->data.public_key, &tmp_len);
+      pk = silc_buffer_alloc(4 + tmp_len);
+      silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
+      silc_buffer_format(pk,
+			 SILC_STR_UI_SHORT(tmp_len),
+			 SILC_STR_UI_SHORT(SILC_SKE_PK_TYPE_SILC),
+			 SILC_STR_UI_XNSTRING(tmp, tmp_len),
+			 SILC_STR_END);
+      silc_free(tmp);
+      pkdata = pk->data;
+      pklen = pk->len;
+    }
   } else if (id_type == SILC_ID_SERVER) {
     server_id = silc_id_payload_get_id(idp);
 
@@ -5183,7 +5189,7 @@ SILC_SERVER_CMD_FUNC(getkey)
       pk = silc_buffer_alloc(4 + tmp_len);
       silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
       silc_buffer_format(pk,
-		       SILC_STR_UI_SHORT(tmp_len),
+			 SILC_STR_UI_SHORT(tmp_len),
 			 SILC_STR_UI_SHORT(SILC_SKE_PK_TYPE_SILC),
 			 SILC_STR_UI_XNSTRING(tmp, tmp_len),
 			 SILC_STR_END);
