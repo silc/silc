@@ -1,5 +1,22 @@
 Thu Nov  2 16:28:01 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
+	* Changed client's channel table to SilcList and changed code 
+	  accordingly.  Also changed SilcChannelClientEntry to include back-
+	  pointer to the channel so that client entry can use that structure
+	  as list as well and we have fast cross-reference to the channel.
+	  This change dramatically decreased the complexity of channel
+	  handling with client entry and vice versa (removed one extra
+	  loop when searching for channel entry from many functions).
+
+	* Changed server->sim from table to SilcDList and changed code
+	  accordingly.
+
+	* NAMES command can now be used from user interface.  It will show
+	  the user list on the channel, neatly.
+
+	* Added realname pointer to SilcClientEntry in lib/silcclient/idlist.h.
+	  Code now saves realname of the user if it becomes available.
+
 	* Renamed configure.in to configure.in.pre and made ./prepare
 	  script to automatically add correct version string to
 	  configure.in which it creates from configure.in.pre.
