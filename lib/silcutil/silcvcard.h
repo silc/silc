@@ -105,7 +105,7 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    char *silc_vcard_encode(SilcVCard vcard, SilcUInt8 *vcard_len);
+ *    char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len);
  *
  * DESCRIPTION
  *
