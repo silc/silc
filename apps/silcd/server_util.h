@@ -74,4 +74,11 @@ bool silc_server_channel_has_local(SilcChannelEntry channel);
 bool silc_server_client_on_channel(SilcClientEntry client,
 				   SilcChannelEntry channel);
 
+/* Checks string for bad characters and returns TRUE if they are found. */
+bool silc_server_name_bad_chars(const char *name, uint32 name_len);
+
+/* Modifies the `nick' if it includes bad characters and returns new
+   allocated nickname that does not include bad characters. */
+char *silc_server_name_modify_bad(const char *name, uint32 name_len);
+
 #endif /* SERVER_UTIL_H */

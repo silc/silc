@@ -1,3 +1,38 @@
+Sat Jan  5 13:37:29 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added the silc_client_del_client to remove the client from
+	  all channels as well.  Affected file lib/silcclient/idlist.c.
+
+	* Fixed the client library to correctly remove the client
+	  from all channels when the client entry is being destroyed.
+	  Affected file lib/silcclient/client_notify.c, command.c.
+
+	* Added auto-nicking support to the client library.  If the
+	  applicatio now sets client->nickname it will be sent to the
+	  server after connecting by the library.  This way for example
+	  SILCNICK (or IRCNICK) environment variables will have effect
+	  and always change the nickname automatically to whatever
+	  it is wanted.  Affected file lib/silcclient/client.[ch].
+
+	* Renamed silc_server_command_bad_chars to the
+	  silc_server_name_bad_chars and moved it to the
+	  silcd/server_util.[ch].  Added also new function
+	  silc_server_name_modify_bad to return nickname that
+	  includes bad characters as new nickname without those
+	  bad characters.  This check and modify is now used in
+	  silc_server_new_client when the username is initially set
+	  as nickname, so it must be checked to be valid nickname.
+	  Affected file silcd/packet_receive.c.
+
+	* The nickname length is now taken from the packet for real
+	  and not trusted to strlen() since it clearly can return
+	  wrong length for nickname including bad characters.  This
+	  also applies to channel names.  Affected file silcd/command.c.
+
+	* Removed the lib/silcsilm/modules directory.  Modules are now
+	  compiled into the lib/silcsim.  Fixed the copying of the
+	  modules to follow symbolic links in Makefile.am.pre.
+
 Wed Jan  2 18:56:21 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed silc_string_regexify list creation.  Fixes bugs with

@@ -1,16 +1,15 @@
 /*
 
-  client.c
+  client.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -385,7 +384,8 @@ bool silc_client_start_key_exchange(SilcClient client,
      Make sure they do not do that. */
   silc_schedule_task_del_by_fd(client->schedule, fd);
 
-  conn->nickname = strdup(client->username);
+  conn->nickname = (client->nickname ? strdup(client->nickname) :
+		    strdup(client->username));
   conn->sock->hostname = strdup(conn->remote_host);
   conn->sock->ip = strdup(conn->remote_host);
   conn->sock->port = conn->remote_port;
@@ -1500,7 +1500,14 @@ void silc_client_receive_new_id(SilcClient client,
 		   (void *)conn->local_entry, 0, NULL);
 
   if (connecting) {
-    /* Issue INFO comqmand to fetch the real server name and server information
+    /* Send NICK command if the nickname was set by the application (and is
+       not same as the username). */
+    if (client->nickname && strcmp(client->nickname, client->username))
+      silc_client_command_send(client, conn, SILC_COMMAND_NICK, 
+			       ++conn->cmd_ident, 1, 1, 
+			       client->nickname, strlen(client->nickname));
+
+    /* Issue INFO command to fetch the real server name and server information
        and other stuff. */
     silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
 				 silc_client_command_reply_info_i, 0, 

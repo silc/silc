@@ -1,7 +1,7 @@
 
                       SILC Client Library Manual
 
-                             Version 0.5
+                             Version 0.7
 
 1.0 Introduction
 
@@ -78,6 +78,11 @@ the initializing function:
 	client->pkcs
 	client->public_key
 	client->private_key
+
+You may also set client->nickname if you want.  If it is set then the
+library will change the nickname to that one after the client is connected
+to the server.  If not set, then server will initially give the nickname
+which is same as the username.
 
 After setting the pointers one must call:
 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -700,7 +700,13 @@ bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 			    SilcClientEntry client_entry)
 {
   bool ret = silc_idcache_del_by_context(conn->client_cache, client_entry);
+
+  /* Remove from channels */
+  silc_client_remove_from_channels(client, conn, client_entry);
+
+  /* Free the client entry data */
   silc_client_del_client_entry(client, conn, client_entry);
+
   return ret;
 }
 

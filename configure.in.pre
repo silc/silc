@@ -786,7 +786,6 @@ lib/silcmath/Makefile
 lib/silcmath/mpi/Makefile.defines
 lib/silcmath/mpi/Makefile.defines_int
 lib/silcsim/Makefile
-lib/silcsim/modules/Makefile
 lib/silcske/Makefile
 lib/silcutil/Makefile
 lib/silcutil/unix/Makefile

@@ -1,16 +1,15 @@
 /*
 
-  client_notify.c
+  client_notify.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -851,11 +850,9 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. */
     client->internal->ops->notify(client, conn, type, client_entry, tmp);
 
-    if (client_entry != conn->local_entry) {
-      /* Remove client from all channels */
-      silc_client_remove_from_channels(client, conn, client_entry);
+    if (client_entry != conn->local_entry)
+      /* Remove the client from all channels and free it */
       silc_client_del_client(client, conn, client_entry);
-    }
 
     break;
     
@@ -904,7 +901,7 @@ void silc_client_notify_by_server(SilcClient client,
 	if (client_entry == conn->local_entry)
 	  continue;
 
-	silc_client_remove_from_channels(client, conn, client_entry);
+	/* Remove the client from all channels and free it */
 	silc_client_del_client(client, conn, client_entry);
       }
       silc_free(clients);

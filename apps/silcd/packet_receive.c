@@ -1472,6 +1472,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcBuffer reply;
   SilcIDListData idata;
   char *username = NULL, *realname = NULL, *id_string;
+  uint16 username_len;
   uint32 id_len;
   int ret;
   char *hostname, *nickname;
@@ -1496,14 +1497,13 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Parse incoming packet */
   ret = silc_buffer_unformat(buffer,
-			     SILC_STR_UI16_STRING_ALLOC(&username),
+			     SILC_STR_UI16_NSTRING_ALLOC(&username, 
+							 &username_len),
 			     SILC_STR_UI16_STRING_ALLOC(&realname),
 			     SILC_STR_END);
   if (ret == -1) {
-    if (username)
-      silc_free(username);
-    if (realname)
-      silc_free(realname);
+    silc_free(username);
+    silc_free(realname);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
                                   "Incomplete client information");
     return NULL;
@@ -1511,17 +1511,22 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   if (!username) {
     silc_free(username);
-    if (realname)
-      silc_free(realname);
+    silc_free(realname);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
                                   "Incomplete client information");
     return NULL;
   }
 
-  if (strlen(username) > 128)
-    username[127] = '\0';
+  if (username_len > 128)
+    username[128] = '\0';
 
-  nickname = strdup(username);
+  /* Check for bad characters for nickname, and modify the nickname if
+     it includes those. */
+  if (silc_server_name_bad_chars(username, username_len)) {
+    nickname = silc_server_name_modify_bad(username, username_len);
+  } else {
+    nickname = strdup(username);
+  }
 
   /* Make sanity checks for the hostname of the client. If the hostname
      is provided in the `username' check that it is the same than the
@@ -1540,8 +1545,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 	strcmp(sock->hostname, hostname)) {
       silc_free(username);
       silc_free(hostname);
-      if (realname)
-	silc_free(realname);
+      silc_free(realname);
       silc_server_disconnect_remote(server, sock, 
 				    "Server closed connection: "
 				    "Incomplete client information");
@@ -1558,18 +1562,15 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 	phostname && strcmp(phostname, hostname)) {
       silc_free(username);
       silc_free(hostname);
-      if (phostname)
-	silc_free(phostname);
-      if (realname)
-	silc_free(realname);
+      silc_free(phostname);
+      silc_free(realname);
       silc_server_disconnect_remote(server, sock, 
 				    "Server closed connection: "
 				    "Incomplete client information");
       return NULL;
     }
     
-    if (phostname)
-      silc_free(phostname);
+    silc_free(phostname);
   } else {
     /* The hostname is not present, add it. */
     char *newusername;

@@ -122,13 +122,11 @@ static void silc_init_userinfo(void)
   }
 
   /* nick */
-  /* Actually take SILCUSER or IRCUSER since nickname cannot be set
-     beforehand in SILC (XXX auto-nicking support should be added to Irssi). */
   nick = settings_get_str("nick");
   if (nick == NULL || *nick == '\0') {
-    str = g_getenv("SILCUSER");
+    str = g_getenv("SILCNICK");
     if (!str)
-      str = g_getenv("IRCUSER");
+      str = g_getenv("IRCNICK");
     settings_set_str("nick", str != NULL ? str : user_name);
     
     nick = settings_get_str("nick");
@@ -312,6 +310,7 @@ void silc_core_init_finish(void)
 
   /* Get user information */
   silc_client->username = g_strdup(settings_get_str("user_name"));
+  silc_client->nickname = g_strdup(settings_get_str("nick"));
   silc_client->hostname = silc_net_localhost();
   silc_client->realname = g_strdup(settings_get_str("real_name"));
 

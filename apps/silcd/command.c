@@ -1951,25 +1951,6 @@ SILC_SERVER_CMD_FUNC(identify)
   silc_server_command_free(cmd);
 }
 
-/* Checks string for bad characters and returns TRUE if they are found. */
-
-static int silc_server_command_bad_chars(char *nick)
-{
-  int i;
-
-  for (i = 0; i < strlen(nick); i++) {
-    if (!isascii(nick[i]))
-      return TRUE;
-    if (nick[i] <= 32) return TRUE;
-    if (nick[i] == ' ') return TRUE;
-    if (nick[i] == '*') return TRUE;
-    if (nick[i] == '?') return TRUE;
-    if (nick[i] == ',') return TRUE;
-  }
-
-  return FALSE;
-}
-
 /* Server side of command NICK. Sets nickname for user. Setting
    nickname causes generation of a new client ID for the client. The
    new client ID is sent to the client after changing the nickname. */
@@ -1981,6 +1962,7 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcServer server = cmd->server;
   SilcBuffer packet, nidp, oidp = NULL;
   SilcClientID *new_id;
+  uint32 nick_len;
   char *nick;
   uint16 ident = silc_command_get_ident(cmd->payload);
   int nickfail = 0;
@@ -1991,15 +1973,14 @@ SILC_SERVER_CMD_FUNC(nick)
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_NICK, cmd, 1, 1);
 
   /* Check nickname */
-  nick = silc_argument_get_arg_type(cmd->args, 1, NULL);
-  if (silc_server_command_bad_chars(nick) == TRUE) {
+  nick = silc_argument_get_arg_type(cmd->args, 1, &nick_len);
+  if (nick_len > 128)
+    nick[128] = '\0';
+  if (silc_server_name_bad_chars(nick, nick_len) == TRUE) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_NICK,
 					  SILC_STATUS_ERR_BAD_NICKNAME);
     goto out;
   }
-
-  if (strlen(nick) > 128)
-    nick[128] = '\0';
 
   /* Check for same nickname */
   if (!strcmp(client->nickname, nick)) {
@@ -3297,10 +3278,10 @@ SILC_SERVER_CMD_FUNC(join)
   }
   channel_name = tmp;
 
-  if (strlen(channel_name) > 256)
+  if (tmp_len > 256)
     channel_name[255] = '\0';
 
-  if (silc_server_command_bad_chars(channel_name) == TRUE) {
+  if (silc_server_name_bad_chars(channel_name, tmp_len) == TRUE) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					  SILC_STATUS_ERR_BAD_CHANNEL);
     goto out;

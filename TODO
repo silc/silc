@@ -17,10 +17,6 @@ TODO/bugs in Irssi SILC client
    cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
    file.
 
- o Add auto-nick support to Irssi, so that the user specified nickname
-   would be sent to the server immediately (automatically) after the
-   client is connected to the server.
-
  o Add PERL scripting support from Irssi CVS.
 
  o Extend the /HELP command to support sub commands or something.  So
@@ -51,11 +47,6 @@ TODO/bugs In SILC Client Library
    not needed and its usage is buggy when the context is registered
    to multiple pending commands.
 
- o Add perhaps an option of setting the nickname to the client context.
-   If set (and username != nickname) the client libary would send NICK
-   command to the server after connecting to automatically set the
-   nickname.
-
  o Additions to do after protocol version 1.1:
 
 	o Fix the NICK_CHANGE notify handling not to create new entry
@@ -70,6 +61,7 @@ TODO/bugs In SILC Server
 ========================
 
  o strerror messages from premature EOF's to signoff messages.
+   (add perhaps a socket error thingy to SilcSockeConnection).
 
  o Backup router related issues
 

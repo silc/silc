@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -746,10 +746,9 @@ SILC_TASK_CALLBACK(silc_client_command_kill_remove_later)
   /* Get the target client */
   target = silc_idlist_get_client(cmd->client, conn, nickname, 
 				  cmd->argv[1], FALSE);
-  if (target) {
-    silc_client_remove_from_channels(client, conn, target);
+  if (target)
+    /* Remove the client from all channels and free it */
     silc_client_del_client(client, conn, target);
-  }
 
   silc_free(nickname);
   silc_client_command_free(cmd);
