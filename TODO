@@ -30,9 +30,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Add support for the <Requested Attributes> in WHOIS.  Sending and
-   reception, with clients and servers should be added.
-
  o Backup router related issues:
 
  	o Add special handling in router and server for "connection
@@ -56,6 +53,8 @@ TODO/bugs In SILC Server
 
 TODO/bugs In SILC Libraries
 ===========================
+
+ o Add support for SILC_ATTRIBUTE_USER_INFo attribute (VCard).
 
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but

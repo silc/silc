@@ -95,9 +95,6 @@ SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
 
     switch (attribute) {
 
-    case SILC_ATTRIBUTE_NONE:
-      break;
-
     case SILC_ATTRIBUTE_USER_INFO:
       SILC_NOT_IMPLEMENTED("SILC_ATTRIBUTE_USER_INFO");
       break;
@@ -233,7 +230,7 @@ SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
       break;
 
     default:
-      /* Other attributes must be in correct format already */
+      return NULL;
       break;
     }
   }
