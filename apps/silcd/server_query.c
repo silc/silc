@@ -42,9 +42,9 @@ typedef struct {
 typedef struct {
   void *id;			    /* ID */
   SilcIdType id_type;		    /* ID type */
-  SilcUInt16 index;		    /* Index to IDs */
-  unsigned int from_cmd : 1;   	    /* TRUE if `index' is from command args,
-				       otherwise from query->ids */
+  unsigned int index : 15;	    /* Index to IDs */
+  unsigned int type : 2;   	    /* 0 = take from query->ids, 0 = take 
+				       from args, 2 = no args in error. */
   unsigned int error : 7;	    /* The actual error (SilcStatus) */
 } *SilcServerQueryError;
 
@@ -80,7 +80,7 @@ void silc_server_query_send_error(SilcServer server,
 				  SilcStatus error, ...);
 void silc_server_query_add_error(SilcServer server,
 				 SilcServerQuery query,
-				 bool from_cmd,
+				 SilcUInt32 type,
 				 SilcUInt32 index,
 				 SilcStatus error);
 void silc_server_query_add_error_id(SilcServer server,
@@ -173,11 +173,13 @@ void silc_server_query_send_error(SilcServer server,
    processing and this function can be used to add one error.  The
    `index' is the index to the command context which includes the argument
    which caused the error, or it is the index to query->ids, depending
-   on value of `from_cmd'. */
+   on value of `type'.  If `type' is 0 the index is to query->ids, if
+   it is 1 it is index to the command context arguments, and if it is
+   2 the index is ignored and no argument is included in the error. */
 
 void silc_server_query_add_error(SilcServer server,
 				 SilcServerQuery query,
-				 bool from_cmd,
+				 SilcUInt32 type,
 				 SilcUInt32 index,
 				 SilcStatus error)
 {
@@ -186,7 +188,7 @@ void silc_server_query_add_error(SilcServer server,
   if (!query->errors)
     return;
   query->errors[query->errors_count].index = index;
-  query->errors[query->errors_count].from_cmd = from_cmd;
+  query->errors[query->errors_count].type = type;
   query->errors[query->errors_count].error = error;
   query->errors[query->errors_count].id = NULL;
   query->errors[query->errors_count].id_type = 0;
@@ -206,7 +208,7 @@ void silc_server_query_add_error_id(SilcServer server,
   if (!query->errors)
     return;
   query->errors[query->errors_count].index = 0;
-  query->errors[query->errors_count].from_cmd = FALSE;
+  query->errors[query->errors_count].type = 0;
   query->errors[query->errors_count].error = error;
   query->errors[query->errors_count].id = silc_id_dup(id, id_type);
   query->errors[query->errors_count].id_type = id_type;
@@ -408,7 +410,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
 	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
 	if (!id || id_type != SILC_ID_CLIENT) {
-	  silc_server_query_add_error(server, query, TRUE, i + 4,
+	  silc_server_query_add_error(server, query, 1, i + 4,
 				      SILC_STATUS_ERR_BAD_CLIENT_ID);
 	  continue;
 	}
@@ -481,7 +483,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	/* Get the nickname@server string and parse it */
 	if (tmp_len > 128 ||
 	    !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))
-	  silc_server_query_add_error(server, query, TRUE, 1,
+	  silc_server_query_add_error(server, query, 1, 1,
 				      SILC_STATUS_ERR_BAD_NICKNAME);
       }
 
@@ -513,7 +515,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
 	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
 	if (!id) {
-	  silc_server_query_add_error(server, query, TRUE, i + 5,
+	  silc_server_query_add_error(server, query, 1, i + 5,
 				      SILC_STATUS_ERR_BAD_CLIENT_ID);
 	  continue;
 	}
@@ -672,10 +674,9 @@ void silc_server_query_check_attributes(SilcServer server,
     }
   }
 
-  if (!found && !query->nickname && !query->ids) {
-    silc_server_query_send_error(server, query,
-                                 SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
-  }
+  if (!found && !query->nickname && !query->ids)
+    silc_server_query_add_error(server, query, 2, 0,
+                                SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 }
 
 /* Processes the parsed query.  This does the actual finding of the
@@ -726,7 +727,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
     }
 
     if (!clients)
-      silc_server_query_add_error(server, query, TRUE, 1,
+      silc_server_query_add_error(server, query, 1, 1,
 				  SILC_STATUS_ERR_NO_SUCH_NICK);
   }
 
@@ -743,7 +744,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
     }
 
     if (!servers)
-      silc_server_query_add_error(server, query, TRUE, 2,
+      silc_server_query_add_error(server, query, 1, 2,
 				  SILC_STATUS_ERR_NO_SUCH_SERVER);
   }
 
@@ -761,7 +762,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
     }
 
     if (!channels)
-      silc_server_query_add_error(server, query, TRUE, 3,
+      silc_server_query_add_error(server, query, 1, 3,
 				  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
   }
 
@@ -782,7 +783,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	  entry = silc_idlist_find_client_by_id(server->global_list,
 						id, TRUE, NULL);
 	if (!entry) {
-	  silc_server_query_add_error(server, query, FALSE, i,
+	  silc_server_query_add_error(server, query, 0, i,
 				      SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
 	  continue;
 	}
@@ -800,7 +801,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	  entry = silc_idlist_find_server_by_id(server->global_list,
 						id, TRUE, NULL);
 	if (!entry) {
-	  silc_server_query_add_error(server, query, FALSE, i,
+	  silc_server_query_add_error(server, query, 0, i,
 				      SILC_STATUS_ERR_NO_SUCH_SERVER_ID);
 	  continue;
 	}
@@ -817,7 +818,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	  entry = silc_idlist_find_channel_by_id(server->global_list, id,
 						 NULL);
 	if (!entry) {
-	  silc_server_query_add_error(server, query, FALSE, i,
+	  silc_server_query_add_error(server, query, 0, i,
 				      SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID);
 	  continue;
 	}
@@ -1508,7 +1509,7 @@ void silc_server_query_send_reply(SilcServer server,
 	 in query send error based on that, otherwise the query->errors
 	 already includes proper errors. */
       if (query->nickname || (!query->nickname && !query->ids && query->attrs))
-	silc_server_query_add_error(server, query, TRUE, 1,
+	silc_server_query_add_error(server, query, 1, 1,
 				    SILC_STATUS_ERR_NO_SUCH_NICK);
     }
   }
@@ -1619,15 +1620,19 @@ void silc_server_query_send_reply(SilcServer server,
       idp = NULL;
 
       /* Take error argument */
-      if (query->errors[i].from_cmd) {
+      if (query->errors[i].type == 1) {
+	/* Take from sent arguments */
 	len = 0;
 	tmp = silc_argument_get_arg_type(cmd->args,
 					 query->errors[i].index, &len);
-	if (query->errors[i].index == 1)
-	  type = 3;		    /* Nickname */
-	else
-	  type = 2;		    /* ID */
+	type = 2;
+      } else if (query->errors[i].type == 2) {
+	/* No argument */
+	len = 0;
+	tmp = NULL;
+	type = 0;
       } else if (!query->errors[i].id) {
+	/* Take from query->ids */
 	idp =
 	  silc_id_payload_encode(query->ids[query->errors[i].index].id,
 				 query->ids[query->errors[k].index].id_type);
@@ -1635,6 +1640,7 @@ void silc_server_query_send_reply(SilcServer server,
 	len = idp->len;
 	type = 2;
       } else {
+	/* Take added ID. */
 	idp = silc_id_payload_encode(query->errors[i].id,
 				     query->errors[k].id_type);
 	tmp = idp->data;

@@ -1,3 +1,9 @@
+Sat Dec 20 14:42:36 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Use silc_server_query_add_error to add error in public key
+	  search error.  Added support in send_reply to send errors
+	  without specific argument.  Affected file silcd/server_query.c.
+
 Sat Dec 20 00:44:47 CET 2003  Patrik Weiskircher <pat@icore.at>
 
 	* fixed a bug in the whois using attributes function where no 
