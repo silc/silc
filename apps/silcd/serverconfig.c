@@ -1404,6 +1404,12 @@ static bool silc_server_config_check(SilcServerConfig config)
 	  "same host.", r->host));
       ret = FALSE;
     }
+
+    if (r->initiator == FALSE && r->port != 0) {
+      SILC_SERVER_LOG_WARNING(("\nWarning: Initiator is FALSE and Port is "
+                               "specified. Ignoring Port value."));
+      r->port = 0;
+    }
   }
 
   /* ServerConnection sanity checks */
