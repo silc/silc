@@ -20,28 +20,7 @@
 /*
  * Created: Fri Jul 25 18:52:14 1997
  */
-/*
- * $Id$
- * $Log$
- * Revision 1.4  2000/07/18 06:51:58  priikone
- * 	Debug version bug fixes.
- *
- * Revision 1.3  2000/07/14 06:10:15  priikone
- * 	Moved all the generic packet sending, enryption, reception,
- * 	decryption and processing function from client and server to
- * 	here as they were duplicated code in the applications. Now they
- * 	are generic code over generic API. Some functions were rewritter;
- * 	packet reception and HMAC computation and checking is now more
- * 	optimized.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -393,10 +372,22 @@ int silc_packet_receive_process(SilcSocketConnection sock,
      errors we either read a whole packet or the read packet is 
      incorrect and will be dropped. */
   SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
-  if (sock->inbuf->len < paddedlen || (packetlen < SILC_PACKET_MIN_LEN)) {
+  if (packetlen < SILC_PACKET_MIN_LEN) {
     SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
     silc_buffer_clear(sock->inbuf);
     return FALSE;
+  }
+
+  if (sock->inbuf->len < paddedlen) {
+    /* Two cases: either we haven't read all of the data or this 
+       packet is malformed. Try to read data from the connection.
+       If it fails this packet is malformed. */
+    silc_schedule_with_fd(sock->sock, SILC_TASK_READ, 0, 1);
+    if (silc_packet_receive(sock) < 0) {
+      SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
+      silc_buffer_clear(sock->inbuf);
+      return FALSE;
+    }
   }
 
   /* Parse the packets from the data */
@@ -406,10 +397,17 @@ int silc_packet_receive_process(SilcSocketConnection sock,
     if (hmac)
       mac_len = hmac->hash->hash->hash_len;
 
-    while(sock->inbuf->len > 0) {
+    while (sock->inbuf->len > 0) {
       SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
 
       if (sock->inbuf->len < paddedlen) {
+	/* Two cases: either we haven't read all of the data or this 
+	   packet is malformed. Try to read data from the connection.
+	   If it fails this packet is malformed. */
+	silc_schedule_with_fd(sock->sock, SILC_TASK_READ, 0, 1);
+	if (silc_packet_receive(sock) > 0) 
+	  continue;
+
 	SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
 	return FALSE;
       }
