@@ -3864,6 +3864,7 @@ void silc_server_resume_client(SilcServer server,
 
     /* Client is detached, and now it is resumed.  Remove the detached
        mode and mark that it is resumed. */
+    silc_idlist_del_data(detached_client);
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
     detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
@@ -3926,4 +3927,5 @@ void silc_server_resume_client(SilcServer server,
   }
 
   silc_free(client_id);
+    silc_idlist_del_data(detached_client);
 }
