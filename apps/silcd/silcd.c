@@ -39,7 +39,6 @@ silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
 			    char *identifier,
 			    SilcPublicKey *ret_pub_key,
 			    SilcPrivateKey *ret_prv_key);
-static void silc_server_create_passphrase(void);
 
 /* Long command line options */
 static struct option long_opts[] =
