@@ -1,3 +1,17 @@
+Wed Oct 30 14:06:52 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Finish the silc-mime.pl script. It now supports MIME type
+	  guessing using magic files, signing data messages, executing
+	  MIME handlers in background. Affected files 
+	  irssi/scripts/silc-mime.pl and irssi/docs/help/in/mmsg.in
+
+	* Changed MIME signal handler to make things easier for the perl
+	  script. Affected files irssi/src/silc/core/client_ops.c,
+	  silc-servers.c, and irssi/docs/signals.txt
+
+	* Cleaned up the silc_mime_parse function and fixed detection
+	  of wrapped header lines. Affected file lib/silcutil/silcstrutil.c
+
 Sun Oct 26 21:19:02 EET 2003 Pekka Riikonen <priikone@silcnet.org>
 
 	* Resolve the IP for file transfer listener from the connection

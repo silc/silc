@@ -532,16 +532,25 @@ bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
 #define MIME_TRANSFER_ENCODING "Content-Transfer-Encoding: "
 #define MIME_TRANSFER_ENCODING_LEN 27
 
-#define MIME_GET_FIELD(header, mime, mime_len, field, field_len,	\
+#define MIME_GET_FIELD(mime, mime_len, field, field_len,		\
 		       dest, dest_size)					\
 do {									\
   if (dest) {								\
-    char *f = strstr(header, field);					\
+    char *f = strstr(mime, field);					\
     if (f) {								\
-      f = (char *)mime + (f - header) + field_len;			\
-      for (i = 0; i < (mime_len - (f - (char *)mime)); i++) {		\
+      int parse_len;							\
+      f += field_len;							\
+      parse_len = (mime_len - (f - (char *)mime));			\
+      for (i = 0; i < parse_len; i++) {					\
         if ((i == dest_size) ||						\
-	    (((f[i] == '\n') || (f[i] == '\r')) && !(f[i+1] == '\t')))	\
+	    ((f[i] == '\n') && 						\
+	       ((i == parse_len - 1) ||					\
+		  ((f[i+1] != ' ') && (f[i+1] != '\t')))) ||		\
+	    ((f[i] == '\r') &&						\
+	       ((i == parse_len - 1) || 				\
+		  ((f[i+1] != ' ') && (f[i+1] != '\n'))) &&		\
+	       ((i >= parse_len - 2) || 				\
+		  ((f[i+2] != ' ') && (f[i+2] != '\t')))))		\
           break;							\
         dest[i] = f[i];							\
       }									\
@@ -558,8 +567,8 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
                 char *transfer_encoding, SilcUInt32 transfer_encoding_size,
                 unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len)
 { 
-  char *header;
   int i;
+  unsigned char *tmp;
 
   /* Get the pointer to the data area in the object */
   for (i = 0; i < mime_len; i++) {
@@ -579,27 +588,21 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
   if (mime_data_len)
     *mime_data_len = mime_len - (i + (mime[i] == '\n' ? 2 : 4));
 
-  header = silc_calloc(i + 1, 1);
-  memcpy(header, mime, i);
-
   /* Check for mandatory Content-Type field */
-  if (!strstr(header, MIME_CONTENT_TYPE)) {
-    silc_free(header);
+  tmp = strstr(mime, MIME_CONTENT_TYPE);
+  if (!tmp || (tmp - mime) >= i)
     return FALSE;
-  }
   
   /* Get MIME version, Content-Type and Transfer Encoding fields */
-  MIME_GET_FIELD(header, mime, mime_len,
+  MIME_GET_FIELD(mime, mime_len,
 		 MIME_VERSION, MIME_VERSION_LEN,
 		 version, version_size);
-  MIME_GET_FIELD(header, mime, mime_len,
+  MIME_GET_FIELD(mime, mime_len,
 		 MIME_CONTENT_TYPE, MIME_CONTENT_TYPE_LEN,
 		 content_type, content_type_size);
-  MIME_GET_FIELD(header, mime, mime_len,
+  MIME_GET_FIELD(mime, mime_len,
 		 MIME_TRANSFER_ENCODING, MIME_TRANSFER_ENCODING_LEN,
 		 transfer_encoding, transfer_encoding_size);
-
-  silc_free(header);
 
   return TRUE;
 }
