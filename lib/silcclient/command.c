@@ -195,6 +195,8 @@ void silc_client_command_free(SilcClientCommandContext ctx)
 
     for (i = 0; i < ctx->argc; i++)
       silc_free(ctx->argv[i]);
+    silc_free(ctx->argv_lens);
+    silc_free(ctx->argv_types);
     silc_free(ctx);
   }
 }

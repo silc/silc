@@ -394,13 +394,15 @@ static void event_ban(SILC_SERVER_REC *server, va_list va)
 
 }
 
+/* PART (LEAVE) command. */
+
 static void command_part(const char *data, SILC_SERVER_REC *server,
 			 WI_ITEM_REC *item)
 {
   SILC_CHANNEL_REC *chanrec;
   
   if (!IS_SILC_SERVER(server) || !server->connected)
-    return;
+    cmd_return_error(CMDERR_NOT_CONNECTED);
 
   if (*data == '\0') {
     if (!IS_SILC_CHANNEL(item))
@@ -419,6 +421,92 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   signal_stop();
   
   channel_destroy(CHANNEL(chanrec));
+}
+
+/* ME local command. */
+
+static void command_me(const char *data, SILC_SERVER_REC *server,
+		       WI_ITEM_REC *item)
+{
+  SILC_CHANNEL_REC *chanrec;
+  char *tmpcmd = "ME", *tmp;
+  uint32 argc = 0;
+  unsigned char **argv;
+  uint32 *argv_lens, *argv_types;
+  int i;
+ 
+  if (!IS_SILC_SERVER(server) || !server->connected)
+    cmd_return_error(CMDERR_NOT_CONNECTED);
+
+  if (!IS_SILC_CHANNEL(item))
+    cmd_return_error(CMDERR_NOT_JOINED);
+
+  /* Now parse all arguments */
+  tmp = g_strconcat(tmpcmd, " ", data, NULL);
+  silc_parse_command_line(tmp, &argv, &argv_lens,
+			  &argv_types, &argc, 2);
+  g_free(tmp);
+
+  if (argc < 2)
+    cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
+
+  chanrec = silc_channel_find(server, item->name);
+  if (chanrec == NULL) 
+    cmd_return_error(CMDERR_CHAN_NOT_FOUND);
+
+  /* Send the action message */
+  silc_client_send_channel_message(silc_client, server->conn, 
+				   chanrec->entry, NULL,
+				   SILC_MESSAGE_FLAG_ACTION, 
+				   argv[1], argv_lens[1], TRUE);
+
+  for (i = 0; i < argc; i++)
+    silc_free(argv[i]);
+  silc_free(argv_lens);
+  silc_free(argv_types);
+}
+
+/* NOTICE local command. */
+
+static void command_notice(const char *data, SILC_SERVER_REC *server,
+			   WI_ITEM_REC *item)
+{
+  SILC_CHANNEL_REC *chanrec;
+  char *tmpcmd = "ME", *tmp;
+  uint32 argc = 0;
+  unsigned char **argv;
+  uint32 *argv_lens, *argv_types;
+  int i;
+ 
+  if (!IS_SILC_SERVER(server) || !server->connected)
+    cmd_return_error(CMDERR_NOT_CONNECTED);
+
+  if (!IS_SILC_CHANNEL(item))
+    cmd_return_error(CMDERR_NOT_JOINED);
+
+  /* Now parse all arguments */
+  tmp = g_strconcat(tmpcmd, " ", data, NULL);
+  silc_parse_command_line(tmp, &argv, &argv_lens,
+			  &argv_types, &argc, 2);
+  g_free(tmp);
+
+  if (argc < 2)
+    cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
+
+  chanrec = silc_channel_find(server, item->name);
+  if (chanrec == NULL) 
+    cmd_return_error(CMDERR_CHAN_NOT_FOUND);
+
+  /* Send the action message */
+  silc_client_send_channel_message(silc_client, server->conn, 
+				   chanrec->entry, NULL,
+				   SILC_MESSAGE_FLAG_NOTICE, 
+				   argv[1], argv_lens[1], TRUE);
+
+  for (i = 0; i < argc; i++)
+    silc_free(argv[i]);
+  silc_free(argv_lens);
+  silc_free(argv_types);
 }
 
 void silc_channels_init(void)
@@ -442,6 +530,8 @@ void silc_channels_init(void)
   signal_add("silc event ban", (SIGNAL_FUNC) event_ban);
   
   command_bind("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
+  command_bind("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
+  command_bind("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   
   silc_nicklist_init();
 }
@@ -469,6 +559,8 @@ void silc_channels_deinit(void)
   signal_remove("silc event ban", (SIGNAL_FUNC) event_ban);
   
   command_unbind("part", (SIGNAL_FUNC) command_part);
+  command_unbind("me", (SIGNAL_FUNC) command_me);
+  command_unbind("notice", (SIGNAL_FUNC) command_notice);
   
   silc_nicklist_deinit();
 }

@@ -22,6 +22,7 @@ aliases = {
   HOST = "userhost";
   LAST = "lastlog";
   SAY = "msg *";
+  WHO = "users *";
   WI = "whois";
   WII = "whois $0 $0";
   WW = "whowas";

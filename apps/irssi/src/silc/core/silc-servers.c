@@ -235,7 +235,8 @@ void silc_command_exec(SILC_SERVER_REC *server,
 
   g_return_if_fail(server != NULL);
 
-  tmpcmd = g_strdup(command); g_strup(tmpcmd);
+  tmpcmd = g_strdup(command); 
+  g_strup(tmpcmd);
   cmd = silc_client_command_find(tmpcmd);
   g_free(tmpcmd);
   if (cmd == NULL)

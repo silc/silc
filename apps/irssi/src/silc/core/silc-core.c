@@ -158,10 +158,16 @@ silc_channel_message(SilcClient client, SilcClientConnection conn,
   chanrec = silc_channel_find_entry(server, channel);
   
   nick = silc_nicklist_find(chanrec, sender);
-  signal_emit("message public", 6, server, msg,
-	      nick == NULL ? "[<unknown>]" : nick->nick,
-	      nick == NULL ? NULL : nick->host,
-	      chanrec->name, nick);
+
+  if (flags & SILC_MESSAGE_FLAG_ACTION)
+    ;
+  else if (flags & SILC_MESSAGE_FLAG_NOTICE)
+    ;
+  else
+    signal_emit("message public", 6, server, msg,
+		nick == NULL ? "[<unknown>]" : nick->nick,
+		nick == NULL ? NULL : nick->host,
+		chanrec->name, nick);
 }
 
 /* Private message to the client. The `sender' is the nickname of the
@@ -347,179 +353,179 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   va_start(vp, status);
 
   switch(command) {
-    case SILC_COMMAND_WHOIS:
-      {
-	char buf[1024], *nickname, *username, *realname;
-	int len;
-	uint32 idle, mode;
-	SilcBuffer channels;
-
-	/* XXX should use irssi routines */
-
-	if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
-	    status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
-	  char *tmp;
-	  tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-					   3, NULL);
-	  if (tmp)
-	    client->ops->say(client, conn, "%s: %s", tmp,
-			     silc_client_command_status_message(status));
-	  else
-	    client->ops->say(client, conn, "%s",
-			     silc_client_command_status_message(status));
-	  break;
-	}
-
-	if (!success)
-	  return;
-
-	(void)va_arg(vp, SilcClientEntry);
-	nickname = va_arg(vp, char *);
-	username = va_arg(vp, char *);
-	realname = va_arg(vp, char *);
-	channels = va_arg(vp, SilcBuffer);
-	mode = va_arg(vp, uint32);
-	idle = va_arg(vp, uint32);
-
-	memset(buf, 0, sizeof(buf));
-
-	if (nickname) {
-	  len = strlen(nickname);
-	  strncat(buf, nickname, len);
-	  strncat(buf, " is ", 4);
-	}
-	
-	if (username) {
-	  strncat(buf, username, strlen(username));
-	}
-	
-	if (realname) {
-	  strncat(buf, " (", 2);
-	  strncat(buf, realname, strlen(realname));
-	  strncat(buf, ")", 1);
-	}
-
-	client->ops->say(client, conn, "%s", buf);
-
-	if (channels) {
-	  SilcDList list = silc_channel_payload_parse_list(channels);
-	  if (list) {
-	    SilcChannelPayload entry;
-
-	    memset(buf, 0, sizeof(buf));
-	    strcat(buf, "on channels: ");
-
-	    silc_dlist_start(list);
-	    while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
-	      char *m = silc_client_chumode_char(silc_channel_get_mode(entry));
-	      uint32 name_len;
-	      char *name = silc_channel_get_name(entry, &name_len);
-
-	      if (m)
-		strncat(buf, m, strlen(m));
-	      strncat(buf, name, name_len);
-	      strncat(buf, " ", 1);
-	      silc_free(m);
-	    }
-
-	    client->ops->say(client, conn, "%s", buf);
-	    silc_channel_payload_list_free(list);
-	  }
-	}
-
-	if (mode) {
-	  if ((mode & SILC_UMODE_SERVER_OPERATOR) ||
-	      (mode & SILC_UMODE_ROUTER_OPERATOR))
-	    client->ops->say(client, conn, "%s is %s", nickname,
-			     (mode & SILC_UMODE_SERVER_OPERATOR) ?
-			     "Server Operator" :
-			     (mode & SILC_UMODE_ROUTER_OPERATOR) ?
-			     "SILC Operator" : "[Unknown mode]");
-
-	  if (mode & SILC_UMODE_GONE)
-	    client->ops->say(client, conn, "%s is gone", nickname);
-	}
-
-	if (idle && nickname)
-	  client->ops->say(client, conn, "%s has been idle %d %s",
-			   nickname,
-			   idle > 60 ? (idle / 60) : idle,
-			   idle > 60 ? "minutes" : "seconds");
-      }
-      break;
-
-    case SILC_COMMAND_WHOWAS:
-      {
-	char buf[1024], *nickname, *username, *realname;
-	int len;
-
-	/* XXX should use irssi routines */
-
-	if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
-	    status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
-	  char *tmp;
-	  tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-					   3, NULL);
-	  if (tmp)
-	    client->ops->say(client, conn, "%s: %s", tmp,
-			     silc_client_command_status_message(status));
-	  else
-	    client->ops->say(client, conn, "%s",
-			     silc_client_command_status_message(status));
-	  break;
-	}
-
-	if (!success)
-	  return;
-
-	(void)va_arg(vp, SilcClientEntry);
-	nickname = va_arg(vp, char *);
-	username = va_arg(vp, char *);
-	realname = va_arg(vp, char *);
-
-	memset(buf, 0, sizeof(buf));
-
-	if (nickname) {
-	  len = strlen(nickname);
-	  strncat(buf, nickname, len);
-	  strncat(buf, " was ", 5);
-	}
-	
-	if (username) {
-	  strncat(buf, username, strlen(nickname));
-	}
-	
-	if (realname) {
-	  strncat(buf, " (", 2);
-	  strncat(buf, realname, strlen(realname));
-	  strncat(buf, ")", 1);
-	}
-
-	client->ops->say(client, conn, "%s", buf);
-      }
-      break;
-
-    case SILC_COMMAND_INVITE:
-      {
-	SilcChannelEntry channel;
-	char *invite_list;
-
-	if (!success)
-	  return;
-	
-	/* XXX should use irssi routines */
-
-	channel = va_arg(vp, SilcChannelEntry);
-	invite_list = va_arg(vp, char *);
-
-	if (invite_list)
-	  silc_say(client, conn, "%s invite list: %s", channel->channel_name,
-		   invite_list);
+  case SILC_COMMAND_WHOIS:
+    {
+      char buf[1024], *nickname, *username, *realname;
+      int len;
+      uint32 idle, mode;
+      SilcBuffer channels;
+      
+      /* XXX should use irssi routines */
+      
+      if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
+	  status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+	char *tmp;
+	tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+					 3, NULL);
+	if (tmp)
+	  client->ops->say(client, conn, "%s: %s", tmp,
+			   silc_client_command_status_message(status));
 	else
-	  silc_say(client, conn, "%s invite list not set", 
-		   channel->channel_name);
+	  client->ops->say(client, conn, "%s",
+			   silc_client_command_status_message(status));
+	break;
       }
-      break;
+      
+      if (!success)
+	return;
+      
+      (void)va_arg(vp, SilcClientEntry);
+      nickname = va_arg(vp, char *);
+      username = va_arg(vp, char *);
+      realname = va_arg(vp, char *);
+      channels = va_arg(vp, SilcBuffer);
+      mode = va_arg(vp, uint32);
+      idle = va_arg(vp, uint32);
+      
+      memset(buf, 0, sizeof(buf));
+      
+      if (nickname) {
+	len = strlen(nickname);
+	strncat(buf, nickname, len);
+	strncat(buf, " is ", 4);
+      }
+	
+      if (username) {
+	strncat(buf, username, strlen(username));
+      }
+	
+      if (realname) {
+	strncat(buf, " (", 2);
+	strncat(buf, realname, strlen(realname));
+	strncat(buf, ")", 1);
+      }
+      
+      client->ops->say(client, conn, "%s", buf);
+      
+      if (channels) {
+	SilcDList list = silc_channel_payload_parse_list(channels);
+	if (list) {
+	  SilcChannelPayload entry;
+	  
+	  memset(buf, 0, sizeof(buf));
+	  strcat(buf, "on channels: ");
+	  
+	  silc_dlist_start(list);
+	  while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
+	    char *m = silc_client_chumode_char(silc_channel_get_mode(entry));
+	    uint32 name_len;
+	    char *name = silc_channel_get_name(entry, &name_len);
+	    
+	    if (m)
+	      strncat(buf, m, strlen(m));
+	    strncat(buf, name, name_len);
+	    strncat(buf, " ", 1);
+	    silc_free(m);
+	  }
+
+	  client->ops->say(client, conn, "%s", buf);
+	  silc_channel_payload_list_free(list);
+	}
+      }
+      
+      if (mode) {
+	if ((mode & SILC_UMODE_SERVER_OPERATOR) ||
+	    (mode & SILC_UMODE_ROUTER_OPERATOR))
+	  client->ops->say(client, conn, "%s is %s", nickname,
+			   (mode & SILC_UMODE_SERVER_OPERATOR) ?
+			   "Server Operator" :
+			   (mode & SILC_UMODE_ROUTER_OPERATOR) ?
+			   "SILC Operator" : "[Unknown mode]");
+	
+	if (mode & SILC_UMODE_GONE)
+	  client->ops->say(client, conn, "%s is gone", nickname);
+      }
+      
+      if (idle && nickname)
+	client->ops->say(client, conn, "%s has been idle %d %s",
+			 nickname,
+			 idle > 60 ? (idle / 60) : idle,
+			 idle > 60 ? "minutes" : "seconds");
+    }
+    break;
+    
+  case SILC_COMMAND_WHOWAS:
+    {
+      char buf[1024], *nickname, *username, *realname;
+      int len;
+      
+      /* XXX should use irssi routines */
+      
+      if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
+	  status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+	char *tmp;
+	tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+					 3, NULL);
+	if (tmp)
+	  client->ops->say(client, conn, "%s: %s", tmp,
+			   silc_client_command_status_message(status));
+	else
+	  client->ops->say(client, conn, "%s",
+			   silc_client_command_status_message(status));
+	break;
+      }
+      
+      if (!success)
+	return;
+      
+      (void)va_arg(vp, SilcClientEntry);
+      nickname = va_arg(vp, char *);
+      username = va_arg(vp, char *);
+      realname = va_arg(vp, char *);
+      
+      memset(buf, 0, sizeof(buf));
+      
+      if (nickname) {
+	len = strlen(nickname);
+	strncat(buf, nickname, len);
+	strncat(buf, " was ", 5);
+      }
+      
+      if (username) {
+	strncat(buf, username, strlen(nickname));
+      }
+	
+      if (realname) {
+	strncat(buf, " (", 2);
+	strncat(buf, realname, strlen(realname));
+	strncat(buf, ")", 1);
+      }
+      
+      client->ops->say(client, conn, "%s", buf);
+    }
+    break;
+    
+  case SILC_COMMAND_INVITE:
+    {
+      SilcChannelEntry channel;
+      char *invite_list;
+      
+      if (!success)
+	return;
+      
+      /* XXX should use irssi routines */
+      
+      channel = va_arg(vp, SilcChannelEntry);
+      invite_list = va_arg(vp, char *);
+      
+      if (invite_list)
+	silc_say(client, conn, "%s invite list: %s", channel->channel_name,
+		 invite_list);
+      else
+	silc_say(client, conn, "%s invite list not set", 
+		 channel->channel_name);
+    }
+    break;
 
   case SILC_COMMAND_JOIN: 
     {
@@ -888,7 +894,7 @@ silc_failure(SilcClient client, SilcClientConnection conn,
       silc_say_error("Server does not support one of your proposed PKCS");
     if (status == SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION)
       silc_say_error("Server does not support one of your proposed "
-		    "hash function");
+		     "hash function");
     if (status == SILC_SKE_STATUS_UNKNOWN_HMAC)
       silc_say_error("Server does not support one of your proposed HMAC");
     if (status == SILC_SKE_STATUS_INCORRECT_SIGNATURE)
