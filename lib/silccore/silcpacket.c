@@ -368,11 +368,6 @@ void silc_packet_receive_process(SilcSocketConnection sock,
   SilcPacketParserContext *parse_ctx;
   int packetlen, paddedlen, count, mac_len = 0;
 
-  /* We need at least 2 bytes of data to be able to start processing
-     the packet. */
-  if (sock->inbuf->len < 2)
-    return;
-
   if (hmac)
     mac_len = hmac->hash->hash->hash_len;
 
@@ -385,7 +380,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 
     if (packetlen < SILC_PACKET_MIN_LEN) {
       SILC_LOG_DEBUG(("Received invalid packet, dropped"));
-      return;
+      continue;
     }
 
     if (sock->inbuf->len < paddedlen + mac_len) {
