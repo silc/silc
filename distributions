@@ -40,7 +40,7 @@
 # Example:
 #
 # _xyz_SUBDIRS=lib irssi doc includes
-# _xyz_SUBDIRS_lib=$(SUBDIRS)
+# _xyz_SUBDIRS_lib=$(COMMONDIRS)
 # _xyz_DISTLABEL=SILC_DIST_XYZ
 #
 # To prepare the distribution give command ./prepare xyz 1.0.4
@@ -48,14 +48,17 @@
 
 _toolkit_SUBDIRS=lib irssi silc silcd doc includes
 _toolkit_SUBDIRS_lib=$(COMMONDIRS)
+_toolkit_SUBDIRS_doc=$(COMMONDIRS)
 _toolkit_DISTLABEL=SILC_DIST_TOOLKIT
 
 _client_SUBDIRS=lib irssi doc includes
 _client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
+_client_SUBDIRS_doc=$(COMMONDIRS)
 _client_DISTLABEL=SILC_DIST_CLIENT
 
 _server_SUBDIRS=lib silcd doc includes
 _server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf
+_server_SUBDIRS_doc=$(COMMONDIRS)
 _server_DISTLABEL=SILC_DIST_SERVER
 
 DISTRIBUTIONS=toolkit client server
