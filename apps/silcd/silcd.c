@@ -320,6 +320,23 @@ SILC_TASK_CALLBACK(dump_stats)
     fprintf(fdd, "  primary router         : %s\n", 
       silcd->router->server_name ? silcd->router->server_name : "");
 
+  /* Dump socket connections */
+  {
+    int i;
+    SilcSocketConnection s;
+
+    fprintf(fdd, "\nDumping socket connections\n");
+    for (i = 0; i < silcd->config->param.connections_max; i++) {
+      s = silcd->sockets[i];
+      if (!s)
+        continue;
+      fprintf(fdd, "  %d: host %s ip %s port %d type %d flags %ul\n",
+	      s->sock, s->hostname ? s->hostname : "N/A",
+	      s->ip ? s->ip : "N/A", s->port, s->type,
+	      (unsigned int)s->flags);
+    }
+  }
+
   /* Dump lists */
   {
     SilcIDCacheList list = NULL;
