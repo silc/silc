@@ -83,7 +83,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, unsigned int argc,
   unsigned int *argv_lens = NULL, *argv_types = NULL;
   unsigned char *x;
   unsigned int x_len;
-  int i, k, len = 0;
+  int i, k = 0, len = 0;
 
   if (argc) {
     argv = silc_calloc(argc, sizeof(unsigned char *));
