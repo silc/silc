@@ -1010,6 +1010,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
      later when outgoing data is available. */
   SILC_REGISTER_CONNECTION_FOR_IO(sock);
 
+  SILC_LOG_INFO(("Incoming connection from %s (%s)", newsocket->hostname,
+		 newsocket->ip));
+
   port = server->sockets[fd]->port; /* Listenning port */
 
   /* Check whether this connection is denied to connect to us. */
@@ -1019,6 +1022,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
 					  port);
   if (deny) {
     /* The connection is denied */
+    SILC_LOG_INFO(("Connection %s (%s) is denied", 
+                   newsocket->hostname, newsocket->ip));
     silc_server_disconnect_remote(server, newsocket, deny->comment ?
 				  deny->comment :
 				  "Server closed connection: "
@@ -1055,9 +1060,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   }
 
   /* The connection is allowed */
-
-  SILC_LOG_INFO(("Incoming connection from %s (%s)", newsocket->hostname,
-		 newsocket->ip));
 
   /* Allocate internal context for key exchange protocol. This is
      sent as context for the protocol. */
