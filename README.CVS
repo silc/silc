@@ -3,25 +3,12 @@ Anonymous CVS Access
 
 Anonymous CVS access is now available to SILC CVS repository. The
 repository includes everything related to SILC project; source codes,
-documentation and even these web pages. The CVS access and hosting for the
-public SILC CVS mirror is kindly provided by SourceForge.  The actual CVS
-repository that is used in the development resides in silc.pspt.fi and is
-mirrored by SourceForge.
+documentation and even these web pages.
 
 Also note that this is the closest to real time development you can get
 thus you cannot expect that the source tree would work or even compile.
 While it is our intention that the trunk would always at least compile
-there might be situations when it will not. The CVS repository is mirrored
-hourly by the SourceForge.
-
-
-Browsing the Source Tree
-========================
-
-If you want to browse the source tree using web browser before checking
-out the tree with CVS use following link:
-
-http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/?cvsroot=silc
+there might be situations when it will not.
 
 
 Howto Checkout The Source Tree
@@ -32,28 +19,28 @@ There are no password restrictions in the SILC anonymous CVS repository.
 
 For those who are using sh/ksh/bash the check out is done as follows:
 
-export CVSROOT=:pserver:anonymous@cvs.silc.sourceforge.net:/cvsroot/silc
+export CVSROOT=:pserver:silc@silc.pspt.fi:/storage/silc/CVS
 cvs login
 cvs co silc
 
 For those who are using csh/tcsh the check out is done as follows:
 
-setenv CVSROOT :pserver:anonymous@cvs.silc.sourceforge.net:/cvsroot/silc
+setenv CVSROOT :pserver:silc@silc.pspt.fi:/storage/silc/CVS
 cvs login
 cvs co silc
 
 If you don't want to set $CVSROOT environment variable you can set the
 path to the cvs as command line options:
 
-cvs -d:pserver:anonymous@cvs.silc.sourceforge.net:/cvsroot/silc login
-cvs -d:pserver:anonymous@cvs.silc.sourceforge.net:/cvsroot/silc co silc
+cvs -d:pserver:silc@silc.pspt.fi:/storage/silc/CVS login
+cvs -d:pserver:silc@silc.pspt.fi:/storage/silc/CVS co silc
 
 What ever method you decide to use, after you have done cvs login you will
 be prompted for password:
 
-	CVS password:
+	CVS password: silc
 
-There is no password so you can press enter when prompted.
+Type the password "silc" and press Enter.
 
 The actual SILC source tree is checked out using the cvs co silc command,
 described above. This command will fetch the source tree and save it into
