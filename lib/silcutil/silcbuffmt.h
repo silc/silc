@@ -76,7 +76,6 @@ int silc_buffer_format(SilcBuffer dst, ...);
  *                               SILC_STR_INT(&intval),
  *                               SILC_STR_CHAR(&charval),
  *                               SILC_STR_INT(&intval2),
- *                               SILC_STR_SHORT(&str_len),
  *                               SILC_STR_UI16_NSTRING_ALLOC(&str, &str_len),
  *                               SILC_STR_END);
  *    if (ret < 0)
