@@ -113,10 +113,10 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
 /* Assembles a new packet to be ready for send out. */
 
 bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
-                          SilcCipher cipher, SilcHmac hmac,
-                          SilcSocketConnection sock,
-                          const unsigned char *data, SilcUInt32 data_len,
-                          const SilcBuffer assembled_packet)
+			  SilcCipher cipher, SilcHmac hmac,
+			  SilcSocketConnection sock,
+			  const unsigned char *data, SilcUInt32 data_len,
+			  const SilcBuffer assembled_packet)
 { 
   unsigned char tmppad[SILC_PACKET_MAX_PADLEN];   
   int block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
@@ -132,7 +132,7 @@ bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
      padding. */
   if (!packet->truelen) {
     data_len = SILC_PACKET_DATALEN(data_len, SILC_PACKET_HEADER_LEN +
-                                   packet->src_id_len + packet->dst_id_len);
+				   packet->src_id_len + packet->dst_id_len);
     packet->truelen = data_len + SILC_PACKET_HEADER_LEN + 
       packet->src_id_len + packet->dst_id_len;
   }
@@ -141,8 +141,8 @@ bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
      the data that will be encrypted. */
   if (!packet->padlen) {
     packet->padlen = (packet->long_pad ?
-                      SILC_PACKET_PADLEN_MAX(packet->truelen) :
-                      SILC_PACKET_PADLEN(packet->truelen, block_len));
+		      SILC_PACKET_PADLEN_MAX(packet->truelen) :
+		      SILC_PACKET_PADLEN(packet->truelen, block_len));
   }
 
   /* Now prepare the outgoing data buffer for packet sending and start
@@ -150,43 +150,43 @@ bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
 
   /* Return pointer to the assembled packet */
   if (!silc_packet_send_prepare(sock, packet->truelen - data_len,
-                                packet->padlen, data_len, hmac,
-                                assembled_packet))
+				packet->padlen, data_len, hmac,
+				assembled_packet))
     return FALSE;
 
   /* Get random padding */
   if (rng)
     for (i = 0; i < packet->padlen; i++) tmppad[i] =
-                                           silc_rng_get_byte_fast(rng);
+					   silc_rng_get_byte_fast(rng);
   else
     for (i = 0; i < packet->padlen; i++) tmppad[i] =
-                                           silc_rng_global_get_byte_fast();
+					   silc_rng_global_get_byte_fast();
 
   /* Create the packet. This creates the SILC header, adds padding, and
      the actual packet data. */
   ret =
     silc_buffer_format(assembled_packet,
-                       SILC_STR_UI_SHORT(packet->truelen),
-                       SILC_STR_UI_CHAR(packet->flags),
-                       SILC_STR_UI_CHAR(packet->type),
-                       SILC_STR_UI_CHAR(packet->padlen),
-                       SILC_STR_UI_CHAR(0),
-                       SILC_STR_UI_CHAR(packet->src_id_len),
-                       SILC_STR_UI_CHAR(packet->dst_id_len),
-                       SILC_STR_UI_CHAR(packet->src_id_type),
-                       SILC_STR_UI_XNSTRING(packet->src_id,
-                                            packet->src_id_len),
-                       SILC_STR_UI_CHAR(packet->dst_id_type),
-                       SILC_STR_UI_XNSTRING(packet->dst_id,
-                                            packet->dst_id_len),
-                       SILC_STR_UI_XNSTRING(tmppad, packet->padlen),
-                       SILC_STR_UI_XNSTRING(data, data_len),
-                       SILC_STR_END);
+		       SILC_STR_UI_SHORT(packet->truelen),
+		       SILC_STR_UI_CHAR(packet->flags),
+		       SILC_STR_UI_CHAR(packet->type),
+		       SILC_STR_UI_CHAR(packet->padlen),
+		       SILC_STR_UI_CHAR(0),
+		       SILC_STR_UI_CHAR(packet->src_id_len),
+		       SILC_STR_UI_CHAR(packet->dst_id_len),
+		       SILC_STR_UI_CHAR(packet->src_id_type),
+		       SILC_STR_UI_XNSTRING(packet->src_id,
+					    packet->src_id_len),
+		       SILC_STR_UI_CHAR(packet->dst_id_type),
+		       SILC_STR_UI_XNSTRING(packet->dst_id,
+					    packet->dst_id_len),
+		       SILC_STR_UI_XNSTRING(tmppad, packet->padlen),
+		       SILC_STR_UI_XNSTRING(data, data_len),
+		       SILC_STR_END);
   if (ret < 0)
     return FALSE;
 
   SILC_LOG_HEXDUMP(("Assembled packet, len %d", assembled_packet->len),
-                   assembled_packet->data, assembled_packet->len);
+		   assembled_packet->data, assembled_packet->len);
 
   return TRUE;
 }
@@ -198,11 +198,11 @@ bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
    pointer to that buffer into the `packet'. */
 
 bool silc_packet_send_prepare(SilcSocketConnection sock,
-                              SilcUInt32 header_len,
-                              SilcUInt32 pad_len,
-                              SilcUInt32 data_len,
-                              SilcHmac hmac,
-                              const SilcBuffer packet)
+			      SilcUInt32 header_len,
+			      SilcUInt32 pad_len,
+			      SilcUInt32 data_len,
+			      SilcHmac hmac,
+			      const SilcBuffer packet)
 { 
   int totlen;
   unsigned char *oldptr;
@@ -219,7 +219,7 @@ bool silc_packet_send_prepare(SilcSocketConnection sock,
     SILC_LOG_DEBUG(("Allocating outgoing data buffer"));
 
     sock->outbuf = silc_buffer_alloc(totlen > SILC_PACKET_DEFAULT_SIZE ?
-                                     totlen : SILC_PACKET_DEFAULT_SIZE);
+				     totlen : SILC_PACKET_DEFAULT_SIZE);
     if (!sock->outbuf)
       return FALSE;
   } else {
@@ -233,7 +233,7 @@ bool silc_packet_send_prepare(SilcSocketConnection sock,
   if ((sock->outbuf->end - sock->outbuf->tail) < (totlen + mac_len)) {
     SILC_LOG_DEBUG(("Reallocating outgoing data buffer"));
     sock->outbuf = silc_buffer_realloc(sock->outbuf,
-                                       sock->outbuf->truelen + (totlen * 2));
+				       sock->outbuf->truelen + (totlen * 2));
     if (!sock->outbuf)
       return FALSE;
   }

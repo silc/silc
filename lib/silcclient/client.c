@@ -768,9 +768,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
     if (SILC_IS_DISCONNECTED(sock))
       return;
 
-    if (sock->outbuf->data - sock->outbuf->head)
-      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
-
     ret = silc_packet_send(sock, TRUE);
 
     /* If returned -2 could not write to connection now, will do

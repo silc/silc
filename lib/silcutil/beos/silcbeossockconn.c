@@ -52,6 +52,13 @@ int silc_socket_write(SilcSocketConnection sock)
       return -1;
     }
 
+    if (ret < src->len) {
+      SILC_LOG_DEBUG(("Wrote data %d of %d bytes, will write rest later",
+		      ret, src->len));
+      silc_buffer_pull(src, ret);
+      return -2;
+    }
+
     silc_buffer_pull(src, ret);
   }
 

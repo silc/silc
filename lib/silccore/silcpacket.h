@@ -453,10 +453,10 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
  *
  ***/
 bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
-                          SilcCipher cipher, SilcHmac hmac,
-                          SilcSocketConnection sock,
-                          const unsigned char *data, SilcUInt32 data_len,
-                          const SilcBuffer assembled_packet);
+			  SilcCipher cipher, SilcHmac hmac,
+			  SilcSocketConnection sock,
+			  const unsigned char *data, SilcUInt32 data_len,
+			  const SilcBuffer assembled_packet);
 
 /****f* silccore/SilcPacketAPI/silc_packet_send_prepare
  *
@@ -485,11 +485,11 @@ bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
  *
  ***/
 bool silc_packet_send_prepare(SilcSocketConnection sock,
-                              SilcUInt32 header_len,
-                              SilcUInt32 pad_len,
-                              SilcUInt32 data_len,
-                              SilcHmac hmac,
-                              const SilcBuffer packet);
+			      SilcUInt32 header_len,
+			      SilcUInt32 pad_len,
+			      SilcUInt32 data_len,
+			      SilcHmac hmac,
+			      const SilcBuffer packet);
 
 /****f* silccore/SilcPacketAPI/silc_packet_receive
  *

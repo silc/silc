@@ -150,7 +150,7 @@ char *silc_get_username()
   }
   
   return strdup(logname);
-}                          
+}
 
 /* Returns the real name of ther user. */
 

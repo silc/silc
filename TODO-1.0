@@ -159,10 +159,8 @@ least could be done.
 
  o EPOC specific additions/changes required:
 
-	o In lib/silccore/silcpacket.c global RNG is used.  Change the
-	  interface for that function.  The PKCS#1 also calls global RNG
-	  (even though it is not used currently in SILC, the interface
-	  allows its use).
+	o The PKCS#1 also calls global RNG (even though it is not used 
+	  currently in SILC, the interface allows its use).
 
 	o Something needs to be thought to the logging globals as well, 
 	  like silc_debug etc.  They won't work on EPOC.  Perhaps logging

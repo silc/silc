@@ -1553,9 +1553,6 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 
     server->stat.packets_sent++;
 
-    if (sock->outbuf->data - sock->outbuf->head)
-     silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
-
     /* Send the packet */
     ret = silc_packet_send(sock, TRUE);
 
