@@ -119,7 +119,17 @@ Following directories currently exist in SILC source tree.
   lib/silcutil/
 
         The SILC Utility library.  Provides various utility functions
-        for the appliations.
+        for the applications.
+
+  lib/silcutil/unix/
+
+        The SILC Utility library.  Provides various Unix specific utility
+        functions for the applications.
+
+  lib/silcutil/win32/
+
+        The SILC Utility library.  Provides various WIN32 specific utility
+        functions for the applications.
 
   public_html/
 
