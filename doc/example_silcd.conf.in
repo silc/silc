@@ -32,7 +32,7 @@ General {
 	# over public key authentication in these cases.
 	#prefer_passphrase_auth = true;
 
-	# Set this to true if you the server to require fully qualified
+	# Set this to true if the server should require fully qualified
 	# domain names (FQDN) for incoming connections.
 	#require_reverse_lookup = false;	
 
@@ -46,7 +46,8 @@ General {
 	# interval grows when reconnect count grows.  Next example will
 	# attempt to reconnect after 10 seconds of disconnect, and the
 	# interval grows up to 600 seconds or until 7 times was attempted
-	# to reconnect.
+	# to reconnect.  These settings has effect only when connecting
+	# as initiator.
 	#
 	# reconnect_count        - how many times reconnect is attempted
 	# reconnect_interval	 - how often reconnect it performed (seconds)
@@ -127,6 +128,7 @@ ServerInfo {
 #
 # This section is used to set various logging files, their paths, maximum
 # sizes and logging options.
+#
 # There are only four defined channels allowed for defining (see below).
 # The log channels have an importance value, and most important channels
 # are redirected on the less important ones, thus setting a valid logging
@@ -192,7 +194,8 @@ ConnectionParam {
 	# interval grows when reconnect count grows.  Next example will
 	# attempt to reconnect after 10 seconds of disconnect, and the
 	# interval grows up to 600 seconds or until 7 times was attempted
-	# to reconnect.
+	# to reconnect.  These settings has effect only when connecting
+	# as initiator.
 	#
 	# reconnect_count        - how many times reconnect is attempted
 	# reconnect_interval	 - how often reconnect it performed (seconds)
