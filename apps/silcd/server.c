@@ -1917,10 +1917,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  silc_free(sock->user_data);
 	  server->stat.auth_failures++;
 
-	  /* From here on, wait 10 seconds for the backup router to appear. */
+	  /* From here on, wait 20 seconds for the backup router to appear. */
 	  silc_schedule_task_add(server->schedule, 0,
 				 silc_server_backup_router_wait,
-				 (void *)server, 10, 0,
+				 (void *)server, 20, 0,
 				 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 	  goto out;
 	}
@@ -2095,10 +2095,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  silc_free(sock->user_data);
 	  server->stat.auth_failures++;
 
-	  /* From here on, wait 10 seconds for the backup router to appear. */
+	  /* From here on, wait 20 seconds for the backup router to appear. */
 	  silc_schedule_task_add(server->schedule, 0,
 				 silc_server_backup_router_wait,
-				 (void *)server, 10, 0,
+				 (void *)server, 20, 0,
 				 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 	  goto out;
 	}
