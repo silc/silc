@@ -89,6 +89,6 @@ include_HEADERS =	\
 	silctypes.h
 endif
 
-EXTRA_DIST = *.h
+EXTRA_DIST = *.h tests
 
 include $(top_srcdir)/Makefile.defines.in
