@@ -1,3 +1,13 @@
+Mon Oct  9 20:57:02 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed SILC_COMMAND_IDENTIFY in protocol specification to 
+	  accept searching by Client ID as well.
+
+	* Added support for LEAVE and SIGNOFF notify types in client library.
+
+	* Added silc_id_payload_parse_data into lib/silccore/silcpayload.[ch]
+	  to parse ID Payload from raw data.
+
 Sun Oct  8 19:33:08 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added flags parameter into silc_ske_assemble_security_properties

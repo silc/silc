@@ -1840,7 +1840,8 @@ List of all defined commands in SILC follows.
    3    SILC_COMMAND_IDENTIFY
 
         Max Arguments:  2
-            Arguments:  (1) <nickname>[@<server>]  (2) [<count>]
+            Arguments:  (1) <nickname>[@<server>]  (2) [<Client ID>]
+                        (3) [<count>]
 
         Identify.  Identify command is almost analogous to WHOIS command,
         except that it does not return as much information.  Only relevant
@@ -1853,6 +1854,10 @@ List of all defined commands in SILC follows.
         down the number of accepted results.  If this is not defined there 
         are no limit of accepted results.  The query may also be narrowed 
         down by defining the server name of the nickname.
+
+        It is also possible to search the user by Client ID.  If <Client ID>
+        is provided server must use it as the search value instead of
+        the <nickname>.
 
         To prevent miss-use of this service wildcards in the nickname
         or in the servername are not permitted.  It is not allowed
