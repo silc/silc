@@ -43,7 +43,7 @@ typedef struct {
   void *id;			    /* ID */
   SilcIdType id_type;		    /* ID type */
   unsigned int index : 15;	    /* Index to IDs */
-  unsigned int type : 2;   	    /* 0 = take from query->ids, 0 = take
+  unsigned int type : 2;   	    /* 0 = take from query->ids, 1 = take
 				       from args, 2 = no args in error. */
   unsigned int error : 7;	    /* The actual error (SilcStatus) */
 } *SilcServerQueryError;
@@ -1753,8 +1753,13 @@ void silc_server_query_send_reply(SilcServer server,
     }
   }
 
-  if (!sent_reply)
+  if (!sent_reply) {
     SILC_LOG_ERROR(("BUG: Query did not send anything"));
+    SILC_LOG_ERROR(("BUG: Sending %d clients", clients_count));
+    SILC_LOG_ERROR(("BUG: Sending %d servers", servers_count));
+    SILC_LOG_ERROR(("BUG: Sending %d channels", channels_count));
+    SILC_LOG_ERROR(("BUG: Sending %d errors", query->errors_count));
+  }
 
   /* Cleanup */
   silc_server_query_free(query);

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,6 +42,10 @@ int silc_server_packet_send_real(SilcServer server,
   ret = silc_packet_send(sock, FALSE);
   if (ret != -2) {
     if (ret == -1) {
+      SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
+      SILC_UNSET_OUTBUF_PENDING(sock);
+      silc_buffer_clear(sock->outbuf);
+
       SILC_LOG_ERROR(("Error sending packet to connection "
 		      "%s:%d [%s]", sock->hostname, sock->port,
 		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
@@ -2065,15 +2069,18 @@ void silc_server_packet_queue_purge(SilcServer server,
       if (sock->outbuf && sock->outbuf->len > 0) {
 	/* Couldn't send all data, put the queue back up, we'll send
 	   rest later. */
+	SILC_LOG_DEBUG(("Could not purge immediately, sending rest later"));
 	SILC_SET_CONNECTION_FOR_OUTPUT(server->schedule, sock->sock);
 	SILC_SET_OUTBUF_PENDING(sock);
 	return;
       }
+    } else if (ret == -1) {
+      SILC_LOG_ERROR(("Error purging packet queue, packets dropped"));
     }
 
     /* Purged all data */
-    SILC_UNSET_OUTBUF_PENDING(sock);
     SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
+    SILC_UNSET_OUTBUF_PENDING(sock);
     silc_buffer_clear(sock->outbuf);
   }
 }

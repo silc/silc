@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,8 +56,12 @@ int silc_packet_send(SilcSocketConnection sock, bool force_send)
     ret = silc_socket_write(sock);
 
     if (ret == -1) {
-      SILC_LOG_ERROR(("Error sending packet, dropped: %s",
-                      strerror(errno)));
+      SILC_LOG_ERROR(("Error sending packet to %s:%d [%s], dropped: %s",
+		      sock->hostname ? sock->hostname : "", sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router"), strerror(errno)));
     }
     if (ret != -2)
       return ret;

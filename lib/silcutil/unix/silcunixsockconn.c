@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ int silc_socket_write(SilcSocketConnection sock)
   SilcBuffer src = sock->outbuf;
 
   if (!src)
-    return -2;
+    return -1;
   if (SILC_IS_DISABLED(sock))
     return -1;
 
