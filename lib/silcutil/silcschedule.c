@@ -511,3 +511,48 @@ void silc_schedule()
   /* Start the scheduler loop */
   while (silc_schedule_one(-1)) ;
 }
+
+/* Run normal select() for `fd' and return after file descriptor changes
+   status or timeout expires. The `event' is either SILC_TASK_READ or
+   SILC_TASK_WRITE. */
+
+int silc_schedule_with_fd(int fd, unsigned int event,
+			  unsigned long usecs, unsigned long secs)
+{
+  struct timeval *tp = NULL, timeout;
+  fd_set *ip = NULL, in;
+  fd_set *op = NULL, out;
+  int ret;
+
+  if (usecs + secs > 0) {
+    timeout.tv_sec = secs;
+    timeout.tv_usec = usecs;
+    tp = &timeout;
+  }
+
+  if (event == SILC_TASK_READ) {
+    FD_ZERO(&in);
+    FD_SET(fd, &in);
+    ip = &in;
+  }
+
+  if (event == SILC_TASK_WRITE) {
+    FD_ZERO(&out);
+    FD_SET(fd, &out);
+    op = &out;
+  }
+
+  ret = select(fd + 1, ip, op, NULL, tp);
+  switch (ret) {
+  case -1:
+    return FALSE;
+    break;
+  case 0:
+    return FALSE;
+    break;
+  default:
+    break;
+  }
+
+  return TRUE;
+}
