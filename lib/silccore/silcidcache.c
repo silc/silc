@@ -85,7 +85,7 @@ struct SilcIDCacheStruct {
 
 */
 struct SilcIDCacheListStruct {
-  SilcIDCacheEntry cache[64];
+  SilcIDCacheEntry cache[128];
   SilcIDCacheEntry *cache_dyn;
   SilcUInt32 cache_dyn_count;
   SilcUInt32 cache_count;
