@@ -62,6 +62,12 @@ S: Laserkatu 4 A 4
 S: 53850 Lappeenranta
 S: Finland
 
+N: Ville Räsänen
+E: ville.rasanen@iki.fi
+D: Client side of STATS-command 
+D: Some ROBOdoc formatting
+D: Bughunting
+
 N: Lubomir Sedlacik
 E: salo@Xtrmntr.org
 W: http://Xtrmntr.org
