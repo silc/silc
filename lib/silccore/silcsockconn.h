@@ -86,6 +86,11 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
        indicate several different status that can affect the use of the
        socket object.
 
+   int users
+
+       Reference counter. When allocated it is set to one (1) and it won't
+       be freed until it hits zero (0).
+
    char *hostname
    char *ip
    unsigned short port
@@ -112,6 +117,7 @@ struct SilcSocketConnectionStruct {
   void *user_data;
   SilcProtocol protocol;
   unsigned int flags;
+  int users;
 
   char *hostname;
   char *ip;
@@ -160,6 +166,7 @@ struct SilcSocketConnectionHB {
 void silc_socket_alloc(int sock, SilcSocketType type, void *user_data,
 		       SilcSocketConnection *new_socket);
 void silc_socket_free(SilcSocketConnection sock);
+SilcSocketConnection silc_socket_dup(SilcSocketConnection sock);
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
 			       unsigned long heartbeat,
 			       void *hb_context,

@@ -39,13 +39,17 @@ void silc_socket_alloc(int sock, SilcSocketType type, void *user_data,
   (*new_socket)->flags = 0;
   (*new_socket)->inbuf = NULL;
   (*new_socket)->outbuf = NULL;
+  (*new_socket)->users++;
 }
 
 /* Free's the Socket connection object. */
 
 void silc_socket_free(SilcSocketConnection sock)
 {
-  if (sock) {
+  sock->users--;
+  SILC_LOG_DEBUG(("Socket %p refcnt %d->%d", sock, sock->users + 1,
+		  sock->users));
+  if (sock->users < 1) {
     silc_buffer_free(sock->inbuf);
     silc_buffer_free(sock->outbuf);
     if (sock->hb) {
@@ -57,6 +61,16 @@ void silc_socket_free(SilcSocketConnection sock)
     memset(sock, 'F', sizeof(*sock));
     silc_free(sock);
   }
+}
+
+/* Increase the reference counter. */
+
+SilcSocketConnection silc_socket_dup(SilcSocketConnection sock)
+{
+  sock->users++;
+  SILC_LOG_DEBUG(("Socket %p refcnt %d->%d", sock, sock->users - 1,
+		  sock->users));
+  return sock;
 }
 
 /* Internal timeout callback to perform heartbeat */
