@@ -12,6 +12,15 @@ Sun Nov  3 17:59:15 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  was missing altogether.  Affected file silcd/command_reply.c.
 	  Bug #44.
 
+Sun Nov  3 00:42:05 EET 2002  Mika Boström <bostik@lut.fi>
+
+	* Added man-pages for silc(1), silcd(8) and silcd.conf(5).
+	  Included yodl sources for each of these. Also modified
+	  Makefile.am prototype to install these files to proper
+	  locations. Updated CREDITS. Affected file Makefile.am.pre,
+	  new files doc/*.yo, doc/silc.1, doc/silcd.conf.5,
+	  doc/silcd.8.
+
 Sat Nov  2 21:26:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for encrypted private key files.  Now

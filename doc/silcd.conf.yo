@@ -1,0 +1,462 @@
+manpage(SILCD_CONF) (5) (November 2 2002) (silc-server-0.9.7.1) (silc-server)
+
+
+manpagename(silcd.conf) (format of configuration file for silcd)
+
+manpagesection(CONFIGURATION FILE)
+bf(Silcd) reads its configuration from /etc/silc/silcd.conf (or the file
+specified with bf(-f)). The file contains sections, subsections and key-value
+pairs. Each section or subsection is bound with a starting em({) and ending
+em(}). Keys and values are of the format 'em(KEY)=em(VALUE);'. All statements
+as well as sections must be terminated with a ';'.
+
+Mandatory section in configuration file is em(ServerInfo).  Other sections
+are optional but recommended.  If em(General) section is defined it must
+be defined before the em(ConnectionParams) section.  On the other hand,
+the em(ConnectionParams) section must be defined before em(Client),
+em(ServerConnection) and/or em(RouterConnection) sections.  Other sections
+are be in free order in the configuration file.
+
+nsect(SECTION: General)
+
+em(General) section contains global settings for the silcd.
+
+bf(module_path)
+quote(Defines where SIM modules are located. If definition is omitted,
+built-in modules will be used. Also, if a module can not be located, a built-in
+module will be used in its place. The argument is a path to the directory the
+modules are in, for example bf("/usr/local/silc/modules").)
+
+bf(prefer_passphrase_auth)
+quote(If both public key and passphrase authentication are set for a 
+connection, public key authentication is by default preferred. Setting this 
+value to em(true) causes silcd to prefer passphrase authentication in these
+cases.)
+
+bf(require_reverse_lookup)
+quote(Set this value to em(true) if all connecting hosts must have a fully
+qualified domain name (FQDN). If set to true, a host without FQDN is not
+allowed to connect to server.)
+
+bf(connections_max)
+quote(Maximum number of incoming connections to this server. Any further
+connections are refused.)
+
+bf(connections_max_per_host)
+quote(Maximum number of incoming connections from any single host. This
+setting can be overridden on a connection-specific basis with 
+em(ConnectionParams).)
+
+bf(version_protocol)
+quote(Defines the minimum required version of protocol to allow connecting
+to server. A client or server using this version of protocol or newer is
+allowed to connect, one using anything older will be rejected. Leaving unset
+allows all versions to connect. This can be overridden with
+em(ConnectionParams).)
+
+bf(version_software)
+quote(Defines the minimum required version of software to allow connecting
+to server. A client or server that is of this version or newer is allowed
+to connect, one using anything older will be rejected. Leaving unset allows
+all versions to connect.  This can be overridden with em(ConnectionParams).)
+
+bf(version_software_vendor)
+quote(Defines the allowed software vendor string that is required to connect.
+Usually this is either a build number or special client tag. Using this
+requirement is not encouraged unless the server is in very limited use.
+Leaving unset allows all versions regardless of their vendor to connect.
+Can be overridden with em(ConnectionParams).)
+
+bf(key_exchange_rekey)
+quote(Defines the interval, in seconds, how often the session key will be
+regenerated. This setting only applies to the connection initiator, as rekey
+is always performed by the initiating party. Setting has effect only when
+the server acts as an initiator, and can be overridden with 
+em(ConnectionParams).)
+
+bf(key_exchange_pfs)
+quote(Boolean value to determine, whether key-exchange is performed with
+Perfect Forward Secrecy (PFS) or without. If set to em(true), the rekey
+process will be somewhat slower, but more secure since the key is 
+entirely regenerated. Can be overridden with em(ConnectionParams).)
+
+bf(key_exchange_timeout)
+quote(Key exchange timeout in seconds. If the key exchange is not completed
+within this time, the remote connection will be closed.)
+
+bf(conn_auth_timeout)
+quote(Connection authentication timeout in seconds. If the connection
+authentication is not completed within this time, the remote connection
+will be closed.)
+
+bf(channel_rekey_secs)
+quote(Seconds, how often channel key will be regenerated. Note that channel
+key is regenerated each time someone joins or leaves the channel. This is
+the maximum time any channel can have the same key.)
+
+bf(detach_disabled)
+quote(Boolean value controlling, whether clients are denied to use DETACH
+command. Default value is false (DETACH is allowed).)
+
+bf(detach_timeout)
+quote(Time in seconds how long detached sessions will be available. By
+default, detached sessions do not expire and as such, are persistent as long
+as the server is running. If DETACH command is allowed, this value should
+be set as well.)
+
+bf(qos)
+quote(Boolean value controlling, whether Quality of Service settings are
+enabled. Default setting is false. NOTE: If you enable QoS in general section,
+it applies to every connection the server has, including server connections.
+This setting can be overridden with em(ConnectionParams) and in case of
+server connections, it SHOULD BE overridden (server connections should not
+use QoS).)
+
+bf(qos_rate_limit)
+quote(Limits read operations per second to given amount. Do note that one read
+operation may read several SILC packets, so this setting does not
+automatically correspond to amount of messages transmitted or accepted.)
+
+bf(qos_bytes_limit)
+quote(Limits incoming SILC data to the specified bytes per second.)
+
+bf(qos_limit_sec)
+quote(This value defines the timeout, in seconds, the delay for received data
+in case it was left in a QoS queue.)
+
+bf(qos_limit_usec)
+quote(This value defines, in microseconds, the delay received data for received
+data in case it was left in a QoS queue.)
+
+nsect(SECTION: ServerInfo)
+
+em(ServerInfo) contains values for bound interfaces and administrative info.
+
+bf(hostname)
+quote(Server's name (FQDN).)
+
+bf(ServerType)
+quote(This is a descriptive text field, usually telling what the server and
+its purpose are.)
+
+bf(Location)
+quote(Descriptive field of server's geographic location.)
+
+bf(Admin)
+quote(Administrator's full name.)
+
+bf(AdminEmail)
+quote(Administrator's email address.)
+
+bf(User)
+quote(The name of the user account silcd will be running on. This must be an
+existing user. Silcd needs to executed as root; after binding the port it
+will drop root privileges and use the account given here.)
+
+bf(Group)
+quote(The name of the group silcd will be running on. This must be an existing
+group. Silcd needs to be executed as root; after binding the port it will drop
+root privileges and use the group given here.)
+
+bf(PublicKey)
+quote(Full path to server's public key file.)
+
+bf(PrivateKey)
+quote(Full path to server's private key file.)
+
+bf(MotdFile)
+quote(Full path to MOTD (Message Of The Day) file, a text file that will be
+displayed to each client connection.)
+
+bf(PidFile)
+quote(Full path to file where silcd will write its PID.)
+
+nsubsect(SUBSECTION: Primary)
+
+This is the primary listener info. Each server can have no more than one em(Primary)
+section.
+
+bf(ip)
+quote(Specifies the address silcd is listening on.)
+
+bf(port)
+quote(Specifies the port silcd is listening on.)
+
+nsubsect(SUBSECTION: Secondary)
+
+This is a secondary listener info. A server may have any amount of
+em(Secondary) listener settings. These are needed only if silcd needs
+to listen on several interfaces. em(Secondary) subsections have the same
+information that em(Primary) does.
+
+nsect(SECTION: Logging)
+
+This section is used to set up various log files; their paths, maximum
+sizes and individual logging options.
+
+There are four defined logging channels. The log channels have an
+importance value, and more important channels are always redirected to the
+less important ones. Setting a valid logging file for em(Info) will ensure
+logging for all channels, whereas a setting for em(Errors) would only ensure
+logging for em(Errors) and em(Fatals).
+
+bf(Timestamp)
+quote(A boolean value that dictates whether log lines will have timestamps
+prefixed. In general, this is a good idea. You might want to disable this
+if you are running silcd under some special logging daemon, such as
+daemontools.)
+
+bf(QuickLogs)
+quote(A boolean value that determines how often log files are updated. Setting
+this to em(true) makes silcd log in real-time. Setting this to em(false) makes
+silcd write to logs every em(FlushDelay) seconds. Real-time logging causes a
+bit more CPU and HDD usage but reduces memory consumption.)
+
+bf(FlushDelay)
+quote(Time in seconds, how often logs are flushed to logfiles. This setting
+has effect only if em(QuickLogs) is disabled.)
+
+nsubsect(SUBSECTION: Info)
+nsubsect(SUBSECTION: Warnings)
+nsubsect(SUBSECTION: Errors)
+nsubsect(SUBSECTION: Fatals)
+Each of these subsections has the same attributes, em(File) and em(Size).
+Different levels of problems are logged to their respective channels
+(em(Info), em(Warnings), em(Errors), em(Fatals)), depending on their need 
+of attention.
+
+bf(File)
+quote(Full path to log file.)
+
+bf(Size)
+quote(Limit the size the log file is allowed to grow to. Any further messages
+to this file cause the oldest lines to be removed in order to keep the file
+size within given limit.)
+
+nsect(SECTION: ConnectionParams)
+
+This section defines connection parameters. Each connection may have its own
+set of em(ConnectionParams) but having one is in no way mandatory. If no 
+separate parameters have been assigned, the defaults and the ones  from 
+em(General) section will be used. A silcd configuration may have any number of
+em(ConnectionParams) sections.
+
+bf(name)
+quote(This is a unique name that separates bf(this) particular 
+em(ConnectionParams) section from all the others. It is also the name with 
+which settings are referred to a given set of parameters. This field is 
+mandatory.)
+
+bf(connections_max)
+quote(Limits how many concurrent connections are allowed. Any further 
+connections are simply refused. Note that this setting can not override the
+figure given in em(General) section.)
+
+bf(connections_max_per_host)
+quote(Maximum number of connections allowed from any single host. If this
+parameter is set for a block controlling server connections, it is highly
+suggested to use a value of one (1).)
+
+bf(version_protocol)
+quote(Exactly the same as in em(General) section.)
+
+bf(version_software)
+quote(Exactly the same as in em(General) section.)
+
+bf(version_software_vendor)
+quote(Exactly the same as in em(General) section.)
+
+bf(keepalive_secs)
+quote(How often (seconds) to send HEARTBEAT packets to connected clients.)
+
+bf(reconnect_count)
+quote(When connection is lost, how many times a reconnection is tried.)
+
+bf(reconnect_interval)
+quote(How often, in seconds, a reconnection is attempted.)
+
+bf(reconnect_interval_max)
+quote(Reconnection time is lengthened each time an unsuccessful attempt
+occurs. This value defines the maximum interval to which the delay may
+be prolonged.)
+
+bf(reconnect_keep_trying)
+quote(Boolean value controlling whether server eventually gives up trying
+to reconnect. If set to em(false), server will give up once em(reconnect_count)
+is reached or even at maximum interval, no connection is established.)
+
+bf(key_exchange_rekey)
+quote(Exactly the same as in em(General) section.)
+
+bf(key_exchange_pfs)
+quote(Exactly the same as in em(General) section.)
+
+bf(anonymous)
+quote(This boolean setting has meaning only to client connections. If set to
+em(true), client connections using this em(ConnectionParams) block will have 
+their username and host scrambled. The client will also have an anonymous mode
+set to it.)
+
+bf(qos)
+quote(Exactly the same as in em(General) section  NOTE: For server
+connection this should be set to em(false) value.)
+
+bf(qos_rate_limit)
+quote(Exactly the same as in em(General) section.)
+
+bf(qos_bytes_limit)
+quote(Exactly the same as in em(General) section.)
+
+bf(qos_limit_sec)
+quote(Exactly the same as in em(General) section.)
+
+bf(qos_limit_usec)
+quote(Exactly the same as in em(General) section.)
+
+nsect(SECTION: Client)
+
+This section defines how incoming client connections are handled. There can
+be several em(Client) sections, each with their own requirements. A silcd admin
+could for example require that connections from certain IP-address space must
+supply a connection password.
+
+bf(Host)
+quote(An address or wildcarded set of addresses, either in numeric IP-address
+fashion or as hostnames. For example em("10.1.*") or 
+em("*.mydomain.domain.org").)
+
+bf(Passphrase)
+quote(The required passphrase to allow client connection.)
+
+bf(PublicKey)
+quote(The path to a file containing the client's public key. There can be any
+number of em(PublicKey) statements in one em(Client) section. Matching any of
+them will do.)
+
+bf(Params)
+quote(Name of client connection parameters.)
+
+nsect(SECTION: ServerConnection)
+
+This section defines a configured server connection. A regular SILC
+server does not need one at all. If this block exists, it means that the
+server is a SILC router. There must be one em(ServerConnection) for each
+SILC server that connects to this router.
+
+bf(Host)
+quote(Either an FQDN or strict IP-address of the connecting server.)
+
+bf(Passphrase)
+quote(If server connection requires passphrase authentication, set it here.)
+
+bf(PublicKey)
+quote(This is a path to connecting server's public key. If server connection
+requires public key authentication, set this value. If both em(Passphrase)
+and em(PublicKey) are set, then either of them will be accepted.)
+
+bf(Params)
+quote(Connection parameters.)
+
+bf(Backup)
+quote(A boolean value controlling whether this server acts as a backup. Set
+to em(false) for normal servers. If set to em(true), this server is a backup
+router.)
+
+nsect(SECTION: RouterConnection)
+This section covers router connections. Stand-alone servers won't have this
+section, and regular servers should only have one.
+
+Router servers need one em(RouterConnection) for each other router they have
+been configured to connect to. First configured section is the primary route.
+
+bf(Port)
+quote(If em(Initiator) is set tro em(true), this setting defines the remote
+port in which to connect. if em(Initiator) is set to false, then this defines
+the local (listening) port.)
+
+bf(Passphrase)
+quote(If connecting server requires a passphrase authentication, it is set
+here.)
+
+bf(PublicKey)
+quote(If connecting to server requires public key authentication, the path
+to server's public key file is set here.)
+
+bf(Params)
+quote(Connection parameters.)
+
+bf(Initiator)
+quote(A boolean setting that defines whether this server is the connecting
+party.)
+
+bf(BackupHost)
+quote(If the configured connection is a backup connection, set this to the
+address of the main router that will be replaced. For normal router connection
+leave this option out.)
+
+bf(BackupPort)
+quote(If the configured connection is a backup connection, set this to the
+remote port which to connect to. For normal router connection, leave this
+option out.)
+
+bf(BackupLocal)
+quote(A boolean value. If this setting is em(true), then the backup router
+is in the same cell. If the backup router is in another cell, set this
+to em(false). Needless to say, for normal router connection, leave this
+option out.)
+
+nsect(SECTION: Admin)
+
+This section defines configured administration connections.
+
+bf(Host)
+quote(Either FQDN or a strict IP-address to the origin of connection. 
+This field is optional.)
+
+bf(User)
+quote(Username that the connecting client announces. This field is optional.)
+
+bf(Nick)
+quote(Nickname that the connecting client announces. This field is optional.)
+
+bf(Passphrase)
+quote(Passphrase required to obtain server operator privileges.)
+
+bf(PublicKey)
+quote(Path to administrator's public key file. If both em(Passphrase) and
+em(PublicKey) are defined, either one can be used.)
+
+nsect(SECTION: Deny)
+This section defines denied incoming connections. They apply equally to both 
+client and server connections, so make sure you know what you add here. Each
+em(Deny) section covers one instance of denied connection(s). There may be any
+number of em(Deny) sections.
+
+bf(Host)
+quote(Address or wildcarded addresses of denied connections. bf(NOTE!) This
+field is not mandatory, but highly recommended. If you don't specify em(Host)
+at all, or give it a value of "*", you have a silcd that denies every single
+incoming connection.)
+
+bf(Reason)
+quote(A string giving the reason for why the connecting party is not allowed
+to connect. Unlike em(Host), this field IS mandatory.)
+
+
+manpagefiles()
+bf(silcd.conf)
+
+
+manpageseealso()
+bf(silcd(8))
+
+
+manpageauthor()
+SILC is designed and written by Pekka Riikonen <priikone@iki.fi> and rest
+of the SILC Project.
+
+Configuration file format and parser is by Johnny Mnemonic.
+
+This manpage was written by Mika 'Bostik' Boström <bostik@lut.fi>
+
+See bf(CREDITS) for full list of contributors.

@@ -1,0 +1,92 @@
+manpage(SILCD) (8) (October 31 2002) (silc-server-0.9.7.1) (silc-server)
+
+
+manpagename(silcd) (SILC server)
+
+
+manpagesynopsis()
+bf(silcd) bf([) -f em(file) | -d | -D | -x | -h | -F | -C | -V bf(])
+
+
+manpagedescription()
+Silcd is a server for SILC, Secure Internet Live Conferencing network.
+
+
+manpageoptions()
+bf(-f) em(FILE)    Read configuration from em(FILE).
+
+bf(-d)         Enable debugging (Implies -F).
+
+bf(-D) em(LEVEL)   Enable debug messages of level em(LEVEL) and lower (Implies -F).
+
+bf(-x)         Enable hexdumps (Implies -d).
+
+bf(-F)         Don't fork.  Run silcd on foreground.
+
+bf(-h)         Display help message.
+
+bf(-V)         Display version.
+
+bf(-C)         Create new public key pair. See bf(KEY GENERATION) for options.
+
+manpagesection(LONG OPTIONS)
+bf(--config-file)=em(FILE)    Same as bf(-f).
+
+bf(--debug)=em(STRING)        Same as bf(-d), limit to messages *em(STRING)*.
+
+bf(--debug-level)=em(LEVEL)   Same as bf(-D).
+
+bf(--hexdump)             Same as bf(-x).
+
+bf(--foreground)          Same as bf(-F).
+
+bf(--version)             Same as bf(-V).
+
+bf(--create-key-pair)     Same as bf(-C).
+
+
+manpagesection(KEY GENERATION)
+When generating new key pair for silcd (bf(-C)), the following extra switches
+apply:
+
+bf(--pkcs)=em(PKCS)       Set the public key algorithm of public key pair.  For example bf(rsa).
+
+bf(--bits)=em(VALUE)      Set the length of public key pair, in bits.
+
+bf(--identifier)=em(ID)   Set em(ID) as public key identifier.
+
+The identifier has the format of:
+
+UN=<username>, HN=<hostname or IP>, RN=<real name>, E=<email>,
+O=<organization>, C=<country>
+
+Both UN and HN are mandatory, all the rest are optional but recommended.
+If no bf(--identifier) is used, an identifier will be created automatically.
+
+Example:
+
+bf(silcd -C --identifier)="UN=foobar, HN=foo.bar.com, RN=Foo T. Bar,
+E=foo@bar.com, C=FI"
+
+
+manpagefiles()
+There are two configuration files for silcd: 
+em(/etc/silc/silcd.conf) for server configuration and
+em(/etc/silc/silcalgs.conf) for SIM (SILC Modules) configuration. Do note that silcalgs.conf is only needed if cryptographic algorithms are built as separate modules.
+
+
+manpageseealso()
+bf(silc(1)), bf(silcd.conf(5))
+
+
+manpagesection(NETWORK RESOURCES)
+Homepage: bf(http://silcnet.org)
+
+manpageauthor()
+SILC is designed and written by Pekka Riikonen <priikone@iki.fi> and rest
+of the SILC Project.
+
+This manpage was written by Mika 'Bostik' Boström <bostik@lut.fi>
+
+See bf(CREDITS) for full list of contributors.
+

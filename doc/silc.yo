@@ -1,0 +1,185 @@
+manpage(SILC) (1) (October 31 2002) (silc-client-0.9.7) (silc-client)
+
+
+manpagename(silc) (client for SILC, a secure and flexible conferencing network)
+
+
+manpagesynopsis()
+bf(silc) bf([) -S em(file) | -d | -C | -c em(host) | -w em(pass) | 
+-p em(port) | -! | -n em(nick) | -h em(host) | -v | -? bf(])
+
+
+manpagedescription()
+SILC (Secure Internet Live Conferencing) is a secure conferencing network.
+bf(Silc) is the SILC client which is used to connect to SILC server and
+the SILC network.  The silc client resembles IRC clients to make the
+using easier for new users.
+
+bf(Silc) supports sending of practically any kind of messages in addition
+of normal text messages in the SILC network.  The session to SILC server
+is secured with session key, channel messages are protected with channel
+key and private messages with session keys.  It is also possible to use
+private channel keys and private message keys in addition of channel
+generated keys.
+
+bf(Silc) supports em(passphrase) and public key authentication based on
+em(digital signatures), when connecting to SILC server.  bf(Silc) also supports
+key exchange (key agreement) between other bf(Silc) users in the SILC
+network to negotiate secret key material.  This key material then can be
+used to secure for example private messages.  It is also possible to exchange
+public keys and certificates in the SILC network between clients and servers.
+
+The bf(silc) also supports em(detaching) from the SILC network by closing
+the connection to the server but without quitting from the network.  Next
+time the bf(silc) connects to the server it em(resumes) the session in the
+SILC network.  During the detaching the user remains in the network and other
+users may query the user information and see that user is in network but
+currently detached.  Messages sent to user while being detached are
+dropped by the server.  When resuming is over the user has automatically
+same nickname than before detaching and remains on all channels, and it
+seems like user never left the network.
+
+The bf(silc) also supports creation of em(friends) list, which is kind of
+buddy list familiar from IM (Instant Messaging) clients.  By using the
+bf(WHOIS) SILC command with em(-details) option it possible to fetch the
+user's information such as their public keys and certificates, business
+card, pictures, and other information and save them to the friends list.
+The friends list is located at bf(~/.silc/friends/) directory.
+
+The SILC public key and private key pair is used to authenticate the user
+to the SILC server when connecting a server.  This key pair is created
+automatically when the bf(silc) is run for the first time.  It also can
+be created with bf(-C) option.
+
+When connecting for the first time to SILC server, user will be asked to
+accept the server's public key.  When key is accepted the bf(silc) saves
+the public key for future into bf(~/.silc/serverkeys/) directory.  The
+next time user connects to same server the public key is verified against
+the saved public key.  The purposeof this public key saving is to avoid
+man-in-the-middle attacks which could be possible if the key would have
+to be verified everytime user connects to the server.
+
+manpageoptions()
+bf(-c) em(host)      Connect to given host
+
+bf(-p) em(port)      Connect to em(port)
+
+bf(-C)           Create new public key pair
+
+bf(-P)           Change the passphrase of the private key file
+
+bf(-S) em(keyfile)   Display the contents of given SILC public key from file
+
+bf(-n) em(nick)      Specify what nick to use
+
+bf(-h) em(host)      Give em(host) as your hostname
+
+bf(-w) em(pass)      Use em(pass) as password for connection
+
+bf(-d) em(string)    Enable debugging
+
+bf(-v)           Display client version
+
+bf(-!)           Do not autoconnect
+
+bf(-?)           Display client help message
+
+
+manpagesection(LONG OPTIONS)
+
+bf(--connect)=em(SERVER)     Same as bf(-c).
+
+bf(--port)=em(PORT)          Same as bf(-p).
+
+bf(--home)=em(PATH)          Client home dir (em(~/.silc)).
+
+bf(--config)=em(PATH)        Configuration file location (em(~/.silc/silc.conf)).
+
+bf(--list-ciphers)       List supported ciphers.
+
+bf(--list-hash-funcs)    List supported hash functions.
+
+bf(--list-hmacs)         List supported HMACs.
+
+bf(--list-pkcs)          List supported PKCSs.
+
+bf(--create-key-pair)    Same as bf(-C).
+
+bf(--passphrase-change)  Same as bf(-P).
+
+bf(--nick)=em(NICK)          Same as bf(-n).
+
+bf(--hostname)=em(HOST)      Same as bf(-h).
+
+bf(--password)=em(PASS)      Same as bf(-w).
+
+bf(--debug)=em(STRING)       Same as bf(-d), limit to messages *em(STRING)*.
+
+bf(--dummy)              Use dummy terminal mode.
+
+bf(--version)            Same as bf(-v).
+
+bf(--noconnect)          Same as bf(-!).
+
+bf(--help)               Same as bf(-?).
+
+bf(--usage)              Display very brief usage summary.
+
+
+manpagesection(KEY GENERATION)
+When generating key pair(s) for silc (bf(-C)), the following extra
+switches apply:
+
+bf(--pkcs)=em(PKCS)       Set the public key algorithm of key pair.  For example bf(rsa).
+
+bf(--bits)=em(VALUE)       Set the length of public key pair, in bits.
+
+
+
+manpagefiles()
+bf(~/.silc/silc.conf)
+quote(Client's configuration file)
+
+bf(~/.silc/public_key.pub)
+quote(The SILC public key of the user)
+
+bf(~/.silc/private_key.pub)
+quote(The SILC private key of the user)
+
+bf(~/.silc/clientkeys/)
+quote(The directory holding the public keys of other users the user have
+accepted and trusted in the SILC network.  The public keys can be received
+with bf(GETKEY) SILC command or during key agreement between two users.)
+
+bf(~/.silc/clientkeys/)
+quote(The directory holding the public keys of servers the user have accepted
+and trusted when connecting to a server.)
+
+bf(~/.silc/friends/)
+quote(The directory holding the information of em(friends) that user has.
+User can create a friend list with bf(WHOIS -details) SILC command.  This
+directory holds the friends' public keys, business cards, pictures, and
+other information.)
+
+
+manpageseealso()
+bf(silcd(8)) bf(silc(1))
+
+
+manpagesection(NETWORK RESOURCES)
+Homepage: bf(http://silcnet.org)
+
+SILC Client is based on Irssi IRC client: bf(http://irssi.org)
+
+User's guide: bf(http://www.silcnet.org/docs/)
+
+
+manpageauthor()
+SILC is designed and written by Pekka Riikonen <priikone@iki.fi> and rest
+of the SILC Project.
+
+This manpage was written by Mika 'Bostik' Boström <bostik@lut.fi>
+
+See bf(CREDITS) for full list of contributors.
+
+
