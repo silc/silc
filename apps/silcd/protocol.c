@@ -23,6 +23,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.8  2000/07/19 07:08:09  priikone
+ * 	Added version detection support to SKE.
+ *
  * Revision 1.7  2000/07/14 06:14:20  priikone
  * 	Put the HMAC keys into the HMAC object instead of having them
  * 	saved elsewhere; now we can use silc_hmac_make insteaad of
@@ -59,6 +62,8 @@
 
 SILC_TASK_CALLBACK(silc_server_protocol_connection_auth);
 SILC_TASK_CALLBACK(silc_server_protocol_key_exchange);
+
+extern char *silc_version_string;
 
 /* SILC client protocol list */
 const SilcProtocolObject silc_protocol_list[] =
@@ -189,12 +194,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
+					  silc_version_string,
 					  ctx->packet, NULL, NULL);
       } else {
 	SilcSKEStartPayload *start_payload;
 
 	/* Assemble security properties. */
-	silc_ske_assemble_security_properties(ske, &start_payload);
+	silc_ske_assemble_security_properties(ske, silc_version_string,
+					      &start_payload);
 
 	/* Start the key exchange by sending our security properties
 	   to the remote end. */
@@ -278,6 +285,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   Key Exhange 1 Payload to the responder. */
 	status = 
 	  silc_ske_initiator_phase_2(ctx->ske,
+				     server->public_key,
 				     silc_server_protocol_ke_send_packet,
 				     context);
       }

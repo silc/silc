@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.11  2000/07/19 07:08:09  priikone
+ * 	Added version detection support to SKE.
+ *
  * Revision 1.10  2000/07/17 11:47:30  priikone
  * 	Added command lagging support. Added idle counting support.
  *
@@ -213,7 +216,7 @@ void silc_server_command_process(SilcServer server,
   if (cmd == NULL) {
     SILC_LOG_ERROR(("Unknown command, packet dropped"));
     silc_free(ctx);
-    return;
+    goto out;
   }
 
  out:
