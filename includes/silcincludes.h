@@ -130,6 +130,10 @@
 #include <regex.h>
 #endif
 
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG
@@ -214,6 +218,8 @@ typedef uint32 * void *;
 #include "silcpkcs.h"
 
 /* SILC util library includes */
+#include "silcmutex.h"
+#include "silcthread.h"
 #include "silchashtable.h"
 #include "silclog.h"
 #include "silcmemory.h"

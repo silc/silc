@@ -24,6 +24,8 @@ libsilcunixutil_a_SOURCES = 	\
 	silcunixschedule.c	\
 	silcunixnet.c		\
 	silcunixutil.c		\
-	silcunixsockconn.c
+	silcunixsockconn.c	\
+	silcunixmutex.c		\
+	silcunixthread.c
 
 include $(top_srcdir)/Makefile.defines.in

@@ -10,6 +10,9 @@
 /* Default configuration file */
 #undef SILC_SERVER_CONFIG_FILE
 
+/* Multi-thread support */
+#undef SILC_THREADS
+
 /* Default paths */
 #undef SILC_ETCDIR
 #undef SILC_HELPDIR

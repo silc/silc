@@ -67,6 +67,7 @@ AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h netdb.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
 AC_CHECK_HEADERS(ncurses.h signal.h ctype.h regex.h)
 AC_CHECK_HEADERS(arpa/inet.h sys/mman.h limits.h)
+AC_CHECK_HEADERS(pthread.h)
 
 # Data type checking
 AC_TYPE_SIGNAL
@@ -291,6 +292,7 @@ AC_CHECK_FUNCS(mlock munlock)
 AC_CHECK_FUNCS(chmod stat fstat getenv putenv strerror ctime gettimeofday)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
 AC_CHECK_FUNCS(strchr strstr strcpy strncpy memcpy memset memmove)
+AC_CHECK_FUNCS(pthread_create)
 
 # SIM support checking
 # XXX These needs to be changed as more supported platforms appear.
@@ -554,6 +556,28 @@ AC_ARG_ENABLE(debug,
     ;;
 esac ], CFLAGS="-O2 -g $CFLAGS"
         AC_MSG_RESULT(no))
+
+# Pthread checking
+AC_ARG_ENABLE(threads,
+[  --disable-threads       Do not compile with multi-thread support],
+[ case "${enableval}" in
+  yes)
+    AC_DEFINE(SILC_THREADS)
+    AM_CONDITIONAL(SILC_THREADS)
+    want_threads=true
+    ;;
+  *)
+    want_threads=false
+    ;;
+esac ], AC_DEFINE(SILC_THREADS)
+        AM_CONDITIONAL(SILC_THREADS)
+        want_threads=true)
+
+if test x$want_threads = xtrue; then
+  AC_TRY_COMPILE([#include <pthread.h>],
+  		 [pthread_attr_t attr; pthread_attr_init(&attr);],
+  		 LIBS="$LIBS -lpthread")
+fi
 
 #
 # Other configure scripts

@@ -91,6 +91,8 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
+ o Complete the SILC Mutex API and SILC Thread API.
+
  o Incomplete IPv6 support:
 
 	o All network routines in lib/silcutil/silcnet.[ch] does not
@@ -131,18 +133,6 @@ TODO In SILC Protocol
 
 TODO After 1.0
 ==============
-
- o Pthreads support.  A lot of problems are solved with server (and with
-   client as well) if we add pthread support.  We can forget things such
-   as non-blocking connecting etc, and we can do things such as DNS/IP
-   lookups async.  The server itself also benefits great deal from 
-   threads, especially from performance point of view.
-
-   But, this is not a small task and almost entire SILC Library has to
-   be made re-entrant.  Own API is probably added for the threads support
-   to make changes in the future as painless as possible.  So the API 
-   would have things like silc_mutex_lock, silc_mutex_unlock and 
-   friends...
 
  o X.509 certificate support.  SILC protocol supports certificates and
    it would be great to have support for them.  This is a big task as
