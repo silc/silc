@@ -5010,6 +5010,11 @@ SILC_SERVER_CMD_FUNC(detach)
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_DETACH, cmd, 0, 0);
 
+  /* Remove operator privileges, since the client may resume in some
+     other server which to it does not have operator privileges. */
+  client->mode &= ~(SILC_UMODE_SERVER_OPERATOR |
+		    SILC_UMODE_ROUTER_OPERATOR);
+
   /* Send the user mode notify to notify that client is detached */
   client->mode |= SILC_UMODE_DETACHED;
   client->data.status &= ~SILC_IDLIST_STATUS_RESUMED;

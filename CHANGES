@@ -1,3 +1,10 @@
+Fri Jun 28 11:53:25 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Remove server/router operator privileges in DETACH command,
+	  since it's possible to resume to server where these
+	  privileges would not be allowed for the client.  Affected
+	  file silcd/command.c.
+
 Thu Jun 27 20:07:27 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Buffer overflow with CUMODE command's mode->mode character
