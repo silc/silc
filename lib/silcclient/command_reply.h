@@ -26,6 +26,12 @@ typedef struct {
   SilcCommand cmd;
 } SilcClientCommandReply;
 
+/* Context holding pending command callbacks. */
+typedef struct {
+  SilcCommandCb callback;
+  void *context;
+} *SilcClientCommandPendingCallbacks;
+
 /* Context sent as argument to all command reply functions */
 struct SilcClientCommandReplyContextStruct {
   SilcClient client;
@@ -37,8 +43,8 @@ struct SilcClientCommandReplyContextStruct {
   SilcPacketContext *packet;
 
   /* If defined this executes the pending command. */
-  SilcCommandCb callback;
-  void *context;
+  SilcClientCommandPendingCallbacks callbacks;
+  SilcUInt32 callbacks_count;
   SilcUInt16 ident;
 };
 

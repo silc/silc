@@ -40,17 +40,18 @@ struct SilcClientEntryStruct {
   SilcClientID *id;		/* The Client ID */
   unsigned char *fingerprint;	/* Fingerprint of client's public key */
   SilcUInt32 fingerprint_len;	/* Length of the fingerprint */
-  bool valid;			/* FALSE if this entry is not valid */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */
-  unsigned char *key;		/* Set only if appliation provided the
-				   key material. NULL if the library 
-				   generated the key. */
-  SilcUInt32 key_len;
-  bool generated;		/* TRUE if library generated the key */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
   SilcClientStatus status;	/* Status mask */
   SilcHashTable channels;	/* All channels client has joined */
+  unsigned char *key;		/* Set only if appliation provided the
+				   key material. NULL if the library 
+				   generated the key. */
+  SilcUInt32 key_len;		/* Key length */
+  SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
+  bool generated;		/* TRUE if library generated `key' */
+  bool valid;			/* FALSE if this entry is not valid */
 };
 
 /* Client and its mode on a channel */

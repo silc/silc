@@ -41,6 +41,8 @@
 #include "window-item-def.h"
 
 #include "fe-common/core/printtext.h"
+#include "fe-common/core/fe-channels.h"
+#include "fe-common/core/keyboard.h"
 #include "fe-common/silc/module-formats.h"
 
 #include "silc-commands.h"
@@ -213,6 +215,11 @@ static void sig_connected(SILC_SERVER_REC *server)
 				    server->connrec->port,
 				    server);
   server->conn = conn;
+
+  if (params.detach_data)
+    keyboard_entry_redirect(NULL,
+			    "-- Resuming old session, may take a while ...",
+			    ENTRY_REDIRECT_FLAG_HIDDEN, server);
 
   silc_free(params.detach_data);
   unlink(file);

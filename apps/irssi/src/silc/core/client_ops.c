@@ -633,7 +633,7 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
 {
   SILC_SERVER_REC *server = conn->context;
 
-  if (!server || status == SILC_CLIENT_CONN_ERROR) {
+  if (!server) {
     silc_client_close_connection(client, conn);
     return;
   }
@@ -748,6 +748,9 @@ static void silc_client_join_get_users(SilcClient client,
   SILC_CHANNEL_REC *chanrec;
   SilcClientEntry founder = NULL;
   NICK_REC *ownnick;
+
+  SILC_LOG_DEBUG(("Start, channel %s, %d users", channel->channel_name,
+		  silc_hash_table_count(channel->user_list)));
 
   if (!clients)
     return;

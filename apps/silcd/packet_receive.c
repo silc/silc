@@ -3059,7 +3059,8 @@ void silc_server_resume_client(SilcServer server,
 
     /* As router we must deliver this packet directly to the original
        server whom this client was earlier. */
-    if (server->server_type == SILC_ROUTER && detached_client->router)
+    if (server->server_type == SILC_ROUTER && detached_client->router &&
+	detached_client->router->server_type != SILC_ROUTER)
       silc_server_packet_send(server, detached_client->router->connection,
 			      SILC_PACKET_RESUME_CLIENT, 0, 
 			      buf->data, buf->len, TRUE);
@@ -3252,6 +3253,11 @@ void silc_server_resume_client(SilcServer server,
 	return;
       }
     }
+
+    if (server->server_type == SILC_ROUTER &&
+	sock->type == SILC_SOCKET_TYPE_ROUTER && 
+	server_entry->server_type == SILC_ROUTER)
+      local = FALSE;
 
     SILC_LOG_DEBUG(("Resuming detached client"));
 

@@ -127,9 +127,10 @@ void silc_client_command_reply_process(SilcClient client,
   silc_command_get_status(ctx->payload, &ctx->status, &ctx->error);
 
   /* Check for pending commands and mark to be exeucted */
-  silc_client_command_pending_check(sock->user_data, ctx, 
-				    silc_command_get(ctx->payload), 
-				    ctx->ident);
+  ctx->callbacks =
+    silc_client_command_pending_check(sock->user_data, ctx, 
+				      silc_command_get(ctx->payload), 
+				      ctx->ident, &ctx->callbacks_count);
 
   /* Execute command reply */
 
@@ -267,7 +268,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 
   /* Notify application */
-  if (!cmd->callback && notify)
+  if (!cmd->callbacks_count && notify)
     COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
 		   has_channels ? &channels : NULL, mode, idle, 
 		   fingerprint, has_user_modes ? &ch_user_modes : NULL));
@@ -1527,6 +1528,7 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
   int i;
   unsigned char **res_argv = NULL;
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
+  bool wait_res = FALSE;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1576,6 +1578,8 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
     return 1;
   }
 
+  SILC_LOG_DEBUG(("channel %s, %d users", channel->channel_name, list_count));
+
   /* Cache the received Client ID's and modes. */
   for (i = 0; i < list_count; i++) {
     SilcUInt16 idp_len;
@@ -1597,11 +1601,18 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
     if (!client_entry || !client_entry->username || !client_entry->realname) {
       if (client_entry) {
 	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+	  /* Attach to this resolving and wait until it finishes */
+	  silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+				      client_entry->resolve_cmd_ident,
+				      get_clients, cmd);
+	  wait_res = TRUE;
+
 	  silc_buffer_pull(&client_id_list, idp_len);
 	  silc_buffer_pull(&client_mode_list, 4);
 	  continue;
 	}
 	client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
+	client_entry->resolve_cmd_ident = conn->cmd_ident + 1;
       }
 
       /* No we don't have it (or it is incomplete in information), query
@@ -1662,7 +1673,10 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
     silc_free(res_argv_types);
     return 1;
   }
-  
+
+  if (wait_res)
+    return 1;
+
   silc_buffer_push(&client_id_list, (client_id_list.data - 
 				     client_id_list.head));
   silc_buffer_push(&client_mode_list, (client_mode_list.data - 

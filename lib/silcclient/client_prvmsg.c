@@ -168,6 +168,7 @@ void silc_client_private_message(SilcClient client,
 	goto out;
       }
       remote_client->status |= SILC_CLIENT_STATUS_RESOLVING;
+      remote_client->resolve_cmd_ident = conn->cmd_ident + 1;
     }
 
     /* Resolve the client info */

@@ -173,19 +173,32 @@ typedef struct {
   SilcClientResumeSessionCallback callback;
   void *context;
   SilcUInt32 channel_count;
+  SilcUInt32 *cmd_idents;
+  SilcUInt32 cmd_idents_count;
   bool success;
 } *SilcClientResumeSession;
 
-/* Generic command reply callback */
+/* Generic command reply callback. */
 
 SILC_CLIENT_CMD_REPLY_FUNC(resume)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SILC_LOG_DEBUG(("Start"));
+  SILC_CLIENT_PENDING_EXEC(cmd, silc_command_get(cmd->payload));
+}
+
+/* Special command reply callback for IDENTIFY callbacks.  This calls
+   the pending callback for every returned command entry. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(resume_special)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  int i;
 
   SILC_LOG_DEBUG(("Start"));
-
-  if (cmd->callback)
-    (*cmd->callback)(cmd->context, cmd);
+  for (i = 0; i < cmd->callbacks_count; i++)
+    if (cmd->callbacks[i].callback)
+      (*cmd->callbacks[i].callback)(cmd->callbacks[i].context, cmd);
 }
 
 /* Completion calling callback */
@@ -193,8 +206,18 @@ SILC_CLIENT_CMD_REPLY_FUNC(resume)
 SILC_TASK_CALLBACK(silc_client_resume_call_completion)
 {
   SilcClientResumeSession session = context;
+  int i;
+
   session->callback(session->client, session->conn, session->success,
 		    session->context);
+
+  for (i = 0; i < session->cmd_idents_count; i++)
+    silc_client_command_pending_del(session->conn, SILC_COMMAND_IDENTIFY, 
+				    session->cmd_idents[i]);
+  silc_free(session->cmd_idents);
+
+  memset(session, 'F', sizeof(*session));
+  silc_free(session);
 }
 
 /* This function is used to perform the resuming procedure after the
@@ -266,17 +289,24 @@ void silc_client_resume_session(SilcClient client,
       /* Send the IDENTIFY command */
       SILC_LOG_DEBUG(("Sending IDENTIFY"));
       silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-				   silc_client_command_reply_resume,
+				   silc_client_command_reply_resume_special,
 				   0, ++conn->cmd_ident);
-      tmp = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
-					res_argc, res_argv, res_argv_lens,
-					res_argv_types, conn->cmd_ident);
       silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
 				  conn->cmd_ident,
 				  silc_client_command_resume_identify,
 				  session);
+
+      tmp = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
+					res_argc, res_argv, res_argv_lens,
+					res_argv_types, conn->cmd_ident);
       silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND, 
 			      NULL, 0, NULL, NULL, tmp->data, tmp->len, TRUE);
+
+      session->cmd_idents = silc_realloc(session->cmd_idents,
+					 sizeof(*session->cmd_idents) *
+					 (session->cmd_idents_count + 1));
+      session->cmd_idents[session->cmd_idents_count] = conn->cmd_ident;
+      session->cmd_idents_count++;
 
       for (i = 0; i < res_argc; i++)
 	silc_free(res_argv[i]);
@@ -517,7 +547,7 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   SILC_LOG_DEBUG(("Sending TOPIC"));
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
   silc_client_command_send(client, conn, SILC_COMMAND_TOPIC,
-			   conn->cmd_ident, 1, 1, tmp, tmp_len);
+			   ++conn->cmd_ident, 1, 1, tmp, tmp_len);
 
   /* Call the completion callback after we've got reply to all of
      our channels */

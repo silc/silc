@@ -87,12 +87,13 @@ silc_client_command_unregister(client, SILC_COMMAND_##cmd,		\
 void silc_client_command_##func(void *context, void *context2)
 
 /* Executed pending command callback */
-#define SILC_CLIENT_PENDING_EXEC(ctx, cmd)				\
-do {									\
-  if ((ctx)->callback)							\
-    (*ctx->callback)(ctx->context, ctx);				\
-  silc_client_command_pending_del((ctx)->sock->user_data, (cmd),	\
-				  (ctx)->ident);			\
+#define SILC_CLIENT_PENDING_EXEC(ctx, cmd)				  \
+do {									  \
+  int _i;								  \
+  for (_i = 0; _i < ctx->callbacks_count; _i++)				  \
+    if (ctx->callbacks[_i].callback)					  \
+      (*ctx->callbacks[_i].callback)(ctx->callbacks[_i].context, ctx);	  \
+  silc_client_command_pending_del(ctx->sock->user_data, cmd, ctx->ident); \
 } while(0)
 
 bool silc_client_command_register(SilcClient client,
@@ -112,11 +113,12 @@ void silc_client_commands_unregister(SilcClient client);
 void silc_client_command_pending_del(SilcClientConnection conn,
 				     SilcCommand reply_cmd,
 				     SilcUInt16 ident);
-int silc_client_command_pending_check(SilcClientConnection conn,
-				      SilcClientCommandReplyContext ctx,
-				      SilcCommand command, 
-				      SilcUInt16 ident);
-
+SilcClientCommandPendingCallbacks
+silc_client_command_pending_check(SilcClientConnection conn,
+				  SilcClientCommandReplyContext ctx,
+				  SilcCommand command, 
+				  SilcUInt16 ident,
+				  SilcUInt32 *callbacks_count);
 SILC_CLIENT_CMD_FUNC(whois);
 SILC_CLIENT_CMD_FUNC(whowas);
 SILC_CLIENT_CMD_FUNC(identify);

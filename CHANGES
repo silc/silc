@@ -1,3 +1,13 @@
+Fri Apr 12 20:09:08 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	  Added resolve_cmd_ident field to the SilcClientEntry structure
+	  too so that if the entry is for example being resolved so 
+	  another command may attach to the same pending command reply
+	  without requiring to resolve the same entry again.  Added
+          support for adding multiple pending commands for one
+	  command idenfier.  Affected files lib/silcclient/command.[ch],
+	  lib/silcclient/command_reply.[ch], lib/silcclient/idlist.h.
+
 Fri Apr 12 10:17:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined that server receives WHOIS command reply for private

@@ -362,6 +362,7 @@ void silc_client_get_clients_by_list(SilcClient client,
   unsigned char **res_argv = NULL;
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
   GetClientsByListInternal in;
+  bool wait_res = FALSE;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -402,13 +403,21 @@ void silc_client_get_clients_by_list(SilcClient client,
 
       if (entry) {
 	if (entry->status & SILC_CLIENT_STATUS_RESOLVING) {
-	  entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
+	  /* Attach to this resolving and wait until it finishes */
+	  silc_client_command_pending(
+			    conn, SILC_COMMAND_NONE, 
+			    entry->resolve_cmd_ident,
+			    silc_client_command_get_clients_list_callback, 
+			    (void *)in);
+	  wait_res = TRUE;
+
 	  silc_free(client_id);
 	  silc_buffer_pull(client_id_list, idp_len);
 	  continue;
 	}
 
 	entry->status |= SILC_CLIENT_STATUS_RESOLVING;
+	entry->resolve_cmd_ident = conn->cmd_ident + 1;
       }
 
       /* No we don't have it, query it from the server. Assemble argument
@@ -428,6 +437,9 @@ void silc_client_get_clients_by_list(SilcClient client,
     silc_free(client_id);
     silc_buffer_pull(client_id_list, idp_len);
   }
+
+  silc_buffer_push(client_id_list, client_id_list->data - 
+		   client_id_list->head);
 
   /* Query the client information from server if the list included clients
      that we don't know about. */
@@ -452,8 +464,6 @@ void silc_client_get_clients_by_list(SilcClient client,
 				silc_client_command_get_clients_list_callback, 
 				(void *)in);
 
-    silc_buffer_push(client_id_list, client_id_list->data - 
-		     client_id_list->head);
     silc_buffer_free(res_cmd);
     silc_free(res_argv);
     silc_free(res_argv_lens);
@@ -461,8 +471,8 @@ void silc_client_get_clients_by_list(SilcClient client,
     return;
   }
 
-  silc_buffer_push(client_id_list, client_id_list->data - 
-		   client_id_list->head);
+  if (wait_res)
+    return;
 
   /* We have the clients in cache, get them and call the completion */
   silc_client_command_get_clients_list_callback((void *)in, NULL);

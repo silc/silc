@@ -223,9 +223,10 @@ void silc_client_notify_by_server(SilcClient client,
 	client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 	goto out;
       }
-      client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
       silc_client_notify_by_server_resolve(client, conn, packet, 
 					   SILC_ID_CLIENT, client_id);
+      client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
+      client_entry->resolve_cmd_ident = conn->cmd_ident;
       goto out;
     } else {
       if (client_entry != conn->local_entry)

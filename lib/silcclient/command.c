@@ -86,10 +86,13 @@ void silc_client_command_call(SilcClientCommand command,
 }
 
 /* Add new pending command to be executed when reply to a command has been
-   received.  The `reply_cmd' is the command that will call the `callback'
-   with `context' when reply has been received.  If `ident is non-zero
-   the `callback' will be executed when received reply with command 
-   identifier `ident'. */
+   received. The `reply_cmd' is the command that will call the `callback'
+   with `context' when reply has been received.  It can be SILC_COMMAND_NONE
+   to match any command with the `ident'.  If `ident' is non-zero
+   the `callback' will be executed when received reply with command
+   identifier `ident'. If there already exists pending command for the
+   specified command, ident, callback and context this function has no
+   effect. */
 
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
@@ -98,6 +101,16 @@ void silc_client_command_pending(SilcClientConnection conn,
 				 void *context)
 {
   SilcClientCommandPending *reply;
+
+  /* Check whether identical pending already exists for same command,
+     ident, callback and callback context. If it does then it would be
+     error to register it again. */
+  silc_dlist_start(conn->pending_commands);
+  while ((reply = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
+    if (reply->reply_cmd == reply_cmd && reply->ident == ident &&
+	reply->callback == callback && reply->context == context)
+      return;
+  }
 
   reply = silc_calloc(1, sizeof(*reply));
   reply->reply_cmd = reply_cmd;
@@ -125,26 +138,33 @@ void silc_client_command_pending_del(SilcClientConnection conn,
 }
 
 /* Checks for pending commands and marks callbacks to be called from
-   the command reply function. Returns TRUE if there were pending command. */
+   the command reply function. */
 
-int silc_client_command_pending_check(SilcClientConnection conn,
-				      SilcClientCommandReplyContext ctx,
-				      SilcCommand command, 
-				      SilcUInt16 ident)
+SilcClientCommandPendingCallbacks
+silc_client_command_pending_check(SilcClientConnection conn,
+				  SilcClientCommandReplyContext ctx,
+				  SilcCommand command, 
+				  SilcUInt16 ident,
+				  SilcUInt32 *callbacks_count)
 {
   SilcClientCommandPending *r;
+  SilcClientCommandPendingCallbacks callbacks = NULL;
+  int i = 0;
 
   silc_dlist_start(conn->pending_commands);
   while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
-    if (r->reply_cmd == command && r->ident == ident) {
-      ctx->context = r->context;
-      ctx->callback = r->callback;
+    if ((r->reply_cmd == command || r->reply_cmd == SILC_COMMAND_NONE)
+	&& r->ident == ident) {
+      callbacks = silc_realloc(callbacks, sizeof(*callbacks) * (i + 1));
+      callbacks[i].context = r->context;
+      callbacks[i].callback = r->callback;
       ctx->ident = ident;
-      return TRUE;
+      i++;
     }
   }
 
-  return FALSE;
+  *callbacks_count = i;
+  return callbacks;
 }
 
 /* Allocate Command Context */
