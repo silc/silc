@@ -246,8 +246,12 @@ bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len)
   freeaddrinfo(ai);
 #else
   struct hostent *hp;
+  unsigned char a[16];
 
-  hp = gethostbyaddr(addr, strlen(addr), AF_INET);
+  if (!silc_net_addr2bin(addr, a, sizeof(a)))
+    return FALSE;
+
+  hp = gethostbyaddr(a, 4, AF_INET);
   if (!hp)
     return FALSE;
   if (name_len < strlen(hp->h_name))

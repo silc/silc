@@ -1,3 +1,8 @@
+Thu Mar 28 20:58:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_net_gethostbyaddr to correctly resolve by
+	  address.  Affected file lib/silcutil/silcnet.c.
+
 Thu Mar 28 19:02:05 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Created new branch silc_protocol_1_0_branch.
