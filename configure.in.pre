@@ -72,7 +72,7 @@ AC_CHECK_HEADERS(unistd.h string.h getopt.h errno.h fcntl.h assert.h)
 AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h stddef.h)
 AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h xti.h netdb.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
-AC_CHECK_HEADERS(ncurses.h signal.h ctype.h utime.h iconv.h)
+AC_CHECK_HEADERS(ncurses.h signal.h ctype.h utime.h)
 AC_CHECK_HEADERS(arpa/inet.h sys/mman.h limits.h termios.h locale.h langinfo.h)
 
 # Data type checking
@@ -114,7 +114,7 @@ AC_CHECK_FUNCS(fcntl setsockopt time)
 AC_CHECK_FUNCS(chmod stat fstat getenv putenv strerror ctime gettimeofday)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
 AC_CHECK_FUNCS(setgroups initgroups)
-AC_CHECK_FUNCS(strchr strstr strcpy strncpy memcpy memset memmove utime iconv)
+AC_CHECK_FUNCS(strchr strstr strcpy strncpy memcpy memset memmove utime)
 AC_CHECK_FUNCS(pthread_create nl_langinfo)
 
 # SIM support checking
@@ -631,6 +631,75 @@ if test x$want_threads = xtrue; then
 
   LIBS="$TMP_LIBS $LIBS"
 fi
+
+
+#
+# iconv support
+#
+AC_ARG_WITH(iconv,
+[  --with-iconv[=PATH]       Search for libiconv in DIR/include and DIR/lib],
+[	for dir in `echo "$withval" | tr : ' '`; do
+		if test -d $dir/include; then
+			CPPFLAGS="$CPPFLAGS -I$dir/include"
+			CFLAGS="$CFLAGS -I$dir/include"
+		fi
+		if test -d $dir/lib; then LDFLAGS="$LDFLAGS -L$dir/lib"; fi
+	done
+])
+
+AC_CHECK_HEADER(iconv.h,
+	AC_DEFINE(HAVE_ICONV_H, 1, [Define if you have the iconv.h header.])
+	[AC_CHECK_FUNC(iconv, ac_iconv_found=1,
+		[ LIBS="$LIBS -liconv"
+		AC_MSG_CHECKING(for iconv in -liconv)
+		AC_TRY_LINK([#include <stdlib.h>
+#include <iconv.h>],
+		[iconv_t cd = iconv_open("","");
+		 iconv(cd,NULL,NULL,NULL,NULL);
+		 iconv_close(cd);
+		], echo "yes"
+		   AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.]), 
+		   ac_iconv_found=0)]
+	)], [ac_iconv_h_found=0]
+)
+
+#if test x$ac_iconv_found = x0 -o x$ac_iconv_h_found = x0; then
+#	AC_MSG_ERROR([Unable to find an iconv support. See INSTALL for help.])
+#fi
+
+if test x$ac_iconv_found = x1; then
+
+# (1) Some implementations of iconv won't convert from UTF-8 to UTF-8.
+# (2) In glibc-2.1.2 and earlier there is a bug that messes up ob and
+#     obl when args 2 and 3 are 0 (fixed in glibc-2.1.3).
+AC_CACHE_CHECK([whether this iconv is good enough], ac_iconv_good,
+        AC_TRY_RUN([
+#include <iconv.h>
+int main()
+{
+  iconv_t cd;
+changequote(, )dnl
+  char buf[4];
+changequote([, ])dnl
+  char *ob;
+  size_t obl;
+  ob = buf, obl = sizeof(buf);
+  return ((cd = iconv_open("UTF-8", "UTF-8")) != (iconv_t)(-1) &&
+          (iconv(cd, 0, 0, &ob, &obl) ||
+           !(ob == buf && obl == sizeof(buf)) ||
+           iconv_close(cd)));
+}
+                ],
+                ac_iconv_good=yes,
+                ac_iconv_good=no,
+                ac_iconv_good=yes)
+)
+if test x$ac_iconv_good = xno; then
+  AC_MSG_ERROR(Try using libiconv instead.)
+fi
+
+fi # iconv
+
 
 #
 # Other configure scripts
