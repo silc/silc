@@ -286,13 +286,13 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 
   if (entry) {
     /* Remove from cache */
-    if (entry->id)
-      if (!silc_idcache_del_by_id(id_list->servers, (void *)entry->id))
-	return FALSE;
+    if (!silc_idcache_del_by_context(id_list->servers, entry))
+      return FALSE;
 
     /* Free data */
     silc_free(entry->server_name);
     silc_free(entry->id);
+    silc_free(entry->server_info);
 
     memset(entry, 'F', sizeof(*entry));
     silc_free(entry);
@@ -356,12 +356,12 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 
   if (entry) {
     /* Remove from cache */
-    if (entry->id)
-      if (!silc_idcache_del_by_context(id_list->clients, entry))
-	return FALSE;
+    if (!silc_idcache_del_by_context(id_list->clients, entry))
+      return FALSE;
 
     /* Free data */
     silc_free(entry->nickname);
+    silc_free(entry->servername);
     silc_free(entry->username);
     silc_free(entry->userinfo);
     silc_free(entry->id);
@@ -642,9 +642,8 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 
   if (entry) {
     /* Remove from cache */
-    if (entry->id)
-      if (!silc_idcache_del_by_id(id_list->channels, (void *)entry->id))
-	return FALSE;
+    if (!silc_idcache_del_by_context(id_list->channels, entry))
+      return FALSE;
 
     /* Free all client entrys from the users list. The silc_hash_table_free
        will free all the entries so they are not freed at the foreach 
