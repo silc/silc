@@ -151,6 +151,19 @@ void silc_client_send_channel_message(SilcClient client,
   silc_free(id_string);
 }
 
+static void silc_client_channel_message_cb(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcClientEntry *clients,
+					   uint32 clients_count,
+					   void *context)
+{
+  SilcPacketContext *packet = (SilcPacketContext *)context;
+
+  if (clients)
+    silc_client_channel_message(client, conn->sock, packet);
+  silc_packet_context_free(packet);
+}
+
 /* Process received message to a channel (or from a channel, really). This
    decrypts the channel message with channel specific key and parses the
    channel payload. Finally it displays the message on the screen. */
@@ -167,7 +180,7 @@ void silc_client_channel_message(SilcClient client,
   SilcChannelUser chu;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id = NULL;
-  int found = FALSE;
+  bool found = FALSE;
   unsigned char *message;
 
   SILC_LOG_DEBUG(("Start"));
@@ -216,8 +229,6 @@ void silc_client_channel_message(SilcClient client,
     goto out;
   }
 
-  message = silc_channel_message_get_data(payload, NULL);
-
   /* Find client entry */
   silc_list_start(channel->clients);
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
@@ -227,9 +238,18 @@ void silc_client_channel_message(SilcClient client,
     }
   }
 
+  if (!found) {
+    /* Resolve the client info */
+    silc_client_get_client_by_id_resolve(client, conn, client_id,
+					 silc_client_channel_message_cb,
+					 silc_packet_context_dup(packet));
+    goto out;
+  }
+
+  message = silc_channel_message_get_data(payload, NULL);
+
   /* Pass the message to application */
-  client->ops->channel_message(client, conn, found ? chu->client : NULL,
-			       channel, 
+  client->ops->channel_message(client, conn, chu->client, channel,
 			       silc_channel_message_get_flags(payload),
 			       message);
 

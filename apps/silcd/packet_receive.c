@@ -701,9 +701,11 @@ void silc_server_notify(SilcServer server,
       }
       if (users_modes) {
 	silc_buffer_push(users_modes, users_modes->data - users_modes->head);
-	silc_server_packet_send(server, sock,
-				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
-				users_modes->data, users_modes->len, FALSE);
+	silc_server_packet_send_dest(server, sock,
+				     SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				     channel->id, SILC_ID_CHANNEL,
+				     users_modes->data, 
+				     users_modes->len, FALSE);
 	silc_buffer_free(users_modes);
       }
     }
@@ -1964,9 +1966,11 @@ void silc_server_new_channel(SilcServer server,
       }
       if (users_modes) {
 	silc_buffer_push(users_modes, users_modes->data - users_modes->head);
-	silc_server_packet_send(server, sock,
-				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
-				users_modes->data, users_modes->len, FALSE);
+	silc_server_packet_send_dest(server, sock,
+				     SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				     channel->id, SILC_ID_CHANNEL,
+				     users_modes->data, 
+				     users_modes->len, FALSE);
 	silc_buffer_free(users_modes);
       }
     }

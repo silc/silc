@@ -29,6 +29,25 @@ Thu Jun 21 17:10:08 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  libary is freed.  The affected files are
 	  lib/silcske/silcske[_status].[ch].
 
+	* Resolve the client entry information in the function
+	  silc_client_channel_message to assure that NULL pointer is not
+	  passed as client entry to the application. */
+
+	* Fixed the task timeout calculation to assure that there is
+	  never negative timeouts.  The affected file is 
+	  lib/silcutil/silcschedule.c.
+
+	* Fixed the channel user mode notification sending in server.
+	  It was sent point-to-point to the router (or to server by router)
+	  but it needs to be destined to a channel.  The routines now
+	  supports sending the channel user mode notifys to the channels
+	  when announcing clients and channels.  Affected files are
+	  silcd/server.c and silcd/packet_receive.c.
+
+	* Fixed the CHANNEL_CHANGE notify handling in the client libary.
+	  It did not actually replace the old channel entry in the cache.
+	  Affected file lib/silcclient/client_notify.c.
+
 Tue Jun 19 22:10:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a possible crash in silc_packet_send_prepare.  It now

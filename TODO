@@ -34,10 +34,6 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o If the silc_client_channel_message does not find the client entry
-   then it should attempt to resolve it at least once and no return
-   NULL entry to the application.
-
  o Add some silc_client_del_client and other deletion funtions for
    application to delete client entrys from the cache.
 
@@ -116,9 +112,6 @@ TODO/bugs In SILC Server
 
 TODO/bugs In SILC Libraries
 ===========================
-
- o The timeout calculation can go negative at least on BSD, so rewrite
-   in in lib/silcutil/silcschdule.c.
 
  o Incomplete IPv6 support:
 

@@ -156,7 +156,9 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcIDList id_list,
 				       SilcBuffer *channels,
 				       SilcBuffer *channel_users,
-				       SilcBuffer *channel_users_modes);
+				       SilcBuffer **channel_users_modes,
+				       uint32 *channel_users_modes_c,
+				       SilcChannelID ***channel_ids);
 void silc_server_announce_servers(SilcServer server);
 void silc_server_announce_clients(SilcServer server);
 void silc_server_announce_channels(SilcServer server);

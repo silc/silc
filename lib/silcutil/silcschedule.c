@@ -328,10 +328,14 @@ do {									    \
           /* Calculate the next timeout for select() */			    \
           queue->timeout.tv_sec = task->timeout.tv_sec - curtime.tv_sec;    \
           queue->timeout.tv_usec = task->timeout.tv_usec - curtime.tv_usec; \
+	  if (queue->timeout.tv_sec < 0)				    \
+            queue->timeout.tv_sec = 0; 					    \
 									    \
           /* We wouldn't want to go under zero, check for it. */	    \
           if (queue->timeout.tv_usec < 0) {				    \
             queue->timeout.tv_sec -= 1;					    \
+	    if (queue->timeout.tv_sec < 0)				    \
+              queue->timeout.tv_sec = 0; 				    \
             queue->timeout.tv_usec += 1000000L;				    \
           }								    \
         }								    \

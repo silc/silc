@@ -506,10 +506,11 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find Client entry */
-    client_entry = 
-      silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry)
+    client_entry = silc_client_get_client_by_id(client, conn, client_id);
+    if (!client_entry) {
+      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
+    }
 
     /* Get the mode */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
@@ -591,10 +592,13 @@ void silc_client_notify_by_server(SilcClient client,
     
     /* Get the channel entry */
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				 &id_cache))
+				     &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
+
+    SILC_LOG_DEBUG(("Old Channel ID id(%s)", 
+		    silc_id_render(channel->id, SILC_ID_CHANNEL)));
 
     /* Free the old ID */
     silc_free(channel->id);
@@ -607,7 +611,13 @@ void silc_client_notify_by_server(SilcClient client,
     if (!channel->id)
       goto out;
 
-    id_cache->id = (void *)channel->id;
+    SILC_LOG_DEBUG(("New Channel ID id(%s)", 
+		    silc_id_render(channel->id, SILC_ID_CHANNEL)));
+
+    /* Remove the old cache entry and create a new one */
+    silc_idcache_del_by_context(conn->channel_cache, channel);
+    silc_idcache_add(conn->channel_cache, channel->channel_name, 
+		     channel->id, channel, FALSE);
 
     /* Notify application */
     client->ops->notify(client, conn, type, channel, channel);
