@@ -64,6 +64,11 @@ SilcClientOperations ops = {
   silc_key_agreement,
 };
 
+Please see the `client_ops_example.h' header file in lib/silcclient/
+directory for predefined structure and stub functions for your
+convenince.  It is provided for programmers so that they can copy
+it and use it directly in their application.
+
 
 1.2 Initializing the Client
 

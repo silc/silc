@@ -1,3 +1,14 @@
+Sat Jan 26 23:01:03 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed some header addition to Toolkit distribution in
+	  lib/silcutil/Makefile.am and lib/trq/Makefile.am.
+
+	* Added lib/silcclient/client_ops_example.h as an template
+	  file for application programmers to quickly start using
+	  the SilcClientOperation functions in their application.
+	  Updated the lib/silcclient/README as well to tell about this
+	  nice file made available.
+
 Sat Jan 26 10:45:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Call silc_server_remove_from_channels when removing client
