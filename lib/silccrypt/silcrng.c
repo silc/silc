@@ -44,7 +44,7 @@ extern pid_t getpgid (pid_t __pid);
 #define SILC_RNG_STATE_NUM 4
 
 /* Byte size of the random data pool. */
-#define SILC_RNG_POOLSIZE 1024
+#define SILC_RNG_POOLSIZE 1024 + 1
 
 static SilcUInt32 silc_rng_get_position(SilcRng rng);
 static void silc_rng_stir_pool(SilcRng rng);
