@@ -1,3 +1,9 @@
+Thu Nov 14 19:33:28 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* Print "nick now appears as newnick" and update Irssi's nicklist
+	  when you change your nick to "nick". Closes #62
+	* Never format your own nick. Closes #63
+
 Thu Nov 14 09:44:54 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* SILC_UMODE_GONE changes are now propagated correctly to the

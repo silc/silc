@@ -1134,6 +1134,20 @@ void silc_client_nickname_format(SilcClient client,
   if (!len || freebase)
     return;
 
+  if (clients_count == 1)
+    unformatted = clients[0];
+  else
+    for (i = 0; i < clients_count; i++)
+      if (!strncasecmp(clients[i]->nickname, client_entry->nickname,
+		       strlen(clients[i]->nickname)))
+	unformatted = clients[i];
+
+  /* If we are changing nickname of our local entry we'll enforce
+     that we will always get the unformatted nickname.  Give our
+     format number to the one that is not formatted now. */
+  if (unformatted && client_entry == conn->local_entry)
+    client_entry = unformatted;
+
   cp = client->internal->params->nickname_format;
   while (*cp) {
     if (*cp == '%') {
@@ -1196,15 +1210,10 @@ void silc_client_nickname_format(SilcClient client,
 	char tmp[6];
 	int num, max = 1;
 
-	if (clients_count == 1) {
-	  unformatted = clients[0];
+	if (clients_count == 1)
 	  break;
-	}
 
 	for (i = 0; i < clients_count; i++) {
-	  if (!strncasecmp(clients[i]->nickname, client_entry->nickname,
-			   strlen(clients[i]->nickname)))
-	    unformatted = clients[i];
 	  if (strncasecmp(clients[i]->nickname, newnick, off))
 	    continue;
 	  if (strlen(clients[i]->nickname) <= off)
@@ -1235,12 +1244,6 @@ void silc_client_nickname_format(SilcClient client,
 
   newnick = silc_realloc(newnick, sizeof(*newnick) * (off + 1));
   newnick[off] = 0;
-
-  /* If we are changing nickname of our local entry we'll enforce
-     that we will always get the unformatted nickname.  Give our
-     format number to the one that is not formatted now. */
-  if (unformatted && client_entry == conn->local_entry)
-    client_entry = unformatted;
 
   silc_free(client_entry->nickname);
   client_entry->nickname = newnick;
