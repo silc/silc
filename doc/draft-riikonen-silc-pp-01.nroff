@@ -1125,9 +1125,8 @@ ID's sent in arguments are sent inside ID Payload.
 
       Sent when an client is invited to a channel.  This is also sent
       when the invite list of the channel is changed.  This notify type
-      is sent between routers and if the <Client ID> is argument is
-      provided to the client as well.  In this case the packet is
-      destined to the client.
+      is sent between routers and if an client was invited to the 
+      client as well.  In this case the packet is destined to the client.
 
       Max Arguments:  5
           Arguments:  (1) <Channel ID>          (2) <channel name>
@@ -1144,8 +1143,8 @@ ID's sent in arguments are sent inside ID Payload.
       and the <removing client> is defined in the [SILC1] with
       SILC_COMMAND_INVITE command.
 
-      The <adding client> and <removing client> is never sent to the
-      client indicated by the <Client ID>.
+      The <adding client> and <removing client> is never sent when the
+      packet is destined to a client.
 
 
 2     SILC_NOTIFY_TYPE_JOIN

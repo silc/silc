@@ -953,14 +953,14 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   int broadcast,
 				   SilcChannelEntry channel,
 				   unsigned int mode_mask,
-				   SilcClientID *client_id,
-				   unsigned int client_id_len,
+				   void *id, SilcIdType id_type,
+				   unsigned int id_len,
 				   char *cipher, char *hmac)
 {
   SilcBuffer idp;
   unsigned char mode[4];
 
-  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  idp = silc_id_payload_encode((void *)id, id_type);
   SILC_PUT32_MSB(mode_mask, mode);
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,

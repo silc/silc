@@ -4130,6 +4130,9 @@ SILC_SERVER_CMD_FUNC(silcoper)
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_SILCOPER, cmd, 1, 2);
 
+  if (server->server_type == SILC_SERVER)
+    goto out;
+
   if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
 

@@ -142,6 +142,13 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 					      SilcChannelEntry channel);
 void silc_server_perform_heartbeat(SilcSocketConnection sock,
 				   void *hb_context);
+void silc_server_announce_get_channel_users(SilcServer server,
+					    SilcChannelEntry channel,
+					    SilcBuffer *channel_users);
+void silc_server_announce_get_channels(SilcServer server,
+				       SilcIDList id_list,
+				       SilcBuffer *channels,
+				       SilcBuffer *channel_users);
 void silc_server_announce_servers(SilcServer server);
 void silc_server_announce_clients(SilcServer server);
 void silc_server_announce_channels(SilcServer server);

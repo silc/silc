@@ -208,12 +208,25 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     
     tmp = silc_client_chmode(tmp_int, channel_entry);
     
-    if (tmp)
-      snprintf(message, sizeof(message), "%s changed channel mode to +%s",
-	       client_entry->nickname, tmp);
-    else
-      snprintf(message, sizeof(message), "%s removed all channel modes", 
-	       client_entry->nickname);
+    if (tmp) {
+      if (client_entry) {
+	snprintf(message, sizeof(message), "%s changed channel mode to +%s",
+		 client_entry->nickname, tmp);
+      } else {
+	snprintf(message, sizeof(message), 
+		 "channel mode was changed to +%s (forced by router)",
+		 tmp);
+      }
+    } else {
+      if (client_entry) {
+	snprintf(message, sizeof(message), "%s removed all channel modes", 
+		 client_entry->nickname);
+      } else {
+	snprintf(message, sizeof(message), 
+		 "Removed all channel modes (forced by router)");
+      }
+    }
+
     if (app->screen->bottom_line->channel_mode)
       silc_free(app->screen->bottom_line->channel_mode);
     app->screen->bottom_line->channel_mode = tmp;
@@ -265,6 +278,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     return;
 
   case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
+    return;
     break;
 
   case SILC_NOTIFY_TYPE_KICKED:

@@ -785,7 +785,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     SILC_LOG_ERROR(("Could not find connection data for %s (%s) on port",
 		    sock->hostname, sock->ip, sock->port));
     silc_protocol_free(protocol);
-    silc_ske_free_key_material(ctx->keymat);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
     if (ctx->ske)
@@ -1927,6 +1926,11 @@ void silc_server_create_connection(SilcServer server,
 		     SILC_TASK_PRI_NORMAL);
 }
 
+SILC_TASK_CALLBACK(silc_server_close_connection_final)
+{
+  silc_socket_free((SilcSocketConnection)context);
+}
+
 /* Closes connection to socket connection */
 
 void silc_server_close_connection(SilcServer server,
@@ -1944,7 +1948,11 @@ void silc_server_close_connection(SilcServer server,
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);
   server->sockets[sock->sock] = NULL;
-  silc_socket_free(sock);
+
+  silc_task_register(server->timeout_queue, 0, 
+		     silc_server_close_connection_final,
+		     (void *)sock, 0, 1, SILC_TASK_TIMEOUT, 
+		     SILC_TASK_PRI_NORMAL);
 }
 
 /* Sends disconnect message to remote connection and disconnects the 
@@ -2631,6 +2639,8 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   unsigned int tmp_len;
   char *cipher;
 
+  SILC_LOG_DEBUG(("Start"));
+
   /* Decode channel key payload */
   payload = silc_channel_key_payload_parse(key_payload);
   if (!payload) {
@@ -2875,23 +2885,60 @@ silc_server_announce_encode_join(unsigned int argc, ...)
   return silc_notify_payload_encode(SILC_NOTIFY_TYPE_JOIN, argc, ap);
 }
 
+/* Returns assembled packets for channel users of the `channel'. */
+
+void silc_server_announce_get_channel_users(SilcServer server,
+					    SilcChannelEntry channel,
+					    SilcBuffer *channel_users)
+{
+  SilcChannelClientEntry chl;
+  SilcBuffer chidp, clidp;
+  SilcBuffer tmp;
+  int len;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Now find all users on the channel */
+  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  silc_list_start(channel->user_list);
+  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    clidp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
+    tmp = silc_server_announce_encode_join(2, clidp->data, clidp->len,
+					   chidp->data, chidp->len);
+    len = tmp->len;
+    *channel_users = 
+      silc_buffer_realloc(*channel_users, 
+			  (*channel_users ? 
+			   (*channel_users)->truelen + len : len));
+    silc_buffer_pull_tail(*channel_users, 
+			  ((*channel_users)->end - 
+			   (*channel_users)->data));
+    
+    silc_buffer_put(*channel_users, tmp->data, tmp->len);
+    silc_buffer_pull(*channel_users, len);
+    silc_buffer_free(clidp);
+    silc_buffer_free(tmp);
+  }
+  silc_buffer_free(chidp);
+}
+
 /* Returns assembled packets for all channels and users on those channels
    from the given ID List. The packets are in the form dictated by the
    New Channel and New Channel User payloads. */
 
-static void silc_server_announce_get_channels(SilcServer server,
-					      SilcIDList id_list,
-					      SilcBuffer *channels,
-					      SilcBuffer *channel_users)
+void silc_server_announce_get_channels(SilcServer server,
+				       SilcIDList id_list,
+				       SilcBuffer *channels,
+				       SilcBuffer *channel_users)
 {
   SilcIDCacheList list;
   SilcIDCacheEntry id_cache;
   SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
-  SilcBuffer chidp;
   unsigned char *cid;
   unsigned short name_len;
   int len;
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* Go through all channels in the list */
   if (silc_idcache_find_by_id(id_list->channels, SILC_ID_CACHE_ANY, 
@@ -2915,36 +2962,12 @@ static void silc_server_announce_get_channels(SilcServer server,
 						name_len),
 			   SILC_STR_UI_SHORT(SILC_ID_CHANNEL_LEN),
 			   SILC_STR_UI_XNSTRING(cid, SILC_ID_CHANNEL_LEN),
-			   SILC_STR_UI_INT(0),
+			   SILC_STR_UI_INT(channel->mode),
 			   SILC_STR_END);
 	silc_buffer_pull(*channels, len);
 
-	/* Now find all users on the channel */
-	chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
-	silc_list_start(channel->user_list);
-	while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-	  SilcBuffer clidp;
-	  SilcBuffer tmp;
-
-	  clidp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
-
-	  tmp = silc_server_announce_encode_join(2, clidp->data, clidp->len,
-						 chidp->data, chidp->len);
-	  len = tmp->len;
-	  *channel_users = 
-	    silc_buffer_realloc(*channel_users, 
-				(*channel_users ? 
-				 (*channel_users)->truelen + len : len));
-	  silc_buffer_pull_tail(*channel_users, 
-				((*channel_users)->end - 
-				 (*channel_users)->data));
-
-	  silc_buffer_put(*channel_users, tmp->data, tmp->len);
-	  silc_buffer_pull(*channel_users, len);
-	  silc_buffer_free(clidp);
-	  silc_buffer_free(tmp);
-	}
-	silc_buffer_free(chidp);
+	silc_server_announce_get_channel_users(server, channel,
+					       channel_users);
 
 	silc_free(cid);
 
