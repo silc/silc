@@ -11,7 +11,45 @@
 
 <font face="Helvetica">
 
-<h1>About the White Paper</h1>
+<p><br>
+<h1>Introduction</h1>
+
+Chat protocols are very popular on the Internet.  They have actually
+been very popular since the very first chat protocols appeared on the net.
+The Internet Relay Chat (IRC) was one of the first chat protocols, and quickly
+gained the status of being the most popular chat on the net.  Today, IRC
+has several competitors from various other so called Instant Messaging (IM)
+protocols, such as ICQ.  However, all of these different chat protocols
+have something in common; they are all insecure.
+<p>
+
+The security is important feature in applications and protocols in 
+contemporary network environment.  The older chat protocols, however have
+failed to deal with the growing security requirements on the Internet.
+It is not anymore enough to just provide services, like for example
+chat services. Now, they need to be secure services.
+<p>
+
+The Secure Internet Live Conferencing (SILC) protocol is a new generation
+chat protocol which provides full featured conferencing services, just
+like any other contemporary chat protocol provides.  In addition, it
+provides security by encrypting and authenticating the messages in
+the network.  The security has been the primary goal of the SILC protocol
+and the protocol has been designed from the day one security in mind.
+All packets and messages travelling in the SILC Network are always
+encrypted and authenticated.  The network topology is also different
+from for example IRC network.  The SILC network topology attempts to be
+more powerful and scalable than the IRC network.  The basic purpose
+of the SILC protocol is to provide secure conferencing services.
+<p>
+
+The SILC Protocol have been developed as Open Source project.  The
+protocol specifications are freely available and they have been submitted to
+the IETF.  The very first implementations of the protocol are also already
+available.
+
+
+<h1>About This White Paper</h1>
 <p>
 The purpose of this white paper is to give short but deep enough introduction
 to the SILC Protocol.  The document describes the purpose of the protocol
@@ -34,12 +72,6 @@ the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU General Public License for more details.
 
-<p><br>
-<h1>Summary</h1>
-
-xxx
-
-<p>
 
 <p><br>
 <h1>SILC Protocol</h1>
@@ -51,15 +83,127 @@ xxx
 <h2>Clients</h2>
 <p>
 
+A client is a piece of software connecting to SILC server.  The software
+is usually run by the end user, a real person that is.  The purpose of the
+clients is to provide the end user an interface to the SILC services.
+They are used to actually engage the conversations on the SILC Network,
+and they can be used to execute various SILC commands.
+<p>
+
+The clients are distinquished from other clients by unique Client ID.
+There cannot be multiple same Client IDs in the SILC Network at the same time.
+The end user, however does not use Client IDs.  The end users usually selects
+a perferred nickname they want to use, and identifies themself with that
+nickname to other users on the network.  The nicknames are not unique in
+the SILC Network.  There can be multiple same nicknames at the same time
+on the network.  The maximum length for the nickname is 128 characters.
+<p>
+
+Most of the other chat protocols have unique nicknames.  This is where SILC
+differs from most of the other chat protocols.  The purpose of this
+feature is to make IRC style nickname wars obsolete, as no one owns their
+nickname; there can always be somene else with the same nickname.
+<p>
+
+When client connects to the server the SILC Key Exchange (SKE) protocol and
+SILC Connection Authentication protocol are executed.  The result of the
+SKE protocol is the session key that the client and server use to secure
+their communication.  All commands, for example, that the client sends
+to the server are secured with the session key.  The session key expires
+periodically and the rekey process can be executed with or without the
+Perfect Forward Secrecy (PFS).  The connection authentication protocol is
+used to authenticate the client to the server.  The server may allow the
+client to connect without authentication, or it may require a passphrase or
+public key encryption based authentication.
+
+
 <p><br>
 <h2>Servers</h2>
 <p>
+
+Servers forms the basis for the SILC Network, by providing a point to which
+clients may connect.  There are two kinds of servers in SILC; normal servers
+and router servers.  The next section describes the function of router
+server.
+<p>
+
+Normal servers connect to router server.  Normal servers cannot directly
+connect to other normal servers.  Messages that are destined outside the
+local server are always sent to the router for further routing.
+The clients usually connect to the normal server, however, clients may
+connect to router servers as well.  The SILC Network diagram above
+illustrates how normal servers connects to the router server.
+<p>
+
+The servers are distinquished by other servers in the network by unique
+Server ID.  There cannot be multiple same Server IDs in the SILC Network
+at the same time.  The servers keep track of local information.  It knows
+all locally connected clients and it knows all channels that its clients
+have joined.  However, it does not know any global information.  It
+usually does not keep track of global clients, however, it may cache
+that information if it was queried.  The reason for this is that the
+server does not need to keep global information up to date and thus
+makes the server faster.  They can always query the information from
+the router.
+<p>
+
+When server connects to its router the SILC Key Exchange (SKE) protocol
+and the SILC Connection Authentication protocol are executed, just like
+when client connects to server.  The SKE results in to the session key
+that is used to secure the communication between the server and the
+router.  The connection authentication protocol is used to authenticate
+the server to the router.  The authentication is always based in either 
+passphrase or public key encryption.
+
 
 <p><br>
 <h2>Routers</h2>
 <p>
 
+The router servers are servers that actually handles the message routing
+in the network.  They are, however also normal servers and they do accept
+client connections.  Each of the router in the network is called a cell.
+The cell can have only one active router and it may have several servers
+and several clients.  The cell, however may have backup routers that can
+take over the tasks of the primary router if it becomes unreachable.
+The switch to the backup router should be transparent and only local
+connections to the primary router are lost.  Other connections in the
+cell are intact, and clients and servers merely experience some lag in
+the network connection during the switch to the backup router.
+<p>
+
+The normal server knows only local information.  Router server on the
+other hand knows local information and global information.  It considers
+the cell as local and outside cells as global.  It knows all the clients
+connected to the network, all created channels, and all routers and servers
+in the network.  The server may query the global information if it is needed.
+For example, when client sends WHOIS command, the server may query the
+information from the router.  If the router does not know all the details
+that the WHOIS command requires it can query the information from a router
+or a server which knows all the details.  It may then cache that information.
+<p>
+
+The primary purpose of the router server is to route the messages to
+local servers and local clients, and messages that are destined to outside
+the cell are routed to the primary route or some other secondary
+route if it is a faster route.  The routers in the network forms a ring.
+Each router has a primary route to other router in the network.  Finally
+the ring is closed by the last router using the first router in the
+network as its primary route.
+<p>
+
 <img src="silc_routers.JPG" alt="SILC Routers" align="center" border"0">
+<p><br>
+
+The diagram above illustrates how the routers forms a ring in the network.
+A router may have several secondary routes which it may use when it
+routes the packets.
+<p>
+
+When routers connect to its primary router the SKE and the SILC Connection
+Authentication protocols are executed just like when normal server connects
+to its router.  The session key is used to secure the communication between
+the routers.  All the secondary routes also have their own session keys.
 
 
 <p><br>
@@ -273,6 +417,34 @@ method of private message delivery is very simple and recommended.
 <h1>Conclusions</h1>
 
 
+<p><br>
+<h1>Further Information</h1>
+<p>
+More detailed information about the SILC Protocol is available in the
+SILC Protocol specification documents.  There exists currently four
+Internet Drafts that defines the protocol in great detail.  The Internet
+Drafts are available from the following sources but also from the
+<a href="http://www.ietf.org">IETF website</a>.
+<p>
+
+- <a href="http://silcnet.org/docs/draft-riikonen-silc-spec-03.txt">
+Secure Internet Live Conferencing (SILC), Protocol Specification</a>
+<br>
+
+- <a href="http://silcnet.org/docs/draft-riikonen-silc-pp-03.txt">
+SILC Packet Protocol</a>
+<br>
+
+- <a href="http://silcnet.org/docs/draft-riikonen-silc-ke-auth-03.txt">
+SILC Key Exchange and Authentication Protocols</a>
+<br>
+
+- <a href="http://silcnet.org/docs/draft-riikonen-silc-commands-01.txt">
+SILC Commands</a>
+<br>
+
+
+<p><br>
 <a name="terms"></a>
 <h1>Terms and Abbreviations</h1>
 
