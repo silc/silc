@@ -3303,7 +3303,7 @@ void silc_server_remove_from_channels(SilcServer server,
     }
 
     silc_hash_table_del(client->channels, channel);
-    silc_hash_table_del(channel->user_list, chl->client);
+    silc_hash_table_del(channel->user_list, client);
     channel->user_count--;
 
     /* If there is no global users on the channel anymore mark the channel
@@ -3312,6 +3312,7 @@ void silc_server_remove_from_channels(SilcServer server,
 	chl->client->router && !silc_server_channel_has_global(channel))
       channel->global_users = FALSE;
 
+    memset(chl, 'A', sizeof(*chl));
     silc_free(chl);
 
     /* Update statistics */
@@ -3404,8 +3405,8 @@ bool silc_server_remove_from_one_channel(SilcServer server,
     return FALSE;
   }
 
-  silc_hash_table_del(client->channels, chl->channel);
-  silc_hash_table_del(channel->user_list, chl->client);
+  silc_hash_table_del(client->channels, channel);
+  silc_hash_table_del(channel->user_list, client);
   channel->user_count--;
 
   /* If there is no global users on the channel anymore mark the channel
@@ -3414,6 +3415,7 @@ bool silc_server_remove_from_one_channel(SilcServer server,
       chl->client->router && !silc_server_channel_has_global(channel))
     channel->global_users = FALSE;
 
+  memset(chl, 'O', sizeof(*chl));
   silc_free(chl);
 
   /* Update statistics */

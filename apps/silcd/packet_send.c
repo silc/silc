@@ -980,8 +980,8 @@ void silc_server_packet_send_local_channel(SilcServer server,
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
-    if (chl->client && !chl->client->router) {
-      sock = (SilcSocketConnection)chl->client->connection;
+    if (chl->client && SILC_IS_LOCAL(chl->client)) {
+      sock = chl->client->connection;
 
       /* Send the packet to the client */
       silc_server_packet_send_dest(server, sock, type, flags, chl->client->id,
