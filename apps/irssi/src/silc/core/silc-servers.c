@@ -258,6 +258,19 @@ static void send_message(SILC_SERVER_REC *server, char *target,
   silc_free(message);
 }
 
+void silc_send_heartbeat(SilcSocketConnection sock, 
+		         void *hb_context)
+{
+  SILC_SERVER_REC *server = SILC_SERVER(hb_context);
+
+  if (server == NULL)
+    return;
+
+  silc_client_packet_send(silc_client, sock, SILC_PACKET_HEARTBEAT, 0,
+		          NULL, 0, FALSE);
+
+}
+
 static void sig_connected(SILC_SERVER_REC *server)
 {
   SilcClientConnection conn;
@@ -298,6 +311,13 @@ static void sig_connected(SILC_SERVER_REC *server)
 
   /* Put default attributes */
   silc_query_attributes_default(silc_client, conn);
+
+  /* initialize heartbeat sending */
+  if (settings_get_int("heartbeat") > 0)
+    silc_socket_set_heartbeat(conn->sock, settings_get_int("heartbeat"),
+		  		(void *)server,
+				(SilcSocketConnectionHBCb)silc_send_heartbeat,
+				silc_client->schedule);
 
   server->ftp_sessions = silc_dlist_init();
   server->isnickflag = isnickflag_func;

@@ -1,3 +1,8 @@
+Sun Oct 27 11:44:32 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Merged c0ffee's /set heartbeat patch to Irssi SILC client.
+	  Affected files irssi/src/silc/core/silc-core, silc-server.c.
+
 Thu Oct 24 12:22:35 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed channel key packet processing bug on backup router
