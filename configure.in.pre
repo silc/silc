@@ -1069,4 +1069,8 @@ echo " Multi-threads support .........: $threads"
 echo " Debugging enabled .............: $summary_debug"
 echo " Stack-trace enabled ...........: $summary_stacktrace"
 echo ""
-echo "Compile the sources with 'make' or 'gmake' command. (GNU make is required)"
+if test "x$silc_dist" = "xsilc-client"; then
+  echo "Compile the sources with 'make' or 'gmake' command (GNU make is required)."
+else
+  echo "Compile the sources with 'make' or 'gmake' command."
+fi
