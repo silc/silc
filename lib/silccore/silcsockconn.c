@@ -30,7 +30,7 @@ void silc_socket_alloc(int sock, SilcSocketType type, void *user_data,
   SILC_LOG_DEBUG(("Allocating new socket connection object"));
 
   /* Set the pointers. Incoming and outgoing data buffers
-     are allocated by the server when they are first used. */
+     are allocated by the application when they are first used. */
   *new_socket = silc_calloc(1, sizeof(**new_socket));
   (*new_socket)->sock = sock;
   (*new_socket)->type = type;
