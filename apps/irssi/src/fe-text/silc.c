@@ -335,10 +335,6 @@ int main(int argc, char **argv)
 	args_register(options);
 	args_execute(argc, argv);
 
-#if 0
-	silc_init_finish();
-#endif
-
 	if (!dummy && !term_init()) {
 		fprintf(stderr, "Can't initialize screen handling, quitting.\n");
 		fprintf(stderr, "You can still use the dummy mode with -d parameter\n");

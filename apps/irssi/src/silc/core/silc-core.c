@@ -42,14 +42,7 @@
 
 /* Command line option variables */
 static bool opt_create_keypair = FALSE;
-static bool opt_list_ciphers = FALSE;
-static bool opt_list_hash = FALSE;
-static bool opt_list_hmac = FALSE;
-static bool opt_list_pkcs = FALSE;
-static bool opt_version = FALSE;
-static char *opt_debug = FALSE;
 static char *opt_pkcs = NULL;
-static char *opt_keyfile = NULL;
 static int opt_bits = 0;
 
 static int idletag;
@@ -239,13 +232,65 @@ static void silc_register_hmac(SilcClient client, const char *hmac)
 
 /* Finalize init. Init finish signal calls this. */
 
-void silc_core_init_finish(SERVER_REC *server)
+void silc_opt_callback(poptContext con, 
+		       enum poptCallbackReason reason,
+		       const struct poptOption *opt,
+		       const char *arg, void *data)
 {
-  CHAT_PROTOCOL_REC *rec;
-  SilcClientParams params;
-  const char *def_cipher, *def_hash, *def_hmac;
+  if (strcmp(opt->longName, "show-key") == 0) {
+    /* Dump the key */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
+    silc_client_show_key(opt->arg);
+    exit(0);
+  }
 
-  if (opt_create_keypair == TRUE) {
+  if (strcmp(opt->longName, "list-ciphers") == 0) {
+    silc_cipher_register_default();
+    silc_client_list_ciphers();
+    exit(0);
+  }
+
+  if (strcmp(opt->longName, "list-hash-funcs") == 0) {
+    silc_hash_register_default();
+    silc_client_list_hash_funcs();
+    exit(0);
+  }
+
+  if (strcmp(opt->longName, "list-hmacs") == 0) {
+    silc_hmac_register_default();
+    silc_client_list_hmacs();
+    exit(0);
+  }
+
+  if (strcmp(opt->longName, "list-pkcs") == 0) {
+    silc_pkcs_register_default();
+    silc_client_list_pkcs();
+    exit(0);
+  }
+
+  if (strcmp(opt->longName, "debug") == 0) {
+    silc_debug = TRUE;
+    silc_debug_hexdump = TRUE;
+    silc_log_set_debug_string(arg);
+    silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
+    silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
+    silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
+    silc_log_set_callback(SILC_LOG_FATAL, silc_log_misc, NULL);
+#ifndef SILC_DEBUG
+    fprintf(stdout, 
+	    "Run-time debugging is not enabled. To enable it recompile\n"
+	    "the client with --enable-debug configuration option.\n");
+    sleep(1);
+#endif
+  }
+}
+
+static void sig_init_read_settings(void)
+{
+  if (opt_create_keypair) {
     /* Create new key pair and exit */
     silc_cipher_register_default();
     silc_pkcs_register_default();
@@ -255,89 +300,72 @@ void silc_core_init_finish(SERVER_REC *server)
 				NULL, NULL, NULL, NULL, NULL);
     exit(0);
   }
+}
 
-  if (opt_keyfile) {
-    /* Dump the key */
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
-    silc_client_show_key(opt_keyfile);
-    exit(0);
-  }
+/* Init SILC. Called from src/fe-text/silc.c */
 
-  if (opt_list_ciphers) {
-    silc_cipher_register_default();
-    silc_client_list_ciphers();
-    exit(0);
-  }
+void silc_core_init(void)
+{
+  static struct poptOption silc_options[] = {
+    { NULL, '\0', POPT_ARG_CALLBACK, (void *)&silc_opt_callback, '\0', NULL },
+    { "show-key", 'S', POPT_ARG_STRING, NULL, 0,
+      "Show the contents of the public key", "FILE" },
+    { "list-ciphers", 'c', POPT_ARG_NONE, NULL, 0,
+      "List supported ciphers", NULL },
+    { "list-hash-funcs", 'H', POPT_ARG_NONE, NULL, 0,
+      "List supported hash functions", NULL },
+    { "list-hmacs", 'M', POPT_ARG_NONE, NULL, 0,
+      "List supported HMACs", NULL },
+    { "list-pkcs", 'P', POPT_ARG_NONE, NULL, 0,
+      "List supported PKCSs", NULL },
+    { "debug", 'd', POPT_ARG_STRING, NULL, 0,
+      "Enable debugging", "STRING" },
+    { NULL, '\0', 0, NULL }
+  };
 
-  if (opt_list_hash) {
-    silc_hash_register_default();
-    silc_client_list_hash_funcs();
-    exit(0);
-  }
+  static struct poptOption options[] = {
+    { NULL, '\0', POPT_ARG_INCLUDE_TABLE, silc_options, 0, NULL, NULL },
+    { "create-key-pair", 'C', POPT_ARG_NONE, &opt_create_keypair, 0,
+      "Create new public key pair", NULL },
+    { "pkcs", 0, POPT_ARG_STRING, &opt_pkcs, 0,
+      "Set the PKCS of the public key pair", "PKCS" },
+    { "bits", 0, POPT_ARG_INT, &opt_bits, 0,
+      "Set the length of the public key pair", "VALUE" },
+    { NULL, '\0', 0, NULL }
+  };
 
-  if (opt_list_hmac) {
-    silc_hmac_register_default();
-    silc_client_list_hmacs();
-    exit(0);
-  }
+  CHAT_PROTOCOL_REC *rec;
+  SilcClientParams params;
+  const char *def_cipher, *def_hash, *def_hmac;
 
-  if (opt_list_pkcs) {
-    silc_pkcs_register_default();
-    silc_client_list_pkcs();
-    exit(0);
-  }
+  args_register(options);
+  signal_add("irssi init read settings", (SIGNAL_FUNC) sig_init_read_settings);
 
-  if (opt_version) {
-    printf("SILC Secure Internet Live Conferencing, version %s "
-	   "(base: SILC Toolkit %s)\n", silc_dist_version, silc_version);
-    printf("(c) 1997 - 2001 Pekka Riikonen <priikone@silcnet.org>\n");
-    exit(0); 
-  }
-
-  if (opt_debug) {
-    silc_debug = TRUE;
-    silc_debug_hexdump = TRUE;
-    silc_log_set_debug_string(opt_debug);
-    silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
-    silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
-    silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
-    silc_log_set_callback(SILC_LOG_FATAL, silc_log_misc, NULL);
-#ifndef SILC_DEBUG
-    fprintf(stdout, 
-	    "Run-time debugging is not enabled. To enable it recompile\n"
-	    "the client with --enable-debug configuration option.\n");
-#endif
-  }
-
-  /* Do some irssi initializing */
+  /* Settings */
   settings_add_bool("server", "skip_motd", FALSE);
   settings_add_str("server", "alternate_nick", NULL);
-  
-  /* Initialize the auto_addr variables Is "server" the best choice for
-   * this?  No existing category seems to apply.
-   */
   settings_add_bool("server", "use_auto_addr", FALSE);
   settings_add_str("server", "auto_bind_ip", "");
   settings_add_str("server", "auto_public_ip", "");
   settings_add_int("server", "auto_bind_port", 0);
-        	    	    	
+  settings_add_str("server", "crypto_default_cipher", SILC_DEFAULT_CIPHER);
+  settings_add_str("server", "crypto_default_hash", SILC_DEFAULT_HASH);
+  settings_add_str("server", "crypto_default_hmac", SILC_DEFAULT_HMAC);
+  settings_add_int("server", "key_exchange_timeout_secs", 120);
+  settings_add_int("server", "key_exchange_rekey_secs", 3600);
+  settings_add_int("server", "connauth_request_secs", 2);
+
   silc_init_userinfo();
 
   /* Initialize client parameters */
   memset(&params, 0, sizeof(params));
   strcat(params.nickname_format, "%n@%h%a");
   params.nickname_parse = silc_nickname_format_parse;
+  params.rekey_secs = settings_get_int("key_exchange_rekey_secs");
+  params.connauth_request_secs = settings_get_int("connauth_request_secs");
 
   /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);
-
-  /* Crypto settings */
-  settings_add_str("server", "crypto_default_cipher", SILC_DEFAULT_CIPHER);
-  settings_add_str("server", "crypto_default_hash", SILC_DEFAULT_HASH);
-  settings_add_str("server", "crypto_default_hmac", SILC_DEFAULT_HMAC);
 
   /* Get the ciphers and stuff from config file */
   def_cipher = settings_get_str("crypto_default_cipher");
@@ -397,39 +425,6 @@ void silc_core_init_finish(SERVER_REC *server)
   silc_queries_init();
 
   idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
-}
-
-/* Init SILC. Called from src/fe-text/silc.c */
-
-void silc_core_init(void)
-{
-  static struct poptOption options[] = {
-    { "create-key-pair", 'C', POPT_ARG_NONE, &opt_create_keypair, 0, 
-      "Create new public key pair", NULL },
-    { "pkcs", 0, POPT_ARG_STRING, &opt_pkcs, 0, 
-      "Set the PKCS of the public key pair", "PKCS" },
-    { "bits", 0, POPT_ARG_INT, &opt_bits, 0, 
-      "Set the length of the public key pair", "VALUE" },
-    { "show-key", 'S', POPT_ARG_STRING, &opt_keyfile, 0, 
-      "Show the contents of the public key", "FILE" },
-    { "list-ciphers", 'c', POPT_ARG_NONE, &opt_list_ciphers, 0,
-      "List supported ciphers", NULL },
-    { "list-hash-funcs", 'H', POPT_ARG_NONE, &opt_list_hash, 0,
-      "List supported hash functions", NULL },
-    { "list-hmacs", 'M', POPT_ARG_NONE, &opt_list_hmac, 0,
-      "List supported HMACs", NULL },
-    { "list-pkcs", 'P', POPT_ARG_NONE, &opt_list_pkcs, 0,
-      "List supported PKCSs", NULL },
-    { "debug", 'd', POPT_ARG_STRING, &opt_debug, 0,
-      "Enable debugging", "STRING" },
-    { "version", 'V', POPT_ARG_NONE, &opt_version, 0,
-      "Show version", NULL },
-    { NULL, '\0', 0, NULL }
-  };
-
-  signal_add("irssi init finished", (SIGNAL_FUNC) silc_core_init_finish);
-
-  args_register(options);
 }
 
 /* Deinit SILC. Called from src/fe-text/silc.c */
