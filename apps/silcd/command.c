@@ -701,7 +701,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   SilcServer server = cmd->server;
   char *tmp;
   int i, k, len, valid_count;
-  SilcBuffer packet, idp, channels;
+  SilcBuffer packet, idp, channels, umode_list = NULL;
   SilcClientEntry entry;
   SilcCommandStatus status;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
@@ -782,7 +782,12 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       strncat(uh, hsock->hostname, len);
     }
 
-    channels = silc_server_get_client_channel_list(server, entry);
+    if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
+      channels = silc_server_get_client_channel_list(server, entry, FALSE, 
+						     FALSE, &umode_list);
+    else
+      channels = silc_server_get_client_channel_list(server, entry, TRUE, 
+						     TRUE, &umode_list);
 
     if (entry->data.fingerprint[0] != 0 && entry->data.fingerprint[1] != 0)
       fingerprint = entry->data.fingerprint;
@@ -791,12 +796,13 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       
     SILC_PUT32_MSB(entry->mode, mode);
 
-    if (entry->connection)
+    if (entry->connection) {
       SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
+    }
 
     packet = 
       silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
-					   status, 0, ident, 8, 
+					   status, 0, ident, 9, 
 					   2, idp->data, idp->len,
 					   3, nh, strlen(nh),
 					   4, uh, strlen(uh),
@@ -807,7 +813,10 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
 					   7, mode, 4,
 					   8, idle, 4,
 					   9, fingerprint,
-					   fingerprint ? 20 : 0);
+					   fingerprint ? 20 : 0,
+					   10, umode_list ? umode_list->data :
+					   NULL, umode_list ? umode_list->len :
+					   0);
 
     silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			    0, packet->data, packet->len, FALSE);
@@ -816,6 +825,10 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
     silc_buffer_free(idp);
     if (channels)
       silc_buffer_free(channels);
+    if (umode_list) {
+      silc_buffer_free(umode_list);
+      umode_list = NULL;
+    }
 
     k++;
   }
@@ -5062,7 +5075,7 @@ SILC_SERVER_CMD_FUNC(users)
     channel = silc_idlist_find_channel_by_name(server->local_list, 
 					       channel_name, NULL);
 
-  if (!channel || channel->disabled) {
+  if (!channel || channel->disabled || !channel->users_resolved) {
     if (server->server_type != SILC_ROUTER && !server->standalone &&
 	!cmd->pending) {
       SilcBuffer tmpbuf;

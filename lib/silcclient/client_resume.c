@@ -27,6 +27,14 @@ SILC_CLIENT_CMD_FUNC(resume_identify);
 SILC_CLIENT_CMD_FUNC(resume_cmode);
 SILC_CLIENT_CMD_FUNC(resume_users);
 
+#define RESUME_CALL_COMPLETION(client, session, s)			\
+do {									\
+  session->success = s;							\
+  silc_schedule_task_add(client->schedule, 0,				\
+			 silc_client_resume_call_completion, session,	\
+			 0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);	\
+} while(0)
+
 /* Generates the session detachment data. This data can be used later
    to resume back to the server. */
 
@@ -157,6 +165,17 @@ bool silc_client_process_detach_data(SilcClient client,
   return TRUE;
 }
 
+
+/* Resume session context */
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  SilcClientResumeSessionCallback callback;
+  void *context;
+  SilcUInt32 channel_count;
+  bool success;
+} *SilcClientResumeSession;
+
 /* Generic command reply callback */
 
 SILC_CLIENT_CMD_REPLY_FUNC(resume)
@@ -169,14 +188,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(resume)
     (*cmd->callback)(cmd->context, cmd);
 }
 
-/* Resume session context */
-typedef struct {
-  SilcClient client;
-  SilcClientConnection conn;
-  SilcClientResumeSessionCallback callback;
-  void *context;
-  SilcUInt32 channel_count;
-} *SilcClientResumeSession;
+/* Completion calling callback */
+
+SILC_TASK_CALLBACK(silc_client_resume_call_completion)
+{
+  SilcClientResumeSession session = context;
+  session->callback(session->client, session->conn, session->success,
+		    session->context);
+}
 
 /* This function is used to perform the resuming procedure after the
    client has connected to the server properly and has received the
@@ -355,8 +374,7 @@ SILC_CLIENT_CMD_FUNC(resume_identify)
  err:
   session->channel_count--;
   if (!session->channel_count)
-    session->callback(session->client, session->conn, FALSE,
-		      session->context);
+    RESUME_CALL_COMPLETION(client, session, FALSE);
 }
 
 /* Received cmode to channel entry */
@@ -418,8 +436,7 @@ SILC_CLIENT_CMD_FUNC(resume_cmode)
  err:
   session->channel_count--;
   if (!session->channel_count)
-    session->callback(session->client, session->conn, FALSE,
-		      session->context);
+    RESUME_CALL_COMPLETION(client, session, FALSE);
 }
 
 /* Received users reply to a channel entry */
@@ -506,8 +523,7 @@ SILC_CLIENT_CMD_FUNC(resume_users)
      our channels */
   session->channel_count--;
   if (!session->channel_count)
-    session->callback(session->client, session->conn, TRUE,
-		      session->context);
+    RESUME_CALL_COMPLETION(client, session, TRUE);
 
   silc_free(channel_id);
   return;
@@ -516,6 +532,5 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   silc_free(channel_id);
   session->channel_count--;
   if (!session->channel_count)
-    session->callback(session->client, session->conn, FALSE,
-		      session->context);
+    RESUME_CALL_COMPLETION(client, session, FALSE);
 }

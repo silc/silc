@@ -1543,15 +1543,17 @@ static void silc_client_resume_session_cb(SilcClient client,
 				 SILC_CLIENT_CONN_SUCCESS_RESUME :
 				 SILC_CLIENT_CONN_ERROR);
 
-  /* Issue INFO command to fetch the real server name and server
-     information and other stuff. */
-  silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
-			       silc_client_command_reply_info_i, 0, 
-			       ++conn->cmd_ident);
-  sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
-  silc_client_command_send(client, conn, SILC_COMMAND_INFO,
-			   conn->cmd_ident, 1, 2, sidp->data, sidp->len);
-  silc_buffer_free(sidp);
+  if (success) {
+    /* Issue INFO command to fetch the real server name and server
+       information and other stuff. */
+    silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
+				 silc_client_command_reply_info_i, 0, 
+				 ++conn->cmd_ident);
+    sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
+    silc_client_command_send(client, conn, SILC_COMMAND_INFO,
+			     conn->cmd_ident, 1, 2, sidp->data, sidp->len);
+    silc_buffer_free(sidp);
+  }
 }
 
 /* Processes the received new Client ID from server. Old Client ID is

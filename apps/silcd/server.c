@@ -3015,6 +3015,9 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 
   server->stat.my_channels++;
 
+  if (server->server_type == SILC_ROUTER)
+    entry->users_resolved = TRUE;
+
   return entry;
 }
 
@@ -3078,6 +3081,9 @@ silc_server_create_new_channel_with_id(SilcServer server,
 				 entry->mode);
 
   server->stat.my_channels++;
+
+  if (server->server_type == SILC_ROUTER)
+    entry->users_resolved = TRUE;
 
   return entry;
 }
@@ -3968,6 +3974,113 @@ void silc_server_save_users_on_channel(SilcServer server,
   }
 }
 
+/* Saves channels and channels user modes to the `client'.  Removes
+   the client from those channels that are not sent in the list but
+   it has joined. */
+
+void silc_server_save_user_channels(SilcServer server,
+				    SilcSocketConnection sock,
+				    SilcClientEntry client,
+				    SilcBuffer channels,
+				    SilcBuffer channels_user_modes)
+{
+  SilcDList ch;
+  SilcUInt32 *chumodes;
+  SilcChannelPayload entry;
+  SilcChannelEntry channel;
+  SilcChannelID *channel_id;
+  SilcChannelClientEntry chl;
+  SilcHashTable ht = NULL;
+  SilcHashTableList htl;
+  char *name;
+  int i = 0;
+
+  if (!channels ||!channels_user_modes)
+    goto out;
+  
+  ch = silc_channel_payload_parse_list(channels->data, channels->len);
+  if (ch && silc_get_mode_list(channels_user_modes, silc_dlist_count(ch),
+			       &chumodes)) {
+    ht = silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL, 
+			       NULL, NULL, NULL, TRUE);
+    silc_dlist_start(ch);
+    while ((entry = silc_dlist_get(ch)) != SILC_LIST_END) {
+      /* Check if we have this channel, and add it if we don't have it.
+	 Also add the client on the channel unless it is there already. */
+      channel_id = silc_channel_get_id_parse(entry);
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
+					       channel_id, NULL);
+      if (!channel)
+	channel = silc_idlist_find_channel_by_id(server->global_list,
+						 channel_id, NULL);
+      if (!channel) {
+	if (server->server_type != SILC_SERVER) {
+	  silc_free(channel_id);
+	  i++;
+	  continue;
+	}
+	
+	/* We don't have that channel anywhere, add it. */
+	name = silc_channel_get_name(entry, NULL);
+	channel = silc_idlist_add_channel(server->global_list, strdup(name), 0,
+					  channel_id, server->router,
+					  NULL, NULL, 0);
+	if (!channel) {
+	  silc_free(channel_id);
+	  i++;
+	  continue;
+	}
+	channel_id = NULL;
+      }
+
+      channel->mode = silc_channel_get_mode(entry);
+
+      /* Add the client on the channel */
+      if (!silc_server_client_on_channel(client, channel, &chl)) {
+	chl = silc_calloc(1, sizeof(*chl));
+	chl->client = client;
+	chl->mode = chumodes[i++];
+	chl->channel = channel;
+	silc_hash_table_add(channel->user_list, chl->client, chl);
+	silc_hash_table_add(client->channels, chl->channel, chl);
+	channel->user_count++;
+      } else {
+	/* Update mode */
+	chl->mode = chumodes[i++];
+      }
+
+      silc_hash_table_add(ht, channel, channel);
+      silc_free(channel_id);
+    }
+    silc_channel_payload_list_free(ch);
+    silc_free(chumodes);
+  }
+
+ out:
+  /* Go through the list again and remove client from channels that
+     are no part of the list. */
+  if (ht) {
+    silc_hash_table_list(client->channels, &htl);
+    while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+      if (!silc_hash_table_find(ht, chl->channel, NULL, NULL)) {
+	silc_hash_table_del(chl->channel->user_list, chl->client);
+	silc_hash_table_del(chl->client->channels, chl->channel);
+	silc_free(chl);
+      }
+    }
+    silc_hash_table_list_reset(&htl);
+    silc_hash_table_free(ht);
+  } else {
+    silc_hash_table_list(client->channels, &htl);
+    while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+      silc_hash_table_del(chl->channel->user_list, chl->client);
+      silc_hash_table_del(chl->client->channels, chl->channel);
+      silc_free(chl);
+    }
+    silc_hash_table_list_reset(&htl);
+  }
+}
+
 /* Lookups route to the client indicated by the `id_data'. The connection
    object and internal data object is returned. Returns NULL if route
    could not be found to the client. If the `client_id' is specified then
@@ -4060,7 +4173,10 @@ silc_server_get_client_route(SilcServer server,
    Secret channels are not put to the list. */
 
 SilcBuffer silc_server_get_client_channel_list(SilcServer server,
-					       SilcClientEntry client)
+					       SilcClientEntry client,
+					       bool get_private,
+					       bool get_secret,
+					       SilcBuffer *user_mode_list)
 {
   SilcBuffer buffer = NULL;
   SilcChannelEntry channel;
@@ -4071,12 +4187,16 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
   SilcUInt16 name_len;
   int len;
 
+  if (user_mode_list)
+    *user_mode_list = NULL;
+
   silc_hash_table_list(client->channels, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
-    if (channel->mode & SILC_CHANNEL_MODE_SECRET ||
-	channel->mode & SILC_CHANNEL_MODE_PRIVATE)
+    if (channel->mode & SILC_CHANNEL_MODE_SECRET && !get_secret)
+      continue;
+    if (channel->mode & SILC_CHANNEL_MODE_PRIVATE && !get_private)
       continue;
 
     cid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
@@ -4085,23 +4205,37 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 
     len = 4 + name_len + id_len + 4;
     buffer = silc_buffer_realloc(buffer,
-				 (buffer ? (buffer)->truelen + len : len));
-    silc_buffer_pull_tail(buffer, ((buffer)->end - (buffer)->data));
+				 (buffer ? buffer->truelen + len : len));
+    silc_buffer_pull_tail(buffer, (buffer->end - buffer->data));
     silc_buffer_format(buffer,
 		       SILC_STR_UI_SHORT(name_len),
 		       SILC_STR_UI_XNSTRING(channel->channel_name,
 					    name_len),
 		       SILC_STR_UI_SHORT(id_len),
 		       SILC_STR_UI_XNSTRING(cid, id_len),
-		       SILC_STR_UI_INT(chl->mode), /* Client's mode */
+		       SILC_STR_UI_INT(chl->channel->mode),
 		       SILC_STR_END);
     silc_buffer_pull(buffer, len);
     silc_free(cid);
+
+    if (user_mode_list) {
+      *user_mode_list = silc_buffer_realloc(*user_mode_list,
+					    (*user_mode_list ?
+					     (*user_mode_list)->truelen + 4 :
+					     4));
+      silc_buffer_pull_tail(*user_mode_list, ((*user_mode_list)->end -
+					      (*user_mode_list)->data));
+      SILC_PUT32_MSB(chl->mode, (*user_mode_list)->data);
+      silc_buffer_pull(*user_mode_list, 4);
+    }
   }
   silc_hash_table_list_reset(&htl);
 
   if (buffer)
     silc_buffer_push(buffer, buffer->data - buffer->head);
+  if (user_mode_list && *user_mode_list)
+    silc_buffer_push(*user_mode_list, ((*user_mode_list)->data -
+				       (*user_mode_list)->head));
 
   return buffer;
 }
@@ -4135,9 +4269,11 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
       always_resolve) {
     SilcBuffer buffer, idp;
 
-    client->data.status |= SILC_IDLIST_STATUS_RESOLVING;
-    client->data.status &= ~SILC_IDLIST_STATUS_RESOLVED;
-    client->resolve_cmd_ident = ++server->cmd_ident;
+    if (client) {
+      client->data.status |= SILC_IDLIST_STATUS_RESOLVING;
+      client->data.status &= ~SILC_IDLIST_STATUS_RESOLVED;
+      client->resolve_cmd_ident = ++server->cmd_ident;
+    }
 
     idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
     buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,

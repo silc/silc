@@ -1,3 +1,22 @@
+Fri Apr 12 10:17:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined that server receives WHOIS command reply for private
+	  and secret channels too.  Updated protocol specs and the
+	  code in server.  Affected file silcd/command.c.
+
+	* Defined <channel user mode list> argument to WHOIS command
+	  reply for returning user modes on the channels.  The
+	  channel list now doesn't include the user mode anymore but the
+	  actual channel mode.  Updated protocol specs and the code in
+	  client and server.  Affected files are silcd/command_reply.c,
+	  silcd/command.c, silcd/server.c, irssi/src/silc/core/client_ops.c,
+	  and lib/silcclient/command_reply.c.
+
+	* Save the channels list in WHOIS command reply in normal server
+	  so that WHOIS always shows joined channels also in normal
+	  server and not just on router.  Affected file is
+	  silcd/command_reply.c.
+
 Thu Apr 11 22:29:33 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined that server receives USERS command reply for private

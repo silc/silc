@@ -529,4 +529,22 @@ char *silc_get_username();
  ***/
 char *silc_get_real_name();
 
+/****f* silcutil/SilcUtilAPI/silc_get_mode_list
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
+ *                            SilcUInt32 **list);
+ *
+ * DESCRIPTION
+ *
+ *    Returns modes from list of 32 bit MSB first order values that are
+ *    encoded one after the other in the `mode_list' into the `list'
+ *    array.  The caller must free the returned list.  Return FALSE if
+ *    there is error parsing the list.
+ *
+ ***/
+bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
+			SilcUInt32 **list);
+
 #endif	/* !SILCUTIL_H */

@@ -900,3 +900,25 @@ char *silc_get_input(const char *prompt, bool echo_off)
   return NULL;
 #endif /* SILC_UNIX */
 }
+
+/* Return mode list */
+
+bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
+			SilcUInt32 **list)
+{
+  int i;
+
+  if (mode_list->len / 4 != mode_list_count)
+    return FALSE;
+
+  *list = silc_calloc(mode_list_count, sizeof(**list));
+
+  for (i = 0; i < mode_list_count; i++) {
+    SILC_GET32_MSB((*list)[i], mode_list->data);
+    silc_buffer_pull(mode_list, 4);
+  }
+
+  silc_buffer_push(mode_list, mode_list->data - mode_list->head);
+
+  return TRUE;
+}

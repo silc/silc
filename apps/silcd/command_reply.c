@@ -121,15 +121,15 @@ static char
 silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 {
   SilcServer server = cmd->server;
-  unsigned char *tmp, *id_data;
+  unsigned char *tmp, *id_data, *umodes;
   char *nickname, *username, *realname, *servername = NULL;
   unsigned char *fingerprint;
   SilcClientID *client_id;
   SilcClientEntry client;
+  SilcIDCacheEntry cache = NULL;
   char global = FALSE;
   char *nick;
-  SilcUInt32 mode = 0, len, id_len, flen;
-  int expire = 0;
+  SilcUInt32 mode = 0, len, len2, id_len, flen;
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -210,17 +210,32 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
     client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
 
-    /* If client is global and is not on any channel then add that we'll
-       expire the entry after a while. */
-    if (global && !silc_hash_table_count(client->channels) &&
-	server->server_type == SILC_SERVER)
-      expire = time(NULL) + 300;
-
     /* Create new cache entry */
     silc_idcache_add(global ? server->global_list->clients :
 		     server->local_list->clients, nick, client->id, 
-		     client, expire, NULL); 
+		     client, 0, &cache); 
     silc_free(client_id);
+  }
+
+  /* Save channel list if it was sent to us */
+  if (server->server_type == SILC_SERVER) {
+    tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
+    umodes = silc_argument_get_arg_type(cmd->args, 10, &len2);
+    if (tmp && umodes) {
+      SilcBufferStruct channels_buf, umodes_buf;
+      silc_buffer_set(&channels_buf, tmp, len);
+      silc_buffer_set(&umodes_buf, umodes, len2);
+      silc_server_save_user_channels(server, cmd->sock, client, &channels_buf,
+				     &umodes_buf);
+    } else {
+      silc_server_save_user_channels(server, cmd->sock, client, NULL, NULL);
+    }
+
+    if (cache)
+      /* If client is global and is not on any channel then add that we'll
+	 expire the entry after a while. */
+      if (global && !silc_hash_table_count(client->channels))
+	cache->expire = time(NULL) + 300;
   }
 
   if (fingerprint && flen == sizeof(client->data.fingerprint))
@@ -939,6 +954,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   silc_server_save_users_on_channel(server, cmd->sock, entry, 
 				    client_id, client_id_list,
 				    client_mode_list, list_count);
+  entry->users_resolved = TRUE;
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
@@ -1070,6 +1086,9 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
   silc_server_save_users_on_channel(server, cmd->sock, channel, NULL,
 				    client_id_list, client_mode_list, 
 				    list_count);
+
+  channel->global_users = silc_server_channel_has_global(channel);
+  channel->users_resolved = TRUE;
 
   silc_buffer_free(client_id_list);
   silc_buffer_free(client_mode_list);

@@ -195,7 +195,8 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   char *nickname = NULL, *username = NULL;
   char *realname = NULL;
   SilcUInt32 idle = 0, mode = 0;
-  SilcBufferStruct channels;
+  SilcBufferStruct channels, ch_user_modes;
+  bool has_channels = FALSE, has_user_modes = FALSE;
   unsigned char *fingerprint;
   SilcUInt32 fingerprint_len;
   
@@ -223,8 +224,10 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
-  if (tmp)
+  if (tmp) {
     silc_buffer_set(&channels, tmp, len);
+    has_channels = TRUE;
+  }
 
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
   if (tmp)
@@ -235,6 +238,12 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     SILC_GET32_MSB(idle, tmp);
 
   fingerprint = silc_argument_get_arg_type(cmd->args, 9, &fingerprint_len);
+
+  tmp = silc_argument_get_arg_type(cmd->args, 10, &len);
+  if (tmp) {
+    silc_buffer_set(&ch_user_modes, tmp, len);
+    has_user_modes = TRUE;
+  }
 
   /* Check if we have this client cached already. */
   client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
@@ -260,7 +269,8 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   /* Notify application */
   if (!cmd->callback && notify)
     COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
-		   &channels, mode, idle, fingerprint));
+		   has_channels ? &channels : NULL, mode, idle, 
+		   fingerprint, has_user_modes ? &ch_user_modes : NULL));
 }
 
 /* Received reply for WHOIS command. This maybe called several times

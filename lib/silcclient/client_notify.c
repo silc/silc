@@ -482,7 +482,7 @@ void silc_client_notify_by_server(SilcClient client,
     tmp = silc_argument_get_arg_type(args, 3, NULL);
     if (tmp) {
       /* Protocol version 1.1 */
-      char *tmp_nick;
+      char *tmp_nick = NULL;
 
       /* Check whether nickname changed at all.  It is possible that nick
 	 change notify is received but nickname didn't changed, only the
@@ -493,7 +493,7 @@ void silc_client_notify_by_server(SilcClient client,
       else
 	tmp_nick = strdup(tmp);
 
-      if (!strcmp(tmp, tmp_nick)) {
+      if (tmp_nick && !strcmp(tmp, tmp_nick)) {
 	/* Nickname didn't change. Update only the ID */
 	silc_idcache_del_by_context(conn->client_cache, client_entry);
 	silc_free(client_entry->id);

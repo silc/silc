@@ -2427,9 +2427,15 @@ void silc_server_new_channel(SilcServer server,
 		      silc_id_render(channel_id, SILC_ID_CHANNEL), 
 		      sock->hostname));
     
-      silc_idlist_add_channel(server->global_list, strdup(channel_name), 
-			      0, channel_id, sock->user_data, NULL, NULL, 0);
+      channel = 
+	silc_idlist_add_channel(server->global_list, strdup(channel_name), 
+				0, channel_id, sock->user_data, NULL, NULL, 0);
+      if (!channel)
+	return;
+
       server->stat.channels++;
+      if (server->server_type == SILC_ROUTER)
+	channel->users_resolved = TRUE;
     }
   } else {
     /* The channel is coming from our server, thus it is in our cell
@@ -2946,12 +2952,14 @@ void silc_server_resume_client(SilcServer server,
       return;
     }
 
-    /* Check that the client is detached */
-    if (!(detached_client->mode & SILC_UMODE_DETACHED)) {
+    /* Check that the client is detached, and that we have other info too */
+    if (!(detached_client->mode & SILC_UMODE_DETACHED) ||
+	!silc_hash_table_count(detached_client->channels) ||
+	!detached_client->nickname) {
       if (server->server_type == SILC_SERVER && !server->standalone) {
 	/* The client info is being resolved. Reprocess this packet after
 	   receiving the reply to the query. */
-	SILC_LOG_DEBUG(("Resolving client mode"));
+	SILC_LOG_DEBUG(("Resolving client info"));
 	silc_server_get_client_resolve(server, client_id, TRUE, NULL);
 	r = silc_calloc(1, sizeof(*r));
 	if (!r)
@@ -3093,6 +3101,24 @@ void silc_server_resume_client(SilcServer server,
 					    client->nickname);
     }
 
+    /* Resolve users on those channels that client has joined but we
+       haven't resolved user list yet. */
+    if (server->server_type == SILC_SERVER && !server->standalone) {
+      silc_hash_table_list(client->channels, &htl);
+      while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+	channel = chl->channel;
+	SILC_LOG_DEBUG(("Resolving users for %s channel", 
+			channel->channel_name));
+	if (channel->disabled || !channel->users_resolved) {
+	  silc_server_send_command(server, server->router->connection,
+				   SILC_COMMAND_USERS, ++server->cmd_ident,
+				   1, 2, channel->channel_name,
+				   strlen(channel->channel_name));
+	}
+      }
+      silc_hash_table_list_reset(&htl);
+    }
+
     /* Send the new client ID to the client. After this client may start
        receiving other packets, and may start sending packets too. */
     silc_server_send_new_id(server, sock, FALSE, client_id, SILC_ID_CLIENT,
@@ -3125,15 +3151,22 @@ void silc_server_resume_client(SilcServer server,
     /* Send some nice info to the client */
     silc_server_send_connect_notifys(server, sock, client);
 
-    /* XXX normal server may not know about any joined channels!!! 
-       Do this by saving the joined list in the resume_resolve callback.
-       Resolve it here with USERS per channel. */
-
-
     /* Send all channel keys of channels the client has joined */
     silc_hash_table_list(client->channels, &htl);
     while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+      bool created = FALSE;
       channel = chl->channel;
+
+      if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY)
+	continue;
+
+      /* If we don't have channel key, then create one */
+      if (!channel->channel_key) {
+	if (!silc_server_create_channel_key(server, channel, 0))
+	  continue;
+	created = TRUE;
+      }
+
       id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
       keyp = 
 	silc_channel_key_payload_encode(silc_id_get_len(channel->id,
@@ -3148,7 +3181,14 @@ void silc_server_resume_client(SilcServer server,
       /* Send the key packet to client */
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
 			      keyp->data, keyp->len, FALSE);
-      channel->global_users = silc_server_channel_has_global(channel);
+
+      if (created && server->server_type == SILC_SERVER && 
+	  !server->standalone)
+	silc_server_packet_send(server, server->router->connection, 
+				SILC_PACKET_CHANNEL_KEY, 0, 
+				keyp->data, keyp->len, FALSE);
+
+      silc_buffer_free(keyp);
     }
     silc_hash_table_list_reset(&htl);
 

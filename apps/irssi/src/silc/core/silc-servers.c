@@ -204,8 +204,7 @@ static void sig_connected(SILC_SERVER_REC *server)
   /* Try to read detached session data and use it if found. */
   memset(&params, 0, sizeof(params));
   memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "%s/session", get_irssi_dir(),
-	   server->connrec->address, server->connrec->port);
+  snprintf(file, sizeof(file) - 1, "%s/session", get_irssi_dir());
   params.detach_data = silc_file_readfile(file, &params.detach_data_len);
 
   /* Add connection to the client library */
@@ -239,7 +238,7 @@ static void sig_disconnected(SILC_SERVER_REC *server)
 
   if (server->conn && server->conn->sock != NULL) {
     silc_client_close_connection(silc_client, server->conn);
-    
+
     /* SILC closes the handle */
     g_io_channel_unref(net_sendbuffer_handle(server->handle));
     net_sendbuffer_destroy(server->handle, FALSE);

@@ -261,13 +261,14 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  9
+        Max Arguments:  10
             Arguments:  (1) <Status Payload>       (2) <Client ID> 
                         (3) <nickname>[@<server>]  (4) <username@host> 
                         (5) <real name>            (6) [<Channel Payload 
                                                          list>] 
                         (7) [<user mode>]          (8) [<idle time>]
-                        (9) [<fingerprint>]
+                        (9) [<fingerprint>]        (10) <channel user
+                                                         mode list>
 
 
         This command may reply with several command reply messages to
@@ -284,14 +285,19 @@ List of all defined commands in SILC follows.
         <count> option were defined in the query there will be only
         <count> many replies from the server.
 
-        The server may return the list of channels if the client has
+        The server returns the list of channels if the client has
         joined channels.  In this case the list is list of Channel
-        Payloads.  The Mode Mask in the Channel Payload (see [SILC2] and
-        section 2.3.2.3 for the Channel Payload) is the client's mode
-        on the channel.  The list is encoded by adding the Channel
-        Payloads one after the other.
+        Payloads.  The Mode Mask in the Channel Payload is the channel's
+        mode.  The list is encoded by adding the Channel Payloads one
+        after the other.  Private and secret channels MUST NOT be sent,
+        except if the sender of this command is on those channels, or
+        the sender is server.  The <channel user mode list> MUST also
+        be sent if client is joined channels.  This list includes 32 bit
+        MSB first order values one after the other and each indicate
+        the user's mode on a channel.  The order of these values MUST
+        be same as the channel order in the <Channel Payload list>.
 
-        The server may also send client's user mode, idle time, and the
+        The server also returns client's user mode, idle time, and the
         fingerprint of the client's public key.  The <fingerprint> is the
         binary hash digest of the public key.  The fingerprint MUST NOT
         be sent if the server has not verified the proof of posession of

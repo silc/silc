@@ -633,7 +633,7 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
 {
   SILC_SERVER_REC *server = conn->context;
 
-  if (!server && status == SILC_CLIENT_CONN_ERROR) {
+  if (!server || status == SILC_CLIENT_CONN_ERROR) {
     silc_client_close_connection(client, conn);
     return;
   }
@@ -856,7 +856,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       char buf[1024], *nickname, *username, *realname, *nick;
       unsigned char *fingerprint;
       SilcUInt32 idle, mode;
-      SilcBuffer channels;
+      SilcBuffer channels, user_modes;
       SilcClientEntry client_entry;
       
       if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
@@ -901,6 +901,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       mode = va_arg(vp, SilcUInt32);
       idle = va_arg(vp, SilcUInt32);
       fingerprint = va_arg(vp, unsigned char *);
+      user_modes = va_arg(vp, SilcBuffer);
       
       silc_parse_userfqdn(nickname, &nick, NULL);
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
@@ -911,16 +912,20 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			 SILCTXT_WHOIS_REALNAME, realname);
       silc_free(nick);
 
-      if (channels) {
+      if (channels && user_modes) {
+	SilcUInt32 *umodes;
 	SilcDList list = silc_channel_payload_parse_list(channels->data,
 							 channels->len);
-	if (list) {
+	if (list && silc_get_mode_list(user_modes, silc_dlist_count(list),
+				       &umodes)) {
 	  SilcChannelPayload entry;
+	  int i = 0;
+
 	  memset(buf, 0, sizeof(buf));
 	  silc_dlist_start(list);
 	  while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
-	    char *m = silc_client_chumode_char(silc_channel_get_mode(entry));
 	    SilcUInt32 name_len;
+	    char *m = silc_client_chumode_char(umodes[i++]);
 	    char *name = silc_channel_get_name(entry, &name_len);
 	    
 	    if (m)
@@ -933,6 +938,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			     SILCTXT_WHOIS_CHANNELS, buf);
 	  silc_channel_payload_list_free(list);
+	  silc_free(umodes);
 	}
       }
       

@@ -496,6 +496,7 @@ struct SilcChannelEntryStruct {
 
   unsigned long created;
   bool disabled;
+  bool users_resolved;
 };
 
 /* 
