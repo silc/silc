@@ -30,9 +30,6 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o The public key authentication is missing for example in OPER and SILCOPER
-   commands.  See the XXX's in the lib/silcclient/command.c.
-
  o The client library must manage somehow when receiving client that has
    same nickname, same server, same username but different Client ID than
    what we have in the cache.  It is now assumed that they are different
@@ -40,6 +37,9 @@ TODO/bugs In SILC Client Library
    using the client->num so that they can be accessed from the user
    interface separately or it could just remove the old client unless
    it is on some channels.
+
+ o The public key authentication is missing for example in OPER and SILCOPER
+   commands.  See the XXX's in the lib/silcclient/command.c.
 
 
 TODO/bugs In SILC Server

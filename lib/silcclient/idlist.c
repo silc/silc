@@ -124,6 +124,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   SilcIDCacheList list = NULL;
   SilcClientEntry entry, *clients;
   int i = 0;
+  bool found = FALSE;
 
   /* Find ID from cache */
   if (!silc_idcache_find_by_name(conn->client_cache, nickname, &list))
@@ -142,6 +143,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
     silc_idcache_list_first(list, &id_cache);
     while (id_cache) {
       clients[i++] = id_cache->context;
+      found = TRUE;
       if (!silc_idcache_list_next(list, &id_cache))
 	break;
     }
@@ -161,6 +163,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
       }
       
       clients[i++] = id_cache->context;
+      found = TRUE;
       if (!silc_idcache_list_next(list, &id_cache))
 	break;
     }
@@ -168,6 +171,13 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 
   if (list)
     silc_idcache_list_free(list);
+
+  if (!found) {
+    *clients_count = 0;
+    if (clients)
+      silc_free(clients);
+    return NULL;
+  }
 
   return clients;
 }

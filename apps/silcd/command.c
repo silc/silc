@@ -4832,11 +4832,22 @@ SILC_SERVER_CMD_FUNC(users)
     }
   }
 
-  /* If the channel is private or secret do not send anything */
-  if (channel->mode & (SILC_CHANNEL_MODE_PRIVATE | SILC_CHANNEL_MODE_SECRET)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
-					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-    goto out;
+  /* If the channel is private or secret do not send anything, unless the
+     user requesting this command is on the channel. */
+  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
+    if (channel->mode & (SILC_CHANNEL_MODE_PRIVATE | SILC_CHANNEL_MODE_SECRET)
+	&& !silc_server_client_on_channel(cmd->sock->user_data, channel)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
+  } else {
+    if (channel->mode & 
+	(SILC_CHANNEL_MODE_PRIVATE | SILC_CHANNEL_MODE_SECRET)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
   }
 
   /* Get the users list */

@@ -320,8 +320,6 @@ SILC_CLIENT_CMD_FUNC(identify)
   }
 
   if (cmd->argc < 2 || cmd->argc > 3) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
-	     "Usage: /IDENTIFY <nickname>[@<server>] [<count>]");
     COMMAND_ERROR;
     goto out;
   }

@@ -35,6 +35,14 @@ Tue Sep  4 12:39:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  not check anymore for the mlock().  Affected file is
 	  configure.in.pre.
 
+	* Fixed USERS command in server to allow the execution of the
+	  command for private and secret channels if the client sending
+	  the command is on the channel.  Affected file silcd/command.c.
+
+	* Fixed silc_client_get_clients_local to return the clients
+	  count correctly.  It could return wrong value.  Affected file
+	  lib/silcclient/idlist.c.
+
 Mon Sep  3 20:09:59 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the lib/silcmath/mpi/mpi.h to always use 32-bit data
