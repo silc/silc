@@ -1636,7 +1636,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
 			   SILC_TASK_PRI_LOW);
 }
 
-/* After this is called, server don't wait for backup router anymore */
+/* After this is called, server don't wait for backup router anymore.  
+   This gets called automatically even after we have backup router
+   connection established. */
 
 SILC_TASK_CALLBACK(silc_server_backup_router_wait)
 {
@@ -1915,7 +1917,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  ctx->conn_type = SILC_SOCKET_TYPE_SERVER;
 
 	new_server->server_type = SILC_BACKUP_ROUTER;
-	server->wait_backup = FALSE;
       }
 
       /* Statistics */
