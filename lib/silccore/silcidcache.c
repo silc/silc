@@ -90,6 +90,7 @@ struct SilcIDCacheListStruct {
   uint32 cache_dyn_count;
   uint32 cache_count;
   uint32 pos;
+  bool dyn;
 };
 
 /* Allocates new ID cache object. The initial amount of allocated entries
@@ -499,7 +500,7 @@ static void silc_idcache_list_add(SilcIDCacheList list, SilcIDCacheEntry cache)
 
   /* Try to add to static cache */
   if (!list->cache_dyn_count)
-    for (i = 0; i < sizeof(list->cache); i++) {
+    for (i = 0; i < (sizeof(list->cache) / sizeof(list->cache[0])); i++) {
       if (!list->cache[i]) {
 	list->cache[i] = cache;
 	list->cache_count++;
@@ -519,17 +520,17 @@ static void silc_idcache_list_add(SilcIDCacheList list, SilcIDCacheEntry cache)
   if (i >= list->cache_dyn_count) {
     int k;
 
-    i += 5;
+    i = list->cache_dyn_count;
     list->cache_dyn = silc_realloc(list->cache_dyn, 
-				   sizeof(*list->cache) * (i));
+				   sizeof(*list->cache_dyn) * (i + 5));
 
     /* NULL the reallocated area */
-    for (k = list->cache_dyn_count; k < i; k++)
+    for (k = i; k < (i + 5); k++)
       list->cache_dyn[k] = NULL;
 
-    list->cache_dyn[list->cache_dyn_count] = cache;
-    list->cache_dyn_count = i;
+    list->cache_dyn[i] = cache;
     list->cache_count++;
+    list->cache_dyn_count += 5;
   }
 }
 
@@ -559,25 +560,25 @@ bool silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret)
 
 bool silc_idcache_list_next(SilcIDCacheList list, SilcIDCacheEntry *ret)
 {
-  int dyn = FALSE;
   list->pos++;
 
-  if (list->pos >= sizeof(list->cache)) {
+  if (!list->dyn &&
+      list->pos >= (sizeof(list->cache) / sizeof(list->cache[0]))) {
     list->pos = 0;
-    dyn = TRUE;
+    list->dyn = TRUE;
   }
 
-  if (dyn && list->pos >= list->cache_dyn_count)
+  if (list->dyn && list->pos >= list->cache_dyn_count)
     return FALSE;
 
-  if (!dyn && !list->cache[list->pos])
+  if (!list->dyn && !list->cache[list->pos])
     return FALSE;
   
-  if (dyn && !list->cache_dyn[list->pos])
+  if (list->dyn && !list->cache_dyn[list->pos])
     return FALSE;
   
   if (ret) {
-    if (!dyn)
+    if (!list->dyn)
       *ret = list->cache[list->pos];
     else
       *ret = list->cache_dyn[list->pos];
