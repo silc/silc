@@ -4902,6 +4902,8 @@ SILC_SERVER_CMD_FUNC(detach)
   /* Send the user mode notify to notify that client is detached */
   client->mode |= SILC_UMODE_DETACHED;
   client->data.status &= ~SILC_IDLIST_STATUS_RESUMED;
+  client->last_command = 0;
+  client->fast_command = 0;
   if (!server->standalone)
     silc_server_send_notify_umode(server, server->router->connection,
 				  server->server_type == SILC_SERVER ?

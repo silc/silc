@@ -29,6 +29,7 @@ SILC_CLIENT_CMD_FUNC(resume_users);
 
 #define RESUME_CALL_COMPLETION(client, session, s)			\
 do {									\
+  SILC_LOG_DEBUG(("Calling completion"));				\
   session->success = s;							\
   silc_schedule_task_add(client->schedule, 0,				\
 			 silc_client_resume_call_completion, session,	\
@@ -207,6 +208,8 @@ SILC_TASK_CALLBACK(silc_client_resume_call_completion)
 {
   SilcClientResumeSession session = context;
   int i;
+
+  SILC_LOG_DEBUG(("Session completed"));
 
   for (i = 0; i < session->cmd_idents_count; i++)
     silc_client_command_pending_del(session->conn, SILC_COMMAND_IDENTIFY, 

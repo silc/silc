@@ -46,6 +46,7 @@ struct SilcClientCommandReplyContextStruct {
   SilcClientCommandPendingCallbacks callbacks;
   SilcUInt32 callbacks_count;
   SilcUInt16 ident;
+  SilcUInt8 users;
 };
 
 /* Macros */

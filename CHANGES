@@ -1,3 +1,9 @@
+Fri May  3 18:36:51 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added reference counter to the command reply context in
+	  the client library.  Affected files are
+	  lib/silcclient/command_reply.[ch].
+
 Fri May  3 11:37:10 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed rekey protocol with PFS in the client library.

@@ -96,6 +96,7 @@ void silc_client_command_reply_process(SilcClient client,
   /* Allocate command reply context. This must be free'd by the
      command reply routine receiving it. */
   ctx = silc_calloc(1, sizeof(*ctx));
+  ctx->users++;
   ctx->client = client;
   ctx->sock = sock;
   ctx->payload = payload;
@@ -134,11 +135,26 @@ void silc_client_command_reply_process(SilcClient client,
   }
 }
 
+/* Duplicate Command Reply Context by adding reference counter. The context
+   won't be free'd untill it hits zero. */
+
+SilcClientCommandReplyContext 
+silc_client_command_reply_dup(SilcClientCommandReplyContext cmd)
+{
+  cmd->users++;
+  SILC_LOG_DEBUG(("Command reply context %p refcnt %d->%d", cmd, 
+		  cmd->users - 1, cmd->users));
+  return cmd;
+}
+
 /* Free command reply context and its internals. */
 
 void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
 {
-  if (cmd) {
+  cmd->users--;
+  SILC_LOG_DEBUG(("Command reply context %p refcnt %d->%d", cmd, 
+		  cmd->users + 1, cmd->users));
+  if (cmd->users < 1) {
     silc_command_payload_free(cmd->payload);
     silc_free(cmd);
   }
@@ -225,8 +241,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     client_entry->fingerprint_len = fingerprint_len;
   }
 
-  if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING)
-    client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
+  client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 
   /* Notify application */
   if (!cmd->callbacks_count && notify)
@@ -394,8 +409,7 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 				name, info, NULL, 0);
     }
 
-    if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING)
-      client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
+    client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 
     /* Notify application */
     if (notify)
@@ -1594,22 +1608,6 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
     /* Check if we have this client cached already. */
     client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
     if (!client_entry || !client_entry->username || !client_entry->realname) {
-      if (client_entry) {
-	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
-	  /* Attach to this resolving and wait until it finishes */
-	  silc_client_command_pending(conn, SILC_COMMAND_NONE, 
-				      client_entry->resolve_cmd_ident,
-				      get_clients, cmd);
-	  wait_res = TRUE;
-
-	  silc_buffer_pull(&client_id_list, idp_len);
-	  silc_buffer_pull(&client_mode_list, 4);
-	  continue;
-	}
-	client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
-	client_entry->resolve_cmd_ident = conn->cmd_ident + 1;
-      }
-
       /* No we don't have it (or it is incomplete in information), query
 	 it from the server. Assemble argument table that will be sent
 	 for the WHOIS command later. */
