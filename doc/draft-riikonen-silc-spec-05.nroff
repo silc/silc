@@ -1417,7 +1417,7 @@ The version strings are of the following format:
 
 .in 6
 protocol version = <major>.<minor>
-software version = <major>[.<minor>[.<build>]]
+software version = <major>[.<minor>[.<build or vendor string>]]
 .in 3
 
 Protocol version MAY provide both major and minor version.  Currently
@@ -1431,10 +1431,12 @@ Software version MAY provide major, minor and build version.  The
 software version MAY be freely set and accepted.
 
 
-Thus, the version string could be, for example:
+Thus, the version strings could be, for example:
 
 .in 6
 SILC-1.0-1.2
+SILC-1.1-2.0.2
+SILC-1.0-1.0.VendorXYZ
 .in 3
 
 

@@ -1,3 +1,10 @@
+Sun Mar 17 19:26:16 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added the deleting of server's own ID cache entry to the
+	  silc_server_free function.  Free also everything else that
+	  has been allocated in silc_server_init.  The affected file 
+	  is silcd/server.c.
+
 Sun Mar 17 15:44:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added functions silc_parse_version_string, silc_version_to_num,

@@ -75,17 +75,7 @@ void silc_server_free(SilcServer server)
   if (server) {
 #ifdef SILC_SIM
     SilcSim sim;
-#endif
 
-    silc_free(server->local_list);
-    silc_free(server->global_list);
-    if (server->rng)
-      silc_rng_free(server->rng);
-
-    if (server->pkcs)
-      silc_pkcs_free(server->pkcs);
-
-#ifdef SILC_SIM
     while ((sim = silc_dlist_get(server->sim)) != SILC_LIST_END) {
       silc_dlist_del(server->sim, sim);
       silc_sim_free(sim);
@@ -93,9 +83,23 @@ void silc_server_free(SilcServer server)
     silc_dlist_uninit(server->sim);
 #endif
 
+    if (server->rng)
+      silc_rng_free(server->rng);
+    if (server->pkcs)
+      silc_pkcs_free(server->pkcs);
     if (server->pending_commands)
       silc_dlist_uninit(server->pending_commands);
+    if (server->id_entry)
+      silc_idlist_del_server(server->local_list, server->id_entry);
 
+    silc_idcache_free(server->local_list->clients);
+    silc_idcache_free(server->local_list->servers);
+    silc_idcache_free(server->local_list->channels);
+    silc_idcache_free(server->global_list->clients);
+    silc_idcache_free(server->global_list->servers);
+    silc_idcache_free(server->global_list->channels);
+
+    silc_free(server->sockets);
     silc_free(server);
   }
 }
@@ -231,8 +235,7 @@ int silc_server_init(SilcServer server)
        For now, NULL is sent as router. This allocates new entry to
        the ID list. */
     id_entry =
-      silc_idlist_add_server(server->local_list,
-			     server->config->server_info->server_name,
+      silc_idlist_add_server(server->local_list, strdup(server->server_name),
 			     server->server_type, server->id, NULL, NULL);
     if (!id_entry) {
       SILC_LOG_ERROR(("Could not add ourselves to cache"));
