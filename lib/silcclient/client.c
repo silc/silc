@@ -778,7 +778,7 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
   SilcPacketContext *packet = parser_context->packet;
   SilcPacketType ret;
 
-  if (conn && conn->hmac_receive && conn->sock == sock)
+  if (conn && conn->hmac_receive)
     conn->psn_receive = parser_context->packet->sequence + 1;
 
   /* Parse the packet immediately */
