@@ -487,7 +487,7 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
 
-    if (!entry->nickname || !entry->username) {
+    if (!entry->nickname || !entry->username || !entry->userinfo) {
       SilcBuffer tmpbuf;
       unsigned short old_ident;
 
@@ -533,6 +533,9 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   SilcClientEntry entry;
   SilcCommandStatus status;
   unsigned short ident = silc_command_get_ident(cmd->payload);
+  char nh[128], uh[128];
+  unsigned char idle[4], mode[4];
+  SilcSocketConnection hsock;
 
   status = SILC_STATUS_OK;
   if (clients_count > 1)
@@ -561,50 +564,49 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
 
     /* Sanity check, however these should never fail. However, as
        this sanity check has been added here they have failed. */
-    if (!entry->nickname || !entry->username)
+    if (!entry->nickname || !entry->username || !entry->userinfo)
       continue;
       
     /* Send WHOIS reply */
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
     tmp = silc_argument_get_first_arg(cmd->args, NULL);
     
-    {
-      char nh[256], uh[256];
-      unsigned char idle[4];
-      SilcSocketConnection hsock;
-
-      memset(uh, 0, sizeof(uh));
-      memset(nh, 0, sizeof(nh));
-
-      strncat(nh, entry->nickname, strlen(entry->nickname));
-      if (!strchr(entry->nickname, '@')) {
-	strncat(nh, "@", 1);
-	len = entry->router ? strlen(entry->router->server_name) :
-	  strlen(server->server_name);
-	strncat(nh, entry->router ? entry->router->server_name :
-		server->server_name, len);
-      }
-      
-      strncat(uh, entry->username, strlen(entry->username));
-      if (!strchr(entry->username, '@')) {
-	strncat(uh, "@", 1);
-	hsock = (SilcSocketConnection)entry->connection;
-	len = strlen(hsock->hostname);
-	strncat(uh, hsock->hostname, len);
-      }
-      
-      SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
-      
-      packet = 
-	silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
-					     status, ident, 5, 
-					     2, idp->data, idp->len,
-					     3, nh, strlen(nh),
-					     4, uh, strlen(uh),
-					     5, entry->userinfo, 
-					     strlen(entry->userinfo),
-					     7, idle, 4);
+    memset(uh, 0, sizeof(uh));
+    memset(nh, 0, sizeof(nh));
+    memset(idle, 0, sizeof(idle));
+    
+    strncat(nh, entry->nickname, strlen(entry->nickname));
+    if (!strchr(entry->nickname, '@')) {
+      strncat(nh, "@", 1);
+      len = entry->router ? strlen(entry->router->server_name) :
+	strlen(server->server_name);
+      strncat(nh, entry->router ? entry->router->server_name :
+	      server->server_name, len);
     }
+      
+    strncat(uh, entry->username, strlen(entry->username));
+    if (!strchr(entry->username, '@')) {
+      strncat(uh, "@", 1);
+      hsock = (SilcSocketConnection)entry->connection;
+      len = strlen(hsock->hostname);
+      strncat(uh, hsock->hostname, len);
+    }
+      
+    if (entry->connection) {
+      SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
+    }
+
+    SILC_PUT32_MSB(entry->mode, mode);
+
+    packet = silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
+						  status, ident, 6, 
+						  2, idp->data, idp->len,
+						  3, nh, strlen(nh),
+						  4, uh, strlen(uh),
+						  5, entry->userinfo, 
+						  strlen(entry->userinfo),
+						  7, mode, 4,
+						  8, idle, 4);
     
     silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			    0, packet->data, packet->len, FALSE);
@@ -629,8 +631,8 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
      to our router if we are normal server, so let's do it now unless we
      are standalone. We will not send any replies to the client until we
      have received reply from the router. */
-  if (server->server_type == SILC_SERVER && 
-      !cmd->pending && !server->standalone) {
+  if (server->server_type == SILC_SERVER && !cmd->pending && 
+      !server->standalone) {
     SilcBuffer tmpbuf;
     unsigned short old_ident;
 
@@ -3668,8 +3670,9 @@ SILC_SERVER_CMD_FUNC(connect)
 
   /* Get port */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp)
+  if (tmp) {
     SILC_GET32_MSB(port, tmp);
+  }
 
   /* Create the connection. It is done with timeout and is async. */
   silc_server_create_connection(server, host, port);
@@ -3722,8 +3725,9 @@ SILC_SERVER_CMD_FUNC(close)
 
   /* Get port */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp)
+  if (tmp) {
     SILC_GET32_MSB(port, tmp);
+  }
 
   server_entry = silc_idlist_find_server_by_conn(server->local_list,
 						 name, port, NULL);

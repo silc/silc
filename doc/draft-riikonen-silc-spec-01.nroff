@@ -1981,11 +1981,12 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  7
+        Max Arguments:  8
             Arguments:  (1) <Status Payload>       (2) <Client ID> 
                         (3) <nickname>[@<server>]  (4) <username@host> 
                         (5) <real name>            (6) [<channel list>] 
-                        (7) [<idle time>]
+                        (7) [<user mode>]          (8) [<idle time>]
+
 
         This command may reply with several command reply messages to
         form a list of results.  In this case the status payload will

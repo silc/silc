@@ -1,3 +1,11 @@
+Mon Mar 19 21:39:15 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added one new argument <user mode> to the WHOIS command reply
+	  to return the mode of the user in SILC.  Updated the protocol
+	  specs.
+
+	  Implemented it to the server and client.
+
 Mon Mar 19 18:43:06 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the mode printing on the user interface on joining.

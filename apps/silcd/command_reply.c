@@ -128,13 +128,14 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 {
   SilcServer server = cmd->server;
   int len, id_len;
-  unsigned char *id_data;
+  unsigned char *tmp, *id_data;
   char *nickname, *username, *realname;
   SilcClientID *client_id;
   SilcClientEntry client;
   SilcIDCacheEntry cache = NULL;
   char global = FALSE;
   char *nick;
+  unsigned int mode = 0;
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -147,6 +148,12 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 		    realname ? realname : ""));
     return FALSE;
   }
+
+  tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
+  if (tmp) {
+    SILC_GET32_MSB(mode, tmp);
+  }
+
 
   client_id = silc_id_payload_parse_id(id_data, id_len);
   if (!client_id)
@@ -180,10 +187,14 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be 
        global. */
-    silc_idlist_add_client(server->global_list, nick,
-			   strdup(username), 
-			   strdup(realname), client_id, 
-			   cmd->sock->user_data, NULL);
+    client = silc_idlist_add_client(server->global_list, nick,
+				    strdup(username), 
+				    strdup(realname), client_id, 
+				    cmd->sock->user_data, NULL);
+    if (!client)
+      return FALSE;
+
+    client->mode = mode;
   } else {
     /* We have the client already, update the data */
 
@@ -208,6 +219,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     client->nickname = nick;
     client->username = strdup(username);
     client->userinfo = strdup(realname);
+    client->mode = mode;
 
     if (cache) {
       cache->data = nick;

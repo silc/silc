@@ -410,7 +410,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       {
 	char buf[1024], *nickname, *username, *realname;
 	int len;
-	unsigned int idle;
+	unsigned int idle, mode;
 
 	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
 	  char *tmp;
@@ -433,6 +433,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	username = va_arg(vp, char *);
 	realname = va_arg(vp, char *);
 	(void)va_arg(vp, void *);
+	mode = va_arg(vp, unsigned int);
 	idle = va_arg(vp, unsigned int);
 
 	memset(buf, 0, sizeof(buf));
@@ -454,6 +455,14 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	}
 
 	client->ops->say(client, conn, "%s", buf);
+
+	if (mode)
+	  client->ops->say(client, conn, "%s is %s", nickname,
+			   (mode & SILC_UMODE_SERVER_OPERATOR) ?
+			   "Server Operator" :
+			   (mode & SILC_UMODE_ROUTER_OPERATOR) ?
+			   "SILC Operator" : "[Unknown mode]");
+
 	if (idle && nickname)
 	  client->ops->say(client, conn, "%s has been idle %d %s",
 			   nickname,

@@ -208,7 +208,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   unsigned char *id_data, *tmp;
   char *nickname = NULL, *username = NULL;
   char *realname = NULL;
-  unsigned int idle = 0;
+  unsigned int idle = 0, mode = 0;
   
   argc = silc_argument_get_arg_num(cmd->args);
 
@@ -233,8 +233,14 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
-  if (tmp)
+  if (tmp) {
+    SILC_GET32_MSB(mode, tmp);
+  }
+
+  tmp = silc_argument_get_arg_type(cmd->args, 8, &len);
+  if (tmp) {
     SILC_GET32_MSB(idle, tmp);
+  }
 
   /* Check if we have this client cached already. */
   if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
@@ -248,6 +254,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     client_entry->username = strdup(username);
     if (realname)
       client_entry->realname = strdup(realname);
+    client_entry->mode = mode;
     
     /* Add client to cache */
     silc_idcache_add(conn->client_cache, client_entry->nickname,
@@ -263,6 +270,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
       silc_free(client_entry->username);
     if (client_entry->realname)
       silc_free(client_entry->realname);
+    client_entry->mode = mode;
 
     SILC_LOG_DEBUG(("Updating client entry"));
 
@@ -281,7 +289,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   /* Notify application */
   if (!cmd->callback)
     COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
-		   NULL, idle));
+		   NULL, mode, idle));
 }
 
 /* Received reply for WHOIS command. This maybe called several times
@@ -869,10 +877,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 
   /* Get channel mode */
   tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
-  if (tmp)
+  if (tmp) {
     SILC_GET32_MSB(mode, tmp);
-  else
+  } else {
     mode = 0;
+  }
 
   /* Get channel key */
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
