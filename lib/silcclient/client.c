@@ -1042,7 +1042,6 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
 
   if (ret == SILC_PACKET_NONE) {
     silc_packet_context_free(packet);
-    silc_socket_free(parser_context->sock);
     silc_free(parser_context);
     return FALSE;
   }
@@ -1071,7 +1070,6 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
 				  silc_client_packet_parse, client);
 
     silc_packet_context_free(packet);
-    silc_socket_free(parser_context->sock);
     silc_free(parser_context);
 
     return FALSE;
@@ -1080,7 +1078,6 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
   /* Parse the incoming packet type */
   silc_client_packet_parse_type(client, sock, packet);
   silc_packet_context_free(packet);
-  silc_socket_free(parser_context->sock);
   silc_free(parser_context);
   return TRUE;
 }

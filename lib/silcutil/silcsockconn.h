@@ -431,7 +431,9 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
  *    will be applied for the reading.  The `limit_sec' and `limit_usec'
  *    specifies the limit that is applied if `read_rate' and/or
  *    `read_limit_bytes' is reached.  The `schedule' is the application's
- *    scheduler.
+ *    scheduler.  If all arguments except `sock' are NULL or zero this
+ *    resets the QoS from the socket, all QoS for this socket that may
+ *    be pending will be cancelled.
  *
  ***/
 void silc_socket_set_qos(SilcSocketConnection sock,

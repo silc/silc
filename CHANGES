@@ -1,7 +1,17 @@
+Fri Oct 31 12:33:59 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Optimized the socket referencing in packet routines, client
+	  library and server.  Affected files are lib/silccore/silcpacket.c,
+	  lib/silcclient/client.c and silcd/server.c.
+
+	* If silc_socket_set_qos is given with NULL arguments the QoS is
+	  reset from the socket.  Affected files are
+	  lib/silcutil/silcsockconn.[ch].
+
 Thu Oct 30 21:23:24 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Add a /LISTKEYS command which lists the locally cached
-	  client and server keys.  Affected files 
+	  client and server keys.  Affected files
 	  irssi/src/fe-common/module-formats.[ch],
 	  irssi/src/silc/core/silc-{channels,servers}.c
 	  irssi/docs/help/in/listkeys.in

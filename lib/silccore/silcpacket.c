@@ -323,10 +323,12 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     mac_len = silc_hmac_len(hmac);
 
   /* Parse the packets from the data */
+  silc_socket_dup(sock);
   while (sock->inbuf->len > 0 && cont) {
 
     if (sock->inbuf->len < SILC_PACKET_MIN_HEADER_LEN) {
       SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
+      silc_socket_free(sock);
       return TRUE;
     }
 
@@ -349,6 +351,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
       SILC_LOG_ERROR(("Received too short packet"));
       memset(header, 0, sizeof(header));
       silc_buffer_clear(sock->inbuf);
+      silc_socket_free(sock);
       return FALSE;
     }
 
@@ -357,6 +360,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 		      "(%d bytes)", paddedlen + mac_len - sock->inbuf->len));
       SILC_SET_INBUF_PENDING(sock);
       memset(tmp, 0, sizeof(tmp));
+      silc_socket_free(sock);
       return TRUE;
     }
 
@@ -375,19 +379,22 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 			sock->protocol ? sock->protocol->protocol->type : -1));
       memset(tmp, 0, sizeof(tmp));
       silc_buffer_clear(sock->inbuf);
+      silc_socket_free(sock);
       return FALSE;
     }
 
     SILC_UNSET_INBUF_PENDING(sock);
     parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
-    if (!parse_ctx)
+    if (!parse_ctx) {
+      silc_socket_free(sock);
       return FALSE;
+    }
     parse_ctx->packet = silc_packet_context_alloc();
     parse_ctx->packet->buffer = silc_buffer_alloc_size(paddedlen);
     parse_ctx->packet->type = (SilcPacketType)header[3];
     parse_ctx->packet->padlen = (SilcUInt8)header[4];
     parse_ctx->packet->sequence = sequence++;
-    parse_ctx->sock = silc_socket_dup(sock);
+    parse_ctx->sock = sock;
     parse_ctx->context = parser_context;
 
     /* Check whether this is normal or special packet */
@@ -432,6 +439,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 	memset(tmp, 0, sizeof(tmp));
 	silc_packet_context_free(parse_ctx->packet);
 	silc_free(parse_ctx);
+	silc_socket_free(sock);
 	return FALSE;
       }
     }
@@ -459,15 +467,20 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
   }
 
   /* Don't clear buffer if pending data is in the buffer */
-  if (cont == FALSE && sock->inbuf->len > 0)
+  if (cont == FALSE && sock->inbuf->len > 0) {
+    silc_socket_free(sock);
     return TRUE;
+  }
 
   /* Don't clear buffer if QoS data exists in the buffer */
-  if (sock->qos && sock->qos->data_len > 0)
+  if (sock->qos && sock->qos->data_len > 0) {
+    silc_socket_free(sock);
     return TRUE;
+  }
 
   SILC_LOG_DEBUG(("Clearing inbound buffer"));
   silc_buffer_clear(sock->inbuf);
+  silc_socket_free(sock);
   return TRUE;
 }
 

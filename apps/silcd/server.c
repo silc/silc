@@ -2481,7 +2481,6 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 
  out:
   silc_packet_context_free(packet);
-  silc_socket_free(parse_ctx->sock);
   silc_free(parse_ctx);
 }
 
@@ -2496,13 +2495,6 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   bool ret;
 
-  if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
-    SILC_LOG_DEBUG(("Connection is disconnected"));
-    silc_socket_free(parser_context->sock);
-    silc_free(parser_context);
-    return FALSE;
-  }
-
   if (idata)
     idata->psn_receive = parser_context->packet->sequence + 1;
 
@@ -2513,16 +2505,13 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
   if (sock->protocol && sock->protocol->protocol &&
       (sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE ||
        sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)) {
-    silc_socket_dup(sock);
     silc_server_packet_parse_real(server->schedule, server, 0, sock->sock,
 				  parser_context);
 
     if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
       SILC_LOG_DEBUG(("Connection is disconnected"));
-      silc_socket_free(sock);
       return FALSE;
     }
-    silc_socket_free(sock);
 
     /* Reprocess data since we'll return FALSE here.  This is because
        the idata->receive_key might have become valid in the last packet
@@ -3160,6 +3149,7 @@ void silc_server_close_connection(SilcServer server,
 		  "Router"), tmp[0] ? tmp : ""));
 
   SILC_SET_DISCONNECTED(sock);
+  silc_socket_set_qos(sock, 0, 0, 0, 0, NULL);
   silc_schedule_task_add(server->schedule, sock->sock,
 			 silc_server_close_connection_final,
 			 (void *)sock, 0, 1, SILC_TASK_TIMEOUT,

@@ -169,6 +169,19 @@ void silc_socket_set_qos(SilcSocketConnection sock,
 			 SilcUInt32 limit_usec,
 			 SilcSchedule schedule)
 {
+  if (!sock)
+    return;
+
+  if (sock->qos && !read_rate && !read_limit_bytes &&
+      !limit_sec && !limit_usec && !schedule) {
+    silc_schedule_task_del_by_context(sock->qos->schedule, sock->qos);
+    silc_free(sock->qos);
+    sock->qos = NULL;
+    return;
+  }
+  if (!schedule)
+    return;
+
   if (!sock->qos) {
     sock->qos = silc_calloc(1, sizeof(*sock->qos));
     if (!sock->qos)
