@@ -63,7 +63,7 @@ are available:
         Set/unset user as quiet.  When set the user cannot
         talk on the channel, and cannot send messages to
         the channel.  This can be used by channel operator
-        to queit a certain misbehaving user.  The user cannot
+        to quiet a certain misbehaving user.  The user cannot
         unset this mode itself.  This mode cannot be set
         or unset to yourself.
 
