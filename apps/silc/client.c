@@ -20,6 +20,12 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.9  2000/07/14 06:13:19  priikone
+ * 	Moved all the generic packet sending, encryption, reception,
+ * 	decryption and processing functions to library as they were
+ * 	duplicated code with the server. Now client uses the generic
+ * 	routines which is a lot cleaner.
+ *
  * Revision 1.8  2000/07/12 05:56:32  priikone
  * 	Major rewrite of ID Cache system. Support added for the new
  * 	ID cache system.
@@ -66,11 +72,12 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_second);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_final);
 SILC_TASK_CALLBACK(silc_client_packet_process);
-SILC_TASK_CALLBACK(silc_client_packet_parse);
+SILC_TASK_CALLBACK(silc_client_packet_parse_real);
 
 SilcClientWindow silc_client_create_main_window(SilcClient client);
 SilcClientWindow silc_client_add_window(SilcClient client,
 					int is_current);
+void silc_client_packet_parse(SilcPacketParserContext *parser_context);
 void silc_client_packet_parse_type(SilcClient client, 
 				   SilcSocketConnection sock,
 				   SilcPacketContext *packet);
@@ -995,23 +1002,52 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   win->sock->protocol = NULL;
 }
 
-typedef struct {
-  SilcPacketContext *packetdata;
-  SilcSocketConnection sock;
-  SilcClient client;
-} SilcClientInternalPacket;
+/* Internal routine that sends packet or marks packet to be sent. This
+   is used directly only in special cases. Normal cases should use
+   silc_server_packet_send. Returns < 0 on error. */
+
+static int silc_client_packet_send_real(SilcClient client,
+					SilcSocketConnection sock,
+					int force_send)
+{
+  int ret;
+
+  /* Send the packet */
+  ret = silc_packet_send(sock, force_send);
+  if (ret != -2)
+    return ret;
+
+  /* Mark that there is some outgoing data available for this connection. 
+     This call sets the connection both for input and output (the input
+     is set always and this call keeps the input setting, actually). 
+     Actual data sending is performed by silc_client_packet_process. */
+  SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(sock->sock);
+
+  /* Mark to socket that data is pending in outgoing buffer. This flag
+     is needed if new data is added to the buffer before the earlier
+     put data is sent to the network. */
+  SILC_SET_OUTBUF_PENDING(sock);
+
+  return 0;
+}
+
+/* Packet processing callback. This is used to send and receive packets
+   from network. This is generic task. */
 
 SILC_TASK_CALLBACK(silc_client_packet_process)
 {
   SilcClient client = (SilcClient)context;
   SilcSocketConnection sock = NULL;
-  int ret, packetlen, paddedlen;
+  SilcClientWindow win;
+  int ret;
 
   SILC_LOG_DEBUG(("Processing packet"));
 
   SILC_CLIENT_GET_SOCK(client, fd, sock);
   if (sock == NULL)
     return;
+
+  win = (SilcClientWindow)sock->user_data;
 
   /* Packet sending */
   if (type == SILC_TASK_WRITE) {
@@ -1021,18 +1057,13 @@ SILC_TASK_CALLBACK(silc_client_packet_process)
       silc_buffer_push(sock->outbuf, 
 		       sock->outbuf->data - sock->outbuf->head);
 
-    /* Write the packet out to the connection */
-    ret = silc_packet_write(fd, sock->outbuf);
+    ret = silc_client_packet_send_real(client, sock, TRUE);
 
     /* If returned -2 could not write to connection now, will do
        it later. */
     if (ret == -2)
       return;
     
-    /* Error */
-    if (ret == -1)
-      SILC_LOG_ERROR(("Packet dropped"));
-
     /* The packet has been sent and now it is time to set the connection
        back to only for input. When there is again some outgoing data 
        available for this connection it will be set for output as well. 
@@ -1040,6 +1071,7 @@ SILC_TASK_CALLBACK(silc_client_packet_process)
     SILC_CLIENT_SET_CONNECTION_FOR_INPUT(fd);
     SILC_UNSET_OUTBUF_PENDING(sock);
 
+    silc_buffer_clear(sock->outbuf);
     return;
   }
 
@@ -1047,22 +1079,10 @@ SILC_TASK_CALLBACK(silc_client_packet_process)
   if (type == SILC_TASK_READ) {
     SILC_LOG_DEBUG(("Reading data from connection"));
 
-    /* Allocate the incoming data buffer if not done already. */
-    if (!sock->inbuf)
-      sock->inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
-
-    /* Read some data from connection */
-    ret = silc_packet_read(fd, sock->inbuf);
-    
-    /* If returned -2 data was not available now, will read it later. */
-    if (ret == -2)
+    /* Read data from network */
+    ret = silc_packet_receive(sock);
+    if (ret < 0)
       return;
-    
-    /* Error */
-    if (ret == -1) {
-      SILC_LOG_ERROR(("Packet dropped"));
-      return;
-    }
     
     /* EOF */
     if (ret == 0) {
@@ -1082,320 +1102,85 @@ SILC_TASK_CALLBACK(silc_client_packet_process)
       return;
     }
 
-    /* Check whether we received a whole packet. If reading went without
-       errors we either read a whole packet or the read packet is 
-       incorrect and will be dropped. */
-    SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
-    if (sock->inbuf->len < paddedlen || (packetlen < SILC_PACKET_MIN_LEN)) {
-      SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
+    /* Process the packet. This will call the parser that will then
+       decrypt and parse the packet. */
+    if (!silc_packet_receive_process(sock, win->receive_key, win->hmac,
+				     silc_client_packet_parse, client)) {
       silc_buffer_clear(sock->inbuf);
       return;
     }
-    
-    /* Decrypt a packet coming from server connection */
-    if (sock->type == SILC_SOCKET_TYPE_SERVER ||
-	sock->type == SILC_SOCKET_TYPE_ROUTER) {
-      SilcClientWindow win = (SilcClientWindow)sock->user_data;
-      SilcClientInternalPacket *packet;
-      int mac_len = 0;
-
-      if (win->hmac)
-	mac_len = win->hmac->hash->hash->hash_len;
-
-      if (sock->inbuf->len - 2 > (paddedlen + mac_len)) {
-	/* Received possibly many packets at once */
-
-	while(sock->inbuf->len > 0) {
-	  SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
-	  if (sock->inbuf->len < paddedlen) {
-	    SILC_LOG_DEBUG(("Received incorrect packet, dropped"));
-	    return;
-	  }
-
-	  paddedlen += 2;
-	  packet = silc_calloc(1, sizeof(*packet));
-	  packet->client = client;
-	  packet->sock = sock;
-	  packet->packetdata = silc_calloc(1, sizeof(*packet->packetdata));
-	  packet->packetdata->buffer = silc_buffer_alloc(paddedlen + mac_len);
-	  silc_buffer_pull_tail(packet->packetdata->buffer, 
-				SILC_BUFFER_END(packet->packetdata->buffer));
-	  silc_buffer_put(packet->packetdata->buffer, sock->inbuf->data, 
-			  paddedlen + mac_len);
-
-	  SILC_LOG_HEXDUMP(("Incoming packet, len %d", 
-			    packet->packetdata->buffer->len),
-			   packet->packetdata->buffer->data, 
-			   packet->packetdata->buffer->len);
-	  SILC_LOG_DEBUG(("Packet from server %s, "
-			  "server type %d, packet length %d", 
-			  win->remote_host, win->remote_type, paddedlen));
-
-	  /* If this packet is for the current active connection we will
-	     parse the packet right away to get it quickly on the screen.
-	     Otherwise, it will be parsed with a timeout as the data is
-	     for inactive window (which might not be visible at all). */
-	  if (SILC_CLIENT_IS_CURRENT_WIN(client, win)) {
-	    /* Parse it real soon */
-	    silc_task_register(client->timeout_queue, fd, 
-			       silc_client_packet_parse,
-			       (void *)packet, 0, 1, 
-			       SILC_TASK_TIMEOUT,
-			       SILC_TASK_PRI_NORMAL);
-	  } else {
-	    /* Parse the packet with timeout */
-	    silc_task_register(client->timeout_queue, fd, 
-			       silc_client_packet_parse,
-			       (void *)packet, 0, 200000, 
-			       SILC_TASK_TIMEOUT,
-			       SILC_TASK_PRI_NORMAL);
-	  }
-
-	  /* Pull the packet from inbuf thus we'll get the next one
-	     in the inbuf. */
-	  silc_buffer_pull(sock->inbuf, paddedlen);
-	  if (win->hmac)
-	    silc_buffer_pull(sock->inbuf, mac_len);
-	}
-	silc_buffer_clear(sock->inbuf);
-	return;
-      } else {
-	/* Received one packet */
-	
-	SILC_LOG_HEXDUMP(("An incoming packet, len %d", sock->inbuf->len),
-			 sock->inbuf->data, sock->inbuf->len);
-	SILC_LOG_DEBUG(("Packet from server %s, "
-			"server type %d, packet length %d", 
-			win->remote_host, win->remote_type, paddedlen));
-	
-	packet = silc_calloc(1, sizeof(*packet));
-	packet->client = client;
-	packet->sock = sock;
-	packet->packetdata = silc_calloc(1, sizeof(*packet->packetdata));
-	packet->packetdata->buffer = silc_buffer_copy(sock->inbuf);
-	silc_buffer_clear(sock->inbuf);
-
-	/* If this packet is for the current active connection we will
-	   parse the packet right away to get it quickly on the screen.
-	   Otherwise, it will be parsed with a timeout as the data is
-	   for inactive window (which might not be visible at all). */
-	if (SILC_CLIENT_IS_CURRENT_WIN(client, win)) {
-	  /* Parse it real soon */
-	  silc_task_register(client->timeout_queue, fd, 
-			     silc_client_packet_parse,
-			     (void *)packet, 0, 1, 
-			     SILC_TASK_TIMEOUT,
-			     SILC_TASK_PRI_NORMAL);
-	  return;
-	} else {
-	  /* Parse the packet with timeout */
-	  silc_task_register(client->timeout_queue, fd, 
-			     silc_client_packet_parse,
-			     (void *)packet, 0, 200000, 
-			     SILC_TASK_TIMEOUT,
-			     SILC_TASK_PRI_NORMAL);
-	  return;
-	}
-      }
-    }
   }
-  
-  SILC_LOG_ERROR(("Weird, nothing happened - ignoring"));
-}
-
-/* Checks MAC in the packet. Returns TRUE if MAC is Ok. This is called
-   after packet has been totally decrypted and parsed. */
-
-static int silc_client_packet_check_mac(SilcClient client,
-					SilcSocketConnection sock,
-					SilcBuffer buffer)
-{
-  SilcClientWindow win = (SilcClientWindow)sock->user_data;
-
-  /* Check MAC */
-  if (win->hmac) {
-    int headlen = buffer->data - buffer->head, mac_len;
-    unsigned char *packet_mac, mac[32];
-    
-    SILC_LOG_DEBUG(("Verifying MAC"));
-
-    mac_len = win->hmac->hash->hash->hash_len;
-
-    silc_buffer_push(buffer, headlen);
-
-    /* Take mac from packet */
-    packet_mac = buffer->tail;
-    
-    /* Make MAC and compare */
-    memset(mac, 0, sizeof(mac));
-    silc_hmac_make_with_key(win->hmac, 
-			    buffer->data, buffer->len,
-			    win->hmac_key, win->hmac_key_len, mac);
-#if 0
-    SILC_LOG_HEXDUMP(("PMAC"), packet_mac, mac_len);
-    SILC_LOG_HEXDUMP(("CMAC"), mac, mac_len);
-#endif
-    if (memcmp(mac, packet_mac, mac_len)) {
-      SILC_LOG_DEBUG(("MAC failed"));
-      return FALSE;
-    }
-    
-    SILC_LOG_DEBUG(("MAC is Ok"));
-    memset(mac, 0, sizeof(mac));
-
-    silc_buffer_pull(buffer, headlen);
-  }
-  
-  return TRUE;
-}
-
-/* Decrypts rest of the packet (after decrypting just the SILC header).
-   After calling this function the packet is ready to be parsed by calling 
-   silc_packet_parse. */
-
-static int silc_client_packet_decrypt_rest(SilcClient client, 
-					   SilcSocketConnection sock,
-					   SilcBuffer buffer)
-{
-  SilcClientWindow win = (SilcClientWindow)sock->user_data;
-  unsigned int mac_len = 0;
-  
-  /* Decrypt */
-  if (win && win->receive_key) {
-
-    /* Pull MAC from packet before decryption */
-    if (win->hmac) {
-      mac_len = win->hmac->hash->hash->hash_len;
-      if ((buffer->len - mac_len) > SILC_PACKET_MIN_LEN) {
-	silc_buffer_push_tail(buffer, mac_len);
-      } else {
-	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
-	return FALSE;
-      }
-    }
-
-    SILC_LOG_DEBUG(("Decrypting rest of the packet"));
-
-    /* Decrypt rest of the packet */
-    silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
-    silc_packet_decrypt(win->receive_key, buffer, buffer->len);
-    silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
-
-    SILC_LOG_HEXDUMP(("Fully decrypted packet, len %d", buffer->len),
-		     buffer->data, buffer->len);
-  }
-
-  return TRUE;
-}
-
-/* Decrypts rest of the SILC Packet header that has been decrypted partly
-   already. This decrypts the padding of the packet also.  After calling 
-   this function the packet is ready to be parsed by calling function 
-   silc_packet_parse. This is used in special packet reception. */
-
-static int silc_client_packet_decrypt_rest_special(SilcClient client, 
-						  SilcSocketConnection sock,
-						  SilcBuffer buffer)
-{
-  SilcClientWindow win = (SilcClientWindow)sock->user_data;
-  unsigned int mac_len = 0;
-
-  /* Decrypt rest of the header plus padding */
-  if (win && win->receive_key) {
-    unsigned short truelen, len1, len2, padlen;
-
-    /* Pull MAC from packet before decryption */
-    if (win->hmac) {
-      mac_len = win->hmac->hash->hash->hash_len;
-      if ((buffer->len - mac_len) > SILC_PACKET_MIN_LEN) {
-	silc_buffer_push_tail(buffer, mac_len);
-      } else {
-	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
-	return FALSE;
-      }
-    }
-  
-    SILC_LOG_DEBUG(("Decrypting rest of the header"));
-
-    SILC_GET16_MSB(len1, &buffer->data[4]);
-    SILC_GET16_MSB(len2, &buffer->data[6]);
-
-    truelen = SILC_PACKET_HEADER_LEN + len1 + len2;
-    padlen = SILC_PACKET_PADLEN(truelen);
-    len1 = (truelen + padlen) - (SILC_PACKET_MIN_HEADER_LEN - 2);
-
-    silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
-    SILC_LOG_HEXDUMP(("XXX"), buffer->data, buffer->len);
-    silc_packet_decrypt(win->receive_key, buffer, len1);
-    silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
-    SILC_LOG_HEXDUMP(("XXX"), buffer->data, buffer->len);
-  }
-
-  return TRUE;
 }
 
 /* Parses whole packet, received earlier. */
 
-SILC_TASK_CALLBACK(silc_client_packet_parse)
+SILC_TASK_CALLBACK(silc_client_packet_parse_real)
 {
-  SilcClientInternalPacket *packet = (SilcClientInternalPacket *)context;
-  SilcBuffer buffer = packet->packetdata->buffer;
-  SilcClient client = packet->client;
-  SilcSocketConnection sock = packet->sock;
+  SilcPacketParserContext *parse_ctx = (SilcPacketParserContext *)context;
+  SilcClient client = (SilcClient)parse_ctx->context;
+  SilcPacketContext *packet = parse_ctx->packet;
+  SilcBuffer buffer = packet->buffer;
+  SilcSocketConnection sock = parse_ctx->sock;
   SilcClientWindow win = (SilcClientWindow)sock->user_data;
   int ret;
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Decrypt start of the packet header */
-  if (win && win->receive_key)
-    silc_packet_decrypt(win->receive_key, buffer, SILC_PACKET_MIN_HEADER_LEN);
+  /* Decrypt the received packet */
+  ret = silc_packet_decrypt(win->receive_key, win->hmac, buffer, packet);
+  if (ret < 0)
+    goto out;
 
-  /* If the packet type is not any special type lets decrypt rest
-     of the packet here. */
-  if (buffer->data[3] != SILC_PACKET_CHANNEL_MESSAGE &&
-      buffer->data[3] != SILC_PACKET_PRIVATE_MESSAGE) {
-  normal:
-    /* Normal packet, decrypt rest of the packet */
-    if (!silc_client_packet_decrypt_rest(client, sock, buffer))
-      goto out;
-
+  if (ret == 0) {
     /* Parse the packet. Packet type is returned. */
-    ret = silc_packet_parse(packet->packetdata);
-    if (ret == SILC_PACKET_NONE)
-      goto out;
-
-    /* Check MAC */
-    if (!silc_client_packet_check_mac(client, sock, buffer))
-      goto out;
+    ret = silc_packet_parse(packet);
   } else {
-    /* If private message key is not set for private message it is
-       handled as normal packet. Go back up. */
-    if (buffer->data[3] == SILC_PACKET_PRIVATE_MESSAGE &&
-	!(buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY))
-      goto normal;
-
-    /* Packet requires special handling, decrypt rest of the header.
-       This only decrypts. This does not do any MAC checking, it must
-       be done individually later when doing the special processing. */
-    silc_client_packet_decrypt_rest_special(client, sock, buffer);
-
     /* Parse the packet header in special way as this is "special"
        packet type. */
-    ret = silc_packet_parse_special(packet->packetdata);
-    if (ret == SILC_PACKET_NONE)
-      goto out;
+    ret = silc_packet_parse_special(packet);
   }
 
+  if (ret == SILC_PACKET_NONE)
+    goto out;
+
   /* Parse the incoming packet type */
-  silc_client_packet_parse_type(client, sock, packet->packetdata);
+  silc_client_packet_parse_type(client, sock, packet);
 
  out:
-  silc_buffer_clear(packet->packetdata->buffer);
-  silc_free(packet->packetdata);
+  silc_buffer_clear(buffer);
   silc_free(packet);
+  silc_free(parse_ctx);
 }
 
+/* Parser callback called by silc_packet_receive_process. Thie merely
+   registers timeout that will handle the actual parsing when appropriate. */
+
+void silc_client_packet_parse(SilcPacketParserContext *parser_context)
+{
+  SilcClient client = (SilcClient)parser_context->context;
+  SilcClientWindow win = (SilcClientWindow)parser_context->sock->user_data;
+
+  /* If this packet is for the current active connection we will
+     parse the packet right away to get it quickly on the screen.
+     Otherwise, it will be parsed with a timeout as the data is
+     for inactive window (which might not be visible at all). */
+  if (SILC_CLIENT_IS_CURRENT_WIN(client, win)) {
+    /* Parse it real soon */
+    silc_task_register(client->timeout_queue, parser_context->sock->sock, 
+		       silc_client_packet_parse_real,
+		       (void *)parser_context, 0, 1, 
+		       SILC_TASK_TIMEOUT,
+		       SILC_TASK_PRI_NORMAL);
+  } else {
+    /* Parse the packet with timeout */
+    silc_task_register(client->timeout_queue, parser_context->sock->sock, 
+		       silc_client_packet_parse_real,
+		       (void *)parser_context, 0, 200000, 
+		       SILC_TASK_TIMEOUT,
+		       SILC_TASK_PRI_NORMAL);
+  }
+}
+  
 /* Parses the packet type and calls what ever routines the packet type
    requires. This is done for all incoming packets. */
 
@@ -1573,84 +1358,6 @@ void silc_client_packet_parse_type(SilcClient client,
   }
 }
 
-/* Internal routine that sends packet or marks packet to be sent. This
-   is used directly only in special cases. Normal cases should use
-   silc_server_packet_send. Returns < 0 on error. */
-
-static int silc_client_packet_send_real(SilcClient client,
-					SilcSocketConnection sock,
-					int force_send)
-{
-  /* Send now if forced to do so */
-  if (force_send == TRUE) {
-    int ret;
-    SILC_LOG_DEBUG(("Forcing packet send, packet sent immediately"));
-    ret = silc_packet_write(sock->sock, sock->outbuf);
-
-    if (ret == -1)
-      SILC_LOG_ERROR(("Packet dropped"));
-    if (ret != -2)
-      return ret;
-
-    SILC_LOG_DEBUG(("Could not force the send, packet put to queue"));
-  }  
-
-  SILC_LOG_DEBUG(("Packet in queue"));
-
-  /* Mark that there is some outgoing data available for this connection. 
-     This call sets the connection both for input and output (the input
-     is set always and this call keeps the input setting, actually). 
-     Actual data sending is performed by silc_client_packet_process. */
-  SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(sock->sock);
-
-  /* Mark to socket that data is pending in outgoing buffer. This flag
-     is needed if new data is added to the buffer before the earlier
-     put data is sent to the network. */
-  SILC_SET_OUTBUF_PENDING(sock);
-
-  return 0;
-}
-
-/* Prepare outgoing data buffer for packet sending. */
-
-static void silc_client_packet_send_prepare(SilcClient client,
-					    SilcSocketConnection sock,
-					    unsigned int header_len,
-					    unsigned int padlen,
-					    unsigned int data_len)
-{
-  int totlen, oldlen;
-
-  totlen = header_len + padlen + data_len;
-
-  /* Prepare the outgoing buffer for packet sending. */
-  if (!sock->outbuf) {
-    /* Allocate new buffer. This is done only once per connection. */
-    SILC_LOG_DEBUG(("Allocating outgoing data buffer"));
-    
-    sock->outbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
-    silc_buffer_pull_tail(sock->outbuf, totlen);
-    silc_buffer_pull(sock->outbuf, header_len + padlen);
-  } else {
-    if (SILC_IS_OUTBUF_PENDING(sock)) {
-      /* There is some pending data in the buffer. */
-
-      if ((sock->outbuf->end - sock->outbuf->tail) < data_len) {
-	SILC_LOG_DEBUG(("Reallocating outgoing data buffer"));
-	/* XXX: not done yet */
-      }
-      oldlen = sock->outbuf->len;
-      silc_buffer_pull_tail(sock->outbuf, totlen);
-      silc_buffer_pull(sock->outbuf, header_len + padlen + oldlen);
-    } else {
-      /* Buffer is free for use */
-      silc_buffer_clear(sock->outbuf);
-      silc_buffer_pull_tail(sock->outbuf, totlen);
-      silc_buffer_pull(sock->outbuf, header_len + padlen);
-    }
-  }
-}
-
 /* Sends packet. This doesn't actually send the packet instead it assembles
    it and marks it to be sent. However, if force_send is TRUE the packet
    is sent immediately. if dst_id, cipher and hmac are NULL those parameters
@@ -1669,10 +1376,6 @@ void silc_client_packet_send(SilcClient client,
 			     int force_send)
 {
   SilcPacketContext packetdata;
-  unsigned char *hmac_key = NULL;
-  unsigned int hmac_key_len = 0;
-  unsigned char mac[32];
-  unsigned int mac_len = 0;
 
   SILC_LOG_DEBUG(("Sending packet, type %d", type));
 
@@ -1680,12 +1383,10 @@ void silc_client_packet_send(SilcClient client,
   if ((!cipher || !hmac || !dst_id) && sock->user_data) {
     if (!cipher && ((SilcClientWindow)sock->user_data)->send_key)
       cipher = ((SilcClientWindow)sock->user_data)->send_key;
-    if (!hmac && ((SilcClientWindow)sock->user_data)->hmac) {
+
+    if (!hmac && ((SilcClientWindow)sock->user_data)->hmac)
       hmac = ((SilcClientWindow)sock->user_data)->hmac;
-      mac_len = hmac->hash->hash->hash_len;
-      hmac_key = ((SilcClientWindow)sock->user_data)->hmac_key;
-      hmac_key_len = ((SilcClientWindow)sock->user_data)->hmac_key_len;
-    }
+
     if (!dst_id && ((SilcClientWindow)sock->user_data)->remote_id) {
       dst_id = ((SilcClientWindow)sock->user_data)->remote_id;
       dst_id_type = SILC_ID_SERVER;
@@ -1716,12 +1417,12 @@ void silc_client_packet_send(SilcClient client,
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
 
   /* Prepare outgoing data buffer for packet sending */
-  silc_client_packet_send_prepare(client, sock, 
-				  SILC_PACKET_HEADER_LEN +
-				  packetdata.src_id_len + 
-				  packetdata.dst_id_len,
-				  packetdata.padlen,
-				  data_len);
+  silc_packet_send_prepare(sock, 
+			   SILC_PACKET_HEADER_LEN +
+			   packetdata.src_id_len + 
+			   packetdata.dst_id_len,
+			   packetdata.padlen,
+			   data_len);
 
   SILC_LOG_DEBUG(("Putting data to outgoing buffer, len %d", data_len));
 
@@ -1734,21 +1435,9 @@ void silc_client_packet_send(SilcClient client,
   /* Create the outgoing packet */
   silc_packet_assemble(&packetdata);
 
-  /* Compute MAC of the packet */
-  if (hmac) {
-    silc_hmac_make_with_key(hmac, sock->outbuf->data, sock->outbuf->len,
-			    hmac_key, hmac_key_len, mac);
-    silc_buffer_put_tail(sock->outbuf, mac, mac_len);
-    memset(mac, 0, sizeof(mac));
-  }
-
   /* Encrypt the packet */
   if (cipher)
-    silc_packet_encrypt(cipher, sock->outbuf, sock->outbuf->len);
-
-  /* Pull MAC into the visible data area */
-  if (hmac)
-    silc_buffer_pull_tail(sock->outbuf, mac_len);
+    silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
 
   SILC_LOG_HEXDUMP(("Packet, len %d", sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
@@ -1774,13 +1463,9 @@ void silc_client_packet_send_to_channel(SilcClient client,
   SilcClientWindow win = (SilcClientWindow)sock->user_data;
   SilcBuffer payload;
   SilcPacketContext packetdata;
-  unsigned char *hmac_key = NULL;
-  unsigned int hmac_key_len = 0;
-  unsigned char mac[32];
-  unsigned int mac_len = 0;
-  unsigned char *id_string;
   SilcCipher cipher;
   SilcHmac hmac;
+  unsigned char *id_string;
 
   SILC_LOG_DEBUG(("Sending packet to channel"));
 
@@ -1811,9 +1496,6 @@ void silc_client_packet_send_to_channel(SilcClient client,
      specified channel key. */
   cipher = win->send_key;
   hmac = win->hmac;
-  mac_len = hmac->hash->hash->hash_len;
-  hmac_key = win->hmac_key;
-  hmac_key_len = win->hmac_key_len;
   id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
 
   /* Set the packet context pointers. The destination ID is always
@@ -1835,12 +1517,12 @@ void silc_client_packet_send_to_channel(SilcClient client,
 					  packetdata.dst_id_len));
 
   /* Prepare outgoing data buffer for packet sending */
-  silc_client_packet_send_prepare(client, sock, 
-				  SILC_PACKET_HEADER_LEN +
-				  packetdata.src_id_len + 
-				  packetdata.dst_id_len,
-				  packetdata.padlen,
-				  payload->len);
+  silc_packet_send_prepare(sock, 
+			   SILC_PACKET_HEADER_LEN +
+			   packetdata.src_id_len + 
+			   packetdata.dst_id_len,
+			   packetdata.padlen,
+			   payload->len);
 
   packetdata.buffer = sock->outbuf;
 
@@ -1850,30 +1532,17 @@ void silc_client_packet_send_to_channel(SilcClient client,
 					payload->len - 16, /* -IV_LEN */
 					channel->iv);
 
-  SILC_LOG_HEXDUMP(("XXX"), payload->data, payload->len);
-      
   /* Put the actual encrypted payload data into the buffer. */
   silc_buffer_put(sock->outbuf, payload->data, payload->len);
 
   /* Create the outgoing packet */
   silc_packet_assemble(&packetdata);
 
-  /* Compute MAC of the packet */
-  silc_hmac_make_with_key(hmac, sock->outbuf->data, sock->outbuf->len,
-			  hmac_key, hmac_key_len, mac);
-  silc_buffer_put_tail(sock->outbuf, mac, mac_len);
-  memset(mac, 0, sizeof(mac));
-
-      SILC_LOG_HEXDUMP(("XXX"), sock->outbuf->data, sock->outbuf->len);
-      
   /* Encrypt the header and padding of the packet. This is encrypted 
      with normal session key shared with our server. */
-  silc_packet_encrypt(cipher, sock->outbuf, SILC_PACKET_HEADER_LEN + 
+  silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
-
-  /* Pull MAC into the visible data area */
-  silc_buffer_pull_tail(sock->outbuf, mac_len);
 
   SILC_LOG_HEXDUMP(("Packet to channel, len %d", sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
@@ -1901,10 +1570,6 @@ void silc_client_packet_send_private_message(SilcClient client,
   SilcClientWindow win = (SilcClientWindow)sock->user_data;
   SilcBuffer buffer;
   SilcPacketContext packetdata;
-  unsigned char *hmac_key = NULL;
-  unsigned int hmac_key_len = 0;
-  unsigned char mac[32];
-  unsigned int mac_len = 0;
   unsigned int nick_len;
   SilcCipher cipher;
   SilcHmac hmac;
@@ -1938,9 +1603,6 @@ void silc_client_packet_send_private_message(SilcClient client,
   /* Get data used in the encryption */
   cipher = client_entry->send_key;
   hmac = win->hmac;
-  mac_len = hmac->hash->hash->hash_len;
-  hmac_key = win->hmac_key;
-  hmac_key_len = win->hmac_key_len;
 
   /* Set the packet context pointers. */
   packetdata.flags = 0;
@@ -1962,13 +1624,13 @@ void silc_client_packet_send_private_message(SilcClient client,
 					  packetdata.dst_id_len));
 
   /* Prepare outgoing data buffer for packet sending */
-  silc_client_packet_send_prepare(client, sock, 
-				  SILC_PACKET_HEADER_LEN +
-				  packetdata.src_id_len + 
-				  packetdata.dst_id_len,
-				  packetdata.padlen,
-				  buffer->len);
-
+  silc_packet_send_prepare(sock, 
+			   SILC_PACKET_HEADER_LEN +
+			   packetdata.src_id_len + 
+			   packetdata.dst_id_len,
+			   packetdata.padlen,
+			   buffer->len);
+  
   packetdata.buffer = sock->outbuf;
 
   /* Encrypt payload of the packet. Encrypt with private message specific
@@ -1982,21 +1644,10 @@ void silc_client_packet_send_private_message(SilcClient client,
   /* Create the outgoing packet */
   silc_packet_assemble(&packetdata);
 
-  /* Compute MAC of the packet */
-  silc_hmac_make_with_key(hmac, sock->outbuf->data, sock->outbuf->len,
-			  hmac_key, hmac_key_len, mac);
-  silc_buffer_put_tail(sock->outbuf, mac, mac_len);
-  memset(mac, 0, sizeof(mac));
-
-  SILC_LOG_HEXDUMP(("XXX"), sock->outbuf->data, sock->outbuf->len);
-      
   /* Encrypt the header and padding of the packet. */
-  silc_packet_encrypt(cipher, sock->outbuf, SILC_PACKET_HEADER_LEN + 
+  silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
-
-  /* Pull MAC into the visible data area */
-  silc_buffer_pull_tail(sock->outbuf, mac_len);
 
   SILC_LOG_HEXDUMP(("Private message packet, len %d", sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
