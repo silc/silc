@@ -167,9 +167,11 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
     min = atoi(cp + 1);
     cp++;
   }
-  cp = strchr(cp, '.');
-  if (cp)
-    build = atoi(cp + 1);
+  if (cp) {
+    cp = strchr(cp, '.');
+    if (cp)
+      build = atoi(cp + 1);
+  }
 
   cp = silc_version_string + 9;
   maj2 = atoi(cp);
@@ -178,9 +180,11 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
     min2 = atoi(cp + 1);
     cp++;
   }
-  cp = strchr(cp, '.');
-  if (cp)
-    build2 = atoi(cp + 1);
+  if (cp) {
+    cp = strchr(cp, '.');
+    if (cp)
+      build2 = atoi(cp + 1);
+  }
 
   if (maj != maj2)
     status = SILC_SKE_STATUS_BAD_VERSION;
