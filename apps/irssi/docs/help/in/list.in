@@ -1,16 +1,9 @@
 
 @SYNTAX:list@
 
-Lists the channel names. Trying to list all the channel 
-names usually causes you to be disconnected from the 
-server with the reason "Excess flood", as usually all
-40000 channels form together and server naively attempts
-to send you them.
+Lists all channel names and number of people on them. Channel topics
+are also shown.
 
-Thus, on IRCNet, you should rather use service ALIS
-(Advanced Listing Service), which will allow you to query
-for channel with specific name, topic, mode or usercount.
-Type /SQUERY ALIS HELP to get more info about it.
-
-See also: SQUERY
+Your server only knows number of people on channels if it has local
+clients joined onto those. This is why you'll see N/A for some channels.
 
