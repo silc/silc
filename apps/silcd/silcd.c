@@ -45,6 +45,7 @@ static struct option long_opts[] =
   { "config-file", 1, NULL, 'f' },
   { "passphrase", 1, NULL, 'p' },
   { "debug", 2, NULL, 'd' },
+  { "debug-level", 1, NULL, 'D' },
   { "hexdump", 0, NULL, 'x' },
   { "help", 0, NULL, 'h' },
   { "foreground", 0, NULL, 'F' },
@@ -75,6 +76,7 @@ static void silc_usage(void)
 "  Generic Options:\n"
 "  -f  --config-file=FILE        Alternate configuration file\n"
 "  -d  --debug=string            Enable debugging (Implies --foreground)\n"
+"  -D  --debug-level=level       Enable debugging (Implies --foreground)\n"
 "  -x  --hexdump                 Enable hexdumps (Implies --debug)\n"
 "  -h  --help                    Display this message\n"
 "  -F  --foreground              Dont fork\n"
@@ -310,6 +312,80 @@ SILC_TASK_CALLBACK(dump_stats)
   fclose(fdd);
 }
 
+typedef struct {
+  int level;
+  const char *string;
+} DebugLevel;
+
+static DebugLevel debug_levels[] = {
+  /* Basic stuff from silcd/ */
+  { 5, "silc_server_*" },
+
+  /* All from silcd/ */
+  { 10, "*silcd*,*serverid*,silc_server_*,*idlist*" },
+
+  /* All from silcd/ and basic stuff from libs */
+  { 15, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,*silcske*" },
+
+  /* All from silcd/ and more stuff from libs */
+  { 20, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+    "*silcpacket*,*ske*,*silcrng*" },
+
+  /* All from silcd/ and even more stuff from libs */
+  { 25, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+    "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*" },
+
+  /* All from silcd/ and even more stuff from libs + all from silccore */
+  { 30, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+    "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
+    "*silcid*,*argument*" },
+
+  /* All from silcd/, all from silccore, silccrypt and silcmath */
+  { 35, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+    "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
+    "*silcid*,*argument*,*pkcs*,*hmac*,*hash*,*cipher*,silc_math*" },
+
+  /* All from silcd/, all from silccore, silccrypt and silcmath + stuff
+     from silcutil */
+  { 40, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+    "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
+    "*silcid*,*argument*,*pkcs*,*hmac*,*hash*,*cipher*,silc_math*,*sim*"
+    "*sockconn*" },
+
+  /* All from silcd/, all from silccore, silccrypt and silcmath + more stuff
+     from silcutil */
+  { 45, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+    "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
+    "*silcid*,*argument*,*pkcs*,*hmac*,*hash*,*cipher*,silc_math*,*sim*"
+    "*sockconn*,*net*" },
+
+  /* All from silcd/, all from silccore, silccrypt and silcmath + more stuff
+     from silcutil */
+  { 50, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+    "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
+    "*silcid*,*argument*,*pkcs*,*hmac*,*hash*,*cipher*,silc_math*,*sim*"
+    "*sockconn*,*net*,*log*,*config*" },
+
+  /* All */
+  { 90, "*" },
+
+  { -1, NULL },
+};
+
+static void silc_get_debug_level(int level)
+{
+  int i;
+
+  if (level < 0)
+    return;
+
+  for (i = 0; debug_levels[i].string; i++)
+    if (level <= debug_levels[i].level) {
+      silc_log_set_debug_string(debug_levels[i].string);
+      break;
+    }
+}
+
 /* This function should not be called directly but throught the wrapper
    macro SILC_SERVER_LOG_STDERR() */
 
@@ -333,7 +409,7 @@ int main(int argc, char **argv)
 
   /* Parse command line arguments */
   if (argc > 1) {
-    while ((opt = getopt_long(argc, argv, "f:p:d:xhFVC:",
+    while ((opt = getopt_long(argc, argv, "f:p:d:D:xhFVC:",
 			      long_opts, &option_index)) != EOF) {
       switch(opt) {
 	case 'h':
@@ -352,8 +428,21 @@ int main(int argc, char **argv)
 	  silc_debug = TRUE;
 	  if (optarg)
 	    silc_log_set_debug_string(optarg);
-	  foreground = TRUE; /* implied */
-	  silc_log_quick = TRUE; /* implied */
+	  foreground = TRUE;	    /* implied */
+	  silc_log_quick = TRUE;    /* implied */
+#else
+	  fprintf(stderr,
+		  "Run-time debugging is not enabled. To enable it recompile\n"
+		  "the server with --enable-debug configuration option.\n");
+#endif
+	  break;
+	case 'D':
+#ifdef SILC_DEBUG
+	  silc_debug = TRUE;
+	  if (optarg)
+	    silc_get_debug_level(atoi(optarg));
+	  foreground = TRUE;	    /* implied */
+	  silc_log_quick = TRUE;    /* implied */
 #else
 	  fprintf(stderr,
 		  "Run-time debugging is not enabled. To enable it recompile\n"

@@ -1,3 +1,37 @@
+Wed Jun 19 17:46:31 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Save the channel passphrase when received succesful JOIN
+	  command reply from router, on normal server.  Otherwise
+	  joinig +a channels from normal server is not possible.
+	  Affected file silcd/command.c.
+
+	* Fixed a bug in TOPIC_SET notify handling.  The notifier
+	  may be other than client too, like server or channel.
+	  It expected it to always be only client and ignored the
+	  notify.  Affected file silcd/packet_recieve.c.
+
+	* Removed some (unnecessary) debug printing from 
+	  lib/silccore/silcid.c and lib/silccore/silcargument.c.
+
+	* Do not force CMODE_CHANGE when server is announcing new
+	  channel.
+
+	  Router announces stuff only after server reannounces channel
+	  after CHANNEL_CHANGE notify.
+
+	  These fixes optimizes the announcing procedure, and perhaps
+	  fixes some problems too.  Affected file silcd/packet_receive.c.
+
+	* Fixed SERVER_SIGNOFF sending to local clients.  It was
+	  totally broken and sent the notify to all local clients, 
+	  instead of only to those that was on same channel as the
+	  signing off clients.  Affected file silcd/server_util.c.
+
+	* Added -D option to server.  It can be used to give debug
+	  level.  The levels are from 0 - 99, and are predefined for
+	  smooth server debugging.  (see silcd.c for the predefined
+	  levels).  Affected file silcd/server.c.
+
 Wed Jun 19 16:01:51 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a bug in Irssi SILC client to close the connection

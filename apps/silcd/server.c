@@ -1217,8 +1217,6 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 
   context = (void *)server;
 
-  SILC_LOG_DEBUG(("Start"));
-
   /* Check whether we could resolve both IP and FQDN. */
   if (!sock->ip || (!strcmp(sock->ip, sock->hostname) &&
 		    server->config->require_reverse_lookup)) {
@@ -1319,6 +1317,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
      initiator of the protocol thus we will wait for initiation from
      there before we start the protocol. */
   server->stat.auth_attempts++;
+  SILC_LOG_DEBUG(("Starting key exchange protocol"));
   silc_protocol_alloc(SILC_PROTOCOL_SERVER_KEY_EXCHANGE,
 		      &sock->protocol, proto_ctx,
 		      silc_server_accept_new_connection_second);
@@ -1404,6 +1403,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   if ((protocol->state == SILC_PROTOCOL_STATE_ERROR) ||
       (protocol->state == SILC_PROTOCOL_STATE_FAILURE)) {
     /* Error occured during protocol */
+    SILC_LOG_DEBUG(("Error key exchange protocol"));
     silc_protocol_free(protocol);
     sock->protocol = NULL;
     silc_ske_free_key_material(ctx->keymat);
@@ -1436,6 +1436,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
 					ctx->ske->prop->hmac,
 					ctx->ske->prop->group,
 					ctx->responder)) {
+    SILC_LOG_ERROR(("Error setting key material in use"));
     silc_protocol_free(protocol);
     sock->protocol = NULL;
     silc_ske_free_key_material(ctx->keymat);
@@ -1481,6 +1482,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
      but we won't start it yet. We will be receiving party of this
      protocol thus we will wait that connecting party will make
      their first move. */
+  SILC_LOG_DEBUG(("Starting connection authentication protocol"));
   silc_protocol_alloc(SILC_PROTOCOL_SERVER_CONNECTION_AUTH,
 		      &sock->protocol, proto_ctx,
 		      silc_server_accept_new_connection_final);
@@ -1512,11 +1514,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   void *id_entry;
   SilcUInt32 hearbeat_timeout = server->config->param.keepalive_secs;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
+    SILC_LOG_DEBUG(("Error during authentication protocol"));
     silc_protocol_free(protocol);
     sock->protocol = NULL;
     if (ctx->packet)
@@ -1548,6 +1549,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (!silc_server_connection_allowed(server, sock, ctx->conn_type,
 					  &server->config->param,
 					  conn->param, ctx->ske)) {
+	SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
+		       sock->ip));
+	silc_server_disconnect_remote(server, sock,
+				      SILC_STATUS_ERR_BANNED_FROM_SERVER,
+				      NULL);
 	server->stat.auth_failures++;
 	goto out;
       }
@@ -1602,6 +1608,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 					    &server->config->param,
 					    rconn ? rconn->param : NULL,
 					    ctx->ske)) {
+	  SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
+			 sock->ip));
+	  silc_server_disconnect_remote(server, sock,
+					SILC_STATUS_ERR_BANNED_FROM_SERVER,
+					NULL);
 	  server->stat.auth_failures++;
 	  goto out;
 	}
@@ -1626,6 +1637,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 					    &server->config->param,
 					    sconn ? sconn->param : NULL,
 					    ctx->ske)) {
+	  SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
+			 sock->ip));
+	  silc_server_disconnect_remote(server, sock,
+					SILC_STATUS_ERR_BANNED_FROM_SERVER,
+					NULL);
 	  server->stat.auth_failures++;
 	  goto out;
 	}
@@ -1769,17 +1785,19 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   SilcUInt32 sequence = 0;
   int ret;
 
-  if (!sock)
+  if (!sock) {
+    SILC_LOG_DEBUG(("Unknown socket connection"));
     return;
-
-  SILC_LOG_DEBUG(("Processing packet"));
+  }
 
   /* Packet sending */
 
   if (type == SILC_TASK_WRITE) {
     /* Do not send data to disconnected connection */
-    if (SILC_IS_DISCONNECTED(sock))
+    if (SILC_IS_DISCONNECTED(sock)) {
+      SILC_LOG_DEBUG(("Disconnected socket connection, cannot send"));
       return;
+    }
 
     server->stat.packets_sent++;
 
@@ -1911,7 +1929,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   int ret;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Parsing packet"));
 
   /* Parse the packet */
   if (parse_ctx->normal)
@@ -2060,8 +2078,6 @@ void silc_server_packet_parse_type(SilcServer server,
 {
   SilcPacketType type = packet->type;
   SilcIDListData idata = (SilcIDListData)sock->user_data;
-
-  SILC_LOG_DEBUG(("Parsing packet type %d", type));
 
   /* Parse the packet type */
   switch (type) {
@@ -2510,7 +2526,6 @@ void silc_server_packet_parse_type(SilcServer server,
     SILC_LOG_ERROR(("Incorrect packet type %d, packet dropped", type));
     break;
   }
-
 }
 
 /* Creates connection to a remote router. */

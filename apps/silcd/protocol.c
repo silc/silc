@@ -170,15 +170,16 @@ silc_server_protocol_ke_verify_key(SilcSKE ske,
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Verifying received public key"));
 
-  if (silc_verify_public_key_internal(server, ctx->sock, 
-				      (ctx->responder == FALSE ?
-				       SILC_SOCKET_TYPE_ROUTER:
-				       ctx->sconfig.ref_ptr ? SILC_SOCKET_TYPE_SERVER :
-				       ctx->rconfig.ref_ptr ? SILC_SOCKET_TYPE_ROUTER :
-				       SILC_SOCKET_TYPE_CLIENT),
-				      pk_data, pk_len, pk_type))
+  if (silc_verify_public_key_internal(
+		  server, ctx->sock, 
+		  (ctx->responder == FALSE ?
+		   SILC_SOCKET_TYPE_ROUTER:
+		   ctx->sconfig.ref_ptr ? SILC_SOCKET_TYPE_SERVER :
+		   ctx->rconfig.ref_ptr ? SILC_SOCKET_TYPE_ROUTER :
+		   SILC_SOCKET_TYPE_CLIENT),
+		  pk_data, pk_len, pk_type))
     completion(ske, SILC_SKE_STATUS_OK, completion_context);
   else
     completion(ske, SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY, 
@@ -219,7 +220,7 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
   SilcUnknownEntry conn_data;
   SilcIDListData idata;
 
-  SILC_LOG_DEBUG(("Setting new key into use"));
+  SILC_LOG_DEBUG(("Setting new keys into use"));
 
   conn_data = silc_calloc(1, sizeof(*conn_data));
   idata = (SilcIDListData)conn_data;
@@ -373,8 +374,6 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (ske->status != SILC_SKE_STATUS_OK) {
     SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
 		    silc_ske_map_status(ske->status)));
@@ -387,6 +386,7 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
   /* Send Ok to the other end. We will end the protocol as responder
      sends Ok to us when we will take the new keys into use. */
   if (ctx->responder == FALSE) {
+    SILC_LOG_DEBUG(("Ending key exchange protocol"));
     silc_ske_end(ctx->ske);
 
     /* End the protocol on the next round */
@@ -414,12 +414,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
   SilcServer server = (SilcServer)ctx->server;
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (protocol->state == SILC_PROTOCOL_STATE_UNKNOWN)
     protocol->state = SILC_PROTOCOL_STATE_START;
 
-  SILC_LOG_DEBUG(("State=%d", protocol->state));
+  SILC_LOG_DEBUG(("Current protocol state %d", protocol->state));
 
   switch(protocol->state) {
   case SILC_PROTOCOL_STATE_START:
@@ -440,11 +438,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       if (ctx->responder == TRUE) {
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
+	SILC_LOG_DEBUG(("Process security property list (KE)"));
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
 					  silc_version_string,
 					  ctx->packet->buffer, ctx->flags);
       } else {
 	SilcSKEStartPayload *start_payload;
+
+	SILC_LOG_DEBUG(("Send security property list (KE)"));
 
 	/* Assemble security properties. */
 	silc_ske_assemble_security_properties(ske, ctx->flags, 
@@ -483,12 +484,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
        */
       if (ctx->responder == TRUE) {
 	/* Sends the selected security properties to the initiator. */
+	SILC_LOG_DEBUG(("Send security property list reply (KE)"));
 	status = silc_ske_responder_phase_1(ctx->ske);
       } else {
 	/* Call Phase-1 function. This processes the Key Exchange Start
 	   paylaod reply we just got from the responder. The callback
 	   function will receive the processed payload where we will
 	   save it. */
+	SILC_LOG_DEBUG(("Process security property list reply (KE)"));
 	status = silc_ske_initiator_phase_1(ctx->ske, ctx->packet->buffer);
       }
 
@@ -521,11 +524,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   the initiator. This also creates our parts of the Diffie
 	   Hellman algorithm. The silc_server_protocol_ke_continue
 	   will be called after the public key has been verified. */
+	SILC_LOG_DEBUG(("Process KE1 packet"));
 	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer);
       } else {
 	/* Call the Phase-2 function. This creates Diffie Hellman
 	   key exchange parameters and sends our public part inside
 	   Key Exhange 1 Payload to the responder. */
+	SILC_LOG_DEBUG(("Send KE1 packet"));
 	status = silc_ske_initiator_phase_2(ctx->ske,
 					    server->public_key,
 					    server->private_key,
@@ -555,6 +560,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       if (ctx->responder == TRUE) {
 	/* This creates the key exchange material and sends our
 	   public parts to the initiator inside Key Exchange 2 Payload. */
+	SILC_LOG_DEBUG(("Process KE2 packet"));
 	status = silc_ske_responder_finish(ctx->ske, 
 					   server->public_key, 
 					   server->private_key,
@@ -566,6 +572,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. The silc_server_protocol_ke_continue will
 	   be called after the public key has been verified. */
+	SILC_LOG_DEBUG(("Send KE2 packet"));
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer);
       }
 
@@ -593,6 +600,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       int key_len = silc_cipher_get_key_len(ctx->ske->prop->cipher);
       int hash_len = silc_hash_len(ctx->ske->prop->hash);
 
+      SILC_LOG_DEBUG(("Process computed key material"));
+
       /* Process the key material */
       keymat = silc_calloc(1, sizeof(*keymat));
       status = silc_ske_process_key_material(ctx->ske, 16, key_len, hash_len,
@@ -610,8 +619,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 
       /* Send Ok to the other end if we are responder. If we are initiator
 	 we have sent this already. */
-      if (ctx->responder == TRUE)
+      if (ctx->responder == TRUE) {
+	SILC_LOG_DEBUG(("Ending key exchange protocol"));
 	silc_ske_end(ctx->ske);
+      }
 
       /* Unregister the timeout task since the protocol has ended. 
 	 This was the timeout task to be executed if the protocol is
@@ -777,6 +788,8 @@ silc_server_get_public_key_auth(SilcServer server,
     return TRUE;
   }
 
+  SILC_LOG_ERROR(("Error computing signature"));
+
   silc_free(*auth_data);
   silc_buffer_free(auth);
   return FALSE;
@@ -834,6 +847,8 @@ silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
 						   remote_auth_len, ske);
   }
 
+  SILC_LOG_DEBUG(("Authentication %s", result ? "successful" : "failed"));
+
   return result;
 }
 
@@ -848,12 +863,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
     (SilcServerConnAuthInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (protocol->state == SILC_PROTOCOL_STATE_UNKNOWN)
     protocol->state = SILC_PROTOCOL_STATE_START;
 
-  SILC_LOG_DEBUG(("State=%d", protocol->state));
+  SILC_LOG_DEBUG(("Current protocol state %d", protocol->state));
 
   switch(protocol->state) {
   case SILC_PROTOCOL_STATE_START:
@@ -1319,12 +1332,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
   SilcIDListData idata = (SilcIDListData)ctx->sock->user_data;
   SilcSKEStatus status;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (protocol->state == SILC_PROTOCOL_STATE_UNKNOWN)
     protocol->state = SILC_PROTOCOL_STATE_START;
 
-  SILC_LOG_DEBUG(("State=%d", protocol->state));
+  SILC_LOG_DEBUG(("Current protocol state %d", protocol->state));
 
   switch(protocol->state) {
   case SILC_PROTOCOL_STATE_START:

@@ -50,8 +50,6 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
   SilcUInt32 pull_len = 0;
   int i = 0, ret;
 
-  SILC_LOG_DEBUG(("Parsing argument payload"));
-
   silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   newp = silc_calloc(1, sizeof(*newp));
   if (!newp)
@@ -95,8 +93,10 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
     pull_len += 3 + p_len;
   }
 
-  if (buffer.len != 0)
+  if (buffer.len != 0) {
+    SILC_LOG_DEBUG(("Malformed argument payload"));
     goto err;
+  }
 
   newp->argc = argc;
   newp->pos = 0;
@@ -106,6 +106,7 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
   return newp;
 
  err:
+  SILC_LOG_DEBUG(("Error parsing argument payload"));
   if (i)
     for (ret = 0; ret < i; ret++)
       silc_free(newp->argv[ret]);
@@ -128,8 +129,6 @@ SilcBuffer silc_argument_payload_encode(SilcUInt32 argc,
   SilcBuffer buffer;
   SilcUInt32 len;
   int i;
-
-  SILC_LOG_DEBUG(("Encoding Argument payload"));
 
   len = 0;
   for (i = 0; i < argc; i++)
@@ -162,8 +161,6 @@ SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload)
   SilcBuffer buffer;
   SilcUInt32 len;
   int i;
-
-  SILC_LOG_DEBUG(("Encoding Argument payload"));
 
   len = 0;
   for (i = 0; i < payload->argc; i++)

@@ -48,8 +48,6 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
   SilcIDPayload newp;
   int ret;
 
-  SILC_LOG_DEBUG(("Parsing ID payload"));
-
   silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   newp = silc_calloc(1, sizeof(*newp));
   if (!newp)
@@ -81,6 +79,7 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
   return newp;
 
  err:
+  SILC_LOG_DEBUG(("Error parsing ID payload"));
   silc_free(newp);
   return NULL;
 }
@@ -103,21 +102,21 @@ void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
 			     SILC_STR_UI_SHORT(&idlen),
 			     SILC_STR_END);
   if (ret == -1)
-    return NULL;
+    goto err;
 
   if (type > SILC_ID_CHANNEL)
-    return NULL;
+    goto err;
 
   silc_buffer_pull(&buffer, 4);
 
   if (idlen > buffer.len || idlen > SILC_PACKET_MAX_ID_LEN)
-    return NULL;
+    goto err;
 
   ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_XNSTRING(&id_data, idlen),
 			     SILC_STR_END);
   if (ret == -1)
-    return NULL;
+    goto err;
 
   id = silc_id_str2id(id_data, idlen, type);
 
@@ -125,6 +124,10 @@ void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
     *ret_type = type;
 
   return id;
+
+ err:
+  SILC_LOG_DEBUG(("Error parsing ID payload"));
+  return NULL;
 }
 
 /* Encodes ID Payload */
@@ -147,10 +150,6 @@ SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
 				       SilcUInt32 id_len, SilcIdType type)
 {
   SilcBuffer buffer;
-
-  SILC_LOG_DEBUG(("Encoding %s ID payload",
-		  type == SILC_ID_CLIENT ? "Client" :
-		  type == SILC_ID_SERVER ? "Server" : "Channel"));
 
   buffer = silc_buffer_alloc_size(4 + id_len);
   if (!buffer)

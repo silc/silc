@@ -497,6 +497,7 @@ void silc_log_set_debug_string(const char *debug_string)
   len = strlen(string);
   if (len >= sizeof(silc_log_debug_string))
     len = sizeof(silc_log_debug_string) - 1;
+  memset(silc_log_debug_string, 0, sizeof(silc_log_debug_string));
   strncpy(silc_log_debug_string, string, len);
   silc_free(string);
 }

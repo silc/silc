@@ -120,6 +120,10 @@ void silc_free(void *ptr);
 void *silc_memdup(const void *ptr, size_t size);
 
 #else
+#ifndef SILC_DIST_TOOLKIT
+#error "The stack trace is not supported in this distribution"
+#endif
+
 #include "stacktrace.h"
 #endif /* SILC_STACKTRACE */
 

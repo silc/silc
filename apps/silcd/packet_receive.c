@@ -368,22 +368,24 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
     if (!client_id)
       goto out;
 
     /* Get client entry */
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, TRUE, &cache);
-    if (!client) {
-      client = silc_idlist_find_client_by_id(server->local_list, 
+    if (id_type == SILC_ID_CLIENT) {
+      client = silc_idlist_find_client_by_id(server->global_list, 
 					     client_id, TRUE, &cache);
       if (!client) {
-	silc_free(client_id);
-	goto out;
+	client = silc_idlist_find_client_by_id(server->local_list, 
+					       client_id, TRUE, &cache);
+	if (!client) {
+	  silc_free(client_id);
+	  goto out;
+	}
       }
+      silc_free(client_id);
     }
-    silc_free(client_id);
 
     /* Get the topic */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
@@ -414,14 +416,16 @@ void silc_server_notify(SilcServer server,
     if (channel->topic && !strcmp(channel->topic, tmp))
       goto out;
 
-    /* Get user's channel entry and check that topic set is allowed. */
-    if (!silc_server_client_on_channel(client, channel, &chl))
-      goto out;
-    if (channel->mode & SILC_CHANNEL_MODE_TOPIC &&
-	!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
-	!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
-      SILC_LOG_DEBUG(("Topic change is not allowed"));
-      goto out;
+    if (client) {
+      /* Get user's channel entry and check that topic set is allowed. */
+      if (!silc_server_client_on_channel(client, channel, &chl))
+	goto out;
+      if (channel->mode & SILC_CHANNEL_MODE_TOPIC &&
+	  !(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	  !(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
+	SILC_LOG_DEBUG(("Topic change is not allowed"));
+	goto out;
+      }
     }
 
     /* Change the topic */
@@ -1098,7 +1102,7 @@ void silc_server_notify(SilcServer server,
 	silc_server_send_notify_topic_set(server, sock,
 					  server->server_type == SILC_ROUTER ?
 					  TRUE : FALSE, channel, 
-					  channel->id, SILC_ID_CHANNEL,
+					  server->id, SILC_ID_SERVER,
 					  channel->topic);
       }
     }
@@ -2806,7 +2810,13 @@ void silc_server_new_channel(SilcServer server,
 	SILC_LOG_DEBUG(("Forcing the server to change Channel ID"));
 	silc_server_send_notify_channel_change(server, sock, FALSE, 
 					       channel_id, channel->id);
+
+	/* Wait that server re-announces this channel */
+	return;
       }
+
+#if 0 /* Lets expect that server send CMODE_CHANGE notify anyway to
+	 (attempt) force mode change, and may very well get it. */
 
       /* If the mode is different from what we have then enforce the
 	 mode change. */
@@ -2820,6 +2830,7 @@ void silc_server_new_channel(SilcServer server,
 				      channel->passphrase,
 				      channel->founder_key);
       }
+#endif
 
       /* Create new key for the channel and send it to the server and
 	 everybody else possibly on the channel. */
@@ -2880,6 +2891,13 @@ void silc_server_new_channel(SilcServer server,
 				     users_modes->data, 
 				     users_modes->len, FALSE);
 	silc_buffer_free(users_modes);
+      }
+      if (channel->topic) {
+	silc_server_send_notify_topic_set(server, sock,
+					  server->server_type == SILC_ROUTER ?
+					  TRUE : FALSE, channel, 
+					  server->id, SILC_ID_SERVER,
+					  channel->topic);
       }
     }
   }

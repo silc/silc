@@ -35,9 +35,18 @@ endif
 endif
 endif
 
+if SILC_DIST_TOOLKIT
+SILC_DIST_SOURCE = stacktrace.c
+SILC_DIST_HEADERS = stacktrace.h
+else
+SILC_DIST_SOURCE =
+SILC_DIST_HEADERS =
+endif
+
 noinst_LIBRARIES = libsilcutil.a
 
 libsilcutil_a_SOURCES = \
+	$(SILC_DIST_SOURCE) \
 	silcbuffmt.c \
 	silcconfig.c \
 	silclog.c \
@@ -49,11 +58,11 @@ libsilcutil_a_SOURCES = \
 	silcutil.c \
 	silchashtable.c \
 	silcsockconn.c	\
-	silcprotocol.c	\
-	stacktrace.c
+	silcprotocol.c
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\
+	$(SILC_DIST_SOURCE) \
 	silcbuffer.h	\
 	silcbuffmt.h	\
 	silcconfig.h	\

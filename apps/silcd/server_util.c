@@ -28,20 +28,25 @@ extern char *server_version;
    keys are regnerated. This is called only by the function
    silc_server_remove_clients_by_server. */
 
-static void silc_server_remove_clients_channels(SilcServer server, 
-						SilcSocketConnection sock,
-						SilcClientEntry client,
-						SilcHashTable channels)
+static void
+silc_server_remove_clients_channels(SilcServer server,
+				    SilcServerEntry server_entry,
+				    SilcHashTable clients,
+				    SilcClientEntry client,
+				    SilcHashTable channels)
 {
   SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
-  SilcHashTableList htl;
+  SilcChannelClientEntry chl, chl2;
+  SilcHashTableList htl, htl2;
   SilcBuffer clidp;
 
   SILC_LOG_DEBUG(("Start"));
 
   if (!client || !client->id)
     return;
+
+  if (silc_hash_table_find(clients, client, NULL, NULL))
+    silc_hash_table_del(clients, client);
 
   clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -94,6 +99,21 @@ static void silc_server_remove_clients_channels(SilcServer server,
       continue;
     }
 
+    /* Mark other local clients to the table of clients whom will receive
+       the SERVER_SIGNOFF notify. */
+    silc_hash_table_list(channel->user_list, &htl2);
+    while (silc_hash_table_get(&htl2, NULL, (void **)&chl2)) {
+      SilcClientEntry c = chl2->client;
+      if (!c)
+	continue;
+
+      /* Add client to table, if it's not from the signoff server */
+      if (c->router != server_entry &&
+	  !silc_hash_table_find(clients, c, NULL, NULL))
+	silc_hash_table_add(clients, c, c);
+    }
+    silc_hash_table_list_reset(&htl2);
+
     /* Add the channel to the the channels list to regenerate the 
        channel key */
     if (!silc_hash_table_find(channels, channel, NULL, NULL))
@@ -117,13 +137,11 @@ bool silc_server_remove_clients_by_server(SilcServer server,
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client = NULL;
   SilcBuffer idp;
-  SilcClientEntry *clients = NULL;
-  SilcUInt32 clients_c = 0;
   unsigned char **argv = NULL;
   SilcUInt32 *argv_lens = NULL, *argv_types = NULL, argc = 0;
   SilcHashTableList htl;
   SilcChannelEntry channel;
-  SilcHashTable channels;
+  SilcHashTable channels, clients;
   int i;
 
   SILC_LOG_DEBUG(("Start"));
@@ -133,6 +151,8 @@ bool silc_server_remove_clients_by_server(SilcServer server,
      from the channels. */
   channels = silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL, NULL,
 				   NULL, NULL, TRUE);
+  clients = silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL, NULL,
+				  NULL, NULL, TRUE);
 
   if (server_signoff) {
     idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
@@ -160,13 +180,6 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	}
 
 	if (client->router != entry) {
-	  if (server_signoff) {
-	    clients = silc_realloc(clients, 
-				   sizeof(*clients) * (clients_c + 1));
-	    clients[clients_c] = client;
-	    clients_c++;
-	  }
-
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
@@ -196,7 +209,8 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
 	/* Remove the client entry */
-	silc_server_remove_clients_channels(server, NULL, client, channels);
+	silc_server_remove_clients_channels(server, entry, clients,
+					    client, channels);
 	if (!server_signoff) {
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
@@ -226,13 +240,6 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	}
 	
 	if (client->router != entry) {
-	  if (server_signoff && client->connection) {
-	    clients = silc_realloc(clients, 
-				   sizeof(*clients) * (clients_c + 1));
-	    clients[clients_c] = client;
-	    clients_c++;
-	  }
-
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
@@ -262,7 +269,8 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
 	/* Remove the client entry */
-	silc_server_remove_clients_channels(server, NULL, client, channels);
+	silc_server_remove_clients_channels(server, entry, clients,
+					    client, channels);
 	if (!server_signoff) {
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
@@ -295,17 +303,18 @@ bool silc_server_remove_clients_by_server(SilcServer server,
       silc_buffer_free(args);
     }
 
+    
+
     /* Send to local clients. We also send the list of client ID's that
        is to be removed for those servers that would like to use that list. */
     args = silc_argument_payload_encode(argc, argv, argv_lens,
 					argv_types);
     not = silc_notify_payload_encode_args(SILC_NOTIFY_TYPE_SERVER_SIGNOFF, 
 					  argc, args);
-    silc_server_packet_send_clients(server, clients, clients_c,
+    silc_server_packet_send_clients(server, clients,
 				    SILC_PACKET_NOTIFY, 0, FALSE,
 				    not->data, not->len, FALSE);
 
-    silc_free(clients);
     silc_buffer_free(args);
     silc_buffer_free(not);
     for (i = 0; i < argc; i++)
@@ -313,6 +322,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
     silc_free(argv);
     silc_free(argv_lens);
     silc_free(argv_types);
+    silc_hash_table_free(clients);
   }
 
   /* We must now re-generate the channel key for all channels that had

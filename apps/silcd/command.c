@@ -3683,6 +3683,18 @@ SILC_SERVER_CMD_FUNC(join)
       SILC_GET32_MSB(created, tmp);
       if (silc_argument_get_arg_type(reply->args, 7, NULL))
 	create_key = FALSE;	/* Router returned the key already */
+
+      if (silc_command_get_status(reply->payload, NULL, NULL) &&
+	  channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
+	/* Save channel passphrase, if user provided it successfully */
+	unsigned char *pa;
+	SilcUInt32 pa_len;
+	pa = silc_argument_get_arg_type(reply->args, 3, &pa_len);
+	if (pa) {
+	  silc_free(channel->passphrase);
+	  channel->passphrase = silc_memdup(pa, pa_len);
+	}
+      }
     }
 
     if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS &&
