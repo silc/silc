@@ -1087,7 +1087,7 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
 /* Called to indicate that connection was disconnected to the server. */
 
 void silc_disconnect(SilcClient client, SilcClientConnection conn,
-		     SilcStatus status, const char *message)
+ 		     SilcStatus status, const char *message)
 {
   SILC_SERVER_REC *server = conn->context;
 
@@ -1475,9 +1475,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	    char *name = silc_channel_get_name(entry, &name_len);
 	    
 	    if (m)
-	      strncat(buf, m, strlen(m));
-	    strncat(buf, name, name_len);
-	    strncat(buf, " ", 1);
+	      silc_strncat(buf, sizeof(buf) - 1, m, strlen(m));
+	    silc_strncat(buf, sizeof(buf) - 1, name, name_len);
+	    silc_strncat(buf, sizeof(buf) - 1, " ", 1);
 	    silc_free(m);
 	  }
 
