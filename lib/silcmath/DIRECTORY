@@ -1,6 +1,8 @@
 <!--
 @LIBRARY=SILC Math Library
 @FILENAME=silcmathlib.html
+@LINK=silcmath.html:SILC Math API
+@LINK=silcmp.html:SILC MP API
 -->
 
 <OL>
@@ -13,6 +15,6 @@ math utility functions for applications.
 </FONT>
 </PRE>
 
-<LI><A HREF="silcmath.html">SILC Math API</A>
-<LI><A HREF="silcmp.html">SILC MP API</A>
+@LINKS@
+
 </OL>

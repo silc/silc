@@ -1,6 +1,7 @@
 <!--
 @LIBRARY=SILC Client Library
 @FILENAME=silcclientlib.html
+@LINK=silcapi.html:SILC Client API
 -->
 
 <OL>
@@ -26,5 +27,6 @@ the library.
 </FONT>
 </PRE>
 
-<LI><A HREF="silcapi.html">SILC Client API</A>
+@LINKS@
+
 </OL>

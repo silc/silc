@@ -195,7 +195,7 @@ static uint32 primetable[] =
    If argument verbose is TRUE this will display some status information
    about the progress of generation. */
 
-int silc_math_gen_prime(SilcMPInt *prime, uint32 bits, int verbose)
+bool silc_math_gen_prime(SilcMPInt *prime, uint32 bits, bool verbose)
 {
   unsigned char *numbuf;
   uint32 i, b, k;
@@ -303,7 +303,7 @@ int silc_math_gen_prime(SilcMPInt *prime, uint32 bits, int verbose)
 /* Performs primality testings for given number. Returns TRUE if the 
    number is probably a prime. */
 
-int silc_math_prime_test(SilcMPInt *p)
+bool silc_math_prime_test(SilcMPInt *p)
 {
   SilcMPInt r, base, tmp;
   int i, ret = 0;

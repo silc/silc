@@ -1,6 +1,8 @@
 <!--
 @LIBRARY=SILC Key Exchange Library
 @FILENAME=silcskelib.html
+@LINK=silcske.html:SILC SKE API
+@LINK=silcske_status.html:SILC SKE Status
 -->
 
 <OL>
@@ -12,6 +14,6 @@ It provides the key exchange protocol for all SILC applications.
 </FONT>
 </PRE>
 
-<LI><A HREF="silcske.html">SILC SKE API</A>
-<LI><A HREF="silcske_status.html">SILC SKE Status</A>
+@LINKS@
+
 </OL>

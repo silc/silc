@@ -1,6 +1,11 @@
 <!--
 @LIBRARY=SILC Crypto Library
 @FILENAME=silccryptlib.html
+@LINK=silccipher.html:SILC Cipher API
+@LINK=silchash.html:SILC Hash API
+@LINK=silchmac.html:SILC HMAC API
+@LINK=silcpkcs.html:SILC PKCS API
+@LINK=silcrng.html:SILC RNG API
 -->
 
 <OL>
@@ -14,9 +19,6 @@ strong random number generator.
 </FONT>
 </PRE>
 
-<LI><A HREF="silccipher.html">SILC Cipher API</A>
-<LI><A HREF="silchash.html">SILC Hash API</A>
-<LI><A HREF="silchmac.html">SILC HMAC API</A>
-<LI><A HREF="silcpkcs.html">SILC PKCS API</A>
-<LI><A HREF="silcrng.html">SILC RNG API</A>
+@LINKS@
+
 </OL>

@@ -1,6 +1,17 @@
 <!--
 @LIBRARY=SILC Core Library
 @FILENAME=silccorelib.html
+@LINK=silcauth.html:SILC Auth API
+@LINK=silcchannel.html:SILC Channel API
+@LINK=silccommand.html:SILC Command API
+@LINK=silcid.html:SILC ID API
+@LINK=silcidcache.html:SILC ID Cache API
+@LINK=silcmode.html:SILC Modes
+@LINK=silcnotify.html:SILC Notify API
+@LINK=silcpacket.html:SILC Packet API
+@LINK=silcpayload.html:SILC Payload API
+@LINK=silcprivate.html:SILC Private API
+@LINK=silcprotocol.html:SILC Protocol API
 -->
 
 <OL>
@@ -14,15 +25,6 @@ routines, and routines for sending private message and channel messages.
 </FONT>
 </PRE>
 
-<LI><A HREF="silcauth.html">SILC Auth API</A>
-<LI><A HREF="silcchannel.html">SILC Channel API</A>
-<LI><A HREF="silccommand.html">SILC Command API</A>
-<LI><A HREF="silcid.html">SILC ID API</A>
-<LI><A HREF="silcidcache.html">SILC ID Cache API</A>
-<LI><A HREF="silcmode.html">SILC Modes</A>
-<LI><A HREF="silcnotify.html">SILC Notify API</A>
-<LI><A HREF="silcpacket.html">SILC Packet API</A>
-<LI><A HREF="silcpayload.html">SILC Payload API</A>
-<LI><A HREF="silcprivate.html">SILC Private API</A>
-<LI><A HREF="silcprotocol.html">SILC Protocol API</A>
+@LINKS@
+
 </OL>
