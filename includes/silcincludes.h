@@ -29,31 +29,38 @@
 extern "C" {
 #endif
 
+#define SILC_UNIX
+
 #ifdef WIN32
 #ifndef SILC_WIN32
 #define SILC_WIN32
+#undef SILC_UNIX
 #endif
 #endif
 
 #if defined(__EPOC32__)
 #ifndef SILC_EPOC
 #define SILC_EPOC
+#undef SILC_UNIX
 #endif
 #endif
 
 #ifdef BEOS
 #ifndef SILC_BEOS
 #define SILC_BEOS
+#undef SILC_UNIX
 #endif
 #elif defined(__BEOS__)
 #ifndef SILC_BEOS
 #define SILC_BEOS
+#undef SILC_UNIX
 #endif
 #endif
 
 #if defined(OS2)
 #ifndef SILC_OS2
 #define SILC_OS2
+#undef SILC_UNIX
 #endif
 #endif
 

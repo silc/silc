@@ -238,7 +238,9 @@ SilcSchedule silc_schedule_init(int max_tasks)
 
   /* Initialize the platform specific scheduler. */
   schedule->internal = silc_schedule_internal_init(schedule);
+#ifdef SILC_UNIX
   silc_schedule_signal_register(schedule, SIGALRM);
+#endif
 
   return schedule;
 }
