@@ -268,9 +268,9 @@ void silc_schedule_stop(SilcSchedule schedule)
 static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 {
   SilcTask task;
-  int i;
+  int i, last_fd = schedule->last_fd;
 
-  for (i = 0; i <= schedule->last_fd; i++) {
+  for (i = 0; i <= last_fd; i++) {
     if (schedule->fd_list[i].events == 0)
       continue;
 

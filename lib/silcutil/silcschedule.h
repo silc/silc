@@ -46,12 +46,13 @@
  * the scheduler's run function returns the application is considered to be 
  * ended.
  *
- * On WIN32 systems the SILC Scheduler is also designed to work as the main
+ * On WIN32 systems the SILC Scheduler is too designed to work as the main
  * loop of the GUI application. It can handle all Windows messages and
- * it dispatches them from the scheduler and thus makes it possible to
+ * it dispatches them from the scheduler, and thus makes it possible to
  * create GUI applications. The scheduler can also handle all kinds of
  * WIN32 handles, this includes sockets created by the SILC Net API routines,
- * WSAEVENT handle objects and arbitrary WIN32 HANDLE objects.
+ * WSAEVENT handle objects created by Winsock2 routines and arbitrary 
+ * WIN32 HANDLE objects.
  *
  * The SILC Scheduler supports multi-threads as well. The actual scheduler
  * must be run in single-thread but other threads may register new tasks
@@ -132,7 +133,7 @@ typedef enum {
      for example, receiving packets from network and sending packets to
      network. It doesn't make much sense to register a task that receives
      a packet from network to every connection when you can have one task
-     that applies to all connections. This is what generic tasks are for-
+     that applies to all connections. This is what generic tasks are for.
      Generic tasks are not bound to any specific file descriptor, however,
      the correct file descriptor must be passed as argument to task
      registering function. */
@@ -152,9 +153,9 @@ typedef enum {
  *    event of the task.  This type will be given as argument to the
  *    SilcTaskCallback function to indicate the event for the caller.
  *    The SILC_TASK_READ and SILC_TASK_WRITE may be set by the caller
- *    of the silc_schedule_set_listen_fd if the caller needs to control
- *    the events for the task. The SILC_TASK_TIMEOUT is set always only
- *    by the scheduler when timeout for timeout task occurs.
+ *    of the silc_schedule_set_listen_fd, if the caller needs to control
+ *    the events for the task. The SILC_TASK_EXPIRE is set always only
+ *    by the scheduler when timeout expires for timeout task.
  *
  * SOURCE
  */
@@ -187,7 +188,7 @@ typedef enum {
      same way. Life is not fair for tasks with this priority. */
   SILC_TASK_PRI_LOW,
 
-  /* Normal priority that is used mostly in Silc. This is priority that
+  /* Normal priority that is used mostly in SILC. This is priority that
      should always be used unless you specificly need some other priority.
      The scheduler will run this task as soon as its timeout has expired.
      For non-timeout tasks this priority behaves same way. Tasks are run 
@@ -213,7 +214,7 @@ typedef enum {
  *    The `schedule' is the scheduler context, the `type' is the indicated
  *    event, the `fd' is the file descriptor of the task and the `context'
  *    is a caller specified context. If multiple events occurred this
- *    call is called separately for all events.
+ *    callback is called separately for all events.
  *
  *    To specify task callback function in the application using the
  *    SILC_TASK_CALLBACK and SILC_TASK_CALLBACK_GLOBAL macros is
@@ -270,7 +271,7 @@ static void func(SilcSchedule schedule, SilcTaskEvent type,	\
  *    Generic macro to define task callback functions. This defines a
  *    function with name `func' as a task callback function.  This
  *    differs from SILC_TASK_CALLBACK in that the defined function is
- *    not static function.
+ *    not static.
  *
  * SOURCE
  */
@@ -290,7 +291,7 @@ void func(SilcSchedule schedule, SilcTaskEvent type,	\
  * DESCRIPTION
  *
  *    Initializes the scheduler. This returns the scheduler context that
- *    is given as arugment usually to all silc_schedule_* functions.
+ *    is given as argument usually to all silc_schedule_* functions.
  *    The `max_tasks' indicates the number of maximum tasks that the
  *    scheduler can handle.
  *
@@ -305,7 +306,7 @@ SilcSchedule silc_schedule_init(int max_tasks);
  *
  * DESCRIPTION
  *
- *    Uninitializes the schedule. This is called when the program is ready
+ *    Uninitializes the scheduler. This is called when the program is ready
  *    to end. This removes all tasks from the scheduler. Returns FALSE if the
  *    scheduler could not be uninitialized. This happens when the scheduler
  *    is still valid and silc_schedule_stop has not been called.
@@ -398,7 +399,7 @@ void silc_schedule_wakeup(SilcSchedule schedule);
  *    should also pass 0 as timeout, as the timeout will be ignored anyway. 
  *    Also, note, that one cannot register timeout task with 0 timeout.
  *    There cannot be zero timeouts, passing zero means no timeout is used
- *    for the task and SILC_TASK_FD_TASK is used as default task type in
+ *    for the task and SILC_TASK_FD is used as default task type in
  *    this case.
  *
  *    The `schedule' is the scheduler context. The `fd' is the file
