@@ -103,6 +103,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "auth_failed", "Authentication failed", 0 },
 	{ "set_away", "You have meen marked as being away (away message: {hilight $0})", 1, { 0 } },
 	{ "unset_away", "You are no longer marked as being away", 0 },
+	{ "auth_meth_unresolved", "Could not resolve authentication method to use, assume no authentication", 0 },
 
 	{ NULL, NULL, 0 }
 };

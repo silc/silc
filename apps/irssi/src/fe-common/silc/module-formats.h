@@ -97,6 +97,8 @@ enum {
   SILCTXT_AUTH_FAILED,
   SILCTXT_SET_AWAY,
   SILCTXT_UNSET_AWAY,
+  SILCTXT_AUTH_METH_UNRESOLVED,
+
 };
 
 extern FORMAT_REC fecommon_silc_formats[];

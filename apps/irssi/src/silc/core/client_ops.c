@@ -930,6 +930,8 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 			 unsigned char **auth_data,
 			 uint32 *auth_data_len)
 {
+  bool ret = TRUE;
+  SILC_SERVER_REC *server = conn ? conn->context : NULL;
 
   /* XXX must resolve from configuration whether this connection has
      any specific authentication data */
@@ -938,7 +940,12 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
   *auth_data = NULL;
   *auth_data_len = 0;
 
-  return TRUE;
+  if (ret == FALSE) {
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_MODES, SILCTXT_AUTH_METH_UNRESOLVED);
+  }
+
+  return ret;
 }
 
 /* Notifies application that failure packet was received.  This is called
