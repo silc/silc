@@ -1314,16 +1314,18 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcBuffer channel_pubkeys)
 {
   SilcBuffer idp, fkey = NULL;
-  unsigned char mode[4];
+  unsigned char mode[4], ulimit[4];
 
   idp = silc_id_payload_encode((void *)id, id_type);
   SILC_PUT32_MSB(mode_mask, mode);
   if (founder_key)
     fkey = silc_pkcs_public_key_payload_encode(founder_key);
+  if (channel->mode & SILC_CHANNEL_MODE_ULIMIT)
+    SILC_PUT32_MSB(channel->user_limit, ulimit);
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
-			       7, idp->data, idp->len,
+			       8, idp->data, idp->len,
 			       mode, 4,
 			       cipher, cipher ? strlen(cipher) : 0,
 			       hmac, hmac ? strlen(hmac) : 0,
@@ -1331,7 +1333,11 @@ void silc_server_send_notify_cmode(SilcServer server,
 			       strlen(passphrase) : 0,
 			       fkey ? fkey->data : NULL, fkey ? fkey->len : 0,
 			       channel_pubkeys ? channel_pubkeys->data : NULL,
-			       channel_pubkeys ? channel_pubkeys->len : 0);
+			       channel_pubkeys ? channel_pubkeys->len : 0,
+			       mode_mask & SILC_CHANNEL_MODE_ULIMIT ?
+			       ulimit : NULL,
+			       mode_mask & SILC_CHANNEL_MODE_ULIMIT ?
+			       sizeof(ulimit) : 0);
   silc_buffer_free(fkey);
   silc_buffer_free(idp);
 }

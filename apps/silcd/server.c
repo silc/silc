@@ -982,7 +982,7 @@ SILC_TASK_CALLBACK(silc_server_connection_established)
   silc_schedule_task_del_by_fd(server->schedule, sock);
   silc_schedule_unset_listen_fd(server->schedule, sock);
 
-  if (silc_net_get_socket_opt(sock, SOL_SOCKET, SO_ERROR, &opt, &optlen) || 
+  if (silc_net_get_socket_opt(sock, SOL_SOCKET, SO_ERROR, &opt, &optlen) ||
       (opt != 0)) {
     SILC_LOG_ERROR(("Could not connect to router %s:%d: %s",
 		    sconn->remote_host, sconn->remote_port,
@@ -4615,7 +4615,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
   SilcBuffer chidp, clidp, csidp;
   SilcBuffer tmp, fkey = NULL, chpklist;
   int len;
-  unsigned char mode[4];
+  unsigned char mode[4], ulimit[4];
   char *hmac;
 
   SILC_LOG_DEBUG(("Start"));
@@ -4626,12 +4626,14 @@ void silc_server_announce_get_channel_users(SilcServer server,
 
   /* CMODE notify */
   SILC_PUT32_MSB(channel->mode, mode);
+  if (channel->mode & SILC_CHANNEL_MODE_ULIMIT)
+    SILC_PUT32_MSB(channel->user_limit, ulimit);
   hmac = channel->hmac ? (char *)silc_hmac_get_name(channel->hmac) : NULL;
   if (channel->founder_key)
     fkey = silc_pkcs_public_key_payload_encode(channel->founder_key);
   tmp =
     silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CMODE_CHANGE,
-				       7, csidp->data, csidp->len,
+				       8, csidp->data, csidp->len,
 				       mode, sizeof(mode),
 				       NULL, 0,
 				       hmac, hmac ? strlen(hmac) : 0,
@@ -4641,7 +4643,13 @@ void silc_server_announce_get_channel_users(SilcServer server,
 				       fkey ? fkey->data : NULL,
 				       fkey ? fkey->len : 0,
 				       chpklist ? chpklist->data : NULL,
-				       chpklist ? chpklist->len : 0);
+				       chpklist ? chpklist->len : 0,
+				       (channel->mode &
+					SILC_CHANNEL_MODE_ULIMIT ?
+					ulimit : NULL),
+				       (channel->mode &
+					SILC_CHANNEL_MODE_ULIMIT ?
+					sizeof(ulimit) : 0));
   len = tmp->len;
   *channel_modes =
     silc_buffer_realloc(*channel_modes,

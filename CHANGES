@@ -1,3 +1,10 @@
+Tue Feb 24 16:49:10 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Implemented the user limit to the CMODE_CHANGE notify,
+	  CMODE command reply and JOIN command reply in server.
+	  Affected files are silcd/server.c, command.c, command_reply.c,
+	  packet_send.c and packet_receive.c.
+
 Mon Feb 23 23:31:15 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined SILC_STRFMT_END that must be used now with

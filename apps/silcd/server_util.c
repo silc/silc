@@ -2274,7 +2274,7 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
   if (chpk && type == 0x03 && channel->channel_pubkeys &&
       server->server_type != SILC_ROUTER) {
     SilcBuffer sidp;
-    unsigned char mask[4];
+    unsigned char mask[4], ulimit[4];
 
     SILC_LOG_DEBUG(("Router enforces its list, remove old list"));
     silc_hash_table_free(channel->channel_pubkeys);
@@ -2283,8 +2283,10 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
     /* Send notify that removes the old list */
     sidp = silc_id_payload_encode(server->id, SILC_ID_SERVER);
     SILC_PUT32_MSB((channel->mode & (~SILC_CHANNEL_MODE_CHANNEL_AUTH)), mask);
+    if (channel->mode & SILC_CHANNEL_MODE_ULIMIT)
+      SILC_PUT32_MSB(channel->user_limit, ulimit);
     silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
-				       SILC_NOTIFY_TYPE_CMODE_CHANGE, 7,
+				       SILC_NOTIFY_TYPE_CMODE_CHANGE, 8,
 				       sidp->data, sidp->len,
 				       mask, 4,
 				       channel->cipher,
@@ -2296,7 +2298,13 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
 				       channel->passphrase,
 				       channel->passphrase ?
 				       strlen(channel->passphrase) : 0,
-				       NULL, 0, NULL, 0);
+				       NULL, 0, NULL, 0,
+				       (channel->mode &
+					SILC_CHANNEL_MODE_ULIMIT ?
+					ulimit : NULL),
+				       (channel->mode &
+					SILC_CHANNEL_MODE_ULIMIT ?
+					sizeof(ulimit) : 0));
     silc_buffer_free(sidp);
   }
 

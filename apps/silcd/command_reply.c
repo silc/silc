@@ -1146,6 +1146,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   if (tmp && server->server_type == SILC_SERVER)
     silc_server_set_channel_pk_list(server, NULL, entry, tmp, len);
 
+  /* The the user limit */
+  tmp = silc_argument_get_arg_type(cmd->args, 17, &len);
+  if (tmp && len == 4)
+    SILC_GET32_MSB(entry->user_limit, tmp);
+
   /* If channel was not created we know there is global users on the
      channel. */
   entry->global_users = (created == 0 ? TRUE : FALSE);

@@ -628,7 +628,7 @@ void silc_server_notify(SilcServer server,
 	  mode & SILC_CHANNEL_MODE_CHANNEL_AUTH) {
 	SilcBuffer chpklist;
 	SilcBuffer sidp;
-	unsigned char mask[4];
+	unsigned char mask[4], ulimit[4];
 
 	SILC_LOG_DEBUG(("Channel public key list received from router"));
 	tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
@@ -644,8 +644,10 @@ void silc_server_notify(SilcServer server,
 	  break;
 	sidp = silc_id_payload_encode(server->router->id, SILC_ID_SERVER);
 	SILC_PUT32_MSB(channel->mode, mask);
+	if (channel->mode & SILC_CHANNEL_MODE_ULIMIT)
+	  SILC_PUT32_MSB(channel->user_limit, ulimit);
 	silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
-					   SILC_NOTIFY_TYPE_CMODE_CHANGE, 7,
+					   SILC_NOTIFY_TYPE_CMODE_CHANGE, 8,
 					   sidp->data, sidp->len,
 					   mask, 4,
 					   channel->cipher,
@@ -658,7 +660,13 @@ void silc_server_notify(SilcServer server,
 					   channel->passphrase ?
 					   strlen(channel->passphrase) : 0,
 					   NULL, 0,
-					   chpklist->data, chpklist->len);
+					   chpklist->data, chpklist->len,
+					   (channel->mode &
+					    SILC_CHANNEL_MODE_ULIMIT ?
+					    ulimit : NULL),
+					   (channel->mode &
+					    SILC_CHANNEL_MODE_ULIMIT ?
+					    sizeof(ulimit) : 0));
 	silc_buffer_free(sidp);
 	silc_buffer_free(chpklist);
 	goto out;
@@ -812,6 +820,11 @@ void silc_server_notify(SilcServer server,
 	silc_buffer_free(chpklist);
       }
     }
+
+    /* Get the user limit */
+    tmp = silc_argument_get_arg_type(args, 8, &tmp_len);
+    if (tmp && tmp_len == 4 && mode & SILC_CHANNEL_MODE_ULIMIT)
+      SILC_GET32_MSB(channel->user_limit, tmp);
 
     /* Send the same notify to the channel */
     silc_server_packet_send_to_channel(server, NULL, channel, packet->type,

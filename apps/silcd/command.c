@@ -1839,7 +1839,7 @@ static void silc_server_command_join_channel(SilcServer server,
   SilcSocketConnection sock = cmd->sock;
   unsigned char *tmp;
   SilcUInt32 tmp_len, user_count;
-  unsigned char *passphrase = NULL, mode[4], tmp2[4], tmp3[4];
+  unsigned char *passphrase = NULL, mode[4], tmp2[4], tmp3[4], ulimit[4];
   SilcClientEntry client;
   SilcChannelClientEntry chl;
   SilcBuffer reply, chidp, clidp, keyp = NULL;
@@ -2124,6 +2124,8 @@ static void silc_server_command_join_channel(SilcServer server,
   SILC_PUT32_MSB(channel->mode, mode);
   SILC_PUT32_MSB(created, tmp2);
   SILC_PUT32_MSB(user_count, tmp3);
+  if (channel->mode & SILC_CHANNEL_MODE_ULIMIT)
+    SILC_PUT32_MSB(channel->user_limit, ulimit);
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     tmp = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
@@ -2182,7 +2184,7 @@ static void silc_server_command_join_channel(SilcServer server,
 
   reply =
     silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					 SILC_STATUS_OK, 0, ident, 15,
+					 SILC_STATUS_OK, 0, ident, 16,
 					 2, channel->channel_name,
 					 strlen(channel->channel_name),
 					 3, chidp->data, chidp->len,
@@ -2209,7 +2211,13 @@ static void silc_server_command_join_channel(SilcServer server,
 					 15, fkey ? fkey->data : NULL,
 					 fkey ? fkey->len : 0,
 					 16, chpklist ? chpklist->data : NULL,
-					 chpklist ? chpklist->len : 0);
+					 chpklist ? chpklist->len : 0,
+					 17, (channel->mode &
+					      SILC_CHANNEL_MODE_ULIMIT ?
+					      ulimit : NULL),
+					 (channel->mode &
+					  SILC_CHANNEL_MODE_ULIMIT ?
+					  sizeof(ulimit) : 0));
 
   /* Send command reply */
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
@@ -2762,7 +2770,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcChannelClientEntry chl;
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask, *chpkdata = NULL;
-  char *cipher = NULL, *hmac = NULL, *passphrase = NULL;
+  char *cipher = NULL, *hmac = NULL, *passphrase = NULL, ulimit[4];
   SilcUInt32 mode_mask = 0, old_mask = 0, tmp_len, tmp_len2, chpklen;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   bool set_mask = FALSE, set_chpk = FALSE;
@@ -3190,8 +3198,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Send CMODE_CHANGE notify. */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+  if (mode_mask & SILC_CHANNEL_MODE_ULIMIT)
+    SILC_PUT32_MSB(channel->user_limit, ulimit);
   silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
-				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 7,
+				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 8,
 				     cidp->data, cidp->len,
 				     tmp_mask, 4,
 				     cipher, cipher ? strlen(cipher) : 0,
@@ -3201,7 +3211,11 @@ SILC_SERVER_CMD_FUNC(cmode)
 				     fkey ? fkey->data : NULL,
 				     fkey ? fkey->len : 0,
 				     chpkdata ? chpkdata : NULL,
-				     chpkdata ? chpklen : 0);
+				     chpkdata ? chpklen : 0,
+				     mode_mask & SILC_CHANNEL_MODE_ULIMIT ?
+				     ulimit : NULL,
+				     mode_mask & SILC_CHANNEL_MODE_ULIMIT ?
+				     sizeof(ulimit) : 0);
 
   /* Set CMODE notify type to network */
   if (chpkdata && chpklen)
@@ -3217,14 +3231,21 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
-						SILC_STATUS_OK, 0, ident, 4,
+						SILC_STATUS_OK, 0, ident, 5,
 						2, tmp_id, tmp_len2,
 						3, tmp_mask, 4,
 						4, fkey ? fkey->data : NULL,
 						fkey ? fkey->len : 0,
 						5, chpklist ? chpklist->data :
 						NULL, chpklist ? chpklist->len
-						: 0);
+						: 0,
+						7, (mode_mask &
+						    SILC_CHANNEL_MODE_ULIMIT ?
+						    ulimit : NULL),
+						(mode_mask &
+						 SILC_CHANNEL_MODE_ULIMIT ?
+						 sizeof(ulimit) : 0));
+
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
 			  packet->data, packet->len, FALSE);
 
