@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 11 August 2003
+.ds RH 4 February 2004
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-08.txt                           11 August 2003
-Expires: 11 February 2004
+draft-riikonen-silc-spec-08.txt                          4 February 2004
+Expires: 4 August 2004
 
 .in 3
 
