@@ -1469,13 +1469,16 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  4
+        Max Arguments:  5
             Arguments:  (1) <Status Payload>    (2) <Channel ID>
                         (3) <channel mode mask> (4) [<founder pubkey>]
+                        (5) [<channel pubkeys>]
 
         This command replies with the changed channel mode mask that
         client MUST keep locally.  It may also return the channel
-        founder's public key if it is set.
+        founder's public key if it is set.  It may also return list of
+        channel public keys.  The <channel pubkeys> is Argument List
+        Payload and each argument includes one public key.
 
         Status messages:
 
