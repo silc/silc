@@ -4,6 +4,8 @@ TODO/bugs in Irssi SILC client
  o GETKEY server will save the serverkey to the same filename as the 
    connected server and thus destroys the key.
 
+ o GETKEY server will show first, "there is no such nickname".
+
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the
