@@ -22,8 +22,9 @@ silc_say(SilcClient client, SilcClientConnection conn,
 }
 
 
-/* Message for a channel. The `sender' is the sender of the message 
-   The `channel' is the channel. */
+/* Message for a channel. The `sender' is the sender of the message
+   The `channel' is the channel. The `msg' is the message.  Note that  
+   `msg' maybe NULL. */
 
 static void 
 silc_channel_message(SilcClient client, SilcClientConnection conn, 

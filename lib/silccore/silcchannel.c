@@ -335,7 +335,7 @@ silc_channel_message_payload_parse(unsigned char *payload,
   if (ret == -1)
     goto err;
 
-  if (new->data_len < 1 || new->data_len > buffer.len) {
+  if (new->data_len > buffer.len) {
     SILC_LOG_ERROR(("Incorrect channel message payload in packet, "
 		    "packet dropped"));
     goto err;

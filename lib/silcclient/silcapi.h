@@ -239,7 +239,8 @@ typedef struct {
 	      SilcClientMessageType type, char *msg, ...);
 
   /* Message for a channel. The `sender' is the sender of the message 
-     The `channel' is the channel. */
+     The `channel' is the channel. The `msg' is the message.  Note that
+     `msg' maybe NULL. */
   void (*channel_message)(SilcClient client, SilcClientConnection conn, 
 			  SilcClientEntry sender, SilcChannelEntry channel, 
 			  SilcMessageFlags flags, char *msg);
@@ -1195,6 +1196,7 @@ SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx);
  *
  *    Finds and returns a pointer to the command list. Return NULL if the
  *    command is not found. See the `command.[ch]' for the command list. 
+ *    Command names are not case-sensitive.
  *
  ***/
 SilcClientCommand silc_client_command_find(SilcClient client,

@@ -87,6 +87,9 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   
   SILC_LOG_DEBUG(("Start"));
 
+  if (!msg)
+    return;
+
   server = conn == NULL ? NULL : conn->context;
   chanrec = silc_channel_find_entry(server, channel);
   if (!chanrec)
