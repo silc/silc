@@ -41,13 +41,18 @@ char *silc_file_read(const char *filename, uint32 *return_len)
   }
 
   filelen = lseek(fd, (off_t)0L, SEEK_END);
-  if (filelen < 0)
+  if (filelen < 0) {
+    close(fd);
     return NULL;
-  if (lseek(fd, (off_t)0L, SEEK_SET) < 0)
+  }
+  if (lseek(fd, (off_t)0L, SEEK_SET) < 0) {
+    close(fd);
     return NULL;
+  }
 
   if (filelen < 0) {
     SILC_LOG_ERROR(("Cannot open file %s: %s", filename, strerror(errno)));
+    close(fd);
     return NULL;
   }
   
@@ -84,6 +89,7 @@ int silc_file_write(const char *filename, const char *buffer, uint32 len)
   
   if ((write(fd, buffer, len)) == -1) {
     SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
+    close(fd);
     return -1;
   }
 
@@ -108,6 +114,7 @@ int silc_file_write_mode(const char *filename, const char *buffer,
   
   if ((write(fd, buffer, len)) == -1) {
     SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
+    close(fd);
     return -1;
   }
 

@@ -107,6 +107,8 @@ void silc_log_output(const char *filename, uint32 maxsize,
       /* Purge? */
       if (filelen >= maxsize)
 	unlink(filename);
+
+      fclose(fp);
     }
   }
 
@@ -126,7 +128,8 @@ void silc_log_output(const char *filename, uint32 maxsize,
 
   fprintf(fp, "[%s] [%s] %s\n", silc_get_time(), np->name, string);
   fflush(fp);
-  fclose(fp);
+  if (fp != stderr)
+    fclose(fp);
   silc_free(string);
 }
 
