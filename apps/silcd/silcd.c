@@ -305,6 +305,127 @@ SILC_TASK_CALLBACK(dump_stats)
 
 #undef STAT_OUTPUT
 
+#ifdef SILC_DEBUG
+  /* Dump lists */
+  {
+    SilcIDCacheList list = NULL;
+    SilcIDCacheEntry id_cache = NULL;
+    SilcServerEntry server_entry;
+    SilcClientEntry client_entry;
+    SilcChannelEntry channel_entry;
+    int c;
+
+    fprintf(fdd, "\nDumping databases\n");
+    
+    if (silc_idcache_get_all(silcd->local_list->servers, &list)) {
+      if (silc_idcache_list_first(list, &id_cache)) {
+	fprintf(fdd, "\nServers in local-list:\n");
+	c = 1;
+	while (id_cache) {
+	  server_entry = (SilcServerEntry)id_cache->context;
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
+		  server_entry->server_name ? server_entry->server_name :
+		  "N/A", server_entry->id ?
+		  silc_id_render(server_entry->id, SILC_ID_SERVER) : "N/A",
+		  server_entry->data.status);
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  c++;
+	}
+      }
+      silc_idcache_list_free(list);
+    }
+    if (silc_idcache_get_all(silcd->global_list->servers, &list)) {
+      if (silc_idcache_list_first(list, &id_cache)) {
+	fprintf(fdd, "\nServers in global-list:\n");
+	c = 1;
+	while (id_cache) {
+	  server_entry = (SilcServerEntry)id_cache->context;
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
+		  server_entry->server_name ? server_entry->server_name :
+		  "N/A", server_entry->id ?
+		  silc_id_render(server_entry->id, SILC_ID_SERVER) : "N/A",
+		  server_entry->data.status);
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  c++;
+	}
+      }
+      silc_idcache_list_free(list);
+    }
+    if (silc_idcache_get_all(silcd->local_list->clients, &list)) {
+      if (silc_idcache_list_first(list, &id_cache)) {
+	fprintf(fdd, "\nClients in local-list:\n");
+	c = 1;
+	while (id_cache) {
+	  client_entry = (SilcClientEntry)id_cache->context;
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
+		  client_entry->nickname ? client_entry->nickname :
+		  (unsigned char *)"N/A", client_entry->id ?
+		  silc_id_render(client_entry->id, SILC_ID_CLIENT) : "N/A",
+		  client_entry->data.status);
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  c++;
+	}
+      }
+      silc_idcache_list_free(list);
+    }
+    if (silc_idcache_get_all(silcd->global_list->clients, &list)) {
+      if (silc_idcache_list_first(list, &id_cache)) {
+	fprintf(fdd, "\nClients in global-list:\n");
+	c = 1;
+	while (id_cache) {
+	  client_entry = (SilcClientEntry)id_cache->context;
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
+		  client_entry->nickname ? client_entry->nickname :
+		  (unsigned char *)"N/A", client_entry->id ?
+		  silc_id_render(client_entry->id, SILC_ID_CLIENT) : "N/A",
+		  client_entry->data.status);
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  c++;
+	}
+      }
+      silc_idcache_list_free(list);
+    }
+    if (silc_idcache_get_all(silcd->local_list->channels, &list)) {
+      if (silc_idcache_list_first(list, &id_cache)) {
+	fprintf(fdd, "\nChannels in local-list:\n");
+	c = 1;
+	while (id_cache) {
+	  channel_entry = (SilcChannelEntry)id_cache->context;
+	  fprintf(fdd, "  %d: name %s id %s\n", c,
+		  channel_entry->channel_name ? channel_entry->channel_name :
+		  "N/A", channel_entry->id ?
+		  silc_id_render(channel_entry->id, SILC_ID_CHANNEL) : "N/A");
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  c++;
+	}
+      }
+      silc_idcache_list_free(list);
+    }
+    if (silc_idcache_get_all(silcd->global_list->channels, &list)) {
+      if (silc_idcache_list_first(list, &id_cache)) {
+	fprintf(fdd, "\nChannels in global-list:\n");
+	c = 1;
+	while (id_cache) {
+	  channel_entry = (SilcChannelEntry)id_cache->context;
+	  fprintf(fdd, "  %d: name %s id %s\n", c,
+		  channel_entry->channel_name ? channel_entry->channel_name :
+		  "N/A", channel_entry->id ?
+		  silc_id_render(channel_entry->id, SILC_ID_CHANNEL) : "N/A");
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  c++;
+	}
+      }
+      silc_idcache_list_free(list);
+    }
+  }
+#endif
+
   fflush(fdd);
   fclose(fdd);
 }
