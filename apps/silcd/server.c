@@ -1874,6 +1874,9 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
   SilcServerConnection sconn = (SilcServerConnection)context;
   SilcSocketConnection sock = sconn->server->sockets[fd];
 
+  if (!sock)
+    return;
+
   silc_server_disconnect_remote(sconn->server, sock, 
 				"Server closed connection: "
 				"Connection timeout");
