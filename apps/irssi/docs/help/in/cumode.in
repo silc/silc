@@ -15,10 +15,19 @@ are available:
         only to remove both modes at once).
 
     f <nickname>[@<server>]
+      [<pubkeyfile> <privkeyfile> [<privkey passphrase>]]
 
         Set/Unset channel founder.  If you are channel
         founder you can set the channel founder authentication
         using CMODEc command.
+
+        If the <pubkeyfile> and <privkeyfile> is
+        provided then the <pubkeyfile> will the used
+        as founder public key, and the private key
+        is used to compute a signature for the SILC
+        server.  If these are omitted then the default
+        SILC keypair is used.  Normally you do not need
+        to provide these arguments.
 
     o <nickname>[@<server>]
 

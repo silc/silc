@@ -1157,9 +1157,10 @@ void  silc_parse_inviteban_list(SilcClient client,
 	  /* a public key */
 	  char *fingerprint, *babbleprint;
 
-	  fingerprint = silc_hash_fingerprint(NULL, tmp, len);
-	  babbleprint = silc_hash_fingerprint(NULL, tmp, len);
-
+	  /* tmp is Public Key Payload, take public key from it. */
+	  fingerprint = silc_hash_fingerprint(NULL, tmp + 4, len - 4);
+	  babbleprint = silc_hash_babbleprint(NULL, tmp + 4, len - 4);
+	  
 	  printformat_module("fe-common/silc", server,
 			     (chanrec ? chanrec->visible_name : NULL),
 			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_PUBKEY,

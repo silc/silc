@@ -1,10 +1,6 @@
 TODO for Irssi SILC Client 1.0
 ==============================
 
- o Support to set arbitrary pulic key in CMODE.
-
- o INVITE/BAN by public key file.
-
  o Signed message payload handling on UI
 
  o bugs parsing nicknames with @ in NICK_CHANGE

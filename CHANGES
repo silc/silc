@@ -3,6 +3,19 @@ Sun Dec  1 20:48:17 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed CMODE setting in server when founder mode was set.
 	  Affected file silcd/command.c.  Bug #95.
 
+	* Added support to setting specific public key in CMODE in
+	  Irssi SILC client.  Affected file lib/silcclient/command.c.
+
+	* Added support to use specific public key in CUMODE in
+	  Irssi SILC Client.  Affected file lib/silcclient/command.c.
+
+	* Added support for inviting and banning by public key in
+	  Irssi SILC client.  Affected file lib/silcclient/command.c.
+
+	* Fixed fingerprint/babbleprint showing in invite and ban
+	  list command replys.  Affected file is
+	  irssi/src/silc/core/client_ops.c.
+
 Sun Dec  1 16:32:03 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Format CMODE +c and +h to display both the mode and the argument
