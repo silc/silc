@@ -1045,6 +1045,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
       silc_buffer_free(packet);
 
       SILC_LOG_INFO(("We are now the primary router of our cell again"));
+      server->wait_backup = FALSE;
 
       /* For us this is the end of this protocol. */
       if (protocol->final_callback)
