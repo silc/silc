@@ -2334,8 +2334,7 @@ void silc_server_create_channel_key(SilcServer server,
   unsigned int len;
 
   if (!channel->channel_key)
-    if (!silc_cipher_alloc("aes-256-cbc", &channel->channel_key))
-      return;
+    silc_cipher_alloc("aes-256-cbc", &channel->channel_key);
 
   if (key_len)
     len = key_len;

@@ -200,7 +200,7 @@ int silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
       c = c->next;
     }
 
-    if (!c || !c->cipher->context_len)
+    if (!c)
       goto check_builtin;
 
     /* Set the pointers */
@@ -222,7 +222,6 @@ int silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 
   if (silc_cipher_builtin_list[i].name == NULL) {
     silc_free(*new_cipher);
-    *new_cipher = NULL;
     return FALSE;
   }
 

@@ -2988,7 +2988,7 @@ SILC_SERVER_CMD_FUNC(connect)
   unsigned int tmp_len;
   unsigned int port = SILC_PORT;
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CONNECT, cmd, 1, 2);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CONNECT, cmd, 0, 0);
 
   if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
@@ -3048,7 +3048,7 @@ SILC_SERVER_CMD_FUNC(close)
   unsigned char *name;
   unsigned int port = SILC_PORT;
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CLOSE, cmd, 1, 2);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CLOSE, cmd, 0, 0);
 
   if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
