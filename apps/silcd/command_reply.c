@@ -280,6 +280,13 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   if (fingerprint && flen == sizeof(client->data.fingerprint))
     memcpy(client->data.fingerprint, fingerprint, flen);
 
+  /* Take Requested Attributes if set. */
+  tmp = silc_argument_get_arg_type(cmd->args, 11, &len);
+  if (tmp) {
+    silc_free(client->attrs);
+    client->attrs = silc_memdup(tmp, len);
+  }
+
   return TRUE;
 }
 

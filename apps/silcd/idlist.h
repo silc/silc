@@ -347,6 +347,10 @@ struct SilcClientEntryStruct {
   long last_command;
   SilcUInt8 fast_command;
 
+  /* Requested Attributes */
+  unsigned char *attrs;
+  SilcUInt16 attrs_len;
+
   /* Pointer to the router */
   SilcServerEntry router;
 

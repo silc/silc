@@ -18,9 +18,7 @@
 */
 /* $Id$ */
 
-/* XXX TODO Requested Attributes to WHOIS
-   (NOTE: entry that is incomplete must be resolved first before resolving
-   the attributes) */
+/* XXX TODO Requested Attributes to WHOIS */
 
 #include "serverincludes.h"
 #include "server_internal.h"
@@ -45,8 +43,8 @@ typedef struct {
 /* Represents one error occurred during query */
 typedef struct {
   void *id;			    /* ID */
-  SilcUInt16 index;		    /* Index to IDs */
   SilcIdType id_type;		    /* ID type */
+  SilcUInt16 index;		    /* Index to IDs */
   unsigned int from_cmd : 1;   	    /* TRUE if `index' is from command args,
 				       otherwise from query->ids */
   unsigned int error : 7;	    /* The actual error (SilcStatus) */
@@ -108,6 +106,9 @@ void silc_server_query_send_reply(SilcServer server,
 				  SilcUInt32 servers_count,
 				  SilcChannelEntry *channels,
 				  SilcUInt32 channels_count);
+unsigned char *silc_server_query_reply_attrs(SilcServer server,
+					     SilcServerQuery query,
+					     SilcUInt32 *attrs_len);
 
 /* Free the query context structure and all allocated resources. */
 
@@ -372,7 +373,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       }
 
       /* Get the nickname@server string and parse it */
-      if (!silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server)) {
+      if (tmp_len > 128 ||
+	  !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server)) {
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	silc_server_query_free(query);
@@ -440,7 +442,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
     }
 
     /* Get the nickname@server string and parse it */
-    if (!silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server)) {
+    if (tmp_len > 128 ||
+	!silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server)) {
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
       silc_server_query_free(query);
@@ -462,7 +465,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
       if (tmp) {
 	/* Get the nickname@server string and parse it */
-	if (!silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))
+	if (tmp_len > 128 ||
+	    !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))
 	  silc_server_query_add_error(server, query, TRUE, 1,
 				      SILC_STATUS_ERR_BAD_NICKNAME);
       }
@@ -474,7 +478,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
       /* Get channel name */
       tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-      if (tmp)
+      if (tmp && tmp_len <= 256)
 	query->channel_name = silc_memdup(tmp, tmp_len);
 
     } else {
@@ -713,10 +717,13 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	  !(client_entry->data.status & SILC_IDLIST_STATUS_REGISTERED))
 	continue;
 
-      /* If requested attributes is set then we always resolve the client
+      /* If Requested Attributes is set then we always resolve the client
 	 information, if not then check whether the entry is complete or not
 	 and decide whether we need to resolve or not. */
       if (!query->attrs) {
+
+	/* Even if nickname and stuff are present, we may need to resolve
+	   the entry */
 	if (client_entry->nickname && client_entry->username &&
 	    client_entry->userinfo) {
 	  /* Check if cannot query this anyway, so take next one */
@@ -780,7 +787,9 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	  !(client_entry->data.status & SILC_IDLIST_STATUS_REGISTERED))
 	continue;
 
+      /* Even if nickname is present, we may need to resolve the entry */
       if (client_entry->nickname) {
+
 	/* If we are router, client is local to us, or client is on channel
 	   we do not need to resolve the client information. */
 	if (server->server_type != SILC_SERVER || SILC_IS_LOCAL(client_entry)
@@ -915,7 +924,7 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
 	  r->timeout = 3;
       }
 
-      /* If attributes were present put them to this resolving */
+      /* If Requested Attributes were present put them to this resolving */
       if (query->attrs && query->querycmd == SILC_COMMAND_WHOIS) {
 	len = r->argc + 1;
 	r->arg = silc_realloc(r->arg, sizeof(*r->arg) * len);
@@ -1067,6 +1076,7 @@ void silc_server_query_send_reply(SilcServer server,
   SilcBuffer idp;
   int i, k, valid_count;
   char nh[256], uh[256];
+  bool sent_reply = FALSE;
 
   SILC_LOG_DEBUG(("Sending reply to query"));
 
@@ -1169,7 +1179,7 @@ void silc_server_query_send_reply(SilcServer server,
       case SILC_COMMAND_WHOIS:
 	{
 	  unsigned char idle[4], mode[4];
-	  unsigned char *fingerprint, fempty[20];
+	  unsigned char *fingerprint, fempty[20], *attrs;
 	  SilcBuffer channels, umode_list = NULL;
 
 	  memset(fempty, 0, sizeof(fempty));
@@ -1200,6 +1210,17 @@ void silc_server_query_send_reply(SilcServer server,
 	  if (entry->connection)
 	    SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
 
+	  /* If Requested Attribute were present, and we do not have the
+	     attributes we will reply to them on behalf of the client. */
+	  if (query->attrs) {
+	    if (!entry->attrs) {
+	      attrs = silc_server_query_reply_attrs(server, query, &len);
+	    } else {
+	      attrs = entry->attrs;
+	      len = entry->attrs_len;
+	    }
+	  }
+
 	  /* Send command reply */
 	  silc_server_send_command_reply(server, cmd->sock, query->querycmd,
 					 status, 0, ident, 9,
@@ -1217,6 +1238,11 @@ void silc_server_query_send_reply(SilcServer server,
 					 10, umode_list ? umode_list->data :
 					 NULL, umode_list ? umode_list->len :
 					 0);
+	  sent_reply = TRUE;
+
+	  /* For now we will delete Requested Attributes */
+	  silc_free(entry->attrs);
+	  entry->attrs = NULL;
 
 	  if (channels)
 	    silc_buffer_free(channels);
@@ -1233,6 +1259,7 @@ void silc_server_query_send_reply(SilcServer server,
 					 status, 0, ident, 2,
 					 2, idp->data, idp->len,
 					 3, nh, strlen(nh));
+	  sent_reply = TRUE;
 	} else {
 	  silc_strncat(uh, sizeof(uh), entry->username,
 		       strlen(entry->username));
@@ -1248,6 +1275,7 @@ void silc_server_query_send_reply(SilcServer server,
 					 2, idp->data, idp->len,
 					 3, nh, strlen(nh),
 					 4, uh, strlen(uh));
+	  sent_reply = TRUE;
 	}
 	break;
 
@@ -1265,6 +1293,7 @@ void silc_server_query_send_reply(SilcServer server,
 				       5, entry->userinfo, 
 				       entry->userinfo ? 
 				       strlen(entry->userinfo) : 0);
+	sent_reply = TRUE;
 	break;
       }
 
@@ -1321,6 +1350,7 @@ void silc_server_query_send_reply(SilcServer server,
 				     entry->server_name ? 
 				     strlen(entry->server_name) : 0);
       silc_buffer_free(idp);
+      sent_reply = TRUE;
       
       if (status == SILC_STATUS_LIST_END)
 	break;
@@ -1364,6 +1394,7 @@ void silc_server_query_send_reply(SilcServer server,
 				     entry->channel_name ? 
 				     strlen(entry->channel_name) : 0);
       silc_buffer_free(idp);
+      sent_reply = TRUE;
       
       if (status == SILC_STATUS_LIST_END)
 	break;
@@ -1429,6 +1460,7 @@ void silc_server_query_send_reply(SilcServer server,
 				      0 : query->errors[i].error), ident, 1,
 				     type, tmp, len);
       silc_buffer_free(idp);
+      sent_reply = TRUE;
 
       if (status == SILC_STATUS_LIST_END)
 	break;
@@ -1436,8 +1468,31 @@ void silc_server_query_send_reply(SilcServer server,
     }
   }
 
+  if (!sent_reply)
+    SILC_LOG_ERROR(("BUG: Query did not send anything"));
+
   /* Cleanup */
   silc_server_query_free(query);
+}
+
+/* This routine is used to reply to Requested Attributes in WHOIS on behalf
+   of the client since we were unable to resolve them from the client.
+   Either client does not support Requested Attributes or isn't replying
+   to them like it should. */
+
+unsigned char *silc_server_query_reply_attrs(SilcServer server,
+					     SilcServerQuery query,
+					     SilcUInt32 *attrs_len)
+{
+  unsigned char *attrs = NULL;
+  SilcUInt32 len = 0;
+
+  SILC_LOG_DEBUG(("Constructing Requested Attributes"));
+
+  if (attrs_len)
+    *attrs_len = len;
+
+  return attrs;
 }
 
 /* Find client by the Client ID indicated by the `client_id', and if not
