@@ -125,11 +125,9 @@ void silc_server_private_message(SilcServer server,
 			 "No such nickname: Private message not sent");
 }
 
-/* Relays received command reply packet to the correct destination. The
-   destination must be one of our locally connected client or the packet
-   will be ignored. This is called when server has forwarded one of
-   client's command request to router and router has now replied to the 
-   command. */
+/* Processes incoming command reply packet. The command reply packet may
+   be destined to one of our clients or it may directly for us. We will 
+   call the command reply routine after processing the packet. */
 
 void silc_server_command_reply(SilcServer server,
 			       SilcSocketConnection sock,
@@ -305,7 +303,7 @@ void silc_server_channel_key(SilcServer server,
 
   /* Remove old key if exists */
   if (channel->key) {
-    memset(channel->key, 0, channel->key_len);
+    memset(channel->key, 0, channel->key_len / 8);
     silc_free(channel->key);
     silc_cipher_free(channel->channel_key);
     exist = TRUE;
