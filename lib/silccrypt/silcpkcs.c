@@ -1191,7 +1191,7 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
   SilcHmac sha1hmac;
   SilcBuffer buf, enc;
   SilcUInt32 len, blocklen;
-  unsigned char tmp[32], keymat[32];
+  unsigned char tmp[32], keymat[64];
   int i;
 
   memset(tmp, 0, sizeof(tmp));
@@ -1234,7 +1234,7 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
   silc_hash_final(sha1, keymat + 16);
 
   /* Set the key to the cipher */
-  silc_cipher_set_key(aes, keymat, sizeof(keymat) * 8);
+  silc_cipher_set_key(aes, keymat, 256);
 
   /* Encode the buffer to be encrypted.  Add padding to it too, at least
      block size of the cipher. */
@@ -1570,7 +1570,7 @@ bool silc_pkcs_load_private_key(const char *filename,
   SilcHash sha1;
   SilcHmac sha1hmac;
   SilcUInt32 blocklen;
-  unsigned char tmp[32], keymat[32];
+  unsigned char tmp[32], keymat[64];
   unsigned char *cp, *old, *data, byte;
   SilcUInt32 i, data_len, len, magic, mac_len;
 
@@ -1700,7 +1700,7 @@ bool silc_pkcs_load_private_key(const char *filename,
 #endif /* 1 */
   
   /* Set the key to the cipher */
-  silc_cipher_set_key(aes, keymat, sizeof(keymat) * 8);
+  silc_cipher_set_key(aes, keymat, 256);
 
   /* First, verify the MAC of the private key data */
   mac_len = silc_hmac_len(sha1hmac);
