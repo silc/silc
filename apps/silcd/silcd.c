@@ -268,11 +268,9 @@ int main(int argc, char **argv)
     goto fail;
 
   /* Read configuration files */
-  silcd->config = silc_server_config_alloc(silcd_config_file);
+  silcd->config = silc_server_config_alloc(silcd, silcd_config_file);
   if (silcd->config == NULL)
     goto fail;
-  silc_server_config_ref(&silcd->config_ref, silcd->config,
-			 (void *)silcd->config);
   silcd->config_file = silcd_config_file;
 
   /* Check for another silcd running */
@@ -318,6 +316,7 @@ int main(int argc, char **argv)
   /* Stop the server and free it. */
   silc_server_stop(silcd);
   silc_server_free(silcd);
+  silc_server_config_destroy(silcd->config);
 
   /* Flush the logging system */
   silc_log_flush_all();

@@ -1198,7 +1198,8 @@ static void silc_server_config_set_defaults(SilcServerConfig config)
  * parses it. The parsed data is returned to the newly allocated
  * configuration object. */
 
-SilcServerConfig silc_server_config_alloc(char *filename)
+SilcServerConfig silc_server_config_alloc(SilcServer server,
+					  const char *filename)
 {
   SilcServerConfig config_new;
   SilcConfigEntity ent;
@@ -1207,13 +1208,18 @@ SilcServerConfig silc_server_config_alloc(char *filename)
   SILC_LOG_DEBUG(("Loading config data from `%s'", filename));
 
   /* alloc a config object */
-  config_new = (SilcServerConfig) silc_calloc(1, sizeof(*config_new));
+  config_new = silc_calloc(1, sizeof(*config_new));
+  if (!config_new)
+    return NULL;
+
   /* obtain a config file object */
   file = silc_config_open(filename);
   if (!file) {
-    SILC_SERVER_LOG_ERROR(("\nError: can't open config file `%s'\n", filename));
+    SILC_SERVER_LOG_ERROR(("\nError: can't open config file `%s'\n", 
+			   filename));
     return NULL;
   }
+
   /* obtain a SilcConfig entity, we can use it to start the parsing */
   ent = silc_config_init(file);
 
@@ -1235,18 +1241,21 @@ SilcServerConfig silc_server_config_alloc(char *filename)
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.\n",
 			     silc_config_strerror(ret)));
       linebuf = silc_config_read_line(file, line);
-      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename, line, linebuf));
+      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename, 
+			     line, linebuf));
       silc_free(linebuf);
     }
     silc_server_config_destroy(config_new);
     return NULL;
   }
+
   /* close (destroy) the file object */
   silc_config_close(file);
 
   /* If config_new is incomplete, abort the object and return NULL */
   if (!config_new->server_info) {
-    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block `server_info'\n"));
+    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block "
+			   "`server_info'\n"));
     silc_server_config_destroy(config_new);
     return NULL;
   }
@@ -1256,6 +1265,7 @@ SilcServerConfig silc_server_config_alloc(char *filename)
   /* Set default to configuration parameters */
   silc_server_config_set_defaults(config_new);
 
+  silc_server_config_ref(&server->config_ref, config_new, config_new);
   return config_new;
 }
 
@@ -1268,8 +1278,8 @@ void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
     config->refcount++;
     ref->config = config;
     ref->ref_ptr = ref_ptr;
-    SILC_LOG_DEBUG(("Referencing config [%p] New Ref=%hu", config,
-		    config->refcount));
+    SILC_LOG_DEBUG(("Referencing config [%p] refcnt %hu->%hu", config,
+		    config->refcount - 1, config->refcount));
   }
 }
 
@@ -1279,14 +1289,12 @@ void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
 void silc_server_config_unref(SilcServerConfigRef *ref)
 {
   SilcServerConfig config = ref->config;
-
-  if (config) {
+  if (ref->ref_ptr) {
     config->refcount--;
-    SILC_LOG_DEBUG(("Unreferencing config [%p] New Ref=%hu", config,
-		    config->refcount));
+    SILC_LOG_DEBUG(("Unreferencing config [%p] refcnt %hu->%hu", config,
+		    config->refcount + 1, config->refcount));
     if (!config->refcount)
       silc_server_config_destroy(config);
-    memset(ref, 0, sizeof(*ref));
   }
 }
 
@@ -1295,6 +1303,17 @@ void silc_server_config_unref(SilcServerConfigRef *ref)
 void silc_server_config_destroy(SilcServerConfig config)
 {
   void *tmp;
+
+  if (config->refcount > 0) {
+    config->refcount--;
+    SILC_LOG_DEBUG(("Unreferencing config [%p] refcnt %hu->%hu", config,
+		    config->refcount + 1, config->refcount));
+    if (config->refcount > 0)
+      return;
+  }
+
+  SILC_LOG_DEBUG(("Freeing config context"));
+
   silc_free(config->module_path);
 
   /* Destroy Logging channels */
@@ -1637,7 +1656,9 @@ void silc_server_config_setlogfiles(SilcServer server)
   SILC_LOG_DEBUG(("Setting configured log file names and options"));
 
   silc_log_quick = config->logging_quick;
-  silc_log_flushdelay = config->logging_flushdelay;
+  silc_log_flushdelay = (config->logging_flushdelay ? 
+			 config->logging_flushdelay :
+			 SILC_SERVER_LOG_FLUSH_DELAY);
 
   if ((this = config->logging_fatals))
     silc_log_set_file(SILC_LOG_FATAL, this->file, this->maxsize,

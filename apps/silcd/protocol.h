@@ -44,7 +44,7 @@ typedef struct {
   void *dest_id;
   SilcIdType dest_id_type;
 
-  /* Pointer to the configurations. */
+  /* Pointers to the configurations. Defined only when responder is TRUE */
   SilcServerConfigRef cconfig;
   SilcServerConfigRef sconfig;
   SilcServerConfigRef rconfig;
@@ -79,7 +79,7 @@ typedef struct {
   void *dest_id;
   SilcIdType dest_id_type;
 
-  /* Pointer to the configurations. */
+  /* Pointers to the configurations. Defined only when responder is TRUE */
   SilcServerConfigRef cconfig;
   SilcServerConfigRef sconfig;
   SilcServerConfigRef rconfig;

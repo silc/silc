@@ -1,3 +1,19 @@
+Thu Mar 28 17:01:43 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added automatic referencing of config context in the
+	  silc_server_config_alloc, and automatic unreferencing in the
+	  silc_server_config_destroy.  Affected files are
+	  silcd/serverconfig.[ch], silcd/silcd.c.
+
+	* Fixed the silc_log_quick handling in the logging routines.
+	  It didn't log quickly when it was TRUE.  Affected file is
+	  lib/silcutil/silclog.c.  Also the flush delay was set even
+	  if it was 0 in config file.  Affected file is 
+	  silcd/serverconfig.c.
+
+	* Added support for changing key pair of the server in rehash.
+	  Affected file silcd/server.c.
+
 Thu Mar 28 12:17:21 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the TOPIC_SET notify to not cras.  It changed the topic

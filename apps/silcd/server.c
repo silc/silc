@@ -91,6 +91,10 @@ void silc_server_free(SilcServer server)
       silc_rng_free(server->rng);
     if (server->pkcs)
       silc_pkcs_free(server->pkcs);
+    if (server->public_key)
+      silc_pkcs_public_key_free(server->public_key);
+    if (server->private_key)
+      silc_pkcs_private_key_free(server->private_key);
     if (server->pending_commands)
       silc_dlist_uninit(server->pending_commands);
     if (server->id_entry)
@@ -139,6 +143,7 @@ bool silc_server_init(SilcServer server)
   SilcServerID *id;
   SilcServerEntry id_entry;
   SilcIDListPurge purge;
+  SilcSocketConnection newsocket = NULL;
 
   SILC_LOG_DEBUG(("Initializing server"));
   assert(server);
@@ -178,7 +183,8 @@ bool silc_server_init(SilcServer server)
   silc_hash_alloc("sha1", &server->sha1hash);
 
   /* Allocate PKCS context for local public and private keys */
-  silc_pkcs_alloc(server->public_key->name, &server->pkcs);
+  if (!silc_pkcs_alloc(server->public_key->name, &server->pkcs))
+    goto err;
   silc_pkcs_public_key_set(server->pkcs, server->public_key);
   silc_pkcs_private_key_set(server->pkcs, server->private_key);
 
@@ -208,73 +214,71 @@ bool silc_server_init(SilcServer server)
   if (!silc_server_listen(server, &sock))
     goto err;
 
+  /* Set socket to non-blocking mode */
+  silc_net_set_socket_nonblock(sock);
+  server->sock = sock;
+
   /* Allocate the entire socket list that is used in server. Eventually
      all connections will have entry in this table (it is a table of
      pointers to the actual object that is allocated individually
      later). */
   server->sockets = silc_calloc(server->config->param.connections_max,
 				sizeof(*server->sockets));
+  if (!server->sockets)
+    goto err;
 
-  do {
-    SilcSocketConnection newsocket = NULL;
+  /* Add ourselves also to the socket table. The entry allocated above
+     is sent as argument for fast referencing in the future. */
+  silc_socket_alloc(sock, SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
+  server->sockets[sock] = newsocket;
 
-    /* Set socket to non-blocking mode */
-    silc_net_set_socket_nonblock(sock);
-    server->sock = sock;
-
-    /* Add ourselves also to the socket table. The entry allocated above
-       is sent as argument for fast referencing in the future. */
-    silc_socket_alloc(sock, SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
-    server->sockets[sock] = newsocket;
-
-    /* Perform name and address lookups to resolve the listenning address
-       and port. */
-    if (!silc_net_check_local_by_sock(sock, &newsocket->hostname,
-				      &newsocket->ip)) {
-      if ((server->config->require_reverse_lookup && !newsocket->hostname) ||
-	  !newsocket->ip) {
-	SILC_LOG_ERROR(("IP/DNS lookup failed for local host %s",
-			newsocket->hostname ? newsocket->hostname :
-			newsocket->ip ? newsocket->ip : ""));
-	server->stat.conn_failures++;
-	goto err;
-      }
-      if (!newsocket->hostname)
-	newsocket->hostname = strdup(newsocket->ip);
-    }
-    newsocket->port = silc_net_get_local_port(sock);
-
-    /* Create a Server ID for the server. */
-    silc_id_create_server_id(newsocket->ip, newsocket->port, server->rng, &id);
-    if (!id)
-      goto err;
-
-    server->id = id;
-    server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
-    server->id_string_len = silc_id_get_len(id, SILC_ID_SERVER);
-    server->id_type = SILC_ID_SERVER;
-    server->server_name = server->config->server_info->server_name;
-    server->config->server_info->server_name = NULL;
-
-    /* Add ourselves to the server list. We don't have a router yet
-       beacuse we haven't established a route yet. It will be done later.
-       For now, NULL is sent as router. This allocates new entry to
-       the ID list. */
-    id_entry =
-      silc_idlist_add_server(server->local_list, strdup(server->server_name),
-			     server->server_type, server->id, NULL, NULL);
-    if (!id_entry) {
-      SILC_LOG_ERROR(("Could not add ourselves to cache"));
+  /* Perform name and address lookups to resolve the listenning address
+     and port. */
+  if (!silc_net_check_local_by_sock(sock, &newsocket->hostname,
+				    &newsocket->ip)) {
+    if ((server->config->require_reverse_lookup && !newsocket->hostname) ||
+	!newsocket->ip) {
+      SILC_LOG_ERROR(("IP/DNS lookup failed for local host %s",
+		      newsocket->hostname ? newsocket->hostname :
+		      newsocket->ip ? newsocket->ip : ""));
+      server->stat.conn_failures++;
       goto err;
     }
-    id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
+    if (!newsocket->hostname)
+      newsocket->hostname = strdup(newsocket->ip);
+  }
+  newsocket->port = silc_net_get_local_port(sock);
 
-    /* Put the allocated socket pointer also to the entry allocated above
-       for fast back-referencing to the socket list. */
-    newsocket->user_data = (void *)id_entry;
-    id_entry->connection = (void *)newsocket;
-    server->id_entry = id_entry;
-  } while (0);
+  /* Create a Server ID for the server. */
+  silc_id_create_server_id(newsocket->ip, newsocket->port, server->rng, &id);
+  if (!id)
+    goto err;
+
+  server->id = id;
+  server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
+  server->id_string_len = silc_id_get_len(id, SILC_ID_SERVER);
+  server->id_type = SILC_ID_SERVER;
+  server->server_name = server->config->server_info->server_name;
+  server->config->server_info->server_name = NULL;
+
+  /* Add ourselves to the server list. We don't have a router yet
+     beacuse we haven't established a route yet. It will be done later.
+     For now, NULL is sent as router. This allocates new entry to
+     the ID list. */
+  id_entry =
+    silc_idlist_add_server(server->local_list, strdup(server->server_name),
+			   server->server_type, server->id, NULL, NULL);
+  if (!id_entry) {
+    SILC_LOG_ERROR(("Could not add ourselves to cache"));
+    goto err;
+  }
+  id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
+  
+  /* Put the allocated socket pointer also to the entry allocated above
+     for fast back-referencing to the socket list. */
+  newsocket->user_data = (void *)id_entry;
+  id_entry->connection = (void *)newsocket;
+  server->id_entry = id_entry;
 
   /* Register protocols */
   silc_server_protocols_register();
@@ -364,15 +368,24 @@ bool silc_server_rehash(SilcServer server)
 
   /* Start the main rehash phase (read again the config file) */
   SILC_LOG_INFO(("Rehashing server"));
-  newconfig = silc_server_config_alloc(server->config_file);
-
+  newconfig = silc_server_config_alloc(server, server->config_file);
   if (!newconfig) {
     SILC_LOG_ERROR(("Rehash FAILED."));
     return FALSE;
   }
-  silc_server_config_unref(&server->config_ref);
+
+  /* Destroy old config context. This is destroyed if no one is referencing
+     it at the moment. */
+  silc_server_config_destroy(server->config);
   server->config = newconfig;
-  silc_server_config_ref(&server->config_ref, newconfig, (void *) newconfig);
+
+  /* Set public and private keys */
+  if (!server->config->server_info ||
+      !server->config->server_info->public_key ||
+      !server->config->server_info->private_key) {
+    SILC_LOG_ERROR(("Server public key and/or private key does not exist"));
+    return FALSE;
+  }
 
   /* Fix the server_name field */
   if (!strcmp(server->server_name, newconfig->server_info->server_name)) {
@@ -388,15 +401,31 @@ bool silc_server_rehash(SilcServer server)
     silc_free(server->id_entry->server_name);
     server->id_entry->server_name = strdup(server->server_name);
     silc_idcache_del_by_context(server->local_list->servers, server->id_entry);
-    silc_idcache_add(server->local_list->servers, server->id_entry->server_name,
+    silc_idcache_add(server->local_list->servers, 
+		     server->id_entry->server_name,
 		     server->id_entry->id, server->id_entry, 0, NULL);
   }
 
   silc_server_config_setlogfiles(server);
 
-  /* XXX There is still to implement the publickey change and modules
-     adding (we can't allow modules removing since we can't know which
-     one are actually in use */
+  /* Change new key pair if necessary */
+  if (server->config->server_info->public_key &&
+      !silc_pkcs_public_key_compare(server->public_key,
+				    server->config->server_info->public_key)) {
+    silc_pkcs_public_key_free(server->public_key);
+    silc_pkcs_private_key_free(server->private_key);
+    server->public_key = server->config->server_info->public_key;
+    server->private_key = server->config->server_info->private_key;
+    server->config->server_info->public_key = NULL;
+    server->config->server_info->private_key = NULL;
+
+    /* Allocate PKCS context for local public and private keys */
+    silc_pkcs_free(server->pkcs);
+    if (!silc_pkcs_alloc(server->public_key->name, &server->pkcs))
+      return FALSE;
+    silc_pkcs_public_key_set(server->pkcs, server->public_key);
+    silc_pkcs_private_key_set(server->pkcs, server->private_key);
+  }
 
   return TRUE;
 }
@@ -656,7 +685,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
     return;
   }
 
-  /* we will lookup a fresh pointer later */
+  /* We will lookup a fresh pointer later */
   silc_server_config_unref(&sconn->conn);
 
   /* Wait one before retrying */
@@ -682,7 +711,9 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   rconn = silc_server_config_find_router_conn(server, sconn->remote_host,
 					      sconn->remote_port);
   if (!rconn) {
-    SILC_LOG_INFO(("Unconfigured server, giving up"));
+    SILC_LOG_INFO(("Unconfigured %s connection %s:%d, cannot connect",
+		   (sconn->backup ? "backup router" : "router"),
+		   sconn->remote_host, sconn->remote_port));
     silc_free(sconn->remote_host);
     silc_free(sconn->backup_replace_ip);
     silc_free(sconn);
@@ -798,9 +829,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     if (ctx->ske)
       silc_ske_free(ctx->ske);
     silc_free(ctx->dest_id);
-    silc_server_config_unref(&ctx->cconfig);
-    silc_server_config_unref(&ctx->sconfig);
-    silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
     silc_server_config_unref(&sconn->conn);
     silc_free(sconn->remote_host);
@@ -891,6 +919,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
       silc_ske_free(ctx->ske);
     silc_free(ctx->dest_id);
     silc_free(ctx);
+    silc_server_config_unref(&sconn->conn);
+    silc_free(sconn->remote_host);
+    silc_free(sconn->backup_replace_ip);
+    silc_free(sconn);
     silc_schedule_task_del_by_callback(server->schedule,
 				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
@@ -1246,7 +1278,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
 
   /* Check for maximum allowed connections */
   if (sock > server->config->param.connections_max) {
-    SILC_LOG_ERROR(("Refusing connection, server is full, try again later"));
+    SILC_LOG_ERROR(("Refusing connection, server is full"));
     server->stat.conn_failures++;
     silc_net_close_connection(sock);
     return;

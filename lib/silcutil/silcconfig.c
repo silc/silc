@@ -250,7 +250,7 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
 /* Tries to open the config file and returns a valid SilcConfigFile object
  * or NULL if failed */
 
-SilcConfigFile *silc_config_open(char *configfile)
+SilcConfigFile *silc_config_open(const char *configfile)
 {
   char *buffer;
   SilcUInt32 filelen;

@@ -85,6 +85,7 @@ typedef struct {
 #define SILC_SERVER_CONNAUTH_TIMEOUT   60	 /* CONN_AUTH timeout */
 #define SILC_SERVER_MAX_CONNECTIONS    1000	 /* Max connections */
 #define SILC_SERVER_MAX_CONNECTIONS_SINGLE 1000  /* Max connections per host */
+#define SILC_SERVER_LOG_FLUSH_DELAY    300       /* Default log flush delay */
 
 /* Macros */
 
@@ -108,8 +109,6 @@ do {								\
    background. */
 #define SILC_SERVER_LOG_ERROR(fmt) silc_server_stderr(silc_format fmt)
 
-
-
 /* Prototypes */
 int silc_server_alloc(SilcServer *new_server);
 void silc_server_free(SilcServer server);
@@ -119,7 +118,6 @@ void silc_server_drop(SilcServer server);
 void silc_server_daemonise(SilcServer server);
 void silc_server_run(SilcServer server);
 void silc_server_stop(SilcServer server);
-void silc_server_stderr(char *message);
 void silc_server_start_key_exchange(SilcServer server,
 				    SilcServerConnection sconn,
 				    int sock);
@@ -222,5 +220,6 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 SilcClientEntry silc_server_get_client_resolve(SilcServer server,
 					       SilcClientID *client_id,
 					       bool *resolved);
+void silc_server_stderr(char *message);
 
 #endif

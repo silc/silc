@@ -189,7 +189,8 @@ typedef struct {
 /* Prototypes */
 
 /* Basic config operations */
-SilcServerConfig silc_server_config_alloc(char *filename);
+SilcServerConfig silc_server_config_alloc(SilcServer server, 
+					  const char *filename);
 void silc_server_config_destroy(SilcServerConfig config);
 void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
 			    void *ref_ptr);

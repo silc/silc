@@ -158,7 +158,7 @@ static bool silc_log_reset(SilcLog log)
 SILC_TASK_CALLBACK(silc_log_fflush_callback)
 {
   unsigned int u;
-  if (!silc_log_quick) {
+  if (silc_log_quick) {
     silc_log_flush_all();
     SILC_FOREACH_LOG(u)
       silc_log_checksize(&silclogs[u]);

@@ -268,7 +268,7 @@ static int func(SilcConfigType type, const char *name,		\
  *    silc_config_close().
  *
  ***/
-SilcConfigFile *silc_config_open(char *configfile);
+SilcConfigFile *silc_config_open(const char *configfile);
 
 /****f* silcutil/SilcConfigAPI/silc_config_close
  *
