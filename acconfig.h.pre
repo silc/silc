@@ -31,7 +31,6 @@
 #undef SILC_DOCDIR
 #undef SILC_MODULESDIR
 #undef SILC_LOGSDIR
-#undef SILC_MANDIR
 
 /* SIM (SILC Module) support */
 #undef SILC_SIM

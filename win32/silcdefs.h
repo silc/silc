@@ -49,7 +49,6 @@
 #define SILC_DOCDIR "doc"
 #define SILC_MODULESDIR "modules"
 #define SILC_LOGSDIR "logs"
-#define SILC_MANDIR "man"
 
 /* SIM (SILC Module) support */
 /* #undef SILC_SIM */
