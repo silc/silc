@@ -717,7 +717,29 @@ void silc_client_notify_by_server(SilcClient client,
       /* Find Client entry */
       client_id = id;
       client_entry = silc_client_get_client_by_id(client, conn, client_id);
-      if (!client_entry || !client_entry->nickname) {
+      if (!client_entry) {
+	silc_client_channel_set_wait(client, conn, channel,
+				     conn->cmd_ident + 1);
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CLIENT, client_id);
+	goto out;
+      }
+
+      if (!client_entry->nickname) {
+	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+	  /* Attach to existing resolving */
+	  SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
+	  res->packet = silc_packet_context_dup(packet);
+	  res->context = client;
+	  res->sock = silc_socket_dup(conn->sock);
+	  silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+				      client_entry->resolve_cmd_ident,
+				      silc_client_notify_by_server_pending,
+				      res);
+	  goto out;
+	}
+
+	/* Do new resolving */
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
 	silc_client_notify_by_server_resolve(client, conn, packet, 
@@ -841,7 +863,29 @@ void silc_client_notify_by_server(SilcClient client,
       /* Find Client entry */
       client_id = id;
       client_entry = silc_client_get_client_by_id(client, conn, client_id);
-      if (!client_entry || !client_entry->nickname) {
+      if (!client_entry) {
+	silc_client_channel_set_wait(client, conn, channel,
+				     conn->cmd_ident + 1);
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CLIENT, client_id);
+	goto out;
+      }
+
+      if (!client_entry->nickname) {
+	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+	  /* Attach to existing resolving */
+	  SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
+	  res->packet = silc_packet_context_dup(packet);
+	  res->context = client;
+	  res->sock = silc_socket_dup(conn->sock);
+	  silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+				      client_entry->resolve_cmd_ident,
+				      silc_client_notify_by_server_pending,
+				      res);
+	  goto out;
+	}
+
+	/* Do new resolving */
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
 	silc_client_notify_by_server_resolve(client, conn, packet, 
