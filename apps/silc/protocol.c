@@ -23,6 +23,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/07 06:53:45  priikone
+ * 	Added support for server public key verification.
+ *
  * Revision 1.3  2000/07/06 07:14:16  priikone
  * 	Deprecated old `channel_auth' protocol.
  *
@@ -55,6 +58,8 @@ const SilcProtocolObject silc_protocol_list[] =
  * Key Exhange protocol functions
  */
 
+/* Function that is called when SKE protocol sends packets to network. */
+
 static void silc_client_protocol_ke_send_packet(SilcSKE ske,
 						SilcBuffer packet,
 						SilcPacketType type,
@@ -71,8 +76,15 @@ static void silc_client_protocol_ke_send_packet(SilcSKE ske,
 
 }
 
-static void silc_client_protocol_ke_phase1_cb(SilcSKE ske,
-					      void *context)
+/* Callback that is called when we have received KE2 payload from
+   responder. We try to verify the public key now. */
+
+static SilcSKEStatus 
+silc_client_protocol_ke_verify_key(SilcSKE ske,
+				   unsigned char *pk_data,
+				   unsigned int pk_len,
+				   SilcSKEPKType pk_type,
+				   void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
   SilcClientKEInternalContext *ctx = 
@@ -81,18 +93,11 @@ static void silc_client_protocol_ke_phase1_cb(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Start"));
 
-}
+  if (!silc_client_verify_server_key(client, ctx->sock, 
+				     pk_data, pk_len, pk_type))
+    return SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
 
-static void silc_client_protocol_ke_finish_cb(SilcSKE ske,
-					      void *context)
-{
-  SilcProtocol protocol = (SilcProtocol)context;
-  SilcClientKEInternalContext *ctx = 
-    (SilcClientKEInternalContext *)protocol->context;
-  SilcClient client = (SilcClient)ctx->client;
-
-  SILC_LOG_DEBUG(("Start"));
-
+  return SILC_SKE_STATUS_OK;
 }
 
 /* Sets the negotiated key material into use for particular connection. */
@@ -226,11 +231,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	   paylaod reply we just got from the responder. The callback
 	   function will receive the processed payload where we will
 	   save it. */
-	status = 
-	  silc_ske_initiator_phase_1(ctx->ske,
-				     ctx->packet,
-				     silc_client_protocol_ke_phase1_cb,
-				     context);
+	status = silc_ske_initiator_phase_1(ctx->ske, ctx->packet, NULL, NULL);
       }
 
       switch(status) {
@@ -281,6 +282,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
        * Finish protocol
        */
       if (ctx->responder == TRUE) {
+	status = 0;
 #if 0
 	status = 
 	  silc_ske_responder_phase_2(ctx->ske, 
@@ -291,16 +293,15 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       } else {
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. */
-	status = 
-	  silc_ske_initiator_finish(ctx->ske,
-				    ctx->packet,
-				    silc_client_protocol_ke_finish_cb,
-				    context);
+	status = silc_ske_initiator_finish(ctx->ske, ctx->packet,
+					   silc_client_protocol_ke_verify_key,
+					   context, NULL, NULL);
       }
 
-      switch(status) {
-      default:
-	break;
+      if (status != SILC_SKE_STATUS_OK) {
+	protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
+	return;
       }
       
       /* Send Ok to the other end. We will end the protocol as server
@@ -338,7 +339,10 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
   case SILC_PROTOCOL_STATE_ERROR:
     
     /* On error the final callback is always called. */
-    /*    protocol->final_callback(pptr, context);*/
+    if (protocol->final_callback)
+      protocol->execute_final(client->timeout_queue, 0, protocol, fd);
+    else
+      silc_protocol_free(protocol);
     break;
   case SILC_PROTOCOL_STATE_UNKNOWN:
     break;

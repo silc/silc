@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/07 06:53:45  priikone
+ * 	Added support for server public key verification.
+ *
  * Revision 1.2  2000/07/05 06:11:00  priikone
  * 	Added ~./silc directory checking, autoloading of keys and
  * 	tweaked the key pair generation function.
@@ -254,6 +257,42 @@ char *silc_client_ask_passphrase(SilcClient client)
   memset(pass2, 0, sizeof(pass2));
 
   wattroff(client->screen->input_win, A_INVIS);
+  silc_screen_input_reset(client->screen);
+
+  return ret;
+}
+
+/* Asks yes/no from user on the input line. Returns TRUE on "yes" and
+   FALSE on "no". */
+
+int silc_client_ask_yes_no(SilcClient client, char *prompt)
+{
+  char answer[4];
+  int ret;
+
+ again:
+  silc_screen_input_reset(client->screen);
+
+  /* Print prompt */
+  wattroff(client->screen->input_win, A_INVIS);
+  silc_screen_input_print_prompt(client->screen, prompt);
+
+  /* Get string */
+  memset(answer, 0, sizeof(answer));
+  echo();
+  wgetnstr(client->screen->input_win, answer, sizeof(answer));
+  if (!strncasecmp(answer, "yes", strlen(answer)) ||
+      !strncasecmp(answer, "y", strlen(answer))) {
+    ret = TRUE;
+  } else if (!strncasecmp(answer, "no", strlen(answer)) ||
+	     !strncasecmp(answer, "n", strlen(answer))) {
+    ret = FALSE;
+  } else {
+    silc_say(client, "Type yes or no");
+    goto again;
+  }
+  noecho();
+
   silc_screen_input_reset(client->screen);
 
   return ret;
@@ -516,6 +555,11 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (ret_prv_key)
     *ret_prv_key = prv_key;
 
+  printf("Public key has been save into `%s'.\n", pkfile);
+  printf("Private key has been saved into `%s'.\n", prvfile);
+  printf("Press <Enter> to continue...\n");
+  getchar();
+
   memset(key, 0, sizeof(key_len));
   silc_free(key);
 
@@ -536,6 +580,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 int silc_client_check_silc_dir()
 {
   char filename[256], file_public_key[256], file_private_key[256];
+  char servfilename[256];
   char *identifier;
   struct stat st;
   struct passwd *pw;
@@ -558,6 +603,8 @@ int silc_client_check_silc_dir()
 
   /* We'll take home path from /etc/passwd file to be sure. */
   snprintf(filename, sizeof(filename) - 1, "%s/.silc/", pw->pw_dir);
+  snprintf(servfilename, sizeof(servfilename) - 1, "%s/.silc/serverkeys", 
+	   pw->pw_dir);
 
   /*
    * Check ~/.silc directory
@@ -599,6 +646,28 @@ int silc_client_check_silc_dir()
       return FALSE;
     }
   }
+
+  /*
+   * Check ~./silc/serverkeys directory
+   */
+  if ((stat(servfilename, &st)) == -1) {
+    /* If dir doesn't exist */
+    if (errno == ENOENT) {
+      if (pw->pw_uid == geteuid()) {
+	if ((mkdir(servfilename, 0755)) == -1) {
+	  fprintf(stderr, "Couldn't create `%s' directory\n", servfilename);
+	  return FALSE;
+	}
+      } else {
+	fprintf(stderr, "Couldn't create `%s' directory due to a wrong uid!\n",
+		servfilename);
+	return FALSE;
+      }
+    } else {
+      fprintf(stderr, "%s\n", strerror(errno));
+      return FALSE;
+    }
+  }
   
   /*
    * Check Public and Private keys
@@ -610,7 +679,7 @@ int silc_client_check_silc_dir()
   
   /* If running SILC first time */
   if (firstime) {
-    fprintf(stdout, "Running SILC for the first time.\n");
+    fprintf(stdout, "Running SILC for the first time\n");
     silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
 				SILC_CLIENT_DEF_PKCS_LEN,
 				file_public_key, file_private_key, 
@@ -725,4 +794,122 @@ int silc_client_load_keys(SilcClient client)
     return FALSE;
 
   return TRUE;
+}
+
+/* Verifies received public key. If user decides to trust the key it is
+   saved as trusted server key for later use. If user does not trust the
+   key this returns FALSE. */
+
+int silc_client_verify_server_key(SilcClient client, 
+				  SilcSocketConnection sock,
+				  unsigned char *pk, unsigned int pk_len,
+				  SilcSKEPKType pk_type)
+{
+  char filename[256];
+  char file[256];
+  char *hostname;
+  struct passwd *pw;
+  struct stat st;
+
+  hostname = sock->hostname ? sock->hostname : sock->ip;
+
+  if (pk_type != SILC_SKE_PK_TYPE_SILC) {
+    silc_say(client, "We don't support server %s key type", hostname);
+    return FALSE;
+  }
+
+  pw = getpwuid(getuid());
+  if (!pw)
+    return FALSE;
+
+  memset(filename, 0, sizeof(filename));
+  memset(file, 0, sizeof(file));
+  snprintf(file, sizeof(file) - 1, "serverkey_%s_%d.pub", hostname,
+	   sock->port);
+  snprintf(filename, sizeof(filename) - 1, "%s/.silc/serverkeys/%s", 
+	   pw->pw_dir, file);
+
+  /* Check wheter this key already exists */
+  if (stat(filename, &st) < 0) {
+
+    silc_say(client, "Received server %s public key", hostname);
+    /* XXX print fingerprint of the key */
+
+    /* Ask user to verify the key and save it */
+    if (silc_client_ask_yes_no(client, 
+       "Would you like to accept the server key (y/n)? "))
+      {
+	/* Save the key for future checking */
+	silc_pkcs_save_public_key_data(filename, pk, pk_len);
+	return TRUE;
+      }
+  } else {
+    /* The key already exists, verify it. */
+    SilcPublicKey public_key;
+    unsigned char *encpk;
+    unsigned int encpk_len;
+
+    /* Load the key file */
+    if (!silc_pkcs_load_public_key(filename, &public_key)) {
+      silc_say(client, "Received server %s public key", hostname);
+      silc_say(client, "Could not load your local copy of the server %s key",
+	       hostname);
+      if (silc_client_ask_yes_no(client, 
+         "Would you like to accept the server key anyway (y/n)? "))
+	{
+	  /* Save the key for future checking */
+	  unlink(filename);
+	  silc_pkcs_save_public_key_data(filename, pk, pk_len);
+	  return TRUE;
+	}
+
+      return FALSE;
+    }
+
+    /* Encode the key data */
+    encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
+    if (!encpk) {
+      silc_say(client, "Received server %s public key", hostname);
+      silc_say(client, "Your local copy of the server %s key is malformed",
+	       hostname);
+      if (silc_client_ask_yes_no(client, 
+         "Would you like to accept the server key anyway (y/n)? "))
+	{
+	  /* Save the key for future checking */
+	  unlink(filename);
+	  silc_pkcs_save_public_key_data(filename, pk, pk_len);
+	  return TRUE;
+	}
+
+      return FALSE;
+    }
+
+    if (memcmp(encpk, pk, encpk_len)) {
+      silc_say(client, "Received server %s public key", hostname);
+      silc_say(client, "Server %s key does not match with your local copy",
+	       hostname);
+      silc_say(client, "It is possible that the key has expired or changed");
+      silc_say(client, "It is also possible that some one is performing "
+	               "man-in-the-middle attack");
+      
+      /* Ask user to verify the key and save it */
+      if (silc_client_ask_yes_no(client, 
+         "Would you like to accept the server key anyway (y/n)? "))
+	{
+	  /* Save the key for future checking */
+	  unlink(filename);
+	  silc_pkcs_save_public_key_data(filename, pk, pk_len);
+	  return TRUE;
+	}
+
+      silc_say(client, "Will not accept server %s key", hostname);
+      return FALSE;
+    }
+
+    /* Local copy matched */
+    return TRUE;
+  }
+
+  silc_say(client, "Will not accept server %s key", hostname);
+  return FALSE;
 }
