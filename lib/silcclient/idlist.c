@@ -983,6 +983,7 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
       silc_hmac_free(hmac);
     silc_dlist_uninit(channel->old_hmacs);
   }
+  silc_schedule_task_del_by_context(conn->client->schedule, channel);
   silc_client_del_channel_private_keys(client, conn, channel);
   silc_free(channel);
   return ret;

@@ -444,12 +444,6 @@ void silc_client_notify_by_server(SilcClient client,
     if (!client_entry)
       goto out;
 
-    /* Remove from all channels */
-    silc_client_remove_from_channels(client, conn, client_entry);
-
-    /* Remove from cache */
-    silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
-
     /* Get signoff message */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (tmp_len > 128)
@@ -457,6 +451,12 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Notify application */
     client->internal->ops->notify(client, conn, type, client_entry, tmp);
+
+    /* Remove from all channels */
+    silc_client_remove_from_channels(client, conn, client_entry);
+
+    /* Remove from cache */
+    silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
 
     /* Free data */
     silc_client_del_client_entry(client, conn, client_entry);

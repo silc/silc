@@ -1,3 +1,12 @@
+Sat Oct 18 11:55:33 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Unregister channel key saving callback when deleting channel.
+	  Affected file lib/silcclient/idlist.c.
+
+	* Do not remove the client from channels in NOTIFY_TYPE_SIGNOFF
+	  before calling notify client operation.  Affected file is
+	  lib/silcclient/client_notify.c.
+
 Tue Oct 14 18:24:53 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Save old channel keys in list to allow more rapid change
