@@ -1038,7 +1038,8 @@ SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
   int i, count;
 
   for (i = 0, count = 0; i < server->config->param.connections_max; i++) {
-    if (server->sockets[i] && !strcmp(server->sockets[i]->ip, ip) &&
+    if (server->sockets[i] && !SILC_IS_LISTENER(server->sockets[i]) &&
+	!strcmp(server->sockets[i]->ip, ip) &&
 	server->sockets[i]->type == type)
       count++;
   }
@@ -1062,7 +1063,7 @@ SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server,
     return 0;
 
   for (i = 0, count = 0; i < server->config->param.connections_max; i++) {
-    if (server->sockets[i] && 
+    if (server->sockets[i] && !SILC_IS_LISTENER(server->sockets[i]) &&
 	((ip && !strcmp(server->sockets[i]->ip, ip)) ||
 	 (hostname && !strcmp(server->sockets[i]->hostname, hostname))) &&
 	server->sockets[i]->port == port &&

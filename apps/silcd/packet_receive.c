@@ -3606,7 +3606,8 @@ void silc_server_resume_client(SilcServer server,
       server->stat.cell_clients--;
     silc_server_remove_from_channels(server, NULL, client, FALSE, NULL, FALSE);
     silc_server_del_from_watcher_list(server, client);
-    silc_idlist_del_client(server->local_list, client);
+    if (!silc_idlist_del_client(server->local_list, client))
+      silc_idlist_del_client(server->global_list, client);
     client = detached_client;
 
     /* If the ID is not based in our ID then change it */

@@ -8,6 +8,15 @@ Fri Jun 28 11:53:25 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	* Do not set to wait for backup in rehash of the server.
 	  Affected file silcd/server.c.
 
+	* Do not check listener sockets when counting how many
+	  socket connections we have.  Affected file is
+	  silcd/server_util.c.
+
+	* Do not announce disconnected clients that are remaining
+	  in history (for WHOWAS).  This is because SIGNOFF notify
+	  for these has been sent earlier already.  Affected file
+	  silcd/server.c.
+
 Thu Jun 27 20:07:27 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Buffer overflow with CUMODE command's mode->mode character

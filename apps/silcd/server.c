@@ -2872,6 +2872,8 @@ SILC_TASK_CALLBACK(silc_server_free_client_data_timeout)
 {
   FreeClientInternal i = (FreeClientInternal)context;
 
+  assert(!silc_hash_table_count(i->client->channels));
+
   silc_idlist_del_data(i->client);
   silc_idcache_purge_by_context(i->server->local_list->clients, i->client);
   silc_free(i);
@@ -2945,6 +2947,7 @@ void silc_server_free_client_data(SilcServer server,
 			 (void *)i, 300, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+  client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
   client->mode = 0;
   client->router = NULL;
   client->connection = NULL;
@@ -3932,6 +3935,12 @@ static void silc_server_announce_get_clients(SilcServer server,
 	    break;
 	  continue;
 	}
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) &&
+	    !client->connection && !client->router && !SILC_IS_LOCAL(client)) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  continue;
+	}
 
 	idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -4531,6 +4540,12 @@ void silc_server_save_users_on_channel(SilcServer server,
 
     silc_free(client_id);
 
+    if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+      SILC_LOG_ERROR(("Attempting to add unregistered client to channel ",
+		      "%s", channel->channel_name));
+      continue;
+    }
+
     if (!silc_server_client_on_channel(client, channel, &chl)) {
       /* Client was not on the channel, add it. */
       chl = silc_calloc(1, sizeof(*chl));
@@ -4568,7 +4583,8 @@ void silc_server_save_user_channels(SilcServer server,
   char *name;
   int i = 0;
 
-  if (!channels ||!channels_user_modes)
+  if (!channels || !channels_user_modes ||
+      !(client->data.status & SILC_IDLIST_STATUS_REGISTERED))
     goto out;
   
   ch = silc_channel_payload_parse_list(channels->data, channels->len);

@@ -368,6 +368,8 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
     if (!silc_idcache_del_by_context(id_list->clients, entry))
       return FALSE;
 
+    assert(!silc_hash_table_count(entry->channels));
+
     /* Free data */
     silc_free(entry->nickname);
     silc_free(entry->servername);
