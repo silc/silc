@@ -3724,10 +3724,6 @@ SILC_SERVER_CMD_FUNC(kick)
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
 
-  /* Send command reply to sender */
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
-					SILC_STATUS_OK, 0);
-
   /* Send KICKED notify to local clients on the channel */
   idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,

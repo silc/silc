@@ -1,3 +1,8 @@
+Thu Oct 30 17:01:01 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed KICK command reply sending, it sent to replies.
+	  Affected file silcd/command.c.
+
 Wed Oct 30 14:06:52 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Finish the silc-mime.pl script. It now supports MIME type
