@@ -110,7 +110,6 @@ RSA_FormatOneBlock(unsigned int modulusLen, RSA_BlockType blockType,
     unsigned char *block;
     unsigned char *bp;
     int padLen;
-    int i;
 
     block = (unsigned char *) silc_malloc(modulusLen);
     if (block == NULL)
@@ -153,6 +152,15 @@ RSA_FormatOneBlock(unsigned int modulusLen, RSA_BlockType blockType,
        * Blocks intended for public-key operation.
        */
       case RSA_BlockPublic:
+
+	/* XXX For now we can't do this because we can't get the
+	   SilcRNG object down to this level. */
+	silc_free(block);
+	return NULL;
+
+#if 0
+	int i;
+
 	/*
 	 * 0x00 || BT || Pad || 0x00 || ActualData
 	 *   1      1   padLen    1      data_len
@@ -163,12 +171,14 @@ RSA_FormatOneBlock(unsigned int modulusLen, RSA_BlockType blockType,
 	for (i = 0; i < padLen; i++) {
 	    /* Pad with non-zero random data. */
 	    do {
-		silc_rng_global_get_byte(bp + i);
+		RNG_GenerateGlobalRandomBytes(bp + i, 1);
 	    } while (bp[i] == RSA_BLOCK_AFTER_PAD_OCTET);
 	}
 	bp += padLen;
 	*bp++ = RSA_BLOCK_AFTER_PAD_OCTET;
 	memcpy(bp, data, data_len);
+#endif
+
 	break;
 
       default:
