@@ -23,6 +23,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.7  2000/07/14 06:14:20  priikone
+ * 	Put the HMAC keys into the HMAC object instead of having them
+ * 	saved elsewhere; now we can use silc_hmac_make insteaad of
+ * 	silc_hmac_make_with_key.
+ *
  * Revision 1.6  2000/07/12 05:59:41  priikone
  * 	Major rewrite of ID Cache system. Support added for the new
  * 	ID cache system. Major rewrite of ID List stuff on server.  All
@@ -144,10 +149,7 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
   /* Save HMAC key to be used in the communication. */
   silc_hash_alloc(hash->hash->name, &nhash);
   silc_hmac_alloc(nhash, &conn_data->hmac);
-  conn_data->hmac_key_len = keymat->hmac_key_len;
-  conn_data->hmac_key = silc_calloc(conn_data->hmac_key_len,
-				    sizeof(unsigned char));
-  memcpy(conn_data->hmac_key, keymat->hmac_key, keymat->hmac_key_len);
+  silc_hmac_set_key(conn_data->hmac, keymat->hmac_key, keymat->hmac_key_len);
 
   sock->user_data = (void *)conn_data;
 }
