@@ -28,7 +28,7 @@ the common naming convention while the lower level routines uses what
 ever they want.  For example, ciphers are implemented currently in this
 way.  They define common SILC Cipher API but the actual implementation
 of algorithms uses their own naming convention.  Another example is
-the GMP math library that uses its own function naming but we have our
+the MPI math library that uses its own function naming but we have our
 own SILC MP API over it that has been defined using common SILC naming
 convention.
 
@@ -270,11 +270,11 @@ be commented.  If nothing more a line of comment telling what the function
 is about helps a lot when you go back to it after six months.  Static
 functions should be commented as well.
 
-The commenting of functions in SILC has been made into the source files,
-and not in the header files where the function prototypes reside.  Header
-files usually includes structure comments, macro comments and perhaps
-some other relevant commenting but usually not function comments.
-It is also Ok to comment the code inside function when it is needed.
+When writing a new header it is preferred that the header file is 
+immediately written in the ROBOdoc documentation format.  This is 
+important when you are doing library code under lib/.  There are plenty
+of examples of this format.  The ROBOdoc is used automatically generate
+the Toolkit documentation.
 
 Comments should use normal C-language comments /* */ and not C++ comments.
 
@@ -342,7 +342,9 @@ Using gotos
 
 Gotos are used in the SILC code quite often.  If you know how to use
 goto's properly then it is ok to use them for example to optimize the
-code.  However, if you don't know how to use goto's do not use them.
+code.  If you use goto's then use them only to make forward jumps, try
+to avoid backward jumps at all cost.  If you don't know how to use goto's 
+do not use them.
 
 
 Debug Messages
@@ -629,7 +631,7 @@ int main()
 Copyrights of the Code
 ======================
 
-The original code in SILC is GPL licensed.  GMP is GPL licensed as well
+The original code in SILC is GPL licensed.  MPI is GPL licensed as well
 and zlib is with free license as well.  New code will be accepted to
 the official SILC source tree if it is coded in GPL or similiar free
 license as GPL is, and of course if it is public domain.  Code with

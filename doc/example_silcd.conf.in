@@ -12,16 +12,16 @@
 # If the cipher is builtin the <module path> maybe omitted.
 #
 [Cipher]
-aes-256-cbc:/usr/local/silc/modules/aes.sim.so:32:16
-aes-192-cbc:/usr/local/silc/modules/aes.sim.so:24:16
-aes-128-cbc:/usr/local/silc/modules/aes.sim.so:16:16
-twofish-256-cbc:/usr/local/silc/modules/twofish.sim.so:32:16
-twofish-192-cbc:/usr/local/silc/modules/twofish.sim.so:24:16
-twofish-128-cbc:/usr/local/silc/modules/twofish.sim.so:16:16
-mars-256-cbc:/usr/local/silc/modules/mars.sim.so:32:16
-mars-192-cbc:/usr/local/silc/modules/mars.sim.so:24:16
-mars-128-cbc:/usr/local/silc/modules/mars.sim.so:16:16
-none:/usr/local/silc/modules/none.sim.so:0:0
+aes-256-cbc:@MODULESDIR@/aes.sim.so:32:16
+aes-192-cbc:@MODULESDIR@/aes.sim.so:24:16
+aes-128-cbc:@MODULESDIR@/aes.sim.so:16:16
+twofish-256-cbc:@MODULESDIR@/twofish.sim.so:32:16
+twofish-192-cbc:@MODULESDIR@/twofish.sim.so:24:16
+twofish-128-cbc:@MODULESDIR@/twofish.sim.so:16:16
+mars-256-cbc:@MODULESDIR@/mars.sim.so:32:16
+mars-192-cbc:@MODULESDIR@/mars.sim.so:24:16
+mars-128-cbc:@MODULESDIR@/mars.sim.so:16:16
+none:@MODULESDIR@/none.sim.so:0:0
 
 #
 # Configured hash functions.
@@ -85,7 +85,7 @@ lassi.kuo.fi.ssh.com:10.2.1.6:Kuopio, Finland:706
 # Format: +<public key>:<private key>
 #
 [ServerKeys]
-/etc/silc/silcd.pub:/etc/silc/silcd.prv
+@ETCDIR@/silcd.pub:@ETCDIR@/silcd.prv
 
 #
 # Listenning ports.
@@ -109,10 +109,10 @@ lassi.kuo.fi.ssh.com:10.2.1.6:Kuopio, Finland:706
 #         fatallogile:<path>:<max byte size>
 #
 [Logging]
-infologfile:/usr/local/silc/logs/silcd.log:10000
-#warninglogfile:/usr/local/silc/logs/silcd_warning.log:10000
-#errorlogfile:/usr/local/silc/logs/error.log:10000
-#fatallogfile:/usr/local/silc/logs/silcd_error.log:
+infologfile:@LOGSDIR@/silcd.log:10000
+#warninglogfile:@LOGSDIR@/silcd_warning.log:10000
+#errorlogfile:@LOGSDIR@/error.log:10000
+#fatallogfile:@LOGSDIR@/silcd_error.log:
 
 #
 # Connection classes.

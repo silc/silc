@@ -318,8 +318,19 @@ AC_CHECK_HEADERS(dlfcn.h,
 # Default installation destination
 AC_PREFIX_DEFAULT(/usr/local/silc)
 
+if test "x$prefix" != xNONE; then
+	silc_prefix="$prefix"
+else
+	silc_prefix="$ac_default_prefix"
+fi
+
 # etc directory
-ETCDIR="/etc/silc"
+#ETCDIR="/etc/silc"
+if test "x$sysconfdir" != 'x${prefix}/etc'; then
+	ETCDIR="$sysconfdir"
+else
+	ETCDIR="$silc_prefix/etc"
+fi
 AC_ARG_WITH(etcdir,
 [  --with-etcdir[=PATH]    Directory for system files [/etc/silc]],
 [ case "$withval" in
@@ -337,7 +348,8 @@ AC_SUBST(ETCDIR)
 AC_DEFINE_UNQUOTED(SILC_ETCDIR, "$ETCDIR")
 
 # help directory
-HELPDIR="help"
+#HELPDIR="help"
+HELPDIR="$silc_prefix/help"
 AC_ARG_WITH(helpdir,
 [  --with-helpdir[=PATH]   Directory for SILC help files [PREFIX/help]],
 [ case "$withval" in
@@ -355,7 +367,8 @@ AC_SUBST(HELPDIR)
 AC_DEFINE_UNQUOTED(SILC_HELPDIR, "$HELPDIR")
 
 # doc directory
-DOCDIR="doc"
+#DOCDIR="doc"
+DOCDIR="$silc_prefix/doc"
 AC_ARG_WITH(docdir,
 [  --with-docdir[=PATH]    Directory for SILC documentation [PREFIX/doc]],
 [ case "$withval" in
@@ -373,7 +386,8 @@ AC_SUBST(DOCDIR)
 AC_DEFINE_UNQUOTED(SILC_DOCDIR, "$DOCDIR")
 
 # SIM modules directory
-MODULESDIR="modules"
+#MODULESDIR="modules"
+MODULESDIR="$silc_prefix/modules"
 AC_ARG_WITH(simdir,
 [  --with-simdir[=PATH]    Directory for SIM modules [PREFIX/modules]],
 [ case "$withval" in
@@ -391,7 +405,8 @@ AC_SUBST(MODULESDIR)
 AC_DEFINE_UNQUOTED(SILC_MODULESDIR, "$MODULESDIR")
 
 # Logs directory
-LOGSDIR="logs"
+#LOGSDIR="logs"
+LOGSDIR="$silc_prefix/logs"
 AC_ARG_WITH(logsdir,
 [  --with-logsdir[=PATH]   Directory for Server logs [PREFIX/logs]],
 [ case "$withval" in
@@ -718,6 +733,8 @@ lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
 lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
+doc/example_silc.conf
+doc/example_silcd.conf
 )     
 
 if test "x$silc_dist" = "xsilc-client" || 

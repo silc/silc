@@ -1,3 +1,12 @@
+Sun Nov  4 11:43:53 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Better installation directory handling.  Configure module
+	  paths and other paths automatically to example_silc* files
+	  in doc/.  A patch by toma.
+
+	* Fixed compiler warning from MPI library, and from SILC RNG.
+	  A patch by johnny.
+
 Sat Nov  3 23:48:23 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Find correct make to use in prepare-clean.  A patch by
