@@ -307,15 +307,16 @@ AC_ARG_ENABLE(stack-trace,
 # Disable all assembler optimizations
 #
 AC_MSG_CHECKING(whether to enable assembler optimizations)
-summary_asm="no"
+want_asm="yes"
 AC_ARG_ENABLE(asm,
   [  --disable-asm           do not use assembler optimizations],
   [
     AC_MSG_RESULT(no)
+    want_asm="no"
   ],
   [
     AC_MSG_RESULT(yes)
-    summary_asm="yes"
+    want_asm="yes"
   ])
 
 
@@ -1092,12 +1093,6 @@ if test x$without_irssi = xfalse; then
   fi
 fi
 
-if test x$mp_gmp = xfalse; then
-  AC_CONFIG_SUBDIRS(lib/silcmath/mpi)
-fi
-
-#AC_CONFIG_SUBDIRS(lib/zlib)
-
 SILC_TOP_SRCDIR=`pwd`
 AC_SUBST(SILC_TOP_SRCDIR)
 #SILC_INSTALL_PREFIX=$ac_default_prefix
@@ -1117,6 +1112,8 @@ if test x$libtoolfix = xtrue; then
 fi
 AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
 
+# Included configure scripts
+AD_INCLUDE_CONFIGURE
 
 #
 # Makefile outputs
@@ -1133,9 +1130,6 @@ lib/silccore/Makefile
 lib/silccore/tests/Makefile
 lib/silccrypt/Makefile
 lib/silccrypt/tests/Makefile
-lib/silcmath/Makefile
-lib/silcmath/mpi/Makefile.defines
-lib/silcmath/mpi/Makefile.defines_int
 lib/silcsim/Makefile
 lib/silcske/Makefile
 lib/silcutil/Makefile
@@ -1145,6 +1139,7 @@ lib/silcutil/beos/Makefile
 lib/silcutil/os2/Makefile
 lib/silcutil/epoc/Makefile
 lib/silcutil/tests/Makefile
+lib/silcmath/Makefile
 lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
 doc/example_silcd.conf
@@ -1249,7 +1244,7 @@ fi
 echo " SIM support ...................: $sim_support"
 echo " IPv6 support ..................: $summary_ipv6"
 echo " Iconv support .................: $iconv_support"
-echo " Assembler optimizations .......: $summary_asm"
+echo " Assembler optimizations .......: $want_asm"
 
 mp="MPI"
 if test x$mp_gmp = xtrue; then
