@@ -394,6 +394,9 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
     if (!entry->nickname || !entry->username || !entry->userinfo) {
       SilcBuffer tmpbuf;
       unsigned short old_ident;
+
+      if (!entry->router)
+	continue;
       
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -805,6 +808,9 @@ silc_server_command_identify_check(SilcServerCommandContext cmd,
     if (!entry->nickname) {
       SilcBuffer tmpbuf;
       unsigned short old_ident;
+      
+      if (!entry->router)
+	continue;
       
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));

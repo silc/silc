@@ -11,6 +11,14 @@ Thu Feb  1 23:31:21 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  separately in the same function earlier.  Affects file
 	  silcd/packet_send.c and all channel packet sending functions.
 
+        * In USERS reply, res_argv[i] are not allocated, the table
+          is allocated.  Thus changed that free the table, not its
+          internals.
+
+	* In server's whois_check and identify_check if the client is
+	  locally connected do not send any WHOIS commands - they are not
+	  needed.
+
 Thu Feb  1 21:32:27 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed some minor bugs in client when sending WHOIS command.  The
