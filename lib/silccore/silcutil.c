@@ -24,6 +24,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/19 07:04:04  priikone
+ * 	Minor bug fix in silc_encode_pem
+ *
  * Revision 1.3  2000/07/10 05:34:40  priikone
  * 	Added PEM encoding/decoding functions.
  *
@@ -417,16 +420,16 @@ unsigned char *silc_decode_pem(unsigned char *pem, unsigned int pem_len,
     return NULL;
     break;
   case 2:
-    data[j] = bits >> 10;
+    data[j++] = bits >> 10;
     break;
   case 3:
     data[j++] = bits >> 16;
-    data[j] = (bits >> 8) & 0xff;
+    data[j++] = (bits >> 8) & 0xff;
     break;
   }
 
   if (ret_len)
-    *ret_len = j + 1;
+    *ret_len = j;
 
   return data;
 }
