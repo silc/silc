@@ -1,3 +1,8 @@
+Sat May  1 13:55:54 CEST 2004  Patrik Weiskircher <pat@icore.at>
+
+	* Couldn't detach and reattach twice, because of the previous
+	  commit. Affected file silcd/packet_receive.c
+
 Fri Apr 30 19:40:28 CEST 2004  Patrik Weiskircher <pat@icore.at>
 
 	* Added check to ignore Port value if Initiator is FALSE. 

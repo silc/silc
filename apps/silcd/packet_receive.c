@@ -3683,6 +3683,19 @@ void silc_server_resume_client(SilcServer server,
       return;
     }
 
+    if (detached_client->data.status & SILC_IDLIST_STATUS_RESUMED) {
+      SILC_LOG_ERROR(("Client %s (%s) tried to attach more than once, "
+ 	              "closing connection", sock->hostname, sock->ip));
+      silc_server_disconnect_remote(server, sock,
+                                    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+ 	                            "Resuming not possible");
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_free(client_id);
+
+      return;
+    }
+
     if (detached_client->resuming_client &&
 	detached_client->resuming_client != client) {
       SILC_LOG_ERROR(("Client %s (%s) tried to attach more than once, "
@@ -3845,6 +3858,9 @@ void silc_server_resume_client(SilcServer server,
     detached_client->data.status &= ~SILC_IDLIST_STATUS_RESUME_RES;
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     server->stat.my_detached--;
+
+    /* we are finished - reset resuming client */
+    detached_client->resuming_client = NULL;
 
     /* Check if anyone is watching this client */
     if (server->server_type == SILC_ROUTER)
