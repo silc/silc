@@ -127,8 +127,9 @@ least could be done.
 
  o Change the lib/silccore/silcpacket.[ch] interfaces (see ~/silcpacket).
 
- o Change SILC_TASK_CALLBACK to non-static, and remove the macro
-   SILC_TASK_CALLBACK_GLOBAL.
+ o Add abstract SilcStream and SilcSocketStream (see ~/silcstream).
+
+ o Change some of the SILC Net interfaces (see ~/silcnet).
 
  o Add DSS support.
 
