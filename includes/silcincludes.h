@@ -251,6 +251,7 @@ extern "C" {
 #include "silcconfig.h"
 #include "silcprotocol.h"
 #include "silcsockconn.h"
+#include "silcvcard.h"
 
 /* SILC core library includes */
 #include "silcstatus.h"

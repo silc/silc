@@ -249,8 +249,8 @@ int silc_buffer_format(SilcBuffer dst, ...);
  *
  * DESCRIPTION
  *
- *    Formats a buffer from a variable argument list.  Returns -1 on error
- *    and the length of the formatted buffer otherwise.
+ *    Unformats a buffer from a variable argument list.  Returns -1 on error
+ *    and the length of the unformatted buffer otherwise.
  *
  ***/
 int silc_buffer_unformat(SilcBuffer src, ...);
@@ -277,10 +277,28 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
  *
  * DESCRIPTION
  *
- *    Formats a buffer from a variable argument list indicated by the `ap'.
- *    Returns -1 on error and the length of the formatted buffer otherwise.
+ *    Unformats a buffer from a variable argument list indicated by the `ap'.
+ *    Returns -1 on error and the length of the unformatted buffer otherwise.
  *
  ***/
 int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_strformat
+ *
+ * SYNOPSIS
+ *
+ *   int silc_buffer_strformat(SilcBuffer dst, ...);
+ *
+ * DESCRIPTION
+ *
+ *   Formats a buffer from variable argument list of strings.  Eachs
+ *   string must be NULL-terminated and the variable argument list must
+ *   be end with SILC_STR_END argument.  This allows that a string in
+ *   the list can be NULL, in which case it is skipped.  This automatically
+ *   allocates the space for the buffer data but `dst' must be already
+ *   allocated by the caller.
+ *
+ ***/
+int silc_buffer_strformat(SilcBuffer dst, ...);
 
 #endif	/* !SILCBUFFMT_H */

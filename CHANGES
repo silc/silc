@@ -1,3 +1,13 @@
+Mon Oct 14 14:33:54 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_buffer_strformat which can be used to format
+	  strings into a buffer which size is automatically increased.
+	  Affected file lib/silcutil/silcbuffmt.[ch].
+
+	* Added implementation of VCard (RFC 2426) which can be used
+	  as part of Requested Attributes in WHOIS command.  Affected
+	  file lib/silcutil/silcvcard.[ch].
+
 Fri Oct 11 23:52:17 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Some strncat -> silc_strncat changes our the core and

@@ -499,3 +499,41 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
   silc_buffer_push(src, len);
   return len;
 }
+
+/* Formats strings into a buffer */
+
+int silc_buffer_strformat(SilcBuffer dst, ...)
+{
+  int len = dst->truelen;
+  va_list va;
+
+  va_start(va, dst);
+
+  /* Parse the arguments by formatting type. */
+  while(1) {
+    char *string = va_arg(va, char *);
+
+    if (!string)
+      continue;
+    if (string == (char *)SILC_BUFFER_PARAM_END)
+      goto ok;
+
+    dst->head = silc_realloc(dst->head, sizeof(*dst->head) *
+			     (strlen(string) + len));
+    memcpy(dst->head + len, string, strlen(string));
+    len += strlen(string);
+  }
+
+  SILC_LOG_DEBUG(("Error occured while formatting buffer"));
+  va_end(va);
+  return -1;
+
+ ok:
+  dst->end = dst->head + len;
+  dst->tail = dst->data = dst->end;
+  dst->len = 0;
+  dst->truelen = len;
+
+  va_end(va);
+  return len;
+}
