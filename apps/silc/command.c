@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/06 07:14:36  priikone
+ * 	Fixes to NAMES command handling.
+ * 	Fixes when leaving from channel.
+ *
  * Revision 1.5  2000/07/05 06:12:05  priikone
  * 	Global cosmetic changes.
  *
@@ -310,7 +314,7 @@ SILC_CLIENT_CMD_FUNC(server)
     port = atoi(cmd->argv[1] + 1 + len);
   } else {
     hostname = cmd->argv[1];
-    port = 334;
+    port = 706;
   }
 
   /* Connect asynchronously to not to block user interface */
@@ -389,8 +393,8 @@ SILC_CLIENT_CMD_FUNC(invite)
   channel_id = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
 
   buffer = silc_command_encode_payload_va(SILC_COMMAND_INVITE, 2,
-					  client_id, SILC_ID_CLIENT_LEN,
-					  channel_id, SILC_ID_CHANNEL_LEN);
+					  1, client_id, SILC_ID_CLIENT_LEN,
+					  2, channel_id, SILC_ID_CHANNEL_LEN);
   silc_client_packet_send(cmd->client, cmd->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
@@ -475,7 +479,7 @@ SILC_CLIENT_CMD_FUNC(ping)
 
   /* Send the command */
   buffer = silc_command_encode_payload_va(SILC_COMMAND_PING, 1, 
-					  win->remote_id_data, 
+					  1, win->remote_id_data, 
 					  SILC_ID_SERVER_LEN);
   silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
@@ -636,27 +640,32 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   win = (SilcClientWindow)cmd->sock->user_data;
 
-  if (cmd->argv[1][0] == '*')
+  if (cmd->argv[1][0] == '*') {
+    if (!win->current_channel) {
+      silc_say(cmd->client, "You are not on any chanenl");
+      goto out;
+    }
     name = win->current_channel->channel_name;
-  else
+  } else {
     name = cmd->argv[1];
+  }
 
   if (!win->current_channel) {
-    silc_say(cmd->client, "You are not on that channel", name);
+    silc_say(cmd->client, "You are not on that channel");
     goto out;
   }
 
   /* Get the Channel ID of the channel */
   silc_idcache_find_by_data(CIDC(name[0]), CIDCC(name[0]), name, &id_cache);
   if (!id_cache) {
-    silc_say(cmd->client, "You are not on that channel", name);
+    silc_say(cmd->client, "You are not on that channel");
     goto out;
   }
 
   /* Send LEAVE command to the server */
   id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
   buffer = silc_command_encode_payload_va(SILC_COMMAND_LEAVE, 1, 
-					  id_string, SILC_ID_CHANNEL_LEN);
+					  1, id_string, SILC_ID_CHANNEL_LEN);
   silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
@@ -726,12 +735,23 @@ SILC_CLIENT_CMD_FUNC(names)
   /* Send NAMES command to the server */
   id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
   buffer = silc_command_encode_payload_va(SILC_COMMAND_NAMES, 1, 
-					  id_string, SILC_ID_CHANNEL_LEN);
+					  1, id_string, SILC_ID_CHANNEL_LEN);
   silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_free(id_string);
+
+  /* Register dummy pending command that will tell the reply command
+     that user called this command. Server may send reply to this command
+     even if user did not send this command thus we want to handle things
+     differently when user sent the command. This is dummy and won't be
+     execute. */
+  /* XXX this is kludge and should be removed after pending command reply 
+     support is added. Currently only commands may be pending not command
+     replies. */
+  silc_client_command_pending(SILC_COMMAND_NAMES, silc_client_command_names,
+			      NULL);
 
  out:
   silc_client_command_free(cmd);

@@ -24,6 +24,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/06 07:14:36  priikone
+ * 	Fixes to NAMES command handling.
+ * 	Fixes when leaving from channel.
+ *
  * Revision 1.4  2000/07/05 06:12:34  priikone
  * 	Tweaked NAMES command reply for better. Should now show users
  * 	joined to a channel.
@@ -201,9 +205,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
     if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
-      tmp += 2;
-      silc_say(cmd->client, "%s: %s", tmp,
-	       silc_client_command_status_message(status));
+      /* Take nickname which may be provided */
+      tmp = silc_command_get_arg_type(cmd->payload, 3, NULL);
+      if (tmp)
+	silc_say(cmd->client, "%s: %s", tmp,
+		 silc_client_command_status_message(status));
+      else
+	silc_say(cmd->client, "%s",
+		 silc_client_command_status_message(status));
       goto out;
     } else {
       silc_say(cmd->client, "%s", silc_client_command_status_message(status));
@@ -297,9 +306,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
     if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
-      tmp += 2;
-      silc_say(cmd->client, "%s: %s", tmp,
-	       silc_client_command_status_message(status));
+      /* Take nickname which may be provided */
+      tmp = silc_command_get_arg_type(cmd->payload, 3, NULL);
+      if (tmp)
+	silc_say(cmd->client, "%s: %s", tmp,
+		 silc_client_command_status_message(status));
+      else
+	silc_say(cmd->client, "%s",
+		 silc_client_command_status_message(status));
       goto out;
     } else {
       silc_say(cmd->client, "%s", silc_client_command_status_message(status));
@@ -502,14 +516,25 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 
   /* Get channel name */
   tmp = silc_command_get_arg_type(cmd->payload, 2, NULL);
+  if (!tmp) {
+    silc_say(cmd->client, "Cannot join channel: Bad reply packet");
+    goto out;
+  }
   channel_name = strdup(tmp);
 
   /* Get Channel ID */
   id_string = silc_command_get_arg_type(cmd->payload, 3, NULL);
+  if (!id_string) {
+    silc_say(cmd->client, "Cannot join channel: Bad reply packet");
+    goto out;
+  }
 
   /* Get channel mode */
   tmp = silc_command_get_arg_type(cmd->payload, 4, NULL);
-  SILC_GET32_MSB(mode, tmp);
+  if (tmp)
+    SILC_GET32_MSB(mode, tmp);
+  else
+    mode = 0;
 
   /* Get topic */
   topic = silc_command_get_arg_type(cmd->payload, 5, NULL);
@@ -589,14 +614,17 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   SilcIDCache *id_cache = NULL;
   SilcChannelEntry channel;
   SilcChannelID *channel_id = NULL;
+  SilcBuffer client_id_list;
   unsigned char *tmp;
   char *name_list;
-  int i, len;
+  int i, len1, len2, list_count = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
 #define CIDC(x) win->channel_id_cache[(x)]
 #define CIDCC(x) win->channel_id_cache_count[(x)]
+#define CLC(x) win->client_id_cache[(x) - 32]
+#define CLCC(x) win->client_id_cache_count[(x) - 32]
 
   tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
   SILC_GET16_MSB(status, tmp);
@@ -607,14 +635,29 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
 
   /* Get channel ID */
   tmp = silc_command_get_arg_type(cmd->payload, 2, NULL);
-  if (!tmp)
+  if (!tmp) {
+    silc_say(cmd->client, "Cannot get user list: Bad reply packet");
     goto out;
+  }
   channel_id = silc_id_str2id(tmp, SILC_ID_CHANNEL);
 
   /* Get the name list of the channel */
-  name_list = silc_command_get_arg_type(cmd->payload, 3, &len);
-  if (!name_list)
+  name_list = silc_command_get_arg_type(cmd->payload, 3, &len1);
+  if (!name_list) {
+    silc_say(cmd->client, "Cannot get user list: Bad reply packet");
     goto out;
+  }
+
+  /* Get Client ID list */
+  tmp = silc_command_get_arg_type(cmd->payload, 4, &len2);
+  if (!tmp) {
+    silc_say(cmd->client, "Cannot get user list: Bad reply packet");
+    goto out;
+  }
+
+  client_id_list = silc_buffer_alloc(len2);
+  silc_buffer_pull_tail(client_id_list, len2);
+  silc_buffer_put(client_id_list, tmp, len2);
 
   /* Get the channel name */
   for (i = 0; i < 96; i++) {
@@ -629,10 +672,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   
   channel = (SilcChannelEntry)id_cache->context;
 
-  /* If there are pending commands set for this command reply we will
-     execute them and let them handle the received name list. */
+  /* If there is pending command we know that user has called this command
+     and we will handle the name list differently. */
   if (cmd->callback) {
-    SILC_CLIENT_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_WHOIS);
+    /* We will resolve all the necessary information about the people
+       on the channel. Only after that will we display the user list. */
+    for (i = 0; i < len1; i++) {
+      /* XXX */
+
+    }
+    silc_client_command_pending_del(SILC_COMMAND_NAMES);
   } else {
     /* there is no pending callback it means that this command reply
        has been received without calling the command, ie. server has sent
@@ -640,12 +689,40 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
        with SILC servers that sends NAMES reply after joining to a channel. */
 
     /* Remove commas from list */
-    for (i = 0; i < len; i++)
-      if (name_list[i] == ',')
+    for (i = 0; i < len1; i++)
+      if (name_list[i] == ',') {
 	name_list[i] = ' ';
+	list_count++;
+      }
 
     silc_say(cmd->client, "Users on %s: %s", channel->channel_name, name_list);
   }
+
+  /* Cache the received name list and client ID's. This cache expires
+     whenever server sends notify message to channel. It means to things;
+     some user has joined or leaved the channel. */
+  for (i = 0; i < list_count; i++) {
+    int nick_len = strcspn(name_list, " ");
+    char *nickname = silc_calloc(nick_len, sizeof(*nickname));
+    SilcClientID *client_id;
+    SilcClientEntry client;
+
+    memcpy(nickname, name_list, nick_len);
+    client_id = silc_id_str2id(client_id_list->data, SILC_ID_CLIENT_LEN);
+    silc_buffer_pull(client_id_list, SILC_ID_CLIENT_LEN);
+
+    client = silc_calloc(1, sizeof(*client));
+    client->id = client_id;
+    client->nickname = nickname;
+
+    CLCC(nickname[0]) = silc_idcache_add(&CLC(nickname[0]), CLCC(nickname[0]),
+					 nickname, SILC_ID_CLIENT, 
+					 client_id, (void *)client);
+
+    name_list = name_list + nick_len + 1;
+  }
+
+  silc_buffer_free(client_id_list);
 
  out:
   if (channel_id)
@@ -653,6 +730,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   silc_client_command_reply_free(cmd);
 #undef CIDC
 #undef CIDCC
+#undef CLC
+#undef CLCC
 }
 
 /* Private message received. This processes the private message and

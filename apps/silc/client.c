@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/06 07:14:36  priikone
+ * 	Fixes to NAMES command handling.
+ * 	Fixes when leaving from channel.
+ *
  * Revision 1.4  2000/07/05 06:12:05  priikone
  * 	Global cosmetic changes.
  *
@@ -2013,6 +2017,8 @@ void silc_client_close_connection(SilcClient client,
   if (sock->user_data) {
     win = (SilcClientWindow)sock->user_data;
 
+    /* XXX Free all client entries and channel entries. */
+
     /* Clear ID caches */
     for (i = 0; i < 96; i++)
       silc_idcache_del_all(&win->client_id_cache[i], 
@@ -2050,6 +2056,7 @@ void silc_client_close_connection(SilcClient client,
     win->local_id = NULL;
     win->local_id_data = NULL;
     win->remote_host = NULL;
+    win->current_channel = NULL;
   }
 
   if (sock->protocol) {
