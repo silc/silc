@@ -3,6 +3,35 @@ Sun Oct 27 11:44:32 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Merged c0ffee's /set heartbeat patch to Irssi SILC client.
 	  Affected files irssi/src/silc/core/silc-core, silc-server.c.
 
+	* Fixed the heartbeat sending in Irssi SILC client.  Moved
+	  the silc_client_packet_send to silcclient.h for application
+	  usage.  Affected files lib/silcclient/client_internal.h
+	  lib/silcclient/silcclient.h.
+
+	* Fixed a bug in query resolving in server.  Used wrong 
+	  variable in a for loop and crashed.  Affected file is
+	  silcd/server_query.c.
+
+	* Server constructs requested attributes only to locally
+	  connected clients.  Affected file silcd/server_query.c.
+	  Bug #36.
+
+	* Fixed a bug when sending resolving from router to server
+	  with requested attributes.  The constructed WHOIS command
+	  was incorrect.  Affected file silcd/server_query.c.
+	  Bug #38.
+
+	* Fixed Requested Attributes saving in WHOIS command reply.
+	  The length of the data buffer must be saved too.  Affected
+	  file silcd/command_reply.c.
+
+	* Update the client entry's servername after detaching is
+	  over.  Affected file silcd/packet_receive.c.  Bug #37.
+
+	* Resolve incomplete client entrys in CUMODE_CHANGE and
+	  CMODE_CHANGE notifys.  Affected file is 
+	  lib/silcclient/client_notify.c.  Bug #42.
+
 Thu Oct 24 12:22:35 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed channel key packet processing bug on backup router
