@@ -1,3 +1,9 @@
+Sun Mar  3 18:37:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the buffer formatting and unformatting routines to
+	  check the size of 64 bits types with sizeof().  Affected
+	  file is lib/silcutil/silcbuffmt.c.
+
 Mon Feb 25 17:19:05 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed 0.6.x backwards support.

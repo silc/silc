@@ -120,20 +120,20 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char xf[8];
 	SilcInt64 x = va_arg(ap, SilcInt64);
-	HAS_SPACE(dst, 8);
+	HAS_SPACE(dst, sizeof(SilcInt64));
 	SILC_PUT64_MSB(x, xf);
-	silc_buffer_put(dst, xf, 8);
-	silc_buffer_pull(dst, 8);
+	silc_buffer_put(dst, xf, sizeof(SilcInt64));
+	silc_buffer_pull(dst, sizeof(SilcInt64));
 	break;
       }
     case SILC_BUFFER_PARAM_UI64_INT:
       {
 	unsigned char xf[8];
 	SilcUInt64 x = va_arg(ap, SilcUInt64);
-	HAS_SPACE(dst, 8);
+	HAS_SPACE(dst, sizeof(SilcUInt64));
 	SILC_PUT64_MSB(x, xf);
-	silc_buffer_put(dst, xf, 8);
-	silc_buffer_pull(dst, 8);
+	silc_buffer_put(dst, xf, sizeof(SilcUInt64));
+	silc_buffer_pull(dst, sizeof(SilcUInt64));
 	break;
       }
     case SILC_BUFFER_PARAM_UI8_STRING:
@@ -273,19 +273,19 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
     case SILC_BUFFER_PARAM_SI64_INT:
       {
 	SilcInt64 *x = va_arg(ap, SilcInt64 *);
-	HAS_SPACE(src, 8);
+	HAS_SPACE(src, sizeof(SilcInt64));
 	if (x)
 	  SILC_GET64_MSB(*x, src->data);
-	silc_buffer_pull(src, 8);
+	silc_buffer_pull(src, sizeof(SilcInt64));
 	break;
       }
     case SILC_BUFFER_PARAM_UI64_INT:
       {
 	SilcUInt64 *x = va_arg(ap, SilcUInt64 *);
-	HAS_SPACE(src, 8);
+	HAS_SPACE(src, sizeof(SilcUInt64));
 	if (x)
 	  SILC_GET64_MSB(*x, src->data);
-	silc_buffer_pull(src, 8);
+	silc_buffer_pull(src, sizeof(SilcUInt64));
 	break;
       }
     case SILC_BUFFER_PARAM_UI8_STRING:
