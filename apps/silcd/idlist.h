@@ -429,6 +429,11 @@ silc_idlist_add_server(SilcIDList id_list,
 		       SilcCipher send_key, SilcCipher receive_key,
 		       SilcPKCS pkcs, SilcHmac hmac, 
 		       SilcPublicKey public_key, void *connection);
+SilcServerEntry
+silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id);
+SilcServerEntry
+silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
+			      SilcServerID *new_id);
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 		       char *userinfo, SilcClientID *id, 
@@ -441,10 +446,13 @@ SilcClientEntry
 silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
 				    char *server);
 SilcClientEntry
-silc_idlist_find_client_by_hash(SilcIDList id_list, unsigned char *hash,
+silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
 				SilcHash md5hash);
 SilcClientEntry
 silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id);
+SilcClientEntry
+silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
+			      SilcClientID *new_id);
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
