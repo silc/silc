@@ -244,6 +244,8 @@ extern "C" {
 #include "silcnet.h"
 #include "silcfileutil.h"
 #include "silcstrutil.h"
+#include "silcutf8.h"
+#include "silcstringprep.h"
 #include "silcutil.h"
 #include "silcconfig.h"
 #include "silcprotocol.h"
