@@ -1124,7 +1124,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 		   client_mode_list->head);
 
   /* Save channel key */
-  if (keyp && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
+  if (keyp)
     silc_client_save_channel_key(cmd->client, conn, keyp, channel);
 
   /* Get founder key */

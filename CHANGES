@@ -5,6 +5,15 @@ Sat Feb 28 16:25:09 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 	  Affected files are lib/silcclient/silcclient.h and
 	  client_channel.c.
 
+	* Added support for using channel private keys in SILC
+	  Client Library even if the private key mode is not set
+	  on the channel.  Affected file lib/silcclient/client_channel.c.
+
+	* The channel private key used to decrypt message is now
+	  delivered to the application in the 'channel_message√' client
+	  operation.  Affected files are lib/silcclient/silcclient.h
+	  and client_channel.c.
+
 Fri Feb 27 11:25:26 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the JOIN command calling when called with both

@@ -131,7 +131,7 @@ silc_print_nick_change_channel(SILC_SERVER_REC *server, const char *channel,
 		   channel, newnick, MSGLEVEL_NICKS))
     return;
 
-  signal_emit("message silc appears", 5, server, channel, 
+  signal_emit("message silc appears", 5, server, channel,
   		oldnick, newnick, address);
 }
 
@@ -364,6 +364,7 @@ void silc_emit_mime_sig(SILC_SERVER_REC *server, WI_ITEM_REC *item,
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcChannelEntry channel,
 			  SilcMessagePayload payload,
+			  SilcChannelPrivateKey key,
 			  SilcMessageFlags flags, const unsigned char *message,
 			  SilcUInt32 message_len)
 {
@@ -559,23 +560,23 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
                        cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
-        signal_emit("message silc signed_private_action", 6, server, cp, 
+        signal_emit("message silc signed_private_action", 6, server, cp,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
-		    sender->username ? userhost : NULL, 
+		    sender->username ? userhost : NULL,
 		    NULL, verified);
       else
-        signal_emit("message silc private_action", 5, server, cp, 
+        signal_emit("message silc private_action", 5, server, cp,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
       silc_free(dm);
     } else {
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
-        signal_emit("message silc signed_private_action", 6, server, message, 
+        signal_emit("message silc signed_private_action", 6, server, message,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
-		    sender->username ? userhost : NULL, 
+		    sender->username ? userhost : NULL,
 		    NULL, verified);
       else
-        signal_emit("message silc private_action", 5, server, message, 
+        signal_emit("message silc private_action", 5, server, message,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
     }
@@ -591,23 +592,23 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
                        cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
-        signal_emit("message silc signed_private_notice", 6, server, cp, 
+        signal_emit("message silc signed_private_notice", 6, server, cp,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
-		    sender->username ? userhost : NULL, 
+		    sender->username ? userhost : NULL,
 		    NULL, verified);
       else
-        signal_emit("message silc private_notice", 5, server, cp, 
+        signal_emit("message silc private_notice", 5, server, cp,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
       silc_free(dm);
     } else {
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
-        signal_emit("message silc signed_private_notice", 6, server, message, 
+        signal_emit("message silc signed_private_notice", 6, server, message,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
-		    sender->username ? userhost : NULL, 
+		    sender->username ? userhost : NULL,
 		    NULL, verified);
       else
-        signal_emit("message silc private_notice", 5, server, message, 
+        signal_emit("message silc private_notice", 5, server, message,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
     }
@@ -634,7 +635,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   		  sender->username ? userhost : NULL);
       silc_free(dm);
       return;
-    } 
+    }
 
     if (flags & SILC_MESSAGE_FLAG_SIGNED)
       signal_emit("message signed_private", 5, server, message,
@@ -644,7 +645,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       signal_emit("message private", 4, server, message,
               sender->nickname ? sender->nickname : "[<unknown>]",
               sender->username ? userhost : NULL);
-  } 
+  }
 }
 
 /* Notify message to the client. The notify arguments are sent in the
@@ -750,7 +751,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     client_entry = va_arg(va, SilcClientEntry);
     channel = va_arg(va, SilcChannelEntry);
-    
+
     memset(buf, 0, sizeof(buf));
     if (client_entry->username)
       snprintf(buf, sizeof(buf) - 1, "%s@%s",
@@ -808,9 +809,9 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     /*
      * Changed topic.
      */
-    
+
     SILC_LOG_DEBUG(("Notify: TOPIC_SET"));
-    
+
     idtype = va_arg(va, int);
     entry = va_arg(va, void *);
     tmp = va_arg(va, char *);
@@ -820,14 +821,14 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
-    
+
       g_free_not_null(chanrec->topic);
-    
+
       chanrec->topic = *tmp == '\0' ? NULL : g_strdup(tmp);
       signal_emit("channel topic changed", 1, chanrec);
-    
+
     }
-    
+
     if (idtype == SILC_ID_CLIENT) {
       client_entry = (SilcClientEntry)entry;
       memset(buf, 0, sizeof(buf));
@@ -845,7 +846,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       signal_emit("message topic", 5, server, channel->channel_name,
         	  tmp, channel->channel_name, channel->channel_name);
     }
-    
+
     silc_free(tmp);
     break;
 
@@ -1230,7 +1231,7 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
   switch (status) {
   case SILC_CLIENT_CONN_SUCCESS:
     /* We have successfully connected to server */
-    if ((client->nickname != NULL) && 
+    if ((client->nickname != NULL) &&
         (strcmp(client->nickname, client->username)))
       silc_queue_enable(conn); /* enable queueing until we have our nick */
     server->connected = TRUE;
@@ -2403,7 +2404,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	return;
 
       /* Print the channel public key list */
-      signal_emit("message silc pubkeys", 3, 
+      signal_emit("message silc pubkeys", 3,
       			server, channel_entry, channel_pubkeys);
     }
     break;

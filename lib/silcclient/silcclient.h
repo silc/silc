@@ -580,7 +580,8 @@ typedef struct {
      (like it may tell the message is multimedia message). */
   void (*channel_message)(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcChannelEntry channel,
-			  SilcMessagePayload payload, SilcMessageFlags flags,
+			  SilcMessagePayload payload,
+			  SilcChannelPrivateKey key, SilcMessageFlags flags,
 			  const unsigned char *message,
 			  SilcUInt32 message_len);
 
@@ -2030,15 +2031,14 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
  *
  * DESCRIPTION
  *
- *    Adds private key for channel. This may be set only if the channel's mode
- *    mask includes the SILC_CHANNEL_MODE_PRIVKEY. This returns FALSE if the
- *    mode is not set. When channel has private key then the messages are
- *    encrypted using that key. All clients on the channel must also know the
- *    key in order to decrypt the messages. However, it is possible to have
- *    several private keys per one channel. In this case only some of the
- *    clients on the channel may know the one key and only some the other key.
- *    The `name' can be application given name for the key.  This returns
- *    the created key to the 'ret_key' pointer if it is non-NULL;
+ *    Adds private key for channel. When channel has private key then the
+ *    messages are encrypted using that key. All clients on the channel
+ *    must also know the key in order to decrypt the messages. However,
+ *    it is possible to have several private keys per one channel. In this
+ *    case only some of the clients on the channel may know the one key
+ *    and only some the other key.  The `name' can be application given
+ *    name for the key.  This returns the created key to the 'ret_key'
+ *    pointer if it is non-NULL;
  *
  *    If `cipher' and/or `hmac' is NULL then default values will be used
  *    (aes-256-cbc for cipher and hmac-sha1-96 for hmac).
