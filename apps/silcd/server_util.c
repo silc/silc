@@ -923,7 +923,7 @@ bool silc_server_channel_has_local(SilcChannelEntry channel)
 
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
-    if (!chl->client->router) {
+    if (SILC_IS_LOCAL(chl->client)) {
       silc_hash_table_list_reset(&htl);
       return TRUE;
     }
