@@ -73,6 +73,7 @@
 							       users */
 #define SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS 0x00000010 /* Block messages
 							       from robots */
+#define SILC_CHANNEL_UMODE_QUIET           0x00000002 /* user is quiet */
 /***/
 
 /****d* silccore/Modes/SilcUserMode

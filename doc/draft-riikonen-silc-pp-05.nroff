@@ -1515,12 +1515,13 @@ UTF-8 [RFC2279] encoded.
 
       The <Client ID> is the user's Client ID which is being watched,
       and the <nickname> is its nickname.  If the client just
-      changed the nickname, then <nickname> is the new nickname.
-      The <user mode> is the user's current user mode.  The <Notify
-      Type> can be same as the Notify Payload's Notify Type, and is
-      16 bit MSB first order value.  If provided it may indicate the
-      notify that occurred for the client.  If client logged in to the
-      network the <Notify Type> MUST NOT be present.
+      changed the nickname, then <nickname> is the new nickname, but
+      the <Client ID> is the old client ID.  The <user mode> is the
+      user's current user mode.  The <Notify Type> can be same as the
+      Notify Payload's Notify Type, and is 16 bit MSB first order value.
+      If provided it may indicate the notify that occurred for the
+      client.  If client logged in to the network the <Notify Type>
+      MUST NOT be present.
 .in 3
 
 Notify types starting from 16384 are reserved for private notify

@@ -43,6 +43,12 @@ TODO/bugs In SILC Server
 	o JOIN (check that joining is allowed)
 	o SIGNOFF (maybe should check that notifier owns the client)
 
+ o Implement the SILC_CUMODE_QUIET user mode (Do this to 0.9.x).
+
+ o Implement the <Requested Attributes> and the Attribute Payload to
+   the core library, client and server.  Maybe implementations of
+   RFC 2425 and RFC 2426 to make it complete.
+
  o Backup router related issues (Fix this to 1.0):
 
  	o Channel user mode changes are notified unnecessarely when
@@ -111,9 +117,3 @@ TODO in SILC Protocol
 
  17. Cell wide channel founder support, and permanent channels when
      founder mode set.
-
- 24. Implement the <Requested Attributes> and the Attribute Payload to
-     the core library, client and server.
-
- 27. Quiet user mode to quiet a user on channel, settable by chan 
-     op/founder?

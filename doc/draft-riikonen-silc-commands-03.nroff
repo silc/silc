@@ -1487,12 +1487,22 @@ List of all defined commands in SILC follows.
            0x00000010    SILC_CUMODE_BLOCK_MESSAGES_ROBOTS
 
               Marks that the client wishes not to receive any channel
-              messages sent from robots.  Messages sent by Users with
+              messages sent from robots.  Messages sent by users with
               the SILC_UMODE_ROBOT user mode set are not delivered.
               Client MAY set and unset this mode to itself.  Client MUST
               NOT set it to anyone else.  When this mode is set server
               MUST NOT deliver channel messages that are sent by robots
               to this client.
+
+
+           0x00000020    SILC_CUMODE_QUIET
+
+              Marks that the client cannot talk on the channel.  This
+              mode can be set by channel operator or channel founder to
+              some other user that is not operator or founder.  The
+              target client MUST NOT unset this mode.  When this mode
+              is set the server MUST drop messages sent by this client
+              to the channel.
 
 
         Reply messages to the command:
