@@ -492,7 +492,7 @@ static CONFIG_REC *parse_configfile(const char *fname)
 	char *real_fname;
 
 	real_fname = fname != NULL ? g_strdup(fname) :
-		g_strdup_printf("%s"G_DIR_SEPARATOR_S".irssi"
+		g_strdup_printf("%s"G_DIR_SEPARATOR_S".silc"
 				G_DIR_SEPARATOR_S"config", g_get_home_dir());
 
 	if (stat(real_fname, &statbuf) == 0)

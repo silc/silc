@@ -54,24 +54,22 @@ rm -f silc/Makefile.in silc/log* silc/*.log
 rm -f aclocal.m4
 rm -f config.status
 rm -f configure
-if [ -d irssi ]; then
-  cd irssi
-  rm -f COPYING
-  rm -f INSTALL
-  rm -f Makefile.in
-  rm -f */Makefile.in
-  rm -f */*/Makefile.in
-  rm -f */*/*/Makefile.in
-  rm -f */*/*/*/Makefile.in
-  rm -f default-theme.h
-  rm -f libtool-shared
-  rm -f stamp-*
-  rm -f docs/startup*.txt
-  cd docs/help
-  cp Makefile.am.gen ..
-  rm -f * 2>/dev/null
-  mv ../Makefile.am.gen .
-  cd ../..
-  rm -f docs/help/in/Makefile.am
-fi
+cd irssi
+rm -f COPYING
+rm -f INSTALL
+rm -f Makefile.in
+rm -f */Makefile.in
+rm -f */*/Makefile.in
+rm -f */*/*/Makefile.in
+rm -f */*/*/*/Makefile.in
+rm -f default-theme.h
+rm -f libtool-shared
+rm -f stamp-*
+rm -f docs/startup*.txt
+cd docs/help
+cp Makefile.am.gen ..
+rm -f * 2>/dev/null
+mv ../Makefile.am.gen .
+cd ../..
+rm -f docs/help/in/Makefile.am
 echo "Done."

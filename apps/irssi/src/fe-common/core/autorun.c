@@ -31,8 +31,8 @@ static void sig_autorun(void)
 	LINEBUF_REC *buffer = NULL;
 	int f, ret, recvlen;
 
-	/* open ~/.irssi/startup and run all commands in it */
-	path = g_strdup_printf("%s/.irssi/startup", g_get_home_dir());
+	/* open ~/.silc/startup and run all commands in it */
+	path = g_strdup_printf("%s/.silc/startup", g_get_home_dir());
 	f = open(path, O_RDONLY);
 	g_free(path);
 	if (f == -1) {

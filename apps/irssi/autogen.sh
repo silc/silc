@@ -88,9 +88,9 @@ esac
 rm -f aclocal.m4
 if grep "^AM_PROG_LIBTOOL" configure.in >/dev/null; then
   echo "Running libtoolize..."
-  libtoolize --force --copy
+  libtoolize --copy
 fi
-aclocalinclude="$ACLOCAL_FLAGS -I ."
+aclocalinclude="$ACLOCAL_FLAGS"
 echo "Running aclocal $aclocalinclude ..."
 aclocal $aclocalinclude
 if grep "^AM_CONFIG_HEADER" configure.in >/dev/null; then

@@ -338,7 +338,7 @@ static int silc_verify_public_key(SilcClient client,
 static unsigned char *silc_ask_passphrase(SilcClient client,
 					  SilcClientConnection conn)
 {
-	return NULL;
+  return NULL;
 }
 
 /* Find authentication method and authentication data by hostname and
@@ -480,6 +480,71 @@ static SERVER_CONNECT_REC *create_server_connect(void)
   return g_malloc0(sizeof(SILC_SERVER_CONNECT_REC));
 }
 
+/* Checks user information and saves them to the config file it they
+   do not exist there already. */
+
+static void silc_init_userinfo(void)
+{
+  const char *set, *nick, *user_name;
+  char *str;   
+        
+  /* check if nick/username/realname wasn't read from setup.. */
+  set = settings_get_str("real_name");
+  if (set == NULL || *set == '\0') {
+    str = g_getenv("SILCNAME");
+    if (!str)
+      str = g_getenv("IRCNAME");
+    settings_set_str("real_name",
+		     str != NULL ? str : g_get_real_name());
+  }
+ 
+  /* username */
+  user_name = settings_get_str("user_name");
+  if (user_name == NULL || *user_name == '\0') {
+    str = g_getenv("SILCUSER");
+    if (!str)
+      str = g_getenv("IRCUSER");
+    settings_set_str("user_name",
+		     str != NULL ? str : g_get_user_name());
+    
+    user_name = settings_get_str("user_name");
+  }
+         
+  /* nick */
+  nick = settings_get_str("nick");
+  if (nick == NULL || *nick == '\0') {
+    str = g_getenv("SILCNICK");
+    if (!str)
+      str = g_getenv("IRCNICK");
+    settings_set_str("nick", str != NULL ? str : user_name);
+    
+    nick = settings_get_str("nick");
+  }
+                
+  /* alternate nick */
+  set = settings_get_str("alternate_nick");
+  if (set == NULL || *set == '\0') {
+    if (strlen(nick) < 9)
+      str = g_strconcat(nick, "_", NULL);
+    else { 
+      str = g_strdup(nick);
+      str[strlen(str)-1] = '_';
+    }
+    settings_set_str("alternate_nick", str);
+    g_free(str);
+  }
+
+  /* host name */
+  set = settings_get_str("hostname");
+  if (set == NULL || *set == '\0') {
+    str = g_getenv("SILCHOST");
+    if (!str)
+      str = g_getenv("IRCHOST");
+    if (str != NULL)
+      settings_set_str("hostname", str);
+  }
+}
+
 /* Init SILC. Called from src/fe-text/silc.c */
 
 void silc_core_init(void)
@@ -513,7 +578,6 @@ void silc_core_init_finish(void)
     silc_hmac_register_default();
     silc_client_create_key_pair(opt_pkcs, opt_bits, 
 				NULL, NULL, NULL, NULL, NULL);
-    silc_free(opt_pkcs);
     exit(0);
   }
 
@@ -524,7 +588,6 @@ void silc_core_init_finish(void)
     silc_hash_register_default();
     silc_hmac_register_default();
     silc_client_show_key(opt_keyfile);
-    silc_free(opt_keyfile);
     exit(0);
   }
 
@@ -595,6 +658,7 @@ void silc_core_init_finish(void)
   chat_protocol_register(rec);
   g_free(rec);
 
+  silc_init_userinfo();
   silc_server_init();
   silc_channels_init();
   silc_queries_init();

@@ -1,3 +1,14 @@
+Thu May 24 19:08:55 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Imported a modified version of Irssi client to the source tree.
+	  The Irssi will be used to create a new client called
+	  Irssi SILC.  Imported to irssi/.
+
+	  Added silc_core_init_finish function to the Irssi.  Affected
+	  file irssi/configure.in.
+
+	  A lot changes in the Makefile.ams around the irssi tree.
+
 Tue May 22 22:23:49 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Do not rehash if the new size is same as the old size of the

@@ -148,10 +148,12 @@ static void textui_finish_init(void)
 #endif
 	signal_emit("irssi init finished", 0);
 
+#if 0
 	if (display_firsttimer) {
 		printtext_window(active_win, MSGLEVEL_CLIENTNOTICE,
 				 "%s", firsttimer_text);
 	}
+#endif
 
 	screen_refresh_thaw();
 }

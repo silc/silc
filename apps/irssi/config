@@ -1,33 +1,18 @@
 lservers = (
-  { address = "irc.stealth.net"; chatnet = IRCNet; port = 6668; },
-  { address = "irc.efnet.net"; chatnet = EFNet; port = 6667; },
-  { address = "irc.undernet.org"; chatnet = Undernet; port = 6667; },
-  { address = "irc.dal.net"; chatnet = DALnet; port = 6667; },
-  { address = "irc.openprojects.net"; chatnet = OPN; port = 6667; },
-  { address = "irc.ptlink.net"; chatnet = PTlink; port = 6667; }
-  { address = "silc.pspt.fi"; chatnet = SILC; port = 706; }
+  { address = "silc.pspt.fi"; chatnet = SILCNet; port = 706; }
 );
 
 chatnets = {
-  IRCNet = { type = "IRC"; max_kicks = 4; max_modes = 3; max_msgs = 5; max_whois = 4; };
-  EFNet = { type = "IRC"; max_kicks = 4; max_modes = 4; max_msgs = 3; };
-  Undernet = { type = "IRC"; max_kicks = 4; max_modes = 3; max_msgs = 3; max_query_chans = "1"; };
-  DALNet = { type = "IRC"; max_kicks = 4; max_modes = 6; max_msgs = 3; };
-  OPN = { type = "IRC"; max_kicks = 1; max_modes = 6; max_msgs = 100; };
-  PTLink = { type = "IRC"; max_kicks = 1; max_modes = 6; max_msgs = 100; };
-  SILC = { type = "SILC"; };
+  SILCNet = { type = "SILC"; };
 };
 
 channels = (
-  { name = "#irssi"; chatnet = ircnet; autojoin = No; },
-  { name = "#irssi"; chatnet = opn; autojoin = No; },
-  { name = "#silc"; chatnet = silc; autojoin = No; }
+  { name = "#silc"; chatnet = silcnet; autojoin = No; }
 );
 
 aliases = {
-  J = "join";
-  WJOIN = "join -window";
-  WQUERY = "query -window";
+  JOIN = "join -window";
+  QUERY = "query -window";
   LEAVE = "part";
   BYE = "quit";
   EXIT = "quit";
@@ -56,10 +41,19 @@ aliases = {
   IG = "ignore";
   UNIG = "unignore";
   SB = "scrollback";
-  UMODE = "mode $N";
   WC = "window close";
   WN = "window new hide";
-  SV = "say Irssi $J - http://irssi.org/";
   GOTO = "sb goto";
   CHAT = "dcc chat";
+};
+
+settings = {
+  "fe-common/core" = {
+    autocreate_own_query = "no";
+    use_status_window = "no";
+    autoclose_windows = "no";
+    use_msgs_window = "no";
+    autocreate_windows = "no";
+  };
+  "fe-text" = { topicbar = "no"; mail_counter = "yes"; };
 };
