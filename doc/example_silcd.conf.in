@@ -298,11 +298,12 @@ ConnectionParams {
 # "param" is optional and can be used to set specific connection parameters
 # for this connection.
 #
-# The authentication data is specified by Passphrase and/or Publickey.
+# The authentication data is specified by Passphrase and/or PublicKey.
 # If both are provided then both password and public key based authentication
 # is allowed.  If the Publickey is used it includes the file path to the
 # public key file.  If none of them is provided then authentication is not
-# required.
+# required.  The PublicKey can be set multiple times to set multiple 
+# public keys for one connection.
 #
 # Next example connection will match to all incoming client connections,
 # and no authentication is required.
@@ -310,7 +311,9 @@ ConnectionParams {
 Client {
 	#Host = "10.1.*";
 	#Passphrase = "secret";
-	#PublicKey = "/path/to/the/public.key";
+	#PublicKey = "/path/to/the/user_my.key";
+	#PublicKey = "/path/to/the/user_221.key";
+	#PublicKey = "/path/to/the/user_313.key";
 	Params = "normal";
 };
 
@@ -320,9 +323,9 @@ Client {
 # The fields "Host", "User", and "Nick", are optional but you are encouraged
 # in using them to better identify your admins.
 #
-# The authentication data is specified by Passphrase and/or Publickey.
+# The authentication data is specified by Passphrase and/or PublicKey.
 # If both are provided then both password and public key based authentication
-# is allowed.  If the Publickey is used it includes the file path to the
+# is allowed.  If the PublicKey is used it includes the file path to the
 # public key file.  If none of them is provided then authentication is not
 # required.
 #
@@ -331,7 +334,7 @@ Admin {
 	User = "priikone";
 	Nick = "pekka";
 	Passphrase = "verysecret";
-	# Publickey = "/path/to/the/public.key";
+	# PublicKey = "/path/to/the/public.key";
 };
 
 #
@@ -342,9 +345,9 @@ Admin {
 # Thus, if this server is not router do not configure this section.  If
 # your server is router, this must be configured.
 #
-# The authentication data is specified by Passphrase and/or Publickey.
+# The authentication data is specified by Passphrase and/or PublicKey.
 # If both are provided then both password and public key based authentication
-# is allowed.  If the Publickey is used it includes the file path to the
+# is allowed.  If the PublicKey is used it includes the file path to the
 # public key file.  If none of them is provided then authentication is not
 # required.
 #
@@ -355,7 +358,7 @@ Admin {
 ServerConnection {
 	Host = "10.2.1.7";
 	Passphrase = "verysecret";
-	#Publickey = "/path/to/the/public.key";
+	#PublicKey = "/path/to/the/public.key";
 	Params = "normal";
 	Backup = false;
 };
@@ -368,9 +371,9 @@ ServerConnection {
 # this section includes all configured router connections.  The first
 # configured connection is the primary route.
 #
-# The authentication data is specified by Passphrase and/or Publickey.
+# The authentication data is specified by Passphrase and/or PublicKey.
 # If both are provided then both password and public key based authentication
-# is allowed.  If the Publickey is used it includes the file path to the
+# is allowed.  If the PublicKey is used it includes the file path to the
 # public key file.  If none of them is provided then authentication is not
 # required.
 #
@@ -389,7 +392,7 @@ RouterConnection {
 	Host = "10.2.1.100";
 	Port = 706;
 	Passphrase = "verysecret";
-	#Publickey = "/path/to/the/public.key";
+	#PublicKey = "/path/to/the/public.key";
 	Params = "normal";
 	Initiator = true;
 	#BackupHost = "10.2.1.6";

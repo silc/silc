@@ -407,9 +407,7 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
   if (ske->status != SILC_SKE_STATUS_OK) {
     SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
 		    silc_ske_map_status(ske->status)));
-    SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
-		    silc_ske_map_status(ske->status)));
-    
+
     protocol->state = SILC_PROTOCOL_STATE_ERROR;
     silc_protocol_execute(protocol, server->schedule, 0, 300000);
     return;
@@ -495,8 +493,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
 			silc_ske_map_status(status)));
-	SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
-			silc_ske_map_status(status)));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	silc_protocol_execute(protocol, server->schedule, 0, 300000);
@@ -531,8 +527,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
-			silc_ske_map_status(status)));
-	SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
 			silc_ske_map_status(status)));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -575,8 +569,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
 			silc_ske_map_status(status)));
-	SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
-			silc_ske_map_status(status)));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	silc_protocol_execute(protocol, server->schedule, 0, 300000);
@@ -612,8 +604,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
-			silc_ske_map_status(status)));
-	SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
 			silc_ske_map_status(status)));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -827,7 +817,7 @@ silc_server_get_public_key_auth(SilcServer server,
 static bool 
 silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
 			       char *local_passphrase,
-			       void *local_publickey,
+			       SilcHashTable local_publickeys,
 			       unsigned char *remote_auth,
 			       SilcUInt32 remote_auth_len)
 {
@@ -837,7 +827,8 @@ silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
 
   /* If we don't have authentication data set at all we do not require
      authentication at all */
-  if (!local_passphrase && !local_publickey) {
+  if (!local_passphrase && (!local_publickeys || 
+			    !silc_hash_table_count(local_publickeys))) {
     SILC_LOG_DEBUG(("No authentication required"));
     return TRUE;
   }
@@ -854,13 +845,22 @@ silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
   }
 
   /* Try public key authenetication */
-  if (!result && local_publickey) {
+  if (!result && local_publickeys) {
+    SilcPublicKey cached_key;
+    SilcPublicKey remote_key = 
+      ((SilcIDListData)ctx->sock->user_data)->public_key;
+
     SILC_LOG_DEBUG(("Public key authentication"));
-    result = silc_server_public_key_authentication(server, 
-						   local_publickey,
+
+    /* Find the public key to be used in authentication */
+    cached_key = silc_server_find_public_key(server, local_publickeys,
+					     remote_key);
+    if (!cached_key)
+      return FALSE;
+
+    result = silc_server_public_key_authentication(server, cached_key,
 						   remote_auth,
-						   remote_auth_len, 
-						   ske);
+						   remote_auth_len, ske);
   }
 
   return result;
@@ -963,19 +963,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  
 	  if (client) {
 	    ret = silc_server_get_authentication(ctx, client->passphrase,
-						 client->publickey,
+						 client->publickeys,
 						 auth_data, payload_len);
 	    if (!ret) {
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
-	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	      return;
 	    }
 	  } else {
-	    SILC_LOG_DEBUG(("No configuration for remote client connection"));
 	    SILC_LOG_ERROR(("Remote client connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    silc_free(auth_data);
@@ -992,19 +990,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  
 	  if (serv) {
 	    ret = silc_server_get_authentication(ctx, serv->passphrase,
-						 serv->publickey,
+						 serv->publickeys,
 						 auth_data, payload_len);
 	    if (!ret) {
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
-	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	      return;
 	    }
 	  } else {
-	    SILC_LOG_DEBUG(("No configuration for remote server connection"));
 	    SILC_LOG_ERROR(("Remote server connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -1021,19 +1017,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	  if (serv) {
 	    ret = silc_server_get_authentication(ctx, serv->passphrase,
-						 serv->publickey,
+						 serv->publickeys,
 						 auth_data, payload_len);
 	    if (!ret) {
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
-	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	      return;
 	    }
 	  } else {
-	    SILC_LOG_DEBUG(("No configuration for remote router connection"));
 	    SILC_LOG_ERROR(("Remote router connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    silc_free(auth_data);

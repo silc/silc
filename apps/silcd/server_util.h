@@ -86,4 +86,19 @@ char *silc_server_name_modify_bad(const char *name, SilcUInt32 name_len);
 SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
 					 SilcSocketType type);
 
+/* Finds locally cached public key by the public key received in the SKE. 
+   If we have it locally cached then we trust it and will use it in the
+   authentication protocol.  Returns the locally cached public key or NULL
+   if we do not find the public key.  */
+SilcPublicKey silc_server_find_public_key(SilcServer server, 
+					  SilcHashTable local_public_keys,
+					  SilcPublicKey remote_public_key);
+
+/* This returns the first public key from the table of public keys.  This
+   is used only in cases where single public key exists in the table and
+   we want to get a pointer to it.  For public key tables that has multiple
+   keys in it the silc_server_find_public_key must be used. */
+SilcPublicKey silc_server_get_public_key(SilcServer server,
+					 SilcHashTable local_public_keys);
+
 #endif /* SERVER_UTIL_H */

@@ -4583,6 +4583,7 @@ SILC_SERVER_CMD_FUNC(oper)
   SilcServerConfigAdmin *admin;
   SilcIDListData idata = (SilcIDListData)client;
   bool result = FALSE;
+  SilcPublicKey cached_key;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_OPER, cmd, 1, 2);
 
@@ -4624,10 +4625,14 @@ SILC_SERVER_CMD_FUNC(oper)
     result = silc_auth_verify_data(auth, tmp_len, SILC_AUTH_PASSWORD,
 				   admin->passphrase, admin->passphrase_len,
 				   idata->hash, client->id, SILC_ID_CLIENT);
-  if (!result && admin->publickey)
+  if (!result && admin->publickeys) {
+    cached_key = silc_server_get_public_key(server, admin->publickeys);
+    if (!cached_key)
+      goto out;
     result = silc_auth_verify_data(auth, tmp_len, SILC_AUTH_PUBLIC_KEY,
-				   admin->publickey, 0,
-				   idata->hash, client->id, SILC_ID_CLIENT);
+				   cached_key, 0, idata->hash, 
+				   client->id, SILC_ID_CLIENT);
+  }
   if (!result) {
     /* Authentication failed */
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
@@ -4670,6 +4675,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   SilcServerConfigAdmin *admin;
   SilcIDListData idata = (SilcIDListData)client;
   bool result = FALSE;
+  SilcPublicKey cached_key;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SILCOPER, cmd, 1, 2);
 
@@ -4717,10 +4723,14 @@ SILC_SERVER_CMD_FUNC(silcoper)
     result = silc_auth_verify_data(auth, tmp_len, SILC_AUTH_PASSWORD,
 				   admin->passphrase, admin->passphrase_len,
 				   idata->hash, client->id, SILC_ID_CLIENT);
-  if (!result && admin->publickey)
+  if (!result && admin->publickeys) {
+    cached_key = silc_server_get_public_key(server, admin->publickeys);
+    if (!cached_key)
+      goto out;
     result = silc_auth_verify_data(auth, tmp_len, SILC_AUTH_PUBLIC_KEY,
-				   admin->publickey, 0,
-				   idata->hash, client->id, SILC_ID_CLIENT);
+				   cached_key, 0, idata->hash, 
+				   client->id, SILC_ID_CLIENT);
+  }
   if (!result) {
     /* Authentication failed */
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,

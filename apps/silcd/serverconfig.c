@@ -59,9 +59,15 @@
 
 /* Free the authentication fields in the specified struct
  * Expands to two instructions */
-#define CONFIG_FREE_AUTH(__section__)					\
-  silc_free(__section__->passphrase);					\
-  silc_pkcs_public_key_free(__section__->publickey)
+#define CONFIG_FREE_AUTH(__section__)			\
+  silc_free(__section__->passphrase);			\
+  if (__section__->publickeys)				\
+    silc_hash_table_free(__section__->publickeys);
+
+static void my_free_public_key(void *key, void *context, void *user_data)
+{
+  silc_pkcs_public_key_free(context);
+}
 
 /* Set default values to those parameters that have not been defined */
 static void 
@@ -106,8 +112,9 @@ my_find_param(SilcServerConfig config, const char *name, SilcUInt32 line)
 }
 
 /* parse an authdata according to its auth method */
-static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, SilcUInt32 line,
-			      void **auth_data, SilcUInt32 *auth_data_len)
+static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, 
+			      SilcUInt32 line, void **auth_data, 
+			      SilcUInt32 *auth_data_len)
 {
   if (auth_meth == SILC_AUTH_PASSWORD) {
     /* p is a plain text password */
@@ -116,7 +123,7 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, SilcUInt32 line
     if (auth_data_len)
       *auth_data_len = (SilcUInt32) strlen(p);
   } else if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
-    /* p is a public key */
+    /* p is a public key file name */
     SilcPublicKey public_key;
 
     if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
@@ -125,10 +132,16 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, SilcUInt32 line
 		"Could not load public key file!\n", line);
 	return FALSE;
       }
-    if (auth_data)
-      *auth_data = (void *) public_key;
-    if (auth_data_len)
-      *auth_data_len = 0;
+
+    /* The auth_data is a pointer to the hash table of public keys. */
+    if (auth_data) {
+      if (*auth_data == NULL)
+	*auth_data = silc_hash_table_alloc(1, silc_hash_public_key, NULL, 
+					   NULL, NULL, 
+					   my_free_public_key, NULL, 
+					   TRUE);
+      silc_hash_table_add(*auth_data, public_key, public_key);
+    }
   } else {
     fprintf(stderr, "\nError while parsing config file at line %lu: "
 	    "Unknown authentication method.\n", line);
@@ -651,6 +664,7 @@ SILC_CONFIG_CALLBACK(fetch_client)
     tmp->host = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "passphrase")) {
+    CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
 			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
@@ -660,7 +674,7 @@ SILC_CONFIG_CALLBACK(fetch_client)
   }
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val, line,
-			   &tmp->publickey, NULL)) {
+			   (void **)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
     }
@@ -722,6 +736,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
     tmp->nick = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "passphrase")) {
+    CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
 			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
@@ -730,8 +745,9 @@ SILC_CONFIG_CALLBACK(fetch_admin)
     }
   }
   else if (!strcmp(name, "publickey")) {
+    CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val, line,
-			   &tmp->publickey, NULL)) {
+			   (void **)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
     }
@@ -825,6 +841,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
     tmp->host = (*(char *)val ? strdup((char *) val) : strdup("*"));
   }
   else if (!strcmp(name, "passphrase")) {
+    CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
 			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
@@ -833,8 +850,9 @@ SILC_CONFIG_CALLBACK(fetch_server)
     }
   }
   else if (!strcmp(name, "publickey")) {
+    CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val, line,
-			   &tmp->publickey, NULL)) {
+			   (void **)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
     }
@@ -905,6 +923,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
     tmp->port = (SilcUInt16) port;
   }
   else if (!strcmp(name, "passphrase")) {
+    CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
 			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
@@ -913,8 +932,9 @@ SILC_CONFIG_CALLBACK(fetch_router)
     }
   }
   else if (!strcmp(name, "publickey")) {
+    CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val, line,
-			   &tmp->publickey, NULL)) {
+			   (void **)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
     }

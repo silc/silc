@@ -179,7 +179,7 @@ do {						\
   if ((x)) {						\
     if ((x)->param && (x)->param->key_exchange_pfs)	\
       (p)->flags |= SILC_SKE_SP_FLAG_PFS;		\
-    if (!(x)->publickey)				\
+    if (!(x)->publickeys)				\
       (p)->flags |= SILC_SKE_SP_FLAG_MUTUAL;		\
   }
 

@@ -2535,11 +2535,11 @@ void silc_server_connection_auth_request(SilcServer server,
     client = silc_server_config_find_client(server, sock->hostname);
   if (client) {
     if (client->passphrase) {
-      if (client->publickey && !server->config->prefer_passphrase_auth)
+      if (client->publickeys && !server->config->prefer_passphrase_auth)
 	auth_meth = SILC_AUTH_PUBLIC_KEY;
       else
 	auth_meth = SILC_AUTH_PASSWORD;
-    } else if (client->publickey)
+    } else if (client->publickeys)
       auth_meth = SILC_AUTH_PUBLIC_KEY;
   }
 

@@ -46,7 +46,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
   silc_hash_table_list(client->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
     channel = chl->channel;
 
     /* Remove channel from client's channel list */
@@ -101,7 +101,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
 	channel->disabled = TRUE;
 
 	silc_hash_table_list(channel->user_list, &htl2);
-	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
+	while (silc_hash_table_get(&htl2, NULL, (void **)&chl2)) {
 	  silc_hash_table_del(chl2->client->channels, channel);
 	  silc_hash_table_del(channel->user_list, chl2->client);
 	  channel->user_count--;
@@ -343,7 +343,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
      this server's client(s) on the channel. As they left the channel we
      must re-generate the channel key. */
   silc_hash_table_list(channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void *)&channel)) {
+  while (silc_hash_table_get(&htl, NULL, (void **)&channel)) {
     if (!silc_server_create_channel_key(server, channel, 0)) {
       silc_hash_table_list_reset(&htl);
       silc_hash_table_free(channels);
@@ -706,7 +706,7 @@ bool silc_server_channel_has_global(SilcChannelEntry channel)
   SilcHashTableList htl;
 
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
     if (chl->client->router) {
       silc_hash_table_list_reset(&htl);
       return TRUE;
@@ -726,7 +726,7 @@ bool silc_server_channel_has_local(SilcChannelEntry channel)
   SilcHashTableList htl;
 
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
     if (!chl->client->router) {
       silc_hash_table_list_reset(&htl);
       return TRUE;
@@ -805,4 +805,54 @@ SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
   }
 
   return count;
+}
+
+/* Finds locally cached public key by the public key received in the SKE. 
+   If we have it locally cached then we trust it and will use it in the
+   authentication protocol.  Returns the locally cached public key or NULL
+   if we do not find the public key.  */
+
+SilcPublicKey silc_server_find_public_key(SilcServer server, 
+					  SilcHashTable local_public_keys,
+					  SilcPublicKey remote_public_key)
+{
+  SilcPublicKey cached_key;
+
+  SILC_LOG_DEBUG(("Find remote public key (%d keys in local cache)",
+		  silc_hash_table_count(local_public_keys)));
+
+  if (!silc_hash_table_find_ext(local_public_keys, remote_public_key,
+				(void **)&cached_key, NULL, 
+				silc_hash_public_key, NULL,
+				silc_hash_public_key_compare, NULL)) {
+    SILC_LOG_ERROR(("Public key not found"));
+    return NULL;
+  }
+
+  SILC_LOG_DEBUG(("Found public key"));
+
+  return cached_key;
+}
+
+/* This returns the first public key from the table of public keys.  This
+   is used only in cases where single public key exists in the table and
+   we want to get a pointer to it.  For public key tables that has multiple
+   keys in it the silc_server_find_public_key must be used. */
+
+SilcPublicKey silc_server_get_public_key(SilcServer server,
+					 SilcHashTable local_public_keys)
+{
+  SilcPublicKey cached_key;
+  SilcHashTableList htl;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  assert(silc_hash_table_count(local_public_keys) < 2);
+
+  silc_hash_table_list(local_public_keys, &htl);
+  if (!silc_hash_table_get(&htl, NULL, (void **)&cached_key))
+    return NULL;
+  silc_hash_table_list_reset(&htl);
+
+  return cached_key;
 }

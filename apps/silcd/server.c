@@ -765,20 +765,18 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     conn = sconn->conn;
 
   if (conn) {
-    /* Match found. Use the configured authentication method */
+    /* Match found. Use the configured authentication method. Take only
+       the passphrase, since for public key auth we automatically use
+       our local key pair. */
     if (conn->passphrase) {
-      if (conn->publickey && !server->config->prefer_passphrase_auth) {
-	proto_ctx->auth_data = conn->publickey;
-	proto_ctx->auth_data_len = 0;
+      if (conn->publickeys && !server->config->prefer_passphrase_auth) {
 	proto_ctx->auth_meth = SILC_AUTH_PUBLIC_KEY;
       } else {
 	proto_ctx->auth_data = strdup(conn->passphrase);
 	proto_ctx->auth_data_len = strlen(conn->passphrase);
 	proto_ctx->auth_meth = SILC_AUTH_PASSWORD;
       }
-    } else if (conn->publickey) {
-      proto_ctx->auth_data = conn->publickey;
-      proto_ctx->auth_data_len = 0;
+    } else if (conn->publickeys) {
       proto_ctx->auth_meth = SILC_AUTH_PUBLIC_KEY;
     } else {
       proto_ctx->auth_meth = SILC_AUTH_NONE;

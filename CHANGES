@@ -1,3 +1,24 @@
+Tue Mar 12 17:58:59 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_hash_public_key and silc_hash_public_key_compare
+	  functions to be used with SilcHashTable.  They can be used to
+	  hash public keys and compare public keys in hash table.  Affected
+	  file lib/silcutil/silcutil.[ch].
+
+	* Added support for specifying multiple public keys for Client
+	  connection section in server configuration file.  This makes it
+	  possible to accept multiple public keys from same host, or to
+	  make a section that accepts any incoming host, and have the
+	  accepted public keys listed in the section.
+
+	  Added functions silc_sever_[find/get]_public_key,  added the
+	  support for this actually to all connection sections but only
+	  the Client section is currently allowed to specify multiple
+	  public keys.
+
+	  Affected files are silcd/server.c, server_internal.h,
+	  command.c, protocol.c, server_util.[ch], packet_receive.c.
+
 Mon Mar 11 23:37:38 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged Irssi 0.8.2 from irssi.org CVS.

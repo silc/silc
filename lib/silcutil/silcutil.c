@@ -654,6 +654,16 @@ SilcUInt32 silc_hash_data(void *key, void *user_context)
   return h;
 }
 
+/* Hashed SILC Public key. */
+
+SilcUInt32 silc_hash_public_key(void *key, void *user_context)
+{
+  SilcPublicKey pk = (SilcPublicKey)key;
+  return (pk->len + silc_hash_string(pk->name, NULL) +
+	  silc_hash_string(pk->identifier, NULL) +
+	  silc_hash_data(pk->pk, (void *)pk->pk_len));
+}
+
 /* Compares two strings. May be used as SilcHashTable comparison function. */
 
 bool silc_hash_string_compare(void *key1, void *key2, void *user_context)
@@ -686,6 +696,14 @@ bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
 {
   SilcUInt32 len = (SilcUInt32)user_context;
   return !memcmp(key1, key2, len);
+}
+
+/* Compares two SILC Public keys. May be used as SilcHashTable comparison
+   function. */
+
+bool silc_hash_public_key_compare(void *key1, void *key2, void *user_context)
+{
+  return silc_pkcs_public_key_compare(key1, key2);
 }
 
 /* Parses mode mask and returns the mode as string. */
