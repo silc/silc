@@ -4,10 +4,6 @@ TODO/bugs in Irssi SILC client
  o If two clients are away and they send private message to each other
    it will cause infinite loop of sending away messages to each other.
 
- o Only one client is shown as being away on the channel. The USERS
-   (WHO) does not show the G (gone) status to all clients that are
-   away.
-
  o /NICK without arguments crashes the client
 
  o /CMODE * +a without arguments crashes the client. Check other options
