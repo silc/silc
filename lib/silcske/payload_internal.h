@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2000 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -51,25 +51,16 @@ typedef struct {
   unsigned char *comp_alg_list;
 } SilcSKEStartPayload;
 
-/* SILC Key Exchange 1 Payload */
+/* SILC Key Exchange Payload */
 typedef struct {
   unsigned short pk_len;
   unsigned char *pk_data;
   unsigned short pk_type;
 
-  SilcInt e;
-} SilcSKEOnePayload;
-
-/* SILC Key Exchange 2 Payload */
-typedef struct {
-  unsigned short pk_len;
-  unsigned char *pk_data;
-  unsigned short pk_type;
-
-  SilcInt f;
+  SilcInt x;
 
   unsigned short sign_len;
   unsigned char *sign_data;
-} SilcSKETwoPayload;
+} SilcSKEKEPayload;
 
 #endif

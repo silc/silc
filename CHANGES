@@ -1,3 +1,83 @@
+Sun Apr  1 19:49:34 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added SILC_UMODE_GONE mode to indicate when the client is not
+	  present in the SILC network.  Added also support to the local
+	  command AWAY that will set this mode.  Added support of showing
+	  "xxx is gone" in WHOIS command.  The USERS command shows the
+	  gone status as well.
+
+	* Fixed setting server and router operator privileges in the
+	  server's UMODE command.  Affected file silcd/command.c.
+
+	* Merged the SKE KE1 and KE2 payloads into one payload.  The
+	  new KE payload is equivalent to the old KE2 payload.
+
+	  Cleaned up the SKE Start Payload parsing.  It now uses the
+	  simple buffer unformatting to do the parsing.  A lot faster
+	  now.
+
+	  Added new Mutual Authentication flag (SILC_SKE_SP_FLAG_MUTUAL)
+	  to the SKE that is used to indicate whether both of the SKE
+	  parties should perform authentication.  By default only the
+	  responder performs authentication.  By setting this flag also
+	  the initiator must do authentication.  By default it is unset
+	  since in normal SKE case, client to server connection, only
+	  the responder should do authentication.  When doing SKE between
+	  two clients both should perform authentication.  Updated the
+	  code and the protocol specs.
+
+	* A little fix to IDENTIFY command in the server.  Search the
+	  client first by hash not nickname.  Affected file is 
+	  silcd/command.c.
+
+	* Fixed the silc_client_close_connection to support closing
+	  the client to client connections wihtout deleting too much
+	  data.  Affected file lib/silcclient/client.c.
+
+	* Fixed a fatal bug in server and client; if KE1 or KE2 packets
+	  are received if protocol used to be active but is not anymore
+	  the application would crash due to NULL pointer dereference.
+	  Affected files silcd/server.c and lib/silcclient/client.c.
+
+	* Added `hash' field to the SilcClientConnection to include
+	  the hash function negotiated in the SKE protocol.
+
+	* Added new channel mode SILC_CMODE_FOUNDER_AUTH that is used
+	  to set the channel founder authentication data.  A client can
+	  claim the founder rights later by providing the authentication
+	  data to the CUMODE command using SILC_CUMODE_FOUNDER mode.
+	  This way the channel founder can regain the channel founder
+	  privileges even it is left the channel.  This works only on
+	  local server and the client must be connected to the same
+	  server to be able to regain the founder rights.  Updated the
+	  protocol specs accordingly.
+
+	  Added support to the CMODE command in the client to set the
+	  founder auth data.  Read the README to see how to set it.
+
+	  Added support to the CUMODE command to claim the founder
+	  rights.  Read the README to see how to do it.
+
+	  Added support for the founder authentication to the Channel
+	  Entry in the server.  Affected file silcd/idlist.h.
+
+	  Added support for the SILC_CMODE_FOUNDER_AUTH mode in the
+	  server's CMODE command.  Affected file silcd/command.c.
+
+	* Added the following new functions into lib/silccore/silcauth.[ch]:
+	  silc_auth_get_method and silc_auth_get_data.	  
+
+	* The server now saves the remote hosts public key to the
+	  SilcIDListData pointer.  Affected file silcd/protocol.c.
+
+	* The normal server now does not remove the channel entry from
+	  the cache if the founder authentication data is set.  It used
+	  to remove it if the founder was the last one on the channel on 
+	  the server and left the channel.  The auth data is saved and
+	  if the channel is re-joined later the old entry is used with
+	  the old auth data.  Affected files silcd/command_reply.c and
+	  silcd/server.c.
+
 Sat Mar 31 15:38:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed packet processing on slow links.  Partial packets were

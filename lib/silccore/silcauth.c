@@ -40,12 +40,18 @@ struct SilcAuthPayloadStruct {
 
 /* Parses and returns Authentication Payload */
 
-SilcAuthPayload silc_auth_payload_parse(SilcBuffer buffer)
+SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
+					unsigned int data_len)
 {
+  SilcBuffer buffer;
   SilcAuthPayload new;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing Authentication Payload"));
+
+  buffer = silc_buffer_alloc(data_len);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  silc_buffer_put(buffer, data, data_len);
 
   new = silc_calloc(1, sizeof(*new));
 
@@ -60,13 +66,17 @@ SilcAuthPayload silc_auth_payload_parse(SilcBuffer buffer)
 			     SILC_STR_END);
   if (ret == -1) {
     silc_free(new);
+    silc_buffer_free(buffer);
     return NULL;
   }
 
   if (new->len != buffer->len) {
     silc_auth_payload_free(new);
+    silc_buffer_free(buffer);
     return NULL;
   }
+
+  silc_buffer_free(buffer);
 
   /* If password authentication, random data must not be set */
   if (new->auth_method == SILC_AUTH_PASSWORD && new->random_len) {
@@ -90,7 +100,7 @@ SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
 
   SILC_LOG_DEBUG(("Encoding Authentication Payload"));
 
-  len = 4 + 4 + random_len + auth_len;
+  len = 2 + 2 + 2 + random_len + 2 + auth_len;
   buffer = silc_buffer_alloc(len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
   silc_buffer_format(buffer,
@@ -120,6 +130,24 @@ void silc_auth_payload_free(SilcAuthPayload payload)
     }
     silc_free(payload);
   }
+}
+
+/* Get authentication method */
+
+SilcAuthMethod silc_auth_get_method(SilcAuthPayload payload)
+{
+  return payload->auth_method;
+}
+
+/* Get the authentication data */
+
+unsigned char *silc_auth_get_data(SilcAuthPayload payload,
+				  unsigned int *auth_len)
+{
+  if (auth_len)
+    *auth_len = payload->auth_len;
+
+  return payload->auth_data;
 }
 
 /******************************************************************************
@@ -152,7 +180,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
   }
   id_len = silc_id_get_len(type);
 
-  buf = silc_buffer_alloc(random_len + pk_len);
+  buf = silc_buffer_alloc(random_len + id_len + pk_len);
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
   silc_buffer_format(buf,
 		     SILC_STR_UI_XNSTRING(random, random_len),
@@ -160,7 +188,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
 		     SILC_STR_UI_XNSTRING(pk, pk_len),
 		     SILC_STR_END);
   
-  ret = silc_calloc(buf->len, sizeof(*ret));
+  ret = silc_calloc(buf->len + 1, sizeof(*ret));
   memcpy(ret, buf->data, buf->len);
 
   if (ret_len)
@@ -178,11 +206,12 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
    and the actual authentication data. Returns NULL on error. */
 
 SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
+					      SilcPrivateKey private_key,
 					      SilcHash hash,
 					      void *id, SilcIdType type)
 {
   unsigned char *random;
-  unsigned char auth_data[32];
+  unsigned char auth_data[1024];
   unsigned int auth_len;
   unsigned char *tmp;
   unsigned int tmp_len;
@@ -208,6 +237,8 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
     silc_free(tmp);
     return NULL;
   }
+  silc_pkcs_public_key_set(pkcs, public_key);
+  silc_pkcs_private_key_set(pkcs, private_key);
 
   /* Compute the hash and the signature. */
   if (!silc_pkcs_sign_with_hash(pkcs, hash, tmp, tmp_len, auth_data,
@@ -235,7 +266,7 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 }
 
 /* Verifies the authentication data. Returns TRUE if authentication was
-   successfull. */
+   successful. */
 
 int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 				     SilcPublicKey public_key, SilcHash hash,
@@ -262,6 +293,7 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
     silc_free(tmp);
     return FALSE;
   }
+  silc_pkcs_public_key_set(pkcs, public_key);
 
   /* Verify the authentication data */
   if (!silc_pkcs_verify_with_hash(pkcs, hash, payload->auth_data,
@@ -278,7 +310,7 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
   silc_free(tmp);
   silc_pkcs_free(pkcs);
 
-  SILC_LOG_DEBUG(("Authentication successfull"));
+  SILC_LOG_DEBUG(("Authentication successful"));
 
   return TRUE;
 }
@@ -293,7 +325,7 @@ int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
   SilcAuthPayload auth_payload;
   int ret;
 
-  auth_payload = silc_auth_payload_parse(payload);
+  auth_payload = silc_auth_payload_parse(payload->data, payload->len);
   if (!auth_payload) {
     SILC_LOG_DEBUG(("Authentication failed"));
     return FALSE;
@@ -333,7 +365,7 @@ int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
     /* Passphrase based authentication. The `pkcs', `hash', `id' and `type'
        arguments are not needed. */
     if (!memcmp(payload->auth_data, auth_data, payload->auth_len)) {
-      SILC_LOG_DEBUG(("Authentication successfull"));
+      SILC_LOG_DEBUG(("Authentication successful"));
       return TRUE;
     }
     break;
@@ -361,23 +393,16 @@ int silc_auth_verify_data(unsigned char *payload, unsigned int payload_len,
 			  void *id, SilcIdType type)
 {
   SilcAuthPayload auth_payload;
-  SilcBuffer buffer;
   int ret;
 
-  buffer = silc_buffer_alloc(payload_len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
-  silc_buffer_put(buffer, payload, payload_len);
-  auth_payload = silc_auth_payload_parse(buffer);
-  if (!auth_payload) {
-    silc_buffer_free(buffer);
+  auth_payload = silc_auth_payload_parse(payload, payload_len);
+  if (!auth_payload)
     return FALSE;
-  }
 
   ret = silc_auth_verify(auth_payload, auth_method, auth_data, auth_data_len, 
 			 hash, id, type);
 
   silc_auth_payload_free(auth_payload);
-  silc_buffer_free(buffer);
 
   return ret;
 }

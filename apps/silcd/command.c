@@ -1508,13 +1508,13 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
       }
     }
   } else {
-    clients = silc_idlist_get_clients_by_nickname(server->local_list, 
-						  nick, server_name,
-						  &clients_count);
+    clients = silc_idlist_get_clients_by_hash(server->local_list, 
+					      nick, server->md5hash,
+					      &clients_count);
     if (!clients)
-      clients = silc_idlist_get_clients_by_hash(server->local_list, 
-						nick, server->md5hash,
-						&clients_count);
+      clients = silc_idlist_get_clients_by_nickname(server->local_list, 
+						    nick, server_name,
+						    &clients_count);
   }
   
   /* Check global list as well */
@@ -1531,13 +1531,13 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
 	}
       }
     } else {
-      clients = silc_idlist_get_clients_by_nickname(server->global_list, 
-						    nick, server_name,
-						    &clients_count);
+      clients = silc_idlist_get_clients_by_hash(server->global_list, 
+						nick, server->md5hash,
+						&clients_count);
       if (!clients)
-	clients = silc_idlist_get_clients_by_hash(server->global_list, 
-						  nick, server->md5hash,
-						  &clients_count);
+	clients = silc_idlist_get_clients_by_nickname(server->global_list, 
+						      nick, server_name,
+						      &clients_count);
     }
   }
   
@@ -1616,13 +1616,13 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
       }
     }
   } else {
-    clients = silc_idlist_get_clients_by_nickname(server->local_list, 
-						  nick, server_name,
-						  &clients_count);
+    clients = silc_idlist_get_clients_by_hash(server->local_list, 
+					      nick, server->md5hash,
+					      &clients_count);
     if (!clients)
-      clients = silc_idlist_get_clients_by_hash(server->local_list, 
-						nick, server->md5hash,
-						&clients_count);
+      clients = silc_idlist_get_clients_by_nickname(server->local_list, 
+						    nick, server_name,
+						    &clients_count);
   }
   
   /* If we are router we will check our global list as well. */
@@ -1639,13 +1639,13 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
 	}
       }
     } else {
-      clients = silc_idlist_get_clients_by_nickname(server->global_list, 
-						    nick, server_name,
-						    &clients_count);
+      clients = silc_idlist_get_clients_by_hash(server->global_list, 
+						nick, server->md5hash,
+						&clients_count);
       if (!clients)
-	clients = silc_idlist_get_clients_by_hash(server->global_list, 
-						  nick, server->md5hash,
-						  &clients_count);
+	clients = silc_idlist_get_clients_by_nickname(server->global_list, 
+						      nick, server_name,
+						      &clients_count);
     }
   }
 
@@ -2996,7 +2996,7 @@ SILC_SERVER_CMD_FUNC(join)
       }
     }
 
-    if (!channel) {
+    if (!channel || !channel->id) {
       /* Channel not found */
 
       /* If we are standalone server we don't have a router, we just create 
@@ -3286,10 +3286,12 @@ SILC_SERVER_CMD_FUNC(umode)
    */
 
   if (mask & SILC_UMODE_SERVER_OPERATOR) {
-    /* Cannot operator mode */
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
-					  SILC_STATUS_ERR_PERM_DENIED);
-    goto out;
+    if (!(client->mode & SILC_UMODE_SERVER_OPERATOR)) {
+      /* Cannot operator mode */
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					    SILC_STATUS_ERR_PERM_DENIED);
+      goto out;
+    }
   } else {
     if (client->mode & SILC_UMODE_SERVER_OPERATOR)
       /* Remove the server operator rights */
@@ -3297,14 +3299,24 @@ SILC_SERVER_CMD_FUNC(umode)
   }
 
   if (mask & SILC_UMODE_ROUTER_OPERATOR) {
-    /* Cannot operator mode */
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
-					  SILC_STATUS_ERR_PERM_DENIED);
-    goto out;
+    if (!(client->mode & SILC_UMODE_ROUTER_OPERATOR)) {
+      /* Cannot operator mode */
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					    SILC_STATUS_ERR_PERM_DENIED);
+      goto out;
+    }
   } else {
     if (client->mode & SILC_UMODE_ROUTER_OPERATOR)
       /* Remove the router operator rights */
       client->mode &= ~SILC_UMODE_ROUTER_OPERATOR;
+  }
+
+  if (mask & SILC_UMODE_GONE) {
+    client->mode |= SILC_UMODE_GONE;
+  } else {
+    if (client->mode & SILC_UMODE_GONE)
+      /* Remove the gone status */
+      client->mode &= ~SILC_UMODE_GONE;
   }
 
   /* Send UMODE change to primary router */
@@ -3377,6 +3389,16 @@ int silc_server_check_cmode_rights(SilcChannelEntry channel,
     }
   }
   
+  if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+    if (is_op && !is_fo)
+      return FALSE;
+  } else {
+    if (channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
+  }
+  
   return TRUE;
 }
 
@@ -3387,28 +3409,17 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  SilcIDListData idata = (SilcIDListData)client;
   SilcChannelID *channel_id;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask;
   char *cipher = NULL, *hmac = NULL;
-  unsigned int argc, mode_mask, tmp_len, tmp_len2;
+  unsigned int mode_mask, tmp_len, tmp_len2;
   unsigned short ident = silc_command_get_ident(cmd->payload);
 
-  SILC_LOG_DEBUG(("Start"));
-
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 2) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 8) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CMODE, cmd, 2, 7);
 
   /* Get Channel ID */
   tmp_id = silc_argument_get_arg_type(cmd->args, 1, &tmp_len2);
@@ -3652,6 +3663,57 @@ SILC_SERVER_CMD_FUNC(cmode)
     }
   }
 
+  if (mode_mask & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+    if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
+      if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
+	/* Set the founder authentication */
+	SilcAuthPayload auth;
+	
+	tmp = silc_argument_get_arg_type(cmd->args, 7, &tmp_len);
+	if (!tmp) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	  goto out;
+	}
+
+	auth = silc_auth_payload_parse(tmp, tmp_len);
+	if (!auth) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	  goto out;
+	}
+
+	/* Save the public key */
+	tmp = silc_pkcs_public_key_encode(idata->public_key, &tmp_len);
+	silc_pkcs_public_key_decode(tmp, tmp_len, &channel->founder_key);
+	silc_free(tmp);
+	
+	channel->founder_method = silc_auth_get_method(auth);
+
+	if (channel->founder_method == SILC_AUTH_PASSWORD) {
+	  tmp = silc_auth_get_data(auth, &tmp_len);
+	  channel->founder_passwd = 
+	    silc_calloc(tmp_len + 1, sizeof(*channel->founder_passwd));
+	  memcpy(channel->founder_passwd, tmp, tmp_len);
+	  channel->founder_passwd_len = tmp_len;
+	}
+
+	silc_auth_payload_free(auth);
+      }
+    }
+  } else {
+    if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
+      if (channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+	if (channel->founder_key)
+	  silc_pkcs_public_key_free(channel->founder_key);
+	if (channel->founder_passwd) {
+	  silc_free(channel->founder_passwd);
+	  channel->founder_passwd = NULL;
+	}
+      }
+    }
+  }
+
   /* Finally, set the mode */
   channel->mode = mode_mask;
 
@@ -3660,7 +3722,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 4,
 				     cidp->data, cidp->len, 
-				     tmp_mask, tmp_len,
+				     tmp_mask, 4,
 				     cipher, cipher ? strlen(cipher) : 0,
 				     hmac, hmac ? strlen(hmac) : 0);
 
@@ -3695,6 +3757,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  SilcIDListData idata = (SilcIDListData)client;
   SilcChannelID *channel_id;
   SilcClientID *client_id;
   SilcChannelEntry channel;
@@ -3702,11 +3765,11 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcChannelClientEntry chl;
   SilcBuffer packet, idp;
   unsigned char *tmp_id, *tmp_ch_id, *tmp_mask;
-  unsigned int target_mask, sender_mask, tmp_len, tmp_ch_len;
+  unsigned int target_mask, sender_mask = 0, tmp_len, tmp_ch_len;
   int notify = FALSE;
   unsigned short ident = silc_command_get_ident(cmd->payload);
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CUMODE, cmd, 3, 3);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CUMODE, cmd, 3, 4);
 
   /* Get Channel ID */
   tmp_ch_id = silc_argument_get_arg_type(cmd->args, 1, &tmp_ch_len);
@@ -3746,13 +3809,6 @@ SILC_SERVER_CMD_FUNC(cumode)
   silc_list_start(channel->user_list);
   while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
     if (chl->client == client) {
-      if (!(chl->mode & SILC_CHANNEL_UMODE_CHANFO) &&
-	  !(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					      SILC_STATUS_ERR_NO_CHANNEL_PRIV);
-	goto out;
-      }
-
       sender_mask = chl->mode;
       break;
     }
@@ -3789,18 +3845,28 @@ SILC_SERVER_CMD_FUNC(cumode)
 						  client_id, NULL);
   }
 
-  /* Check whether target client is on the channel */
-  if (!silc_server_client_on_channel(target_client, channel)) {
+  if (target_client != client &&
+      !(sender_mask & SILC_CHANNEL_UMODE_CHANFO) &&
+      !(sender_mask & SILC_CHANNEL_UMODE_CHANOP)) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_USER_NOT_ON_CHANNEL);
+					  SILC_STATUS_ERR_NO_CHANNEL_PRIV);
     goto out;
   }
 
-  /* Get entry to the channel user list */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
-    if (chl->client == target_client)
-      break;
+  /* Check whether target client is on the channel */
+  if (target_client != client) {
+    if (!silc_server_client_on_channel(target_client, channel)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+				 SILC_STATUS_ERR_USER_NOT_ON_CHANNEL);
+      goto out;
+    }
+
+    /* Get entry to the channel user list */
+    silc_list_start(channel->user_list);
+    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
+      if (chl->client == target_client)
+	break;
+  }
 
   /* 
    * Change the mode 
@@ -3815,10 +3881,46 @@ SILC_SERVER_CMD_FUNC(cumode)
   }
 
   if (target_mask & SILC_CHANNEL_UMODE_CHANFO) {
-    /* Cannot promote anyone to channel founder */
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NOT_YOU);
-    goto out;
+    /* The client tries to claim the founder rights. */
+    unsigned char *tmp_auth;
+    unsigned int tmp_auth_len, auth_len;
+    void *auth;
+    
+    if (target_client != client) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					    SILC_STATUS_ERR_NOT_YOU);
+      goto out;
+    }
+
+    if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
+	!channel->founder_key) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					    SILC_STATUS_ERR_NOT_YOU);
+      goto out;
+    }
+
+    tmp_auth = silc_argument_get_arg_type(cmd->args, 4, &tmp_auth_len);
+    if (!tmp_auth) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+      goto out;
+    }
+
+    auth = (channel->founder_method == SILC_AUTH_PASSWORD ?
+	    (void *)channel->founder_passwd : (void *)channel->founder_key);
+    auth_len = (channel->founder_method == SILC_AUTH_PASSWORD ?
+		channel->founder_passwd_len : 0);
+    
+    if (!silc_auth_verify_data(tmp_auth, tmp_auth_len,
+			       channel->founder_method, auth, auth_len,
+			       idata->hash, client->id, SILC_ID_CLIENT)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					    SILC_STATUS_ERR_AUTH_FAILED);
+      goto out;
+    }
+
+    chl->mode |= SILC_CHANNEL_UMODE_CHANFO;
+    notify = TRUE;
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
       if (target_client == client) {
@@ -3836,11 +3938,25 @@ SILC_SERVER_CMD_FUNC(cumode)
   if (target_mask & SILC_CHANNEL_UMODE_CHANOP) {
     /* Promote to operator */
     if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {
+      if (!(sender_mask & SILC_CHANNEL_UMODE_CHANOP) &&
+	  !(sender_mask & SILC_CHANNEL_UMODE_CHANFO)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					      SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+	goto out;
+      }
+
       chl->mode |= SILC_CHANNEL_UMODE_CHANOP;
       notify = TRUE;
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANOP) {
+      if (!(sender_mask & SILC_CHANNEL_UMODE_CHANOP) &&
+	  !(sender_mask & SILC_CHANNEL_UMODE_CHANFO)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					      SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+	goto out;
+      }
+
       /* Demote to normal user */
       chl->mode &= ~SILC_CHANNEL_UMODE_CHANOP;
       notify = TRUE;
@@ -3848,6 +3964,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   }
 
   idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+  tmp_id = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
 
   /* Send notify to channel, notify only if mode was actually changed. */
   if (notify) {

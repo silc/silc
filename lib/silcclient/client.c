@@ -653,14 +653,16 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
       /* If connection is disconnecting already we will finally
 	 close the connection */
       if (SILC_IS_DISCONNECTING(sock)) {
-	client->ops->disconnect(client, conn);
-	silc_client_close_connection(client, conn);
+	if (sock == conn->sock)
+	  client->ops->disconnect(client, conn);
+	silc_client_close_connection(client, sock, conn);
 	return;
       }
       
       SILC_LOG_DEBUG(("EOF from connection %d", sock->sock));
-      client->ops->disconnect(client, conn);
-      silc_client_close_connection(client, conn);
+      if (sock == conn->sock)
+	client->ops->disconnect(client, conn);
+      silc_client_close_connection(client, sock, conn);
       return;
     }
 
@@ -852,8 +854,8 @@ void silc_client_packet_parse_type(SilcClient client,
     break;
 
   case SILC_PACKET_KEY_EXCHANGE:
-    if (sock->protocol && sock->protocol->protocol->type 
-	== SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
+    if (sock->protocol && sock->protocol->protocol && 
+	sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
       SilcClientKEInternalContext *proto_ctx = 
 	(SilcClientKEInternalContext *)sock->protocol->context;
 
@@ -876,8 +878,8 @@ void silc_client_packet_parse_type(SilcClient client,
     break;
 
   case SILC_PACKET_KEY_EXCHANGE_1:
-    if (sock->protocol && sock->protocol->protocol->type 
-	== SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
+    if (sock->protocol && sock->protocol->protocol && 
+	sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
       SilcClientKEInternalContext *proto_ctx = 
 	(SilcClientKEInternalContext *)sock->protocol->context;
 
@@ -900,8 +902,8 @@ void silc_client_packet_parse_type(SilcClient client,
     }
     break;
   case SILC_PACKET_KEY_EXCHANGE_2:
-    if (sock->protocol && sock->protocol->protocol->type 
-	== SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
+    if (sock->protocol && sock->protocol->protocol && 
+	sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
       SilcClientKEInternalContext *proto_ctx = 
 	(SilcClientKEInternalContext *)sock->protocol->context;
 
@@ -1055,12 +1057,23 @@ void silc_client_packet_send(SilcClient client,
 }
 
 /* Closes connection to remote end. Free's all allocated data except
-   for some information such as nickname etc. that are valid at all time. */
+   for some information such as nickname etc. that are valid at all time. 
+   If the `sock' is NULL then the conn->sock will be used.  If `sock' is
+   provided it will be checked whether the sock and `conn->sock' are the
+   same (they can be different, ie. a socket can use `conn' as its
+   connection but `conn->sock' might be actually a different connection
+   than the `sock'). */
 
 void silc_client_close_connection(SilcClient client,
+				  SilcSocketConnection sock,
 				  SilcClientConnection conn)
 {
-  SilcSocketConnection sock = conn->sock;
+  int del = FALSE;
+
+  if (!sock || (sock && conn->sock == sock))
+    del = TRUE;
+  if (!sock)
+    sock = conn->sock;
 
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(sock->sock);
@@ -1072,12 +1085,12 @@ void silc_client_close_connection(SilcClient client,
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);
 
-  client->ops->say(client, sock->user_data,
-		   "Closed connection to host %s", sock->hostname);
-
   /* Free everything */
-  if (sock->user_data) {
+  if (del && sock->user_data) {
     /* XXX Free all client entries and channel entries. */
+
+    client->ops->say(client, sock->user_data,
+		     "Closed connection to host %s", sock->hostname);
 
     /* Clear ID caches */
     silc_idcache_del_all(conn->client_cache);
@@ -1145,7 +1158,7 @@ void silc_client_disconnected_by_server(SilcClient client,
   silc_free(msg);
 
   SILC_SET_DISCONNECTED(sock);
-  silc_client_close_connection(client, sock->user_data);
+  silc_client_close_connection(client, sock, sock->user_data);
 }
 
 /* Received error message from server. Display it on the screen. 
@@ -1359,6 +1372,9 @@ char *silc_client_chmode(unsigned int mode, SilcChannelEntry channel)
 
   if (mode & SILC_CHANNEL_MODE_PASSPHRASE)
     strncat(string, "a", 1);
+
+  if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)
+    strncat(string, "f", 1);
 
   if (mode & SILC_CHANNEL_MODE_CIPHER) {
     char cipher[30];

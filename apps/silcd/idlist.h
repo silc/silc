@@ -361,6 +361,16 @@ struct SilcClientEntryStruct {
        Default hmac of the channel. If this is NULL then server picks
        the cipher to be used. This can be set at SILC_COMMAND_JOIN.
 
+   SilcPublicKey founder_key
+   SilcAuthMethod founder_method
+   unsigned char *founder_passwd
+   unsigned int founder_passwd_len
+
+       If the SILC_CMODE_FOUNDER_AUTH has been set then these will include
+       the founder's public key, authentication method and the password
+       if the method is SILC_AUTH_PASSWORD.  If it is SILC_AUTH_PUBLIC_KEY
+       then the `founder_passwd' is NULL.
+
    SilcServerEntry router
 
        This is a pointer to the server list. This is the router server 
@@ -394,6 +404,11 @@ struct SilcChannelEntryStruct {
   char *topic;
   char *cipher;
   char *hmac_name;
+
+  SilcPublicKey founder_key;
+  SilcAuthMethod founder_method;
+  unsigned char *founder_passwd;
+  unsigned int founder_passwd_len;
 
   unsigned int user_limit;
   unsigned char *passphrase;

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2000 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,19 +33,12 @@ silc_ske_payload_start_decode(SilcSKE ske,
 			      SilcBuffer buffer,
 			      SilcSKEStartPayload **return_payload);
 void silc_ske_payload_start_free(SilcSKEStartPayload *payload);
-SilcSKEStatus silc_ske_payload_one_encode(SilcSKE ske,
-					  SilcSKEOnePayload *payload,
-					  SilcBuffer *return_buffer);
-SilcSKEStatus silc_ske_payload_one_decode(SilcSKE ske,
-					  SilcBuffer buffer,
-					  SilcSKEOnePayload **return_payload);
-void silc_ske_payload_one_free(SilcSKEOnePayload *payload);
-SilcSKEStatus silc_ske_payload_two_encode(SilcSKE ske,
-					  SilcSKETwoPayload *payload,
-					  SilcBuffer *return_buffer);
-SilcSKEStatus silc_ske_payload_two_decode(SilcSKE ske,
-					  SilcBuffer buffer,
-					  SilcSKETwoPayload **return_payload);
-void silc_ske_payload_two_free(SilcSKETwoPayload *payload);
+SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
+					 SilcSKEKEPayload *payload,
+					 SilcBuffer *return_buffer);
+SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
+					 SilcBuffer buffer,
+					 SilcSKEKEPayload **return_payload);
+void silc_ske_payload_ke_free(SilcSKEKEPayload *payload);
 
 #endif

@@ -77,8 +77,7 @@ Table of Contents
 2 SILC Key Exchange Protocol ....................................  3
   2.1 Key Exchange Payloads .....................................  3
       2.1.1 Key Exchange Start Payload ..........................  4
-      2.1.2 Key Exchange 1 Payload ..............................  7
-      2.1.3 Key Exchange 2 Payload ..............................  9
+      2.1.2 Key Exchange Payload ................................  7
   2.2 Key Exchange Procedure .................................... 10
   2.3 Processing the Key Material ............................... 12
   2.4 SILC Key Exchange Groups .................................. 13
@@ -101,9 +100,8 @@ List of Figures
 
 .nf
 Figure 1:  Key Exchange Start Payload
-Figure 2:  Key Exchange 1 Payload
-Figure 3:  Key Exchange 2 Payload
-Figure 4:  Connection Auth Payload
+Figure 2:  Key Exchange Payload
+Figure 3:  Connection Auth Payload
 
 
 .ti 0
@@ -185,7 +183,7 @@ Following descriptions of these payloads.
 .ti 0
 2.1.1 Key Exchange Start Payload
 
-Key exchange between two entities always begins with a
+Key exchange between two entities always begins with the
 SILC_PACKET_KEY_EXCHANGE packet containing Key Exchange Start Payload.
 Initiator sends the Key Exchange Start Payload to the responder filled with
 all security properties it supports.  The responders then checks whether
@@ -296,16 +294,16 @@ o Flags (1 byte) - Indicates flags to be used in the key
   exchange.  Several flags can be set at once by ORing the
   flags together.  Following flags are reserved for this field.
 
-     No flags              0x00
+     No flags                 0x00
 
        In this case the field is ignored.
 
-     No Reply              0x01
+     No Reply                 0x01
 
        If set the receiver of the payload does not reply to 
        the packet.
 
-     PFS                   0x02
+     PFS                      0x02
 
        Perfect Forward Secrecy (PFS) to be used in the
        key exchange protocol.  If not set, re-keying
@@ -315,6 +313,16 @@ o Flags (1 byte) - Indicates flags to be used in the key
 
        Rest of the flags are reserved for the future and
        must not be set.
+
+     Mutual Authentication    0x04
+
+       Both of the parties will perform authenetication
+       by providing signed data for the other party to
+       verify.  By default, only responder will provide
+       the signature data.  If this is set then the
+       inititator must also provide it.  Initiator may
+       set this but also responder may set this even if
+       initiator did not set it.
 
 o Payload Length (2 bytes) - Length of the entire Key Exchange
   Start payload, not including any other field.
@@ -374,35 +382,27 @@ o Compression Algorithms (variable length) - The list of
 
 
 .ti 0
-2.1.2 Key Exchange 1 Payload
+2.1.2 Key Exchange Payload
 
-Key Exchange 1 Payload is used to deliver computed public data from 
-initiator to responder.  This data is used to compute the shared secret,
-later by all parties.  Key Exchange 1 Payload is only sent after the 
-SILC_PACKET_KEY_EXCHANGE packet and the Key Exchange Start Payload has
-been processed by all the parties.
+Key Exchange payload is used to deliver the public key (or certificate),
+the computed Diffie-Hellman public value and possibly signature data
+from one party to the other.  When initiator is using this payload
+and the Mutual Authentication flag is not set then the initiator must
+not provide the signature data.  If the flag is set then the initiator
+must provide the signature data so that the responder may verify it.
 
-This payload sends the initiator's public key to the responder.  Responder
-may need the public key in which case it should be checked to be trusted
-by the responder.
- 
-The payload may only be sent with SILC_PACKET_KEY_EXCHANGE_1 packet.
-It must not be sent in any other packet type.  Following diagram 
-represent the Key Exchange 1 Payload.
+The Mutual Authentication flag is usually used only if a separate
+authentication protocol will not be executed for the initiator of the
+prtocool.  This is case for example when the SKE is performed between
+two SILC clients.  In normal case, where client is connecting to the
+server or server is connecting to the router the Mutual Authentication
+flag is not necessary.
 
+This payload is sent inside SILC_PACKET_KEY_EXCHANGE_1 and inside
+SILC_PACKET_KEY_EXCHANGE_2 packet types.  The initiator uses the 
+SILC_PACKET_KEY_EXCHANGE_1 and the responder the latter.
 
-
-
-
-
-
-
-
-
-
-
-
-
+The following diagram represent the Key Exchange 1 Payload.
 
 
 .in 5
@@ -413,19 +413,25 @@ represent the Key Exchange 1 Payload.
 |       Public Key Length       |        Public Key Type        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-~            Public Key of the Host (or certificate)            ~
+~            Public Key of the party (or certificate)           ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|      Public Data Length       |                               |
+|       Public Data Length      |                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
 |                                                               |
-~                 Public Data (e = g ^ x mod p)                 ~
+~                          Public Data                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Signature Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                        Signature Data                         ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
 .ce
-Figure 2:  Key Exchange 1 Payload
+Figure 2:  Key Exchange Payload
 
 
 .in 6
@@ -452,92 +458,29 @@ o Public Key Type (2 bytes) - The public key (or certificate)
   sending SILC_PACKET_FAILURE message and the connection should
   be closed immediately.
 
-o Public Data Length (2 bytes) - The length of the public
-  data computed by the responder, not including any other
-  field.
+o Public Data Length (2 bytes) - The length of the Public Data
+  field, not including any other field.
 
 o Public Data (variable length) - The public data to be
-  sent to the responder.  See section 2.2 Key Exchange 
+  sent to the receiver.  See section 2.2 Key Exchange 
   Procedure for detailed description how this field is
   computed.  This value is binary encoded.
-.in 3
-
-
-.ti 0
-2.1.3 Key Exchange 2 Payload
-
-Key Exchange 2 Payload is used to deliver public key, computed public
-data and signature from responder to initiator.  Initiator uses these
-public parts of the key exchange protocol to compute the shared secret.
-
-The payload may only be sent with SILC_PACKET_KEY_EXCHANGE_2 packet.
-It must not be sent in any other packet type.  Following diagram 
-represent the Key Exchange 2 Payload.
-
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|       Public Key Length       |        Public Key Type        |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~            Public Key of the Host (or certificate)            ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|       Public Data Length      |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                 Public Data (f = g ^ y mod p)                 ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Signature Length       |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                        Signature Data                         ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 3:  Key Exchange 2 Payload
-
-
-
-.in 6
-o Public Key Length (2 bytes) - The length of the Public Key
-  (or certificate) field, not including any other field.
-
-o Public Key Type (2 bytes) - The public key (or certificate) 
-  type.  This field indicates the type of the public key in 
-  the packet.  See previous sections for defined public key
-  types.
-
-o Public Key of the host (variable length) - The public
-  key of the sender (or its certificate).  This is verified
-  by the receiver of the packet.  The type of this field
-  is indicated by previous Public Key Type field.
-
-o Public Data Length (2 bytes) - The length of the public
-  data computed by the responder, not including any other
-  field.
-
-o Public Data (variable length) - The public data computed
-  by the responder.  See section 2.2 Key Exchange Procedure
-  for detailed description how this field is computed.  This
-  value is binary encoded.
 
 o Signature Length (2 bytes) - The length of the signature,
   not including any other field.
 
 o Signature Data (variable length) - The signature signed
-  by the responder.  The receiver of this signature must
+  by the sender.  The receiver of this signature must
   verify it.  The verification is done using the public
   key received in this same payload.  See section 2.2
   Key Exchange Procedure for detailed description how
-  to produce the signature.
+  to produce the signature.  If the Mutual Authentication
+  flag is not set then initiator must not provide this
+  field and the Signature Length field must be set to zero (0)
+  value.  If the flag is set then also the initiator must
+  provide this field.  The responder always provides this
+  field.
+.in 3
 
 
 .ti 0
@@ -558,26 +501,45 @@ Setup:  p is a large and public safe prime.  This is one of the
 
     1.  Initiator generates a random number x, where 1 < x < q, 
         and computes e = g ^ x mod p.  The result e is then 
-        encoded into Key Exchange 1 Payload and sent
-        to the responder.
+        encoded into Key Exchange Payload and sent to the
+        responder.
 
+        If the Mutual Authentication flag is set then initiator
+        must also produce signature data SIGN_i which the responder
+        will verify.  The initiator must compute a hash value
+        HASH_i = hash(Key Exchange Start Payload | public key
+        (or certificate) | e).  It then signs the HASH_i value with
+        its private key resulting a signature SIGN_i.
 
     2.  Responder generates a random number y, where 1 < y < q,
         and computes f = g ^ y mod p.  It then computes the
         shared secret KEY = e ^ y mod p, and, a hash value 
-        HASH = hash(Key Exchange Start Payload data | Host public 
+        HASH = hash(Key Exchange Start Payload data | public 
         key (or certificate) | e | f | KEY).  It then signs
         the HASH value with its private key resulting a signature
         SIGN.  
 
         It then encodes its public key (or certificate), f and 
-        SIGN into Key Exchange 2 Payload and sends it to the 
+        SIGN into Key Exchange Payload and sends it to the 
         initiator.
 
+        If the Mutual Authentication flag is set then the responder
+        should verify that the public key provided in the payload
+        is authentic, or if certificates are used it verifies the
+        certificate.  The responder may accept the public key without
+        verifying it, however, doing so may result to insecure key
+        exchange (accepting the public key without verifying may be
+        desirable for practical reasons on many environments.  For
+        long term use this is never desirable, in which case
+        certificates would be the preferred method to use).  It then
+        computes the HASH_i value the same way initiator did in the
+        phase 1.  It then verifies the signature SIGN_i from the
+        payload with the hash value HASH_i using the received public
+        key.
 
     3.  Initiator verifies that the public key provided in
         the payload is authentic, or if certificates are used
-        it verifies the certificate.  Initiator may accept
+        it verifies the certificate.  The initiator may accept
         the public key without verifying it, however, doing
         so may result to insecure key exchange (accepting the
         public key without verifying may be desirable for 
@@ -605,6 +567,9 @@ used.  The key material is also used to produce other security parameters
 later used in the communication.  See section 2.3 Processing the Key
 Material for detailed description how to process the key material.
 
+If the Mutual Authentication flag was set the protocol produces also
+a hash value HASH_i.  This value, however, must be discarded.
+
 After the keys are processed the protocol is ended by sending the
 SILC_PACKET_SUCCESS packet.  Both entities send this packet to 
 each other.  After this both parties will start using the new keys.
@@ -619,8 +584,7 @@ Key Exchange protocol produces secret shared key material KEY.  This
 key material is used to derive the actual keys used in the encryption
 of the communication channel.  The key material is also used to derive
 other security parameters used in the communication.  Key Exchange
-protocol produces a hash value HASH as well.  This is used in the key
-deriving process as a session identifier.
+protocol produces a hash value HASH as well.
 
 Keys are derived from the key material as follows:
 
@@ -925,7 +889,7 @@ represent the Connection Auth Payload.
 .in 3
  
 .ce
-Figure 4:  Connection Auth Payload
+Figure 3:  Connection Auth Payload
 
 
 .in 6

@@ -150,28 +150,10 @@ TODO in the protocol before SILC 0.x
 	  to various security reasons (the server must not trust the
 	  public keys blindly without third party verification; that's
 	  why SENDKEY is not for servers).
-	o Define AWAY command to set the indication flag whether the
-	  client is present or not.  Do not save the away message to the
-	  server though.
-	o Define the channel founder property to be permanent locally in
-	  the server so that channel founder can regain its rights even
-	  if it disconnects from the server.  Thus, define a new command
-	  or channel user mode that can be used to set the channel founder
-	  passphrase or public key that can be used in the authentication
-	  when regaining the founder rights.
 
  o New features in the KE/auth protocol
    (draft-riikonen-silc-ke-auth-xx.txt):
 
-	o Merge the KE1 and KE2 payloads into one KE payload that has
-	  the `signature' field.  Provide it only if the perty is
-	  required to do authentication.
-	o Add MUTUAL_AUTH flag to indicate that the party must perform
-	  authentication (to sign with their private key).  Initiator
-	  may set it to indicate that it can authenticate but responder
-	  MAY require for the initiator to do authentication by setting
-	  the flag at the KE Start Payload reply phase.  The responder
-	  performs authentication always as now as well.
 	o Define group exchange support for the SKE so that the SKE
 	  could be performed among more than two entities.  This is not
 	  a showstopper and may be defined later.

@@ -613,6 +613,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
+  SilcIDCacheEntry cache = NULL;
   SilcCommandStatus status;
   SilcChannelID *id;
   SilcClientID *client_id = NULL;
@@ -702,7 +703,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   silc_buffer_put(client_mode_list, tmp, len);
 
   /* See whether we already have the channel. */
-  entry = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
+  entry = silc_idlist_find_channel_by_name(server->local_list, 
+					   channel_name, &cache);
   if (!entry) {
     /* Add new channel */
 
@@ -719,7 +721,21 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
       goto out;
     }
   } else {
-    silc_free(id);
+    /* The entry exists. */
+    if (entry->id)
+      silc_free(entry->id);
+    entry->id = id;
+    cache->id = entry->id;
+
+    /* Remove the founder auth data if the mode is not set but we have
+       them in the entry */
+    if (!(mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) && entry->founder_key) {
+      silc_pkcs_public_key_free(entry->founder_key);
+      if (entry->founder_passwd) {
+	silc_free(entry->founder_passwd);
+	entry->founder_passwd = NULL;
+      }
+    }
   }
 
   if (entry->hmac_name && hmac) {

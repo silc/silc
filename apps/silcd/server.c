@@ -715,7 +715,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (protocol->state == SILC_PROTOCOL_STATE_ERROR) {
+  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_protocol_free(protocol);
     silc_ske_free_key_material(ctx->keymat);
@@ -847,7 +848,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (protocol->state == SILC_PROTOCOL_STATE_ERROR) {
+  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
@@ -1710,8 +1712,8 @@ void silc_server_packet_parse_type(SilcServer server,
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
 
-    if (sock->protocol && sock->protocol->protocol->type 
-	== SILC_PROTOCOL_SERVER_KEY_EXCHANGE) {
+    if (sock->protocol && sock->protocol->protocol &&
+	sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE) {
 
       SilcServerKEInternalContext *proto_ctx = 
 	(SilcServerKEInternalContext *)sock->protocol->context;
@@ -1734,8 +1736,8 @@ void silc_server_packet_parse_type(SilcServer server,
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
 
-    if (sock->protocol && sock->protocol->protocol->type 
-	== SILC_PROTOCOL_SERVER_KEY_EXCHANGE) {
+    if (sock->protocol && sock->protocol->protocol &&
+	sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE) {
 
       SilcServerKEInternalContext *proto_ctx = 
 	(SilcServerKEInternalContext *)sock->protocol->context;
@@ -1765,8 +1767,8 @@ void silc_server_packet_parse_type(SilcServer server,
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
 
-    if (sock->protocol && sock->protocol->protocol->type 
-	== SILC_PROTOCOL_SERVER_KEY_EXCHANGE) {
+    if (sock->protocol && sock->protocol->protocol &&
+	sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE) {
 
       SilcServerKEInternalContext *proto_ctx = 
 	(SilcServerKEInternalContext *)sock->protocol->context;
@@ -2262,9 +2264,26 @@ void silc_server_remove_from_channels(SilcServer server,
     /* Remove channel if there is no users anymore */
     if (server->server_type == SILC_ROUTER &&
 	silc_list_count(channel->user_list) < 2) {
+      server->stat.my_channels--;
+
+      if (channel->founder_key) {
+	/* The founder auth data exists, do not remove the channel entry */
+	SilcChannelClientEntry chl2;
+
+	silc_free(channel->id);
+	channel->id = NULL;
+
+	silc_list_start(channel->user_list);
+	while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+	  silc_list_del(chl2->client->channels, chl2);
+	  silc_list_del(channel->user_list, chl2);
+	  silc_free(chl2);
+	}
+	continue;
+      }
+
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
-      server->stat.my_channels--;
       continue;
     }
 
@@ -2292,9 +2311,26 @@ void silc_server_remove_from_channels(SilcServer server,
 					   signoff_message, signoff_message ?
 					   strlen(signoff_message) : 0);
 
+      server->stat.my_channels--;
+
+      if (channel->founder_key) {
+	/* The founder auth data exists, do not remove the channel entry */
+	SilcChannelClientEntry chl2;
+
+	silc_free(channel->id);
+	channel->id = NULL;
+
+	silc_list_start(channel->user_list);
+	while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+	  silc_list_del(chl2->client->channels, chl2);
+	  silc_list_del(channel->user_list, chl2);
+	  silc_free(chl2);
+	}
+	continue;
+      }
+
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
-      server->stat.my_channels--;
       continue;
     }
 
@@ -2386,10 +2422,27 @@ int silc_server_remove_from_one_channel(SilcServer server,
 					   SILC_NOTIFY_TYPE_LEAVE, 1,
 					   clidp->data, clidp->len);
 
+      server->stat.my_channels--;
+      silc_buffer_free(clidp);
+
+      if (channel->founder_key) {
+	/* The founder auth data exists, do not remove the channel entry */
+	SilcChannelClientEntry chl2;
+
+	silc_free(channel->id);
+	channel->id = NULL;
+
+	silc_list_start(channel->user_list);
+	while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+	  silc_list_del(chl2->client->channels, chl2);
+	  silc_list_del(channel->user_list, chl2);
+	  silc_free(chl2);
+	}
+	return FALSE;
+      }
+
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
-      silc_buffer_free(clidp);
-      server->stat.my_channels--;
       return FALSE;
     }
 

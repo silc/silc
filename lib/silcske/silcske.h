@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2000 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -77,9 +77,10 @@ typedef struct {
 
 /* Security Property Flags. */
 typedef enum {
-  SILC_SKE_SP_FLAG_NONE      = (1L << 0),
-  SILC_SKE_SP_FLAG_NO_REPLY  = (1L << 1),
-  SILC_SKE_SP_FLAG_PFS       = (1L << 2),
+  SILC_SKE_SP_FLAG_NONE      = 0x00,
+  SILC_SKE_SP_FLAG_NO_REPLY  = 0x01,
+  SILC_SKE_SP_FLAG_PFS       = 0x02,
+  SILC_SKE_SP_FLAG_MUTUAL    = 0x04,
 } SilcSKESecurityPropertyFlag;
 
 /* Security Properties negotiated between key exchange parties. This
@@ -106,8 +107,8 @@ struct SilcSKEStruct {
   /* Key Exchange payloads filled during key negotiation with
      remote data. Responder may save local data here as well. */
   SilcSKEStartPayload *start_payload;
-  SilcSKEOnePayload *ke1_payload;
-  SilcSKETwoPayload *ke2_payload;
+  SilcSKEKEPayload *ke1_payload;
+  SilcSKEKEPayload *ke2_payload;
 
   /* Temporary copy of the KE Start Payload used in the
      HASH computation. */
@@ -155,10 +156,11 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
 					 void *context);
 SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 					 SilcPublicKey public_key,
+					 SilcPrivateKey private_key,
 					 SilcSKESendPacketCb send_packet,
 					 void *context);
 SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
-					SilcBuffer ke2_payload,
+					SilcBuffer ke_payload,
 					SilcSKEVerifyCb verify_key,
 					void *verify_context,
 					SilcSKECb callback,
@@ -167,6 +169,7 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
 				       char *version,
 				       SilcBuffer start_payload,
+				       int mutual_auth,
 				       SilcSKECb callback,
 				       void *context);
 SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske, 
@@ -174,7 +177,9 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
 					 SilcSKESendPacketCb send_packet,
 					 void *context);
 SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
-					 SilcBuffer ke1_payload,
+					 SilcBuffer ke_payload,
+					 SilcSKEVerifyCb verify_key,
+					 void *verify_context,
 					 SilcSKECb callback,
 					 void *context);
 SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
@@ -204,7 +209,8 @@ SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n,
 				  SilcInt *rnd);
 SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
 				 unsigned char *return_hash,
-				 unsigned int *return_hash_len);
+				 unsigned int *return_hash_len,
+				 int initiator);
 SilcSKEStatus 
 silc_ske_process_key_material_data(unsigned char *data,
 				   unsigned int data_len,

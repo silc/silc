@@ -671,7 +671,7 @@ SILC_TASK_CALLBACK(silc_client_command_quit_cb)
 
   /* Close connection */
   q->client->ops->disconnect(q->client, q->conn);
-  silc_client_close_connection(q->client, q->conn->sock->user_data);
+  silc_client_close_connection(q->client, NULL, q->conn->sock->user_data);
 
   silc_free(q);
 }
@@ -1071,6 +1071,12 @@ SILC_CLIENT_CMD_FUNC(umode)
       else
 	mode &= ~SILC_UMODE_ROUTER_OPERATOR;
       break;
+    case 'g':
+      if (add)
+	mode |= SILC_UMODE_GONE;
+      else
+	mode &= ~SILC_UMODE_GONE;
+      break;
     default:
       COMMAND_ERROR;
       goto out;
@@ -1108,7 +1114,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
-  SilcBuffer buffer, chidp;
+  SilcBuffer buffer, chidp, auth = NULL;
   unsigned char *name, *cp, modebuf[4], tmp[4], *arg = NULL;
   unsigned int mode, add, type, len, arg_len = 0;
   int i;
@@ -1234,6 +1240,28 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	mode &= ~SILC_CHANNEL_MODE_HMAC;
       }
       break;
+    case 'f':
+      if (add) {
+	mode |= SILC_CHANNEL_MODE_FOUNDER_AUTH;
+	type = 7;
+
+	if (!strcasecmp(cmd->argv[3], "-pubkey")) {
+	  auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+						    cmd->client->private_key,
+						    conn->hash,
+						    conn->local_id,
+						    SILC_ID_CLIENT);
+	} else {
+	  auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
+					  cmd->argv[3], cmd->argv_lens[3]);
+	}
+
+	arg = auth->data;
+	arg_len = auth->len;
+      } else {
+	mode &= ~SILC_CHANNEL_MODE_FOUNDER_AUTH;
+      }
+      break;
     default:
       COMMAND_ERROR;
       goto out;
@@ -1268,6 +1296,8 @@ SILC_CLIENT_CMD_FUNC(cmode)
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
+  if (auth)
+    silc_buffer_free(auth);
 
   /* Notify application */
   COMMAND;
@@ -1285,7 +1315,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
   SilcChannelEntry channel;
   SilcChannelUser chu;
   SilcClientEntry client_entry;
-  SilcBuffer buffer, clidp, chidp;
+  SilcBuffer buffer, clidp, chidp, auth = NULL;
   unsigned char *name, *cp, modebuf[4];
   unsigned int mode = 0, add, len;
   char *nickname = NULL, *server = NULL;
@@ -1378,10 +1408,23 @@ SILC_CLIENT_CMD_FUNC(cumode)
       }
       break;
     case 'f':
-      if (add)
+      if (add) {
+	if (cmd->argc == 5) {
+	  if (!strcasecmp(cmd->argv[4], "-pubkey")) {
+	  auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+						    cmd->client->private_key,
+						    conn->hash,
+						    conn->local_id,
+						    SILC_ID_CLIENT);
+	  } else {
+	    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
+					    cmd->argv[4], cmd->argv_lens[4]);
+	  }
+	}
 	mode |= SILC_CHANNEL_UMODE_CHANFO;
-      else
+      } else {
 	mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+      }
       break;
     case 'o':
       if (add)
@@ -1402,16 +1445,20 @@ SILC_CLIENT_CMD_FUNC(cumode)
 
   /* Send the command packet. We support sending only one mode at once
      that requires an argument. */
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_CUMODE, 0, 3, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_CUMODE, 0, 4, 
 					  1, chidp->data, chidp->len, 
 					  2, modebuf, 4,
-					  3, clidp->data, clidp->len);
-
+					  3, clidp->data, clidp->len,
+					  4, auth ? auth->data : NULL, 
+					  auth ? auth->len : 0);
+  
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
   silc_buffer_free(clidp);
+  if (auth)
+    silc_buffer_free(auth);
   
   /* Notify application */
   COMMAND;
@@ -1990,7 +2037,10 @@ SILC_CLIENT_CMD_FUNC(users)
 	  strcat(line, " ");
       }
 
-      strncat(line, "  H", 3);
+      if (e->mode & SILC_UMODE_GONE)
+	strcat(line, "  G");
+      else
+	strcat(line, "  H");
       strcat(tmp, m ? m : "");
       strncat(line, tmp, strlen(tmp));
 

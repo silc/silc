@@ -522,12 +522,18 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  }
 	}
 
-	if (mode)
-	  client->ops->say(client, conn, "%s is %s", nickname,
-			   (mode & SILC_UMODE_SERVER_OPERATOR) ?
-			   "Server Operator" :
-			   (mode & SILC_UMODE_ROUTER_OPERATOR) ?
-			   "SILC Operator" : "[Unknown mode]");
+	if (mode) {
+	  if ((mode & SILC_UMODE_SERVER_OPERATOR) ||
+	      (mode & SILC_UMODE_ROUTER_OPERATOR))
+	    client->ops->say(client, conn, "%s is %s", nickname,
+			     (mode & SILC_UMODE_SERVER_OPERATOR) ?
+			     "Server Operator" :
+			     (mode & SILC_UMODE_ROUTER_OPERATOR) ?
+			     "SILC Operator" : "[Unknown mode]");
+
+	  if (mode & SILC_UMODE_GONE)
+	    client->ops->say(client, conn, "%s is gone", nickname);
+	}
 
 	if (idle && nickname)
 	  client->ops->say(client, conn, "%s has been idle %d %s",

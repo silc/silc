@@ -88,12 +88,21 @@ SILC Commands
 				be provided when joining to the channel.
 		c <cipher>      Set/unset channel's cipher
 		h <hmac>        Set/unset channel's hmac
+		f <-pubkey|<password>
+				Set/unset channel founder authentication.
+				Channel founder may set this mode so that
+				if the client leaves the channel it can
+				claim the founder rights when it returns
+				to the channel.  If -pubkey is set then
+				the authentication will be done using the
+				client's public key.  You can claim the
+				founder rights using the CUMODE command.
 
 		Multiple modes can be set/unset at once if the modes does not
 		require any arguments.  If mode requires an argument then only
 		one mode can be set at once.
 
-	/CUMODE	<channel> +|-<modes> <nickname>[@<server>]
+	/CUMODE	<channel> +|-<modes> <nickname>[@<server>] [-pubkey|<passwd>]
 
 		Changes/set user's mode on a channel.  Most of the modes 
 		require that the client who changes some client's mode must
@@ -101,26 +110,39 @@ SILC Commands
 		user modes are available:
 
 		a <nickname>[@<server>]
+
 				Set/unset all modes (cannot be used to set
 				both founder and operator rights, can be used
 				only to remove both modes at once).
-		f <nickname>[@<server>]
-				Unset channel founder.  Channel founder rights
-				cannot be set by user (only by server) so this
-				can be used only to unset the mode.
+
+		f <nickname>[@<server>] [-pubkey|<password>]
+
+				Set/Unset channel founder.  If the -pubkey
+				option or <password> is provided then the
+				client is claiming the founder rights by
+				providing the channel founder authentication
+				data.  If the -pubkey is provided then the
+				authentication is performed using the
+				client's public key.  If you are channel
+				founder you can set the channel founder
+				authentication using CMODE command.
+
 		o <nickname>[@<server>]
+
 				Set/unset channel operator.  Requires that 
 				you are channel operator or channel founder.
 
 	/UMODE	+|-<modes>
 
-		Sets/unsets user mode.  Currently none of the modes can
-		be set by the user so this command can be merely used to
-		unset some mode.  Following user modes are available:
+		Sets/unsets user mode.  Note that some of the modes the
+		client cannot set itself.  The following user modes are
+		available:
 
 		a 	Unset all modes
 		s	Unset server operator privileges
 		r	Unset router operator privileges
+		g	Set/unset to be gone (or use /AWAY command)
+
 
 	/MSG    <nickname> <message>
 

@@ -230,6 +230,8 @@ int silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
   silc_hash_make(hash, src, src_len, hashr);
   hash_len = hash->hash->hash_len;
 
+  SILC_LOG_HEXDUMP(("Hash"), hashr, hash_len);
+
   ret = pkcs->pkcs->sign(pkcs->context, hashr, hash_len, dst, dst_len);
   memset(hashr, 0, sizeof(hashr));
 
@@ -251,6 +253,8 @@ int silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
 
   silc_hash_make(hash, data, data_len, hashr);
   hash_len = hash->hash->hash_len;
+
+  SILC_LOG_HEXDUMP(("Hash"), hashr, hash_len);
 
   ret = pkcs->pkcs->verify(pkcs->context, signature, signature_len, 
 			   hashr, hash_len);

@@ -70,12 +70,13 @@ struct SilcClientConnectionStruct {
   /*
    * Common data 
    */
-  /* Keys */
+  /* Keys and stuff negotiated in the SKE protocol */
   SilcCipher send_key;
   SilcCipher receive_key;
   SilcHmac hmac;
   unsigned char *hmac_key;
   unsigned int hmac_key_len;
+  SilcHash hash;
 
   /* Client ID and Channel ID cache. Messages transmitted in SILC network
      are done using different unique ID's. These are the cache for

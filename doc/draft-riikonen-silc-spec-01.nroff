@@ -2661,6 +2661,7 @@ List of all defined commands in SILC follows.
               privileges by SILC_COMMAND_SILCOPER command.  Client
               may unset the mode itself.
 
+
         Reply messages to the command:
 
         Max Arguments:  2

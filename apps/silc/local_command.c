@@ -218,6 +218,8 @@ SILC_CLIENT_LCMD_FUNC(away)
   SilcClientConnection conn = cmd->conn;
   SilcClient client = cmd->client;
   SilcClientInternal app = (SilcClientInternal)client->application;
+  unsigned char modebuf[4];
+  SilcBuffer idp, buffer;
 
   if (!cmd->conn) {
     silc_say(client, conn,
@@ -226,6 +228,8 @@ SILC_CLIENT_LCMD_FUNC(away)
   }
 
   if (cmd->argc == 1) {
+    conn->local_entry->mode &= ~SILC_UMODE_GONE;
+
     if (conn->away) {
       silc_free(conn->away->away);
       silc_free(conn->away);
@@ -236,7 +240,8 @@ SILC_CLIENT_LCMD_FUNC(away)
       silc_screen_print_bottom_line(app->screen, 0);
     }
   } else {
-
+    conn->local_entry->mode |= SILC_UMODE_GONE;
+  
     if (conn->away)
       silc_free(conn->away->away);
     else
@@ -248,6 +253,19 @@ SILC_CLIENT_LCMD_FUNC(away)
     silc_say(client, conn, "Away message set: %s", conn->away->away);
     silc_screen_print_bottom_line(app->screen, 0);
   }
+
+  /* Send the UMODE command to se myself as gone */
+  idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
+  SILC_PUT32_MSB(conn->local_entry->mode, modebuf);
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_UMODE, 
+					  ++conn->cmd_ident, 2, 
+					  1, idp->data, idp->len, 
+					  2, modebuf, sizeof(modebuf));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, 
+			  NULL, 0, NULL, NULL, buffer->data, 
+			  buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_buffer_free(idp);
 
  out:
   silc_client_command_free(cmd);

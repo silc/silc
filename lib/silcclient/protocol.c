@@ -117,6 +117,9 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
   /* Save HMAC key to be used in the communication. */
   silc_hmac_alloc(hmac->hmac->name, NULL, &conn->hmac);
   silc_hmac_set_key(conn->hmac, keymat->hmac_key, keymat->hmac_key_len);
+
+  /* Save the HASH function */
+  silc_hash_alloc(hash->hash->name, &conn->hash);
 }
 
 /* Checks the version string of the server. */
@@ -183,7 +186,8 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
 					  silc_version_string,
-					  ctx->packet->buffer, NULL, NULL);
+					  ctx->packet->buffer, TRUE,
+					  NULL, NULL);
       } else {
 	SilcSKEStartPayload *start_payload;
 
@@ -265,16 +269,16 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	   the initiator. This also creates our parts of the Diffie
 	   Hellman algorithm. */
 	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
-					    NULL, NULL);
+					    ctx->verify, context, NULL, NULL);
       } else {
 	/* Call the Phase-2 function. This creates Diffie Hellman
 	   key exchange parameters and sends our public part inside
 	   Key Exhange 1 Payload to the responder. */
-	status = 
-	  silc_ske_initiator_phase_2(ctx->ske,
-				     client->public_key,
-				     ctx->send_packet,
-				     context);
+	status = silc_ske_initiator_phase_2(ctx->ske,
+					    client->public_key,
+					    client->private_key,
+					    ctx->send_packet,
+					    context);
       }
 
       if (status != SILC_SKE_STATUS_OK) {

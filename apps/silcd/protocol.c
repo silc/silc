@@ -102,6 +102,10 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
     idata->receive_key->set_iv(idata->receive_key, keymat->receive_iv);
   }
 
+  /* Save the remote host's public key */
+  silc_pkcs_public_key_decode(ske->ke1_payload->pk_data, 
+			      ske->ke1_payload->pk_len, &idata->public_key);
+
   /* Save the hash */
   if (!silc_hash_alloc(hash->hash->name, &idata->hash)) {
     silc_cipher_free(idata->send_key);
@@ -187,7 +191,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
 					  silc_version_string,
-					  ctx->packet->buffer, NULL, NULL);
+					  ctx->packet->buffer, FALSE,
+					  NULL, NULL);
       } else {
 	SilcSKEStartPayload *start_payload;
 
@@ -269,7 +274,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   the initiator. This also creates our parts of the Diffie
 	   Hellman algorithm. */
 	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
-					    NULL, NULL);
+					    NULL, NULL, NULL, NULL);
       } else {
 	/* Call the Phase-2 function. This creates Diffie Hellman
 	   key exchange parameters and sends our public part inside
@@ -277,6 +282,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	status = 
 	  silc_ske_initiator_phase_2(ctx->ske,
 				     server->public_key,
+				     server->private_key,
 				     silc_server_protocol_ke_send_packet,
 				     context);
       }

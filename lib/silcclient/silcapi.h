@@ -285,8 +285,14 @@ int silc_client_start_key_exchange(SilcClient client,
                                    int fd);
 
 /* Closes connection to remote end. Free's all allocated data except
-   for some information such as nickname etc. that are valid at all time. */
+   for some information such as nickname etc. that are valid at all time. 
+   If the `sock' is NULL then the conn->sock will be used.  If `sock' is
+   provided it will be checked whether the sock and `conn->sock' are the
+   same (they can be different, ie. a socket can use `conn' as its
+   connection but `conn->sock' might be actually a different connection
+   than the `sock'). */
 void silc_client_close_connection(SilcClient client,
+				  SilcSocketConnection sock,
 				  SilcClientConnection conn);
 
 
