@@ -111,9 +111,10 @@ Table of Contents
   2.8 Packet Compression ........................................ 40
   2.9 Packet Sending ............................................ 40
   2.10 Packet Reception ......................................... 41
-  2.11 Packet Broadcasting ...................................... 41
-  2.12 Packet Routing ........................................... 42
-  2.13 Packet Tunneling ......................................... 42
+  2.11 Packet Routing ........................................... 42
+  2.12 Packet Forwarding ........................................
+  2.13 Packet Broadcasting ...................................... 41
+  2.14 Packet Tunneling ......................................... 42
 3 Security Considerations ....................................... 43
 4 References .................................................... 43
 5 Author's Address .............................................. 44
@@ -297,7 +298,16 @@ o Flags (1 byte) - Indicates flags to be used in packet
        Encryption And Decryption for more information.
 
 
-     Broadcast                 0x02
+     Forwarded                 0x02
+  
+       Marks the packet to be forwarded.  Some specific
+       packet types may be forwarded.  Receiver of packet
+       with this flag set must not forward the packet any
+       further.  See section 2.12 Packet Forwarding for
+       desribtion of packet forwarding.
+
+
+     Broadcast                 0x04
 
        Marks the packet to be broadcasted.  Client cannot
        send broadcast packet and normal server cannot send
@@ -306,16 +316,16 @@ o Flags (1 byte) - Indicates flags to be used in packet
        set must send (broadcast) the packet to its primary
        route.  If router has several router connections the
        packet may be sent only to the primary route.  See
-       section 2.11 Packet Broadcasting for description of 
+       section 2.13 Packet Broadcasting for description of 
        packet broadcasting.
 
 
-     Tunneled                  0x04
+     Tunneled                  0x08
 
        Marks that the packet is tunneled.  Tunneling means
        that extra SILC Packet Header has been applied to the
        original packet.  The outer header has this flag
-       set.  See section 2.13 Packet Tunneling for more
+       set.  See section 2.14 Packet Tunneling for more
        information.
 .in 3
 
@@ -1677,7 +1687,7 @@ Information about newly created channel is broadcasted to all routers
 in the SILC network by sending this packet payload.  Channels are
 created by router of the cell.  Server never creates channels unless
 it is a standalone server and it does not have router connection,
-in this case server acts as router.  Normal server sends JOIN command
+in this case server acts as router.  Normal server forwards JOIN command
 to the router (after it has received JOIN command from client) which
 then processes the command and creates the channel.  Client never sends
 this packet.
@@ -2142,10 +2152,10 @@ server or router en route must not decompress the packet.
 
 The sender of the packet must assemble the SILC Packet Header with
 correct values.  It must set the Source ID of the header as its own
-ID.  It must also set the Destination ID of the header to the true
-destination.  If the destination is client it will be Client ID, if
-it is server it will be Server ID and if it is channel it will be
-Channel ID.
+ID, unless it is forwarding the packet.  It must also set the Destination
+ID of the header to the true destination.  If the destination is client
+it will be Client ID, if it is server it will be Server ID and if it is
+channel it will be Channel ID.
 
 If the sender wants to compress the packet it must apply the
 compression now.  Sender must also compute the padding as described
@@ -2178,34 +2188,7 @@ special packet types and their parsing.
 
 
 .ti 0
-2.11 Packet Broadcasting
-
-SILC packets may be broadcasted in SILC network.  However, only router
-server may send or receive broadcast packets.  Client and normal server
-must not send broadcast packets and they must ignore broadcast packets
-if they receive them.  Broadcast packets are sent by setting Broadcast
-flag to the SILC packet header.
-
-Broadcasting packets means that the packet is sent to all routers in
-the SILC network, except to the router that sent the packet.  The router
-receiving broadcast packet must send the packet to its primary route.
-The fact that SILC routers may have several router connections may
-cause problems, such as race conditions inside the SILC network, if
-care is not taken when broadcasting packets.  Router must not send
-the broadcast packet to any other route except to its primary route.
-
-If the primary route of the router is the original sender of the packet
-the packet must not be sent to the primary route.  This may happen
-if router has several router connections and some other router uses
-the router as its primary route.
-
-Routers use broadcast packets to broadcast for example information
-about newly registered clients, servers, channels etc. so that all the
-routers may keep these informations up to date.
-
-
-.ti 0
-2.12 Packet Routing
+2.11 Packet Routing
 
 Routers are the primary entities in the SILC network that takes care
 of packet routing.  However, normal servers routes packets as well, for
@@ -2237,7 +2220,62 @@ directly connected to the server.
 
 
 .ti 0
-2.13 Packet Tunneling
+2.12 Packet Forwarding
+
+Currently SILC command packets may be forwarded from one entity to another.
+Any other packet currently cannot be forwarded but support for more packet
+types may be added if needed.  Forwarding is usually used by server to
+forward some command request coming from client to the router as the server
+may be incapable to handle the request.  Forwarding may be only one hop
+long; the receiver of the packet with Forwarded flag set in the SILC   
+Packet header must not forward the packet any further.
+
+The normal scenario is that client sends JOIN command to the server which
+is not able to create the channel as there are no local clients on the
+channel.  Channels are created always by the router of the cell thus the
+packet must be forwarded to the router.  The server forwards the original
+packet coming from client to the router after it has set the Forwarded
+flag to the SILC Packet header.
+
+Router receiving the packet knows that the packet has to be processed
+specially by checking the flags and the Forwarded flag in the SILC Packet
+header.  After router has joined the client to the channel (and perhaps
+created a new channel) it sends normal command reply packet to the
+client.  However, as the router doesn't have direct connection to the
+client the packet is sent through the server.  Server detects that 
+the command reply packet is destined to the client and sends it to
+the client.
+
+
+.ti 0
+2.13 Packet Broadcasting
+
+SILC packets may be broadcasted in SILC network.  However, only router
+server may send or receive broadcast packets.  Client and normal server
+must not send broadcast packets and they must ignore broadcast packets
+if they receive them.  Broadcast packets are sent by setting Broadcast
+flag to the SILC packet header.
+
+Broadcasting packets means that the packet is sent to all routers in
+the SILC network, except to the router that sent the packet.  The router
+receiving broadcast packet must send the packet to its primary route.
+The fact that SILC routers may have several router connections may
+cause problems, such as race conditions inside the SILC network, if
+care is not taken when broadcasting packets.  Router must not send
+the broadcast packet to any other route except to its primary route.
+
+If the primary route of the router is the original sender of the packet
+the packet must not be sent to the primary route.  This may happen
+if router has several router connections and some other router uses
+the router as its primary route.
+
+Routers use broadcast packets to broadcast for example information
+about newly registered clients, servers, channels etc. so that all the
+routers may keep these informations up to date.
+
+
+.ti 0
+2.14 Packet Tunneling
 
 Tunneling is a feature that is available in SILC protocol.  Tunneling
 means that extra SILC Packet Header is applied to the original packet

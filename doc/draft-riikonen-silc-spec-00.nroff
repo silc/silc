@@ -764,7 +764,10 @@ to set nickname, join to channel, change modes and many other things.
 Client usually sends the commands and server replies by sending a reply
 packet to the command.  Server may also send commands usually to serve
 the original client's request.  However, server may not send command
-to client and there are some commands that server must not send.
+to client and there are some commands that server must not send.  Server
+is also able to send the forwarded command packets.  For example, 
+SILC_COMMAND_JOIN is always forwarded packet.  See [SILC2] for more
+about packet forwarding.
 
 Note that the command reply is usually sent only after client has sent
 the command request but server is allowed to send command reply packet
@@ -1336,7 +1339,7 @@ newly joined channel is sent to the router.  The new channel key is
 also distributed to the router and to all clients on the channel.
 
 If the channel does not exist in the local list the command must be
-sent to the router which will then perform the actual joining
+fowarded to the router which will then perform the actual joining
 procedure.  When server receives the reply to the command from the
 router it must be distributed to the client who sent the command
 originally.  Server will also receive the channel key from the server
@@ -2136,9 +2139,10 @@ List of all defined commands in SILC follows.
 
         Join to channel/create new channel.  This command is used to
         join to a channel.  If the channel does not exist the channel is
-        created on the server receiving the join request.  The channel 
-        may be protected with passphrase.  If this is the case the 
-        passphrase must be sent along the join command.
+        created.  If server is normal server this command must be forwarded
+        to router who will create the channel.  The channel may be protected
+        with passphrase.  If this is the case the passphrase must be sent
+        along the join command.
 
         The name of the <channel> must not include any spaces (` '),
         non-printable characters, commas (`,') or any wildcard characters.
