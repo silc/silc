@@ -1048,6 +1048,7 @@ void silc_server_send_motd(SilcServer server,
     if (!motd)
       return;
 
+    motd[motd_len] = 0;
     silc_server_send_notify(server, sock, FALSE, SILC_NOTIFY_TYPE_MOTD, 1,
 			    motd, motd_len);
     silc_free(motd);
