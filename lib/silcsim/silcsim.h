@@ -43,7 +43,7 @@ SilcSim silc_sim_alloc(SilcSimType type, const char *libname,
 void silc_sim_free(SilcSim sim);
 int silc_sim_load(SilcSim sim);
 int silc_sim_close(SilcSim sim);
-char *silc_sim_error(SilcSim sim);
+const char *silc_sim_error(SilcSim sim);
 void *silc_sim_getsym(SilcSim sim, const char *symbol);
 
 #endif

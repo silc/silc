@@ -147,7 +147,7 @@ int silc_sim_close(SilcSim sim)
 
 /* Returns error string if error has occured while processing SIM's. */
 
-char *silc_sim_error(SilcSim sim)
+const char *silc_sim_error(SilcSim sim)
 {
   return dlerror();
 }
