@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.8  2000/07/10 05:39:11  priikone
+ * 	Added INFO and VERSION commands. Minor changes to SERVER command
+ * 	to show current servers when giving without arguments.
+ *
  * Revision 1.7  2000/07/07 06:54:44  priikone
  * 	Fixed channel joining bug, do not allow joining twice on the
  * 	same channel.
@@ -85,7 +89,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(names, NAMES, "NAMES", SILC_CF_LAG | SILC_CF_REG, 2),
 
   /*
-   * Local. client specific commands
+   * Local. Client specific commands
    */
   SILC_CLIENT_CMD(help, HELP, "HELP", SILC_CF_NONE, 2),
   SILC_CLIENT_CMD(clear, CLEAR, "CLEAR", SILC_CF_NONE, 1),
@@ -296,15 +300,32 @@ SILC_CLIENT_CMD_FUNC(nick)
 SILC_CLIENT_CMD_FUNC(server)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-  int len, port;
+  SilcClient client = cmd->client;
+  int i = 0, len, port;
   char *hostname;
 
   if (cmd->argc < 2) {
     /* Show current servers */
+
     if (!cmd->client->current_win->sock) {
       silc_say(cmd->client, "You are not connected to any server");
       silc_say(cmd->client, "Usage: /SERVER [<server>[:<port>]]");
       goto out;
+    }
+
+    silc_say(client, "Current server: %s on %d %s", 
+	     client->current_win->remote_host,
+	     client->current_win->remote_port,
+	     client->windows[i]->remote_info ?
+	     client->windows[i]->remote_info : "");
+    
+    silc_say(client, "Server list:");
+    for (i = 0; i < client->windows_count; i++) {
+      silc_say(client, " [%d] %s on %d %s", i + 1,
+	       client->windows[i]->remote_host,
+	       client->windows[i]->remote_port,
+	       client->windows[i]->remote_info ?
+	       client->windows[i]->remote_info : "");
     }
 
     goto out;
@@ -399,9 +420,8 @@ SILC_CLIENT_CMD_FUNC(invite)
   buffer = silc_command_encode_payload_va(SILC_COMMAND_INVITE, 2,
 					  1, client_id, SILC_ID_CLIENT_LEN,
 					  2, channel_id, SILC_ID_CHANNEL_LEN);
-  silc_client_packet_send(cmd->client, cmd->sock,
-			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
-			  buffer->data, buffer->len, TRUE);
+  silc_client_packet_send(cmd->client, win->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
 
   silc_say(cmd->client, "Inviting %s to channel %s", cmd->argv[1], 
@@ -428,9 +448,8 @@ SILC_CLIENT_CMD_FUNC(quit)
   buffer = silc_command_encode_payload(SILC_COMMAND_QUIT, cmd->argc - 1, 
 				       ++cmd->argv, ++cmd->argv_lens,
 				       ++cmd->argv_types);
-  silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
-			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
-			  buffer->data, buffer->len, TRUE);
+  silc_client_packet_send(cmd->client, cmd->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   cmd->argv--;
   cmd->argv_lens--;
@@ -441,7 +460,7 @@ SILC_CLIENT_CMD_FUNC(quit)
   cmd->client->screen->bottom_line->connection = NULL;
   silc_screen_print_bottom_line(cmd->client->screen, 0);
 
-out:
+ out:
   silc_client_command_free(cmd);
 }
 
@@ -449,8 +468,37 @@ SILC_CLIENT_CMD_FUNC(kill)
 {
 }
 
+/* Command INFO. Request information about specific server. If specific
+   server is not provided the current server is used. */
+
 SILC_CLIENT_CMD_FUNC(info)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientWindow win = NULL;
+  SilcBuffer buffer;
+  char *name;
+
+  if (!cmd->sock) {
+    SILC_NOT_CONNECTED(cmd->client);
+    goto out;
+  }
+
+  win = (SilcClientWindow)cmd->sock->user_data;
+
+  if (cmd->argc < 2)
+    name = strdup(win->remote_host);
+  else
+    name = strdup(cmd->argv[1]);
+
+  /* Send the command */
+  buffer = silc_command_encode_payload_va(SILC_COMMAND_INFO, 1, 
+					  1, name, strlen(name));
+  silc_client_packet_send(cmd->client, win->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 SILC_CLIENT_CMD_FUNC(connect)
@@ -485,9 +533,8 @@ SILC_CLIENT_CMD_FUNC(ping)
   buffer = silc_command_encode_payload_va(SILC_COMMAND_PING, 1, 
 					  1, win->remote_id_data, 
 					  SILC_ID_SERVER_LEN);
-  silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
-			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
-			  buffer->data, buffer->len, TRUE);
+  silc_client_packet_send(cmd->client, win->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
 
   /* Start counting time */
@@ -572,9 +619,8 @@ SILC_CLIENT_CMD_FUNC(join)
   buffer = silc_command_encode_payload(SILC_COMMAND_JOIN,
 				       cmd->argc - 1, ++cmd->argv,
 				       ++cmd->argv_lens, ++cmd->argv_types);
-  silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
-			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
-			  buffer->data, buffer->len, TRUE);
+  silc_client_packet_send(cmd->client, win->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   cmd->argv--;
   cmd->argv_lens--;
@@ -673,9 +719,8 @@ SILC_CLIENT_CMD_FUNC(leave)
   id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
   buffer = silc_command_encode_payload_va(SILC_COMMAND_LEAVE, 1, 
 					  1, id_string, SILC_ID_CHANNEL_LEN);
-  silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
-			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
-			  buffer->data, buffer->len, TRUE);
+  silc_client_packet_send(cmd->client, win->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
 
   /* We won't talk anymore on this channel */
@@ -746,9 +791,8 @@ SILC_CLIENT_CMD_FUNC(names)
   id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
   buffer = silc_command_encode_payload_va(SILC_COMMAND_NAMES, 1, 
 					  1, id_string, SILC_ID_CHANNEL_LEN);
-  silc_client_packet_send(cmd->client, cmd->client->current_win->sock,
-			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
-			  buffer->data, buffer->len, TRUE);
+  silc_client_packet_send(cmd->client, win->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_free(id_string);
 
@@ -784,18 +828,30 @@ SILC_CLIENT_CMD_FUNC(help)
 
 SILC_CLIENT_CMD_FUNC(clear)
 {
-  SilcClient client = (SilcClient)context;
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClient client = cmd->client;
 
   assert(client->current_win != NULL);
   wclear((WINDOW *)client->current_win->screen);
   wrefresh((WINDOW *)client->current_win->screen);
+
+  silc_client_command_free(cmd);
 }
 
 /* VERSION command. This is local command and shows version of the client */
 
 SILC_CLIENT_CMD_FUNC(version)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClient client = cmd->client;
+  extern char *silc_version;
+  extern char *silc_name;
+  extern char *silc_fullname;
 
+  silc_say(client, "%s (%s) version %s", silc_name, silc_fullname,
+	   silc_version);
+
+  silc_client_command_free(cmd);
 }
 
 /* Command MSG. Sends private message to user or list of users. */
