@@ -16,6 +16,9 @@ Sat Jun 23 16:01:00 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  lib/silcutil/unix/silcunixnet.c and the old
 	  lib/silcutil/silcnet.c includes now only generic routines.
 
+	  Added WIN32 specific network routines to the
+	  lib/silcutil/win32/silcwin32net.c.
+
 Fri Jun 22 10:44:14 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not handle JOIN notify in the server if the target client
