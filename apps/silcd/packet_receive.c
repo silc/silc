@@ -1097,6 +1097,10 @@ void silc_server_notify(SilcServer server,
     }
     silc_free(channel_id);
 
+#if 0 /* These aren't actually used anywhere or needed, since this
+	 notify is for handling the invite list (direct invite
+	 goes to client and is not handled here at all). */
+
     /* Get client ID */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
     if (!tmp)
@@ -1129,6 +1133,7 @@ void silc_server_notify(SilcServer server,
         goto out;
       }
     }
+#endif
 
     /* Get the invite action */
     tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
@@ -1148,7 +1153,7 @@ void silc_server_notify(SilcServer server,
       if (!iargs)
 	goto out;
 
-      if (action == 0 && !channel->invite_list)
+      if (action != 0x01 && !channel->invite_list)
 	channel->invite_list =
 	  silc_hash_table_alloc(0, silc_hash_ptr,
 				NULL, NULL, NULL,
@@ -1745,7 +1750,7 @@ void silc_server_notify(SilcServer server,
       if (!iargs)
 	goto out;
 
-      if (action == 0 && !channel->ban_list)
+      if (action != 0x01 && !channel->ban_list)
 	channel->ban_list =
 	  silc_hash_table_alloc(0, silc_hash_ptr,
 				NULL, NULL, NULL,
