@@ -132,7 +132,7 @@ bool silc_client_command_call(SilcClient client,
       argv_types = silc_realloc(argv_types, sizeof(*argv_types) * (argc + 1));
       argv[argc] = silc_memdup(arg, strlen(arg));
       argv_lens[argc] = strlen(arg);
-      argv_types[argc] = argc + 1;
+      argv_types[argc] = argc;
       argc++;
       arg = va_arg(va, char *);
     }
