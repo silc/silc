@@ -1203,7 +1203,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
 
       if (attrs)
-	silc_query_attributes_print(server, silc_client, conn, attrs);
+	silc_query_attributes_print(server, silc_client, conn, attrs,
+				    client_entry);
     }
     break;
     

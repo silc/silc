@@ -32,6 +32,8 @@
 #include "fe-common/core/keyboard.h"
 #include "fe-common/silc/module-formats.h"
 
+static void silc_query_attributes_print_final(bool success, void *context);
+
 QUERY_REC *silc_query_create(const char *server_tag,
 			     const char *nick, int automatic)
 {
@@ -248,6 +250,7 @@ void silc_query_attributes_default(SilcClient client,
   SilcAttributeObjGeo geo;
   SilcAttributeObjDevice dev;
   SilcAttributeObjPk pk;
+  SilcVCardStruct vcard;
   bool allowed;
 
   memset(&service, 0, sizeof(service));
@@ -255,6 +258,7 @@ void silc_query_attributes_default(SilcClient client,
   memset(&geo, 0, sizeof(geo));
   memset(&dev, 0, sizeof(dev));
   memset(&pk, 0, sizeof(pk));
+  memset(&vcard, 0, sizeof(vcard));
 
   sv = settings_get_str("attr_vcard");
   if (sv && *sv) {
@@ -262,9 +266,11 @@ void silc_query_attributes_default(SilcClient client,
     silc_client_attribute_del(silc_client, conn,
 			      SILC_ATTRIBUTE_USER_INFO, NULL);
     tmp = silc_file_readfile(sv, &tmp_len);
-    if (tmp)
+    if (tmp && silc_vcard_decode(tmp, tmp_len, &vcard))
       silc_client_attribute_add(silc_client, conn,
-				SILC_ATTRIBUTE_USER_INFO, tmp, tmp_len);
+				SILC_ATTRIBUTE_USER_INFO, (void *)&vcard,
+				sizeof(vcard));
+    silc_vcard_free(&vcard);
     silc_free(tmp);
   }
 
@@ -488,7 +494,6 @@ void silc_query_attributes_default(SilcClient client,
 			      SILC_ATTRIBUTE_USER_PUBLIC_KEY, NULL);
     list = g_strsplit(sv, " ", -1);
     for (entry = list; *entry != NULL; entry++) {
-      /* XXX we support only SILC keys currently */
       if (!strncasecmp(*entry, "silc-rsa:", 8)) {
 	tmp = silc_file_readfile((*entry) + 8, &tmp_len);
 	if (tmp) {
@@ -500,29 +505,47 @@ void silc_query_attributes_default(SilcClient client,
 				    sizeof(pk));
 	}
 	silc_free(tmp);
+      } else {
+	silc_say_error("Unsupported public key type '%s'", *entry);
       }
     }
     g_strfreev(list);
   }
 }
 
+typedef struct {
+  SILC_SERVER_REC *server;
+  char *name;
+  SilcAttributeObjPk userpk;
+  SilcVCardStruct vcard;
+  SilcAttributeObjMime message;
+  SilcAttributeObjMime extension;
+} *AttrVerify;
+
 void silc_query_attributes_print(SILC_SERVER_REC *server,
 				 SilcClient client,
 				 SilcClientConnection conn,
-				 SilcDList attrs)
+				 SilcDList attrs,
+				 SilcClientEntry client_entry)
 {
   SilcAttributePayload attr;
   SilcAttribute attribute;
   char tmp[512];
-  SilcAttributeObjPk userpk, serverpk, usersign, serversign;
+  SilcAttributeObjPk serverpk, usersign, serversign;
+  AttrVerify verify;
 
   printformat_module("fe-common/silc", server, NULL,
 		     MSGLEVEL_CRAP, SILCTXT_ATTR_HEADER);
 
-  memset(&userpk, 0, sizeof(userpk));
   memset(&serverpk, 0, sizeof(serverpk));
   memset(&usersign, 0, sizeof(usersign));
   memset(&serversign, 0, sizeof(serversign));
+
+  verify = silc_calloc(1, sizeof(*verify));
+  if (!verify)
+    return;
+  verify->server = server;
+  verify->name = strdup(client_entry->nickname);
 
   silc_dlist_start(attrs);
   while ((attr = silc_dlist_get(attrs)) != SILC_LIST_END) {
@@ -533,11 +556,12 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 
     case SILC_ATTRIBUTE_USER_INFO:
       {
-	SilcVCardStruct vcard;
-	memset(&vcard, 0, sizeof(vcard));
-	if (!silc_attribute_get_object(attr, (void *)&vcard, sizeof(vcard)))
+	if (!silc_attribute_get_object(attr, (void *)&verify->vcard,
+				       sizeof(verify->vcard)))
 	  continue;
-	/* XXX */
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_ATTR_VCARD_FILE,
+			   "present");
       }
       break;
 
@@ -600,11 +624,12 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 
     case SILC_ATTRIBUTE_STATUS_MESSAGE:
       {
-	SilcAttributeObjMime mime;
-	memset(&mime, 0, sizeof(mime));
-	if (!silc_attribute_get_object(attr, (void *)&mime, sizeof(mime)))
+	if (!silc_attribute_get_object(attr, (void *)&verify->message,
+				       sizeof(verify->message)))
 	  continue;
-	/* XXX */
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_ATTR_STATUS_MESSAGE,
+			   "present");
       }
       break;
 
@@ -652,6 +677,14 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
       break;
 
     case SILC_ATTRIBUTE_EXTENSION:
+      {
+	if (!silc_attribute_get_object(attr, (void *)&verify->extension,
+				       sizeof(verify->extension)))
+	  continue;
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_ATTR_EXTENSION,
+			   "present");
+      }
       break;
 
     case SILC_ATTRIBUTE_GEOLOCATION:
@@ -694,11 +727,14 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 
     case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
       {
-	if (userpk.type)
+	if (verify->userpk.type)
 	  continue;
-	if (!silc_attribute_get_object(attr, (void *)&userpk, sizeof(userpk)))
+	if (!silc_attribute_get_object(attr, (void *)&verify->userpk,
+				       sizeof(verify->userpk)))
 	  continue;
       }
+      break;
+
     case SILC_ATTRIBUTE_SERVER_PUBLIC_KEY:
       {
 	if (serverpk.type)
@@ -734,15 +770,99 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     }
   }
 
-  if (!userpk.type)
+  /* Handle the signature verifications and public key verifying here */
+
+  if (usersign.data && !strcmp(verify->userpk.type, "silc-rsa")) {
+    /* Verify the signature now */
+    SilcPublicKey public_key;
+    SilcPKCS pkcs;
+    unsigned char *verifyd;
+    SilcUInt32 verify_len;
+
+    if (silc_pkcs_public_key_decode(verify->userpk.data,
+				    verify->userpk.data_len,
+				    &public_key)) {
+      silc_pkcs_alloc("rsa", &pkcs);
+      verifyd = silc_attribute_get_verify_data(attrs, FALSE, &verify_len);
+      if (verifyd && silc_pkcs_public_key_set(pkcs, public_key)){
+	if (silc_pkcs_verify_with_hash(pkcs, client->sha1hash,
+				       usersign.data,
+				       usersign.data_len,
+				       verifyd, verify_len)) {
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_VERIFIED);
+	} else {
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_FAILED);
+	}
+      }
+
+      silc_pkcs_public_key_free(public_key);
+      silc_free(verifyd);
+    }
+  } else {
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_NOT_PRESENT);
+  }
+
+  if (serversign.data && !strcmp(serverpk.type, "silc-rsa")) {
+    /* Verify the signature now */
+    SilcPublicKey public_key;
+    SilcPKCS pkcs;
+    unsigned char *verifyd;
+    SilcUInt32 verify_len;
+
+    if (silc_pkcs_public_key_decode(serverpk.data, serverpk.data_len,
+				    &public_key)) {
+      silc_pkcs_alloc("rsa", &pkcs);
+      verifyd = silc_attribute_get_verify_data(attrs, TRUE, &verify_len);
+      if (verifyd && silc_pkcs_public_key_set(pkcs, public_key)) {
+	if (silc_pkcs_verify_with_hash(pkcs, client->sha1hash,
+				       serversign.data,
+				       serversign.data_len,
+				       verifyd, verify_len)) {
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_VERIFIED);
+	} else {
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_FAILED);
+	}
+      }
+
+      silc_pkcs_public_key_free(public_key);
+      silc_free(verifyd);
+    }
+  }
+
+  if (!verify->userpk.type || !usersign.data)
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_ATTR_FOOTER);
 
-  /* Handle the signature verifications and public key verifying here */
+  silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
+			 verify->userpk.data, verify->userpk.data_len, 
+			 SILC_SKE_PK_TYPE_SILC,
+			 silc_query_attributes_print_final, verify);
+}
 
-  if (usersign.data && !strcmp(userpk.type, "silc-rsa")) {
-    /* Verify the signature now */
-    /* XXX */
+static void silc_query_attributes_print_final(bool success, void *context)
+{
+  AttrVerify verify = context;
+  SILC_SERVER_REC *server = verify->server;
+
+  if (success) {
+    printformat_module("fe-common/silc", NULL, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_GETKEY_VERIFIED, "user",
+		       verify->name);
+  } else {
+    printformat_module("fe-common/silc", NULL, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_GETKEY_DISCARD, "user",
+		       verify->name);
   }
 
+  printformat_module("fe-common/silc", server, NULL,
+		     MSGLEVEL_CRAP, SILCTXT_ATTR_FOOTER);
+
+  silc_free(verify->name);
+  silc_vcard_free(&verify->vcard);
+  silc_free(verify);
 }

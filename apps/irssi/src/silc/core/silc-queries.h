@@ -43,6 +43,7 @@ void silc_query_attributes_default(SilcClient client,
 void silc_query_attributes_print(SILC_SERVER_REC *server,
 				 SilcClient client,
 				 SilcClientConnection conn,
-				 SilcDList attrs);
+				 SilcDList attrs,
+				 SilcClientEntry client_entry);
 
 #endif /* SILC_QUERIES_H */
