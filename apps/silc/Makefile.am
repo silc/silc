@@ -32,6 +32,7 @@ silc_SOURCES = \
 	screen.c
 
 LDADD = -L. -L.. -L../lib -lsilc -lcurses
+#LDADD = -L. -L.. -L../lib -lsilc -lcurses -L../lib/silcmath/gmp-3.0.1/lib -lgmp
 
 EXTRA_DIST = *.h
 

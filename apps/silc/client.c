@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.10  2000/07/18 06:53:15  priikone
+ * 	Allow partial command strings in comparison.
+ *
  * Revision 1.9  2000/07/14 06:13:19  priikone
  * 	Moved all the generic packet sending, encryption, reception,
  * 	decryption and processing functions to library as they were
@@ -488,7 +491,7 @@ static void silc_client_process_message(SilcClient client)
 
     /* Find command match */
     for (cmd = silc_command_list; cmd->name; cmd++) {
-      if (!strcmp(cmd->name, tmpcmd))
+      if (!strncmp(cmd->name, tmpcmd, strlen(tmpcmd)))
 	break;
     }
 
