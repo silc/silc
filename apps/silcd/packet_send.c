@@ -1704,7 +1704,7 @@ void silc_server_send_channel_key(SilcServer server,
   unsigned char *chid;
   uint32 tmp_len;
  
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Sending key to channel %s", channel->channel_name));
  
   chid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   if (!chid)

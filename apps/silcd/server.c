@@ -3020,7 +3020,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   payload = silc_channel_key_payload_parse(key_payload->data,
 					   key_payload->len);
   if (!payload) {
-    SILC_LOG_ERROR(("Bad channel key payload, dropped"));
+    SILC_LOG_ERROR(("Bad channel key payload received, dropped"));
     channel = NULL;
     goto out;
   }

@@ -103,9 +103,6 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o make install copies the symblic links from lib/silcsim/ and not
-   modules.
-
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but
    is not actually async currently.
@@ -175,18 +172,11 @@ describe new stuff to be added to protocol versions 1.x.
 TODO After 1.0
 ==============
 
- o Compression routines are missing.  The protocol supports packet
-   compression thus it must be implemented.  SILC Zip API must be
-   defined.  zlib package is already included into the lib dir (in CVS,
-   not in distribution), but it is not used yet, and it requires some
-   tweaking on the Makefiles (we want static lib not shared).
+A rough list of stuff that is going to be done to SILC after 1.0 or at
+least could be done.
 
  o Implement the defined SilcDH API.  The definition is in
    lib/silccrypt/silcdh.h.
-
- o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
-   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
-   in separately.
 
  o X.509 certificate support.  SILC protocol supports certificates and
    it would be great to have support for them.  This is a big task as
@@ -206,8 +196,90 @@ TODO After 1.0
    Other package that should be checked is the NSS's X509 library,
    which I like more over OpenSSL package.
 
- o SSH2 public keys support.
+ o SSH2 public keys support, allowing the use of SSH2 public keys in
+   SILC.
 
- o OpenPGP certificate support.
+ o OpenPGP certificate support, allowing the use of PGP public keys
+   in SILC.
+
+ o Compression routines are missing.  The protocol supports packet
+   compression thus it must be implemented.  SILC Zip API must be
+   defined.
+
+ o Rewrite the lib/silcutil/silcprotocol.[ch] not to have [un]register 
+   functions, but to make it context based all the way.  The alloc should 
+   take as argument the protocol type and its callback (not only 
+   final callback).  It is not good that we have now global list of 
+   registered protocols.
+
+ o Optimizations in Libraries
+
+	o There is currently three (3) allocations per packet in the
+	  silc_packet_receive_process, which is used to process and
+	  dispatch all packets in the packet queue to the parser callback
+	  function.  First allocation is for parse_ctx, second for the
+	  SilcPacketContext, and third for packet->buffer where the actual
+	  data is saved.
+
+	  The parse_ctx allocation can be removed by adding it as a
+	  structure to the SilcPacketContext.  When the SilcPacketContext
+	  is allocated there is space for the parse context already.
+
+	  The silc_packet_context_alloc could have a free list of
+	  packet contexts.  If free packet context is found from the list
+	  it is returned instead of allocating a new one.  The library
+	  could at first allocate them and save them to the free list
+	  until enough contexts for smooth processing exists in the list.
+	  This would remove a big allocation since the structure is
+	  quite big, and even bigger if it would include the parse_ctx.
+
+	  The packet->buffer can be optimized too if the SilcBuffer
+	  interface would support free lists as well.  Maybe such could
+	  be done in the same way as for SilcPacketContext.  The
+	  silc_buffer_alloc would check free list before actually 
+	  allocating new memory.  Since the packets in the SILC protocol
+	  usually are about the same size (due to padding) it would be
+	  easy to find suitable size buffer from the free list very
+	  quickly.
+
+	  These naturally cause the overal memory consumption to grow
+	  but would take away many allocations that can be done several
+	  times in a second.
+
+	o Move the actual file descriptor task callback (the callback that
+	  handles the incoming data, outgoing data etc, that is implemnted
+	  in server and client separately (silc_server_packet_process and
+	  silc_client_packet_proces)) to the low level socket connection
+	  handling routines, and create an interface where the application
+	  can register a callbacks for incoming data, outoing data and EOF
+	  receiving, which the library will call when necessary.  This way 
+	  we can move the data handling in one place.
+
+	o Add silc_id_str2id to accept the destination buffer as argument
+	  and thus not require any memory allocation.  Same will happen
+	  with silc_id_payload_* functions.
+
+ o Optimizations in Server
+
+	o Remove the big switch statement from the function 
+	  silc_server_packet_parse_type and replace it with predefined
+	  table of function pointers where each of the slot in table
+	  represents the packet type value.
+
+	  Same could be done with notify packets which has big switch 
+	  statement too.  Same kind of table of notify callbacks could be
+	  done as well.
+
+	o The parser callback in the server will add a timeout task for
+	  all packets.  It will require registering and allocating a
+	  new task to the SilcSchedule.  Maybe, at least, for server
+	  and router packets the parser would be called immediately
+	  instead of adding it to the scheduler with 0 timeout.  It
+	  should be analyzed too how slow the task registering process
+	  actually is, and find out ways to optimize it.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
+
+ o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
+   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
+   in separately.
