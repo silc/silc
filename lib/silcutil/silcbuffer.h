@@ -223,7 +223,7 @@ void silc_buffer_free(SilcBuffer sb)
  * SYNOPSIS
  *
  *    static inline
- *    unsigned char *silc_buffer_free(SilcBuffer sb, SilcUInt32 *data_len);
+ *    unsigned char *silc_buffer_steal(SilcBuffer sb, SilcUInt32 *data_len);
  *
  * DESCRIPTION
  *
