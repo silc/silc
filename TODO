@@ -13,6 +13,8 @@ TODO/bugs In SILC Client Library
    set the key only if application wishes to set (accept the key) it
    (Do this to 0.9.x).
 
+ o Testing
+
 
 TODO/bugs In SILC Server
 ========================
@@ -36,6 +38,8 @@ TODO/bugs In SILC Server
  o If client's public key is saved in the server (and doing public key
    authentication) then the hostname and the username information could
    be taken from the public key.  Should be a configuration option!
+
+ o Testing
 
 
 TODO/bugs In SILC Libraries
