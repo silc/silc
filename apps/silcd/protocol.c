@@ -374,8 +374,9 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
   SilcServer server = (SilcServer)ctx->server;
 
   if (ske->status != SILC_SKE_STATUS_OK) {
-    SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
-		    silc_ske_map_status(ske->status)));
+    SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+		    silc_ske_map_status(ske->status), ctx->sock->hostname,
+		    ctx->sock->ip));
 
     protocol->state = SILC_PROTOCOL_STATE_ERROR;
     silc_protocol_execute(protocol, server->schedule, 0, 300000);
@@ -462,8 +463,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	return;
 
       if (status != SILC_SKE_STATUS_OK) {
-	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
-			silc_ske_map_status(status)));
+	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+			silc_ske_map_status(status), ctx->sock->hostname,
+			ctx->sock->ip));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	silc_protocol_execute(protocol, server->schedule, 0, 300000);
@@ -499,8 +501,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	return;
 
       if (status != SILC_SKE_STATUS_OK) {
-	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
-			silc_ske_map_status(status)));
+	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+			silc_ske_map_status(status), ctx->sock->hostname,
+			ctx->sock->ip));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	silc_protocol_execute(protocol, server->schedule, 0, 300000);
@@ -542,8 +545,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	return;
 
       if (status != SILC_SKE_STATUS_OK) {
-	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
-			silc_ske_map_status(status)));
+	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+			silc_ske_map_status(status), ctx->sock->hostname,
+			ctx->sock->ip));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	silc_protocol_execute(protocol, server->schedule, 0, 300000);
@@ -580,8 +584,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	return;
 
       if (status != SILC_SKE_STATUS_OK) {
-	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
-			silc_ske_map_status(status)));
+	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+			silc_ske_map_status(status), ctx->sock->hostname,
+			ctx->sock->ip));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	silc_protocol_execute(protocol, server->schedule, 0, 300000);
