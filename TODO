@@ -51,6 +51,11 @@ TODO/bugs In SILC Client Library
    not needed and its usage is buggy when the context is registered
    to multiple pending commands.
 
+ o Add perhaps an option of setting the nickname to the client context.
+   If set (and username != nickname) the client libary would send NICK
+   command to the server after connecting to automatically set the
+   nickname.
+
  o Additions to do after protocol version 1.1:
 
 	o Fix the NICK_CHANGE notify handling not to create new entry

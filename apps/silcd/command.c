@@ -3092,8 +3092,7 @@ static void silc_server_command_join_channel(SilcServer server,
        username and/or hostname is in the ban list the access to the
        channel is denied. */
     if (channel->ban_list) {
-      if (!channel->ban_list ||
-	  silc_string_match(channel->ban_list, check) ||
+      if (silc_string_match(channel->ban_list, check) ||
 	  silc_string_match(channel->ban_list, check2)) {
 	silc_server_command_send_status_reply(
 				      cmd, SILC_COMMAND_JOIN,
@@ -4938,7 +4937,7 @@ SILC_SERVER_CMD_FUNC(close)
     server->router = NULL;
     server->standalone = TRUE;
   }
-  silc_server_free_sock_user_data(server, sock);
+  silc_server_free_sock_user_data(server, sock, NULL);
   silc_server_close_connection(server, sock);
   
  out:

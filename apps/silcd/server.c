@@ -1551,7 +1551,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
        close the connection */
     if (SILC_IS_DISCONNECTING(sock)) {
       if (sock->user_data)
-	silc_server_free_sock_user_data(server, sock);
+	silc_server_free_sock_user_data(server, sock, NULL);
       silc_server_close_connection(server, sock);
       return;
     }
@@ -1560,7 +1560,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     SILC_SET_DISCONNECTING(sock);
 
     if (sock->user_data)
-      silc_server_free_sock_user_data(server, sock);
+      silc_server_free_sock_user_data(server, sock, NULL);
     else if (server->router_conn && server->router_conn->sock == sock &&
 	     !server->router && server->standalone)
       silc_schedule_task_add(server->schedule, 0, 
@@ -1606,7 +1606,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     SILC_SET_DISCONNECTING(sock);
 
     if (sock->user_data)
-      silc_server_free_sock_user_data(server, sock);
+      silc_server_free_sock_user_data(server, sock, NULL);
     silc_server_close_connection(server, sock);
   }
 }
@@ -2317,7 +2317,7 @@ void silc_server_free_client_data(SilcServer server,
 				  SilcSocketConnection sock,
 				  SilcClientEntry client, 
 				  int notify,
-				  char *signoff)
+				  const char *signoff)
 {
   FreeClientInternal i = silc_calloc(1, sizeof(*i));
 
@@ -2366,7 +2366,8 @@ void silc_server_free_client_data(SilcServer server,
    entities. */
 
 void silc_server_free_sock_user_data(SilcServer server, 
-				     SilcSocketConnection sock)
+				     SilcSocketConnection sock,
+				     const char *signoff_message)
 {
   SILC_LOG_DEBUG(("Start"));
 
@@ -2374,7 +2375,8 @@ void silc_server_free_sock_user_data(SilcServer server,
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry user_data = (SilcClientEntry)sock->user_data;
-      silc_server_free_client_data(server, sock, user_data, TRUE, NULL);
+      silc_server_free_client_data(server, sock, user_data, TRUE, 
+				   signoff_message);
       break;
     }
   case SILC_SOCKET_TYPE_SERVER:
@@ -2752,7 +2754,7 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
   }
 
   if (sock->user_data)
-    silc_server_free_sock_user_data(server, sock);
+    silc_server_free_sock_user_data(server, sock, NULL);
 
   silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				"Connection timeout");

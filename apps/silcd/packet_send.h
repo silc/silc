@@ -153,7 +153,7 @@ void silc_server_send_notify_signoff(SilcServer server,
 				     SilcSocketConnection sock,
 				     bool broadcast,
 				     SilcClientID *client_id,
-				     char *message);
+				     const char *message);
 void silc_server_send_notify_topic_set(SilcServer server,
 				       SilcSocketConnection sock,
 				       bool broadcast,

@@ -53,6 +53,8 @@ char *silc_string_regexify(const char *string)
       regex[count] = '.';
       count++;
     } else if (string[i] == ',') {
+      if (i + 1 == len)
+	continue;
       regex[count] = '|';
       count++;
       continue;
