@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2001/02/14 15:31:33  priikone
+ * 	Do not allow several server connections.
+ *
  * Revision 1.2  2001/01/30 21:40:21  priikone
  * 	updates.
  *
@@ -202,6 +205,17 @@ SILC_CLIENT_LCMD_FUNC(server)
   } else {
     hostname = cmd->argv[1];
     port = 706;
+  }
+
+  if (conn && conn->remote_host) {
+    if (!strcmp(hostname, conn->remote_host) && port == conn->remote_port) {
+      silc_say(client, conn, "You are already connected to that server");
+      goto out;
+    }
+
+    /* Close connection */
+    cmd->client->ops->disconnect(cmd->client, cmd->conn);
+    silc_client_close_connection(cmd->client, cmd->conn->sock);
   }
 
   /* Connect asynchronously to not to block user interface */

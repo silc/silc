@@ -14,6 +14,13 @@ Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Sort the ID Cache in client library when the ID Cache data
 	  has changed (needs sorting).
 
+	* Do not allow for SILC client to create several connections to
+	  several servers.  The client does not support windows right now
+	  and generating multiple connections causes weird behaviour.
+
+	  Irssi-silc client does support windows and can handle several
+	  connections without problems, see: www.irssi.org and SILC plugin.
+
 Tue Feb 13 19:55:59 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added --with-gmp configuration option.  If set the GMP
