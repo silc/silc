@@ -190,6 +190,7 @@ do {								\
 								\
   for (__i = 0; __i < (__x)->internal->conns_count; __i++)	\
     if ((__x)->internal->conns[__i] &&				\
+	(__x)->internal->conns[__i]->sock &&			\
 	(__x)->internal->conns[__i]->sock->sock == (__fd))	\
       break;							\
 								\
