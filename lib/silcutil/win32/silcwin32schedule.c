@@ -79,24 +79,16 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
      and wait just for windows messages. */
   if (nhandles == 0 && timeout) {
     UINT timer = SetTimer(NULL, 0, timeo, NULL);
-    curtime = GetTickCount();
-    while (timer)
+    if (timer) {
       WaitMessage();
       KillTimer(NULL, timer);
 
       while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-	if (msg.message == WM_TIMER)
-	  return 0;
 	TranslateMessage(&msg); 
 	DispatchMessage(&msg); 
       }
 
-      if (timeo != INFINITE) {
-	timeo -= GetTickCount() - curtime;
-	if (timeo < 0)
-	  timeo = 0;
-	timer = SetTimer(NULL, 0, timeo, NULL);
-      }
+      return 0;
     }
   }
 
