@@ -1,8 +1,20 @@
+Fri Jan  2 23:34:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the CUMODE channel founder authentication on normal
+	  server to not remove the founder rights on existing founder
+	  before checking that router accepts the mode change.  Affected
+	  files are silcd/command.c and silcd/packet_receive.c.
+
+	* Remove the server entry correctly when rekey timeouts and
+	  remote router connection on normal server is closed.  Fixes
+	  a crash where server uses the freed server entry.  Affected
+	  file silcd/server.c.
+
 Fri Jan 02 10:28:15 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Add /SILCNET [ADD|REMOVE|LIST] command to manage different SILC
 	  networks.  This is the first step in solving the bug about
-	  /SERVER ADD -silcnet <silcnet>.  Affected files 
+	  /SERVER ADD -silcnet <silcnet>.  Affected files
 	  irssi/docs/in/silcnet.in; irssi/src/fe-common/silc/Makefile.am,
 	  fe-silcnet.c, fe-common-silc.c, module-formats.[ch];
 	  irssi/src/silc/core/silc-chatnets.[ch], silc-core.c, Makefile.am
@@ -25,7 +37,7 @@ Wed Dec 31 17:06:55 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 	* Make the session data filename configurable.  This makes it
 	  possible to have different session files for different
 	  SILC networks.  Affected files irssi/src/silc/core/silc-core.c,
-	  client_ops.[ch], silc-servers.c, 
+	  client_ops.[ch], silc-servers.c,
 	  irssi/src/silc/fe-common/silc/module-formats.[ch]
 
 	* Use the same set of libtool files for the MPI lib as for the
@@ -43,7 +55,7 @@ Sat Dec 20 14:42:36 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 	  search error.  Added support in send_reply to send errors
 	  without specific argument.  Affected file silcd/server_query.c.
 
-	* Fixed the WHOIS, IDENTIFY and WHOWAS error handling in SILC 
+	* Fixed the WHOIS, IDENTIFY and WHOWAS error handling in SILC
 	  Client for NO_SUCH_NICK.  It was against the protocol specs.
 	  Affected file irssi/src/silc/core/client_ops.c.
 
@@ -54,7 +66,7 @@ Sat Dec 20 14:42:36 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 Sat Dec 20 00:44:47 CET 2003  Patrik Weiskircher <pat@icore.at>
 
-	* fixed a bug in the whois using attributes function where no 
+	* fixed a bug in the whois using attributes function where no
 	  error was sent if no nickname and client id but the attributes were
 	  given to whois. Affected file silcd/server_query.c
 
@@ -76,7 +88,7 @@ Sat Dec 06 21:35:14 CET 2003  Patrik Weiskircher <pat@icore.at>
 
 Thu Dec 04 11:33:46 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
-	* Initialize the variable idletag, since it is tested in 
+	* Initialize the variable idletag, since it is tested in
 	  silc_core_deinit for its default value.  Affected file
 	  irssi/src/silc/core/silc-core.c
 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -2611,7 +2611,7 @@ SILC_SERVER_CMD_FUNC(motd)
 
     /* Send to primary router only if we don't know the server
      * the client requested or if the server is not locally connected */
-    if ((!entry || !(entry->data.status & SILC_IDLIST_STATUS_LOCAL)) 
+    if ((!entry || !(entry->data.status & SILC_IDLIST_STATUS_LOCAL))
 	&& !cmd->pending && !server->standalone) {
       /* Send to the primary router */
       SilcBuffer tmpbuf;
@@ -3323,16 +3323,15 @@ SILC_SERVER_CMD_FUNC(cumode)
   /* Get target client's entry */
   target_client = silc_idlist_find_client_by_id(server->local_list,
 						client_id, TRUE, NULL);
-  if (!target_client) {
+  if (!target_client)
     target_client = silc_idlist_find_client_by_id(server->global_list,
 						  client_id, TRUE, NULL);
-  }
 
   if (target_client != client &&
       !(sender_mask & SILC_CHANNEL_UMODE_CHANFO) &&
       !(sender_mask & SILC_CHANNEL_UMODE_CHANOP)) {
     silc_server_command_send_status_data(cmd, SILC_COMMAND_CUMODE,
-					 SILC_STATUS_ERR_NO_CHANNEL_PRIV, 0,
+					 SILC_STATUS_ERR_NOT_YOU, 0,
 					 2, tmp_ch_id, tmp_ch_len);
     goto out;
   }
@@ -3365,7 +3364,8 @@ SILC_SERVER_CMD_FUNC(cumode)
   if (target_mask & SILC_CHANNEL_UMODE_CHANFO) {
     if (target_client != client) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					    SILC_STATUS_ERR_NOT_YOU, 0);
+					    SILC_STATUS_ERR_NO_CHANNEL_FOPRIV,
+					    0);
       goto out;
     }
 
@@ -3409,16 +3409,23 @@ SILC_SERVER_CMD_FUNC(cumode)
       }
 
       /* There cannot be anyone else as founder on the channel now.  This
-	 client is definitely the founder due to this authentication */
-      silc_hash_table_list(channel->user_list, &htl);
-      while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
-	if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
-	  chl2->mode &= ~SILC_CHANNEL_UMODE_CHANFO;
-	  silc_server_force_cumode_change(server, NULL, channel, chl2,
-					  chl2->mode);
-	  break;
-	}
-      silc_hash_table_list_reset(&htl);
+	 client is definitely the founder due to this authentication.  This
+	 is done only on router, not on server, since server cannot know
+	 whether router will accept this mode change or not.  XXX This
+	 probably shouldn't be done anymore at all, may cause problems in
+	 router-router connections too (maybe just AUTH_FAILED error should
+	 be returned). -Pekka */
+      if (server->server_type == SILC_ROUTER) {
+	silc_hash_table_list(channel->user_list, &htl);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
+	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	    chl2->mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    silc_server_force_cumode_change(server, NULL, channel, chl2,
+					    chl2->mode);
+	    break;
+	  }
+	silc_hash_table_list_reset(&htl);
+      }
 
       sender_mask = chl->mode |= SILC_CHANNEL_UMODE_CHANFO;
     }

@@ -13,9 +13,6 @@ TODO for SILC Client 1.0 branch
 TODO for SILC Server 1.0
 ========================
 
- o Check that +of works correctly when same client is +of already on
-   some other server on same channel.
-
  o Check that founder key is distributed ok during backup resuming.
 
  o invite (with @server!*@host) not working from normal server/backup

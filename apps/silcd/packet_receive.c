@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -982,6 +982,7 @@ void silc_server_notify(SilcServer server,
 	silc_hash_table_list(channel->user_list, &htl);
 	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
 	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	    SILC_LOG_DEBUG(("Founder already on channel"));
 	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	    silc_server_force_cumode_change(server, sock, channel,
 					    chl, mode);
@@ -992,7 +993,7 @@ void silc_server_notify(SilcServer server,
 	if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
 	  break;
 
-	/* Founder not found of the channel.  Since the founder auth mode
+	/* Founder not found on the channel.  Since the founder auth mode
 	   is set on the channel now check whether this is the client that
 	   originally set the mode. */
 
@@ -1002,6 +1003,7 @@ void silc_server_notify(SilcServer server,
 	  if (!tmp || !silc_pkcs_public_key_payload_decode(tmp, tmp_len,
 							   &founder_key)) {
 	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    SILC_LOG_DEBUG(("Founder public key not present"));
 	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	    notify_sent = TRUE;
 	    break;
@@ -1012,6 +1014,7 @@ void silc_server_notify(SilcServer server,
 	  if (!silc_pkcs_public_key_compare(channel->founder_key,
 					    founder_key)) {
 	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    SILC_LOG_DEBUG(("Founder public key mismatch"));
 	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	    notify_sent = TRUE;
 	    break;
@@ -1020,11 +1023,13 @@ void silc_server_notify(SilcServer server,
 
 	/* There cannot be anyone else as founder on the channel now.  This
 	   client is definitely the founder due to this 'authentication'.
-	   We trust the server did the actual authentication earlier. */
+	   We trust the server did the actual signature verification
+	   earlier (bad, yes). */
 	silc_hash_table_list(channel->user_list, &htl);
 	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
 	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
 	    chl2->mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    SILC_LOG_DEBUG(("Removing old founder rights, new authenticated"));
 	    silc_server_force_cumode_change(server, NULL, channel, chl2,
 					    chl2->mode);
 	    break;
