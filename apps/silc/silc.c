@@ -546,7 +546,7 @@ static void silc_client_process_message(SilcClientInternal app)
 
     /* Allocate command context. This and its internals must be free'd 
        by the command routine receiving it. */
-    ctx = silc_client_command_alloc();
+    ctx = silc_calloc(1, sizeof(*ctx));
     ctx->client = app->client;
     ctx->conn = app->conn;
     ctx->command = cmd;
