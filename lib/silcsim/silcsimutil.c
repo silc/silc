@@ -22,27 +22,26 @@
 
 #ifdef SILC_SIM			/* SIM support enabled */
 
-/* This puts two arguments together and returns a new allocated string.
-   This is used to produce the function names that are then get from
+static char symname[256];
+
+/* This is used to produce the function names that are then get from
    SIM's. */
 
 char *silc_sim_symname(char *symbol, char *function)
 {
-  char *ret;
   int len1, len2, len3;
 
   len1 = strlen(symbol);
   len2 = strlen(function);
   len3 = strlen(SILC_SIM_SYMBOL_PREFIX);
-  ret = silc_calloc(len1 + len2 + len3 + 2 + 1, sizeof(char));
+  memset(symname, 0, sizeof(symname));
+  silc_strncat(symname, sizeof(symname), SILC_SIM_SYMBOL_PREFIX, len3);
+  silc_strncat(symname, sizeof(symname), "_", 1);
+  silc_strncat(symname, sizeof(symname), symbol, len1);
+  silc_strncat(symname, sizeof(symname), "_", 1);
+  silc_strncat(symname, sizeof(symname), function, len2);
 
-  strncpy(ret, SILC_SIM_SYMBOL_PREFIX, len3);
-  strncat(ret, "_", 1);
-  strncat(ret, symbol, len1);
-  strncat(ret, "_", 1);
-  strncat(ret, function, len2);
-
-  return ret;
+  return symname;
 }
 
 #endif /* SILC_SIM */
