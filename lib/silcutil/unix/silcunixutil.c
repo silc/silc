@@ -62,7 +62,7 @@ char *silc_string_regexify(const char *string)
     count++;
   }
 
-  regex[count - 1] = ')';
+  regex[count++] = ')';
   regex[count] = '$';
 
   return regex;

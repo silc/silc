@@ -23,6 +23,7 @@
 
 /* Set TRUE/FALSE to enable/disable debugging */
 extern int silc_debug;
+extern char *silc_debug_string;
 
 /* SILC Log types */
 typedef enum {
@@ -124,5 +125,6 @@ void silc_log_reset_callbacks();
 void silc_log_set_debug_callbacks(SilcDebugCb debug, 
 				  SilcDebugHexdumpCb debug_hexdump);
 void silc_log_reset_debug_callbacks();
+void silc_log_set_debug_string(const char *debug_string);
 
 #endif

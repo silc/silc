@@ -179,8 +179,7 @@ is a string that is used to match the output debug.  The example "*" will
 match for everything, and all debugs will be printed.  If you want to
 limit the debugs you want to printout you can give for example a string
 like "*server*,*rng*" to match all functions, and filenames that has
-"server" or "rng" string in them.  Others will not be printed out.  You   
-can freely define regural expressions as debug string.
+"server" or "rng" string in them.  Others will not be printed out.
 
 
 Howto Clean SILC Source Tree

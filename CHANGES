@@ -1,3 +1,20 @@
+Wed Nov  7 17:15:07 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_log_set_debug_string function to set a regex
+	  string to match for debug output.  Only the function names,
+	  or filenames matching the given debug string is actually
+	  printed.  This way it is possible to filter out those debug
+	  strings that user is not interested in.
+
+	  Fixed a bug in silc_string_regexify.
+
+	  Affected files lib/silcutil/silclog.[ch], and
+	  lib/silcutil/unix/silcunixutil.c.
+
+	* Changed the -d options in both server and Irssi SILC client
+	  to take the debug string as argument.  Affected files
+	  silcd/silcd.c and irssi/src/silc/core/silc-core.c.
+
 Tue Nov  6 21:31:54 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_hash_babbleprint to create a Bubble Babble

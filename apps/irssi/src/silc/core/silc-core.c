@@ -42,12 +42,12 @@
 
 /* Command line option variables */
 static bool opt_create_keypair = FALSE;
-static bool opt_debug = FALSE;
 static bool opt_list_ciphers = FALSE;
 static bool opt_list_hash = FALSE;
 static bool opt_list_hmac = FALSE;
 static bool opt_list_pkcs = FALSE;
 static bool opt_version = FALSE;
+static char *opt_debug = FALSE;
 static char *opt_pkcs = NULL;
 static char *opt_keyfile = NULL;
 static int opt_bits = 0;
@@ -193,7 +193,7 @@ void silc_core_init(void)
       "List supported HMACs", NULL },
     { "list-pkcs", 'P', POPT_ARG_NONE, &opt_list_pkcs, 0,
       "List supported PKCSs", NULL },
-    { "debug", 'd', POPT_ARG_NONE, &opt_debug, 0,
+    { "debug", 'd', POPT_ARG_STRING, &opt_debug, 0,
       "Enable debugging", NULL },
     { "version", 'V', POPT_ARG_NONE, &opt_version, 0,
       "Show version", NULL },
@@ -268,9 +268,12 @@ void silc_core_init_finish(void)
     exit(0); 
   }
 
-  silc_debug = opt_debug;
-  silc_log_set_callbacks(silc_log_info, silc_log_warning,
-			 silc_log_error, NULL);
+  if (opt_debug) {
+    silc_debug = TRUE;
+    silc_log_set_debug_string(opt_debug);
+    silc_log_set_callbacks(silc_log_info, silc_log_warning,
+			   silc_log_error, NULL);
+  }
 
   /* Do some irssi initializing */
   settings_add_bool("server", "skip_motd", FALSE);

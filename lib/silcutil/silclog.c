@@ -23,6 +23,7 @@
 
 /* Set TRUE/FALSE to enable/disable debugging */
 int silc_debug = FALSE;
+char *silc_debug_string = NULL;
 
 /* SILC Log name strings. These strings are printed to the log file. */
 const SilcLogTypeName silc_log_types[] =
@@ -148,6 +149,13 @@ void silc_log_output_debug(char *file, char *function,
     return;
   }
 
+  if (silc_debug_string && 
+      (!silc_string_regex_match(silc_debug_string, file) &&
+       !silc_string_regex_match(silc_debug_string, function))) {
+    silc_free(string);
+    return;
+  }
+
   if (debug_cb)
     {
       (*debug_cb)(file, function, line, string);
@@ -171,6 +179,13 @@ void silc_log_output_hexdump(char *file, char *function,
   unsigned char *data = (unsigned char *)data_in;
 
   if (!silc_debug) {
+    silc_free(string);
+    return;
+  }
+
+  if (silc_debug_string && 
+      (!silc_string_regex_match(silc_debug_string, file) &&
+       !silc_string_regex_match(silc_debug_string, function))) {
     silc_free(string);
     return;
   }
@@ -293,4 +308,16 @@ void silc_log_reset_debug_callbacks()
 {
   debug_cb = NULL;
   debug_hexdump_cb = NULL;
+}
+
+/* Set current debug string */
+
+void silc_log_set_debug_string(const char *debug_string)
+{
+  silc_free(silc_debug_string);
+  if (strchr(debug_string, '(') &&
+      strchr(debug_string, ')'))
+    silc_debug_string = strdup(debug_string);
+  else
+    silc_debug_string = silc_string_regexify(debug_string);
 }
