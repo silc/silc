@@ -915,6 +915,7 @@ void silc_client_nickname_format(SilcClient client,
   int i, off = 0, len;
   SilcClientEntry *clients;
   uint32 clients_count = 0;
+  SilcClientEntry unformatted = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -999,10 +1000,15 @@ void silc_client_nickname_format(SilcClient client,
 	char tmp[6];
 	int num, max = 1;
 
-	if (clients_count == 1)
+	if (clients_count == 1) {
+	  unformatted = clients[0];
 	  break;
+	}
 
 	for (i = 0; i < clients_count; i++) {
+	  if (!strncasecmp(clients[i]->nickname, client_entry->nickname,
+			   strlen(clients[i]->nickname)))
+	    unformatted = clients[i];
 	  if (strncasecmp(clients[i]->nickname, newnick, off))
 	    continue;
 	  if (strlen(clients[i]->nickname) <= off)
@@ -1011,7 +1017,7 @@ void silc_client_nickname_format(SilcClient client,
 	  if (num > max)
 	    max = num;
 	}
-	
+
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp) - 1, "%d", ++max);
 	len = strlen(tmp);
@@ -1033,6 +1039,12 @@ void silc_client_nickname_format(SilcClient client,
 
   newnick = silc_realloc(newnick, sizeof(*newnick) * (off + 1));
   newnick[off] = 0;
+
+  /* If we are changing nickname of our local entry we'll enforce
+     that we will always get the unformatted nickname.  Give our
+     format number to the one that is not formatted now. */
+  if (unformatted && client_entry == conn->local_entry)
+    client_entry = unformatted;
 
   silc_free(client_entry->nickname);
   client_entry->nickname = newnick;

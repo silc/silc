@@ -4252,9 +4252,9 @@ SILC_SERVER_CMD_FUNC(cumode)
 
   /* If the target client is founder, no one else can change their mode
      but themselves. */
-  if (chl->mode & SILC_CHANNEL_UMODE_CHANFO && chl->client != target_client) {
+  if (chl->mode & SILC_CHANNEL_UMODE_CHANFO && client != target_client) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NOT_YOU);
+					  SILC_STATUS_ERR_NO_CHANNEL_PRIV);
     goto out;
   }
 

@@ -600,7 +600,6 @@ SILC_CLIENT_CMD_FUNC(invite)
 	  COMMAND_ERROR;
 	  goto out;
 	}
-	silc_free(nickname);
       
 	/* Client entry not found, it was requested thus mark this to be
 	   pending command. */
@@ -802,8 +801,6 @@ SILC_CLIENT_CMD_FUNC(kill)
       COMMAND_ERROR;
       goto out;
     }
-
-    silc_free(nickname);
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
@@ -1458,8 +1455,6 @@ SILC_CLIENT_CMD_FUNC(cumode)
       COMMAND_ERROR;
       goto out;
     }
-
-    silc_free(nickname);
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */

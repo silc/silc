@@ -30,17 +30,10 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o Remove the assert from silc_client_file_send.
-
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
    set the key only if application wishes to set (accept the key) it.
-
- o When changing own nickname and there exists a same nickname the library
-   can give the client now nickname in format nick@host.  This is new
-   behaviour and maybe should be removed.  The changer should always
-   get the one it wants and not have the formatted nickname.
 
  o Additions to do after protocol version 1.1:
 
@@ -54,9 +47,6 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
-
- o removing other's modes on channel seems to be possible due to some
-   cumode bug.
 
  o Add hashed passwords to silcd.conf file.
 
@@ -276,6 +266,8 @@ least could be done.
 	  instead of adding it to the scheduler with 0 timeout.  It
 	  should be analyzed too how slow the task registering process
 	  actually is, and find out ways to optimize it.
+
+ o Add SilcAsyncOperation to utility library.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
 

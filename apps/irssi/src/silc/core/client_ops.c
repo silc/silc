@@ -223,7 +223,8 @@ void silc_connect(SilcClient client, SilcClientConnection conn, int success)
     signal_emit("event connected", 1, server);
   } else {
     server->connection_lost = TRUE;
-    server->conn->context = NULL;
+    if (server->conn)
+      server->conn->context = NULL;
     server_disconnect(SERVER(server));
   }
 }

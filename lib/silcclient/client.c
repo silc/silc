@@ -372,6 +372,8 @@ static void silc_client_start_key_exchange_cb(SilcSocketConnection sock,
   SilcProtocol protocol;
   SilcClientKEInternalContext *proto_ctx;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!conn->sock->hostname)
     conn->sock->hostname = strdup(conn->remote_host);
   if (!conn->sock->ip)

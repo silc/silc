@@ -306,9 +306,7 @@ void silc_client_send_key_agreement(SilcClient client,
   SilcClientKeyAgreement ke = NULL;
   SilcBuffer buffer;
 
-  assert(client_entry);
-
-  if (client_entry->ke)
+  if (!client_entry || client_entry->ke)
     return;
 
   /* Create the listener if hostname and port was provided.
@@ -518,7 +516,8 @@ void silc_client_perform_key_agreement(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  assert(client_entry && hostname && port);
+  if (!client_entry || !hostname || !port)
+    return;
 
   ke = silc_calloc(1, sizeof(*ke));
   ke->client = client;
@@ -556,7 +555,8 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  assert(client_entry);
+  if (!client_entry)
+    return;
 
   ke = silc_calloc(1, sizeof(*ke));
   ke->client = client;
@@ -614,7 +614,8 @@ void silc_client_abort_key_agreement(SilcClient client,
 				     SilcClientConnection conn,
 				     SilcClientEntry client_entry)
 {
-  assert(client_entry);
+  if (!client_entry)
+    return;
 
   if (client_entry->ke) {
     SilcClientKeyAgreement ke;

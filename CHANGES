@@ -1,3 +1,20 @@
+Tue Jan 22 18:19:36 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed assert()'s from the lib/silcclient/client_keyagr.c.
+
+	* Fixed the NICK command to always give the unformatted
+	  nickname to the one giving the NICK command.  If unformatted
+	  nickname is cached already it will be formatted and the
+	  local entry will always get the unformatted nickname.
+	  Affected file lib/silcclient/idlist.c.
+
+	* Fixed some double frees from client library commands.
+	  Affected file is lib/silcclient/command.c.
+
+	* Fixed CUMODE command in server to assure that no one can
+	  change founder's mode than the founder itself, there was a
+	  little bug.  Affected file silcd/command.c.
+
 Mon Jan 21 19:07:53 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed the SilcClientCommandDestructor from the client
