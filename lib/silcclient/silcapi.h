@@ -322,7 +322,7 @@ void silc_client_send_channel_message(SilcClient client,
 /* Sends private message to remote client. If private message key has
    not been set with this client then the message will be encrypted using
    normal session keys. Private messages are special packets in SILC
-   network hence we need this own function for them. This is similiar
+   network hence we need this own function for them. This is similar
    to silc_client_packet_send_to_channel except that we send private
    message. The `data' is the private message. If the `force_send' is
    TRUE the packet is sent immediately. */
