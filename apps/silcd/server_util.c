@@ -1754,7 +1754,7 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   while (silc_hash_table_get(&htl, (void **)&t, (void **)&entry)) {
     if (type == t) {
       if (type == 1) {
-	if (silc_string_match((char *)entry, tmp)) {
+	if (silc_string_match(entry->data, tmp)) {
 	  ret = TRUE;
 	  break;
 	}
