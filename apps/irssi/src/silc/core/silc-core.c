@@ -360,8 +360,10 @@ void silc_core_init(void)
       "List supported HMACs", NULL },
     { "list-pkcs", 0, POPT_ARG_NONE, NULL, 0,
       "List supported PKCSs", NULL },
+#ifdef SILC_DEBUG
     { "debug", 'd', POPT_ARG_STRING, NULL, 0,
       "Enable debugging", "STRING" },
+#endif /* SILC_DEBUG */
     { "create-key-pair", 'C', POPT_ARG_NONE, NULL, 0,
       "Create new public key pair", NULL },
     { "pkcs", 0, POPT_ARG_STRING, &opt_pkcs, 0,
