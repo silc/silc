@@ -57,14 +57,12 @@ Conferencing, Protocol Specification [SILC1].  The SILC Key Exchange
 (SKE) protocol provides secure key exchange between two parties
 resulting into shared secret key material.  The protocol is based
 on Diffie-Hellman key exchange algorithm and its functionality is
-derived from several key exchange protocols.  SKE use best parts
-of the SSH2 Key Exchange protocol, Station-To-Station (STS) protocol
-and the OAKLEY Key Determination protocol [OAKLEY].
+derived from several key exchange protocols.
 
 The second protocol, SILC Connection Authentication protocol provides
 user level authentication used when creating connections in SILC
 network.  The protocol is transparent to the authentication data
-which means that it can be used to authenticate the user with, for
+which means that it can be used to authenticate the connection with, for
 example, passphrase (pre-shared secret) or public key (and certificate)
 based on digital signatures.
 
@@ -116,14 +114,14 @@ Conferencing, Protocol Specification [SILC1].  The SILC Key Exchange
 (SKE) protocol provides secure key exchange between two parties
 resulting into shared secret key material.  The protocol is based on
 Diffie-Hellman key exchange algorithm and its functionality is derived
-from several key exchange protocols.  SKE use best parts of the SSH2
-Key Exchange protocol, Station-To-Station (STS) protocol and the
-OAKLEY Key Determination protocol [OAKLEY].
+from several key exchange protocols, such as SSH2 Key Exchange protocol,
+Station-To-Station (STS) protocol and the OAKLEY Key Determination
+protocol [OAKLEY].
 
 The second protocol, SILC Connection Authentication protocol provides
 user level authentication used when creating connections in SILC
 network.  The protocol is transparent to the authentication data which
-means that it can be used to authenticate the user with, for example,
+means that it can be used to authenticate the connection with, for example,
 passphrase (pre-shared secret) or public key (and certificate) based
 on digital signatures.
 
@@ -147,7 +145,7 @@ provided by the SILC protocol.
 .ti 0
 1.1 Requirements Terminology
 
-The keywords MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, RECOMMENDED, 
+The keywords MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, RECOMMENDED,
 MAY, and OPTIONAL, when they appear in this document, are to be
 interpreted as described in [RFC2119].
 
@@ -156,14 +154,14 @@ interpreted as described in [RFC2119].
 2 SILC Key Exchange Protocol
 
 SILC Key Exchange Protocol (SKE) is used to exchange shared secret
-between connecting entities.  The result of this protocol is a key
 material used to secure the communication channel.  The protocol use
 Diffie-Hellman key exchange algorithm and its functionality is derived
-from several key exchange protocols.  SKE use best parts of the SSH2
-Key Exchange protocol, Station-To-Station (STS) protocol and the OAKLEY
-Key Determination protocol.  The protocol does not claim any conformance
+from several key exchange protocols, such as SSH2 Key Exchange protocol,
+Station-To-Station (STS) protocol and the OAKLEY Key Determination
+protocol [OAKLEY].  The protocol does not claim any conformance
 to any of these protocols, they were only used as a reference when
-designing this protocol.
+designing this protocol.  The protocol can mutually authenticate the
+negotiating parties during the key exchange.
 
 The purpose of SILC Key Exchange protocol is to create session keys to
 be used in current SILC session.  The keys are valid only for some period
@@ -172,7 +170,7 @@ are used to protect packets traveling between the two entities.
 Usually all traffic is secured with the key material derived from this
 protocol.
 
-The Diffie-Hellman implementation used in the SILC  SHOULD be compliant
+The Diffie-Hellman implementation used in the SILC SHOULD be compliant
 to the PKCS #3.
 
 
@@ -233,7 +231,7 @@ include white spaces (` ').
 |   RESERVED    |     Flags     |         Payload Length        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-+                                                               +  
++                                                               +
 |                                                               |
 +                            Cookie                             +
 |                                                               |
@@ -323,11 +321,12 @@ o Flags (1 byte) - Indicates flags to be used in the key
        is performed using the old key.  See the [SILC1]
        for more information on this issue.  When PFS is
        used, re-keying and creating new keys for any
-       particular purpose MUST cause new key exchange.
-       In this key exchange only the Key Exchange Payload
-       is sent and the Key Exchange Start Payload MUST
-       NOT be sent.  When doing PFS the Key Exchange
-       Payloads are encrypted with the old keys.
+       particular purpose MUST cause new key exchange with
+       new Diffie-Hellman exponent values.  In this key
+       exchange only the Key Exchange Payload is sent and
+       the Key Exchange Start Payload MUST NOT be sent.
+       When doing PFS the Key Exchange Payloads are
+       encrypted with the old keys.
 
      Mutual Authentication    0x04
 
@@ -370,7 +369,7 @@ o Key Exchange Group (variable length) - The list of
 o PKCS Alg Length (2 bytes) - The length of the PKCS algorithms
   list, not including any other field.
 
-o PKCS Algorithms (variable length) - The list of PKCS 
+o PKCS Algorithms (variable length) - The list of PKCS
   algorithms.  This field MUST be present.
 
 o Encryption Alg Length (2 bytes) - The length of the encryption
@@ -396,7 +395,7 @@ o HMACs (variable length) - The list of HMACs.  The HMAC's
 o Compression Alg Length (2 bytes) - The length of the
   compression algorithms list, not including any other field.
 
-o Compression Algorithms (variable length) - The list of 
+o Compression Algorithms (variable length) - The list of
   compression algorithms.  This field MAY be omitted.
 .in 3
 
@@ -411,14 +410,14 @@ and the Mutual Authentication flag is not set then the initiator MUST
 NOT provide the signature data.  If the flag is set then the initiator
 MUST provide the signature data so that the responder can verify it.
 
-The Mutual Authentication flag is usually used when a separate 
+The Mutual Authentication flag is usually used when a separate
 authentication protocol will not be executed for the initiator of the
 protocol.  This is case for example when the SKE is performed between
 two SILC clients.  In normal case, where client is connecting to a
 server, or server is connecting to a router the Mutual Authentication
-flag MAY be omitted.  However, if the connection authentication protocol 
+flag MAY be omitted.  However, if the connection authentication protocol
 for the connecting entity is not based on digital signatures (it is
-based on pre-shared key) then the Mutual Authentication flag SHOULD be 
+based on pre-shared key) then the Mutual Authentication flag SHOULD be
 enabled.  This way the connecting entity has to provide proof of
 possession of the private key for the public key it will provide in
 this protocol.
@@ -433,7 +432,7 @@ the new key material.  In the re-key the Mutual Authentication flag, that
 may be set in the initial negotiation, MUST also be ignored.
 
 This payload is sent inside SILC_PACKET_KEY_EXCHANGE_1 and inside
-SILC_PACKET_KEY_EXCHANGE_2 packet types.  The initiator uses the 
+SILC_PACKET_KEY_EXCHANGE_2 packet types.  The initiator uses the
 SILC_PACKET_KEY_EXCHANGE_1 and the responder the latter.
 
 The following diagram represent the Key Exchange Payload.
@@ -472,8 +471,8 @@ Figure 2:  Key Exchange Payload
 o Public Key Length (2 bytes) - The length of the Public Key
   (or certificate) field, not including any other field.
 
-o Public Key Type (2 bytes) - The public key (or certificate) 
-  type.  This field indicates the type of the public key in 
+o Public Key Type (2 bytes) - The public key (or certificate)
+  type.  This field indicates the type of the public key in
   the packet.  Following types are defined:
 
      1    SILC style public key (mandatory)
@@ -482,7 +481,7 @@ o Public Key Type (2 bytes) - The public key (or certificate)
      4    OpenPGP certificate (optional)
      5    SPKI certificate (optional)
 
-  The only required type to support is type number 1.  See 
+  The only required type to support is type number 1.  See
   [SILC1] for the SILC public key specification.  See
   SSH2 public key specification in [SSH-TRANS].  See X.509v3
   certificate specification in [PKIX-Part1].  See OpenPGP
@@ -502,9 +501,10 @@ o Public Data Length (2 bytes) - The length of the Public Data
   field, not including any other field.
 
 o Public Data (variable length) - The public data to be
-  sent to the receiver (Diffie-Hellman public values).  See
-  section 2.2 Key Exchange Procedure for detailed description
-  how this field is computed.  This value is binary encoded.
+  sent to the receiver (computed Diffie-Hellman public values).
+  See section 2.2 Key Exchange Procedure for detailed description
+  how this field is computed.  This field is MP integer and is
+  encoded as defined in [SILC1].
 
 o Signature Length (2 bytes) - The length of the signature,
   not including any other field.
@@ -518,7 +518,8 @@ o Signature Data (variable length) - The signature signed
   MUST NOT provide this field and the Signature Length field
   MUST be set to zero (0) value.  If the flag is set then
   also the initiator MUST provide this field.  The responder
-  always MUST provide this field.
+  always MUST provide this field.  The encoding for signature
+  is defined in [SILC1].
 .in 3
 
 
@@ -538,8 +539,8 @@ Setup:  p is a large and public safe prime.  This is one of the
         prime factor of p).  g is a generator and is defined
         along with the Diffie Hellman group.
 
-    1.  Initiator generates a random number x, where 1 < x < q, 
-        and computes e = g ^ x mod p.  The result e is then 
+    1.  Initiator generates a random number x, where 1 < x < q,
+        and computes e = g ^ x mod p.  The result e is then
         encoded into Key Exchange Payload, with the public key
         (or certificate) and sent to the responder.
 
@@ -553,15 +554,15 @@ Setup:  p is a large and public safe prime.  This is one of the
 
     2.  Responder generates a random number y, where 1 < y < q,
         and computes f = g ^ y mod p.  It then computes the
-        shared secret KEY = e ^ y mod p, and, a hash value 
+        shared secret KEY = e ^ y mod p, and, a hash value
         HASH = hash(Initiator's Key Exchange Start Payload |
         public key (or certificate) | Initiator's public key
         (or certificate) | e | f | KEY).  It then signs
         the HASH value with its private key resulting a signature
-        SIGN.  
+        SIGN.
 
-        It then encodes its public key (or certificate), f and 
-        SIGN into Key Exchange Payload and sends it to the 
+        It then encodes its public key (or certificate), f and
+        SIGN into Key Exchange Payload and sends it to the
         initiator.
 
         If the Mutual Authentication flag is set then the responder
@@ -583,14 +584,14 @@ Setup:  p is a large and public safe prime.  This is one of the
         it verifies the certificate.  The initiator MAY accept
         the public key without verifying it, however, doing
         so may result to insecure key exchange (accepting the
-        public key without verifying may be desirable for 
+        public key without verifying may be desirable for
         practical reasons on many environments.  For long term
         use this is never desirable, in which case certificates
         would be the preferred method to use).
 
-        Initiator then computes the shared secret KEY = 
+        Initiator then computes the shared secret KEY =
         f ^ x mod p, and, a hash value HASH in the same way as
-        responder did in phase 2.  It then verifies the 
+        responder did in phase 2.  It then verifies the
         signature SIGN from the payload with the hash value
         HASH using the received public key.
 
@@ -602,7 +603,7 @@ accepted during the key exchange except the SILC_PACKET_KEY_EXCHANGE_*,
 SILC_PACKET_FAILURE and SILC_PACKET_SUCCESS packets.
 
 The result of this protocol is a shared secret key material KEY and
-a hash value HASH.  The key material itself is not fit to be used as 
+a hash value HASH.  The key material itself is not fit to be used as
 a key, it needs to be processed further to derive the actual keys to be
 used.  The key material is also used to produce other security parameters
 later used in the communication.  See section 2.3 Processing the Key
@@ -612,8 +613,8 @@ If the Mutual Authentication flag was set the protocol produces also
 a hash value HASH_i.  This value, however, must be discarded.
 
 After the keys are processed the protocol is ended by sending the
-SILC_PACKET_SUCCESS packet.  Both entities send this packet to 
-each other.  After this both parties will start using the new keys.
+SILC_PACKET_SUCCESS packet.  Both entities send this packet to
+each other.  After this both parties MUST start using the new keys.
 
 
 .ti 0
@@ -693,7 +694,7 @@ separately when this procedure is needed.  See the [SILC1] and the
 2.4 SILC Key Exchange Groups
 
 The Following groups may be used in the SILC Key Exchange protocol.
-The first group diffie-hellman-group1 is REQUIRED, other groups MAY be 
+The first group diffie-hellman-group1 is REQUIRED, other groups MAY be
 negotiated to be used in the connection with Key Exchange Start Payload
 and SILC_PACKET_KEY_EXCHANGE packet.  However, the first group MUST be
 proposed in the Key Exchange Start Payload regardless of any other
@@ -858,10 +859,10 @@ are defined:
 Purpose of Connection Authentication protocol is to authenticate the
 connecting party with server.  Usually connecting party is client but
 server may connect to router server as well.  Its other purpose is to
-provide information for the server about which type of connection this
-is.  The type defines whether this is client, server or router
-connection.  Server use this information to create the ID for the
-connection.
+provide information for the server about which type of entity the
+connection is.  The type defines whether the connection is client,
+server or router connection.  Server use this information to create the
+ID for the connection.
 
 Server MUST verify the authentication data received and if it is to fail
 the authentication MUST be failed by sending SILC_PACKET_FAILURE packet.
@@ -901,7 +902,7 @@ prevent this.  See the section 3.2.1 Passphrase Authentication for
 more information.
 
 If authentication method is public key authentication the authentication
-data is a digital signature of the hash value of hash HASH and Key 
+data is a digital signature of the hash value of hash HASH and Key
 Exchange Start Payload, established by the SILC Key Exchange protocol.
 This signature MUST then be verified by the server.  See the section
 3.2.2 Public Key Authentication for more information.
@@ -921,7 +922,7 @@ this payload MUST verify all the data in it and if something is to fail
 the authentication MUST be failed by sending SILC_PACKET_FAILURE packet.
 
 The payload may only be sent with SILC_PACKET_CONNECTION_AUTH packet.
-It MUST NOT be sent in any other packet type.  The following diagram 
+It MUST NOT be sent in any other packet type.  The following diagram
 represent the Connection Auth Payload.
 
 
@@ -942,23 +943,23 @@ represent the Connection Auth Payload.
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
- 
+
 .ce
 Figure 3:  Connection Auth Payload
 
 
 .in 6
-o Payload Length (2 bytes) - Length of the entire Connection 
+o Payload Length (2 bytes) - Length of the entire Connection
   Auth Payload.
 
-o Connection Type (2 bytes) - Indicates the type of the 
+o Connection Type (2 bytes) - Indicates the type of the
   connection.  See section Connection Auth Request Payload
   in [SILC2] for the list of connection types.  This field MUST
   include valid connection type or the packet MUST be discarded
-  and authentication MUST be failed. 
+  and authentication MUST be failed.
 
-o Authentication Data (variable length) - The actual 
-  authentication data.  Contents of this depends on the 
+o Authentication Data (variable length) - The actual
+  authentication data.  Contents of this depends on the
   authentication method known by both parties.  If no
   authentication is required this field does not exist.
 .in 3
@@ -977,13 +978,13 @@ authentication method types.
 .ti 0
 3.2.1 Passphrase Authentication
 
-Passphrase authentication or pre-shared key based authentication is 
-simply an authentication where the party that wants to authenticate 
+Passphrase authentication or pre-shared key based authentication is
+simply an authentication where the party that wants to authenticate
 itself to the other end sends the passphrase that is required by
 the other end, for example server.  The plaintext passphrase is put
 to the payload, that is then encrypted.  The plaintext passphrase
 MUST be in UTF-8 [RFC2279] encoding.  If the passphrase is in the
-sender's system in some other encoding it MUST be UTF-8 encoded 
+sender's system in some other encoding it MUST be UTF-8 encoded
 before transmitted.  The receiver MAY change the encoding of the
 passphrase to its system's default character encoding before verifying
 the passphrase.
@@ -1061,8 +1062,8 @@ are defined:
 
 Security is central to the design of this protocol, and these security
 considerations permeate the specification.  Common security considerations
-such as keeping private keys truly private and using adequate lengths for 
-symmetric and asymmetric keys must be followed in order to maintain the   
+such as keeping private keys truly private and using adequate lengths for
+symmetric and asymmetric keys must be followed in order to maintain the
 security of this protocol.
 
 
@@ -1092,7 +1093,7 @@ security of this protocol.
 [IRC-SERVER] Kalt, C., "Internet Relay Chat: Server Protocol", RFC
              2813, April 2000.
 
-[SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol", 
+[SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol",
              Internet Draft.
 
 [PGP]        Callas, J., et al, "OpenPGP Message Format", RFC 2440,
@@ -1101,7 +1102,7 @@ security of this protocol.
 [SPKI]       Ellison C., et al, "SPKI Certificate Theory", RFC 2693,
              September 1999.
 
-[PKIX-Part1] Housley, R., et al, "Internet X.509 Public Key 
+[PKIX-Part1] Housley, R., et al, "Internet X.509 Public Key
              Infrastructure, Certificate and CRL Profile", RFC 2459,
              January 1999.
 
