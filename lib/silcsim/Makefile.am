@@ -28,8 +28,6 @@ libsilcsim_a_SOURCES = \
 	silcsim.c \
 	silcsimutil.c
 
-SIM_CFLAGS = -fPIC -shared
-
 SIM_MODULES_DIR = modules
 
 SUBDIRS = modules
@@ -60,20 +58,16 @@ all: $(SIM_CIPHER_OBJS) $(SIM_HASH_OBJS)
 endif
 
 $(SIM_CIPHER_OBJS): ../silccrypt/libsilccrypt.a
-	rm -rf $*.c $*.o
-	$(LN_S) $(srcdir)/../silccrypt/$*.c $*.c
-	$(COMPILE) $(SIM_CFLAGS) $*.c -o $(SIM_MODULES_DIR)/$*.sim.so
-	$(LN_S) $(srcdir)/$(SIM_MODULES_DIR)/$*.sim.so $*.o
-	rm -rf $*.c
+	$(LTCOMPILE) -c $(srcdir)/../silccrypt/$*.c
+	$(LIBTOOL) --mode=link $(LINK) -rpath $(silc_modulesdir) -o lib$*.la $*.lo
+	cd $(srcdir)/$(SIM_MODULES_DIR) && $(LN_S) $(srcdir)/../.libs/lib$*.so $(srcdir)/$*.sim.so
 
 $(SIM_HASH_OBJS): ../silccrypt/libsilccrypt.a
-	rm -rf $*.c $*.o
-	$(LN_S) $(srcdir)/../silccrypt/$*.c $*.c
-	$(COMPILE) $(SIM_CFLAGS) $*.c -o $(SIM_MODULES_DIR)/$*.sim.so
-	$(LN_S) $(srcdir)/$(SIM_MODULES_DIR)/$*.sim.so $*.o
-	rm -rf $*.c
+	$(LTCOMPILE) -c $(srcdir)/../silccrypt/$*.c
+	$(LIBTOOL) --mode=link $(LINK) -rpath $(silc_modulesdir) -o lib$*.la $*.lo
+	cd $(srcdir)/$(SIM_MODULES_DIR) && $(LN_S) $(srcdir)/../.libs/lib$*.so $(srcdir)/$*.sim.so
 
-CLEANFILES = $(SIM_MODULES_DIR)/*.sim.so
+CLEANFILES = $(SIM_MODULES_DIR)/*.sim.so *.la
 
 if SILC_DIST_TOOLKIT
 include_HEADERS = silcsim.h silcsimutil.h

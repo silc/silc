@@ -41,6 +41,12 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Implement the <founder auth> and founder privileges gaining to
+   the JOIN command.  This will bypass invite-only mode as well for
+   the client who got the founder mode during JOIN.
+
+ o Make the SILC_NOTIFY_TYPE_KICKED send the kicker's client ID as well.
+
  o After backup resume protocol the TOPIC_SET was not handled correctly
    by all (unknown Channel ID).
 
@@ -53,6 +59,10 @@ TODO/bugs In SILC Server
 
  o Announcements are incomplete: channel topics are not announced,
    user modes (UMODE) are not announced.
+
+ o If client's public key is saved in the server (and doing public key
+   authentication) then the hostname and the username information could
+   be taken from the public key.  Should be a configuration option!
 
  o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
@@ -140,20 +150,11 @@ TODO/Bugs in native WIN32 support (libraries)
    actually async currently.
 
 
-TODO In SILC Protocol
-=====================
-
- o If channel founder mode is set and the invite mode is set on channel
-   then the founder should be added to the list automatically so that
-   if the founder signoff's it will be able join again to the invite only
-   channel wihtout being invited.
-
-
 TODO After 1.0
 ==============
 
  o Compression routines are missing.  The protocol supports packet
-   compression thus it must be implemented.  SILC Comp API must be
+   compression thus it must be implemented.  SILC Zip API must be
    defined.  zlib package is already included into the lib dir (in CVS,
    not in distribution), but it is not used yet, and it requires some
    tweaking on the Makefiles (we want static lib not shared).

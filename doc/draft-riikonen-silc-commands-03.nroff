@@ -810,10 +810,10 @@ List of all defined commands in SILC follows.
 
    14   SILC_COMMAND_JOIN
 
-        Max Arguments:  5
+        Max Arguments:  6
             Arguments:  (1) <channel>       (2) <Client ID>
                         (3) [<passphrase>]  (4) [<cipher>]
-                        (5) [<hmac>]
+                        (5) [<hmac>]        (6) [<founder auth>]
 
         Join to channel/create new channel.  This command is used to
         join to a channel.  If the channel does not exist the channel is
@@ -837,13 +837,29 @@ List of all defined commands in SILC follows.
         of the channel message are produced by the default HMAC or by
         the <hmac> provided for the command.
 
+        The <founder auth> is Authentication Payload providing the
+        authentication for gaining founder privileges on the channel
+        when joining the channel.  The client may provide this if it
+        knows that it is the founder of the channel and that the 
+        SILC_CMODE_FOUNDER_AUTH mode is set on the channel.  The server
+        MUST verify whether the client is able to gain the founder
+        privileges the same way as the client had given the
+        SILC_COMMAND_CUMODE command to gain founder privileges.  The
+        client is still able to join the channel even if the founder
+        privileges could not be gained.  If the channel is invite only
+        channel, the client is able to join the channel only if it 
+        was invited to the channel or was able to gain the founder
+        privileges.
+
         The server MUST check whether the user is allowed to join to
         the requested channel.  Various modes set to the channel affect
         the ability of the user to join the channel.  These conditions
         are:
 
             o  The user MUST be invited to the channel if the channel
-               is invite-only channel.
+               is invite-only channel, or MUST provide correct
+               <founder auth> payload and gain founder privileges, and
+               bypass the invite-only mode.
 
             o  The Client ID/nickname/username/host name MUST NOT match
                any active bans.

@@ -422,15 +422,12 @@ void silc_server_drop(SilcServer server)
       exit(1);
     }
 
-    pw=getpwnam(user);
-    gr=getgrnam(group);
-
-    if (!pw) {
+    if (!(pw=getpwnam(user))) {
       fprintf(stderr, "No such user %s found\n", user);
       exit(1);
     }
 
-    if (!gr) {
+    if (!(gr=getgrnam(group))) {
       fprintf(stderr, "No such group %s found\n", group);
       exit(1);
     }
@@ -446,7 +443,7 @@ void silc_server_drop(SilcServer server)
       exit(1);
     } else {
       SILC_LOG_DEBUG(("Changing to group %s", group));
-      if(setgid(gr->gr_gid)==0) {
+      if (setgid(gr->gr_gid)==0) {
         SILC_LOG_DEBUG(("Setgid to %s", group));
       } else {
         SILC_LOG_DEBUG(("Setgid to %s failed", group));
@@ -454,8 +451,21 @@ void silc_server_drop(SilcServer server)
                 group);
         exit(1);
       }
-      SILC_LOG_DEBUG(("Changing to user nobody"));
-      if(setuid(pw->pw_uid)==0) {
+#if defined HAVE_SETGROUPS && defined HAVE_INITGROUPS
+      if (setgroups(0, NULL)!=0) {
+        SILC_LOG_DEBUG(("Setgroups to NULL failed"));
+        fprintf(stderr, "Tried to setgroups NULL but failed. Exiting\n");
+        exit(1);
+      }
+      if (initgroups(user, gr->gr_gid)!=0) {
+        SILC_LOG_DEBUG(("Initgroups to user %s (gid=%d) failed", user, gr->gr_gid));
+        fprintf(stderr, "Tried to initgroups %s (gid=%d) but no such user. Exiting\n",
+                user, gr->gr_gid);
+        exit(1);
+      }
+#endif
+      SILC_LOG_DEBUG(("Changing to user %s", user));
+      if (setuid(pw->pw_uid)==0) {
         SILC_LOG_DEBUG(("Setuid to %s", user));
       } else {
         SILC_LOG_DEBUG(("Setuid to %s failed", user));

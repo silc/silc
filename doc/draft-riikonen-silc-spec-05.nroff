@@ -1962,6 +1962,10 @@ MAY also send SILC_COMMAND_WHOIS command to receive the Client ID.
 If the sender has received earlier a private message from the receiver
 it should have cached the Client ID from the SILC Packet Header.
 
+If server receives a private message packet which includes invalid
+destionation Client ID the server MUST send SILC_COMMAND_IDENTIFY
+command reply packet destined to the client with error status.
+
 See [SILC2] for description of private message encryption and decryption
 process.
 

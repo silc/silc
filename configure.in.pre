@@ -58,6 +58,7 @@ fi
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_MAKE_SET
+AC_PROG_LIBTOOL
 
 # Header checking
 AC_HEADER_STDC
@@ -291,7 +292,7 @@ AC_CHECK_FUNCS(select listen bind shutdown close connect)
 AC_CHECK_FUNCS(fcntl setsockopt)
 AC_CHECK_FUNCS(getopt_long time)
 AC_CHECK_FUNCS(chmod stat fstat getenv putenv strerror ctime gettimeofday)
-AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
+AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid setgroups initgroups)
 AC_CHECK_FUNCS(strchr strstr strcpy strncpy memcpy memset memmove)
 AC_CHECK_FUNCS(pthread_create)
 
@@ -575,11 +576,28 @@ AC_ARG_WITH(silcd-config-file,
                           server [/etc/silc/silcd.conf]],
 [ AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval") ])
 
+if test "x$localstatedir" != 'x${prefix}/var'; then
+	PIDFILE="$localstatedir/silcd.pid"
+else
+	PIDFILE="$silc_prefix/var/silcd.pid"
+fi
 AC_ARG_WITH(silcd-pid-file,
 [  --with-silcd-pid-file[=PATH]
                           Use PATH as default pid file in SILC
                           server [/var/run/silcd.pid]],
-[ AC_DEFINE_UNQUOTED(SILC_SERVER_PID_FILE, "$withval") ])
+[ case "$withval" in
+	no)
+		;;
+	yes)
+		PIDFILE="$withval"
+		;;
+	*)
+		PIDFILE="$withval"
+		;;
+	esac ],
+)
+AC_SUBST(PIDFILE)
+AC_DEFINE_UNQUOTED(SILC_SERVER_PID_FILE, "$PIDFILE")
 
 #
 # Native WIN32 compilation under cygwin

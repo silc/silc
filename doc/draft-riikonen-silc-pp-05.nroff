@@ -1393,12 +1393,13 @@ Also, all ID's sent in arguments are sent inside ID Payload.
       this type to the local clients on the channel and broadcast it
       to the network.
 
-      Max Arguments:  2
-          Arguments:  (1) <Client ID>  (2) [<comment>]
+      Max Arguments:  3
+          Arguments:  (1) <Client ID>           (2) [<comment>]
+                      (3) <Kicker's Client ID>
 
       The <Client ID> is the client which was kicked from the channel.
       The kicker may have set the <comment> to indicate the reason for
-      the kicking.
+      the kicking.  The <Kicker's Client ID> is the kicker.
 
 
 13    SILC_NOTIFY_TYPE_KILLED

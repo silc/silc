@@ -161,22 +161,30 @@ SilcBuffer silc_id_payload_encode(void *id, SilcIdType type)
   unsigned char *id_data;
   uint32 len;
 
+  id_data = silc_id_id2str(id, type);
+  len = silc_id_get_len(id, type);
+  buffer = silc_id_payload_encode_data((const unsigned char *)id_data,
+				       len, type);
+  silc_free(id_data);
+  return buffer;
+}
+
+SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
+				       uint32 id_len, SilcIdType type)
+{
+  SilcBuffer buffer;
+
   SILC_LOG_DEBUG(("Encoding %s ID payload",
 		  type == SILC_ID_CLIENT ? "Client" :
 		  type == SILC_ID_SERVER ? "Server" : "Channel"));
 
-  id_data = silc_id_id2str(id, type);
-  len = silc_id_get_len(id, type);
-
-  buffer = silc_buffer_alloc(4 + len);
+  buffer = silc_buffer_alloc(4 + id_len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(type),
-		     SILC_STR_UI_SHORT(len),
-		     SILC_STR_UI_XNSTRING(id_data, len),
+		     SILC_STR_UI_SHORT(id_len),
+		     SILC_STR_UI_XNSTRING(id, id_len),
 		     SILC_STR_END);
-  silc_free(id_data);
-
   return buffer;
 }
 

@@ -1190,17 +1190,27 @@ void silc_server_private_message(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   if (packet->src_id_type != SILC_ID_CLIENT ||
-      packet->dst_id_type != SILC_ID_CLIENT)
-    return;
-
-  if (!packet->dst_id)
+      packet->dst_id_type != SILC_ID_CLIENT || !packet->dst_id)
     return;
 
   /* Get the route to the client */
   dst_sock = silc_server_get_client_route(server, packet->dst_id,
 					  packet->dst_id_len, NULL, &idata);
-  if (!dst_sock)
+  if (!dst_sock) {
+    /* Send IDENTIFY command reply with error status to indicate that
+       such destination ID does not exist or is invalid */
+    SilcBuffer idp = silc_id_payload_encode_data(packet->dst_id,
+						 packet->dst_id_len,
+						 packet->dst_id_type);
+    if (!idp)
+      return;
+
+    silc_server_send_command_reply(server, sock, SILC_COMMAND_IDENTIFY,
+				   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0, 1,
+				   2, idp, idp->len);
+    silc_buffer_free(idp);
     return;
+  }
 
   /* Send the private message */
   silc_server_send_private_message(server, dst_sock, idata->send_key,

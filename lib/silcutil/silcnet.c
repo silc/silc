@@ -219,6 +219,7 @@ char *silc_net_localhost(void)
 {
   char hostname[256];
   struct hostent *dest;
+  char *h;
 
   if (gethostname(hostname, sizeof(hostname)))
     return NULL;
@@ -227,6 +228,13 @@ char *silc_net_localhost(void)
   if (!dest)
     return strdup(hostname);
 
+  h = strdup(dest->h_name);
+  dest = gethostbyaddr((char *)dest->h_addr_list[0],
+		       sizeof(struct in_addr), AF_INET);
+  if (!dest)
+    return h;
+
+  silc_free(h);
   return strdup(dest->h_name);
 }
 

@@ -255,6 +255,21 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
 				     uint32 argc, ...)
 {
   va_list ap;
+  SilcBuffer buffer;
+
+  va_start(ap, argc);
+  buffer = silc_command_reply_payload_encode_vap(cmd, status, ident, argc, ap);
+  va_end(ap);
+
+  return buffer;
+}
+
+SilcBuffer 
+silc_command_reply_payload_encode_vap(SilcCommand cmd, 
+				      SilcCommandStatus status,
+				      uint16 ident, uint32 argc, 
+				      va_list ap)
+{
   unsigned char **argv;
   uint32 *argv_lens = NULL, *argv_types = NULL;
   unsigned char status_data[2];
@@ -263,8 +278,6 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
   uint32 x_type;
   SilcBuffer buffer;
   int i, k;
-
-  va_start(ap, argc);
 
   argc++;
   argv = silc_calloc(argc, sizeof(unsigned char *));
@@ -300,8 +313,6 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
   silc_free(argv);
   silc_free(argv_lens);
   silc_free(argv_types);
-
-  va_end(ap);
 
   return buffer;
 }

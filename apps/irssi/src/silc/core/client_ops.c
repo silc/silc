@@ -926,7 +926,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   if (conn_type == SILC_SOCKET_TYPE_SERVER ||
       conn_type == SILC_SOCKET_TYPE_ROUTER) {
     snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
-	     conn->sock->hostname, conn->sock->port);
+	     conn->sock->ip, conn->sock->port);
     snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
 	     pw->pw_dir, entity, file);
   } else {

@@ -225,6 +225,12 @@ void silc_server_send_command(SilcServer server,
 			      SilcCommand command, 
 			      uint16 ident,
 			      uint32 argc, ...);
+void silc_server_send_command_reply(SilcServer server, 
+				    SilcSocketConnection sock,
+				    SilcCommand command, 
+				    SilcCommandStatus status,
+				    uint16 ident,
+				    uint32 argc, ...);
 void silc_server_send_heartbeat(SilcServer server,
 				SilcSocketConnection sock);
 void silc_server_relay_packet(SilcServer server,

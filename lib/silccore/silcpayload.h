@@ -125,6 +125,22 @@ void *silc_id_payload_parse_id(unsigned char *data, uint32 len);
  ***/
 SilcBuffer silc_id_payload_encode(void *id, SilcIdType type);
 
+/****f* silccore/SilcGenericPayloadAPI/silc_id_payload_encode_data
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
+ *                                           uin32 id_len, SilcIdType type);
+ *
+ * DESCRIPTION
+ *
+ *    Encodes ID Payload. The `id' is raw ID data of the length of `id_len'
+ *    of type of `type'. Returns the encoded payload buffer.
+ *
+ ***/
+SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
+				       uint32 id_len, SilcIdType type);
+
 /****f* silccore/SilcGenericPayloadAPI/silc_id_payload_free
  *
  * SYNOPSIS

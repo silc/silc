@@ -335,6 +335,28 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
 				     uint16 ident,
 				     uint32 argc, ...);
 
+/****f* silccore/SilcCommandAPI/silc_command_reply_payload_encode_vap
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer 
+ *    silc_command_reply_payload_encode_vap(SilcCommand cmd, 
+ *                                          SilcCommandStatus status,
+ *                                          uint16 ident, uint32 argc,
+ *                                          va_list ap);
+ *
+ * DESCRIPTION
+ *
+ *    This is equivalent to the silc_command_reply_payload_encode_va except
+ *    takes the va_list as argument.
+ *
+ ***/
+SilcBuffer 
+silc_command_reply_payload_encode_vap(SilcCommand cmd, 
+				      SilcCommandStatus status,
+				      uint16 ident, uint32 argc, 
+				      va_list ap);
+
 /****f* silccore/SilcCommandAPI/silc_command_free
  *
  * SYNOPSIS
