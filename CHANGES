@@ -1,3 +1,8 @@
+Sun Dec 28 21:57:39 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed server statistics decrementing error to not go to
+	  negative.  Affected file silcd/packet_receive.c.
+
 Sat Dec 20 14:42:36 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Use silc_server_query_add_error to add error in public key

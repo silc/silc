@@ -2505,6 +2505,10 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   new_server = (SilcServerEntry)sock->user_data;
   idata = (SilcIDListData)new_server;
 
+  /* Statistics */
+  if (server->server_type == SILC_ROUTER)
+    server->stat.cell_servers++;
+
   /* Remove the old cache entry */
   if (!silc_idcache_del_by_context(server->local_list->servers, new_server)) {
     if (!silc_idcache_del_by_context(server->global_list->servers,
@@ -2648,9 +2652,6 @@ SilcServerEntry silc_server_new_server(SilcServer server,
     silc_server_backup_send(server, sock->user_data, SILC_PACKET_NEW_ID, 0,
 			    idp->data, idp->len, FALSE, TRUE);
     silc_buffer_free(idp);
-
-    /* Statistics */
-    server->stat.cell_servers++;
   }
 
   /* Check whether this router connection has been replaced by an
