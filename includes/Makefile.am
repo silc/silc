@@ -26,6 +26,9 @@ include_HEADERS = \
 	bitmove.h \
 	silcincludes.h \
 	silcwin32.h \
+	silcepoc.h \
+	silcbeos.h \
+	silcos2.h \
 	silcversion.h \
 	version_internal.h \
 	silcdefs.h
@@ -35,6 +38,9 @@ EXTRA_DIST = \
 	bitmove.h \
 	silcincludes.h \
 	silcwin32.h \
+	silcepoc.h \
+	silcbeos.h \
+	silcos2.h \
 	silcversion.h \
 	version_internal.h \
 	silcdefs.h.in
