@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/10 05:34:22  priikone
+ * 	Added mp binary encoding as protocols defines.
+ *
  * Revision 1.4  2000/07/07 06:46:43  priikone
  * 	Removed ske_verify_public_key function as it is not needed
  * 	anymore. Added support to the public key verification as callback
@@ -1062,10 +1065,10 @@ SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n,
   SILC_LOG_DEBUG(("Creating random number"));
 
   /* Get the random number as string */
-  string = silc_rng_get_rn_string(ske->rng, (len / 8));
+  string = silc_rng_get_rn_data(ske->rng, (len / 8));
 
   /* Decode the string into a MP integer */
-  silc_mp_set_str(rnd, string, 16);
+  silc_mp_bin2mp(string, (len / 8), rnd);
   silc_mp_mod_2exp(rnd, rnd, len);
 
   /* Checks */
@@ -1094,17 +1097,9 @@ SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Start"));
 
-  e_len = silc_mp_sizeinbase(&ske->ke1_payload->e, 16);
-  e = silc_calloc(e_len + 1, sizeof(unsigned char));
-  silc_mp_get_str(e, 16, &ske->ke1_payload->e);
-
-  f_len = silc_mp_sizeinbase(&ske->ke2_payload->f, 16);
-  f = silc_calloc(f_len + 1, sizeof(unsigned char));
-  silc_mp_get_str(f, 16, &ske->ke2_payload->f);
-
-  KEY_len = silc_mp_sizeinbase(&ske->KEY, 16);
-  KEY = silc_calloc(KEY_len + 1, sizeof(unsigned char));
-  silc_mp_get_str(KEY, 16, &ske->KEY);
+  e = silc_mp_mp2bin(&ske->ke1_payload->e, &e_len);
+  f = silc_mp_mp2bin(&ske->ke2_payload->f, &f_len);
+  KEY = silc_mp_mp2bin(&ske->KEY, &KEY_len);
 
   buf = silc_buffer_alloc(ske->start_payload_copy->len + 
 			  ske->pk_len + e_len + f_len + KEY_len);
@@ -1150,9 +1145,8 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 					    unsigned int req_hmac_key_len,
 					    SilcSKEKeyMaterial *key)
 {
-  int i, klen;
+  int klen;
   SilcBuffer buf;
-  SilcInt tmp;
   unsigned char *tmpbuf;
   unsigned char hash[32];
   unsigned int hash_len = ske->prop->hash->hash->hash_len;
@@ -1160,19 +1154,10 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Start"));
 
-  silc_mp_init_set(&tmp, &ske->KEY);
-
-  klen = silc_mp_size(&tmp);
-
-  /* Format the KEY material into binary data */
-  tmpbuf = silc_calloc(klen, sizeof(unsigned char));
-  for (i = klen; i > 0; i--) {
-    tmpbuf[i - 1] = (unsigned char)(silc_mp_get_ui(&tmp) & 0xff);
-    silc_mp_fdiv_q_2exp(&tmp, &tmp, 8);
-  }
+  /* Encode KEY to binary data */
+  tmpbuf = silc_mp_mp2bin(&ske->KEY, &klen);
 
   buf = silc_buffer_alloc(1 + klen + hash_len);
-
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
   silc_buffer_format(buf,
 		     SILC_STR_UI_CHAR(0),

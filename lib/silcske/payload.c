@@ -22,6 +22,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/10 05:34:22  priikone
+ * 	Added mp binary encoding as protocols defines.
+ *
  * Revision 1.3  2000/07/07 06:46:43  priikone
  * 	Removed ske_verify_public_key function as it is not needed
  * 	anymore. Added support to the public key verification as callback
@@ -279,22 +282,19 @@ SilcSKEStatus silc_ske_payload_one_encode(SilcSKE ske,
 {
   SilcBuffer buf;
   unsigned char *e_str;
-  unsigned short e_len;
+  unsigned int e_len;
 
   SILC_LOG_DEBUG(("Encoding KE 1 Payload"));
 
   if (!payload)
     return SILC_SKE_STATUS_ERROR;
 
-  /* Encode the integer into HEX string */
-  e_len = silc_mp_sizeinbase(&payload->e, 16);
-  e_str = silc_calloc(e_len + 1, sizeof(unsigned char));
-  silc_mp_get_str(e_str, 16, &payload->e);
+  /* Encode the integer into binary data */
+  e_str = silc_mp_mp2bin(&payload->e, &e_len);
 
   /* Allocate channel payload buffer. The length of the buffer
      is 2 + e. */
   buf = silc_buffer_alloc(e_len + 2);
-
   silc_buffer_pull_tail(buf, e_len + 2);
 
   /* Encode the payload */
@@ -356,7 +356,7 @@ SilcSKEStatus silc_ske_payload_one_decode(SilcSKE ske,
 
   /* Decode the HEX string to integer */
   silc_mp_init(&payload->e);
-  silc_mp_set_str(&payload->e, buf, 16);
+  silc_mp_bin2mp(buf, e_len, &payload->e);
   memset(buf, 0, sizeof(buf));
 
   /* Return the payload */
@@ -397,9 +397,7 @@ SilcSKEStatus silc_ske_payload_two_encode(SilcSKE ske,
     return SILC_SKE_STATUS_ERROR;
 
   /* Encode the integer into HEX string */
-  f_len = silc_mp_sizeinbase(&payload->f, 16);
-  f_str = silc_calloc(f_len + 1, sizeof(unsigned char));
-  silc_mp_get_str(f_str, 16, &payload->f);
+  f_str = silc_mp_mp2bin(&payload->f, &f_len);
 
   /* Allocate channel payload buffer. The length of the buffer
      is 2 + 2 + public key + 2 + f + 2 + signature. */
@@ -504,7 +502,7 @@ SilcSKEStatus silc_ske_payload_two_decode(SilcSKE ske,
   
   /* Decode the HEX string to integer */
   silc_mp_init(&payload->f);
-  silc_mp_set_str(&payload->f, buf, 16);
+  silc_mp_bin2mp(buf, f_len, &payload->f);
   memset(buf, 0, sizeof(buf));
 
   payload->sign_len -= 2;
