@@ -1825,12 +1825,14 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *
  * SYNOPSIS
  *
- *    void silc_client_file_send(SilcClient client,
- *                               SilcClientConnection conn,
- *                               SilcClientFileMonitor monitor,
- *                               void *monitor_context,
- *                               SilcClientEntry client_entry,
- *                               const char *filepath);
+ *    uint32 silc_client_file_send(SilcClient client,
+ *                                 SilcClientConnection conn,
+ *                                 SilcClientFileMonitor monitor,
+ *                                 void *monitor_context,
+ *                                 const char *local_ip,
+ *                                 uint32 local_port,
+ *                                 SilcClientEntry client_entry,
+ *                                 const char *filepath);
  *
  * DESCRIPTION
  *
