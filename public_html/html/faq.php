@@ -70,13 +70,15 @@
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_190" class="normal">
 2.23 Does SILC support multimedia messages, like video/audio streaming?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_200" class="normal">
-2.24 What kind of presence modes SILC support?</a><br />
+2.24 Is it possible to send picture/image messages?</a><br />
+ &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_205" class="normal">
+2.25 What kind of presence modes SILC support?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_210" class="normal">
-2.25 Does SILC support anonymity?</a><br />
+2.26 Does SILC support anonymity?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_220" class="normal">
-2.26 Does SILC support services?</a><br />
+2.27 Does SILC support services?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_230" class="normal">
-2.27 I have suggestions to SILC Protocol, what can I do?</a>
+2.28 I have suggestions to SILC Protocol, what can I do?</a>
 
 <br />&nbsp;<br />
 <a href="#f3_0" class="normal">3. Client Questions</a><br />
@@ -545,6 +547,14 @@ the future.
 <br />&nbsp;<br />
 
 <a name="f2_200"></a>
+<samp class="highlight">Q: Is it possible to send picture/image messages?
+</samp><br />
+A: Yes.  Since it is possible to send any kind of MIME object as a message
+it is also possible to send pictures and images as messages.  It would be
+possible to for example send a hand/mouse written messages.
+<br />&nbsp;<br />
+
+<a name="f2_205"></a>
 <samp class="highlight">Q: What kind of presence modes SILC 
 support?</samp><br />
 A: By presence we mean indication of presence in the network, and SILC 
