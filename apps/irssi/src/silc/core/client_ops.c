@@ -36,6 +36,7 @@
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/fe-channels.h"
 #include "fe-common/core/keyboard.h"
+#include "fe-common/core/window-items.h"
 #include "fe-common/silc/module-formats.h"
 
 #include "core.h"
@@ -79,6 +80,48 @@ static void silc_get_umode_string(SilcUInt32 mode, char *buf,
     strcat(buf, " [rejects watching]");
   if (mode & SILC_UMODE_BLOCK_INVITE)
     strcat(buf, " [blocks invites]");
+}
+
+/* print "nick appears as" message to every channel of a server */
+static void 
+silc_print_nick_change_channel(SILC_SERVER_REC *server, const char *channel,
+			      const char *newnick, const char *oldnick,
+			      const char *address)
+{
+    if (ignore_check(server, oldnick, address,
+		     channel, newnick, MSGLEVEL_NICKS))
+	return;
+
+    printformat_module("fe-common/silc", server, channel, MSGLEVEL_NICKS,
+		SILCTXT_CHANNEL_APPEARS,
+		oldnick, newnick, channel, address);
+}
+
+static void
+silc_print_nick_change(SILC_SERVER_REC *server, const char *newnick,
+		       const char *oldnick, const char *address)
+{
+    GSList *tmp, *windows;
+
+    /* Print to each channel/query where the nick is.
+       Don't print more than once to the same window. */
+    windows = NULL;
+    
+    for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
+	CHANNEL_REC *channel = tmp->data;
+	WINDOW_REC *window = window_item_window((WI_ITEM_REC *) channel);
+
+	if (nicklist_find(channel, newnick) == NULL ||
+	    g_slist_find(windows, window) != NULL)
+	    continue;
+
+	windows = g_slist_append(windows, window);
+	silc_print_nick_change_channel(server, channel->visible_name,
+				       newnick, oldnick, address);
+    }
+
+    g_slist_free(windows);
+
 }
 
 void silc_say(SilcClient client, SilcClientConnection conn,
@@ -1346,9 +1389,32 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       char *old;
       SilcClientEntry client = va_arg(vp, SilcClientEntry);
+      GSList *nicks;
       
       if (!success)
 	return;
+
+      nicks = nicklist_get_same(SERVER(server), client->nickname);
+      if (nicks != NULL) {
+	char buf[512];
+	SilcClientEntry collider, old;
+
+	old = ((SILC_NICK_REC *)(nicks->next->data))->silc_user->client;
+	collider = silc_client_get_client_by_id(client, conn,
+			old->id);
+	
+        memset(buf, 0, sizeof(buf));
+        snprintf(buf, sizeof(buf) - 1, "%s@%s",
+		 collider->username, collider->hostname);
+	nicklist_rename_unique(SERVER(server),
+			       old, old->nickname,
+			       collider, collider->nickname);
+	silc_print_nick_change(server, collider->nickname, client->nickname,
+			       buf);
+
+	g_slist_free(nicks);
+
+      }
 
       old = g_strdup(server->nick);
       server_change_nick(SERVER(server), client->nickname);

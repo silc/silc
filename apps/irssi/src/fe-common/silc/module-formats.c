@@ -48,6 +48,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "killed_you", "You have been killed from the SILC Network by {nick $0} ($1)", 2, { 0, 0 } },
 	{ "killed", "{nick $0} has been killed from the SILC Network by {nick $1} ($2)", 3, { 0, 0, 0 } },
 	{ "quieted", "You have been queited and cannot talk on {channel $0}", 1, { 0 } },
+	{ "appears", "{channick $0} now appears as {channick_hilight $1}", 4, { 0, 0, 0, 0 } },
 
 	/* WHOIS, WHOWAS and USERS (alias WHO) messages */
 	{ NULL, "Who Queries", 0 },
