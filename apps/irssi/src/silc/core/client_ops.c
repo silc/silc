@@ -1375,7 +1375,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       topic = va_arg(vp, char *);
       usercount = va_arg(vp, int);
 
-      if (!silc_term_utf8() && silc_utf8_valid(topic, strlen(topic))) {
+      if (topic && !silc_term_utf8() &&
+	  silc_utf8_valid(topic, strlen(topic))) {
 	memset(tmp, 0, sizeof(tmp));
 	cp = tmp;
 	if (strlen(topic) > sizeof(tmp) - 1) {
@@ -1607,7 +1608,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       channel = va_arg(vp, SilcChannelEntry);
       topic = va_arg(vp, char *);
 
-      if (!silc_term_utf8() && silc_utf8_valid(topic, strlen(topic))) {
+      if (topic && !silc_term_utf8() &&
+	  silc_utf8_valid(topic, strlen(topic))) {
 	memset(tmp, 0, sizeof(tmp));
 	cp = tmp;
 	if (strlen(topic) > sizeof(tmp) - 1) {
