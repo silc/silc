@@ -342,17 +342,23 @@ bool silc_server_init(SilcServer server)
 
   /* Initialize ID caches */
   server->local_list->clients =
-    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor);
-  server->local_list->servers = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
-  server->local_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
+    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor,
+		       FALSE, TRUE);
+  server->local_list->servers =
+    silc_idcache_alloc(0, SILC_ID_SERVER, NULL, FALSE, TRUE);
+  server->local_list->channels =
+    silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL, FALSE, TRUE);
 
   /* These are allocated for normal server as well as these hold some
      global information that the server has fetched from its router. For
      router these are used as they are supposed to be used on router. */
   server->global_list->clients =
-    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor);
-  server->global_list->servers = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
-  server->global_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
+    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor,
+		       FALSE, TRUE);
+  server->global_list->servers =
+    silc_idcache_alloc(0, SILC_ID_SERVER, NULL, FALSE, TRUE);
+  server->global_list->channels =
+    silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL, FALSE, TRUE);
 
   /* Init watcher lists */
   server->watcher_list =
@@ -427,20 +433,11 @@ bool silc_server_init(SilcServer server)
   if (!id)
     goto err;
 
-  /* Check server name */
-  server->server_name =
-    silc_identifier_check(server->config->server_info->server_name,
-			  strlen(server->config->server_info->server_name),
-			  SILC_STRING_LOCALE, 256, NULL);
-  if (!server->server_name) {
-    SILC_LOG_ERROR(("Malformed server name string '%s'",
-		    server->config->server_info->server_name));
-    goto err;
-  }
-
   server->id = id;
   server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
   server->id_string_len = silc_id_get_len(id, SILC_ID_SERVER);
+  server->server_name = server->config->server_info->server_name;
+  server->config->server_info->server_name = NULL;
 
   /* Add ourselves to the server list. We don't have a router yet
      beacuse we haven't established a route yet. It will be done later.
@@ -613,7 +610,7 @@ bool silc_server_rehash(SilcServer server)
 				     server->id_entry))
       return FALSE;
     if (!silc_idcache_add(server->local_list->servers,
-			  server->id_entry->server_name,
+			  strdup(server->id_entry->server_name),
 			  server->id_entry->id, server->id_entry, 0, NULL))
       return FALSE;
   }

@@ -626,9 +626,8 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcBuffer packet, nidp, oidp = NULL;
   SilcClientID *new_id;
   SilcUInt32 nick_len;
-  unsigned char *nick = NULL;
+  unsigned char *nick, *nickc = NULL;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
-  int nickfail = 0;
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
@@ -649,46 +648,31 @@ SILC_SERVER_CMD_FUNC(nick)
     nick_len = 128;
   }
 
-  /* Check for valid nickname string */
-  nick = silc_identifier_check(nick, nick_len, SILC_STRING_UTF8, 128,
-			       &nick_len);
-  if (!nick) {
+  /* Check for valid nickname string.  This is cached, original is saved
+     in the client context. */
+  nickc = silc_identifier_check(nick, nick_len, SILC_STRING_UTF8, 128, NULL);
+  if (!nickc) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_NICK,
 					  SILC_STATUS_ERR_BAD_NICKNAME, 0);
-    silc_free(nick);
     goto out;
   }
 
   /* Check for same nickname */
   if (!memcmp(client->nickname, nick, nick_len)) {
     nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-    silc_free(nick);
-    nick = client->nickname;
+    silc_free(nickc);
     goto send_reply;
   }
 
   /* Create new Client ID */
-  while (!silc_id_create_client_id(cmd->server, cmd->server->id,
-				   cmd->server->rng,
-				   cmd->server->md5hash, nick, nick_len,
-				   &new_id)) {
-    nickfail++;
-    if (nickfail > 9) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_NICK,
-					    SILC_STATUS_ERR_BAD_NICKNAME, 0);
-      goto out;
-    }
-    if (nickfail < 2) {
-      nick = silc_realloc(nick, sizeof(*nick) * (nick_len + 2));
-      if (!nick) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_NICK,
-					      SILC_STATUS_ERR_BAD_NICKNAME, 0);
-	goto out;
-      }
-      nick_len += 2;
-      nick[nick_len - 1] = '\0';
-    }
-    snprintf(&nick[nick_len - 2], 1, "%d", nickfail);
+  if (!silc_id_create_client_id(cmd->server, cmd->server->id,
+				cmd->server->rng,
+				cmd->server->md5hash,
+				nickc, strlen(nickc), &new_id)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_NICK,
+					  SILC_STATUS_ERR_BAD_NICKNAME, 0);
+    silc_free(nickc);
+    goto out;
   }
 
   /* Send notify about nickname change to our router. We send the new
@@ -715,7 +699,7 @@ SILC_SERVER_CMD_FUNC(nick)
   client->nickname = nick;
 
   /* Update client cache */
-  silc_idcache_add(server->local_list->clients, client->nickname,
+  silc_idcache_add(server->local_list->clients, nickc,
 		   client->id, (void *)client, 0, NULL);
 
   nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
@@ -1571,7 +1555,7 @@ SILC_SERVER_CMD_FUNC(info)
   /* Get server name */
   dest_server = silc_argument_get_arg_type(cmd->args, 1, NULL);
   if (dest_server) {
-    /* Check server name */
+    /* Check server name. */
     dest_server = silc_identifier_check(dest_server, strlen(dest_server),
 					SILC_STRING_UTF8, 256, &tmp_len);
     if (!dest_server) {
@@ -1615,7 +1599,7 @@ SILC_SERVER_CMD_FUNC(info)
   if ((!dest_server && !server_id && !entry) || (entry &&
 						 entry == server->id_entry) ||
       (dest_server && !cmd->pending &&
-       !strncasecmp(dest_server, server->server_name, strlen(dest_server)))) {
+       !memcmp(dest_server, server->server_name, strlen(dest_server)))) {
     /* Send our reply */
     char info_string[256];
 
@@ -1693,11 +1677,15 @@ SILC_SERVER_CMD_FUNC(info)
   silc_free(server_id);
 
   if (!entry) {
-    if (dest_server)
+    if (dest_server) {
+      silc_free(dest_server);
+      dest_server = silc_argument_get_arg_type(cmd->args, 1, NULL);
       silc_server_command_send_status_data(cmd, SILC_COMMAND_INFO,
 					   SILC_STATUS_ERR_NO_SUCH_SERVER, 0,
 					   2, dest_server,
 					   strlen(dest_server));
+      dest_server = NULL;
+    }
     goto out;
   }
 
@@ -2342,7 +2330,7 @@ SILC_SERVER_CMD_FUNC(join)
   SilcServer server = cmd->server;
   unsigned char *auth, *cauth;
   SilcUInt32 tmp_len, auth_len, cauth_len;
-  char *tmp, *channel_name = NULL, *cipher, *hmac;
+  char *tmp, *channel_name, *channel_namec = NULL, *cipher, *hmac;
   SilcChannelEntry channel;
   SilcUInt32 umode = 0;
   bool created = FALSE, create_key = TRUE;
@@ -2364,11 +2352,13 @@ SILC_SERVER_CMD_FUNC(join)
     tmp[256] = '\0';
     tmp_len = 256;
   }
+  channel_name = tmp;
 
-  /* Check for valid channel name */
-  channel_name = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8, 256,
-				       &tmp_len);
-  if (!channel_name) {
+  /* Check for valid channel name.  This is cached, the original is saved
+     in the channel context. */
+  channel_namec = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8, 256,
+					NULL);
+  if (!channel_namec) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					  SILC_STATUS_ERR_BAD_CHANNEL, 0);
     goto out;
@@ -2398,7 +2388,7 @@ SILC_SERVER_CMD_FUNC(join)
 
   /* See if the channel exists */
   channel = silc_idlist_find_channel_by_name(server->local_list,
-					     channel_name, NULL);
+					     channel_namec, NULL);
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     SilcClientEntry entry = (SilcClientEntry)cmd->sock->user_data;
@@ -2478,7 +2468,7 @@ SILC_SERVER_CMD_FUNC(join)
 	/* We are router and the channel does not seem exist so we will check
 	   our global list as well for the channel. */
 	channel = silc_idlist_find_channel_by_name(server->global_list,
-						   channel_name, NULL);
+						   channel_namec, NULL);
 	if (!channel) {
 	  /* Channel really does not exist, create it */
 	  channel = silc_server_create_new_channel(server, server->id, cipher,
@@ -2514,7 +2504,7 @@ SILC_SERVER_CMD_FUNC(join)
       /* We are router and the channel does not seem exist so we will check
 	 our global list as well for the channel. */
       channel = silc_idlist_find_channel_by_name(server->global_list,
-						 channel_name, NULL);
+						 channel_namec, NULL);
       if (!channel) {
 	/* Channel really does not exist, create it */
 	channel = silc_server_create_new_channel(server, server->id, cipher,
@@ -2708,10 +2698,13 @@ SILC_SERVER_CMD_FUNC(motd)
     }
 
     if (!entry) {
+      silc_free(dest_server);
+      dest_server = silc_argument_get_arg_type(cmd->args, 1, NULL);
       silc_server_command_send_status_data(cmd, SILC_COMMAND_MOTD,
 					   SILC_STATUS_ERR_NO_SUCH_SERVER, 0,
 					   2, dest_server,
 					   strlen(dest_server));
+      dest_server = NULL;
       goto out;
     }
 
@@ -4748,7 +4741,7 @@ SILC_SERVER_CMD_FUNC(users)
   unsigned char lc[4];
   SilcUInt32 list_count = 0;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
-  char *channel_name = NULL;
+  char *channel_name, *channel_namec = NULL;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_USERS, cmd, 1, 2);
 
@@ -4766,9 +4759,9 @@ SILC_SERVER_CMD_FUNC(users)
 
   /* Check channel name */
   if (channel_name) {
-    channel_name = silc_identifier_check(channel_name, strlen(channel_name),
-					 SILC_STRING_UTF8, 256, NULL);
-    if (!channel_name) {
+    channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
+    if (!channel_namec) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
 					    SILC_STATUS_ERR_BAD_CHANNEL, 0);
       goto out;
@@ -4793,7 +4786,7 @@ SILC_SERVER_CMD_FUNC(users)
     channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
   else
     channel = silc_idlist_find_channel_by_name(server->local_list,
-					       channel_name, NULL);
+					       channel_namec, NULL);
 
   if (!channel || (!server->standalone && (channel->disabled ||
 		    !channel->users_resolved))) {
@@ -4826,7 +4819,7 @@ SILC_SERVER_CMD_FUNC(users)
       channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
     else
       channel = silc_idlist_find_channel_by_name(server->global_list,
-						 channel_name, NULL);
+						 channel_namec, NULL);
     if (!channel) {
       /* Channel really does not exist */
       if (id)
@@ -4894,7 +4887,7 @@ SILC_SERVER_CMD_FUNC(users)
   silc_free(id);
 
  out:
-  silc_free(channel_name);
+  silc_free(channel_namec);
   silc_server_command_free(cmd);
 }
 

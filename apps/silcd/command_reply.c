@@ -197,14 +197,6 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
   fingerprint = silc_argument_get_arg_type(cmd->args, 9, &flen);
 
-  /* Check for valid username */
-  username = silc_identifier_check(username, strlen(username),
-				   SILC_STRING_UTF8, 128, NULL);
-  if (!username) {
-    SILC_LOG_ERROR(("Malformed username received in WHOIS reply"));
-    return FALSE;
-  }
-
   /* Check if we have this client cached already. */
 
   client = silc_idlist_find_client_by_id(server->local_list, client_id,
@@ -218,35 +210,21 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   if (!client) {
     /* If router did not find such Client ID in its lists then this must
        be bogus client or some router in the net is buggy. */
-    if (server->server_type != SILC_SERVER) {
-      silc_free(username);
+    if (server->server_type != SILC_SERVER)
       return FALSE;
-    }
 
     /* Take hostname out of nick string if it includes it. */
     silc_parse_userfqdn(nickname, &nick, &servername);
 
-    /* Check nickname */
-    nickname = silc_identifier_check(nick, strlen(nick), SILC_STRING_UTF8,
-				     128, NULL);
-    if (!nickname) {
-      SILC_LOG_ERROR(("Malformed nickname received in WHOIS reply"));
-      silc_free(username);
-      return FALSE;
-    }
-    silc_free(nick);
-    nick = nickname;
-
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be
-       global. */
+       global. This will check for valid nickname and username strings. */
     client = silc_idlist_add_client(server->global_list, nick, username,
 				    strdup(realname), client_id,
 				    cmd->sock->user_data, NULL, 0);
     if (!client) {
       SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
       silc_free(nick);
-      silc_free(username);
       return FALSE;
     }
 
@@ -268,11 +246,16 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 				     128, NULL);
     if (!nickname) {
       SILC_LOG_ERROR(("Malformed nickname received in WHOIS reply"));
-      silc_free(username);
       return FALSE;
     }
-    silc_free(nick);
-    nick = nickname;
+
+    /* Check username */
+    username = silc_identifier_check(username, strlen(username),
+				     SILC_STRING_UTF8, 128, NULL);
+    if (!username) {
+      SILC_LOG_ERROR(("Malformed username received in WHOIS reply"));
+      return FALSE;
+    }
 
     /* Remove the old cache entry  */
     silc_idcache_del_by_context(global ? server->global_list->clients :
@@ -293,7 +276,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
     /* Create new cache entry */
     silc_idcache_add(global ? server->global_list->clients :
-		     server->local_list->clients, nick, client->id,
+		     server->local_list->clients, nickname, client->id,
 		     client, 0, NULL);
     silc_free(client_id);
   }
@@ -397,7 +380,6 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     }
   }
 
-  silc_free(username);
   return TRUE;
 }
 
@@ -489,14 +471,6 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   if (!client_id)
     return FALSE;
 
-  /* Check for valid username */
-  username = silc_identifier_check(username, strlen(username),
-				   SILC_STRING_UTF8, 128, NULL);
-  if (!username) {
-    SILC_LOG_ERROR(("Malformed username received in WHOWAS reply"));
-    return FALSE;
-  }
-
   /* Check if we have this client cached already. */
 
   client = silc_idlist_find_client_by_id(server->local_list, client_id,
@@ -510,24 +484,11 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   if (!client) {
     /* If router did not find such Client ID in its lists then this must
        be bogus client or some router in the net is buggy. */
-    if (server->server_type != SILC_SERVER) {
-      silc_free(username);
+    if (server->server_type != SILC_SERVER)
       return FALSE;
-    }
 
     /* Take hostname out of nick string if it includes it. */
     silc_parse_userfqdn(nickname, &nick, &servername);
-
-    /* Check nickname */
-    nickname = silc_identifier_check(nick, strlen(nick), SILC_STRING_UTF8,
-				     128, NULL);
-    if (!nickname) {
-      SILC_LOG_ERROR(("Malformed nickname received in WHOWAS reply"));
-      silc_free(username);
-      return FALSE;
-    }
-    silc_free(nick);
-    nick = nickname;
 
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be
@@ -540,7 +501,6 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     if (!client) {
       SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
       silc_free(nick);
-      silc_free(username);
       return FALSE;
     }
 
@@ -559,11 +519,16 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
 				     128, NULL);
     if (!nickname) {
       SILC_LOG_ERROR(("Malformed nickname received in WHOWAS reply"));
-      silc_free(username);
       return FALSE;
     }
-    silc_free(nick);
-    nick = nickname;
+
+    /* Check username */
+    username = silc_identifier_check(username, strlen(username),
+				     SILC_STRING_UTF8, 128, NULL);
+    if (!username) {
+      SILC_LOG_ERROR(("Malformed username received in WHOWAS reply"));
+      return FALSE;
+    }
 
     silc_free(client->nickname);
     silc_free(client->username);
@@ -579,7 +544,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     silc_idcache_del_by_context(global ? server->global_list->clients :
 				server->local_list->clients, client);
     silc_idcache_add(global ? server->global_list->clients :
-		     server->local_list->clients, nick, client->id,
+		     server->local_list->clients, nickname, client->id,
 		     client, 0, NULL);
   }
 
@@ -595,7 +560,6 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   }
 
   silc_free(client_id);
-  silc_free(username);
 
   return TRUE;
 }
@@ -686,25 +650,13 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	goto error;
 
       /* Take nickname */
-      if (name) {
+      if (name)
 	silc_parse_userfqdn(name, &nick, NULL);
-
-	/* Check nickname */
-	name = silc_identifier_check(nick, strlen(nick), SILC_STRING_UTF8,
-				   128, NULL);
-	if (!name) {
-	  SILC_LOG_ERROR(("Malformed nickname received in IDENTIFY reply"));
-	  return FALSE;
-	}
-	silc_free(nick);
-	nick = name;
-      }
 
       /* We don't have that client anywhere, add it. The client is added
 	 to global list since server didn't have it in the lists so it must be
 	 global. */
-      client = silc_idlist_add_client(server->global_list, nick,
-				      info ? strdup(info) : NULL, NULL,
+      client = silc_idlist_add_client(server->global_list, nick, info, NULL,
 				      client_id, cmd->sock->user_data,
 				      NULL, time(NULL) + 300);
       if (!client) {
@@ -712,6 +664,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	silc_free(nick);
 	goto error;
       }
+
       client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
       client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
       client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
@@ -731,8 +684,6 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	  SILC_LOG_ERROR(("Malformed nickname received in IDENTIFY reply"));
 	  return FALSE;
 	}
-	silc_free(nick);
-	nick = name;
 
 	/* Remove the old cache entry */
 	silc_idcache_del_by_context(global ? server->global_list->clients :
@@ -740,6 +691,11 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 
 	silc_free(client->nickname);
 	client->nickname = nick;
+
+	/* Add new cache entry */
+	silc_idcache_add(global ? server->global_list->clients :
+			 server->local_list->clients, name, client->id,
+			 client, expire, NULL);
       }
 
       if (info) {
@@ -749,13 +705,6 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 
       client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
       client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
-
-      if (name) {
-	/* Add new cache entry */
-	silc_idcache_add(global ? server->global_list->clients :
-			 server->local_list->clients, nick, client->id,
-			 client, expire, NULL);
-      }
 
       /* If client is global and is not on any channel then add that we'll
          expire the entry after a while. */
@@ -823,16 +772,24 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 
     SILC_LOG_DEBUG(("Received channel information"));
 
+    /* Check channel name */
+    info = silc_identifier_check(name, strlen(name), SILC_STRING_UTF8,
+				 256, NULL);
+    if (!info)
+      goto error;
+
     channel = silc_idlist_find_channel_by_name(server->local_list,
-					       name, NULL);
+					       info, NULL);
     if (!channel)
       channel = silc_idlist_find_channel_by_name(server->global_list,
-						 name, NULL);
+						 info, NULL);
     if (!channel) {
       /* If router did not find such Channel ID in its lists then this must
 	 be bogus channel or some router in the net is buggy. */
-      if (server->server_type != SILC_SERVER)
+      if (server->server_type != SILC_SERVER) {
+	silc_free(info);
 	goto error;
+      }
 
       /* We don't have that channel anywhere, add it. */
       channel = silc_idlist_add_channel(server->global_list, strdup(name),
@@ -840,8 +797,10 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 					server->router, NULL, NULL, 0);
       if (!channel) {
 	silc_free(channel_id);
+	silc_free(info);
 	goto error;
       }
+      silc_free(info);
       channel_id = NULL;
     }
 
@@ -900,7 +859,7 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
   SilcServerEntry entry;
   SilcServerID *server_id;
   SilcUInt32 tmp_len;
-  unsigned char *tmp, *name = NULL;
+  unsigned char *tmp, *name;
 
   COMMAND_CHECK_STATUS;
 
@@ -917,12 +876,6 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
   if (!name)
     goto out;
 
-  /* Check server name */
-  name = silc_identifier_check(name, tmp_len, SILC_STRING_UTF8,
-			       256, NULL);
-  if (!name)
-    goto out;
-
   entry = silc_idlist_find_server_by_id(server->local_list, server_id,
 					FALSE, NULL);
   if (!entry) {
@@ -931,12 +884,11 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
     if (!entry) {
       /* Add the server to global list */
       server_id = silc_id_dup(server_id, SILC_ID_SERVER);
-      entry = silc_idlist_add_server(server->global_list, name, 0,
+      entry = silc_idlist_add_server(server->global_list, strdup(name), 0,
 				     server_id, cmd->sock->user_data,
 				     cmd->sock);
       if (!entry) {
 	silc_free(server_id);
-	silc_free(name);
 	goto out;
       }
       entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
@@ -949,8 +901,6 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
     tmp = NULL;
 
   entry->server_info = tmp ? strdup(tmp) : NULL;
-
-  silc_free(name);
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
@@ -1045,7 +995,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcHmac hmac = NULL;
   SilcUInt32 id_len, len, list_count;
   unsigned char *id_string;
-  char *channel_name, *tmp;
+  char *channel_name, *channel_namec = NULL, *tmp;
   SilcUInt32 mode, created;
   SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
   SilcPublicKey founder_key = NULL;
@@ -1134,8 +1084,12 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     silc_pkcs_public_key_payload_decode(tmp, len, &founder_key);
 
   /* See whether we already have the channel. */
+  channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
+					SILC_STRING_UTF8, 256, NULL);
+  if (!channel_namec)
+    goto out;
   entry = silc_idlist_find_channel_by_name(server->local_list,
-					   channel_name, &cache);
+					   channel_namec, &cache);
   if (!entry) {
     /* Add new channel */
 
@@ -1146,7 +1100,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     /* If the channel is found from global list we must move it to the
        local list. */
     entry = silc_idlist_find_channel_by_name(server->global_list,
-					     channel_name, &cache);
+					     channel_namec, &cache);
     if (entry)
       silc_idlist_del_channel(server->global_list, entry);
 
@@ -1281,6 +1235,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
  err:
+  silc_free(channel_namec);
   if (hmac)
     silc_hmac_free(hmac);
   silc_free(client_id);
@@ -1521,7 +1476,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   SilcChannelEntry channel;
   SilcIDCacheEntry cache;
   SilcUInt32 len;
-  unsigned char *tmp, *name, *topic;
+  unsigned char *tmp, *name, *namec = NULL, *topic;
   SilcUInt32 usercount = 0;
   bool global_list = FALSE;
 
@@ -1538,12 +1493,17 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   if (tmp)
     SILC_GET32_MSB(usercount, tmp);
 
+  namec = silc_identifier_check(name, strlen(name), SILC_STRING_UTF8,
+				256, NULL);
+  if (!namec)
+    goto out;
+
   /* Add the channel entry if we do not have it already */
   channel = silc_idlist_find_channel_by_name(server->local_list,
-					     name, &cache);
+					     namec, &cache);
   if (!channel) {
     channel = silc_idlist_find_channel_by_name(server->global_list,
-					       name, &cache);
+					       namec, &cache);
     global_list = TRUE;
   }
   if (!channel) {
@@ -1587,6 +1547,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_LIST);
   silc_free(channel_id);
  err:
+  silc_free(namec);
   silc_server_command_reply_free(cmd);
 }
 

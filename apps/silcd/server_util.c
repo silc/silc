@@ -1728,8 +1728,13 @@ bool silc_server_check_watcher_list(SilcServer server,
 
   /* Make hash from the nick, or take it from Client ID */
   if (client->nickname) {
-    silc_hash_make(server->md5hash, client->nickname,
-		   strlen(client->nickname), hash);
+    unsigned char *nickc;
+    nickc = silc_identifier_check(client->nickname, strlen(client->nickname),
+				  SILC_STRING_UTF8, 128, NULL);
+    if (!nickc)
+      return FALSE;
+    silc_hash_make(server->md5hash, nickc, strlen(nickc), hash);
+    silc_free(nickc);
   } else {
     memset(hash, 0, sizeof(hash));
     memcpy(hash, client->id->hash, sizeof(client->id->hash));

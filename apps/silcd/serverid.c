@@ -67,7 +67,8 @@ bool silc_id_create_client_id(SilcServer server,
 
   *new_id = silc_calloc(1, sizeof(**new_id));
 
-  /* Create hash of the nickanem */
+  /* Create hash of the nickname (it's already checked as valid identifier
+     string). */
   silc_hash_make(md5hash, nickname, nick_len, hash);
 
   /* Create the ID */

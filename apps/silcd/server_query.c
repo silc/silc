@@ -51,10 +51,10 @@ typedef struct {
 /* Query session context */
 typedef struct {
   /* Queried data */
-  char *nickname;		    /* Queried nickname */
+  char *nickname;		    /* Queried nickname, normalized */
   char *nick_server;		    /* Queried nickname's server */
-  char *server_name;		    /* Queried server name */
-  char *channel_name;		    /* Queried channel name */
+  char *server_name;		    /* Queried server name, normalized */
+  char *channel_name;		    /* Queried channel name, normalized */
   SilcServerQueryID ids;	    /* Queried IDs */
   SilcUInt32 ids_count;		    /* number of queried IDs */
   SilcUInt32 reply_count;	    /* Requested reply count */
@@ -400,15 +400,18 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       }
 
       /* Check nickname */
-      tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
-				  SILC_STRING_UTF8, 128, &tmp_len);
-      if (!tmp) {
-	silc_server_query_send_error(server, query,
-				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
-	silc_server_query_free(query);
+      if (query->nickname) {
+	tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				    SILC_STRING_UTF8, 128, &tmp_len);
+	if (!tmp) {
+	  silc_server_query_send_error(server, query,
+				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
+	  silc_server_query_free(query);
+	  return;
+	}
+	silc_free(query->nickname);
+	query->nickname = tmp;
       }
-      silc_free(query->nickname);
-      query->nickname = tmp;
 
     } else {
       /* Parse the IDs included in the query */
@@ -484,6 +487,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
       silc_server_query_free(query);
+      return;
     }
     silc_free(query->nickname);
     query->nickname = tmp;
@@ -507,17 +511,45 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	    !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))
 	  silc_server_query_add_error(server, query, 1, 1,
 				      SILC_STATUS_ERR_BAD_NICKNAME);
+
+	/* Check nickname */
+	tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				    SILC_STRING_UTF8, 128, &tmp_len);
+	silc_free(query->nickname);
+	if (!tmp) {
+	  silc_server_query_add_error(server, query, 1, 1,
+				      SILC_STATUS_ERR_BAD_NICKNAME);
+	  query->nickname = NULL;
+	} else {
+	  query->nickname = tmp;
+	}
       }
 
       /* Try get server name */
       tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-      if (tmp)
-	query->server_name = silc_memdup(tmp, tmp_len);
+      if (tmp) {
+	/* Check server name */
+	tmp = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8,
+				    256, &tmp_len);
+	if (!tmp)
+	  silc_server_query_add_error(server, query, 1, 1,
+				      SILC_STATUS_ERR_BAD_SERVER);
+	else
+	  query->server_name = tmp;
+      }
 
       /* Get channel name */
       tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-      if (tmp && tmp_len <= 256)
-	query->channel_name = silc_memdup(tmp, tmp_len);
+      if (tmp && tmp_len <= 256) {
+	/* Check channel name */
+	tmp = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8,
+				    256, &tmp_len);
+	if (!tmp)
+	  silc_server_query_add_error(server, query, 1, 1,
+				      SILC_STATUS_ERR_BAD_SERVER);
+	else
+	  query->channel_name = tmp;
+      }
 
       if (!query->nickname && !query->server_name && !query->channel_name) {
 	silc_server_query_send_error(server, query,

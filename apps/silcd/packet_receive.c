@@ -2258,8 +2258,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcUInt16 username_len;
   SilcUInt32 id_len, tmp_len;
   int ret;
-  char *hostname, *nickname, *tmp;
-  int nickfail = 0;
+  char *hostname, *nickname, *nicknamec;
 
   SILC_LOG_DEBUG(("Creating new client"));
 
@@ -2328,9 +2327,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   }
 
   /* Check for valid username string */
-  tmp = silc_identifier_check(username, username_len, SILC_STRING_UTF8, 128,
-			      &tmp_len);
-  if (!tmp) {
+  nicknamec = silc_identifier_check(username, username_len,
+				    SILC_STRING_UTF8, 128, &tmp_len);
+  if (!nicknamec) {
     silc_free(username);
     silc_free(realname);
     SILC_LOG_ERROR(("Client %s (%s) sent bad username string, closing "
@@ -2342,12 +2341,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       silc_server_free_sock_user_data(server, sock, NULL);
     return NULL;
   }
-  silc_free(username);
-  username = tmp;
-  username_len = tmp_len;
 
   /* Nickname is initially same as username */
-  nickname = silc_memdup(username, username_len);
+  nickname = strdup(username);
 
   /* Make sanity checks for the hostname of the client. If the hostname
      is provided in the `username' check that it is the same than the
@@ -2437,18 +2433,14 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   }
 
   /* Create Client ID */
-  while (!silc_id_create_client_id(server, server->id, server->rng,
-				   server->md5hash, nickname,
-				   strlen(nickname), &client_id)) {
-    nickfail++;
-    if (nickfail > 9) {
-      silc_server_disconnect_remote(server, sock,
-				    SILC_STATUS_ERR_BAD_NICKNAME, NULL);
-      if (sock->user_data)
-	silc_server_free_sock_user_data(server, sock, NULL);
-      return NULL;
-    }
-    snprintf(&nickname[strlen(nickname) - 1], 1, "%d", nickfail);
+  if (!silc_id_create_client_id(server, server->id, server->rng,
+				server->md5hash, nicknamec,
+				strlen(nicknamec), &client_id)) {
+    silc_server_disconnect_remote(server, sock,
+				  SILC_STATUS_ERR_BAD_NICKNAME, NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
+    return NULL;
   }
 
   /* If client marked as anonymous, scramble the username and hostname */
@@ -2479,7 +2471,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   id_len = silc_id_get_len(client_id, SILC_ID_CLIENT);
 
   /* Add the client again to the ID cache */
-  silc_idcache_add(server->local_list->clients, client->nickname,
+  silc_idcache_add(server->local_list->clients, nicknamec,
 		   client_id, client, 0, NULL);
 
   /* Notify our router about new client on the SILC network */
@@ -2525,7 +2517,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   SilcServerEntry new_server, server_entry;
   SilcServerID *server_id;
   SilcIDListData idata;
-  unsigned char *server_name, *id_string;
+  unsigned char *server_name, *server_namec, *id_string;
   SilcUInt16 id_len, name_len;
   int ret;
   bool local = TRUE;
@@ -2598,8 +2590,10 @@ SilcServerEntry silc_server_new_server(SilcServer server,
     return NULL;
   }
 
-  if (name_len > 256)
-    server_name[255] = '\0';
+  if (name_len > 256) {
+    server_name[256] = '\0';
+    name_len = 256;
+  }
 
   /* Get Server ID */
   server_id = silc_id_str2id(id_string, id_len, SILC_ID_SERVER);
@@ -2663,6 +2657,20 @@ SilcServerEntry silc_server_new_server(SilcServer server,
     }
   }
 
+  /* Check server name */
+  server_namec = silc_identifier_check(server_name, strlen(server_name),
+				       SILC_STRING_UTF8, 256, NULL);
+  if (!server_namec) {
+    SILC_LOG_ERROR(("Malformed server name from %s (%s)",
+		    sock->ip, sock->hostname));
+    silc_server_disconnect_remote(server, sock,
+				  SILC_STATUS_ERR_OPERATION_ALLOWED,
+				  "Malfromed server name");
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
+    return NULL;
+  }
+
   /* Update server entry */
   idata->status |= SILC_IDLIST_STATUS_REGISTERED;
   new_server->server_name = server_name;
@@ -2673,7 +2681,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 
   /* Add again the entry to the ID cache. */
   silc_idcache_add(local ? server->local_list->servers :
-		   server->global_list->servers, server_name, server_id,
+		   server->global_list->servers, server_namec, server_id,
 		   new_server, 0, NULL);
 
   /* Distribute the information about new server in the SILC network
@@ -3053,7 +3061,7 @@ void silc_server_new_channel(SilcServer server,
 {
   SilcChannelPayload payload;
   SilcChannelID *channel_id;
-  char *channel_name;
+  char *channel_name, *channel_namec = NULL;
   SilcUInt32 name_len;
   unsigned char *id;
   SilcUInt32 id_len, cipher_len;
@@ -3080,8 +3088,16 @@ void silc_server_new_channel(SilcServer server,
   }
 
   channel_name = silc_channel_get_name(payload, &name_len);
-  if (name_len > 256)
-    channel_name[255] = '\0';
+  if (name_len > 256) {
+    channel_name[256] = '\0';
+    name_len = 256;
+  }
+
+  /* Check channel name */
+  channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
+					SILC_STRING_UTF8, 256, NULL);
+  if (!channel_namec)
+    return;
 
   id = silc_channel_get_id(payload, &id_len);
 
@@ -3093,10 +3109,10 @@ void silc_server_new_channel(SilcServer server,
 
     /* Check that we don't already have this channel */
     channel = silc_idlist_find_channel_by_name(server->local_list,
-					       channel_name, NULL);
+					       channel_namec, NULL);
     if (!channel)
       channel = silc_idlist_find_channel_by_name(server->global_list,
-						 channel_name, NULL);
+						 channel_namec, NULL);
     if (!channel) {
       SILC_LOG_DEBUG(("New channel id(%s) from [Router] %s",
 		      silc_id_render(channel_id, SILC_ID_CHANNEL),
@@ -3127,10 +3143,10 @@ void silc_server_new_channel(SilcServer server,
 
     /* Check that we don't already have this channel */
     channel = silc_idlist_find_channel_by_name(server->local_list,
-					       channel_name, NULL);
+					       channel_namec, NULL);
     if (!channel)
       channel = silc_idlist_find_channel_by_name(server->global_list,
-						 channel_name, NULL);
+						 channel_namec, NULL);
 
     /* If the channel does not exist, then create it. This creates a new
        key to the channel as well that we will send to the server. */
@@ -3317,6 +3333,7 @@ void silc_server_new_channel(SilcServer server,
 			    FALSE, TRUE);
   }
 
+  silc_free(channel_namec);
   silc_channel_payload_free(payload);
 }
 
@@ -3629,9 +3646,9 @@ void silc_server_resume_client(SilcServer server,
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry detached_client;
   SilcClientID *client_id = NULL;
-  unsigned char *id_string, *auth = NULL;
+  unsigned char *id_string, *auth = NULL, *nicknamec = NULL;
   SilcUInt16 id_len, auth_len = 0;
-  int ret, nickfail = 0;
+  int ret;
   bool resolved, local, nick_change = FALSE, resolve = FALSE;
   SilcChannelEntry channel;
   SilcHashTableList htl;
@@ -3851,35 +3868,32 @@ void silc_server_resume_client(SilcServer server,
       return;
     }
 
+    /* Check nickname */
+    nicknamec = silc_identifier_check(detached_client->nickname,
+				      strlen(detached_client->nickname),
+				      SILC_STRING_UTF8, 128, NULL);
+    if (!nicknamec) {
+      silc_server_disconnect_remote(server, sock,
+				    SILC_STATUS_ERR_BAD_NICKNAME,
+				    "Malformed nickname, cannot resume");
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      return;
+    }
+
     /* If the ID is not based in our ID then change it */
     if (!SILC_ID_COMPARE(detached_client->id, server->id,
 			 server->id->ip.data_len)) {
       silc_free(client_id);
-      while (!silc_id_create_client_id(server, server->id, server->rng,
-				       server->md5hash,
-				       detached_client->nickname,
-				       strlen(detached_client->nickname),
-				       &client_id)) {
-	nickfail++;
-	if (nickfail > 9) {
-	  silc_server_disconnect_remote(server, sock,
-					SILC_STATUS_ERR_BAD_NICKNAME,
-					"Resuming not possible");
-	  if (sock->user_data)
-	    silc_server_free_sock_user_data(server, sock, NULL);
-	  return;
-	}
-	if (nickfail < 2) {
-	  detached_client->nickname =
-	    silc_realloc(detached_client->nickname,
-			 sizeof(*detached_client->nickname) *
-			 (strlen(detached_client->nickname) + 2));
-	  detached_client->
-	    nickname[strlen(detached_client->nickname) - 1] = '\0';
-	}
-	snprintf(&detached_client->
-		 nickname[strlen(detached_client->nickname) - 2], 1,
-		 "%d", nickfail);
+      if (!silc_id_create_client_id(server, server->id, server->rng,
+				    server->md5hash, nicknamec,
+				    strlen(nicknamec), &client_id)) {
+	silc_server_disconnect_remote(server, sock,
+				      SILC_STATUS_ERR_BAD_NICKNAME,
+				      "Resuming not possible");
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock, NULL);
+	return;
       }
       nick_change = TRUE;
     }
@@ -4013,7 +4027,7 @@ void silc_server_resume_client(SilcServer server,
     silc_free(client->id);
     client->id = client_id;
     client_id = NULL;
-    silc_idcache_add(server->local_list->clients, client->nickname,
+    silc_idcache_add(server->local_list->clients, nicknamec,
 		     client->id, client, 0, NULL);
 
     /* Send some nice info to the client */
@@ -4110,6 +4124,17 @@ void silc_server_resume_client(SilcServer server,
       return;
     }
 
+    /* Check nickname */
+    if (detached_client->nickname) {
+      nicknamec = silc_identifier_check(detached_client->nickname,
+					strlen(detached_client->nickname),
+					SILC_STRING_UTF8, 128, NULL);
+      if (!nicknamec) {
+	silc_free(client_id);
+	return;
+      }
+    }
+
     SILC_LOG_DEBUG(("Resuming detached client"));
 
     /* If the sender of this packet is server and we are router we need to
@@ -4184,8 +4209,7 @@ void silc_server_resume_client(SilcServer server,
 				  detached_client);
     silc_idcache_add(local && server->server_type == SILC_ROUTER ?
 		     server->local_list->clients :
-		     server->global_list->clients,
-		     detached_client->nickname,
+		     server->global_list->clients, nicknamec,
 		     detached_client->id, detached_client, FALSE, NULL);
 
     /* Change the owner of the client */
