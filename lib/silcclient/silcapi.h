@@ -529,7 +529,7 @@ typedef void (*SilcKeyAgreementCallback)(SilcClient client,
    performed the `completion' callback with `context' will be called.
    If remote side decides to ignore the request the `completion' will never
    be called and the caller is responsible of freeing the `context' memory. 
-   Application can do this by setting for example timeout. */
+   The application can do this by setting, for example, timeout. */
 void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcClientEntry client_entry,
