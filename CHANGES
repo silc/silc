@@ -1,3 +1,12 @@
+Sun May 20 13:45:58 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* silc_idcache_purge_by_context deletes the entry now by context
+	  as it is supposed to do.  Affected file lib/silccore/idcache.c.
+
+	* Send the ERR_NO_SUCH_NICK in the WHOIS command reply if the
+	  client is not anymore valid (WHOWAS givens the info) and not
+	  the ERR_NO_SUCH_CLIENT_ID if the nickname still exists.
+
 Sat May 19 16:30:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Removed the `data' and `data_len' arguments from the ID Cache

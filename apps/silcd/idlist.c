@@ -383,6 +383,8 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
   
   *clients_count += i;
 
+  SILC_LOG_DEBUG(("Found %d clients", *clients_count));
+
   return TRUE;
 }
 
@@ -404,6 +406,10 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 
   silc_hash_make(md5hash, nickname, strlen(nickname), hash);
 
+  /* As the Client ID is hashed in the ID cache by hashing only the hash
+     from the Client ID, we can do a lookup with only the hash not the
+     other parts of the ID and get all the clients with that hash, ie.
+     with that nickname, as the hash is from the nickname. */
   memset(&client_id, 0, sizeof(client_id));
   memcpy(&client_id.hash, hash, sizeof(client_id.hash));
   if (!silc_idcache_find_by_id(id_list->clients, &client_id, &list))
@@ -423,6 +429,8 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   silc_idcache_list_free(list);
   
   *clients_count += i;
+
+  SILC_LOG_DEBUG(("Found %d clients", *clients_count));
 
   return TRUE;
 }

@@ -304,6 +304,7 @@ bool silc_idcache_purge(SilcIDCache cache)
 bool silc_idcache_purge_by_context(SilcIDCache cache, void *context)
 {
   SilcIDCacheEntry entry;
+  bool ret = FALSE;
 
   if (!silc_hash_table_find(cache->context_table, context, NULL, 
 			    (void *)&entry))
@@ -313,7 +314,15 @@ bool silc_idcache_purge_by_context(SilcIDCache cache, void *context)
   if (cache->destructor)
     cache->destructor(cache, entry);
   
-  return silc_idcache_del(cache, entry);
+  if (entry->name)
+    ret = silc_hash_table_del_by_context(cache->name_table, entry->name, 
+					 entry);
+  if (entry->context)
+    ret = silc_hash_table_del(cache->context_table, entry->context);
+  if (entry->id)
+    ret = silc_hash_table_del_by_context(cache->id_table, entry->id, entry);
+
+  return ret;
 }
 
 /* Callback that is called by the hash table routine when traversing

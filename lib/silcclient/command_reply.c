@@ -1043,7 +1043,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     SILC_GET32_MSB(mode, client_mode_list->data);
 
     /* Check if we have this client cached already. */
-    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
+    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
+					 (void *)client_id, 
 					 NULL, NULL, 
 					 silc_hash_client_id_compare, NULL,
 					 &id_cache)) {
@@ -1638,7 +1639,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     SILC_GET32_MSB(mode, client_mode_list->data);
 
     /* Check if we have this client cached already. */
-    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
+    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
+					 (void *)client_id, 
 					 NULL, NULL, 
 					 silc_hash_client_id_compare, NULL,
 					 &id_cache)) {
@@ -1773,7 +1775,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   if (id_type == SILC_ID_CLIENT) {
     client_id = silc_id_payload_get_id(idp);
 
-    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
+    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
+					 (void *)client_id, 
 					 NULL, NULL, 
 					 silc_hash_client_id_compare, NULL,
 					 &id_cache))

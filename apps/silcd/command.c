@@ -555,11 +555,18 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
 
     if (entry->data.registered == FALSE) {
       if (clients_count == 1) {
-	SilcBuffer idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
-	silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
-					     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
-					     2, idp->data, idp->len);
-	silc_buffer_free(idp);
+	if (entry->nickname) {
+	  silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
+					       SILC_STATUS_ERR_NO_SUCH_NICK,
+					       3, entry->nickname, 
+					       strlen(entry->nickname));
+	} else {
+	  SilcBuffer idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
+	  silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
+				     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
+					       2, idp->data, idp->len);
+	  silc_buffer_free(idp);
+	}
       }
       continue;
     }
