@@ -496,9 +496,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->remote_id_data = silc_id_id2str(ctx->dest_id, SILC_ID_SERVER);
   conn->remote_id_data_len = SILC_ID_SERVER_LEN;
 
-  /* Notify application of successful connection */
-  client->ops->connect(client, conn, TRUE);
-
   silc_protocol_free(protocol);
   if (ctx->auth_data)
     silc_free(ctx->auth_data);
@@ -1867,6 +1864,10 @@ void silc_client_receive_new_id(SilcClient client,
   /* Put it to the ID cache */
   silc_idcache_add(conn->client_cache, conn->nickname, SILC_ID_CLIENT,
 		   conn->local_id, (void *)conn->local_entry, TRUE);
+
+  /* Notify application of successful connection. We do it here now that
+     we've received the Client ID and are allowed to send traffic. */
+  client->ops->connect(client, conn, TRUE);
 }
 
 /* Processed received Channel ID for a channel. This is called when client

@@ -1,3 +1,10 @@
+Sat Feb 17 22:11:50 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Moved the calling of ops->connect() from connect_to_server_final
+	  into receive_new_id functin since that is the point when the
+	  client is actually allowed to send traffic to network.  The
+	  affected file is lib/silcclient/client.c.
+
 Sat Feb 17 13:15:35 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* When receiving NEW_CHANNEL_LIST, NEW_CHANNEL_USER_LIST,
