@@ -1,10 +1,10 @@
 /*
 
-  silcbuffmt.h 
+  silcbuffmt.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -122,14 +122,14 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
  *
  *   Formats a buffer from variable argument list of strings.  Each
  *   string must be NULL-terminated and the variable argument list must
- *   be end with SILC_STR_END argument.  This allows that a string in
+ *   be end with SILC_STRFMT_END argument.  This allows that a string in
  *   the list can be NULL, in which case it is skipped.  This automatically
  *   allocates the space for the buffer data but `dst' must be already
  *   allocated by the caller.
  *
  * EXAMPLE
  *
- *    ret = silc_buffer_strformat(buffer, "foo", "bar", SILC_STR_END);
+ *    ret = silc_buffer_strformat(buffer, "foo", "bar", SILC_STRFMT_END);
  *    if (ret < 0)
  *      error;
  *
@@ -292,7 +292,7 @@ typedef enum {
  *    automatically.
  *
  *    Example:
- * 
+ *
  *    Formatting:    ..., SILC_STR_UI_INT(strlen(string)),
  *                        SILC_STR_UI32_STRING(string), ...
  *    Unformatting:  ..., SILC_STR_UI32_STRING(&string), ...
@@ -411,5 +411,19 @@ typedef enum {
  *
  ***/
 #define SILC_STR_END SILC_BUFFER_PARAM_END
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STRFMT_END
+ *
+ * NAME
+ *
+ *    #define SILC_STRFMT_END ...
+ *
+ * DESCRIPTION
+ *
+ *    Marks end of the argument list in silc_buffer_strformat function.
+ *    This must be at the end of the argument list or error will occur.
+ *
+ ***/
+#define SILC_STRFMT_END (void *)SILC_STR_END
 
 #endif	/* !SILCBUFFMT_H */

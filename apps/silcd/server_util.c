@@ -1704,8 +1704,8 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
   }
 }
 
-/* This function checks whether the `client' nickname and/or 'client' 
-   public key is being watched by someone, and notifies the watcher of the 
+/* This function checks whether the `client' nickname and/or 'client'
+   public key is being watched by someone, and notifies the watcher of the
    notify change of notify type indicated by `notify'. */
 
 bool silc_server_check_watcher_list(SilcServer server,
@@ -1747,7 +1747,7 @@ bool silc_server_check_watcher_list(SilcServer server,
   if (client->data.public_key)
     silc_hash_table_find_foreach(server->watcher_list_pk,
 				 client->data.public_key,
-			         silc_server_check_watcher_list_foreach, 
+			         silc_server_check_watcher_list_foreach,
 				 &n);
 
   return TRUE;
@@ -1934,8 +1934,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	  if (len) {
 	    if (tmp[len - 1] == ',')
 	      tmp[len - 1] = '\0';
-	    silc_buffer_strformat(tmp2, tmp, SILC_STR_END);
-	    silc_buffer_strformat(tmp2, ",", SILC_STR_END);
+	    silc_buffer_strformat(tmp2, tmp, SILC_STRFMT_END);
+	    silc_buffer_strformat(tmp2, ",", SILC_STRFMT_END);
 	  }
 	} else {
 	  /* Announced list.  Check each entry in the list */
@@ -1972,8 +1972,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 
 	  /* Save the part that we didn't already have. */
 	  if (strlen(rtmp) > 1) {
-	    silc_buffer_strformat(tmp2, rtmp, SILC_STR_END);
-	    silc_buffer_strformat(tmp2, ",", SILC_STR_END);
+	    silc_buffer_strformat(tmp2, rtmp, SILC_STRFMT_END);
+	    silc_buffer_strformat(tmp2, ",", SILC_STRFMT_END);
 	  }
 	  silc_free(rtmp);
 	}

@@ -1,3 +1,10 @@
+Mon Feb 23 23:31:15 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined SILC_STRFMT_END that must be used now with
+	  silc_buffer_strformat, instead of SILC_STR_END.  Fixes
+	  crashes on AMD64.  Affected files are lib/silcutil/silcbuffmt.h,
+	  lib/silcclient/silcvcard.c, silcd/server_util.c.
+
 Mon Feb 23 09:30:30 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for public key watching in server.  Affected
