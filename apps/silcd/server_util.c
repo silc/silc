@@ -42,7 +42,8 @@ silc_server_remove_clients_channels(SilcServer server,
   if (!client)
     return;
 
-  SILC_LOG_DEBUG(("Remove client from all channels"));
+  SILC_LOG_DEBUG(("Remove client %s from all channels",   
+		 client->nickname ? client->nickname : ""));
 
   if (silc_hash_table_find(clients, client, NULL, NULL))
     silc_hash_table_del(clients, client);
