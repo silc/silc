@@ -1261,7 +1261,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   SilcClientEntry client_entry;
   SilcChannelEntry channel;
   SilcChannelUser chu;
-  unsigned char *tmp, *id;
+  unsigned char *modev, *tmp, *id;
   uint32 len, mode;
   
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
@@ -1273,8 +1273,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   }
   
   /* Get channel mode */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (!tmp) {
+  modev = silc_argument_get_arg_type(cmd->args, 2, NULL);
+  if (!modev) {
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1325,7 +1325,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   client_entry = (SilcClientEntry)id_cache->context;
 
   /* Save the mode */
-  SILC_GET32_MSB(mode, tmp);
+  SILC_GET32_MSB(mode, modev);
+  silc_list_start(channel->clients);
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
     if (chu->client == client_entry) {
       chu->mode = mode;

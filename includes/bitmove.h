@@ -1,16 +1,15 @@
 /*
 
-  bitmove.h
+  bitmove.h 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +19,22 @@
 
 #ifndef BITMOVE_H
 #define BITMOVE_H
+
+#define GET_WORD(cp) ((uint32)(uint8)(cp)[0]) << 24	\
+		    | ((uint32)(uint8)(cp)[1] << 16)	\
+		    | ((uint32)(uint8)(cp)[2] << 8)	\
+		    | ((uint32)(uint8)(cp)[3])
+
+/* Returns eight 8-bit bytes, most significant bytes first. */
+#define SILC_GET64_MSB(l, cp)			\
+       (l) = ((((uint64)GET_WORD((cp))) << 32) |	\
+	      ((uint64)GET_WORD((cp) + 4)))
+#define SILC_PUT64_MSB(l, cp) 				\
+do {							\
+  SILC_PUT32_MSB((uint32)((uint64)(l) >> 32), (cp));	\
+  SILC_PUT32_MSB((uint32)(l), (cp) + 4); 		\
+} while(0)
+
 
 /* Returns four 8-bit bytes, most significant bytes first. */
 #define SILC_GET32_MSB(l, cp)			\

@@ -29,6 +29,7 @@
 #include "serverconfig.h"
 #include "server.h"
 #include "serverid.h"
+#include "server_util.h"
 #include "packet_send.h"
 #include "packet_receive.h"
 #include "route.h"
@@ -36,5 +37,6 @@
 #include "command.h"
 #include "command_reply.h"
 #include "silcd.h"
+#include "server_backup.h"
 
 #endif

@@ -26,6 +26,7 @@
 #define SILC_PROTOCOL_SERVER_CONNECTION_AUTH    1
 #define SILC_PROTOCOL_SERVER_KEY_EXCHANGE       2
 #define SILC_PROTOCOL_SERVER_REKEY              3
+#define SILC_PROTOCOL_SERVER_BACKUP             4
 /* #define SILC_PROTOCOL_SERVER_MAX             255 */
 
 /* Internal context for Key Exchange protocol. */

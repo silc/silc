@@ -35,7 +35,8 @@ libsilcutil_a_SOURCES = \
 	silcschedule.c \
 	silcutil.c \
 	silchashtable.c \
-	silcsockconn.c
+	silcsockconn.c	\
+	silcprotocol.c
 
 include_HEADERS =	\
 	silcbuffer.h	\
@@ -49,6 +50,7 @@ include_HEADERS =	\
 	silcnet.h	\
 	silcschedule.h	\
 	silcsockconn.h	\
+	silcprotocol.h	\
 	silcthread.h	\
 	silcutil.h
 

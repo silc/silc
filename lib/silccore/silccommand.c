@@ -189,44 +189,10 @@ SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
 					  uint32 argc, ...)
 {
   va_list ap;
-  unsigned char **argv;
-  uint32 *argv_lens = NULL, *argv_types = NULL;
-  unsigned char *x;
-  uint32 x_len;
-  uint32 x_type;
   SilcBuffer buffer;
-  int i, k;
 
   va_start(ap, argc);
-
-  argv = silc_calloc(argc, sizeof(unsigned char *));
-  argv_lens = silc_calloc(argc, sizeof(uint32));
-  argv_types = silc_calloc(argc, sizeof(uint32));
-
-  for (i = 0, k = 0; i < argc; i++) {
-    x_type = va_arg(ap, uint32);
-    x = va_arg(ap, unsigned char *);
-    x_len = va_arg(ap, uint32);
-
-    if (!x_type || !x || !x_len)
-      continue;
-
-    argv[k] = silc_calloc(x_len + 1, sizeof(unsigned char));
-    memcpy(argv[k], x, x_len);
-    argv_lens[k] = x_len;
-    argv_types[k] = x_type;
-    k++;
-  }
-
-  buffer = silc_command_payload_encode(cmd, k, argv, argv_lens, 
-				       argv_types, ident);
-
-  for (i = 0; i < k; i++)
-    silc_free(argv[i]);
-  silc_free(argv);
-  silc_free(argv_lens);
-  silc_free(argv_types);
-
+  buffer = silc_command_payload_encode_vap(cmd, ident, argc, ap);
   va_end(ap);
 
   return buffer;

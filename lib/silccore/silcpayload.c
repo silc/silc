@@ -80,40 +80,36 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
 					 uint32 len)
 {
   SilcIDPayload new;
-  SilcBuffer buffer;
+  SilcBufferStruct buffer;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing ID payload"));
 
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
-  silc_buffer_put(buffer, data, len);
+  silc_buffer_set(&buffer, data, len);
 
   new = silc_calloc(1, sizeof(*new));
 
-  ret = silc_buffer_unformat(buffer,
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_SHORT(&new->type),
 			     SILC_STR_UI_SHORT(&new->len),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
 
-  silc_buffer_pull(buffer, 4);
+  silc_buffer_pull(&buffer, 4);
 
-  if (new->len > buffer->len)
+  if (new->len > buffer.len)
     goto err;
 
-  ret = silc_buffer_unformat(buffer,
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
 
-  silc_buffer_free(buffer);
   return new;
 
  err:
-  silc_buffer_free(buffer);
   silc_free(new);
   return NULL;
 }
@@ -122,43 +118,38 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
 
 void *silc_id_payload_parse_id(unsigned char *data, uint32 len)
 {
-  SilcBuffer buffer;
+  SilcBufferStruct buffer;
   SilcIdType type;
   uint16 idlen;
   unsigned char *id_data = NULL;
   int ret;
   void *id;
 
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
-  silc_buffer_put(buffer, data, len);
+  silc_buffer_set(&buffer, data, len);
 
-  ret = silc_buffer_unformat(buffer,
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_SHORT(&type),
 			     SILC_STR_UI_SHORT(&idlen),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
 
-  silc_buffer_pull(buffer, 4);
+  silc_buffer_pull(&buffer, 4);
 
-  if (idlen > buffer->len)
+  if (idlen > buffer.len)
     goto err;
 
-  ret = silc_buffer_unformat(buffer,
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_XNSTRING_ALLOC(&id_data, idlen),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
-
-  silc_buffer_free(buffer);
 
   id = silc_id_str2id(id_data, idlen, type);
   silc_free(id_data);
   return id;
 
  err:
-  silc_buffer_free(buffer);
   return NULL;
 }
 

@@ -33,6 +33,9 @@ int silc_socket_write(SilcSocketConnection sock)
   SOCKET fd = sock->sock;
   SilcBuffer src = sock->outbuf;
 
+  if (SILC_IS_DISABLED(sock))
+    return -1;
+
   SILC_LOG_DEBUG(("Writing data to socket %d", fd));
 
   if (src->len > 0) {
@@ -66,6 +69,9 @@ int silc_socket_read(SilcSocketConnection sock)
   unsigned char buf[SILC_SOCKET_READ_SIZE];
   SOCKET fd = sock->sock;
   int argp;
+
+  if (SILC_IS_DISABLED(sock))
+    return -1;
 
   SILC_LOG_DEBUG(("Reading data from socket %d", fd));
 

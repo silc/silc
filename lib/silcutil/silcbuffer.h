@@ -111,16 +111,14 @@
 
 */
 
-typedef struct SilcBufferStruct {
+typedef struct {
   uint32 truelen;
   uint32 len;
   unsigned char *head;
   unsigned char *data;
   unsigned char *tail;
   unsigned char *end;
-} SilcBufferObject;
-
-typedef SilcBufferObject *SilcBuffer;
+} *SilcBuffer, SilcBufferStruct;
 
 /* Macros */
 
@@ -160,6 +158,19 @@ void silc_buffer_free(SilcBuffer sb)
     silc_free(sb->head);
     silc_free(sb);
   }
+}
+
+/* Sets the `data' and `data_len' to the buffer pointer sent as argument.
+   The data area is automatically set to the `data_len'. This function
+   can be used to set the data to static buffer without needing any
+   memory allocations. The `data' will not be copied to the buffer. */
+
+extern inline
+void silc_buffer_set(SilcBuffer sb, unsigned char *data, uint32 data_len)
+{
+  sb->data = sb->head = data;
+  sb->tail = sb->end = data + data_len;
+  sb->len = sb->truelen = data_len;
 }
 
 /* Pulls current data area towards end. The length of the currently

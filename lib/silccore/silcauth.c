@@ -43,20 +43,18 @@ struct SilcAuthPayloadStruct {
 SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
 					uint32 data_len)
 {
-  SilcBuffer buffer;
+  SilcBufferStruct buffer;
   SilcAuthPayload new;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing Authentication Payload"));
 
-  buffer = silc_buffer_alloc(data_len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
-  silc_buffer_put(buffer, data, data_len);
+  silc_buffer_set(&buffer, data, data_len);
 
   new = silc_calloc(1, sizeof(*new));
 
   /* Parse the payload */
-  ret = silc_buffer_unformat(buffer, 
+  ret = silc_buffer_unformat(&buffer, 
 			     SILC_STR_UI_SHORT(&new->len),
 			     SILC_STR_UI_SHORT(&new->auth_method),
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->random_data,
@@ -66,17 +64,13 @@ SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
 			     SILC_STR_END);
   if (ret == -1) {
     silc_free(new);
-    silc_buffer_free(buffer);
     return NULL;
   }
 
-  if (new->len != buffer->len) {
+  if (new->len != buffer.len) {
     silc_auth_payload_free(new);
-    silc_buffer_free(buffer);
     return NULL;
   }
-
-  silc_buffer_free(buffer);
 
   /* If password authentication, random data must not be set */
   if (new->auth_method == SILC_AUTH_PASSWORD && new->random_len) {

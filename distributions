@@ -70,6 +70,7 @@ server_DISTLABEL=SILC_DIST_SERVER
 server_EXTRA_DIST=#
 
 # Native WIN32 SILC library distribution (will include only the libraries)
+# XXX This is not really used at all!
 win32dll_SUBDIRS=lib doc includes
 win32dll_SUBDIRS_lib=silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
 win32dll_SUBDIRS_doc=$(COMMONDIRS)

@@ -57,7 +57,6 @@ struct SilcClientAwayStruct {
 SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process);
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
-				 bool force_send,
-				 bool flush);
+				 bool force_send);
 
 #endif

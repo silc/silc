@@ -37,4 +37,7 @@
 #undef inline
 #define inline __inline
 
+#undef sleep
+#define sleep(x) Sleep((x) * 1000)
+
 #endif

@@ -31,7 +31,7 @@
 
 int silc_server_packet_send_real(SilcServer server,
 				 SilcSocketConnection sock,
-				 int force_send)
+				 bool force_send)
 {
   int ret;
 
@@ -42,6 +42,10 @@ int silc_server_packet_send_real(SilcServer server,
   /* If rekey protocol is active we must assure that all packets are
      sent through packet queue. */
   if (SILC_SERVER_IS_REKEY(sock))
+    force_send = FALSE;
+
+  /* If outbound data is already pending do not force send */
+  if (SILC_IS_OUTBUF_PENDING(sock))
     force_send = FALSE;
 
   /* Send the packet */
@@ -75,16 +79,21 @@ void silc_server_packet_send(SilcServer server,
 			     SilcPacketFlags flags,
 			     unsigned char *data, 
 			     uint32 data_len,
-			     int force_send)
+			     bool force_send)
 {
   void *dst_id = NULL;
   SilcIdType dst_id_type = SILC_ID_NONE;
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
 
   if (!sock)
     return;
 
   /* If disconnecting, ignore the data */
   if (SILC_IS_DISCONNECTING(sock))
+    return;
+
+  /* If entry is disabled do not sent anything. */
+  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED)
     return;
 
   /* Get data used in the packet sending, keys and stuff */
@@ -125,10 +134,10 @@ void silc_server_packet_send_dest(SilcServer server,
 				  SilcIdType dst_id_type,
 				  unsigned char *data, 
 				  uint32 data_len,
-				  int force_send)
+				  bool force_send)
 {
   SilcPacketContext packetdata;
-  SilcIDListData idata;
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
   unsigned char *dst_id_data = NULL;
@@ -138,10 +147,11 @@ void silc_server_packet_send_dest(SilcServer server,
   if (SILC_IS_DISCONNECTING(sock))
     return;
 
-  SILC_LOG_DEBUG(("Sending packet, type %d", type));
+  /* If entry is disabled do not sent anything. */
+  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED)
+    return;
 
-  /* Get data used in the packet sending, keys and stuff */
-  idata = (SilcIDListData)sock->user_data;
+  SILC_LOG_DEBUG(("Sending packet, type %d", type));
 
   if (dst_id) {
     dst_id_data = silc_id_id2str(dst_id, dst_id_type);
@@ -218,7 +228,7 @@ void silc_server_packet_send_srcdest(SilcServer server,
 				     SilcIdType dst_id_type,
 				     unsigned char *data, 
 				     uint32 data_len,
-				     int force_send)
+				     bool force_send)
 {
   SilcPacketContext packetdata;
   SilcIDListData idata;
@@ -378,7 +388,7 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 					unsigned char *data,
 					uint32 data_len,
 					int channel_message,
-					int force_send)
+					bool force_send)
 {
   packet->truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packet->src_id_len + packet->dst_id_len;
@@ -394,7 +404,8 @@ silc_server_packet_send_to_channel_real(SilcServer server,
   packet->buffer = sock->outbuf;
 
   /* Put the data to buffer, assemble and encrypt the packet. The packet
-     is encrypted with normal session key shared with the client. */
+     is encrypted with normal session key shared with the client, unless
+     the `channel_message' is TRUE. */
   silc_buffer_put(sock->outbuf, data, data_len);
   silc_packet_assemble(packet);
   if (channel_message)
@@ -424,10 +435,10 @@ void silc_server_packet_send_to_channel(SilcServer server,
 					SilcSocketConnection sender,
 					SilcChannelEntry channel,
 					SilcPacketType type,
-					unsigned char route,
+					bool route,
 					unsigned char *data,
 					uint32 data_len,
-					int force_send)
+					bool force_send)
 {
   SilcSocketConnection sock = NULL;
   SilcPacketContext packetdata;
@@ -439,8 +450,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
   uint32 routed_count = 0;
 
   /* This doesn't send channel message packets */
-  if (type == SILC_PACKET_CHANNEL_MESSAGE)
-    return;
+  assert(type != SILC_PACKET_CHANNEL_MESSAGE);
   
   SILC_LOG_DEBUG(("Sending packet to channel"));
 
@@ -459,7 +469,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
 
   /* If there are global users in the channel we will send the message
      first to our router for further routing. */
-  if (route && server->server_type == SILC_SERVER && !server->standalone &&
+  if (route && server->server_type != SILC_ROUTER && !server->standalone &&
       channel->global_users) {
     SilcServerEntry router;
 
@@ -554,7 +564,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
    then we'll need to encrypt it with the channel key. This is called
    from the silc_server_packet_relay_to_channel. */
 
-static void
+static bool
 silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 					    SilcSocketConnection sock,
 					    SilcChannelEntry channel,
@@ -572,7 +582,7 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
       channel->channel_key) {
     SilcBuffer chp;
     uint32 iv_len, i;
-    uint16 data_len, flags;
+    uint16 dlen, flags;
 
     iv_len = silc_cipher_get_block_len(channel->channel_key);
     if (channel->iv[0] == '\0')
@@ -583,15 +593,22 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
     
     /* Encode new payload. This encrypts it also. */
     SILC_GET16_MSB(flags, data);
-    SILC_GET16_MSB(data_len, data + 2);
-    chp = silc_channel_message_payload_encode(flags, data_len, 
-					      data + 4,
+    SILC_GET16_MSB(dlen, data + 2);
+
+    if (dlen > data_len) {
+      SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
+      return FALSE;
+    }
+
+    chp = silc_channel_message_payload_encode(flags, dlen, data + 4,
 					      iv_len, channel->iv,
 					      channel->channel_key,
 					      channel->hmac);
     memcpy(data, chp->data, chp->len);
     silc_buffer_free(chp);
   }
+
+  return TRUE;
 }
 
 /* This routine is explicitly used to relay messages to some channel.
@@ -611,7 +628,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					 void *sender_entry,
 					 unsigned char *data,
 					 uint32 data_len,
-					 int force_send)
+					 bool force_send)
 {
   bool found = FALSE;
   SilcSocketConnection sock = NULL;
@@ -624,6 +641,15 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   SilcHashTableList htl;
 
   SILC_LOG_DEBUG(("Relaying packet to channel"));
+
+  /* This encrypts the packet, if needed. It will be encrypted if
+     it came from the router thus it needs to be encrypted with the
+     channel key. If the channel key does not exist, then we know we
+     don't have a single local user on the channel. */
+  if (!silc_server_packet_relay_to_channel_encrypt(server, sender_sock,
+						   channel, data,
+						   data_len))
+    return;
 
   /* Set the packet context pointers. */
   packetdata.flags = 0;
@@ -638,17 +664,9 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					  packetdata.src_id_len +
 					  packetdata.dst_id_len));
 
-  /* This encrypts the packet, if needed. It will be encrypted if
-     it came from the router thus it needs to be encrypted with the
-     channel key. If the channel key does not exist, then we know we
-     don't have a single local user on the channel. */
-  silc_server_packet_relay_to_channel_encrypt(server, sender_sock,
-					      channel, data,
-					      data_len);
-
   /* If there are global users in the channel we will send the message
      first to our router for further routing. */
-  if (server->server_type == SILC_SERVER && !server->standalone &&
+  if (server->server_type != SILC_ROUTER && !server->standalone &&
       channel->global_users) {
     SilcServerEntry router;
 
@@ -735,6 +753,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	   channel keys are cell specific and we have different channel
 	   key than the remote router has. */
 	if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	  SILC_LOG_DEBUG(("Remote is router, encrypt with session key"));
 
 	  /* If private key mode is not set then decrypt the packet
 	     and re-encrypt it */
@@ -824,7 +843,7 @@ void silc_server_packet_send_local_channel(SilcServer server,
 					   SilcPacketFlags flags,
 					   unsigned char *data,
 					   uint32 data_len,
-					   int force_send)
+					   bool force_send)
 {
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
@@ -950,6 +969,14 @@ void silc_server_send_notify(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY, 
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
 			  packet->data, packet->len, FALSE);
+
+  /* Send to backup routers if this is being broadcasted to primary
+     router. */
+  if (server->router && server->router->connection &&
+      sock == server->router->connection && broadcast)
+    silc_server_backup_send(server, NULL, SILC_PACKET_NOTIFY, 0,
+			    packet->data, packet->len, FALSE, TRUE);
+
   silc_buffer_free(packet);
   va_end(ap);
 }
@@ -1344,7 +1371,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
   SilcBuffer packet;
   unsigned char *data;
   uint32 data_len;
-  int force_send = FALSE;
+  bool force_send = FALSE;
   va_list ap;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1487,6 +1514,14 @@ void silc_server_send_new_id(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_NEW_ID, 
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
 			  idp->data, idp->len, FALSE);
+
+  /* Send to backup routers if this is being broadcasted to primary
+     router. */
+  if (server->router && server->router->connection &&
+      sock == server->router->connection && broadcast)
+    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_ID, 0,
+			    idp->data, idp->len, FALSE, TRUE);
+
   silc_buffer_free(idp);
 }
 
@@ -1520,6 +1555,13 @@ void silc_server_send_new_channel(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_NEW_CHANNEL, 
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
 			  packet->data, packet->len, FALSE);
+
+  /* Send to backup routers if this is being broadcasted to primary
+     router. */
+  if (server->router && server->router->connection &&
+      sock == server->router->connection && broadcast)
+    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_CHANNEL, 0,
+			    packet->data, packet->len, FALSE, TRUE);
 
   silc_free(cid);
   silc_buffer_free(packet);
@@ -1556,7 +1598,6 @@ void silc_server_send_channel_key(SilcServer server,
 					   chid, tmp_len,
                                            channel->channel_key->cipher->name,
                                            channel->key_len / 8, channel->key);
- 
   silc_server_packet_send_to_channel(server, sender, channel, 
 				     SILC_PACKET_CHANNEL_KEY,
                                      route, packet->data, packet->len, FALSE);
@@ -1602,7 +1643,7 @@ void silc_server_relay_packet(SilcServer server,
 			      SilcCipher cipher,
 			      SilcHmac hmac,
 			      SilcPacketContext *packet,
-			      int force_send)
+			      bool force_send)
 {
   silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		   + packet->dst_id_len + packet->padlen);
@@ -1639,4 +1680,26 @@ void silc_server_send_connection_auth_request(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_CONNECTION_AUTH_REQUEST,
 			  0, packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
+}
+
+/* Purge the outgoing packet queue to the network if there is data. This
+   function can be used to empty the packet queue. It is guaranteed that
+   after this function returns the outgoing data queue is empty. */
+
+void silc_server_packet_queue_purge(SilcServer server,
+				    SilcSocketConnection sock)
+{
+  if (sock && SILC_IS_OUTBUF_PENDING(sock) && 
+      (SILC_IS_DISCONNECTED(sock) == FALSE)) {
+    server->stat.packets_sent++;
+
+    if (sock->outbuf->data - sock->outbuf->head)
+      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
+
+    silc_packet_send(sock, TRUE);
+
+    SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
+    SILC_UNSET_OUTBUF_PENDING(sock);
+    silc_buffer_clear(sock->outbuf);
+  }
 }

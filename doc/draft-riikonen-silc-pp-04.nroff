@@ -101,7 +101,8 @@ Table of Contents
       2.3.18 New Server Payload ................................. 40
       2.3.19 New Channel Payload ................................ 41
       2.3.20 Key Agreement Payload .............................. 42
-      2.3.21 Cell Routers Payload ............................... 43
+      2.3.21 Resume Router Payload .............................. 43
+      2.3.22 File Transfer Payload .............................. 43
   2.4 SILC ID Types ............................................. 44
   2.5 Packet Encryption And Decryption .......................... 44
       2.5.1 Normal Packet Encryption And Decryption ............. 45
@@ -143,7 +144,8 @@ Figure 18:  Connection Auth Request Payload
 Figure 19:  New Client Payload
 Figure 20:  New Server Payload
 Figure 21:  Key Agreement Payload
-Figure 22:  Cell Routers Payload
+Figure 22:  Resume Router Payload
+Figure 23:  File Transfer Payload
 
 
 .ti 0
@@ -228,7 +230,7 @@ integrity of the packet.  The MAC is always computed from the packet
 before the encryption is applied to the packet.  If compression is used
 in the packet the MAC is computed after the compression has been
 applied.  The compression, on the other hand, is always applied before
-encryption.
+encryption.  See more details in the section 2.6 Packet MAC Generation.
 
 All fields in all packet payloads are always in MSB (most significant
 byte first) order.
@@ -736,20 +738,32 @@ List of SILC Packet types are defined as follows.
           Payload of the packet:  See section 2.3.20 Key Agreement Payload
 
 
-    26    SILC_PACKET_CELL_ROUTERS
+     26   SILC_PACKET_RESUME_ROUTER
 
-          This packet is used by primary router in the cell to notify its
-          primary router what other routers (backup routers) exist in the
-          cell.  In case of failure of the primary router in the cell the
-          first router in the list will act as primary router of the cell.
-          This packet MAY be sent at anytime after connection has been
-          registered to the primary router.  The client MUST NOT send this
-          packet.
+          This packet is used during backup router protocol when the 
+          original primary router of the cell comes back online and wishes
+          to resume the position as being the primary router of the cell.
 
-          Payload of the packet:  See section 2.3.21 Cell Routers Payload
+          Payload of the packet:  See section 2.3.21 Resume Router Payload
 
 
-     27 - 199
+     27   SILC_PACKET_FTP
+
+          This packet is used to perform an file transfer protocol in the
+          SILC session with some entity in the network.  The packet is
+          multi purpose.  The packet is used to tell other entity in the
+          network that the sender wishes to perform an file transfer
+          protocol.  The packet is also used to actually tunnel the
+          file transfer protocol stream.  The file transfer protocol
+          stream is always protected with the SILC packet.
+
+          This packet MUST NOT be sent as list and the List flag MUST
+          NOT be set.
+
+          Payload of the packet:  See section 2.3.22 File Transfer Payload
+
+
+     28 - 199
 
           Currently undefined commands.
 
@@ -1996,9 +2010,9 @@ Also, when server connects to router, router uses this payload to inform
 other routers about new server in the SILC network.  However, every 
 server (or router) creates their own ID's thus the ID distributed by 
 this payload is not created by the distributor in this case.  Servers
-create their own ID's.  Server registers itself to the network by sending
-SILC_PACKET_NEW_SERVER to the router it connected to.  The case is same
-when router connects to another router.
+create their own ID's.  Server registers itself to the network by
+sending SILC_PACKET_NEW_SERVER to the router it connected to.  The case
+is same when router connects to another router.
 
 However, this payload MUST NOT be used to send information about new
 channels.  New channels are always distributed by sending the dedicated
@@ -2130,7 +2144,7 @@ o Server ID Length (2 bytes) - Length of the Server ID Data
   field.
 
 o Server ID Data (variable length) - The actual Server ID
-   data.
+  data.
 
 o Server Name Length (2 bytes) - Length of the server name
   field.
@@ -2156,8 +2170,6 @@ section 2.3.2.3 for generic Channel Payload.  The Mode Mask field in the
 Channel Payload is the mode of the channel.
 
 
-
-
 .ti 0
 2.3.20 Key Agreement Payload
 
@@ -2178,9 +2190,9 @@ request by sending the same payload filled with the receiver's hostname
 and the port where the SKE protocol is running.  The sender MAY then
 initiate the SKE negotiation with the receiver.
 
-The payload may only be sent with SILC_PACKET_KEY_AGREEMENT packet.
-It MUST NOT be sent in any other packet type.  The following diagram
-represents the Key Agreement Payload.
+This payload may be sent with SILC_PACKET_KEY_AGREEMENT and 
+SILC_PACKET_FTP packet types.  It MUST NOT be sent in any other packet
+types.  The following diagram represents the Key Agreement Payload.
 
 
 .in 5
@@ -2228,61 +2240,97 @@ the key material is undefined.
 
 
 .ti 0
-2.3.21 Cell Routers Payload
+2.3.21 Resume Router Payload
 
-Cell Routers payload is used by router to notify its primary router what
-other routers exist in the cell.  The other routers are considered to be
-backup routers and one of them will come active only in the case of
-failure of the primary router.  Normal server MAY send this packet if it
-is acting as backup router.  Client MUST NOT send this packet.  To send
-more than one backup router set the List flag and assemble the payloads
-as list.
-
-The payload may only be sent with SILC_PACKET_CELL_ROUTERS packet.  It
+The payload may only be sent with SILC_PACKET_RESUME_ROUTER packet.  It
 MUST NOT be sent in any other packet type.  The Following diagram
-represents the Cell Routers Payload.
+represents the Resume Router Payload.
 
          
+.in 5
+.nf
+                     1
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Opcode    |  Session ID   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 22:  Resume Router Payload
+
+
+.in 6
+o Opcode (1 byte) - Indicates the opcode for the backup resume
+  protocol.
+
+o Session ID (1 bytes) - Indicates the session ID for the
+  backup resume protocol.  The sender of the packet sets this
+  value and the receiver MUST set the same value in subsequent
+  reply packet.
+.in 3
+
+
+.ti 0
+2.3.22 File Transfer Payload
+
+File Transfer Payload is used to perform file transfer protocol
+between two entities in the network.  The actual file transfer
+protocol is always encapsulated inside the SILC Packet.  The actual
+data stream is also sent peer to peer outside SILC network.
+
+When an entity, usually a client wishes to perform file transfer
+protocol with another client in the network, they perform Key Agreement
+protocol as described in the section 2.3.20 Key Agreement Payload and
+in [SILC3], inside File Transfer Payload.  After the Key Agreement
+protocol has been performed the subsequent packets in the data stream
+will be protected using the new key material.  The actual file transfer
+protocol is also initialized in this stage.  All file transfer protocol
+packets are always encapsulated in the File Transfer Payload and
+protected with the negotiated key material.
+
+The payload may only be sent with SILC_PACKET_FTP packet.  It MUST NOT
+be sent in any other packet type.  The following diagram represents the
+File Transfer Payload
+
 .in 5
 .nf
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Hostname Length        |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|     Type      |                                               |
++-+-+-+-+-+-+-+-+                                               +
 |                                                               |
-~                           Hostname                            ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                             Port                              |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Server ID Length       |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                           Server ID                           ~
+~                             Data                              ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
 .ce
-Figure 22:  Cell Routers Payload
+Figure 23:  File Transfer Payload
 
 
 .in 6
-o Hostname Length (2 bytes) - Indicates the length of the Hostname
-  field.
+o Type (1 byte) - Indicates the type of the file transfer
+  protocol.  The following file transfer protocols has been
+  defined:
 
-o Hostname (variable length) - The hostname or IP address of
-  the backup router.
+    1    SSH File Transfer Protocol (SFTP) (mandatory)
 
-o Port (4 bytes) - The port of the backup router it currently uses.
-  This is a 32 bit MSB first order value.
+  If zero (0) value or any unsupported file transfer protocol
+  type is found in this field the packet must be discarded.
+  The currently mandatory file transfer protocol is SFTP.
+  The SFTP protocol is defined in [SFTP].
 
-o Server ID Length (2 bytes) - Indicates the length of the Server
-  ID field.
-
-o Server ID (variable length) - Consists of the Server ID of the
-  backup router.
+o Data (variable length) - Arbitrary file transfer data.  The
+  contents and encoding of this field is dependent of the usage
+  of this payload and the type of the file transfer protocol.
+  When this payload is used to perform the Key Agreement 
+  protocol, this field include the Key Agreement Payload,
+  as defined in the section 2.3.20 Key Agreement Payload.
+  When this payload is used to send the actual file transfer
+  protocol data, the encoding is defined in the corresponding
+  file transfer protocol.
 .in 3
 
 
@@ -2441,9 +2489,9 @@ of the message.
 Data integrity of a packet is protected by including a message
 authentication code (MAC) at the end of the packet.  The MAC is computed
 from shared secret MAC key, that is established by the SILC Key Exchange
-protocol, and from the original contents of the packet.  The MAC is
-always computed before the packet is encrypted, although after it is
-compressed if compression is used.
+protocol, from packet sequence number, and from the original contents
+of the packet.  The MAC is always computed before the packet is
+encrypted, although after it is compressed if compression is used.
 
 The MAC is computed from entire packet.  Every bit of data in the packet,
 including SILC Packet Header is used in the MAC computing.  This way
@@ -2454,6 +2502,15 @@ but part of the packet may be encrypted before the MAC is computed.
 This is case, for example, with channel messages where the message data
 is encrypted with key that server may not now.  In this case the MAC
 has been computed from the encrypted data.
+
+Hence, packet's MAC generation is as follows:
+
+  mac = MAC(key, sequence number | SILC packet)
+
+The MAC key is negotiated during the SKE protocol.  The sequence number
+is a 32 bit MSB first value starting from zero for first packet and
+increasing for subsequent packets, finally wrapping after 2^32 packets.
+The value is never reset, not even after rekey has been performed.
 
 See [SILC1] for defined and allowed MAC algorithms.
 

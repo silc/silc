@@ -132,6 +132,8 @@ typedef struct SilcServerConfigSectionServerConnectionStruct {
   char *version;
   uint32 class;
   bool initiator;
+  bool backup_router;
+  bool backup_local;
   struct SilcServerConfigSectionServerConnectionStruct *next;
   struct SilcServerConfigSectionServerConnectionStruct *prev;
 } SilcServerConfigSectionServerConnection;
@@ -271,6 +273,8 @@ SilcServerConfigSectionServerConnection *
 silc_server_config_find_router_conn(SilcServerConfig config, 
 				    char *host, int port);
 bool silc_server_config_is_primary_route(SilcServerConfig config);
+SilcServerConfigSectionServerConnection *
+silc_server_config_get_primary_router(SilcServerConfig config);
 SilcServerConfigSectionAdminConnection *
 silc_server_config_find_admin(SilcServerConfig config,
 			      char *host, char *username, char *nickname);

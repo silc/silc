@@ -25,14 +25,14 @@
 
 int silc_server_packet_send_real(SilcServer server,
 				 SilcSocketConnection sock,
-				 int force_send);
+				 bool force_send);
 void silc_server_packet_send(SilcServer server,
 			     SilcSocketConnection sock, 
 			     SilcPacketType type, 
 			     SilcPacketFlags flags,
 			     unsigned char *data, 
 			     uint32 data_len,
-			     int force_send);
+			     bool force_send);
 void silc_server_packet_send_dest(SilcServer server,
 				  SilcSocketConnection sock, 
 				  SilcPacketType type, 
@@ -41,7 +41,7 @@ void silc_server_packet_send_dest(SilcServer server,
 				  SilcIdType dst_id_type,
 				  unsigned char *data, 
 				  uint32 data_len,
-				  int force_send);
+				  bool force_send);
 void silc_server_packet_send_srcdest(SilcServer server,
 				     SilcSocketConnection sock, 
 				     SilcPacketType type, 
@@ -52,7 +52,7 @@ void silc_server_packet_send_srcdest(SilcServer server,
 				     SilcIdType dst_id_type,
 				     unsigned char *data, 
 				     uint32 data_len,
-				     int force_send);
+				     bool force_send);
 void silc_server_packet_broadcast(SilcServer server,
 				  SilcSocketConnection sock,
 				  SilcPacketContext *packet);
@@ -63,10 +63,10 @@ void silc_server_packet_send_to_channel(SilcServer server,
 					SilcSocketConnection sender,
 					SilcChannelEntry channel,
 					SilcPacketType type,
-					unsigned char route,
+					bool route,
 					unsigned char *data,
 					uint32 data_len,
-					int force_send);
+					bool force_send);
 void silc_server_packet_relay_to_channel(SilcServer server,
 					 SilcSocketConnection sender_sock,
 					 SilcChannelEntry channel,
@@ -75,14 +75,14 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					 void *sender_entry,
 					 unsigned char *data,
 					 uint32 data_len,
-					 int force_send);
+					 bool force_send);
 void silc_server_packet_send_local_channel(SilcServer server,
 					   SilcChannelEntry channel,
 					   SilcPacketType type,
 					   SilcPacketFlags flags,
 					   unsigned char *data,
 					   uint32 data_len,
-					   int force_send);
+					   bool force_send);
 void silc_server_send_private_message(SilcServer server,
 				      SilcSocketConnection dst_sock,
 				      SilcCipher cipher,
@@ -222,10 +222,12 @@ void silc_server_relay_packet(SilcServer server,
 			      SilcCipher cipher,
 			      SilcHmac hmac,
 			      SilcPacketContext *packet,
-			      int force_send);
+			      bool force_send);
 void silc_server_send_connection_auth_request(SilcServer server,
 					      SilcSocketConnection sock,
 					      uint16 conn_type,
 					      SilcAuthMethod auth_meth);
+void silc_server_packet_queue_purge(SilcServer server,
+				    SilcSocketConnection sock);
 
 #endif

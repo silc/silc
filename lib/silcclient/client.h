@@ -310,5 +310,7 @@ void silc_client_private_message(SilcClient client,
 void silc_client_connection_auth_request(SilcClient client,
 					 SilcSocketConnection sock,
 					 SilcPacketContext *packet);
-
+void silc_client_ftp(SilcClient client,
+		     SilcSocketConnection sock,
+		     SilcPacketContext *packet);
 #endif

@@ -51,6 +51,7 @@ INCLUDES = $(ADD_INCLUDES) $(SILC_CFLAGS) \
 	-I$(silc_top_srcdir)/lib/silcske \
 	-I$(silc_top_srcdir)/lib/silcsim \
 	-I$(silc_top_srcdir)/lib/silcutil \
+	-I$(silc_top_srcdir)/lib/silcsftp \
 	-I$(silc_top_srcdir)/lib/silcclient \
 	-I$(silc_top_srcdir)/lib/contrib \
         -I$(silc_top_srcdir)/includes \

@@ -592,6 +592,13 @@ esac ], CFLAGS="-O2 -g $CFLAGS"
         AC_MSG_RESULT(no))
 
 #
+# Disable all assembler optimizations
+#
+AC_ARG_ENABLE(asm,
+[  --disable-asm           Do not use assembler optimizations ],
+[])
+
+#
 # Threads support
 #
 AC_ARG_ENABLE(threads,
@@ -709,6 +716,8 @@ lib/silcske/Makefile
 lib/silcutil/Makefile
 lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
+lib/silcsftp/Makefile
+lib/silcsftp/tests/Makefile
 )     
 
 if test "x$silc_dist" = "xsilc-client" || 

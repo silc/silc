@@ -262,8 +262,8 @@ void silc_core_init_finish(void)
   }
 
   if (opt_version) {
-    printf("SILC Secure Internet Live Conferencing, version %s\n", 
-	   silc_version);
+    printf("SILC Secure Internet Live Conferencing, version %s "
+	   "(base: SILC Toolkit %s)\n", silc_dist_version, silc_version);
     printf("(c) 1997 - 2001 Pekka Riikonen <priikone@silcnet.org>\n");
     exit(0); 
   }

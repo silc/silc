@@ -26,6 +26,9 @@
    the object private hence this declaration. */
 typedef struct SilcServerStruct *SilcServer;
 
+/* Forward declaration of backup server context */
+typedef struct SilcServerBackupStruct *SilcServerBackup;
+
 #define SILC_SERVER_MAX_CONNECTIONS 1000
 
 /* General definitions */
@@ -36,6 +39,7 @@ typedef struct SilcServerStruct *SilcServer;
 /* Server and router. Used internally by the code. */
 #define SILC_SERVER 0
 #define SILC_ROUTER 1
+#define SILC_BACKUP_ROUTER 2
 
 /* Connection retry timeout. We implement exponential backoff algorithm
    in connection retry. The interval of timeuot grows when retry count
@@ -66,6 +70,32 @@ typedef struct {
   char require_reverse_mapping;
 } *SilcServerParams;
 
+/* Callback function that is called after the key exchange and connection
+   authentication protocols has been completed with a remote router. The
+   `server_entry' is the remote router entry. */
+typedef void (*SilcServerConnectRouterCallback)(SilcServer server,
+						SilcServerEntry server_entry,
+						void *context);
+
+typedef struct {
+  SilcSocketConnection sock;
+
+  /* Remote host name and port */
+  char *remote_host;
+  int remote_port;
+  bool backup;
+  
+  /* Current connection retry info */
+  uint32 retry_count;
+  uint32 retry_timeout;
+
+  /* Back pointer to server */
+  SilcServer server;
+
+  SilcServerConnectRouterCallback callback;
+  void *callback_context;
+} *SilcServerConnection;
+
 /* Macros */
 
 /* This macro is used to send notify messages with formatted string. The
@@ -91,6 +121,9 @@ int silc_server_init(SilcServer server);
 void silc_server_daemonise(SilcServer server);
 void silc_server_run(SilcServer server);
 void silc_server_stop(SilcServer server);
+void silc_server_start_key_exchange(SilcServer server,
+				    SilcServerConnection sconn,
+				    int sock);
 void silc_server_packet_parse(SilcPacketParserContext *parser_context);
 void silc_server_packet_parse_type(SilcServer server, 
 				   SilcSocketConnection sock,
@@ -106,11 +139,6 @@ void silc_server_free_client_data(SilcServer server,
 				  char *signoff);
 void silc_server_free_sock_user_data(SilcServer server, 
 				     SilcSocketConnection sock);
-int silc_server_channel_has_global(SilcChannelEntry channel);
-int silc_server_channel_has_local(SilcChannelEntry channel);
-int silc_server_remove_clients_by_server(SilcServer server, 
-					 SilcServerEntry entry,
-					 int server_signoff);
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
 				      SilcClientEntry client,
@@ -122,8 +150,6 @@ int silc_server_remove_from_one_channel(SilcServer server,
 					SilcChannelEntry channel,
 					SilcClientEntry client,
 					int notify);
-int silc_server_client_on_channel(SilcClientEntry client,
-				  SilcChannelEntry channel);
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
 				   const char *fmt, ...);
@@ -158,10 +184,14 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcBuffer *channel_users,
 				       SilcBuffer **channel_users_modes,
 				       uint32 *channel_users_modes_c,
-				       SilcChannelID ***channel_ids);
-void silc_server_announce_servers(SilcServer server);
-void silc_server_announce_clients(SilcServer server);
-void silc_server_announce_channels(SilcServer server);
+				       SilcChannelID ***channel_ids,
+				       unsigned long creation_time);
+void silc_server_announce_servers(SilcServer server, bool global,
+				  unsigned long creation_time);
+void silc_server_announce_clients(SilcServer server,
+				  unsigned long creationg_time);
+void silc_server_announce_channels(SilcServer server,
+				   unsigned long creationg_time);
 void silc_server_get_users_on_channel(SilcServer server,
 				      SilcChannelEntry channel,
 				      SilcBuffer *user_list,

@@ -637,14 +637,17 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
-				 bool force_send,
-				 bool flush)
+				 bool force_send)
 {
   int ret;
 
   /* If rekey protocol is active we must assure that all packets are
      sent through packet queue. */
-  if (flush == FALSE && SILC_CLIENT_IS_REKEY(sock))
+  if (SILC_CLIENT_IS_REKEY(sock))
+    force_send = FALSE;
+
+  /* If outbound data is already pending do not force send */
+  if (SILC_IS_OUTBUF_PENDING(sock))
     force_send = FALSE;
 
   /* Send the packet */
@@ -686,17 +689,22 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
 
   /* Packet sending */
   if (type == SILC_TASK_WRITE) {
-    SILC_LOG_DEBUG(("Writing data to connection"));
+    /* Do not send data to disconnected connection */
+    if (SILC_IS_DISCONNECTED(sock))
+      return;
 
     if (sock->outbuf->data - sock->outbuf->head)
-      silc_buffer_push(sock->outbuf, 
-		       sock->outbuf->data - sock->outbuf->head);
+      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
 
-    ret = silc_client_packet_send_real(client, sock, TRUE, TRUE);
+    ret = silc_packet_send(sock, TRUE);
 
     /* If returned -2 could not write to connection now, will do
        it later. */
     if (ret == -2)
+      return;
+
+    /* Error */
+    if (ret == -1)
       return;
     
     /* The packet has been sent and now it is time to set the connection
@@ -712,8 +720,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
 
   /* Packet receiving */
   if (type == SILC_TASK_READ) {
-    SILC_LOG_DEBUG(("Reading data from connection"));
-
     /* Read data from network */
     ret = silc_packet_receive(sock);
     if (ret < 0)
@@ -1100,6 +1106,11 @@ void silc_client_packet_parse_type(SilcClient client,
     silc_client_connection_auth_request(client, sock, packet);
     break;
 
+  case SILC_PACKET_FTP:
+    /* Received file transfer packet. */
+    silc_client_ftp(client, sock, packet);
+    break;
+
   default:
     SILC_LOG_DEBUG(("Incorrect packet type %d, packet dropped", type));
     break;
@@ -1198,7 +1209,23 @@ void silc_client_packet_send(SilcClient client,
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
-  silc_client_packet_send_real(client, sock, force_send, FALSE);
+  silc_client_packet_send_real(client, sock, force_send);
+}
+
+void silc_client_packet_queue_purge(SilcClient client,
+				    SilcSocketConnection sock)
+{
+  if (sock && SILC_IS_OUTBUF_PENDING(sock) && 
+      (SILC_IS_DISCONNECTED(sock) == FALSE)) {
+    if (sock->outbuf->data - sock->outbuf->head)
+      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
+
+    silc_packet_send(sock, TRUE);
+
+    SILC_CLIENT_SET_CONNECTION_FOR_INPUT(client->schedule, sock->sock);
+    SILC_UNSET_OUTBUF_PENDING(sock);
+    silc_buffer_clear(sock->outbuf);
+  }
 }
 
 /* Closes connection to remote end. Free's all allocated data except
@@ -1601,6 +1628,10 @@ SILC_TASK_CALLBACK(silc_client_rekey_final)
     return;
   }
 
+  /* Purge the outgoing data queue to assure that all rekey packets really
+     go to the network before we quit the protocol. */
+  silc_client_packet_queue_purge(client, sock);
+
   /* Cleanup */
   silc_protocol_free(protocol);
   sock->protocol = NULL;
@@ -1714,4 +1745,32 @@ silc_client_request_authentication_method(SilcClient client,
 			   silc_client_request_authentication_method_timeout,
 			   conn, client->params->connauth_request_secs, 0,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+}
+
+/* Called when file transfer packet is received. This will parse the
+   packet and give it to the file transfer protocol. */
+
+void silc_client_ftp(SilcClient client,
+		     SilcSocketConnection sock,
+		     SilcPacketContext *packet)
+{
+  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  uint8 type;
+  int ret;
+
+  /* Parse the payload */
+  ret = silc_buffer_unformat(packet->buffer,
+			     SILC_STR_UI_CHAR(&type),
+			     SILC_STR_END);
+  if (ret == -1)
+    return;
+
+  /* We support only type number 1 (== SFTP) */
+  if (type != 1)
+    return;
+
+  silc_buffer_pull(packet->buffer, 1);
+
+  /* Give it to the file transfer protocol processor. */
+  //silc_sftp_client_receive_process(xxx, sock, packet);
 }

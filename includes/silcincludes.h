@@ -238,12 +238,12 @@ typedef uint32 * void *;
 #include "silcutil.h"
 #include "silcconfig.h"
 #include "silcschedule.h"
+#include "silcprotocol.h"
+#include "silcsockconn.h"
 
 /* SILC core library includes */
 #include "silcid.h"
 #include "silcidcache.h"
-#include "silcprotocol.h"
-#include "silcsockconn.h"
 #include "silcpayload.h"
 #include "silccommand.h"
 #include "silcchannel.h"
@@ -268,5 +268,8 @@ typedef uint32 * void *;
 #include "payload.h"
 #include "groups.h"
 
-#endif
+/* SILC SFTP library */
+#include "silcsftp.h"
+#include "silcsftp_fs.h"
 
+#endif

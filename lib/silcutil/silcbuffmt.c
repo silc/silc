@@ -40,10 +40,20 @@ do {						\
 int silc_buffer_format(SilcBuffer dst, ...)
 {
   va_list ap;
-  SilcBufferParamType fmt;
-  unsigned char *start_ptr = dst->data;
+  int ret;
 
   va_start(ap, dst);
+  ret = silc_buffer_format_vp(dst, ap);
+  va_end(ap);
+
+  return ret;
+}
+
+int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
+{
+  SilcBufferParamType fmt;
+  unsigned char *start_ptr = dst->data;
+  int len;
 
   /* Parse the arguments by formatting type. */
   while(1) {
@@ -106,6 +116,26 @@ int silc_buffer_format(SilcBuffer dst, ...)
 	silc_buffer_pull(dst, 4);
 	break;
       }
+    case SILC_BUFFER_PARAM_SI64_INT:
+      {
+	unsigned char xf[8];
+	int64 x = va_arg(ap, int64);
+	HAS_SPACE(dst, 8);
+	SILC_PUT64_MSB(x, xf);
+	silc_buffer_put(dst, xf, 8);
+	silc_buffer_pull(dst, 8);
+	break;
+      }
+    case SILC_BUFFER_PARAM_UI64_INT:
+      {
+	unsigned char xf[8];
+	uint64 x = va_arg(ap, uint64);
+	HAS_SPACE(dst, 8);
+	SILC_PUT64_MSB(x, xf);
+	silc_buffer_put(dst, xf, 8);
+	silc_buffer_pull(dst, 8);
+	break;
+      }
     case SILC_BUFFER_PARAM_UI16_STRING:
     case SILC_BUFFER_PARAM_UI32_STRING:
     case SILC_BUFFER_PARAM_UI16_STRING_ALLOC:
@@ -149,8 +179,9 @@ int silc_buffer_format(SilcBuffer dst, ...)
 
  ok:
   /* Push the buffer back to where it belongs. */
-  silc_buffer_push(dst, dst->data - start_ptr);
-  return dst->len;
+  len = dst->data - start_ptr;
+  silc_buffer_push(dst, len);
+  return len;
 }
 
 /* Unformats the buffer sent as argument. The unformatted data is returned
@@ -161,11 +192,20 @@ int silc_buffer_format(SilcBuffer dst, ...)
 int silc_buffer_unformat(SilcBuffer src, ...)
 {
   va_list ap;
+  int ret;
+
+  va_start(ap, src);
+  ret = silc_buffer_unformat_vp(src, ap);
+  va_end(ap);
+  
+  return ret;
+}
+
+int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
+{
   SilcBufferParamType fmt;
   unsigned char *start_ptr = src->data;
   int len = 0;
-
-  va_start(ap, src);
 
   /* Parse the arguments by formatting type. */
   while(1) {
@@ -224,6 +264,24 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 	if (x)
 	  SILC_GET32_MSB(*x, src->data);
 	silc_buffer_pull(src, 4);
+	break;
+      }
+    case SILC_BUFFER_PARAM_SI64_INT:
+      {
+	int64 *x = va_arg(ap, int64 *);
+	HAS_SPACE(src, 8);
+	if (x)
+	  SILC_GET64_MSB(*x, src->data);
+	silc_buffer_pull(src, 8);
+	break;
+      }
+    case SILC_BUFFER_PARAM_UI64_INT:
+      {
+	uint64 *x = va_arg(ap, uint64 *);
+	HAS_SPACE(src, 8);
+	if (x)
+	  SILC_GET64_MSB(*x, src->data);
+	silc_buffer_pull(src, 8);
 	break;
       }
     case SILC_BUFFER_PARAM_UI16_STRING:

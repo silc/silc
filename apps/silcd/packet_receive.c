@@ -37,7 +37,7 @@ void silc_server_notify(SilcServer server,
   SilcNotifyPayload payload;
   SilcNotifyType type;
   SilcArgumentPayload args;
-  SilcChannelID *channel_id, *channel_id2;
+  SilcChannelID *channel_id = NULL, *channel_id2;
   SilcClientID *client_id, *client_id2;
   SilcServerID *server_id;
   SilcChannelEntry channel;
@@ -74,6 +74,11 @@ void silc_server_notify(SilcServer server,
 			       idata->hmac_receive, packet, TRUE);
   }
 
+  /* Parse the Notify Payload */
+  payload = silc_notify_payload_parse(packet->buffer);
+  if (!payload)
+    return;
+
   /* If we are router and this packet is not already broadcast packet
      we will broadcast it. The sending socket really cannot be router or
      the router is buggy. If this packet is coming from router then it must
@@ -82,14 +87,37 @@ void silc_server_notify(SilcServer server,
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received Notify packet"));
-    silc_server_packet_send(server, server->router->connection, packet->type,
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-			    packet->buffer->data, packet->buffer->len, FALSE);
-  }
+    if (packet->dst_id_type == SILC_ID_CHANNEL) {
+      /* Packet is destined to channel */
+      channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				  packet->dst_id_type);
+      if (!channel_id)
+	goto out;
 
-  payload = silc_notify_payload_parse(packet->buffer);
-  if (!payload)
-    return;
+      silc_server_packet_send_dest(server, server->router->connection, 
+				   packet->type,
+				   packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+				   channel_id, SILC_ID_CHANNEL,
+				   packet->buffer->data, packet->buffer->len, 
+				   FALSE);
+      silc_server_backup_send_dest(server, (SilcServerEntry)sock->user_data, 
+				   packet->type, packet->flags,
+				   channel_id, SILC_ID_CHANNEL,
+				   packet->buffer->data, packet->buffer->len, 
+				   FALSE, TRUE);
+    } else {
+      /* Packet is destined to client or server */
+      silc_server_packet_send(server, server->router->connection, 
+			      packet->type,
+			      packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+			      packet->buffer->data, packet->buffer->len, 
+			      FALSE);
+      silc_server_backup_send(server, (SilcServerEntry)sock->user_data,
+			      packet->type, packet->flags,
+			      packet->buffer->data, packet->buffer->len, 
+			      FALSE, TRUE);
+    }
+  }
 
   type = silc_notify_get_type(payload);
   args = silc_notify_get_args(payload);
@@ -132,11 +160,6 @@ void silc_server_notify(SilcServer server,
     if (!client_id)
       goto out;
 
-    /* Send to channel */
-    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-
     /* If the the client is not in local list we check global list (ie. the
        channel will be global channel) and if it does not exist then create
        entry for the client. */
@@ -149,7 +172,7 @@ void silc_server_notify(SilcServer server,
 					     NULL);
       if (!client) {
 	/* If router did not find the client the it is bogus */
-	if (server->server_type == SILC_ROUTER)
+	if (server->server_type != SILC_SERVER)
 	  goto out;
 
 	client = 
@@ -174,7 +197,12 @@ void silc_server_notify(SilcServer server,
     if (silc_server_client_on_channel(client, channel))
       break;
 
-    if (server->server_type == SILC_SERVER && 
+    /* Send to channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
+    if (server->server_type != SILC_ROUTER && 
 	sock->type == SILC_SOCKET_TYPE_ROUTER)
       /* The channel is global now */
       channel->global_users = TRUE;
@@ -185,7 +213,7 @@ void silc_server_notify(SilcServer server,
     chl->client = client;
     chl->channel = channel;
 
-    /* If this is the first one on the channel then it is the founder off
+    /* If this is the first one on the channel then it is the founder of
        the channel. */
     if (!silc_hash_table_count(channel->user_list))
       chl->mode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
@@ -202,10 +230,12 @@ void silc_server_notify(SilcServer server,
      */
     SILC_LOG_DEBUG(("LEAVE notify"));
 
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
+    if (!channel_id) {
+      channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				  packet->dst_id_type);
+      if (!channel_id)
+	goto out;
+    }
 
     /* Get channel entry */
     channel = silc_idlist_find_channel_by_id(server->global_list, 
@@ -231,11 +261,6 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
 
-    /* Send to channel */
-    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-
     /* Get client entry */
     client = silc_idlist_find_client_by_id(server->global_list, 
 					   client_id, TRUE, NULL);
@@ -249,6 +274,15 @@ void silc_server_notify(SilcServer server,
       }
     }
     silc_free(client_id);
+
+    /* Check if on channel */
+    if (!silc_server_client_on_channel(client, channel))
+      break;
+
+    /* Send the leave notify to channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
 
     /* Remove the user from channel */
     silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
@@ -303,10 +337,12 @@ void silc_server_notify(SilcServer server,
 
     SILC_LOG_DEBUG(("TOPIC SET notify"));
 
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
+    if (!channel_id) {
+      channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				  packet->dst_id_type);
+      if (!channel_id)
+	goto out;
+    }
 
     /* Get channel entry */
     channel = silc_idlist_find_channel_by_id(server->global_list, 
@@ -404,10 +440,12 @@ void silc_server_notify(SilcServer server,
     
     SILC_LOG_DEBUG(("CMODE CHANGE notify"));
       
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
+    if (!channel_id) {
+      channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				  packet->dst_id_type);
+      if (!channel_id)
+	goto out;
+    }
 
     /* Get channel entry */
     channel = silc_idlist_find_channel_by_id(server->global_list, 
@@ -421,11 +459,6 @@ void silc_server_notify(SilcServer server,
       }
     }
 
-    /* Send the same notify to the channel */
-    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-
     /* Get the mode */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp) {
@@ -434,6 +467,15 @@ void silc_server_notify(SilcServer server,
     }
 
     SILC_GET32_MSB(mode, tmp);
+
+    /* Check if mode changed */
+    if (channel->mode == mode)
+      break;
+
+    /* Send the same notify to the channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
 
     /* If the channel had private keys set and the mode was removed then
        we must re-generate and re-distribute a new channel key */
@@ -485,10 +527,12 @@ void silc_server_notify(SilcServer server,
       
       SILC_LOG_DEBUG(("CUMODE CHANGE notify"));
       
-      channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				  packet->dst_id_type);
-      if (!channel_id)
-	goto out;
+      if (!channel_id) {
+	channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				    packet->dst_id_type);
+	if (!channel_id)
+	  goto out;
+      }
 
       /* Get channel entry */
       channel = silc_idlist_find_channel_by_id(server->global_list, 
@@ -545,6 +589,11 @@ void silc_server_notify(SilcServer server,
 	  SilcBuffer idp;
 	  unsigned char cumode[4];
 
+	  if (chl->client == client && chl->mode == mode) {
+	    notify_sent = TRUE;
+	    break;
+	  }
+
 	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	  silc_server_send_notify_cumode(server, sock, FALSE, channel, mode,
 					 client->id, SILC_ID_CLIENT,
@@ -569,6 +618,11 @@ void silc_server_notify(SilcServer server,
 	}
 	
 	if (chl->client == client) {
+	  if (chl->mode == mode) {
+	    notify_sent = TRUE;
+	    break;
+	  }
+
 	  /* Change the mode */
 	  chl->mode = mode;
 	  if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
@@ -794,10 +848,12 @@ void silc_server_notify(SilcServer server,
     
     SILC_LOG_DEBUG(("KICKED notify"));
       
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
+    if (!channel_id) {
+      channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				  packet->dst_id_type);
+      if (!channel_id)
+	goto out;
+    }
 
     /* Get channel entry */
     channel = silc_idlist_find_channel_by_id(server->global_list, 
@@ -820,11 +876,6 @@ void silc_server_notify(SilcServer server,
     if (!client_id)
       goto out;
 
-    /* Send to channel */
-    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-
     /* If the the client is not in local list we check global list */
     client = silc_idlist_find_client_by_id(server->global_list, 
 					   client_id, TRUE, NULL);
@@ -836,6 +887,11 @@ void silc_server_notify(SilcServer server,
 	goto out;
       }
     }
+
+    /* Send to channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
 
     /* Remove the client from channel */
     silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
@@ -1297,6 +1353,13 @@ void silc_server_channel_key(SilcServer server,
   /* Distribute the key to everybody who is on the channel. If we are router
      we will also send it to locally connected servers. */
   silc_server_send_channel_key(server, sock, channel, FALSE);
+  
+  if (server->server_type != SILC_BACKUP_ROUTER) {
+    /* Distribute to local cell backup routers. */
+    silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+			    SILC_PACKET_CHANNEL_KEY, 0,
+			    buffer->data, buffer->len, FALSE, TRUE);
+  }
 }
 
 /* Received New Client packet and processes it.  Creates Client ID for the
@@ -1626,6 +1689,30 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   if (server->server_type == SILC_ROUTER)
     server->stat.cell_servers++;
 
+  /* Check whether this router connection has been replaced by an
+     backup router. If it has been then we'll disable the server and will
+     ignore everything it will send until the backup router resuming
+     protocol has been completed. */
+  if (sock->type == SILC_SOCKET_TYPE_ROUTER &&
+      silc_server_backup_replaced_get(server, server_id, NULL)) {
+    /* Send packet to the server indicating that it cannot use this
+       connection as it has been replaced by backup router. */
+    SilcBuffer packet = silc_buffer_alloc(2);
+    silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+    silc_buffer_format(packet,
+		       SILC_STR_UI_CHAR(20),
+		       SILC_STR_UI_CHAR(0),
+		       SILC_STR_END);
+    silc_server_packet_send(server, sock, 
+			    SILC_PACKET_RESUME_ROUTER, 0, 
+			    packet->data, packet->len, TRUE);
+    silc_buffer_free(packet);
+
+    /* Mark the server disabled. The data sent earlier will go but nothing
+       after this does not go to this connection. */
+    idata->status |= SILC_IDLIST_STATUS_DISABLED;
+  }
+
   return new_server;
 }
 
@@ -1666,18 +1753,6 @@ static void silc_server_new_id_real(SilcServer server,
   if (!id)
     goto out;
 
-  /* If the sender of this packet is server and we are router we need to
-     broadcast this packet to other routers in the network. */
-  if (broadcast && !server->standalone && server->server_type == SILC_ROUTER &&
-      sock->type == SILC_SOCKET_TYPE_SERVER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received New ID packet"));
-    silc_server_packet_send(server, server->router->connection,
-			    packet->type, 
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			    buffer->data, buffer->len, FALSE);
-  }
-
   if (sock->type == SILC_SOCKET_TYPE_SERVER)
     id_list = server->local_list;
   else
@@ -1707,6 +1782,19 @@ static void silc_server_new_id_real(SilcServer server,
   case SILC_ID_CLIENT:
     {
       SilcClientEntry entry;
+
+      /* Check that we do not have this client already */
+      entry = silc_idlist_find_client_by_id(server->global_list, 
+					    id, server->server_type, 
+					    NULL);
+      if (!entry)
+	entry = silc_idlist_find_client_by_id(server->local_list, 
+					      id, server->server_type,
+					      NULL);
+      if (entry) {
+	SILC_LOG_DEBUG(("Ignoring client that we already have"));
+	goto out;
+      }
 
       SILC_LOG_DEBUG(("New client id(%s) from [%s] %s",
 		      silc_id_render(id, SILC_ID_CLIENT),
@@ -1750,6 +1838,19 @@ static void silc_server_new_id_real(SilcServer server,
 	break;
       }
       
+      /* Check that we do not have this server already */
+      entry = silc_idlist_find_server_by_id(server->global_list, 
+					    id, server->server_type, 
+					    NULL);
+      if (!entry)
+	entry = silc_idlist_find_server_by_id(server->local_list, 
+					      id, server->server_type,
+					      NULL);
+      if (entry) {
+	SILC_LOG_DEBUG(("Ignoring server that we already have"));
+	goto out;
+      }
+
       SILC_LOG_DEBUG(("New server id(%s) from [%s] %s",
 		      silc_id_render(id, SILC_ID_SERVER),
 		      sock->type == SILC_SOCKET_TYPE_SERVER ?
@@ -1774,10 +1875,28 @@ static void silc_server_new_id_real(SilcServer server,
 
   case SILC_ID_CHANNEL:
     SILC_LOG_ERROR(("Channel cannot be registered with NEW_ID packet"));
+    goto out;
     break;
 
   default:
+    goto out;
     break;
+  }
+
+  /* If the sender of this packet is server and we are router we need to
+     broadcast this packet to other routers in the network. */
+  if (broadcast && !server->standalone && server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received New ID packet"));
+    silc_server_packet_send(server, server->router->connection,
+			    packet->type, 
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			    buffer->data, buffer->len, FALSE);
+    silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+			    packet->type, packet->flags,
+			    packet->buffer->data, packet->buffer->len, 
+			    FALSE, TRUE);
   }
 
  out:
@@ -1821,6 +1940,10 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
 			    packet->type, 
 			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
 			    packet->buffer->data, packet->buffer->len, FALSE);
+    silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+			    packet->type, packet->flags,
+			    packet->buffer->data, packet->buffer->len, 
+			    FALSE, TRUE);
   }
 
   /* Make copy of the original packet context, except for the actual
@@ -1874,6 +1997,7 @@ void silc_server_new_channel(SilcServer server,
   unsigned char *id;
   uint32 id_len;
   uint32 mode;
+  SilcChannelEntry channel;
 
   SILC_LOG_DEBUG(("Processing New Channel"));
 
@@ -1904,24 +2028,30 @@ void silc_server_new_channel(SilcServer server,
     /* Add the channel to global list as it is coming from router. It 
        cannot be our own channel as it is coming from router. */
 
-    SILC_LOG_DEBUG(("New channel id(%s) from [Router] %s",
-		    silc_id_render(channel_id, SILC_ID_CHANNEL), 
-		    sock->hostname));
+    /* Check that we don't already have this channel */
+    channel = silc_idlist_find_channel_by_name(server->local_list, 
+					       channel_name, NULL);
+    if (!channel)
+      channel = silc_idlist_find_channel_by_name(server->global_list, 
+						 channel_name, NULL);
+    if (!channel) {
+      SILC_LOG_DEBUG(("New channel id(%s) from [Router] %s",
+		      silc_id_render(channel_id, SILC_ID_CHANNEL), 
+		      sock->hostname));
     
-    silc_idlist_add_channel(server->global_list, strdup(channel_name), 
-			    0, channel_id, sock->user_data, NULL, NULL);
-
-    server->stat.channels++;
+      silc_idlist_add_channel(server->global_list, strdup(channel_name), 
+			      0, channel_id, sock->user_data, NULL, NULL);
+      server->stat.channels++;
+    }
   } else {
     /* The channel is coming from our server, thus it is in our cell
        we will add it to our local list. */
-    SilcChannelEntry channel;
     SilcBuffer chk;
 
-    SILC_LOG_DEBUG(("New channel id(%s) from [Server] %s",
+    SILC_LOG_DEBUG(("Channel id(%s) from [Server] %s",
 		    silc_id_render(channel_id, SILC_ID_CHANNEL), 
 		    sock->hostname));
-    
+
     /* Check that we don't already have this channel */
     channel = silc_idlist_find_channel_by_name(server->local_list, 
 					       channel_name, NULL);
@@ -1929,10 +2059,26 @@ void silc_server_new_channel(SilcServer server,
       channel = silc_idlist_find_channel_by_name(server->global_list, 
 						 channel_name, NULL);
 
-    /* If the channel does not exist, then create it. We create the channel
-       with the channel ID provided by the server. This creates a new
+    /* If the channel does not exist, then create it. This creates a new
        key to the channel as well that we will send to the server. */
     if (!channel) {
+      /* The protocol says that the Channel ID's IP address must be based
+	 on the router's IP address.  Check whether the ID is based in our
+	 IP and if it is not then create a new ID and enforce the server
+	 to switch the ID. */
+      if (!SILC_ID_COMPARE(channel_id, server->id, server->id->ip.data_len)) {
+	SilcChannelID *tmp;
+	SILC_LOG_DEBUG(("Forcing the server to change Channel ID"));
+	
+	if (silc_id_create_channel_id(server, server->id, server->rng, &tmp)) {
+	  silc_server_send_notify_channel_change(server, sock, FALSE, 
+						 channel_id, tmp);
+	  silc_free(channel_id);
+	  channel_id = tmp;
+	}
+      }
+
+      /* Create the channel with the provided Channel ID */
       channel = silc_server_create_new_channel_with_id(server, NULL, NULL,
 						       channel_name,
 						       channel_id, FALSE);
@@ -1963,7 +2109,7 @@ void silc_server_new_channel(SilcServer server,
       SilcBuffer users = NULL, users_modes = NULL;
 
       if (!channel->id)
-	channel_id = silc_id_dup(channel_id, SILC_ID_CHANNEL);
+	channel->id = silc_id_dup(channel_id, SILC_ID_CHANNEL);
 
       if (!SILC_ID_CHANNEL_COMPARE(channel_id, channel->id)) {
 	/* They don't match, send CHANNEL_CHANGE notify to the server to
@@ -2068,6 +2214,10 @@ void silc_server_new_channel_list(SilcServer server,
 			    packet->type, 
 			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
 			    packet->buffer->data, packet->buffer->len, FALSE);
+    silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+			    packet->type, packet->flags,
+			    packet->buffer->data, packet->buffer->len, 
+			    FALSE, TRUE);
   }
 
   /* Make copy of the original packet context, except for the actual

@@ -704,6 +704,9 @@ SILC_CLIENT_CMD_FUNC(quit)
   q->client = cmd->client;
   q->conn = cmd->conn;
 
+  /* Sleep for a while */
+  sleep(2);
+
   /* We quit the connection with little timeout */
   silc_schedule_task_add(cmd->client->schedule, cmd->conn->sock->sock,
 			 silc_client_command_quit_cb, (void *)q,
@@ -1449,6 +1452,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
   }
   
   /* Get the current mode */
+  silc_list_start(channel->clients);
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
     if (chu->client == client_entry) {
       mode = chu->mode;
@@ -1513,7 +1517,8 @@ SILC_CLIENT_CMD_FUNC(cumode)
 
   /* Send the command packet. We support sending only one mode at once
      that requires an argument. */
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_CUMODE, 0, 4, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_CUMODE, 0, 
+					  auth ? 4 : 3, 
 					  1, chidp->data, chidp->len, 
 					  2, modebuf, 4,
 					  3, clidp->data, clidp->len,

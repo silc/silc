@@ -1,3 +1,158 @@
+Sun Oct  7 12:29:25 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Sleep two (2) seconds after sending QUIT command to server.
+	  Affected file lib/silcclient/command.c.
+
+	* Assure that if outgoing data buffer is pending do not force
+	  send any data.  Affected file silcd/packet_send.c.
+
+	* Assure that if outgoing data buffer is pending do not force
+	  send any data.  Affected file lib/silcclient/client.c.
+
+	* Implemented the backup router support when the primary router
+	  goes down.  The servers and routers can now use the backup
+	  router as new primary router without loosing connectivity.
+
+Sat Oct  6 21:18:54 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added new SILC_IDLIST_STATUS_DISABLED flag for entries
+	  in the server to indicate disabled entry.  All data read
+	  from the connection will be ignored and no data is sent
+	  for entry that is disabled.  Affected files are
+	  silcd/idlist.h, silcd/server.c.
+
+Fri Oct  5 00:03:29 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Created SFTP client and server test programs in the
+	  lib/silcsftp/tests directory.
+
+Wed Oct  3 23:31:42 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Implemented memory filesystem (virtual filesystem) for
+	  SFTP server.  Affected file lib/silcsftp/silcsftp_fs.h,
+	  sftp_fs_memory.c.
+
+Sun Sep 30 22:10:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Implemented the SFTP (SSH File Transfer Protocol) to the
+	  lib/silcsftp.  It includes SFTP client and SFTP server
+	  implementations.
+
+Sun Sep 30 10:35:44 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Moved lib/silccore/silcprotocol.[ch] to the
+	  lib/silcutil library.
+
+	* Added silc_buffer_format_vp and silc_buffer_unformat_vp to
+	  take variable argument list pointer as argument.  Affected
+	  file lib/silcutil/silcbuffmt.[ch].
+
+	* Added silc_buffer_set function that is used to set data
+	  to a SilcBuffer that is not allocated at all (SilcBufferStruct).
+	  Affected file lib/silcutil/silcbuffer.h.
+
+	* Changed various routines in the core library to use the new
+	  silc_buffer_set instead of allocating new buffer only for
+	  temporary purposes.
+
+	* Added 64-bit value formatting and unformatting support to the
+	  silc_buffer_[un]format routines.  Affected file is
+	  lib/silcutil/silcbuffmt.[ch].
+
+	  Added also 64-bit macros: SILC_GET64_MSB and SILC_PUT64_MSB,
+	  to includes/bitmove.h.
+
+Fri Sep 28 21:30:10 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed channel user mode saving in client library.  Affected
+	  file lib/silcclient/command[_reply].c.
+
+Thu Sep 27 22:52:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined the file transfer to the SILC Protocol.  Added
+	  new packet type SILC_PACKET_FTP and defined File Transfer
+	  Payload.  The mandatory file transfer protocol is SFTP
+	  (SSH File Transfer Protocol).  Affected file in addition
+	  of the internet draft is lib/silccore/silcpacket.h.
+
+	* Deprecated the SILC_PACKET_CELL_ROUTERS and defined new 
+	  packet SILC_PACKET_RESUME_ROUTER instead.  The new packet
+	  is used as part of backup router protocol when the primary
+	  router of the cell is back online and wishes to resume
+	  the position as primary router.
+
+	* Redefined the MAC generation keys in the protocol.  The
+	  same key is not used anymore in both direction.  Both
+	  direction will now use different keys for sending and
+	  receiving.  This fixes a potential security flaw.  This
+	  change causes incompatibilities in the protocol.
+
+	* Redefined also the MAC computation from the packet.
+	  An packet sequence number is now added to the MAC 
+	  computation.  This prevents possible replay attacks against
+	  the protocol.  This change too causes incompatibilities
+	  in the protocol.
+
+	  Added `sequence' field to the SilcPacketContext to hold
+	  the current sequence number for the packet.
+
+Wed Sep 26 20:15:22 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added `created' field to the SilcIDListData in the file
+	  silcd/idlist.h to indicate the time when the entry was
+	  created.
+
+	* Added `created' field to the SilcChannelEntry too.  Affected
+	  file silcd/idlist.h.
+
+	* Added `creation_time' aguments to all the announcement functions
+	  in the server.  If it is provided then only the entries that
+	  was created after the provided time frame are actually
+	  announced.  Affected file silcd/server.[ch].
+
+	* The protocol says that the Channel ID's IP address must be
+	  based on the router's IP address.  Added check for this in
+	  the silc_server_new_channel when processing incoming New Channel
+	  Payload.  Affected file silcd/packet_receive.c.
+
+	* Print out the correct version with --version in SILC client.
+	  Affected file irssi/src/silc/core/silc-core.c.
+
+Mon Sep 24 17:19:00 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed WHOWAS command to check for completnes of the client
+	  entry always, not just when the command is coming from client.
+	  Affected file silcd/command.c.
+
+	* Added new function silc_server_packet_queue_purge to purge the
+	  outgoing data queue to the network.  After the function returns
+	  it is guaranteed that the outgoing packet queue is empty.
+	  Affected file silcd/packet_send.[ch].
+
+	* Purge the outgoing packet queue in the rekey protocol's final
+	  callback to assure that all rekey packets go to the network
+	  before quitting the protocol.  Affected file silcd/server.c.
+
+	* Added silc_client_packet_queue_parse as similar function as
+	  in server to the client library.  The affected file is
+	  lib/silcclient/client.c.
+
+Sun Sep 23 15:15:53 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Splitted silcd/server.c and created silcd/server_util.[ch]
+	  for utility functions.
+
+	* Added new socket flag SILC_SF_DISABLED to indicate that the
+	  connection is open but nothing can be sent to or received from
+	  the connection.  Affected file lib/silcutil/silsockconn.[ch].
+	  The checking for disabled socket is checked in the low level
+	  silc_socket_write and silc_socket_read functions.
+
+Thu Sep 20 23:11:28 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Allow only nicknames and channel names that fits into the
+	  7-bit unsigned char ASCII set.  Affected file silcd/command.c.
+
 Thu Sep 20 18:04:12 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* When processing JOIN command reply in server check that if

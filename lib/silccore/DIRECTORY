@@ -11,7 +11,6 @@
 @LINK=silcpacket.html:SILC Packet API
 @LINK=silcpayload.html:SILC Payload API
 @LINK=silcprivate.html:SILC Private API
-@LINK=silcprotocol.html:SILC Protocol API
 -->
 
 <FONT SIZE="+3">SILC Core Library</FONT><BR><BR>

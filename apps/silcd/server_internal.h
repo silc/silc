@@ -56,21 +56,6 @@ typedef struct {
   uint32 packets_received;	  /* Received packets */
 } SilcServerStatistics;
 
-typedef struct {
-  SilcSocketConnection sock;
-
-  /* Remote host name and port */
-  char *remote_host;
-  int remote_port;
-  
-  /* Current connection retry info */
-  uint32 retry_count;
-  uint32 retry_timeout;
-
-  /* Back pointer to server */
-  SilcServer server;
-} *SilcServerConnection;
-
 /* 
    SILC Server Object.
 
@@ -79,21 +64,24 @@ struct SilcServerStruct {
   char *server_name;
   int server_type;
   int sock;
-  int standalone;
-  int listenning;
   SilcServerID *id;
   unsigned char *id_string;
   uint32 id_string_len;
   SilcIdType id_type;
 
+  bool standalone;		     /* TRUE if server is standalone, and
+					does not have connection to network. */
+  bool listenning;		     /* TRUE if server is listenning for
+					incoming connections. */
+
+  SilcServerEntry id_entry;	     /* Server's own ID entry */
+  SilcServerEntry router;	     /* Pointer to the primary router */
+  unsigned long router_connect;	     /* Time when router was connected */
+  SilcServerBackup backup;	     /* Backup routers */
+  bool backup_router;
+
   /* Current command identifier, 0 not used */
   uint16 cmd_ident;
-
-  /* Server's own ID entry. */
-  SilcServerEntry id_entry;
-
-  /* Back pointer to the primary router of this server. */
-  SilcServerEntry router;
 
   /* SILC server scheduler */
   SilcSchedule schedule;

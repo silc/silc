@@ -44,6 +44,8 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
   data->last_receive = idata->last_receive;
   data->last_sent = idata->last_sent;
   data->status = idata->status;
+
+  data->created = time(0);	/* Update creation time */
 }
 
 /* Free's all data in the common ID entry data structure. */
@@ -569,6 +571,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   channel->router = router;
   channel->channel_key = channel_key;
   channel->hmac = hmac;
+  channel->created = time(0);
   if (!channel->hmac)
     if (!silc_hmac_alloc(SILC_DEFAULT_HMAC, NULL, &channel->hmac)) {
       silc_free(channel);

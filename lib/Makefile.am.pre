@@ -27,6 +27,7 @@ COMMONDIRS = \
 	silcske \
 	silcutil \
 	silcclient \
+	silcsftp \
 	dotconf \
 	trq
 #        zlib
@@ -43,6 +44,7 @@ SILCLIB_DIRS = \
 	silcmath \
 	silcske \
 	silcutil \
+	silcsftp \
 	trq \
 	dotconf
 

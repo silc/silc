@@ -111,7 +111,7 @@ void silc_client_send_private_message(SilcClient client,
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
-  silc_client_packet_send_real(client, sock, force_send, FALSE);
+  silc_client_packet_send_real(client, sock, force_send);
   silc_free(packetdata.dst_id);
 
  out:

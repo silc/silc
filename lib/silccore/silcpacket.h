@@ -93,7 +93,8 @@ typedef unsigned char SilcPacketType;
 #define SILC_PACKET_REKEY_DONE           23      /* Re-key done */
 #define SILC_PACKET_HEARTBEAT            24      /* Heartbeat */
 #define SILC_PACKET_KEY_AGREEMENT        25      /* Key Agreement request */
-#define SILC_PACKET_CELL_ROUTERS         26      /* Cell routers backup */
+#define SILC_PACKET_RESUME_ROUTER        26      /* Backup router resume */
+#define SILC_PACKET_FTP                  27      /* File Transfer */
 
 #define SILC_PACKET_PRIVATE              200     /* Private range start  */
 #define SILC_PACKET_MAX                  255     /* RESERVED */
@@ -192,12 +193,16 @@ typedef unsigned char SilcPacketFlags;
  *      silc_packet_* routines. If not provided the library will calculate
  *      the values.
  *
- *    in users;
+ *    int users;
  *
  *      Reference counter for this context. The context is freed only 
  *      after the reference counter hits zero. The counter is added
  *      calling silc_packet_context_dup and decreased by calling the
  *      silc_packet_context_free.
+ *
+ *    uint32 sequence;
+ *
+ *      Packet sequence number.
  *
  ***/
 typedef struct {
@@ -221,6 +226,8 @@ typedef struct {
   SilcSocketConnection sock;
 
   int users;
+
+  uint32 sequence;
 } SilcPacketContext;
 
 /****s* silccore/SilcPacketAPI/SilcPacketParserContext

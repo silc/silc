@@ -23,16 +23,19 @@ sbin_PROGRAMS = silcd
 silcd_SOURCES = \
 	protocol.c \
 	route.c \
-	server.c \
 	packet_send.c \
 	packet_receive.c \
 	idlist.c \
 	command.c \
 	command_reply.c \
+	silcd.c \
+	server.c \
+	server_util.c \
+	server_backup.c \
 	serverconfig.c \
 	serverid.c \
-	silcd.c \
 	server_version.c
+
 silcd_DEPENDENCIES = ../lib/libsilc.a
 
 LIBS = $(SILC_COMMON_LIBS)

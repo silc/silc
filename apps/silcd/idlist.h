@@ -60,6 +60,7 @@ typedef uint8 SilcIDListStatus;
 #define SILC_IDLIST_STATUS_RESOLVED     0x02    /* Entry info is resolved */
 #define SILC_IDLIST_STATUS_RESOLVING    0x04    /* Entry is being resolved
 						   with WHOIS or IDENTIFY */
+#define SILC_IDLIST_STATUS_DISABLED     0x08    /* Entry is disabled */
 
 /*
    Generic ID list data structure.
@@ -94,6 +95,8 @@ typedef struct {
 
   long last_receive;		/* Time last received data */
   long last_sent;		/* Time last sent data */
+
+  unsigned long created;	/* Time when entry was created */
 
   SilcIDListStatus status;	/* Status mask of the entry */
 } *SilcIDListData, SilcIDListDataStruct;
@@ -482,6 +485,8 @@ struct SilcChannelEntryStruct {
   SilcHmac hmac;
 
   SilcServerChannelRekey rekey;
+
+  unsigned long created;
 };
 
 /* 

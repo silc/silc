@@ -610,7 +610,8 @@ Sending Initial Vector (IV)     = hash(0 | KEY | HASH)
 Receiving Initial Vector (IV)   = hash(1 | KEY | HASH)
 Sending Encryption Key          = hash(2 | KEY | HASH)
 Receiving Encryption Key        = hash(3 | KEY | HASH)
-HMAC Key                        = hash(4 | KEY | HASH)
+Sending HMAC Key                = hash(4 | KEY | HASH)
+Receiving HMAC Key              = hash(5 | KEY | HASH)
 .in 3
 
 
@@ -651,9 +652,9 @@ actually sender's sending key, and, the sending key is actually sender's
 receiving key.  Initiator uses generated keys as they are (sending key
 for sending and receiving key for receiving).
 
-The HMAC key is used to create MAC values to packets in the communication
-channel.  As many bytes as needed are taken from the start of the hash
-output.
+The HMAC keys are used to create MAC values to packets in the
+communication channel.  As many bytes as needed are taken from the start
+of the hash output to generate the MAC keys.
 
 These procedures are performed by all parties of the key exchange
 protocol.  This MUST be done before the protocol has been ended by

@@ -44,6 +44,9 @@ typedef enum {
   SILC_BUFFER_PARAM_SI32_INT,
   SILC_BUFFER_PARAM_UI32_INT,
 
+  SILC_BUFFER_PARAM_SI64_INT,
+  SILC_BUFFER_PARAM_UI64_INT,
+
   SILC_BUFFER_PARAM_UI16_STRING,        /* No copy */
   SILC_BUFFER_PARAM_UI16_STRING_ALLOC,	/* Alloc + memcpy */
   SILC_BUFFER_PARAM_UI32_STRING,	/* No copy */
@@ -94,6 +97,17 @@ typedef enum {
 */
 #define SILC_STR_SI_INT(x) SILC_BUFFER_PARAM_SI32_INT, (x)
 #define SILC_STR_UI_INT(x) SILC_BUFFER_PARAM_UI32_INT, (x)
+
+/* Signed/uint64. 
+
+   Formatting:    SILC_STR_SI_INT64(int)
+                  SILC_STR_UI_INT64(uint32)
+   Unformatting:  SILC_STR_SI_INT64(int *)
+                  SILC_STR_UI_INT64(uint32 *)
+
+*/
+#define SILC_STR_SI_INT64(x) SILC_BUFFER_PARAM_SI64_INT, (x)
+#define SILC_STR_UI_INT64(x) SILC_BUFFER_PARAM_UI64_INT, (x)
 
 /* Unsigned NULL terminated string. Note that the string must be
    NULL terminated because strlen() will be used to get the length of
@@ -192,7 +206,61 @@ typedef enum {
 #define SILC_STR_END SILC_BUFFER_PARAM_END
 
 /* Prototypes */
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_format
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_format(SilcBuffer dst, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Formats a buffer from a variable argument list.  Returns -1 on error
+ *    and the length of the formatted buffer otherwise.
+ *
+ ***/
 int silc_buffer_format(SilcBuffer dst, ...);
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_unformat
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_unformat(SilcBuffer src, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Formats a buffer from a variable argument list.  Returns -1 on error
+ *    and the length of the formatted buffer otherwise.
+ *
+ ***/
 int silc_buffer_unformat(SilcBuffer src, ...);
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_format
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_format_vp(SilcBuffer dst, va_list vp);
+ *
+ * DESCRIPTION
+ *
+ *    Formats a buffer from a variable argument list indicated by the `ap'.
+ *    Returns -1 on error and the length of the formatted buffer otherwise.
+ *
+ ***/
+int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_unformat
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_unformat_vp(SilcBuffer src, va_list vp);
+ *
+ * DESCRIPTION
+ *
+ *    Formats a buffer from a variable argument list indicated by the `ap'.
+ *    Returns -1 on error and the length of the formatted buffer otherwise.
+ *
+ ***/
+int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
 
 #endif

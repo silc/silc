@@ -26,7 +26,6 @@ libsilccore_a_SOURCES = \
 	silcchannel.c \
 	silccommand.c \
 	silcpacket.c \
-	silcprotocol.c \
 	silcpayload.c \
 	silcnotify.c \
 	silcauth.c \
@@ -42,8 +41,7 @@ include_HEADERS =	\
 	silcnotify.h	\
 	silcpacket.h	\
 	silcpayload.h	\
-	silcprivate.h	\
-	silcprotocol.h
+	silcprivate.h
 
 EXTRA_DIST = *.h
 

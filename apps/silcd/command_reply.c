@@ -172,7 +172,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   if (!client) {
     /* If router did not find such Client ID in its lists then this must
        be bogus client or some router in the net is buggy. */
-    if (server->server_type == SILC_ROUTER)
+    if (server->server_type != SILC_SERVER)
       return FALSE;
 
     /* Take hostname out of nick string if it includes it. */
@@ -299,7 +299,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   if (!client) {
     /* If router did not find such Client ID in its lists then this must
        be bogus client or some router in the net is buggy. */
-    if (server->server_type == SILC_ROUTER)
+    if (server->server_type != SILC_SERVER)
       return FALSE;
 
     /* Take hostname out of nick string if it includes it. */
@@ -424,7 +424,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     if (!client) {
       /* If router did not find such Client ID in its lists then this must
 	 be bogus client or some router in the net is buggy. */
-      if (server->server_type == SILC_ROUTER)
+      if (server->server_type != SILC_SERVER)
 	goto error;
 
       /* Take nickname */
@@ -496,7 +496,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     if (!server_entry) {
       /* If router did not find such Server ID in its lists then this must
 	 be bogus server or some router in the net is buggy. */
-      if (server->server_type == SILC_ROUTER)
+      if (server->server_type != SILC_SERVER)
 	goto error;
       
       /* We don't have that server anywhere, add it. */
@@ -531,7 +531,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     if (!channel) {
       /* If router did not find such Channel ID in its lists then this must
 	 be bogus channel or some router in the net is buggy. */
-      if (server->server_type == SILC_ROUTER)
+      if (server->server_type != SILC_SERVER)
 	goto error;
       
       /* We don't have that server anywhere, add it. */
@@ -931,7 +931,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
     if (!channel) {
       SilcBuffer idp;
 
-      if (server->server_type == SILC_ROUTER)
+      if (server->server_type != SILC_SERVER)
 	goto out;
 
       idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);

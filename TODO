@@ -44,17 +44,41 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Add perhaps /var/run/silcd.pid for PID information for the server.
+ o On normal server the channel count can go negative (like -3 channels).
 
- o The backup router support described in the protocol specification
-   should be done at some point.
+ o Change the sever to connect to another server from low ports (706)
+   and not from high ports.  Currently we cannot do incoming connection
+   checking by remote port because the port is not fixed.
 
- o Add a timeout to handling incmoing JOIN commands.  It should be 
+ o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
    seconds.  Now it is possible to accept n incoming JOIN commands
    and process them without any timeouts.  THis must be employed because
    each JOIN command will create and distribute the new channel key
    to everybody on the channel.
+
+ o Optimize the JOIN command in normal server.  When router returns
+   command reply for JOIN it returns the new channel key.  We however
+   still create new channel key when processing the pending JOIN command.
+   This works ok but is not necessary.
+
+ o Optimize the WHOIS and IDENTIFY commands to somehow check whether the
+   requested clients are on some channel that the server knows about.  If
+   this is the case then the request is not needed to be forwarded to the
+   router.  One specific optimization could be done with JOIN command.
+   If the previous command to the WHOIS and IDENTIFY commands are JOIN
+   command (from the client) it can be expected (though it must be
+   verified) that the client is resolving the users on the channel it just
+   joined.  If server has done this once there is really no reason to
+   resolve it twice (from the router), it can reply directly back with
+   the information it knows.  This is because the server would (will) 
+   receive notifications from the router for users that are on a local
+   channel.
+
+   The same is with whowas command.  Actually with all these commands
+   it should be checked also whether the requested information is local.
+   If it is, there is no reason to send it to the router, since the server
+   knows it best.
 
  o Add support for sending the LIST command to primary router on normal
    server to receive all the created channels.  Currently the command
@@ -64,6 +88,8 @@ TODO/bugs In SILC Server
  o Incomplete IPv6 support:
 
 	o silcd/serverid.c and its routines supports only IPv4.
+
+ o Add perhaps /var/run/silcd.pid for PID information for the server.
 
  o New configuration file format must be added.  The new one will be
    done using the dotconf config library (lib/dotconf).  The following
@@ -88,6 +114,9 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
+ o Security fixes from the latest draft for MAC key and MAC computation:
+   the packet sequence number.
+
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
    defined.  zlib package is already included into the lib dir (in CVS,
@@ -98,12 +127,9 @@ TODO/bugs In SILC Libraries
    and uint32 as data and data length as arguments.  Now some of the
    routines do already that but most of the routines use SilcBuffer.
    The SilcBuffer ones should be removed since buf->data and buf->len
-   is more convenient to use.  However, the silc_buffer_[un]format
-   routines support only SilcBuffer so they would require reallocation
-   of SilcBuffer.  Maybe support for raw data (and not just SilcBuffer)
-   should be added silc_buffer_[un]format_? routines.  These are currently
-   only cosmetic changes but at some point must be done to make the
-   payload interfaces consistent.
+   is more convenient to use.  These are currently only cosmetic changes
+   but at some point must be done to make the payload interfaces
+   consistent.
 
  o Incomplete IPv6 support:
 

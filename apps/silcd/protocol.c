@@ -1602,6 +1602,8 @@ void silc_server_protocols_register(void)
 			 silc_server_protocol_key_exchange);
   silc_protocol_register(SILC_PROTOCOL_SERVER_REKEY,
 			 silc_server_protocol_rekey);
+  silc_protocol_register(SILC_PROTOCOL_SERVER_BACKUP,
+			 silc_server_protocol_backup);
 }
 
 /* Unregisters protocols */
@@ -1614,4 +1616,6 @@ void silc_server_protocols_unregister(void)
 			   silc_server_protocol_key_exchange);
   silc_protocol_unregister(SILC_PROTOCOL_SERVER_REKEY,
 			   silc_server_protocol_rekey);
+  silc_protocol_unregister(SILC_PROTOCOL_SERVER_BACKUP,
+			   silc_server_protocol_backup);
 }

@@ -268,7 +268,7 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 
     /* Get number of tokens in line */
     ret = silc_config_check_num_token(line);
-    if (ret != pc->section->maxfields) {
+    if (ret < pc->section->maxfields) {
       /* Bad line */
       fprintf(stderr, "%s:%d: Missing tokens, %d tokens (should be %d)\n",
 	      config->filename, pc->linenum, ret, 
@@ -848,6 +848,15 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 	silc_free(tmp);
       }
 
+      /* Check whether this connection is backup router connection */
+      ret = silc_config_get_token(line, &tmp);
+      if (ret != -1) {
+	config->servers->backup_router = atoi(tmp);
+	if (config->servers->backup_router != 0)
+	  config->servers->backup_router = TRUE;
+	silc_free(tmp);
+      }
+
       check = TRUE;
       checkmask |= (1L << pc->section->type);
       break;
@@ -860,9 +869,6 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       ret = silc_config_get_token(line, &config->routers->host);
       if (ret < 0)
 	break;
-      //      if (ret == 0)
-      ///* Any host */
-      //	config->routers->host = strdup("*");
 
       /* Get authentication method */
       ret = silc_config_get_token(line, &tmp);
@@ -942,6 +948,24 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 	config->routers->initiator = atoi(tmp);
 	if (config->routers->initiator != 0)
 	  config->routers->initiator = TRUE;
+	silc_free(tmp);
+      }
+
+      /* Check whether this connection is backup router connection */
+      ret = silc_config_get_token(line, &tmp);
+      if (ret != -1) {
+	config->routers->backup_router = atoi(tmp);
+	if (config->routers->backup_router != 0)
+	  config->routers->backup_router = TRUE;
+	silc_free(tmp);
+      }
+
+      /* Check whether this backup is local (in cell) or remote (other cell) */
+      ret = silc_config_get_token(line, &tmp);
+      if (ret != -1) {
+	config->routers->backup_local = atoi(tmp);
+	if (config->routers->backup_local != 0)
+	  config->routers->backup_local = TRUE;
 	silc_free(tmp);
       }
 
@@ -1586,7 +1610,7 @@ bool silc_server_config_is_primary_route(SilcServerConfig config)
 
   serv = config->routers;
   for (i = 0; serv; i++) {
-    if (serv->initiator == TRUE) {
+    if (serv->initiator == TRUE && serv->backup_router == FALSE) {
       found = TRUE;
       break;
     }
@@ -1595,6 +1619,25 @@ bool silc_server_config_is_primary_route(SilcServerConfig config)
   }
 
   return found;
+}
+
+/* Returns our primary connection configuration or NULL if we do not
+   have primary router configured. */
+
+SilcServerConfigSectionServerConnection *
+silc_server_config_get_primary_router(SilcServerConfig config)
+{
+  int i;
+  SilcServerConfigSectionServerConnection *serv = NULL;
+
+  serv = config->routers;
+  for (i = 0; serv; i++) {
+    if (serv->initiator == TRUE && serv->backup_router == FALSE)
+      return serv;
+    serv = serv->next;
+  }
+
+  return NULL;
 }
 
 /* Returns Admin connection configuration by host, username and/or 
