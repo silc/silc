@@ -114,7 +114,8 @@ void silc_server_packet_send(SilcServer server,
      rekeys, though */
   if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
        type != SILC_PACKET_HEARTBEAT && type != SILC_PACKET_REKEY &&
-       type != SILC_PACKET_REKEY_DONE) ||
+       type != SILC_PACKET_REKEY_DONE && type != SILC_PACKET_KEY_EXCHANGE_1
+       && type != SILC_PACKET_KEY_EXCHANGE_2) ||
       (sock->user_data == server->id_entry)) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;
@@ -176,9 +177,13 @@ void silc_server_packet_send_dest(SilcServer server,
 
   idata = (SilcIDListData)sock->user_data;
 
-  /* If entry is disabled do not sent anything. */
-  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED) ||
-      sock->user_data == server->id_entry) {
+  /* If entry is disabled do not sent anything.  Allow hearbeat and
+     rekeys, though */
+  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
+       type != SILC_PACKET_HEARTBEAT && type != SILC_PACKET_REKEY &&
+       type != SILC_PACKET_REKEY_DONE && type != SILC_PACKET_KEY_EXCHANGE_1
+       && type != SILC_PACKET_KEY_EXCHANGE_2) ||
+      (sock->user_data == server->id_entry)) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;
   }
@@ -285,9 +290,13 @@ void silc_server_packet_send_srcdest(SilcServer server,
   /* Get data used in the packet sending, keys and stuff */
   idata = (SilcIDListData)sock->user_data;
 
-  /* If entry is disabled do not sent anything. */
-  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED) ||
-      sock->user_data == server->id_entry) {
+  /* If entry is disabled do not sent anything.  Allow hearbeat and
+     rekeys, though */
+  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
+       type != SILC_PACKET_HEARTBEAT && type != SILC_PACKET_REKEY &&
+       type != SILC_PACKET_REKEY_DONE && type != SILC_PACKET_KEY_EXCHANGE_1
+       && type != SILC_PACKET_KEY_EXCHANGE_2) ||
+      (sock->user_data == server->id_entry)) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;
   }

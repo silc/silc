@@ -2509,8 +2509,10 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   /* If entry is disabled ignore what we got. */
   if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
       ret != SILC_PACKET_HEARTBEAT && ret != SILC_PACKET_RESUME_ROUTER &&
-      ret != SILC_PACKET_REKEY && ret != SILC_PACKET_REKEY_DONE) {
-    SILC_LOG_DEBUG(("Connection is disabled"));
+      ret != SILC_PACKET_REKEY && ret != SILC_PACKET_REKEY_DONE &&
+      ret != SILC_PACKET_KEY_EXCHANGE_1 && ret != SILC_PACKET_KEY_EXCHANGE_2) {
+    SILC_LOG_DEBUG(("Connection is disabled (packet %s dropped)",
+		    silc_get_packet_name(ret)));
     goto out;
   }
 

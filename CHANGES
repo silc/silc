@@ -4,6 +4,11 @@ Wed Mar  3 15:13:49 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 	  completion callback, which might have closed it already.
 	  Affected file silcd/server.c.
 
+	* Fixed rekey with PFS in backup router.  It did not allow
+	  rekeys with PFS, and when the rekey protocol timedout
+	  it crashed the backup router without the above fix.  Affected
+	  file silcd/packet_send.c and server.c.
+
 Sat Feb 28 16:25:09 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* The silc_client_add_channel_private_key now returns the
