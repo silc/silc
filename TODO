@@ -19,9 +19,6 @@ TODO/bugs in Irssi SILC client
    that user can say /help set mutual_authentication they would get
    help of the mutual_authentication setting.
 
- o Set different kind of settings, like, /set mutual_authentication,
-   /set key_exchange_timeout, /set conn_auth_timeout etc etc.
-
 
 TODO/bugs In SILC Client Library
 ================================
