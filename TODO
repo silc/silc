@@ -70,15 +70,6 @@ TODO In SILC Server
 	  When implementing this check that all commands handle the
 	  situation correctly when it is called as pending command
 	  (it should most likely check that cmd->pending == TRUE/FALSE).
-	o WHOIS and IDENTIFY command reply sending is buggy because
-	  it may put status to be SILC_STATUS_LIST_START even though
-	  there is only one valid entry (thus should be SILC_STATUS_OK).
-	  This happens because it does not check the data.registered == FALSE
-	  clients before setting the status.  Good fix for this would be
-	  to make sure that the clients table does not include any
-	  unregistered clients in the first place.
-	o Cleanup LEAVE command's channel key sending, it can be done
-	  simpler by one function: silc_server_send_channel_key.
 
  o TODO in notify types (packet_receive.c):
 
@@ -140,11 +131,6 @@ TODO In SILC Libraries
    RNG may block as well.  Also, I have some pending changes to the RNG 
    that needs to be commited (from Schneier's Yarrow-160 paper).  They 
    should make the RNG even better.
-
- o Scheduler needs to be analyzed on high load as it might be unfair
-   towards select() because it may run timeout tasks before select() and
-   after select().  If it is found to be unfair the timeout task running
-   before select() should probably be removed.
 
 
 TODO in the protocol before SILC 0.x

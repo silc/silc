@@ -528,11 +528,12 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
 static void
 silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
 				     SilcClientEntry *clients,
-				     unsigned int clients_count)
+				     unsigned int clients_count,
+				     int count)
 {
   SilcServer server = cmd->server;
   char *tmp;
-  int i, count = 0, len;
+  int i, k, len;
   SilcBuffer packet, idp, channels;
   SilcClientEntry entry;
   SilcCommandStatus status;
@@ -541,11 +542,16 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   unsigned char idle[4], mode[4];
   SilcSocketConnection hsock;
 
+  len = 0;
+  for (i = 0; i < clients_count; i++)
+    if (clients[i]->data.registered)
+      len++;
+
   status = SILC_STATUS_OK;
-  if (clients_count > 1)
+  if (len > 1)
     status = SILC_STATUS_LIST_START;
 
-  for (i = 0; i < clients_count; i++) {
+  for (i = 0, k = 0; i < clients_count; i++) {
     entry = clients[i];
 
     if (entry->data.registered == FALSE) {
@@ -559,14 +565,17 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       continue;
     }
 
-    if (count && i - 1 == count)
-      break;
-
-    if (i >= 1)
+    if (k >= 1)
       status = SILC_STATUS_LIST_ITEM;
 
-    if (clients_count > 1 && i == clients_count - 1)
+    if (clients_count > 1 && k == clients_count - 1)
       status = SILC_STATUS_LIST_END;
+
+    if (count && k - 1 == count)
+      status = SILC_STATUS_LIST_END;
+
+    if (count && k - 1 > count)
+      break;
 
     /* Sanity check, however these should never fail. However, as
        this sanity check has been added here they have failed. */
@@ -636,6 +645,8 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
     silc_buffer_free(idp);
     if (channels)
       silc_buffer_free(channels);
+
+    k++;
   }
 }
 
@@ -766,7 +777,8 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
   }
 
   /* Send the command reply to the client */
-  silc_server_command_whois_send_reply(cmd, clients, clients_count);
+  silc_server_command_whois_send_reply(cmd, clients, clients_count,
+				       count);
 
  out:
   if (client_id_count) {
@@ -876,7 +888,8 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
   }
 
   /* Send the command reply to the client */
-  silc_server_command_whois_send_reply(cmd, clients, clients_count);
+  silc_server_command_whois_send_reply(cmd, clients, clients_count,
+				       count);
 
  out:
   if (client_id_count) {
@@ -1333,11 +1346,12 @@ silc_server_command_identify_check(SilcServerCommandContext cmd,
 static void
 silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 					SilcClientEntry *clients,
-					unsigned int clients_count)
+					unsigned int clients_count,
+					int count)
 {
   SilcServer server = cmd->server;
   char *tmp;
-  int i, count = 0, len;
+  int i, k, len;
   SilcBuffer packet, idp;
   SilcClientEntry entry;
   SilcCommandStatus status;
@@ -1345,11 +1359,16 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
   char nh[256], uh[256];
   SilcSocketConnection hsock;
 
+  len = 0;
+  for (i = 0; i < clients_count; i++)
+    if (clients[i]->data.registered)
+      len++;
+
   status = SILC_STATUS_OK;
-  if (clients_count > 1)
+  if (len > 1)
     status = SILC_STATUS_LIST_START;
 
-  for (i = 0; i < clients_count; i++) {
+  for (i = 0, k = 0; i < clients_count; i++) {
     entry = clients[i];
 
     if (entry->data.registered == FALSE) {
@@ -1363,14 +1382,17 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
       continue;
     }
 
-    if (count && i - 1 == count)
-      break;
-
-    if (i >= 1)
+    if (k >= 1)
       status = SILC_STATUS_LIST_ITEM;
 
-    if (clients_count > 1 && i == clients_count - 1)
+    if (clients_count > 1 && k == clients_count - 1)
       status = SILC_STATUS_LIST_END;
+
+    if (count && k - 1 == count)
+      status = SILC_STATUS_LIST_END;
+
+    if (count && k - 1 > count)
+      break;
 
     /* Send IDENTIFY reply */
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
@@ -1414,6 +1436,8 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
     
     silc_buffer_free(packet);
     silc_buffer_free(idp);
+
+    k++;
   }
 }
 
@@ -1541,7 +1565,8 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
   }
 
   /* Send the command reply to the client */
-  silc_server_command_identify_send_reply(cmd, clients, clients_count);
+  silc_server_command_identify_send_reply(cmd, clients, clients_count,
+					  count);
 
  out:
   if (client_id_count) {
@@ -1648,7 +1673,7 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
   }
 
   /* Send the command reply */
-  silc_server_command_identify_send_reply(cmd, clients, clients_count);
+  silc_server_command_identify_send_reply(cmd, clients, clients_count, count);
 
  out:
   if (client_id_count) {
@@ -4187,6 +4212,9 @@ SILC_SERVER_CMD_FUNC(connect)
 
 SILC_SERVER_CMD_FUNC(restart)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+
+  silc_server_command_free(cmd);
 }
 
 /* Server side command of CLOSE. Closes connection to a specified server. */
@@ -4292,8 +4320,7 @@ SILC_SERVER_CMD_FUNC(leave)
   SilcClientEntry id_entry = (SilcClientEntry)cmd->sock->user_data;
   SilcChannelID *id;
   SilcChannelEntry channel;
-  SilcBuffer packet;
-  unsigned int i, len;
+  unsigned int len;
   unsigned char *tmp;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_LEAVE, cmd, 1, 2);
@@ -4338,47 +4365,23 @@ SILC_SERVER_CMD_FUNC(leave)
 				  TRUE : FALSE, channel, id_entry->id,
 				  SILC_ID_CLIENT_LEN);
 
-  /* Remove client from channel */
-  i = silc_server_remove_from_one_channel(server, sock, channel, id_entry,
-					  TRUE);
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
 					SILC_STATUS_OK);
 
-  /* If the channel does not exist anymore we won't send anything */
-  if (!i)
+  /* Remove client from channel */
+  if (!silc_server_remove_from_one_channel(server, sock, channel, id_entry,
+					   TRUE))
+    /* If the channel does not exist anymore we won't send anything */
     goto out;
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Re-generate channel key */
     silc_server_create_channel_key(server, channel, 0);
 
-    /* Encode channel key payload to be distributed on the channel */
-    packet = 
-      silc_channel_key_payload_encode(len, tmp,
-				      strlen(channel->channel_key->
-					     cipher->name),
-				      channel->channel_key->cipher->name,
-				      channel->key_len / 8, channel->key);
-
-    /* If we are normal server then we will send it to our router.  If we
-       are router we will send it to all local servers that has clients on
-       the channel */
-    if (server->server_type == SILC_SERVER) {
-      if (!server->standalone)
-	silc_server_packet_send(server, 
-				cmd->server->router->connection,
-				SILC_PACKET_CHANNEL_KEY, 0, packet->data,
-				packet->len, FALSE);
-    } else {
-      
-    }
-
-    /* Send to locally connected clients on the channel */
-    silc_server_packet_send_local_channel(server, channel, 
-					  SILC_PACKET_CHANNEL_KEY, 0,
-					  packet->data, packet->len, FALSE);
-
-    silc_buffer_free(packet);
+    /* Send the channel key */
+    silc_server_send_channel_key(server, NULL, channel, 
+				 server->server_type == SILC_ROUTER ? 
+				 FALSE : !server->standalone);
   }
 
   silc_free(id);
