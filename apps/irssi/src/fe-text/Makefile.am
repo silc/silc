@@ -18,8 +18,8 @@ silc_DEPENDENCIES = 		\
 
 LIBS = $(SILC_COMMON_LIBS)
 silc_LDADD = \
-	-L../../../lib -lsilcclient \
 	@COMMON_LIBS@ \
+	-L../../../lib -lsilcclient \
 	@PERL_LINK_LIBS@ \
 	@PERL_FE_LINK_LIBS@ \
 	@PERL_LINK_FLAGS@ \
