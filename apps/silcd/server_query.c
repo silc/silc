@@ -43,7 +43,7 @@ typedef struct {
   void *id;			    /* ID */
   SilcIdType id_type;		    /* ID type */
   unsigned int index : 15;	    /* Index to IDs */
-  unsigned int type : 2;   	    /* 0 = take from query->ids, 0 = take 
+  unsigned int type : 2;   	    /* 0 = take from query->ids, 0 = take
 				       from args, 2 = no args in error. */
   unsigned int error : 7;	    /* The actual error (SilcStatus) */
 } *SilcServerQueryError;
@@ -651,7 +651,7 @@ void silc_server_query_check_attributes(SilcServer server,
 	                               silc_server_public_key_hash_foreach,
 	                               &usercontext);
 
-	  if (usercontext.found == TRUE) 
+	  if (usercontext.found == TRUE)
 	    found = TRUE;
 	} else {
 	  for (i = 0; i < *clients_count; i++) {
@@ -1666,6 +1666,18 @@ void silc_server_query_send_reply(SilcServer server,
 		      silc_get_status_message(query->errors[i].error),
 		      query->errors[i].error));
 
+#if 1 /* XXX Backwards compatibility.  Remove in 1.0. */
+      if (query->errors[i].error == SILC_STATUS_ERR_NO_SUCH_NICK)
+	/* Send error */
+	silc_server_send_command_reply(server, cmd->sock, query->querycmd,
+				       (status == SILC_STATUS_OK ?
+					query->errors[i].error : status),
+				       (status == SILC_STATUS_OK ?
+					0 : query->errors[i].error), ident, 2,
+				       type, tmp, len,
+				       3, tmp, len);
+      else
+#endif
       /* Send error */
       silc_server_send_command_reply(server, cmd->sock, query->querycmd,
 				     (status == SILC_STATUS_OK ?
@@ -1673,6 +1685,7 @@ void silc_server_query_send_reply(SilcServer server,
 				     (status == SILC_STATUS_OK ?
 				      0 : query->errors[i].error), ident, 1,
 				     type, tmp, len);
+
       silc_buffer_free(idp);
       sent_reply = TRUE;
 
