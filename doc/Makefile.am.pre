@@ -31,6 +31,11 @@ all:
 
 if SILC_DIST_CLIENT
 dist-hook:
+	rm draft-riikonen*.txt
+	touch draft-riikonen-silc-spec-02.txt
+	touch draft-riikonen-silc-pp-02.txt
+	touch draft-riikonen-silc-ke-auth-02.txt
+	touch draft-riikonen-silc-commands-00.txt
 else
 dist-hook:
 	touch draft-riikonen-silc-spec-02.txt
