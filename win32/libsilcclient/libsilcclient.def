@@ -167,4 +167,4 @@ EXPORTS
 	silc_client_get_channel_resolve @ 157 ;
 	silc_client_get_clients_by_channel @ 158 ;
 	silc_client_get_clients_whois @ 159 ;
-
+	silc_client_send_packet @ 160 ;
