@@ -183,7 +183,9 @@ typedef struct SilcChannelPrivateKeyStruct {
  *
  *    Ask passphrase callback. This is called by the application when the
  *    library calls `ask_passphrase' client operation.  The callback delivers
- *    the passphrase to the library.
+ *    the passphrase to the library.  The passphrases in SILC protocol
+ *    MUST be in UTF-8 encoding, therefore the `passphrase' SHOULD be UTF-8
+ *    encoded, and if it is not then library will attempt to encode it.
  *
  ***/
 typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
@@ -371,7 +373,8 @@ typedef struct {
 
   /* Ask (interact, that is) a passphrase from user. The passphrase is
      returned to the library by calling the `completion' callback with
-     the `context'. */
+     the `context'. The returned passphrase SHOULD be in UTF-8 encoded,
+     if not then the library will attempt to encode. */
   void (*ask_passphrase)(SilcClient client, SilcClientConnection conn,
 			 SilcAskPassphrase completion, void *context);
 

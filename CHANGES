@@ -1,3 +1,23 @@
+Fri Apr  5 16:03:03 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Splitted lib/silcutil/silcutil.h into silcstrutil.h for
+	  string utility functions.  Added there also new functions
+	  silc_utf8_[encode/decode/valid] for UTF-8 string encoding.
+	  Affected files lib/silcutil/silcstrutil.[ch].
+
+	* Renamed silc_*_pem functions to silc_pem_* functions.  Affected
+	  files are lib/silcutil/silcstrutil.[ch].
+
+	* Defined that the security property fields in SKE SHOULD be
+	  UTF-8 encoded, defined that version string MUST be US-ASCII
+	  encoded, defined that passphrases sent in connection 
+	  authentication protocol MUST be UTF-8 encoded.  Implemented
+	  these to the client and server.  Defined also that other
+	  passphrases sent in the protocol MUST be UTF-8 encoded.
+	  Affected files are lib/silcske/silcske.c, 
+	  lib/silcclient/protocol.c, silcd/protocol.c, 
+	  silcd/serverconfig.c, and lib/silccore/silcauth.c.
+
 Wed Apr  3 16:24:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Upgraded the protocol version to 1.1, updated protocol specs

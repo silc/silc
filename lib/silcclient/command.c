@@ -948,8 +948,8 @@ SILC_CLIENT_CMD_FUNC(join)
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
   SilcBuffer buffer, idp, auth = NULL;
-  char *name, *passphrase = NULL, *cipher = NULL, *hmac = NULL;
-  int i;
+  char *name, *passphrase = NULL, *pu8, *cipher = NULL, *hmac = NULL;
+  int i, passphrase_len = 0;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -995,7 +995,18 @@ SILC_CLIENT_CMD_FUNC(join)
       }
       i++;
     } else {
-      passphrase = cmd->argv[i];
+      /* Passphrases must be UTF-8 encoded, so encode if it is not */
+      if (!silc_utf8_valid(cmd->argv[i], cmd->argv_lens[i])) {
+	passphrase_len = silc_utf8_encoded_len(cmd->argv[i], 
+					       cmd->argv_lens[i], 0);
+	pu8 = silc_calloc(passphrase_len, sizeof(*pu8));
+	passphrase_len = silc_utf8_encode(cmd->argv[i], cmd->argv_lens[i],
+					  0, pu8, passphrase_len);
+	passphrase = pu8;
+      } else {
+	passphrase = strdup(cmd->argv[i]);
+	passphrase_len = cmd->argv_lens[i];
+      }
     }
   }
 
@@ -1004,8 +1015,7 @@ SILC_CLIENT_CMD_FUNC(join)
     silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 6,
 				   1, name, strlen(name),
 				   2, idp->data, idp->len,
-				   3, passphrase, 
-				   passphrase ? strlen(passphrase) : 0,
+				   3, passphrase, passphrase_len,
 				   4, cipher, cipher ? strlen(cipher) : 0,
 				   5, hmac, hmac ? strlen(hmac) : 0,
 				   6, auth ? auth->data : NULL,
@@ -1016,6 +1026,7 @@ SILC_CLIENT_CMD_FUNC(join)
   silc_buffer_free(idp);
   if (auth)
     silc_buffer_free(auth);
+  silc_free(passphrase);
 
   /* Notify application */
   COMMAND;
@@ -1730,7 +1741,8 @@ SILC_CLIENT_CMD_FUNC(oper)
 }
 
 static void silc_client_command_silcoper_send(unsigned char *data,
-					      SilcUInt32 data_len, void *context)
+					      SilcUInt32 data_len, 
+					      void *context)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
