@@ -52,10 +52,10 @@ extern unsigned int log_error_size;
 extern unsigned int log_fatal_size;
 
 /* Log macros. */
-#define SILC_LOG_INFO(fmt) silc_log_output(log_info_file, \
+#define SILC_LOG_INFO(fmt) (silc_log_output(log_info_file, \
                                            log_info_size, \
 					   SILC_LOG_INFO, \
-					   silc_log_format fmt)) 
+					   silc_log_format fmt))
 #define SILC_LOG_WARNING(fmt) (silc_log_output(log_warning_file, \
                                                log_warning_size, \
 					       SILC_LOG_WARNING, \
