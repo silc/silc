@@ -521,7 +521,7 @@ SilcUInt8 silc_rng_get_byte_fast(SilcRng rng)
 
   if (rng->fd_devurandom == -1) {
     rng->fd_devurandom = open("/dev/urandom", O_RDONLY);
-    if (rng < 0)
+    if (rng->fd_devurandom < 0)
       return silc_rng_get_byte(rng);
     fcntl(rng->fd_devurandom, F_SETFL, O_NONBLOCK);
   }
