@@ -1,3 +1,20 @@
+Thu Jul  6 18:12:24 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed screen refresh.
+
+	* Fixed channel joining bug from client.  On some circumstances
+	  client tried to join to a channel it had already joined.
+
+	* Added public key verification process into client's protocol.c.
+	  The client now verifies the public key from user and saves
+	  it into ~./silc/serverkeys/ directory. 
+
+	  Added into: clientutil.[ch]: silc_client_verify_server_key.
+
+	* Changed SKE protocol's silc_ske_initiator_finish function
+	  to accept callback function that verifies the received public
+	  key.  Removed old silc_ske_verify_public_key function.
+
 Wed Jul  5 19:19:02 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added into silcpkcs[ch]: silc_pkcs_public_key[_data]_set and
