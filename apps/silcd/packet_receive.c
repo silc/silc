@@ -3920,5 +3920,4 @@ void silc_server_resume_client(SilcServer server,
   }
 
   silc_free(client_id);
-    silc_idlist_del_data(detached_client);
 }

@@ -1,3 +1,8 @@
+Fri Nov 29 23:44:29 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a typo in resuming code that fixed detach/resume code
+	  in server.  Bug #93.  Affected file silcd/packet_receive.c.
+
 Thu Nov 28 17:17:11 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Do reverse lookups for server when /connecting. Affected files

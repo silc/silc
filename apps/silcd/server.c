@@ -42,7 +42,6 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final);
 SILC_TASK_CALLBACK(silc_server_free_client_data_timeout);
 SILC_TASK_CALLBACK(silc_server_timeout_remote);
 SILC_TASK_CALLBACK(silc_server_channel_key_rekey);
-SILC_TASK_CALLBACK(silc_server_failure_callback);
 SILC_TASK_CALLBACK(silc_server_get_stats);
 
 /* Allocates a new SILC server object. This has to be done before the server
@@ -1109,8 +1108,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
       silc_ske_free(ctx->ske);
     silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
 
@@ -1154,8 +1151,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
       silc_ske_free(ctx->ske);
     silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
 
@@ -1230,8 +1225,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     silc_free(sconn->remote_host);
     silc_free(sconn->backup_replace_ip);
     silc_free(sconn);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     return;
@@ -1673,8 +1666,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     silc_server_config_unref(&ctx->sconfig);
     silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED,
 				  NULL);
@@ -1706,8 +1697,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     silc_server_config_unref(&ctx->sconfig);
     silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     server->stat.auth_failures++;
@@ -1795,8 +1784,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     silc_server_config_unref(&ctx->sconfig);
     silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
 				  NULL);
     server->stat.auth_failures++;
@@ -2133,8 +2120,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 			server->schedule);
 
  out:
-  silc_schedule_task_del_by_callback(server->schedule,
-				     silc_server_failure_callback);
   silc_protocol_free(protocol);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
@@ -2534,14 +2519,8 @@ void silc_server_packet_parse_type(SilcServer server,
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     if (sock->protocol) {
-      SilcServerFailureContext f;
-      f = silc_calloc(1, sizeof(*f));
-      f->sock = silc_socket_dup(sock);
-
-      /* We will wait 5 seconds to process this failure packet */
-      silc_schedule_task_add(server->schedule, sock->sock,
-			     silc_server_failure_callback, (void *)f, 5, 0,
-			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+      sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
+      silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
     }
     break;
 
@@ -4588,27 +4567,6 @@ void silc_server_announce_channels(SilcServer server,
   }
 
   silc_free(channel_ids);
-}
-
-/* Failure timeout callback. If this is called then we will immediately
-   process the received failure. We always process the failure with timeout
-   since we do not want to blindly trust to received failure packets.
-   This won't be called (the timeout is cancelled) if the failure was
-   bogus (it is bogus if remote does not close the connection after sending
-   the failure). */
-
-SILC_TASK_CALLBACK(silc_server_failure_callback)
-{
-  SilcServer server = app_context;
-  SilcServerFailureContext f = (SilcServerFailureContext)context;
-
-  if (f->sock->protocol) {
-    f->sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
-    silc_protocol_execute(f->sock->protocol, server->schedule, 0, 0);
-  }
-
-  silc_socket_free(f->sock);
-  silc_free(f);
 }
 
 /* Assembles user list and users mode list from the `channel'. */
