@@ -613,7 +613,7 @@ int main()
 	
   /* Then traverse the list, print the values, remove from list and free
      memory */
-  silc_list_start(list)
+  silc_list_start(list);
   while ((entry = silc_list_get(list)) != SILC_LIST_END) {
     fprintf(stderr, "%d\n", entry->dummy);
 
