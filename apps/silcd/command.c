@@ -3035,7 +3035,8 @@ static void silc_server_command_join_channel(SilcServer server,
      username and/or hostname is in the ban list the access to the
      channel is denied. */
   if (channel->ban_list) {
-    if (silc_string_match(channel->ban_list, check) ||
+    if (!channel->ban_list ||
+        silc_string_match(channel->ban_list, check) ||
 	silc_string_match(channel->ban_list, check2)) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 			      SILC_STATUS_ERR_BANNED_FROM_CHANNEL);
@@ -3052,8 +3053,9 @@ static void silc_server_command_join_channel(SilcServer server,
   
   /* Check the channel passphrase if set. */
   if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
-    if (!passphrase || memcmp(channel->passphrase, passphrase,
-			      strlen(channel->passphrase))) {
+    if (!passphrase || !channel->passphrase ||
+        memcmp(channel->passphrase, passphrase,
+               strlen(channel->passphrase))) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					    SILC_STATUS_ERR_BAD_PASSWORD);
       goto out;
