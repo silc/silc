@@ -73,8 +73,7 @@ int mybot_start(void)
      application   - our application, ie. the MyBot of course!
      version       - silc version, provided by the library if we put NULL
   */
-  mybot->client = silc_client_alloc(&ops, NULL, mybot,
-				    /* NULL */"SILC-1.1-0.9.4");
+  mybot->client = silc_client_alloc(&ops, NULL, mybot, NULL);
   if (!mybot->client) {
     perror("Could not allocate SILC Client");
     return 1;
@@ -106,8 +105,8 @@ int mybot_start(void)
     /* The keys don't exist.  Let's generate us a key pair then!  There's
        nice ready routine for that too.  Let's do 2048 bit RSA key pair. */
     fprintf(stdout, "MyBot: Key pair does not exist, generating it.\n");
-    if (!silc_create_key_pair("rsa", 2048, "mybot.pub", "mybot.prv", NULL,
-			      "", &mybot->client->pkcs,
+    if (!silc_create_key_pair("rsa", 2048, "mybot.pub", "mybot.prv", NULL, "",
+			      &mybot->client->pkcs,
 			      &mybot->client->public_key,
 			      &mybot->client->private_key, FALSE)) {
       perror("Could not generated key pair");
