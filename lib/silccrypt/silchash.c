@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/10 05:35:43  priikone
+ * 	Added fingerprint functions.
+ *
  * Revision 1.2  2000/07/05 06:08:43  priikone
  * 	Global cosmetic change.
  *
@@ -278,4 +281,36 @@ void silc_hash_make(SilcHash hash, const unsigned char *data,
   hash->hash->init(hash->context);
   hash->hash->update(hash->context, (unsigned char *)data, len);
   hash->hash->final(hash->context, return_hash);
+}
+
+/* Creates fingerprint of the data. If `hash' is NULL SHA1 is used as
+   default hash function. The returned fingerprint must be free's by the
+   caller. */
+
+char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
+			    unsigned int data_len)
+{
+  char fingerprint[64], *cp;
+  unsigned char h[32];
+  int i;
+
+  if (!hash)
+    silc_hash_alloc("sha1", &hash);
+
+  silc_hash_make(hash, data, data_len, h);
+  
+  memset(fingerprint, 0, sizeof(fingerprint));
+  cp = fingerprint;
+  for (i = 0; i < hash->hash->hash_len; i++) {
+    snprintf(cp, sizeof(fingerprint), "%02X", h[i]);
+    cp += 2;
+    
+    if ((i + 1) % 2 == 0)
+      snprintf(cp++, sizeof(fingerprint), " ");
+
+    if ((i + 1) % 10 == 0)
+      snprintf(cp++, sizeof(fingerprint), " ");
+  }
+  
+  return strdup(fingerprint);
 }

@@ -88,5 +88,7 @@ int silc_hash_is_supported(const unsigned char *name);
 char *silc_hash_get_supported();
 void silc_hash_make(SilcHash hash, const unsigned char *data,
 		    unsigned int len, unsigned char *return_hash);
+char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
+			    unsigned int data_len);
 
 #endif
