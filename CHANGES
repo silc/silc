@@ -1,3 +1,7 @@
+Sun Dec  1 16:32:03 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* Format CMODE +c and +h to display both the mode and the argument
+
 Sun Dec  1 18:17:22 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added test vectors and test programs for SHA-1, MD5,

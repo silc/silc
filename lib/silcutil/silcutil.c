@@ -657,15 +657,25 @@ char *silc_client_chmode(SilcUInt32 mode, const char *cipher, const char *hmac)
 
   if (mode & SILC_CHANNEL_MODE_SILENCE_OPERS)
     strncat(string, "M", 1);
+  
+  if (mode & SILC_CHANNEL_MODE_CIPHER)
+    strncat(string, "c", 1);
+  
+  if (mode & SILC_CHANNEL_MODE_HMAC)
+    strncat(string, "h", 1);
 
   if (mode & SILC_CHANNEL_MODE_CIPHER) {
-    if (strlen(cipher) + strlen(string) < sizeof(string))
+    if (strlen(cipher) + strlen(string) + 1< sizeof(string)) {
+      strncat(string, " ", 1);
       strncat(string, cipher, strlen(cipher));
+    }
   }
 
   if (mode & SILC_CHANNEL_MODE_HMAC) {
-    if (strlen(hmac) + strlen(string) < sizeof(string))
+    if (strlen(hmac) + strlen(string) + 1< sizeof(string)) {
+      strncat(string, " ", 1);
       strncat(string, hmac, strlen(hmac));
+    }
   }
 
   /* Rest of mode is ignored */
