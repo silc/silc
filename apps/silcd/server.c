@@ -923,7 +923,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 		    ptr->host, ptr->port));
 
     if (server->server_type == SILC_ROUTER && ptr->backup_router &&
-	ptr->initiator == FALSE && !server->backup_router)
+	ptr->initiator == FALSE && !server->backup_router &&
+	!silc_server_config_get_backup_router(server))
       server->wait_backup = TRUE;
 
     if (ptr->initiator) {
