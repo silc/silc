@@ -130,8 +130,11 @@ void silc_server_send_new_channel_user(SilcServer server,
 				       void *client_id,
 				       unsigned int client_id_len);
 void silc_server_send_channel_key(SilcServer server,
-				  SilcSocketConnection sock,
 				  SilcChannelEntry channel,
 				  unsigned char route);
+void silc_server_send_command(SilcServer server, 
+			      SilcSocketConnection sock,
+			      SilcCommand command, 
+			      unsigned int argc, ...);
 
 #endif

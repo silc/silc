@@ -1220,6 +1220,43 @@ void silc_server_command_send_names(SilcServer server,
   silc_free(idp);
 }
 
+/* Internal routine that is called after router has replied to server's
+   JOIN command it forwarded to the router. The route has joined and possibly
+   creaetd the channel. This function adds the client to the channel's user
+   list. */
+
+SILC_SERVER_CMD_FUNC(add_to_channel)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client;
+  SilcChannelEntry channel;
+  SilcChannelClientEntry chl;
+  char *channel_name;
+
+  /* Get channel name */
+  channel_name = silc_argument_get_arg_type(cmd->args, 1, NULL);
+
+  /* Get client entry */
+  client = (SilcClientEntry)cmd->sock->user_data;
+
+  /* Get channel entry */
+  channel = silc_idlist_find_channel_by_name(server->local_list, channel_name);
+  if (channel) {
+    /* Join the client to the channel by adding it to channel's user list.
+       Add also the channel to client entry's channels list for fast cross-
+       referencing. */
+    chl = silc_calloc(1, sizeof(*chl));
+    //chl->mode = SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO;
+    chl->client = client;
+    chl->channel = channel;
+    silc_list_add(channel->user_list, chl);
+    silc_list_add(client->channels, chl);
+  }
+
+  silc_server_command_free(cmd);
+}
+
 /* Internal routine to join channel. The channel sent to this function
    has been either created or resolved from ID lists. This joins the sent
    client to the channel. */
@@ -1370,7 +1407,7 @@ static void silc_server_command_join_channel(SilcServer server,
 				 reply->data, reply->len, FALSE);
 
     /* Distribute new channel key to local cell and local clients. */
-    silc_server_send_channel_key(server, sock, channel, TRUE);
+    silc_server_send_channel_key(server, channel, FALSE);
     
     /* Distribute JOIN notify into the cell for everbody on the channel */
     silc_server_send_notify_to_channel(server, channel, FALSE,
@@ -1392,7 +1429,7 @@ static void silc_server_command_join_channel(SilcServer server,
 
     /* Send the channel key. Channel key is sent before any other packet
        to the channel. */
-    silc_server_send_channel_key(server, sock, channel, server->standalone ?
+    silc_server_send_channel_key(server, channel, server->standalone ?
 				 FALSE : TRUE);
     
     /* Send JOIN notify to locally connected clients on the channel */
@@ -1496,7 +1533,15 @@ SILC_SERVER_CMD_FUNC(join)
 				   server->router->connection,
 				   cmd->packet->buffer->data, 
 				   cmd->packet->buffer->len, TRUE);
-	goto out;
+
+	/* Register handler that will be called after the router has replied
+	   to us. We will add the client to the new channel in this callback
+	   function. Will be called from JOIN command reply. */
+	silc_server_command_pending(server, SILC_COMMAND_JOIN, 
+				    ++server->router->data.cmd_ident,
+				    silc_server_command_add_to_channel,
+				    context);
+	return;
       }
       
       /* We are router and the channel does not seem exist so we will check
@@ -1601,7 +1646,7 @@ int silc_server_check_cmode_rights(SilcChannelEntry channel,
     if (is_op && !is_fo)
       return FALSE;
   } else {
-    if (channel->mode & SILC_CHANNEL_MODE_PRIVATE) {
+    if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
       if (is_op && !is_fo)
 	return FALSE;
     }
@@ -1636,16 +1681,13 @@ SILC_SERVER_CMD_FUNC(cmode)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  SilcSocketConnection sock = cmd->sock;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   SilcChannelID *channel_id;
-  SilcClientID *client_id;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask;
   unsigned int argc, mode_mask, tmp_len, tmp_len2;
-  int i;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -2001,7 +2043,6 @@ SILC_SERVER_CMD_FUNC(cumode)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  SilcSocketConnection sock = cmd->sock;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   SilcChannelID *channel_id;
   SilcClientID *client_id;
@@ -2009,9 +2050,9 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcClientEntry target_client;
   SilcChannelClientEntry chl;
   SilcBuffer packet, idp;
-  unsigned char *tmp, *tmp_id, *tmp_mask;
+  unsigned char *tmp_id, *tmp_mask;
   unsigned int argc, target_mask, sender_mask, tmp_len;
-  int i, notify = FALSE;
+  int notify = FALSE;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -2179,11 +2220,6 @@ SILC_SERVER_CMD_FUNC(cumode)
 
 SILC_SERVER_CMD_FUNC(kick)
 {
-  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  SilcServer server = cmd->server;
-  SilcSocketConnection sock = cmd->sock;
-  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-
 }
 
 SILC_SERVER_CMD_FUNC(restart)

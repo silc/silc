@@ -296,7 +296,7 @@ void silc_server_channel_key(SilcServer server,
   /* Remove old key if exists */
   if (channel->key) {
     memset(channel->key, 0, channel->key_len);
-    silc_free(channel_key);
+    silc_free(channel->key);
     silc_cipher_free(channel->channel_key);
     exist = TRUE;
   }
@@ -313,14 +313,8 @@ void silc_server_channel_key(SilcServer server,
 					tmp, tmp_len);
 
   /* Distribute the key to everybody who is on the channel. If we are router
-     we will also send it to locally connected servers. If we are normal
-     server and old key did not exist then we don't use this function
-     as the client is not in our channel user list just yet. We send the
-     key after receiveing JOIN notify from router. */
-  if (server->server_type == SILC_SERVER && exist)
-    silc_server_send_channel_key(server, channel, FALSE);
-  if (server->server_type == SILC_ROUTER)
-    silc_server_send_channel_key(server, channel, FALSE);
+     we will also send it to locally connected servers. */
+  silc_server_send_channel_key(server, channel, FALSE);
 
  out:
   if (id)
@@ -660,49 +654,29 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 
   switch(id_type) {
   case SILC_ID_CLIENT:
-    {
-      SilcClientEntry idlist;
-
-      SILC_LOG_DEBUG(("New client id(%s) from [%s] %s",
-		      silc_id_render(id, SILC_ID_CLIENT),
-		      sock->type == SILC_SOCKET_TYPE_SERVER ?
-		      "Server" : "Router", sock->hostname));
-
-      /* Add the client to our local list. We are router and we keep
-	 cell specific local database of all clients in the cell. */
-      idlist = silc_idlist_add_client(id_list, NULL, NULL, NULL,
-				      id, router, router_sock);
-    }
+    SILC_LOG_DEBUG(("New client id(%s) from [%s] %s",
+		    silc_id_render(id, SILC_ID_CLIENT),
+		    sock->type == SILC_SOCKET_TYPE_SERVER ?
+		    "Server" : "Router", sock->hostname));
+    
+    /* Add the client to our local list. We are router and we keep
+       cell specific local database of all clients in the cell. */
+    silc_idlist_add_client(id_list, NULL, NULL, NULL, id, router, router_sock);
     break;
 
   case SILC_ID_SERVER:
-    {
-      SilcServerEntry idlist;
-
-      SILC_LOG_DEBUG(("New server id(%s) from [%s] %s",
-		      silc_id_render(id, SILC_ID_SERVER),
-		      sock->type == SILC_SOCKET_TYPE_SERVER ?
-		      "Server" : "Router", sock->hostname));
-
-      /* Add the server to our local list. We are router and we keep
-	 cell specific local database of all servers in the cell. */
-      idlist = silc_idlist_add_server(id_list, NULL, 0, id, router, 
-				      router_sock);
-    }
+    SILC_LOG_DEBUG(("New server id(%s) from [%s] %s",
+		    silc_id_render(id, SILC_ID_SERVER),
+		    sock->type == SILC_SOCKET_TYPE_SERVER ?
+		    "Server" : "Router", sock->hostname));
+    
+    /* Add the server to our local list. We are router and we keep
+       cell specific local database of all servers in the cell. */
+    silc_idlist_add_server(id_list, NULL, 0, id, router, router_sock);
     break;
 
   case SILC_ID_CHANNEL:
     SILC_LOG_ERROR(("Channel cannot be registered with NEW_ID packet"));
-#if 0
-    SILC_LOG_DEBUG(("New channel id(%s) from [%s] %s",
-		    silc_id_render(id, SILC_ID_CHANNEL),
-		    sock->type == SILC_SOCKET_TYPE_SERVER ?
-		    "Server" : "Router", sock->hostname));
-
-    /* Add the channel to our local list. We are router and we keep
-       cell specific local database of all channels in the cell. */
-    silc_idlist_add_channel(id_list, NULL, 0, id, router, NULL);
-#endif
     break;
 
   default:
@@ -844,13 +818,8 @@ void silc_server_notify(SilcServer server,
   SilcNotifyPayload payload;
   SilcNotifyType type;
   SilcArgumentPayload args;
-  SilcClientID *client_id;
   SilcChannelID *channel_id;
-  SilcClientEntry client;
   SilcChannelEntry channel;
-  unsigned char *tmp;
-  unsigned int tmp_len;
-  int i;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -876,32 +845,25 @@ void silc_server_notify(SilcServer server,
 
   switch(type) {
   case SILC_NOTIFY_TYPE_JOIN:
-    {
-      /* Get Client ID */
-      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-      if (!tmp)
-	goto out;
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
 
-      client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_type);
+    if (!channel_id)
+      goto out;
 
-      /* Get client entry */
-      client = silc_idlist_find_client_by_id(server->local_list, client_id);
-      if (!client) {
-	silc_free(client_id);
-	goto out;
-      }
-
-      //      channel_id = ;
-
-      /* Get channel entry */
-      channel = silc_idlist_find_channel_by_id(server->local_list, channel_id);
-      if (!channel) {
-	silc_free(client_id);
-	goto out;
-      }
-      
-      silc_free(client_id);
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, channel_id);
+    if (!channel) {
+      silc_free(channel_id);
+      goto out;
     }
+
+    /* Send to channel */
+    silc_server_packet_send_to_channel(server, channel, packet->type, FALSE,
+				       packet->buffer->data, 
+				       packet->buffer->len, FALSE);
     break;
 
   case SILC_NOTIFY_TYPE_LEAVE:
@@ -948,6 +910,8 @@ void silc_server_new_channel_user(SilcServer server,
   SilcSocketConnection router_sock;
   SilcBuffer clidp;
   void *tmpid;
+
+  SILC_LOG_DEBUG(("Start"));
 
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       server->server_type != SILC_ROUTER ||
@@ -1033,7 +997,7 @@ void silc_server_new_channel_user(SilcServer server,
      it is assured that this is sent only to our local clients and locally
      connected servers if needed. */
   clidp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, channel, TRUE,
+  silc_server_send_notify_to_channel(server, channel, FALSE,
 				     SILC_NOTIFY_TYPE_JOIN, 
 				     1, clidp->data, clidp->len);
   silc_buffer_free(clidp);

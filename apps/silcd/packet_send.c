@@ -1094,7 +1094,6 @@ void silc_server_send_new_channel_user(SilcServer server,
    must not be broadcasted packet. */
 
 void silc_server_send_channel_key(SilcServer server,
-				  SilcSocketConnection sock,
 				  SilcChannelEntry channel,
 				  unsigned char route)
 {
@@ -1118,4 +1117,23 @@ void silc_server_send_channel_key(SilcServer server,
 				     route, packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
   silc_free(chid);
+}
+
+/* Generic function to send any command. The arguments must be sent already
+   encoded into correct form in correct order. */
+
+void silc_server_send_command(SilcServer server, 
+			      SilcSocketConnection sock,
+			      SilcCommand command, 
+			      unsigned int argc, ...)
+{
+  SilcBuffer packet;
+  va_list ap;
+
+  va_start(ap, argc);
+
+  packet = silc_command_payload_encode_vap(command, 0, argc, ap);
+  silc_server_packet_send(server, sock, SILC_PACKET_COMMAND, 0,
+			  packet->data, packet->len, TRUE);
+  silc_buffer_free(packet);
 }

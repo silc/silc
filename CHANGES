@@ -1,3 +1,12 @@
+Tue Nov 28 11:05:39 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_server_command_add_to_channel internal routine to add
+	  the client to the channel after router has created the channel and
+	  sent command reply to the server.
+
+	* Added generic silc_server_send_command to send any command from
+	  server.
+
 Mon Nov 27 21:39:40 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a channel user mode bug when joining to a channel server gave
