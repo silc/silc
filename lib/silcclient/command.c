@@ -507,8 +507,8 @@ SILC_CLIENT_CMD_FUNC(quit)
   cmd->argv_types--;
 
   /* Close connection */
-  silc_client_close_connection(cmd->client, cmd->conn->sock);
   cmd->client->ops->disconnect(cmd->client, cmd->conn);
+  silc_client_close_connection(cmd->client, cmd->conn->sock);
 
   /* Notify application */
   COMMAND;
