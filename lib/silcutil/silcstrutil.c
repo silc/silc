@@ -212,8 +212,9 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
 	  iconv_close(icd);
 	  return utf8_size;
 	}
-	iconv_close(icd);
       }
+      if (icd != (iconv_t)-1)
+	iconv_close(icd);
     }
 #endif
 
@@ -355,8 +356,9 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 	  iconv_close(icd);
 	  return bin_size;
 	}
-	iconv_close(icd);
       }
+      if (icd != (iconv_t)-1)
+	iconv_close(icd);
     }
 #endif
 
