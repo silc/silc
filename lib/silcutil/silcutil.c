@@ -195,81 +195,6 @@ char *silc_to_upper(char *string)
   return ret;
 }
 
-/* Compares two strings. Strings may include wildcards * and ?.
-   Returns TRUE if strings match. */
-
-int silc_string_compare(char *string1, char *string2)
-{
-  int i;
-  int slen1 = strlen(string1);
-  int slen2 = strlen(string2);
-  char *tmpstr1, *tmpstr2;
-
-  if (!string1 || !string2)
-    return FALSE;
-
-  /* See if they are same already */
-  if (!strncmp(string1, string2, strlen(string2)))
-    return TRUE;
-
-  if (slen2 < slen1)
-    if (!strchr(string1, '*'))
-      return FALSE;
-  
-  /* Take copies of the original strings as we will change them */
-  tmpstr1 = silc_calloc(slen1 + 1, sizeof(char));
-  memcpy(tmpstr1, string1, slen1);
-  tmpstr2 = silc_calloc(slen2 + 1, sizeof(char));
-  memcpy(tmpstr2, string2, slen2);
-  
-  for (i = 0; i < slen2; i++) {
-    
-    /* * wildcard. Only one * wildcard is possible. */
-    if (tmpstr1[i] == '*')
-      if (!strncmp(tmpstr1, tmpstr2, i)) {
-	memset(tmpstr2, 0, slen2);
-	strncpy(tmpstr2, tmpstr1, i);
-	break;
-      }
-    
-    /* ? wildcard */
-    if (tmpstr1[i] == '?') {
-      if (!strncmp(tmpstr1, tmpstr2, i)) {
-	if (!(slen1 < i + 1))
-	  if (tmpstr1[i + 1] != '?' &&
-	      tmpstr1[i + 1] != tmpstr2[i + 1])
-	    continue;
-	
-	if (!(slen1 < slen2))
-	  tmpstr2[i] = '?';
-      }
-#if 0
-    } else {
-      if (strncmp(tmpstr1, tmpstr2, i))
-	strncpy(tmpstr2, string2, slen2);
-#endif
-    }
-  }
-  
-  /* if using *, remove it */
-  if (strchr(tmpstr1, '*'))
-    *strchr(tmpstr1, '*') = 0;
-  
-  if (!strcmp(tmpstr1, tmpstr2)) {
-    memset(tmpstr1, 0, slen1);
-    memset(tmpstr2, 0, slen2);
-    silc_free(tmpstr1);
-    silc_free(tmpstr2);
-    return TRUE;
-  }
-  
-  memset(tmpstr1, 0, slen1);
-  memset(tmpstr2, 0, slen2);
-  silc_free(tmpstr1);
-  silc_free(tmpstr2);
-  return FALSE;
-}
-
 static unsigned char pem_enc[64] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -599,4 +524,159 @@ char *silc_id_render(void *id, unsigned short type)
   }
 
   return rid;
+}
+
+/* Compares two strings. Strings may include wildcards * and ?.
+   Returns TRUE if strings match. */
+
+int silc_string_compare(char *string1, char *string2)
+{
+  int i;
+  int slen1 = strlen(string1);
+  int slen2 = strlen(string2);
+  char *tmpstr1, *tmpstr2;
+
+  if (!string1 || !string2)
+    return FALSE;
+
+  /* See if they are same already */
+  if (!strncmp(string1, string2, strlen(string2)))
+    return TRUE;
+
+  if (slen2 < slen1)
+    if (!strchr(string1, '*'))
+      return FALSE;
+  
+  /* Take copies of the original strings as we will change them */
+  tmpstr1 = silc_calloc(slen1 + 1, sizeof(char));
+  memcpy(tmpstr1, string1, slen1);
+  tmpstr2 = silc_calloc(slen2 + 1, sizeof(char));
+  memcpy(tmpstr2, string2, slen2);
+  
+  for (i = 0; i < slen2; i++) {
+    
+    /* * wildcard. Only one * wildcard is possible. */
+    if (tmpstr1[i] == '*')
+      if (!strncmp(tmpstr1, tmpstr2, i)) {
+	memset(tmpstr2, 0, slen2);
+	strncpy(tmpstr2, tmpstr1, i);
+	break;
+      }
+    
+    /* ? wildcard */
+    if (tmpstr1[i] == '?') {
+      if (!strncmp(tmpstr1, tmpstr2, i)) {
+	if (!(slen1 < i + 1))
+	  if (tmpstr1[i + 1] != '?' &&
+	      tmpstr1[i + 1] != tmpstr2[i + 1])
+	    continue;
+	
+	if (!(slen1 < slen2))
+	  tmpstr2[i] = '?';
+      }
+#if 0
+    } else {
+      if (strncmp(tmpstr1, tmpstr2, i))
+	strncpy(tmpstr2, string2, slen2);
+#endif
+    }
+  }
+  
+  /* if using *, remove it */
+  if (strchr(tmpstr1, '*'))
+    *strchr(tmpstr1, '*') = 0;
+  
+  if (!strcmp(tmpstr1, tmpstr2)) {
+    memset(tmpstr1, 0, slen1);
+    memset(tmpstr2, 0, slen2);
+    silc_free(tmpstr1);
+    silc_free(tmpstr2);
+    return TRUE;
+  }
+  
+  memset(tmpstr1, 0, slen1);
+  memset(tmpstr2, 0, slen2);
+  silc_free(tmpstr1);
+  silc_free(tmpstr2);
+  return FALSE;
+}
+
+/* Inspects the `string' for wildcards and returns regex string that can
+   be used by the GNU regex library. This has a lot overhead but luckily
+   this is used only for short strings. */
+
+char *silc_string_regexify(const char *string)
+{
+  int i, len, count;
+  char *regex;
+
+  /* If there is no wildcards then we don't need to regexify the string. */
+  if (!strchr(string, '*') && !strchr(string, '?'))
+    return strdup(string);
+
+  len = strlen(string);
+  count = 0;
+
+  for (i = 0; i < len; i++)
+    if (string[i] == '*' || string[i] == '?')
+      count++;
+
+  regex = silc_calloc(len + count + 4, sizeof(*regex));
+
+  count = 0;
+  regex[count] = '(';
+  count++;
+
+  for (i = 0; i < len; i++) {
+    if (string[i] == '*' || string[i] == '?') {
+      regex[count] = '.';
+      count++;
+    }
+
+    regex[count] = string[i];
+    count++;
+  }
+
+  regex[count - 1] = ')';
+  regex[count] = '$';
+
+  return regex;
+}
+
+/* Combines two regex strings into one regex string so that they can be
+   used as one by the GNU regex library. The `string2' is combine into
+   the `string1'. */
+
+char *silc_string_regex_combine(const char *string1, const char *string2)
+{
+  char *tmp;
+  int len1, len2;
+
+  len1 = strlen(string1);
+  len2 = strlen(string2);
+
+  tmp = silc_calloc(2 + len1 + len2, sizeof(*tmp));
+  memcpy(tmp, string1, len1 - 2);
+  memcpy(tmp, "|", 1);
+  memcpy(tmp, string2 + 1, len2 - 1);
+
+  return tmp;
+}
+
+/* Matches the two strings and returns TRUE if the strings match. */
+
+int silc_string_regex_match(const char *regex, const char *string)
+{
+  regex_t preg;
+  int ret = FALSE;
+  
+  if (regcomp(&preg, regex, REG_NOSUB | REG_EXTENDED) < 0)
+    return FALSE;
+
+  if (regexec(&preg, string, 0, NULL, 0) == 0)
+    ret = TRUE;
+
+  regfree(&preg);
+
+  return ret;
 }

@@ -30,7 +30,6 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin);
 int silc_check_line(char *buf);
 char *silc_get_time();
 char *silc_to_upper(char *string);
-int silc_string_compare(char *string1, char *string2);
 char *silc_encode_pem(unsigned char *data, unsigned int len);
 char *silc_encode_pem_file(unsigned char *data, unsigned int data_len);
 unsigned char *silc_decode_pem(unsigned char *pem, unsigned int pem_len,
@@ -45,5 +44,8 @@ void silc_parse_command_line(unsigned char *buffer,
 			     unsigned int max_args);
 char *silc_format(char *fmt, ...);
 char *silc_id_render(void *id, unsigned short type);
+int silc_string_compare(char *string1, char *string2);
+char *silc_string_regexify(const char *string);
+int silc_string_regex_match(const char *regex, const char *string);
 
 #endif

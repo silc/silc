@@ -1,3 +1,18 @@
+Thu Mar 22 22:52:23 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new function silc_string_regexify that converts string
+	  including wildcard characters into regex string that can
+	  be used by the GNU regex library.  Added into the file
+	  lib/silcutil/silcutil.[ch].
+
+	  Added silc_string_regex_combine to combine to regex strings
+	  into one so that they can be used as one regex string by
+	  the GNU regex library.  Added into the file
+	  lib/silcutil/silcutil.[ch].
+
+	  Added silc_string_regex_match to match two strings.  It returns
+	  TRUE if the strings match.  Added into lib/silcutil/silcutil.[ch].
+
 Thu Mar 22 15:29:42 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Imported GNU regex to the soruce tree into lib/contrib.
