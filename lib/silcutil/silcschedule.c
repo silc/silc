@@ -269,14 +269,17 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 {
   SilcTask task;
   int i, last_fd = schedule->last_fd;
+  uint32 fd;
 
   for (i = 0; i <= last_fd; i++) {
     if (schedule->fd_list[i].events == 0)
       continue;
 
+    fd = schedule->fd_list[i].fd;
+
     /* First check whether this fd has task in the fd queue */
     silc_mutex_lock(schedule->fd_queue->lock);
-    task = silc_task_find(schedule->fd_queue, schedule->fd_list[i].fd);
+    task = silc_task_find(schedule->fd_queue, fd);
 
     /* If the task was found then execute its callbacks. If not then
        execute all generic tasks for that fd. */
@@ -328,8 +331,7 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  silc_mutex_unlock(schedule->lock);
-	  task->callback(schedule, SILC_TASK_READ, schedule->fd_list[i].fd, 
-			 task->context);
+	  task->callback(schedule, SILC_TASK_READ, fd, task->context);
 	  silc_mutex_lock(schedule->lock);
 	  silc_mutex_lock(schedule->generic_queue->lock);
 	}
@@ -338,8 +340,7 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  silc_mutex_unlock(schedule->lock);
-	  task->callback(schedule, SILC_TASK_WRITE, schedule->fd_list[i].fd, 
-			 task->context);
+	  task->callback(schedule, SILC_TASK_WRITE, fd, task->context);
 	  silc_mutex_lock(schedule->lock);
 	  silc_mutex_lock(schedule->generic_queue->lock);
 	}
