@@ -176,6 +176,9 @@ void silc_server_packet_send_dest(SilcServer server,
   packetdata.dst_id = dst_id_data;
   packetdata.dst_id_len = dst_id_len;
   packetdata.dst_id_type = dst_id_type;
+  data_len = SILC_PACKET_DATALEN(data_len, (SILC_PACKET_HEADER_LEN +
+					    packetdata.src_id_len + 
+					    packetdata.dst_id_len));
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
@@ -277,6 +280,9 @@ void silc_server_packet_send_srcdest(SilcServer server,
   packetdata.dst_id = dst_id_data;
   packetdata.dst_id_len = dst_id_len;
   packetdata.dst_id_type = dst_id_type;
+  data_len = SILC_PACKET_DATALEN(data_len, (SILC_PACKET_HEADER_LEN +
+					    packetdata.src_id_len + 
+					    dst_id_len));
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
@@ -480,6 +486,9 @@ silc_server_packet_send_to_channel_real(SilcServer server,
   if (!sock)
     return;
 
+  data_len = SILC_PACKET_DATALEN(data_len, (SILC_PACKET_HEADER_LEN +
+					    packet->src_id_len + 
+					    packet->dst_id_len));
   packet->truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packet->src_id_len + packet->dst_id_len;
 

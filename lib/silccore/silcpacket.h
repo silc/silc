@@ -51,6 +51,9 @@
 /* Minimum packet length */
 #define SILC_PACKET_MIN_LEN (SILC_PACKET_HEADER_LEN + 1)
 
+/* Maximum packet length */
+#define SILC_PACKET_MAX_LEN 0xffff
+
 /* Maximum length of ID */
 #define SILC_PACKET_MAX_ID_LEN 16
 
@@ -325,6 +328,29 @@ do {									\
   SILC_GET16_MSB((__ret_truelen), (__packet)->data);			\
   (__ret_paddedlen) = (__ret_truelen) + (__packet)->data[4];		\
 } while(0)
+/***/
+
+/****d* silccore/SilcPacketAPI/SILC_PACKET_DATALEN
+ *
+ * NAME
+ * 
+ *    #define SILC_PACKET_DATALEN ...
+ *
+ * DESCRIPTION
+ *
+ *    Calculates the data length with given header length.  This macro
+ *    can be used to check whether the data_len with header_len exceeds
+ *    SILC_PACKET_MAX_LEN.  If it does, this returns the new data_len
+ *    so that the SILC_PACKET_MAX_LEN is not exceeded.  If the data_len
+ *    plus header_len fits SILC_PACKET_MAX_LEN the returned data length
+ *    is the data_len given as argument.  This macro can be used when
+ *    assembling packet.
+ *
+ * SOURCE
+ */
+#define SILC_PACKET_DATALEN(data_len, header_len)			  \
+  ((data_len + header_len) > SILC_PACKET_MAX_LEN ? 			  \
+   data_len - ((data_len + header_len) - SILC_PACKET_MAX_LEN) : data_len)
 /***/
 
 /****d* silccore/SilcPacketAPI/SILC_PACKET_PADLEN

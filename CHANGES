@@ -1,3 +1,21 @@
+Mon Mar 18 21:00:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added macro SILC_PACKET_DATALEN which can be used during
+	  packet assembling to check whether the data to be added to	
+	  the packet will fit to SILC_PACKET_MAX_LEN.  If not the data
+	  len is truncated until it fits it.
+
+	  Added checks for maximum length of channel message payload and
+	  private message payload also.
+
+	  Added checks for maximum packet length in server and in
+	  client library.
+
+	  Affected files are lib/silccore/silcpacket.h, silcd/packet_send.c,
+	  lib/silcclient/client.c, lib/silccore/silcchannel.c and
+	  lib/silccore/silcprivate.c, lib/silcclient/client_channel.c and
+	  lib/silcclient/client_prvmsg.c.
+
 Mon Mar 18 14:54:42 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_server_packet_queue_purge call to the

@@ -169,9 +169,14 @@ void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher)
   /* Get the true length of the packet. This is saved as payload length
      into the packet header. This does not include the length of the
      padding. */
-  if (!ctx->truelen)
+  if (!ctx->truelen) {
     ctx->truelen = ctx->buffer->len + SILC_PACKET_HEADER_LEN + 
       ctx->src_id_len + ctx->dst_id_len;
+    if (ctx->truelen > SILC_PACKET_MAX_LEN) {
+      ctx->truelen -= (SILC_PACKET_MAX_LEN - ctx->truelen);
+      silc_buffer_push_tail(ctx->buffer, (SILC_PACKET_MAX_LEN - ctx->truelen));
+    }
+  }
 
   /* Calculate the length of the padding. The padding is calculated from
      the data that will be encrypted. */

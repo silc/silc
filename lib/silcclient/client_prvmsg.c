@@ -75,6 +75,8 @@ void silc_client_send_private_message(SilcClient client,
   block_len = silc_cipher_get_block_len(cipher);
 
   /* Set the packet context pointers. */
+  data = buffer->data;
+  data_len = buffer->len;
   packetdata.flags = SILC_PACKET_FLAG_PRIVMSG_KEY;
   packetdata.type = SILC_PACKET_PRIVATE_MESSAGE;
   packetdata.src_id = conn->local_id_data;
@@ -83,7 +85,10 @@ void silc_client_send_private_message(SilcClient client,
   packetdata.dst_id = silc_id_id2str(client_entry->id, SILC_ID_CLIENT);
   packetdata.dst_id_len = silc_id_get_len(client_entry->id, SILC_ID_CLIENT);
   packetdata.dst_id_type = SILC_ID_CLIENT;
-  packetdata.truelen = buffer->len + SILC_PACKET_HEADER_LEN + 
+  data_len = SILC_PACKET_DATALEN(data_len, SILC_PACKET_HEADER_LEN +
+				 packetdata.src_id_len +
+				 packetdata.dst_id_len);
+  packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 					  packetdata.src_id_len +
@@ -95,12 +100,12 @@ void silc_client_send_private_message(SilcClient client,
 			   packetdata.src_id_len + 
 			   packetdata.dst_id_len,
 			   packetdata.padlen,
-			   buffer->len);
+			   data_len);
   
   packetdata.buffer = sock->outbuf;
 
   /* Put the actual encrypted message payload data into the buffer. */
-  silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
+  silc_buffer_put(sock->outbuf, data, data_len);
 
   /* Create the outgoing packet */
   silc_packet_assemble(&packetdata, cipher);

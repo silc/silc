@@ -29,7 +29,18 @@
 
 ******************************************************************************/
 
+/* Calculates padding length for message payload */
 #define SILC_PRIVATE_MESSAGE_PAD(__payloadlen) (16 - (__payloadlen) % 16)
+
+/* Header length plus maximum padding length */
+#define SILC_PRIVATE_MESSAGE_HLEN 4 + 16
+
+/* Returns the data length that fits to the packet.  If data length is too
+   big it will be truncated to fit to the payload. */
+#define SILC_PRIVATE_MESSAGE_DATALEN(data_len)				\
+  ((data_len + SILC_PRIVATE_MESSAGE_HLEN) > SILC_PACKET_MAX_LEN ?	\
+   data_len - ((data_len + SILC_PRIVATE_MESSAGE_HLEN) - 		\
+	       SILC_PACKET_MAX_LEN) : data_len)
 
 /* Private Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
@@ -105,6 +116,7 @@ SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
 
   SILC_LOG_DEBUG(("Encoding private message payload"));
 
+  data_len = SILC_PRIVATE_MESSAGE_DATALEN(data_len);
   len = 4 + data_len;
 
   if (cipher) {

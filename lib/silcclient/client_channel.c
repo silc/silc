@@ -112,6 +112,8 @@ void silc_client_send_channel_message(SilcClient client,
   /* Set the packet context pointers. The destination ID is always
      the Channel ID of the channel. Server and router will handle the
      distribution of the packet. */
+  data = payload->data;
+  data_len = payload->len;
   packetdata.flags = 0;
   packetdata.type = SILC_PACKET_CHANNEL_MESSAGE;
   packetdata.src_id = conn->local_id_data;
@@ -120,7 +122,10 @@ void silc_client_send_channel_message(SilcClient client,
   packetdata.dst_id = id_string;
   packetdata.dst_id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_type = SILC_ID_CHANNEL;
-  packetdata.truelen = payload->len + SILC_PACKET_HEADER_LEN + 
+  data_len = SILC_PACKET_DATALEN(data_len, SILC_PACKET_HEADER_LEN +
+				 packetdata.src_id_len +
+				 packetdata.dst_id_len);
+  packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 					  packetdata.src_id_len +
@@ -132,12 +137,12 @@ void silc_client_send_channel_message(SilcClient client,
 			   packetdata.src_id_len + 
 			   packetdata.dst_id_len,
 			   packetdata.padlen,
-			   payload->len);
+			   data_len);
 
   packetdata.buffer = sock->outbuf;
 
   /* Put the channel message payload to the outgoing data buffer */
-  silc_buffer_put(sock->outbuf, payload->data, payload->len);
+  silc_buffer_put(sock->outbuf, data, data_len);
 
   /* Create the outgoing packet */
   silc_packet_assemble(&packetdata, cipher);

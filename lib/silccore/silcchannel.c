@@ -230,7 +230,19 @@ SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload)
 
 ******************************************************************************/
 
+/* Calculates padding length for message payload */
 #define SILC_CHANNEL_MESSAGE_PAD(__payloadlen) (16 - (__payloadlen) % 16)
+
+/* Header length plus maximum padding length */
+#define SILC_CHANNEL_MESSAGE_HLEN 6 + 16
+
+/* Returns the data length that fits to the packet.  If data length is too
+   big it will be truncated to fit to the payload. */
+#define SILC_CHANNEL_MESSAGE_DATALEN(data_len, header_len)		\
+  ((data_len + SILC_CHANNEL_MESSAGE_HLEN + header_len) >		\
+   SILC_PACKET_MAX_LEN ?						\
+   data_len - ((data_len + SILC_CHANNEL_MESSAGE_HLEN + header_len) -	\
+	       SILC_PACKET_MAX_LEN) : data_len)
 
 /* Channel Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
@@ -384,6 +396,7 @@ SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
   /* Calculate length of padding. IV is not included into the calculation
      since it is not encrypted. */
   mac_len = silc_hmac_len(hmac);
+  data_len = SILC_CHANNEL_MESSAGE_DATALEN(data_len, mac_len + iv_len);
   len = 6 + data_len + mac_len;
   pad_len = SILC_CHANNEL_MESSAGE_PAD(len);
 

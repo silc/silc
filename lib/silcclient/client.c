@@ -1234,6 +1234,9 @@ void silc_client_packet_send(SilcClient client,
     packetdata.dst_id_len = 0;
     packetdata.dst_id_type = SILC_ID_NONE;
   }
+  data_len = SILC_PACKET_DATALEN(data_len, (SILC_PACKET_HEADER_LEN +
+					    packetdata.src_id_len + 
+					    packetdata.dst_id_len));
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
