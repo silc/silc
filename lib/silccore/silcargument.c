@@ -153,6 +153,33 @@ SilcBuffer silc_argument_payload_encode(SilcUInt32 argc,
   return buffer;
 }
 
+/* Encode one argument to buffer */
+
+SilcBuffer silc_argument_payload_encode_one(SilcBuffer args,
+					    unsigned char *arg,
+					    SilcUInt32 arg_len,
+					    SilcUInt32 arg_type)
+{
+  SilcBuffer buffer = args;
+  int len;
+
+  len = 3 + arg_len;
+  buffer = silc_buffer_realloc(buffer,
+			       (buffer ? buffer->truelen + len : len));
+  if (!buffer)
+    return NULL;
+  silc_buffer_pull(buffer, buffer->len);
+  silc_buffer_pull_tail(buffer, len);
+  silc_buffer_format(buffer, 
+		     SILC_STR_UI_SHORT(arg_len),
+		     SILC_STR_UI_CHAR(arg_type),
+		     SILC_STR_UI_XNSTRING(arg, arg_len),
+		     SILC_STR_END);
+  silc_buffer_push(buffer, buffer->data - buffer->head);
+
+  return buffer;
+}
+
 /* Same as above but encode the buffer from SilcArgumentPayload structure
    instead of raw data. */
 
@@ -213,6 +240,7 @@ SilcUInt32 silc_argument_get_arg_num(SilcArgumentPayload payload)
 /* Returns first argument from payload. */
 
 unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
+					   SilcUInt32 *type,
 					   SilcUInt32 *ret_len)
 {
   if (!payload)
@@ -220,6 +248,8 @@ unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
 
   payload->pos = 0;
 
+  if (type)
+    *type = payload->argv_types[payload->pos];
   if (ret_len)
     *ret_len = payload->argv_lens[payload->pos];
 
@@ -229,6 +259,7 @@ unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
 /* Returns next argument from payload or NULL if no more arguments. */
 
 unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
+					  SilcUInt32 *type,
 					  SilcUInt32 *ret_len)
 {
   if (!payload)
@@ -237,6 +268,8 @@ unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
   if (payload->pos >= payload->argc)
     return NULL;
 
+  if (type)
+    *type = payload->argv_types[payload->pos];
   if (ret_len)
     *ret_len = payload->argv_lens[payload->pos];
 

@@ -91,6 +91,28 @@ SilcBuffer silc_argument_payload_encode(SilcUInt32 argc,
 					SilcUInt32 *argv_lens,
 					SilcUInt32 *argv_types);
 
+/****f* silccore/SilcArgumentAPI/silc_argument_payload_encode_one
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer silc_argument_payload_encode_one(SilcBuffer args,
+ *                                                unsigned char *arg,
+ *                                                SilcUInt32 arg_len,
+ *                                                SilcUInt32 arg_type);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_argument_payload_encode but encodes one argument to
+ *    the buffer `args' and returns the buffer.  The returned buffer
+ *    may be different than the `args'.  If `args' is NULL for the first
+ *    argument this allocates the buffer and returns it.
+ *
+ ***/
+SilcBuffer silc_argument_payload_encode_one(SilcBuffer args,
+					    unsigned char *arg,
+					    SilcUInt32 arg_len,
+					    SilcUInt32 arg_type);
+
 /****f* silccore/SilcArgumentAPI/silc_argument_payload_encode_payload
  *
  * SYNOPSIS
@@ -147,6 +169,7 @@ SilcUInt32 silc_argument_get_arg_num(SilcArgumentPayload payload);
  *
  ***/
 unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
+					   SilcUInt32 *type,
 					   SilcUInt32 *ret_len);
 
 /****f* silccore/SilcArgumentAPI/silc_argument_get_next_arg
@@ -165,6 +188,7 @@ unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
  *
  ***/
 unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
+					  SilcUInt32 *type,
 					  SilcUInt32 *ret_len);
 
 /****f* silccore/SilcArgumentAPI/silc_argument_get_arg_type
