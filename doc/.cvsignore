@@ -1,0 +1,5 @@
+Makefile
+Makefile.in
+Makefile.am
+example_silcd.conf
+*.txt
