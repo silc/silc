@@ -19,3 +19,5 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 SUBDIRS = lib silcd silc doc includes
+
+EXTRA_DIST = CHANGES CREDITS

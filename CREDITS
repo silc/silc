@@ -8,6 +8,16 @@ kernel credits file. :)
 
 ----------------------------------------------------------------------------
 
+N: Mika "Bostik" Boström
+E: bostik@lut.fi
+W: http://www.lut.fi/~bostik
+D: Server runs as a daemon on dedicated account
+D: Fixed inconsistencies in server side code routine names
+D: Transition to new configuration file format
+S: Skinnarilankatu 28 E 2
+S: 53850 Lappeenranta
+S: Finland
+
 N: Pekka Riikonen
 E: priikone@poseidon.pspt.fi
 E: priikone@ssh.com
@@ -15,6 +25,15 @@ D: Protocol architet
 D: Main developer
 S: Kasarmikatu 11 A4
 S: 70110 Kuopio
+S: Finland
+
+N: Juha Räsänen
+E: jmrasane@lut.fi
+D: Persistent nagger
+D: Desultory coder
+D: ElGamal implementation
+S: Laserkatu 4 A 4
+S: 53850 Lappeenranta
 S: Finland
 
 ----------------------------------------------------------------------------

@@ -125,10 +125,6 @@ TODO In SILC Server
 
  o Protocol execution timeouts are hard coded, should be configurable.
 
- o serverconfig.c and the function naming in it is inconsistent.  It is 
-   not silc_config_server* it should be silc_server_config*.  As should
-   all the SilcConfigServer* types be SilcServerConfig*.
-
  o Implement DENY_CONNECTION section in serverconfig.c and in server.
 
  o Implement REDIRECT_CLIENT section in serverconfig.c and in server.
