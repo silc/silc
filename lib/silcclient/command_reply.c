@@ -1,10 +1,10 @@
 /*
 
-  command_reply.c 
+  command_reply.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * application through command_reply client operation.  The arguments are
  * exactly same and in same order as the server sent it.  However, ID's are
  * not sent to the application.  Instead, corresponding ID entry is sent
- * to the application.  For example, instead of sending Client ID the 
+ * to the application.  For example, instead of sending Client ID the
  * corresponding SilcClientEntry is sent to the application.  The case is
  * same with for example Channel ID's.  This way application has all the
  * necessary data already in hand without redundant searching.  If ID is
@@ -38,7 +38,7 @@
 
 #define SAY cmd->client->internal->ops->say
 
-/* All functions that call the COMMAND_CHECK_STATUS macro must have 
+/* All functions that call the COMMAND_CHECK_STATUS macro must have
    out: and err: goto labels. out label should call the pending
    command replies, and the err label just handle error condition. */
 
@@ -84,7 +84,7 @@ void silc_client_command_reply_process(SilcClient client,
   SilcCommandPayload payload;
   SilcCommand command;
   SilcCommandCb reply = NULL;
-  
+
   /* Get command reply payload from packet */
   payload = silc_command_payload_parse(buffer->data, buffer->len);
   if (!payload) {
@@ -92,7 +92,7 @@ void silc_client_command_reply_process(SilcClient client,
     SILC_LOG_DEBUG(("Bad command reply packet"));
     return;
   }
-  
+
   /* Allocate command reply context. This must be free'd by the
      command reply routine receiving it. */
   ctx = silc_calloc(1, sizeof(*ctx));
@@ -107,8 +107,8 @@ void silc_client_command_reply_process(SilcClient client,
 
   /* Check for pending commands and mark to be exeucted */
   ctx->callbacks =
-    silc_client_command_pending_check(sock->user_data, ctx, 
-				      silc_command_get(ctx->payload), 
+    silc_client_command_pending_check(sock->user_data, ctx,
+				      silc_command_get(ctx->payload),
 				      ctx->ident, &ctx->callbacks_count);
 
   /* Execute command reply */
@@ -138,11 +138,11 @@ void silc_client_command_reply_process(SilcClient client,
 /* Duplicate Command Reply Context by adding reference counter. The context
    won't be free'd untill it hits zero. */
 
-SilcClientCommandReplyContext 
+SilcClientCommandReplyContext
 silc_client_command_reply_dup(SilcClientCommandReplyContext cmd)
 {
   cmd->users++;
-  SILC_LOG_DEBUG(("Command reply context %p refcnt %d->%d", cmd, 
+  SILC_LOG_DEBUG(("Command reply context %p refcnt %d->%d", cmd,
 		  cmd->users - 1, cmd->users));
   return cmd;
 }
@@ -152,7 +152,7 @@ silc_client_command_reply_dup(SilcClientCommandReplyContext cmd)
 void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
 {
   cmd->users--;
-  SILC_LOG_DEBUG(("Command reply context %p refcnt %d->%d", cmd, 
+  SILC_LOG_DEBUG(("Command reply context %p refcnt %d->%d", cmd,
 		  cmd->users + 1, cmd->users));
   if (cmd->users < 1) {
     silc_command_payload_free(cmd->payload);
@@ -160,7 +160,7 @@ void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
   }
 }
 
-static void 
+static void
 silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 				     SilcStatus status,
 				     bool notify)
@@ -177,21 +177,21 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   bool has_channels = FALSE, has_user_modes = FALSE;
   unsigned char *fingerprint;
   SilcUInt32 fingerprint_len;
-  
+
   id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!id_data) {
     if (notify)
       COMMAND_REPLY_ERROR;
     return;
   }
-  
+
   client_id = silc_id_payload_parse_id(id_data, len, NULL);
   if (!client_id) {
     if (notify)
       COMMAND_REPLY_ERROR;
     return;
   }
-  
+
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
   username = silc_argument_get_arg_type(cmd->args, 4, &len);
   realname = silc_argument_get_arg_type(cmd->args, 5, &len);
@@ -227,11 +227,11 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
   if (!client_entry) {
     SILC_LOG_DEBUG(("Adding new client entry"));
-    client_entry = 
+    client_entry =
       silc_client_add_client(cmd->client, conn, nickname, username, realname,
 			     client_id, mode);
   } else {
-    silc_client_update_client(cmd->client, conn, client_entry, 
+    silc_client_update_client(cmd->client, conn, client_entry,
 			      nickname, username, realname, mode);
     silc_free(client_id);
   }
@@ -253,8 +253,8 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 
   /* Notify application */
   if (!cmd->callbacks_count && notify)
-    COMMAND_REPLY((SILC_ARGS, client_entry, nickname, username, realname, 
-		   has_channels ? &channels : NULL, mode, idle, 
+    COMMAND_REPLY((SILC_ARGS, client_entry, nickname, username, realname,
+		   has_channels ? &channels : NULL, mode, idle,
 		   fingerprint, has_user_modes ? &ch_user_modes : NULL,
 		   client_entry->attrs));
 }
@@ -326,7 +326,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
+
   client_id = silc_id_payload_parse_id(id_data, len, NULL);
   if (!client_id) {
     COMMAND_REPLY_ERROR;
@@ -346,7 +346,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
   }
 
   /* Notify application. We don't save any history information to any
-     cache. Just pass the data to the application for displaying on 
+     cache. Just pass the data to the application for displaying on
      the screen. */
   COMMAND_REPLY((SILC_ARGS, client_entry, nickname, username, realname));
 
@@ -363,7 +363,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
   silc_client_command_reply_free(cmd);
 }
 
-static void 
+static void
 silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 					SilcStatus status,
 					bool notify)
@@ -381,7 +381,7 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
   char *name = NULL, *info = NULL;
   SilcIDPayload idp = NULL;
   SilcIdType id_type;
-  
+
   id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!id_data) {
     if (notify)
@@ -410,11 +410,11 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
     client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
     if (!client_entry) {
       SILC_LOG_DEBUG(("Adding new client entry"));
-      client_entry = 
+      client_entry =
 	silc_client_add_client(cmd->client, conn, name, info, NULL,
 			       silc_id_dup(client_id, id_type), 0);
     } else {
-      silc_client_update_client(cmd->client, conn, client_entry, 
+      silc_client_update_client(cmd->client, conn, client_entry,
 				name, info, NULL, 0);
     }
 
@@ -482,7 +482,7 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 }
 
 /* Received reply for IDENTIFY command. This maybe called several times
-   for one IDENTIFY command as server may reply with list of results. 
+   for one IDENTIFY command as server may reply with list of results.
    This is totally silent and does not print anything on screen. */
 
 SILC_CLIENT_CMD_REPLY_FUNC(identify)
@@ -544,7 +544,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
 
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	"Cannot set nickname: %s", 
+	"Cannot set nickname: %s",
 	silc_get_status_message(cmd->error));
     COMMAND_REPLY_ERROR;
     goto out;
@@ -580,7 +580,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
     silc_idcache_add(conn->internal->client_cache, strdup(tmp),
                      conn->local_entry->id, conn->local_entry, 0, NULL);
   }
-    
+
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, conn->local_entry, conn->local_entry->nickname));
 
@@ -626,7 +626,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
     SILC_GET32_MSB(usercount, tmp);
 
   /* Check whether the channel exists, and add it to cache if it doesn't. */
-  channel_entry = silc_client_get_channel_by_id(cmd->client, conn, 
+  channel_entry = silc_client_get_channel_by_id(cmd->client, conn,
 						channel_id);
   if (!channel_entry) {
     /* Add new channel entry */
@@ -702,7 +702,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
+
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel, topic));
 
@@ -751,7 +751,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
   if (tmp)
     silc_buffer_set(&buf, tmp, len);
-  
+
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel, tmp ? &buf : NULL));
 
@@ -761,7 +761,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
 }
 
 /* Received reply to the KILL command. */
- 
+
 SILC_CLIENT_CMD_REPLY_FUNC(kill)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
@@ -798,7 +798,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
   SILC_LOG_DEBUG(("Start"));
 
   if (cmd->error != SILC_STATUS_OK) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s",
 	silc_get_status_message(cmd->error));
     COMMAND_REPLY_ERROR;
     goto out;
@@ -905,11 +905,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
       continue;
     if (SILC_ID_SERVER_COMPARE(conn->internal->ping[i].dest_id, id)) {
       diff = curtime - conn->internal->ping[i].start_time;
-      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-	  "Ping reply from %s: %d second%s", 
-	  conn->internal->ping[i].dest_name, diff, 
+      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
+	  "Ping reply from %s: %d second%s",
+	  conn->internal->ping[i].dest_name, diff,
 	  diff == 1 ? "" : "s");
-      
+
       conn->internal->ping[i].start_time = 0;
       silc_free(conn->internal->ping[i].dest_id);
       conn->internal->ping[i].dest_id = NULL;
@@ -1008,7 +1008,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
       silc_client_replace_channel_id(cmd->client, conn, channel, channel_id);
   } else {
     /* Create new channel entry */
-    channel = silc_client_add_channel(cmd->client, conn, channel_name, 
+    channel = silc_client_add_channel(cmd->client, conn, channel_name,
 				      mode, channel_id);
   }
 
@@ -1018,7 +1018,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   hmac = silc_argument_get_arg_type(cmd->args, 11, NULL);
   if (hmac) {
     if (!silc_hmac_alloc(hmac, NULL, &channel->hmac)) {
-      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, 
+      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	  "Cannot join channel: Unsupported HMAC `%s'", hmac);
       COMMAND_REPLY_ERROR;
       goto out;
@@ -1070,7 +1070,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
     if (!client_entry) {
       /* No, we don't have it, add entry for it. */
-      client_entry = 
+      client_entry =
 	silc_client_add_client(cmd->client, conn, NULL, NULL, NULL,
 			       silc_id_dup(client_id, SILC_ID_CLIENT), 0);
     }
@@ -1089,9 +1089,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     silc_buffer_pull(client_id_list, idp_len);
     silc_buffer_pull(client_mode_list, 4);
   }
-  silc_buffer_push(client_id_list, client_id_list->data - 
+  silc_buffer_push(client_id_list, client_id_list->data -
 		   client_id_list->head);
-  silc_buffer_push(client_mode_list, client_mode_list->data - 
+  silc_buffer_push(client_mode_list, client_mode_list->data -
 		   client_mode_list->head);
 
   /* Save channel key */
@@ -1099,9 +1099,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     silc_client_save_channel_key(cmd->client, conn, keyp, channel);
 
   /* Notify application */
-  COMMAND_REPLY((SILC_ARGS, channel_name, channel, mode, 0, 
+  COMMAND_REPLY((SILC_ARGS, channel_name, channel, mode, 0,
 		 keyp ? keyp->head : NULL, NULL,
-		 NULL, topic, hmac, list_count, client_id_list, 
+		 NULL, topic, hmac, list_count, client_id_list,
 		 client_mode_list));
 
  out:
@@ -1152,12 +1152,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
 	memset(line, 0, sizeof(line));
 	silc_strncat(line, sizeof(line), cp, i - 1);
 	cp += i;
-	
+
 	if (i == 2)
 	  line[0] = ' ';
-	
+
 	SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "%s", line);
-	
+
 	if (!strlen(cp))
 	  break;
 	i = 0;
@@ -1276,14 +1276,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   SilcChannelUser chu;
   unsigned char *modev, *tmp, *id;
   SilcUInt32 len, mode;
-  
+
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
+
   /* Get channel mode */
   modev = silc_argument_get_arg_type(cmd->args, 2, NULL);
   if (!modev) {
@@ -1306,7 +1306,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
+
   /* Get Client ID */
   id = silc_argument_get_arg_type(cmd->args, 4, &len);
   if (!id) {
@@ -1320,7 +1320,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
+
   /* Get client entry */
   client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
   if (!client_entry) {
@@ -1340,7 +1340,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   COMMAND_REPLY((SILC_ARGS, mode, channel, client_entry));
   silc_free(client_id);
   silc_free(channel_id);
-  
+
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CUMODE);
   silc_client_command_reply_free(cmd);
@@ -1426,7 +1426,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(detach)
      detach client operation */
   detach = silc_client_get_detach_data(cmd->client, conn);
   if (detach) {
-    cmd->client->internal->ops->detach(cmd->client, conn, 
+    cmd->client->internal->ops->detach(cmd->client, conn,
 				       detach->data, detach->len);
     silc_buffer_free(detach);
   }
@@ -1489,12 +1489,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
+
   /* Get the ban list */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
   if (tmp)
     silc_buffer_set(&buf, tmp, len);
-  
+
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel, tmp ? &buf : NULL));
 
@@ -1575,6 +1575,7 @@ static int
 silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
 				     SilcStatus status,
 				     bool notify,
+				     bool resolve,
 				     SilcGetChannelCallback get_channel,
 				     SilcCommandCb get_clients)
 {
@@ -1604,7 +1605,7 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
+
   /* Get the list count */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
   if (!tmp) {
@@ -1660,19 +1661,21 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
     /* Check if we have this client cached already. */
     client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
     if (!client_entry || !client_entry->username || !client_entry->realname) {
-      /* No we don't have it (or it is incomplete in information), query
-	 it from the server. Assemble argument table that will be sent
-	 for the WHOIS command later. */
-      res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
-			      (res_argc + 1));
-      res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
-				   (res_argc + 1));
-      res_argv_types = silc_realloc(res_argv_types, sizeof(*res_argv_types) *
-				    (res_argc + 1));
-      res_argv[res_argc] = client_id_list.data;
-      res_argv_lens[res_argc] = idp_len;
-      res_argv_types[res_argc] = res_argc + 4;
-      res_argc++;
+      if (resolve) {
+	/* No we don't have it (or it is incomplete in information), query
+	   it from the server. Assemble argument table that will be sent
+	   for the WHOIS command later. */
+	res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
+				(res_argc + 1));
+	res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
+				     (res_argc + 1));
+	res_argv_types = silc_realloc(res_argv_types, sizeof(*res_argv_types) *
+				      (res_argc + 1));
+	res_argv[res_argc] = client_id_list.data;
+	res_argv_lens[res_argc] = idp_len;
+	res_argv_types[res_argc] = res_argc + 4;
+	res_argc++;
+      }
     } else {
       if (!silc_client_on_channel(channel, client_entry)) {
 	chu = silc_calloc(1, sizeof(*chu));
@@ -1701,7 +1704,7 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
     res_cmd = silc_command_payload_encode(SILC_COMMAND_WHOIS,
 					  res_argc, res_argv, res_argv_lens,
 					  res_argv_types, conn->cmd_ident);
-    silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, 
+    silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND,
 			    NULL, 0, NULL, NULL, res_cmd->data, res_cmd->len,
 			    TRUE);
 
@@ -1722,14 +1725,14 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
   if (wait_res)
     return 1;
 
-  silc_buffer_push(&client_id_list, (client_id_list.data - 
+  silc_buffer_push(&client_id_list, (client_id_list.data -
 				     client_id_list.head));
-  silc_buffer_push(&client_mode_list, (client_mode_list.data - 
+  silc_buffer_push(&client_mode_list, (client_mode_list.data -
 				       client_mode_list.head));
 
   /* Notify application */
   if (notify)
-    COMMAND_REPLY((SILC_ARGS, channel, list_count, &client_id_list, 
+    COMMAND_REPLY((SILC_ARGS, channel, list_count, &client_id_list,
 		   &client_mode_list));
 
  out:
@@ -1756,13 +1759,23 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   }
 
   if (r && !silc_command_get_status(r->payload, NULL, &cmd->error)) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
-    goto out;
+    if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+      /* Do not resolve anymore. Server may be sending us some non-existent
+	 Client ID (a bug in server), and we want to show the users list
+	 anyway. */
+      silc_client_command_reply_users_save(cmd, cmd->status, TRUE, FALSE,
+					   silc_client_command_reply_users_cb,
+					   silc_client_command_reply_users);
+      goto out;
+    } else {
+      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	  "%s", silc_get_status_message(cmd->error));
+      COMMAND_REPLY_ERROR;
+      goto out;
+    }
   }
 
-  if (silc_client_command_reply_users_save(cmd, cmd->status, TRUE,
+  if (silc_client_command_reply_users_save(cmd, cmd->status, TRUE, TRUE,
 					   silc_client_command_reply_users_cb,
 					   silc_client_command_reply_users))
     return;
@@ -1815,7 +1828,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
     if (!silc_pkcs_public_key_payload_decode(tmp, len, &public_key))
       public_key = NULL;
   }
-   
+
   id_type = silc_id_payload_get_type(idp);
   if (id_type == SILC_ID_CLIENT) {
     /* Received client's public key */
@@ -2008,7 +2021,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(info_i)
     silc_client_add_server(cmd->client, conn, server_name, server_info,
 			   silc_id_dup(server_id, SILC_ID_SERVER));
   }
-  
+
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
   silc_free(server_id);
@@ -2046,7 +2059,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users_i)
 
   /* Save USERS info */
   if (silc_client_command_reply_users_save(
-				    cmd, cmd->status, FALSE,
+				    cmd, cmd->status, FALSE, TRUE,
 				    silc_client_command_reply_users_i_cb,
 				    silc_client_command_reply_users_i))
     return;
@@ -2105,7 +2118,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(close)
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_PRIV_CLOSE);
   silc_client_command_reply_free(cmd);
 }
- 
+
 SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
