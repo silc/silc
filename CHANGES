@@ -14,6 +14,17 @@ Tue Feb 20 14:14:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  the size is approximated using silc_mp_sizeinbase, which however
 	  is not relieable.
 
+	* Created Global RNG API which is global RNG that application can
+	  initialize.  After initializing, any routine anywhere in the
+	  code (including library) can use RNG without allocating a new
+	  RNG object.  This was done to allow this sort of use of the 
+	  RNG in code that has no chance to allocate RNG object.  All
+	  applications currently allocate this and many routines in the
+	  library use this.  Affected file lib/silccrypt/silcrng.[ch].
+
+	* Removed the RNG kludge from lib/silcmath/primegen.c and changed
+	  it to use the Global RNG API.
+
 Mon Feb 19 19:59:28 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* The client entry's userinfo pointer must be always valid. 
