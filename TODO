@@ -35,7 +35,7 @@ TODO/bugs In SILC Client Library
    CMODE and CUMODE by the command reply identifier must be added.
    Otherwise saving the modes for the channels and channel user
    entries are impossible since server does not send Channel ID as
-   command reply in these functions.
+   command reply in these commands.
 
  o All protocol execution timeouts are hard coded. They should be 
    configurable and the Irssi SILC client should be able to set them

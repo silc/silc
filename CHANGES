@@ -1,3 +1,10 @@
+Fri Jul  6 18:26:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the dynamic tables to static size tables in the
+	  lib/silccrypt/silchmac.c.
+
+	* Removed GCC dependencies from the code.  A patch by cras.
+
 Fri Jul  6 09:39:35 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not show the error "Error receiving packet bla bla"

@@ -231,10 +231,9 @@ void silc_hmac_make_internal(SilcHmac hmac, unsigned char *data,
 			     uint32 key_len, unsigned char *return_hash)
 {
   SilcHash hash = hmac->hash;
-  unsigned char inner_pad[hash->hash->block_len + 1];
-  unsigned char outer_pad[hash->hash->block_len + 1];
-  unsigned char hvalue[hash->hash->hash_len];
-  unsigned char mac[128];
+  unsigned char inner_pad[64];
+  unsigned char outer_pad[64];
+  unsigned char hvalue[20], mac[20];
   void *hash_context;
   int i;
 
@@ -314,7 +313,7 @@ void silc_hmac_make_truncated(SilcHmac hmac, unsigned char *data,
 			      uint32 truncated_len,
 			      unsigned char *return_hash)
 {
-  unsigned char hvalue[hmac->hash->hash->hash_len];
+  unsigned char hvalue[20];
 
   silc_hmac_make_internal(hmac, data, data_len, 
 			  hmac->key, hmac->key_len, hvalue);
