@@ -921,8 +921,7 @@ char *silc_get_input(const char *prompt, bool echo_off)
     tcsetattr(fd, TCSANOW, &to_old);
     signal(SIGINT, SIG_DFL);
 
-    ret = silc_calloc(strlen(input), sizeof(char));
-    memcpy(ret, input, strlen(input));
+    ret = silc_memdup(input, strlen(input));
     memset(input, 0, sizeof(input));
 #endif /* HAVE_TERMIOS_H */
     return ret;
