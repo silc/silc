@@ -606,11 +606,8 @@ SILC_TASK_CALLBACK(silc_client_packet_process)
 
     /* Process the packet. This will call the parser that will then
        decrypt and parse the packet. */
-    if (!silc_packet_receive_process(sock, conn->receive_key, conn->hmac,
-				     silc_client_packet_parse, client)) {
-      silc_buffer_clear(sock->inbuf);
-      return;
-    }
+    silc_packet_receive_process(sock, conn->receive_key, conn->hmac,
+				silc_client_packet_parse, client);
   }
 }
 
