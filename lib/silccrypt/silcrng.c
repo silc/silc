@@ -22,7 +22,8 @@
  * Created: Sun Mar  9 00:09:18 1997
  *
  * The original RNG was based on Secure Shell's random number generator
- * by Tatu Ylönen.  This RNG has been rewritten twice since the creation.
+ * by Tatu Ylönen and was used as reference when programming this RNG.  
+ * This RNG has been rewritten twice since the creation.
  */
 
 #include "silcincludes.h"

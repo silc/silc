@@ -35,8 +35,9 @@
  *	Decryption:
  *	m = c ^ d mod n
  *
- * This code is based on SSH's (Secure Shell), PGP's (Pretty Good Privacy) 
- * and RSAREF Toolkit's RSA source codes. They all were a big help for me.
+ * The SSH's (Secure Shell), PGP's (Pretty Good Privacy) and RSAREF 
+ * Toolkit were used as reference when coding this implementation. They 
+ * all were a big help for me.
  *
  * I also suggest reading Bruce Schneier's; Applied Cryptography, Second 
  * Edition, John Wiley & Sons, Inc. 1996. This book deals about RSA and 
