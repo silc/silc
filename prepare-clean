@@ -30,11 +30,14 @@ rm -f includes/stamp-*
 rm -f includes/silcconfig.*
 rm -f Makefile.in
 rm -f doc/draft-riikonen*.txt
+rm -f doc/Makefile.in
+rm -f includes/Makefile.in
 rm -f lib/Makefile.in
 rm -f lib/silccore/Makefile.in
 rm -f lib/silccrypt/Makefile.in
 rm -f lib/silcmath/Makefile.in
 rm -f lib/silcsim/Makefile.in
+rm -f lib/silcsim/modules/Makefile.in
 rm -f lib/silcske/Makefile.in
 rm -f silcd/Makefile.in silcd/log* silcd/*.log
 rm -f silc/Makefile.in silc/log* silc/*.log
