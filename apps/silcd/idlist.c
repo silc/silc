@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/06 07:16:13  priikone
+ * 	Added SilcPublicKey's
+ *
  * Revision 1.3  2000/07/05 06:14:01  priikone
  * 	Global costemic changes.
  *
@@ -63,7 +66,7 @@ void silc_idlist_add_server(SilcServerList **list,
   idlist->router = router;
   idlist->send_key = send_key;
   idlist->receive_key = receive_key;
-  idlist->public_key = public_key;
+  idlist->pkcs = public_key;
   idlist->hmac = hmac;
   idlist->next = idlist;
   idlist->prev = idlist;
@@ -116,7 +119,7 @@ void silc_idlist_add_client(SilcClientList **list, char *nickname,
   idlist->router = router;
   idlist->send_key = send_key;
   idlist->receive_key = receive_key;
-  idlist->public_key = public_key;
+  idlist->pkcs = public_key;
   idlist->hmac = hmac;
   idlist->next = idlist;
   idlist->prev = idlist;
@@ -157,8 +160,8 @@ void silc_idlist_del_client(SilcClientList **list, SilcClientList *entry)
       silc_cipher_free(entry->send_key);
     if (entry->receive_key)
       silc_cipher_free(entry->receive_key);
-    if (entry->public_key)
-      silc_pkcs_free(entry->public_key);
+    if (entry->pkcs)
+      silc_pkcs_free(entry->pkcs);
     if (entry->hmac)
       silc_hmac_free(entry->hmac);
     if (entry->hmac_key) {

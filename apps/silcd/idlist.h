@@ -90,7 +90,8 @@ struct SilcServerListStruct {
   /* Keys */
   SilcCipher send_key;
   SilcCipher receive_key;
-  SilcPKCS public_key;
+  SilcPKCS pkcs;
+  SilcPublicKey public_key;
   SilcHmac hmac;
   unsigned char *hmac_key;
   unsigned int hmac_key_len;
@@ -175,9 +176,9 @@ struct SilcServerListStruct {
        The actual session key established by key exchange protcol between
        connecting parties. This is used for both encryption and decryption.
 
-   SilcPKCS public_key
+   SilcPKCS pkcs
 
-       Public key of the client. This maybe NULL.
+       PKCS of the client. This maybe NULL.
 
    SilcHmac hmac
    unsigned char *hmac_key
@@ -210,7 +211,7 @@ struct SilcClientListStruct {
   /* Keys */
   SilcCipher send_key;
   SilcCipher receive_key;
-  SilcPKCS public_key;
+  SilcPKCS pkcs;
   SilcHmac hmac;
   unsigned char *hmac_key;
   unsigned int hmac_key_len;
@@ -385,6 +386,7 @@ typedef struct {
   SilcCipher send_key;
   SilcCipher receive_key;
   SilcPKCS pkcs;
+  SilcPublicKey public_key;
 
   SilcHmac hmac;
   unsigned char *hmac_key;
