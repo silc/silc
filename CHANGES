@@ -1,3 +1,16 @@
+Tue Feb 27 13:30:52 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Removed lib/silcclient/ops.h file.
+
+	  Redefined parts of the SILC Client Library API. Created new
+	  file silcapi.h that deprecates the ops.h file and defines the
+	  published Client Library API.  Defined also private message key
+	  API and channel private key API into the file.
+
+	  This is the file that the application must include from the
+	  SILC Client Library.  Other files need not be included by
+	  the application anymore.
+
 Tue Feb 27 11:28:31 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new packet type: SILC_PACKET_KEY_AGREEMENT.  This packet

@@ -124,7 +124,7 @@ static void silc_client_protocol_ke_set_keys(SilcSKE ske,
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 				     unsigned int len)
 {
-  SilcSocketConnection conn = (SilcSocketConnection)ske->sock->user_data;
+  SilcClientConnection conn = (SilcClientConnection)ske->sock->user_data;
   SilcClient client = (SilcClient)ske->user_data;
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
 

@@ -546,7 +546,7 @@ static void silc_client_process_message(SilcClientInternal app)
 
     /* Allocate command context. This and its internals must be free'd 
        by the command routine receiving it. */
-    ctx = silc_calloc(1, sizeof(*ctx));
+    ctx = silc_client_command_alloc();
     ctx->client = app->client;
     ctx->conn = app->conn;
     ctx->command = cmd;
@@ -563,10 +563,10 @@ static void silc_client_process_message(SilcClientInternal app)
     if (len && app->conn && app->conn->current_channel &&
 	app->conn->current_channel->on_channel == TRUE) {
       silc_print(app->client, "> %s", data);
-      silc_client_packet_send_to_channel(app->client, 
-					 app->conn->sock,
-					 app->conn->current_channel,
-					 data, strlen(data), TRUE);
+      silc_client_send_channel_message(app->client, 
+				       app->conn,
+				       app->conn->current_channel,
+				       data, strlen(data), TRUE);
     }
   }
 

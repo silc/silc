@@ -17,33 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.6  2001/02/24 15:50:23  priikone
- * 	implemented KICK command
- *
- * Revision 1.5  2001/02/19 13:47:30  priikone
- * 	updates.
- *
- * Revision 1.4  2001/02/16 00:33:23  priikone
- * 	updates.
- *
- * Revision 1.3  2001/02/14 15:31:33  priikone
- * 	Do not allow several server connections.
- *
- * Revision 1.2  2001/01/30 21:40:21  priikone
- * 	updates.
- *
- * Revision 1.1  2000/09/13 17:47:54  priikone
- * 	Created SILC Client Libary by moving stuff from silc/ directory.
- * 	SILC client library is SILC client without UI. Old UI still exists
- * 	in silc/ directory and uses the new client.
- *
- * 	Bug fixes and several new functions, structures and functions
- * 	naming changes during the change was made.
- *
- */
+/* $Id$ */
 
 #include "clientincludes.h"
 
@@ -162,9 +136,9 @@ SILC_CLIENT_LCMD_FUNC(msg)
   silc_print(client, "-> *%s* %s", cmd->argv[1], cmd->argv[2]);
 
   /* Send the private message */
-  silc_client_packet_send_private_message(client, conn->sock, client_entry,
-					  cmd->argv[2], cmd->argv_lens[2],
-					  TRUE);
+  silc_client_send_private_message(client, conn, client_entry,
+				   cmd->argv[2], cmd->argv_lens[2],
+				   TRUE);
 
  out:
   silc_client_command_free(cmd);

@@ -29,7 +29,7 @@ typedef struct SilcClientConnectionObject *SilcClientConnection;
 
 #include "idlist.h"
 #include "command.h"
-#include "ops.h"
+#include "silcapi.h"
 
 /* Structure to hold ping time information. Every PING command will 
    add entry of this structure and is removed after reply to the ping
@@ -222,22 +222,8 @@ do {							\
  (__sock) = (__x)->conns[__i]->sock;			\
 } while(0)
 
-/* Prototypes */
+/* Prototypes (some of the prototypes are defined in the silcapi.h) */
 
-SilcClient silc_client_alloc(SilcClientOperations *ops, void *application);
-void silc_client_free(SilcClient client);
-int silc_client_init(SilcClient client);
-void silc_client_stop(SilcClient client);
-void silc_client_run(SilcClient client);
-SilcClientConnection silc_client_add_connection(SilcClient client,
-						char *hostname,
-						int port,
-						void *context);
-int silc_client_connect_to_server(SilcClient client, int port,
-				  char *host, void *context);
-int silc_client_start_key_exchange(SilcClient client,
-			           SilcClientConnection conn,
-                                   int fd);
 void silc_client_packet_send(SilcClient client, 
 			     SilcSocketConnection sock,
 			     SilcPacketType type, 
@@ -248,20 +234,6 @@ void silc_client_packet_send(SilcClient client,
 			     unsigned char *data, 
 			     unsigned int data_len, 
 			     int force_send);
-void silc_client_packet_send_to_channel(SilcClient client, 
-					SilcSocketConnection sock,
-					SilcChannelEntry channel,
-					unsigned char *data, 
-					unsigned int data_len, 
-					int force_send);
-void silc_client_packet_send_private_message(SilcClient client,
-					     SilcSocketConnection sock,
-					     SilcClientEntry client_entry,
-					     unsigned char *data, 
-					     unsigned int data_len, 
-					     int force_send);
-void silc_client_close_connection(SilcClient client,
-				  SilcSocketConnection sock);
 void silc_client_disconnected_by_server(SilcClient client,
 					SilcSocketConnection sock,
 					SilcBuffer message);

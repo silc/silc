@@ -32,6 +32,6 @@
 #include "command_reply.h"
 #include "idlist.h"
 #include "protocol.h"
-#include "ops.h"
+#include "silcapi.h"
 
 #endif

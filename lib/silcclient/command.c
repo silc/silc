@@ -217,6 +217,16 @@ static void silc_client_command_destructor(void *context)
   silc_client_command_free((SilcClientCommandContext)context);
 }
 
+/* silc_client_get_client completion callback */
+void silc_client_command_completion(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcClientEntry clients,
+				    unsigned int clients_count,
+				    void *context)
+{
+
+}
+
 /* Command WHOIS. This command is used to query information about 
    specific user. */
 
@@ -490,7 +500,7 @@ SILC_CLIENT_CMD_FUNC(invite)
   }
 
   /* Find channel entry */
-  channel_entry = silc_idlist_get_channel(client, conn, cmd->argv[2]);
+  channel_entry = silc_client_get_channel(client, conn, cmd->argv[2]);
   if (!channel_entry) {
     cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
     COMMAND_ERROR;
@@ -531,7 +541,7 @@ SILC_TASK_CALLBACK(silc_client_command_quit_cb)
 
   /* Close connection */
   q->client->ops->disconnect(q->client, q->conn);
-  silc_client_close_connection(q->client, q->conn->sock);
+  silc_client_close_connection(q->client, q->conn->sock->user_data);
 
   silc_free(q);
 }
@@ -834,7 +844,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
   } else {
     name = cmd->argv[1];
 
-    channel = silc_idlist_get_channel(cmd->client, conn, name);
+    channel = silc_client_get_channel(cmd->client, conn, name);
     if (!channel) {
       cmd->client->ops->say(cmd->client, conn, "You are on that channel");
       COMMAND_ERROR;
@@ -1023,7 +1033,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
   } else {
     name = cmd->argv[1];
 
-    channel = silc_idlist_get_channel(cmd->client, conn, name);
+    channel = silc_client_get_channel(cmd->client, conn, name);
     if (!channel) {
       cmd->client->ops->say(cmd->client, conn, "You are on that channel");
       COMMAND_ERROR;

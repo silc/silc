@@ -70,7 +70,7 @@ typedef struct SilcChannelEntryStruct {
    commands to routers. */
 #define SILC_IDLIST_IDENT 3333
 
-/* Prototypes */
+/* Prototypes (some functions are defined in the silcapi.h) */
 
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
@@ -78,11 +78,5 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       char *server,
 				       unsigned int num,
 				       int query);
-SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
-					     SilcClientConnection conn,
-					     SilcClientID *client_id);
-SilcChannelEntry silc_idlist_get_channel(SilcClient client,
-					 SilcClientConnection conn,
-					 char *channel);
 
 #endif

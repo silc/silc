@@ -21,11 +21,156 @@
 
 #include "clientlibincludes.h"
 
-/* Finds client entry from cache by nickname. If the entry is not found
-   from the cache this function queries it from the server. If `server'
-   and `num' are defined as well thisk checks the match from multiple
-   cache entries thus providing support for multiple same nickname
-   handling. This also ignores case-sensitivity. */
+typedef struct {
+  SilcClientCommandContext cmd;
+  SilcGetClientCallback completion;
+  char *nickname;
+  char *server;
+  void *context;
+  int found;
+} *GetClientInternal;
+
+SILC_CLIENT_CMD_FUNC(get_client_callback)
+{
+  GetClientInternal i = (GetClientInternal)context;
+  SilcClientEntry *clients;
+  unsigned int clients_count;
+
+  /* Get the clients */
+  clients = silc_client_get_clients_local(i->cmd->client, i->cmd->conn,
+					  i->nickname, i->server,
+					  &clients_count);
+  if (clients) {
+    i->completion(i->cmd->client, i->cmd->conn, NULL, 0, i->context);
+    i->found = TRUE;
+    silc_free(clients);
+  }
+}
+
+static void silc_client_get_client_destructor(void *context)
+{
+  GetClientInternal i = (GetClientInternal)context;
+
+  if (i->found == FALSE)
+    i->completion(i->cmd->client, i->cmd->conn, NULL, 0, i->context);
+
+  silc_client_command_free(i->cmd);
+  if (i->nickname)
+    silc_free(i->nickname);
+  if (i->server)
+    silc_free(i->server);
+  silc_free(i);
+}
+
+/* Finds client entry or entries by the `nickname' and `server'. The 
+   completion callback will be called when the client entries has been found.
+
+   Note: this function is always asynchronous and resolves the client
+   information from the server. Thus, if you already know the client
+   information then use the silc_client_get_client_by_id function to
+   get the client entry since this function may be very slow and should
+   be used only to initially get the client entries. */
+
+void silc_client_get_clients(SilcClient client,
+			     SilcClientConnection conn,
+			     char *nickname,
+			     char *server,
+			     SilcGetClientCallback completion,
+			     void *context)
+{
+  char ident[512];
+  SilcClientCommandContext ctx;
+  GetClientInternal i = silc_calloc(1, sizeof(*i));
+      
+  /* No ID found. Do query from the server. The query is done by 
+     sending simple IDENTIFY command to the server. */
+  ctx = silc_client_command_alloc();
+  ctx->client = client;
+  ctx->conn = conn;
+  ctx->command = silc_client_command_find("IDENTIFY");
+  memset(ident, 0, sizeof(ident));
+  snprintf(ident, sizeof(ident), "IDENTIFY %s", nickname);
+  silc_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
+			  &ctx->argv_types, &ctx->argc, 2);
+  ctx->command->cb(ctx);
+      
+  i->cmd = ctx;
+  i->nickname = nickname ? strdup(nickname) : NULL;
+  i->server = server ? strdup(server) : NULL;
+  i->completion = completion;
+  i->context = context;
+
+  /* Add pending callback */
+  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+			      ++conn->cmd_ident, 
+			      silc_client_get_client_destructor,
+			      silc_client_command_get_client_callback, 
+			      (void *)i);
+}
+
+/* Same as above function but does not resolve anything from the server.
+   This checks local cache and returns all clients from the cache. */
+
+SilcClientEntry *silc_client_get_clients_local(SilcClient client,
+					       SilcClientConnection conn,
+					       char *nickname,
+					       char *server,
+					       unsigned int *clients_count)
+{
+  SilcIDCacheEntry id_cache;
+  SilcIDCacheList list = NULL;
+  SilcClientEntry entry, *clients;
+  int i = 0;
+
+  /* Find ID from cache */
+  if (!silc_idcache_find_by_data_loose(conn->client_cache, nickname, &list))
+    return NULL;
+
+  if (silc_idcache_list_count(list) == 0)
+    return NULL;
+
+  clients = silc_calloc(silc_idcache_list_count(list), sizeof(*clients));
+  *clients_count = silc_idcache_list_count(list);
+
+  if (!server) {
+    /* Take all without any further checking */
+    silc_idcache_list_first(list, &id_cache);
+    while (id_cache) {
+      clients[i++] = id_cache->context;
+      if (!silc_idcache_list_next(list, &id_cache))
+	break;
+    }
+  } else {
+    /* Check multiple cache entries for match */
+    silc_idcache_list_first(list, &id_cache);
+    while (id_cache) {
+      entry = (SilcClientEntry)id_cache->context;
+      
+      if (entry->server && 
+	  strncasecmp(server, entry->server, strlen(server))) {
+	if (!silc_idcache_list_next(list, &id_cache)) {
+	  break;
+	} else {
+	  continue;
+	}
+      }
+      
+      clients[i++] = id_cache->context;
+      if (!silc_idcache_list_next(list, &id_cache))
+	break;
+    }
+  }
+
+  if (list)
+    silc_idcache_list_free(list);
+
+  return clients;
+}
+
+/* The old style function to find client entry. This is used by the
+   library internally. If `query' is TRUE then the client information is
+   requested by the server. The pending command callback must be set
+   by the caller. */
 
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
@@ -43,8 +188,8 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   identify:
 
     if (query) {
-      SilcClientCommandContext ctx;
       char ident[512];
+      SilcClientCommandContext ctx;
       
       SILC_LOG_DEBUG(("Requesting Client ID from server"));
       
@@ -62,7 +207,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
       
       if (list)
 	silc_idcache_list_free(list);
-      
+
       return NULL;
     }
     return NULL;
@@ -106,9 +251,10 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   return entry;
 }
 
-/* Finds client entry from cache by Client ID. */
+/* Finds entry for client by the client's ID. Returns the entry or NULL
+   if the entry was not found. */
 
-SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
+SilcClientEntry silc_client_get_client_by_id(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcClientID *client_id)
 {
@@ -127,9 +273,11 @@ SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
   return (SilcClientEntry)id_cache->context;
 }
 
-/* Finds channel entry from ID cache by channel name. */
+/* Finds entry for channel by the channel name. Returns the entry or NULL
+   if the entry was not found. It is found only if the client is joined
+   to the channel. */
 
-SilcChannelEntry silc_idlist_get_channel(SilcClient client,
+SilcChannelEntry silc_client_get_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 char *channel)
 {

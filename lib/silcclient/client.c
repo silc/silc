@@ -49,7 +49,7 @@ SilcClient silc_client_alloc(SilcClientOperations *ops, void *application)
   return new_client;
 }
 
-/* Free's client object */
+/* Frees client object and its internals. */
 
 void silc_client_free(SilcClient client)
 {
@@ -63,7 +63,7 @@ void silc_client_free(SilcClient client)
 
 /* Initializes the client. This makes all the necessary steps to make
    the client ready to be run. One must call silc_client_run to run the
-   client. */
+   client. Returns FALSE if error occured, TRUE otherwise. */
 
 int silc_client_init(SilcClient client)
 {
@@ -109,7 +109,8 @@ void silc_client_stop(SilcClient client)
   SILC_LOG_DEBUG(("Client stopped"));
 }
 
-/* Runs the client. */
+/* Runs the client. This starts the scheduler from the utility library.
+   When this functions returns the execution of the appliation is over. */
 
 void silc_client_run(SilcClient client)
 {
@@ -124,7 +125,9 @@ void silc_client_run(SilcClient client)
    connection to the connection table and returns a pointer to it. A client
    can have multiple connections to multiple servers. Every connection must
    be added to the client using this function. User data `context' may
-   be sent as argument. */
+   be sent as argument. This function is normally used only if the 
+   application performed the connecting outside the library. The library
+   however may use this internally. */
 
 SilcClientConnection silc_client_add_connection(SilcClient client,
 						char *hostname,
@@ -161,7 +164,7 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
   return conn;
 }
 
-/* Removes connection from client. */
+/* Removes connection from client. Frees all memory. */
 
 void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
 {
@@ -218,7 +221,10 @@ silc_client_connect_to_server_internal(SilcClientInternalConnectContext *ctx)
 /* Connects to remote server. This is the main routine used to connect
    to SILC server. Returns -1 on error and the created socket otherwise. 
    The `context' is user context that is saved into the SilcClientConnection
-   that is created after the connection is created. */
+   that is created after the connection is created. Note that application
+   may handle the connecting process outside the library. If this is the
+   case then this function is not used at all. When the connecting is
+   done the `connect' client operation is called. */
 
 int silc_client_connect_to_server(SilcClient client, int port,
 				  char *host, void *context)
@@ -254,7 +260,9 @@ int silc_client_connect_to_server(SilcClient client, int port,
 /* Start SILC Key Exchange (SKE) protocol to negotiate shared secret
    key material between client and server.  This function can be called
    directly if application is performing its own connecting and does not
-   use the connecting provided by this library. */
+   use the connecting provided by this library. This function is normally
+   used only if the application performed the connecting outside the library.
+   The library however may use this internally. */
 
 int silc_client_start_key_exchange(SilcClient client,
 			           SilcClientConnection conn,
@@ -599,13 +607,13 @@ SILC_TASK_CALLBACK(silc_client_packet_process)
 	 close the connection */
       if (SILC_IS_DISCONNECTING(sock)) {
 	client->ops->disconnect(client, conn);
-	silc_client_close_connection(client, sock);
+	silc_client_close_connection(client, conn);
 	return;
       }
       
       SILC_LOG_DEBUG(("EOF from connection %d", sock->sock));
       client->ops->disconnect(client, conn);
-      silc_client_close_connection(client, sock);
+      silc_client_close_connection(client, conn);
       return;
     }
 
@@ -950,21 +958,22 @@ void silc_client_packet_send(SilcClient client,
   silc_client_packet_send_real(client, sock, force_send);
 }
 
-/* Sends packet to a channel. Packet to channel is always encrypted
+/* Sends packet to the `channel'. Packet to channel is always encrypted
    differently from "normal" packets. SILC header of the packet is 
    encrypted with the next receiver's key and the rest of the packet is
    encrypted with the channel specific key. Padding and HMAC is computed
-   with the next receiver's key. */
+   with the next receiver's key. The `data' is the channel message. If
+   the `force_send' is TRUE then the packet is sent immediately. */
 
-void silc_client_packet_send_to_channel(SilcClient client, 
-					SilcSocketConnection sock,
-					SilcChannelEntry channel,
-					unsigned char *data, 
-					unsigned int data_len, 
-					int force_send)
+void silc_client_send_channel_message(SilcClient client, 
+				      SilcClientConnection conn,
+				      SilcChannelEntry channel,
+				      unsigned char *data, 
+				      unsigned int data_len, 
+				      int force_send)
 {
   int i;
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  SilcSocketConnection sock = conn->sock;
   SilcBuffer payload;
   SilcPacketContext packetdata;
   SilcCipher cipher;
@@ -1062,16 +1071,17 @@ void silc_client_packet_send_to_channel(SilcClient client,
    normal session keys. Private messages are special packets in SILC
    network hence we need this own function for them. This is similiar
    to silc_client_packet_send_to_channel except that we send private
-   message. */
+   message. The `data' is the private message. If the `force_send' is
+   TRUE the packet is sent immediately. */
 
-void silc_client_packet_send_private_message(SilcClient client,
-					     SilcSocketConnection sock,
-					     SilcClientEntry client_entry,
-					     unsigned char *data, 
-					     unsigned int data_len, 
-					     int force_send)
+void silc_client_send_private_message(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcClientEntry client_entry,
+				      unsigned char *data, 
+				      unsigned int data_len, 
+				      int force_send)
 {
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  SilcSocketConnection sock = conn->sock;
   SilcBuffer buffer;
   SilcPacketContext packetdata;
   unsigned int nick_len;
@@ -1167,9 +1177,9 @@ void silc_client_packet_send_private_message(SilcClient client,
    for some information such as nickname etc. that are valid at all time. */
 
 void silc_client_close_connection(SilcClient client,
-				  SilcSocketConnection sock)
+				  SilcClientConnection conn)
 {
-  SilcClientConnection conn;
+  SilcSocketConnection sock = conn->sock;
 
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(sock->sock);
@@ -1186,8 +1196,6 @@ void silc_client_close_connection(SilcClient client,
 
   /* Free everything */
   if (sock->user_data) {
-    conn = (SilcClientConnection)sock->user_data;
-
     /* XXX Free all client entries and channel entries. */
 
     /* Clear ID caches */
@@ -1256,7 +1264,7 @@ void silc_client_disconnected_by_server(SilcClient client,
   silc_free(msg);
 
   SILC_SET_DISCONNECTED(sock);
-  silc_client_close_connection(client, sock);
+  silc_client_close_connection(client, sock->user_data);
 }
 
 /* Received error message from server. Display it on the screen. 
@@ -1366,7 +1374,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find Client entry and if not found query it */
-    client_entry = silc_idlist_get_client_by_id(client, conn, client_id);
+    client_entry = silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry) {
       silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
@@ -1412,7 +1420,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find Client entry and if not found query it */
-    client_entry = silc_idlist_get_client_by_id(client, conn, client_id);
+    client_entry = silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry) {
       silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
@@ -1471,7 +1479,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1518,7 +1526,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1566,7 +1574,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1615,7 +1623,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry and if not found query it */
     client_entry2 = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry2) {
       silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
@@ -1633,7 +1641,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find old Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1677,7 +1685,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1724,7 +1732,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1747,7 +1755,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find target Client entry */
     client_entry2 = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry2)
       goto out;
 
@@ -1847,7 +1855,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id);
+      silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -2190,9 +2198,9 @@ void silc_client_private_message(SilcClient client,
       goto out;
 
     /* Send the away message */
-    silc_client_packet_send_private_message(client, sock, remote_client,
-					    conn->away->away,
-					    strlen(conn->away->away), TRUE);
+    silc_client_send_private_message(client, conn, remote_client,
+				     conn->away->away,
+				     strlen(conn->away->away), TRUE);
   }
 
  out:
