@@ -1,3 +1,12 @@
+Wed Jul 19 19:08:46 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added lib/contrib directory to hold routines that some platforms
+	  don't have but are needed by SILC.
+
+	* Added getopt.c, getopt1.c and getopt.h from GNU C library
+	  into lin/contrib to provide getopt() and getopt_long() for
+	  those who don't have it.
+
 Tue Jul 18 20:41:20 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added AWAY command to client.  When away message is set and

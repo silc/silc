@@ -238,6 +238,7 @@ Makefile
 doc/Makefile
 includes/Makefile
 lib/Makefile
+lib/contrib/Makefile
 lib/silccore/Makefile
 lib/silccrypt/Makefile
 lib/silcmath/Makefile

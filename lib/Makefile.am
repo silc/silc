@@ -19,6 +19,7 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 SUBDIRS = \
+	contrib \
 	silccore \
 	silccrypt \
 	silcsim \
@@ -34,5 +35,3 @@ all:  libsilc.a
 libsilc.a:
 	find . -type f -name *.o | xargs $(AR) cru libsilc.a
 	ranlib libsilc.a
-#	find . -type f -name *.o -maxdepth 2 | xargs $(AR) cru libsilc.a
-#	ranlib libsilc.a
