@@ -34,9 +34,10 @@
 typedef struct {
   void (*say)(SilcClient client, SilcClientConnection conn, char *msg, ...);
   void (*channel_message)(SilcClient client, SilcClientConnection conn, 
-			  char *sender, char *channel_name, char *msg);
+			  SilcClientEntry sender, SilcChannelEntry channel, 
+			  char *msg);
   void (*private_message)(SilcClient client, SilcClientConnection conn,
-			  char *sender, char *msg);
+			  SilcClientEntry sender, char *msg);
   void (*notify)(SilcClient client, SilcClientConnection conn, 
 		 SilcNotifyType type, ...);
   void (*command)(SilcClient client, SilcClientConnection conn, 
@@ -70,18 +71,19 @@ typedef struct {
    message to a specific connection.  `conn', however, may be NULL.
 
 
-   void (*channel_message)(client, SilcClientConnection conn, 
-			   char *sender, char *channel_name, char *msg);
+   void (*channel_message)(SilcClient client, SilcClientConnection conn, 
+			   SilcClientEntry client, SilcChannelEntry channel, 
+			   char *msg);
 
-   Message for a channel. The `sender' is the nickname of the sender 
-   received in the packet. The `channel_name' is the name of the channel. 
+   Message for a channel. The `sender' is the sender of the message 
+   The `channel' is the channel.
 
 
-   void (*private_message)(client, SilcClientConnection conn,
+   void (*private_message)(SilcClient client, SilcClientConnection conn,
 	 		   char *sender, char *msg);
 
-   Private message to the client. The `sender' is the nickname of the
-   sender received in the packet.
+   Private message to the client. The `sender' is the sender of the
+   message.
 
 
    void (*notify)(SilcClient client, SilcClientConnection conn, ...);

@@ -23,9 +23,10 @@
 
 void silc_say(SilcClient client, SilcClientConnection conn, char *msg, ...);
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
-			  char *sender, char *channel_name, char *msg);
+			  SilcClientEntry sender, 
+			  SilcChannelEntry channel, char *msg);
 void silc_private_message(SilcClient client, SilcClientConnection conn,
-			  char *sender, char *msg);
+			  SilcClientEntry sender, char *msg);
 void silc_notify(SilcClient client, SilcClientConnection conn, 
 		 SilcNotifyType type, ...);
 void silc_command(SilcClient client, SilcClientConnection conn, 

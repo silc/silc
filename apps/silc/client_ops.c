@@ -46,22 +46,26 @@ void silc_say(SilcClient client, SilcClientConnection conn,
    received in the packet. The `channel_name' is the name of the channel. */
 
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
-			  char *sender, char *channel_name, char *msg)
+			  SilcClientEntry sender, SilcChannelEntry channel
+			  , char *msg)
 {
   /* Message from client */
-  if (conn && !strcmp(conn->current_channel->channel_name, channel_name))
-    silc_print(client, "<%s> %s", sender, msg);
+  if (conn && !strcmp(conn->current_channel->channel_name, 
+		      channel->channel_name))
+    silc_print(client, "<%s> %s", sender ? sender->nickname : "[<unknown>]", 
+	       msg);
   else
-    silc_print(client, "<%s:%s> %s", sender, channel_name, msg);
+    silc_print(client, "<%s:%s> %s", sender ? sender->nickname : "[<unknown>]",
+	       channel->channel_name, msg);
 }
 
 /* Private message to the client. The `sender' is the nickname of the
    sender received in the packet. */
 
 void silc_private_message(SilcClient client, SilcClientConnection conn,
-			  char *sender, char *msg)
+			  SilcClientEntry sender, char *msg)
 {
-  silc_print(client, "*%s* %s", sender, msg);
+  silc_print(client, "*%s* %s", sender->nickname, msg);
 }
 
 

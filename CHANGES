@@ -1,3 +1,15 @@
+Mon Feb 19 00:50:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed the client operation API: channel_message operation's
+	  `sender' is now the client entry of the sender, not the nickname
+	  and the `channel' is the channel entry, not the channel name.
+
+	  In the private_message operation the `sender' is now also the
+	  client entry of the sender not the nickname.
+
+	  Affected file is lib/silcclient/ops.h and all applications
+	  using the client operations.
+
 Sat Feb 17 22:11:50 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Moved the calling of ops->connect() from connect_to_server_final

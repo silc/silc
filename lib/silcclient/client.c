@@ -1996,7 +1996,7 @@ void silc_client_channel_message(SilcClient client,
   SilcChannelUser chu;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id = NULL;
-  char *nickname;
+  int found = FALSE;
 
   /* Sanity checks */
   if (packet->dst_id_type != SILC_ID_CHANNEL)
@@ -2030,20 +2030,18 @@ void silc_client_channel_message(SilcClient client,
   if (!payload)
     goto out;
 
-  /* Find nickname */
-  nickname = "[unknown]";
+  /* Find client entry */
   silc_list_start(channel->clients);
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
     if (!SILC_ID_CLIENT_COMPARE(chu->client->id, client_id)) {
-      nickname = chu->client->nickname;
+      found = TRUE;
       break;
     }
   }
 
   /* Pass the message to application */
-  client->ops->channel_message(client, conn, nickname,
-			       channel->channel_name,
-			       silc_channel_get_data(payload, NULL));
+  client->ops->channel_message(client, conn, found ? chu->client : NULL,
+			       channel, silc_channel_get_data(payload, NULL));
 
  out:
   if (id)
@@ -2063,9 +2061,15 @@ void silc_client_private_message(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   SilcBuffer buffer = packet->buffer;
+  SilcIDCacheEntry id_cache;
+  SilcClientID *remote_id = NULL;
+  SilcClientEntry remote_client;
   unsigned short nick_len;
-  unsigned char *nickname, *message;
+  unsigned char *nickname, *message = NULL;
   int ret;
+
+  if (packet->src_id_type != SILC_ID_CLIENT)
+    goto out;
 
   /* Get nickname */
   ret = silc_buffer_unformat(buffer, 
@@ -2079,46 +2083,38 @@ void silc_client_private_message(SilcClient client,
   message = silc_calloc(buffer->len + 1, sizeof(char));
   memcpy(message, buffer->data, buffer->len);
 
+  remote_id = silc_id_str2id(packet->src_id, packet->src_id_len, 
+			     SILC_ID_CLIENT);
+  if (!remote_id)
+    goto out;
+
+  /* Check whether we know this client already */
+  if (!silc_idcache_find_by_id_one(conn->client_cache, remote_id,
+				   SILC_ID_CLIENT, &id_cache))
+    {
+      /* Allocate client entry */
+      remote_client = silc_calloc(1, sizeof(*remote_client));
+      remote_client->id = remote_id;
+      silc_parse_nickname(nickname, &remote_client->nickname, 
+			  &remote_client->server, &remote_client->num);
+      
+      /* Save the client to cache */
+      silc_idcache_add(conn->client_cache, remote_client->nickname,
+		       SILC_ID_CLIENT, remote_client->id, remote_client, 
+		       TRUE);
+    } else {
+      remote_client = (SilcClientEntry)id_cache->context;
+    }
+
   /* Pass the private message to application */
-  client->ops->private_message(client, conn, nickname, message);
+  client->ops->private_message(client, conn, remote_client, message);
 
   /* See if we are away (gone). If we are away we will reply to the
      sender with the set away message. */
   if (conn->away && conn->away->away) {
-    SilcClientID *remote_id;
-    SilcClientEntry remote_client;
-    SilcIDCacheEntry id_cache;
-
-    if (packet->src_id_type != SILC_ID_CLIENT)
-      goto out;
-
-    remote_id = silc_id_str2id(packet->src_id, packet->src_id_len, 
-			       SILC_ID_CLIENT);
-    if (!remote_id)
-      goto out;
-
     /* If it's me, ignore */
     if (!SILC_ID_CLIENT_COMPARE(remote_id, conn->local_id))
       goto out;
-
-    /* Check whether we know this client already */
-    if (!silc_idcache_find_by_id_one(conn->client_cache, remote_id,
-				     SILC_ID_CLIENT, &id_cache))
-      {
-	/* Allocate client entry */
-	remote_client = silc_calloc(1, sizeof(*remote_client));
-	remote_client->id = remote_id;
-	silc_parse_nickname(nickname, &remote_client->nickname, 
-			    &remote_client->server, &remote_client->num);
-
-	/* Save the client to cache */
-	silc_idcache_add(conn->client_cache, remote_client->nickname,
-			 SILC_ID_CLIENT, remote_client->id, remote_client, 
-			 TRUE);
-      } else {
-	silc_free(remote_id);
-	remote_client = (SilcClientEntry)id_cache->context;
-      }
 
     /* Send the away message */
     silc_client_packet_send_private_message(client, sock, remote_client,
@@ -2127,8 +2123,13 @@ void silc_client_private_message(SilcClient client,
   }
 
  out:
-  memset(message, 0, buffer->len);
-  silc_free(message);
+  if (remote_id)
+    silc_free(remote_id);
+
+  if (message) {
+    memset(message, 0, buffer->len);
+    silc_free(message);
+  }
   silc_free(nickname);
 }
 
