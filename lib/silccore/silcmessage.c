@@ -67,15 +67,16 @@ bool silc_message_payload_decrypt(unsigned char *data,
 				  SilcHmac hmac,
 				  bool check_mac)
 {
-  SilcUInt32 mac_len = 0, iv_len = 0, block_len, pad_len;
-  unsigned char *mac, mac2[32];
-  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE], *ivp;
+  SilcUInt32 mac_len, iv_len = 0, block_len, pad_len;
+  unsigned char mac[32];
+  unsigned char *ivp;
   SilcUInt16 len;
   
   mac_len = silc_hmac_len(hmac);
+  block_len = silc_cipher_get_block_len(cipher);
 
-  /* IV is present for channel messages and private messages when static
-     key (pre-shared key) is used. */
+  /* IV is present for all channel messages, and private messages when 
+     static key (pre-shared key) is used. */
   if (!private_message || (private_message && static_key))
     iv_len = silc_cipher_get_block_len(cipher);
 
@@ -83,15 +84,12 @@ bool silc_message_payload_decrypt(unsigned char *data,
     return FALSE;
 
   if (check_mac) {
-    /* Take the MAC */
-    mac = data + (data_len - mac_len);
-
     /* Check the MAC of the message */
     SILC_LOG_DEBUG(("Checking message MAC"));
     silc_hmac_init(hmac);
     silc_hmac_update(hmac, data, data_len - mac_len);
-    silc_hmac_final(hmac, mac2, &mac_len);
-    if (memcmp(mac, mac2, mac_len)) {
+    silc_hmac_final(hmac, mac, &mac_len);
+    if (memcmp(data + (data_len - mac_len), mac, mac_len)) {
       SILC_LOG_DEBUG(("Message MAC does not match"));
       return FALSE;
     }
@@ -105,19 +103,15 @@ bool silc_message_payload_decrypt(unsigned char *data,
   /* Decrypt first block to get data length.  We need to do this since
      there might be extra data at the end of the payload which is not
      encrypted (like the signature payload). */
-  block_len = silc_cipher_get_block_len(cipher);
-  memcpy(iv, ivp, block_len);
-  silc_cipher_decrypt(cipher, data, data, 16, iv);
+  silc_cipher_decrypt(cipher, data, data, block_len, ivp);
 
-  /* Decrypt rest of the message */
+  /* Decrypt rest of the message according to the length of data */
   SILC_GET16_MSB(len, data + 2);
   pad_len = SILC_MESSAGE_PAD(6 + len);
-  if (6 + len + pad_len > 16 &&
-      6 + len + pad_len + mac_len + iv_len <= data_len) {
-    silc_cipher_set_iv(cipher, iv);
-    silc_cipher_decrypt(cipher, data + 16, data + 16,
-			(6 + len + pad_len) - 16, NULL);
-  }
+  if (6 + len + pad_len > block_len &&
+      6 + len + pad_len + mac_len + iv_len <= data_len)
+    silc_cipher_decrypt(cipher, data + block_len, data + block_len,
+			(6 + len + pad_len) - block_len, ivp);
 
   return TRUE;
 }
@@ -154,8 +148,8 @@ silc_message_payload_parse(unsigned char *payload,
   if (hmac)
     mac_len = silc_hmac_len(hmac);
 
-  /* IV is present for channel messages and private messages when static
-     key (pre-shared key) is used. */
+  /* IV is present for all channel messages, and private messages when 
+     static key (pre-shared key) is used. */
   if (cipher && (!private_message || (private_message && static_key)))
     iv_len = silc_cipher_get_block_len(cipher);
 
@@ -170,8 +164,6 @@ silc_message_payload_parse(unsigned char *payload,
 							 &newp->data_len),
 			     SILC_STR_UI16_NSTRING_ALLOC(&newp->pad, 
 							 &newp->pad_len),
-			     SILC_STR_UI_XNSTRING(&newp->iv, iv_len),
-			     SILC_STR_UI_XNSTRING(&newp->mac, mac_len),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
@@ -182,20 +174,23 @@ silc_message_payload_parse(unsigned char *payload,
     goto err;
   }
 
-  newp->iv_len = iv_len;
-
-  SILC_LOG_HEXDUMP(("foo"), buffer.data, buffer.len);
-  
   /* Parse Signed Message Payload if provided */
   if (newp->flags & SILC_MESSAGE_FLAG_SIGNED &&
       newp->data_len + newp->pad_len + 6 + mac_len + iv_len < buffer.len) {
-    silc_buffer_pull(&buffer, 6 + newp->data_len + newp->pad_len);
     newp->sig =
-      silc_message_signed_payload_parse(buffer.data,
+      silc_message_signed_payload_parse(buffer.data + 6 + newp->data_len +
+					newp->pad_len,
 					buffer.len - iv_len - mac_len);
-    silc_buffer_push(&buffer, 6 + newp->data_len + newp->pad_len);
   }
-  
+
+  /* Parse IV and MAC from the payload */
+  if (iv_len) {
+    newp->iv = buffer.data + (buffer.len - iv_len - mac_len);
+    newp->iv_len = iv_len;
+  }
+  if (mac_len)
+    newp->mac = buffer.data + (buffer.len - mac_len);
+
   return newp;
 
  err:
@@ -467,7 +462,7 @@ silc_message_signed_payload_parse(const unsigned char *data,
 
   SILC_LOG_DEBUG(("Parsing SILC_MESSAGE_FLAG_SIGNED Payload"));
 
-  SILC_LOG_HEXDUMP(("sig payload"), data, data_len);
+  SILC_LOG_HEXDUMP(("sig payload"), (unsigned char *)data, data_len);
 
   silc_buffer_set(&buffer, (unsigned char *)data, data_len);
   sig = silc_calloc(1, sizeof(*sig));
