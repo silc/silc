@@ -2481,8 +2481,8 @@ void silc_server_remove_from_channels(SilcServer server,
 	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
       if (silc_idlist_del_channel(server->local_list, channel))
 	server->stat.my_channels--;
-      else if (silc_idlist_del_channel(server->global_list, channel))
-	server->stat.my_channels--;
+      else 
+        silc_idlist_del_channel(server->global_list, channel);
       continue;
     }
 
@@ -2533,8 +2533,8 @@ void silc_server_remove_from_channels(SilcServer server,
       /* Remove the channel entry */
       if (silc_idlist_del_channel(server->local_list, channel))
 	server->stat.my_channels--;
-      else if (silc_idlist_del_channel(server->global_list, channel))
-	server->stat.my_channels--;
+      else 
+        silc_idlist_del_channel(server->global_list, channel);
       continue;
     }
 
@@ -2601,8 +2601,8 @@ int silc_server_remove_from_one_channel(SilcServer server,
       silc_schedule_task_del_by_context(server->schedule, channel->rekey);
     if (silc_idlist_del_channel(server->local_list, channel))
       server->stat.my_channels--;
-    else if (silc_idlist_del_channel(server->global_list, channel))
-      server->stat.my_channels--;
+    else 
+      silc_idlist_del_channel(server->global_list, channel);
     silc_buffer_free(clidp);
     return FALSE;
   }
@@ -2653,8 +2653,8 @@ int silc_server_remove_from_one_channel(SilcServer server,
     /* Remove the channel entry */
     if (silc_idlist_del_channel(server->local_list, channel))
       server->stat.my_channels--;
-    else if (silc_idlist_del_channel(server->global_list, channel))
-      server->stat.my_channels--;
+    else 
+      silc_idlist_del_channel(server->global_list, channel);
     return FALSE;
   }
 

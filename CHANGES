@@ -1,3 +1,8 @@
+Thu Oct 25 19:04:49 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Assure my_channels statistics cannot go negative in server.
+	  Affected files silcd/server.c, silcd/server_util.c.
+
 Wed Oct 24 19:53:05 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Upgraded dotconf 1.0.2 to 1.0.6 in lib/dotconf.

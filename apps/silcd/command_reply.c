@@ -813,6 +813,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
       silc_free(id);
       goto out;
     }
+    server->stat.my_channels++;
   } else {
     /* The entry exists. */
     if (cache->id)

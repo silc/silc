@@ -64,8 +64,8 @@ static void silc_server_remove_clients_channels(SilcServer server,
 
       if (silc_idlist_del_channel(server->local_list, channel))
 	server->stat.my_channels--;
-      else if (silc_idlist_del_channel(server->global_list, channel))
-	server->stat.my_channels--;
+      else 
+        silc_idlist_del_channel(server->global_list, channel);
       continue;
     }
 
@@ -111,8 +111,8 @@ static void silc_server_remove_clients_channels(SilcServer server,
       /* Remove the channel entry */
       if (silc_idlist_del_channel(server->local_list, channel))
 	server->stat.my_channels--;
-      else if (silc_idlist_del_channel(server->global_list, channel))
-	server->stat.my_channels--;
+      else 
+        silc_idlist_del_channel(server->global_list, channel);
       continue;
     }
 
