@@ -1678,6 +1678,14 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *                             NULL);
  *    silc_client_command_call(client, conn, "PING silc.silcnet.org");
  *
+ * NOTES
+ *
+ *    This command executes the commands implemented inside the client 
+ *    library.  These commands are designed for command line applications,
+ *    but GUI application may call them too if needed.  Alternatively
+ *    application may override the library and use silc_client_command_send
+ *    function instead.
+ *
  ***/
 bool silc_client_command_call(SilcClient client,
 			      SilcClientConnection conn,
@@ -1701,6 +1709,10 @@ bool silc_client_command_call(SilcClient client,
  *    the silc_client_command_call, this function is usually not used.
  *    Note that this overriders the Client Librarys commands and sends
  *    the command packet directly to server.
+ *
+ *    Programmer should get familiar with the SILC protocol commands
+ *    specification when using this function, as the arguments needs to 
+ *    be encoded as specified in the protocol.
  *
  *    The variable arguments are a pair of { type, data, data_length },
  *    and the `argc' is the number of these pairs.
