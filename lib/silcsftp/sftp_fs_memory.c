@@ -795,7 +795,12 @@ void mem_readdir(void *context, SilcSFTP sftp,
 	     ((entry->perm & SILC_SFTP_FS_PERM_WRITE) ? 'w' : '-'),
 	     ((entry->perm & SILC_SFTP_FS_PERM_EXEC) ? 'x' : '-'),
 	     (entry->directory ? (int)entry->entry_count : 1),
-	     (unsigned long long)filesize, date, entry->name,
+#ifndef SILC_WIN32
+	     (unsigned long long)filesize,
+#else
+	     (unsigned long)filesize,
+#endif
+	     date, entry->name,
 	     (entry->directory ? "/" :
 	      ((entry->perm & SILC_SFTP_FS_PERM_EXEC) ? "*" : "")));
 
