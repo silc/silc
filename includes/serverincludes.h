@@ -26,10 +26,10 @@
 
 /* SILC Server includes */
 #include "idlist.h"
-#include "route.h"
 #include "serverid.h"
 #include "serverconfig.h"
 #include "server.h"
+#include "route.h"
 #include "protocol.h"
 #include "command.h"
 #include "command_reply.h"
