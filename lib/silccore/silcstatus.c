@@ -33,7 +33,7 @@ SilcUInt32 silc_status_get_args(SilcStatus status,
   assert(ret_arg1 && ret_arg2);
 
   num = silc_argument_get_arg_num(args);
-  if (num > 2)
+  if (num > 3)
     return 0;
   if (num == 0)
     return 0;
