@@ -302,7 +302,8 @@ void silc_client_channel_message(SilcClient client,
 
   /* Find client entry */
   client_entry = silc_client_get_client_by_id(client, conn, client_id);
-  if (!client_entry || !client_entry->nickname) {
+  if (!client_entry || !client_entry->nickname ||
+      !silc_client_on_channel(channel, client_entry)) {
     /* Resolve the client info */
     SilcChannelClientResolve res = silc_calloc(1, sizeof(*res));
     res->payload = payload;
@@ -312,11 +313,6 @@ void silc_client_channel_message(SilcClient client,
 					 res);
     payload = NULL;
     id = NULL;
-    goto out;
-  }
-
-  if (!silc_client_on_channel(channel, client_entry)) {
-    SILC_LOG_WARNING(("Received channel message from client not on channel"));
     goto out;
   }
 
