@@ -591,6 +591,8 @@ SilcBuffer silc_buffer_alloc_size(SilcUInt32 len)
 static inline
 void silc_buffer_clear(SilcBuffer sb)
 {
+  if (!sb)
+    return;
   memset(sb->head, 0, sb->truelen);
   sb->data = sb->head;
   sb->tail = sb->head;
