@@ -2491,7 +2491,10 @@ and additional documents on the issue may be written.
 3 Security Considerations
 
 Security is central to the design of this protocol, and these security
-considerations permeate the specification.
+considerations permeate the specification.  Common security considerations
+such as keeping private keys truly private and using adequate lengths for 
+symmetric and asymmetric keys must be followed in order to maintain the   
+security of this protocol.
 
 
 .ti 0
