@@ -105,6 +105,10 @@ TODO In SILC Server
 TODO In SILC Libraries
 ======================
 
+ o The SKE Start Payload parsing routines are an overkill.  Use the
+   SILC_STR_UI16_NSTRING_ALLOC in the parsing and not parsing them
+   one by one like done now.
+
  o Implement PFS (Perfect Forward Secrecy) flag in SKE (and in client and
    server, actually).  If PFS is set, re-key must cause new key exchange.
    This is required by the SILC protocol.
@@ -159,6 +163,15 @@ TODO in the protocol before SILC 0.x
  o New features in the KE/auth protocol
    (draft-riikonen-silc-ke-auth-xx.txt):
 
+	o Merge the KE1 and KE2 payloads into one KE payload that has
+	  the `signature' field.  Provide it only if the perty is
+	  required to do authentication.
+	o Add MUTUAL_AUTH flag to indicate that the party must perform
+	  authentication (to sign with their private key).  Initiator
+	  may set it to indicate that it can authenticate but responder
+	  MAY require for the initiator to do authentication by setting
+	  the flag at the KE Start Payload reply phase.  The responder
+	  performs authentication always as now as well.
 	o Define group exchange support for the SKE so that the SKE
 	  could be performed among more than two entities.  This is not
 	  a showstopper and may be defined later.
