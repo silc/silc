@@ -1,3 +1,10 @@
+Wed Nov  1 17:21:26 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed some unsigned int's to unsigned short's.  Patch by cras.
+
+	* Fixed contrib/getopt*.[ch] to not require config.h.  Patch by
+	  cras.
+
 Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Updated README.

@@ -247,6 +247,5 @@ lib/silcsim/Makefile
 lib/silcsim/modules/Makefile
 lib/silcske/Makefile
 lib/silcutil/Makefile
-lib/trq/Makefile
 silc/Makefile
 silcd/Makefile)
