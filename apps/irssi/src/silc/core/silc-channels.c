@@ -93,6 +93,15 @@ static void sig_connected(SILC_SERVER_REC *server)
     server->channels_join = (void *) silc_channels_join;
 }
 
+/* "server quit" signal from the core to indicate that QUIT command
+   was called. */
+
+static void sig_server_quit(SILC_SERVER_REC *server, const char *msg)
+{
+  if (IS_SILC_SERVER(server))
+    silc_command_exec(server, "QUIT", msg);
+}
+
 /*
  * "event join". Joined to a channel.
  */
@@ -285,10 +294,8 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
     signal_emit("channel mode changed", 1, chanrec);
   }
   
-  /*signal_emit("message mode", 5, server, chanrec->name,
-    client->nickname, client->username, mode);*/
   printtext(server, channel->channel_name, MSGLEVEL_MODES,
-	    "mode/%s [%s] by %s", channel->channel_name, mode,
+	    "cmode/%s [%s] by %s", channel->channel_name, mode,
 	    client->nickname);
   
   g_free(mode);
@@ -328,11 +335,9 @@ static void event_cumode(SILC_SERVER_REC *server, va_list va)
     }
   }
   
-  /*signal_emit("message mode", 5, server, chanrec->name,
-    client->nickname, client->username, modestr);*/
   printtext(server, channel->channel_name, MSGLEVEL_MODES,
-	    "mode/%s [%s] by %s", channel->channel_name, modestr,
-	    client->nickname);
+	    "cumode/%s/%s [%s] by %s", destclient->nickname, 
+	    channel->channel_name, mode, client->nickname);
   
   g_free(modestr);
 }
@@ -513,6 +518,7 @@ void silc_channels_init(void)
 {
   signal_add("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
   signal_add("server connected", (SIGNAL_FUNC) sig_connected);
+  signal_add("server quit", (SIGNAL_FUNC) sig_server_quit);
 
   signal_add("silc event join", (SIGNAL_FUNC) event_join);
   signal_add("silc event leave", (SIGNAL_FUNC) event_leave);
@@ -540,6 +546,7 @@ void silc_channels_deinit(void)
 {
   signal_remove("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
   signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
+  signal_remove("server quit", (SIGNAL_FUNC) sig_server_quit);
 
   signal_remove("silc event join", (SIGNAL_FUNC) event_join);
   signal_remove("silc event leave", (SIGNAL_FUNC) event_leave);

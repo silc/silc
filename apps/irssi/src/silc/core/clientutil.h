@@ -21,9 +21,11 @@
 #ifndef CLIENTUTIL_H
 #define CLIENTUTIL_H
 
+#include "signals.h"
+
 /* Prototypes */
 void silc_client_ask_yes_no(char *prompt, SIGNAL_FUNC func);
-void silc_client_get_input(char *prompt, SIGNAL_FUNC func);
+char *silc_client_get_input(const char *prompt);
 void silc_client_list_ciphers();
 void silc_client_list_hash_funcs();
 void silc_client_list_pkcs();

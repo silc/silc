@@ -31,16 +31,17 @@
 #include "rawlog.h"
 #include "misc.h"
 #include "settings.h"
-#include "curses.h"
 
-#include "servers-setup.h"
+#include "channels-setup.h"
 
 #include "silc-servers.h"
 #include "silc-channels.h"
 #include "silc-queries.h"
+#include "silc-nicklist.h"
 #include "window-item-def.h"
 
 #include "fe-common/core/printtext.h"
+#include "fe-common/core/keyboard.h"
 
 /* Asks yes/no from user on the input line. Returns TRUE on "yes" and
    FALSE on "no". */
@@ -79,9 +80,34 @@ void silc_client_list_pkcs()
 
 /* Displays input prompt on command line and takes input data from user */
 
-void silc_client_get_input(char *prompt, SIGNAL_FUNC func)
+char *silc_client_get_input(const char *prompt)
 {
-  keyboard_entry_redirect(func, prompt, 0, NULL);
+  char input[2048];
+  int fd;
+
+  fd = open("/dev/tty", O_RDONLY);
+  if (fd < 0) {
+    fprintf(stderr, "silc: %s\n", strerror(errno));
+    return NULL;
+  }
+
+  memset(input, 0, sizeof(input));
+
+  printf("%s", prompt);
+  fflush(stdout);
+
+  if ((read(fd, input, sizeof(input))) < 0) {
+    fprintf(stderr, "silc: %s\n", strerror(errno));
+    return NULL;
+  }
+
+  if (strlen(input) <= 1)
+    return NULL;
+
+  if (strchr(input, '\n'))
+    *strchr(input, '\n') = '\0';
+
+  return strdup(input);
 }
 
 /* Returns identifier string for public key generation. */

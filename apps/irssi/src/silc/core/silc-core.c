@@ -40,6 +40,7 @@
 
 /* Command line option variables */
 static bool opt_create_keypair = FALSE;
+static bool opt_debug = FALSE;
 static char *opt_pkcs = NULL;
 static char *opt_keyfile = NULL;
 static int opt_bits = 0;
@@ -49,6 +50,7 @@ static int idletag;
 SilcClient silc_client = NULL;
 SilcClientConfig silc_config = NULL;
 extern SilcClientOperations ops;
+extern int silc_debug;
 #ifdef SILC_SIM
 /* SIM (SILC Module) table */
 SilcSimContext **sims = NULL;
@@ -1045,6 +1047,23 @@ static void silc_init_userinfo(void)
   }
 }
 
+/* Log callbacks */
+
+static void silc_log_info(char *message)
+{
+  fprintf(stderr, "%s\n", message);
+}
+
+static void silc_log_warning(char *message)
+{
+  fprintf(stderr, "%s\n", message);
+}
+
+static void silc_log_error(char *message)
+{
+  fprintf(stderr, "%s\n", message);
+}
+
 /* Init SILC. Called from src/fe-text/silc.c */
 
 void silc_core_init(void)
@@ -1058,6 +1077,8 @@ void silc_core_init(void)
       "Set the length of the public key pair", "VALUE" },
     { "show-key", 'S', POPT_ARG_STRING, &opt_keyfile, 0, 
       "Show the contents of the public key", "FILE" },
+    { "debug", 'd', POPT_ARG_NONE, &opt_debug, 0,
+      "Enable debugging", NULL },
     { NULL, '\0', 0, NULL }
   };
 
@@ -1090,6 +1111,10 @@ void silc_core_init_finish(void)
     silc_client_show_key(opt_keyfile);
     exit(0);
   }
+
+  silc_debug = opt_debug;
+  silc_log_set_callbacks(silc_log_info, silc_log_warning,
+			 silc_log_error, NULL);
 
   silc_init_userinfo();
 
@@ -1164,7 +1189,7 @@ void silc_core_init_finish(void)
   silc_channels_init();
   silc_queries_init();
 
-  idletag = g_timeout_add(100, (GSourceFunc) my_silc_scheduler, NULL);
+  idletag = g_timeout_add(50, (GSourceFunc) my_silc_scheduler, NULL);
 }
 
 /* Deinit SILC. Called from src/fe-text/silc.c */
