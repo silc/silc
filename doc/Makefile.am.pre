@@ -24,33 +24,33 @@ DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 makerfc = ../scripts/makerfc
 
 all:
-	touch draft-riikonen-silc-spec-03.txt
-	touch draft-riikonen-silc-pp-03.txt
-	touch draft-riikonen-silc-ke-auth-03.txt
-	touch draft-riikonen-silc-commands-01.txt
+	touch draft-riikonen-silc-spec-04.txt
+	touch draft-riikonen-silc-pp-04.txt
+	touch draft-riikonen-silc-ke-auth-04.txt
+	touch draft-riikonen-silc-commands-02.txt
 	-cd ..
 
 if SILC_DIST_CLIENT
 dist-hook:
 	rm draft-riikonen*.txt
-	touch draft-riikonen-silc-spec-03.txt
-	touch draft-riikonen-silc-pp-03.txt
-	touch draft-riikonen-silc-ke-auth-03.txt
-	touch draft-riikonen-silc-commands-01.txt
+	touch draft-riikonen-silc-spec-04.txt
+	touch draft-riikonen-silc-pp-04.txt
+	touch draft-riikonen-silc-ke-auth-04.txt
+	touch draft-riikonen-silc-commands-02.txt
 else
 dist-hook:
-	touch draft-riikonen-silc-spec-03.txt
-	touch draft-riikonen-silc-pp-03.txt
-	touch draft-riikonen-silc-ke-auth-03.txt
-	touch draft-riikonen-silc-commands-01.txt
-	$(makerfc) draft-riikonen-silc-spec-03.nroff \
-		draft-riikonen-silc-spec-03.txt
-	$(makerfc) draft-riikonen-silc-pp-03.nroff \
-		draft-riikonen-silc-pp-03.txt
-	$(makerfc) draft-riikonen-silc-ke-auth-03.nroff \
-		draft-riikonen-silc-ke-auth-03.txt
-	$(makerfc) draft-riikonen-silc-commands-01.nroff \
-		draft-riikonen-silc-commands-01.txt
+	touch draft-riikonen-silc-spec-04.txt
+	touch draft-riikonen-silc-pp-04.txt
+	touch draft-riikonen-silc-ke-auth-04.txt
+	touch draft-riikonen-silc-commands-02.txt
+	$(makerfc) draft-riikonen-silc-spec-04.nroff \
+		draft-riikonen-silc-spec-04.txt
+	$(makerfc) draft-riikonen-silc-pp-04.nroff \
+		draft-riikonen-silc-pp-04.txt
+	$(makerfc) draft-riikonen-silc-ke-auth-04.nroff \
+		draft-riikonen-silc-ke-auth-04.txt
+	$(makerfc) draft-riikonen-silc-commands-02.nroff \
+		draft-riikonen-silc-commands-02.txt
 endif
 
 EXTRA_DIST = \

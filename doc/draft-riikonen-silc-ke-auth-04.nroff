@@ -220,8 +220,8 @@ payload before the key exchange procedure starts.  The cookie MUST be
 returned to the original sender by the responder.
 
 Following diagram represents the Key Exchange Start Payload.  The lists
-mentioned below are always comma (`,') separated and the list MUST
-not include spaces (` ').
+mentioned below are always comma (`,') separated and the list MUST NOT
+include spaces (` ').
 
 
 .in 5

@@ -1,3 +1,11 @@
+Wed Aug 29 17:55:01 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Statement about ignoring the Mutual Authentication flag when
+	  performing rekey with PFS was a bit misleading.  It is ignored
+	  if it was set in the initial negotiation, it cannot be even
+	  set in the rekey.  Fixed in the ke-auth draft.  Started the
+	  new versions of the protocol drafts in the doc/.
+
 Sun Aug 26 14:59:15 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a bug in silc_client_command_identify_save when saving
