@@ -1,3 +1,12 @@
+Tue Feb 13 19:55:59 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added --with-gmp configuration option.  If set the GMP
+	  is always compiled in the SILC source tree.  If not set then
+	  it is checked whether the system has the GMP3 installed.  If
+	  it has then the GMP won't be compiled (the system's headers
+	  and library is used), if it doesn't have it then the GMP is
+	  compiled in the SILC source tree.
+
 Mon Feb 12 11:20:32 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed RSA private exponent generation to what PKCS #1
