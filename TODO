@@ -1,13 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o We should get rid of the clientconfig.[ch] in Irssi SILC and move the
-   cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
-   file.
-
- o The QUIT command should wait for servers disconnection (at least for
-   a while) before exiting the application.
-
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the
@@ -16,6 +9,13 @@ TODO/bugs in Irssi SILC client
  o Add local commands to list the current server and client public keys
    that the user has.  And a local command to dump the contents of the
    public key to the screen.  Something like LISTKEYS, SHOWKEY...
+
+ o We should get rid of the clientconfig.[ch] in Irssi SILC and move the
+   cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
+   file.
+
+ o The QUIT command should wait for servers disconnection (at least for
+   a while) before exiting the application.
 
  o Add PERL scripting support from Irssi CVS.
 
@@ -75,15 +75,7 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o Move all utility stuff to undef lib/silcutil/.  This includes trq,
-   dotconf and zlib.
-
- o Incomplete IPv6 support:
-
-	o All network routines in lib/silcutil/silcnet.[ch] does not
-	  support IPv6.
-	o silc_id_render supports only IPv4 based ID's in the file
-	  lib/silcutil/silcutil.c.
+ o Some ./prepare problems with latest autoconf and automake.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
@@ -101,6 +93,13 @@ TODO/bugs In SILC Libraries
    should be added silc_buffer_[un]format_? routines.  These are currently
    only cosmetic changes but at some point must be done to make the
    payload interfaces consistent.
+
+ o Incomplete IPv6 support:
+
+	o All network routines in lib/silcutil/silcnet.[ch] does not
+	  support IPv6.
+	o silc_id_render supports only IPv4 based ID's in the file
+	  lib/silcutil/silcutil.c.
 
  o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
    SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
