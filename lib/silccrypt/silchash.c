@@ -28,7 +28,7 @@
 SilcDList silc_hash_list = NULL;
 
 /* Default hash functions for silc_hash_register_default(). */
-SilcHashObject silc_default_hash[] = 
+const SilcHashObject silc_default_hash[] = 
 {
   { "sha1", 20, 64, silc_sha1_init, silc_sha1_update, silc_sha1_final,
     silc_sha1_transform, silc_sha1_context_len },
@@ -112,7 +112,7 @@ bool silc_hash_register_default(void)
   int i;
 
   for (i = 0; silc_default_hash[i].name; i++)
-    silc_hash_register(&(silc_default_hash[i]));
+    silc_hash_register((SilcHashObject *)&(silc_default_hash[i]));
 
   return TRUE;
 }

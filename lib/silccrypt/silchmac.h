@@ -73,7 +73,7 @@ typedef struct {
 #define SILC_ALL_HMACS ((SilcHmacObject *)1)
 
 /* Default hmacs for silc_hmac_register_default(). */
-extern DLLAPI SilcHmacObject silc_default_hmacs[];
+extern DLLAPI const SilcHmacObject silc_default_hmacs[];
 
 /* Default HMAC in the SILC protocol */
 #define SILC_DEFAULT_HMAC "hmac-sha1-96"

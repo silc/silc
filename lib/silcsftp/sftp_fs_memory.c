@@ -26,7 +26,7 @@
 
 #define DIR_SEPARATOR "/"
 
-struct SilcSFTPFilesystemOpsStruct silc_sftp_fs_memory;
+const struct SilcSFTPFilesystemOpsStruct silc_sftp_fs_memory;
 
 /* Memory filesystem entry */
 typedef struct MemFSEntryStruct {
@@ -320,7 +320,8 @@ SilcSFTPFilesystem silc_sftp_fs_memory_alloc(SilcSFTPFSMemoryPerm perm)
   fs->root->name = strdup(DIR_SEPARATOR);
 
   filesystem = silc_calloc(1, sizeof(*filesystem));
-  filesystem->fs = &silc_sftp_fs_memory;
+  filesystem->fs = 
+    (struct SilcSFTPFilesystemOpsStruct *)&silc_sftp_fs_memory;
   filesystem->fs_context = (void *)fs;
 
   return filesystem;
@@ -1014,7 +1015,7 @@ void mem_extended(void *context, SilcSFTP sftp,
 	      callback_context);
 }
 
-struct SilcSFTPFilesystemOpsStruct silc_sftp_fs_memory = {
+const struct SilcSFTPFilesystemOpsStruct silc_sftp_fs_memory = {
   mem_get_handle,
   mem_encode_handle,
   mem_open,

@@ -28,7 +28,7 @@
 SilcDList silc_pkcs_list = NULL;
 
 /* Static list of PKCS for silc_pkcs_register_default(). */
-SilcPKCSObject silc_default_pkcs[] =
+const SilcPKCSObject silc_default_pkcs[] =
 {
   /* RSA with PKCS #1 (Uses directly routines from Raw RSA operations) */
   { "rsa", 
@@ -118,7 +118,7 @@ bool silc_pkcs_register_default(void)
   int i;
 
   for (i = 0; silc_default_pkcs[i].name; i++)
-    silc_pkcs_register(&(silc_default_pkcs[i]));
+    silc_pkcs_register((SilcPKCSObject *)&(silc_default_pkcs[i]));
 
   return TRUE;
 }

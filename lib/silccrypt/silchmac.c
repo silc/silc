@@ -38,7 +38,7 @@ struct SilcHmacStruct {
 SilcDList silc_hmac_list = NULL;
 
 /* Default hmacs for silc_hmac_register_default(). */
-SilcHmacObject silc_default_hmacs[] =
+const SilcHmacObject silc_default_hmacs[] =
 {
   { "hmac-sha1-96", 12 },
   { "hmac-md5-96", 12 },
@@ -145,7 +145,7 @@ bool silc_hmac_register_default(void)
   int i;
 
   for (i = 0; silc_default_hmacs[i].name; i++)
-    silc_hmac_register(&(silc_default_hmacs[i]));
+    silc_hmac_register((SilcHmacObject *)&(silc_default_hmacs[i]));
 
   return TRUE;
 }

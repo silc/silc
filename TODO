@@ -100,6 +100,28 @@ TODO/bugs In SILC Libraries
    context it provides, which is delivered by SFTP libary to all 
    callback functions.
 
+ o EPOC specific additions/changes required:
+
+	o lib/silcutil/epoc routines missing or not completed.
+
+ 	o Rewrite the lib/silcutil/silcprotocol.[ch] not to have 
+	  [un]register functions, but to make it context based all the 
+	  way.  The alloc should take as argument the protocol type and 
+	  its callback (not only final callback).  It is not good that we 
+	  have now global list of registered protocols.
+
+	o Global RNG should not be allowed on EPOC, since it won't
+	  work.  Every function in library that calls the global RNG must
+	  also take the RNG context as argument so that application can
+	  provide it if it doesn't want to use global RNG.
+
+	o Think some solution to the global crypto lists in lib/silccrypt.
+	  They won't work on EPOC.
+
+	o Something needs to be thought to the logging globals as well, 
+	  like silc_debug etc.  They won't work on EPOC.  Perhaps logging
+	  and debugging is to be disabled on EPOC.
+
 
 TODO in Toolkit Documentation
 =============================
@@ -232,12 +254,6 @@ least could be done.
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Zip API must be
    defined.
-
- o Rewrite the lib/silcutil/silcprotocol.[ch] not to have [un]register 
-   functions, but to make it context based all the way.  The alloc should 
-   take as argument the protocol type and its callback (not only 
-   final callback).  It is not good that we have now global list of 
-   registered protocols.
 
  o Optimizations in Libraries
 

@@ -27,7 +27,7 @@
 SilcDList silc_cipher_list = NULL;
 
 /* Static list of ciphers for silc_cipher_register_default(). */
-SilcCipherObject silc_default_ciphers[] =
+const SilcCipherObject silc_default_ciphers[] =
 {
   { "aes-256-cbc", 16, 256, silc_aes_set_key, 
     silc_aes_set_key_with_string, silc_aes_encrypt_cbc,
@@ -162,7 +162,7 @@ bool silc_cipher_register_default(void)
   int i;
 
   for (i = 0; silc_default_ciphers[i].name; i++)
-    silc_cipher_register(&(silc_default_ciphers[i]));
+    silc_cipher_register((SilcCipherObject *)&(silc_default_ciphers[i]));
 
   return TRUE;
 }

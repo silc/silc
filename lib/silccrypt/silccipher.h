@@ -74,7 +74,7 @@ typedef struct SilcCipherStruct {
 #define SILC_ALL_CIPHERS ((SilcCipherObject *)1)
 
 /* Static list of ciphers for silc_cipher_register_default(). */
-extern DLLAPI SilcCipherObject silc_default_ciphers[];
+extern DLLAPI const SilcCipherObject silc_default_ciphers[];
 
 /* Default cipher in the SILC protocol */
 #define SILC_DEFAULT_CIPHER "aes-256-cbc"
