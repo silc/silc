@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -5422,6 +5422,8 @@ SILC_TASK_CALLBACK(silc_server_rekey_timeout)
   /* Disconnect since we failed to rekey, the keys are probably wrong. */
   silc_server_disconnect_remote(server, sock,
 				SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
+  if (sock->user_data)
+    silc_server_free_sock_user_data(server, sock, NULL);
 
   /* Reconnect */
   if (sock->type != SILC_SOCKET_TYPE_CLIENT)
@@ -5530,6 +5532,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     silc_free(ctx);
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
 
     /* Reconnect */
     if (sock->type != SILC_SOCKET_TYPE_CLIENT)
