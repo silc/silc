@@ -10,7 +10,7 @@ Version: @VERSION@<br />
 Copyright &copy; 2001 - 2002 The SILC Project<br />
 Updated: @DATE@
 </small>
-<br /><br /><br /><br />
+<br /><br /><br />
 Welcome to the SILC Toolkit Reference Manual.  The manual is a complete
 developer guide and reference for the SILC application programmer.  The manual
 is intended for application programmers who would like to integrate the SILC
@@ -23,16 +23,18 @@ create new SILC client applications.
 The application programming interfaces are automatically generated from the
 Toolkit sources, and the documentation is constantly evolving.  New versions
 of the Toolkit always delivers the latest version of this reference manual.
-<br /><br />
 
+<br /><br /><br />
+<li><a href="intro_reference.html">Introduction to the Manual</a><br />
 @BODY@
 
-<br /><br />
+<br /><br /><br />
 <b>Resource Links</b>
 <br /><br />
 Please refer to these outside links for more information about the SILC 
 project and SILC Protocol.
-<br /><br />
+
+<br /><br /><br />
 <li><a href="http://silcnet.org">SILC Project Website</a><br />
 <li><a href="http://silcnet.org/?page=docs">SILC Protocol Documentation</a><br />
 <li><a href="http://silcnet.org/?page=whitepaper">SILC White Paper</a><br />

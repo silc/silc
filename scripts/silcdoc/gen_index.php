@@ -15,6 +15,11 @@
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
+  type values:
+
+	0 = add left index, details and right index
+	1 = add left index, details, no right index
+	2 = no left index, add details, no right index
 */
 ?>
 
@@ -27,7 +32,7 @@
  <meta content="INDEX, FOLLOW" name="ROBOTS" />
  <style type="text/css">
   <!--
-  body { color: #000000; background: #ffffff; font-family: Helvetica, Arial, Sans-serif; }
+  body { color: #000000; background: #f0f0f0; font-family: Helvetica, Arial, Sans-serif; }
   a:link { text-decoration: none; color: #2f488f; }
   a:visited { text-decoration: none;color: #2f488f; }
   a:active { text-decoration: none; color: #2f488f; }
@@ -53,13 +58,15 @@
 <table cellpadding="0" cellspacing="0" border="0">
  <tr valign="top">
 
-  <td width="230" bgcolor="#f0f0f0">
+  <td width="200" bgcolor="#f0f0f0">
+   <img src="space.gif" width="1" height="1" border="0" alt="">
    <table width="100%" cellpadding="2" cellspacing="2" border="0">
     <tr valign="top"><td>
 <br />
 <small>
 <?php
-require "$dest/index.tmpl";
+if ($type != 2)
+  require "$dest/index.tmpl";
 ?>
 </small>
 <br /><br /><br /><br />
@@ -68,9 +75,10 @@ require "$dest/index.tmpl";
   </td>
 
   <td bgcolor="#cccccc" background="dot.gif">
-    <img src="space.gif" width="1" height="1" border="0" alt=""></td>
+   <img src="space.gif" width="1" height="1" border="0" alt=""></td>
 
-  <td width="800">
+  <td width="720" bgcolor="#ffffff">
+   <img src="space.gif" width="1" height="1" border="0" alt="">
    <table cellpadding="2" cellspacing="6" width="100%">
     <tr><td valign="top">
 <br />
@@ -83,18 +91,21 @@ require "$page";
   </td>
 
   <td bgcolor="#cccccc" background="dot.gif">
-    <img src="space.gif" width="1" height="1" border="0" alt=""></td>
+   <img src="space.gif" width="1" height="1" border="0" alt=""></td>
 
-  <td width="200" bgcolor="#f0f0f0">
+  <td width="180" bgcolor="#f0f0f0">
+    <img src="space.gif" width="1" height="1" border="0" alt="">
     <table width="100%" cellpadding="4" cellspacing="0">
     <tr valign="top"><td>
 <br />
 <font face="Helvetica,Arial,Sans-serif" size="1">
 <?php
-/* Get the index for this page */
-$len = strcspn($page, "__");
-$fname = substr($page, 0, $len);
-require "$fname"."__index.tmpl";
+if ($type == 0) {
+  /* Get the index for this page */
+  $len = strcspn($page, "__");
+  $fname = substr($page, 0, $len);
+  require "$fname"."__index.tmpl";
+}
 ?>
 </font>
 
