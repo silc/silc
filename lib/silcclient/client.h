@@ -223,6 +223,8 @@ int silc_client_init(SilcClient client);
 void silc_client_stop(SilcClient client);
 void silc_client_run(SilcClient client);
 SilcClientConnection silc_client_add_connection(SilcClient client,
+						char *hostname,
+						int port,
 						void *context);
 int silc_client_connect_to_server(SilcClient client, int port,
 				  char *host, void *context);

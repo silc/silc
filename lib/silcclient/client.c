@@ -124,7 +124,9 @@ void silc_client_run(SilcClient client)
    be sent as argument. */
 
 SilcClientConnection silc_client_add_connection(SilcClient client,
-						void *context)
+						char *hostname,
+						int port,
+						void *context);
 {
   SilcClientConnection conn;
   int i;
@@ -136,6 +138,8 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
   conn->channel_cache = silc_idcache_alloc(0);
   conn->server_cache = silc_idcache_alloc(0);
   conn->client = client;
+  conn->remote_host = strdup(hostname);
+  conn->remote_port = port;
   conn->context = context;
 
   /* Add the connection to connections table */
@@ -220,9 +224,7 @@ int silc_client_connect_to_server(SilcClient client, int port,
   SILC_LOG_DEBUG(("Connecting to port %d of server %s",
 		  port, host));
 
-  conn = silc_client_add_connection(client, context);
-  conn->remote_host = strdup(host);
-  conn->remote_port = port;
+  conn = silc_client_add_connection(client, host, port, context);
 
   client->ops->say(client, conn, 
 		   "Connecting to port %d of server %s", port, host);

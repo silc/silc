@@ -129,10 +129,8 @@ After connection has been created application must call:
 
 	SilcClientConnection conn;
 
-	/* Add new connection to client library */
-	conn = silc_client_add_connection(client, context);
-	conn->remote_host = hostname;
-	conn->remote_port = port;
+	/* Add new connection to client */
+	conn = silc_client_add_connection(client, hostname, port, context);
 
 	/* Start key exchange and let the library handle everything
 	   after this point on. */
