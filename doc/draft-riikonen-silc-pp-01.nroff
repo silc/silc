@@ -773,7 +773,7 @@ in [SILC1] and [SILC3].
 .ti 0
 2.3.2 Generic paylods
 
-This sections describes generic payloads that are not associated to any
+This section describes generic payloads that are not associated to any
 specific packet type.  They can be used for example inside some other
 packet payloads.
 
