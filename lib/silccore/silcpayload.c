@@ -277,7 +277,7 @@ SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
     new->argv_lens[i] = payload_len;
     new->argv_types[i] = arg_type;
 
-    if (payload_len > buffer->len)
+    if (payload_len > buffer->len - 3)
       break;
     
     /* Get argument data */
