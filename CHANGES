@@ -9,6 +9,11 @@ Sat Sep  7 16:02:09 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  instead of by default using the Toolkit base version as protocol 
 	  version.  Affected file prepare.
 
+	* Do not set the locally resolved hostname for local client
+	  entry but take what server sends.  This way the real hostname
+	  is showed in WHOIS for yourself.  Affected file is
+	  lib/silcclient/idlist.c and lib/silcclient/client.c.
+
 Sat Sep  7 14:22:43 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
 
 	* Rewritten check for POSIX threads.  Use --with-pthreads[=DIR]

@@ -1618,8 +1618,6 @@ void silc_client_receive_new_id(SilcClient client,
   conn->local_entry->nickname = conn->nickname;
   if (!conn->local_entry->username)
     conn->local_entry->username = strdup(client->username);
-  if (!conn->local_entry->hostname)
-    conn->local_entry->hostname = strdup(client->hostname);
   if (!conn->local_entry->server)
     conn->local_entry->server = strdup(conn->remote_host);
   conn->local_entry->id = conn->local_id;

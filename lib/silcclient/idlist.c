@@ -646,9 +646,14 @@ void silc_client_update_client(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!client_entry->username && username)
-    silc_parse_userfqdn(username, &client_entry->username, 
+  if ((!client_entry->username || !client_entry->hostname) && username) {
+    silc_free(client_entry->username);
+    silc_free(client_entry->hostname);
+    client_entry->username = NULL;
+    client_entry->hostname = NULL;
+    silc_parse_userfqdn(username, &client_entry->username,
 			&client_entry->hostname);
+  }
   if (!client_entry->realname && userinfo)
     client_entry->realname = strdup(userinfo);
   if (!client_entry->nickname && nickname) {
