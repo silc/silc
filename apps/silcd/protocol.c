@@ -1367,9 +1367,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	   */
 
 	  if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
-	    SILC_LOG_ERROR(("Error during Re-key (PFS): re-key state is "
-			    "incorrect (received %d, expected %d packet)",
-			    ctx->packet->type, SILC_PACKET_KEY_EXCHANGE_1));
+	    SILC_LOG_ERROR(("Error during Re-key (R PFS): re-key state is "
+			    "incorrect (received %d, expected %d packet), "
+			    "with %s (%s)", ctx->packet->type, 
+			    SILC_PACKET_KEY_EXCHANGE_1, ctx->sock->hostname,
+			    ctx->sock->ip));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
@@ -1387,8 +1389,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       
 	  status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer);
 	  if (status != SILC_SKE_STATUS_OK) {
-	    SILC_LOG_ERROR(("Error (%s) during Re-key (PFS)",
-			    silc_ske_map_status(status)));
+	    SILC_LOG_ERROR(("Error (%s) during Re-key (R PFS), with %s (%s)",
+			    silc_ske_map_status(status), ctx->sock->hostname,
+			    ctx->sock->ip));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
@@ -1441,8 +1444,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       
 	  status = silc_ske_initiator_phase_2(ctx->ske, NULL, NULL, 0);
 	  if (status != SILC_SKE_STATUS_OK) {
-	    SILC_LOG_ERROR(("Error (%s) during Re-key (PFS)",
-			    silc_ske_map_status(status)));
+	    SILC_LOG_ERROR(("Error (%s) during Re-key (I PFS), with %s (%s)",
+			    silc_ske_map_status(status), ctx->sock->hostname,
+			    ctx->sock->ip));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
@@ -1485,8 +1489,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	status = silc_ske_responder_finish(ctx->ske, NULL, NULL, 
 					   SILC_SKE_PK_TYPE_SILC);
 	if (status != SILC_SKE_STATUS_OK) {
-	  SILC_LOG_ERROR(("Error (%s) during Re-key (PFS)",
-			  silc_ske_map_status(status)));
+	  SILC_LOG_ERROR(("Error (%s) during Re-key (R PFS), with %s (%s)",
+			  silc_ske_map_status(status), ctx->sock->hostname,
+			  ctx->sock->ip));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
@@ -1499,9 +1504,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	 * The packet type must be KE packet
 	 */
 	if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_2) {
-	  SILC_LOG_ERROR(("Error during Re-key (PFS): re-key state is "
-			  "incorrect (received %d, expected %d packet)",
-			  ctx->packet->type, SILC_PACKET_KEY_EXCHANGE_2));
+	  SILC_LOG_ERROR(("Error during Re-key (I PFS): re-key state is "
+			  "incorrect (received %d, expected %d packet), "
+			  "with %s (%s)", ctx->packet->type, 
+			  SILC_PACKET_KEY_EXCHANGE_2, ctx->sock->hostname,
+			  ctx->sock->ip));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
@@ -1509,8 +1516,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer);
 	if (status != SILC_SKE_STATUS_OK) {
-	  SILC_LOG_ERROR(("Error (%s) during Re-key (PFS)",
-			  silc_ske_map_status(status)));
+	  SILC_LOG_ERROR(("Error (%s) during Re-key (I PFS), with %s (%s)",
+			  silc_ske_map_status(status), ctx->sock->hostname,
+			  ctx->sock->ip));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
@@ -1538,9 +1546,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
      */
 
     if (ctx->packet->type != SILC_PACKET_REKEY_DONE) {
-      SILC_LOG_ERROR(("Error during Re-key (PFS): re-key state is "
-		      "incorrect (received %d, expected %d packet)",
-		      ctx->packet->type, SILC_PACKET_REKEY_DONE));
+      SILC_LOG_ERROR(("Error during Re-key (%s PFS): re-key state is "
+		      "incorrect (received %d, expected %d packet), "
+		      "with %s (%s)", ctx->responder ? "R" : "I",
+		      ctx->packet->type, SILC_PACKET_REKEY_DONE,
+		      ctx->sock->hostname, ctx->sock->ip));
       protocol->state = SILC_PROTOCOL_STATE_ERROR;
       silc_protocol_execute(protocol, server->schedule, 0, 300000);
       return;
