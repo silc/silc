@@ -33,7 +33,7 @@ typedef struct MemFSEntryStruct {
   SilcUInt32 entry_count;      	    /* Number of files and sub-directories */
   struct MemFSEntryStruct *parent;  /* non-NULL if `directory' is TRUE,
 				       includes parent directory. */
-  unsigned long created;	    /* Time of creation */
+  SilcUInt32 created;	            /* Time of creation */
   char *name;                       /* Name of the entry */
   char *data;			    /* Data of the entry */
   unsigned int directory : 1;	    /* Set if this is directory */
@@ -775,7 +775,7 @@ void mem_readdir(void *context, SilcSFTP sftp,
     filesize = sizeof(*entry);
     memset(long_name, 0, sizeof(long_name));
 
-    date = ctime(&entry->created);
+    date = (char *)silc_get_time(entry->created);
     if (strrchr(date, ':'))
       *strrchr(date, ':') = '\0';
 
