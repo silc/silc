@@ -3905,7 +3905,8 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
-    if (channel->mode & SILC_CHANNEL_MODE_SECRET)
+    if (channel->mode & SILC_CHANNEL_MODE_SECRET ||
+	channel->mode & SILC_CHANNEL_MODE_PRIVATE)
       continue;
 
     cid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
@@ -4028,7 +4029,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   SILC_LOG_DEBUG(("Start"));
 
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
-      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
+       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_protocol_cancel(protocol, server->schedule);
     silc_protocol_free(protocol);
