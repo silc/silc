@@ -1,0 +1,18 @@
+<!--
+@LIBRARY=SILC Math Library
+@FILENAME=silcmathlib.html
+-->
+
+<OL>
+<FONT SIZE="+3">SILC Math Library</FONT><BR><BR>
+<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
+<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
+SILC Math Library provides arbitrary precision artichmetic routines for
+public key cryptosystems, prime number generation routines, and other
+math utility functions for applications.
+</FONT>
+</PRE>
+
+<LI><A HREF="silcmath.html">SILC Math API</A>
+<LI><A HREF="silcmp.html">SILC MP API</A>
+</OL>

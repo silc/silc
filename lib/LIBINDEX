@@ -8,4 +8,8 @@
 Copyright (C) GNU GPL 2001 The SILC Project<BR>
 Updated: @DATE@
 <BR><BR>
+<B><FONT SIZE="2">Note that this document is still under work and does not
+include yet all references for SILC Toolkit interfaces.  Consider this to
+be version 0.01 of the SILC Toolkit Reference Manual.</FONT></B>
+<BR><BR>
 @BODY@

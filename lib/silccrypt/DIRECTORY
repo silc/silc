@@ -1,0 +1,22 @@
+<!--
+@LIBRARY=SILC Crypto Library
+@FILENAME=silccryptlib.html
+-->
+
+<OL>
+<FONT SIZE="+3">SILC Crypto Library</FONT><BR><BR>
+<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
+<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
+SILC Crypto Library provides cryptographic routines for applications.  It
+provides interfaces for ciphers, hash functions, HMACs and public key
+cryptosystems.  In addition is also provides interfaces for cryptographically
+strong random number generator.
+</FONT>
+</PRE>
+
+<LI><A HREF="silccipher.html">SILC Cipher API</A>
+<LI><A HREF="silchash.html">SILC Hash API</A>
+<LI><A HREF="silchmac.html">SILC HMAC API</A>
+<LI><A HREF="silcpkcs.html">SILC PKCS API</A>
+<LI><A HREF="silcrng.html">SILC RNG API</A>
+</OL>
