@@ -78,7 +78,7 @@ static PERL_SIGNAL_ARGS_REC perl_signal_args[] =
     { "ban new", { "iobject", "Irssi::Irc::Ban", NULL } },
     { "ban remove", { "iobject", "Irssi::Irc::Ban", NULL } },
     { "channel mode changed", { "iobject", "string", NULL } },
-    { "nick mode changed", { "iobject", "iobject", "string", NULL } },
+    { "nick mode changed", { "iobject", "iobject", "string", "string", "string", NULL } },
     { "user mode changed", { "iobject", "string", NULL } },
     { "away mode changed", { "iobject", NULL } },
     { "netsplit server new", { "iobject", "NETSPLIT_iobject", NULL } },
@@ -175,6 +175,7 @@ static PERL_SIGNAL_ARGS_REC perl_signal_args[] =
     { "message dcc", { "siobject", "string", NULL } },
     { "message dcc action", { "siobject", "string", NULL } },
     { "message dcc ctcp", { "siobject", "string", "string", NULL } },
+    { "gui key pressed", { "int", NULL } },
 
     { NULL }
 };

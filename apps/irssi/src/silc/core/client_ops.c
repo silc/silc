@@ -1135,7 +1135,7 @@ void  silc_parse_inviteban_list(SilcClient client,
       case 1:
 	{
 	  /* an invite string */
-	  unsigned char **list;
+	  char **list;
 	  int i=0;
 		
 	  if (tmp[len-1] == ',')
