@@ -33,6 +33,7 @@ libsilcutil_a_SOURCES = \
 	silcmemory.c \
 	silcnet.c \
 	silctask.c \
+	silcschedule.c \
 	silcutil.c \
 	silchashtable.c
 

@@ -21,6 +21,8 @@
 
 #include "silcincludes.h"
 
+/* XXX Untested! */
+
 /* Our "select()" for WIN32. This actually is not the select() and does
    not call Winsock's select() (since it cannot be used for our purposes)
    but mimics the functions of select(). 
