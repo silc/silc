@@ -44,7 +44,7 @@ static char used_keys[256];
 static GTree *key_states;
 static int key_config_frozen;
 
-struct KEYBOARD_REC {
+struct _KEYBOARD_REC {
 	char *key_state; /* the ongoing key combo */
         void *gui_data; /* GUI specific data sent in "key pressed" signal */
 };
@@ -193,7 +193,7 @@ static int expand_combo(const char *start, const char *end, GSList **out)
         KEY_REC *rec;
 	KEYINFO_REC *info;
         GSList *tmp, *tmp2, *list, *copy, *newout;
-	char *str;
+	char *str, *p;
 
 	if (start == end) {
 		/* single key */
@@ -214,10 +214,16 @@ static int expand_combo(const char *start, const char *end, GSList **out)
 		if (strcmp(rec->data, str) == 0)
                         list = g_slist_append(list, rec);
 	}
-	g_free(str);
 
-	if (list == NULL)
-		return FALSE;
+	if (list == NULL) {
+		/* unknown keycombo - add it as-is, maybe the GUI will
+		   feed it to us as such */
+		for (p = str; *p != '\0'; p++)
+			expand_out_char(*out, *p);
+		g_free(str);
+		return TRUE;
+	}
+	g_free(str);
 
 	if (list->next == NULL) {
                 /* only one way to generate the combo, good */
@@ -563,6 +569,9 @@ int key_pressed(KEYBOARD_REC *keyboard, const char *key)
                 g_strconcat(keyboard->key_state, "-", key, NULL);
 	g_free_and_null(keyboard->key_state);
 
+#if GLIB_MAJOR_VERSION == 2
+#  define GSearchFunc GCompareFunc
+#endif
 	rec = g_tree_search(key_states,
 			    (GSearchFunc) key_states_search,
 			    combo);
@@ -642,6 +651,8 @@ static void cmd_show_keys(const char *searchkey, int full)
 	GSList *info, *key;
         int len;
 
+	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_BIND_HEADER);
+
 	len = searchkey == NULL ? 0 : strlen(searchkey);
 	for (info = keyinfos; info != NULL; info = info->next) {
 		KEYINFO_REC *rec = info->data;
@@ -651,11 +662,13 @@ static void cmd_show_keys(const char *searchkey, int full)
 
 			if ((len == 0 || g_strncasecmp(rec->key, searchkey, len) == 0) &&
 			    (!full || rec->key[len] == '\0')) {
-				printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_BIND_KEY,
+				printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_BIND_LIST,
 					    rec->key, rec->info->id, rec->data == NULL ? "" : rec->data);
 			}
 		}
 	}
+
+	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_BIND_FOOTER);
 }
 
 /* SYNTAX: BIND [-delete] [<key> [<command> [<data>]]] */
@@ -833,6 +846,11 @@ void keyboard_init(void)
 
 void keyboard_deinit(void)
 {
+	key_unbind("command", (SIGNAL_FUNC) sig_command);
+	key_unbind("key", (SIGNAL_FUNC) sig_key);
+	key_unbind("multi", (SIGNAL_FUNC) sig_multi);
+	key_unbind("nothing", (SIGNAL_FUNC) sig_nothing);
+
 	while (keyinfos != NULL)
 		keyinfo_remove(keyinfos->data);
 	g_hash_table_destroy(keys);

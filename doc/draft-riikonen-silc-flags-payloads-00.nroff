@@ -261,10 +261,10 @@ support S/MIME may be desired in some implementations.
 5 References 
 
 [SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
-             Protocol Specification", Internet Draft, April 2001.
+             Protocol Specification", Internet Draft, May 2002.
 
 [SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
-             April 2001.
+             May 2002.
 
 [RFC2045]    Freed, N., et al., "Multipurpose Internet Mail Extensions 
              (MIME) Part One: Format of Internet Message Bodies",

@@ -110,6 +110,19 @@ if test "x$prefix" != "xNONE"; then
 	perl_prefix_note=yes
 fi
 
+AC_ARG_WITH(tests,
+[  --with-glib2           Use GLIB 2.0 instead of 1.2],
+	if test x$withval = xyes; then
+		want_glib2=yes
+	else
+		if test "x$withval" = xno; then
+			want_glib2=no
+		else
+			want_glib2=yes
+		fi
+	fi,
+	want_glib2=yes)
+
 AC_ARG_WITH(perl-staticlib,
 [  --with-perl-staticlib   Specify that we want to link perl libraries
                         statically in irssi, default is no],
@@ -311,15 +324,35 @@ AC_DEFUN(AC_CHECK_GLIBDIR,[
 AC_CHECK_GLIBDIR
 
 if test -z "$GLIB_DIR"; then
-  AM_PATH_GLIB(1.2.0,,, gmodule)
-  if test -z "$GLIB_LIBS"; then
-    echo "*** trying without -lgmodule"
-    glib_config_args=
-    AM_PATH_GLIB(1.2.0)
+  if test "x$with_glib2" = "xyes"; then
+    dnl * check only for glib2
+    checks="3 4"
   else
-    AC_DEFINE(HAVE_GMODULE)
-    have_gmodule=yes
+    dnl * check glib1 then glib2
+    checks="1 2 3 4"
   fi
+
+  for try in $checks; do
+    glib_config_args=
+    if test $try = 1 -o $try = 3; then
+      glib_modules=gmodule
+    else
+      echo "*** trying without -lgmodule"
+      glib_modules=
+    fi
+    if test $try = 1 -o $try = 2; then
+      AM_PATH_GLIB(1.2.0,,, $glib_modules)
+    else
+      AM_PATH_GLIB_2_0(2.0.0,,, $glib_modules)
+    fi
+    if test "$GLIB_LIBS"; then
+      if test $glib_modules = gmodule; then
+        AC_DEFINE(HAVE_GMODULE)
+        have_gmodule=yes
+      fi
+      break
+    fi
+  done
 
   if test -z "$GLIB_LIBS"; then
     echo
@@ -448,9 +481,8 @@ if test "x$want_textui" = "xyes"; then
 		  LIBS="$LIBS -ltermcap"
 		  want_termcap=yes
 		], [
-		  AC_MSG_WARN(Terminfo/termcap not found)
+		  AC_ERROR(Terminfo/termcap not found - install ncurses-devel package)
 		  want_textui=no
-		  curses_error=yes
 		])))
         fi
        	if test "x$want_termcap" = "xyes"; then
@@ -535,21 +567,14 @@ if test "$want_perl" != "no"; then
 		esac
 
 		dnl * check that perl's ldflags actually work
-		AC_CACHE_VAL(irssi_cv_lib_perl_works, [
-			echo "main(){perl_alloc(); return 0;}" > conftest.c
-			$CC $CFLAGS conftest.c -o conftest $LDFLAGS $PERL_LDFLAGS 2> perl.error.tmp > /dev/null
-			if test -s conftest; then
-				irssi_cv_lib_perl_works=yes
-			else
-				irssi_cv_lib_perl_works=no
-			fi
-		])
-
-		if test "x$irssi_cv_lib_perl_works" = "xno"; then
+		echo "main(){perl_alloc(); return 0;}" > conftest.c
+		$CC $CFLAGS conftest.c -o conftest $LDFLAGS $PERL_LDFLAGS 2> perl.error.tmp > /dev/null
+		if test ! -s conftest; then
 			perl_check_error="Error linking with perl libraries: $PERL_LDFLAGS: `cat perl.error.tmp`"
 			AC_MSG_RESULT([error linking with perl libraries, building without Perl])
 			want_perl=no
 		fi
+
 		rm -f perl.error.tmp
 	fi
 
@@ -798,23 +823,16 @@ fi
 
 echo
 
-if test "x$curses_error" != "xyes"; then
-	if test "x$want_textui" = "xno"; then
-		text=no
-	elif test "x$want_termcap" = "xyes"; then
-		text="yes, using termcap"
-	elif test "x$want_terminfo" = "xyes"; then
-		text="yes, using terminfo"
-	else
-		text="yes, using curses"
-	fi
-	echo "Building text frontend ..... : $text"
+if test "x$want_textui" = "xno"; then
+	text=no
+elif test "x$want_termcap" = "xyes"; then
+	text="yes, using termcap"
+elif test "x$want_terminfo" = "xyes"; then
+	text="yes, using terminfo"
 else
-	echo "Building text frontend ..... : NO!!"
-	echo " - Because curses was not found, specify the path to it with"
-	echo "   --with-curses=/dir and make sure you have the curses headers"
-	echo "   installed (usually in ncurses-devel package)"
+	text="yes, using curses"
 fi
+echo "Building text frontend ..... : $text"
 echo "Building irssi bot ......... : $want_irssibot"
 echo "Building irssi proxy ....... : $want_irssiproxy"
 echo "Building with IPv6 support . : $want_ipv6"
@@ -843,6 +861,10 @@ if test "x$want_perl" != "xno" -a "x$perl_mod_error" != "x"; then
 	echo " - NOTE: Perl support will be compiled statically to irssi, not as"
 	echo "   a module as requested. Reason:"
 	echo "   $perl_mod_error"
+
+	if test -f /etc/debian_version; then
+		echo " - Try: apt-get install libperl-dev"
+	fi
 fi
 
 if test "x$want_perl" != "xno"; then
@@ -863,3 +885,5 @@ fi
 
 echo "Install prefix ............. : $prefix"
 
+echo
+echo "If there was any problems, read the INSTALL file."

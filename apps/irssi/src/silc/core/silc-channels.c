@@ -66,6 +66,8 @@ static void sig_channel_destroyed(SILC_CHANNEL_REC *channel)
 {
   if (!IS_SILC_CHANNEL(channel))
     return;
+  if (channel->server && channel->server->disconnected)
+    return;
 
   if (channel->server != NULL && !channel->left && !channel->kicked) {
     /* destroying channel record without actually

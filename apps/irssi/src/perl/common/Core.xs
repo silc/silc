@@ -15,7 +15,7 @@ void perl_signal_add_hash(int priority, SV *sv)
         hv = hvref(sv);
 	hv_iterinit(hv);
 	while ((he = hv_iternext(hv)) != NULL)
-                perl_signal_add_to(hv_iterkey(he, &len), HeVAL(he), priority);
+                perl_signal_add_full(hv_iterkey(he, &len), HeVAL(he), priority);
 }
 
 static void perl_command_bind_add_hash(int priority, SV *sv, char *category)
@@ -77,14 +77,34 @@ CODE:
 	signal_emit(signal, items-1, p[0], p[1], p[2], p[3], p[4], p[5]);
 
 void
+signal_continue(...)
+CODE:
+	void *p[SIGNAL_MAX_ARGUMENTS];
+	int n;
+
+	memset(p, 0, sizeof(p));
+	for (n = 0; n < items && n < SIGNAL_MAX_ARGUMENTS; n++) {
+		if (SvPOKp(ST(n)))
+			p[n] = SvPV(ST(n), PL_na);
+		else if (irssi_is_ref_object(ST(n)))
+			p[n] = irssi_ref_object(ST(n));
+		else if (SvROK(ST(n)))
+			p[n] = (void *) SvIV((SV*)SvRV(ST(n)));
+		else
+			p[n] = NULL;
+	}
+	signal_continue(items, p[0], p[1], p[2], p[3], p[4], p[5]);
+
+void
 signal_add(...)
 CODE:
 	if (items != 1 && items != 2)
 		croak("Usage: Irssi::signal_add(signal, func)");
 	if (items == 2)
-		perl_signal_add((char *)SvPV(ST(0),PL_na), ST(1));
+		perl_signal_add_full((char *)SvPV(ST(0),PL_na), ST(1),
+				     SIGNAL_PRIORITY_DEFAULT);
 	else
-		perl_signal_add_hash(1, ST(0));
+		perl_signal_add_hash(SIGNAL_PRIORITY_DEFAULT, ST(0));
 
 void
 signal_add_first(...)
@@ -92,9 +112,10 @@ CODE:
 	if (items != 1 && items != 2)
 		croak("Usage: Irssi::signal_add_first(signal, func)");
 	if (items == 2)
-		perl_signal_add_first((char *)SvPV(ST(0),PL_na), ST(1));
+		perl_signal_add_full((char *)SvPV(ST(0),PL_na), ST(1),
+				     SIGNAL_PRIORITY_HIGH);
 	else
-		perl_signal_add_hash(0, ST(0));
+		perl_signal_add_hash(SIGNAL_PRIORITY_HIGH, ST(0));
 
 void
 signal_add_last(...)
@@ -102,9 +123,41 @@ CODE:
 	if (items != 1 && items != 2)
 		croak("Usage: Irssi::signal_add_last(signal, func)");
 	if (items == 2)
-		perl_signal_add_last((char *)SvPV(ST(0),PL_na), ST(1));
+		perl_signal_add_full((char *)SvPV(ST(0),PL_na), ST(1),
+				     SIGNAL_PRIORITY_LOW);
 	else
-		perl_signal_add_hash(2, ST(0));
+		perl_signal_add_hash(SIGNAL_PRIORITY_LOW, ST(0));
+
+void
+signal_add_priority(...)
+CODE:
+	if (items != 2 && items != 3)
+		croak("Usage: Irssi::signal_add_priority(signal, func, priority)");
+	if (items == 3)
+		perl_signal_add_full((char *)SvPV(ST(0),PL_na), ST(1), SvIV(ST(2)));
+	else
+		perl_signal_add_hash(SvIV(ST(0)), ST(1));
+
+int
+SIGNAL_PRIORITY_LOW()
+CODE:
+	RETVAL = SIGNAL_PRIORITY_LOW;
+OUTPUT:
+	RETVAL
+
+int
+SIGNAL_PRIORITY_DEFAULT()
+CODE:
+	RETVAL = SIGNAL_PRIORITY_DEFAULT;
+OUTPUT:
+	RETVAL
+
+int
+SIGNAL_PRIORITY_HIGH()
+CODE:
+	RETVAL = SIGNAL_PRIORITY_HIGH;
+OUTPUT:
+	RETVAL
 
 void
 signal_remove(signal, func)
@@ -136,7 +189,12 @@ timeout_add(msecs, func, data)
 	SV *func
 	SV *data
 CODE:
-	RETVAL = perl_timeout_add(msecs, func, data);
+	if (msecs < 10) {
+		croak("Irssi::timeout() : msecs must be >= 10");
+		RETVAL = -1;
+	} else {
+		RETVAL = perl_timeout_add(msecs, func, data);
+	}
 OUTPUT:
 	RETVAL
 
@@ -399,17 +457,17 @@ PPCODE:
 void
 command_bind_first(...)
 CODE:
-	handle_command_bind(0, items, ST(0), ST(1), ST(2));
+	handle_command_bind(SIGNAL_PRIORITY_HIGH, items, ST(0), ST(1), ST(2));
 
 void
 command_bind(...)
 CODE:
-	handle_command_bind(1, items, ST(0), ST(1), ST(2));
+	handle_command_bind(SIGNAL_PRIORITY_DEFAULT, items, ST(0), ST(1), ST(2));
 
 void
 command_bind_last(...)
 CODE:
-	handle_command_bind(2, items, ST(0), ST(1), ST(2));
+	handle_command_bind(SIGNAL_PRIORITY_LOW, items, ST(0), ST(1), ST(2));
 
 void
 command_runsub(cmd, data, server, item)

@@ -98,6 +98,10 @@ static void signal_query_destroyed(QUERY_REC *query)
 
 	if (!query->unwanted)
 		window_auto_destroy(window);
+	else {
+		/* eg. connection lost to dcc chat */
+		window_bind_add(window, query->server->tag, query->name);
+	}
 }
 
 static void signal_query_server_changed(QUERY_REC *query)
@@ -123,7 +127,8 @@ static void signal_query_nick_changed(QUERY_REC *query, const char *oldnick)
 	/* don't print the nick change message if only the case was changed */
 	if (g_strcasecmp(query->name, oldnick) != 0) {
 		printformat_dest(&dest,  TXT_NICK_CHANGED, oldnick,
-				 query->name, query->name);
+				 query->name, query->name,
+				 query->address == NULL ? "" : query->address);
 	}
 
 	signal_emit("window item changed", 2,
@@ -247,22 +252,12 @@ static void cmd_query(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 		query = CHAT_PROTOCOL(server)->
 			query_create(server->tag, nick, FALSE);
 	else {
-		/* query already exists */
+		/* query already exists, set it active */
 		WINDOW_REC *window = window_item_window(query);
 
-		if (window == active_win) {
-                        /* query is in active window, set it active */
-			window_item_set_active(active_win,
-					       (WI_ITEM_REC *) query);
-		} else {
-			/* notify user how to move the query to active
-			   window. this was used to be done automatically
-			   but it just confused everyone who did it
-			   accidentally */
-			printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
-					   TXT_QUERY_MOVE_NOTIFY, query->name,
-					   window->refnum);
-		}
+		if (window != active_win)
+			window_set_active(window);
+		window_item_set_active(active_win, (WI_ITEM_REC *) query);
 	}
 
 	if (g_hash_table_lookup(optlist, "window") != NULL) {

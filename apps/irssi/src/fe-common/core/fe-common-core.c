@@ -240,7 +240,7 @@ void fe_common_core_deinit(void)
         fe_queries_deinit();
 
 	fe_messages_deinit();
-	fe_ignore_messages_init();
+	fe_ignore_messages_deinit();
 
         theme_unregister();
 	themes_deinit();
@@ -269,7 +269,7 @@ void glog_func(const char *log_domain, GLogLevelFlags log_level,
 	}
 
 	if (windows == NULL)
-		fprintf(stderr, "GLib %s: %s", reason, message);
+		fprintf(stderr, "GLib %s: %s\n", reason, message);
 	else {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
 			    TXT_GLIB_ERROR, reason, message);

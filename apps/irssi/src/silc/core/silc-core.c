@@ -429,6 +429,8 @@ void silc_core_deinit(void)
   if (idletag != -1) {
     signal_emit("chat protocol deinit", 1,
 		chat_protocol_find("SILC"));
+    signal_remove("irssi init read settings", 
+		  (SIGNAL_FUNC) sig_init_read_settings);
     
     silc_server_deinit();
     silc_channels_deinit();

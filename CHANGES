@@ -1,3 +1,7 @@
+Tue May  7 20:41:58 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Merged with Irssi CVS for Irssi SILC client.
+
 Tue May  7 11:07:16 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added the founder's public key delivery to the

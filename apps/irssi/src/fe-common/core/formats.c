@@ -169,6 +169,10 @@ int format_expand_styles(GString *out, const char **format, int *flags)
 		g_string_append_c(out, 4);
 		g_string_append_c(out, FORMAT_STYLE_CLRTOEOL);
 		break;
+	case '#':
+		g_string_append_c(out, 4);
+		g_string_append_c(out, FORMAT_STYLE_MONOSPACE);
+		break;
 	case '[':
 		/* code */
                 format_expand_code(format, out, flags);
@@ -224,7 +228,7 @@ void format_read_arglist(va_list va, FORMAT_REC *format,
 		case FORMAT_STRING:
 			arglist[num] = (char *) va_arg(va, char *);
 			if (arglist[num] == NULL) {
-				g_warning("format_read_arglist() : parameter %d is NULL", num);
+				g_warning("format_read_arglist(%s) : parameter %d is NULL", format->tag, num);
 				arglist[num] = "";
 			}
 			break;
@@ -703,7 +707,7 @@ void format_newline(WINDOW_REC *window)
 	signal_emit_id(signal_gui_print_text, 6, window,
 		       GINT_TO_POINTER(-1), GINT_TO_POINTER(-1),
 		       GINT_TO_POINTER(GUI_PRINT_FLAG_NEWLINE),
-		       "", GINT_TO_POINTER(-1));
+		       "", NULL);
 }
 
 /* parse ANSI color string */
@@ -956,7 +960,7 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 				       GINT_TO_POINTER(fgcolor),
 				       GINT_TO_POINTER(bgcolor),
 				       GINT_TO_POINTER(flags), str,
-				       dest->level);
+				       dest);
 			flags &= ~(GUI_PRINT_FLAG_INDENT|GUI_PRINT_FLAG_CLRTOEOL);
 		}
 
@@ -997,6 +1001,9 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 			case FORMAT_STYLE_REVERSE:
 				flags ^= GUI_PRINT_FLAG_REVERSE;
 				break;
+			case FORMAT_STYLE_MONOSPACE:
+				flags ^= GUI_PRINT_FLAG_MONOSPACE;
+				break;
 			case FORMAT_STYLE_INDENT:
 				flags |= GUI_PRINT_FLAG_INDENT;
 				break;
@@ -1009,13 +1016,13 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 				signal_emit_id(signal_gui_print_text, 6,
 					       dest->window, NULL, NULL,
 					       GINT_TO_POINTER(GUI_PRINT_FLAG_INDENT_FUNC),
-					       str, start, dest->level);
+					       str, start, dest);
 				break;
 			}
 			case FORMAT_STYLE_DEFAULTS:
                                 fgcolor = theme->default_color;
 				bgcolor = -1;
-				flags &= GUI_PRINT_FLAG_INDENT;
+				flags &= GUI_PRINT_FLAG_INDENT|GUI_PRINT_FLAG_MONOSPACE;
 				break;
 			case FORMAT_STYLE_CLRTOEOL:
                                 break;
@@ -1056,7 +1063,7 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 			/* remove all styling */
 			fgcolor = theme->default_color;
 			bgcolor = -1;
-			flags &= GUI_PRINT_FLAG_INDENT;
+			flags &= GUI_PRINT_FLAG_INDENT|GUI_PRINT_FLAG_MONOSPACE;
 			break;
 		case 22:
 			/* reverse */

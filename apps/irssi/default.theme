@@ -48,15 +48,15 @@
 #############################################################################
 
 # default foreground color (%N) - 0 is the "default terminal color" 
-default_color = 0;
+default_color = "-1";
 
-# default foreground color when "0" can't be used,
-# such as with bolds and reverses. white is default.
-default_real_color = 7;
+# print timestamp/servertag at the end of line, not at beginning
+info_eol = "false";
 
 # these characters are automatically replaced with specified color
 # (dark grey by default)
-replaces = {};
+replaces = { "()=" = "%K$*%n"; };
+#replaces = {};
 
 abstracts = {
   ##

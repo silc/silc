@@ -70,6 +70,7 @@ queries.c:
  "query created", QUERY_REC, int automatic
  "query destroyed", QUERY_REC
  "query nick changed", QUERY_REC, char *orignick
+ "window item name changed", WI_ITEM_REC
  "query address changed", QUERY_REC
  "query server changed", QUERY_REC, SERVER_REC
 
@@ -151,8 +152,8 @@ mode-lists.c:
  "ban remove", CHANNEL_REC, BAN_REC
 
 modes.c:
- "channel mode changed", CHANNEL_REC
- "nick mode changed", CHANNEL_REC, NICK_REC
+ "channel mode changed", CHANNEL_REC, char *setby
+ "nick mode changed", CHANNEL_REC, NICK_REC, char *setby
  "user mode changed", SERVER_REC, char *old
  "away mode changed", SERVER_REC
 
@@ -225,7 +226,7 @@ FE common
 
 * Requires to work properly:
 
- "gui print text", WINDOW_REC, int fg, int bg, int flags, char *text, int level
+ "gui print text", WINDOW_REC, int fg, int bg, int flags, char *text, TEXT_DEST_REC
 
 (Can be used to determine when all "gui print text"s are sent (not required))
  "gui print text finished", WINDOW_REC
@@ -303,6 +304,9 @@ fe-irc-messages.c:
  "message irc notice", SERVER_REC, char *msg, char *nick, char *address, char *target
  "message irc own_ctcp", SERVER_REC, char *cmd, char *data, char *target
  "message irc ctcp", SERVER_REC, char *cmd, char *data, char *nick, char *address, char *target
+
+fe-modes.c:
+ "message irc mode", SERVER_REC, char *channel, char *nick, char *addr, char *mode
 
 dcc/fe-dcc-chat-messages.c:
  "message dcc own", DCC_REC *dcc, char *msg

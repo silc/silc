@@ -67,8 +67,7 @@ static EXEC_WI_REC *exec_wi_create(WINDOW_REC *window, PROCESS_REC *rec)
 	item = g_new0(EXEC_WI_REC, 1);
 	item->type = module_get_uniq_id_str("WINDOW ITEM TYPE", "EXEC");
         item->destroy = (void (*) (WI_ITEM_REC *)) exec_wi_destroy;
-	item->name = rec->name != NULL ?
-		g_strdup_printf("%%%s", rec->name) :
+	item->name = rec->name != NULL ? g_strdup(rec->name) :
 		g_strdup_printf("%%%d", rec->id);
 
 	item->createtime = time(NULL);
@@ -406,7 +405,7 @@ static void handle_exec(const char *args, GHashTable *optlist,
 		return;
 
         /* common options */
-	target_channel = target_nick = FALSE;
+        target_channel = target_nick = FALSE;
 	if (g_hash_table_lookup(optlist, "out") != NULL) {
                 /* redirect output to active channel/query */
 		if (item == NULL)
@@ -498,6 +497,7 @@ static void handle_exec(const char *args, GHashTable *optlist,
         rec->args = g_strdup(args);
 	rec->notice = notice;
         rec->silent = g_hash_table_lookup(optlist, "-") != NULL;
+        rec->quiet = g_hash_table_lookup(optlist, "quiet") != NULL;
 	rec->name = g_strdup(g_hash_table_lookup(optlist, "name"));
 
 	level = g_hash_table_lookup(optlist, "level");
@@ -572,6 +572,9 @@ static void sig_exec_input(PROCESS_REC *rec, const char *text)
 	SERVER_REC *server;
         char *str;
 
+	if (rec->quiet)
+		return;
+
         item = NULL;
 	server = NULL;
 
@@ -620,7 +623,7 @@ static void event_text(const char *data, SERVER_REC *server, EXEC_WI_REC *item)
 void fe_exec_init(void)
 {
 	command_bind("exec", NULL, (SIGNAL_FUNC) cmd_exec);
-	command_set_options("exec", "!- interactive nosh +name out +msg +notice +in window close +level");
+	command_set_options("exec", "!- interactive nosh +name out +msg +notice +in window close +level quiet");
 
         signal_exec_input = signal_get_uniq_id("exec input");
         signal_add("pidwait", (SIGNAL_FUNC) sig_pidwait);

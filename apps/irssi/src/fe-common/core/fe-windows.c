@@ -109,9 +109,10 @@ void window_destroy(WINDOW_REC *window)
 	window->destroying = TRUE;
 	windows = g_slist_remove(windows, window);
 
-	if (active_win == window && windows != NULL) {
-                active_win = NULL; /* it's corrupted */
-		window_set_active(windows->data);
+	if (active_win == window) {
+		active_win = NULL; /* it's corrupted */
+		if (windows != NULL)
+			window_set_active(windows->data);
 	}
 
 	while (window->items != NULL)
@@ -160,8 +161,8 @@ void window_set_active(WINDOW_REC *window)
 
 void window_change_server(WINDOW_REC *window, void *server)
 {
-        if (server != NULL && SERVER(server)->disconnected)
-                return;
+	if (server != NULL && SERVER(server)->disconnected)
+		return;
 
 	window->active_server = server;
 	signal_emit("window server changed", 2, window, server);
@@ -194,7 +195,7 @@ void window_set_refnum(WINDOW_REC *window, int refnum)
 void window_set_name(WINDOW_REC *window, const char *name)
 {
 	g_free_not_null(window->name);
-	window->name = g_strdup(name);
+	window->name = name == NULL || *name == '\0' ? NULL : g_strdup(name);
 
 	signal_emit("window name changed", 1, window);
 }
@@ -338,21 +339,9 @@ WINDOW_REC *window_find_item(SERVER_REC *server, const char *name)
 
 	item = server == NULL ? NULL :
 		window_item_find(server, name);
-	if (item == NULL && server == NULL) {
+	if (item == NULL) {
 		/* not found from the active server - any server? */
 		item = window_item_find(NULL, name);
-	}
-
-	if (item == NULL) {
-		char *chan;
-
-		/* still nothing? maybe user just left the # in front of
-		   channel, try again with it.. */
-		chan = g_strdup_printf("#%s", name);
-		item = server == NULL ? NULL :
-			window_item_find(server, chan);
-		if (item == NULL) item = window_item_find(NULL, chan);
-		g_free(chan);
 	}
 
 	if (item == NULL)

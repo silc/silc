@@ -329,8 +329,8 @@ void perl_window_item_fill_hash(HV *hv, WI_ITEM_REC *item)
 	hv_store(hv, "name", 4, new_pv(item->name), 0);
 
 	hv_store(hv, "createtime", 10, newSViv(item->createtime), 0);
-	hv_store(hv, "data_level", 8, newSViv(item->data_level), 0);
-	hv_store(hv, "hilight_color", 10, new_pv(item->hilight_color), 0);
+	hv_store(hv, "data_level", 10, newSViv(item->data_level), 0);
+	hv_store(hv, "hilight_color", 13, new_pv(item->hilight_color), 0);
 }
 
 void perl_channel_fill_hash(HV *hv, CHANNEL_REC *channel)
@@ -369,6 +369,7 @@ void perl_query_fill_hash(HV *hv, QUERY_REC *query)
 
 	perl_window_item_fill_hash(hv, (WI_ITEM_REC *) query);
 
+	hv_store(hv, "last_unread_msg", 15, newSViv(query->last_unread_msg), 0);
 	hv_store(hv, "address", 7, new_pv(query->address), 0);
 	hv_store(hv, "server_tag", 10, new_pv(query->server_tag), 0);
 	hv_store(hv, "unwanted", 8, newSViv(query->unwanted), 0);
@@ -425,7 +426,7 @@ static void perl_ignore_fill_hash(HV *hv, IGNORE_REC *ignore)
 
 	hv_store(hv, "level", 5, newSViv(ignore->level), 0);
 
-	hv_store(hv, "exception", 6, newSViv(ignore->exception), 0);
+	hv_store(hv, "exception", 9, newSViv(ignore->exception), 0);
 	hv_store(hv, "regexp", 6, newSViv(ignore->regexp), 0);
 	hv_store(hv, "fullword", 8, newSViv(ignore->fullword), 0);
 }
