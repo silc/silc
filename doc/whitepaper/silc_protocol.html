@@ -28,7 +28,7 @@ have something in common; they are all insecure.
 
 The security is important feature in applications and protocols in 
 contemporary network environment.  The older chat protocols, however have
-failed to deal with the growing security requirements on the Internet.
+failed to meet the growing security requirements on the Internet.
 It is not anymore enough to just provide services, like for example
 chat services. Now, they need to be secure services.
 <p>
@@ -117,7 +117,7 @@ periodically and the rekey process can be executed with or without the
 Perfect Forward Secrecy (PFS).  The connection authentication protocol is
 used to authenticate the client to the server.  The server may allow the
 client to connect without authentication, or it may require a passphrase or
-public key encryption based authentication.
+public key based authentication.
 
 
 <p><br>
@@ -156,7 +156,7 @@ when client connects to server.  The SKE results in to the session key
 that is used to secure the communication between the server and the
 router.  The connection authentication protocol is used to authenticate
 the server to the router.  The authentication is always based in either 
-passphrase or public key encryption.
+passphrase or public key.
 
 
 <p><br>
@@ -249,11 +249,69 @@ data area before encrypting the packet.
 <h1>SILC Key Exchange Protocol</h1>
 <p>
 
-
-<p><br>
-<h1>SILC Connection Authentcation Protocol</h1>
+SILC Key Exchange Protocol (SKE) is used to exchange shared secret
+between connecting entities.  The result of this protocol is a key material
+used to secure the communication channel.  This protocol is executed when,
+for example client connects to server.  It is also executed when server
+connects to router.  And, there is no reason why it could not be executed
+between two clients too, if two clients would need to create secret key.
+The purpose of the SKE protocol is to create session keys to be used
+in current SILC session.  The SKE is based on the Diffie-Hellman key
+exchange algorithm, and is immune to man-in-the-middle attack.
 <p>
 
+This is the first protocol that is executed when creating connection to,
+for example SILC server.  All the other protocols are always executed
+after this protocol.  This way all the other protocols are secured since
+the SKE creates the session key that is used to secure all subsequent
+packets.  The session keys created in the SKE are valid only for some
+period of time (usually an hour) or at most until the session ends.
+The rekey process can be executed with or without the Perfect Forward
+Secrecy (PFS).
+<p>
+
+<img src="silc_ske.JPG" alt="SILC Key Exchange (SKE) Protocol" align="center" border"0">
+<p><br>
+
+
+
+<p><br>
+<h1>SILC Connection Authentication Protocol</h1>
+<p>
+
+Purpose of SILC Connection Authentication protocol is to authenticate the
+connecting party with server or router.  This protocol is executed when
+for example client connects to server.  It is also executed when server
+connects to router.  Its other purpose is to provide information for the
+server about which type of connection it is.  The type of the connection
+defines whether it is client, server or router.  If it is client then
+the server will create a new Client ID for the client.  If it is server
+then it will except the server to send its Server ID.  Server IDs are
+created by the servers and routers itself.
+<p>
+
+Since the SILC Connection Authentication protocol is always executed after
+the SKE protocol, session keys has been established already.  This means
+that all packets sent in the connection authentication protocol are encrypted 
+and authenticated.
+<p>
+
+The authentication may be based either in passphrase or public key
+encryption.  It is also possible to not require authentication at all.
+If the authentication is based to passphrase the passphrase is sent
+to the server.  As the packet sent by, for example client, is entirely
+encrypted it is safe to send the passphrase inside the packet.
+<p>
+
+If the authentication is based to public key then, for example the client, 
+signs data with its private key and sends it to the server.  The server
+then verifies this signature by using the client's public key.  The
+packet is also encrypted in the case of public key authentication.
+<p>
+
+If the authentication is to fail the connection to the server or router
+will be refused.  If it is succesful the connection is granted.  After
+this the client is ready to communicate in the SILC Network.
 
 
 <p><br>
@@ -316,8 +374,8 @@ have clients joined on a particular channel have also own key for the
 channel.  That key is not shared by other cells in the network.  Inside
 the cell the channel key is known by the router and all servers that
 have clients on the channel and all clients that have joined the channel.
-
 <p>
+
 <img src="silc_channel.JPG" alt="Channel Message Delivery" align="center" border"0">
 <p><br>
 
@@ -329,7 +387,7 @@ channel key in that cell.  The servers and the router in the local cell
 then routes the message to all local clients who have joined the channel.
 If the channel has clients that belong to other cell in the network the
 router will route the channel message to that cell.  When channel
-messages are send between routers they are first decrypted with the
+messages are sent between routers they are first decrypted with the
 current channel key, and then re-encrypted with the session key shared
 between the two routers.  The router who receives the channel message
 then decrypts it with the session and re-encrypts it with the
@@ -376,7 +434,7 @@ key to do that.
 The clients who have joined the channel must first agree on the channel
 private key they are going to use.  The key may generally be anything.
 It may be a passphrase or a random string, or the key may negotiated
-using some key negotiation protocol which provides exchanging the
+using some key exchange protocol which provides negotiating the
 key for multiple clients at the same time.
 <p>
 
@@ -387,7 +445,7 @@ are not known by all channel members.  When encrypting messages with
 one channel private key only the clients who have that key can decrypt
 the message.  The other key could be shared for example by all clients
 on the channel and thus all clients can decrypt messages encrypted with
-that key.  In this way it is actually possible to have private group
+that key.  In this way it is actually possible to have a private group
 conversation inside the channel while having global conversation at the
 same time.
 
@@ -488,7 +546,7 @@ It can be a passphrase that only the sender and the receiver knows.  They
 could have been agreed to use some word or phrase as the key sometime
 earlier before they started the conversation.  Or the key maybe from some
 random string from a code book that only the sender and the receiver poses.
-Or it can be a key that is negotiated using some key negotiation protocol.
+Or it can be a key that is negotiated using some key exchange protocol.
 <p>
 
 The problem however is fundamental.  How to agree to use some key when
@@ -507,7 +565,7 @@ clients cannot trust the servers and routers in the SILC Network.  The
 drawback is the extra phase of setting the private message key before
 starting the conversation.  However, using the SKE protocol is the
 recommended way to negotiate the private message key since it can be
-automized and does not cause any extra tasks for end user.
+automatized and does not cause any extra tasks for end user.
 
 
 <p><br>
@@ -543,7 +601,7 @@ that it can use to encrypt messages that it will send to Client A.
 
 Even this method of private message delivery is not perfect.  The drawbacks
 of this method is that the public key encryption process, as being
-assymmetric cryptosystem, is much slower than encryption process with
+asymmetric cryptosystem, is much slower than encryption process with
 symmetric cryptosystems.  This is not probably problem with short messages
 but may be inconvenient with long messages.  The other drawback is that the
 sender must first assure that the public key it is using in the encryption
@@ -572,8 +630,8 @@ method of private message delivery is very simple and recommended.
 <p><br>
 <h1>Further Information</h1>
 <p>
-More detailed information about the SILC Protocol is available in the
-SILC Protocol specification documents.  There exists currently four
+More detailed information about the SILC protocol is available in the
+SILC protocol specification documents.  There exists currently four
 Internet Drafts that defines the protocol in great detail.  The Internet
 Drafts are available from the following sources but also from the
 <a href="http://www.ietf.org">IETF website</a>.
@@ -593,12 +651,52 @@ SILC Key Exchange and Authentication Protocols</a>
 
 - <a href="http://silcnet.org/docs/draft-riikonen-silc-commands-01.txt">
 SILC Commands</a>
-<br>
+<p>
 
+For comprehensive introduction to cryptography refer to the
+<a href="http://www.ssh.com/tech/crypto/">Cryptography A-2-Z document</a>.
 
 <p><br>
 <a name="terms"></a>
 <h1>Terms and Abbreviations</h1>
+<p>
+
+- Asymmetric cryptosystem
+<p>
+
+- Authentication
+<p>
+
+- Certificate
+<p>
+
+- Certificate Authority (CA)
+<p>
+
+- Encryption
+<p>
+
+- Integrity
+<p>
+
+- HMAC
+<p>
+
+- Man-in-the-middle attack
+<p>
+
+- Message Authentication Code (MAC)
+<p>
+
+- Perfect Forward Secrecy (PFS)
+<p>
+
+- Rekey
+<p>
+
+- Symmetric cryptosystem
+<p>
+
 
 </font>
 
