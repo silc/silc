@@ -69,6 +69,7 @@ typedef struct {
   SilcUInt8 session;
   SilcServerBackupProtocolSession *sessions;
   SilcUInt32 sessions_count;
+  SilcUInt32 initiator_restart;
   long start;
   unsigned int responder        : 1;
   unsigned int received_failure : 1;
@@ -1459,6 +1460,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	    ctx->sock = NULL;
 	  }
 
+	  /* If failed after 10 attempts, it won't work, give up */
+	  if (ctx->initiator_restart > 10)
+	    ctx->received_failure = TRUE;
+
 	  if (!ctx->received_failure) {
 	    /* Protocol error, probably timeout. Just restart the protocol. */
 	    SilcServerBackupProtocolContext proto_ctx;
@@ -1470,6 +1475,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	    proto_ctx->responder = FALSE;
 	    proto_ctx->type = SILC_SERVER_BACKUP_START;
 	    proto_ctx->start = time(0);
+	    proto_ctx->initiator_restart = ctx->initiator_restart + 1;
 
 	    /* Start through scheduler */
 	    silc_schedule_task_add(server->schedule, 0,

@@ -1,3 +1,8 @@
+Wed Dec  8 16:15:11 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not try to initiate backup resuming protocol forever.
+	  Affected file silcd/server_backup.c.
+
 Wed Nov 24 18:24:05 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* ID change in resuming has to be done before changing
