@@ -25,6 +25,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/06 13:18:07  priikone
+ * 	Check for NULL in client_on_channel.
+ *
  * Revision 1.4  2000/07/05 06:14:01  priikone
  * 	Global costemic changes.
  *
@@ -3053,6 +3056,9 @@ int silc_server_client_on_channel(SilcClientList *client,
 				  SilcChannelList *channel)
 {
   int i;
+
+  if (!client || !channel)
+    return FALSE;
 
   for (i = 0; i < client->channel_count; i++) {
     if (client->channel[i] == channel)
