@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/06/28 05:06:38  priikone
+ * 	Shorter timeout for channel joining notify.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -886,7 +889,7 @@ SILC_SERVER_CMD_FUNC(join)
       ctx->server = server;
       silc_task_register(server->timeout_queue, sock->sock,
 			 silc_server_command_join_notify, ctx,
-			 0, 100000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+			 0, 10000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
     }
   }
 
