@@ -72,7 +72,6 @@ typedef struct {
   /* Keys */
   SilcCipher send_key;
   SilcCipher receive_key;
-  SilcPKCS public_key;
   SilcHmac hmac;
   unsigned char *hmac_key;
   unsigned int hmac_key_len;
@@ -108,6 +107,11 @@ typedef struct {
 typedef struct {
   char *username;
   char *realname;
+
+  /* Private and public key */
+  SilcPKCS pkcs;
+  SilcPublicKey public_key;
+  SilcPrivateKey private_key;
 
   /* SILC client task queues */
   SilcTaskQueue io_queue;

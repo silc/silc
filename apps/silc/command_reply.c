@@ -24,6 +24,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/05 06:12:34  priikone
+ * 	Tweaked NAMES command reply for better. Should now show users
+ * 	joined to a channel.
+ *
  * Revision 1.3  2000/07/04 08:27:14  priikone
  * 	Changes to LEAVE command -- more consistent now and does error
  * 	handling better. Added INVITE, PING and part of NAMES commands.
@@ -33,7 +37,7 @@
  * 	Implemented LEAVE command.  Minor bug fixes.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -67,7 +71,7 @@ SilcClientCommandReply silc_command_reply_list[] =
   SILC_CLIENT_CMD_REPLY(die, DIE),
   SILC_CLIENT_CMD_REPLY(silcoper, SILCOPER),
   SILC_CLIENT_CMD_REPLY(leave, LEAVE),
-  SILC_CLIENT_CMD_REPLY(names, LEAVE),
+  SILC_CLIENT_CMD_REPLY(names, NAMES),
 
   { NULL, 0 },
 };
@@ -580,15 +584,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
 SILC_CLIENT_CMD_REPLY_FUNC(names)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClient client = cmd->client;
   SilcClientWindow win = (SilcClientWindow)cmd->sock->user_data;
   SilcCommandStatus status;
   SilcIDCache *id_cache = NULL;
-  SilcChannelEntry *channel;
+  SilcChannelEntry channel;
   SilcChannelID *channel_id = NULL;
   unsigned char *tmp;
-  char *name_list, channel_name;
+  char *name_list;
   int i, len;
+
+  SILC_LOG_DEBUG(("Start"));
 
 #define CIDC(x) win->channel_id_cache[(x)]
 #define CIDCC(x) win->channel_id_cache_count[(x)]
@@ -625,15 +630,22 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   channel = (SilcChannelEntry)id_cache->context;
 
   /* If there are pending commands set for this command reply we will
-     execute them and let them handle the received name list. They can
-     If there is no pending callback it means that this command reply
-     has been received without calling the command, ie. server has sent
-     the reply without getting the command from us first. This happens
-     with SILC servers that sends NAMES reply after joining to a channel. */
-  if (cmd->callback)
+     execute them and let them handle the received name list. */
+  if (cmd->callback) {
     SILC_CLIENT_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_WHOIS);
-  else
-    silc_say(cmd->client, "xxx");
+  } else {
+    /* there is no pending callback it means that this command reply
+       has been received without calling the command, ie. server has sent
+       the reply without getting the command from us first. This happens
+       with SILC servers that sends NAMES reply after joining to a channel. */
+
+    /* Remove commas from list */
+    for (i = 0; i < len; i++)
+      if (name_list[i] == ',')
+	name_list[i] = ' ';
+
+    silc_say(cmd->client, "Users on %s: %s", channel->channel_name, name_list);
+  }
 
  out:
   if (channel_id)
