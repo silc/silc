@@ -395,6 +395,7 @@ void silc_core_init(void)
   settings_add_int("server", "key_exchange_rekey_secs", 3600);
   settings_add_int("server", "connauth_request_secs", 2);
   settings_add_int("server", "heartbeat", 300);
+  settings_add_bool("server", "ignore_message_signatures", FALSE);
 
   /* Requested Attributes settings */
   settings_add_bool("silc", "attr_allow", TRUE);

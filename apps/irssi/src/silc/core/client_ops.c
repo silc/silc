@@ -273,9 +273,12 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 
   /* If the messages is digitally signed, verify it, if possible. */
   if (flags & SILC_MESSAGE_FLAG_SIGNED) {
-    SilcMessageSignedPayload sig = silc_message_get_signature(payload);
-
-    verified = verify_message_signature(sender, sig, payload);
+    if (!settings_get_bool("ignore_message_signatures")) {
+      SilcMessageSignedPayload sig = silc_message_get_signature(payload);
+      verified = verify_message_signature(sender, sig, payload);
+    } else {
+      flags &= ~SILC_MESSAGE_FLAG_SIGNED;
+    }
   }
   
   if (flags & SILC_MESSAGE_FLAG_DATA) {
@@ -379,9 +382,12 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 
   /* If the messages is digitally signed, verify it, if possible. */
   if (flags & SILC_MESSAGE_FLAG_SIGNED) {
-    SilcMessageSignedPayload sig = silc_message_get_signature(payload);
-
-    verified = verify_message_signature(sender, sig, payload);
+    if (!settings_get_bool("ignore_message_signatures")) {
+      SilcMessageSignedPayload sig = silc_message_get_signature(payload);
+      verified = verify_message_signature(sender, sig, payload);
+    } else {
+      flags &= ~SILC_MESSAGE_FLAG_SIGNED;
+    }
   }
   
   if (flags & SILC_MESSAGE_FLAG_DATA) {
