@@ -2694,18 +2694,11 @@ SILC_SERVER_CMD_FUNC(umode)
     }
 
     /* Anonymous mode cannot be set by client */
-    if (mask & SILC_UMODE_ANONYMOUS) {
-      if (!(client->mode & SILC_UMODE_ANONYMOUS)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
-					      SILC_STATUS_ERR_PERM_DENIED, 0);
-	goto out;
-      }
-    } else {
-      if (client->mode & SILC_UMODE_ANONYMOUS) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
-					      SILC_STATUS_ERR_PERM_DENIED, 0);
-	goto out;
-      }
+    if (mask & SILC_UMODE_ANONYMOUS &&
+	!(client->mode & SILC_UMODE_ANONYMOUS)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					    SILC_STATUS_ERR_PERM_DENIED, 0);
+      goto out;
     }
 
     /* Update statistics */
@@ -2716,6 +2709,10 @@ SILC_SERVER_CMD_FUNC(umode)
       if (client->mode & SILC_UMODE_GONE)
 	server->stat.my_aways--;
     }
+
+    /* If the client has anonymous mode set, preserve it. */
+    if (client->mode & SILC_UMODE_ANONYMOUS)
+      mask |= SILC_UMODE_ANONYMOUS;
 
     /* Change the mode */
     client->mode = mask;

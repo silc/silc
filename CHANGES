@@ -1,3 +1,9 @@
+Wed Nov  5 23:37:36 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed UMODE setting in server when the client has anonymous
+	  mode set.  The mode setting was not working.  Affected file
+ 	  silcd/command.c.
+
 Mon Nov  2 11:36:08 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Fixed some bugs and typos related to sending split messages.
