@@ -69,6 +69,9 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Normal server seemed not to distribute the SERVER_SIGNOFF properly
+   when its router disconnected.
+
  o When server quits and all clients of that server are removed from all
    channels the channel keys are re-generated for all clients.  This is
    a bug and should be done only once per channel after all clients of

@@ -1536,7 +1536,7 @@ o Flags (2 bytes) - Includes the flags of the channel
 
           No specific flags set.
 
-  0x0001  SILC_MESSAGE_FLAG_AUTREPLY
+  0x0001  SILC_MESSAGE_FLAG_AUTOREPLY
 
           This message is an automatic reply to an earlier
           received message.
