@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 20 June 2003
+.ds RH 27 June 2003
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-05.txt                         20 June 2003
-Expires: 20 December 2003
+draft-riikonen-silc-commands-05.txt                         27 June 2003
+Expires: 27 December 2003
 
 .in 3
 
@@ -75,11 +75,11 @@ Table of Contents
 2 SILC Commands .................................................  2
   2.1 SILC Commands Syntax ......................................  4
   2.2 SILC Command Argument Idioms ..............................  4
-  2.3 SILC Commands List ........................................  4
+  2.3 SILC Commands List ........................................  5
   2.4 SILC Command Status Payload ............................... 42
 3 SILC Status Types ............................................. 43
-4 Security Considerations ....................................... 49
-5 References .................................................... 49
+4 Security Considerations ....................................... 50
+5 References .................................................... 50
 6 Author's Address .............................................. 51
 Appendix A ...................................................... 51
 Full Copyright Statement ........................................ 53
@@ -218,6 +218,8 @@ UTF-8 [RFC2279] encoded.
 All public keys and certificates that are sent as arguments are actually
 Public Key Payloads [SILC2].  This way it is possible to send different
 kind of public keys and certificate types as arguments.
+
+
 
 
 .ti 0
@@ -1764,6 +1766,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_REGISTERED
 
 
+
    22   SILC_COMMAND_WATCH
 
         Max Arguments:  3
@@ -1857,6 +1860,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
             SILC_STATUS_ERR_NOT_REGISTERED
             SILC_STATUS_ERR_AUTH_FAILED
+
+
 
 
    24   SILC_COMMAND_LEAVE
@@ -2401,6 +2406,7 @@ List of all defined status types:
         is not allowed or it's execution is not allowed.
 
 .in 3
+
 
 
 .ti 0
