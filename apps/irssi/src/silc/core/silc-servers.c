@@ -284,7 +284,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: KEY MSG <nickname> set|unset|list|agreement|negotiate [<arguments>] */
 /* SYNTAX: KEY CHANNEL <channel> set|unset|list|agreement|negotiate [<arguments>] */
 /* SYNTAX: KICK <channel> <nickname>[@<hostname>] [<comment>] */
-/* SYNTAX: KILL <channel> <nickname>[@<hostname>] [<comment>] */
+/* SYNTAX: KILL <nickname>[@<hostname>] [<comment>] */
 /* SYNTAX: OPER <username> [-pubkey] */
 /* SYNTAX: SILCOPER <username> [-pubkey] */
 /* SYNTAX: TOPIC <channel> [<topic>] */

@@ -36,6 +36,8 @@ char *silc_file_read(const char *filename, uint32 *return_len)
 
   fd = open(filename, O_RDONLY);
   if (fd < 0) {
+    if (errno == ENOENT)
+      return NULL;
     SILC_LOG_ERROR(("Cannot open file %s: %s", filename, strerror(errno)));
     return NULL;
   }

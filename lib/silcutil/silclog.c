@@ -96,35 +96,38 @@ void silc_log_output(const char *filename, uint32 maxsize,
     }
 
   if (!filename)
-    filename = " ";
+    fp = stderr;
 
-  /* Purge the log file if the max size is defined. */
-  if (maxsize) {
-    fp = fopen(filename, "r");
-    if (fp) {
-      int filelen;
-      
-      filelen = fseek(fp, (off_t)0L, SEEK_END);
-      fseek(fp, (off_t)0L, SEEK_SET);  
-      
-      /* Purge? */
-      if (filelen >= maxsize)
-	unlink(filename);
-
-      fclose(fp);
+  if (filename) {
+    /* Purge the log file if the max size is defined. */
+    if (maxsize) {
+      fp = fopen(filename, "r");
+      if (fp) {
+	int filelen;
+	
+	filelen = fseek(fp, (off_t)0L, SEEK_END);
+	fseek(fp, (off_t)0L, SEEK_SET);  
+	
+	/* Purge? */
+	if (filelen >= maxsize)
+	  unlink(filename);
+	
+	fclose(fp);
+      }
+    }
+    
+    /* Open the log file */
+    if ((fp = fopen(filename, "a+")) == NULL) {
+      fprintf(stderr, "warning: could not open log file "
+	      "%s: %s\n", filename, strerror(errno));
+      fprintf(stderr, "warning: log messages will be displayed on "
+	      "the screen\n");
+      fp = stderr;
     }
   }
 
-  /* Open the log file */
-  if ((fp = fopen(filename, "a+")) == NULL) {
-    fprintf(stderr, "warning: could not open log file "
-	    "%s: %s\n", filename, strerror(errno));
-    fprintf(stderr, "warning: log messages will be displayed on the screen\n");
-    fp = stderr;
-  }
- 
   /* Get the log type name */
-  for(np = silc_log_types; np->name; np++) {
+  for (np = silc_log_types; np->name; np++) {
     if (np->type == type)
       break;
   }

@@ -162,6 +162,7 @@ static void event_join(SILC_SERVER_REC *server, va_list va)
     }
   }
 
+  memset(userhost, 0, sizeof(userhost));
   if (client->username)
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     client->username, client->hostname);
@@ -185,6 +186,7 @@ static void event_leave(SILC_SERVER_REC *server, va_list va)
   client = va_arg(va, SilcClientEntry);
   channel = va_arg(va, SilcChannelEntry);
 
+  memset(userhost, 0, sizeof(userhost));
   if (client->username)
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     client->username, client->hostname);
@@ -214,6 +216,7 @@ static void event_signoff(SILC_SERVER_REC *server, va_list va)
   client = va_arg(va, SilcClientEntry);
   message = va_arg(va, char *);
 
+  memset(userhost, 0, sizeof(userhost));
   if (client->username)
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     client->username, client->hostname);
@@ -253,6 +256,7 @@ static void event_topic(SILC_SERVER_REC *server, va_list va)
     signal_emit("channel topic changed", 1, chanrec);
   }
 
+  memset(userhost, 0, sizeof(userhost));
   snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	   client->username, client->hostname);
   signal_emit("message topic", 5, server, channel->channel_name,
@@ -274,6 +278,7 @@ static void event_invite(SILC_SERVER_REC *server, va_list va)
   channel_name = va_arg(va, char *);
   client = va_arg(va, SilcClientEntry);
 
+  memset(userhost, 0, sizeof(userhost));
   snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	   client->username, client->hostname);
   signal_emit("message invite", 4, server, channel ? channel->channel_name :
@@ -296,6 +301,7 @@ static void event_nick(SILC_SERVER_REC *server, va_list va)
 			 oldclient, oldclient->nickname,
 			 newclient, newclient->nickname);
 
+  memset(userhost, 0, sizeof(userhost));
   snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	   newclient->username, newclient->hostname);
   signal_emit("message nick", 4, server, newclient->nickname, 
@@ -543,6 +549,7 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   if (chanrec == NULL) 
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
+  memset(userhost, 0, sizeof(userhost));
   snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	   server->conn->local_entry->username, 
 	   server->conn->local_entry->hostname);

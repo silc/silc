@@ -6,6 +6,10 @@ Sat Sep  8 10:22:10 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  if the userinfo field is missing.  Affected file is
 	  lib/silcclient/command_reply.c.
 
+	* Do not print error in silc_file_read if the read file does
+	  not exist.  Just silently return NULL.  Affected file is
+	  lib/silcutil/silcutil.c.
+
 Fri Sep  7 22:16:38 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed various printing bugs on the user interface in the

@@ -1767,7 +1767,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
 				    silc_hash_client_id_compare, NULL,
 				    &id_cache);
 
-    if (!id_cache || !((SilcClientEntry)id_cache->context)->username) {
+    if (!id_cache || !((SilcClientEntry)id_cache->context)->username ||
+	!((SilcClientEntry)id_cache->context)->realname) {
       /* No we don't have it (or it is incomplete in information), query
 	 it from the server. Assemble argument table that will be sent
 	 for the WHOIS command later. */

@@ -117,6 +117,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   char userhost[256];
   
   server = conn == NULL ? NULL : conn->context;
+  memset(userhost, 0, sizeof(userhost));
   if (sender->username)
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     sender->username, sender->hostname);
