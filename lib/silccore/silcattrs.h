@@ -460,7 +460,7 @@ typedef struct {
  * SYNOPSIS
  *
  *    bool silc_attribute_get_object(SilcAttributePayload payload,
- *                                   void **object,
+ *                                   void *object,
  *                                   SilcUInt32 object_size);
  *
  * DESCRIPTION
@@ -478,6 +478,6 @@ typedef struct {
  *
  ***/
 bool silc_attribute_get_object(SilcAttributePayload payload,
-			       void **object, SilcUInt32 object_size);
+			       void *object, SilcUInt32 object_size);
 
 #endif /* SILCATTRS_H */

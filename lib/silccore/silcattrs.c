@@ -139,9 +139,13 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 	if (!tmpbuf)
 	  return NULL;
 	silc_buffer_format(tmpbuf,
+			   SILC_STR_UI_SHORT(strlen(geo->longitude)),
 			   SILC_STR_UI16_STRING(geo->longitude),
+			   SILC_STR_UI_SHORT(strlen(geo->latitude)),
 			   SILC_STR_UI16_STRING(geo->latitude),
+			   SILC_STR_UI_SHORT(strlen(geo->altitude)),
 			   SILC_STR_UI16_STRING(geo->altitude),
+			   SILC_STR_UI_SHORT(strlen(geo->accuracy)),
 			   SILC_STR_UI16_STRING(geo->accuracy),
 			   SILC_STR_END);
 	object = tmpbuf->data;
@@ -164,9 +168,13 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 	  return NULL;
 	silc_buffer_format(tmpbuf,
 			   SILC_STR_UI_INT(dev->type),
+			   SILC_STR_UI_SHORT(strlen(dev->manufacturer)),
 			   SILC_STR_UI16_STRING(dev->manufacturer),
+			   SILC_STR_UI_SHORT(strlen(dev->version)),
 			   SILC_STR_UI16_STRING(dev->version),
+			   SILC_STR_UI_SHORT(strlen(dev->model)),
 			   SILC_STR_UI16_STRING(dev->model),
+			   SILC_STR_UI_SHORT(strlen(dev->language)),
 			   SILC_STR_UI16_STRING(dev->language),
 			   SILC_STR_END);
 	object = tmpbuf->data;
@@ -396,18 +404,18 @@ const unsigned char *silc_attribute_get_data(SilcAttributePayload payload,
 /* Return parsed attribute object */
 
 bool silc_attribute_get_object(SilcAttributePayload payload,
-			       void **object, SilcUInt32 object_size)
+			       void *object, SilcUInt32 object_size)
 {
   SilcUInt16 len;
   bool ret = FALSE;
 
-  if (!object || !(*object) || payload->flags & SILC_ATTRIBUTE_FLAG_INVALID)
+  if (!object || payload->flags & SILC_ATTRIBUTE_FLAG_INVALID)
     return FALSE;
 
   switch (payload->attribute) {
   case SILC_ATTRIBUTE_USER_INFO:
     {
-      SilcVCard vcard = *object;
+      SilcVCard vcard = object;
       if (object_size != sizeof(*vcard))
 	break;
       if (!silc_vcard_decode(payload->data, payload->data_len, vcard))
@@ -418,7 +426,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 
   case SILC_ATTRIBUTE_SERVICE:
     {
-      SilcAttributeObjService *service = *object;
+      SilcAttributeObjService *service = object;
       if (object_size != sizeof(*service))
 	break;
       if (payload->data_len < 7)
@@ -438,7 +446,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   case SILC_ATTRIBUTE_STATUS_MOOD:
   case SILC_ATTRIBUTE_PREFERRED_CONTACT:
     {
-      SilcUInt32 *mask = *object;
+      SilcUInt32 *mask = (SilcUInt32 *)object;
       if (object_size != sizeof(SilcUInt32))
 	break;
       if (payload->data_len < 4)
@@ -452,7 +460,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   case SILC_ATTRIBUTE_PREFERRED_LANGUAGE:
   case SILC_ATTRIBUTE_TIMEZONE:
     {
-      char *string = *object;
+      char *string = object;
       if (payload->data_len < 2)
 	break;
       SILC_GET16_MSB(len, payload->data);
@@ -468,7 +476,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   case SILC_ATTRIBUTE_STATUS_MESSAGE:
   case SILC_ATTRIBUTE_EXTENSION:
     {
-      SilcAttributeObjMime *mime = *object;
+      SilcAttributeObjMime *mime = object;
       if (object_size != sizeof(*mime))
 	break;
       mime->mime = (const unsigned char *)payload->data;
@@ -479,7 +487,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 
   case SILC_ATTRIBUTE_GEOLOCATION:
     {
-      SilcAttributeObjGeo *geo = *object;
+      SilcAttributeObjGeo *geo = object;
       SilcBufferStruct buffer;
       int res;
       if (object_size != sizeof(*geo))
@@ -492,7 +500,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 				 SILC_STR_UI16_STRING_ALLOC(&geo->altitude),
 				 SILC_STR_UI16_STRING_ALLOC(&geo->accuracy),
 				 SILC_STR_END);
-      if (res == 1)
+      if (res == -1)
 	break;
       ret = TRUE;
     }
@@ -500,7 +508,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 
   case SILC_ATTRIBUTE_DEVICE_INFO:
     {
-      SilcAttributeObjDevice *dev = *object;
+      SilcAttributeObjDevice *dev = object;
       SilcBufferStruct buffer;
       SilcUInt32 type;
       int res;
@@ -516,7 +524,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 			     SILC_STR_UI16_STRING_ALLOC(&dev->model),
 			     SILC_STR_UI16_STRING_ALLOC(&dev->language),
 			     SILC_STR_END);
-      if (res == 1)
+      if (res == -1)
 	break;
       dev->type = type;
       ret = TRUE;
@@ -526,7 +534,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
   case SILC_ATTRIBUTE_SERVER_PUBLIC_KEY:
     {
-      SilcAttributeObjPk *pk = *object;
+      SilcAttributeObjPk *pk = object;
       SilcBufferStruct buffer;
       int res;
       if (object_size != sizeof(*pk))
@@ -537,7 +545,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 	silc_buffer_unformat(&buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&pk->type, &len),
 			     SILC_STR_END);
-      if (res == 1)
+      if (res == -1)
 	break;
       pk->data = silc_memdup(payload->data + 2 + len,
 			     payload->data_len - 2 - len);
@@ -549,7 +557,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   case SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE:
   case SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE:
     {
-      SilcAttributeObjPk *pk = *object;
+      SilcAttributeObjPk *pk = object;
       if (object_size != sizeof(*pk))
 	break;
       pk->type = NULL;
