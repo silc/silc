@@ -30,6 +30,10 @@
 #include "silc-queries.h"
 #include "silc-nicklist.h"
 
+EXPANDO_FUNC old_expando_usermode,
+            old_expando_cumode,
+            old_expando_cumode_space;
+
 /* User mode in active server */
 
 static char *expando_usermode(SERVER_REC *server, void *item, int *free_ret)
@@ -38,8 +42,12 @@ static char *expando_usermode(SERVER_REC *server, void *item, int *free_ret)
   static char modes[128], stat[128];
   bool se;
 
-  if (!s)
-    return "";
+  if (!s) {
+    if (old_expando_usermode)
+      return old_expando_usermode(server, item, free_ret);
+    else
+      return "";
+  }
 
   memset(modes, 0, sizeof(modes));
   memset(stat, 0, sizeof(stat));
@@ -78,6 +86,15 @@ static char *expando_usermode(SERVER_REC *server, void *item, int *free_ret)
 
 static char *expando_cumode(SERVER_REC *server, void *item, int *free_ret)
 {
+  SILC_SERVER_REC *s = SILC_SERVER(server);
+      
+  if (!s) {
+    if (old_expando_cumode)
+      return old_expando_cumode(server, item, free_ret);
+    else
+      return ""; 
+  }
+
   if (IS_SILC_CHANNEL(item) && CHANNEL(item)->ownnick) {
     SILC_NICK_REC *nick = (SILC_NICK_REC *)CHANNEL(item)->ownnick;
     return (nick->op && nick->founder) ? "*@" :
@@ -90,17 +107,31 @@ static char *expando_cumode(SERVER_REC *server, void *item, int *free_ret)
 static char *expando_cumode_space(SERVER_REC *server, void *item, 
 				  int *free_ret)
 {
+  SILC_SERVER_REC *s = SILC_SERVER(server);
   char *ret;
 
-  if (!IS_SILC_SERVER(server))
-    return "";
+  if (!s) {
+    if (old_expando_cumode_space)
+      return old_expando_cumode_space(server, item, free_ret);   
+    else
+      return "";
+  }
 
   ret = expando_cumode(server, item, free_ret);
   return *ret == '\0' ? " " : ret;
 }
 
+static char *expando_silc_version(SERVER_REC *server, void *item,
+                                 int *free_ret)
+{
+  return "";
+}
+
 void silc_expandos_init(void)
 {
+  old_expando_usermode = expando_find_long("usermode");
+  old_expando_cumode = expando_find_long("cumode");
+  old_expando_cumode_space = expando_find_long("cumode_space");
   expando_create("usermode", expando_usermode,
 		 "window changed", EXPANDO_ARG_NONE,
 		 "window server changed", EXPANDO_ARG_WINDOW,
@@ -120,4 +151,10 @@ void silc_expandos_deinit(void)
   expando_destroy("usermode", expando_usermode);
   expando_destroy("cumode", expando_cumode);
   expando_destroy("cumode_space", expando_cumode_space);
+  if (old_expando_usermode)
+    expando_create("usermode", old_expando_usermode, NULL);
+  if (old_expando_cumode)
+    expando_create("cumode", old_expando_cumode, NULL);
+  if (old_expando_cumode_space)
+    expando_create("cumode_space", old_expando_cumode_space, NULL);
 }

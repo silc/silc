@@ -383,8 +383,10 @@ static void command_away(const char *data, SILC_SERVER_REC *server,
   }
 
   server->usermode_away = set;
+  g_free_and_null(server->away_reason);
   if (set)
     server->away_reason = g_strdup((char *)data);
+
   signal_emit("away mode changed", 1, server);
 
   silc_command_exec(server, "UMODE", set ? "+g" : "-g");
