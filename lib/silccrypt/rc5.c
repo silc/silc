@@ -62,14 +62,6 @@ SILC_CIPHER_API_SET_KEY(rc5)
 
 SILC_CIPHER_API_SET_KEY_WITH_STRING(rc5)
 {
-  /*  unsigned char key[md5_hash_len];
-  SilcMarsContext *ctx = (SilcMarsContext *)context;
-
-  make_md5_hash(string, &key);
-  memcpy(&ctx->key, mars_set_key(&key, keylen), keylen);
-  memset(&key, 'F', sizeoof(key));
-  */
-
   return 1;
 }
 

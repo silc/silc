@@ -28,5 +28,6 @@
 #include "twofish.h"
 #include "aes.h"
 #include "blowfish.h"
+#include "cast.h"
 
 #endif

@@ -31,6 +31,7 @@ libsilccrypt_a_SOURCES = \
 	sha1.c \
 	twofish.c \
 	blowfish.c \
+	cast.c \
 	silccipher.c \
 	silchash.c \
 	silchmac.c \

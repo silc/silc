@@ -45,7 +45,8 @@ SIM_CIPHER_OBJS = \
         mars.o \
         aes.o \
         rsa.o \
-        twofish.o
+        twofish.o \
+	cast.o
 
 #
 # SILC Hash Functions to be compiled as modules

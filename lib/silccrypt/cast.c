@@ -341,7 +341,7 @@ u4byte s_box[4][256] =
     u ^= s_box[1][byte(t,2)];			\
     u -= s_box[2][byte(t,1)];			\
     u += s_box[3][byte(t,0)];			\
-    y ^= u
+    y ^= u;
 
 #define f2(y,x,kr,km)				\
     t  = rotl(km ^ x, kr);			\
@@ -349,7 +349,7 @@ u4byte s_box[4][256] =
     u -= s_box[1][byte(t,2)];			\
     u += s_box[2][byte(t,1)];			\
     u ^= s_box[3][byte(t,0)];			\
-    y ^= u
+    y ^= u;
 
 #define f3(y,x,kr,km)				\
     t  = rotl(km - x, kr);			\
@@ -357,19 +357,19 @@ u4byte s_box[4][256] =
     u += s_box[1][byte(t,2)];			\
     u ^= s_box[2][byte(t,1)];			\
     u -= s_box[3][byte(t,0)];			\
-    y ^= u
+    y ^= u;
 
 #define f_rnd(x,n)				\
     f1(x[2],x[3],l_key[n],    l_key[n + 4]);	\
     f2(x[1],x[2],l_key[n + 1],l_key[n + 5]);	\
     f3(x[0],x[1],l_key[n + 2],l_key[n + 6]);	\
-    f1(x[3],x[0],l_key[n + 3],l_key[n + 7])
+    f1(x[3],x[0],l_key[n + 3],l_key[n + 7]);
 
 #define i_rnd(x, n)				\
     f1(x[3],x[0],l_key[n + 3],l_key[n + 7]);	\
     f3(x[0],x[1],l_key[n + 2],l_key[n + 6]);	\
     f2(x[1],x[2],l_key[n + 1],l_key[n + 5]);	\
-    f1(x[2],x[3],l_key[n],    l_key[n + 4])
+    f1(x[2],x[3],l_key[n],    l_key[n + 4]);
 
 #define k_rnd(k,tr,tm)				\
     f1(k[6],k[7],tr[0],tm[0]);			\
@@ -379,7 +379,7 @@ u4byte s_box[4][256] =
     f2(k[2],k[3],tr[4],tm[4]);			\
     f3(k[1],k[2],tr[5],tm[5]);			\
     f1(k[0],k[1],tr[6],tm[6]);			\
-    f2(k[7],k[0],tr[7],tm[7])
+    f2(k[7],k[0],tr[7],tm[7]);
 
 /* initialise the key schedule from the user supplied key   */
 
