@@ -3518,15 +3518,15 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
     return;
   }
 
-  if (sock->user_data)
-    silc_server_free_sock_user_data(server, sock, NULL);
-
   silc_server_disconnect_remote(server, sock, 
 				protocol == 
 				SILC_PROTOCOL_SERVER_CONNECTION_AUTH ?
 				SILC_STATUS_ERR_AUTH_FAILED :
 				SILC_STATUS_ERR_KEY_EXCHANGE_FAILED,
 				"Connection timeout");
+
+  if (sock->user_data)
+    silc_server_free_sock_user_data(server, sock, NULL);
 }
 
 /* Creates new channel. Sends NEW_CHANNEL packet to primary route. This
