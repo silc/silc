@@ -65,6 +65,7 @@ void silc_server_packet_forward(SilcServer server,
 				int force_send);
 void silc_server_packet_send_to_channel(SilcServer server,
 					SilcChannelEntry channel,
+					SilcPacketType type,
 					unsigned char *data,
 					unsigned int data_len,
 					int force_send);
@@ -117,14 +118,17 @@ void silc_server_send_error(SilcServer server,
 			    const char *fmt, ...);
 void silc_server_send_notify(SilcServer server,
 			     SilcSocketConnection sock,
+			     SilcNotifyType type,
 			     const char *fmt, ...);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  void *dest_id,
 				  SilcIdType dest_id_type,
+				  SilcNotifyType type,
 				  const char *fmt, ...);
 void silc_server_send_notify_to_channel(SilcServer server,
 					SilcChannelEntry channel,
+					SilcNotifyType type,
 					const char *fmt, ...);
 void silc_server_send_new_id(SilcServer server,
 			     SilcSocketConnection sock,

@@ -26,6 +26,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/09/29 07:13:05  priikone
+ * 	Added support for notify type sending in notify payload.
+ * 	Removed Log headers from the file.
+ * 	Enabled debug messages by default for server.
+ *
  * Revision 1.2  2000/07/05 06:14:01  priikone
  * 	Global costemic changes.
  *
@@ -69,6 +74,8 @@ int main(int argc, char **argv)
   int opt, option_index;
   char *config_file = NULL;
   SilcServer silcd;
+
+  silc_debug = TRUE;
 
   /* Parse command line arguments */
   if (argc > 1) {

@@ -20,6 +20,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.14  2000/09/29 07:13:04  priikone
+ * 	Added support for notify type sending in notify payload.
+ * 	Removed Log headers from the file.
+ * 	Enabled debug messages by default for server.
+ *
  * Revision 1.13  2000/08/21 14:21:21  priikone
  * 	Fixed channel joining and channel message sending inside a
  * 	SILC cell. Added silc_server_send_remove_channel_user and
@@ -830,6 +835,7 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Send notify to the client that is invited to the channel */
   silc_server_send_notify_dest(server, dest_sock, dest_id, SILC_ID_CLIENT,
+			       SILC_NOTIFY_TYPE_INVITE,
 			       "%s invites you to channel %s",
 			       sender->nickname, channel->channel_name);
 
@@ -1021,6 +1027,7 @@ SILC_TASK_CALLBACK(silc_server_command_join_notify)
 
   if (ctx->channel->key && ctx->channel->key_len) {
     silc_server_send_notify_to_channel(ctx->server, ctx->channel,
+				       SILC_NOTIFY_TYPE_JOIN,
 				       "%s (%s@%s) has joined channel %s",
 				       ctx->nickname, ctx->username,
 				       ctx->hostname, ctx->channel_name);
@@ -1275,6 +1282,7 @@ SILC_SERVER_CMD_FUNC(join)
   if (!(cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED)) {
     if (!cmd->pending) {
       silc_server_send_notify_to_channel(server, channel,
+					 SILC_NOTIFY_TYPE_JOIN,
 					 "%s (%s@%s) has joined channel %s",
 					 client->nickname, client->username,
 					 sock->hostname ? sock->hostname :

@@ -22,69 +22,7 @@
  * servicing the SILC connections. This is also a SILC router as a router 
  * is also normal server.
  */
-/*
- * $Id$
- * $Log$
- * Revision 1.14  2000/09/13 17:50:26  priikone
- * 	Updates to comly with new source tree.
- *
- * Revision 1.13  2000/08/21 14:21:21  priikone
- * 	Fixed channel joining and channel message sending inside a
- * 	SILC cell. Added silc_server_send_remove_channel_user and
- * 	silc_server_remove_channel_user functions.
- *
- * Revision 1.12  2000/07/26 07:05:11  priikone
- * 	Fixed the server to server (server to router actually) connections
- * 	and made the private message work inside a cell. Added functin
- * 	silc_server_replace_id.
- *
- * Revision 1.11  2000/07/20 10:17:25  priikone
- * 	Added dynamic protocol registering/unregistering support.  The
- * 	patch was provided by cras.
- *
- * Revision 1.10  2000/07/17 11:47:30  priikone
- * 	Added command lagging support. Added idle counting support.
- *
- * Revision 1.9  2000/07/14 06:15:47  priikone
- * 	Moved all the generic packet sending, encryption, reception,
- * 	decryption and processing functions to library as they were
- * 	duplicated code. Now server uses the generic routine which is
- * 	a lot cleaner. Channel message sending uses now also generic
- * 	routines instead of duplicating the packet sending for every
- * 	channel message sending function. Same was done for private
- * 	message sending as well.
- *
- * Revision 1.8  2000/07/12 05:59:41  priikone
- * 	Major rewrite of ID Cache system. Support added for the new
- * 	ID cache system. Major rewrite of ID List stuff on server.  All
- * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
- * 	by default. A lot rewritten ID list functions.
- *
- * Revision 1.7  2000/07/10 05:43:00  priikone
- * 	Removed command packet processing from server.c and added it to
- * 	command.c.
- * 	Implemented INFO command. Added support for testing that
- * 	connections are registered before executing commands.
- *
- * Revision 1.6  2000/07/07 06:55:59  priikone
- * 	Added SILC style public key support and made server to use
- * 	it at all time.
- *
- * Revision 1.5  2000/07/06 13:18:07  priikone
- * 	Check for NULL in client_on_channel.
- *
- * Revision 1.4  2000/07/05 06:14:01  priikone
- * 	Global costemic changes.
- *
- * Revision 1.3  2000/07/04 08:13:53  priikone
- * 	Changed message route discovery to use silc_server_get_route.
- * 	Added silc_server_client_on_channel function.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 #include "server_internal.h"
@@ -1788,6 +1726,7 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 					SilcHmac hmac,
 					unsigned char *data,
 					unsigned int data_len,
+					int channel_message,
 					int force_send)
 {
   packet->truelen = data_len + SILC_PACKET_HEADER_LEN + 
@@ -1807,9 +1746,12 @@ silc_server_packet_send_to_channel_real(SilcServer server,
      is encrypted with normal session key shared with the client. */
   silc_buffer_put(sock->outbuf, data, data_len);
   silc_packet_assemble(packet);
-  silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
-		      packet->src_id_len + packet->dst_id_len +
-		      packet->padlen);
+  if (channel_message)
+    silc_packet_encrypt(cipher, hmac, sock->outbuf, SILC_PACKET_HEADER_LEN + 
+			packet->src_id_len + packet->dst_id_len +
+			packet->padlen);
+  else
+    silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
     
   SILC_LOG_HEXDUMP(("Channel packet, len %d", sock->outbuf->len),
 		   sock->outbuf->data, sock->outbuf->len);
@@ -1825,6 +1767,7 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 
 void silc_server_packet_send_to_channel(SilcServer server,
 					SilcChannelEntry channel,
+					SilcPacketType type,
 					unsigned char *data,
 					unsigned int data_len,
 					int force_send)
@@ -1837,32 +1780,16 @@ void silc_server_packet_send_to_channel(SilcServer server,
   unsigned int routed_count = 0;
   SilcCipher cipher;
   SilcHmac hmac;
-  SilcBuffer payload;
 
-  SILC_LOG_DEBUG(("Sending packet to channel"));
-
-  /* Generate IV */
-  for (i = 0; i < 16; i++)
-    channel->iv[i] = silc_rng_get_byte(server->rng);
-
-  /* Encode the channel payload */
-  payload = silc_channel_encode_payload(0, "", data_len, data, 
-					16, channel->iv, server->rng);
-  if (!payload) {
-    SILC_LOG_ERROR(("Could not encode channel payload, message not sent"));
+  /* This doesn't send channel message packets */
+  if (type == SILC_PACKET_CHANNEL_MESSAGE)
     return;
-  }
   
-  /* Encrypt payload of the packet. This is encrypted with the 
-     channel key. */
-  channel->channel_key->cipher->encrypt(channel->channel_key->context,
-					payload->data, payload->data,
-					payload->len - 16, /* -IV_LEN */
-					channel->iv);
+  SILC_LOG_DEBUG(("Sending packet to channel"));
 
   /* Set the packet context pointers. */
   packetdata.flags = 0;
-  packetdata.type = SILC_PACKET_CHANNEL_MESSAGE;
+  packetdata.type = type;
   packetdata.src_id = silc_id_id2str(server->id, SILC_ID_SERVER);
   packetdata.src_id_len = SILC_ID_SERVER_LEN;
   packetdata.src_id_type = SILC_ID_SERVER;
@@ -1870,9 +1797,9 @@ void silc_server_packet_send_to_channel(SilcServer server,
   packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
   packetdata.dst_id_type = SILC_ID_CHANNEL;
   packetdata.rng = server->rng;
-  packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
-					  packetdata.src_id_len +
-					  packetdata.dst_id_len));
+  packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
+    packetdata.src_id_len + packetdata.dst_id_len;
+  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
 
   /* If there are global users in the channel we will send the message
      first to our router for further routing. */
@@ -1889,8 +1816,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
     SILC_LOG_DEBUG(("Sending channel message to router for routing"));
 
     silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					    cipher, hmac, payload->data,
-					    payload->len, force_send);
+					    cipher, hmac, data,
+					    data_len, FALSE, force_send);
   }
 
   /* Send the message to clients on the channel's client list. */
@@ -1914,8 +1841,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
 
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					      cipher, hmac, payload->data,
-					      payload->len, force_send);
+					      cipher, hmac, data,
+					      data_len, FALSE, force_send);
 
       /* We want to make sure that the packet is routed to same router
 	 only once. Mark this route as sent route. */
@@ -1939,8 +1866,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
       
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					      cipher, hmac, payload->data,
-					      payload->len, force_send);
+					      cipher, hmac, data,
+					      data_len, FALSE, force_send);
     }
   }
 
@@ -1948,7 +1875,6 @@ void silc_server_packet_send_to_channel(SilcServer server,
     silc_free(routed);
   silc_free(packetdata.src_id);
   silc_free(packetdata.dst_id);
-  silc_buffer_free(payload);
 }
 
 /* This routine is explicitly used to relay messages to some channel.
@@ -1979,8 +1905,6 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   SilcHmac hmac;
 
   SILC_LOG_DEBUG(("Relaying packet to channel"));
-
-  SILC_LOG_HEXDUMP(("XXX %d", data_len), data, data_len);
 
   /* Set the packet context pointers. */
   packetdata.flags = 0;
@@ -2016,7 +1940,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      cipher, hmac, data,
-					      data_len, force_send);
+					      data_len, TRUE, force_send);
     }
   }
 
@@ -2057,7 +1981,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	/* Send the packet */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 						cipher, hmac, data,
-						data_len, force_send);
+						data_len, TRUE, force_send);
 	
 	/* We want to make sure that the packet is routed to same router
 	   only once. Mark this route as sent route. */
@@ -2082,7 +2006,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      cipher, hmac, data,
-					      data_len, force_send);
+					      data_len, TRUE, force_send);
     }
   }
 
@@ -2320,6 +2244,7 @@ void silc_server_remove_from_channels(SilcServer server,
 	     notify that this client has left the channel. */
 	  if (channel->global_users)
 	    silc_server_send_notify_to_channel(server, channel,
+					       SILC_NOTIFY_TYPE_SIGNOFF,
 					       "Signoff: %s@%s",
 					       client->nickname,
 					       sock->hostname ?
@@ -2335,6 +2260,7 @@ void silc_server_remove_from_channels(SilcServer server,
 	/* Send notify to channel about client leaving SILC and thus
 	   the entire channel. */
 	silc_server_send_notify_to_channel(server, channel,
+					   SILC_NOTIFY_TYPE_SIGNOFF,
 					   "Signoff: %s@%s",
 					   client->nickname,
 					   sock->hostname ?
@@ -2384,6 +2310,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	     ie. the channel is not created locally. */
 	  if (notify && channel->global_users)
 	    silc_server_send_notify_to_channel(server, channel,
+					       SILC_NOTIFY_TYPE_LEAVE,
 					       "%s@%s has left channel %s",
 					       client->nickname, 
 					       sock->hostname ?
@@ -2400,6 +2327,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	/* Send notify to channel about client leaving the channel */
 	if (notify)
 	  silc_server_send_notify_to_channel(server, channel,
+					     SILC_NOTIFY_TYPE_LEAVE,
 					     "%s@%s has left channel %s",
 					     client->nickname, sock->hostname ?
 					     sock->hostname : sock->ip,
@@ -2741,18 +2669,28 @@ void silc_server_send_error(SilcServer server,
 
 void silc_server_send_notify(SilcServer server,
 			     SilcSocketConnection sock,
+			     SilcNotifyType type,
 			     const char *fmt, ...)
 {
   va_list ap;
   unsigned char buf[4096];
+  SilcBuffer packet;
 
   memset(buf, 0, sizeof(buf));
   va_start(ap, fmt);
   vsprintf(buf, fmt, ap);
   va_end(ap);
 
+  packet = silc_buffer_alloc(2 + strlen(buf));
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_SHORT(type),
+		     SILC_STR_UI16_STRING(buf),
+		     SILC_STR_END);
+
   silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY, 0, 
-			  buf, strlen(buf), FALSE);
+			  packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
 }
 
 /* Sends notify message destined to specific entity. */
@@ -2761,41 +2699,59 @@ void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  void *dest_id,
 				  SilcIdType dest_id_type,
+				  SilcNotifyType type,
 				  const char *fmt, ...)
 {
   va_list ap;
   unsigned char buf[4096];
+  SilcBuffer packet;
 
   memset(buf, 0, sizeof(buf));
   va_start(ap, fmt);
   vsprintf(buf, fmt, ap);
   va_end(ap);
 
+  packet = silc_buffer_alloc(2 + strlen(buf));
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_SHORT(type),
+		     SILC_STR_UI16_STRING(buf),
+		     SILC_STR_END);
+
   silc_server_packet_send_dest(server, sock, SILC_PACKET_NOTIFY, 0, 
 			       dest_id, dest_id_type,
-			       buf, strlen(buf), FALSE);
+			       packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
 }
 
 /* Sends notify message to a channel. The notify message sent is 
-   distributed to all clients on the channel. Actually this is not real
-   notify message, instead it is message to channel sent by server. But
-   as server is sending it it will appear as notify type message on the
-   client side. */
+   distributed to all clients on the channel. */
 
 void silc_server_send_notify_to_channel(SilcServer server,
 					SilcChannelEntry channel,
+					SilcNotifyType type,
 					const char *fmt, ...)
 {
   va_list ap;
   unsigned char buf[4096];
+  SilcBuffer packet;
 
   memset(buf, 0, sizeof(buf));
   va_start(ap, fmt);
   vsprintf(buf, fmt, ap);
   va_end(ap);
 
-  silc_server_packet_send_to_channel(server, channel, buf, 
-				     strlen(buf), FALSE);
+  packet = silc_buffer_alloc(2 + strlen(buf));
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_SHORT(type),
+		     SILC_STR_UI16_STRING(buf),
+		     SILC_STR_END);
+
+  silc_server_packet_send_to_channel(server, channel, 
+				     SILC_PACKET_NOTIFY,
+				     packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
 }
 
 /* Sends New ID Payload to remote end. The packet is used to distribute
@@ -3141,19 +3097,23 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   
   /* Send some nice info to the client */
   silc_server_send_notify(server, sock, 
+			  SILC_NOTIFY_TYPE_NONE,
 			  "Welcome to the SILC Network %s@%s",
 			  username, 
 			  sock->hostname ? sock->hostname : sock->ip);
   silc_server_send_notify(server, sock,
+			  SILC_NOTIFY_TYPE_NONE,
 			  "Your host is %s, running version %s",
 			  server->config->server_info->server_name,
 			  server_version);
   silc_server_send_notify(server, sock, 
+			  SILC_NOTIFY_TYPE_NONE,
 			  "Your connection is secured with %s cipher, "
 			  "key length %d bits",
 			  client->send_key->cipher->name,
 			  client->send_key->cipher->key_len);
   silc_server_send_notify(server, sock, 
+			  SILC_NOTIFY_TYPE_NONE,
 			  "Your current nickname is %s",
 			  client->nickname);
 
