@@ -1141,6 +1141,7 @@ echo ""
 echo " Installation prefix ...........: $prefix"
 echo " bin directory .................: $s_bindir"
 echo " sbin directory ................: $s_sbindir"
+echo " etc directory .................: $ETCDIR"
 echo " man directory .................: $s_mandir"
 echo " help directory ................: $HELPDIR"
 echo " doc directory .................: $DOCDIR"
@@ -1174,8 +1175,14 @@ if test x$sim_support = xfalse; then
 else
   sim_support="yes"
 fi
+if test x$has_iconv = xfalse; then
+  iconv_support="no"
+else
+  iconv_support="yes"
+fi
 echo " SIM support ...................: $sim_support"
 echo " IPv6 support ..................: $summary_ipv6"
+echo " Iconv support .................: $iconv_support"
 echo " Assembler optimizations .......: $summary_asm"
 
 mp="MPI"
