@@ -487,6 +487,53 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
   silc_free(argv_types);
 }
 
+/* ACTION local command. Same as ME but takes the channel as mandatory
+   argument. */
+
+static void command_action(const char *data, SILC_SERVER_REC *server,
+			   WI_ITEM_REC *item)
+{
+  SILC_CHANNEL_REC *chanrec;
+  char *tmpcmd = "ME", *tmp;
+  uint32 argc = 0;
+  unsigned char **argv;
+  uint32 *argv_lens, *argv_types;
+  int i;
+ 
+  if (!IS_SILC_SERVER(server) || !server->connected)
+    cmd_return_error(CMDERR_NOT_CONNECTED);
+
+  if (!IS_SILC_CHANNEL(item))
+    cmd_return_error(CMDERR_NOT_JOINED);
+
+  /* Now parse all arguments */
+  tmp = g_strconcat(tmpcmd, " ", data, NULL);
+  silc_parse_command_line(tmp, &argv, &argv_lens,
+			  &argv_types, &argc, 3);
+  g_free(tmp);
+
+  if (argc < 3)
+    cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
+
+  chanrec = silc_channel_find(server, argv[1]);
+  if (chanrec == NULL) 
+    cmd_return_error(CMDERR_CHAN_NOT_FOUND);
+
+  /* Send the action message */
+  silc_client_send_channel_message(silc_client, server->conn, 
+				   chanrec->entry, NULL,
+				   SILC_MESSAGE_FLAG_ACTION, 
+				   argv[2], argv_lens[2], TRUE);
+
+  printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
+		     MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_OWNACTION, argv[2]);
+
+  for (i = 0; i < argc; i++)
+    silc_free(argv[i]);
+  silc_free(argv_lens);
+  silc_free(argv_types);
+}
+
 /* NOTICE local command. */
 
 static void command_notice(const char *data, SILC_SERVER_REC *server,
@@ -548,11 +595,19 @@ static void command_away(const char *data, SILC_SERVER_REC *server,
     /* Remove any possible away message */
     silc_client_set_away_message(silc_client, server->conn, NULL);
     set = FALSE;
+
+    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP, 
+		       SILCTXT_UNSET_AWAY);
   } else {
     /* Set the away message */
     silc_client_set_away_message(silc_client, server->conn, (char *)data);
     set = TRUE;
+
+    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP, 
+		       SILCTXT_SET_AWAY, data);
   }
+
+  signal_emit("away mode changed", 1, server);
 
   silc_command_exec(server, "UMODE", set ? "+g" : "-g");
 }
@@ -1050,6 +1105,7 @@ void silc_channels_init(void)
   
   command_bind("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
   command_bind("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
+  command_bind("action", MODULE_NAME, (SIGNAL_FUNC) command_action);
   command_bind("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   command_bind("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
   command_bind("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
@@ -1082,6 +1138,7 @@ void silc_channels_deinit(void)
   
   command_unbind("part", (SIGNAL_FUNC) command_part);
   command_unbind("me", (SIGNAL_FUNC) command_me);
+  command_unbind("action", (SIGNAL_FUNC) command_action);
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
   command_unbind("away", (SIGNAL_FUNC) command_away);
   command_unbind("key", (SIGNAL_FUNC) command_key);

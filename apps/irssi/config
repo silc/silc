@@ -46,6 +46,7 @@ aliases = {
   WN = "window new hide";
   GOTO = "sb goto";
   CHAT = "dcc chat";
+  ADMIN = "info";
 };
 
 settings = {

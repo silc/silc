@@ -1,3 +1,22 @@
+Tue May 29 22:16:40 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added Makefile.defines_int to include the actual definitions
+	  for Makefile.defines.in.  Tested the new distribution system,
+	  created distributions and tested installation.
+
+	* Added AWAY message printing to the Irssi SILC client.  Added
+	  the messages to the irssi/src/fe-common/silc/module-formats.[ch].
+
+	* Added SCONNECT command to call the SILC's CONNECT command.
+	  Cannot use CONNECT directly since Irssi uses that internally.
+	  Affected file irssi/src/silc/core/silc-servers.c.
+
+	  Added ACTION local command.  It is same as ME command but takes
+	  the channel as mandatory argument.
+
+	  Rewrote some of the Irssi's help files to suite for SILC
+	  protocol.
+
 Mon May 28 19:05:22 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added Makefile.defines[.in] that should for now on be included

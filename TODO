@@ -1,3 +1,12 @@
+TODO/bugs in Irssi SILC client
+==============================
+
+ o Add KNOCKOUT local command.  It should kick an client from channel and
+   set a ban for it for number of seconds.
+
+ o Add KICKBAN local command.  Kicks and bans the specified client.
+
+
 TODO/bugs In SILC Client Library
 ================================
 

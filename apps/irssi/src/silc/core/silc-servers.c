@@ -287,6 +287,8 @@ void silc_command_exec(SILC_SERVER_REC *server,
   (*cmd->cb)(ctx);
 }
 
+/* Generic command function to call any SILC command directly. */
+
 static void command_self(const char *data, SILC_SERVER_REC *server)
 {
   if (!IS_SILC_SERVER(server) || !server->connected) {
@@ -295,6 +297,20 @@ static void command_self(const char *data, SILC_SERVER_REC *server)
   }
 
   silc_command_exec(server, current_command, data);
+  signal_stop();
+}
+
+/* SCONNECT command.  Calls actually SILC's CONNECT command since Irssi
+   has CONNECT command for other purposes. */
+
+static void command_sconnect(const char *data, SILC_SERVER_REC *server)
+{
+  if (!IS_SILC_SERVER(server) || !server->connected) {
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Not connected to server");
+    return;
+  }
+
+  silc_command_exec(server, "CONNECT", data);
   signal_stop();
 }
 
@@ -338,12 +354,12 @@ void silc_server_init(void)
   command_bind("kill", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("kick", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("info", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("connect", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("ping", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("motd", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("close", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("shutdown", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind("sconnect", MODULE_NAME, (SIGNAL_FUNC) command_sconnect);
 
   command_set_options("connect", "+silcnet");
 }
@@ -370,11 +386,11 @@ void silc_server_deinit(void)
   command_unbind("kill", (SIGNAL_FUNC) command_self);
   command_unbind("kick", (SIGNAL_FUNC) command_self);
   command_unbind("info", (SIGNAL_FUNC) command_self);
-  command_unbind("connect", (SIGNAL_FUNC) command_self);
   command_unbind("ping", (SIGNAL_FUNC) command_self);
   command_unbind("motd", (SIGNAL_FUNC) command_self);
   command_unbind("ban", (SIGNAL_FUNC) command_self);
   command_unbind("close", (SIGNAL_FUNC) command_self);
   command_unbind("shutdown", (SIGNAL_FUNC) command_self);
   command_unbind("getkey", (SIGNAL_FUNC) command_self);
+  command_unbind("sconnect", (SIGNAL_FUNC) command_sconnect);
 }
