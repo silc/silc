@@ -603,7 +603,7 @@ const char *silc_get_packet_name(unsigned char type);
  *
  * SYNOPSIS
  *
- *    char *silc_get_packet_name(SilcCommand command);
+ *    char *silc_get_command_name(SilcCommand command);
  *
  * DESCRIPTION
  *
