@@ -109,7 +109,8 @@ void silc_client_send_channel_message(SilcClient client,
 
   /* Encode the message payload. This also encrypts the message payload. */
   payload = silc_message_payload_encode(flags, data, data_len, TRUE, FALSE,
-					cipher, hmac, client->rng);
+					cipher, hmac, client->rng, NULL,
+					client->private_key, client->sha1hash);
 
   /* Get data used in packet header encryption, keys and stuff. */
   cipher = conn->internal->send_key;
@@ -205,9 +206,9 @@ static void silc_client_channel_message_cb(SilcClient client,
     
     /* Pass the message to application */
     client->internal->ops->channel_message(
-			       client, conn, clients[0], channel,
-			       silc_message_get_flags(res->payload),
-			       message, message_len);
+			    client, conn, clients[0], channel, res->payload,
+			    silc_message_get_flags(res->payload),
+			    message, message_len);
   }
 
  out:
@@ -316,9 +317,9 @@ void silc_client_channel_message(SilcClient client,
 
   /* Pass the message to application */
   client->internal->ops->channel_message(
-				 client, conn, client_entry, channel,
-				 silc_message_get_flags(payload),
-				 message, message_len);
+			     client, conn, client_entry, channel, payload,
+			     silc_message_get_flags(payload),
+			     message, message_len);
 
  out:
   silc_free(id);

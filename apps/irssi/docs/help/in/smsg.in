@@ -1,0 +1,18 @@
+
+@SYNTAX:smsg@
+
+Sends a signed private message to other user in the network.
+The message will be digitally signed and the receiver may verify
+the message by using your public key.
+
+If -channel option is provided then this command actually
+send channel message to the specified channel.  The message
+IS NOT private message, it is normal channel message.  Also this
+message will be signed and can be verified by using your public
+key.
+
+Example:
+
+/SMSG Foobar Very authenticated message
+
+See also: MSG QUERY

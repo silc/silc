@@ -1000,7 +1000,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
   /* Get the ban list */
   tmp = silc_argument_get_arg_type(cmd->args, 8, &len);
-  if (tmp) {
+  if (tmp && len > 2) {
     SilcArgumentPayload iargs;
     SilcUInt16 iargc;
     SILC_GET16_MSB(iargc, tmp);

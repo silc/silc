@@ -31,8 +31,8 @@ silc_say(SilcClient client, SilcClientConnection conn,
 static void
 silc_channel_message(SilcClient client, SilcClientConnection conn,
 		     SilcClientEntry sender, SilcChannelEntry channel,
-		     SilcMessageFlags flags, const unsigned char *message,
-		     SilcUInt32 message_len)
+		     SilcMessagePayload payload, SilcMessageFlags flags,
+		     const unsigned char *message, SilcUInt32 message_len)
 {
 
 }
@@ -46,8 +46,8 @@ silc_channel_message(SilcClient client, SilcClientConnection conn,
 
 static void
 silc_private_message(SilcClient client, SilcClientConnection conn,
-		     SilcClientEntry sender, SilcMessageFlags flags,
-		     const unsigned char *message,
+		     SilcClientEntry sender, SilcMessagePayload payload,
+		     SilcMessageFlags flags, const unsigned char *message,
 		     SilcUInt32 message_len)
 {
 

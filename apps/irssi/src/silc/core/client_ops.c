@@ -158,6 +158,7 @@ void silc_say_error(char *msg, ...)
 
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcChannelEntry channel,
+			  SilcMessagePayload payload,
 			  SilcMessageFlags flags, const unsigned char *message,
 			  SilcUInt32 message_len)
 {
@@ -183,6 +184,18 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       nick = silc_nicklist_insert(chanrec, chu, FALSE);
   }
 
+  /* If the messages is digitally signed, verify it, if possible. */
+  if (flags & SILC_MESSAGE_FLAG_SIGNED) {
+    SilcMessageSignedPayload sig = silc_message_get_signature(payload);
+/*
+    if (sig) {
+      if (silc_message_signed_verify(sig, payload, client->public_key,
+				     client->sha1hash) != SILC_AUTH_OK)
+	silc_say_error(("Could not verify signature in message"));
+    }
+*/
+  }
+  
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     /* MIME object received, try to display it as well as we can */
     char type[128], enc[128];
@@ -251,7 +264,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
    sender received in the packet. */
 
 void silc_private_message(SilcClient client, SilcClientConnection conn,
-			  SilcClientEntry sender, SilcMessageFlags flags,
+			  SilcClientEntry sender, SilcMessagePayload payload,
+			  SilcMessageFlags flags,
 			  const unsigned char *message,
 			  SilcUInt32 message_len)
 {
@@ -266,6 +280,14 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     sender->username, sender->hostname);
 
+  /* If the messages is digitally signed, verify it, if possible. */
+  if (flags & SILC_MESSAGE_FLAG_SIGNED) {
+    SilcMessageSignedPayload sig = silc_message_get_signature(payload);
+    if (sig) {
+
+    }
+  }
+  
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     /* MIME object received, try to display it as well as we can */
     char type[128], enc[128];

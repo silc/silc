@@ -8,6 +8,21 @@ Mon Dec  2 20:50:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  notify.  Affected file lib/silcclient/client_notify.c.
 	  Fixes bug in '@' character handling in a nickname.
 
+	* Added support for automatically parsing signature from
+	  the message payload.  Added new function
+	  silc_message_get_signature to return the payload to
+	  application.  Affected files lib/silccore/silcmessage.[ch].
+
+	* Changed the private_message and channel_message client
+	  operations to deliver the SilcMessagePayload to the
+	  application too.  Application can use it fe. to get the
+	  signature from the message for verification.  Affected
+	  file lib/silcclient/silcclient.h, client_channel.c and
+	  client_prvmsg.c.
+
+	* Redefined the signed payload for message payloads.
+	  Updated protocol specs and implemented.
+
 Mon Dec  2 16:28:29 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed wrong invite and ban list handling in server command

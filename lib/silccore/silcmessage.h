@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 -2002 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,6 +50,25 @@
  *
  ***/
 typedef struct SilcMessagePayloadStruct *SilcMessagePayload;
+
+/****s* silccore/SilcMessageAPI/SilcMessageSignedPayload
+ *
+ * NAME
+ * 
+ *    typedef struct SilcMessageSignedPayloadStruct *SilcMessageSignedPayload;
+ *
+ *
+ * DESCRIPTION
+ *
+ *    This context represents the SILC_MESSAGE_FLAG_SIGNED Payload which
+ *    is used with channel messages and private messages to indicate that
+ *    the message is digitally signed.  This payload may include the
+ *    message sender's public key and it includes the digital signature.
+ *    This payload MUST NOT be used in any other context except with
+ *    channel and private message sending and reception.
+ *
+ ***/
+typedef struct SilcMessageSignedPayloadStruct *SilcMessageSignedPayload;
 
 /****d* silccore/SilcMessageAPI/SilcMessageFlags
  *
@@ -161,6 +180,7 @@ silc_message_payload_parse(unsigned char *payload,
  *
  *    bool silc_message_payload_encrypt(unsigned char *data,
  *                                      SilcUInt32 data_len,
+ *                                      SilcUInt32 true_len,
  *                                      unsigned char *iv,
  *                                      SilcUInt32 iv_len,
  *                                      SilcCipher cipher,
@@ -171,7 +191,7 @@ silc_message_payload_parse(unsigned char *payload,
  *    This function is used to encrypt the Messsage Payload which is
  *    the `data' and `data_len'.  The `data_len' is the data length which
  *    is used to create MAC out of.  The `data' MUST have additional space
- *    after `data_len' bytes for the MAC which is appended to the data.
+ *    after `true_len' bytes for the MAC which is appended to the data.
  *
  *    This is usually used by the Message Payload interface itself but can
  *    be called by the appliation if separate encryption process is required.
@@ -182,6 +202,7 @@ silc_message_payload_parse(unsigned char *payload,
  ***/
 bool silc_message_payload_encrypt(unsigned char *data,
 				  SilcUInt32 data_len,
+				  SilcUInt32 true_len,
 				  unsigned char *iv,
 				  SilcUInt32 iv_len,
 				  SilcCipher cipher,
@@ -198,7 +219,10 @@ bool silc_message_payload_encrypt(unsigned char *data,
  *                                           bool private_message,
  *                                           SilcCipher cipher,
  *                                           SilcHmac hmac,
- *                                           SilcRng rng);
+ *                                           SilcRng rng,
+ *                                           SilcPublicKey public_key,
+ *                                           SilcPrivateKey private_key,
+ *                                           SilcHash hash);
  *
  * DESCRIPTION
  *
@@ -219,9 +243,14 @@ bool silc_message_payload_encrypt(unsigned char *data,
  *    message that will be encrypted with session keys (no private message
  *    key) then `cipher' and `hmac' is NULL and this merely encodes the
  *    payload buffer, and the caller must encrypt the packet later.
- *
  *    If `rng' is NULL then global RNG is used, if non-NULL then the
  *    `rng' is used (for IV and padding generation).
+ *
+ *    The `public_key', `private_key' and `hash' are provided only if the
+ *    flags includes SILC_MESSAGE_FLAG_SIGNED, in which case the message
+ *    will be digitally signed.  If `public_key' is non-NULL then it will
+ *    be included in the message.  The `private_message' and `hash' MUST
+ *    be provided.  The `hash' SHOULD be SHA1.
  *
  ***/
 SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
@@ -231,7 +260,10 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 				       bool private_message,
 				       SilcCipher cipher,
 				       SilcHmac hmac,
-				       SilcRng rng);
+				       SilcRng rng,
+				       SilcPublicKey public_key,
+				       SilcPrivateKey private_key,
+				       SilcHash hash);
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_free
  *
@@ -306,24 +338,26 @@ unsigned char *silc_message_get_mac(SilcMessagePayload payload);
  ***/
 unsigned char *silc_message_get_iv(SilcMessagePayload payload);
 
-/****s* silccore/SilcMessageAPI/SilcMessageSignedPayload
+/****f* silccore/SilcMessageAPI/silc_message_get_signature
  *
- * NAME
- * 
- *    typedef struct SilcMessageSignedPayloadStruct *SilcMessageSignedPayload;
+ * SYNOPSIS
  *
+ *    const SilcMessageSignedPayload
+ *    silc_message_get_signature(SilcMessagePayload payload);
  *
  * DESCRIPTION
  *
- *    This context represents the SILC_MESSAGE_FLAG_SIGNED Payload which
- *    is used with channel messages and private messages to indicate that
- *    the message is digitally signed.  This payload may include the
- *    message sender's public key and it includes the digital signature.
- *    This payload MUST NOT be used in any other context except with
- *    channel and private message sending and reception.
+ *    Returns the pointer to the signature of the message if the
+ *    SILC_MESSAGE_FLAG_SIGNED was set.  If the flag is set and this
+ *    function returns NULL then error had occurred and the signature
+ *    could not be retrieved from the message.
+ *
+ *    The caller SHOULD verify the signature by calling the
+ *    silc_message_signed_verify function.
  *
  ***/
-typedef struct SilcMessageSignedPayloadStruct *SilcMessageSignedPayload;
+const SilcMessageSignedPayload
+silc_message_get_signature(SilcMessagePayload payload);
 
 /****f* silccore/SilcMessageAPI/silc_message_signed_payload_parse
  *
@@ -335,10 +369,13 @@ typedef struct SilcMessageSignedPayloadStruct *SilcMessageSignedPayload;
  *
  * DESCRIPTION
  *
- *    Parses the SILC_MESSAGE_FLAG_SIGNED Payload from the `data' of
+ *    Parses the SilcMessageSignedPayload Payload from the `data' of
  *    length of `data_len' bytes.  The `data' must be payload without
  *    the actual message payload.  Returns the parsed payload or NULL
- *    on error.  Caller must free the returned payload.
+ *    on error.  Caller must free the returned payload.  Application
+ *    usually does not need to call this since the function
+ *    silc_message_payload_parse calls this automatically for signed
+ *    messages.
  *
  ***/
 SilcMessageSignedPayload
@@ -354,18 +391,22 @@ silc_message_signed_payload_parse(const unsigned char *data,
  *                                       SilcUInt32 message_payload_len,
  *                                       SilcPublicKey public_key,
  *                                       SilcPrivateKey private_key,
- *                                       bool include_public_key);
+ *                                       SilcHash hash);
  *
  * DESCRIPTION
  *
- *    Encodes the SILC_MESSAGE_FLAG_SIGNED Payload and computes the
+ *    Encodes the SilcMessageSignedPayload Payload and computes the
  *    digital signature.  The `message_payload' is the message data that
  *    is used in the signature computation.  The encoding of the buffer
- *    is specified in the SILC protocol.  If `include_public_key' is
- *    TRUE then the public key included in the payload.  The `private_key'
+ *    is specified in the SILC protocol.  If `public_key' is provided
+ *    then the public key included in the payload.  The `private_key'
  *    is used to produce the signature.  This function returns the encoded
  *    payload with the signature or NULL on error.  Caller must free the
- *    returned buffer.
+ *    returned buffer.  The `hash' SHOULD be SHA-1 hash function.
+ *    
+ *    Application usually does not need to call this since the function
+ *    silc_message_payload_encode calls this automatically if the caller
+ *    wants to sign the message.
  *
  ***/
 SilcBuffer
@@ -373,8 +414,7 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
 				   SilcUInt32 message_payload_len,
 				   SilcPublicKey public_key,
 				   SilcPrivateKey private_key,
-				   SilcHash hash,
-				   bool include_public_key);
+				   SilcHash hash);
 
 /****f* silccore/SilcMessageAPI/silc_message_signed_payload_free
  *
@@ -384,7 +424,7 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
  *
  * DESCRIPTION
  *
- *    Frees the SILC_MESSAGE_FLAG_SIGNED Payload.
+ *    Frees the SilcMessageSignedPayload Payload.
  *
  ***/
 void silc_message_signed_payload_free(SilcMessageSignedPayload sig);
@@ -401,7 +441,7 @@ void silc_message_signed_payload_free(SilcMessageSignedPayload sig);
  * DESCRIPTION
  *
  *    This routine can be used to verify the signature found in
- *    SILC_MESSAGE_FLAG_SIGNED Payload.  This returns SILC_AUTH_OK if the
+ *    SilcMessageSignedPayload Payload.  This returns SILC_AUTH_OK if the
  *    signature verification was successful.
  *
  ***/
@@ -419,7 +459,7 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
  *
  * DESCRIPTION
  *
- *    Returns the public key from the SILC_MESSAGE_FLAG_SIGNED Payload
+ *    Returns the public key from the SilcMessageSignedPayload Payload
  *    or NULL if it does not include public key.  The caller must free
  *    the returned public key.
  *

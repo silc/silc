@@ -538,7 +538,7 @@ typedef struct {
      (like it may tell the message is multimedia message). */
   void (*channel_message)(SilcClient client, SilcClientConnection conn, 
 			  SilcClientEntry sender, SilcChannelEntry channel, 
-			  SilcMessageFlags flags,
+			  SilcMessagePayload payload, SilcMessageFlags flags,
 			  const unsigned char *message,
 			  SilcUInt32 message_len);
 
@@ -548,7 +548,8 @@ typedef struct {
      can be interpreted (like it may tell the message is multimedia 
      message). */
   void (*private_message)(SilcClient client, SilcClientConnection conn,
-			  SilcClientEntry sender, SilcMessageFlags flags,
+			  SilcClientEntry sender, SilcMessagePayload payload,
+			  SilcMessageFlags flags,
 			  const unsigned char *message,
 			  SilcUInt32 message_len);
 
@@ -1126,6 +1127,9 @@ void silc_client_close_connection(SilcClient client,
  *    keys are set then the first key (the key that was added first as
  *    private key) is used. 
  *
+ *    If the `flags' includes SILC_MESSAGE_FLAG_SIGNED the message will be
+ *    digitally signed with the SILC key pair.
+ *
  ***/
 void silc_client_send_channel_message(SilcClient client, 
 				      SilcClientConnection conn,
@@ -1157,6 +1161,9 @@ void silc_client_send_channel_message(SilcClient client,
  *    to silc_client_packet_send_to_channel except that we send private
  *    message. The `data' is the private message. If the `force_send' is
  *    TRUE the packet is sent immediately. 
+ *
+ *    If the `flags' includes SILC_MESSAGE_FLAG_SIGNED the message will be
+ *    digitally signed with the SILC key pair.
  *
  ***/
 void silc_client_send_private_message(SilcClient client,
