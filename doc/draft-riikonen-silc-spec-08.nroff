@@ -1687,7 +1687,8 @@ In addition of general UTF-8 string limitations described in previous
 section, the UTF-8 encoded nickname and channel name strings MUST NOT
 include any characters that has been marked in the Unicode standard as
 space (white space) characters, line and paragraph separators,
-mathematical and currency symbol characters, or any other symbol
+mathematical symbol characters (with exception of US-ASCII mathematical
+symbol characters), currency symbol characters, or any other symbol
 characters, special characters or tags.  In addition nicknames and
 channel names MUST NOT include commas (','), '@', '!' or any wildcard
 characters.
