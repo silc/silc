@@ -38,5 +38,19 @@ typedef struct SilcChannelUserStruct *SilcChannelUser;
 typedef struct SilcClientInternalStruct *SilcClientInternal;
 typedef struct SilcClientConnectionInternalStruct 
 					   *SilcClientConnectionInternal;
+typedef struct SilcChannelPrivateKeyStruct *SilcChannelPrivateKey;
   
+/* Client entry status */
+typedef enum {
+  SILC_CLIENT_STATUS_NONE       = 0x0000,
+  SILC_CLIENT_STATUS_RESOLVING  = 0x0001,
+} SilcEntryStatus;
+
+/* Client and its mode on a channel */
+struct SilcChannelUserStruct {
+  SilcClientEntry client;
+  SilcUInt32 mode;
+  SilcChannelEntry channel;
+};
+
 #endif

@@ -179,6 +179,125 @@ struct SilcClientConnectionStruct {
 };
 /***/
 
+/****s* silcclient/SilcClientAPI/SilcClientEntry
+ *
+ * NAME
+ *
+ *    typedef struct SilcClientEntryStruct { ... } *SilcClientEntry
+ *
+ * DESCRIPTION
+ *
+ *    This structure represents a client or a user in the SILC network.
+ *    The local user has this structure also and it can be accessed from
+ *    SilcClientConnection structure.  All other users in the SILC network
+ *    that are accessed using the Client Library routines will have their
+ *    own SilcClientEntry structure.  For example, when finding users by
+ *    their nickname the Client Library returns this structure back to
+ *    the application.
+ *
+ * SOURCE
+ */
+struct SilcClientEntryStruct {
+  /* General information */
+  char *nickname;		/* nickname */
+  char *username;		/* username */
+  char *hostname;		/* hostname */
+  char *server;			/* SILC server name */
+  char *realname;		/* Realname (userinfo) */
+
+  /* Mode, ID and other information */
+  SilcUInt32 mode;		/* User mode in SILC */
+  SilcClientID *id;		/* The Client ID */
+  SilcDList attrs;		/* Requested Attributes (maybe NULL) */
+  unsigned char *fingerprint;	/* Fingerprint of client's public key */
+  SilcUInt32 fingerprint_len;	/* Length of the fingerprint */
+
+  /* Private message keys */
+  SilcCipher send_key;		/* Private message key for sending */
+  SilcCipher receive_key;	/* Private message key for receiving */
+  unsigned char *key;		/* Set only if appliation provided the
+				   key material. NULL if the library 
+				   generated the key. */
+  SilcUInt32 key_len;		/* Key length */
+  SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
+
+  /* SilcClientEntry status information */
+  SilcEntryStatus status;	/* Status mask */
+  SilcHashTable channels;	/* All channels client has joined */
+  SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
+  bool generated;		/* TRUE if library generated `key' */
+  bool valid;			/* FALSE if this entry is not valid */
+};
+/***/
+
+/****s* silcclient/SilcClientAPI/SilcChannelEntry
+ *
+ * NAME
+ *
+ *    typedef struct SilcChannelEntryStruct { ... } *SilcChannelEntry
+ *
+ * DESCRIPTION
+ *
+ *    This structure represents a channel in the SILC network.  All
+ *    channels that the client are aware of or have joined in will be
+ *    represented as SilcChannelEntry.  The structure includes information
+ *    about the channel.
+ *
+ * SOURCE
+ */
+struct SilcChannelEntryStruct {
+  /* General information */
+  char *channel_name;		             /* Channel name */
+  SilcChannelID *id;			     /* Channel ID */
+  SilcUInt32 mode;			     /* Channel mode */
+
+  /* All clients that has joined this channel */
+  SilcHashTable user_list;
+
+  /* Channel keys */
+  SilcCipher channel_key;                    /* The channel key */
+  unsigned char *key;			     /* Raw key data */
+  SilcUInt32 key_len;		             /* Raw key data length */
+  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
+  SilcHmac hmac;			     /* Current HMAC */
+
+  /* Channel private keys */
+  SilcDList private_keys;		     /* List of private keys or NULL */
+  SilcChannelPrivateKey curr_key;	     /* Current private key */
+
+  /* SilcChannelEntry status information */
+  SilcCipher old_channel_key;
+  SilcHmac old_hmac;
+  SilcTask rekey_task;
+  SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
+						resolving this entry */
+};
+/***/
+
+/****s* silcclient/SilcClientAPI/SilcServerEntry
+ *
+ * NAME
+ *
+ *    typedef struct SilcServerEntryStruct { ... } *SilcServerEntry
+ *
+ * DESCRIPTION
+ *
+ *    This structure represents a server in the SILC network.  All servers
+ *    that the client is aware of and have for example resolved with
+ *    SILC_COMMAND_INFO command have their on SilcServerEntry structure.
+ *
+ * SOURCE
+ */
+struct SilcServerEntryStruct {
+  /* Generate information */
+  char *server_name;			     /* Server name */
+  char *server_info;			     /* Server info */
+  SilcServerID *server_id;		     /* Server ID */
+  SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
+					        resolving this entry */
+};
+/***/
+
 /****d* silcclient/SilcClientAPI/SilcKeyAgreementStatus
  *
  * NAME
@@ -262,7 +381,8 @@ typedef struct {
  *
  * NAME
  *
- *    typedef struct { ... } SilcChannelPrivateKey;
+ *    typedef struct SilcChannelPrivateKeyStruct { ... }
+ *                      *SilcChannelPrivateKey;
  *
  * DESCRIPTION
  *
@@ -271,13 +391,13 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct SilcChannelPrivateKeyStruct {
+struct SilcChannelPrivateKeyStruct {
   char *name;			      /* Application given name */
   SilcCipher cipher;		      /* The cipher and key */
   SilcHmac hmac;		      /* The HMAC and hmac key */
   unsigned char *key;		      /* The key data */
   SilcUInt32 key_len;		      /* The key length */
-} *SilcChannelPrivateKey;
+};
 /***/
 
 /****f* silcclient/SilcClientAPI/SilcAskPassphrase

@@ -5,6 +5,11 @@ Thu Nov  7 10:05:28 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  Affected files lib/silcclient/silcclient.h, client.c and
 	  client_internal.h.
 
+	* Moved the SilcClientEntry, SilcChannelEntry and
+	  SilcServerEntry to silcclient.h to be public and documented
+	  them for application.  Affected files are
+	  lib/silcclient/silcclient.h and idlist.h.
+
 Wed Nov  6 17:18:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed manual page installation patch by Ville Räsänen.
