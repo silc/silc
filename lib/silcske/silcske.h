@@ -273,10 +273,10 @@ typedef struct {
  * SOURCE
  */
 typedef enum {
-  SILC_SKE_SP_FLAG_NONE      = 0x00,     /* No flags */
-  SILC_SKE_SP_FLAG_NO_REPLY  = 0x01,	 /* No reply required to payload */
-  SILC_SKE_SP_FLAG_PFS       = 0x02,	 /* Perfect Forward Secrecy */
-  SILC_SKE_SP_FLAG_MUTUAL    = 0x04,	 /* Mutual authentication */
+  SILC_SKE_SP_FLAG_NONE         = 0x00,	 /* No flags */
+  SILC_SKE_SP_FLAG_IV_INCLUDED  = 0x01,	 /* IV included in ciphertexts */
+  SILC_SKE_SP_FLAG_PFS          = 0x02,	 /* Perfect Forward Secrecy */
+  SILC_SKE_SP_FLAG_MUTUAL       = 0x04,	 /* Mutual authentication */
 } SilcSKESecurityPropertyFlag;
 /***/
 

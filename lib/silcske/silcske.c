@@ -693,6 +693,13 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
     remote_payload->flags |= SILC_SKE_SP_FLAG_PFS;
   }
 
+  /* Disable IV Included flag if requested */
+  if (remote_payload->flags & SILC_SKE_SP_FLAG_IV_INCLUDED &&
+      !(flags & SILC_SKE_SP_FLAG_IV_INCLUDED)) {
+    SILC_LOG_DEBUG(("We do not support IV Included flag"));
+    remote_payload->flags &= ~SILC_SKE_SP_FLAG_IV_INCLUDED;
+  }
+
   /* Parse and select the security properties from the payload */
   payload = silc_calloc(1, sizeof(*payload));
   status = silc_ske_select_security_properties(ske, version,
