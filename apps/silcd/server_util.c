@@ -937,7 +937,7 @@ bool silc_server_channel_delete(SilcServer server,
   SilcHashTableList htl;
   bool delchan = !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH);
 
-  if (delchan || server->server_shutdown) {
+  if (delchan) {
     /* Update statistics */
     if (server->server_type == SILC_ROUTER)
       server->stat.chanclients -= channel->user_count;

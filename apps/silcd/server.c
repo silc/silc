@@ -78,6 +78,9 @@ int silc_server_alloc(SilcServer *new_server)
 
 void silc_server_free(SilcServer server)
 {
+  SilcIDCacheList list;
+  SilcIDCacheEntry cache;
+
   if (!server)
     return;
 
@@ -106,6 +109,66 @@ void silc_server_free(SilcServer server)
     silc_dlist_uninit(server->pending_commands);
   if (server->id_entry)
     silc_idlist_del_server(server->local_list, server->id_entry);
+
+  /* Delete all channels */
+  list = NULL;
+  if (silc_idcache_get_all(server->local_list->channels, &list) &&
+      silc_idcache_list_first(list, &cache)) {
+    silc_idlist_del_channel(server->local_list, cache->context);
+    while (silc_idcache_list_next(list, &cache))
+      silc_idlist_del_channel(server->local_list, cache->context);
+  }
+  if (list)
+    silc_idcache_list_free(list);
+  list = NULL;
+  if (silc_idcache_get_all(server->global_list->channels, &list) &&
+      silc_idcache_list_first(list, &cache)) {
+    silc_idlist_del_channel(server->global_list, cache->context);
+    while (silc_idcache_list_next(list, &cache))
+      silc_idlist_del_channel(server->global_list, cache->context);
+  }
+  if (list)
+    silc_idcache_list_free(list);
+
+  /* Delete all clients */
+  list = NULL;
+  if (silc_idcache_get_all(server->local_list->clients, &list) &&
+      silc_idcache_list_first(list, &cache)) {
+    silc_idlist_del_client(server->local_list, cache->context);
+    while (silc_idcache_list_next(list, &cache))
+      silc_idlist_del_client(server->local_list, cache->context);
+  }
+  if (list)
+    silc_idcache_list_free(list);
+  list = NULL;
+  if (silc_idcache_get_all(server->global_list->clients, &list) &&
+      silc_idcache_list_first(list, &cache)) {
+    silc_idlist_del_client(server->global_list, cache->context);
+    while (silc_idcache_list_next(list, &cache))
+      silc_idlist_del_client(server->global_list, cache->context);
+  }
+  if (list)
+    silc_idcache_list_free(list);
+
+  /* Delete all servers */
+  list = NULL;
+  if (silc_idcache_get_all(server->local_list->servers, &list) &&
+      silc_idcache_list_first(list, &cache)) {
+    silc_idlist_del_server(server->local_list, cache->context);
+    while (silc_idcache_list_next(list, &cache))
+      silc_idlist_del_server(server->local_list, cache->context);
+  }
+  if (list)
+    silc_idcache_list_free(list);
+  list = NULL;
+  if (silc_idcache_get_all(server->global_list->servers, &list) &&
+      silc_idcache_list_first(list, &cache)) {
+    silc_idlist_del_server(server->global_list, cache->context);
+    while (silc_idcache_list_next(list, &cache))
+      silc_idlist_del_server(server->global_list, cache->context);
+  }
+  if (list)
+    silc_idcache_list_free(list);
 
   silc_idcache_free(server->local_list->clients);
   silc_idcache_free(server->local_list->servers);
@@ -459,7 +522,7 @@ SILC_TASK_CALLBACK(silc_server_rehash_close_connection)
   if (!sock)
     return;
 
-  SILC_LOG_INFO(("Closing connection %s:%d [%s]: connection is unconfigured",
+  SILC_LOG_INFO(("Connection %s:%d [%s] is unconfigured",
 		 sock->hostname, sock->port,
 		 (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
 		  sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
