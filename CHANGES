@@ -1,3 +1,12 @@
+Sat May 26 17:43:42 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed channel joining notify handling, cumode notify handling
+	  from Irssi SILC client.
+
+	* Added SILC specific module-formats to the Irssi SILC client so
+	  that SILC specific message hilighting, colors etc is possible.
+	  Affected file irssi/src/fe-common/silc/module-formats.[ch].
+
 Sat May 26 12:13:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed the ask_passphrase client operation to be ascynchronous.

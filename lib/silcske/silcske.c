@@ -357,19 +357,19 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
     return;
   }
 
-  /* Decode the public key */
-  if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
-				   &public_key)) {
-    status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
-    if (finish->callback)
-      finish->callback(ske, finish->context);
-    silc_free(finish);
-    return;
-  }
-
-  SILC_LOG_DEBUG(("Public key is authentic"));
-
   if (payload->pk_data) {
+    /* Decode the public key */
+    if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
+				     &public_key)) {
+      status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+      if (finish->callback)
+	finish->callback(ske, finish->context);
+      silc_free(finish);
+      return;
+    }
+
+    SILC_LOG_DEBUG(("Public key is authentic"));
+
     /* Compute the hash value */
     status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
     if (status != SILC_SKE_STATUS_OK)
@@ -497,13 +497,13 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   finish->callback = callback;
   finish->context = context;
 
-  if (verify_key) {
+  if (payload->pk_data && verify_key) {
     SILC_LOG_DEBUG(("Verifying public key"));
     
     (*verify_key)(ske, payload->pk_data, payload->pk_len,
 		  payload->pk_type, verify_context,
 		  silc_ske_initiator_finish_final, finish);
-
+    
     /* We will continue to the final state after the public key has
        been verified by the caller. */
     return SILC_SKE_STATUS_PENDING;
@@ -864,7 +864,7 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
       return status;
     }
 
-    if (verify_key) {
+    if (recv_payload->pk_data && verify_key) {
       SILC_LOG_DEBUG(("Verifying public key"));
 
       (*verify_key)(ske, recv_payload->pk_data, recv_payload->pk_len,

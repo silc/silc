@@ -38,6 +38,7 @@
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/fe-channels.h"
 #include "fe-common/core/keyboard.h"
+#include "fe-common/silc/module-formats.h"
 
 /* Command line option variables */
 static bool opt_create_keypair = FALSE;
@@ -121,7 +122,7 @@ static void silc_say(SilcClient client, SilcClientConnection conn,
   
   va_start(va, msg);
   str = g_strdup_vprintf(msg, va);
-  printtext(server, "#silc", MSGLEVEL_CRAP, "%s", str);
+  printtext(server, NULL, MSGLEVEL_CRAP, "%s", str);
   g_free(str);
   va_end(va);
 }
@@ -302,23 +303,46 @@ void silc_client_join_get_users(SilcClient client,
   SilcChannelUser chu;
   SILC_SERVER_REC *server = conn->context;
   SILC_CHANNEL_REC *chanrec;
+  SilcClientEntry founder = NULL;
   NICK_REC *ownnick;
 
   if (!clients)
     return;
 
-  chanrec = silc_channel_find_entry(server, channel);
+  chanrec = silc_channel_find(server, channel->channel_name);
   if (chanrec == NULL)
     return;
 
   silc_list_start(channel->clients);
-  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END)
+  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+    if (chu->mode & SILC_CHANNEL_UMODE_CHANFO)
+      founder = chu->client;
     silc_nicklist_insert(chanrec, chu, FALSE);
+  }
 
   ownnick = NICK(silc_nicklist_find(chanrec, conn->local_entry));
   nicklist_set_own(CHANNEL(chanrec), ownnick);
   signal_emit("channel joined", 1, chanrec);
+
+  if (chanrec->topic)
+    printformat_module("fe-common/silc", server, channel->channel_name,
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_TOPIC,
+		       channel->channel_name, chanrec->topic);
+
   fe_channels_nicklist(CHANNEL(chanrec), CHANNEL_NICKLIST_FLAG_ALL);
+
+  if (founder) {
+    if (founder == conn->local_entry)
+      printformat_module("fe-common/silc", 
+			 server, channel->channel_name, MSGLEVEL_CRAP,
+			 SILCTXT_CHANNEL_FOUNDER_YOU,
+			 channel->channel_name);
+    else
+      printformat_module("fe-common/silc", 
+			 server, channel->channel_name, MSGLEVEL_CRAP,
+			 SILCTXT_CHANNEL_FOUNDER,
+			 channel->channel_name, founder->nickname);
+  }
 }
 
 /* Command reply handler. This function is called always in the command reply
@@ -557,7 +581,6 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	g_free_not_null(chanrec->topic);
 	chanrec->topic = *topic == '\0' ? NULL : g_strdup(topic);
 	signal_emit("channel topic changed", 1, chanrec);
-	silc_say(client, conn, "Topic for %s: %s", channel, topic);
       }
 
       mode = silc_client_chmode(modei, channel_entry);
@@ -1331,6 +1354,9 @@ void silc_core_init_finish(void)
   silc_log_set_callbacks(silc_log_info, silc_log_warning,
 			 silc_log_error, NULL);
 
+  /* Do some irssi initializing */
+  settings_add_bool("server", "skip_motd", FALSE);
+  settings_add_str("server", "alternate_nick", NULL);
   silc_init_userinfo();
 
   /* Allocate SILC client */

@@ -8,6 +8,8 @@ INCLUDES = \
         -DSYSCONFDIR=\""$(sysconfdir)"\" \
         -I$(IRSSI_INCLUDE) -I$(IRSSI_INCLUDE)/src \
         -I$(IRSSI_INCLUDE)/src/core \
+        -I$(IRSSI_INCLUDE)/src/fe-common/core \
+        -I$(IRSSI_INCLUDE)/src/fe-common/silc \
         -I$(SILC_INCLUDE)/includes \
         -I$(SILC_INCLUDE)/lib/silccore \
         -I$(SILC_INCLUDE)/lib/silccrypt \

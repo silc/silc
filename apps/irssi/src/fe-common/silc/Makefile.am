@@ -8,6 +8,7 @@ INCLUDES = \
         -DSYSCONFDIR=\""$(sysconfdir)"\" \
         -I$(IRSSI_INCLUDE) -I$(IRSSI_INCLUDE)/src \
         -I$(IRSSI_INCLUDE)/src/core \
+        -I$(IRSSI_INCLUDE)/src/fe-common/core \
         -I$(IRSSI_INCLUDE)/src/silc \
         -I$(IRSSI_INCLUDE)/src/silc/core \
         -I$(SILC_INCLUDE)/includes \
@@ -26,6 +27,7 @@ noinst_LIBRARIES = libfe_common_silc.a
 libfe_common_silc_a_SOURCES = \
 	fe-channels.c \
 	fe-common-silc.c \
+	module-formats.c \
 	silc-modules.c 
 
 noinst_HEADERS = \

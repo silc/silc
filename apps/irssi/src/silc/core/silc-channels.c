@@ -328,7 +328,7 @@ static void event_cumode(SILC_SERVER_REC *server, va_list va)
 	(mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
     }
     
-    nick = silc_nicklist_find(chanrec, client);
+    nick = silc_nicklist_find(chanrec, destclient);
     if (nick != NULL) {
       nick->op = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
       signal_emit("nick mode changed", 2, chanrec, nick);
