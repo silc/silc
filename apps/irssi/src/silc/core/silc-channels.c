@@ -479,7 +479,8 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
 				   argv[1], argv_lens[1], TRUE);
 
   printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
-		     MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_OWNACTION, argv[1]);
+		     MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_OWNACTION, 
+                     server->conn->local_entry->nickname, argv[1]);
 
   for (i = 0; i < argc; i++)
     silc_free(argv[i]);
@@ -526,7 +527,8 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
 				   argv[2], argv_lens[2], TRUE);
 
   printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
-		     MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_OWNACTION, argv[2]);
+		     MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_OWNACTION, 
+                     server->conn->local_entry->nickname, argv[2]);
 
   for (i = 0; i < argc; i++)
     silc_free(argv[i]);
@@ -572,7 +574,8 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
 				   argv[1], argv_lens[1], TRUE);
 
   printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
-		     MSGLEVEL_NOTICES, SILCTXT_CHANNEL_OWNNOTICE, argv[1]);
+		     MSGLEVEL_NOTICES, SILCTXT_CHANNEL_OWNNOTICE, 
+                     server->conn->local_entry->nickname, argv[1]);
 
   for (i = 0; i < argc; i++)
     silc_free(argv[i]);

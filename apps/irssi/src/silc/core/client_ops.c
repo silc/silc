@@ -93,10 +93,12 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 
   if (flags & SILC_MESSAGE_FLAG_ACTION)
     printformat_module("fe-common/silc", server, channel->channel_name,
-		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION, msg);
+		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION, 
+                       nick == NULL ? "[<unknown>]" : nick->nick, msg);
   else if (flags & SILC_MESSAGE_FLAG_NOTICE)
     printformat_module("fe-common/silc", server, channel->channel_name,
-		       MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE, msg);
+		       MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE, 
+                       nick == NULL ? "[<unknown>]" : nick->nick, msg);
   else
     signal_emit("message public", 6, server, msg,
 		nick == NULL ? "[<unknown>]" : nick->nick,
