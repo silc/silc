@@ -1,3 +1,15 @@
+Thu Nov  1 22:10:07 EST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined to WHOIS command reply the sending of fingerprint
+	  of the client's public key (if the proof of posession of the
+	  corresponding private key is verified by the server).
+	  Updated to the protocol specification.
+
+	* Added support of receiving the client's public key's 
+	  fingerprint in command reply in client library.  Affected
+	  file is lib/silcclient/command_reply.c, and
+	  lib/silcclient/idlist.[ch].
+
 Thu Nov  1 18:06:12 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not send over 128 chars long nickname to the server

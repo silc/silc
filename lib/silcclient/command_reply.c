@@ -239,6 +239,8 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   char *realname = NULL;
   uint32 idle = 0, mode = 0;
   SilcBuffer channels = NULL;
+  unsigned char *fingerprint;
+  uint32 fingerprint_len;
   
   argc = silc_argument_get_arg_num(cmd->args);
 
@@ -277,6 +279,8 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   if (tmp)
     SILC_GET32_MSB(idle, tmp);
 
+  fingerprint = silc_argument_get_arg_type(cmd->args, 9, &fingerprint_len);
+
   /* Check if we have this client cached already. */
   if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
 				       NULL, NULL, 
@@ -291,6 +295,14 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     silc_client_update_client(cmd->client, conn, client_entry, 
 			      nickname, username, realname, mode);
     silc_free(client_id);
+  }
+
+  if (fingerprint && !client_entry->fingerprint) {
+    client_entry->fingerprint = 
+      silc_calloc(fingerprint_len, 
+		  sizeof(*client_entry->fingerprint));
+    memcpy(client_entry->fingerprint, fingerprint, fingerprint_len);
+    client_entry->fingerprint_len = fingerprint_len;
   }
 
   if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING)

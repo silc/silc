@@ -39,6 +39,8 @@ typedef struct {
   uint32 num;
   uint32 mode;			/* User mode in SILC */
   SilcClientID *id;		/* The Client ID */
+  unsigned char *fingerprint;	/* Fingerprint of client's public key */
+  uint32 fingerprint_len;	/* Length of the fingerprint */
   bool valid;			/* FALSE if this entry is not valid */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */

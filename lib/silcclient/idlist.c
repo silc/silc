@@ -646,6 +646,7 @@ void silc_client_del_client_entry(SilcClient client,
   silc_free(client_entry->realname);
   silc_free(client_entry->server);
   silc_free(client_entry->id);
+  silc_free(client_entry->fingerprint);
   if (client_entry->send_key)
     silc_cipher_free(client_entry->send_key);
   if (client_entry->receive_key)
