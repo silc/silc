@@ -44,6 +44,9 @@ typedef struct {
   SilcCipher send_key;
   SilcCipher receive_key;
 
+  /* Hash selected in the SKE protocol, NULL if not needed at all */
+  SilcHash hash;
+
   /* HMAC and raw key data */
   SilcHmac hmac;
   unsigned char *hmac_key;

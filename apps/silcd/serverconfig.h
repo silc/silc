@@ -95,8 +95,9 @@ typedef struct SilcServerConfigSectionConnectionClassStruct {
 /* Holds all client authentication data from config file */
 typedef struct SilcServerConfigSectionClientConnectionStruct {
   char *host;
-  int auth_meth;
-  char *auth_data;
+  SilcAuthMethod auth_meth;
+  void *auth_data;
+  unsigned int auth_data_len;
   unsigned short port;
   unsigned int class;
   struct SilcServerConfigSectionClientConnectionStruct *next;
@@ -108,8 +109,9 @@ typedef struct SilcServerConfigSectionAdminConnectionStruct {
   char *host;
   char *username;
   char *nickname;
-  int auth_meth;
-  char *auth_data;
+  SilcAuthMethod auth_meth;
+  void *auth_data;
+  unsigned int auth_data_len;
   struct SilcServerConfigSectionAdminConnectionStruct *next;
   struct SilcServerConfigSectionAdminConnectionStruct *prev;
 } SilcServerConfigSectionAdminConnection;
@@ -117,8 +119,9 @@ typedef struct SilcServerConfigSectionAdminConnectionStruct {
 /* Holds all configured server/router connections from config file */
 typedef struct SilcServerConfigSectionServerConnectionStruct {
   char *host;
-  int auth_meth;
-  char *auth_data;
+  SilcAuthMethod auth_meth;
+  void *auth_data;
+  unsigned int auth_data_len;
   unsigned short port;
   char *version;
   unsigned int class;

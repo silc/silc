@@ -36,6 +36,7 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
   SilcIDListData data = (SilcIDListData)entry;
   data->send_key = idata->send_key;
   data->receive_key = idata->receive_key;
+  data->hash = idata->hash;
   data->hmac = idata->hmac;
   data->hmac_key = idata->hmac_key;
   data->hmac_key_len = idata->hmac_key_len;
@@ -179,8 +180,9 @@ silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
     server = (SilcServerEntry)id_cache->context;
     sock = (SilcSocketConnection)server->connection;
     
-    if (sock && (!strcmp(sock->hostname, hostname) ||
-		 !strcmp(sock->ip, hostname)) && sock->port == port)
+    if (sock && ((sock->hostname && !strcmp(sock->hostname, hostname)) ||
+		 (sock->ip && !strcmp(sock->ip, hostname)))
+	&& sock->port == port)
       break;
 
     id_cache = NULL;

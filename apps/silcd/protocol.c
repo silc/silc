@@ -113,10 +113,19 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
 			   ske->ke2_payload->pk_len);
 #endif
 
+  /* Save the hash */
+  if (!silc_hash_alloc(hash->hash->name, &idata->hash)) {
+    silc_cipher_free(idata->send_key);
+    silc_cipher_free(idata->receive_key);
+    silc_free(conn_data);
+    return FALSE;
+  }
+
   /* Save HMAC key to be used in the communication. */
   if (!silc_hmac_alloc(hmac->hmac->name, NULL, &idata->hmac)) {
     silc_cipher_free(idata->send_key);
     silc_cipher_free(idata->receive_key);
+    silc_hash_free(idata->hash);
     silc_free(conn_data);
     return FALSE;
   }

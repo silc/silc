@@ -170,13 +170,21 @@ Following commands has been, at least partly, implemented:
 
 		Shows client version.
 
+	/OPER	<username> [<public key>]
+
+		Obtains server operator privileges.
+
+	/SILCOPER <username> [<public key>]
+
+		Obtains router operator privileges.
+
 	/CONNECT <server> [<port>]
 
 		Connects to server the remote <server>.  You must be
 		server operator to be able to do this.
 
 
-	/CLOSE <server> [<port>]
+	/CLOSE 	<server> [<port>]
 
 		Closes connection to the <server>.  You must be server
 		operator to be able to do this.

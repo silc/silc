@@ -682,12 +682,30 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       }
 
       /* Get authentication data */
-      ret = silc_config_get_token(line, &config->clients->auth_data);
+      ret = silc_config_get_token(line, (char **)&config->clients->auth_data);
       if (ret < 0)
 	break;
-      if (ret == 0)
-	/* Any host */
-	config->clients->host = strdup("*");
+
+      if (config->clients->auth_meth == SILC_AUTH_PASSWORD) {
+	config->clients->auth_data_len = strlen(config->clients->auth_data);
+      } else if (config->clients->auth_meth == SILC_AUTH_PUBLIC_KEY) {
+	/* Get the public key */
+	SilcPublicKey public_key;
+
+	if (!silc_pkcs_load_public_key(config->clients->auth_data,
+				       &public_key, SILC_PKCS_FILE_PEM))
+	  if (!silc_pkcs_load_public_key(config->clients->auth_data,
+					 &public_key, SILC_PKCS_FILE_BIN)) {
+	    fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
+		    config->filename, pc->linenum, 
+		    (char *)config->clients->auth_data);
+	    break;
+	  }
+
+	silc_free(config->clients->auth_data);
+	config->clients->auth_data = (void *)public_key;
+	config->clients->auth_data_len = 0;
+      }
 
       /* Get port */
       ret = silc_config_get_token(line, &tmp);
@@ -745,9 +763,30 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       }
 
       /* Get authentication data */
-      ret = silc_config_get_token(line, &config->servers->auth_data);
+      ret = silc_config_get_token(line, (char **)&config->servers->auth_data);
       if (ret < 0)
 	break;
+
+      if (config->servers->auth_meth == SILC_AUTH_PASSWORD) {
+	config->servers->auth_data_len = strlen(config->servers->auth_data);
+      } else if (config->servers->auth_meth == SILC_AUTH_PUBLIC_KEY) {
+	/* Get the public key */
+	SilcPublicKey public_key;
+
+	if (!silc_pkcs_load_public_key(config->servers->auth_data,
+				       &public_key, SILC_PKCS_FILE_PEM))
+	  if (!silc_pkcs_load_public_key(config->servers->auth_data,
+					 &public_key, SILC_PKCS_FILE_BIN)) {
+	    fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
+		    config->filename, pc->linenum, 
+		    (char *)config->servers->auth_data);
+	    break;
+	  }
+
+	silc_free(config->servers->auth_data);
+	config->servers->auth_data = (void *)public_key;
+	config->servers->auth_data_len = 0;
+      }
 
       /* Get port */
       ret = silc_config_get_token(line, &tmp);
@@ -810,9 +849,30 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       }
 
       /* Get authentication data */
-      ret = silc_config_get_token(line, &config->routers->auth_data);
+      ret = silc_config_get_token(line, (char **)&config->routers->auth_data);
       if (ret < 0)
 	break;
+
+      if (config->routers->auth_meth == SILC_AUTH_PASSWORD) {
+	config->routers->auth_data_len = strlen(config->routers->auth_data);
+      } else if (config->routers->auth_meth == SILC_AUTH_PUBLIC_KEY) {
+	/* Get the public key */
+	SilcPublicKey public_key;
+
+	if (!silc_pkcs_load_public_key(config->routers->auth_data,
+				       &public_key, SILC_PKCS_FILE_PEM))
+	  if (!silc_pkcs_load_public_key(config->routers->auth_data,
+					 &public_key, SILC_PKCS_FILE_BIN)) {
+	    fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
+		    config->filename, pc->linenum, 
+		    (char *)config->routers->auth_data);
+	    break;
+	  }
+
+	silc_free(config->routers->auth_data);
+	config->routers->auth_data = (void *)public_key;
+	config->routers->auth_data_len = 0;
+      }
 
       /* Get port */
       ret = silc_config_get_token(line, &tmp);
@@ -902,9 +962,30 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       }
 
       /* Get authentication data */
-      ret = silc_config_get_token(line, &config->admins->auth_data);
+      ret = silc_config_get_token(line, (char **)&config->admins->auth_data);
       if (ret < 0)
 	break;
+
+      if (config->admins->auth_meth == SILC_AUTH_PASSWORD) {
+	config->admins->auth_data_len = strlen(config->admins->auth_data);
+      } else if (config->admins->auth_meth == SILC_AUTH_PUBLIC_KEY) {
+	/* Get the public key */
+	SilcPublicKey public_key;
+
+	if (!silc_pkcs_load_public_key(config->admins->auth_data,
+				       &public_key, SILC_PKCS_FILE_PEM))
+	  if (!silc_pkcs_load_public_key(config->admins->auth_data,
+					 &public_key, SILC_PKCS_FILE_BIN)) {
+	    fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
+		    config->filename, pc->linenum, 
+		    (char *)config->admins->auth_data);
+	    break;
+	  }
+
+	silc_free(config->admins->auth_data);
+	config->admins->auth_data = (void *)public_key;
+	config->admins->auth_data_len = 0;
+      }
 
       check = TRUE;
       checkmask |= (1L << pc->section->type);
@@ -1403,7 +1484,7 @@ silc_server_config_find_admin(SilcServerConfig config,
     host = "*";
   if (!username)
     username = "*";
-  if (nickname)
+  if (!nickname)
     nickname = "*";
 
   admin = config->admins;

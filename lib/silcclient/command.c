@@ -35,7 +35,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(invite, INVITE, "INVITE", SILC_CF_LAG | SILC_CF_REG, 3),
   SILC_CLIENT_CMD(quit, QUIT, "QUIT", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(kill, KILL, "KILL", 
-		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
+		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 3),
   SILC_CLIENT_CMD(info, INFO, "INFO", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(connect, CONNECT, "CONNECT",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 3),
@@ -51,11 +51,11 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(restart, RESTART, "RESTART",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
   SILC_CLIENT_CMD(close, CLOSE, "CLOSE",
-		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
+		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 3),
   SILC_CLIENT_CMD(shutdown, SHUTDOWN, "SHUTDOWN",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 1),
   SILC_CLIENT_CMD(silcoper, SILCOPER, "SILOPER",
-		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER, 2),
+		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER, 3),
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(users, USERS, "USERS", SILC_CF_LAG | SILC_CF_REG, 2),
 
@@ -1264,12 +1264,126 @@ SILC_CLIENT_CMD_FUNC(kick)
   silc_client_command_free(cmd);
 }
 
-SILC_CLIENT_CMD_FUNC(silcoper)
-{
-}
+/* OPER command. Used to obtain server operator privileges. */
 
 SILC_CLIENT_CMD_FUNC(oper)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+  unsigned char *auth_data;
+  SilcBuffer auth;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    cmd->client->ops->say(cmd->client, conn, 
+			  "Usage: /OPER <username> [<public key>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc == 3) {
+    /* XXX Get public key */
+    auth_data = NULL;
+    COMMAND_ERROR;
+    goto out;
+  } else {
+    /* Get passphrase */
+
+    auth_data = cmd->client->ops->ask_passphrase(cmd->client, conn);
+    if (!auth_data) {
+      COMMAND_ERROR;
+      goto out;
+    }
+
+    /* Encode the authentication payload */
+    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
+				    auth_data, strlen(auth_data));
+  }
+
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_OPER, 0, 2, 
+					  1, cmd->argv[1], 
+					  strlen(cmd->argv[1]),
+					  2, auth->data, auth->len);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+
+  silc_buffer_free(buffer);
+  silc_buffer_free(auth);
+  memset(auth_data, 0, strlen(auth_data));
+  silc_free(auth_data);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
+}
+
+/* SILCOPER command. Used to obtain router operator privileges. */
+
+SILC_CLIENT_CMD_FUNC(silcoper)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+  unsigned char *auth_data;
+  SilcBuffer auth;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    cmd->client->ops->say(cmd->client, conn, 
+			  "Usage: /SILCOPER <username> [<public key>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc == 3) {
+    /* XXX Get public key */
+    auth_data = NULL;
+    COMMAND_ERROR;
+    goto out;
+  } else {
+    /* Get passphrase */
+
+    auth_data = cmd->client->ops->ask_passphrase(cmd->client, conn);
+    if (!auth_data) {
+      COMMAND_ERROR;
+      goto out;
+    }
+
+    /* Encode the authentication payload */
+    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
+				    auth_data, strlen(auth_data));
+  }
+
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_SILCOPER, 0, 2, 
+					  1, cmd->argv[1], 
+					  strlen(cmd->argv[1]),
+					  2, auth->data, auth->len);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+
+  silc_buffer_free(buffer);
+  silc_buffer_free(auth);
+  memset(auth_data, 0, strlen(auth_data));
+  silc_free(auth_data);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 /* CONNECT command. Connects the server to another server. */

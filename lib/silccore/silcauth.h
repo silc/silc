@@ -48,15 +48,23 @@ SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
 				    unsigned char *auth_data,
 				    unsigned short auth_len);
 void silc_auth_payload_free(SilcAuthPayload payload);
-SilcBuffer silc_auth_public_key_auth_generate(SilcPKCS pkcs,
+SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      SilcHash hash,
 					      void *id, SilcIdType type);
 int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
-				     SilcPKCS pkcs, SilcHash hash,
+				     SilcPublicKey public_key, SilcHash hash,
 				     void *id, SilcIdType type);
 int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
-					  SilcPKCS pkcs, SilcHash hash,
+					  SilcPublicKey public_key, 
+					  SilcHash hash,
 					  void *id, SilcIdType type);
+int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
+		     void *auth_data, unsigned int auth_data_len, 
+		     SilcHash hash, void *id, SilcIdType type);
+int silc_auth_verify_data(unsigned char *payload, unsigned int payload_len,
+			  SilcAuthMethod auth_method, void *auth_data,
+			  unsigned int auth_data_len, SilcHash hash, 
+			  void *id, SilcIdType type);
 SilcKeyAgreementPayload silc_key_agreement_payload_parse(SilcBuffer buffer);
 SilcBuffer silc_key_agreement_payload_encode(char *hostname,
 					     unsigned int port);

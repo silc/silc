@@ -3307,12 +3307,138 @@ SILC_SERVER_CMD_FUNC(kick)
   silc_server_command_free(cmd);
 }
 
+/* Server side of OPER command. Client uses this comand to obtain server
+   operator privileges to this server/router. */
+
 SILC_SERVER_CMD_FUNC(oper)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  unsigned char *username, *auth;
+  unsigned int tmp_len;
+  SilcServerConfigSectionAdminConnection *admin;
+  SilcIDListData idata = (SilcIDListData)client;
+
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_OPER, cmd, 1, 2);
+
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  /* Get the username */
+  username = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!username) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  /* Get the admin configuration */
+  admin = silc_server_config_find_admin(server->config, cmd->sock->ip,
+					username, client->nickname);
+  if (!admin) {
+    admin = silc_server_config_find_admin(server->config, cmd->sock->hostname,
+					  username, client->nickname);
+    if (!admin) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+					    SILC_STATUS_ERR_AUTH_FAILED);
+      goto out;
+    }
+  }
+
+  /* Get the authentication payload */
+  auth = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (!auth) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  /* Verify the authentication data */
+  if (!silc_auth_verify_data(auth, tmp_len, admin->auth_meth, 
+			     admin->auth_data, admin->auth_data_len,
+			     idata->hash, client->id, SILC_ID_CLIENT)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+					  SILC_STATUS_ERR_AUTH_FAILED);
+    goto out;
+  }
+
+  /* Client is now server operator */
+  client->mode |= SILC_UMODE_SERVER_OPERATOR;
+
+  /* Send reply to the sender */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+					SILC_STATUS_OK);
+
+ out:
+  silc_server_command_free(cmd);
 }
+
+/* Server side of SILCOPER command. Client uses this comand to obtain router
+   operator privileges to this router. */
 
 SILC_SERVER_CMD_FUNC(silcoper)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  unsigned char *username, *auth;
+  unsigned int tmp_len;
+  SilcServerConfigSectionAdminConnection *admin;
+  SilcIDListData idata = (SilcIDListData)client;
+
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_SILCOPER, cmd, 1, 2);
+
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  /* Get the username */
+  username = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!username) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  /* Get the admin configuration */
+  admin = silc_server_config_find_admin(server->config, cmd->sock->ip,
+					username, client->nickname);
+  if (!admin) {
+    admin = silc_server_config_find_admin(server->config, cmd->sock->hostname,
+					  username, client->nickname);
+    if (!admin) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
+					    SILC_STATUS_ERR_AUTH_FAILED);
+      goto out;
+    }
+  }
+
+  /* Get the authentication payload */
+  auth = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (!auth) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  /* Verify the authentication data */
+  if (!silc_auth_verify_data(auth, tmp_len, admin->auth_meth, 
+			     admin->auth_data, admin->auth_data_len,
+			     idata->hash, client->id, SILC_ID_CLIENT)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
+					  SILC_STATUS_ERR_AUTH_FAILED);
+    goto out;
+  }
+
+  /* Client is now router operator */
+  client->mode |= SILC_UMODE_ROUTER_OPERATOR;
+
+  /* Send reply to the sender */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
+					SILC_STATUS_OK);
+
+ out:
+  silc_server_command_free(cmd);
 }
 
 /* Server side command of CONNECT. Connects us to the specified remote
@@ -3323,7 +3449,7 @@ SILC_SERVER_CMD_FUNC(connect)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  unsigned char *tmp;
+  unsigned char *tmp, *host;
   unsigned int tmp_len;
   unsigned int port = SILC_PORT;
 
@@ -3347,8 +3473,8 @@ SILC_SERVER_CMD_FUNC(connect)
   }
 
   /* Get the remote server */
-  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-  if (!tmp) {
+  host = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!host) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
 					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -3360,7 +3486,7 @@ SILC_SERVER_CMD_FUNC(connect)
     SILC_GET32_MSB(port, tmp);
 
   /* Create the connection. It is done with timeout and is async. */
-  silc_server_create_connection(server, tmp, port);
+  silc_server_create_connection(server, host, port);
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
@@ -3382,6 +3508,7 @@ SILC_SERVER_CMD_FUNC(close)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   SilcServerEntry server_entry;
+  SilcSocketConnection sock;
   unsigned char *tmp;
   unsigned int tmp_len;
   unsigned char *name;
@@ -3420,16 +3547,15 @@ SILC_SERVER_CMD_FUNC(close)
     goto out;
   }
 
-  /* Close the connection to the server */
-  silc_server_free_sock_user_data(server, server_entry->connection);
-  silc_server_disconnect_remote(server, server_entry->connection,
-				"Server closed connection: "
-				"Closed by operator");
-  
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
 					SILC_STATUS_OK);
 
+  /* Close the connection to the server */
+  sock = (SilcSocketConnection)server_entry->connection;
+  silc_server_free_sock_user_data(server, sock);
+  silc_server_close_connection(server, sock);
+  
  out:
   silc_server_command_free(cmd);
 }
@@ -3455,12 +3581,13 @@ SILC_SERVER_CMD_FUNC(shutdown)
     goto out;
   }
 
-  /* Then, gracefully, or not, bring the server down. */
-  silc_server_stop(server);
-
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_SHUTDOWN,
 					SILC_STATUS_OK);
+
+  /* Then, gracefully, or not, bring the server down. */
+  silc_server_stop(server);
+  exit(0);
 
  out:
   silc_server_command_free(cmd);

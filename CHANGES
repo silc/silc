@@ -1,3 +1,35 @@
+Fri Mar 16 15:52:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented OPER and SILCOPER commands into the server and
+	  the client library.
+
+	* Added silc_auth_verify and silc_auth_verify_data to verify
+	  the authentication directly from the authentication payload.
+	  It supports verifying both passphrase and public key based
+	  authentication.  Affected file lib/silccore/silcauth.[ch].
+
+	* Added `hash' field to the SilcIDListData structure.  It is the
+	  hash negotiated in the SKE protocol.  Affected file is
+	  silcd/idlist.[ch].
+
+	* Slight redesigning of the SilcAuthPayload handling routines.
+	  Do not send SilcPKCS but SilcPublicKey as argument.
+
+	* Implemented the public key authentication support to the
+	  serverconfig.  The public key is loaded fromthe provided path
+	  and saved as authentication data to void * pointer.  Thus,
+	  changed the unsigned char *auth_data to void *auth_data;
+
+	* Fixed SHUTDOWN command to send the reply before the server
+	  is shutdown. :)  Affected file silcd/command.c.
+
+	* Fixed fatal bug in CONNECT command.  The hostname was invalid
+	  memory and server crashed.  Affected file silcd/command.c.
+
+	* Fixed fatal bug in CLOSE command.  The server_entry became
+	  invalid but was referenced later in the command.  Affected file
+	  silcd/command.c.
+
 Thu Mar 15 12:46:58 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed fatal bug in failure packet handling.  Server ignored
