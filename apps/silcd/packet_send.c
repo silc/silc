@@ -1770,6 +1770,9 @@ void silc_server_send_channel_key(SilcServer server,
   chid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   if (!chid)
     return;
+
+  if (!channel->channel_key)
+    return;
  
   /* Encode channel key packet */
   tmp_len = strlen(channel->channel_key->cipher->name);
