@@ -1,3 +1,11 @@
+Sat Nov 30 14:29:34 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Extended the SILC_SERVER_LOG_ERROR macro to all available logging
+	  channels.  Affected files silcd/silcd.c, silcd/server.h.
+
+	* Added the config directive PublicKeyDir for the client block.
+	  Affected files doc/exampe_silcd.conf.in, silcd/serverconfig.[ch].
+
 Sat Nov 30 09:30:55 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged Toni's irssi/silc.conf patch.
