@@ -117,7 +117,8 @@ static void silc_log_checksize(SilcLog log)
 		    log->filename, oldfp));
     return;
   }
-  if (size < log->maxsize) return;
+  if (size < log->maxsize)
+    return;
 
   /* It's too big */
   fprintf(log->fp, "[%s] [%s] Cycling log file, over max "
@@ -125,7 +126,8 @@ static void silc_log_checksize(SilcLog log)
 	  silc_get_time(0), log->typename, log->maxsize / 1024);
   fflush(log->fp);
   fclose(log->fp);
-  snprintf(newname, sizeof(newname), "%s.old", log->filename);
+  memset(newname, 0, sizeof(newname));
+  snprintf(newname, sizeof(newname) - 1, "%s.old", log->filename);
   unlink(newname);
 
   /* I heard the following syscall may cause portability issues, but I don't

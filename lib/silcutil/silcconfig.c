@@ -336,13 +336,9 @@ char *silc_config_read_line(SilcConfigFile *file, SilcUInt32 line)
  found:
   if ((endbuf = strchr(p, '\n'))) {
     len = endbuf - p;
-    ret = silc_calloc(len, sizeof(*ret));
-    strncpy(ret, p, len);
-    ret[len] = '\0';
-  }
-  else {
-    ret = silc_calloc(strlen(p), sizeof(*ret));
-    strcpy(ret, p);
+    ret = silc_memdup(p, len);
+  } else {
+    ret = silc_memdup(p, strlen(p));
   }
   return ret;
 }
