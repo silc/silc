@@ -242,7 +242,7 @@ void silc_opt_callback(poptContext con,
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
-    silc_client_show_key(opt->arg);
+    silc_client_show_key(arg);
     exit(0);
   }
 
