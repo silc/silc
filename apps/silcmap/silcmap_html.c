@@ -27,7 +27,8 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
 {
   FILE *fp;
   char *hostname;
-  char filename[256];
+  char filename[256], line[128];
+  int begin;
 
   /* Generate data filename.  First configure hostname is the filename */
   silc_dlist_start(mapconn->hostnames);
@@ -134,9 +135,9 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
       fprintf(fp, "Country</td><td>&nbsp;:</td><td>&nbsp;%s</td></tr>\n", ident->country);
     }
     fprintf(fp, "<tr><td>&nbsp;&nbsp;");
-    fprintf(fp, "Fingerprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;%s</td></tr>\n", fingerprint);
+    fprintf(fp, "Fingerprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;<small>%s</small></td></tr>\n", fingerprint);
     fprintf(fp, "<tr><td>&nbsp;&nbsp;");
-    fprintf(fp, "Babbleprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;%s</td></tr>\n", babbleprint);
+    fprintf(fp, "Babbleprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;<small>%s</small></td></tr>\n", babbleprint);
     fprintf(fp, "</table>\n");
 
     pd = fopen(mapconn->public_key, "r");
@@ -144,14 +145,17 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
       return FALSE;
 
     pk_len = silc_file_size(mapconn->public_key);
-    pdd = silc_calloc(pk_len + 1, sizeof(*pdd));
+    pdd = silc_calloc(pk_len + 2, sizeof(*pdd));
     if (!pdd)
       return FALSE;
     fread(pdd, pk_len, 1, pd);
+    pdd[pk_len] = EOF;
 
-    fprintf(fp, "<pre><tt>\n");
-    fprintf(fp, "%s", pdd);
-    fprintf(fp, "</tt></pre>\n");
+    fprintf(fp, "<br /><tt><small>\n");
+    begin = 0;
+    while (silc_gets(line, sizeof(line) - 1, pdd, pk_len + 1, &begin) != EOF)
+      fprintf(fp, "%s<br />\n", line);
+    fprintf(fp, "</small></tt><br />\n");
 
     fclose(pd);
     silc_free(pdd);
@@ -280,7 +284,13 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
   if (mapconn->motd) {
     fprintf(fp, "&nbsp;<br /><hr ><br />\n");
     fprintf(fp, "<b>Message of the Day:</b>&nbsp;<br />\n");
-    fprintf(fp, "<pre><tt>%s</tt><pre>\n", mapconn->data.motd);
+
+    fprintf(fp, "<br /><tt><small>\n");
+    begin = 0;
+    while (silc_gets(line, sizeof(line) - 1, mapconn->data.motd,
+		     strlen(mapconn->data.motd), &begin) != EOF)
+      fprintf(fp, "%s<br />\n", line);
+    fprintf(fp, "</small></tt>\n");
   }
 
   fprintf(fp, "<br />\n");
@@ -328,16 +338,20 @@ bool silc_map_writehtml_index(SilcMap map)
     silc_dlist_start(mapconn->ips);
     ip = silc_dlist_get(mapconn->ips);
 
+    fprintf(fp, "<tr>\n");
+    if (mapconn->html_url)
+      fprintf(fp,
+	      "<td align = \"center\" class=\"%s\">&nbsp;<a href=\"%s\">%s</a></td>\n", class, mapconn->html_url, hostname);
+    else
+      fprintf(fp,
+	      "<td align = \"center\" class=\"%s\">&nbsp;<a href=\"%s_%d.html\">%s</a></td>\n", class, hostname, mapconn->port, hostname);
     fprintf(fp,
-	    "<tr>\n"
-	    "<td align = \"center\" class=\"%s\">&nbsp;<a href=\"%s_%d.html\">%s</a></td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%s</td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%d</td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%s</td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%s</td>\n"
-	    "</tr>\n", class,
-	    mapconn->html_url ? mapconn->html_url : hostname, mapconn->port,
-	    hostname, class, ip, class, mapconn->port, class,
+	    "</tr>\n",
+	    class, ip, class, mapconn->port, class,
 	    mapconn->country, class, mapconn->admin);
   }
 
