@@ -1,3 +1,61 @@
+Wed Sep 13 18:10:14 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Splitted core library.  Core library (lib/silccore) includes
+	  now only SILC protocol specific core (and common) components.
+	  Created new utility library (lib/silcutil) that includes more
+	  generic purpose stuff.  The stuff for util library was taken
+	  from the old core library.  This was minor and easy split.
+
+	* Created SILC Client Library (lib/silcclient) that includes
+	  implementation of the SILC client without user interface.  This
+	  was major move from silc/ directory.  The code has been changed
+	  so that it is transparent towards the user interface.  The
+	  silc/ directory includes now the same user interface as before
+	  and it uses the new client library.  Read lib/silcclient/README.
+	  Basicly, the client library performs everything else related
+	  to SILC except user interface handling.  Also, configuration
+	  files are considered to be part of user interface and library
+	  does not handle them.
+
+	  This change also changed a lot of structures, function naming etc.
+	  Most important change was that SilcClientWindow object was
+	  renamed to SilcClientConnection in the client library.  Created
+	  also new file lib/silcclient/ops.h.  Also added new files
+	  silc/local_command.[ch] and silc/client_ops.[ch].
+
+	  All these changes were made to make it easier for user interface
+	  designers to create what ever user interface for the SILC client
+	  they want.
+
+	  It is also expected that the server will be moved to lib
+	  directory as well and SILC Server Library will be created;
+	  sometimes in the future.
+
+	* Removed Local commands from lib/silccore/silccommand.h as
+	  they are application specific and new client library does not
+	  handle any of those anymore.
+
+	* Several functions moved to lib/silcutil/silcutilc.[ch] from
+	  old client implementation in silc/.
+
+	* Added support for callback functions in SILC_LOG_* macros.
+	  Application can now set its own callbacks that will be called
+	  instead of using the default functions that will always print
+	  the debug messages to stderr (or stdout).  Also, debugging can
+	  now be disabled by setting silc_debug to FALSE and re-enabled by
+	  setting it to TRUE.  Note, that logging will still work even
+	  if debugging is disabled.
+
+	  New functions in lib/silcutil/silclog.[ch]: silc_log_set_callbacks,
+	  silc_log_reset_callbacks, silc_log_set_debug_callbacks and
+	  silc_log_reset_debug_callbacks.
+
+	* To enable debugging in silc client one must give now -d
+	  option on command line.
+
+	* Changed silc_schedule_init to automatically allocate task queues
+	  if they are not allocated before calling it.
+
 Thu Sep  7 10:49:33 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added GMP 3.1 into math library.

@@ -130,7 +130,7 @@
 #include "silcrng.h"
 #include "silcpkcs.h"
 
-/* SILC core library includes */
+/* SILC util library includes */
 #include "silclog.h"
 #include "silcmemory.h"
 #include "silcbuffer.h"
@@ -139,10 +139,12 @@
 #include "silcnet.h"
 #include "silcutil.h"
 #include "silcconfig.h"
-#include "id.h"
-#include "idcache.h"
 #include "silctask.h"
 #include "silcschedule.h"
+
+/* SILC core library includes */
+#include "id.h"
+#include "idcache.h"
 #include "silcprotocol.h"
 #include "silcsockconn.h"
 #include "silccommand.h"

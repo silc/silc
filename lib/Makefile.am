@@ -24,14 +24,39 @@ SUBDIRS = \
 	silccrypt \
 	silcsim \
 	silcmath \
-	silcske
+	silcske \
+	silcutil \
+	silcclient
 #        zlib
 
-CLEANFILES = libsilc.a
-DISTCLEANFILES = libsilc.a
+# SILC Library dirs
+SILCLIB_DIRS = \
+	contrib \
+	silccore \
+	silccrypt \
+	silcsim \
+	silcmath \
+	silcske \
+	silcutil
 
-all:  libsilc.a
+# SILC Client Library dirs
+SILCCLIENTLIB_DIRS = \
+	silcclient
+
+CLEANFILES = libsilc.a libsilcclient.a
+DISTCLEANFILES = libsilc.a libsilcclient.a
+
+all:  remove libsilc.a libsilcclient.a
+
+remove:
+	-rm -rf libsilc.a
+	-rm -rf libsilcclient.a
 
 libsilc.a:
-	find . -type f -name *.o | xargs $(AR) cru libsilc.a
+	find $(SILCLIB_DIRS) -type f -name *.o | xargs $(AR) cru libsilc.a
 	ranlib libsilc.a
+
+libsilcclient.a:
+	find $(SILCCLIENTLIB_DIRS) -type f -name *.o | xargs $(AR) cru libsilcclient.a
+	ranlib libsilcclient.a
+

@@ -33,16 +33,14 @@
 
 /* Generic includes */
 #include "silcincludes.h"
+#include "clientlibincludes.h"
 
 /* SILC Client includes */
 #include "screen.h"
 #include "clientconfig.h"
-#include "client.h"
-#include "command.h"
-#include "command_reply.h"
-#include "idlist.h"
+#include "local_command.h"
 #include "clientutil.h"
-#include "protocol.h"
 #include "silc.h"
+#include "client_ops.h"
 
 #endif

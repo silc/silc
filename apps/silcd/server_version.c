@@ -19,5 +19,6 @@
 */
 
 #include "serverincludes.h"
+#include "version_internal.h"
 
-const char server_version[] = "26072000";
+const char *server_version = SILC_VERSION_STRING;

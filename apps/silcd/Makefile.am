@@ -32,11 +32,13 @@ silcd_SOURCES = \
 	silcd.c \
 	server_version.c
 
+silcd_DEPENDENCIES = ../lib/libsilc.a
+
 LDADD = -L. -L.. -L../lib -lsilc
 
 EXTRA_DIST = *.h
 
 INCLUDES = -I. -I.. -I../lib/silccore -I../lib/silccrypt \
 	-I../lib/silcmath -I../lib/silcske -I../lib/silcsim \
-	-I../includes \
+	-I../includes -I../lib/silcutil \
 	-I../lib/silcmath/gmp

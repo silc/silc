@@ -28,19 +28,22 @@ echo "All errors and warnings may be safely ignored."
 make distclean
 rm -f includes/stamp-*
 rm -f includes/silcconfig.*
+rm -f includes/version_internal.h
 rm -f Makefile.in
 rm -f doc/draft-*.txt
 rm -f doc/Makefile.in
 rm -f includes/Makefile.in
 rm -f lib/Makefile.in
 rm -f lib/contrib/Makefile.in
+rm -f lib/silcclient/Makefile.in
 rm -f lib/silccore/Makefile.in
+rm -f lib/silcutil/Makefile.in
 rm -f lib/silccrypt/Makefile.in
 rm -f lib/silcmath/Makefile.in
 rm -f lib/silcsim/Makefile.in
 rm -f lib/silcsim/modules/Makefile.in
 rm -f lib/silcske/Makefile.in
-rm -f lib/silcmath/gmp/.deps
+rm -rf lib/silcmath/gmp/.deps
 rm -f silcd/Makefile.in silcd/log* silcd/*.log
 rm -f silc/Makefile.in silc/log* silc/*.log
 rm -f aclocal.m4

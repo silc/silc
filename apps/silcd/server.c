@@ -25,6 +25,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.14  2000/09/13 17:50:26  priikone
+ * 	Updates to comly with new source tree.
+ *
  * Revision 1.13  2000/08/21 14:21:21  priikone
  * 	Fixed channel joining and channel message sending inside a
  * 	SILC cell. Added silc_server_send_remove_channel_user and
@@ -97,7 +100,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process);
 SILC_TASK_CALLBACK(silc_server_packet_parse_real);
 SILC_TASK_CALLBACK(silc_server_timeout_remote);
 
-extern char server_version[];
+extern char *server_version;
 
 /* Allocates a new SILC server object. This has to be done before the server
    can be used. After allocation one must call silc_server_init to initialize
@@ -336,8 +339,8 @@ int silc_server_init(SilcServer server)
   silc_server_protocols_register();
 
   /* Initialize the scheduler */
-  silc_schedule_init(server->io_queue, server->timeout_queue, 
-		     server->generic_queue, 
+  silc_schedule_init(&server->io_queue, &server->timeout_queue, 
+		     &server->generic_queue, 
 		     SILC_SERVER_MAX_CONNECTIONS);
   
   /* Add the first task to the queue. This is task that is executed by

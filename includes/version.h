@@ -21,6 +21,8 @@
 #ifndef VERSION_H
 #define VERSION_H
 
+#include "version_internal.h"
+
 /* Version type definition */
 typedef unsigned char SilcVersion;
 
@@ -33,8 +35,8 @@ typedef unsigned char SilcVersion;
 #define SILC_VERSION_1 '\1'
 
 /* SILC version string */
-const char *silc_version = "26072000";
-const char *silc_version_string = "SILC-1.0-26072000";
+const char *silc_version = SILC_VERSION_STRING;
+const char *silc_version_string = SILC_PROTOCOL_VERSION_STRING;
 const char *silc_name = "SILC";
 const char *silc_fullname = "Secure Internet Live Conferencing";
 

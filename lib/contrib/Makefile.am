@@ -27,5 +27,5 @@ libcontrib_a_SOURCES = \
 EXTRA_DIST = *.h
 
 INCLUDES = -I. -I.. -I../silccrypt -I../silcmath -I../silcske \
-	-I../silcsim -I../.. -I../../includes -I../silccore \
+	-I../silcsim -I../.. -I../../includes -I../silccore -I../silcutil \
 	-I../silcmath/gmp

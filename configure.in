@@ -33,7 +33,7 @@ case "$target" in
     ;;
 esac
 
-AM_INIT_AUTOMAKE(silc, 26072000)
+AM_INIT_AUTOMAKE(silc, 14092000)
 AC_PREREQ(2.3)
 AM_CONFIG_HEADER(includes/silcdefs.h)
 
@@ -239,11 +239,13 @@ doc/Makefile
 includes/Makefile
 lib/Makefile
 lib/contrib/Makefile
+lib/silcclient/Makefile
 lib/silccore/Makefile
 lib/silccrypt/Makefile
 lib/silcmath/Makefile
 lib/silcsim/Makefile
 lib/silcsim/modules/Makefile
 lib/silcske/Makefile
+lib/silcutil/Makefile
 silc/Makefile
 silcd/Makefile)

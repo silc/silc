@@ -233,10 +233,6 @@ TODO In SILC Libraries
    cleaner.  Introducing silc_cipher_encrypt/decrypt/set_key etc.
    functions (I actually don't understand why have I left these un-done).
 
- o Scheduler should automatically allocate task queues if NULL pointers 
-   are passed to the silc_schedule_init.  Would make initialization 
-   cleaner.
-
  o Packet processing routines in client and server are actually pretty
    much generic and should be moved from the client/server to the library
    as generic routines (silc_<client/server>_packet_decrypt_rest* etc).
