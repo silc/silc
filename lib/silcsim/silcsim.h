@@ -36,7 +36,7 @@ typedef enum {
    thus experience some overhead when using the symbol first time. */
 #if defined(RTLD_NOW)
 #define SILC_SIM_FLAGS RTLD_NOW
-#elif defined(RTLD_NOW)
+#elif defined(RTLD_LAZY)
 #define SILC_SIM_FLAGS RTLD_LAZY
 #else
 #define SILC_SIM_FLAGS 0
