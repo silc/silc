@@ -1,3 +1,17 @@
+Wed Nov 12 11:34:56 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed file transmission accepting in client library to not
+	  start the negotiation if user hasn't accepted the transfer,
+	  instead create new session for resent transfer.  Affected
+	  file lib/silcclient/client_ftp.c.
+
+	* Show the session ID in the file transmision list.  Remove
+	  session from list that failed to transfer.  Switch the current
+	  session automatically after transmission, and in errors, to new
+	  session if other sessions exists in the transfer list.  Affected
+	  files are irssi/src/silc/core/silc-servers.c,
+	  irssi/src/fe-common/silc/modfule-formats.c.
+
 Mon Nov 10 14:41:40 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Fixed MIME header parsing for the hopefully last time.  Affected
