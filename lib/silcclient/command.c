@@ -2303,7 +2303,7 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(info, INFO, "INFO", 2);
   SILC_CLIENT_CMD(connect, CONNECT, "CONNECT", 3);
   SILC_CLIENT_CMD(ping, PING, "PING", 2);
-  SILC_CLIENT_CMD(oper, OPER, "OPER", 2);
+  SILC_CLIENT_CMD(oper, OPER, "OPER", 3);
   SILC_CLIENT_CMD(join, JOIN, "JOIN", 9);
   SILC_CLIENT_CMD(motd, MOTD, "MOTD", 2);
   SILC_CLIENT_CMD(umode, UMODE, "UMODE", 2);

@@ -814,6 +814,51 @@ silc_server_get_public_key_auth(SilcServer server,
   return FALSE;
 }
 
+/* Function that actually performs the authentication to the remote. This
+   supports both passphrase and public key authentication. */
+
+static bool 
+silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
+			       char *local_passphrase,
+			       void *local_publickey,
+			       unsigned char *remote_auth,
+			       uint32 remote_auth_len)
+{
+  SilcServer server = (SilcServer)ctx->server;
+  SilcSKE ske = ctx->ske;
+  bool result = FALSE;
+
+  /* If we don't have authentication data set at all we do not require
+     authentication at all */
+  if (!local_passphrase && !local_publickey) {
+    SILC_LOG_DEBUG(("No authentication required"));
+    return TRUE;
+  }
+
+  /* If both passphrase and public key is provided then we'll try both of
+     them and see which one of them authenticates.  If only one of them is
+     set, then try only that. */
+
+  /* Try first passphrase (as it is faster to check) */
+  if (local_passphrase) {
+    SILC_LOG_DEBUG(("Password authentication"));
+    result = silc_server_password_authentication(server, local_passphrase,
+						 remote_auth);
+  }
+
+  /* Try public key authenetication */
+  if (!result && local_publickey) {
+    SILC_LOG_DEBUG(("Public key authentication"));
+    result = silc_server_public_key_authentication(server, 
+						   local_publickey,
+						   remote_auth,
+						   remote_auth_len, 
+						   ske);
+  }
+
+  return result;
+}
+
 /* Performs connection authentication protocol. If responder, we 
    authenticate the remote data received. If initiator, we will send
    authentication data to the remote end. */
@@ -909,49 +954,16 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  SilcServerConfigSectionClient *client = ctx->cconfig;
 	  
 	  if (client) {
-	    switch(client->auth_meth) {
-	    case SILC_AUTH_NONE:
-	      /* No authentication required */
-	      SILC_LOG_DEBUG(("No authentication required"));
-	      break;
-	      
-	    case SILC_AUTH_PASSWORD:
-	      /* Password authentication */
-	      SILC_LOG_DEBUG(("Password authentication"));
-	      ret = silc_server_password_authentication(server, auth_data,
-							client->auth_data);
-
-	      if (ret)
-		break;
-
+	    ret = silc_server_get_authentication(ctx, client->passphrase,
+						 client->publickey,
+						 auth_data, payload_len);
+	    if (!ret) {
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->schedule, 
-				    0, 300000);
-	      return;
-	      break;
-	      
-	    case SILC_AUTH_PUBLIC_KEY:
-	      /* Public key authentication */
-	      SILC_LOG_DEBUG(("Public key authentication"));
-	      ret = silc_server_public_key_authentication(server, 
-							  client->auth_data,
-							  auth_data,
-							  payload_len, 
-							  ctx->ske);
-
-	      if (ret)
-		break;
-
-	      SILC_LOG_ERROR(("Authentication failed"));
-	      SILC_LOG_DEBUG(("Authentication failed"));
-	      silc_free(auth_data);
-	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->schedule, 
-				    0, 300000);
+	      silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	      return;
 	    }
 	  } else {
@@ -971,49 +983,16 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  SilcServerConfigSectionServer *serv = ctx->sconfig;
 	  
 	  if (serv) {
-	    switch(serv->auth_meth) {
-	    case SILC_AUTH_NONE:
-	      /* No authentication required */
-	      SILC_LOG_DEBUG(("No authentication required"));
-	      break;
-	      
-	    case SILC_AUTH_PASSWORD:
-	      /* Password authentication */
-	      SILC_LOG_DEBUG(("Password authentication"));
-	      ret = silc_server_password_authentication(server, auth_data,
-							serv->auth_data);
-
-	      if (ret)
-		break;
-	      
+	    ret = silc_server_get_authentication(ctx, serv->passphrase,
+						 serv->publickey,
+						 auth_data, payload_len);
+	    if (!ret) {
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->schedule, 
-				    0, 300000);
-	      return;
-	      break;
-
-	    case SILC_AUTH_PUBLIC_KEY:
-	      /* Public key authentication */
-	      SILC_LOG_DEBUG(("Public key authentication"));
-	      ret = silc_server_public_key_authentication(server, 
-							  serv->auth_data,
-							  auth_data,
-							  payload_len, 
-							  ctx->ske);
-							  
-	      if (ret)
-		break;
-
-	      SILC_LOG_ERROR(("Authentication failed"));
-	      SILC_LOG_DEBUG(("Authentication failed"));
-	      silc_free(auth_data);
-	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->schedule, 
-				    0, 300000);
+	      silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	      return;
 	    }
 	  } else {
@@ -1033,49 +1012,16 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  SilcServerConfigSectionRouter *serv = ctx->rconfig;
 
 	  if (serv) {
-	    switch(serv->auth_meth) {
-	    case SILC_AUTH_NONE:
-	      /* No authentication required */
-	      SILC_LOG_DEBUG(("No authentication required"));
-	      break;
-	      
-	    case SILC_AUTH_PASSWORD:
-	      /* Password authentication */
-	      SILC_LOG_DEBUG(("Password authentication"));
-	      ret = silc_server_password_authentication(server, auth_data,
-							serv->auth_data);
-
-	      if (ret)
-		break;
-	      
+	    ret = silc_server_get_authentication(ctx, serv->passphrase,
+						 serv->publickey,
+						 auth_data, payload_len);
+	    if (!ret) {
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->schedule, 
-				    0, 300000);
-	      return;
-	      break;
-	      
-	    case SILC_AUTH_PUBLIC_KEY:
-	      /* Public key authentication */
-	      SILC_LOG_DEBUG(("Public key authentication"));
-	      ret = silc_server_public_key_authentication(server, 
-							  serv->auth_data,
-							  auth_data,
-							  payload_len, 
-							  ctx->ske);
-							  
-	      if (ret)
-		break;
-	      
-	      SILC_LOG_ERROR(("Authentication failed"));
-	      SILC_LOG_DEBUG(("Authentication failed"));
-	      silc_free(auth_data);
-	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->schedule, 
-				    0, 300000);
+	      silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	      return;
 	    }
 	  } else {

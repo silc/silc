@@ -10,7 +10,14 @@
 General {
 	# This is the default path where to search modules
 	# You can comment it out to use builtin modules globally.
-	ModulePath = "@MODULESDIR@";
+	module_path = "@MODULESDIR@";
+
+	# If both passphrase and public key authentication is set for a
+	# connection the public key authentication is the preferred one
+	# to use.  Set this to `true' to prefer passphrase authentication
+	# over public key authentication in these cases.
+	#
+	# prefer_passphrase_auth = true;
 };
 
 #
@@ -23,56 +30,56 @@ General {
 cipher {
 	name = "aes-256-cbc";
 	module = "aes.sim.so";
-	key_length = 32;
-	block_length = 16;
+	keylength = 32;
+	blocklength = 16;
 };
 cipher {
 	name = "aes-192-cbc";
 	module = "aes.sim.so";
-	key_length = 24;
-	block_length = 16;
+	keylength = 24;
+	blocklength = 16;
 };
 cipher {
 	name = "aes-128-cbc";
 	module = "aes.sim.so";
-	key_length = 16;
-	block_length = 16;
+	keylength = 16;
+	blocklength = 16;
 };
 cipher {
 	name = "twofish-256-cbc";
 	module = "twofish.sim.so";
-	key_length = 32;
-	block_length = 16;
+	keylength = 32;
+	blocklength = 16;
 };
 cipher {
 	name = "twofish-192-cbc";
 	module = "twofish.sim.so";
-	key_length = 24;
-	block_length = 16;
+	keylength = 24;
+	blocklength = 16;
 };
 cipher {
 	name = "twofish-128-cbc";
 	module = "twofish.sim.so";
-	key_length = 16;
-	block_length = 16;
+	keylength = 16;
+	blocklength = 16;
 };
 cipher {
 	name = "mars-256-cbc";
 	module = "mars.sim.so";
-	key_length = 32;
-	block_length = 16;
+	keylength = 32;
+	blocklength = 16;
 };
 cipher {
 	name = "mars-192-cbc";
 	module = "mars.sim.so";
-	key_length = 24;
-	block_length = 16;
+	keylength = 24;
+	blocklength = 16;
 };
 cipher {
 	name = "mars-128-cbc";
 	module = "mars.sim.so";
-	key_length = 16;
-	block_length = 16;
+	keylength = 16;
+	blocklength = 16;
 };
 cipher {
 	name = "none";
@@ -84,13 +91,13 @@ cipher {
 #
 hash {
 	name = "sha1";
-	block_length = 64;
-	digest_length = 20;
+	blocklength = 64;
+	digestlength = 20;
 };
 hash {
 	name = "md5";
-	block_length = 64;
-	digest_length = 16;
+	blocklength = 64;
+	digestlength = 16;
 };
 
 #
@@ -100,22 +107,22 @@ hash {
 hmac {
 	name = "hmac-sha1-96";
 	hash = "sha1";
-	mac_length = 12;
+	maclength = 12;
 };
 hmac {
 	name = "hmac-md5-96";
 	hash = "md5";
-	mac_length = 12;
+	maclength = 12;
 };
 hmac {
 	name = "hmac-sha1";
 	hash = "sha1";
-	mac_length = 20;
+	maclength = 20;
 };
 hmac {
 	name = "hmac-md5";
 	hash = "md5";
-	mac_length = 16;
+	maclength = 16;
 };
 
 #
@@ -156,8 +163,8 @@ ServerInfo {
 	EMail = "priikone@poseidon.pspt.fi";
 
 	#
-	# Run SILC server as specific user and group. The server must be initially
-	# run as root.
+	# Run SILC server as specific user and group. The server must be 
+	# initially run as root.
 	#
 	User = "nobody";
 	Group = "nobody";
@@ -261,16 +268,19 @@ Client {
 #
 # The fields "Host", "User", and "Nick", are optional but you are encouraged
 # in using them to better identify your admins.
-# "AuthMethod" and "AuthData" fields are mandatory.  The "AuthMethod" field
-# can be either the special string "passwd" or "pubkey" to identify the type
-# of data specified by "AuthData".
+#
+# The authentication data is specified by Passphrase and/or Publickey.
+# If both are provided then both password and public key based authentication
+# is allowed.  If the Publickey is used it includes the file path to the
+# public key file.  If none of them is provided then authentication is not
+# required.
 #
 Admin {
 	Host = "10.2.1.199";
 	User = "priikone";
 	Nick = "pekka";
-	AuthMethod = "passwd";
-	AuthData = "verysecret";
+	Passphrase = "verysecret";
+	# Publickey = "/path/to/the/public.key";
 };
 
 #
@@ -299,16 +309,20 @@ Admin {
 # Thus, if this server is not router do not configure this section.  If
 # your server is router, this must be configured.
 #
-# The "AuthData" option is either passphrase or file path to the public key
-# file. If the connection is backup connection then set the "Backup" option
-# to true. For normal connections set it false. If it is
-# set to true then this server will be backup router.
+# The authentication data is specified by Passphrase and/or Publickey.
+# If both are provided then both password and public key based authentication
+# is allowed.  If the Publickey is used it includes the file path to the
+# public key file.  If none of them is provided then authentication is not
+# required.
+#
+# If the connection is backup connection then set the "Backup" option
+# to true. For normal connections set it false. If it is set to true then
+# this server will be backup router.
 #
 ServerConnection {
 	Host = "10.2.1.7";
-	AuthMethod = passwd;
-	AuthData = "verysecret";
-	Port = 706;
+	Passphrase = "verysecret";
+	# Publickey = "/path/to/the/public.key";
 	VersionID = 1;
 	Class = "norm";
 	Backup = false;
@@ -322,8 +336,13 @@ ServerConnection {
 # this section includes all configured router connections.  The first
 # configured connection is the primary route.
 #
-# The "AuthData" option is either passphrase or file path to the public key
-# file. If you are the initiator of the connection then set the "Initiator"
+# The authentication data is specified by Passphrase and/or Publickey.
+# If both are provided then both password and public key based authentication
+# is allowed.  If the Publickey is used it includes the file path to the
+# public key file.  If none of them is provided then authentication is not
+# required.
+#
+# If you are the initiator of the connection then set the "Initiator"
 # option to true.  If you are the responder of the connection (waiting for
 # incoming connection) then set it to false.
 #
@@ -336,9 +355,9 @@ ServerConnection {
 #
 RouterConnection {
 	Host = "10.2.1.100";
-	AuthMethod = passwd;
-	AuthData = "verysecret";
 	Port = 706;
+	Passphrase = "verysecret";
+	# Publickey = "/path/to/the/public.key";
 	VersionID = 1;
 	Class = "norm";
 	Initiator = true;

@@ -91,5 +91,4 @@ EXTRA_DIST = \
 	CodingStyle \
 	FAQ \
 	example_silcd.conf \
-	example_silc.conf \
 	draft-riikonen*.txt $(SILC_EXTRA_DIST)

@@ -4585,6 +4585,7 @@ SILC_SERVER_CMD_FUNC(oper)
   uint32 tmp_len;
   SilcServerConfigSectionAdmin *admin;
   SilcIDListData idata = (SilcIDListData)client;
+  bool result = FALSE;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_OPER, cmd, 1, 2);
 
@@ -4600,10 +4601,10 @@ SILC_SERVER_CMD_FUNC(oper)
   }
 
   /* Get the admin configuration */
-  admin = silc_server_config_find_admin(server->config, cmd->sock->ip,
+  admin = silc_server_config_find_admin(server, cmd->sock->ip,
 					username, client->nickname);
   if (!admin) {
-    admin = silc_server_config_find_admin(server->config, cmd->sock->hostname,
+    admin = silc_server_config_find_admin(server, cmd->sock->hostname,
 					  username, client->nickname);
     if (!admin) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
@@ -4620,10 +4621,18 @@ SILC_SERVER_CMD_FUNC(oper)
     goto out;
   }
 
-  /* Verify the authentication data */
-  if (!silc_auth_verify_data(auth, tmp_len, admin->auth_meth, 
-			     admin->auth_data, admin->auth_data_len,
-			     idata->hash, client->id, SILC_ID_CLIENT)) {
+  /* Verify the authentication data. If both passphrase and public key
+     is set then try both of them. */
+  if (admin->passphrase)
+    result = silc_auth_verify_data(auth, tmp_len, SILC_AUTH_PASSWORD,
+				   admin->passphrase, admin->passphrase_len,
+				   idata->hash, client->id, SILC_ID_CLIENT);
+  if (!result && admin->publickey)
+    result = silc_auth_verify_data(auth, tmp_len, SILC_AUTH_PUBLIC_KEY,
+				   admin->publickey, 0,
+				   idata->hash, client->id, SILC_ID_CLIENT);
+  if (!result) {
+    /* Authentication failed */
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
 					  SILC_STATUS_ERR_AUTH_FAILED);
     goto out;
@@ -4663,6 +4672,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   uint32 tmp_len;
   SilcServerConfigSectionAdmin *admin;
   SilcIDListData idata = (SilcIDListData)client;
+  bool result = FALSE;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SILCOPER, cmd, 1, 2);
 
@@ -4684,10 +4694,10 @@ SILC_SERVER_CMD_FUNC(silcoper)
   }
 
   /* Get the admin configuration */
-  admin = silc_server_config_find_admin(server->config, cmd->sock->ip,
+  admin = silc_server_config_find_admin(server, cmd->sock->ip,
 					username, client->nickname);
   if (!admin) {
-    admin = silc_server_config_find_admin(server->config, cmd->sock->hostname,
+    admin = silc_server_config_find_admin(server, cmd->sock->hostname,
 					  username, client->nickname);
     if (!admin) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
@@ -4704,11 +4714,19 @@ SILC_SERVER_CMD_FUNC(silcoper)
     goto out;
   }
 
-  /* Verify the authentication data */
-  if (!silc_auth_verify_data(auth, tmp_len, admin->auth_meth, 
-			     admin->auth_data, admin->auth_data_len,
-			     idata->hash, client->id, SILC_ID_CLIENT)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
+  /* Verify the authentication data. If both passphrase and public key
+     is set then try both of them. */
+  if (admin->passphrase)
+    result = silc_auth_verify_data(auth, tmp_len, SILC_AUTH_PASSWORD,
+				   admin->passphrase, admin->passphrase_len,
+				   idata->hash, client->id, SILC_ID_CLIENT);
+  if (!result && admin->publickey)
+    result = silc_auth_verify_data(auth, tmp_len, SILC_AUTH_PUBLIC_KEY,
+				   admin->publickey, 0,
+				   idata->hash, client->id, SILC_ID_CLIENT);
+  if (!result) {
+    /* Authentication failed */
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
 					  SILC_STATUS_ERR_AUTH_FAILED);
     goto out;
   }

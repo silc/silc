@@ -1,9 +1,9 @@
 #
-#  configure.in
+#  configure.in.pre
 #
-#  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+#  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2001 Pekka Riikonen
+#  Copyright (C) 2000 - 2002 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -795,9 +795,8 @@ lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
 lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
-doc/example_silc.conf
 doc/example_silcd.conf
-)     
+)
 
 if test "x$silc_dist" = "xsilc-client" || 
    test "x$silc_dist" = "xsilc-toolkit"; then

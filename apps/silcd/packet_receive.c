@@ -2502,7 +2502,7 @@ void silc_server_connection_auth_request(SilcServer server,
   SilcServerConfigSectionClient *client = NULL;
   uint16 conn_type;
   int ret, port;
-  SilcAuthMethod auth_meth;
+  SilcAuthMethod auth_meth = SILC_AUTH_NONE;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -2523,20 +2523,21 @@ void silc_server_connection_auth_request(SilcServer server,
   /* Get the authentication method for the client */
   auth_meth = SILC_AUTH_NONE;
   port = server->sockets[server->sock]->port; /* Listenning port */
-  client = silc_server_config_find_client(server->config,
-					       sock->ip,
-					       port);
+  client = silc_server_config_find_client(server, sock->ip, port);
   if (!client)
-    client = silc_server_config_find_client(server->config,
-						 sock->hostname,
-						 port);
-  if (client)
-    auth_meth = client->auth_meth;
-	  
+    client = silc_server_config_find_client(server, sock->hostname, port);
+  if (client) {
+    if (client->passphrase) {
+      if (client->publickey && !server->config->prefer_passphrase_auth)
+	auth_meth = SILC_AUTH_PUBLIC_KEY;
+      else
+	auth_meth = SILC_AUTH_PASSWORD;
+    } else if (client->publickey)
+      auth_meth = SILC_AUTH_PUBLIC_KEY;
+  }
+
   /* Send it back to the client */
-  silc_server_send_connection_auth_request(server, sock,
-					   conn_type,
-					   auth_meth);
+  silc_server_send_connection_auth_request(server, sock, conn_type, auth_meth);
 }
 
 /* Received REKEY packet. The sender of the packet wants to regenerate

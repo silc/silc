@@ -4,7 +4,7 @@
 
   Author: Johnny Mnemonic <johnny@themnemonic.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Johnny Mnemonic
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -82,9 +82,9 @@ typedef struct SilcServerConfigSectionLoggingStruct {
 /* Holds all client authentication data from config file */
 typedef struct SilcServerConfigSectionClientStruct {
   char *host;
-  SilcAuthMethod auth_meth;
-  void *auth_data;
-  uint32 auth_data_len;
+  unsigned char *passphrase;
+  uint32 passphrase_len;
+  void *publickey;
   uint16 port;
   uint32 class;
   struct SilcServerConfigSectionClientStruct *next;
@@ -95,9 +95,9 @@ typedef struct SilcServerConfigSectionAdminStruct {
   char *host;
   char *user;
   char *nick;
-  SilcAuthMethod auth_meth;
-  void *auth_data;
-  uint32 auth_data_len;
+  unsigned char *passphrase;
+  uint32 passphrase_len;
+  void *publickey;
   struct SilcServerConfigSectionAdminStruct *next;
 } SilcServerConfigSectionAdmin;
 
@@ -112,10 +112,9 @@ typedef struct SilcServerConfigSectionDenyStruct {
 /* Holds all configured server connections from config file */
 typedef struct SilcServerConfigSectionServerStruct {
   char *host;
-  SilcAuthMethod auth_meth;
-  void *auth_data;
-  uint32 auth_data_len;
-  uint16 port;
+  unsigned char *passphrase;
+  uint32 passphrase_len;
+  void *publickey;
   char *version;
   uint32 class;
   bool backup_router;
@@ -125,9 +124,9 @@ typedef struct SilcServerConfigSectionServerStruct {
 /* Holds all configured router connections from config file */
 typedef struct SilcServerConfigSectionRouterStruct {
   char *host;
-  SilcAuthMethod auth_meth;
-  void *auth_data;
-  uint32 auth_data_len;
+  unsigned char *passphrase;
+  uint32 passphrase_len;
+  void *publickey;
   uint16 port;
   char *version;
   uint32 class;
@@ -143,6 +142,7 @@ typedef struct SilcServerConfigSectionRouterStruct {
 typedef struct {
   void *tmp;
   char *module_path;
+  bool prefer_passphrase_auth;
 
   SilcServerConfigSectionCipher *cipher;
   SilcServerConfigSectionHash *hash;
@@ -163,38 +163,31 @@ typedef struct {
 
 /* Prototypes */
 
-/* basic config operations */
+/* Basic config operations */
 SilcServerConfig silc_server_config_alloc(char *filename);
 void silc_server_config_destroy(SilcServerConfig config);
 
-/* algorithm registering and reset functions */
+/* Algorithm registering and reset functions */
 bool silc_server_config_register_ciphers(SilcServer server);
 bool silc_server_config_register_hashfuncs(SilcServer server);
 bool silc_server_config_register_hmacs(SilcServer server);
 bool silc_server_config_register_pkcs(SilcServer server);
-void silc_server_config_setlogfiles(SilcServerConfig config, SilcSchedule sked);
+void silc_server_config_setlogfiles(SilcServer server);
 
-/* run-time config access functions */
+/* Run-time config access functions */
 SilcServerConfigSectionClient *
-silc_server_config_find_client(SilcServerConfig config, char *host, int port);
-
+silc_server_config_find_client(SilcServer server, char *host, int port);
 SilcServerConfigSectionAdmin *
-silc_server_config_find_admin(SilcServerConfig config,
-			      char *host, char *user, char *nick);
-
+silc_server_config_find_admin(SilcServer server, char *host, char *user, 
+			      char *nick);
 SilcServerConfigSectionDeny *
-silc_server_config_find_denied(SilcServerConfig config,
-			       char *host, uint16 port);
-
-/* Prototypes - OLD */
+silc_server_config_find_denied(SilcServer server, char *host, uint16 port);
 SilcServerConfigSectionServer *
-silc_server_config_find_server_conn(SilcServerConfig config,
-				    char *host, int port);
+silc_server_config_find_server_conn(SilcServer server, char *host);
 SilcServerConfigSectionRouter *
-silc_server_config_find_router_conn(SilcServerConfig config,
-				    char *host, int port);
-bool silc_server_config_is_primary_route(SilcServerConfig config);
+silc_server_config_find_router_conn(SilcServer server, char *host, int port);
+bool silc_server_config_is_primary_route(SilcServer server);
 SilcServerConfigSectionRouter *
-silc_server_config_get_primary_router(SilcServerConfig config);
+silc_server_config_get_primary_router(SilcServer server);
 
 #endif	/* !SERVERCONFIG_H */

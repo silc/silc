@@ -177,7 +177,7 @@ int silc_server_init(SilcServer server)
       SILC_LOG_ERROR(("Could not create server listener: %s on %hd",
 		      server->config->server_info->server_ip,
 		      server->config->server_info->port));
-      goto err0;
+      goto err;
     }
 
     sock = silc_realloc(sock, sizeof(*sock) * (sock_count + 1));
@@ -229,7 +229,7 @@ int silc_server_init(SilcServer server)
 			newsocket->hostname ? newsocket->hostname :
 			newsocket->ip ? newsocket->ip : ""));
 	server->stat.conn_failures++;
-	goto err0;
+	goto err;
       }
       if (!newsocket->hostname)
 	newsocket->hostname = strdup(newsocket->ip);
@@ -239,7 +239,7 @@ int silc_server_init(SilcServer server)
     /* Create a Server ID for the server. */
     silc_id_create_server_id(newsocket->ip, newsocket->port, server->rng, &id);
     if (!id)
-      goto err0;
+      goto err;
     
     server->id = id;
     server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
@@ -257,7 +257,7 @@ int silc_server_init(SilcServer server)
 			     server->server_type, server->id, NULL, NULL);
     if (!id_entry) {
       SILC_LOG_ERROR(("Could not add ourselves to cache"));
-      goto err0;
+      goto err;
     }
     id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     
@@ -274,7 +274,7 @@ int silc_server_init(SilcServer server)
   /* Initialize the scheduler. */
   server->schedule = silc_schedule_init(SILC_SERVER_MAX_CONNECTIONS);
   if (!server->schedule)
-    goto err0;
+    goto err;
 
   /* Add the first task to the scheduler. This is task that is executed by
      timeout. It expires as soon as the caller calls silc_server_run. This
@@ -297,7 +297,7 @@ int silc_server_init(SilcServer server)
   server->listenning = TRUE;
 
   /* Send log file configuration */
-  silc_server_config_setlogfiles(server->config, server->schedule);
+  silc_server_config_setlogfiles(server);
 
   /* If server connections has been configured then we must be router as
      normal server cannot have server connections, only router connections. */
@@ -344,7 +344,7 @@ int silc_server_init(SilcServer server)
   /* We are done here, return succesfully */
   return TRUE;
 
- err0:
+ err:
   for (i = 0; i < sock_count; i++)
     silc_net_close_server(sock[i]);
 
@@ -786,15 +786,26 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 
   /* Resolve the authentication method used in this connection. Check if 
      we find a match from user configured connections */
-  conn = silc_server_config_find_router_conn(server->config,
-					     sock->hostname,
+  conn = silc_server_config_find_router_conn(server, sock->hostname,
 					     sock->port);
   if (conn) {
     /* Match found. Use the configured authentication method */
-    proto_ctx->auth_meth = conn->auth_meth;
-    if (conn->auth_data) {
-      proto_ctx->auth_data = strdup(conn->auth_data);
-      proto_ctx->auth_data_len = strlen(conn->auth_data);
+    if (conn->passphrase) {
+      if (conn->publickey && !server->config->prefer_passphrase_auth) {
+	proto_ctx->auth_data = conn->publickey;
+	proto_ctx->auth_data_len = 0;
+	proto_ctx->auth_meth = SILC_AUTH_PUBLIC_KEY;
+      } else {
+	proto_ctx->auth_data = strdup(conn->passphrase);
+	proto_ctx->auth_data_len = strlen(conn->passphrase);
+	proto_ctx->auth_meth = SILC_AUTH_PASSWORD;
+      }
+    } else if (conn->publickey) {
+      proto_ctx->auth_data = conn->publickey;
+      proto_ctx->auth_data_len = 0;
+      proto_ctx->auth_meth = SILC_AUTH_PUBLIC_KEY;
+    } else {
+      proto_ctx->auth_meth = SILC_AUTH_NONE;
     }
   } else {
     SILC_LOG_ERROR(("Could not find connection data for %s (%s) on port",
@@ -1002,7 +1013,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
     silc_packet_context_free(ctx->packet);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
-  silc_free(ctx->auth_data);
+  if (ctx->auth_meth == SILC_AUTH_PASSWORD)
+    silc_free(ctx->auth_data);
   silc_free(ctx);
 }
 
@@ -1049,10 +1061,9 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   port = server->sockets[server->sock]->port; /* Listenning port */
 
   /* Check whether this connection is denied to connect to us. */
-  deny = silc_server_config_find_denied(server->config, sock->ip, port);
+  deny = silc_server_config_find_denied(server, sock->ip, port);
   if (!deny)
-    deny = silc_server_config_find_denied(server->config, sock->hostname,
-					  port);
+    deny = silc_server_config_find_denied(server, sock->hostname, port);
   if (deny) {
     /* The connection is denied */
     SILC_LOG_INFO(("Connection %s (%s) is denied", 
@@ -1068,25 +1079,16 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   /* Check whether we have configred this sort of connection at all. We
      have to check all configurations since we don't know what type of
      connection this is. */
-  if (!(cconfig = silc_server_config_find_client(server->config,
-						      sock->ip, port)))
-    cconfig = silc_server_config_find_client(server->config,
-						  sock->hostname, 
-						  port);
-  if (!(sconfig = silc_server_config_find_server_conn(server->config,
-						     sock->ip, 
-						     port)))
-    sconfig = silc_server_config_find_server_conn(server->config,
-						  sock->hostname,
-						  port);
-  if (!(rconfig = silc_server_config_find_router_conn(server->config,
-						     sock->ip, port)))
-    rconfig = silc_server_config_find_router_conn(server->config,
-						  sock->hostname, 
-						  port);
+  if (!(cconfig = silc_server_config_find_client(server, sock->ip, port)))
+    cconfig = silc_server_config_find_client(server, sock->hostname, port);
+  if (!(sconfig = silc_server_config_find_server_conn(server, sock->ip)))
+    sconfig = silc_server_config_find_server_conn(server, sock->hostname);
+  if (!(rconfig = silc_server_config_find_router_conn(server, sock->ip, port)))
+    rconfig = silc_server_config_find_router_conn(server, sock->hostname, 
+						  sock->port);
   if (!cconfig && !sconfig && !rconfig) {
-    SILC_LOG_INFO(("Connection %s (%s) is not allowed", 
-                   sock->hostname, sock->ip));
+    SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname, 
+		   sock->ip));
     silc_server_disconnect_remote(server, sock, 
 				  "Server closed connection: "
 				  "Connection refused");
@@ -1418,7 +1420,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       /* Check whether this connection is to be our primary router connection
 	 if we do not already have the primary route. */
       if (server->standalone && ctx->conn_type == SILC_SOCKET_TYPE_ROUTER) {
-	if (silc_server_config_is_primary_route(server->config) &&
+	if (silc_server_config_is_primary_route(server) &&
 	    !conn->initiator)
 	  break;
 

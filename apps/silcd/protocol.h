@@ -67,14 +67,10 @@ typedef struct {
   /* SKE object from Key Exchange protocol. */
   SilcSKE ske;
 
-  /* Auth method that must be used. This is resolved before this
-     connection authentication protocol is started. Used when we are
-     initiating. */
+  /* Authentication method and data if we alreay know it. This is filled
+     before starting the protocol if we know the authentication data.
+     Otherwise these are and remain NULL. Used when we are initiating. */
   uint32 auth_meth;
-
-  /* Authentication data if we alreay know it. This is filled before
-     starting the protocol if we know the authentication data. Otherwise
-     these are and remain NULL. Used when we are initiating. */
   void *auth_data;
   uint32 auth_data_len;
 

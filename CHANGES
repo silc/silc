@@ -1,3 +1,27 @@
+Wed Feb 13 20:51:13 EET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Unified the serverconfig.[ch]'s helper function interface.
+	  Affected file silcd/serverconfig.[ch].
+
+	* Removed doc/example_silc.conf.in since it is redundant.
+	  The make install will now install irssi/silc.conf file.
+
+	* Added new Passphrase and Publickey authentication methods to	
+	  config file, allowing both public key and passphrase based
+	  authentication to be set at the same time.
+
+	  Added `prefer_passphrase_auth' setting in config file which
+	  can be used to set to prefer passwd auth if both passwd and
+	  public key is set.  If not set, public key is preferred.
+	  This has effect only when being initiator (responder will try
+	  both anyway).
+
+	  Added support for authentication with passphrase and public key
+	  at the same time.  The passphrase is tried first always since
+	  it is faster to check.
+
+	  Affected file silcd/serverconfig.[ch], server.c, protocol.[ch].
+
 Wed Feb 13 12:46:25 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Merged the new SILC Config library, with the server parsing

@@ -96,7 +96,7 @@ SILC_CONFIG_CALLBACK(fetch_generic)
 {
   SilcServerConfig config = (SilcServerConfig) context;
 
-  if (!strcmp(name, "modulepath")) {
+  if (!strcmp(name, "module_path")) {
     if (config->module_path) 
       return SILC_CONFIG_EDOUBLE;
 
@@ -147,9 +147,9 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
     /* dup it only if non-empty, otherwise point it to NULL */
     tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
   }
-  else if (!strcmp(name, "key_length"))
+  else if (!strcmp(name, "keylength"))
     tmp->key_length = *(uint32 *)val;
-  else if (!strcmp(name, "block_length"))
+  else if (!strcmp(name, "blocklength"))
     tmp->block_length = *(uint32 *)val;
   else
     return SILC_CONFIG_EINTERNAL;
@@ -198,9 +198,9 @@ SILC_CONFIG_CALLBACK(fetch_hash)
     /* dup it only if non-empty, otherwise point it to NULL */
     tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
   }
-  else if (!strcmp(name, "block_length"))
+  else if (!strcmp(name, "blocklength"))
     tmp->block_length = *(int *)val;
-  else if (!strcmp(name, "digest_length"))
+  else if (!strcmp(name, "digestlength"))
     tmp->digest_length = *(int *)val;
   else
     return SILC_CONFIG_EINTERNAL;
@@ -248,7 +248,7 @@ SILC_CONFIG_CALLBACK(fetch_hmac)
     if (tmp->hash) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
     tmp->hash = strdup((char *) val);
   }
-  else if (!strcmp(name, "mac_length"))
+  else if (!strcmp(name, "maclength"))
     tmp->mac_length = *(int *)val;
   else
     return SILC_CONFIG_EINTERNAL;

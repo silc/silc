@@ -87,7 +87,7 @@ etc-install:
           chmod go= $(etcdir)/silcd.conf; \
 	fi
 	-@if test '!' -f $(etcdir)/silc.conf ; then \
-	  $(INSTALL_DATA) $(srcdir)/doc/example_silc.conf \
+	  $(INSTALL_DATA) $(srcdir)/irssi/silc.conf \
 	  $(etcdir)/silc.conf; \
 	fi
 

@@ -882,7 +882,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
       /* Connect to the primary router that was down that is now supposed
 	 to be back online. We send the CONNECTED packet after we've
 	 established the connection to the primary router. */
-      primary = silc_server_config_get_primary_router(server->config);
+      primary = silc_server_config_get_primary_router(server);
       if (primary && server->backup_primary) {
 	silc_server_backup_reconnect(server,
 				     primary->host, primary->port,
@@ -975,7 +975,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	 to next state. */
       if (server->router &&
 	  !(server->router->data.status & SILC_IDLIST_STATUS_DISABLED) &&
-	  silc_server_config_is_primary_route(server->config)) {
+	  silc_server_config_is_primary_route(server)) {
 	/* We'll wait for RESUMED packet */
 	protocol->state = SILC_PROTOCOL_STATE_END;
 	break;
