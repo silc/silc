@@ -700,8 +700,8 @@ void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
  *    directly if application is performing its own connecting and does not
  *    use the connecting provided by this library. This function is normally
  *    used only if the application performed the connecting outside the
- *    library. The library however may use this internally. Returns FALSE
- *    if the key exchange could not be started.
+ *    library. The library however may use this internally.  After the
+ *    key exchange is performed the `connect' client operation is called.
  *
  ***/
 void silc_client_start_key_exchange(SilcClient client,

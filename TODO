@@ -1,6 +1,8 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o /USERS does not show the user modes on the channel correctly.
+
  o Fix the silc_channels_join to parse the command like, with fe.
    silc_parse_command_line, because currently it ignores all options,
    including passphrase which makes autojoin impossible to +a channels.
@@ -10,6 +12,8 @@ TODO/bugs in Irssi SILC client
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the
    user.
+
+ o Add the server/router operator info to the statusbar.
 
  o /cumode for unknown nick does not give any error message.
 
