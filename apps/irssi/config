@@ -1,4 +1,4 @@
-lservers = (
+servers = (
   { address = "silc.silcnet.org"; chatnet = SILCNet; port = 706; }
 );
 
