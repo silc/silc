@@ -27,6 +27,7 @@ silc_SOURCES = \
 	command_reply.c \
 	clientconfig.c \
 	clientutil.c \
+	idlist.c \
 	protocol.c \
 	screen.c
 

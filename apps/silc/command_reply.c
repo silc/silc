@@ -24,6 +24,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.7  2000/07/12 05:56:32  priikone
+ * 	Major rewrite of ID Cache system. Support added for the new
+ * 	ID cache system.
+ *
  * Revision 1.6  2000/07/10 05:38:32  priikone
  * 	Added INFO command.
  *
@@ -198,7 +202,6 @@ void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
 SILC_CLIENT_CMD_REPLY_FUNC(whois)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClient client = cmd->client;
   SilcCommandStatus status;
   unsigned char *tmp;
 
@@ -230,7 +233,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
     unsigned char *id_data;
     char *nickname = NULL, *username = NULL;
     char *realname = NULL;
-    void *id;
 
     memset(buf, 0, sizeof(buf));
 
@@ -302,9 +304,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
 
   SILC_LOG_DEBUG(("Start"));
 
-#define CIDC(x) win->client_id_cache[(x) - 32]
-#define CIDCC(x) win->client_id_cache_count[(x) - 32]
-
   tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
@@ -338,10 +337,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
     client_entry->nickname = strdup(nickname);
 
     /* Save received Client ID to ID cache */
-    CIDCC(nickname[0]) =
-      silc_idcache_add(&CIDC(nickname[0]), CIDCC(nickname[0]),
-		       client_entry->nickname, SILC_ID_CLIENT, 
-		       client_entry->id, client_entry);
+    silc_idcache_add(win->client_cache, client_entry->nickname,
+		     SILC_ID_CLIENT, client_entry->id, client_entry, TRUE);
   }
 
   if (status == SILC_STATUS_LIST_START) {
@@ -356,8 +353,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
 
  out:
   silc_client_command_reply_free(cmd);
-#undef CIDC
-#undef CIDCC
 }
 
 /* Received reply for command NICK. If everything went without errors
@@ -626,7 +621,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(silcoper)
 SILC_CLIENT_CMD_REPLY_FUNC(leave)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClient client = cmd->client;
   SilcCommandStatus status;
   unsigned char *tmp;
 
@@ -646,7 +640,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientWindow win = (SilcClientWindow)cmd->sock->user_data;
   SilcCommandStatus status;
-  SilcIDCache *id_cache = NULL;
+  SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcChannelID *channel_id = NULL;
   SilcBuffer client_id_list;
@@ -655,11 +649,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   int i, len1, len2, list_count = 0;
 
   SILC_LOG_DEBUG(("Start"));
-
-#define CIDC(x) win->channel_id_cache[(x)]
-#define CIDCC(x) win->channel_id_cache_count[(x)]
-#define CLC(x) win->client_id_cache[(x) - 32]
-#define CLCC(x) win->client_id_cache_count[(x) - 32]
 
   tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
   SILC_GET16_MSB(status, tmp);
@@ -695,14 +684,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   silc_buffer_put(client_id_list, tmp, len2);
 
   /* Get the channel name */
-  for (i = 0; i < 96; i++) {
-    if (CIDC(i) == NULL)
-      continue;
-    if (silc_idcache_find_by_id(CIDC(i), CIDCC(i), (void *)channel_id, 
-				SILC_ID_CHANNEL, &id_cache))
-      break;
-  }
-  if (!id_cache)
+  if (!silc_idcache_find_by_id_one(win->channel_cache, (void *)channel_id,
+				   SILC_ID_CHANNEL, &id_cache))
     goto out;
   
   channel = (SilcChannelEntry)id_cache->context;
@@ -750,10 +733,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
     client->id = client_id;
     client->nickname = nickname;
 
-    CLCC(nickname[0]) = silc_idcache_add(&CLC(nickname[0]), CLCC(nickname[0]),
-					 nickname, SILC_ID_CLIENT, 
-					 client_id, (void *)client);
-
+    silc_idcache_add(win->client_cache, nickname, SILC_ID_CLIENT,
+		     client_id, (void *)client, TRUE);
     name_list = name_list + nick_len + 1;
   }
 
@@ -763,10 +744,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   if (channel_id)
     silc_free(channel_id);
   silc_client_command_reply_free(cmd);
-#undef CIDC
-#undef CIDCC
-#undef CLC
-#undef CLCC
 }
 
 /* Private message received. This processes the private message and
@@ -779,41 +756,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(msg)
   SilcBuffer buffer = (SilcBuffer)cmd->context;
   unsigned short nick_len;
   unsigned char *nickname, *message;
-  SilcIDCache *id_cache;
-  unsigned char *id_string;
-  void *id;
 
   /* Get nickname */
   silc_buffer_unformat(buffer, 
 		       SILC_STR_UI16_NSTRING_ALLOC(&nickname, &nick_len),
 		       SILC_STR_END);
   silc_buffer_pull(buffer, 2 + nick_len);
-
-#if 0
-  /* Get ID of the sender */
-  id_string = silc_calloc(SILC_ID_CLIENT_LEN, sizeof(unsigned char *));
-  silc_buffer_push(buffer, SILC_ID_CLIENT_LEN + SILC_ID_CLIENT_LEN);
-  memcpy(id_string, buffer->data, SILC_ID_CLIENT_LEN);
-  silc_buffer_pull(buffer, SILC_ID_CLIENT_LEN + SILC_ID_CLIENT_LEN);
-  id = silc_id_str2id(id_string, SILC_ID_CLIENT);
-  silc_free(id_string);
-
-  /* Nickname should be verified if we don't have it in the cache */
-  if (silc_idcache_find_by_data(client->current_win->
-				client_id_cache[nickname[0] - 32],
-				client->current_win->
-				client_id_cache_count[nickname[0] - 32],
-				nickname, &id_cache) == FALSE) {
-
-    SilcClientCommandContext ctx;
-    char whois[255];
-
-    /* Private message from unknown source, try to resolve it. */
-
-
-    return;
-  }
-#endif
      
   message = silc_calloc(buffer->len + 1, sizeof(char));
   memcpy(message, buffer->data, buffer->len);

@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.8  2000/07/12 05:56:32  priikone
+ * 	Major rewrite of ID Cache system. Support added for the new
+ * 	ID cache system.
+ *
  * Revision 1.7  2000/07/10 05:40:33  priikone
  * 	Minor bug fixes.
  *
@@ -267,6 +271,11 @@ SilcClientWindow silc_client_create_main_window(SilcClient client)
   win->remote_port = -1;
   win->sock = NULL;
 
+  /* Initialize ID caches */
+  win->client_cache = silc_idcache_alloc(0);
+  win->channel_cache = silc_idcache_alloc(0);
+  win->server_cache = silc_idcache_alloc(0);
+
   /* Create the actual screen */
   screen = (void *)silc_screen_create_output_window(client->screen);
   silc_screen_create_input_window(client->screen);
@@ -305,6 +314,11 @@ SilcClientWindow silc_client_add_window(SilcClient client,
   /* Add the pointers */
   win->screen = silc_screen_add_output_window(client->screen);
   win->sock = NULL;
+
+  /* Initialize ID caches */
+  win->client_cache = silc_idcache_alloc(0);
+  win->channel_cache = silc_idcache_alloc(0);
+  win->server_cache = silc_idcache_alloc(0);
 
   /* Add the window to windows table */
   client->windows = silc_realloc(client->windows, sizeof(*client->windows)
@@ -2002,7 +2016,6 @@ void silc_client_close_connection(SilcClient client,
 				  SilcSocketConnection sock)
 {
   SilcClientWindow win;
-  int i;
 
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(sock->sock);
@@ -2024,12 +2037,8 @@ void silc_client_close_connection(SilcClient client,
     /* XXX Free all client entries and channel entries. */
 
     /* Clear ID caches */
-    for (i = 0; i < 96; i++)
-      silc_idcache_del_all(&win->client_id_cache[i], 
-			   win->client_id_cache_count[i]);
-    for (i = 0; i < 96; i++)
-      silc_idcache_del_all(&win->channel_id_cache[i], 
-			   win->channel_id_cache_count[i]);
+    silc_idcache_del_all(win->client_cache);
+    silc_idcache_del_all(win->channel_cache);
 
     /* Free data */
     if (win->remote_host)
@@ -2128,14 +2137,9 @@ void silc_client_receive_new_id(SilcClient client,
 				unsigned char *id_string)
 {
   SilcClientWindow win = (SilcClientWindow)sock->user_data;
-  char *nickname = win->nickname;
-
-#define CIDC(x) win->client_id_cache[(x) - 32]
-#define CIDCC(x) win->client_id_cache_count[(x) - 32]
 
   /* Delete old ID from ID cache */
-  silc_idcache_del_by_id(CIDC(nickname[0]), CIDCC(nickname[0]),
-			 SILC_ID_CLIENT, win->local_id);
+  silc_idcache_del_by_id(win->client_cache, SILC_ID_CLIENT, win->local_id);
   
   /* Save the new ID */
   if (win->local_id)
@@ -2153,13 +2157,8 @@ void silc_client_receive_new_id(SilcClient client,
   win->local_entry->id = win->local_id;
   
   /* Put it to the ID cache */
-  CIDCC(nickname[0]) = silc_idcache_add(&CIDC(nickname[0]), 
-					CIDCC(nickname[0]),
-					win->nickname, SILC_ID_CLIENT, 
-					win->local_id, 
-					(void *)win->local_entry);
-#undef CIDC
-#undef CIDCC
+  silc_idcache_add(win->client_cache, win->nickname, SILC_ID_CLIENT,
+		   win->local_id, (void *)win->local_entry, TRUE);
 }
 
 /* Processed received Channel ID for a channel. This is called when client
@@ -2177,9 +2176,6 @@ void silc_client_new_channel_id(SilcClient client,
 
   SILC_LOG_DEBUG(("New channel ID"));
 
-#define CIDC(x) win->channel_id_cache[(x) - 32]
-#define CIDCC(x) win->channel_id_cache_count[(x) - 32]
-
   id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
   channel = silc_calloc(1, sizeof(*channel));
   channel->channel_name = channel_name;
@@ -2188,12 +2184,8 @@ void silc_client_new_channel_id(SilcClient client,
   win->current_channel = channel;
   
   /* Put it to the ID cache */
-  CIDCC(channel_name[0]) = silc_idcache_add(&CIDC(channel_name[0]), 
-					    CIDCC(channel_name[0]),
-					    channel_name, SILC_ID_CHANNEL, 
-					    id, (void *)channel);
-#undef CIDC
-#undef CIDCC
+  silc_idcache_add(win->channel_cache, channel_name, SILC_ID_CHANNEL,
+		   (void *)id, (void *)channel, TRUE);
 }
 
 /* Processes received key for channel. The received key will be used
@@ -2206,20 +2198,16 @@ void silc_client_receive_channel_key(SilcClient client,
 				     SilcSocketConnection sock,
 				     SilcBuffer packet)
 {
-  int i;
   unsigned char *id_string, *key, *cipher;
   unsigned int key_len;
   SilcClientWindow win = (SilcClientWindow)sock->user_data;
   SilcChannelID *id;
-  SilcIDCache *id_cache = NULL;
+  SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcChannelKeyPayload payload;
 
   SILC_LOG_DEBUG(("Received key for channel"));
   
-#define CIDC(x) win->channel_id_cache[(x)]
-#define CIDCC(x) win->channel_id_cache_count[(x)]
-
   payload = silc_channel_key_parse_payload(packet);
   if (!payload)
     return;
@@ -2231,18 +2219,11 @@ void silc_client_receive_channel_key(SilcClient client,
   }
   id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
 
-  /* Find channel. XXX: This is bad and slow. */ 
-  for (i = 0; i < 96; i++) {
-    if (CIDC(i) == NULL)
-      continue;
-    if (silc_idcache_find_by_id(CIDC(i), CIDCC(i), (void *)id, 
-				SILC_ID_CHANNEL, &id_cache))
-      break;
-  }
-
- if (!id_cache)
+  /* Find channel. */
+  if (!silc_idcache_find_by_id_one(win->channel_cache, (void *)id,
+				   SILC_ID_CHANNEL, &id_cache))
     goto out;
-
+  
   /* Save the key */
   key = silc_channel_key_get_key(payload, &key_len);
   cipher = silc_channel_key_get_cipher(payload, NULL);
@@ -2266,8 +2247,6 @@ void silc_client_receive_channel_key(SilcClient client,
  out:
   silc_free(id);
   silc_channel_key_free_payload(payload);
-#undef CIDC
-#undef CIDCC
 }
 
 /* Process received message to a channel (or from a channel, really). This
@@ -2278,16 +2257,12 @@ void silc_client_channel_message(SilcClient client,
 				 SilcSocketConnection sock, 
 				 SilcPacketContext *packet)
 {
-  int i;
   SilcClientWindow win = (SilcClientWindow)sock->user_data;
   SilcBuffer buffer = packet->buffer;
   SilcChannelPayload payload = NULL;
   SilcChannelID *id = NULL;
   SilcChannelEntry channel;
-  SilcIDCache *id_cache = NULL;
-
-#define CIDC(x) win->channel_id_cache[(x)]
-#define CIDCC(x) win->channel_id_cache_count[(x)]
+  SilcIDCacheEntry id_cache = NULL;
 
   /* Sanity checks */
   if (packet->dst_id_type != SILC_ID_CHANNEL)
@@ -2296,15 +2271,8 @@ void silc_client_channel_message(SilcClient client,
   id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
 
   /* Find the channel entry from channels on this window */
-  for (i = 0; i < 96; i++) {
-    if (CIDC(i) == NULL)
-      continue;
-    if (silc_idcache_find_by_id(CIDC(i), CIDCC(i), (void *)id, 
-				SILC_ID_CHANNEL, &id_cache))
-      break;
-  }
-
-  if (!id_cache)
+  if (!silc_idcache_find_by_id_one(win->channel_cache, (void *)id,
+				   SILC_ID_CHANNEL, &id_cache))
     goto out;
 
   channel = (SilcChannelEntry)id_cache->context;
@@ -2344,6 +2312,4 @@ void silc_client_channel_message(SilcClient client,
     silc_free(id);
   if (payload)
     silc_channel_free_payload(payload);
-#undef CIDC
-#undef CIDCC
 }

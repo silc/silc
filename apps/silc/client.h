@@ -21,6 +21,14 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+/* Forward declaration for client */
+typedef struct SilcClientObject *SilcClient;
+
+/* Forward declaration for client window */
+typedef struct SilcClientWindowObject *SilcClientWindow;
+
+#include "idlist.h"
+
 /* Structure to hold ping time information. Every PING command will 
    add entry of this structure and is removed after reply to the ping
    as been received. */
@@ -34,7 +42,7 @@ typedef struct SilcClientPingStruct {
    connection (window) specific data to this structure. How the window
    actually appears on the screen in handeled by the silc_screen*
    routines in screen.c. */
-typedef struct {
+struct SilcClientWindowObject {
   /*
    * Local data 
    */
@@ -80,12 +88,9 @@ typedef struct {
   /* Client ID and Channel ID cache. Messages transmitted in SILC network
      are done using different unique ID's. These are the cache for
      thoses ID's used in the communication. */
-  SilcIDCache *client_id_cache[96];
-  unsigned int client_id_cache_count[96];
-  SilcIDCache *channel_id_cache[96];
-  unsigned int channel_id_cache_count[96];
-  SilcIDCache *server_id_cache;
-  unsigned int server_id_cache_count;
+  SilcIDCache client_cache;
+  SilcIDCache channel_cache;
+  SilcIDCache server_cache;
 
   /* Current channel on window. All channel's are saved (allocated) into
      the cache entries. */
@@ -103,9 +108,9 @@ typedef struct {
   /* The actual physical screen. This data is handled by the
      screen handling routines. */
   void *screen;
-} *SilcClientWindow;
+};
 
-typedef struct {
+struct SilcClientObject {
   char *username;
   char *realname;
 
@@ -153,9 +158,7 @@ typedef struct {
   SilcSimContext **sim;
   unsigned int sim_count;
 #endif
-} SilcClientObject;
-
-typedef SilcClientObject *SilcClient;
+};
 
 /* Macros */
 
