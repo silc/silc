@@ -146,7 +146,7 @@ SILC_PKCS_API_GET_PUBLIC_KEY(rsa)
   unsigned char tmp[4];
 
   e = silc_mp_mp2bin(&key->e, 0, &e_len);
-  n = silc_mp_mp2bin(&key->n, key->bits / 8, &n_len);
+  n = silc_mp_mp2bin(&key->n, (key->bits + 7) / 8, &n_len);
 
   *ret_len = e_len + 4 + n_len + 4;
   ret = silc_calloc(*ret_len, sizeof(unsigned char));
@@ -185,7 +185,7 @@ SILC_PKCS_API_GET_PRIVATE_KEY(rsa)
   unsigned char tmp[4];
 
   e = silc_mp_mp2bin(&key->e, 0, &e_len);
-  n = silc_mp_mp2bin(&key->n, key->bits / 8, &n_len);
+  n = silc_mp_mp2bin(&key->n, (key->bits + 7) / 8, &n_len);
   d = silc_mp_mp2bin(&key->d, 0, &d_len);
 
   *ret_len = e_len + 4 + n_len + 4 + d_len + 4;
@@ -259,7 +259,7 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
 
   silc_mp_bin2mp(key_data + 4 + e_len + 4, n_len, &key->n);
 
-  key->bits = n_len * 8;
+  key->bits = silc_mp_sizeinbase(&key->n, 2);
   key->pub_set = TRUE;
 
   return key->bits;
@@ -323,7 +323,7 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
 
   silc_mp_bin2mp(key_data + 4 + e_len + 4 + n_len + 4, d_len, &key->d);
 
-  key->bits = n_len * 8;
+  key->bits = silc_mp_sizeinbase(&key->n, 2);
   key->prv_set = TRUE;
   key->pub_set = TRUE;
 
@@ -338,20 +338,15 @@ SILC_PKCS_API_CONTEXT_LEN(rsa)
 SILC_PKCS_API_ENCRYPT(rsa)
 {
   RsaKey *key = (RsaKey *)context;
-  int i, tmplen;
+  int tmplen;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
 
   silc_mp_init(&mp_tmp);
   silc_mp_init(&mp_dst);
-  silc_mp_set_ui(&mp_tmp, 0);
-  silc_mp_set_ui(&mp_dst, 0);
 
   /* Format the data into MP int */
-  for (i = 0; i < src_len; i++) {
-    silc_mp_mul_2exp(&mp_tmp, &mp_tmp, 8);
-    silc_mp_add_ui(&mp_tmp, &mp_tmp, src[i]);
-  }
+  silc_mp_bin2mp(src, src_len, &mp_tmp);
 
   /* Encrypt */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->e, &key->n);
@@ -359,10 +354,7 @@ SILC_PKCS_API_ENCRYPT(rsa)
   tmplen = (key->bits + 7) / 8;
 
   /* Format the MP int back into data */
-  for (i = tmplen; i > 0; i--) {
-    dst[i - 1] = (unsigned char)(silc_mp_get_ui(&mp_dst) & 0xff);
-    silc_mp_div_2exp(&mp_dst, &mp_dst, 8);
-  }
+  silc_mp_mp2bin_noalloc(&mp_dst, dst, tmplen);
   *dst_len = tmplen;
 
   silc_mp_uninit(&mp_tmp);
@@ -374,20 +366,15 @@ SILC_PKCS_API_ENCRYPT(rsa)
 SILC_PKCS_API_DECRYPT(rsa)
 {
   RsaKey *key = (RsaKey *)context;
-  int i, tmplen;
+  int tmplen;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
 
   silc_mp_init(&mp_tmp);
   silc_mp_init(&mp_dst);
-  silc_mp_set_ui(&mp_tmp, 0);
-  silc_mp_set_ui(&mp_dst, 0);
 
   /* Format the data into MP int */
-  for (i = 0; i < src_len; i++) {
-    silc_mp_mul_2exp(&mp_tmp, &mp_tmp, 8);
-    silc_mp_add_ui(&mp_tmp, &mp_tmp, src[i]);
-  }
+  silc_mp_bin2mp(src, src_len, &mp_tmp);
 
   /* Decrypt */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
@@ -395,10 +382,7 @@ SILC_PKCS_API_DECRYPT(rsa)
   tmplen = (key->bits + 7) / 8;
 
   /* Format the MP int back into data */
-  for (i = tmplen; i > 0; i--) {
-    dst[i - 1] = (unsigned char)(silc_mp_get_ui(&mp_dst) & 0xff);
-    silc_mp_div_2exp(&mp_dst, &mp_dst, 8);
-  }
+  silc_mp_mp2bin_noalloc(&mp_dst, dst, tmplen);
   *dst_len = tmplen;
 
   silc_mp_uninit(&mp_tmp);
@@ -410,20 +394,15 @@ SILC_PKCS_API_DECRYPT(rsa)
 SILC_PKCS_API_SIGN(rsa)
 {
   RsaKey *key = (RsaKey *)context;
-  int i, tmplen;
+  int tmplen;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
 
   silc_mp_init(&mp_tmp);
   silc_mp_init(&mp_dst);
-  silc_mp_set_ui(&mp_tmp, 0);
-  silc_mp_set_ui(&mp_dst, 0);
 
   /* Format the data into MP int */
-  for (i = 0; i < src_len; i++) {
-    silc_mp_mul_2exp(&mp_tmp, &mp_tmp, 8);
-    silc_mp_add_ui(&mp_tmp, &mp_tmp, src[i]);
-  }
+  silc_mp_bin2mp(src, src_len, &mp_tmp);
 
   /* Sign */
   rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
@@ -431,10 +410,7 @@ SILC_PKCS_API_SIGN(rsa)
   tmplen = (key->bits + 7) / 8;
 
   /* Format the MP int back into data */
-  for (i = tmplen; i > 0; i--) {
-    dst[i - 1] = (unsigned char)(silc_mp_get_ui(&mp_dst) & 0xff);
-    silc_mp_div_2exp(&mp_dst, &mp_dst, 8);
-  }
+  silc_mp_mp2bin_noalloc(&mp_dst, dst, tmplen);
   *dst_len = tmplen;
 
   silc_mp_uninit(&mp_tmp);
@@ -446,31 +422,22 @@ SILC_PKCS_API_SIGN(rsa)
 SILC_PKCS_API_VERIFY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
-  int i, ret;
+  int ret;
   SilcMPInt mp_tmp, mp_tmp2;
   SilcMPInt mp_dst;
 
   silc_mp_init(&mp_tmp);
   silc_mp_init(&mp_tmp2);
   silc_mp_init(&mp_dst);
-  silc_mp_set_ui(&mp_tmp, 0);
-  silc_mp_set_ui(&mp_tmp2, 0);
-  silc_mp_set_ui(&mp_dst, 0);
 
   /* Format the signature into MP int */
-  for (i = 0; i < signature_len; i++) {
-    silc_mp_mul_2exp(&mp_tmp2, &mp_tmp2, 8);
-    silc_mp_add_ui(&mp_tmp2, &mp_tmp2, signature[i]);
-  }
+  silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
 
   /* Verify */
   rsa_en_de_crypt(&mp_dst, &mp_tmp2, &key->e, &key->n);
 
   /* Format the data into MP int */
-  for (i = 0; i < data_len; i++) {
-    silc_mp_mul_2exp(&mp_tmp, &mp_tmp, 8);
-    silc_mp_add_ui(&mp_tmp, &mp_tmp, data[i]);
-  }
+  silc_mp_bin2mp(data, data_len, &mp_tmp);
 
   ret = TRUE;
 
