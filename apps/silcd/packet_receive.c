@@ -3630,6 +3630,7 @@ void silc_server_resume_client(SilcServer server,
     silc_idlist_add_data(detached_client, idata);
     detached_client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
+    detached_client->data.status |= SILC_IDLIST_STATUS_LOCAL;
     detached_client->data.status &= ~SILC_IDLIST_STATUS_RESUME_RES;
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     server->stat.my_detached--;
