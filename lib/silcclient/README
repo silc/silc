@@ -113,3 +113,30 @@ Application specific context can be saved to the SilcClientConnection object
 which then can be retrieved in the application, thus perhaps associate
 the connection with what ever object in the application (window or something
 else).
+
+
+Using Own Connecting
+====================
+
+Application might not want to use silc_client_connect_to_server function
+if it wants to perform its own connecting for some reason.  In this case
+application must call function silc_client_start_key_exchange after it
+has created the connection by itself.  This function starts key exhange
+protocol between the client and server and the library takes care of
+everything after that.
+
+After connection has been created application must call:
+
+	SilcClientConnection conn;
+
+	/* Add new connection to client library */
+	conn = silc_client_add_connection(client, context);
+	conn->remote_host = hostname;
+	conn->remote_port = port;
+
+	/* Start key exchange and let the library handle everything
+	   after this point on. */
+	silc_client_start_key_exchange(client, conn, sock);
+
+These calls are performed only and only if application did not call
+silc_client_connect_to_server function.

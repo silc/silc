@@ -243,6 +243,65 @@ int silc_client_connect_to_server(SilcClient client, int port,
   return sock;
 }
 
+/* Start SILC Key Exchange (SKE) protocol to negotiate shared secret
+   key material between client and server.  This function can be called
+   directly if application is performing its own connecting and does not
+   use the connecting provided by this library. */
+
+int silc_client_start_key_exchange(SilcClient client,
+			           SilcClientConnection conn,
+                                   int fd)
+{
+  SilcProtocol protocol;
+  SilcClientKEInternalContext *proto_ctx;
+  void *context;
+
+  /* Allocate new socket connection object */
+  silc_socket_alloc(fd, SILC_SOCKET_TYPE_SERVER, (void *)conn, &conn->sock);
+  if (conn->sock == NULL) {
+    client->ops->say(client, conn, 
+		     "Error: Could not allocate connection socket");
+    return FALSE;
+  }
+
+  conn->nickname = strdup(client->username);
+  conn->sock->hostname = conn->remote_host;
+  conn->sock->port = conn->remote_port;
+
+  /* Allocate internal Key Exchange context. This is sent to the
+     protocol as context. */
+  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+  proto_ctx->client = (void *)client;
+  proto_ctx->sock = conn->sock;
+  proto_ctx->rng = client->rng;
+  proto_ctx->responder = FALSE;
+
+  /* Perform key exchange protocol. silc_client_connect_to_server_final
+     will be called after the protocol is finished. */
+  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 
+		      &protocol, (void *)proto_ctx,
+		      silc_client_connect_to_server_second);
+  if (!protocol) {
+    client->ops->say(client, conn, 
+		     "Error: Could not start authentication protocol");
+    return FALSE;
+  }
+  conn->sock->protocol = protocol;
+
+  /* Register the connection for network input and output. This sets
+     that scheduler will listen for incoming packets for this connection 
+     and sets that outgoing packets may be sent to this connection as well.
+     However, this doesn't set the scheduler for outgoing traffic, it will 
+     be set separately by calling SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT,
+     later when outgoing data is available. */
+  context = (void *)client;
+  SILC_CLIENT_REGISTER_CONNECTION_FOR_IO(fd);
+
+  /* Execute the protocol */
+  protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
+  return TRUE;
+}
+
 /* Start of the connection to the remote server. This is called after
    succesful TCP/IP connection has been established to the remote host. */
 
@@ -252,8 +311,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
     (SilcClientInternalConnectContext *)context;
   SilcClient client = ctx->client;
   SilcClientConnection conn = ctx->conn;
-  SilcProtocol protocol;
-  SilcClientKEInternalContext *proto_ctx;
   int opt, opt_len = sizeof(opt);
 
   SILC_LOG_DEBUG(("Start"));
@@ -297,52 +354,10 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
   silc_task_unregister(client->io_queue, ctx->task);
   silc_free(ctx);
 
-  /* Allocate new socket connection object */
-  silc_socket_alloc(fd, SILC_SOCKET_TYPE_SERVER, (void *)conn, &conn->sock);
-  if (conn->sock == NULL) {
-    client->ops->say(client, conn, 
-		     "Error: Could not allocate connection socket");
+  if (!silc_client_start_key_exchange(client, conn, fd)) {
     silc_net_close_connection(fd);
     client->ops->connect(client, conn, FALSE);
-    return;
   }
-
-  conn->nickname = strdup(client->username);
-  conn->sock->hostname = conn->remote_host;
-  conn->sock->port = conn->remote_port;
-
-  /* Allocate internal Key Exchange context. This is sent to the
-     protocol as context. */
-  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
-  proto_ctx->client = (void *)client;
-  proto_ctx->sock = conn->sock;
-  proto_ctx->rng = client->rng;
-  proto_ctx->responder = FALSE;
-
-  /* Perform key exchange protocol. silc_client_connect_to_server_final
-     will be called after the protocol is finished. */
-  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 
-		      &protocol, (void *)proto_ctx,
-		      silc_client_connect_to_server_second);
-  if (!protocol) {
-    client->ops->say(client, conn, 
-		     "Error: Could not start authentication protocol");
-    client->ops->connect(client, conn, FALSE);
-    return;
-  }
-  conn->sock->protocol = protocol;
-
-  /* Register the connection for network input and output. This sets
-     that scheduler will listen for incoming packets for this connection 
-     and sets that outgoing packets may be sent to this connection as well.
-     However, this doesn't set the scheduler for outgoing traffic, it will 
-     be set separately by calling SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT,
-     later when outgoing data is available. */
-  context = (void *)client;
-  SILC_CLIENT_REGISTER_CONNECTION_FOR_IO(fd);
-
-  /* Execute the protocol */
-  protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
 }
 
 /* Second part of the connecting to the server. This executed 
@@ -473,9 +488,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->remote_id = ctx->dest_id;
   conn->remote_id_data = silc_id_id2str(ctx->dest_id, SILC_ID_SERVER);
   conn->remote_id_data_len = SILC_ID_SERVER_LEN;
-
-  client->ops->say(client, conn, "Connected to port %d of host %s",
-		   conn->remote_port, conn->remote_host);
 
   /* Notify application of successful connection */
   client->ops->connect(client, conn, TRUE);

@@ -226,6 +226,9 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
 						void *context);
 int silc_client_connect_to_server(SilcClient client, int port,
 				  char *host, void *context);
+int silc_client_start_key_exchange(SilcClient client,
+			           SilcClientConnection conn,
+                                   int fd);
 void silc_client_packet_send(SilcClient client, 
 			     SilcSocketConnection sock,
 			     SilcPacketType type, 
