@@ -67,7 +67,7 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
 
   silc_buffer_pull(&buffer, 4);
 
-  if (newp->len > buffer.len - 4 || newp->len > SILC_PACKET_MAX_ID_LEN)
+  if (newp->len > buffer.len || newp->len > SILC_PACKET_MAX_ID_LEN)
     goto err;
 
   ret = silc_buffer_unformat(&buffer,
