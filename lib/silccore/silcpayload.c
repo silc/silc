@@ -229,7 +229,7 @@ SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
   SilcArgumentPayload new;
   unsigned short payload_len = 0;
   unsigned char arg_num = 0;
-  unsigned int arg_type = 0;
+  unsigned char arg_type = 0;
   unsigned int pull_len = 0;
   int i = 0;
 

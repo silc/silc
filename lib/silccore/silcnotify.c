@@ -30,7 +30,7 @@
 
 struct SilcNotifyPayloadStruct {
   SilcNotifyType type;
-  unsigned int argc;
+  unsigned char argc;
   SilcArgumentPayload args;
 };
 
