@@ -1,3 +1,12 @@
+Tue Feb  4 22:53:26 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* NULL terminate allocated string in silc_buffer_strformat.
+	  Affected file lib/silcutil/silcbuffmt.c.
+
+	* Rewrote the invite/ban list string handling in server to
+	  use SilcBuffer instead.  Affected files are silcd/command.c
+	  and silcd/server_util.c.
+
 Mon Feb  3 14:43:52 CET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in CMODE command when setting new HMAC
