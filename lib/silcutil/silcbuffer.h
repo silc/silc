@@ -136,10 +136,10 @@ SilcBuffer silc_buffer_alloc(uint32 len)
   SilcBuffer sb;
 
   /* Allocate new SilcBuffer */
-  sb = silc_calloc(1, sizeof(*sb));
+  sb = (SilcBuffer)silc_calloc(1, sizeof(*sb));
 
   /* Allocate the actual data area */
-  sb->head = silc_calloc(len, sizeof(*sb->head));
+  sb->head = (unsigned char *)silc_calloc(len, sizeof(*sb->head));
 
   /* Set pointers to the new buffer */
   sb->truelen = len;
@@ -309,7 +309,7 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 #ifdef SILC_DEBUG
   assert((sb->data - sb->head) >= len);
 #endif
-  return memcpy(sb->head, data, len);
+  return (unsigned char *)memcpy(sb->head, data, len);
 }
 
 /* Puts data at the start of the valid data area. Returns a pointer 
@@ -331,7 +331,7 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 #ifdef SILC_DEBUG
   assert((sb->tail - sb->data) >= len);
 #endif
-  return memcpy(sb->data, data, len);
+  return (unsigned char *)memcpy(sb->data, data, len);
 }
 
 /* Puts data at the tail of the buffer. Returns pointer to the copied
@@ -353,7 +353,7 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
 #ifdef SILC_DEBUG
   assert((sb->end - sb->tail) >= len);
 #endif
-  return memcpy(sb->tail, data, len);
+  return (unsigned char *)memcpy(sb->tail, data, len);
 }
 
 #endif

@@ -235,12 +235,12 @@ static void func(void *qptr, int type, void *context, int fd)
 void func(void *qptr, int type, void *context, int fd)
 
 /* Prototypes */
-void silc_task_queue_alloc(SilcSchedule schedule, SilcTaskQueue *new, 
+void silc_task_queue_alloc(SilcSchedule schedule, SilcTaskQueue *queue, 
 			   bool valid);
 void silc_task_queue_free(SilcTaskQueue queue);
-SilcTask silc_task_add(SilcTaskQueue queue, SilcTask new, 
+SilcTask silc_task_add(SilcTaskQueue queue, SilcTask task, 
 		       SilcTaskPriority priority);
-SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask new,
+SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask task,
 			       SilcTaskPriority priority);
 SilcTask silc_task_register(SilcTaskQueue queue, int fd, 
 			    SilcTaskCallback cb, void *context, 

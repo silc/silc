@@ -28,6 +28,12 @@
 /* Automatically generated configuration header */
 #include "silcdefs.h"
 
+#ifdef WIN32
+#ifndef SILC_WIN32
+#define SILC_WIN32
+#endif
+#endif
+
 #ifdef SILC_WIN32
 #include "silcwin32.h"
 #endif
