@@ -29,7 +29,6 @@ extern "C"
 
 #include <stddef.h>		/* size_t */
 #include <stdlib.h>
-#include <idn-int.h>		/* uint32_t */
 
 #include "silcincludes.h"
 
