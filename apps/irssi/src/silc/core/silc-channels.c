@@ -70,7 +70,7 @@ static void sig_channel_destroyed(SILC_CHANNEL_REC *channel)
   if (channel->server != NULL && !channel->left && !channel->kicked) {
     /* destroying channel record without actually
        having left the channel yet */
-    silc_command_exec(channel->server, "PART", channel->name);
+    silc_command_exec(channel->server, "LEAVE", channel->name);
   }
 }
 
