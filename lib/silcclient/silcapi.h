@@ -158,7 +158,8 @@ typedef struct {
      the library to perform the key agreement protocol and FALSE if it is not
      desired. */
   int (*key_agreement)(SilcClient client, SilcClientConnection conn,
-		       SilcClientEntry client_entry);
+		       SilcClientEntry client_entry, char *hostname,
+		       int port);
 } SilcClientOperations;
 
 
