@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ void silc_client_free(SilcClient client)
   if (client) {
     if (client->rng)
       silc_rng_free(client->rng);
-	
+
     if (!client->internal->params->dont_register_crypto_library) {
       silc_cipher_unregister_all();
       silc_pkcs_unregister_all();
@@ -238,9 +238,12 @@ silc_client_add_connection(SilcClient client,
   conn->remote_port = port;
   conn->context = context;
   conn->internal->client_cache =
-    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_client_entry_destructor);
-  conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
-  conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
+    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_client_entry_destructor,
+		       FALSE, FALSE);
+  conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL,
+						     FALSE, FALSE);
+  conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL,
+						    FALSE, FALSE);
   conn->internal->pending_commands = silc_dlist_init();
   conn->internal->ftp_sessions = silc_dlist_init();
 

@@ -1,16 +1,16 @@
 /*
- 
+
   silcidcache.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
-  Copyright (C) 2000 - 2001 Pekka Riikonen
- 
+
+  Copyright (C) 2000 - 2005 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,7 +21,7 @@
 /****h* silccore/SILC ID Cache Interface
  *
  * DESCRIPTION
- * 
+ *
  * SILC ID Cache is an cache for all kinds of ID's used in the SILC
  * protocol.  Application can save here the ID's it uses and the interface
  * provides fast retrieval of the ID's from the cache.
@@ -34,13 +34,13 @@
 /****s* silccore/SilcIDCacheAPI/SilcIDCacheEntry
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcIDCacheEntry;
  *
  * DESCRIPTION
  *
  *    This is one entry in the SILC ID Cache system. Contents of this is
- *    allocated outside the ID cache system, however, all the fields are 
+ *    allocated outside the ID cache system, however, all the fields are
  *    filled with ID cache utility functions. The ID cache system does not
  *    allocate any of these fields nor free them.
  *
@@ -76,13 +76,13 @@ typedef struct {
 /****s* silccore/SilcIDCacheAPI/SilcIDCache
  *
  * NAME
- * 
+ *
  *    typedef struct SilcIDCacheStruct *SilcIDCache;
  *
  * DESCRIPTION
  *
- *    This context is the actual ID Cache and is allocated by 
- *    silc_idcache_alloc and given as argument usually to all 
+ *    This context is the actual ID Cache and is allocated by
+ *    silc_idcache_alloc and given as argument usually to all
  *    silc_idcache_* functions.  It is freed by the
  *    silc_idcache_free function.
  *
@@ -92,12 +92,12 @@ typedef struct SilcIDCacheStruct *SilcIDCache;
 /****s* silccore/SilcIDCacheAPI/SilcIDCacheList
  *
  * NAME
- * 
+ *
  *    typedef struct SilcIDCacheListStruct *SilcIDCacheList;
  *
  * DESCRIPTION
  *
- *    This context is the ID Cache List and is allocated by 
+ *    This context is the ID Cache List and is allocated by
  *    some of the silc_idcache_* functions. Functions that may return
  *    multiple entries from the cache allocate the entries in to the
  *    SilcIDCacheList. The context is freed by silc_idcache_list_free
@@ -139,13 +139,18 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
  * DESCRIPTION
  *
  *    Allocates new ID cache object. The initial amount of allocated entries
- *    can be sent as argument. If `count' is 0 the system uses default values. 
+ *    can be sent as argument. If `count' is 0 the system uses default values.
  *    The `id_type' defines the types of the ID's that will be saved to the
  *    cache.
  *
+ *    If 'delete_id' is TRUE then library will free the ID when a
+ *    cache entry is deleted.  If 'delete_name' is TRUE then library
+ *    will delete the associated name when a cache entry is deleted.
+ *
  ***/
 SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
-			       SilcIDCacheDestructor destructor);
+			       SilcIDCacheDestructor destructor,
+			       bool delete_id, bool delete_name);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_free
  *
@@ -164,7 +169,7 @@ void silc_idcache_free(SilcIDCache cache);
  *
  * SYNOPSIS
  *
- *    bool silc_idcache_add(SilcIDCache cache, char *name, void *id, 
+ *    bool silc_idcache_add(SilcIDCache cache, char *name, void *id,
  *                          void *context, int expire, SilcIDCacheEntry *ret);
  *
  * DESCRIPTION
@@ -180,11 +185,11 @@ void silc_idcache_free(SilcIDCache cache);
  *    of deleting the cache entry.  Otherwise the cache will have the freed
  *    pointers stored.
  *
- *    If the `ret' is non-NULL the created ID Cache entry is returned to 
+ *    If the `ret' is non-NULL the created ID Cache entry is returned to
  *    that pointer.
  *
  ***/
-bool silc_idcache_add(SilcIDCache cache, char *name, void *id, 
+bool silc_idcache_add(SilcIDCache cache, char *name, void *id,
 		      void *context, int expire, SilcIDCacheEntry *ret);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_del
@@ -220,9 +225,9 @@ bool silc_idcache_del_by_id(SilcIDCache cache, void *id);
  * SYNOPSIS
  *
  *    bool silc_idcache_del_by_id_ext(SilcIDCache cache, void *id,
- *                                    SilcHashFunction hash, 
+ *                                    SilcHashFunction hash,
  *                                    void *hash_context,
- *                                    SilcHashCompare compare, 
+ *                                    SilcHashCompare compare,
  *                                    void *compare_context);
  *
  * DESCRIPTION
@@ -230,13 +235,13 @@ bool silc_idcache_del_by_id(SilcIDCache cache, void *id);
  *    Same as silc_idcache_del_by_id but with specific hash and comparison
  *    functions. If the functions are NULL then default values are used.
  *    Returns TRUE if the entry was deleted. The destructor function is
- *    not called.
+ *    called.
  *
  ***/
 bool silc_idcache_del_by_id_ext(SilcIDCache cache, void *id,
-				SilcHashFunction hash, 
+				SilcHashFunction hash,
 				void *hash_context,
-				SilcHashCompare compare, 
+				SilcHashCompare compare,
 				void *compare_context);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_del_by_context
@@ -290,7 +295,7 @@ bool silc_idcache_purge(SilcIDCache cache);
  *
  * DESCRIPTION
  *
- *    Purges the cache by context and removes expired cache entires. 
+ *    Purges the cache by context and removes expired cache entires.
  *    Returns TRUE if the puring was successful. The destructor function
  *    is called for the purged cache entry.
  *
@@ -316,7 +321,7 @@ bool silc_idcache_get_all(SilcIDCache cache, SilcIDCacheList *ret);
  *
  * SYNOPSIS
  *
- *    bool silc_idcache_find_by_id(SilcIDCache cache, void *id, 
+ *    bool silc_idcache_find_by_id(SilcIDCache cache, void *id,
  *                                 SilcIDCacheList *ret);
  *
  * DESCRIPTION
@@ -326,14 +331,14 @@ bool silc_idcache_get_all(SilcIDCache cache, SilcIDCacheList *ret);
  *    found. The caller must free the returned SilcIDCacheList.
  *
  ***/
-bool silc_idcache_find_by_id(SilcIDCache cache, void *id, 
+bool silc_idcache_find_by_id(SilcIDCache cache, void *id,
 			     SilcIDCacheList *ret);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_find_by_id_one
  *
  * SYNOPSIS
  *
- *     bool silc_idcache_find_by_id_one(SilcIDCache cache, void *id, 
+ *     bool silc_idcache_find_by_id_one(SilcIDCache cache, void *id,
  *                                      SilcIDCacheEntry *ret);
  *
  * DESCRIPTION
@@ -343,17 +348,17 @@ bool silc_idcache_find_by_id(SilcIDCache cache, void *id,
  *    if the entry was found.
  *
  ***/
-bool silc_idcache_find_by_id_one(SilcIDCache cache, void *id, 
+bool silc_idcache_find_by_id_one(SilcIDCache cache, void *id,
 				 SilcIDCacheEntry *ret);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_find_by_id_one_ext
  *
  * SYNOPSIS
  *
- *    bool silc_idcache_find_by_id_one_ext(SilcIDCache cache, void *id, 
- *                                         SilcHashFunction hash, 
+ *    bool silc_idcache_find_by_id_one_ext(SilcIDCache cache, void *id,
+ *                                         SilcHashFunction hash,
  *                                         void *hash_context,
- *                                         SilcHashCompare compare, 
+ *                                         SilcHashCompare compare,
  *                                         void *compare_context,
  *                                         SilcIDCacheEntry *ret);
  *
@@ -365,10 +370,10 @@ bool silc_idcache_find_by_id_one(SilcIDCache cache, void *id,
  *    is used. Returns TRUE if the entry was found.
  *
  ***/
-bool silc_idcache_find_by_id_one_ext(SilcIDCache cache, void *id, 
-				     SilcHashFunction hash, 
+bool silc_idcache_find_by_id_one_ext(SilcIDCache cache, void *id,
+				     SilcHashFunction hash,
 				     void *hash_context,
-				     SilcHashCompare compare, 
+				     SilcHashCompare compare,
 				     void *compare_context,
 				     SilcIDCacheEntry *ret);
 
@@ -376,7 +381,7 @@ bool silc_idcache_find_by_id_one_ext(SilcIDCache cache, void *id,
  *
  * SYNOPSIS
  *
- *    bool silc_idcache_find_by_context(SilcIDCache cache, void *context, 
+ *    bool silc_idcache_find_by_context(SilcIDCache cache, void *context,
  *                                      SilcIDCacheEntry *ret);
  *
  * DESCRIPTION
@@ -385,14 +390,14 @@ bool silc_idcache_find_by_id_one_ext(SilcIDCache cache, void *id,
  *    entry was found.
  *
  ***/
-bool silc_idcache_find_by_context(SilcIDCache cache, void *context, 
+bool silc_idcache_find_by_context(SilcIDCache cache, void *context,
 				  SilcIDCacheEntry *ret);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_find_by_name
  *
  * SYNOPSIS
  *
- *    bool silc_idcache_find_by_name(SilcIDCache cache, char *name, 
+ *    bool silc_idcache_find_by_name(SilcIDCache cache, char *name,
  *                                   SilcIDCacheList *ret);
  *
  * DESCRIPTION
@@ -402,7 +407,7 @@ bool silc_idcache_find_by_context(SilcIDCache cache, void *context,
  *    TRUE if the entry was found. The caller must free the SIlcIDCacheList.
  *
  ***/
-bool silc_idcache_find_by_name(SilcIDCache cache, char *name, 
+bool silc_idcache_find_by_name(SilcIDCache cache, char *name,
 			       SilcIDCacheList *ret);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_find_by_name_one
@@ -440,7 +445,7 @@ int silc_idcache_list_count(SilcIDCacheList list);
  *
  * SYNOPSIS
  *
- *    bool silc_idcache_list_first(SilcIDCacheList list, 
+ *    bool silc_idcache_list_first(SilcIDCacheList list,
  *                                 SilcIDCacheEntry *ret);
  *
  * DESCRIPTION
