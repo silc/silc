@@ -19,7 +19,7 @@ bf(Silc) supports sending of practically any kind of messages in addition
 of normal text messages in the SILC network.  The session to SILC server
 is secured with session key, channel messages are protected with channel
 key and private messages with session keys.  It is also possible to use
-private channel keys and private message keys in addition of channel
+private channel keys and private message keys in addition of server
 generated keys.
 
 bf(Silc) supports em(passphrase) and public key authentication based on
@@ -171,7 +171,7 @@ Homepage: bf(http://silcnet.org)
 
 SILC Client is based on Irssi IRC client: bf(http://irssi.org)
 
-User's guide: bf(http://www.silcnet.org/docs/)
+User's guide: bf(http://silcnet.org/docs/)
 
 
 manpageauthor()
