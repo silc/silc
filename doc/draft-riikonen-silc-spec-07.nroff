@@ -2159,7 +2159,7 @@ mandatory cipher and HMAC in private message encryption.
 
 Channel messages are delivered to group of users.  The group forms a
 channel and all clients on the channel receives messages sent to the
-channel.  The Source ID in the SILC Packet Header MUST be the Client ID
+channel.  The Source ID in the SILC Packet Header MUST be the ID
 of the sender of the message.
 
 Channel messages are destined to channel by specifying the Channel ID
