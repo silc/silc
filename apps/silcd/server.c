@@ -588,7 +588,7 @@ void silc_server_start_key_exchange(SilcServer server,
 
   /* Cancel any possible retry timeouts */
   silc_schedule_task_del_by_callback(server->schedule,
-				     silc_server_connect_router);
+				     silc_server_connect_to_router_retry);
 
   /* Set socket options */
   silc_net_set_socket_nonblock(sock);
@@ -724,10 +724,10 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   silc_server_config_ref(&sconn->conn, server->config, (void *)rconn);
 
   /* Connect to remote host */
-  sock = silc_net_create_connection(server->config->server_info->primary == NULL ? NULL :
-		 server->config->server_info->primary->server_ip,
-		 sconn->remote_port,
-		 sconn->remote_host);
+  sock = silc_net_create_connection(
+		 (!server->config->server_info->primary ? NULL :
+		  server->config->server_info->primary->server_ip),
+		 sconn->remote_port, sconn->remote_host);
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not connect to router %s:%d",
 		    sconn->remote_host, sconn->remote_port));
@@ -1113,6 +1113,13 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       /* Announce our clients and channels to the router */
       silc_server_announce_clients(server, 0, server->router->connection);
       silc_server_announce_channels(server, 0, server->router->connection);
+
+#ifdef BACKUP_SINGLE_ROUTER
+      /* If we are backup router then this primary router is whom we are
+	 backing up. */
+      if (server->server_type == SILC_BACKUP_ROUTER)
+	silc_server_backup_add(server, server->id_entry, sock->ip, 0, TRUE);
+#endif /* BACKUP_SINGLE_ROUTER */
     }
   } else {
     /* Add this server to be our backup router */
@@ -1644,7 +1651,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
       /* Check whether this connection is to be our primary router connection
 	 if we do not already have the primary route. */
-      if (server->standalone && ctx->conn_type == SILC_SOCKET_TYPE_ROUTER) {
+      if (!backup_router &&
+	  server->standalone && ctx->conn_type == SILC_SOCKET_TYPE_ROUTER) {
 	if (silc_server_config_is_primary_route(server) && !initiator)
 	  break;
 
@@ -2702,10 +2710,21 @@ void silc_server_free_sock_user_data(SilcServer server,
 			 backup_router->server_name));
 	  SILC_LOG_DEBUG(("New primary router is backup router %s",
 			  backup_router->server_name));
-	  server->id_entry->router = backup_router;
-	  server->router = backup_router;
-	  server->router_connect = time(0);
-	  server->backup_primary = TRUE;
+#ifdef BACKUP_SINGLE_ROUTER
+	  if (server->id_entry != backup_router) {
+#endif /* BACKUP_SINGLE_ROUTER */
+	    server->id_entry->router = backup_router;
+	    server->router = backup_router;
+	    server->router_connect = time(0);
+	    server->backup_primary = TRUE;
+#ifdef BACKUP_SINGLE_ROUTER
+	  } else {
+	    server->id_entry->router = NULL;
+	    server->router = NULL;
+	    server->standalone = TRUE;
+	  }
+#endif /* BACKUP_SINGLE_ROUTER */
+
 	  if (server->server_type == SILC_BACKUP_ROUTER) {
 	    server->server_type = SILC_ROUTER;
 
@@ -3085,6 +3104,22 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 				 silc_id_get_len(entry->id, SILC_ID_CHANNEL),
 				 entry->mode);
 
+  /* Distribute to backup routers */
+  if (broadcast && server->server_type == SILC_ROUTER) {
+    SilcBuffer packet;
+    unsigned char *cid;
+    SilcUInt32 name_len = strlen(channel_name);
+    SilcUInt32 channel_id_len = silc_id_get_len(entry->id, SILC_ID_CHANNEL);
+    cid = silc_id_id2str(entry->id, SILC_ID_CHANNEL);
+
+    packet = silc_channel_payload_encode(channel_name, name_len,
+					 cid, channel_id_len, entry->mode);
+    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_CHANNEL, 0,
+			    packet->data, packet->len, FALSE, TRUE);
+    silc_free(cid);
+    silc_buffer_free(packet);
+  }
+
   server->stat.my_channels++;
 
   if (server->server_type == SILC_ROUTER)
@@ -3151,6 +3186,22 @@ silc_server_create_new_channel_with_id(SilcServer server,
 				 channel_name, entry->id,
 				 silc_id_get_len(entry->id, SILC_ID_CHANNEL),
 				 entry->mode);
+
+  /* Distribute to backup routers */
+  if (broadcast && server->server_type == SILC_ROUTER) {
+    SilcBuffer packet;
+    unsigned char *cid;
+    SilcUInt32 name_len = strlen(channel_name);
+    SilcUInt32 channel_id_len = silc_id_get_len(entry->id, SILC_ID_CHANNEL);
+    cid = silc_id_id2str(entry->id, SILC_ID_CHANNEL);
+
+    packet = silc_channel_payload_encode(channel_name, name_len,
+					 cid, channel_id_len, entry->mode);
+    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_CHANNEL, 0,
+			    packet->data, packet->len, FALSE, TRUE);
+    silc_free(cid);
+    silc_buffer_free(packet);
+  }
 
   server->stat.my_channels++;
 

@@ -5110,6 +5110,17 @@ SILC_SERVER_CMD_FUNC(watch)
       silc_free(tmp);
   }
 
+  /* Distribute the watch list to backup routers too */
+  if (server->backup) {
+    SilcBuffer tmpbuf;
+    silc_command_set_ident(cmd->payload, ++server->cmd_ident);
+    tmpbuf = silc_command_payload_encode_payload(cmd->payload);
+    silc_server_backup_send(server, NULL, SILC_PACKET_COMMAND,
+			    cmd->packet->flags, tmpbuf->data, tmpbuf->len,
+			    FALSE, TRUE);
+    silc_buffer_free(tmpbuf);
+  }
+
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
 					SILC_STATUS_OK, 0);
 

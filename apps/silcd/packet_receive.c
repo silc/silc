@@ -86,7 +86,7 @@ void silc_server_notify(SilcServer server,
      we will broadcast it. The sending socket really cannot be router or
      the router is buggy. If this packet is coming from router then it must
      have the broadcast flag set already and we won't do anything. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
+  if (server->server_type == SILC_ROUTER &&
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received Notify packet"));
@@ -97,12 +97,13 @@ void silc_server_notify(SilcServer server,
       if (!channel_id)
 	goto out;
 
-      silc_server_packet_send_dest(server, server->router->connection, 
-				   packet->type,
-				   packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-				   channel_id, SILC_ID_CHANNEL,
-				   packet->buffer->data, packet->buffer->len, 
-				   FALSE);
+      if (!server->standalone)
+	silc_server_packet_send_dest(server, server->router->connection, 
+				     packet->type, packet->flags | 
+				     SILC_PACKET_FLAG_BROADCAST, 
+				     channel_id, SILC_ID_CHANNEL,
+				     packet->buffer->data, 
+				     packet->buffer->len, FALSE);
       silc_server_backup_send_dest(server, (SilcServerEntry)sock->user_data, 
 				   packet->type, packet->flags,
 				   channel_id, SILC_ID_CHANNEL,
@@ -110,11 +111,12 @@ void silc_server_notify(SilcServer server,
 				   FALSE, TRUE);
     } else {
       /* Packet is destined to client or server */
-      silc_server_packet_send(server, server->router->connection, 
-			      packet->type,
-			      packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-			      packet->buffer->data, packet->buffer->len, 
-			      FALSE);
+      if (!server->standalone)
+	silc_server_packet_send(server, server->router->connection, 
+				packet->type,
+				packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+				packet->buffer->data, packet->buffer->len, 
+				FALSE);
       silc_server_backup_send(server, (SilcServerEntry)sock->user_data,
 			      packet->type, packet->flags,
 			      packet->buffer->data, packet->buffer->len, 
@@ -2140,7 +2142,15 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 			    server->router->connection, 
 			    server->server_type == SILC_ROUTER ? TRUE : FALSE,
 			    client->id, SILC_ID_CLIENT, id_len);
-  
+
+  /* Distribute to backup routers */
+  if (server->server_type == SILC_ROUTER) {
+    SilcBuffer idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_ID, 0,
+			    idp->data, idp->len, FALSE, TRUE);
+    silc_buffer_free(idp);
+  }
+
   /* Send the new client ID to the client. */
   silc_server_send_new_id(server, sock, FALSE, client->id, SILC_ID_CLIENT,
 			  silc_id_get_len(client->id, SILC_ID_CLIENT));
@@ -2293,8 +2303,16 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 			    TRUE, new_server->id, SILC_ID_SERVER, 
 			    silc_id_get_len(server_id, SILC_ID_SERVER));
 
-  if (server->server_type == SILC_ROUTER)
+  if (server->server_type == SILC_ROUTER) {
+    /* Distribute to backup routers */
+    SilcBuffer idp = silc_id_payload_encode(new_server->id, SILC_ID_SERVER);
+    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_ID, 0,
+			    idp->data, idp->len, FALSE, TRUE);
+    silc_buffer_free(idp);
+
+    /* Statistics */
     server->stat.cell_servers++;
+  }
 
   /* Check whether this router connection has been replaced by an
      backup router. If it has been then we'll disable the server and will
@@ -2513,14 +2531,15 @@ static void silc_server_new_id_real(SilcServer server,
 
   /* If the sender of this packet is server and we are router we need to
      broadcast this packet to other routers in the network. */
-  if (broadcast && !server->standalone && server->server_type == SILC_ROUTER &&
+  if (broadcast && server->server_type == SILC_ROUTER &&
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received New ID packet"));
-    silc_server_packet_send(server, server->router->connection,
-			    packet->type, 
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			    buffer->data, buffer->len, FALSE);
+    if (!server->standalone)
+      silc_server_packet_send(server, server->router->connection,
+			      packet->type, 
+			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			      buffer->data, buffer->len, FALSE);
     silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
@@ -2560,14 +2579,16 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
   /* If the sender of this packet is server and we are router we need to
      broadcast this packet to other routers in the network. Broadcast
      this list packet instead of multiple New ID packets. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
+  if (server->server_type == SILC_ROUTER &&
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received New ID List packet"));
-    silc_server_packet_send(server, server->router->connection,
-			    packet->type, 
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			    packet->buffer->data, packet->buffer->len, FALSE);
+    if (!server->standalone)
+      silc_server_packet_send(server, server->router->connection,
+			      packet->type, 
+			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			      packet->buffer->data, 
+			      packet->buffer->len, FALSE);
     silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
@@ -2858,14 +2879,16 @@ void silc_server_new_channel_list(SilcServer server,
   /* If the sender of this packet is server and we are router we need to
      broadcast this packet to other routers in the network. Broadcast
      this list packet instead of multiple New Channel packets. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
+  if (server->server_type == SILC_ROUTER &&
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received New Channel List packet"));
-    silc_server_packet_send(server, server->router->connection,
-			    packet->type, 
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			    packet->buffer->data, packet->buffer->len, FALSE);
+    if (!server->standalone)
+      silc_server_packet_send(server, server->router->connection,
+			      packet->type, 
+			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			      packet->buffer->data, 
+			      packet->buffer->len, FALSE);
     silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
@@ -3565,14 +3588,15 @@ void silc_server_resume_client(SilcServer server,
 
     /* If the sender of this packet is server and we are router we need to
        broadcast this packet to other routers in the network. */
-    if (!server->standalone && server->server_type == SILC_ROUTER &&
+    if (server->server_type == SILC_ROUTER &&
 	sock->type == SILC_SOCKET_TYPE_SERVER &&
 	!(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
       SILC_LOG_DEBUG(("Broadcasting received Resume Client packet"));
-      silc_server_packet_send(server, server->router->connection,
-			      packet->type, 
-			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			      buffer->data, buffer->len, FALSE);
+      if (!server->standalone)
+	silc_server_packet_send(server, server->router->connection,
+				packet->type, 
+				packet->flags | SILC_PACKET_FLAG_BROADCAST,
+				buffer->data, buffer->len, FALSE);
       silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
 			      packet->type, packet->flags,
 			      packet->buffer->data, packet->buffer->len, 

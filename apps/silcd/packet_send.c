@@ -1656,14 +1656,6 @@ void silc_server_send_new_id(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_NEW_ID, 
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
 			  idp->data, idp->len, FALSE);
-
-  /* Send to backup routers if this is being broadcasted to primary
-     router. */
-  if (server->router && server->router->connection &&
-      sock == server->router->connection && broadcast)
-    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_ID, 0,
-			    idp->data, idp->len, FALSE, TRUE);
-
   silc_buffer_free(idp);
 }
 
@@ -1696,14 +1688,6 @@ void silc_server_send_new_channel(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_NEW_CHANNEL, 
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
 			  packet->data, packet->len, FALSE);
-
-  /* Send to backup routers if this is being broadcasted to primary
-     router. */
-  if (server->server_type == SILC_ROUTER &&
-      server->router && server->router->connection &&
-      sock == server->router->connection && broadcast)
-    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_CHANNEL, 0,
-			    packet->data, packet->len, FALSE, TRUE);
 
   silc_free(cid);
   silc_buffer_free(packet);

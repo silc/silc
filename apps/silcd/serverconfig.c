@@ -967,6 +967,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
     CONFIG_IS_DOUBLE(tmp->backup_replace_ip);
     tmp->backup_replace_ip = (*(char *)val ? strdup((char *) val) :
 			      strdup("*"));
+    tmp->backup_router = TRUE;
   }
   else if (!strcmp(name, "backupport")) {
     int port = *(int *)val;
