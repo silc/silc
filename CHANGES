@@ -7,6 +7,15 @@ Sat Jul  7 14:40:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed some memory leaks around the server code.
 
+	* Rewrote the silc_server_get_users_on_channel to support IPv6
+	  based Client ID's.  Affected file silcd/server.c.
+
+	* Defined the SILC_MESSAGE_FLAG_SIGNED to the protocol
+	  specification.  However, a separate document must be written
+	  to define the detailed signing procedure and the payload
+	  associated with the flag.  Defined the flag to the
+	  lib/silccore/silcchannel.h as well.
+
 Fri Jul  6 18:26:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the dynamic tables to static size tables in the
