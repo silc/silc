@@ -56,7 +56,6 @@ AC_DEFINE(SILC_DIST_DEFINE)
 
 __SILC_HAVE_PTHREAD=""
 __SILC_HAVE_SIM=""
-__SILC_HAVE_LIBIDN=""
 __SILC_ENABLE_DEBUG=""
 
 #
@@ -681,146 +680,6 @@ if test x$mp_gmp = xfalse; then
 fi
 
 
-# GNU Libidn (for stringprep) support
-#
-check_libidn=true
-has_libidn=false
-SAVE_LIBS="$LIBS"
-SAVE_CFLAGS="$CFLAGS"
-SAVE_LDFLAGS="$LDFLAGS"
-SAVE_CPPFLAGS="$CPPFLAGS"
-AC_MSG_CHECKING(whether to implicit search for libidn)
-AC_ARG_WITH(libidn,
-  [[  --with-libidn[=DIR]     use libidn [search in DIR/include and DIR/lib]]],
-  [
-    case "${withval}" in
-      no)
-        AC_MSG_RESULT(no)
-        AC_CHECK_HEADERS(stringprep.h,
-          [
-            AC_CHECK_FUNC(stringprep, has_libidn=true)
-          ])
-        check_libidn=false
-        ;;
-      *)
-        AC_MSG_RESULT(yes)
-        if test -d $withval/include; then
-          CPPFLAGS="$CPPFLAGS -I$withval/include"
-          CFLAGS="$CFLAGS -I$withval/include"
-        fi
-        if test -d $withval/lib; then
-          LDFLAGS="$LDFLAGS -L$withval/lib"
-        fi
-        ;;
-    esac
-  ],
-  [
-    AC_MSG_RESULT(no)
-    AC_CHECK_HEADERS(stringprep.h,
-      [
-        AC_CHECK_FUNCS(stringprep,
-          [
-            has_libidn=true
-            check_libidn=false
-          ])
-      ])
-  ])
-
-if test x$check_libidn = xtrue; then
-  AC_MSG_RESULT(Searching for libidn...)
-
-  AC_CHECK_HEADERS(stringprep.h,
-    [
-      LIBS="$LIBS -lidn"
-      AC_MSG_CHECKING(for stringprep in -lidn)
-      AC_TRY_LINK(
-        [
-          #include <stdlib.h>
-          #include <stringprep.h>
-        ],
-        [
-	  (void)stringprep_locale_charset();
-        ],
-        [
-          echo "yes"
-          AC_DEFINE(HAVE_LIBIDN, 1, [Define if you have the stringprep() function.])
-          has_libidn=true
-          check_libidn=false
-        ],
-        [
-          echo "no"
-          LIBS="$SAVE_LIBS"
-          CFLAGS="$SAVE_CFLAGS"
-          LDFLAGS="$SAVE_LDFLAGS"
-          CPPFLAGS="$SAVE_CPPFLAGS"
-        ])
-     ])
-fi
-
-if test x$check_libidn = xtrue; then
-  # search for idn library..
-  SAVE_LIBS="$LIBS"
-  SAVE_CFLAGS="$CFLAGS"
-  SAVE_LDFLAGS="$LDFLAGS"
-  SAVE_CPPFLAGS="$CPPFLAGS"
-
-  for dir in `echo "/usr/local /usr/pkg /usr/contrib"`; do
-    if test x$has_libidn = xfalse; then
-      AC_MSG_RESULT(searching in $dir...)
-
-      if test -d $dir/include; then
-        CPPFLAGS="$CPPFLAGS -I$dir/include"
-        CFLAGS="$CFLAGS -I$dir/include"
-      fi
-      if test -d $dir/lib; then
-        LDFLAGS="$LDFLAGS -L$dir/lib"
-      fi
-
-      # XXX
-      unset ac_cv_header__stringprep_h_ ac_cv_header_stringprep_h || true
-
-      AC_CHECK_HEADERS(stringprep.h,
-        [
-          LIBS="$LIBS -lidn"
-          AC_MSG_CHECKING(for stringprep in -lidn)
-          AC_TRY_LINK(
-            [
-              #include <stdlib.h>
-              #include <stringprep.h>
-            ],
-            [
-	      (void)stringprep_locale_charset();
-            ],
-            [
-              echo "yes"
-              has_libidn=true
-              AC_DEFINE(HAVE_LIBIDN, 1, [Define if you have the stringprep() function.])
-            ],
-            [
-              echo "no"
-              has_libidn=false
-
-              LIBS="$SAVE_LIBS"
-              CFLAGS="$SAVE_CFLAGS"
-              LDFLAGS="$SAVE_LDFLAGS"
-              CPPFLAGS="$SAVE_CPPFLAGS"
-            ])
-         ],
-         [
-           CFLAGS="$SAVE_CFLAGS"
-           LDFLAGS="$SAVE_LDFLAGS"
-           CPPFLAGS="$SAVE_CPPFLAGS"
-         ])
-      fi
-    done
-fi
-
-if test x$has_libidn = xtrue; then
-  __SILC_HAVE_LIBIDN="#define __SILC_HAVE_LIBIDN 1"
-else
-  AC_MSG_ERROR(Could not locate libidn.  GNU Libidn is required to compile SILC)
-fi
-
 # iconv support
 #
 check_iconv=true
@@ -1251,7 +1110,6 @@ AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
 
 AC_SUBST(__SILC_HAVE_PTHREAD)
 AC_SUBST(__SILC_HAVE_SIM)
-AC_SUBST(__SILC_HAVE_LIBIDN)
 AC_SUBST(__SILC_ENABLE_DEBUG)
 
 #
@@ -1357,15 +1215,9 @@ if test x$has_iconv = xfalse; then
 else
   iconv_support="yes"
 fi
-if test x$has_libidn = xfalse; then
-  libidn_support="no"
-else
-  libidn_support="yes"
-fi
 echo " SIM support ...................: $sim_support"
 echo " IPv6 support ..................: $summary_ipv6"
 echo " Iconv support .................: $iconv_support"
-echo " Idn support ...................: $libidn_support"
 if test x$want_asm = xfalse; then
   summary_asm="no"
 else

@@ -593,3 +593,6 @@ EXPORTS
 	silc_hash_babbleprint @ 918 ;
 	silc_get_real_name @ 919 ;
 	silc_get_username @ 920 ;
+	silc_utf8_strcasecmp @ 921 ;
+	silc_utf8_strncasecmp @ 922 ;
+	silc_stringprep @ 923;
