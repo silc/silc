@@ -3005,7 +3005,7 @@ bool silc_server_create_channel_key(SilcServer server,
     channel->rekey->task = 
       silc_schedule_task_add(server->schedule, 0, 
 			     silc_server_channel_key_rekey,
-			     (void *)channel->rekey, 3600, 0,
+			     (void *)channel->rekey, 36, 0,
 			     SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
   }
@@ -3117,7 +3117,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
     channel->rekey->task = 
       silc_schedule_task_add(server->schedule, 0, 
 			     silc_server_channel_key_rekey,
-			     (void *)channel->rekey, 3600, 0,
+			     (void *)channel->rekey, 36, 0,
 			     SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
   }

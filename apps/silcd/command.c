@@ -1083,53 +1083,36 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
 {
   SilcServer server = cmd->server;
   char *tmp;
-  int i, k, count = 0, len;
+  int i, count = 0, len;
   SilcBuffer packet, idp;
   SilcClientEntry entry = NULL;
   SilcCommandStatus status;
   uint16 ident = silc_command_get_ident(cmd->payload);
+  char found = FALSE;
   char nh[256], uh[256];
-  int valid_count;
 
   status = SILC_STATUS_OK;
-
-  /* Process only entries that are not registered anymore. */
-  valid_count = 0;
-  for (i = 0; i < clients_count; i++) {
-    if (clients[i]->data.status & SILC_IDLIST_STATUS_REGISTERED)
-      clients[i] = NULL;
-    else
-      valid_count++;
-  }
-
-  if (!valid_count) {
-    /* No valid entries found at all, just send error */
-    unsigned char *tmp;
-    
-    tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-    if (tmp)
-      silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
-					   SILC_STATUS_ERR_NO_SUCH_NICK,
-					   3, tmp, strlen(tmp));
-    return;
-  }
-
-  if (valid_count > 1)
+  if (clients_count > 1)
     status = SILC_STATUS_LIST_START;
 
-  for (i = 0, k = 0; i < clients_count; i++) {
+  for (i = 0; i < clients_count; i++) {
     entry = clients[i];
-    if (!entry)
+
+    /* We will take only clients that are not valid anymore. They are the
+       ones that are not registered anymore but still have a ID. They
+       have disconnected us, and thus valid for WHOWAS. */
+    if (entry->data.status & SILC_IDLIST_STATUS_REGISTERED || !entry->id)
       continue;
 
-    if (k >= 1)
-      status = SILC_STATUS_LIST_ITEM;
-    if (valid_count > 1 && k == valid_count - 1)
-      status = SILC_STATUS_LIST_END;
-    if (count && k - 1 == count)
-      status = SILC_STATUS_LIST_END;
-    if (count && k - 1 > count)
+    if (count && i - 1 == count)
       break;
+
+    found = TRUE;
+
+    if (clients_count > 2)
+      status = SILC_STATUS_LIST_ITEM;
+    if (clients_count > 1 && i == clients_count - 1)
+      status = SILC_STATUS_LIST_END;
 
     /* Send WHOWAS reply */
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
@@ -1170,9 +1153,13 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
     
     silc_buffer_free(packet);
     silc_buffer_free(idp);
-
-    k++;
   }
+
+  if (found == FALSE && entry)
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
+					 SILC_STATUS_ERR_NO_SUCH_NICK,
+					 3, entry->nickname, 
+					 strlen(entry->nickname));
 }
 
 static int
@@ -3410,7 +3397,6 @@ SILC_SERVER_CMD_FUNC(join)
 				      silc_server_command_dup(cmd));
 	  cmd->pending = TRUE;
           silc_command_set_ident(cmd->payload, old_ident);
-	  silc_buffer_free(tmpbuf);
 	  goto out;
 	}
 	
