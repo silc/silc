@@ -312,13 +312,13 @@ bool silc_map_writehtml_index(SilcMap map)
   fprintf(fp, "<table cellspacing=\"0\" cellpadding=\"0\" "
 	  "class=\"%s\" border=\"0\">\n", class);
   fprintf(fp,
-	  "<tr class=\"%s\">\n"
+	  "<tr>\n"
 	  "<td align=\"center\" class=\"%s\"><b>Hostname</b></td>\n"
 	  "<td align=\"center\" class=\"%s\"><b>IPv4 Address</b></td>\n"
 	  "<td align=\"center\" class=\"%s\"><b>Port</b></td>\n"
 	  "<td align=\"center\" class=\"%s\"><b>Country</b></td>\n"
 	  "<td align=\"center\" class=\"%s\"><b>Oper</b></td>\n"
-	  "</tr>\n", class, class, class, class, class, class);
+	  "</tr>\n", class, class, class, class, class);
 
   silc_dlist_start(map->conns);
   while ((mapconn = silc_dlist_get(map->conns)) != SILC_LIST_END) {
@@ -329,13 +329,13 @@ bool silc_map_writehtml_index(SilcMap map)
     ip = silc_dlist_get(mapconn->ips);
 
     fprintf(fp,
-	    "<tr class=\"%s\">\n"
+	    "<tr>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;<a href=\"%s_%d.html\">%s</a></td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%s</td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%d</td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%s</td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%s</td>\n"
-	    "</tr>\n", class, class, hostname, mapconn->port,
+	    "</tr>\n", class, hostname, mapconn->port,
 	    hostname, class, ip, class, mapconn->port, class,
 	    mapconn->country, class, mapconn->admin);
   }
