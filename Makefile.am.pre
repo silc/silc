@@ -44,7 +44,7 @@ modulesdir = $(DESTDIR)$(silc_modulesdir)
 helpdir = $(DESTDIR)$(silc_helpdir)
 docdir = $(DESTDIR)$(silc_docdir)
 logsdir = $(DESTDIR)$(silc_logsdir)
-mansdir = $(DESTDIR)$(mandir)
+mandir = $(DESTDIR)@mandir@
 
 install-dirs:
 	-mkdir -p $(etcdir)
@@ -53,12 +53,12 @@ install-dirs:
 
 install-dirs-client: install-dirs
 	-mkdir -p $(helpdir)
-	-mkdir -p $(mansdir)/man1
+	-mkdir -p $(mandir)/man1
 
 install-dirs-server: install-dirs
 	-mkdir -p $(logsdir)
-	-mkdir -p $(mansdir)/man5
-	-mkdir -p $(mansdir)/man8
+	-mkdir -p $(mandir)/man5
+	-mkdir -p $(mandir)/man8
 
 doc-install:
 	-$(INSTALL_DATA) $(srcdir)/doc/CodingStyle $(docdir)/
@@ -74,16 +74,16 @@ doc-install:
 doc-install-client: doc-install
 	$(INSTALL_DATA) $(srcdir)/irssi/silc.conf $(docdir)/example_silc.conf
 	-@if test -f $(srcdir)/doc/silc.1 ; then \
-	 $(INSTALL_DATA) $(srcdir)/doc/silc.1 $(mansdir)/man1; \
+	 $(INSTALL_DATA) $(srcdir)/doc/silc.1 $(mandir)/man1; \
 	fi
 
 doc-install-server: doc-install
 	-$(INSTALL_DATA) $(srcdir)/doc/example_silcd.conf $(docdir)/
 	-@if test -f $(srcdir)/doc/silcd.8 ; then \
-	 $(INSTALL_DATA) $(srcdir)/doc/silcd.8 $(mansdir)/man8; \
+	 $(INSTALL_DATA) $(srcdir)/doc/silcd.8 $(mandir)/man8; \
 	fi
 	-@if test -f $(srcdir)/doc/silcd.conf.5 ; then \
-	 $(INSTALL_DATA) $(srcdir)/doc/silcd.conf.5 $(mansdir)/man5; \
+	 $(INSTALL_DATA) $(srcdir)/doc/silcd.conf.5 $(mandir)/man5; \
 	fi
 
 etc-install-client:
