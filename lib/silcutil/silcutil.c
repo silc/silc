@@ -417,6 +417,12 @@ bool silc_parse_userfqdn(const char *string, char **left, char **right)
   if (!string)
     return FALSE;
 
+  if (string[0] == '@') {
+    if (left)
+      *left = strdup(string);
+    return TRUE;
+  }
+
   if (strchr(string, '@')) {
     tlen = strcspn(string, "@");
     
