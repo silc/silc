@@ -5,13 +5,14 @@
 @LINK=silcske_status.html:SILC SKE Status
 -->
 
-<FONT SIZE="+3">SILC Key Exchange Library</FONT><BR><BR>
-<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
-<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
+<BIG><B>SILC Key Exchange Library</B></BIG>
+<BR /><BR />
+<B>Introduction</B>
+
+<BR /><BR />
 SILC Key Exchange (SKE) Library, is an implementation of the SKE protocol.
 It provides the key exchange protocol for all SILC applications.
-</FONT>
-</PRE>
 
+<BR /><BR />
 @LINKS@
 

@@ -13,14 +13,15 @@
 @LINK=silcprivate.html:SILC Private API
 -->
 
-<FONT SIZE="+3">SILC Core Library</FONT><BR><BR>
-<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
-<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
+<BIG><B>SILC Core Library</B></BIG>
+<BR /><BR />
+<B>Introduction</B>
+
+<BR /><BR />
 SILC Core Library includes all the core components of the SILC Protocol.
 It provides routines to encode and decode all SILC packet payloads defined
 in the protocol specification.  It provides packet assembling and parsing
 routines, and routines for sending private message and channel messages.
-</FONT>
-</PRE>
 
+<BR /><BR />
 @LINKS@

@@ -1,7 +1,7 @@
-<font size="+2">Using SILC Client Library</font>
+<big><b>Using SILC Client Library</b></big>
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.0 Introduction</b>
+<b>Introduction</b>
 
 <br />&nbsp;<br />
 SILC Client library is a full featured SILC Client protocol implementation.
@@ -26,7 +26,7 @@ for sending channel and private messages, client and channel retrieval
 and other utility functions.
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.0.1 Including Library Headers</b>
+<b>Including Library Headers</b>
 
 <br />&nbsp;<br />
 Your application must include the following includes in your sources to 
@@ -52,7 +52,7 @@ extern "C" {<br />
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.1 Creating Client</b>
+<b>Creating Client</b>
 
 <br />&nbsp;<br />
 The client is context or entity based, so several client entitites can
@@ -106,7 +106,7 @@ it and use it directly in their application.
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.2 Initializing the Client</b>
+<b>Initializing the Client</b>
 
 <br />&nbsp;<br />
 The client must be initialized before running.  However, there are also
@@ -144,7 +144,7 @@ function.
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.3 Running the Client</b>
+<b>Running the Client</b>
 
 <br />&nbsp;<br />
 The client is run by calling silc_client_run.  The function will call
@@ -162,7 +162,7 @@ should initialize the user interface.
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.3.1 Running the Client in GUI application</b>
+<b>Running the Client in GUI application</b>
 
 <br />&nbsp;<br />
 Many GUI applications has their own main loop or event loop, which they 
@@ -193,7 +193,7 @@ also on Win32 systems it is possible.
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.3.1.1 Running Client in GTK--</b>
+<b>Running Client in GTK--</b>
 
 <br />&nbsp;<br />
 Here is a short example how to run the SILC Client libary under the 
@@ -230,7 +230,7 @@ Client library work on the background of the GUI application.
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.4 Creating Connection to Server</b>
+<b>Creating Connection to Server</b>
 
 <br />&nbsp;<br />
 Connection to remote SILC server is done by calling:
@@ -256,7 +256,7 @@ application (window or something else).
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.4.1 Using Own Connecting</b>
+<b>Using Own Connecting</b>
 
 <br />&nbsp;<br />
 Application might not want to use silc_client_connect_to_server function
@@ -290,7 +290,7 @@ process manually.
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>1.5 Example Client</b>
+<b>Example Client</b>
 
 <br />&nbsp;<br />
 This section includes an example SILC client implementation in pseudo-like

@@ -19,16 +19,17 @@
 @LINK=silcdlist.html:SILC Dynamic List API
 -->
 
-<FONT SIZE="+3">SILC Utility Library</FONT><BR><BR>
-<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
-<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
+<BIG><B>SILC Utility Library</B></BIG>
+<BR /><BR />
+<B>Introduction</B>
+
+<BR /><BR />
 SILC Utility Library provides various utility routines for the applications.
 For example, it provides the application's main loop, called the SILC
 Scheduler.  It can handle all kinds of tasks, like socket connections and
 timeout tasks.  The SILC Utility Library also provides various buffer
 management routines.  All of these routines work on multiple platforms
 such as Unix and WIN32.
-</FONT>
-</PRE>
 
+<BR /><BR />
 @LINKS@

@@ -8,15 +8,16 @@
 @LINK=silcrng.html:SILC RNG API
 -->
 
-<FONT SIZE="+3">SILC Crypto Library</FONT><BR><BR>
-<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
-<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
+<BIG><B>SILC Crypto Library</B></BIG>
+<BR /><BR />
+<B>Introduction</B>
+
+<BR /><BR />
 SILC Crypto Library provides cryptographic routines for applications.  It
 provides interfaces for ciphers, hash functions, HMACs and public key
 cryptosystems.  In addition is also provides interfaces for cryptographically
 strong random number generator.
-</FONT>
-</PRE>
 
+<BR /><BR />
 @LINKS@
 

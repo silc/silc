@@ -5,13 +5,14 @@
 @LINK=silcmp.html:SILC MP API
 -->
 
-<FONT SIZE="+3">SILC Math Library</FONT><BR><BR>
-<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
-<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
+<BIG><B>SILC Math Library</B></BIG>
+<BR /><BR />
+<B>Introduction</B>
+
+<BR /><BR />
 SILC Math Library provides arbitrary precision artichmetic routines for
 public key cryptosystems, prime number generation routines, and other
 math utility functions for applications.
-</FONT>
-</PRE>
 
+<BR /><BR />
 @LINKS@

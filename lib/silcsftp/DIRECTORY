@@ -5,14 +5,15 @@
 @LINK=silcsftp_fs.html:SILC SFTP Filesystems
 -->
 
-<FONT SIZE="+3">SILC SFTP Library</FONT><BR><BR>
-<FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
-<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
+<BIG><B>SILC SFTP Library</B></BIG>
+<BR /><BR />
+<B>Introduction</B>
+
+<BR /><BR />
 SILC SFTP Library provides SSH File Transfer Protocol client and server
 implementation.  The SFTP protocol is the mandatory file transfer protocol
 used for file transfers in the SILC protocol.  The same interface is used
 for SFTP client and SFTP server.
-</FONT>
-</PRE>
 
+<BR /><BR />
 @LINKS@
