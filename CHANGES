@@ -1,3 +1,10 @@
+Sun Apr 29 23:17:50 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* New web pages in the http://silc.pspt.fi.  The pages was
+	  designed by salo.
+
+	* Updated CREDITS.
+
 Sun Apr 29 13:33:41 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented the [DenyConnectin] config section in the server.
