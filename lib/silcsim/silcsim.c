@@ -108,6 +108,7 @@ int silc_sim_close(SilcSimContext *sim)
 
   /* Close the library */
   dlclose(sim->handle);
+  sim->handle = NULL;
 
   return TRUE;
 }
