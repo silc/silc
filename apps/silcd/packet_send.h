@@ -143,5 +143,10 @@ void silc_server_send_remove_id(SilcServer server,
 				int broadcast,
 				void *id, unsigned int id_len,
 				SilcIdType id_type);
+void silc_server_send_set_mode(SilcServer server,
+			       SilcSocketConnection sock,
+			       int broadcast,
+			       int mode_type, unsigned int mode_mask,
+			       unsigned int argc, ...);
 
 #endif

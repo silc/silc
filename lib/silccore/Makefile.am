@@ -29,7 +29,8 @@ libsilccore_a_SOURCES = \
 	silcprotocol.c \
 	silcsockconn.c \
 	silcpayload.c \
-	silcnotify.c
+	silcnotify.c \
+	silcmode.c
 
 EXTRA_DIST = *.h
 

@@ -104,6 +104,7 @@ Table of Contents
       2.3.24 Replace ID Payload ................................. 36
       2.3.25 Remove ID Payload .................................. 37
       2.3.26 Remove Channel User Payload ........................ 38
+      2.3.27 Set Mode Payload ................................... XXX
   2.4 SILC ID Types ............................................. 39
   2.5 Packet Encryption And Decryption .......................... 39
       2.5.1 Normal Packet Encryption And Decryption ............. 39
@@ -148,6 +149,7 @@ Figure 19:  New Channel Payload
 Figure 20:  New Channel User Payload
 Figure 21:  Replace ID Payload
 Figure 22:  Remove Channel User Payload
+Figure 23:  Set Mode Payload
 
 
 .ti 0
@@ -751,8 +753,20 @@ List of SILC Packet types are defined as follows.
           as SILC Key Exchange protocol is executed.  This packet does
           not have a payload.
 
+     
+     31   SILC_PACKET_SET_MODE
 
-     31 - 199
+          This packet is used by servers and routers to inform each 
+          other about changed modes.  When channel's and client'c channel
+          mode is changed this packet is used to distribute the information
+          to all routers in the network.  Server can send this packet but
+          must not receive it.  Router can send and receive this packet.
+          Client must not send or receive this packet.
+
+          Payload of the packet:  See section 2.3.27 Set Mode Payload
+
+
+     32 - 199
 
          Currently undefined commands.
 
@@ -1184,7 +1198,7 @@ ID's sent in arguments are sent inside ID Payload.
 
       The <Client ID> is the client who changed the mode.  The <mode mask>
       is the new mode mask of the channel.  The <Target Client ID> is the
-      client whose mode was changed.
+      client which mode was changed.
 
 
 9     SILC_NOTIFY_TYPE_MOTD
@@ -2127,6 +2141,89 @@ o Channel ID Length (2 bytes) - Length of the Channel ID Data area
 
 o Channel ID Data (variable length) - The Channel ID of the channel
   the user has left.
+.in 3
+
+
+.ti 0
+2.3.27 Set Mode Payload
+
+Set Mode Payload is used by servers and routers to distribute to each 
+other the information about changed modes in the SILC network.  The 
+payload is sent when channel's or client's channel mode is changed.  
+Server can send this to router which will broadcast it further to other
+routers.  However, normal server must not reiceve this payload.  Client
+must not send or receive this payload.
+
+The payload may only be sent with SILC_PACKET_SET_MODE packet.
+It must not be sent in any other packet type.  Following diagram
+represents the Set Mode Payload.
+
+
+
+.in 5
+.nf
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           Mode Type           |        Payload Length         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           Mode Mask                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Argument Nums |
++-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 23:  Set Mode Payload
+
+
+.in 6
+o Mode type (2 bytes) - Indicates the type of the mode that was
+  changed.  Every type has arguments associated to the type which
+  are defined below.  The following types are defined:
+
+  0        SILC_MODE_TYPE_CHANNEL
+
+           Max Arguments:  2
+               Arguments:  (1) <Channel ID>  (2) <Client ID>
+
+           The <Channel ID> is the channel which mode was set and the
+           <Client ID> is the client who set it.
+
+
+  1        SILC_MODE_TYPE_UCHANNEL
+
+           Max Arguments:  3
+               Arguments:  (1) <Channel ID>        (2) <Client ID>  
+                           (3) <Target Client ID>
+
+           The <Channel ID> is the channel where the <Client ID> and
+           the <Target Client ID> is on.  The <Client ID> is the client
+           who set the <Target Client ID> mode.
+
+
+  2 -      RESERVED
+
+           Reserved types.
+
+
+  32768 -  Private range
+
+           Rest of the types are reserved for private use.
+
+o Payload Length (2 bytes) - Length of the entire Set Mode Payload
+  including any associated Argument Payloads.
+
+o Mode Mask (4 bytes) - Indicates the set mode mask.  This is
+  specified by the mode type.  See definitions of SILC_COMMAND_UMODE
+  for client modes, SILC_COMMAND_CMODE for channel modes and
+  SILC_COMMAND_CUMODE for client's channel modes in [SILC1].
+
+o Argument Nums (2 bytes) - Indicates the number of Argument
+  Payloads associated to this payload.  Mode types may define
+  arguments to be send along this payload.
 .in 3
 
 

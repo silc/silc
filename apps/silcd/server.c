@@ -1579,6 +1579,14 @@ void silc_server_packet_parse_type(SilcServer server,
     silc_server_remove_channel_user(server, sock, packet);
     break;
 
+  case SILC_PACKET_SET_MODE:
+    /*
+     * Received packet to set the mode of channel or client's channel mode.
+     */
+    SILC_LOG_DEBUG(("Set Mode packet"));
+    silc_server_set_mode(server, sock, packet);
+    break
+
   default:
     SILC_LOG_ERROR(("Incorrect packet type %d, packet dropped", type));
     break;
@@ -1908,6 +1916,9 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
 
   if (!sock)
     return;
+
+  if (sock->user_data)
+    silc_server_free_sock_user_data(sconn->server, sock);
 
   silc_server_disconnect_remote(sconn->server, sock, 
 				"Server closed connection: "

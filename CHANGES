@@ -1,3 +1,19 @@
+Sun Feb  4 13:18:32 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new packet type SILC_PACKET_SET_MODE that is used to
+	  distribute the information about changed modes (for clients,
+	  channels and clients channel modes) to all routers in the
+	  network.  Updated the protocol specification accordingly.
+
+	  Added functions into silcd/packet_send.c and 
+	  silcd/packet_receive.c: silc_server_send_set_mode, 
+	  silc_server_set_mode.
+
+	  Added new files silcmode.[ch] into lib/silccore that implements
+	  the encoding and decoding of Set Mode Payload.  Added new type
+	  SilcSetModePayload.  Moved the definitions of different modes
+	  from lib/silccore/silcchannel.h into lib/silccore/silcmode.h.
+
 Sat Feb  3 15:44:54 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Oops, a little mistake in server's connection authentication 

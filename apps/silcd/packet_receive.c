@@ -1338,3 +1338,166 @@ void silc_server_remove_id(SilcServer server,
  out:
   silc_id_payload_free(idp);
 }
+
+/* Processes received SET_MODE packet. The packet is used to distribute
+   the information about changed channel's or client's channel modes. */
+
+void silc_server_set_mode(SilcServer server,
+			  SilcSocketConnection sock,
+			  SilcPacketContext *packet)
+{
+  SilcSetModePayload payload = NULL;
+  SilcArgumentPayload args = NULL;
+  unsigned short mode_type;
+  unsigned int mode_mask;
+  unsigned char *tmp, *tmp2;
+  unsigned int tmp_len, tmp_len2;
+  unsigned char mode[4];
+  SilcClientID *client_id;
+  SilcChannelID *channel_id = NULL;
+  SilcClientEntry client;
+  SilcChannelEntry channel;
+  SilcChannelClientEntry chl;
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type == SILC_ID_CLIENT)
+    return;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* If we are router and this packet is not already broadcast packet
+     we will broadcast it. The sending socket really cannot be router or
+     the router is buggy. If this packet is coming from router then it must
+     have the broadcast flag set already and we won't do anything. */
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received Set Mode packet"));
+    silc_server_packet_send(server, server->router->connection, packet->type,
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+			    packet->buffer->data, packet->buffer->len, FALSE);
+  }
+
+  /* Parse Set Mode payload */
+  payload = silc_set_mode_payload_parse(packet->buffer);
+  if (!payload)
+    return;
+
+  mode_type = silc_set_mode_get_type(payload);
+  args = silc_set_mode_get_args(payload);
+  if (!args)
+    goto out;
+
+  mode_mask = silc_set_mode_get_mode(payload);
+  SILC_PUT32_MSB(mode_mask, mode);
+
+  switch (mode_type) {
+  case SILC_MODE_TYPE_CHANNEL:
+    /* Get Channel ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel)
+	goto out;
+    }
+
+    /* Get Client ID payload */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    /* Send CMODE_CHANGE notify to local channel */
+    silc_server_send_notify_to_channel(server, sock, channel, FALSE,
+				       SILC_NOTIFY_TYPE_CMODE_CHANGE, 
+				       2, tmp, tmp_len,
+				       mode, sizeof(mode));
+
+    /* Change the mode */
+    channel->mode = mode_mask;
+    break;
+
+  case SILC_MODE_TYPE_UCHANNEL:
+    /* Get Channel ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel)
+	goto out;
+    }
+
+    /* Get Client ID payload */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    /* Get target Client ID */
+    tmp2 = silc_argument_get_arg_type(args, 3, &tmp_len2);
+    if (!tmp2)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp2, tmp_len2);
+    if (!client_id)
+      goto out;
+
+    /* Get target client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
+    /* Send CUMODE_CHANGE notify to local channel */
+    silc_server_send_notify_to_channel(server, sock, channel, FALSE,
+				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 2, 
+				       tmp, tmp_len,
+				       mode, sizeof(mode),
+				       tmp2, tmp_len2);
+
+    /* Get entry to the channel user list */
+    silc_list_start(channel->user_list);
+    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
+      if (chl->client == client) {
+	/* Change the mode */
+	chl->mode = mode_mask;
+	break;
+      }
+
+    break;
+
+  default:
+    break;
+  }
+
+ out:
+  if (channel_id)
+    silc_free(channel_id);
+  if (args)
+    silc_argument_payload_free(args);
+  if (payload)
+    silc_set_mode_payload_free(payload);
+}

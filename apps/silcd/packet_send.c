@@ -1177,3 +1177,33 @@ void silc_server_send_remove_id(SilcServer server,
 			  idp->data, idp->len, FALSE);
   silc_buffer_free(idp);
 }
+
+/* Function used to send SET_MODE packet. The packet is used to notify routers
+   that channel's or client's channel mode was changed. If the argument
+   `broadcast' is TRUE then the packet is sent as broadcast packet. */
+
+void silc_server_send_set_mode(SilcServer server,
+			       SilcSocketConnection sock,
+			       int broadcast,
+			       int mode_type, unsigned int mode_mask,
+			       unsigned int argc, ...)
+{
+  SilcBuffer packet;
+  va_list ap;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  va_start(ap, argc);
+
+  /* Encode Set Mode payload */
+  packet = silc_set_mode_payload_encode(mode_type, mode_mask, argc, ap);
+  if (!packet)
+    return;
+
+  /* Send the packet */
+  silc_server_packet_send(server, sock, SILC_PACKET_SET_MODE, 
+			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
+			  packet->data, packet->len, FALSE);
+
+  silc_buffer_free(packet);
+}
