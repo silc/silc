@@ -528,7 +528,7 @@ typedef struct {
   uint32 res_argc;
 } *SilcServerResolveContext;
 
-static char
+static bool
 silc_server_command_whois_check(SilcServerCommandContext cmd,
 				SilcClientEntry *clients,
 				uint32 clients_count)
@@ -538,6 +538,7 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
   SilcServerResolveContext resolve = NULL, r = NULL;
   uint32 resolve_count = 0;
   int i, k;
+  bool no_res = TRUE;
 
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
@@ -557,6 +558,7 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
 				  silc_server_command_destructor,
 				  silc_server_command_whois,
 				  silc_server_command_dup(cmd));
+      no_res = FALSE;
     } else {
       if (entry->data.status & SILC_IDLIST_STATUS_RESOLVING) {
 	/* We've resolved this and it still is not ready.  We'll return
@@ -647,13 +649,11 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
     silc_free(r->res_argv);
     silc_free(r->res_argv_lens);
     silc_free(r->res_argv_types);
+    no_res = FALSE;
   }
   silc_free(resolve);
 
-  if (resolve_count)
-    return FALSE;
-
-  return TRUE;
+  return no_res;
 }
 
 static void
@@ -1473,7 +1473,7 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
    then send WHOIS request to the server who owns the client. We use
    WHOIS because we want to get as much information as possible at once. */
 
-static char
+static bool
 silc_server_command_identify_check_client(SilcServerCommandContext cmd,
 					  SilcClientEntry *clients,
 					  uint32 clients_count)
@@ -1483,6 +1483,7 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
   SilcServerResolveContext resolve = NULL, r = NULL;
   uint32 resolve_count = 0;
   int i, k;
+  bool no_res = TRUE;
 
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
@@ -1502,6 +1503,7 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
 				  silc_server_command_destructor,
 				  silc_server_command_identify,
 				  silc_server_command_dup(cmd));
+      no_res = FALSE;
     } else {
       if (entry->data.status & SILC_IDLIST_STATUS_RESOLVING) {
 	/* We've resolved this and it still is not ready.  We'll return
@@ -1592,13 +1594,11 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
     silc_free(r->res_argv);
     silc_free(r->res_argv_lens);
     silc_free(r->res_argv_types);
+    no_res = FALSE;
   }
   silc_free(resolve);
 
-  if (resolve_count)
-    return FALSE;
-
-  return TRUE;
+  return no_res;
 }
 
 static void
