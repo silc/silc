@@ -521,6 +521,33 @@ silc_server_command_send_status_data(SilcServerCommandContext cmd,
   silc_buffer_free(buffer);
 }
 
+static void
+silc_server_command_send_status_data2(SilcServerCommandContext cmd,
+				      SilcCommand command,
+				      SilcStatus status,
+				      SilcStatus error,
+				      SilcUInt32 arg_type1,
+				      const unsigned char *arg1,
+				      SilcUInt32 arg_len1,
+				      SilcUInt32 arg_type2,
+				      const unsigned char *arg2,
+				      SilcUInt32 arg_len2)
+{
+  SilcBuffer buffer;
+
+  SILC_LOG_DEBUG(("Sending command status %d", status));
+
+  buffer =
+    silc_command_reply_payload_encode_va(command, status, 0,
+					 silc_command_get_ident(cmd->payload),
+					 2, arg_type1, arg1, arg_len2,
+					 arg_type2, arg2, arg_len2);
+  silc_server_packet_send(cmd->server, cmd->sock,
+			  SILC_PACKET_COMMAND_REPLY, 0,
+			  buffer->data, buffer->len, FALSE);
+  silc_buffer_free(buffer);
+}
+
 /* This function can be called to check whether in the command reply
    an error occurred. This function has no effect if this is called
    when the command function was not called as pending command callback.
@@ -927,9 +954,9 @@ SILC_SERVER_CMD_FUNC(topic)
     channel = silc_idlist_find_channel_by_id(server->global_list,
 					     channel_id, NULL);
     if (!channel) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_TOPIC,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID,
+					   0, 2, tmp, tmp_len);
       goto out;
     }
   }
@@ -953,18 +980,20 @@ SILC_SERVER_CMD_FUNC(topic)
 
     /* See whether the client is on channel and has rights to change topic */
     if (!silc_server_client_on_channel(client, channel, &chl)) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
-					    SILC_STATUS_ERR_NOT_ON_CHANNEL,
-					    0);
+      tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_TOPIC,
+					   SILC_STATUS_ERR_NOT_ON_CHANNEL,
+					   0, 2, tmp, tmp_len);
       goto out;
     }
 
     if (channel->mode & SILC_CHANNEL_MODE_TOPIC &&
 	!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
 	!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
-					    SILC_STATUS_ERR_NO_CHANNEL_PRIV,
-					    0);
+      tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_TOPIC,
+					   SILC_STATUS_ERR_NO_CHANNEL_PRIV,
+					   0, 2, tmp, tmp_len);
       goto out;
     }
 
@@ -1054,9 +1083,9 @@ SILC_SERVER_CMD_FUNC(invite)
     channel = silc_idlist_find_channel_by_id(server->global_list,
 					     channel_id, NULL);
     if (!channel) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_INVITE,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID,
+					   0, 2, tmp, len);
       goto out;
     }
   }
@@ -1064,8 +1093,9 @@ SILC_SERVER_CMD_FUNC(invite)
   /* Check whether the sender of this command is on the channel. */
   sender = (SilcClientEntry)sock->user_data;
   if (!sender || !silc_server_client_on_channel(sender, channel, &chl)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_NOT_ON_CHANNEL, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_INVITE,
+					 SILC_STATUS_ERR_NOT_ON_CHANNEL, 0,
+					 2, tmp, len);
     goto out;
   }
 
@@ -1074,9 +1104,9 @@ SILC_SERVER_CMD_FUNC(invite)
   if (channel->mode & SILC_CHANNEL_MODE_INVITE &&
       !(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
       !(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_NO_CHANNEL_PRIV,
-					  0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_INVITE,
+					 SILC_STATUS_ERR_NO_CHANNEL_PRIV,
+					 0, 2, tmp, len);
     goto out;
   }
 
@@ -1096,9 +1126,10 @@ SILC_SERVER_CMD_FUNC(invite)
     dest = silc_server_query_client(server, dest_id, FALSE, &resolve);
     if (!dest) {
       if (server->server_type != SILC_SERVER || !resolve || cmd->pending) {
-	silc_server_command_send_status_reply(
+	silc_server_command_send_status_data(
 					cmd, SILC_COMMAND_INVITE,
-					SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0);
+					SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0,
+					2, tmp, len);
 	goto out;
       }
 
@@ -1114,9 +1145,11 @@ SILC_SERVER_CMD_FUNC(invite)
 
     /* Check whether the requested client is already on the channel. */
     if (silc_server_client_on_channel(dest, channel, NULL)) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+      atype = silc_argument_get_arg_type(cmd->args, 1, &len2);
+      silc_server_command_send_status_data2(cmd, SILC_COMMAND_INVITE,
 					    SILC_STATUS_ERR_USER_ON_CHANNEL,
-					    0);
+					    0, 2, tmp, len,
+					    3, atype, len2);
       goto out;
     }
 
@@ -1124,9 +1157,9 @@ SILC_SERVER_CMD_FUNC(invite)
     dest_sock = silc_server_get_client_route(server, NULL, 0, dest_id,
 					     &idata, NULL);
     if (!dest_sock) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_INVITE,
+					   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
+					   0, 2, tmp, len);
       goto out;
     }
 
@@ -1522,9 +1555,9 @@ SILC_SERVER_CMD_FUNC(info)
       entry = silc_idlist_find_server_by_id(server->global_list,
 					    server_id, TRUE, NULL);
       if (!entry && server->server_type != SILC_SERVER) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
-					      SILC_STATUS_ERR_NO_SUCH_SERVER,
-					      0);
+	silc_server_command_send_status_data(cmd, SILC_COMMAND_INFO,
+					     SILC_STATUS_ERR_NO_SUCH_SERVER_ID,
+					     0, 2, tmp, tmp_len);
 	goto out;
       }
     }
@@ -1615,8 +1648,11 @@ SILC_SERVER_CMD_FUNC(info)
   silc_free(server_id);
 
   if (!entry) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
-					  SILC_STATUS_ERR_NO_SUCH_SERVER, 0);
+    if (dest_server)
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_INFO,
+					   SILC_STATUS_ERR_NO_SUCH_SERVER, 0,
+					   2, dest_server,
+					   strlen(dest_server));
     goto out;
   }
 
@@ -1660,7 +1696,8 @@ SILC_SERVER_CMD_FUNC(ping)
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
   if (!tmp) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
-					  SILC_STATUS_ERR_NO_SERVER_ID, 0);
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					  0);
     goto out;
   }
   server_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
@@ -1672,8 +1709,9 @@ SILC_SERVER_CMD_FUNC(ping)
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
 					  SILC_STATUS_OK, 0);
   } else {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
-					  SILC_STATUS_ERR_NO_SUCH_SERVER, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_PING,
+					 SILC_STATUS_ERR_NO_SUCH_SERVER_ID, 0,
+					 2, tmp, tmp_len);
     goto out;
   }
 
@@ -1710,8 +1748,9 @@ SILC_SERVER_CMD_FUNC(stats)
 
   /* The ID must be ours */
   if (!SILC_ID_SERVER_COMPARE(server->id, server_id)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_STATS,
-					  SILC_STATUS_ERR_NO_SUCH_SERVER, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_STATS,
+					 SILC_STATUS_ERR_NO_SUCH_SERVER_ID, 0,
+					 2, tmp, tmp_len);
     silc_free(server_id);
     goto out;
   }
@@ -1948,8 +1987,11 @@ static void silc_server_command_join_channel(SilcServer server,
 					1, check) &&
 	   !silc_server_inviteban_match(server, channel->invite_list,
 					1, check2))) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					      SILC_STATUS_ERR_NOT_INVITED, 0);
+	chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+	silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
+					     SILC_STATUS_ERR_NOT_INVITED, 0,
+					     2, chidp->data, chidp->len);
+	silc_buffer_free(chidp);
 	goto out;
       }
     }
@@ -1968,9 +2010,12 @@ static void silc_server_command_join_channel(SilcServer server,
 				      1, check) ||
 	  silc_server_inviteban_match(server, channel->ban_list,
 				      1, check2)) {
-	silc_server_command_send_status_reply(
+	chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+	silc_server_command_send_status_data(
 				      cmd, SILC_COMMAND_JOIN,
-				      SILC_STATUS_ERR_BANNED_FROM_CHANNEL, 0);
+				      SILC_STATUS_ERR_BANNED_FROM_CHANNEL, 0,
+				      2, chidp->data, chidp->len);
+	silc_buffer_free(chidp);
 	goto out;
       }
     }
@@ -1979,9 +2024,11 @@ static void silc_server_command_join_channel(SilcServer server,
     if (channel->mode & SILC_CHANNEL_MODE_ULIMIT) {
       if (silc_hash_table_count(channel->user_list) + 1 >
 	  channel->user_limit) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					      SILC_STATUS_ERR_CHANNEL_IS_FULL,
-					      0);
+	chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+	silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
+					     SILC_STATUS_ERR_CHANNEL_IS_FULL,
+					     0, 2, chidp->data, chidp->len);
+	silc_buffer_free(chidp);
 	goto out;
       }
     }
@@ -2018,8 +2065,14 @@ static void silc_server_command_join_channel(SilcServer server,
 
   /* Check whether the client already is on the channel */
   if (silc_server_client_on_channel(client, channel, NULL)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_USER_ON_CHANNEL, 0);
+    clidp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+    chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+    silc_server_command_send_status_data2(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_USER_ON_CHANNEL, 0,
+					  2, clidp->data, clidp->len,
+					  3, chidp->data, chidp->len);
+    silc_buffer_free(clidp);
+    silc_buffer_free(chidp);
     goto out;
   }
 
@@ -2303,10 +2356,10 @@ SILC_SERVER_CMD_FUNC(join)
 	  channel = silc_server_create_new_channel(server, server->id, cipher,
 						   hmac, channel_name, TRUE);
 	  if (!channel) {
-	    silc_server_command_send_status_reply(
+	    silc_server_command_send_status_data(
 				  cmd, SILC_COMMAND_JOIN,
 				  SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
-				  0);
+				  0, 2, cipher, strlen(cipher));
 	    silc_free(client_id);
 	    goto out;
 	  }
@@ -2364,9 +2417,10 @@ SILC_SERVER_CMD_FUNC(join)
 	  channel = silc_server_create_new_channel(server, server->id, cipher,
 						   hmac, channel_name, TRUE);
 	  if (!channel) {
-	    silc_server_command_send_status_reply(
+	    silc_server_command_send_status_data(
 				       cmd, SILC_COMMAND_JOIN,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
+				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
+				       2, cipher, strlen(cipher));
 	    silc_free(client_id);
 	    goto out;
 	  }
@@ -2399,9 +2453,10 @@ SILC_SERVER_CMD_FUNC(join)
 	channel = silc_server_create_new_channel(server, server->id, cipher,
 						 hmac, channel_name, TRUE);
 	if (!channel) {
-	  silc_server_command_send_status_reply(
+	  silc_server_command_send_status_data(
 				       cmd, SILC_COMMAND_JOIN,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
+				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
+				       2, cipher, strlen(cipher));
 	  silc_free(client_id);
 	  goto out;
 	}
@@ -2476,7 +2531,8 @@ SILC_SERVER_CMD_FUNC(motd)
   dest_server = silc_argument_get_arg_type(cmd->args, 1, NULL);
   if (!dest_server) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_MOTD,
-					  SILC_STATUS_ERR_NO_SUCH_SERVER, 0);
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					  0);
     goto out;
   }
 
@@ -2572,8 +2628,10 @@ SILC_SERVER_CMD_FUNC(motd)
     }
 
     if (!entry) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_MOTD,
-					    SILC_STATUS_ERR_NO_SUCH_SERVER, 0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_MOTD,
+					   SILC_STATUS_ERR_NO_SUCH_SERVER, 0,
+					   2, dest_server,
+					   strlen(dest_server));
       goto out;
     }
 
@@ -2731,9 +2789,9 @@ SILC_SERVER_CMD_FUNC(cmode)
     channel = silc_idlist_find_channel_by_id(server->global_list,
 					     channel_id, NULL);
     if (!channel) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_CMODE,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID,
+					   0, 2, tmp_id, tmp_len2);
       silc_free(channel_id);
       silc_server_command_free(cmd);
       return;
@@ -2750,8 +2808,9 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Check whether this client is on the channel */
   if (!silc_server_client_on_channel(client, channel, &chl)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					  SILC_STATUS_ERR_NOT_ON_CHANNEL, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_CMODE,
+					 SILC_STATUS_ERR_NOT_ON_CHANNEL, 0,
+					 2, tmp_id, tmp_len2);
     goto out;
   }
 
@@ -2759,11 +2818,12 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (set_mask && !silc_server_check_cmode_rights(server, channel, chl,
 						  mode_mask)) {
     SILC_LOG_DEBUG(("Client does not have rights to change mode"));
-    silc_server_command_send_status_reply(
+    silc_server_command_send_status_data(
 			     cmd, SILC_COMMAND_CMODE,
 			     (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) ?
 			      SILC_STATUS_ERR_NO_CHANNEL_PRIV :
-			      SILC_STATUS_ERR_NO_CHANNEL_FOPRIV), 0);
+			      SILC_STATUS_ERR_NO_CHANNEL_FOPRIV), 0,
+			     2, tmp_id, tmp_len2);
     goto out;
   }
 
@@ -2882,8 +2942,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Delete old cipher and allocate the new one */
       if (!silc_cipher_alloc(cipher, &newkey)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
+	silc_server_command_send_status_data(
+					 cmd, SILC_COMMAND_CMODE,
+					 SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
+					 2, cipher, strlen(cipher));
 	goto out;
       }
 
@@ -2915,8 +2977,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Delete old cipher and allocate default one */
       if (!silc_cipher_alloc(cipher ? cipher : SILC_DEFAULT_CIPHER, &newkey)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-				   SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
+	silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_CMODE,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
+				      2, cipher, strlen(cipher));
 	goto out;
       }
 
@@ -2957,8 +3021,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Delete old hmac and allocate the new one */
       if (!silc_hmac_alloc(hmac, NULL, &newhmac)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
+	silc_server_command_send_status_data(
+					cmd, SILC_COMMAND_CMODE,
+					SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
+					2, hmac, strlen(hmac));
 	goto out;
       }
 
@@ -2983,8 +3049,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Delete old hmac and allocate default one */
       if (!silc_hmac_alloc(hmac ? hmac : SILC_DEFAULT_HMAC, NULL, &newhmac)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
+	silc_server_command_send_status_data(
+					cmd, SILC_COMMAND_CMODE,
+					SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
+					2, hmac, strlen(hmac));
 	goto out;
       }
 
@@ -3206,17 +3274,18 @@ SILC_SERVER_CMD_FUNC(cumode)
     channel = silc_idlist_find_channel_by_id(server->global_list,
 					     channel_id, NULL);
     if (!channel) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_CUMODE,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID,
+					   0, 2, tmp_ch_id, tmp_ch_len);
       goto out;
     }
   }
 
   /* Check whether sender is on the channel */
   if (!silc_server_client_on_channel(client, channel, &chl)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NOT_ON_CHANNEL, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_CUMODE,
+					 SILC_STATUS_ERR_NOT_ON_CHANNEL, 0,
+					 2, tmp_ch_id, tmp_ch_len);
     goto out;
   }
   sender_mask = chl->mode;
@@ -3256,16 +3325,20 @@ SILC_SERVER_CMD_FUNC(cumode)
   if (target_client != client &&
       !(sender_mask & SILC_CHANNEL_UMODE_CHANFO) &&
       !(sender_mask & SILC_CHANNEL_UMODE_CHANOP)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NO_CHANNEL_PRIV, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_CUMODE,
+					 SILC_STATUS_ERR_NO_CHANNEL_PRIV, 0,
+					 2, tmp_ch_id, tmp_ch_len);
     goto out;
   }
 
   /* Check whether target client is on the channel */
   if (target_client != client) {
     if (!silc_server_client_on_channel(target_client, channel, &chl)) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-				 SILC_STATUS_ERR_USER_NOT_ON_CHANNEL, 0);
+      silc_server_command_send_status_data2(
+				  cmd, SILC_COMMAND_CUMODE,
+				  SILC_STATUS_ERR_USER_NOT_ON_CHANNEL, 0,
+				  2, tmp_id, tmp_len,
+				  3, tmp_ch_id, tmp_ch_len);
       goto out;
     }
   }
@@ -3277,9 +3350,9 @@ SILC_SERVER_CMD_FUNC(cumode)
   /* If the target client is founder, no one else can change their mode
      but themselves. */
   if (chl->mode & SILC_CHANNEL_UMODE_CHANFO && client != target_client) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NO_CHANNEL_FOPRIV,
-					  0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_CUMODE,
+					 SILC_STATUS_ERR_NO_CHANNEL_FOPRIV,
+					 0, 2, tmp_ch_id, tmp_ch_len);
     goto out;
   }
 
@@ -3362,9 +3435,9 @@ SILC_SERVER_CMD_FUNC(cumode)
     if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {
       if (!(sender_mask & SILC_CHANNEL_UMODE_CHANOP) &&
           !(sender_mask & SILC_CHANNEL_UMODE_CHANFO)) {
-        silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-                                              SILC_STATUS_ERR_NO_CHANNEL_PRIV,
-                                              0);
+        silc_server_command_send_status_data(cmd, SILC_COMMAND_CUMODE,
+					     SILC_STATUS_ERR_NO_CHANNEL_PRIV,
+					     0, 2, tmp_ch_id, tmp_ch_len);
         goto out;
       }
 
@@ -3375,9 +3448,9 @@ SILC_SERVER_CMD_FUNC(cumode)
     if (chl->mode & SILC_CHANNEL_UMODE_CHANOP) {
       if (!(sender_mask & SILC_CHANNEL_UMODE_CHANOP) &&
           !(sender_mask & SILC_CHANNEL_UMODE_CHANFO)) {
-        silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-                                              SILC_STATUS_ERR_NO_CHANNEL_PRIV,
-                                              0);
+        silc_server_command_send_status_data(cmd, SILC_COMMAND_CUMODE,
+					     SILC_STATUS_ERR_NO_CHANNEL_PRIV,
+					     0, 2, tmp_ch_id, tmp_ch_len);
         goto out;
       }
 
@@ -3613,9 +3686,10 @@ SILC_SERVER_CMD_FUNC(kick)
 
   /* Check whether target client is on the channel */
   if (!silc_server_client_on_channel(target_client, channel, &chl)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+    silc_server_command_send_status_data2(cmd, SILC_COMMAND_KICK,
 					  SILC_STATUS_ERR_USER_NOT_ON_CHANNEL,
-					  0);
+					  0, 2, target_idp, target_idp_len,
+					  3, tmp, tmp_len);
     goto out;
   }
 
@@ -3977,9 +4051,9 @@ SILC_SERVER_CMD_FUNC(watch)
   }
   client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
   if (!client_id) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
-					  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
-					  0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_WATCH,
+					 SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
+					 0, 2, tmp, tmp_len);
     goto out;
   }
 
@@ -3987,9 +4061,9 @@ SILC_SERVER_CMD_FUNC(watch)
   client = silc_idlist_find_client_by_id(server->local_list,
 					 client_id, TRUE, NULL);
   if (!client) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
-					  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
-					  0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_WATCH,
+					 SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0,
+					 2, tmp, tmp_len);
     goto out;
   }
 
@@ -4059,8 +4133,9 @@ SILC_SERVER_CMD_FUNC(watch)
     if (!silc_hash_table_find_by_context(server->watcher_list, hash,
 					 client, (void **)&tmp)) {
       /* Nickname is alredy being watched for this client */
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
-					    SILC_STATUS_ERR_NO_SUCH_NICK, 0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_WATCH,
+					   SILC_STATUS_ERR_NO_SUCH_NICK, 0,
+					   2, nick, strlen(nick));
       goto out;
     }
 
@@ -4244,24 +4319,26 @@ SILC_SERVER_CMD_FUNC(ban)
     channel = silc_idlist_find_channel_by_id(server->global_list,
 					     channel_id, NULL);
     if (!channel) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_BAN,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID,
+					   0, 2, id, id_len);
       goto out;
     }
   }
 
   /* Check whether this client is on the channel */
   if (!silc_server_client_on_channel(client, channel, &chl)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
-					  SILC_STATUS_ERR_NOT_ON_CHANNEL, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_BAN,
+					 SILC_STATUS_ERR_NOT_ON_CHANNEL, 0,
+					 2, id, id_len);
     goto out;
   }
 
   /* The client must be at least channel operator. */
   if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
-					  SILC_STATUS_ERR_NO_CHANNEL_PRIV, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_BAN,
+					 SILC_STATUS_ERR_NO_CHANNEL_PRIV, 0,
+					 2, id, id_len);
     goto out;
   }
 
@@ -4396,17 +4473,18 @@ SILC_SERVER_CMD_FUNC(leave)
   if (!channel) {
     channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
     if (!channel) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_LEAVE,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID,
+					   0, 2, tmp, len);
       goto out;
     }
   }
 
   /* Check whether this client is on the channel */
   if (!silc_server_client_on_channel(id_entry, channel, NULL)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					  SILC_STATUS_ERR_NOT_ON_CHANNEL, 0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_LEAVE,
+					 SILC_STATUS_ERR_NOT_ON_CHANNEL, 0,
+					 2, tmp, len);
     goto out;
   }
 
@@ -4477,8 +4555,9 @@ SILC_SERVER_CMD_FUNC(users)
   if (channel_id) {
     id = silc_id_payload_parse_id(channel_id, channel_id_len, NULL);
     if (!id) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
-					    SILC_STATUS_ERR_BAD_CHANNEL_ID, 0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_USERS,
+					   SILC_STATUS_ERR_BAD_CHANNEL_ID, 0,
+					   2, channel_id, channel_id_len);
       goto out;
     }
   }
@@ -4526,9 +4605,16 @@ SILC_SERVER_CMD_FUNC(users)
 						 channel_name, NULL);
     if (!channel) {
       /* Channel really does not exist */
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
-					    0);
+      if (id)
+	silc_server_command_send_status_data(
+				    cmd, SILC_COMMAND_USERS,
+				    SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID, 0,
+				    2, channel_id, channel_id_len);
+      else
+	silc_server_command_send_status_data(
+				    cmd, SILC_COMMAND_USERS,
+				    SILC_STATUS_ERR_NO_SUCH_CHANNEL, 0,
+				    2, channel_name, strlen(channel_name));
       goto out;
     }
   }
@@ -4539,9 +4625,10 @@ SILC_SERVER_CMD_FUNC(users)
     if (channel->mode & (SILC_CHANNEL_MODE_PRIVATE | SILC_CHANNEL_MODE_SECRET)
 	&& !silc_server_client_on_channel(cmd->sock->user_data, channel,
 					  NULL)) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_USERS,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL, 0,
+					   2, channel->channel_name,
+					   strlen(channel->channel_name));
       goto out;
     }
   }
@@ -4666,9 +4753,9 @@ SILC_SERVER_CMD_FUNC(getkey)
     }
 
     if (!client) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
-					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_GETKEY,
+					   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
+					   0, 2, tmp, tmp_len);
       goto out;
     }
 
@@ -4718,9 +4805,9 @@ SILC_SERVER_CMD_FUNC(getkey)
     }
 
     if (!server_entry) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
-					    SILC_STATUS_ERR_NO_SUCH_SERVER_ID,
-					    0);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_GETKEY,
+					   SILC_STATUS_ERR_NO_SUCH_SERVER_ID,
+					   0, 2, tmp, tmp_len);
       goto out;
     }
 
