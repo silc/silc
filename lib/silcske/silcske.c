@@ -1837,6 +1837,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     memset(k2, 0, sizeof(k2));
     memset(k3, 0, sizeof(k3));
     silc_free(dtmp);
+    silc_buffer_clear(dist);
     silc_buffer_free(dist);
   } else {
     /* Take normal hash as key */
@@ -1898,6 +1899,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     memset(k2, 0, sizeof(k2));
     memset(k3, 0, sizeof(k3));
     silc_free(dtmp);
+    silc_buffer_clear(dist);
     silc_buffer_free(dist);
   } else {
     /* Take normal hash as key */
@@ -1922,6 +1924,7 @@ silc_ske_process_key_material_data(unsigned char *data,
   key->hmac_key_len = req_hmac_key_len;
   memset(hashd, 0, sizeof(hashd));
 
+  silc_buffer_clear(buf);
   silc_buffer_free(buf);
 
   return SILC_SKE_STATUS_OK;
@@ -1960,6 +1963,7 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 
   memset(tmpbuf, 0, klen);
   silc_free(tmpbuf);
+  silc_buffer_clear(buf);
   silc_buffer_free(buf);
 
   return status;
