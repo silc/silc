@@ -1,3 +1,32 @@
+Sat Sep 30 08:48:47 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new function into lib/silcutil/silcschedule.[ch]:
+	  silc_schedule_with_fd to select() a specified fd.  The function
+	  returns after timeout expires or data arrives or goes.  The
+	  function is used by packet routines to wait that all data is
+	  received from network.
+
+	* Fixed data reading from network in lib/silccore/silcpacket.c.
+	  The code now assures that all data is read from the fd and then
+	  continues packet processing.  This was a bug fix since the code
+	  used to drop some data in some circumstances.
+
+	* Added new function into lib/silcclient/client.[ch]:
+	  silc_client_start_key_exchange to start key exchange after
+	  connection has been established to server.  The code internally
+	  now uses this funtion but its main purpose was to provide it
+	  for applications that perform their own connecting.  After
+	  application has created a connection it merely calls this
+	  function to start the key exchange between client and server.
+	  The library takes care of everything else after that.
+
+	  Updated also lib/silcclient/README to explain the usage of
+	  this new function.
+
+	* Do not send to application information that connection has
+	  been established.  Application gets notified it by connect
+	  operation anyway.
+
 Thu Sep 28 23:40:19 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Applied cras's patch to add silc_schedule_one function.  The
