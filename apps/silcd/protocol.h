@@ -68,7 +68,7 @@ typedef struct {
   /* Authentication data if we alreay know it. This is filled before
      starting the protocol if we know the authentication data. Otherwise
      these are and remain NULL. Used when we are initiating. */
-  unsigned char *auth_data;
+  void *auth_data;
   unsigned int auth_data_len;
 
   /* Destinations ID from KE protocol context */

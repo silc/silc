@@ -53,8 +53,6 @@ SilcServerConfigSection silc_server_config_sections[] = {
     SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_CONNECTION, 5 },
   { "[DenyConnection]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION, 4 },
-  { "[RedirectClient]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_REDIRECT_CLIENT, 2 },
   { "[motd]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_MOTD, 1 },
   
@@ -117,7 +115,6 @@ void silc_server_config_free(SilcServerConfig config)
     silc_free(config->servers);
     silc_free(config->routers);
     silc_free(config->denied);
-    silc_free(config->redirect);
     silc_free(config->motd);
     silc_free(config);
   }
@@ -996,11 +993,6 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       check = TRUE;
       break;
 
-    case SILC_CONFIG_SERVER_SECTION_TYPE_REDIRECT_CLIENT:
-      /* Not implemented yet */
-      check = TRUE;
-      break;
-
     case SILC_CONFIG_SERVER_SECTION_TYPE_MOTD:
 
       if (!config->motd)
@@ -1557,7 +1549,6 @@ void silc_server_config_print()
 <RouterConnection>
 
 <DenyConnection>
-<RedirectClient>
   */
 
   fprintf(stdout, "%s\n", buf);

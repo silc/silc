@@ -1520,3 +1520,24 @@ void silc_server_relay_packet(SilcServer server,
   silc_buffer_pull(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		   + packet->dst_id_len + packet->padlen);
 }
+
+/* Routine used to send the connection authentication packet. */
+
+void silc_server_send_connection_auth_request(SilcServer server,
+					      SilcSocketConnection sock,
+					      unsigned short conn_type,
+					      SilcAuthMethod auth_meth)
+{
+  SilcBuffer packet;
+
+  packet = silc_buffer_alloc(4);
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_SHORT(conn_type),
+		     SILC_STR_UI_SHORT(auth_meth),
+		     SILC_STR_END);
+
+  silc_server_packet_send(server, sock, SILC_PACKET_CONNECTION_AUTH_REQUEST,
+			  0, packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
+}

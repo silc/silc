@@ -233,5 +233,9 @@ void silc_server_relay_packet(SilcServer server,
 			      SilcHmac hmac,
 			      SilcPacketContext *packet,
 			      int force_send);
+void silc_server_send_connection_auth_request(SilcServer server,
+					      SilcSocketConnection sock,
+					      unsigned short conn_type,
+					      SilcAuthMethod auth_meth);
 
 #endif

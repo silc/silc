@@ -603,7 +603,7 @@ List of SILC Packet types are defined as follows.
           This packet is used to request the authentication method to
           be used in the SILC Connection Authentication Protocol.  If 
           initiator of the protocol does not know the mandatory 
-          authentication method this packet is used to determine it.
+          authentication method this packet may be used to determine it.
 
           The party receiving this payload must respond with the same
           packet including the mandatory authentication method.

@@ -1861,3 +1861,54 @@ void silc_server_key_agreement(SilcServer server,
   silc_server_relay_packet(server, dst_sock, idata->send_key,
 			   idata->hmac, packet, FALSE);
 }
+
+/* Received connection auth request packet that is used during connection
+   phase to resolve the mandatory authentication method.  This packet can
+   actually be received at anytime but usually it is used only during
+   the connection authentication phase. Now, protocol says that this packet
+   can come from client or server, however, we support only this coming
+   from client and expect that server's always knows what authentication
+   method to use. */
+
+void silc_server_connection_auth_request(SilcServer server,
+					 SilcSocketConnection sock,
+					 SilcPacketContext *packet)
+{
+  SilcServerConfigSectionClientConnection *client = NULL;
+  unsigned short conn_type;
+  int ret;
+  SilcAuthMethod auth_meth;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (packet->src_id_type && packet->src_id_type != SILC_ID_CLIENT)
+    return;
+
+  /* Parse the payload */
+  ret = silc_buffer_unformat(packet->buffer,
+			     SILC_STR_UI_SHORT(&conn_type),
+			     SILC_STR_UI_SHORT(NULL),
+			     SILC_STR_END);
+  if (ret == -1)
+    return;
+
+  if (conn_type != SILC_SOCKET_TYPE_CLIENT)
+    return;
+
+  /* Get the authentication method for the client */
+  auth_meth = SILC_AUTH_NONE;
+  client = silc_server_config_find_client_conn(server->config,
+					       sock->ip,
+					       sock->port);
+  if (!client)
+    client = silc_server_config_find_client_conn(server->config,
+						 sock->hostname,
+						 sock->port);
+  if (client)
+    auth_meth = client->auth_meth;
+	  
+  /* Send it back to the client */
+  silc_server_send_connection_auth_request(server, sock,
+					   conn_type,
+					   auth_meth);
+}

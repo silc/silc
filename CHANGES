@@ -1,3 +1,25 @@
+Tue Mar 27 22:22:38 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_server_connection_auth_request to handle the
+	  incoming CONNECTION_AUTH_REQUEST packet.  Affected file is
+	  silcd/packet_receive.[ch].
+
+	* Added silc_server_send_connection_auth_request into the
+	  silcd/packet_send.c to send the connection auth request packet.
+
+	* Cleaned up the silcd/protocol.c a bit and fixed some memory
+	  leaks.
+
+	* Fixed the public key authentication in responder side in the
+	  server.  The `auth_data' pointer includes the SilcPublicKey
+	  not the path to the public key.  Affected file silcd/protocol.c.
+
+	* Implemented the public key authentication in the initiator side
+	  in the server.  Affected file silcd/protocol.c.
+
+	* Removed the [RedirectClient] config section from the server
+	  configuration.  Is not needed and I don't want to implement it.
+
 Tue Mar 27 12:49:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Cleaned up the CMODE command in the server.  It now works
@@ -364,7 +386,7 @@ Fri Mar 16 15:52:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  Do not send SilcPKCS but SilcPublicKey as argument.
 
 	* Implemented the public key authentication support to the
-	  serverconfig.  The public key is loaded fromthe provided path
+	  serverconfig.  The public key is loaded from the provided path
 	  and saved as authentication data to void * pointer.  Thus,
 	  changed the unsigned char *auth_data to void *auth_data;
 

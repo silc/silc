@@ -626,7 +626,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
   SilcInt *KEY;
-  unsigned char hash[32], sign[256], *pk;
+  unsigned char hash[32], sign[1024], *pk;
   unsigned int hash_len, sign_len, pk_len;
 
   SILC_LOG_DEBUG(("Start"));

@@ -862,8 +862,8 @@ The protocol is started by the connecting party by sending
 SILC_PACKET_CONNECTION_AUTH packet with Connection Auth Payload,
 described in the next section.  This payload must include the
 authentication data.  Authentication data is set according
-authentication method that must be known by both parties. If connecting
-party does not know what is the mandatory authentication method it must
+authentication method that must be known by both parties.  If connecting
+party does not know what is the mandatory authentication method it may
 request it from the server by sending SILC_PACKET_CONNECTION_AUTH_REQUEST
 packet.  This packet is not part of this protocol and is described in
 section Connection Auth Request Payload in [SILC2].  However, if

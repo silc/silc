@@ -49,20 +49,18 @@ TODO In SILC Client Library
    from file and using them (see corresponding code in server, it should
    support public key authentication already).
 
- o Connection Authentication request resolving is missing and must be
-   done.  This is required by the protocol.
+ o Non-blocking connection on the background must be stopped if some
+   other connection on same window has established.  Now it is possible
+   that some non-blocking connection timeouts on the background when
+   we already have a working connection to some other place; things
+   goes bad.
 
  o Add client library parameters or options that handle what kind of
    messages the library should print out (using `say' client operation,
    for example) and what is left for the application to print.  The
    appliation could for example set that it handles all command printing
    but all error printing should be handled by the library, etc...
-
- o Non-blocking connection on the background must be stopped if some
-   other connection on same window has established.  Now it is possible
-   that some non-blocking connection timeouts on the background when
-   we already have a working connection to some other place; things
-   goes bad.
+   This is not a showstopper.
 
  o Input line on UI is buggy.  Cursor movement etc bugs.  Too lazy to
    fix it.
@@ -84,21 +82,6 @@ TODO In SILC Server
  o TODO in notify types (packet_receive.c):
 
 	o SERVER_SIGNOFF notify type is not implemented
-
- o TODO in authentication protocol (protocol.c):
-
-	o Public key authentication is missing in initiator side.  It must
-	  be implemented by creating the authentication data.
-
- o TODO in general server (server.c):
-
-	o SILC_PACKET_CONNECTION_AUTH_REQUEST packet type is not
-	  implemented.
-
-	o silc_server_connect_to_router_second checks the authentication
-	  method to be used in the connection.  However, if it does not
-	  find it it must resolve it from the responder by sending the
-	  SILC_PACKET_CONNECTION_AUTH_REQUEST packet.
 
  o Packet processing can be made faster. All packet function in the
    packet_receive.c has same prototypes.  Instead of calling those from
@@ -125,9 +108,6 @@ TODO In SILC Server
 
  o Connection classes should be actually implemented in serverconfig.c.
    They can be defined but they are totally ignored currently.
-
- o Connection redirect, if server is full, is not implemented.  I also
-   don't know how to do it currently.  Maybe it shouldn't be done at all.
 
 
 TODO In SILC Libraries
@@ -201,7 +181,7 @@ TODO in the protocol before SILC 0.x
 	  as for the private message flags.  This way we can implement
 	  for example the CTCP style ACTION (/ME command) messages.
 
- o New feature in the KE/auth protocol
+ o New features in the KE/auth protocol
    (draft-riikonen-silc-ke-auth-xx.txt):
 
 	o Define group exchange support for the SKE so that the SKE

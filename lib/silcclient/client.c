@@ -419,18 +419,18 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
   if (!client->ops->get_auth_method(client, sock->user_data, sock->hostname,
 				    sock->port, &proto_ctx->auth_meth,
 				    &proto_ctx->auth_data, 
-				    &proto_ctx->auth_data_len))
-    {
-      /* XXX do AUTH_REQUEST resolcing with server */
-      proto_ctx->auth_meth = SILC_AUTH_NONE;
-    }
+				    &proto_ctx->auth_data_len)) {
+    client->ops->say(client, ctx->sock->user_data, 
+		     "Could not resolve authentication method to use, "
+		     "assume no authentication");
+    proto_ctx->auth_meth = SILC_AUTH_NONE;
+  }
 
   /* Free old protocol as it is finished now */
   silc_protocol_free(protocol);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
   silc_free(ctx);
-  /* silc_free(ctx->keymat....); */
   sock->protocol = NULL;
 
   /* Allocate the authentication protocol. This is allocated here

@@ -711,6 +711,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   SilcServerConnection sconn = (SilcServerConnection)ctx->context;
   SilcSocketConnection sock = NULL;
   SilcServerConnAuthInternalContext *proto_ctx;
+  SilcServerConfigSectionServerConnection *conn = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -768,28 +769,35 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   proto_ctx->dest_id_type = ctx->dest_id_type;
   proto_ctx->dest_id = ctx->dest_id;
 
-  /* Resolve the authentication method used in this connection */
-  proto_ctx->auth_meth = SILC_AUTH_PASSWORD;
-  if (server->config->routers) {
-    SilcServerConfigSectionServerConnection *conn = NULL;
-
-    /* Check if we find a match from user configured connections */
-    conn = silc_server_config_find_router_conn(server->config,
-					       sock->hostname,
-					       sock->port);
-    if (conn) {
-      /* Match found. Use the configured authentication method */
-      proto_ctx->auth_meth = conn->auth_meth;
-      if (conn->auth_data) {
-	proto_ctx->auth_data = strdup(conn->auth_data);
-	proto_ctx->auth_data_len = strlen(conn->auth_data);
-      }
-    } else {
-      /* No match found. */
-      /* XXX */
+  /* Resolve the authentication method used in this connection. Check if 
+     we find a match from user configured connections */
+  conn = silc_server_config_find_router_conn(server->config,
+					     sock->hostname,
+					     sock->port);
+  if (conn) {
+    /* Match found. Use the configured authentication method */
+    proto_ctx->auth_meth = conn->auth_meth;
+    if (conn->auth_data) {
+      proto_ctx->auth_data = strdup(conn->auth_data);
+      proto_ctx->auth_data_len = strlen(conn->auth_data);
     }
   } else {
-    /* XXX */
+    SILC_LOG_ERROR(("Could not find connection data for %s (%s) on port",
+		    sock->hostname, sock->ip, sock->port));
+    silc_protocol_free(protocol);
+    silc_ske_free_key_material(ctx->keymat);
+    if (ctx->packet)
+      silc_packet_context_free(ctx->packet);
+    if (ctx->ske)
+      silc_ske_free(ctx->ske);
+    if (ctx->dest_id)
+      silc_free(ctx->dest_id);
+    silc_free(ctx);
+    silc_task_unregister_by_callback(server->timeout_queue,
+				     silc_server_failure_callback);
+    silc_server_disconnect_remote(server, sock, "Server closed connection: "
+				  "Key exchange failed");
+    return;
   }
 
   /* Free old protocol as it is finished now */
@@ -959,13 +967,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
 
   /* Check max connections */
   if (sock > SILC_SERVER_MAX_CONNECTIONS) {
-    if (server->config->redirect) {
-      /* XXX Redirecting connection to somewhere else now?? */
-      /*silc_server_send_notify("Server is full, trying to redirect..."); */
-    } else {
-      SILC_LOG_ERROR(("Refusing connection, server is full"));
-      server->stat.conn_failures++;
-    }
+    SILC_LOG_ERROR(("Refusing connection, server is full"));
+    server->stat.conn_failures++;
     return;
   }
 
@@ -1796,6 +1799,7 @@ void silc_server_packet_parse_type(SilcServer server,
     SILC_LOG_DEBUG(("Connection authentication request packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
+    silc_server_connection_auth_request(server, sock, packet);
     break;
 
     /*

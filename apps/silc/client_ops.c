@@ -1015,7 +1015,11 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
     }
   }
 
-  return FALSE;
+  *auth_meth = SILC_AUTH_NONE;
+  *auth_data = NULL;
+  *auth_data_len = 0;
+
+  return TRUE;
 }
 
 /* Notifies application that failure packet was received.  This is called

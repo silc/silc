@@ -430,8 +430,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
  * Connection Authentication protocol functions
  */
 
-int silc_server_password_authentication(SilcServer server, char *auth1, 
-					char *auth2)
+static int 
+silc_server_password_authentication(SilcServer server, char *auth1, 
+				    char *auth2)
 {
   if (!auth1 || !auth2)
     return FALSE;
@@ -442,24 +443,19 @@ int silc_server_password_authentication(SilcServer server, char *auth1,
   return FALSE;
 }
 
-int silc_server_public_key_authentication(SilcServer server,
-					  char *pkfile,
-					  unsigned char *sign,
-					  unsigned int sign_len,
-					  SilcSKE ske)
+static int
+silc_server_public_key_authentication(SilcServer server,
+				      SilcPublicKey pub_key,
+				      unsigned char *sign,
+				      unsigned int sign_len,
+				      SilcSKE ske)
 {
-  SilcPublicKey pub_key;
   SilcPKCS pkcs;
   int len;
   SilcBuffer auth;
 
-  if (!pkfile || !sign)
+  if (!pub_key || !sign)
     return FALSE;
-
-  /* Load public key from file */
-  if (!silc_pkcs_load_public_key(pkfile, &pub_key, SILC_PKCS_FILE_PEM))
-    if (!silc_pkcs_load_public_key(pkfile, &pub_key, SILC_PKCS_FILE_BIN))
-      return FALSE;
 
   silc_pkcs_alloc(pub_key->name, &pkcs);
   if (!silc_pkcs_public_key_set(pkcs, pub_key)) {
@@ -479,17 +475,55 @@ int silc_server_public_key_authentication(SilcServer server,
 		     SILC_STR_END);
 
   /* Verify signature */
-  if (pkcs->pkcs->verify(pkcs->context, sign, sign_len,
-			 auth->data, auth->len))
-    {
-      silc_pkcs_free(pkcs);
-      silc_pkcs_public_key_free(pub_key);
-      silc_buffer_free(auth);
-      return TRUE;
-    }
+  if (silc_pkcs_verify(pkcs, sign, sign_len, auth->data, auth->len)) {
+    silc_pkcs_free(pkcs);
+    silc_buffer_free(auth);
+    return TRUE;
+  }
 
   silc_pkcs_free(pkcs);
-  silc_pkcs_public_key_free(pub_key);
+  silc_buffer_free(auth);
+  return FALSE;
+}
+
+static int
+silc_server_get_public_key_auth(SilcServer server,
+				SilcPublicKey pub_key,
+				unsigned char *auth_data,
+				unsigned int *auth_data_len,
+				SilcSKE ske)
+{
+  int len;
+  SilcPKCS pkcs;
+  SilcBuffer auth;
+
+  if (!pub_key)
+    return FALSE;
+
+  silc_pkcs_alloc(pub_key->name, &pkcs);
+  if (!silc_pkcs_public_key_set(pkcs, pub_key)) {
+    silc_pkcs_free(pkcs);
+    return FALSE;
+  }
+
+  /* Make the authentication data. Protocol says it is HASH plus
+     KE Start Payload. */
+  len = ske->hash_len + ske->start_payload_copy->len;
+  auth = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(auth, len);
+  silc_buffer_format(auth,
+		     SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
+		     SILC_STR_UI_XNSTRING(ske->start_payload_copy->data,
+					  ske->start_payload_copy->len),
+		     SILC_STR_END);
+
+  if (silc_pkcs_sign(pkcs, auth->data, auth->len, auth_data, auth_data_len)) {
+    silc_pkcs_free(pkcs);
+    silc_buffer_free(auth);
+    return TRUE;
+  }
+
+  silc_pkcs_free(pkcs);
   silc_buffer_free(auth);
   return FALSE;
 }
@@ -526,7 +560,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	int ret;
 	unsigned short payload_len;
 	unsigned short conn_type;
-	unsigned char *auth_data;
+	unsigned char *auth_data = NULL;
 
 	SILC_LOG_INFO(("Performing authentication protocol for %s (%s)",
 		       ctx->sock->hostname, ctx->sock->ip));
@@ -565,8 +599,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  /* Get authentication data */
 	  silc_buffer_pull(ctx->packet->buffer, 4);
 	  ret = silc_buffer_unformat(ctx->packet->buffer,
-				     SILC_STR_UI_XNSTRING_ALLOC(&auth_data, 
-								payload_len),
+				     SILC_STR_UI_XNSTRING(&auth_data, 
+							  payload_len),
 				     SILC_STR_END);
 	  if (ret == -1) {
 	    SILC_LOG_DEBUG(("Bad payload in authentication packet"));
@@ -575,8 +609,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 			      protocol, fd, 0, 300000);
 	    return;
 	  }
-	} else {
-	  auth_data = NULL;
 	}
 
 	/* 
@@ -590,15 +622,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	/* Remote end is client */
 	if (conn_type == SILC_SOCKET_TYPE_CLIENT) {
 	  SilcServerConfigSectionClientConnection *client = NULL;
-	  client = 
-	    silc_server_config_find_client_conn(server->config,
-						ctx->sock->ip,
-						ctx->sock->port);
+	  client = silc_server_config_find_client_conn(server->config,
+						       ctx->sock->ip,
+						       ctx->sock->port);
 	  if (!client)
-	    client = 
-	      silc_server_config_find_client_conn(server->config,
-						  ctx->sock->hostname,
-						  ctx->sock->port);
+	    client = silc_server_config_find_client_conn(server->config,
+							 ctx->sock->hostname,
+							 ctx->sock->port);
 	  
 	  if (client) {
 	    switch(client->auth_meth) {
@@ -613,12 +643,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      ret = silc_server_password_authentication(server, auth_data,
 							client->auth_data);
 
-	      if (ret) {
-		memset(auth_data, 0, payload_len);
-		silc_free(auth_data);
-		auth_data = NULL;
+	      if (ret)
 		break;
-	      }
 
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
@@ -638,12 +664,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 							  payload_len, 
 							  ctx->ske);
 
-	      if (ret) {
-		memset(auth_data, 0, payload_len);
-		silc_free(auth_data);
-		auth_data = NULL;
+	      if (ret)
 		break;
-	      }
 
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
@@ -656,9 +678,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_DEBUG(("No configuration for remote connection"));
 	    SILC_LOG_ERROR(("Remote connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
-	    memset(auth_data, 0, payload_len);
-	    silc_free(auth_data);
-	    auth_data = NULL;
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    protocol->execute(server->timeout_queue, 0, 
 			      protocol, fd, 0, 300000);
@@ -669,16 +688,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	/* Remote end is server */
 	if (conn_type == SILC_SOCKET_TYPE_SERVER) {
 	  SilcServerConfigSectionServerConnection *serv = NULL;
-	  serv = 
-	    silc_server_config_find_server_conn(server->config,
-						ctx->sock->ip,
-						ctx->sock->port);
+	  serv = silc_server_config_find_server_conn(server->config,
+						     ctx->sock->ip,
+						     ctx->sock->port);
 	  if (!serv)
-	    serv = 
-	      silc_server_config_find_server_conn(server->config,
-						  ctx->sock->hostname,
-						  ctx->sock->port);
-	  
+	    serv = silc_server_config_find_server_conn(server->config,
+						       ctx->sock->hostname,
+						       ctx->sock->port);
+
 	  if (serv) {
 	    switch(serv->auth_meth) {
 	    case SILC_AUTH_NONE:
@@ -692,12 +709,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      ret = silc_server_password_authentication(server, auth_data,
 							serv->auth_data);
 
-	      if (ret) {
-		memset(auth_data, 0, payload_len);
-		silc_free(auth_data);
-		auth_data = NULL;
+	      if (ret)
 		break;
-	      }
 	      
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
@@ -717,12 +730,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 							  payload_len, 
 							  ctx->ske);
 							  
-	      if (ret) {
-		memset(auth_data, 0, payload_len);
-		silc_free(auth_data);
-		auth_data = NULL;
+	      if (ret)
 		break;
-	      }
 
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
@@ -735,9 +744,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_DEBUG(("No configuration for remote connection"));
 	    SILC_LOG_ERROR(("Remote connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
-	    memset(auth_data, 0, payload_len);
-	    silc_free(auth_data);
-	    auth_data = NULL;
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    protocol->execute(server->timeout_queue, 0, 
 			      protocol, fd, 0, 300000);
@@ -748,15 +754,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	/* Remote end is router */
 	if (conn_type == SILC_SOCKET_TYPE_ROUTER) {
 	  SilcServerConfigSectionServerConnection *serv = NULL;
-	  serv = 
-	    silc_server_config_find_router_conn(server->config,
-						ctx->sock->ip,
-						ctx->sock->port);
+	  serv = silc_server_config_find_router_conn(server->config,
+						     ctx->sock->ip,
+						     ctx->sock->port);
 	  if (!serv)
-	    serv = 
-	      silc_server_config_find_router_conn(server->config,
-						  ctx->sock->hostname,
-						  ctx->sock->port);
+	    serv = silc_server_config_find_router_conn(server->config,
+						       ctx->sock->hostname,
+						       ctx->sock->port);
 	  
 	  if (serv) {
 	    switch(serv->auth_meth) {
@@ -771,12 +775,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      ret = silc_server_password_authentication(server, auth_data,
 							serv->auth_data);
 
-	      if (ret) {
-		memset(auth_data, 0, payload_len);
-		silc_free(auth_data);
-		auth_data = NULL;
+	      if (ret)
 		break;
-	      }
 	      
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
@@ -796,12 +796,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 							  payload_len, 
 							  ctx->ske);
 							  
-	      if (ret) {
-		memset(auth_data, 0, payload_len);
-		silc_free(auth_data);
-		auth_data = NULL;
+	      if (ret)
 		break;
-	      }
 
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
@@ -814,19 +810,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_DEBUG(("No configuration for remote connection"));
 	    SILC_LOG_ERROR(("Remote connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
-	    memset(auth_data, 0, payload_len);
-	    silc_free(auth_data);
-	    auth_data = NULL;
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    protocol->execute(server->timeout_queue, 0, 
 			      protocol, fd, 0, 300000);
 	    return;
 	  }
-	}
-	
-	if (auth_data) {
-	  memset(auth_data, 0, payload_len);
-	  silc_free(auth_data);
 	}
 	
 	/* Save connection type. This is later used to create the
@@ -856,16 +844,22 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	case SILC_AUTH_PASSWORD:
 	  /* Password authentication */
 	  if (ctx->auth_data && ctx->auth_data_len) {
-	    auth_data = ctx->auth_data;
+	    auth_data = strdup(ctx->auth_data);
 	    auth_data_len = ctx->auth_data_len;
 	    break;
 	  }
 	  break;
 	  
 	case SILC_AUTH_PUBLIC_KEY:
-	  /* Public key authentication */
-	  /* XXX TODO */
-	  break;
+	  {
+	    unsigned char sign[1024];
+
+	    /* Public key authentication */
+	    silc_server_get_public_key_auth(server, ctx->auth_data,
+					    sign, &auth_data_len,
+					    ctx->ske);
+	    break;
+	  }
 	}
 	
 	payload_len = 4 + auth_data_len;
