@@ -88,6 +88,11 @@ Following commands has been, at least partly, implemented:
 		Pings server.  Only locally connected server may be 
 		pinged.
 
+	/INFO 	[<server>]
+
+		Requests information about a server.  If argument is
+		not specified current server is used.
+
 	/QUIT
 
 		Quits session.  Connection to remote server is closed.
@@ -95,6 +100,10 @@ Following commands has been, at least partly, implemented:
 	/CLEAR
 
 		Clears current screen.
+
+	/VERSION
+
+		Shows client version.
 
 
 Features

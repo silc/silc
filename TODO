@@ -113,12 +113,6 @@ TODO In SILC Client
    be implemented (See corresponding code from server).  Error handling
    in the KE protocol is also in pretty bad shape in client.
 
- o Configuration file loading from global and from local dirs.  This
-   is currently missing and I guess the global is only used.  Old SILC
-   version (in 1997) had ~./silc directory that I guess should be done
-   now as well.  The code for handling those exists but not in current
-   source tree.
-
  o Configuration file format - could be better.
 
  o Write help files for commands.  Nice format for the help files should
@@ -205,11 +199,6 @@ TODO In SILC Server
 TODO In SILC Libraries
 ======================
 
- o Public key verification in SKE (SILC Key Exchange) protocol is missing,
-   thus currently we trust on all public keys.  This probably doesn't cause
-   bad problems but the mechanism of verifying it from local database
-   (from files) needs to be done (it can open man-in-the-middle-attacks).
-
  o Implement PFS (Perfect Forward Secrecy) flag in SKE (and in client and
    server, actually).  If PFS is set, re-key must cause new key exchange.
    This is required by the SILC protocol.
@@ -226,10 +215,6 @@ TODO In SILC Libraries
    missing, and should be added for interoperability reasons.  The thing 
    I've done now is bad and should be removed as soon as possible (or 
    the protocol should then state the method of how they should be done).
-
- o SILC public key file type is bad.  I'd like to see PEM encoded files.
-   I have public domain code for base64 encoding but it needs to be 
-   rewritten.
 
  o Slow ciphers should be removed.  I think we don't need more than
    the AES finalists plus blowfish and RC5.

@@ -122,6 +122,7 @@
 /* Math library includes */
 #include "silcmp.h"
 #include "modinv.h"
+#include "mpbin.h"
 #include "silcprimegen.h"
 
 /* Crypto library includes */

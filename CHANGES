@@ -1,3 +1,35 @@
+Sun Jul  9 15:19:24 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Finally made the SKE implementation compliant to the protocol
+	  specification.  All mp integers are now binary encoded as
+	  opposed being HEX encoded.
+
+	* Added lib/silcmath/mpbin.[ch].  Encoding mp intergers to and
+	  from binary data.
+
+	* Added into lib/silccore/silcutil.[ch] PEM encoding/decoding
+	  functions: silc_[encode/decode]_pem.  Also added function
+	  silc_encode_pem_file to PEM encode with newlines ('\n') for
+	  saving into a file.
+
+	* SILC public keys are now encoded either PEM or binary.  Same
+	  option is for private keys as well.  By default private keys
+	  are binary encoded and public keys PEM encoded.  Silly HEX
+	  encoding were removed.
+
+	* Added into lib/silccrypt/silchash.[ch] silc_hash_fingerprint
+	  function to create fingerprints.
+
+	* Fixed a bug in SHA1; does not change the original data anymore.
+
+	* Partly implemented INFO command on client and server side.
+	  Fixed CLEAR command.  Changes to SERVER command; show current
+	  server(s) when giving command without arguments.  Added
+	  VERSION command to client.
+
+	* Added check to server that unregistered connections cannot
+	  execute commands (unless it is specificly allowed).
+
 Thu Jul  6 18:12:24 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed screen refresh.
