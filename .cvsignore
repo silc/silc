@@ -1,8 +1,12 @@
 Makefile
 Makefile.in
 Makefile.am
+Makefile.defines
 Makefile.defines.in
+Makefile.defines_int
 Makefile.defines_int.in
+acconfig.h
+aclocal.m4
 config.cache
 config.guess
 config.h
