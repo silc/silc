@@ -1,4 +1,32 @@
 &nbsp;<br />
+<b><big>Licensing of the SILC Software</big></b>
+<br />&nbsp;<br />
+The SILC is distributed currently as three different distributions; SILC 
+Client, SILC Server and SILC Toolkit.  Each of the distributions may have 
+different licenses and different licensing policy.  Currently the licenses 
+of these different distributions are as follows:
+<br />&nbsp;<br />
+- SILC Client: <a href="#gpl" class="normal">GNU General Public License</a><br />
+- SILC Server: <a href="#gpl" class="normal">GNU General Public License</a><br />
+- SILC Toolkit: <a href="#gpl" class="normal">GNU General Public License</a>
+<br />&nbsp;<br />
+If you have special licensing requirements, such as you are going to 
+distribute one of the SILC distributions as commercial product, or you 
+need to include one of the SILC distributions (such as SILC Toolkit) into 
+your commercial product, or you need to use some parts of the SILC 
+distributions (such as SILC Toolkit) within your commercial product,
+it is suggested that you would contact us to discuss the licensing policy 
+and other possible licensing methods for the SILC distributions.  Contact 
+us at <a href="mailto:info at silcnet.org" 
+class="normal">info@silcnet.org</a>.
+<br />&nbsp;<br />
+Note that these licenses apply only to the SILC software.  The actual SILC 
+protocol specification is open specification and is freely available from 
+this site and from the <a href="http://www.ietf.org" 
+class="normal">IETF</a>.
+
+<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />
+<a name="gpl"></a>
 <b><big>GNU GENERAL PUBLIC LICENSE<br />
 Version 2, June 1991</big></b>
 <br />&nbsp;<br />
