@@ -3534,6 +3534,7 @@ SILC_SERVER_CMD_FUNC(join)
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     SilcClientEntry entry = (SilcClientEntry)cmd->sock->user_data;
+    silc_free(client_id);
     client_id = silc_id_dup(entry->id, SILC_ID_CLIENT);
 
     if (!channel || 
@@ -3550,6 +3551,7 @@ SILC_SERVER_CMD_FUNC(join)
 					 cmd, SILC_COMMAND_JOIN,
 					 SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
 					 0);
+	  silc_free(client_id);
 	  goto out;
 	}
 	
@@ -3570,8 +3572,10 @@ SILC_SERVER_CMD_FUNC(join)
 	  /* If this is pending command callback then we've resolved
 	     it and it didn't work, return since we've notified the
 	     client already in the command reply callback. */
-	  if (cmd->pending)
+	  if (cmd->pending) {
+	    silc_free(client_id);
 	    goto out;
+	  }
 	  
 	  old_ident = silc_command_get_ident(cmd->payload);
 	  silc_command_set_ident(cmd->payload, ++server->cmd_ident);
@@ -3591,6 +3595,7 @@ SILC_SERVER_CMD_FUNC(join)
 	  cmd->pending = TRUE;
           silc_command_set_ident(cmd->payload, old_ident);
 	  silc_buffer_free(tmpbuf);
+	  silc_free(client_id);
 	  goto out;
 	}
 	
@@ -3606,6 +3611,7 @@ SILC_SERVER_CMD_FUNC(join)
 	    silc_server_command_send_status_reply(
 				       cmd, SILC_COMMAND_JOIN,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
+	    silc_free(client_id);
 	    goto out;
 	  }
 
@@ -3623,8 +3629,10 @@ SILC_SERVER_CMD_FUNC(join)
 	 something went wrong with the joining as the channel was not found.
 	 We can't do anything else but ignore this. */
       if (cmd->sock->type == SILC_SOCKET_TYPE_ROUTER ||
-	  server->server_type != SILC_ROUTER)
+	  server->server_type != SILC_ROUTER) {
+	silc_free(client_id);
 	goto out;
+      }
       
       /* We are router and the channel does not seem exist so we will check
 	 our global list as well for the channel. */
@@ -3638,6 +3646,7 @@ SILC_SERVER_CMD_FUNC(join)
 	  silc_server_command_send_status_reply(
 				       cmd, SILC_COMMAND_JOIN,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0);
+	  silc_free(client_id);
 	  goto out;
 	}
 
@@ -3711,7 +3720,8 @@ SILC_SERVER_CMD_FUNC(motd)
     if (server->config && server->config->server_info &&
 	server->config->server_info->motd_file) {
       /* Send motd */
-      motd = silc_file_readfile(server->config->server_info->motd_file, &motd_len);
+      motd = silc_file_readfile(server->config->server_info->motd_file,
+				&motd_len);
       if (!motd)
 	goto out;
       
