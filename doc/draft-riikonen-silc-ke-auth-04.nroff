@@ -525,8 +525,8 @@ Setup:  p is a large and public safe prime.  This is one of the
 
     1.  Initiator generates a random number x, where 1 < x < q, 
         and computes e = g ^ x mod p.  The result e is then 
-        encoded into Key Exchange Payload and sent to the
-        responder.
+        encoded into Key Exchange Payload, with the public key
+        (or certificate) and sent to the responder.
 
         If the Mutual Authentication flag is set then initiator
         MUST also produce signature data SIGN_i which the responder
@@ -539,7 +539,8 @@ Setup:  p is a large and public safe prime.  This is one of the
         and computes f = g ^ y mod p.  It then computes the
         shared secret KEY = e ^ y mod p, and, a hash value 
         HASH = hash(Key Exchange Start Payload data | public 
-        key (or certificate) | e | f | KEY).  It then signs
+        key (or certificate) | Initiator's public key (or
+        certificate) | e | f | KEY).  It then signs
         the HASH value with its private key resulting a signature
         SIGN.  
 
