@@ -97,17 +97,26 @@ typedef struct {
 
 /* Macros */
 
+/* Compares two ID's. */
+#define SILC_ID_COMPARE(id1, id2, len) (!memcmp(id1, id2, len))
+
 /* Compares Client ID's */
-#define SILC_ID_CLIENT_COMPARE(id1, id2)		\
-  silc_id_compare(id1, id2, SILC_ID_CLIENT)
+#define SILC_ID_CLIENT_COMPARE(id1, id2) \
+  SILC_ID_COMPARE(id1, id2, sizeof(SilcClientID))
 
 /* Compares Server ID's */
-#define SILC_ID_SERVER_COMPARE(id1, id2)		\
-  silc_id_compare(id1, id2, SILC_ID_SERVER)
+#define SILC_ID_SERVER_COMPARE(id1, id2) \
+  SILC_ID_COMPARE(id1, id2, sizeof(SilcServerID))
 
 /* Compares Channel ID's */
-#define SILC_ID_CHANNEL_COMPARE(id1, id2)			\
-  silc_id_compare(id1, id2, SILC_ID_CHANNEL)
+#define SILC_ID_CHANNEL_COMPARE(id1, id2) \
+  SILC_ID_COMPARE(id1, id2, sizeof(SilcChannelID))
+
+/* Compares two ID's by type */
+#define SILC_ID_COMPARE_TYPE(id1, id2, type)			\
+  (type == SILC_ID_SERVER ? SILC_ID_SERVER_COMPARE(id1, id2) :	\
+   type == SILC_ID_CLIENT ? SILC_ID_CLIENT_COMPARE(id1, id2) :	\
+   SILC_ID_CHANNEL_COMPARE(id1, id2))
 
 /* Compare nickname hash from Client ID */
 #define SILC_ID_COMPARE_HASH(id, _hash) \
@@ -118,6 +127,5 @@ unsigned char *silc_id_id2str(void *id, SilcIdType type);
 void *silc_id_str2id(unsigned char *id, uint32 id_len, SilcIdType type);
 uint32 silc_id_get_len(void *id, SilcIdType type);
 void *silc_id_dup(void *id, SilcIdType type);
-bool silc_id_compare(void *id1, void *id2, SilcIdType type);
 
 #endif

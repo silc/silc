@@ -44,6 +44,7 @@ void silc_id_create_server_id(int sock, SilcRng rng, SilcServerID **new_id)
   }
 
   /* Create the ID */
+  /* XXX Does not support IPv6 */
   SILC_PUT32_MSB(server.sin_addr.s_addr, (*new_id)->ip.data);
   (*new_id)->ip.data_len = 4;
   (*new_id)->port = server.sin_port;

@@ -166,9 +166,7 @@ void *silc_id_dup(void *id, SilcIdType type)
     {
       SilcServerID *server_id = (SilcServerID *)id, *new;
       new = silc_calloc(1, sizeof(*server_id));
-      memcpy(&new->ip, &server_id->ip, sizeof(server_id->ip)); 
-      new->port = server_id->port;
-      new->rnd = server_id->rnd;
+      memcpy(new, server_id, sizeof(*server_id));
       return new;
     }
     break;
@@ -176,9 +174,7 @@ void *silc_id_dup(void *id, SilcIdType type)
     {
       SilcClientID *client_id = (SilcClientID *)id, *new;
       new = silc_calloc(1, sizeof(*client_id));
-      memcpy(&new->ip, &client_id->ip, sizeof(client_id->ip)); 
-      new->rnd = client_id->rnd;
-      memcpy(new->hash, client_id->hash, CLIENTID_HASH_LEN);
+      memcpy(new, client_id, sizeof(*client_id));
       return new;
     }
     break;
@@ -186,59 +182,11 @@ void *silc_id_dup(void *id, SilcIdType type)
     {
       SilcChannelID *channel_id = (SilcChannelID *)id, *new;
       new = silc_calloc(1, sizeof(*channel_id));
-      memcpy(&new->ip, &channel_id->ip, sizeof(channel_id->ip)); 
-      new->port = channel_id->port;
-      new->rnd = channel_id->rnd;
+      memcpy(new, channel_id, sizeof(*channel_id));
       return new;
     }
     break;
   }
 
   return NULL;
-}
-
-/* Returns TRUE if the `id2' is equal to `id1'. */
-
-bool silc_id_compare(void *id1, void *id2, SilcIdType type)
-{
-  switch(type) {
-  case SILC_ID_SERVER:
-    {
-      SilcServerID *server_id1 = (SilcServerID *)id1;
-      SilcServerID *server_id2 = (SilcServerID *)id2;
-      if (!memcmp(server_id1->ip.data, server_id2->ip.data, 
-		  server_id1->ip.data_len) &&
-	  server_id1->port == server_id2->port &&
-	  server_id1->rnd == server_id2->rnd)
-	return TRUE;
-      return FALSE;
-    }
-    break;
-  case SILC_ID_CLIENT:
-    {
-      SilcClientID *client_id1 = (SilcClientID *)id1;
-      SilcClientID *client_id2 = (SilcClientID *)id2;
-      if (!memcmp(client_id1->ip.data, client_id2->ip.data, 
-		  client_id1->ip.data_len) &&
-	  client_id1->rnd == client_id2->rnd &&
-	  !memcmp(client_id1->hash, client_id2->hash, CLIENTID_HASH_LEN))
-	return TRUE;
-      return FALSE;
-    }
-    break;
-  case SILC_ID_CHANNEL:
-    {
-      SilcChannelID *channel_id1 = (SilcChannelID *)id1;
-      SilcChannelID *channel_id2 = (SilcChannelID *)id2;
-      if (!memcmp(channel_id1->ip.data, channel_id2->ip.data, 
-		  channel_id1->ip.data_len) &&
-	  channel_id1->port == channel_id2->port &&
-	  channel_id1->rnd == channel_id2->rnd)
-	return TRUE;
-      return FALSE;
-    }
-    break;
-  }
-
-  return FALSE;
 }

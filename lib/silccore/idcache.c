@@ -326,7 +326,8 @@ int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
 
   if (id != SILC_ID_CACHE_ANY) {
     for (i = 0; i < cache->cache_count; i++)
-      if (cache->cache[i].id && silc_id_compare(cache->cache[i].id, id, type))
+      if (cache->cache[i].id && SILC_ID_COMPARE_TYPE(cache->cache[i].id, 
+						     id, type))
 	silc_idcache_list_add(list, &(cache->cache[i]));
   } else {
     for (i = 0; i < cache->cache_count; i++)
@@ -358,7 +359,8 @@ int silc_idcache_find_by_id_one(SilcIDCache cache, void *id, SilcIdType type,
     return FALSE;
 
   for (i = 0; i < cache->cache_count; i++)
-    if (cache->cache[i].id && silc_id_compare(cache->cache[i].id, id, type)) {
+    if (cache->cache[i].id && SILC_ID_COMPARE_TYPE(cache->cache[i].id, 
+						   id, type)) {
       if (ret)
 	*ret = &(cache->cache[i]);
       return TRUE;
@@ -483,7 +485,8 @@ int silc_idcache_del_by_id(SilcIDCache cache, SilcIdType type, void *id)
     return FALSE;
 
   for (i = 0; i < cache->cache_count; i++)
-    if (cache->cache[i].id && silc_id_compare(cache->cache[i].id, id, type)) {
+    if (cache->cache[i].id && SILC_ID_COMPARE_TYPE(cache->cache[i].id, 
+						   id, type)) {
       cache->cache[i].id = NULL;
       cache->cache[i].data = NULL;
       cache->cache[i].type = 0;

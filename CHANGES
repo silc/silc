@@ -5,7 +5,6 @@ Sun May  6 13:59:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  This is a step towards IPv6 support.
 
 	  The silc_id_get_len takes now the ID as an extra argument.
-	  Added new function silc_id_compare into lib/silccore/id.[ch].
 	  The silc_id_id2str, silc_id_str2id and silc_id_dup now supports
 	  both IPv4 and IPv6 based ID's.
 
