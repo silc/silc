@@ -1601,11 +1601,17 @@ static void silc_server_new_id_real(SilcServer server,
     break;
 
   case SILC_ID_SERVER:
+    /* If the ID is mine, ignore it. */
+    if (!SILC_ID_SERVER_COMPARE(id, server->id)) {
+      SILC_LOG_DEBUG(("Ignoring my own ID as new ID"));
+      break;
+    }
+
     SILC_LOG_DEBUG(("New server id(%s) from [%s] %s",
 		    silc_id_render(id, SILC_ID_SERVER),
 		    sock->type == SILC_SOCKET_TYPE_SERVER ?
 		    "Server" : "Router", sock->hostname));
-    
+
     /* As a router we keep information of all global information in our global
        list. Cell wide information however is kept in the local list. */
     silc_idlist_add_server(id_list, NULL, 0, id, router, router_sock);

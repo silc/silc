@@ -665,14 +665,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	/* Remote end is client */
 	if (conn_type == SILC_SOCKET_TYPE_CLIENT) {
-	  SilcServerConfigSectionClientConnection *client = NULL;
-	  client = silc_server_config_find_client_conn(server->config,
-						       ctx->sock->ip,
-						       ctx->sock->port);
-	  if (!client)
-	    client = silc_server_config_find_client_conn(server->config,
-							 ctx->sock->hostname,
-							 ctx->sock->port);
+	  SilcServerConfigSectionClientConnection *client = ctx->config;
 	  
 	  if (client) {
 	    switch(client->auth_meth) {
@@ -734,15 +727,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is server */
 	if (conn_type == SILC_SOCKET_TYPE_SERVER) {
-	  SilcServerConfigSectionServerConnection *serv = NULL;
-	  serv = silc_server_config_find_server_conn(server->config,
-						     ctx->sock->ip,
-						     ctx->sock->port);
-	  if (!serv)
-	    serv = silc_server_config_find_server_conn(server->config,
-						       ctx->sock->hostname,
-						       ctx->sock->port);
-
+	  SilcServerConfigSectionServerConnection *serv = ctx->config;
+	  
 	  if (serv) {
 	    switch(serv->auth_meth) {
 	    case SILC_AUTH_NONE:
@@ -803,15 +789,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is router */
 	if (conn_type == SILC_SOCKET_TYPE_ROUTER) {
-	  SilcServerConfigSectionServerConnection *serv = NULL;
-	  serv = silc_server_config_find_router_conn(server->config,
-						     ctx->sock->ip,
-						     ctx->sock->port);
-	  if (!serv)
-	    serv = silc_server_config_find_router_conn(server->config,
-						       ctx->sock->hostname,
-						       ctx->sock->port);
-	  
+	  SilcServerConfigSectionServerConnection *serv = ctx->config;
+
 	  if (serv) {
 	    switch(serv->auth_meth) {
 	    case SILC_AUTH_NONE:

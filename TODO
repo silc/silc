@@ -48,9 +48,6 @@ TODO/bugs In SILC Server
    own resolver stuff (through scheduler, if possible without writing
    too much own stuff) or use threads.
 
- o [AdminConnection] config section does not work correctly, it takes
-   only one entry and ignores the other -> authentication fails.
-
  o [DenyConnection] config section is not implemented.
 
  o The backup router support described in the protocol specification

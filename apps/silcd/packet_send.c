@@ -866,7 +866,8 @@ void silc_server_send_notify(SilcServer server,
   va_start(ap, argc);
 
   packet = silc_notify_payload_encode(type, argc, ap);
-  silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY, 0, 
+  silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY, 
+			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
 }
@@ -884,7 +885,8 @@ void silc_server_send_notify_args(SilcServer server,
   SilcBuffer packet;
 
   packet = silc_notify_payload_encode_args(type, argc, args);
-  silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY, 0, 
+  silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY, 
+			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
 }

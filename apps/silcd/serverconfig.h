@@ -131,7 +131,7 @@ typedef struct SilcServerConfigSectionServerConnectionStruct {
   uint16 port;
   char *version;
   uint32 class;
-  int initiator;
+  bool initiator;
   struct SilcServerConfigSectionServerConnectionStruct *next;
   struct SilcServerConfigSectionServerConnectionStruct *prev;
 } SilcServerConfigSectionServerConnection;
@@ -269,6 +269,7 @@ silc_server_config_find_server_conn(SilcServerConfig config,
 SilcServerConfigSectionServerConnection *
 silc_server_config_find_router_conn(SilcServerConfig config, 
 				    char *host, int port);
+bool silc_server_config_is_primary_route(SilcServerConfig config);
 SilcServerConfigSectionAdminConnection *
 silc_server_config_find_admin(SilcServerConfig config,
 			      char *host, char *username, char *nickname);

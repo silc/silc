@@ -239,6 +239,23 @@ int silc_server_init(SilcServer server)
 		      &newsocket);
 
     server->sockets[sock[i]] = newsocket;
+    
+    /* Perform name and address lookups to resolve the listenning address
+       and port. */
+    if (!silc_net_check_local_by_sock(sock[i], &newsocket->hostname, 
+				     &newsocket->ip)) {
+      if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
+	  !newsocket->ip) {
+	SILC_LOG_ERROR(("IP/DNS lookup failed for local host %s",
+			newsocket->hostname ? newsocket->hostname :
+			newsocket->ip ? newsocket->ip : ""));
+	server->stat.conn_failures++;
+	goto err0;
+      }
+      if (!newsocket->hostname)
+	newsocket->hostname = strdup(newsocket->ip);
+    }
+    newsocket->port = silc_net_get_local_port(sock[i]);
 
     /* Put the allocated socket pointer also to the entry allocated above 
        for fast back-referencing to the socket list. */
@@ -929,7 +946,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   SilcServer server = (SilcServer)context;
   SilcSocketConnection newsocket;
   SilcServerKEInternalContext *proto_ctx;
-  int sock;
+  int sock, port;
+  void *config;
 
   SILC_LOG_DEBUG(("Accepting new connection"));
 
@@ -977,6 +995,45 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   }
   newsocket->port = silc_net_get_remote_port(sock);
 
+  /* Register the connection for network input and output. This sets
+     that scheduler will listen for incoming packets for this connection 
+     and sets that outgoing packets may be sent to this connection as well.
+     However, this doesn't set the scheduler for outgoing traffic, it
+     will be set separately by calling SILC_SET_CONNECTION_FOR_OUTPUT,
+     later when outgoing data is available. */
+  SILC_REGISTER_CONNECTION_FOR_IO(sock);
+
+  /* Check whether we have configred this sort of connection at all. We
+     have to check all configurations since we don't know what type of
+     connection this is. */
+  port = server->sockets[fd]->port; /* Listenning port */
+  if (!(config = silc_server_config_find_client_conn(server->config,
+						     newsocket->ip, port)))
+    if (!(config = silc_server_config_find_client_conn(server->config,
+						       newsocket->hostname, 
+						       port)))
+      if (!(config = silc_server_config_find_server_conn(server->config,
+							 newsocket->ip, 
+							 port)))
+	if (!(config = silc_server_config_find_server_conn(server->config,
+							   newsocket->hostname,
+							   port)))
+	  if (!(config = 
+		silc_server_config_find_router_conn(server->config,
+						    newsocket->ip, port)))
+	    if (!(config = 
+		  silc_server_config_find_router_conn(server->config,
+						      newsocket->hostname, 
+						      port))) {
+	      silc_server_disconnect_remote(server, newsocket, 
+					    "Server closed connection: "
+					    "Connection refused");
+	      server->stat.conn_failures++;
+	      return;
+	    }
+
+  /* The connection is allowed */
+
   SILC_LOG_INFO(("Incoming connection from %s (%s)", newsocket->hostname,
 		 newsocket->ip));
 
@@ -987,6 +1044,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   proto_ctx->sock = newsocket;
   proto_ctx->rng = server->rng;
   proto_ctx->responder = TRUE;
+  proto_ctx->config = config;
 
   /* Prepare the connection for key exchange protocol. We allocate the
      protocol but will not start it yet. The connector will be the
@@ -1007,14 +1065,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
 		       context, 60, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_LOW);
-
-  /* Register the connection for network input and output. This sets
-     that scheduler will listen for incoming packets for this connection 
-     and sets that outgoing packets may be sent to this connection as well.
-     However, this doesn't set the scheduler for outgoing traffic, it
-     will be set separately by calling SILC_SET_CONNECTION_FOR_OUTPUT,
-     later when outgoing data is available. */
-  SILC_REGISTER_CONNECTION_FOR_IO(sock);
 }
 
 /* Second part of accepting new connection. Key exchange protocol has been
@@ -1093,6 +1143,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   proto_ctx->responder = TRUE;
   proto_ctx->dest_id_type = ctx->dest_id_type;
   proto_ctx->dest_id = ctx->dest_id;
+  proto_ctx->config = ctx->config;
 
   /* Free old protocol as it is finished now */
   silc_protocol_free(protocol);
@@ -1192,6 +1243,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   case SILC_SOCKET_TYPE_ROUTER:
     {
       SilcServerEntry new_server;
+      SilcServerConfigSectionServerConnection *conn = ctx->config;
 
       SILC_LOG_DEBUG(("Remote host is %s", 
 		      sock->type == SILC_SOCKET_TYPE_SERVER ? 
@@ -1224,12 +1276,14 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       server->stat.servers++;
 
       id_entry = (void *)new_server;
-      
-      /* There is connection to other server now, if it is router then
-	 we will have connection to outside world.  If we are router but
-	 normal server connected to us then we will remain standalone,
-	 if we are standlone. */
+
+      /* Check whether this connection is to be our primary router connection
+	 if we dont' already have the primary route. */
       if (server->standalone && sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	if (silc_server_config_is_primary_route(server->config) &&
+	    !conn->initiator)
+	  break;
+
 	SILC_LOG_DEBUG(("We are not standalone server anymore"));
 	server->standalone = FALSE;
 	if (!server->id_entry->router) {
@@ -1237,6 +1291,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  server->router = id_entry;
 	}
       }
+
       break;
     }
   default:
@@ -1473,7 +1528,8 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   if (server->server_type == SILC_ROUTER) {
     /* Route the packet if it is not destined to us. Other ID types but
        server are handled separately after processing them. */
-    if (packet->dst_id_type == SILC_ID_SERVER && 
+    if (!(packet->flags & SILC_PACKET_FLAG_BROADCAST) &&
+	packet->dst_id_type == SILC_ID_SERVER && 
 	sock->type != SILC_SOCKET_TYPE_CLIENT &&
 	SILC_ID_SERVER_COMPARE(packet->dst_id, server->id_string)) {
       
@@ -1489,17 +1545,20 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
       silc_free(id);
       goto out;
     }
-    
-    /* Broadcast packet if it is marked as broadcast packet and it is
-       originated from router and we are router. */
-    if (sock->type == SILC_SOCKET_TYPE_ROUTER &&
-	packet->flags & SILC_PACKET_FLAG_BROADCAST) {
-      silc_server_packet_broadcast(server, server->router->connection, packet);
-    }
   }
 
   /* Parse the incoming packet type */
   silc_server_packet_parse_type(server, sock, packet);
+
+  if (server->server_type == SILC_ROUTER) {
+    /* Broadcast packet if it is marked as broadcast packet and it is
+       originated from router and we are router. */
+    if (sock->type == SILC_SOCKET_TYPE_ROUTER &&
+	packet->flags & SILC_PACKET_FLAG_BROADCAST &&
+	!server->standalone) {
+      silc_server_packet_broadcast(server, server->router->connection, packet);
+    }
+  }
 
  out:
   /*  silc_buffer_clear(sock->inbuf); */
@@ -2334,8 +2393,8 @@ int silc_server_remove_clients_by_server(SilcServer server,
 					  argv_types);
       silc_server_send_notify_args(server, 
 				   server->router->connection,
-				   server->server_type == 
-				   SILC_SERVER ? FALSE : TRUE, 
+				   server->server_type == SILC_SERVER ? 
+				   FALSE : TRUE, 
 				   SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
 				   argc, args);
       silc_buffer_free(args);

@@ -760,7 +760,7 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       ret = silc_config_get_token(line, &tmp);
       if (ret < 0)
 	break;
-      if (ret == 0) {
+      if (ret) {
 	config->clients->port = atoi(tmp);
 	silc_free(tmp);
       }
@@ -1106,6 +1106,8 @@ int silc_server_config_parse_lines(SilcServerConfig config,
     config->clients = config->clients->prev;
   while (config->servers && config->servers->prev)
     config->servers = config->servers->prev;
+  while (config->admins && config->admins->prev)
+    config->admins = config->admins->prev;
   while (config->routers && config->routers->prev)
     config->routers = config->routers->prev;
   
@@ -1422,7 +1424,8 @@ void silc_server_config_register_hmacs(SilcServerConfig config)
 }
 
 /* Returns client authentication information from server configuration
-   by host (name or ip). */
+   by host (name or ip). If `port' is non-null then both name or IP and 
+   the port must match. */
 
 SilcServerConfigSectionClientConnection *
 silc_server_config_find_client_conn(SilcServerConfig config, 
@@ -1430,6 +1433,7 @@ silc_server_config_find_client_conn(SilcServerConfig config,
 {
   int i;
   SilcServerConfigSectionClientConnection *client = NULL;
+  bool match = FALSE;
 
   if (!host)
     return NULL;
@@ -1441,7 +1445,14 @@ silc_server_config_find_client_conn(SilcServerConfig config,
 
   for (i = 0; client; i++) {
     if (silc_string_compare(client->host, host))
+      match = TRUE;
+
+    if (port && client->port != port)
+      match = FALSE;
+
+    if (match)
       break;
+
     client = client->next;
   }
 
@@ -1452,7 +1463,8 @@ silc_server_config_find_client_conn(SilcServerConfig config,
 }
 
 /* Returns server connection info from server configuartion by host 
-   (name or ip). */
+   (name or ip). If `port' is non-null then both name or IP and the port
+   must match. */
 
 SilcServerConfigSectionServerConnection *
 silc_server_config_find_server_conn(SilcServerConfig config, 
@@ -1460,6 +1472,7 @@ silc_server_config_find_server_conn(SilcServerConfig config,
 {
   int i;
   SilcServerConfigSectionServerConnection *serv = NULL;
+  bool match = FALSE;
 
   if (!host)
     return NULL;
@@ -1470,7 +1483,14 @@ silc_server_config_find_server_conn(SilcServerConfig config,
   serv = config->servers;
   for (i = 0; serv; i++) {
     if (silc_string_compare(serv->host, host))
+      match = TRUE;
+
+    if (port && serv->port != port)
+      match = FALSE;
+
+    if (match)
       break;
+
     serv = serv->next;
   }
 
@@ -1489,6 +1509,7 @@ silc_server_config_find_router_conn(SilcServerConfig config,
 {
   int i;
   SilcServerConfigSectionServerConnection *serv = NULL;
+  bool match = FALSE;
 
   if (!host)
     return NULL;
@@ -1499,7 +1520,14 @@ silc_server_config_find_router_conn(SilcServerConfig config,
   serv = config->routers;
   for (i = 0; serv; i++) {
     if (silc_string_compare(serv->host, host))
+      match = TRUE;
+
+    if (port && serv->port != port)
+      match = FALSE;
+
+    if (match)
       break;
+
     serv = serv->next;
   }
 
@@ -1507,6 +1535,28 @@ silc_server_config_find_router_conn(SilcServerConfig config,
     return NULL;
 
   return serv;
+}
+
+/* Returns TRUE if configuartion for a router connection that we are 
+   initiating exists. */
+
+bool silc_server_config_is_primary_route(SilcServerConfig config)
+{
+  int i;
+  SilcServerConfigSectionServerConnection *serv = NULL;
+  bool found = FALSE;
+
+  serv = config->routers;
+  for (i = 0; serv; i++) {
+    if (serv->initiator == TRUE) {
+      found = TRUE;
+      break;
+    }
+
+    serv = serv->next;
+  }
+
+  return found;
 }
 
 /* Returns Admin connection configuration by host, username and/or 

@@ -43,6 +43,9 @@ typedef struct {
   void *dest_id;
   SilcIdType dest_id_type;
 
+  /* Pointer to the configuration. */
+  void *config;
+
   SilcTask timeout_task;
   SilcPacketContext *packet;
   SilcSKE ske;
@@ -75,6 +78,9 @@ typedef struct {
   /* Destinations ID from KE protocol context */
   void *dest_id;
   SilcIdType dest_id_type;
+
+  /* Pointer to the configuration. */
+  void *config;
 
   SilcTask timeout_task;
   SilcPacketContext *packet;

@@ -299,6 +299,71 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   return TRUE;
 }
 
+/* Performs lookups for local name and IP address. This peforms reverse
+   lookup as well to verify that the IP has FQDN. */
+
+bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
+{
+  struct sockaddr_in local;
+  struct hostent *dest;
+  char *host_ip = NULL;
+  char host_name[1024];
+  int rval, len;
+  int i;
+
+  *hostname = NULL;
+  *ip = NULL;
+
+  SILC_LOG_DEBUG(("Resolving local hostname and IP address"));
+
+  memset(&local, 0, sizeof(local));
+  len = sizeof(local);
+  rval = getsockname(sock, (struct sockaddr *)&local, &len);
+  if (rval < 0)
+    return FALSE;
+
+  host_ip = inet_ntoa(local.sin_addr);
+  if (!host_ip)
+    return FALSE;
+
+  *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
+  memcpy(*ip, host_ip, strlen(host_ip));
+
+  /* Get host by address */
+  dest = gethostbyaddr((char *)&local.sin_addr, 
+		       sizeof(struct in_addr), AF_INET);
+  if (!dest)
+    return FALSE;
+
+  /* Get same host by name to see that the local host really is
+     the who it says it is */
+  memset(host_name, 0, sizeof(host_name));
+  memcpy(host_name, dest->h_name, strlen(dest->h_name));
+
+  *hostname = silc_calloc(strlen(host_name) + 1, sizeof(char));
+  memcpy(*hostname, host_name, strlen(host_name));
+  SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
+
+  dest = gethostbyname(host_name);
+  if (!dest)
+    return FALSE;
+
+  /* Find the address from list */
+  for (i = 0; dest->h_addr_list[i]; i++)
+    if (!memcmp(dest->h_addr_list[i], &local.sin_addr, 
+	       sizeof(struct in_addr)))
+      break;
+  if (!dest->h_addr_list[i])
+    return FALSE;
+
+  silc_free(*ip);
+  *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
+  memcpy(*ip, host_ip, strlen(host_ip));
+  SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
+
+  return TRUE;
+}
+
 /* Return remote port by socket. */
 
 uint16 silc_net_get_remote_port(int sock)

@@ -1,3 +1,54 @@
+Tue Apr 17 21:18:19 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the [AdminConnection] server config section to support
+	  multiple entries.  Affected file silcd/serverconfig.c.
+
+	* Added support into the server to check the validity of the
+	  incoming connection before executing any KE or authentication
+	  protocols.
+
+	* The connection configuration is now saved to the KE and 
+	  connection auth protocol contexts and not fetched anymore in 
+	  the protocol.  Affected files silcd/server.c, silcd/protocol.[ch].
+
+	* The local hosts listenning address and port is also resolved
+	  now when starting the server.  We want to have the socket object
+	  to include the real address and port for the listener.  Added
+	  new function silc_net_check_local_by_sock into the files
+	  lib/silcutil/silcnet.[ch].
+
+	* Fixed a broadcast bug in server -> do not broadcast if we
+	  are standalone.
+
+	* Fixed a routing bug.  Do not route broadcast packets ever.
+	  Broadcast packets must be processed always and not routed since
+	  they may be destined to some other host than yourself and thus
+	  would get routed without no good reason.  Affected file is
+	  silcd/server.c.
+
+	* Added function silc_server_config_is_primary_route to check
+	  whether primary router connection has been configured (a router
+	  configuration that we are initiating).  If there is not, we 
+	  will assume that there is only two routers in the SILC network
+	  and we will use the incoming router connection as our primary
+	  route.  Affected files silcd/serverconfig.[ch], silcd/server.c.
+
+	* Changed the order of the broadcasting.  Broadcast _after_ the
+	  packet has been processed not before.  Affected file is
+	  silcd/server.c.
+
+	* Fixed a [ClientConnection] parsing bug.  The port was never
+	  parsed correctly thus resulting to port 0.  Affected file
+	  silcd/serverconfig.c.
+
+	* Fixed silc_server_send_notify_args -> it ignored the `broadcast'
+	  argument and did not set the broadcast packet flag.  Affected
+	  file silcd/packet_send.c.  Fixed same bug in the function
+	  silc_server_send_notify as well.
+
+	* If we receive NEW_ID packet for our own ID in the server, ignore
+	  the packet.
+
 Mon Apr 16 12:10:33 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Updated TODO.
