@@ -177,16 +177,18 @@ static void silc_nickname_format_parse(const char *nickname,
 static void silc_register_cipher(SilcClient client, const char *cipher)
 {
   int i;
-  
-  for (i = 0; silc_default_ciphers[i].name; i++)
-    if (!strcmp(silc_default_ciphers[i].name, cipher)) {
-      silc_cipher_register(&silc_default_ciphers[i]);
-      break;
-    }
 
-  if (!silc_cipher_is_supported(cipher)) {
-    SILC_LOG_ERROR(("Unknown cipher `%s'", cipher));
-    exit(1);
+  if (cipher) {
+    for (i = 0; silc_default_ciphers[i].name; i++)
+      if (!strcmp(silc_default_ciphers[i].name, cipher)) {
+	silc_cipher_register(&silc_default_ciphers[i]);
+	break;
+      }
+    
+    if (!silc_cipher_is_supported(cipher)) {
+      SILC_LOG_ERROR(("Unknown cipher `%s'", cipher));
+      exit(1);
+    }
   }
 
   /* Register other defaults */
@@ -196,16 +198,18 @@ static void silc_register_cipher(SilcClient client, const char *cipher)
 static void silc_register_hash(SilcClient client, const char *hash)
 {
   int i;
-  
-  for (i = 0; silc_default_hash[i].name; i++)
-    if (!strcmp(silc_default_hash[i].name, hash)) {
-      silc_hash_register(&silc_default_hash[i]);
-      break;
+
+  if (hash) {
+    for (i = 0; silc_default_hash[i].name; i++)
+      if (!strcmp(silc_default_hash[i].name, hash)) {
+	silc_hash_register(&silc_default_hash[i]);
+	break;
+      }
+    
+    if (!silc_hash_is_supported(hash)) {
+      SILC_LOG_ERROR(("Unknown hash function `%s'", hash));
+      exit(1);
     }
-  
-  if (!silc_hash_is_supported(hash)) {
-    SILC_LOG_ERROR(("Unknown hash function `%s'", hash));
-    exit(1);
   }
 
   /* Register other defaults */
@@ -215,16 +219,18 @@ static void silc_register_hash(SilcClient client, const char *hash)
 static void silc_register_hmac(SilcClient client, const char *hmac)
 {
   int i;
-  
-  for (i = 0; silc_default_hmacs[i].name; i++)
-    if (!strcmp(silc_default_hmacs[i].name, hmac)) {
-      silc_hmac_register(&silc_default_hmacs[i]);
-      break;
+
+  if (hmac) {
+    for (i = 0; silc_default_hmacs[i].name; i++)
+      if (!strcmp(silc_default_hmacs[i].name, hmac)) {
+	silc_hmac_register(&silc_default_hmacs[i]);
+	break;
+      }
+    
+    if (!silc_hmac_is_supported(hmac)) {
+      SILC_LOG_ERROR(("Unknown HMAC `%s'", hmac));
+      exit(1);
     }
-  
-  if (!silc_hmac_is_supported(hmac)) {
-    SILC_LOG_ERROR(("Unknown HMAC `%s'", hmac));
-    exit(1);
   }
 
   /* Register other defaults */
@@ -329,9 +335,9 @@ void silc_core_init_finish(SERVER_REC *server)
   silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);
 
   /* Crypto settings */
-  settings_add_str("server", "crypto_default_cipher", "aes-256-cbc");
-  settings_add_str("server", "crypto_default_hash", "sha1");
-  settings_add_str("server", "crypto_default_hmac", "hmac-sha1-96");
+  settings_add_str("server", "crypto_default_cipher", SILC_DEFAULT_CIPHER);
+  settings_add_str("server", "crypto_default_hash", SILC_DEFAULT_HASH);
+  settings_add_str("server", "crypto_default_hmac", SILC_DEFAULT_HMAC);
 
   /* Get the ciphers and stuff from config file */
   def_cipher = settings_get_str("crypto_default_cipher");
