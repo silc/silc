@@ -215,6 +215,7 @@ int silc_client_connect_to_server(SilcClient client, int port,
 {
   SilcClientInternalConnectContext *ctx;
   SilcClientConnection conn;
+  int sock;
 
   SILC_LOG_DEBUG(("Connecting to port %d of server %s",
 		  port, host));
@@ -236,7 +237,10 @@ int silc_client_connect_to_server(SilcClient client, int port,
   ctx->tries = 0;
 
   /* Do the actual connecting process */
-  return silc_client_connect_to_server_internal(ctx);
+  sock = silc_client_connect_to_server_internal(ctx);
+  if (sock == -1)
+    silc_client_del_connection(client, conn);
+  return sock;
 }
 
 /* Start of the connection to the remote server. This is called after
@@ -284,6 +288,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
 
       /* Notify application of failure */
       client->ops->connect(client, conn, FALSE);
+      silc_client_del_connection(client, conn);
     }
     return;
   }
@@ -575,15 +580,15 @@ SILC_TASK_CALLBACK(silc_client_packet_process)
       /* If connection is disconnecting already we will finally
 	 close the connection */
       if (SILC_IS_DISCONNECTING(sock)) {
-	silc_client_close_connection(client, sock);
 	client->ops->disconnect(client, conn);
+	silc_client_close_connection(client, sock);
 	return;
       }
       
       client->ops->say(client, conn, "Connection closed: premature EOF");
       SILC_LOG_DEBUG(("Premature EOF from connection %d", sock->sock));
-      silc_client_close_connection(client, sock);
       client->ops->disconnect(client, conn);
+      silc_client_close_connection(client, sock);
       return;
     }
 
@@ -1187,6 +1192,8 @@ void silc_client_close_connection(SilcClient client,
     conn->local_id_data = NULL;
     conn->remote_host = NULL;
     conn->current_channel = NULL;
+
+    silc_client_del_connection(client, conn);
   }
 
   if (sock->protocol) {
