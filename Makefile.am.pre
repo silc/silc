@@ -61,7 +61,7 @@ sim-install:
 doc-install:
 	$(INSTALL_DATA) $(srcdir)/doc/CodingStyle $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/doc/FAQ $(docdir)/
-	$(INSTALL_DATA) $(srcdir)/doc/example* $(docdir)/
+	$(INSTALL_DATA) $(srcdir)/doc/example_* $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/doc/*.txt $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/COPYING $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/CHANGES $(docdir)/
