@@ -624,7 +624,7 @@ void silc_server_remove_channels_by_server(SilcServer server,
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Removing channels by server"));
 
   if (silc_idcache_get_all(server->global_list->channels, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
@@ -650,7 +650,7 @@ void silc_server_update_channels_by_server(SilcServer server,
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Updating channels by server"));
 
   if (silc_idcache_get_all(server->global_list->channels, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {

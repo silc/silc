@@ -744,7 +744,7 @@ void silc_server_notify(SilcServer server,
 	if (!silc_server_client_on_channel(client, channel, &chl))
 	  goto out;
 	
-	if (client != client2) {
+	if (client != client2 && server->server_type == SILC_ROUTER) {
 	  /* Sender must be operator */
 	  if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
 	      !(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
@@ -752,7 +752,6 @@ void silc_server_notify(SilcServer server,
 	    goto out;
 	  }
 
-	  /* Check that target is on channel */
 	  if (!silc_server_client_on_channel(client2, channel, &chl))
 	    goto out;
 
@@ -764,7 +763,29 @@ void silc_server_notify(SilcServer server,
 	}
       }
 
+      /* Get target channel entry */
+      if (!silc_server_client_on_channel(client2, channel, &chl))
+	goto out;
+
       if (mode & SILC_CHANNEL_UMODE_CHANFO &&
+	  !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) && !client &&
+	  server->server_type == SILC_ROUTER) {
+	/* Get the founder of the channel and if found then this client
+	   cannot be the founder since there already is one. */
+	silc_hash_table_list(channel->user_list, &htl);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
+	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	    mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
+	    notify_sent = TRUE;
+	    break;
+	  }
+	silc_hash_table_list_reset(&htl);
+	if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
+	  break;
+      }
+
+      if (client && mode & SILC_CHANNEL_UMODE_CHANFO &&
 	  !(chl->mode & SILC_CHANNEL_UMODE_CHANFO) && 
 	  server->server_type == SILC_ROUTER) {
 	/* Check whether this client is allowed to be channel founder on
@@ -813,7 +834,7 @@ void silc_server_notify(SilcServer server,
 
 	/* Now match the public key we have cached and public key sent.
 	   They must match. */
-	if (client && client->data.public_key && 
+	if (client->data.public_key && 
 	    !silc_pkcs_public_key_compare(channel->founder_key,
 					  client->data.public_key)) {
 	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;

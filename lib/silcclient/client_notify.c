@@ -741,8 +741,11 @@ void silc_client_notify_by_server(SilcClient client,
     /* Find target Client entry */
     client_entry2 = 
       silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry2)
+    if (!client_entry2) {
+      silc_client_notify_by_server_resolve(client, conn, packet, 
+					   SILC_ID_CLIENT, client_id);
       goto out;
+    }
 
     /* Get channel entry */
     channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
