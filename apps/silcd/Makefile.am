@@ -35,7 +35,8 @@ silcd_SOURCES = \
 	server_version.c
 silcd_DEPENDENCIES = ../lib/libsilc.a
 
-LDADD = -L. $(SILC_COMMON_LIBS)
+LIBS = $(SILC_COMMON_LIBS)
+LDADD =
 
 EXTRA_DIST = *.h
 
