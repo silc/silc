@@ -175,6 +175,7 @@ extern DLLAPI bool silc_log_quick;
  *    delay time will expire; for example if you change from 300 seconds to
  *    60 seconds you will have to wait up to 300 seconds for this change to
  *    take effect.
+ *    This value must be greater than 2 seconds.
  *
  ***/
 extern DLLAPI long silc_log_flushdelay;
