@@ -840,7 +840,7 @@ router.  Usually these people are SILC server and router administrators
 that take care of their own server and clients on them.  The purpose of
 operators is to administrate the SILC server or router.  However, even
 an operator with highest privileges is not able to enter invite-only
-channel, to gain access to the contents of a encrypted and authenticated
+channels, to gain access to the contents of encrypted and authenticated
 packets traveling in the SILC network or to gain channel operator
 privileges on public channels without being promoted.  They have the
 same privileges as any normal else except they are able to administrate
