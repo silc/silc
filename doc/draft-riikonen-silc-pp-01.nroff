@@ -1089,7 +1089,7 @@ ID's sent in arguments are sent inside ID Payload.
       and broadcast it to the network.
 
       Max Arguments:  2
-          Arguments:  (1) <Client ID>  (2)  <message>
+          Arguments:  (1) <Client ID>  (2) <message>
 
       The <Client ID> is the client who left SILC network.  The <message>
       is free text string indicating the reason of signoff.

@@ -32,7 +32,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(list, LIST, "LIST", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(topic, TOPIC, "TOPIC", SILC_CF_LAG | SILC_CF_REG, 3),
   SILC_CLIENT_CMD(invite, INVITE, "INVITE", SILC_CF_LAG | SILC_CF_REG, 3),
-  SILC_CLIENT_CMD(quit, QUIT, "QUIT", SILC_CF_LAG | SILC_CF_REG, 1),
+  SILC_CLIENT_CMD(quit, QUIT, "QUIT", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(kill, KILL, "KILL", 
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
   SILC_CLIENT_CMD(info, INFO, "INFO", SILC_CF_LAG | SILC_CF_REG, 2),
@@ -519,12 +519,29 @@ SILC_CLIENT_CMD_FUNC(invite)
   silc_client_command_free(cmd);
 }
 
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+} *QuitInternal;
+
+SILC_TASK_CALLBACK(silc_client_command_quit_cb)
+{
+  QuitInternal q = (QuitInternal)context;
+
+  /* Close connection */
+  q->client->ops->disconnect(q->client, q->conn);
+  silc_client_close_connection(q->client, q->conn->sock);
+
+  silc_free(q);
+}
+
 /* Command QUIT. Closes connection with current server. */
  
 SILC_CLIENT_CMD_FUNC(quit)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcBuffer buffer;
+  QuitInternal q;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -532,20 +549,26 @@ SILC_CLIENT_CMD_FUNC(quit)
     goto out;
   }
 
-  buffer = silc_command_payload_encode(SILC_COMMAND_QUIT, cmd->argc - 1, 
-				       ++cmd->argv, ++cmd->argv_lens,
-				       ++cmd->argv_types, 0);
+  if (cmd->argc > 1)
+    buffer = silc_command_payload_encode(SILC_COMMAND_QUIT, cmd->argc - 1, 
+					 &cmd->argv[1], &cmd->argv_lens[1],
+					 &cmd->argv_types[1], 0);
+  else
+    buffer = silc_command_payload_encode(SILC_COMMAND_QUIT, 0,
+					 NULL, NULL, NULL, 0);
   silc_client_packet_send(cmd->client, cmd->conn->sock, SILC_PACKET_COMMAND, 
 			  NULL, 0, NULL, NULL, 
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  cmd->argv--;
-  cmd->argv_lens--;
-  cmd->argv_types--;
 
-  /* Close connection */
-  cmd->client->ops->disconnect(cmd->client, cmd->conn);
-  silc_client_close_connection(cmd->client, cmd->conn->sock);
+  q = silc_calloc(1, sizeof(*q));
+  q->client = cmd->client;
+  q->conn = cmd->conn;
+
+  /* We quit the connection with little timeout */
+  silc_task_register(cmd->client->timeout_queue, cmd->conn->sock->sock,
+		     silc_client_command_quit_cb, (void *)q,
+		     1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   /* Notify application */
   COMMAND;

@@ -89,6 +89,9 @@ void silc_server_packet_parse_type(SilcServer server,
 				   SilcPacketContext *packet);
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock);
+void silc_server_free_client_data(SilcServer server, 
+				  SilcSocketConnection sock,
+				  SilcClientEntry user_data, char *signoff);
 void silc_server_free_sock_user_data(SilcServer server, 
 				     SilcSocketConnection sock);
 int silc_server_channel_has_global(SilcChannelEntry channel);
@@ -97,7 +100,8 @@ int silc_server_remove_clients_by_server(SilcServer server,
 					 SilcServerEntry entry);
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
-				      SilcClientEntry client);
+				      SilcClientEntry client,
+				      char *signoff_message);
 int silc_server_remove_from_one_channel(SilcServer server, 
 					SilcSocketConnection sock,
 					SilcChannelEntry channel,

@@ -603,8 +603,7 @@ SILC_TASK_CALLBACK(silc_client_packet_process)
 	return;
       }
       
-      client->ops->say(client, conn, "Connection closed: premature EOF");
-      SILC_LOG_DEBUG(("Premature EOF from connection %d", sock->sock));
+      SILC_LOG_DEBUG(("EOF from connection %d", sock->sock));
       client->ops->disconnect(client, conn);
       silc_client_close_connection(client, sock);
       return;
@@ -1531,8 +1530,13 @@ void silc_client_notify_by_server(SilcClient client,
     silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
 			   client_entry->id);
 
+    /* Get signoff message */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (tmp_len > 128)
+      tmp = NULL;
+
     /* Notify application */
-    client->ops->notify(client, conn, type, client_entry);
+    client->ops->notify(client, conn, type, client_entry, tmp);
 
     /* Free data */
     if (client_entry->nickname)

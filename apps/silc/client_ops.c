@@ -85,7 +85,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   char message[4096];
   SilcClientEntry client_entry, client_entry2;
   SilcChannelEntry channel_entry;
-  char *tmp;
+  char *tmp = NULL;
   unsigned int tmp_int;
 
   va_start(vp, type);
@@ -130,12 +130,15 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
   case SILC_NOTIFY_TYPE_SIGNOFF:
     client_entry = va_arg(vp, SilcClientEntry);
+    tmp = va_arg(vp, char *);
     if (client_entry->server)
-      snprintf(message, sizeof(message), "Signoff: %s@%s", 
-	       client_entry->nickname, client_entry->server);
+      snprintf(message, sizeof(message), "Signoff: %s@%s %s%s%s", 
+	       client_entry->nickname, client_entry->server,
+	       tmp ? "(" : "", tmp ? tmp : "", tmp ? ")" : "");
     else
-      snprintf(message, sizeof(message), "Signoff: %s", 
-	       client_entry->nickname);
+      snprintf(message, sizeof(message), "Signoff: %s %s%s%s", 
+	       client_entry->nickname,
+	       tmp ? "(" : "", tmp ? tmp : "", tmp ? ")" : "");
     break;
 
   case SILC_NOTIFY_TYPE_TOPIC_SET:

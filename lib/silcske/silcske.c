@@ -353,9 +353,8 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   /* Verify signature */
   silc_pkcs_public_key_data_set(ske->prop->pkcs, public_key->pk, 
 				public_key->pk_len);
-  if (ske->prop->pkcs->pkcs->verify(ske->prop->pkcs->context,
-				    payload->sign_data, payload->sign_len,
-				    hash, hash_len) == FALSE) {
+  if (silc_pkcs_verify(ske->prop->pkcs, payload->sign_data, 
+		       payload->sign_len, hash, hash_len) == FALSE) {
 
     SILC_LOG_DEBUG(("Signature don't match"));
 
@@ -658,9 +657,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   /* Sign the hash value */
   silc_pkcs_private_key_data_set(ske->prop->pkcs, private_key->prv, 
 				 private_key->prv_len);
-  ske->prop->pkcs->pkcs->sign(ske->prop->pkcs->context,
-			      hash, hash_len,
-			      sign, &sign_len);
+  silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len);
   ske->ke2_payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
   memcpy(ske->ke2_payload->sign_data, sign, sign_len);
   memset(sign, 0, sizeof(sign));

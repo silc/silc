@@ -1,3 +1,12 @@
+Fri Feb 23 11:22:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added support for quit message that client can "leave" on the
+	  channel when it quits the SILC.  It is ditributed inside the
+	  SILC_NOTIFY_TYPE_SIGNOFF notify type.
+
+	  Added silc_server_free_client_data that will take the
+	  signoff message as argument.
+
 Thu Feb 22 23:05:36 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Updated parts of the protocol specification to keep it up

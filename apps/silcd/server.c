@@ -1809,7 +1809,34 @@ void silc_server_disconnect_remote(SilcServer server,
   silc_server_close_connection(server, sock);
 }
 
-/* Free's user_data pointer from socket connection object. This also sends
+/* Frees client data and notifies about client's signoff. */
+
+void silc_server_free_client_data(SilcServer server, 
+				  SilcSocketConnection sock,
+				  SilcClientEntry user_data, char *signoff)
+{
+  /* Send REMOVE_ID packet to routers. */
+  if (!server->standalone && server->router)
+    silc_server_send_notify_signoff(server, server->router->connection,
+				    server->server_type == SILC_SERVER ?
+				    FALSE : TRUE, user_data->id, 
+				    SILC_ID_CLIENT_LEN, signoff);
+
+  /* Remove client from all channels */
+  silc_server_remove_from_channels(server, sock, user_data, signoff);
+
+  /* XXX must take some info to history before freeing */
+
+  /* Free the client entry and everything in it */
+  silc_idlist_del_data(user_data);
+  silc_idlist_del_client(server->local_list, user_data);
+  server->stat.my_clients--;
+  server->stat.clients--;
+  if (server->server_type == SILC_ROUTER)
+    server->stat.cell_clients--;
+}
+
+/* Frees user_data pointer from socket connection object. This also sends
    appropriate notify packets to the network to inform about leaving
    entities. */
 
@@ -1822,26 +1849,7 @@ void silc_server_free_sock_user_data(SilcServer server,
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry user_data = (SilcClientEntry)sock->user_data;
-
-      /* Send REMOVE_ID packet to routers. */
-      if (!server->standalone && server->router)
-	silc_server_send_notify_signoff(server, server->router->connection,
-					server->server_type == SILC_SERVER ?
-					FALSE : TRUE, user_data->id, 
-					SILC_ID_CLIENT_LEN, NULL);
-
-      /* Remove client from all channels */
-      silc_server_remove_from_channels(server, sock, user_data);
-
-      /* XXX must take some info to history before freeing */
-
-      /* Free the client entry and everything in it */
-      silc_idlist_del_data(user_data);
-      silc_idlist_del_client(server->local_list, user_data);
-      server->stat.my_clients--;
-      server->stat.clients--;
-      if (server->server_type == SILC_ROUTER)
-	server->stat.cell_clients--;
+      silc_server_free_client_data(server, sock, user_data, NULL);
       break;
     }
   case SILC_SOCKET_TYPE_SERVER:
@@ -1918,7 +1926,7 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	}
 
 	/* Remove the client entry */
-	silc_server_remove_from_channels(server, NULL, client);
+	silc_server_remove_from_channels(server, NULL, client, NULL);
 	silc_idlist_del_client(server->local_list, client);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -1943,7 +1951,7 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	}
 
 	/* Remove the client entry */
-	silc_server_remove_from_channels(server, NULL, client);
+	silc_server_remove_from_channels(server, NULL, client, NULL);
 	silc_idlist_del_client(server->global_list, client);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -1994,7 +2002,8 @@ int silc_server_channel_has_local(SilcChannelEntry channel)
 
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
-				      SilcClientEntry client)
+				      SilcClientEntry client,
+				      char *signoff_message)
 {
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
@@ -2043,8 +2052,11 @@ void silc_server_remove_from_channels(SilcServer server,
       /* Notify about leaving client if this channel has global users. */
       if (channel->global_users)
 	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-					   SILC_NOTIFY_TYPE_SIGNOFF, 1,
-					   clidp->data, clidp->len);
+					   SILC_NOTIFY_TYPE_SIGNOFF, 
+					   signoff_message ? 2 : 1,
+					   clidp->data, clidp->len,
+					   signoff_message, signoff_message ?
+					   strlen(signoff_message) : 0);
 
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
@@ -2055,8 +2067,11 @@ void silc_server_remove_from_channels(SilcServer server,
     /* Send notify to channel about client leaving SILC and thus
        the entire channel. */
     silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-				       SILC_NOTIFY_TYPE_SIGNOFF, 1,
-				       clidp->data, clidp->len);
+				       SILC_NOTIFY_TYPE_SIGNOFF, 
+				       signoff_message ? 2 : 1,
+				       clidp->data, clidp->len,
+				       signoff_message, signoff_message ?
+				       strlen(signoff_message) : 0);
   }
 
   silc_buffer_free(clidp);

@@ -240,8 +240,13 @@ void silc_server_notify(SilcServer server,
     }
     silc_free(client_id);
 
+    /* Get signoff message */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (tmp_len > 128)
+      tmp = NULL;
+
     /* Remove the client from all channels */
-    silc_server_remove_from_channels(server, NULL, client);
+    silc_server_remove_from_channels(server, NULL, client, tmp);
 
     /* Remove the client entry */
     if (!silc_idlist_del_client(server->global_list, client))

@@ -1573,20 +1573,30 @@ SILC_SERVER_CMD_FUNC(invite)
   silc_server_command_free(cmd);
 }
 
+typedef struct {
+  SilcServer server;
+  SilcSocketConnection sock;
+  char *signoff;
+} *QuitInternal;
+
 /* Quits connection to client. This gets called if client won't
    close the connection even when it has issued QUIT command. */
 
 SILC_TASK_CALLBACK(silc_server_command_quit_cb)
 {
-  SilcServer server = (SilcServer)context;
-  SilcSocketConnection sock = server->sockets[fd];
+  QuitInternal q = (QuitInternal)context;
 
   /* Free all client specific data, such as client entry and entires
      on channels this client may be on. */
-  silc_server_free_sock_user_data(server, sock);
+  silc_server_free_client_data(q->server, q->sock, q->sock->user_data,
+			       q->signoff);
+  q->sock->user_data = NULL;
 
   /* Close the connection on our side */
-  silc_server_close_connection(server, sock);
+  silc_server_close_connection(q->server, q->sock);
+
+  silc_free(q->signoff);
+  silc_free(q);
 }
 
 /* Quits SILC session. This is the normal way to disconnect client. */
@@ -1596,13 +1606,26 @@ SILC_SERVER_CMD_FUNC(quit)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcSocketConnection sock = cmd->sock;
+  QuitInternal q;
+  unsigned char *tmp = NULL;
+  unsigned int len = 0;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_QUIT, cmd, 0, 1);
+
+  /* Get destination ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
+  if (len > 128)
+    tmp = NULL;
+
+  q = silc_calloc(1, sizeof(*q));
+  q->server = server;
+  q->sock = sock;
+  q->signoff = tmp ? strdup(tmp) : NULL;
 
   /* We quit the connection with little timeout */
   silc_task_register(server->timeout_queue, sock->sock,
-		     silc_server_command_quit_cb, server,
-		     0, 300000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+		     silc_server_command_quit_cb, (void *)q,
+		     0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
   silc_server_command_free(cmd);
 }
