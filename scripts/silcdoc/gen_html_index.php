@@ -53,16 +53,13 @@
 <table cellpadding="0" cellspacing="0" border="0">
  <tr valign="top">
 
-  <td width="230" bgcolor="#f0f0f0">
+  <td width="220" bgcolor="#f0f0f0">
    <table width="100%" cellpadding="2" cellspacing="2" border="0">
     <tr valign="top"><td>
 <br />
-<small>
 <?php
 require "$dest/index.tmpl";
 ?>
-</small>
-<br /><br /><br /><br />
     </td></tr>
    </table>
   </td>
@@ -86,7 +83,9 @@ require "$page";
   <td width="200" bgcolor="#f0f0f0">
     <table width="100%" cellpadding="4" cellspacing="0">
     <tr valign="top"><td>
-<br /><br /><br /><br /><br />
+<br />
+
+<br /><br /><br /><br />
     </td></tr>
     </table>
   </td>
