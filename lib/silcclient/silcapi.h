@@ -408,7 +408,7 @@ int silc_client_del_private_message_key(SilcClient client,
 
 /* Structure to hold the list of private message keys. The array of this
    structure is returned by the silc_client_list_private_message_keys
-   function. The IV's are not returned as they are not important. */
+   function. */
 typedef struct {
   SilcClientEntry client_entry;       /* The remote client entry */
   unsigned char *key;		      /* The original key, If the appliation
