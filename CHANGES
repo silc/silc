@@ -1,3 +1,9 @@
+Sat Oct 19 13:32:15 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* ROBODoc documented lib/silcutil/silcbuffer.h and
+	  lib/silcutil/silcdlist.h.  Patch by Ville Räsänen
+	  <ville.rasanen@iki.fi>.
+
 Fri Oct 18 10:51:04 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for auto-passphrase authentication from the
