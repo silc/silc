@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2004 Pekka Riikonen
+  Copyright (C) 2004 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,8 +35,13 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
   if (!bin || !bin_len)
     return 0;
 
-  if (bin_encoding == SILC_STRING_UTF8 ||
-      (silc_utf8_valid(bin, bin_len) && bin_len <= utf8_size)) {
+  if (bin_encoding == SILC_STRING_UTF8) {
+    if (!silc_utf8_valid(bin, bin_len))
+      return 0;
+    if (!utf8)
+      return bin_len;
+    if (bin_len > utf8_size)
+      return 0;
     memcpy(utf8, bin, bin_len);
     return bin_len;
   }
