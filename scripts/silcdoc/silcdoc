@@ -93,7 +93,6 @@ if [ "$TYPE" = "HTML" ]; then
     # Get library name
     name=`grep "@LIBRARY=" $i |cut -d=  -f2`
     fname=`grep "@FILENAME=" $i |cut -d=  -f2`
-    links=`grep "@LINK=" $i |cut -d=  -f2 |cut -d:  -f1`
 
     # Generate links for this library
     sed -e "/@LINKS@/ r $DST/$fname.links" -e s/@LINKS@//g $i >$DST/$fname
