@@ -21,6 +21,15 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+/* Structure to hold ping time information. Every PING command will 
+   add entry of this structure and is removed after reply to the ping
+   as been received. */
+typedef struct SilcClientPingStruct {
+  time_t start_time;
+  void *dest_id;
+  char *dest_name;
+} SilcClientPing;
+
 /* Window structure used in client to associate all the important
    connection (window) specific data to this structure. How the window
    actually appears on the screen in handeled by the silc_screen*
@@ -86,6 +95,10 @@ typedef struct {
      object will have a back-pointer to this window object for fast
      referencing (sock->user_data). */
   SilcSocketConnection sock;
+
+  /* Requested pings. */
+  SilcClientPing *ping;
+  unsigned int ping_count;
 
   /* The actual physical screen. This data is handled by the
      screen handling routines. */

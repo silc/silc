@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/04 08:29:12  priikone
+ * 	Added support for PING command. The ping times are calculated
+ * 	and showed to the user.
+ *
  * Revision 1.2  2000/07/03 05:49:48  priikone
  * 	Implemented LEAVE command.  Minor bug fixes.
  *
@@ -898,6 +902,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
       silc_buffer_free(ctx->packet);
     if (ctx->ske)
       silc_ske_free(ctx->ske);
+    if (ctx->dest_id)
+      silc_free(ctx->dest_id);
     silc_free(ctx);
     sock->protocol = NULL;
     return;
@@ -909,6 +915,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
   proto_ctx->client = (void *)client;
   proto_ctx->sock = sock = ctx->sock;
   proto_ctx->ske = ctx->ske;	/* Save SKE object from previous protocol */
+  proto_ctx->dest_id_type = ctx->dest_id_type;
+  proto_ctx->dest_id = ctx->dest_id;
 
   /* Resolve the authentication method to be used in this connection */
   proto_ctx->auth_meth = SILC_PROTOCOL_CONN_AUTH_NONE;
@@ -979,6 +987,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
       silc_free(ctx->auth_data);
     if (ctx->ske)
       silc_ske_free(ctx->ske);
+    if (ctx->dest_id)
+      silc_free(ctx->dest_id);
     silc_free(ctx);
     win->sock->protocol = NULL;
     return;
@@ -1005,6 +1015,11 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 			  packet->data, packet->len, TRUE);
   silc_buffer_free(packet);
 
+  /* Save remote ID. */
+  win->remote_id = ctx->dest_id;
+  win->remote_id_data = silc_id_id2str(ctx->dest_id, SILC_ID_CHANNEL);
+  win->remote_id_data_len = SILC_ID_CHANNEL_LEN;
+
   silc_say(client, "Connected to port %d of host %s",
 	   win->remote_port, win->remote_host);
 
@@ -1016,6 +1031,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     silc_free(ctx->auth_data);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
+  if (ctx->dest_id)
+    silc_free(ctx->dest_id);
   silc_free(ctx);
   win->sock->protocol = NULL;
 }
@@ -1516,7 +1533,7 @@ void silc_client_packet_parse_type(SilcClient client,
     /*
      * Recived reply for a command
      */
-    silc_client_command_reply_process(client, sock, buffer);
+    silc_client_command_reply_process(client, sock, packet);
     break;
 
   case SILC_PACKET_KEY_EXCHANGE:
@@ -1525,6 +1542,8 @@ void silc_client_packet_parse_type(SilcClient client,
 	(SilcClientKEInternalContext *)sock->protocol->context;
 
       proto_ctx->packet = buffer;
+      proto_ctx->dest_id_type = packet->src_id_type;
+      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
 
       /* Let the protocol handle the packet */
       sock->protocol->execute(client->timeout_queue, 0,
@@ -1554,6 +1573,8 @@ void silc_client_packet_parse_type(SilcClient client,
 	silc_buffer_free(proto_ctx->packet);
 
       proto_ctx->packet = buffer;
+      proto_ctx->dest_id_type = packet->src_id_type;
+      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
 
       /* Let the protocol handle the packet */
       sock->protocol->execute(client->timeout_queue, 0,
