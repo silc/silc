@@ -43,7 +43,7 @@ void silc_server_notify(SilcServer server,
   SilcClientEntry client = NULL, client2 = NULL;
   SilcServerEntry server_entry = NULL;
   SilcChannelClientEntry chl;
-  SilcIDCacheEntry cache;
+  SilcIDCacheEntry cache = NULL;
   SilcHashTableList htl;
   SilcUInt32 mode;
   unsigned char *tmp;
@@ -166,11 +166,11 @@ void silc_server_notify(SilcServer server,
        entry for the client. */
     client = silc_idlist_find_client_by_id(server->global_list, 
 					   client_id, server->server_type, 
-					   NULL);
+					   &cache);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->local_list, 
 					     client_id, server->server_type,
-					     NULL);
+					     &cache);
       if (!client) {
 	/* If router did not find the client the it is bogus */
 	if (server->server_type != SILC_SERVER) {
@@ -238,6 +238,10 @@ void silc_server_notify(SilcServer server,
     silc_hash_table_add(client->channels, channel, chl);
     channel->user_count++;
     channel->disabled = FALSE;
+
+    /* Make sure we don't expire clients that are on channel */
+    if (cache)
+      cache->expire = 0;
 
     /* Update statistics */
     if (server->server_type == SILC_ROUTER) {
