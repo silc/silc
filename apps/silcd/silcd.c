@@ -330,7 +330,7 @@ SILC_TASK_CALLBACK(dump_stats)
       s = silcd->sockets[i];
       if (!s)
         continue;
-      fprintf(fdd, "  %d: host %s ip %s port %d type %d flags %ul\n",
+      fprintf(fdd, "  %d: host %s ip %s port %d type %d flags 0x%x\n",
 	      s->sock, s->hostname ? s->hostname : "N/A",
 	      s->ip ? s->ip : "N/A", s->port, s->type,
 	      (unsigned int)s->flags);
