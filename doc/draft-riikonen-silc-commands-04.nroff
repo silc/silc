@@ -301,7 +301,7 @@ List of all defined commands in SILC follows.
 
         The command replies include the Client ID of the nickname,
         nickname and server name, user name and host name and user's real
-        name.  Client SHOULD process these replies only after the last
+        name.  Client should process these replies only after the last
         reply has been received with the STATUS_LIST_END status.  If the
         <count> option were defined in the query there will be only
         <count> many replies from the server.
@@ -399,7 +399,7 @@ List of all defined commands in SILC follows.
 
         Identify command is used to query information about an entity by
         the entity's name or ID.  This command can be used to query
-        information about clients, server and channels.
+        information about clients, servers and channels.
 
         The query may find multiple matching entities.  The <count> option
         may be given to narrow down the number of accepted results.  If
