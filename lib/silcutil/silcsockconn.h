@@ -207,6 +207,12 @@ struct SilcSocketConnectionStruct {
 
 /* Macros */
 
+/* Amount of bytes to be read from the socket connection at once. */
+#define SILC_SOCKET_READ_SIZE 16384
+
+/* Default socket buffer size. */
+#define SILC_SOCKET_BUF_SIZE 1024
+
 /* Generic manipulation of flags */
 #define SF_SET(x, f) (x)->flags |= (1L << (f))
 #define SF_UNSET(x, f) (x)->flags &= ~(1L << (f))
