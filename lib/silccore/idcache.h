@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 2000 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,12 @@
 #define IDCACHE_H
 
 /* 
-   SilcIDCache structure.
+   Silc ID Cache Entry object.
+
+   This is one entry in the SILC ID Cache system. Contents of this is
+   allocated outside the ID cache system, however, all the fields are 
+   filled with ID cache utility functions. The ID cache system does not
+   allocate any of these fields nor free them.
 
    char *data
 
@@ -55,25 +60,42 @@ typedef struct {
   void *id;
   unsigned long expire;
   void *context;
-} SilcIDCache;
+} *SilcIDCacheEntry;
+
+/* Forward declaration for SILC ID Cache object. */
+typedef struct SilcIDCacheStruct *SilcIDCache;
+
+/* Forward declaration for ID Cache List */
+typedef struct SilcIDCacheListStruct *SilcIDCacheList;
 
 #define SILC_ID_CACHE_EXPIRE 3600
 
 /* Prototypes */
-void silc_idcache_sort_by_data(SilcIDCache *cache, unsigned int count);
-int silc_idcache_find_by_data(SilcIDCache *cache, unsigned int cache_count,
-			      char *data, SilcIDCache **ret);
-int silc_idcache_find_by_id(SilcIDCache *cache, unsigned int cache_count, 
-			    void *id, SilcIdType type, SilcIDCache **ret);
-int silc_idcache_add(SilcIDCache **cache, unsigned int cache_count,
-		     char *data, SilcIdType id_type, void *id, 
-		     void *context);
-int silc_idcache_del(SilcIDCache *cache, SilcIDCache *old);
-int silc_idcache_del_by_data(SilcIDCache *cache, unsigned int cache_count,
-			     char *data);
-int silc_idcache_del_by_id(SilcIDCache *cache, unsigned int cache_count,
-			   SilcIdType type, void *id);
-int silc_idcache_del_all(SilcIDCache **cache, unsigned int cache_count);
-int silc_idcache_purge(SilcIDCache *cache, unsigned int cache_count);
+SilcIDCache silc_idcache_alloc(unsigned int count);
+void silc_idcache_free(SilcIDCache cache);
+void silc_idcache_sort_by_data(SilcIDCache cache);
+int silc_idcache_find_by_data(SilcIDCache cache, char *data, 
+			      SilcIDCacheList *ret);
+int silc_idcache_find_by_data_one(SilcIDCache cache, char *data,
+				  SilcIDCacheEntry *ret);
+int silc_idcache_find_by_data_loose(SilcIDCache cache, char *data, 
+				    SilcIDCacheList *ret);
+int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
+			    SilcIDCacheList *ret);
+int silc_idcache_find_by_id_one(SilcIDCache cache, void *id, SilcIdType type, 
+				SilcIDCacheEntry *ret);
+int silc_idcache_find_by_context(SilcIDCache cache, void *context, 
+				 SilcIDCacheEntry *ret);
+int silc_idcache_add(SilcIDCache cache, char *data, SilcIdType id_type,
+		     void *id, void *context, int sort);
+int silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old);
+int silc_idcache_del_by_data(SilcIDCache cache, char *data);
+int silc_idcache_del_by_id(SilcIDCache cache, SilcIdType type, void *id);
+int silc_idcache_del_all(SilcIDCache cache);
+int silc_idcache_purge(SilcIDCache cache);
+int silc_idcache_list_count(SilcIDCacheList list);
+int silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret);
+int silc_idcache_list_next(SilcIDCacheList list, SilcIDCacheEntry *ret);
+void silc_idcache_list_free(SilcIDCacheList list);
 
 #endif
