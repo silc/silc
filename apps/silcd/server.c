@@ -2926,7 +2926,7 @@ void silc_server_disconnect_remote(SilcServer server,
   char *cp;
   int len;
 
-  if (!sock)
+  if (!sock || SILC_IS_DISCONNECTED(sock))
     return;
 
   memset(buf, 0, sizeof(buf));
