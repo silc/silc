@@ -452,8 +452,6 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
         signal_emit("message silc action", 5, server, message,
 		    nick->nick, nick->host, channel->channel_name);
     }
-  /* FIXME: replace those printformat calls with signals and add signature
-            information to them (if present) */
   else if (flags & SILC_MESSAGE_FLAG_NOTICE)
     if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
       char tmp[256], *cp, *dm = NULL;
@@ -465,15 +463,20 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       }
       silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
                        cp, message_len);
-      printformat_module("fe-common/silc", server, channel->channel_name,
-                         MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE,
-                         nick == NULL ? "[<unknown>]" : nick->nick, cp);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+	signal_emit("message silc signed_notice", 6, server, cp, nick->nick,
+		nick->host, channel->channel_name, verified);
+      else
+	signal_emit("message silc notice", 5, server, cp, nick->nick,
+		nick->host, channel->channel_name);
       silc_free(dm);
     } else {
-      printformat_module("fe-common/silc", server, channel->channel_name,
-                         MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE,
-                         nick == NULL ? "[<unknown>]" : nick->nick,
-                         message);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+	signal_emit("message silc signed_notice", 6, server, message,
+		nick->nick, nick->host, channel->channel_name, verified);
+      else
+	signal_emit("message silc notice", 5, server, message,
+		nick->nick, nick->host, channel->channel_name);
     }
   else {
     if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
@@ -560,7 +563,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   if (!message)
     return;
 
-  if (flags & SILC_MESSAGE_FLAG_ACTION) {
+  if (flags & SILC_MESSAGE_FLAG_ACTION)
     if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
       char tmp[256], *cp, *dm = NULL;
       memset(tmp, 0, sizeof(tmp));
@@ -592,42 +595,72 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
     }
-    return;
-  }
-  /* FIXME: added notices */
-
-  if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
-    char tmp[256], *cp, *dm = NULL;
-
-    memset(tmp, 0, sizeof(tmp));
-    cp = tmp;
-    if (message_len > sizeof(tmp) - 1) {
-      dm = silc_calloc(message_len + 1, sizeof(*dm));
-      cp = dm;
+  else if (flags & SILC_MESSAGE_FLAG_NOTICE)
+    if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if(message_len > sizeof(tmp) - 1) {
+        dm = silc_calloc(message_len + 1, sizeof(*dm));
+        cp = dm;
+      }
+      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+                       cp, message_len);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_private_notice", 6, server, cp, 
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, 
+		    NULL, verified);
+      else
+        signal_emit("message silc private_notice", 5, server, cp, 
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, NULL);
+      silc_free(dm);
+    } else {
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_private_notice", 6, server, message, 
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, 
+		    NULL, verified);
+      else
+        signal_emit("message silc private_notice", 5, server, message, 
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, NULL);
     }
+  else {
+    if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
 
-    silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
-		     cp, message_len);
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if (message_len > sizeof(tmp) - 1) {
+        dm = silc_calloc(message_len + 1, sizeof(*dm));
+        cp = dm;
+      }
+
+      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+  		     cp, message_len);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message signed_private", 5, server, cp,
+  		  sender->nickname ? sender->nickname : "[<unknown>]",
+  		  sender->username ? userhost : NULL, verified);
+      else
+        signal_emit("message private", 4, server, cp,
+  		  sender->nickname ? sender->nickname : "[<unknown>]",
+  		  sender->username ? userhost : NULL);
+      silc_free(dm);
+      return;
+    } 
+
     if (flags & SILC_MESSAGE_FLAG_SIGNED)
-      signal_emit("message signed_private", 5, server, cp,
-		  sender->nickname ? sender->nickname : "[<unknown>]",
-		  sender->username ? userhost : NULL, verified);
+      signal_emit("message signed_private", 5, server, message,
+              sender->nickname ? sender->nickname : "[<unknown>]",
+              sender->username ? userhost : NULL, verified);
     else
-      signal_emit("message private", 4, server, cp,
-		  sender->nickname ? sender->nickname : "[<unknown>]",
-		  sender->username ? userhost : NULL);
-    silc_free(dm);
-    return;
-  }
-
-  if (flags & SILC_MESSAGE_FLAG_SIGNED)
-    signal_emit("message signed_private", 5, server, message,
-	        sender->nickname ? sender->nickname : "[<unknown>]",
-	        sender->username ? userhost : NULL, verified);
-  else
-    signal_emit("message private", 4, server, message,
-	        sender->nickname ? sender->nickname : "[<unknown>]",
-	        sender->username ? userhost : NULL);
+      signal_emit("message private", 4, server, message,
+              sender->nickname ? sender->nickname : "[<unknown>]",
+              sender->username ? userhost : NULL);
+  } 
 }
 
 /* Notify message to the client. The notify arguments are sent in the

@@ -139,10 +139,10 @@ abstracts = {
   ##
 
   # Generic notice
-  notice = "%C- $0 $1-";
-
-  # Own sent notice
-  ownnotice = "%g- $0 $1-";
+  ownnotice = "%g- $1 -%n ";
+  notice = "%C- $* -%n ";
+  pubnotice_channel = "";
+  pvtnotice_host = "";
 
 
   ##

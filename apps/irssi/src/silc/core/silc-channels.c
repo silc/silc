@@ -310,60 +310,79 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
 static void command_notice(const char *data, SILC_SERVER_REC *server,
 			   WI_ITEM_REC *item)
 {
-  SILC_CHANNEL_REC *chanrec;
-  char *tmpcmd = "NOTICE", *tmp;
-  SilcUInt32 argc = 0;
-  unsigned char *message = NULL;
-  unsigned char **argv;
-  SilcUInt32 *argv_lens, *argv_types;
-  int i;
- 
+  GHashTable *optlist;
+  char *target, *msg;
+  char *message = NULL;
+  int target_type;
+  void *free_arg;
+
   CMD_SILC_SERVER(server);
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
-  if (!IS_SILC_CHANNEL(item))
+  if ((item != NULL) && (!IS_SILC_CHANNEL(item) && !IS_SILC_QUERY(item)))
     cmd_return_error(CMDERR_NOT_JOINED);
 
   /* Now parse all arguments */
-  tmp = g_strconcat(tmpcmd, " ", data, NULL);
-  silc_parse_command_line(tmp, &argv, &argv_lens,
-			  &argv_types, &argc, 2);
-  g_free(tmp);
+  if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS | 
+		      PARAM_FLAG_GETREST, 
+		      "notice", &optlist, &target, &msg))
+    return;
 
-  if (argc < 2)
-    cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
+  if (*target == '\0' || *msg == '\0')
+    cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
-  chanrec = silc_channel_find(server, item->visible_name);
-  if (chanrec == NULL) 
-    cmd_return_error(CMDERR_CHAN_NOT_FOUND);
+  if (strcmp(target, "*") == 0) {
+    /* send to active channel/query */
+    if (item == NULL)
+      cmd_param_error(CMDERR_NOT_JOINED);
+
+    target_type = IS_SILC_CHANNEL(item) ? 
+	    SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+    target = (char *)window_item_get_target(item);
+  } else if (g_hash_table_lookup(optlist, "channel") != NULL)
+    target_type = SEND_TARGET_CHANNEL;
+  else {
+    target_type = SEND_TARGET_NICK;
+  }
 
   if (!silc_term_utf8()) {
-    int len = silc_utf8_encoded_len(argv[1], argv_lens[1],
+    int len = silc_utf8_encoded_len(msg, strlen(msg),
 				    SILC_STRING_LANGUAGE);
     message = silc_calloc(len + 1, sizeof(*message));
     g_return_if_fail(message != NULL);
-    silc_utf8_encode(argv[1], argv_lens[1], SILC_STRING_LANGUAGE,
+    silc_utf8_encode(msg, strlen(msg), SILC_STRING_LANGUAGE,
 		     message, len);
   }
 
-  /* Send the action message */
-  silc_client_send_channel_message(silc_client, server->conn, 
-				   chanrec->entry, NULL,
-				   SILC_MESSAGE_FLAG_NOTICE |
-				   SILC_MESSAGE_FLAG_UTF8,
-				   message ? message : argv[1],
-				   message ? strlen(message) : argv_lens[1],
-				   TRUE);
+  if (target != NULL) {
+    if (target_type == SEND_TARGET_CHANNEL) {
+      if (silc_send_channel(server, target, (message != NULL ? message : msg),
+		            SILC_MESSAGE_FLAG_NOTICE | SILC_MESSAGE_FLAG_UTF8 |
+		  	    (g_hash_table_lookup(optlist, "sign") != NULL ?
+			     SILC_MESSAGE_FLAG_SIGNED : 0))) {
+	if (g_hash_table_lookup(optlist, "sign"))
+          signal_emit("message silc signed_own_notice", 3, server, msg, target);
+	else
+          signal_emit("message silc own_notice", 3, server, msg, target);
+      }
+    } else {
+      if (silc_send_msg(server, target, (message != NULL ? message : msg),
+			(message != NULL ? strlen(message) : strlen(msg)),
+			SILC_MESSAGE_FLAG_NOTICE | SILC_MESSAGE_FLAG_UTF8 |
+			(g_hash_table_lookup(optlist, "sign") != NULL ?
+			 SILC_MESSAGE_FLAG_SIGNED : 0))) {
+	if (g_hash_table_lookup(optlist, "sign"))
+	  signal_emit("message silc signed_own_private_notice", 3, 
+			  server, msg, target);
+	else
+	  signal_emit("message silc own_private_notice", 3,
+			  server, msg, target);
+      }
+    }
+  }
 
-  printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
-		     MSGLEVEL_NOTICES, SILCTXT_CHANNEL_OWNNOTICE, 
-                     server->conn->local_entry->nickname, argv[1]);
-
-  for (i = 0; i < argc; i++)
-    silc_free(argv[i]);
-  silc_free(argv_lens);
-  silc_free(argv_types);
+  cmd_params_free(free_arg);
   silc_free(message);
 }
 
@@ -1208,6 +1227,7 @@ void silc_channels_init(void)
 
   command_set_options("listkeys", "clients servers");
   command_set_options("action", "sign channel");
+  command_set_options("notice", "sign channel");
 
   silc_nicklist_init();
 }

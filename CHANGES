@@ -1,3 +1,14 @@
+Tue Jan 04 02:43:44 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Changed the way NOTICE flagged messages are treated. Added support
+	  for notices in queries and signing notices.  Affected files
+	  irssi/default.theme; irssi/docs/help/in/notice.in;
+	  irssi/src/fe-common/silc/module-formats.[ch], fe-silc-messages.c;
+	  irssi/src/silc/core/client_ops.c, silc-channels.c, silc-servers.c
+
+	* Fixed typo in /ACTION help.  Affected file 
+	  irssi/docs/help/in/action.in
+
 Mon Jan 03 23:26:38 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Fixed typo in perl module.  Affected file 

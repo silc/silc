@@ -352,6 +352,79 @@ static void sig_message_private_action_signed(SERVER_REC *server,
   sig_message_action_all(server, msg, nick, address, target, FALSE, verified);
 }
 
+static void sig_message_own_notice_all(SERVER_REC *server, 
+					const char *msg, const char *target,
+					bool is_signed)
+{
+  printformat(server, target,
+	      MSGLEVEL_NOTICES | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
+	      (is_signed ? SILCTXT_OWN_NOTICE_SIGNED : SILCTXT_OWN_NOTICE),
+	      target, msg);
+}
+
+static void sig_message_own_notice(SERVER_REC *server, const char *msg,
+				   const char *target)
+{
+  sig_message_own_notice_all(server, msg, target, FALSE);
+}
+
+static void sig_message_own_notice_signed(SERVER_REC *server,
+					  const char *msg, const char *target)
+{
+  sig_message_own_notice_all(server, msg, target, TRUE);
+}
+
+static void sig_message_notice_all(SERVER_REC *server, const char *msg,
+				   const char *nick, const char *address,
+				   const char *target, int is_channel,
+				   int verified)
+{
+  if (ignore_check(server, nick, address, target, msg, MSGLEVEL_NOTICES))
+    return;
+
+  if (is_channel) {
+    /* channel notice */ 
+      printformat(server, target, MSGLEVEL_NOTICES,
+		  VERIFIED_MSG2(verified, SILCTXT_NOTICE_PUBLIC), 
+		  nick, target, msg);
+  } else {
+    /* private notice */
+    printformat(server, nick, MSGLEVEL_NOTICES,
+		VERIFIED_MSG2(verified, SILCTXT_NOTICE_PRIVATE),
+		nick, address == NULL ? "" : address, msg);
+  }
+
+}
+
+static void sig_message_notice(SERVER_REC *server, const char *msg,
+				   const char *nick, const char *address,
+				   const char *target)
+{
+  sig_message_notice_all(server, msg, nick, address, target, TRUE, -1);
+}
+
+static void sig_message_private_notice(SERVER_REC *server, const char *msg,
+				   const char *nick, const char *address,
+				   const char *target)
+{
+  sig_message_notice_all(server, msg, nick, address, target, FALSE, -1);
+}
+
+static void sig_message_notice_signed(SERVER_REC *server, const char *msg,
+				   const char *nick, const char *address,
+				   const char *target, int verified)
+{
+  sig_message_notice_all(server, msg, nick, address, target, TRUE, verified);
+}
+
+static void sig_message_private_notice_signed(SERVER_REC *server,
+				   const char *msg, const char *nick,
+				   const char *address, const char *target,
+				   int verified)
+{
+  sig_message_notice_all(server, msg, nick, address, target, FALSE, verified);
+}
+
 void fe_silc_messages_init(void)
 {
   signal_add_last("message signed_public",
@@ -379,6 +452,23 @@ void fe_silc_messages_init(void)
 		  (SIGNAL_FUNC) sig_message_own_private_action_signed);
   signal_add_last("message silc signed_private_action",
 		  (SIGNAL_FUNC) sig_message_private_action_signed);
+
+  signal_add_last("message silc own_notice",
+		  (SIGNAL_FUNC) sig_message_own_notice);
+  signal_add_last("message silc notice",
+		  (SIGNAL_FUNC) sig_message_notice);
+  signal_add_last("message silc signed_own_notice",
+		  (SIGNAL_FUNC) sig_message_own_notice_signed);
+  signal_add_last("message silc signed_notice",
+		  (SIGNAL_FUNC) sig_message_notice_signed);
+  signal_add_last("message silc own_private_notice",
+		  (SIGNAL_FUNC) sig_message_own_notice);
+  signal_add_last("message silc private_notice",
+		  (SIGNAL_FUNC) sig_message_private_notice);
+  signal_add_last("message silc signed_own_private_notice",
+		  (SIGNAL_FUNC) sig_message_own_notice_signed);
+  signal_add_last("message silc signed_private_notice",
+		  (SIGNAL_FUNC) sig_message_private_notice_signed);
 }
 
 void fe_silc_messages_deinit(void)
@@ -408,4 +498,21 @@ void fe_silc_messages_deinit(void)
 		(SIGNAL_FUNC) sig_message_own_private_action_signed);
   signal_remove("message silc signed_private_action",
 		(SIGNAL_FUNC) sig_message_private_action_signed);
+
+  signal_remove("message silc own_notice",
+		(SIGNAL_FUNC) sig_message_own_notice);
+  signal_remove("message silc notice",
+		(SIGNAL_FUNC) sig_message_notice);
+  signal_remove("message silc signed_own_notice",
+		(SIGNAL_FUNC) sig_message_own_notice_signed);
+  signal_remove("message silc signed_notice",
+		(SIGNAL_FUNC) sig_message_notice_signed);
+  signal_remove("message silc own_private_notice",
+		(SIGNAL_FUNC) sig_message_own_notice);
+  signal_remove("message silc private_notice",
+		(SIGNAL_FUNC) sig_message_private_notice);
+  signal_remove("message silc signed_own_private_notice",
+		(SIGNAL_FUNC) sig_message_own_notice_signed);
+  signal_remove("message silc signed_private_notice",
+		(SIGNAL_FUNC) sig_message_private_notice_signed);
 }

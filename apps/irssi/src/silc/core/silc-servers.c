@@ -430,7 +430,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: AWAY [<message>] */
 /* SYNTAX: INFO [<server>] */
 /* SYNTAX: NICK <nickname> */
-/* SYNTAX: NOTICE <message> */
+/* SYNTAX: NOTICE [-sign] [-channel] <target> <message> */
 /* SYNTAX: PART [<channel>] */
 /* SYNTAX: PING */
 /* SYNTAX: SCONNECT <server> [<port>] */
