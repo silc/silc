@@ -976,13 +976,14 @@ SILC_TASK_CALLBACK(silc_server_connection_established)
   SilcServer server = app_context;
   SilcServerConnection sconn = (SilcServerConnection)context;
   int sock = fd;
-  int opt = EINVAL, optlen = sizeof(opt);
-    
+  int opt = EINVAL, optlen = sizeof(opt), ret;
+
+  ret = silc_net_get_socket_opt(sock, SOL_SOCKET, SO_ERROR, &opt, &optlen);
+
   silc_schedule_task_del_by_fd(server->schedule, sock);
   silc_schedule_unset_listen_fd(server->schedule, sock);
-  
-  silc_net_get_socket_opt(sock, SOL_SOCKET, SO_ERROR, &opt, &optlen);
-  if (opt != 0) {
+
+  if (ret != 0 || opt != 0) {
     SILC_LOG_ERROR(("Could not connect to router %s:%d: %s",
 		    sconn->remote_host, sconn->remote_port, strerror(opt)));
     silc_net_close_connection(sock);
