@@ -1,3 +1,21 @@
+Wed Mar 27 19:43:16 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the KICKED notify handling in client library to
+	  correctly remove the channel and all entries from the
+	  channel when I was kicked.  This bug crashed the client.
+
+	  Fixed yet another but in KICKED notify handling to remove
+	  the kicked client correctly from the channel.
+
+	  Affected file is lib/silcclient/client_notify.c.
+
+	* Fixed a minor bug in looking up correct client entry
+	  in KICKED notify in server.  Affected file is
+	  silcd/packet_receive.c.
+
+	* Fixed the lib/silcmath/Makefile.am to include the MPI and GMP
+	  sources correctly to distribution.  Fixes --with-gmp option.
+
 Wed Mar 27 00:07:11 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a bug in the silc_client_nickname_format function that

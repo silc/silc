@@ -159,6 +159,8 @@ least could be done.
 
  o EPOC specific additions/changes required:
 
+	o lib/silcutil/epoc routines missing or not completed.
+
 	o The PKCS#1 also calls global RNG (even though it is not used 
 	  currently in SILC, the interface allows its use).
 

@@ -797,16 +797,19 @@ void silc_client_notify_by_server(SilcClient client,
     client->internal->ops->notify(client, conn, type, client_entry, tmp, 
 				  client_entry2, channel);
 
-    /* If I was kicked from channel, remove the channel */
+    /* Remove kicked client from channel */
     if (client_entry == conn->local_entry) {
+      /* If I was kicked from channel, remove the channel */
       if (conn->current_channel == channel)
 	conn->current_channel = NULL;
-      silc_idcache_del_by_id(conn->channel_cache, channel->id);
-      silc_free(channel->channel_name);
-      silc_free(channel->id);
-      silc_free(channel->key);
-      silc_cipher_free(channel->channel_key);
-      silc_free(channel);
+      silc_client_del_channel(client, conn, channel);
+    } else {
+      chu = silc_client_on_channel(channel, client_entry);
+      if (chu) {
+	silc_hash_table_del(client_entry->channels, channel);
+	silc_hash_table_del(channel->user_list, client_entry);
+	silc_free(chu);
+      }
     }
     break;
 

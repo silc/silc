@@ -108,17 +108,16 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
   cache = silc_calloc(1, sizeof(*cache));
   if (!cache)
     return NULL;
-  cache->id_table = silc_hash_table_alloc(count, silc_hash_id, 
+  cache->id_table = silc_hash_table_alloc(count, silc_hash_id,
 					  (void *)(SilcUInt32)id_type,
-					  silc_hash_id_compare, 
-					  (void *)(SilcUInt32)id_type, 
-					  silc_idcache_destructor, NULL, 
-					  FALSE);
+					  silc_hash_id_compare,
+					  (void *)(SilcUInt32)id_type,
+					  silc_idcache_destructor, NULL, TRUE);
   cache->name_table = silc_hash_table_alloc(count, silc_hash_string, NULL,
-					    silc_hash_string_compare, NULL, 
-					    NULL, NULL, FALSE);
+					    silc_hash_string_compare, NULL,
+					    NULL, NULL, TRUE);
   cache->context_table = silc_hash_table_alloc(count, silc_hash_ptr, NULL,
-					       NULL, NULL, NULL, NULL, FALSE);
+					       NULL, NULL, NULL, NULL, TRUE);
   cache->destructor = destructor;
   cache->type = id_type;
 
@@ -178,14 +177,6 @@ bool silc_idcache_add(SilcIDCache cache, char *name, void *id,
     silc_hash_table_add(cache->name_table, name, c);
   if (context)
     silc_hash_table_add(cache->context_table, context, c);
-
-  /* See whether we have time to rehash the tables */
-  if ((silc_hash_table_count(cache->id_table) / 2) >
-      silc_hash_table_size(cache->id_table)) {
-    silc_hash_table_rehash(cache->id_table, 0);
-    silc_hash_table_rehash(cache->name_table, 0);
-    silc_hash_table_rehash(cache->context_table, 0);
-  }
 
   if (ret)
     *ret = c;

@@ -404,8 +404,10 @@ void silc_server_notify(SilcServer server,
     if (!silc_server_client_on_channel(client, channel, &chl))
       goto out;
     if (chl->mode == SILC_CHANNEL_UMODE_NONE && 
-	channel->mode & SILC_CHANNEL_MODE_TOPIC)
+	channel->mode & SILC_CHANNEL_MODE_TOPIC) {
+      SILC_LOG_DEBUG(("Topic change is not allowed"));
       goto out;
+    }
 
     /* Change the topic */
     silc_free(channel->topic);
@@ -540,8 +542,10 @@ void silc_server_notify(SilcServer server,
     if (client) {
       if (!silc_server_client_on_channel(client, channel, &chl))
 	goto out;
-      if (!silc_server_check_cmode_rights(server, channel, chl, mode))
+      if (!silc_server_check_cmode_rights(server, channel, chl, mode)) {
+	SILC_LOG_DEBUG(("CMODE change is not allowed"));
 	goto out;
+      }
     }
 
     /* Send the same notify to the channel */
@@ -685,16 +689,20 @@ void silc_server_notify(SilcServer server,
 	
 	if (client != client2) {
 	  /* Sender must be operator */
-	  if (chl->mode == SILC_CHANNEL_UMODE_NONE)
+	  if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
+	    SILC_LOG_DEBUG(("CUMODE change is not allowed"));
 	    goto out;
+	  }
 
 	  /* Check that target is on channel */
 	  if (!silc_server_client_on_channel(client2, channel, &chl))
 	    goto out;
 
 	  /* If target is founder mode change is not allowed. */
-	  if (chl->mode & SILC_CHANNEL_UMODE_CHANFO)
+	  if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	    SILC_LOG_DEBUG(("CUMODE change is not allowed"));
 	    goto out;
+	  }
 	}
       }
 
@@ -822,8 +830,10 @@ void silc_server_notify(SilcServer server,
     if (!silc_server_client_on_channel(client, channel, &chl))
       goto out;
     if (chl->mode == SILC_CHANNEL_UMODE_NONE && 
-	channel->mode & SILC_CHANNEL_MODE_INVITE)
+	channel->mode & SILC_CHANNEL_MODE_INVITE) {
+      SILC_LOG_DEBUG(("Inviting is not allowed"));
       goto out;
+    }
 
     /* Get the added invite */
     tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
@@ -1128,8 +1138,8 @@ void silc_server_notify(SilcServer server,
       client2 = silc_idlist_find_client_by_id(server->global_list, 
 					      client_id, TRUE, NULL);
       if (!client2) {
-	client = silc_idlist_find_client_by_id(server->local_list, 
-					       client_id, TRUE, NULL);
+	client2 = silc_idlist_find_client_by_id(server->local_list, 
+						client_id, TRUE, NULL);
 	if (!client2) {
 	  silc_free(client_id);
 	  goto out;
@@ -1140,8 +1150,10 @@ void silc_server_notify(SilcServer server,
       /* Kicker must be operator on channel */
       if (!silc_server_client_on_channel(client2, channel, &chl))
 	goto out;
-      if (chl->mode == SILC_CHANNEL_UMODE_NONE)
+      if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
+	SILC_LOG_DEBUG(("Kicking is not allowed"));
 	goto out;
+      }
     }
 
     /* Send to channel */
@@ -1249,8 +1261,10 @@ void silc_server_notify(SilcServer server,
     SILC_GET32_MSB(mode, tmp);
 
     /* Check that mode changing is allowed. */
-    if (!silc_server_check_umode_rights(server, client, mode))
+    if (!silc_server_check_umode_rights(server, client, mode)) {
+      SILC_LOG_DEBUG(("UMODE change is not allowed"));
       goto out;
+    }
 
     /* Change the mode */
     client->mode = mode;
