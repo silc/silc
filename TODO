@@ -40,7 +40,9 @@ TODO/bugs In SILC Server
 
 	o Testing
 
- o Close unconfigured client connections in rehash.
+ o Close unconfigured client connections in rehash.  When client
+   connections are removed from the config file and rehashed the 
+   connections matching those removed, should be closed.
 
  o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
