@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run this to generate all the initial makefiles, etc.
 
-PKG_NAME="Irssi SILC"
+PKG_NAME="SILC Client"
 
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
