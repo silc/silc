@@ -452,7 +452,7 @@ between SILC and IRC.  This causes the server names or client's host names
 to be used along with the nicknames to identify specific users when sending
 messages.  This feature of SILC makes IRC style nickname-wars obsolete as
 no one owns their nickname; there can always be someone else with the same
-nickname.  The maximum length of nickname is 128 characters.
+nickname.  The maximum length of nickname is 128 bytes.
 
 
 .ti 0
@@ -737,7 +737,7 @@ can reference it using the name of the channel.
 Channel names are unique although the real uniqueness comes from 64 bit
 Channel ID.  However, channel names are still unique and no two global
 channels with same name may exist.  The Channel name is a string of
-maximum length of 256 characters.  Channel names MUST NOT contain any
+maximum length of 256 bytes.  Channel names MUST NOT contain any
 spaces (`  '), any non-printable ASCII characters, commas (`,') and
 wildcard characters.
 

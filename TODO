@@ -156,4 +156,4 @@ describe new stuff to be added to protocol versions 1.x.
      founder mode set.
 
  18. UTF-8 requirement checkings for all specifications, when strings
-     are sent.
+     are sent.  http://www.cl.cam.ac.uk/~mgk25/unicode.html
