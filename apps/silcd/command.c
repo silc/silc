@@ -1545,11 +1545,10 @@ SILC_SERVER_CMD_FUNC(ping)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  SilcServerID *id;
   SilcUInt32 len;
   unsigned char *tmp;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_INFO, cmd, 1, 2);
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PING, cmd, 1, 2);
 
   /* Get Server ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
@@ -1558,11 +1557,8 @@ SILC_SERVER_CMD_FUNC(ping)
 					  SILC_STATUS_ERR_NO_SERVER_ID, 0);
     goto out;
   }
-  id = silc_id_str2id(tmp, len, SILC_ID_SERVER);
-  if (!id)
-    goto out;
 
-  if (SILC_ID_SERVER_COMPARE(id, server->id)) {
+  if (!memcmp(tmp, server->id_string, server->id_string_len)) {
     /* Send our reply */
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
 					  SILC_STATUS_OK, 0);
@@ -1571,8 +1567,6 @@ SILC_SERVER_CMD_FUNC(ping)
 					  SILC_STATUS_ERR_NO_SUCH_SERVER, 0);
     goto out;
   }
-
-  silc_free(id);
 
  out:
   silc_server_command_free(cmd);
