@@ -646,8 +646,11 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 
 	/* Send the key to the remote client so that it starts using it
 	   too. */
+	/* XXX for now we don't do this.  This feature is pretty stupid
+	   and should perhaps be removed altogether from SILC.
 	silc_client_send_private_message_key(silc_client, conn, 
 					     client_entry, TRUE);
+	*/
       } else if (type == 2) {
 	/* Set private channel key */
 	char *cipher = NULL, *hmac = NULL;

@@ -11,12 +11,6 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
-   though).  This should be added and perhaps new client operation
-   should be added to notify application that it was received and
-   set the key only if application wishes to set (accept the key) it
-   (Do this to 0.9.x).
-
  o Testing
 
 
