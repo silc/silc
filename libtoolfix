@@ -33,20 +33,20 @@ args=\`echo \$*\`
 cargs=\`echo \$* | sed -e '/--libtool-enable-shared/s///' -e '/--libtool-enable-static/s///' -e '/--libtool-disable-shared/s///' -e '/--libtool-disable-static/s///'\`
 for i in \$args
 do
-  if test "\$i" == "--libtool-enable-shared"; then
+  if test "\$i" = "--libtool-enable-shared"; then
     build_libtool_libs=yes
     fast_install=yes
     continue
   fi
-  if test "\$i" == "--libtool-disable-shared"; then
+  if test "\$i" = "--libtool-disable-shared"; then
     build_libtool_libs=no
     continue
   fi
-  if test "\$i" == "--libtool-enable-static"; then
+  if test "\$i" = "--libtool-enable-static"; then
     build_old_libs=yes
     continue
   fi
-  if test "\$i" == "--libtool-disable-static"; then
+  if test "\$i" = "--libtool-disable-static"; then
     build_old_libs=no
     continue
   fi
