@@ -1,8 +1,6 @@
 
 @SYNTAX:cmode@
 
-Format: <channel> +|-<modes> [{ <arguments>}]
-
 This command is used to manage the modes of the channel.  Most
 of the modes require special privileges, such as channel operator
 or channel founder privileges to work.  The mode is added by

@@ -1,12 +1,10 @@
 
 @SYNTAX:umode@
 
-Format: +|-<modes>
-
 This command is used to manage client's modes in the network.
-Note that some of the modes the client cannot set itself.  The
-mode is added by adding + before the option(s) and removed by
-adding - before the option(s).  The following channel user
+Note that some of the modes the client cannot set itself.
+The mode is added by adding + before the option(s) and removed
+by adding - before the option(s).  The following channel user
 modes are available:
 
     a        Unset all modes

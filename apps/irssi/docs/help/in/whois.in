@@ -1,8 +1,6 @@
 
 @SYNTAX:whois@
 
-Format: <nickname>[@<server>] [<count>
-
 Shows whois information of the specified client.
 By default, this is aliased to /WI.
 

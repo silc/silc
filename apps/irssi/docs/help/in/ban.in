@@ -1,16 +1,14 @@
 
 @SYNTAX:ban@
 
-Format: <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]
-
-This command is used to manage the ban list of the channel.  You must be
-channel operator to be able to use this command.  Wildcards may be used
-with this command.
+This command is used to manage the ban list of the channel.
+You must be channel operator to be able to use this command.
+Wildcards may be used with this command.
 
 Examples:
     /BAN #mychannel +foobar!mr.bar@foo.bar.com
-        Adds nickname `foobar' with username `mr.bar' from host `foo.bar.com'
-        on #mychannel to the ban list.
+        Adds nickname `foobar' with username `mr.bar' from host
+        `foo.bar.com' on #mychannel to the ban list.
 
     /BAN * +looser
         Adds nickname `looser' to the ban list on current channel.
@@ -20,7 +18,8 @@ Examples:
         *.foobar.com hosts to the ban list on current channel.
 
     /BAN * -looser
-        Removes the nickname `looser' from the ban list on current channel.
+        Removes the nickname `looser' from the ban list on current
+        channel.
 
     /BAN *
         Shows the ban list of the current channel.

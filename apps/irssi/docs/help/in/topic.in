@@ -1,8 +1,6 @@
 
 @SYNTAX:topic@
 
-Format: <channel> [<topic>]
-
-Shows or/and changes the topic of the current or specified 
-channel.
+Shows or/and changes the topic of the current or
+specified channel.
 

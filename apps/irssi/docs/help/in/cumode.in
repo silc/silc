@@ -1,8 +1,6 @@
 
 @SYNTAX:cumode@
 
-Format: <channel> +|-<modes> <nickname>[@<server>] [-pubkey|<passwd>]
-
 This command is used to manage the client's modes on the channel.
 Most of the modes require that the client which changes some
 client's mode must be channel founder or channel operator.  The

@@ -1,9 +1,6 @@
  
 @SYNTAX:invite@
 
-Formats: <channel> [<nickname>[@server>]
-         <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]
-
 This command is used to invite an client to a channel and to manage
 the channel's invite list.  Wildcards may be used with this command.
 
@@ -20,7 +17,8 @@ Examples:
         hosts to the invite list of the current channel.
 
     /INVITE * -joe
-        Removes nickname `joe' from the invite list of the current channel.
+        Removes nickname `joe' from the invite list of the current
+        channel.
 
 See also: CMODE
 

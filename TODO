@@ -6,6 +6,10 @@ TODO/bugs in Irssi SILC client
 
  o Add KICKBAN local command.  Kicks and bans the specified client.
 
+ o Add local commands to list the current server and client public keys
+   that the user has.  And a local command to dump the contents of the
+   public key to the screen.  Something like LISTKEYS, SHOWKEY...
+
 
 TODO/bugs In SILC Client Library
 ================================
@@ -17,10 +21,6 @@ TODO/bugs In SILC Client Library
    using the client->num so that they can be accessed from the user
    interface separately or it could just remove the old client unless
    it is on some channels.
-
- o Add local commands to list the current server and client public keys
-   that the user has.  And a local command to dump the contents of the
-   public key to the screen.
 
  o Add client library parameters or options that handle what kind of
    messages the library should print out (using `say' client operation,

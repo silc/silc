@@ -247,6 +247,40 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
   return ret;
 }
 
+/* Syntaxes of all SILC commands for HELP files (the help file generation
+   will snoop these from here). */
+
+/* SYNTAX: BAN <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]] */
+/* SYNTAX: CMODE <channel> +|-<modes> [{ <arguments>}] */
+/* SYNTAX: CUMODE <channel> +|-<modes> <nickname>[@<server>] [-pubkey|<passwd>] */
+/* SYNTAX: GETKEY <nickname> */
+/* SYNTAX: INVITE <channel> [<nickname>[@server>] */
+/* SYNTAX: INVITE <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]] */
+/* SYNTAX: KEY MSG <nickname> set|unset|list|agreement|negotiate [<arguments>] */
+/* SYNTAX: KEY CHANNEL <channel> set|unset|list|agreement|negotiate [<arguments>] */
+/* SYNTAX: KICK <channel> <nickname>[@<server>] [<comment>] */
+/* SYNTAX: KILL <channel> <nickname>[@<server>] [<comment>] */
+/* SYNTAX: OPER <username> [<public key>] */
+/* SYNTAX: SILCOPER <username> [<public key>] */
+/* SYNTAX: TOPIC <channel> [<topic> */
+/* SYNTAX: UMODE +|-<modes> */
+/* SYNTAX: WHOIS <nickname>[@<server>] [<count>] */
+/* SYNTAX: WHOWAS <nickname>[@<server>] [<count>] */
+/* SYNTAX: CLOSE <server> [<port>] */
+/* SYNTAX: SHUTDOWN */
+/* SYNTAX: MOTD [<server>] */
+/* SYNTAX: LIST [<channel>] */
+/* SYNTAX: ME <message> */
+/* SYNTAX: ACTION <channel> <message> */
+/* SYNTAX: AWAY [<message>] */
+/* SYNTAX: INFO [<server>] */
+/* SYNTAX: NICK <nickname> */
+/* SYNTAX: NOTICE <message> */
+/* SYNTAX: PART [<channel>] */
+/* SYNTAX: PING [<server>] */
+/* SYNTAX: SCONNECT <server> [<port>] */
+/* SYNTAX: USERS <channel> */
+
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
 {

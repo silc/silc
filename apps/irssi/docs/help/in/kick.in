@@ -1,11 +1,10 @@
 
 @SYNTAX:kick@
 
-Format: <channel> <nickname>[@<server>] [<comment>]
-
-This command kicks client from channel.  You have to be at least
-channel operator to be able to kick client from channel.  Note:
-you cannot kick channel founder even if you are channel operator.
+This command kicks client from channel.  You have to be
+at least channel operator to be able to kick client from
+channel.  Note: you cannot kick channel founder even if
+you are channel operator.
 
 The default alias for /KICK is /K.
 

@@ -1,12 +1,11 @@
 
 @SYNTAX:kill@
 
-Format: <nickname> [<comment>]
-
-This is operator command. KILL is used to forcibly remove a client
-from the network. It works similarly to KICK expect that the client
-is removed from the entire network.  In general, KILL is useful only
-as a warning tool for abusive users and it has only temporary effects.
+This is operator command. KILL is used to forcibly remove
+a client from the network. It works similarly to KICK expect
+that the client is removed from the entire network.  In general,
+KILL is useful only as a warning tool for abusive users and
+it has only temporary effects.
 
 See also: OPER, SILCOPER
 

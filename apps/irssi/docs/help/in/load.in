@@ -1,8 +1,8 @@
 
 @SYNTAX:load@
 
-Load a plugin. If full path isn't given, irssi searches the plugin from
-directories:
+Load a plugin. If full path isn't given, irssi searches the
+plugin from directories:
 
  ~/.irssi/modules/
  <install dir, /usr/local or /usr maybe>/lib/irssi/modules/

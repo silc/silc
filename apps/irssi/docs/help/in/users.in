@@ -1,0 +1,11 @@
+
+@SYNTAX:users@
+
+Shows users of the specified channel.  You must
+already be on the channel.
+
+Alias WHO is by default USERS * command.
+
+See also: WHOIS, WHOWAS
+
+

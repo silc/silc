@@ -6,8 +6,9 @@
      -voices: show voiced people in list
      -normal: show rest of the people in list
 
-Shows the names (nicks) in the specified channels. /NAMES ** shows all
-nicks in all channels, you probably don't want to do this.
+Shows the names (nicks) in the specified channels. /NAMES **
+shows all nicks in all channels, you probably don't want
+to do this.
 
 Examples:
 
