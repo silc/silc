@@ -550,7 +550,8 @@ int silc_string_match(const char *string1, const char *string2);
  * DESCRIPTION
  *
  *    Returns the username of the user. If the global variable LOGNAME
- *    does not exists we will get the name from the passwd file.
+ *    does not exists we will get the name from the passwd file.  The
+ *    caller must free the returned name.
  *
  *    This function is system dependant.
  *
@@ -565,7 +566,8 @@ char *silc_get_username();
  *
  * DESCRIPTION
  *
- *    Returns the real name of ther user from the passwd file.
+ *    Returns the real name of ther user from the passwd file.  The
+ *    caller must free the returned name.
  *
  *    This function is system dependant.
  *

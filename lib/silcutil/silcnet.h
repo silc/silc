@@ -400,7 +400,8 @@ SilcUInt16 silc_net_get_local_port(int sock);
  *
  *    Return name of localhost.  This will also attempt to resolve
  *    the real hostname by the local host's IP address.  If unsuccessful
- *    the first found hostname is returned.
+ *    the first found hostname is returned.  The caller must free
+ *    returned hostname.
  *
  ***/
 char *silc_net_localhost(void);
@@ -413,7 +414,7 @@ char *silc_net_localhost(void);
  *
  * DESCRIPTION
  *
- *    Return IP of localhost.  
+ *    Return IP of localhost.  The caller must free the returned IP.
  *
  ***/
 char *silc_net_localip(void);
