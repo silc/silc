@@ -461,6 +461,8 @@ SILC_TASK_CALLBACK(dump_stats)
   fclose(fdd);
 }
 
+#ifdef SILC_DEBUG
+
 typedef struct {
   int level;
   const char *string;
@@ -540,6 +542,7 @@ static void silc_get_debug_level(int level)
       break;
     }
 }
+#endif /* SILC_DEBUG */
 
 /* This function should not be called directly but through the appropriate
    wrapper macro defined in server.h */

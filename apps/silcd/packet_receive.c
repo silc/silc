@@ -980,7 +980,7 @@ void silc_server_notify(SilcServer server,
 	/* Get the founder of the channel and if found then this client
 	   cannot be the founder since there already is one. */
 	silc_hash_table_list(channel->user_list, &htl);
-	while (silc_hash_table_get(&htl, NULL, (void **)&chl2))
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
 	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
 	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	    silc_server_force_cumode_change(server, sock, channel,
@@ -3877,7 +3877,7 @@ void silc_server_resume_client(SilcServer server,
        haven't resolved user list yet. */
     if (server->server_type == SILC_SERVER && !server->standalone) {
       silc_hash_table_list(client->channels, &htl);
-      while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+      while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
 	channel = chl->channel;
 	SILC_LOG_DEBUG(("Resolving users for %s channel",
 			channel->channel_name));
@@ -3925,7 +3925,7 @@ void silc_server_resume_client(SilcServer server,
 
     /* Send all channel keys of channels the client has joined */
     silc_hash_table_list(client->channels, &htl);
-    while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+    while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
       bool created = FALSE;
       channel = chl->channel;
 
@@ -4087,7 +4087,7 @@ void silc_server_resume_client(SilcServer server,
     /* Update channel information regarding global clients on channel. */
     if (server->server_type != SILC_ROUTER) {
       silc_hash_table_list(detached_client->channels, &htl);
-      while (silc_hash_table_get(&htl, NULL, (void **)&chl))
+      while (silc_hash_table_get(&htl, NULL, (void *)&chl))
 	chl->channel->global_users =
 	  silc_server_channel_has_global(chl->channel);
       silc_hash_table_list_reset(&htl);

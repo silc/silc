@@ -67,7 +67,7 @@ SilcBuffer silc_client_get_detach_data(SilcClient client,
 
   /* Save all joined channels */
   silc_hash_table_list(conn->local_entry->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     unsigned char *chid = silc_id_id2str(chu->channel->id, SILC_ID_CHANNEL);
     SilcUInt16 chid_len = silc_id_get_len(chu->channel->id, SILC_ID_CHANNEL);
 

@@ -1,3 +1,8 @@
+Sat Nov  8 13:08:53 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed GCC-3.3.2 related compilation warnings from the
+	  source tree.
+
 Fri Nov  7 23:01:47 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed RC6 from distributions.

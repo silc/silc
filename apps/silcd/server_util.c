@@ -52,7 +52,7 @@ silc_server_remove_clients_channels(SilcServer server,
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
   silc_hash_table_list(client->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
     /* Remove channel if this is last client leaving the channel, unless
@@ -101,7 +101,7 @@ silc_server_remove_clients_channels(SilcServer server,
     /* Mark other local clients to the table of clients whom will receive
        the SERVER_SIGNOFF notify. */
     silc_hash_table_list(channel->user_list, &htl2);
-    while (silc_hash_table_get(&htl2, NULL, (void **)&chl2)) {
+    while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
       SilcClientEntry c = chl2->client;
       if (!c)
 	continue;
@@ -360,7 +360,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
      this server's client(s) on the channel. As they left the channel we
      must re-generate the channel key. */
   silc_hash_table_list(channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&channel)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&channel)) {
     if (!silc_server_create_channel_key(server, channel, 0)) {
       silc_hash_table_list_reset(&htl);
       silc_hash_table_free(channels);
@@ -974,7 +974,7 @@ bool silc_server_channel_has_global(SilcChannelEntry channel)
   SilcHashTableList htl;
 
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (chl->client->router) {
       silc_hash_table_list_reset(&htl);
       return TRUE;
@@ -994,7 +994,7 @@ bool silc_server_channel_has_local(SilcChannelEntry channel)
   SilcHashTableList htl;
 
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (SILC_IS_LOCAL(chl->client)) {
       silc_hash_table_list_reset(&htl);
       return TRUE;
@@ -1078,7 +1078,7 @@ bool silc_server_client_on_channel(SilcClientEntry client,
     return FALSE;
 
   return silc_hash_table_find(client->channels, channel, NULL,
-			      (void **)chl);
+			      (void *)chl);
 }
 
 /* Checks string for bad characters and returns TRUE if they are found. */
@@ -1201,7 +1201,7 @@ SilcPublicKey silc_server_find_public_key(SilcServer server,
 		  silc_hash_table_count(local_public_keys)));
 
   if (!silc_hash_table_find_ext(local_public_keys, remote_public_key,
-				(void **)&cached_key, NULL,
+				(void *)&cached_key, NULL,
 				silc_hash_public_key, NULL,
 				silc_hash_public_key_compare, NULL)) {
     SILC_LOG_ERROR(("Public key not found"));
@@ -1229,7 +1229,7 @@ SilcPublicKey silc_server_get_public_key(SilcServer server,
   assert(silc_hash_table_count(local_public_keys) < 2);
 
   silc_hash_table_list(local_public_keys, &htl);
-  if (!silc_hash_table_get(&htl, NULL, (void **)&cached_key)) {
+  if (!silc_hash_table_get(&htl, NULL, (void *)&cached_key)) {
     silc_hash_table_list_reset(&htl);
     return NULL;
   }
@@ -1756,7 +1756,7 @@ bool silc_server_del_from_watcher_list(SilcServer server,
   bool found = FALSE;
 
   silc_hash_table_list(server->watcher_list, &htl);
-  while (silc_hash_table_get(&htl, &key, (void **)&entry)) {
+  while (silc_hash_table_get(&htl, &key, (void *)&entry)) {
     if (entry == client) {
       silc_hash_table_del_by_context(server->watcher_list, key, client);
 
@@ -1868,7 +1868,7 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 
   /* Compare the list */
   silc_hash_table_list(list, &htl);
-  while (silc_hash_table_get(&htl, (void **)&t, (void **)&entry)) {
+  while (silc_hash_table_get(&htl, (void *)&t, (void *)&entry)) {
     if (type == t) {
       if (type == 1) {
 	if (silc_string_match(entry->data, tmp)) {
@@ -1975,7 +1975,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 
 	/* Check if the public key is in the list already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
 	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    tmp = NULL;
 	    break;
@@ -1995,7 +1995,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 
 	/* Check if the ID is in the list already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
 	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    tmp = NULL;
 	    break;
@@ -2025,7 +2025,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	   the requested string. */
 	char *string = NULL, *start, *end, *n;
 
-	if (silc_hash_table_find(list, (void *)1, NULL, (void **)&tmp2)) {
+	if (silc_hash_table_find(list, (void *)1, NULL, (void *)&tmp2)) {
 	  string = tmp2->head;
 	  if (tmp2->truelen && !strncmp(string, tmp, tmp2->truelen - 1)) {
 	    /* Delete entire string */
@@ -2050,7 +2050,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
 	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)2, tmp2);
 	    break;
@@ -2063,7 +2063,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
 	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)3, tmp2);
 	    break;
@@ -2191,7 +2191,7 @@ SilcBuffer silc_server_get_channel_pk_list(SilcServer server,
 		     SILC_STR_END);
 
   silc_hash_table_list(channel->channel_pubkeys, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&pk)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&pk)) {
     pkp = silc_pkcs_public_key_payload_encode(pk);
     list = silc_argument_payload_encode_one(list, pkp->data, pkp->len,
 					    announce ? 0x03 :
@@ -2318,7 +2318,7 @@ bool silc_server_verify_channel_auth(SilcServer server,
 
   /* Find the public key with the hash */
   if (!silc_hash_table_find(channel->channel_pubkeys, pkhash,
-			    NULL, (void **)&chpk)) {
+			    NULL, (void *)&chpk)) {
     SILC_LOG_DEBUG(("Public key not found in channel public key list"));
     goto out;
   }

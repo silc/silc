@@ -149,7 +149,7 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
       }
 
     if (*auth_data &&
-	silc_hash_table_find_ext(*auth_data, public_key, (void **)&cached_key,
+	silc_hash_table_find_ext(*auth_data, public_key, (void *)&cached_key,
 				 NULL, silc_hash_public_key, NULL,
 				 silc_hash_public_key_compare, NULL)) {
       silc_pkcs_public_key_free(public_key);
@@ -831,7 +831,7 @@ SILC_CONFIG_CALLBACK(fetch_client)
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
-			   (void **)&tmp->passphrase,
+			   (void *)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
@@ -839,13 +839,13 @@ SILC_CONFIG_CALLBACK(fetch_client)
   }
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void **)&tmp->publickeys, NULL)) {
+			   (void *)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val, (void **)&tmp->publickeys)) {
+    if (!my_parse_publickeydir((char *) val, (void *)&tmp->publickeys)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -903,7 +903,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
-			   (void **)&tmp->passphrase,
+			   (void *)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
@@ -911,13 +911,13 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   }
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void **)&tmp->publickeys, NULL)) {
+			   (void *)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val, (void **)&tmp->publickeys)) {
+    if (!my_parse_publickeydir((char *) val, (void *)&tmp->publickeys)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1008,7 +1008,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
-			   (void **)&tmp->passphrase,
+			   (void *)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
@@ -1017,7 +1017,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void **)&tmp->publickeys, NULL)) {
+			   (void *)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1084,7 +1084,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
-			   (void **)&tmp->passphrase,
+			   (void *)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
@@ -1093,7 +1093,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void **)&tmp->publickeys, NULL)) {
+			   (void *)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }

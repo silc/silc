@@ -467,7 +467,7 @@ void silc_server_packet_send_clients(SilcServer server,
 
   /* Send to all clients in table */
   silc_hash_table_list(clients, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&client)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&client)) {
     /* If client has router set it is not locally connected client and
        we will route the message to the router set in the client. Though,
        send locally connected server in all cases. */
@@ -655,7 +655,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
     if (!client)
       continue;
@@ -871,7 +871,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
     if (!client || client == sender_entry)
       continue;
@@ -1039,7 +1039,7 @@ void silc_server_packet_send_local_channel(SilcServer server,
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (chl->client && SILC_IS_LOCAL(chl->client)) {
       sock = chl->client->connection;
 
@@ -1656,12 +1656,12 @@ void silc_server_send_notify_on_channels(SilcServer server,
   packetdata.src_id_type = SILC_ID_SERVER;
 
   silc_hash_table_list(client->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
     /* Send the message to all clients on the channel's client list. */
     silc_hash_table_list(channel->user_list, &htl2);
-    while (silc_hash_table_get(&htl2, NULL, (void **)&chl2)) {
+    while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
       c = chl2->client;
 
       if (sender && c == sender)

@@ -1812,7 +1812,7 @@ void silc_client_remove_from_channels(SilcClient client,
   SilcChannelUser chu;
 
   silc_hash_table_list(client_entry->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);
     silc_free(chu);
@@ -1835,7 +1835,7 @@ void silc_client_replace_from_channels(SilcClient client,
   SilcChannelUser chu;
 
   silc_hash_table_list(old->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     /* Replace client entry */
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);

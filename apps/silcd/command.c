@@ -1174,7 +1174,7 @@ SILC_SERVER_CMD_FUNC(invite)
 
     /* Check if the ID is in the list already */
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+    while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
       if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
 	tmp = NULL;
 	break;
@@ -1256,7 +1256,7 @@ SILC_SERVER_CMD_FUNC(invite)
 					  channel->invite_list)),
 		       SILC_STR_END);
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+    while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
       list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
 					      type);
     silc_hash_table_list_reset(&htl);
@@ -2146,7 +2146,7 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply))
+    while (silc_hash_table_get(&htl, (void *)&tmp_len, (void *)&reply))
       invite_list = silc_argument_payload_encode_one(invite_list,
 						     reply->data,
 						     reply->len, tmp_len);
@@ -2165,7 +2165,7 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply))
+    while (silc_hash_table_get(&htl, (void *)&tmp_len, (void *)&reply))
       ban_list = silc_argument_payload_encode_one(ban_list,
 						  reply->data,
 						  reply->len, tmp_len);
@@ -3134,7 +3134,6 @@ SILC_SERVER_CMD_FUNC(cmode)
 	channel->founder_key = NULL;
 	goto out;
       }
-    has_founder:
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
@@ -3145,6 +3144,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
     }
   }
+ has_founder:
 
   if (mode_mask & SILC_CHANNEL_MODE_CHANNEL_AUTH) {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
@@ -3164,7 +3164,6 @@ SILC_SERVER_CMD_FUNC(cmode)
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE, st, 0);
 	goto out;
       }
-    has_pk_list:
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
@@ -3176,6 +3175,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
     }
   }
+ has_pk_list:
 
   /* Finally, set the mode */
   old_mask = channel->mode = mode_mask;
@@ -4108,7 +4108,7 @@ SILC_SERVER_CMD_FUNC(watch)
 
     /* Get the nickname from the watcher list and use the same key in
        new entries as well.  If key doesn't exist then create it. */
-    if (!silc_hash_table_find(server->watcher_list, hash, (void **)&tmp, NULL))
+    if (!silc_hash_table_find(server->watcher_list, hash, (void *)&tmp, NULL))
       tmp = silc_memdup(hash, CLIENTID_HASH_LEN);
 
     /* Add the client to the watcher list with the specified nickname hash. */
@@ -4130,7 +4130,7 @@ SILC_SERVER_CMD_FUNC(watch)
 
     /* Check that this client is watching for this nickname */
     if (!silc_hash_table_find_by_context(server->watcher_list, hash,
-					 client, (void **)&tmp)) {
+					 client, (void *)&tmp)) {
       /* Nickname is alredy being watched for this client */
       silc_server_command_send_status_data(cmd, SILC_COMMAND_WATCH,
 					   SILC_STATUS_ERR_NO_SUCH_NICK, 0,
@@ -4391,7 +4391,7 @@ SILC_SERVER_CMD_FUNC(ban)
 					  channel->ban_list)),
 		       SILC_STR_END);
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+    while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
       list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
 					      type);
     silc_hash_table_list_reset(&htl);

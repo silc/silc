@@ -522,7 +522,7 @@ SILC_CLIENT_CMD_FUNC(get_clients_by_channel_cb)
     clients = silc_calloc(silc_hash_table_count(channel->user_list),
 			  sizeof(*clients));
     silc_hash_table_list(channel->user_list, &htl);
-    while (silc_hash_table_get(&htl, NULL, (void **)&chu))
+    while (silc_hash_table_get(&htl, NULL, (void *)&chu))
       clients[clients_count++] = chu->client;
     silc_hash_table_list_reset(&htl);
     found = TRUE;
@@ -583,7 +583,7 @@ void silc_client_get_clients_by_channel(SilcClient client,
   }
 
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     entry = chu->client;
 
     /* If the entry has incomplete info, then resolve it from the server. */

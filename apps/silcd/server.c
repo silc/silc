@@ -4483,7 +4483,7 @@ void silc_server_announce_get_inviteban(SilcServer server,
     type = silc_hash_table_count(channel->invite_list);
     SILC_PUT16_MSB(type, list->data);
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+    while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
       list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
                                               type);
     silc_hash_table_list_reset(&htl);
@@ -4507,7 +4507,7 @@ void silc_server_announce_get_inviteban(SilcServer server,
     type = silc_hash_table_count(channel->ban_list);
     SILC_PUT16_MSB(type, list->data);
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+    while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
       list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
                                               type);
     silc_hash_table_list_reset(&htl);
@@ -5176,7 +5176,7 @@ void silc_server_save_user_channels(SilcServer server,
      are no part of the list. */
   if (ht) {
     silc_hash_table_list(client->channels, &htl);
-    while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+    while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
       if (!silc_hash_table_find(ht, chl->channel, NULL, NULL)) {
 	silc_hash_table_del(chl->channel->user_list, chl->client);
 	silc_hash_table_del(chl->client->channels, chl->channel);
@@ -5187,7 +5187,7 @@ void silc_server_save_user_channels(SilcServer server,
     silc_hash_table_free(ht);
   } else {
     silc_hash_table_list(client->channels, &htl);
-    while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+    while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
       silc_hash_table_del(chl->channel->user_list, chl->client);
       silc_hash_table_del(chl->client->channels, chl->channel);
       silc_free(chl);
