@@ -47,6 +47,8 @@ TODO/bugs In SILC Client Library
    behaviour and maybe should be removed.  The changer should always
    get the one it wants and not have the formatted nickname.
 
+ o strerror messages from premature EOF's to signoff messages.
+
  o Additions to do after protocol version 1.1:
 
 	o Fix the NICK_CHANGE notify handling not to create new entry
