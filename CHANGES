@@ -1,3 +1,10 @@
+Mon Feb 18 15:49:22 EET 2002  Timo Sirainen <tss@iki.fi>
+
+	* Added proper initializations to silc's irssi code, so it's
+	  now possible to load it as module.  Affected files
+	  irssi/src/silc/core/silc-core.c,
+	  fe-common/silc/fe-common-silc-core.c and fe-text/silc.c
+
 Sun Feb 17 19:02:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged latest Irssi (0.8.1) from the irssi.org's CVS into
