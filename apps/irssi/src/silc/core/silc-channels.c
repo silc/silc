@@ -1030,7 +1030,7 @@ void silc_channels_init(void)
   command_bind_silc("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   command_bind_silc("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
   command_bind_silc("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
-  command_bind_silc("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
+/*  command_bind_silc("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys); */
 
   silc_nicklist_init();
 }
@@ -1049,7 +1049,7 @@ void silc_channels_deinit(void)
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
   command_unbind("away", (SIGNAL_FUNC) command_away);
   command_unbind("key", (SIGNAL_FUNC) command_key);
-  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys);
+/*  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys); */
 
   silc_nicklist_deinit();
 }

@@ -422,13 +422,47 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   /* FIXME: replace those printformat calls with signals and add signature
             information to them (if present) */
   if (flags & SILC_MESSAGE_FLAG_ACTION)
-    printformat_module("fe-common/silc", server, channel->channel_name,
-		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION,
-                       nick == NULL ? "[<unknown>]" : nick->nick, message);
+    if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if(message_len > sizeof(tmp) - 1) {
+        dm = silc_calloc(message_len + 1, sizeof(*dm));
+        cp = dm;
+      }
+      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+                       cp, message_len);
+      printformat_module("fe-common/silc", server, channel->channel_name,
+                         MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION,
+                         nick == NULL ? "[<unknown>]" : nick->nick, cp);
+      silc_free(dm);
+    } else {
+      printformat_module("fe-common/silc", server, channel->channel_name,
+                         MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION,
+                         nick == NULL ? "[<unknown>]" : nick->nick,
+                         message);
+    }
   else if (flags & SILC_MESSAGE_FLAG_NOTICE)
-    printformat_module("fe-common/silc", server, channel->channel_name,
-		       MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE,
-                       nick == NULL ? "[<unknown>]" : nick->nick, message);
+    if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if(message_len > sizeof(tmp) - 1) {
+        dm = silc_calloc(message_len + 1, sizeof(*dm));
+        cp = dm;
+      }
+      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+                       cp, message_len);
+      printformat_module("fe-common/silc", server, channel->channel_name,
+                         MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE,
+                         nick == NULL ? "[<unknown>]" : nick->nick, cp);
+      silc_free(dm);
+    } else {
+      printformat_module("fe-common/silc", server, channel->channel_name,
+                         MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE,
+                         nick == NULL ? "[<unknown>]" : nick->nick,
+                         message);
+    }
   else {
     if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
       char tmp[256], *cp, *dm = NULL;
@@ -519,7 +553,8 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       message = (const unsigned char *)data;
     } else {
       silc_emit_mime_sig(server, NULL, data, data_len,
-      			enc, type, sender->nickname);
+      			enc, type, sender->nickname ? sender->nickname :
+				   "[<unknown>]");
       message = NULL;
     }
   }

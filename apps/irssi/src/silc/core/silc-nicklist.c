@@ -33,6 +33,8 @@ SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
 
   g_return_val_if_fail(IS_SILC_CHANNEL(channel), NULL);
   g_return_val_if_fail(user != NULL, NULL);
+  g_return_val_if_fail(user->client != NULL, NULL);
+  g_return_val_if_fail(user->client->nickname != NULL, NULL);
 
   rec = g_new0(SILC_NICK_REC, 1);
   rec->nick = g_strdup(user->client->nickname);
