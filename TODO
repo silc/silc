@@ -48,6 +48,10 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o The router should check for validity of received notify packets from
+   servers (after all buggy servers may send notify that is actually
+   something that should have not been sent).
+
  o Add hashed passwords to silcd.conf file.
 
  o Backup router related issues
