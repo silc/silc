@@ -1242,7 +1242,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	data[1] = 0;
 	silc_server_packet_send(server, sock, SILC_PACKET_RESUME_ROUTER, 0,
 				data, sizeof(data), FALSE);
-	silc_server_packet_queue_purge(server,sock);
+	silc_server_packet_queue_purge(server, sock);
       }
 
       /* Now send the same packet to backup */
@@ -1394,6 +1394,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
     /* The SilcProtocol context was shared between all connections, clear
        it from all connections. */
     if (sock->protocol == protocol) {
+      silc_server_packet_queue_purge(server, sock);
       sock->protocol = NULL;
 
       if (error) {

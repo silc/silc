@@ -1279,6 +1279,12 @@ void silc_server_notify(SilcServer server,
 
     SILC_LOG_DEBUG(("SERVER SIGNOFF notify"));
 
+    /* Backup router shouldn't accept SERVER_SIGNOFF's from normal routers
+       when the backup isn't acting as primary router. */
+    if (sock->type == SILC_SOCKET_TYPE_SERVER &&
+	server->backup_router && server->server_type == SILC_BACKUP_ROUTER)
+      return;
+
     /* Get Server ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
