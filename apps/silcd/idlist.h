@@ -63,6 +63,7 @@ typedef SilcUInt8 SilcIDListStatus;
 						   with WHOIS or IDENTIFY */
 #define SILC_IDLIST_STATUS_DISABLED     0x08    /* Entry is disabled */
 #define SILC_IDLIST_STATUS_RESUMED      0x10    /* Entry is resumed */
+#define SILC_IDLIST_STATUS_LOCAL        0x20    /* Entry locally connected */
 
 /*
    Generic ID list data structure.

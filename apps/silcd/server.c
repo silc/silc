@@ -1573,6 +1573,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	server->stat.auth_failures++;
 	goto out;
       }
+      entry->data.status |= SILC_IDLIST_STATUS_LOCAL;
 
       /* Statistics */
       server->stat.my_clients++;
@@ -1677,6 +1678,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	server->stat.auth_failures++;
 	goto out;
       }
+      entry->data.status |= SILC_IDLIST_STATUS_LOCAL;
 
       /* Statistics */
       if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER) {
@@ -1875,8 +1877,6 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     return;
   }
 
-  server->stat.packets_received++;
-
   /* Get keys and stuff from ID entry */
   idata = (SilcIDListData)sock->user_data;
   if (idata) {
@@ -1916,6 +1916,8 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   SilcPacketContext *packet = parse_ctx->packet;
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   int ret;
+
+  server->stat.packets_received++;
 
   /* Parse the packet */
   if (parse_ctx->normal)
@@ -2924,7 +2926,7 @@ void silc_server_remove_from_channels(SilcServer server,
     silc_free(chl);
 
     /* Update statistics */
-    if (client->connection)
+    if (SILC_IS_LOCAL(client))
       server->stat.my_chanclients--;
     if (server->server_type == SILC_ROUTER) {
       server->stat.cell_chanclients--;
@@ -3022,7 +3024,7 @@ bool silc_server_remove_from_one_channel(SilcServer server,
   silc_free(chl);
 
   /* Update statistics */
-  if (client->connection)
+  if (SILC_IS_LOCAL(client))
     server->stat.my_chanclients--;
   if (server->server_type == SILC_ROUTER) {
     server->stat.cell_chanclients--;
@@ -3992,6 +3994,20 @@ void silc_server_announce_channels(SilcServer server,
     silc_buffer_free(channels);
   }
 
+  if (channel_users) {
+    silc_buffer_push(channel_users, channel_users->data - channel_users->head);
+    SILC_LOG_HEXDUMP(("channel users"), channel_users->data,
+		     channel_users->len);
+
+    /* Send the packet */
+    silc_server_packet_send(server, remote,
+			    SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+			    channel_users->data, channel_users->len,
+			    FALSE);
+
+    silc_buffer_free(channel_users);
+  }
+
   if (channel_modes) {
     int i;
 
@@ -4012,20 +4028,6 @@ void silc_server_announce_channels(SilcServer server,
       silc_buffer_free(channel_modes[i]);
     }
     silc_free(channel_modes);
-  }
-
-  if (channel_users) {
-    silc_buffer_push(channel_users, channel_users->data - channel_users->head);
-    SILC_LOG_HEXDUMP(("channel users"), channel_users->data,
-		     channel_users->len);
-
-    /* Send the packet */
-    silc_server_packet_send(server, remote,
-			    SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
-			    channel_users->data, channel_users->len,
-			    FALSE);
-
-    silc_buffer_free(channel_users);
   }
 
   if (channel_users_modes) {

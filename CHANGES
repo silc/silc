@@ -1,3 +1,33 @@
+Sat Jun 22 21:34:59 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_client_udpate_server function to update changed
+	  server info.  Affected file lib/silcclient/idlist.[ch].
+
+	* Added check for server entries that are being resolved when
+	  notify is received.  If being resolved, handle the received
+	  notify only after it's resolved so that all notifys are
+	  handled in same order as received from the server.
+
+	  Added similar resolver check to channel entries.  Every
+	  notify that cause resolving of any information that affects
+	  channel entry marks the channel entry in waiting state.
+	  After whatever resolving is over the waiters are signalled
+	  and only then the notifys are handled in the same order
+	  as delivered from the server.
+
+	  Affected files are lib/silcclient/idlist.[ch], and
+	  client_notify.c.
+
+	* Fixed KILLED notify handling in normal server.  Affected
+	  file silcd/packet_receive.c.
+
+	* Added SILC_IDLIST_STATUS_LOCAL which indicates that entry
+	  is locally connected, or was locally connected (but may
+	  be detached and connection is not active).  Added also
+	  SILC_IS_LOCAL for checking this status.  Affected files
+	  silcd/idlist.h, silcd/packet_receive.c, silcd/server_util.c,
+	  silcd/server.c and silcd/server_internal.h.
+
 Sat Jun 22 17:06:58 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Don't send or handle TOPIC_SET if topic is already set and

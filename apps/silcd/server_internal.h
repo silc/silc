@@ -55,8 +55,8 @@ typedef struct {
   SilcUInt32 conn_failures;		  /* Connection failure */
   SilcUInt32 auth_attempts;		  /* Authentication attempts */
   SilcUInt32 auth_failures;		  /* Authentication failures */
-  SilcUInt32 packets_sent;		  /* Sent packets */
-  SilcUInt32 packets_received;		  /* Received packets */
+  SilcUInt32 packets_sent;		  /* Sent SILC packets */
+  SilcUInt32 packets_received;		  /* Received SILC packets */
 } SilcServerStatistics;
 
 /*
@@ -162,6 +162,11 @@ typedef struct {
 /* Return TRUE if a packet must be broadcasted (router broadcasts) */
 #define SILC_BROADCAST(server) (server->server_type == SILC_ROUTER) 
 
+/* Return TRUE if entry is locally connected or local to us */
+#define SILC_IS_LOCAL(entry)						\
+  ((entry)->connection ? TRUE :						\
+   (entry)->data.status & SILC_IDLIST_STATUS_LOCAL ? TRUE : FALSE)
+
 /* Registers generic task for file descriptor for reading from network and
    writing to network. As being generic task the actual task is allocated 
    only once and after that the same task applies to all registered fd's. */
@@ -187,7 +192,7 @@ do {									      \
 #define SILC_OPER_STATS_UPDATE(c, type, mod)	\
 do {						\
   if ((c)->mode & (mod)) {			\
-    if ((c)->connection)			\
+    if (SILC_IS_LOCAL((c)))     		\
       server->stat.my_ ## type ## _ops--;	\
     if (server->server_type == SILC_ROUTER)	\
       server->stat. type ## _ops--;		\
@@ -199,14 +204,14 @@ do {						\
 do {						\
     if (client->mode & (mod)) {			\
       if (!(mode & (mod))) {			\
-	if (client->connection)			\
+	if (SILC_IS_LOCAL(client))      	\
 	  server->stat.my_ ## oper ## _ops--;	\
         if (server->server_type == SILC_ROUTER)	\
 	  server->stat. oper ## _ops--;		\
       }						\
     } else {					\
       if (mode & (mod)) {			\
-	if (client->connection)			\
+	if (SILC_IS_LOCAL(client))      	\
 	  server->stat.my_ ## oper ## _ops++;	\
         if (server->server_type == SILC_ROUTER)	\
 	  server->stat. oper ## _ops++;		\

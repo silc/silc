@@ -76,6 +76,14 @@ void silc_idlist_del_data(void *entry)
     silc_hash_free(idata->hash);
   if (idata->public_key)
     silc_pkcs_public_key_free(idata->public_key);
+
+  idata->send_key = NULL;
+  idata->receive_key = NULL;
+  idata->rekey = NULL;
+  idata->hmac_send = NULL;
+  idata->hmac_receive = NULL;
+  idata->hash = NULL;
+  idata->public_key = NULL;
 }
 
 /* Purges ID cache */

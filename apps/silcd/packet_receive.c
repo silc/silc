@@ -1160,6 +1160,13 @@ void silc_server_notify(SilcServer server,
       /* Re-announce our clients on the channel as the ID has changed now */
       silc_server_announce_get_channel_users(server, channel, &modes, &users,
 					     &users_modes);
+      if (users) {
+	silc_buffer_push(users, users->data - users->head);
+	silc_server_packet_send(server, sock,
+				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				users->data, users->len, FALSE);
+	silc_buffer_free(users);
+      }
       if (modes) {
 	silc_buffer_push(modes, modes->data - modes->head);
 	silc_server_packet_send_dest(server, sock,
@@ -1167,13 +1174,6 @@ void silc_server_notify(SilcServer server,
 				     channel->id, SILC_ID_CHANNEL,
 				     modes->data, modes->len, FALSE);
 	silc_buffer_free(modes);
-      }
-      if (users) {
-	silc_buffer_push(users, users->data - users->head);
-	silc_server_packet_send(server, sock,
-				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
-				users->data, users->len, FALSE);
-	silc_buffer_free(users);
       }
       if (users_modes) {
 	silc_buffer_push(users_modes, users_modes->data - users_modes->head);
@@ -1416,10 +1416,10 @@ void silc_server_notify(SilcServer server,
 
       /* If the the client is not in local list we check global list */
       client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, TRUE, NULL);
+					     client_id, TRUE, &cache);
       if (!client) {
 	client = silc_idlist_find_client_by_id(server->local_list, 
-					       client_id, TRUE, NULL);
+					       client_id, TRUE, &cache);
 	if (!client) {
 	  silc_free(client_id);
 	  goto out;
@@ -1463,7 +1463,8 @@ void silc_server_notify(SilcServer server,
 	  silc_free(client_id);
 
 	  /* Killer must be router operator */
-	  if (!(client2->mode & SILC_UMODE_ROUTER_OPERATOR)) {
+	  if (server->server_type != SILC_SERVER &&
+	      !(client2->mode & SILC_UMODE_ROUTER_OPERATOR)) {
 	    SILC_LOG_DEBUG(("Killing is not allowed"));
 	    goto out;
 	  }
@@ -1482,10 +1483,25 @@ void silc_server_notify(SilcServer server,
 				       FALSE);
 
       /* Check if anyone is watching this nickname */
-      if (server->server_type == SILC_ROUTER)
-	silc_server_check_watcher_list(server, client, NULL,
-				       SILC_NOTIFY_TYPE_KILLED);
+      silc_server_check_watcher_list(server, client, NULL,
+				     SILC_NOTIFY_TYPE_KILLED);
 
+      /* Update statistics */
+      server->stat.clients--;
+      if (server->stat.cell_clients)
+	server->stat.cell_clients--;
+      SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+      SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+
+      if (SILC_IS_LOCAL(client)) {
+ 	server->stat.my_clients--;
+	silc_schedule_task_del_by_context(server->schedule, client);
+	silc_idlist_del_data(client);
+	client->mode = 0;
+      }
+
+      client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+      cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
       break;
     }
 
@@ -2956,6 +2972,13 @@ void silc_server_new_channel(SilcServer server,
 	 users on the channel "joining" the channel. */
       silc_server_announce_get_channel_users(server, channel, &modes, &users,
 					     &users_modes);
+      if (users) {
+	silc_buffer_push(users, users->data - users->head);
+	silc_server_packet_send(server, sock,
+				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				users->data, users->len, FALSE);
+	silc_buffer_free(users);
+      }
       if (modes) {
 	silc_buffer_push(modes, modes->data - modes->head);
 	silc_server_packet_send_dest(server, sock,
@@ -2963,13 +2986,6 @@ void silc_server_new_channel(SilcServer server,
 				     channel->id, SILC_ID_CHANNEL,
 				     modes->data, modes->len, FALSE);
 	silc_buffer_free(modes);
-      }
-      if (users) {
-	silc_buffer_push(users, users->data - users->head);
-	silc_server_packet_send(server, sock,
-				SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
-				users->data, users->len, FALSE);
-	silc_buffer_free(users);
       }
       if (users_modes) {
 	silc_buffer_push(users_modes, users_modes->data - users_modes->head);
@@ -3753,6 +3769,7 @@ void silc_server_resume_client(SilcServer server,
 		     server->global_list->clients, 
 		     detached_client->nickname,
 		     detached_client->id, detached_client, FALSE, NULL);
+    detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
 
     /* Change the owner of the client if needed */
     if (detached_client->router != server_entry)

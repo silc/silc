@@ -77,7 +77,7 @@ silc_server_remove_clients_channels(SilcServer server,
     silc_free(chl);
 
     /* Update statistics */
-    if (client->connection)
+    if (SILC_IS_LOCAL(client))
       server->stat.my_chanclients--;
     if (server->server_type == SILC_ROUTER) {
       server->stat.cell_chanclients--;
@@ -762,7 +762,7 @@ bool silc_server_channel_delete(SilcServer server,
     channel->user_count--;
 
     /* Update statistics */
-    if (chl->client->connection)
+    if (SILC_IS_LOCAL(chl->client))
       server->stat.my_chanclients--;
     if (server->server_type == SILC_ROUTER) {
       server->stat.cell_chanclients--;
@@ -1307,11 +1307,16 @@ void silc_server_kill_client(SilcServer server,
   } else {
     /* Update statistics */
     server->stat.clients--;
-    server->stat.my_clients--;
     if (server->stat.cell_clients)
       server->stat.cell_clients--;
     SILC_OPER_STATS_UPDATE(remote_client, server, SILC_UMODE_SERVER_OPERATOR);
     SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
+
+    if (SILC_IS_LOCAL(remote_client)) {
+      server->stat.my_clients--;
+      silc_schedule_task_del_by_context(server->schedule, remote_client);
+      silc_idlist_del_data(remote_client);
+    }
 
     /* Remove remote client */
     if (!silc_idlist_del_client(server->global_list, remote_client)) {

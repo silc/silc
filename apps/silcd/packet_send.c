@@ -596,7 +596,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
     goto out;
   }
 
-  SILC_LOG_DEBUG(("Sending packet to channel %s", channel->channel_name));
+  SILC_LOG_DEBUG(("Sending %s packet to channel %s",
+		  silc_get_packet_name(type), channel->channel_name));
 
   routed = silc_calloc(silc_hash_table_count(channel->user_list), 
 		       sizeof(*routed));
@@ -636,6 +637,10 @@ void silc_server_packet_send_to_channel(SilcServer server,
 	gone = TRUE;
       }
 
+      SILC_LOG_DEBUG(("Sending packet to client %s",
+		      client->nickname ? client->nickname :
+		      (unsigned char *)""));
+
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      idata->send_key, 
@@ -660,6 +665,10 @@ void silc_server_packet_send_to_channel(SilcServer server,
     
     if (!sock || (sender && sock == sender))
       continue;
+
+    SILC_LOG_DEBUG(("Sending packet to client %s",
+		    client->nickname ? client->nickname :
+		    (unsigned char *)""));
 
     /* Send the packet */
     silc_server_packet_send_to_channel_real(server, sock, &packetdata,
