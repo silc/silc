@@ -1054,6 +1054,12 @@ if test x$mp_gmp = xtrue; then
   mp="GMP"
 fi
 echo " Arithmetic library ............: $mp"
+
+threads="no"
+if test x$has_threads = xtrue; then
+  threads="yes"
+fi
+echo " Multi-threads support .........: $threads"
 echo " Debugging enabled .............: $summary_debug"
 echo " Stack-trace enabled ...........: $summary_stacktrace"
 echo ""
