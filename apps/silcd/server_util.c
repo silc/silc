@@ -1515,7 +1515,7 @@ void silc_server_kill_client(SilcServer server,
   /* Remove the client from all channels. This generates new keys to the
      channels as well. */
   silc_server_remove_from_channels(server, NULL, remote_client, FALSE, 
-				   NULL, TRUE, FALSE);
+				   NULL, TRUE, TRUE);
 
   /* Remove the client entry, If it is locally connected then we will also
      disconnect the client here */
