@@ -1810,7 +1810,8 @@ void silc_client_receive_channel_key(SilcClient client,
     silc_channel_key_payload_free(payload);
     return;
   }
-  id = silc_id_payload_parse_id(id_string, tmp_len);
+
+  id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
 
   /* Find channel. */
   if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
