@@ -1,3 +1,10 @@
+Wed Feb 20 18:48:49 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added preliminary BeOS support into the util library.
+	  Created lib/silcutil/beos/, and implemented all the needed
+	  functions to support SILC on BeOS.  Created also file
+	  includes/silcbeos.h.
+
 Mon Feb 18 15:49:22 EET 2002  Timo Sirainen <tss@iki.fi>
 
 	* Added proper initializations to silc's irssi code, so it's

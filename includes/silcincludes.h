@@ -40,12 +40,28 @@
 #endif
 #endif
 
+#ifdef BEOS
+#ifndef SILC_BEOS
+#define SILC_BEOS
+#endif
+#elif defined(__BEOS__)
+#ifndef SILC_BEOS
+#define SILC_BEOS
+#endif
+#endif
+
+/* Platform specific includes */
+
 #ifdef SILC_WIN32
 #include "silcwin32.h"
 #endif
 
 #ifdef SILC_EPOC
 #include "silcepoc.h"
+#endif
+
+#ifdef SILC_BEOS
+#include "silcbeos.h"
 #endif
 
 #ifndef DLLAPI

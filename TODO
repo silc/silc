@@ -106,6 +106,10 @@ Manual.
    and naming conventions used in the Toolkit (should not be 
    actually the CodingStyle document, but something more general).
 
+ o Write "Platform Implementations" document to describe what platforms
+   Toolkit support, what has been implemented, what has not been, what
+   wors differently etc.
+
 
 TODO in SILC Protocol
 =====================

@@ -23,7 +23,11 @@ else
 if SILC_EPOC
 SUBDIRS=epoc
 else
+if SILC_BEOS
+SUBDIRS=beos
+else
 SUBDIRS=unix
+endif
 endif
 endif
 
