@@ -4299,11 +4299,14 @@ SILC_SERVER_CMD_FUNC(silcoper)
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SILCOPER, cmd, 1, 2);
 
-  if (server->server_type == SILC_SERVER)
-    goto out;
-
   if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
+
+  if (server->server_type == SILC_SERVER) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
+					  SILC_STATUS_ERR_AUTH_FAILED);
+    goto out;
+  }
 
   /* Get the username */
   username = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);

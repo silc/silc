@@ -57,6 +57,9 @@ int silc_select(SilcScheduleFd fds, uint32 fds_count, struct timeval *timeout)
   int nhandles = 0, i;
   MSG msg;
 
+  if (fds_count > MAXIMUM_WAIT_OBJECTS)
+    fds_count = MAXIMUM_WAIT_OBJECTS;
+
   for (i = 0; i < fds_count; i++) {
     if (!fds[i].events)
       continue;

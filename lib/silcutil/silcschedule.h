@@ -463,6 +463,9 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
+ *    Note that generic tasks cannot be deleted using this function
+ *    since generic tasks does not match any specific fd.
+ *
  ***/
 void silc_schedule_task_del_by_fd(SilcSchedule schedule, uint32 fd);
 

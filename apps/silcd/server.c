@@ -830,10 +830,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
      server. This task remains on the queue until the end of the program. */
   if (!server->listenning) {
     silc_schedule_task_add(server->schedule, server->sock, 
-		       silc_server_accept_new_connection,
-		       (void *)server, 0, 0, 
-		       SILC_TASK_FD,
-		       SILC_TASK_PRI_NORMAL);
+			   silc_server_accept_new_connection,
+			   (void *)server, 0, 0, 
+			   SILC_TASK_FD,
+			   SILC_TASK_PRI_NORMAL);
     server->listenning = TRUE;
   }
 
@@ -1036,10 +1036,10 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
      be closed if the key exchange protocol has not been started. */
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock->sock, 
-		       silc_server_timeout_remote,
-		       context, 60, 0,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_LOW);
+			   silc_server_timeout_remote,
+			   context, 60, 0,
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_LOW);
 }
 
 /* Accepts new connections to the server. Accepting new connections are
@@ -1186,10 +1186,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
      this is 60 seconds and is hard coded limit (XXX). */
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock->sock, 
-		       silc_server_timeout_remote,
-		       (void *)server, 60, 0,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_LOW);
+			   silc_server_timeout_remote,
+			   (void *)server, 60, 0,
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_LOW);
 }
 
 /* Final part of accepting new connection. The connection has now
@@ -1459,10 +1459,10 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (!server->standalone && sock->type == SILC_SOCKET_TYPE_ROUTER && 
 	sock == server->router->connection)
       silc_schedule_task_add(server->schedule, 0, 
-			 silc_server_connect_to_router,
-			 context, 1, 0,
-			 SILC_TASK_TIMEOUT,
-			 SILC_TASK_PRI_NORMAL);
+			     silc_server_connect_to_router,
+			     context, 1, 0,
+			     SILC_TASK_TIMEOUT,
+			     SILC_TASK_PRI_NORMAL);
 
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock);
@@ -2104,6 +2104,19 @@ void silc_server_close_connection(SilcServer server,
 		  sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 		  sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		  "Router"), sock->sock));
+
+  /* If sock->user_data is NULL then we'll check for active protocols
+     here since the silc_server_free_sock_user_data has not been called
+     for this connection. */
+  if (!sock->user_data) {
+    /* If any protocol is active cancel its execution */
+    if (sock->protocol) {
+      silc_protocol_cancel(sock->protocol, server->schedule);
+      sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
+      silc_protocol_execute_final(sock->protocol, server->schedule);
+      sock->protocol = NULL;
+    }
+  }
 
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(server->schedule, sock->sock);

@@ -5,6 +5,9 @@ TODO/bugs in Irssi SILC client
    cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
    file.
 
+ o The QUIT command should wait for servers disconnection (at least for
+   a while) before exiting the application.
+
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the

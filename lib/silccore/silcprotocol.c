@@ -138,5 +138,5 @@ void silc_protocol_execute_final(SilcProtocol protocol, SilcSchedule schedule)
 
 void silc_protocol_cancel(SilcProtocol protocol, SilcSchedule schedule)
 {
-  silc_schedule_task_del_by_callback(schedule, protocol->protocol->callback);
+  silc_schedule_task_del_by_context(schedule, protocol);
 }

@@ -1,3 +1,21 @@
+Wed Jul 18 18:34:01 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Call silc_schedule_task_del_by_context in the 
+	  silc_protocol_cancel instead of silc_schedule_task_del_by_callback.
+	  Affected file lib/silccore/silcprotocol.c.
+
+	* Call silc_protocol_cancel for active protocols in the
+	  silc_server_close_connection if the funtion
+	  silc_server_free_sock_user_data has not been called.
+	  Affected file silcd/server.c.
+
+	* Generic tasks cannot be deleted using the del_by_fd
+	  task deleting function since generic tasks does not match
+	  any specific fd.  Affected file lib/silcutil/silcschedule.[ch].
+
+	* Added a notion to SILCOPER help file that the SILCOPER works
+	  only on router server, not on normal server.
+
 Wed Jul 18 09:40:04 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added for WIN32 support for the new scheduler as well.

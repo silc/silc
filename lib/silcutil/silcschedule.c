@@ -745,7 +745,6 @@ void silc_schedule_task_del_by_fd(SilcSchedule schedule, uint32 fd)
 {
   silc_task_del_by_fd(schedule->timeout_queue, fd);
   silc_task_del_by_fd(schedule->fd_queue, fd);
-  silc_task_del_by_fd(schedule->generic_queue, fd);
 }
 
 /* Remove task by task callback. */
@@ -1056,7 +1055,7 @@ static int silc_schedule_task_remove(SilcTaskQueue queue, SilcTask task)
 {
   SilcTask first, old, next;
 
-  if (!queue)
+  if (!queue || !task)
     return FALSE;
 
   if (!queue->task) {

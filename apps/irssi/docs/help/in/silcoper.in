@@ -1,9 +1,12 @@
 
 @SYNTAX:silcoper@
 
-Gives you router operator priviledges if thecorrect
+Gives you router operator priviledges if the correct
 username and passphrase are given. User will be prompted
 for the passphrase if the <public key> is not provided.
+
+NOTE: This command works only on router server. It has
+no effect on normal SILC server.
 
 See also: KILL, SCONNECT, CLOSE, OPER
 

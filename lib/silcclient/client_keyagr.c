@@ -343,9 +343,9 @@ void silc_client_send_key_agreement(SilcClient client,
        will not start the key exchange protocol within the specified 
        timeout. */
     ke->timeout = silc_schedule_task_add(client->schedule, 0, 
-				     silc_client_key_agreement_timeout,
-				     (void *)ke, timeout_secs, 0, 
-				     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+					 silc_client_key_agreement_timeout,
+					 (void *)ke, timeout_secs, 0, 
+					 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   }
 
   /* Encode the key agreement payload */
@@ -373,10 +373,10 @@ silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
   /* Register task that will receive the async connect and will
      read the result. */
   ctx->task = silc_schedule_task_add(ctx->client->schedule, sock, 
-				 silc_client_perform_key_agreement_start,
-				 (void *)ctx, 0, 0, 
-				 SILC_TASK_FD,
-				 SILC_TASK_PRI_NORMAL);
+				     silc_client_perform_key_agreement_start,
+				     (void *)ctx, 0, 0, 
+				     SILC_TASK_FD,
+				     SILC_TASK_PRI_NORMAL);
   silc_schedule_set_listen_fd(ctx->client->schedule, sock, SILC_TASK_WRITE);
 
   ctx->sock = sock;
