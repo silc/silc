@@ -34,13 +34,13 @@
 #
 # NOTE: Also note that if any subdirectory has Makefile.am.pre then you
 #       must list it here as _<name>_SUBDIRS_<dir>. To define all sub
-#       directories use $(COMMONDIRS) that must be defined in the Makefile
+#       directories use $(COMMONLIBS) that must be defined in the Makefile
 #       and list all subdirs.
 #
 # Example:
 #
 # _xyz_SUBDIRS=lib irssi doc includes
-# _xyz_SUBDIRS_lib=$(COMMONDIRS)
+# _xyz_SUBDIRS_lib=$(SUBDIRS)
 # _xyz_DISTLABEL=SILC_DIST_XYZ
 #
 # To prepare the distribution give command ./prepare xyz 1.0.4
@@ -51,7 +51,7 @@ _toolkit_SUBDIRS_lib=$(COMMONDIRS)
 _toolkit_DISTLABEL=SILC_DIST_TOOLKIT
 
 _client_SUBDIRS=lib irssi doc includes
-_client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
+_client_SUBDIRS_lib=$(COMMONDIRS)
 _client_DISTLABEL=SILC_DIST_CLIENT
 
 _server_SUBDIRS=lib silcd doc includes
