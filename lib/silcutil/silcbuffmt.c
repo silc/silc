@@ -179,6 +179,8 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
 
  fail:
   SILC_LOG_DEBUG(("Error occured while formatting data"));
+  len = dst->data - start_ptr;
+  silc_buffer_push(dst, len);
   return -1;
 
  ok:
@@ -491,6 +493,8 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
 
  fail:
   SILC_LOG_DEBUG(("Error occured while unformatting buffer"));
+  len = src->data - start_ptr;
+  silc_buffer_push(src, len);
   return -1;
 
  ok:

@@ -370,14 +370,18 @@ do {									\
  *
  * DESCRIPTION
  *
- *    Returns the length of the padding in the packet. This is used
+ *    Calculates the length of the padding in the packet. This is used
  *    by various library routines to determine needed padding length.
  *
  * SOURCE
  */
-#define SILC_PACKET_PADLEN(__packetlen, __blocklen)		\
-  SILC_PACKET_DEFAULT_PADLEN - (__packetlen) %			\
-    ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN)
+#define SILC_PACKET_PADLEN(__packetlen, __blocklen, __padlen)		   \
+do {									   \
+  __padlen = (SILC_PACKET_DEFAULT_PADLEN - (__packetlen) %		   \
+	      ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN)); \
+  if (__padlen < 8)							   \
+    __padlen = ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN); \
+} while(0)
 /***/
 
 /****d* silccore/SilcPacketAPI/SILC_PACKET_PADLEN_MAX
@@ -389,13 +393,16 @@ do {									\
  * DESCRIPTION
  *
  *    Returns the length of the padding up to the maximum length, which
- *    is 128 butes. This is used by various library routines to determine
+ *    is 128 bytes. This is used by various library routines to determine
  *    needed padding length.
  *
  * SOURCE
  */
-#define SILC_PACKET_PADLEN_MAX(__packetlen)				\
-  SILC_PACKET_MAX_PADLEN - (__packetlen) % SILC_PACKET_MAX_PADLEN
+#define SILC_PACKET_PADLEN_MAX(__packetlen, __blocklen, __padlen)	   \
+do {									   \
+  __padlen = (SILC_PACKET_MAX_PADLEN - (__packetlen) % 			   \
+	      ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN)); \
+} while(0)
 /***/
 
 /* Prototypes */

@@ -1,11 +1,30 @@
 
 @SYNTAX:kill@
 
-This is operator command. KILL is used to forcibly remove
-a client from the network. It works similarly to KICK expect
-that the client is removed from the entire network.  In general,
-KILL is useful only as a warning tool for abusive users and
-it has only temporary effects.
+This command can be used for two purpose:  SILC operator may use it
+to remove a client from the network, or user may use it to remove
+its own client entries from the network.
+
+If you are not SILC operator you cannot use this command to remove
+anybody else except yourself from the network.  Only SILC operator
+is able to kill other clients from the network.  When killing your
+own client entry you must provide -pubkey argument to the command.
+For killing your own client from network you also must be connected
+to the same server as your own client entry (the client entry may
+be for example detached client entry).  When using this command as
+SILC operator -pubkey has no effect.
+
+Examples:
+
+	/KILL myself -pubkey
+
+		Kill yourself with nickname "myself" from network.
+
+	/SILCOPER user
+	/KILL someclient You have been killed
+
+		Become SILC operator and kill client named
+                "someclient", with comment "You have been killed".
 
 See also: OPER, SILCOPER
 

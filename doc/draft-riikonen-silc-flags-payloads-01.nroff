@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 15 May 2002
+.ds RH XXX
 .ds CH
 .na
 .hy 0
@@ -16,14 +16,14 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-flags-payloads-00.txt                         15 May 2002
-Expires: 15 November 2002
+draft-riikonen-flags-payloads-01.txt                         XXX
+Expires: 20 April 2003
 
 .in 3
 
 .ce 2
 SILC Message Flag Payloads
-<draft-riikonen-flags-payloads-00.txt>
+<draft-riikonen-flags-payloads-01.txt>
 
 .ti 0
 Status of this Memo
@@ -178,7 +178,106 @@ additional payload.
 .ti 0
 3.3 SILC_MESSAGE_FLAG_SIGNED
 
-Not defined yet.
+This flag is used to tell the recipient that the sent message is
+digitally signed by the sender, and that the receipient should verify
+the signature to verify the true authenticity of the received message.
+All message payloads in SILC provides message authentication code (MAC)
+which can be used to verify that the sender produced and sent the message.
+Even so, signing messages digitally can be used to verify the authenticity
+of the message when recipient trusts the sender.
+
+This flag defines a payload which is used to deliver the actual message,
+sender's public key and the digital signature.  The payload for
+SILC_MESSAGE_FLAG_SIGNED is as follows:
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                       Message Payload                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                      Public Key Payload                       ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Signature Data Length     |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                        Signature Data                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 1:  SILC_MESSAGE_FLAG_SIGNED Payload
+
+
+.in 6
+o Message Payload (variable length) - This is a message payload
+  consisting of the encrypted message.  When this flag is used
+  with channel messages it include Channel Message Payload, and
+  when used with private messages it include Private Message
+  Payload [SILC2].
+
+o Public Key Payload (variable length) - This includes the
+  Public Key Payload which can be used to deliver the sender's
+  public key (or certificate).  It also indicates the type of the
+  public key (or certificate) which the recipient use to identify
+  how the signature must be verified.  This payload must always
+  be present but it is not required to include the public key
+  data.  The Public Key Type field in the Public Key Payload
+  MUST be set to the correct type of the key, even if the
+  actual public key data is not included.
+
+o Signature Data Length (2 bytes) - Indicates the length of
+  the Signature Data field not including any other field.
+
+o Signature Data (variable lenght) - Includes the actual
+  signature data.  The signature computation and encoding
+  is key type specific.  See [SILC3] for all key types, and
+  their respective references of how to compute and encode
+  the signature.
+.in 3
+
+How the data is processed before it is signed is key type specific.
+The actual data that to be signed MUST be the plaintext message
+payload before encryption.  For Channel Message Payload the data to
+be signed is concatenation of Message Flags, Message Length, Message
+Data, Padding Length, Padding, Initial Vector fields and the Public
+Key Payload.  Any other field is not included for signature data.
+For Private Message Payload the data to be signed is concatenation
+of Message Flags, Message Data Length, Message Data, Padding fields and
+the Public Key Payload fields.  Any other field is not included for
+signature data.  Before signing, the data is always processed, usually
+hashed.  The hash function to be used is defined in the key type
+specific definitions.  See the key type specific references in
+[SILC3].
+
+If the public key of the sender is included in the payload the
+recipient SHOULD verify before accepting the public key.  Recipient
+SHOULD verify the signature before accepting a public key.  With
+certificates the certificate verification may be done before
+verifying the signature.  If the signature verification fails the
+message should still be displayed.  The end user should also be
+notified about the result of the signature verification.
+
+To make the packet size smaller implementations may not want to
+include the actual public key in all signed messages.  Sending the
+public key in the first message is usually sufficient.  Subsequent
+messages may include empty Public Key Payload with an indication of
+the public key type.
+
+Implementations that do not support this flag can still process the
+message payload in normal manner.  These implementations merely ignore
+rest of the data after the message payload.
+
+This flag MAY be masked with any other Message Flag including those that
+define additional payloads.  As long as the defined payload resides in
+the data area of the message payload this flag may be masked with the
+other flags.
 
 
 .ti 0
@@ -236,10 +335,12 @@ MIME fragmentation is defined for gateway usage, but in case of SILC the
 sender may also start sending fragmented MIME objects.
 
 This flag SHOULD NOT be masked with some other Message Flag that defines 
-payloads.  Generally this sort of setting would be impossible for the 
-receiver to interpret.  However, flags that does not define any specific 
-payloads MAY be masked with this flag as well.  For example, this flag
-could be masked also with SILC_MESSAGE_FLAG_REQUEST flag.
+payloads for message data.  Generally this sort of setting would be
+impossible for the receiver to interpret.  However, flags that does not
+define any specific payloads MAY be masked with this flag as well.  For
+example, this flag could be masked also with SILC_MESSAGE_FLAG_REQUEST flag.
+It also can be masked with SILC_MESSAGE_FLAG_SIGNED flag since it does not
+define data specific payload.
 
 
 .ti 0
@@ -265,6 +366,9 @@ support S/MIME may be desired in some implementations.
 
 [SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
              May 2002.
+
+[SILC3]      Riikonen, P., "SILC Key Exchange and Authentication 
+             Protocols", Internet Draft, May 2002.
 
 [RFC2045]    Freed, N., et al., "Multipurpose Internet Mail Extensions 
              (MIME) Part One: Format of Internet Message Bodies",
@@ -301,4 +405,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 15 November 2002
+This Internet-Draft expires 20 April 2003

@@ -1,16 +1,15 @@
 /*
 
-  client_prvmsg.c
+  client_prvmsg.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -39,7 +38,7 @@ void silc_client_send_private_message(SilcClient client,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
 				      SilcUInt32 data_len, 
-				      int force_send)
+				      bool force_send)
 {
   SilcSocketConnection sock;
   SilcBuffer buffer;
@@ -57,6 +56,7 @@ void silc_client_send_private_message(SilcClient client,
   buffer = silc_private_message_payload_encode(flags,
 					       data_len, data,
 					       client_entry->send_key,
+					       client_entry->hmac_send,
 					       client->rng);
 
   /* If we don't have private message specific key then private messages
@@ -93,9 +93,9 @@ void silc_client_send_private_message(SilcClient client,
 				 packetdata.dst_id_len);
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
-					  packetdata.src_id_len +
-					  packetdata.dst_id_len), block_len);
+  SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
+		      packetdata.src_id_len +
+		      packetdata.dst_id_len), block_len, packetdata.padlen);
 
   /* Create the outgoing packet */
   if (!silc_packet_assemble(&packetdata, client->rng, cipher, hmac, sock, 
@@ -106,7 +106,7 @@ void silc_client_send_private_message(SilcClient client,
 
   /* Encrypt the header and padding of the packet. */
   silc_packet_encrypt(cipher, hmac, conn->internal->psn_send++,
-		      (SilcBuffer)&packet, SILC_PACKET_HEADER_LEN + 
+		      (SilcBuffer)&packet, SILC_PACKET_HEADER_LEN +
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
 
@@ -115,6 +115,13 @@ void silc_client_send_private_message(SilcClient client,
 
   /* Now actually send the packet */
   silc_client_packet_send_real(client, sock, force_send);
+
+  /* Check for mandatory rekey */
+  if (conn->internal->psn_send == SILC_CLIENT_REKEY_THRESHOLD)
+    silc_schedule_task_add(client->schedule, sock->sock,
+			   silc_client_rekey_callback, sock, 0, 1,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+
   silc_free(packetdata.dst_id);
 
  out:
@@ -153,6 +160,7 @@ void silc_client_private_message(SilcClient client,
   unsigned char *message;
   SilcUInt32 message_len;
   SilcCipher cipher = NULL;
+  SilcHmac hmac = NULL;
 
   if (packet->src_id_type != SILC_ID_CLIENT)
     goto out;
@@ -182,14 +190,16 @@ void silc_client_private_message(SilcClient client,
   }
 
   cipher = remote_client->receive_key;
-  if (packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY && !cipher) {
+  hmac = remote_client->hmac_receive;
+  if (packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY && !cipher && !hmac) {
     silc_free(remote_id);
     return;
   }
 
   /* Parse the payload and decrypt it also if private message key is set */
   payload = silc_private_message_payload_parse(packet->buffer->data,
-					       packet->buffer->len, cipher);
+					       packet->buffer->len,
+					       cipher, hmac);
   if (!payload) {
     silc_free(remote_id);
     return;
@@ -235,7 +245,7 @@ static void silc_client_private_message_key_cb(SilcClient client,
   SilcPacketContext *packet = (SilcPacketContext *)context;
   unsigned char *key;
   SilcUInt16 key_len;
-  unsigned char *cipher;
+  unsigned char *cipher = NULL, *hmac = NULL;
   int ret;
 
   if (!clients)
@@ -244,7 +254,8 @@ static void silc_client_private_message_key_cb(SilcClient client,
   /* Parse the private message key payload */
   ret = silc_buffer_unformat(packet->buffer,
 			     SILC_STR_UI16_NSTRING(&key, &key_len),
-			     SILC_STR_UI16_STRING(&cipher),
+			     SILC_STR_UI16_STRING_ALLOC(&cipher),
+			     SILC_STR_UI16_STRING_ALLOC(&hmac),
 			     SILC_STR_END);
   if (!ret)
     goto out;
@@ -254,7 +265,8 @@ static void silc_client_private_message_key_cb(SilcClient client,
 
   /* Now take the key in use */
   if (!silc_client_add_private_message_key(client, conn, clients[0],
-					   cipher, key, key_len, FALSE, TRUE))
+					   cipher, hmac, key, key_len,
+					   FALSE, TRUE))
     goto out;
 
   /* Print some info for application */
@@ -269,6 +281,8 @@ static void silc_client_private_message_key_cb(SilcClient client,
 		     clients[0]->username ? ")" : "");
 
  out:
+  silc_free(cipher);
+  silc_free(hmac);
   silc_packet_context_free(packet);
 }
 
@@ -301,9 +315,9 @@ void silc_client_private_message_key(SilcClient client,
    indicated by the `client_entry'. If the `key' is NULL and the boolean
    value `generate_key' is TRUE the library will generate random key.
    The `key' maybe for example pre-shared-key, passphrase or similar.
-   The `cipher' MAY be provided but SHOULD be NULL to assure that the
-   requirements of the SILC protocol are met. The API, however, allows
-   to allocate any cipher.
+   The `cipher' and `hmac' MAY be provided but SHOULD be NULL to assure
+   that the requirements of the SILC protocol are met. The API, however,
+   allows to allocate any cipher and HMAC.
 
    If `responder' is TRUE then the sending and receiving keys will be
    set according the client being the receiver of the private key.  If
@@ -317,14 +331,15 @@ void silc_client_private_message_key(SilcClient client,
    Returns FALSE if the key is already set for the `client_entry', TRUE
    otherwise. */
 
-int silc_client_add_private_message_key(SilcClient client,
-					SilcClientConnection conn,
-					SilcClientEntry client_entry,
-					char *cipher,
-					unsigned char *key,
-					SilcUInt32 key_len,
-					bool generate_key,
-					bool responder)
+bool silc_client_add_private_message_key(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcClientEntry client_entry,
+					 const char *cipher,
+					 const char *hmac,
+					 unsigned char *key,
+					 SilcUInt32 key_len,
+					 bool generate_key,
+					 bool responder)
 {
   unsigned char private_key[32];
   SilcUInt32 len;
@@ -339,15 +354,20 @@ int silc_client_add_private_message_key(SilcClient client,
 
   if (!cipher)
     cipher = SILC_DEFAULT_CIPHER;
+  if (!hmac)
+    hmac = SILC_DEFAULT_HMAC;
 
-  /* Check the requested cipher */
+  /* Check the requested cipher and HMAC */
   if (!silc_cipher_is_supported(cipher))
+    return FALSE;
+  if (!silc_hmac_is_supported(hmac))
     return FALSE;
 
   /* Generate key if not provided */
   if (generate_key == TRUE) {
     len = 32;
-    for (i = 0; i < len; i++) private_key[i] = silc_rng_get_byte(client->rng);
+    for (i = 0; i < len; i++)
+      private_key[i] = silc_rng_get_byte_fast(client->rng);
     key = private_key;
     key_len = len;
     client_entry->generated = TRUE;
@@ -364,9 +384,11 @@ int silc_client_add_private_message_key(SilcClient client,
       != SILC_SKE_STATUS_OK)
     return FALSE;
 
-  /* Allocate the ciphers */
+  /* Allocate the cipher and HMAC */
   silc_cipher_alloc(cipher, &client_entry->send_key);
   silc_cipher_alloc(cipher, &client_entry->receive_key);
+  silc_hmac_alloc(hmac, NULL, &client_entry->hmac_send);
+  silc_hmac_alloc(hmac, NULL, &client_entry->hmac_receive);
 
   /* Set the keys */
   if (responder == TRUE) {
@@ -376,6 +398,10 @@ int silc_client_add_private_message_key(SilcClient client,
     silc_cipher_set_key(client_entry->receive_key, keymat->send_enc_key,
 			keymat->enc_key_len);
     silc_cipher_set_iv(client_entry->receive_key, keymat->send_iv);
+    silc_hmac_set_key(client_entry->hmac_send, keymat->receive_hmac_key,
+		      keymat->hmac_key_len);
+    silc_hmac_set_key(client_entry->hmac_receive, keymat->send_hmac_key,
+		      keymat->hmac_key_len);
   } else {
     silc_cipher_set_key(client_entry->send_key, keymat->send_enc_key,
 			keymat->enc_key_len);
@@ -383,6 +409,10 @@ int silc_client_add_private_message_key(SilcClient client,
     silc_cipher_set_key(client_entry->receive_key, keymat->receive_enc_key,
 			keymat->enc_key_len);
     silc_cipher_set_iv(client_entry->receive_key, keymat->receive_iv);
+    silc_hmac_set_key(client_entry->hmac_send, keymat->send_hmac_key,
+		      keymat->hmac_key_len);
+    silc_hmac_set_key(client_entry->hmac_receive, keymat->receive_hmac_key,
+		      keymat->hmac_key_len);
   }
 
   /* Free the key material */
@@ -394,15 +424,16 @@ int silc_client_add_private_message_key(SilcClient client,
 /* Same as above but takes the key material from the SKE key material
    structure. This structure is received if the application uses the
    silc_client_send_key_agreement to negotiate the key material. The
-   `cipher' SHOULD be provided as it is negotiated also in the SKE
-   protocol. */
+   `cipher' and `hmac' SHOULD be provided as it is negotiated also in
+   the SKE protocol. */
 
-int silc_client_add_private_message_key_ske(SilcClient client,
-					    SilcClientConnection conn,
-					    SilcClientEntry client_entry,
-					    char *cipher,
-					    SilcSKEKeyMaterial *key,
-					    bool responder)
+bool silc_client_add_private_message_key_ske(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcClientEntry client_entry,
+					     const char *cipher,
+					     const char *hmac,
+					     SilcSKEKeyMaterial *key,
+					     bool responder)
 {
   assert(client && client_entry);
 
@@ -412,14 +443,20 @@ int silc_client_add_private_message_key_ske(SilcClient client,
 
   if (!cipher)
     cipher = SILC_DEFAULT_CIPHER;
+  if (!hmac)
+    hmac = SILC_DEFAULT_HMAC;
 
-  /* Check the requested cipher */
+  /* Check the requested cipher and HMAC */
   if (!silc_cipher_is_supported(cipher))
     return FALSE;
+  if (!silc_hmac_is_supported(hmac))
+    return FALSE;
 
-  /* Allocate the ciphers */
+  /* Allocate the cipher and HMAC */
   silc_cipher_alloc(cipher, &client_entry->send_key);
   silc_cipher_alloc(cipher, &client_entry->receive_key);
+  silc_hmac_alloc(hmac, NULL, &client_entry->hmac_send);
+  silc_hmac_alloc(hmac, NULL, &client_entry->hmac_receive);
 
   /* Set the keys */
   if (responder == TRUE) {
@@ -429,6 +466,10 @@ int silc_client_add_private_message_key_ske(SilcClient client,
     silc_cipher_set_key(client_entry->receive_key, key->send_enc_key,
 			key->enc_key_len);
     silc_cipher_set_iv(client_entry->receive_key, key->send_iv);
+    silc_hmac_set_key(client_entry->hmac_send, key->receive_hmac_key,
+		      key->hmac_key_len);
+    silc_hmac_set_key(client_entry->hmac_receive, key->send_hmac_key,
+		      key->hmac_key_len);
   } else {
     silc_cipher_set_key(client_entry->send_key, key->send_enc_key,
 			key->enc_key_len);
@@ -436,6 +477,10 @@ int silc_client_add_private_message_key_ske(SilcClient client,
     silc_cipher_set_key(client_entry->receive_key, key->receive_enc_key,
 			key->enc_key_len);
     silc_cipher_set_iv(client_entry->receive_key, key->receive_iv);
+    silc_hmac_set_key(client_entry->hmac_send, key->send_hmac_key,
+		      key->hmac_key_len);
+    silc_hmac_set_key(client_entry->hmac_receive, key->receive_hmac_key,
+		      key->hmac_key_len);
   }
 
   return TRUE;
@@ -451,15 +496,15 @@ int silc_client_add_private_message_key_ske(SilcClient client,
    through the SILC network. The packet is protected using normal session
    keys. */
 
-int silc_client_send_private_message_key(SilcClient client,
+bool silc_client_send_private_message_key(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
-					 int force_send)
+					 bool force_send)
 {
   SilcSocketConnection sock;
   SilcBuffer buffer;
-  int cipher_len;
-  const char *cipher;
+  int cipher_len, hmac_len;
+  const char *cipher, *hmac;
 
   assert(client && conn && client_entry);
 
@@ -471,6 +516,8 @@ int silc_client_send_private_message_key(SilcClient client,
 
   cipher = silc_cipher_get_name(client_entry->send_key);
   cipher_len = strlen(cipher);
+  hmac = silc_hmac_get_name(client_entry->hmac_send);
+  hmac_len = strlen(hmac);
 
   /* Create private message key payload */
   buffer = silc_buffer_alloc(2 + client_entry->key_len);
@@ -482,6 +529,9 @@ int silc_client_send_private_message_key(SilcClient client,
 		     SILC_STR_UI_SHORT(cipher_len),
 		     SILC_STR_UI_XNSTRING(cipher,
 					  cipher_len),
+		     SILC_STR_UI_SHORT(hmac_len),
+		     SILC_STR_UI_XNSTRING(hmac,
+					  hmac_len),
 		     SILC_STR_END);
 
   /* Send the packet */
@@ -497,7 +547,7 @@ int silc_client_send_private_message_key(SilcClient client,
    after this to protect the private messages with the remote `client_entry'
    client. Returns FALSE on error, TRUE otherwise. */
 
-int silc_client_del_private_message_key(SilcClient client,
+bool silc_client_del_private_message_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcClientEntry client_entry)
 {

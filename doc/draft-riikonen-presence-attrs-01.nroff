@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 15 May 2002
+.ds RH XXX
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-presence-attrs-00.txt                         15 May 2002
-Expires: 15 November 2002
+draft-riikonen-presence-attrs-00.txt                         XXX
+Expires: XXX
 
 .in 3
 
@@ -306,8 +306,9 @@ multiple same attributes in the packet.
 2    ATTRIBUTE_SERVICE
 
      This attribute indicates a service in the Internet that the user
-     is currently using or has logged in.  The value of this attribute
-     is as follows:
+     is currently using or has logged in.  It also shows when the user
+     started using the service, and how long user has been idle in the
+     service.  The value of this attribute is as follows:
 
      Length       Type       Value
      4 bytes      integer    Service Port (IANA specified)
@@ -316,6 +317,9 @@ multiple same attributes in the packet.
                              0x01 (true) it means the user is online
                              in the service.  Set to 0x00 (false) when
                              out of reach.
+     variable     string     Signon date and time, UTC date, format as
+                             in ISO 8601
+     4 bytes      integer    Idle time
 
 
 3    ATTRIBUTE_STATUS_MOOD
@@ -542,7 +546,8 @@ multiple same attributes in the packet.
 
      The procedure producing the signature and encoding it are done
      in the manner defined in their respective definitions, see the
-     provided references.
+     provided references.  Also the hash function used with the
+     signature procedure is defined by the public key/certificate type.
 
 
 15   ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
@@ -628,4 +633,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 15 November 2002
+This Internet-Draft expires XXX

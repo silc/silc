@@ -141,9 +141,10 @@ bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
   /* Calculate the length of the padding. The padding is calculated from
      the data that will be encrypted. */
   if (!packet->padlen) {
-    packet->padlen = (packet->long_pad ?
-		      SILC_PACKET_PADLEN_MAX(packet->truelen) :
-		      SILC_PACKET_PADLEN(packet->truelen, block_len));
+    if (packet->long_pad)
+      SILC_PACKET_PADLEN_MAX(packet->truelen, block_len, packet->padlen);
+    else
+      SILC_PACKET_PADLEN(packet->truelen, block_len, packet->padlen);
   }
 
   /* Now prepare the outgoing data buffer for packet sending and start

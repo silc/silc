@@ -845,9 +845,9 @@ SILC_CLIENT_CMD_FUNC(kill)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClient client = cmd->client;
   SilcClientConnection conn = cmd->conn;
-  SilcBuffer buffer, idp;
+  SilcBuffer buffer, idp, auth = NULL;
   SilcClientEntry target;
-  char *nickname = NULL;
+  char *nickname = NULL, *comment = NULL;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -857,7 +857,7 @@ SILC_CLIENT_CMD_FUNC(kill)
 
   if (cmd->argc < 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-	"Usage: /KILL <nickname> [<comment>]");
+	"Usage: /KILL <nickname> [<comment>] [-pubkey]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
@@ -887,22 +887,35 @@ SILC_CLIENT_CMD_FUNC(kill)
     goto out;
   }
 
+  if (cmd->argc >= 3) {
+    if (strcasecmp(cmd->argv[2], "-pubkey"))
+      comment = cmd->argv[2];
+
+    if (!strcasecmp(cmd->argv[2], "-pubkey") ||
+	(cmd->argc >= 4 && !strcasecmp(cmd->argv[3], "-pubkey"))) {
+      /* Encode the public key authentication payload */
+      auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+						cmd->client->private_key,
+						cmd->client->rng,
+						client->sha1hash,
+						target->id, SILC_ID_CLIENT);
+    }
+  }
+
   /* Send the KILL command to the server */
   idp = silc_id_payload_encode(target->id, SILC_ID_CLIENT);
-  if (cmd->argc == 2)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_KILL, 
-					    ++conn->cmd_ident, 1, 
-					    1, idp->data, idp->len);
-  else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_KILL, 
-					    ++conn->cmd_ident, 2, 
-					    1, idp->data, idp->len,
-					    2, cmd->argv[2], 
-					    strlen(cmd->argv[2]));
+  buffer =
+    silc_command_payload_encode_va(SILC_COMMAND_KILL, 
+				   ++conn->cmd_ident, 3, 
+				   1, idp->data, idp->len,
+				   2, comment, comment ? strlen(comment) : 0,
+				   3, auth ? auth->data : NULL,
+				   auth ? auth->len : 0);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
+  silc_buffer_free(auth);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -996,7 +1009,7 @@ SILC_CLIENT_CMD_FUNC(ping)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcBuffer buffer;
+  SilcBuffer buffer, idp;
   void *id;
   int i;
 
@@ -1006,14 +1019,15 @@ SILC_CLIENT_CMD_FUNC(ping)
     goto out;
   }
 
+  idp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER); 
+
   /* Send the command */
   buffer = silc_command_payload_encode_va(SILC_COMMAND_PING, 0, 1, 
-					  1, conn->remote_id_data, 
-					  silc_id_get_len(conn->remote_id,
-							  SILC_ID_SERVER));
+					  1, idp->data, idp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
+  silc_buffer_free(idp);
 
   id = silc_id_str2id(conn->remote_id_data, conn->remote_id_data_len,
 		      SILC_ID_SERVER);
@@ -2548,7 +2562,7 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(topic, TOPIC, "TOPIC", 3);
   SILC_CLIENT_CMD(invite, INVITE, "INVITE", 3);
   SILC_CLIENT_CMD(quit, QUIT, "QUIT", 2);
-  SILC_CLIENT_CMD(kill, KILL, "KILL", 3);
+  SILC_CLIENT_CMD(kill, KILL, "KILL", 4);
   SILC_CLIENT_CMD(info, INFO, "INFO", 2);
   SILC_CLIENT_CMD(stats, STATS, "STATS", 0);
   SILC_CLIENT_CMD(ping, PING, "PING", 2);

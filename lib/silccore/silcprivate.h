@@ -57,18 +57,21 @@ typedef struct SilcPrivateMessagePayloadStruct *SilcPrivateMessagePayload;
  *    SilcPrivateMessagePayload 
  *    silc_private_message_payload_parse(unsigned char *payload,
  *                                       SilcUInt32 payload_len,
- *                                       SilcCipher cipher);
+ *                                       SilcCipher cipher,
+ *                                       SilcHmac hmac);
  *
  * DESCRIPTION
  *
  *    Parses private message payload returning new private mesage payload 
  *    structure. This also decrypts the message if the `cipher' is provided.
+ *    The data integrity is checked with `hmac'.
  *
  ***/
 SilcPrivateMessagePayload 
 silc_private_message_payload_parse(unsigned char *payload,
 				   SilcUInt32 payload_len,
-				   SilcCipher cipher);
+				   SilcCipher cipher,
+				   SilcHmac hmac);
 
 /****f* silccore/SilcPrivateAPI/silc_private_message_payload_encode
  *
@@ -78,20 +81,23 @@ silc_private_message_payload_parse(unsigned char *payload,
  *                                                   SilcUInt16 data_len,
  *                                                   const unsigned char *data,
  *                                                   SilcCipher cipher,
+ *                                                   SilcHmac hmac,
  *                                                   SilcRng rng);
  *
  * DESCRIPTION
  *
  *    Encodes private message payload into a buffer and returns it.  If
- *    the cipher is provided the packet is also encrypted here.  It is provided
- *    if the private message private keys are used.  If the `rng' is NULL
- *    then global RNG is used, if non-NULL then `rng' is used.
+ *    the `cipher' is provided the packet is also encrypted here.  It is
+ *    provided if the private message private keys are used.  If the `rng'
+ *    is NULL then global RNG is used, if non-NULL then `rng' is used.
+ *    The MAC for the message is computed with `hmac'.
  *
  ***/
 SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
 					       SilcUInt16 data_len,
 					       const unsigned char *data,
 					       SilcCipher cipher,
+					       SilcHmac hmac,
 					       SilcRng rng);
 
 /****f* silccore/SilcPrivateAPI/silc_private_message_payload_free
@@ -141,5 +147,21 @@ silc_private_message_get_flags(SilcPrivateMessagePayload payload);
 unsigned char *
 silc_private_message_get_message(SilcPrivateMessagePayload payload,
 				 SilcUInt32 *message_len);
+
+/****f* silccore/SilcPrivateAPI/silc_private_message_get_mac
+ *
+ * SYNOPSIS
+ *
+ *    unsigned char *
+ *    silc_private_message_get_mac(SilcPrivateMessagePayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the MAC from the payload.  The caller knows its length.
+ *    The caller must not free it.
+ *
+ ***/
+unsigned char *
+silc_private_message_get_mac(SilcPrivateMessagePayload payload);
 
 #endif

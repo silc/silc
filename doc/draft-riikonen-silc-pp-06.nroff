@@ -231,11 +231,9 @@ packet.  The packet data is the packet payloads defined in this
 protocol.  The data payload area is always encrypted.
 
 The last part of SILC packet is the packet MAC that assures the
-integrity of the packet.  The MAC is always computed from the packet
-before the encryption is applied to the packet.  If compression is used
-in the packet the MAC is computed after the compression has been
-applied.  The compression, on the other hand, is always applied before
-encryption.  See more details in the section 2.6 Packet MAC Generation.
+integrity of the packet.  See the section 2.6 Packet MAC Generation
+for more information.  If compsession is used the compsession is
+always applied before encryption.
 
 All fields in all packet payloads are always in MSB (most significant
 byte first) order.
@@ -1009,7 +1007,7 @@ The following diagram represents the Public Key Payload.
 |       Public Key Length       |        Public Key Type        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-~            Public Key of the party (or certificate)           ~
+~                  Public Key (or certificate)                  ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
@@ -1214,8 +1212,8 @@ The following list of currently defined notify types.  The format for
 notify arguments is same as in SILC commands described in [SILC4]. 
 Note that all ID's sent in arguments are sent inside ID Payload.  Also
 note that all passphrases that may be sent inside arguments MUST be
-UTF-8 [RFC2279] encoded.
-
+UTF-8 [RFC2279] encoded.  Also note that all public keys or certificates
+sent in arguments are actually Public Key Payloads.
 
 
 .in 6
@@ -1870,11 +1868,16 @@ Private Message Payload is used to send private message between
 two clients (or users for that matter).  The messages are sent only
 to the specified user and no other user inside SILC network is
 able to see the message.  The message is protected by the session 
-key established by the SILC Key Exchange Protocol.  However,
-it is also possible to agree to use a private key to protect
-just the private messages.  See section 2.3.11 Private Message
-Key Payload for detailed description of how to agree to use
-specific key.
+key established by the SILC Key Exchange Protocol.
+
+However, it is also possible to agree to use a private key to
+protect just the private messages.  It is for example possible to
+perform Key Agreement between two clients.  See section 2.3.20
+Key Agreement Payload how to perform key agreement.  See also
+section 2.3.12 Private Message Key Payload for another way of
+using private keys with private messages.  See [SILC1] section
+4.6 for detailed description for private message key generation
+procedure.
 
 If normal session key is used to protect the message, every server
 between the sender client and the receiving client MUST decrypt the
@@ -1903,7 +1906,11 @@ diagram represents the Private Message Payload.
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-~                             Padding                           ~
+~                            Padding                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                              MAC                              ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
@@ -1921,11 +1928,10 @@ o Message Flags (2 bytes) - This field includes the Message
   same purpose.
 
 o Message Data Length (2 bytes) - Indicates the length of the
-  Message Data field, not includes any other field.
+  Message Data field, not including any other field.
 
 o Message Data (variable length) - The actual message to
-  the client.  Rest of the packet is reserved for the message
-  data.
+  the client.
 
 o Padding (variable length) - This field is present only
   when the private message payload is encrypted with private
@@ -1933,6 +1939,16 @@ o Padding (variable length) - This field is present only
   the payload multiple by eight (8), or by the block size of
   the cipher, which ever is larger.  When encrypted with
   normal session keys, this field MUST NOT be included.
+
+o MAC (variable length) - This field is present only when
+  the private message payload is encrypted with private
+  message key. The MAC is computed from the Message Flags,
+  Message Data Length, Message Data and Padding fields in
+  that order.  The MAC protects the integrity of the channel
+  message.  The MAC is computed after encryption from the
+  ciphertext.  Note that, this field is not encrypted and
+  thus not included in the padding calculation.  When encrypted
+  with normal session keys, this field MUST NOT be included.
 .in 3
 
 
@@ -1950,7 +1966,7 @@ whether user wants to receive private message key.  Note that there
 are other, more secure ways of exchanging private message keys in
 the SILC network.  Instead of sending this payload it is possible to
 negotiate the private message key with SKE protocol using the Key
-Agreement payload directly peer to peer.
+Agreement payload directly peer to peer, see section 2.3.20.
 
 This payload may only be sent by client to another client.  Server
 MUST NOT send this payload at any time.  After sending this payload
@@ -1979,6 +1995,12 @@ diagram represents the Private Message Key Payload.
 ~                          Cipher Name                          ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       HMAC Name Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           HMAC Name                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
 .ce
@@ -2003,8 +2025,16 @@ o Cipher Name (variable length) - Name of the cipher to use
   in the private message encryption.  If this field does not
   exist then the default cipher of the SILC protocol is used.
   See the [SILC1] for defined ciphers.
-.in 3
 
+o HMAC Name Length (2 bytes) - Indicates the length of the
+  HMAC Name field in the payload, not including any other
+  field.
+
+o HMAC Name (variable length) - Name of the HMAC to use
+  in the private message MAC computation.  If this field does
+  not exist then the default HMAC of the SILC protocol is used.
+  See the [SILC1] for defined HMACs.
+.in 3
 
 
 .ti 0
@@ -2380,9 +2410,9 @@ After the key material has been received from the SKE protocol it is
 processed as the [SILC3] describes.  If the key material is used as
 channel private key then the Sending Encryption Key, as defined in
 [SILC3] is used as the channel private key.  Other key material must
-be discarded.  The [SILC1] defines the way to use the key material if
-it is intended to be used as private message keys.  Any other use for
-the key material is undefined.
+be discarded.  The [SILC1] in section 4.6 defines the way to use the
+key material if it is intended to be used as private message keys.
+Any other use for the key material is undefined.
 
 
 .ti 0
@@ -2719,7 +2749,7 @@ However, rekey MUST be performed before the sequence number wraps
 and repeats from zero.  Note that the sequence number is incremented only
 when MAC is computed for a packet.  If packet is not encrypted and MAC is
 not computed then the sequence number is not incremented.  Hence, the
-sequence number is zero for first encrypted packet.
+sequence number is zero for the very first encrypted packet.
 
 See [SILC1] for defined and allowed MAC algorithms.
 
@@ -2736,16 +2766,20 @@ and between the Data Payload area.  The padding for normal packets
 may be calculated as follows:
 
 .in 6
-padding length = 16 - (packet_length mod block_size)
+padding_length = 16 - (packet_length mod block_size)
+if (padding_length < 8)
+  padding_length += block_size
 .in 3
 
 The `block_size' is the block size of the cipher.  The maximum padding
-length is 128 bytes, and minimum is 1 byte.  The above algorithm calculates
-the padding to the next block size, and always returns the padding
-length between 1 - 16 bytes.  However, implementations may add padding
-up to 128 bytes.  For example packets that include a passphrase or a
-password for authentication purposes SHOULD pad the packet up to the
-maximum padding length.
+length is 128 bytes, and minimum is 8 bytes.  For example, packets that
+include a passphrase or a password for authentication purposes SHOULD
+pad the packet up to the maximum padding length.  The maximum padding
+is calculated as follows:
+
+.in 6
+padding_length = 128 - (packet_length mod block_size)
+.in 3
 
 For special packets the padding calculation is different as special
 packets may be encrypted differently.  In these cases the encrypted

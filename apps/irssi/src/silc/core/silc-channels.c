@@ -424,7 +424,7 @@ static void keyagr_completion(SilcClient client,
       /* Set the private key for this client */
       silc_client_del_private_message_key(client, conn, client_entry);
       silc_client_add_private_message_key_ske(client, conn, client_entry,
-					      NULL, key, i->responder);
+					      NULL, NULL, key, i->responder);
       printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_KEY_AGREEMENT_PRIVMSG, 
 			 client_entry->nickname);
@@ -612,23 +612,36 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     command = 1;
 
     if (argc >= 5) {
+      char *cipher = NULL, *hmac = NULL;
+
       if (type == 1 && client_entry) {
 	/* Set private message key */
+	bool responder = FALSE;
 	
 	silc_client_del_private_message_key(silc_client, conn, client_entry);
 
-	if (argc >= 6)
-	  silc_client_add_private_message_key(silc_client, conn, client_entry,
-					      argv[5], argv[4],
-					      argv_lens[4],
-					      (argv[4][0] == '*' ?
-					       TRUE : FALSE), FALSE);
-	else
-	  silc_client_add_private_message_key(silc_client, conn, client_entry,
-					      NULL, argv[4],
-					      argv_lens[4],
-					      (argv[4][0] == '*' ?
-					       TRUE : FALSE), FALSE);
+	if (argc >= 6) {
+	  if (!strcasecmp(argv[5], "-responder"))
+	    responder = TRUE;
+	  else
+	    cipher = argv[5];
+	}
+	if (argc >= 7) {
+	  if (!strcasecmp(argv[6], "-responder"))
+	    responder = TRUE;
+	  else
+	    hmac = argv[6];
+	}
+	if (argc >= 8) {
+	  if (!strcasecmp(argv[7], "-responder"))
+	    responder = TRUE;
+	}
+
+	silc_client_add_private_message_key(silc_client, conn, client_entry,
+					    cipher, hmac,
+					    argv[4], argv_lens[4],
+					    (argv[4][0] == '*' ?
+					     TRUE : FALSE), responder);
 
 	/* Send the key to the remote client so that it starts using it
 	   too. */
@@ -639,8 +652,6 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	*/
       } else if (type == 2) {
 	/* Set private channel key */
-	char *cipher = NULL, *hmac = NULL;
-
 	if (!(channel_entry->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
 	  printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			     SILCTXT_CH_PRIVATE_KEY_NOMODE, 

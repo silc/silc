@@ -1,3 +1,42 @@
+Sun Nov 10 12:20:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for rekey before 2^32 sequence number wraps.
+	  Affected files in server and client library.
+
+	* Padding must be at least 8 bytes now.  Implemented and updated
+	  protocol specs.
+
+	* Compute maximum padding for authentication packets to make
+	  passphrase approximation attacks impossible.  Affected files
+	  in client library and in server.
+
+	* Fixed PING command sending in client library and handling in
+	  server.  The server ID must be ID Payload, not raw ID data.
+	  Affected files in server and client library.
+
+	* Defined that all public keys sent in commands and notify
+	  payloads are actually Public Key Payloads not raw public key
+	  data.  Updated protocol specs and implemented.
+
+	* Updated protocol version to 1.2.  Updated specs and code.
+
+	* Added ERR_UNSUPPORTED_PUBLIC_KEY and ERR_OPERATION_ALLOWED
+	  status types.  Updated specs and the code.
+
+	* Added support for normal client to kill its own entries from
+	  the network.  Updated protocol specs and the code.
+
+	* Defined the SILC_MESSAGE_FLAG_SIGNED.  Updated protocol specs
+	  and added initial implementation.
+
+	* Added MAC field to the Private Message Payload to protect
+	  against chosen ciphertext attacks.  Updated the protocol specs
+	  and implemented.
+
+	* Added idle and signon fields to the ATTRIBUTE_SERVICE
+	  attribute to indicate the user's current idle and signon time
+	  of a service.  Updated protocol specs and implemented.
+
 Thu Nov  7 19:21:10 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added "do_not_bind" argument to silc_client_file_send what

@@ -1457,7 +1457,7 @@ software version = <major>[.<minor>[.<build or vendor string>]]
 
 Protocol version MAY provide both major and minor version.  Currently
 implementations MUST set the protocol version and accept at least the 
-protocol version as SILC-1.1-<software version>.  If new protocol version 
+protocol version as SILC-1.2-<software version>.  If new protocol version 
 causes incompatibilities with older version the <minor> version number 
 MUST be incremented.  The <major> is incremented if new protocol version 
 is fully incompatible.
@@ -1472,8 +1472,8 @@ Thus, the version strings could be, for example:
 .in 6
 SILC-1.1-2.0.2
 SILC-1.0-1.2
-SILC-1.1-1.0.VendorXYZ
-SILC-1.1-2.4.5 Vendor Limited
+SILC-1.2-1.0.VendorXYZ
+SILC-1.2-2.4.5 Vendor Limited
 .in 3
 
 
@@ -1987,7 +1987,7 @@ the MACs of the channel messages.  The processing is as follows:
 
 The raw key data is the key data received in the Channel Key Payload.
 The hash() function is the hash function used in the HMAC of the channel.
-Note that the server MUST also save the channel key.
+Note that the server also MUST save the channel key.
 
 
 .ti 0
@@ -2038,12 +2038,13 @@ generated key, and the SILC_PACKET_KEY_AGREEMENT was not used, then
 the key material SHOULD be processed as defined in the [SILC3].  In
 the processing, however, the HASH, as defined in [SILC3] MUST be 
 ignored.  After processing the key material it is employed as defined
-in [SILC3], however, the HMAC key material MUST be discarded.
+in [SILC3].
 
 If the key is pre-shared-key or randomly generated the implementations
-SHOULD use the SILC protocol's mandatory cipher as the cipher.  If the
-SKE was used to negotiate key material the cipher was negotiated as well,
-and may be different from default cipher.
+SHOULD use the SILC protocol's mandatory cipher as the cipher, and the
+mandatory HMAC as the HMAC.  If the SKE was used to negotiate key material
+the cipher was negotiated as well, and may be different from default
+cipher and default HMAC.
 
 
 .ti 0

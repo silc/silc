@@ -1,6 +1,6 @@
 /*
 
-  silcauth.c
+  silcauth.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -8,8 +8,7 @@
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation; version 2 of the License.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,6 +20,8 @@
 
 #include "silcincludes.h"
 #include "silcauth.h"
+#include "silcchannel_i.h"
+#include "silcprivate_i.h"
 
 /******************************************************************************
 
@@ -224,6 +225,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
   if (ret_len)
     *ret_len = buf->len;
 
+  silc_buffer_clear(buf);
   silc_buffer_free(buf);
   silc_free(id_data);
   silc_free(pk);
@@ -265,7 +267,7 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
     return NULL;
 
   /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(public_key->name, &pkcs)) {
+  if (!silc_pkcs_alloc(private_key->name, &pkcs)) {
     memset(tmp, 0, tmp_len);
     silc_free(tmp);
     return NULL;
@@ -537,4 +539,320 @@ char *silc_key_agreement_get_hostname(SilcKeyAgreementPayload payload)
 SilcUInt32 silc_key_agreement_get_port(SilcKeyAgreementPayload payload)
 {
   return payload->port;
+}
+
+/******************************************************************************
+
+                     SILC_MESSAGE_FLAG_SIGNED Payload
+
+******************************************************************************/
+
+/* The SILC_MESSAGE_FLAG_SIGNED Payload */
+struct SilcSignedPayloadStruct {
+  SilcUInt16 pk_len;
+  SilcUInt16 pk_type;
+  SilcUInt16 sign_len;
+  unsigned char *pk_data;
+  unsigned char *sign_data;
+};
+
+/* Encodes the data to be signed to SILC_MESSAGE_FLAG_SIGNED Payload */
+
+static SilcBuffer
+silc_signed_payload_encode_data(const unsigned char *message_payload,
+				SilcUInt32 message_payload_len,
+				unsigned char *pk,
+				SilcUInt32 pk_len, SilcUInt32 pk_type)
+{
+  SilcBuffer sign;
+
+  sign = silc_buffer_alloc_size(message_payload_len + 4 + pk_len);
+  if (!sign)
+    return NULL;
+
+  silc_buffer_format(sign,
+		     SILC_STR_UI_XNSTRING(message_payload,
+					  message_payload_len),
+		     SILC_STR_UI_SHORT(pk_len),
+		     SILC_STR_UI_SHORT(pk_type),
+		     SILC_STR_END);
+
+  if (pk && pk_len) {
+    silc_buffer_pull(sign, message_payload_len + 4);
+    silc_buffer_format(sign,
+		       SILC_STR_UI_XNSTRING(pk, pk_len),
+		       SILC_STR_END);
+    silc_buffer_push(sign, message_payload_len + 4);
+  }
+
+  return sign;
+}
+
+/* Parses the SILC_MESSAGE_FLAG_SIGNED Payload */
+
+SilcSignedPayload silc_signed_payload_parse(const unsigned char *data,
+					    SilcUInt32 data_len)
+{
+  SilcSignedPayload sig;
+  SilcBufferStruct buffer;
+  int ret;
+
+  SILC_LOG_DEBUG(("Parsing SILC_MESSAGE_FLAG_SIGNED Payload"));
+
+  silc_buffer_set(&buffer, (unsigned char *)data, data_len);
+  sig = silc_calloc(1, sizeof(*sig));
+  if (!sig)
+    return NULL;
+
+  /* Parse the payload */
+  ret = silc_buffer_unformat(&buffer,
+			     SILC_STR_UI_SHORT(&sig->pk_len),
+			     SILC_STR_UI_SHORT(&sig->pk_type),
+			     SILC_STR_END);
+  if (ret == -1 || sig->pk_len > data_len - 4) {
+    silc_signed_payload_free(sig);
+    return NULL;
+  }
+
+  silc_buffer_pull(&buffer, 4);
+  ret = silc_buffer_unformat(&buffer,
+			     SILC_STR_UI_XNSTRING_ALLOC(&sig->pk_data,
+							sig->pk_len),
+			     SILC_STR_UI16_NSTRING_ALLOC(&sig->sign_data,
+							 &sig->sign_len),
+			     SILC_STR_END);
+  if (ret == -1) {
+    silc_signed_payload_free(sig);
+    return NULL;
+  }
+  silc_buffer_push(&buffer, 4);
+
+  /* Signature must be provided */
+  if (sig->sign_len < 1)  {
+    silc_signed_payload_free(sig);
+    return NULL;
+  }
+
+  return sig;
+}
+
+/* Encodes the SILC_MESSAGE_FLAG_SIGNED Payload and computes the digital
+   signature. */
+
+SilcBuffer silc_signed_payload_encode(const unsigned char *message_payload,
+				      SilcUInt32 message_payload_len,
+				      SilcPublicKey public_key,
+				      SilcPrivateKey private_key,
+				      SilcHash hash,
+				      bool include_public_key)
+{
+  SilcBuffer buffer, sign;
+  SilcPKCS pkcs;
+  unsigned char auth_data[2048];
+  SilcUInt32 auth_len;
+  unsigned char *pk = NULL;
+  SilcUInt32 pk_len = 0;
+  SilcUInt16 pk_type;
+
+  if (!message_payload || !message_payload_len || !private_key || !hash)
+    return NULL;
+  if (include_public_key && !public_key)
+    return NULL;
+
+  if (include_public_key)
+    pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+
+  /* Now we support only SILC style public key */
+  pk_type = SILC_SKE_PK_TYPE_SILC;
+
+  /* Encode the data to be signed */
+  sign = silc_signed_payload_encode_data(message_payload,
+					 message_payload_len,
+					 pk, pk_len, pk_type);
+  if (!sign) {
+    silc_free(pk);
+    return NULL;
+  }
+
+  /* Sign the buffer */
+
+  /* Allocate PKCS object */
+  if (!silc_pkcs_alloc(private_key->name, &pkcs)) {
+    silc_buffer_clear(sign);
+    silc_buffer_free(sign);
+    silc_free(pk);
+    return NULL;
+  }
+  silc_pkcs_private_key_set(pkcs, private_key);
+
+  /* Compute the hash and the signature. */
+  if (silc_pkcs_get_key_len(pkcs) / 8 > sizeof(auth_data) - 1 ||
+      !silc_pkcs_sign_with_hash(pkcs, hash, sign->data, sign->len, auth_data,
+				&auth_len)) {
+    silc_buffer_clear(sign);
+    silc_buffer_free(sign);
+    silc_pkcs_free(pkcs);
+    silc_free(pk);
+    return NULL;
+  }
+
+  /* Encode the SILC_MESSAGE_FLAG_SIGNED Payload */
+
+  buffer = silc_buffer_alloc_size(4 + pk_len + 2 + auth_len);
+  if (!buffer) {
+    silc_buffer_clear(sign);
+    silc_buffer_free(sign);
+    silc_pkcs_free(pkcs);
+    memset(auth_data, 0, sizeof(auth_data));
+    silc_free(pk);
+    return NULL;
+  }
+
+  silc_buffer_format(sign,
+		     SILC_STR_UI_SHORT(pk_len),
+		     SILC_STR_UI_SHORT(pk_type),
+		     SILC_STR_END);
+
+  if (pk_len && pk) {
+    silc_buffer_pull(sign, 4);
+    silc_buffer_format(sign,
+		       SILC_STR_UI_XNSTRING(pk, pk_len),
+		       SILC_STR_END);
+    silc_buffer_push(sign, 4);
+  }
+
+  silc_buffer_pull(sign, 4 + pk_len);
+  silc_buffer_format(sign,
+		     SILC_STR_UI_SHORT(auth_len),
+		     SILC_STR_UI_XNSTRING(auth_data, auth_len),
+		     SILC_STR_END);
+  silc_buffer_push(sign, 4 + pk_len);
+
+  memset(auth_data, 0, sizeof(auth_data));
+  silc_pkcs_free(pkcs);
+  silc_buffer_clear(sign);
+  silc_buffer_free(sign);
+  silc_free(pk);
+
+  return buffer;
+}
+
+/* Free the payload */
+
+void silc_signed_payload_free(SilcSignedPayload sig)
+{
+  if (sig) {
+    memset(sig->sign_data, 0, sig->sign_len);
+    silc_free(sig->sign_data);
+    silc_free(sig->pk_data);
+    silc_free(sig);
+  }
+}
+
+/* Verify the signature in SILC_MESSAGE_FLAG_SIGNED Payload */
+
+int silc_signed_payload_verify(SilcSignedPayload sig,
+			       bool channel_message,
+			       void *message_payload,
+			       SilcPublicKey remote_public_key,
+			       SilcHash hash)
+{
+  int ret = SILC_AUTH_FAILED;
+#if 0
+  SilcBuffer sign;
+  SilcPKCS pkcs;
+  
+  if (!sig || !remote_public_key || !hash)
+    return ret;
+
+  /* Generate the signature verification data */
+  if (channel_message) {
+    SilcChannelMessagePayload chm =
+      (SilcChannelMessagePayload)message_payload;
+    SilcBuffer tmp;
+
+    /* Encode Channel Message Payload */
+    tmp = silc_buffer_alloc_size(6 + chm->data_len + chm->pad_len +
+				 chm->iv_len);
+    silc_buffer_format(tmp,
+		       SILC_STR_UI_SHORT(chm->flags),
+		       SILC_STR_UI_SHORT(chm->data_len),
+		       SILC_STR_UI_XNSTRING(chm->data, chm->data_len),
+		       SILC_STR_UI_SHORT(chm->pad_len),
+		       SILC_STR_UI_XNSTRING(chm->pad, chm->pad_len),
+		       SILC_STR_UI_XNSTRING(chm->iv, chm->iv_len),
+		       SILC_STR_END);
+
+    sign = silc_signed_payload_encode_data(tmp->data, tmp->len,
+					   sig->pk_data, sig->pk_len,
+					   sig->pk_type);
+    silc_buffer_clear(tmp);
+    silc_buffer_free(tmp);
+  } else {
+    SilcPrivateMessagePayload prm =
+      (SilcPrivateMessagePayload)message_payload;
+    SilcBuffer tmp;
+
+    /* Encode Private Message Payload */
+    tmp = silc_buffer_alloc_size(4 + prm->data_len +
+				 SILC_PRIVATE_MESSAGE_PAD(4 + prm->data_len));
+    silc_buffer_format(tmp,
+		       SILC_STR_UI_SHORT(prm->flags),
+		       SILC_STR_UI_SHORT(prm->message_len),
+		       SILC_STR_UI_XNSTRING(prm->message, prm->message_len),
+		       SILC_STR_END);
+
+    sign = silc_signed_payload_encode_data(tmp->data, tmp->len,
+					   sig->pk_data, sig->pk_len,
+					   sig->pk_type);
+    silc_buffer_clear(tmp);
+    silc_buffer_free(tmp);
+  }
+
+  if (!sign)
+    return ret;
+  
+  /* Allocate PKCS object */
+  if (!silc_pkcs_alloc(remote_public_key->name, &pkcs)) {
+    silc_buffer_clear(sign);
+    silc_buffer_free(sign);
+    return ret;
+  }
+  silc_pkcs_public_key_set(pkcs, remote_public_key);
+
+  /* Verify the authentication data */
+  if (!silc_pkcs_verify_with_hash(pkcs, hash, payload->sign_data
+				  payload->sign_len,
+				  sign->data, sign->len)) {
+
+    silc_buffer_clear(sign);
+    silc_buffer_free(sign);
+    silc_pkcs_free(pkcs);
+    SILC_LOG_DEBUG(("Signature verification failed"));
+    return ret;
+  }
+
+  ret = SILC_AUTH_OK;
+
+  silc_buffer_clear(sign);
+  silc_buffer_free(sign);
+  silc_pkcs_free(pkcs);
+
+  SILC_LOG_DEBUG(("Signature verification successful"));
+
+#endif
+  return ret;
+}
+
+/* Return the public key from the payload */
+
+SilcPublicKey silc_signed_payload_get_public_key(SilcSignedPayload sig)
+{
+  SilcPublicKey pk;
+
+  if (!sig->pk_data || !silc_pkcs_public_key_decode(sig->pk_data,
+						    sig->pk_len, &pk))
+    return NULL;
+
+  return pk;
 }

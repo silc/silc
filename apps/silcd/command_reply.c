@@ -939,7 +939,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   /* Get founder key */
   tmp = silc_argument_get_arg_type(cmd->args, 15, &len);
   if (tmp)
-    silc_pkcs_public_key_decode(tmp, len, &founder_key);
+    silc_pkcs_public_key_payload_decode(tmp, len, &founder_key);
 
   /* See whether we already have the channel. */
   entry = silc_idlist_find_channel_by_name(server->local_list, 
@@ -1205,10 +1205,8 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
   SilcServerEntry server_entry = NULL;
   SilcClientID *client_id = NULL;
   SilcServerID *server_id = NULL;
-  SilcSKEPKType type;
-  unsigned char *tmp, *pk;
+  unsigned char *tmp;
   SilcUInt32 len;
-  SilcUInt16 pk_len;
   SilcIDPayload idp = NULL;
   SilcIdType id_type;
   SilcPublicKey public_key = NULL;
@@ -1227,16 +1225,8 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
   if (!tmp)
     goto out;
 
-  /* Decode the public key */
-
-  SILC_GET16_MSB(pk_len, tmp);
-  SILC_GET16_MSB(type, tmp + 2);
-  pk = tmp + 4;
-
-  if (type != SILC_SKE_PK_TYPE_SILC)
-    goto out;
-
-  if (!silc_pkcs_public_key_decode(pk, pk_len, &public_key))
+  /* Decode the public key payload */
+  if (!silc_pkcs_public_key_payload_decode(tmp, len, &public_key))
     goto out;
 
   id_type = silc_id_payload_get_type(idp);

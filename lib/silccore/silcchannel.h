@@ -357,7 +357,7 @@ bool silc_channel_message_payload_encrypt(unsigned char *data,
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
+ *    SilcBuffer silc_channel_message_payload_encode(SilcMessageFlags flags,
  *                                                   SilcUInt16 data_len,
  *                                                   const unsigned char *data,
  *                                                   SilcUInt16 iv_len,
@@ -378,7 +378,7 @@ bool silc_channel_message_payload_encrypt(unsigned char *data,
  *    the `rng' is used.
  *
  ***/
-SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
+SilcBuffer silc_channel_message_payload_encode(SilcMessageFlags flags,
 					       SilcUInt16 data_len,
 					       const unsigned char *data,
 					       SilcUInt16 iv_len,

@@ -74,8 +74,9 @@ Table of Contents
   1.1 Requirements Terminology ..................................  2
 2 SILC Commands .................................................  2
   2.1 SILC Commands Syntax ......................................  2
-  2.2 SILC Commands List ........................................  4
-  2.3 SILC Command Status Payload ............................... 40
+  2.2 SILC Command Argument Idioms ..............................  2
+  2.3 SILC Commands List ........................................  4
+  2.4 SILC Command Status Payload ............................... 40
 3 SILC Status Types ............................................. 41
 4 Security Considerations ....................................... 47
 5 References .................................................... 47
@@ -196,18 +197,30 @@ Status messages:
 Every command reply also defines set of status message that it
 may return inside the <Status Payload>.  All status messages
 are defined in the section 2.3 SILC Command Status Payload
-
+The status messages defined with the command are recommendations.
+It is possible to return other status messages not listes with
+the command reply definition.
 .in 3
-Every command that has some kind of ID as argument (for example
-<Client ID>) are actually ID Payloads, defined in [SILC2] that includes
-the type of the ID, length of the ID and the actual ID data.  This
-way variable length ID's can be sent as arguments.  Also note that
-all passphrases that may be sent in commands MUST be UTF-8 [RFC2279]
-encoded.
 
 
 .ti 0
-2.2 SILC Commands List
+2.2 SILC Command Argument Idioms
+
+All commands that has an ID as argument (for example <Client ID>) are
+actually ID Payloads, defined in [SILC2] that includes the type of the
+ID, length of the ID and the actual ID data.  This way variable length
+ID's can be sent as arguments.
+
+All passphrases that may be sent in commands as arguments MUST be
+UTF-8 [RFC2279] encoded.
+
+All public keys and certificates that are sent as arguments are actually
+Public Key Payloads [SILC2].  This way it is possible to send different
+kind of public keys and certificate types as arguments.
+
+
+.ti 0
+2.3 SILC Commands List
 
 This section lists all SILC commands, however, it is expected that a
 implementation and especially client implementation has many more
@@ -660,15 +673,22 @@ List of all defined commands in SILC follows.
 
     9   SILC_COMMAND_KILL
 
-        Max Arguments:  2
-            Arguments:  (1) <Client ID>  (2) [<comment>]
+        Max Arguments:  3
+            Arguments:  (1) <Client ID>         (2) [<comment>]
+                        (3) [<auth payload>]
 
-        This command is used by SILC operators to remove a client from
-        SILC network.  The removing has temporary effects and client may
-        reconnect to SILC network.  The <Client ID> is the client to be
-        removed from SILC.  The <comment> argument may be provided to 
-        give to the removed client some information why it was removed
-        from the network.
+        This command can be used by SILC operators to remove a client from
+        SILC network.  It also can be used by a normal client to remove
+        its own client from network by providing correct authentication
+        data.
+
+        Router operator killing a client:
+
+        The removing has temporary effects and client may reconnect to
+        SILC network.  The <Client ID> is the client to be removed from SILC.
+        The <comment> argument may be provided to give to the removed client
+        some information why it was removed from the network.  The killer
+        MUST have SILC operator privileges.
 
         When killing a client the router MUST first send notify type
         SILC_NOTIFY_TYPE_KILLED to all channels the client has joined.
@@ -676,6 +696,19 @@ List of all defined commands in SILC follows.
         Then, the router MUST send the same notify type to its primary
         router.  Finally, the router MUST send the same notify type 
         directly to the client which was killed.
+
+        Normal client killing by authentication:
+
+        When normal client executes this command the <Client ID> is the
+        destination client to be removed from the network.  The client
+        MUST provide the <auth payload> which includes a digital signature
+        that MUST be verified with the public key of the client indicated
+        by <Client ID>.  The <Client ID> MUST be local client to the server.
+        If the signature verification is successful the server sends
+        SILC_NOTIFY_TYPE_SIGNOFF to network and to the destination client.
+        The SILC_NOTIFY_TYPE_KILLED MUST NOT be used in this case.  If the
+        verification fails the destination client remains in network.
+        The hash function used in <auth payload> computing is SHA1.
 
         Reply messages to the command:
 
@@ -829,12 +862,10 @@ List of all defined commands in SILC follows.
         The <username> is the username set in the server configurations
         as operator.  The <authentication payload> is the data that the
         client is authenticated against.  It may be passphrase prompted
-        for user on client's screen or it may be public key or certificate
-        authentication data (data signed with private key).  The public
-        key that server will use to verify the signature found in the
-        payload should be verified.  It is recommended that the public
-        key is saved locally in the server and server would not use
-        any public keys received during the SKE.
+        for user on client's screen or it may be public key authentication
+        based on digital signatures.  The public key used to verify the
+        signature should be locally saved in the server, and server should
+        not use public key received during the SKE to verify this signature.
 
         After changing the mode the server MUST send the notify type
         SILC_NOTIFY_TYPE_UMODE_CHANGE to its primary router.
@@ -942,7 +973,7 @@ List of all defined commands in SILC follows.
         channel.  The <Client ID list> is formed by adding the ID Payloads
         one after the other.  The <client mode list> is formed by adding
         32 bit MSB first order values one after the other.  The <founder
-        pubkey> is the public key of the channel founder.
+        pubkey> is the public key (or certificate) of the channel founder.
 
         Client receives the channel key in the reply message as well
         inside <Channel Key Payload>.
@@ -1943,7 +1974,7 @@ List of all defined commands in SILC follows.
 
 
 .ti 0
-2.3.1 SILC Command Status Payload
+2.4 SILC Command Status Payload
 
 Command Status Payload is sent in command reply messages to indicate
 the status of the command.  The payload is one of argument in the
@@ -2014,7 +2045,7 @@ All Status messages are described in the next section.
 
 
 .ti 0
-2.3.2 SILC Status Types
+3 SILC Status Types
 
 Status messages are returned in SILC protocol in command reply
 packet and in notify packet.  The SILC_PACKET_COMMAND_REPLY is
@@ -2296,11 +2327,21 @@ List of all defined status types:
         "Operation timed out".  Operation or service request timed
         out, and thus was not processed.
 
+   55   SILC_STATUS_ERR_UNSUPPORTED_PUBLIC_KEY
+
+        "Unsupported public key type".  The public key or certificate
+        type is not supported in this implementation.
+
+   56   SILC_STATUS_ERR_OPERATION_ALLOWED
+
+        "Operation is not allowed".  A operation, for example a command,
+        is not allowed or it's execution is not allowed.
+
 .in 3
 
 
 .ti 0
-3 Security Considerations
+4 Security Considerations
 
 Security is central to the design of this protocol, and these security
 considerations permeate the specification.  Common security considerations
@@ -2310,7 +2351,7 @@ security of this protocol.
 
 
 .ti 0
-4 References
+5 References
 
 [SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
              Protocol Specification", Internet Draft, May 2002.
@@ -2382,7 +2423,7 @@ security of this protocol.
 
 
 .ti 0
-5 Author's Address
+6 Author's Address
 
 .nf
 Pekka Riikonen

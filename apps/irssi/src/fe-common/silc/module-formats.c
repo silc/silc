@@ -159,7 +159,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "attr_allow",       " Sending allowed    : $0", 1, { 0 } },
 	{ "attr_vcard_file",  " Business card      : $0", 1, { 0 } },
 	{ "attr_services",    " Services used      : $0", 1, { 0 } },
-	{ "attr_service",     " Service            : port [$0] address [$1] logged in [$2]", 3, { 0, 0, 0 } },
+	{ "attr_service",     " Service            : port [$0] address [$1] logged in [$2] login time [$3] idle [$4]", 5, { 0, 0, 0, 0, 0 } },
 	{ "attr_status_mood", " User's mood        : $0", 1, { 0 } },
 	{ "attr_status_text", " User's message     : $0", 1, { 0 } },
 	{ "attr_status_message",      " User's message     : $0", 1, { 0 } },

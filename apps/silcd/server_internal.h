@@ -152,6 +152,9 @@ typedef struct {
   SilcUInt32 failure;
 } *SilcServerFailureContext;
 
+/* Rekey must be performed at the lastest when this many packets is sent */
+#define SILC_SERVER_REKEY_THRESHOLD 0xfffffe00
+
 /* Macros */
 
 /* Return pointer to the primary router connection */
@@ -228,6 +231,7 @@ do {						\
 
 /* Prototypes */
 SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final);
+SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback);
 void silc_server_watcher_list_destroy(void *key, void *context,
 				      void *user_context);
 

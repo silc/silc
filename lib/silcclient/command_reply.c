@@ -1770,10 +1770,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   SilcClientEntry client_entry;
   SilcServerID *server_id = NULL;
   SilcServerEntry server_entry;
-  SilcSKEPKType type;
-  unsigned char *tmp, *pk;
+  unsigned char *tmp;
   SilcUInt32 len;
-  SilcUInt16 pk_len;
   SilcIdType id_type;
   SilcPublicKey public_key = NULL;
 
@@ -1800,15 +1798,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   /* Get the public key payload */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
   if (tmp) {
-    /* Decode the public key */
-    SILC_GET16_MSB(pk_len, tmp);
-    SILC_GET16_MSB(type, tmp + 2);
-    pk = tmp + 4;
-    
-    if (type == SILC_SKE_PK_TYPE_SILC)
-      if (!silc_pkcs_public_key_decode(pk, pk_len, &public_key))
-	public_key = NULL;
-  } 
+    if (!silc_pkcs_public_key_payload_decode(tmp, len, &public_key))
+      public_key = NULL;
+  }
    
   id_type = silc_id_payload_get_type(idp);
   if (id_type == SILC_ID_CLIENT) {

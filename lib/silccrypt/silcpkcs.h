@@ -92,6 +92,7 @@ typedef struct SilcPKCSObjectStruct {
  * SOURCE
  */
 typedef struct {
+  SilcUInt16 pk_type;		/* Public key type (SilcSKEPKType) */
   SilcUInt32 len;
   char *name;
   char *identifier;
@@ -734,8 +735,9 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
  *
  * SYNOPSIS
  *
- *    bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
- *				       SilcPublicKey *public_key);
+ *    bool silc_pkcs_public_key_decode(unsigned char *data,
+ *                                     SilcUInt32 data_len,
+ *                                     SilcPublicKey *public_key);
  *
  * DESCRIPTION
  *
@@ -745,6 +747,41 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
  ***/
 bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
 				 SilcPublicKey *public_key);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_decode
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_pkcs_public_key_payload_encode(SilcPublicKey public_key);
+ *
+ * DESCRIPTION
+ *
+ *    Encodes the Public Key Payload from the public key indicated by
+ *    `public_key' of type of `pk_type'.  The type is SilcSKEPKType.
+ *    Returns the encoded payload buffer.
+ *
+ ***/
+SilcBuffer silc_pkcs_public_key_payload_encode(SilcPublicKey public_key);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_decode
+ *
+ * SYNOPSIS
+ *
+ *    bool
+ *    silc_pkcs_public_key_payload_decode(unsigned char *data,
+ *                                        SilcUInt32 data_len,
+ *                                        SilcPublicKey *public_key);
+ *
+ * DESCRIPTION
+ *
+ *    Decodes Public Key Payload from `data' of `data_len' bytes in length
+ *    data buffer into `public_key' pointer. Returns FALSE if the payload
+ *    cannot be decoded.
+ *
+ ***/
+bool silc_pkcs_public_key_payload_decode(unsigned char *data,
+					 SilcUInt32 data_len,
+					 SilcPublicKey *public_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_compare
  *

@@ -612,7 +612,8 @@ void silc_server_notify(SilcServer server,
 	if (channel->founder_key)
 	  silc_pkcs_public_key_free(channel->founder_key);
 	channel->founder_key = NULL;
-	silc_pkcs_public_key_decode(tmp, tmp_len, &channel->founder_key);
+	silc_pkcs_public_key_payload_decode(tmp, tmp_len,
+					    &channel->founder_key);
       }
 
       break;
@@ -718,7 +719,7 @@ void silc_server_notify(SilcServer server,
       if (channel->founder_key)
 	silc_pkcs_public_key_free(channel->founder_key);
       channel->founder_key = NULL;
-      silc_pkcs_public_key_decode(tmp, tmp_len, &channel->founder_key);
+      silc_pkcs_public_key_payload_decode(tmp, tmp_len, &channel->founder_key);
 
       if (!channel->founder_key || 
 	  (client && client->data.public_key && 
@@ -938,8 +939,8 @@ void silc_server_notify(SilcServer server,
 	if (channel->founder_key) {
 	  /* Get public key that must be present in notify */
 	  tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
-	  if (!tmp || !silc_pkcs_public_key_decode(tmp, tmp_len,
-						   &founder_key)) {
+	  if (!tmp || !silc_pkcs_public_key_payload_decode(tmp, tmp_len,
+							   &founder_key)) {
 	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	    notify_sent = TRUE;

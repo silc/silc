@@ -181,6 +181,12 @@ void silc_server_packet_send_dest(SilcServer server,
     hmac = idata->hmac_send;
     sequence = idata->psn_send++;
     block_len = silc_cipher_get_block_len(cipher);
+
+    /* Check for mandatory rekey */
+    if (sequence == SILC_SERVER_REKEY_THRESHOLD)
+      silc_schedule_task_add(server->schedule, sock->sock,
+			     silc_server_rekey_callback, sock, 0, 1,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
   }
 
   /* Set the packet context pointers */
@@ -197,7 +203,10 @@ void silc_server_packet_send_dest(SilcServer server,
 					    packetdata.dst_id_len));
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
+  if (type == SILC_PACKET_CONNECTION_AUTH)
+    SILC_PACKET_PADLEN_MAX(packetdata.truelen, block_len, packetdata.padlen);
+  else
+    SILC_PACKET_PADLEN(packetdata.truelen, block_len, packetdata.padlen);
 
   /* Create the outgoing packet */
   if (!silc_packet_assemble(&packetdata, NULL, cipher, hmac, sock,
@@ -272,6 +281,12 @@ void silc_server_packet_send_srcdest(SilcServer server,
     hmac = idata->hmac_send;
     sequence = idata->psn_send++;
     block_len = silc_cipher_get_block_len(cipher);
+
+    /* Check for mandatory rekey */
+    if (sequence == SILC_SERVER_REKEY_THRESHOLD)
+      silc_schedule_task_add(server->schedule, sock->sock,
+			     silc_server_rekey_callback, sock, 0, 1,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
   }
 
   if (dst_id) {
@@ -298,7 +313,7 @@ void silc_server_packet_send_srcdest(SilcServer server,
 					    dst_id_len));
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
+  SILC_PACKET_PADLEN(packetdata.truelen, block_len, packetdata.padlen);
 
   /* Create the outgoing packet */
   if (!silc_packet_assemble(&packetdata, NULL, cipher, hmac, sock, data,
@@ -364,6 +379,12 @@ void silc_server_packet_broadcast(SilcServer server,
     /* Now actually send the packet */
     silc_server_packet_send_real(server, sock, TRUE);
     silc_free(id);
+
+    /* Check for mandatory rekey */
+    if (idata->psn_send == SILC_SERVER_REKEY_THRESHOLD)
+      silc_schedule_task_add(server->schedule, sock->sock,
+			     silc_server_rekey_callback, sock, 0, 1,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     return;
   }
 
@@ -402,6 +423,12 @@ void silc_server_packet_route(SilcServer server,
 
   /* Now actually send the packet */
   silc_server_packet_send_real(server, sock, TRUE);
+
+  /* Check for mandatory rekey */
+  if (idata->psn_send == SILC_SERVER_REKEY_THRESHOLD)
+    silc_schedule_task_add(server->schedule, sock->sock,
+			   silc_server_rekey_callback, sock, 0, 1,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* This routine can be used to send a packet to table of clients provided
@@ -513,11 +540,11 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 
   block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
   if (channel_message)
-    packet->padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
-					 packet->src_id_len +
-					 packet->dst_id_len), block_len);
+    SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
+			packet->src_id_len +
+			packet->dst_id_len), block_len, packet->padlen);
   else
-    packet->padlen = SILC_PACKET_PADLEN(packet->truelen, block_len);
+    SILC_PACKET_PADLEN(packet->truelen, block_len, packet->padlen);
 
   /* Put the data to buffer, assemble and encrypt the packet. The packet
      is encrypted with normal session key shared with the client, unless
@@ -1045,6 +1072,12 @@ void silc_server_send_private_message(SilcServer server,
 
   /* Send the packet */
   silc_server_packet_send_real(server, dst_sock, FALSE);
+
+  /* Check for mandatory rekey */
+  if (sequence == SILC_SERVER_REKEY_THRESHOLD)
+    silc_schedule_task_add(server->schedule, dst_sock->sock,
+			   silc_server_rekey_callback, dst_sock, 0, 1,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* Sends current motd to client */
@@ -1237,14 +1270,13 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   const char *passphrase,
 				   SilcPublicKey founder_key)
 {
-  SilcBuffer idp;
-  unsigned char mode[4], *key = NULL;
-  SilcUInt32 key_len = 0;
+  SilcBuffer idp, fkey = NULL;
+  unsigned char mode[4];
 
   idp = silc_id_payload_encode((void *)id, id_type);
   SILC_PUT32_MSB(mode_mask, mode);
   if (founder_key)
-    key = silc_pkcs_public_key_encode(founder_key, &key_len);
+    fkey = silc_pkcs_public_key_payload_encode(founder_key);
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
@@ -1254,8 +1286,8 @@ void silc_server_send_notify_cmode(SilcServer server,
 			       hmac, hmac ? strlen(hmac) : 0,
 			       passphrase, passphrase ? 
 			       strlen(passphrase) : 0,
-			       key, key_len);
-  silc_free(key);
+			       fkey ? fkey->data : NULL, fkey ? fkey->len : 0);
+  silc_buffer_free(fkey),
   silc_buffer_free(idp);
 }
 
@@ -1272,15 +1304,14 @@ void silc_server_send_notify_cumode(SilcServer server,
 				    SilcClientID *target,
 				    SilcPublicKey founder_key)
 {
-  SilcBuffer idp1, idp2;
-  unsigned char mode[4], *key = NULL;
-  SilcUInt32 key_len = 0;
+  SilcBuffer idp1, idp2, fkey = NULL;
+  unsigned char mode[4];
 
   idp1 = silc_id_payload_encode((void *)id, id_type);
   idp2 = silc_id_payload_encode((void *)target, SILC_ID_CLIENT);
   SILC_PUT32_MSB(mode_mask, mode);
   if (founder_key)
-    key = silc_pkcs_public_key_encode(founder_key, &key_len);
+    fkey = silc_pkcs_public_key_payload_encode(founder_key);
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, 
@@ -1288,8 +1319,8 @@ void silc_server_send_notify_cumode(SilcServer server,
 			       idp1->data, idp1->len,
 			       mode, 4,
 			       idp2->data, idp2->len,
-			       key, key_len);
-  silc_free(key);
+			       fkey ? fkey->data : NULL, fkey ? fkey->len : 0);
+  silc_buffer_free(fkey);
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 }
@@ -1917,6 +1948,12 @@ void silc_server_relay_packet(SilcServer server,
 
   silc_buffer_pull(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		   + packet->dst_id_len + packet->padlen);
+
+  /* Check for mandatory rekey */
+  if (sequence == SILC_SERVER_REKEY_THRESHOLD)
+    silc_schedule_task_add(server->schedule, dst_sock->sock,
+			   silc_server_rekey_callback, dst_sock, 0, 1,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* Routine used to send the connection authentication packet. */

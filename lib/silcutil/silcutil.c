@@ -1031,6 +1031,8 @@ static const SilcStatusMessage silc_status_messages[] = {
   { STAT(KEY_EXCHANGE_FAILED), "Key exchange failed" },
   { STAT(BAD_VERSION), "Bad version" },
   { STAT(TIMEDOUT), "Service timed out" },
+  { STAT(UNSUPPORTED_PUBLIC_KEY), "Unsupported public key type" },
+  { STAT(OPERATION_ALLOWED), "Operation is not allowed" },
 
   { 0, NULL }
 };

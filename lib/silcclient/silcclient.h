@@ -215,7 +215,9 @@ struct SilcClientEntryStruct {
   /* Private message keys */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */
-  unsigned char *key;		/* Set only if appliation provided the
+  SilcHmac hmac_send;		/* Private mesage key HMAC for sending */
+  SilcHmac hmac_receive;	/* Private mesage key HMAC for receiving */
+  unsigned char *key;		/* Set only if application provided the
 				   key material. NULL if the library 
 				   generated the key. */
   SilcUInt32 key_len;		/* Key length */
@@ -853,7 +855,7 @@ void silc_client_free(SilcClient client);
  *
  * SYNOPSIS
  *
- *    int silc_client_init(SilcClient client);
+ *    bool silc_client_init(SilcClient client);
  *
  * DESCRIPTION
  *
@@ -862,7 +864,7 @@ void silc_client_free(SilcClient client);
  *    client. Returns FALSE if error occurred, TRUE otherwise.
  *
  ***/
-int silc_client_init(SilcClient client);
+bool silc_client_init(SilcClient client);
 
 /****f* silcclient/SilcClientAPI/silc_client_run
  *
@@ -952,7 +954,7 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    int silc_client_connect_to_server(SilcClient client, 
+ *    bool silc_client_connect_to_server(SilcClient client, 
  *                                      SilcClientConnectionParams *params,
  *                                      int port, char *host, void *context);
  *
@@ -969,9 +971,9 @@ typedef struct {
  *    If the `params' is provided they are used by the routine.
  *
  ***/
-int silc_client_connect_to_server(SilcClient client, 
-				  SilcClientConnectionParams *params,
-				  int port, char *host, void *context);
+bool silc_client_connect_to_server(SilcClient client, 
+				   SilcClientConnectionParams *params,
+				   int port, char *host, void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_connection
  *
@@ -1107,7 +1109,7 @@ void silc_client_close_connection(SilcClient client,
  *                                          SilcMessageFlags flags,
  *                                          unsigned char *data, 
  *                                          SilcUInt32 data_len, 
- *                                          int force_send);
+ *                                          bool_force_send);
  *
  * DESCRIPTION
  *
@@ -1132,7 +1134,7 @@ void silc_client_send_channel_message(SilcClient client,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
 				      SilcUInt32 data_len, 
-				      int force_send);
+				      bool force_send);
 
 /****f* silcclient/SilcClientAPI/silc_client_send_private_message
  *
@@ -1144,7 +1146,7 @@ void silc_client_send_channel_message(SilcClient client,
  *                                          SilcMessageFlags flags,
  *                                          unsigned char *data, 
  *                                          SilcUInt32 data_len, 
- *                                          int force_send);
+ *                                          bool force_send);
  *
  * DESCRIPTION
  *
@@ -1163,7 +1165,7 @@ void silc_client_send_private_message(SilcClient client,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
 				      SilcUInt32 data_len, 
-				      int force_send);
+				      bool force_send);
 
 
 /* Client and Channel entry retrieval (idlist.c) */
@@ -1533,7 +1535,7 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *
  * SYNOPSIS
  *
- *    void silc_client_command_call(SilcClient client,
+ *    bool silc_client_command_call(SilcClient client,
  *                                  SilcClientConnection conn,
  *                                  const char *command_line, ...);
  *
@@ -1664,14 +1666,15 @@ void silc_client_command_pending(SilcClientConnection conn,
  *
  * SYNOPSIS
  *
- *    int silc_client_add_private_message_key(SilcClient client,
- *                                            SilcClientConnection conn,
- *                                            SilcClientEntry client_entry,
- *                                            char *cipher,
- *                                            unsigned char *key,
- *                                            SilcUInt32 key_len,
- *                                            bool generate_key,
- *                                            bool responder);
+ *    bool silc_client_add_private_message_key(SilcClient client,
+ *                                             SilcClientConnection conn,
+ *                                             SilcClientEntry client_entry,
+ *                                             const char *cipher,
+ *                                             const char *hmac,
+ *                                             unsigned char *key,
+ *                                             SilcUInt32 key_len,
+ *                                             bool generate_key,
+ *                                             bool responder);
  *
  * DESCRIPTION
  *
@@ -1680,9 +1683,9 @@ void silc_client_command_pending(SilcClientConnection conn,
  *    indicated by the `client_entry'. If the `key' is NULL and the boolean
  *    value `generate_key' is TRUE the library will generate random key.
  *    The `key' maybe for example pre-shared-key, passphrase or similar.
- *    The `cipher' MAY be provided but SHOULD be NULL to assure that the
- *    requirements of the SILC protocol are met. The API, however, allows
- *    to allocate any cipher.
+ *    The `cipher' and `hmac' MAY be provided but SHOULD be NULL to assure
+ *    that the requirements of the SILC protocol are met. The API, however,
+ *    allows to allocate any cipher and HMAC.
  *
  *    If `responder' is TRUE then the sending and receiving keys will be
  *    set according the client being the receiver of the private key.  If
@@ -1697,48 +1700,52 @@ void silc_client_command_pending(SilcClientConnection conn,
  *    otherwise. 
  *
  ***/
-int silc_client_add_private_message_key(SilcClient client,
-					SilcClientConnection conn,
-					SilcClientEntry client_entry,
-					char *cipher,
-					unsigned char *key,
-					SilcUInt32 key_len,
-					bool generate_key,
-					bool responder);
+bool silc_client_add_private_message_key(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcClientEntry client_entry,
+					 const char *cipher,
+					 const char *hmac,
+					 unsigned char *key,
+					 SilcUInt32 key_len,
+					 bool generate_key,
+					 bool responder);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_private_message_key_ske
  *
  * SYNOPSIS
  *
- *    int silc_client_add_private_message_key_ske(SilcClient client,
- *                                                SilcClientConnection conn,
- *                                                SilcClientEntry client_entry,
- *                                                char *cipher,
- *                                                SilcSKEKeyMaterial *key);
+ *    bool
+ *    silc_client_add_private_message_key_ske(SilcClient client,
+ *                                            SilcClientConnection conn,
+ *                                            SilcClientEntry client_entry,
+ *                                            const char *cipher,
+ *                                            const char *hmac,
+ *                                            SilcSKEKeyMaterial *key);
  *
  * DESCRIPTION
  *
  *    Same as silc_client_add_private_message_key but takes the key material
  *    from the SKE key material structure. This structure is received if
  *    the application uses the silc_client_send_key_agreement to negotiate
- *    the key material. The `cipher' SHOULD be provided as it is negotiated
- *    also in the SKE protocol. 
+ *    the key material. The `cipher' and `hmac' SHOULD be provided as it is
+ *    negotiated also in the SKE protocol. 
  *
  ***/
-int silc_client_add_private_message_key_ske(SilcClient client,
-					    SilcClientConnection conn,
-					    SilcClientEntry client_entry,
-					    char *cipher,
-					    SilcSKEKeyMaterial *key,
-					    bool responder);
+bool silc_client_add_private_message_key_ske(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcClientEntry client_entry,
+					     const char *cipher,
+					     const char *hmac,
+					     SilcSKEKeyMaterial *key,
+					     bool responder);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_private_message_key
  *
  * SYNOPSIS
  *
- *    int silc_client_del_private_message_key(SilcClient client,
- *                                            SilcClientConnection conn,
- *                                            SilcClientEntry client_entry);
+ *    bool silc_client_del_private_message_key(SilcClient client,
+ *                                             SilcClientConnection conn,
+ *                                             SilcClientEntry client_entry);
  *
  * DESCRIPTION
  *
@@ -1747,9 +1754,9 @@ int silc_client_add_private_message_key_ske(SilcClient client,
  *    client. Returns FALSE on error, TRUE otherwise. 
  *
  ***/
-int silc_client_del_private_message_key(SilcClient client,
-					SilcClientConnection conn,
-					SilcClientEntry client_entry);
+bool silc_client_del_private_message_key(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcClientEntry client_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_list_private_message_keys
  *
@@ -1800,14 +1807,14 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
  *
  * SYNOPSIS
  *
- *    int silc_client_add_channel_private_key(SilcClient client,
- *                                            SilcClientConnection conn,
- *                                            SilcChannelEntry channel,
- *                                            const char *name,
- *                                            char *cipher,
- *                                            char *hmac,
- *                                            unsigned char *key,
- *                                            SilcUInt32 key_len);
+ *    bool silc_client_add_channel_private_key(SilcClient client,
+ *                                             SilcClientConnection conn,
+ *                                             SilcChannelEntry channel,
+ *                                             const char *name,
+ *                                             char *cipher,
+ *                                             char *hmac,
+ *                                             unsigned char *key,
+ *                                             SilcUInt32 key_len);
  * 
  * DESCRIPTION
  *
@@ -1841,22 +1848,22 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
  *    as channel private key. However, this API allows it. 
  *
  ***/
-int silc_client_add_channel_private_key(SilcClient client,
-					SilcClientConnection conn,
-					SilcChannelEntry channel,
-					const char *name,
-					char *cipher,
-					char *hmac,
-					unsigned char *key,
-					SilcUInt32 key_len);
+bool silc_client_add_channel_private_key(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel,
+					 const char *name,
+					 char *cipher,
+					 char *hmac,
+					 unsigned char *key,
+					 SilcUInt32 key_len);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_channel_private_keys
  *
  * SYNOPSIS
  *
- *    int silc_client_del_channel_private_keys(SilcClient client,
- *                                             SilcClientConnection conn,
- *                                             SilcChannelEntry channel);
+ *    bool silc_client_del_channel_private_keys(SilcClient client,
+ *                                              SilcClientConnection conn,
+ *                                              SilcChannelEntry channel);
  * 
  * DESCRIPTION
  *
@@ -1865,15 +1872,15 @@ int silc_client_add_channel_private_key(SilcClient client,
  *    on error, TRUE otherwise. 
  *
  ***/
-int silc_client_del_channel_private_keys(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcChannelEntry channel);
+bool silc_client_del_channel_private_keys(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcChannelEntry channel);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_channel_private_key
  *
  * SYNOPSIS
  *
- *    int silc_client_del_channel_private_key(SilcClient client,
+ *    bool silc_client_del_channel_private_key(SilcClient client,
  *                                            SilcClientConnection conn,
  *                                            SilcChannelEntry channel,
  *                                            SilcChannelPrivateKey key);
@@ -1888,10 +1895,10 @@ int silc_client_del_channel_private_keys(SilcClient client,
  *    on error, TRUE otherwise. 
  *
  ***/
-int silc_client_del_channel_private_key(SilcClient client,
-					SilcClientConnection conn,
-					SilcChannelEntry channel,
-					SilcChannelPrivateKey key);
+bool silc_client_del_channel_private_key(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel,
+					 SilcChannelPrivateKey key);
 
 /****f* silcclient/SilcClientAPI/silc_client_list_channel_private_keys
  *

@@ -155,6 +155,9 @@ typedef void (*SilcClientResumeSessionCallback)(SilcClient client,
 						bool success,
 						void *context);
 
+/* Rekey must be performed at the lastest when this many packets is sent */
+#define SILC_CLIENT_REKEY_THRESHOLD 0xfffffe00
+
 /* Macros */
 
 /* Registers generic task for file descriptor for reading from network and
@@ -218,7 +221,7 @@ void silc_client_packet_send(SilcClient client,
                              unsigned char *data,
                              SilcUInt32 data_len,
                              bool force_send);
-int silc_client_packet_send_real(SilcClient client,
+bool silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
 				 bool force_send);
 void silc_client_ftp_free_sessions(SilcClient client,
@@ -286,5 +289,6 @@ void silc_client_resume_session(SilcClient client,
 SilcBuffer silc_client_attributes_process(SilcClient client,
 					  SilcSocketConnection sock,
 					  SilcDList attrs);
+SILC_TASK_CALLBACK_GLOBAL(silc_client_rekey_callback);
 
 #endif

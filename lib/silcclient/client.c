@@ -26,7 +26,6 @@
 SILC_TASK_CALLBACK(silc_client_connect_to_server_start);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_second);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_final);
-SILC_TASK_CALLBACK(silc_client_rekey_callback);
 SILC_TASK_CALLBACK(silc_client_rekey_final);
 
 static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
@@ -100,7 +99,7 @@ void silc_client_free(SilcClient client)
    the client ready to be run. One must call silc_client_run to run the
    client. Returns FALSE if error occured, TRUE otherwise. */
 
-int silc_client_init(SilcClient client)
+bool silc_client_init(SilcClient client)
 {
   SILC_LOG_DEBUG(("Initializing client"));
 
@@ -427,7 +426,7 @@ silc_client_connect_to_server_internal(SilcClientInternalConnectContext *ctx)
    case then this function is not used at all. When the connecting is
    done the `connect' client operation is called. */
 
-int silc_client_connect_to_server(SilcClient client,
+bool silc_client_connect_to_server(SilcClient client,
                                   SilcClientConnectionParams *params,
                                   int port, char *host, void *context)
 {
@@ -890,7 +889,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
    is used directly only in special cases. Normal cases should use
    silc_server_packet_send. Returns < 0 on error. */
 
-int silc_client_packet_send_real(SilcClient client,
+bool silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
 				 bool force_send)
 {
@@ -1402,6 +1401,12 @@ void silc_client_packet_send(SilcClient client,
 
     if (hmac)
       sequence = ((SilcClientConnection)sock->user_data)->internal->psn_send++;
+
+    /* Check for mandatory rekey */
+    if (sequence == SILC_CLIENT_REKEY_THRESHOLD)
+      silc_schedule_task_add(client->schedule, sock->sock,
+			     silc_client_rekey_callback, sock, 0, 1,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
   }
 
   block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
@@ -1434,7 +1439,10 @@ void silc_client_packet_send(SilcClient client,
 					    packetdata.dst_id_len));
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
+  if (type == SILC_PACKET_CONNECTION_AUTH)
+    SILC_PACKET_PADLEN_MAX(packetdata.truelen, block_len, packetdata.padlen);
+  else
+    SILC_PACKET_PADLEN(packetdata.truelen, block_len, packetdata.padlen);
 
   /* Create the outgoing packet */
   if (!silc_packet_assemble(&packetdata, client->rng, cipher, hmac, sock, 
@@ -1832,7 +1840,7 @@ void silc_client_process_failure(SilcClient client,
 /* A timeout callback for the re-key. We will be the initiator of the
    re-key protocol. */
 
-SILC_TASK_CALLBACK(silc_client_rekey_callback)
+SILC_TASK_CALLBACK_GLOBAL(silc_client_rekey_callback)
 {
   SilcSocketConnection sock = (SilcSocketConnection)context;
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;

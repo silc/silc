@@ -333,6 +333,12 @@ void silc_server_backup_broadcast(SilcServer server,
 
     /* Now actually send the packet */
     silc_server_packet_send_real(server, sock, FALSE);
+
+    /* Check for mandatory rekey */
+    if (idata->psn_send == SILC_SERVER_REKEY_THRESHOLD)
+      silc_schedule_task_add(server->schedule, sender->sock,
+			     silc_server_rekey_callback, sender, 0, 1,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
   }
 }
 

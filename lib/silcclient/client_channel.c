@@ -1,16 +1,15 @@
 /*
 
-  client_channel.c
+  client_channel.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -40,7 +39,7 @@ void silc_client_send_channel_message(SilcClient client,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
 				      SilcUInt32 data_len, 
-				      int force_send)
+				      bool force_send)
 {
   int i;
   SilcSocketConnection sock;
@@ -146,9 +145,9 @@ void silc_client_send_channel_message(SilcClient client,
 				 packetdata.dst_id_len);
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
-  packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
-					  packetdata.src_id_len +
-					  packetdata.dst_id_len), block_len);
+  SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
+		      packetdata.src_id_len +
+		      packetdata.dst_id_len), block_len, packetdata.padlen);
 
   /* Create the outgoing packet */
   if (!silc_packet_assemble(&packetdata, client->rng, cipher, hmac, sock,
@@ -169,6 +168,12 @@ void silc_client_send_channel_message(SilcClient client,
 
   /* Now actually send the packet */
   silc_client_packet_send_real(client, sock, force_send);
+
+  /* Check for mandatory rekey */
+  if (conn->internal->psn_send == SILC_CLIENT_REKEY_THRESHOLD)
+    silc_schedule_task_add(client->schedule, sock->sock,
+			   silc_client_rekey_callback, sock, 0, 1,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
  out:
   silc_buffer_free(payload);
@@ -484,7 +489,7 @@ void silc_client_receive_channel_key(SilcClient client,
    currently it is not expected that the SKE key material would be used
    as channel private key. However, this API allows it. */
 
-int silc_client_add_channel_private_key(SilcClient client,
+bool silc_client_add_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
 					const char *name,
@@ -571,7 +576,7 @@ int silc_client_add_channel_private_key(SilcClient client,
    after calling this to protect the channel messages. Returns FALSE on
    on error, TRUE otherwise. */
 
-int silc_client_del_channel_private_keys(SilcClient client,
+bool silc_client_del_channel_private_keys(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcChannelEntry channel)
 {
@@ -607,7 +612,7 @@ int silc_client_del_channel_private_keys(SilcClient client,
    old channel key is used hereafter to protect the channel messages. This
    returns FALSE on error, TRUE otherwise. */
 
-int silc_client_del_channel_private_key(SilcClient client,
+bool silc_client_del_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
 					SilcChannelPrivateKey key)

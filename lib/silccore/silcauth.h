@@ -1,16 +1,15 @@
 /*
 
-  silcauth.h
- 
+  silcauth.h 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
-  Copyright (C) 2001 Pekka Riikonen
- 
+
+  Copyright (C) 2001 - 2002 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
- 
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,43 +32,15 @@
  * used by client to agree on key material usually with another client
  * in the network.
  *
+ * This interface defines also the SILC_MESSAGE_FLAG_SIGNED Payload,
+ * which defines how channel messages and private messages can be digitally
+ * signed.  This interface provides the payload parsing, encoding, 
+ * signature computing and signature verification routines.
+ *
  ***/
 
 #ifndef SILCAUTH_H
 #define SILCAUTH_H
-
-/****s* silccore/SilcAuthAPI/SilcAuthPayload
- *
- * NAME
- * 
- *    typedef struct SilcAuthPayloadStruct *SilcAuthPayload; 
- *
- *
- * DESCRIPTION
- *
- *    This context is the actual Authentication Payload and is allocated
- *    by silc_auth_payload_parse and given as argument usually to all
- *    silc_auth_payload_* functions.  It is freed by silc_auth_payload_free
- *    function.
- *
- ***/
-typedef struct SilcAuthPayloadStruct *SilcAuthPayload;
-
-/****s* silccore/SilcAuthAPI/SilcKeyAgreementPayload
- *
- * NAME
- * 
- *    typedef struct SilcKeyAgreementPayloadStruct *SilcKeyAgreementPayload;
- *
- * DESCRIPTION
- *
- *    This context is the actual Key Agreement Payload and is allocated
- *    by silc_key_agreement_payload_parse and given as argument usually to all
- *    silc_key_agreement_* functions.  It is freed by the function
- *    silc_key_agreement_payload_free.
- *
- ***/
-typedef struct SilcKeyAgreementPayloadStruct *SilcKeyAgreementPayload;
 
 /****d* silccore/SilcAuthAPI/SilcAuthMethod
  *
@@ -97,7 +68,22 @@ typedef SilcUInt16 SilcAuthMethod;
 #define SILC_AUTH_FAILED      1
 /***/
 
-/* Prototypes */
+/****s* silccore/SilcAuthAPI/SilcAuthPayload
+ *
+ * NAME
+ * 
+ *    typedef struct SilcAuthPayloadStruct *SilcAuthPayload; 
+ *
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual Authentication Payload and is allocated
+ *    by silc_auth_payload_parse and given as argument usually to all
+ *    silc_auth_payload_* functions.  It is freed by silc_auth_payload_free
+ *    function.
+ *
+ ***/
+typedef struct SilcAuthPayloadStruct *SilcAuthPayload;
 
 /****f* silccore/SilcAuthAPI/silc_auth_payload_parse
  *
@@ -308,6 +294,22 @@ bool silc_auth_verify_data(const unsigned char *payload,
 			   SilcUInt32 auth_data_len, SilcHash hash, 
 			   const void *id, SilcIdType type);
 
+/****s* silccore/SilcAuthAPI/SilcKeyAgreementPayload
+ *
+ * NAME
+ * 
+ *    typedef struct SilcKeyAgreementPayloadStruct *SilcKeyAgreementPayload;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual Key Agreement Payload and is allocated
+ *    by silc_key_agreement_payload_parse and given as argument usually to all
+ *    silc_key_agreement_* functions.  It is freed by the function
+ *    silc_key_agreement_payload_free.
+ *
+ ***/
+typedef struct SilcKeyAgreementPayloadStruct *SilcKeyAgreementPayload;
+
 /****f* silccore/SilcAuthAPI/silc_key_agreement_payload_parse
  *
  * SYNOPSIS
@@ -382,5 +384,127 @@ char *silc_key_agreement_get_hostname(SilcKeyAgreementPayload payload);
  *
  ***/
 SilcUInt32 silc_key_agreement_get_port(SilcKeyAgreementPayload payload);
+
+/****s* silccore/SilcAuthAPI/SilcSignedPayload
+ *
+ * NAME
+ * 
+ *    typedef struct SilcSignedPayloadStruct *SilcSignedPayload;
+ *
+ *
+ * DESCRIPTION
+ *
+ *    This context represents the SILC_MESSAGE_FLAG_SIGNED Payload which
+ *    is used with channel messages and private messages to indicate that
+ *    the message is digitally signed.  This payload may include the
+ *    message sender's public key and it includes the digital signature.
+ *    This payload MUST NOT be used in any other context except with
+ *    channel and private message sending and reception.
+ *
+ ***/
+typedef struct SilcSignedPayloadStruct *SilcSignedPayload;
+
+/****f* silccore/SilcAuthAPI/silc_signed_payload_parse
+ *
+ * SYNOPSIS
+ *
+ *    SilcSignedPayload silc_signed_payload_parse(const unsigned char *data,
+ *                                                SilcUInt32 data_len);
+ *
+ * DESCRIPTION
+ *
+ *    Parses the SILC_MESSAGE_FLAG_SIGNED Payload from the `data' of
+ *    length of `data_len' bytes.  The `data' must be payload without
+ *    the actual message payload.  Returns the parsed payload or NULL
+ *    on error.  Caller must free the returned payload.
+ *
+ ***/
+SilcSignedPayload silc_signed_payload_parse(const unsigned char *data,
+					    SilcUInt32 data_len);
+
+/****f* silccore/SilcAuthAPI/silc_signed_payload_encode
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer
+ *    silc_signed_payload_encode(const unsigned char *message_payload,
+ *                               SilcUInt32 message_payload_len,
+ *                               SilcPublicKey public_key,
+ *                               SilcPrivateKey private_key,
+ *                               bool include_public_key);
+ *
+ * DESCRIPTION
+ *
+ *    Encodes the SILC_MESSAGE_FLAG_SIGNED Payload and computes the
+ *    digital signature.  The `message_payload' is the message data that
+ *    is used in the signature computation.  The encoding of the buffer
+ *    is specified in the SILC protocol.  If `include_public_key' is
+ *    TRUE then the public key included in the payload.  The `private_key'
+ *    is used to produce the signature.  This function returns the encoded
+ *    payload with the signature or NULL on error.  Caller must free the
+ *    returned buffer.
+ *
+ ***/
+SilcBuffer silc_signed_payload_encode(const unsigned char *message_payload,
+				      SilcUInt32 message_payload_len,
+				      SilcPublicKey public_key,
+				      SilcPrivateKey private_key,
+				      SilcHash hash,
+				      bool include_public_key);
+
+/****f* silccore/SilcAuthAPI/silc_signed_payload_free
+ *
+ * SYNOPSIS
+ *
+ *    void silc_signed_payload_free(SilcSignedPayload sig);
+ *
+ * DESCRIPTION
+ *
+ *    Frees the SILC_MESSAGE_FLAG_SIGNED Payload.
+ *
+ ***/
+void silc_signed_payload_free(SilcSignedPayload sig);
+
+/****f* silccore/SilcAuthAPI/silc_signed_payload_verify
+ *
+ * SYNOPSIS
+ *
+ *    int silc_signed_payload_verify(SilcSignedPayload sig,
+ *                                   bool channel_message,
+ *                                   void *message_payload,
+ *                                   SilcPublicKey remote_public_key,
+ *                                   SilcHash hash);
+ *
+ * DESCRIPTION
+ *
+ *    This routine can be used to verify the signature found in
+ *    SILC_MESSAGE_FLAG_SIGNED Payload.  The `remote_public_key' is the
+ *    sender's public key and is used in the verification.  If the
+ *    `channel_message' is TRUE then `message_payload' must include the
+ *    SilcChannelMessagePayload.  If it is FALSE then it must include
+ *    SilcPrivateMessagePayload.  This returns SILC_AUTH_OK if the
+ *    signature verification was successful.
+ *
+ ***/
+int silc_signed_payload_verify(SilcSignedPayload sig,
+			       bool channel_message,
+			       void *message_payload,
+			       SilcPublicKey remote_public_key,
+			       SilcHash hash);
+
+/****f* silccore/SilcAuthAPI/silc_signed_payload_get_public_key
+ *
+ * SYNOPSIS
+ *
+ *    SilcPublicKey silc_signed_payload_get_public_key(SilcSignedPayload sig);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the public key from the SILC_MESSAGE_FLAG_SIGNED Payload
+ *    or NULL if it does not include public key.  The caller must free
+ *    the returned public key.
+ *
+ ***/
+SilcPublicKey silc_signed_payload_get_public_key(SilcSignedPayload sig);
 
 #endif

@@ -23,22 +23,7 @@
 
 #include "silcincludes.h"
 #include "silcchannel.h"
-
-/******************************************************************************
-
-                              Channel Payload
-
-******************************************************************************/
-
-/* Channel Message Payload structure. Contents of this structure is parsed
-   from SILC packets. */
-struct SilcChannelPayloadStruct {
-  SilcUInt16 name_len;
-  unsigned char *channel_name;
-  SilcUInt16 id_len;
-  unsigned char *channel_id;
-  SilcUInt32 mode;
-};
+#include "silcchannel_i.h"
 
 /* Parses channel payload returning new channel payload structure. */
 
@@ -231,32 +216,6 @@ SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload)
 
 ******************************************************************************/
 
-/* Calculates padding length for message payload */
-#define SILC_CHANNEL_MESSAGE_PAD(__payloadlen) (16 - ((__payloadlen) % 16))
-
-/* Header length plus maximum padding length */
-#define SILC_CHANNEL_MESSAGE_HLEN 6 + 16
-
-/* Returns the data length that fits to the packet.  If data length is too
-   big it will be truncated to fit to the payload. */
-#define SILC_CHANNEL_MESSAGE_DATALEN(data_len, header_len)		\
-  ((data_len + SILC_CHANNEL_MESSAGE_HLEN + header_len) >		\
-   SILC_PACKET_MAX_LEN ?						\
-   data_len - ((data_len + SILC_CHANNEL_MESSAGE_HLEN + header_len) -	\
-	       SILC_PACKET_MAX_LEN) : data_len)
-
-/* Channel Message Payload structure. Contents of this structure is parsed
-   from SILC packets. */
-struct SilcChannelMessagePayloadStruct {
-  SilcMessageFlags flags;
-  SilcUInt16 data_len;
-  unsigned char *data;
-  SilcUInt16 pad_len;
-  unsigned char *pad;
-  unsigned char *mac;
-  unsigned char *iv;
-};
-
 /* Decrypts the channel message payload. First push the IV out of the
    packet. The IV is used in the decryption process. Then decrypt the
    message. After decyprtion, take the MAC from the decrypted packet, 
@@ -305,18 +264,9 @@ bool silc_channel_message_payload_decrypt(unsigned char *data,
     silc_hmac_update(hmac, data + (data_len - iv_len), iv_len);
     silc_hmac_final(hmac, mac2, &mac_len);
     if (memcmp(mac, mac2, mac_len)) {
-#if 1
-      /* Backwards support for old mac checking, remove in 1.0 */
-      silc_hmac_make(hmac, dst, (data_len - iv_len - mac_len), mac2, &mac_len);
-      if (memcmp(mac, mac2, mac_len)) {
-#endif
-
       SILC_LOG_DEBUG(("Channel message MACs does not match"));
       silc_free(dst);
       return FALSE;
-#if 1
-      }
-#endif
     }
     SILC_LOG_DEBUG(("MAC is Ok"));
 
@@ -381,6 +331,8 @@ silc_channel_message_payload_parse(unsigned char *payload,
     goto err;
   }
 
+  newp->iv_len = iv_len;
+
   return newp;
 
  err:
@@ -434,7 +386,7 @@ bool silc_channel_message_payload_encrypt(unsigned char *data,
    encrypted separately from other parts of the packet padding must
    be applied to the payload. */
 
-SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
+SilcBuffer silc_channel_message_payload_encode(SilcMessageFlags flags,
 					       SilcUInt16 data_len,
 					       const unsigned char *data,
 					       SilcUInt16 iv_len,
@@ -543,17 +495,6 @@ unsigned char *silc_channel_message_get_iv(SilcChannelMessagePayload payload)
                              Channel Key Payload
 
 ******************************************************************************/
-
-/* Channel Key Payload structrue. Channel keys are parsed from SILC
-   packets into this structure. */
-struct SilcChannelKeyPayloadStruct {
-  SilcUInt16 id_len;
-  unsigned char *id;
-  SilcUInt16 cipher_len;
-  unsigned char *cipher;
-  SilcUInt16 key_len;
-  unsigned char *key;
-};
 
 /* Parses channel key payload returning new channel key payload structure */
 

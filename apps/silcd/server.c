@@ -43,7 +43,6 @@ SILC_TASK_CALLBACK(silc_server_free_client_data_timeout);
 SILC_TASK_CALLBACK(silc_server_timeout_remote);
 SILC_TASK_CALLBACK(silc_server_channel_key_rekey);
 SILC_TASK_CALLBACK(silc_server_failure_callback);
-SILC_TASK_CALLBACK(silc_server_rekey_callback);
 SILC_TASK_CALLBACK(silc_server_get_stats);
 
 /* Allocates a new SILC server object. This has to be done before the server
@@ -4233,10 +4232,9 @@ void silc_server_announce_get_channel_users(SilcServer server,
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
   SilcBuffer chidp, clidp, csidp;
-  SilcBuffer tmp;
+  SilcBuffer tmp, fkey = NULL;
   int len;
-  unsigned char mode[4], *fkey = NULL;
-  SilcUInt32 fkey_len = 0;
+  unsigned char mode[4];
   char *hmac;
 
   SILC_LOG_DEBUG(("Start"));
@@ -4248,7 +4246,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
   SILC_PUT32_MSB(channel->mode, mode);
   hmac = channel->hmac ? (char *)silc_hmac_get_name(channel->hmac) : NULL;
   if (channel->founder_key)
-    fkey = silc_pkcs_public_key_encode(channel->founder_key, &fkey_len);
+    fkey = silc_pkcs_public_key_payload_encode(channel->founder_key);
   tmp = 
     silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CMODE_CHANGE,
 				       6, csidp->data, csidp->len,
@@ -4258,7 +4256,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
 				       channel->passphrase,
 				       channel->passphrase ?
 				       strlen(channel->passphrase) : 0,
-				       fkey, fkey_len);
+				       fkey ? fkey->data : NULL,
+				       fkey ? fkey->len : 0);
   len = tmp->len;
   *channel_modes =
     silc_buffer_realloc(*channel_modes,
@@ -4270,9 +4269,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
   silc_buffer_put(*channel_modes, tmp->data, tmp->len);
   silc_buffer_pull(*channel_modes, len);
   silc_buffer_free(tmp);
-  silc_free(fkey);
+  silc_buffer_free(fkey);
   fkey = NULL;
-  fkey_len = 0;
 
   /* Now find all users on the channel */
   silc_hash_table_list(channel->user_list, &htl);
@@ -4299,12 +4297,13 @@ void silc_server_announce_get_channel_users(SilcServer server,
     /* CUMODE notify for mode change on the channel */
     SILC_PUT32_MSB(chl->mode, mode);
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO && channel->founder_key)
-      fkey = silc_pkcs_public_key_encode(channel->founder_key, &fkey_len);
+      fkey = silc_pkcs_public_key_payload_encode(channel->founder_key);
     tmp = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CUMODE_CHANGE,
 					     4, csidp->data, csidp->len,
 					     mode, sizeof(mode),
 					     clidp->data, clidp->len,
-					     fkey, fkey_len);
+					     fkey ? fkey->data : NULL,
+					     fkey ? fkey->len : 0);
     len = tmp->len;
     *channel_users_modes =
       silc_buffer_realloc(*channel_users_modes,
@@ -4317,9 +4316,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
     silc_buffer_put(*channel_users_modes, tmp->data, tmp->len);
     silc_buffer_pull(*channel_users_modes, len);
     silc_buffer_free(tmp);
-    silc_free(fkey);
+    silc_buffer_free(fkey);
     fkey = NULL;
-    fkey_len = 0;
     silc_buffer_free(clidp);
   }
   silc_hash_table_list_reset(&htl);
@@ -5011,7 +5009,7 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 /* A timeout callback for the re-key. We will be the initiator of the
    re-key protocol. */
 
-SILC_TASK_CALLBACK(silc_server_rekey_callback)
+SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
 {
   SilcServer server = app_context;
   SilcSocketConnection sock = (SilcSocketConnection)context;

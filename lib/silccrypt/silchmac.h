@@ -150,7 +150,8 @@ bool silc_hmac_unregister_all(void);
  *
  * SYNOPSIS
  *
- *    bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac);
+ *    bool silc_hmac_alloc(const char *name, SilcHash hash,
+ *                         SilcHmac *new_hmac);
  *
  * DESCRIPTION
  *
@@ -161,7 +162,7 @@ bool silc_hmac_unregister_all(void);
  *    FALSE if such HMAC does not exist.
  *
  ***/
-bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac);
+bool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_free
  *

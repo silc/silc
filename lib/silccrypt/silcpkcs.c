@@ -620,6 +620,7 @@ SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
   public_key->name = strdup(name);
   public_key->pk_len = pk_len;
   public_key->pk = silc_calloc(pk_len, sizeof(*public_key->pk));
+  public_key->pk_type = SILC_SKE_PK_TYPE_SILC;
   memcpy(public_key->pk, pk, pk_len);
 
   if (!silc_utf8_valid(identifier, strlen(identifier))) {
@@ -826,6 +827,7 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
     (*public_key)->identifier = ident;
     (*public_key)->pk = key_data;
     (*public_key)->pk_len = key_len;
+    (*public_key)->pk_type = SILC_SKE_PK_TYPE_SILC;
   }
 
   silc_buffer_free(buf);
@@ -840,6 +842,88 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
     silc_free(key_data);
   silc_buffer_free(buf);
   return FALSE;
+}
+
+/* Encodes Public Key Payload for transmitting public keys and certificates. */
+
+SilcBuffer silc_pkcs_public_key_payload_encode(SilcPublicKey public_key)
+{
+  SilcBuffer buffer;
+  unsigned char *pk;
+  SilcUInt32 pk_len;
+
+  if (!public_key)
+    return NULL;
+
+  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  if (!pk)
+    return NULL;
+
+  buffer = silc_buffer_alloc_size(4 + pk_len);
+  if (!buffer) {
+    silc_free(pk);
+    return NULL;
+  }
+
+  silc_buffer_format(buffer,
+		     SILC_STR_UI_SHORT(pk_len),
+		     SILC_STR_UI_SHORT(public_key->pk_type),
+		     SILC_STR_UI_XNSTRING(pk, pk_len),
+		     SILC_STR_END);
+
+  silc_free(pk);
+  return buffer;
+}
+
+/* Decode Public Key Payload and decodes the public key inside it to
+   to `payload'. */
+
+bool silc_pkcs_public_key_payload_decode(unsigned char *data,
+					 SilcUInt32 data_len,
+					 SilcPublicKey *public_key)
+{
+  SilcBufferStruct buf;
+  SilcUInt16 pk_len, pk_type;
+  unsigned char *pk;
+  int ret;
+
+  if (!public_key)
+    return FALSE;
+
+#if 1
+  /* XXX 1.1 version support.  Check whether the data is actually raw
+     public key and attempt to decode.  Remove this later! */
+  if (silc_pkcs_public_key_decode(data, data_len, public_key)) {
+    (*public_key)->pk_type = SILC_SKE_PK_TYPE_SILC;
+    return TRUE;
+  }
+#endif
+
+  silc_buffer_set(&buf, data, data_len);
+  ret = silc_buffer_unformat(&buf,
+			     SILC_STR_UI_SHORT(&pk_len),
+			     SILC_STR_UI_SHORT(&pk_type),
+			     SILC_STR_END);
+  if (ret < 0 || pk_len > data_len - 4)
+    return FALSE;
+
+  /* For now we support only SILC public keys */
+  if (pk_type != SILC_SKE_PK_TYPE_SILC)
+    return FALSE;
+
+  silc_buffer_pull(&buf, 4);
+  ret = silc_buffer_unformat(&buf,
+			     SILC_STR_UI_XNSTRING(&pk, pk_len),
+			     SILC_STR_END);
+  silc_buffer_push(&buf, 4);
+  if (ret < 0)
+    return FALSE;
+
+  if (!silc_pkcs_public_key_decode(pk, pk_len, public_key))
+    return FALSE;
+  (*public_key)->pk_type = SILC_SKE_PK_TYPE_SILC;
+
+  return TRUE;
 }
 
 /* Compares two public keys and returns TRUE if they are same key, and
@@ -876,6 +960,7 @@ SilcPublicKey silc_pkcs_public_key_copy(SilcPublicKey public_key)
 				strlen(public_key->identifier));
   key->pk = silc_memdup(public_key->pk, public_key->pk_len);
   key->pk_len = public_key->pk_len;
+  key->pk_type = public_key->pk_type;
 
   return key;
 }

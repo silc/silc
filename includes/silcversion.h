@@ -27,7 +27,7 @@ extern "C" {
 #include "version_internal.h"
 
 /* SILC Protocol version number */
-#define SILC_PROTOCOL_VERSION_CURRENT 11
+#define SILC_PROTOCOL_VERSION_CURRENT 12
 
 /* SILC version string */
 #define silc_version SILC_VERSION_STRING

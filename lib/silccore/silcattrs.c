@@ -70,18 +70,23 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     case SILC_ATTRIBUTE_SERVICE:
       {
 	SilcAttributeObjService *service = object;
+	int len2;
 	if (object_size != sizeof(*service))
 	  return NULL;
 	len = strlen(service->address);
-	str = silc_malloc(7 + len);
-	if (!str)
-	  return NULL;
-	SILC_PUT32_MSB(service->port, str);
-	SILC_PUT16_MSB(len, str + 4);
-	memcpy(str + 6, service->address, len);
-	str[6 + len] = service->status;
-	object = str;
-	object_size = 7 + len;
+	len2 = strlen(service->signon);
+	tmpbuf = silc_buffer_alloc_size(13 + len + len2);
+	silc_buffer_format(tmpbuf,
+			   SILC_STR_UI_INT(service->port),
+			   SILC_STR_UI_SHORT(len),
+			   SILC_STR_UI_XNSTRING(service->address, len),
+			   SILC_STR_UI_CHAR(service->status),
+			   SILC_STR_UI_SHORT(len2),
+			   SILC_STR_UI_XNSTRING(service->signon, len2),
+			   SILC_STR_UI_INT(service->idle),
+			   SILC_STR_END);
+	object = tmpbuf->data;
+	object_size = tmpbuf->len;
       }
       break;
 
@@ -481,18 +486,32 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   case SILC_ATTRIBUTE_SERVICE:
     {
       SilcAttributeObjService *service = object;
+      SilcBufferStruct buf;
+      SilcUInt16 addr_len, signon_len;
+      char *addr, *signon;
+      int res;
       if (object_size != sizeof(*service))
 	break;
-      if (payload->data_len < 7)
+      if (payload->data_len < 13)
 	break;
-      SILC_GET32_MSB(service->port, payload->data);
-      SILC_GET16_MSB(len, payload->data + 4);
-      if (payload->data_len < 7 + len)
+      silc_buffer_set(&buf, payload->data, payload->data_len);
+      res = silc_buffer_unformat(&buf,
+				 SILC_STR_UI_INT(&service->port),
+				 SILC_STR_UI16_NSTRING(&addr, &addr_len),
+				 SILC_STR_UI_CHAR(&service->status),
+				 SILC_STR_UI16_NSTRING(&signon, &signon_len),
+				 SILC_STR_UI_INT(&service->idle),
+				 SILC_STR_END);
+      if (res == -1)
 	break;
-      memcpy(service->address, payload->data + 6,
-	     (len < sizeof(service->address) - 1 ? len :
+      memset(service->address, 0, sizeof(service->address));
+      memset(service->signon, 0, sizeof(service->signon));
+      memcpy(service->address, addr,
+	     (addr_len < sizeof(service->address) - 1 ? addr_len :
 	      sizeof(service->address) - 1));
-      service->status = payload->data[6 + len] ? TRUE : FALSE;
+      memcpy(service->signon, signon,
+	     (signon_len < sizeof(service->signon) - 1 ? signon_len :
+	      sizeof(service->signon) - 1));
       ret = TRUE;
     }
     break;

@@ -21,7 +21,7 @@
 #define STACKTRACE_H
 
 #ifndef SILCMEMORY_H
-#error "Do not include this file directly"
+#error "Do not include internal header file directly"
 #endif
 
 #if defined(__GNUC__) && defined(__i386__)

@@ -390,6 +390,8 @@ unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
  */
 typedef struct {
   SilcUInt32 port;		/* IANA specified service port */
+  SilcUInt32 idle;		/* Idle time in the service */
+  char signon[64];		/* Signon date and time (UTC) */
   char address[256];		/* service address */
   bool status;			/* online status (TRUE present in service) */
 } SilcAttributeObjService;

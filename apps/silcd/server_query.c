@@ -1573,6 +1573,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
       silc_strncat(service.address, sizeof(service.address),
 		   server->server_name, strlen(server->server_name));
       service.status = !(client_entry->mode & SILC_UMODE_DETACHED);
+      if (client_entry->connection)
+	service.idle = time(NULL) - client_entry->data.last_receive;
       buffer = silc_attribute_payload_encode(buffer, attribute,
 					     SILC_ATTRIBUTE_FLAG_VALID,
 					     &service, sizeof(service));

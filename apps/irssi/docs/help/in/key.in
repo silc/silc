@@ -20,7 +20,7 @@ Types:
 
 Commands:
 
-  set        [<key> [<cipher>] [<hmac>]]
+  set        [<key> [<cipher>] [<hmac>]] [-responder]
 
     Set the key into use.  If the <key> is provided it is used
     as the key material.  If the <key> is not provided the
@@ -28,9 +28,11 @@ Commands:
     been performed this command has no effect.
 
     If the type is MSG and the <key> is `*' then random key
-    will be generated automatically.  The <cipher> may be set
-    for both private message and channel private keys and the
-    <hmac> may be set only to the channel private keys.
+    will be generated automatically.  The -responder option
+    may be used ONLY with MSG type.  One of the clients must
+    be the responder side.  The one being the responder must
+    use this option.  The clients setting the key must agree
+    on which one is the responder.
 
   unset      [<number>]
 
@@ -97,3 +99,7 @@ Examples:
 
     /KEY CHANNEL set very_secret_key_this_is
     /KEY CHANNEL list
+    /KEY MSG nickname set secretkey
+    /KEY MSG nick set secretkey -responder
+    /KEY MSG foo agreement 10.2.1.7 5000
+    /KEY MSG bar negotiate 10.2.1.7 5000

@@ -221,6 +221,11 @@ extern "C" {
 #include "silcmp.h"
 #include "silcmath.h"
 
+/* SILC util library includes */
+#include "silcmemory.h"
+#include "silcbuffer.h"
+#include "silcbuffmt.h"
+
 /* Crypto library includes */
 #include "silccipher.h"
 #include "silchash.h"
@@ -228,17 +233,14 @@ extern "C" {
 #include "silcrng.h"
 #include "silcpkcs.h"
 
-/* SILC util library includes */
+/* More SILC util library includes */
 #include "silcmutex.h"
 #include "silcthread.h"
 #include "silcschedule.h"
 #include "silchashtable.h"
 #include "silclog.h"
-#include "silcmemory.h"
 #include "silclist.h"
 #include "silcdlist.h"
-#include "silcbuffer.h"
-#include "silcbuffmt.h"
 #include "silcnet.h"
 #include "silcfileutil.h"
 #include "silcstrutil.h"

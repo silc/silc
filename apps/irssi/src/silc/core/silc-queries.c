@@ -323,6 +323,7 @@ void silc_query_attributes_default(SilcClient client,
       silc_strncat(service.address, sizeof(service.address), *entry,
 		   strlen(*entry));
       service.status = TRUE;
+      service.idle = 0;
       silc_client_attribute_add(silc_client, conn,
 				SILC_ATTRIBUTE_SERVICE, &service,
 				sizeof(service));
@@ -609,9 +610,10 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 	if (!silc_attribute_get_object(attr, (void *)&service,
 				       sizeof(service)))
 	  continue;
-	snprintf(tmp, sizeof(tmp) - 1, "%s:%d (logged %s)",
+	snprintf(tmp, sizeof(tmp) - 1, "%s:%d (logged %s) idle %d seconds",
 		 service.address, (unsigned int)service.port,
-		 service.status ? "in" : "out");
+		 service.status ? "in" : "out",
+		 service.idle);
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_SERVICES, tmp);
       }
