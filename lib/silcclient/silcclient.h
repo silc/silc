@@ -1115,7 +1115,7 @@ void silc_client_close_connection(SilcClient client,
  *
  * SYNOPSIS
  *
- *    void silc_client_send_channel_message(SilcClient client,
+ *    bool silc_client_send_channel_message(SilcClient client,
  *                                          SilcClientConnection conn,
  *                                          SilcChannelEntry channel,
  *                                          SilcChannelPrivateKey key,
@@ -1142,8 +1142,12 @@ void silc_client_close_connection(SilcClient client,
  *    If the `flags' includes SILC_MESSAGE_FLAG_SIGNED the message will be
  *    digitally signed with the SILC key pair.
  *
+ *    Returns TRUE if the message was sent, and FALSE if error occurred or
+ *    the sending is not allowed due to channel modes (like sending is
+ *    blocked).
+ *
  ***/
-void silc_client_send_channel_message(SilcClient client,
+bool silc_client_send_channel_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
 				      SilcChannelPrivateKey key,
@@ -1156,7 +1160,7 @@ void silc_client_send_channel_message(SilcClient client,
  *
  * SYNOPSIS
  *
- *    void silc_client_send_private_message(SilcClient client,
+ *    bool silc_client_send_private_message(SilcClient client,
  *                                          SilcClientConnection conn,
  *                                          SilcClientEntry client_entry,
  *                                          SilcMessageFlags flags,
@@ -1177,8 +1181,10 @@ void silc_client_send_channel_message(SilcClient client,
  *    If the `flags' includes SILC_MESSAGE_FLAG_SIGNED the message will be
  *    digitally signed with the SILC key pair.
  *
+ *    Returns TRUE if the message was sent, and FALSE if error occurred.
+ *
  ***/
-void silc_client_send_private_message(SilcClient client,
+bool silc_client_send_private_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry,
 				      SilcMessageFlags flags,

@@ -32,7 +32,7 @@
    with the next receiver's key. The `data' is the channel message. If
    the `force_send' is TRUE then the packet is sent immediately. */
 
-void silc_client_send_channel_message(SilcClient client, 
+bool silc_client_send_channel_message(SilcClient client, 
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
 				      SilcChannelPrivateKey key,
@@ -50,6 +50,7 @@ void silc_client_send_channel_message(SilcClient client,
   unsigned char *id_string;
   int block_len;
   SilcChannelUser chu;
+  bool ret = FALSE;
 
   assert(client && conn && channel);
   sock = conn->sock;
@@ -58,18 +59,18 @@ void silc_client_send_channel_message(SilcClient client,
   chu = silc_client_on_channel(channel, conn->local_entry);
   if (!chu) {
     SILC_LOG_ERROR(("Cannot send message to channel we are not joined"));
-    return;
+    return FALSE;
   }
 
   /* Check if it is allowed to send messages to this channel by us. */
   if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS && !chu->mode)
-    return;
+    return FALSE;
   if (channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS && 
       chu->mode & SILC_CHANNEL_UMODE_CHANOP &&
       !(chu->mode & SILC_CHANNEL_UMODE_CHANFO))
-    return;
+    return FALSE;
   if (chu->mode & SILC_CHANNEL_UMODE_QUIET)
-    return;
+    return FALSE;
 
   /* Take the key to be used */
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
@@ -102,8 +103,10 @@ void silc_client_send_channel_message(SilcClient client,
     hmac = channel->hmac;
   }
 
-  if (!cipher || !hmac)
-    return;
+  if (!cipher || !hmac) {
+    SILC_LOG_ERROR(("No cipher and HMAC for channel"));
+    return FALSE;
+  }
 
   block_len = silc_cipher_get_block_len(cipher);
 
@@ -111,8 +114,10 @@ void silc_client_send_channel_message(SilcClient client,
   payload = silc_message_payload_encode(flags, data, data_len, TRUE, FALSE,
 					cipher, hmac, client->rng, NULL,
 					client->private_key, client->sha1hash);
-  if (!payload)
-    return;
+  if (!payload) {
+    SILC_LOG_ERROR(("Error encoding channel message"));
+    return FALSE;
+  }
 
   /* Get data used in packet header encryption, keys and stuff. */
   cipher = conn->internal->send_key;
@@ -167,9 +172,13 @@ void silc_client_send_channel_message(SilcClient client,
 			   silc_client_rekey_callback, sock, 0, 1,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
+  ret = TRUE;
+
  out:
   silc_buffer_free(payload);
   silc_free(id_string);
+
+  return ret;
 }
 
 typedef struct {
