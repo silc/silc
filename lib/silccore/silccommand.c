@@ -228,8 +228,7 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
       if (!x_type || !x || !x_len)
 	continue;
       
-      argv[k] = silc_calloc(x_len + 1, sizeof(unsigned char));
-      memcpy(argv[k], x, x_len);
+      argv[k] = silc_memdup(x, x_len);
       argv_lens[k] = x_len;
       argv_types[k] = x_type;
       k++;
@@ -290,8 +289,7 @@ silc_command_reply_payload_encode_vap(SilcCommand cmd,
   argv_types = silc_calloc(argc, sizeof(uint32));
 
   SILC_PUT16_MSB(status, status_data);
-  argv[0] = silc_calloc(sizeof(status_data) + 1, sizeof(unsigned char));
-  memcpy(argv[0], status_data, sizeof(status_data));
+  argv[0] = silc_memdup(status_data, sizeof(status_data));
   argv_lens[0] = sizeof(status_data);
   argv_types[0] = 1;
 
@@ -303,8 +301,7 @@ silc_command_reply_payload_encode_vap(SilcCommand cmd,
     if (!x_type || !x || !x_len)
       continue;
 
-    argv[k] = silc_calloc(x_len + 1, sizeof(unsigned char));
-    memcpy(argv[k], x, x_len);
+    argv[k] = silc_memdup(x, x_len);
     argv_lens[k] = x_len;
     argv_types[k] = x_type;
     k++;

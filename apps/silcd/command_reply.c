@@ -918,16 +918,14 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   tmp = silc_argument_get_arg_type(cmd->args, 8, &len);
   if (tmp) {
     silc_free(entry->ban_list);
-    entry->ban_list = silc_calloc(len, sizeof(*entry->ban_list));
-    memcpy(entry->ban_list, tmp, len);
+    entry->ban_list = silc_memdup(tmp, len);
   }
 
   /* Get the invite list */
   tmp = silc_argument_get_arg_type(cmd->args, 9, &len);
   if (tmp) {
     silc_free(entry->invite_list);
-    entry->invite_list = silc_calloc(len, sizeof(*entry->invite_list));
-    memcpy(entry->invite_list, tmp, len);
+    entry->invite_list = silc_memdup(tmp, len);
   }
 
   /* Get the topic */

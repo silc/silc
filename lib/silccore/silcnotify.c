@@ -101,8 +101,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, uint32 argc,
       if (!x || !x_len)
 	continue;
       
-      argv[k] = silc_calloc(x_len + 1, sizeof(unsigned char));
-      memcpy(argv[k], x, x_len);
+      argv[k] = silc_memdup(x, x_len);
       argv_lens[k] = x_len;
       argv_types[k] = i + 1;
       k++;

@@ -611,8 +611,7 @@ void silc_client_resolve_auth_method(bool success,
   proto_ctx->auth_meth = auth_meth;
 
   if (auth_data && auth_data_len) {
-    proto_ctx->auth_data = silc_calloc(auth_data_len, sizeof(*auth_data));
-    memcpy(proto_ctx->auth_data, auth_data, auth_data_len);
+    proto_ctx->auth_data = silc_memdup(auth_data, auth_data_len);
     proto_ctx->auth_data_len = auth_data_len;
   }
 
@@ -1438,8 +1437,7 @@ void silc_client_disconnected_by_server(SilcClient client,
 
   SILC_LOG_DEBUG(("Server disconnected us, sock %d", sock->sock));
 
-  msg = silc_calloc(message->len + 1, sizeof(char));
-  memcpy(msg, message->data, message->len);
+  msg = silc_memdup(message->data, message->len);
   client->internal->ops->say(client, sock->user_data, 
 			     SILC_CLIENT_MESSAGE_AUDIT, msg);
   silc_free(msg);
@@ -1462,8 +1460,7 @@ void silc_client_error_by_server(SilcClient client,
 {
   char *msg;
 
-  msg = silc_calloc(message->len + 1, sizeof(char));
-  memcpy(msg, message->data, message->len);
+  msg = silc_memdup(message->data, message->len);
   client->internal->ops->say(client, sock->user_data, 
 			     SILC_CLIENT_MESSAGE_AUDIT, msg);
   silc_free(msg);

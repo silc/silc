@@ -182,14 +182,10 @@ void *silc_id_payload_get_id(SilcIDPayload payload)
 
 unsigned char *silc_id_payload_get_data(SilcIDPayload payload)
 {
-  unsigned char *ret;
-
   if (!payload)
     return NULL;
 
-  ret = silc_calloc(payload->len, sizeof(*ret));
-  memcpy(ret, payload->id, payload->len);
-  return ret;
+  return silc_memdup(payload->id, payload->len);
 }
 
 /* Get length of ID */
@@ -336,26 +332,20 @@ void *silc_id_dup(const void *id, SilcIdType type)
   switch(type) {
   case SILC_ID_SERVER:
     {
-      SilcServerID *server_id = (SilcServerID *)id, *new;
-      new = silc_calloc(1, sizeof(*server_id));
-      memcpy(new, server_id, sizeof(*server_id));
-      return new;
+      SilcServerID *server_id = (SilcServerID *)id;
+      return silc_memdup(server_id, sizeof(*server_id));
     }
     break;
   case SILC_ID_CLIENT:
     {
-      SilcClientID *client_id = (SilcClientID *)id, *new;
-      new = silc_calloc(1, sizeof(*client_id));
-      memcpy(new, client_id, sizeof(*client_id));
-      return new;
+      SilcClientID *client_id = (SilcClientID *)id;
+      return silc_memdup(client_id, sizeof(*client_id));
     }
     break;
   case SILC_ID_CHANNEL:
     {
-      SilcChannelID *channel_id = (SilcChannelID *)id, *new;
-      new = silc_calloc(1, sizeof(*channel_id));
-      memcpy(new, channel_id, sizeof(*channel_id));
-      return new;
+      SilcChannelID *channel_id = (SilcChannelID *)id;
+      return silc_memdup(channel_id, sizeof(*channel_id));
     }
     break;
   }

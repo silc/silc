@@ -557,3 +557,4 @@ EXPORTS
 	silc_log_flushdelay @ 848 DATA ;
 	silc_hash_table_list_reset @ 849 ;
 	silc_debug_hexdump @ 850 DATA ;
+	silc_memdup @ 851 ;

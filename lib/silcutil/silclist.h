@@ -18,7 +18,7 @@
 
 */
 
-/****h* silcutil/SilcList
+/****h* silcutil/SilcListAPI
  *
  * DESCRIPTION
  *

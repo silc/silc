@@ -278,10 +278,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   }
 
   if (fingerprint && !client_entry->fingerprint) {
-    client_entry->fingerprint = 
-      silc_calloc(fingerprint_len, 
-		  sizeof(*client_entry->fingerprint));
-    memcpy(client_entry->fingerprint, fingerprint, fingerprint_len);
+    client_entry->fingerprint = silc_memdup(fingerprint, fingerprint_len);
     client_entry->fingerprint_len = fingerprint_len;
   }
 

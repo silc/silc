@@ -3141,10 +3141,8 @@ static void silc_server_command_join_channel(SilcServer server,
   if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
     /* Get passphrase */
     tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-    if (tmp) {
-      passphrase = silc_calloc(tmp_len, sizeof(*passphrase));
-      memcpy(passphrase, tmp, tmp_len);
-    }
+    if (tmp)
+      passphrase = silc_memdup(tmp, tmp_len);
   
     if (!passphrase || !channel->passphrase ||
         memcmp(passphrase, channel->passphrase, strlen(channel->passphrase))) {
@@ -4109,9 +4107,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
 	if (channel->founder_method == SILC_AUTH_PASSWORD) {
 	  tmp = silc_auth_get_data(auth, &tmp_len);
-	  channel->founder_passwd = 
-	    silc_calloc(tmp_len + 1, sizeof(*channel->founder_passwd));
-	  memcpy(channel->founder_passwd, tmp, tmp_len);
+	  channel->founder_passwd = silc_memdup(tmp, tmp_len);
 	  channel->founder_passwd_len = tmp_len;
 	} else {
 	  /* Verify the payload before setting the mode */

@@ -46,7 +46,6 @@ if SILC_DIST_TOOLKIT
 include_HEADERS =	\
 	silcbuffer.h	\
 	silcbuffmt.h	\
-	silcbufutil.h	\
 	silcconfig.h	\
 	silchashtable.h	\
 	silclog.h	\

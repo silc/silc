@@ -276,11 +276,8 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
   }
 
   idata->rekey = silc_calloc(1, sizeof(*idata->rekey));
-  idata->rekey->send_enc_key = 
-    silc_calloc(keymat->enc_key_len / 8,
-		sizeof(*idata->rekey->send_enc_key));
-  memcpy(idata->rekey->send_enc_key, 
-	 keymat->send_enc_key, keymat->enc_key_len / 8);
+  idata->rekey->send_enc_key = silc_memdup(keymat->send_enc_key,
+					   keymat->enc_key_len / 8);
   idata->rekey->enc_key_len = keymat->enc_key_len / 8;
 
   if (ske->prop->flags & SILC_SKE_SP_FLAG_PFS)
@@ -1247,11 +1244,8 @@ silc_server_protocol_rekey_validate(SilcServer server,
   if (!send) {
     memset(idata->rekey->send_enc_key, 0, idata->rekey->enc_key_len);
     silc_free(idata->rekey->send_enc_key);
-    idata->rekey->send_enc_key = 
-      silc_calloc(keymat->enc_key_len / 8,
-		  sizeof(*idata->rekey->send_enc_key));
-    memcpy(idata->rekey->send_enc_key, keymat->send_enc_key, 
-	   keymat->enc_key_len / 8);
+    idata->rekey->send_enc_key = silc_memdup(keymat->send_enc_key,
+					     keymat->enc_key_len / 8);
     idata->rekey->enc_key_len = keymat->enc_key_len / 8;
   }
 }

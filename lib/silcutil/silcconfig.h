@@ -26,20 +26,21 @@
  * (or File object) and SilcConfigEntity (or Entity).  The File objects are
  * structs directly corresponding to the real files in the filesystem, while
  * Entities are a little more abstract.
+ *
  * An Entity is composed by delimited area on a File object (it can take the
  * whole File object or just part of it), plus a group of known options.
- *
  * In order to parse this file, first you need to create a File object with
  * the silc_config_open() function, and then you need to create the Entity
  * with the silc_config_init() function.
+ *
  * Now you can use the newly created Entity to register a group of expected
  * known options and sub-blocks, and then you can call the main parsing loop
- * with the silc_config_main() function.
- * When silc_config_main() will return, if some error encoured the object file
- * will point to the file that caused this error (this can be different from
- * the originally opened file if it contained `Include' directives).  If no
- * errors encoured then the File objects will still point to the original
- * file.
+ * with the silc_config_main() function. When silc_config_main() will 
+ * return, if some error encoured the object file will point to the file 
+ * that caused this error (this can be different from the originally 
+ * opened file if it contained `Include' directives).  If no errors 
+ * encoured then the File objects will still point to the original file.
+ *
  * While silc_config_main() will take care of destroying Entities before
  * returning, you need to take care that the File object you created is freed
  * with the silc_config_close() function.
@@ -51,6 +52,7 @@
  * The config file syntax is pretty straightforward.  All lines starting
  * with `#' will be skipped, while sub-blocks are delimited by braces (see
  * the example below).
+ *
  * Options with argument must have the `=' character between the option
  * name and the value.  Simple words and numbers does not require quoting.
  * There is a special built-in directive "Include" which allows you to include

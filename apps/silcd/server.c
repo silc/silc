@@ -3066,8 +3066,7 @@ bool silc_server_create_channel_key(SilcServer server,
 
   /* Save the key */
   channel->key_len = len * 8;
-  channel->key = silc_calloc(len, sizeof(*channel->key));
-  memcpy(channel->key, channel_key, len);
+  channel->key = silc_memdup(channel_key, len);
   memset(channel_key, 0, sizeof(channel_key));
 
   /* Generate HMAC key from the channel key data and set it */
@@ -3178,8 +3177,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 
   /* Save the key */
   channel->key_len = tmp_len * 8;
-  channel->key = silc_calloc(tmp_len, sizeof(unsigned char));
-  memcpy(channel->key, tmp, tmp_len);
+  channel->key = silc_memdup(tmp, tmp_len);
   silc_cipher_set_key(channel->channel_key, tmp, channel->key_len);
 
   /* Generate HMAC key from the channel key data and set it */

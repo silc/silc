@@ -396,8 +396,7 @@ void silc_client_save_channel_key(SilcClient client,
   key = silc_channel_key_get_key(payload, &tmp_len);
   cipher = silc_channel_key_get_cipher(payload, NULL);
   channel->key_len = tmp_len * 8;
-  channel->key = silc_calloc(tmp_len, sizeof(*channel->key));
-  memcpy(channel->key, key, tmp_len);
+  channel->key = silc_memdup(key, tmp_len);
 
   if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
     client->internal->ops->say(
@@ -520,8 +519,7 @@ int silc_client_add_channel_private_key(SilcClient client,
 
   /* Save the key */
   entry = silc_calloc(1, sizeof(*entry));
-  entry->key = silc_calloc(keymat->enc_key_len / 8, sizeof(*entry->key));
-  memcpy(entry->key, keymat->send_enc_key, keymat->enc_key_len / 8);
+  entry->key = silc_memdup(keymat->send_enc_key, keymat->enc_key_len / 8);
   entry->key_len = keymat->enc_key_len / 8;
 
   /* Allocate the cipher and set the key*/

@@ -344,8 +344,7 @@ int silc_client_add_private_message_key(SilcClient client,
   }
 
   /* Save the key */
-  client_entry->key = silc_calloc(key_len, sizeof(*client_entry->key));
-  memcpy(client_entry->key, key, key_len);
+  client_entry->key = silc_memdup(key, key_len);
   client_entry->key_len = key_len;
 
   /* Produce the key material as the protocol defines */

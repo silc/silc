@@ -181,8 +181,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
 		     SILC_STR_UI_XNSTRING(pk, pk_len),
 		     SILC_STR_END);
   
-  ret = silc_calloc(buf->len + 1, sizeof(*ret));
-  memcpy(ret, buf->data, buf->len);
+  ret = silc_memdup(buf->data, buf->len);
 
   if (ret_len)
     *ret_len = buf->len;

@@ -875,8 +875,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	/* If private key mode is not set then decrypt the packet
 	   and re-encrypt it */
 	if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
-	  unsigned char *tmp = silc_calloc(data_len, sizeof(*data));
-	  memcpy(tmp, data, data_len);
+	  unsigned char *tmp = silc_memdup(data, data_len);
 
 	  /* Decrypt the channel message (we don't check the MAC) */
 	  if (channel->channel_key &&

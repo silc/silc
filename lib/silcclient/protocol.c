@@ -151,11 +151,8 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 
   /* Rekey stuff */
   conn->rekey = silc_calloc(1, sizeof(*conn->rekey));
-  conn->rekey->send_enc_key = 
-    silc_calloc(keymat->enc_key_len / 8,
-		sizeof(*conn->rekey->send_enc_key));
-  memcpy(conn->rekey->send_enc_key, 
-	 keymat->send_enc_key, keymat->enc_key_len / 8);
+  conn->rekey->send_enc_key = silc_memdup(keymat->send_enc_key, 
+					  keymat->enc_key_len / 8);
   conn->rekey->enc_key_len = keymat->enc_key_len / 8;
 
   if (ske->start_payload->flags & SILC_SKE_SP_FLAG_PFS)
@@ -785,11 +782,8 @@ silc_client_protocol_rekey_validate(SilcClient client,
   if (!send) {
     memset(conn->rekey->send_enc_key, 0, conn->rekey->enc_key_len);
     silc_free(conn->rekey->send_enc_key);
-    conn->rekey->send_enc_key = 
-      silc_calloc(keymat->enc_key_len / 8,
-		  sizeof(*conn->rekey->send_enc_key));
-    memcpy(conn->rekey->send_enc_key, keymat->send_enc_key, 
-	   keymat->enc_key_len / 8);
+    conn->rekey->send_enc_key = silc_memdup(keymat->send_enc_key,
+					    keymat->enc_key_len / 8);
     conn->rekey->enc_key_len = keymat->enc_key_len / 8;
   }
 }

@@ -1589,8 +1589,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     int tlen = strcspn(username, "@");
     char *phostname = NULL;
 
-    hostname = silc_calloc((strlen(username) - tlen) + 1, sizeof(char));
-    memcpy(hostname, username + tlen + 1, strlen(username) - tlen - 1);
+    hostname = silc_memdup(username + tlen + 1, strlen(username) - tlen - 1);
 
     if (strcmp(sock->hostname, sock->ip) && 
 	strcmp(sock->hostname, hostname)) {

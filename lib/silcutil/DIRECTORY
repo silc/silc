@@ -3,7 +3,6 @@
 @FILENAME=silcutillib.html
 @LINK=silcbuffer.html:SILC Buffer Interface
 @LINK=silcbuffmt.html:SILC Buffer Format Interface
-@LINK=silcbufutil.html:SILC Buffer Utility Interface
 @LINK=silchashtable.html:SILC Hash Table Interface
 @LINK=silclog.html:SILC Logging Interface
 @LINK=silcmemory.html:SILC Memory Interface
