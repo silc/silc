@@ -186,7 +186,7 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
 
 static unsigned char *
 silc_auth_public_key_encode_data(SilcPublicKey public_key,
-				 const unsigned char *random,
+				 const unsigned char *randomdata,
 				 SilcUInt32 random_len, const void *id,
 				 SilcIdType type, SilcUInt32 *ret_len)
 {
@@ -212,7 +212,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
     return NULL;
   }
   silc_buffer_format(buf,
-		     SILC_STR_UI_XNSTRING(random, random_len),
+		     SILC_STR_UI_XNSTRING(randomdata, random_len),
 		     SILC_STR_UI_XNSTRING(id_data, id_len),
 		     SILC_STR_UI_XNSTRING(pk, pk_len),
 		     SILC_STR_END);
@@ -240,7 +240,7 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      SilcRng rng, SilcHash hash,
 					      const void *id, SilcIdType type)
 {
-  unsigned char *random;
+  unsigned char *randomdata;
   unsigned char auth_data[1024];
   SilcUInt32 auth_len;
   unsigned char *tmp;
@@ -252,15 +252,15 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 
   /* Get 256 bytes of random data */
   if (rng)
-    random = silc_rng_get_rn_data(rng, 256);
+    randomdata = silc_rng_get_rn_data(rng, 256);
   else
-    random = silc_rng_global_get_rn_data(256);
-  if (!random)
+    randomdata = silc_rng_global_get_rn_data(256);
+  if (!randomdata)
     return NULL;
 
   /* Encode the auth data */
-  tmp = silc_auth_public_key_encode_data(public_key, random, 256, id, type,
-					 &tmp_len);
+  tmp = silc_auth_public_key_encode_data(public_key, randomdata, 256, id, 
+					 type, &tmp_len);
   if (!tmp)
     return NULL;
 
@@ -276,23 +276,23 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
   /* Compute the hash and the signature. */
   if (!silc_pkcs_sign_with_hash(pkcs, hash, tmp, tmp_len, auth_data,
 				&auth_len)) {
-    memset(random, 0, 256);
+    memset(randomdata, 0, 256);
     memset(tmp, 0, tmp_len);
     silc_free(tmp);
-    silc_free(random);
+    silc_free(randomdata);
     silc_pkcs_free(pkcs);
     return NULL;
   }
 
   /* Encode Authentication Payload */
-  buf = silc_auth_payload_encode(SILC_AUTH_PUBLIC_KEY, random, 256,
+  buf = silc_auth_payload_encode(SILC_AUTH_PUBLIC_KEY, randomdata, 256,
 				 auth_data, auth_len);
 
   memset(tmp, 0, tmp_len);
   memset(auth_data, 0, sizeof(auth_data));
-  memset(random, 0, 256);
+  memset(randomdata, 0, 256);
   silc_free(tmp);
-  silc_free(random);
+  silc_free(randomdata);
   silc_pkcs_free(pkcs);
 
   return buf;
