@@ -442,9 +442,9 @@ AC_SUBST(PIDFILE)
 
 # SOCKS4 support checking
 #
-SAVELIBS="$LIBS"
-SAVECFLAGS="$CFLAGS"
-SAVELDFLAGS="$LDFLAGS"
+SAVE_LIBS="$LIBS"
+SAVE_CFLAGS="$CFLAGS"
+SAVE_LDFLAGS="$LDFLAGS"
 AC_MSG_CHECKING(whether to support SOCKS4)
 AC_ARG_WITH(socks4,
   [[  --with-socks4[=DIR]     with SOCKS4 support [search in DIR/lib and DIR/include]]],
@@ -474,9 +474,9 @@ AC_ARG_WITH(socks4,
       ], [],
       [
         AC_MSG_ERROR(Could not find SOCKS4 library.)
-        LIBS="$SAVELIBS"
-        CFLAGS="$SAVECFLAGS"
-        LDFLAGS="$SAVELDFLAGS"
+        LIBS="$SAVE_LIBS"
+        CFLAGS="$SAVE_CFLAGS"
+        LDFLAGS="$SAVE_LDFLAGS"
       ])
   ],
     AC_MSG_RESULT(no)
@@ -484,9 +484,9 @@ AC_ARG_WITH(socks4,
 
 # SOCKS5 support checking
 #
-SAVELIBS="$LIBS"
-SAVECFLAGS="$CFLAGS"
-SAVELDFLAGS="$LDFLAGS"
+SAVE_LIBS="$LIBS"
+SAVE_CFLAGS="$CFLAGS"
+SAVE_LDFLAGS="$LDFLAGS"
 AC_MSG_CHECKING(whether to support SOCKS5)
 AC_ARG_WITH(socks5,
   [[  --with-socks5[=DIR]     with SOCKS5 support [search in DIR/lib and DIR/include]]],
@@ -516,9 +516,9 @@ AC_ARG_WITH(socks5,
       ], [],
       [
         AC_MSG_ERROR(Could not find SOCKS5 library.)
-        LIBS="$SAVELIBS"
-        CFLAGS="$SAVECFLAGS"
-        LDFLAGS="$SAVELDFLAGS"
+        LIBS="$SAVE_LIBS"
+        CFLAGS="$SAVE_CFLAGS"
+        LDFLAGS="$SAVE_LDFLAGS"
       ])
   ],
     AC_MSG_RESULT(no)
@@ -560,9 +560,9 @@ fi
 # source tree.
 #
 mp_gmp=false
-SAVELIBS="$LIBS"
-SAVECFLAGS="$CFLAGS"
-SAVELDFLAGS="$LDFLAGS"
+SAVE_LIBS="$LIBS"
+SAVE_CFLAGS="$CFLAGS"
+SAVE_LDFLAGS="$LDFLAGS"
 AC_MSG_CHECKING(whether to search for GMP)
 AC_ARG_WITH(gmp,
   [[  --with-gmp[=DIR]        use GMP instead of MPI [search in DIR/lib and DIR/include]]],
@@ -592,9 +592,9 @@ AC_ARG_WITH(gmp,
         AC_MSG_RESULT(Using GMP as a MP library.)
       ],
       [
-        LIBS="$SAVELIBS"
-        CFLAGS="$SAVECFLAGS"
-        LDFLAGS="$SAVELDFLAGS"
+        LIBS="$SAVE_LIBS"
+        CFLAGS="$SAVE_CFLAGS"
+        LDFLAGS="$SAVE_LDFLAGS"
       ])
   ],
     AC_MSG_RESULT(no)
@@ -611,10 +611,10 @@ fi
 #
 check_iconv=true
 has_iconv=false
-SAVELIBS="$LIBS"
-SAVECFLAGS="$CFLAGS"
-SAVELDFLAGS="$LDFLAGS"
-SAVECPPFLAGS="$CPPFLAGS"
+SAVE_LIBS="$LIBS"
+SAVE_CFLAGS="$CFLAGS"
+SAVE_LDFLAGS="$LDFLAGS"
+SAVE_CPPFLAGS="$CPPFLAGS"
 AC_MSG_CHECKING(whether to implicit search for libiconv)
 AC_ARG_WITH(iconv,
   [[  --with-iconv[=DIR]      use libiconv [search in DIR/include and DIR/lib]]],
@@ -676,20 +676,20 @@ if test x$check_iconv = xtrue; then
         ],
         [
           echo "no"
-          LIBS="$SAVELIBS"
-          CFLAGS="$SAVECFLAGS"
-          LDFLAGS="$SAVELDFLAGS"
-          CPPFLAGS="$SAVECPPFLAGS"
+          LIBS="$SAVE_LIBS"
+          CFLAGS="$SAVE_CFLAGS"
+          LDFLAGS="$SAVE_LDFLAGS"
+          CPPFLAGS="$SAVE_CPPFLAGS"
         ])
      ])
 fi
 
 if test x$check_iconv = xtrue; then
   # search for iconv library..
-  SAVELIBS="$LIBS"
-  SAVECFLAGS="$CFLAGS"
-  SAVELDFLAGS="$LDFLAGS"
-  SAVECPPFLAGS="$CPPFLAGS"
+  SAVE_LIBS="$LIBS"
+  SAVE_CFLAGS="$CFLAGS"
+  SAVE_LDFLAGS="$LDFLAGS"
+  SAVE_CPPFLAGS="$CPPFLAGS"
     
   for dir in `echo "/usr/local /usr/pkg /usr/contrib"`; do
     if test x$has_iconv = xfalse; then
@@ -729,16 +729,16 @@ if test x$check_iconv = xtrue; then
               echo "no"
               has_iconv=false
  
-              LIBS="$SAVELIBS"    
-              CFLAGS="$SAVECFLAGS"
-              LDFLAGS="$SAVELDFLAGS"
-              CPPFLAGS="$SAVECPPFLAGS"
+              LIBS="$SAVE_LIBS"    
+              CFLAGS="$SAVE_CFLAGS"
+              LDFLAGS="$SAVE_LDFLAGS"
+              CPPFLAGS="$SAVE_CPPFLAGS"
             ])
          ],
          [
-           CFLAGS="$SAVECFLAGS"
-           LDFLAGS="$SAVELDFLAGS"
-           CPPFLAGS="$SAVECPPFLAGS"
+           CFLAGS="$SAVE_CFLAGS"
+           LDFLAGS="$SAVE_LDFLAGS"
+           CPPFLAGS="$SAVE_CPPFLAGS"
          ])
       fi
     done
@@ -809,10 +809,14 @@ AC_ARG_WITH(pthreads,
   ])
 
 if test x$check_threads = xtrue; then
+  SAVE_LIBS="$LIBS"
+  SAVE_CFLAGS="$CFLAGS"
+  SAVE_LDFLAGS="$LDFLAGS"
+  SAVE_CPPFLAGS="$CPPFLAGS"
+  
   AC_MSG_RESULT(yes)
   AC_CHECK_HEADERS(pthread.h,
     [
-      SAVE_LIBS="$LIBS"
       LIBS="$LIBS -lpthread"
       AC_CHECK_LIB(pthread, pthread_attr_init, has_threads=true,
         [
@@ -820,24 +824,19 @@ if test x$check_threads = xtrue; then
           case "${target}" in
             *-*-freebsd*)
               LIBS="$SAVE_LIBS -pthread"
-              AC_CHECK_LIB(c_r, pthread_attr_init, has_threads=true)
+              AC_CHECK_LIB(c_r, pthread_attr_init, has_threads=true, LIBS="$SAVE_LIBS")
+              ;;
+            *)
+              LIBS="$SAVE_LIBS"
               ;;
           esac
         ])
     ],
     [
       # search for pthread library..
-      SAVE_CPPFLAGS="$CPPFLAGS"
-      SAVE_CFLAGS="$CFLAGS"
-      SAVE_LDFLAGS="$LDFLAGS"
-
       for dir in `echo "/usr/local /usr/pkg /usr/contrib /usr/pkg/pthreads /usr/local/pthreads"`; do
         if test x$has_threads = xfalse; then
           AC_MSG_RESULT(searching in $dir...)
-  
-          CPPFLAGS="$SAVE_CPPFLAGS"
-          CFLAGS="$SAVE_CFLAGS"
-          LDFLAGS="$SAVE_LDFLAGS"
   
           if test -d $dir/include; then
             CPPFLAGS="$CPPFLAGS -I$dir/include"
@@ -854,7 +853,19 @@ if test x$check_threads = xtrue; then
             [ 
               LIBS="$LIBS -lpthread"
               AC_CHECK_LIB(pthread, pthread_attr_init, has_threads=true,
-                                                       has_threads=false)
+                [
+                  has_threads=false
+
+                  LIBS="$SAVE_LIBS"
+                  CFLAGS="$SAVE_CFLAGS"
+                  LDFLAGS="$SAVE_LDFLAGS"
+                  CPPFLAGS="$SAVE_CPPFLAGS"
+                ])
+            ],
+            [
+              CFLAGS="$SAVE_CFLAGS"
+              LDFLAGS="$SAVE_LDFLAGS"
+              CPPFLAGS="$SAVE_CPPFLAGS"
             ])
         fi
       done
