@@ -724,6 +724,11 @@ char *silc_get_username()
 {
   char *logname = NULL;
   
+  if (!getenv("LOGNAME")) {
+    fprintf(stderr, "Error: environment variable $LOGNAME not set\n");
+    return NULL;
+  }
+
   logname = strdup(getenv("LOGNAME"));
   if (!logname) {
     logname = getlogin();

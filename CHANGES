@@ -1,3 +1,14 @@
+Thu May 10 22:49:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Compiled the SILC under cygwin.  Compiled and tested briefly
+	  without problems.  More tests needed.  The SIMs didn't compile
+	  though.
+
+	* Added various #ifdef HAVE_* stuff to lib/silccrypt/silrng.c.
+
+	* Fixed possible crash in silc_get_username in the
+	  lib/silcutil/silcutil.c.
+
 Tue May  8 09:04:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a va_arg in silc/client_ops.c.
