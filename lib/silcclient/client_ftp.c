@@ -802,6 +802,8 @@ silc_client_file_send(SilcClient client,
   char *filename, *path;
   int fd;
 
+  assert(client && conn && client_entry);
+
   SILC_LOG_DEBUG(("Start"));
 
   /* Check for existing session for `filepath'. */
@@ -910,6 +912,8 @@ silc_client_file_receive(SilcClient client,
   SilcClientFtpSession session;
   SilcBuffer keyagr, ftp;
 
+  assert(client && conn);
+
   SILC_LOG_DEBUG(("Start, Session ID: %d", session_id));
 
   /* Get the session */
@@ -992,6 +996,8 @@ SilcClientFileError silc_client_file_close(SilcClient client,
 					   SilcUInt32 session_id)
 {
   SilcClientFtpSession session;
+
+  assert(client && conn);
 
   SILC_LOG_DEBUG(("Start, Session ID: %d", session_id));
 
