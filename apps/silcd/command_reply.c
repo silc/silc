@@ -311,6 +311,7 @@ silc_server_command_reply_whois_save_client(SilcServerCommandReplyContext cmd)
   if (tmp && client) {
     silc_free(client->attrs);
     client->attrs = silc_memdup(tmp, len);
+    client->attrs_len = len;
   }
 
   client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
