@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "silcprotocol.h"
 
 /* Dynamically registered protocols */
 SilcProtocolObject *silc_protocol_list = NULL;
@@ -34,17 +33,17 @@ SilcProtocolObject *silc_protocol_list = NULL;
 void silc_protocol_register(SilcProtocolType type,
 			    SilcProtocolCallback callback)
 {
-  SilcProtocolObject *new;
+  SilcProtocolObject *proto_new;
 
-  new = silc_calloc(1, sizeof(*new));
-  new->type = type;
-  new->callback = callback;
+  proto_new = silc_calloc(1, sizeof(*proto_new));
+  proto_new->type = type;
+  proto_new->callback = callback;
 
   if (!silc_protocol_list)
-    silc_protocol_list = new;
+    silc_protocol_list = proto_new;
   else {
-    new->next = silc_protocol_list;
-    silc_protocol_list = new;
+    proto_new->next = silc_protocol_list;
+    silc_protocol_list = proto_new;
   }
 }
 

@@ -40,7 +40,8 @@ struct SilcLogStruct {
 };
 typedef struct SilcLogStruct *SilcLog;
 
-/* These are the known logging channels */
+/* These are the known logging channels.  We initialize this struct with most
+ * of the fields set to NULL, because we'll fill in those values at runtime. */
 static struct SilcLogStruct silclogs[SILC_LOG_MAX] = {
   {NULL, NULL, 0, "Info", SILC_LOG_INFO, NULL, NULL},
   {NULL, NULL, 0, "Warning", SILC_LOG_WARNING, NULL, NULL},
@@ -55,13 +56,13 @@ bool silc_log_quick = FALSE;
 bool silc_debug = FALSE;
 bool silc_debug_hexdump = FALSE;
 
-/* Flush delay */
+/* Flush delay (in seconds) */
 long silc_log_flushdelay = 300;
 
 /* Regular pattern matching expression for the debug output */
 char *silc_log_debug_string = NULL;
 
-/* Debug callbacks. If set these are used instead of default ones. */
+/* Debug callbacks. If set, these are triggered for each specific output. */
 static SilcLogDebugCb silc_log_debug_cb = NULL;
 static void *silc_log_debug_context = NULL;
 static SilcLogHexdumpCb silc_log_hexdump_cb = NULL;
@@ -71,7 +72,7 @@ static void *silc_log_hexdump_context = NULL;
 static bool silc_log_scheduled = FALSE;
 static bool silc_log_no_init = FALSE;
 
-/* This is only needed during starting up -- don't lose any logging */
+/* This is only needed during starting up -- don't lose any logging message */
 static bool silc_log_starting = TRUE;
 
 /* The type wrapper utility. Translates a SilcLogType id to the corresponding
@@ -144,7 +145,7 @@ static bool silc_log_reset(SilcLog log)
   if (!log->filename) return FALSE;
   if (!(log->fp = fopen(log->filename, "a+"))) {
     SILC_LOG_WARNING(("Couldn't reset logfile %s for type \"%s\": %s",
-	log->filename, log->typename, strerror(errno)));
+		      log->filename, log->typename, strerror(errno)));
     return FALSE;
   }
   return TRUE;
@@ -170,27 +171,27 @@ SILC_TASK_CALLBACK(silc_log_fflush_callback)
 
 /* Outputs the log message to the first available channel. Channels are
  * ordered by importance (see SilcLogType documentation).
- * More importants channels can be printed on less important ones, but not
+ * More important channels can be printed on less important ones, but not
  * vice-versa. */
 
 void silc_log_output(SilcLogType type, char *string)
 {
-  char *typename;
+  char *typename = NULL;
   FILE *fp;
   SilcLog log;
 
   if ((type > SILC_LOG_MAX) || !(log = silc_log_find_by_type(type)))
     goto end;
 
+  /* Save the original typename, because even if we redirect the message
+   * to another channel we'll keep however the original channel name */
+  typename = log->typename;
+
   /* If there is a custom callback set, use it and return. */
   if (log->cb) {
     if ((*log->cb)(type, string, log->context))
       goto end;
   }
-
-  /* save the original typename, because if we redirect the channel we
-   * keep however the original destination channel name */
-  typename = log->typename;
 
   if (!silc_log_scheduled) {
     if (silc_log_no_init == FALSE) {
@@ -225,6 +226,11 @@ void silc_log_output(SilcLogType type, char *string)
   }
 
  end:
+  /* If debugging, also output the logging message to the console */
+  if (typename && silc_debug) {
+    fprintf(stderr, "[Logging] [%s] %s\n", typename, string);
+    fflush(stderr);
+  }
   silc_free(string);
 }
 
@@ -335,6 +341,8 @@ void silc_log_reset_all() {
   SILC_LOG_DEBUG(("Resetting all logs"));
   SILC_FOREACH_LOG(u)
     silc_log_reset(&silclogs[u]);
+  /* Immediately flush any possible warning message */
+  silc_log_flush_all();
 }
 
 /* Outputs the debug message to stderr. */

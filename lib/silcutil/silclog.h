@@ -53,7 +53,7 @@ typedef enum {
   /* This should be used for warnings and non critical failures */
   SILC_LOG_WARNING,
 
-  /* Generic error and critical failures messages */
+  /* Generic error and critical failure messages */
   SILC_LOG_ERROR,
 
   /* Fatal messages (usually situations that will lead to a program crash */
@@ -506,8 +506,8 @@ void silc_log_flush_all();
  *
  *    Forces all logging channels to close and reopen their streams.  Useful
  *    for example after a SIGHUP signal.
- *    Please note that this function could cause some warning messages if
- *    some logging channel points to an illegal filename.
+ *    Please note that this function could generate some warning messages if
+ *    one or more logging channels point to an illegal filename.
  *
  ***/
 void silc_log_reset_all();

@@ -1,3 +1,13 @@
+Sun Mar 10 23:34:48 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* If silc_debug is TRUE, also output standard logging messages
+	  to stderr with the debug output.
+
+	  Made silc_log_reset_all() flushing all channels before returning.
+	  Also fixed some documentation typos.
+
+	  Affected files are lib/silcutil/silclog.[ch].
+
 Sun Mar 10 20:07:49 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the server to check correctly the amount of connections
