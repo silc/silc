@@ -1,6 +1,8 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o Rewrite the notify handling in the new Irssi SILC client.
+
  o /cumode for unknown nick does not give any error message.
 
  o Add local command to switch the channel's private key when channel has
@@ -104,6 +106,9 @@ TODO/bugs In SILC Libraries
  o lib/silcsftp/sftp_fs_memory.c use directly open(), close() etc. 
    routines.  Change to use silc_file_* routines.
 
+ o SILC RNG does not implement random seed files, and they should be
+   implemented.
+
 
 TODO in Toolkit Documentation
 =============================
@@ -114,9 +119,6 @@ Manual.
  o Lots of ROBOdoc header formatting is undone in lib/silcske, 
    lib/silcutil, and lib/silccrypt.
 
- o Write "Documentation conventions" document to describe how to read
-   the Toolkit reference manual, and what is what there.
-
  o Write "Programming with Toolkit" document, describing how to build
    Toolkit, how the build system works, where is everything, how
    new (external) projects can be glued into Toolkit (use irssi as an
@@ -126,6 +128,9 @@ Manual.
  o Write "Programming conventions" document to describe the coding
    and naming conventions used in the Toolkit (should not be 
    actually the CodingStyle document, but something more general).
+
+ o Move the lib/silccrypt/silcrng.h's "how the RNG works" documentation
+   to its own html file and link it to the reference manual.
 
 
 TODO in SILC Protocol
