@@ -147,7 +147,7 @@
  * The RNG must also assure that any old or future random numbers are not
  * compromised if an adversary would learn the initial input data (or any
  * input data for that matter). The SILC's RNG provides good protection for
- * this even if the some of the output bits would be compromised in old or
+ * this even if the some of the input bits would be compromised for old or
  * future random numbers. The RNG reinitalizes (reseeds) itself using the
  * threshholds after every 64 and 160 bits of output. This is considered to be
  * adequate even if some of the bits would get compromised. Also, the
