@@ -1,0 +1,115 @@
+body {
+  background:      #aaaaaa;
+  color:           #000000;
+  font-family:     Helvetica, Arial, Sans-serif;
+  font-size:       10pt;
+  margin-top:      15px;
+}
+
+a.normal {
+  text-decoration: none;
+  background:      none;
+  color:           #2f486f;
+  font-size:       10pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+a.small {
+  text-decoration: none;
+  background:      none;
+  color:           #2f486f;
+  font-size:       8pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+td.black {
+  background:      #000000;
+  color:           #ffffff;
+  font-size:       10pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+td.grey {
+  background:      #e2e2e2;
+  color:           #000000;
+  font-size:       10pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+td.white {
+  background:      #ffffff;
+  color:           #000000;
+  font-size:       10pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+td.blackline {
+  background:      #000000;
+  color:           #ffffff;
+  height:          1px;
+}
+
+td.greytext {
+  background:      #e2e2e2;
+  color:           #000000;
+  text-align:      justify;
+  font-size:       10pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+td.whitetext {
+  background:      #ffffff;
+  color:           #000000;
+  text-align:      justify;
+  font-size:       10pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+small.blue {
+  background:      none;
+  color:           #2f486f;
+  font-size:       8pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+small.black {
+  background:      none;
+  color:           #000000;
+  font-size:       8pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+big {
+  background:      none;
+  color:           #000000;
+  font-size:       14pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+i {
+  background:      none;
+  color:           #2f486f;
+  font-size:       10pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
+
+tt.blue {
+  background:      none;
+  color:           #2f486f;
+  font-size:       10pt;
+  font-family:     Courier, monospace;
+}
+
+tt.black {
+  background:      none;
+  color:           #000000;
+  font-size:       10pt;
+  font-family:     Courier, monospace;
+}
+
+samp.blue {
+  background:      none;
+  color:           #2f486f;
+  font-size:       10pt;
+  font-family:     Helvetica, Arial, Sans-serif;
+}
