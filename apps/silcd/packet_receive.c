@@ -218,10 +218,17 @@ void silc_server_notify(SilcServer server,
     chl->client = client;
     chl->channel = channel;
 
-    /* If this is the first one on the channel then it is the founder of
-       the channel. */
-    if (!silc_hash_table_count(channel->user_list))
-      chl->mode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+    if (server->server_type != SILC_ROUTER ||
+	sock->type == SILC_SOCKET_TYPE_ROUTER) {
+      /* If this is the first one on the channel then it is the founder of
+	 the channel. This is done on normal server and on router if this
+	 notify is coming from router */
+      if (!silc_hash_table_count(channel->user_list)) {
+	SILC_LOG_DEBUG(("Client %s is founder on channel",
+			silc_id_render(chl->client->id, SILC_ID_CLIENT)));
+	chl->mode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+      }
+    }
 
     silc_hash_table_add(channel->user_list, client, chl);
     silc_hash_table_add(client->channels, channel, chl);
@@ -915,17 +922,17 @@ void silc_server_notify(SilcServer server,
 	   is set on the channel now check whether this is the client that
 	   originally set the mode. */
 
-	/* Get public key that must be present in notify */
-	tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
-	if (!tmp || !silc_pkcs_public_key_decode(tmp, tmp_len,
-						 &founder_key)) {
-	  chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
-	  silc_server_force_cumode_change(server, sock, channel, chl, mode);
-	  notify_sent = TRUE;
-	  break;
-	}
-
 	if (channel->founder_key) {
+	  /* Get public key that must be present in notify */
+	  tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
+	  if (!tmp || !silc_pkcs_public_key_decode(tmp, tmp_len,
+						   &founder_key)) {
+	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
+	    notify_sent = TRUE;
+	    break;
+	  }
+
 	  /* Now match the public key we have cached and public key sent.
 	     They must match. */
 	  if (client && client->data.public_key && 
@@ -1287,9 +1294,14 @@ void silc_server_notify(SilcServer server,
     }
     silc_free(server_id);
 
+    /* Sending SERVER_SIGNOFF is not right way to signoff local connection */
+    if (SILC_IS_LOCAL(server_entry))
+      break;
+
     /* Free all client entries that this server owns as they will
        become invalid now as well. */
     silc_server_remove_clients_by_server(server, server_entry, TRUE);
+    silc_server_backup_del(server, server_entry);
 
     /* Remove the server entry */
     silc_idlist_del_server(local ? server->local_list :
@@ -2484,6 +2496,12 @@ SilcServerEntry silc_server_new_server(SilcServer server,
       silc_server_announce_clients(server, 0, sock);
       silc_server_announce_channels(server, 0, sock);
     }
+
+    /* By default the servers connected to backup router are disabled
+       until backup router has become the primary */
+    if (server->server_type == SILC_BACKUP_ROUTER &&
+	sock->type == SILC_SOCKET_TYPE_SERVER)
+      idata->status |= SILC_IDLIST_STATUS_DISABLED;
   }
 
   return new_server;

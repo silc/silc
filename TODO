@@ -25,8 +25,19 @@ TODO/bugs In SILC Server
 
  o Backup router related issues (Fix this to 0.9.x):
 
- 	o Channel user mode changes are notified unnecessarely when
-	  switching to backup router on router crash.
+	o Complete backup router support with standalone router
+
+	o Make the backup router work even if not all servers in the
+	  cell use it.  When primary goes down, also those that are
+	  not using it (are not connected locally) are signoffed.
+
+	o Configure use of backup router on normal server using HUP.
+
+	o Configure use of backup router on router using HUP.
+
+	o Rewrite SILC_LOG_DEBUG's in silcd/server_backup.c.
+
+	o Testing
 
  o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two

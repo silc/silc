@@ -1630,14 +1630,14 @@ resuming protocol is executed.  The protocol is advanced as follows:
   5. Backup router MUST wait for all packets with type value 3 before
      it continues with the protocol.  It knows from the session ID values
      set in the packet when it have received all packets.  The session
-     value should be different in all packets it have send earlier.
+     value should be different in all packets it have sent earlier.
      After the packets is received the backup router sends the
      SILC_PACKET_RESUME_ROUTER packet with type value 4 to the
      primary router that came back online.  This packet will indicate 
      that the backup router is now ready to resign as being primary
      router.  The session ID value in this packet MUST be the same as
      in first packet sent to the primary router.  During this time
-     the backup router should still route all packets it is receiving
+     the backup router must still route all packets it is receiving
      from server connections.
 
   6. The primary router receives the packet and send the
@@ -1683,7 +1683,7 @@ packet:
   3    SILC_SERVER_BACKUP_START_CONNECTED
   4    SILC_SERVER_BACKUP_START_ENDING
   5    SILC_SERVER_BACKUP_START_RESUMED
-  6    SILC_SERVER_BACKUP_START_GLOBAL
+  6    SILC_SERVER_BACKUP_START_RESUMED_GLOBAL
   20   SILC_SERVER_BACKUP_START_REPLACED
 
 If any other value is found in the type field the packet must be 

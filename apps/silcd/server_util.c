@@ -287,6 +287,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
   if (server_signoff) {
     SilcBuffer args, not;
 
+    SILC_LOG_DEBUG(("Sending SERVER_SIGNOFF for %d clients",
+		    argc - 1));
+
     /* Send SERVER_SIGNOFF notify to our primary router */
     if (server->router != entry) {
       args = silc_argument_payload_encode(1, argv, argv_lens,
@@ -474,18 +477,23 @@ void silc_server_update_clients_by_server(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
-  SILC_LOG_DEBUG(("Updating %s", silc_id_render(from->id,
-						SILC_ID_SERVER)));
-  SILC_LOG_DEBUG(("to %s", silc_id_render(to->id,
-					  SILC_ID_SERVER)));
-
+  if (from)
+    SILC_LOG_DEBUG(("Updating %s", silc_id_render(from->id,
+						  SILC_ID_SERVER)));
+  if (to)
+    SILC_LOG_DEBUG(("to %s", silc_id_render(to->id,
+					    SILC_ID_SERVER)));
 
   local = FALSE;
   if (silc_idcache_get_all(server->global_list->clients, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+
+	/* If entry is disabled skip it.  If entry is local to us, do not
+	   switch it to anyone else, it is ours so skip it. */
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	    SILC_IS_LOCAL(client)) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
@@ -532,7 +540,11 @@ void silc_server_update_clients_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+
+	/* If entry is disabled skip it.  If entry is local to us, do not
+	   switch it to anyone else, it is ours so skip it. */
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	    SILC_IS_LOCAL(client)) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
@@ -582,26 +594,48 @@ void silc_server_update_clients_by_server(SilcServer server,
 }
 
 /* Updates servers that are from `from' to be originated from `to'.  This
-   will also update the server's connection to `to's connection. */
+   will also update the server's connection to `to's connection. If
+   `local_toggle_enabled' is TRUE then local server's connections are
+   enabled, if FALSE they are disabled. */
 
 void silc_server_update_servers_by_server(SilcServer server, 
 					  SilcServerEntry from,
-					  SilcServerEntry to)
+					  SilcServerEntry to,
+					  bool local_toggle_enabled)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server_entry = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (silc_idcache_get_all(server->local_list->servers, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	server_entry = (SilcServerEntry)id_cache->context;
+
+	if (SILC_IS_LOCAL(server_entry)) {
+	  if (server_entry != server->id_entry) {
+	    if (local_toggle_enabled)
+	      server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
+	    else
+	      server_entry->data.status |= SILC_IDLIST_STATUS_DISABLED;
+	  }
+
+	  /* If entry is local to us, do not switch it to any oneelse,
+	     it is ours. */
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
+
 	if (server_entry->router == from) {
+	  SILC_LOG_DEBUG(("Updating server (local) %s",
+			  server_entry->server_name ? 
+			  server_entry->server_name : ""));
 	  server_entry->router = to;
 	  server_entry->connection = to->connection;
 	}
+
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
       }
@@ -613,10 +647,31 @@ void silc_server_update_servers_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	server_entry = (SilcServerEntry)id_cache->context;
+
+	if (SILC_IS_LOCAL(server_entry)) {
+	  if (server_entry != server->id_entry) {
+	    if (local_toggle_enabled)
+	      server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
+	    else
+	      server_entry->data.status |= SILC_IDLIST_STATUS_DISABLED;
+	  }
+
+	  /* If entry is local to us, do not switch it to anyone else,
+	     it is ours. */
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
+
 	if (server_entry->router == from) {
+	  SILC_LOG_DEBUG(("Updating server (global) %s",
+			  server_entry->server_name ? 
+			  server_entry->server_name : ""));
 	  server_entry->router = to;
 	  server_entry->connection = to->connection;
 	}
+
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
       }
@@ -947,6 +1002,8 @@ bool silc_server_connection_allowed(SilcServer server,
   SilcUInt32 r_protocol_version, l_protocol_version;
   SilcUInt32 r_software_version, l_software_version;
   char *r_vendor_version = NULL, *l_vendor_version;
+
+  SILC_LOG_DEBUG(("Checking whether connection is allowed"));
 
   /* Check version */
 

@@ -45,10 +45,13 @@ void silc_server_update_clients_by_server(SilcServer server,
 					  bool remove_from);
 
 /* Updates servers that are from `from' to be originated from `to'.  This
-   will also update the server's connection to `to's connection. */
+   will also update the server's connection to `to's connection. If
+   `local_toggle_enabled' is TRUE then local server's connections are
+   enabled, if FALSE they are disabled. */
 void silc_server_update_servers_by_server(SilcServer server, 
 					  SilcServerEntry from,
-					  SilcServerEntry to);
+					  SilcServerEntry to,
+					  bool local_toggle_enabled);
 
 /* Removes channels that are from `from. */
 void silc_server_remove_channels_by_server(SilcServer server, 

@@ -995,7 +995,7 @@ static const SilcStatusMessage silc_status_messages[] = {
   { STAT(NOT_ENOUGH_PARAMS), "Not enough parameters" },
   { STAT(TOO_MANY_PARAMS),   "Too many parameters" },
   { STAT(PERM_DENIED),       "Permission denied" },
-  { STAT(BANNED_FROM_SERVER),"You are banned from this server" },
+  { STAT(BANNED_FROM_SERVER),"You are not allowed to connect" },
   { STAT(BAD_PASSWORD),      "Cannot join channel. Incorrect password" },
   { STAT(CHANNEL_IS_FULL),   "Cannot join channel. Channel is full" },
   { STAT(NOT_INVITED),     "Cannot join channel. You have not been invited" },

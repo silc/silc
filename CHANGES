@@ -5,6 +5,26 @@ Sun Jun 23 17:32:31 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  and on some it's not.  Fallback encoding is used instead.
 	  Affected file lib/silcutil/silcstrutil.c.
 
+	* Fixed statistics updating for incoming server connection
+	  which could cause problems when re-connecting.  Affected
+	  file silcd/server.c.
+
+	* Preliminary backup router support for standalone router
+	  added.  Affected files in silcd/.
+
+	* Mark server connections in backup router disabled before
+	  and after backup protocol.  Affected file is
+	  silcd/server_backup.c.
+
+	* Added support for reconnecting to remote server connection
+	  even if the protocol fails, and if the configuration wants
+	  us to keep trying to connect anyway.
+
+	  Server connection is not allowed to backup router if
+	  backup router does not have connection to primary router yet.
+
+	  Affected file is silcd/server.c.
+
 Sat Jun 22 21:34:59 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_client_udpate_server function to update changed
