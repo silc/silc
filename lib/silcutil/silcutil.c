@@ -628,12 +628,15 @@ char *silc_id_render(void *id, uint16 type)
 int silc_string_compare(char *string1, char *string2)
 {
   int i;
-  int slen1 = strlen(string1);
-  int slen2 = strlen(string2);
+  int slen1;
+  int slen2;
   char *tmpstr1, *tmpstr2;
 
   if (!string1 || !string2)
     return FALSE;
+
+  slen1 = strlen(string1);
+  slen2 = strlen(string2);
 
   /* See if they are same already */
   if (!strncmp(string1, string2, strlen(string2)))

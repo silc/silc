@@ -116,6 +116,9 @@ int silc_string_match(const char *string1, const char *string2)
   char *s1;
   int ret = FALSE;
 
+  if (!string1 || !string2)
+    return ret;
+
   s1 = silc_string_regexify(string1);
   ret = silc_string_regex_match(s1, string2);
   silc_free(s1);
