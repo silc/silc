@@ -277,7 +277,6 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
     /* First check whether this fd has task in the fd queue */
     silc_mutex_lock(schedule->fd_queue->lock);
     task = silc_task_find(schedule->fd_queue, schedule->fd_list[i].fd);
-    silc_mutex_unlock(schedule->fd_queue->lock);
 
     /* If the task was found then execute its callbacks. If not then
        execute all generic tasks for that fd. */
@@ -285,7 +284,6 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
       /* Validity of the task is checked always before and after
 	 execution beacuse the task might have been unregistered
 	 in the callback function, ie. it is not valid anymore. */
-      silc_mutex_lock(schedule->fd_queue->lock);
 
       /* Is the task ready for reading */
       if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
@@ -311,6 +309,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
       silc_mutex_unlock(schedule->fd_queue->lock);
     } else {
       /* Run generic tasks for this fd. */
+
+      silc_mutex_unlock(schedule->fd_queue->lock);
 
       silc_mutex_lock(schedule->generic_queue->lock);
       if (!schedule->generic_queue->task) {
