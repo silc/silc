@@ -289,7 +289,7 @@ struct SilcChannelEntryStruct {
  * SOURCE
  */
 struct SilcServerEntryStruct {
-  /* Generate information */
+  /* General information */
   char *server_name;			     /* Server name */
   char *server_info;			     /* Server info */
   SilcServerID *server_id;		     /* Server ID */
