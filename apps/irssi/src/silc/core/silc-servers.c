@@ -221,7 +221,7 @@ static void sig_disconnected(SILC_SERVER_REC *server)
   silc_dlist_uninit(server->ftp_sessions);
 
   if (server->conn && server->conn->sock != NULL) {
-    silc_client_close_connection(silc_client, NULL, server->conn);
+    silc_client_close_connection(silc_client, server->conn);
     
     /* SILC closes the handle */
     g_io_channel_unref(net_sendbuffer_handle(server->handle));

@@ -1839,11 +1839,18 @@ o Padding (variable length) - This field is present only
 .ti 0
 2.3.12 Private Message Key Payload
 
-This payload is used to send key from client to another client that
-is going to be used to protect the private messages between these
-two clients.  If this payload is not sent normal session key 
-established by the SILC Key Exchange Protocol is used to protect
-the private messages.
+This payload is optional and can be used to send private message
+key between two clients in the network.  The packet is secured with
+normal session keys.  By default private messages are encrypted
+with session keys, and with this payload it is possible to set
+private key for private message encryption between two clients.
+
+The receiver of this payload SHOULD verify for example from user
+whether user wants to receive private message key.  Note that there
+are other, more secure ways of exchanging private message keys in
+the SILC network.  Instead of sending this payload it is possible to
+negotiate the private message key with SKE protocol using the Key
+Agreement payload directly peer to peer.
 
 This payload may only be sent by client to another client.  Server
 MUST NOT send this payload at any time.  After sending this payload

@@ -663,7 +663,7 @@ SILC_TASK_CALLBACK(silc_client_command_quit_cb)
 
   /* Close connection */
   q->client->internal->ops->disconnect(q->client, q->conn);
-  silc_client_close_connection(q->client, NULL, q->conn->sock->user_data);
+  silc_client_close_connection(q->client, q->conn->sock->user_data);
 
   silc_free(q);
 }

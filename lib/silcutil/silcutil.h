@@ -21,7 +21,7 @@
  *
  * DESCRIPTION
  *
- *    XXX
+ *    Utility functions.
  *
  ***/
 
@@ -84,50 +84,6 @@ char *silc_get_time();
  *
  ***/
 char *silc_to_upper(char *string);
-
-/****f* silcutil/SilcUtilAPI/silc_encode_pem
- *
- * SYNOPSIS
- *
- *    char *silc_encode_pem(unsigned char *data, SilcUInt32 len);
- *
- * DESCRIPTION
- *
- *    Encodes data into PEM encoding. Returns NULL terminated PEM encoded
- *    data string. Note: This is originally public domain code and is
- *    still PD.
- *
- ***/
-char *silc_encode_pem(unsigned char *data, SilcUInt32 len);
-
-/****f* silcutil/SilcUtilAPI/silc_encode_pem_file
- *
- * SYNOPSIS
- *
- *    char *silc_encode_pem_file(unsigned char *data, SilcUInt32 data_len);
- *
- * DESCRIPTION
- *
- *    Same as silc_encode_pem() but puts newline ('\n') every 72 characters.
- *
- ***/
-char *silc_encode_pem_file(unsigned char *data, SilcUInt32 data_len);
-
-/****f* silcutil/SilcUtilAPI/silc_decode_pem
- *
- * SYNOPSIS
- *
- *    unsigned char *silc_decode_pem(unsigned char *pem, SilcUInt32 pem_len,
- *                                   SilcUInt32 *ret_len);
- *
- * DESCRIPTION
- *
- *    Decodes PEM into data. Returns the decoded data. Note: This is
- *    originally public domain code and is still PD.
- *
- ***/
-unsigned char *silc_decode_pem(unsigned char *pem, SilcUInt32 pem_len,
-			       SilcUInt32 *ret_len);
 
 /****f* silcutil/SilcUtilAPI/silc_parse_userfqdn
  *

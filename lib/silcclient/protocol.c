@@ -572,8 +572,20 @@ silc_client_conn_auth_continue(unsigned char *auth_data,
   SilcClient client = (SilcClient)ctx->client;
   SilcBuffer packet;
   int payload_len = 0;
+  unsigned char *autf8 = NULL;
 
   SILC_LOG_DEBUG(("Start"));
+
+  /* Passphrase must be UTF-8 encoded, if it isn't encode it */
+  if (ctx->auth_meth == SILC_AUTH_PASSWORD && 
+      !silc_utf8_valid(auth_data, auth_data_len)) {
+    payload_len = silc_utf8_encoded_len(auth_data, auth_data_len, 
+					SILC_STRING_ASCII);
+    autf8 = silc_calloc(payload_len, sizeof(*autf8));
+    auth_data_len = silc_utf8_encode(auth_data, auth_data_len, 
+				     SILC_STRING_ASCII, autf8, payload_len);
+    auth_data = autf8;
+  }
 
   payload_len = 4 + auth_data_len;
   packet = silc_buffer_alloc(payload_len);
@@ -590,6 +602,7 @@ silc_client_conn_auth_continue(unsigned char *auth_data,
 			  NULL, 0, NULL, NULL,
 			  packet->data, packet->len, TRUE);
   silc_buffer_free(packet);
+  silc_free(autf8);
       
   /* Next state is end of protocol */
   protocol->state = SILC_PROTOCOL_STATE_END;

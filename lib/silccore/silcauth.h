@@ -129,7 +129,10 @@ SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
  *
  *    Encodes authentication payload into buffer and returns it.
  *    The `random_data' is provided only if doing public key authentication.
- *    The `auth_data' is the actual authentication data.
+ *    The `auth_data' is the actual authentication data.  If the
+ *    `method' is SILC_AUTH_PASSWORD the passphase in `auth_data' sent as
+ *    argument SHOULD be UTF-8 encoded, if not library will attempt to
+ *    encode it.
  *
  ***/
 SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
@@ -173,7 +176,9 @@ SilcAuthMethod silc_auth_get_method(SilcAuthPayload payload);
  *
  * DESCRIPTION
  *
- *    Get the authentication data. The caller must not free the data.
+ *    Get the authentication data. The caller must not free the data.  If
+ *    the authentication method is passphrase, then the returned string
+ *    is UTF-8 encoded passphrase.
  *
  ***/
 unsigned char *silc_auth_get_data(SilcAuthPayload payload,
@@ -266,9 +271,9 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
  *    Verifies the authentication data directly from the Authentication 
  *    Payload. Supports all authentication methods. If the authentication
  *    method is passphrase based then the `auth_data' and `auth_data_len'
- *    are the passphrase and its length. If the method is public key
- *    authentication then the `auth_data' is the SilcPublicKey and the
- *    `auth_data_len' is ignored.
+ *    are the passphrase and its length.  The passphrase MUST be UTF-8
+ *    encoded.  If the method is public key authentication then the
+ *    `auth_data' is the SilcPublicKey and the `auth_data_len' is ignored.
  *
  ***/
 bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
@@ -292,12 +297,13 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
  *    Verifies the authentication data directly from the Authentication 
  *    Payload. Supports all authentication methods. If the authentication
  *    method is passphrase based then the `auth_data' and `auth_data_len'
- *    are the passphrase and its length. If the method is public key
- *    authentication then the `auth_data' is the SilcPublicKey and the
- *    `auth_data_len' is ignored.
+ *    are the passphrase and its length.  The passphrase MUST be UTF-8
+ *    encoded.  If the method is public key authentication then the
+ *    `auth_data' is the SilcPublicKey and the `auth_data_len' is ignored.
  *
  ***/
-bool silc_auth_verify_data(const unsigned char *payload, SilcUInt32 payload_len,
+bool silc_auth_verify_data(const unsigned char *payload, 
+			   SilcUInt32 payload_len,
 			   SilcAuthMethod auth_method, const void *auth_data,
 			   SilcUInt32 auth_data_len, SilcHash hash, 
 			   const void *id, SilcIdType type);

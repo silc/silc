@@ -18,6 +18,14 @@ Fri Apr  5 16:03:03 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  lib/silcclient/protocol.c, silcd/protocol.c, 
 	  silcd/serverconfig.c, and lib/silccore/silcauth.c.
 
+	* Changed the silc_client_close_connection interface to not
+	  need the SilcSocketConnection which should not be visible
+	  to application.  Affected files are lib/silcclient/client.c
+	  and lib/silcclient/silcclient.h.
+
+	* Rewrote the text for Private Message Key Payload in the
+	  protocol specification.  Protocol TODO #11.
+
 Wed Apr  3 16:24:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Upgraded the protocol version to 1.1, updated protocol specs

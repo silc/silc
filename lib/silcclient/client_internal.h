@@ -155,6 +155,9 @@ void silc_client_packet_send(SilcClient client,
 			     unsigned char *data, 
 			     SilcUInt32 data_len, 
 			     int force_send);
+void silc_client_close_connection_real(SilcClient client,
+				       SilcSocketConnection sock,
+				       SilcClientConnection conn);
 void silc_client_disconnected_by_server(SilcClient client,
 					SilcSocketConnection sock,
 					SilcBuffer message);

@@ -202,7 +202,9 @@ are defined in the section 2.3 SILC Command Status Types.
 Every command that has some kind of ID as argument (for example
 <Client ID>) are actually ID Payloads, defined in [SILC2] that includes
 the type of the ID, length of the ID and the actual ID data.  This
-way variable length ID's can be sent as arguments.
+way variable length ID's can be sent as arguments.  Also note that
+all passphrases that may be sent in commands MUST be UTF-8 [RFC2279]
+encoded.
 
 
 .ti 0
@@ -603,8 +605,7 @@ List of all defined commands in SILC follows.
                         (3) [<invite list>]
 
 	This command replies with the invite list of the channel if it
-	exists.  The <invite list> may be omitted if the list was not
-        altered.
+	exists.
 
         Status messages:
 
@@ -1896,8 +1897,8 @@ security of this protocol.
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
-
-
+[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 2279, January 1998.
 
 
 

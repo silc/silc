@@ -15,6 +15,7 @@
 @LINK=silcprotocol.html:SILC Protocol Interface
 @LINK=silcconfig.html:SILC Config Interface
 @LINK=silcfileutil.html:SILC File Util Interface
+@LINK=silcstrutil.html:SILC String Util Interface
 @LINK=silcutil.html:SILC Util Interface
 @LINK=silclist.html:SILC List Interface
 @LINK=silcdlist.html:SILC Dynamic List Interface

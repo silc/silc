@@ -754,7 +754,7 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
       if (conn->active_session == session)
 	conn->active_session = NULL;
 
-      silc_client_close_connection(session->client, session->sock, conn);
+      silc_client_close_connection_real(session->client, session->sock, conn);
     } else {
       silc_socket_free(session->sock);
     }

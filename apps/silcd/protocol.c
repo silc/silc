@@ -690,10 +690,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
  */
 
 static int 
-silc_server_password_authentication(SilcServer server, char *remote_auth, 
-				    char *local_auth)
+silc_server_password_authentication(SilcServer server, char *local_auth, 
+				    char *remote_auth)
 {
-  if (!remote_auth || !local_auth)
+  if (!remote_auth || !local_auth || strlen(local_auth) != strlen(remote_auth))
     return FALSE;
 
   if (!memcmp(remote_auth, local_auth, strlen(local_auth)))

@@ -945,7 +945,7 @@ static int silc_pkcs_save_public_key_internal(char *filename,
   case SILC_PKCS_FILE_BIN:
     break;
   case SILC_PKCS_FILE_PEM:
-    data = silc_encode_pem_file(data, data_len);
+    data = silc_pem_encode_file(data, data_len);
     data_len = strlen(data);
     break;
   }
@@ -1008,7 +1008,7 @@ static int silc_pkcs_save_private_key_internal(char *filename,
   case SILC_PKCS_FILE_BIN:
     break;
   case SILC_PKCS_FILE_PEM:
-    data = silc_encode_pem_file(data, data_len);
+    data = silc_pem_encode_file(data, data_len);
     data_len = strlen(data);
     break;
   }
@@ -1097,7 +1097,7 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
     case SILC_PKCS_FILE_BIN:
       break;
     case SILC_PKCS_FILE_PEM:
-      data = silc_decode_pem(data, len, &len);
+      data = silc_pem_decode(data, len, &len);
       memset(old, 0, data_len);
       silc_free(old);
       old = data; 
@@ -1154,7 +1154,7 @@ int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
     case SILC_PKCS_FILE_BIN:
       break;
     case SILC_PKCS_FILE_PEM:
-      data = silc_decode_pem(data, len, &len);
+      data = silc_pem_decode(data, len, &len);
       break;
     }
 

@@ -113,18 +113,26 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
 {
   if (auth_meth == SILC_AUTH_PASSWORD) {
     /* p is a plain text password */
-    if (auth_data)
-      *auth_data = (void *) strdup(p);
-    if (auth_data_len)
-      *auth_data_len = (SilcUInt32) strlen(p);
+    if (auth_data && auth_data_len) {
+      if (!silc_utf8_valid(p, strlen(p))) {
+	*auth_data_len = silc_utf8_encoded_len(p, strlen(p), 0);
+	*auth_data = silc_calloc(*auth_data_len, sizeof(unsigned char));
+	silc_utf8_encode(p, strlen(p), SILC_STRING_ASCII, *auth_data,
+			 *auth_data_len);
+      } else {
+	*auth_data = (void *) strdup(p);
+	*auth_data_len = (SilcUInt32) strlen(p);
+      }
+    }
   } else if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
     /* p is a public key file name */
     SilcPublicKey public_key;
 
     if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_BIN)) {
-	SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line %lu: "
-			       "Could not load public key file!\n", line));
+	SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line "
+			       "%lu: Could not load public key file!\n", 
+			       line));
 	return FALSE;
       }
 

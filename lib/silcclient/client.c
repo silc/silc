@@ -806,14 +806,14 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
       if (SILC_IS_DISCONNECTING(sock)) {
 	if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
 	  client->internal->ops->disconnect(client, conn);
-	silc_client_close_connection(client, sock, conn);
+	silc_client_close_connection_real(client, sock, conn);
 	return;
       }
       
       SILC_LOG_DEBUG(("EOF from connection %d", sock->sock));
       if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
 	client->internal->ops->disconnect(client, conn);
-      silc_client_close_connection(client, sock, conn);
+      silc_client_close_connection_real(client, sock, conn);
       return;
     }
 
@@ -1278,9 +1278,9 @@ void silc_client_packet_queue_purge(SilcClient client,
    connection but `conn->sock' might be actually a different connection
    than the `sock'). */
 
-void silc_client_close_connection(SilcClient client,
-				  SilcSocketConnection sock,
-				  SilcClientConnection conn)
+void silc_client_close_connection_real(SilcClient client,
+				       SilcSocketConnection sock,
+				       SilcClientConnection conn)
 {
   int del = FALSE;
 
@@ -1395,6 +1395,14 @@ void silc_client_close_connection(SilcClient client,
   silc_socket_free(sock);
 }
 
+/* Closes the connection to the remote end */
+
+void silc_client_close_connection(SilcClient client,
+				  SilcClientConnection conn)
+{
+  silc_client_close_connection_real(client, NULL, conn);
+}
+
 /* Called when we receive disconnection packet from server. This 
    closes our end properly and displays the reason of the disconnection
    on the screen. */
@@ -1408,7 +1416,7 @@ SILC_TASK_CALLBACK(silc_client_disconnected_by_server_later)
   if (sock == NULL)
     return;
 
-  silc_client_close_connection(client, sock, sock->user_data);
+  silc_client_close_connection_real(client, sock, sock->user_data);
 }
 
 /* Called when we receive disconnection packet from server. This 

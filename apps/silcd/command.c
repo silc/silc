@@ -3825,15 +3825,13 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
 
       /* Save the passphrase */
-      passphrase = channel->passphrase = strdup(tmp);
+      passphrase = channel->passphrase = silc_memdup(tmp, strlen(tmp));
     }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
       /* Passphrase mode is unset. remove the passphrase */
-      if (channel->passphrase) {
-	silc_free(channel->passphrase);
-	channel->passphrase = NULL;
-      }
+      silc_free(channel->passphrase);
+      channel->passphrase = NULL;
     }
   }
 

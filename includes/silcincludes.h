@@ -230,6 +230,7 @@ extern "C" {
 #include "silcbuffmt.h"
 #include "silcnet.h"
 #include "silcfileutil.h"
+#include "silcstrutil.h"
 #include "silcutil.h"
 #include "silcconfig.h"
 #include "silcprotocol.h"

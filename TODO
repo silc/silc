@@ -145,11 +145,6 @@ describe new stuff to be added to protocol versions 1.x.
     payload MAC and not alone by packet MAC.  To be included in protocol 
     version 1.1.
 
- 11. Change the wording in Private Message Key Payload definition to
-     describe the problems of trusting the payload, and to indicate that
-     the receiver may not accept the key in the payload, and to describe
-     other means of distributing a key.
-
  16. Add STATS command after all to the protocol for providing practically
      same information client gets when connects to a server.  Normal
      server would send this to router always when received from client.

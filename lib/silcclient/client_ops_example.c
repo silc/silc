@@ -164,7 +164,8 @@ silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 
 /* Ask (interact, that is) a passphrase from user. The passphrase is
    returned to the library by calling the `completion' callback with
-   the `context'. */
+   the `context'. The returned passphrase SHOULD be in UTF-8 encoded,
+   if not then the library will attempt to encode. */
 
 static void 
 silc_ask_passphrase(SilcClient client, SilcClientConnection conn, 

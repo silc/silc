@@ -1047,8 +1047,9 @@ completed.  The purpose of authentication is to authenticate for example
 client connecting to the server.  However, usually clients are accepted
 to connect to server without explicit authentication.  Servers are
 required use authentication protocol when connecting.  The authentication
-may be based on passphrase (pre-shared-secret) or public key.  The
-connection authentication protocol is described in detail in [SILC3].
+may be based on passphrase (pre-shared-secret) or public key.  All
+passphrases sent in SILC protocol MUST be UTF-8 [RFC2279] encoded.
+The connection authentication protocol is described in detail in [SILC3].
 
 
 .ti 0
@@ -1118,9 +1119,9 @@ o Authentication Data (variable length) - Authentication
 
 
 If the authentication method is password based, the Authentication
-Data field includes the plaintext password.  It is safe to send
-plaintext password since the entire payload is encrypted.  In this
-case the Public Data Length is set to zero (0), but MAY also include
+Data field includes the plaintext UTF-8 encoded password.  It is safe
+to send plaintext password since the entire payload is encrypted.  In
+this case the Public Data Length is set to zero (0), but MAY also include
 random data for padding purposes.  It is also RECOMMENDED that maximum
 amount of padding is applied to SILC packet when using password based
 authentication.  This way it is not possible to approximate the length
@@ -1421,14 +1422,15 @@ software version = <major>[.<minor>[.<build or vendor string>]]
 .in 3
 
 Protocol version MAY provide both major and minor version.  Currently
-implementations MUST set the protocol version and accept the protocol
-version as SILC-1.1-<software version>.  If new protocol version causes
-in compatibilities with older version the the <minor> versio number MUST
-be incremented.  The <major> is incremented if new protocol version is
-fully incompatible.
+implementations MUST set the protocol version and accept at least the 
+protocol version as SILC-1.1-<software version>.  If new protocol version 
+causes in compatibilities with older version the the <minor> versio number 
+MUST be incremented.  The <major> is incremented if new protocol version 
+is fully incompatible.
 
-Software version MAY provide major, minor and build version.  The
-software version MAY be freely set and accepted.
+Software version MAY provide major, minor and build (vendor) version.
+The software version MAY be freely set and accepted.  The version string 
+MUST consist of printable US-ASCII characters.
 
 
 Thus, the version strings could be, for example:
@@ -1437,6 +1439,7 @@ Thus, the version strings could be, for example:
 SILC-1.1-2.0.2
 SILC-1.0-1.2
 SILC-1.1-1.0.VendorXYZ
+SILC-1.1-2.4.5 Vendor Limited
 .in 3
 
 
@@ -2220,8 +2223,8 @@ should have a forum to discuss the cell management issues.
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
-
-
+[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 2279, January 1998.
 
 
 

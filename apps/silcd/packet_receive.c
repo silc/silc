@@ -595,7 +595,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
     if (tmp) {
       silc_free(channel->passphrase);
-      channel->passphrase = strdup(tmp);
+      channel->passphrase = silc_memdup(tmp, tmp_len);
     }
 
     break;

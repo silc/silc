@@ -45,6 +45,7 @@ libsilcutil_a_SOURCES = \
 	silcnet.c \
 	silcschedule.c \
 	silcfileutil.c \
+	silcstrutil.c \
 	silcutil.c \
 	silchashtable.c \
 	silcsockconn.c	\
@@ -68,6 +69,7 @@ include_HEADERS =	\
 	silcdlist.h	\
 	silcfileutil.h	\
 	silcutil.h	\
+	silcstrutil.h	\
 	silctypes.h
 endif
 

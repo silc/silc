@@ -92,13 +92,28 @@ SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
 {
   SilcBuffer buffer;
   SilcUInt32 len;
+  unsigned char *autf8 = NULL;
+  SilcUInt32 autf8_len;
 
   SILC_LOG_DEBUG(("Encoding Authentication Payload"));
 
+  /* Passphrase MUST be UTF-8 encoded, encode if it is not */
+  if (method == SILC_AUTH_PASSWORD && !silc_utf8_valid(auth_data, auth_len)) {
+    autf8_len = silc_utf8_encoded_len(auth_data, auth_len, 0);
+    if (!autf8_len)
+      return NULL;
+    autf8 = silc_calloc(autf8_len, sizeof(*autf8));
+    auth_len = silc_utf8_encode(auth_data, auth_len, 0, autf8, autf8_len);
+    auth_data = (const unsigned char *)autf8;
+  }
+
   len = 2 + 2 + 2 + random_len + 2 + auth_len;
   buffer = silc_buffer_alloc_size(len);
-  if (!buffer)
+  if (!buffer) {
+    silc_free(autf8);
     return NULL;
+  }
+
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(len),
 		     SILC_STR_UI_SHORT(method),
@@ -108,6 +123,7 @@ SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
 		     SILC_STR_UI_XNSTRING(auth_data, auth_len),
 		     SILC_STR_END);
 
+  silc_free(autf8);
   return buffer;
 }
 
@@ -135,7 +151,7 @@ SilcAuthMethod silc_auth_get_method(SilcAuthPayload payload)
   return payload->auth_method;
 }
 
-/* Get the authentication data */
+/* Get the authentication data. If this is passphrase it is UTF-8 encoded. */
 
 unsigned char *silc_auth_get_data(SilcAuthPayload payload,
 				  SilcUInt32 *auth_len)
@@ -392,7 +408,8 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
 
 /* Same as above but parses the authentication payload before verify. */
 
-bool silc_auth_verify_data(const unsigned char *payload, SilcUInt32 payload_len,
+bool silc_auth_verify_data(const unsigned char *payload, 
+			   SilcUInt32 payload_len,
 			   SilcAuthMethod auth_method, const void *auth_data,
 			   SilcUInt32 auth_data_len, SilcHash hash, 
 			   const void *id, SilcIdType type)
