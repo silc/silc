@@ -638,11 +638,13 @@ List of all defined commands in SILC follows.
 
         When adding to or removing from the invite list the server MUST
         send the notify type SILC_NOTIFY_TYPE_INVITE to its primary router.
-        The client which executes this command MUST have at least channel
-        operator privileges to be able to add to or remove from the invite
-        list.  The wildcards MAY be used with this command.  When this
-        command is used to invite explicit client with <Client ID> the
-        ID MUST be added to the invite list by the server.
+        When the SILC_CHANNEL_MODE_INVITE is set the client which executes
+        this command MUST have at least channel operator privileges to be
+        able to add to or remove from the invite list.  If this channel
+        mode is not set the list manipulation is allowed for all clients.
+        Wildcards MAY be used with this command.  When this command is
+        used to invite explicit client with <Client ID> the ID MUST be
+        added to the invite list by the server.
 
         When this command is given with only <Channel ID> argument then
         the command merely returns the invite list of the channel.   This
