@@ -11,7 +11,8 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o Still crash with NICK_CHANGE notify.
+ o Resolve local hostname info using IDENTIFY and not use the local
+   clinet resolving (ie. update your local info in IDENTIFY reply).
 
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
