@@ -108,7 +108,10 @@ int silc_file_close(int fd);
  * DESCRIPTION
  *
  *    Reads the content of `filename' to a buffer.  The allocated buffer is
- *    returned.
+ *    returned.  This does not NULL terminate the buffer but EOF terminate
+ *    it.  The caller must replace the EOF with NULL if the buffer must be
+ *    NULL terminated.
+ *
  *    If the `return_len' pointer is not NULL, it's filled with the length of
  *    the file.
  *
