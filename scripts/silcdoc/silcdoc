@@ -68,13 +68,14 @@ if [ "$TYPE" = "HTML" ]; then
 
   # Generate the index and TOC files from the DIRECTORY files
   files=`find $SRC -name "DIRECTORY"`
-  index=`find $SRC -name "INDEX"`
-  cat $index >$DST/index.html
+  index=`find $SRC -name "LIBINDEX"`
+  curdate=`date`
+  sed -e "/@DATE@/s//$curdate/" $index >$DST/index.html
   for i in $files
   do
     # Get library name
-    name=`grep $i "@LIBRARY=" |cut -d=  -f2`
-    fname=`grep $i "@FILENAME" |cut -d=  -f2`
+    name=`grep "@LIBRARY=" $i |cut -d=  -f2`
+    fname=`grep "@FILENAME" $i |cut -d=  -f2`
 
     # Generate the TOC file for the library
     sh gen.sh gen_toc.php $i $DST/$fname
