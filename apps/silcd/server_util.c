@@ -1143,11 +1143,23 @@ void silc_server_send_connect_notifys(SilcServer server,
 			  ("Your host is %s, running version %s",
 			   server->server_name, server_version));
 
-  if (server->stat.clients && server->stat.servers + 1)
+  if (server->server_type == SILC_ROUTER) {
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			    ("There are %d clients on %d servers in SILC "
-			     "Network", server->stat.clients,
-			     server->stat.servers + 1));
+			    ("There are %d clients, %d servers and %d "
+			     "routers in SILC Network",
+			     server->stat.clients, server->stat.servers + 1,
+			     server->stat.routers));
+  } else {
+    if (server->stat.clients && server->stat.servers + 1)
+      SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			      ("There are %d clients, %d servers and %d "
+			       "routers in SILC Network",
+			       server->stat.clients, server->stat.servers + 1,
+			       (server->standalone ? 0 :
+				!server->stat.routers ? 1 :
+				server->stat.routers)));
+  }
+
   if (server->stat.cell_clients && server->stat.cell_servers + 1)
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("There are %d clients on %d server in our cell",
@@ -1391,9 +1403,10 @@ bool silc_server_force_cumode_change(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
-  silc_server_send_notify_cumode(server, sock, FALSE, channel, forced_mode,
-				 server->id, SILC_ID_SERVER,
-				 chl->client->id, NULL);
+  if (sock)
+    silc_server_send_notify_cumode(server, sock, FALSE, channel, forced_mode,
+				   server->id, SILC_ID_SERVER,
+				   chl->client->id, NULL);
 
   idp1 = silc_id_payload_encode(server->id, SILC_ID_SERVER);
   idp2 = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);

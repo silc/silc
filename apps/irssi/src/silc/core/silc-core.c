@@ -151,7 +151,7 @@ static bool silc_irssi_debug_print(char *file, char *function, int line,
 				   char *message, void *context)
 {
   printtext(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-	    "DEBUG: %s:%d:%s", function, line, message);
+	    "DEBUG: %s:%d: %s", function, line, message);
   return TRUE;
 }
 
@@ -161,7 +161,8 @@ static void sig_debug_setup_changed(void)
   if (debug) {
     const char *debug_string = settings_get_str("debug_string");
     i_debug = silc_debug = TRUE;
-    silc_log_set_debug_string(debug_string);
+    if (strlen(debug_string))
+      silc_log_set_debug_string(debug_string);
     silc_log_set_debug_callbacks(silc_irssi_debug_print, NULL, NULL, NULL);
     return;
   }
@@ -174,7 +175,7 @@ static void sig_debug_setup_changed(void)
 
 static bool silc_log_misc(SilcLogType type, char *message, void *context)
 {
-  fprintf(stderr, "%s\n", message);
+  printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "%s", message);
   return TRUE;
 }
 

@@ -1,3 +1,34 @@
+Sat Jun 15 12:09:14 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added some better info printing for client during connecting.
+	  Affected file silcd/server_util.c.
+
+	* Implemented the SILC_CHANNEL_UMODE_QUIET mode that can be used
+	  to silence a user on a channel.  Affected files are
+	  lib/silcclient/client_channel.c, irssi/src/silc/core/client_ops.c,
+	  irssi/src/fe-common/silc/module-formats.[ch], silcd/command.c
+	  and silcd/packet_receive.c.
+
+	* Fixed a fatal bug in handling of malformed command payload.
+	  Affected file silcd/command.c.
+
+	* Fixed a double free when announcing channel users to router.
+	  Affected file silcd/server.c.
+
+	* After successful authentication to channel founder mode, check
+	  that there isn't anyone else with founder mode on the channel.
+	  The one that authenticated will become founder and anyone
+	  else is demoted.  Affected file silcd/command.c.
+
+	* Added error printing of any error that has occurred during
+	  any command in client library.  Affected file is
+	  irssi/src/silc/core/client_ops.c.
+
+	* Removed some error printing from the client library and left
+	  it for the application to worry (from the error status it
+	  receives in 'command' client operation.  Affected file is
+	  lib/silcclient/command.c.
+
 Fri Jun 14 22:59:02 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new status types KEY_AGREEMENT_ALREADY_STARTED and

@@ -422,6 +422,9 @@ bool silc_server_init(SilcServer server)
 			   server, 10, 0, SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 
+  if (server->server_type == SILC_ROUTER)
+    server->stat.routers++;
+
   SILC_LOG_DEBUG(("Server initialized"));
 
   /* We are done here, return succesfully */
@@ -1628,10 +1631,12 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       }
 
       /* Statistics */
-      if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER)
+      if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER) {
 	server->stat.my_servers++;
-      else
+      } else {
 	server->stat.my_routers++;
+	server->stat.routers++;
+      }
       server->stat.servers++;
 
       id_entry = (void *)new_server;
@@ -2775,10 +2780,12 @@ void silc_server_free_sock_user_data(SilcServer server,
       silc_idlist_del_data(user_data);
       if (!silc_idlist_del_server(server->local_list, user_data))
 	silc_idlist_del_server(server->global_list, user_data);
-      if (sock->type == SILC_SOCKET_TYPE_SERVER)
+      if (sock->type == SILC_SOCKET_TYPE_SERVER) {
 	server->stat.my_servers--;
-      else
+      } else {
 	server->stat.my_routers--;
+	server->stat.routers--;
+      }
       server->stat.servers--;
       if (server->server_type == SILC_ROUTER)
 	server->stat.cell_servers--;
@@ -3716,6 +3723,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
   silc_buffer_pull(*channel_modes, len);
   silc_buffer_free(tmp);
   silc_free(fkey);
+  fkey = NULL;
+  fkey_len = 0;
 
   /* Now find all users on the channel */
   silc_hash_table_list(channel->user_list, &htl);
@@ -3761,6 +3770,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
     silc_buffer_pull(*channel_users_modes, len);
     silc_buffer_free(tmp);
     silc_free(fkey);
+    fkey = NULL;
+    fkey_len = 0;
     silc_buffer_free(clidp);
   }
   silc_hash_table_list_reset(&htl);

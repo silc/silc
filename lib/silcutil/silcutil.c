@@ -690,6 +690,9 @@ char *silc_client_chumode(SilcUInt32 mode)
   if (mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS)
     strncat(string, "r", 1);
 
+  if (mode & SILC_CHANNEL_UMODE_QUIET)
+    strncat(string, "q", 1);
+
   return strdup(string);
 }
 
@@ -709,6 +712,9 @@ char *silc_client_chumode_char(SilcUInt32 mode)
 
   if (mode & SILC_CHANNEL_UMODE_CHANOP)
     strncat(string, "@", 1);
+
+  if (mode & SILC_CHANNEL_UMODE_QUIET)
+    strncat(string, "&", 1);
 
   return strdup(string);
 }

@@ -1887,6 +1887,10 @@ void silc_server_channel_message(SilcServer server,
       SILC_LOG_DEBUG(("Channel is silenced from operators"));
       goto out;
     }
+    if (chl->mode & SILC_CHANNEL_UMODE_QUIET) {
+      SILC_LOG_DEBUG(("Sender is quieted on the channel"));
+      goto out;
+    }
 
     /* If the packet is coming from router, but the client entry is local 
        entry to us then some router is rerouting this to us and it is not 

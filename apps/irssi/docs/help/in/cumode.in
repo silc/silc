@@ -49,5 +49,14 @@ are available:
         as robots.  Client may set this mode only to
         itself.
 
+    q <nickname>[@<server>]
+
+        Set/unset user as quiet.  When set the user cannot
+        talk on the channel, and cannot send messages to
+        the channel.  This can be used by channel operator
+        to queit a certain misbehaving user.  The user cannot
+        unset this mode itself.  This mode cannot be set
+        or unset to yourself.
+
 
 See also: CMODE, UMODE

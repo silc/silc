@@ -545,6 +545,11 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 			 SILCTXT_CHANNEL_FOUNDER,
 			 channel->channel_name, client_entry2->nickname);
 
+    if (mode & SILC_CHANNEL_UMODE_QUIET && conn->local_entry == client_entry2)
+      printformat_module("fe-common/silc", 
+			 server, channel->channel_name, MSGLEVEL_CRAP,
+			 SILCTXT_CHANNEL_QUIETED, channel->channel_name);
+
     silc_free(tmp);
     break;
 
@@ -870,10 +875,12 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!success)
+  if (!success) {
+    silc_say_error("%s", silc_get_status_message(status));
     return;
+  }
 
-  switch(command) {
+  switch (command) {
   case SILC_COMMAND_INVITE:
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITING,

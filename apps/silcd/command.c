@@ -201,7 +201,6 @@ void silc_server_command_process(SilcServer server,
 					    packet->buffer->len);
   if (!ctx->payload) {
     SILC_LOG_ERROR(("Bad command payload, packet dropped"));
-    silc_buffer_free(packet->buffer);
     silc_packet_context_free(packet);
     silc_socket_free(ctx->sock);
     silc_free(ctx);
@@ -4413,6 +4412,8 @@ SILC_SERVER_CMD_FUNC(cumode)
       /* The client tries to claim the founder rights. */
       unsigned char *tmp_auth;
       SilcUInt32 tmp_auth_len;
+      SilcChannelClientEntry chl2;
+      SilcHashTableList htl;
 
       if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
 	  !channel->founder_key || !idata->public_key ||
@@ -4439,7 +4440,6 @@ SILC_SERVER_CMD_FUNC(cumode)
 	goto out;
       }
 
-      sender_mask = chl->mode |= SILC_CHANNEL_UMODE_CHANFO;
       notify = TRUE;
       founder_key = channel->founder_key;
       fkey = silc_pkcs_public_key_encode(founder_key, &fkey_len);
@@ -4448,6 +4448,20 @@ SILC_SERVER_CMD_FUNC(cumode)
 					      SILC_STATUS_ERR_AUTH_FAILED, 0);
 	goto out;
       }
+
+      /* There cannot be anyone else as founder on the channel now.  This
+	 client is definitely the founder due to this authentication */
+      silc_hash_table_list(channel->user_list, &htl);
+      while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
+	if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	  chl2->mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	  silc_server_force_cumode_change(server, NULL, channel, chl2,
+					  chl2->mode);
+	  break;
+	}
+      silc_hash_table_list_reset(&htl);
+
+      sender_mask = chl->mode |= SILC_CHANNEL_UMODE_CHANFO;
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
@@ -4466,27 +4480,11 @@ SILC_SERVER_CMD_FUNC(cumode)
   if (target_mask & SILC_CHANNEL_UMODE_CHANOP) {
     /* Promote to operator */
     if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {
-      if (!(sender_mask & SILC_CHANNEL_UMODE_CHANOP) &&
-	  !(sender_mask & SILC_CHANNEL_UMODE_CHANFO)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					      SILC_STATUS_ERR_NO_CHANNEL_PRIV,
-					      0);
-	goto out;
-      }
-
       chl->mode |= SILC_CHANNEL_UMODE_CHANOP;
       notify = TRUE;
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANOP) {
-      if (!(sender_mask & SILC_CHANNEL_UMODE_CHANOP) &&
-	  !(sender_mask & SILC_CHANNEL_UMODE_CHANFO)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					      SILC_STATUS_ERR_NO_CHANNEL_PRIV,
-					      0);
-	goto out;
-      }
-
       /* Demote to normal user */
       chl->mode &= ~SILC_CHANNEL_UMODE_CHANOP;
       notify = TRUE;
@@ -4561,6 +4559,28 @@ SILC_SERVER_CMD_FUNC(cumode)
       }
 
       chl->mode &= ~SILC_CHANNEL_UMODE_BLOCK_MESSAGES_ROBOTS;
+      notify = TRUE;
+    }
+  }
+
+  if (target_mask & SILC_CHANNEL_UMODE_QUIET) {
+    if (!(chl->mode & SILC_CHANNEL_UMODE_QUIET)) {
+      if (client == target_client) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					      SILC_STATUS_ERR_PERM_DENIED, 0);
+	goto out;
+      }
+      chl->mode |= SILC_CHANNEL_UMODE_QUIET;
+      notify = TRUE;
+    }
+  } else {
+    if (chl->mode & SILC_CHANNEL_UMODE_QUIET) {
+      if (client == target_client) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					      SILC_STATUS_ERR_PERM_DENIED, 0);
+	goto out;
+      }
+      chl->mode &= ~SILC_CHANNEL_UMODE_QUIET;
       notify = TRUE;
     }
   }
