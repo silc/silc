@@ -38,14 +38,8 @@ int silc_server_packet_send_real(SilcServer server,
   if (SILC_IS_DISCONNECTING(sock))
     return -1;
 
-  /* If rekey protocol is active we must assure that all packets are
-     sent through packet queue. */
-  if (SILC_SERVER_IS_REKEY(sock))
-    force_send = FALSE;
-
-  /* If outbound data is already pending do not force send */
-  if (SILC_IS_OUTBUF_PENDING(sock))
-    force_send = FALSE;
+  /* We do not force anymore packet sending */
+  force_send = FALSE;
 
   /* Send the packet */
   ret = silc_packet_send(sock, force_send);
