@@ -467,6 +467,25 @@ SilcUInt32 silc_hash_string(void *key, void *user_context)
   return h;
 }
 
+/* Hash UTF-8 string */
+
+SilcUInt32 silc_hash_utf8_string(void *key, void *user_context)
+{
+  unsigned char *s = (unsigned char *)key;
+  SilcUInt32 h = 0, g;
+
+  while (*s != '\0') {
+    h = (h << 4) + *s;
+    if ((g = h & 0xf0000000)) {
+      h = h ^ (g >> 24);
+      h = h ^ g;
+    }
+    s++;
+  }
+
+  return h;
+}
+
 /* Basic hash function to hash integers. May be used with the SilcHashTable. */
 
 SilcUInt32 silc_hash_uint(void *key, void *user_context)
@@ -607,6 +626,17 @@ bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
 {
   SilcUInt32 len = SILC_PTR_TO_32(user_context);
   return !memcmp(key1, key2, len);
+}
+
+/* Compares UTF-8 string. */
+
+bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
+{
+  int l1 = strlen((char *)key1);
+  int l2 = strlen((char *)key2);
+  if (l1 > l2)
+    l2 = l1;
+  return !memcmp(key1, key2, l2);
 }
 
 /* Compares two SILC Public keys. It may be used as SilcHashTable

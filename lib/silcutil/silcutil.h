@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -196,6 +196,21 @@ int silc_string_compare(char *string1, char *string2);
  ***/
 SilcUInt32 silc_hash_string(void *key, void *user_context);
 
+/****f* silcutil/SilcUtilAPI/silc_hash_utf8_string
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_hash_utf8_string(void *key, void *user_context);
+ *
+ * DESCRIPTION
+ *
+ *    Basic has function to hash UTF-8 strings. May be used with the
+ *    SilcHashTable.  Used with identifier strings.  The key is
+ *    expected to be casefolded.
+ *
+ ***/
+SilcUInt32 silc_hash_utf8_string(void *key, void *user_context);
+
 /****f* silcutil/SilcUtilAPI/silc_hash_uint
  *
  * SYNOPSIS
@@ -329,6 +344,20 @@ bool silc_hash_client_id_compare(void *key1, void *key2, void *user_context);
  *
  ***/
 bool silc_hash_data_compare(void *key1, void *key2, void *user_context);
+
+/****f* silcutil/SilcUtilAPI/silc_hash_utf8_compare
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
+ *
+ * DESCRIPTION
+ *
+ *    Compares UTF-8 strings.  Casefolded and NULL terminated strings are
+ *    expected.  May be used as SilcHashTable comparison function.
+ *
+ ***/
+bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_public_key_compare
  *

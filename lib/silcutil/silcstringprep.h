@@ -81,6 +81,8 @@ typedef enum {
 
 /* Profiles */
 #define SILC_IDENTIFIER_PREP "silc-identifier-prep"
+#define SILC_IDENTIFIERC_PREP "silc-identifierc-prep"
+#define SILC_CASEFOLD_PREP "silc-casefold-prep"
 
 /****f* silcutil/SilcStringprep/silc_stringprep
  *
@@ -118,7 +120,9 @@ typedef enum {
  *
  *    Available profile names:
  *
- *      SILC_IDENTIFIER_PREP
+ *      SILC_IDENTIFIER_PREP            Prepares SILC identifier strings
+ *      SILC_IDENTIFIERC_PREP           Casefolds identifier strings
+ *      SILC_CASEFOLD_PREP              Casefolding and normalizing
  *
  ***/
 SilcStringprepStatus

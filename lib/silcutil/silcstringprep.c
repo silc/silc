@@ -91,6 +91,24 @@ const Stringprep_profile stringprep_silc_identifier_prep[] =
   {0}
 };
 
+/* Identifier string case folding and normalizing */
+const Stringprep_profile stringprep_silc_identifierc_prep[] =
+{
+  {STRINGPREP_MAP_TABLE, 0, stringprep_rfc3454_B_1},
+  {STRINGPREP_MAP_TABLE, 0, stringprep_rfc3454_B_2},
+  {STRINGPREP_NFKC, 0, 0},
+  {0}
+};
+
+/* Case folding and normalizing */
+const Stringprep_profile stringprep_silc_casefold_prep[] =
+{
+  {STRINGPREP_MAP_TABLE, 0, stringprep_rfc3454_B_2},
+  {STRINGPREP_NFKC, 0, 0},
+  {0}
+};
+
+
 /* Prepares string according to the profile */
 
 SilcStringprepStatus
@@ -124,6 +142,10 @@ silc_stringprep(const unsigned char *bin, SilcUInt32 bin_len,
   /* Check profile. */
   if (!strcmp(profile_name, SILC_IDENTIFIER_PREP))
     profile = stringprep_silc_identifier_prep;
+  else if (!strcmp(profile_name, SILC_IDENTIFIERC_PREP))
+    profile = stringprep_silc_identifierc_prep;
+  else if (!strcmp(profile_name, SILC_CASEFOLD_PREP))
+    profile = stringprep_silc_casefold_prep;
   else
     return SILC_STRINGPREP_ERR_UNSUP_PROFILE;
 

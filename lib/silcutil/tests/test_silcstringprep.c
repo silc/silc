@@ -48,6 +48,26 @@ const test_st tests[] = {
    SILC_STRINGPREP_ERR_PROHIBITED},
 };
 
+const test_st tests_norm[] = {
+  {"Casefold 1",
+   "Pekka Riikonen", "pekka riikonen"},
+  {"Casefold 2",
+   "PEKKA RIIKONEN", "pekka riikonen"},
+  {"Casefold 3",
+   "pekka riikonen", "pekka riikonen"},
+  {"Casefold 4",
+   "#ksPPPAA", "#kspppaa"},
+  {"Normal casefold",
+   "Foobbeli-BofJFlkJDF", "foobbeli-bofjflkjdf"},
+  {"Nothing",
+   "sauna.silcnet.org", "sauna.silcnet.org"},
+  {"Locale test",
+   "Pהivהה", "pהivהה", 0, SILC_STRING_LOCALE},
+  {"Locale test2",
+   "#צהצצ/&#\\#(&(&#(.הצהִײהִײִײ^'", 
+   "#צהצצ/&#\\#(&(&#(.הצההצההצהצ^'", 0, SILC_STRING_LOCALE},
+};
+
 int main(int argc, char **argv)
 {
   bool success = FALSE;
@@ -61,6 +81,8 @@ int main(int argc, char **argv)
     silc_debug_hexdump = 1;
     silc_log_set_debug_string("*stringprep*,*utf8*");
   }
+
+  SILC_LOG_DEBUG(("--- Identifier string tests"));
 
   for (i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
     SILC_LOG_DEBUG(("Test case %d", i));
@@ -87,6 +109,43 @@ int main(int argc, char **argv)
       SILC_LOG_DEBUG((" %d: prepared out: %s", i, out));
       SILC_LOG_HEXDUMP((" %d: prepared dump", i), out, out_len);
       if (memcmp(out, tests[i].out, out_len)) {
+        SILC_LOG_DEBUG((" %d: Output mismatch", i));
+        goto err;
+      }
+    }
+    SILC_LOG_DEBUG((" %d: Output match", i));
+
+    silc_free(out);
+    out = NULL;
+  }
+
+  SILC_LOG_DEBUG(("--- Casefold tests"));
+
+  for (i = 0; i < sizeof(tests_norm) / sizeof(tests_norm[0]); i++) {
+    SILC_LOG_DEBUG(("Test case %d", i));
+    SILC_LOG_DEBUG((" %d: %s", i, tests_norm[i].comment));
+    SILC_LOG_DEBUG((" %d: in: %s", i, tests_norm[i].in));
+    SILC_LOG_DEBUG((" %d: out: %s", i, tests_norm[i].out));
+    SILC_LOG_DEBUG((" %d: ret: %d", i, tests_norm[i].ret));
+
+    if (!tests_norm[i].enc)
+      enc = SILC_STRING_UTF8;
+    else
+      enc = tests_norm[i].enc;
+    ret = silc_stringprep(tests_norm[i].in, strlen(tests_norm[i].in),
+			  enc, SILC_CASEFOLD_PREP, 0,
+			  &out, &out_len, enc);
+    if (ret != SILC_STRINGPREP_OK) {
+      if (tests_norm[i].ret != SILC_STRINGPREP_OK) {
+        SILC_LOG_DEBUG((" %d: Expected ret %d", i, ret));
+      } else {
+        SILC_LOG_DEBUG(("%d: Error: %d", i, ret));
+        goto err;
+      }
+    } else {
+      SILC_LOG_DEBUG((" %d: prepared out: %s", i, out));
+      SILC_LOG_HEXDUMP((" %d: prepared dump", i), out, out_len);
+      if (memcmp(out, tests_norm[i].out, out_len)) {
         SILC_LOG_DEBUG((" %d: Output mismatch", i));
         goto err;
       }

@@ -309,3 +309,30 @@ unsigned char *silc_identifier_check(const unsigned char *identifier,
 
   return utf8s;
 }
+
+/* Same as above but does not allocate memory, just checks the
+   validity of the string. */
+
+bool silc_identifier_verify(const unsigned char *identifier,
+			    SilcUInt32 identifier_len,
+			    SilcStringEncoding identifier_encoding,
+			    SilcUInt32 max_allowed_length)
+{
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return FALSE;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return FALSE;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_PREP, 0,
+			   NULL, NULL, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return FALSE;
+  }
+
+  return TRUE;
+}
