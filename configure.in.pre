@@ -307,16 +307,16 @@ AC_ARG_ENABLE(stack-trace,
 # Disable all assembler optimizations
 #
 AC_MSG_CHECKING(whether to enable assembler optimizations)
-want_asm="yes"
+want_asm=true
 AC_ARG_ENABLE(asm,
   [  --disable-asm           do not use assembler optimizations],
   [
     AC_MSG_RESULT(no)
-    want_asm="no"
+    want_asm=false
   ],
   [
     AC_MSG_RESULT(yes)
-    want_asm="yes"
+    want_asm=true
   ])
 
 
@@ -330,7 +330,7 @@ AC_DEFUN(SILC_ADD_CFLAGS,
 [ tmp_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $1"
   AC_MSG_CHECKING(whether $CC accepts $1 flag)
-  AC_TRY_LINK(, , AC_MSG_RESULT(yes), [AC_MSG_RESULT(no)
+  AC_TRY_LINK([], [], AC_MSG_RESULT(yes), [AC_MSG_RESULT(no)
 				       CFLAGS="$tmp_CFLAGS"
 				       $2])
   unset tmp_CFLAGS
@@ -1244,7 +1244,12 @@ fi
 echo " SIM support ...................: $sim_support"
 echo " IPv6 support ..................: $summary_ipv6"
 echo " Iconv support .................: $iconv_support"
-echo " Assembler optimizations .......: $want_asm"
+if test x$want_asm = xfalse; then
+  summary_asm="no"
+else
+  summary_asm="yes"
+fi
+echo " Assembler optimizations .......: $summary_asm"
 
 mp="MPI"
 if test x$mp_gmp = xtrue; then

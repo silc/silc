@@ -1,3 +1,10 @@
+Wed Mar 10 21:30:02 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Create one configure script from configure fragments
+	  (configure.ad).  This is a first step towards new distribution
+	  system.  Affected files prepare, configure.in.pre,
+	  lib/silcmath/mpi/configure.ad.
+
 Wed Mar 10 18:35:24 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Removed expiring of client key pair.  Affected file is
