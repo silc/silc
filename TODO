@@ -115,5 +115,5 @@ TODO in SILC Protocol
  24. Implement the <Requested Attributes> and the Attribute Payload to
      the core library, client and server.
 
- 25. Disconnect Payload change to include Status Type instead of
-     human readable error message?
+ 26. INVITE notify blocking by mode? Quiet user mode to quiet a user on
+     channel, settable by chan op/founder?

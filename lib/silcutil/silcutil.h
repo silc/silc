@@ -573,4 +573,18 @@ char *silc_get_real_name();
 bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
 			SilcUInt32 **list);
 
+
+/****f* silcutil/SilcUtilAPI/silc_get_status_message
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_get_status_message(SilcStatus status)
+ *
+ * DESCRIPTION
+ *
+ *    Returns status message string
+ *
+ ***/
+char *silc_get_status_message(unsigned char status);
+
 #endif	/* !SILCUTIL_H */

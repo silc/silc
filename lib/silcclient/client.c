@@ -1479,16 +1479,28 @@ SILC_TASK_CALLBACK(silc_client_disconnected_by_server_later)
 
 void silc_client_disconnected_by_server(SilcClient client,
 					SilcSocketConnection sock,
-					SilcBuffer message)
+					SilcBuffer packet)
 {
-  char *msg;
+  SilcStatus status;
+  char *message = NULL;
 
   SILC_LOG_DEBUG(("Server disconnected us, sock %d", sock->sock));
 
-  msg = silc_memdup(message->data, message->len);
+  if (packet->len < 1)
+    return;
+
+  status = (SilcStatus)packet->data[0];
+
+  if (packet->len > 1 &&
+      silc_utf8_valid(packet->data + 1, packet->len - 1))
+    message = silc_memdup(packet->data, packet->len);
+
   client->internal->ops->say(client, sock->user_data, 
-			     SILC_CLIENT_MESSAGE_AUDIT, msg);
-  silc_free(msg);
+			     SILC_CLIENT_MESSAGE_AUDIT, 
+			     "Server closed connection: %s (%d) %s",
+			     silc_get_status_message(status), status,
+			     message ? message : "");
+  silc_free(message);
 
   SILC_SET_DISCONNECTED(sock);
 

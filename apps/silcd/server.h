@@ -149,7 +149,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
 					int notify);
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
-				   const char *fmt, ...);
+				   SilcStatus status, ...);
 SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 						SilcServerID *router_id,
 						char *cipher,

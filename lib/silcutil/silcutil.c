@@ -957,3 +957,77 @@ bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
 
   return TRUE;
 }
+
+/* Status message structure. Messages are defined below. */
+typedef struct {
+  SilcStatus status;
+  char *message;
+} SilcStatusMessage;
+
+#define STAT(x) SILC_STATUS_ERR_##x
+const SilcStatusMessage silc_status_messages[] = {
+
+  { STAT(NO_SUCH_NICK),      "There was no such nickname" },
+  { STAT(NO_SUCH_CHANNEL),   "There was no such channel" },
+  { STAT(NO_SUCH_SERVER),    "There was no such server" },
+  { STAT(INCOMPLETE_INFORMATION),  "Incomplete registration information" },
+  { STAT(NO_RECIPIENT),      "No recipient given" },
+  { STAT(UNKNOWN_COMMAND),   "Unknown command" },
+  { STAT(WILDCARDS),         "Wilcrads not allowed" },
+  { STAT(NO_CLIENT_ID),      "No Client ID given" },
+  { STAT(NO_CHANNEL_ID),     "No Channel ID given" },
+  { STAT(NO_SERVER_ID),      "No Server ID given" },
+  { STAT(BAD_CLIENT_ID),     "Bad Client ID" },
+  { STAT(BAD_CHANNEL_ID),    "Bad Channel ID" },
+  { STAT(NO_SUCH_CLIENT_ID), "There is no such client" },
+  { STAT(NO_SUCH_CHANNEL_ID),"There is no such channel" },
+  { STAT(NICKNAME_IN_USE),   "Nickname already exists" },
+  { STAT(NOT_ON_CHANNEL),    "You are not on that channel" },
+  { STAT(USER_NOT_ON_CHANNEL),"They are not on the channel" },
+  { STAT(USER_ON_CHANNEL),   "User already on the channel" },
+  { STAT(NOT_REGISTERED),    "You have not registered" },
+  { STAT(NOT_ENOUGH_PARAMS), "Not enough parameters" },
+  { STAT(TOO_MANY_PARAMS),   "Too many parameters" },
+  { STAT(PERM_DENIED),       "Permission denied" },
+  { STAT(BANNED_FROM_SERVER),"You are banned from this server" },
+  { STAT(BAD_PASSWORD),      "Cannot join channel. Incorrect password" },
+  { STAT(CHANNEL_IS_FULL),   "Cannot join channel. Channel is full" },
+  { STAT(NOT_INVITED),     "Cannot join channel. You have not been invited" },
+  { STAT(BANNED_FROM_CHANNEL), "Cannot join channel. You have been banned" },
+  { STAT(UNKNOWN_MODE),    "Unknown mode" },
+  { STAT(NOT_YOU),         "Cannot change mode for other users" },
+  { STAT(NO_CHANNEL_PRIV), "Permission denied. You are not channel operator" },
+  { STAT(NO_CHANNEL_FOPRIV),"Permission denied. You are not channel founder" },
+  { STAT(NO_SERVER_PRIV),  "Permission denied. You are not server operator" },
+  { STAT(NO_ROUTER_PRIV),  "Permission denied. You are not SILC operator" },
+  { STAT(BAD_NICKNAME),    "Bad nickname" },
+  { STAT(BAD_CHANNEL),     "Bad channel name" },
+  { STAT(AUTH_FAILED),     "Authentication failed" },
+  { STAT(UNKNOWN_ALGORITHM), "Unsupported algorithm" },
+  { STAT(NO_SUCH_SERVER_ID), "No such Server ID" },
+  { STAT(RESOURCE_LIMIT), "No more free resources" },
+  { STAT(NO_SUCH_SERVICE), "Service doesn't exist" },
+  { STAT(NOT_AUTHENTICATED), "You have not been authenticated" },
+  { STAT(BAD_SERVER_ID), "Server ID is not valid" },
+  { STAT(KEY_EXCHANGE_FAILED), "Key exchange failed" },
+  { STAT(BAD_VERSION), "Bad version" },
+
+  { 0, NULL }
+};
+
+/* Returns status message string */
+
+char *silc_get_status_message(unsigned char status)
+{
+  int i;
+
+  for (i = 0; silc_status_messages[i].message; i++) {
+    if (silc_status_messages[i].status == status)
+      break;
+  }
+
+  if (silc_status_messages[i].message == NULL)
+    return "";
+
+  return silc_status_messages[i].message;
+}

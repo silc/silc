@@ -1,3 +1,18 @@
+Sun Apr 21 19:44:38 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Disconnect Payload includes now the status type.  Updated
+	  the protocol specs and the code.  Protocol TODO #25.
+	  Affected files are silcd/server.c, lib/silcclient/client.c.
+
+	* Added NOT_AUTHENTICATED, BAD_SERVER_ID, INCOMPLETE_INFORMATION,
+	  KEY_EXCHANGE_FAILED and BAD_VERSION error status types.
+	  Moved the silc_client_command_status_messages table to the
+	  lib/silcutil/silcutil.c and added new funtion
+	  silc_get_status_message, which deprecates function
+	  silc_client_status_message.  Affected files are 
+	  lib/silccore/silcstatus.h, lib/silcclient/command_reply.[ch],
+	  lib/silcutil/silcutil.[ch].
+
 Fri Apr 19 17:35:15 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined that the nickname hash in Client ID MUST be from

@@ -790,8 +790,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     silc_free(sconn);
     silc_schedule_task_del_by_callback(server->schedule,
 				       silc_server_failure_callback);
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Key exchange failed");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     return;
   }
 
@@ -821,8 +821,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     silc_free(sconn);
     silc_schedule_task_del_by_callback(server->schedule,
 				       silc_server_failure_callback);
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Key exchange failed");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     return;
   }
   silc_ske_free_key_material(ctx->keymat);
@@ -879,8 +879,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     silc_free(sconn);
     silc_schedule_task_del_by_callback(server->schedule,
 				       silc_server_failure_callback);
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Key exchange failed");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     return;
   }
 
@@ -939,8 +939,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_free(ctx->dest_id);
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Authentication failed");
+    silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
+				  NULL);
     goto out;
   }
 
@@ -999,8 +999,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   if (!id_entry) {
     silc_free(ctx->dest_id);
     SILC_LOG_ERROR(("Cannot add new server entry to cache"));
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Authentication failed");
+    silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
+				  NULL);
     goto out;
   }
 
@@ -1112,7 +1112,8 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 		    sock->ip ? sock->ip : ""));
     server->stat.conn_failures++;
     silc_server_disconnect_remote(server, sock,
-				  "Server closed connection: Unknown host");
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				  "Unknown host or IP");
     return;
   }
 
@@ -1137,10 +1138,9 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     /* The connection is denied */
     SILC_LOG_INFO(("Connection %s (%s) is denied",
 		   sock->hostname, sock->ip));
-    silc_server_disconnect_remote(server, sock, deny->reason ?
-				  deny->reason :
-				  "Server closed connection: "
-				  "Connection refused");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_BANNED_FROM_SERVER,
+				  deny->reason);
     server->stat.conn_failures++;
     return;
   }
@@ -1162,8 +1162,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
 		   sock->ip));
     silc_server_disconnect_remote(server, sock,
-				  "Server closed connection: "
-				  "Connection refused");
+				  SILC_STATUS_ERR_BANNED_FROM_SERVER);
     server->stat.conn_failures++;
     return;
   }
@@ -1289,8 +1288,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     silc_free(ctx);
     silc_schedule_task_del_by_callback(server->schedule,
 				       silc_server_failure_callback);
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Key exchange failed");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED,
+				  NULL);
     server->stat.auth_failures++;
     return;
   }
@@ -1320,8 +1320,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     silc_free(ctx);
     silc_schedule_task_del_by_callback(server->schedule,
 				       silc_server_failure_callback);
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Key exchange failed");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     server->stat.auth_failures++;
     return;
   }
@@ -1400,8 +1400,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     silc_free(ctx);
     silc_schedule_task_del_by_callback(server->schedule,
 				       silc_server_failure_callback);
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Authentication failed");
+    silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
+				  NULL);
     server->stat.auth_failures++;
     return;
   }
@@ -1434,9 +1434,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (!client) {
 	SILC_LOG_ERROR(("Could not add new client to cache"));
 	silc_free(sock->user_data);
-	silc_server_disconnect_remote(server, sock,
-				      "Server closed connection: "
-				      "Authentication failed");
+	silc_server_disconnect_remote(server, sock, 
+				      SILC_STATUS_ERR_AUTH_FAILED, NULL);
 	server->stat.auth_failures++;
 	goto out;
       }
@@ -1539,9 +1538,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (!new_server) {
 	SILC_LOG_ERROR(("Could not add new server to cache"));
 	silc_free(sock->user_data);
-	silc_server_disconnect_remote(server, sock,
-				      "Server closed connection: "
-				      "Authentication failed");
+	silc_server_disconnect_remote(server, sock, 
+				      SILC_STATUS_ERR_AUTH_FAILED, NULL);
 	server->stat.auth_failures++;
 	goto out;
       }
@@ -1935,13 +1933,26 @@ void silc_server_packet_parse_type(SilcServer server,
   /* Parse the packet type */
   switch (type) {
   case SILC_PACKET_DISCONNECT:
-    SILC_LOG_DEBUG(("Disconnect packet"));
-    if (packet->flags & SILC_PACKET_FLAG_LIST)
-      break;
-    if (silc_string_is_ascii(packet->buffer->data, packet->buffer->len)) {
-      /* Duplicate to null terminate the string. */
-      char *message = silc_memdup(packet->buffer->data, packet->buffer->len);
-      SILC_LOG_ERROR(("%s", message));
+    {
+      SilcStatus status;
+      char *message = NULL;
+
+      SILC_LOG_DEBUG(("Disconnect packet"));
+
+      if (packet->flags & SILC_PACKET_FLAG_LIST)
+	break;
+      if (packet->buffer->len < 1)
+	break;
+
+      status = (SilcStatus)packet->buffer->data[0];
+      if (packet->buffer->len > 1 &&
+	  silc_utf8_valid(packet->buffer->data + 1, packet->buffer->len - 1))
+	message = silc_memdup(packet->buffer->data, packet->buffer->len);
+
+      SILC_LOG_ERROR(("Disconnected by %s (%s): %s (%d) %s", 
+		      sock->ip, sock->hostname,
+		      silc_get_status_message(status), status,
+		      message ? message : ""));
       silc_free(message);
     }
     break;
@@ -2444,25 +2455,48 @@ void silc_server_close_connection(SilcServer server,
 
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
-				   const char *fmt, ...)
+				   SilcStatus status, ...)
 {
   va_list ap;
-  unsigned char buf[4096];
+  unsigned char buf[512];
+  SilcBuffer buffer;
+  char *cp;
+  int len;
 
   if (!sock)
     return;
 
   memset(buf, 0, sizeof(buf));
-  va_start(ap, fmt);
-  vsprintf(buf, fmt, ap);
+  va_start(ap, status);
+  cp = va_arg(ap, char *);
+  if (cp) {
+    vsnprintf(buf, sizeof(buf) - 1, cp, ap);
+    cp = buf;
+  }
   va_end(ap);
 
   SILC_LOG_DEBUG(("Disconnecting remote host"));
 
   /* Notify remote end that the conversation is over. The notify message
      is tried to be sent immediately. */
+
+  len = 1;
+  if (cp)
+    len += silc_utf8_encoded_len(buf, strlen(buf), SILC_STRING_ASCII);
+
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer)
+    goto out;
+
+  buffer->data[0] = status;
+  if (cp)
+    silc_utf8_encode(buf, strlen(buf), SILC_STRING_ASCII, buffer->data + 1,
+		     buffer->len - 1);
   silc_server_packet_send(server, sock, SILC_PACKET_DISCONNECT, 0,
-			  buf, strlen(buf), TRUE);
+			  buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+ out:
   silc_server_packet_queue_purge(server, sock);
 
   /* Mark the connection to be disconnected */
@@ -2930,6 +2964,7 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
 {
   SilcServer server = (SilcServer)context;
   SilcSocketConnection sock = server->sockets[fd];
+  SilcProtocolType protocol = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -2942,6 +2977,7 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
   /* If we have protocol active we must assure that we call the protocol's
      final callback so that all the memory is freed. */
   if (sock->protocol) {
+    protocol = sock->protocol->protocol->type;
     silc_protocol_cancel(sock->protocol, server->schedule);
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
     silc_protocol_execute_final(sock->protocol, server->schedule);
@@ -2952,7 +2988,11 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
   if (sock->user_data)
     silc_server_free_sock_user_data(server, sock, NULL);
 
-  silc_server_disconnect_remote(server, sock, "Server closed connection: "
+  silc_server_disconnect_remote(server, sock, 
+				protocol == 
+				SILC_PROTOCOL_SERVER_CONNECTION_AUTH ?
+				SILC_STATUS_ERR_AUTH_FAILED :
+				SILC_STATUS_ERR_KEY_EXCHANGE_FAILED,
 				"Connection timeout");
 }
 

@@ -1863,8 +1863,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   /* Remove the old cache entry. */
   if (!silc_idcache_del_by_context(server->local_list->clients, client)) {
     SILC_LOG_INFO(("Unauthenticated client attempted to register to network"));
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-                                  "You have not been authenticated");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_NOT_AUTHENTICATED, NULL);
     return NULL;
   }
 
@@ -1879,8 +1879,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     silc_free(realname);
     SILC_LOG_ERROR(("Client %s (%s) sent incomplete information, closing "
 		    "connection", sock->hostname, sock->ip));
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-                                  "Incomplete client information");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION, 
+				  NULL);
     return NULL;
   }
 
@@ -1889,8 +1890,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     silc_free(realname);
     SILC_LOG_ERROR(("Client %s (%s) did not send its username, closing "
 		    "connection", sock->hostname, sock->ip));
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-                                  "Incomplete client information");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				  NULL);
     return NULL;
   }
 
@@ -1925,8 +1927,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       SILC_LOG_ERROR(("Client %s (%s) sent incomplete information, closing "
 		      "connection", sock->hostname, sock->ip));
       silc_server_disconnect_remote(server, sock, 
-				    "Server closed connection: "
-				    "Incomplete client information");
+				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				    NULL);
       return NULL;
     }
     
@@ -1945,8 +1947,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       SILC_LOG_ERROR(("Client %s (%s) sent incomplete information, closing "
 		      "connection", sock->hostname, sock->ip));
       silc_server_disconnect_remote(server, sock, 
-				    "Server closed connection: "
-				    "Incomplete client information");
+				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				    NULL);
       return NULL;
     }
     
@@ -1994,7 +1996,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     nickfail++;
     if (nickfail > 9) {
       silc_server_disconnect_remote(server, sock, 
-				    "Server closed connection: Bad nickname");
+				    SILC_STATUS_ERR_BAD_NICKNAME, NULL);
       return NULL;
     }
     snprintf(&nickname[strlen(nickname) - 1], 1, "%d", nickfail);
@@ -2071,8 +2073,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
       SILC_LOG_INFO(("Unauthenticated %s attempted to register to "
 		     "network", (sock->type == SILC_SOCKET_TYPE_SERVER ?
 				 "server" : "router")));
-      silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				    "You have not been authenticated");
+      silc_server_disconnect_remote(server, sock, 
+				    SILC_STATUS_ERR_NOT_AUTHENTICATED, NULL);
       return NULL;
     }
     local = FALSE;
@@ -2114,8 +2116,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   if (!silc_id_is_valid_server_id(server, server_id, sock)) {
     SILC_LOG_INFO(("Invalid server ID sent by %s (%s)",
 		   sock->ip, sock->hostname));
-    silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				  "Your Server ID is not valid");
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_BAD_SERVER_ID, NULL);
     silc_free(server_name);
     return NULL;
   }
@@ -2932,9 +2934,9 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
   if (!reply || !silc_command_get_status(reply->payload, NULL, NULL)) {
     SILC_LOG_ERROR(("Client %s (%s) tried to resume unknown client, "
 		    "closing connection", sock->hostname, sock->ip));
-    silc_server_disconnect_remote(server, sock, 
-				  "Server closed connection: "
-				  "Incomplete resume information");
+    silc_server_disconnect_remote(server, sock,
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				  "Resuming not possible");
     goto out;
   }
 
@@ -2948,9 +2950,9 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
       if (!client) {
 	SILC_LOG_ERROR(("Client %s (%s) tried to resume unknown client, "
 			"closing connection", sock->hostname, sock->ip));
-	silc_server_disconnect_remote(server, sock, 
-				      "Server closed connection: "
-				      "Incomplete resume information");
+	silc_server_disconnect_remote(server, sock,
+				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				      "Resuming not possible");
 	goto out;
       }
     }
@@ -2958,9 +2960,9 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
     if (!(client->mode & SILC_UMODE_DETACHED)) {
       SILC_LOG_ERROR(("Client %s (%s) tried to resume un-detached client, "
 		      "closing connection", sock->hostname, sock->ip));
-      silc_server_disconnect_remote(server, sock, 
-				    "Server closed connection: "
-				    "Incomplete resume information");
+      silc_server_disconnect_remote(server, sock,
+				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				    "Resuming not possible");
       goto out;
     }
   }
@@ -3020,8 +3022,9 @@ void silc_server_resume_client(SilcServer server,
     if (!client_id || auth_len < 128) {
       SILC_LOG_ERROR(("Client %s (%s) sent incomplete resume information, "
 		      "closing connection", sock->hostname, sock->ip));
-      silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				    "Incomplete resume information");
+      silc_server_disconnect_remote(server, sock,
+				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				    "Resuming not possible");
       return;
     }
 
@@ -3050,9 +3053,9 @@ void silc_server_resume_client(SilcServer server,
       } else {
 	SILC_LOG_ERROR(("Client %s (%s) tried to resume unknown client, "
 			"closing connection", sock->hostname, sock->ip));
-	silc_server_disconnect_remote(server, sock, 
-				      "Server closed connection: "
-				      "Incomplete resume information");
+	silc_server_disconnect_remote(server, sock,
+				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				      "Resuming not possible");
       }
       return;
     }
@@ -3081,9 +3084,9 @@ void silc_server_resume_client(SilcServer server,
       if (server->server_type == SILC_SERVER) {
 	SILC_LOG_ERROR(("Client %s (%s) tried to resume un-detached client, "
 			"closing connection", sock->hostname, sock->ip));
-	silc_server_disconnect_remote(server, sock, 
-				      "Server closed connection: "
-				      "Incomplete resume information");
+	silc_server_disconnect_remote(server, sock,
+				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				      "Resuming not possible");
 	return;
       }
     }
@@ -3092,9 +3095,9 @@ void silc_server_resume_client(SilcServer server,
        resolve it first. */
     if (!detached_client->data.public_key) {
       if (server->standalone) {
-	silc_server_disconnect_remote(server, sock, 
-				      "Server closed connection: "
-				      "Incomplete resume information");
+	silc_server_disconnect_remote(server, sock,
+				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				      "Resuming not possible");
       } else {
 	/* We must retrieve the detached client's public key by sending
 	   GETKEY command. Reprocess this packet after receiving the key */
@@ -3127,9 +3130,9 @@ void silc_server_resume_client(SilcServer server,
 					     idata->public_key)) {
       /* We require that the connection and resuming authentication data
 	 must be using same key pair. */
-      silc_server_disconnect_remote(server, sock, 
-				    "Server closed connection: "
-				    "Incomplete resume information");
+      silc_server_disconnect_remote(server, sock,
+				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				    "Resuming not possible");
       return;
     }
 
@@ -3141,8 +3144,9 @@ void silc_server_resume_client(SilcServer server,
 			       SILC_ID_CLIENT)) {
       SILC_LOG_ERROR(("Client %s (%s) resume authentication failed, "
 		      "closing connection", sock->hostname, sock->ip));
-      silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				    "Incomplete resume information");
+      silc_server_disconnect_remote(server, sock,
+				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				    "Resuming not possible");
       return;
     }
 
@@ -3200,8 +3204,7 @@ void silc_server_resume_client(SilcServer server,
 	nickfail++;
 	if (nickfail > 9) {
 	  silc_server_disconnect_remote(server, sock, 
-					"Server closed connection: "
-					"Bad nickname");
+					SILC_STATUS_ERR_BAD_NICKNAME, NULL);
 	  return;
 	}
 	snprintf(&client->nickname[strlen(client->nickname) - 1], 1, 

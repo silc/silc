@@ -1044,6 +1044,8 @@ represents the Disconnect Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|    Status     |                                               |
++-+-+-+-+-+-+-+-+                                               +
 |                                                               |
 ~                      Disconnect Message                       ~
 |                                                               |
@@ -1053,12 +1055,13 @@ represents the Disconnect Payload.
 .ce
 Figure 7:  Disconnect Payload
 
-
-
-
 .in 6
-o Disconnect Message (variable length) - Human readable
-  reason of the disconnection.
+o Status (1 byte) - Indicates the Status Type, defined in [SILC3]
+  for the reason of disconnection.
+
+o Disconnect Message (variable length) - Human readable UTF-8
+  encoded string indicating reason of the disconnection.  This
+  MAY be omitted.
 .in 3
 
 

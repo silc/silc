@@ -937,7 +937,7 @@ bool silc_server_connection_allowed(SilcServer server,
       SILC_LOG_INFO(("Connection %s (%s) is too old version",
 		     sock->hostname, sock->ip));
       silc_server_disconnect_remote(server, sock, 
-				    "Server closed connection: "
+				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old protocol version");
       return FALSE;
     }
@@ -948,7 +948,7 @@ bool silc_server_connection_allowed(SilcServer server,
       SILC_LOG_INFO(("Connection %s (%s) is too old version",
 		     sock->hostname, sock->ip));
       silc_server_disconnect_remote(server, sock, 
-				    "Server closed connection: "
+				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old software version");
       return FALSE;
     }
@@ -959,7 +959,7 @@ bool silc_server_connection_allowed(SilcServer server,
       SILC_LOG_INFO(("Connection %s (%s) is unsupported version",
 		     sock->hostname, sock->ip));
       silc_server_disconnect_remote(server, sock, 
-				    "Server closed connection: "
+				    SILC_STATUS_ERR_BAD_VERSION,
 				    "Your software is not supported");
       return FALSE;
     }
@@ -977,7 +977,7 @@ bool silc_server_connection_allowed(SilcServer server,
     SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
 		   sock->hostname, sock->ip));
     silc_server_disconnect_remote(server, sock, 
-				  "Server closed connection: "
+				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Server is full, try again later");
     return FALSE;
   }
@@ -986,7 +986,7 @@ bool silc_server_connection_allowed(SilcServer server,
     SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
 		   sock->hostname, sock->ip));
     silc_server_disconnect_remote(server, sock, 
-				  "Server closed connection: "
+				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Too many connections from your host");
     return FALSE;
   }
@@ -1294,7 +1294,8 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
     silc_server_send_notify_watch(notify->server, sock, entry, 
 				  notify->client, 
 				  notify->new_nick ? notify->new_nick :
-				  notify->client->nickname, notify->notify);
+				  (const char *)notify->client->nickname, 
+				  notify->notify);
   }
 }
 

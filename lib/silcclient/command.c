@@ -2284,9 +2284,9 @@ SILC_CLIENT_CMD_FUNC(getkey)
 	   server and did not find anybody. */
 	if (error == SILC_STATUS_ERR_NO_SUCH_SERVER) {
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
-	     silc_client_status_message(SILC_STATUS_ERR_NO_SUCH_NICK));
+	     silc_get_status_message(SILC_STATUS_ERR_NO_SUCH_NICK));
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
-           silc_client_status_message(error));
+           silc_get_status_message(error));
 	  COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
 	  goto out;
 	}

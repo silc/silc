@@ -166,7 +166,7 @@ void silc_client_close_connection_real(SilcClient client,
 				       SilcClientConnection conn);
 void silc_client_disconnected_by_server(SilcClient client,
 					SilcSocketConnection sock,
-					SilcBuffer message);
+					SilcBuffer packet);
 void silc_client_error_by_server(SilcClient client,
 				 SilcSocketConnection sock,
 				 SilcBuffer message);
