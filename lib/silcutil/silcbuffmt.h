@@ -10,7 +10,7 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -41,7 +41,7 @@
   memcpy the data to the pointer sent as argument (in unformatting).
 
   Any XXX_STRING will not allocate or copy any data.  Instead it
-  will set the pointer to the data.  Note that the data pointer 
+  will set the pointer to the data.  Note that the data pointer
   returned (in unformatting) must not be freed.
 
 */
@@ -76,8 +76,8 @@ typedef enum {
   SILC_BUFFER_PARAM_END
 } SilcBufferParamType;
 
-/* Macros for expanding parameters into variable function argument list. 
-   These are passed to silc_buffer_format and silc_buffer_unformat 
+/* Macros for expanding parameters into variable function argument list.
+   These are passed to silc_buffer_format and silc_buffer_unformat
    functions. */
 
 /* One signed/unsigned character.
@@ -91,7 +91,7 @@ typedef enum {
 #define SILC_STR_SI_CHAR(x) SILC_BUFFER_PARAM_SI8_CHAR, (x)
 #define SILC_STR_UI_CHAR(x) SILC_BUFFER_PARAM_UI8_CHAR, (x)
 
-/* Signed/SilcUInt16. 
+/* Signed/SilcUInt16.
 
    Formatting:    SILC_STR_SI_SHORT(short)
                   SILC_STR_UI_SHORT(SilcUInt16)
@@ -102,7 +102,7 @@ typedef enum {
 #define SILC_STR_SI_SHORT(x) SILC_BUFFER_PARAM_SI16_SHORT, (x)
 #define SILC_STR_UI_SHORT(x) SILC_BUFFER_PARAM_UI16_SHORT, (x)
 
-/* Signed/SilcUInt32. 
+/* Signed/SilcUInt32.
 
    Formatting:    SILC_STR_SI_INT(int)
                   SILC_STR_UI_INT(SilcUInt32)
@@ -113,7 +113,7 @@ typedef enum {
 #define SILC_STR_SI_INT(x) SILC_BUFFER_PARAM_SI32_INT, (x)
 #define SILC_STR_UI_INT(x) SILC_BUFFER_PARAM_UI32_INT, (x)
 
-/* Signed/SilcUInt64. 
+/* Signed/SilcUInt64.
 
    Formatting:    SILC_STR_SI_INT64(int)
                   SILC_STR_UI_INT64(SilcUInt32)
@@ -126,29 +126,29 @@ typedef enum {
 
 /* Unsigned NULL terminated string. Note that the string must be
    NULL terminated because strlen() will be used to get the length of
-   the string. 
+   the string.
 
    Formatting:    SILC_STR_UI32_STRING(unsigned char *)
    Unformatting:  SILC_STR_UI32_STRING(unsigned char **)
 
    Unformatting procedure will check for length of the string from the
    buffer before trying to get the string out. Thus, one *must* format the
-   length as UI_INT or UI_SHORT into the buffer *before* formatting the 
-   actual string to the buffer, and, in unformatting one must ignore the 
-   length of the string because unformatting procedure will take it 
+   length as UI_INT or UI_SHORT into the buffer *before* formatting the
+   actual string to the buffer, and, in unformatting one must ignore the
+   length of the string because unformatting procedure will take it
    automatically.
 
    Example:
 
-   Formatting:    ..., SILC_STR_UI_INT(strlen(string)), 
+   Formatting:    ..., SILC_STR_UI_INT(strlen(string)),
                        SILC_STR_UI32_STRING(string), ...
    Unformatting:  ..., SILC_STR_UI32_STRING(&string), ...
 
    I.e., you ignore the formatted length field in unformatting. If you don't
    the unformatting procedure might fail and it definitely does not unformat
-   the data reliably. 
+   the data reliably.
 
-   _ALLOC routines automatically allocates memory for the variable sent 
+   _ALLOC routines automatically allocates memory for the variable sent
    as argument in unformatting.
 
 */
@@ -166,14 +166,14 @@ typedef enum {
 
    Unformatting procedure will check for length of the string from the
    buffer before trying to get the string out. Thus, one *must* format the
-   length as UI_INT or UI_SHORT into the buffer *before* formatting the 
-   actual string to the buffer, and, in unformatting one must ignore the 
-   length of the string because unformatting procedure will take it 
+   length as UI_INT or UI_SHORT into the buffer *before* formatting the
+   actual string to the buffer, and, in unformatting one must ignore the
+   length of the string because unformatting procedure will take it
    automatically.
 
    Example:
 
-   Formatting:    ..., SILC_STR_UI_INT(strlen(string)), 
+   Formatting:    ..., SILC_STR_UI_INT(strlen(string)),
                        SILC_STR_UI32_NSTRING(string, strlen(string)), ...
    Unformatting:  ..., SILC_STR_UI32_NSTRING(&string, &len), ...
 
@@ -185,7 +185,7 @@ typedef enum {
    UI/SI16 and UI/SI32 means that the length is considered to be either
    short (16 bits) or int (32 bits) in unformatting.
 
-   _ALLOC routines automatically allocates memory for the variable sent 
+   _ALLOC routines automatically allocates memory for the variable sent
    as argument in unformatting.
 
 */
@@ -199,7 +199,7 @@ typedef enum {
 #define SILC_STR_UI32_NSTRING_ALLOC(x, l) \
   SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC, (x), (l)
 
-/* Extended Unsigned string formatting. Second argument is the length of 
+/* Extended Unsigned string formatting. Second argument is the length of
    the string.
 
    Formatting:    This is equal to using *_NSTRING
@@ -213,7 +213,7 @@ typedef enum {
    from the buffer without having the length of the string formatted
    in the buffer.
 
-   _ALLOC routines automatically allocates memory for the variable sent 
+   _ALLOC routines automatically allocates memory for the variable sent
    as argument in unformatting.
 
 */
@@ -283,4 +283,4 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
  ***/
 int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
 
-#endif
+#endif	/* !SILCBUFFMT_H */
