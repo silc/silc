@@ -2,15 +2,14 @@
 
   client_keyagr.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,7 +20,7 @@
 /* This file includes the Key Agreement packet processing and actual
    key agreement routines. This file has nothing to do with the actual
    connection key exchange protocol, it is implemented in the client.c
-   and in protocol.c. This file implements the client-to-client key 
+   and in protocol.c. This file implements the client-to-client key
    agreement as defined by the SILC protocol. */
 
 #include "silcincludes.h"
@@ -54,7 +53,7 @@ static void silc_client_key_agreement_send_packet(SilcSKE ske,
 						  void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcClientKEInternalContext *ctx = 
+  SilcClientKEInternalContext *ctx =
     (SilcClientKEInternalContext *)protocol->context;
   void *tmp;
 
@@ -92,7 +91,7 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_close)
 SILC_TASK_CALLBACK(silc_client_key_agreement_final)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcClientKEInternalContext *ctx = 
+  SilcClientKEInternalContext *ctx =
     (SilcClientKEInternalContext *)protocol->context;
   SilcClient client = (SilcClient)ctx->client;
   SilcClientKeyAgreement ke = (SilcClientKeyAgreement)ctx->context;
@@ -103,7 +102,7 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_final)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     ke->client_entry->ke = NULL;
-    ke->completion(ke->client, ke->conn, ke->client_entry, 
+    ke->completion(ke->client, ke->conn, ke->client_entry,
 		   SILC_KEY_AGREEMENT_ERROR, NULL, ke->context);
     silc_ske_free_key_material(ctx->keymat);
     goto out;
@@ -112,7 +111,7 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_final)
   /* Pass the negotiated key material to the application. The application
      is responsible of freeing the key material. */
   ke->client_entry->ke = NULL;
-  ke->completion(ke->client, ke->conn, ke->client_entry, 
+  ke->completion(ke->client, ke->conn, ke->client_entry,
 		 SILC_KEY_AGREEMENT_OK, ctx->keymat, ke->context);
 
  out:
@@ -128,9 +127,9 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_final)
     silc_schedule_task_del(client->schedule, ke->timeout);
   silc_client_del_socket(ke->client, ke->sock);
 
-  silc_schedule_task_add(client->schedule, 0, 
+  silc_schedule_task_add(client->schedule, 0,
 		     silc_client_key_agreement_close,
-		     (void *)ke, 0, 1, 
+		     (void *)ke, 0, 1,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   silc_free(ctx);
@@ -154,10 +153,10 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
   sock = silc_net_accept_connection(ke->fd);
   if (sock < 0) {
     client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
-			       "Could not accept key agreement connection: ", 
+			       "Could not accept key agreement connection: ",
 			       strerror(errno));
     ke->client_entry->ke = NULL;
-    ke->completion(ke->client, ke->conn, ke->client_entry, 
+    ke->completion(ke->client, ke->conn, ke->client_entry,
 		   SILC_KEY_AGREEMENT_ERROR, NULL, ke->context);
     silc_schedule_task_del_by_fd(client->schedule, ke->fd);
     silc_schedule_unset_listen_fd(ke->client->schedule, ke->fd);
@@ -181,10 +180,10 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
   /* Perform name and address lookups for the remote host. */
   silc_net_check_host_by_sock(sock, &newsocket->hostname, &newsocket->ip);
   if (!newsocket->hostname && !newsocket->ip) {
-    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 			       "Could not resolve the remote IP or hostname");
     ke->client_entry->ke = NULL;
-    ke->completion(ke->client, ke->conn, ke->client_entry, 
+    ke->completion(ke->client, ke->conn, ke->client_entry,
 		   SILC_KEY_AGREEMENT_ERROR, NULL, ke->context);
     silc_schedule_task_del_by_fd(client->schedule, ke->fd);
     silc_schedule_unset_listen_fd(ke->client->schedule, ke->fd);
@@ -213,14 +212,14 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
 
   /* Prepare the connection for key exchange protocol. We allocate the
      protocol but will not start it yet. The connector will be the
-     initiator of the protocol thus we will wait for initiation from 
+     initiator of the protocol thus we will wait for initiation from
      there before we start the protocol. */
-  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 
-		      &newsocket->protocol, proto_ctx, 
+  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE,
+		      &newsocket->protocol, proto_ctx,
 		      silc_client_key_agreement_final);
 
   /* Register the connection for network input and output. This sets
-     that scheduler will listen for incoming packets for this connection 
+     that scheduler will listen for incoming packets for this connection
      and sets that outgoing packets may be sent to this connection as well.
      However, this doesn't set the scheduler for outgoing traffic, it
      will be set separately by calling SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT,
@@ -230,7 +229,7 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
 }
 
 /* Timeout occured during key agreement. This means that the key agreement
-   protocol was not completed in the specified timeout. We will call the 
+   protocol was not completed in the specified timeout. We will call the
    completion callback. */
 
 SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
@@ -238,7 +237,7 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
   SilcClientKeyAgreement ke = (SilcClientKeyAgreement)context;
 
   ke->client_entry->ke = NULL;
-  ke->completion(ke->client, ke->conn, ke->client_entry, 
+  ke->completion(ke->client, ke->conn, ke->client_entry,
 		 SILC_KEY_AGREEMENT_TIMEOUT, NULL, ke->context);
 
   if (ke->sock) {
@@ -269,9 +268,9 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
    the same packet including its hostname and port. If the library receives
    the reply from the remote client the `key_agreement' client operation
    callback will be called to verify whether the user wants to perform the
-   key agreement or not. 
+   key agreement or not.
 
-   NOTE: If the application provided the `hostname' and the `port' and the 
+   NOTE: If the application provided the `hostname' and the `port' and the
    remote side initiates the key agreement protocol it is not verified
    from the user anymore whether the protocol should be executed or not.
    By setting the `hostname' and `port' the user gives permission to
@@ -282,7 +281,7 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
    perform the key agreement at all. If the key agreement protocol is
    performed the `completion' callback with the `context' will be called.
    If remote side decides to ignore the request the `completion' will be
-   called after the specified timeout, `timeout_secs'. 
+   called after the specified timeout, `timeout_secs'.
 
    NOTE: If the `hostname' and the `port' was not provided the `completion'
    will not be called at all since this does nothing more than sending
@@ -290,7 +289,7 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
 
    NOTE: There can be only one active key agreement for one client entry.
    Before setting new one, the old one must be finished (it is finished
-   after calling the completion callback) or the function 
+   after calling the completion callback) or the function
    silc_client_abort_key_agreement must be called. */
 
 void silc_client_send_key_agreement(SilcClient client,
@@ -325,10 +324,10 @@ void silc_client_send_key_agreement(SilcClient client,
   /* Create the listener if hostname and port was provided.
    * also, use bindhost if it was specified.
    */
-   
+
   if (hostname) {
     ke = silc_calloc(1, sizeof(*ke));
-    
+
     if (bindhost)
       ke->fd = silc_net_create_server(port, bindhost);
     else
@@ -336,8 +335,8 @@ void silc_client_send_key_agreement(SilcClient client,
 
     if (ke->fd < 0) {
       client->internal->ops->say(
-		     client, conn, SILC_CLIENT_MESSAGE_ERROR, 
-		     "Cannot create listener on %s on port %d: %s", 
+		     client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		     "Cannot create listener on %s on port %d: %s",
 		     (bindhost) ? bindhost:hostname, port, strerror(errno));
       completion(client, conn, client_entry, SILC_KEY_AGREEMENT_FAILURE,
 		 NULL, context);
@@ -351,26 +350,26 @@ void silc_client_send_key_agreement(SilcClient client,
     ke->completion = completion;
     ke->context = context;
 
-    /* Add listener task to the scheduler. This task receives the key 
+    /* Add listener task to the scheduler. This task receives the key
        negotiations. */
     silc_schedule_task_add(client->schedule, ke->fd,
 			   silc_client_process_key_agreement,
-			   (void *)ke, 0, 0, 
+			   (void *)ke, 0, 0,
 			   SILC_TASK_FD,
 			   SILC_TASK_PRI_NORMAL);
 
     /* Register a timeout task that will be executed if the connector
-       will not start the key exchange protocol within the specified 
+       will not start the key exchange protocol within the specified
        timeout. */
-    ke->timeout = silc_schedule_task_add(client->schedule, 0, 
+    ke->timeout = silc_schedule_task_add(client->schedule, 0,
 					 silc_client_key_agreement_timeout,
-					 (void *)ke, timeout_secs, 0, 
+					 (void *)ke, timeout_secs, 0,
 					 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   }
 
   /* Encode the key agreement payload */
-  buffer = silc_key_agreement_payload_encode(hostname, 
-					     !ke ? port : 
+  buffer = silc_key_agreement_payload_encode(hostname,
+					     !ke ? port :
 					     silc_net_get_local_port(ke->fd));
 
   /* Send the key agreement packet to the client */
@@ -380,7 +379,7 @@ void silc_client_send_key_agreement(SilcClient client,
   silc_buffer_free(buffer);
 }
 
-static int 
+static int
 silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
 {
   int sock;
@@ -392,9 +391,9 @@ silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
 
   /* Register task that will receive the async connect and will
      read the result. */
-  ctx->task = silc_schedule_task_add(ctx->client->schedule, sock, 
+  ctx->task = silc_schedule_task_add(ctx->client->schedule, sock,
 				     silc_client_perform_key_agreement_start,
-				     (void *)ctx, 0, 0, 
+				     (void *)ctx, 0, 0,
 				     SILC_TASK_FD,
 				     SILC_TASK_PRI_NORMAL);
   silc_schedule_set_listen_fd(ctx->client->schedule, sock, SILC_TASK_WRITE,
@@ -409,7 +408,7 @@ silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
    to the remote client on specified port. */
 
 static int
-silc_client_connect_to_client(SilcClient client, 
+silc_client_connect_to_client(SilcClient client,
 			      SilcClientConnection conn, int port,
 			      char *host, void *context)
 {
@@ -451,8 +450,8 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
       client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 				 "Could not connect to client %s: %s",
 				 ctx->host, strerror(opt));
-      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-				 "Connecting to port %d of client %s resumed", 
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+				 "Connecting to port %d of client %s resumed",
 				 ctx->port, ctx->host);
 
       /* Unregister old connection try */
@@ -475,7 +474,7 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
       silc_free(ctx);
 
       /* Call the completion callback */
-      ke->completion(ke->client, ke->conn, ke->client_entry, 
+      ke->completion(ke->client, ke->conn, ke->client_entry,
 		     SILC_KEY_AGREEMENT_FAILURE, NULL, ke->context);
       silc_free(ke);
     }
@@ -504,7 +503,7 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
    The `hostname' is the remote hostname (or IP address) and the `port'
    is the remote port. The `completion' callback with the `context' will
    be called after the key agreement protocol.
-   
+
    NOTE: If the application returns TRUE in the `key_agreement' client
    operation the library will automatically start the key agreement. In this
    case the application must not call this function. However, application
@@ -560,8 +559,8 @@ void silc_client_perform_key_agreement(SilcClient client,
   }
 }
 
-/* Same as above but application has created already the connection to 
-   the remote host. The `sock' is the socket to the remote connection. 
+/* Same as above but application has created already the connection to
+   the remote host. The `sock' is the socket to the remote connection.
    Application can use this function if it does not want the client library
    to create the connection. */
 
@@ -615,15 +614,15 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
   ke->proto_ctx = proto_ctx;
 
   /* Perform key exchange protocol. */
-  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 
+  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE,
 		      &protocol, (void *)proto_ctx,
 		      silc_client_key_agreement_final);
   ke->sock->protocol = protocol;
 
   /* Register the connection for network input and output. This sets
-     that scheduler will listen for incoming packets for this connection 
+     that scheduler will listen for incoming packets for this connection
      and sets that outgoing packets may be sent to this connection as well.
-     However, this doesn't set the scheduler for outgoing traffic, it will 
+     However, this doesn't set the scheduler for outgoing traffic, it will
      be set separately by calling SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT,
      later when outgoing data is available. */
   context = (void *)client;
@@ -634,10 +633,10 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
 }
 
 /* This function can be called to unbind the hostname and the port for
-   the key agreement protocol. However, this function has effect only 
+   the key agreement protocol. However, this function has effect only
    before the key agreement protocol has been performed. After it has
-   been performed the library will automatically unbind the port. The 
-   `client_entry' is the client to which we sent the key agreement 
+   been performed the library will automatically unbind the port. The
+   `client_entry' is the client to which we sent the key agreement
    request. */
 
 void silc_client_abort_key_agreement(SilcClient client,
@@ -656,21 +655,21 @@ void silc_client_abort_key_agreement(SilcClient client,
     }
     silc_schedule_task_del_by_fd(client->schedule, client_entry->ke->fd);
     if (client_entry->ke->timeout)
-      silc_schedule_task_del(client->schedule, 
+      silc_schedule_task_del(client->schedule,
 			     client_entry->ke->timeout);
     ke = client_entry->ke;
     client_entry->ke = NULL;
-    ke->completion(client, conn, client_entry, 
+    ke->completion(client, conn, client_entry,
 		   SILC_KEY_AGREEMENT_ABORTED, NULL, ke->context);
     silc_free(ke);
   }
 }
 
-/* Callback function that is called after we've resolved the client 
+/* Callback function that is called after we've resolved the client
    information who sent us the key agreement packet from the server.
    We actually call the key_agreement client operation now. */
 
-static void 
+static void
 silc_client_key_agreement_resolve_cb(SilcClient client,
 				     SilcClientConnection conn,
 				     SilcClientEntry *clients,
@@ -694,7 +693,7 @@ silc_client_key_agreement_resolve_cb(SilcClient client,
 
   /* Call the key_agreement client operation */
   ret = client->internal->ops->key_agreement(
-				   client, conn, clients[0], 
+				   client, conn, clients[0],
 				   silc_key_agreement_get_hostname(payload),
 				   silc_key_agreement_get_port(payload),
 				   &completion, &completion_context);
@@ -715,7 +714,7 @@ silc_client_key_agreement_resolve_cb(SilcClient client,
 
 /* Received Key Agreement packet from remote client. Process the packet
    and resolve the client information from the server before actually
-   letting the application know that we've received this packet.  Then 
+   letting the application know that we've received this packet.  Then
    call the key_agreement client operation and let the user decide
    whether we perform the key agreement protocol now or not. */
 
@@ -728,7 +727,7 @@ void silc_client_key_agreement(SilcClient client,
   if (packet->src_id_type != SILC_ID_CLIENT)
     return;
 
-  remote_id = silc_id_str2id(packet->src_id, packet->src_id_len, 
+  remote_id = silc_id_str2id(packet->src_id, packet->src_id_len,
 			     SILC_ID_CLIENT);
   if (!remote_id)
     return;

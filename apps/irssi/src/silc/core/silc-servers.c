@@ -1,7 +1,7 @@
 /*
   silc-server.c : irssi
 
-  Copyright (C) 2000 - 2004 Timo Sirainen
+  Copyright (C) 2000 - 2005 Timo Sirainen
                             Pekka Riikonen <priikone@silcnet.org>
 
   This program is free software; you can redistribute it and/or modify
@@ -117,7 +117,7 @@ static void silc_send_msg_clients(SilcClient client,
        real (formatted) nickname and the nick (maybe formatted) that
        use gave. This is to assure that `nick' does not match
        `nick@host'. */
-    if (strcasecmp(rec->nick, clients[0]->nickname)) {
+    if (!silc_utf8_strcasecmp(rec->nick, clients[0]->nickname)) {
       printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 		"%s: There is no such client", rec->nick);
       goto out;
@@ -237,7 +237,7 @@ const char *get_nick_flags(void)
 static void send_message(SILC_SERVER_REC *server, char *target,
 			 char *msg, int target_type)
 {
-  char *message = NULL;
+  char *message = NULL, *t = NULL;
   int len;
 
   g_return_if_fail(server != NULL);
@@ -254,12 +254,21 @@ static void send_message(SILC_SERVER_REC *server, char *target,
   if (target_type == SEND_TARGET_CHANNEL)
     silc_send_channel(server, target, message ? message : msg,
 		      SILC_MESSAGE_FLAG_UTF8);
-  else
-    silc_send_msg(server, target, message ? message : msg,
+  else {
+    if (!silc_term_utf8()) {
+      len = silc_utf8_encoded_len(target, strlen(target), SILC_STRING_LOCALE);
+      t = silc_calloc(len + 1, sizeof(*t));
+      g_return_if_fail(t != NULL);
+      silc_utf8_encode(target, strlen(target), SILC_STRING_LOCALE, t, len);
+    }
+
+    silc_send_msg(server, t ? t : target, message ? message : msg,
 		  message ? strlen(message) : strlen(msg),
 		  SILC_MESSAGE_FLAG_UTF8);
+  }
 
   silc_free(message);
+  silc_free(t);
 }
 
 void silc_send_heartbeat(SilcSocketConnection sock,
@@ -537,7 +546,7 @@ static void command_smsg(const char *data, SILC_SERVER_REC *server,
   }
 
   if (target != NULL) {
-    char *message = NULL;
+    char *message = NULL, *t = NULL;
     int len, result;
 
     if (!silc_term_utf8()) {
@@ -551,12 +560,21 @@ static void command_smsg(const char *data, SILC_SERVER_REC *server,
       result = silc_send_channel(server, target, message ? message : msg,
 				 SILC_MESSAGE_FLAG_UTF8 |
 				 SILC_MESSAGE_FLAG_SIGNED);
-    else
-      result = silc_send_msg(server, target, message ? message : msg,
+    else {
+      if (!silc_term_utf8()) {
+	len = silc_utf8_encoded_len(target, strlen(target),
+				    SILC_STRING_LOCALE);
+	t = silc_calloc(len + 1, sizeof(*t));
+	g_return_if_fail(t != NULL);
+	silc_utf8_encode(target, strlen(target), SILC_STRING_LOCALE, t, len);
+      }
+      result = silc_send_msg(server, t ? t : target, message ? message : msg,
 			     message ? strlen(message) : strlen(msg),
 			     SILC_MESSAGE_FLAG_UTF8 |
 			     SILC_MESSAGE_FLAG_SIGNED);
+    }
     silc_free(message);
+    silc_free(t);
     if (!result)
       goto out;
   }

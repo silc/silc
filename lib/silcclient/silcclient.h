@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2004 Pekka Riikonen
+  Copyright (C) 2000 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -73,7 +73,8 @@ extern "C" {
  */
 struct SilcClientStruct {
   /*
-   * The following fields are set by application
+   * The following fields are set by application. Strings MUST be UTF-8
+   * encoded strings.
    */
   char *nickname;               /* Nickname, MAY be set by application  */
   char *username;               /* Username, MUST be set by application */
@@ -123,7 +124,7 @@ struct SilcClientStruct {
  *    to server this is context is returned to the application in the
  *    "connected" client operation.  It includes all the important
  *    data for the session, such as nickname, local and remote IDs, and
- *    other information.
+ *    other information.  All strings in the structure are UTF-8 encoded.
  *
  * SOURCE
  */
@@ -140,7 +141,7 @@ struct SilcClientConnectionStruct {
   /*
    * Remote data
    */
-  char *remote_host;		  /* Remote host name */
+  char *remote_host;		  /* Remote host name, UTF-8 encoded */
   int remote_port;		  /* Remote port */
   SilcServerID *remote_id;	  /* Remote Server ID */
   unsigned char *remote_id_data;  /* Remote Server ID decoded */
@@ -190,7 +191,7 @@ struct SilcClientConnectionStruct {
  *    that are accessed using the Client Library routines will have their
  *    own SilcClientEntry structure.  For example, when finding users by
  *    their nickname the Client Library returns this structure back to
- *    the application.
+ *    the application.  All strings in the structure are UTF-8 encoded.
  *
  * SOURCE
  */
@@ -246,7 +247,7 @@ struct SilcClientEntryStruct {
  *    This structure represents a channel in the SILC network.  All
  *    channels that the client are aware of or have joined in will be
  *    represented as SilcChannelEntry.  The structure includes information
- *    about the channel.
+ *    about the channel.  All strings in the structure are UTF-8 encoded.
  *
  * SOURCE
  */
@@ -320,6 +321,7 @@ struct SilcChannelUserStruct {
  *    This structure represents a server in the SILC network.  All servers
  *    that the client is aware of and have for example resolved with
  *    SILC_COMMAND_INFO command have their on SilcServerEntry structure.
+ *    All strings in the structure are UTF-8 encoded.
  *
  * SOURCE
  */
@@ -850,8 +852,8 @@ typedef struct {
      not want to use them set this to TRUE.  See SilcAttribute and
      silc_client_attribute_add for more information on attributes. */
   bool ignore_requested_attributes;
-  
-  /* If this is set to TRUE, the silcclient library will not register and 
+
+  /* If this is set to TRUE, the silcclient library will not register and
      deregister the cipher, pkcs, hash and hmac algorithms. The application
      itself will need to handle that. */
   bool dont_register_crypto_library;

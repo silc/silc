@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -505,7 +505,7 @@ SILC_CLIENT_CMD_FUNC(nick)
     goto out;
   }
 
-  if (!strcmp(conn->nickname, cmd->argv[1]))
+  if (silc_utf8_strcasecmp(conn->nickname, cmd->argv[1]))
     goto out;
 
   /* Show current nickname */

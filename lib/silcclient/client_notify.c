@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -632,7 +632,7 @@ void silc_client_notify_by_server(SilcClient client,
        ID changes.  Check whether the hashes in the Client ID match, if
        they do nickname didn't change. */
     if (SILC_ID_COMPARE_HASH(client_entry->id, client_id) &&
-	!strcmp(tmp, client_entry->nickname)) {
+	silc_utf8_strcasecmp(tmp, client_entry->nickname)) {
       /* Nickname didn't change.  Update only Client ID. */
       silc_idcache_del_by_context(conn->internal->client_cache,
 				  client_entry);
@@ -1411,7 +1411,7 @@ void silc_client_notify_by_server(SilcClient client,
 
 	/* If same nick, the client was new to us and has become "present"
 	   to network.  Send NULL as nick to application. */
-	if (tmp_nick && !strcmp(tmp, tmp_nick))
+	if (tmp_nick && silc_utf8_strcasecmp(tmp, tmp_nick))
 	  tmp = NULL;
 
 	silc_free(tmp_nick);

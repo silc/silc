@@ -1,0 +1,40 @@
+<big><b>Unicode and UTF-8 Strings in Client Library</b></big>
+
+<br />&nbsp;<br />
+This document describes how the client library handles UTF-8 encoded
+strings.  By default all strings in the SILC protocol are UTF-8 encoded.
+All strings that are sent to server and strings that are received from the
+server are always UTF-8 encoded.  It is application's responsibility to
+render the strings as well as possible on the user interface.
+
+<br />&nbsp;<br />
+Exception to these strings are messages sent and received in
+<a href="silcmessage-SilcMessagePayload.html">Message Payload</a>, which
+can include practically any kind of strings with any kind of character
+encodings, and binary data also.  If UTF-8 encoded message is sent
+or received it is indicated with the SILC_MESSAGE_FLAG_UTF8, and
+application can render the messages accordingly.
+
+<br />&nbsp;<br />
+Other strings are always UTF-8 encoded and application needs to decode
+the strings to other character encoding if application does not support
+UTF-8 rendering on user interface.  Also strings application sends to
+library, such as, nicknames, channel names, server names, host names,
+topic srings, any command argument, etc. must always be UTF-8 encoded
+before they are sent to the library.  The <a href="silcutf8.h">UTF-8
+routines</a> help the application developer to encode and decode
+UTF-8 strings.
+
+<br />&nbsp;<br />
+The client library does not ever encode or decode strings to or from the
+current locale.  The library always expects that all strings it receives
+from application are already UTF-8 encoded.  The library may validate
+certain UTF-8 strings and return error if needed.  Server may also
+send errors in command reply if strings are not encoded properly.
+
+<br />&nbsp;<br />
+Nicknames and channel names in SILC are also UTF-8 encoded and can
+include practically any kind of letters, numbers and punctuation
+marks.  Control characters and other special characters are not allowed
+in nickname strings, and application never receives such nicknames
+or channel names from the library.

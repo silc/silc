@@ -120,6 +120,28 @@ bool silc_client_init(SilcClient client)
   assert(client->hostname);
   assert(client->realname);
 
+  /* Validate essential strings */
+  if (client->nickname)
+    if (!silc_identifier_verify(client->nickname, strlen(client->nickname),
+				SILC_STRING_UTF8, 128)) {
+      SILC_LOG_ERROR(("Malformed nickname '%s'", client->nickname));
+      return FALSE;
+    }
+  if (!silc_identifier_verify(client->username, strlen(client->username),
+			      SILC_STRING_UTF8, 128)) {
+    SILC_LOG_ERROR(("Malformed username '%s'", client->username));
+    return FALSE;
+  }
+  if (!silc_identifier_verify(client->hostname, strlen(client->hostname),
+			      SILC_STRING_UTF8, 256)) {
+    SILC_LOG_ERROR(("Malformed hostname '%s'", client->hostname));
+    return FALSE;
+  }
+  if (!silc_utf8_valid(client->realname, strlen(client->realname))) {
+    SILC_LOG_ERROR(("Malformed realname '%s'", client->realname));
+    return FALSE;
+  }
+
   if (!client->internal->params->dont_register_crypto_library) {
     /* Initialize the crypto library.  If application has done this already
        this has no effect.  Also, we will not be overriding something
@@ -1786,7 +1808,8 @@ void silc_client_receive_new_id(SilcClient client,
     if (!conn->internal->params.detach_data) {
       /* Send NICK command if the nickname was set by the application (and is
 	 not same as the username). Send this with little timeout. */
-      if (client->nickname && strcmp(client->nickname, client->username))
+      if (client->nickname &&
+	  !silc_utf8_strcasecmp(client->nickname, client->username))
 	silc_schedule_task_add(client->schedule, 0,
 			       silc_client_send_auto_nick, conn,
 			       1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);

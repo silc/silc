@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2004 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
     silc_idcache_list_first(list, &id_cache);
     while (id_cache) {
       entry = (SilcClientEntry)id_cache->context;
-      if (strcasecmp(entry->nickname, format)) {
+      if (!silc_utf8_strcasecmp(entry->nickname, format)) {
 	if (!silc_idcache_list_next(list, &id_cache)) {
 	  break;
 	} else {
@@ -422,7 +422,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
     while (id_cache) {
       entry = (SilcClientEntry)id_cache->context;
 
-      if (strcasecmp(entry->nickname, format)) {
+      if (!silc_utf8_strcasecmp(entry->nickname, format)) {
 	if (!silc_idcache_list_next(list, &id_cache)) {
 	  entry = NULL;
 	  break;
@@ -1465,8 +1465,9 @@ void silc_client_update_server(SilcClient client,
 {
   SILC_LOG_DEBUG(("Start"));
 
-  if (server_name && (!server_entry->server_name ||
-		      strcmp(server_entry->server_name, server_name))) {
+  if (server_name &&
+      (!server_entry->server_name ||
+       !silc_utf8_strcasecmp(server_entry->server_name, server_name))) {
 
     silc_idcache_del_by_context(conn->internal->server_cache, server_entry);
     silc_free(server_entry->server_name);
@@ -1476,8 +1477,9 @@ void silc_client_update_server(SilcClient client,
 		     server_entry, 0, NULL);
   }
 
-  if (server_info && (!server_entry->server_info ||
-		      strcmp(server_entry->server_info, server_info))) {
+  if (server_info &&
+      (!server_entry->server_info ||
+       !silc_utf8_strcasecmp(server_entry->server_info, server_info))) {
     silc_free(server_entry->server_info);
     server_entry->server_info = strdup(server_info);
   }
@@ -1523,7 +1525,7 @@ void silc_client_nickname_format(SilcClient client,
     if (clients[i]->valid && clients[i] != client_entry)
       len++;
     if (clients[i]->valid && clients[i] != client_entry &&
-	!strcasecmp(clients[i]->nickname, client_entry->nickname))
+	silc_utf8_strcasecmp(clients[i]->nickname, client_entry->nickname))
       freebase = FALSE;
   }
   if (!len || freebase)
@@ -1533,8 +1535,8 @@ void silc_client_nickname_format(SilcClient client,
     unformatted = clients[0];
   else
     for (i = 0; i < clients_count; i++)
-      if (!strncasecmp(clients[i]->nickname, client_entry->nickname,
-		       strlen(clients[i]->nickname)))
+      if (silc_utf8_strncasecmp(clients[i]->nickname, client_entry->nickname,
+				strlen(clients[i]->nickname)))
 	unformatted = clients[i];
 
   /* If we are changing nickname of our local entry we'll enforce
@@ -1609,7 +1611,7 @@ void silc_client_nickname_format(SilcClient client,
 	  break;
 
 	for (i = 0; i < clients_count; i++) {
-	  if (strncasecmp(clients[i]->nickname, newnick, off))
+	  if (!silc_utf8_strncasecmp(clients[i]->nickname, newnick, off))
 	    continue;
 	  if (strlen(clients[i]->nickname) <= off)
 	    continue;
