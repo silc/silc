@@ -3598,6 +3598,8 @@ void silc_server_announce_channels(SilcServer server,
     int i;
 
     for (i = 0; i < channel_users_modes_c; i++) {
+      if (!channel_users_modes[i])
+        continue;
       silc_buffer_push(channel_users_modes[i], 
 		       channel_users_modes[i]->data - 
 		       channel_users_modes[i]->head);

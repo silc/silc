@@ -1,3 +1,8 @@
+Tue Jan 29 10:35:03 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a crash in server related to channel announcements.
+	  Affected file silcd/server.c.
+
 Mon Jan 28 17:49:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed memory leaks in silc_server_create_new_channel*
