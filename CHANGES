@@ -1,0 +1,4 @@
+Fri Jun 30 14:03:26 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added SOCKS4 and SOCKS5 support to SILC client.  SOCKS5
+	  was tested.  SOCKS4 was not but should work anyway.
