@@ -718,7 +718,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   proto_ctx->dest_id = ctx->dest_id;
 
   /* Resolve the authentication method used in this connection */
-  proto_ctx->auth_meth = SILC_PROTOCOL_CONN_AUTH_PASSWORD;
+  proto_ctx->auth_meth = SILC_AUTH_PASSWORD;
   if (server->config->routers) {
     SilcConfigServerSectionServerConnection *conn = NULL;
 

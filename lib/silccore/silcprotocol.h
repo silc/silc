@@ -35,16 +35,6 @@ typedef unsigned char SilcProtocolState;
 #define SILC_PROTOCOL_STATE_FAILURE 253	 /* Received failure from remote */
 #define SILC_PROTOCOL_STATE_ERROR 254    /* Local error at our end */
 
-/* Connection Authentication protocols' authentication methods */
-#define SILC_PROTOCOL_CONN_AUTH_NONE 0
-#define SILC_PROTOCOL_CONN_AUTH_PASSWORD 1
-#define SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY 2
-
-/* XXX These don't belong here really! */
-/* Connection authentication protocol status message */
-#define SILC_CONN_AUTH_OK 0
-#define SILC_CONN_AUTH_FAILED 1
-
 /* Type definition for above auth methods */
 typedef unsigned char SilcProtocolAuthMeth;
 

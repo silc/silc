@@ -182,6 +182,82 @@ int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
   return pkcs->pkcs->set_private_key(pkcs->context, prv, prv_len);
 }
 
+/* Encrypts */
+
+int silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
+		      unsigned char *dst, unsigned int *dst_len)
+{
+  return pkcs->pkcs->encrypt(pkcs->context, src, src_len, dst, dst_len);
+}
+
+/* Decrypts */
+
+int silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
+		      unsigned char *dst, unsigned int *dst_len)
+{
+  return pkcs->pkcs->decrypt(pkcs->context, src, src_len, dst, dst_len);
+}
+
+/* Generates signature */
+
+int silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
+		   unsigned char *dst, unsigned int *dst_len)
+{
+  return pkcs->pkcs->sign(pkcs->context, src, src_len, dst, dst_len);
+}
+
+/* Verifies signature */
+
+int silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature, 
+		     unsigned int signature_len, unsigned char *data, 
+		     unsigned int data_len)
+{
+  return pkcs->pkcs->verify(pkcs->context, signature, signature_len, 
+			    data, data_len);
+}
+
+/* Generates signature with hash. The hash is signed. */
+
+int silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
+			     unsigned char *src, unsigned int src_len,
+			     unsigned char *dst, unsigned int *dst_len)
+{
+  unsigned char hashr[32];
+  unsigned int hash_len;
+  int ret;
+
+  silc_hash_make(hash, src, src_len, hashr);
+  hash_len = hash->hash->hash_len;
+
+  ret = pkcs->pkcs->sign(pkcs->context, hashr, hash_len, dst, dst_len);
+  memset(hashr, 0, sizeof(hashr));
+
+  return ret;
+}
+
+/* Verifies signature with hash. The `data' is hashed and verified against
+   the `signature'. */
+
+int silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash, 
+			       unsigned char *signature, 
+			       unsigned int signature_len, 
+			       unsigned char *data, 
+			       unsigned int data_len)
+{
+  unsigned char hashr[32];
+  unsigned int hash_len;
+  int ret;
+
+  silc_hash_make(hash, data, data_len, hashr);
+  hash_len = hash->hash->hash_len;
+
+  ret = pkcs->pkcs->verify(pkcs->context, signature, signature_len, 
+			   hashr, hash_len);
+  memset(hashr, 0, sizeof(hashr));
+
+  return ret;
+}
+
 /* Encodes and returns SILC public key identifier. If some of the 
    arguments is NULL those are not encoded into the identifier string.
    Protocol says that at least username and host must be provided. */

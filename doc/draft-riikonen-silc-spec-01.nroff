@@ -1030,6 +1030,92 @@ connection authentication protocol is described in detail in [SILC3].
 
 
 .ti 0
+3.9.1 Authentication Payload
+
+Authentication payload is used separately from the SKE and the Connection
+authentication protocol.  It is used during the session to authenticate
+with the remote.  For example, the client can authenticate itself to the
+server to be server operator.  In this case, Authentication Payload is
+used.
+
+The format of the Authentication Payload is as follows:
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Payload Length         |     Authentication Method     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Public Data Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Public Data                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Authentication Data Length  |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                       Authentication Data                     ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+|
+.in 3
+ 
+.ce
+Figure 5:  Authentication Payload
+
+
+.in 6
+o Payload Length (2 bytes) - Length of the entire payload.
+
+o Authentication Type (2) - The method of the authentication.
+  The authentication methods are defined in [SILC2] in the
+  Connection Auth Request Payload.  The NONE authentication
+  method is not recommended.
+
+o Public Data Length (2 bytes) - Indicates the length of
+  the Public Data field.
+
+o Public Data (variable length) - This is defined only if
+  the authentication method is public key.  If it is any other
+  this field does not exist and the Public Data Length field
+  is set to zero (0).
+
+  When the authentication method is public key this includes
+  128 to 4096 bytes of non-zero random data that is used in
+  the signature process, described subsequently.
+
+o Authentication Data Length (2 bytes) - Indicates the
+  length of the Authentication Data field.
+
+o Authentication Data (variable length) - Authentication 
+  method dependent authentication data.
+.in 3
+
+
+If the authentication method is password based, the Authentication
+Data field includes the plaintext password.  It is safe to send
+plaintext password since the entire payload is encrypted.
+
+If the authentication method is public key based (or certificate)
+the Authentication Data is computed as follows:
+
+  HASH = hash(random bytes | public key (or certificate));
+  Authentication Data = sign(HASH);
+
+The hash() and sign() are the hash funtion and the public key cryptography
+function selected in the SKE protocol.  The public key is SILC style
+public key unless certificates are used.  The random bytes are non-zero
+random bytes of length between 128 and 4096 bytes, and will be included
+into the Public Data field as is.  The receiver will compute the signature
+using the random data received in the payload and the public key (or
+certificate) received in the SKE protocol.  After computing the receiver
+must verify the signature.  In this case also, the entire payload is
+encrypted.
+
+
+.ti 0
 3.10 Algorithms
 
 This section defines all the allowed algorithms that can be used in

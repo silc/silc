@@ -178,6 +178,23 @@ int silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
 int silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key);
 int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
 				   unsigned int prv_len);
+int silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
+		      unsigned char *dst, unsigned int *dst_len);
+int silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
+		      unsigned char *dst, unsigned int *dst_len);
+int silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
+		   unsigned char *dst, unsigned int *dst_len);
+int silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature, 
+		     unsigned int signature_len, unsigned char *data, 
+		     unsigned int data_len);
+int silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
+			     unsigned char *src, unsigned int src_len,
+			     unsigned char *dst, unsigned int *dst_len);
+int silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash, 
+			       unsigned char *signature, 
+			       unsigned int signature_len, 
+			       unsigned char *data, 
+			       unsigned int data_len);
 char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 				  char *email, char *org, char *country);
 SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,

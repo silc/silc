@@ -766,10 +766,10 @@ int silc_config_server_parse_lines(SilcConfigServer config,
 	}
 
 	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
-	  config->clients->auth_meth = SILC_PROTOCOL_CONN_AUTH_PASSWORD;
+	  config->clients->auth_meth = SILC_AUTH_PASSWORD;
 
 	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
-	  config->clients->auth_meth = SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY;
+	  config->clients->auth_meth = SILC_AUTH_PUBLIC_KEY;
 
 	silc_free(tmp);
       }
@@ -829,10 +829,10 @@ int silc_config_server_parse_lines(SilcConfigServer config,
 	}
 
 	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
-	  config->servers->auth_meth = SILC_PROTOCOL_CONN_AUTH_PASSWORD;
+	  config->servers->auth_meth = SILC_AUTH_PASSWORD;
 
 	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
-	  config->servers->auth_meth = SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY;
+	  config->servers->auth_meth = SILC_AUTH_PUBLIC_KEY;
 
 	silc_free(tmp);
       }
@@ -894,10 +894,10 @@ int silc_config_server_parse_lines(SilcConfigServer config,
 	}
 
 	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
-	  config->routers->auth_meth = SILC_PROTOCOL_CONN_AUTH_PASSWORD;
+	  config->routers->auth_meth = SILC_AUTH_PASSWORD;
 
 	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
-	  config->routers->auth_meth = SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY;
+	  config->routers->auth_meth = SILC_AUTH_PUBLIC_KEY;
 
 	silc_free(tmp);
       }
@@ -970,10 +970,10 @@ int silc_config_server_parse_lines(SilcConfigServer config,
 	}
 
 	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
-	  config->admins->auth_meth = SILC_PROTOCOL_CONN_AUTH_PASSWORD;
+	  config->admins->auth_meth = SILC_AUTH_PASSWORD;
 
 	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
-	  config->admins->auth_meth = SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY;
+	  config->admins->auth_meth = SILC_AUTH_PUBLIC_KEY;
 
 	silc_free(tmp);
       }

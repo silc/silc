@@ -433,11 +433,11 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
       unsigned int auth_data_len = 0;
 
       switch(ctx->auth_meth) {
-      case SILC_PROTOCOL_CONN_AUTH_NONE:
+      case SILC_AUTH_NONE:
 	/* No authentication required */
 	break;
 
-      case SILC_PROTOCOL_CONN_AUTH_PASSWORD:
+      case SILC_AUTH_PASSWORD:
 	/* Password authentication */
 	if (ctx->auth_data && ctx->auth_data_len) {
 	  auth_data = ctx->auth_data;
@@ -452,7 +452,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	auth_data_len = strlen(auth_data);
 	break;
 
-      case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
+      case SILC_AUTH_PUBLIC_KEY:
 	/* XXX */
 	break;
       }
@@ -504,7 +504,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
        */
       unsigned char error[4];
 
-      SILC_PUT32_MSB(SILC_CONN_AUTH_FAILED, error);
+      SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
 
       /* Error in protocol. Send FAILURE packet. Although I don't think
 	 this could ever happen on client side. */

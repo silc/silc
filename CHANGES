@@ -25,6 +25,23 @@ Tue Feb 20 14:14:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Removed the RNG kludge from lib/silcmath/primegen.c and changed
 	  it to use the Global RNG API.
 
+	* Defined Authentication Payload into protocol specification that
+	  is used during SILC session to authenticate entities.  It is
+	  used for example by client to authenticate itself to the server
+	  to obtain server operator privileges.
+
+	  Implemented this payload into the lib/silccore/silcauth.[ch].
+	  Implemented also routines for public key based authentication
+	  as the new protocol specification dictates.
+
+	  Moved definitions of different authentication methods from
+	  lib/silccore/silcprotocol.h into lib/silccore/silcauth.h.
+
+	* Added silc_pkcs_encrypt, silc_pkcs_decrypt, silc_pkcs_sign,
+	  silc_pkcs_verify and silc_pkcs_sign_with_hash and
+	  silc_pkcs_verify_with_hash functions into the file 
+	  lib/silccrypt/silcpkcs.[ch].
+
 Mon Feb 19 19:59:28 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* The client entry's userinfo pointer must be always valid. 

@@ -605,12 +605,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  
 	  if (client) {
 	    switch(client->auth_meth) {
-	    case SILC_PROTOCOL_CONN_AUTH_NONE:
+	    case SILC_AUTH_NONE:
 	      /* No authentication required */
 	      SILC_LOG_DEBUG(("No authentication required"));
 	      break;
 	      
-	    case SILC_PROTOCOL_CONN_AUTH_PASSWORD:
+	    case SILC_AUTH_PASSWORD:
 	      /* Password authentication */
 	      SILC_LOG_DEBUG(("Password authentication"));
 	      ret = silc_server_password_authentication(server, auth_data,
@@ -632,7 +632,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      return;
 	      break;
 	      
-	    case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
+	    case SILC_AUTH_PUBLIC_KEY:
 	      /* Public key authentication */
 	      SILC_LOG_DEBUG(("Public key authentication"));
 	      ret = silc_server_public_key_authentication(server, 
@@ -684,12 +684,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  
 	  if (serv) {
 	    switch(serv->auth_meth) {
-	    case SILC_PROTOCOL_CONN_AUTH_NONE:
+	    case SILC_AUTH_NONE:
 	      /* No authentication required */
 	      SILC_LOG_DEBUG(("No authentication required"));
 	      break;
 	      
-	    case SILC_PROTOCOL_CONN_AUTH_PASSWORD:
+	    case SILC_AUTH_PASSWORD:
 	      /* Password authentication */
 	      SILC_LOG_DEBUG(("Password authentication"));
 	      ret = silc_server_password_authentication(server, auth_data,
@@ -711,7 +711,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      return;
 	      break;
 	      
-	    case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
+	    case SILC_AUTH_PUBLIC_KEY:
 	      /* Public key authentication */
 	      SILC_LOG_DEBUG(("Public key authentication"));
 	      ret = silc_server_public_key_authentication(server, 
@@ -763,12 +763,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  
 	  if (serv) {
 	    switch(serv->auth_meth) {
-	    case SILC_PROTOCOL_CONN_AUTH_NONE:
+	    case SILC_AUTH_NONE:
 	      /* No authentication required */
 	      SILC_LOG_DEBUG(("No authentication required"));
 	      break;
 	      
-	    case SILC_PROTOCOL_CONN_AUTH_PASSWORD:
+	    case SILC_AUTH_PASSWORD:
 	      /* Password authentication */
 	      SILC_LOG_DEBUG(("Password authentication"));
 	      ret = silc_server_password_authentication(server, auth_data,
@@ -790,7 +790,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      return;
 	      break;
 	      
-	    case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
+	    case SILC_AUTH_PUBLIC_KEY:
 	      /* Public key authentication */
 	      SILC_LOG_DEBUG(("Public key authentication"));
 	      ret = silc_server_public_key_authentication(server, 
@@ -852,11 +852,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	unsigned int auth_data_len = 0;
 	
 	switch(ctx->auth_meth) {
-	case SILC_PROTOCOL_CONN_AUTH_NONE:
+	case SILC_AUTH_NONE:
 	  /* No authentication required */
 	  break;
 	  
-	case SILC_PROTOCOL_CONN_AUTH_PASSWORD:
+	case SILC_AUTH_PASSWORD:
 	  /* Password authentication */
 	  if (ctx->auth_data && ctx->auth_data_len) {
 	    auth_data = ctx->auth_data;
@@ -869,7 +869,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	  break;
 	  
-	case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
+	case SILC_AUTH_PUBLIC_KEY:
 	  /* Public key authentication */
 	  /* XXX TODO */
 	  break;
@@ -911,7 +911,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
        */
       unsigned char ok[4];
 
-      SILC_PUT32_MSB(SILC_CONN_AUTH_OK, ok);
+      SILC_PUT32_MSB(SILC_AUTH_OK, ok);
 
       /* Authentication failed */
       silc_server_packet_send(server, ctx->sock, SILC_PACKET_SUCCESS,
@@ -937,7 +937,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
        */
       unsigned char error[4];
 
-      SILC_PUT32_MSB(SILC_CONN_AUTH_FAILED, error);
+      SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
 
       /* Authentication failed */
       silc_server_packet_send(server, ctx->sock, SILC_PACKET_FAILURE,

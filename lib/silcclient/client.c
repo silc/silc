@@ -416,7 +416,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
 				    &proto_ctx->auth_data_len))
     {
       /* XXX do AUTH_REQUEST resolcing with server */
-      proto_ctx->auth_meth = SILC_PROTOCOL_CONN_AUTH_NONE;
+      proto_ctx->auth_meth = SILC_AUTH_NONE;
     }
 
   /* Free old protocol as it is finished now */
