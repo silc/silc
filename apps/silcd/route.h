@@ -54,7 +54,7 @@ extern SilcServerRouteTable silc_route_cache[SILC_SERVER_ROUTE_SIZE];
 /* Returns route cache hash table entry index. This is IPv4 specific.
    `port' argument may be zero (0) if it doesn't exist.  This has been
    taken from Linux kernel's route cache code. */
-extern inline
+static inline
 SilcUInt32 silc_server_route_hash(unsigned int addr, 
 				    SilcUInt16 port)
 {
