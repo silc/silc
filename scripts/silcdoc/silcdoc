@@ -66,9 +66,8 @@ if [ "$TYPE" = "HTML" ]; then
     rm -f $DST/$i_index.tmpl
   done
 
-  # Generate the index and TOC files from the DIRECTORY files
+  # Generate indes template from the DIRECTORY files
   files=`find $SRC -name "DIRECTORY"`
-  touch $DST/index.html.tmp
   for i in $files
   do
     # Get library name
@@ -78,15 +77,25 @@ if [ "$TYPE" = "HTML" ]; then
 
     # Generate links to template file that can be included into various
     # places on the webpage.
-    echo ">> <A HREF="$fname">$name</A>" >>$DST/index.tmpl
-
-    # Generate links for this library
+    echo "> <A HREF="$fname">$name</A><BR>" >>$DST/index.tmpl
     for k in $links
     do
       n=`grep $k $i |cut -d=  -f2 |cut -d:  -f2`
       echo "<LI><A HREF="$k">$n</A>" >>$DST/$fname.links
-      echo "&nbps;&nbsp;> <A HREF="$k">$n</A>" >>$DST/index.tmpl
+      echo "&nbsp;&nbsp;> <A HREF="$k">$n</A><BR>" >>$DST/index.tmpl
     done
+  done
+
+  # Generate the index and TOC files from the DIRECTORY files
+  files=`find $SRC -name "DIRECTORY"`
+  for i in $files
+  do
+    # Get library name
+    name=`grep "@LIBRARY=" $i |cut -d=  -f2`
+    fname=`grep "@FILENAME=" $i |cut -d=  -f2`
+    links=`grep "@LINK=" $i |cut -d=  -f2 |cut -d:  -f1`
+
+    # Generate links for this library
     sed -e "/@LINKS@/ r $DST/$fname.links" -e s/@LINKS@//g $i >$DST/$fname
 
     # Generate the TOC file for the library
