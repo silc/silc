@@ -45,9 +45,6 @@ rm -f lib/silcmath/Makefile.in
 rm -f lib/silcsim/Makefile.in
 rm -f lib/silcsim/modules/Makefile.in
 rm -f lib/silcske/Makefile.in
-rm -f lib/trq/Makefile.in
-rm -f lib/trq/tests/Makefile
-rm -f lib/trq/trq_test/Makefile
 rm -rf lib/silcmath/gmp/.deps
 rm -f silcd/Makefile.in silcd/log* silcd/*.log
 rm -f silc/Makefile.in silc/log* silc/*.log
