@@ -7,6 +7,9 @@ Sun Nov  4 11:43:53 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed compiler warning from MPI library, and from SILC RNG.
 	  A patch by johnny.
 
+	* Added SILC_SERVER_PID_FILE to define the pid file for server.
+	  It can be configured with ./configure.  A patch by toma.
+
 Sat Nov  3 23:48:23 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Find correct make to use in prepare-clean.  A patch by
