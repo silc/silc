@@ -6,5 +6,6 @@
 <FONT SIZE="+3" COLOR="#000044"><B>SILC Toolkit Reference Manual</B></FONT>
 <BR>
 Copyright (C) GNU GPL 2001 The SILC Project<BR>
-@DATE@
+Updated: @DATE@
 <BR><BR>
+@BODY@
