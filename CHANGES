@@ -1,3 +1,8 @@
+Tue Oct 29 17:36:44 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Send RESUME_CLIENT packet from router to backup routers
+	  to in resuming.  Affected file silcd/packet_receive.c.
+
 Mon Oct 28 21:23:39 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* In IDENTIFY command parsing, send all other IDs except

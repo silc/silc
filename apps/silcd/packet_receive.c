@@ -3647,6 +3647,8 @@ void silc_server_resume_client(SilcServer server,
     silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_RESUME_CLIENT, 0, 
 			    buf->data, buf->len, TRUE);
+    silc_server_backup_send(server, NULL, SILC_PACKET_RESUME_CLIENT, 0,
+			    buf->data, buf->len, TRUE, TRUE);
 
     /* As router we must deliver this packet directly to the original
        server whom this client was earlier. */
