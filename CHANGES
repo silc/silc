@@ -1,3 +1,10 @@
+Sat Feb 28 16:25:09 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* The silc_client_add_channel_private_key now returns the
+	  private key context if pointer is given as argument.
+	  Affected files are lib/silcclient/silcclient.h and
+	  client_channel.c.
+
 Fri Feb 27 11:25:26 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the JOIN command calling when called with both

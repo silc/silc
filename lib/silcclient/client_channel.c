@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -515,13 +515,14 @@ void silc_client_receive_channel_key(SilcClient client,
    as channel private key. However, this API allows it. */
 
 bool silc_client_add_channel_private_key(SilcClient client,
-					SilcClientConnection conn,
-					SilcChannelEntry channel,
-					const char *name,
-					char *cipher,
-					char *hmac,
-					unsigned char *key,
-					SilcUInt32 key_len)
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel,
+					 const char *name,
+					 char *cipher,
+					 char *hmac,
+					 unsigned char *key,
+					 SilcUInt32 key_len,
+					 SilcChannelPrivateKey *ret_key)
 {
   SilcChannelPrivateKey entry;
   unsigned char hash[32];
@@ -593,6 +594,9 @@ bool silc_client_add_channel_private_key(SilcClient client,
 
   /* Free the key material */
   silc_ske_free_key_material(keymat);
+
+  if (ret_key)
+    *ret_key = entry;
 
   return TRUE;
 }
