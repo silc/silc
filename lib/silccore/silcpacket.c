@@ -463,6 +463,12 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
     len1 = (truelen + padlen) - (SILC_PACKET_MIN_HEADER_LEN - 2);
 
     silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN - 2);
+    if (len1 - 2 > buffer->len) {
+      SILC_LOG_DEBUG(("Garbage in header of packet, bad packet length, "
+		      "packet dropped"));
+      return FALSE;
+    }
+
     cipher->cipher->decrypt(cipher->context, buffer->data + 2,
 			    buffer->data + 2, len1 - 2,
 			    cipher->iv);
