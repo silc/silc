@@ -329,7 +329,8 @@ abstracts = {
   privmsgnick_failed = "{privmsgnick {flag_failed}$0}";
   
   ownmsgnick_signed = "{msgnick {flag_signed} $1-}%g";
-  ownprivmsgnick_signed = "->*%c{flag_signed}%n* %g$1-";
+  ownprivmsg_signed = "->*%c{flag_signed}$1-%n* %g";
+  ownprivmsgnick_signed = "->*%c{flag_signed}$0%n* %g$1-";
 };
 
 #
