@@ -455,7 +455,8 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type);
  *    ID out of data that has been taken for example from packet.
  *
  ***/
-void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, SilcIdType type);
+void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
+		     SilcIdType type);
 
 /****f* silccore/SilcIDAPI/silc_id_get_len
  *

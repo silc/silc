@@ -61,7 +61,8 @@ int silc_file_close(int fd)
 
 /* Writes a buffer to the file. */
 
-int silc_file_writefile(const char *filename, const char *buffer, SilcUInt32 len)
+int silc_file_writefile(const char *filename, const char *buffer, 
+			SilcUInt32 len)
 {
   int fd;
         
