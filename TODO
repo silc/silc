@@ -26,6 +26,9 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Rekey protocol does not work with backup router (due to disabled
+   connections)!?
+
  o Implement the <Requested Attributes> and the Attribute Payload to
    the core library, client and server.  Maybe implementations of
    RFC 2425 and RFC 2426 to make it complete.
