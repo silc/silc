@@ -1,3 +1,10 @@
+Wed Mar 23 11:20:33 CET 2005  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* If the passphrases entered do not match while generating a new key,
+	  completly start over instead of going into an infinite loop asking
+	  the user to re-enter the passphrase correctly.  Affected file
+	  lib/silcutil/silcapputil.c
+
 Sun Jan  9 14:28:51 CET 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Make sure server is removed from backup list when it is
