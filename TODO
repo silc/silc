@@ -3,8 +3,6 @@ TODO/bugs in Irssi SILC client
 
  o UTF-8 encode/decode WHOIS userinfos, topic, etc.
 
- o Add STATS.
-
  o Testing
 
 
@@ -25,6 +23,8 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
+
+ o WHOIS may not send reply in certain situations.
 
  o Add support for the <Requested Attributes> in WHOIS.  Sending and
    reception, with clients and servers should be added.

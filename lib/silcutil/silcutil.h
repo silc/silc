@@ -63,14 +63,16 @@ int silc_check_line(char *buf);
  *
  * SYNOPSIS
  *
- *    char *silc_get_time();
+ *    const char *silc_get_time(SilcUInt32 timeval)
  *
  * DESCRIPTION
  *
- *    Returns current time as string.
+ *    Returns time as string.  If the the `timeval' is non-zero that
+ *    value is returned as string.  If it is zero the current time of the
+ *    local machine is returned.
  *
  ***/
-char *silc_get_time();
+const char *silc_get_time(SilcUInt32 timeval);
 
 /****f* silcutil/SilcUtilAPI/silc_to_upper
  *

@@ -78,18 +78,23 @@ int silc_check_line(char *buf)
   return 0;
 }
 
-/* Returns current time as string. */
+/* Returns time as string.  If the the `timeval' is non-zero that
+   value is returned as string.  If it is zero the current time of the
+   local machine is returned. */
 
-char *silc_get_time()
+const char *silc_get_time(SilcUInt32 timeval)
 {
   time_t curtime;
   char *return_time;
 
-  curtime = time(NULL);
+  if (!timeval)
+    curtime = time(NULL);
+  else
+    curtime = (time_t)timeval;
   return_time = ctime(&curtime);
   return_time[strlen(return_time) - 1] = '\0';
 
-  return return_time;
+  return (const char *)return_time;
 }
 
 /* Converts string to capital characters. */

@@ -1,3 +1,12 @@
+Sun Sep 15 12:25:10 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the silc_get_time to accept time value as argument
+	  or if zero is sent return current local time.  Affected
+	  file lib/silcutil/silcutil.[ch].
+
+	* Added STATS command to client library and Irssi SILC client.
+	  Patch provided by Ville Räsänen <ville.rasanen@iki.fi>.
+
 Wed Sep 11 09:22:00 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Assure that channel key is set before sending it.  May

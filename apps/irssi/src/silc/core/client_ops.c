@@ -1610,6 +1610,135 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
   case SILC_COMMAND_WATCH:
     break;
+  
+  case SILC_COMMAND_STATS:
+    {
+      SilcUInt32 starttime, uptime, my_clients, my_channels, my_server_ops,
+	         my_router_ops, cell_clients, cell_channels, cell_servers,
+	         clients, channels, servers, routers, server_ops, router_ops;
+      SilcUInt32 buf_len;
+      SilcBufferStruct buf;
+      unsigned char *tmp_buf;
+      char tmp[40];
+      const char *tmptime;
+      int days, hours, mins, secs;
+
+      if (!success)
+	return;
+
+      tmp_buf = va_arg(vp, unsigned char *);
+      buf_len = va_arg(vp, SilcUInt32);
+
+      if (!tmp_buf || !buf_len) {
+	printtext(server, NULL, MSGLEVEL_CRAP, "No statistics available");
+	return;
+      }
+
+      /* Get statistics structure */
+      silc_buffer_set(&buf, tmp_buf, buf_len);
+      silc_buffer_unformat(&buf,
+			   SILC_STR_UI_INT(&starttime),
+			   SILC_STR_UI_INT(&uptime),
+			   SILC_STR_UI_INT(&my_clients),
+			   SILC_STR_UI_INT(&my_channels),
+			   SILC_STR_UI_INT(&my_server_ops),
+			   SILC_STR_UI_INT(&my_router_ops),
+			   SILC_STR_UI_INT(&cell_clients),
+			   SILC_STR_UI_INT(&cell_channels),
+			   SILC_STR_UI_INT(&cell_servers),
+			   SILC_STR_UI_INT(&clients),
+			   SILC_STR_UI_INT(&channels),
+			   SILC_STR_UI_INT(&servers),
+			   SILC_STR_UI_INT(&routers),
+			   SILC_STR_UI_INT(&server_ops),
+			   SILC_STR_UI_INT(&router_ops),
+			   SILC_STR_END);
+
+      tmptime = silc_get_time(starttime);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local server start time", tmptime);
+
+      days = uptime / (24 * 60 * 60);
+      uptime -= days * (24 * 60 * 60);
+      hours = uptime / (60 * 60);
+      uptime -= hours * (60 * 60);
+      mins = uptime / 60;
+      uptime -= mins * 60;
+      secs = uptime;
+      snprintf(tmp, sizeof(tmp) - 1, "%d days %d hours %d mins %d secs",
+	       days, hours, mins, secs);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local server uptime", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)my_clients);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local server clients", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)my_channels);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local server channels", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)my_server_ops);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local server operators", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)my_router_ops);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local router operators", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cell_clients);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local cell clients", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cell_channels);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local cell channels", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cell_servers);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Local cell servers", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)clients);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Total clients", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)channels);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Total channels", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)servers);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Total servers", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)routers);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Total routers", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)server_ops);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			   "Total server operators", tmp);
+
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)router_ops);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_STATS,
+			 "Total router operators", tmp);
+    }
+    break;
+
   }
 
   va_end(vp);

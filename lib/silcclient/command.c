@@ -874,6 +874,38 @@ SILC_CLIENT_CMD_FUNC(info)
   silc_client_command_free(cmd);
 }
 
+/* Command STATS. Shows server and network statistics. */
+
+SILC_CLIENT_CMD_FUNC(stats)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer, idp = NULL;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
+    goto out;
+  }
+
+  idp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER); 
+  
+  /* Send the command */
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_STATS,
+					  ++conn->cmd_ident, 1,
+					  SILC_ID_SERVER, idp->data, idp->len);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_buffer_free(idp);
+
+  /* Notify application */
+  COMMAND(SILC_STATUS_OK);
+
+ out:
+  silc_client_command_free(cmd);
+}
+
 /* Command PING. Sends ping to server. This is used to test the 
    communication channel. */
 
@@ -2433,6 +2465,7 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(quit, QUIT, "QUIT", 2);
   SILC_CLIENT_CMD(kill, KILL, "KILL", 3);
   SILC_CLIENT_CMD(info, INFO, "INFO", 2);
+  SILC_CLIENT_CMD(stats, STATS, "STATS", 0);
   SILC_CLIENT_CMD(ping, PING, "PING", 2);
   SILC_CLIENT_CMD(oper, OPER, "OPER", 3);
   SILC_CLIENT_CMD(join, JOIN, "JOIN", 9);
@@ -2468,6 +2501,7 @@ void silc_client_commands_unregister(SilcClient client)
   SILC_CLIENT_CMDU(quit, QUIT, "QUIT");
   SILC_CLIENT_CMDU(kill, KILL, "KILL");
   SILC_CLIENT_CMDU(info, INFO, "INFO");
+  SILC_CLIENT_CMDU(stats, STATS, "STATS");
   SILC_CLIENT_CMDU(ping, PING, "PING");
   SILC_CLIENT_CMDU(oper, OPER, "OPER");
   SILC_CLIENT_CMDU(join, JOIN, "JOIN");

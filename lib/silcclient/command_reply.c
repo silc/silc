@@ -830,6 +830,38 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
   silc_client_command_reply_free(cmd);
 }
 
+/* Received reply to STATS command. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(stats)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  unsigned char *tmp, *buf = NULL;
+  SilcUInt32 len, buf_len = 0;
+
+  if (cmd->error != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_get_status_message(cmd->error));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Get server ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (!tmp)
+    goto out;
+
+  /* Get statistics structure */
+  buf = silc_argument_get_arg_type(cmd->args, 3, &buf_len);
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS, buf, buf_len));
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_STATS);
+  silc_client_command_reply_free(cmd);
+}
+
 /* Received reply to PING command. The reply time is shown to user. */
 
 SILC_CLIENT_CMD_REPLY_FUNC(ping)

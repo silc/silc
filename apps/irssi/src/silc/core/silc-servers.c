@@ -414,6 +414,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder] */
 /* SYNTAX: DETACH */
 /* SYNTAX: WATCH [<-add | -del> <nickname>] */
+/* SYNTAX: STATS */
 
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
@@ -966,6 +967,7 @@ void silc_server_init(void)
   command_bind_silc("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
   command_bind_silc("detach", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("watch", MODULE_NAME, (SIGNAL_FUNC) command_self);
+  command_bind_silc("stats", MODULE_NAME, (SIGNAL_FUNC) command_self);
 
   command_set_options("connect", "+silcnet");
 }
@@ -1002,6 +1004,7 @@ void silc_server_deinit(void)
   command_unbind("file", (SIGNAL_FUNC) command_file);
   command_unbind("detach", (SIGNAL_FUNC) command_self);
   command_unbind("watch", (SIGNAL_FUNC) command_self);
+  command_unbind("stats", (SIGNAL_FUNC) command_self);
 }
 
 void silc_server_free_ftp(SILC_SERVER_REC *server,

@@ -122,7 +122,7 @@ static void silc_log_checksize(SilcLog log)
   /* It's too big */
   fprintf(log->fp, "[%s] [%s] Cycling log file, over max "
 	  "logsize (%lu kilobytes)\n",
-	  silc_get_time(), log->typename, log->maxsize / 1024);
+	  silc_get_time(0), log->typename, log->maxsize / 1024);
   fflush(log->fp);
   fclose(log->fp);
   snprintf(newname, sizeof(newname), "%s.old", log->filename);
@@ -225,7 +225,7 @@ void silc_log_output(SilcLogType type, char *string)
  found:
   /* writes the logging string to the selected channel */
   if (silc_log_timestamp)
-    fprintf(fp, "[%s] [%s] %s\n", silc_get_time(), typename, string);
+    fprintf(fp, "[%s] [%s] %s\n", silc_get_time(0), typename, string);
   else
     fprintf(fp, "[%s] %s\n", typename, string);
 
