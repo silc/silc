@@ -80,48 +80,48 @@ Table of Contents
 3 SILC Specification ............................................  7
   3.1 Client ....................................................  7
       3.1.1 Client ID ...........................................  8
-  3.2 Server ....................................................  8
+  3.2 Server ....................................................  9
       3.2.1 Server's Local ID List ..............................  9
       3.2.2 Server ID ........................................... 10
-      3.2.3 SILC Server Ports ................................... 10
+      3.2.3 SILC Server Ports ................................... 11
   3.3 Router .................................................... 11
       3.3.1 Router's Local ID List .............................. 11
       3.3.2 Router's Global ID List ............................. 12
-      3.3.3 Router's Server ID .................................. 12
-  3.4 Channels .................................................. 12
-      3.4.1 Channel ID .......................................... 13
+      3.3.3 Router's Server ID .................................. 13
+  3.4 Channels .................................................. 13
+      3.4.1 Channel ID .......................................... 14
   3.5 Operators ................................................. 14
-  3.6 SILC Commands ............................................. 14
+  3.6 SILC Commands ............................................. 15
   3.7 SILC Packets .............................................. 15
-  3.8 Packet Encryption ......................................... 15
+  3.8 Packet Encryption ......................................... 16
       3.8.1 Determination of the Source and the Destination ..... 16
-      3.8.2 Client To Client .................................... 16
-      3.8.3 Client To Channel ................................... 17
-      3.8.4 Server To Server .................................... 18
-  3.9 Key Exchange And Authentication ........................... 18
+      3.8.2 Client To Client .................................... 17
+      3.8.3 Client To Channel ................................... 18
+      3.8.4 Server To Server .................................... 19
+  3.9 Key Exchange And Authentication ........................... 19
   3.10 Algorithms ............................................... 19
       3.10.1 Ciphers ............................................ 19
       3.10.2 Public Key Algorithms .............................. 20
       3.10.3 MAC Algorithms ..................................... 20
-      3.10.4 Compression Algorithms ............................. 20
+      3.10.4 Compression Algorithms ............................. 21
   3.11 SILC Public Key .......................................... 21
-4 SILC Procedures ............................................... 23
-  4.1 Creating Client Connection ................................ 23
-  4.2 Creating Server Connection ................................ 24
-  4.3 Joining to a Channel ...................................... 25
-  4.4 Channel Key Generation .................................... 26
+4 SILC Procedures ............................................... 24
+  4.1 Creating Client Connection ................................ 24
+  4.2 Creating Server Connection ................................ 25
+  4.3 Joining to a Channel ...................................... 26
+  4.4 Channel Key Generation .................................... 27
   4.5 Private Message Sending and Reception ..................... 27
-  4.6 Private Message Key Generation ............................ 27
-  4.7 Channel Message Sending and Reception ..................... 28
-  4.8 Session Key Regeneration .................................. 28
+  4.6 Private Message Key Generation ............................ 28
+  4.7 Channel Message Sending and Reception ..................... 29
+  4.8 Session Key Regeneration .................................. 29
   4.9 Command Sending and Reception ............................. 29
-5 SILC Commands ................................................. 29
-  5.1 SILC Commands Syntax ...................................... 29
-  5.2 SILC Commands List ........................................ 31
-  5.3 SILC Command Status Types ................................. 54
-      5.3.1 SILC Command Status Payload ......................... 54
+5 SILC Commands ................................................. 30
+  5.1 SILC Commands Syntax ...................................... 30
+  5.2 SILC Commands List ........................................ 32
+  5.3 SILC Command Status Types ................................. 53
+      5.3.1 SILC Command Status Payload ......................... 53
       5.3.2 SILC Command Status List ............................ 54
-6 Security Considerations ....................................... 58
+6 Security Considerations ....................................... 59
 7 References .................................................... 59
 8 Author's Address .............................................. 60
 
@@ -143,11 +143,12 @@ Figure 5:  SILC Command Status Payload
 This document describes a Secure Internet Live Conferencing (SILC)
 protocol which provides secure conferencing services over insecure
 network channel.  SILC is IRC [IRC] like protocol, however, it is 
-not equivalent to IRC and does not support IRC.  Strong cryptographic
-methods are used to protect SILC packets inside SILC network.  Two
-other Internet Drafts relates very closely to this memo;  SILC Packet
-Protocol [SILC2] and SILC Key Exchange and Authentication Protocols
-[SILC3].
+not equivalent to IRC and does not support IRC.
+
+Strong cryptographic methods are used to protect SILC packets inside
+SILC network.  Two other Internet Drafts relates very closely to this
+memo; SILC Packet Protocol [SILC2] and SILC Key Exchange and
+Authentication Protocols [SILC3].
 
 The protocol uses extensively packets as conferencing protocol 
 requires message and command sending.  The SILC Packet Protocol is
@@ -189,7 +190,8 @@ clear.
 SILC network is a cellular network as opposed to tree style network 
 topology.  The rationale for this is to have servers that can perform 
 specific kind of tasks what other servers cannot perform.  This leads 
-to two kinds of servers; normal SILC servers and SILC routers.  
+to two kinds of servers; normal SILC servers and SILC routers.
+
 A difference between normal server and router server is that routers 
 knows everything about everything in the network.  They also do the 
 actual routing of the messages to the correct receiver.  Normal servers 
@@ -199,7 +201,23 @@ keep global information up to date at all time.
 
 This, on the other hand, leads to cellular like network, where routers 
 are in the centrum on the cell and servers are connected to the router.
+
 Following diagram represents SILC network topology.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 .in 8
@@ -324,9 +342,6 @@ Example:  Client 5. connected to Server 4. in Cell 1. message sent
 The optimal case of message delivery from client point of view is
 when clients are connected directly to the routers and the messages
 are delivered from one router to the other router.
-
-
-
 
 
 .ti 0 
@@ -462,6 +477,13 @@ of creating the Client ID's for their clients.
 Normal server also keeps information about locally created channels and
 their Channel ID's.
 
+
+
+
+
+
+
+
 Hence, local list for normal server includes:
 
 .in 6
@@ -480,8 +502,6 @@ client list        - All clients in server
    o Client ID
    o Sending key
    o Receiving key
-
-
 
 channel list       - All channels in server
    o Channel name
@@ -565,6 +585,10 @@ information about user's nickname, username and hostname and real name
 since these are not needed by the router.  Router keeps only information
 that it needs.
 
+
+
+
+
 Hence, local list for router includes:
 
 .in 6
@@ -615,6 +639,7 @@ server list        - All servers in SILC
    o Server name
    o Server ID
    o Router's Server ID
+
 
 client list        - All clients in SILC
    o Client ID
@@ -768,6 +793,8 @@ or some other key, for example, channel key, when encrypting channel
 messages.  The SILC Packet Protocol is a wide protocol and is described
 in [SILC2].  This document does not define or describe details of
 SILC packets.
+
+
 
 
 .ti 0
@@ -968,6 +995,11 @@ in the SILC packets.  See [SILC2] of the actual encryption process and
 definition of how it must be done.  SILC has a mandatory algorithm that
 must be supported in order to be compliant with this protocol.
 
+
+
+
+
+
 Following ciphers are defined in SILC protocol:
 
 .in 6
@@ -991,10 +1023,6 @@ debugging mode.
 
 Additional ciphers may be defined to be used in SILC by using the
 same name format as above.
-
-
-
-
 
 
 .ti 0
@@ -1022,6 +1050,10 @@ Additional public key algorithms may be defined to be used in SILC.
 Data integrity is protected by computing a message authentication code
 (MAC) of the packet data.  See [SILC2] for details how to compute the
 MAC.
+
+
+
+
 
 Following MAC algorithms are defined in SILC protocol:
 
@@ -1072,6 +1104,11 @@ protocol.  Public keys in SILC may be used to authenticate entities
 and to perform other tasks related to public key cryptography.
 
 The format of the SILC Public Key is as follows:
+
+
+
+
+
 
 
 .in 5
@@ -1421,6 +1458,8 @@ case by default in SILC, the private messages are secured by using
 normal session keys established by SILC Key Exchange protocol.
 
 
+
+
 .ti 0
 4.7 Channel Message Sending and Reception
 
@@ -1519,6 +1558,10 @@ possible to have multiple optional arguments in commands and in
 command replies.  The number of argument is marked in parentheses
 before the actual argument.
 
+
+
+
+
 .in 6
 Example:  Arguments:  (1) <nickname> (2) <username@host>
 .in 3
@@ -1555,10 +1598,6 @@ The receiver always knows that, say, argument number two (2) is
 <message> argument, regardles of the ordering of the arguments in
 the Command Payload.
 
-
-
-
-
 Reply messages to the command:
 
 Max Arguments:  4
@@ -1573,6 +1612,8 @@ command sending specification.
 Every command reply with <Status Payload>, it is mandatory 
 argument for all command replies and for this reason it is not
 described in the command reply descriptions.
+
+
 
 Status messages:
 
@@ -1848,11 +1889,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER
 
 
-
-
-
-
-
    7    SILC_COMMAND_TOPIC
 
         Max Arguments:  2
@@ -1965,6 +2001,9 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CLIENT_ID
 
 
+
+
+
    11   SILC_COMMAND_INFO
 
         Max Arguments:  1
@@ -1993,10 +2032,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER
 
 
-
-
-
-
    12   SILC_COMMAND_CONNECT
 
         Max Arguments:  2
@@ -2015,6 +2050,8 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <Status Payload>
 
         This command replies only with Status Payload.
+
+
 
         Status messages:
 
@@ -2088,11 +2125,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_REGISTERED
             SILC_STATUS_ERR_BAD_PASSWORD
             SILC_STATUS_ERR_AUTH_FAILED
-
-
-
-
-
 
 
    15   SILC_COMMAND_JOIN
@@ -2186,10 +2218,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
             SILC_STATUS_ERR_NOT_REGISTERED
             SILC_STATUS_ERR_NO_SUCH_SERVER
-
-
-
-
 
 
    17   SILC_COMMAND_UMODE
@@ -2457,6 +2485,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CLIENT_ID
 
 
+
+
    19   SILC_COMMAND_KICK
 
         Max Arguments:  3
@@ -2502,6 +2532,8 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <Status Payload>
 
         This command replies only with Status Payload.
+
+
 
         Status messages:
 
@@ -2549,6 +2581,8 @@ List of all defined commands in SILC follows.
         shutdown.
 
         Reply messages to the command:
+
+
 
         Max Arguments:  1
             Arguments:  (1) <Status Payload>
@@ -2777,8 +2811,6 @@ List of all defined command status messages following.
         "Unknown command".  Command sent to server is unknown by the
         server.
 
-
-
    16   SILC_STATUS_ERR_WILDCARDS
 
         "Wildcards cannot be used".  Wildcards were provided but they
@@ -2854,6 +2886,8 @@ List of all defined command status messages following.
         "You are banned from this server".  The client tried to register
         on server that has explicitly denied this host to connect.
 
+
+
    31   SILC_STATUS_ERR_BAD_PASSWORD
 
         "Cannot join channel. Incorrect password".  Password provided for 
@@ -2873,8 +2907,6 @@ List of all defined command status messages following.
 
         "Cannot join channel. You have been banned".  The client has
         been banned from the channel.
-
-
 
    35   SILC_STATUS_ERR_UNKNOWN_MODE
 
@@ -2971,10 +3003,6 @@ considerations permeate the specification.
 
 [HMAC]       Krawczyk, H., "HMAC: Keyed-Hashing for Message
              Authentication", RFC 2104, February 1997.
-
-
-
-
 
 
 

@@ -833,6 +833,7 @@ o Success Indication (variable length) - Indication of
 This is opposite of Success Payload.  Indication of failure of
 some protocol is sent in the payload.
 
+
 .in 5
 .nf
                      1                   2                   3
@@ -892,6 +893,9 @@ o Reject Indication (variable length) - Indication of
 .in 3
 
 
+
+
+
 .ti 0
 2.3.6 Notify Payload
 
@@ -904,10 +908,6 @@ notify message should be noted and possibly logged.
 The payload may only be sent with SILC_PACKET_NOTIFY packet.  It must
 not be sent in any other packet type.  Following diagram represents the
 Notify Payload.
-
-
-
-
 
 .in 5
 .nf
