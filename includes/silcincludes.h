@@ -53,9 +53,7 @@
 #endif
 
 #ifdef HAVE_SIGNAL_H
-#undef __USE_GNU
 #include <signal.h>
-#define __USE_GNU 1
 #else
 #error signal.h not found in the system
 #endif

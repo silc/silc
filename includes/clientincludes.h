@@ -23,6 +23,10 @@
 
 #include "silcdefs.h"
 
+/* Generic includes */
+#include "silcincludes.h"
+#include "clientlibincludes.h"
+
 #if defined(USE_NCURSES) && !defined(RENAMED_NCURSES)
 #include <ncurses.h>
 #else
@@ -33,10 +37,6 @@
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
-
-/* Generic includes */
-#include "silcincludes.h"
-#include "clientlibincludes.h"
 
 /* SILC Client includes */
 #include "screen.h"
