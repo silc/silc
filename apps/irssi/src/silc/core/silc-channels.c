@@ -156,6 +156,7 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   signal_emit("message part", 5, server, chanrec->name,
 	      server->nick, userhost, "");
   
+  chanrec->left = TRUE;
   silc_command_exec(server, "LEAVE", chanrec->name);
   signal_stop();
   

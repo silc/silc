@@ -208,13 +208,13 @@ SILC_TASK_CALLBACK(silc_client_resume_call_completion)
   SilcClientResumeSession session = context;
   int i;
 
-  session->callback(session->client, session->conn, session->success,
-		    session->context);
-
   for (i = 0; i < session->cmd_idents_count; i++)
     silc_client_command_pending_del(session->conn, SILC_COMMAND_IDENTIFY, 
 				    session->cmd_idents[i]);
   silc_free(session->cmd_idents);
+
+  session->callback(session->client, session->conn, session->success,
+		    session->context);
 
   memset(session, 'F', sizeof(*session));
   silc_free(session);

@@ -892,6 +892,17 @@ void silc_client_notify_by_server(SilcClient client,
 	silc_hash_table_del(channel->user_list, client_entry);
 	silc_free(chu);
       }
+
+      if (!silc_hash_table_count(client_entry->channels)) {
+	SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
+	res->context = client;
+	res->sock = silc_socket_dup(conn->sock);
+	res->packet = silc_id_dup(client_entry->id, SILC_ID_CLIENT);
+	silc_schedule_task_add(client->schedule, 0,
+			       silc_client_notify_check_client, res,
+			       (5 + (silc_rng_get_rn16(client->rng) % 529)),
+			       0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+      }
     }
     break;
 

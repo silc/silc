@@ -24,13 +24,18 @@
 #include "command_reply.h"
 
 /* All functions that call the COMMAND_CHECK_STATUS macros must have
-   out: goto label. */
+   out: and err: goto labels. */
 
-#define COMMAND_CHECK_STATUS					\
-do {								\
-  SILC_LOG_DEBUG(("Start"));					\
-  if (!silc_command_get_status(cmd->payload, &status, &error))	\
-    goto out;							\
+#define COMMAND_CHECK_STATUS						\
+do {									\
+  SILC_LOG_DEBUG(("Start"));						\
+  if (!silc_command_get_status(cmd->payload, &status, &error)) {	\
+    if (SILC_STATUS_IS_ERROR(status))					\
+      goto out;								\
+    if (status == SILC_STATUS_LIST_END)					\
+      goto out;								\
+    goto err;								\
+  }									\
 } while(0)
 
 /* Server command reply list. Not all commands have reply function as
@@ -112,6 +117,37 @@ void silc_server_command_reply_free(SilcServerCommandReplyContext cmd)
       silc_socket_free(cmd->sock); /* Decrease the reference counter */
     silc_free(cmd->callbacks);
     silc_free(cmd);
+  }
+}
+
+static void 
+silc_server_command_process_error(SilcServerCommandReplyContext cmd,
+				  SilcStatus error)
+{
+  SilcServer server = cmd->server;
+
+  /* If we received notify for invalid ID we'll remove the ID if we
+     have it cached. */
+  if (error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID &&
+      cmd->sock->type == SILC_SOCKET_TYPE_ROUTER) {
+    SilcClientEntry client;
+    SilcUInt32 tmp_len;
+    unsigned char *tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+    if (tmp) {
+      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+      if (client_id) {
+	SILC_LOG_DEBUG(("Received invalid client ID notification, deleting "
+			"the entry from cache"));
+	client = silc_idlist_find_client_by_id(server->global_list, 
+					       client_id, FALSE, NULL);
+	if (client) {
+	  silc_server_remove_from_channels(server, NULL, client, TRUE, 
+					   NULL, TRUE);
+	  silc_idlist_del_client(server->global_list, client);
+	}
+	silc_free(client_id);
+      }
+    }
   }
 }
 
@@ -253,7 +289,6 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 SILC_SERVER_CMD_REPLY_FUNC(whois)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
-  SilcServer server = cmd->server;
   SilcStatus status, error;
 
   COMMAND_CHECK_STATUS;
@@ -269,31 +304,13 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
   }
 
  out:
-  /* If we received notify for invalid ID we'll remove the ID if we
-     have it cached. */
-  if (error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID &&
-      cmd->sock->type == SILC_SOCKET_TYPE_ROUTER) {
-    SilcClientEntry client;
-    SilcUInt32 tmp_len;
-    unsigned char *tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-    if (tmp) {
-      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
-      if (client_id) {
-	SILC_LOG_DEBUG(("Received invalid client ID notification, deleting "
-			"the entry from cache"));
-	client = silc_idlist_find_client_by_id(server->global_list, 
-					       client_id, FALSE, NULL);
-	if (client) {
-	  silc_server_remove_from_channels(server, NULL, client, TRUE, 
-					   NULL, TRUE);
-	  silc_idlist_del_client(server->global_list, client);
-	}
-	silc_free(client_id);
-      }
-    }
-  }
-
+  silc_server_command_process_error(cmd, error);
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
+  silc_server_command_reply_free(cmd);
+  return;
+
+ err:
+  silc_server_command_process_error(cmd, error);
   silc_server_command_reply_free(cmd);
 }
 
@@ -406,6 +423,7 @@ SILC_SERVER_CMD_REPLY_FUNC(whowas)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WHOWAS);
+ err:
   silc_server_command_reply_free(cmd);
 }
 
@@ -614,7 +632,6 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 SILC_SERVER_CMD_REPLY_FUNC(identify)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
-  SilcServer server = cmd->server;
   SilcStatus status, error;
 
   COMMAND_CHECK_STATUS;
@@ -630,31 +647,13 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
   }
 
  out:
-  /* If we received notify for invalid ID we'll remove the ID if we
-     have it cached. */
-  if (error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID &&
-      cmd->sock->type == SILC_SOCKET_TYPE_ROUTER) {
-    SilcClientEntry client;
-    SilcUInt32 tmp_len;
-    unsigned char *tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-    if (tmp) {
-      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
-      if (client_id) {
-	SILC_LOG_DEBUG(("Received invalid client ID notification, deleting "
-			"the entry from cache"));
-	client = silc_idlist_find_client_by_id(server->global_list, 
-					       client_id, FALSE, NULL);
-	if (client) {
-	  silc_server_remove_from_channels(server, NULL, client, TRUE, 
-					   NULL, TRUE);
-	  silc_idlist_del_client(server->global_list, client);
-	}
-	silc_free(client_id);
-      }
-    }
-  }
-
+  silc_server_command_process_error(cmd, error);
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_IDENTIFY);
+  silc_server_command_reply_free(cmd);
+  return;
+
+ err:
+  silc_server_command_process_error(cmd, error);
   silc_server_command_reply_free(cmd);
 }
 
@@ -712,6 +711,7 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
+ err:
   silc_server_command_reply_free(cmd);
 }
 
@@ -755,6 +755,7 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_MOTD);
+ err:
   silc_server_command_reply_free(cmd);
 
   if (entry)
@@ -958,6 +959,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
+ err:
   silc_free(client_id);
   silc_server_command_reply_free(cmd);
 
@@ -1005,6 +1007,8 @@ SILC_SERVER_CMD_REPLY_FUNC(stats)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_STATS);
+ err:
+  silc_server_command_reply_free(cmd);
 }
 
 SILC_SERVER_CMD_REPLY_FUNC(users)
@@ -1096,6 +1100,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
   silc_free(channel_id);
+ err:
   silc_server_command_reply_free(cmd);
 }
 
@@ -1183,6 +1188,7 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
   silc_free(server_id);
   if (public_key)
     silc_pkcs_public_key_free(public_key);
+ err:
   silc_server_command_reply_free(cmd);
 }
 
@@ -1260,6 +1266,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_LIST);
   silc_free(channel_id);
+ err:
   silc_server_command_reply_free(cmd);
 }
 
@@ -1272,5 +1279,6 @@ SILC_SERVER_CMD_REPLY_FUNC(watch)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WATCH);
+ err:
   silc_server_command_reply_free(cmd);
 }

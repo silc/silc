@@ -1498,7 +1498,7 @@ void silc_client_disconnected_by_server(SilcClient client,
 
   if (packet->len > 1 &&
       silc_utf8_valid(packet->data + 1, packet->len - 1))
-    message = silc_memdup(packet->data, packet->len);
+    message = silc_memdup(packet->data + 1, packet->len - 1);
 
   client->internal->ops->say(client, sock->user_data, 
 			     SILC_CLIENT_MESSAGE_AUDIT, 

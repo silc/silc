@@ -1079,7 +1079,10 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 
     /* We received the REKEY_DONE packet and all packets after this is
        encrypted with the new key so set the decryption key to the new key */
-    silc_client_protocol_rekey_generate(client, ctx, FALSE);
+    if (ctx->pfs == TRUE)
+      silc_client_protocol_rekey_generate_pfs(client, ctx, FALSE);
+    else
+      silc_client_protocol_rekey_generate(client, ctx, FALSE);
 
     /* Protocol has ended, call the final callback */
     if (protocol->final_callback)

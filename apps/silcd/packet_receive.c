@@ -2993,7 +2993,7 @@ void silc_server_resume_client(SilcServer server,
   unsigned char *id_string, *auth = NULL;
   SilcUInt16 id_len, auth_len = 0;
   int ret, nickfail = 0;
-  bool resolved, local, nick_change = FALSE;
+  bool resolved, local, nick_change = FALSE, resolve = FALSE;
   SilcChannelEntry channel;
   SilcHashTableList htl;
   SilcChannelClientEntry chl;
@@ -3060,10 +3060,15 @@ void silc_server_resume_client(SilcServer server,
       return;
     }
 
-    /* Check that the client is detached, and that we have other info too */
-    if (!(detached_client->mode & SILC_UMODE_DETACHED) ||
-	!silc_hash_table_count(detached_client->channels) ||
-	!detached_client->nickname) {
+    if (!(detached_client->mode & SILC_UMODE_DETACHED))
+      resolve = TRUE;
+    if (!silc_hash_table_count(detached_client->channels) &&
+	detached_client->router)
+      resolve = TRUE;
+    if (!detached_client->nickname)
+      resolve = TRUE;
+
+    if (resolve) {
       if (server->server_type == SILC_SERVER && !server->standalone) {
 	/* The client info is being resolved. Reprocess this packet after
 	   receiving the reply to the query. */
@@ -3094,7 +3099,7 @@ void silc_server_resume_client(SilcServer server,
     /* Check that we have the public key of the client, if not then we must
        resolve it first. */
     if (!detached_client->data.public_key) {
-      if (server->standalone) {
+      if (server->server_type == SILC_SERVER && server->standalone) {
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				      "Resuming not possible");

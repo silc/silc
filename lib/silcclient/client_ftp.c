@@ -769,6 +769,7 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
 
   silc_free(session->hostname);
   silc_free(session->filepath);
+  silc_free(session->path);
   silc_free(session);
 }
 

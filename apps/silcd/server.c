@@ -4336,7 +4336,7 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
     idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
     buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
 					    server->cmd_ident, 1,
-					    3, idp->data, idp->len);
+					    4, idp->data, idp->len);
     silc_server_packet_send(server, client ? client->router->connection :
 			    server->router->connection,
 			    SILC_PACKET_COMMAND, 0,

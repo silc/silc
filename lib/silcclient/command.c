@@ -129,6 +129,9 @@ void silc_client_command_pending_del(SilcClientConnection conn,
 {
   SilcClientCommandPending *r;
 
+  if (!conn->pending_commands)
+    return;
+
   silc_dlist_start(conn->pending_commands);
   while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
     if (r->reply_cmd == reply_cmd && r->ident == ident) {

@@ -39,14 +39,36 @@
 #define SAY cmd->client->internal->ops->say
 
 /* All functions that call the COMMAND_CHECK_STATUS macro must have 
-   out: goto label. */
+   out: and err: goto labels. out label should call the pending
+   command replies, and the err label just handle error condition. */
 
 #define COMMAND_CHECK_STATUS					\
 do {								\
   SILC_LOG_DEBUG(("Start"));					\
   if (!silc_command_get_status(cmd->payload, NULL, NULL)) {	\
+    if (SILC_STATUS_IS_ERROR(cmd->status)) {			\
+      /* Single error */					\
+      COMMAND_REPLY_ERROR;					\
+      goto out;							\
+    }								\
+    /* List of errors */					\
     COMMAND_REPLY_ERROR;					\
-    goto out;							\
+    if (cmd->status == SILC_STATUS_LIST_END)			\
+      goto out;							\
+    goto err;							\
+  }								\
+} while(0)
+
+/* Same as COMMAND_CHECK_STATUS but doesn't call client operation */
+#define COMMAND_CHECK_STATUS_I					\
+do {								\
+  SILC_LOG_DEBUG(("Start"));					\
+  if (!silc_command_get_status(cmd->payload, NULL, NULL)) {	\
+    if (SILC_STATUS_IS_ERROR(cmd->status))			\
+      goto out;							\
+    if (cmd->status == SILC_STATUS_LIST_END)			\
+      goto out;							\
+    goto err;							\
   }								\
 } while(0)
 
@@ -236,6 +258,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
 
+ err:
   /* If we received notify for invalid ID we'll remove the ID if we
      have it cached. */
   if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
@@ -312,6 +335,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOWAS);
+ err:
   silc_client_command_reply_free(cmd);
 }
 
@@ -454,6 +478,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_IDENTIFY);
 
+ err:
   /* If we received notify for invalid ID we'll remove the ID if we
      have it cached. */
   if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
@@ -599,6 +624,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
  out:
   silc_free(channel_id);
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_LIST);
+ err:
   silc_client_command_reply_free(cmd);
 }
 
@@ -1595,7 +1621,7 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
 				    (res_argc + 1));
       res_argv[res_argc] = client_id_list.data;
       res_argv_lens[res_argc] = idp_len;
-      res_argv_types[res_argc] = res_argc + 3;
+      res_argv_types[res_argc] = res_argc + 4;
       res_argc++;
     } else {
       if (!silc_client_on_channel(channel, client_entry)) {
@@ -1793,10 +1819,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois_i)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  if (cmd->error != SILC_STATUS_OK)
-    goto out;
+  COMMAND_CHECK_STATUS_I;
 
   /* Save WHOIS info */
   silc_client_command_reply_whois_save(cmd, cmd->status, FALSE);
@@ -1811,6 +1834,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois_i)
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
 
+ err:
   /* If we received notify for invalid ID we'll remove the ID if we
      have it cached. */
   if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
@@ -1844,10 +1868,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify_i)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  if (cmd->error != SILC_STATUS_OK)
-    goto out;
+  COMMAND_CHECK_STATUS_I;
 
   /* Save IDENTIFY info */
   silc_client_command_reply_identify_save(cmd, cmd->status, FALSE);
@@ -1862,6 +1883,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify_i)
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_IDENTIFY);
 
+ err:
   /* If we received notify for invalid ID we'll remove the ID if we
      have it cached. */
   if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
@@ -1900,10 +1922,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(info_i)
   char *server_name, *server_info;
   SilcUInt32 len;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  if (cmd->error != SILC_STATUS_OK)
-    goto out;
+  COMMAND_CHECK_STATUS_I;
 
   /* Get server ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
@@ -1935,6 +1954,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(info_i)
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
   silc_free(server_id);
+ err:
   silc_client_command_reply_free(cmd);
 }
 
@@ -1964,10 +1984,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users_i)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  if (cmd->error != SILC_STATUS_OK)
-    goto out;
+  COMMAND_CHECK_STATUS_I;
 
   /* Save USERS info */
   if (silc_client_command_reply_users_save(
@@ -1979,6 +1996,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users_i)
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
 
+ err:
   /* Unregister this command reply */
   silc_client_command_unregister(cmd->client, SILC_COMMAND_USERS,
 				 NULL, silc_client_command_reply_users_i,

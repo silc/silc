@@ -1,3 +1,25 @@
+Fri May  3 11:37:10 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed rekey protocol with PFS in the client library.
+	  Affected file is lib/silcclient/protocol.c.
+
+	* Added support for list of errors in client library
+	  command reply handling.  Affected file is
+	  lib/silcclient/command_reply.c.
+
+	* Defined that the WHOIS and IDENTIFY commands can send
+	  list of errors.  Updated the protocol specs.  Protocol
+	  TODO #2.
+
+	* Added support for sending list of errors to WHOIS and
+	  IDENTIFY commands in server.  Added support for receiving
+	  list of errors in server.  Affected files are
+	  silcd/command.c and silcd/command_reply.c.
+
+	* Fixed client info resolving on LEAVE command in client
+	  library to not crash.  Affected file is 
+	  lib/silcclient/client_notify.c.
+
 Thu May  2 08:45:11 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined that the NICK command replies with thew changed

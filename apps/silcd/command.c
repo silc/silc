@@ -477,16 +477,18 @@ silc_server_command_pending_error_check(SilcServerCommandContext cmd,
 
 typedef struct {
   void *id;
+  SilcIdType id_type;
   SilcUInt32 index;
   SilcStatus error;
 } *ResolveError;
 
-#define ADD_ERROR(errptr, errptr_count, _id, _index, _status)		\
+#define ADD_ERROR(errptr, errptr_count, _id, _id_type, _index, _status)	\
 do {									\
   errptr = silc_realloc(errptr, sizeof(*errptr) * (errptr_count + 1));	\
   if (!errptr)								\
     return FALSE;							\
   errptr[errptr_count].id = _id;					\
+  errptr[errptr_count].id_type = _id_type;		       		\
   errptr[errptr_count].index = _index;					\
   errptr[errptr_count].error = _status;					\
   errptr_count++;							\
@@ -509,7 +511,7 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
   int i, k;
 
   /* If client ID is in the command it must be used instead of nickname */
-  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+  tmp = silc_argument_get_arg_type(cmd->args, 4, &len);
   if (!tmp) {
     /* No ID, get the nickname@server string and parse it. */
     tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
@@ -524,7 +526,7 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
     /* Command includes ID, we must use that.  Take all ID's from the 
        command packet */
     for (k = 0, i = 0; i < argc; i++) {
-      tmp = silc_argument_get_arg_type(cmd->args, i + 3, &len);
+      tmp = silc_argument_get_arg_type(cmd->args, i + 4, &len);
       if (!tmp)
 	continue;
       id = silc_id_payload_parse_id(tmp, len, NULL);
@@ -535,7 +537,7 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
 	(*client_id_count)++;
 	k++;
       } else {
-	ADD_ERROR((*error_client), (*error_client_count), NULL, i + 3,
+	ADD_ERROR((*error_client), (*error_client_count), NULL, 0, i + 4,
 		  SILC_STATUS_ERR_BAD_CLIENT_ID);
       }
     }
@@ -543,11 +545,10 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
 
   /* Get the max count of reply messages allowed */
   tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (tmp) {
+  if (tmp)
     SILC_GET32_MSB(*count, tmp);
-  } else {
+  else
     *count = 0;
-  }
 
   return TRUE;
 }
@@ -653,7 +654,7 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
 					       sizeof(**r->res_argv));
 	memcpy(r->res_argv[r->res_argc], idp->data, idp->len);
 	r->res_argv_lens[r->res_argc] = idp->len;
-	r->res_argv_types[r->res_argc] = r->res_argc + 3;
+	r->res_argv_types[r->res_argc] = r->res_argc + 4;
 	r->res_argc++;
 	silc_buffer_free(idp);
 
@@ -834,7 +835,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       umode_list = NULL;
     }
 
-    if (count && k - 1 == count)
+    if (status == SILC_STATUS_LIST_END)
       break;
     k++;
   }
@@ -870,7 +871,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
     silc_buffer_free(idp);
     idp = NULL;
       
-    if (count && k - 1 == count)
+    if (status == SILC_STATUS_LIST_END)
       break;
     k++;
   }
@@ -963,8 +964,8 @@ silc_server_command_whois_process(SilcServerCommandContext cmd)
 	  goto out;
 	}
 
-	ADD_ERROR(error_client, error_client_count, client_id[i], 0,
-		  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
+	ADD_ERROR(error_client, error_client_count, client_id[i], 
+		  SILC_ID_CLIENT, 0, SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
       }
     }
   } else if (nick) {
@@ -1079,11 +1080,10 @@ silc_server_command_whowas_parse(SilcServerCommandContext cmd,
 
   /* Get the max count of reply messages allowed */
   tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (tmp) {
+  if (tmp)
     SILC_GET32_MSB(*count, tmp);
-  } else {
+  else
     *count = 0;
-  }
 
   return TRUE;
 }
@@ -1160,13 +1160,10 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
 
   if (!valid_count) {
     /* No valid entries found at all, just send error */
-    unsigned char *tmp;
-    
     tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-    if (tmp)
-      silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
-					   SILC_STATUS_ERR_NO_SUCH_NICK, 0,
-					   3, tmp, strlen(tmp));
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
+					 SILC_STATUS_ERR_NO_SUCH_NICK, 0,
+					 3, tmp, tmp ? strlen(tmp) : 0);
     return;
   }
 
@@ -1184,8 +1181,6 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
       status = SILC_STATUS_LIST_END;
     if (count && k - 1 == count)
       status = SILC_STATUS_LIST_END;
-    if (count && k - 1 > count)
-      break;
 
     /* Send WHOWAS reply */
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
@@ -1227,6 +1222,8 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
     silc_buffer_free(packet);
     silc_buffer_free(idp);
 
+    if (status == SILC_STATUS_LIST_END)
+      break;
     k++;
   }
 }
@@ -1382,7 +1379,9 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 				   SilcUInt32 *servers_count,
 				   SilcChannelEntry **channels,
 				   SilcUInt32 *channels_count,
-				   SilcUInt32 *count)
+				   SilcUInt32 *count,
+				   ResolveError *error_id,
+				   SilcUInt32 *error_id_count)
 {
   SilcServer server = cmd->server;
   unsigned char *tmp;
@@ -1392,7 +1391,6 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
   bool check_global = FALSE;
   void *entry;
   int i;
-  bool error = FALSE;
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
     check_global = TRUE;
@@ -1513,26 +1511,19 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 	continue;
       
       idp = silc_id_payload_parse(tmp, len);
-      if (!idp) {
-	silc_free(*clients);
-	silc_free(*servers);
-	silc_free(*channels);
-	silc_server_command_send_status_reply(
-				       cmd, SILC_COMMAND_IDENTIFY,
-				       SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
-	return 0;
-      }
+      if (!idp)
+	ADD_ERROR((*error_id), (*error_id_count), NULL, 0, i + 5,
+		  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 
       id = silc_id_payload_get_id(idp);
-      
       switch (silc_id_payload_get_type(idp)) {
 	
       case SILC_ID_CLIENT:
-	entry = (void *)silc_idlist_find_client_by_id(server->local_list, 
-						      id, TRUE, NULL);
+	entry = silc_idlist_find_client_by_id(server->local_list, 
+					      id, TRUE, NULL);
 	if (!entry && check_global)
-	  entry = (void *)silc_idlist_find_client_by_id(server->global_list, 
-							id, TRUE, NULL);
+	  entry = silc_idlist_find_client_by_id(server->global_list, 
+						id, TRUE, NULL);
 	if (entry) {
 	  *clients = silc_realloc(*clients, sizeof(**clients) * 
 				  (*clients_count + 1));
@@ -1547,24 +1538,22 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 	    silc_free(*clients);
 	    silc_free(*servers);
 	    silc_free(*channels);
+	    silc_free(*error_id);
 	    return -1;
-	  } else {
-	    silc_server_command_send_status_data(
-					cmd, SILC_COMMAND_IDENTIFY,
-					SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
-					0, 2, tmp, len);
-	    error = TRUE;
 	  }
+
+	  ADD_ERROR((*error_id), (*error_id_count), NULL, 0, i + 5,
+		    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
 	}
 
 	break;
 	
       case SILC_ID_SERVER:
-	entry = (void *)silc_idlist_find_server_by_id(server->local_list, 
-						      id, TRUE, NULL);
+	entry = silc_idlist_find_server_by_id(server->local_list, 
+					      id, TRUE, NULL);
 	if (!entry && check_global)
-	  entry = (void *)silc_idlist_find_server_by_id(server->global_list, 
-							id, TRUE, NULL);
+	  entry = silc_idlist_find_server_by_id(server->global_list, 
+						id, TRUE, NULL);
 	if (entry) {
 	  *servers = silc_realloc(*servers, sizeof(**servers) * 
 				  (*servers_count + 1));
@@ -1579,23 +1568,20 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 	    silc_free(*clients);
 	    silc_free(*servers);
 	    silc_free(*channels);
+	    silc_free(*error_id);
 	    return -1;
-	  } else {
-	    silc_server_command_send_status_data(
-					 cmd, SILC_COMMAND_IDENTIFY,
-					 SILC_STATUS_ERR_NO_SUCH_SERVER_ID,
-					 0, 2, tmp, len);
-	    error = TRUE;
 	  }
+
+	  ADD_ERROR((*error_id), (*error_id_count), NULL, 0, i + 5,
+		    SILC_STATUS_ERR_NO_SUCH_SERVER_ID);
 	}
 	break;
 	
       case SILC_ID_CHANNEL:
-	entry = (void *)silc_idlist_find_channel_by_id(server->local_list, 
-						       id, NULL);
+	entry = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
 	if (!entry && check_global)
-	  entry = (void *)silc_idlist_find_channel_by_id(server->global_list, 
-							 id, NULL);
+	  entry = silc_idlist_find_channel_by_id(server->global_list, id,
+						 NULL);
 	if (entry) {
 	  *channels = silc_realloc(*channels, sizeof(**channels) * 
 				   (*channels_count + 1));
@@ -1610,14 +1596,12 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 	    silc_free(*clients);
 	    silc_free(*servers);
 	    silc_free(*channels);
+	    silc_free(*error_id);
 	    return -1;
-	  } else {
-	    silc_server_command_send_status_data(
-				         cmd, SILC_COMMAND_IDENTIFY,
-					 SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID,
-					 0, 2, tmp, len);
-	    error = TRUE;
 	  }
+
+	  ADD_ERROR((*error_id), (*error_id_count), NULL, 0, i + 5,
+		    SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID);
 	}
 	break;
       }
@@ -1626,20 +1610,12 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
     }
   }
 
-  if (error) {
-    silc_free(*clients);
-    silc_free(*servers);
-    silc_free(*channels);
-    return FALSE;
-  }
-  
   /* Get the max count of reply messages allowed */
   tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
-  if (tmp) {
+  if (tmp)
     SILC_GET32_MSB(*count, tmp);
-  } else {
+  else
     *count = 0;
-  }
 
   return 1;
 }
@@ -1737,7 +1713,7 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
 					       sizeof(**r->res_argv));
 	memcpy(r->res_argv[r->res_argc], idp->data, idp->len);
 	r->res_argv_lens[r->res_argc] = idp->len;
-	r->res_argv_types[r->res_argc] = r->res_argc + 3;
+	r->res_argv_types[r->res_argc] = r->res_argc + 4;
 	r->res_argc++;
 	silc_buffer_free(idp);
 
@@ -1793,46 +1769,46 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 					SilcUInt32 servers_count,
 					SilcChannelEntry *channels,
 					SilcUInt32 channels_count,
+					ResolveError errors,
+					SilcUInt32 errors_count,
 					int count)
 {
   SilcServer server = cmd->server;
-  int i, k, len, valid_count;
+  int i, k, valid_count;
+  SilcUInt32 len;
   SilcBuffer packet, idp;
   SilcStatus status;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char nh[256], uh[256];
   SilcSocketConnection hsock;
+  unsigned char *tmp;
 
   status = SILC_STATUS_OK;
 
   if (clients) {
     SilcClientEntry entry;
+    valid_count = clients_count;
 
-    /* Process only valid entries. */
-    valid_count = 0;
-    for (i = 0; i < clients_count; i++) {
-      if (clients[i]->data.status & SILC_IDLIST_STATUS_REGISTERED)
-	valid_count++;
-      else
-	clients[i] = NULL;
-    }
+    if (silc_argument_get_arg_type(cmd->args, 1, NULL)) {
+      /* Process only valid clients and ignore those that are not registered. 
+	 This is checked with nickname only because when resolved client IDs
+	 we check that they are registered earlier. */
+      valid_count = 0;
+      for (i = 0; i < clients_count; i++) {
+	if (clients[i]->data.status & SILC_IDLIST_STATUS_REGISTERED)
+	  valid_count++;
+	else
+	  clients[i] = NULL;
+      }
 
-    if (!valid_count) {
-      /* No valid entries found at all, just send error */
-      unsigned char *tmp;
-
-      tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-      if (tmp) {
+      if (!valid_count) {
+	/* No valid entries found at all, just send error */
+	tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
 	silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
 					     SILC_STATUS_ERR_NO_SUCH_NICK, 0,
-					     3, tmp, strlen(tmp));
-      } else {
-	tmp = silc_argument_get_arg_type(cmd->args, 5, (SilcUInt32 *)&len);
-	silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
-					     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
-					     0, 2, tmp, len);
+					     3, tmp, tmp ? strlen(tmp) : 0);
+	return;
       }
-      return;
     }
 
     /* Process all valid client entries and send command replies */
@@ -1848,7 +1824,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
       if (valid_count > 1 && k == valid_count - 1 
-	  && !servers_count && !channels_count)
+	  && !servers_count && !channels_count && !errors_count)
 	status = SILC_STATUS_LIST_END;
       if (count && k - 1 == count)
 	status = SILC_STATUS_LIST_END;
@@ -1898,9 +1874,8 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
       silc_buffer_free(packet);
       silc_buffer_free(idp);
       
-      if (count && k - 1 == count)
+      if (status == SILC_STATUS_LIST_END)
 	break;
-
       k++;
     }
   }
@@ -1916,7 +1891,8 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
       
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
-      if (servers_count > 1 && k == servers_count - 1 && !channels_count)
+      if (servers_count > 1 && k == servers_count - 1 && !channels_count &&
+	  !errors_count)
 	status = SILC_STATUS_LIST_END;
       if (count && k - 1 == count)
 	status = SILC_STATUS_LIST_END;
@@ -1936,9 +1912,8 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
       silc_buffer_free(packet);
       silc_buffer_free(idp);
       
-      if (count && k - 1 == count)
+      if (status == SILC_STATUS_LIST_END)
 	break;
-
       k++;
     }
   }
@@ -1954,7 +1929,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
       
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
-      if (channels_count > 1 && k == channels_count - 1)
+      if (channels_count > 1 && k == channels_count - 1 && !errors_count)
 	status = SILC_STATUS_LIST_END;
       if (count && k - 1 == count)
 	status = SILC_STATUS_LIST_END;
@@ -1974,9 +1949,46 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
       silc_buffer_free(packet);
       silc_buffer_free(idp);
       
-      if (count && k - 1 == count)
+      if (status == SILC_STATUS_LIST_END)
 	break;
+      k++;
+    }
+  }
 
+  /* Send error replies */
+  if (errors) {
+    if (status == SILC_STATUS_OK && errors_count > 1)
+      status = SILC_STATUS_LIST_START;
+
+    idp = NULL;
+    for (i = 0, k = 0; i < errors_count; i++) {
+      if (errors[i].id) {
+	idp = silc_id_payload_encode(errors[i].id, SILC_ID_CLIENT);
+	tmp = idp->data;
+	len = idp->len;
+      } else {
+	tmp = silc_argument_get_arg_type(cmd->args, errors[i].index, &len);
+      }
+      
+      if (k >= 1)
+	status = SILC_STATUS_LIST_ITEM;
+      if (errors_count > 1 && k == errors_count - 1)
+	status = SILC_STATUS_LIST_END;
+      if (count && k - 1 == count)
+	status = SILC_STATUS_LIST_END;
+      
+      /* Send error */
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
+					   (status == SILC_STATUS_OK ?
+					    errors[i].error : status),
+					   (status == SILC_STATUS_OK ?
+					    0 : errors[i].error),
+					   2, tmp, len);
+      silc_buffer_free(idp);
+      idp = NULL;
+      
+      if (status == SILC_STATUS_LIST_END)
+	break;
       k++;
     }
   }
@@ -1991,21 +2003,23 @@ silc_server_command_identify_process(SilcServerCommandContext cmd)
   SilcServerEntry *servers = NULL;
   SilcChannelEntry *channels = NULL;
   SilcUInt32 clients_count = 0, servers_count = 0, channels_count = 0;
+  SilcUInt32 errors_count = 0;
+  ResolveError errors = NULL;
 
   /* Parse the IDENTIFY request */
   ret = silc_server_command_identify_parse(cmd,
 					   &clients, &clients_count,
 					   &servers, &servers_count,
 					   &channels, &channels_count,
-					   &count);
+					   &count, &errors, &errors_count);
   if (ret < 1)
     return ret;
   ret = 0;
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
-  if (clients && !silc_server_command_identify_check_client(cmd, clients, 
-							    clients_count)) {
+  if (!silc_server_command_identify_check_client(cmd, clients, 
+						 clients_count)) {
     ret = -1;
     goto out;
   }
@@ -2015,12 +2029,14 @@ silc_server_command_identify_process(SilcServerCommandContext cmd)
 					  clients, clients_count,
 					  servers, servers_count,
 					  channels, channels_count, 
+					  errors, errors_count,
 					  count);
 
  out:
   silc_free(clients);
   silc_free(servers);
   silc_free(channels);
+  silc_free(errors);
   return ret;
 }
 

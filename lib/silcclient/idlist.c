@@ -558,7 +558,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
   /* Send the command */
   idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
   silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-			   1, 3, idp->data, idp->len);
+			   1, 4, idp->data, idp->len);
   silc_buffer_free(idp);
 
   /* Add pending callback */

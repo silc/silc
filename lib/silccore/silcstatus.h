@@ -101,4 +101,6 @@ typedef SilcUInt8 SilcStatus;
 #define SILC_STATUS_ERR_BAD_VERSION         53
 /***/
 
+#define SILC_STATUS_IS_ERROR(status) (status >= SILC_STATUS_ERR_NO_SUCH_NICK)
+
 #endif /* SILCSTATUS_H */
