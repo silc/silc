@@ -34,7 +34,7 @@ case "$target" in
 esac
 
 # ./prepare script will automatically put the correct version. Do not edit!
-AM_INIT_AUTOMAKE(silc, SILC_VERSION)
+AM_INIT_AUTOMAKE(SILC_PACKAGE, SILC_VERSION)
 AC_PREREQ(2.3)
 AM_CONFIG_HEADER(includes/silcdefs.h)
 

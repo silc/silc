@@ -26,8 +26,17 @@
 #
 
 #
+# Usage: ./prepare [<distribution> <base version> <package version>]
+#
+# If <package version> is omitted <base version> is used as package
+# version.  The package version appears in the package name and in those
+# distributions that used the SILC_DISTRIBUTION_VERSION define in the
+# code.  The base version is the SILC_VERSION_STRING define.
+#
+
+#
 # SILC Distribution versions. Set here or give the version on the command
-# line, as argument.
+# line as argument.
 #
 SILC_VERSION=0.2.6			# Base version
 
@@ -46,6 +55,11 @@ if test "$version" = ""; then
   version=$SILC_VERSION;
 fi
 
+dist_version=$3
+if test "$dist_version" = ""; then
+  dist_version=$version
+fi
+
 echo "Preparing $distribution distribution version $version"
 
 # Go though the subdirs and create the Makefile.ams from the
@@ -62,13 +76,17 @@ do
     cd $path
     continue;
   fi
-  sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$sub/" Makefile.am.pre >Makefile.am 2>/dev/null
+  if [ -f Makefile.am.pre ]; then
+    sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$sub/" Makefile.am.pre >Makefile.am 2>/dev/null
+  fi
   cd $path
 done
 cd $path
 
 # Replace version string and create configure.in
-sed -e "/SILC_VERSION/s//$version/" configure.in.pre >configure.in
+sed -e "/SILC_VERSION/s//$version/" configure.in.pre >configure.in2
+sed -e "/SILC_PACKAGE/s//silc-"$distribution"/" configure.in2 >configure.in
+rm -f configure.in2
 
 aclocal
 autoconf

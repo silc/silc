@@ -1,3 +1,8 @@
+Mon May 28 10:30:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Minor changes to the ./prepare script to change the package
+	  name according the distribution name to the configure.in.
+
 Sun May 27 22:24:57 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Created new distribution system.  Added file `distributions'
