@@ -22,6 +22,8 @@
 #include "server_internal.h"
 
 SILC_TASK_CALLBACK(silc_server_protocol_backup_done);
+SILC_TASK_CALLBACK(silc_server_backup_connect_to_router);
+
 static void silc_server_backup_connect_primary(SilcServer server,
 					       SilcServerEntry server_entry,
 					       void *context);
@@ -781,8 +783,6 @@ void silc_server_backup_resume_router(SilcServer server,
 }
 
 /* callback for async connection to remote router */
-
-SILC_TASK_CALLBACK(silc_server_backup_connect_to_router); /* forward decl */
 
 SILC_TASK_CALLBACK(silc_server_backup_connection_established)
 {

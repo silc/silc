@@ -42,6 +42,7 @@ SILC_TASK_CALLBACK(silc_server_free_client_data_timeout);
 SILC_TASK_CALLBACK(silc_server_timeout_remote);
 SILC_TASK_CALLBACK(silc_server_channel_key_rekey);
 SILC_TASK_CALLBACK(silc_server_get_stats);
+SILC_TASK_CALLBACK(silc_server_connect_router);
 
 /* Allocates a new SILC server object. This has to be done before the server
    can be used. After allocation one must call silc_server_init to initialize
@@ -963,8 +964,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 }
 
 /* callback for async connection to remote router */
-
-SILC_TASK_CALLBACK(silc_server_connect_router); /* forward decl */
 
 SILC_TASK_CALLBACK(silc_server_connection_established)
 {
