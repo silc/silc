@@ -22,18 +22,22 @@ all:
 	touch draft-riikonen-silc-spec-02.txt
 	touch draft-riikonen-silc-pp-02.txt
 	touch draft-riikonen-silc-ke-auth-02.txt
+	touch draft-riikonen-silc-commands-00.txt
 	-cd ..
 
 dist-hook:
 	touch draft-riikonen-silc-spec-02.txt
 	touch draft-riikonen-silc-pp-02.txt
 	touch draft-riikonen-silc-ke-auth-02.txt
+	touch draft-riikonen-silc-commands-00.txt
 	./makerfc draft-riikonen-silc-spec-02.nroff \
 		draft-riikonen-silc-spec-02.txt
 	./makerfc draft-riikonen-silc-pp-02.nroff \
 		draft-riikonen-silc-pp-02.txt
 	./makerfc draft-riikonen-silc-ke-auth-02.nroff \
 		draft-riikonen-silc-ke-auth-02.txt
+	./makerfc draft-riikonen-silc-commands-00.nroff \
+		draft-riikonen-silc-commands-00.txt
 
 EXTRA_DIST = \
 	CodingStyle \

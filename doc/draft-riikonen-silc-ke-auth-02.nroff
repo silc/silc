@@ -64,8 +64,8 @@ and the OAKLEY Key Determination protocol [OAKLEY].
 The SILC Connection Authentication protocol provides user level
 authentication used when creating connections in SILC network.  The
 protocol is transparent to the authentication data which means that it
-can be used to authenticate the user with, for example, pass phrase
-(pre-shared- secret) or public key (and certificate).
+can be used to authenticate the user with, for example, passphrase
+(pre-shared-secret) or public key (and certificate).
 
 
 

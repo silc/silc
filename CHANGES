@@ -1,3 +1,17 @@
+Mon Apr 16 12:10:33 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Updated TODO.
+
+	* Removed the nickname from the Private Message Payload.
+	  Updated the code and the protocol specs.
+
+	* Updated protocol specs for submitting to the IETF.
+
+	* Tweaked the Random Number Generator a bit.  Affected file
+	  lib/silccrypt/silcrng.c.  Exported a new function
+	  silc_rng_[global]_add_noise which can be used to add more
+	  noise to the RNG.
+
 Sat Apr 14 16:21:32 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Do not parse packets with different timeout when protocol

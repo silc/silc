@@ -26,6 +26,10 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Send SILC_NOTIFY_TYPE_CUMODE_CHANGE when received announced channels
+   and channel users and we (router) already has a channel founder on the
+   channel.
+
  o When server quits and all clients of that server are removed from all
    channels the channel keys are re-generated for all clients.  This is
    a bug and should be done only once per channel after all clients of
@@ -68,22 +72,28 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
+ o Remove the static lists from SILC ciphers, PKCS and hash functions
+   in the crypto library.  The currently acceptable code is used in the
+   HMAC library, look from there.  The config file must decide the order
+   of the algorithms, not the static lists, as they are doing now.
+   Actually the way to do this is to keep the static lists, but register
+   the algorithms to the dynamic list and make the alloc routines to 
+   check only the dynamic list.  Also, replace the lists used by these 
+   routines with SilcList.  Also, for applications it might be nice
+   to export a function that registers default algorithms, if application
+   does not want to register them one by one (if for example SILC client
+   is run without config files at all).
+
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
    defined.  zlib package is already included into the lib dir (in CVS,
    not in distribution), but it is not used yet, and it requires some
    tweaking on the Makefiles (we want static lib not shared).
 
- o Random Number Generator needs some tweaking.  Reading /dev/random may
-   block resulting slow initialization of RNG.  Some other things in the
-   RNG may block as well.  Also, I have some pending changes to the RNG 
-   that needs to be commited (from Schneier's Yarrow-160 paper).  They 
-   should make the RNG even better.
-
- o IPv6 support for ID's and into the code.
-
  o Some of the ciphers in lib/silccrypt does not implement the SILC
    Crypto API correctly.
+
+ o IPv6 support for ID's and into the code.
 
  o SIM support for SILC PKCS API needs to made so that they could be
    used as SIM's.  At the same time some work is required on prime

@@ -115,7 +115,9 @@ by both cilent and server is very heavy, thus it is common to test
 the programs as follows:
 
 	./silc -d -f configfile 2>log
-	./silcd -f configfile 2>log
+	./silcd -d -f configfile 2>log
+
+Do not give the -d options if you do not want to dump the debugging.
 
 
 Howto Clean SILC Source Tree
