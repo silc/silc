@@ -1,8 +1,6 @@
 
 @SYNTAX:version@
 
-Shows the version info of the current or specified
-IRC server.
+Shows the version of the client.
 
-See also: ADMIN, STATS
 

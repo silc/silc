@@ -1,11 +1,11 @@
 
-@SYNTAX:oper@
+@SYNTAX:silcoper@
 
 Format: <username> [<public key>]
 
-Gives you server operator priviledges if the correct username and
+Gives you router operator priviledges if thecorrect username and
 passphrase are given. User will be prompted for the passphrase
 if the <public key> is not provided.
 
-See also: KILL, SCONNECT, CLOSE, SILCOPER
+See also: KILL, SCONNECT, CLOSE, OPER
 

@@ -1,8 +1,7 @@
 
 @SYNTAX:me@
 
-Sends a CTCP ACTION to the current channel or query.
-For example: /me sits back.
+Sends an ACTION channel message to the current channel.  For example: 
+/ME sits back.
 
-See also: ACTION, CTCP
-
+See also: ACTION

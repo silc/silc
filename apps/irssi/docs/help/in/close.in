@@ -1,0 +1,8 @@
+
+@SYNTAX:close@
+
+Operator command.  Makes the server to close connection to another server
+or router.
+
+See also: OPER, SILCOPER
+

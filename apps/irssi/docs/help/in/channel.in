@@ -2,7 +2,7 @@
 @SYNTAX:channel@
 
 Irssi can automatically join to specified channels in specified
-IRC networks. It can also automatically send the password when
+networks. It can also automatically send the password when
 manually joining to channel without specifying the password.
 
 /CHANNEL ADD [-auto | -noauto] [-bots <masks>] [-botcmd <command>]

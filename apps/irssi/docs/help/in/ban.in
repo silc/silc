@@ -1,24 +1,29 @@
 
 @SYNTAX:ban@
 
-Bans the specified nick or userhost mask.
+Format: <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]
 
-If nick is given as parameter, the ban type is used to generate the ban
-mask. /SET ban_type specified the default ban type. Ban type is one of
-the following:
-
-    Normal - *!user@*.domain.net
-    Host   - *!*@host.domain.net
-    Domain - *!*@*.domain.net
-    Custom [nick] [user] [host] [domain]
+This command is used to manage the ban list of the channel.  You must be
+channel operator to be able to use this command.  Wildcards may be used
+with this command.
 
 Examples:
-    /BAN looser    - This bans the nick 'looser'
-    /BAN *!*@*.org - This bans all the users coming from any 
-                     .org domain.
+    /BAN #mychannel +foobar!mr.bar@foo.bar.com
+        Adds nickname `foobar' with username `mr.bar' from host `foo.bar.com'
+        on #mychannel to the ban list.
 
-    /SET ban_type custom nick domain - nick!*@*.domain.net
-    /SET ban_type custom user host   - *!user@host.domain.net
+    /BAN * +looser
+        Adds nickname `looser' to the ban list on current channel.
+
+    /BAN * +foo*@*!@*.foobar.com
+        Adds foo* nicknames from any server with any username from
+        *.foobar.com hosts to the ban list on current channel.
+
+    /BAN * -looser
+        Removes the nickname `looser' from the ban list on current channel.
+
+    /BAN *
+        Shows the ban list of the current channel.
 
 See also: KNOCKOUT, KICKBAN
 

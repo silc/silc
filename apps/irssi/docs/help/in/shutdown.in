@@ -1,0 +1,7 @@
+
+@SYNTAX:shutdown@
+
+Operator command.  Shutdowns the server.
+
+See also: OPER, SILCOPER, CLOSE
+

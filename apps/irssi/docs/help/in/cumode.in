@@ -1,0 +1,36 @@
+
+@SYNTAX:cumode@
+
+Format: <channel> +|-<modes> <nickname>[@<server>] [-pubkey|<passwd>]
+
+This command is used to manage the client's modes on the channel.
+Most of the modes require that the client which changes some
+client's mode must be channel founder or channel operator.  The
+mode is added by adding + before the option(s) and removed by
+adding - before the option(s).  The following channel user modes
+are available:
+
+    a <nickname>[@<server>]
+
+        Set/unset all modes (cannot be used to set
+        both founder and operator rights, can be used
+        only to remove both modes at once).
+
+    f <nickname>[@<server>] [-pubkey|<password>]
+
+        Set/Unset channel founder.  If the -pubkey
+        option or <password> is provided then the
+        client is claiming the founder rights by
+        providing the channel founder authentication
+        data.  If the -pubkey is provided then the
+        authentication is performed using the
+        client's public key.  If you are channel
+        founder you can set the channel founder
+        authentication using CMODE command.
+
+    o <nickname>[@<server>]
+
+        Set/unset channel operator.  Requires that 
+        you are channel operator or channel founder.
+
+See also: CMODE, UMODE

@@ -1,14 +1,11 @@
 
 @SYNTAX:kick@
 
-This command "kicks" the specified user off of the specified 
-channel. It is typically used to remove troublemakers, flooders, 
-or people otherwise making a nuisanse of themselves on the channel. 
-The reason for the kick is recommended, but not required by the IRC 
-servers
+Format: <channel> <nickname>[@<server>] [<comment>]
 
-If the <channel> is omitted, removes the nick from the current
-channel.
+This command kicks client from channel.  You have to be at least
+channel operator to be able to kick client from channel.  Note:
+you cannot kick channel founder even if you are channel operator.
 
 The default alias for /KICK is /K.
 

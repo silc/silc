@@ -1,10 +1,26 @@
  
 @SYNTAX:invite@
 
-Invites the specified nick to the current or specified channel.
+Formats: <channel> [<nickname>[@server>]
+         <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]
 
-Example:
-   /INVITE buddy #mychannel
+This command is used to invite an client to a channel and to manage
+the channel's invite list.  Wildcards may be used with this command.
 
-See also: MODE
+Examples:
+    /INVITE #silc joe
+        Invites nickname `joe' to channel #silc.
+
+    /INVITE #silc +joe!*@*
+        Adds nickname `joe' from anywhere to the invite list of the
+        channel #silc
+
+    /INVITE * +foo*@silcnet.org!*@*.foobar.com
+        Adds nicknames foo* from silcnet.org server from *.foobar.com
+        hosts to the invite list of the current channel.
+
+    /INVITE * -joe
+        Removes nickname `joe' from the invite list of the current channel.
+
+See also: CMODE
 

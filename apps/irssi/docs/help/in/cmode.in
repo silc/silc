@@ -1,0 +1,37 @@
+
+@SYNTAX:cmode@
+
+Format: <channel> +|-<modes> [{ <arguments>}]
+
+This command is used to manage the modes of the channel.  Most
+of the modes require special privileges, such as channel operator
+or channel founder privileges to work.  The mode is added by
+adding + before the option(s) and removed by adding - before the
+option(s).  The following modes are available:
+
+    p               Set/unset channel as private channel
+    s               Set/unset channel as secret channel
+    k               Set/unset that channel uses private channel key
+    i               Set/unset channel as invite only channel
+    t               Set/unset that only channel operator or 
+                    founder may set channel topic
+    l <limit>       Set/unset channel's user limit
+    a <passphrase>  Set/unset passphrase for channel that must
+                    be provided when joining to the channel.
+    c <cipher>      Set/unset channel's cipher
+    h <hmac>        Set/unset channel's hmac
+    f <-pubkey|<password>
+                    Set/unset channel founder authentication.
+                    Channel founder may set this mode so that
+                    if the client leaves the channel it can
+                    claim the founder rights when it returns
+                    to the channel.  If -pubkey is set then
+                    the authentication will be done using the
+                    client's public key.  You can claim the
+                    founder rights using the CUMODE command.
+
+Multiple modes can be set/unset at once if the modes does not
+require any arguments.  If mode requires an argument then only
+one mode can be set at once
+
+See also: CUMODE, UMODE

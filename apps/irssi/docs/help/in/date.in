@@ -9,3 +9,4 @@ If a nickname is given, that client's server is queried.
 
 Same as /TIME.
 
+NOTE: This command has no effect on SILC.

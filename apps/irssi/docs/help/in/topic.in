@@ -1,7 +1,7 @@
 
 @SYNTAX:topic@
 
-   -delete  - Deletes the topic.
+Format: <channel> [<topic>]
 
 Shows or/and changes the topic of the current or specified 
 channel.
