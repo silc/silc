@@ -1,6 +1,15 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o /NICK without arguments crashes the client
+
+ o /CMODE * +a without arguments crashes the client. Check other options
+   with arguments as well.
+
+ o /INVITE * nick crashes the remote client.
+
+ o Add PERL scripting support from Irssi CVS.
+
  o Add KNOCKOUT local command.  It should kick an client from channel and
    set a ban for it for number of seconds.
 

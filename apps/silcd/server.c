@@ -483,6 +483,8 @@ void silc_server_run(SilcServer server)
 {
   SILC_LOG_DEBUG(("Running server"));
 
+  SILC_LOG_INFO(("SILC Server started"));
+
   /* Start the scheduler, the heart of the SILC server. When this returns
      the program will be terminated. */
   silc_schedule();
