@@ -1,3 +1,8 @@
+Thu Dec 12 12:06:59 CET 2002 Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* Don't print signed messages when sending failed.  Affected file
+	  irssi/src/silc/core/silc-servers.c
+
 Wed Dec 11 21:46:19 CET 2002 Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Fix theme abstracts parsing.  Affected files irssi/default.theme,
