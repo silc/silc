@@ -25,12 +25,13 @@ if test "x$enable_static" = "xno"; then
 	AC_ERROR([Don't give --disable-static option to configure])
 fi
 
-${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
-$libtool_flags --disable-static --output=libtool-shared --no-verify $ac_aux_dir/ltmain.sh $lt_target \
-|| { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
-${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
-$libtool_flags --no-verify $ac_aux_dir/ltmain.sh $host \
-|| { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
+#${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
+#$libtool_flags --disable-static --output=libtool-shared --no-verify
+#$ac_aux_dir/ltmain.sh $lt_target \
+#|| { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
+#${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
+#$libtool_flags --no-verify $ac_aux_dir/ltmain.sh $host \
+#|| { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
 
 AC_CHECK_HEADERS(string.h stdlib.h unistd.h dirent.h sys/ioctl.h libintl.h)
 
