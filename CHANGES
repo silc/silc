@@ -3,6 +3,15 @@ Sun Jan 26 12:20:30 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed a double free in INVITE command error handling in
 	  server.  Affected file silcd/command.c.
 
+	* Added macros SILC_SWAB_[16|32] to swab byte order of
+	  16-bit and 32-bit unsigned integers.  Affected file
+	  lib/silcutil/silctypes.h.
+
+	* Use the SILC_SWAB_16 instead of htons() in server when
+	  handling ports since the ports in structures are always
+	  in little-endian order (regardless of platform).  Affected
+	  file silcd/serverid.c and silcd/server_backup.c.
+
 Tue Jan 21 17:18:04 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Send DISCONNECT in close admin command in server.  Affected

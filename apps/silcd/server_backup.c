@@ -96,7 +96,7 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
     if (!server->backup->servers[i].server) {
       server->backup->servers[i].server = backup_server;
       server->backup->servers[i].local = local;
-      server->backup->servers[i].port = htons(port);
+      server->backup->servers[i].port = SILC_SWAB_16(port);
       memset(server->backup->servers[i].ip.data, 0,
 	     sizeof(server->backup->servers[i].ip.data));
       silc_net_addr2bin(ip, server->backup->servers[i].ip.data,
@@ -111,7 +111,7 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
 					 (i + 1));
   server->backup->servers[i].server = backup_server;
   server->backup->servers[i].local = local;
-  server->backup->servers[i].port = htons(port);
+  server->backup->servers[i].port = SILC_SWAB_16(port);
   memset(server->backup->servers[i].ip.data, 0,
 	 sizeof(server->backup->servers[i].ip.data));
   silc_net_addr2bin(ip, server->backup->servers[i].ip.data,
