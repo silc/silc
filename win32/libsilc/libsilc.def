@@ -196,7 +196,6 @@ EXPORTS
 	silc_id_payload_get_len @ 406 ; 
 	silc_id_payload_get_type @ 407 ; 
 	silc_id_payload_parse @ 408 ; 
-	silc_id_payload_parse_data @ 409 ; 
 	silc_id_payload_parse_id @ 410 ; 
 	silc_id_render @ 411 ; 
 	silc_id_str2id @ 412 ; 
@@ -464,8 +463,8 @@ EXPORTS
 	silc_ske_end @ 675 ; 
 	silc_ske_free @ 676 ; 
 	silc_ske_free_key_material @ 677 ; 
-	silc_ske_get_group_by_name @ 678 ; 
-	silc_ske_get_group_by_number @ 679 ; 
+	silc_ske_group_get_by_name @ 678 ; 
+	silc_ske_group_get_by_number @ 679 ; 
 	silc_ske_get_supported_groups @ 680 ; 
 	silc_ske_group_get_number @ 681 ; 
 	silc_ske_groups @ 682 ; 
@@ -618,3 +617,9 @@ EXPORTS
 	silc_hmac_get_hash @ 834 ;
 	silc_net_localip @ 835 ;
 	silc_sftp_server_set_monitor @ 836 ;
+	silc_net_gethostbyname @ 837 ;
+	silc_net_gethostbyaddr @ 838 ;
+	silc_net_gethostbyname_async @ 839 ;
+	silc_net_gethostbyaddr_async @ 840 ;
+	silc_net_is_ip4 @ 841 ;
+	silc_net_is_ip6 @ 842 ;

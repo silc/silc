@@ -99,6 +99,10 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\lib\silccore\silcargument.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silccore\silcauth.c
 # End Source File
 # Begin Source File
@@ -124,10 +128,6 @@ SOURCE=..\..\lib\silccore\silcnotify.c
 # Begin Source File
 
 SOURCE=..\..\lib\silccore\silcpacket.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccore\silcpayload.c
 # End Source File
 # Begin Source File
 
@@ -483,6 +483,10 @@ SOURCE=..\..\lib\silcsftp\sftp_util.c
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\lib\silccore\silcargument.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silccore\silcauth.h
 # End Source File
 # Begin Source File
@@ -512,10 +516,6 @@ SOURCE=..\..\lib\silccore\silcnotify.h
 # Begin Source File
 
 SOURCE=..\..\lib\silccore\silcpacket.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccore\silcpayload.h
 # End Source File
 # Begin Source File
 

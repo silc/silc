@@ -88,6 +88,8 @@ TODO/bugs In SILC Libraries
    than on Unix.  Do it with threads on WIN32.  The function works but
    is not actually async currently.
 
+ o Do not let the silcdefs.h lay around in distributions.
+
 
 TODO After 1.0
 ==============
