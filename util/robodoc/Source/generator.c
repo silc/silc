@@ -1282,8 +1282,13 @@ RB_Generate_Item_Body (FILE * dest_doc, char *dest_name,
 		    }
 		  else if (file_name && strcmp (file_name, dest_name))
 		    {
+#if 0
 		      fprintf (dest_doc, "<A HREF=\"%s#%s\">%s</A>",
 			       file_name, label_name, label_name);
+#endif
+		      fprintf (dest_doc, "<A HREF=\"%s-%s.html\">%s</A>",
+			       RB_FilePartStart(file_name), label_name, 
+			       label_name);
 		    }
 		  else
 		    {

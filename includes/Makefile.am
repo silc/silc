@@ -23,7 +23,6 @@ all:
 
 if SILC_DIST_TOOLKIT
 include_HEADERS = \
-	bitmove.h \
 	silcincludes.h \
 	silcwin32.h \
 	silcepoc.h \
@@ -35,7 +34,6 @@ include_HEADERS = \
 endif
 
 EXTRA_DIST = \
-	bitmove.h \
 	silcincludes.h \
 	silcwin32.h \
 	silcepoc.h \

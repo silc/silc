@@ -203,77 +203,8 @@ extern "C" {
 #include "../lib/contrib/getopt.h"
 #endif
 
-#ifndef TRUE
-#define TRUE 1
-#endif
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-/* Define offsetof */
-#ifndef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-#endif
-
-/* Define types. The types must be at least of the specified size */
-
-typedef unsigned char SilcUInt8;
-typedef signed char SilcInt8;
-
-#if SILC_SIZEOF_SHORT > 2
-#error "size of the short must be 2 bytes"
-#endif
-
-typedef unsigned short SilcUInt16;
-typedef signed short SilcInt16;
-
-#if SILC_SIZEOF_LONG == 4
-typedef unsigned long SilcUInt32;
-typedef signed long SilcInt32;
-#else
-#if SILC_SIZEOF_INT == 4
-typedef unsigned int SilcUInt32;
-typedef signed int SilcInt32;
-#else
-#if SILC_SIZEOF_LONG_LONG >= 4
-#ifndef WIN32
-typedef unsigned long long SilcUInt32;
-typedef signed long long SilcInt32;
-#endif
-#endif
-#endif
-#endif
-
-#if SILC_SIZEOF_LONG >= 8
-typedef unsigned long SilcUInt64;
-typedef signed long SilcInt64;
-#else
-#if SILC_SIZEOF_LONG_LONG >= 8
-#ifndef WIN32
-typedef unsigned long long SilcUInt64;
-typedef signed long long SilcInt64;
-#else
-typedef SilcUInt32 SilcUInt64; /* XXX Use Windows's own 64 bit types */
-typedef SilcInt32 SilcInt64;
-#endif
-#else
-typedef SilcUInt32 SilcUInt64;
-typedef SilcInt32 SilcInt64;
-#endif
-#endif
-
-#if SILC_SIZEOF_VOID_P < 4
-typedef SilcUInt32 * void *;
-#endif
-
-#ifndef __cplusplus
-#ifndef bool
-#define bool unsigned char
-#endif
-#endif
-
-/* Generic global SILC includes */
-#include "bitmove.h"
+/* Include generic SILC type definitions */
+#include "silctypes.h"
 
 /* Math library includes */
 #include "silcmp.h"

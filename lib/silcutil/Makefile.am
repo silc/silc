@@ -67,7 +67,8 @@ include_HEADERS =	\
 	silclist.h	\
 	silcdlist.h	\
 	silcfileutil.h	\
-	silcutil.h
+	silcutil.h	\
+	silctypes.h
 endif
 
 EXTRA_DIST = *.h

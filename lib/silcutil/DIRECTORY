@@ -1,6 +1,7 @@
 <!--
 @LIBRARY=SILC Utility Library
 @FILENAME=silcutillib.html
+@LINK=silctypes.html:Basic SILC Types
 @LINK=silcbuffer.html:SILC Buffer Interface
 @LINK=silcbuffmt.html:SILC Buffer Format Interface
 @LINK=silchashtable.html:SILC Hash Table Interface

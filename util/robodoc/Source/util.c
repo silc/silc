@@ -54,6 +54,35 @@ RB_FilePart (char *file_name)
   return (file_name);
 }
 
+/* Same except remove trailing dot (.). -Pekka */
+char *
+RB_FilePartStart (char *file_name)
+{
+  char *cur_char;
+  char c;
+
+  if ((cur_char = file_name) != NULL)
+    {
+      for (; (c = *cur_char) != '\0'; ++cur_char)
+	{
+	  if ((c == '/') || (c == ':'))
+	    {
+	      ++cur_char;
+	      while ('/' == *cur_char)
+		++cur_char;
+
+	      if (*cur_char)
+		file_name = cur_char;
+	    }
+	}
+    }
+
+  if (strchr(file_name, '.'))
+    *strchr(file_name, '.') = '\0';
+
+  return (file_name);
+}
+
 /*** RB_File_Part ***/
 
 

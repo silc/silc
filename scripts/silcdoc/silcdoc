@@ -94,7 +94,18 @@ if [ "$TYPE" = "HTML" ]; then
     f="/tmp/silcdoc_html.html/$i"
     sh gen.sh $DST gen_index.php 1 $f $f
     cp /tmp/silcdoc_html.html/$i $DST
-echo $f
+  done
+
+  # Generate cross reference files
+  path=`pwd`
+  cd /tmp/silcdoc.html
+  headers=`find . -name "silc*.h" |cut -d/  -f2 |cut -d.  -f1`
+  cd $path
+  touch $DST/silcdoc_xref
+  for i in $headers
+  do
+    $ROBO /tmp/silcdoc.html/$i.h $DST/$i.html $TYPE GENXREF $DST/$i.xref
+    echo $DST/$i.xref >>$DST/silcdoc_xref
   done
 
   # Generate the actual detailed documentation
@@ -104,7 +115,7 @@ echo $f
   cd $path
   for i in $headers
   do
-    $ROBO /tmp/silcdoc.html/$i.h $DST/$i.html $TYPE
+    $ROBO /tmp/silcdoc.html/$i.h $DST/$i.html XREF $DST/silcdoc_xref $TYPE
 
     # Generate the TOC file
     sh gen.sh $DST gen_index.php 1 $DST/$i.html $DST/$i.html

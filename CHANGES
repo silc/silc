@@ -1,3 +1,14 @@
+Mon Mar 25 21:11:35 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added cross-reference support to the SILC Documentation
+	  generator.  All types across all HTML files are now cross-
+	  referenced.  Affected files util/robodoc/generator.c and
+	  scripts/silcdoc/silcdoc.
+
+	* Added file lib/silcutil/silctypes.h to include all the
+	  arithmetic type definitions and some macros.  Removed
+	  includes/bitmove.h and moved macros to silctypes.h.
+
 Mon Mar 25 17:19:46 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged bugfixes for Irssi SILC client from irssi.org CVS.
