@@ -1,3 +1,9 @@
+Thu Jun 27 20:07:27 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Buffer overflow with CUMODE command's mode->mode character
+	  conversion.  Reported by Ville Räsänen.  Affected file
+	  lib/silcutil/silcutil.c.
+
 Thu Jun 27 16:54:33 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Allow heartbeat packets to go disabled connections anyway.

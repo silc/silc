@@ -3707,7 +3707,6 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
       if (!channel) {
 	SILC_LOG_ERROR(("Received key for non-existent channel %s",
 			silc_id_render(id, SILC_ID_CHANNEL)));
-	assert(FALSE);
 	goto out;
       }
     }
