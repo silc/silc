@@ -137,6 +137,9 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
   return (void *)internal;
 }
 
+void silc_schedule_internal_signals_block(void *context);
+void silc_schedule_internal_signals_unblock(void *context);
+
 /* Uninitializes the platform specific scheduler context. */
 
 void silc_schedule_internal_uninit(void *context)

@@ -1,10 +1,10 @@
 /*
 
-  silcattrs.c 
+  silcattrs.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -93,7 +93,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     case SILC_ATTRIBUTE_STATUS_MOOD:
     case SILC_ATTRIBUTE_PREFERRED_CONTACT:
       {
-	SilcUInt32 mask = (SilcUInt32)object;
+	SilcUInt32 mask = SILC_PTR_TO_32(object);
 	if (object_size != sizeof(SilcUInt32))
 	  return NULL;
 	SILC_PUT32_MSB(mask, tmp);
@@ -293,7 +293,7 @@ SilcDList silc_attribute_payload_parse(const unsigned char *payload,
     ret = silc_buffer_unformat(&buffer,
 			       SILC_STR_UI_CHAR(&newp->attribute),
 			       SILC_STR_UI_CHAR(&newp->flags),
-			       SILC_STR_UI16_NSTRING_ALLOC(&newp->data, 
+			       SILC_STR_UI16_NSTRING_ALLOC(&newp->data,
 							   &newp->data_len),
 			       SILC_STR_END);
     if (ret == -1)
@@ -311,7 +311,7 @@ SilcDList silc_attribute_payload_parse(const unsigned char *payload,
 
     silc_dlist_add(list, newp);
   }
-  
+
   return list;
 
  err:
@@ -354,7 +354,7 @@ SilcBuffer silc_attribute_payload_encode_data(SilcBuffer attrs,
     return NULL;
   silc_buffer_pull(buffer, buffer->len);
   silc_buffer_pull_tail(buffer, len);
-  silc_buffer_format(buffer, 
+  silc_buffer_format(buffer,
 		     SILC_STR_UI_CHAR(attribute),
 		     SILC_STR_UI_CHAR(flags),
 		     SILC_STR_UI_SHORT((SilcUInt16)data_len),
@@ -444,7 +444,7 @@ unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
       if (!data)
 	return NULL;
       silc_buffer_set(&buffer, data + len, 4 + attr->data_len);
-      silc_buffer_format(&buffer, 
+      silc_buffer_format(&buffer,
 			 SILC_STR_UI_CHAR(attr->attribute),
 			 SILC_STR_UI_CHAR(attr->flags),
 			 SILC_STR_UI_SHORT(attr->data_len),
