@@ -218,6 +218,8 @@ uint32 silc_channel_get_mode(SilcChannelPayload payload)
 
 ******************************************************************************/
 
+#define SILC_CHANNEL_MESSAGE_PAD(__payloadlen) (16 - (__payloadlen) % 16)
+
 /* Channel Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcChannelMessagePayloadStruct {
@@ -334,8 +336,8 @@ SilcBuffer silc_channel_message_payload_encode(uint16 flags,
 {
   int i;
   SilcBuffer buffer;
-  uint32 len, pad_len, mac_len, block_len;
-  unsigned char pad[SILC_PACKET_MAX_PADLEN];
+  uint32 len, pad_len, mac_len;
+  unsigned char pad[16];
   unsigned char mac[32];
 
   SILC_LOG_DEBUG(("Encoding channel message payload"));
@@ -343,9 +345,8 @@ SilcBuffer silc_channel_message_payload_encode(uint16 flags,
   /* Calculate length of padding. IV is not included into the calculation
      since it is not encrypted. */
   mac_len = silc_hmac_len(hmac);
-  block_len = silc_cipher_get_block_len(cipher);
   len = 6 + data_len + mac_len;
-  pad_len = SILC_PACKET_PADLEN(len, block_len);
+  pad_len = SILC_CHANNEL_MESSAGE_PAD(len);
 
   /* Allocate channel payload buffer */
   len += pad_len + iv_len;

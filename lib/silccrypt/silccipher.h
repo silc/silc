@@ -63,11 +63,6 @@ typedef struct SilcCipherStruct {
   SilcCipherObject *cipher;
   void *context;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
-
-  /* XXX Backwards support for 0.5.x
-     XXX Remove in 0.7.x */
-  bool back;
-
   void (*set_iv)(struct SilcCipherStruct *, const unsigned char *);
   void (*get_iv)(struct SilcCipherStruct *, unsigned char *);
   uint32 (*get_key_len)(struct SilcCipherStruct *);

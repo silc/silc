@@ -216,9 +216,10 @@ with malformed SILC header MUST be dropped.
 Padding follows the packet header.  The purpose of the padding is to
 make the packet multiple by eight (8) or by the block size of the
 cipher used in the encryption, which ever is larger.  The maximum
-length of padding is currently 16 bytes.  The padding is always
-encrypted.  See the section 2.7 Padding Generation for more detailed
-information.
+length of padding is currently 128 bytes.  The padding is always
+encrypted.  The padding is applied always, even if the packet is
+not encrypted.  See the section 2.7 Padding Generation for more
+detailed information.
 
 Data payload area follows padding and it is the actual data of the
 packet.  The packet data is the packet payloads defined in this
@@ -253,7 +254,7 @@ The following diagram represents the SILC packet header.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |         Payload Length        |     Flags     |  Packet Type  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Source ID Length       |     Destination ID Length     |
+|   Pad Length  |    RESERVED   | Source ID Len |  Dest ID Len  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |  Src ID Type  |                                               |
 +-+-+-+-+-+-+-+-+                                               +
@@ -332,11 +333,18 @@ o Packet Type (1 byte) - Is the type of the packet. Receiver
   uses this field to parse the packet.  See section 2.3
   SILC Packets for list of defined packet types.
 
-o Source ID Length (2 bytes) - Indicates the length of the
+o Pad Length (1 byte) - Indicates the length of the padding
+  applied after the SILC Packet header.  Maximum length for
+  padding is 128 bytes.
+
+o RESERVED (1 byte) - Reserved field and must include a
+  zero (0) value.
+
+o Source ID Length (1 byte) - Indicates the length of the
   Source ID field in the header, not including this or any
   other fields.
 
-o Destination ID Length (2 bytes) - Indicates the length of the
+o Destination ID Length (1 byte) - Indicates the length of the
   Destination ID field in the header, not including this or
   any other fields.
 
@@ -353,6 +361,7 @@ o Dst ID Type (1 byte) - Indicates the type of ID in the
 
 o Destination ID (variable length) - The actual destination
   ID that indicates which is the end receiver of the packet.
+
 
 
 .ti 0
@@ -2521,16 +2530,19 @@ of the cipher, which ever is larger.  The padding is always encrypted.
 
 For normal packets the padding is added after the SILC Packet Header
 and between the Data Payload area.  The padding for normal packets
-are calculated as follows:
+may be calculated as follows:
 
 .in 6
 padding length = 16 - (packet_length mod block_size)
 .in 3
 
 The `block_size' is the block size of the cipher.  The maximum padding
-length is 16 bytes, and minimum is 1 byte.  The above algorithm calculates
+length is 128 bytes, and minimum is 1 byte.  The above algorithm calculates
 the padding to the next block size, and always returns the padding
-length between 1 - 16 bytes.
+length between 1 - 16 bytes.  However, implementations may add padding
+up to 128 bytes.  For example packets that include a passphrase or a
+password for authentication purposes SHOULD pad the packet up to the
+maximum padding length.
 
 For special packets the padding calculation is different as special
 packets may be encrypted differently.  In these cases the encrypted

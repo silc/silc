@@ -957,6 +957,11 @@ sent to the sender and the protocol execution fails.
 This is REQUIRED authentication method to be supported by all SILC
 implementations.
 
+When password authentication is used it is RECOMMENDED that maximum
+amount of padding is applied to the SILC packet.  This way it is not
+possible to approximate the length of the password from the encrypted
+packet.
+
 
 .ti 0
 3.2.2 Public Key Authentication

@@ -89,14 +89,8 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, uint32 sequence,
     unsigned char psn[4];
 
     silc_hmac_init(hmac);
-
-    /* XXX Backwards support for old MAC computation.
-       XXX Remove in 0.7.x */
-    if (!silc_hmac_get_b(hmac)) {
-      SILC_PUT32_MSB(sequence, psn);
-      silc_hmac_update(hmac, psn, 4);
-    }
-
+    SILC_PUT32_MSB(sequence, psn);
+    silc_hmac_update(hmac, psn, 4);
     silc_hmac_update(hmac, buffer->data, buffer->len);
     silc_hmac_final(hmac, mac, &mac_len);
     silc_buffer_put_tail(buffer, mac, mac_len);
@@ -107,13 +101,7 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, uint32 sequence,
   if (cipher) {
     SILC_LOG_DEBUG(("Encrypting packet, cipher %s, len %d", 
 		    cipher->cipher->name, len));
-    /* XXX Backwards support for 0.5.x 
-       XXX Remove in 0.7.x */
-    if (hmac && silc_hmac_get_b(hmac))
-      silc_cipher_encrypt(cipher, buffer->data + 2, buffer->data + 2, 
-			  len - 1, cipher->iv);
-    else
-      silc_cipher_encrypt(cipher, buffer->data, buffer->data, len, cipher->iv);
+    silc_cipher_encrypt(cipher, buffer->data, buffer->data, len, cipher->iv);
   }
 
   /* Pull the HMAC into the visible data area in the buffer */
@@ -150,8 +138,10 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, uint32 sequence,
       2 bytes     Payload length
       1 byte      Flags
       1 byte      Packet type
-      2 bytes     Source ID Length
-      2 bytes     Destination ID Length
+      1 byte      Padding length
+      1 byte      RESERVED
+      1 bytes     Source ID Length
+      1 bytes     Destination ID Length
       1 byte      Source ID Type
       n bytes     Source ID
       1 byte      Destination ID Type
@@ -185,11 +175,10 @@ void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher)
   /* Calculate the length of the padding. The padding is calculated from
      the data that will be encrypted. */
   if (!ctx->padlen) {
-    ctx->padlen = SILC_PACKET_PADLEN(ctx->truelen, block_len);
-    /* XXX backwards support for 0.5.x
-       XXX remove in 0.7.x */
-    if (cipher->back)
-      ctx->padlen = SILC_PACKET_PADLEN2(ctx->truelen, block_len);
+    if (ctx->long_pad)
+      ctx->padlen = SILC_PACKET_PADLEN_MAX(ctx->truelen);
+    else
+      ctx->padlen = SILC_PACKET_PADLEN(ctx->truelen, block_len);
   }
 
   /* Put the start of the data section to the right place. */
@@ -210,8 +199,10 @@ void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher)
 		     SILC_STR_UI_SHORT(ctx->truelen),
 		     SILC_STR_UI_CHAR(ctx->flags),
 		     SILC_STR_UI_CHAR(ctx->type),
-		     SILC_STR_UI_SHORT(ctx->src_id_len),
-		     SILC_STR_UI_SHORT(ctx->dst_id_len),
+		     SILC_STR_UI_CHAR(ctx->padlen),
+		     SILC_STR_UI_CHAR(0),
+		     SILC_STR_UI_CHAR(ctx->src_id_len),
+		     SILC_STR_UI_CHAR(ctx->dst_id_len),
 		     SILC_STR_UI_CHAR(ctx->src_id_type),
 		     SILC_STR_UI_XNSTRING(ctx->src_id, ctx->src_id_len),
 		     SILC_STR_UI_CHAR(ctx->dst_id_type),
@@ -352,28 +343,12 @@ void silc_packet_receive_process(SilcSocketConnection sock,
   while (sock->inbuf->len > 0) {
 
     /* Decrypt first 16 bytes of the packet */
-    if (!SILC_IS_INBUF_PENDING(sock) && cipher) {
-      /* XXX backwards support for 0.5.x
-	 XXX remove in 0.7.x */
-      if (cipher->back)
-	silc_cipher_decrypt(cipher, sock->inbuf->data + 2, 
-			    sock->inbuf->data + 2, 
-			    SILC_PACKET_MIN_HEADER_LEN, cipher->iv);
-      else
-	silc_cipher_decrypt(cipher, sock->inbuf->data, sock->inbuf->data, 
-			    SILC_PACKET_MIN_HEADER_LEN, cipher->iv);
-    }
+    if (!SILC_IS_INBUF_PENDING(sock) && cipher)
+      silc_cipher_decrypt(cipher, sock->inbuf->data, sock->inbuf->data, 
+			  SILC_PACKET_MIN_HEADER_LEN, cipher->iv);
 
     /* Get packet lenght and full packet length with padding */
-    SILC_PACKET_LENGTH(sock->inbuf, packetlen);
-    /* XXX backwards support for 0.5.x
-       XXX remove in 0.7.x */
-    if (cipher && cipher->back) {
-      paddedlen = packetlen + SILC_PACKET_PADLEN2(packetlen, block_len);
-      paddedlen += 2;
-    } else {
-      paddedlen = packetlen + SILC_PACKET_PADLEN(packetlen, block_len);
-    }
+    SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
 
     /* Sanity checks */
     if (packetlen < SILC_PACKET_MIN_LEN) {
@@ -393,6 +368,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
     parse_ctx->packet = silc_packet_context_alloc();
     parse_ctx->packet->buffer = silc_buffer_alloc(paddedlen + mac_len);
+    parse_ctx->packet->padlen = sock->inbuf->data[4];
     parse_ctx->packet->sequence = sequence++;
     parse_ctx->sock = sock;
     parse_ctx->context = parser_context;
@@ -458,14 +434,8 @@ static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer,
 
     memset(mac, 0, sizeof(mac));
     silc_hmac_init(hmac);
-
-    /* XXX Backwards support for old MAC computation.
-       XXX Remove in 0.7.x */
-    if (!silc_hmac_get_b(hmac)) {
-      SILC_PUT32_MSB(sequence, psn);
-      silc_hmac_update(hmac, psn, 4);
-    }
-
+    SILC_PUT32_MSB(sequence, psn);
+    silc_hmac_update(hmac, psn, 4);
     silc_hmac_update(hmac, buffer->data, buffer->len);
     silc_hmac_final(hmac, mac, &mac_len);
 
@@ -507,15 +477,8 @@ static int silc_packet_decrypt_rest(SilcCipher cipher, SilcHmac hmac,
 
     /* Decrypt rest of the packet */
     silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
-    /* XXX backwards support for 0.5.x
-       XXX remove in 0.7.x */
-    if (cipher->back)
-      silc_cipher_decrypt(cipher, buffer->data + 2, buffer->data + 2, 
-			  buffer->len - 2, 
-			  cipher->iv);
-    else
-      silc_cipher_decrypt(cipher, buffer->data, buffer->data, buffer->len, 
-			  cipher->iv);
+    silc_cipher_decrypt(cipher, buffer->data, buffer->data, buffer->len, 
+			cipher->iv);
     silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN);
 
     SILC_LOG_HEXDUMP(("Fully decrypted packet, len %d", buffer->len),
@@ -537,7 +500,7 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 {
   /* Decrypt rest of the header plus padding */
   if (cipher) {
-    uint16 truelen, len1, len2, padlen, blocklen;
+    uint16 len;
 
     /* Pull MAC from packet before decryption */
     if (hmac) {
@@ -551,45 +514,22 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
   
     SILC_LOG_DEBUG(("Decrypting rest of the header"));
 
-    SILC_GET16_MSB(len1, &buffer->data[4]);
-    SILC_GET16_MSB(len2, &buffer->data[6]);
+    /* padding length + src id len + dst id len + header length - 16
+       bytes already decrypted, gives the rest of the encrypted packet */
+    len = (((uint8)buffer->data[4] + (uint8)buffer->data[6] + 
+	   (uint8)buffer->data[7] + SILC_PACKET_HEADER_LEN) -
+	   SILC_PACKET_MIN_HEADER_LEN);
 
-    blocklen = silc_cipher_get_block_len(cipher);
-    truelen = SILC_PACKET_HEADER_LEN + len1 + len2;
-
-    /* XXX backwards support for 0.5.x
-       XXX remove in 0.7.x */
-    if (cipher->back) {
-      padlen = SILC_PACKET_PADLEN2(truelen, blocklen);
-      len1 = (truelen + padlen) - (SILC_PACKET_MIN_HEADER_LEN);
-      
-      silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
-
-      if (len1 - 2 > buffer->len) {
-	SILC_LOG_DEBUG(("Garbage in header of packet, bad packet length, "
-			"packet dropped"));
-	return FALSE;
-      }
-
-      silc_cipher_decrypt(cipher, buffer->data + 2, buffer->data + 2, 
-			  len1 - 2, cipher->iv);
-    } else {
-      blocklen = silc_cipher_get_block_len(cipher);
-      truelen = SILC_PACKET_HEADER_LEN + len1 + len2;
-      padlen = SILC_PACKET_PADLEN(truelen, blocklen);
-      len1 = (truelen + padlen) - SILC_PACKET_MIN_HEADER_LEN;
-      
-      silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
-
-      if (len1 > buffer->len) {
-	SILC_LOG_DEBUG(("Garbage in header of packet, bad packet length, "
-			"packet dropped"));
-	return FALSE;
-      }
-      
-      silc_cipher_decrypt(cipher, buffer->data, buffer->data, len1, cipher->iv);
+    silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
+    if (len > buffer->len) {
+      SILC_LOG_DEBUG(("Garbage in header of packet, bad packet length, "
+		      "packet dropped"));
+      return FALSE;
     }
+    silc_cipher_decrypt(cipher, buffer->data, buffer->data, len, cipher->iv);
     silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN);
+    SILC_LOG_HEXDUMP(("packet, len %d", buffer->len), 
+		     buffer->data, buffer->len);
   }
 
   return TRUE;
@@ -648,8 +588,8 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher)
 {
   SilcBuffer buffer = ctx->buffer;
+  uint8 tmp;
   int len, ret;
-  int block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));
 
@@ -664,11 +604,13 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher)
 			     SILC_STR_UI_SHORT(&ctx->truelen),
 			     SILC_STR_UI_CHAR(&ctx->flags),
 			     SILC_STR_UI_CHAR(&ctx->type),
-			     SILC_STR_UI_SHORT(&ctx->src_id_len),
-			     SILC_STR_UI_SHORT(&ctx->dst_id_len),
+			     SILC_STR_UI_CHAR(&ctx->padlen),
+			     SILC_STR_UI_CHAR(&tmp),
+			     SILC_STR_UI_CHAR(&ctx->src_id_len),
+			     SILC_STR_UI_CHAR(&ctx->dst_id_len),
 			     SILC_STR_UI_CHAR(&ctx->src_id_type),
 			     SILC_STR_END);
-  if (len == -1)
+  if (len == -1 || tmp != 0)
     return SILC_PACKET_NONE;
 
   if (ctx->src_id_len > SILC_PACKET_MAX_ID_LEN ||
@@ -677,9 +619,6 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher)
 		    ctx->src_id_len, ctx->dst_id_len));
     return SILC_PACKET_NONE;
   }
-
-  /* Calculate length of padding in packet */
-  ctx->padlen = SILC_PACKET_PADLEN(ctx->truelen, block_len);
 
   silc_buffer_pull(buffer, len);
   ret = silc_buffer_unformat(buffer, 
@@ -692,15 +631,6 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher)
 			     SILC_STR_END);
   if (ret == -1)
     return SILC_PACKET_NONE;
-
-  /* XXX backwards support for 0.5.x
-     XXX remove in 0.7.x */
-  silc_buffer_pull(buffer, 
-		   ctx->src_id_len + 1 + ctx->dst_id_len + ctx->padlen);
-  SILC_LOG_DEBUG(("**************** %d", buffer->len));
-  if (buffer->len == 2)
-    ctx->padlen += 2;
-  silc_buffer_push(buffer, ret);
 
   silc_buffer_push(buffer, len);
 
@@ -726,8 +656,8 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
 					 SilcCipher cipher)
 {
   SilcBuffer buffer = ctx->buffer;
-  int len, tmplen, ret;
-  int block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
+  uint8 tmp;
+  int len, ret;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));
 
@@ -742,11 +672,13 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
 			     SILC_STR_UI_SHORT(&ctx->truelen),
 			     SILC_STR_UI_CHAR(&ctx->flags),
 			     SILC_STR_UI_CHAR(&ctx->type),
-			     SILC_STR_UI_SHORT(&ctx->src_id_len),
-			     SILC_STR_UI_SHORT(&ctx->dst_id_len),
+			     SILC_STR_UI_CHAR(&ctx->padlen),
+			     SILC_STR_UI_CHAR(&tmp),
+			     SILC_STR_UI_CHAR(&ctx->src_id_len),
+			     SILC_STR_UI_CHAR(&ctx->dst_id_len),
 			     SILC_STR_UI_CHAR(&ctx->src_id_type),
 			     SILC_STR_END);
-  if (len == -1) {
+  if (len == -1 || tmp != 0) {
     SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
     return SILC_PACKET_NONE;
   }
@@ -757,17 +689,6 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
 		    ctx->src_id_len, ctx->dst_id_len));
     return SILC_PACKET_NONE;
   }
-
-  /* Calculate length of padding in packet. As this is special packet
-     the data area is not used in the padding calculation as it won't
-     be decrypted by the caller. */
-  tmplen = SILC_PACKET_HEADER_LEN + ctx->src_id_len + ctx->dst_id_len;
-  /* XXX backwards support for 0.5.x
-     XXX remove in 0.7.x */
-  if (ctx->back)
-    ctx->padlen = SILC_PACKET_PADLEN2(tmplen, block_len);
-  else
-    ctx->padlen = SILC_PACKET_PADLEN(tmplen, block_len);
 
   silc_buffer_pull(buffer, len);
   ret = silc_buffer_unformat(buffer, 

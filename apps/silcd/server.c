@@ -1572,10 +1572,6 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* XXX backwards support for 0.5.x
-     XXX remove in 0.7.x */
-  packet->sock = sock;
-
   /* Parse the packet */
   if (parse_ctx->normal)
     ret = silc_packet_parse(packet, idata ? idata->receive_key : NULL);

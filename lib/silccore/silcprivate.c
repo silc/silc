@@ -29,6 +29,8 @@
 
 ******************************************************************************/
 
+#define SILC_PRIVATE_MESSAGE_PAD(__payloadlen) (16 - (__payloadlen) % 16)
+
 /* Private Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcPrivateMessagePayloadStruct {
@@ -90,8 +92,8 @@ SilcBuffer silc_private_message_payload_encode(uint16 flags,
 {
   int i;
   SilcBuffer buffer;
-  uint32 len, pad_len = 0, block_len;
-  unsigned char pad[SILC_PACKET_MAX_PADLEN];
+  uint32 len, pad_len = 0;
+  unsigned char pad[16];
 
   SILC_LOG_DEBUG(("Encoding private message payload"));
 
@@ -99,8 +101,7 @@ SilcBuffer silc_private_message_payload_encode(uint16 flags,
 
   if (cipher) {
     /* Calculate length of padding. */
-    block_len = silc_cipher_get_block_len(cipher);
-    pad_len = SILC_PACKET_PADLEN(len, block_len);
+    pad_len = SILC_PRIVATE_MESSAGE_PAD(len);
     len += pad_len;
 
     /* Generate padding */

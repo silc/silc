@@ -115,6 +115,7 @@ typedef struct SilcRngObjectStruct {
   SilcRngState state;
   SilcHash sha1;
   uint8 threshhold;
+  char *devrandom;
 } SilcRngObject;
 
 /* Allocates new RNG object. */
@@ -132,6 +133,8 @@ SilcRng silc_rng_alloc()
   new->state = NULL;
   silc_hash_alloc("sha1", &new->sha1);
 
+  new->devrandom = strdup("/dev/random");
+
   return new;
 }
 
@@ -142,7 +145,8 @@ void silc_rng_free(SilcRng rng)
   if (rng) {
     memset(rng->pool, 0, sizeof(rng->pool));
     memset(rng->key, 0, sizeof(rng->key));
-    silc_free(rng->sha1);
+    silc_hash_free(rng->sha1);
+    silc_free(new->devrandom);
     silc_free(rng);
   }
 }
@@ -185,6 +189,8 @@ void silc_rng_init(SilcRng rng)
   silc_rng_get_medium_noise(rng);
   silc_rng_get_hard_noise(rng);
   silc_rng_get_soft_noise(rng);
+  silc_free(rng->devrandom);
+  rng->devrandom = strdup("/dev/urandom");
 }
 
 /* This function gets 'soft' noise from environment. */
@@ -275,8 +281,8 @@ static void silc_rng_get_hard_noise(SilcRng rng)
   char buf[32];
   int fd, len, i;
   
-  /* Get noise from /dev/random if available */
-  fd = open("/dev/random", O_RDONLY);
+  /* Get noise from /dev/[u]random if available */
+  fd = open(rnd->devrandom, O_RDONLY);
   if (fd < 0)
     return;
 
@@ -370,7 +376,7 @@ static void silc_rng_stir_pool(SilcRng rng)
   uint32 iv[5];
 
   /* Get the IV */
-  memcpy(iv, &rng->pool[SILC_RNG_POOLSIZE - 256], sizeof(iv));
+  memcpy(iv, &rng->pool[16], sizeof(iv));
 
   /* First CFB pass */
   for (i = 0; i < SILC_RNG_POOLSIZE; i += 5) {

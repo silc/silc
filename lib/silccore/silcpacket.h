@@ -43,7 +43,10 @@
 #define SILC_PACKET_MIN_HEADER_LEN 16
 
 /* Maximum padding length */
-#define SILC_PACKET_MAX_PADLEN 16
+#define SILC_PACKET_MAX_PADLEN 128
+
+/* Default padding length */
+#define SILC_PACKET_DEFAULT_PADLEN 16
 
 /* Minimum packet length */
 #define SILC_PACKET_MIN_LEN (SILC_PACKET_HEADER_LEN + 1)
@@ -206,31 +209,29 @@ typedef unsigned char SilcPacketFlags;
  ***/
 typedef struct {
   SilcBuffer buffer;
-  SilcPacketType type;
-  SilcPacketFlags flags;
-
-  unsigned char *src_id;
-  uint16 src_id_len;
-  unsigned char src_id_type;
-
-  unsigned char *dst_id;
-  uint16 dst_id_len;
-  unsigned char dst_id_type;
 
   uint16 truelen;
-  uint16 padlen;
+  SilcPacketFlags flags;
+  SilcPacketType type;
+  uint8 padlen;
+
+  unsigned char *src_id;
+  uint8 src_id_len;
+  uint8 src_id_type;
+
+  unsigned char *dst_id;
+  uint8 dst_id_len;
+  uint8 dst_id_type;
 
   /* Back pointers */
   void *context;
   SilcSocketConnection sock;
 
   int users;
+  bool long_pad;		/* Set to TRUE to use maximum padding
+				   in packet (up to 256 bytes). */
 
   uint32 sequence;
-
-  /* XXX backwards support for 0.5.c
-     XXX remove in 0.7.x */
-  bool back;
 } SilcPacketContext;
 
 /****s* silccore/SilcPacketAPI/SilcPacketParserContext
@@ -315,9 +316,10 @@ typedef void (*SilcPacketParserCallback)(SilcPacketParserContext
  *
  * SOURCE
  */
-#define SILC_PACKET_LENGTH(__packet, __ret_truelen)	\
-do {							\
-  SILC_GET16_MSB((__ret_truelen), (__packet)->data);	\
+#define SILC_PACKET_LENGTH(__packet, __ret_truelen, __ret_paddedlen)	\
+do {									\
+  SILC_GET16_MSB((__ret_truelen), (__packet)->data);			\
+  (__ret_paddedlen) = (__ret_truelen) + (__packet)->data[4];		\
 } while(0)
 /***/
 
@@ -335,15 +337,27 @@ do {							\
  * SOURCE
  */
 #define SILC_PACKET_PADLEN(__packetlen, __blocklen)		\
-  SILC_PACKET_MAX_PADLEN - (__packetlen) %			\
-    ((__blocklen) ? (__blocklen) : SILC_PACKET_MAX_PADLEN)
+  SILC_PACKET_DEFAULT_PADLEN - (__packetlen) %			\
+    ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN)
 /***/
 
-/* XXX Backwards support for 0.5.x
-   XXX Remove in 0.7.x */
-#define SILC_PACKET_PADLEN2(__packetlen, __blocklen)		\
-  SILC_PACKET_MAX_PADLEN - ((__packetlen) - 2 ) %		\
-    ((__blocklen) ? (__blocklen) : SILC_PACKET_MAX_PADLEN)
+/****d* silccore/SilcPacketAPI/SILC_PACKET_PADLEN_MAX
+ *
+ * NAME
+ * 
+ *    #define SILC_PACKET_PADLEN_MAX ...
+ *
+ * DESCRIPTION
+ *
+ *    Returns the length of the padding up to the maximum length, which
+ *    is 128 butes. This is used by various library routines to determine
+ *    needed padding length.
+ *
+ * SOURCE
+ */
+#define SILC_PACKET_PADLEN_MAX(__packetlen)				\
+  SILC_PACKET_MAX_PADLEN - (__packetlen) % SILC_PACKET_MAX_PADLEN
+/***/
 
 /* Prototypes */
 

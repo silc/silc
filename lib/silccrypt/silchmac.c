@@ -32,10 +32,6 @@ struct SilcHmacStruct {
   unsigned char inner_pad[64];
   unsigned char outer_pad[64];
   void *hash_context;
-
-  /* XXX backwards thingy for 0.5.x MAC computation.
-     XXX Remove in 0.7.x */
-  bool backwards_support;
 };
 
 /* List of dynamically registered HMACs. */
@@ -397,14 +393,4 @@ void silc_hmac_final(SilcHmac hmac, unsigned char *return_hash,
 
   if (return_len)
     *return_len = hmac->hmac->len;
-}
-
-void silc_hmac_set_b(SilcHmac hmac)
-{
-  hmac->backwards_support = TRUE;
-}
-
-bool silc_hmac_get_b(SilcHmac hmac)
-{
-  return hmac->backwards_support;
 }

@@ -1862,14 +1862,6 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 					      req_hmac_key_len, 
 					      ske->prop->hash, key);
 
-  /* Backwards support for old MAC keys */
-  /* XXX Remove in 0.7.x */
-  if (ske->backward_version == 1) {
-    silc_free(key->receive_hmac_key);
-    key->receive_hmac_key = silc_calloc(1, sizeof(*key->receive_hmac_key));
-    memcpy(key->receive_hmac_key, key->send_hmac_key, key->hmac_key_len);
-  }
-
   memset(tmpbuf, 0, klen);
   silc_free(tmpbuf);
   silc_buffer_free(buf);

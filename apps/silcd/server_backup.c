@@ -650,6 +650,34 @@ static void silc_server_backup_connect_primary(SilcServer server,
   backup_router->protocol = NULL;
 }
 
+SILC_TASK_CALLBACK(silc_server_backup_send_resumed)
+{
+  SilcProtocol protocol = (SilcProtocol)context;
+  SilcServerBackupProtocolContext ctx = protocol->context;
+  SilcServer server = ctx->server;
+  SilcBuffer packet;
+  int i;
+
+  for (i = 0; i < ctx->sessions_count; i++)
+    if (ctx->sessions[i].server_entry == ctx->sock->user_data)
+      ctx->session = ctx->sessions[i].session;
+  
+  /* We've received all the CONNECTED packets and now we'll send the
+     ENDING packet to the new primary router. */
+  packet = silc_buffer_alloc(2);
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_CHAR(SILC_SERVER_BACKUP_ENDING),
+		     SILC_STR_UI_CHAR(ctx->session),
+		     SILC_STR_END);
+  silc_server_packet_send(server, ctx->sock, 
+			  SILC_PACKET_RESUME_ROUTER, 0, 
+			  packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
+  
+  protocol->state = SILC_PROTOCOL_STATE_END;
+}
+
 /* Resume protocol with RESUME_ROUTER packet: 
 
    SILC_PACKET_RESUME_ROUTER:
@@ -922,24 +950,12 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
       SILC_LOG_DEBUG(("********************************"));
       SILC_LOG_DEBUG(("Sending ENDING packet to primary"));
 
-      for (i = 0; i < ctx->sessions_count; i++)
-	if (ctx->sessions[i].server_entry == ctx->sock->user_data)
-	  ctx->session = ctx->sessions[i].session;
-
-      /* We've received all the CONNECTED packets and now we'll send the
-	 ENDING packet to the new primary router. */
-      packet = silc_buffer_alloc(2);
-      silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-      silc_buffer_format(packet,
-			 SILC_STR_UI_CHAR(SILC_SERVER_BACKUP_ENDING),
-			 SILC_STR_UI_CHAR(ctx->session),
-			 SILC_STR_END);
-      silc_server_packet_send(server, ctx->sock, 
-			      SILC_PACKET_RESUME_ROUTER, 0, 
-			      packet->data, packet->len, FALSE);
-      silc_buffer_free(packet);
-
-      protocol->state = SILC_PROTOCOL_STATE_END;
+      /* Send with a timeout */
+      silc_schedule_task_add(server->schedule, 0, 
+			     silc_server_backup_send_resumed,
+			     protocol, 1, 0, SILC_TASK_TIMEOUT,
+			     SILC_TASK_PRI_NORMAL);
+      return;
     } else {
       /* Responder */
 

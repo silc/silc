@@ -395,7 +395,7 @@ void silc_hmac_init_with_key(SilcHmac hmac, const unsigned char *key,
 void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
 		      uint32 data_len);
 
-/****f* silccrypt/SilcHMACAPI/silc_hmac_init
+/****f* silccrypt/SilcHMACAPI/silc_hmac_final
  *
  * SYNOPSIS
  *
@@ -414,8 +414,5 @@ void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
  ***/
 void silc_hmac_final(SilcHmac hmac, unsigned char *return_hash,
 		     uint32 *return_len);
-
-void silc_hmac_set_b(SilcHmac hmac);
-bool silc_hmac_get_b(SilcHmac hmac);
 
 #endif

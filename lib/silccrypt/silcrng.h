@@ -57,10 +57,10 @@
  * Every time data is acquired from any source, the pool is stirred. The
  * stirring process performs an CFB (cipher feedback) encryption with SHA1
  * algorithm to the entire random pool. First it acquires an IV (Initial
- * Vector) from the constant location of the pool and performs the first CFB
- * pass. Then it acquires a new encryption key from variable location of the
- * pool and performs the second CFB pass. The encryption key thus is always
- * acquired from unguessable data.
+ * Vector) from the constant (random) location of the pool and performs
+ * the first CFB pass. Then it acquires a new encryption key from variable
+ * location of the pool and performs the second CFB pass. The encryption
+ * key thus is always acquired from unguessable data.
  *
  * The encryption process to the entire random pool assures that it is
  * impossible to learn the input data to the random pool without breaking the
@@ -89,7 +89,7 @@
  *
  * The second threshhold gets hard noise from system and stirs the random
  * pool. The threshhold is reached after 160 bits of random output. After the
- * noise is acquired (from /dev/random) the random pool is stirred and the
+ * noise is acquired (from /dev/urandom) the random pool is stirred and the
  * threshholds are set to zero. The process is repeated again after 64 bits of
  * output for first threshhold and after 160 bits of output for the second
  * threshhold.

@@ -244,15 +244,6 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
     return FALSE;
   }
 
-  /* XXX backwards support for old MAC thingy
-     XXX Remove ing 0.7.x */
-  if (ske->backward_version) {
-    silc_hmac_set_b(idata->hmac_send);
-    silc_hmac_set_b(idata->hmac_receive);
-    idata->send_key->back = TRUE;
-    idata->receive_key->back = TRUE;
-  }
-
   if (is_responder == TRUE) {
     silc_cipher_set_key(idata->send_key, keymat->receive_enc_key, 
 			keymat->enc_key_len);
@@ -369,10 +360,9 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   if (min > min2)
     status = SILC_SKE_STATUS_BAD_VERSION;
 
-  /* Backwards support for 0.5.x for various MAC related issues.
-     XXX Remove in 0.7.x */
-  if (maj == 0 && min < 6)
-    ske->backward_version = 1;
+  /* XXX < 0.6 is not allowed */
+  if (maj == 0 && min < 5)
+    status = SILC_SKE_STATUS_BAD_VERSION;
 
   return status;
 }

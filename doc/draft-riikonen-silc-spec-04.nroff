@@ -1139,7 +1139,11 @@ o Authentication Data (variable length) - Authentication
 If the authentication method is password based, the Authentication
 Data field includes the plaintext password.  It is safe to send
 plaintext password since the entire payload is encrypted.  In this
-case the Public Data Length is set to zero (0).
+case the Public Data Length is set to zero (0), but MAY also include
+random data for padding purposes.  It is also RECOMMENDED that maximum
+amount of padding is applied to SILC packet when using password based
+authentication.  This way it is not possible to approximate the length
+of the password from the encrypted packet.
 
 If the authentication method is public key based (or certificate)
 the Authentication Data is computed as follows:
