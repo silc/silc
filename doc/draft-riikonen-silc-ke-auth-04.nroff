@@ -406,9 +406,9 @@ two SILC clients.  In normal case, where client is connecting to a
 server, or server is connecting to a router the Mutual Authentication
 flag may be omitted.  However, if the connection authentication protocol 
 for the connecting entity is not based on public key authentication (it
-is based on passphrase) then it is RECOMMENDED that Mutual Authentication 
-flag is enabled.  This way the connecting entity has to provide proof
-of posession of the private key for the public key it will provide in
+is based on passphrase) then the Mutual Authentication flag SHOULD be 
+enabled.  This way the connecting entity has to provide proof of
+posession of the private key for the public key it will provide in
 SILC Key Exchange protocol.
 
 When performing re-key with PFS selected this is the only payload that

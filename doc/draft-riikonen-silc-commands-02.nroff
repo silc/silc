@@ -259,12 +259,13 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  8
+        Max Arguments:  9
             Arguments:  (1) <Status Payload>       (2) <Client ID> 
                         (3) <nickname>[@<server>]  (4) <username@host> 
                         (5) <real name>            (6) [<Channel Payload 
                                                          list>] 
                         (7) [<user mode>]          (8) [<idle time>]
+                        (9) [<fingerprint>]
 
 
         This command may reply with several command reply messages to
@@ -281,11 +282,18 @@ List of all defined commands in SILC follows.
         <count> option were defined in the query there will be only
         <count> many replies from the server.
 
-        The server MAY return the list of channel the client has joined.
+        The server may return the list of channel the client has joined.
         In this case the list is list of Channel Payloads.  The Mode Mask
         in the Channel Payload (see [SILC2] and section 2.3.2.3 for the
         Channel Payload) is the client's mode on the channel.  The list
         is encoded by adding the Channel Payloads one after the other.
+
+        The server may also send client's user mode, idle time, and the
+        fingerprint of the client's public key.  The <fingerprint> is the
+        binary hash digest of the public key.  The fingerprint MUST NOT
+        be sent if the server has not verified the proof of posession of
+        the corresponding private key.  Server can do this during the
+        SILC Key Exchange protocol.
 
         Status messages:
 
