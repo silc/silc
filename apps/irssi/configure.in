@@ -341,10 +341,11 @@ if test -z "$GLIB_DIR"; then
       glib_modules=
     fi
     if test $try = 1 -o $try = 2; then
-      AM_PATH_GLIB(1.2.0,,, $glib_modules)
+      glib_version=1.2.0
     else
-      AM_PATH_GLIB_2_0(2.0.0,,, $glib_modules)
+      glib_version=2.0.0
     fi
+    AM_PATH_GLIB($glib_version,[],[], [$glib_modules])
     if test "$GLIB_LIBS"; then
       if test $glib_modules = gmodule; then
         AC_DEFINE(HAVE_GMODULE)
