@@ -1,3 +1,14 @@
+Sat Nov  3 17:48:55 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_pkcs_public_key_compare to compare two 
+	  public keys.  Affected file lib/silccrypt/silcpkcs.[ch].
+
+	* Check that the client who set the founder mode on the
+	  channel is the same client that is giving the founder
+	  mode to itself.  It is done by comparing the saved public
+	  key (it is saved even in the authentication is passphrase).
+	  Affected file silcd/command.c.
+
 Fri Nov  2 18:52:08 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not process packet for disconnected socket connection.

@@ -4186,7 +4186,9 @@ SILC_SERVER_CMD_FUNC(cumode)
       }
 
       if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
-	  !channel->founder_key) {
+	  !channel->founder_key || !idata->public_key ||
+	  !silc_pkcs_public_key_compare(channel->founder_key, 
+					idata->public_key)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
 					      SILC_STATUS_ERR_NOT_YOU);
 	goto out;
@@ -4198,7 +4200,7 @@ SILC_SERVER_CMD_FUNC(cumode)
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
-      
+
       auth = (channel->founder_method == SILC_AUTH_PASSWORD ?
 	      (void *)channel->founder_passwd : (void *)channel->founder_key);
       auth_len = (channel->founder_method == SILC_AUTH_PASSWORD ?

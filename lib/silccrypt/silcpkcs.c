@@ -721,6 +721,25 @@ int silc_pkcs_public_key_decode(unsigned char *data, uint32 data_len,
   return FALSE;
 }
 
+/* Compares two public keys and returns TRUE if they are same key, and
+   FALSE if they are not same. */
+
+bool silc_pkcs_public_key_compare(SilcPublicKey key1, SilcPublicKey key2)
+{
+  if (key1 == key2)
+    return TRUE;
+
+  if (key1->len == key2->len &&
+      key1->name && key2->name && key1->identifier && key2->identifier &&
+      !strcmp(key1->name, key2->name) &&
+      !strcmp(key1->identifier, key2->identifier) &&
+      !memcmp(key1->pk, key2->pk, key1->pk_len) &&
+      key1->pk_len == key2->pk_len)
+    return TRUE;
+
+  return FALSE;
+}
+
 /* Encodes SILC private key from SilcPrivateKey. Returns the encoded data. */
 
 unsigned char *
