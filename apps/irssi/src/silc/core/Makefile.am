@@ -31,6 +31,7 @@ noinst_HEADERS = \
 	silc-channels.h \
 	silc-core.h \
 	silc-nicklist.h \
+	silc-commands.h \
 	silc-queries.h \
 	silc-servers.h
 

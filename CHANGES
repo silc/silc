@@ -1,3 +1,9 @@
+Thu Mar 21 20:44:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the internal Unix scheduler functions to check for
+	  NULL context they may receive.  The affected file is
+	  lib/silcutil/unix/silcunixschedule.c.
+
 Thu Mar 21 19:12:22 EET 2002  Timo Sirainen <tss@iki.fi>
 
 	* Changed hardcoded ~/.silc paths to use get_irssi_dir() so you
