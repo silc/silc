@@ -401,6 +401,55 @@ const unsigned char *silc_attribute_get_data(SilcAttributePayload payload,
   return (const unsigned char *)payload->data;
 }
 
+/* Construct digital signature verification data */
+
+unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
+					      bool server_verification,
+					      SilcUInt32 *data_len)
+{
+  SilcAttributePayload attr;
+  SilcBufferStruct buffer;
+  unsigned char *data = NULL;
+  SilcUInt32 len = 0;
+
+  silc_dlist_start(attrs);
+  while ((attr = silc_dlist_get(attrs)) != SILC_LIST_END) {
+    switch (attr->attribute) {
+    case SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE:
+      /* Server signature is never part of the verification data */
+      break;
+
+    case SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE:
+      /* For user signature verification this is not part of the data */
+      if (!server_verification)
+	break;
+
+      /* Fallback, for server signature verification, user digital signature
+	 is part of verification data. */
+
+    default:
+      /* All other data is part of the verification data */
+      data = silc_realloc(data, sizeof(*data) * (4 + attr->data_len + len));
+      if (!data)
+	return NULL;
+      silc_buffer_set(&buffer, data + len, 4 + attr->data_len);
+      silc_buffer_format(&buffer, 
+			 SILC_STR_UI_CHAR(attr->attribute),
+			 SILC_STR_UI_CHAR(attr->flags),
+			 SILC_STR_UI_SHORT(attr->data_len),
+			 SILC_STR_UI_XNSTRING(attr->data, attr->data_len),
+			 SILC_STR_END);
+      len += 4 + attr->data_len;
+      break;
+    }
+  }
+
+  if (data_len)
+    *data_len = len;
+
+  return data;
+}
+
 /* Return parsed attribute object */
 
 bool silc_attribute_get_object(SilcAttributePayload payload,

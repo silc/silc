@@ -350,6 +350,30 @@ SilcAttributeFlags silc_attribute_get_flags(SilcAttributePayload payload);
 const unsigned char *silc_attribute_get_data(SilcAttributePayload payload,
 					     SilcUInt32 *data_len);
 
+/****f* silccore/SilcAttributesAPI/silc_attribute_get_verify_data
+ *
+ * SYNOPSIS
+ *
+ *    unsigned char *
+ *    silc_attribute_get_verify_data(SilcDList attrs,
+ *                                   bool server_verification,
+ *                                   SilcUInt32 *data_len);
+ *
+ * DESCRIPTION
+ *
+ *    Constructs the data to be verified with the sender's digital
+ *    signature and sender's public key.  This allocates the data from
+ *    the list of attribute payloads and returns the buffer.  The caller
+ *    must free it.  If `server_verification' is FALSE then data is
+ *    constructed for user's digital signature verification, if it is
+ *    TRUE then it is constructed for server's digital signature
+ *    verification.
+ *
+ ***/
+unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
+					      bool server_verification,
+					      SilcUInt32 *data_len);
+
 /* Object structures */
 
 /****s* silccore/SilcAttributesAPI/SilcAttributesObjService
