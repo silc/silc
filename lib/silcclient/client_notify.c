@@ -192,9 +192,11 @@ void silc_client_notify_by_server(SilcClient client,
     channel = (SilcChannelEntry)id_cache->context;
 
     /* Add client to channel */
-    chu = silc_calloc(1, sizeof(*chu));
-    chu->client = client_entry;
-    silc_list_add(channel->clients, chu);
+    if (client_entry != conn->local_entry) {
+      chu = silc_calloc(1, sizeof(*chu));
+      chu->client = client_entry;
+      silc_list_add(channel->clients, chu);
+    }
 
     /* XXX add support for multiple same nicks on same channel. Check
        for them here */

@@ -1213,7 +1213,7 @@ is always in PKCS #1 version 1.5 format.
 Additional public key algorithms may be defined to be used in SILC.
 
 
-.ti0
+.ti 0
 3.10.3 Hash Functions
 
 Hash functions are used as part of MAC algorithms defined in the next

@@ -886,8 +886,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     } else {
       /* Yes, we have it already */
       client_entry = (SilcClientEntry)id_cache->context;
-      if (client_entry == conn->local_entry)
-	continue;
     }
 
     /* Join the client to the channel */

@@ -335,7 +335,7 @@ void silc_client_show_users(SilcClient client,
     len1++;
     k++;
   }
-  
+
   client->ops->say(client, conn, "Users on %s: %s", channel->channel_name, 
 		   name_list);
   silc_free(name_list);
