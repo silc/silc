@@ -366,7 +366,7 @@ void silc_server_daemonise(SilcServer server)
 	!server->config->identity->group) {
       fprintf(stderr, "Error:"
        "\tSILC server must not be run as root.  For the security of your\n"
-       "\tsystem it is strongly suggested that you run SILC tunder dedicated\n"
+       "\tsystem it is strongly suggested that you run SILC under dedicated\n"
        "\tuser account.  Modify the [Identity] configuration section to run\n"
        "\tthe server as non-root user.\n");
       exit(1);
@@ -398,8 +398,11 @@ void silc_server_daemonise(SilcServer server)
     /* Check whether user and/or group is set to root. If yes, exit
        immediately. Otherwise, setgid and setuid server to user.group */
     if (gr->gr_gid==0 || pw->pw_uid==0) {
-      SILC_LOG_DEBUG(("FATAL: silcd will not run at root privileges"));
-      fprintf(stderr, "User and/or group not set. Please set them\n");
+      fprintf(stderr, "Error:"
+       "\tSILC server must not be run as root.  For the security of your\n"
+       "\tsystem it is strongly suggested that you run SILC under dedicated\n"
+       "\tuser account.  Modify the [Identity] configuration section to run\n"
+       "\tthe server as non-root user.\n");
       exit(1);
     } else {
       /* Fork server to background, making it a daemon */
