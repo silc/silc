@@ -126,7 +126,8 @@
 
        Format:
 
-       +<Remote address or name>:<auth method>:<password/key/???>:<Port>:<Version ID>:<Class>
+       +<Remote address or name>:<auth method>:<password/key/???>:
+       <Port>:<Version ID>:<Class>:<Initiator>
 
    <DenyConnection>
 
@@ -169,7 +170,7 @@ SilcConfigServerSection silc_config_server_sections[] = {
   { "[ServerConnection]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_CONNECTION, 6 },
   { "[RouterConnection]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_ROUTER_CONNECTION, 6 },
+    SILC_CONFIG_SERVER_SECTION_TYPE_ROUTER_CONNECTION, 7 },
   { "[AdminConnection]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_CONNECTION, 5 },
   { "[DenyConnection]", 
@@ -897,6 +898,17 @@ int silc_config_server_parse_lines(SilcConfigServer config,
 	break;
       if (ret) {
 	config->routers->class = atoi(tmp);
+	silc_free(tmp);
+      }
+
+      /* Get whether we are initiator or not */
+      ret = silc_config_get_token(line, &tmp);
+      if (ret < 0)
+	break;
+      if (ret) {
+	config->routers->initiator = atoi(tmp);
+	if (config->routers->initiator != 0)
+	  config->routers->initiator = TRUE;
 	silc_free(tmp);
       }
 

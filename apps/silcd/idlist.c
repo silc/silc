@@ -24,6 +24,51 @@
 
 /******************************************************************************
 
+                             Common functions
+
+******************************************************************************/
+
+/* This function is used to add keys and stuff to common ID entry data
+   structure. */
+
+void silc_idlist_add_data(void *entry, SilcIDListData idata)
+{
+  SilcIDListData data = (SilcIDListData)entry;
+  data->send_key = idata->send_key;
+  data->receive_key = idata->receive_key;
+  data->hmac = idata->hmac;
+  data->hmac_key = idata->hmac_key;
+  data->hmac_key_len = idata->hmac_key_len;
+  data->pkcs = idata->pkcs;
+  data->public_key = idata->public_key;
+  data->last_receive = idata->last_receive;
+  data->last_sent = idata->last_sent;
+  data->registered = idata->registered;
+}
+
+/* Free's all data in the common ID entry data structure. */
+
+void silc_idlist_del_data(void *entry)
+{
+  SilcIDListData idata = (SilcIDListData)entry;
+  if (idata->send_key)
+    silc_cipher_free(idata->send_key);
+  if (idata->receive_key)
+    silc_cipher_free(idata->receive_key);
+  if (idata->hmac)
+    silc_hmac_free(idata->hmac);
+  if (idata->hmac_key) {
+    memset(idata->hmac_key, 0, idata->hmac_key_len);
+    silc_free(idata->hmac_key);
+  }
+  if (idata->pkcs)
+    silc_pkcs_free(idata->pkcs);
+  if (idata->public_key)
+    silc_pkcs_public_key_free(idata->public_key);
+}
+
+/******************************************************************************
+
                           Server entry functions
 
 ******************************************************************************/
@@ -37,9 +82,7 @@ SilcServerEntry
 silc_idlist_add_server(SilcIDList id_list, 
 		       char *server_name, int server_type,
 		       SilcServerID *id, SilcServerEntry router,
-		       SilcCipher send_key, SilcCipher receive_key,
-		       SilcPKCS pkcs, SilcHmac hmac, 
-		       SilcPublicKey public_key, void *connection)
+		       void *connection)
 {
   SilcServerEntry server;
 
@@ -50,11 +93,6 @@ silc_idlist_add_server(SilcIDList id_list,
   server->server_type = server_type;
   server->id = id;
   server->router = router;
-  server->send_key = send_key;
-  server->receive_key = receive_key;
-  server->pkcs = pkcs;
-  server->hmac = hmac;
-  server->public_key = public_key;
   server->connection = connection;
 
   if (!silc_idcache_add(id_list->servers, server->server_name, SILC_ID_SERVER,
@@ -127,10 +165,7 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 		       char *userinfo, SilcClientID *id, 
-		       SilcServerEntry router,
-		       SilcCipher send_key, SilcCipher receive_key,
-		       SilcPKCS pkcs, SilcHmac hmac, 
-		       SilcPublicKey public_key, void *connection)
+		       SilcServerEntry router, void *connection)
 {
   SilcClientEntry client;
 
@@ -142,11 +177,6 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
   client->userinfo = userinfo;
   client->id = id;
   client->router = router;
-  client->send_key = send_key;
-  client->receive_key = receive_key;
-  client->pkcs = pkcs;
-  client->hmac = hmac;
-  client->public_key = public_key;
   client->connection = connection;
   silc_list_init(client->channels, struct SilcChannelClientEntryStruct, 
 		 client_list);
@@ -161,7 +191,7 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 }
 
 /* Free client entry. This free's everything and removes the entry
-   from ID cache. */
+   from ID cache. Call silc_idlist_del_data before calling this one. */
 
 void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 {
@@ -180,16 +210,6 @@ void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
       silc_free(entry->userinfo);
     if (entry->id)
       silc_free(entry->id);
-    if (entry->send_key)
-      silc_cipher_free(entry->send_key);
-    if (entry->receive_key)
-      silc_cipher_free(entry->receive_key);
-    if (entry->pkcs)
-      silc_pkcs_free(entry->pkcs);
-    if (entry->public_key)
-      silc_pkcs_public_key_free(entry->public_key);
-    if (entry->hmac)
-      silc_hmac_free(entry->hmac);
   }
 }
 

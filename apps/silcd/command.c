@@ -86,25 +86,9 @@ static int silc_server_is_registered(SilcServer server,
 				     SilcServerCommandContext cmd,
 				     SilcCommand command)
 {
-  switch(sock->type) {
-  case SILC_SOCKET_TYPE_CLIENT:
-    {
-      SilcClientEntry client = (SilcClientEntry)sock->user_data;
-      if (client->registered)
-	return TRUE;
-      break;
-    }
-  case SILC_SOCKET_TYPE_SERVER:
-  case SILC_SOCKET_TYPE_ROUTER:
-    {
-      SilcServerEntry serv = (SilcServerEntry)sock->user_data;
-      if (serv->registered)
-	return TRUE;
-      break;
-    }
-  default:
-    break;
-  }
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
+  if (idata->registered)
+    return TRUE;
 
   silc_server_command_send_status_reply(cmd, command,
 					SILC_STATUS_ERR_NOT_REGISTERED);
@@ -122,6 +106,9 @@ void silc_server_command_process(SilcServer server,
   SilcServerCommand *cmd;
 
 #if 0
+  /* XXX allow commands in but do not execute them more than once per
+     two seconds. */
+
   /* Check whether it is allowed for this connection to execute any
      command. */
   if (sock->type == SILC_SOCKET_TYPE_CLIENT) {
@@ -449,7 +436,7 @@ SILC_SERVER_CMD_FUNC(whois)
       len = hsock->hostname ? strlen(hsock->hostname) : strlen(hsock->ip);
       strncat(uh, hsock->hostname ? hsock->hostname : hsock->ip, len);
       
-      SILC_PUT32_MSB((time(NULL) - entry->last_receive), idle);
+      SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
       
       /* XXX */
       if (entry->userinfo)

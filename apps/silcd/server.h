@@ -37,11 +37,11 @@ typedef struct SilcServerStruct *SilcServer;
 /* Connection retry timeout. We implement exponential backoff algorithm
    in connection retry. The interval of timeuot grows when retry count
    grows. */
-#define SILC_SERVER_RETRY_COUNT        3	 /* Max retry count */
+#define SILC_SERVER_RETRY_COUNT        4	 /* Max retry count */
 #define SILC_SERVER_RETRY_MULTIPLIER   7 / 4	 /* Interval growth */
 #define SILC_SERVER_RETRY_RANDOMIZER   2	 /* timeout += rnd % 2 */
-#define SILC_SERVER_RETRY_INTERVAL_MIN 2	 /* Min retry timeout */
-#define SILC_SERVER_RETRY_INTERVAL_MAX 30	 /* Max generated timeout */
+#define SILC_SERVER_RETRY_INTERVAL_MIN 10	 /* Min retry timeout */
+#define SILC_SERVER_RETRY_INTERVAL_MAX 600	 /* Max generated timeout */
 
 /* 
    Silc Server Params.

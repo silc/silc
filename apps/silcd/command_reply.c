@@ -166,8 +166,7 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
        ever gets here it means they don't have this client's information
        in their cache. */
     silc_idlist_add_client(server->global_list, strdup(nickname),
-			   username, NULL, client_id, NULL, NULL, NULL,
-			   NULL, NULL, NULL, NULL);
+			   username, NULL, client_id, NULL, NULL);
   }
 
   if (status == SILC_STATUS_LIST_START) {

@@ -115,6 +115,7 @@ typedef struct SilcConfigServerSectionServerConnectionStruct {
   unsigned short port;
   char *version;
   unsigned int class;
+  int initiator;
   struct SilcConfigServerSectionServerConnectionStruct *next;
   struct SilcConfigServerSectionServerConnectionStruct *prev;
 } SilcConfigServerSectionServerConnection;

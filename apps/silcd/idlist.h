@@ -26,6 +26,41 @@ typedef struct SilcServerEntryStruct *SilcServerEntry;
 typedef struct SilcClientEntryStruct *SilcClientEntry;
 typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 
+/*
+   Generic ID list data structure.
+
+   This structure is included in all ID list entries and it includes data
+   pointers that are common to all ID entries.  This structure is always
+   defined to the first field in the ID entries and is used to explicitly
+   cast to this type without first explicitly casting to correct ID entry
+   type.  Hence, the ID list entry is casted to this type to get this data
+   from the ID entry (which is usually opaque pointer).
+
+   Note that some of the fields may be NULL.
+
+*/
+typedef struct {
+  /* Send and receive symmetric keys */
+  SilcCipher send_key;
+  SilcCipher receive_key;
+
+  /* HMAC and raw key data */
+  SilcHmac hmac;
+  unsigned char *hmac_key;
+  unsigned int hmac_key_len;
+
+  /* PKCS and public key */
+  SilcPKCS pkcs;
+  SilcPublicKey public_key;
+
+  /* Time when last received or sent data */
+  long last_receive;
+  long last_sent;
+
+  /* Boolean value whether connection is registered */
+  int registered;
+} *SilcIDListData, SilcIDListDataStruct;
+
 /* 
    SILC Server entry object.
 
@@ -45,6 +80,10 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 
    Following short description of the fields:
 
+   SilcIDListDataStruct data
+
+       Generic data structure to hold data common to all ID entries.
+
    char *server_name
 
        Logical name of the server. There is no limit of the length of the
@@ -60,10 +99,6 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
        ID of the server. This includes all the relevant information about
        the server SILC will ever need. These are also the informations
        that is broadcasted between servers and routers in the SILC network.
-
-   long last_receive
-
-       Time when data was received from the server last time.
 
    SilcServerEntry router
 
@@ -85,25 +120,15 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
    
 */
 struct SilcServerEntryStruct {
+  /* Generic data structure. DO NOT add anything before this! */
+  SilcIDListDataStruct data;
+
   char *server_name;
   int server_type;
   SilcServerID *id;
-  long last_receive;
-
-  /* TRUE when server is registered to server */
-  int registered;
 
   /* Pointer to the router */
   SilcServerEntry router;
-
-  /* Keys */
-  SilcCipher send_key;
-  SilcCipher receive_key;
-  SilcPKCS pkcs;
-  SilcPublicKey public_key;
-  SilcHmac hmac;
-  unsigned char *hmac_key;
-  unsigned int hmac_key_len;
 
   /* Connection data */
   void *connection;
@@ -165,6 +190,10 @@ typedef struct SilcChannelClientEntryStruct {
 
    Following short description of the fields:
 
+   SilcIDListDataStruct data
+
+       Generic data structure to hold data common to all ID entries.
+
    char username
 
        Client's (meaning user's) real name. This is defined in following 
@@ -209,22 +238,11 @@ typedef struct SilcChannelClientEntryStruct {
        Client's mode.  Client maybe for example server operator or
        router operator (SILC operator).
 
-   long last_receive
-
-       Time of last time data was received from the client. This is
-       result of normal time().
-
    long last_command
 
        Time of last time client executed command. We are strict and will
        not allow any command to be exeucted more than once in about
        2 seconds. This is result of normal time().
-
-   int registered
-
-       Boolean value to indicate whether this client has registered itself
-       to the server. After KE and authentication protocols has been
-       successfully completed will client become registered.
 
    SilcServerEntry router
 
@@ -254,31 +272,22 @@ typedef struct SilcChannelClientEntryStruct {
 
 */
 struct SilcClientEntryStruct {
+  /* Generic data structure. DO NOT add anything before this! */
+  SilcIDListDataStruct data;
+
   char *nickname;
   char *username;
   char *userinfo;
   SilcClientID *id;
   int mode;
 
-  /* Time of last accesses of the client */
-  long last_receive;
   long last_command;
-
-  /* TRUE when client is registered to server */
-  int registered;
 
   /* Pointer to the router */
   SilcServerEntry router;
 
   /* List of channels client has joined to */
   SilcList channels;
-
-  /* Keys */
-  SilcCipher send_key;
-  SilcCipher receive_key;
-  SilcPKCS pkcs;
-  SilcHmac hmac;
-  SilcPublicKey public_key;
 
   /* Connection data */
   void *connection;
@@ -441,26 +450,18 @@ typedef struct SilcIDListStruct {
 
 */
 typedef struct {
-  SilcCipher send_key;
-  SilcCipher receive_key;
-  SilcPKCS pkcs;
-  SilcPublicKey public_key;
-
-  SilcHmac hmac;
-  unsigned char *hmac_key;
-  unsigned int hmac_key_len;
-
-  /* SilcComp comp */
+  /* Generic data structure. DO NOT add anything before this! */
+  SilcIDListDataStruct data;
 } *SilcUnknownEntry;
 
 /* Prototypes */
+void silc_idlist_add_data(void *entry, SilcIDListData idata);
+void silc_idlist_del_data(void *entry);
 SilcServerEntry 
 silc_idlist_add_server(SilcIDList id_list, 
 		       char *server_name, int server_type,
 		       SilcServerID *id, SilcServerEntry router,
-		       SilcCipher send_key, SilcCipher receive_key,
-		       SilcPKCS pkcs, SilcHmac hmac, 
-		       SilcPublicKey public_key, void *connection);
+		       void *connection);
 SilcServerEntry
 silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id);
 SilcServerEntry
@@ -469,10 +470,7 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 		       char *userinfo, SilcClientID *id, 
-		       SilcServerEntry router,
-		       SilcCipher send_key, SilcCipher receive_key,
-		       SilcPKCS pkcs, SilcHmac hmac, 
-		       SilcPublicKey public_key, void *connection);
+		       SilcServerEntry router, void *connection);
 void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
 SilcClientEntry *
 silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,

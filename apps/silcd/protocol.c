@@ -63,35 +63,37 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
 					     int is_responder)
 {
   SilcUnknownEntry conn_data;
+  SilcIDListData idata;
   SilcHash nhash;
 
   SILC_LOG_DEBUG(("Setting new key into use"));
 
   conn_data = silc_calloc(1, sizeof(*conn_data));
+  idata = (SilcIDListData)conn_data;
 
   /* Allocate cipher to be used in the communication */
-  silc_cipher_alloc(cipher->cipher->name, &conn_data->send_key);
-  silc_cipher_alloc(cipher->cipher->name, &conn_data->receive_key);
+  silc_cipher_alloc(cipher->cipher->name, &idata->send_key);
+  silc_cipher_alloc(cipher->cipher->name, &idata->receive_key);
   
   if (is_responder == TRUE) {
-    conn_data->send_key->cipher->set_key(conn_data->send_key->context, 
-					 keymat->receive_enc_key, 
-					 keymat->enc_key_len);
-    conn_data->send_key->set_iv(conn_data->send_key, keymat->receive_iv);
-    conn_data->receive_key->cipher->set_key(conn_data->receive_key->context, 
-					    keymat->send_enc_key, 
-					    keymat->enc_key_len);
-    conn_data->receive_key->set_iv(conn_data->receive_key, keymat->send_iv);
+    idata->send_key->cipher->set_key(idata->send_key->context, 
+				     keymat->receive_enc_key, 
+				     keymat->enc_key_len);
+    idata->send_key->set_iv(idata->send_key, keymat->receive_iv);
+    idata->receive_key->cipher->set_key(idata->receive_key->context, 
+					keymat->send_enc_key, 
+					keymat->enc_key_len);
+    idata->receive_key->set_iv(idata->receive_key, keymat->send_iv);
     
   } else {
-    conn_data->send_key->cipher->set_key(conn_data->send_key->context, 
-					 keymat->send_enc_key, 
-					 keymat->enc_key_len);
-    conn_data->send_key->set_iv(conn_data->send_key, keymat->send_iv);
-    conn_data->receive_key->cipher->set_key(conn_data->receive_key->context, 
-					    keymat->receive_enc_key, 
-					    keymat->enc_key_len);
-    conn_data->receive_key->set_iv(conn_data->receive_key, keymat->receive_iv);
+    idata->send_key->cipher->set_key(idata->send_key->context, 
+				     keymat->send_enc_key, 
+				     keymat->enc_key_len);
+    idata->send_key->set_iv(idata->send_key, keymat->send_iv);
+    idata->receive_key->cipher->set_key(idata->receive_key->context, 
+					keymat->receive_enc_key, 
+					keymat->enc_key_len);
+    idata->receive_key->set_iv(idata->receive_key, keymat->receive_iv);
   }
 
   /* Allocate PKCS to be used */
@@ -99,16 +101,16 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
   /* XXX Do we ever need to allocate PKCS for the connection??
      If yes, we need to change KE protocol to get the initiators
      public key. */
-  silc_pkcs_alloc(pkcs->pkcs->name, &conn_data->pkcs);
-  conn_data->public_key = silc_pkcs_public_key_alloc(XXX);
-  silc_pkcs_set_public_key(conn_data->pkcs, ske->ke2_payload->pk_data, 
+  silc_pkcs_alloc(pkcs->pkcs->name, &idata->pkcs);
+  idata->public_key = silc_pkcs_public_key_alloc(XXX);
+  silc_pkcs_set_public_key(idata->pkcs, ske->ke2_payload->pk_data, 
 			   ske->ke2_payload->pk_len);
 #endif
 
   /* Save HMAC key to be used in the communication. */
   silc_hash_alloc(hash->hash->name, &nhash);
-  silc_hmac_alloc(nhash, &conn_data->hmac);
-  silc_hmac_set_key(conn_data->hmac, keymat->hmac_key, keymat->hmac_key_len);
+  silc_hmac_alloc(nhash, &idata->hmac);
+  silc_hmac_set_key(idata->hmac, keymat->hmac_key, keymat->hmac_key_len);
 
   sock->user_data = (void *)conn_data;
 }
