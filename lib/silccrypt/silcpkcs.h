@@ -62,7 +62,7 @@ typedef struct SilcPKCSObjectStruct {
   unsigned char *(*get_public_key)(void *, SilcUInt32 *);
   unsigned char *(*get_private_key)(void *, SilcUInt32 *);
   SilcUInt32 (*set_public_key)(void *, unsigned char *, SilcUInt32);
-  int (*set_private_key)(void *, unsigned char *, SilcUInt32);
+  SilcUInt32 (*set_private_key)(void *, unsigned char *, SilcUInt32);
   SilcUInt32 (*context_len)();
   int (*encrypt)(void *, unsigned char *, SilcUInt32,
 		 unsigned char *, SilcUInt32 *);
@@ -204,10 +204,10 @@ unsigned char *silc_##pkcs##_get_private_key(void *context, \
                                              SilcUInt32 *ret_len)
 #define SILC_PKCS_API_SET_PUBLIC_KEY(pkcs) \
 SilcUInt32 silc_##pkcs##_set_public_key(void *context, unsigned char *key_data, \
-                                    SilcUInt32 key_len)
+                                        SilcUInt32 key_len)
 #define SILC_PKCS_API_SET_PRIVATE_KEY(pkcs) \
-int silc_##pkcs##_set_private_key(void *context, unsigned char *key_data, \
-                                  SilcUInt32 key_len)
+SilcUInt32 silc_##pkcs##_set_private_key(void *context, unsigned char *key_data, \
+                                         SilcUInt32 key_len)
 #define SILC_PKCS_API_CONTEXT_LEN(pkcs) \
 SilcUInt32 silc_##pkcs##_context_len()
 #define SILC_PKCS_API_ENCRYPT(pkcs) \
@@ -272,9 +272,9 @@ unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len);
 SilcUInt32 silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key);
 SilcUInt32 silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
 					 SilcUInt32 pk_len);
-int silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key);
-int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
-				   SilcUInt32 prv_len);
+SilcUInt32 silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key);
+SilcUInt32 silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
+					  SilcUInt32 prv_len);
 int silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
 		      unsigned char *dst, SilcUInt32 *dst_len);
 int silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,

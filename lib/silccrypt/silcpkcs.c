@@ -342,18 +342,26 @@ SilcUInt32 silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
 
 /* Sets private key from SilcPrivateKey. */
 
-int silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key)
+SilcUInt32 silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key)
 {
-  return pkcs->pkcs->set_private_key(pkcs->context, private_key->prv, 
-				     private_key->prv_len);
+  SilcUInt32 key_len;
+  key_len = pkcs->pkcs->set_private_key(pkcs->context, private_key->prv, 
+					private_key->prv_len);
+  if (!pkcs->key_len)
+    pkcs->key_len = key_len;
+  return pkcs->key_len;
 }
 
 /* Sets private key from data. */
 
-int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
-				   SilcUInt32 prv_len)
+SilcUInt32 silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
+					  SilcUInt32 prv_len)
 {
-  return pkcs->pkcs->set_private_key(pkcs->context, prv, prv_len);
+  SilcUInt32 key_len;
+  key_len = pkcs->pkcs->set_private_key(pkcs->context, prv, prv_len);
+  if (!pkcs->key_len)
+    pkcs->key_len = key_len;
+  return pkcs->key_len;
 }
 
 /* Encrypts */

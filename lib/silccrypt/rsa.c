@@ -327,7 +327,7 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
   key->prv_set = TRUE;
   key->pub_set = TRUE;
 
-  return TRUE;
+  return key->bits;
 }
 
 SILC_PKCS_API_CONTEXT_LEN(rsa)
