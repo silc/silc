@@ -127,14 +127,20 @@ static void silc_server_checkpid(SilcServer silcd)
   }
 }
 
-static void got_hup(int z)
+static void signal_handler(int sig)
+{
+  /* Mark the signal to be caller after this signal is over. */
+  silc_schedule_signal_call(silcd->schedule, sig);
+}
+
+SILC_TASK_CALLBACK(got_hup)
 {
   /* First, reset all log files (they might have been deleted) */
   silc_log_reset_all();
   silc_log_flush_all();
 }
 
-static void stop_server(int z)
+SILC_TASK_CALLBACK(stop_server)
 {
   /* Stop scheduler, the program will stop eventually after noticing
      that the scheduler is down. */
@@ -251,15 +257,13 @@ int main(int argc, char **argv)
   sa.sa_flags = 0;
   sigemptyset(&sa.sa_mask);
   sigaction(SIGPIPE, &sa, NULL);
-  sa.sa_handler = got_hup;
+  sa.sa_handler = signal_handler;
   sigaction(SIGHUP, &sa, NULL);
-  sa.sa_handler = stop_server;
   sigaction(SIGTERM, &sa, NULL);
-  sa.sa_handler = stop_server;
   sigaction(SIGINT, &sa, NULL);
-  silc_schedule_signal_register(silcd->schedule, SIGHUP);
-  silc_schedule_signal_register(silcd->schedule, SIGTERM);
-  silc_schedule_signal_register(silcd->schedule, SIGINT);
+  silc_schedule_signal_register(silcd->schedule, SIGHUP, got_hup, NULL);
+  silc_schedule_signal_register(silcd->schedule, SIGTERM, stop_server, NULL);
+  silc_schedule_signal_register(silcd->schedule, SIGINT, stop_server, NULL);
 
   /* Before running the server, fork to background. */
   if (!foreground)

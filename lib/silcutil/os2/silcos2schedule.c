@@ -114,8 +114,11 @@ void silc_schedule_internal_wakeup(void *context)
 }
 
 /* Register signal */
+
 void silc_schedule_internal_signal_register(void *context,
-					    SilcUInt32 signal)
+                                            SilcUInt32 signal,
+                                            SilcTaskCallback callback,
+                                            void *callback_context)
 {
 
 }
@@ -123,7 +126,24 @@ void silc_schedule_internal_signal_register(void *context,
 /* Unregister signal */
 
 void silc_schedule_internal_signal_unregister(void *context,
-					      SilcUInt32 signal)
+                                              SilcUInt32 signal,
+                                              SilcTaskCallback callback,
+                                              void *callback_context)
+{
+
+}
+
+/* Mark signal to be called later. */
+
+void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
+{
+
+}
+
+/* Call all signals */
+
+void silc_schedule_internal_signals_call(void *context,
+                                         SilcSchedule schedule)
 {
 
 }

@@ -165,6 +165,7 @@ typedef enum {
   SILC_TASK_READ      = 0x0001,	         /* Reading */
   SILC_TASK_WRITE     = 0x0002,		 /* Writing */
   SILC_TASK_EXPIRE    = 0x0004,		 /* Timeout */
+  SILC_TASK_INTERRUPT = 0x0004,		 /* Signal */
 } SilcTaskEvent;
 /***/
 
@@ -574,25 +575,60 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
  * SYNOPSIS
  *
  *    void silc_schedule_signal_register(SilcSchedule schedule, 
- *                                       SilcUInt32 signal);
+ *                                       SilcUInt32 signal,
+ *					 SilcTaskCallback callback,
+ * 					 void *context);
  *
  * DESCRIPTION
  *
  *    Register signal indicated by `signal' to the scheduler.  Application
  *    should register all signals it is going to use to the scheduler.
- *    To unregister a signal call silc_schedule_signal_unregister.  On
- *    platform that does not support signals calling this function has not
- *    effect.
+ *    The `callback' with `context' will be called after the application
+ *    has called silc_schedule_signal_call function in the real signal 
+ *    callback.  Application is responsible of calling that, and the 
+ *    signal system will not work without calling silc_schedule_signal_call
+ *    function.  The specified `signal' value will be also delivered to
+ *    the `callback' as the fd-argument.  The event type in the callback
+ *    will be SILC_TASK_INTERRUPT.  It is safe to use any SILC routines,
+ *    in the `callback' since it is actually called after the signal really
+ *    happened.
+ *
+ *    On platform that does not support signals calling this function has 
+ *    not effect.
+ *
+ * EXAMPLE
+ *
+ *    Typical signal usage case on Unix systems:
+ *
+ *    struct sigaction sa;
+ *    sa.sa_handler = signal_handler;
+ *    sigaction(SIGHUP, &sa, NULL);
+ *    sigaction(SIGINT, &sa, NULL);
+ *    silc_schedule_signal_register(schedule, SIGHUP, hup_signal, context);
+ *    silc_schedule_signal_register(schedule, SIGINT, int_signal, context);
+ *
+ *    static void signal_handler(int sig)
+ *    {
+ *      silc_schedule_signal_call(schedule, sig);
+ *    }
+ *
+ *    The `signal_handler' can be used as generic signal callback in the
+ *    application that merely calls silc_schedule_signal_call, which then
+ *    eventually will deliver for example the `hup_signal' callback.  The 
+ *    same `signal_handler' can be used with all signals.
  *
  ***/
-void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal);
+void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal,
+				   SilcTaskCallback callback, void *context);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_signal_unregister
  *
  * SYNOPSIS
  *
  *    void silc_schedule_signal_unregister(SilcSchedule schedule, 
- *                                         SilcUInt32 signal);
+ *                                         SilcUInt32 signal,
+ *					   SilcTaskCallback callback,
+ * 					   void *context);
  *
  * DESCRIPTION
  *
@@ -601,6 +637,26 @@ void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal);
  *    effect.
  *
  ***/
-void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal);
+void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal,
+				     SilcTaskCallback callback, void *context);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_signal_call
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_signal_call(SilcSchedule schedule, 
+ *                                   SilcUInt32 signal);
+ *
+ * DESCRIPTION
+ *
+ *    Mark the `signal' to be called later.  Every signal that has been
+ *    registered by silc_schedule_signal_register is delivered by calling
+ *    this function.  When signal really occurs, the application is 
+ *    responsible of calling this function int the signal handler.  After
+ *    signal is over the scheduler will then safely deliver the callback
+ *    that was given to silc_schedule_signal_register function.
+ *
+ ***/
+void silc_schedule_signal_call(SilcSchedule schedule, SilcUInt32 signal);
 
 #endif

@@ -45,11 +45,22 @@ void silc_schedule_internal_wakeup(void *context);
 
 /* Register signal */
 void silc_schedule_internal_signal_register(void *context,
-					    SilcUInt32 signal);
+                                            SilcUInt32 signal,
+                                            SilcTaskCallback callback,
+                                            void *callback_context);
 
 /* Unregister signal */
 void silc_schedule_internal_signal_unregister(void *context,
-					      SilcUInt32 signal);
+                                              SilcUInt32 signal,
+                                              SilcTaskCallback callback,
+                                              void *callback_context);
+
+/* Mark signal to be called later. */
+void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal);
+
+/* Call all signals */
+void silc_schedule_internal_signals_call(void *context,
+					 SilcSchedule schedule);
 
 /* Block registered signals in scheduler. */
 void silc_schedule_internal_signals_block(void *context);
@@ -190,6 +201,11 @@ struct SilcTaskQueueStruct {
   
        Scheduler lock.
 
+   bool signal_tasks
+
+       TRUE when tasks has been registered from signals.  Next round in
+       scheduler will call the callbacks when this is TRUE.
+
 */
 struct SilcScheduleStruct {
   SilcTaskQueue fd_queue;
@@ -203,6 +219,7 @@ struct SilcScheduleStruct {
   void *internal;
   SILC_MUTEX_DEFINE(lock);
   bool is_locked;
+  bool signal_tasks;
 };
 
 /* Initializes the scheduler. This returns the scheduler context that
@@ -238,9 +255,6 @@ SilcSchedule silc_schedule_init(int max_tasks)
 
   /* Initialize the platform specific scheduler. */
   schedule->internal = silc_schedule_internal_init(schedule);
-#ifdef SILC_UNIX
-  silc_schedule_signal_register(schedule, SIGALRM);
-#endif
 
   return schedule;
 }
@@ -573,6 +587,12 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
 
   SILC_SCHEDULE_UNLOCK(schedule);
 
+  /* Deliver signals if any has been set to be called */
+  if (schedule->signal_tasks) {
+    silc_schedule_internal_signals_call(schedule->internal, schedule);
+    schedule->signal_tasks = FALSE;
+  }
+
   /* This is the main select(). The program blocks here until some
      of the selected file descriptors change status or the selected
      timeout expires. */
@@ -876,16 +896,29 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
 
 /* Register a new signal */
 
-void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal)
+void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal,
+				   SilcTaskCallback callback, void *context)
 {
-  silc_schedule_internal_signal_register(schedule->internal, signal);
+  silc_schedule_internal_signal_register(schedule->internal, signal,
+					 callback, context);
 }
 
 /* Unregister a new signal */
 
-void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal)
+void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal,
+				     SilcTaskCallback callback, void *context)
 {
-  silc_schedule_internal_signal_unregister(schedule->internal, signal);
+  silc_schedule_internal_signal_unregister(schedule->internal, signal,
+					   callback, context);
+}
+
+/* Call signal indicated by `signal'. */
+
+void silc_schedule_signal_call(SilcSchedule schedule, SilcUInt32 signal)
+{
+  /* Mark that signals needs to be delivered later. */
+  silc_schedule_internal_signal_call(schedule->internal, signal);
+  schedule->signal_tasks = TRUE;
 }
 
 /* Allocates a newtask task queue into the scheduler */

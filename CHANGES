@@ -1,3 +1,13 @@
+Wed Mar 20 11:06:57 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Improved the signal support in SILC Schedule.  Added new
+	  function silc_schedule_signal_call which is used by application
+	  to mark a signal to be called.  It is now safe to perform
+	  any kind of tasks in signal callbacks since it is guaranteed
+	  that the application specified signal callback is called
+	  after the signal is over.  Affected files are
+	  lib/silcutil/silcschedule.[ch], lib/silcutil/*/silc*schedule.c.
+
 Tue Mar 19 20:42:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added `name' field to SilcChannelPrivateKey to represent

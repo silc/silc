@@ -65,12 +65,22 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count,
   return ret;
 }
 
+#define SIGNAL_COUNT 32
+
+typedef struct {
+  SilcUInt32 signal;
+  SilcTaskCallback callback;
+  void *context;
+  bool call;
+} SilcUnixSignal;
+
 /* Internal context. */
 typedef struct {
   int wakeup_pipe[2];
   SilcTask wakeup_task;
   sigset_t signals;
   sigset_t signals_blocked;
+  SilcUnixSignal signal_call[SIGNAL_COUNT];
 } *SilcUnixScheduler;
 
 #ifdef SILC_THREADS
@@ -154,17 +164,77 @@ void silc_schedule_internal_wakeup(void *context)
 }
 
 void silc_schedule_internal_signal_register(void *context,
-					    SilcUInt32 signal)
+					    SilcUInt32 signal,
+                                            SilcTaskCallback callback,
+                                            void *callback_context)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  int i;
+
+  for (i = 0; i < SIGNAL_COUNT; i++) {
+    if (!internal->signal_call[i].signal) {
+      internal->signal_call[i].signal = signal;
+      internal->signal_call[i].callback = callback;
+      internal->signal_call[i].context = callback_context;
+      internal->signal_call[i].call = FALSE;
+    }
+  }
+
   sigaddset(&internal->signals, signal);
 }
 
 void silc_schedule_internal_signal_unregister(void *context,
-					      SilcUInt32 signal)
+					      SilcUInt32 signal,
+                                              SilcTaskCallback callback,
+                                              void *callback_context)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  int i;
+
+  for (i = 0; i < SIGNAL_COUNT; i++) {
+    if (internal->signal_call[i].signal == signal &&
+	internal->signal_call[i].callback == callback &&
+	internal->signal_call[i].context == callback_context) {
+      internal->signal_call[i].signal = 0;
+      internal->signal_call[i].callback = NULL;
+      internal->signal_call[i].context = NULL;
+      internal->signal_call[i].call = FALSE;
+    }
+  }
+
   sigdelset(&internal->signals, signal);
+}
+
+/* Mark signal to be called later. */
+
+void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
+{
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  int i;
+
+  for (i = 0; i < SIGNAL_COUNT; i++) {
+    if (internal->signal_call[i].signal == signal)
+      internal->signal_call[i].call = TRUE;
+  }
+}
+                                        
+/* Call all signals */
+
+void silc_schedule_internal_signals_call(void *context,
+                                         SilcSchedule schedule)
+{
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  int i;
+
+  for (i = 0; i < SIGNAL_COUNT; i++) {
+    if (internal->signal_call[i].call &&
+        internal->signal_call[i].callback) {
+      internal->signal_call[i].callback(schedule, SILC_TASK_INTERRUPT,
+					internal->signal_call[i].signal,
+					internal->signal_call[i].context);
+      internal->signal_call[i].call = FALSE;
+    }
+  }
 }
 
 /* Block registered signals in scheduler. */
