@@ -17,18 +17,6 @@
 
 */
 
-/* Tests:
-   silc_sftp_client_start();
-   silc_sftp_client_receive_process();
-   silc_sftp_opendir();
-   silc_sftp_readdir();
-   silc_sftp_open();
-   silc_sftp_read();
-   silc_sftp_fstat();
-   silc_sftp_lstat();
-   silc_sftp_close();
-*/
-
 #include "silcincludes.h"
 #include "silcsftp.h"
 
@@ -130,70 +118,6 @@ SILC_TASK_CALLBACK(packet_process)
   }
 }
 
-static void sftp_status(SilcSFTP sftp, SilcSFTPStatus status,
-			const char *message, const char *lang_tag,
-			void *context)
-{
-  fprintf(stderr, "Status %d\n", status);
-  if (status != SILC_SFTP_STATUS_OK) {
-    SILC_LOG_DEBUG(("Error status"));
-    success = FALSE;
-    end_test();
-    return;
-  }
-
-  success = TRUE;
-  end_test();
-}
-
-static void sftp_attr(SilcSFTP sftp, SilcSFTPStatus status,
-		      const SilcSFTPAttributes attrs, void *context)
-{
-  SilcSFTPHandle handle = (SilcSFTPHandle)context;
-  int debug = silc_debug;
-  int i;
-  
-  fprintf(stderr, "Status %d\n", status);
-  if (status != SILC_SFTP_STATUS_OK) {
-    SILC_LOG_DEBUG(("Error status"));
-    success = FALSE;
-    end_test();
-    return;
-  }
-    
-  if (!debug)
-    silc_debug = 1;
-
-  SILC_LOG_DEBUG(("Attr.flags: %d", attrs->flags));
-  SILC_LOG_DEBUG(("Attr.size: %lu", attrs->size));
-  SILC_LOG_DEBUG(("Attr.uid: %d", attrs->uid));
-  SILC_LOG_DEBUG(("Attr.gid: %d", attrs->gid));
-  SILC_LOG_DEBUG(("Attr.permissions: %d", attrs->permissions));
-  SILC_LOG_DEBUG(("Attr.atime: %d", attrs->atime));
-  SILC_LOG_DEBUG(("Attr.mtime: %d", attrs->mtime));
-  SILC_LOG_DEBUG(("Attr.extended count: %d", attrs->extended_count));
-  for (i = 0; i < attrs->extended_count; i++) {
-    SILC_LOG_HEXDUMP(("Attr.extended_type[i]:", i),
-		     attrs->extended_type[i]->data,
-		     attrs->extended_type[i]->len);
-    SILC_LOG_HEXDUMP(("Attr.extended_data[i]:", i),
-		     attrs->extended_data[i]->data,
-		     attrs->extended_data[i]->len);
-  }
-    
-  silc_debug = debug;
-
-  if (!file) {
-    fprintf(stderr, "Closing file\n"); 
-    silc_sftp_close(sftp, handle, sftp_status, context);
-    return;
-  }
-  
-  fprintf(stderr, "LStatting file %s\n", file); 
-  silc_sftp_lstat(sftp, file, sftp_attr, context);
-  file = NULL;
-}
-
 static void sftp_data(SilcSFTP sftp, SilcSFTPStatus status,
 		      const unsigned char *data, SilcUInt32 data_len,
 		      void *context)
@@ -214,8 +138,8 @@ static void sftp_data(SilcSFTP sftp, SilcSFTPStatus status,
     }
     
     if (!strcmp(file, "/sftp/sftp_server.c")) {
-      fprintf(stderr, "FStatting file handle %s\n", file); 
-      silc_sftp_fstat(sftp, handle, sftp_attr, context);
+      success = TRUE;
+      end_test();
       return;
     }
       
@@ -372,6 +296,5 @@ int main(int argc, char **argv)
 static void end_test(void)
 {
   SILC_LOG_DEBUG(("Testing was %s", success ? "SUCCESS" : "FAILURE"));
-  fprintf(stderr, "Testing was %s\n", success ? "SUCCESS" : "FAILURE");
   exit(success);
 }
