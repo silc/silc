@@ -416,7 +416,7 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
   SILC_LOG_DEBUG(("Start"));
 
   /* Check the socket status as it might be in error */
-  getsockopt(fd, SOL_SOCKET, SO_ERROR, &opt, &opt_len);
+  silc_net_get_socket_opt(fd, SOL_SOCKET, SO_ERROR, &opt, &opt_len);
   if (opt != 0) {
     if (ctx->tries < 2) {
       /* Connection failed but lets try again */

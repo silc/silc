@@ -1,3 +1,13 @@
+Sun Jun 24 19:49:23 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* lib/contrib/regex.c is not compiled on WIN32.
+
+	* Added silc_net_get_socket_opt function to the
+	  lib/silcutil/silcnet.h.
+
+	* Added includes/silcwin32.h for WIN32 specific includes
+	  and definitions.
+
 Sun Jun 24 12:19:52 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Moved the lib/silccore/silcsockconn.[ch] to the utility

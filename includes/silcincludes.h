@@ -1,11 +1,10 @@
-
 /*
 
   silcincludes.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,9 +29,7 @@
 #include "silcdefs.h"
 
 #ifdef SILC_WIN32
-#include <windows.h>
-#include <dir.h>
-#include <io.h>
+#include "silcwin32.h"
 #endif
 
 #include <stdio.h>

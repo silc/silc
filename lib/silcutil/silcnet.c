@@ -36,6 +36,13 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on)
   return setsockopt(sock, level, option, (void *)&on, sizeof(on));
 }
 
+/* Get socket options */
+
+int silc_net_get_socket_opt(int sock, int level, int option, 
+			    void *optval, int *opt_len)
+{
+  return getsockopt(sock, level, option, optval, (socklen_t *)opt_len);
+}
 /* Checks whether IP address sent as argument is valid IP address. */
 
 bool silc_net_is_ip(const char *addr)

@@ -191,12 +191,15 @@ void silc_rng_init(SilcRng rng)
 
 static void silc_rng_get_soft_noise(SilcRng rng)
 {
+#ifndef SILC_WIN32
   struct tms ptime;
+#endif
   uint32 pos;
   
   pos = silc_rng_get_position(rng);
 
   silc_rng_xor(rng, clock(), 0);
+#ifndef SILC_WIN32
 #ifdef HAVE_GETPID
   silc_rng_xor(rng, getpid(), 1);
 #ifdef HAVE_GETPGID
@@ -222,7 +225,9 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, (ptime.tms_stime ^ ptime.tms_cutime), pos++);
   silc_rng_xor(rng, (ptime.tms_cutime + ptime.tms_stime), pos++);
   silc_rng_xor(rng, (ptime.tms_stime << 8), pos++);
+#endif
   silc_rng_xor(rng, clock() << 4, pos++);
+#ifndef SILC_WIN32
 #ifdef HAVE_GETPGID
   silc_rng_xor(rng, getpgid(getpid() << 8), pos++);
 #endif
@@ -236,6 +241,7 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, ptime.tms_utime, pos++);
 #ifdef HAVE_GETPGRP
   silc_rng_xor(rng, getpgrp(), pos++);
+#endif
 #endif
 
 #ifdef SILC_RNG_DEBUG
@@ -265,6 +271,7 @@ static void silc_rng_get_medium_noise(SilcRng rng)
 
 static void silc_rng_get_hard_noise(SilcRng rng)
 {
+#ifndef SILC_WIN32
   char buf[32];
   int fd, len, i;
   
@@ -289,6 +296,7 @@ static void silc_rng_get_hard_noise(SilcRng rng)
  out:
   close(fd);
   memset(buf, 0, sizeof(buf));
+#endif
 }
 
 /* Execs command and gets noise from its output */

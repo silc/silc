@@ -72,23 +72,31 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
 	return 1;
   }
 
-  timeo = (timeout ? (timeout.tv_sec * 1000) + (timeout.tv_usec / 1000) :
+  timeo = (timeout ? (timeout->tv_sec * 1000) + (timeout->tv_usec / 1000) :
 	   INFINITE);
 
   /* If we have nothing to wait and timeout is set then register a timeout
      and wait just for windows messages. */
   if (nhandles == 0 && timeout) {
     UINT timer = SetTimer(NULL, 0, timeo, NULL);
-    if (timer) {
+    curtime = GetTickCount();
+    while (timer) {
       WaitMessage();
       KillTimer(NULL, timer);
 
       while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+	if (msg.message == WM_TIMER)
+	  return 0;
 	TranslateMessage(&msg); 
 	DispatchMessage(&msg); 
       }
 
-      return 0;
+      if (timeo != INFINITE) {
+	timeo -= GetTickCount() - curtime;
+	if (timeo < 0)
+	  timeo = 0;
+	timer = SetTimer(NULL, 0, timeo, NULL);
+      }
     }
   }
 
@@ -140,13 +148,13 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
     i = 0;
     do {
       /* Set the handle to fd set */
-      FD_SET(handle[ready], readfds);
+      FD_SET((int)handles[ready], readfds);
       i++;
 
       /* Check the status of the next handle and set it's fd to the fd
 	 set if data is available. */
       while (++ready < n)
-	if (WaitForSingleObject(handle[ready], 0) == WAIT_OBJECT_0)
+	if (WaitForSingleObject(handles[ready], 0) == WAIT_OBJECT_0)
 	  break;
     } while (ready < n);
 

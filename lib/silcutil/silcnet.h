@@ -142,6 +142,21 @@ int silc_net_set_socket_nonblock(int sock);
  ***/
 int silc_net_set_socket_opt(int sock, int level, int option, int on);
 
+/****f* silcutil/SilcNetAPI/silc_net_get_socket_opt
+ *
+ * SYNOPSIS
+ *
+ *    int silc_net_get_socket_opt(int sock, int level, int option, 
+ *                                void *optval, int *opt_len);
+ *
+ * DESCRIPTION
+ *
+ *    Return socket options to the `optval' and `opt_len'.
+ *
+ ***/
+int silc_net_get_socket_opt(int sock, int level, int option, 
+			    void *optval, int *opt_len);
+
 /****f* silcutil/SilcNetAPI/silc_net_is_ip
  *
  * SYNOPSIS
