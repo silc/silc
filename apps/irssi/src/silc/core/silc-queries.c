@@ -33,6 +33,7 @@
 #include "fe-common/silc/module-formats.h"
 
 static void silc_query_attributes_print_final(bool success, void *context);
+static void silc_query_attributes_accept(const char *line, void *context);
 
 QUERY_REC *silc_query_create(const char *server_tag,
 			     const char *nick, int automatic)
@@ -514,6 +515,7 @@ void silc_query_attributes_default(SilcClient client,
 }
 
 typedef struct {
+  SilcClient client;
   SILC_SERVER_REC *server;
   char *name;
   SilcAttributeObjPk userpk;
@@ -544,6 +546,7 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
   verify = silc_calloc(1, sizeof(*verify));
   if (!verify)
     return;
+  verify->client = client;
   verify->server = server;
   verify->name = strdup(client_entry->nickname);
 
@@ -847,21 +850,150 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 static void silc_query_attributes_print_final(bool success, void *context)
 {
   AttrVerify verify = context;
+  SilcClient client = verify->client;
   SILC_SERVER_REC *server = verify->server;
+  char *format = NULL;
+  unsigned char filename[256], *fingerprint = NULL, *tmp;
+  struct stat st;
+  int i;
 
   if (success) {
     printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_GETKEY_VERIFIED, "user",
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_VERIFIED, "user",
 		       verify->name);
   } else {
     printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_GETKEY_DISCARD, "user",
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_NOTVERIFIED, "user",
 		       verify->name);
   }
 
   printformat_module("fe-common/silc", server, NULL,
 		     MSGLEVEL_CRAP, SILCTXT_ATTR_FOOTER);
 
+  /* Replace all whitespaces with `_'. */
+  fingerprint = silc_hash_fingerprint(client->sha1hash,
+				      verify->userpk.data,
+				      verify->userpk.data_len);
+  for (i = 0; i < strlen(fingerprint); i++)
+    if (fingerprint[i] == ' ')
+      fingerprint[i] = '_';
+  
+  /* Filename for dir */
+  tmp = fingerprint + strlen(fingerprint) - 9;
+  snprintf(filename, sizeof(filename) - 1, "%s/friends/%s", 
+	   get_irssi_dir(), tmp);
+  silc_free(fingerprint);
+
+  if ((stat(filename, &st)) == -1) {
+    /* Ask to accept save requested attributes */
+    format = format_get_text("fe-common/silc", NULL, NULL, NULL,
+			     SILCTXT_ATTR_SAVE);
+    keyboard_entry_redirect((SIGNAL_FUNC)silc_query_attributes_accept,
+			    format, 0, verify);
+  } else {
+    /* Save new data to existing directory */
+    silc_query_attributes_accept("Y", verify);
+  }
+
+  g_free(format);
+}
+
+static void silc_query_attributes_accept(const char *line, void *context)
+{
+  AttrVerify verify = context;
+  SilcClient client = verify->client;
+  SILC_SERVER_REC *server = verify->server;
+  struct stat st;
+  struct passwd *pw;
+  unsigned char filename[256], filename2[256], *fingerprint = NULL, *tmp;
+  SilcUInt32 len;
+  int i;
+
+  if (line[0] == 'Y' || line[0] == 'y') {
+    /* Save the attributes */
+    memset(filename, 0, sizeof(filename));
+    memset(filename2, 0, sizeof(filename2));
+
+    pw = getpwuid(getuid());
+    if (!pw)
+      goto out;
+
+    /* Replace all whitespaces with `_'. */
+    fingerprint = silc_hash_fingerprint(client->sha1hash,
+					verify->userpk.data,
+					verify->userpk.data_len);
+    for (i = 0; i < strlen(fingerprint); i++)
+      if (fingerprint[i] == ' ')
+	fingerprint[i] = '_';
+
+    /* Filename for dir */
+    tmp = fingerprint + strlen(fingerprint) - 9;
+    snprintf(filename, sizeof(filename) - 1, "%s/friends/%s", 
+	     get_irssi_dir(), tmp);
+
+    /* Create dir if it doesn't exist */
+    if ((stat(filename, &st)) == -1) {
+      /* If dir doesn't exist */
+      if (errno == ENOENT) {
+	if (pw->pw_uid == geteuid()) {
+	  if ((mkdir(filename, 0755)) == -1) {
+	    silc_say_error("Couldn't create `%s' directory",
+			   filename);
+	    goto out;
+	  }
+	} else {
+	  silc_say_error("Couldn't create `%s' directory due to a "
+			 "wrong uid!", filename);
+	  goto out;
+	}
+      } else {
+	silc_say_error("%s", strerror(errno));
+	goto out;
+      }
+    }
+
+    /* Save the stuff to the directory */
+
+    /* Save VCard */
+    snprintf(filename2, sizeof(filename2) - 1, "%s/vcard", filename);
+    if (verify->vcard.full_name) {
+      tmp = silc_vcard_encode(&verify->vcard, &len);
+      silc_file_writefile(filename2, tmp, len);
+      silc_free(tmp);
+    }
+
+    /* Save public key */
+    memset(filename2, 0, sizeof(filename2));
+    snprintf(filename2, sizeof(filename2) - 1, "%s/clientkey_%s.pub",
+	     filename, fingerprint);
+    silc_pkcs_save_public_key_data(filename2, verify->userpk.data,
+				   verify->userpk.data_len,
+				   SILC_PKCS_FILE_PEM);
+
+    /* Save extension data */
+    if (verify->extension.mime) {
+      memset(filename2, 0, sizeof(filename2));
+      snprintf(filename2, sizeof(filename2) - 1, "%s/extension.mime",
+	       filename);
+      silc_file_writefile(filename2, verify->extension.mime,
+			  verify->extension.mime_len);
+    }
+
+    /* Save MIME message data */
+    if (verify->extension.mime) {
+      memset(filename2, 0, sizeof(filename2));
+      snprintf(filename2, sizeof(filename2) - 1, "%s/status_message.mime",
+	       filename);
+      silc_file_writefile(filename2, verify->message.mime,
+			  verify->message.mime_len);
+    }
+
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_ATTR_SAVED, filename);
+  }
+
+ out:
+  silc_free(fingerprint);
   silc_free(verify->name);
   silc_vcard_free(&verify->vcard);
   silc_free(verify);

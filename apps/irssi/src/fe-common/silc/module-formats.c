@@ -177,6 +177,8 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "attr_server_sign_verified", " Server's signature : verified successfully", 0 },
 	{ "attr_server_sign_failed",   " Server's signature : {hilight signature failed}", 0 },
 	{ "attr_extension",            " Extension          : $0", 1, { 0 } },
+	{ "attr_save", "Would you like to save the attributes (y/n)?", 0 },
+	{ "attr_saved", "Requested Attributes located in {hilight $0}", 1, { 0 } },
 
 	{ NULL, NULL, 0 }
 };

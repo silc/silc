@@ -258,7 +258,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 int silc_client_check_silc_dir()
 {
   char filename[256], file_public_key[256], file_private_key[256];
-  char servfilename[256], clientfilename[256];
+  char servfilename[256], clientfilename[256], friendsfilename[256];
   char *identifier;
   struct stat st;
   struct passwd *pw;
@@ -286,6 +286,8 @@ int silc_client_check_silc_dir()
   snprintf(servfilename, sizeof(servfilename) - 1, "%s/serverkeys", 
 	   get_irssi_dir());
   snprintf(clientfilename, sizeof(clientfilename) - 1, "%s/clientkeys", 
+	   get_irssi_dir());
+  snprintf(friendsfilename, sizeof(friendsfilename) - 1, "%s/friends", 
 	   get_irssi_dir());
 
   /*
@@ -368,6 +370,28 @@ int silc_client_check_silc_dir()
       } else {
 	fprintf(stderr, "Couldn't create `%s' directory due to a wrong uid!\n",
 		clientfilename);
+	return FALSE;
+      }
+    } else {
+      fprintf(stderr, "%s\n", strerror(errno));
+      return FALSE;
+    }
+  }
+  
+  /*
+   * Check ~./silc/friends directory
+   */
+  if ((stat(friendsfilename, &st)) == -1) {
+    /* If dir doesn't exist */
+    if (errno == ENOENT) {
+      if (pw->pw_uid == geteuid()) {
+	if ((mkdir(friendsfilename, 0755)) == -1) {
+	  fprintf(stderr, "Couldn't create `%s' directory\n", friendsfilename);
+	  return FALSE;
+	}
+      } else {
+	fprintf(stderr, "Couldn't create `%s' directory due to a wrong uid!\n",
+		friendsfilename);
 	return FALSE;
       }
     } else {

@@ -1,8 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o Add requested attributes public key/signature verifications.
-
  o Server password is not used at all.  It is not possible to automize
    the password authentication currently.  The silc_get_auth_method
    in irssi/src/silc/core/client_ops.c should find the connection's

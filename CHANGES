@@ -1,3 +1,9 @@
+Thu Oct 17 16:40:39 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for saving the requested attributes in
+	  WHOIS to directory.  Affected file is
+	  irssi/src/silc/core/silc-queries.c.
+
 Wed Oct 16 17:40:56 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for parsing VCard fields that do not have

@@ -1044,10 +1044,11 @@ void silc_getkey_cb(bool success, void *context)
 
   if (success) {
     printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_GETKEY_VERIFIED, entity, name);
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_VERIFIED, entity, name);
   } else {
     printformat_module("fe-common/silc", NULL, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_GETKEY_DISCARD, entity, name);
+		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_NOTVERIFIED,
+		       entity, name);
   }
 
   silc_free(getkey->fingerprint);
@@ -1565,7 +1566,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	silc_free(pk);
       } else {
 	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_GETKEY_NOKEY);
+			   MSGLEVEL_CRAP, SILCTXT_PUBKEY_NOKEY);
       }
     }
     break;
