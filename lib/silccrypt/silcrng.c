@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,21 +21,18 @@
 /*
  * Created: Sun Mar  9 00:09:18 1997
  *
- * This RNG is based on Secure Shell's random number generator.
+ * The original RNG was based on Secure Shell's random number generator
+ * by Tatu Ylönen.  This RNG has been rewritten twice since the creation.
  */
-/* XXX: Some operations block resulting slow initialization.
- * XXX: I have some pending changes to make this better. */
 
 #include "silcincludes.h"
 
-#undef SILC_RNG_DEBUG
-/* #define SILC_RNG_DEBUG */
+//#undef SILC_RNG_DEBUG
+#define SILC_RNG_DEBUG
 
 static uint32 silc_rng_get_position(SilcRng rng);
 static void silc_rng_stir_pool(SilcRng rng);
 static void silc_rng_xor(SilcRng rng, uint32 val, unsigned int pos);
-static void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, 
-			       uint32 len);
 static void silc_rng_exec_command(SilcRng rng, char *command);
 static void silc_rng_get_hard_noise(SilcRng rng);
 static void silc_rng_get_medium_noise(SilcRng rng);
@@ -98,12 +95,19 @@ typedef struct SilcRngStateContext {
        random pool. This is allocated when RNG object is allocated and
        free'd when RNG object is free'd.
 
+   uint8 threshold
+
+       Threshold to indicate when it is required to acquire more
+       noise from the environment.  More soft noise is acquired after
+       64 bits of output and hard noise every 160 bits of output.
+
 */
 typedef struct SilcRngObjectStruct {
   unsigned char pool[SILC_RNG_POOLSIZE];
   unsigned char key[64];
   SilcRngState state;
   SilcHash sha1;
+  uint8 threshold;
 } SilcRngObject;
 
 /* Allocates new RNG object. */
@@ -173,6 +177,7 @@ void silc_rng_init(SilcRng rng)
   silc_rng_get_soft_noise(rng);
   silc_rng_get_medium_noise(rng);
   silc_rng_get_hard_noise(rng);
+  silc_rng_get_soft_noise(rng);
 }
 
 /* This function gets 'soft' noise from environment. */
@@ -180,7 +185,10 @@ void silc_rng_init(SilcRng rng)
 static void silc_rng_get_soft_noise(SilcRng rng)
 {
   struct tms ptime;
+  uint32 pos;
   
+  pos = silc_rng_get_position(rng);
+
   silc_rng_xor(rng, clock(), 0);
   silc_rng_xor(rng, getpid(), 1);
   silc_rng_xor(rng, getpgid(getpid() << 8), 2);
@@ -190,22 +198,26 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, getsid(getpid() << 16), 6);
   silc_rng_xor(rng, times(&ptime), 7);
   silc_rng_xor(rng, ptime.tms_utime, 8);
-  silc_rng_xor(rng, (ptime.tms_utime + ptime.tms_stime), 9);
-  silc_rng_xor(rng, (ptime.tms_stime + ptime.tms_cutime), 10);
-  silc_rng_xor(rng, (ptime.tms_utime + ptime.tms_stime), 11);
-  silc_rng_xor(rng, (ptime.tms_cutime ^ ptime.tms_stime), 12);
-  silc_rng_xor(rng, (ptime.tms_cutime ^ ptime.tms_cstime), 13);
-  silc_rng_xor(rng, (ptime.tms_utime ^ ptime.tms_stime), 14);
-  silc_rng_xor(rng, (ptime.tms_stime ^ ptime.tms_cutime), 15);
-  silc_rng_xor(rng, (ptime.tms_cutime + ptime.tms_stime), 16);
-  silc_rng_xor(rng, (ptime.tms_stime << 8), 17);
-  silc_rng_xor(rng, clock() << 4, 18);
-  silc_rng_xor(rng, getpgid(getpid() << 8), 19);
-  silc_rng_xor(rng, getpgrp(), 20);
-  silc_rng_xor(rng, getsid(getpid() << 16), 21);
-  silc_rng_xor(rng, times(&ptime), 22);
-  silc_rng_xor(rng, ptime.tms_utime, 23);
-  silc_rng_xor(rng, getpgrp(), 24);
+  silc_rng_xor(rng, (ptime.tms_utime + ptime.tms_stime), pos++);
+  silc_rng_xor(rng, (ptime.tms_stime + ptime.tms_cutime), pos++);
+  silc_rng_xor(rng, (ptime.tms_utime + ptime.tms_stime), pos++);
+  silc_rng_xor(rng, (ptime.tms_cutime ^ ptime.tms_stime), pos++);
+  silc_rng_xor(rng, (ptime.tms_cutime ^ ptime.tms_cstime), pos++);
+  silc_rng_xor(rng, (ptime.tms_utime ^ ptime.tms_stime), pos++);
+  silc_rng_xor(rng, (ptime.tms_stime ^ ptime.tms_cutime), pos++);
+  silc_rng_xor(rng, (ptime.tms_cutime + ptime.tms_stime), pos++);
+  silc_rng_xor(rng, (ptime.tms_stime << 8), pos++);
+  silc_rng_xor(rng, clock() << 4, pos++);
+  silc_rng_xor(rng, getpgid(getpid() << 8), pos++);
+  silc_rng_xor(rng, getpgrp(), pos++);
+  silc_rng_xor(rng, getsid(getpid() << 16), pos++);
+  silc_rng_xor(rng, times(&ptime), pos++);
+  silc_rng_xor(rng, ptime.tms_utime, pos++);
+  silc_rng_xor(rng, getpgrp(), pos++);
+
+#ifdef SILC_RNG_DEBUG
+  SILC_LOG_HEXDUMP(("pool"), rng->pool, sizeof(rng->pool));
+#endif
 
   /* Stir random pool */
   silc_rng_stir_pool(rng);
@@ -217,12 +229,12 @@ static void silc_rng_get_medium_noise(SilcRng rng)
 {
   silc_rng_exec_command(rng, "ps -lefaww 2> /dev/null");
   silc_rng_exec_command(rng, "ls -afiln 2> /dev/null");
-  silc_rng_exec_command(rng, "ps -asww 2> /dev/null");
   silc_rng_exec_command(rng, "ls -afiln /proc 2> /dev/null");
-  /*
-  silc_rng_exec_command(rng, "ps -ef 2> /dev/null");
-  silc_rng_exec_command(rng, "ls -alin /dev 2> /dev/null");
-  */
+  silc_rng_exec_command(rng, "ps -asww 2> /dev/null");
+
+#ifdef SILC_RNG_DEBUG
+  SILC_LOG_HEXDUMP(("pool"), rng->pool, sizeof(rng->pool));
+#endif
 }
 
 /* This function gets 'hard' noise from environment. This tries to
@@ -240,12 +252,16 @@ static void silc_rng_get_hard_noise(SilcRng rng)
 
   fcntl(fd, F_SETFL, O_NONBLOCK);
 
-  for (i = 0; i < 8; i++) {
+  for (i = 0; i < 2; i++) {
     len = read(fd, buf, sizeof(buf));
     if (len <= 0)
       goto out;
     silc_rng_add_noise(rng, buf, len);
   }
+
+#ifdef SILC_RNG_DEBUG
+  SILC_LOG_HEXDUMP(("pool"), rng->pool, sizeof(rng->pool));
+#endif
 
  out:
   close(fd);
@@ -256,7 +272,7 @@ static void silc_rng_get_hard_noise(SilcRng rng)
 
 static void silc_rng_exec_command(SilcRng rng, char *command)
 {
-  char buf[2048];
+  char buf[1024];
   FILE *fd;
   int i;
   int c;
@@ -287,8 +303,7 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
 /* This function adds the contents of the buffer as noise into random 
    pool. After adding the noise the pool is stirred. */
 
-static void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, 
-			       uint32 len)
+void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, uint32 len)
 {
   uint32 i, pos;
 
@@ -365,7 +380,7 @@ static uint32 silc_rng_get_position(SilcRng rng)
     rng->state->pos = rng->state->low;
 
 #ifdef SILC_RNG_DEBUG
-    fprintf(stderr, "state: %p: low: %d, pos: %d\n", 
+    fprintf(stderr, "state: %p: low: %lu, pos: %lu\n", 
 	    rng->state, rng->state->low, rng->state->pos);
 #endif
 
@@ -374,10 +389,22 @@ static uint32 silc_rng_get_position(SilcRng rng)
   return pos;
 }
 
-/* returns random byte. Every two byte is from pools low or high state. */
+/* Returns random byte. */
 
 unsigned char silc_rng_get_byte(SilcRng rng)
 {
+  rng->threshold++;
+
+  /* Get more soft noise after 64 bits threshold */
+  if (rng->threshold >= 8)
+    silc_rng_get_soft_noise(rng);
+
+  /* Get hard noise after 160 bits threshold, zero the threshold. */
+  if (rng->threshold >= 20) {
+    rng->threshold = 0;
+    silc_rng_get_hard_noise(rng);
+  }
+
   return rng->pool[silc_rng_get_position(rng)];
 }
 
@@ -498,4 +525,10 @@ unsigned char *silc_rng_global_get_rn_string(uint32 len)
 unsigned char *silc_rng_global_get_rn_data(uint32 len)
 {
   return global_rng ? silc_rng_get_rn_data(global_rng, len) : NULL;
+}
+
+void silc_rng_global_add_noise(unsigned char *buffer, uint32 len)
+{
+  if (global_rng)
+    silc_rng_add_noise(global_rng, buffer, len);
 }
