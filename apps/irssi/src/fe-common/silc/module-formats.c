@@ -42,6 +42,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "no_invite_list", "channel {channel $0} invite list not set", 1, { 0 } },
 	{ "ban_list", "channel {channel $0} ban list: $1", 2, { 0, 0 } },
 	{ "no_ban_list", "channel {channel $0} ban list not set", 1, { 0 } },
+	{ "inviting", "Inviting {nick $0} to channel {channel $1}", 2, { 0, 0 } },
 
 	/* WHOIS, WHOWAS and USERS (alias WHO) messages */
 	{ NULL, "Who Queries", 0 },

@@ -76,11 +76,19 @@ static void silc_channels_join(SILC_SERVER_REC *server,
 			       const char *channels, int automatic)
 {
   char **list, **tmp, *channel;
+  SILC_CHANNEL_REC *chanrec;
 
   list = g_strsplit(channels, ",", -1);
   for (tmp = list; *tmp != NULL; tmp++) {
     channel = **tmp == '#' ? g_strdup(*tmp) :
       g_strconcat("#", *tmp, NULL);
+
+    chanrec = silc_channel_find(server, channel);
+    if (chanrec) {
+      g_free(channel);
+      continue;
+    }
+
     silc_channel_create(server, channel, FALSE);
     silc_command_exec(server, "JOIN", channel);
     g_free(channel);
@@ -245,12 +253,14 @@ static void event_invite(SILC_SERVER_REC *server, va_list va)
 {
   SilcClientEntry client;
   SilcChannelEntry channel;
+  char *channel_name;
   
-  client = va_arg(va, SilcClientEntry);
   channel = va_arg(va, SilcChannelEntry);
+  channel_name = va_arg(va, char *);
+  client = va_arg(va, SilcClientEntry);
 
-  signal_emit("message invite", 4, server, channel->channel_name,
-	      client->nickname, client->username);
+  signal_emit("message invite", 4, server, channel ? channel->channel_name :
+	      channel_name, client->nickname, client->username);
 }
 
 /*

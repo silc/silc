@@ -2221,6 +2221,11 @@ SILC_SERVER_CMD_FUNC(invite)
     
     /* Get route to the client */
     dest_sock = silc_server_get_client_route(server, NULL, 0, dest_id, &idata);
+    if (!dest_sock) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
+      goto out;
+    }
 
     memset(invite, 0, sizeof(invite));
     strncat(invite, dest->nickname, strlen(dest->nickname));
@@ -2307,13 +2312,20 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Send command reply */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INVITE,
-						SILC_STATUS_OK, ident, 2,
-						2, tmp, len,
-						3, channel->invite_list,
-						channel->invite_list ?
-						strlen(channel->invite_list) :
-						0);
+
+  if (add || del)
+    packet = 
+      silc_command_reply_payload_encode_va(SILC_COMMAND_INVITE,
+					   SILC_STATUS_OK, ident, 2,
+					   2, tmp, len,
+					   3, channel->invite_list,
+					   channel->invite_list ?
+					   strlen(channel->invite_list) : 0);
+  else
+    packet = 
+      silc_command_reply_payload_encode_va(SILC_COMMAND_INVITE,
+					   SILC_STATUS_OK, ident, 1,
+					   2, tmp, len);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);

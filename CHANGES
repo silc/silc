@@ -1,3 +1,38 @@
+Mon Jun 18 18:49:07 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Set SILC_MESSAGE_FLAG_NOREPLY when sending the away message.
+	  Added check that if the NOREPLY is set then we will not send
+	  the away message.  This avoids infinite loop of away messages
+	  if both clients are away.  The affected file is
+	  lib/silcclient/client_prvmsg.c.
+
+	* Fixed client crash if /NICK was given without arguments.
+	  Affected file lib/silcclient/command.c.
+
+	* Server does not send the invite list in INVITE command back
+	  to the client if the list was not altered.  Added this notion
+	  to the protocol spec as well.  Affected file silcd/command.c.
+
+	  Fixed possible crash in INVITE command by checking the
+	  value of silc_server_get_client_route command.
+
+	* Fixed the INVITE notify type handling.  The arguments are now
+	  taken in correct order and client does not crash.  The affected
+	  file is irssi/src/silc/core/silc-channels.c.
+
+	  Removed the "Inviting xxx to channel" message from the
+	  client library away and let the application handle it.
+	  Affected file lib/silcclient/command.c.  Added that message
+	  to Irssi SILC client's message formats.
+
+	* Fixed CMODE command crash in client.  It now checks the
+	  amount of arguments correctly and does not crash.  The affected
+	  file is lib/silcclient/command.c.
+
+	* Do not create new channel automatically in silc_channels_join
+	  but check whether the channel by that name already exists.
+	  Affected file irssi/silc/core/silc-channels.c.
+
 Sun Jun 17 15:26:05 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the GETKEY command in the server to check also the
