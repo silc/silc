@@ -1384,7 +1384,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
-  SilcBuffer buffer, chidp, auth = NULL;
+  SilcBuffer buffer, chidp, auth = NULL, pk = NULL;
   unsigned char *name, *cp, modebuf[4], tmp[4], *arg = NULL;
   SilcUInt32 mode, add, type, len, arg_len = 0;
   int i;
@@ -1565,6 +1565,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	  }
 	}
 
+	pk = silc_pkcs_public_key_payload_encode(pubkey);
 	auth = silc_auth_public_key_auth_generate(pubkey, privkey,
 						  cmd->client->rng, 
 						  cmd->client->sha1hash,
@@ -1590,10 +1591,12 @@ SILC_CLIENT_CMD_FUNC(cmode)
      that requires an argument. */
   if (type && arg) {
     buffer = 
-      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 3,
+      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 4,
 				     1, chidp->data, chidp->len, 
 				     2, modebuf, sizeof(modebuf),
-				     type, arg, arg_len);
+				     type, arg, arg_len,
+				     8, pk ? pk->data : NULL,
+				     pk ? pk->len : 0);
   } else {
     buffer = 
       silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 2,
@@ -1605,8 +1608,8 @@ SILC_CLIENT_CMD_FUNC(cmode)
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
-  if (auth)
-    silc_buffer_free(auth);
+  silc_buffer_free(auth);
+  silc_buffer_free(pk);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);

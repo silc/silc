@@ -1,3 +1,12 @@
+Tue Dec  3 23:26:55 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed founder key sending in CMODE command in client.
+	  Affected file lib/silcclient/command.c.
+
+	* Fixed CUMODE founder authentication in server to not check
+	  for client's public key since it's not supposed to do that.
+	  Affected file silcd/command.c.
+
 Tue Dec  3 12:02:41 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Set realname and hostname in NICK_REC records. Affected file
