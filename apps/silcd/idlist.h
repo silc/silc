@@ -26,6 +26,13 @@ typedef struct SilcServerEntryStruct *SilcServerEntry;
 typedef struct SilcClientEntryStruct *SilcClientEntry;
 typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 
+/* Context for holding cache information to periodically purge
+   the cache. */
+typedef struct {
+  SilcIDCache cache;
+  void *timeout_queue;
+} *SilcIDListPurge;
+
 /*
    Generic ID list data structure.
 
@@ -126,6 +133,7 @@ struct SilcServerEntryStruct {
   char *server_name;
   int server_type;
   SilcServerID *id;
+  char *server_info;
 
   /* Pointer to the router */
   SilcServerEntry router;
@@ -460,6 +468,7 @@ typedef struct {
 /* Prototypes */
 void silc_idlist_add_data(void *entry, SilcIDListData idata);
 void silc_idlist_del_data(void *entry);
+SILC_TASK_CALLBACK_GLOBAL(silc_idlist_purge);
 SilcServerEntry 
 silc_idlist_add_server(SilcIDList id_list, 
 		       char *server_name, int server_type,

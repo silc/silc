@@ -2362,9 +2362,9 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  3
+        Max Arguments:  4
             Arguments:  (1) <Status Payload>  (2) <Server ID>
-                        (3) <string>
+                        (3) <server name>     (4) <string>
 
         This command replies with the Server ID of the server and a
         string which tells the information about the server.

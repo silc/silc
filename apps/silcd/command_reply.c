@@ -50,9 +50,11 @@ do {									  \
    they are never sent by server. More maybe added later if need appears. */
 SilcServerCommandReply silc_command_reply_list[] =
 {
-  SILC_SERVER_CMD_REPLY(join, JOIN),
   SILC_SERVER_CMD_REPLY(whois, WHOIS),
+  SILC_SERVER_CMD_REPLY(whowas, WHOWAS),
   SILC_SERVER_CMD_REPLY(identify, IDENTIFY),
+  SILC_SERVER_CMD_REPLY(info, INFO),
+  SILC_SERVER_CMD_REPLY(join, JOIN),
   SILC_SERVER_CMD_REPLY(users, USERS),
 
   { NULL, 0 },
@@ -192,6 +194,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     if (!client)
       return FALSE;
 
+    client->data.registered = TRUE;
     client->mode = mode;
   } else {
     /* We have the client already, update the data */
@@ -221,6 +224,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
     if (cache) {
       cache->data = nick;
+      cache->data_len = strlen(nick);
       silc_idcache_sort_by_data(global ? server->global_list->clients : 
 				server->local_list->clients);
     }
@@ -252,6 +256,127 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
 
  out:
   SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_WHOIS);
+  silc_server_command_reply_free(cmd);
+}
+
+/* Caches the received WHOWAS information for a short period of time. */
+
+static char
+silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
+{
+  SilcServer server = cmd->server;
+  int len, id_len;
+  unsigned char *id_data;
+  char *nickname, *username, *realname;
+  SilcClientID *client_id;
+  SilcClientEntry client;
+  SilcIDCacheEntry cache = NULL;
+  char *nick;
+  int global = FALSE;
+
+  id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
+  nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
+  username = silc_argument_get_arg_type(cmd->args, 4, &len);
+  if (!id_data || !nickname || !username)
+    return FALSE;
+
+  realname = silc_argument_get_arg_type(cmd->args, 5, &len);
+
+  client_id = silc_id_payload_parse_id(id_data, id_len);
+  if (!client_id)
+    return FALSE;
+
+  /* Check if we have this client cached already. */
+
+  client = silc_idlist_find_client_by_id(server->local_list, client_id,
+					 &cache);
+  if (!client) {
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, &cache);
+    global = TRUE;
+  }
+
+  if (!client) {
+    /* If router did not find such Client ID in its lists then this must
+       be bogus client or some router in the net is buggy. */
+    if (server->server_type == SILC_ROUTER)
+      return FALSE;
+
+    /* Take hostname out of nick string if it includes it. */
+    if (strchr(nickname, '@')) {
+      int len = strcspn(nickname, "@");
+      nick = silc_calloc(len + 1, sizeof(char));
+      memcpy(nick, nickname, len);
+    } else {
+      nick = strdup(nickname);
+    }
+
+    /* We don't have that client anywhere, add it. The client is added
+       to global list since server didn't have it in the lists so it must be 
+       global. */
+    client = silc_idlist_add_client(server->global_list, nick,
+				    strdup(username), 
+				    strdup(realname), 
+				    silc_id_dup(client_id, SILC_ID_CLIENT), 
+				    cmd->sock->user_data, NULL);
+    if (!client)
+      return FALSE;
+
+    client->data.registered = FALSE;
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, &cache);
+    cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+  } else {
+    /* We have the client already, update the data */
+
+    /* Take hostname out of nick string if it includes it. */
+    if (strchr(nickname, '@')) {
+      int len = strcspn(nickname, "@");
+      nick = silc_calloc(len + 1, sizeof(char));
+      memcpy(nick, nickname, len);
+    } else {
+      nick = strdup(nickname);
+    }
+
+    if (client->nickname)
+      silc_free(client->nickname);
+    if (client->username)
+      silc_free(client->username);
+    
+    client->nickname = nick;
+    client->username = strdup(username);
+
+    if (cache) {
+      cache->data = nick;
+      cache->data_len = strlen(nick);
+      silc_idcache_sort_by_data(global ? server->global_list->clients : 
+				server->local_list->clients);
+    }
+  }
+
+  silc_free(client_id);
+
+  return TRUE;
+}
+
+/* Received reply for WHOWAS command. Cache the client information only for
+   a short period of time. */
+
+SILC_SERVER_CMD_REPLY_FUNC(whowas)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcCommandStatus status;
+
+  COMMAND_CHECK_STATUS_LIST;
+
+  if (!silc_server_command_reply_whowas_save(cmd))
+    goto out;
+
+  /* Execute any pending commands */
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WHOWAS);
+
+ out:
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_WHOWAS);
   silc_server_command_reply_free(cmd);
 }
 
@@ -310,9 +435,10 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be 
        global. */
-    silc_idlist_add_client(server->global_list, nick,
-			   username ? strdup(username) : NULL, NULL,
-			   client_id, cmd->sock->user_data, NULL);
+    client = silc_idlist_add_client(server->global_list, nick,
+				    username ? strdup(username) : NULL, NULL,
+				    client_id, cmd->sock->user_data, NULL);
+    client->data.registered = TRUE;
   } else {
     /* We have the client already, update the data */
 
@@ -342,6 +468,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 
     if (nickname && cache) {
       cache->data = nick;
+      cache->data_len = strlen(nick);
       silc_idcache_sort_by_data(global ? server->global_list->clients : 
 				server->local_list->clients);
     }
@@ -372,6 +499,64 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
 
  out:
   SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_IDENTIFY);
+  silc_server_command_reply_free(cmd);
+}
+
+/* Received reply fro INFO command. Cache the server and its information */
+
+SILC_SERVER_CMD_REPLY_FUNC(info)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcServer server = cmd->server;
+  SilcCommandStatus status;
+  SilcServerEntry entry;
+  SilcServerID *server_id;
+  unsigned int tmp_len;
+  unsigned char *tmp, *name;
+
+  COMMAND_CHECK_STATUS;
+
+  /* Get Server ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (!tmp)
+    goto out;
+  server_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!server_id)
+    goto out;
+
+  /* Get the info string */
+  name = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+  if (tmp_len > 256)
+    goto out;
+
+  entry = silc_idlist_find_server_by_id(server->local_list, server_id, NULL);
+  if (!entry) {
+    entry = silc_idlist_find_server_by_id(server->global_list, server_id, 
+					  NULL);
+    if (!entry) {
+      /* Add the server to global list */
+      server_id = silc_id_dup(server_id, SILC_ID_SERVER);
+      entry = silc_idlist_add_server(server->global_list, name, 0,
+				     server_id, NULL, NULL);
+      if (!entry) {
+	silc_free(server_id);
+	goto out;
+      }
+    }
+  }
+
+  /* Get the info string */
+  tmp = silc_argument_get_arg_type(cmd->args, 4, &tmp_len);
+  if (tmp_len > 256)
+    tmp = NULL;
+
+  entry->server_info = tmp ? strdup(tmp) : NULL;
+
+  /* Execute any pending commands */
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
+
+ out:
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INFO);
   silc_server_command_reply_free(cmd);
 }
 

@@ -30,6 +30,7 @@
    allocate any of these fields nor free them.
 
    unsigned char *data
+   unsigned int data_len;
 
       The data that is usually used to find the data from the cache.
       For example for Client ID's this is nickname.
@@ -56,6 +57,7 @@
 */
 typedef struct {
   unsigned char *data;
+  unsigned int data_len;
   SilcIdType type;
   void *id;
   unsigned long expire;
@@ -78,6 +80,7 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
 #define SILC_ID_CACHE_ANY ((void *)1)
 
 #define SILC_ID_CACHE_EXPIRE 3600
+#define SILC_ID_CACHE_EXPIRE_DEF (time(NULL) + SILC_ID_CACHE_EXPIRE)
 
 /* Prototypes */
 SilcIDCache silc_idcache_alloc(unsigned int count,
@@ -97,8 +100,8 @@ int silc_idcache_find_by_id_one(SilcIDCache cache, void *id, SilcIdType type,
 int silc_idcache_find_by_context(SilcIDCache cache, void *context, 
 				 SilcIDCacheEntry *ret);
 int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
-		     SilcIdType id_type, void *id, void *context, int sort,
-		     int expire);
+		     unsigned int data_len, SilcIdType id_type, void *id, 
+		     void *context, int sort, int expire);
 int silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old);
 int silc_idcache_del_by_data(SilcIDCache cache, unsigned char *data);
 int silc_idcache_del_by_id(SilcIDCache cache, SilcIdType type, void *id);

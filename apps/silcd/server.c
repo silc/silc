@@ -113,6 +113,7 @@ int silc_server_init(SilcServer server)
   int *sock = NULL, sock_count = 0, i;
   SilcServerID *id;
   SilcServerEntry id_entry;
+  SilcIDListPurge purge;
 
   SILC_LOG_DEBUG(("Initializing server"));
   assert(server);
@@ -334,6 +335,27 @@ int silc_server_init(SilcServer server)
      normal server cannot have server connections, only router connections. */
   if (server->config->servers)
     server->server_type = SILC_ROUTER;
+
+  /* Register the ID Cache purge task. This periodically purges the ID cache
+     and removes the expired cache entries. */
+
+  /* Clients local list */
+  purge = silc_calloc(1, sizeof(*purge));
+  purge->cache = server->local_list->clients;
+  purge->timeout_queue = server->timeout_queue;
+  silc_task_register(purge->timeout_queue, 0, 
+		     silc_idlist_purge,
+		     (void *)purge, 600, 0,
+		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+
+  /* Clients global list */
+  purge = silc_calloc(1, sizeof(*purge));
+  purge->cache = server->global_list->clients;
+  purge->timeout_queue = server->timeout_queue;
+  silc_task_register(purge->timeout_queue, 0, 
+		     silc_idlist_purge,
+		     (void *)purge, 300, 0,
+		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
   SILC_LOG_DEBUG(("Server initialized"));
 
@@ -3087,6 +3109,8 @@ void silc_server_save_users_on_channel(SilcServer server,
 	silc_free(client_id);
 	continue;
       }
+
+      client->data.registered = TRUE;
     }
 
     silc_free(client_id);
@@ -3215,6 +3239,8 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
     silc_free(cid);
   }
 
-  silc_buffer_push(buffer, buffer->data - buffer->head);
+  if (buffer)
+    silc_buffer_push(buffer, buffer->data - buffer->head);
+
   return buffer;
 }

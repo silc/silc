@@ -42,6 +42,7 @@ void silc_server_notify(SilcServer server,
   SilcChannelEntry channel;
   SilcClientEntry client;
   SilcChannelClientEntry chl;
+  SilcIDCacheEntry cache;
   unsigned int mode;
   unsigned char *tmp;
   unsigned int tmp_len;
@@ -154,6 +155,8 @@ void silc_server_notify(SilcServer server,
 	  silc_free(client_id);
 	  goto out;
 	}
+
+	client->data.registered = TRUE;
       }
     }
 
@@ -251,10 +254,10 @@ void silc_server_notify(SilcServer server,
 
     /* Get client entry */
     client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
+					   client_id, &cache);
     if (!client) {
       client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
+					     client_id, &cache);
       if (!client) {
 	silc_free(client_id);
 	goto out;
@@ -270,9 +273,14 @@ void silc_server_notify(SilcServer server,
     /* Remove the client from all channels */
     silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, TRUE);
 
+    client->data.registered = FALSE;
+    cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+
+#if 0
     /* Remove the client entry */
     if (!silc_idlist_del_client(server->global_list, client))
       silc_idlist_del_client(server->local_list, client);
+#endif
     break;
 
   case SILC_NOTIFY_TYPE_TOPIC_SET:
@@ -1142,7 +1150,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   SilcServerID *server_id;
   SilcIDListData idata;
   unsigned char *server_name, *id_string;
-  unsigned short id_len;
+  unsigned short id_len, name_len;
   int ret;
 
   SILC_LOG_DEBUG(("Creating new server"));
@@ -1165,7 +1173,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   /* Parse the incoming packet */
   ret = silc_buffer_unformat(buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&id_string, &id_len),
-			     SILC_STR_UI16_STRING_ALLOC(&server_name),
+			     SILC_STR_UI16_NSTRING_ALLOC(&server_name, 
+							 &name_len),
 			     SILC_STR_END);
   if (ret == -1) {
     if (id_string)
@@ -1180,6 +1189,9 @@ SilcServerEntry silc_server_new_server(SilcServer server,
     silc_free(server_name);
     return NULL;
   }
+
+  if (name_len > 256)
+    server_name[255] = '\0';
 
   /* Get Server ID */
   server_id = silc_id_str2id(id_string, id_len, SILC_ID_SERVER);
@@ -1289,13 +1301,14 @@ static void silc_server_new_id_real(SilcServer server,
 	 list. The client is put to global list and we will take the hash
 	 value of the Client ID and save it to the ID Cache system for fast
 	 searching in the future. */
-      hash = silc_calloc(sizeof(((SilcClientID *)id)->hash), 
+      hash = silc_calloc(sizeof(((SilcClientID *)id)->hash),
 			 sizeof(unsigned char));
       memcpy(hash, ((SilcClientID *)id)->hash, 
 	     sizeof(((SilcClientID *)id)->hash));
       entry = silc_idlist_add_client(id_list, hash, NULL, NULL, id, 
 				     router, NULL);
       entry->nickname = NULL;
+      entry->data.registered = TRUE;
 
       if (sock->type == SILC_SOCKET_TYPE_SERVER)
 	server->stat.cell_clients++;

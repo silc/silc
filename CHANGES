@@ -1,3 +1,33 @@
+Tue Mar 20 21:05:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* The client entry's data.registered must be TRUE even with
+	  global client entry on global client list.  The data.registered
+	  is used to check whether the client is anymore in the network,
+	  for example with WHOWAS command so it must be valid.
+
+	* Fixed the WHOWAS command in the server.  It now actually works
+	  in router environment.  Added function into silcd/command_reply.c
+	  silc_server_command_reply_whowas_save.
+
+	* Added silc_idlist_purge function to the silcd/idlist.c
+	  to peridiocally purge the ID Cache.
+
+	* Fixed INFO command in the server.  It works now in router
+	  environment.  Added <server name> argument to the INFO command
+	  reply.  Updated the protocol specs.
+
+	* Fixed minor bug in silc_idcache_purge to not purge if the
+	  expire value is zero.
+
+	* Fixed various bugs in WHOIS and IDENTIFY command handling as
+	  they were buggy because of the WHOWAS information.
+
+	* Fixed local command MSG to handle the async resolving of 
+	  the remote client properly.  It used to fail the first MSG.
+	  Affected file silc/local_command.c.
+
+	* Added `data_len' field to SilcIDCache context.
+
 Tue Mar 20 16:29:00 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Update TODO.  Todo in commands in the server.

@@ -200,7 +200,7 @@ int silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data,
       break;
 
     if (cache->cache[i].data && 
-	!memcmp(cache->cache[i].data, data, strlen(cache->cache[i].data)))
+	!memcmp(cache->cache[i].data, data, cache->cache[i].data_len))
       silc_idcache_list_add(list, &(cache->cache[i]));
   }
 
@@ -236,7 +236,7 @@ int silc_idcache_find_by_data_one(SilcIDCache cache, unsigned char *data,
 
   for (i = i; i < cache->cache_count; i++)
     if (cache->cache[i].data && 
-	!memcmp(cache->cache[i].data, data, strlen(cache->cache[i].data))) {
+	!memcmp(cache->cache[i].data, data, cache->cache[i].data_len)) {
       if (ret)
 	*ret = &(cache->cache[i]);
       return TRUE;
@@ -391,8 +391,8 @@ int silc_idcache_find_by_context(SilcIDCache cache, void *context,
    however, it is not mandatory. */
 
 int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
-		     SilcIdType id_type, void *id, void *context, int sort,
-		     int expire)
+		     unsigned int data_len, SilcIdType id_type, void *id, 
+		     void *context, int sort, int expire)
 {
   int i;
   unsigned int count;
@@ -420,6 +420,7 @@ int silc_idcache_add(SilcIDCache cache, unsigned char *data,
   for (i = 0; i < count; i++) {
     if (c[i].data == NULL && c[i].id == NULL) {
       c[i].data = data;
+      c[i].data_len = data_len;
       c[i].type = id_type;
       c[i].id = id;
       c[i].expire = (expire ? (curtime + SILC_ID_CACHE_EXPIRE) : 0);
@@ -435,6 +436,7 @@ int silc_idcache_add(SilcIDCache cache, unsigned char *data,
       c[i].id = NULL;
     }
     c[count].data = data;
+    c[count].data_len = data_len;
     c[count].type = id_type;
     c[count].id = id;
     c[count].expire = (expire ? (curtime + SILC_ID_CACHE_EXPIRE) : 0);
@@ -521,7 +523,7 @@ int silc_idcache_purge(SilcIDCache cache)
   c = cache->cache;
 
   for (i = 0; i < cache->cache_count; i++) {
-    if (c[i].data && c[i].expire < curtime) {
+    if (c[i].data && c[i].expire && c[i].expire < curtime) {
 
       /* Call the destructor */
       if (cache->destructor)

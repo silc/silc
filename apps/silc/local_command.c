@@ -128,8 +128,8 @@ SILC_CLIENT_LCMD_FUNC(msg)
   if (!client_entry) {
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 0, NULL,
-				silc_client_local_command_msg, context);
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident, 
+				NULL, silc_client_local_command_msg, context);
     return;
   }
 

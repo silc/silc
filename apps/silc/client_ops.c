@@ -413,7 +413,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	unsigned int idle, mode;
 	SilcBuffer channels;
 
-	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
+	    status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
 	  char *tmp;
 	  tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 					   3, NULL);
@@ -503,7 +504,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	char buf[1024], *nickname, *username, *realname;
 	int len;
 
-	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
+	    status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
 	  char *tmp;
 	  tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 					   3, NULL);

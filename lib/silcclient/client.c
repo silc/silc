@@ -1128,8 +1128,9 @@ void silc_client_receive_new_id(SilcClient client,
   conn->local_entry->id = conn->local_id;
   
   /* Put it to the ID cache */
-  silc_idcache_add(conn->client_cache, conn->nickname, SILC_ID_CLIENT,
-		   conn->local_id, (void *)conn->local_entry, TRUE, FALSE);
+  silc_idcache_add(conn->client_cache, conn->nickname, strlen(conn->nickname),
+		   SILC_ID_CLIENT, conn->local_id, (void *)conn->local_entry,
+		   TRUE, FALSE);
 
   /* Notify application of successful connection. We do it here now that
      we've received the Client ID and are allowed to send traffic. */
@@ -1161,8 +1162,9 @@ SilcChannelEntry silc_client_new_channel_id(SilcClient client,
   conn->current_channel = channel;
 
   /* Put it to the ID cache */
-  silc_idcache_add(conn->channel_cache, channel_name, SILC_ID_CHANNEL,
-		   (void *)channel->id, (void *)channel, TRUE, FALSE);
+  silc_idcache_add(conn->channel_cache, channel_name, strlen(channel_name),
+		   SILC_ID_CHANNEL, (void *)channel->id, (void *)channel, 
+		   TRUE, FALSE);
 
   return channel;
 }

@@ -264,6 +264,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     
     /* Add client to cache */
     silc_idcache_add(conn->client_cache, client_entry->nickname,
+		     strlen(client_entry->nickname),
 		     SILC_ID_CLIENT, client_id, (void *)client_entry, 
 		     TRUE, FALSE);
   } else {
@@ -287,6 +288,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
       client_entry->realname = strdup(realname);
 
     id_cache->data = client_entry->nickname;
+    id_cache->data_len = strlen(client_entry->nickname);
     silc_idcache_sort_by_data(conn->client_cache);
 
     silc_free(client_id);
@@ -462,6 +464,7 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
     
     /* Add client to cache */
     silc_idcache_add(conn->client_cache, client_entry->nickname,
+		     strlen(client_entry->nickname),
 		     SILC_ID_CLIENT, client_id, (void *)client_entry, 
 		     TRUE, FALSE);
   } else {
@@ -482,6 +485,7 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
       client_entry->username = strdup(username);
     
     id_cache->data = client_entry->nickname;
+    id_cache->data_len = strlen(client_entry->nickname);
     silc_idcache_sort_by_data(conn->client_cache);
     
     silc_free(client_id);
@@ -749,8 +753,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
 
   /* XXX save server id */
 
-  /* Get server info */
+  /* Get server name */
   tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
+  if (!tmp)
+    goto out;
+
+  /* Get server info */
+  tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
   if (!tmp)
     goto out;
 
@@ -970,7 +979,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
       /* No, we don't have it, add entry for it. */
       client_entry = silc_calloc(1, sizeof(*client_entry));
       client_entry->id = silc_id_dup(client_id, SILC_ID_CLIENT);
-      silc_idcache_add(conn->client_cache, NULL, SILC_ID_CLIENT, 
+      silc_idcache_add(conn->client_cache, NULL, 0, SILC_ID_CLIENT, 
 		       client_entry->id, (void *)client_entry, FALSE, FALSE);
     } else {
       /* Yes, we have it already */
