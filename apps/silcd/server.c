@@ -1630,10 +1630,11 @@ void silc_server_free_sock_user_data(SilcServer server,
       /* XXX must take some info to history before freeing */
 
       /* Send REMOVE_ID packet to routers. */
-      silc_server_send_remove_id(server, server->router->connection,
-				 server->server_type == SILC_SERVER ?
-				 FALSE : TRUE, user_data->id, 
-				 SILC_ID_CLIENT_LEN, SILC_ID_CLIENT);
+      if (!server->standalone)
+	silc_server_send_remove_id(server, server->router->connection,
+				   server->server_type == SILC_SERVER ?
+				   FALSE : TRUE, user_data->id, 
+				   SILC_ID_CLIENT_LEN, SILC_ID_CLIENT);
 
       /* Free the client entry and everything in it */
       silc_idlist_del_data(user_data);

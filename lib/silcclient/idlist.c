@@ -123,7 +123,7 @@ SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
     } else {
       SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
       silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, 1,
-			       2, idp->data, idp->len);
+			       3, idp->data, idp->len);
       return NULL;
     }
   }

@@ -1172,6 +1172,7 @@ SILC_CLIENT_CMD_FUNC(users)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
   SilcBuffer buffer, idp;
   char *name;
 
@@ -1213,25 +1214,79 @@ SILC_CLIENT_CMD_FUNC(users)
     goto out;
   }
 
-  /* Send USERS command to the server */
-  idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 0, 1, 
-					  1, idp->data, idp->len);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
-			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
-  silc_buffer_free(buffer);
-  silc_buffer_free(idp);
+  channel = (SilcChannelEntry)id_cache->context;
 
-  /* Register dummy pending command that will tell the reply command
-     that user called this command. Server may send reply to this command
-     even if user did not send this command thus we want to handle things
-     differently when user sent the command. This is dummy and won't be
-     executed. */
-  /* XXX this is kludge and should be removed after pending command reply 
-     support is added. Currently only commands may be pending not command
-     replies. */
-  silc_client_command_pending(conn, SILC_COMMAND_USERS, 0, 
-			      silc_client_command_users, NULL);
+  if (!cmd->pending) {
+    /* Send USERS command to the server */
+    idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 0, 1, 
+					    1, idp->data, idp->len);
+    silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, 
+			    NULL, 0, NULL, NULL, buffer->data, 
+			    buffer->len, TRUE);
+    silc_buffer_free(buffer);
+    silc_buffer_free(idp);
+
+    /* Register pending callback which will recall this command callback with
+       same context and reprocesses the command. When reprocessing we actually
+       display the information on the screen. */
+    silc_client_command_pending(conn, SILC_COMMAND_USERS, 0, 
+				silc_client_command_users, context);
+    cmd->pending = TRUE;
+    return;
+  }
+
+  if (cmd->pending) {
+    /* Pending command. Now we've resolved the information from server and
+       we are ready to display the information on screen. */
+    int i;
+    SilcChannelUser chu;
+
+    cmd->client->ops->say(cmd->client, conn, "Users on %s", 
+			  channel->channel_name);
+
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      SilcClientEntry e = chu->client;
+      char *m, tmp[80], line[80], len1;
+
+      memset(line, 0, sizeof(line));
+      memset(tmp, 0, sizeof(tmp));
+      m = silc_client_chumode_char(chu->mode);
+
+      strcat(line, " ");
+      strcat(line, e->nickname);
+      strcat(line, e->server ? "@" : "");
+
+      len1 = 0;
+      if (e->server)
+	len1 = strlen(e->server);
+      strncat(line, e->server ? e->server : "", len1 > 30 ? 30 : len1);
+
+      len1 = strlen(line);
+      if (len1 >= 30) {
+	memset(&line[29], 0, len1 - 29);
+      } else {
+	for (i = 0; i < 30 - len1 - 1; i++)
+	  strcat(line, " ");
+      }
+
+      strcat(line, "  H");
+      strcat(tmp, m ? m : "");
+      strcat(line, tmp);
+
+      if (strlen(tmp) < 5)
+	for (i = 0; i < 5 - strlen(tmp); i++)
+	  strcat(line, " ");
+
+      strcat(line, e->username ? e->username : "");
+
+      cmd->client->ops->say(cmd->client, conn, "%s", line);
+
+      if (m)
+	silc_free(m);
+    }
+  }
 
   /* Notify application */
   COMMAND;

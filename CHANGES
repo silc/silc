@@ -1,3 +1,35 @@
+Thu Feb  1 21:32:27 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed some minor bugs in client when sending WHOIS command.  The
+	  arguments was in wrong order.
+
+	* Removed statis function add_to_channel from server in 
+	  silcd/command.c that was previously used with the joining but
+	  is obsolete now.
+
+	* Tested USERS command in router environment successfully with two
+	  routers, two servers and two clients.
+
+Thu Feb  1 00:54:26 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Reorganized the USERS command and command reply in client library
+	  in lib/silcclient/command.c and lib/silcclient/command_reply.c.
+	  When the command is given by user we register a pending command
+	  callback that will reprocess the command after the reply has been
+	  received from the server.  When reprocessing the packet we then
+	  display the information.  Thus, the USERS information is displayed
+	  now in the command callback instead of in the command reply
+	  callback.  The processing of the command is same as previously
+	  when server has sent the command reply in the JOINing process.
+
+	* Added to USERS command in silcd/command_reply.c to join the client,
+	  we didn't use to know about, to the channel after we've created
+	  a client entry for it.  Also, for clienet we did know already still
+	  check whether it is on the channel or not and add it if not.
+
+	* Removed silc_server_command_join_notify as the function and its
+	  use was obsolete.
+
 Tue Jan 30 22:39:15 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed the client's pending command handling to the same as the

@@ -395,10 +395,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
       continue;
     }
 
-    if (server->server_type == SILC_ROUTER && !route)
-      continue;
-
-    if (server->server_type == SILC_SERVER && client->router)
+    if (client && client->router)
       continue;
 
     /* Send to locally connected client */

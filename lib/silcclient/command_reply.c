@@ -1103,11 +1103,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
     client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
-    silc_buffer_pull(client_id_list, idp_len);
 
     /* Mode */
     SILC_GET32_MSB(mode, client_mode_list->data);
-    silc_buffer_pull(client_mode_list, 4);
 
     /* Check if we have this client cached already. */
     if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
@@ -1135,6 +1133,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
       silc_free(client_id);
       id_cache = NULL;
     }
+
+    silc_buffer_pull(client_id_list, idp_len);
+    silc_buffer_pull(client_mode_list, 4);
   }
 
   /* Query the client information from server if the list included clients
@@ -1171,54 +1172,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   /* We have all the clients on the channel cached now. Create a nice
      output for user interface and notify application. */
 
-  if (cmd->callback) {
-    /* User has called USERS command on user interface. */
-    cmd->client->ops->say(cmd->client, conn, "Users on %s", 
-			  channel->channel_name);
-    
-    silc_list_start(channel->clients);
-    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-      SilcClientEntry e = chu->client;
-      char *m, tmp[80], line[80], len1;
-
-      memset(line, 0, sizeof(line));
-      memset(tmp, 0, sizeof(tmp));
-      m = silc_client_chumode_char(chu->mode);
-
-      strcat(line, " ");
-      strcat(line, e->nickname);
-      strcat(line, e->server ? "@" : "");
-
-      len1 = 0;
-      if (e->server)
-	len1 = strlen(e->server);
-      strncat(line, e->server ? e->server : "", len1 > 30 ? 30 : len1);
-
-      len1 = strlen(line);
-      if (len1 >= 30) {
-	memset(&line[29], 0, len1 - 29);
-      } else {
-	for (i = 0; i < 30 - len1 - 1; i++)
-	  strcat(line, " ");
-      }
-
-      strcat(line, "  H");
-      strcat(tmp, m ? m : "");
-      strcat(line, tmp);
-
-      if (strlen(tmp) < 5)
-	for (i = 0; i < 5 - strlen(tmp); i++)
-	  strcat(line, " ");
-
-      strcat(line, e->username ? e->username : "");
-
-      cmd->client->ops->say(cmd->client, conn, "%s", line);
-
-      if (m)
-	silc_free(m);
-    }
-
-  } else {
+  if (!cmd->callback) {
     /* Server has sent us USERS reply even when we haven't actually sent
        USERS command. This is normal behaviour when joining to a channel.
        Display some nice information on the user interface. */

@@ -325,10 +325,11 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       }
     }
 
-    if (nickname && client->nickname) {
+    if (nickname && client->nickname)
       silc_free(client->nickname);
+
+    if (nickname)
       client->nickname = nick;
-    }
 
     if (username && client->username) {
       silc_free(client->username);
@@ -573,11 +574,22 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
       /* We don't have that client anywhere, add it. The client is added
 	 to global list since server didn't have it in the lists so it must be 
 	 global. */
-      silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
-			     client_id, NULL, NULL);
+      client = silc_idlist_add_client(server->global_list, NULL, NULL, 
+				      NULL, client_id, cmd->sock->user_data, 
+				      NULL);
     } else {
       /* We have the client already. */
       silc_free(client_id);
+    }
+
+    if (!silc_server_client_on_channel(client, channel)) {
+      /* Client was not on the channel, add it. */
+      SilcChannelClientEntry chl = silc_calloc(1, sizeof(*chl));
+      chl->client = client;
+      chl->mode = mode;
+      chl->channel = channel;
+      silc_list_add(channel->user_list, chl);
+      silc_list_add(client->channels, chl);
     }
   }
 

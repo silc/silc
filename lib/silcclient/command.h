@@ -70,12 +70,11 @@ typedef struct {
   unsigned char **argv;
   unsigned int *argv_lens;
   unsigned int *argv_types;
+  int pending;			/* Command is being re-processed when TRUE */
 } *SilcClientCommandContext;
 
 /* Structure holding pending commands. If command is pending it will be
    executed after command reply has been executed. */
-/* XXX This support may added for commands as well and not just command
-   replies, if needed later. */
 typedef struct SilcClientCommandPendingStruct {
   SilcCommand reply_cmd;
   SilcCommandCb callback;

@@ -325,7 +325,7 @@ void silc_server_replace_id(SilcServer server,
      we will broadcast it. The sending socket really cannot be router or
      the router is buggy. If this packet is coming from router then it must
      have the broadcast flag set already and we won't do anything. */
-  if (server->server_type == SILC_ROUTER &&
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received Replace ID packet"));
