@@ -359,14 +359,15 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
 
     /* Take all ID's from the command packet */
     if (argc > 3) {
-      for (k = 1, i = 4; i < argc; i++) {
+      for (k = 1, i = 4; i < argc + 1; i++) {
 	tmp = silc_argument_get_arg_type(cmd->args, i, &len);
 	if (tmp) {
 	  *client_id = silc_realloc(*client_id, sizeof(**client_id) *
 				    (*client_id_count + 1));
 	  (*client_id)[k] = silc_id_payload_parse_id(tmp, len);
 	  if ((*client_id)[k] == NULL) {
-	    for (i = 0; i < k; i++)
+	    /* Cleanup all and fail */
+	    for (i = 0; i < *client_id_count; i++)
 	      silc_free((*client_id)[i]);
 	    silc_free(*client_id);
 	    return FALSE;
