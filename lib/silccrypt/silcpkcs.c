@@ -568,7 +568,6 @@ SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
   char *tmp = NULL;
 
   public_key = silc_calloc(1, sizeof(*public_key));
-  public_key->len = 4 + 2 + strlen(name) + 2 + strlen(identifier) + pk_len;
   public_key->name = strdup(name);
   public_key->pk_len = pk_len;
   public_key->pk = silc_calloc(pk_len, sizeof(*public_key->pk));
@@ -582,6 +581,7 @@ SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
   }
 
   public_key->identifier = strdup(identifier);
+  public_key->len = 4 + 2 + strlen(name) + 2 + strlen(identifier) + pk_len;
   silc_free(tmp);
 
   return public_key;
