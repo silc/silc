@@ -671,6 +671,8 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
     silc_free(entry->channel_name);
     silc_free(entry->id);
     silc_free(entry->topic);
+    silc_free(entry->invite_list);
+    silc_free(entry->ban_list);
     if (entry->channel_key)
       silc_cipher_free(entry->channel_key);
     if (entry->key) {

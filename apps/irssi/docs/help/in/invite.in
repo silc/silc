@@ -6,7 +6,8 @@ the channel's invite list.  Wildcards may be used with this command.
 
 Examples:
     /INVITE silc joe
-        Invites nickname `joe' to channel 'silc'.
+        Invites nickname `joe' to channel 'silc', and adds the client
+	to the channel's invite list.
 
     /INVITE silc +joe!*@*
         Adds nickname `joe' from anywhere to the invite list of the
