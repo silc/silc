@@ -496,6 +496,8 @@ static SilcUInt32 silc_rng_get_position(SilcRng rng)
 
 SilcUInt8 silc_rng_get_byte(SilcRng rng)
 {
+  SilcUInt8 byte;
+
   rng->threshold++;
 
   /* Get more soft noise after 64 bits threshold */
@@ -508,7 +510,8 @@ SilcUInt8 silc_rng_get_byte(SilcRng rng)
     silc_rng_get_hard_noise(rng);
   }
 
-  return rng->pool[silc_rng_get_position(rng)];
+  do byte = rng->pool[silc_rng_get_position(rng)]; while (byte == 0x00);
+  return byte;
 }
 
 /* Return random byte as fast as possible. Reads from /dev/urandom if
@@ -529,7 +532,7 @@ SilcUInt8 silc_rng_get_byte_fast(SilcRng rng)
   if (read(rng->fd_devurandom, buf, sizeof(buf)) < 0)
     return silc_rng_get_byte(rng);
 
-  return buf[0];
+  return buf[0] != 0x00 ? buf[0] : silc_rng_get_byte(rng);
 #else
   return silc_rng_get_byte(rng);
 #endif
@@ -565,7 +568,7 @@ SilcUInt32 silc_rng_get_rn32(SilcRng rng)
   return num;
 }
 
-/* Returns random number string. Returned string is in HEX format. */
+/* Returns non-zero random number string. Returned string is in HEX format. */
 
 unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len)
 {
@@ -580,7 +583,7 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len)
   return string;
 }
 
-/* Returns random number binary data. */
+/* Returns non-zero random number binary data. */
 
 unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len)
 {

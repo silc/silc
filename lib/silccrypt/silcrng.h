@@ -1,10 +1,10 @@
 /*
 
-  silcrng.h 
+  silcrng.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
 /****s* silccrypt/SilcRNGAPI/SilcRng
  *
  * NAME
- * 
+ *
  *    typedef struct SilcRngStruct *SilcRng;
  *
  * DESCRIPTION
@@ -174,7 +174,8 @@ SilcUInt32 silc_rng_get_rn32(SilcRng rng);
  * DESCRIPTION
  *
  *    Returns random string in HEX form of the length of `len' bytes.
- *    The caller must free returned data buffer.
+ *    The caller must free returned data buffer.  It is guaranteed the
+ *    data string goes not include any zero (0x00) bytes.
  *
  ***/
 unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len);
@@ -187,8 +188,9 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len);
  *
  * DESCRIPTION
  *
- *    Returns random binary data of the length of `len' bytes.  The 
- *    caller must free returned data buffer.
+ *    Returns random binary data of the length of `len' bytes.  The
+ *    caller must free returned data buffer.  It is guaranteed the data
+ *    buffer does not include any zero (0x00) bytes.
  *
  ***/
 unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len);
@@ -201,7 +203,7 @@ unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len);
  *
  * DESCRIPTION
  *
- *    Add the data buffer indicated by `buffer' of length of `len' bytes 
+ *    Add the data buffer indicated by `buffer' of length of `len' bytes
  *    as noise to the random number generator.  The random number generator
  *    is restirred (reseeded) when this function is called.
  *
@@ -317,7 +319,8 @@ SilcUInt32 silc_rng_global_get_rn32(void);
  * DESCRIPTION
  *
  *    Returns random string in HEX form of the length of `len' bytes.
- *    The caller must free returned data buffer.
+ *    The caller must free returned data buffer.  It is guaranteed the
+ *    data string goes not include any zero (0x00) bytes.
  *
  ***/
 unsigned char *silc_rng_global_get_rn_string(SilcUInt32 len);
@@ -330,8 +333,9 @@ unsigned char *silc_rng_global_get_rn_string(SilcUInt32 len);
  *
  * DESCRIPTION
  *
- *    Returns random binary data of the length of `len' bytes.  The 
- *    caller must free returned data buffer.
+ *    Returns random binary data of the length of `len' bytes.  The
+ *    caller must free returned data buffer.  It is guaranteed the data
+ *    buffer does not include any zero (0x00) bytes.
  *
  ***/
 unsigned char *silc_rng_global_get_rn_data(SilcUInt32 len);
@@ -344,7 +348,7 @@ unsigned char *silc_rng_global_get_rn_data(SilcUInt32 len);
  *
  * DESCRIPTION
  *
- *    Add the data buffer indicated by `buffer' of length of `len' bytes 
+ *    Add the data buffer indicated by `buffer' of length of `len' bytes
  *    as noise to the random number generator.  The random number generator
  *    is restirred (reseeded) when this function is called.
  *
