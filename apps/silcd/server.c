@@ -2221,15 +2221,15 @@ void silc_server_remove_from_channels(SilcServer server,
   SilcChannelEntry channel;
   SilcBuffer id_payload;
 
-  id_payload = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL_LEN,
-				      SILC_ID_CHANNEL);
-
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
   for (i = 0; i < client->channel_count; i++) {
     channel = client->channel[i];
     if (!channel)
       continue;
+
+    id_payload = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL_LEN,
+				        SILC_ID_CHANNEL);
 
     /* Remove from channel */
     for (k = 0; k < channel->user_list_count; k++) {
@@ -2276,12 +2276,13 @@ void silc_server_remove_from_channels(SilcServer server,
 					   id_payload->len);
       }
     }
+
+    silc_id_payload_free(id_payload);
   }
 
   if (client->channel_count)
     silc_free(client->channel);
   client->channel = NULL;
-  silc_buffer_free(id_payload);
 }
 
 /* Removes client from one channel. This is used for example when client
