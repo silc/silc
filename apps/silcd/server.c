@@ -2266,11 +2266,13 @@ void silc_server_remove_from_channels(SilcServer server,
 	silc_list_count(channel->user_list) < 2) {
       server->stat.my_channels--;
 
+      if (channel->rekey)
+	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+
       if (channel->founder_key) {
 	/* The founder auth data exists, do not remove the channel entry */
 	SilcChannelClientEntry chl2;
 
-	silc_free(channel->id);
 	channel->id = NULL;
 
 	silc_list_start(channel->user_list);
@@ -2313,11 +2315,13 @@ void silc_server_remove_from_channels(SilcServer server,
 
       server->stat.my_channels--;
 
+      if (channel->rekey)
+	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+
       if (channel->founder_key) {
 	/* The founder auth data exists, do not remove the channel entry */
 	SilcChannelClientEntry chl2;
 
-	silc_free(channel->id);
 	channel->id = NULL;
 
 	silc_list_start(channel->user_list);
@@ -2394,6 +2398,8 @@ int silc_server_remove_from_one_channel(SilcServer server,
     /* Remove channel if there is no users anymore */
     if (server->server_type == SILC_ROUTER &&
 	silc_list_count(channel->user_list) < 2) {
+      if (channel->rekey)
+	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
       silc_buffer_free(clidp);
@@ -2425,11 +2431,13 @@ int silc_server_remove_from_one_channel(SilcServer server,
       server->stat.my_channels--;
       silc_buffer_free(clidp);
 
+      if (channel->rekey)
+	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+
       if (channel->founder_key) {
 	/* The founder auth data exists, do not remove the channel entry */
 	SilcChannelClientEntry chl2;
 
-	silc_free(channel->id);
 	channel->id = NULL;
 
 	silc_list_start(channel->user_list);
@@ -2622,6 +2630,23 @@ silc_server_create_new_channel_with_id(SilcServer server,
   return entry;
 }
 
+/* Channel's key re-key timeout callback. */
+
+SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
+{
+  SilcServerChannelRekey rekey = (SilcServerChannelRekey)context;
+  SilcServer server = (SilcServer)rekey->context;
+
+  silc_server_create_channel_key(server, rekey->channel, rekey->key_len);
+  silc_server_send_channel_key(server, NULL, rekey->channel, FALSE);
+
+  silc_task_register(server->timeout_queue, 0, 
+		     silc_server_channel_key_rekey,
+		     (void *)rekey, 3600, 0,
+		     SILC_TASK_TIMEOUT,
+		     SILC_TASK_PRI_NORMAL);
+}
+
 /* Generates new channel key. This is used to create the initial channel key
    but also to re-generate new key for channel. If `key_len' is provided
    it is the bytes of the key length. */
@@ -2676,6 +2701,22 @@ void silc_server_create_channel_key(SilcServer server,
   silc_hash_make(channel->hmac->hash, channel->key, len, hash);
   silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
   memset(hash, 0, sizeof(hash));
+
+  if (server->server_type == SILC_ROUTER) {
+    if (!channel->rekey)
+      channel->rekey = silc_calloc(1, sizeof(*channel->rekey));
+    channel->rekey->context = (void *)server;
+    channel->rekey->channel = channel;
+    channel->rekey->key_len = key_len;
+
+    silc_task_unregister_by_callback(server->timeout_queue,
+				     silc_server_channel_key_rekey);
+    silc_task_register(server->timeout_queue, 0, 
+		       silc_server_channel_key_rekey,
+		       (void *)channel->rekey, 3600, 0,
+		       SILC_TASK_TIMEOUT,
+		       SILC_TASK_PRI_NORMAL);
+  }
 }
 
 /* Saves the channel key found in the encoded `key_payload' buffer. This 
@@ -2766,6 +2807,21 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 
   memset(hash, 0, sizeof(hash));
   memset(tmp, 0, tmp_len);
+
+  if (server->server_type == SILC_ROUTER) {
+    if (!channel->rekey)
+      channel->rekey = silc_calloc(1, sizeof(*channel->rekey));
+    channel->rekey->context = (void *)server;
+    channel->rekey->channel = channel;
+
+    silc_task_unregister_by_callback(server->timeout_queue,
+				     silc_server_channel_key_rekey);
+    silc_task_register(server->timeout_queue, 0, 
+		       silc_server_channel_key_rekey,
+		       (void *)channel->rekey, 3600, 0,
+		       SILC_TASK_TIMEOUT,
+		       SILC_TASK_PRI_NORMAL);
+  }
 
  out:
   if (id)

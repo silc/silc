@@ -351,6 +351,7 @@ void silc_task_unregister(SilcTaskQueue queue, SilcTask task);
 void silc_task_unregister_by_fd(SilcTaskQueue queue, int fd);
 void silc_task_unregister_by_callback(SilcTaskQueue queue, 
 				      SilcTaskCallback callback);
+void silc_task_unregister_by_context(SilcTaskQueue queue, void *context);
 void silc_task_set_iotype(SilcTask task, int type);
 void silc_task_reset_iotype(SilcTask task, int type);
 int silc_task_timeout_compare(struct timeval *smaller, 

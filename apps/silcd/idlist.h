@@ -33,6 +33,13 @@ typedef struct {
   void *timeout_queue;
 } *SilcIDListPurge;
 
+/* Channel key re-key context. */
+typedef struct {
+  void *context;
+  SilcChannelEntry channel;
+  unsigned int key_len;
+} *SilcServerChannelRekey;
+
 /*
    Generic ID list data structure.
 
@@ -394,6 +401,10 @@ struct SilcClientEntryStruct {
 
        HMAC of the channel.
 
+   SilcServerChannelRekey rekey
+
+       Channel key re-key context.
+
 */
 struct SilcChannelEntryStruct {
   char *channel_name;
@@ -426,6 +437,8 @@ struct SilcChannelEntryStruct {
   unsigned int key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
   SilcHmac hmac;
+
+  SilcServerChannelRekey rekey;
 };
 
 /* 

@@ -594,6 +594,28 @@ void silc_task_unregister_by_callback(SilcTaskQueue queue,
   }
 }
 
+/* Unregister a task by context. This invalidates the task. */
+
+void silc_task_unregister_by_context(SilcTaskQueue queue, void *context)
+{
+  SilcTask next;
+
+  SILC_LOG_DEBUG(("Unregister task by context"));
+
+  if (queue->task == NULL)
+    return;
+
+  next = queue->task;
+
+  while(1) {
+    if (next->context == context)
+      next->valid = FALSE;
+    if (queue->task == next->next)
+      break;
+    next = next->next;
+  }
+}
+
 /* Sets the I/O mask for the task. Only one I/O type can be set at a
    time. */
 

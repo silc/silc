@@ -722,8 +722,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     }
   } else {
     /* The entry exists. */
-    if (entry->id)
-      silc_free(entry->id);
+    if (cache->id)
+      silc_free(cache->id);
     entry->id = id;
     cache->id = entry->id;
 
@@ -784,9 +784,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   entry->mode = mode;
 
   /* Save channel key */
-  if (!(entry->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+  if (!(entry->mode & SILC_CHANNEL_MODE_PRIVKEY))
     silc_server_save_channel_key(server, keyp, entry);
-  }
   if (keyp)
     silc_buffer_free(keyp);
 

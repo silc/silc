@@ -3919,7 +3919,7 @@ SILC_SERVER_CMD_FUNC(cumode)
       goto out;
     }
 
-    chl->mode |= SILC_CHANNEL_UMODE_CHANFO;
+    sender_mask = chl->mode |= SILC_CHANNEL_UMODE_CHANFO;
     notify = TRUE;
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
