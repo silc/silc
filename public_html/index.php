@@ -1,114 +1,176 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
- <title> SILC Secure Internet Live Conferencing </title>
- <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
- <style TYPE="text/css">
- <!--
-  body { color: #000000; background: #aaaaaa; font-family: Helvetica, Arial, Sans-serif; }
-  a:link { text-decoration: none; color: #2f486f; }
-  a:visited { text-decoration: none;color: #2f486f; }
-  a:active { text-decoration: none; color: #2f486f; }
- -->
- </style>
-</head>
-
-<body bgcolor="#aaaaaa" text="#000000" link="#2f486f" alink="#2f486f" vlink="#2f486f">
-
-<br>
-<div align="center">
-<table width="700" bgcolor="#000000" cellpadding="1" cellspacing="0" border="0">
- <tr>
-  <td>
-    <table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0">
-     <tr>
-      <td bgcolor="#e2e2e2">
-        <br><a href="index.php?page=news"><img src="img/silc.gif" width="700" height="100" alt=" SILC Secure Internet Live Conferencing " border="0"></a>
-      </td>
-     </tr>
-     <tr><td bgcolor="#000000" height="1"><img src="img/pixel.gif" alt="" height="1"></td></tr>
-     <tr>
-      <td>
-        <div align="center">
-        <table cellspacing="3" cellpadding="10" border="0"><tr><td>
-        <font size="2" face="Helvetica,Arial,Sans-serif">
-        o <a href="index.php?page=about">About the SILC</a><br>
-        o <a href="index.php?page=history">History</a><br>
-        o <a href="index.php?page=lists">SILC Mailing Lists</a><br>
-        o <a href="index.php?page=docs">SILC Documentation</a><br>
-        </font>
-        </td><td>
-        <font size="2" face="Helvetica,Arial,Sans-serif">
-        o <a href="index.php?page=download">Download SILC</a><br>
-        o <a href="index.php?page=faq">SILC FAQ</a><br>
-        o <a href="index.php?page=features">SILC Features</a><br>
-        o <a href="changes.txt">ChangeLog</a><br>
-        </font>
-        </td><td>
-        <font size="2" face="Helvetica,Arial,Sans-serif">
-        o <a href="index.php?page=todo">TODO list</a><br>
-        o <a href="index.php?page=contribute">Contributing</a><br>
-        o <a href="index.php?page=cvs">Anonymous CVS Access</a><br>
-        o <a href="index.php?page=copying">The General Public License (GPL)</a><br>
-        </font>
-        </td></tr></table>
-        </div>
-      </td>
-     <tr><td bgcolor="#000000" height="1"><img src="img/pixel.gif" alt="" height="1"></td></tr>
-     <tr>
-      <td>
-        <table width="100%" bgcolor="#e2e2e2" cellpadding="10" cellspacing="0" border="0">
-        <tr><td><font face="Helvetica,Arial,Sans-serif">
 <?php
+// 
+// Copyright (c) 2001, Lubomir Sedlacik <salo@silcnet.org>
+// and other members of the SILC Project (http://silcnet.org)
+// All rights reserved.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 
+// 1) Redistributions of source code must retain the above copyright notice,
+//    this list of conditions and the following disclaimer.
+// 2) Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+// 3) Neither the name of the SILC Project nor the names of its contributors
+//    may be used to endorse or promote products derived from this software
+//    without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+// IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+// THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-// directory where SILC FTP files are located
-$FTPRoot = "/home/ftp/pub/silc/";
-
-// directory where SILC HTML documents are located
-$DocRoot = "/home/priikone/public_html/silc/";
-
-// remove dangerous characters, only alphanumerical characters are passed
-$SecurityFilter = $DocRoot.EReg_Replace('([^a-zA-Z0-9])*','',$page).".php";
-
-// read latest release version
-if (File_Exists($DocRoot."LATEST")) {
-  $fp = FOpen($DocRoot."LATEST","r");
-  $latest = EReg_Replace('([^a-zA-Z0-9.])*','',FGetS($fp,255));
-  FClose($fp);
-}
-// read latest release version
-if (File_Exists($DocRoot."LATEST_CLIENT")) {
-  $fp = FOpen($DocRoot."LATEST_CLIENT","r");
-  $latestc = EReg_Replace('([^a-zA-Z0-9.])*','',FGetS($fp,255));
-  FClose($fp);
-}
-// read latest release version
-if (File_Exists($DocRoot."LATEST_SERVER")) {
-  $fp = FOpen($DocRoot."LATEST_SERVER","r");
-  $latests = EReg_Replace('([^a-zA-Z0-9.])*','',FGetS($fp,255));
-  FClose($fp);
-}
-
-function div($a,$b) {
-return (int) ($a/$b);
-}
-
-$latest_d = filemtime($DocRoot."LATEST"); 
-$latest_date = date("l dS of F Y H:i:s", $latest_d);
-$latest_dc = filemtime($DocRoot."LATEST_CLIENT"); 
-$latest_datec = date("l dS of F Y H:i:s", $latest_dc);
-$latest_ds = filemtime($DocRoot."LATEST_SERVER"); 
-$latest_dates = date("l dS of F Y H:i:s", $latest_ds);
-
-// read document, if it is not valid then read first page
-if (Is_File($SecurityFilter))
-  require $SecurityFilter;
-else
-  require $DocRoot."news.php";
+// Read neccessary stuff if accessible
+  if (Is_Readable("config.php")) include("config.php");
+  if (Is_Readable("mirror.php")) include("mirror.php");
 
 ?>
-        </font>
-        </td></tr>
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+ <meta http-equiv="Content-Language" content="en" />
+ <meta name="description" content="SILC Secure Internet Live Conferencing" />
+ <meta name="keywords" content="SILC silcnet secure chat protocol cipher encrypt encryption SKE private channel conferencing" />
+ <meta content="INDEX, FOLLOW" name="ROBOTS" />
+ <title> SILC Secure Internet Live Conferencing - 
+<?php
+
+  // sites
+  if ($Country_Code != "")
+    $WWW_Site = $Country_Code.".silcnet.org";
+  else
+    $WWW_Site = "silcnet.org";
+
+  if ($Country_Code != "" && StrToLower($FTP_Archive) == "yes")
+    $FTP_Site = "ftp.".$Country_Code.".silcnet.org";
+  else
+    $FTP_Site = "ftp.silcnet.org";
+
+  if ($Country_Code != "" && StrToLower($CVS_Archive) == "yes"
+                          && $CVS_User && $CVS_Root)
+    $CVS_Site = "cvs.".$Country_Code.".silcnet.org";
+  else {
+    $CVS_Site = "cvs.silcnet.org";
+    $CVS_User = "cvs";
+    $CVS_Root = "/cvs/silc";
+  }
+
+  // find out release dates from release archive files
+  $Date_Toolkit = date("l dS of F Y H:i:s",
+                  filemtime("download/silc-toolkit-".$Latest_Toolkit.".tar.gz"));
+  $Date_Client  = date("l dS of F Y H:i:s",
+                  filemtime("download/silc-client-".$Latest_Client.".tar.gz"));
+  $Date_Server  = date("l dS of F Y H:i:s",
+                  filemtime("download/silc-server-".$Latest_Server.".tar.gz"));
+
+  // remove possibly dangerous characters, only alphanumerical characters are passed
+  function Filter($input) {
+    return EReg_Replace("([^a-zA-Z0-9])*", "", $input);
+  }
+
+  // div();
+  function div($a,$b) {
+    return (int) ($a/$b);
+  }
+
+  $pass = 0;
+  if (Is_Readable("html/".Filter($page).".php")) {
+    echo $page;
+    $pass = 1;
+  }
+  else
+    echo "news";
+?>
+ </title>
+ <link href="silc.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+
+<table width="100%" cellpadding="0" cellspacing ="0" border="0">
+<tr><td align="center">
+
+<table width="700" cellpadding="1" cellspacing="0" border="0">
+ <tr>
+  <td class="black">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+     <tr>
+      <td class="white">
+        <img src="img/silc.gif" width="700" height="100" alt=" " />
+      </td>
+     </tr>
+     <tr>
+      <td class="white" align="center">
+        <table cellspacing="3" cellpadding="10" border="0">
+        <tr><td valign="top" class="white">
+        <b>General</b><br />
+        <small class="black">o</small> <a href="?page=news" class="normal">SILC News</a><br />
+        <small class="black">o</small> <a href="?page=about" class="normal">About the SILC</a><br />
+        <small class="black">o</small> <a href="?page=history" class="normal">History of SILC</a><br />
+        <small class="black">o</small> <a href="?page=contribute" class="normal">Contributing</a><br />
+        <small class="black">o</small> <a href="?page=lists" class="normal">SILC Mailing Lists</a><br />
+        </td><td valign="top" class="white">
+        <b>Documentation</b><br />
+        <small class="black">o</small> <a href="?page=docs" class="normal">SILC Documentation</a><br />
+        <small class="black">o</small> <a href="?page=whitepaper" class="normal">SILC White Paper</a><br />
+        <small class="black">o</small> <a href="?page=faq" class="normal">SILC FAQ</a><br />
+        <small class="black">o</small> <a href="?page=features" class="normal">SILC Features</a><br />
+        <small class="black">o</small> <a href="?page=todo" class="normal">TODO List</a><br />
+        </td><td valign="top" class="white">
+        <b>Software</b><br />
+        <small class="black">o</small> <a href="?page=download" class="normal">Download SILC</a><br />
+        <small class="black">o</small> <a href="?page=mirrors" class="normal">Mirrors Worldwide</a><br />
+        <small class="black">o</small> <a href="?page=cvs" class="normal">Anonymous CVS Access</a><br />
+        <small class="black">o</small> <a href="txt/changes.txt" class="normal">ChangeLog</a><br />
+        <small class="black">o</small> <a href="?page=copying" class="normal">The General Public License (GPL)</a><br />
+        </td></tr></table>
+      </td>
+     </tr>
+     <tr><td class="blackline"></td></tr>
+     <tr>
+      <td class="<?php if($pass == 1 && $page == "whitepaper") $color="whitetext"; else $color="greytext"; echo $color; ?>">
+        <table width="100%" cellpadding="10" cellspacing="0" border="0">
+        <tr><td class="<?php echo $color; ?>">
+<?php
+  // read document, if it is not valid then read opening page
+  if ($pass == 1)
+    include("html/".Filter($page).".php");
+  else
+    include("html/news.php");
+?>
+          </td>
+         </tr>
+<?php
+
+  if ($OS_Type) {
+    switch(StrToLower($OS_Type)) {
+      case "bsd":   $img = "daemon.gif";
+                    $alt = "( daemon powered - IMAGE )";
+                    break;
+      case "linux": $img = "penguin.gif";
+                    $alt = "( penguin powered - IMAGE )";
+                    break;
+    }
+    echo "<tr>";
+    echo "<td align=\"right\" valign=\"bottom\">";
+    echo "&nbsp;<br />";
+    echo "<img src=\"img/".$img."\" alt=\"".$alt."\" />";
+    echo "</td>";
+    echo "</tr>";
+  }
+?>
         </table>
       </td>
      </tr>
@@ -116,12 +178,19 @@ else
   </td>
  </tr>
 </table>
-<font size="1" face="Helvetica,Arial,Sans-serif">webpage by
-<a href="mailto:salo at silcnet.org">salo at silcnet.org</a> | 
-<font color="#2f486f"><? require $DocRoot."counter.php"; ?></font> |
-<a href="http://validator.w3.org/check/referer">W3C HTML 4.01 compliant</a>
-</font>
-</div>
+<small class="blue">
+webpage by
+<a href="mailto:salo at silcnet.org" class="small">salo at silcnet.org</a> | 
+<?php
+  // insert counter
+  include("html/counter.php");
+?> | W3C 
+<a href="http://validator.w3.org/check/referer" class="small">XHTML</a> and 
+<a href="http://jigsaw.w3.org/css-validator/check/referer" class="small">CSS</a>
+</small>
+<br /><br />
+
+</td></tr></table>
 
 </body>
 </html>
