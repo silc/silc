@@ -364,18 +364,20 @@ int silc_parse_nickname(char *string, char **nickname, char **server,
 			uint32 *num)
 {
   uint32 tlen;
-  char tmp[256];
 
   if (!string)
     return FALSE;
 
   if (strchr(string, '!')) {
+    char *tmp;
     tlen = strcspn(string, "!");
-    memset(tmp, 0, sizeof(tmp));
+    tmp = silc_calloc(tlen + 1, sizeof(*tmp));
     memcpy(tmp, string, tlen);
 
     if (num)
       *num = atoi(tmp);
+
+    silc_free(tmp);
 
     if (tlen >= strlen(string))
       return FALSE;

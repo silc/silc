@@ -10,6 +10,9 @@ Tue Jun 19 22:10:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	  The affected file is lib/silccore/silcpacket.c.
 
+	* Fixed buffer overflow in silc_parse_nickname in the file
+	  lib/silcutil/silcutil.c.
+
 Tue Jun 19 13:40:09 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* make install generates new server keys only if there is not
