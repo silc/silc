@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W2 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /FD /c
+# ADD CPP /nologo /MT /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -341,7 +341,43 @@ SOURCE=..\..\lib\trq\trq_deque_sort.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\trq\trq_deque_x.c
+SOURCE=..\..\lib\trq\trq_deque_x_001.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_002.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_003.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_004.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_005.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_006.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_007.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_008.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_009.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_deque_x_010.c
 # End Source File
 # Begin Source File
 
@@ -353,7 +389,67 @@ SOURCE=..\..\lib\trq\trq_list_sort.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\trq\trq_list_x.c
+SOURCE=..\..\lib\trq\trq_list_x_001.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_002.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_003.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_004.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_005.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_006.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_007.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_008.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_009.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_010.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_011.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_012.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_013.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_014.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_015.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\trq\trq_list_x_016.c
 # End Source File
 # End Group
 # End Group
