@@ -123,10 +123,14 @@ AC_CHECK_FUNCS(strchr strstr strcpy strncpy memcpy memset memmove)
 # SIM support checking
 # XXX These needs to be changed as more supported platforms appear.
 # XXX This probably needs to be made platform dependant check.
+sim_support=false
+AM_CONDITIONAL(SILC_SIM, test x$sim_support = xtrue)
 AC_CHECKING(for SIM support)
 AC_CHECK_HEADERS(dlfcn.h, 
   AC_CHECK_LIB(dl, dlopen, 
     AC_DEFINE(SILC_SIM) 
+    sim_support=true
+    AM_CONDITIONAL(SILC_SIM, test x$sim_support = xtrue)
     AC_MSG_RESULT(enabled SIM support)
     LIBS="$LIBS -ldl",
     AC_MSG_RESULT(no SIM support found)),

@@ -18,7 +18,11 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
+if SILC_SIM
 noinst_LIBRARIES = libsilcsim.a
+else
+noinst_LIBRARIES = 
+endif
 
 libsilcsim_a_SOURCES = \
 	silcsim.c \
@@ -50,7 +54,9 @@ SIM_HASH_OBJS = \
 	md5.o \
 	sha1.o
 
+if SILC_SIM
 all: $(SIM_CIPHER_OBJS) $(SIM_HASH_OBJS)
+endif
 
 $(SIM_CIPHER_OBJS): ../silccrypt/libsilccrypt.a
 	rm -rf $*.c $*.o

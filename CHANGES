@@ -1,3 +1,9 @@
+Sun May 13 19:32:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Do not compile anything in lib/silcsim/* if the SIM support
+	  is not enabled.  The tree should now compile without problems
+	  under cygwin.
+
 Thu May 10 22:49:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Compiled the SILC under cygwin.  Compiled and tested briefly

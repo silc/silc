@@ -90,8 +90,6 @@ TODO/bugs In SILC Libraries
  o The CAST cipher is not compiled currently due to compilation errors;
    check those.  Cast is in lib/silccrypt/cast.c.
 
- o SIMs did not compile under cygwin.
-
 
 TODO After 1.0
 ==============
