@@ -142,3 +142,26 @@ bool silc_id_create_channel_id(SilcServer server,
 
   return TRUE;
 }
+
+/* Checks whether the `server_id' is valid.  It must be based to the
+   IP address provided in the `remote' socket connection. */
+
+bool silc_id_is_valid_server_id(SilcServer server,
+				SilcServerID *server_id,
+				SilcSocketConnection remote)
+{
+  unsigned char ip[16];
+
+  if (!silc_net_addr2bin(remote->ip, ip, sizeof(ip)))
+    return FALSE;
+
+  if (silc_net_is_ip4(remote->ip)) {
+    if (!memcmp(server_id->ip.data, ip, 4))
+      return TRUE;
+  } else {
+    if (!memcmp(server_id->ip.data, ip, 16))
+      return TRUE;
+  }
+
+  return FALSE;
+}

@@ -1540,9 +1540,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Remove the old cache entry. */
   if (!silc_idcache_del_by_context(server->local_list->clients, client)) {
-    SILC_LOG_ERROR(("Lost client's cache entry - report a bug"));
+    SILC_LOG_INFO(("Unauthenticated client attempted to register to network"));
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
-                                  "Unknown client");
+                                  "You have not been authenticated");
     return NULL;
   }
 
@@ -1796,7 +1796,15 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 
   /* Remove the old cache entry */
   if (!silc_idcache_del_by_context(server->local_list->servers, new_server)) {
-    silc_idcache_del_by_context(server->global_list->servers, new_server);
+    if (!silc_idcache_del_by_context(server->global_list->servers, 
+				     new_server)) {
+      SILC_LOG_INFO(("Unauthenticated %s attempted to register to "
+		     "network", (sock->type == SILC_SOCKET_TYPE_SERVER ?
+				 "server" : "router")));
+      silc_server_disconnect_remote(server, sock, "Server closed connection: "
+				    "You have not been authenticated");
+      return NULL;
+    }
     local = FALSE;
   }
 
@@ -1831,6 +1839,16 @@ SilcServerEntry silc_server_new_server(SilcServer server,
     return NULL;
   }
   silc_free(id_string);
+
+  /* Check for valid server ID */
+  if (!silc_id_is_valid_server_id(server, server_id, sock)) {
+    SILC_LOG_INFO(("Invalid server ID sent by %s (%s)",
+		   sock->ip, sock->hostname));
+    silc_server_disconnect_remote(server, sock, "Server closed connection: "
+				  "Your Server ID is not valid");
+    silc_free(server_name);
+    return NULL;
+  }
 
   /* Check that we do not have this ID already */
   server_entry = silc_idlist_find_server_by_id(server->local_list, 

@@ -845,3 +845,17 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
   
   return strdup(fingerprint);
 }
+
+/* Return TRUE if the `data' is ASCII string. */
+
+bool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len)
+{
+  int i;
+
+  for (i = 0; i < data_len; i++) {
+    if (!isascii(data[i]))
+      return FALSE;
+  }
+
+  return TRUE;
+}

@@ -160,6 +160,7 @@ bool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
     (*new_hash)->hash = entry;
     (*new_hash)->context = silc_calloc(1, entry->context_len());
     (*new_hash)->make_hash = silc_hash_make;
+    return TRUE;
   }
 
   return FALSE;

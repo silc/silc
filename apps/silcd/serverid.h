@@ -31,5 +31,8 @@ bool silc_id_create_client_id(SilcServer server,
 bool silc_id_create_channel_id(SilcServer server,
 			       SilcServerID *router_id, SilcRng rng,
 			       SilcChannelID **new_id);
+bool silc_id_is_valid_server_id(SilcServer server,
+				SilcServerID *server_id,
+				SilcSocketConnection remote);
 
 #endif

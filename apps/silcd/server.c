@@ -1876,6 +1876,12 @@ void silc_server_packet_parse_type(SilcServer server,
     SILC_LOG_DEBUG(("Disconnect packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
+    if (silc_string_is_ascii(packet->buffer->data, packet->buffer->len)) {
+      /* Duplicate to null terminate the string. */
+      char *message = silc_memdup(packet->buffer->data, packet->buffer->len);
+      SILC_LOG_ERROR(("%s", message));
+      silc_free(message);
+    }
     break;
 
   case SILC_PACKET_SUCCESS:

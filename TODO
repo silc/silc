@@ -189,3 +189,8 @@ describe new stuff to be added to protocol versions 1.x.
 
  13. Add the killer's client ID to the KILLED notify.  To be included in 
      protocol version 1.1.
+
+ 14. The length of Arguments Num field in Notify Payload and Command
+     Payload enforces that total of 256 arguments can be associated
+     to a such payload.  However, command-xx draft specified much higher
+     values, and these should be fixed.
