@@ -1572,7 +1572,7 @@ void silc_client_remove_from_channels(SilcClient client,
   SilcChannelUser chu;
 
   silc_hash_table_list(client_entry->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);
     silc_free(chu);
@@ -1595,7 +1595,7 @@ void silc_client_replace_from_channels(SilcClient client,
   SilcChannelUser chu;
 
   silc_hash_table_list(old->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
     /* Replace client entry */
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);
@@ -1809,4 +1809,56 @@ silc_client_request_authentication_method(SilcClient client,
 			   conn, 
 			   client->internal->params->connauth_request_secs, 0,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+}
+
+SilcBuffer silc_client_get_detach_data(SilcClient client,
+				       SilcClientConnection conn)
+{
+  SilcBuffer detach;
+  SilcHashTableList htl;
+  SilcChannelUser chu;
+
+  SILC_LOG_DEBUG(("Creating detachment data"));
+
+  /* Save the nickname, Client ID and user mode in SILC network */
+  detach = silc_buffer_alloc_size(2 + strlen(conn->nickname) +
+				  2 + conn->local_id_data_len + 4);
+  silc_buffer_format(detach,
+		     SILC_STR_UI_SHORT(strlen(conn->nickname)),
+		     SILC_STR_UI_XNSTRING(conn->nickname,
+					  strlen(conn->nickname)),
+		     SILC_STR_UI_SHORT(conn->local_id_data_len),
+		     SILC_STR_UI_XNSTRING(conn->local_id_data,
+					  conn->local_id_data_len),
+		     SILC_STR_UI_INT(conn->local_entry->mode),
+		     SILC_STR_END);
+
+  /* Save all joined channels */
+  silc_hash_table_list(conn->local_entry->channels, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+    unsigned char *chid = silc_id_id2str(chu->channel->id, SILC_ID_CHANNEL);
+    SilcUInt16 chid_len = silc_id_get_len(chu->channel->id, SILC_ID_CHANNEL);
+
+    detach = silc_buffer_realloc(detach, detach->truelen + 2 +
+				 strlen(chu->channel->channel_name) +
+				 2 + chid_len + 4);
+    silc_buffer_pull(detach, detach->len);
+    silc_buffer_format(detach,
+		       SILC_STR_UI_SHORT(strlen(chu->channel->channel_name)),
+		       SILC_STR_UI_XNSTRING(chu->channel->channel_name,
+					    strlen(chu->channel->channel_name)),
+		       SILC_STR_UI_SHORT(chid_len),
+		       SILC_STR_UI_XNSTRING(chid, chid_len),
+		       SILC_STR_UI_INT(chu->channel->mode),
+		       SILC_STR_END);
+
+    silc_free(chid);
+  }
+  silc_hash_table_list_reset(&htl);
+
+  silc_buffer_push(detach, detach->data - detach->head);
+
+  SILC_LOG_HEXDUMP(("Detach data"), detach->data, detach->len);
+
+  return detach;
 }

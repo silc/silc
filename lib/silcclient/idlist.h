@@ -36,8 +36,7 @@ struct SilcClientEntryStruct {
   char *hostname;		/* hostname */
   char *server;			/* SILC server name */
   char *realname;		/* Realname (userinfo) */
-  SilcUInt32 num;
-  SilcUInt32 mode;			/* User mode in SILC */
+  SilcUInt32 mode;		/* User mode in SILC */
   SilcClientID *id;		/* The Client ID */
   unsigned char *fingerprint;	/* Fingerprint of client's public key */
   SilcUInt32 fingerprint_len;	/* Length of the fingerprint */
