@@ -245,6 +245,7 @@ SilcAttributePayload silc_attribute_payload_alloc(SilcAttribute attribute,
 						  SilcUInt32 object_size)
 {
   SilcAttributePayload attr;
+  SilcUInt32 tmp_len;
 
   attr = silc_calloc(1, sizeof(*attr));
   if (!attr)
@@ -254,8 +255,8 @@ SilcAttributePayload silc_attribute_payload_alloc(SilcAttribute attribute,
   attr->flags = flags;
   attr->data =
     silc_attribute_payload_encode_int(attribute, flags, object,
-				      object_size,
-				      (SilcUInt32 *)&attr->data_len);
+				      object_size, &tmp_len);
+  attr->data_len = (SilcUInt32)tmp_len;
   if (!attr->data) {
     silc_free(attr);
     return NULL;
@@ -401,7 +402,7 @@ const unsigned char *silc_attribute_get_data(SilcAttributePayload payload,
 					     SilcUInt32 *data_len)
 {
   if (data_len)
-    *data_len = payload->data_len;
+    *data_len = (SilcUInt32)payload->data_len;
   return (const unsigned char *)payload->data;
 }
 
