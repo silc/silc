@@ -692,9 +692,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcClient client = cmd->client;
   SilcCommandStatus status;
-  SilcIDPayload idp;
+  SilcIDPayload idp = NULL;
   unsigned int argc, mode, len;
-  char *topic, *tmp, *channel_name;
+  char *topic, *tmp, *channel_name = NULL;
+  SilcBuffer keyp;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -707,7 +708,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 3 || argc > 5) {
+  if (argc < 3 || argc > 9) {
     cmd->client->ops->say(cmd->client, conn,
 	     "Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;
@@ -730,6 +731,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     cmd->client->ops->say(cmd->client, conn, 
 			  "Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;
+    silc_free(channel_name);
     goto out;
   }
   idp = silc_id_payload_parse_data(tmp, len);
@@ -741,13 +743,28 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   else
     mode = 0;
 
+  /* Get channel key */
+  tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
+  if (!tmp) {
+    silc_id_payload_free(idp);
+    silc_free(channel_name);
+    goto out;
+  }
+  keyp = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
+  silc_buffer_put(keyp, tmp, len);
+
   /* Get topic */
-  topic = silc_argument_get_arg_type(cmd->args, 5, NULL);
+  topic = silc_argument_get_arg_type(cmd->args, 8, NULL);
 
   /* Save received Channel ID */
   silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, 
 			     mode, idp);
   silc_id_payload_free(idp);
+
+  /* Save channel key */
+  silc_client_save_channel_key(conn, keyp, conn->current_channel);
+  silc_buffer_free(keyp);
 
   if (topic)
     client->ops->say(cmd->client, conn, 

@@ -1884,7 +1884,7 @@ void silc_server_create_channel_key(SilcServer server,
   unsigned int len;
 
   if (!channel->channel_key)
-    return;
+    silc_cipher_alloc("twofish", &channel->channel_key);
 
   if (key_len)
     len = key_len;
@@ -1911,4 +1911,85 @@ void silc_server_create_channel_key(SilcServer server,
   channel->key = silc_calloc(len, sizeof(*channel->key));
   memcpy(channel->key, channel_key, len);
   memset(channel_key, 0, sizeof(channel_key));
+}
+
+/* Saves the channel key found in the encoded `key_payload' buffer. This 
+   function is used when we receive Channel Key Payload and also when we're
+   processing JOIN command reply. Returns entry to the channel. */
+
+SilcChannelEntry silc_server_save_channel_key(SilcServer server,
+					      SilcBuffer key_payload,
+					      SilcChannelEntry channel)
+{
+  SilcChannelKeyPayload payload = NULL;
+  SilcChannelID *id = NULL;
+  unsigned char *tmp;
+  unsigned int tmp_len;
+  char *cipher;
+
+  /* Decode channel key payload */
+  payload = silc_channel_key_payload_parse(key_payload);
+  if (!payload) {
+    SILC_LOG_ERROR(("Bad channel key payload, dropped"));
+    channel = NULL;
+    goto out;
+  }
+
+  /* Get the channel entry */
+  if (!channel) {
+
+    /* Get channel ID */
+    tmp = silc_channel_key_get_id(payload, &tmp_len);
+    id = silc_id_str2id(tmp, SILC_ID_CHANNEL);
+    if (!id) {
+      channel = NULL;
+      goto out;
+    }
+
+    channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
+    if (!channel) {
+      SILC_LOG_ERROR(("Received key for non-existent channel"));
+      goto out;
+    }
+  }
+
+  tmp = silc_channel_key_get_key(payload, &tmp_len);
+  if (!tmp) {
+    channel = NULL;
+    goto out;
+  }
+
+  cipher = silc_channel_key_get_cipher(payload, NULL);;
+  if (!cipher) {
+    channel = NULL;
+    goto out;
+  }
+
+  /* Remove old key if exists */
+  if (channel->key) {
+    memset(channel->key, 0, channel->key_len / 8);
+    silc_free(channel->key);
+    silc_cipher_free(channel->channel_key);
+  }
+
+  /* Create new cipher */
+  if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
+    channel = NULL;
+    goto out;
+  }
+
+  /* Save the key */
+  channel->key_len = tmp_len * 8;
+  channel->key = silc_calloc(tmp_len, sizeof(unsigned char));
+  memcpy(channel->key, tmp, tmp_len);
+  channel->channel_key->cipher->set_key(channel->channel_key->context, 
+					tmp, tmp_len);
+
+ out:
+  if (id)
+    silc_free(id);
+  if (payload)
+    silc_channel_key_payload_free(payload);
+
+  return channel;
 }

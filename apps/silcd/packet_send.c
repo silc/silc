@@ -441,6 +441,9 @@ void silc_server_packet_send_to_channel(SilcServer server,
       continue;
     }
 
+    if (server->server_type == SILC_ROUTER && !route)
+      continue;
+
     /* Send to locally connected client */
     if (client) {
 
@@ -1088,12 +1091,12 @@ void silc_server_send_new_channel_user(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
-  clid = silc_id_id2str(client_id, SILC_ID_CLIENT);
-  if (!clid)
-    return;
-
   chid = silc_id_id2str(channel_id, SILC_ID_CHANNEL);
   if (!chid)
+    return;
+
+  clid = silc_id_id2str(client_id, SILC_ID_CLIENT);
+  if (!clid)
     return;
 
   packet = silc_buffer_alloc(2 + 2 + channel_id_len + client_id_len);
@@ -1115,10 +1118,10 @@ void silc_server_send_new_channel_user(SilcServer server,
 
 /* Send Channel Key payload to distribute the new channel key. Normal server
    sends this to router when new client joins to existing channel. Router
-   sends this to the local server who forwarded join command in case where
-   the channel did not exist yet.  Both normal and router servers uses this
+   sends this to the local server who sent the join command in case where
+   the channel did not exist yet. Both normal and router servers uses this
    also to send this to locally connected clients on the channel. This
-   must not be broadcasted packet. */
+   must not be broadcasted packet. Routers do not send this to each other. */
 
 void silc_server_send_channel_key(SilcServer server,
 				  SilcChannelEntry channel,

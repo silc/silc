@@ -109,5 +109,8 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 void silc_server_create_channel_key(SilcServer server, 
 				    SilcChannelEntry channel,
 				    unsigned int key_len);
+SilcChannelEntry silc_server_save_channel_key(SilcServer server,
+					      SilcBuffer key_payload,
+					      SilcChannelEntry channel);
 
 #endif

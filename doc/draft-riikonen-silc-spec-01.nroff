@@ -1442,9 +1442,8 @@ new client joins to channel, whether the channel has existed previously
 or not.  This way the new client on the channel is not able to decrypt
 any of the old traffic on the channel.  Client who receives the reply to
 the join command must start using the received Channel ID in the channel
-message communication thereafter.  However, client must not start
-communicating on the channel before it has received the packet
-SILC_PACKET_CHANNEL_KEY.
+message communication thereafter.  Client also receives the key for the
+channel in the command reply.
 
 If client wants to know the other clients currently on the channel
 the client must send SILC_COMMAND_NAMES command to receive a list of
@@ -1779,6 +1778,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_LIST_START
             SILC_STATUS_LIST_END
             SILC_STATUS_ERR_NO_SUCH_NICK
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_WILDCARDS
             SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
             SILC_STATUS_ERR_TOO_MANY_PARAMS
@@ -1894,6 +1894,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_LIST_START
             SILC_STATUS_LIST_END
             SILC_STATUS_ERR_NO_SUCH_NICK
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_WILDCARDS
             SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
             SILC_STATUS_ERR_TOO_MANY_PARAMS
@@ -2227,9 +2228,9 @@ List of all defined commands in SILC follows.
 
    14   SILC_COMMAND_JOIN
 
-        Max Arguments:  3
-            Arguments:  (1) <channel>  (2) [<passphrase>] 
-                        (3) [<cipher>]
+        Max Arguments:  4
+            Arguments:  (1) <channel>       (2) <Client ID>
+                        (3) [<passphrase>]  (4) [<cipher>]
 
         Join to channel/create new channel.  This command is used to
         join to a channel.  If the channel does not exist the channel is
@@ -2240,6 +2241,10 @@ List of all defined commands in SILC follows.
 
         The name of the <channel> must not include any spaces (` '),
         non-printable characters, commas (`,') or any wildcard characters.
+
+        The second argument <Client ID> is the Client ID of the client who
+        is joining to the client.  When client sends this command to the
+        server the <Client ID> must be the client's own ID.
 
         Cipher to be used to secure the traffic on the channel may be
         requested by sending the name of the requested <cipher>.  This
@@ -2265,11 +2270,12 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  6
+        Max Arguments:  9
             Arguments:  (1) <Status Payload>  (2) <channel> 
                         (3) <Channel ID>      (4) <channel mode mask>
-                        (5) [<ban mask>]      (6) [<invite list>]
-                        (6) [<topic>]
+                        (5) <created>         (6) <Channel Key Payload>
+                        (7) [<ban mask>]      (8) [<invite list>]
+                        (9) [<topic>]
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
@@ -2278,10 +2284,8 @@ List of all defined commands in SILC follows.
         channel is created the mode mask is zero (0).  If ban mask
         and/or invite list is set they are sent as well.
 
-        Client must not start transmitting to the channel even after
-        server has replied to this command.  Client is permitted to 
-        start transmitting on channel after server has sent packet 
-        SILC_PACKET_CHANNEL_KEY to the client.
+        Client receives the channel key in the reply message as well
+        inside <Channel Key Payload>.
 
         Status messages:
 

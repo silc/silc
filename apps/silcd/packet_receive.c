@@ -212,7 +212,6 @@ void silc_server_channel_message(SilcServer server,
 
   /* Sanity checks */
   if (packet->dst_id_type != SILC_ID_CHANNEL) {
-    SILC_LOG_ERROR(("Received bad message for channel, dropped"));
     SILC_LOG_DEBUG(("Received bad message for channel, dropped"));
     goto out;
   }
@@ -221,8 +220,11 @@ void silc_server_channel_message(SilcServer server,
   id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
   channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
   if (!channel) {
-    SILC_LOG_DEBUG(("Could not find channel"));
-    goto out;
+    channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
+    if (!channel) {
+      SILC_LOG_DEBUG(("Could not find channel"));
+      goto out;
+    }
   }
 
   /* See that this client is on the channel. If the message is coming
@@ -263,74 +265,19 @@ void silc_server_channel_key(SilcServer server,
 			     SilcPacketContext *packet)
 {
   SilcBuffer buffer = packet->buffer;
-  SilcChannelKeyPayload payload = NULL;
-  SilcChannelID *id = NULL;
   SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
-  unsigned char *tmp;
-  unsigned int tmp_len;
-  char *cipher;
-  int exist = FALSE;
 
   if (packet->src_id_type != SILC_ID_SERVER)
-    goto out;
+    return;
 
-  /* Decode channel key payload */
-  payload = silc_channel_key_payload_parse(buffer);
-  if (!payload) {
-    SILC_LOG_ERROR(("Bad channel key payload, dropped"));
-    goto out;
-  }
-
-  /* Get channel ID */
-  tmp = silc_channel_key_get_id(payload, &tmp_len);
-  id = silc_id_payload_parse_id(tmp, tmp_len);
-  if (!id)
-    goto out;
-
-  /* Get the channel entry */
-  channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
-  if (!channel) {
-    SILC_LOG_ERROR(("Received key for non-existent channel"));
-    goto out;
-  }
-
-  tmp = silc_channel_key_get_key(payload, &tmp_len);
-  if (!tmp)
-    goto out;
-
-  cipher = silc_channel_key_get_cipher(payload, NULL);;
-  if (!cipher)
-    goto out;
-
-  /* Remove old key if exists */
-  if (channel->key) {
-    memset(channel->key, 0, channel->key_len / 8);
-    silc_free(channel->key);
-    silc_cipher_free(channel->channel_key);
-    exist = TRUE;
-  }
-
-  /* Create new cipher */
-  if (!silc_cipher_alloc(cipher, &channel->channel_key))
-    goto out;
-
-  /* Save the key */
-  channel->key_len = tmp_len * 8;
-  channel->key = silc_calloc(tmp_len, sizeof(unsigned char));
-  memcpy(channel->key, tmp, tmp_len);
-  channel->channel_key->cipher->set_key(channel->channel_key->context, 
-					tmp, tmp_len);
+  /* Save the channel key */
+  channel = silc_server_save_channel_key(server, buffer, NULL);
+  if (!channel)
+    return;
 
   /* Distribute the key to everybody who is on the channel. If we are router
      we will also send it to locally connected servers. */
   silc_server_send_channel_key(server, channel, FALSE);
-
- out:
-  if (id)
-    silc_free(id);
-  if (payload)
-    silc_channel_key_payload_free(payload);
 }
 
 /* Received packet to replace a ID. This checks that the requested ID
@@ -390,12 +337,20 @@ void silc_server_replace_id(SilcServer server,
   /* Replace the old ID */
   switch(old_id_type) {
   case SILC_ID_CLIENT:
+    SILC_LOG_DEBUG(("Old Client ID id(%s)", 
+		    silc_id_render(id, SILC_ID_CLIENT)));
+    SILC_LOG_DEBUG(("New Client ID id(%s)", 
+		    silc_id_render(id2, SILC_ID_CLIENT)));
     if (silc_idlist_replace_client_id(server->local_list, id, id2) == NULL)
       if (server->server_type == SILC_ROUTER)
 	silc_idlist_replace_client_id(server->global_list, id, id2);
     break;
 
   case SILC_ID_SERVER:
+    SILC_LOG_DEBUG(("Old Server ID id(%s)", 
+		    silc_id_render(id, SILC_ID_CLIENT)));
+    SILC_LOG_DEBUG(("New Server ID id(%s)", 
+		    silc_id_render(id2, SILC_ID_CLIENT)));
     if (silc_idlist_replace_server_id(server->local_list, id, id2) == NULL)
       if (server->server_type == SILC_ROUTER)
 	silc_idlist_replace_server_id(server->global_list, id, id2);
@@ -792,18 +747,24 @@ void silc_server_remove_channel_user(SilcServer server,
 			    buffer->data, buffer->len, FALSE);
   }
 
-  /* XXX routers should check server->global_list as well */
   /* Get channel entry */
   channel = silc_idlist_find_channel_by_id(server->local_list, 
 					   channel_id, NULL);
-  if (!channel)
-    goto out;
-  
-  /* XXX routers should check server->global_list as well */
+  if (!channel) {
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel)
+      goto out;
+  }
+
   /* Get client entry */
   client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
-  if (!client)
-    goto out;
+  if (!client) {
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client)
+      goto out;
+  }
 
   /* Remove from channel */
   silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
@@ -919,6 +880,8 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
 
+    channel->global_users = TRUE;
+
     /* Send to channel */
     silc_server_packet_send_to_channel(server, channel, packet->type, FALSE,
 				       packet->buffer->data, 
@@ -995,10 +958,11 @@ void silc_server_new_channel_user(SilcServer server,
     goto out;
 
   /* Decode the client ID */
-  client_id = silc_id_str2id(tmpid1, SILC_ID_CLIENT);
+  client_id = silc_id_str2id(tmpid2, SILC_ID_CLIENT);
   if (!client_id)
     goto out;
 
+#if 0
   /* If the packet is originated from the one who sent it to us we know
      that the ID belongs to our cell, unless the sender was router. */
   tmpid = silc_id_str2id(packet->src_id, SILC_ID_SERVER);
@@ -1015,12 +979,19 @@ void silc_server_new_channel_user(SilcServer server,
     router = server->router;
   }
   silc_free(tmpid);
+#endif
+
+  router_sock = sock;
+  router = sock->user_data;
 
   /* Find the channel */
-  channel = silc_idlist_find_channel_by_id(id_list, channel_id, NULL);
+  channel = silc_idlist_find_channel_by_id(server->local_list, 
+					   channel_id, NULL);
   if (!channel) {
-    SILC_LOG_ERROR(("Received channel user for non-existent channel"));
-    goto out;
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel)
+      goto out;
   }
 
   /* If we are router and this packet is not already broadcast packet
@@ -1033,12 +1004,13 @@ void silc_server_new_channel_user(SilcServer server,
 			    packet->buffer->data, packet->buffer->len, FALSE);
   }
 
+  SILC_LOG_DEBUG(("Client ID: %s", silc_id_render(client_id, SILC_ID_CLIENT)));
+
   /* Get client entry */
-  client = silc_idlist_find_client_by_id(id_list, client_id, NULL);
+  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
   if (!client) {
-    /* This is new client to us, add entry to ID list */
-    client = silc_idlist_add_client(id_list, NULL, NULL, NULL, 
-				    client_id, router, router_sock);
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
     if (!client)
       goto out;
   }

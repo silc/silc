@@ -1340,6 +1340,10 @@ payload with the session key shared between the server and
 the client.  After that, client starts using the key received
 in this payload to protect the traffic on the channel.
 
+The client who is joining to the channel receives its key in the
+SILC_COMMAND_JOIN command reply message thus it is not necessary to
+send this payload to the entity who sent the SILC_COMMAND_JOIN command.
+
 Channel keys are cell specific thus every router in cell have
 to create a channel key and distribute it if any client in the
 cell has joined to a channel.  Channel traffic between cell's

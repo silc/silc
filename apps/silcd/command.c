@@ -670,9 +670,17 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
 
   if (!clients) {
     /* Such a client really does not exist in the SILC network. */
-    silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
-					 SILC_STATUS_ERR_NO_SUCH_NICK,
-					 3, nick, strlen(nick));
+    if (!client_id) {
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
+					   SILC_STATUS_ERR_NO_SUCH_NICK,
+					   3, nick, strlen(nick));
+    } else {
+      SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
+					   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
+					   2, idp->data, idp->len);
+      silc_buffer_free(idp);
+    }
     goto out;
   }
 
@@ -999,9 +1007,17 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
   
   if (!clients) {
     /* Such a client really does not exist in the SILC network. */
-    silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
-					 SILC_STATUS_ERR_NO_SUCH_NICK,
-					 3, nick, strlen(nick));
+    if (!client_id) {
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
+					   SILC_STATUS_ERR_NO_SUCH_NICK,
+					   3, nick, strlen(nick));
+    } else {
+      SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
+					   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
+					   2, idp->data, idp->len);
+      silc_buffer_free(idp);
+    }
     goto out;
   }
 
@@ -1706,16 +1722,18 @@ SILC_SERVER_CMD_FUNC(add_to_channel)
 static void silc_server_command_join_channel(SilcServer server, 
 					     SilcServerCommandContext cmd,
 					     SilcChannelEntry channel,
+					     SilcClientID *client_id,
 					     int created,
 					     unsigned int umode)
 {
   SilcSocketConnection sock = cmd->sock;
   unsigned char *tmp;
   unsigned int tmp_len;
-  unsigned char *passphrase = NULL, mode[4];
+  unsigned char *passphrase = NULL, mode[4], tmp2[4];
   SilcClientEntry client;
   SilcChannelClientEntry chl;
-  SilcBuffer reply, chidp, clidp;
+  SilcBuffer reply, chidp, clidp, keyp;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1723,7 +1741,7 @@ static void silc_server_command_join_channel(SilcServer server,
     return;
 
   /* Get passphrase */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
   if (tmp) {
     passphrase = silc_calloc(tmp_len, sizeof(*passphrase));
     memcpy(passphrase, tmp, tmp_len);
@@ -1773,21 +1791,20 @@ static void silc_server_command_join_channel(SilcServer server,
    * Client is allowed to join to the channel. Make it happen.
    */
 
-  /* If the JOIN request was forwarded to us we will make a bit slower
-     query to get the client pointer. Otherwise, we get the client pointer
-     real easy. */
-  if (cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
-    void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
-    client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
-    if (!client) {
-      /* XXX */
-      SILC_LOG_ERROR(("Forwarded join command did not find the client who "
-		      "wanted to join the channel"));
-      goto out;
-    }
-    silc_free(id);
-  } else {
+  /* Get the client entry */
+  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     client = (SilcClientEntry)sock->user_data;
+  } else {
+    client = silc_idlist_find_client_by_id(server->local_list, client_id, 
+					   NULL);
+    if (!client) {
+      /* XXX actually this is useless since router finds always cell's
+	 local clients from its local lists. */
+      client = silc_idlist_find_client_by_id(server->global_list, client_id, 
+					     NULL);
+      if (!client)
+	goto out;
+    }
   }
 
   /* Check whether the client already is on the channel */
@@ -1798,8 +1815,14 @@ static void silc_server_command_join_channel(SilcServer server,
   }
 
   /* Generate new channel key as protocol dictates */
-  if (!created)
+  if (!created || !channel->channel_key)
     silc_server_create_channel_key(server, channel, 0);
+
+  /* Send the channel key. This is broadcasted to the channel but is not
+     sent to the client who is joining to the channel. */
+  silc_server_send_channel_key(server, channel, 
+			       server->server_type == SILC_ROUTER ? 
+			       FALSE : server->standalone);
 
   /* Join the client to the channel by adding it to channel's user list.
      Add also the channel to client entry's channels list for fast cross-
@@ -1817,85 +1840,74 @@ static void silc_server_command_join_channel(SilcServer server,
   /* Encode command reply packet */
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   SILC_PUT32_MSB(channel->mode, mode);
+  SILC_PUT32_MSB(created, tmp2);
+  tmp = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+  keyp = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, tmp, 
+					 SILC_ID_CHANNEL_LEN,
+					 channel->channel_key->cipher->name,
+					 channel->key_len / 8, channel->key);
+  silc_free(tmp);
   if (!channel->topic) {
     reply = 
       silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					   SILC_STATUS_OK, 0, 3,
+					   SILC_STATUS_OK, ident, 5,
 					   2, channel->channel_name,
 					   strlen(channel->channel_name),
 					   3, chidp->data, chidp->len,
-					   4, mode, 4);
+					   4, mode, 4,
+					   5, tmp2, 4,
+					   6, keyp->data, keyp->len);
   } else {
     reply = 
       silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					   SILC_STATUS_OK, 0, 4, 
+					   SILC_STATUS_OK, ident, 6, 
 					   2, channel->channel_name, 
 					   strlen(channel->channel_name),
 					   3, chidp->data, chidp->len,
 					   4, mode, 4,
-					   5, channel->topic, 
+					   5, tmp2, 4,
+					   6, keyp->data, keyp->len,
+					   8, channel->topic, 
 					   strlen(channel->topic));
   }
-    
-  if (server->server_type == SILC_ROUTER && 
-      cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
-    /* We are router and server has forwarded this command to us. Send
-       all replys to the server. */
-    void *tmpid;
 
-    /* Send command reply destined to the original client */
-    tmpid = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
-    silc_server_packet_send_dest(cmd->server, sock, 
-				 SILC_PACKET_COMMAND_REPLY, 0,
-				 tmpid, cmd->packet->src_id_type,
-				 reply->data, reply->len, FALSE);
+  /* Send command reply */
+  silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0, 
+			  reply->data, reply->len, FALSE);
 
-    /* Distribute new channel key to local cell and local clients. */
-    silc_server_send_channel_key(server, channel, FALSE);
-    
-    /* Distribute JOIN notify into the cell for everbody on the channel */
-    silc_server_send_notify_to_channel(server, channel, FALSE,
-				       SILC_NOTIFY_TYPE_JOIN, 1,
-				       clidp->data, clidp->len);
-
-    /* Broadcast NEW_CHANNEL_USER packet to primary route */
-    silc_server_send_new_channel_user(server, server->router->connection,
-				      TRUE, channel->id, SILC_ID_CHANNEL_LEN,
-				      client->id, SILC_ID_CLIENT_LEN);
-
-    silc_free(tmpid);
-  } else {
-    /* Client sent the command. Send all replies directly to the client. */
-
-    /* Send command reply */
-    silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0, 
-			    reply->data, reply->len, FALSE);
-
-    /* Send the channel key. Channel key is sent before any other packet
-       to the channel. */
-    silc_server_send_channel_key(server, channel, server->standalone ?
-				 FALSE : TRUE);
-    
+  if (!cmd->pending)
     /* Send JOIN notify to locally connected clients on the channel */
     silc_server_send_notify_to_channel(server, channel, FALSE,
 				       SILC_NOTIFY_TYPE_JOIN, 1,
 				       clidp->data, clidp->len);
 
-    /* Send NEW_CHANNEL_USER packet to our primary router */
-    if (!server->standalone)
-      silc_server_send_new_channel_user(server, server->router->connection,
-					FALSE, 
-					channel->id, SILC_ID_CHANNEL_LEN,
-					client->id, SILC_ID_CLIENT_LEN);
+  /* Send NEW_CHANNEL_USER packet to our primary router */
+  if (!cmd->pending && !server->standalone)
+    silc_server_send_new_channel_user(server, server->router->connection,
+				      server->server_type == SILC_SERVER ?
+				      FALSE : TRUE,
+				      channel->id, SILC_ID_CHANNEL_LEN,
+				      client->id, SILC_ID_CLIENT_LEN);
 
-    /* Send NAMES command reply to the joined channel so the user sees who
-       is currently on the channel. */
-    silc_server_command_send_names(server, sock, channel);
-  }
+  /* Send NAMES command reply to the joined channel so the user sees who
+     is currently on the channel. */
+  silc_server_command_send_names(server, sock, channel);
+
+  /*
+
+    FAQ:
+
+   * Kuinka NAMES komento händlätään serverissä kun router lähettää sen
+   serverille joka on lähettäny sille clientin puolesta JOIN komennon?
+   
+   R: Serverin pitää ymmärtää NAMES comman replyjä.
+
+  */
 
   silc_buffer_free(reply);
   silc_buffer_free(clidp);
   silc_buffer_free(chidp);
+  silc_buffer_free(keyp);
 
  out:
   if (passphrase)
@@ -1914,8 +1926,9 @@ SILC_SERVER_CMD_FUNC(join)
   SilcChannelEntry channel;
   unsigned int umode = 0;
   int created = FALSE;
+  SilcClientID *client_id;
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_JOIN, cmd, 1, 3);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_JOIN, cmd, 1, 4);
 
   /* Get channel name */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
@@ -1933,48 +1946,96 @@ SILC_SERVER_CMD_FUNC(join)
     goto out;
   }
 
+  /* Get Client ID of the client who is joining to the channel */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  client_id = silc_id_payload_parse_id(tmp, tmp_len);
+
   /* Get cipher name */
-  cipher = silc_argument_get_arg_type(cmd->args, 3, NULL);
+  cipher = silc_argument_get_arg_type(cmd->args, 4, NULL);
 
   /* See if the channel exists */
   channel = silc_idlist_find_channel_by_name(server->local_list, 
 					     channel_name, NULL);
-  if (!channel) {
-    /* Channel not found */
 
-    /* If we are standalone server we don't have a router, we just create 
-       the channel by ourselves. */
-    if (server->standalone) {
-      channel = silc_server_create_new_channel(server, server->id, cipher, 
-					       channel_name);
-      umode |= SILC_CHANNEL_UMODE_CHANOP;
-      umode |= SILC_CHANNEL_UMODE_CHANFO;
-      created = TRUE;
-    } else {
-
-      /* The channel does not exist on our server. If we are normal server 
-	 we will send JOIN command to our router which will handle the joining
-	 procedure (either creates the channel if it doesn't exist or joins
-	 the client to it). */
-      if (server->server_type == SILC_SERVER) {
-	/* Forward the original JOIN command to the router */
-	silc_buffer_push(cmd->packet->buffer, 
-			 cmd->packet->buffer->data - 
-			 cmd->packet->buffer->head);
-	silc_server_packet_forward(server, (SilcSocketConnection)
-				   server->router->connection,
-				   cmd->packet->buffer->data, 
-				   cmd->packet->buffer->len, TRUE);
-
-	/* Register handler that will be called after the router has replied
-	   to us. We will add the client to the new channel in this callback
-	   function. Will be called from JOIN command reply. */
-	silc_server_command_pending(server, SILC_COMMAND_JOIN, 
-				    ++server->router->data.cmd_ident,
-				    silc_server_command_add_to_channel,
-				    context);
-	return;
+  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
+    /* If this is coming from client the Client ID in the command packet must
+       be same as the client's ID. */
+    if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
+      SilcClientEntry entry = (SilcClientEntry)cmd->sock->user_data;
+      if (SILC_ID_CLIENT_COMPARE(entry->id, client_id)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	goto out;
       }
+    }
+
+    if (!channel) {
+      /* Channel not found */
+
+      /* If we are standalone server we don't have a router, we just create 
+	 the channel by ourselves. */
+      if (server->standalone) {
+	channel = silc_server_create_new_channel(server, server->id, cipher, 
+						 channel_name);
+	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+	created = TRUE;
+
+      } else {
+
+	/* The channel does not exist on our server. If we are normal server 
+	   we will send JOIN command to our router which will handle the
+	   joining procedure (either creates the channel if it doesn't exist 
+	   or joins the client to it). */
+	if (server->server_type == SILC_SERVER) {
+	  SilcBuffer tmpbuf;
+	  unsigned short old_ident;
+	  
+	  old_ident = silc_command_get_ident(cmd->payload);
+	  silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
+	  tmpbuf = silc_command_payload_encode_payload(cmd->payload);
+	  
+	  /* Send JOIN command to our router */
+	  silc_server_packet_send(server, (SilcSocketConnection)
+				  server->router->connection,
+				  SILC_PACKET_COMMAND, cmd->packet->flags,
+				  tmpbuf->data, tmpbuf->len, TRUE);
+	  
+	  /* Reprocess this packet after received reply from router */
+	  silc_server_command_pending(server, SILC_COMMAND_JOIN, 
+				      silc_command_get_ident(cmd->payload),
+				      silc_server_command_join, context);
+	  cmd->pending = TRUE;
+	  return;
+	}
+	
+	/* We are router and the channel does not seem exist so we will check
+	   our global list as well for the channel. */
+	channel = silc_idlist_find_channel_by_name(server->global_list, 
+						   channel_name, NULL);
+	if (!channel) {
+	  /* Channel really does not exist, create it */
+	  channel = silc_server_create_new_channel(server, server->id, cipher, 
+						   channel_name);
+	  umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+	  created = TRUE;
+	}
+      }
+    }
+  } else {
+    if (!channel) {
+      /* Channel not found */
+
+      /* If the command came from router and/or we are normal server then
+	 something went wrong with the joining as the channel was not found.
+	 We can't do anything else but ignore this. */
+      if (cmd->sock->type == SILC_SOCKET_TYPE_ROUTER ||
+	  server->server_type == SILC_SERVER)
+	goto out;
       
       /* We are router and the channel does not seem exist so we will check
 	 our global list as well for the channel. */
@@ -1984,15 +2045,25 @@ SILC_SERVER_CMD_FUNC(join)
 	/* Channel really does not exist, create it */
 	channel = silc_server_create_new_channel(server, server->id, cipher, 
 						 channel_name);
-	umode |= SILC_CHANNEL_UMODE_CHANOP;
-	umode |= SILC_CHANNEL_UMODE_CHANFO;
+	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	created = TRUE;
       }
     }
   }
 
+  /* If the channel does not have global users and is also empty it means the
+     channel was created globally (by our router) and the client will be the
+     channel founder and operator. */
+  if (!channel->global_users && silc_list_count(channel->user_list) == 0) {
+    umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+    created = TRUE;		/* Created globally by our router */
+  }
+
   /* Join to the channel */
-  silc_server_command_join_channel(server, cmd, channel, created, umode);
+  silc_server_command_join_channel(server, cmd, channel, client_id,
+				   created, umode);
+
+  silc_free(client_id);
 
  out:
   silc_server_command_free(cmd);

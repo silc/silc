@@ -1,3 +1,38 @@
+Sat Jan 27 22:34:56 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* silc_server_remove_channel_user checks now also global list
+	  for channel and client.
+
+	* silc_server_new_channel_user checks now both local and global
+	  list for channel and client.  Fixed a bug in client id decoding.
+	  Used to decode wrong buffer.
+
+	* silc_server_channel_message checks now both local and global
+	  list for channel entry.
+
+	* Tested channel joining (hence JOIN) in router environment
+	  successfully.  Tested with two routers, two servers and two
+	  clients.
+
+	* Tested channel message sending in router environment successfully.
+
+Thu Jan 11 03:22:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_server_save_channel_key into server.[ch] to save the
+	  received channel key in Channel Key payload processing. It is
+	  also used in JOIN command reply handling.
+
+	  Equivalent function silc_client_save_channel_key added into
+	  client.[ch] into client library.
+
+	* Changed JOIN command reply to send information whether the channel
+	  was created or not (is existing already) and the channel key 
+	  payload.  Changed protocol specs accordingly.
+
+	* Fixed bugs in WHOIS and IDENTIFY command reply sending when
+	  the request was sent by ID and not by nickname.  Crashed on
+	  NULL dereference.
+
 Sat Dec 23 21:55:07 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a bug in Client library.  IDENTIFY and WHOIS reply functions

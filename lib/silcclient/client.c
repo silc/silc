@@ -1781,27 +1781,21 @@ void silc_client_new_channel_id(SilcClient client,
 		   (void *)channel->id, (void *)channel, TRUE);
 }
 
-/* Processes received key for channel. The received key will be used
-   to protect the traffic on the channel for now on. Client must receive
-   the key to the channel before talking on the channel is possible. 
-   This is the key that server has generated, this is not the channel
-   private key, it is entirely local setting. */
+/* Saves channel key from encoded `key_payload'. This is used when we
+   receive Channel Key Payload and when we are processing JOIN command 
+   reply. */
 
-void silc_client_receive_channel_key(SilcClient client,
-				     SilcSocketConnection sock,
-				     SilcBuffer packet)
+void silc_client_save_channel_key(SilcClientConnection conn,
+				  SilcBuffer key_payload, 
+				  SilcChannelEntry channel)
 {
   unsigned char *id_string, *key, *cipher;
   unsigned int tmp_len;
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   SilcChannelID *id;
   SilcIDCacheEntry id_cache = NULL;
-  SilcChannelEntry channel;
   SilcChannelKeyPayload payload;
 
-  SILC_LOG_DEBUG(("Received key for channel"));
-  
-  payload = silc_channel_key_payload_parse(packet);
+  payload = silc_channel_key_payload_parse(key_payload);
   if (!payload)
     return;
 
@@ -1814,21 +1808,24 @@ void silc_client_receive_channel_key(SilcClient client,
   id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
 
   /* Find channel. */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
-				   SILC_ID_CHANNEL, &id_cache))
-    goto out;
+  if (!channel) {
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
+				     SILC_ID_CHANNEL, &id_cache))
+      goto out;
     
+    /* Get channel entry */
+    channel = (SilcChannelEntry)id_cache->context;
+  }
+
   /* Save the key */
   key = silc_channel_key_get_key(payload, &tmp_len);
   cipher = silc_channel_key_get_cipher(payload, NULL);
-
-  channel = (SilcChannelEntry)id_cache->context;
   channel->key_len = tmp_len;
   channel->key = silc_calloc(tmp_len, sizeof(*channel->key));
   memcpy(channel->key, key, tmp_len);
 
   if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
-    client->ops->say(client, conn,
+    conn->client->ops->say(conn->client, conn,
 		     "Cannot talk to channel: unsupported cipher %s", cipher);
     goto out;
   }
@@ -1841,6 +1838,22 @@ void silc_client_receive_channel_key(SilcClient client,
  out:
   silc_free(id);
   silc_channel_key_payload_free(payload);
+}
+
+/* Processes received key for channel. The received key will be used
+   to protect the traffic on the channel for now on. Client must receive
+   the key to the channel before talking on the channel is possible. 
+   This is the key that server has generated, this is not the channel
+   private key, it is entirely local setting. */
+
+void silc_client_receive_channel_key(SilcClient client,
+				     SilcSocketConnection sock,
+				     SilcBuffer packet)
+{
+  SILC_LOG_DEBUG(("Received key for channel"));
+
+  /* Save the key */
+  silc_client_save_channel_key(sock->user_data, packet, NULL);
 }
 
 /* Process received message to a channel (or from a channel, really). This

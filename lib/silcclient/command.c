@@ -635,7 +635,7 @@ SILC_CLIENT_CMD_FUNC(join)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcIDCacheEntry id_cache = NULL;
-  SilcBuffer buffer;
+  SilcBuffer buffer, idp;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -662,27 +662,33 @@ SILC_CLIENT_CMD_FUNC(join)
     goto out;
   }
 
+  idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
+
   /* Send JOIN command to the server */
-  if (cmd->argc == 2)
-    buffer = 
-      silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 1,
-				     1, cmd->argv[1], cmd->argv_lens[1]);
-  else if (cmd->argc == 3)
-    /* XXX Buggy */
+  if (cmd->argc == 3)
     buffer = 
       silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 2,
 				     1, cmd->argv[1], cmd->argv_lens[1],
-				     2, cmd->argv[2], cmd->argv_lens[2]);
-  else
+				     2, idp->data, idp->len);
+  else if (cmd->argc == 4)
+    /* XXX Buggy */
     buffer = 
       silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 3,
 				     1, cmd->argv[1], cmd->argv_lens[1],
-				     2, cmd->argv[2], cmd->argv_lens[2],
-				     3, cmd->argv[3], cmd->argv_lens[3]);
+				     2, idp->data, idp->len,
+				     3, cmd->argv[2], cmd->argv_lens[2]);
+  else
+    buffer = 
+      silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 4,
+				     1, cmd->argv[1], cmd->argv_lens[1],
+				     2, idp->data, idp->len,
+				     3, cmd->argv[2], cmd->argv_lens[2],
+				     4, cmd->argv[3], cmd->argv_lens[3]);
 
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
+  silc_buffer_free(idp);
 
   /* Notify application */
   COMMAND;

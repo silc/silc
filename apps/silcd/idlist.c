@@ -344,6 +344,8 @@ silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
       *ret_entry = id_cache;
   }
 
+  SILC_LOG_DEBUG(("Found"));
+
   return client;
 }
 
@@ -389,6 +391,8 @@ silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
   if (ret_entry)
     *ret_entry = id_cache;
 
+  SILC_LOG_DEBUG(("Found"));
+
   return client;
 }
 
@@ -414,6 +418,8 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 
   if (ret_entry)
     *ret_entry = id_cache;
+
+  SILC_LOG_DEBUG(("Found"));
 
   return client;
 }
@@ -552,6 +558,8 @@ silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,
 
   silc_idcache_list_free(list);
 
+  SILC_LOG_DEBUG(("Found"));
+
   return channel;
 }
 
@@ -577,6 +585,8 @@ silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
 
   if (ret_entry)
     *ret_entry = id_cache;
+
+  SILC_LOG_DEBUG(("Found"));
 
   return channel;
 }

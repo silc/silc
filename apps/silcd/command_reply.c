@@ -96,7 +96,7 @@ void silc_server_command_reply_process(SilcServer server,
     if (cmd->cmd == command)
       break;
 
-  if (cmd == NULL) {
+  if (cmd == NULL || !cmd->cb) {
     silc_free(ctx);
     return;
   }
@@ -402,14 +402,16 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   unsigned int len;
   unsigned char *id_string;
   char *channel_name, *tmp;
+  unsigned int mode, created;
+  SilcBuffer keyp;
 
   SILC_LOG_DEBUG(("Start"));
 
   COMMAND_CHECK_STATUS;
 
   /* Get channel name */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (!tmp)
+  channel_name = silc_argument_get_arg_type(cmd->args, 2, NULL);
+  if (!channel_name)
     goto out;
 
   /* Get channel ID */
@@ -417,28 +419,66 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   if (!id_string)
     goto out;
 
-  channel_name = strdup(tmp);
+  /* Get mode mask */
+  tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
+  if (!tmp)
+    goto out;
+  SILC_GET32_MSB(mode, tmp);
+
+  /* Get created boolean value */
+  tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
+  if (!tmp)
+    goto out;
+  SILC_GET32_MSB(created, tmp);
+
+  /* Get channel key */
+  tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
+  if (!tmp)
+    goto out;
+  keyp = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
+  silc_buffer_put(keyp, tmp, len);
+
   id = silc_id_payload_parse_id(id_string, len);
 
-  /* XXX We should check that we have sent JOIN command to the router
-     in the first place. Also should check that we don't have the channel
-     already in the cache. These checks must be made because of possible
-     buggy routers. */
-
-  SILC_LOG_DEBUG(("Adding new channel %s id(%s)", channel_name,
-		  silc_id_render(id, SILC_ID_CHANNEL)));
-
-  /* Add the channel to our local list. */
-  entry = silc_idlist_add_channel(server->local_list, channel_name, 
-				  SILC_CHANNEL_MODE_NONE, id, 
-				  server->router, NULL);
+  /* See whether we already have the channel. */
+  entry = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
   if (!entry) {
-    silc_free(channel_name);
+    /* Add new channel */
+
+    SILC_LOG_DEBUG(("Adding new [%s] channel %s id(%s)", 
+		    (created == 0 ? "created" : "existing"), channel_name,
+		    silc_id_render(id, SILC_ID_CHANNEL)));
+
+    /* Add the channel to our local list. */
+    entry = silc_idlist_add_channel(server->local_list, strdup(channel_name), 
+				    SILC_CHANNEL_MODE_NONE, id, 
+				    server->router, NULL);
+    if (!entry) {
+      silc_free(id);
+      goto out;
+    }
+  } else {
     silc_free(id);
-    goto out;
   }
 
-  //entry->global_users = TRUE;
+  /* If channel was not created we know there is global users on the 
+     channel. */
+  entry->global_users = (created == 0 ? TRUE : FALSE);
+
+  /* If channel was just created the mask must be zero */
+  if (!entry->global_users && mode) {
+    SILC_LOG_DEBUG(("Buggy router `%s' sent non-zero mode mask for "
+		    "new channel, forcing it to zero", cmd->sock->hostname));
+    mode = 0;
+  }
+
+  /* Save channel mode */
+  entry->mode = mode;
+
+  /* Save channel key */
+  silc_server_save_channel_key(server, keyp, entry);
+  silc_buffer_free(keyp);
 
   /* Execute any pending commands */
   SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_JOIN);

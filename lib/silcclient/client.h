@@ -272,6 +272,9 @@ void silc_client_new_channel_id(SilcClient client,
 				SilcSocketConnection sock,
 				char *channel_name,
 				unsigned int mode, SilcIDPayload idp);
+void silc_client_save_channel_key(SilcClientConnection conn,
+				  SilcBuffer key_payload, 
+				  SilcChannelEntry channel);
 void silc_client_receive_channel_key(SilcClient client,
 				     SilcSocketConnection sock,
 				     SilcBuffer packet);
