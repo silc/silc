@@ -3,9 +3,6 @@ TODO/bugs in Irssi SILC client
 
  o LEAVE does not work correctly, it doesn't leave the channel for real!
 
- o The input line parser in client (librarys) doesn't like extra spaces
-   at the end of line (like after commands).
-
  o /KICK does not remove the client from Irssi's NAMES list.
 
  o Giving KILL command crashes the client.

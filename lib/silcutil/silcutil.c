@@ -420,15 +420,21 @@ void silc_parse_command_line(unsigned char *buffer,
   int i, len = 0;
   int argc = 0;
   const char *cp = buffer;
+  char *tmp;
 
   *parsed = silc_calloc(1, sizeof(**parsed));
   *parsed_lens = silc_calloc(1, sizeof(**parsed_lens));
 
   /* Get the command first */
   len = strcspn(cp, " ");
-  (*parsed)[0] = silc_to_upper((char *)cp);
+  tmp = silc_to_upper((char *)cp);
+  (*parsed)[0] = silc_calloc(len + 1, sizeof(char));
+  memcpy((*parsed)[0], tmp, len);
+  silc_free(tmp);
   (*parsed_lens)[0] = len;
-  cp += len + 1;
+  cp += len;
+  while (*cp == ' ')
+    cp++;
   argc++;
 
   /* Parse arguments */
@@ -439,6 +445,10 @@ void silc_parse_command_line(unsigned char *buffer,
 	len = strcspn(cp, " ");
       else
 	len = strlen(cp);
+      while (len && cp[len - 1] == ' ')
+	len--;
+      if (!len)
+	break;
       
       *parsed = silc_realloc(*parsed, sizeof(**parsed) * (argc + 1));
       *parsed_lens = silc_realloc(*parsed_lens, 
@@ -452,7 +462,8 @@ void silc_parse_command_line(unsigned char *buffer,
       if (strlen(cp) == 0)
 	break;
       else
-	cp++;
+	while (*cp == ' ')
+	  cp++;
     }
   }
 

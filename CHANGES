@@ -1,3 +1,9 @@
+Thu Jun 21 17:10:08 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the silc_parse_command_line to remove extra spaces
+	  from the start and end of the arguments.  Affected file is
+	  lib/silcutil/silcutil.c.
+
 Tue Jun 19 22:10:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a possible crash in silc_packet_send_prepare.  It now
