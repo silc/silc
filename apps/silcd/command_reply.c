@@ -174,9 +174,8 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
 
   }
 
-  /* Execute pending IDENTIFY command so that the client who originally
-     requested the identify information will get it after all. */
-  SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_IDENTIFY);
+  /* Execute any pending commands */
+  SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_WHOIS);
 
  out:
   silc_server_command_reply_free(cmd);
@@ -231,8 +230,7 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
 
   }
 
-  /* Execute pending IDENTIFY command so that the client who originally
-     requested the identify information will get it after all. */
+  /* Execute any pending commands */
   SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_IDENTIFY);
 
  out:
