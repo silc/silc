@@ -547,9 +547,11 @@ char *silc_format(char *fmt, ...)
 
 /* Renders ID to suitable to print for example to log file. */
 
+static char rid[256];
+
 char *silc_id_render(void *id, unsigned short type)
 {
-  char rid[256], tmp[100];
+  char tmp[100];
   unsigned char tmps[2];
 
   memset(rid, 0, sizeof(rid));
@@ -596,5 +598,5 @@ char *silc_id_render(void *id, unsigned short type)
     break;
   }
 
-  return strdup(rid);
+  return rid;
 }
