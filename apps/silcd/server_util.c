@@ -462,7 +462,8 @@ silc_server_update_clients_by_real_server(SilcServer server,
    be the new source. This function also removes the clients that are
    *really* originated from `from' if `remove_from' is TRUE. These are
    clients that the `from' owns, and not just clients that are behind
-   the `from'. */
+   the `from'. If `from' is NULL then all non-local clients are switched
+   to `to'. */
 
 void silc_server_update_clients_by_server(SilcServer server, 
 					  SilcServerEntry from,
@@ -506,26 +507,31 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  SILC_LOG_DEBUG(("Client->router (global) %s", 
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
-	if (client->router == from) {
-	  /* Skip clients that are *really* owned by the `from' */
-	  if (remove_from && SILC_ID_COMPARE(from->id, client->id, 
-					     client->id->ip.data_len)) {
-	    SILC_LOG_DEBUG(("Found really owned client, skip it"));
-	    if (!silc_idcache_list_next(list, &id_cache))
-	      break;
-	    else
-	      continue;
-	  }
+	if (from) {
+	  if (client->router == from) {
+	    /* Skip clients that are *really* owned by the `from' */
+	    if (remove_from && SILC_ID_COMPARE(from->id, client->id, 
+					       client->id->ip.data_len)) {
+	      SILC_LOG_DEBUG(("Found really owned client, skip it"));
+	      if (!silc_idcache_list_next(list, &id_cache))
+		break;
+	      else
+		continue;
+	    }
 
-	  if (resolve_real_server) {
-	    client->router = 
-	      silc_server_update_clients_by_real_server(server, from, client,
-							local, id_cache);
-	    if (!client->router)
+	    if (resolve_real_server) {
+	      client->router = 
+		silc_server_update_clients_by_real_server(server, from, client,
+							  local, id_cache);
+	      if (!client->router)
+		client->router = to;
+	    } else {
 	      client->router = to;
-	  } else {
-	    client->router = to;
+	    }
 	  }
+	} else {
+	  /* All are changed */
+	  client->router = to;
 	}
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -557,26 +563,31 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  SILC_LOG_DEBUG(("Client->router (local) %s", 
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
-	if (client->router == from) {
-	  /* Skip clients that are *really* owned by the `from' */
-	  if (remove_from && SILC_ID_COMPARE(from->id, client->id, 
-					     client->id->ip.data_len)) {
-	    SILC_LOG_DEBUG(("Found really owned client, skip it"));
-	    if (!silc_idcache_list_next(list, &id_cache))
-	      break;
-	    else
-	      continue;
-	  }
+	if (from) {
+	  if (client->router == from) {
+	    /* Skip clients that are *really* owned by the `from' */
+	    if (remove_from && SILC_ID_COMPARE(from->id, client->id, 
+					       client->id->ip.data_len)) {
+	      SILC_LOG_DEBUG(("Found really owned client, skip it"));
+	      if (!silc_idcache_list_next(list, &id_cache))
+		break;
+	      else
+		continue;
+	    }
 
-	  if (resolve_real_server) {
-	    client->router = 
-	      silc_server_update_clients_by_real_server(server, from, client,
-							local, id_cache);
-	    if (!client->router)
-	      client->router = from; /* on local list put old from */
-	  } else {
-	    client->router = to;
+	    if (resolve_real_server) {
+	      client->router = 
+		silc_server_update_clients_by_real_server(server, from, client,
+							  local, id_cache);
+	      if (!client->router)
+		client->router = from; /* on local list put old from */
+	    } else {
+	      client->router = to;
+	    }
 	  }
+	} else {
+	  /* All are changed */
+	  client->router = to;
 	}
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -1526,4 +1537,26 @@ bool silc_server_force_cumode_change(SilcServer server,
   silc_buffer_free(idp2);
 
   return TRUE;
+}
+
+/* Find active socket connection by the IP address and port indicated by
+   `ip' and `port', and socket connection type of `type'. */
+
+SilcSocketConnection
+silc_server_find_socket_by_host(SilcServer server,
+				SilcSocketType type,
+				const char *ip, SilcUInt16 port)
+{
+  int i;
+
+  for (i = 0; i < server->config->param.connections_max; i++) {
+    if (!server->sockets[i])
+      continue;
+    if (!strcmp(server->sockets[i]->ip, ip) &&
+	(!port || server->sockets[i]->port == port) &&
+	server->sockets[i]->type == type)
+      return server->sockets[i];
+  }
+
+  return NULL;
 }

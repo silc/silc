@@ -35,10 +35,6 @@ TODO/bugs In SILC Server
 	  cell use it.  When primary goes down, also those that are
 	  not using it (are not connected locally) are signoffed.
 
-	o Configure use of backup router on normal server using HUP.
-
-	o Configure use of backup router on router using HUP.
-
 	o Rewrite SILC_LOG_DEBUG's in silcd/server_backup.c.
 
 	o Testing

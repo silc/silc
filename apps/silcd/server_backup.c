@@ -1144,8 +1144,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	   router */
 	silc_server_update_servers_by_server(server, backup_router, router,
 					     FALSE);
-	silc_server_update_clients_by_server(server, backup_router,
-					     router, TRUE, FALSE);
+	silc_server_update_clients_by_server(server, NULL, router, 
+					     FALSE, FALSE);
 	if (server->server_type == SILC_SERVER)
 	  silc_server_update_channels_by_server(server, backup_router, router);
  	silc_server_backup_replaced_del(server, backup_router);
@@ -1162,6 +1162,13 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	silc_server_announce_clients(server, 0, router->connection);
 	silc_server_announce_channels(server, 0, router->connection);
       }
+
+      /* Send notify about primary router going down to local operators */
+      SILC_SERVER_SEND_OPERS(server, FALSE, TRUE,
+			     SILC_NOTIFY_TYPE_NONE,
+			     ("%s resumed the use of primary router %s",
+			      server->server_name,
+			      server->router->server_name));
 
       /* Protocol has ended, call the final callback */
       if (protocol->final_callback)

@@ -1911,3 +1911,183 @@ void silc_server_packet_queue_purge(SilcServer server,
     silc_buffer_clear(sock->outbuf);
   }
 }
+
+/* Send packet to clients that are known to be operators.  If server
+   is router and `route' is TRUE then the packet would go to all operators
+   in the SILC network.  If `route' is FALSE then only local operators
+   (local for server and cell wide for router).  If `local' is TRUE then
+   only locally connected operators receive the packet.  If `local' is
+   TRUE then `route' is ignored.  If server is normal server and `route'
+   is FALSE it is equivalent to `local' being TRUE. */
+
+void silc_server_send_opers(SilcServer server,
+			    SilcPacketType type,
+			    SilcPacketFlags flags,
+			    bool route, bool local,
+			    unsigned char *data, 
+			    SilcUInt32 data_len,
+			    bool force_send)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry client = NULL;
+  SilcSocketConnection sock;
+  SilcServerEntry *routed = NULL;
+  SilcUInt32 routed_count = 0;
+  bool gone = FALSE;
+  int k;
+
+  SILC_LOG_DEBUG(("Sending %s packet to operators",
+		  silc_get_packet_name(type)));
+
+  /* If local was requested send only locally connected operators. */
+  if (local || (server->server_type == SILC_SERVER && !route)) {
+    if (!silc_idcache_get_all(server->local_list->clients, &list) ||
+	!silc_idcache_list_first(list, &id_cache))
+      return;
+    while (id_cache) {
+      client = (SilcClientEntry)id_cache->context;
+      if (!client->router && SILC_IS_LOCAL(client) &&
+	  (client->mode & SILC_UMODE_SERVER_OPERATOR ||
+	   client->mode & SILC_UMODE_ROUTER_OPERATOR)) {
+
+	/* Send the packet to locally connected operator */
+	silc_server_packet_send_dest(server, client->connection, type, flags,
+				     client->id, SILC_ID_CLIENT,
+				     data, data_len, force_send);
+      }
+
+      if (!silc_idcache_list_next(list, &id_cache))
+	break;
+    }
+    silc_idcache_list_free(list);
+    return;
+  }
+
+  if (!silc_idcache_get_all(server->local_list->clients, &list) ||
+      !silc_idcache_list_first(list, &id_cache))
+    return;
+  while (id_cache) {
+    client = (SilcClientEntry)id_cache->context;
+    if (!(client->mode & SILC_UMODE_SERVER_OPERATOR) &&
+	!(client->mode & SILC_UMODE_ROUTER_OPERATOR))
+      goto next;
+
+    if (server->server_type != SILC_SERVER && client->router && 
+	((!route && client->router->router == server->id_entry) || route)) {
+
+      /* Check if we have sent the packet to this route already */
+      for (k = 0; k < routed_count; k++)
+	if (routed[k] == client->router)
+	  break;
+      if (k < routed_count)
+	goto next;
+
+      /* Route only once to router */
+      sock = (SilcSocketConnection)client->router->connection;
+      if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	if (gone)
+	  goto next;
+	gone = TRUE;
+      }
+
+      /* Send the packet */
+      silc_server_packet_send_dest(server, sock, type, flags,
+				   client->id, SILC_ID_CLIENT,
+				   data, data_len, force_send);
+
+      /* Mark this route routed already */
+      routed = silc_realloc(routed, sizeof(*routed) * (routed_count + 1));
+      routed[routed_count++] = client->router;
+      goto next;
+    }
+
+    if (client->router || !client->connection)
+      goto next;
+
+    /* Send to locally connected client */
+    sock = (SilcSocketConnection)client->connection;
+    silc_server_packet_send_dest(server, sock, type, flags,
+				 client->id, SILC_ID_CLIENT,
+				 data, data_len, force_send);
+
+  next:
+    if (!silc_idcache_list_next(list, &id_cache))
+      break;
+  }
+  silc_idcache_list_free(list);
+
+  if (!silc_idcache_get_all(server->global_list->clients, &list) ||
+      !silc_idcache_list_first(list, &id_cache))
+    return;
+  while (id_cache) {
+    client = (SilcClientEntry)id_cache->context;
+    if (!(client->mode & SILC_UMODE_SERVER_OPERATOR) &&
+	!(client->mode & SILC_UMODE_ROUTER_OPERATOR))
+      goto nextg;
+
+    if (server->server_type != SILC_SERVER && client->router && 
+	((!route && client->router->router == server->id_entry) || route)) {
+
+      /* Check if we have sent the packet to this route already */
+      for (k = 0; k < routed_count; k++)
+	if (routed[k] == client->router)
+	  break;
+      if (k < routed_count)
+	goto nextg;
+
+      /* Route only once to router */
+      sock = (SilcSocketConnection)client->router->connection;
+      if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	if (gone)
+	  goto nextg;
+	gone = TRUE;
+      }
+
+      /* Send the packet */
+      silc_server_packet_send_dest(server, sock, type, flags,
+				   client->id, SILC_ID_CLIENT,
+				   data, data_len, force_send);
+
+      /* Mark this route routed already */
+      routed = silc_realloc(routed, sizeof(*routed) * (routed_count + 1));
+      routed[routed_count++] = client->router;
+      goto nextg;
+    }
+
+    if (client->router || !client->connection)
+      goto nextg;
+
+    /* Send to locally connected client */
+    sock = (SilcSocketConnection)client->connection;
+    silc_server_packet_send_dest(server, sock, type, flags,
+				 client->id, SILC_ID_CLIENT,
+				 data, data_len, force_send);
+
+  nextg:
+    if (!silc_idcache_list_next(list, &id_cache))
+      break;
+  }
+  silc_idcache_list_free(list);
+  silc_free(routed);
+}
+
+/* Send a notify packet to operators */
+
+void silc_server_send_opers_notify(SilcServer server,
+				   bool route,
+				   bool local,
+				   SilcNotifyType type,
+				   SilcUInt32 argc, ...)
+{
+  va_list ap;
+  SilcBuffer packet;
+
+  va_start(ap, argc);
+  packet = silc_notify_payload_encode(type, argc, ap);
+  silc_server_send_opers(server, SILC_PACKET_NOTIFY, 0,
+			 route, local, packet->data, packet->len,
+			 FALSE);
+  silc_buffer_free(packet);
+  va_end(ap);
+}

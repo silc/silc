@@ -1551,12 +1551,6 @@ void silc_server_notify(SilcServer server,
       goto out;
     SILC_GET32_MSB(mode, tmp);
 
-    /* Check that mode changing is allowed. */
-    if (!silc_server_check_umode_rights(server, client, mode)) {
-      SILC_LOG_DEBUG(("UMODE change is not allowed"));
-      goto out;
-    }
-
     /* Remove internal resumed flag if client is marked detached now */
     if (mode & SILC_UMODE_DETACHED)
       client->data.status &= ~SILC_IDLIST_STATUS_RESUMED;

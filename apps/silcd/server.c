@@ -28,6 +28,7 @@
 #include "server_internal.h"
 
 /* Static prototypes */
+SILC_TASK_CALLBACK(silc_server_rehash_close_connection);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 SILC_TASK_CALLBACK(silc_server_connect_router);
 SILC_TASK_CALLBACK(silc_server_connect_to_router);
@@ -448,6 +449,31 @@ bool silc_server_init(SilcServer server)
   return FALSE;
 }
 
+/* Task callback to close a socket connection after rehash */
+
+SILC_TASK_CALLBACK(silc_server_rehash_close_connection)
+{
+  SilcServer server = context;
+  SilcSocketConnection sock = server->sockets[fd];
+
+  if (!sock)
+    return;
+
+  SILC_LOG_INFO(("Closing connection %s:%d [%s]: connection is unconfigured",
+		 sock->hostname, sock->port,
+		 (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		  sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		  sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		  "Router")));
+  silc_schedule_task_del_by_context(server->schedule, sock);
+  silc_server_disconnect_remote(server, sock,
+				SILC_STATUS_ERR_BANNED_FROM_SERVER,
+				"This connection is removed from "
+				"configuration");
+  if (sock->user_data)
+    silc_server_free_sock_user_data(server, sock, NULL);
+}
+
 /* This function basically reads the config file again and switches the config
    object pointed by the server object. After that, we have to fix various
    things such as the server_name and the listening ports.
@@ -514,6 +540,70 @@ bool silc_server_rehash(SilcServer server)
       return FALSE;
     silc_pkcs_public_key_set(server->pkcs, server->public_key);
     silc_pkcs_private_key_set(server->pkcs, server->private_key);
+  }
+
+  /* Check for unconfigured server and router connections and close
+     connections that were unconfigured. */
+
+  if (server->config->routers) {
+    SilcServerConfigRouter *ptr;
+    SilcServerConfigRouter *newptr;
+    bool found;
+
+    for (ptr = server->config->routers; ptr; ptr = ptr->next) {
+      found = FALSE;
+
+      /* Check whether new config has this one too */
+      for (newptr = newconfig->routers; newptr; newptr = newptr->next) {
+	if (!strcmp(newptr->host, ptr->host) && newptr->port == ptr->port &&
+	    newptr->initiator == ptr->initiator) {
+	  found = TRUE;
+	  break;
+	}
+      }
+
+      if (!found) {
+	/* Remove this connection */
+	SilcSocketConnection sock;
+	sock = silc_server_find_socket_by_host(server, SILC_SOCKET_TYPE_ROUTER,
+					       ptr->host, ptr->port);
+	if (sock && !SILC_IS_LISTENER(sock))
+	  silc_schedule_task_add(server->schedule, sock->sock,
+				 silc_server_rehash_close_connection,
+				 server, 0, 1, SILC_TASK_TIMEOUT,
+				 SILC_TASK_PRI_NORMAL);
+      }
+    }
+  }
+
+  if (server->config->servers) {
+    SilcServerConfigServer *ptr;
+    SilcServerConfigServer *newptr;
+    bool found;
+
+    for (ptr = server->config->servers; ptr; ptr = ptr->next) {
+      found = FALSE;
+
+      /* Check whether new config has this one too */
+      for (newptr = newconfig->servers; newptr; newptr = newptr->next) {
+	if (!strcmp(newptr->host, ptr->host)) {
+	  found = TRUE;
+	  break;
+	}
+      }
+
+      if (!found) {
+	/* Remove this connection */
+	SilcSocketConnection sock;
+	sock = silc_server_find_socket_by_host(server, SILC_SOCKET_TYPE_SERVER,
+					       ptr->host, 0);
+	if (sock && !SILC_IS_LISTENER(sock))
+	  silc_schedule_task_add(server->schedule, sock->sock,
+				 silc_server_rehash_close_connection,
+				 server, 0, 1, SILC_TASK_TIMEOUT,
+				 SILC_TASK_PRI_NORMAL);
+      }
+    }
   }
 
   /* Go through all configured routers after rehash */
@@ -2865,6 +2955,20 @@ void silc_server_free_sock_user_data(SilcServer server,
 	if (server->server_type == SILC_SERVER)
 	  silc_server_update_channels_by_server(server, user_data,
 						backup_router);
+
+	/* Send notify about primary router going down to local operators */
+	if (server->backup_router)
+	  SILC_SERVER_SEND_OPERS(server, FALSE, TRUE,
+				 SILC_NOTIFY_TYPE_NONE,
+				 ("%s switched to backup router %s "
+				  "(we are primary router now)",
+				  server->server_name, server->server_name));
+	else
+	  SILC_SERVER_SEND_OPERS(server, FALSE, TRUE,
+				 SILC_NOTIFY_TYPE_NONE,
+				 ("%s switched to backup router %s",
+				  server->server_name,
+				  server->router->server_name));
       }
 
       /* Free the server entry */

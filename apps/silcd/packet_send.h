@@ -61,7 +61,7 @@ void silc_server_packet_route(SilcServer server,
 			      SilcPacketContext *packet);
 void silc_server_packet_send_clients(SilcServer server,
 				     SilcHashTable clients,
-				     SilcPacketType type, 
+				     SilcPacketType type,
 				     SilcPacketFlags flags,
 				     bool route,
 				     unsigned char *data, 
@@ -267,5 +267,17 @@ void silc_server_send_connection_auth_request(SilcServer server,
 					      SilcAuthMethod auth_meth);
 void silc_server_packet_queue_purge(SilcServer server,
 				    SilcSocketConnection sock);
+void silc_server_send_opers(SilcServer server,
+			    SilcPacketType type,
+			    SilcPacketFlags flags,
+			    bool route, bool local,
+			    unsigned char *data, 
+			    SilcUInt32 data_len,
+			    bool force_send);
+void silc_server_send_opers_notify(SilcServer server,
+				   bool route,
+				   bool local,
+				   SilcNotifyType type,
+				   SilcUInt32 argc, ...);
 
 #endif

@@ -37,7 +37,8 @@ bool silc_server_remove_clients_by_server(SilcServer server,
    be the new source. This function also removes the clients that are
    *really* originated from `from' if `remove_from' is TRUE. These are
    clients that the `from' owns, and not just clients that are behind
-   the `from'. */
+   the `from'. If `from' is NULL then all non-local clients are switched
+   to `to'. */
 void silc_server_update_clients_by_server(SilcServer server, 
 					  SilcServerEntry from,
 					  SilcServerEntry to,
@@ -97,7 +98,7 @@ char *silc_server_name_modify_bad(const char *name, SilcUInt32 name_len);
 SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
 					 SilcSocketType type);
 
-/* Find number of sockets by IP address indicated by remote host, indicatd
+/* Find number of sockets by IP address indicated by remote host, indicated
    by `ip' or `hostname', `port', and `type'.  Returns 0 if socket connections
    does not exist. If `ip' is provided then `hostname' is ignored. */
 SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server, 
@@ -179,5 +180,12 @@ bool silc_server_force_cumode_change(SilcServer server,
 				     SilcChannelEntry channel,
 				     SilcChannelClientEntry chl,
 				     SilcUInt32 forced_mode);
+
+/* Find active socket connection by the IP address and port indicated by
+   `ip' and `port', and socket connection type of `type'. */
+SilcSocketConnection
+silc_server_find_socket_by_host(SilcServer server,
+				SilcSocketType type,
+				const char *ip, SilcUInt16 port);
 
 #endif /* SERVER_UTIL_H */

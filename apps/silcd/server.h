@@ -98,7 +98,16 @@ do {								\
   silc_server_send_notify(server, sock, FALSE, 			\
 			  type, 1, __fmt__, strlen(__fmt__));	\
   silc_free(__fmt__);						\
-} while(0);
+} while(0)
+
+/* Send notify to operators */
+#define SILC_SERVER_SEND_OPERS(server, route, local, type, fmt)		\
+do {									\
+  char *__fmt__ = silc_format fmt;					\
+  silc_server_send_opers_notify(server, route, local,			\
+			        type, 1, __fmt__, strlen(__fmt__));	\
+  silc_free(__fmt__);							\
+} while(0)
 
 /* Check whether rekey protocol is active */
 #define SILC_SERVER_IS_REKEY(sock)					\

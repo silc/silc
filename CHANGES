@@ -1,3 +1,29 @@
+Mon Jun 24 17:47:52 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added functions silc_server_send_opers and
+	  silc_server_send_opers_notify to send packets stricly
+	  to operators.  Added macro SILC_SERVER_SEND_OPERS macro
+	  to send variable argument notify to operators.
+	  Affected files silcd/packet_send.[ch] and silcd/server.h.
+
+	* Removed UMODE rights checking with UMODE_CHANGE notify.
+	  Affected file silcd/packet_receive.c.
+
+	* Server/router operator now receives notify when network
+	  switches to backup router and when it resumes the use of
+	  primary router.  Affected file silcd/server.c and
+	  silcd/server_backup.c.
+
+	* Fixed the updating of client information after backup
+	  resuming protocol is over; update all except local clients
+	  to the new primary router.  The affected file is
+	  silcd/server_util.c.
+
+	* Added support for closing active connections in rehash
+	  that were unconfigured by the user.  Supports currently
+	  closing server and router connections.  Affected file
+	  silcd/server.c.
+
 Sun Jun 23 17:32:31 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Don't do SILC_STRING_LANGUAGE encoding if the outbuffer
