@@ -52,18 +52,18 @@ typedef struct {
   void *context;
 } *SilcServerRekey;
 
-/* ID List Entry status type and all the types. */
+/* ID List Entry status flags. */
 typedef SilcUInt8 SilcIDListStatus;
-#define SILC_IDLIST_STATUS_NONE         0x00    /* No status */
-#define SILC_IDLIST_STATUS_REGISTERED   0x01    /* Entry is registered */
-#define SILC_IDLIST_STATUS_RESOLVED     0x02    /* Entry info is resolved */
-#define SILC_IDLIST_STATUS_RESOLVING    0x04    /* Entry is being resolved
-						   with WHOIS or IDENTIFY */
-#define SILC_IDLIST_STATUS_DISABLED     0x08    /* Entry is disabled */
-#define SILC_IDLIST_STATUS_RESUMED      0x10    /* Entry is resumed */
-#define SILC_IDLIST_STATUS_LOCAL        0x20    /* Entry locally connected */
-#define SILC_IDLIST_STATUS_RESUME_RES   0x40    /* Entry resolved while
-						   resuming */
+#define SILC_IDLIST_STATUS_NONE         0x00  /* No status */
+#define SILC_IDLIST_STATUS_REGISTERED   0x01  /* Entry is registered */
+#define SILC_IDLIST_STATUS_RESOLVED     0x02  /* Entry info is resolved */
+#define SILC_IDLIST_STATUS_RESOLVING    0x04  /* Entry is being resolved
+						 with WHOIS or IDENTIFY */
+#define SILC_IDLIST_STATUS_DISABLED     0x08  /* Entry is disabled */
+#define SILC_IDLIST_STATUS_RESUMED      0x10  /* Entry is resumed */
+#define SILC_IDLIST_STATUS_LOCAL        0x20  /* Entry locally connected */
+#define SILC_IDLIST_STATUS_RESUME_RES   0x40  /* Entry resolved while
+						 resuming */
 
 /*
    Generic ID list data structure.

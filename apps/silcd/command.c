@@ -1251,7 +1251,7 @@ silc_server_command_whowas_check(SilcServerCommandContext cmd,
       silc_server_packet_send(server, entry->router->connection,
 			      SILC_PACKET_COMMAND, cmd->packet->flags,
 			      tmpbuf->data, tmpbuf->len, TRUE);
-      
+
       /* Reprocess this packet after received reply */
       silc_server_command_pending(server, SILC_COMMAND_WHOWAS, 
 				  silc_command_get_ident(cmd->payload),
