@@ -188,22 +188,23 @@ static bool my_parse_publickeydir(const char *dirname, void **auth_data)
   /* errors are not considered fatal */
   while ((get_file = readdir(dp))) {
     int dirname_len = strlen(dirname);
-    char buf[1023];
+    char buf[1024];
     const char *filename = get_file->d_name;
     struct stat check_file;
 
-    if (!strcmp(filename, ".") || !strcmp(filename, ".."))
+    /* Ignore "." and "..", and take files only with ".pub" suffix. */
+    if (!strcmp(filename, ".") || !strcmp(filename, "..") ||
+	!strstr(filename, ".pub"))
       continue;
 
-    snprintf(buf, sizeof(buf) - 2, "%s%s%s", dirname,
+    memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf) - 1, "%s%s%s", dirname,
 	     (dirname[dirname_len - 1] == '/' ? "" : "/"), filename);
-    buf[sizeof(buf) - 1] = 0;
 
     if (stat(buf, &check_file) < 0) {
       SILC_SERVER_LOG_ERROR(("Error stating file %s: %s", buf,
 			     strerror(errno)));
-    }
-    else if (S_ISREG(check_file.st_mode)) {
+    } else if (S_ISREG(check_file.st_mode)) {
       my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL);
       total++;
     }

@@ -1,3 +1,8 @@
+Sat Nov 30 19:07:52 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Load only files with .pub suffix in PublicKeyDir.  Affected
+	  file silcd/serverconfig.c.
+
 Sat Nov 30 14:29:34 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Extended the SILC_SERVER_LOG_ERROR macro to all available logging
