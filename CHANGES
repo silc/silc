@@ -1,3 +1,11 @@
+Mon Apr 29 20:10:42 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added `Compressed' packet flag to indicate that the packet
+	  payload is compressed by the sender.  Updated the protocol
+	  specs and the core library.  The compression still is not
+	  implemented in the sources.  Affected file is
+	  lib/silccore/silcpacket.h.
+
 Mon Apr 29 09:48:12 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Remove pending command callbacks also if the connection

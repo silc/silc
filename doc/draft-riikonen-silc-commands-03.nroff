@@ -1324,25 +1324,31 @@ List of all defined commands in SILC follows.
               Channel founder may set this mode to be able to regain
               channel founder rights even if the client leaves the 
               channel.  The <auth payload> is the Authentication Payload
-              consisting of the authentication method and authentication
-              data to be used in the authentication.  The server MUST
-              NOT accept NONE authentication method.  Also, if the 
-              method is public key authentication the server MUST NOT
-              save the authentication data from the payload as the
-              data is different on all authentications.  In this case the
-              server only saves the authentication method.  However,
-              server MUST verify the sent authentication payload and
-              set the mode only if the verification was successful.
+              consisting of the public key authentication method and the
+              authentication data for that method.  The passphrase
+              method cannot be used with this mode.  The server MUST NOT
+              accept NONE authentication method.  The server does not
+              save <auth payload> but MUST verify it.  The public key
+              used to verify the payload is the public key of the
+              client sending this command.  The mode may be set only
+              if the <auth payload> was verified successfully.  The
+              server also MUST save the founder's public key.
 
-              Note that this mode is effective only in the current server.
-              The client MUST connect to the same server later to be able
-              to regain the channel founder rights.  The server MUST save
-              the public key of the channel founder and use that to identify
-              the client which is claiming the channel founder rights.
-              The rights may be claimed by the SILC_CUMODE_FOUNDER 
-              channel user mode using SILC_COMMAND_CUMODE command.  The
-              set authentication data remains valid as long as the channel
-              exists or until the founder unsets this mode.
+              The public key of the founder is sent in the
+              SILC_NOTIFY_TYPE_CMODE_CHANGE notify type so that other
+              routers and servers in the network may save the public key.
+              This way the founder can reclaim the founder rights back
+              to the channel from any server in the network.  The founder
+              rights can be regained by the SILC_CUMODE_FOUNDER channel
+              user mode, or during joining procedure with the command
+              SILC_COMMAND_JOIN.
+
+              When this channel mode is set the channel also becomes
+              permanent.  If all clients leave the channel while this
+              mode is set the channel MUST NOT be destroyed.  The founder
+              can reclaim the founder mode back on these empty channels
+              at any time.  Implementations MAY limit the number of how
+              many channels a user can own.
 
               Typical implementation would use [+|-]f on user interface
               to set/unset this mode.
@@ -1440,7 +1446,7 @@ List of all defined commands in SILC follows.
               been set, the client can claim channel founder privileges
               by providing the <auth payload> that the server will use
               to authenticate the client.  The public key that server will
-              use to verify the <auth payload> must the same public key
+              use to verify the <auth payload> MUST the same public key
               that was saved when the SILC_CMODE_FOUNDER_AUTH channel
               mode was set.  The client MAY remove this mode at any time.
 

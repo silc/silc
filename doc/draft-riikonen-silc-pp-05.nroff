@@ -158,7 +158,11 @@ Conferencing, Protocol Specification Internet Draft [SILC1].  This
 protocol describes the packet types and packet payloads which defines
 the contents of the packets.  The protocol provides secure binary packet
 protocol that assures that the contents of the packets are secured and
-authenticated.
+authenticated.  The packet protocol is designed to be compact to avoid
+unnecessary overhead as much as possible.  This makes the SILC suitable
+also in environment of low bandwith requirements such as mobile networks.
+All packet payloads can also be compressed to further reduce the size
+of the packets.
 
 The basis of SILC protocol relies in the SILC packets and it is with
 out a doubt the most important part of the protocol.  It is also probably
@@ -324,6 +328,16 @@ o Flags (1 byte) - Indicates flags to be used in packet
        packet may be sent only to the primary route.  See
        section 2.12 Packet Broadcasting for description of 
        packet broadcasting.
+
+
+     Compressed                0x08
+
+       Marks that the payload of the packet is compressed.
+       The sender of the packet marks this flag when it
+       compresses the payload, and any server or router
+       en route to the receipient MUST NOT unset this flag.
+       See section 2.8 Packet Compression for description of
+       packet compressing.
 
 .in 3
 
@@ -1334,10 +1348,10 @@ UTF-8 [RFC2279] encoded.
       to the clients which is joined on the channel which mode was
       changed.
 
-      Max Arguments:  5
+      Max Arguments:  6
           Arguments:  (1) <ID Payload>    (2) <mode mask>
                       (3) [<cipher>]      (4) <[hmac>]     
-                      (5) [<passphrase>]
+                      (5) [<passphrase>]  (6) [<founder public key>]
 
       The <ID Payload> is the ID (usually Client ID but it can be
       Server ID as well when the router is enforcing channel mode
@@ -1347,7 +1361,12 @@ UTF-8 [RFC2279] encoded.
       packet will force the new channel key change anyway.  The <hmac>
       argument is important since the client is responsible of setting
       the new HMAC and the hmac key into use.  The <passphrase> is
-      the passphrase of the channel, if it was now set.
+      the passphrase of the channel, if it was now set.  The <founder
+      public key> argument is sent when the founder mode on the
+      channel was set.  All routers and servers that receive the packet
+      MUST save the founder's public key so that the founder can
+      reclaim the channel founder rights back for the channel on any
+      server in the network.
 
 
 8     SILC_NOTIFY_TYPE_CUMODE_CHANGE
@@ -1723,20 +1742,21 @@ o Padding (variable length) - The padding that MUST be
   other parts of the packet.
 
 o MAC (variable length) - The MAC computed from the
-  Message Length, Message Data, Padding Length, Padding and
-  Initial Vector fields.  This protects the integrity of the
-  plaintext channel message.  The receiver can verify from
-  the MAC whether the message decrypted correctly.  Also, if
-  more than one private key has been set for the channel, the
-  receiver can verify which of the keys decrypted the message 
-  correctly.  Note that, this field is encrypted and MUST
-  be added to the padding calculation.
+  Message Flags, Message Length, Message Data, Padding Length,
+  Padding and Initial Vector fields in that order.  This
+  protects the integrity of the plaintext channel message.
+  The receiver can verify from the MAC whether the message
+  decrypted correctly.  Also, if more than one private key
+  has been set for the channel, the receiver can verify which
+  of the keys decrypted the message correctly.  Note that,
+  this field is encrypted and MUST be added to the padding
+  calculation.
 
 o Initial Vector (variable length) - The initial vector
   that has been used in packet encryption.  It needs to be
   used in the packet decryption as well.  What this field
   includes is implementation issue.  However, it is 
-  RECOMMENDED that it would be random data or, perhaps,
+  RECOMMENDED that it would be random data, or perhaps
   a timestamp.  It is NOT RECOMMENDED to use zero (0) as an
   initial vector.  This field is not encrypted.  This field
   is not included into the padding calculation.  Length
@@ -2758,7 +2778,7 @@ The compression MUST always be applied before encryption.  When
 the packet is received and decrypted the data area MUST be decompressed.
 Note that the true sender of the packet MUST apply the compression and
 the true receiver of the packet MUST apply the decompression.  Any
-server or router en route MUST NOT decompress the packet.
+server or router en route SHOULD NOT decompress the packet.
 
 
 .ti 0

@@ -169,8 +169,8 @@ multiple same attributes in the packet.
 
      This attribute includes general information about the user, their
      name and contact information.  The content of this attribute is
-     a VCard version 3.0 as defined in RFC 2425 [RFC2425] and RFC 2426
-     [RFC2426].  Note that some of the information that VCard provides
+     a VCard version 3.0 as defined in RFC 2426 [RFC2426] and RFC 2425
+     [RFC2425].  Note that some of the information that VCard provides
      can be also provided in the means of providing other attributes.
      The rationale for this is that the VCard does not provide all the
      information, or with the required precision that may be desired in
@@ -274,7 +274,7 @@ x    ATTRIBUTE_EXTENSION
 
      This attribute indicates that the attribute value is vendor,
      application or service specific attribute extension.  This field
-     MUST include MIME object, which is the extension value.  This
+     MUST include a MIME object, which is the extension value.  This
      document does not specify any explicit MIME objects for this
      attribute.
 
@@ -310,11 +310,9 @@ x    ATTRIBUTE_USER_PUBLIC_KEY
      x509v3-sign-rsa   X.509 Version 3 RSA certificate [RFC2459]
      x509v3-sign-dss   X.509 Version 3 DSS certificate [RFC2459]
 
-     These public key/certificate types are equivalent to the types
-     specified for SSH protocol [SSH-TRANS] and are expected to be
-     officially assigned by IANA.  The silc-rsa and silc-dss are not
-     currently specified in SSH, however they are considered to be
-     IANA assigned later anyway.
+     Most of these public key/certificate types are equivalent to
+     the types specified for SSH protocol [SSH-TRANS] and are expected
+     to be officially assigned by IANA.
 
      The encoding of the public key/certificate data in the attribute
      is done in the manner defined in their respective definitions.
@@ -322,8 +320,8 @@ x    ATTRIBUTE_USER_PUBLIC_KEY
      Note that these public keys are intended for signing.  Some
      certificates may have a key usage restrictions and same key cannot
      be used for both encryption and signing.  Therefore, the name
-     of the certificate type indicates that they are intended for 
-     signing.
+     of the certificate type indicates if they are intended for 
+     signing only.
 
 
 x    ATTRIBUTE_SERVER_PUBLIC_KEY
@@ -386,6 +384,33 @@ x    ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
 .ti 0
 5 References 
 
+[RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
+             Requirement Levels", BCP 14, RFC 2119, March 1997.
+
+[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 2279, January 1998.
+
+[RFC2425]    Howes, T., et al, "A MIME Content-Type for Directory
+             Information", RFC 2425, September 1998.
+
+[RFC2426]    Dawson, F., et al, "vCard MIME Directory Profile",
+             RFC 2426, September 1998.
+
+[SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
+             Protocol Specification", Internet Draft, April 2001.
+
+[RFC2440]    Callas, J., et al, "OpenPGP Message Format", RFC 2440,
+             November 1998.
+
+[RFC2459]    Housley, R., et al, "Internet X.509 Public Key 
+             Infrastructure, Certificate and CRL Profile", RFC 2459,
+             January 1999.
+
+[SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol", 
+             Internet Draft.
+
+[PKCS7]      Kalinski, B., "PKCS #7: Cryptographic Message Syntax,
+             Version 1.5", RFC 2315, March 1998.
 
 
 .ti 0

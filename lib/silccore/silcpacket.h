@@ -138,10 +138,10 @@ typedef unsigned char SilcPacketFlags;
 #define SILC_PACKET_FLAG_PRIVMSG_KEY      0x01	  /* Private message key */
 #define SILC_PACKET_FLAG_LIST             0x02	  /* Packet is a list */
 #define SILC_PACKET_FLAG_BROADCAST        0x04	  /* Packet is a broadcast */
+#define SILC_PACKET_FLAG_COMPRESSED       0x08    /* Payload is compressed */
 /***/
 
 /* Rest of flags still available
-#define SILC_PACKET_FLAG_XXX              0x08
 #define SILC_PACKET_FLAG_XXX              0x10
 #define SILC_PACKET_FLAG_XXX              0x20
 #define SILC_PACKET_FLAG_XXX              0x40

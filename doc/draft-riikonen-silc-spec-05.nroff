@@ -149,7 +149,11 @@ Figure 5:  SILC Public Key
 This document describes a Secure Internet Live Conferencing (SILC)
 protocol which provides secure conferencing services over insecure
 network channel.  SILC is IRC [IRC] like protocol, however, it is 
-not equivalent to IRC and does not support IRC.
+not equivalent to IRC and does not support IRC.  Some of the SILC's
+features are not found in IRC but in traditional Instant Message (IM)
+protocols.  SILC combines features from both of these chat protocol
+styles, and SILC can be implemeneted as either IRC-like system or
+IM-like system.
 
 Strong cryptographic methods are used to protect SILC packets inside
 the SILC network.  Three other Internet Drafts relates very closely
@@ -160,7 +164,11 @@ The protocol uses extensively packets as conferencing protocol
 requires message and command sending.  The SILC Packet Protocol is
 described in [SILC2] and should be read to fully comprehend this
 document and protocol.  [SILC2] also describes the packet encryption
-and decryption in detail.
+and decryption in detail.  The SILC Packet Protocol provides secured
+and authenticated packets, and the protocol is designed to be compact.
+This makes SILC also suitable in environment of low bandwith
+requirements such as mobile networks.  All packet payloads in SILC
+can be also compressed.
 
 The security of SILC protocol, and for any security protocol for that
 matter, is based on strong and secure key exchange protocol.  The SILC
@@ -734,14 +742,19 @@ A channel is a named group of one or more clients which will all receive
 messages addressed to that channel.  The channel is created when first
 client requests JOIN command to the channel, and the channel ceases to
 exist when the last client has left it.  When channel exists, any client
-can reference it using the name of the channel.
+can reference it using the name of the channel.  If the channel has
+a founder mode set and last client leaves the channel the channel does
+not cease to exist.  The founder mode can be used to make permanent
+channels in the network.  The founder of the channel can regain the
+channel founder privileges on the channel later when he joins the
+channel.
 
 Channel names are unique although the real uniqueness comes from 64 bit
 Channel ID.  However, channel names are still unique and no two global
-channels with same name may exist.  The Channel name is a string of
+channels with same name may exist.  The channel name is a string of
 maximum length of 256 bytes.  Channel names MUST NOT contain any
-spaces (`  '), any non-printable ASCII characters, commas (`,') and
-wildcard characters.
+whitespaces (`  '), any non-printable ASCII characters, commas (`,')
+and wildcard characters.
 
 Channels can have operators that can administrate the channel and
 operate all of its modes.  The following operators on channel exist on
@@ -1231,6 +1244,16 @@ and the hash algorithms used in the SILC protocol.  Hence, the encoding
 is always in PKCS #1 version 1.5 format.
 
 Additional public key algorithms MAY be defined to be used in SILC.
+
+When signatures are computed in SILC the computing of the signature is
+represented as sign().  The signature computing procedure is dependent
+of the public key algorithm, and the public key or certificate encoding.
+When using SILC public key the signature is computed as described in
+previous section for RSA and DSS keys.  When using SSH2 public keys
+the signature is computed as described in [SSH-TRANS].  When using
+X.509 version 3 certificates the signature is computed as described
+in [PKCS7].  When using OpenPGP certificates the signature is computed
+as described in [PGP].
 
 
 .ti 0
@@ -2344,6 +2367,8 @@ should have a forum to discuss the cell management issues.
 [RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
              10646", RFC 2279, January 1998.
 
+[PKCS7]      Kalinski, B., "PKCS #7: Cryptographic Message Syntax,
+             Version 1.5", RFC 2315, March 1998.
 
 
 .ti 0
