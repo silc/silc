@@ -78,7 +78,7 @@ if [ "$TYPE" = "HTML" ]; then
 
     # Generate links to template file that can be included into various
     # places on the webpage.
-    echo ">> <A HREF="$fname">$name"</A> >>$DST/index.tmpl
+    echo ">> <A HREF="$fname">$name</A>" >>$DST/index.tmpl
 
     # Generate links for this library
     for k in $links
