@@ -1532,7 +1532,7 @@ represents the Channel Message Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|            Flags              |         Message Length        |
+|        Message  Flags         |         Message Length        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
 ~                         Message Data                          ~
@@ -1559,11 +1559,11 @@ Figure 13:  Channel Message Payload
 
 
 .in 6
-o Flags (2 bytes) - Includes the flags of the channel
-  messages.  The flags can indicate a reason or purpose
-  for the channel message.  Note that the Private Message
-  Payload use these same flags for the same purpose.  The
-  following flags are defined:
+o Message Flags (2 bytes) - Includes the Message Flags of
+  the channel messages.  The flags can indicate a reason or
+  purpose for the channel message.  Note that the Private
+  Message Payload use these same Message Flags for the same
+  purpose. The following Message Flags are defined:
 
   0x0000  SILC_MESSAGE_FLAG_NONE
 
@@ -1777,7 +1777,7 @@ diagram represents the Private Message Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|            Flags              |      Message Data Length      |
+|         Message Flags         |      Message Data Length      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
 ~                          Message Data                         ~
@@ -1794,10 +1794,10 @@ Figure 15:  Private Message Payload
 
 
 .in 6
-o Flags (2 bytes) - This field includes the flags of the
-  private message.  They can indicate a different reason or
-  purpose for the private message.  See the section 2.3.9
-  Channel Message Payload for defined flags.  Note that
+o Message Flags (2 bytes) - This field includes the Message
+  Flags of the private message.  They can indicate a different
+  reason or purpose for the private message.  See the section
+  2.3.9 Channel Message Payload for defined flags.  Note that
   the Channel Message Payload use the same flags for the
   same purpose.
 
@@ -2814,6 +2814,6 @@ Snellmanninkatu 34 A 15
 70100 Kuopio
 Finland
 
-EMail: priikone@silcnet.org
+EMail: priikone@iki.fi
 
 This Internet-Draft expires XXX
