@@ -5,8 +5,6 @@ Sun Jul 22 19:40:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  a bit differently than it used to.  Made the change to the
 	  SKE protocol specification.
 
-	* Submitted new drafts to the IETF.
-
 Fri Jul 20 13:16:00 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a minor bug in SKE that might cause some problem on
