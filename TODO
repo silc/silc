@@ -102,19 +102,21 @@ TODO In SILC Server
 
  o TODO in command.c and in command_reply.c:
 
+	o BAN is not implemented
 	o RESTART is not implemented
-	o INVITE is probably not working correctly
+	o INVITE is not working correctly
 	o JOIN does not check the invite and ban lists
 	o CMODE should be rewritten as it uses a lot duplicated code.
 	  Some of the modes may still not be implemented or is implemented
-	  the wrong way.  Also, setting ban and invite lists does not
-	  work at all and requires some thinking how to do them.
+	  the wrong way.
 	o In servers all command reply funtions should still call the
 	  pending command reply even if the reply was error.  In client
 	  it is not called but in server, I think, it must be called.
 	  When implementing this check that all commands handle the
 	  situation correctly when it is called as pending command
 	  (it should most likely check that cmd->pending == TRUE/FALSE).
+
+ o Implement the SILC_NOTIFY_TYPE_SERVER_QUIT notify type to the server.
 
  o Packet processing can be made faster. All packet function in the
    packet_receive.c has same prototypes.  Instead of calling those from
