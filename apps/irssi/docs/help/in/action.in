@@ -2,7 +2,8 @@
 @SYNTAX:action@
 
 Sends and ACTION to target.
-For example: /ME * sits back. (sends ACTION "sits back" to the current window)
+For example: /ACTION * sits back. (sends ACTION "sits back" to the current 
+window)
 
       -channel: interpret <target> as channel name
       -sign: add signature
