@@ -956,7 +956,7 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    bool silc_client_connect_to_server(SilcClient client,
+ *    int silc_client_connect_to_server(SilcClient client,
  *                                      SilcClientConnectionParams *params,
  *                                      int port, char *host, void *context);
  *
@@ -973,9 +973,9 @@ typedef struct {
  *    If the `params' is provided they are used by the routine.
  *
  ***/
-bool silc_client_connect_to_server(SilcClient client,
-				   SilcClientConnectionParams *params,
-				   int port, char *host, void *context);
+int silc_client_connect_to_server(SilcClient client,
+				  SilcClientConnectionParams *params,
+				  int port, char *host, void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_connection
  *

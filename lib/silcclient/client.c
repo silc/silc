@@ -436,9 +436,9 @@ silc_client_connect_to_server_internal(SilcClientInternalConnectContext *ctx)
    case then this function is not used at all. When the connecting is
    done the `connect' client operation is called. */
 
-bool silc_client_connect_to_server(SilcClient client,
-				   SilcClientConnectionParams *params,
-				   int port, char *host, void *context)
+int silc_client_connect_to_server(SilcClient client,
+				  SilcClientConnectionParams *params,
+				  int port, char *host, void *context)
 {
   SilcClientInternalConnectContext *ctx;
   SilcClientConnection conn;
