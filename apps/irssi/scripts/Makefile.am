@@ -2,12 +2,11 @@ scriptdir = $(datadir)/silc/scripts
 
 script_DATA = \
 	autoop.pl \
-	autorejoin.pl \
 	clones.pl \
 	hello.pl \
-	mail.pl \
-	privmsg.pl \
-	realname.pl \
-	quitmsg.pl
+	mail.pl	\
+	beep.pl	\
+	dns.pl	\
+	mail-maildir.pl
 
 EXTRA_DIST = $(script_DATA)
