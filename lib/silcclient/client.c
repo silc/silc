@@ -1376,9 +1376,8 @@ void silc_client_close_connection(SilcClient client,
     if (conn->server_cache)
       silc_idcache_free(conn->server_cache);
 
-    /* Free data (my ID is freed in above silc_client_del_client) */
-    if (conn->nickname)
-      silc_free(conn->nickname);
+    /* Free data (my ID is freed in above silc_client_del_client).
+       conn->nickname is freed when freeing the local_entry->nickname. */
     if (conn->remote_host)
       silc_free(conn->remote_host);
     if (conn->local_id_data)
@@ -1509,7 +1508,7 @@ void silc_client_receive_new_id(SilcClient client,
   if (!conn->local_entry)
     conn->local_entry = silc_calloc(1, sizeof(*conn->local_entry));
 
-  conn->local_entry->nickname = strdup(conn->nickname);
+  conn->local_entry->nickname = conn->nickname;
   if (!conn->local_entry->username)
     conn->local_entry->username = strdup(client->username);
   if (!conn->local_entry->hostname)

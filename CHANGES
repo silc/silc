@@ -1,3 +1,9 @@
+Wed Jan 30 19:14:31 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed founder regaining problem with JOIN command on normal
+	  server.  The notify for mode change must be sent always and
+	  not only if !cmd->pending.  Affected file silcd/command.c.
+
 Wed Jan 30 11:11:47 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* When sending JOIN command to router for processing the

@@ -1083,36 +1083,53 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
 {
   SilcServer server = cmd->server;
   char *tmp;
-  int i, count = 0, len;
+  int i, k, count = 0, len;
   SilcBuffer packet, idp;
   SilcClientEntry entry = NULL;
   SilcCommandStatus status;
   uint16 ident = silc_command_get_ident(cmd->payload);
-  char found = FALSE;
   char nh[256], uh[256];
+  int valid_count;
 
   status = SILC_STATUS_OK;
-  if (clients_count > 1)
+
+  /* Process only entries that are not registered anymore. */
+  valid_count = 0;
+  for (i = 0; i < clients_count; i++) {
+    if (clients[i]->data.status & SILC_IDLIST_STATUS_REGISTERED)
+      clients[i] = NULL;
+    else
+      valid_count++;
+  }
+
+  if (!valid_count) {
+    /* No valid entries found at all, just send error */
+    unsigned char *tmp;
+    
+    tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+    if (tmp)
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
+					   SILC_STATUS_ERR_NO_SUCH_NICK,
+					   3, tmp, strlen(tmp));
+    return;
+  }
+
+  if (valid_count > 1)
     status = SILC_STATUS_LIST_START;
 
-  for (i = 0; i < clients_count; i++) {
+  for (i = 0, k = 0; i < clients_count; i++) {
     entry = clients[i];
-
-    /* We will take only clients that are not valid anymore. They are the
-       ones that are not registered anymore but still have a ID. They
-       have disconnected us, and thus valid for WHOWAS. */
-    if (entry->data.status & SILC_IDLIST_STATUS_REGISTERED || !entry->id)
+    if (!entry)
       continue;
 
-    if (count && i - 1 == count)
-      break;
-
-    found = TRUE;
-
-    if (clients_count > 2)
+    if (k >= 1)
       status = SILC_STATUS_LIST_ITEM;
-    if (clients_count > 1 && i == clients_count - 1)
+    if (valid_count > 1 && k == valid_count - 1)
       status = SILC_STATUS_LIST_END;
+    if (count && k - 1 == count)
+      status = SILC_STATUS_LIST_END;
+    if (count && k - 1 > count)
+      break;
 
     /* Send WHOWAS reply */
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
@@ -1153,13 +1170,9 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
     
     silc_buffer_free(packet);
     silc_buffer_free(idp);
-  }
 
-  if (found == FALSE && entry)
-    silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOWAS,
-					 SILC_STATUS_ERR_NO_SUCH_NICK,
-					 3, entry->nickname, 
-					 strlen(entry->nickname));
+    k++;
+  }
 }
 
 static int
@@ -3252,24 +3265,24 @@ static void silc_server_command_join_channel(SilcServer server,
       /* Distribute the channel key to all backup routers. */
       silc_server_backup_send(server, NULL, SILC_PACKET_CHANNEL_KEY, 0,
 			      keyp->data, keyp->len, FALSE, TRUE);
+  }
 
-    /* If client became founder by providing correct founder auth data
-       notify the mode change to the channel. */
-    if (founder) {
-      SILC_PUT32_MSB(chl->mode, mode);
-      silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
-					 SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
-					 clidp->data, clidp->len,
-					 mode, 4, clidp->data, clidp->len);
+  /* If client became founder by providing correct founder auth data
+     notify the mode change to the channel. */
+  if (founder) {
+    SILC_PUT32_MSB(chl->mode, mode);
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
+				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
+				       clidp->data, clidp->len,
+				       mode, 4, clidp->data, clidp->len);
       
-      /* Set CUMODE notify type to network */
-      if (!server->standalone)
-	silc_server_send_notify_cumode(server, server->router->connection,
-				       server->server_type == SILC_ROUTER ? 
-				       TRUE : FALSE, channel,
-				       chl->mode, client->id, SILC_ID_CLIENT,
-				       client->id);
-    }
+    /* Set CUMODE notify type to network */
+    if (!server->standalone)
+      silc_server_send_notify_cumode(server, server->router->connection,
+				     server->server_type == SILC_ROUTER ? 
+				     TRUE : FALSE, channel,
+				     chl->mode, client->id, SILC_ID_CLIENT,
+				     client->id);
   }
 
   silc_buffer_free(reply);
@@ -3397,6 +3410,7 @@ SILC_SERVER_CMD_FUNC(join)
 				      silc_server_command_dup(cmd));
 	  cmd->pending = TRUE;
           silc_command_set_ident(cmd->payload, old_ident);
+	  silc_buffer_free(tmpbuf);
 	  goto out;
 	}
 	
@@ -3460,8 +3474,8 @@ SILC_SERVER_CMD_FUNC(join)
     if (silc_command_get(reply->payload) == SILC_COMMAND_JOIN) {
       tmp = silc_argument_get_arg_type(reply->args, 6, NULL);
       SILC_GET32_MSB(created, tmp);
-      if (silc_argument_get_arg_type(reply->args, 7, NULL)
-        create_key = FALSE;	/* Router returned the key already */
+      if (silc_argument_get_arg_type(reply->args, 7, NULL))
+	create_key = FALSE;	/* Router returned the key already */
     }
 
     if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS &&

@@ -895,8 +895,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     /* The entry exists. */
 
     /* If ID has changed, then update it to the cache too. */
-    if (!SILC_ID_CHANNEL_COMPARE(channel->id, id))
-      silc_idlist_replace_channel_id(server->local_list, channel->id, id);
+    if (!SILC_ID_CHANNEL_COMPARE(entry->id, id))
+      silc_idlist_replace_channel_id(server->local_list, entry->id, id);
 
     entry->disabled = FALSE;
 
@@ -917,8 +917,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   /* Get the ban list */
   tmp = silc_argument_get_arg_type(cmd->args, 8, &len);
   if (tmp) {
-    if (entry->ban_list)
-      silc_free(entry->ban_list);
+    silc_free(entry->ban_list);
     entry->ban_list = silc_calloc(len, sizeof(*entry->ban_list));
     memcpy(entry->ban_list, tmp, len);
   }
@@ -926,8 +925,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   /* Get the invite list */
   tmp = silc_argument_get_arg_type(cmd->args, 9, &len);
   if (tmp) {
-    if (entry->invite_list)
-      silc_free(entry->invite_list);
+    silc_free(entry->invite_list);
     entry->invite_list = silc_calloc(len, sizeof(*entry->invite_list));
     memcpy(entry->invite_list, tmp, len);
   }
@@ -935,8 +933,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   /* Get the topic */
   tmp = silc_argument_get_arg_type(cmd->args, 10, &len);
   if (tmp) {
-    if (entry->topic)
-      silc_free(entry->topic);
+    silc_free(entry->topic);
     entry->topic = strdup(tmp);
   }
 
