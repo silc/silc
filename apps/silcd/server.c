@@ -2788,7 +2788,7 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
 
   silc_task_register(server->timeout_queue, 0, 
 		     silc_server_channel_key_rekey,
-		     (void *)rekey, 3600, 0,
+		     (void *)rekey, 3600 + 5, 0,
 		     SILC_TASK_TIMEOUT,
 		     SILC_TASK_PRI_NORMAL);
 }
@@ -2859,7 +2859,7 @@ void silc_server_create_channel_key(SilcServer server,
 				     silc_server_channel_key_rekey);
     silc_task_register(server->timeout_queue, 0, 
 		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 3600, 0,
+		       (void *)channel->rekey, 3600 + 5, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }
@@ -2964,7 +2964,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 				     silc_server_channel_key_rekey);
     silc_task_register(server->timeout_queue, 0, 
 		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 3600, 0,
+		       (void *)channel->rekey, 3600 + 5, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }

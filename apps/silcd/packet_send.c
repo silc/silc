@@ -1499,7 +1499,7 @@ void silc_server_send_heartbeat(SilcServer server,
 				SilcSocketConnection sock)
 {
   silc_server_packet_send(server, sock, SILC_PACKET_HEARTBEAT, 0,
-			  NULL, 0, FALSE);
+			  NULL, 0, TRUE);
 }
 
 /* Generic function to relay packet we've received. This is used to relay
