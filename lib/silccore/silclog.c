@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/17 16:44:57  priikone
+ * 	Buffer overflow bug fixe in silc_log_format.
+ *
  * Revision 1.3  2000/07/05 06:06:35  priikone
  * 	Global cosmetic change.
  *
@@ -60,10 +63,11 @@ unsigned int log_fatal_size;
 char *silc_log_format(char *fmt, ...)
 {
   va_list args;
-  static char buf[1024];
+  static char buf[8192];
 
+  memset(buf, 0, sizeof(buf);
   va_start(args, fmt);
-  vsprintf(buf, fmt, args);
+  vsnprintf(buf, sizeof(buf) - 1, fmt, args);
   va_end(args);
 
   return strdup(buf);
