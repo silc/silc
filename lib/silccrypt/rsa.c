@@ -236,22 +236,31 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
     key->pub_set = FALSE;
   }
 
+  if (key_len < 4)
+    return 0;
+
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
 
   memcpy(tmp, key_data, 4);
   SILC_GET32_MSB(e_len, tmp);
-  if (!e_len || e_len > key_len) {
+  if (!e_len || e_len + 4 > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
     return 0;
   }
 
   silc_mp_bin2mp(key_data + 4, e_len, &key->e);
-  
+
+  if (key_len < 4 + e_len + 4) {
+    silc_mp_uninit(&key->e);
+    silc_mp_uninit(&key->n);
+    return 0;
+  }
+
   memcpy(tmp, key_data + 4 + e_len, 4);
   SILC_GET32_MSB(n_len, tmp);
-  if (!n_len || e_len + n_len > key_len) {
+  if (!n_len || e_len + 4 + n_len + 4 > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
     return 0;
@@ -286,13 +295,16 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
     key->pub_set = FALSE;
   }
 
+  if (key_len < 4)
+    return FALSE;
+
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
   silc_mp_init(&key->d);
 
   memcpy(tmp, key_data, 4);
   SILC_GET32_MSB(e_len, tmp);
-  if (e_len > key_len) {
+  if (e_len + 4 > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
     silc_mp_uninit(&key->d);
@@ -301,9 +313,16 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
 
   silc_mp_bin2mp(key_data + 4, e_len, &key->e);
   
+  if (key_len < e_len + 4 + 4) {
+    silc_mp_uninit(&key->e);
+    silc_mp_uninit(&key->n);
+    silc_mp_uninit(&key->d);
+    return FALSE;
+  }
+
   memcpy(tmp, key_data + 4 + e_len, 4);
   SILC_GET32_MSB(n_len, tmp);
-  if (e_len + n_len > key_len) {
+  if (e_len + 4 + n_len + 4 > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
     silc_mp_uninit(&key->d);
@@ -312,9 +331,16 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
 
   silc_mp_bin2mp(key_data + 4 + e_len + 4, n_len, &key->n);
 
+  if (key_len < e_len + 4 + n_len + 4 + 4) {
+    silc_mp_uninit(&key->e);
+    silc_mp_uninit(&key->n);
+    silc_mp_uninit(&key->d);
+    return FALSE;
+  }
+
   memcpy(tmp, key_data + 4 + e_len + 4 + n_len, 4);
   SILC_GET32_MSB(d_len, tmp);
-  if (e_len + n_len + d_len > key_len) {
+  if (e_len + 4 + n_len + 4 + d_len + 4 > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
     silc_mp_uninit(&key->d);
