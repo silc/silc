@@ -237,6 +237,24 @@ bool silc_net_addr2bin(const char *addr, unsigned char *bin,
   return ret != INADDR_NONE;
 }
 
+/* Converts the IP number string from numbers-and-dots notation to
+   binary form in network byte order. */
+
+bool silc_net_addr2bin_ne(const char *addr, unsigned char *bin,
+			  uint32 bin_len)
+{
+  unsigned long ret;
+
+  ret = inet_addr(addr);
+
+  if (bin_len < 4)
+    return FALSE;
+
+  SILC_PUT32_MSB(ret, bin);
+
+  return ret != INADDR_NONE;
+}
+
 /* Set socket to non-blocking mode. */
 
 int silc_net_set_socket_nonblock(int sock)

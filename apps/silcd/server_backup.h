@@ -30,21 +30,20 @@
 #define SILC_SERVER_BACKUP_REPLACED         20
 
 /* Adds the `backup_server' to be one of our backup router. This can be
-   called multiple times to set multiple backup routers. If `local' is
-   TRUE then the `backup_server' is in the local cell, if FALSE it is
-   in some other cell. */
+   called multiple times to set multiple backup routers. The `replacing' is
+   the IP and port that the `backup_router' will replace if the `replacing'
+   will become unresponsive. If `local' is TRUE then the `backup_server' is
+   in the local cell, if FALSE it is in some other cell. */
 void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
-			    bool local);
+			    const char *ip, int port, bool local);
 
-/* Returns the first backup router context. Returns NULL if we do not have
-   any backup servers. This removes the returned server from being 
-   backup router and needs to be added later with silc_server_backup_add
-   if it needs to be backup router again. */
-SilcServerEntry silc_server_backup_get(SilcServer server);
+/* Returns backup router for IP and port in `replacing' or NULL if there
+   does not exist backup router. */
+SilcServerEntry silc_server_backup_get(SilcServer server, 
+				       SilcServerID *server_id);
 
-/* Deletes the backup server `server_entry. */
-void silc_server_backup_del(SilcServer server, 
-			    SilcServerEntry server_entry);
+/* Deletes the backup server `server_entry'. */
+void silc_server_backup_del(SilcServer server, SilcServerEntry server_entry);
 
 /* Marks the IP address and port from the `server_id' as  being replaced
    by backup router indicated by the `server'. If the router connects at

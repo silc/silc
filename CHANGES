@@ -1,3 +1,15 @@
+Thu Oct 11 22:19:26 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the backup router adding and getting interfaces
+	  in the server.  The router that will be replaced by the
+	  specified backup router is now sent as argument.  Affected
+	  files silcd/serverconfig.[ch], silcd/backup_router.[ch], and
+	  silcd/server.c.
+
+	* Added silc_net_addr2bin_ne to return the binary form of
+	  the IP address in network byte order.  Affected files
+	  lib/silcutil/[unix/win32].silc[unix/win32]net.[ch].
+
 Thu Oct 11 12:14:19 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check for existing server ID in silc_server_new_server

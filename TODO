@@ -1,6 +1,8 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o /key msg * list crashes the client
+
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the

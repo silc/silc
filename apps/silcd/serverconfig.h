@@ -133,6 +133,8 @@ typedef struct SilcServerConfigSectionServerConnectionStruct {
   uint32 class;
   bool initiator;
   bool backup_router;
+  char *backup_replace_ip;
+  uint16 backup_replace_port;
   bool backup_local;
   struct SilcServerConfigSectionServerConnectionStruct *next;
   struct SilcServerConfigSectionServerConnectionStruct *prev;

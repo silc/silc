@@ -1,5 +1,5 @@
 This directory includes example files for a small SILC network.  The
-network conists of three (3) routers, and seven (7) servers.  One of
+network consists of three (3) routers, and seven (7) servers.  One of
 the cell also has a backup router too.  The topology of the network is
 as follows:
 
@@ -23,6 +23,11 @@ To make it simple all servers and routers use the same public and private
 keys.  They are the silcd.pub and silcd.prv in this directory.  Also, to
 make authentication simple all servers and routers authenticate themselves
 to other routers by simple password.
+
+Also note that the format in the configuration file is very raw so if you 
+need any help to understand what some setting means please check the
+documented example configuration files in doc/ directory.  Mainly, the
+example_silcd.conf.
 
 If you want to test this network you should change the IP addresses
 in the configuration file or perhaps set IP aliases for you local

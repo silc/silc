@@ -84,6 +84,8 @@ typedef struct {
   char *remote_host;
   int remote_port;
   bool backup;
+  char *backup_replace_ip;
+  int backup_replace_port;
   
   /* Current connection retry info */
   uint32 retry_count;

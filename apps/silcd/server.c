@@ -659,7 +659,11 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       sconn->remote_host = strdup(ptr->host);
       sconn->remote_port = ptr->port;
       sconn->backup = ptr->backup_router;
-      
+      if (sconn->backup) {
+	sconn->backup_replace_ip = strdup(ptr->backup_replace_ip);
+	sconn->backup_replace_port = ptr->backup_replace_port;
+      }
+
       silc_schedule_task_add(server->schedule, fd, 
 			     silc_server_connect_router,
 			     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
@@ -939,7 +943,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
     }
   } else {
     /* Add this server to be our backup router */
-    silc_server_backup_add(server, id_entry, FALSE);
+    silc_server_backup_add(server, id_entry, sconn->backup_replace_ip,
+			   sconn->backup_replace_port, FALSE);
   }
 
   sock->protocol = NULL;
@@ -953,6 +958,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   /* Free the temporary connection data context */
   if (sconn) {
     silc_free(sconn->remote_host);
+    silc_free(sconn->backup_replace_ip);
     silc_free(sconn);
   }
 
@@ -1359,7 +1365,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       /* If the incoming connection is router and marked as backup router
 	 then add it to be one of our backups */
       if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER && conn->backup_router) {
-	silc_server_backup_add(server, new_server, conn->backup_local);
+	silc_server_backup_add(server, new_server, conn->backup_replace_ip,
+			       conn->backup_replace_port, conn->backup_local);
 
 	/* Change it back to SERVER type since that's what it really is. */
 	if (conn->backup_local) {
@@ -2323,11 +2330,12 @@ void silc_server_free_sock_user_data(SilcServer server,
       SilcServerEntry user_data = (SilcServerEntry)sock->user_data;
       SilcServerEntry backup_router = NULL;
 
+      if (user_data->id)
+	backup_router = silc_server_backup_get(server, user_data->id);
+
       /* If this was our primary router connection then we're lost to
 	 the outside world. */
       if (server->router == user_data) {
-	backup_router = silc_server_backup_get(server);
-
 	/* Check whether we have a backup router connection */
 	if (!backup_router || backup_router == user_data) {
 	  silc_schedule_task_add(server->schedule, 0, 
@@ -2348,6 +2356,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  server->id_entry->router = backup_router;
 	  server->router = backup_router;
 	  server->router_connect = time(0);
+	  server->backup_primary = TRUE;
 	  if (server->server_type == SILC_BACKUP_ROUTER) {
 	    server->server_type = SILC_ROUTER;
 
@@ -2362,6 +2371,15 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  silc_server_backup_replaced_add(server, user_data->id, 
 					  backup_router);
 	}
+      } else if (backup_router) {
+	SILC_LOG_INFO(("Enabling the use of backup router %s",
+		       backup_router->server_name));
+	SILC_LOG_DEBUG(("Enabling the use of backup router %s",
+			backup_router->server_name));
+
+	/* Mark this connection as replaced */
+	silc_server_backup_replaced_add(server, user_data->id, 
+					backup_router);
       }
 
       if (!backup_router) {
@@ -2392,13 +2410,13 @@ void silc_server_free_sock_user_data(SilcServer server,
 	   The backup router knows all the other stuff already. */
 	if (server->server_type == SILC_ROUTER)
 	  silc_server_announce_servers(server, FALSE, time(0) - 300,
-				       server->router->connection);
+				       backup_router->connection);
 
 	/* Announce our clients and channels to the router */
 	silc_server_announce_clients(server, time(0) - 300,
-				     server->router->connection);
+				     backup_router->connection);
 	silc_server_announce_channels(server, time(0) - 300,
-				      server->router->connection);
+				      backup_router->connection);
       }
       break;
     }

@@ -78,9 +78,13 @@ endif
 endif
 
 if SILC_DIST_TOOLKIT
-SILC_EXTRA_DIST = toolkit
+SILC_EXTRA_DIST = toolkit examples
+else
+if SILC_DIST_SERVER
+SILC_EXTRA_DIST = examples
 else
 SILC_EXTRA_DIST =
+endif
 endif
 
 EXTRA_DIST = \

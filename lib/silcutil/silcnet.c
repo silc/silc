@@ -43,6 +43,7 @@ int silc_net_get_socket_opt(int sock, int level, int option,
 {
   return getsockopt(sock, level, option, optval, opt_len);
 }
+
 /* Checks whether IP address sent as argument is valid IP address. */
 
 bool silc_net_is_ip(const char *addr)

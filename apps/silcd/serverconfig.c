@@ -951,22 +951,27 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 	silc_free(tmp);
       }
 
-      /* Check whether this connection is backup router connection */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret != -1) {
-	config->routers->backup_router = atoi(tmp);
-	if (config->routers->backup_router != 0)
-	  config->routers->backup_router = TRUE;
-	silc_free(tmp);
-      }
+      /* Get backup replace IP */
+      ret = silc_config_get_token(line, &config->routers->backup_replace_ip);
+      if (ret != -1)
+	config->routers->backup_router = TRUE;
 
-      /* Check whether this backup is local (in cell) or remote (other cell) */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret != -1) {
-	config->routers->backup_local = atoi(tmp);
-	if (config->routers->backup_local != 0)
-	  config->routers->backup_local = TRUE;
-	silc_free(tmp);
+      if (config->routers->backup_router) {
+	/* Get backup replace port */
+	ret = silc_config_get_token(line, &tmp);
+	if (ret != -1) {
+	  config->routers->backup_replace_port = atoi(tmp);
+	  silc_free(tmp);
+	}
+	
+	/* Check whether the backup connection is local */
+	ret = silc_config_get_token(line, &tmp);
+	if (ret != -1) {
+	  config->routers->backup_local = atoi(tmp);
+	  if (config->routers->backup_local != 0)
+	    config->routers->backup_local = TRUE;
+	  silc_free(tmp);
+	}
       }
 
       check = TRUE;

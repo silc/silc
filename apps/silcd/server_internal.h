@@ -77,7 +77,9 @@ struct SilcServerStruct {
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */
   SilcServerBackup backup;	     /* Backup routers */
-  bool backup_router;
+  bool backup_router;		     /* TRUE if this is backup router */
+  bool backup_primary;		     /* TRUE if we've switched our primary
+				        router to a backup router. */
 
   /* Current command identifier, 0 not used */
   uint16 cmd_ident;
