@@ -1,3 +1,9 @@
+Tue Aug 14 07:29:27 CEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a channel key regeneration bug.  It registered new
+	  timeout tasks exponentially until all system resources were
+	  used.  Affected file silcd/server.c.
+
 Sun Aug 12 20:48:14 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added the SILC Document generator to the scripts/silcdoc.

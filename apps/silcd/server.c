@@ -3052,12 +3052,6 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
   if (!silc_server_create_channel_key(server, rekey->channel, rekey->key_len))
     return;
   silc_server_send_channel_key(server, NULL, rekey->channel, FALSE);
-
-  silc_schedule_task_add(server->schedule, 0, 
-		     silc_server_channel_key_rekey,
-		     (void *)rekey, 3600, 0,
-		     SILC_TASK_TIMEOUT,
-		     SILC_TASK_PRI_NORMAL);
 }
 
 /* Generates new channel key. This is used to create the initial channel key
@@ -3122,11 +3116,6 @@ bool silc_server_create_channel_key(SilcServer server,
     channel->rekey->channel = channel;
     channel->rekey->key_len = key_len;
 
-#if 0
-    /* XXX Now this cannot be a good thing */
-    silc_schedule_task_del_by_callback(server->schedule,
-				     silc_server_channel_key_rekey);
-#endif
     silc_schedule_task_add(server->schedule, 0, 
 		       silc_server_channel_key_rekey,
 		       (void *)channel->rekey, 3600, 0,
