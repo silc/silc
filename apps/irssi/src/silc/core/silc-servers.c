@@ -442,7 +442,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: FILE */
 /* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder] [-auth [<pubkeyfile> <privkeyfile> [<privkey passphrase>]]]*/
 /* SYNTAX: DETACH */
-/* SYNTAX: WATCH [<-add | -del> <nickname>] */
+/* SYNTAX: WATCH [<-add | -del> <nickname>] [-pubkey +|-<pubkeyfile>] */
 /* SYNTAX: STATS */
 /* SYNTAX: ATTR [<-del> <option> [{ <value>}]] */
 /* SYNTAX: SMSG [<-channel>] <target> <message> */

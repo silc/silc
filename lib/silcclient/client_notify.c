@@ -1356,6 +1356,9 @@ void silc_client_notify_by_server(SilcClient client,
        */
       SilcNotifyType notify = 0;
       bool del_client = FALSE;
+      unsigned char *pk;
+      SilcUInt32 pk_len;
+      SilcPublicKey public_key = NULL;
 
       SILC_LOG_DEBUG(("Notify: WATCH"));
 
@@ -1407,9 +1410,19 @@ void silc_client_notify_by_server(SilcClient client,
 	silc_free(tmp_nick);
       }
 
+      /* Get public key, if present */
+      pk = silc_argument_get_arg_type(args, 5, &pk_len);
+      if (pk && !client_entry->public_key) {
+        if (silc_pkcs_public_key_payload_decode(pk, pk_len, &public_key)) {
+	  client_entry->public_key = public_key;
+	  public_key = NULL;
+	}
+      }
+
       /* Notify application. */
       client->internal->ops->notify(client, conn, type, client_entry,
-				    tmp, mode, notify);
+				    tmp, mode, notify,
+				    client_entry->public_key);
 
       client_entry->mode = mode;
 
@@ -1433,6 +1446,8 @@ void silc_client_notify_by_server(SilcClient client,
 			       silc_client_notify_del_client_cb, res,
 			       1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
       }
+
+      silc_pkcs_public_key_free(public_key);
     }
     break;
 

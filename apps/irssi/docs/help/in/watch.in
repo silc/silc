@@ -6,6 +6,11 @@ When the watched nickname appears in the network, leaves the network
 or its user mode is changed you will be notified for this change.  This
 same command can be used also to remove nicknames from being watched.
 
+This command may also be used to watch users by their public keys.
+Since nicknames are not unique in SILC users may frequently change their
+nickname.  By watching them by public key you will be able to keep
+track of your friends regardless of what nickname they use.
+
 Note that some users may have a user mode set that rejects you from
 receiving notifications about them.  Also note that since nicknames are
 not unique it is possible that same nickname matches several users in
@@ -16,5 +21,7 @@ Examples:
 
     /WATCH -add foobar
     /WATCH -del foobar
+    /WATCH -pubkey +/path/to/add/public_key.pub
+    /WATCH -pubkey -/path/to/del/public_key.pub
 
 See also: WHOIS
