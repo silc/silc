@@ -110,176 +110,141 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
     silc_buffer_pull_tail(buffer, mac_len);
 }
 
-/* Assembles a new packet to be ready for send out. The buffer sent as
-   argument must include the data to be sent and it must not be encrypted. 
-   The packet also must have enough free space so that the SILC header
-   and padding maybe added to the packet. The packet is encrypted after 
-   this function has returned.
+/* Assembles a new packet to be ready for send out. */
 
-   The buffer sent as argument should be something like following:
-
-   --------------------------------------------
-   | head             | data           | tail |
-   --------------------------------------------
-   ^                  ^
-   58 bytes           x bytes
-
-   So that the SILC header and 1 - 16 bytes of padding can fit to
-   the buffer. After assembly the buffer might look like this:
-
-   --------------------------------------------
-   | data                              |      |
-   --------------------------------------------
-   ^                                   ^
-   Start of assembled packet
-
-   Packet construct is as follows:
-
-   n bytes       SILC Header
-      2 bytes     Payload length
-      1 byte      Flags
-      1 byte      Packet type
-      1 byte      Padding length
-      1 byte      RESERVED
-      1 bytes     Source ID Length
-      1 bytes     Destination ID Length
-      1 byte      Source ID Type
-      n bytes     Source ID
-      1 byte      Destination ID Type
-      n bytes     Destination ID
-
-   1 - 16 bytes    Padding
-
-   n bytes        Data payload
-
-   All fields in the packet will be authenticated by MAC. The MAC is
-   not computed here, it must be computed separately before encrypting
-   the packet.
-
-*/
-
-void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher)
-{
-  unsigned char tmppad[SILC_PACKET_MAX_PADLEN];
+bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
+                          SilcCipher cipher, SilcHmac hmac,
+                          SilcSocketConnection sock,
+                          const unsigned char *data, SilcUInt32 data_len,
+                          const SilcBuffer assembled_packet)
+{ 
+  unsigned char tmppad[SILC_PACKET_MAX_PADLEN];   
   int block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
-  int i;
+  int i, ret;
 
   SILC_LOG_DEBUG(("Assembling outgoing packet"));
-  
+
+  /* Calculate the packet's length and padding length if upper layer
+     didn't already do it. */
+
   /* Get the true length of the packet. This is saved as payload length
      into the packet header. This does not include the length of the
      padding. */
-  if (!ctx->truelen) {
-    ctx->truelen = ctx->buffer->len + SILC_PACKET_HEADER_LEN + 
-      ctx->src_id_len + ctx->dst_id_len;
-    if (ctx->truelen > SILC_PACKET_MAX_LEN) {
-      ctx->truelen -= (ctx->truelen - SILC_PACKET_MAX_LEN);
-      silc_buffer_push_tail(ctx->buffer, (ctx->truelen - SILC_PACKET_MAX_LEN));
-    }
+  if (!packet->truelen) {
+    data_len = SILC_PACKET_DATALEN(data_len, SILC_PACKET_HEADER_LEN +
+                                   packet->src_id_len + packet->dst_id_len);
+    packet->truelen = data_len + SILC_PACKET_HEADER_LEN + 
+      packet->src_id_len + packet->dst_id_len;
   }
 
   /* Calculate the length of the padding. The padding is calculated from
      the data that will be encrypted. */
-  if (!ctx->padlen) {
-    if (ctx->long_pad)
-      ctx->padlen = SILC_PACKET_PADLEN_MAX(ctx->truelen);
-    else
-      ctx->padlen = SILC_PACKET_PADLEN(ctx->truelen, block_len);
+  if (!packet->padlen) {
+    packet->padlen = (packet->long_pad ?
+                      SILC_PACKET_PADLEN_MAX(packet->truelen) :
+                      SILC_PACKET_PADLEN(packet->truelen, block_len));
   }
 
-  /* Put the start of the data section to the right place. */
-  silc_buffer_push(ctx->buffer, SILC_PACKET_HEADER_LEN + 
-		   ctx->src_id_len + ctx->dst_id_len + ctx->padlen);
+  /* Now prepare the outgoing data buffer for packet sending and start
+     assembling the packet. */
+
+  /* Return pointer to the assembled packet */
+  if (!silc_packet_send_prepare(sock, packet->truelen - data_len,
+                                packet->padlen, data_len, hmac,
+                                assembled_packet))
+    return FALSE;
 
   /* Get random padding */
-#if 1
-  for (i = 0; i < ctx->padlen; i++) tmppad[i] = 
-				      silc_rng_global_get_byte_fast();
-#else
-  /* XXX: For testing - to be removed */
-  memset(tmppad, 65, sizeof(tmppad));
-#endif
+  if (rng)
+    for (i = 0; i < packet->padlen; i++) tmppad[i] =
+                                           silc_rng_get_byte_fast(rng);
+  else
+    for (i = 0; i < packet->padlen; i++) tmppad[i] =
+                                           silc_rng_global_get_byte_fast();
 
-  /* Create the packet. This creates the SILC header and adds padding,
-     rest of the buffer remains as it is. */
-  silc_buffer_format(ctx->buffer, 
-		     SILC_STR_UI_SHORT(ctx->truelen),
-		     SILC_STR_UI_CHAR(ctx->flags),
-		     SILC_STR_UI_CHAR(ctx->type),
-		     SILC_STR_UI_CHAR(ctx->padlen),
-		     SILC_STR_UI_CHAR(0),
-		     SILC_STR_UI_CHAR(ctx->src_id_len),
-		     SILC_STR_UI_CHAR(ctx->dst_id_len),
-		     SILC_STR_UI_CHAR(ctx->src_id_type),
-		     SILC_STR_UI_XNSTRING(ctx->src_id, ctx->src_id_len),
-		     SILC_STR_UI_CHAR(ctx->dst_id_type),
-		     SILC_STR_UI_XNSTRING(ctx->dst_id, ctx->dst_id_len),
-		     SILC_STR_UI_XNSTRING(tmppad, ctx->padlen),
-		     SILC_STR_END);
+  /* Create the packet. This creates the SILC header, adds padding, and
+     the actual packet data. */
+  ret =
+    silc_buffer_format(assembled_packet,
+                       SILC_STR_UI_SHORT(packet->truelen),
+                       SILC_STR_UI_CHAR(packet->flags),
+                       SILC_STR_UI_CHAR(packet->type),
+                       SILC_STR_UI_CHAR(packet->padlen),
+                       SILC_STR_UI_CHAR(0),
+                       SILC_STR_UI_CHAR(packet->src_id_len),
+                       SILC_STR_UI_CHAR(packet->dst_id_len),
+                       SILC_STR_UI_CHAR(packet->src_id_type),
+                       SILC_STR_UI_XNSTRING(packet->src_id,
+                                            packet->src_id_len),
+                       SILC_STR_UI_CHAR(packet->dst_id_type),
+                       SILC_STR_UI_XNSTRING(packet->dst_id,
+                                            packet->dst_id_len),
+                       SILC_STR_UI_XNSTRING(tmppad, packet->padlen),
+                       SILC_STR_UI_XNSTRING(data, data_len),
+                       SILC_STR_END);
+  if (ret < 0)
+    return FALSE;
 
-  SILC_LOG_HEXDUMP(("Assembled packet, len %d", ctx->buffer->len), 
-		   ctx->buffer->data, ctx->buffer->len);
+  SILC_LOG_HEXDUMP(("Assembled packet, len %d", assembled_packet->len),
+                   assembled_packet->data, assembled_packet->len);
 
-  SILC_LOG_DEBUG(("Outgoing packet assembled"));
+  return TRUE;
 }
 
 /* Prepare outgoing data buffer for packet sending. This moves the data
    area so that new packet may be added into it. If needed this allocates
    more space to the buffer. This handles directly the connection's
-   outgoing buffer in SilcSocketConnection object. */
+   outgoing buffer in SilcSocketConnection object, and returns the
+   pointer to that buffer into the `packet'. */
 
-void silc_packet_send_prepare(SilcSocketConnection sock,
-			      SilcUInt32 header_len,
-			      SilcUInt32 padlen,
-			      SilcUInt32 data_len)
-{
-  int totlen, oldlen;
+bool silc_packet_send_prepare(SilcSocketConnection sock,
+                              SilcUInt32 header_len,
+                              SilcUInt32 pad_len,
+                              SilcUInt32 data_len,
+                              SilcHmac hmac,
+                              const SilcBuffer packet)
+{ 
+  int totlen;
+  unsigned char *oldptr;
+  int mac_len = hmac ? silc_hmac_len(hmac) : 0;
 
-  totlen = header_len + padlen + data_len;
+  if (!packet)
+    return FALSE;
+
+  totlen = header_len + pad_len + data_len;
 
   /* Prepare the outgoing buffer for packet sending. */
   if (!sock->outbuf) {
     /* Allocate new buffer. This is done only once per connection. */
     SILC_LOG_DEBUG(("Allocating outgoing data buffer"));
-    
-    if (totlen > SILC_PACKET_DEFAULT_SIZE)
-      sock->outbuf = silc_buffer_alloc(totlen);
-    else
-      sock->outbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
-    silc_buffer_pull_tail(sock->outbuf, totlen);
-    silc_buffer_pull(sock->outbuf, header_len + padlen);
+
+    sock->outbuf = silc_buffer_alloc(totlen > SILC_PACKET_DEFAULT_SIZE ?
+                                     totlen : SILC_PACKET_DEFAULT_SIZE);
+    if (!sock->outbuf)
+      return FALSE;
   } else {
-    if (SILC_IS_OUTBUF_PENDING(sock)) {
-      /* There is some pending data in the buffer. */
-
-      /* Allocate more space if needed */
-      if ((sock->outbuf->end - sock->outbuf->tail) < 
-	  (totlen + 20)) {
-	SILC_LOG_DEBUG(("Reallocating outgoing data buffer"));
-	sock->outbuf = silc_buffer_realloc(sock->outbuf, 
-					   sock->outbuf->truelen +
-					   (totlen * 2));
-      }
-
-      oldlen = sock->outbuf->len;
-      silc_buffer_pull_tail(sock->outbuf, totlen);
-      silc_buffer_pull(sock->outbuf, header_len + padlen + oldlen);
-    } else {
+    if (!SILC_IS_OUTBUF_PENDING(sock)) {
       /* Buffer is free for use */
       silc_buffer_clear(sock->outbuf);
-
-      /* Allocate more space if needed */
-      if ((sock->outbuf->end - sock->outbuf->tail) < (totlen + 20)) {
-	SILC_LOG_DEBUG(("Reallocating outgoing data buffer"));
-	sock->outbuf = silc_buffer_realloc(sock->outbuf, 
-					   sock->outbuf->truelen + 
-					   (totlen * 2));
-      }
-
-      silc_buffer_pull_tail(sock->outbuf, totlen);
-      silc_buffer_pull(sock->outbuf, header_len + padlen);
     }
   }
+
+  /* Allocate more space if needed */
+  if ((sock->outbuf->end - sock->outbuf->tail) < (totlen + mac_len)) {
+    SILC_LOG_DEBUG(("Reallocating outgoing data buffer"));
+    sock->outbuf = silc_buffer_realloc(sock->outbuf,
+                                       sock->outbuf->truelen + (totlen * 2));
+    if (!sock->outbuf)
+      return FALSE;
+  }
+
+  /* Pull data area for the new packet, and return pointer to the start of
+     the data area and save the pointer in to the `packet'. */
+  oldptr = silc_buffer_pull_tail(sock->outbuf, totlen + mac_len);
+  silc_buffer_set(packet, oldptr, totlen + mac_len);
+  silc_buffer_push_tail(packet, mac_len);
+
+  return TRUE;
 }
 
 /******************************************************************************

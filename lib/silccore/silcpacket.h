@@ -434,78 +434,62 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
  *
  * SYNOPSIS
  *
- *    void silc_packet_assemble(SilcPacketContext *ctx);
+ *    bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
+ *                              SilcCipher cipher, SilcHmac hmac,
+ *                              SilcSocketConnection sock,
+ *                              const unsigned char *data, SilcUInt32 data_len,
+ *                              const SilcBuffer assembled_packet);
  *
  * DESCRIPTION
  *
- *    Assembles a new packet to be ready for send out. The buffer sent as
- *    argument must include the data to be sent and it must not be encrypted. 
- *    The packet also must have enough free space so that the SILC header
- *    and padding maybe added to the packet. The packet is encrypted after 
- *    this function has returned.
- *
- *    The buffer sent as argument should be something like following:
- *
- *    --------------------------------------------
- *    | head             | data           | tail |
- *    --------------------------------------------
- *    ^                  ^
- *    58 bytes           x bytes
- *
- *    So that the SILC header and 1 - 16 bytes of padding can fit to
- *    the buffer. After assembly the buffer might look like this:
- *
- *    --------------------------------------------
- *    | data                              |      |
- *    --------------------------------------------
- *    ^                                   ^
- *    Start of assembled packet
- *
- *    Packet construct is as follows (* = won't be encrypted):
- *
- *    n bytes       SILC Header
- *      2 bytes     Payload length  (*)
- *      1 byte      Flags
- *      1 byte      Packet type
- *      2 bytes     Source ID Length
- *      2 bytes     Destination ID Length
- *      1 byte      Source ID Type
- *      n bytes     Source ID
- *      1 byte      Destination ID Type
- *      n bytes     Destination ID
- *
- *    1 - 16 bytes    Padding
- *
- *    n bytes        Data payload
- *
- *    All fields in the packet will be authenticated by MAC. The MAC is
- *    not computed here, it must be computed separately before encrypting
- *    the packet.
+ *    Assembles new packet to be ready for encrypting and sending out.
+ *    The `packet' is filled by caller to include the packet header specific
+ *    values.  This prepares the socket connection's `sock' outoing buffer
+ *    for sending data, and returns the assembled packet to the 
+ *    `assembled_packet' pointer sent by the caller.  The `assembled_packet'
+ *    is a reference to the socket connection's outgoing buffer.  The
+ *    returned packet can be encrypted, and then sent to network by calling
+ *    silc_packet_send function.
  *
  ***/
-void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher);
+bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
+                          SilcCipher cipher, SilcHmac hmac,
+                          SilcSocketConnection sock,
+                          const unsigned char *data, SilcUInt32 data_len,
+                          const SilcBuffer assembled_packet);
 
 /****f* silccore/SilcPacketAPI/silc_packet_send_prepare
  *
  * SYNOPSIS
  *
- *    void silc_packet_send_prepare(SilcSocketConnection sock,
+ *    bool silc_packet_send_prepare(SilcSocketConnection sock,
  *                                  SilcUInt32 header_len,
- *                                  SilcUInt32 padlen,
- *                                  SilcUInt32 data_len);
+ *                                  SilcUInt32 pad_len,
+ *                                  SilcUInt32 data_len,
+ *                                  SilcHmac hmac,
+ *                                  const SilcBuffer packet);
  *
  * DESCRIPTION
  *
- *    Prepare outgoing data buffer for packet sending. This moves the data
- *    area so that new packet may be added into it. If needed this allocates
- *    more space to the buffer. This handles directly the connection's
- *    outgoing buffer in SilcSocketConnection object.
+ *    This function can be used to prepare the outgoing data buffer in
+ *    the socket connection specified by `sock' for packet sending.
+ *    This is used internally by packet sending routines, but application
+ *    may call this if it doesn't call silc_packet_assemble function.
+ *    If that function is called then application must not call this since
+ *    that function calls this internally.
+ *
+ *    This returns the prepared data area into the `packet' pointer provided
+ *    caller, which can be used then to add data to it, and later encrypt
+ *    it.  The `packet' includes reference to the socket connection's
+ *    outgoing buffer.
  *
  ***/
-void silc_packet_send_prepare(SilcSocketConnection sock,
-			      SilcUInt32 header_len,
-			      SilcUInt32 padlen,
-			      SilcUInt32 data_len);
+bool silc_packet_send_prepare(SilcSocketConnection sock,
+                              SilcUInt32 header_len,
+                              SilcUInt32 pad_len,
+                              SilcUInt32 data_len,
+                              SilcHmac hmac,
+                              const SilcBuffer packet);
 
 /****f* silccore/SilcPacketAPI/silc_packet_receive
  *

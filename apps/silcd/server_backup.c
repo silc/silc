@@ -270,6 +270,7 @@ void silc_server_backup_broadcast(SilcServer server,
   SilcServerEntry backup;
   SilcSocketConnection sock;
   SilcBuffer buffer;
+  const SilcBufferStruct p;
   SilcIDListData idata;
   int i;
 
@@ -291,13 +292,16 @@ void silc_server_backup_broadcast(SilcServer server,
     idata = (SilcIDListData)backup;
     sock = backup->connection;
 
-    silc_packet_send_prepare(sock, 0, 0, buffer->len); 
-    silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
+    if (!silc_packet_send_prepare(sock, 0, 0, buffer->len, idata->hmac_send,
+				  (const SilcBuffer)&p)) {
+      SILC_LOG_ERROR(("Cannot send packet"));
+      return;
+    }
+    silc_buffer_put((SilcBuffer)&p, buffer->data, buffer->len);
     silc_packet_encrypt(idata->send_key, idata->hmac_send, idata->psn_send++, 
-			sock->outbuf, sock->outbuf->len);
+			(SilcBuffer)&p, p.len);
 
-    SILC_LOG_HEXDUMP(("Broadcasted packet, len %d", sock->outbuf->len),
-		     sock->outbuf->data, sock->outbuf->len);
+    SILC_LOG_HEXDUMP(("Broadcasted packet, len %d", p.len), p.data, p.len);
 
     /* Now actually send the packet */
     silc_server_packet_send_real(server, sock, FALSE);

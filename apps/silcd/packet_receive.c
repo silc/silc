@@ -1379,19 +1379,23 @@ void silc_server_command_reply(SilcServer server,
 
   if (packet->dst_id_type == SILC_ID_CLIENT && client && id) {
     /* Relay the packet to the client */
+    const SilcBufferStruct p;
     
     dst_sock = (SilcSocketConnection)client->connection;
+    idata = (SilcIDListData)client;
+    
     silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		     + packet->dst_id_len + packet->padlen);
-    
-    silc_packet_send_prepare(dst_sock, 0, 0, buffer->len);
-    silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
-    
-    idata = (SilcIDListData)client;
+    if (!silc_packet_send_prepare(dst_sock, 0, 0, buffer->len,
+                                  idata->hmac_send, (const SilcBuffer)&p)) {
+      SILC_LOG_ERROR(("Cannot send packet"));
+      return;
+    }
+    silc_buffer_put((SilcBuffer)&p, buffer->data, buffer->len);
     
     /* Encrypt packet */
     silc_packet_encrypt(idata->send_key, idata->hmac_send, idata->psn_send++,
-			dst_sock->outbuf, buffer->len);
+			(SilcBuffer)&p, buffer->len);
     
     /* Send the packet */
     silc_server_packet_send_real(server, dst_sock, TRUE);

@@ -137,6 +137,7 @@ void silc_server_packet_send_dest(SilcServer server,
 				  bool force_send)
 {
   SilcPacketContext packetdata;
+  const SilcBufferStruct packet;
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
@@ -183,35 +184,23 @@ void silc_server_packet_send_dest(SilcServer server,
     packetdata.src_id_len + dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
-  /* Prepare outgoing data buffer for packet sending */
-  silc_packet_send_prepare(sock, 
-			   SILC_PACKET_HEADER_LEN +
-			   packetdata.src_id_len + 
-			   packetdata.dst_id_len,
-			   packetdata.padlen,
-			   data_len);
-
-  SILC_LOG_DEBUG(("Putting data to outgoing buffer, len %d", data_len));
-
-  packetdata.buffer = sock->outbuf;
-
-  /* Put the data to the buffer */
-  if (data && data_len)
-    silc_buffer_put(sock->outbuf, data, data_len);
-
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata, cipher);
+  if (!silc_packet_assemble(&packetdata, NULL, cipher, hmac, sock,
+                            data, data_len, (const SilcBuffer)&packet)) {
+    SILC_LOG_ERROR(("Cannot assemble packet"));
+    goto out;
+  }
 
   /* Encrypt the packet */
-  silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, sock->outbuf->len);
+  silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&packet, packet.len);
 
-  SILC_LOG_HEXDUMP(("Outgoing packet (%d), len %d", sequence, 
-		    sock->outbuf->len),
-		   sock->outbuf->data, sock->outbuf->len);
+  SILC_LOG_HEXDUMP(("Outgoing packet (%d), len %d", sequence, packet.len),
+		   packet.data, packet.len);
 
   /* Now actually send the packet */
   silc_server_packet_send_real(server, sock, force_send);
 
+ out:
   if (packetdata.src_id)
     silc_free(packetdata.src_id);
   if (packetdata.dst_id)
@@ -239,6 +228,7 @@ void silc_server_packet_send_srcdest(SilcServer server,
 				     bool force_send)
 {
   SilcPacketContext packetdata;
+  const SilcBufferStruct packet;
   SilcIDListData idata;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
@@ -287,35 +277,23 @@ void silc_server_packet_send_srcdest(SilcServer server,
     packetdata.src_id_len + dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
-  /* Prepare outgoing data buffer for packet sending */
-  silc_packet_send_prepare(sock, 
-			   SILC_PACKET_HEADER_LEN +
-			   packetdata.src_id_len + 
-			   packetdata.dst_id_len,
-			   packetdata.padlen,
-			   data_len);
-
-  SILC_LOG_DEBUG(("Putting data to outgoing buffer, len %d", data_len));
-
-  packetdata.buffer = sock->outbuf;
-
-  /* Put the data to the buffer */
-  if (data && data_len)
-    silc_buffer_put(sock->outbuf, data, data_len);
-
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata, cipher);
+  if (!silc_packet_assemble(&packetdata, NULL, cipher, hmac, sock, data,
+                            data_len, (const SilcBuffer)&packet)) {
+    SILC_LOG_ERROR(("Cannot assemble packe"));
+    goto out;
+  }
 
   /* Encrypt the packet */
-  silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, sock->outbuf->len);
+  silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&packet, packet.len);
 
-  SILC_LOG_HEXDUMP(("Outgoing packet (%d), len %d", sequence, 
-		    sock->outbuf->len),
-		   sock->outbuf->data, sock->outbuf->len);
+  SILC_LOG_HEXDUMP(("Outgoing packet (%d), len %d", sequence, packet.len),
+                   packet.data, packet.len);
 
   /* Now actually send the packet */
   silc_server_packet_send_real(server, sock, force_send);
 
+ out:
   if (packetdata.src_id)
     silc_free(packetdata.src_id);
   if (packetdata.dst_id)
@@ -341,17 +319,23 @@ void silc_server_packet_broadcast(SilcServer server,
      not allowed to send the packet. */
   id = silc_id_str2id(packet->src_id, packet->src_id_len, packet->src_id_type);
   if (id && !SILC_ID_SERVER_COMPARE(id, server->router->id)) {
+    const SilcBufferStruct p;
+
     idata = (SilcIDListData)sock->user_data;
 
     silc_buffer_push(buffer, buffer->data - buffer->head);
-    silc_packet_send_prepare(sock, 0, 0, buffer->len); 
-    silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
+    if (!silc_packet_send_prepare(sock, 0, 0, buffer->len, idata->hmac_send,
+                                  (const SilcBuffer)&p)) {
+      SILC_LOG_ERROR(("Cannot send packet"));
+      silc_free(id);
+      return;
+    }
+    silc_buffer_put((SilcBuffer)&p, buffer->data, buffer->len);
     silc_packet_encrypt(idata->send_key, idata->hmac_send, idata->psn_send++,
-			sock->outbuf, sock->outbuf->len);
+			(SilcBuffer)&p, p.len);
 
     SILC_LOG_HEXDUMP(("Broadcasted packet (%d), len %d", idata->psn_send - 1,
-		      sock->outbuf->len),
-		     sock->outbuf->data, sock->outbuf->len);
+		      p.len), p.data, p.len);
 
     /* Now actually send the packet */
     silc_server_packet_send_real(server, sock, TRUE);
@@ -372,6 +356,7 @@ void silc_server_packet_route(SilcServer server,
 			      SilcPacketContext *packet)
 {
   SilcBuffer buffer = packet->buffer;
+  const SilcBufferStruct p;
   SilcIDListData idata;
 
   SILC_LOG_DEBUG(("Routing received packet"));
@@ -379,14 +364,17 @@ void silc_server_packet_route(SilcServer server,
   idata = (SilcIDListData)sock->user_data;
 
   silc_buffer_push(buffer, buffer->data - buffer->head);
-  silc_packet_send_prepare(sock, 0, 0, buffer->len); 
-  silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
+  if (!silc_packet_send_prepare(sock, 0, 0, buffer->len, idata->hmac_send,
+                                (const SilcBuffer)&p)) {
+    SILC_LOG_ERROR(("Cannot send packet"));
+    return;
+  }
+  silc_buffer_put((SilcBuffer)&p, buffer->data, buffer->len);
   silc_packet_encrypt(idata->send_key, idata->hmac_send, idata->psn_send++,
-		      sock->outbuf, sock->outbuf->len);
+		      (SilcBuffer)&p, p.len);
 
   SILC_LOG_HEXDUMP(("Routed packet (%d), len %d", idata->psn_send - 1, 
-		    sock->outbuf->len),
-		   sock->outbuf->data, sock->outbuf->len);
+		   p.len), p.data, p.len);
 
   /* Now actually send the packet */
   silc_server_packet_send_real(server, sock, TRUE);
@@ -482,6 +470,7 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 					bool force_send)
 {
   int block_len;
+  const SilcBufferStruct p;
 
   if (!sock)
     return;
@@ -500,32 +489,24 @@ silc_server_packet_send_to_channel_real(SilcServer server,
   else
     packet->padlen = SILC_PACKET_PADLEN(packet->truelen, block_len);
 
-  /* Prepare outgoing data buffer for packet sending */
-  silc_packet_send_prepare(sock, 
-			   SILC_PACKET_HEADER_LEN +
-			   packet->src_id_len + 
-			   packet->dst_id_len,
-			   packet->padlen,
-			   data_len);
-
-  packet->buffer = sock->outbuf;
-
   /* Put the data to buffer, assemble and encrypt the packet. The packet
      is encrypted with normal session key shared with the client, unless
      the `channel_message' is TRUE. */
-  silc_buffer_put(sock->outbuf, data, data_len);
-  silc_packet_assemble(packet, cipher);
+  if (!silc_packet_assemble(packet, NULL, cipher, hmac, sock, data,
+                            data_len, (const SilcBuffer)&p)) {
+    SILC_LOG_ERROR(("Cannot assemble packet"));
+    return;
+  }
+
   if (channel_message)
-    silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, 
+    silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&p, 
 			SILC_PACKET_HEADER_LEN + packet->src_id_len + 
 			packet->dst_id_len + packet->padlen);
   else
-    silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, 
-			sock->outbuf->len);
+    silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&p, p.len);
     
-  SILC_LOG_HEXDUMP(("Channel packet (%d), len %d", sequence, 
-		    sock->outbuf->len),
-		   sock->outbuf->data, sock->outbuf->len);
+  SILC_LOG_HEXDUMP(("Channel packet (%d), len %d", sequence, p.len),
+		   p.data, p.len);
 
   /* Now actually send the packet */
   silc_server_packet_send_real(server, sock, force_send);
@@ -1008,35 +989,30 @@ void silc_server_send_private_message(SilcServer server,
 				      SilcPacketContext *packet)
 {
   SilcBuffer buffer = packet->buffer;
+  const SilcBufferStruct p;
+
+  silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
+		   + packet->dst_id_len + packet->padlen);
+  if (!silc_packet_send_prepare(dst_sock, 0, 0, buffer->len, hmac,
+                                (const SilcBuffer)&p)) {
+    SILC_LOG_ERROR(("Cannot send packet"));
+    return;
+  }
+  silc_buffer_put((SilcBuffer)&p, buffer->data, buffer->len);
 
   /* Re-encrypt and send if private messge key does not exist */
   if (!(packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY)) {
-
-    silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
-		     + packet->dst_id_len + packet->padlen);
-    silc_packet_send_prepare(dst_sock, 0, 0, buffer->len);
-    silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
-
     /* Re-encrypt packet */
-    silc_packet_encrypt(cipher, hmac, sequence, dst_sock->outbuf, buffer->len);
-
-    /* Send the packet */
-    silc_server_packet_send_real(server, dst_sock, FALSE);
-
+    silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&p, buffer->len);
   } else {
     /* Key exist so encrypt just header and send it */
-    silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
-		     + packet->dst_id_len + packet->padlen);
-    silc_packet_send_prepare(dst_sock, 0, 0, buffer->len);
-    silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
-
-    /* Encrypt header */
-    silc_packet_encrypt(cipher, hmac, sequence, dst_sock->outbuf, 
+    silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&p, 
 			SILC_PACKET_HEADER_LEN + packet->src_id_len + 
 			packet->dst_id_len + packet->padlen);
-
-    silc_server_packet_send_real(server, dst_sock, FALSE);
   }
+
+  /* Send the packet */
+  silc_server_packet_send_real(server, dst_sock, FALSE);
 }
 
 /* Sends current motd to client */
@@ -1841,14 +1817,19 @@ void silc_server_relay_packet(SilcServer server,
 			      SilcPacketContext *packet,
 			      bool force_send)
 {
+  const SilcBufferStruct p;
+
   silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		   + packet->dst_id_len + packet->padlen);
-
-  silc_packet_send_prepare(dst_sock, 0, 0, packet->buffer->len);
-  silc_buffer_put(dst_sock->outbuf, packet->buffer->data, packet->buffer->len);
+  if (!silc_packet_send_prepare(dst_sock, 0, 0, packet->buffer->len, hmac,
+                                (const SilcBuffer)&p)) {
+    SILC_LOG_ERROR(("Cannot send packet"));
+    return;
+  }
+  silc_buffer_put((SilcBuffer)&p, packet->buffer->data, packet->buffer->len);
   
   /* Re-encrypt packet */
-  silc_packet_encrypt(cipher, hmac, sequence, dst_sock->outbuf, 
+  silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&p,
 		      packet->buffer->len);
   
   /* Send the packet */

@@ -46,6 +46,7 @@ void silc_client_send_channel_message(SilcClient client,
   SilcSocketConnection sock = conn->sock;
   SilcBuffer payload;
   SilcPacketContext packetdata;
+  const SilcBufferStruct packet;
   SilcCipher cipher;
   SilcHmac hmac;
   unsigned char *id_string;
@@ -131,34 +132,27 @@ void silc_client_send_channel_message(SilcClient client,
 					  packetdata.src_id_len +
 					  packetdata.dst_id_len), block_len);
 
-  /* Prepare outgoing data buffer for packet sending */
-  silc_packet_send_prepare(sock, 
-			   SILC_PACKET_HEADER_LEN +
-			   packetdata.src_id_len + 
-			   packetdata.dst_id_len,
-			   packetdata.padlen,
-			   data_len);
-
-  packetdata.buffer = sock->outbuf;
-
-  /* Put the channel message payload to the outgoing data buffer */
-  silc_buffer_put(sock->outbuf, data, data_len);
-
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata, cipher);
+  if (!silc_packet_assemble(&packetdata, client->rng, cipher, hmac, sock,
+                            data, data_len, (const SilcBuffer)&packet)) {
+    SILC_LOG_ERROR(("Error assembling packet"));
+    goto out;
+  }
 
   /* Encrypt the header and padding of the packet. This is encrypted 
      with normal session key shared with our server. */
   silc_packet_encrypt(cipher, hmac, conn->psn_send++,
-		      sock->outbuf, SILC_PACKET_HEADER_LEN + 
+		      (SilcBuffer)&packet, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
 
-  SILC_LOG_HEXDUMP(("Packet to channel, len %d", sock->outbuf->len),
-		   sock->outbuf->data, sock->outbuf->len);
+  SILC_LOG_HEXDUMP(("Packet to channel, len %d", packet.len),
+		    packet.data, packet.len);
 
   /* Now actually send the packet */
   silc_client_packet_send_real(client, sock, force_send);
+
+ out:
   silc_buffer_free(payload);
   silc_free(id_string);
 }

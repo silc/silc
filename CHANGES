@@ -1,7 +1,19 @@
-Tue Mar 19 12:32:43 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+Tue Mar 19 16:32:43 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_rng_get_byte_fast function in to the
 	  lib/silccrypt/silcrng.[ch].
+
+	* Changed the interface of silc_packet_assemble and the
+	  silc_packet_send_prepare.  If silc_packet_assmble is now
+	  called the application does not call silc_packet_send_prepare
+	  because the library will call it automatically.  These
+	  interfaces now also return a reference to the outgoing buffer
+	  which includes the assembled packet, which the application can 
+	  use to encrypt the packet.
+
+	  Affected files are lib/silccore/silcpacket.[ch],
+	  lib/silcclient/client.c, client_channel.c client_prvmsg.c,
+	  silcd/packet_send.c, server_backup.c and packet_receive.c.
 
 Mon Mar 18 21:00:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 

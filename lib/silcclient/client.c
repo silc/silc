@@ -1184,6 +1184,7 @@ void silc_client_packet_send(SilcClient client,
 			     int force_send)
 {
   SilcPacketContext packetdata;
+  const SilcBufferStruct packet;
   int block_len;
   SilcUInt32 sequence = 0;
 
@@ -1241,32 +1242,20 @@ void silc_client_packet_send(SilcClient client,
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
-  /* Prepare outgoing data buffer for packet sending */
-  silc_packet_send_prepare(sock, 
-			   SILC_PACKET_HEADER_LEN +
-			   packetdata.src_id_len + 
-			   packetdata.dst_id_len,
-			   packetdata.padlen,
-			   data_len);
-
-  SILC_LOG_DEBUG(("Putting data to outgoing buffer, len %d", data_len));
-
-  packetdata.buffer = sock->outbuf;
-
-  /* Put the data to the buffer */
-  if (data && data_len)
-    silc_buffer_put(sock->outbuf, data, data_len);
-
   /* Create the outgoing packet */
-  silc_packet_assemble(&packetdata, cipher);
+  if (!silc_packet_assemble(&packetdata, client->rng, cipher, hmac, sock, 
+                            data, data_len, (const SilcBuffer)&packet)) {
+    SILC_LOG_ERROR(("Error assembling packet"));
+    return;
+  }
 
   /* Encrypt the packet */
   if (cipher)
-    silc_packet_encrypt(cipher, hmac, sequence, sock->outbuf, 
-			sock->outbuf->len);
+    silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&packet, 
+                        packet.len);
 
-  SILC_LOG_HEXDUMP(("Packet (%d), len %d", sequence, sock->outbuf->len),
-		   sock->outbuf->data, sock->outbuf->len);
+  SILC_LOG_HEXDUMP(("Packet (%d), len %d", sequence, packet.len),
+		   packet.data, packet.len);
 
   /* Now actually send the packet */
   silc_client_packet_send_real(client, sock, force_send);
