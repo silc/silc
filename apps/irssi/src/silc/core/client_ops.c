@@ -114,11 +114,15 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 			  char *msg)
 {
   SILC_SERVER_REC *server;
+  char userhost[256];
   
   server = conn == NULL ? NULL : conn->context;
+  if (sender->username)
+    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	     sender->username, sender->hostname);
   signal_emit("message private", 4, server, msg,
 	      sender->nickname ? sender->nickname : "[<unknown>]",
-	      sender->username ? sender->username : NULL);
+	      sender->username ? userhost : NULL);
 }
 
 /* Notify message to the client. The notify arguments are sent in the
@@ -641,7 +645,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	printformat_module("fe-common/silc", server, channel->channel_name,
 			   MSGLEVEL_CRAP, SILCTXT_USERS,
 			   e->nickname, stat, e->username, 
-			   e->realname ? e->realname : "");
+			   e->hostname, e->realname ? e->realname : "");
 	if (mode)
 	  silc_free(mode);
       }

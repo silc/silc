@@ -58,7 +58,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "whois_idle", " idle     : $0", 1, { 0 } },
 	{ "whowas", "{nick $0} was {nickhost $1} ($2)", 3, { 0, 0, 0 } },
 	{ "users_header", "Users on {channelhilight $0}", 1, { 0 } },
-	{ "users", " %|{nick $[!20]0} $[!5]1 $2 {comment {hilight $3}}", 4, { 0, 0, 0, 0 } },
+	{ "users", " %|{nick $[!20]0} $[!5]1 $2@$3 {comment {hilight $4}}", 5, { 0, 0, 0, 0, 0 } },
 
 	/* Key management and key agreement */
 	{ NULL, "Key Management And Key Agreement", 0 },

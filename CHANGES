@@ -1,3 +1,9 @@
+Fri Sep  7 22:16:38 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed various printing bugs on the user interface in the
+	  Irssi SILC Client.  Minor changes that were forgotten from
+	  the release.
+
 Fri Sep  7 17:28:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the configure.in.pre and the compilation and distribution

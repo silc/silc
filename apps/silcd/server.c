@@ -868,7 +868,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   silc_buffer_free(packet);
   silc_free(id_string);
 
-  SILC_LOG_DEBUG(("Connected to router %s", sock->hostname));
+  SILC_LOG_INFO(("Connected to router %s", sock->hostname));
 
   /* Add the connected router to local server list */
   server->standalone = FALSE;

@@ -138,6 +138,7 @@ static void event_join(SILC_SERVER_REC *server, va_list va)
   SILC_NICK_REC *nickrec;
   SilcClientEntry client;
   SilcChannelEntry channel;
+  char userhost[256];
 
   client = va_arg(va, SilcClientEntry);
   channel = va_arg(va, SilcChannelEntry);
@@ -161,9 +162,12 @@ static void event_join(SILC_SERVER_REC *server, va_list va)
     }
   }
 
+  if (client->username)
+    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	     client->username, client->hostname);
   signal_emit("message join", 4, server, channel->channel_name,
 	      client->nickname,
-	      client->username == NULL ? "" : client->username);
+	      client->username == NULL ? "" : userhost);
 }
 
 /*
@@ -176,12 +180,16 @@ static void event_leave(SILC_SERVER_REC *server, va_list va)
   SILC_NICK_REC *nickrec;
   SilcClientEntry client;
   SilcChannelEntry channel;
+  char userhost[256];
 
   client = va_arg(va, SilcClientEntry);
   channel = va_arg(va, SilcChannelEntry);
 
+  if (client->username)
+    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	     client->username, client->hostname);
   signal_emit("message part", 5, server, channel->channel_name,
-	      client->nickname,  client->username ?  client->username : "", 
+	      client->nickname,  client->username ?  userhost : "", 
 	      client->nickname);
 
   chanrec = silc_channel_find_entry(server, channel);
@@ -201,12 +209,16 @@ static void event_signoff(SILC_SERVER_REC *server, va_list va)
   SilcClientEntry client;
   GSList *nicks, *tmp;
   char *message;
+  char userhost[256];
 
   client = va_arg(va, SilcClientEntry);
   message = va_arg(va, char *);
 
+  if (client->username)
+    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	     client->username, client->hostname);
   signal_emit("message quit", 4, server, client->nickname,
-	      client->username ? client->username : "", 
+	      client->username ? userhost : "", 
 	      message ? message : "");
 
   nicks = nicklist_get_same_unique(SERVER(server), client);
@@ -228,6 +240,7 @@ static void event_topic(SILC_SERVER_REC *server, va_list va)
   SilcClientEntry client;
   SilcChannelEntry channel;
   char *topic;
+  char userhost[256];
 
   client = va_arg(va, SilcClientEntry);
   topic = va_arg(va, char *);
@@ -240,8 +253,10 @@ static void event_topic(SILC_SERVER_REC *server, va_list va)
     signal_emit("channel topic changed", 1, chanrec);
   }
 
+  snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	   client->username, client->hostname);
   signal_emit("message topic", 5, server, channel->channel_name,
-	      topic, client->nickname, client->username);
+	      topic, client->nickname, userhost);
 }
 
 /*
@@ -253,13 +268,16 @@ static void event_invite(SILC_SERVER_REC *server, va_list va)
   SilcClientEntry client;
   SilcChannelEntry channel;
   char *channel_name;
+  char userhost[256];
   
   channel = va_arg(va, SilcChannelEntry);
   channel_name = va_arg(va, char *);
   client = va_arg(va, SilcClientEntry);
 
+  snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	   client->username, client->hostname);
   signal_emit("message invite", 4, server, channel ? channel->channel_name :
-	      channel_name, client->nickname, client->username);
+	      channel_name, client->nickname, userhost);
 }
 
 /*
@@ -269,6 +287,7 @@ static void event_invite(SILC_SERVER_REC *server, va_list va)
 static void event_nick(SILC_SERVER_REC *server, va_list va)
 {
   SilcClientEntry oldclient, newclient;
+  char userhost[256];
 
   oldclient = va_arg(va, SilcClientEntry);
   newclient = va_arg(va, SilcClientEntry);
@@ -277,8 +296,10 @@ static void event_nick(SILC_SERVER_REC *server, va_list va)
 			 oldclient, oldclient->nickname,
 			 newclient, newclient->nickname);
 
+  snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	   newclient->username, newclient->hostname);
   signal_emit("message nick", 4, server, newclient->nickname, 
-	      oldclient->nickname, newclient->username);
+	      oldclient->nickname, userhost);
 }
 
 /*
@@ -411,15 +432,21 @@ static void event_server_signoff(SILC_SERVER_REC *server, va_list va)
   SilcClientEntry *clients;
   uint32 clients_count;
   int i;
+  char userhost[256];
   
   (void)va_arg(va, void *);
   clients = va_arg(va, SilcClientEntry *);
   clients_count = va_arg(va, uint32);
   
-  for (i = 0; i < clients_count; i++)
+  for (i = 0; i < clients_count; i++) {
+    memset(userhost, 0, sizeof(userhost));
+    if (clients[i]->username)
+      snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	       clients[i]->username, clients[i]->hostname);
     signal_emit("message quit", 4, server, clients[i]->nickname,
-		clients[i]->username ? clients[i]->username : "", 
+		clients[i]->username ? userhost : "", 
 		"server signoff");
+  }
 }
 
 /*
@@ -501,6 +528,7 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
 			 WI_ITEM_REC *item)
 {
   SILC_CHANNEL_REC *chanrec;
+  char userhost[256];
   
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
@@ -515,8 +543,11 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   if (chanrec == NULL) 
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
+  snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	   server->conn->local_entry->username, 
+	   server->conn->local_entry->hostname);
   signal_emit("message part", 5, server, chanrec->name,
-	      server->nick, server->conn->local_entry->username, "");
+	      server->nick, userhost, "");
   
   silc_command_exec(server, "LEAVE", chanrec->name);
   signal_stop();
