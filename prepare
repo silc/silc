@@ -68,7 +68,7 @@ echo "Preparing $distribution distribution version $version (package $dist_versi
 #
 subdirs=`grep "$distribution"_SUBDIRS= distributions |cut -d=  -f2`
 ed=`grep "$distribution"_EXTRA_DIST= distributions |cut -d=  -f2`
-sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$subdirs/" -e "/SILC_DISTRIBUTION_EXTRA/s//$ed/" Makefile.am.pre >Makefile.am
+sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$subdirs/" -e "/SILC_DISTRIBUTION_EXTRA/s,,$ed," Makefile.am.pre >Makefile.am
 path=`pwd`
 for i in $subdirs
 do
@@ -129,20 +129,22 @@ cp Makefile.defines_int.in lib/silcmath/mpi
 
 aclocal
 autoconf
-autoheader
+autoheader >/dev/null 2>/dev/null
 automake
 
+echo "Preparing lib/trq"
 cd lib/trq
 aclocal
 autoconf
-autoheader
+autoheader </dev/null 2>/dev/null
 automake >/dev/null 2>/dev/null
 cd ../..
 
+echo "Preparing lib/silcmath/mpi"
 cd lib/silcmath/mpi
 aclocal
 autoconf
-autoheader
+autoheader </dev/null 2>/dev/null
 automake >/dev/null 2>/dev/null
 cd ../../..
 
@@ -154,6 +156,7 @@ echo "#define SILC_PROTOCOL_VERSION_STRING \"SILC-1.0-$version\"" >>$file
 echo "#define SILC_NAME \"SILC $distribution\"" >>$file
 
 # preparing irssi
+echo "Preparing irssi"
 cd irssi
 sh autogen.sh 2>/dev/null 1>/dev/null
 cd ..
