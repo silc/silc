@@ -723,6 +723,8 @@ void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size)
   SilcHashTableEntry *table, e, tmp;
   uint32 table_size, size_index;
 
+  SILC_HT_DEBUG(("Start"));
+
   if (new_size)
     silc_hash_table_primesize(new_size, &size_index);
   else
@@ -768,6 +770,8 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
   int i;
   SilcHashTableEntry *table, e, tmp;
   uint32 table_size, size_index;
+
+  SILC_HT_DEBUG(("Start"));
 
   if (new_size)
     silc_hash_table_primesize(new_size, &size_index);
