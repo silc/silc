@@ -47,6 +47,16 @@ bool silc_hash_register(SilcHashObject *hash)
 
   SILC_LOG_DEBUG(("Registering new hash function `%s'", hash->name));
 
+  /* Check for existing */
+  if (silc_hash_list) {
+    SilcHashObject *entry;
+    silc_dlist_start(silc_hash_list);
+    while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, hash->name))
+	return FALSE;
+    }
+  }
+
   new = silc_calloc(1, sizeof(*new));
   new->name = strdup(hash->name);
   new->hash_len = hash->hash_len;

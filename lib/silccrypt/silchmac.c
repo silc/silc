@@ -86,6 +86,16 @@ bool silc_hmac_register(SilcHmacObject *hmac)
 
   SILC_LOG_DEBUG(("Registering new HMAC `%s'", hmac->name));
 
+  /* Check for existing */
+  if (silc_hmac_list) {
+    SilcHmacObject *entry;
+    silc_dlist_start(silc_hmac_list);
+    while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, hmac->name))
+	return FALSE;
+    }
+  }
+
   new = silc_calloc(1, sizeof(*new));
   new->name = strdup(hmac->name);
   new->len = hmac->len;

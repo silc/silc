@@ -1,7 +1,6 @@
 #ifndef __SILC_CORE_H
 #define __SILC_CORE_H
 
-#include "clientconfig.h"
 #include "clientutil.h"
 
 /* Default client configuration file. This can be overridden at the
@@ -27,7 +26,6 @@
 #define SILC_CLIENT_DEF_PKCS_LEN 1024
 
 extern SilcClient silc_client;
-extern SilcClientConfig silc_config;
 
 #ifdef SILC_SIM
 /* SIM (SILC Module) table */

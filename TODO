@@ -15,10 +15,6 @@ TODO/bugs in Irssi SILC client
    that the user has.  And a local command to dump the contents of the
    public key to the screen.  Something like LISTKEYS, SHOWKEY...
 
- o We should get rid of the clientconfig.[ch] in Irssi SILC and move the
-   cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
-   file.
-
  o Extend the /HELP command to support sub commands or something.  So
    that user can say /help set mutual_authentication they would get
    help of the mutual_authentication setting.

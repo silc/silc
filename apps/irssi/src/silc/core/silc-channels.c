@@ -75,22 +75,16 @@ static void sig_channel_destroyed(SILC_CHANNEL_REC *channel)
 static void silc_channels_join(SILC_SERVER_REC *server,
 			       const char *channels, int automatic)
 {
-  char **list, **tmp, *channel;
+  char **list, **tmp;
   SILC_CHANNEL_REC *chanrec;
 
   list = g_strsplit(channels, ",", -1);
   for (tmp = list; *tmp != NULL; tmp++) {
-    channel = **tmp == '#' ? g_strdup(*tmp) :
-      g_strconcat("#", *tmp, NULL);
-
-    chanrec = silc_channel_find(server, channel);
-    if (chanrec) {
-      g_free(channel);
+    chanrec = silc_channel_find(server, *tmp);
+    if (chanrec)
       continue;
-    }
 
-    silc_command_exec(server, "JOIN", channel);
-    g_free(channel);
+    silc_command_exec(server, "JOIN", *tmp);
   }
 
   g_strfreev(list);
@@ -1256,9 +1250,11 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT, argv[2]);
     internal->responder = TRUE;
-    silc_client_send_key_agreement(silc_client, conn, client_entry, hostname, 
-    				   bindhost, port, 120, keyagr_completion, 
-    				   internal);
+    silc_client_send_key_agreement(
+			   silc_client, conn, client_entry, hostname, 
+			   bindhost, port, 
+			   settings_get_int("key_exchange_timeout_secs"), 
+			   keyagr_completion, internal);
     if (!hostname)
       silc_free(internal);
     goto out;

@@ -1,3 +1,10 @@
+Sun Feb 10 18:11:30 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* The silc_cipher_register, silc_hash_register and
+	  silc_hmac_register now checks if the object to be registered
+	  is registered already.  Affected files are
+	  lib/silccrypt/silccipher.c, silchash.c and silchmac.c.
+
 Sun Feb 10 15:48:38 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged new irssi from irssi.org's CVS, the version 0.7.99.

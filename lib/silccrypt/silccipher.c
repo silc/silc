@@ -95,6 +95,16 @@ bool silc_cipher_register(SilcCipherObject *cipher)
 
   SILC_LOG_DEBUG(("Registering new cipher `%s'", cipher->name));
 
+  /* Check if exists already */
+  if (silc_cipher_list) {
+    SilcCipherObject *entry;
+    silc_dlist_start(silc_cipher_list);
+    while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, cipher->name))
+	return FALSE;
+    }
+  }
+
   new = silc_calloc(1, sizeof(*new));
   new->name = strdup(cipher->name);
   new->block_len = cipher->block_len;

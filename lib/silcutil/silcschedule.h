@@ -172,7 +172,7 @@ typedef enum {
  *
  * NAME
  * 
- *    typedef enum { ... } SilcTaskPriority
+ *    typedef enum { ... } SilcTaskPriority;
  *
  * DESCRIPTION
  *
