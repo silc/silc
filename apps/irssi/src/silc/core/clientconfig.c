@@ -68,6 +68,7 @@ SilcClientConfig silc_client_config_alloc(char *filename)
   SilcClientConfig new;
   SilcBuffer buffer;
   SilcClientConfigParse config_parse;
+  char *str;
 
   SILC_LOG_DEBUG(("Allocating new configuration object"));
 
@@ -77,7 +78,9 @@ SilcClientConfig silc_client_config_alloc(char *filename)
   /* Open configuration file and parse it */
   config_parse = NULL;
   buffer = NULL;
-  silc_config_open(filename, &buffer);
+  str = convert_home(filename);
+  silc_config_open(str, &buffer);
+  g_free(str);
   if (!buffer)
     goto fail;
   if ((silc_client_config_parse(new, buffer, &config_parse)) == FALSE)
