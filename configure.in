@@ -220,14 +220,14 @@ if test "x$socks" = "x5"; then
 fi
 
 
-# XXX
-#LIBS="$LIBS -lefence"
-
 AC_ARG_WITH(silcd-config-file,
 [  --with-silcd-config-file[=PATH]
                           Use PATH as default configuration file in SILC
                           server.],
 [ AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval") ])
+
+# XXX
+#LIBS="$LIBS -lefence"
 
 # Other configure scripts
 #AC_CONFIG_SUBDIRS(lib/zlib)
