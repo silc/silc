@@ -76,7 +76,8 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       char *nickname,
 				       char *server,
-				       unsigned int num);
+				       unsigned int num,
+				       int query);
 SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcClientID *client_id);

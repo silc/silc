@@ -144,6 +144,13 @@ void silc_server_send_notify_topic_set(SilcServer server,
 				       SilcClientID *client_id,
 				       unsigned int client_id_len,
 				       char *topic);
+void silc_server_send_notify_kicked(SilcServer server,
+				    SilcSocketConnection sock,
+				    int broadcast,
+				    SilcChannelEntry channel,
+				    SilcClientID *client_id,
+				    unsigned int client_id_len,
+				    char *comment);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  int broadcast,

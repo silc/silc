@@ -479,6 +479,61 @@ void silc_server_notify(SilcServer server,
     SILC_LOG_DEBUG(("SERVER SIGNOFF notify (not-impl XXX)"));
     break;
 
+  case SILC_NOTIFY_TYPE_KICKED:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    
+    SILC_LOG_DEBUG(("KICKED notify"));
+      
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+    silc_free(channel_id);
+
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+
+    /* Send to channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
+    /* If the the client is not in local list we check global list */
+    client = silc_idlist_find_client_by_id(server->local_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->global_list, 
+					     client_id, NULL);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+    }
+
+    /* Remove the client from channel */
+    silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
+
+    break;
+
     /* Ignore rest of the notify types for now */
   case SILC_NOTIFY_TYPE_NONE:
   case SILC_NOTIFY_TYPE_MOTD:

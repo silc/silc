@@ -31,7 +31,8 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       char *nickname,
 				       char *server,
-				       unsigned int num)
+				       unsigned int num,
+				       int query)
 {
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list = NULL;
@@ -39,28 +40,31 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 
   /* Find ID from cache */
   if (!silc_idcache_find_by_data_loose(conn->client_cache, nickname, &list)) {
-    SilcClientCommandContext ctx;
-    char ident[512];
-    
   identify:
 
-    SILC_LOG_DEBUG(("Requesting Client ID from server"));
-
-    /* No ID found. Do query from the server. The query is done by 
-       sending simple IDENTIFY command to the server. */
-    ctx = silc_client_command_alloc();
-    ctx->client = client;
-    ctx->conn = conn;
-    ctx->command = silc_client_command_find("IDENTIFY");
-    memset(ident, 0, sizeof(ident));
-    snprintf(ident, sizeof(ident), "IDENTIFY %s", nickname);
-    silc_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
-			    &ctx->argv_types, &ctx->argc, 2);
-    ctx->command->cb(ctx);
-
-    if (list)
-      silc_idcache_list_free(list);
-
+    if (query) {
+      SilcClientCommandContext ctx;
+      char ident[512];
+      
+      SILC_LOG_DEBUG(("Requesting Client ID from server"));
+      
+      /* No ID found. Do query from the server. The query is done by 
+	 sending simple IDENTIFY command to the server. */
+      ctx = silc_client_command_alloc();
+      ctx->client = client;
+      ctx->conn = conn;
+      ctx->command = silc_client_command_find("IDENTIFY");
+      memset(ident, 0, sizeof(ident));
+      snprintf(ident, sizeof(ident), "IDENTIFY %s", nickname);
+      silc_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
+			      &ctx->argv_types, &ctx->argc, 2);
+      ctx->command->cb(ctx);
+      
+      if (list)
+	silc_idcache_list_free(list);
+      
+      return NULL;
+    }
     return NULL;
   }
 

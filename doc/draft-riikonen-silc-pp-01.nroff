@@ -1055,7 +1055,7 @@ ID's sent in arguments are sent inside ID Payload.
 
       Sent when client has joined to a channel.  The server must distribute
       this type only to the local clients on the channel and then send
-      it to its primary router. The router or server receiving the packet
+      it to its primary router.  The router or server receiving the packet
       distributes this type to the local clients on the channel and
       broadcast it to the network.
 
@@ -1070,7 +1070,7 @@ ID's sent in arguments are sent inside ID Payload.
 
       Sent when client has left a channel.  The server must distribute
       this type only to the local clients on the channel and then send
-      it to its primary router. The router or server receiving the packet
+      it to its primary router.  The router or server receiving the packet
       distributes this type to the local clients on the channel and
       broadcast it to the network.
 
@@ -1084,7 +1084,7 @@ ID's sent in arguments are sent inside ID Payload.
 
       Sent when client signoffs from SILC network.  The server must
       distribute this type only to the local clients on the channel and
-      then send it to its primary router. The router or server receiving
+      then send it to its primary router.  The router or server receiving
       the packet distributes this type to the local clients on the channel
       and broadcast it to the network.
 
@@ -1183,6 +1183,23 @@ ID's sent in arguments are sent inside ID Payload.
           Arguments:  (1) <Server ID>
 
       The <Server ID> is the server's ID.
+
+
+12    SILC_NOTIFY_TYPE_KICKED
+
+      Sent when a client has been kicked from a channel.  This is sent 
+      also to the client who was kicked from the channel.  The client
+      who was kicked from the channel must be removed from the channel.
+      This notify type is always destined to the channel.  The router or
+      server receiving the packet distributes this type to the local
+      clients on the channel and broadcast it to the network.
+
+      Max Arguments:  2
+          Arguments:  (1) <Client ID>  (2) [<comment>]
+
+      The <Client ID> is the client who was kicked from the channel.
+      The kicker may have set the <comment> to indicate the reason for
+      the kicking.
 
 .in 3
 

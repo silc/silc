@@ -229,6 +229,27 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
     break;
 
+  case SILC_NOTIFY_TYPE_KICKED:
+    client_entry = va_arg(vp, SilcClientEntry);
+    tmp = va_arg(vp, char *);
+    channel_entry = va_arg(vp, SilcChannelEntry);
+
+    if (client_entry == conn->local_entry) {
+      snprintf(message, sizeof(message), 
+	       "You have been kicked off channel %s %s%s%s", 
+	       conn->current_channel->channel_name,
+	       tmp ? "(" : "", tmp ? tmp : "", tmp ? ")" : "");
+    } else {
+      snprintf(message, sizeof(message), 
+	       "%s%s%s has been kicked off channel %s %s%s%s", 
+	       client_entry->nickname, 
+	       client_entry->server ? "@" : "",
+	       client_entry->server ? client_entry->server : "",
+	       conn->current_channel->channel_name,
+	       tmp ? "(" : "", tmp ? tmp : "", tmp ? ")" : "");
+    }
+    break;
+
   default:
     break;
   }

@@ -1,3 +1,23 @@
+Sat Feb 24 16:03:45 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added SILC_NOTIFY_TYPE_KICKED to indicate that the client
+	  or some other client was kicked from the channel.
+
+	  Implemented the handling of the notify type to both client
+	  and server.
+
+	  Implemented silc_server_send_notify_kicked to send the KICKED
+	  notify.  It is used to send it to the server's primary router.
+
+	* Implemented the KICK command into server and client.
+
+	* Added `query' argument to the silc_idlist_get_client function
+	  to indicate whether to query the client from server or not if
+	  it was not found.
+
+	* Added new command status type SILC_STATUS_ERR_NO_CHANNEL_FOPRIV
+	  to indicate that the client is not channel founder.
+
 Sat Feb 24 00:00:55 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Removed the rng context from SilcPacketContext structure and

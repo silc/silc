@@ -2804,7 +2804,7 @@ List of all defined commands in SILC follows.
    19   SILC_COMMAND_KICK
 
         Max Arguments:  3
-            Arguments:  (1) <channel>  (2) <Client ID>  
+            Arguments:  (1) <Channel ID>  (2) <Client ID>  
                         (3) [<comment>]
 
         This command is used by channel operators to remove a client from
@@ -3266,27 +3266,32 @@ List of all defined command status messages following.
         "Permission denied. You are not channel operator".  Command may 
         be executed only by channel operator.
 
-   40   SILC_STATUS_ERR_NO_SERVER_PRIV
+   40   SILC_STATUS_ERR_NO_CHANNEL_FOPRIV
+
+        "Permission denied. You are not channel founder".  Command may 
+        be executed only by channel operator.
+
+   41   SILC_STATUS_ERR_NO_SERVER_PRIV
 
         "Permission denied. You are not server operator".  Command may
         be executed only by server operator.
 
-   41   SILC_STATUS_ERR_NO_ROUTER_PRIV
+   42   SILC_STATUS_ERR_NO_ROUTER_PRIV
 
         "Permission denied. You are not SILC operator".  Command may be
         executed only by router (SILC) operator.
 
-   42   SILC_STATUS_ERR_BAD_NICKNAME
+   43   SILC_STATUS_ERR_BAD_NICKNAME
 
         "Bad nickname".  Nickname requested contained illegal characters
         or were malformed.
 
-   43   SILC_STATUS_ERR_BAD_CHANNEL
+   44   SILC_STATUS_ERR_BAD_CHANNEL
 
         "Bad channel name".  Channel requested contained illegal characters
         or were malformed.
 
-   44   SILC_STATUS_ERR_AUTH_FAILED
+   45   SILC_STATUS_ERR_AUTH_FAILED
 
         "Authentication failed".  The authentication data sent as 
         argument were wrong and thus authentication failed.

@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2001/02/24 15:50:23  priikone
+ * 	implemented KICK command
+ *
  * Revision 1.5  2001/02/19 13:47:30  priikone
  * 	updates.
  *
@@ -145,7 +148,8 @@ SILC_CLIENT_LCMD_FUNC(msg)
   }
 
   /* Find client entry */
-  client_entry = silc_idlist_get_client(client, conn, nickname, server, num);
+  client_entry = silc_idlist_get_client(client, conn, nickname, server, num,
+					TRUE);
   if (!client_entry) {
     /* Client entry not found, it was requested thus mark this to be
        pending command. */

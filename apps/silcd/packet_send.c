@@ -918,6 +918,29 @@ void silc_server_send_notify_topic_set(SilcServer server,
   silc_buffer_free(idp);
 }
 
+/* Send KICKED notify type. This tells that the `client_id' on `channel'
+   was kicked off the channel.  The `comment' may indicate the reason
+   for the kicking. This function is used only between server and router
+   traffic. */
+
+void silc_server_send_notify_kicked(SilcServer server,
+				    SilcSocketConnection sock,
+				    int broadcast,
+				    SilcChannelEntry channel,
+				    SilcClientID *client_id,
+				    unsigned int client_id_len,
+				    char *comment)
+{
+  SilcBuffer idp;
+
+  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
+			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_KICKED,
+			       comment ? 2 : 1, idp->data, idp->len,
+			       comment, comment ? strlen(comment) : 0);
+  silc_buffer_free(idp);
+}
+
 /* Sends notify message destined to specific entity. */
 
 void silc_server_send_notify_dest(SilcServer server,
@@ -941,7 +964,7 @@ void silc_server_send_notify_dest(SilcServer server,
 }
 
 /* Sends notify message to a channel. The notify message sent is 
-   distributed to all clients on the channel. If `router_notify' is TRUE
+   distributed to all clients on the channel. If `route_notify' is TRUE
    then the notify may be routed to primary route or to some other routers.
    If FALSE it is assured that the notify is sent only locally. If `sender'
    is provided then the packet is not sent to that connection since it

@@ -107,6 +107,7 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
   { STAT(UNKNOWN_MODE),    "Unknown mode" },
   { STAT(NOT_YOU),         "Cannot change mode for other users" },
   { STAT(NO_CHANNEL_PRIV), "Permission denied. You are not channel operator" },
+  { STAT(NO_CHANNEL_FOPRIV),"Permission denied. You are not channel founder" },
   { STAT(NO_SERVER_PRIV),  "Permission denied. You are not server operator" },
   { STAT(NO_ROUTER_PRIV),  "Permission denied. You are not SILC operator" },
   { STAT(BAD_NICKNAME),    "Bad nickname" },
@@ -1011,6 +1012,29 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
 
 SILC_CLIENT_CMD_REPLY_FUNC(kick)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_KICK);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_KICK);
+  silc_client_command_reply_free(cmd);
 }
 
 SILC_CLIENT_CMD_REPLY_FUNC(restart)

@@ -1828,6 +1828,59 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application */
     client->ops->notify(client, conn, type, channel, channel);
     break;
+
+  case SILC_NOTIFY_TYPE_KICKED:
+    /*
+     * A client (maybe me) was kicked from a channel
+     */
+
+    /* Get Client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+
+    /* Find Client entry */
+    client_entry = 
+      silc_idlist_get_client_by_id(client, conn, client_id);
+    if (!client_entry)
+      goto out;
+
+    /* Get channel entry */
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				SILC_ID_CHANNEL);
+    if (!channel_id)
+      goto out;
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				     SILC_ID_CHANNEL, &id_cache))
+      break;
+
+    channel = (SilcChannelEntry)id_cache->context;
+
+    /* Get comment */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+
+    /* Notify application. The channel entry is sent last as this notify
+       is for channel but application don't know it from the arguments
+       sent by server. */
+    client->ops->notify(client, conn, type, client_entry, tmp, channel);
+
+    /* If I was kicked from channel, remove the channel */
+    if (client_entry == conn->local_entry) {
+      if (conn->current_channel == channel)
+	conn->current_channel = NULL;
+      silc_idcache_del_by_id(conn->channel_cache, 
+			     SILC_ID_CHANNEL, channel->id);
+      silc_free(channel->channel_name);
+      silc_free(channel->id);
+      silc_free(channel->key);
+      silc_cipher_free(channel->channel_key);
+      silc_free(channel);
+    }
+    break;
     
   default:
     break;

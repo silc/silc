@@ -122,11 +122,12 @@ typedef unsigned short SilcCommandStatus;
 #define SILC_STATUS_ERR_UNKNOWN_MODE        37
 #define SILC_STATUS_ERR_NOT_YOU             38
 #define SILC_STATUS_ERR_NO_CHANNEL_PRIV     39
-#define SILC_STATUS_ERR_NO_SERVER_PRIV      40
-#define SILC_STATUS_ERR_NO_ROUTER_PRIV      41
-#define SILC_STATUS_ERR_BAD_NICKNAME        42
-#define SILC_STATUS_ERR_BAD_CHANNEL         43
-#define SILC_STATUS_ERR_AUTH_FAILED         44
+#define SILC_STATUS_ERR_NO_CHANNEL_FOPRIV   40
+#define SILC_STATUS_ERR_NO_SERVER_PRIV      41
+#define SILC_STATUS_ERR_NO_ROUTER_PRIV      42
+#define SILC_STATUS_ERR_BAD_NICKNAME        43
+#define SILC_STATUS_ERR_BAD_CHANNEL         44
+#define SILC_STATUS_ERR_AUTH_FAILED         45
 
 /* Prototypes */
 SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);

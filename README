@@ -130,6 +130,13 @@ Following commands has been, at least partly, implemented:
 		handling multiple same nicknames with this command is
 		still missing.
 
+        /KICK   <channel> <nickname>[@<server>] [<comment>]
+
+                Kicks client from channel. You have to be at least channel
+		operator to be able to kick client from channel.  Note:
+		you cannot kick channel founder even if you are channel
+		operator.
+
 	/PING	[<server>]
 
 		Pings server.  Only locally connected server may be 

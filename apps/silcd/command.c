@@ -2386,7 +2386,7 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (!tmp) {
       if (!(channel->mode & SILC_CHANNEL_MODE_ULIMIT)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					      SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
     } else {
@@ -2407,7 +2407,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
       if (!tmp) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					      SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
 
@@ -2432,7 +2432,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
       if (!tmp) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					      SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
 
@@ -2459,7 +2459,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       tmp = silc_argument_get_arg_type(cmd->args, 6, NULL);
       if (!tmp) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					      SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
 
@@ -2700,13 +2700,13 @@ SILC_SERVER_CMD_FUNC(cumode)
   tmp_id = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
   if (!tmp_id) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+					  SILC_STATUS_ERR_NO_CLIENT_ID);
     goto out;
   }
   client_id = silc_id_payload_parse_id(tmp_id, tmp_len);
   if (!client_id) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+					  SILC_STATUS_ERR_NO_CLIENT_ID);
     goto out;
   }
 
@@ -2818,6 +2818,151 @@ SILC_SERVER_CMD_FUNC(cumode)
 
 SILC_SERVER_CMD_FUNC(kick)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  SilcClientEntry target_client;
+  SilcChannelID *channel_id;
+  SilcClientID *client_id;
+  SilcChannelEntry channel;
+  SilcChannelClientEntry chl;
+  SilcBuffer idp;
+  unsigned int tmp_len;
+  unsigned char *tmp, *comment;
+
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_LEAVE, cmd, 1, 3);
+
+  /* Get Channel ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
+  channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!channel_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_NO_CHANNEL_ID);
+    goto out;
+  }
+
+  /* Get channel entry */
+  channel = silc_idlist_find_channel_by_id(server->local_list, 
+					   channel_id, NULL);
+  if (!channel) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+    goto out;
+  }
+
+  /* Check whether sender is on the channel */
+  if (!silc_server_client_on_channel(client, channel)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_NOT_ON_CHANNEL);
+    goto out;
+  }
+
+  /* Check that the kicker is channel operator or channel founder */
+  silc_list_start(channel->user_list);
+  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    if (chl->client == client) {
+      if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					      SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+	goto out;
+      }
+      break;
+    }
+  }
+  
+  /* Get target Client ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_NO_CLIENT_ID);
+    goto out;
+  }
+  client_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!client_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_NO_CLIENT_ID);
+    goto out;
+  }
+
+  /* Get target client's entry */
+  target_client = silc_idlist_find_client_by_id(server->local_list, 
+						client_id, NULL);
+  if (!target_client) {
+    target_client = silc_idlist_find_client_by_id(server->global_list, 
+						  client_id, NULL);
+  }
+
+  /* Check that the target client is not channel founder. Channel founder
+     cannot be kicked from the channel. */
+  silc_list_start(channel->user_list);
+  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    if (chl->client == target_client) {
+      if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+				  SILC_STATUS_ERR_NO_CHANNEL_FOPRIV);
+	goto out;
+      }
+      break;
+    }
+  }
+  
+  /* Check whether target client is on the channel */
+  if (!silc_server_client_on_channel(target_client, channel)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_USER_NOT_ON_CHANNEL);
+    goto out;
+  }
+
+  /* Get comment */
+  tmp_len = 0;
+  comment = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+  if (tmp_len > 128)
+    comment = NULL;
+
+  /* Send command reply to sender */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK, 
+					SILC_STATUS_OK);
+
+  /* Send KICKED notify to local clients on the channel */
+  idp = silc_id_payload_encode(target_client->id, SILC_ID_CLIENT);
+  silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+				     SILC_NOTIFY_TYPE_KICKED, 
+				     comment ? 2 : 1,
+				     idp->data, idp->len,
+				     comment, comment ? strlen(comment) : 0);
+  silc_buffer_free(idp);
+
+  /* Remove the client from the channel. If the channel does not exist
+     after removing the client then the client kicked itself of the channel
+     and we don't have to send anything after that. */
+  if (!silc_server_remove_from_one_channel(server, NULL, channel, 
+					   target_client, FALSE))
+    goto out;
+
+  /* Send KICKED notify to primary route */
+  if (!server->standalone)
+    silc_server_send_notify_kicked(server, server->router->connection,
+				   server->server_type == SILC_ROUTER ?
+				   TRUE : FALSE, channel,
+				   target_client->id, SILC_ID_CLIENT_LEN,
+				   comment);
+
+  /* Re-generate channel key */
+  silc_server_create_channel_key(server, channel, 0);
+
+  /* Send the channel key to the channel. The key of course is not sent
+     to the client who joined the channel. */
+  silc_server_send_channel_key(server, target_client->connection, channel, 
+			       server->server_type == SILC_ROUTER ? 
+			       FALSE : server->standalone);
+
+ out:
+  silc_server_command_free(cmd);
 }
 
 SILC_SERVER_CMD_FUNC(restart)

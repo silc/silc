@@ -139,4 +139,5 @@ void *silc_id_dup(void *id, SilcIdType type)
   int len = silc_id_get_len(type);
   void *new = silc_calloc(1, len);
   memcpy(new, id, len);
+  return new;
 }

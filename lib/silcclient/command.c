@@ -46,7 +46,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(umode, UMODE, "UMODE", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(cmode, CMODE, "CMODE", SILC_CF_LAG | SILC_CF_REG, 4),
   SILC_CLIENT_CMD(cumode, CUMODE, "CUMODE", SILC_CF_LAG | SILC_CF_REG, 5),
-  SILC_CLIENT_CMD(kick, KICK, "KICK", SILC_CF_LAG | SILC_CF_REG, 2),
+  SILC_CLIENT_CMD(kick, KICK, "KICK", SILC_CF_LAG | SILC_CF_REG, 4),
   SILC_CLIENT_CMD(restart, RESTART, "RESTART",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
   SILC_CLIENT_CMD(close, CLOSE, "CLOSE",
@@ -471,7 +471,8 @@ SILC_CLIENT_CMD_FUNC(invite)
   }
 
   /* Find client entry */
-  client_entry = silc_idlist_get_client(client, conn, nickname, server, num);
+  client_entry = silc_idlist_get_client(client, conn, nickname, server, num,
+					TRUE);
   if (!client_entry) {
     if (nickname)
       silc_free(nickname);
@@ -1051,7 +1052,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
 
   /* Find client entry */
   client_entry = silc_idlist_get_client(cmd->client, conn, 
-					nickname, server, num);
+					nickname, server, num, TRUE);
   if (!client_entry) {
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
@@ -1138,7 +1139,94 @@ SILC_CLIENT_CMD_FUNC(kick)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
+  SilcBuffer buffer, idp, idp2;
+  SilcClientEntry target;
+  char *name;
+  unsigned int num = 0;
+  char *nickname = NULL, *server = NULL;
 
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 3) {
+    cmd->client->ops->say(cmd->client, conn, 
+			  "Usage: /KICK <channel> <client> [<comment>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argv[1][0] == '*') {
+    if (!conn->current_channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+    name = conn->current_channel->channel_name;
+  } else {
+    name = cmd->argv[1];
+  }
+
+  if (!conn->current_channel) {
+    cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Get the Channel ID of the channel */
+  if (!silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {
+    cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  channel = (SilcChannelEntry)id_cache->context;
+
+  /* Parse the typed nickname. */
+  if (!silc_parse_nickname(cmd->argv[2], &nickname, &server, &num)) {
+    cmd->client->ops->say(cmd->client, conn, "Bad nickname");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Get the target client */
+  target = silc_idlist_get_client(cmd->client, conn, nickname, 
+				  server, num, FALSE);
+  if (!target) {
+    cmd->client->ops->say(cmd->client, conn, "No such client: %s",
+			  cmd->argv[2]);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Send KICK command to the server */
+  idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
+  idp2 = silc_id_payload_encode(target->id, SILC_ID_CLIENT);
+  if (cmd->argc == 3)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_KICK, 0, 2, 
+					    1, idp->data, idp->len,
+					    2, idp2->data, idp2->len);
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_KICK, 0, 3, 
+					    1, idp->data, idp->len,
+					    2, idp2->data, idp2->len,
+					    3, cmd->argv[3], 
+					    strlen(cmd->argv[3]));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_buffer_free(idp);
+  silc_buffer_free(idp2);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 SILC_CLIENT_CMD_FUNC(restart)
