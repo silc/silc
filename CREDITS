@@ -49,7 +49,6 @@ P: 1024/A924ED4F AD 82 53 2D 84 FF C7 D1  FF 63 19 0E 1A 78 9F 8A  A9 24 ED 4F
 D: Protocol architect
 D: Main developer
 D: SILCNet coordinator and administrator
-S: Snellmanninkatu 34 A 15
 S: 70100 Kuopio
 S: Finland
 
@@ -105,5 +104,15 @@ D: wannabe
 S: Arnyas ut 38-40/H
 S: 1121 Budapest
 S: Hungary
+
+N: Toni Willberg
+W: http://toniw.iki.fi/
+E: toniw@iki.fi
+D: bugzilla.silcnet.org admin
+D: silc.peelo.com admin
+D: Silc Admin development
+D: Testing
+S: Helsinki
+S: Finland
 
 ----------------------------------------------------------------------------
