@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "DLL" /FD /c
+# ADD CPP /nologo /MT /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "DLL" /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -71,7 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "SILC_DEBUG" /D "DLL" /FD /GZ /c
+# ADD CPP /nologo /MTd /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "SILC_DEBUG" /D "DLL" /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -100,6 +100,10 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=..\..\lib\silccore\silcargument.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccore\silcattrs.c
 # End Source File
 # Begin Source File
 
@@ -196,6 +200,10 @@ SOURCE=..\..\lib\silcutil\silcstrutil.c
 # Begin Source File
 
 SOURCE=..\..\lib\silcutil\silcutil.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcvcard.c
 # End Source File
 # Begin Source File
 
@@ -367,6 +375,10 @@ SOURCE=..\..\lib\silccore\silcargument.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silccore\silcattrs.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silccore\silcauth.h
 # End Source File
 # Begin Source File
@@ -504,6 +516,10 @@ SOURCE=..\..\lib\silcutil\silctypes.h
 # Begin Source File
 
 SOURCE=..\..\lib\silcutil\silcutil.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcvcard.h
 # End Source File
 # End Group
 # Begin Group "silcmath No. 1"

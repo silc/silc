@@ -160,3 +160,7 @@ EXPORTS
 	silc_client_run_one @ 150 ;
 	silc_client_on_channel @ 151 ;
 	silc_client_current_channel_private_key @ 152;
+        silc_client_attribute_add @ 153 ;
+        silc_client_attribute_del @ 154 ;
+        silc_client_attributes_get @ 155 ;
+        silc_client_attributes_request @ 156 ;

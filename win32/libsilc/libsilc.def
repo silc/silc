@@ -565,3 +565,18 @@ EXPORTS
 	silc_parse_version_string @ 863 ;
 	silc_version_to_num @ 864 ;
 	silc_fingerprint @ 865 ;
+        silc_get_packet_name @ 866 ;
+        silc_get_command_name @ 867 ;
+        silc_strncat @ 868 ;
+        silc_attribute_payload_parse @ 869 ;
+        silc_attribute_payload_encode @ 870 ;
+        silc_attribute_payload_alloc @ 871 ;
+        silc_attribute_payload_free @ 872 ;
+        silc_attribute_payload_list_free @ 873 ;
+        silc_attribute_payload_encode_data @ 874 ;
+        silc_attribute_get_attribute @ 875 ;
+        silc_attribute_get_data @ 876 ;
+        silc_attribute_get_object @ 877 ;
+        silc_attribute_get_flags @ 878 ;
+        silc_attribute_get_verify_data @ 879 ;
+        silc_hash_get_name @ 880 ;
