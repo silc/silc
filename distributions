@@ -12,7 +12,7 @@
 # The format of this file is as follows:
 #
 # _<name>_SUBDIRS			Subdirs for the distribution
-# _<name>_SUBIDRS_<dir>                 Subdirs under <dir>
+# _<name>_SUBDIRS_<dir>                 Subdirs under <dir>
 # _<name>_DISTLABEL                     Preprocessor label
 #
 # The _SUBDIRS define all the subdirectories that the Makefile should
