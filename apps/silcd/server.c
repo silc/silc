@@ -3152,9 +3152,16 @@ void silc_server_free_sock_user_data(SilcServer server,
 	silc_server_remove_servers_by_server(server, user_data, TRUE);
 
 	/* Remove the clients that this server owns as they will become
-	   invalid now too. */
-	silc_server_remove_clients_by_server(server, user_data,
-					     user_data, TRUE);
+	   invalid now too.  For backup router the server is actually
+	   coming from the primary router, so mark that as the owner
+	   of this entry. */
+	if (server->server_type == SILC_BACKUP_ROUTER &&
+	    sock->type == SILC_SOCKET_TYPE_SERVER)
+	  silc_server_remove_clients_by_server(server, server->router,
+					       user_data, TRUE);
+	else
+	  silc_server_remove_clients_by_server(server, user_data,
+					       user_data, TRUE);
 
 	/* Remove channels owned by this server */
 	if (server->server_type == SILC_SERVER)

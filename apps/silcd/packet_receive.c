@@ -1233,7 +1233,7 @@ void silc_server_notify(SilcServer server,
     /* Get server entry */
     server_entry = silc_idlist_find_server_by_id(server->global_list, 
 						 server_id, TRUE, NULL);
-    local = TRUE;
+    local = FALSE;
     if (!server_entry) {
       server_entry = silc_idlist_find_server_by_id(server->local_list, 
 						   server_id, TRUE, NULL);

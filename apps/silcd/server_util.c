@@ -332,6 +332,10 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 				    SILC_PACKET_NOTIFY, 0, FALSE,
 				    not->data, not->len, FALSE);
 
+    /* Send notify also to local backup routers */
+    silc_server_backup_send(server, NULL, SILC_PACKET_NOTIFY, 0,
+			    not->data, not->len, FALSE, TRUE);
+
     silc_buffer_free(args);
     silc_buffer_free(not);
     for (i = 0; i < argc; i++)

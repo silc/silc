@@ -1,3 +1,17 @@
+Sun Sep  8 13:13:44 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Distribute the SERVER_SIGNOFF notify also to local backup
+	  routers from the primary router.  The backup router may not
+	  have the signing of local server directly connected and need
+	  to know about the signoff.  Affected file silcd/server_util.c.
+
+	* Use the primary router as the origin of the locally connected
+	  server when it is disconnecting from the backup router since
+	  that's where it really is coming from.  Now the clients from
+	  the disconnecting server are removed correctly and "shadow"
+	  clients are not left to the backup router.  Affected file
+	  silcd/server.c.
+
 Sat Sep  7 22:26:50 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* If normal server is standalone and found existing but disabled

@@ -1418,7 +1418,7 @@ UTF-8 [RFC2279] encoded.
       Sent when server quits SILC network.  Those clients from this
       server that are on channels must be removed from the channel.
 
-      Max Arguments:  2000
+      Max Arguments:  256
           Arguments:  (1) <Server ID>   (n) [<Client ID>]   [...]
 
       The <Server ID> is the server's ID.  The rest of the arguments
