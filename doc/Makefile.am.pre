@@ -64,8 +64,9 @@ toolkit-ref-ps:
 
 toolkit-ref-pdf:
 	-ps2pdf $(SILC_TOP_SRCDIR)/doc/toolkit.ps $(SILC_TOP_SRCDIR)/doc/toolkit.pdf
+endif
 
-dist-hook: toolkit-ref-html
+dist-hook:
 	touch draft-riikonen-silc-spec-05.txt
 	touch draft-riikonen-silc-pp-05.txt
 	touch draft-riikonen-silc-ke-auth-05.txt
@@ -84,25 +85,7 @@ dist-hook: toolkit-ref-html
 		draft-riikonen-silc-flags-payloads-00.txt
 	$(makerfc) draft-riikonen-presence-attrs-00.nroff \
 		draft-riikonen-presence-attrs-00.txt
-else
-dist-hook:
-	touch draft-riikonen-silc-spec-05.txt
-	touch draft-riikonen-silc-pp-05.txt
-	touch draft-riikonen-silc-ke-auth-05.txt
-	touch draft-riikonen-silc-commands-03.txt
-	touch draft-riikonen-silc-flags-payloads-00.txt
-	touch draft-riikonen-presence-attrs-00.txt
-	$(makerfc) draft-riikonen-silc-spec-05.nroff \
-		draft-riikonen-silc-spec-05.txt
-	$(makerfc) draft-riikonen-silc-pp-05.nroff \
-		draft-riikonen-silc-pp-05.txt
-	$(makerfc) draft-riikonen-silc-ke-auth-05.nroff \
-		draft-riikonen-silc-ke-auth-05.txt
-	$(makerfc) draft-riikonen-silc-commands-03.nroff \
-		draft-riikonen-silc-commands-03.txt
-	$(makerfc) draft-riikonen-presence-attrs-00.nroff \
-		draft-riikonen-presence-attrs-00.txt
-endif
+
 endif
 
 if SILC_DIST_TOOLKIT

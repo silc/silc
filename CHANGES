@@ -1,3 +1,10 @@
+Fri Nov  1 18:57:02 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed includes/silcincludes.h to silcincludes.h.in to
+	  include configuration specific information.  The silcdefs.h
+	  is not included in to installation anymore (it's only
+	  compilation time header).
+
 Fri Nov  1 10:30:26 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Moved the SilcClient and SilcClientConnection from client.h

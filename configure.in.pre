@@ -92,17 +92,17 @@ AC_TYPE_UID_T
 AC_TYPE_PID_T
 
 AC_CHECK_SIZEOF(long long, 0)
-AC_DEFINE_UNQUOTED(SILC_SIZEOF_LONG_LONG, $ac_cv_sizeof_long_long)
+AC_SUBST(SILC_SIZEOF_LONG_LONG, $ac_cv_sizeof_long_long)
 AC_CHECK_SIZEOF(long, 0)
-AC_DEFINE_UNQUOTED(SILC_SIZEOF_LONG, $ac_cv_sizeof_long)
+AC_SUBST(SILC_SIZEOF_LONG, $ac_cv_sizeof_long)
 AC_CHECK_SIZEOF(int, 0)
-AC_DEFINE_UNQUOTED(SILC_SIZEOF_INT, $ac_cv_sizeof_int)
+AC_SUBST(SILC_SIZEOF_INT, $ac_cv_sizeof_int)
 AC_CHECK_SIZEOF(short, 0)
-AC_DEFINE_UNQUOTED(SILC_SIZEOF_SHORT, $ac_cv_sizeof_short)
+AC_SUBST(SILC_SIZEOF_SHORT, $ac_cv_sizeof_short)
 AC_CHECK_SIZEOF(char, 0)
-AC_DEFINE_UNQUOTED(SILC_SIZEOF_CHAR, $ac_cv_sizeof_char)
+AC_SUBST(SILC_SIZEOF_CHAR, $ac_cv_sizeof_char)
 AC_CHECK_SIZEOF(void *, 0)
-AC_DEFINE_UNQUOTED(SILC_SIZEOF_VOID_P, $ac_cv_sizeof_void_p)
+AC_SUBST(SILC_SIZEOF_VOID_P, $ac_cv_sizeof_void_p)
 
 # Function and library checking
 #
@@ -967,6 +967,7 @@ lib/silcutil/epoc/Makefile
 lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
 doc/example_silcd.conf
+includes/silcincludes.h
 )
 
 if test "x$silc_dist" = "xsilc-client" ||
