@@ -80,38 +80,6 @@ void silc_client_list_pkcs()
   silc_free(pkcs);
 }
 
-/* Displays input prompt on command line and takes input data from user */
-
-char *silc_client_get_input(const char *prompt)
-{
-  char input[2048];
-  int fd;
-
-  fd = open("/dev/tty", O_RDONLY);
-  if (fd < 0) {
-    fprintf(stderr, "silc: %s\n", strerror(errno));
-    return NULL;
-  }
-
-  memset(input, 0, sizeof(input));
-
-  printf("%s", prompt);
-  fflush(stdout);
-
-  if ((read(fd, input, sizeof(input))) < 0) {
-    fprintf(stderr, "silc: %s\n", strerror(errno));
-    return NULL;
-  }
-
-  if (strlen(input) <= 1)
-    return NULL;
-
-  if (strchr(input, '\n'))
-    *strchr(input, '\n') = '\0';
-
-  return strdup(input);
-}
-
 /* Returns identifier string for public key generation. */
 
 char *silc_client_create_identifier()
@@ -171,8 +139,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
   if (!pkcs_name) {
   again_name:
-    pkcs_name = 
-      silc_client_get_input("PKCS name (l to list names) [rsa]: ");
+    pkcs_name = silc_get_input("PKCS name (l to list names) [rsa]: ", FALSE);
     if (!pkcs_name)
       pkcs_name = strdup("rsa");
 
@@ -190,8 +157,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
   if (!bits) {
     char *length = NULL;
-    length = 
-      silc_client_get_input("Key length in bits [1024]: ");
+    length = silc_get_input("Key length in bits [1024]: ", FALSE);
     if (!length)
       bits = 1024;
     else
@@ -210,7 +176,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 	       "RN=Jon Johnson, E=jon@dummy.com): ");
 
     while (!identifier) {
-      identifier = silc_client_get_input(line);
+      identifier = silc_get_input(line, FALSE);
       if (!identifier && def)
 	identifier = strdup(def);
     }
@@ -227,7 +193,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     memset(line, 0, sizeof(line));
     snprintf(line, sizeof(line), "Public key filename [%s] ", 
 	     SILC_CLIENT_PUBLIC_KEY_NAME);
-    pkfile = silc_client_get_input(line);
+    pkfile = silc_get_input(line, FALSE);
     if (!pkfile)
       pkfile = SILC_CLIENT_PUBLIC_KEY_NAME;
   } else {
@@ -238,7 +204,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     memset(line, 0, sizeof(line));
     snprintf(line, sizeof(line), "Public key filename [%s] ", 
 	     SILC_CLIENT_PRIVATE_KEY_NAME);
-    prvfile = silc_client_get_input(line);
+    prvfile = silc_get_input(line, FALSE);
     if (!prvfile)
       prvfile = SILC_CLIENT_PRIVATE_KEY_NAME;
   } else {

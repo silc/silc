@@ -1,7 +1,8 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o /cumode for unknown nick does not give any error message.
+ o /cumode for unknown nick does not give any error message (Fix this to
+   1.0).
 
 
 TODO/bugs In SILC Client Library
@@ -10,7 +11,8 @@ TODO/bugs In SILC Client Library
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
-   set the key only if application wishes to set (accept the key) it.
+   set the key only if application wishes to set (accept the key) it
+   (Do this to 1.0).
 
  o Additions to do after protocol version 1.1:
 
@@ -25,36 +27,38 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Configuration file additions:
+ o Configuration file additions (Do this to 0.8.x):
 
 	o Add incoming connection frequency, incoming connection frequency
 	  for single IP address, key exchange frequency, key exchange
 	  frequency for single IP. Add also frequency base.
-
-	o Add hashed passwords to config file.
 
 	o Add rehashing support.
 
  o If server send CUMODE_CHANGE notify (like setting founder) to router
    and router does not have founder on channel (founder is left or there's
    no founder on channel at all), the router will accept the server's
-   founder mode change, even though it perhaps should not do that.
+   founder mode change, even though it perhaps should not do that (Fix 
+   this to 0.9).
 
  o The router should check for validity of received notify packets from
-   servers (after all buggy servers may send notify that is actually
-   something that should have not been sent).
+   routers (fix this to 0.9).  Following NOTIFYs needs to be verified:
+
+	o JOIN (check that joining is allowed)
+	o SIGNOFF (maybe should check that notifier owns the client)
+	o KILLED (check that killling is allowed (Protocol TODO #13))
+
+ o Backup router related issues (Fix this to 1.0):
+
+ 	o Channel user mode changes are notified unnecessarely when
+	  switching to backup router on router crash.
 
  o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
    seconds.  Now it is possible to accept n incoming JOIN commands
    and process them without any timeouts.  THis must be employed because
    each JOIN command will create and distribute the new channel key
-   to everybody on the channel.
-
- o Backup router related issues
-
- 	o Channel user mode changes are notified unnecessarely when
-	  switching to backup router on router crash.
+   to everybody on the channel (Fix this to 1.0).
 
  o Lots of statistics updating is missing around the server.
 

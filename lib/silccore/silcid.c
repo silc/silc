@@ -64,7 +64,7 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
 
   silc_buffer_pull(&buffer, 4);
 
-  if (newp->len > buffer.len)
+  if (newp->len > buffer.len || newp->len > SILC_PACKET_MAX_ID_LEN)
     goto err;
 
   ret = silc_buffer_unformat(&buffer,
@@ -84,12 +84,13 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
 
 /* Return the ID directly from the raw payload data. */
 
-void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len)
+void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
+			       SilcIdType *ret_type)
 {
   SilcBufferStruct buffer;
   SilcIdType type;
   SilcUInt16 idlen;
-  unsigned char *id_data = NULL;
+  unsigned char *id_data;
   int ret;
   void *id;
 
@@ -99,25 +100,25 @@ void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len)
 			     SILC_STR_UI_SHORT(&idlen),
 			     SILC_STR_END);
   if (ret == -1)
-    goto err;
+    return NULL;
 
   silc_buffer_pull(&buffer, 4);
 
-  if (idlen > buffer.len)
-    goto err;
+  if (idlen > buffer.len || idlen > SILC_PACKET_MAX_ID_LEN)
+    return NULL;
 
   ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_XNSTRING_ALLOC(&id_data, idlen),
+			     SILC_STR_UI_XNSTRING(&id_data, idlen),
 			     SILC_STR_END);
   if (ret == -1)
-    goto err;
+    return NULL;
 
   id = silc_id_str2id(id_data, idlen, type);
-  silc_free(id_data);
-  return id;
 
- err:
-  return NULL;
+  if (ret_type)
+    *ret_type = type;
+
+  return id;
 }
 
 /* Encodes ID Payload */
@@ -247,7 +248,8 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type)
 
 /* Converts string to a ID */
 
-void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, SilcIdType type)
+void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, 
+		     SilcIdType type)
 {
 
   switch(type) {

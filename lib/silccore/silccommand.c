@@ -386,6 +386,23 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload)
   return payload->ident;
 }
 
+/* Return command status */
+
+SilcCommandStatus silc_command_get_status(SilcCommandPayload payload)
+{
+  unsigned char *tmp;
+  SilcCommandStatus status;
+
+  if (!payload->args)
+    return 0;
+  tmp = silc_argument_get_arg_type(payload->args, 1, NULL);
+  if (!tmp)
+    return 0;
+
+  SILC_GET16_MSB(status, tmp);
+  return status;
+}
+
 /* Function to set identifier to already allocated Command Payload. Command
    payloads are frequentlly resent in SILC and thusly this makes it easy
    to set the identifier. */

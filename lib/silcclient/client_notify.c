@@ -44,9 +44,7 @@ static void silc_client_notify_by_server_pending(void *context, void *context2)
   SILC_LOG_DEBUG(("Start"));
 
   if (reply) {
-    SilcCommandStatus status;
-    unsigned char *tmp = silc_argument_get_arg_type(reply->args, 1, NULL);
-    SILC_GET16_MSB(status, tmp);
+    SilcCommandStatus status = silc_command_get_status(reply->payload);
     if (status != SILC_STATUS_OK)
       goto out;
   }
@@ -59,27 +57,39 @@ static void silc_client_notify_by_server_pending(void *context, void *context2)
   silc_free(res);
 }
 
-/* Resolve client information from server by Client ID. */
+/* Resolve client, channel or server information. */
 
 static void silc_client_notify_by_server_resolve(SilcClient client,
 						 SilcClientConnection conn,
 						 SilcPacketContext *packet,
-						 SilcClientID *client_id)
+						 SilcIdType id_type,
+						 void *id)
 {
   SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
-  SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+  SilcBuffer idp = silc_id_payload_encode(id, id_type);
 
   res->packet = silc_packet_context_dup(packet);
   res->context = client;
   res->sock = silc_socket_dup(conn->sock);
 
-  silc_client_command_register(client, SILC_COMMAND_WHOIS, NULL, NULL,
-			       silc_client_command_reply_whois_i, 0,
-			       ++conn->cmd_ident);
-  silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-			   1, 3, idp->data, idp->len);
-  silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-			      silc_client_notify_by_server_pending, res);
+  /* For client resolving use WHOIS, and oterhwise use IDENTIFY */
+  if (id_type == SILC_ID_CLIENT) {
+    silc_client_command_register(client, SILC_COMMAND_WHOIS, NULL, NULL,
+				 silc_client_command_reply_whois_i, 0,
+				 ++conn->cmd_ident);
+    silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
+			     1, 3, idp->data, idp->len);
+    silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
+				silc_client_notify_by_server_pending, res);
+  } else {
+    silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
+				 silc_client_command_reply_identify_i, 0,
+				 ++conn->cmd_ident);
+    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, 
+			     conn->cmd_ident, 1, 5, idp->data, idp->len);
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
+				silc_client_notify_by_server_pending, res);
+  }
   silc_buffer_free(idp);
 }
 
@@ -95,7 +105,8 @@ void silc_client_notify_by_server(SilcClient client,
   SilcNotifyType type;
   SilcArgumentPayload args;
 
-  SilcIDPayload idp;
+  void *id;
+  SilcIdType id_type;
   SilcClientID *client_id = NULL;
   SilcChannelID *channel_id = NULL;
   SilcServerID *server_id = NULL;
@@ -138,7 +149,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id)
       goto out;
 
@@ -150,14 +161,15 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
     /* Find Client entry and if not found query it */
     client_entry = silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry) {
-      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
+      silc_client_notify_by_server_resolve(client, conn, packet, 
+					   SILC_ID_CLIENT, client_id);
       goto out;
     }
 
@@ -184,14 +196,15 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
     /* Find Client entry and if not found query it */
     client_entry = silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry) {
-      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
+      silc_client_notify_by_server_resolve(client, conn, packet, 
+					   SILC_ID_CLIENT, client_id);
       goto out;
     }
 
@@ -202,7 +215,8 @@ void silc_client_notify_by_server(SilcClient client,
 	goto out;
       }
       client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
-      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
+      silc_client_notify_by_server_resolve(client, conn, packet, 
+					   SILC_ID_CLIENT, client_id);
       goto out;
     } else {
       if (client_entry != conn->local_entry)
@@ -214,7 +228,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id)
       goto out;
 
@@ -251,7 +265,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -296,7 +310,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -331,62 +345,50 @@ void silc_client_notify_by_server(SilcClient client,
 
     SILC_LOG_DEBUG(("Notify: TOPIC_SET"));
 
-    /* Get Client ID */
+    /* Get ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-
-    idp = silc_id_payload_parse(tmp, tmp_len);
-    if (!idp)
+    id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+    if (!id)
       goto out;
 
     /* Find Client entry */
-    if (silc_id_payload_get_type(idp) == SILC_ID_CLIENT) {
-      client_id = silc_id_payload_parse_id(tmp, tmp_len);
-      if (!client_id) {
-	silc_id_payload_free(idp);
-	goto out;
-      }
-
+    if (id_type == SILC_ID_CLIENT) {
       /* Find Client entry */
-      client_entry = 
-	silc_client_get_client_by_id(client, conn, client_id);
-      if (!client_entry)
-	goto out;
-    } else if (silc_id_payload_get_type(idp) == SILC_ID_SERVER) {
-      server_id = silc_id_payload_parse_id(tmp, tmp_len);
-      if (!server_id) {
-	silc_id_payload_free(idp);
+      client_id = id;
+      client_entry = silc_client_get_client_by_id(client, conn, client_id);
+      if (!client_entry) {
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CLIENT, client_id);
 	goto out;
       }
-      
+    } else if (id_type == SILC_ID_SERVER) {
+      /* Find Server entry */
+      server_id = id;
       server = silc_client_get_server_by_id(client, conn, server_id);
       if (!server) {
-	silc_id_payload_free(idp);
-	silc_free(server_id);
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_SERVER, server_id);
 	goto out;
       }
       
       /* Save the pointer to the client_entry pointer */
       client_entry = (SilcClientEntry)server;
-      silc_free(server_id);
     } else {
-      channel_id = silc_id_payload_parse_id(tmp, tmp_len);
-      if (!channel_id) {
-	silc_id_payload_free(idp);
-	goto out;
-      }
-      
+      /* Find Channel entry */
+      channel_id = id;
       channel = silc_client_get_channel_by_id(client, conn, channel_id);
       if (!channel) {
-	silc_id_payload_free(idp);
-	silc_free(channel_id);
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CHANNEL, channel_id);
 	goto out;
       }
       
       /* Save the pointer to the client_entry pointer */
       client_entry = (SilcClientEntry)channel;
       silc_free(channel_id);
+      channel_id = NULL;
     }
 
     /* Get topic */
@@ -406,11 +408,9 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->internal->ops->notify(client, conn, type, 
-				  silc_id_payload_get_type(idp),
+    client->internal->ops->notify(client, conn, type, id_type,
 				  client_entry, tmp, channel);
 
-    silc_id_payload_free(idp);
     break;
 
   case SILC_NOTIFY_TYPE_NICK_CHANGE:
@@ -428,7 +428,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -449,7 +449,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -457,7 +457,8 @@ void silc_client_notify_by_server(SilcClient client,
     client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry2) {
       /* Resolve the entry information */
-      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
+      silc_client_notify_by_server_resolve(client, conn, packet, 
+					   SILC_ID_CLIENT, client_id);
 
       /* Add the new entry even though we resolved it. This is because we
 	 want to replace the old entry with the new entry here right now. */
@@ -496,68 +497,67 @@ void silc_client_notify_by_server(SilcClient client,
 
     SILC_LOG_DEBUG(("Notify: CMODE_CHANGE"));
 
-    /* Get Client ID */
+    /* Get ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-
-    idp = silc_id_payload_parse(tmp, tmp_len);
-    if (!idp)
+    id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+    if (!id)
       goto out;
 
     /* Find Client entry */
-    if (silc_id_payload_get_type(idp) == SILC_ID_CLIENT) {
-      client_id = silc_id_payload_parse_id(tmp, tmp_len);
-      if (!client_id) {
-	silc_id_payload_free(idp);
+    if (id_type == SILC_ID_CLIENT) {
+      /* Find Client entry */
+      client_id = id;
+      client_entry = silc_client_get_client_by_id(client, conn, client_id);
+      if (!client_entry) {
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CLIENT, client_id);
+	goto out;
+      }
+    } else if (id_type == SILC_ID_SERVER) {
+      /* Find Server entry */
+      server_id = id;
+      server = silc_client_get_server_by_id(client, conn, server_id);
+      if (!server) {
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_SERVER, server_id);
 	goto out;
       }
 
-      client_entry = silc_client_get_client_by_id(client, conn, client_id);
-      if (!client_entry) {
-	silc_id_payload_free(idp);
-	goto out;
-      }
+      /* Save the pointer to the client_entry pointer */
+      client_entry = (SilcClientEntry)server;
     } else {
-      server_id = silc_id_payload_parse_id(tmp, tmp_len);
-      if (!server_id) {
-	silc_id_payload_free(idp);
-	goto out;
-      }
-      
-      server = silc_client_get_server_by_id(client, conn, server_id);
-      if (!server) {
-	silc_id_payload_free(idp);
-	silc_free(server_id);
+      /* Find Channel entry */
+      channel_id = id;
+      channel = silc_client_get_channel_by_id(client, conn, channel_id);
+      if (!channel) {
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CHANNEL, channel_id);
 	goto out;
       }
       
       /* Save the pointer to the client_entry pointer */
-      client_entry = (SilcClientEntry)server;
-      silc_free(server_id);
+      client_entry = (SilcClientEntry)channel;
+      silc_free(channel_id);
+      channel_id = NULL;
     }
 
     /* Get the mode */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp) {
-      silc_id_payload_free(idp);
+    if (!tmp)
       goto out;
-    }
 
     SILC_GET32_MSB(mode, tmp);
 
     /* Get channel entry */
     channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
 				SILC_ID_CHANNEL);
-    if (!channel_id) {
-      silc_id_payload_free(idp);
+    if (!channel_id)
       goto out;
-    }
     channel = silc_client_get_channel_by_id(client, conn, channel_id);
-    if (!channel) {
-      silc_id_payload_free(idp);
+    if (!channel)
       goto out;
-    }
 
     /* Save the new mode */
     channel->mode = mode;
@@ -583,11 +583,8 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->internal->ops->notify(client, conn, type, 
-				  silc_id_payload_get_type(idp), 
+    client->internal->ops->notify(client, conn, type, id_type,
 				  client_entry, mode, NULL, tmp, channel);
-
-    silc_id_payload_free(idp);
     break;
 
   case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
@@ -597,20 +594,50 @@ void silc_client_notify_by_server(SilcClient client,
 
     SILC_LOG_DEBUG(("Notify: CUMODE_CHANGE"));
 
-    /* Get Client ID */
+    /* Get ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!client_id)
+    id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+    if (!id)
       goto out;
 
     /* Find Client entry */
-    client_entry = silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry) {
-      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
-      goto out;
+    if (id_type == SILC_ID_CLIENT) {
+      /* Find Client entry */
+      client_id = id;
+      client_entry = silc_client_get_client_by_id(client, conn, client_id);
+      if (!client_entry) {
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CLIENT, client_id);
+	goto out;
+      }
+    } else if (id_type == SILC_ID_SERVER) {
+      /* Find Server entry */
+      server_id = id;
+      server = silc_client_get_server_by_id(client, conn, server_id);
+      if (!server) {
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_SERVER, server_id);
+	goto out;
+      }
+
+      /* Save the pointer to the client_entry pointer */
+      client_entry = (SilcClientEntry)server;
+    } else {
+      /* Find Channel entry */
+      channel_id = id;
+      channel = silc_client_get_channel_by_id(client, conn, channel_id);
+      if (!channel) {
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CHANNEL, channel_id);
+	goto out;
+      }
+      
+      /* Save the pointer to the client_entry pointer */
+      client_entry = (SilcClientEntry)channel;
+      silc_free(channel_id);
+      channel_id = NULL;
     }
 
     /* Get the mode */
@@ -626,7 +653,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     silc_free(client_id);
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -653,8 +680,8 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->internal->ops->notify(client, conn, type, 
-				  client_entry, mode, 
+    client->internal->ops->notify(client, conn, type,
+				  id_type, client_entry, mode, 
 				  client_entry2, channel);
     break;
 
@@ -686,7 +713,7 @@ void silc_client_notify_by_server(SilcClient client,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id)
       goto out;
 
@@ -701,7 +728,7 @@ void silc_client_notify_by_server(SilcClient client,
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp)
       goto out;
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id)
       goto out;
 
@@ -724,7 +751,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -745,14 +772,15 @@ void silc_client_notify_by_server(SilcClient client,
     /* Get the kicker */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
     if (tmp) {
-      client_id = silc_id_payload_parse_id(tmp, tmp_len);
+      client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
       if (!client_id)
 	goto out;
 
       /* Find kicker's client entry and if not found resolve it */
       client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
       if (!client_entry2) {
-	silc_client_notify_by_server_resolve(client, conn, packet, client_id);
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CLIENT, client_id);
 	goto out;
       } else {
 	if (client_entry2 != conn->local_entry)
@@ -794,7 +822,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!tmp)
       goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -831,7 +859,7 @@ void silc_client_notify_by_server(SilcClient client,
 	/* Get Client ID */
 	tmp = silc_argument_get_arg_type(args, i + 1, &tmp_len);
 	if (tmp) {
-	  client_id = silc_id_payload_parse_id(tmp, tmp_len);
+	  client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
 	  if (!client_id)
 	    goto out;
 	  
@@ -876,4 +904,5 @@ void silc_client_notify_by_server(SilcClient client,
   silc_notify_payload_free(payload);
   silc_free(client_id);
   silc_free(channel_id);
+  silc_free(server_id);
 }

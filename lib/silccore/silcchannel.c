@@ -250,6 +250,8 @@ struct SilcChannelMessagePayloadStruct {
   SilcMessageFlags flags;
   SilcUInt16 data_len;
   unsigned char *data;
+  SilcUInt16 pad_len;
+  unsigned char *pad;
   unsigned char *mac;
   unsigned char *iv;
 };
@@ -346,12 +348,13 @@ silc_channel_message_payload_parse(unsigned char *payload,
   if (!newp)
     return NULL;
 
-  /* Parse the Channel Message Payload. Ignore the padding. */
+  /* Parse the Channel Message Payload. */
   ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_SHORT(&newp->flags),
 			     SILC_STR_UI16_NSTRING_ALLOC(&newp->data, 
 							 &newp->data_len),
-			     SILC_STR_UI16_NSTRING(NULL, NULL),
+			     SILC_STR_UI16_NSTRING_ALLOC(&newp->pad, 
+							 &newp->pad_len),
 			     SILC_STR_UI_XNSTRING(&newp->mac, mac_len),
 			     SILC_STR_UI_XNSTRING(&newp->iv, iv_len),
 			     SILC_STR_END);
@@ -369,6 +372,44 @@ silc_channel_message_payload_parse(unsigned char *payload,
  err:
   silc_channel_message_payload_free(newp);
   return NULL;
+}
+
+/* This function is used to encrypt the Channel Messsage Payload which is
+   the `data' and `data_len'.  This is used internally by the Channel Message
+   Payload encoding routines but application may call this too if needed. 
+   The `data_len' is the data lenght which is used to create MAC out of.
+   The `true_len' is the true length of `data' message payload and is used
+   assemble rest of the packet after MAC creation. The `true_len' length
+   packet will then be encrypted. */
+
+bool silc_channel_message_payload_encrypt(unsigned char *data,
+					  SilcUInt32 data_len,
+					  SilcUInt32 true_len,
+					  unsigned char *iv,
+					  SilcUInt32 iv_len,
+					  SilcCipher cipher,
+					  SilcHmac hmac)
+{
+  unsigned char mac[32];
+  SilcUInt32 mac_len;
+  SilcBufferStruct buf;
+
+  /* Compute the MAC of the channel message data */
+  silc_hmac_make(hmac, data, data_len, mac, &mac_len);
+
+  /* Put rest of the data to the payload */
+  silc_buffer_set(&buf, data, true_len);
+  silc_buffer_pull(&buf, data_len);
+  silc_buffer_format(&buf, 
+		     SILC_STR_UI_XNSTRING(mac, mac_len),
+		     SILC_STR_UI_XNSTRING(iv, iv_len),
+		     SILC_STR_END);
+
+  /* Encrypt payload of the packet. This is encrypted with the channel key. */
+  silc_cipher_encrypt(cipher, data, data, true_len - iv_len, iv);
+
+  memset(mac, 0, sizeof(mac));
+  return TRUE;
 }
 
 /* Encodes channel message payload into a buffer and returns it. This is used 
@@ -389,7 +430,6 @@ SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
   SilcBuffer buffer;
   SilcUInt32 len, pad_len, mac_len;
   unsigned char pad[16];
-  unsigned char mac[32];
 
   SILC_LOG_DEBUG(("Encoding channel message payload"));
 
@@ -408,9 +448,9 @@ SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
 
   /* Generate padding */
   if (rng) {
-    for (i = 0; i < pad_len; i++) pad[i] = silc_rng_get_byte(rng);
+    for (i = 0; i < pad_len; i++) pad[i] = silc_rng_get_byte_fast(rng);
   } else {
-    for (i = 0; i < pad_len; i++) pad[i] = silc_rng_global_get_byte();
+    for (i = 0; i < pad_len; i++) pad[i] = silc_rng_global_get_byte_fast();
   }
 
   /* Encode the Channel Message Payload */
@@ -423,24 +463,16 @@ SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
 		     SILC_STR_UI_XNSTRING(pad, pad_len),
 		     SILC_STR_END);
 
-  /* Compute the MAC of the channel message data */
-  silc_hmac_make(hmac, buffer->data, buffer->len, mac, &mac_len);
-
-  /* Put rest of the data to the payload */
-  silc_buffer_pull_tail(buffer, mac_len + iv_len);
-  silc_buffer_pull(buffer, 6 + data_len + pad_len);
-  silc_buffer_format(buffer, 
-		     SILC_STR_UI_XNSTRING(mac, mac_len),
-		     SILC_STR_UI_XNSTRING(iv, iv_len),
-		     SILC_STR_END);
-  silc_buffer_push(buffer, 6 + data_len + pad_len);
-
-  /* Encrypt payload of the packet. This is encrypted with the channel key. */
-  silc_cipher_encrypt(cipher, buffer->data, buffer->data, 
-		      buffer->len - iv_len, iv);
-
   memset(pad, 0, sizeof(pad));
-  memset(mac, 0, sizeof(mac));
+
+  if (!silc_channel_message_payload_encrypt(buffer->data, buffer->len,
+					    buffer->truelen, iv, iv_len,
+					    cipher, hmac)) {
+    silc_buffer_free(buffer);
+    return NULL;
+  }
+
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer) - buffer->len);
 
   return buffer;
 }

@@ -69,5 +69,6 @@ bool silc_parse_version_string(const char *version,
 			       char **software_version_string,
 			       char **vendor_version);
 SilcUInt32 silc_version_to_num(const char *version);
+char *silc_get_input(const char *prompt, bool echo_off);
 
 #endif

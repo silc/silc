@@ -951,3 +951,92 @@ SilcUInt32 silc_version_to_num(const char *version)
   snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
   return (SilcUInt32)atoi(buf);
 }
+
+/* Displays input prompt on command line and takes input data from user */
+
+char *silc_get_input(const char *prompt, bool echo_off)
+{
+#ifdef SILC_UNIX
+  if (echo_off) {
+    char *ret = NULL;
+#ifdef HAVE_TERMIOS_H
+    char input[2048];
+    int fd;
+    struct termios to;
+    struct termios to_old;
+
+    fd = open("/dev/tty", O_RDONLY);
+    if (fd < 0) {
+      fprintf(stderr, "silc: %s\n", strerror(errno));
+      return NULL;
+    }
+
+    signal(SIGINT, SIG_IGN);
+
+    /* Get terminal info */
+    tcgetattr(fd, &to);
+    to_old = to;
+
+    /* Echo OFF */
+    to.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
+    tcsetattr(fd, TCSANOW, &to);
+
+    memset(input, 0, sizeof(input));
+
+    printf("%s", prompt);
+    fflush(stdout);
+
+    if ((read(fd, input, sizeof(input))) < 0) {
+      fprintf(stderr, "silc: %s\n", strerror(errno));
+      return NULL;
+    }
+
+    if (strlen(input) <= 1) {
+      tcsetattr(fd, TCSANOW, &to_old);
+      return NULL;
+    }
+
+    if (strchr(input, '\n'))
+      *strchr(input, '\n') = '\0';
+
+    /* Restore old terminfo */
+    tcsetattr(fd, TCSANOW, &to_old);
+    signal(SIGINT, SIG_DFL);
+
+    ret = silc_calloc(strlen(input), sizeof(char));
+    memcpy(ret, input, strlen(input));
+    memset(input, 0, sizeof(input));
+#endif /* HAVE_TERMIOS_H */
+    return ret;
+  } else {
+    char input[2048];
+    int fd;
+
+    fd = open("/dev/tty", O_RDONLY);
+    if (fd < 0) {
+      fprintf(stderr, "silc: %s\n", strerror(errno));
+      return NULL;
+    }
+
+    memset(input, 0, sizeof(input));
+
+    printf("%s", prompt);
+    fflush(stdout);
+
+    if ((read(fd, input, sizeof(input))) < 0) {
+      fprintf(stderr, "silc: %s\n", strerror(errno));
+      return NULL;
+    }
+
+    if (strlen(input) <= 1)
+      return NULL;
+
+    if (strchr(input, '\n'))
+      *strchr(input, '\n') = '\0';
+
+    return strdup(input);
+  }
+#else
+  return NULL;
+#endif /* SILC_UNIX */
+}

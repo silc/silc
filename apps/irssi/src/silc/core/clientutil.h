@@ -24,7 +24,6 @@
 #include "signals.h"
 
 /* Prototypes */
-char *silc_client_get_input(const char *prompt);
 void silc_client_list_ciphers();
 void silc_client_list_hash_funcs();
 void silc_client_list_hmacs();

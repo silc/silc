@@ -175,6 +175,25 @@ do {						\
   }						\
 } while(0)
 
+#define SILC_UMODE_STATS_UPDATE(oper, mod)	\
+do {						\
+    if (client->mode & (mod)) {			\
+      if (!(mode & (mod))) {			\
+	if (client->connection)			\
+	  server->stat.my_ ## oper ## _ops--;	\
+        if (server->server_type == SILC_ROUTER)	\
+	  server->stat. oper ## _ops--;		\
+      }						\
+    } else {					\
+      if (mode & (mod)) {			\
+	if (client->connection)			\
+	  server->stat.my_ ## oper ## _ops++;	\
+        if (server->server_type == SILC_ROUTER)	\
+	  server->stat. oper ## _ops++;		\
+      }						\
+    }						\
+} while(0)
+
 #define SILC_GET_SKE_FLAGS(x, p)			\
   if ((x)) {						\
     if ((x)->param && (x)->param->key_exchange_pfs)	\

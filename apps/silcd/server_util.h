@@ -72,7 +72,8 @@ bool silc_server_channel_has_local(SilcChannelEntry channel);
    always in up to date thus we can only check the channel list from 
    `client' which is faster than checking the user list from `channel'. */
 bool silc_server_client_on_channel(SilcClientEntry client,
-				   SilcChannelEntry channel);
+				   SilcChannelEntry channel,
+				   SilcChannelClientEntry *chl);
 
 /* Checks string for bad characters and returns TRUE if they are found. */
 bool silc_server_name_bad_chars(const char *name, SilcUInt32 name_len);
@@ -110,5 +111,18 @@ bool silc_server_connection_allowed(SilcServer server,
 				    SilcServerConfigConnParams *global,
 				    SilcServerConfigConnParams *params,
 				    SilcSKE ske);
+
+/* Checks that client has rights to add or remove channel modes. If any
+   of the checks fails FALSE is returned. */
+bool silc_server_check_cmode_rights(SilcServer server,
+				    SilcChannelEntry channel,
+				    SilcChannelClientEntry client,
+				    SilcUInt32 mode);
+
+/* Check that the client has rights to change its user mode.  Returns
+   FALSE if setting some mode is not allowed. */
+bool silc_server_check_umode_rights(SilcServer server,
+				    SilcClientEntry client,
+				    SilcUInt32 mode);
 
 #endif /* SERVER_UTIL_H */

@@ -308,7 +308,7 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
     /* Get Client ID */
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
-    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
+    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len, NULL);
     if (!client_id) {
       silc_buffer_pull(client_id_list, idp_len);
       continue;
@@ -381,7 +381,7 @@ void silc_client_get_clients_by_list(SilcClient client,
     /* Get Client ID */
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
-    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
+    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len, NULL);
     if (!client_id) {
       silc_buffer_pull(client_id_list, idp_len);
       continue;
@@ -939,6 +939,39 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
   entry = (SilcServerEntry)id_cache->context;
 
   return entry;
+}
+
+/* Add new server entry */
+
+SilcServerEntry silc_client_add_server(SilcClient client,
+				       SilcClientConnection conn,
+				       const char *server_name,
+				       const char *server_info,
+				       SilcServerID *server_id)
+{
+  SilcServerEntry server_entry;
+
+  server_entry = silc_calloc(1, sizeof(*server_entry));
+  if (!server_entry || !server_id)
+    return NULL;
+
+  server_entry->server_id = server_id;
+  if (server_name)
+    server_entry->server_name = strdup(server_name);
+  if (server_info)
+    server_entry->server_info = strdup(server_info);
+
+  /* Add server to cache */
+  if (!silc_idcache_add(conn->server_cache, server_entry->server_name,
+			server_entry->server_id, server_entry, 0, NULL)) {
+    silc_free(server_entry->server_id);
+    silc_free(server_entry->server_name);
+    silc_free(server_entry->server_info);
+    silc_free(server_entry);
+    return NULL;
+  }
+
+  return server_entry;
 }
 
 /* Removes server from the cache by the server entry. */

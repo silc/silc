@@ -743,12 +743,14 @@ bool silc_server_channel_has_local(SilcChannelEntry channel)
    `client' which is faster than checking the user list from `channel'. */
 
 bool silc_server_client_on_channel(SilcClientEntry client,
-				   SilcChannelEntry channel)
+				   SilcChannelEntry channel,
+				   SilcChannelClientEntry *chl)
 {
   if (!client || !channel)
     return FALSE;
 
-  return silc_hash_table_find(client->channels, channel, NULL, NULL);
+  return silc_hash_table_find(client->channels, channel, NULL, 
+			      (void **)chl);
 }
 
 /* Checks string for bad characters and returns TRUE if they are found. */
@@ -954,6 +956,113 @@ bool silc_server_connection_allowed(SilcServer server,
 				  "Too many connections from your host");
     return FALSE;
   }
+
+  return TRUE;
+}
+
+/* Checks that client has rights to add or remove channel modes. If any
+   of the checks fails FALSE is returned. */
+
+bool silc_server_check_cmode_rights(SilcServer server,
+				    SilcChannelEntry channel,
+				    SilcChannelClientEntry client,
+				    SilcUInt32 mode)
+{
+  bool is_op = client->mode & SILC_CHANNEL_UMODE_CHANOP;
+  bool is_fo = client->mode & SILC_CHANNEL_UMODE_CHANFO;
+
+  /* Check whether has rights to change anything */
+  if (!is_op && !is_fo)
+    return FALSE;
+
+  /* Check whether has rights to change everything */
+  if (is_op && is_fo)
+    return TRUE;
+
+  /* We know that client is channel operator, check that they are not
+     changing anything that requires channel founder rights. Rest of the
+     modes are available automatically for channel operator. */
+
+  if (mode & SILC_CHANNEL_MODE_PRIVKEY) {
+    if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
+      if (is_op && !is_fo)
+	return FALSE;
+  } else {
+    if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
+  }
+  
+  if (mode & SILC_CHANNEL_MODE_PASSPHRASE) {
+    if (!(channel->mode & SILC_CHANNEL_MODE_PASSPHRASE))
+      if (is_op && !is_fo)
+	return FALSE;
+  } else {
+    if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
+  }
+
+  if (mode & SILC_CHANNEL_MODE_CIPHER) {
+    if (!(channel->mode & SILC_CHANNEL_MODE_CIPHER))
+      if (is_op && !is_fo)
+	return FALSE;
+  } else {
+    if (channel->mode & SILC_CHANNEL_MODE_CIPHER) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
+  }
+  
+  if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+    if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH))
+      if (is_op && !is_fo)
+	return FALSE;
+  } else {
+    if (channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
+  }
+  
+  return TRUE;
+}
+
+/* Check that the client has rights to change its user mode.  Returns
+   FALSE if setting some mode is not allowed. */
+
+bool silc_server_check_umode_rights(SilcServer server,
+				    SilcClientEntry client,
+				    SilcUInt32 mode)
+{
+  bool server_op = FALSE, router_op = FALSE;
+
+  if (mode & SILC_UMODE_SERVER_OPERATOR) {
+    /* Cannot set server operator mode (must use OPER command) */
+    if (!(client->mode & SILC_UMODE_SERVER_OPERATOR))
+      return FALSE;
+  } else {
+    /* Remove the server operator rights */
+    if (client->mode & SILC_UMODE_SERVER_OPERATOR)
+      server_op = TRUE;
+  }
+
+  if (mode & SILC_UMODE_ROUTER_OPERATOR) {
+    /* Cannot set router operator mode (must use SILCOPER command) */
+    if (!(client->mode & SILC_UMODE_ROUTER_OPERATOR))
+      return FALSE;
+  } else {
+    /* Remove the router operator rights */
+    if (client->mode & SILC_UMODE_ROUTER_OPERATOR)
+      router_op = TRUE;
+  }
+
+  if (server_op)
+    SILC_UMODE_STATS_UPDATE(server, SILC_UMODE_SERVER_OPERATOR);
+  if (router_op)
+    SILC_UMODE_STATS_UPDATE(router, SILC_UMODE_ROUTER_OPERATOR);
 
   return TRUE;
 }

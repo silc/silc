@@ -1,3 +1,66 @@
+Sun Mar 24 11:21:04 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added `type' argument to silc_id_payload_parse_id function which
+	  now returns the type of the ID to the sent pointer.  Affected
+	  file is lib/silccore/silcid.[ch].
+
+	* Added check for CMODE_CHANGE notify type that mode change is
+	  allowed by the sender.  Affected file silcd/packet_receive.c.
+
+	* Added check for CUMODE_CHANGE notify type that mode change is
+	  allowed by the sender.  Affected file silcd/packet_receive.c.
+	  Added the ID type as CUMODE_CHANGE notify type as argument
+	  to the `notify' client operation.  Affected files are
+	  lib/silcclient/client_notify.c, irssi/src/silc/core/client_ops.c.
+
+	* Added function silc_client_add_server to the client library.
+	  Added support for resolving also channel and server info when
+	  received unknown entity in notify packet.  Affected files are
+	  lib/silcclient/idlist.[ch], lib/silcclient/client_notify.c.
+
+	* Added function silc_command_get_status to return the command
+	  status from the command reply's argument payload.  Affected files
+	  are lib/silccore/silccommand.[ch].
+
+	* Added check for KICKED notify type that the kicking is
+	  allowed by the client.  Affected file silcd/packet_receive.c.
+
+	* Created function silc_get_input which can be used to get input
+	  (echo on or off) from user on command line.  Affected files are
+	  lib/silcutil/silcutil.[ch].
+
+Sat Mar 23 09:51:26 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Optimized silc_server_packet_relay_to_channel function.
+	  Added new function silc_channel_message_payload_encrypt which
+	  can be called directly if channel message payload needs to
+	  be encrypted and is already encoded (no need to call _encode
+	  function).  Packet relaying is now done by router without any
+	  extra memory allocations.  Affected files are
+	  lib/silccore/silcchanel.[ch], silcd/packet_receive.c and
+	  silcd/packet_send.c.
+
+	* Fixed the INVITE notify handling.  It took wrong arguments
+	  as invite list and invite delete.  Affected file is
+	  silcd/packet_receive.c.
+
+	* Added check for TOPIC_SET notify type that the topic change is
+	  allowed by the client.  Affected file silcd/packet_receive.c.
+
+	* Added check for INVITE notify type that inviting is allowed by
+	  the client.  Affected file silcd/packet_receive.c.
+
+	* Changed the silc_server_client_on_channel to return the
+	  SilcChannelClientEntry as well.  Moved the function
+	  silc_server_check_cmode_rights to server_util.[ch].
+	  Affected files are silcd/server_util.[ch], silcd/command.c.
+
+	* Added function silc_server_check_umode_rights to check whether
+	  changing client's user mode is allowed.  Added check for
+	  UMODE_CHANGE notify type that the umode change is allowed
+	  by the client.  Affected files are silcd/server_util.[ch],
+	  silcd/packet_receive.c and silcd/command.c.
+
 Fri Mar 22 12:25:58 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the SILC_PACKET_MAX_ID_LEN to actually be the max

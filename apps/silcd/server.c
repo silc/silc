@@ -3800,7 +3800,7 @@ void silc_server_save_users_on_channel(SilcServer server,
     /* Client ID */
     SILC_GET16_MSB(idp_len, user_list->data + 2);
     idp_len += 4;
-    client_id = silc_id_payload_parse_id(user_list->data, idp_len);
+    client_id = silc_id_payload_parse_id(user_list->data, idp_len, NULL);
     silc_buffer_pull(user_list, idp_len);
     if (!client_id)
       continue;
@@ -3855,7 +3855,7 @@ void silc_server_save_users_on_channel(SilcServer server,
 
     silc_free(client_id);
 
-    if (!silc_server_client_on_channel(client, channel)) {
+    if (!silc_server_client_on_channel(client, channel, NULL)) {
       /* Client was not on the channel, add it. */
       SilcChannelClientEntry chl = silc_calloc(1, sizeof(*chl));
       chl->client = client;

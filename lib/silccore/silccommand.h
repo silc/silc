@@ -416,11 +416,26 @@ SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload);
  ***/
 SilcUInt16 silc_command_get_ident(SilcCommandPayload payload);
 
+/****f* silccore/SilcCommandAPI/silc_command_get_status
+ *
+ * SYNOPSIS
+ *
+ *    SilcCommandStatus silc_command_get_status(SilcCommandPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the SilcCommandStatus from command reply payload's argument 
+ *    payload.  Status can be returned only from command reply payload.
+ *
+ ***/
+SilcCommandStatus silc_command_get_status(SilcCommandPayload payload);
+
 /****f* silccore/SilcCommandAPI/silc_command_set_ident
  *
  * SYNOPSIS
  *
- *    void silc_command_set_ident(SilcCommandPayload payload, SilcUInt16 ident);
+ *    void silc_command_set_ident(SilcCommandPayload payload, 
+ *                                SilcUInt16 ident);
  *
  * DESCRIPTION
  *

@@ -124,6 +124,11 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 const char *channel_name,
 					 SilcUInt32 mode, 
 					 SilcChannelID *channel_id);
+SilcServerEntry silc_client_add_server(SilcClient client,
+				       SilcClientConnection conn,
+				       const char *server_name,
+				       const char *server_info,
+				       SilcServerID *server_id);
 bool silc_client_replace_channel_id(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcChannelEntry channel,

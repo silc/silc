@@ -32,18 +32,20 @@
 /* For now, we'll have this one server context global for this module. */
 static SilcServer silcd;
 
-static void silc_usage();
-static char *silc_server_create_identifier();
+static void silc_usage(void);
+static char *silc_server_create_identifier(void);
 static int
 silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
 			    char *identifier,
 			    SilcPublicKey *ret_pub_key,
 			    SilcPrivateKey *ret_prv_key);
+static void silc_server_create_passphrase(void);
 
 /* Long command line options */
 static struct option long_opts[] =
 {
   { "config-file", 1, NULL, 'f' },
+  { "passphrase", 1, NULL, 'p' },
   { "debug", 1, NULL, 'd' },
   { "help", 0, NULL, 'h' },
   { "foreground", 0, NULL, 'F' },
@@ -67,7 +69,7 @@ static int opt_bits = 1024;
 
 /* Prints out the usage of silc client */
 
-static void silc_usage()
+static void silc_usage(void)
 {
   printf("\
 Usage: silcd [options]\n\
@@ -119,7 +121,8 @@ static void silc_server_checkpid(SilcServer silcd)
       return;
     kill(oldpid, SIGCHLD); /* this signal does nothing, check if alive */
     if (errno != ESRCH) {
-      fprintf(stderr, "\nI detected another daemon running with the same pid file.\n");
+      fprintf(stderr, "\nI detected another daemon running with the "
+	      "same pid file.\n");
       fprintf(stderr, "Please change the config file, or erase the %s\n",
 	silcd->config->server_info->pid_file);
       exit(1);
@@ -156,7 +159,7 @@ int main(int argc, char **argv)
 
   /* Parse command line arguments */
   if (argc > 1) {
-    while ((opt = getopt_long(argc, argv, "cf:d:hFVC:",
+    while ((opt = getopt_long(argc, argv, "f:d:hFVC:",
 			      long_opts, &option_index)) != EOF) {
       switch(opt)
 	{
@@ -298,7 +301,7 @@ int main(int argc, char **argv)
 
 /* Returns identifier string for public key generation. */
 
-static char *silc_server_create_identifier()
+static char *silc_server_create_identifier(void)
 {
   char *username = NULL, *realname = NULL;
   char hostname[256], email[256];

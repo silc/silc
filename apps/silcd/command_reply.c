@@ -158,7 +158,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   if (tmp)
     SILC_GET32_MSB(mode, tmp);
 
-  client_id = silc_id_payload_parse_id(id_data, id_len);
+  client_id = silc_id_payload_parse_id(id_data, id_len, NULL);
   if (!client_id)
     return FALSE;
 
@@ -278,7 +278,7 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
     SilcUInt32 tmp_len;
     unsigned char *tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
     if (tmp) {
-      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len);
+      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
       if (client_id) {
 	SILC_LOG_DEBUG(("Received invalid client ID notification, deleting "
 			"the entry from cache"));
@@ -321,7 +321,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
 
   realname = silc_argument_get_arg_type(cmd->args, 5, &len);
 
-  client_id = silc_id_payload_parse_id(id_data, id_len);
+  client_id = silc_id_payload_parse_id(id_data, id_len, NULL);
   if (!client_id)
     return FALSE;
 
@@ -639,7 +639,7 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
     SilcUInt32 tmp_len;
     unsigned char *tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
     if (tmp) {
-      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len);
+      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
       if (client_id) {
 	SILC_LOG_DEBUG(("Received invalid client ID notification, deleting "
 			"the entry from cache"));
@@ -677,7 +677,7 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
   if (!tmp)
     goto out;
-  server_id = silc_id_payload_parse_id(tmp, tmp_len);
+  server_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
   if (!server_id)
     goto out;
 
@@ -734,7 +734,7 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
   if (!tmp)
     goto out;
-  server_id = silc_id_payload_parse_id(tmp, tmp_len);
+  server_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
   if (!server_id)
     goto out;
 
@@ -798,7 +798,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   tmp = silc_argument_get_arg_type(cmd->args, 4, &len);
   if (!tmp)
     goto out;
-  client_id = silc_id_payload_parse_id(tmp, len);
+  client_id = silc_id_payload_parse_id(tmp, len, NULL);
   if (!client_id)
     goto out;
 
@@ -825,7 +825,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   }
 
   /* Parse the Channel ID */
-  id = silc_id_payload_parse_id(id_string, id_len);
+  id = silc_id_payload_parse_id(id_string, id_len, NULL);
   if (!id)
     goto out;
 
@@ -991,7 +991,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
   if (!tmp)
     goto out;
-  channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+  channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
   if (!channel_id)
     goto out;
 
@@ -1162,7 +1162,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   COMMAND_CHECK_STATUS_LIST;
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
-  channel_id = silc_id_payload_parse_id(tmp, len);
+  channel_id = silc_id_payload_parse_id(tmp, len, NULL);
   if (!channel_id)
     goto out;
 

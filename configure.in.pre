@@ -71,7 +71,7 @@ AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h stddef.h)
 AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h xti.h netdb.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
 AC_CHECK_HEADERS(ncurses.h signal.h ctype.h regex.h)
-AC_CHECK_HEADERS(arpa/inet.h sys/mman.h limits.h)
+AC_CHECK_HEADERS(arpa/inet.h sys/mman.h limits.h termios.h)
 
 # Data type checking
 AC_TYPE_SIGNAL

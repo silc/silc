@@ -610,7 +610,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
       if (sender && sock == sender)
 	continue;
 
-      /* Route only once to router */
+      /* Route only once to router. Protocol prohibits sending channel
+	 messages to more than one router. */
       if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
 	if (gone)
 	  continue;
@@ -677,32 +678,18 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
       sock->type == SILC_SOCKET_TYPE_ROUTER &&
       !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY) &&
       channel->channel_key) {
-    SilcBuffer chp;
-    SilcUInt32 iv_len, i;
-    SilcUInt16 dlen, flags;
+    SilcUInt32 mac_len = silc_hmac_len(channel->hmac);
+    SilcUInt32 iv_len = silc_cipher_get_block_len(channel->channel_key);
 
-    iv_len = silc_cipher_get_block_len(channel->channel_key);
-    if (channel->iv[0] == '\0')
-      for (i = 0; i < iv_len; i++) channel->iv[i] = 
-				     silc_rng_get_byte(server->rng);
-    else
-      silc_hash_make(server->md5hash, channel->iv, iv_len, channel->iv);
-    
-    /* Encode new payload. This encrypts it also. */
-    SILC_GET16_MSB(flags, data);
-    SILC_GET16_MSB(dlen, data + 2);
-
-    if (dlen > data_len) {
+    if (data_len <= mac_len + iv_len) {
       SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
       return FALSE;
     }
 
-    chp = silc_channel_message_payload_encode(flags, dlen, data + 4,
-					      iv_len, channel->iv,
-					      channel->channel_key,
-					      channel->hmac, NULL);
-    memcpy(data, chp->data, chp->len);
-    silc_buffer_free(chp);
+    memcpy(channel->iv, data + (data_len - iv_len), iv_len);
+    silc_channel_message_payload_encrypt(data, data_len - iv_len - mac_len,
+					 data_len, channel->iv, iv_len,
+					 channel->channel_key, channel->hmac);
   }
 
   return TRUE;
@@ -720,14 +707,13 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 void silc_server_packet_relay_to_channel(SilcServer server,
 					 SilcSocketConnection sender_sock,
 					 SilcChannelEntry channel,
-					 void *sender, 
+					 void *sender_id,
 					 SilcIdType sender_type,
-					 void *sender_entry,
+					 SilcClientEntry sender_entry,
 					 unsigned char *data,
 					 SilcUInt32 data_len,
 					 bool force_send)
 {
-  bool found = FALSE;
   SilcSocketConnection sock = NULL;
   SilcPacketContext packetdata;
   SilcClientEntry client = NULL;
@@ -753,8 +739,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   /* Set the packet context pointers. */
   packetdata.flags = 0;
   packetdata.type = SILC_PACKET_CHANNEL_MESSAGE;
-  packetdata.src_id = silc_id_id2str(sender, sender_type);
-  packetdata.src_id_len = silc_id_get_len(sender, sender_type);
+  packetdata.src_id = silc_id_id2str(sender_id, sender_type);
+  packetdata.src_id_len = silc_id_get_len(sender_id, sender_type);
   packetdata.src_id_type = sender_type;
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
@@ -787,40 +773,20 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   routed = silc_calloc(silc_hash_table_count(channel->user_list), 
 		       sizeof(*routed));
 
-  /* Mark that to the route the original sender if from is not routed */
-  if (sender_type == SILC_ID_CLIENT) {
-    client = (SilcClientEntry)sender_entry;
-    if (client->router) {
-      routed[routed_count++] = client->router;
-      SILC_LOG_DEBUG(("************* router %s", 
-		      silc_id_render(client->router->id, SILC_ID_SERVER)));
-    }
-  }
+  /* Assure we won't route the message back to the sender's way. */
+  if (sender_entry->router)
+    routed[routed_count++] = sender_entry->router;
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
-    if (!client)
+    if (!client || client == sender_entry)
       continue;
-
-    /* Do not send to the sender */
-    if (!found && client == sender_entry) {
-      found = TRUE;
-      continue;
-    }
 
     /* If the client has set router it means that it is not locally
        connected client and we will route the packet further. */
     if (server->server_type == SILC_ROUTER && client->router) {
-
-      /* Sender maybe server as well so we want to make sure that
-	 we won't send the message to the server it came from. */
-      if (!found && SILC_ID_SERVER_COMPARE(client->router->id, sender)) {
-	found = TRUE;
-	routed[routed_count++] = client->router;
-	continue;
-      }
 
       /* Check if we have sent the packet to this route already */
       for (k = 0; k < routed_count; k++)
@@ -828,18 +794,13 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	  break;
       if (k < routed_count)
 	continue;
-	
+
       /* Get data used in packet header encryption, keys and stuff. */
       sock = (SilcSocketConnection)client->router->connection;
       idata = (SilcIDListData)client->router;
 
-      /* Do not send to the sender. Check first whether the true
-	 sender's router is same as this client's router. Also check
-	 if the sender socket is the same as this client's router
+      /* Check if the sender socket is the same as this client's router
 	 socket. */
-      if (sender_entry &&
-	  ((SilcClientEntry)sender_entry)->router == client->router)
-	continue;
       if (sender_sock && sock == sender_sock)
 	continue;
 
@@ -850,62 +811,59 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       /* Mark this route routed already. */
       routed[routed_count++] = client->router;
 	
-      /* If the remote connection is router then we'll decrypt the
-	 channel message and re-encrypt it with the session key shared
-	 between us and the remote router. This is done because the
-	 channel keys are cell specific and we have different channel
-	 key than the remote router has. */
       if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	/* The remote connection is router then we'll decrypt the
+	   channel message and re-encrypt it with the session key shared
+	   between us and the remote router. This is done because the
+	   channel keys are cell specific and we have different channel
+	   key than the remote router has. */
+
+	/* Route only once to router. Protocol prohibits sending channel
+	   messages to more than one router. */
 	if (gone)
 	  continue;
+	gone = TRUE;
 
 	SILC_LOG_DEBUG(("Remote is router, encrypt with session key"));
-	gone = TRUE;
 
 	/* If private key mode is not set then decrypt the packet
 	   and re-encrypt it */
-	if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
-	  unsigned char *tmp = silc_memdup(data, data_len);
+	if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY) && 
+	    channel->channel_key) {
+	  unsigned char tmp[SILC_PACKET_MAX_LEN];
+
+	  if (data_len > SILC_PACKET_MAX_LEN)
+	    data_len = SILC_PACKET_MAX_LEN;
+	  memcpy(tmp, data, data_len);
 
 	  /* Decrypt the channel message (we don't check the MAC) */
-	  if (channel->channel_key &&
-	      !silc_channel_message_payload_decrypt(tmp, data_len, 
-						    channel->channel_key,
-						    NULL)) {
-	    memset(tmp, 0, data_len);
-	    silc_free(tmp);
-	    continue;
-	  }
+	  silc_channel_message_payload_decrypt(tmp, data_len,
+					       channel->channel_key, NULL);
 
 	  /* Now re-encrypt and send it to the router */
-	  silc_server_packet_send_srcdest(server, sock, 
+	  silc_server_packet_send_srcdest(server, sock,
 					  SILC_PACKET_CHANNEL_MESSAGE, 0,
-					  sender, sender_type,
+					  sender_id, sender_type,
 					  channel->id, SILC_ID_CHANNEL,
 					  tmp, data_len, force_send);
-
-	  /* Free the copy of the channel message */
-	  memset(tmp, 0, data_len);
-	  silc_free(tmp);
 	} else {
 	  /* Private key mode is set, we don't have the channel key, so
 	     just re-encrypt the entire packet and send it to the router. */
-	  silc_server_packet_send_srcdest(server, sock, 
+	  silc_server_packet_send_srcdest(server, sock,
 					  SILC_PACKET_CHANNEL_MESSAGE, 0,
-					  sender, sender_type,
+					  sender_id, sender_type,
 					  channel->id, SILC_ID_CHANNEL,
 					  data, data_len, force_send);
 	}
-	continue;
+      } else {
+	/* Send the packet to normal server */
+	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
+						idata->send_key,
+						idata->hmac_send,
+						idata->psn_send++,
+						data, data_len, TRUE,
+						force_send);
       }
-
-      /* Send the packet (to normal server) */
-      silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					      idata->send_key, 
-					      idata->hmac_send, 
-					      idata->psn_send++, 
-					      data, data_len, TRUE, 
-					      force_send);
 
       continue;
     }

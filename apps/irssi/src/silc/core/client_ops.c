@@ -158,7 +158,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   SILC_CHANNEL_REC *chanrec;
   SILC_NICK_REC *nickrec;
   SilcClientEntry client_entry, client_entry2;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel, channel2;
   SilcServerEntry server_entry;
   SilcIdType idtype;
   void *entry;
@@ -383,6 +383,12 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
 			 channel->channel_name, tmp ? tmp : "removed all",
 			 server_entry->server_name);
+    } else {
+      channel2 = (SilcChannelEntry)entry;
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
+			 channel->channel_name, tmp ? tmp : "removed all",
+			 channel2->channel_name);
     }
 
     silc_free(tmp);
@@ -395,7 +401,8 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     SILC_LOG_DEBUG(("Notify: CUMODE_CHANGE"));
 
-    client_entry = va_arg(va, SilcClientEntry);
+    idtype = va_arg(va, int);
+    entry = va_arg(va, void *);
     mode = va_arg(va, SilcUInt32);
     client_entry2 = va_arg(va, SilcClientEntry);
     channel = va_arg(va, SilcChannelEntry);
@@ -416,11 +423,28 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       }
     }
 
-    printformat_module("fe-common/silc", server, channel->channel_name,
-		       MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
-		       channel->channel_name, client_entry2->nickname, 
-		       tmp ? tmp : "removed all",
-		       client_entry->nickname);
+    if (idtype == SILC_ID_CLIENT) {
+      client_entry = (SilcClientEntry)entry;
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
+			 channel->channel_name, client_entry2->nickname, 
+			 tmp ? tmp : "removed all",
+			 client_entry->nickname);
+    } else if (idtype == SILC_ID_SERVER) {
+      server_entry = (SilcServerEntry)entry;
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
+			 channel->channel_name, client_entry2->nickname, 
+			 tmp ? tmp : "removed all",
+			 server_entry->server_name);
+    } else {
+      channel2 = (SilcChannelEntry)entry;
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
+			 channel->channel_name, client_entry2->nickname, 
+			 tmp ? tmp : "removed all",
+			 channel2->channel_name);
+    }
 
     if (mode & SILC_CHANNEL_UMODE_CHANFO)
       printformat_module("fe-common/silc", 
@@ -786,7 +810,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 				     2, &tmp_len);
 	if (tmp) {
-	  SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len);
+	  SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, 
+							     NULL);
 	  if (client_id) {
 	    client_entry = silc_client_get_client_by_id(client, conn,
 							client_id);
@@ -902,7 +927,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 				     2, &tmp_len);
 	if (tmp) {
-	  SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len);
+	  SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len,
+							     NULL);
 	  if (client_id) {
 	    client_entry = silc_client_get_client_by_id(client, conn,
 							client_id);

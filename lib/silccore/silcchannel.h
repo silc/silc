@@ -316,6 +316,40 @@ silc_channel_message_payload_parse(unsigned char *payload,
 				   SilcCipher cipher,
 				   SilcHmac hmac);
 
+/****f* silccore/SilcChannelAPI/silc_channel_message_payload_encrypt
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_channel_message_payload_encrypt(unsigned char *data,
+ *                                              SilcUInt32 data_len,
+ *                                              SilcUInt32 true_len,
+ *                                              unsigned char *iv,
+ *                                              SilcUInt32 iv_len,
+ *                                              SilcCipher cipher,
+ *                                              SilcHmac hmac);
+ *
+ * DESCRIPTION
+ *
+ *    This function is used to encrypt the Channel Messsage Payload which is
+ *    the `data' and `data_len'.  The `data_len' is the data length which is
+ *    used to create MAC out of.  The `true_len' is the true length of `data'
+ *    message payload and is used assemble rest of the packet after MAC
+ *    creation. The `true_len' length packet will then be encrypted.
+ *
+ *    This is usually used by the Channel Message interface itself but can
+ *    be called by the appliation if separate encryption process is required.
+ *    For example server might need to call this directly in some 
+ *    circumstances. The `cipher' is used to encrypt the payload.
+ *
+ ***/
+bool silc_channel_message_payload_encrypt(unsigned char *data,
+					  SilcUInt32 data_len,
+					  SilcUInt32 true_len,
+					  unsigned char *iv,
+					  SilcUInt32 iv_len,
+					  SilcCipher cipher,
+					  SilcHmac hmac);
+
 /****f* silccore/SilcChannelAPI/silc_channel_message_payload_encode
  *
  * SYNOPSIS

@@ -322,9 +322,8 @@ SILC_CLIENT_CMD_FUNC(nick_change)
   SilcClientConnection conn = cmd->conn;
   SilcClientCommandReplyContext reply = 
     (SilcClientCommandReplyContext)context2;
-  SilcCommandStatus status;
+  SilcCommandStatus status = silc_command_get_status(reply->payload);
 
-  SILC_GET16_MSB(status, silc_argument_get_arg_type(reply->args, 1, NULL));
   if (status == SILC_STATUS_OK) {
     /* Set the nickname */
     silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
@@ -749,9 +748,8 @@ SILC_CLIENT_CMD_FUNC(kill_remove)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientCommandReplyContext reply = 
     (SilcClientCommandReplyContext)context2;
-  SilcCommandStatus status;
+  SilcCommandStatus status = silc_command_get_status(reply->payload);
 
-  SILC_GET16_MSB(status, silc_argument_get_arg_type(reply->args, 1, NULL));
   if (status == SILC_STATUS_OK) {
     /* Remove with timeout */
     silc_schedule_task_add(cmd->client->schedule, cmd->conn->sock->sock,
@@ -2167,9 +2165,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
       } else {
 	SilcClientCommandReplyContext reply = 
 	  (SilcClientCommandReplyContext)context2;
-	SilcCommandStatus status;
-	unsigned char *tmp = silc_argument_get_arg_type(reply->args, 1, NULL);
-	SILC_GET16_MSB(status, tmp);
+	SilcCommandStatus status = silc_command_get_status(reply->payload);
 	
 	/* If nickname was not found, then resolve the server. */
 	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {

@@ -40,9 +40,10 @@ void silc_server_notify(SilcServer server,
   SilcChannelID *channel_id = NULL, *channel_id2;
   SilcClientID *client_id, *client_id2;
   SilcServerID *server_id;
-  SilcChannelEntry channel;
-  SilcClientEntry client;
-  SilcServerEntry server_entry;
+  SilcIdType id_type;
+  SilcChannelEntry channel = NULL;
+  SilcClientEntry client = NULL, client2 = NULL;
+  SilcServerEntry server_entry = NULL;
   SilcChannelClientEntry chl;
   SilcIDCacheEntry cache;
   SilcHashTableList htl;
@@ -138,7 +139,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp)
       goto out;
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id)
       goto out;
 
@@ -159,7 +160,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -197,7 +198,7 @@ void silc_server_notify(SilcServer server,
       break;
 
     /* Do not add client to channel if it is there already */
-    if (silc_server_client_on_channel(client, channel)) {
+    if (silc_server_client_on_channel(client, channel, NULL)) {
       SILC_LOG_DEBUG(("Client already on channel"));
       break;
     }
@@ -263,7 +264,7 @@ void silc_server_notify(SilcServer server,
       silc_free(channel_id);
       goto out;
     }
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id) {
       silc_free(channel_id);
       goto out;
@@ -284,7 +285,7 @@ void silc_server_notify(SilcServer server,
     silc_free(client_id);
 
     /* Check if on channel */
-    if (!silc_server_client_on_channel(client, channel))
+    if (!silc_server_client_on_channel(client, channel, NULL))
       break;
 
     /* Send the leave notify to channel */
@@ -306,7 +307,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -349,6 +350,27 @@ void silc_server_notify(SilcServer server,
 
     SILC_LOG_DEBUG(("TOPIC SET notify"));
 
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+    if (!client_id)
+      goto out;
+
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, TRUE, &cache);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, TRUE, &cache);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
     if (!channel_id) {
       channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
 				  packet->dst_id_type);
@@ -375,6 +397,14 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
 
+    /* Get user's channel entry and check that topic set is allowed. */
+    if (!silc_server_client_on_channel(client, channel, &chl))
+      goto out;
+    if (chl->mode == SILC_CHANNEL_UMODE_NONE && 
+	channel->mode & SILC_CHANNEL_MODE_TOPIC)
+      goto out;
+
+    /* Set the topic for channel */    
     silc_free(channel->topic);
     channel->topic = strdup(tmp);
 
@@ -398,7 +428,7 @@ void silc_server_notify(SilcServer server,
       id = silc_argument_get_arg_type(args, 1, &tmp_len);
       if (!id)
 	goto out;
-      client_id = silc_id_payload_parse_id(id, tmp_len);
+      client_id = silc_id_payload_parse_id(id, tmp_len, NULL);
       if (!client_id)
 	goto out;
       
@@ -406,7 +436,7 @@ void silc_server_notify(SilcServer server,
       id2 = silc_argument_get_arg_type(args, 2, &tmp_len);
       if (!id2)
 	goto out;
-      client_id2 = silc_id_payload_parse_id(id2, tmp_len);
+      client_id2 = silc_id_payload_parse_id(id2, tmp_len, NULL);
       if (!client_id2)
 	goto out;
       
@@ -450,6 +480,29 @@ void silc_server_notify(SilcServer server,
     
     SILC_LOG_DEBUG(("CMODE CHANGE notify"));
       
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+    if (!client_id)
+      goto out;
+
+    /* Get client entry */
+    if (id_type == SILC_ID_CLIENT) {
+      client = silc_idlist_find_client_by_id(server->global_list, 
+					     client_id, TRUE, &cache);
+      if (!client) {
+	client = silc_idlist_find_client_by_id(server->local_list, 
+					       client_id, TRUE, &cache);
+	if (!client) {
+	  silc_free(client_id);
+	  goto out;
+	}
+      }
+      silc_free(client_id);
+    }
+
     if (!channel_id) {
       channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
 				  packet->dst_id_type);
@@ -468,19 +521,25 @@ void silc_server_notify(SilcServer server,
 	goto out;
       }
     }
+    silc_free(channel_id);
 
     /* Get the mode */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp) {
-      silc_free(channel_id);
+    if (!tmp)
       goto out;
-    }
-
     SILC_GET32_MSB(mode, tmp);
 
     /* Check if mode changed */
     if (channel->mode == mode)
       break;
+
+    /* Get user's channel entry and check that mode change is allowed */
+    if (client) {
+      if (!silc_server_client_on_channel(client, channel, &chl))
+	goto out;
+      if (!silc_server_check_cmode_rights(server, channel, chl, mode))
+	goto out;
+    }
 
     /* Send the same notify to the channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
@@ -504,7 +563,6 @@ void silc_server_notify(SilcServer server,
 
     /* Change mode */
     channel->mode = mode;
-    silc_free(channel_id);
 
     /* Get the hmac */
     tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
@@ -545,6 +603,29 @@ void silc_server_notify(SilcServer server,
       
       SILC_LOG_DEBUG(("CUMODE CHANGE notify"));
       
+      /* Get client ID */
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!tmp)
+	goto out;
+      client_id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+      if (!client_id)
+	goto out;
+
+      /* Get client entry */
+      if (id_type == SILC_ID_CLIENT) {
+	client = silc_idlist_find_client_by_id(server->global_list, 
+					       client_id, TRUE, &cache);
+	if (!client) {
+	  client = silc_idlist_find_client_by_id(server->local_list, 
+						 client_id, TRUE, &cache);
+	  if (!client) {
+	    silc_free(client_id);
+	    goto out;
+	  }
+	}
+	silc_free(client_id);
+      }
+
       if (!channel_id) {
 	channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
 				    packet->dst_id_type);
@@ -577,22 +658,42 @@ void silc_server_notify(SilcServer server,
       tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
       if (!tmp)
 	goto out;
-      client_id = silc_id_payload_parse_id(tmp, tmp_len);
+      client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
       if (!client_id)
 	goto out;
       
       /* Get client entry */
-      client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, TRUE, NULL);
-      if (!client) {
-	client = silc_idlist_find_client_by_id(server->local_list, 
-					       client_id, TRUE, NULL);
-	if (!client) {
+      client2 = silc_idlist_find_client_by_id(server->global_list, 
+					      client_id, TRUE, NULL);
+      if (!client2) {
+	client2 = silc_idlist_find_client_by_id(server->local_list, 
+						client_id, TRUE, NULL);
+	if (!client2) {
 	  silc_free(client_id);
 	  goto out;
 	}
       }
       silc_free(client_id);
+
+      if (client) {
+	/* Check that sender is on channel */
+	if (!silc_server_client_on_channel(client, channel, &chl))
+	  goto out;
+	
+	if (client != client2) {
+	  /* Sender must be operator */
+	  if (chl->mode == SILC_CHANNEL_UMODE_NONE)
+	    goto out;
+
+	  /* Check that target is on channel */
+	  if (!silc_server_client_on_channel(client2, channel, &chl))
+	    goto out;
+
+	  /* If target is founder mode change is not allowed. */
+	  if (chl->mode & SILC_CHANNEL_UMODE_CHANFO)
+	    goto out;
+	}
+      }
 
       /* Get entry to the channel user list */
       silc_hash_table_list(channel->user_list, &htl);
@@ -614,10 +715,10 @@ void silc_server_notify(SilcServer server,
 
 	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	  silc_server_send_notify_cumode(server, sock, FALSE, channel, mode,
-					 client->id, SILC_ID_CLIENT,
-					 client->id);
+					 client2->id, SILC_ID_CLIENT,
+					 client2->id);
 	  
-	  idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+	  idp = silc_id_payload_encode(client2->id, SILC_ID_CLIENT);
 	  SILC_PUT32_MSB(mode, cumode);
 	  silc_server_send_notify_to_channel(server, sock, channel, FALSE, 
 					     SILC_NOTIFY_TYPE_CUMODE_CHANGE,
@@ -636,7 +737,7 @@ void silc_server_notify(SilcServer server,
 	  }
 	}
 	
-	if (chl->client == client) {
+	if (chl->client == client2) {
 	  if (chl->mode == mode) {
 	    notify_sent = TRUE;
 	    break;
@@ -676,7 +777,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id)
       goto out;
 
@@ -693,8 +794,36 @@ void silc_server_notify(SilcServer server,
     }
     silc_free(channel_id);
 
-    /* Get the added invite */
+    /* Get client ID */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+    if (!client_id)
+      goto out;
+
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, TRUE, &cache);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, TRUE, &cache);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
+    /* Get user's channel entry and check that inviting is allowed. */
+    if (!silc_server_client_on_channel(client, channel, &chl))
+      goto out;
+    if (chl->mode == SILC_CHANNEL_UMODE_NONE && 
+	channel->mode & SILC_CHANNEL_MODE_INVITE)
+      goto out;
+
+    /* Get the added invite */
+    tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
     if (tmp) {
       if (!channel->invite_list)
 	channel->invite_list = silc_calloc(tmp_len + 2, 
@@ -713,7 +842,7 @@ void silc_server_notify(SilcServer server,
     }
 
     /* Get the deleted invite */
-    tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
+    tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
     if (tmp && channel->invite_list) {
       char *start, *end, *n;
       
@@ -752,7 +881,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id)
       goto out;
 
@@ -777,7 +906,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp)
       goto out;
-    channel_id2 = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id2 = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id2)
       goto out;
 
@@ -850,7 +979,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    server_id = silc_id_payload_parse_id(tmp, tmp_len);
+    server_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!server_id)
       goto out;
 
@@ -876,7 +1005,7 @@ void silc_server_notify(SilcServer server,
 	    tmp = silc_argument_get_arg_type(args, i + 1, &tmp_len);
 	    if (!tmp)
 	      continue;
-	    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+	    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
 	    if (!client_id)
 	      continue;
 
@@ -961,7 +1090,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -975,6 +1104,41 @@ void silc_server_notify(SilcServer server,
 	silc_free(client_id);
 	goto out;
       }
+    }
+    silc_free(client_id);
+
+    /* If target is founder they cannot be kicked */
+    if (!silc_server_client_on_channel(client, channel, &chl))
+      goto out;
+    if (chl->mode & SILC_CHANNEL_UMODE_CHANFO)
+      goto out;
+    
+    /* Get kicker. In protocol version 1.0 this is not mandatory argument
+       so we check it only if it is provided. */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    if (tmp) {
+      client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+      if (!client_id)
+	goto out;
+
+      /* If the the client is not in local list we check global list */
+      client2 = silc_idlist_find_client_by_id(server->global_list, 
+					      client_id, TRUE, NULL);
+      if (!client2) {
+	client = silc_idlist_find_client_by_id(server->local_list, 
+					       client_id, TRUE, NULL);
+	if (!client2) {
+	  silc_free(client_id);
+	  goto out;
+	}
+      }
+      silc_free(client_id);
+
+      /* Kicker must be operator on channel */
+      if (!silc_server_client_on_channel(client2, channel, &chl))
+	goto out;
+      if (chl->mode == SILC_CHANNEL_UMODE_NONE)
+	goto out;
     }
 
     /* Send to channel */
@@ -1001,7 +1165,7 @@ void silc_server_notify(SilcServer server,
       id = silc_argument_get_arg_type(args, 1, &id_len);
       if (!id)
 	goto out;
-      client_id = silc_id_payload_parse_id(id, id_len);
+      client_id = silc_id_payload_parse_id(id, id_len, NULL);
       if (!client_id)
 	goto out;
 
@@ -1058,7 +1222,7 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!client_id)
       goto out;
 
@@ -1081,30 +1245,11 @@ void silc_server_notify(SilcServer server,
       goto out;
     SILC_GET32_MSB(mode, tmp);
 
-#define SILC_UMODE_STATS_UPDATE(oper, mod)	\
-do {						\
-    if (client->mode & (mod)) {			\
-      if (!(mode & (mod))) {			\
-	if (client->connection)			\
-	  server->stat.my_ ## oper ## _ops--;	\
-        if (server->server_type == SILC_ROUTER)	\
-	  server->stat. oper ## _ops--;		\
-      }						\
-    } else {					\
-      if (mode & (mod)) {			\
-	if (client->connection)			\
-	  server->stat.my_ ## oper ## _ops++;	\
-        if (server->server_type == SILC_ROUTER)	\
-	  server->stat. oper ## _ops++;		\
-      }						\
-    }						\
-} while(0)
+    /* Check that mode changing is allowed. */
+    if (!silc_server_check_umode_rights(server, client, mode))
+      goto out;
 
-    /* Update statistics */
-    SILC_UMODE_STATS_UPDATE(server, SILC_UMODE_SERVER_OPERATOR);
-    SILC_UMODE_STATS_UPDATE(router, SILC_UMODE_ROUTER_OPERATOR);
-
-    /* Save the mode */
+    /* Change the mode */
     client->mode = mode;
 
     break;
@@ -1120,7 +1265,7 @@ do {						\
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
     if (!channel_id)
       goto out;
     
@@ -1413,8 +1558,8 @@ void silc_server_channel_message(SilcServer server,
 {
   SilcChannelEntry channel = NULL;
   SilcChannelID *id = NULL;
-  void *sender = NULL;
-  void *sender_entry = NULL;
+  void *sender_id = NULL;
+  SilcClientEntry sender_entry = NULL;
   bool local = TRUE;
 
   SILC_LOG_DEBUG(("Processing channel message"));
@@ -1440,27 +1585,28 @@ void silc_server_channel_message(SilcServer server,
 
   /* See that this client is on the channel. If the original sender is
      not client (as it can be server as well) we don't do the check. */
-  sender = silc_id_str2id(packet->src_id, packet->src_id_len, 
-			  packet->src_id_type);
-  if (!sender)
+  sender_id = silc_id_str2id(packet->src_id, packet->src_id_len, 
+			     packet->src_id_type);
+  if (!sender_id)
     goto out;
   if (packet->src_id_type == SILC_ID_CLIENT) {
     sender_entry = silc_idlist_find_client_by_id(server->local_list, 
-						 sender, TRUE, NULL);
+						 sender_id, TRUE, NULL);
     if (!sender_entry) {
       local = FALSE;
       sender_entry = silc_idlist_find_client_by_id(server->global_list, 
-						   sender, TRUE, NULL);
+						   sender_id, TRUE, NULL);
     }
     if (!sender_entry || !silc_server_client_on_channel(sender_entry, 
-							channel)) {
+							channel, NULL)) {
       SILC_LOG_DEBUG(("Client not on channel"));
       goto out;
     }
 
-    /* If the packet is coming from router, but the client entry is
-       local entry to us then some router is rerouting this to us and it is
-       not allowed. */
+    /* If the packet is coming from router, but the client entry is local 
+       entry to us then some router is rerouting this to us and it is not 
+       allowed. When the client is local to us it means that we've routed
+       this packet to network, and now someone is routing it back to us. */
     if (server->server_type == SILC_ROUTER &&
 	sock->type == SILC_SOCKET_TYPE_ROUTER && local) {
       SILC_LOG_DEBUG(("Channel message rerouted to the sender, drop it"));
@@ -1470,16 +1616,14 @@ void silc_server_channel_message(SilcServer server,
 
   /* Distribute the packet to our local clients. This will send the
      packet for further routing as well, if needed. */
-  silc_server_packet_relay_to_channel(server, sock, channel, sender,
+  silc_server_packet_relay_to_channel(server, sock, channel, sender_id,
 				      packet->src_id_type, sender_entry,
 				      packet->buffer->data,
 				      packet->buffer->len, FALSE);
 
  out:
-  if (sender)
-    silc_free(sender);
-  if (id)
-    silc_free(id);
+  silc_free(sender_id);
+  silc_free(id);
 }
 
 /* Received channel key packet. We distribute the key to all of our locally

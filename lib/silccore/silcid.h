@@ -123,7 +123,9 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
  *
  * SYNOPSIS
  *
- *    void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len);
+ *    void *silc_id_payload_parse_id(const unsigned char *data, 
+ *                                   SilcUInt32 len,
+ *                                   SilcIdType *type);
  *
  * DESCRIPTION
  *
@@ -131,7 +133,8 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
  *    caller must free the returned ID.
  *
  ***/
-void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len);
+void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
+			       SilcIdType *type);
 
 /****f* silccore/SilcIDAPI/silc_id_payload_encode
  *

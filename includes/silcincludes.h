@@ -193,6 +193,10 @@ extern "C" {
 #include <stddef.h>
 #endif
 
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG

@@ -2688,8 +2688,8 @@ directly connected to the server.
 Routers form a ring in the SILC network.  However, routers may have other
 direct connections to other routers in the network too.  This can cause
 interesting routing problems in the network.  Since the network is a ring,
-the packets usually should be routed into counter clock-wise direction,
-or if it cannot be used then always clock-wise (primary route) direction.
+the packets usually should be routed into clock-wise direction, or if it 
+cannot be used then always counter clock-wise (primary route) direction.
 Problems may arise when a faster direct route exists and router is routing
 a channel message.  Currently channel messages must be routed either
 in upstream or downstream, they cannot be routed to other direct routes.
