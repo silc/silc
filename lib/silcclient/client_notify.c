@@ -1147,7 +1147,7 @@ void silc_client_notify_by_server(SilcClient client,
 
 	/* If same nick, the client was new to us and has become "present"
 	   to network.  Send NULL as nick to application. */
-	if (!strcmp(tmp, tmp_nick))
+	if (tmp_nick && !strcmp(tmp, tmp_nick))
 	  tmp = NULL;
 
 	silc_free(tmp_nick);
