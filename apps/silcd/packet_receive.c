@@ -2318,7 +2318,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   idata->status |= SILC_IDLIST_STATUS_REGISTERED;
   client->nickname = nickname;
   client->username = username;
-  client->userinfo = realname ? realname : strdup(" ");
+  client->userinfo = realname ? realname : strdup(username);
   client->id = client_id;
   id_len = silc_id_get_len(client_id, SILC_ID_CLIENT);
 
@@ -3063,10 +3063,6 @@ void silc_server_new_channel(SilcServer server,
       }
 
       silc_free(channel_id);
-
-      /* Update statistics */
-      server->stat.channels++;
-      server->stat.cell_channels++;
 
       /* Since the channel is coming from server and we also know about it
 	 then send the JOIN notify to the server so that it see's our
