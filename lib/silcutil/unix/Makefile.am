@@ -22,7 +22,8 @@ noinst_LIBRARIES = libsilcunixutil.a
 
 libsilcunixutil_a_SOURCES = 	\
 	silcunixschedule.c	\
-	silcunixnet.c
+	silcunixnet.c		\
+	silcunixutil.c
 
 EXTRA_DIST = *.h
 

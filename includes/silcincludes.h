@@ -31,6 +31,8 @@
 
 #ifdef SILC_WIN32
 #include <windows.h>
+#include <dir.h>
+#include <io.h>
 #endif
 
 #include <stdio.h>
@@ -56,7 +58,7 @@
 #error fcntl.h not found in the system
 #endif
 
-#ifdef HAVE_ASSERT_H
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
 #else
 #error errno.h not found in the system

@@ -22,8 +22,6 @@
 #include "silcincludes.h"
 #include "silcnet.h"
 
-int silc_net_set_socket_nonblock(int sock);
-
 /* This function creates server or daemon or listener or what ever. This
    does not fork a new process, it must be done by the caller if caller
    wants to create a child process. This is used by the SILC server. 

@@ -114,6 +114,19 @@ void silc_net_close_connection(int sock);
  ***/
 int silc_net_accept_connection(int sock);
 
+/****f* silcutil/SilcNetAPI/silc_net_set_socket_nonblock
+ *
+ * SYNOPSIS
+ *
+ *    int silc_net_set_socket_nonblock(int sock);
+ *
+ * DESCRIPTION
+ *
+ *    Sets the socket to non-blocking mode.
+ *
+ ***/
+int silc_net_set_socket_nonblock(int sock);
+
 /****f* silcutil/SilcNetAPI/silc_net_set_socket_opt
  *
  * SYNOPSIS

@@ -19,6 +19,9 @@ Sat Jun 23 16:01:00 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  Added WIN32 specific network routines to the
 	  lib/silcutil/win32/silcwin32net.c.
 
+	* Added Unix specific utility functions from the
+	  lib/silcutil/silcutil.c to lib/silcutil/unix/silcunixutil.c.
+
 Fri Jun 22 10:44:14 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not handle JOIN notify in the server if the target client
