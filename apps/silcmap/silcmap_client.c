@@ -413,7 +413,8 @@ silc_connected(SilcClient client, SilcClientConnection conn,
   silc_schedule_task_del_by_context(client->schedule, mapconn);
 
   if (status == SILC_CLIENT_CONN_ERROR) {
-    fprintf(stderr, "Could not connect to server\n");
+    fprintf(stderr, "Could not connect to server %s\n",
+		     conn->remote_host ? conn->remote_host : "");
     silc_client_close_connection(client, conn);
 
     /* Mark that this server is down. */
