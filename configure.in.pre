@@ -554,6 +554,8 @@ fi
 # source tree.
 #
 mp_gmp=false
+SAVELIBS="$LIBS"
+SAVECFLAGS="$CFLAGS"
 AC_MSG_CHECKING(whether to search for GMP)
 AC_ARG_WITH(gmp,
   [[  --with-gmp[=DIR]        use GMP instead of MPI [search in DIR/lib and DIR/include]]],
@@ -561,6 +563,10 @@ AC_ARG_WITH(gmp,
     case "$withval" in
       no)
         AC_MSG_RESULT(no)
+        ;;
+      yes)
+        AC_MSG_RESULT(yes)
+        LIBS="-lgmp $LIBS"
         ;;
       *)
         AC_MSG_RESULT(yes)
@@ -577,14 +583,19 @@ AC_ARG_WITH(gmp,
         fi
     
         LIBS="$withval $LIBS"
-        AC_CHECK_LIB(gmp, __gmpz_init,
-          [
-            mp_gmp=true
-            AC_DEFINE(SILC_MP_GMP)
-            AC_MSG_RESULT(Using GMP as a MP library.)
-          ])
         ;;
     esac
+
+    AC_CHECK_LIB(gmp, __gmpz_init,
+      [
+        mp_gmp=true
+        AC_DEFINE(SILC_MP_GMP)
+        AC_MSG_RESULT(Using GMP as a MP library.)
+      ],
+      [
+        LIBS="$SAVELIBS"
+        CFLAGS="$SAVECFLAGS"
+      ])
   ],
     AC_MSG_RESULT(no)
   )
