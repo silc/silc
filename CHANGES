@@ -7,6 +7,10 @@ Thu May 16 13:05:13 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  is KILLED, SERVER_SIGNOFF or SIGNOFF.  Affected file is
 	  lib/silcclient/client_notify.c.
 
+	* Check the watcher list before and after changing nickname
+	  when the NICK_CHANGE notify is received.  Affected file is
+	  silcd/idlist.c.
+
 Wed May 15 19:01:42 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged with Irssi CVS for Irssi SILC client.

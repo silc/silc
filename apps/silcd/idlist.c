@@ -526,7 +526,7 @@ silc_idlist_replace_client_id(SilcServer server,
   if (!silc_idcache_del_by_context(id_list->clients, client))
     return NULL;
 
-  /* Check if anyone is watching this nickname */
+  /* Check if anyone is watching old nickname */
   if (server->server_type == SILC_ROUTER)
     silc_server_check_watcher_list(server, client, nickname,
 				   SILC_NOTIFY_TYPE_NICK_CHANGE);
@@ -535,6 +535,11 @@ silc_idlist_replace_client_id(SilcServer server,
   silc_free(client->nickname);
   client->id = new_id;
   client->nickname = nickname ? strdup(nickname) : NULL;
+
+  /* Check if anyone is watching new nickname */
+  if (server->server_type == SILC_ROUTER)
+    silc_server_check_watcher_list(server, client, nickname,
+				   SILC_NOTIFY_TYPE_NICK_CHANGE);
 
   if (!silc_idcache_add(id_list->clients, client->nickname, client->id, 
 			client, 0, NULL))
