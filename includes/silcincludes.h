@@ -147,6 +147,7 @@
 #include "idcache.h"
 #include "silcprotocol.h"
 #include "silcsockconn.h"
+#include "silcpayload.h"
 #include "silccommand.h"
 #include "silcchannel.h"
 #include "silcpacket.h"
