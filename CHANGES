@@ -1,3 +1,13 @@
+Sat Mar 10 00:07:37 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added client searching by nickname hash into the IDENTIFY and
+	  WHOIS commands in the server as they were clearly missing from
+	  them.  Affected file is silcd/command.c.
+
+	* Fixed a bug in private message receiving in the client library.
+	  The remote ID was freed and it wasn't supposed, now it is
+	  duplicated.
+
 Fri Mar  9 12:40:42 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Minor fix to the channel payload; allocate the data area, as it

@@ -171,7 +171,7 @@ void silc_client_private_message(SilcClient client,
     {
       /* Allocate client entry */
       remote_client = silc_calloc(1, sizeof(*remote_client));
-      remote_client->id = remote_id;
+      remote_client->id = silc_id_dup(remote_id, SILC_ID_CLIENT);
       silc_parse_nickname(nickname, &remote_client->nickname, 
 			  &remote_client->server, &remote_client->num);
       

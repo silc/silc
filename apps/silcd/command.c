@@ -630,6 +630,10 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
     clients = silc_idlist_get_clients_by_nickname(server->local_list, 
 						  nick, server_name,
 						  &clients_count);
+    if (!clients)
+      clients = silc_idlist_get_clients_by_hash(server->local_list, 
+						nick, server->md5hash,
+						&clients_count);
   }
   
   /* Check global list as well */
@@ -649,6 +653,10 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
       clients = silc_idlist_get_clients_by_nickname(server->global_list, 
 						    nick, server_name,
 						    &clients_count);
+      if (!clients)
+	clients = silc_idlist_get_clients_by_hash(server->global_list, 
+						  nick, server->md5hash,
+						  &clients_count);
     }
   }
   
@@ -1042,6 +1050,10 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
     clients = silc_idlist_get_clients_by_nickname(server->local_list, 
 						  nick, server_name,
 						  &clients_count);
+    if (!clients)
+      clients = silc_idlist_get_clients_by_hash(server->local_list, 
+						nick, server->md5hash,
+						&clients_count);
   }
   
   /* Check global list as well */
@@ -1061,6 +1073,10 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
       clients = silc_idlist_get_clients_by_nickname(server->global_list, 
 						    nick, server_name,
 						    &clients_count);
+      if (!clients)
+	clients = silc_idlist_get_clients_by_hash(server->global_list, 
+						  nick, server->md5hash,
+						  &clients_count);
     }
   }
   
