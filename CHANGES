@@ -1,3 +1,10 @@
+Mon Feb 12 11:20:32 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed RSA private exponent generation to what PKCS #1
+	  suggests.  We try to find the smallest possible d by doing
+	  modinv(e, lcm(phi)) instead of modinv(e, phi).  Note: this is
+	  not security fix but optimization.
+
 Sun Feb 11 18:19:51 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new config entry [Identity] to fork the server and run
