@@ -32,7 +32,7 @@
 # To prepare the distribution give command ./prepare xyz 1.0.4
 #
 
-_toolkit_SUBDIRS=lib silc silcd doc includes
+_toolkit_SUBDIRS=lib irssi silc silcd doc includes
 _toolkit_SUBDIRS_lib=$(SUBDIRS)
 
 _client_SUBDIRS=lib irssi doc includes
