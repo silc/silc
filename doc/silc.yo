@@ -19,7 +19,7 @@ bf(Silc) supports sending of practically any kind of messages in addition
 of normal text messages in the SILC network.  The session to SILC server
 is secured with session key, channel messages are protected with channel
 key and private messages with session keys.  It is also possible to use
-private channel keys and private message keys in addition of server
+private channel keys and private message keys in addition to server
 generated keys.
 
 bf(Silc) supports em(passphrase) authentication and public key authentication
@@ -49,7 +49,7 @@ The friends list is located at bf(~/.silc/friends/) directory.
 
 The SILC public key and private key pair is used to authenticate the user
 to the SILC server when connecting a server.  This key pair is created
-automatically when the bf(silc) is run for the first time.  It also can
+automatically when the bf(silc) is run for the first time.  It can also
 be created with bf(-C) option.
 
 When connecting for the first time to SILC server, user will be asked to
@@ -138,7 +138,7 @@ bf(--bits)=em(VALUE)       Set the length of public key pair, in bits.
 
 manpagesection(CONFIGURATION FILE)
 The bf(silc) configuration file is bf(~/.silc/silc.conf) and can be used
-to configure the behavriou of the client.  The configuration file format
+to configure the behaviour of the client.  The configuration file format
 is equivalent to Irssi IRC client's configuration file.  See the 
 documentation for the configuration file at bf(http://irssi.org).
 
@@ -171,12 +171,12 @@ bf(~/.silc/private_key.pub)
 quote(The SILC private key of the user)
 
 bf(~/.silc/clientkeys/)
-quote(The directory holding the public keys of other users the user have
+quote(The directory holding the public keys of other users the user has
 accepted and trusted in the SILC network.  The public keys can be received
 with bf(GETKEY) SILC command or during key agreement between two users.)
 
 bf(~/.silc/serverkeys/)
-quote(The directory holding the public keys of servers the user have accepted
+quote(The directory holding the public keys of servers the user has accepted
 and trusted when connecting to a server.)
 
 bf(~/.silc/friends/)

@@ -72,7 +72,9 @@ E=foo@bar.com, C=FI"
 manpagefiles()
 There are two configuration files for silcd: 
 em(/etc/silc/silcd.conf) for server configuration and
-em(/etc/silc/silcalgs.conf) for SIM (SILC Modules) configuration. Do note that silcalgs.conf is only needed if cryptographic algorithms are built as separate modules.
+em(/etc/silc/silcalgs.conf) for SIM (SILC Modules) configuration. 
+Do note that silcalgs.conf is only needed if cryptographic algorithms are 
+built as separate modules.
 
 
 manpageseealso()

@@ -15,7 +15,7 @@ are optional but recommended.  If em(General) section is defined it must
 be defined before the em(ConnectionParams) section.  On the other hand,
 the em(ConnectionParams) section must be defined before em(Client),
 em(ServerConnection) and/or em(RouterConnection) sections.  Other sections
-are be in free order in the configuration file.
+can be in a free order in the configuration file.
 
 nsect(SECTION: General)
 
@@ -95,7 +95,7 @@ key is regenerated each time someone joins or leaves the channel. This is
 the maximum time any channel can have the same key.)
 
 bf(detach_disabled)
-quote(Boolean value controlling, whether clients are denied to use DETACH
+quote(Boolean value controlling, whether clients are denied the use of DETACH
 command. Default value is false (DETACH is allowed).)
 
 bf(detach_timeout)
@@ -118,15 +118,15 @@ operation may read several SILC packets, so this setting does not
 automatically correspond to amount of messages transmitted or accepted.)
 
 bf(qos_bytes_limit)
-quote(Limits incoming SILC data to the specified bytes per second.)
+quote(Limits incoming SILC data to the specified number of bytes per second.)
 
 bf(qos_limit_sec)
-quote(This value defines the timeout, in seconds, the delay for received data
-in case it was left in a QoS queue.)
+quote(This value defines the timeout, in seconds, for the delay of received 
+data in case it was left in a QoS queue.)
 
 bf(qos_limit_usec)
-quote(This value defines, in microseconds, the delay received data for received
-data in case it was left in a QoS queue.)
+quote(This value defines the timeout, in microseconds, for the delay of 
+received data for received data in case it was left in a QoS queue.)
 
 nsect(SECTION: ServerInfo)
 
@@ -166,7 +166,7 @@ quote(Full path to server's private key file.)
 
 bf(MotdFile)
 quote(Full path to MOTD (Message Of The Day) file, a text file that will be
-displayed to each client connection.)
+displayed to each client upon connection.)
 
 bf(PidFile)
 quote(Full path to file where silcd will write its PID.)
@@ -283,7 +283,7 @@ be prolonged.)
 bf(reconnect_keep_trying)
 quote(Boolean value controlling whether server eventually gives up trying
 to reconnect. If set to em(false), server will give up once em(reconnect_count)
-is reached or even at maximum interval, no connection is established.)
+is reached or, even at maximum interval no connection is established.)
 
 bf(key_exchange_rekey)
 quote(Exactly the same as in em(General) section.)
@@ -316,9 +316,9 @@ quote(Exactly the same as in em(General) section.)
 nsect(SECTION: Client)
 
 This section defines how incoming client connections are handled. There can
-be several em(Client) sections, each with their own requirements. A silcd admin
-could for example require that connections from certain IP-address space must
-supply a connection password.
+be several em(Client) sections, each with their own requirements. A bf(silcd)
+admin could for example require that connections from certain IP-address space
+must supply a connection password.
 
 bf(Host)
 quote(An address or wildcarded set of addresses, either in numeric IP-address
@@ -439,7 +439,7 @@ at all, or give it a value of "*", you have a silcd that denies every single
 incoming connection.)
 
 bf(Reason)
-quote(A string giving the reason for why the connecting party is not allowed
+quote(A string giving the reason as to why the connecting party is not allowed
 to connect. Unlike em(Host), this field IS mandatory.)
 
 
