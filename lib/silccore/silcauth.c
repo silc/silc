@@ -358,7 +358,7 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
   case SILC_AUTH_PASSWORD:
     /* Passphrase based authentication. The `pkcs', `hash', `id' and `type'
        arguments are not needed. */
-    if (!memcmp(payload->auth_data, auth_data, payload->auth_len)) {
+    if (!memcmp(payload->auth_data, auth_data, auth_data_len)) {
       SILC_LOG_DEBUG(("Authentication successful"));
       return TRUE;
     }

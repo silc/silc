@@ -1956,6 +1956,7 @@ silc_server_command_identify_process(SilcServerCommandContext cmd)
 					   &count);
   if (ret < 1)
     return ret;
+  ret = 0;
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
@@ -3159,8 +3160,7 @@ static void silc_server_command_join_channel(SilcServer server,
     }
   
     if (!passphrase || !channel->passphrase ||
-        memcmp(channel->passphrase, passphrase,
-               strlen(channel->passphrase))) {
+        memcmp(passphrase, channel->passphrase, strlen(channel->passphrase))) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					    SILC_STATUS_ERR_BAD_PASSWORD);
       goto out;

@@ -39,6 +39,14 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o It is possible that IDENTIFy's check_client will register two pending	
+   callbacks for same ident, which must not happen.  Check same for WHOIS
+   as well.
+
+ o If auto-reconnecting to router and EOF is received during the
+   connecting phase the server will not try to auto-reconnect anymore
+   after that.  Fix to auto-reconnect.
+
  o Backup router related issues
 
  	o Channel user mode changes are notified unnecessarely when

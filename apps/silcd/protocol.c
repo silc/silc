@@ -131,12 +131,11 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
 
       /* Save the key for future checking */
       unlink(filename);
-      silc_pkcs_save_public_key_data(filename, pk, pk_len,
-				     SILC_PKCS_FILE_PEM);
+      silc_pkcs_save_public_key_data(filename, pk, pk_len, SILC_PKCS_FILE_PEM);
       return TRUE;
     }
 
-    if (memcmp(encpk, pk, encpk_len)) {
+    if (memcmp(pk, encpk, encpk_len)) {
       SILC_LOG_WARNING(("%s (%s) port %d server public key does not match "
 			"with local copy", sock->hostname, sock->ip, 
 			sock->port));
@@ -711,13 +710,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
  */
 
 static int 
-silc_server_password_authentication(SilcServer server, char *auth1, 
-				    char *auth2)
+silc_server_password_authentication(SilcServer server, char *remote_auth, 
+				    char *local_auth)
 {
-  if (!auth1 || !auth2)
+  if (!remote_auth || !local_auth)
     return FALSE;
 
-  if (!memcmp(auth1, auth2, strlen(auth1)))
+  if (!memcmp(remote_auth, local_auth, strlen(local_auth)))
     return TRUE;
 
   return FALSE;

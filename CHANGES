@@ -1,3 +1,16 @@
+Sat Dec 15 20:31:50 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the server's password authentication to use the
+	  length of the locally saved password, and not the one
+	  sent in the packet.  Affected file silcd/protocol.c.
+
+	* Fixed same password authentication problem in the
+	  Authentication Payload handling routines in
+	  lib/silccore/silcauth.c.
+
+	* Yet another password authentication problem fixed with
+	  channel password handling in silcd/command.c.
+
 Mon Dec 10 19:57:40 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* If first character of string in silc_parse_userfqdn is '@'

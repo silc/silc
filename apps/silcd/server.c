@@ -1633,7 +1633,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
     if (!(packet->flags & SILC_PACKET_FLAG_BROADCAST) &&
 	packet->dst_id_type == SILC_ID_SERVER && 
 	sock->type != SILC_SOCKET_TYPE_CLIENT &&
-	memcmp(packet->dst_id, server->id_string, packet->dst_id_len)) {
+	memcmp(packet->dst_id, server->id_string, server->id_string_len)) {
       
       /* Route the packet to fastest route for the destination ID */
       void *id = silc_id_str2id(packet->dst_id, packet->dst_id_len, 

@@ -1317,7 +1317,7 @@ void silc_server_command_reply(SilcServer server,
 
   if (packet->dst_id_type == SILC_ID_SERVER) {
     /* For now this must be for us */
-    if (memcmp(packet->dst_id, server->id_string, packet->dst_id_len)) {
+    if (memcmp(packet->dst_id, server->id_string, server->id_string_len)) {
       SILC_LOG_ERROR(("Cannot process command reply to unknown server"));
       return;
     }

@@ -89,6 +89,8 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
   command_reply(cmd->client, cmd->sock->user_data, cmd->payload,	\
   FALSE, silc_command_get(cmd->payload), status)
 
+#define SAY cmd->client->internal->ops->say
+
 /* All functions that call the COMMAND_CHECK_STATUS or the
    COMMAND_CHECK_STATUS_LIST macros must have out: goto label. */
 
@@ -606,21 +608,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
 
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-			     cmd->client, 
-			     conn, SILC_CLIENT_MESSAGE_ERROR,
-			     "Cannot set nickname: %s", 
-			     silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"Cannot set nickname: %s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
   if (argc < 2 || argc > 2) {
-    cmd->client->internal->ops->say(
-			    cmd->client, 
-			    conn, SILC_CLIENT_MESSAGE_ERROR,
-			    "Cannot set nickname: bad reply to command");
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"Cannot set nickname: bad reply to command");
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -696,8 +693,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
 
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -757,8 +754,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -804,8 +801,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(kill)
 
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -839,11 +836,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-			  cmd->client, conn, 
-			  SILC_CLIENT_MESSAGE_ERROR,
-			  "%s", 
-			  silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
+	silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -907,8 +901,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
 
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -926,10 +920,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
       continue;
     if (SILC_ID_SERVER_COMPARE(conn->ping[i].dest_id, id)) {
       diff = curtime - conn->ping[i].start_time;
-      cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-			    "Ping reply from %s: %d second%s", 
-			    conn->ping[i].dest_name, diff, 
-			    diff == 1 ? "" : "s");
+      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+	  "Ping reply from %s: %d second%s", 
+	  conn->ping[i].dest_name, diff, 
+	  diff == 1 ? "" : "s");
       
       conn->ping[i].start_time = 0;
       silc_free(conn->ping[i].dest_id);
@@ -972,16 +966,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
     if (status != SILC_STATUS_ERR_USER_ON_CHANNEL)
-      cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-			    "%s", silc_client_command_status_message(status));
+      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	  "%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
   if (argc < 7 || argc > 14) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "Cannot join channel: Bad reply packet");
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -989,8 +983,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   /* Get channel name */
   tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
   if (!tmp) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-			  "Cannot join channel: Bad reply packet");
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -999,8 +993,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   /* Get Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
   if (!tmp) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-			  "Cannot join channel: Bad reply packet");
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;
     silc_free(channel_name);
     goto out;
@@ -1046,9 +1040,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   hmac = silc_argument_get_arg_type(cmd->args, 11, NULL);
   if (hmac) {
     if (!silc_hmac_alloc(hmac, NULL, &channel->hmac)) {
-      cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, 
-			    "Cannot join channel: Unsupported HMAC `%s'",
-			    hmac);
+      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, 
+	  "Cannot join channel: Unsupported HMAC `%s'", hmac);
       COMMAND_REPLY_ERROR;
       silc_free(channel_name);
       goto out;
@@ -1166,8 +1159,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     return;
   }
@@ -1196,8 +1189,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
 	if (i == 2)
 	  line[0] = ' ';
 	
-	cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
-			      "%s", line);
+	SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "%s", line);
 	
 	if (!strlen(cp))
 	  break;
@@ -1228,8 +1220,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(umode)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1268,8 +1260,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
 
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1333,8 +1325,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1422,9 +1414,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(kick)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-		      cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		      "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1448,9 +1439,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(silcoper)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-		       cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1474,10 +1464,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(oper)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-		       cmd->client, conn, 
-		       SILC_CLIENT_MESSAGE_ERROR,
-		       "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1501,9 +1489,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(connect)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-		       cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1531,9 +1518,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-		       cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1579,9 +1565,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(close)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-			 cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-			 "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1605,9 +1590,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-			 cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-			 "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1633,9 +1617,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-			  cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-			  "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1674,9 +1657,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(
-			  cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-			  "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1885,8 +1867,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
-    cmd->client->internal->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-			  "%s", silc_client_command_status_message(status));
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
