@@ -36,7 +36,7 @@ int silc_socket_write(SilcSocketConnection sock)
   SILC_LOG_DEBUG(("Writing data to socket %d", fd));
 
   if (src->len > 0) {
-    ret = recv(fd, src->data, src->len,  0);
+    ret = send(fd, src->data, src->len,  0);
     if (ret == SOCKET_ERROR) {
       err = WSAGetLastError();
       if (err == WSAEWOULDBLOCK) {
