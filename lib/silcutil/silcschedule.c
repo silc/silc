@@ -70,6 +70,8 @@ void silc_schedule_internal_signals_unblock(void *context);
 
 /* Internal task management routines. */
 
+static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
+					   bool dispatch_all);
 static void silc_task_queue_alloc(SilcTaskQueue *queue);
 static void silc_task_queue_free(SilcTaskQueue queue);
 static SilcTask silc_task_find(SilcTaskQueue queue, SilcUInt32 fd);
@@ -271,6 +273,19 @@ bool silc_schedule_uninit(SilcSchedule schedule)
   if (schedule->valid == TRUE)
     return FALSE;
 
+  /* Dispatch all timeouts before going away */
+  silc_mutex_lock(schedule->timeout_queue->lock);
+  silc_schedule_dispatch_timeout(schedule, TRUE);
+  silc_mutex_unlock(schedule->timeout_queue->lock);
+
+  /* Deliver signals before going away */
+  if (schedule->signal_tasks) {
+    SILC_SCHEDULE_UNLOCK(schedule);
+    silc_schedule_internal_signals_call(schedule->internal, schedule);
+    schedule->signal_tasks = FALSE;
+    SILC_SCHEDULE_LOCK(schedule);
+  }
+
   /* Unregister all tasks */
   silc_schedule_task_remove(schedule->fd_queue, SILC_ALL_TASKS);
   silc_schedule_task_remove(schedule->timeout_queue, SILC_ALL_TASKS);
@@ -437,7 +452,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
    phase. */
 /* This holds the schedule->lock and the schedule->timeout_queue->lock */
 
-static void silc_schedule_dispatch_timeout(SilcSchedule schedule)
+static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
+					   bool dispatch_all)
 {
   SilcTaskQueue queue = schedule->timeout_queue;
   SilcTask task;
@@ -455,7 +471,8 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule)
        the expired tasks. */
     while(1) {
       /* Execute the task if the timeout has expired */
-      if (silc_schedule_task_timeout_compare(&task->timeout, &curtime)) {
+      if (dispatch_all ||
+	  silc_schedule_task_timeout_compare(&task->timeout, &curtime)) {
         if (task->valid) {
 	  silc_mutex_unlock(queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
@@ -509,8 +526,8 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
       /* If the timeout is in past, we will run the task and all other
 	 timeout tasks from the past. */
       if (silc_schedule_task_timeout_compare(&task->timeout, &curtime)) {
-	silc_schedule_dispatch_timeout(schedule);
-						
+	silc_schedule_dispatch_timeout(schedule, FALSE);
+
 	/* The task(s) has expired and doesn't exist on the task queue
 	   anymore. We continue with new timeout. */
 	queue = schedule->timeout_queue;
@@ -615,7 +632,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   case 0:
     /* Timeout */
     silc_mutex_lock(schedule->timeout_queue->lock);
-    silc_schedule_dispatch_timeout(schedule);
+    silc_schedule_dispatch_timeout(schedule, FALSE);
     silc_mutex_unlock(schedule->timeout_queue->lock);
     break;
   default:
@@ -682,6 +699,9 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   SilcTask newtask;
   SilcTaskQueue queue;
   int timeout = FALSE;
+
+  if (!schedule->valid)
+    return NULL;
 
   SILC_LOG_DEBUG(("Registering new task, fd=%d type=%d priority=%d", fd, 
 		  type, priority));
@@ -849,6 +869,9 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule,
 {
   int i;
   bool found = FALSE;
+
+  if (!schedule->valid)
+    return;
 
   SILC_SCHEDULE_LOCK(schedule);
 
