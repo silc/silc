@@ -2098,13 +2098,6 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
-  SILC_LOG_INFO(("Closing connection %s:%d [%s] (%d)", sock->hostname,
-		 sock->port,  
-		 (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
-		  sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
-		  sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
-		  "Router"), sock->sock));
-
   /* If sock->user_data is NULL then we'll check for active protocols
      here since the silc_server_free_sock_user_data has not been called
      for this connection. */
