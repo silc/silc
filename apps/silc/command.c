@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.11  2000/07/19 09:19:05  priikone
+ * 	Enhancements to AWAY command.
+ *
  * Revision 1.10  2000/07/19 07:06:33  priikone
  * 	Added AWAY command.
  *
@@ -910,8 +913,10 @@ SILC_CLIENT_CMD_FUNC(away)
       silc_free(win->away->away);
       silc_free(win->away);
       win->away = NULL;
+      client->screen->bottom_line->away = FALSE;
 
       silc_say(client, "Away message removed");
+      silc_screen_print_bottom_line(cmd->client->screen, 0);
     }
   } else {
 
@@ -920,9 +925,11 @@ SILC_CLIENT_CMD_FUNC(away)
     else
       win->away = silc_calloc(1, sizeof(*win->away));
     
+    client->screen->bottom_line->away = TRUE;
     win->away->away = strdup(cmd->argv[1]);
 
     silc_say(client, "Away message set: %s", win->away->away);
+    silc_screen_print_bottom_line(cmd->client->screen, 0);
   }
 
  out:

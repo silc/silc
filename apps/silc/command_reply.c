@@ -24,6 +24,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.9  2000/07/19 09:19:05  priikone
+ * 	Enhancements to AWAY command.
+ *
  * Revision 1.8  2000/07/19 07:06:51  priikone
  * 	Added AWAY command.
  *
@@ -787,6 +790,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(msg)
     if (!remote_id)
       goto out;
 
+    if (!SILC_ID_CLIENT_COMPARE(remote_id, win->local_id))
+      goto out;
+
     /* Check whether we know this client already */
     if (!silc_idcache_find_by_id_one(win->client_cache, remote_id,
 				     SILC_ID_CLIENT, &id_cache))
@@ -814,4 +820,5 @@ SILC_CLIENT_CMD_REPLY_FUNC(msg)
  out:
   memset(message, 0, buffer->len);
   silc_free(message);
+  silc_free(nickname);
 }

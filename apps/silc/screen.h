@@ -26,6 +26,7 @@ typedef struct {
   char *nickname;
   char *connection;
   char *channel;
+  int away;
 } *SilcScreenBottomLine;
 
 typedef struct {

@@ -26,6 +26,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/19 09:19:05  priikone
+ * 	Enhancements to AWAY command.
+ *
  * Revision 1.4  2000/07/10 05:38:08  priikone
  * 	Fixed screen refresh.
  *
@@ -222,6 +225,9 @@ void silc_screen_print_bottom_line(SilcScreen screen, int win_index)
     strncat(buf, line->channel, len > SILC_SCREEN_MAX_CHANNEL_LEN ?
 	    SILC_SCREEN_MAX_CHANNEL_LEN : len);
   }
+
+  if (line->away)
+    strncat(buf, " (away)", 8);
 
   wattrset(screen->output_stat_line[win_index], A_REVERSE);
 
