@@ -31,7 +31,7 @@
 #ifndef SILCMUTEX_H
 #define SILCMUTEX_H
 
-/* Prototypes */
+#ifdef SILC_THREADS
 
 /****s* silcutil/SilcMutexAPI/SilcMutex
  *
@@ -47,6 +47,23 @@
  *
  ***/
 typedef struct SilcMutexStruct *SilcMutex;
+
+/****d* silcutil/SilcMutexAPI/SILC_MUTEX_DEFINE
+ *
+ * NAME
+ * 
+ *    #define SILC_MUTEX_DEFINE(name) ...
+ *
+ * DESCRIPTION
+ *
+ *    This macro is used to define new mutex.  Use this macro in an
+ *    environment that can be compiled with or without the SILC Mutex
+ *    API. This is equivalent to defining SilcMutex `name'; directly.
+ *
+ * SOURCE
+ */
+#define SILC_MUTEX_DEFINE(name) SilcMutex name
+/***/
 
 /****f* silcutil/SilcMutexAPI/silc_mutex_alloc
  *
@@ -115,5 +132,15 @@ void silc_mutex_lock(SilcMutex mutex);
  *
  ***/
 void silc_mutex_unlock(SilcMutex mutex);
+
+#else
+
+#define SILC_MUTEX_DEFINE(name)
+#define silc_mutex_alloc()
+#define silc_mutex_free(mutex)
+#define silc_mutex_lock(mutex)
+#define silc_mutex_unlock(mutex)
+
+#endif         /* SILC_THREADS */
 
 #endif

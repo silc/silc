@@ -37,6 +37,8 @@ silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
 			    SilcPublicKey *ret_pub_key,
 			    SilcPrivateKey *ret_prv_key);
 
+SILC_MUTEX_DEFINE(testi);
+
 /* Long command line options */
 static struct option long_opts[] = 
 {
