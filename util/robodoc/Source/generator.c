@@ -1456,8 +1456,8 @@ RB_Generate_Index (FILE * dest, char *source)
 	  fprintf (dest, "<H1>Master Index File</H1>\n");
 	}
 	if (RB_Number_Of_Links (MAIN_HEADER, NULL))
-	  RB_Generate_Index_Table (dest, MAIN_HEADER, "Project Modules");
-	RB_Generate_Index_Table (dest, NO_HEADER, "Source Files");
+	  RB_Generate_Index_Table (dest, MAIN_HEADER, "Modules");
+//	RB_Generate_Index_Table (dest, NO_HEADER, "Source Files");
 	if (RB_Number_Of_Links (CLASS_HEADER, NULL))
 	  RB_Generate_Index_Table (dest, CLASS_HEADER, "Classes");
 	if (RB_Number_Of_Links (METHOD_HEADER, NULL))
@@ -1467,7 +1467,7 @@ RB_Generate_Index (FILE * dest, char *source)
 	if (RB_Number_Of_Links (FUNCTION_HEADER, NULL))
 	  RB_Generate_Index_Table (dest, FUNCTION_HEADER, "Functions");
 	if (RB_Number_Of_Links (VARIABLE_HEADER, NULL))
-	  RB_Generate_Index_Table (dest, VARIABLE_HEADER, "Variables");
+	  RB_Generate_Index_Table (dest, VARIABLE_HEADER, "Global Variables");
 	if (RB_Number_Of_Links (CONSTANT_HEADER, NULL))
 	  RB_Generate_Index_Table (dest, CONSTANT_HEADER, "Constants");
 	if (RB_Number_Of_Links (GENERIC_HEADER, NULL))
@@ -1557,8 +1557,9 @@ RB_Generate_Index_Table (FILE * dest, int type, char *title)
 	      if (RB_Number_Of_Links (NO_HEADER, cur_link->file_name) > 1)
 		{
 		  fprintf (dest,
-			   "<TD><A HREF=\"%s#%s\"><TT>%s</TT></A></TD>\n",
-			   cur_link->file_name, cur_link->label_name,
+			   "<TD><A HREF=\"%s-%s.html\"><TT>%s</TT></A></TD>\n",
+			   RB_FilePartStart(cur_link->file_name),
+			   cur_link->label_name,
 			   cur_link->label_name);
 		}
 	      else
@@ -1568,9 +1569,19 @@ RB_Generate_Index_Table (FILE * dest, int type, char *title)
 	    }
 	  else
 	    {
-	      fprintf (dest, "<TD><A HREF=\"%s#%s\"><TT>%s</TT></A></TD>\n",
-		       cur_link->file_name, cur_link->label_name,
+	      if (type == MAIN_HEADER)
+		{
+	      	  fprintf (dest, "<TD><A HREF=\"%s.html\"><TT>%s</TT></A></TD>\n",
+		       RB_FilePartStart(cur_link->file_name), 
 		       cur_link->label_name);
+		}
+	      else
+		{
+	      	  fprintf (dest, "<TD><A HREF=\"%s-%s.html\"><TT>%s</TT></A></TD>\n",
+		       RB_FilePartStart(cur_link->file_name), 
+		       cur_link->label_name,
+		       cur_link->label_name);
+		}
 	    };
 	  cur_column++;
 	  if (cur_column > number_of_columns)
