@@ -38,12 +38,13 @@
    o All Windows messages are dispatched from this function.
    o The Operating System has Winsock 2.
 
-   MSDN References:
+   References:
 
    o http://msdn.microsoft.com/library/default.asp?
      url=/library/en-us/winui/hh/winui/messques_77zk.asp 
    o http://msdn.microsoft.com/library/default.asp?
      url=/library/en-us/winsock/hh/winsock/apistart_9g1e.asp
+   o http://developer.novell.com/support/winsock/doc/toc.htm
 
 */
 
@@ -78,16 +79,24 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
      and wait just for windows messages. */
   if (nhandles == 0 && timeout) {
     UINT timer = SetTimer(NULL, 0, timeo, NULL);
-    if (timer) {
+    curtime = GetTickCount();
+    while (timer)
       WaitMessage();
       KillTimer(NULL, timer);
 
       while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+	if (msg.message == WM_TIMER)
+	  return 0;
 	TranslateMessage(&msg); 
 	DispatchMessage(&msg); 
       }
 
-      return 0;
+      if (timeo != INFINITE) {
+	timeo -= GetTickCount() - curtime;
+	if (timeo < 0)
+	  timeo = 0;
+	timer = SetTimer(NULL, 0, timeo, NULL);
+      }
     }
   }
 

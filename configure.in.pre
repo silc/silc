@@ -563,10 +563,10 @@ esac ], CFLAGS="-O2 -g $CFLAGS"
 #
 # Other configure scripts
 #
-AC_CONFIG_SUBDIRS(irssi)
 AC_CONFIG_SUBDIRS(lib/dotconf)
 AC_CONFIG_SUBDIRS(lib/trq)
 AC_CONFIG_SUBDIRS(lib/silcmath/mpi)
+AC_CONFIG_SUBDIRS(irssi)
 #AC_CONFIG_SUBDIRS(lib/zlib)
 
 SILC_TOP_SRCDIR=`pwd`
