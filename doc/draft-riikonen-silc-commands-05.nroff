@@ -612,11 +612,8 @@ List of all defined commands in SILC follows.
         from invite list.  The <invite list>, if present, indicates
         the information to be added to or removed from the invite list.
         It may include a string for matching clients, public key of a
-        client or Client ID of a client.  The <invite list> format is
-        as follows:
-
-          2 bytes         - Number of arguments in the list
-          variable length - Argument Payloads
+        client or Client ID of a client.  The <invite list> is an
+        Argument List Payload.
 
         The following Argument Types has been defined for invite list
         Argument Payloads:
@@ -1668,11 +1665,8 @@ List of all defined commands in SILC follows.
         from ban list.  The <ban list>, if present, indicates the
         information to be added to or removed from the ban list.  It
         may include a string for matching clients, public key of a
-        client or Client ID of a client.  The <ban list> format is
-        as follows:
-
-          2 bytes         - Number of arguments in the list
-          variable length - Argument Payloads
+        client or Client ID of a client.  The <ban list> is an Argument
+        List Payload.
 
         The following Argument Types has been defined for ban list
         Argument Payloads:
