@@ -3829,6 +3829,11 @@ void silc_server_resume_client(SilcServer server,
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     server->stat.my_detached--;
 
+    /* Check if anyone is watching this client */
+    if (server->server_type == SILC_ROUTER)
+      silc_server_check_watcher_list(server, detached_client, NULL,
+				     SILC_NOTIFY_TYPE_UMODE_CHANGE);
+
     /* Send the RESUME_CLIENT packet to our primary router so that others
        know this client isn't detached anymore. */
     buf = silc_buffer_alloc_size(2 + id_len);
@@ -4071,6 +4076,11 @@ void silc_server_resume_client(SilcServer server,
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
     detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
     id_cache->expire = 0;
+
+    /* Check if anyone is watching this client */
+    if (server->server_type == SILC_ROUTER)
+      silc_server_check_watcher_list(server, detached_client, NULL,
+				     SILC_NOTIFY_TYPE_UMODE_CHANGE);
 
     silc_schedule_task_del_by_context(server->schedule, detached_client);
 
