@@ -1,3 +1,8 @@
+Mon Mar 28 22:46:23 CEST 2005  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Make public key in getkey reply mandatory.  Affected file
+	  lib/silcclient/command_reply.c
+
 Sun Mar 27 19:03:31 CEST 2005  Patrik Weiskircher <pat@icore.at>
 
 	* Added Parameter dont_register_crypto_library to

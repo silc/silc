@@ -1960,6 +1960,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
       public_key = NULL;
   }
 
+  if (!public_key) {
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
   id_type = silc_id_payload_get_type(idp);
   if (id_type == SILC_ID_CLIENT) {
     /* Received client's public key */
