@@ -27,6 +27,7 @@ echo "Cleaning entire SILC source tree..."
 echo "All errors and warnings may be safely ignored."
 make clean -k
 make distclean -k
+rm -f configure.in
 rm -f includes/stamp-*
 rm -f includes/silcconfig.*
 rm -f includes/version_internal.h

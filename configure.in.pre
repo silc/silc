@@ -33,7 +33,8 @@ case "$target" in
     ;;
 esac
 
-AM_INIT_AUTOMAKE(silc, 20001101)
+# ./prepare script will automatically put the correct date. Do not edit!
+AM_INIT_AUTOMAKE(silc, YYYYMMDD)
 AC_PREREQ(2.3)
 AM_CONFIG_HEADER(includes/silcdefs.h)
 
