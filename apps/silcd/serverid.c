@@ -1,16 +1,16 @@
 /*
 
-  id.c
+  serverid.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,7 +25,7 @@
 /* Creates a Server ID. Newly created Server ID is returned to the
    new_id argument. */
 
-void silc_id_create_server_id(const char *ip, SilcUInt16 port, SilcRng rng, 
+void silc_id_create_server_id(const char *ip, SilcUInt16 port, SilcRng rng,
 			      SilcServerID **new_id)
 {
   SILC_LOG_DEBUG(("Creating new Server ID"));
@@ -34,7 +34,7 @@ void silc_id_create_server_id(const char *ip, SilcUInt16 port, SilcRng rng,
 
   /* Create the ID */
 
-  if (!silc_net_addr2bin(ip, (*new_id)->ip.data, 
+  if (!silc_net_addr2bin(ip, (*new_id)->ip.data,
 			 sizeof((*new_id)->ip.data))) {
     silc_free(*new_id);
     *new_id = NULL;
