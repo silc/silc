@@ -420,13 +420,15 @@ bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
 #define MIME_GET_FIELD(header, mime, mime_len, field, field_len,	\
 		       dest, dest_size)					\
 do {									\
-  char *f = strstr(header, field);					\
-  if (f && dest) {							\
-    f = (char *)mime + (f - header) + field_len;			\
-    for (i = 0; i < (mime_len - (f - (char *)mime)); i++) {		\
-      if (f[i] == '\r' || f[i] == '\n' || i == dest_size)		\
-        break;								\
-      dest[i] = f[i];							\
+  if (dest) {								\
+    char *f = strstr(header, field);					\
+    if (f) {								\
+      f = (char *)mime + (f - header) + field_len;			\
+      for (i = 0; i < (mime_len - (f - (char *)mime)); i++) {		\
+        if (f[i] == '\r' || f[i] == '\n' || i == dest_size)		\
+          break;							\
+        dest[i] = f[i];							\
+      }									\
     }									\
   }									\
 } while(0)
@@ -441,9 +443,9 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
                 unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len)
 { 
   int i;
-  char header[512];
+  char header[256];
    
-  memcpy(header, mime, 512 > mime_len ? mime_len : 512);
+  memcpy(header, mime, 256 > mime_len ? mime_len : 256);
   header[sizeof(header) - 1] = '\0';
 
   /* Check for mandatory Content-Type field */
