@@ -100,7 +100,7 @@ static void silc_init_userinfo(void)
     if (!str)
       str = g_getenv("IRCNAME");
     settings_set_str("real_name",
-		     str != NULL ? str : g_get_real_name());
+		     str != NULL ? str : silc_get_real_name());
   }
  
   /* username */
@@ -110,8 +110,8 @@ static void silc_init_userinfo(void)
     if (!str)
       str = g_getenv("IRCUSER");
     settings_set_str("user_name",
-		     str != NULL ? str : g_get_user_name());
-    
+		     str != NULL ? str : silc_get_username());
+
     user_name = settings_get_str("user_name");
   }
 
@@ -129,12 +129,7 @@ static void silc_init_userinfo(void)
   /* alternate nick */
   set = settings_get_str("alternate_nick");
   if (set == NULL || *set == '\0') {
-    if (strlen(nick) < 9)
-      str = g_strconcat(nick, "_", NULL);
-    else { 
-      str = g_strdup(nick);
-      str[strlen(str)-1] = '_';
-    }
+    str = g_strconcat(nick, "_", NULL);
     settings_set_str("alternate_nick", str);
     g_free(str);
   }

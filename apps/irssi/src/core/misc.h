@@ -61,6 +61,10 @@ int regexp_match(const char *str, const char *regexp);
 
 /* Create the directory and all it's parent directories */
 int mkpath(const char *path, int mode);
+
+/* Get home directory */
+const char *get_home_dir(void);
+
 /* convert ~/ to $HOME */
 char *convert_home(const char *path);
 
