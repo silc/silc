@@ -11,9 +11,6 @@ Mon Apr  9 21:54:44 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Changed the PKCS api to return the public key length when
 	  setting the public key.
 
-	* Send heartbeat packet immediately, not through packet queue.
-	  Affected file silcd/packet_send.c.
-
 	* Fixed a fatal bug in the public and private key file loading.
 	  Affected file lib/silccrypt/silcpkcs.c.
 

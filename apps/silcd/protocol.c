@@ -1184,7 +1184,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
 	  /* Send the REKEY_DONE to indicate we will take new keys into use */
 	  silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
-				  0, NULL, 0, TRUE);
+				  0, NULL, 0, FALSE);
 
 	  /* The protocol ends in next stage. */
 	  protocol->state = SILC_PROTOCOL_STATE_END;
@@ -1296,7 +1296,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     /* Send the REKEY_DONE to indicate we will take new keys into use 
        now. */ 
     silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
-			    0, NULL, 0, TRUE);
+			    0, NULL, 0, FALSE);
     
     /* The protocol ends in next stage. */
     protocol->state = SILC_PROTOCOL_STATE_END;
@@ -1318,7 +1318,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	/* Send the REKEY_DONE to indicate we will take new keys into use 
 	   now. */ 
 	silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
-				0, NULL, 0, TRUE);
+				0, NULL, 0, FALSE);
       }
     }
 

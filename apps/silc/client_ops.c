@@ -1033,7 +1033,7 @@ int silc_verify_public_key(SilcClient client,
   snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
 	   pw->pw_dir, entity, file);
 
-  /* Check wheter this key already exists */
+  /* Check whether this key already exists */
   if (stat(filename, &st) < 0) {
 
     fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
