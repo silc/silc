@@ -281,7 +281,7 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
   }
 
   /* motd */
-  if (mapconn->motd) {
+  if (mapconn->motd && mapconn->data.motd) {
     fprintf(fp, "&nbsp;<br /><hr ><br />\n");
     fprintf(fp, "<b>Message of the Day:</b>&nbsp;<br />\n");
 
