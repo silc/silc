@@ -1018,6 +1018,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	server->stat.my_servers++;
       else
 	server->stat.my_routers++;
+      server->stat.servers++;
 
       id_entry = (void *)new_server;
       

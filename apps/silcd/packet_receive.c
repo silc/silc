@@ -577,6 +577,9 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 			    TRUE, new_server->id, SILC_ID_SERVER, 
 			    SILC_ID_SERVER_LEN);
 
+  if (server->server_type == SILC_ROUTER)
+    server->stat.cell_servers++;
+
   return new_server;
 }
 
