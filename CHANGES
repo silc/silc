@@ -1,3 +1,8 @@
+Wed Dec 11 20:20:07 EET 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed close command to use the port correctly when closing
+	  server connections.  Affected file silcd/idlist.c.
+
 Wed Dec 11 10:01:26 CET 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in SKE library error hadling when signature
