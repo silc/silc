@@ -137,12 +137,13 @@
 #undef int16
 #undef int32
 #undef int64
+#undef bool
 
 typedef unsigned char uint8;
 typedef signed char int8;
 
 #if SILC_SIZEOF_SHORT > 2
-#error "size of the short must be 2 bytes"
+#error "sizeof short must be 2 bytes"
 #endif
 
 typedef unsigned short uint16;
@@ -180,9 +181,7 @@ typedef int32 int64;
 typedef uint32 * void *;
 #endif
 
-#ifndef bool
-#define bool unsigned char
-#endif
+typedef unsigned char bool;
 
 /* Generic global SILC includes */
 #include "bitmove.h"
