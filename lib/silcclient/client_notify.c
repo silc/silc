@@ -107,8 +107,23 @@ void silc_client_notify_by_server(SilcClient client,
      * for the application.
      */
     
-    /* Get Client ID */
+    /* Get Channel ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
+
+    /* Get the channel entry */
+    channel = NULL;
+    if (silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				     SILC_ID_CHANNEL, &id_cache))
+      channel = (SilcChannelEntry)id_cache->context;
+
+    /* Get sender Client ID */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
     if (!tmp)
       goto out;
 
@@ -123,28 +138,13 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
     }
 
-    /* Get Channel ID */
+    /* Get the channel name */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp)
       goto out;
 
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!channel_id)
-      goto out;
-
-    /* XXX Will ALWAYS fail because currently we don't have way to resolve
-       channel information for channel that we're not joined to. */
-    /* XXX ways to fix: use (extended) LIST command, or define the channel
-       name to the notfy type when name resolving is not mandatory. */
-    /* Find channel entry */
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
-      goto out;
-
-    channel = (SilcChannelEntry)id_cache->context;
-
     /* Notify application */
-    client->ops->notify(client, conn, type, client_entry, channel);
+    client->ops->notify(client, conn, type, channel, tmp, client_entry);
     break;
 
   case SILC_NOTIFY_TYPE_JOIN:

@@ -2303,10 +2303,12 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  2
-            Arguments:  (1) <Status Payload>
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) [<invite list>]
 
-        This command replies only with Status Payload.
+	This command replies with the invite list of the channel if it
+	exists.
 
         Status messages:
 

@@ -1126,24 +1126,26 @@ ID's sent in arguments are sent inside ID Payload.
       Sent when an client is invited to a channel.  This is also sent
       when the invite list of the channel is changed.  This notify type
       is sent between routers and if the <Client ID> is argument is
-      provided to the client as well.
+      provided to the client as well.  In this case the packet is
+      destined to the client.
 
       Max Arguments:  5
-          Arguments:  (1) <Channel ID>          (2) [<Client ID>]
-                      (3) [<sender Client ID>]  (3) [<adding client>]
-                      (4) [<removing client>]
+          Arguments:  (1) <Channel ID>          (2) <channel name>
+                      (3) [<sender Client ID>]  (4) [<adding client>]
+                      (5) [<removing client>]
 
-      The <Client ID> is the client which was invited to the channel.
-      The <Channel ID> is the channel.  The <sender Client ID> is the
+      The <Channel ID> is the channel.  The <channel name> is the name
+      of the channel and is provided because the client which receives 
+      this notify packet may not have a way to resolve the name of the
+      channel from the <Channel ID>.  The <sender Client ID> is the
       Client ID who invited the client to the channel.  The <adding client>
-      and the <removing client> indicates the added or removed client from
-      the channel's invite list.  The format of the <adding client and the
-      <removing client> is defined in the [SILC1] with SILC_COMMAND_INVITE
-      command.
+      and the <removing client> indicates the added or removed client
+      from the channel's invite list.  The format of the <adding client
+      and the <removing client> is defined in the [SILC1] with
+      SILC_COMMAND_INVITE command.
 
       The <adding client> and <removing client> is never sent to the
-      client indicated by the <Client ID>.  Also note that the lists
-      include the <Client ID> already.
+      client indicated by the <Client ID>.
 
 
 2     SILC_NOTIFY_TYPE_JOIN
@@ -1262,7 +1264,7 @@ ID's sent in arguments are sent inside ID Payload.
 10    SILC_NOTIFY_TYPE_CHANNEL_CHANGE
 
       Sent when channel's ID has changed for a reason or another.  This 
-      is sent by noral server to the client.  Client must change the 
+      is sent by normal server to the client.  Client must change the 
       old Channel ID to the new one.  This type must be sent only to the
       clients who is joined on the channel.
 

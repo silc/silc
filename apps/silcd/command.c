@@ -2104,11 +2104,12 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcChannelEntry channel;
   SilcChannelID *channel_id = NULL;
   SilcIDListData idata;
-  SilcBuffer idp;
+  SilcBuffer idp, idp2, packet;
   unsigned char *tmp, *add, *del;
   unsigned int len;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INVITE, cmd, 1, 2);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INVITE, cmd, 1, 4);
 
   /* Get Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
@@ -2202,13 +2203,10 @@ SILC_SERVER_CMD_FUNC(invite)
     }
     
     /* Get route to the client */
-    dest_sock = silc_server_get_client_route(server, tmp, len, &idata);
+    dest_sock = silc_server_get_client_route(server, NULL, 0, dest_id, &idata);
 
+    memset(invite, 0, sizeof(invite));
     strncat(invite, dest->nickname, strlen(dest->nickname));
-    if (!strchr(dest->nickname, '@')) {
-      strncat(invite, "@", 1);
-      strncat(invite, server->server_name, strlen(server->server_name));
-    }
     strncat(invite, "!", 1);
     strncat(invite, dest->username, strlen(dest->username));
     if (!strchr(dest->username, '@')) {
@@ -2221,7 +2219,7 @@ SILC_SERVER_CMD_FUNC(invite)
       channel->invite_list = silc_calloc(len + 2, 
 					 sizeof(*channel->invite_list));
     else
-      channel->invite_list = silc_realloc(channel->ban_list, 
+      channel->invite_list = silc_realloc(channel->invite_list, 
 					  sizeof(*channel->invite_list) * 
 					  (len + 
 					   strlen(channel->invite_list) + 2));
@@ -2229,23 +2227,27 @@ SILC_SERVER_CMD_FUNC(invite)
     strncat(channel->invite_list, ",", 1);
 
     /* Send notify to the client that is invited to the channel */
-    idp = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
-    tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+    idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
+    idp2 = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
     silc_server_send_notify_dest(server, dest_sock, FALSE, dest_id, 
 				 SILC_ID_CLIENT,
-				 SILC_NOTIFY_TYPE_INVITE, 2, 
-				 idp->data, idp->len, tmp, len);
+				 SILC_NOTIFY_TYPE_INVITE, 3, 
+				 idp->data, idp->len, 
+				 channel->channel_name, 
+				 strlen(channel->channel_name),
+				 idp2->data, idp2->len);
     silc_buffer_free(idp);
+    silc_buffer_free(idp2);
   }
 
   /* Add the client to the invite list of the channel */
   add = silc_argument_get_arg_type(cmd->args, 3, &len);
-  if (add && strlen(add) == len) {
+  if (add) {
     if (!channel->invite_list)
       channel->invite_list = silc_calloc(len + 2, 
 					 sizeof(*channel->invite_list));
     else
-      channel->invite_list = silc_realloc(channel->ban_list, 
+      channel->invite_list = silc_realloc(channel->invite_list, 
 					  sizeof(*channel->invite_list) * 
 					  (len + 
 					   strlen(channel->invite_list) + 2));
@@ -2265,33 +2267,40 @@ SILC_SERVER_CMD_FUNC(invite)
 		 strlen(channel->invite_list) - 1)) {
       silc_free(channel->invite_list);
       channel->invite_list = NULL;
-      goto out0;
-    }
-
-    start = strstr(channel->invite_list, del);
-    if (start && strlen(start) >= len) {
-      end = start + len;
-      n = silc_calloc(strlen(channel->invite_list) - len, sizeof(*n));
-      strncat(n, channel->invite_list, start - channel->invite_list);
-      strncat(n, end + 1, ((channel->invite_list + 
-			    strlen(channel->invite_list)) - end) - 1);
-      silc_free(channel->invite_list);
-      channel->invite_list = n;
+    } else {
+      start = strstr(channel->invite_list, del);
+      if (start && strlen(start) >= len) {
+	end = start + len;
+	n = silc_calloc(strlen(channel->invite_list) - len, sizeof(*n));
+	strncat(n, channel->invite_list, start - channel->invite_list);
+	strncat(n, end + 1, ((channel->invite_list + 
+			      strlen(channel->invite_list)) - end) - 1);
+	silc_free(channel->invite_list);
+	channel->invite_list = n;
+      }
     }
   }
 
- out0:
-
-  idp = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
-
   /* Send notify to the primary router */
-
+  if (!server->standalone)
+    silc_server_send_notify_invite(server, server->router->connection,
+				   server->server_type == SILC_ROUTER ?
+				   TRUE : FALSE, channel,
+				   sender->id, SILC_ID_CLIENT_LEN,
+				   add, del);
 
   /* Send command reply */
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					SILC_STATUS_OK);
-
-  silc_buffer_free(idp);
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
+  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INVITE,
+						SILC_STATUS_OK, ident, 2,
+						2, tmp, len,
+						3, channel->invite_list,
+						channel->invite_list ?
+						strlen(channel->invite_list) :
+						0);
+  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
+			  packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
 
  out:
   if (dest_id)
@@ -2699,7 +2708,13 @@ static void silc_server_command_join_channel(SilcServer server,
 
   /* Check invite list if channel is invite-only channel */
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT && 
-      channel->mode & SILC_CHANNEL_MODE_INVITE && channel->invite_list) {
+      channel->mode & SILC_CHANNEL_MODE_INVITE) {
+    if (!channel->invite_list) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					    SILC_STATUS_ERR_NOT_INVITED);
+      goto out;
+    }
+
     if (!silc_string_match(channel->invite_list, check)) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					    SILC_STATUS_ERR_NOT_INVITED);
@@ -4529,7 +4544,7 @@ SILC_SERVER_CMD_FUNC(ban)
 
   /* Get the new ban and add it to the ban list */
   add = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (add && strlen(add) == tmp_len) {
+  if (add) {
     if (!channel->ban_list)
       channel->ban_list = silc_calloc(tmp_len + 2, sizeof(*channel->ban_list));
     else
@@ -4552,22 +4567,19 @@ SILC_SERVER_CMD_FUNC(ban)
     if (!strncmp(channel->ban_list, del, strlen(channel->ban_list) - 1)) {
       silc_free(channel->ban_list);
       channel->ban_list = NULL;
-      goto out0;
-    }
-
-    start = strstr(channel->ban_list, del);
-    if (start && strlen(start) >= tmp_len) {
-      end = start + tmp_len;
-      n = silc_calloc(strlen(channel->ban_list) - tmp_len, sizeof(*n));
-      strncat(n, channel->ban_list, start - channel->ban_list);
-      strncat(n, end + 1, ((channel->ban_list + strlen(channel->ban_list)) - 
-			   end) - 1);
-      silc_free(channel->ban_list);
-      channel->ban_list = n;
+    } else {
+      start = strstr(channel->ban_list, del);
+      if (start && strlen(start) >= tmp_len) {
+	end = start + tmp_len;
+	n = silc_calloc(strlen(channel->ban_list) - tmp_len, sizeof(*n));
+	strncat(n, channel->ban_list, start - channel->ban_list);
+	strncat(n, end + 1, ((channel->ban_list + strlen(channel->ban_list)) - 
+			     end) - 1);
+	silc_free(channel->ban_list);
+	channel->ban_list = n;
+      }
     }
   }
-
- out0:
 
   /* Send the BAN notify type to our primary router. */
   if (!server->standalone && (add || del))

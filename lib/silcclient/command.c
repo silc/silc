@@ -530,18 +530,20 @@ SILC_CLIENT_CMD_FUNC(topic)
   silc_client_command_free(cmd);
 }
 
-/* Command INVITE. Invites specific client to join a channel. */
+/* Command INVITE. Invites specific client to join a channel. This is
+   also used to mange the invite list of the channel. */
 
 SILC_CLIENT_CMD_FUNC(invite)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClient client = cmd->client;
   SilcClientConnection conn = cmd->conn;
-  SilcClientEntry client_entry;
-  SilcChannelEntry channel_entry;
+  SilcClientEntry client_entry = NULL;
+  SilcChannelEntry channel;
   SilcBuffer buffer, clidp, chidp;
-  unsigned int num = 0;
-  char *nickname = NULL, *server = NULL;
+  unsigned int num = 0, type = 0;
+  char *nickname = NULL, *server = NULL, *name;
+  char *invite = NULL;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -549,62 +551,103 @@ SILC_CLIENT_CMD_FUNC(invite)
     goto out;
   }
 
-  if (cmd->argc != 3) {
+  if (cmd->argc < 2) {
     cmd->client->ops->say(cmd->client, conn,
-			  "Usage: /INVITE <nickname>[@<server>] <channel>");
+		   "Usage: /INVITE <channel> [<nickname>[@server>]"
+		   "[+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]");
     COMMAND_ERROR;
     goto out;
+  }
+
+  if (cmd->argv[1][0] == '*') {
+    if (!conn->current_channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+
+    channel = conn->current_channel;
+  } else {
+    name = cmd->argv[1];
+
+    channel = silc_client_get_channel(cmd->client, conn, name);
+    if (!channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are on that channel");
+      COMMAND_ERROR;
+      goto out;
+    }
   }
 
   /* Parse the typed nickname. */
-  if (!silc_parse_nickname(cmd->argv[1], &nickname, &server, &num)) {
-    cmd->client->ops->say(cmd->client, conn, "Bad nickname");
-    COMMAND_ERROR;
-    goto out;
+  if (cmd->argc == 3) {
+    if (cmd->argv[2][0] != '+' && cmd->argv[2][0] != '-') {
+      if (!silc_parse_nickname(cmd->argv[2], &nickname, &server, &num)) {
+	cmd->client->ops->say(cmd->client, conn, "Bad nickname");
+	COMMAND_ERROR;
+	goto out;
+      }
+      
+      /* Find client entry */
+      client_entry = silc_idlist_get_client(client, conn, nickname, 
+					    server, num, TRUE);
+      if (!client_entry) {
+	if (nickname)
+	  silc_free(nickname);
+	if (server)
+	  silc_free(server);
+	
+	if (cmd->pending) {
+	  COMMAND_ERROR;
+	  goto out;
+	}
+      
+	/* Client entry not found, it was requested thus mark this to be
+	   pending command. */
+	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				    conn->cmd_ident,
+				    silc_client_command_destructor,
+				    silc_client_command_invite, 
+				    silc_client_command_dup(cmd));
+	cmd->pending = 1;
+	return;
+      }
+      
+      cmd->client->ops->say(cmd->client, conn, 
+			    "Inviting %s to channel %s", cmd->argv[2], 
+			    channel->channel_name);
+    } else {
+      invite = cmd->argv[2];
+      invite++;
+      if (cmd->argv[2][0] == '+')
+	type = 3;
+      else
+	type = 4;
+    }
   }
 
-  /* Find client entry */
-  client_entry = silc_idlist_get_client(client, conn, nickname, server, num,
-					TRUE);
-  if (!client_entry) {
-    if (nickname)
-      silc_free(nickname);
-    if (server)
-      silc_free(server);
-
-    /* Client entry not found, it was requested thus mark this to be
-       pending command. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-				silc_client_command_destructor,
-				silc_client_command_invite, 
-				silc_client_command_dup(cmd));
-    cmd->pending = 1;
-    return;
+  /* Send the command */
+  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  if (client_entry) {
+    clidp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE, 
+					    ++conn->cmd_ident, 3,
+					    1, chidp->data, chidp->len,
+					    2, clidp->data, clidp->len,
+					    type, invite, invite ?
+					    strlen(invite) : 0);
+    silc_buffer_free(clidp);
+  } else {
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE, 
+					    ++conn->cmd_ident, 2,
+					    1, chidp->data, chidp->len,
+					    type, invite, invite ?
+					    strlen(invite) : 0);
   }
 
-  /* Find channel entry */
-  channel_entry = silc_client_get_channel(client, conn, cmd->argv[2]);
-  if (!channel_entry) {
-    cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  /* Send command */
-  clidp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
-  chidp = silc_id_payload_encode(channel_entry->id, SILC_ID_CHANNEL);
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE, 0, 2,
-					  1, clidp->data, clidp->len,
-					  2, chidp->data, chidp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  silc_buffer_free(clidp);
   silc_buffer_free(chidp);
-
-  cmd->client->ops->say(cmd->client, conn, 
-			"Inviting %s to channel %s", cmd->argv[1], 
-			cmd->argv[2]);
 
   /* Notify application */
   COMMAND;
@@ -714,6 +757,11 @@ SILC_CLIENT_CMD_FUNC(kill)
     silc_free(nickname);
     if (server)
       silc_free(server);
+
+    if (cmd->pending) {
+      COMMAND_ERROR;
+      goto out;
+    }
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
@@ -1292,6 +1340,11 @@ SILC_CLIENT_CMD_FUNC(cumode)
   client_entry = silc_idlist_get_client(cmd->client, conn, 
 					nickname, server, num, TRUE);
   if (!client_entry) {
+    if (cmd->pending) {
+      COMMAND_ERROR;
+      goto out;
+    }
+
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
     silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 

@@ -64,7 +64,7 @@ void silc_server_notify(SilcServer server,
 
     /* Get the route to the client */
     dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					    packet->dst_id_len, &idata);
+					    packet->dst_id_len, NULL, &idata);
     if (dst_sock)
       /* Relay the packet */
       silc_server_relay_packet(server, dst_sock, idata->send_key,
@@ -498,7 +498,75 @@ void silc_server_notify(SilcServer server,
     break;
 
   case SILC_NOTIFY_TYPE_INVITE:
-    SILC_LOG_DEBUG(("INVITE notify (not-impl XXX)"));
+
+    if (packet->dst_id_type == SILC_ID_CLIENT)
+      goto out;
+
+    SILC_LOG_DEBUG(("INVITE notify"));
+
+    /* Get Channel ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+    silc_free(channel_id);
+
+    /* Get the added invite */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    if (tmp) {
+      if (!channel->invite_list)
+	channel->invite_list = silc_calloc(tmp_len + 2, 
+					   sizeof(*channel->invite_list));
+      else
+	channel->invite_list = silc_realloc(channel->invite_list, 
+					    sizeof(*channel->invite_list) * 
+					    (tmp_len + 
+					     strlen(channel->invite_list) + 
+					     2));
+      if (tmp[tmp_len - 1] == ',')
+	tmp[tmp_len - 1] = '\0';
+      
+      strncat(channel->invite_list, tmp, tmp_len);
+      strncat(channel->invite_list, ",", 1);
+    }
+
+    /* Get the deleted invite */
+    tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
+    if (tmp && channel->invite_list) {
+      char *start, *end, *n;
+      
+      if (!strncmp(channel->invite_list, tmp, 
+		   strlen(channel->invite_list) - 1)) {
+	silc_free(channel->invite_list);
+	channel->invite_list = NULL;
+      } else {
+	start = strstr(channel->invite_list, tmp);
+	if (start && strlen(start) >= tmp_len) {
+	  end = start + tmp_len;
+	  n = silc_calloc(strlen(channel->invite_list) - tmp_len, sizeof(*n));
+	  strncat(n, channel->invite_list, start - channel->invite_list);
+	  strncat(n, end + 1, ((channel->invite_list + 
+				strlen(channel->invite_list)) - end) - 1);
+	  silc_free(channel->invite_list);
+	  channel->invite_list = n;
+	}
+      }
+    }
+
     break;
 
   case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
@@ -714,18 +782,17 @@ void silc_server_notify(SilcServer server,
       if (!strcmp(channel->ban_list, tmp)) {
 	silc_free(channel->ban_list);
 	channel->ban_list = NULL;
-	break;
-      }
-      
-      start = strstr(channel->ban_list, tmp);
-      if (start && strlen(start) >= tmp_len) {
-	end = start + tmp_len;
-	n = silc_calloc(strlen(channel->ban_list) - tmp_len, sizeof(*n));
-	strncat(n, channel->ban_list, start - channel->ban_list);
-	strncat(n, end + 1, ((channel->ban_list + strlen(channel->ban_list)) - 
-			     end) - 1);
-	silc_free(channel->ban_list);
-	channel->ban_list = n;
+      } else {
+	start = strstr(channel->ban_list, tmp);
+	if (start && strlen(start) >= tmp_len) {
+	  end = start + tmp_len;
+	  n = silc_calloc(strlen(channel->ban_list) - tmp_len, sizeof(*n));
+	  strncat(n, channel->ban_list, start - channel->ban_list);
+	  strncat(n, end + 1, ((channel->ban_list + 
+				strlen(channel->ban_list)) - end) - 1);
+	  silc_free(channel->ban_list);
+	  channel->ban_list = n;
+	}
       }
     }
 
@@ -820,7 +887,7 @@ void silc_server_private_message(SilcServer server,
 
   /* Get the route to the client */
   dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					  packet->dst_id_len, &idata);
+					  packet->dst_id_len, NULL, &idata);
   if (!dst_sock)
     return;
 
@@ -852,7 +919,7 @@ void silc_server_private_message_key(SilcServer server,
 
   /* Get the route to the client */
   dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					  packet->dst_id_len, &idata);
+					  packet->dst_id_len, NULL, &idata);
   if (!dst_sock)
     return;
 
@@ -1741,7 +1808,7 @@ void silc_server_key_agreement(SilcServer server,
 
   /* Get the route to the client */
   dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					  packet->dst_id_len, &idata);
+					  packet->dst_id_len, NULL, &idata);
   if (!dst_sock)
     return;
 

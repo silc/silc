@@ -712,7 +712,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
+  SilcChannelEntry channel;
+  SilcChannelID *channel_id;
+  SilcIDCacheEntry id_cache;
   unsigned char *tmp;
+  unsigned int len;
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
@@ -725,12 +729,35 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
     return;
   }
 
+  /* Take Channel ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (!tmp)
+    goto out;
+
+  channel_id = silc_id_payload_parse_id(tmp, len);
+  if (!channel_id)
+    goto out;
+
+  /* Get the channel entry */
+  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				   SILC_ID_CHANNEL, &id_cache)) {
+    silc_free(channel_id);
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+  
+  channel = (SilcChannelEntry)id_cache->context;
+
+  /* Get the invite list */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+
   /* Notify application */
-  COMMAND_REPLY((ARGS));
+  COMMAND_REPLY((ARGS, channel, tmp));
 
   /* Execute any pending command callbacks */
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INVITE);
 
+ out:
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INVITE);
   silc_client_command_reply_free(cmd);
 }

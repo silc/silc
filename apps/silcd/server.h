@@ -160,6 +160,7 @@ void silc_server_save_users_on_channel(SilcServer server,
 SilcSocketConnection silc_server_get_client_route(SilcServer server,
 						  unsigned char *id_data,
 						  unsigned int id_len,
+						  SilcClientID *client_id,
 						  SilcIDListData *idata);
 SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 					       SilcClientEntry client);

@@ -3130,11 +3130,13 @@ void silc_server_save_users_on_channel(SilcServer server,
 
 /* Lookups route to the client indicated by `id' client ID. The connection
    object and internal data object is returned. Returns NULL if route
-   could not be found to the client. */
+   could not be found to the client. If the `client_id' is specified then
+   it is used and the `id_data' is ignored. */
 
 SilcSocketConnection silc_server_get_client_route(SilcServer server,
 						  unsigned char *id_data,
 						  unsigned int id_len,
+						  SilcClientID *client_id,
 						  SilcIDListData *idata)
 {
   SilcClientID *id;
@@ -3143,10 +3145,14 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   /* Decode destination Client ID */
-  id = silc_id_str2id(id_data, id_len, SILC_ID_CLIENT);
-  if (!id) {
-    SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
-    return NULL;
+  if (!client_id) {
+    id = silc_id_str2id(id_data, id_len, SILC_ID_CLIENT);
+    if (!id) {
+      SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
+      return NULL;
+    }
+  } else {
+    id = silc_id_dup(client_id, SILC_ID_CLIENT);
   }
 
   /* If the destination belongs to our server we don't have to route

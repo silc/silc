@@ -102,10 +102,11 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     break;
 
   case SILC_NOTIFY_TYPE_INVITE:
+    (void)va_arg(vp, SilcChannelEntry);
+    tmp = va_arg(vp, char *);
     client_entry = va_arg(vp, SilcClientEntry);
-    channel_entry = va_arg(vp, SilcChannelEntry);
     snprintf(message, sizeof(message), "%s invites you to channel %s", 
-	     client_entry->nickname, channel_entry->channel_name);
+	     client_entry->nickname, tmp);
     break;
 
   case SILC_NOTIFY_TYPE_JOIN:
@@ -545,6 +546,26 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	}
 
 	client->ops->say(client, conn, "%s", buf);
+      }
+      break;
+
+    case SILC_COMMAND_INVITE:
+      {
+	SilcChannelEntry channel;
+	char *invite_list;
+
+	if (!success)
+	  return;
+	
+	channel = va_arg(vp, SilcChannelEntry);
+	invite_list = va_arg(vp, char *);
+
+	if (invite_list)
+	  silc_say(client, conn, "%s invite list: %s", channel->channel_name,
+		   invite_list);
+	else
+	  silc_say(client, conn, "%s invite list not set", 
+		   channel->channel_name);
       }
       break;
 

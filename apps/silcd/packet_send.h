@@ -179,6 +179,13 @@ void silc_server_send_notify_ban(SilcServer server,
 				 int broadcast,
 				 SilcChannelEntry channel,
 				 char *add, char *del);
+void silc_server_send_notify_invite(SilcServer server,
+				    SilcSocketConnection sock,
+				    int broadcast,
+				    SilcChannelEntry channel,
+				    SilcClientID *client_id,
+				    unsigned int client_id_len,
+				    char *add, char *del);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  int broadcast,

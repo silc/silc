@@ -1,3 +1,15 @@
+Mon Mar 26 12:11:14 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_server_send_notify_invite to send the INVITE
+	  notify between routers.
+
+	* Implemented the INVITE command correctly to the server.
+
+	* Implemented the INVITE notify type handling in the server.
+
+	* Implemented the INVITE command to the client library and on the
+	  user interface.
+
 Sun Mar 25 20:27:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added function silc_server_get_client_resolve to find the

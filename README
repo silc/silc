@@ -137,6 +137,22 @@ SILC Commands
 
 		Gives a little history information about a client.
 
+	/INVITE	<channel> [<nickname>[@server>]
+ 		[+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]
+
+		Invites client to a channel or manages the invite list of
+		the channel.  The first <nickname> argument is used if an
+		client is invited to the channel.  The second +|-<nickname>
+		argument is used to either add or delete invite from the
+		channel's invite list.  Wildcards may be used with this
+		command.
+
+	/BAN	<channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]
+
+		Manages the ban list of the channel.  Wildcards may be used
+		with this command.  You must be channel operator to be
+		able to use this command.
+
         /KICK   <channel> <nickname>[@<server>] [<comment>]
 
                 Kicks client from channel. You have to be at least channel

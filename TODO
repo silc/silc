@@ -100,12 +100,9 @@ TODO In SILC Client Library
 TODO In SILC Server
 ===================
 
- o TODO in command.c and in command_reply.c:
+ o TODO in commands (command.c and command_reply.c):
 
-	o BAN is not implemented
 	o RESTART is not implemented
-	o INVITE is not working correctly
-	o JOIN does not check the invite and ban lists
 	o CMODE should be rewritten as it uses a lot duplicated code.
 	  Some of the modes may still not be implemented or is implemented
 	  the wrong way.
@@ -116,7 +113,10 @@ TODO In SILC Server
 	  situation correctly when it is called as pending command
 	  (it should most likely check that cmd->pending == TRUE/FALSE).
 
- o Implement the SILC_NOTIFY_TYPE_SERVER_QUIT notify type to the server.
+ o TODO in notify types (packet_receive.c):
+
+	o CHANNEL_CHANGE notify type is not implemented
+	o SERVER_SIGNOFF notify type is not implemented
 
  o Packet processing can be made faster. All packet function in the
    packet_receive.c has same prototypes.  Instead of calling those from
