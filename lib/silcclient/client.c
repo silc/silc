@@ -383,10 +383,10 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     ctx->sock->protocol = NULL;
-    silc_free(ctx);
 
     /* Notify application of failure */
     client->ops->connect(client, ctx->sock->user_data, FALSE);
+    silc_free(ctx);
     return;
   }
 
@@ -455,11 +455,11 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
       silc_ske_free(ctx->ske);
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
-    silc_free(ctx);
     conn->sock->protocol = NULL;
 
     /* Notify application of failure */
     client->ops->connect(client, ctx->sock->user_data, FALSE);
+    silc_free(ctx);
     return;
   }
 

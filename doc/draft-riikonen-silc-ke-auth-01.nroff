@@ -15,7 +15,7 @@
 .in 0
 .nf
 Network Working Group                                      P. Riikonen
-INTERNET-DRAFT
+Internet-Draft
 draft-riikonen-silc-ke-auth-01.txt                   13 September 2000
 Expires: 13 May 2001
 
@@ -184,20 +184,13 @@ Following descriptions of these payloads.
 
 Key exchange between two entities always begins with a
 SILC_PACKET_KEY_EXCHANGE packet containing Key Exchange Start Payload.
-When performing key exchange between client and server, the client sends
-Key Exchange Start Payload to server filled with all security properties
-that the client supports.  Server then checks if it supports the security
-properties.
+Initiator sends the Key Exchange Start Payload to the responder filled with
+all security properties it supports.  The responders then checks whether
+it supports the security properties.
 
-It then sends a Key Exchange Start Payload to client filled with security
-properties it selected from the payload client originally sent.  The
-payload sent by server must include only one chosen property per list.
-
-When performing key exchange between server and server, the server who
-is contacting sends the Key Exchange Start Payload with security property
-list it supports to the other server.  The contacted party then chooses
-the preferred properties same way as previously described.  It then
-replies with the properties it wanted same way as previously described.
+It then sends a Key Exchange Start Payload to the initiator filled with
+security properties it selected from the original payload.  The payload sent
+by responder must include only one chosen property per list.
 
 The Key Exchange Start Payload is used to tell connecting entities what
 security properties and algorithms should be used in the communication.
@@ -212,8 +205,8 @@ there are no existing keys to encrypt it with.  If performing re-keying
 (PFS was selected) this payload is encrypted with the existing key and
 encryption algorithm.
 
-Cookie is also send in this payload.  Cookie is used to uniform the
-payload so that none of the key exchange parties cannot determine this
+A cookie is also sent in this payload.  A cookie is used to uniform the
+payload so that none of the key exchange parties can determine this
 payload before hand.  The cookie must be returned to the original sender
 by the responder.
 
@@ -673,7 +666,7 @@ first group diffie-hellman-group1 is mandatory, other groups maybe
 negotiated to be used in the connection with Key Exchange Start Payload
 and SILC_PACKET_KEY_EXCHANGE packet.  However, the first group must be
 proposed in the Key Exchange Start Payload regardless of any other
-requested group (however, it doesn't have to be the first on the list).
+requested group (however, it does not have to be the first on the list).
 
 
 .ti 0

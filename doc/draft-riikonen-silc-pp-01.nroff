@@ -77,30 +77,33 @@ Table of Contents
   2.2 SILC Packet Header ........................................  5
   2.3 SILC Packet Types .........................................  7
       2.3.1 SILC Packet Payloads ................................ 15
-      2.3.2 Disconnect Payload .................................. 15
-      2.3.3 Success Payload ..................................... 16
-      2.3.4 Failure Payload ..................................... 16
-      2.3.5 Reject Payload ...................................... 17
-      2.3.6 Notify Payload ...................................... 17
-      2.3.7 Error Payload ....................................... 18
-      2.3.8 Channel Message Payload ............................. 19
-      2.3.9 Channel Key Payload ................................. 20
-      2.3.10 Private Message Payload ............................ 23
-      2.3.11 Private Message Key Payload ........................ 24
-      2.3.12 Command Payload .................................... 25
-             2.3.12.1 Command Argument Payload .................. 25
-      2.3.13 Command Reply Payload .............................. 26
-      2.3.14 Connection Auth Request Payload .................... 27
-      2.3.15 New ID Payload ..................................... 28
-      2.3.16 New ID List Payload ................................ 29
-      2.3.17 New Client Payload ................................. 29
-      2.3.18 New Server Payload ................................. 31
-      2.3.19 New Channel Payload ................................ 31
-      2.3.20 New Channel User Payload ........................... 32
-      2.3.21 New Channel List Payload ........................... 33
-      2.3.22 New Channel User List Payload ...................... 34
-      2.3.23 Replace ID Payload ................................. 34
-      2.3.24 Remove ID Payload .................................. 35
+      2.3.2 Generic paylods .....................................
+            2.3.2.1 ID Payload ..................................
+            2.3.2.2 Argument Payload ............................
+      2.3.3 Disconnect Payload .................................. 15
+      2.3.4 Success Payload ..................................... 16
+      2.3.5 Failure Payload ..................................... 16
+      2.3.6 Reject Payload ...................................... 17
+      2.3.7 Notify Payload ...................................... 17
+      2.3.8 Error Payload ....................................... 18
+      2.3.9 Channel Message Payload ............................. 19
+      2.3.10 Channel Key Payload ................................ 20
+      2.3.11 Private Message Payload ............................ 23
+      2.3.12 Private Message Key Payload ........................ 24
+      2.3.13 Command Payload .................................... 25
+      2.3.14 Command Reply Payload .............................. 26
+      2.3.15 Connection Auth Request Payload .................... 27
+      2.3.16 New ID Payload ..................................... 28
+      2.3.17 New ID List Payload ................................ 29
+      2.3.18 New Client Payload ................................. 29
+      2.3.19 New Server Payload ................................. 31
+      2.3.20 New Channel Payload ................................ 31
+      2.3.21 New Channel User Payload ........................... 32
+      2.3.22 New Channel List Payload ........................... 33
+      2.3.23 New Channel User List Payload ...................... 34
+      2.3.24 Replace ID Payload ................................. 34
+      2.3.25 Remove ID Payload .................................. 35
+      2.3.26 Remove Channel User Payload ........................
   2.4 SILC ID Types ............................................. 36
   2.5 Packet Encryption And Decryption .......................... 37
       2.5.1 Normal Packet Encryption And Decryption ............. 37
@@ -136,7 +139,6 @@ Figure 10:  Channel Key Payload
 Figure 11:  Private Message Payload
 Figure 12:  Private Message Key Payload
 Figure 13:  Command Payload
-Figure 14:  Command Argument Payload
 Figure 15:  Connection Auth Request Payload
 Figure 16:  New ID Payload
 Figure 17:  New Client Payload
@@ -463,21 +465,6 @@ List of SILC Packet types are defined as follows.
           by channel specific keys.  Channel Keys are distributed by
           SILC_PACKET_CHANNEL_KEY packet.
 
-          When client sends this packet the destination ID in the SILC 
-          header must be the Channel ID of the channel the message is 
-          destined to.  If server sends this packet to a client the 
-          destination ID in the SILC header must be the Client ID of 
-          the client receiving the packet.
-
-          If server sends this packet to router or if router sends this
-          packet to server or another router the destination ID in the
-          SILC header must be the Channel ID of the channel.  Server
-          (including router) distributes this packet only to its local
-          clients who are joined to the channel.  Servers and routers
-          also determines who are on the channel and when this packet
-          needs to be sent, as described in section Client To Client
-          in [SILC1].
-
           Payload of the packet:  See section 2.3.8 Channel Message 
                                   Payload
 
@@ -661,7 +648,7 @@ List of SILC Packet types are defined as follows.
           packet.  This packet maybe sent to entity that is indirectly
           connected to the sender.
 
-          Payload of the packet:  See section 2.3.19 New Channel Payload
+          Payload of the packet:  See section 2.3.20 New Channel Payload
 
 
      23   SILC_PACKET_NEW_CHANNEL_USER
@@ -670,10 +657,10 @@ List of SILC Packet types are defined as follows.
           The packet is sent after user has joined to the channel.  Server
           may send this packet to its router and router may send this to
           its primary router.  Client must not send this packet.  This
-          packet maybe sent to entity that is indirectly connected to the
-          sender.
+          packet maybe sent to entity that is indirectly connected to
+          the sender.
 
-          Payload of the packet:  See section 2.3.20 New Channel User
+          Payload of the packet:  See section 2.3.21 New Channel User
                                   Payload
 
 
@@ -684,7 +671,7 @@ List of SILC Packet types are defined as follows.
           SILC_PACKET_NEW_CHANNEL except that it may include several
           payloads. Client must not send this packet.
 
-          Payload of the packet:  See section 2.3.21 New Channel List
+          Payload of the packet:  See section 2.3.22 New Channel List
                                   Payload
 
 
@@ -695,7 +682,7 @@ List of SILC Packet types are defined as follows.
           packet SILC_PACKET_NEW_CHANNEL_USER except that it may
           include several payloads.  Client must not send this packet.
 
-          Payload of the packet:  See section 2.3.22 New Channel User
+          Payload of the packet:  See section 2.3.23 New Channel User
                                   List Payload
 
 
@@ -709,7 +696,7 @@ List of SILC Packet types are defined as follows.
           packet.  This packet maybe sent to entity that is indirectly
           connected to the sender.
 
-          Payload of the packet:  See section 2.3.23 Replace ID Payload
+          Payload of the packet:  See section 2.3.24 Replace ID Payload
 
 
      27   SILC_PACKET_REMOVE_ID
@@ -719,7 +706,7 @@ List of SILC Packet types are defined as follows.
           this packet.  This packet maybe sent to entity that is
           indirectly connected to the sender.
 
-          Payload of the packet:  See section 2.3.24 Remove ID Payload
+          Payload of the packet:  See section 2.3.25 Remove ID Payload
 
 
      28   SILC_PACKET_REMOVE_CHANNEL_USER
@@ -729,7 +716,7 @@ List of SILC Packet types are defined as follows.
           client has leaved a channel.  This packet maybe sent to entity
           that is indirectly connected to the sender.
 
-          Payload of the packet:  See section 2.3.25 Remove Channel User
+          Payload of the packet:  See section 2.3.26 Remove Channel User
                                   Payload
 
 
@@ -784,7 +771,97 @@ in [SILC1] and [SILC3].
 
 
 .ti 0
-2.3.2 Disconnect Payload
+2.3.2 Generic paylods
+
+This sections describes generic payloads that are not associated to any
+specific packet type.  They can be used for example inside some other
+packet payloads.
+
+
+.ti 0
+2.3.2.1 ID Payload
+
+This payload can be used to send an ID.  ID's are variable length thus
+this payload provides a way to send variable length ID's.
+
+Following diagram represents the ID Payload.
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|             ID Type           |           ID Length           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                           ID Data                             ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 3:  ID Payload
+
+
+.in 6
+o ID Type (2 bytes) - Indicates the type of the ID.  See 
+  section 2.4 SILC ID Types for list of defined ID types.
+
+o ID Length (2 bytes) - Length of the ID Data area not 
+  including the length of any other fields in the payload.
+
+o ID Data (variable length) - The actual ID data.
+.in 3
+
+
+.ti 0
+2.3.2.2 Argument Payload
+
+Argument Payload is used to set arguments for any packet payload that
+needs and supports arguments, such as commands.  Number of arguments
+associated with a packet must be indicated by the packet payload who
+needs the arguments. Argument Payloads must always reside right after
+the packet payload needing the arguments.  Incorrect amount of argument
+payloads must cause rejection of the packet.  Following diagram represents
+the Argument Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         Payload Length        | Argument Type |               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+               +
+|                                                               |
+~                        Argument Data                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 4:  Argument Payload
+
+
+.in 6
+o Payload Length (2 bytes) - Length of the argument payload data 
+  area not including the length of any other fields in the 
+  payload.
+
+o Argument Type (1 byte) - Indicates the type of the argument.  
+  Every argument may have a specific type that must be defined
+  by the packet payload needing the argument.  For example
+  every command specify a number for each argument that maybe 
+  associated with the command.  By using this number the receiver 
+  of the packet knows what type of argument this is.  If there is
+  no specific argument type this field is set to zero (0).
+
+o Argument Data (variable length) - Argument data.
+.in 3
+
+
+.ti 0
+2.3.3 Disconnect Payload
 
 Disconnect payload is sent upon disconnection.  The payload is simple;
 reason of disconnection is sent to the disconnected party.
@@ -818,7 +895,7 @@ o Disconnect Message (variable length) - Human readable
 
 
 .ti 0
-2.3.3 Success Payload
+2.3.4 Success Payload
 
 Success payload is sent when some protocol execution is successfully
 completed.  The payload is simple; indication of the success is sent.
@@ -850,7 +927,7 @@ o Success Indication (variable length) - Indication of
 
 
 .ti 0
-2.3.4 Failure Payload
+2.3.5 Failure Payload
 
 This is opposite of Success Payload.  Indication of failure of
 some protocol is sent in the payload.
@@ -882,7 +959,7 @@ o Failure Indication (variable length) - Indication of
 
 
 .ti 0
-2.3.5 Reject Payload
+2.3.6 Reject Payload
 
 This payload is sent when some protocol is rejected to be executed.
 Other operations may send this as well that was rejected.  The
@@ -919,7 +996,7 @@ o Reject Indication (variable length) - Indication of
 
 
 .ti 0
-2.3.6 Notify Payload
+2.3.7 Notify Payload
 
 Notify payload is used to send notify messages.  The payload is usually
 sent from server to client, however, server may send it to another
@@ -936,8 +1013,8 @@ Notify Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|          Notify Type          |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|          Notify Type          | Argument Nums |               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+               +
 |                                                               |
 ~                        Notify Message                         ~
 |                                                               |
@@ -952,8 +1029,13 @@ Figure 7:  Notify Payload
 o Notify Type (2 bytes) - Indicates the type of the notify
   message.
 
+o Argument Nums (2 bytes) - Indicates the number of Argument
+  Payloads associated to this payload.  Notify types may define
+  arguments to be send along the notify message.
+
 o Notify Message (variable length) - Human readable notify
-  message.
+  message.  The format of this message is implementation specific.
+  The message can be for example "%s has joined channel %s".
 .in 3
 
 Following notify types has been defined:
@@ -964,21 +1046,36 @@ Following notify types has been defined:
       If no specific notify type apply for the notify
       message this type may be used.
 
+      No arguments associated to this type.
+
 1     SILC_NOTIFY_TYPE_INVITE
 
       Sent when receiver has been invited to a channel.
+
+      This type includes three arguments: nickname and channel name.
 
 2     SILC_NOTIFY_TYPE_JOIN
 
       Sent when client has joined to a channel.
 
+      This type includes six arguments: Client ID, nickname, username,
+      hostname, Channel ID and channel name.  The Client ID and Channel ID
+      are sent inside ID Payload.
+
 3     SILC_NOTIFY_TYPE_LEAVE
 
       Sent when client has left a channel.
 
+      This type includes three arguments: nickname, server name,
+      Channel ID and channel name.  The Channel ID is sent inside ID
+      Payload.
+
 4     SILC_NOTIFY_TYPE_SIGNOFF
 
       Sent when client signoffs from SILC network.
+
+      This type includes three arguments: nickname, server name and
+      Channel ID.  The Channel ID is sent inside ID Payload.
 .in 3
 
 Notify types starting from 16384 are reserved for private notify
@@ -986,7 +1083,7 @@ message types.
 
 
 .ti 0
-2.3.7 Error Payload
+2.3.8 Error Payload
 
 Error payload is sent upon error.  Error may occur in various
 conditions when server sends this packet.  Client may not send this
@@ -1018,7 +1115,7 @@ o Error Message (variable length) - Human readable error
 
 
 .ti 0
-2.3.8 Channel Message Payload
+2.3.9 Channel Message Payload
 
 Channel messages are the most common messages sent in the SILC.
 Channel Message Payload is used to send message to channels.  These
@@ -1080,12 +1177,6 @@ represents the Channel Message Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Nickname Length        |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                           Nickname                            ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |         Message Length        |                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
 |                                                               |
@@ -1109,24 +1200,9 @@ Figure 9:  Channel Message Payload
 
 
 .in 6
-o Nickname Length (2 bytes) - Indicates the length of the
-  Nickname field, not including any other field.
-
-o Nickname (variable length) - Nickname of the sender of the 
-  channel message.  This should not be trusted as a definite 
-  sender of the channel message.  The SILC Packet Header in 
-  the packet indicates the true sender of the packet and 
-  client should verify that the nickname sent here belongs 
-  to the Client ID in the SILC Packet Header.  This nickname 
-  is merely provided to be displayed by the client.
-
-  If server is sending this packet this field is not included
-  and zero (0) length must be set to the Nickname Length field.
-
 o Message Length (2 bytes) - Indicates the length of the
   the Message Data field in the payload, not including any 
   other field.
-
 
 o Message Data (variable length) - The actual message to
   the channel.
@@ -1153,7 +1229,7 @@ o Initial Vector (variable length) - The initial vector
 
 
 .ti 0
-2.3.9 Channel Key Payload
+2.3.10 Channel Key Payload
 
 All traffic in channels are protected by channel specific keys.
 Channel Key Payload is used to distribute channel keys to all
@@ -1237,7 +1313,7 @@ o Channel Key (variable length) - The actual channel key
 
 
 .ti 0
-2.3.10 Private Message Payload
+2.3.11 Private Message Payload
 
 Private Message Payload is used to send private message between
 two clients (or users for that matter).  The messages are sent only
@@ -1305,7 +1381,7 @@ o Message Data (variable length) - The actual message to
 
 
 .ti 0
-2.3.11 Private Message Key Payload
+2.3.12 Private Message Key Payload
 
 This payload is used to send key from client to another client that
 is going to be used to protect the private messages between these
@@ -1354,7 +1430,7 @@ o Private Message Key (variable length) - The actual private
 
 
 .ti 0
-2.3.12 Command Payload
+2.3.13 Command Payload
 
 Command Payload is used to send SILC commands from client to server.
 Also server may send commands to other servers.  Following diagram
@@ -1388,7 +1464,8 @@ o SILC Command (1 byte) - SILC Command identifier.  This must
 o Arguments Num (1 byte) - Indicates the number of arguments
   associated with the command.  If there are no arguments this
   field is set to zero (0).  The arguments must follow the 
-  command payload.
+  command payload.  See section 2.3.2.2 for definition of the
+  Argument Payload.
 
 o Command Unifier (2 bytes) - Unifies this command at the
   sender's end.  The entity who replies to this command must
@@ -1405,61 +1482,7 @@ their arguments and their reply messages.
 
 
 .ti 0
-2.3.12.1 Command Argument Payload
-
-Command Argument Payload is used to set arguments for SILC commands.
-Number of arguments associated with a command are indicated by the
-Command Payload in the Arguments Num field.  Command argument 
-payloads may only be used with a command payload and they must 
-always reside right after the command payload.  Incorrect amount of
-argument payloads must cause rejection of the packet.  Following 
-diagram represents the Command Argument Payload.
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Argument Num | Argument Type |         Payload Length        |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                        Argument Data                          ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 14:  Command Argument Payload
-
-
-.in 6
-o Argument Num (1 byte) - Indicates the number of this argument.
-  For first argument this is set to 1, for second argument this
-  is set to 2, and so forth.  If incorrect value is found 
-  in this field the packet must be discarded.  Value is 
-  incorrect if it is zero (0) or, for example, a third argument
-  does not include value 3.
-
-o Argument Type (1 byte) - Indicates the type of the argument.  
-  Every command specify a number for each argument that maybe 
-  associated with the command.  By using this number the receiver 
-  of the packet knows what type of argument this is.  The numbers 
-  are command specific and has been defined in section SILC
-  Commands in [SILC1].  This field makes it possible to send
-  arguments in free order as this field is used to identify
-  the specific type of the argument.
-
-o Payload Length (2 bytes) - Length of the argument payload data 
-  area not including the length of any other fields in the 
-  payload.
-
-o Argument Data (variable length) - Argument data.
-.in 3
-
-
-.ti 0
-2.3.13 Command Reply Payload
+2.3.14 Command Reply Payload
 
 Command Reply Payload is used to send replies to the commands.  The
 Command Reply Payload is identical to the Command Payload thus see the
@@ -1476,7 +1499,7 @@ SILC commands, their arguments and their reply messages.
 
 
 .ti 0
-2.3.14 Connection Auth Request Payload
+2.3.15 Connection Auth Request Payload
 
 Client may send this payload to server to request the authentication
 method that must be used in authentication protocol.  If client knows 
@@ -1546,7 +1569,7 @@ o Authentication Method (2 bytes) - Indicates the authentication
 
 
 .ti 0
-2.3.15 New ID Payload
+2.3.16 New ID Payload
 
 New ID Payload is a multipurpose payload.  It is used to send newly 
 created ID's from clients and servers.  When client connects to server
@@ -1572,42 +1595,12 @@ Hence, this payload is very important and used every time when some
 new entity is registered to the SILC network.  Client never sends this
 payload.  Both client and server (and router) may receive this payload.
 
-The payload may only be sent with SILC_PACKET_NEW_ID packet.  It must
-not be sent in any other packet type.  Following diagram represents the
-New ID Payload.
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|             ID Type           |           ID Length           |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                           ID Data                             ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 16:  New ID Payload
-
-
-.in 6
-o ID Type (2 bytes) - Indicates the type of the ID.  See 
-  section 2.4 SILC ID Types for list of defined ID types.
-
-o ID Length (2 bytes) - Length of the ID Data area not 
-  including the length of any other fields in the payload.
-
-o ID Data (variable length) - The actual ID data.
-.in 3
-
+The packet uses generic ID Payload as New ID Payload.  See section
+2.3.2.1 for generic ID Payload.
 
 
 .ti 0
-2.3.16 New ID List Payload
+2.3.17 New ID List Payload
 
 New ID List Payload is used to distribute list of ID's usually from 
 server to router but also from router to other routers in the network.
@@ -1629,7 +1622,7 @@ packet.  They must not be sent in any other packet type.
 
 
 .ti 0
-2.3.17 New Client Payload
+2.3.18 New Client Payload
 
 When client is connected to the server, keys has been exchanged and
 connection has been authenticated client must register itself to the 
@@ -1689,7 +1682,7 @@ o Real Name (variable length) - The real name of the user
 
 
 .ti 0
-2.3.18 New Server Payload
+2.3.19 New Server Payload
 
 This payload is sent by server when it has completed successfully both
 key exchange and connection authentication protocols.  The server
@@ -1741,7 +1734,7 @@ o Server Name (variable length) - The server name.
 
 
 .ti 0
-2.3.19 New Channel Payload
+2.3.20 New Channel Payload
 
 Information about newly created channel is broadcasted to all routers
 in the SILC network by sending this packet payload.  Channels are
@@ -1794,7 +1787,7 @@ o Channel ID (variable length) - The created Channel ID.
 
 
 .ti 0
-2.3.20 New Channel User Payload
+2.3.21 New Channel User Payload
 
 When client (user) joins to a channel, server must notify routers
 about the new user on the channel.  Normal server sends this packet
@@ -1845,7 +1838,7 @@ o Client ID (variable length) - The Client ID of the client
 
 
 .ti 0
-2.3.21 New Channel List Payload
+2.3.22 New Channel List Payload
 
 This payload is used to distribute list of new channels from server
 to routers.  It might convenient to send list of new channels when
@@ -1864,7 +1857,7 @@ packet.  They must not be sent in any other packet type.
 
 
 .ti 0
-2.3.22 New Channel User List Payload
+2.3.23 New Channel User List Payload
 
 This payload is used to distribute list of channel users on specific
 channel from server to routers.  It might convenient to send list of
@@ -1884,7 +1877,7 @@ packet type.
 
 
 .ti 0
-2.3.23 Replace ID Payload
+2.3.24 Replace ID Payload
 
 This payload is used to replace old ID with new ID sent in the payload.
 When ID changes for some entity and the new ID is wanted to replace the
@@ -1948,7 +1941,7 @@ o New ID Data (variable length) - The actual new ID data.
 
 
 .ti 0
-2.3.24 Remove ID Payload
+2.3.25 Remove ID Payload
 
 Remove ID payload is used to remove ID from SILC network.  This is used
 for example when client exits SILC network.  The server must in this
@@ -1956,42 +1949,12 @@ case send this payload to notify that this ID is not valid anymore.
 After this has been send the old ID must not be used anymore.  Client
 must not send this payload.
 
-The payload may only be sent with SILC_PACKET_REMOVE_ID packet.  It must
-not be sent in any other packet type.  Following diagram represents the 
-Remove Payload Payload.
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|            ID Type            |           ID Length           |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                            ID Data                            ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 22:  Remove ID Payload
-
-
-.in 6
-o ID Type (2 bytes) - Indicates the type of the ID to be
-  removed.  See section 2.4 SILC ID Types for list of defined
-  ID types.
-
-o ID Length (2 bytes) - Length of the ID Data area not including
-  the length of any other fields in the payload.
-
-o ID Data (variable length) - The actual ID data to be removed.
-.in 3
+The packet uses generic ID Payload as New ID Payload.  See section
+2.3.2.1 for generic ID Payload.
 
 
 .ti 0
-2.3.25 Remove Channel User Payload
+2.3.26 Remove Channel User Payload
 
 Remove Channel User payload is used to remove a user from a channel network
 wide.  This is used by routers to notify other routers that a user has

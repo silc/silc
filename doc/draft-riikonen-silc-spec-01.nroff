@@ -236,7 +236,7 @@ Following diagram represents SILC network topology.
     ---- ---- ----         ---- ---- ----       ---- ------
    | S7 | S4 | S2 |       | S1 | S3 | S2 |      | S2 | S5 |
    ----- ---- -----       ----- ---- -----       ---- ----
-  | S6 | S/R3 | S1 | --- | S4 | S/R5 | S5 |       Cell 4.
+  | S6 | S/R3 | S1 | --- | S4 | S/R5 | S5 | ____/ Cell 4.
    ---- ------ ----       ---- ------ ----
    | S8 | S5 | S3 |       | S6 | S7 | S8 |     ... etc ...
     ---- ---- ----         ---- ---- ----
@@ -1665,6 +1665,11 @@ Status messages:
 Every command reply also defines set of status message that it
 may return inside the <Status Payload>.  All status messages
 are defined in the section 5.3 SILC Command Status Types.
+
+Every command that has some kind of ID as argument (for example
+<Client ID>) are actually ID Payloads, defined in [SILC2] that includes
+the type of the ID, length of the ID and the actual ID data.  This
+way variable length ID's can be sent as arguments.
 .in 3
 
 
@@ -2082,13 +2087,14 @@ List of all defined commands in SILC follows.
 
         Max Arguments:  2
             Arguments:  (1) <Server ID>  
-                        (2) [<remote server/router>[:<port>]]
+                        (2) [<remote server/router>[ <port>]]
 
         This command is used by operators to force a server to try to
         establish a new connection to another router (if the connecting
         server is normal server) or server (if the conneceting server is
         router server).  Operator may specify the server/router to be
-        connected by setting <remote server> argument.
+        connected by setting <remote server> argument.  The separator
+        between <remote server address> and <port> is whitespace (` ').
 
         Reply messages to the command:
 
@@ -2217,13 +2223,15 @@ List of all defined commands in SILC follows.
         Max Arguments:  5
             Arguments:  (1) <Status Payload>  (2) <channel> 
                         (3) <Channel ID>      (4) <channel mode mask>
-                        (5) [<topic>]
+                        (5) [<ban mask>]      (6) [<invite list>]
+                        (6) [<topic>]
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
         if it exists.  It also replies with the channel mode mask
         which tells all the modes set on the channel.  If the
-        channel is created the mode mask is zero (0).
+        channel is created the mode mask is zero (0).  If ban mask
+        and/or invite list is set they are sent as well.
 
         Client must not start transmitting to the channel even after
         server has replied to this command.  Client is permitted to 
