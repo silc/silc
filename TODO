@@ -18,7 +18,7 @@ TODO for Irssi SILC Client 1.0
 TODO for SILC Server 1.0
 ========================
 
- o Remove client from invite lists in KICKED and KILLED.
+ o Remove client from invite lists KILLED.
 
  o 1.2 backup router support
 

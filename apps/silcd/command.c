@@ -1212,7 +1212,7 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Encode invite list */
   list = NULL;
-  if (channel->invite_list) {
+  if (channel->invite_list && silc_hash_table_count(channel->invite_list)) {
     list = silc_buffer_alloc_size(2);
     silc_buffer_format(list,
 		       SILC_STR_UI_SHORT(silc_hash_table_count(
@@ -1899,6 +1899,7 @@ static void silc_server_command_join_channel(SilcServer server,
     /* Check invite list if channel is invite-only channel */
     if (channel->mode & SILC_CHANNEL_MODE_INVITE) {
       if (!channel->invite_list ||
+	  !silc_hash_table_count(channel->invite_list) ||
 	  (!silc_server_inviteban_match(server, channel->invite_list,
 					3, client->id) &&
 	   !silc_server_inviteban_match(server, channel->invite_list,
@@ -1916,14 +1917,14 @@ static void silc_server_command_join_channel(SilcServer server,
     /* Check ban list if it exists. If the client's nickname, server,
        username and/or hostname is in the ban list the access to the
        channel is denied. */
-    if (channel->ban_list) {
-      if (silc_server_inviteban_match(server, channel->invite_list,
+    if (channel->ban_list && silc_hash_table_count(channel->ban_list)) {
+      if (silc_server_inviteban_match(server, channel->ban_list,
 				      3, client->id) ||
-	  silc_server_inviteban_match(server, channel->invite_list,
+	  silc_server_inviteban_match(server, channel->ban_list,
 				      2, client->data.public_key) ||
-	  !silc_server_inviteban_match(server, channel->invite_list,
+	  !silc_server_inviteban_match(server, channel->ban_list,
 				       1, check) ||
-	  !silc_server_inviteban_match(server, channel->invite_list,
+	  !silc_server_inviteban_match(server, channel->ban_list,
 				       1, check2)) {
 	silc_server_command_send_status_reply(
 				      cmd, SILC_COMMAND_JOIN,
@@ -2024,7 +2025,7 @@ static void silc_server_command_join_channel(SilcServer server,
 
   /* Encode invite list */
   invite_list = NULL;
-  if (channel->invite_list) {
+  if (channel->invite_list && silc_hash_table_count(channel->invite_list)) {
     SilcHashTableList htl;
 
     invite_list = silc_buffer_alloc_size(2);
@@ -2050,7 +2051,7 @@ static void silc_server_command_join_channel(SilcServer server,
 
   /* Encode ban list */
   ban_list = NULL;
-  if (channel->ban_list) {
+  if (channel->ban_list && silc_hash_table_count(channel->ban_list)) {
     SilcHashTableList htl;
 
     ban_list = silc_buffer_alloc_size(2);
@@ -3543,6 +3544,17 @@ SILC_SERVER_CMD_FUNC(kick)
 				 SILC_BROADCAST(server), channel,
 				 target_client->id, client->id, comment);
 
+  /* Remove the client from channel's invite list */
+  if (channel->invite_list && silc_hash_table_count(channel->invite_list)) {
+    SilcBuffer ab =
+      silc_argument_payload_encode_one(NULL, target_idp, target_idp_len, 3);
+    SilcArgumentPayload args =
+      silc_argument_payload_parse(ab->data, ab->len, 1);
+    silc_server_inviteban_process(server, channel->invite_list, 1, args);
+    silc_buffer_free(ab);
+    silc_argument_payload_free(args);
+  }
+
   /* Remove the client from the channel. If the channel does not exist
      after removing the client then the client kicked itself off the channel
      and we don't have to send anything after that. */
@@ -4148,7 +4160,7 @@ SILC_SERVER_CMD_FUNC(ban)
     }
 
     /* Get the type of action */
-    tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+    tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
     if (tmp && len == 1) {
       if (tmp[0] == 0x00) {
 	/* Allocate hash table for ban list if it doesn't exist yet */
@@ -4175,7 +4187,7 @@ SILC_SERVER_CMD_FUNC(ban)
 
   /* Encode ban list */
   list = NULL;
-  if (channel->ban_list) {
+  if (channel->ban_list && silc_hash_table_count(channel->ban_list)) {
     list = silc_buffer_alloc_size(2);
     silc_buffer_format(list,
 		       SILC_STR_UI_SHORT(silc_hash_table_count(

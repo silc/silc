@@ -1383,40 +1383,52 @@ void silc_server_notify(SilcServer server,
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO)
       goto out;
     
-    /* From protocol version 1.1 we get the kicker's ID as well. */
+    /* Get the kicker's Client ID */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
-    if (tmp) {
-      client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
-      if (!client_id)
-	goto out;
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+    if (!client_id)
+      goto out;
 
-      /* If the the client is not in local list we check global list */
-      client2 = silc_idlist_find_client_by_id(server->global_list, 
+    /* If the the client is not in local list we check global list */
+    client2 = silc_idlist_find_client_by_id(server->global_list, 
+					    client_id, TRUE, NULL);
+    if (!client2) {
+      client2 = silc_idlist_find_client_by_id(server->local_list, 
 					      client_id, TRUE, NULL);
       if (!client2) {
-	client2 = silc_idlist_find_client_by_id(server->local_list, 
-						client_id, TRUE, NULL);
-	if (!client2) {
-	  silc_free(client_id);
-	  goto out;
-	}
+	silc_free(client_id);
+	goto out;
       }
-      silc_free(client_id);
+    }
+    silc_free(client_id);
 
-      /* Kicker must be operator on channel */
-      if (!silc_server_client_on_channel(client2, channel, &chl))
-	goto out;
-      if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
-	  !(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
-	SILC_LOG_DEBUG(("Kicking is not allowed"));
-	goto out;
-      }
+    /* Kicker must be operator on channel */
+    if (!silc_server_client_on_channel(client2, channel, &chl))
+      goto out;
+    if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
+      SILC_LOG_DEBUG(("Kicking is not allowed"));
+      goto out;
     }
 
     /* Send to channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
 				       FALSE, packet->buffer->data, 
 				       packet->buffer->len, FALSE);
+
+    /* Remove the client from channel's invite list */
+    if (channel->invite_list && silc_hash_table_count(channel->invite_list)) {
+      SilcBuffer ab;
+      SilcArgumentPayload iargs;
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      ab = silc_argument_payload_encode_one(NULL, tmp, tmp_len, 3);
+      iargs = silc_argument_payload_parse(ab->data, ab->len, 1);
+      silc_server_inviteban_process(server, channel->invite_list, 1, iargs);
+      silc_buffer_free(ab);
+      silc_argument_payload_free(iargs);
+    }
 
     /* Remove the client from channel */
     silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
@@ -1468,33 +1480,33 @@ void silc_server_notify(SilcServer server,
       if (comment_len > 128)
 	comment_len = 127;
 
-      /* From protocol version 1.1 we get the killer's ID as well. */
+      /* Get the killer's Client ID */
       tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
-      if (tmp) {
-	client_id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
-	if (!client_id)
-	  goto out;
+      if (!tmp)
+	goto out;
+      client_id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+      if (!client_id)
+	goto out;
 
-	if (id_type == SILC_ID_CLIENT) {
-	  /* If the the client is not in local list we check global list */
-	  client2 = silc_idlist_find_client_by_id(server->global_list, 
+      if (id_type == SILC_ID_CLIENT) {
+	/* If the the client is not in local list we check global list */
+	client2 = silc_idlist_find_client_by_id(server->global_list, 
+						client_id, TRUE, NULL);
+	if (!client2) {
+	  client2 = silc_idlist_find_client_by_id(server->local_list, 
 						  client_id, TRUE, NULL);
 	  if (!client2) {
-	    client2 = silc_idlist_find_client_by_id(server->local_list, 
-						    client_id, TRUE, NULL);
-	    if (!client2) {
-	      silc_free(client_id);
-	      goto out;
-	    }
-	  }
-	  silc_free(client_id);
-
-	  /* Killer must be router operator */
-	  if (server->server_type != SILC_SERVER &&
-	      !(client2->mode & SILC_UMODE_ROUTER_OPERATOR)) {
-	    SILC_LOG_DEBUG(("Killing is not allowed"));
+	    silc_free(client_id);
 	    goto out;
 	  }
+	}
+	silc_free(client_id);
+
+	/* Killer must be router operator */
+	if (server->server_type != SILC_SERVER &&
+	    !(client2->mode & SILC_UMODE_ROUTER_OPERATOR)) {
+	  SILC_LOG_DEBUG(("Killing is not allowed"));
+	  goto out;
 	}
       }
 
