@@ -413,8 +413,6 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	if (tmp)
 	  silc_say_error("%s: %s", tmp, 
 			 silc_client_command_status_message(status));
-	else
-	  silc_say_error("%s", silc_client_command_status_message(status));
 	break;
       }
       
@@ -503,8 +501,6 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	if (tmp)
 	  silc_say_error("%s: %s", tmp, 
 			 silc_client_command_status_message(status));
-	else
-	  silc_say_error("%s", silc_client_command_status_message(status));
 	break;
       }
       

@@ -815,18 +815,35 @@ static void keyagr_completion(SilcClient client,
 typedef struct {
   SILC_SERVER_REC *server;
   char *data;
+  char *nick;
   WI_ITEM_REC *item;
 } *KeyGetClients;
 
 /* Callback to be called after client information is resolved from the
    server. */
 
-SILC_CLIENT_CMD_FUNC(key_get_clients)
+static void silc_client_command_key_get_clients(SilcClient client,
+						SilcClientConnection conn,
+						SilcClientEntry *clients,
+						uint32 clients_count,
+						void *context)
 {
   KeyGetClients internal = (KeyGetClients)context;
+
+  if (!clients) {
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s", 
+	      internal->nick);
+    silc_free(internal->data);
+    silc_free(internal->nick);
+    silc_free(internal);
+    return;
+  }
+
   signal_emit("command key", 3, internal->data, internal->server,
 	      internal->item);
+
   silc_free(internal->data);
+  silc_free(internal->nick);
   silc_free(internal);
 }
 
@@ -834,7 +851,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 			WI_ITEM_REC *item)
 {
   SilcClientConnection conn;
-  SilcClientEntry client_entry = NULL;
+  SilcClientEntry *entrys, client_entry = NULL;
+  uint32 entry_count;
   SilcChannelEntry channel_entry = NULL;
   char *nickname = NULL, *tmp;
   int command = 0, port = 0, type = 0;
@@ -878,22 +896,20 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       }
       
       /* Find client entry */
-      client_entry = silc_idlist_get_client(silc_client, conn, nickname, 
-					    argv[2], TRUE);
-      if (!client_entry) {
+      entrys = silc_client_get_clients_local(silc_client, conn, nickname,
+					     argv[2], &entry_count);
+      if (!entrys) {
 	KeyGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
 	inter->data = strdup(data);
+	inter->nick = strdup(nickname);
 	inter->item = item;
-
-	/* Client entry not found, it was requested thus mark this to be
-	   pending command. */
-	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				    conn->cmd_ident, 
-				    NULL, silc_client_command_key_get_clients, 
-				    inter);
+	silc_client_get_clients(silc_client, conn, nickname, argv[2],
+				silc_client_command_key_get_clients, inter);
 	goto out;
       }
+      client_entry = entrys[0];
+      silc_free(entrys);
     }
   }
 

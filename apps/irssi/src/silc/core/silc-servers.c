@@ -129,8 +129,6 @@ static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg)
   /* Find client entry */
   clients = silc_client_get_clients_local(silc_client, server->conn, 
 					  nickname, nick, &clients_count);
-  silc_free(nickname);
-
   if (!clients) {
     rec = g_new0(PRIVMSG_REC, 1);
     rec->nick = g_strdup(nick);
@@ -140,10 +138,12 @@ static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg)
     /* Could not find client with that nick, resolve it from server. */
     silc_client_get_clients(silc_client, server->conn,
 			    nickname, NULL, silc_send_msg_clients, rec);
+    silc_free(nickname);
     return;
   }
 
   /* Send the private message directly */
+  silc_free(nickname);
   silc_client_send_private_message(silc_client, server->conn, 
 				   clients[0], 0, msg, strlen(msg), TRUE);
 }
@@ -485,15 +485,32 @@ static void silc_client_file_monitor(SilcClient client,
 typedef struct {
   SILC_SERVER_REC *server;
   char *data;
+  char *nick;
   WI_ITEM_REC *item;
 } *FileGetClients;
 
-SILC_CLIENT_CMD_FUNC(file_get_clients)
+static void silc_client_command_file_get_clients(SilcClient client,
+						 SilcClientConnection conn,
+						 SilcClientEntry *clients,
+						 uint32 clients_count,
+						 void *context)
 {
   FileGetClients internal = (FileGetClients)context;
+
+  if (!clients) {
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s", 
+	      internal->nick);
+    silc_free(internal->data);
+    silc_free(internal->nick);
+    silc_free(internal);
+    return;
+  }
+
   signal_emit("command file", 3, internal->data, internal->server,
 	      internal->item);
+
   silc_free(internal->data);
+  silc_free(internal->nick);
   silc_free(internal);
 }
 
@@ -501,7 +518,8 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			 WI_ITEM_REC *item)
 {
   SilcClientConnection conn;
-  SilcClientEntry client_entry;
+  SilcClientEntry *entrys, client_entry;
+  uint32 entry_count;
   char *nickname = NULL, *tmp;
   unsigned char **argv;
   uint32 argc;
@@ -548,22 +566,20 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     }
     
     /* Find client entry */
-    client_entry = silc_idlist_get_client(silc_client, conn, nickname, 
-					  argv[3], TRUE);
-    if (!client_entry) {
+    entrys = silc_client_get_clients_local(silc_client, conn, nickname,
+					   argv[3], &entry_count);
+    if (!entrys) {
       FileGetClients inter = silc_calloc(1, sizeof(*inter));
       inter->server = server;
       inter->data = strdup(data);
+      inter->nick = strdup(nickname);
       inter->item = item;
-      
-      /* Client entry not found, it was requested thus mark this to be
-	 pending command. */
-      silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				  conn->cmd_ident, 
-				  NULL, silc_client_command_file_get_clients, 
-				  inter);
+      silc_client_get_clients(silc_client, conn, nickname, argv[3],
+			      silc_client_command_file_get_clients, inter);
       goto out;
     }
+    client_entry = entrys[0];
+    silc_free(entrys);
 
     silc_client_file_send(silc_client, conn, silc_client_file_monitor, 
 			  server, client_entry, argv[2]);
@@ -591,23 +607,20 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
       }
     
       /* Find client entry */
-      client_entry = silc_idlist_get_client(silc_client, conn, nickname, 
-					    argv[2], TRUE);
-      if (!client_entry) {
+      entrys = silc_client_get_clients_local(silc_client, conn, nickname,
+					     argv[2], &entry_count);
+      if (!entrys) {
 	FileGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
 	inter->data = strdup(data);
+	inter->nick = strdup(nickname);
 	inter->item = item;
-      
-	/* Client entry not found, it was requested thus mark this to be
-	   pending command. */
-	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				    conn->cmd_ident, 
-				    NULL, 
-				    silc_client_command_file_get_clients, 
-				    inter);
+	silc_client_get_clients(silc_client, conn, nickname, argv[2],
+				silc_client_command_file_get_clients, inter);
 	goto out;
       }
+      client_entry = entrys[0];
+      silc_free(entrys);
     } else {
       if (!server->current_session) {
 	printformat_module("fe-common/silc", server, NULL,
@@ -658,30 +671,27 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
       }
     
       /* Find client entry */
-      client_entry = silc_idlist_get_client(silc_client, conn, nickname, 
-					    argv[2], TRUE);
-      if (!client_entry) {
+      entrys = silc_client_get_clients_local(silc_client, conn, nickname,
+					     argv[2], &entry_count);
+      if (!entrys) {
 	FileGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
 	inter->data = strdup(data);
+	inter->nick = strdup(nickname);
 	inter->item = item;
-      
-	/* Client entry not found, it was requested thus mark this to be
-	   pending command. */
-	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				    conn->cmd_ident, 
-				    NULL, 
-				    silc_client_command_file_get_clients, 
-				    inter);
+	silc_client_get_clients(silc_client, conn, nickname, argv[2],
+				silc_client_command_file_get_clients, inter);
 	goto out;
       }
+      client_entry = entrys[0];
+      silc_free(entrys);
     } else {
       if (!server->current_session) {
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_FILE_NA);
 	goto out;
       }
-
+ 
       if (!silc_client_file_close(silc_client, conn, 
 				  server->current_session->session_id))
 	printformat_module("fe-common/silc", server, NULL,

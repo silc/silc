@@ -38,6 +38,19 @@ typedef struct {
 static void silc_client_notify_by_server_pending(void *context, void *context2)
 {
   SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
+  SilcClientCommandReplyContext reply = 
+    (SilcClientCommandReplyContext)context2;
+
+  if (reply) {
+    SilcCommandStatus status;
+    unsigned char *tmp = silc_argument_get_arg_type(reply->args, 1, NULL);
+    SILC_GET16_MSB(status, tmp);
+    if (status != SILC_STATUS_OK) {
+      silc_socket_free(res->sock);
+      return;
+    }
+  }
+
   silc_client_notify_by_server(res->context, res->sock, res->packet);
   silc_socket_free(res->sock);
 }

@@ -843,7 +843,8 @@ void silc_client_get_clients(SilcClient client,
  *    is the formatted nickname to find exact match from multiple found
  *    entries. The format must be same as given in the SilcClientParams
  *    structure to the client library. If the `format' is NULL all found
- *    clients by `nickname' are returned.
+ *    clients by `nickname' are returned. The caller must return the
+ *    returned array.
  *
  ***/
 SilcClientEntry *silc_client_get_clients_local(SilcClient client,
