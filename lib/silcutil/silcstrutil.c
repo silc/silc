@@ -187,6 +187,11 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
   if (!bin || !bin_len)
     return 0;
 
+  if (silc_utf8_valid(bin, bin_len) && bin_len <= utf8_size) {
+    memcpy(utf8, bin, bin_len);
+    return bin_len;
+  }
+
   for (i = 0; i < bin_len; i++) {
     switch (bin_encoding) {
     case SILC_STRING_ASCII:

@@ -406,16 +406,17 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
   SilcBuffer buf;
   char *identifier;
   SilcUInt32 len, tlen = 0;
+  char utf8[256 + 1];
 
   if (!username || !host)
     return NULL;
 
-  len = (username ? strlen(username) : 0) +
-	(host     ? strlen(host)     : 0) +
-	(realname ? strlen(realname) : 0) +
-	(email    ? strlen(email)    : 0) +
-	(org      ? strlen(org)      : 0) +
-	(country  ? strlen(country)  : 0);
+  len = (username ? silc_utf8_encoded_len(username, strlen(username), 0) : 0) +
+	(host     ? silc_utf8_encoded_len(host, strlen(host), 0) : 0) +
+	(realname ? silc_utf8_encoded_len(realname, strlen(realname), 0) : 0) +
+	(email    ? silc_utf8_encoded_len(email, strlen(email), 0) : 0) +
+	(org      ? silc_utf8_encoded_len(org, strlen(org), 0) : 0) +
+	(country  ? silc_utf8_encoded_len(country, strlen(country), 0) : 0);
   
   if (len < 3)
     return NULL;
@@ -425,62 +426,77 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
   silc_buffer_pull_tail(buf, len);
 
   if (username) {
+    memset(utf8, 0, sizeof(utf8));
+    len = silc_utf8_encode(username, strlen(username), 0, utf8,
+			   sizeof(utf8) - 1);
     silc_buffer_format(buf,
 		       SILC_STR_UI32_STRING("UN="),
-		       SILC_STR_UI32_STRING(username),
+		       SILC_STR_UI32_STRING(utf8),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 3 + strlen(username));
-    tlen = 3 + strlen(username); 
+    silc_buffer_pull(buf, 3 + len);
+    tlen = 3 + len; 
   }
     
   if (host) {
+    memset(utf8, 0, sizeof(utf8));
+    len = silc_utf8_encode(host, strlen(host), 0, utf8, sizeof(utf8) - 1);
     silc_buffer_format(buf,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("HN="),
-		       SILC_STR_UI32_STRING(host),
+		       SILC_STR_UI32_STRING(utf8),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 5 + strlen(host));
-    tlen += 5 + strlen(host); 
+    silc_buffer_pull(buf, 5 + len);
+    tlen += 5 + len; 
   }
 
   if (realname) {
+    memset(utf8, 0, sizeof(utf8));
+    len = silc_utf8_encode(realname, strlen(realname), 0, utf8,
+			   sizeof(utf8) - 1);
     silc_buffer_format(buf,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("RN="),
-		       SILC_STR_UI32_STRING(realname),
+		       SILC_STR_UI32_STRING(utf8),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 5 + strlen(realname));
-    tlen += 5 + strlen(realname); 
+    silc_buffer_pull(buf, 5 + len);
+    tlen += 5 + len; 
   }
 
   if (email) {
+    memset(utf8, 0, sizeof(utf8));
+    len = silc_utf8_encode(email, strlen(email), 0, utf8, sizeof(utf8) - 1);
     silc_buffer_format(buf,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("E="),
-		       SILC_STR_UI32_STRING(email),
+		       SILC_STR_UI32_STRING(utf8),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 4 + strlen(email));
-    tlen += 4 + strlen(email); 
+    silc_buffer_pull(buf, 4 + len);
+    tlen += 4 + len; 
   }
 
   if (org) {
+    memset(utf8, 0, sizeof(utf8));
+    len = silc_utf8_encode(org, strlen(org), 0, utf8, sizeof(utf8) - 1);
     silc_buffer_format(buf,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("O="),
-		       SILC_STR_UI32_STRING(org),
+		       SILC_STR_UI32_STRING(utf8),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 4 + strlen(org));
-    tlen += 4 + strlen(org); 
+    silc_buffer_pull(buf, 4 + len);
+    tlen += 4 + len; 
   }
 
   if (country) {
+    memset(utf8, 0, sizeof(utf8));
+    len = silc_utf8_encode(country, strlen(country), 0, utf8,
+			   sizeof(utf8) - 1);
     silc_buffer_format(buf,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("C="),
-		       SILC_STR_UI32_STRING(country),
+		       SILC_STR_UI32_STRING(utf8),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 4 + strlen(country));
-    tlen += 4 + strlen(country); 
+    silc_buffer_pull(buf, 4 + len);
+    tlen += 4 + len; 
   }
 
   silc_buffer_push(buf, buf->data - buf->head);

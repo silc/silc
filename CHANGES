@@ -5,6 +5,10 @@ Mon Apr 22 09:09:44 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  are lib/silccore/silcmode.h, lib/silcclient/command.c and
 	  silcd/command.c.
 
+	* SILC Publickey fields MUST be UTF-8 encoded now.  Updated
+	  the protocol specs and the code.  Affected file is
+	  lib/silccrypt/silcpkcs.c.
+
 Sun Apr 21 19:44:38 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Disconnect Payload includes now the status type.  Updated

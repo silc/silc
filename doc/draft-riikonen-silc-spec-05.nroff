@@ -1409,7 +1409,7 @@ o Public Data (variable length) - Includes the actual
 .in 3
 
 All fields in the public key are in MSB (most significant byte first)
-order.
+order.  All strings in the public key are UTF-8 encoded.
 
 
 .ti 0
