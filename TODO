@@ -6,6 +6,9 @@ TODO/bugs in Irssi SILC client
    keys is not possible because changing the key is not possible by the
    user.
 
+ o JOINing to +a (requires passphrase to JOIN) does not work on autojoin.
+   Seems the passwords in the .silc/config has no effect.
+
  o Add local commands to list the current server and client public keys
    that the user has.  And a local command to dump the contents of the
    public key to the screen.  Something like LISTKEYS, SHOWKEY...
