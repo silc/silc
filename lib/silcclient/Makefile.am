@@ -18,23 +18,18 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-bin_PROGRAMS = silc
+noinst_LIBRARIES = libsilcclient.a
 
-silc_SOURCES = \
-	silc.c \
-	clientconfig.c \
-	clientutil.c \
-	local_command.c \
-	screen.c \
-	client_ops.c
-
-silc_DEPENDENCIES = ../lib/libsilcclient.a ../lib/libsilc.a
-
-LDADD = -L. -L.. -L../lib -lsilcclient -lsilc -lcurses
+libsilcclient_a_SOURCES = \
+	client.c \
+	command.c \
+	command_reply.c \
+	idlist.c \
+	protocol.c
 
 EXTRA_DIST = *.h
 
-INCLUDES = -I. -I.. -I../lib/silccore -I../lib/silccrypt \
-	-I../lib/silcmath -I../lib/silcske -I../lib/silcsim \
-	-I../includes -I../lib/silcclient -I../lib/silcutil \
-	-I../lib/silcmath/gmp
+INCLUDES = -I. -I.. -I../silccore -I../silccrypt -I../silcutil \
+	-I../silcmath -I../silcske -I../silcsim \
+	-I../../includes \
+	-I../silcmath/gmp

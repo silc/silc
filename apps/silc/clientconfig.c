@@ -17,21 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.3  2000/07/05 06:12:05  priikone
- * 	Global cosmetic changes.
- *
- * Revision 1.2  2000/07/03 05:49:11  priikone
- * 	Remove ':' from the end of line when in commands section.  Command
- * 	execution should work now from config file ok.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "clientincludes.h"
 #include "clientconfig.h"
@@ -543,7 +529,8 @@ int silc_client_config_parse_lines(SilcClientConfig config,
 void silc_client_config_register_ciphers(SilcClientConfig config)
 {
   SilcClientConfigSectionAlg *alg;
-  SilcClient client = (SilcClient)config->client;
+  SilcClientInternal app = (SilcClientInternal)config->client;
+  SilcClient client = app->client;
 
   SILC_LOG_DEBUG(("Registering configured ciphers"));
 
@@ -600,11 +587,11 @@ void silc_client_config_register_ciphers(SilcClientConfig config)
 	SILC_LOG_DEBUG(("context_len=%p", cipher.context_len));
 
 	/* Put the SIM to the table of all SIM's in client */
-	client->sim = silc_realloc(client->sim,
-				   sizeof(*client->sim) * 
-				   (client->sim_count + 1));
-	client->sim[client->sim_count] = sim;
-	client->sim_count++;
+	app->sim = silc_realloc(app->sim,
+				   sizeof(*app->sim) * 
+				   (app->sim_count + 1));
+	app->sim[app->sim_count] = sim;
+	app->sim_count++;
       } else {
 	SILC_LOG_ERROR(("Error configuring ciphers"));
 	silc_client_stop(client);
@@ -629,7 +616,8 @@ void silc_client_config_register_ciphers(SilcClientConfig config)
 void silc_client_config_register_pkcs(SilcClientConfig config)
 {
   SilcClientConfigSectionAlg *alg = config->pkcs;
-  SilcClient client = (SilcClient)config->client;
+  SilcClientInternal app = (SilcClientInternal)config->client;
+  SilcClient client = app->client;
   SilcPKCS tmp = NULL;
 
   SILC_LOG_DEBUG(("Registering configured PKCS"));
@@ -653,7 +641,8 @@ void silc_client_config_register_pkcs(SilcClientConfig config)
 void silc_client_config_register_hashfuncs(SilcClientConfig config)
 {
   SilcClientConfigSectionAlg *alg;
-  SilcClient client = (SilcClient)config->client;
+  SilcClientInternal app = (SilcClientInternal)config->client;
+  SilcClient client = app->client;
 
   SILC_LOG_DEBUG(("Registering configured hash functions"));
 
@@ -706,11 +695,11 @@ void silc_client_config_register_hashfuncs(SilcClientConfig config)
 	SILC_LOG_DEBUG(("context_len=%p", hash.context_len));
 
 	/* Put the SIM to the table of all SIM's in client */
-	client->sim = silc_realloc(client->sim,
-				   sizeof(*client->sim) * 
-				   (client->sim_count + 1));
-	client->sim[client->sim_count] = sim;
-	client->sim_count++;
+	app->sim = silc_realloc(app->sim,
+				   sizeof(*app->sim) * 
+				   (app->sim_count + 1));
+	app->sim[app->sim_count] = sim;
+	app->sim_count++;
       } else {
 	SILC_LOG_ERROR(("Error configuring hash functions"));
 	silc_client_stop(client);

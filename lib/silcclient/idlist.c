@@ -17,15 +17,9 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/07/12 05:55:05  priikone
- * 	Created idlist.c
- *
- */
+/* $Id$ */
 
-#include "clientincludes.h"
+#include "clientlibincludes.h"
 
 /* Finds client entry from cache by nickname. If the entry is not found
    from the cache this function queries it from the server. If `server'
@@ -34,7 +28,7 @@
    handling. This also ignores case-sensitivity. */
 
 SilcClientEntry silc_idlist_get_client(SilcClient client,
-				       SilcClientWindow win,
+				       SilcClientConnection conn,
 				       char *nickname,
 				       char *server,
 				       unsigned int num)
@@ -44,7 +38,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   SilcClientEntry entry = NULL;
 
   /* Find ID from cache */
-  if (!silc_idcache_find_by_data_loose(win->client_cache, nickname, &list)) {
+  if (!silc_idcache_find_by_data_loose(conn->client_cache, nickname, &list)) {
     SilcClientCommandContext ctx;
     char ident[512];
     
@@ -56,12 +50,13 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
        sending simple IDENTIFY command to the server. */
     ctx = silc_calloc(1, sizeof(*ctx));
     ctx->client = client;
-    ctx->sock = win->sock;
+    ctx->conn = conn;
+    ctx->command = silc_client_command_find("IDENTIFY");
     memset(ident, 0, sizeof(ident));
-    snprintf(ident, sizeof(ident), "/IDENTIFY %s", nickname);
-    silc_client_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
-				   &ctx->argv_types, &ctx->argc, 2);
-    silc_client_command_identify(ctx);
+    snprintf(ident, sizeof(ident), "IDENTIFY %s", nickname);
+    silc_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
+			    &ctx->argv_types, &ctx->argc, 2);
+    ctx->command->cb(ctx);
 
     if (list)
       silc_idcache_list_free(list);
@@ -108,13 +103,13 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 /* Finds channel entry from ID cache by channel name. */
 
 SilcChannelEntry silc_idlist_get_channel(SilcClient client,
-					 SilcClientWindow win,
+					 SilcClientConnection conn,
 					 char *channel)
 {
   SilcIDCacheEntry id_cache;
   SilcChannelEntry entry;
 
-  if (!silc_idcache_find_by_data_one(win->channel_cache, channel, &id_cache))
+  if (!silc_idcache_find_by_data_one(conn->channel_cache, channel, &id_cache))
     return NULL;
 
   entry = (SilcChannelEntry)id_cache->context;

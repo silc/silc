@@ -24,10 +24,12 @@
 /* Forward declaration for client */
 typedef struct SilcClientObject *SilcClient;
 
-/* Forward declaration for client window */
-typedef struct SilcClientWindowObject *SilcClientWindow;
+/* Forward declaration for client connection */
+typedef struct SilcClientConnectionObject *SilcClientConnection;
 
 #include "idlist.h"
+#include "command.h"
+#include "ops.h"
 
 /* Structure to hold ping time information. Every PING command will 
    add entry of this structure and is removed after reply to the ping
@@ -47,11 +49,9 @@ typedef struct SilcClientAwayStruct {
   struct SilcClientAwayStruct *next;
 } SilcClientAway;
 
-/* Window structure used in client to associate all the important
-   connection (window) specific data to this structure. How the window
-   actually appears on the screen in handeled by the silc_screen*
-   routines in screen.c. */
-struct SilcClientWindowObject {
+/* Connection structure used in client to associate all the important
+   connection specific data to this structure. */
+struct SilcClientConnectionObject {
   /*
    * Local data 
    */
@@ -76,10 +76,10 @@ struct SilcClientWindowObject {
   int remote_type;
   char *remote_info;
 
-  /* Remote client ID for this connection */
-  SilcClientID *remote_id;
+  /* Remote server ID for this connection */
+  SilcServerID *remote_id;
 
-  /* Remote local ID so that the above defined ID would not have
+  /* Decoded remote ID so that the above defined ID would not have
      to be decoded for every packet. */
   unsigned char *remote_id_data;
   unsigned int remote_id_data_len;
@@ -101,7 +101,7 @@ struct SilcClientWindowObject {
   SilcIDCache channel_cache;
   SilcIDCache server_cache;
 
-  /* Current channel on window. All channel's are saved (allocated) into
+  /* Current channel on window. All channels are saved (allocated) into
      the cache entries. */
   SilcChannelEntry current_channel;
 
@@ -117,66 +117,65 @@ struct SilcClientWindowObject {
   /* Set away message */
   SilcClientAway *away;
 
-  /* The actual physical screen. This data is handled by the
-     screen handling routines. */
-  void *screen;
+  /* Pointer back to the SilcClient. This object is passed to the application
+     and the actual client object is accesible thourh this pointer. */
+  SilcClient client;
+
+  /* User data context. Library does not touch this. */
+  void *context;
 };
 
+/* Main client structure. */
 struct SilcClientObject {
+  /*
+   * Public data. All the following pointers must be set by the allocator
+   * of this structure.
+   */
+
+  /* Users's username and realname. */
   char *username;
   char *realname;
 
-  /* Private and public key */
+  /* Private and public key of the user. */
   SilcPKCS pkcs;
   SilcPublicKey public_key;
   SilcPrivateKey private_key;
+
+  /* Application specific user data pointer. Client library does not
+     touch this. */
+  void *application;
+
+  /*
+   * Private data. Following pointers are used internally by the client
+   * library and should be considered read-only fields.
+   */
+
+  /* All client operations that are implemented in the application. */
+  SilcClientOperations *ops;
 
   /* SILC client task queues */
   SilcTaskQueue io_queue;
   SilcTaskQueue timeout_queue;
   SilcTaskQueue generic_queue;
 
-  /* Input buffer that holds the characters user types. This is
-     used only to store the typed chars for a while. */
-  SilcBuffer input_buffer;
+  /* Table of connections in client. All the connection data is saved here. */
+  SilcClientConnection *conns;
+  unsigned int conns_count;
 
-  /* Table of windows in client. All the data, including connection
-     specific data, is saved in here. */
-  SilcClientWindow *windows;
-  unsigned int windows_count;
-
-  /* Currently active window. This is pointer to the window table 
-     defined above. This must never be free'd directly. */
-  SilcClientWindow current_win;
-
-  /* The SILC client screen object */
-  SilcScreen screen;
-
-  /* Generic cipher and hash objects */
+  /* Generic cipher and hash objects. These can be used and referenced
+     by the application as well. */
   SilcCipher none_cipher;
   SilcHash md5hash;
   SilcHash sha1hash;
   SilcHmac md5hmac;
   SilcHmac sha1hmac;
 
-  /* Configuration object */
-  SilcClientConfig config;
-
-  /* Random Number Generator */
+  /* Random Number Generator. Application should use this as its primary
+     random number generator. */
   SilcRng rng;
-
-#ifdef SILC_SIM
-  /* SIM (SILC Module) table */
-  SilcSimContext **sim;
-  unsigned int sim_count;
-#endif
 };
 
 /* Macros */
-
-#ifndef CTRL
-#define CTRL(x) ((x) & 0x1f)	/* Ctrl+x */
-#endif
 
 /* Registers generic task for file descriptor for reading from network and
    writing to network. As being generic task the actual task is allocated 
@@ -207,32 +206,26 @@ do {								\
 do {							\
   int __i;						\
 							\
-  for (__i = 0; __i < (__x)->windows_count; __i++)	\
-    if ((__x)->windows[__i]->sock->sock == (__fd))	\
+  for (__i = 0; __i < (__x)->conns_count; __i++)	\
+    if ((__x)->conns[__i]->sock->sock == (__fd))	\
       break;						\
 							\
-  if (__i >= (__x)->windows_count)			\
+  if (__i >= (__x)->conns_count)			\
     (__sock) = NULL;					\
- (__sock) = (__x)->windows[__i]->sock;			\
+ (__sock) = (__x)->conns[__i]->sock;			\
 } while(0)
 
-/* Returns TRUE if windows is currently active window */
-#define SILC_CLIENT_IS_CURRENT_WIN(__x, __win) ((__x)->current_win == (__win))
-
 /* Prototypes */
-int silc_client_alloc(SilcClient *new_client);
+
+SilcClient silc_client_alloc(SilcClientOperations *ops, void *application);
 void silc_client_free(SilcClient client);
 int silc_client_init(SilcClient client);
 void silc_client_stop(SilcClient client);
 void silc_client_run(SilcClient client);
-void silc_client_parse_command_line(unsigned char *buffer, 
-				    unsigned char ***parsed,
-				    unsigned int **parsed_lens,
-				    unsigned int **parsed_types,
-				    unsigned int *parsed_num,
-				    unsigned int max_args);
+SilcClientConnection silc_client_add_connection(SilcClient client,
+						void *context);
 int silc_client_connect_to_server(SilcClient client, int port,
-				  char *host);
+				  char *host, void *context);
 void silc_client_packet_send(SilcClient client, 
 			     SilcSocketConnection sock,
 			     SilcPacketType type, 
@@ -278,6 +271,9 @@ void silc_client_receive_channel_key(SilcClient client,
 				     SilcSocketConnection sock,
 				     SilcBuffer packet);
 void silc_client_channel_message(SilcClient client, 
+				 SilcSocketConnection sock, 
+				 SilcPacketContext *packet);
+void silc_client_private_message(SilcClient client, 
 				 SilcSocketConnection sock, 
 				 SilcPacketContext *packet);
 #endif

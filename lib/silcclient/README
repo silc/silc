@@ -1,0 +1,114 @@
+SILC Client Library
+===================
+
+This directory includes the SILC Client implementation.  The library uses
+common and core components of SILC protocol from lib/silccore library and
+normal utility routines from lib/silcutil library.  The library has been
+designed to be complete SILC Client implementation without actual user
+interface.  The library provides API for the application which can use
+it to implement generally what ever user interface it wants.
+
+The `ops.h' file defines the function prototypes that application must
+implement in order to be able to create the user interface with the
+library.  The idea is that the application can implement what ever user
+interface routines in the functions and display the data what ever way
+it wants.  The library is entirely transparent to the user interface and
+it does not include any user interface specific issues such as window
+handling or item handling on the screen etc.  These does not interest
+the library.
+
+
+
+Creating Client
+===============
+
+The client is context or entity based (which ever) thus several client
+entitites can be created in the application if needed.  However, it should
+be noted that they are completely independent from each other and can
+be seen as different applications.  Usually only one client entity is
+needed per application.
+
+The client object is SilcClient which is usually allocated in following
+manner:
+
+	SilcClient client = silc_client_alloc(&ops, context);
+
+`ops' is the static structure of client operations that library will call.
+`context' can be some application specific context that will be saved into
+the SilcClient object.  It is up to the caller to free this context.
+SilcClient is always passed to the application thus the application specific
+context can be retrieved from the SilcClient object.  See `client.h' file
+for detailed definition of SilcClient object.
+
+`ops' can be defined for example as follows:
+
+SilcClientOperations ops = {
+  say:                  silc_say,
+  channel_message:      silc_channel_message,
+  private_message:      silc_private_message,
+  command:              silc_command,
+  command_reply:        silc_command_reply,
+  connect:              silc_connect,
+  disconnect:           silc_disconnect,
+  get_auth_method:      silc_get_auth_method,
+  verify_server_key:    silc_verify_server_key,
+  ask_passphrase:       silc_ask_passphrase,
+};
+
+
+Initializing the Client
+=======================
+
+The client must be initialized before running.  However, there are also
+some other tasks that must be done before initializing the client.  Following
+pointers must be set before calling the initializing function:
+
+	client->username
+	client->realname
+	client->pkcs
+	client->public_key
+	client->private_key
+
+After setting the pointers one must call:
+
+	silc_client_init(client);
+
+which then initializes the client library for the `client'.  If the pointers
+mentioned above are not initialized the silc_client_init will fail.
+
+
+Running the Client
+==================
+
+The client is run by calling silc_client_run.  The function will call
+the scheduler from utility library that will be run until the program is
+ended.  When silc_client_run returns the application is ended.  Thus,
+to run the client, call:
+
+	silc_client_run(client);
+
+Usually application may do some other initializations before calling
+this function.  For example before calling this function application should
+initialize the user interface.
+
+
+Creating Connection to Server
+=============================
+
+Connection to remote SILC server is done by calling:
+
+	silc_client_connect_to_server(client, port, hostname, context);
+
+The function will create the connection asynchronously to the server, ie.
+the function will return before the actual connection is created.  After
+the connection is created the client->ops->connect operation is called.
+
+Generally speaking the connections are associated with windows' on the
+screen.  IRC is usually implemented this way, however it is not the necessary
+way to associate the client's connections.  SilcClientConnection object
+is provided by the library (and is always passed to the application) that
+can be used in the application to associate the connection from the library.
+Application specific context can be saved to the SilcClientConnection object
+which then can be retrieved in the application, thus perhaps associate
+the connection with what ever object in the application (window or something
+else).

@@ -17,27 +17,23 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.4  2000/07/14 06:11:32  priikone
- * 	Fixed key-pair generation.
- *
- * Revision 1.3  2000/07/05 06:11:00  priikone
- * 	Added ~./silc directory checking, autoloading of keys and
- * 	tweaked the key pair generation function.
- *
- * Revision 1.2  2000/06/30 10:49:48  priikone
- * 	Added SOCKS4 and SOCKS5 support for SILC client.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "clientincludes.h"
 #include "version.h"
+
+/* Static function prototypes */
+static int silc_client_bad_keys(unsigned char key);
+static void silc_client_clear_input(SilcClientInternal app);
+static void silc_client_process_message(SilcClientInternal app);
+static char *silc_client_parse_command(unsigned char *buffer);
+
+void silc_client_create_main_window(SilcClientInternal app);
+
+/* Static task callback prototypes */
+SILC_TASK_CALLBACK(silc_client_update_clock);
+SILC_TASK_CALLBACK(silc_client_run_commands);
+SILC_TASK_CALLBACK(silc_client_process_key_press);
 
 /* Long command line options */
 static struct option long_opts[] = 
@@ -52,6 +48,7 @@ static struct option long_opts[] =
   { "private-key", 1, NULL, 'k' },
   { "config-file", 1, NULL, 'f' },
   { "no-silcrc", 0, NULL, 'q' },
+  { "debug", 0, NULL, 'd' },
   { "help", 0, NULL, 'h' },
   { "version", 0, NULL, 'V' },
   { "list-ciphers", 0, NULL, 1 },
@@ -81,6 +78,9 @@ static int opt_create_keypair = FALSE;
 static char *opt_pkcs = NULL;
 static int opt_bits = 0;
 
+/* SILC Client operations */
+extern SilcClientOperations ops;
+
 /* Prints out the usage of silc client */
 
 void usage()
@@ -98,6 +98,7 @@ Usage: silc [options]\n\
   -k, --private-key=FILE       Private key used in SILC\n\
   -f, --config-file=FILE       Alternate configuration file\n\
   -q, --no-silcrc              Don't load ~/.silcrc on startup\n\
+  -d, --debug                  Enable debugging\n\
   -h, --help                   Display this help message\n\
   -V, --version                Display version\n\
       --list-ciphers           List supported ciphers\n\
@@ -116,13 +117,15 @@ int main(int argc, char **argv)
   int opt, option_index = 1;
   int ret;
   SilcClient silc = NULL;
-  SilcClientConfig config = NULL;
-  
+  SilcClientInternal app = NULL;
+
+  silc_debug = FALSE;
+
   if (argc > 1) 
     {
       while ((opt = 
 	      getopt_long(argc, argv,
-			  "s:p:n:c:b:k:f:qhVC",
+			  "s:p:n:c:b:k:f:qdhVC",
 			  long_opts, &option_index)) != EOF)
 	{
 	  switch(opt) 
@@ -164,6 +167,9 @@ int main(int argc, char **argv)
 	      break;
 	    case 'q':
 	      opt_no_silcrc = TRUE;
+	      break;
+	    case 'd':
+	      silc_debug = TRUE;
 	      break;
 	    case 'h':
 	      usage();
@@ -224,6 +230,11 @@ SILC Secure Internet Live Conferencing, version %s\n",
   signal(SIGFPE, SIG_DFL);
   //  signal(SIGINT, SIG_IGN);
   
+#ifdef SOCKS
+  /* Init SOCKS */
+  SOCKSinit(argv[0]);
+#endif
+
   if (opt_create_keypair == TRUE) {
     /* Create new key pair and exit */
     silc_client_create_key_pair(opt_pkcs, opt_bits, 
@@ -235,34 +246,81 @@ SILC Secure Internet Live Conferencing, version %s\n",
   if (!opt_config_file)
     opt_config_file = strdup(SILC_CLIENT_CONFIG_FILE);
 
-  /* Read global configuration file. */
-  config = silc_client_config_alloc(opt_config_file);
-  if (config == NULL)
+  /* Allocate internal application context */
+  app = silc_calloc(1, sizeof(*app));
+
+  /* Allocate new client */
+  app->client = silc = silc_client_alloc(&ops, app);
+  if (!silc)
     goto fail;
 
-  /* Read local configuration file */
+  /* Read global configuration file. */
+  app->config = silc_client_config_alloc(opt_config_file);
+  if (app->config == NULL)
+    goto fail;
+
+  /* XXX Read local configuration file */
 
   /* Check ~/.silc directory and public and private keys */
   if (silc_client_check_silc_dir() == FALSE)
     goto fail;
 
-#ifdef SOCKS
-  /* Init SOCKS */
-  SOCKSinit(argv[0]);
-#endif
+  /* Get user information */
+  silc->username = silc_get_username();
+  silc->realname = silc_get_real_name();
 
-  /* Allocate new client */
-  ret = silc_client_alloc(&silc);
-  if (ret == FALSE)
+  /* Register all configured ciphers, PKCS and hash functions. */
+  app->config->client = (void *)app;
+  silc_client_config_register_ciphers(app->config);
+  silc_client_config_register_pkcs(app->config);
+  silc_client_config_register_hashfuncs(app->config);
+
+  /* Load public and private key */
+  if (silc_client_load_keys(silc) == FALSE)
     goto fail;
 
-  /* Initialize the client */
-  silc->config = config;
+  /* Initialize the client. This initializes the client library and
+     sets everything ready for silc_client_run. */
   ret = silc_client_init(silc);
   if (ret == FALSE)
     goto fail;
 
-  /* Run the client */
+  /* Register the main task that is used in client. This receives
+     the key pressings. */
+  silc_task_register(silc->io_queue, fileno(stdin), 
+		     silc_client_process_key_press,
+		     (void *)silc, 0, 0, 
+		     SILC_TASK_FD,
+		     SILC_TASK_PRI_NORMAL);
+
+  /* Register timeout task that updates clock every minute. */
+  silc_task_register(silc->timeout_queue, 0,
+		     silc_client_update_clock,
+		     (void *)silc, 
+		     silc_client_time_til_next_min(), 0,
+		     SILC_TASK_TIMEOUT,
+		     SILC_TASK_PRI_LOW);
+
+  if (app->config->commands) {
+    /* Run user configured commands with timeout */
+    silc_task_register(silc->timeout_queue, 0,
+		       silc_client_run_commands,
+		       (void *)silc, 0, 1,
+		       SILC_TASK_TIMEOUT,
+		       SILC_TASK_PRI_LOW);
+  }
+
+  /* Allocate the input buffer used to save typed characters */
+  app->input_buffer = silc_buffer_alloc(SILC_SCREEN_INPUT_WIN_SIZE);
+  silc_buffer_pull_tail(app->input_buffer, 
+			SILC_BUFFER_END(app->input_buffer));
+
+  /* Initialize the screen */
+  silc_client_create_main_window(app);
+  silc_screen_print_coordinates(app->screen, 0);
+
+  /* Run the client. When this returns the application will be
+     terminated. */
   silc_client_run(silc);
 
   /* Stop the client. This probably has been done already but it
@@ -275,9 +333,324 @@ SILC Secure Internet Live Conferencing, version %s\n",
  fail:
   if (opt_config_file)
     silc_free(opt_config_file);
-  if (config)
-    silc_client_config_free(config);
+  if (app->config)
+    silc_client_config_free(app->config);
   if (silc)
     silc_client_free(silc);
   exit(1);
+}
+
+/* Creates the main window used in SILC client. This is called always
+   at the initialization of the client. If user wants to create more
+   than one windows a new windows are always created by calling 
+   silc_client_add_window. */
+
+void silc_client_create_main_window(SilcClientInternal app)
+{
+  void *screen;
+
+  SILC_LOG_DEBUG(("Creating main window"));
+
+  app->screen = silc_screen_init();
+  app->screen->input_buffer = app->input_buffer->data;
+  app->screen->u_stat_line.program_name = silc_name;
+  app->screen->u_stat_line.program_version = silc_version;
+
+  /* Create the actual screen */
+  screen = (void *)silc_screen_create_output_window(app->screen);
+  silc_screen_create_input_window(app->screen);
+  silc_screen_init_upper_status_line(app->screen);
+  silc_screen_init_output_status_line(app->screen);
+
+  app->screen->bottom_line->nickname = silc_get_username();
+  silc_screen_print_bottom_line(app->screen, 0);
+}
+
+/* The main task on SILC client. This processes the key pressings user
+   has made. */
+
+SILC_TASK_CALLBACK(silc_client_process_key_press)
+{
+  SilcClient client = (SilcClient)context;
+  SilcClientInternal app = (SilcClientInternal)client->application;
+  int c;
+
+  /* There is data pending in stdin, this gets it directly */
+  c = wgetch(app->screen->input_win);
+  if (silc_client_bad_keys(c))
+    return;
+
+  SILC_LOG_DEBUG(("Pressed key: %d", c));
+
+  switch(c) {
+    /* 
+     * Special character handling
+     */
+  case KEY_UP: 
+  case KEY_DOWN:
+    break;
+  case KEY_RIGHT:
+    /* Right arrow */
+    SILC_LOG_DEBUG(("RIGHT"));
+    silc_screen_input_cursor_right(app->screen);
+    break;
+  case KEY_LEFT:
+    /* Left arrow */
+    SILC_LOG_DEBUG(("LEFT"));
+    silc_screen_input_cursor_left(app->screen);
+    break;
+  case KEY_BACKSPACE:
+  case KEY_DC:
+  case '\177':
+  case '\b':
+    /* Backspace */
+    silc_screen_input_backspace(app->screen);
+    break;
+  case '\011':
+    /* Tabulator */
+    break;
+  case KEY_IC:
+    /* Insert switch. Turns on/off insert on input window */
+    silc_screen_input_insert(app->screen);
+    break;
+  case CTRL('j'):
+  case '\r':
+    /* Enter, Return. User pressed enter we are ready to
+       process the message. */
+    silc_client_process_message(app);
+    break;
+  case CTRL('l'):
+    /* Refresh screen, Ctrl^l */
+    silc_screen_refresh_all(app->screen);
+    break;
+  case CTRL('a'):
+  case KEY_HOME:
+  case KEY_BEG:
+    /* Beginning, Home */
+    silc_screen_input_cursor_home(app->screen);
+    break;
+  case CTRL('e'):
+  case KEY_END:
+    /* End */
+    silc_screen_input_cursor_end(app->screen);
+    break;
+  case KEY_LL:
+    /* End */
+    break;
+  case CTRL('g'):
+    /* Bell, Ctrl^g */
+    beep();
+    break;
+  case KEY_DL:
+  case CTRL('u'):
+    /* Delete line */
+    silc_client_clear_input(app);
+    break;
+  default:
+    /* 
+     * Other characters 
+     */
+    if (c < 32) {
+      /* Control codes are printed as reversed */
+      c = (c & 127) | 64;
+      wattron(app->screen->input_win, A_REVERSE);
+      silc_screen_input_print(app->screen, c);
+      wattroff(app->screen->input_win, A_REVERSE);
+    } else  {
+      /* Normal character */
+      silc_screen_input_print(app->screen, c);
+    }
+  }
+
+  silc_screen_print_coordinates(app->screen, 0);
+  silc_screen_refresh_win(app->screen->input_win);
+}
+
+static int silc_client_bad_keys(unsigned char key)
+{
+  /* these are explained in curses.h */
+  switch(key) {
+  case KEY_SF:
+  case KEY_SR:
+  case KEY_NPAGE:
+  case KEY_PPAGE:
+  case KEY_PRINT:
+  case KEY_A1:
+  case KEY_A3:
+  case KEY_B2:
+  case KEY_C1:
+  case KEY_C3:
+  case KEY_UNDO:
+  case KEY_EXIT:
+  case '\v':           /* VT */
+  case '\E':           /* we ignore ESC */
+    return TRUE;
+  default: 
+    return FALSE; 
+  }
+}
+
+/* Clears input buffer */
+
+static void silc_client_clear_input(SilcClientInternal app)
+{
+  silc_buffer_clear(app->input_buffer);
+  silc_buffer_pull_tail(app->input_buffer,
+ 		        SILC_BUFFER_END(app->input_buffer));
+  silc_screen_input_reset(app->screen);
+}
+
+/* Processes messages user has typed on the screen. This either sends
+   a packet out to network or if command were written executes it. */
+
+static void silc_client_process_message(SilcClientInternal app)
+{
+  unsigned char *data;
+  unsigned int len;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  data = app->input_buffer->data;
+  len = strlen(data);
+
+  if (data[0] == '/' && data[1] != ' ') {
+    /* Command */
+    unsigned int argc = 0;
+    unsigned char **argv, *tmpcmd;
+    unsigned int *argv_lens, *argv_types;
+    SilcClientCommand *cmd;
+    SilcClientCommandContext ctx;
+
+    /* Get the command */
+    tmpcmd = silc_client_parse_command(data);
+    cmd = silc_client_local_command_find(tmpcmd);
+    if (!cmd && (cmd = silc_client_command_find(tmpcmd)) == NULL) {
+      silc_say(app->client, app->current_win, "Invalid command: %s", tmpcmd);
+      silc_free(tmpcmd);
+      goto out;
+    }
+
+    /* Now parse all arguments */
+    silc_parse_command_line(data + 1, &argv, &argv_lens, 
+			    &argv_types, &argc, cmd->max_args);
+    silc_free(tmpcmd);
+
+    SILC_LOG_DEBUG(("Executing command: %s", cmd->name));
+
+    /* Allocate command context. This and its internals must be free'd 
+       by the command routine receiving it. */
+    ctx = silc_calloc(1, sizeof(*ctx));
+    ctx->client = app->client;
+    ctx->conn = app->conn;
+    ctx->command = cmd;
+    ctx->argc = argc;
+    ctx->argv = argv;
+    ctx->argv_lens = argv_lens;
+    ctx->argv_types = argv_types;
+
+    /* Execute command */
+    (*cmd->cb)(ctx);
+
+  } else {
+    /* Normal message to a channel */
+    if (len && app->conn->current_channel &&
+	app->conn->current_channel->on_channel == TRUE) {
+      silc_print(app->client, "> %s", data);
+      silc_client_packet_send_to_channel(app->client, 
+					 app->conn->sock,
+					 app->conn->current_channel,
+					 data, strlen(data), TRUE);
+    }
+  }
+
+ out:
+  /* Clear the input buffer */
+  silc_client_clear_input(app);
+}
+
+/* Returns the command fetched from user typed command line */
+
+static char *silc_client_parse_command(unsigned char *buffer)
+{
+  char *ret;
+  const char *cp = buffer;
+  int len;
+
+  len = strcspn(cp, " ");
+  ret = silc_to_upper((char *)++cp);
+  ret[len - 1] = 0;
+
+  return ret;
+}
+
+/* Updates clock on the screen every minute. */
+
+SILC_TASK_CALLBACK(silc_client_update_clock)
+{
+  SilcClient client = (SilcClient)context;
+  SilcClientInternal app = (SilcClientInternal)client->application;
+
+  /* Update the clock on the screen */
+  silc_screen_print_clock(app->screen);
+
+  /* Re-register this same task */
+  silc_task_register(qptr, 0, silc_client_update_clock, context, 
+		     silc_client_time_til_next_min(), 0,
+		     SILC_TASK_TIMEOUT,
+		     SILC_TASK_PRI_LOW);
+
+  silc_screen_refresh_win(app->screen->input_win);
+}
+
+/* Runs commands user configured in configuration file. This is
+   called when initializing client. */
+
+SILC_TASK_CALLBACK(silc_client_run_commands)
+{
+  SilcClient client = (SilcClient)context;
+  SilcClientInternal app = (SilcClientInternal)client->application;
+  SilcClientConfigSectionCommand *cs;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  cs = app->config->commands;
+  while(cs) {
+    unsigned int argc = 0;
+    unsigned char **argv, *tmpcmd;
+    unsigned int *argv_lens, *argv_types;
+    SilcClientCommand *cmd;
+    SilcClientCommandContext ctx;
+
+    /* Get the command */
+    tmpcmd = silc_client_parse_command(cs->command);
+    cmd = silc_client_local_command_find(tmpcmd);
+    if (!cmd && (cmd = silc_client_command_find(tmpcmd)) == NULL) {
+      silc_say(client, app->conn, "Invalid command: %s", tmpcmd);
+      silc_free(tmpcmd);
+      continue;
+    }
+    
+    /* Now parse all arguments */
+    silc_parse_command_line(cs->command + 1, &argv, &argv_lens, 
+			    &argv_types, &argc, cmd->max_args);
+    silc_free(tmpcmd);
+
+    SILC_LOG_DEBUG(("Executing command: %s", cmd->name));
+
+    /* Allocate command context. This and its internals must be free'd 
+       by the command routine receiving it. */
+    ctx = silc_calloc(1, sizeof(*ctx));
+    ctx->client = client;
+    ctx->conn = app->conn;
+    ctx->command = cmd;
+    ctx->argc = argc;
+    ctx->argv = argv;
+    ctx->argv_lens = argv_lens;
+    ctx->argv_types = argv_types;
+
+    /* Execute command */
+    (*cmd->cb)(ctx);
+
+    cs = cs->next;
+  }
 }

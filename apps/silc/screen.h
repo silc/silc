@@ -54,8 +54,8 @@ typedef struct {
 
   /* XXX */
   struct upper_status_line {
-    char *program_name;
-    char *program_version;
+    const char *program_name;
+    const char *program_version;
   } u_stat_line;
 
 } SilcScreenObject;

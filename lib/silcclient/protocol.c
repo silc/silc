@@ -20,40 +20,9 @@
 /*
  * Client side of the protocols.
  */
-/*
- * $Id$
- * $Log$
- * Revision 1.8  2000/07/20 10:17:25  priikone
- * 	Added dynamic protocol registering/unregistering support.  The
- * 	patch was provided by cras.
- *
- * Revision 1.7  2000/07/19 07:07:47  priikone
- * 	Added version detection support to SKE.
- *
- * Revision 1.6  2000/07/14 06:12:29  priikone
- * 	Put the HMAC keys into the HMAC object instead on having them
- * 	saved elsewhere; we can use now silc_hmac_make instead of
- * 	silc_hmac_make_with_key.
- *
- * Revision 1.5  2000/07/07 11:36:09  priikone
- * 	Inform user when received unsupported public key from server.
- *
- * Revision 1.4  2000/07/07 06:53:45  priikone
- * 	Added support for server public key verification.
- *
- * Revision 1.3  2000/07/06 07:14:16  priikone
- * 	Deprecated old `channel_auth' protocol.
- *
- * Revision 1.2  2000/07/05 06:12:05  priikone
- * 	Global cosmetic changes.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
-#include "clientincludes.h"
+#include "clientlibincludes.h"
 
 SILC_TASK_CALLBACK(silc_client_protocol_connection_auth);
 SILC_TASK_CALLBACK(silc_client_protocol_key_exchange);
@@ -99,8 +68,9 @@ silc_client_protocol_ke_verify_key(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!silc_client_verify_server_key(client, ctx->sock, 
-				     pk_data, pk_len, pk_type))
+  /* Verify server key from user. */
+  if (!client->ops->verify_server_key(client, ctx->sock->user_data, 
+				      pk_data, pk_len, pk_type))
     return SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
 
   return SILC_SKE_STATUS_OK;
@@ -115,38 +85,38 @@ static void silc_client_protocol_ke_set_keys(SilcSKE ske,
 					     SilcPKCS pkcs,
 					     SilcHash hash)
 {
-  SilcClientWindow win = (SilcClientWindow)sock->user_data;
+  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   SilcHash nhash;
 
   SILC_LOG_DEBUG(("Setting new keys into use"));
 
   /* Allocate cipher to be used in the communication */
-  silc_cipher_alloc(cipher->cipher->name, &win->send_key);
-  silc_cipher_alloc(cipher->cipher->name, &win->receive_key);
+  silc_cipher_alloc(cipher->cipher->name, &conn->send_key);
+  silc_cipher_alloc(cipher->cipher->name, &conn->receive_key);
 
-  win->send_key->cipher->set_key(win->send_key->context, 
+  conn->send_key->cipher->set_key(conn->send_key->context, 
 				 keymat->send_enc_key, 
 				 keymat->enc_key_len);
-  win->send_key->set_iv(win->send_key, keymat->send_iv);
-  win->receive_key->cipher->set_key(win->receive_key->context, 
+  conn->send_key->set_iv(conn->send_key, keymat->send_iv);
+  conn->receive_key->cipher->set_key(conn->receive_key->context, 
 				    keymat->receive_enc_key, 
 				    keymat->enc_key_len);
-  win->receive_key->set_iv(win->receive_key, keymat->receive_iv);
+  conn->receive_key->set_iv(conn->receive_key, keymat->receive_iv);
 
   /* Allocate PKCS to be used */
 #if 0
   /* XXX Do we ever need to allocate PKCS for the connection??
      If yes, we need to change KE protocol to get the initiators
      public key. */
-  silc_pkcs_alloc(pkcs->pkcs->name, &win->public_Key);
-  silc_pkcs_set_public_key(win->public_key, ske->ke2_payload->pk_data, 
+  silc_pkcs_alloc(pkcs->pkcs->name, &conn->public_Key);
+  silc_pkcs_set_public_key(conn->public_key, ske->ke2_payload->pk_data, 
 			   ske->ke2_payload->pk_len);
 #endif
 
   /* Save HMAC key to be used in the communication. */
   silc_hash_alloc(hash->hash->name, &nhash);
-  silc_hmac_alloc(nhash, &win->hmac);
-  silc_hmac_set_key(win->hmac, keymat->hmac_key, keymat->hmac_key_len);
+  silc_hmac_alloc(nhash, &conn->hmac);
+  silc_hmac_set_key(conn->hmac, keymat->hmac_key, keymat->hmac_key_len);
 }
 
 /* Performs key exchange protocol. This is used for both initiator
@@ -158,6 +128,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
   SilcClientKEInternalContext *ctx = 
     (SilcClientKEInternalContext *)protocol->context;
   SilcClient client = (SilcClient)ctx->client;
+  SilcClientConnection conn = ctx->sock->user_data;
   SilcSKEStatus status;
 
   SILC_LOG_DEBUG(("Start"));
@@ -305,11 +276,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       if (status != SILC_SKE_STATUS_OK) {
 
         if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY) {
-          silc_say(client, "Received unsupported server %s public key",
-                   ctx->sock->hostname);
+          client->ops->say(client, conn, 
+			   "Received unsupported server %s public key",
+			   ctx->sock->hostname);
         } else {
-          silc_say(client, "Error during key exchange protocol with server %s",
-                   ctx->sock->hostname);
+          client->ops->say(client, conn,
+			   "Error during key exchange protocol with server %s",
+			   ctx->sock->hostname);
         }
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
@@ -371,6 +344,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
   SilcClientConnAuthInternalContext *ctx = 
     (SilcClientConnAuthInternalContext *)protocol->context;
   SilcClient client = (SilcClient)ctx->client;
+  SilcClientConnection conn = ctx->sock->user_data;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -402,9 +376,10 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	  break;
 	}
 
-	silc_say(client, "Password authentication required by server %s",
-		 ctx->sock->hostname);
-	auth_data = silc_client_ask_passphrase(client);
+	client->ops->say(client, conn, 
+			 "Password authentication required by server %s",
+			 ctx->sock->hostname);
+	auth_data = client->ops->ask_passphrase(client, conn);
 	auth_data_len = strlen(auth_data);
 	break;
 

@@ -61,12 +61,12 @@ typedef SilcChannelEntryObject *SilcChannelEntry;
 /* Prototypes */
 
 SilcClientEntry silc_idlist_get_client(SilcClient client,
-				       SilcClientWindow win,
+				       SilcClientConnection conn,
 				       char *nickname,
 				       char *server,
 				       unsigned int num);
 SilcChannelEntry silc_idlist_get_channel(SilcClient client,
-					 SilcClientWindow win,
+					 SilcClientConnection conn,
 					 char *channel);
 
 #endif

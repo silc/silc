@@ -22,14 +22,13 @@
 #define CLIENTUTIL_H
 
 /* Prototypes */
-void silc_say(SilcClient client, char *msg, ...);
+void silc_print_to_window(WINDOW *win, char *message);
 void silc_print(SilcClient client, char *msg, ...);
 char *silc_get_mail_path();
 int silc_get_number_of_emails();
 char *silc_get_username();
 char *silc_get_real_name();
 int silc_client_time_til_next_min();
-char *silc_client_ask_passphrase(SilcClient client);
 int silc_client_ask_yes_no(SilcClient client, char *prompt);
 char *silc_client_get_input(const char *prompt);
 char *silc_client_get_passphrase(const char *prompt);
@@ -44,11 +43,5 @@ int silc_client_create_key_pair(char *pkcs_name, int bits,
 				SilcPrivateKey *ret_prv_key);
 int silc_client_check_silc_dir();
 int silc_client_load_keys(SilcClient client);
-int silc_client_verify_server_key(SilcClient client, 
-				  SilcSocketConnection sock,
-				  unsigned char *pk, unsigned int pk_len,
-				  SilcSKEPKType pk_type);
-int silc_client_parse_nickname(char *string, char **nickname, char **server,
-			       unsigned int *num);
 
 #endif

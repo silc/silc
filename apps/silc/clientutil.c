@@ -17,44 +17,14 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.8  2000/07/20 05:49:32  priikone
- * 	Added default mail directory path.
- *
- * Revision 1.7  2000/07/19 07:07:16  priikone
- * 	Search mail by From:
- *
- * Revision 1.6  2000/07/14 06:11:32  priikone
- * 	Fixed key-pair generation.
- *
- * Revision 1.5  2000/07/12 05:55:50  priikone
- * 	Added client_parse_nickname.
- *
- * Revision 1.4  2000/07/10 05:40:05  priikone
- * 	Added support for verifying incoming public keys from user.
- * 	Shows fingerprint of the public key now plus other changes.
- *
- * Revision 1.3  2000/07/07 06:53:45  priikone
- * 	Added support for server public key verification.
- *
- * Revision 1.2  2000/07/05 06:11:00  priikone
- * 	Added ~./silc directory checking, autoloading of keys and
- * 	tweaked the key pair generation function.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "clientincludes.h"
 
-/* Internal routine used to print lines to window. This can split the
+/* Routine used to print lines to window. This can split the
    line neatly if a word would overlap the line. */
 
-static void silc_print_to_window(WINDOW *win, char *message)
+void silc_print_to_window(WINDOW *win, char *message)
 {
   int str_len, len;
 
@@ -85,29 +55,6 @@ static void silc_print_to_window(WINDOW *win, char *message)
   wrefresh(win);
 }
 
-/* Prints a message with three star (*) sign before the actual message
-   on the current output window. This is used to print command outputs
-   and error messages. */
-/* XXX Change to accept SilcClientWindow and use output window 
-   from there (the pointer to the output window must be added to the
-   SilcClientWindow object. */
-
-void silc_say(SilcClient client, char *msg, ...)
-{
-  va_list vp;
-  char message[2048];
-  
-  memset(message, 0, sizeof(message));
-  strncat(message, "\n***  ", 5);
-
-  va_start(vp, msg);
-  vsprintf(message + 5, msg, vp);
-  va_end(vp);
-  
-  /* Print the message */
-  silc_print_to_window(client->screen->output_win[0], message);
-}
-
 /* Prints message to the screen. This is used to print the messages
    user is typed and message that came on channels. */
 
@@ -115,6 +62,7 @@ void silc_print(SilcClient client, char *msg, ...)
 {
   va_list vp;
   char message[2048];
+  SilcClientInternal app = client->application;
   
   memset(message, 0, sizeof(message));
   strncat(message, "\n ", 2);
@@ -124,7 +72,7 @@ void silc_print(SilcClient client, char *msg, ...)
   va_end(vp);
   
   /* Print the message */
-  silc_print_to_window(client->screen->output_win[0], message);
+  silc_print_to_window(app->screen->output_win[0], message);
 }
 
 /* Returns user's mail path */
@@ -237,71 +185,26 @@ int silc_client_time_til_next_min()
   return 60 - min->tm_sec;
 }
 
-/* Asks passphrase from user on the input line. */
-
-char *silc_client_ask_passphrase(SilcClient client)
-{
-  char pass1[256], pass2[256];
-  char *ret;
-  int try = 3;
-
-  while(try) {
-
-    /* Print prompt */
-    wattroff(client->screen->input_win, A_INVIS);
-    silc_screen_input_print_prompt(client->screen, "Passphrase: ");
-    wattron(client->screen->input_win, A_INVIS);
-    
-    /* Get string */
-    memset(pass1, 0, sizeof(pass1));
-    wgetnstr(client->screen->input_win, pass1, sizeof(pass1));
-    
-    /* Print retype prompt */
-    wattroff(client->screen->input_win, A_INVIS);
-    silc_screen_input_print_prompt(client->screen, "Retype passphrase: ");
-    wattron(client->screen->input_win, A_INVIS);
-    
-    /* Get string */
-    memset(pass2, 0, sizeof(pass2));
-    wgetnstr(client->screen->input_win, pass2, sizeof(pass2));
-
-    if (!strncmp(pass1, pass2, strlen(pass2)))
-      break;
-
-    try--;
-  }
-
-  ret = silc_calloc(strlen(pass1), sizeof(char));
-  memcpy(ret, pass1, strlen(pass1));
-
-  memset(pass1, 0, sizeof(pass1));
-  memset(pass2, 0, sizeof(pass2));
-
-  wattroff(client->screen->input_win, A_INVIS);
-  silc_screen_input_reset(client->screen);
-
-  return ret;
-}
-
 /* Asks yes/no from user on the input line. Returns TRUE on "yes" and
    FALSE on "no". */
 
 int silc_client_ask_yes_no(SilcClient client, char *prompt)
 {
+  SilcClientInternal app = (SilcClientInternal)client->application;
   char answer[4];
   int ret;
 
  again:
-  silc_screen_input_reset(client->screen);
+  silc_screen_input_reset(app->screen);
 
   /* Print prompt */
-  wattroff(client->screen->input_win, A_INVIS);
-  silc_screen_input_print_prompt(client->screen, prompt);
+  wattroff(app->screen->input_win, A_INVIS);
+  silc_screen_input_print_prompt(app->screen, prompt);
 
   /* Get string */
   memset(answer, 0, sizeof(answer));
   echo();
-  wgetnstr(client->screen->input_win, answer, sizeof(answer));
+  wgetnstr(app->screen->input_win, answer, sizeof(answer));
   if (!strncasecmp(answer, "yes", strlen(answer)) ||
       !strncasecmp(answer, "y", strlen(answer))) {
     ret = TRUE;
@@ -309,12 +212,12 @@ int silc_client_ask_yes_no(SilcClient client, char *prompt)
 	     !strncasecmp(answer, "n", strlen(answer))) {
     ret = FALSE;
   } else {
-    silc_say(client, "Type yes or no");
+    silc_say(client, app->conn, "Type yes or no");
     goto again;
   }
   noecho();
 
-  silc_screen_input_reset(client->screen);
+  silc_screen_input_reset(app->screen);
 
   return ret;
 }
@@ -823,195 +726,6 @@ int silc_client_load_keys(SilcClient client)
     if (silc_pkcs_load_public_key(filename, &client->public_key,
 				  SILC_PKCS_FILE_BIN) == FALSE)
       return FALSE;
-
-  return TRUE;
-}
-
-/* Verifies received public key. If user decides to trust the key it is
-   saved as trusted server key for later use. If user does not trust the
-   key this returns FALSE. */
-
-int silc_client_verify_server_key(SilcClient client, 
-				  SilcSocketConnection sock,
-				  unsigned char *pk, unsigned int pk_len,
-				  SilcSKEPKType pk_type)
-{
-  char filename[256];
-  char file[256];
-  char *hostname, *fingerprint;
-  struct passwd *pw;
-  struct stat st;
-
-  hostname = sock->hostname ? sock->hostname : sock->ip;
-
-  if (pk_type != SILC_SKE_PK_TYPE_SILC) {
-    silc_say(client, "We don't support server %s key type", hostname);
-    return FALSE;
-  }
-
-  pw = getpwuid(getuid());
-  if (!pw)
-    return FALSE;
-
-  memset(filename, 0, sizeof(filename));
-  memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "serverkey_%s_%d.pub", hostname,
-	   sock->port);
-  snprintf(filename, sizeof(filename) - 1, "%s/.silc/serverkeys/%s", 
-	   pw->pw_dir, file);
-
-  /* Check wheter this key already exists */
-  if (stat(filename, &st) < 0) {
-
-    fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-    silc_say(client, "Received server %s public key", hostname);
-    silc_say(client, "Fingerprint for the server %s key is", hostname);
-    silc_say(client, "%s", fingerprint);
-    silc_free(fingerprint);
-
-    /* Ask user to verify the key and save it */
-    if (silc_client_ask_yes_no(client, 
-       "Would you like to accept the key (y/n)? "))
-      {
-	/* Save the key for future checking */
-	silc_pkcs_save_public_key_data(filename, pk, pk_len, 
-				       SILC_PKCS_FILE_PEM);
-	return TRUE;
-      }
-  } else {
-    /* The key already exists, verify it. */
-    SilcPublicKey public_key;
-    unsigned char *encpk;
-    unsigned int encpk_len;
-
-    /* Load the key file */
-    if (!silc_pkcs_load_public_key(filename, &public_key, 
-				   SILC_PKCS_FILE_PEM))
-      if (!silc_pkcs_load_public_key(filename, &public_key, 
-				     SILC_PKCS_FILE_BIN)) {
-	fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-	silc_say(client, "Received server %s public key", hostname);
-	silc_say(client, "Fingerprint for the server %s key is", hostname);
-	silc_say(client, "%s", fingerprint);
-	silc_free(fingerprint);
-	silc_say(client, "Could not load your local copy of the server %s key",
-		 hostname);
-	if (silc_client_ask_yes_no(client, 
-	   "Would you like to accept the key anyway (y/n)? "))
-	  {
-	    /* Save the key for future checking */
-	    unlink(filename);
-	    silc_pkcs_save_public_key_data(filename, pk, pk_len,
-					   SILC_PKCS_FILE_PEM);
-	    return TRUE;
-	  }
-	
-	return FALSE;
-      }
-  
-    /* Encode the key data */
-    encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
-    if (!encpk) {
-      fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-      silc_say(client, "Received server %s public key", hostname);
-      silc_say(client, "Fingerprint for the server %s key is", hostname);
-      silc_say(client, "%s", fingerprint);
-      silc_free(fingerprint);
-      silc_say(client, "Your local copy of the server %s key is malformed",
-	       hostname);
-      if (silc_client_ask_yes_no(client, 
-         "Would you like to accept the key anyway (y/n)? "))
-	{
-	  /* Save the key for future checking */
-	  unlink(filename);
-	  silc_pkcs_save_public_key_data(filename, pk, pk_len,
-					 SILC_PKCS_FILE_PEM);
-	  return TRUE;
-	}
-
-      return FALSE;
-    }
-
-    if (memcmp(encpk, pk, encpk_len)) {
-      fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-      silc_say(client, "Received server %s public key", hostname);
-      silc_say(client, "Fingerprint for the server %s key is", hostname);
-      silc_say(client, "%s", fingerprint);
-      silc_free(fingerprint);
-      silc_say(client, "Server %s key does not match with your local copy",
-	       hostname);
-      silc_say(client, "It is possible that the key has expired or changed");
-      silc_say(client, "It is also possible that some one is performing "
-	               "man-in-the-middle attack");
-      
-      /* Ask user to verify the key and save it */
-      if (silc_client_ask_yes_no(client, 
-         "Would you like to accept the key anyway (y/n)? "))
-	{
-	  /* Save the key for future checking */
-	  unlink(filename);
-	  silc_pkcs_save_public_key_data(filename, pk, pk_len,
-					 SILC_PKCS_FILE_PEM);
-	  return TRUE;
-	}
-
-      silc_say(client, "Will not accept server %s key", hostname);
-      return FALSE;
-    }
-
-    /* Local copy matched */
-    return TRUE;
-  }
-
-  silc_say(client, "Will not accept server %s key", hostname);
-  return FALSE;
-}
-
-
-/* Parse nickname string. The format may be <num>!<nickname>@<server> to
-   support multiple same nicknames. The <num> is the final unifier if same
-   nickname is on same server. Note, this is only local format and server
-   does not know anything about these. */
-
-int silc_client_parse_nickname(char *string, char **nickname, char **server,
-			       unsigned int *num)
-{
-  unsigned int tlen;
-  char tmp[256];
-
-  if (!string)
-    return FALSE;
-
-  if (strchr(string, '!')) {
-    tlen = strcspn(string, "!");
-    memset(tmp, 0, sizeof(tmp));
-    memcpy(tmp, string, tlen);
-
-    if (num)
-      *num = atoi(tmp);
-
-    if (tlen >= strlen(string))
-      return FALSE;
-
-    string += tlen + 1;
-  }
-
-  if (strchr(string, '@')) {
-    tlen = strcspn(string, "@");
-    
-    if (nickname) {
-      *nickname = silc_calloc(tlen + 1, sizeof(char));
-      memcpy(*nickname, string, tlen);
-    }
-    
-    if (server) {
-      *server = silc_calloc(strlen(string) - tlen, sizeof(char));
-      memcpy(*server, string + tlen + 1, strlen(string) - tlen - 1);
-    }
-  } else {
-    if (nickname)
-      *nickname = strdup(string);
-  }
 
   return TRUE;
 }

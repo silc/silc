@@ -43,4 +43,37 @@
 #define SILC_CLIENT_DEF_PKCS "rsa"
 #define SILC_CLIENT_DEF_PKCS_LEN 1024
 
+/* XXX This is entirely temporary structure until UI is written again. */
+typedef struct {
+  /* Input buffer that holds the characters user types. This is
+     used only to store the typed chars for a while. */
+  SilcBuffer input_buffer;
+
+  /* The SILC client screen object */
+  SilcScreen screen;
+
+  /* Current physical window */
+  void *current_win;
+
+  SilcClientConnection conn;
+
+  /* Configuration object */
+  SilcClientConfig config;
+
+#ifdef SILC_SIM
+  /* SIM (SILC Module) table */
+  SilcSimContext **sim;
+  unsigned int sim_count;
+#endif
+
+  /* The allocated client */
+  SilcClient client;
+} *SilcClientInternal;
+
+/* Macros */
+
+#ifndef CTRL
+#define CTRL(x) ((x) & 0x1f)	/* Ctrl+x */
+#endif
+
 #endif

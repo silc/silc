@@ -66,7 +66,8 @@ typedef void (*SilcClientCommandCallback)(void *context);
 /* Context sent as argument to all commands */
 typedef struct {
   SilcClient client;
-  SilcSocketConnection sock;
+  SilcClientConnection conn;
+  SilcClientCommand *command;
   unsigned int argc;
   unsigned char **argv;
   unsigned int *argv_lens;
@@ -126,6 +127,8 @@ do {							\
 } while(0)
 
 /* Prototypes */
+void silc_client_command_free(SilcClientCommandContext cmd);
+SilcClientCommand *silc_client_command_find(const char *name);
 void silc_client_command_pending(SilcCommand reply_cmd,
 				 SilcClientCommandCallback callback,
 				 void *context);
@@ -134,7 +137,6 @@ SILC_CLIENT_CMD_FUNC(whois);
 SILC_CLIENT_CMD_FUNC(whowas);
 SILC_CLIENT_CMD_FUNC(identify);
 SILC_CLIENT_CMD_FUNC(nick);
-SILC_CLIENT_CMD_FUNC(server);
 SILC_CLIENT_CMD_FUNC(list);
 SILC_CLIENT_CMD_FUNC(topic);
 SILC_CLIENT_CMD_FUNC(invite);
@@ -155,10 +157,5 @@ SILC_CLIENT_CMD_FUNC(die);
 SILC_CLIENT_CMD_FUNC(silcoper);
 SILC_CLIENT_CMD_FUNC(leave);
 SILC_CLIENT_CMD_FUNC(names);
-SILC_CLIENT_CMD_FUNC(help);
-SILC_CLIENT_CMD_FUNC(clear);
-SILC_CLIENT_CMD_FUNC(version);
-SILC_CLIENT_CMD_FUNC(msg);
-SILC_CLIENT_CMD_FUNC(away);
 
 #endif

@@ -22,10 +22,10 @@
 #define PROTOCOL_H
 
 /* SILC client protocol types */
-#define SILC_PROTOCOL_CLIENT_NONE 0
-#define SILC_PROTOCOL_CLIENT_CONNECTION_AUTH 1
-#define SILC_PROTOCOL_CLIENT_KEY_EXCHANGE 2
-/* #define SILC_PROTOCOL_CLIENT_MAX 255 */
+#define SILC_PROTOCOL_CLIENT_NONE               0
+#define SILC_PROTOCOL_CLIENT_CONNECTION_AUTH    1
+#define SILC_PROTOCOL_CLIENT_KEY_EXCHANGE       2
+/* #define SILC_PROTOCOL_CLIENT_MAX             255 */
 
 /* Internal context for key exchange protocol */
 typedef struct {
@@ -53,7 +53,7 @@ typedef struct {
 
   /* Auth method that must be used. This is resolved before this
      connection authentication protocol is started. */
-  unsigned int auth_meth;
+  SilcProtocolAuthMeth auth_meth;
 
   /* Destinations ID from KE protocol context */
   void *dest_id;
