@@ -6,6 +6,9 @@ Sun May 27 12:39:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  Added key management and key agreement message formats to the
 	  irssi/src/fe-common/silc/module-formats.[ch].
 
+	  Added USERS (alias WHO) printing, server/router operator
+	  indication and LIST command printing to the module formats.
+
 Sat May 26 17:43:42 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed channel joining notify handling, cumode notify handling
