@@ -33,8 +33,6 @@ TODO/bugs In SILC Server
 	  for single IP address, key exchange frequency, key exchange
 	  frequency for single IP. Add also frequency base.
 
-	o Add rehashing support.
-
  o If server send CUMODE_CHANGE notify (like setting founder) to router
    and router does not have founder on channel (founder is left or there's
    no founder on channel at all), the router will accept the server's

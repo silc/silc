@@ -87,6 +87,15 @@ char *silc_server_name_modify_bad(const char *name, SilcUInt32 name_len);
 SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
 					 SilcSocketType type);
 
+/* Find number of sockets by IP address indicated by remote host, indicatd
+   by `ip' or `hostname', `port', and `type'.  Returns 0 if socket connections
+   does not exist. If `ip' is provided then `hostname' is ignored. */
+SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server, 
+					     const char *ip,
+					     const char *hostname,
+					     SilcUInt16 port,
+					     SilcSocketType type);
+
 /* Finds locally cached public key by the public key received in the SKE. 
    If we have it locally cached then we trust it and will use it in the
    authentication protocol.  Returns the locally cached public key or NULL
