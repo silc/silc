@@ -11,6 +11,10 @@ Thu Dec 12 23:22:50 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  when dispatching timeout tasks.  Affected file is
 	  lib/silcutil/silcschedule.c.
 
+	* Changed Win32 implementation of SilcThread to use modern
+	  Win32 interface.  Affected file is 
+	  lib/silcutil/win32/silcwin32thread.c  A patch by Mikko L.
+
 Thu Dec 12 12:06:59 CET 2002 Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Don't print signed messages when sending failed.  Affected files
