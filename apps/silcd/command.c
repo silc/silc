@@ -232,8 +232,10 @@ void silc_server_command_process(SilcServer server,
       client->fast_command++;
       fast = FALSE;
     } else {
-      client->fast_command = ((client->fast_command - 1) <= 0 ? 0 : 
-			      client->fast_command--);
+      if (client->fast_command - 2 <= 0)
+	client->fast_command = 0;
+      else
+	client->fast_command -= 2;
       fast = TRUE;
     }
 
