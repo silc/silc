@@ -5,6 +5,15 @@ Wed Jan 30 11:11:47 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  sender's command context, fixed now.  The affected file is
 	  silcd/command.c.
 
+	* Create the key in JOIN command of the router did not return
+	  the channel key, added check for this.  Affected file is
+	  silcd/command.c.
+
+	* Fixed a channel ID update bug in JOIN command reply.  Do
+	  not directly upgrade the ID but call the function
+	  silc_idlist_replace_channel_id if the ID was changed.
+	  Affected file silcd/command_reply.c.
+
 Tue Jan 29 19:49:31 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Applied patches from cras:

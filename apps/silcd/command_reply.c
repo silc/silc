@@ -823,6 +823,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
     silc_buffer_put(keyp, tmp, len);
   }
+
+  /* Parse the Channel ID */
   id = silc_id_payload_parse_id(id_string, id_len);
   if (!id)
     goto out;
@@ -891,19 +893,19 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     server->stat.my_channels++;
   } else {
     /* The entry exists. */
-    silc_free(cache->id);
-    entry->id = id;
-    cache->id = entry->id;
+
+    /* If ID has changed, then update it to the cache too. */
+    if (!SILC_ID_CHANNEL_COMPARE(channel->id, id))
+      silc_idlist_replace_channel_id(server->local_list, channel->id, id);
+
     entry->disabled = FALSE;
 
     /* Remove the founder auth data if the mode is not set but we have
        them in the entry */
     if (!(mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) && entry->founder_key) {
       silc_pkcs_public_key_free(entry->founder_key);
-      if (entry->founder_passwd) {
-	silc_free(entry->founder_passwd);
-	entry->founder_passwd = NULL;
-      }
+      silc_free(entry->founder_passwd);
+      entry->founder_passwd = NULL;
     }
   }
 
