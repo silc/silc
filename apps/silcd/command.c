@@ -3768,6 +3768,15 @@ SILC_SERVER_CMD_FUNC(cmode)
 	    silc_calloc(tmp_len + 1, sizeof(*channel->founder_passwd));
 	  memcpy(channel->founder_passwd, tmp, tmp_len);
 	  channel->founder_passwd_len = tmp_len;
+	} else {
+	  /* Verify the payload before setting the mode */
+	  if (!silc_auth_verify(auth, channel->founder_method, 
+				channel->founder_key, 0, idata->hash,
+				client->id, SILC_ID_CLIENT)) {
+	    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+						  SILC_STATUS_ERR_AUTH_FAILED);
+	    goto out;
+	  }
 	}
 
 	silc_auth_payload_free(auth);

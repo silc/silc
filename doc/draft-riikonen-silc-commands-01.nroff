@@ -775,7 +775,11 @@ List of all defined commands in SILC follows.
         as operator.  The <authentication payload> is the data that the
         client is authenticated against.  It may be passphrase prompted
         for user on client's screen or it may be public key or certificate
-        authentication data (data signed with private key).
+        authentication data (data signed with private key).  The public
+        key that server will use to verify the signature found in the
+        payload should be verified.  It is recommended that the public
+        key is saved locally in the server and server would not use
+        any public keys received during the SKE.
 
         After changing the mode the server MUST send the notify type
         SILC_NOTIFY_TYPE_UMODE_CHANGE to its primary router.
@@ -1147,7 +1151,9 @@ List of all defined commands in SILC follows.
               method is public key authentication the server MUST NOT
               save the authentication data from the payload as the
               data is different on all authentications.  In this case the
-              server only saves the authentication method.
+              server only saves the authentication method.  However,
+              server MUST verify the sent authentication payload and
+              set the mode only if the verification was successful.
 
               Note that this mode is effective only in the current server.
               The client MUST connect to the same server later to be able
@@ -1193,6 +1199,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
             SILC_STATUS_ERR_UNKNOWN_MODE
             SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_AUTH_FAILED
 
 
    18   SILC_COMMAND_CUMODE
@@ -1229,8 +1236,10 @@ List of all defined commands in SILC follows.
               However, if the SILC_CMODE_FOUNDER_AUTH channel mode has
               been set, the client can claim channel founder privileges
               by providing the <auth payload> that the server will use
-              to authenticate the client.  The client MAY remove this
-              mode at any time.
+              to authenticate the client.  The public key that server will
+              use to verify the <auth payload> must the same public key
+              that was saved when the SILC_CMODE_FOUNDER_AUTH channel
+              mode was set.  The client MAY remove this mode at any time.
 
 
            0x0002    SILC_CUMODE_OPERATOR
@@ -1411,7 +1420,11 @@ List of all defined commands in SILC follows.
         as operator.  The <authentication payload> is the data that the
         client is authenticated against.  It may be passphrase prompted
         for user on client's screen or it may be public key or certificate
-        authentication data (data signed with private key).
+        authentication data (data signed with private key).  The public
+        key that router will use to verify the signature found in the
+        payload should be verified.  It is recommended that the public
+        key is saved locally in the router and router would not use
+        any public keys received during the SKE.
 
         Difference between router operator and server operator is that
         router operator is able to handle cell level properties while
