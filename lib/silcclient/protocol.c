@@ -153,9 +153,6 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 
   /* Check software version */
 
-  if (len < strlen(silc_version_string))
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
   cp = version + 9;
   maj = atoi(cp);
   cp = strchr(cp, '.');
