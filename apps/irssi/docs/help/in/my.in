@@ -1,0 +1,108 @@
+
+My information for WHOIS command
+
+In SILC it is possible to retrieve detailed information about a user
+with WHOIS command by giving -details option to the WHOIS.  This
+information is retrieved directly from the client, if the client
+supports it.  If client does not support it or do not want to send
+anything then server may reply on behalf of the client.
+
+You may set your personal information that others may retrieve using
+WHOIS command.  These information is set with SET command, give command:
+
+  SET my
+
+to see all possible settings for the information.  By default, in SILC
+Client sending the information is allowed.  If you do not want to allow
+it give command:
+
+   SET my_allow_request OFF
+
+and your client will not reply to the requests.  This usually means that
+server may not send you the request anymore at all, or may do so only
+occasionally.
+
+The following settings are available:
+
+  my_vcard
+    - Info:	Your personal information (business card)
+    - Format: 	path to VCard file
+    - Examples:
+      SET my_vcard /home/foo/.silc/vcard
+
+  my_services
+    - Info:	List of network services you are using
+    - Format: 	list of <service>://<address>:<port>
+    - Examples:
+      SET my_services silc://silcnet.org:706
+      SET my_services silc://silcnet.org:706 irc://irc.org:6667
+
+  my_status_mood
+    - Info:	Indication of your personal mood at the present time
+		By default, setting this is aliased to MOOD command
+    - Format: 	list of moods (NORMAL, HAPPY, SAD, ANGRY, JEALOUS,
+                               ASHAMED, INVINCIBLE, INLOVE, SLEEPY,
+                               BORED, EXCITED, ANXIOUS)
+    - Examples:
+      SET my_status_mood HAPPY INLOVE
+      MOOD SLEEPY BORED INVINCIBLE
+
+  my_status_text
+    - Info:	Text message further describing your current status
+    - Format: 	text string
+    - Examples:
+      SET my_status_text "Not much going on, right now..."
+
+  my_status_message
+    - Info:	MIME message further describing your current status
+    - Format: 	File path to file containing a MIME object
+    - Examples:
+      SET my_status_message /home/foo/.silc/message
+
+  my_preferred_language
+    - Info:	Language you would like to use in SILC
+    - Format: 	list of three letter language codes (ISO 639-2/T)
+                See http://www.loc.gov/standards/iso639-2/langcodes.html
+    - Examples:
+      SET my_preferred_language fin
+      SET my_preferred_language eng fin
+
+  my_preferred_contact
+    - Info:	Contact method you prefer
+    - Format: 	List of preferred contact methods
+		(NONE, EMAIL, CALL, PAGE, SMS, MMS, CHAT)
+    - Examples:
+      SET my_preferred_contact NONE
+      SET my_preferred_contact CHAT EMAIL SMS
+
+  my_timezone
+    - Info:	Send your local time and timezone
+    - Format: 	ON/OFF, ON by default
+    - Examples:
+      SET my_timezone OFF
+
+  my_geolocation
+    - Info:	Your current measured global location
+    - Format: 	longitude:latitude:altitude:accuracy in meters
+    - Examples:
+      SET my_geolocation "60 10:24 57:251:20"
+
+  my_device_info
+    - Info:	Type of your device you are using
+    - Format: 	Device type (COMPUTER, MOBILE_PHONE, PDA, TERMINAL)
+    - Examples:
+      SET my_device_info COMPUTER
+      SET my_device_info PDA
+
+  my_public_keys
+    - Info:	List of your public keys you want to send in the reply,
+                The client automatically sends your SILC public key
+    - Format:	List of file paths to public key files with key type
+                (silc-rsa, silc-dss, ssh-rsa, ssh-dss, pgp-sign-rsa,
+		 pgp-sign-dss, x509v3-sign-rsa, x509v3-sign-dss)
+    - Examples:
+      SET my_public_keys ssh-rsa:/home/priikone/.ssh2/ssh2.pub
+      SET my_public_keys pgp-sign-rsa:/home/priikone/pgp/pgp.asc
+
+See also: WHOIS, SET MY, MOOD
+
