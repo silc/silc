@@ -1112,7 +1112,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
 
 /* Internal routine to save public key */
 
-static bool silc_pkcs_save_public_key_internal(char *filename,
+static bool silc_pkcs_save_public_key_internal(const char *filename,
 					       unsigned char *data,
 					       SilcUInt32 data_len,
 					       SilcUInt32 encoding)
@@ -1152,7 +1152,7 @@ static bool silc_pkcs_save_public_key_internal(char *filename,
 
 /* Saves public key into file */
 
-bool silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
+bool silc_pkcs_save_public_key(const char *filename, SilcPublicKey public_key,
 			       SilcUInt32 encoding)
 {
   unsigned char *data;
@@ -1168,9 +1168,8 @@ bool silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
 
 /* Saves public key into file */
 
-bool silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
-				    SilcUInt32 data_len,
-				    SilcUInt32 encoding)
+bool silc_pkcs_save_public_key_data(const char *filename, unsigned char *data,
+				    SilcUInt32 data_len, SilcUInt32 encoding)
 {
   return silc_pkcs_save_public_key_internal(filename, data, data_len,
 					    encoding);
@@ -1180,7 +1179,7 @@ bool silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
 
 /* Internal routine to save private key. */
 
-static bool silc_pkcs_save_private_key_internal(char *filename,
+static bool silc_pkcs_save_private_key_internal(const char *filename,
 						unsigned char *data,
 						SilcUInt32 data_len,
 						unsigned char *key,
@@ -1329,7 +1328,8 @@ static bool silc_pkcs_save_private_key_internal(char *filename,
 
 /* Saves private key into file. */
 
-bool silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
+bool silc_pkcs_save_private_key(const char *filename,
+				SilcPrivateKey private_key,
 				unsigned char *passphrase,
 				SilcUInt32 passphrase_len,
 				SilcUInt32 encoding)
@@ -1350,7 +1350,7 @@ bool silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key,
 /* Loads public key from file and allocates new public key. Returns TRUE
    if loading was successful. */
 
-bool silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
+bool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
 			       SilcUInt32 encoding)
 {
   unsigned char *cp, *old, *data, byte;
@@ -1406,7 +1406,8 @@ bool silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
 /* Load private key from file and allocates new private key. Returns TRUE
    if loading was successful. */
 
-bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
+bool silc_pkcs_load_private_key(const char *filename,
+				SilcPrivateKey *private_key,
 				unsigned char *passphrase,
 				SilcUInt32 passphrase_len,
 				SilcUInt32 encoding)
