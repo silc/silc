@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.7  2000/07/10 05:40:33  priikone
+ * 	Minor bug fixes.
+ *
  * Revision 1.6  2000/07/07 06:54:16  priikone
  * 	Print channel name when receiving channel message to non-current
  * 	channel.
@@ -251,12 +254,11 @@ SilcClientWindow silc_client_create_main_window(SilcClient client)
 
   assert(client->screen != NULL);
 
-  win = silc_calloc(1, sizeof(*win));
-
   client->screen->u_stat_line.program_name = silc_name;
   client->screen->u_stat_line.program_version = silc_version;
 
-  /* Add the pointers */
+  /* Create windows */
+  win = silc_calloc(1, sizeof(*win));
   win->nickname = silc_get_username();
   win->local_id = NULL;
   win->local_id_data = NULL;

@@ -57,6 +57,7 @@ typedef struct {
   char *remote_host;
   int remote_port;
   int remote_type;
+  char *remote_info;
 
   /* Remote client ID for this connection */
   SilcClientID *remote_id;
