@@ -125,6 +125,10 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
   if (map->writehtml.writehtml)
     silc_map_writehtml(map, mapconn);
 
+  /* Write uptime reliability data */
+  if (map->writerel.writerel)
+    silc_map_writerel(map, mapconn);
+
   /* If this was last connection, we are done and ready to quit. */
   if (map->conn_num == map->conns_num) {
     SILC_LOG_DEBUG(("All connections processed"));
@@ -146,6 +150,10 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
 
     /* Write the HTML map file(s) */
     silc_map_writemaphtml(map);
+
+    /* Write uptime reliability graph */
+    if (map->writerel.writerel)
+      silc_map_writerelhtml(map);
 
     /* Schedule to stop */
     silc_schedule_task_add(map->client->schedule, 0,

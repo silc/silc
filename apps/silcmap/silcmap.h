@@ -56,6 +56,7 @@ typedef struct {
   unsigned int writemap       : 1;
   unsigned int writehtml      : 1;
   unsigned int writemaphtml   : 1;
+  unsigned int writerel       : 1;
   unsigned int cut            : 1;
   unsigned int draw_line      : 1;
   unsigned int draw_text      : 1;
@@ -83,6 +84,7 @@ typedef struct {
   /* Output methods */
   SilcMapCommandStruct writemap;
   SilcMapCommandStruct writehtml;
+  SilcMapCommandStruct writerel;
   SilcMapCommandStruct *writemaphtml;
   SilcMapCommandStruct *cut;
   SilcUInt32 writemaphtml_count;
@@ -204,5 +206,7 @@ bool silc_map_load_font(SilcMap map, const char *filename);
 bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn);
 bool silc_map_writehtml_index(SilcMap map);
 bool silc_map_writemaphtml(SilcMap map);
+bool silc_map_writerel(SilcMap map, SilcMapConnection mapconn);
+bool silc_map_writerelhtml(SilcMap map);
 
 #endif /* SILCMAP_H */

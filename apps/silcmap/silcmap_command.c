@@ -28,6 +28,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_loadmap);
 SILC_CONFIG_CALLBACK(silc_map_cmd_writemap);
 SILC_CONFIG_CALLBACK(silc_map_cmd_writemaphtml);
 SILC_CONFIG_CALLBACK(silc_map_cmd_writehtml);
+SILC_CONFIG_CALLBACK(silc_map_cmd_writerel);
 SILC_CONFIG_CALLBACK(silc_map_cmd_cut);
 SILC_CONFIG_CALLBACK(silc_map_cmd_rectangle);
 SILC_CONFIG_CALLBACK(silc_map_cmd_circle);
@@ -59,6 +60,13 @@ static const SilcConfigTable silc_map_table_writehtml[] =
 {
   { "filename", SILC_CONFIG_ARG_STR, silc_map_cmd_writehtml, NULL },
   { "class", SILC_CONFIG_ARG_STRE, silc_map_cmd_writehtml, NULL },
+  { NULL },
+};
+
+static const SilcConfigTable silc_map_table_writerel[] =
+{
+  { "filename", SILC_CONFIG_ARG_STR, silc_map_cmd_writerel, NULL },
+  { "class", SILC_CONFIG_ARG_STRE, silc_map_cmd_writerel, NULL },
   { NULL },
 };
 
@@ -183,6 +191,8 @@ static const SilcConfigTable silc_map_table_main[] =
     silc_map_cmd_writemaphtml, silc_map_table_writemaphtml },
   { "writehtml", SILC_CONFIG_ARG_BLOCK,
     silc_map_cmd_writehtml, silc_map_table_writehtml },
+  { "writerel", SILC_CONFIG_ARG_BLOCK,
+    silc_map_cmd_writerel, silc_map_table_writerel },
   { "cut", SILC_CONFIG_ARG_BLOCK,
     silc_map_cmd_cut, silc_map_table_cut },
   { "rectangle", SILC_CONFIG_ARG_BLOCK,
@@ -484,6 +494,37 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_writehtml)
     map->writehtml.filename = filename;
     map->writehtml.text = text;		/* class */
     map->writehtml.writehtml = TRUE;
+    filename = text = NULL;
+
+    return retval;
+  }
+  if (!strcmp(name, "filename"))
+    filename = strdup((char *)val);
+  else if (!strcmp(name, "class"))
+    text = strdup((char *)val);
+  else
+    retval = SILC_CONFIG_ESILENT;
+
+  return retval;
+}
+
+/* Command: writerel, writes the uptime reliability graph. */
+
+SILC_CONFIG_CALLBACK(silc_map_cmd_writerel)
+{
+  SilcMap map = context;
+  int retval = SILC_CONFIG_OK;
+
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    if (!filename)
+      return SILC_CONFIG_EMISSFIELDS;
+
+    SILC_LOG_DEBUG(("writerel: file: %s", filename));
+
+    /* Will generate uptime reliability graph */
+    map->writerel.filename = filename;
+    map->writerel.text = text;		/* class */
+    map->writerel.writerel = TRUE;
     filename = text = NULL;
 
     return retval;
