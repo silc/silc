@@ -3204,8 +3204,6 @@ void silc_server_free_sock_user_data(SilcServer server,
       } else if (backup_router) {
 	SILC_LOG_INFO(("Enabling the use of backup router %s",
 		       backup_router->server_name));
-	SILC_LOG_DEBUG(("Enabling the use of backup router %s",
-			backup_router->server_name));
 
 	/* Mark this connection as replaced */
 	silc_server_backup_replaced_add(server, user_data->id,

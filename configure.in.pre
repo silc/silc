@@ -60,6 +60,7 @@ if test "$GCC"; then
   CFLAGS="-Wall -finline-functions $CFLAGS"
 fi
 
+#
 # Program checking
 #
 AC_PROG_INSTALL

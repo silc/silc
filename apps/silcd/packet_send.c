@@ -760,8 +760,8 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
     }
 
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
-    silc_channel_message_payload_encrypt(data, data_len - iv_len, iv, iv_len,
-					 channel->channel_key, channel->hmac);
+    silc_message_payload_encrypt(data, data_len - iv_len, iv, iv_len,
+				 channel->channel_key, channel->hmac);
   }
 
   return TRUE;
@@ -937,9 +937,9 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	  memcpy(tmp, data, data_len);
 
 	  /* Decrypt the channel message (we don't check the MAC) */
-	  silc_channel_message_payload_decrypt(tmp, data_len,
-					       channel->channel_key,
-					       channel->hmac, FALSE);
+	  silc_message_payload_decrypt(tmp, data_len, FALSE, FALSE,
+				       channel->channel_key,
+				       channel->hmac, FALSE);
 
 	  /* Now re-encrypt and send it to the router */
 	  silc_server_packet_send_srcdest(server, sock,

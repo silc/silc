@@ -1,3 +1,36 @@
+Fri Nov 22 18:34:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support to backup router protocol for backup to tell
+	  normal server that it cannot use the backup router as primary
+	  because the primary isn't really down.  Updated protocol
+	  specs.
+
+	* Added support for primary router to tell backup router that
+	  resuming is not possible because the backup really isn't primary
+	  in the cell.  For example if backup disconnected itself the
+	  resuming is not allowed since the primary really did not
+	  go down.  Updated protocol specs.
+
+	* Removed MARS from crypto library.
+
+	* Defined the CTR mode and Randomized CBC mode in SILC.  The
+	  CTR mode is RECOMMENDED now in specification.  Defined also
+	  Serpent cipher as optional cipher.  Updated the protocol specs.
+
+Thu Nov 21 12:43:28 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for inviting/banning by IP/MASK, public key,
+	  and explicit Client ID.  Redefined the command and notify
+	  types to allow easier forwards support for other methods
+	  of inviting/banning.  Updated protocol specs.
+
+	* Remove the client from channel's invite lists if the client
+	  is kicked or killed.  Updated protocol specs.
+
+	* Unified the Channel Message Payload and Private Message
+	  into one Message Payload.  Updated protocol specs and
+	  implemented.
+
 Tue Nov 19 22:30:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Don't wait for EOF after socket error has occurred, but
