@@ -1,3 +1,12 @@
+Sat Mar 30 21:06:45 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Optimized even more the SilcPacketContext structure.  Now
+	  totally saved 16 bytes of memory per context after optimization.
+	  Affected files are lib/silccore/silcpacket.[ch].
+
+	* Made strict checks for valid SILC IDs.  Affected file is
+	  lib/silccore/silcid.c.
+
 Sat Mar 30 18:15:55 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the object argument for silc_cipher_register,

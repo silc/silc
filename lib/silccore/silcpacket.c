@@ -585,6 +585,7 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher)
   SilcBuffer buffer = ctx->buffer;
   SilcUInt8 tmp;
   int len, ret;
+  SilcUInt8 src_id_len, src_id_type, dst_id_len, dst_id_type, padlen;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));
 
@@ -599,33 +600,45 @@ SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher)
 			     SILC_STR_UI_SHORT(&ctx->truelen),
 			     SILC_STR_UI_CHAR(&ctx->flags),
 			     SILC_STR_UI_CHAR(&ctx->type),
-			     SILC_STR_UI_CHAR(&ctx->padlen),
+			     SILC_STR_UI_CHAR(&padlen),
 			     SILC_STR_UI_CHAR(&tmp),
-			     SILC_STR_UI_CHAR(&ctx->src_id_len),
-			     SILC_STR_UI_CHAR(&ctx->dst_id_len),
-			     SILC_STR_UI_CHAR(&ctx->src_id_type),
+			     SILC_STR_UI_CHAR(&src_id_len),
+			     SILC_STR_UI_CHAR(&dst_id_len),
+			     SILC_STR_UI_CHAR(&src_id_type),
 			     SILC_STR_END);
   if (len == -1 || tmp != 0)
     return SILC_PACKET_NONE;
 
-  if (ctx->src_id_len > SILC_PACKET_MAX_ID_LEN ||
-      ctx->dst_id_len > SILC_PACKET_MAX_ID_LEN) {
+  if (src_id_len > SILC_PACKET_MAX_ID_LEN ||
+      dst_id_len > SILC_PACKET_MAX_ID_LEN) {
     SILC_LOG_ERROR(("Bad ID lengths in packet (%d and %d)",
-		    ctx->src_id_len, ctx->dst_id_len));
+		    src_id_len, dst_id_len));
     return SILC_PACKET_NONE;
   }
 
   silc_buffer_pull(buffer, len);
   ret = silc_buffer_unformat(buffer, 
 			     SILC_STR_UI_XNSTRING_ALLOC(&ctx->src_id,
-							ctx->src_id_len),
-			     SILC_STR_UI_CHAR(&ctx->dst_id_type),
+							src_id_len),
+			     SILC_STR_UI_CHAR(&dst_id_type),
 			     SILC_STR_UI_XNSTRING_ALLOC(&ctx->dst_id,
-							ctx->dst_id_len),
-			     SILC_STR_UI_XNSTRING(NULL, ctx->padlen),
+							dst_id_len),
+			     SILC_STR_UI_XNSTRING(NULL, padlen),
 			     SILC_STR_END);
   if (ret == -1)
     return SILC_PACKET_NONE;
+
+  if (src_id_type > SILC_ID_CHANNEL || dst_id_type > SILC_ID_CHANNEL) {
+    SILC_LOG_ERROR(("Bad ID types in packet (%d and %d",
+		   src_id_type, dst_id_type));
+    return SILC_PACKET_NONE;
+  }
+
+  ctx->src_id_len = src_id_len;
+  ctx->dst_id_len = dst_id_len;
+  ctx->src_id_type = src_id_type;
+  ctx->dst_id_type = dst_id_type;
+  ctx->padlen = padlen;
 
   silc_buffer_push(buffer, len);
 
@@ -653,6 +666,7 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
   SilcBuffer buffer = ctx->buffer;
   SilcUInt8 tmp;
   int len, ret;
+  SilcUInt8 src_id_len, src_id_type, dst_id_len, dst_id_type, padlen;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));
 
@@ -667,37 +681,49 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
 			     SILC_STR_UI_SHORT(&ctx->truelen),
 			     SILC_STR_UI_CHAR(&ctx->flags),
 			     SILC_STR_UI_CHAR(&ctx->type),
-			     SILC_STR_UI_CHAR(&ctx->padlen),
+			     SILC_STR_UI_CHAR(&padlen),
 			     SILC_STR_UI_CHAR(&tmp),
-			     SILC_STR_UI_CHAR(&ctx->src_id_len),
-			     SILC_STR_UI_CHAR(&ctx->dst_id_len),
-			     SILC_STR_UI_CHAR(&ctx->src_id_type),
+			     SILC_STR_UI_CHAR(&src_id_len),
+			     SILC_STR_UI_CHAR(&dst_id_len),
+			     SILC_STR_UI_CHAR(&src_id_type),
 			     SILC_STR_END);
   if (len == -1 || tmp != 0) {
     SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
     return SILC_PACKET_NONE;
   }
 
-  if (ctx->src_id_len > SILC_PACKET_MAX_ID_LEN ||
-      ctx->dst_id_len > SILC_PACKET_MAX_ID_LEN) {
+  if (src_id_len > SILC_PACKET_MAX_ID_LEN ||
+      dst_id_len > SILC_PACKET_MAX_ID_LEN) {
     SILC_LOG_ERROR(("Bad ID lengths in packet (%d and %d)",
-		    ctx->src_id_len, ctx->dst_id_len));
+		    src_id_len, dst_id_len));
     return SILC_PACKET_NONE;
   }
 
   silc_buffer_pull(buffer, len);
   ret = silc_buffer_unformat(buffer, 
 			     SILC_STR_UI_XNSTRING_ALLOC(&ctx->src_id,
-							ctx->src_id_len),
-			     SILC_STR_UI_CHAR(&ctx->dst_id_type),
+							src_id_len),
+			     SILC_STR_UI_CHAR(&dst_id_type),
 			     SILC_STR_UI_XNSTRING_ALLOC(&ctx->dst_id,
-							ctx->dst_id_len),
-			     SILC_STR_UI_XNSTRING(NULL, ctx->padlen),
+							dst_id_len),
+			     SILC_STR_UI_XNSTRING(NULL, padlen),
 			     SILC_STR_END);
   if (ret == -1) {
     SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
     return SILC_PACKET_NONE;
   }
+
+  if (src_id_type > SILC_ID_CHANNEL || dst_id_type > SILC_ID_CHANNEL) {
+    SILC_LOG_ERROR(("Bad ID types in packet (%d and %d",
+		   src_id_type, dst_id_type));
+    return SILC_PACKET_NONE;
+  }
+
+  ctx->src_id_len = src_id_len;
+  ctx->dst_id_len = dst_id_len;
+  ctx->src_id_type = src_id_type;
+  ctx->dst_id_type = dst_id_type;
+  ctx->padlen = padlen;
 
   silc_buffer_push(buffer, len);
 

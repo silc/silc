@@ -62,6 +62,9 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
   if (ret == -1)
     goto err;
 
+  if (newp->type > SILC_ID_CHANNEL)
+    goto err;
+
   silc_buffer_pull(&buffer, 4);
 
   if (newp->len > buffer.len || newp->len > SILC_PACKET_MAX_ID_LEN)
@@ -100,6 +103,9 @@ void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
 			     SILC_STR_UI_SHORT(&idlen),
 			     SILC_STR_END);
   if (ret == -1)
+    return NULL;
+
+  if (type > SILC_ID_CHANNEL)
     return NULL;
 
   silc_buffer_pull(&buffer, 4);
@@ -209,6 +215,9 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type)
   SilcChannelID *channel_id;
   SilcUInt32 id_len = silc_id_get_len(id, type);
 
+  if (id_len > SILC_PACKET_MAX_ID_LEN)
+    return NULL;
+
   switch(type) {
   case SILC_ID_SERVER:
     server_id = (SilcServerID *)id;
@@ -251,6 +260,8 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type)
 void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, 
 		     SilcIdType type)
 {
+  if (id_len > SILC_PACKET_MAX_ID_LEN)
+    return NULL;
 
   switch(type) {
   case SILC_ID_SERVER:

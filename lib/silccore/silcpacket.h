@@ -180,17 +180,30 @@ typedef unsigned char SilcPacketFlags;
  *
  *    unsigned char *src_id
  *    SilcUInt8 src_id_len
- *    unsigned char src_id_type
+ *    SilcUInt8 src_id_type
  *
  *      Source ID, its length and type. On packet reception retuned ID's
  *      are always the hash values of the ID's from the packet.
  *
  *    unsigned char *dst_id;
  *    SilcUInt8 dst_id_len;
- *    unsigned char src_id_type;
+ *    SilcUInt8 src_id_type;
  *
  *      Destination ID, its length and type. On packet reception retuned
  *      ID's are always the hash values of the ID's from the packet.
+ *
+ *    bool long_pad
+ * 
+ *      If set to TRUE the packet will include the maximum padding allowed
+ *      in SILC packet, which is 128 bytes.  If FALSE only the amount of
+ *      padding needed will be applied.
+ *
+ *    SilcUInt16 users;
+ *
+ *      Reference counter for this context. The context is freed only 
+ *      after the reference counter hits zero. The counter is added
+ *      calling silc_packet_context_dup and decreased by calling the
+ *      silc_packet_context_free.
  *
  *    SilcUInt8 padlen
  *
@@ -198,26 +211,15 @@ typedef unsigned char SilcPacketFlags;
  *      before calling any of the silc_packet_* routines. If not provided
  *      the library will calculate the values.
  *
- *    unsigned int long_pad
- * 
- *      If set to TRUE the packet will include the maximum padding allowed
- *      in SILC packet, which is 128 bytes.  If FALSE only the amount of
- *      padding needed will be applied.
- *
- *    unsigned int users;
- *
- *      Reference counter for this context. The context is freed only 
- *      after the reference counter hits zero. The counter is added
- *      calling silc_packet_context_dup and decreased by calling the
- *      silc_packet_context_free.
- *
  *    SilcUInt32 sequence;
  *
- *      Packet sequence number.
+ *      Packet sequence number.  Set only when this context is a parsed
+ *      packet.
  *
  *    SilcBuffer buffer
  *
- *      The actual packet data.
+ *      The actual packet data.  Set only when this context is a parsed
+ *      packet.
  *
  ***/
 typedef struct {
@@ -227,14 +229,13 @@ typedef struct {
 
   unsigned char *src_id;
   unsigned char *dst_id;
-  SilcUInt8 src_id_len;
-  SilcUInt8 src_id_type;
-  SilcUInt8 dst_id_len;
-  SilcUInt8 dst_id_type;
-
-  SilcUInt8 padlen;
-  unsigned int long_pad : 1;	/* Set when maximum padding in packet */
-  unsigned int users : 23;	/* Reference counter */
+  unsigned int src_id_len : 5;
+  unsigned int src_id_type : 2;
+  unsigned int dst_id_len : 5;
+  unsigned int dst_id_type : 2;
+  unsigned int long_pad : 1;	  /* Set when maximum padding in packet */
+  unsigned int users : 9;	  /* Reference counter */
+  unsigned int padlen : 8;
 
   SilcUInt32 sequence;
   SilcBuffer buffer;
