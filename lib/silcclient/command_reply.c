@@ -937,7 +937,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
 	  silc_calloc(strlen(nickname) + 8, 
 		      sizeof(*channel->clients[k]->nickname));
 	strncat(channel->clients[k]->nickname, nickname, strlen(nickname));
-	snprintf(t, sizeof(t), "[%d]", c++);
+	snprintf(t, sizeof(t), " [%d]", c++);
 	strncat(channel->clients[k]->nickname, t, strlen(t));
       }
     }
