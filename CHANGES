@@ -1,3 +1,8 @@
+Wed Nov 23 20:51:21 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* Fixed channel messages across cells. Affected file 
+	  silcd/packet_send.c
+
 Wed Nov 12 11:34:56 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed file transmission accepting in client library to not

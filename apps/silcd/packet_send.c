@@ -776,9 +776,9 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
     }
 
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
-    silc_message_payload_encrypt(data, data_len - iv_len, data_len,
-				 iv, iv_len, channel->channel_key,
-				 channel->hmac);
+    silc_message_payload_encrypt(data, data_len - iv_len - mac_len, 
+                                 data_len - mac_len, iv, iv_len, 
+                                 channel->channel_key, channel->hmac);
   }
 
   return TRUE;
