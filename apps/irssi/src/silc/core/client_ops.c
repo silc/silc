@@ -157,6 +157,11 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 	!strstr(type, "text/vnd")) {
       /* It is something textual, display it */
       message = (const unsigned char *)data;
+    } else {
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
+			 nick == NULL ? "[<unknown>]" : nick->nick, type);
+      message = NULL;
     }
   }
 
@@ -235,6 +240,12 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 	!strstr(type, "text/vnd")) {
       /* It is something textual, display it */
       message = (const unsigned char *)data;
+    } else {
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
+			 sender->nickname ? sender->nickname : "[<unknown>]",
+			 type);
+      message = NULL;
     }
   }
 
