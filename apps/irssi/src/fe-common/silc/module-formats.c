@@ -124,6 +124,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "watch_killed", "Watch: {nick $0} was killed from the network", 1, { 0 } },
 	{ "watch_umode_change", "Watch: {nick $0} is now {hilight $1}", 2, { 0, 0 } },
 	{ "watch_nick_change", "Watch: {nick $0} changed nickname to {nick $1}", 2, { 0, 0 } },
+	{ "message_data", "{nick $0} sent \"{hilight $1}\" data message: cannot display", 2, { 0, 0 } },
 
 	/* File transfer messages */
 	{ NULL, "FileTransfer", 0 },

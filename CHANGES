@@ -11,6 +11,10 @@ Thu May 23 12:00:14 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  timeout, and not directly, so that other notifys can be
 	  retrieved too.  Affected file lib/silcclient/client_notify.c.
 
+	* Display notification about data messages that cannot be
+	  displayed.  Affected files irssi/src/silc/core/client_ops.c,
+	  irssi/src/fe-common/silc/module-formats.[ch].
+
 Sun May 19 18:59:00 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the CHANNEL_CHANGE notify handling in client libary
