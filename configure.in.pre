@@ -689,6 +689,7 @@ Makefile.defines_int
 irssi/Makefile.defines
 irssi/Makefile.defines_int
 doc/Makefile
+doc/whitepaper/Makefile
 includes/Makefile
 lib/Makefile
 lib/contrib/Makefile

@@ -23,7 +23,7 @@ HTML2PS = ../../scripts/html2ps -f ../../scripts/html2psrc
 all:	make-html2ps make-ps2pdf
 
 make-html2ps:
-	($HTML2PS) -o silc_protocol.ps silc_protocol.html
+	$(HTML2PS) -o silc_protocol.ps silc_protocol.html
 
 make-ps2pdf:
-	ps2df silc_protocol.ps
+	ps2pdf silc_protocol.ps

@@ -62,7 +62,7 @@ and how the protocol works in practice.  This document is intended for all
 audience.  This document should be easy to understand for non-technical
 person and still be detailed enough for technically oriented person.  See
 the section <a href="#terms">Terms and Abbreviations</a> for terms used
-in this documents.
+in this document.
 <p>
 
 <p>
@@ -110,6 +110,16 @@ two cells that both has several servers, and backup routers and several
 clients.  Clients can connect to server and routers if they want to.
 The following sections will describe the entities of the SILC Network
 in greater detail.
+
+Generally it is assumed that the SILC Network is trusted.  This means
+that clients can fully trust the servers and routers in the SILC Network.
+Now, in real life this is not always possible.  In the Internet it is
+possible that some server or router would get compromised by a malicious
+cracker.  However, if the SILC Network is closed network, for example
+inside a orgranization the assumption generally is true.  The SILC
+protocol copes very well that the end user might consider the network
+untrusted and provides several ways to still have secure conversation
+on the SILC Network.
 
 
 <p><br>
@@ -321,7 +331,7 @@ by performing the Diffie-Hellman key exchange algorithm.  At the same
 time the intiator and responder also sends their public keys or
 certificates to each other.  The responder also computes a signature
 that the initiator will verify.  It is also possible to perform a
-mutual authentication when both of the parties computes a signature
+mutual authentication where both of the parties computes a signature
 which are verified by each other independently.  If any of the phases
 of the protocol are to fail the connection is closed immeadiately.
 <p>
@@ -379,7 +389,7 @@ packet is also encrypted in the case of public key authentication.
 <p>
 
 If the authentication is to fail the connection to the server or router
-will be refused.  If it is succesful the connection is granted.  After
+will be refused.  If it is successful the connection is granted.  After
 this the client is ready to communicate in the SILC Network.
 
 
@@ -471,7 +481,7 @@ for servers to decrypt the message.  The router decrypts the message
 only when sending it between two routers.
 <p>
 
-This method of channel message delivery is the the default way to send
+This method of channel message delivery is the default way to send
 channel messages in the SILC Network.  However, this is not perfect
 solution on all circumstances.  If the clients joined on a particular
 channel cannot trust, or do not want to trust the servers and routers
@@ -489,7 +499,7 @@ channel.
 <p>
 
 In addition of encrypting channel messages it also possible to digitally
-sign all sent channel messages.  The receiver could the verify the
+sign all sent channel messages.  The receiver could then verify the
 signature of each of the message using the sender's public key.
 
 
@@ -501,7 +511,7 @@ If the clients cannot trust the servers and routers in the SILC Network
 they should not use the default way of sending the channel messages.
 Instead, they should use channel private keys to encrypt and decrypt
 the channel messages.  Channel private keys are keys that are known
-only by the clients who have joined the channel.  All servers and
+only by the clients who have joined the channel.  Sservers and
 routers do not know the key and cannot decrypt the messages.  When
 message is sent between two routers they are merely re-encrypted with
 the session key but not decrypted since the router do not have the
@@ -555,7 +565,7 @@ deciding what way of sending private message suites for them.
 <p>
 
 In addition of encrypting private messages it also possible to digitally
-sign all sent private messages.  The receiver could the verify the
+sign all sent private messages.  The receiver could then verify the
 signature of each of the message using the sender's public key.
 
 
@@ -574,7 +584,7 @@ re-encrypted everytime it is sent further to the receiving client.
 </object>
 <p><br>
 
-As the above diagram shows the private messages sent by Client A to the
+As the diagram above shows the private messages sent by Client A to the
 Client B travels through the SILC Network and is always decrypted and
 re-encrypted with the session key of the next receiver.  The Client B then
 finally decrypts the private messages that is encrypted with the session
@@ -617,7 +627,7 @@ routers in the SILC network.
 </object>
 <p><br>
 
-As the above diagram shows the Client A encrypts the message with private
+As the diagram above shows the Client A encrypts the message with private
 message key and sends the message to the SILC Network.  All servers and
 routers merely pass the message through since they cannot decrypt it.
 The Client B then receives the message and decrypts it with the private
@@ -640,10 +650,11 @@ you cannot reach the other person over secure channel?  The SILC protocol
 solves this problem by providing a possiblity to negotiate the key
 between two clients using the SKE protocol.  One or both of the clients
 can set up the SKE server running in their host and ask the other client
-to connect to it.  As a result of the SKE protocol the clients have
-now shared secret that they can use as private message key.  The key
-is known only by the two clients that exexcuted the SKE protocol.  They
-can then use that key to secure all subsequent private messages.
+to connect to it.  In this case the SKE is executed outside the SILC
+Network.  As a result of the SKE protocol the clients have now shared
+secret that they can use as private message key.  The key is known only
+by the two clients that executed the SKE protocol.  They can then use
+that key to secure all subsequent private messages.
 <p>
 
 Using this method of private messages delivery is recommended if the
@@ -679,7 +690,7 @@ key which it uses to decrypt the message.
 </object>
 <p><br>
 
-As the above diagram shows the Client A has the Client B's public key.
+As the diagram above shows the Client A has the Client B's public key.
 It will encrypt the message with that key and sends the message to the
 SILC Network.  All servers and routers pass the message through since
 they cannot decrypt it.  The Client B then uses its private key to
@@ -779,7 +790,7 @@ it also means verifying the origin of a message.
 - Certificate
 <p>
 Certificate is a digital document which can be used to verify the 
-identity of a person or host.  In SILC certificates can be used to prove
+identity of a person or host.  In SILC, certificates can be used to prove
 identity of clients, servers and routers.  Basically certificate is a public
 key with subject name.  SILC supports X.509, OpenPGP and SPKI certificates.
 Supported public keys are SILC style public key and SSH2 style public
@@ -797,7 +808,7 @@ verification services.
 <p>
 First public key algorithm ever invented.  It is used to generate a secret
 key between two or more parties.  It gets its security from the difficulty
-of calculating discrete lograrithms.
+of calculating discrete logarithms.
 <p>
 
 - Encryption
