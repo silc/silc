@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/07 06:54:16  priikone
+ * 	Print channel name when receiving channel message to non-current
+ * 	channel.
+ *
  * Revision 1.5  2000/07/06 07:14:36  priikone
  * 	Fixes to NAMES command handling.
  * 	Fixes when leaving from channel.
@@ -838,14 +842,12 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
     /* Error occured during protocol */
     SILC_LOG_DEBUG(("Error during KE protocol"));
     silc_protocol_free(protocol);
-    if (ctx->packet)
-      silc_buffer_free(ctx->packet);
     if (ctx->ske)
       silc_ske_free(ctx->ske);
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
+    ctx->sock->protocol = NULL;
     silc_free(ctx);
-    sock->protocol = NULL;
     return;
   }
 
@@ -2319,13 +2321,21 @@ void silc_client_channel_message(SilcClient client,
     goto out;
 
   /* Display the message on screen */
-  if (packet->src_id_type == SILC_ID_CLIENT)
+  if (packet->src_id_type == SILC_ID_CLIENT) {
     /* Message from client */
-    silc_print(client, "<%s> %s", silc_channel_get_nickname(payload, NULL),
-	       silc_channel_get_data(payload, NULL));
-  else
+    if (channel == win->current_channel)
+      silc_print(client, "<%s> %s", 
+		 silc_channel_get_nickname(payload, NULL),
+		 silc_channel_get_data(payload, NULL));
+    else
+      silc_print(client, "<%s:%s> %s", 
+		 silc_channel_get_nickname(payload, NULL),
+		 channel->channel_name,
+		 silc_channel_get_data(payload, NULL));
+  } else {
     /* Message from server */
     silc_say(client, "%s", silc_channel_get_data(payload, NULL));
+  }
 
  out:
   if (id)
