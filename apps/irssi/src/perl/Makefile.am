@@ -143,21 +143,21 @@ all-local:
 	done
 
 install-exec-local:
-	for dir in $(perl_dirs); do \
+	for dir in "$(perl_dirs)"; do \
 	  cd $$dir && $(MAKE) install && cd ..; \
 	done
 
 clean-generic:
-	for dir in $(perl_dirs); do \
+	for dir in "$(perl_dirs)"; do \
 	  cd $$dir; \
 	  $(MAKE) clean; \
 	  cd ..; \
 	done
 
 distclean-generic:
-	for dir in $(perl_dirs); do \
-	  cd $$dir; \
-	  $(MAKE) realclean; rm -f Makefile.PL; \
+	for dir in "$(perl_dirs)"; do \
+	  cd $$dir && \
+	  $(MAKE) realclean && rm -f Makefile.PL && \
 	  cd ..; \
 	done
 
