@@ -54,7 +54,7 @@ struct SilcClientCommandReplyContextStruct {
 /* Command reply operation that is called at the end of all command replys. 
    Usage: COMMAND_REPLY((ARGS, argument1, argument2, etc...)), */
 #define COMMAND_REPLY(args) cmd->client->internal->ops->command_reply args
-#define ARGS cmd->client, cmd->sock->user_data,				\
+#define SILC_ARGS cmd->client, cmd->sock->user_data,	       		\
              cmd->payload, TRUE, silc_command_get(cmd->payload), cmd->status
 
 /* Error reply to application. Usage: COMMAND_REPLY_ERROR; */
