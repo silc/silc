@@ -40,6 +40,8 @@ TODO/bugs In SILC Client Library
 
  o JOIN command's argument handling is buggy.  See the XXX in the code.
 
+ o key agreement with itself causes the packet sequence numbers go grazy.
+
 
 TODO/bugs In SILC Server
 ========================
