@@ -83,53 +83,6 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context);
 void silc_server_packet_parse_type(SilcServer server, 
 				   SilcSocketConnection sock,
 				   SilcPacketContext *packet);
-void silc_server_packet_send(SilcServer server,
-			     SilcSocketConnection sock, 
-			     SilcPacketType type, 
-			     SilcPacketFlags flags,
-			     unsigned char *data, 
-			     unsigned int data_len,
-			     int force_send);
-void silc_server_packet_send_dest(SilcServer server,
-				  SilcSocketConnection sock, 
-				  SilcPacketType type, 
-				  SilcPacketFlags flags,
-				  void *dst_id,
-				  SilcIdType dst_id_type,
-				  unsigned char *data, 
-				  unsigned int data_len,
-				  int force_send);
-void silc_server_packet_forward(SilcServer server,
-				SilcSocketConnection sock,
-				unsigned char *data, unsigned int data_len,
-				int force_send);
-void silc_server_packet_broadcast(SilcServer server,
-				  SilcSocketConnection sock,
-				  SilcPacketContext *packet);
-void silc_server_packet_send_to_channel(SilcServer server,
-					SilcChannelEntry channel,
-					SilcPacketType type,
-					unsigned char *data,
-					unsigned int data_len,
-					int force_send);
-void silc_server_packet_relay_to_channel(SilcServer server,
-					 SilcSocketConnection sender_sock,
-					 SilcChannelEntry channel,
-					 void *sender, 
-					 SilcIdType sender_type,
-					 unsigned char *data,
-					 unsigned int data_len,
-					 int force_send);
-void silc_server_packet_send_local_channel(SilcServer server,
-					   SilcChannelEntry channel,
-					   SilcPacketType type,
-					   SilcPacketFlags flags,
-					   unsigned char *data,
-					   unsigned int data_len,
-					   int force_send);
-void silc_server_packet_relay_command_reply(SilcServer server,
-					    SilcSocketConnection sock,
-					    SilcPacketContext *packet);
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock);
 void silc_server_free_sock_user_data(SilcServer server, 
@@ -147,70 +100,9 @@ int silc_server_client_on_channel(SilcClientEntry client,
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
 				   const char *fmt, ...);
-void silc_server_private_message(SilcServer server,
-				 SilcSocketConnection sock,
-				 SilcPacketContext *packet);
-void silc_server_channel_message(SilcServer server,
-				 SilcSocketConnection sock,
-				 SilcPacketContext *packet);
-void silc_server_channel_key(SilcServer server,
-			     SilcSocketConnection sock,
-			     SilcPacketContext *packet);
-void silc_server_send_motd(SilcServer server,
-			   SilcSocketConnection sock);
-void silc_server_send_error(SilcServer server,
-			    SilcSocketConnection sock,
-			    const char *fmt, ...);
-void silc_server_send_notify(SilcServer server,
-			     SilcSocketConnection sock,
-			     SilcNotifyType type,
-			     unsigned int argc, ...);
-void silc_server_send_notify_dest(SilcServer server,
-				  SilcSocketConnection sock,
-				  void *dest_id,
-				  SilcIdType dest_id_type,
-				  SilcNotifyType type,
-				  unsigned int argc, ...);
-void silc_server_send_notify_to_channel(SilcServer server,
-					SilcChannelEntry channel,
-					SilcNotifyType type,
-					unsigned int argc, ...);
-void silc_server_send_notify_on_channels(SilcServer server,
-					 SilcClientEntry client,
-					 SilcNotifyType type,
-					 unsigned int argc, ...);
-void silc_server_send_new_id(SilcServer server,
-			     SilcSocketConnection sock,
-			     int broadcast,
-			     void *id, SilcIdType id_type, 
-			     unsigned int id_len);
-void silc_server_send_replace_id(SilcServer server,
-				 SilcSocketConnection sock,
-				 int broadcast,
-				 void *old_id, SilcIdType old_id_type,
-				 unsigned int old_id_len,
-				 void *new_id, SilcIdType new_id_type,
-				 unsigned int new_id_len);
-void silc_server_send_remove_channel_user(SilcServer server,
-					  SilcSocketConnection sock,
-					  int broadcast,
-					  void *client_id, void *channel_id);
-void silc_server_replace_id(SilcServer server,
-			    SilcSocketConnection sock,
-			    SilcPacketContext *packet);
-SilcChannelEntry silc_server_new_channel(SilcServer server, 
-					 SilcServerID *router_id,
-					 char *cipher, char *channel_name);
-SilcClientEntry silc_server_new_client(SilcServer server,
-				       SilcSocketConnection sock,
-				       SilcPacketContext *packet);
-SilcServerEntry silc_server_new_server(SilcServer server,
-				       SilcSocketConnection sock,
-				       SilcPacketContext *packet);
-void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
-			SilcPacketContext *packet);
-void silc_server_remove_channel_user(SilcServer server,
-				     SilcSocketConnection sock,
-				     SilcPacketContext *packet);
+SilcChannelEntry silc_server_create_new_channel(SilcServer server, 
+						SilcServerID *router_id,
+						char *cipher, 
+						char *channel_name);
 
 #endif
