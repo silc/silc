@@ -1257,6 +1257,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 		protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
 	      server->backup_noswitch = TRUE;
 	      server->server_type = SILC_BACKUP_ROUTER;
+	      if (ctx->sock == sock)
+		ctx->sock = NULL;
 
 	      if (sock->user_data)
 		silc_server_free_sock_user_data(server, sock, NULL);
@@ -1300,6 +1302,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 		protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
 	      server->backup_noswitch = TRUE;
 	      server->server_type = SILC_BACKUP_ROUTER;
+	      if (ctx->sock == sock)
+		ctx->sock = NULL;
 
 	      if (sock->user_data)
 		silc_server_free_sock_user_data(server, sock, NULL);
@@ -1332,7 +1336,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
       protocol->state != SILC_PROTOCOL_STATE_FAILURE)
     SILC_LOG_INFO(("Backup resuming protocol ended successfully"));
 
-  if (ctx->sock->protocol)
+  if (ctx->sock && ctx->sock->protocol)
     ctx->sock->protocol = NULL;
   silc_protocol_free(protocol);
   silc_free(ctx->sessions);
