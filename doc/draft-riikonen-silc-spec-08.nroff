@@ -2007,6 +2007,10 @@ done by compiling a list of Notify Payloads with SILC_NOTIFY_UMODE_CHANGE
 notify type into the SILC_PACKET_NOTIFY packet.  Also, channels' topics
 MUST be announced by compiling a list of Notify Payloads with the
 SILC_NOTIFY_TOPIC_SET notify type into the SILC_PACKET_NOTIFY packet.
+Also, channel's invite and ban lists MUST be announced by compiling list
+of Notify Payloads with the SILC_NOTIFY_TYPE_INVITE and
+SILC_NOTIFY_TYPE_BAN notify types, respectively, into the 
+SILC_PACKET_NOTIFY packet.
 
 The router which receives these lists MUST process them and broadcast
 the packets to its primary router.  When processing the announced channels

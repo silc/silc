@@ -1362,9 +1362,11 @@ sent inside arguments are actually Public Key Payloads.
 
       Sent when an client is invited to a channel.  This is also sent
       when the invite list of the channel is changed.  This notify type
-      is sent between routers and if an client was invited, to the
-      client as well.  In this case the packet is destined to the
-      client.
+      is sent to local servers on the channel, but MUST NOT be sent
+      to clients on the channel.  Router MUST broadcast this to its
+      primary router and to local servers on the channel.  When a client
+      was directly invited to the channel this is also sent to that 
+      client.  In this case the packet is destined to the client.
 
       Max Arguments:  5
           Arguments:  (1) <Channel ID>          (2) <channel name>
@@ -1648,8 +1650,10 @@ sent inside arguments are actually Public Key Payloads.
 
 15    SILC_NOTIFY_TYPE_BAN
 
-      Sent when the ban list of the channel is changed.  This type is
-      sent only between routers as broadcast packet.
+      Sent when the ban list of the channel is changed.  This notify
+      type is sent to local servers on the channel, but MUST NOT be
+      sent to clients on the channel.  Router MUST broadcast this to
+      its primary router and to local servers on the channel.
 
       Max Arguments:  3
           Arguments:  (1) <Channel ID>         (2) [<add | del>]
