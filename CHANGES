@@ -1,3 +1,8 @@
+Thu Dec 26 14:19:29 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added some sanity checks in server for correctness of the
+	  server configuration.  Affected file silcd/serverconfig.c.
+
 Fri Dec 20 10:47:59 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Prevent endless resolving of user informations in USERS

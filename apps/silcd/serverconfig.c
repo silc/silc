@@ -1303,6 +1303,82 @@ static void silc_server_config_set_defaults(SilcServerConfig config)
 			       SILC_SERVER_CONNAUTH_TIMEOUT);
 }
 
+/* Check for correctness of the configuration */
+
+static bool silc_server_config_check(SilcServerConfig config)
+{
+  bool ret = TRUE;
+  SilcServerConfigServer *s;
+  SilcServerConfigRouter *r;
+  bool b = FALSE;
+
+  /* ServerConfig is mandatory */
+  if (!config->server_info) {
+    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block `ServerInfo'"));
+    ret = FALSE;
+  }
+
+  /* RouterConnection sanity checks */
+
+  if (config->routers && config->routers->backup_router == TRUE &&
+      !config->servers) {
+    SILC_SERVER_LOG_ERROR((
+         "\nError: First RouterConnection block must be primary router "
+	 "connection. You have marked it incorrectly as backup router."));
+    ret = FALSE;
+  }
+  if (config->routers && config->routers->initiator == FALSE &&
+      config->routers->backup_router == FALSE) {
+    SILC_SERVER_LOG_ERROR((
+         "\nError: First RouterConnection block must be primary router "
+	 "connection and it must be marked as Initiator."));
+    ret = FALSE;
+  }
+  if (config->routers && config->routers->backup_router == TRUE &&
+      !config->servers && !config->routers->next) {
+    SILC_SERVER_LOG_ERROR((
+         "\nError: You have configured backup router but not primary router. "
+	 "If backup router is configured also primary router must be "
+	 "configured."));
+    ret = FALSE;
+  }
+
+  /* Backup router sanity checks */
+
+  for (r = config->routers; r; r = r->next) {
+    if (r->backup_router && !strcmp(r->host, r->backup_replace_ip)) {
+      SILC_SERVER_LOG_ERROR((
+          "\nError: Backup router connection incorrectly configured to use "
+	  "primary and backup router as same host `%s'. They must not be "
+	  "same host.", r->host));
+      ret = FALSE;
+    }
+  }
+  
+  /* ServerConnection sanity checks */
+  
+  for (s = config->servers; s; s = s->next) {
+    if (s->backup_router) {
+      b = TRUE;
+      break;
+    }
+  }
+  if (b) {
+    for (s = config->servers; s; s = s->next) {
+      if (!s->backup_router) {
+	SILC_SERVER_LOG_ERROR((
+          "\nError: Your server is backup router but not all ServerConnection "
+	  "blocks were marked as backup connections. They all must be "
+	  "marked as backup connections."));
+	ret = FALSE;
+	break;
+      }
+    }
+  }
+
+  return ret;
+}
+
 /* Allocates a new configuration object, opens configuration file and
    parses it. The parsed data is returned to the newly allocated
    configuration object. The SilcServerConfig must be freed by calling
@@ -1366,10 +1442,8 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* close (destroy) the file object */
   silc_config_close(file);
 
-  /* If config_new is incomplete, abort the object and return NULL */
-  if (!config_new->server_info) {
-    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block "
-			   "`server_info'"));
+  /* Check the configuration */
+  if (!silc_server_config_check(config_new)) {
     silc_server_config_destroy(config_new);
     return NULL;
   }
