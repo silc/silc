@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 25 November 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-flags-payloads-01.txt                         XXX
-Expires: 20 April 2003
+draft-riikonen-flags-payloads-01.txt                    25 November 2002
+Expires: 25 April 2003
 
 .in 3
 
@@ -53,12 +53,12 @@ Abstract
 
 This memo describes the data payloads associated with the SILC Message
 Flags, as defined in the SILC Packet Protocol Internet Draft [SILC2].  The 
-purpose of the Message Flags is to augment the function of the Private 
-Message Payload and Channel Message Payload by allowing the sender to 
-tell the receiver what type of data the payload includes, and how the 
-data should be processed.  Some of the Message Flags may define additional 
-payloads to be associated with the flag, and this memo describes these 
-payloads.
+purpose of the Message Flags is to augment the function of the Message
+Payload used to send both private and channel messages, by allowing the
+sender to tell the receiver what type of data the payload includes, and
+how the data should be processed.  Some of the Message Flags may define
+additional payloads to be associated with the flag, and this memo
+describes these payloads.
 
 
 
@@ -78,10 +78,10 @@ Table of Contents
   3.1 SILC_MESSAGE_FLAG_REQUEST .................................  3
   3.2 SILC_MESSAGE_FLAG_REPLY ...................................  3
   3.3 SILC_MESSAGE_FLAG_SIGNED ..................................  4
-  3.4 SILC_MESSAGE_FLAG_DATA ....................................  4
-4 Security Considerations .......................................  5
-5 References ....................................................  5
-6 Author's Address ..............................................  6
+  3.4 SILC_MESSAGE_FLAG_DATA ....................................  6
+4 Security Considerations .......................................  7
+5 References ....................................................  7
+6 Author's Address ..............................................  8
 
 
 .ti 0
@@ -90,14 +90,14 @@ Table of Contents
 The Secure Internet Live Conferencing [SILC1] supports sending binary
 messages between users in the network.  To make the data sending, and
 processing at the receiver's end as simple as possible the SILC defines
-Message Flags to the Private Message Payload and Channel Message Payload
-[SILC2], which can help the receiver to decide how the data is encoded,
-and how it should be interpreted.  Some of the Message Flags may define 
-additional payloads to be associated with the flag, but the [SILC2] does 
-not define them.  This memo defines the payloads for those Message Flags 
-that was marked to include additional payloads in [SILC2].
+Message Flags to the Message Payload [SILC2] that is used to send private
+and channel messages, which can help the receiver to decide how the data
+is encoded, and how it should be interpreted.  Some of the Message Flags
+may define additional payloads to be associated with the flag, but the
+[SILC2] does not define them.  This memo defines the payloads for those
+Message Flags that was marked to include additional payloads in [SILC2].
 
-By defining the payloads for the Message Flags the SILC message payloads 
+By defining the payloads for the Message Flags the Message Payload
 can be augmented to support any kind of data, which can be easily 
 interpreted at the receiver end.  For example, it would be possible to 
 send audio stream, video stream, image files and HTML pages as messages, 
@@ -128,12 +128,12 @@ such problems since they do not generally support sending of binary data
 at all, or require encoding of the data before it can be sent over the
 network.
 
-SILC Private Message Payload and Channel Message Payload can have flags
-that can augment the function of the payload.  The flags can tell for
-example that the message is a request, or a reply to an earlier received
-request.  They can tell that the message is some action that the sender 
-is performing, or they can tell that the message is an auto reply, or 
-that it is explicitly digitally signed by the sender.
+The Message Payload in SILC can have flags that can augment the function
+of the payload.  The flags can tell for example that the message is a
+request, or a reply to an earlier received request.  They can tell that
+the message is some action that the sender is performing, or they can tell
+that the message is an auto reply, or that it is explicitly digitally
+signed by the sender.
 
 The problem of Message Flags is that the space for flags mask is only 16
 bits, so there is a limited number of flags available.  For this reason a
@@ -179,7 +179,7 @@ additional payload.
 3.3 SILC_MESSAGE_FLAG_SIGNED
 
 This flag is used to tell the recipient that the sent message is
-digitally signed by the sender, and that the receipient should verify
+digitally signed by the sender, and that the recipient should verify
 the signature to verify the true authenticity of the received message.
 All message payloads in SILC provides message authentication code (MAC)
 which can be used to verify that the sender produced and sent the message.
@@ -216,26 +216,23 @@ Figure 1:  SILC_MESSAGE_FLAG_SIGNED Payload
 
 
 .in 6
-o Message Payload (variable length) - This is a message payload
-  consisting of the encrypted message.  When this flag is used
-  with channel messages it include Channel Message Payload, and
-  when used with private messages it include Private Message
-  Payload [SILC2].
+o Message Payload (variable length) - This is the Message Payload
+  [SILC2] consisting of the encrypted message.
 
 o Public Key Payload (variable length) - This includes the
-  Public Key Payload which can be used to deliver the sender's
-  public key (or certificate).  It also indicates the type of the
-  public key (or certificate) which the recipient use to identify
-  how the signature must be verified.  This payload must always
-  be present but it is not required to include the public key
-  data.  The Public Key Type field in the Public Key Payload
-  MUST be set to the correct type of the key, even if the
-  actual public key data is not included.
+  Public Key Payload [SILC2] which can be used to deliver the
+  sender's public key (or certificate).  It also indicates the
+  type of the public key (or certificate) which the recipient
+  use to identify how the signature must be verified.  This
+  payload must always be present but it is not required to
+  include the public key data.  The Public Key Type field in
+  the Public Key Payload MUST be set to the correct type of
+  the key, even if the actual public key data is not included.
 
 o Signature Data Length (2 bytes) - Indicates the length of
   the Signature Data field not including any other field.
 
-o Signature Data (variable lenght) - Includes the actual
+o Signature Data (variable length) - Includes the actual
   signature data.  The signature computation and encoding
   is key type specific.  See [SILC3] for all key types, and
   their respective references of how to compute and encode
@@ -244,17 +241,13 @@ o Signature Data (variable lenght) - Includes the actual
 
 How the data is processed before it is signed is key type specific.
 The actual data that to be signed MUST be the plaintext message
-payload before encryption.  For Channel Message Payload the data to
-be signed is concatenation of Message Flags, Message Length, Message
-Data, Padding Length, Padding, Initial Vector fields and the Public
-Key Payload.  Any other field is not included for signature data.
-For Private Message Payload the data to be signed is concatenation
-of Message Flags, Message Data Length, Message Data, Padding fields and
-the Public Key Payload fields.  Any other field is not included for
-signature data.  Before signing, the data is always processed, usually
-hashed.  The hash function to be used is defined in the key type
-specific definitions.  See the key type specific references in
-[SILC3].
+payload before encryption.  The data to be signed is concatenation
+of Message Flags, Message Length, Message Data, Padding Length,
+Padding and Initial Vector fields, and the Public Key Payload, in
+that order.  Any other fields is not included for signature data.
+Before signing, the data is always processed, usually hashed.  The
+hash function to be used is defined in the key type specific
+definitions.  See the key type specific references in [SILC3].
 
 If the public key of the sender is included in the payload the
 recipient SHOULD verify before accepting the public key.  Recipient
@@ -280,6 +273,7 @@ the data area of the message payload this flag may be masked with the
 other flags.
 
 
+
 .ti 0
 3.4 SILC_MESSAGE_FLAG_DATA
 
@@ -300,15 +294,15 @@ media type received in the MIME header, it SHOULD be treated as
 "application/octet-stream".  The receiver MAY also ignore and discard 
 messages that it does not support.
 
-The MIME header MUST be at the start of the data area of the Private 
-Message Payload or Channel Message Payload.  The MIME header received in 
-the data area of the payload SHOULD have the MIME-Version field at first 
-and then Content-Type field.  The MIME-Version field is not required to be 
-present in each body part of multipart entity.  Additionally the header
-MAY also include any other MIME compliant headers.  The character encoding 
-for the MIME Header strings inside the message payload is US-ASCII, as 
-defined in [RFC2045].  The actual MIME object may define additional 
-character sets or encodings for the data it delivers.
+The MIME header MUST be at the start of the data area of the Message
+Payload.  The MIME header received in the data area of the payload SHOULD
+have the MIME-Version field at first and then Content-Type field.  The
+MIME-Version field is not required to be present in each body part of
+multipart entity.  Additionally the header MAY also include any other
+MIME compliant headers.  The character encoding for the MIME Header
+strings inside the message payload is US-ASCII, as defined in [RFC2045].
+The actual MIME object may define additional character sets or encodings
+for the data it delivers.
 
 Hence, the MIME Header in the message payload may be as follows:
 
@@ -405,4 +399,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 20 April 2003
+This Internet-Draft expires 25 April 2003

@@ -41,7 +41,6 @@ void silc_client_send_channel_message(SilcClient client,
 				      SilcUInt32 data_len, 
 				      bool force_send)
 {
-  int i;
   SilcSocketConnection sock;
   SilcBuffer payload;
   SilcPacketContext packetdata;
@@ -49,7 +48,6 @@ void silc_client_send_channel_message(SilcClient client,
   SilcCipher cipher;
   SilcHmac hmac;
   unsigned char *id_string;
-  SilcUInt32 iv_len;
   int block_len;
   SilcChannelUser chu;
 
@@ -109,18 +107,9 @@ void silc_client_send_channel_message(SilcClient client,
 
   block_len = silc_cipher_get_block_len(cipher);
 
-  /* Generate IV */
-  iv_len = silc_cipher_get_block_len(cipher);
-  if (channel->iv[0] == '\0')
-    for (i = 0; i < iv_len; i++) channel->iv[i] = 
-				   silc_rng_get_byte(client->rng);
-  else
-    silc_hash_make(client->md5hash, channel->iv, iv_len, channel->iv);
-
-  /* Encode the channel payload. This also encrypts the message payload. */
-  payload = silc_channel_message_payload_encode(flags, data_len, data, iv_len, 
-						channel->iv, cipher, hmac,
-						client->rng);
+  /* Encode the message payload. This also encrypts the message payload. */
+  payload = silc_message_payload_encode(flags, data, data_len, TRUE, FALSE,
+					cipher, hmac, client->rng);
 
   /* Get data used in packet header encryption, keys and stuff. */
   cipher = conn->internal->send_key;
@@ -181,7 +170,7 @@ void silc_client_send_channel_message(SilcClient client,
 }
 
 typedef struct {
-  SilcChannelMessagePayload payload;
+  SilcMessagePayload payload;
   SilcChannelID *channel_id;
 } *SilcChannelClientResolve;
 
@@ -212,24 +201,24 @@ static void silc_client_channel_message_cb(SilcClient client,
       silc_hash_table_add(clients[0]->channels, channel, chu);
     }
 
-    message = silc_channel_message_get_data(res->payload, &message_len);
+    message = silc_message_get_data(res->payload, &message_len);
     
     /* Pass the message to application */
     client->internal->ops->channel_message(
 			       client, conn, clients[0], channel,
-			       silc_channel_message_get_flags(res->payload),
+			       silc_message_get_flags(res->payload),
 			       message, message_len);
   }
 
  out:
-  silc_channel_message_payload_free(res->payload);
+  silc_message_payload_free(res->payload);
   silc_free(res->channel_id);
   silc_free(res);
 }
 
 /* Process received message to a channel (or from a channel, really). This
    decrypts the channel message with channel specific key and parses the
-   channel payload. Finally it displays the message on the screen. */
+   message payload. Finally it displays the message on the screen. */
 
 void silc_client_channel_message(SilcClient client, 
 				 SilcSocketConnection sock, 
@@ -237,7 +226,7 @@ void silc_client_channel_message(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   SilcBuffer buffer = packet->buffer;
-  SilcChannelMessagePayload payload = NULL;
+  SilcMessagePayload payload = NULL;
   SilcChannelID *id = NULL;
   SilcChannelEntry channel;
   SilcClientEntry client_entry;
@@ -269,9 +258,9 @@ void silc_client_channel_message(SilcClient client,
      all private keys and check what decrypts correctly. */
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Parse the channel message payload. This also decrypts the payload */
-    payload = silc_channel_message_payload_parse(buffer->data, buffer->len, 
-						 channel->channel_key,
-						 channel->hmac);
+    payload = silc_message_payload_parse(buffer->data, buffer->len, FALSE,
+					 FALSE, channel->channel_key,
+					 channel->hmac);
 
     /* If decryption failed and we have just performed channel key rekey
        we will use the old key in decryption. If that fails too then we
@@ -281,9 +270,10 @@ void silc_client_channel_message(SilcClient client,
 	goto out;
       }
 
-      payload = silc_channel_message_payload_parse(buffer->data, buffer->len, 
-						   channel->old_channel_key,
-						   channel->old_hmac);
+      payload = silc_message_payload_parse(buffer->data, buffer->len,
+					   FALSE, FALSE,
+					   channel->old_channel_key,
+					   channel->old_hmac);
       if (!payload) {
 	goto out;
       }
@@ -293,10 +283,10 @@ void silc_client_channel_message(SilcClient client,
 
     silc_dlist_start(channel->private_keys);
     while ((entry = silc_dlist_get(channel->private_keys)) != SILC_LIST_END) {
-      /* Parse the channel message payload. This also decrypts the payload */
-      payload = silc_channel_message_payload_parse(buffer->data, buffer->len, 
-						   entry->cipher,
-						   entry->hmac);
+      /* Parse the message payload. This also decrypts the payload */
+      payload = silc_message_payload_parse(buffer->data, buffer->len, 
+					   FALSE, FALSE,
+					   entry->cipher, entry->hmac);
       if (payload)
 	break;
     }
@@ -322,19 +312,19 @@ void silc_client_channel_message(SilcClient client,
     goto out;
   }
 
-  message = silc_channel_message_get_data(payload, &message_len);
+  message = silc_message_get_data(payload, &message_len);
 
   /* Pass the message to application */
   client->internal->ops->channel_message(
 				 client, conn, client_entry, channel,
-				 silc_channel_message_get_flags(payload),
+				 silc_message_get_flags(payload),
 				 message, message_len);
 
  out:
   silc_free(id);
   silc_free(client_id);
   if (payload)
-    silc_channel_message_payload_free(payload);
+    silc_message_payload_free(payload);
 }
 
 /* Timeout callback that is called after a short period of time after the

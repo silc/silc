@@ -595,41 +595,60 @@ List of all defined commands in SILC follows.
 
         Max Arguments:  4
             Arguments:  (1) <Channel ID>       (2) [<Client ID>]
-                        (3) [<adding client>]  (4) [<removing client>]
+                        (3) [<add | del>]      (4) [<invite list>]
 
-        This command is used to invite other clients to join to the
-        channel.  The <Client ID> argument is the target client's ID that
-        is being invited.  The <Channel ID> is the Channel ID of the
-        requested channel.  The sender of this command MUST be on the
-        channel.  The server MUST also send the notify type
-        SILC_NOTIFY_TYPE_INVITE to its primary router and then to the
-        client indicated by the <Client ID>.
+        This command can be used to invite other clients to join to a
+        channel, and to manage the channel's invite list.  The <Client
+        ID> argument is the target client's ID that is being invited.
+        The <Channel ID> is the Channel ID of the requested channel.
+        The sender of this command MUST be on the channel.  The server
+        MUST also send the notify type SILC_NOTIFY_TYPE_INVITE to its
+        primary router and then to the client indicated by the <Client
+        ID>.
 
-        The <adding client> and <removing client> can be used to add to
-        and remove from the invite list.  The format of the <adding client>
-        and <removing client> is as follows:
+        The <add | del> is an argument of size of 1 byte where 0x00 means
+        adding a client to invite list, and 0x01 means deleting a client
+        from invite list.  The <invite list>, if present, indicates
+        the information to be added to or removed from the invite list.
+        It may include a string for matching clients, public key of a
+        client or Client ID of a client.  The <invite list> format is
+        as follows:
 
-            [<nickname>[@<server>]!][<username>]@[<hostname>]
+          2 bytes         - Number of arguments in the list
+          variable length - Argument Payloads
+
+        The following Argument Types has been defined for invite list
+        Argument Payloads:
+
+          0x01 - Argument is an invite string of following format:
+
+            [<nickname>[@<server>]!][<username>]@[<hostname or IP/MASK>]
+
+            The <hostname> may also be in format of IP/MASK to indicate
+            a network.
+
+          0x02 - Argument is the public key of a client
+          0x03 - Argument is the Client ID of a client
+
+        If unknown type value is received or there is invalid amount of
+        Argument Payloads present in the list, the command MUST be
+        discarded.  When argument that is to be deleted from the invite
+        list does not exist in the list the argument is ignored.
 
         When adding to or removing from the invite list the server MUST
-        send the notify type SILC_NOTIFY_TYPE_INVITE to its primary router
-        and MUST NOT send it to the client which was added to the list.
+        send the notify type SILC_NOTIFY_TYPE_INVITE to its primary router.
         The client which executes this command MUST have at least channel
         operator privileges to be able to add to or remove from the invite
-        list.  The wildcards MAY be used with this command.  If adding or
-        removing more than one client then the lists are an comma (`,')
-        separated.
+        list.  The wildcards MAY be used with this command.  When this
+        command is used to invite explicit client with <Client ID> the
+        ID MUST be added to the invite list by the server.
 
-        Note that the <Client ID> provided MUST be resolved into correct
-        nickname and host name and add to the invite list before sending
-        the notify packet.
-        
         When this command is given with only <Channel ID> argument then
         the command merely returns the invite list of the channel.   This
         command MUST fail if the requested channel does not exist, the
         requested <Client ID> is already on the channel or if the channel
         is invite only channel and the caller of this command does not
-        have at least channel operator privileges.
+        have at least channel operator privileges on the channel.
 
         Reply messages to the command:
 
@@ -674,7 +693,7 @@ List of all defined commands in SILC follows.
     9   SILC_COMMAND_KILL
 
         Max Arguments:  3
-            Arguments:  (1) <Client ID>         (2) [<comment>]
+            Arguments:  (1) <Client ID>          (2) [<comment>]
                         (3) [<auth payload>]
 
         This command can be used by SILC operators to remove a client from
@@ -695,7 +714,9 @@ List of all defined commands in SILC follows.
         The packet MUST NOT be sent to the killed client on the channels.
         Then, the router MUST send the same notify type to its primary
         router.  Finally, the router MUST send the same notify type 
-        directly to the client which was killed.
+        directly to the client which was killed.  The killed client MUST
+        also be removed from the invite lists of joined channels if it
+        is explicitly added in the invite lists.
 
         Normal client killing by authentication:
 
@@ -935,8 +956,8 @@ List of all defined commands in SILC follows.
             o  The user MUST be invited to the channel if the channel
                is invite-only channel.
 
-            o  The Client ID/nickname/username/host name MUST NOT match
-               any active bans.
+            o  The Client ID/nickname/username/host name/public key
+               MUST NOT match any active bans.
 
             o  The correct passphrase MUST be provided if passphrase 
                is set to the channel.
@@ -1204,11 +1225,11 @@ List of all defined commands in SILC follows.
 
    17   SILC_COMMAND_CMODE
 
-        Max Arguments:  7
+        Max Arguments:  8
             Arguments:  (1) <Channel ID>      (2) [<channel mode mask>]
                         (3) [<user limit>]    (4) [<passphrase>]
                         (5) [<cipher>]        (6) [<hmac>]
-                        (7) [<auth payload>]
+                        (7) [<auth payload>]  (8) [<founder pubkey>]
 
         This command is used by client to set or change channel flags on
         a channel.  Channel has several modes that set various properties
@@ -1365,15 +1386,17 @@ List of all defined commands in SILC follows.
               channel founder rights even if the client leaves the 
               channel.  The <auth payload> is the Authentication Payload
               consisting of the public key authentication method and the
-              authentication data for that method.  The passphrase
-              method cannot be used with this mode.  The server MUST NOT
-              accept NONE authentication method.  The server does not
-              save <auth payload> but MUST verify it.  The public key
-              used to verify the payload is the public key of the
-              client sending this command.  The mode may be set only
-              if the <auth payload> was verified successfully.  The
-              server also MUST save the founder's public key.  The
-              hash function used with the <auth payload> MUST be sha1.
+              digital signature for that method.  The passphrase or NONE
+              authentication methods MUST NOT be accepted.
+
+              The server does not save <auth payload> but MUST verify it.
+              The public key used to verify the payload is the <founder
+              pubkey> if present, or the public key of the client sending
+              this command.  If <founder pubkey> is present also that
+              public key MUST be saved as founder's public key.  This
+              mode may be set only if the <auth payload> was verified
+              successfully.  The hash function used with the <auth
+              payload> MUST be sha1.
 
               The public key of the founder is sent in the
               SILC_NOTIFY_TYPE_CMODE_CHANGE notify type so that other
@@ -1383,6 +1406,13 @@ List of all defined commands in SILC follows.
               rights can be regained by the SILC_CUMODE_FOUNDER channel
               user mode, or during joining procedure with the command
               SILC_COMMAND_JOIN.
+
+              If this mode is already set but the <founder pubkey> is
+              different the new key will replace the old founder key and
+              the new key is distribute in the network with the
+              SILC_NOTIFY_TYPE_CMODE_CHANGE notify.  Only the original
+              founder may set this mode multiple times and the client
+              MUST have SILC_CUMODE_FOUNDER mode on the channel.
 
               When this channel mode is set the channel also becomes
               permanent.  If all clients leave the channel while this
@@ -1428,12 +1458,13 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  3
-            Arguments:  (1) <Status Payload>  (2) <Channel ID>
-                        (3) <channel mode mask>
+        Max Arguments:  4
+            Arguments:  (1) <Status Payload>    (2) <Channel ID>
+                        (3) <channel mode mask> (4) [<founder pubkey>]
 
         This command replies with the changed channel mode mask that
-        client MUST keep locally.
+        client MUST keep locally.  It may also return the channel
+        founder's public key if it is set.
 
         Status messages:
 
@@ -1582,7 +1613,7 @@ List of all defined commands in SILC follows.
    19   SILC_COMMAND_KICK
 
         Max Arguments:  3
-            Arguments:  (1) <Channel ID>  (2) <Client ID>  
+            Arguments:  (1) <Channel ID>      (2) <Client ID>  
                         (3) [<comment>]
 
         This command is used by channel operators to remove a client from
@@ -1593,8 +1624,10 @@ List of all defined commands in SILC follows.
 
         After kicking the client the server MUST send the notify type
         SILC_NOTIFY_TYPE_KICKED to the channel and to its primary router.
-        The channel key MUST also be re-generated after kicking, unless
-        the SILC_CMODE_PRIVKEY mode is set.
+        The kicked client MUST be removed from the invite list of the
+        channel if it is explicitly added in the list.  The channel key
+        MUST also be re-generated after kicking, unless the
+        SILC_CMODE_PRIVKEY mode is set.
 
         Reply messages to the command:
 
@@ -1620,8 +1653,8 @@ List of all defined commands in SILC follows.
    20   SILC_COMMAND_BAN
 
         Max Arguments:  3
-            Arguments:  (1) <Channel ID>         (2) [<adding client>]
-                        (3) [<removing client>]
+            Arguments:  (1) <Channel ID>         (2) [<add | del>]
+                        (3) [<ban list>]
 
         This command is used to manage the ban list of the channel
         indicated by the <Channel ID>.  A client that is banned from
@@ -1629,20 +1662,40 @@ List of all defined commands in SILC follows.
         is executing this command MUST have at least channel operator
         privileges on the channel.
 
-        The <adding client> and <removing client> are used to add to and
-        remove from the ban list.  The format of the <adding client> and
-        the <removing client> is of following format:
+        The <add | del> is an argument of size of 1 byte where 0x00 means
+        adding a client to ban list, and 0x01 means deleting a client
+        from ban list.  The <ban list>, if present, indicates the
+        information to be added to or removed from the ban list.  It
+        may include a string for matching clients, public key of a
+        client or Client ID of a client.  The <ban list> format is
+        as follows:
 
-            [<nickname>[@<server>]!][<username>]@[<hostname>]
+          2 bytes         - Number of arguments in the list
+          variable length - Argument Payloads
+
+        The following Argument Types has been defined for ban list
+        Argument Payloads:
+
+          0x01 - Argument is an ban string of following format:
+
+            [<nickname>[@<server>]!][<username>]@[<hostname or IP/MASK>]
+
+            The <hostname> may also be in format of IP/MASK to indicate
+            a network.
+
+          0x02 - Argument is the public key of a client
+          0x03 - Argument is the Client ID of a client
+
+        If unknown type value is received or there is invalid amount of
+        Argument Payloads present in the list, the command MUST be
+        discarded.  When argument that is to be deleted from the ban
+        list does not exist in the list the argument is ignored.
 
         The server MUST send the notify type SILC_NOTIFY_TYPE_BAN to its
         primary router after adding to or removing from the ban list.
-        The wildcards MAY be used with this command.  If adding or removing
-        from than one clients then the lists are an comma (`,') separated.
-
-        If this command is executed without the ban arguments the command
-        merely replies with the current ban list.
-
+        The wildcards MAY be used with this command.  If this command
+        is executed without the ban arguments the command merely replies
+        with the current ban list.
 
         Reply messages to the command:
 

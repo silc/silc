@@ -2,6 +2,7 @@
 @LIBRARY=SILC Core Library
 @FILENAME=silccorelib.html
 @LINK=silcauth.html:SILC Authentication Interface
+@LINK=silcmessage.html:SILC Message Interface
 @LINK=silcchannel.html:SILC Channel Interface
 @LINK=silccommand.html:SILC Command Interface
 @LINK=silcnotify.html:SILC Notify Interface
@@ -10,7 +11,6 @@
 @LINK=silcid.html:SILC ID Interface
 @LINK=silcidcache.html:SILC ID Cache Interface
 @LINK=silcargument.html:SILC Argument Interface
-@LINK=silcprivate.html:SILC Private Message Interface
 @LINK=silcattrs.html:SILC Attributes Interface
 @LINK=silcpacket.html:Packet Protocol Interface
 -->

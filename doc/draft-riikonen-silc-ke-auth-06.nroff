@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet-Draft
-.ds RH 15 May 2002
+.ds RH 25 November 2002
 .ds CH
 .na
 .hy 0
@@ -16,14 +16,14 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-ke-auth-05.txt                           15 May 2002
-Expires: 15 November 2002
+draft-riikonen-silc-ke-auth-06.txt                      25 November 2002
+Expires: 25 April 2003
 
 .in 3
 
 .ce 2
 SILC Key Exchange and Authentication Protocols
-<draft-riikonen-silc-ke-auth-05.txt>
+<draft-riikonen-silc-ke-auth-06.txt>
 
 .ti 0
 Status of this Memo
@@ -53,19 +53,20 @@ Abstract
 
 This memo describes two protocols used in the Secure Internet Live
 Conferencing (SILC) protocol, specified in the Secure Internet Live
-Conferencing, Protocol Specification internet-draft [SILC1].  The
-SILC Key Exchange (SKE) protocol provides secure key exchange between
-two parties resulting into shared secret key material.  The protocol
-is based on Diffie-Hellman key exchange algorithm and its functionality
-is derived from several key exchange protocols.  SKE uses best parts
+Conferencing, Protocol Specification [SILC1].  The SILC Key Exchange
+(SKE) protocol provides secure key exchange between two parties
+resulting into shared secret key material.  The protocol is based
+on Diffie-Hellman key exchange algorithm and its functionality is
+derived from several key exchange protocols.  SKE use best parts
 of the SSH2 Key Exchange protocol, Station-To-Station (STS) protocol
 and the OAKLEY Key Determination protocol [OAKLEY].
 
-The SILC Connection Authentication protocol provides user level
-authentication used when creating connections in SILC network.  The
-protocol is transparent to the authentication data which means that it
-can be used to authenticate the user with, for example, passphrase
-(pre-shared-secret) or public key (and certificate).
+The second protocol, SILC Connection Authentication protocol provides
+user level authentication used when creating connections in SILC
+network.  The protocol is transparent to the authentication data
+which means that it can be used to authenticate the user with, for
+example, passphrase (pre-shared secret) or public key (and certificate)
+based on digital signatures.
 
 
 
@@ -79,21 +80,22 @@ Table of Contents
   2.1 Key Exchange Payloads .....................................  4
       2.1.1 Key Exchange Start Payload ..........................  4
       2.1.2 Key Exchange Payload ................................  8
-  2.2 Key Exchange Procedure .................................... 10
+  2.2 Key Exchange Procedure .................................... 11
   2.3 Processing the Key Material ............................... 12
   2.4 SILC Key Exchange Groups .................................. 14
       2.4.1 diffie-hellman-group1 ............................... 14
-      2.4.2 diffie-hellman-group2 ............................... 14
-  2.5 Key Exchange Status Types ................................. 15
-3 SILC Connection Authentication Protocol ....................... 16
+      2.4.2 diffie-hellman-group2 ............................... 15
+      2.4.3 diffie-hellman-group3 ............................... 15
+  2.5 Key Exchange Status Types ................................. 16
+3 SILC Connection Authentication Protocol ....................... 17
   3.1 Connection Auth Payload ................................... 18
   3.2 Connection Authentication Types ........................... 19
       3.2.1 Passphrase Authentication ........................... 19
       3.2.2 Public Key Authentication ........................... 20
-  3.3 Connection Authentication Status Types .................... 20
+  3.3 Connection Authentication Status Types .................... 21
 4 Security Considerations ....................................... 21
 5 References .................................................... 21
-6 Author's Address .............................................. 22
+6 Author's Address .............................................. 23
 
 
 .ti 0
@@ -110,32 +112,32 @@ Figure 3:  Connection Auth Payload
 
 This memo describes two protocols used in the Secure Internet Live
 Conferencing (SILC) protocol specified in the Secure Internet Live
-Conferencing, Protocol Specification Internet-Draft [SILC1].  The
-SILC Key Exchange (SKE) protocol provides secure key exchange between
-two parties resulting into shared secret key material.  The protocol
-is based on Diffie-Hellman key exchange algorithm and its functionality
-is derived from several key exchange protocols.  SKE uses best parts
-of the SSH2 Key Exchange protocol, Station-To-Station (STS) protocol
-and the OAKLEY Key Determination protocol.
+Conferencing, Protocol Specification [SILC1].  The SILC Key Exchange
+(SKE) protocol provides secure key exchange between two parties
+resulting into shared secret key material.  The protocol is based on
+Diffie-Hellman key exchange algorithm and its functionality is derived
+from several key exchange protocols.  SKE use best parts of the SSH2
+Key Exchange protocol, Station-To-Station (STS) protocol and the
+OAKLEY Key Determination protocol [OAKLEY].
 
-The SILC Connection Authentication protocol provides user level
-authentication used when creating connections in SILC network.  The
-protocol is transparent to the authentication data which means that it
-can be used to authenticate the user with, for example, passphrase
-(pre-shared- secret) or public key (and certificate).
+The second protocol, SILC Connection Authentication protocol provides
+user level authentication used when creating connections in SILC
+network.  The protocol is transparent to the authentication data which
+means that it can be used to authenticate the user with, for example,
+passphrase (pre-shared secret) or public key (and certificate) based
+on digital signatures.
 
 The basis of secure SILC session requires strong and secure key exchange
-protocol and authentication.  The authentication protocol is entirely
-secured and no authentication data is ever sent in the network without
-encrypting and authenticating it first.  Thus, authentication protocol
-may be used only after the key exchange protocol has been successfully
-completed.
+protocol and authentication.  The authentication protocol is secured and
+no authentication data is ever sent in the network without encrypting
+and authenticating it first.  Thus, authentication protocol may be used
+only after the key exchange protocol has been successfully completed.
 
-This document refers constantly to other SILC protocol specification
-Internet Drafts that are a must read for those who wants to understand
-the function of these protocols.  The most important references are
+This document constantly refers to other SILC protocol specifications
+that should be read to be able to fully understand the functionality
+and purpose of these protocols.  The most important references are
 the Secure Internet Live Conferencing, Protocol Specification [SILC1]
-and the SILC Packet Protocol [SILC2] Internet Drafts.
+and the SILC Packet Protocol [SILC2].
 
 The protocol is intended to be used with the SILC protocol thus it
 does not define own framework that could be used.  The framework is
@@ -155,25 +157,22 @@ interpreted as described in [RFC2119].
 
 SILC Key Exchange Protocol (SKE) is used to exchange shared secret
 between connecting entities.  The result of this protocol is a key
-material used to secure the communication channel.  The protocol uses
+material used to secure the communication channel.  The protocol use
 Diffie-Hellman key exchange algorithm and its functionality is derived
-from several key exchange protocols.  SKE uses best parts of the SSH2
+from several key exchange protocols.  SKE use best parts of the SSH2
 Key Exchange protocol, Station-To-Station (STS) protocol and the OAKLEY
 Key Determination protocol.  The protocol does not claim any conformance
-to any of these protocols, they were merely used as a reference when
+to any of these protocols, they were only used as a reference when
 designing this protocol.
 
 The purpose of SILC Key Exchange protocol is to create session keys to
 be used in current SILC session.  The keys are valid only for some period
 of time (usually an hour) or at most until the session ends.  These keys
-are used to protect packets like commands, command replies and other
-communication between two entities.  If connection is server to router
-connection, the keys are used to protect all traffic between those
-servers.  In client connections usually all the packets are protected
-with this key except channel messages; channels has their own keys and 
-they are not exchanged with this protocol.
+are used to protect packets traveling between the two entities.
+Usually all traffic is secured with the key material derived from this
+protocol.
 
-The Diffie-Hellman implementation used in the SILC SHOULD be compliant
+The Diffie-Hellman implementation used in the SILC  SHOULD be compliant
 to the PKCS #3.
 
 
@@ -184,9 +183,9 @@ During the key exchange procedure public data is sent between initiator
 and responder.  This data is later used in the key exchange procedure.
 There are several payloads used in the key exchange.  As for all SILC
 packets, SILC Packet Header, described in [SILC2], is at the start of
-all packets. The same is done with these payloads as well.  All the
-fields in the payloads are always in MSB (most significant byte first)
-order.  Following descriptions of these payloads.
+all packets sent in during this protocol.  All the fields in the
+following payloads are in MSB (most significant byte first) order.
+Following descriptions of these payloads.
 
 
 .ti 0
@@ -201,8 +200,8 @@ whether it supports the security properties.
 It then sends a Key Exchange Start Payload to the initiator filled with
 security properties it selected from the original payload.  The payload
 sent by responder MUST include only one chosen property per list.  The
-character encoding for the security property values as defined in [SILC1] 
-SHOULD be UTF-8 [RFC2279].
+character encoding for the security property values as defined in [SILC1]
+SHOULD be UTF-8 [RFC2279] in Key Exchange Start Payload.
 
 The Key Exchange Start Payload is used to tell connecting entities what
 security properties and algorithms should be used in the communication.
@@ -219,7 +218,7 @@ is never encrypted, as there are no keys to encrypt it with.
 A cookie is also sent in this payload.  A cookie is used to randomize the
 payload so that none of the key exchange parties can determine this
 payload before the key exchange procedure starts.  The cookie MUST be
-returned to the original sender by the responder.
+returned to the original sender unmodified by the responder.
 
 Following diagram represents the Key Exchange Start Payload.  The lists
 mentioned below are always comma (`,') separated and the list MUST NOT
@@ -303,10 +302,19 @@ o Flags (1 byte) - Indicates flags to be used in the key
 
        In this case the field is ignored.
 
-     No Reply                 0x01
+     IV Included              0x01
 
-       If set the receiver of the payload does not reply to 
-       the packet.
+       This flag is used to indicate that Initial Vector (IV)
+       in encryption will be included in the ciphertext
+       which the recipient must use in decryption.  The IV
+       MUST be set after the last ciphertext block.  With
+       this flag it is possible to use SILC protocol on
+       unreliable transport such as UDP/IP which may cause
+       packet reordering and packet losses.  By default,
+       this flag is not set and thus IV is not included
+       in the ciphertext.  Setting this flag increases the
+       ciphertext size by one ciphertext block.  Responder
+       MAY override this flag for the initiator.
 
      PFS                      0x02
 
@@ -347,7 +355,7 @@ o Version String Length (2 bytes) - The length of the Version
 o Version String (variable length) - Indicates the version of
   the sender of this payload.  Initiator sets this when sending
   the payload and responder sets this when it replies by sending
-  this payload.  See [SILC1] for definition of the version
+  this payload.  See [SILC1] for definition for the version
   string format.  This field MUST be present and include valid
   version string.
 
@@ -382,7 +390,7 @@ o HMAC Length (2 bytes) - The length of the HMAC list, not
   including any other field.
 
 o HMACs (variable length) - The list of HMACs.  The HMAC's
-  are used to compute the Message Authentication Codes (MAC)
+  are used to compute the Message Authentication Code (MAC)
   of the SILC packets.  This field MUST be present.
 
 o Compression Alg Length (2 bytes) - The length of the
@@ -408,12 +416,12 @@ authentication protocol will not be executed for the initiator of the
 protocol.  This is case for example when the SKE is performed between
 two SILC clients.  In normal case, where client is connecting to a
 server, or server is connecting to a router the Mutual Authentication
-flag may be omitted.  However, if the connection authentication protocol 
-for the connecting entity is not based on public key authentication (it
-is based on passphrase) then the Mutual Authentication flag SHOULD be 
+flag MAY be omitted.  However, if the connection authentication protocol 
+for the connecting entity is not based on digital signatures (it is
+on pre-shared key) then the Mutual Authentication flag SHOULD be 
 enabled.  This way the connecting entity has to provide proof of
 possession of the private key for the public key it will provide in
-SILC Key Exchange protocol.
+this protocol.
 
 When performing re-key with PFS selected this is the only payload that
 is sent in the SKE protocol.  The Key Exchange Start Payload MUST NOT
@@ -476,7 +484,7 @@ o Public Key Type (2 bytes) - The public key (or certificate)
 
   The only required type to support is type number 1.  See 
   [SILC1] for the SILC public key specification.  See
-  SSH public key specification in [SSH-TRANS].  See X.509v3
+  SSH2 public key specification in [SSH-TRANS].  See X.509v3
   certificate specification in [PKIX-Part1].  See OpenPGP
   certificate specification in [PGP].  See SPKI certificate
   specification in [SPKI].  If this field includes zero (0)
@@ -510,7 +518,7 @@ o Signature Data (variable length) - The signature signed
   MUST NOT provide this field and the Signature Length field
   MUST be set to zero (0) value.  If the flag is set then
   also the initiator MUST provide this field.  The responder
-  MUST always provide this field.
+  always MUST provide this field.
 .in 3
 
 
@@ -539,8 +547,9 @@ Setup:  p is a large and public safe prime.  This is one of the
         MUST also produce signature data SIGN_i which the responder
         will verify.  The initiator MUST compute a hash value
         HASH_i = hash(Initiator's Key Exchange Start Payload |
-        public key (or certificate) | e).  It then signs the HASH_i
-        value with its private key resulting a signature SIGN_i.
+        public key (or certificate) | e).  The '|' stands for
+        concatenation.  It then signs the HASH_i value with its
+        private key resulting a signature SIGN_i.
 
     2.  Responder generates a random number y, where 1 < y < q,
         and computes f = g ^ y mod p.  It then computes the
@@ -671,12 +680,13 @@ of the hash output to generate the MAC keys.
 
 These procedures are performed by all parties of the key exchange
 protocol.  This MUST be done before the protocol has been ended by
-sending the SILC_PACKET_SUCCESS packet.
+sending the SILC_PACKET_SUCCESS packet, to assure that parties can
+successfully process the key material.
 
-This same procedure is used in the SILC in some other circumstances
-as well.  Any changes to this procedure is mentioned separately when
-this procedure is needed.  See the [SILC1] and the [SILC2] for these
-circumstances.
+This same key processing procedure MAY be used in the SILC in some
+other circumstances as well.  Any changes to this procedure is defined
+separately when this procedure is needed.  See the [SILC1] and the
+[SILC2] for these circumstances.
 
 
 .ti 0
@@ -695,17 +705,6 @@ requested group (however, it does not have to be the first in the list).
 
 The length of this group is 1024 bits.  This is REQUIRED group.
 The prime is 2^1024 - 2^960 - 1 + 2^64 * { [2^894 pi] + 129093 }.
-
-Its decimal value is
-
-.in 6
-179769313486231590770839156793787453197860296048756011706444
-423684197180216158519368947833795864925541502180565485980503
-646440548199239100050792877003355816639229553136239076508735
-759914822574862575007425302077447712589550957937778424442426
-617334727629299387668709205606050270810842907692932019128194
-467627007
-.in 3
 
 Its hexadecimal value is
 
@@ -731,22 +730,6 @@ This group was taken from the OAKLEY specification.
 The length of this group is 1536 bits.  This is OPTIONAL group.
 The prime is 2^1536 - 2^1472 - 1 + 2^64 * { [2^1406 pi] + 741804 }.
 
-
-
-
-Its decimal value is
-
-.in 6
-241031242692103258855207602219756607485695054850245994265411
-694195810883168261222889009385826134161467322714147790401219
-650364895705058263194273070680500922306273474534107340669624
-601458936165977404102716924945320037872943417032584377865919
-814376319377685986952408894019557734611984354530154704374720
-774996976375008430892633929555996888245787241299381012913029
-459299994792636526405928464720973038494721168143446471443848
-8520940127459844288859336526896320919633919
-.in 3
-
 Its hexadecimal value is
 
 .in 6
@@ -764,6 +747,35 @@ The generator used with this prime is g = 2.  The group order q is
 (p - 1) / 2.
 
 This group was taken from the OAKLEY specification.
+
+
+.ti 0
+2.4.3 diffie-hellman-group3
+
+The length of this group is 2048 bits.  This is OPTIONAL group.
+This prime is: 2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }.
+
+Its hexadecimal value is
+
+.in 6
+FFFFFFFF FFFFFFFF C90FDAA2 2168C234 C4C6628B 80DC1CD1
+29024E08 8A67CC74 020BBEA6 3B139B22 514A0879 8E3404DD
+EF9519B3 CD3A431B 302B0A6D F25F1437 4FE1356D 6D51C245
+E485B576 625E7EC6 F44C42E9 A637ED6B 0BFF5CB6 F406B7ED
+EE386BFB 5A899FA5 AE9F2411 7C4B1FE6 49286651 ECE45B3D
+C2007CB8 A163BF05 98DA4836 1C55D39A 69163FA8 FD24CF5F
+83655D23 DCA3AD96 1C62F356 208552BB 9ED52907 7096966D
+670C354E 4ABC9804 F1746C08 CA18217C 32905E46 2E36CE3B
+E39E772C 180E8603 9B2783A2 EC07A28F B5C55DF0 6F4C52C9
+DE2BCBF6 95581718 3995497C EA956AE5 15D22618 98FA0510
+15728E5A 8AACAA68 FFFFFFFF FFFFFFFF
+.in 3
+
+The generator used with this prime is g = 2.  The group order q is
+(p - 1) / 2.
+
+
+
 
 
 .ti 0
@@ -848,12 +860,12 @@ connecting party with server.  Usually connecting party is client but
 server may connect to router server as well.  Its other purpose is to
 provide information for the server about which type of connection this
 is.  The type defines whether this is client, server or router
-connection.  Server uses this information to create the ID for the
+connection.  Server use this information to create the ID for the
 connection.
 
 Server MUST verify the authentication data received and if it is to fail
 the authentication MUST be failed by sending SILC_PACKET_FAILURE packet.
-If everything checks out fine the protocol is ended by server by sending
+If authentication is successful the protocol is ended by server by sending
 SILC_PACKET_SUCCESS packet.
 
 The protocol is executed after the SILC Key Exchange protocol.  It MUST
@@ -876,22 +888,23 @@ sending the request is not necessary.
 See [SILC1] and section Connection Auth Request Payload in [SILC2] also
 for the list of different authentication methods.  Authentication method
 MAY also be NONE, in which case the server does not require
-authentication at all.  However, in this case the protocol still MUST be
-executed; the authentication data just is empty indicating no
-authentication is required.
+authentication.  However, in this case the protocol still MUST be
+executed; the authentication data is empty indicating no authentication
+is required.
 
 If authentication method is passphrase the authentication data is
-plaintext passphrase.  As the payload is entirely encrypted it is safe
-to have plaintext passphrase.  It is also provided as plaintext passphrase
+plaintext passphrase.  As the payload is encrypted it is safe to have
+plaintext passphrase.  It is also provided as plaintext passphrase
 because the receiver may need to pass the entire passphrase into a
-passphrase checker, and hash digest of the passphrase would prevent this.
-See the section 3.2.1 Passphrase Authentication for more information.
+passphrase verifier, and a message digest of the passphrase would
+prevent this.  See the section 3.2.1 Passphrase Authentication for
+more information.
 
 If authentication method is public key authentication the authentication
-data is a signature of the hash value of hash HASH plus Key Exchange
-Start Payload, established by the SILC Key Exchange protocol.  This
-signature MUST then be verified by the server.  See the section 3.2.2
-Public Key Authentication for more information.
+data is a digital signature of the hash value of hash HASH and Key 
+Exchange Start Payload, established by the SILC Key Exchange protocol.
+This signature MUST then be verified by the server.  See the section
+3.2.2 Public Key Authentication for more information.
 
 See the section 4 SILC Procedures in [SILC1] for more information about
 client creating connection to server, and server creating connection
@@ -910,6 +923,11 @@ the authentication MUST be failed by sending SILC_PACKET_FAILURE packet.
 The payload may only be sent with SILC_PACKET_CONNECTION_AUTH packet.
 It MUST NOT be sent in any other packet type.  The following diagram 
 represent the Connection Auth Payload.
+
+
+
+
+
 
 
 .in 5
@@ -946,21 +964,20 @@ o Authentication Data (variable length) - The actual
 .in 3
 
 
-
-
 .ti 0
 3.2 Connection Authentication Types
 
 SILC supports two authentication types to be used in the connection
-authentication protocol; passphrase or public key based authentication.
-The following sections defines the authentication methods.  See [SILC2]
-for defined numerical authentication method types.
+authentication protocol; passphrase authentication or public key
+authentication based on digital signatures.  The following sections
+defines the authentication methods.  See [SILC2] for defined numerical
+authentication method types.
 
 
 .ti 0
 3.2.1 Passphrase Authentication
 
-Passphrase authentication or pre-shared-key based authentication is 
+Passphrase authentication or pre-shared key based authentication is 
 simply an authentication where the party that wants to authenticate 
 itself to the other end sends the passphrase that is required by
 the other end, for example server.  The plaintext passphrase is put
@@ -990,8 +1007,8 @@ packet.
 
 Public key authentication may be used if passphrase based authentication
 is not desired.  The public key authentication works by sending a
-signature as authentication data to the other end, say, server.  The
-server MUST then verify the signature by the public key of the sender,
+digital signature as authentication data to the other end, say, server.
+The server MUST then verify the signature by the public key of the sender,
 which the server has received earlier in SKE protocol.
 
 The signature is computed using the private key of the sender by signing
@@ -1006,7 +1023,8 @@ which is then signed.
 The hash() function used to compute the value is the hash function
 negotiated in the SKE protocol.  The server MUST verify the data, thus
 it must keep the HASH and the Key Exchange Start Payload saved during
-SKE and authentication protocols.
+SKE and authentication protocols.  These values can be discarded after
+Connection Authentication protocol is completed.
 
 If the verified signature matches the sent signature, the authentication
 were successful and SILC_PACKET_SUCCESS is sent.  If it failed the
@@ -1014,6 +1032,7 @@ protocol execution is stopped and SILC_PACKET_FAILURE is sent.
 
 This is REQUIRED authentication method to be supported by all SILC
 implementations.
+
 
 
 .ti 0
@@ -1037,8 +1056,6 @@ are defined:
     Authentication failed.
 
 
-
-
 .ti 0
 4 Security Considerations
 
@@ -1047,7 +1064,6 @@ considerations permeate the specification.  Common security considerations
 such as keeping private keys truly private and using adequate lengths for 
 symmetric and asymmetric keys must be followed in order to maintain the   
 security of this protocol.
-
 
 
 .ti 0
@@ -1129,4 +1145,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 15 November 2002
+This Internet-Draft expires 25 April 2003

@@ -24,12 +24,12 @@ DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 makerfc = ../scripts/makerfc
 
 all:
-	touch draft-riikonen-silc-spec-05.txt
-	touch draft-riikonen-silc-pp-05.txt
-	touch draft-riikonen-silc-ke-auth-05.txt
-	touch draft-riikonen-silc-commands-03.txt
-	touch draft-riikonen-silc-flags-payloads-00.txt
-	touch draft-riikonen-presence-attrs-00.txt
+	touch draft-riikonen-silc-spec-06.txt
+	touch draft-riikonen-silc-pp-06.txt
+	touch draft-riikonen-silc-ke-auth-06.txt
+	touch draft-riikonen-silc-commands-04.txt
+	touch draft-riikonen-silc-flags-payloads-01.txt
+	touch draft-riikonen-presence-attrs-01.txt
 
 if SILC_DIST_TOOLKIT
 toolkit-ref-html:
@@ -56,35 +56,35 @@ toolkit-ref-pdf:
 
 dist-hook:
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
-	touch draft-riikonen-silc-spec-05.txt
-	touch draft-riikonen-silc-pp-05.txt
-	touch draft-riikonen-silc-ke-auth-05.txt
-	touch draft-riikonen-silc-commands-03.txt
-	touch draft-riikonen-silc-flags-payloads-00.txt
-	touch draft-riikonen-presence-attrs-00.txt
-	$(makerfc) draft-riikonen-silc-spec-05.nroff \
-		draft-riikonen-silc-spec-05.txt
-	$(makerfc) draft-riikonen-silc-pp-05.nroff \
-		draft-riikonen-silc-pp-05.txt
-	$(makerfc) draft-riikonen-silc-ke-auth-05.nroff \
-		draft-riikonen-silc-ke-auth-05.txt
-	$(makerfc) draft-riikonen-silc-commands-03.nroff \
-		draft-riikonen-silc-commands-03.txt
-	$(makerfc) draft-riikonen-silc-flags-payloads-00.nroff \
-		draft-riikonen-silc-flags-payloads-00.txt
-	$(makerfc) draft-riikonen-presence-attrs-00.nroff \
-		draft-riikonen-presence-attrs-00.txt
+	touch draft-riikonen-silc-spec-06.txt
+	touch draft-riikonen-silc-pp-06.txt
+	touch draft-riikonen-silc-ke-auth-06.txt
+	touch draft-riikonen-silc-commands-04.txt
+	touch draft-riikonen-silc-flags-payloads-01.txt
+	touch draft-riikonen-presence-attrs-01.txt
+	$(makerfc) draft-riikonen-silc-spec-06.nroff \
+		draft-riikonen-silc-spec-06.txt
+	$(makerfc) draft-riikonen-silc-pp-06.nroff \
+		draft-riikonen-silc-pp-06.txt
+	$(makerfc) draft-riikonen-silc-ke-auth-06.nroff \
+		draft-riikonen-silc-ke-auth-06.txt
+	$(makerfc) draft-riikonen-silc-commands-04.nroff \
+		draft-riikonen-silc-commands-04.txt
+	$(makerfc) draft-riikonen-silc-flags-payloads-01.nroff \
+		draft-riikonen-silc-flags-payloads-01.txt
+	$(makerfc) draft-riikonen-presence-attrs-01.nroff \
+		draft-riikonen-presence-attrs-01.txt
 
 else
 dist-hook:
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
 	rm draft-riikonen*.txt
-	touch draft-riikonen-silc-spec-05.txt
-	touch draft-riikonen-silc-pp-05.txt
-	touch draft-riikonen-silc-ke-auth-05.txt
-	touch draft-riikonen-silc-commands-03.txt
-	touch draft-riikonen-silc-flags-payloads-00.txt
-	touch draft-riikonen-presence-attrs-00.txt
+	touch draft-riikonen-silc-spec-06.txt
+	touch draft-riikonen-silc-pp-06.txt
+	touch draft-riikonen-silc-ke-auth-06.txt
+	touch draft-riikonen-silc-commands-04.txt
+	touch draft-riikonen-silc-flags-payloads-01.txt
+	touch draft-riikonen-presence-attrs-01.txt
 endif
 
 if SILC_DIST_TOOLKIT

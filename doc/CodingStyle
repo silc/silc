@@ -631,8 +631,7 @@ int main()
 Copyrights of the Code
 ======================
 
-The original code in SILC is GPL licensed.  MPI is GPL licensed as well
-and zlib is with free license as well.  New code will be accepted to
+The original code in SILC is GPL licensed.  New code will be accepted to
 the official SILC source tree if it is coded in GPL or similiar free
 license as GPL is, and of course if it is public domain.  Code with
 restricting licenses will not be accepted to the SILC source tree.

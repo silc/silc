@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 25 November 2002
 .ds CH
 .na
 .hy 0
@@ -16,14 +16,14 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-presence-attrs-00.txt                         XXX
-Expires: XXX
+draft-riikonen-presence-attrs-01.txt                    25 November 2002
+Expires: 25 April 2003
 
 .in 3
 
 .ce 2
 User Online Presence and Information Attributes
-<draft-riikonen-presence-attrs-00.txt>
+<draft-riikonen-presence-attrs-01.txt>
 
 .ti 0
 Status of this Memo
@@ -81,7 +81,7 @@ Table of Contents
   2.5 Attributes ................................................  5
 3 Security Considerations .......................................  11
 4 References ....................................................  12
-5 Author's Address ..............................................  12
+5 Author's Address ..............................................  13
 
 
 .ti 0
@@ -423,8 +423,8 @@ multiple same attributes in the packet.
      describing the accuracy of the information can also be provided.
 
      Length       Type       Value
-     variable     string     Longitude
-     variable     string     Latitude
+     variable     string     Longitude (ex. 31 17 14.321W)
+     variable     string     Latitude (ex. 12 11 21.2N)
      variable     string     Altitude
      variable     string     Accuracy in meters
 
@@ -583,7 +583,7 @@ Even though the attributes would be digitally signed by the sender of
 the attributes, the information contained in the attribute may still
 be incorrect.  The third party server should not apply digital signature
 unless it can verify every attribute.  The receiver of the attributes
-should also not trust that the information infact is correct.
+should also not trust that the information in fact is correct.
 
 However, it is possible that the context where these attributes are used
 the attributes are provided by a party that can provide the accurate
@@ -623,6 +623,8 @@ attributes on behalf of the actual user for some of the attributes.
              Version 1.5", RFC 2315, March 1998.
 
 
+
+
 .ti 0
 5 Author's Address
 
@@ -633,4 +635,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 25 April 2003

@@ -53,11 +53,12 @@ void silc_client_send_private_message(SilcClient client,
   SILC_LOG_DEBUG(("Sending private message"));
 
   /* Encode private message payload */
-  buffer = silc_private_message_payload_encode(flags,
-					       data_len, data,
-					       client_entry->send_key,
-					       client_entry->hmac_send,
-					       client->rng);
+  buffer = silc_message_payload_encode(flags, data, data_len,
+				       !client_entry->send_key ? FALSE :
+				       !client_entry->generated,
+				       TRUE, client_entry->send_key,
+				       client_entry->hmac_send,
+				       client->rng);
 
   /* If we don't have private message specific key then private messages
      are just as any normal packet thus call normal packet sending.  If
@@ -153,7 +154,7 @@ void silc_client_private_message(SilcClient client,
 				 SilcPacketContext *packet)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  SilcPrivateMessagePayload payload = NULL;
+  SilcMessagePayload payload = NULL;
   SilcClientID *remote_id = NULL;
   SilcClientEntry remote_client;
   SilcMessageFlags flags;
@@ -197,18 +198,19 @@ void silc_client_private_message(SilcClient client,
   }
 
   /* Parse the payload and decrypt it also if private message key is set */
-  payload = silc_private_message_payload_parse(packet->buffer->data,
-					       packet->buffer->len,
-					       cipher, hmac);
+  payload = silc_message_payload_parse(packet->buffer->data,
+				       packet->buffer->len, TRUE,
+				       !remote_client->generated,
+				       cipher, hmac);
   if (!payload) {
     silc_free(remote_id);
     return;
   }
 
-  flags = silc_private_message_get_flags(payload);
+  flags = silc_message_get_flags(payload);
 
   /* Pass the private message to application */
-  message = silc_private_message_get_message(payload, &message_len);
+  message = silc_message_get_data(payload, &message_len);
   client->internal->ops->private_message(client, conn, remote_client, flags,
 					 message, message_len);
 
@@ -230,7 +232,7 @@ void silc_client_private_message(SilcClient client,
 
  out:
   if (payload)
-    silc_private_message_payload_free(payload);
+    silc_message_payload_free(payload);
   silc_free(remote_id);
 }
 
@@ -451,6 +453,8 @@ bool silc_client_add_private_message_key_ske(SilcClient client,
     return FALSE;
   if (!silc_hmac_is_supported(hmac))
     return FALSE;
+
+  client_entry->generated = TRUE;
 
   /* Allocate the cipher and HMAC */
   silc_cipher_alloc(cipher, &client_entry->send_key);

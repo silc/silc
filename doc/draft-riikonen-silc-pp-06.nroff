@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 15 May 2002
+.ds RH XXX
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-05.txt                                15 May 2002
-Expires: 15 November 2002
+draft-riikonen-silc-pp-05.txt                                XXX
+Expires: XXX
 
 .in 3
 
@@ -82,6 +82,7 @@ Table of Contents
             2.3.2.2 Argument Payload ............................ 18
             2.3.2.3 Channel Payload ............................. 19
             2.3.2.4 Public Key Payload .......................... 20
+            2.3.2.5 Message Payload ............................. 20
       2.3.3 Disconnect Payload .................................. 20
       2.3.4 Success Payload ..................................... 21
       2.3.5 Failure Payload ..................................... 22
@@ -129,24 +130,23 @@ Figure 3:   ID Payload
 Figure 4:   Argument Payload
 Figure 5:   Channel Payload
 Figure 6:   Public Key Payload
-Figure 7:   Disconnect Payload
-Figure 8:   Success Payload
-Figure 9:   Failure Payload
-Figure 10:  Reject Payload
-Figure 11:  Notify Payload
-Figure 12:  Error Payload
-Figure 13:  Channel Message Payload
+Figure 7:   Message Payload
+Figure 8:   Disconnect Payload
+Figure 9:   Success Payload
+Figure 10:  Failure Payload
+Figure 11:  Reject Payload
+Figure 12:  Notify Payload
+Figure 13:  Error Payload
 Figure 14:  Channel Key Payload
-Figure 15:  Private Message Payload
-Figure 16:  Private Message Key Payload
-Figure 17:  Command Payload
-Figure 18:  Connection Auth Request Payload
-Figure 19:  New Client Payload
-Figure 20:  New Server Payload
-Figure 21:  Key Agreement Payload
-Figure 22:  Resume Router Payload
-Figure 23:  File Transfer Payload
-Figure 24:  Resume Client Payload
+Figure 15:  Private Message Key Payload
+Figure 16:  Command Payload
+Figure 17:  Connection Auth Request Payload
+Figure 18:  New Client Payload
+Figure 19:  New Server Payload
+Figure 20:  Key Agreement Payload
+Figure 21:  Resume Router Payload
+Figure 22:  File Transfer Payload
+Figure 23:  Resume Client Payload
 
 
 .ti 0
@@ -920,17 +920,17 @@ Figure 4:  Argument Payload
 
 
 .in 6
-o Payload Length (2 bytes) - Length of the argument payload data 
-  area not including the length of any other fields in the 
+o Payload Length (2 bytes) - Length of the Argument Data 
+  area not including the length of any other field in the 
   payload.
 
 o Argument Type (1 byte) - Indicates the type of the argument.  
-  Every argument may have a specific type that MUST be defined
+  Every argument can have a specific type that MUST be defined
   by the packet payload needing the argument.  For example
-  every command specify a number for each argument that maybe 
+  every command specify a number for each argument that may be 
   associated with the command.  By using this number the receiver 
   of the packet knows what type of argument this is.  If there is
-  no specific argument type this field is set to zero (0).
+  no specific argument type this field is set to zero (0) value.
 
 o Argument Data (variable length) - Argument data.
 .in 3
@@ -997,8 +997,6 @@ The following diagram represents the Public Key Payload.
 
 
 
-
-
 .in 5
 .nf
                      1                   2                   3
@@ -1030,6 +1028,176 @@ o Public Key (or certificate) (variable length) - The
 
 
 .ti 0
+2.3.2.5 Message Payload
+
+Generic Message Payload can be used to send message in SILC.  It
+is used to send channel messages and private messages.
+
+The following diagram represents the Message Payload.
+
+(*) indicates that the field is not encrypted.
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Message  Flags         |         Message Length        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                         Message Data                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Padding Length         |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                            Padding                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                       Initial Vector *                        ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                              MAC *                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 7:  Message Payload
+
+
+.in 6
+o Message Flags (2 bytes) - Includes the Message Flags of the
+  message.  The flags can indicate a reason or purpose for
+  the message.  The following Message Flags are defined:
+
+  0x0000  SILC_MESSAGE_FLAG_NONE
+
+          No specific flags set.
+
+  0x0001  SILC_MESSAGE_FLAG_AUTOREPLY
+
+          This message is an automatic reply to an earlier
+          received message.
+
+  0x0002  SILC_MESSAGE_FLAG_NOREPLY
+
+          There should not be reply messages to this
+          message.
+
+  0x0004  SILC_MESSAGE_FLAG_ACTION
+
+          The sender is performing an action and the message
+          is the indication of the action.
+
+  0x0008  SILC_MESSAGE_FLAG_NOTICE
+
+          The message is for example an informational notice
+          type message.
+
+  0x0010  SILC_MESSAGE_FLAG_REQUEST
+
+          This is a generic request flag to send request
+          messages.  A separate document should define any 
+          payloads associated to this flag.
+
+  0x0020  SILC_MESSAGE_FLAG_SIGNED
+
+          This flag indicates that the message is signed
+          with sender's private key and thus can be verified
+          by the receiver using the sender's public key.  A
+          separate document should define the detailed procedure
+          of the signing process and any associated payloads
+          of this flag.
+
+  0x0040  SILC_MESSAGE_FLAG_REPLY
+
+          This is a generic reply flag to send a reply to
+          previously received request.  A separate document
+          should define any payloads associated to this flag.
+
+  0x0080  SILC_MESSAGE_FLAG_DATA
+
+          This is a generic data flag, indicating that the
+          message includes some data which can be interpreted
+          in a specific way.  Using this flag any kind of data
+          can be delivered inside message payload.  A separate
+          document should define how this flag is interpreted
+          and define any associated payloads.
+
+  0x0100  SILC_MESSAGE_FLAG_UTF8
+
+          This flag indicates that the message is UTF-8 encoded
+          textual message.  When sending text messages this
+          flag SHOULD be used.  When this flag is used the text
+          sent as message MUST be UTF-8 encoded.
+
+  0x0200 - 0x0800 RESERVED
+
+          Reserved for future flags.
+
+  0x1000 - 0x8000 PRIVATE RANGE
+
+          Private range for free use.
+
+o Message Length (2 bytes) - Indicates the length of the
+  Message Data field in the payload, not including any 
+  other field.
+
+o Message Data (variable length) - The actual message data.
+
+o Padding Length (2 bytes) - Indicates the length of the
+  Padding field in the payload, not including any other
+  field.
+
+o Padding (variable length) - If this payload is used as
+  channel messages, the padding MUST be applied because
+  this payload is encrypted separately from other parts
+  of the packet.  If this payload is used as private
+  messages, the padding is present only when the payload
+  is encrypted with private message key.  If encrypted
+  with session keys this field is not present and the
+  Padding Length field includes a zero (0) value.  The
+  padding SHOULD be random data.
+
+o Initial Vector (variable length) - This field MUST be
+  present when this payload is used as channel messages.
+
+  When encrypting private messages with session keys this
+  field MUST NOT be present.  For private messages this
+  field is present only when encrypting with a static
+  private message key (pre-shared key).  If randomly
+  generated key material is used this field MUST NOT be
+  present.  Also, If Key Agreement (SKE) was used to
+  negotiate fresh key material for private message key
+  this field MUST NOT be present.  See the section 4.6
+  in [SILC1] for more information about IVs when
+  encrypting private messages.
+
+  This field includes the initial vector used in message
+  encryption.  It need to be used in the packet decryption
+  as well.  Contents of this field depends on the encryption
+  algorithm and encryption mode.  This field is not encrypted,
+  is not included in padding calculation and its length
+  equals to cipher's block size.  This field is authenticated
+  by the message MAC.
+
+o MAC (variable length) - The MAC computed from the
+  Message Flags, Message Length, Message Data, Padding Length,
+  Padding and Initial Vector fields in that order.  The MAC
+  is computed after the payload is encrypted.  This is so
+  called Encrypt-Then-MAC order; first encrypt, then compute
+  MAC from ciphertext.  The MAC protects the integrity of
+  the Message Payload.  Also, when used as channel messages
+  it is possible to have multiple private channel keys set,
+  and receiver can use MAC to verify which of the keys must
+  be used in decryption.  This field is not encrypted.
+.in 3
+
+
+.ti 0
 2.3.3 Disconnect Payload
 
 Disconnect payload is sent upon disconnection.  The payload is simple;
@@ -1054,7 +1222,7 @@ represents the Disconnect Payload.
 .in 3
 
 .ce
-Figure 7:  Disconnect Payload
+Figure 8:  Disconnect Payload
 
 .in 6
 o Status (1 byte) - Indicates the Status Type, defined in [SILC3]
@@ -1085,7 +1253,7 @@ This may be any data, including binary or human readable data.
 .in 3
 
 .ce
-Figure 8:  Success Payload
+Figure 9:  Success Payload
 
 
 .in 6
@@ -1118,7 +1286,7 @@ some protocol is sent in the payload.
 .in 3
 
 .ce
-Figure 9:  Failure Payload
+Figure 10:  Failure Payload
 
 
 .in 6
@@ -1152,7 +1320,7 @@ may be binary or human readable data.
 .in 3
 
 .ce
-Figure 10:  Reject Payload
+Figure 11:  Reject Payload
 
 
 .in 6
@@ -1193,7 +1361,7 @@ the Notify Payload.
 .in 3
 
 .ce
-Figure 11:  Notify Payload
+Figure 12:  Notify Payload
 
 
 .in 6
@@ -1225,7 +1393,7 @@ sent in arguments are actually Public Key Payloads.
       Max Arguments:  1
           Arguments:  (1) <message>
 
-      The <message> is implementation specific free text string.
+      The <message> is implementation specific free UTF-8 text string.
       Receiver MAY ignore this message.
 
 
@@ -1238,21 +1406,21 @@ sent in arguments are actually Public Key Payloads.
 
       Max Arguments:  5
           Arguments:  (1) <Channel ID>          (2) <channel name>
-                      (3) [<sender Client ID>]  (4) [<adding client>]
-                      (5) [<removing client>]
+                      (3) [<sender Client ID>]  (4) [<add | del>]
+                      (5) [<invite list>]
 
       The <Channel ID> is the channel.  The <channel name> is the name
       of the channel and is provided because the client which receives 
       this notify packet may not have a way to resolve the name of the
       channel from the <Channel ID>.  The <sender Client ID> is the
-      Client ID which invited the client to the channel.  The <adding
-      client> and the <removing client> indicates the added or removed
-      client from the channel's invite list.  The format of the <adding
-      client> and the <removing client> is defined in the [SILC4] with
-      SILC_COMMAND_INVITE command.
-
-      The <adding client> and <removing client> MUST NOT be sent when
-      the packet is destined to a client.
+      Client ID which invited the client to the channel.  The <add | del>
+      is an argument of size of 1 byte where 0x00 means adding a client
+      to invite list, and 0x01 means deleting a client from invite list.
+      The <invite list>, if present, indicates the information to be
+      added to or removed from the invite list.  The <invite list>
+      format is defined in [SILC4] with SILC_COMMAND_INVITE command.
+      When this notify is destined to a client the <add | del> and
+      <invite list> MUST NOT be sent.
 
 
 2     SILC_NOTIFY_TYPE_JOIN
@@ -1434,10 +1602,11 @@ sent in arguments are actually Public Key Payloads.
       Sent when a client has been kicked from a channel.  This is
       sent also to the client which was kicked from the channel.
       The client which was kicked from the channel MUST be removed
-      from the channel.  This notify type is always destined to the
-      channel.  The router or server receiving the packet distributes
-      this type to the local clients on the channel and broadcast it
-      to the network.
+      from the channel.  The client MUST also be removed from channel's
+      invite list if it is explicitly added in the list.  This notify
+      type is always destined to the channel.  The router or server
+      receiving the packet distributes this type to the local clients
+      on the channel and broadcast it to the network.
 
       Max Arguments:  3
           Arguments:  (1) <Client ID>           (2) [<comment>]
@@ -1456,7 +1625,9 @@ sent in arguments are actually Public Key Payloads.
       This notify type is destined directly to the client which was
       killed and to channel if the client is on any channel.  The router
       or server receiving the packet distributes this type to the local
-      clients on the channel and broadcast it to the network.
+      clients on the channel and broadcast it to the network.  The client
+      MUST also be removed from joined channels invite list if it is
+      explicitly added in the lists.
 
       Max Arguments:  3
           Arguments:  (1) <Client ID>           (2) [<comment>]
@@ -1486,15 +1657,15 @@ sent in arguments are actually Public Key Payloads.
       sent only between routers as broadcast packet.
 
       Max Arguments:  3
-          Arguments:  (1) <Channel ID>         (2) [<adding client>]
-                      (3) [<removing client>]
+          Arguments:  (1) <Channel ID>         (2) [<add | del>]
+                      (3) [<ban list>]
 
-      The <Channel ID> is the channel which ban list was changed.  The
-      <adding client> is used to indicate that a ban was added and the
-      <removing client> is used to indicate that a ban was removed from
-      the ban list.  The format of the <adding client> and the 
-      <removing client> is defined in the [SILC4] with SILC_COMMAND_BAN
-      command.
+      The <Channel ID> is the channel which ban list was changed.
+      The <add | del> is an argument of size of 1 byte where 0x00 means
+      adding a client to ban list, and 0x01 means deleting a client
+      from ban list.  The <ban list> indicates the information to be
+      added to or removed from the ban list.  The <ban list> format
+      format is defined in [SILC4] with SILC_COMMAND_BAN command.
 
 
 16    SILC_NOTIFY_TYPE_ERROR
@@ -1580,12 +1751,12 @@ that the client takes error packet seriously.
 .in 3
 
 .ce
-Figure 12:  Error Payload
+Figure 13:  Error Payload
 
 
 .in 6
 o Error Message (variable length) - Human readable error
-  message.
+  message as UTF-8 string.
 .in 3
 
 
@@ -1601,9 +1772,8 @@ reception of channel message is required.
 Padding MUST be applied into this payload since the payload is
 encrypted separately from other parts of the packet with the
 channel specific key.  Hence the requirement of the padding.  
-The padding SHOULD be random data.  The packet MUST be made
-multiple by eight (8) or by the block size of the cipher, which
-ever is larger.
+The packet MUST be made multiple by eight (8) or by the block
+size of the cipher, which ever is larger.
 
 The SILC header in this packet is encrypted with the session key
 of the next receiver of the packet.  Nothing else is encrypted
@@ -1619,154 +1789,8 @@ The original sender of the packet is also determined by checking
 the source ID from the header which tells the client which sent
 the message.
 
-The payload may only be sent with SILC_PACKET_CHANNEL_MESSAGE packet.
-It MUST NOT be sent in any other packet type.  The following diagram 
-represents the Channel Message Payload.
-
-(*) indicates that the field is not encrypted.
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Message  Flags         |         Message Length        |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                         Message Data                          ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Padding Length         |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                            Padding                            ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                       Initial Vector *                        ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                              MAC *                            ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 13:  Channel Message Payload
-
-
-.in 6
-o Message Flags (2 bytes) - Includes the Message Flags of
-  the channel messages.  The flags can indicate a reason or
-  purpose for the channel message.  Note that the Private
-  Message Payload use these same Message Flags for the same
-  purpose. The following Message Flags are defined:
-
-  0x0000  SILC_MESSAGE_FLAG_NONE
-
-          No specific flags set.
-
-  0x0001  SILC_MESSAGE_FLAG_AUTOREPLY
-
-          This message is an automatic reply to an earlier
-          received message.
-
-  0x0002  SILC_MESSAGE_FLAG_NOREPLY
-
-          There should not be reply messages to this
-          message.
-
-  0x0004  SILC_MESSAGE_FLAG_ACTION
-
-          The sender is performing an action and the message
-          is the indication of the action.
-
-  0x0008  SILC_MESSAGE_FLAG_NOTICE
-
-          The message is for example an informational notice
-          type message.
-
-  0x0010  SILC_MESSAGE_FLAG_REQUEST
-
-          This is a generic request flag to send request
-          messages.  A separate document should define any 
-          payloads associated to this flag.
-
-  0x0020  SILC_MESSAGE_FLAG_SIGNED
-
-          This flag indicates that the message is signed
-          with sender's private key and thus can be verified
-          by the receiver using the sender's public key.  A
-          separate document should define the detailed procedure
-          of the signing process and any associated payloads
-          of this flag.
-
-  0x0040  SILC_MESSAGE_FLAG_REPLY
-
-          This is a generic reply flag to send a reply to
-          previously received request.  A separate document
-          should define any payloads associated to this flag.
-
-  0x0080  SILC_MESSAGE_FLAG_DATA
-
-          This is a generic data flag, indicating that the
-          message includes some data which can be interpreted
-          in a specific way.  Using this flag any kind of data
-          can be delivered inside message payload.  A separate
-          document should define how this flag is interpreted
-          and define any associated payloads.
-
-  0x0100  SILC_MESSAGE_FLAG_UTF8
-
-          This flag indicates that the message is UTF-8 encoded
-          textual message.  When sending text messages this
-          flag SHOULD be used.  When this flag is used the text
-          sent as message MUST be UTF-8 encoded.
-
-  0x0200 - 0x0800 RESERVED
-
-          Reserved for future flags
-
-  0x1000 - 0x8000 PRIVATE RANGE
-
-          Private range for free use.
-
-o Message Length (2 bytes) - Indicates the length of the
-  Message Data field in the payload, not including any 
-  other field.
-
-o Message Data (variable length) - The actual message to
-  the channel.
-
-o Padding Length (2 bytes) - Indicates the length of the
-  Padding field in the payload, not including any other
-  field.
-
-o Padding (variable length) - The padding that MUST be
-  applied because this payload is encrypted separately from
-  other parts of the packet.
-
-o Initial Vector (variable length) - The initial vector
-  that has been used in packet encryption.  It needs to be
-  used in the packet decryption as well.  Contents of this
-  field depends on the encryption algorithm and mode.  This
-  field is not encrypted, is not included in padding
-  calculation and its length equals to cipher's block size.
-  This field is authenticated by the channel message MAC.
-
-o MAC (variable length) - The MAC computed from the
-  Message Flags, Message Length, Message Data, Padding Length,
-  Padding and Initial Vector fields in that order.  The MAC
-  is computed after the payload is encrypted.  This is so
-  called Encrypt-Then-MAC order; first encrypt, then compute
-  MAC from ciphertext.  The MAC protects the integrity of
-  the channel message.  Also, if more than one private key
-  has been set for the channel, the receiver can verify which
-  of the keys must be used in decryption.  This field is not
-  encrypted.
-.in 3
+This packet use generic Message Payload as Channel Message Payload.
+See section 2.3.2.5 for generic Message Payload.
 
 
 .ti 0
@@ -1861,19 +1885,18 @@ o Channel Key (variable length) - The actual channel key
 2.3.11 Private Message Payload
 
 Private Message Payload is used to send private message between
-two clients (or users for that matter).  The messages are sent only
-to the specified user and no other user inside SILC network is
-able to see the message.  The message is protected by the session 
-key established by the SILC Key Exchange Protocol.
+two clients.  The messages are sent only to the specified user
+and no other user inside SILC network is able to see the message.
 
-However, it is also possible to agree to use a private key to
-protect just the private messages.  It is for example possible to
-perform Key Agreement between two clients.  See section 2.3.20
-Key Agreement Payload how to perform key agreement.  See also
-section 2.3.12 Private Message Key Payload for another way of
-using private keys with private messages.  See [SILC1] section
-4.6 for detailed description for private message key generation
-procedure.
+The message can be protected by the session key established by the
+SILC Key Exchange Protocol.  However, it is also possible to agree
+to use a private key to protect just the private messages.  It is
+for example possible to perform Key Agreement between two clients.
+See section 2.3.20 Key Agreement Payload how to perform key
+agreement.  See also section 2.3.12 Private Message Key Payload
+for another way of using private keys with private messages.  See
+[SILC1] section 4.6 for detailed description for private message
+key generation procedure.
 
 If normal session key is used to protect the message, every server
 between the sender client and the receiving client MUST decrypt the
@@ -1885,71 +1908,8 @@ the sender and the receiver needs not to decrypt/re-encrypt the
 packet.  Section Client To Client in [SILC1] gives example of this
 scheme as well.
 
-The payload may only be sent with SILC_PACKET_PRIVATE_MESSAGE 
-packet.  It MUST NOT be sent in any other packet type.  The following 
-diagram represents the Private Message Payload.
-
-(*) indicates that the field is not encrypted.
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         Message Flags         |      Message Data Length      |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                          Message Data                         ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                            Padding                            ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                              MAC *                            ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 15:  Private Message Payload
-
-
-.in 6
-o Message Flags (2 bytes) - This field includes the Message
-  Flags of the private message.  They can indicate a different
-  reason or purpose for the private message.  See the section
-  2.3.9 Channel Message Payload for defined flags.  Note that
-  the Channel Message Payload use the same flags for the
-  same purpose.
-
-o Message Data Length (2 bytes) - Indicates the length of the
-  Message Data field, not including any other field.
-
-o Message Data (variable length) - The actual message to
-  the client.
-
-o Padding (variable length) - This field is present only
-  when the private message payload is encrypted with private
-  message key.  In this case the padding is applied to make
-  the payload multiple by eight (8), or by the block size of
-  the cipher, which ever is larger.  When encrypted with
-  normal session keys, this field MUST NOT be included.
-
-o MAC (variable length) - This field is present only when
-  the private message payload is encrypted with private
-  message key.  The MAC is computed from the Message Flags,
-  Message Data Length, Message Data and Padding fields in
-  that order.  The MAC protects the integrity of the private
-  message.  The MAC is computed after encryption from the
-  ciphertext.  This is so called Encrypt-Then-MAC order;
-  first encrypt, then compute MAC from ciphertext.  Note that,
-  this field is not encrypted and thus not included in the
-  padding calculation.  When encrypted with normal session
-  keys, this field MUST NOT be included.
-.in 3
+This packet use generic Message Payload as Private Message Payload.
+See section 2.3.2.5 for generic Message Payload.
 
 
 .ti 0
@@ -2004,7 +1964,7 @@ diagram represents the Private Message Key Payload.
 .in 3
 
 .ce
-Figure 16:  Private Message Key Payload
+Figure 15:  Private Message Key Payload
 
 
 
@@ -2057,7 +2017,7 @@ represents the Command Payload.
 .in 3
 
 .ce
-Figure 17:  Command Payload
+Figure 16:  Command Payload
 
 
 .in 6
@@ -2139,7 +2099,7 @@ diagram represents the Connection Auth Request Payload.
 .in 3
 
 .ce
-Figure 18:  Connection Auth Request Payload
+Figure 17:  Connection Auth Request Payload
 
 
 .in 6
@@ -2209,7 +2169,7 @@ Thus, this payload is very important and used every time when some
 new entity is registered to the SILC network.  Client MUST NOT send this
 payload.  Both client and server (and router) MAY receive this payload.
 
-The packet uses generic ID Payload as New ID Payload.  See section
+The packet use generic ID Payload as New ID Payload.  See section
 2.3.2.1 for generic ID Payload.
 
 
@@ -2257,7 +2217,7 @@ represents the New Client Payload.
 .in 3
 
 .ce
-Figure 19:  New Client Payload
+Figure 18:  New Client Payload
 
 
 .in 6
@@ -2310,7 +2270,7 @@ represents the New Server Payload.
 .in 3
 
 .ce
-Figure 20:  New Server Payload
+Figure 19:  New Server Payload
 
 
 .in 6
@@ -2341,7 +2301,7 @@ send this packet.  Server may send this packet to a router when it is
 announcing its existing channels to the router after it has connected
 to the router.
 
-The packet uses generic Channel Payload as New Channel Payload.  See
+The packet use generic Channel Payload as New Channel Payload.  See
 section 2.3.2.3 for generic Channel Payload.  The Mode Mask field in the
 Channel Payload is the mode of the channel.
 
@@ -2387,7 +2347,7 @@ types.  The following diagram represents the Key Agreement Payload.
 .in 3
 
 .ce
-Figure 21:  Key Agreement Payload
+Figure 20:  Key Agreement Payload
 
 
 .in 6
@@ -2433,7 +2393,7 @@ represents the Resume Router Payload.
 .in 3
 
 .ce
-Figure 22:  Resume Router Payload
+Figure 21:  Resume Router Payload
 
 
 .in 6
@@ -2483,7 +2443,7 @@ File Transfer Payload.
 .in 3
 
 .ce
-Figure 23:  File Transfer Payload
+Figure 22:  File Transfer Payload
 
 
 .in 6
@@ -2491,7 +2451,7 @@ o Type (1 byte) - Indicates the type of the file transfer
   protocol.  The following file transfer protocols has been
   defined:
 
-    1    SSH File Transfer Protocol (SFTP) (mandatory)
+    1    Secure File Transfer Protocol (SFTP) (mandatory)
 
   If zero (0) value or any unsupported file transfer protocol
   type is found in this field the packet must be discarded.
@@ -2551,7 +2511,7 @@ represents the Resume Client Payload.
 .in 3
 
 .ce
-Figure 24:  Resume Client Payload
+Figure 23:  Resume Client Payload
 
 
 .in 6
@@ -2580,7 +2540,7 @@ network.
 .in 6
 0    No ID
 
-     When ever specific ID cannot be used this is used.
+     This is used when other ID type is available at the time.
 
 1    Server ID
 
@@ -2753,7 +2713,7 @@ See [SILC1] for defined and allowed MAC algorithms.
 2.7 Packet Padding Generation
 
 Padding is needed in the packet because the packet is encrypted.  It
-MUST always be multiple by eight (8) or multiple by the block size
+always MUST be multiple by eight (8) or multiple by the block size
 of the cipher, which ever is larger.  The padding is always encrypted.
 
 For normal packets the padding is added after the SILC Packet Header

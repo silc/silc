@@ -103,6 +103,9 @@ Table of Contents
       3.9.1 Authentication Payload .............................. 21
   3.10 Algorithms ............................................... 23
       3.10.1 Ciphers ............................................ 23
+             3.10.1.1 CBC Mode .................................. XXX
+             3.10.1.2 CTR Mode .................................. XXX
+             3.10.1.3 Randomized CBC Mode ....................... XXX
       3.10.2 Public Key Algorithms .............................. 24
       3.10.3 Hash Functions ..................................... 24
       3.10.4 MAC Algorithms ..................................... 25
@@ -141,6 +144,7 @@ Figure 2:  Communication Inside cell
 Figure 3:  Communication Between Cells
 Figure 4:  Router Connections
 Figure 5:  SILC Public Key
+Figure 6:  Counter Block
 
 
 .ti 0
@@ -1161,7 +1165,7 @@ The receiver will compute the signature using the random data received
 in the payload, the ID associated to the connection and the public key
 (or certificate) received in the SKE protocol.  After computing the
 receiver MUST verify the signature.  In case of public key authentication
-this payload is also encrypted.
+also this payload is encrypted.
 
 
 .ti 0
@@ -1183,33 +1187,133 @@ must be supported in order to be compliant with this protocol.
 The following ciphers are defined in SILC protocol:
 
 .in 6
-aes-256-cbc         AES in CBC mode, 256 bit key       (REQUIRED)
-aes-192-cbc         AES in CBC mode, 192 bit key       (OPTIONAL)
-aes-128-cbc         AES in CBC mode, 128 bit key       (OPTIONAL)
-twofish-256-cbc     Twofish in CBC mode, 256 bit key   (OPTIONAL)
-twofish-192-cbc     Twofish in CBC mode, 192 bit key   (OPTIONAL)
-twofish-128-cbc     Twofish in CBC mode, 128 bit key   (OPTIONAL)
-blowfish-128-cbc    Blowfish in CBC mode, 128 bit key  (OPTIONAL)
-cast-256-cbc        CAST-256 in CBC mode, 256 bit key  (OPTIONAL)
-cast-192-cbc        CAST-256 in CBC mode, 192 bit key  (OPTIONAL)
-cast-128-cbc        CAST-256 in CBC mode, 128 bit key  (OPTIONAL)
-rc6-256-cbc         RC6 in CBC mode, 256 bit key       (OPTIONAL)
-rc6-192-cbc         RC6 in CBC mode, 192 bit key       (OPTIONAL)
-rc6-128-cbc         RC6 in CBC mode, 128 bit key       (OPTIONAL)
-mars-256-cbc        Mars in CBC mode, 256 bit key      (OPTIONAL)
-mars-192-cbc        Mars in CBC mode, 192 bit key      (OPTIONAL)
-mars-128-cbc        Mars in CBC mode, 128 bit key      (OPTIONAL)
-none                No encryption                      (OPTIONAL)
+aes-256-cbc          AES in CBC mode, 256 bit key            (REQUIRED)
+aes-256-ctr          AES in CTR mode, 256 bit key            (RECOMMENDED)
+aes-256-rcbc         AES in randomized CBC mode, 256 bit key (OPTIONAL)
+aes-192-<mode>       AES in <mode> mode, 192 bit key         (OPTIONAL)
+aes-128-<mode>       AES in <mode> mode, 128 bit key         (RECOMMENDED)
+twofish-256-<mode>   Twofish in <mode> mode, 256 bit key     (OPTIONAL)
+twofish-192-<mode>   Twofish in <mode> mode, 192 bit key     (OPTIONAL)
+twofish-128-<mode>   Twofish in <mode> mode, 128 bit key     (OPTIONAL)
+cast-256-<mode>      CAST-256 in <mode> mode, 256 bit key    (OPTIONAL)
+cast-192-<mode>      CAST-256 in <mode> mode, 192 bit key    (OPTIONAL)
+cast-128-<mode>      CAST-256 in <mode> mode, 128 bit key    (OPTIONAL)
+serpent-<len>-<mode> Serpent in <mode> mode, <len> bit key   (OPTIONAL)
+rc6-<len>-<mode>     RC6 in <mode> mode, <len> bit key       (OPTIONAL)
+mars-<len>-<mode>    MARS in <mode> mode, <len> bit key      (OPTIONAL)
+none                 No encryption                           (OPTIONAL)
 .in 3
 
 
-Algorithm none does not perform any encryption process at all and 
+The <mode> is either "cbc", "ctr" or "rcbc".  Other encryption modes MAY
+be defined as to be used in SILC using the same format.  The <len> is
+either 256, 192 or 128 bit key length.  Also, additional ciphers MAY be
+defined to be used in SILC by using the same name format as above.
+
+Algorithm "none" does not perform any encryption process at all and 
 thus is not recommended to be used.  It is recommended that no client
-or server implementation would accept none algorithms except in special
+or server implementation would accept none algorithm except in special
 debugging mode.
 
-Additional ciphers MAY be defined to be used in SILC by using the
-same name format as above.
+
+.ti 0
+3.10.1.1 CBC Mode
+
+The "cbc" encryption mode is CBC mode with inter-packet chaining.  This
+means that the Initial Vector (IV) for the next encryption block is
+the previous ciphertext block.  The very first IV MUST be random and is
+generated as described in [SILC3].
+
+
+.ti 0
+3.10.1.2 CTR Mode
+
+The "ctr" encryption mode is CTR mode.  The CTR mode in SILC is stateful
+in encryption and decryption.  Both sender and receiver maintain the
+counter for the CTR mode and thus can precompute the key stream for
+encryption and decryption.  By default, CTR mode does not require
+plaintext padding, however implementations MAY apply padding to the
+packets.  If the last key block is larger than the last plaintext block
+the resulted value is truncated to the size of the plaintext block and
+the most significant bits are used.  When sending authentication data
+inside packets the maximum amount of padding SHOULD be applied with
+CTR mode as well.
+
+In CTR mode only the encryption operation of the cipher is used.  The
+decryption operation is not needed since both encryption and decryption
+process is simple XOR with the plaintext block and the key stream block.
+
+The counter block is used to create the key for the CTR mode.  When
+SILC specifications refer to Initial Vector (IV) in general cases, in
+case of CTR mode it refers to the counter block.  The format of the
+128 bit counter block is as follows:
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                   Truncated HASH from SKE                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                Sending/Receiving IV from SKE                  |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Block Counter                          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 6:  Counter Block
+
+.in 6
+o Truncated HASH from SKE (4 bytes) - This value is the 32 most
+  significant bits from the HASH value that was computed as a
+  result of SKE protocol.  This acts as session identifier and
+  each rekey MUST produce a new HASH value.
+
+o Sending/Receiving IV from SKE (8 bytes) - This value is the 64
+  most significant bits from the Sending IV or Receiving IV
+  generated in the SKE protocol.  When this mode is used to
+  encrypt sending traffic the Sending IV is used, when used to
+  decrypt receiving traffic the Receiving IV is used.  This
+  assures that two parties of the protocol use different IV
+  for sending traffic.  Each rekey MUST produce a new value.
+
+o Block Counter (4 bytes) - This is the counter value for the
+  counter block and is MSB ordered number starting from one (1)
+  value for first block and incrementing for subsequent blocks.
+  The same value MUST NOT be used twice.  The rekey MUST be
+  performed before this counter value wraps.
+.in 3
+
+CTR mode MUST NOT be used with "none" MAC.  Implementations also MUST
+assure that the same counter block is not used to encrypt more than
+one block.  Also, the key material used with CTR mode MUST be fresh
+key material.  Static keys (pre-shared keys) MUST NOT be used with
+CTR mode.  For this reason using CTR mode to encrypt for example
+channel messages or private messages with a pre-shared key is
+inappropriate.  For private messages, the Key Agreement could be
+performed to produce fresh key material.
+
+If the IV Included flag was negotiated in SKE, implementations SHOULD
+still use the same counter block format as defined above.  However, 
+implementations are RECOMMENDED to replace the Truncated HASH field
+with a 32 bit random value for each IV (counter block) per encrypted
+SILC packet.  Also note, that in this case the decryption process is
+not stateful and receiver cannot precompute the key stream.
+
+
+.ti 0
+3.10.1.3 Randomized CBC Mode
+
+The "rcbc" encryption mode is CBC mode with randomized IV.  This means
+that each IV for each packet MUST be chosen randomly.  In this mode the
+IV is appended at the end of the last ciphertext block and thus delivered
+to the recipient.  This mode increases the ciphertext size by one
+ciphertext block.  Note also that some data payloads in SILC are capable
+of delivering the IV to the recipient.  When explicitly encrypting these
+payloads with randomized CBC the IV MUST NOT be appended at the end
+of the ciphertext.
 
 
 .ti 0
@@ -1261,7 +1365,7 @@ The following Hash algorithm are defined in SILC protocol:
 
 .in 6
 sha1             SHA-1, length = 20      (REQUIRED)
-md5              MD5, length = 16        (OPTIONAL)
+md5              MD5, length = 16        (RECOMMENDED)
 .in 3
 
 
@@ -1275,21 +1379,21 @@ MAC.
 The following MAC algorithms are defined in SILC protocol:
 
 .in 6
-hmac-sha1-96     HMAC-SHA1, length = 12  (REQUIRED)
-hmac-md5-96      HMAC-MD5, length = 12   (OPTIONAL)
-hmac-sha1        HMAC-SHA1, length = 20  (OPTIONAL)
-hmac-md5         HMAC-MD5, length = 16   (OPTIONAL)
-none             No MAC                  (OPTIONAL)
+hmac-sha1-96     HMAC-SHA1, length = 12 bytes  (REQUIRED)
+hmac-md5-96      HMAC-MD5, length = 12 bytes   (OPTIONAL)
+hmac-sha1        HMAC-SHA1, length = 20 bytes  (OPTIONAL)
+hmac-md5         HMAC-MD5, length = 16 bytes   (OPTIONAL)
+none             No MAC                        (OPTIONAL)
 .in 3
 
-The none MAC is not recommended to be used as the packet is not
+The "none" MAC is not recommended to be used as the packet is not
 authenticated when MAC is not computed.  It is recommended that no
 client or server would accept none MAC except in special debugging
 mode.
 
 The HMAC algorithm is described in [HMAC] and hash algorithms that
 are used as part of the HMACs are described in [Scheneir] and in
-[Menezes]
+[Menezes].
 
 Additional MAC algorithms MAY be defined to be used in SILC.
 
@@ -1578,9 +1682,19 @@ All the other parties of the protocol must also update their local
 database to understand that the route to the primary router will now go
 to the backup router.
 
-The servers connected to the backup router must announce their clients,
-channels, channel users, channel user modes and channel modes to the
-backup router.  This is to assure that none of the important notify 
+Servers connected to the backup router MUST send SILC_PACKET_RESUME_ROUTER
+packet with type number 21, to indicate that the server will start using
+the backup router as primary router.  The backup router MUST NOT allow
+this action if it detects that primary is still up and running.  If
+backup router knows that primary is up and running it MUST send type
+number 22 back to the server.  The server then MUST NOT use the backup
+as primary router, but must try to establish connection back to the
+primary router.  If the action is allowed type number 21 is sent back
+to the server from the backup router.
+
+The servers connected to the backup router must then announce their
+clients, channels, channel users, channel user modes and channel modes
+to the backup router.  This is to assure that none of the important notify 
 packets were lost during the switch to the backup router.  The backup
 router must check which of these announced entities it already have
 and distribute the new ones to the primary route.
@@ -1613,6 +1727,13 @@ resuming protocol is executed.  The protocol is advanced as follows:
      router.  After sending the packet the backup router will announce
      all of its channels, channel users, modes etc. to the primary
      router.
+
+     If the primary knows that it has not been replaced (for example
+     the backup itself disconnected from the primary router and thinks
+     that it is now primary in the cell) the primary router send
+     SILC_PACKET_FAILURE with the type value 1 back to the backup
+     router.  If backup receives this it MUST NOT continue with the
+     backup resuming protocol.
 
   2. Backup router sends SILC_PACKET_RESUME_ROUTER packet with type
      value 2 to its current primary router to indicate that it will
@@ -1693,6 +1814,8 @@ packet:
   5    SILC_SERVER_BACKUP_START_RESUMED
   6    SILC_SERVER_BACKUP_START_RESUMED_GLOBAL
   20   SILC_SERVER_BACKUP_START_REPLACED
+  21   SILC_SERVER_BACKUP_START_USE
+  22   SILC_SERVER_BACKUP_START_USE_DENIED
 
 If any other value is found in the type field the packet must be 
 discarded.  The SILC_PACKET_RESUME_ROUTER packet and its payload
@@ -2019,32 +2142,38 @@ process.
 .ti 0
 4.6 Private Message Key Generation
 
-Private message MAY be protected by the key generated by the client.
+Private message MAY be protected with a key generated by the client.
 The key may be generated and sent to the other client by sending packet
 SILC_PACKET_PRIVATE_MESSAGE_KEY which travels through the network
 and is secured by session keys.  After that the private message key
 is used in the private message communication between those clients.
+The key sent inside the payload SHOULD be randomly generated.  This
+packet MUST NOT be used to send pre-shared keys.
 
 Other choice is to entirely use keys that are not sent through
 the SILC network at all.  This significantly adds security.  This key
-would be pre-shared-key that is known by both of the clients.  Both
+could be a pre-shared-key that is known by both of the clients.  Both
 agree about using the key and starts sending packets that indicate
-that the private message is secured using private message key.
+that the private message is secured using private message key.  In
+case of pre-shared keys (static keys) the IV used in encryption SHOULD
+be chosen randomly.
 
-The key material used as private message key is implementation issue.
-However, SILC_PACKET_KEY_AGREEMENT packet MAY be used to negotiate
-the key material.  If the key is normal pre-shared-key or randomly
-generated key, and the SILC_PACKET_KEY_AGREEMENT was not used, then
-the key material SHOULD be processed as defined in the [SILC3].  In
-the processing, however, the HASH, as defined in [SILC3] MUST be 
-ignored.  After processing the key material it is employed as defined
-in [SILC3].
+It is also possible to negotiate fresh key material by performing
+Key Agreement.  The SILC_PACKET_KEY_AGREEMENT packet MAY be used to
+negotiate the fresh key material.  In this case the resulted key
+material is used to secure the private messages.  Also, the IV used
+in encryption is used as defined in [SILC3], unless otherwise stated
+by the encryption mode used.  By performing Key Agreement the clients
+may negotiate the cipher and HMAC to be used in the private message
+encryption and to negotiate additional security parameters.
 
-If the key is pre-shared-key or randomly generated the implementations
-SHOULD use the SILC protocol's mandatory cipher as the cipher, and the
-mandatory HMAC as the HMAC.  If the SKE was used to negotiate key material
-the cipher was negotiated as well, and may be different from default
-cipher and default HMAC.
+If the key is pre-shared key or other key material not generated by
+Key Agreement, then the key material SHOULD be processed as defined
+in [SILC3].  In the processing, however, the HASH, as defined in
+[SILC3] MUST be ignored.  After processing the key material it is
+employed as defined in [SILC3].  In this case also, implementations
+SHOULD use the SILC protocol's mandatory cipher and HMAC in private
+message encryption.
 
 
 .ti 0

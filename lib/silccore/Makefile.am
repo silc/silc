@@ -22,19 +22,20 @@ noinst_LTLIBRARIES = libsilccore.la
 libsilccore_la_SOURCES = \
 	silcid.c \
 	silcidcache.c \
+	silcmessage.c \
 	silcchannel.c \
 	silccommand.c \
 	silcpacket.c \
 	silcargument.c \
 	silcnotify.c \
 	silcauth.c \
-	silcattrs.c \
-	silcprivate.c
+	silcattrs.c
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\
 	silcauth.h	\
 	silcchannel.h	\
+	silcmessage.h	\
 	silccommand.h	\
 	silcidcache.h	\
 	silcid.h	\
@@ -43,8 +44,7 @@ include_HEADERS =	\
 	silcpacket.h	\
 	silcargument.h	\
 	silcstatus.h	\
-	silcattrs.h	\
-	silcprivate.h
+	silcattrs.h
 endif
 
 EXTRA_DIST = *.h

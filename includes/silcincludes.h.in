@@ -257,12 +257,12 @@ extern "C" {
 #include "silcidcache.h"
 #include "silcargument.h"
 #include "silccommand.h"
+#include "silcmessage.h"
 #include "silcchannel.h"
 #include "silcpacket.h"
 #include "silcnotify.h"
 #include "silcmode.h"
 #include "silcauth.h"
-#include "silcprivate.h"
 #include "silcattrs.h"
 #include "silcvcard.h"
 
