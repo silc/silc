@@ -51,7 +51,7 @@ _toolkit_SUBDIRS_lib=$(COMMONDIRS)
 _toolkit_DISTLABEL=SILC_DIST_TOOLKIT
 
 _client_SUBDIRS=lib irssi doc includes
-_client_SUBDIRS_lib=$(COMMONDIRS)
+_client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
 _client_DISTLABEL=SILC_DIST_CLIENT
 
 _server_SUBDIRS=lib silcd doc includes
