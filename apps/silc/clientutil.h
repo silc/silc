@@ -48,5 +48,7 @@ int silc_client_verify_server_key(SilcClient client,
 				  SilcSocketConnection sock,
 				  unsigned char *pk, unsigned int pk_len,
 				  SilcSKEPKType pk_type);
+int silc_client_parse_nickname(char *string, char **nickname, char **server,
+			       unsigned int *num);
 
 #endif

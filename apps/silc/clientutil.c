@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/12 05:55:50  priikone
+ * 	Added client_parse_nickname.
+ *
  * Revision 1.4  2000/07/10 05:40:05  priikone
  * 	Added support for verifying incoming public keys from user.
  * 	Shows fingerprint of the public key now plus other changes.
@@ -945,4 +948,53 @@ int silc_client_verify_server_key(SilcClient client,
 
   silc_say(client, "Will not accept server %s key", hostname);
   return FALSE;
+}
+
+
+/* Parse nickname string. The format may be <num>!<nickname>@<server> to
+   support multiple same nicknames. The <num> is the final unifier if same
+   nickname is on same server. Note, this is only local format and server
+   does not know anything about these. */
+
+int silc_client_parse_nickname(char *string, char **nickname, char **server,
+			       unsigned int *num)
+{
+  unsigned int tlen;
+  char tmp[256];
+
+  if (!string)
+    return FALSE;
+
+  if (strchr(string, '!')) {
+    tlen = strcspn(string, "!");
+    memset(tmp, 0, sizeof(tmp));
+    memcpy(tmp, string, tlen);
+
+    if (num)
+      *num = atoi(tmp);
+
+    if (tlen >= strlen(string))
+      return FALSE;
+
+    string += tlen + 1;
+  }
+
+  if (strchr(string, '@')) {
+    tlen = strcspn(string, "@");
+    
+    if (nickname) {
+      *nickname = silc_calloc(tlen + 1, sizeof(char));
+      memcpy(*nickname, string, tlen);
+    }
+    
+    if (server) {
+      *server = silc_calloc(strlen(string) - tlen, sizeof(char));
+      memcpy(*server, string + tlen + 1, strlen(string) - tlen - 1);
+    }
+  } else {
+    if (nickname)
+      *nickname = strdup(string);
+  }
+
+  return TRUE;
 }
