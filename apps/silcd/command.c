@@ -2090,39 +2090,28 @@ SILC_SERVER_CMD_FUNC(topic)
   silc_server_command_free(cmd);
 }
 
-/* Server side of INVITE command. Invites some client to join some channel. */
+/* Server side of INVITE command. Invites some client to join some channel. 
+   This command is also used to manage the invite list of the channel. */
 
 SILC_SERVER_CMD_FUNC(invite)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcSocketConnection sock = cmd->sock, dest_sock;
+  SilcChannelClientEntry chl;
   SilcClientEntry sender, dest;
-  SilcClientID *dest_id;
+  SilcClientID *dest_id = NULL;
   SilcChannelEntry channel;
-  SilcChannelID *channel_id;
-  SilcBuffer sidp;
-  unsigned char *tmp;
+  SilcChannelID *channel_id = NULL;
+  SilcIDListData idata;
+  SilcBuffer idp;
+  unsigned char *tmp, *add, *del;
   unsigned int len;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INVITE, cmd, 1, 2);
 
-  /* Get destination ID */
-  tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
-  if (!tmp) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_NO_CLIENT_ID);
-    goto out;
-  }
-  dest_id = silc_id_payload_parse_id(tmp, len);
-  if (!dest_id) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_NO_CLIENT_ID);
-    goto out;
-  }
-
   /* Get Channel ID */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
   if (!tmp) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
 					  SILC_STATUS_ERR_NO_CHANNEL_ID);
@@ -2135,7 +2124,7 @@ SILC_SERVER_CMD_FUNC(invite)
     goto out;
   }
 
-  /* Check whether the channel exists */
+  /* Get the channel entry */
   channel = silc_idlist_find_channel_by_id(server->local_list, 
 					   channel_id, NULL);
   if (!channel) {
@@ -2159,8 +2148,6 @@ SILC_SERVER_CMD_FUNC(invite)
   /* Check whether the channel is invite-only channel. If yes then the
      sender of this command must be at least channel operator. */
   if (channel->mode & SILC_CHANNEL_MODE_INVITE) {
-    SilcChannelClientEntry chl;
-
     silc_list_start(channel->user_list);
     while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
       if (chl->client == sender) {
@@ -2173,39 +2160,144 @@ SILC_SERVER_CMD_FUNC(invite)
       }
   }
 
-  /* Find the connection data for the destination. If it is local we will
-     send it directly otherwise we will send it to router for routing. */
-  dest = silc_idlist_find_client_by_id(server->local_list, dest_id, NULL);
-  if (dest)
-    dest_sock = (SilcSocketConnection)dest->connection;
-  else
-    dest_sock = silc_server_route_get(server, dest_id, SILC_ID_CLIENT);
+  /* Get destination client ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (tmp) {
+    char invite[512];
 
-  /* Check whether the requested client is already on the channel. */
-  /* XXX if we are normal server we don't know about global clients on
-     the channel thus we must request it (USERS command), check from
-     local cache as well. */
-  if (silc_server_client_on_channel(dest, channel)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_USER_ON_CHANNEL);
-    goto out;
+    dest_id = silc_id_payload_parse_id(tmp, len);
+    if (!dest_id) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					    SILC_STATUS_ERR_NO_CLIENT_ID);
+      goto out;
+    }
+
+    /* Get the client entry */
+    dest = silc_server_get_client_resolve(server, dest_id);
+    if (!dest) {
+      if (server->server_type == SILC_ROUTER) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+				     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
+	goto out;
+      }
+      
+      /* The client info is being resolved. Reprocess this packet after
+	 receiving the reply to the query. */
+      silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
+				  server->cmd_ident,
+				  silc_server_command_destructor,
+				  silc_server_command_invite, 
+				  silc_server_command_dup(cmd));
+      cmd->pending = TRUE;
+      silc_free(channel_id);
+      silc_free(dest_id);
+      return;
+    }
+
+    /* Check whether the requested client is already on the channel. */
+    if (silc_server_client_on_channel(dest, channel)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					    SILC_STATUS_ERR_USER_ON_CHANNEL);
+      goto out;
+    }
+    
+    /* Get route to the client */
+    dest_sock = silc_server_get_client_route(server, tmp, len, &idata);
+
+    strncat(invite, dest->nickname, strlen(dest->nickname));
+    if (!strchr(dest->nickname, '@')) {
+      strncat(invite, "@", 1);
+      strncat(invite, server->server_name, strlen(server->server_name));
+    }
+    strncat(invite, "!", 1);
+    strncat(invite, dest->username, strlen(dest->username));
+    if (!strchr(dest->username, '@')) {
+      strncat(invite, "@", 1);
+      strncat(invite, cmd->sock->hostname, strlen(cmd->sock->hostname));
+    }
+
+    len = strlen(invite);
+    if (!channel->invite_list)
+      channel->invite_list = silc_calloc(len + 2, 
+					 sizeof(*channel->invite_list));
+    else
+      channel->invite_list = silc_realloc(channel->ban_list, 
+					  sizeof(*channel->invite_list) * 
+					  (len + 
+					   strlen(channel->invite_list) + 2));
+    strncat(channel->invite_list, invite, len);
+    strncat(channel->invite_list, ",", 1);
+
+    /* Send notify to the client that is invited to the channel */
+    idp = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
+    tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+    silc_server_send_notify_dest(server, dest_sock, FALSE, dest_id, 
+				 SILC_ID_CLIENT,
+				 SILC_NOTIFY_TYPE_INVITE, 2, 
+				 idp->data, idp->len, tmp, len);
+    silc_buffer_free(idp);
   }
 
-  sidp = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
+  /* Add the client to the invite list of the channel */
+  add = silc_argument_get_arg_type(cmd->args, 3, &len);
+  if (add && strlen(add) == len) {
+    if (!channel->invite_list)
+      channel->invite_list = silc_calloc(len + 2, 
+					 sizeof(*channel->invite_list));
+    else
+      channel->invite_list = silc_realloc(channel->ban_list, 
+					  sizeof(*channel->invite_list) * 
+					  (len + 
+					   strlen(channel->invite_list) + 2));
+    if (add[len - 1] == ',')
+      add[len - 1] = '\0';
+    
+    strncat(channel->invite_list, add, len);
+    strncat(channel->invite_list, ",", 1);
+  }
 
-  /* Send notify to the client that is invited to the channel */
-  silc_server_send_notify_dest(server, dest_sock, FALSE, dest_id, 
-			       SILC_ID_CLIENT,
-			       SILC_NOTIFY_TYPE_INVITE, 2, 
-			       sidp->data, sidp->len, tmp, len);
+  /* Get the invite to be removed and remove it from the list */
+  del = silc_argument_get_arg_type(cmd->args, 4, &len);
+  if (del && channel->invite_list) {
+    char *start, *end, *n;
+
+    if (!strncmp(channel->invite_list, del, 
+		 strlen(channel->invite_list) - 1)) {
+      silc_free(channel->invite_list);
+      channel->invite_list = NULL;
+      goto out0;
+    }
+
+    start = strstr(channel->invite_list, del);
+    if (start && strlen(start) >= len) {
+      end = start + len;
+      n = silc_calloc(strlen(channel->invite_list) - len, sizeof(*n));
+      strncat(n, channel->invite_list, start - channel->invite_list);
+      strncat(n, end + 1, ((channel->invite_list + 
+			    strlen(channel->invite_list)) - end) - 1);
+      silc_free(channel->invite_list);
+      channel->invite_list = n;
+    }
+  }
+
+ out0:
+
+  idp = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
+
+  /* Send notify to the primary router */
+
 
   /* Send command reply */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
 					SILC_STATUS_OK);
 
-  silc_buffer_free(sidp);
+  silc_buffer_free(idp);
 
  out:
+  if (dest_id)
+    silc_free(dest_id);
+  if (channel_id)
+    silc_free(channel_id);
   silc_server_command_free(cmd);
 }
 
@@ -4437,7 +4529,7 @@ SILC_SERVER_CMD_FUNC(ban)
 
   /* Get the new ban and add it to the ban list */
   add = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (add) {
+  if (add && strlen(add) == tmp_len) {
     if (!channel->ban_list)
       channel->ban_list = silc_calloc(tmp_len + 2, sizeof(*channel->ban_list));
     else
@@ -4445,6 +4537,9 @@ SILC_SERVER_CMD_FUNC(ban)
 				       sizeof(*channel->ban_list) * 
 				       (tmp_len + 
 					strlen(channel->ban_list) + 2));
+    if (add[tmp_len - 1] == ',')
+      add[tmp_len - 1] = '\0';
+
     strncat(channel->ban_list, add, tmp_len);
     strncat(channel->ban_list, ",", 1);
   }

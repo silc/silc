@@ -385,7 +385,7 @@ silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 /* XXX This actually checks the data, which can be hash of the nickname
    but is not if the client is local client. Global client on global
    list may have hash.  Thus, this is not fully reliable function.
-   Instead this should probably check the hash from the lists client ID's. */
+   Instead this should probably check the hash from the list of client ID's. */
 
 SilcClientEntry *
 silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,

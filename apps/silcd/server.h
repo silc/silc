@@ -163,5 +163,7 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
 						  SilcIDListData *idata);
 SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 					       SilcClientEntry client);
+SilcClientEntry silc_server_get_client_resolve(SilcServer server,
+					       SilcClientID *client_id);
 
 #endif

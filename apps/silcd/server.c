@@ -3245,3 +3245,40 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 
   return buffer;
 }
+
+/* Finds client entry by Client ID and if it is not found then resolves
+   it using WHOIS command. */
+
+SilcClientEntry silc_server_get_client_resolve(SilcServer server,
+					       SilcClientID *client_id)
+{
+  SilcClientEntry client;
+
+  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
+  if (!client) {
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client && server->server_type == SILC_ROUTER)
+      return NULL;
+  }
+
+  if (!client && server->standalone)
+    return NULL;
+
+  if (!client || !client->nickname || !client->username) {
+    SilcBuffer buffer, idp;
+
+    idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
+					    ++server->cmd_ident, 1,
+					    3, idp->data, idp->len);
+    silc_server_packet_send(server, client ? client->router->connection :
+			    server->router->connection,
+			    SILC_PACKET_COMMAND, 0,
+			    buffer->data, buffer->len, FALSE);
+    silc_buffer_free(idp);
+    silc_buffer_free(buffer);
+  }
+
+  return client;
+}

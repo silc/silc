@@ -2264,7 +2264,7 @@ List of all defined commands in SILC follows.
    7    SILC_COMMAND_INVITE
 
         Max Arguments:  4
-            Arguments:  (1) [<Client ID>]      (2) <Channel ID>
+            Arguments:  (1) <Channel ID>       (2) [<Client ID>]
                         (3) [<adding client>]  (4) [<removing client>]
 
         This command is used to invite other clients to join to the

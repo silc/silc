@@ -1128,14 +1128,16 @@ ID's sent in arguments are sent inside ID Payload.
       is sent between routers and if the <Client ID> is argument is
       provided to the client as well.
 
-      Max Arguments:  4
-          Arguments:  (1) [<Client ID>]       (2) <Channel ID>
-                      (3) [<adding client>]   (4) [<removing client>]
+      Max Arguments:  5
+          Arguments:  (1) <Channel ID>          (2) [<Client ID>]
+                      (3) [<sender Client ID>]  (3) [<adding client>]
+                      (4) [<removing client>]
 
       The <Client ID> is the client which was invited to the channel.
-      The <Channel ID> is the channel.  The <adding client> and the
-      <removing client> indicates the added or removed client from the
-      channel's invite list.  The format of the <adding client and the
+      The <Channel ID> is the channel.  The <sender Client ID> is the
+      Client ID who invited the client to the channel.  The <adding client>
+      and the <removing client> indicates the added or removed client from
+      the channel's invite list.  The format of the <adding client and the
       <removing client> is defined in the [SILC1] with SILC_COMMAND_INVITE
       command.
 

@@ -1,3 +1,10 @@
+Sun Mar 25 20:27:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added function silc_server_get_client_resolve to find the
+	  client entry by ID from all ID lists and then resolve it
+	  (using WHOIS) if it cannot be found.  Affected file is
+	  silcd/server.[ch].
+
 Sun Mar 25 13:52:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented the BAN command to the client library.
