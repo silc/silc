@@ -81,7 +81,7 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
   SilcAttribute attribute;
   SilcAttributePayload attr;
   SilcAttributeObjPk pk;
-  unsigned char sign[2048];
+  unsigned char sign[2048 + 1];
   SilcUInt32 sign_len;
 
   SILC_LOG_DEBUG(("Process Requested Attributes"));
