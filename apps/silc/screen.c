@@ -26,6 +26,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/10 05:38:08  priikone
+ * 	Fixed screen refresh.
+ *
  * Revision 1.3  2000/07/07 06:52:10  priikone
  * 	Fixed screen refresh routine.
  *
@@ -44,11 +47,7 @@ SilcScreen silc_screen_init()
 {
   SilcScreen new;
 
-  new = silc_malloc(sizeof(*new));
-  new->output_win_count = 0;
-  new->input_pos = 0;
-  new->cursor_pos = 0;
-  new->virtual_window = 0;
+  new = silc_calloc(1, sizeof(*new));
   new->insert = TRUE;
 
   initscr();
@@ -69,7 +68,7 @@ WINDOW *silc_screen_create_output_window(SilcScreen screen)
 {
   assert(screen != NULL);
 
-  screen->output_win = silc_malloc(sizeof(*screen->output_win) * 1);
+  screen->output_win = silc_calloc(1, sizeof(*screen->output_win));
   screen->output_win_count = 1;
   screen->output_win[0] = newwin(LINES - 3, COLS, 1, 0);
   scrollok(screen->output_win[0], TRUE);
@@ -313,9 +312,9 @@ void silc_screen_input_backspace(SilcScreen screen)
       screen->virtual_window--;
       
       waddnstr(win, &buffer[screen->virtual_window * (COLS - 5)], COLS);
-      screen->input_pos = ((screen->virtual_window + 1) * (COLS - 5)) + 1;
-      screen->input_end = ((screen->virtual_window + 1) * (COLS - 5)) + 1;
-      screen->cursor_pos = (COLS - 5) + 1;
+      screen->input_pos = ((screen->virtual_window + 1) * (COLS - 5));
+      screen->input_end = ((screen->virtual_window + 1) * (COLS - 5));
+      screen->cursor_pos = (COLS - 5);
       wrefresh(win);
     }
   }
@@ -417,8 +416,8 @@ void silc_screen_input_cursor_left(SilcScreen screen)
       screen->virtual_window--;
       
       waddnstr(win, &buffer[screen->virtual_window * (COLS - 5)], COLS);
-      screen->input_pos = ((screen->virtual_window + 1) * (COLS - 5)) + 1;
-      screen->cursor_pos = (COLS - 5) + 1;
+      screen->input_pos = ((screen->virtual_window + 1) * (COLS - 5));
+      screen->cursor_pos = (COLS - 5);
       wrefresh(win);
     }
   }
