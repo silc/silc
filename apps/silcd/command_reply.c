@@ -315,8 +315,9 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
       if (attrs) {
 	silc_dlist_start(attrs);
 	while ((attr = silc_dlist_get(attrs)) != SILC_LIST_END) {
-	  switch (silc_attribute_get_attribute(attr)) {
-	  case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
+	  if (silc_attribute_get_attribute(attr) ==
+	      SILC_ATTRIBUTE_USER_PUBLIC_KEY) {
+
 	    if (!silc_attribute_get_object(attr, &pk, sizeof(pk)))
 	      continue;
 
@@ -354,9 +355,6 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
 	    silc_free(pk.type);
 	    silc_free(pk.data);
-	    break;
-
-	  default:
 	    break;
 	  }
 	}
