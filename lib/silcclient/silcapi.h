@@ -40,16 +40,16 @@
 /* Key agreement status types indicating the status of the protocol. */
 typedef enum {
   SILC_KEY_AGREEMENT_OK,	       /* Everything is Ok */
-  SILC_KEY_AGREEMENT_ERROR,	       /* Unknown error occured */
+  SILC_KEY_AGREEMENT_ERROR,	       /* Unknown error occurred */
   SILC_KEY_AGREEMENT_FAILURE,	       /* The protocol failed */
   SILC_KEY_AGREEMENT_TIMEOUT,	       /* The protocol timeout */
 } SilcKeyAgreementStatus;
 
 /* Key agreement callback that is called after the key agreement protocol
-   has been performed. This is called also if error occured during the
+   has been performed. This is called also if error occurred during the
    key agreement protocol. The `key' is the allocated key material and
    the caller is responsible of freeing it. The `key' is NULL if error
-   has occured. The application can freely use the `key' to whatever
+   has occurred. The application can freely use the `key' to whatever
    purpose it needs. See lib/silcske/silcske.h for the definition of
    the SilcSKEKeyMaterial structure. */
 typedef void (*SilcKeyAgreementCallback)(SilcClient client,
@@ -116,7 +116,7 @@ typedef struct {
   /* Command handler. This function is called always in the command function.
      If error occurs it will be called as well. `conn' is the associated
      client connection. `cmd_context' is the command context that was
-     originally sent to the command. `success' is FALSE if error occured
+     originally sent to the command. `success' is FALSE if error occurred
      during command. `command' is the command being processed. It must be
      noted that this is not reply from server. This is merely called just
      after application has called the command. Just to tell application
@@ -135,7 +135,7 @@ typedef struct {
      payload data received from server and it can be ignored. It is provided
      if the application would like to re-parse the received command data,
      however, it must be noted that the data is parsed already by the library
-     thus the payload can be ignored. `success' is FALSE if error occured.
+     thus the payload can be ignored. `success' is FALSE if error occurred.
      In this case arguments are not sent to the application. The `status' is
      the command reply status server returned. The `command' is the command
      reply being processed. The function has variable argument list and each
@@ -227,7 +227,7 @@ void silc_client_free(SilcClient client);
 
 /* Initializes the client. This makes all the necessary steps to make
    the client ready to be run. One must call silc_client_run to run the
-   client. Returns FALSE if error occured, TRUE otherwise. */
+   client. Returns FALSE if error occurred, TRUE otherwise. */
 int silc_client_init(SilcClient client);
 
 /* Runs the client. This starts the scheduler from the utility library.
