@@ -29,13 +29,13 @@ noinst_LIBRARIES = libsilcmath.a
 if SILC_MP_NSS_MPI
 MP_SOURCE = mp_mpi.c
 if SILC_DIST_TOOLKIT
-MP_HEADERS = mpi/mpi.h mpi/mplogic.h mpi/mpprime.h mpi/mpi-config.h
+MP_HEADER = mpi/mpi.h mpi/mplogic.h mpi/mpprime.h mpi/mpi-config.h
 else
-MP_HEADERS =
+MP_HEADER =
 endif
 else
 MP_SOURCE = mp_gmp.c
-MP_HEADERS =
+MP_HEADER =
 endif
 
 libsilcmath_a_SOURCES = \
@@ -50,7 +50,7 @@ include_HEADERS = 	\
 	mp_mpi.h	\
 	silcmath.h	\
 	silcmp.h	\
-	$(MP_HEADERS)
+	$(MP_HEADER)
 endif
 
 EXTRA_DIST = *.h

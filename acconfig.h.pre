@@ -4,9 +4,6 @@
 /* Version of the package. */
 #undef VERSION
 
-/* Debugging */
-#undef SILC_DEBUG
-
 /* Default configuration file */
 #undef SILC_SERVER_CONFIG_FILE
 
@@ -15,9 +12,17 @@
 
 /* These can be defined only on other than Win32 systems */
 #ifndef SILC_WIN32
+
+/* Debugging */
+#undef SILC_DEBUG
+
+/* Multi-thread support */
 #undef SILC_HAVE_PTHREAD
+
+/* IPv6 Support */
 #undef HAVE_IPV6
-#endif
+
+#endif /* SILC_WIN32 */
 
 /* Default paths */
 #undef SILC_ETCDIR

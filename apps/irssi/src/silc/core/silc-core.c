@@ -173,7 +173,7 @@ static void silc_register_cipher(SilcClient client, const char *cipher)
   if (cipher) {
     for (i = 0; silc_default_ciphers[i].name; i++)
       if (!strcmp(silc_default_ciphers[i].name, cipher)) {
-	silc_cipher_register(&silc_default_ciphers[i]);
+	silc_cipher_register((SilcCipherObject *)&silc_default_ciphers[i]);
 	break;
       }
     
@@ -194,7 +194,7 @@ static void silc_register_hash(SilcClient client, const char *hash)
   if (hash) {
     for (i = 0; silc_default_hash[i].name; i++)
       if (!strcmp(silc_default_hash[i].name, hash)) {
-	silc_hash_register(&silc_default_hash[i]);
+	silc_hash_register((SilcHashObject *)&silc_default_hash[i]);
 	break;
       }
     
@@ -215,7 +215,7 @@ static void silc_register_hmac(SilcClient client, const char *hmac)
   if (hmac) {
     for (i = 0; silc_default_hmacs[i].name; i++)
       if (!strcmp(silc_default_hmacs[i].name, hmac)) {
-	silc_hmac_register(&silc_default_hmacs[i]);
+	silc_hmac_register((SilcHmacObject *)&silc_default_hmacs[i]);
 	break;
       }
     
