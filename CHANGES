@@ -1,3 +1,7 @@
+Mon Apr  1 20:15:10 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* ROBOdoc documented lib/silcutil/silcutil.h.
+
 Sat Mar 30 18:15:55 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the silc_get_username and silc_get_real_name to
