@@ -135,6 +135,10 @@ typedef struct {
   /* Back pointers */
   void *context;
   SilcSocketConnection sock;
+
+  /* Reference count for this context. The context is free'd only
+     after the reference count is zero. */
+  int users;
 } SilcPacketContext;
 
 /* 
@@ -254,6 +258,8 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 				 void *context);
 SilcPacketType silc_packet_parse(SilcPacketContext *ctx);
 SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx);
+SilcPacketContext *silc_packet_context_alloc();
 SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx);
+void silc_packet_context_free(SilcPacketContext *ctx);
 
 #endif

@@ -393,7 +393,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     }
 
     parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
-    parse_ctx->packet = silc_calloc(1, sizeof(*parse_ctx->packet));
+    parse_ctx->packet = silc_packet_context_alloc();
     parse_ctx->packet->buffer = silc_buffer_alloc(paddedlen + mac_len);
     parse_ctx->sock = sock;
     parse_ctx->cipher = cipher;
@@ -732,34 +732,37 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx)
   return ctx->type;
 }
 
-/* Duplicates packet context. Duplicates the entire context and its
-   contents. */
+/* Allocate packet context */
+
+SilcPacketContext *silc_packet_context_alloc()
+{
+  SilcPacketContext *ctx = silc_calloc(1, sizeof(*ctx));
+  ctx->users++;
+  return ctx;
+}
+
+/* Increse the reference count of the packet context. */
 
 SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx)
 {
-  SilcPacketContext *new;
+  ctx->users++;
+  return ctx;
+}
 
-  new = silc_calloc(1, sizeof(*new));
-  new->buffer = silc_buffer_copy(ctx->buffer);
-  new->type = ctx->type;
-  new->flags = ctx->flags;
+/* Decrese the reference count of the packet context and free it only if
+   it is zero. */
 
-  new->src_id = silc_calloc(ctx->src_id_len, sizeof(*new->src_id));
-  memcpy(new->src_id, ctx->src_id, ctx->src_id_len);
-  new->src_id_len = ctx->src_id_len;
-  new->src_id_type = ctx->src_id_type;
-
-  new->dst_id = silc_calloc(ctx->dst_id_len, sizeof(*new->dst_id));
-  memcpy(new->dst_id, ctx->dst_id, ctx->dst_id_len);
-  new->dst_id_len = ctx->dst_id_len;
-  new->dst_id_type = ctx->dst_id_type;
-
-  new->truelen = ctx->truelen;
-  new->padlen = ctx->padlen;
-
-  new->rng = ctx->rng;
-  new->context = ctx->context;
-  new->sock = ctx->sock;
-
-  return new;
+void silc_packet_context_free(SilcPacketContext *ctx)
+{
+  ctx->users--;
+  if (ctx->users < 1)
+    {
+      if (ctx->buffer)
+	silc_buffer_free(ctx->buffer);
+      if (ctx->src_id)
+	silc_free(ctx->src_id);
+      if (ctx->dst_id)
+	silc_free(ctx->dst_id);
+      silc_free(ctx);
+    }
 }
