@@ -218,22 +218,12 @@ SilcerApp::SilcerApp(int argc, char **argv)
   silc_pkcs_register_default();
   silc_hash_register_default();
   silc_hmac_register_default();
-
-  // XXXXX
-  // In real application at this point it would be of course checked 
-  // whether ~/.silc direectory or something exists and key pair exists.
-  // If not then some firstsetup-wizard would be lauched that creates
-  // the keypair.  In our example we'll always create a key pair. :(
   silc_create_key_pair("rsa", 1024, "kk", "UN=foobar, "
 		       "HN=foo.bar.foobar.com", 
 		       &silc_client->public_key, &silc_client->private_key);
-
-  // We are ready to initialize the SILC Client library.
   silc_client_init(silc_client);
 
-  // Setup SILC scheduler as timeout task. This will handle the SILC
-  // client library every 50 milliseconds.  It will actually make the
-  // SILC client work on background.
+  // Setup SILC scheduler as timeout task
   Gnome::Main::timeout.connect(slot(this, &SilcerApp::silc_scheduler), 50);
 
   // XXXXX
