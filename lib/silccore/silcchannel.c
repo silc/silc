@@ -23,7 +23,22 @@
 
 #include "silcincludes.h"
 #include "silcchannel.h"
-#include "silcchannel_i.h"
+
+/******************************************************************************
+
+                              Channel Payload
+
+******************************************************************************/
+
+/* Channel Message Payload structure. Contents of this structure is parsed
+   from SILC packets. */
+struct SilcChannelPayloadStruct {
+  unsigned char *channel_name;
+  unsigned char *channel_id;
+  SilcUInt32 mode;
+  SilcUInt16 name_len;
+  SilcUInt16 id_len;
+};
 
 /* Parses channel payload returning new channel payload structure. */
 
@@ -216,6 +231,17 @@ SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload)
                              Channel Key Payload
 
 ******************************************************************************/
+
+/* Channel Key Payload structrue. Channel keys are parsed from SILC
+   packets into this structure. */
+struct SilcChannelKeyPayloadStruct {
+  unsigned char *id;
+  unsigned char *cipher;
+  unsigned char *key;
+  SilcUInt16 id_len;
+  SilcUInt16 cipher_len;
+  SilcUInt16 key_len;
+};
 
 /* Parses channel key payload returning new channel key payload structure */
 
