@@ -59,7 +59,7 @@ void silc_server_private_message(SilcServer server,
 
   /* If the destination belongs to our server we don't have to route
      the message anywhere but to send it to the local destination. */
-  client = silc_idlist_find_client_by_id(server->local_list, id);
+  client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
   if (client) {
     /* It exists, now deliver the message to the destination */
     dst_sock = (SilcSocketConnection)client->connection;
@@ -125,21 +125,19 @@ void silc_server_private_message(SilcServer server,
 			 "No such nickname: Private message not sent");
 }
 
-/* Relays received command reply packet to the correct destination. The
-   destination must be one of our locally connected client or the packet
-   will be ignored. This is called when server has forwarded one of
-   client's command request to router and router has now replied to the 
-   command. */
+/* Processes incoming command reply packet. The command reply packet may
+   be destined to one of our clients or it may directly for us. We will 
+   call the command reply routine after processing the packet. */
 
-void silc_server_packet_relay_command_reply(SilcServer server,
-					    SilcSocketConnection sock,
-					    SilcPacketContext *packet)
+void silc_server_command_reply(SilcServer server,
+			       SilcSocketConnection sock,
+			       SilcPacketContext *packet)
 {
   SilcBuffer buffer = packet->buffer;
-  SilcClientEntry client;
-  SilcClientID *id;
+  SilcClientEntry client = NULL;
   SilcSocketConnection dst_sock;
   SilcIDListData idata;
+  SilcClientID *id = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -148,42 +146,52 @@ void silc_server_packet_relay_command_reply(SilcServer server,
       sock->type != SILC_SOCKET_TYPE_ROUTER)
     return;
 
-  /* Destination must be client */
-  if (packet->dst_id_type != SILC_ID_CLIENT)
+  if (packet->dst_id_type == SILC_ID_CHANNEL)
     return;
+
+  if (packet->dst_id_type == SILC_ID_CLIENT) {
+    /* Destination must be one of ours */
+    id = silc_id_str2id(packet->dst_id, SILC_ID_CLIENT);
+    client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
+    if (!client) {
+      SILC_LOG_ERROR(("Cannot process command reply to unknown client"));
+      silc_free(id);
+      return;
+    }
+  }
+
+  if (packet->dst_id_type == SILC_ID_SERVER) {
+    /* For now this must be for us */
+    if (SILC_ID_SERVER_COMPARE(packet->dst_id, server->id_string)) {
+      SILC_LOG_ERROR(("Cannot process command reply to unknown server"));
+      return;
+    }
+  }
 
   /* Execute command reply locally for the command */
   silc_server_command_reply_process(server, sock, buffer);
 
-  id = silc_id_str2id(packet->dst_id, SILC_ID_CLIENT);
-
-  /* Destination must be one of ours */
-  client = silc_idlist_find_client_by_id(server->local_list, id);
-  if (!client) {
-    SILC_LOG_ERROR(("Cannot relay command reply to unknown client"));
-    silc_free(id);
-    return;
-  }
-
-  /* Relay the packet to the client */
-
-  dst_sock = (SilcSocketConnection)client->connection;
-  silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
-		   + packet->dst_id_len + packet->padlen);
-
-  silc_packet_send_prepare(dst_sock, 0, 0, buffer->len);
-  silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
-
-  idata = (SilcIDListData)client;
-
-  /* Encrypt packet */
-  silc_packet_encrypt(idata->send_key, idata->hmac, dst_sock->outbuf, 
-		      buffer->len);
+  if (packet->dst_id_type == SILC_ID_CLIENT && client && id) {
+    /* Relay the packet to the client */
     
-  /* Send the packet */
-  silc_server_packet_send_real(server, dst_sock, TRUE);
+    dst_sock = (SilcSocketConnection)client->connection;
+    silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
+		     + packet->dst_id_len + packet->padlen);
+    
+    silc_packet_send_prepare(dst_sock, 0, 0, buffer->len);
+    silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
+    
+    idata = (SilcIDListData)client;
+    
+    /* Encrypt packet */
+    silc_packet_encrypt(idata->send_key, idata->hmac, dst_sock->outbuf, 
+			buffer->len);
+    
+    /* Send the packet */
+    silc_server_packet_send_real(server, dst_sock, TRUE);
 
-  silc_free(id);
+    silc_free(id);
+  }
 }
 
 /* Process received channel message. The message can be originated from
@@ -209,7 +217,7 @@ void silc_server_channel_message(SilcServer server,
 
   /* Find channel entry */
   id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
-  channel = silc_idlist_find_channel_by_id(server->local_list, id);
+  channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
   if (!channel) {
     SILC_LOG_DEBUG(("Could not find channel"));
     goto out;
@@ -279,7 +287,7 @@ void silc_server_channel_key(SilcServer server,
     goto out;
 
   /* Get the channel entry */
-  channel = silc_idlist_find_channel_by_id(server->local_list, id);
+  channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
   if (!channel) {
     SILC_LOG_ERROR(("Received key for non-existent channel"));
     goto out;
@@ -598,6 +606,7 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
   SilcSocketConnection router_sock;
   SilcIDPayload idp;
   SilcIdType id_type;
+  unsigned char *hash = NULL;
   void *id, *tmpid;
 
   SILC_LOG_DEBUG(("Processing new ID"));
@@ -669,15 +678,30 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 		    sock->type == SILC_SOCKET_TYPE_SERVER ?
 		    "Server" : "Router", sock->hostname));
     
-    /* Add the client to our local list. We are router and we keep
-       cell specific local database of all clients in the cell. */
-    silc_idlist_add_client(id_list, NULL, NULL, NULL, id, router, router_sock);
+    /* As a router we keep information of all global information in our global
+       list. Cell wide information however is kept in the local list. The
+       client is put to global list and we will take the hash value of the
+       Client ID and save it to the ID Cache system for fast searching in the 
+       future. */
+    hash = silc_calloc(sizeof(((SilcClientID *)id)->hash), 
+		       sizeof(unsigned char));
+    memcpy(hash, ((SilcClientID *)id)->hash, 
+	   sizeof(((SilcClientID *)id)->hash));
+    silc_idlist_add_client(id_list, hash, NULL, NULL, id, router, router_sock);
 
+#if 0
+    /* XXX Adding two ID's with same IP number replaces the old entry thus
+       gives wrong route. Thus, now disabled until figured out a better way
+       to do this or when removed the whole thing. This could be removed
+       because entry->router->connection gives always the most optimal route
+       for the ID anyway (unless new routes (faster perhaps) are established
+       after receiving this ID, this we don't know however). */
     /* Add route cache for this ID */
     silc_server_route_add(silc_server_route_hash(
 			  ((SilcClientID *)id)->ip.s_addr,
 			  server->id->port), ((SilcClientID *)id)->ip.s_addr,
 			  router);
+#endif
     break;
 
   case SILC_ID_SERVER:
@@ -686,16 +710,18 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 		    sock->type == SILC_SOCKET_TYPE_SERVER ?
 		    "Server" : "Router", sock->hostname));
     
-    /* Add the server to our local list. We are router and we keep
-       cell specific local database of all servers in the cell. */
+    /* As a router we keep information of all global information in our global
+       list. Cell wide information however is kept in the local list. */
     silc_idlist_add_server(id_list, NULL, 0, id, router, router_sock);
 
+#if 0
     /* Add route cache for this ID */
     silc_server_route_add(silc_server_route_hash(
 			  ((SilcServerID *)id)->ip.s_addr,
 			  ((SilcServerID *)id)->port), 
 			  ((SilcServerID *)id)->ip.s_addr,
 			  router);
+#endif
     break;
 
   case SILC_ID_CHANNEL:
@@ -760,13 +786,14 @@ void silc_server_remove_channel_user(SilcServer server,
 
   /* XXX routers should check server->global_list as well */
   /* Get channel entry */
-  channel = silc_idlist_find_channel_by_id(server->local_list, channel_id);
+  channel = silc_idlist_find_channel_by_id(server->local_list, 
+					   channel_id, NULL);
   if (!channel)
     goto out;
   
   /* XXX routers should check server->global_list as well */
   /* Get client entry */
-  client = silc_idlist_find_client_by_id(server->local_list, client_id);
+  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
   if (!client)
     goto out;
 
@@ -877,7 +904,8 @@ void silc_server_notify(SilcServer server,
       goto out;
 
     /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, channel_id);
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
     if (!channel) {
       silc_free(channel_id);
       goto out;
@@ -981,7 +1009,7 @@ void silc_server_new_channel_user(SilcServer server,
   silc_free(tmpid);
 
   /* Find the channel */
-  channel = silc_idlist_find_channel_by_id(id_list, channel_id);
+  channel = silc_idlist_find_channel_by_id(id_list, channel_id, NULL);
   if (!channel) {
     SILC_LOG_ERROR(("Received channel user for non-existent channel"));
     goto out;
@@ -998,7 +1026,7 @@ void silc_server_new_channel_user(SilcServer server,
   }
 
   /* Get client entry */
-  client = silc_idlist_find_client_by_id(id_list, client_id);
+  client = silc_idlist_find_client_by_id(id_list, client_id, NULL);
   if (!client) {
     /* This is new client to us, add entry to ID list */
     client = silc_idlist_add_client(id_list, NULL, NULL, NULL, 
