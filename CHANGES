@@ -4,6 +4,9 @@ Sat Nov 30 09:30:55 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* ROBODoc cleanup patch to lib/silccrypt/silcpkcs.h by johnny.
 
+	* Max alloc tests in allocation routines.  Affected file
+	  lib/silcutil/silcmemory.c.
+
 Fri Nov 29 23:44:29 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a typo in resuming code that fixed detach/resume code
