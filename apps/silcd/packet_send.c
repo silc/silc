@@ -1124,25 +1124,26 @@ void silc_server_send_channel_key(SilcServer server,
 				  SilcChannelEntry channel,
 				  unsigned char route)
 {
-  SilcBuffer packet, idp;
+  SilcBuffer packet;
+  unsigned char *chid;
   unsigned int tmp_len;
-
+ 
   SILC_LOG_DEBUG(("Start"));
-
-  idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
-  if (!idp)
+ 
+  chid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+  if (!chid)
     return;
-
+ 
   /* Encode channel key packet */
   tmp_len = strlen(channel->channel_key->cipher->name);
-  packet = silc_channel_key_payload_encode(idp->len, idp->data, tmp_len,
-					   channel->channel_key->cipher->name,
-					   channel->key_len / 8, channel->key);
-
+  packet = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, chid, tmp_len,
+                                           channel->channel_key->cipher->name,
+                                           channel->key_len / 8, channel->key);
+ 
   silc_server_packet_send_to_channel(server, channel, SILC_PACKET_CHANNEL_KEY,
-				     route, packet->data, packet->len, FALSE);
+                                     route, packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
-  silc_buffer_free(idp);
+  silc_free(chid);
 }
 
 /* Generic function to send any command. The arguments must be sent already
