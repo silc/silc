@@ -24,6 +24,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/10 05:34:40  priikone
+ * 	Added PEM encoding/decoding functions.
+ *
  * Revision 1.2  2000/07/05 06:06:12  priikone
  * 	Added file saving with specific mode.
  *
@@ -276,4 +279,154 @@ int silc_string_compare(char *string1, char *string2)
   silc_free(tmpstr1);
   silc_free(tmpstr2);
   return FALSE;
+}
+
+unsigned char pem_enc[64] =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/* Encodes data into PEM encoding. Returns NULL terminated PEM encoded
+   data string. Note: This is originally public domain code and is 
+   still PD. */
+
+char *silc_encode_pem(unsigned char *data, unsigned int len)
+{
+  int i, j;
+  unsigned int bits, c, char_count;
+  char *pem;
+
+  char_count = 0;
+  bits = 0;
+  j = 0;
+
+  pem = silc_calloc(((len * 8 + 5) / 6) + 5, sizeof(*pem));
+
+  for (i = 0; i < len; i++) {
+    c = data[i];
+    bits += c;
+    char_count++;
+
+    if (char_count == 3) {
+      pem[j++] = pem_enc[bits  >> 18];
+      pem[j++] = pem_enc[(bits >> 12) & 0x3f];
+      pem[j++] = pem_enc[(bits >> 6)  & 0x3f];
+      pem[j++] = pem_enc[bits & 0x3f];
+      bits = 0;
+      char_count = 0;
+    } else {
+      bits <<= 8;
+    }
+  }
+
+  if (char_count != 0) {
+    bits <<= 16 - (8 * char_count);
+    pem[j++] = pem_enc[bits >> 18];
+    pem[j++] = pem_enc[(bits >> 12) & 0x3f];
+
+    if (char_count == 1) {
+      pem[j++] = '=';
+      pem[j] = '=';
+    } else {
+      pem[j++] = pem_enc[(bits >> 6) & 0x3f];
+      pem[j] = '=';
+    }
+  }
+
+  return pem;
+}
+
+/* Same as above but puts newline ('\n') every 72 characters. */
+
+char *silc_encode_pem_file(unsigned char *data, unsigned int data_len)
+{
+  int i, j;
+  unsigned int len, cols;
+  char *pem, *pem2;
+
+  pem = silc_encode_pem(data, data_len);
+  len = strlen(pem);
+
+  pem2 = silc_calloc(len + (len / 72) + 1, sizeof(*pem2));
+
+  for (i = 0, j = 0, cols = 1; i < len; i++, cols++) {
+    if (cols == 72) {
+      pem2[i] = '\n';
+      cols = 0;
+      len++;
+      continue;
+    }
+
+    pem2[i] = pem[j++];
+  }
+
+  return pem2;
+}
+
+/* Decodes PEM into data. Returns the decoded data. Note: This is
+   originally public domain code and is still PD. */
+
+unsigned char *silc_decode_pem(unsigned char *pem, unsigned int pem_len,
+			       unsigned int *ret_len)
+{
+  int i, j;
+  unsigned int len, c, char_count, bits;
+  unsigned char *data;
+  static char ialpha[256], decoder[256];
+
+  for (i = 64 - 1; i >= 0; i--) {
+    ialpha[pem_enc[i]] = 1;
+    decoder[pem_enc[i]] = i;
+  }
+
+  char_count = 0;
+  bits = 0;
+  j = 0;
+
+  if (!pem_len)
+    len = strlen(pem);
+  else
+    len = pem_len;
+
+  data = silc_calloc(((len * 6) / 8), sizeof(*data));
+
+  for (i = 0; i < len; i++) {
+    c = pem[i];
+
+    if (c == '=')
+      break;
+
+    if (c > 127 || !ialpha[c])
+      continue;
+
+    bits += decoder[c];
+    char_count++;
+
+    if (char_count == 4) {
+      data[j++] = bits >> 16;
+      data[j++] = (bits >> 8) & 0xff;
+      data[j++] = bits & 0xff;
+      bits = 0;
+      char_count = 0;
+    } else {
+      bits <<= 6;
+    }
+  }
+
+  switch(char_count) {
+  case 1:
+    silc_free(data);
+    return NULL;
+    break;
+  case 2:
+    data[j] = bits >> 10;
+    break;
+  case 3:
+    data[j++] = bits >> 16;
+    data[j] = (bits >> 8) & 0xff;
+    break;
+  }
+
+  if (ret_len)
+    *ret_len = j + 1;
+
+  return data;
 }
