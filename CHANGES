@@ -1,3 +1,9 @@
+Sat Apr 14 16:21:32 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Do not parse packets with different timeout when protocol
+	  is active -> may cause problem with rekey.  Affected file
+	  silcd/server.c.
+
 Fri Apr 13 17:12:46 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added printing of error messages during SKE protocol from the
