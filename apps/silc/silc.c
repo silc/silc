@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/06/30 10:49:48  priikone
+ * 	Added SOCKS4 and SOCKS5 support for SILC client.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -231,6 +234,10 @@ SILC Secure Internet Live Conferencing, version %s\n",
 
   /* Read local configuration file */
 
+#ifdef SOCKS
+  /* Init SOCKS */
+  SOCKSinit(argv[0]);
+#endif
 
   /* Allocate new client */
   ret = silc_client_alloc(&silc);

@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/06/30 10:49:48  priikone
+ * 	Added SOCKS4 and SOCKS5 support for SILC client.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -119,6 +122,7 @@ int silc_net_create_connection(int port, char *host)
   /* Set socket information */
   memset(&desthost, 0, sizeof(desthost));
   desthost.sin_port = htons(port);
+  desthost.sin_family = PF_INET;
   memcpy(&desthost.sin_addr, dest->h_addr_list[0], sizeof(desthost.sin_addr));
 
   /* Create the connection socket */
@@ -169,6 +173,7 @@ int silc_net_create_connection_async(int port, char *host)
   /* Set socket information */
   memset(&desthost, 0, sizeof(desthost));
   desthost.sin_port = htons(port);
+  desthost.sin_family = PF_INET;
   memcpy(&desthost.sin_addr, dest->h_addr_list[0], sizeof(desthost.sin_addr));
 
   /* Create the connection socket */

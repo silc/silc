@@ -40,6 +40,10 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
+#ifdef SOCKS5
+#include "socks.h"
+#endif
+
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #else
