@@ -119,5 +119,6 @@ void silc_schedule_stop();
 void silc_schedule_set_listen_fd(int fd, unsigned int iomask);
 void silc_schedule_unset_listen_fd(int fd);
 void silc_schedule();
+int silc_schedule_one(int block);
 
 #endif

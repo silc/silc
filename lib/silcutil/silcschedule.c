@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  2000/09/28 08:50:31  priikone
+ * 	Added silc_schedule_one function to run the scheduler only ones.
+ * 	Patch by cras.
+ *
  * Revision 1.1  2000/09/13 17:45:16  priikone
  * 	Splitted SILC core library. Core library includes now only
  * 	SILC protocol specific stuff. New utility library includes the
@@ -164,7 +168,7 @@ void silc_schedule_unset_listen_fd(int fd)
       if (schedule.fd_list.fd[i] != -1)
 	break;
 
-    schedule.fd_list.last_fd = i;
+    schedule.fd_list.last_fd = i < 0 ? 0 : i;
   }
 }
 
@@ -438,17 +442,87 @@ do {									     \
   }									     \
 } while(0)
 
+int silc_schedule_one(int timeout_usecs)
+{
+  struct timeval timeout;
+  int is_run, i;
+  SilcTask task;
+  SilcTaskQueue queue;
+  struct timeval curtime;
+
+  SILC_LOG_DEBUG(("In scheduler loop"));
+
+  /* If the task queues aren't initialized or we aren't valid anymore
+     we will return */
+  if ((!schedule.fd_queue && !schedule.timeout_queue 
+       && !schedule.generic_queue) || schedule.valid == FALSE) {
+    SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
+    return FALSE;
+  }
+
+  /* Clear everything */
+  FD_ZERO(&schedule.in);
+  FD_ZERO(&schedule.out);
+  schedule.max_fd = -1;
+  is_run = FALSE;
+
+  /* Calculate next timeout for select(). This is the timeout value
+     when at earliest some of the timeout tasks expire. */
+  SILC_SCHEDULE_SELECT_TIMEOUT;
+
+  /* Add the file descriptors to the fd sets. These are the non-timeout
+     tasks. The select() listens to these file descriptors. */
+  SILC_SCHEDULE_SELECT_TASKS;
+
+  if (schedule.max_fd == -1) {
+    /*SILC_LOG_ERROR(("Nothing to listen, exiting"));*/
+    return FALSE;
+  }
+
+  if (schedule.timeout) {
+    SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule.timeout->tv_sec,
+		    schedule.timeout->tv_usec));
+  }
+
+  /* This is the main select(). The program blocks here until some
+     of the selected file descriptors change status or the selected
+     timeout expires. */
+  SILC_LOG_DEBUG(("Select"));
+  if (timeout_usecs < 0)
+    memcpy(&timeout, schedule.timeout, sizeof(timeout));
+  else {
+    timeout.tv_sec = 0;
+    timeout.tv_usec = timeout_usecs;
+  }
+  switch (select(schedule.max_fd + 1, &schedule.in,
+		 &schedule.out, 0, &timeout)) {
+  case -1:
+    /* Error */
+    SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
+    break;
+  case 0:
+    /* Timeout */
+    SILC_LOG_DEBUG(("Running timeout tasks"));
+    gettimeofday(&curtime, NULL);
+    SILC_SCHEDULE_RUN_TIMEOUT_TASKS;
+    break;
+  default:
+    /* There is some data available now */
+    SILC_LOG_DEBUG(("Running non-timeout tasks"));
+    SILC_SCHEDULE_RUN_TASKS;
+
+    SILC_SCHEDULE_RUN_GENERIC_TASKS;
+    break;
+  }
+  return TRUE;
+}
+
 /* The SILC scheduler. This is actually the main routine in SILC programs.
    When this returns the program is to be ended. Before this function can
    be called, one must call silc_schedule_init function. */
 
 void silc_schedule()
 {
-  int is_run, i;
-  SilcTask task;
-  SilcTaskQueue queue;
-  struct timeval curtime;
-
   SILC_LOG_DEBUG(("Running scheduler"));
 
   if (schedule.valid == FALSE) {
@@ -457,65 +531,5 @@ void silc_schedule()
   }
 
   /* Start the scheduler loop */
-  while(1) {
-
-    SILC_LOG_DEBUG(("In scheduler loop"));
-
-    /* If the task queues aren't initialized or we aren't valid anymore
-       we will return */
-    if ((!schedule.fd_queue && !schedule.timeout_queue 
-	 && !schedule.generic_queue) || schedule.valid == FALSE) {
-      SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
-      break;
-    }
-
-    /* Clear everything */
-    FD_ZERO(&schedule.in);
-    FD_ZERO(&schedule.out);
-    schedule.max_fd = -1;
-    is_run = FALSE;
-
-    /* Calculate next timeout for select(). This is the timeout value
-       when at earliest some of the timeout tasks expire. */
-    SILC_SCHEDULE_SELECT_TIMEOUT;
-
-    /* Add the file descriptors to the fd sets. These are the non-timeout
-       tasks. The select() listens to these file descriptors. */
-    SILC_SCHEDULE_SELECT_TASKS;
-
-    if (schedule.max_fd == -1) {
-      SILC_LOG_ERROR(("Nothing to listen, exiting"));
-      break;
-    }
-
-    if (schedule.timeout) {
-      SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule.timeout->tv_sec,
-		      schedule.timeout->tv_usec));
-    }
-
-    /* This is the main select(). The program blocks here until some
-       of the selected file descriptors change status or the selected
-       timeout expires. */
-    SILC_LOG_DEBUG(("Select"));
-    switch(select(schedule.max_fd + 1, &schedule.in, 
-		  &schedule.out, 0, schedule.timeout)) {
-    case -1:
-      /* Error */
-      SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
-      break;
-    case 0:
-      /* Timeout */
-      SILC_LOG_DEBUG(("Running timeout tasks"));
-      gettimeofday(&curtime, NULL);
-      SILC_SCHEDULE_RUN_TIMEOUT_TASKS;
-      break;
-    default:
-      /* There is some data available now */
-      SILC_LOG_DEBUG(("Running non-timeout tasks"));
-      SILC_SCHEDULE_RUN_TASKS;
-
-      SILC_SCHEDULE_RUN_GENERIC_TASKS;
-      break;
-    }
-  }
+  while (silc_schedule_one(-1)) ;
 }
