@@ -349,7 +349,7 @@ extern DLLAPI bool silc_debug_hexdump;
 				__LINE__, \
 				silc_format fmt)
 #define SILC_NOT_IMPLEMENTED(string) \
-  SILC_LOG_DEBUG(("*********** %s: NOT IMPLEMENTED YET", string));
+  SILC_LOG_INFO(("*********** %s: NOT IMPLEMENTED YET", string));
 #else
 #define SILC_LOG_DEBUG(fmt)
 #define SILC_NOT_IMPLEMENTED(string)
