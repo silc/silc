@@ -29,6 +29,8 @@ TODO/bugs In SILC Server
    the core library, client and server.  Maybe implementations of
    RFC 2425 and RFC 2426 to make it complete.
 
+ o Remove OPER and SILCOPER rights in DETACH.
+
  o Backup router related issues:
 
  	o Add special handling in router and server for "connection
