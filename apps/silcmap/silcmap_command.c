@@ -37,11 +37,13 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_text);
 static const SilcConfigTable silc_map_table_loadmap[] =
 {
   { "filename", SILC_CONFIG_ARG_STR, silc_map_cmd_loadmap, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_writemap[] =
 {
   { "filename", SILC_CONFIG_ARG_STR, silc_map_cmd_writemap, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_writemaphtml[] =
@@ -50,12 +52,14 @@ static const SilcConfigTable silc_map_table_writemaphtml[] =
   { "image", SILC_CONFIG_ARG_STR, silc_map_cmd_writemaphtml, NULL },
   { "cut_lat", SILC_CONFIG_ARG_STRE, silc_map_cmd_writemaphtml, NULL },
   { "cut_lon", SILC_CONFIG_ARG_STRE, silc_map_cmd_writemaphtml, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_writehtml[] =
 {
   { "filename", SILC_CONFIG_ARG_STR, silc_map_cmd_writehtml, NULL },
   { "class", SILC_CONFIG_ARG_STRE, silc_map_cmd_writehtml, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_cut[] =
@@ -65,6 +69,7 @@ static const SilcConfigTable silc_map_table_cut[] =
   { "width", SILC_CONFIG_ARG_INT, silc_map_cmd_cut, NULL },
   { "height", SILC_CONFIG_ARG_INT, silc_map_cmd_cut, NULL },
   { "filename", SILC_CONFIG_ARG_STR, silc_map_cmd_cut, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_rectangle[] =
@@ -76,6 +81,7 @@ static const SilcConfigTable silc_map_table_rectangle[] =
   { "lposx", SILC_CONFIG_ARG_INT, silc_map_cmd_rectangle, NULL },
   { "lposy", SILC_CONFIG_ARG_INT, silc_map_cmd_rectangle, NULL },
   { "lcolor", SILC_CONFIG_ARG_STR, silc_map_cmd_rectangle, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_circle[] =
@@ -87,6 +93,7 @@ static const SilcConfigTable silc_map_table_circle[] =
   { "lposx", SILC_CONFIG_ARG_INT, silc_map_cmd_circle, NULL },
   { "lposy", SILC_CONFIG_ARG_INT, silc_map_cmd_circle, NULL },
   { "lcolor", SILC_CONFIG_ARG_STR, silc_map_cmd_circle, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_line[] =
@@ -97,6 +104,7 @@ static const SilcConfigTable silc_map_table_line[] =
   { "b_lon", SILC_CONFIG_ARG_STR, silc_map_cmd_line, NULL },
   { "width", SILC_CONFIG_ARG_STR, silc_map_cmd_line, NULL },
   { "color", SILC_CONFIG_ARG_STR, silc_map_cmd_line, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_text[] =
@@ -105,6 +113,7 @@ static const SilcConfigTable silc_map_table_text[] =
   { "lon", SILC_CONFIG_ARG_STR, silc_map_cmd_text, NULL },
   { "color", SILC_CONFIG_ARG_STR, silc_map_cmd_text, NULL },
   { "text", SILC_CONFIG_ARG_STR, silc_map_cmd_text, NULL },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_server[] =
@@ -159,6 +168,7 @@ static const SilcConfigTable silc_map_table_server[] =
     silc_map_cmd_line, silc_map_table_line },
   { "text", SILC_CONFIG_ARG_BLOCK,
     silc_map_cmd_text, silc_map_table_text },
+  { NULL },
 };
 
 static const SilcConfigTable silc_map_table_main[] =
