@@ -13,6 +13,8 @@ TODO for Irssi SILC Client 1.0
 TODO for SILC Server 1.0
 ========================
 
+ o Fix CUMODE_CHANGE and CMODE_CHANGE for founder key things.
+
  o 1.2 backup router support
 
  o Testing
