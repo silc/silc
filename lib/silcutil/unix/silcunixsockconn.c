@@ -74,8 +74,9 @@ SILC_TASK_CALLBACK(silc_socket_read_qos)
 {
   SilcSocketConnection sock = context;
   sock->qos->applied = TRUE;
-  silc_schedule_set_listen_fd(sock->qos->schedule, sock->sock,
-			      (SILC_TASK_READ | SILC_TASK_WRITE), TRUE);
+  if (sock->users > 1)
+    silc_schedule_set_listen_fd(sock->qos->schedule, sock->sock,
+				(SILC_TASK_READ | SILC_TASK_WRITE), TRUE);
   sock->qos->applied = FALSE;
   silc_socket_free(sock);
 }
