@@ -499,7 +499,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 2 || argc > 2) {
+  if (argc < 2 || argc > 3) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot set nickname: bad reply to command");
     COMMAND_REPLY_ERROR;

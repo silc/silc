@@ -240,15 +240,15 @@ void silc_server_command_process(SilcServer server,
     if (!fast && ((cmd->flags & SILC_CF_LAG_STRICT) ||
 		  (client->fast_command > 5 && cmd->flags & SILC_CF_LAG)))
       silc_schedule_task_add(server->schedule, sock->sock, 
-			 silc_server_command_process_timeout,
-			 (void *)timeout, 
-			 2 - (time(NULL) - client->last_command), 0,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+			     silc_server_command_process_timeout, timeout,
+			     (client->fast_command < 3 ? 0 :
+			      2 - (time(NULL) - client->last_command)),
+			     (client->fast_command < 3 ? 200000 : 0),
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     else
       silc_schedule_task_add(server->schedule, sock->sock, 
-			 silc_server_command_process_timeout,
-			 (void *)timeout, 0, 1,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+			     silc_server_command_process_timeout, timeout,
+			     0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     return;
   }
 
