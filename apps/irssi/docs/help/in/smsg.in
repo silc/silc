@@ -1,0 +1,33 @@
+
+@SYNTAX:smsg@
+
+Sends a signed private message to other user in the network.
+The message will be digitally signed and the receiver may verify
+the message by using your public key.
+
+If -channel option is provided then this command actually
+send channel message to the specified channel.  The message
+IS NOT private message, it is normal channel message.  Also this
+message will be signed and can be verified by using your public
+key.
+
+The default theme of Irssi SILC Client shows the digital signed
+messages with [S] at start of the nickname who sent the message, when
+the message was successfully verified, [?] if the message could not
+be verified since the public key of the sender isn't cached locally,
+or [F] if the signature verificationn failed.  If you do not have
+the sender's public key you can fetch it with GETKEY command.
+
+If you don't want to verify the signatures from received messages
+you may do /SET ignore_message_signatures on.  In this case
+signatures in messages are ignored and they appear as normal
+non-signed messages.  By default, all message signatures are
+verified.
+
+Examples:
+
+/SMSG Foobar Very authenticated message
+/SMSG -channel silc Another signed message
+/SMSG * I truly said this
+
+See also: MSG QUERY GETKEY

@@ -1,16 +1,15 @@
 /*
 
-  silcschedule.c
+  silcschedule.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2001 Pekka Riikonen
+  Copyright (C) 1998 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -275,16 +274,16 @@ bool silc_schedule_uninit(SilcSchedule schedule)
     return FALSE;
 
   /* Dispatch all timeouts before going away */
+  SILC_SCHEDULE_LOCK(schedule);
   silc_mutex_lock(schedule->timeout_queue->lock);
   silc_schedule_dispatch_timeout(schedule, TRUE);
   silc_mutex_unlock(schedule->timeout_queue->lock);
+  SILC_SCHEDULE_UNLOCK(schedule);
 
   /* Deliver signals before going away */
   if (schedule->signal_tasks) {
-    SILC_SCHEDULE_UNLOCK(schedule);
     silc_schedule_internal_signals_call(schedule->internal, schedule);
     schedule->signal_tasks = FALSE;
-    SILC_SCHEDULE_LOCK(schedule);
   }
 
   /* Unregister all tasks */
@@ -343,8 +342,8 @@ void silc_schedule_stop(SilcSchedule schedule)
 static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 {
   SilcTask task;
-  int i, last_fd = schedule->last_fd;
-  SilcUInt32 fd;
+  int i;
+  SilcUInt32 fd, last_fd = schedule->last_fd;
 
   for (i = 0; i <= last_fd; i++) {
     if (schedule->fd_list[i].events == 0)

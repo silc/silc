@@ -625,6 +625,7 @@ SILC_CLIENT_CMD_FUNC(invite)
   SilcClientEntry client_entry = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, clidp, chidp, args = NULL;
+  SilcPublicKey pubkey = NULL;
   char *nickname = NULL, *name;
   char *invite = NULL;
   unsigned char action[1];
@@ -687,12 +688,19 @@ SILC_CLIENT_CMD_FUNC(invite)
 	goto out;
       }
     } else {
-      invite = cmd->argv[2];
-      invite++;
       if (cmd->argv[2][0] == '+')
 	action[0] = 0x00;
       else
 	action[0] = 0x01;
+
+      /* Check if it is public key file to be added to invite list */
+      if (!silc_pkcs_load_public_key(cmd->argv[2] + 1, &pubkey,
+				     SILC_PKCS_FILE_PEM))
+	silc_pkcs_load_public_key(cmd->argv[2] + 1, &pubkey,
+				  SILC_PKCS_FILE_BIN);
+      invite = cmd->argv[2];
+      if (!pubkey)
+	invite++;
     }
   }
 
@@ -701,7 +709,15 @@ SILC_CLIENT_CMD_FUNC(invite)
     silc_buffer_format(args,
 		       SILC_STR_UI_SHORT(1),
 		       SILC_STR_END);
-    args = silc_argument_payload_encode_one(args, invite, strlen(invite), 1);
+    if (pubkey) {
+      chidp = silc_pkcs_public_key_payload_encode(pubkey);
+      args = silc_argument_payload_encode_one(args, chidp->data,
+					      chidp->len, 2);
+      silc_buffer_free(chidp);
+      silc_pkcs_public_key_free(pubkey);
+    } else {
+      args = silc_argument_payload_encode_one(args, invite, strlen(invite), 1);
+    }
   }
 
   /* Send the command */
@@ -1368,7 +1384,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
-  SilcBuffer buffer, chidp, auth = NULL;
+  SilcBuffer buffer, chidp, auth = NULL, pk = NULL;
   unsigned char *name, *cp, modebuf[4], tmp[4], *arg = NULL;
   SilcUInt32 mode, add, type, len, arg_len = 0;
   int i;
@@ -1530,10 +1546,27 @@ SILC_CLIENT_CMD_FUNC(cmode)
       break;
     case 'f':
       if (add) {
+	SilcPublicKey pubkey = cmd->client->public_key;
+	SilcPrivateKey privkey = cmd->client->private_key;
+
 	mode |= SILC_CHANNEL_MODE_FOUNDER_AUTH;
 	type = 7;
-	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
-						  cmd->client->private_key,
+
+	if (cmd->argc >= 5) {
+	  char *pass = "";
+	  if (cmd->argc >= 6)
+	    pass = cmd->argv[5];
+	  if (!silc_load_key_pair(cmd->argv[3], cmd->argv[4], pass,
+				  NULL, &pubkey, &privkey)) {
+	    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		"Could not load key pair, check your arguments");
+	    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	    goto out;
+	  }
+	}
+
+	pk = silc_pkcs_public_key_payload_encode(pubkey);
+	auth = silc_auth_public_key_auth_generate(pubkey, privkey,
 						  cmd->client->rng, 
 						  cmd->client->sha1hash,
 						  conn->local_id,
@@ -1558,10 +1591,12 @@ SILC_CLIENT_CMD_FUNC(cmode)
      that requires an argument. */
   if (type && arg) {
     buffer = 
-      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 3,
+      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 4,
 				     1, chidp->data, chidp->len, 
 				     2, modebuf, sizeof(modebuf),
-				     type, arg, arg_len);
+				     type, arg, arg_len,
+				     8, pk ? pk->data : NULL,
+				     pk ? pk->len : 0);
   } else {
     buffer = 
       silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 2,
@@ -1573,8 +1608,8 @@ SILC_CLIENT_CMD_FUNC(cmode)
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
-  if (auth)
-    silc_buffer_free(auth);
+  silc_buffer_free(auth);
+  silc_buffer_free(pk);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1683,8 +1718,23 @@ SILC_CLIENT_CMD_FUNC(cumode)
       break;
     case 'f':
       if (add) {
-	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
-						  cmd->client->private_key,
+	SilcPublicKey pubkey = cmd->client->public_key;
+	SilcPrivateKey privkey = cmd->client->private_key;
+
+	if (cmd->argc >= 6) {
+	  char *pass = "";
+	  if (cmd->argc >= 7)
+	    pass = cmd->argv[6];
+	  if (!silc_load_key_pair(cmd->argv[4], cmd->argv[5], pass,
+				  NULL, &pubkey, &privkey)) {
+	    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		"Could not load key pair, check your arguments");
+	    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	    goto out;
+	  }
+	}
+
+	auth = silc_auth_public_key_auth_generate(pubkey, privkey,
 						  cmd->client->rng,
 						  cmd->client->sha1hash,
 						  conn->local_id,
@@ -2006,7 +2056,8 @@ SILC_CLIENT_CMD_FUNC(ban)
   SilcBuffer buffer, chidp, args = NULL;
   char *name, *ban = NULL;
   unsigned char action[1];
-
+  SilcPublicKey pubkey = NULL;
+  
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
@@ -2044,8 +2095,14 @@ SILC_CLIENT_CMD_FUNC(ban)
     else
       action[0] = 0x01;
 
+    /* Check if it is public key file to be added to invite list */
+    if (!silc_pkcs_load_public_key(cmd->argv[2] + 1, &pubkey,
+				   SILC_PKCS_FILE_PEM))
+      silc_pkcs_load_public_key(cmd->argv[2] + 1, &pubkey,
+				SILC_PKCS_FILE_BIN);
     ban = cmd->argv[2];
-    ban++;
+    if (!pubkey)
+      ban++;
   }
 
   if (ban) {
@@ -2053,7 +2110,15 @@ SILC_CLIENT_CMD_FUNC(ban)
     silc_buffer_format(args,
 		       SILC_STR_UI_SHORT(1),
 		       SILC_STR_END);
-    args = silc_argument_payload_encode_one(args, ban, strlen(ban), 1);
+    if (pubkey) {
+      chidp = silc_pkcs_public_key_payload_encode(pubkey);
+      args = silc_argument_payload_encode_one(args, chidp->data,
+					      chidp->len, 2);
+      silc_buffer_free(chidp);
+      silc_pkcs_public_key_free(pubkey);
+    } else {
+      args = silc_argument_payload_encode_one(args, ban, strlen(ban), 1);
+    }
   }
 
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
@@ -2596,8 +2661,8 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(join, JOIN, "JOIN", 9);
   SILC_CLIENT_CMD(motd, MOTD, "MOTD", 2);
   SILC_CLIENT_CMD(umode, UMODE, "UMODE", 2);
-  SILC_CLIENT_CMD(cmode, CMODE, "CMODE", 4);
-  SILC_CLIENT_CMD(cumode, CUMODE, "CUMODE", 5);
+  SILC_CLIENT_CMD(cmode, CMODE, "CMODE", 6);
+  SILC_CLIENT_CMD(cumode, CUMODE, "CUMODE", 9);
   SILC_CLIENT_CMD(kick, KICK, "KICK", 4);
   SILC_CLIENT_CMD(ban, BAN, "BAN", 3);
   SILC_CLIENT_CMD(detach, DETACH, "DETACH", 0);

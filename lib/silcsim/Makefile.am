@@ -36,7 +36,6 @@ SIM_CIPHER_OBJS = \
         blowfish.o \
         rc5.o \
         rc6.o \
-        mars.o \
         aes.o \
         rsa.o \
         twofish.o \
@@ -53,10 +52,16 @@ if SILC_SIM
 all: $(SIM_CIPHER_OBJS) $(SIM_HASH_OBJS)
 endif
 
+if SILC_LIBTOOLFIX
+LTFLAGS = --libtool-enable-shared
+else
+LTFLAGS =
+endif
+
 $(SIM_CIPHER_OBJS):
 	@if test '!' -f lib$*.la ; then \
 	  $(LIBTOOL) --mode=link $(CCLD) -rpath $(silc_modulesdir) \
-		../silccrypt/$*.lo -o lib$*.la; \
+		../silccrypt/$*.lo -o lib$*.la $(LTFLAGS); \
 	  cd $(srcdir) && $(LN_S) -f $(srcdir)/.libs/lib$*.so \
 		$(srcdir)/$*.sim.so; \
 	fi
@@ -64,7 +69,7 @@ $(SIM_CIPHER_OBJS):
 $(SIM_HASH_OBJS):
 	@if test '!' -f lib$*.la ; then \
 	  $(LIBTOOL) --mode=link $(CCLD) -rpath $(silc_modulesdir) \
-		../silccrypt/$*.lo -o lib$*.la; \
+		../silccrypt/$*.lo -o lib$*.la $(LTFLAGS); \
 	  cd $(srcdir) && $(LN_S) -f $(srcdir)/.libs/lib$*.so \
 		$(srcdir)/$*.sim.so; \
 	fi

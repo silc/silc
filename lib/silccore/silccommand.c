@@ -1,16 +1,15 @@
 /*
 
-  silccommand.c
+  silccommand.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -76,6 +75,7 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
   }
 
   if (newp->cmd == 0) {
+    SILC_LOG_ERROR(("Incorrect command type in command payload"));
     silc_free(newp);
     return NULL;
   }
@@ -111,6 +111,8 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
 
   if (argc) {
     args = silc_argument_payload_encode(argc, argv, argv_lens, argv_types);
+    if (!args)
+      return NULL;
     len = args->len;
   }
 
@@ -154,7 +156,8 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
 
   if (payload->args) {
     args = silc_argument_payload_encode_payload(payload->args);
-    len = args->len;
+    if (args)
+      len = args->len;
     argc = silc_argument_get_arg_num(payload->args);
   }
 

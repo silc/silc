@@ -4,11 +4,9 @@
      -4, -6: specify explicitly whether to use IPv4 or IPv6 address
      -auto: Automatically connect to server at startup (default)
      -noauto: Don't connect to server at startup
-     -silcnet: Specify what network this server belongs to
-     -host: Specify what host name to use, if you have multiple
+     -silcnet: Specify the network this server belongs to
+     -host: Specify what host name to bind to, if you have multiple interfaces
      -!: don't autojoin channels
-     -cmdspeed: Same as /SET cmd_queue_speed, see section 3.1
-     -cmdmax: Same as /SET cmd_max_at_once, see section 3.1
      -port: This is pretty much like the port argument later, 
             except this can be used to modify existing server's 
             port.
@@ -25,7 +23,4 @@ where the server is connected (ie. /window new hide;
 
 /SERVER REMOVE <address> [<port>]
 
-/SERVER LIST
-
-See also: RMRECONNS, DISCONNECT, RECONNECT
-
+See also: RMRECONNS, DISCONNECT, RECONNECT, CONNECT

@@ -49,6 +49,11 @@ package or does not want to use them, you can give the --disable-asm
 option to the `configure' script.  This will assure that assembler
 optimized code is not compiled in.
 
+`--enabled-shared'
+
+   If you wish to compile and install shared libraries then enable this
+option.  By default all libraries are compiled as static libraries.
+
 `--enable-debug'
 
    If you would like to enable the debugging for the compiled programs

@@ -21,38 +21,39 @@
 #include "silcsftp.h"
 
 typedef struct {
+  SilcSocketConnection sock;
+  void *server;
+} *ServerSession;
+
+typedef struct {
   SilcSchedule schedule;
   int sock;
   SilcSFTPFilesystem fs;
-  SilcSocketConnection socks[100];
+  ServerSession sessions[100];
   SilcSFTP sftp[100];
 } *Server;
 
-static void send_packet(SilcSocketConnection sock,
-			SilcBuffer packet, void *context)
+static void send_packet(SilcBuffer packet, void *context)
 {
-  Server server = (Server)context;
+  ServerSession session = context;
+  Server server = session->server;
   SilcPacketContext packetdata;
+  const SilcBufferStruct p;
   int ret;
 
   memset(&packetdata, 0, sizeof(packetdata));
   packetdata.type = SILC_PACKET_FTP;
   packetdata.truelen = packet->len + SILC_PACKET_HEADER_LEN;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, 0);
-  silc_packet_send_prepare(sock,
-			   SILC_PACKET_HEADER_LEN,
-			   packetdata.padlen,
-			   packet->len);
-  packetdata.buffer = sock->outbuf;
-  silc_buffer_put(sock->outbuf, packet->data, packet->len);
-  silc_packet_assemble(&packetdata, NULL);
-  ret = silc_packet_send(sock, TRUE);
+  SILC_PACKET_PADLEN(packetdata.truelen, 0, packetdata.padlen);
+  silc_packet_assemble(&packetdata, NULL, NULL, NULL, session->sock,
+		       packet->data, packet->len, (const SilcBuffer)&p);
+  ret = silc_packet_send(session->sock, TRUE);
   if (ret != -2)
     return;
 
-  silc_schedule_set_listen_fd(server->schedule, sock->sock, 
+  silc_schedule_set_listen_fd(server->schedule, session->sock->sock, 
 			      (SILC_TASK_READ | SILC_TASK_WRITE), FALSE);
-  SILC_SET_OUTBUF_PENDING(sock);
+  SILC_SET_OUTBUF_PENDING(session->sock);
 }
 
 static bool packet_parse(SilcPacketParserContext *parser, void *context)
@@ -72,12 +73,14 @@ static bool packet_parse(SilcPacketParserContext *parser, void *context)
 
 SILC_TASK_CALLBACK(packet_process)
 {
-  Server server = (Server)context;
-  SilcSocketConnection sock = server->socks[fd];
+  Server server = context;
+  ServerSession session = server->sessions[fd];
+  SilcSocketConnection sock;
   int ret;
 
-  if (!sock)
+  if (!session)
     return;
+  sock = session->sock;
 
   if (type == SILC_TASK_WRITE) {
     if (sock->outbuf->data - sock->outbuf->head)
@@ -101,7 +104,8 @@ SILC_TASK_CALLBACK(packet_process)
     if (ret == 0) {
       silc_net_close_connection(sock->sock);
       silc_schedule_unset_listen_fd(server->schedule, sock->sock);
-      server->socks[sock->sock] = NULL;
+      silc_free(server->sessions[sock->sock]);
+      server->sessions[sock->sock] = NULL;
       silc_socket_free(sock);
       return;
     }
@@ -125,9 +129,11 @@ SILC_TASK_CALLBACK(accept_connection)
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
 
   silc_socket_alloc(sock, 0, NULL, &sc);
-  server->socks[sock] = sc;
+  server->sessions[sock] = silc_calloc(1, sizeof(server->sessions[0]));
+  server->sessions[sock]->sock = sc;
+  server->sessions[sock]->server = server;
   server->sftp[sock] = 
-    silc_sftp_server_start(sc, send_packet, server,
+    silc_sftp_server_start(send_packet, server->sessions[sock],
 			   server->fs);
   silc_schedule_task_add(server->schedule, sock, packet_process,
 			 server, 0, 0, SILC_TASK_GENERIC,
@@ -140,8 +146,10 @@ int main()
   void *dir;
 
   silc_debug = 1;
-
-  server->schedule = silc_schedule_init(100);
+  silc_debug_hexdump = 1;
+  silc_log_set_debug_string("*sftp*");
+  
+  server->schedule = silc_schedule_init(100, NULL);
   if (!server->schedule)
     return -1;
 

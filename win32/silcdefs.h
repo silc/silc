@@ -103,7 +103,9 @@
 
 /* Native WIN32 compilation (-mno-cygwin GCC option) under cygwin, though
    the code compiles with any native WIN32 compiler. */
+#ifndef SILC_WIN32
 #define SILC_WIN32 1
+#endif
 
 /* SILC distribution definitions (leave this at the end of file) */
 #define SILC_DIST_TOOLKIT 1

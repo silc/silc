@@ -21,6 +21,7 @@
 
 #include "serverincludes.h"
 #include "server_internal.h"
+#include <dirent.h>
 
 #if 0
 #define SERVER_CONFIG_DEBUG(fmt) SILC_LOG_DEBUG(fmt)
@@ -118,7 +119,7 @@ my_find_param(SilcServerConfig config, const char *name)
 }
 
 /* parse an authdata according to its auth method */
-static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
+static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
 			      void **auth_data, SilcUInt32 *auth_data_len)
 {
   if (auth_meth == SILC_AUTH_PASSWORD) {
@@ -138,6 +139,7 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
   } else if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
     /* p is a public key file name */
     SilcPublicKey public_key;
+    SilcPublicKey cached_key;
 
     if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_BIN)) {
@@ -145,6 +147,16 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
 			       "Could not load public key file!"));
 	return FALSE;
       }
+
+    if (*auth_data &&
+	silc_hash_table_find_ext(*auth_data, public_key, (void **)&cached_key,
+				 NULL, silc_hash_public_key, NULL,
+				 silc_hash_public_key_compare, NULL)) {
+      silc_pkcs_public_key_free(public_key);
+      SILC_SERVER_LOG_WARNING(("Warning: public key file \"%s\" already "
+			       "configured, ignoring this key", p));
+      return TRUE; /* non fatal error */
+    }
 
     /* The auth_data is a pointer to the hash table of public keys. */
     if (auth_data) {
@@ -158,6 +170,47 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
   } else
     abort();
 
+  return TRUE;
+}
+
+static bool my_parse_publickeydir(const char *dirname, void **auth_data)
+{
+  int total = 0;
+  struct dirent *get_file;
+  DIR *dp;
+
+  if (!(dp = opendir(dirname))) {
+    SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			   "Could not open directory \"%s\"", dirname));
+    return FALSE;
+  }
+
+  /* errors are not considered fatal */
+  while ((get_file = readdir(dp))) {
+    const char *filename = get_file->d_name;
+    char buf[1024];
+    int dirname_len = strlen(dirname), filename_len = strlen(filename);
+    struct stat check_file;
+
+    /* Ignore "." and "..", and take files only with ".pub" suffix. */
+    if (!strcmp(filename, ".") || !strcmp(filename, "..") ||
+	(filename_len < 5) || strcmp(filename + filename_len - 4, ".pub"))
+      continue;
+
+    memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf) - 1, "%s%s%s", dirname,
+	     (dirname[dirname_len - 1] == '/' ? "" : "/"), filename);
+
+    if (stat(buf, &check_file) < 0) {
+      SILC_SERVER_LOG_ERROR(("Error stating file %s: %s", buf,
+			     strerror(errno)));
+    } else if (S_ISREG(check_file.st_mode)) {
+      my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL);
+      total++;
+    }
+  }
+
+  SILC_LOG_DEBUG(("Tried to load %d public keys in \"%s\"", total, dirname));
   return TRUE;
 }
 
@@ -521,6 +574,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   }
   else if (!strcmp(name, "publickey")) {
     char *file_tmp = (char *) val;
+    CONFIG_IS_DOUBLE(server_info->public_key);
 
     /* try to load specified file, if fail stop config parsing */
     if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
@@ -533,6 +587,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   }
   else if (!strcmp(name, "privatekey")) {
     char *file_tmp = (char *) val;
+    CONFIG_IS_DOUBLE(server_info->private_key);
 
     /* try to load specified file, if fail stop config parsing */
     if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
@@ -752,6 +807,12 @@ SILC_CONFIG_CALLBACK(fetch_client)
       goto got_err;
     }
   }
+  else if (!strcmp(name, "publickeydir")) {
+    if (!my_parse_publickeydir((char *) val, (void **)&tmp->publickeys)) {
+      got_errno = SILC_CONFIG_EPRINTLINE;
+      goto got_err;
+    }
+  }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
     tmp->param = my_find_param(config, (char *) val);
@@ -812,9 +873,14 @@ SILC_CONFIG_CALLBACK(fetch_admin)
     }
   }
   else if (!strcmp(name, "publickey")) {
-    CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void **)&tmp->publickeys, NULL)) {
+      got_errno = SILC_CONFIG_EPRINTLINE;
+      goto got_err;
+    }
+  }
+  else if (!strcmp(name, "publickeydir")) {
+    if (!my_parse_publickeydir((char *) val, (void **)&tmp->publickeys)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1158,6 +1224,7 @@ static const SilcConfigTable table_client[] = {
   { "host",		SILC_CONFIG_ARG_STRE,	fetch_client,	NULL },
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
+  { "publickeydir",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { "params",		SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { 0, 0, 0, 0 }
 };
@@ -1168,6 +1235,7 @@ static const SilcConfigTable table_admin[] = {
   { "nick",		SILC_CONFIG_ARG_STRE,	fetch_admin,	NULL },
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
+  { "publickeydir",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "port",		SILC_CONFIG_ARG_INT,	fetch_admin,	NULL },
   { "params",		SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { 0, 0, 0, 0 }
@@ -1235,6 +1303,82 @@ static void silc_server_config_set_defaults(SilcServerConfig config)
 			       SILC_SERVER_CONNAUTH_TIMEOUT);
 }
 
+/* Check for correctness of the configuration */
+
+static bool silc_server_config_check(SilcServerConfig config)
+{
+  bool ret = TRUE;
+  SilcServerConfigServer *s;
+  SilcServerConfigRouter *r;
+  bool b = FALSE;
+
+  /* ServerConfig is mandatory */
+  if (!config->server_info) {
+    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block `ServerInfo'"));
+    ret = FALSE;
+  }
+
+  /* RouterConnection sanity checks */
+
+  if (config->routers && config->routers->backup_router == TRUE &&
+      !config->servers) {
+    SILC_SERVER_LOG_ERROR((
+         "\nError: First RouterConnection block must be primary router "
+	 "connection. You have marked it incorrectly as backup router."));
+    ret = FALSE;
+  }
+  if (config->routers && config->routers->initiator == FALSE &&
+      config->routers->backup_router == FALSE) {
+    SILC_SERVER_LOG_ERROR((
+         "\nError: First RouterConnection block must be primary router "
+	 "connection and it must be marked as Initiator."));
+    ret = FALSE;
+  }
+  if (config->routers && config->routers->backup_router == TRUE &&
+      !config->servers && !config->routers->next) {
+    SILC_SERVER_LOG_ERROR((
+         "\nError: You have configured backup router but not primary router. "
+	 "If backup router is configured also primary router must be "
+	 "configured."));
+    ret = FALSE;
+  }
+
+  /* Backup router sanity checks */
+
+  for (r = config->routers; r; r = r->next) {
+    if (r->backup_router && !strcmp(r->host, r->backup_replace_ip)) {
+      SILC_SERVER_LOG_ERROR((
+          "\nError: Backup router connection incorrectly configured to use "
+	  "primary and backup router as same host `%s'. They must not be "
+	  "same host.", r->host));
+      ret = FALSE;
+    }
+  }
+  
+  /* ServerConnection sanity checks */
+  
+  for (s = config->servers; s; s = s->next) {
+    if (s->backup_router) {
+      b = TRUE;
+      break;
+    }
+  }
+  if (b) {
+    for (s = config->servers; s; s = s->next) {
+      if (!s->backup_router) {
+	SILC_SERVER_LOG_ERROR((
+          "\nError: Your server is backup router but not all ServerConnection "
+	  "blocks were marked as backup connections. They all must be "
+	  "marked as backup connections."));
+	ret = FALSE;
+	break;
+      }
+    }
+  }
+
+  return ret;
+}
+
 /* Allocates a new configuration object, opens configuration file and
    parses it. The parsed data is returned to the newly allocated
    configuration object. The SilcServerConfig must be freed by calling
@@ -1287,9 +1431,11 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
         SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.",
 			       silc_config_strerror(ret)));
       linebuf = silc_config_read_line(file, line);
-      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename,
-			     line, linebuf));
-      silc_free(linebuf);
+      if (linebuf) {
+	SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename,
+			       line, linebuf));
+	silc_free(linebuf);
+      }
     }
     silc_server_config_destroy(config_new);
     return NULL;
@@ -1298,10 +1444,8 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* close (destroy) the file object */
   silc_config_close(file);
 
-  /* If config_new is incomplete, abort the object and return NULL */
-  if (!config_new->server_info) {
-    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block "
-			   "`server_info'"));
+  /* Check the configuration */
+  if (!silc_server_config_check(config_new)) {
     silc_server_config_destroy(config_new);
     return NULL;
   }

@@ -27,11 +27,13 @@ void silc_say_error(char *msg, ...);
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, 
 			  SilcChannelEntry channel, 
+			  SilcMessagePayload payload,
 			  SilcMessageFlags flags, 
 			  const unsigned char *message,
 			  SilcUInt32 message_len);
 void silc_private_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, 
+			  SilcMessagePayload payload,
 			  SilcMessageFlags flags, 
 			  const unsigned char *message,
 			  SilcUInt32 message_len);

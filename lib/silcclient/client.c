@@ -1645,10 +1645,10 @@ SILC_TASK_CALLBACK(silc_client_send_auto_nick)
 {
   SilcClientConnection conn = (SilcClientConnection)context;
   SilcClient client = conn->client;
-
-  silc_client_command_send(client, conn, SILC_COMMAND_NICK, 
-			   ++conn->cmd_ident, 1, 1, 
-			   client->nickname, strlen(client->nickname));
+  if (client)
+    silc_client_command_send(client, conn, SILC_COMMAND_NICK, 
+			     ++conn->cmd_ident, 1, 1, 
+			     client->nickname, strlen(client->nickname));
 }
 
 /* Client session resuming callback.  If the session was resumed

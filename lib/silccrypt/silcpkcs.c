@@ -895,15 +895,6 @@ bool silc_pkcs_public_key_payload_decode(unsigned char *data,
   if (!public_key)
     return FALSE;
 
-#if 1
-  /* XXX 1.1 version support.  Check whether the data is actually raw
-     public key and attempt to decode.  Remove this later! */
-  if (silc_pkcs_public_key_decode(data, data_len, public_key)) {
-    (*public_key)->pk_type = SILC_SKE_PK_TYPE_SILC;
-    return TRUE;
-  }
-#endif
-
   silc_buffer_set(&buf, data, data_len);
   ret = silc_buffer_unformat(&buf,
 			     SILC_STR_UI_SHORT(&pk_len),
@@ -1112,7 +1103,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
 
 /* Internal routine to save public key */
 
-static bool silc_pkcs_save_public_key_internal(char *filename,
+static bool silc_pkcs_save_public_key_internal(const char *filename,
 					       unsigned char *data,
 					       SilcUInt32 data_len,
 					       SilcUInt32 encoding)
@@ -1152,7 +1143,7 @@ static bool silc_pkcs_save_public_key_internal(char *filename,
 
 /* Saves public key into file */
 
-bool silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
+bool silc_pkcs_save_public_key(const char *filename, SilcPublicKey public_key,
 			       SilcUInt32 encoding)
 {
   unsigned char *data;
@@ -1168,9 +1159,8 @@ bool silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
 
 /* Saves public key into file */
 
-bool silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
-				    SilcUInt32 data_len,
-				    SilcUInt32 encoding)
+bool silc_pkcs_save_public_key_data(const char *filename, unsigned char *data,
+				    SilcUInt32 data_len, SilcUInt32 encoding)
 {
   return silc_pkcs_save_public_key_internal(filename, data, data_len,
 					    encoding);
@@ -1180,7 +1170,7 @@ bool silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
 
 /* Internal routine to save private key. */
 
-static bool silc_pkcs_save_private_key_internal(char *filename,
+static bool silc_pkcs_save_private_key_internal(const char *filename,
 						unsigned char *data,
 						SilcUInt32 data_len,
 						unsigned char *key,
@@ -1188,11 +1178,11 @@ static bool silc_pkcs_save_private_key_internal(char *filename,
 						SilcUInt32 encoding)
 {
   SilcCipher aes;
-  SilcHash md5;
+  SilcHash sha1;
   SilcHmac sha1hmac;
   SilcBuffer buf, enc;
-  SilcUInt32 len, blocklen;
-  unsigned char tmp[32], keymat[32];
+  SilcUInt32 len, blocklen, padlen;
+  unsigned char tmp[32], keymat[64];
   int i;
 
   memset(tmp, 0, sizeof(tmp));
@@ -1207,9 +1197,9 @@ static bool silc_pkcs_save_private_key_internal(char *filename,
   if (blocklen * 2 > sizeof(tmp))
     return FALSE;
 
-  /* Allocate MD5 hash */
-  if (!silc_hash_alloc("md5", &md5)) {
-    SILC_LOG_ERROR(("Could not allocate MD5 hash, probably not registered"));
+  /* Allocate SHA1 hash */
+  if (!silc_hash_alloc("sha1", &sha1)) {
+    SILC_LOG_ERROR(("Could not allocate SHA1 hash, probably not registered"));
     silc_cipher_free(aes);
     return FALSE;
   }
@@ -1217,7 +1207,7 @@ static bool silc_pkcs_save_private_key_internal(char *filename,
   /* Allocate HMAC */
   if (!silc_hmac_alloc("hmac-sha1-96", NULL, &sha1hmac)) {
     SILC_LOG_ERROR(("Could not allocate SHA1 HMAC, probably not registered"));
-    silc_hash_free(md5);
+    silc_hash_free(sha1);
     silc_cipher_free(aes);
     return FALSE;
   }
@@ -1226,33 +1216,33 @@ static bool silc_pkcs_save_private_key_internal(char *filename,
      is 256 bits length, and derived by taking hash of the data, then 
      re-hashing the data and the previous digest, and using the first and
      second digest as the key. */
-  silc_hash_init(md5);
-  silc_hash_update(md5, key, key_len);
-  silc_hash_final(md5, keymat);
-  silc_hash_init(md5);
-  silc_hash_update(md5, key, key_len);
-  silc_hash_update(md5, keymat, 16);
-  silc_hash_final(md5, keymat + 16);
+  silc_hash_init(sha1);
+  silc_hash_update(sha1, key, key_len);
+  silc_hash_final(sha1, keymat);
+  silc_hash_init(sha1);
+  silc_hash_update(sha1, key, key_len);
+  silc_hash_update(sha1, keymat, 16);
+  silc_hash_final(sha1, keymat + 16);
 
   /* Set the key to the cipher */
-  silc_cipher_set_key(aes, keymat, sizeof(keymat) * 8);
+  silc_cipher_set_key(aes, keymat, 256);
 
   /* Encode the buffer to be encrypted.  Add padding to it too, at least
      block size of the cipher. */
 
   /* Allocate buffer for encryption */
   len = silc_hmac_len(sha1hmac);
-  enc = silc_buffer_alloc_size(data_len + 4 + 4 +
-			       (blocklen + (data_len % blocklen)) + len);
+  padlen = 16 + (16 - ((data_len + 4) % blocklen));
+  enc = silc_buffer_alloc_size(4 + 4 + data_len + padlen + len);
   if (!enc) {
     silc_hmac_free(sha1hmac);
-    silc_hash_free(md5);
+    silc_hash_free(sha1);
     silc_cipher_free(aes);
     return FALSE;
   }
 
   /* Generate padding */
-  for (i = 0; i < blocklen + (data_len % blocklen); i++)
+  for (i = 0; i < padlen; i++)
     tmp[i] = silc_rng_global_get_byte_fast();
 
   /* Put magic number */
@@ -1263,8 +1253,7 @@ static bool silc_pkcs_save_private_key_internal(char *filename,
   silc_buffer_format(enc,
 		     SILC_STR_UI_INT(data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
-		     SILC_STR_UI_XNSTRING(tmp, blocklen + (data_len %
-							   blocklen)),
+		     SILC_STR_UI_XNSTRING(tmp, padlen),
 		     SILC_STR_END);
 
   /* Encrypt. */
@@ -1286,7 +1275,7 @@ static bool silc_pkcs_save_private_key_internal(char *filename,
   memset(keymat, 0, sizeof(keymat));
   memset(tmp, 0, sizeof(tmp));
   silc_hmac_free(sha1hmac);
-  silc_hash_free(md5);
+  silc_hash_free(sha1);
   silc_cipher_free(aes);
 
   data = enc->data;
@@ -1329,7 +1318,8 @@ static bool silc_pkcs_save_private_key_internal(char *filename,
 
 /* Saves private key into file. */
 
-bool silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
+bool silc_pkcs_save_private_key(const char *filename,
+				SilcPrivateKey private_key,
 				unsigned char *passphrase,
 				SilcUInt32 passphrase_len,
 				SilcUInt32 encoding)
@@ -1350,12 +1340,16 @@ bool silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key,
 /* Loads public key from file and allocates new public key. Returns TRUE
    if loading was successful. */
 
-bool silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
+bool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
 			       SilcUInt32 encoding)
 {
   unsigned char *cp, *old, *data, byte;
   SilcUInt32 i, data_len, len;
 
+  SILC_LOG_DEBUG(("Loading public key `%s' with %s encoding", filename,
+		  encoding == SILC_PKCS_FILE_PEM ? "Base64" :
+		  encoding == SILC_PKCS_FILE_BIN ? "Binary" : "Unkonwn"));
+  
   old = data = silc_file_readfile(filename, &data_len);
   if (!data)
     return FALSE;
@@ -1406,19 +1400,24 @@ bool silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
 /* Load private key from file and allocates new private key. Returns TRUE
    if loading was successful. */
 
-bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
+bool silc_pkcs_load_private_key(const char *filename,
+				SilcPrivateKey *private_key,
 				unsigned char *passphrase,
 				SilcUInt32 passphrase_len,
 				SilcUInt32 encoding)
 {
   SilcCipher aes;
-  SilcHash md5;
+  SilcHash sha1;
   SilcHmac sha1hmac;
   SilcUInt32 blocklen;
-  unsigned char tmp[32], keymat[32];
+  unsigned char tmp[32], keymat[64];
   unsigned char *cp, *old, *data, byte;
   SilcUInt32 i, data_len, len, magic, mac_len;
 
+  SILC_LOG_DEBUG(("Loading private key `%s' with %s encoding", filename,
+		  encoding == SILC_PKCS_FILE_PEM ? "Base64" :
+		  encoding == SILC_PKCS_FILE_BIN ? "Binary" : "Unkonwn"));
+  
   old = data = silc_file_readfile(filename, &data_len);
   if (!data)
     return FALSE;
@@ -1489,9 +1488,9 @@ bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
     return FALSE;
   }
 
-  /* Allocate MD5 hash */
-  if (!silc_hash_alloc("md5", &md5)) {
-    SILC_LOG_ERROR(("Could not allocate MD5 hash, probably not registered"));
+  /* Allocate SHA1 hash */
+  if (!silc_hash_alloc("sha1", &sha1)) {
+    SILC_LOG_ERROR(("Could not allocate SHA1 hash, probably not registered"));
     silc_cipher_free(aes);
     memset(old, 0, data_len);
     silc_free(old);
@@ -1501,7 +1500,7 @@ bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
   /* Allocate HMAC */
   if (!silc_hmac_alloc("hmac-sha1-96", NULL, &sha1hmac)) {
     SILC_LOG_ERROR(("Could not allocate SHA1 HMAC, probably not registered"));
-    silc_hash_free(md5);
+    silc_hash_free(sha1);
     silc_cipher_free(aes);
     memset(old, 0, data_len);
     silc_free(old);
@@ -1512,16 +1511,16 @@ bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
      is 256 bits length, and derived by taking hash of the data, then 
      re-hashing the data and the previous digest, and using the first and
      second digest as the key. */
-  silc_hash_init(md5);
-  silc_hash_update(md5, passphrase, passphrase_len);
-  silc_hash_final(md5, keymat);
-  silc_hash_init(md5);
-  silc_hash_update(md5, passphrase, passphrase_len);
-  silc_hash_update(md5, keymat, 16);
-  silc_hash_final(md5, keymat + 16);
+  silc_hash_init(sha1);
+  silc_hash_update(sha1, passphrase, passphrase_len);
+  silc_hash_final(sha1, keymat);
+  silc_hash_init(sha1);
+  silc_hash_update(sha1, passphrase, passphrase_len);
+  silc_hash_update(sha1, keymat, 16);
+  silc_hash_final(sha1, keymat + 16);
 
   /* Set the key to the cipher */
-  silc_cipher_set_key(aes, keymat, sizeof(keymat) * 8);
+  silc_cipher_set_key(aes, keymat, 256);
 
   /* First, verify the MAC of the private key data */
   mac_len = silc_hmac_len(sha1hmac);
@@ -1533,7 +1532,7 @@ bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
     memset(keymat, 0, sizeof(keymat));
     memset(tmp, 0, sizeof(tmp));
     silc_hmac_free(sha1hmac);
-    silc_hash_free(md5);
+    silc_hash_free(sha1);
     silc_cipher_free(aes);
     memset(old, 0, data_len);
     silc_free(old);
@@ -1543,14 +1542,14 @@ bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
   len -= 4;
 
   /* Decrypt the private key buffer */
-  silc_cipher_decrypt(aes, data, data, len - mac_len, silc_cipher_get_iv(aes));
+  silc_cipher_decrypt(aes, data, data, len - mac_len, NULL);
   SILC_GET32_MSB(i, data);
   if (i > len) {
     SILC_LOG_DEBUG(("Bad private key length in buffer!"));
     memset(keymat, 0, sizeof(keymat));
     memset(tmp, 0, sizeof(tmp));
     silc_hmac_free(sha1hmac);
-    silc_hash_free(md5);
+    silc_hash_free(sha1);
     silc_cipher_free(aes);
     memset(old, 0, data_len);
     silc_free(old);
@@ -1563,7 +1562,7 @@ bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
   memset(keymat, 0, sizeof(keymat));
   memset(tmp, 0, sizeof(tmp));
   silc_hmac_free(sha1hmac);
-  silc_hash_free(md5);
+  silc_hash_free(sha1);
   silc_cipher_free(aes);
 
   /* Now decode the actual private key */

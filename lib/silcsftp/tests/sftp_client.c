@@ -17,6 +17,18 @@
 
 */
 
+/* Tests:
+   silc_sftp_client_start();
+   silc_sftp_client_receive_process();
+   silc_sftp_opendir();
+   silc_sftp_readdir();
+   silc_sftp_open();
+   silc_sftp_read();
+   silc_sftp_fstat();
+   silc_sftp_lstat();
+   silc_sftp_close();
+*/
+
 #include "silcincludes.h"
 #include "silcsftp.h"
 
@@ -32,6 +44,7 @@ char *dir;
 char *file;
 bool opendir;
 SilcUInt64 offset;
+bool success = FALSE;
 
 static void sftp_name(SilcSFTP sftp, SilcSFTPStatus status,
 		      const SilcSFTPName name, void *context);
@@ -40,29 +53,26 @@ static void sftp_handle(SilcSFTP sftp, SilcSFTPStatus status,
 static void sftp_data(SilcSFTP sftp, SilcSFTPStatus status,
 		      const unsigned char *data, SilcUInt32 data_len,
 		      void *context);
+static void end_test(void);
 
-static void send_packet(SilcSocketConnection sock,
-			SilcBuffer packet, void *context)
+static void send_packet(SilcBuffer packet, void *context)
 {
   Client client = (Client)context;
+  SilcSocketConnection sock = client->sock;
   SilcPacketContext packetdata;
+  const SilcBufferStruct p;
   int ret;
 
   memset(&packetdata, 0, sizeof(packetdata));
   packetdata.type = SILC_PACKET_FTP;
   packetdata.truelen = packet->len + SILC_PACKET_HEADER_LEN;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, 0);
-  silc_packet_send_prepare(sock,
-			   SILC_PACKET_HEADER_LEN,
-			   packetdata.padlen,
-			   packet->len);
-  packetdata.buffer = sock->outbuf;
-  silc_buffer_put(sock->outbuf, packet->data, packet->len);
-  silc_packet_assemble(&packetdata, NULL);
+  SILC_PACKET_PADLEN(packetdata.truelen, 0, packetdata.padlen);
+  silc_packet_assemble(&packetdata, NULL, NULL, NULL, sock,
+		       packet->data, packet->len, (const SilcBuffer)&p);
   ret = silc_packet_send(sock, TRUE);
   if (ret != -2)
     return;
-
+  
   silc_schedule_set_listen_fd(client->schedule, sock->sock, 
 			      (SILC_TASK_READ | SILC_TASK_WRITE), FALSE);
   SILC_SET_OUTBUF_PENDING(sock);
@@ -79,7 +89,7 @@ static bool packet_parse(SilcPacketParserContext *parser, void *context)
   assert(packet->type == SILC_PACKET_FTP);
 
   silc_sftp_client_receive_process(client->sftp, sock, packet);
-
+    
   return TRUE;
 }
 
@@ -91,23 +101,24 @@ SILC_TASK_CALLBACK(packet_process)
 
   if (type == SILC_TASK_WRITE) {
     if (sock->outbuf->data - sock->outbuf->head)
-     silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
+      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
 
     ret = silc_packet_send(sock, TRUE);
     if (ret < 0)
       return;
-
+      
     silc_schedule_set_listen_fd(client->schedule, fd, SILC_TASK_READ, FALSE);
     SILC_UNSET_OUTBUF_PENDING(sock);
     silc_buffer_clear(sock->outbuf);
     return;
+    
   }
 
   if (type == SILC_TASK_READ) {
     ret = silc_packet_receive(sock);
     if (ret < 0)
       return;
-
+  
     if (ret == 0) {
       silc_net_close_connection(sock->sock);
       silc_socket_free(sock);
@@ -117,6 +128,70 @@ SILC_TASK_CALLBACK(packet_process)
     silc_packet_receive_process(sock, FALSE, NULL, NULL, 0, 
 				packet_parse, client);
   }
+}
+
+static void sftp_status(SilcSFTP sftp, SilcSFTPStatus status,
+			const char *message, const char *lang_tag,
+			void *context)
+{
+  fprintf(stderr, "Status %d\n", status);
+  if (status != SILC_SFTP_STATUS_OK) {
+    SILC_LOG_DEBUG(("Error status"));
+    success = FALSE;
+    end_test();
+    return;
+  }
+
+  success = TRUE;
+  end_test();
+}
+
+static void sftp_attr(SilcSFTP sftp, SilcSFTPStatus status,
+		      const SilcSFTPAttributes attrs, void *context)
+{
+  SilcSFTPHandle handle = (SilcSFTPHandle)context;
+  int debug = silc_debug;
+  int i;
+  
+  fprintf(stderr, "Status %d\n", status);
+  if (status != SILC_SFTP_STATUS_OK) {
+    SILC_LOG_DEBUG(("Error status"));
+    success = FALSE;
+    end_test();
+    return;
+  }
+    
+  if (!debug)
+    silc_debug = 1;
+
+  SILC_LOG_DEBUG(("Attr.flags: %d", attrs->flags));
+  SILC_LOG_DEBUG(("Attr.size: %lu", attrs->size));
+  SILC_LOG_DEBUG(("Attr.uid: %d", attrs->uid));
+  SILC_LOG_DEBUG(("Attr.gid: %d", attrs->gid));
+  SILC_LOG_DEBUG(("Attr.permissions: %d", attrs->permissions));
+  SILC_LOG_DEBUG(("Attr.atime: %d", attrs->atime));
+  SILC_LOG_DEBUG(("Attr.mtime: %d", attrs->mtime));
+  SILC_LOG_DEBUG(("Attr.extended count: %d", attrs->extended_count));
+  for (i = 0; i < attrs->extended_count; i++) {
+    SILC_LOG_HEXDUMP(("Attr.extended_type[i]:", i),
+		     attrs->extended_type[i]->data,
+		     attrs->extended_type[i]->len);
+    SILC_LOG_HEXDUMP(("Attr.extended_data[i]:", i),
+		     attrs->extended_data[i]->data,
+		     attrs->extended_data[i]->len);
+  }
+    
+  silc_debug = debug;
+
+  if (!file) {
+    fprintf(stderr, "Closing file\n"); 
+    silc_sftp_close(sftp, handle, sftp_status, context);
+    return;
+  }
+  
+  fprintf(stderr, "LStatting file %s\n", file); 
+  silc_sftp_lstat(sftp, file, sftp_attr, context);
+  file = NULL;
 }
 
 static void sftp_data(SilcSFTP sftp, SilcSFTPStatus status,
@@ -131,9 +206,19 @@ static void sftp_data(SilcSFTP sftp, SilcSFTPStatus status,
 
     fprintf(stderr, "Status %d\n", status);
 
-    if (!strcmp(file, "/sftp/sftp_server.c"))
+    if (status != SILC_SFTP_STATUS_EOF) {
+      SILC_LOG_DEBUG(("Error status"));
+      success = FALSE;
+      end_test();
       return;
-
+    }
+    
+    if (!strcmp(file, "/sftp/sftp_server.c")) {
+      fprintf(stderr, "FStatting file handle %s\n", file); 
+      silc_sftp_fstat(sftp, handle, sftp_attr, context);
+      return;
+    }
+      
     /* Open another file */
     opendir = FALSE;
     memset(&attrs, 0, sizeof(attrs));
@@ -166,6 +251,13 @@ static void sftp_name(SilcSFTP sftp, SilcSFTPStatus status,
   SILC_LOG_DEBUG(("Name"));
   fprintf(stderr, "Status %d\n", status);
 
+  if (status != SILC_SFTP_STATUS_OK) {
+    SILC_LOG_DEBUG(("Error status"));
+    success = FALSE;
+    end_test();
+    return;
+  }
+  
   fprintf(stderr, "Directory: %s\n", dir);
   for (i = 0; i < name->count; i++) {
     fprintf(stderr, "%s\n", name->long_filename[i]);
@@ -202,9 +294,13 @@ static void sftp_handle(SilcSFTP sftp, SilcSFTPStatus status,
 
   SILC_LOG_DEBUG(("Handle"));
   fprintf(stderr, "Status %d\n", status);
-  if (status != SILC_SFTP_STATUS_OK)
+  if (status != SILC_SFTP_STATUS_OK) {
+    SILC_LOG_DEBUG(("Error status"));
+    success = FALSE;
+    end_test();
     return;
-
+  }
+  
   if (opendir) {
     fprintf(stderr, "Reading %s\n", dir);
     /* Readdir */
@@ -225,6 +321,12 @@ static void sftp_version(SilcSFTP sftp, SilcSFTPStatus status,
 
   SILC_LOG_DEBUG(("Version"));
   fprintf(stderr, "Status %d\n", status);
+  if (status != SILC_SFTP_STATUS_OK) {
+    SILC_LOG_DEBUG(("Error status"));
+    success = FALSE;
+    end_test();
+    return;
+  }
 
   /* opendir */
   dir = "/";
@@ -243,10 +345,10 @@ int main(int argc, char **argv)
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_debug = 1;
     silc_debug_hexdump = 1;
-    silc_log_set_debug_string("");
+    silc_log_set_debug_string("*sftp*");
   }
 
-  client->schedule = silc_schedule_init(100);
+  client->schedule = silc_schedule_init(100, NULL);
   if (!client->schedule)
     return -1;
 
@@ -260,9 +362,16 @@ int main(int argc, char **argv)
 			 SILC_TASK_GENERIC, SILC_TASK_PRI_NORMAL);
 
   /* Start SFTP session */
-  client->sftp = silc_sftp_client_start(client->sock, send_packet, client,
+  client->sftp = silc_sftp_client_start(send_packet, client,
 					sftp_version, client);
 
   silc_schedule(client->schedule);
   return 0;
+}
+
+static void end_test(void)
+{
+  SILC_LOG_DEBUG(("Testing was %s", success ? "SUCCESS" : "FAILURE"));
+  fprintf(stderr, "Testing was %s\n", success ? "SUCCESS" : "FAILURE");
+  exit(success);
 }

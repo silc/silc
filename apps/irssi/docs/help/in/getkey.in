@@ -8,3 +8,4 @@ client posesses the corresponding private key as well.  You will be
 prompted to verify and accept the fetched public key.  The public key
 is saved into your local key directory (~/.silc/clientkeys/).
 
+See also: WHOIS, KEY

@@ -4,5 +4,5 @@
 Outputs the contents of the specified file. Equivalent to
 UNIX 'cat' command.
 
-See also: CD
+See also: EXEC
 

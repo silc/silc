@@ -22,9 +22,10 @@
 #include "silcincludes.h"
 
 /* SILC Mutex structure */
-struct SilcMutexStruct {
+struct SilcMutexStruct {	
 #ifdef SILC_THREADS
-  HANDLE mutex;
+  CRITICAL_SECTION mutex;  
+  BOOL locked;
 #else
   void *tmp;
 #endif /* SILC_THREADS */
@@ -33,12 +34,8 @@ struct SilcMutexStruct {
 bool silc_mutex_alloc(SilcMutex *mutex)
 {
 #ifdef SILC_THREADS
-  *mutex = silc_calloc(1, sizeof(**mutex));
-  (*mutex)->mutex = CreateMutex(NULL, FALSE, NULL);
-  if (!(*mutex)->mutex) {
-    silc_free(*mutex);
-    return FALSE;
-  }
+  *mutex = silc_calloc(1, sizeof(**mutex));  
+  InitializeCriticalSection(&((*mutex)->mutex));  
 #endif /* SILC_THREADS */
   return TRUE;
 }
@@ -46,7 +43,7 @@ bool silc_mutex_alloc(SilcMutex *mutex)
 void silc_mutex_free(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
-  CloseHandle(mutex->mutex);
+  DeleteCriticalSection(&mutex->mutex);
   silc_free(mutex);
 #endif /* SILC_THREADS */
 }
@@ -54,13 +51,17 @@ void silc_mutex_free(SilcMutex mutex)
 void silc_mutex_lock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
-  WaitForSingleObject(mutex->mutex, INFINITE);
+  EnterCriticalSection(&mutex->mutex);    
+  assert(mutex->locked == FALSE);
+  mutex->locked = TRUE;
 #endif /* SILC_THREADS */
 }
 
 void silc_mutex_unlock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
-  ReleaseMutex(mutex->mutex);
+  assert(mutex->locked == TRUE);
+  mutex->locked = FALSE;
+  LeaveCriticalSection(&mutex->mutex);       
 #endif /* SILC_THREADS */
 }

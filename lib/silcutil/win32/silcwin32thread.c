@@ -17,9 +17,6 @@
   GNU General Public License for more details.
 
 */
-/* These routines are based on GLib's WIN32 gthread implementation and
-   thus credits should go there. */
-/* XXX Is the use of Tls necessary?? */
 /* $Id$ */
 
 #include "silcincludes.h"
@@ -64,8 +61,8 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   thread->start_func = start_func;
   thread->context = context;
   thread->waitable = waitable;
-  thread->thread = (HANDLE)_beginthreadex(NULL, 0, silc_thread_win32_start,
-					  (void *)thread, 0, &id);
+  thread->thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)silc_thread_win32_start, (void *)thread, 0, &id);
+
   if (!thread->thread) {
     SILC_LOG_ERROR(("Could not create new thread"));
     silc_free(thread);
@@ -89,14 +86,13 @@ void silc_thread_exit(void *exit_value)
     /* If the thread is waitable the memory is freed only in silc_thread_wait
        by another thread. If not waitable, free it now. */
     if (!thread->waitable) {
-      CloseHandle(thread->thread);
+      TerminateThread(thread->thread, 0);
       silc_free(thread);
     }
 
     TlsSetValue(silc_thread_tls, NULL);
   }
-
-  _endthreadex(0);
+  ExitThread(0);
 #endif
 }
 
@@ -134,8 +130,11 @@ bool silc_thread_wait(SilcThread thread, void **exit_value)
 
   /* The thread is waitable thus we will free all memory after the
      WaitForSingleObject returns, the thread is destroyed after that. */
-  WaitForSingleObject(self->thread, INFINITE);
-  CloseHandle(self->thread);
+
+  /* 2 sec timeout, otherwise we would run to infinite loop some cases.. */
+  if (WaitForSingleObject(self->thread, 2000) == WAIT_TIMEOUT)
+    TerminateThread(self->thread, 0);
+
   silc_free(self);
   if (exit_value)
     *exit_value = NULL;

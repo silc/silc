@@ -58,7 +58,8 @@ void silc_client_send_private_message(SilcClient client,
 				       !client_entry->generated,
 				       TRUE, client_entry->send_key,
 				       client_entry->hmac_send,
-				       client->rng);
+				       client->rng, NULL, client->private_key,
+				       client->sha1hash);
 
   /* If we don't have private message specific key then private messages
      are just as any normal packet thus call normal packet sending.  If
@@ -211,8 +212,8 @@ void silc_client_private_message(SilcClient client,
 
   /* Pass the private message to application */
   message = silc_message_get_data(payload, &message_len);
-  client->internal->ops->private_message(client, conn, remote_client, flags,
-					 message, message_len);
+  client->internal->ops->private_message(client, conn, remote_client, payload,
+					 flags, message, message_len);
 
   /* See if we are away (gone). If we are away we will reply to the
      sender with the set away message. */
@@ -382,7 +383,7 @@ bool silc_client_add_private_message_key(SilcClient client,
   /* Produce the key material as the protocol defines */
   keymat = silc_calloc(1, sizeof(*keymat));
   if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
-					 client->md5hash, keymat) 
+					 client->sha1hash, keymat) 
       != SILC_SKE_STATUS_OK)
     return FALSE;
 

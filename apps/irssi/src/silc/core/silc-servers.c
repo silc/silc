@@ -50,20 +50,20 @@
 void silc_servers_reconnect_init(void);
 void silc_servers_reconnect_deinit(void);
 
-static void silc_send_channel(SILC_SERVER_REC *server,
-			      char *channel, char *msg)
+static int silc_send_channel(SILC_SERVER_REC *server,
+			      char *channel, char *msg,
+			      SilcMessageFlags flags)
 {
   SILC_CHANNEL_REC *rec;
   
   rec = silc_channel_find(server, channel);
   if (rec == NULL || rec->entry == NULL) {
-    cmd_return_error(CMDERR_NOT_JOINED);
-    return;
+    cmd_return_error_value(CMDERR_NOT_JOINED, FALSE);
   }
 
   silc_client_send_channel_message(silc_client, server->conn, rec->entry, 
-				   NULL, SILC_MESSAGE_FLAG_UTF8,
-				   msg, strlen(msg), TRUE);
+				   NULL, flags, msg, strlen(msg), TRUE);
+  return TRUE;
 }
 
 typedef struct {
@@ -134,8 +134,8 @@ static void silc_send_msg_clients(SilcClient client,
   g_free(rec);
 }
 
-static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
-			int msg_len, SilcMessageFlags flags)
+static int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
+			  int msg_len, SilcMessageFlags flags)
 {
   PRIVMSG_REC *rec;
   SilcClientEntry *clients;
@@ -145,7 +145,7 @@ static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
   if (!silc_parse_userfqdn(nick, &nickname, NULL)) {
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_BAD_NICK, nick);
-    return;
+    return FALSE;
   }
 
   /* Find client entry */
@@ -163,7 +163,7 @@ static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
     silc_client_get_clients(silc_client, server->conn,
 			    nickname, NULL, silc_send_msg_clients, rec);
     silc_free(nickname);
-    return;
+    return FALSE;
   }
 
   /* Send the private message directly */
@@ -171,6 +171,7 @@ static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
   silc_client_send_private_message(silc_client, server->conn, 
 				   clients[0], flags,
 				   msg, msg_len, TRUE);
+  return TRUE;
 }
 
 void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
@@ -249,7 +250,8 @@ static void send_message(SILC_SERVER_REC *server, char *target,
   }
 
   if (target_type == SEND_TARGET_CHANNEL)
-    silc_send_channel(server, target, message ? message : msg);
+    silc_send_channel(server, target, message ? message : msg,
+		      SILC_MESSAGE_FLAG_UTF8);
   else
     silc_send_msg(server, target, message ? message : msg,
 		  message ? strlen(message) : strlen(msg),
@@ -444,6 +446,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: WATCH [<-add | -del> <nickname>] */
 /* SYNTAX: STATS */
 /* SYNTAX: ATTR [<-del> <option> [{ <value>}]] */
+/* SYNTAX: SMSG [<-channel>] <target> <message> */
 
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
@@ -493,6 +496,77 @@ static void command_sconnect(const char *data, SILC_SERVER_REC *server)
 
   silc_command_exec(server, "CONNECT", data);
   signal_stop();
+}
+
+/* SMSG command, to send digitally signed messages */
+
+static void command_smsg(const char *data, SILC_SERVER_REC *server,
+			 WI_ITEM_REC *item)
+{
+  GHashTable *optlist;
+  char *target, *origtarget, *msg;
+  void *free_arg;
+  int free_ret, target_type;
+  
+  g_return_if_fail(data != NULL);
+  if (server == NULL || !server->connected)
+    cmd_param_error(CMDERR_NOT_CONNECTED);
+
+  if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS |
+		      PARAM_FLAG_UNKNOWN_OPTIONS | PARAM_FLAG_GETREST,
+		      "msg", &optlist, &target, &msg))
+    return;
+  if (*target == '\0' || *msg == '\0')
+    cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+
+  origtarget = target;
+  free_ret = FALSE;
+
+  if (strcmp(target, "*") == 0) {
+    if (item == NULL)
+      cmd_param_error(CMDERR_NOT_JOINED);
+
+    target_type = IS_CHANNEL(item) ?
+      SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+    target = (char *) window_item_get_target(item);
+  } else if (g_hash_table_lookup(optlist, "channel") != NULL) {
+    target_type = SEND_TARGET_CHANNEL;
+  } else {
+    target_type = server_ischannel(SERVER(server), target) ?
+      SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+  }
+
+  if (target != NULL) {
+    char *message = NULL;
+    int len, result;
+
+    if (!silc_term_utf8()) {
+      len = silc_utf8_encoded_len(msg, strlen(msg), SILC_STRING_LANGUAGE);
+      message = silc_calloc(len + 1, sizeof(*message));
+      g_return_if_fail(message != NULL);
+      silc_utf8_encode(msg, strlen(msg), SILC_STRING_LANGUAGE, message, len);
+    }
+
+    if (target_type == SEND_TARGET_CHANNEL)
+      result = silc_send_channel(server, target, message ? message : msg,
+				 SILC_MESSAGE_FLAG_UTF8 |
+				 SILC_MESSAGE_FLAG_SIGNED);
+    else
+      result = silc_send_msg(server, target, message ? message : msg,
+			     message ? strlen(message) : strlen(msg),
+			     SILC_MESSAGE_FLAG_UTF8 |
+			     SILC_MESSAGE_FLAG_SIGNED);
+    silc_free(message);
+    if (!result)
+      goto out;
+  }
+
+  signal_emit(target != NULL && target_type == SEND_TARGET_CHANNEL ?
+	      "message signed_own_public" : "message signed_own_private", 4,
+	      server, msg, target, origtarget);
+out:
+  if (free_ret && target != NULL) g_free(target);
+  cmd_params_free(free_arg);
 }
 
 /* FILE command */
@@ -983,6 +1057,7 @@ void silc_server_init(void)
   command_bind_silc("watch", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("stats", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("attr", MODULE_NAME, (SIGNAL_FUNC) command_attr);
+  command_bind_silc("smsg", MODULE_NAME, (SIGNAL_FUNC) command_smsg);
 
   command_set_options("connect", "+silcnet");
 }
@@ -1021,6 +1096,7 @@ void silc_server_deinit(void)
   command_unbind("watch", (SIGNAL_FUNC) command_self);
   command_unbind("stats", (SIGNAL_FUNC) command_self);
   command_unbind("attr", (SIGNAL_FUNC) command_attr);
+  command_unbind("smsg", (SIGNAL_FUNC) command_smsg);
 }
 
 void silc_server_free_ftp(SILC_SERVER_REC *server,

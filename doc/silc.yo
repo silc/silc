@@ -1,4 +1,4 @@
-manpage(SILC) (1) (October 31 2002) (silc-client-0.9.7) (silc-client)
+manpage(SILC) (1) (December 7 2002) (silc-client) (silc-client)
 
 
 manpagename(silc) (client for SILC, a secure and flexible conferencing network)
@@ -16,11 +16,12 @@ the SILC network.  The silc client resembles IRC clients to make the
 using easier for new users.
 
 bf(Silc) supports sending of practically any kind of messages in addition
-of normal text messages in the SILC network.  The session to SILC server
+of normal text messages in the SILC network.  This includes multimedia
+messages like images, video and audio stream.  The session to SILC server
 is secured with session key, channel messages are protected with channel
 key and private messages with session keys.  It is also possible to use
 private channel keys and private message keys in addition to server
-generated keys.
+generated keys.  It is also possible to digitally sign all messages.
 
 bf(Silc) supports em(passphrase) authentication and public key authentication
 based on em(digital signatures), when connecting to SILC server.  bf(Silc)

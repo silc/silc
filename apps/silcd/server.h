@@ -120,9 +120,16 @@ do {									\
   (sock->protocol && sock->protocol->protocol && 			\
    sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_BACKUP)
 
-/* Output an error message wether to stderr or LOG_ERROR if we are in the
-   background. */
-#define SILC_SERVER_LOG_ERROR(fmt) silc_server_stderr(silc_format fmt)
+/* Output a message to stderr or to the appropriate log facility wether
+   we are in the background or not. */
+#define SILC_SERVER_LOG_INFO(fmt)					\
+  silc_server_stderr(SILC_LOG_INFO, silc_format fmt)
+#define SILC_SERVER_LOG_WARNING(fmt)					\
+  silc_server_stderr(SILC_LOG_WARNING, silc_format fmt)
+#define SILC_SERVER_LOG_ERROR(fmt)					\
+  silc_server_stderr(SILC_LOG_ERROR, silc_format fmt)
+#define SILC_SERVER_LOG_FATAL(fmt)					\
+  silc_server_stderr(SILC_LOG_WARNING, silc_format fmt)
 
 /* Prototypes */
 int silc_server_alloc(SilcServer *new_server);
@@ -242,6 +249,6 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 					       bool get_private,
 					       bool get_secret,
 					       SilcBuffer *user_mode_list);
-void silc_server_stderr(char *message);
+void silc_server_stderr(SilcLogType type, char *message);
 
 #endif

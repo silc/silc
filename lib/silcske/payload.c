@@ -1,16 +1,15 @@
 /*
 
-  payload.c
+  payload.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2001 Pekka Riikonen
+  Copyright (C) 2000 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -36,10 +35,9 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
   if (!payload)
     return SILC_SKE_STATUS_ERROR;
 
-  buf = silc_buffer_alloc(payload->len);
+  buf = silc_buffer_alloc_size(payload->len);
   if (!buf)
     return SILC_SKE_STATUS_OUT_OF_MEMORY;
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
 
   /* Encode the payload */
   ret = silc_buffer_format(buf,
@@ -135,7 +133,6 @@ silc_ske_payload_start_decode(SilcSKE ske,
   }
 
   if (tmp != 0) {
-    SILC_LOG_DEBUG(("Bad reserved field"));
     SILC_LOG_ERROR(("Bad RESERVED field in KE Start Payload"));
     status = SILC_SKE_STATUS_BAD_RESERVED_FIELD;
     goto err;
@@ -215,11 +212,10 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
 
   /* Allocate channel payload buffer. The length of the buffer
      is 4 + public key + 2 + x + 2 + signature. */
-  buf = silc_buffer_alloc(4 + payload->pk_len + 2 + x_len + 
-			  2 + payload->sign_len);
+  buf = silc_buffer_alloc_size(4 + payload->pk_len + 2 + x_len + 
+			       2 + payload->sign_len);
   if (!buf)
     return SILC_SKE_STATUS_OUT_OF_MEMORY;
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
 
   /* Encode the payload */
   ret = silc_buffer_format(buf, 

@@ -19,7 +19,7 @@ include $(top_srcdir)/Makefile.defines.in
 
 #confdir = $(sysconfdir)
 confdir = $(silc_etcdir)
-conf_DATA = silc.conf
+conffile = silc.conf
 
 themedir = $(datadir)/silc/themes
 theme_DATA = default.theme
@@ -33,7 +33,7 @@ EXTRA_DIST = \
 	file2header.sh \
 	irssi.spec \
 	irssi.spec.in \
-	$(conf_DATA) \
+	$(conffile) \
 	$(theme_DATA) \
 	irssi-config.in \
 	irssi-icon.png \

@@ -29,7 +29,7 @@ noinst_LTLIBRARIES = libsilcmath.la
 if SILC_MP_NSS_MPI
 MP_SOURCE = mp_mpi.c
 if SILC_DIST_TOOLKIT
-MP_HEADER = mpi/mpi.h mpi/mplogic.h mpi/mpprime.h mpi/mpi-config.h
+MP_HEADER = mpi/mpi.h mpi/mplogic.h mpi/mpi-config.h
 else
 MP_HEADER =
 endif

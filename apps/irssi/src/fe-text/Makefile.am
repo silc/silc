@@ -19,12 +19,12 @@ silc_DEPENDENCIES = 		\
 LIBS = $(SILC_COMMON_LIBS)
 silc_LDADD = \
 	@COMMON_LIBS@ \
+	-L../../../lib -lsilcclient \
 	@PERL_LINK_LIBS@ \
 	@PERL_FE_LINK_LIBS@ \
 	@PERL_LINK_FLAGS@ \
 	@PROG_LIBS@	\
-	@TEXTUI_LIBS@	\
-	-L../../../lib -lsilcclient
+	@TEXTUI_LIBS@
 silc_LDFLAGS = -export-dynamic
 
 tparm_sources = \

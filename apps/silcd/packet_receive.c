@@ -1087,9 +1087,10 @@ void silc_server_notify(SilcServer server,
 	goto out;
 
       if (action == 0 && !channel->invite_list)
-	channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						     NULL, NULL, NULL,
-						     NULL, NULL, TRUE);
+	channel->invite_list =
+	  silc_hash_table_alloc(0, silc_hash_ptr,
+				NULL, NULL, NULL,
+				silc_server_inviteban_destruct, channel, TRUE);
 
       /* Proces the invite action */
       silc_server_inviteban_process(server, channel->invite_list, action,
@@ -1305,9 +1306,22 @@ void silc_server_notify(SilcServer server,
     }
     silc_free(server_id);
 
-    /* Sending SERVER_SIGNOFF is not right way to signoff local connection */
-    if (SILC_IS_LOCAL(server_entry))
+    /* For local entrys SERVER_SIGNOFF is processed only on backup router.
+       It is possible that router sends server signoff for a server.  If
+       backup router has it as local connection it will be closed. */
+    if (SILC_IS_LOCAL(server_entry)) {
+      if (server->server_type == SILC_BACKUP_ROUTER) {
+	sock = server_entry->connection;
+	SILC_LOG_DEBUG(("Closing connection %s after SERVER_SIGNOFF",
+		       sock->hostname));
+	SILC_SET_DISCONNECTING(sock);
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock, NULL);
+	silc_server_close_connection(server, sock);
+      }
+
       break;
+    }
 
     /* Remove all servers that are originated from this server, and
        remove the clients of those servers too. */
@@ -1661,9 +1675,10 @@ void silc_server_notify(SilcServer server,
 	goto out;
 
       if (action == 0 && !channel->ban_list)
-	channel->ban_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						  NULL, NULL, NULL,
-						  NULL, NULL, TRUE);
+	channel->ban_list =
+	  silc_hash_table_alloc(0, silc_hash_ptr,
+				NULL, NULL, NULL,
+				silc_server_inviteban_destruct, channel, TRUE);
 
       /* Proces the ban action */
       silc_server_inviteban_process(server, channel->ban_list, action,
@@ -2094,9 +2109,12 @@ void silc_server_channel_key(SilcServer server,
 
   /* Save the channel key */
   channel = silc_server_save_channel_key(server, buffer, NULL);
-  if (!channel)
+  if (!channel) {
+    SILC_LOG_ERROR(("Bad channel key from %s (%s)",
+		    sock->hostname, sock->ip));
     return;
-
+  }
+    
   /* Distribute the key to everybody who is on the channel. If we are router
      we will also send it to locally connected servers. */
   silc_server_send_channel_key(server, sock, channel, FALSE);
@@ -3920,5 +3938,4 @@ void silc_server_resume_client(SilcServer server,
   }
 
   silc_free(client_id);
-    silc_idlist_del_data(detached_client);
 }

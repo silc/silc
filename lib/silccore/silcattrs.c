@@ -46,7 +46,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 {
   SilcBuffer tmpbuf = NULL;
   unsigned char tmp[4], *str = NULL, *ret;
-  int len;
+  SilcUInt32 len;
 
   /* Encode according to attribute type */
   if (flags & SILC_ATTRIBUTE_FLAG_VALID) {
@@ -70,7 +70,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     case SILC_ATTRIBUTE_SERVICE:
       {
 	SilcAttributeObjService *service = object;
-	int len2;
+	SilcUInt32 len2;
 	if (object_size != sizeof(*service))
 	  return NULL;
 	len = strlen(service->address);
@@ -131,7 +131,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     case SILC_ATTRIBUTE_GEOLOCATION:
       {
 	SilcAttributeObjGeo *geo = object;
-	int len1, len2, len3, len4;
+	SilcUInt32 len1, len2, len3, len4;
 	if (object_size != sizeof(*geo))
 	  return NULL;
 	len1 = (geo->longitude ? strlen(geo->longitude) : 0);
@@ -162,7 +162,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     case SILC_ATTRIBUTE_DEVICE_INFO:
       {
 	SilcAttributeObjDevice *dev = object;
-	int len1, len2, len3, len4;
+	SilcUInt32 len1, len2, len3, len4;
 	if (object_size != sizeof(*dev))
 	  return NULL;
 	len1 = (dev->manufacturer ? strlen(dev->manufacturer) : 0);
@@ -278,7 +278,8 @@ SilcDList silc_attribute_payload_parse(const unsigned char *payload,
   SilcBufferStruct buffer;
   SilcDList list;
   SilcAttributePayload newp;
-  int len, ret;
+  SilcUInt32 len;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing Attribute Payload list"));
 
@@ -344,9 +345,9 @@ SilcBuffer silc_attribute_payload_encode_data(SilcBuffer attrs,
 					      SilcUInt32 data_len)
 {
   SilcBuffer buffer = attrs;
-  int len;
+  SilcUInt32 len;
 
-  len = 4 + data_len;
+  len = 4 + (SilcUInt16)data_len;
   buffer = silc_buffer_realloc(buffer,
 			       (buffer ? buffer->truelen + len : len));
   if (!buffer)
@@ -357,7 +358,7 @@ SilcBuffer silc_attribute_payload_encode_data(SilcBuffer attrs,
 		     SILC_STR_UI_CHAR(attribute),
 		     SILC_STR_UI_CHAR(flags),
 		     SILC_STR_UI_SHORT((SilcUInt16)data_len),
-		     SILC_STR_UI_XNSTRING(data, data_len),
+		     SILC_STR_UI_XNSTRING(data, (SilcUInt16)data_len),
 		     SILC_STR_END);
   silc_buffer_push(buffer, buffer->data - buffer->head);
 

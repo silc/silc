@@ -30,18 +30,23 @@ void fe_silc_channels_deinit(void);
 void fe_silc_modules_init(void);
 void fe_silc_modules_deinit(void);
 
+void fe_silc_messages_init(void);
+void fe_silc_messages_deinit(void);
+
 void fe_silc_init(void)
 {
   theme_register(fecommon_silc_formats);
 
   fe_silc_channels_init();
   fe_silc_modules_init();
+  fe_silc_messages_init();
 
   module_register("silc", "fe");
 }
 
 void fe_silc_deinit(void)
 {
+  fe_silc_messages_deinit();
   fe_silc_modules_deinit();
   fe_silc_channels_deinit();
 

@@ -5,7 +5,8 @@ Operator command. Makes an server to connect to another
 server or router.  The <server> is the hostname or IP 
 addres of the server.
 
-Example: /SCONNECT silc.silcnet.org 706
+You need to use same name of the server as configured in silcd.conf.
 
-See also: OPER, SILCOPER, CLOSE, SHUTDOWN
+Example: /SCONNECT sauna.silcnet.org
 
+See also: CLOSE, OPER, SILCOPER

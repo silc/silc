@@ -1,9 +1,6 @@
 
 @SYNTAX:action@
 
-Same as ME, but gets channel as an additional parameter.
-Example: /ACTION #irssi yawns
-(This outputs the following to #irssi: * Nick yawns)
+Same as ME, but gets channel as an additional parameter. Example: /ACTION silc yawns (This outputs the following to channel silc: * Nick yawns)
 
 See also: ME
-

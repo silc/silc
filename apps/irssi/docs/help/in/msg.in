@@ -1,9 +1,22 @@
 
 @SYNTAX:msg@
 
-Sends a message to a remote client. Usually this
-is used for sending private messages to other persons.
+Sends a private message to other user in the network.
 
-Examples:
+It is possible to digitally sign your messages.  The receiver
+may then verify the message with your public key.  By default
+messages are not signed.  If you want your private messages 
+to be signed you SMSG command instead of this MSG command.
 
-/MSG friend Hi, what's up?
+If -channel option is provided then this command actually
+send channel message to the specified channel.  The message
+IS NOT private message, it is normal channel message.  It is
+also possible to digitally sign channel messages by using
+SMSG command or by doing /set sign_channel_messages on, in
+which case _all_ channel messages will be signed.
+
+Example:
+
+/MSG Toni Hi, what's up?
+
+See also: QUERY SMSG

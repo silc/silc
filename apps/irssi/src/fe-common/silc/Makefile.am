@@ -27,7 +27,8 @@ libfe_common_silc_a_SOURCES = \
 	fe-channels.c \
 	fe-common-silc.c \
 	module-formats.c \
-	silc-modules.c 
+	silc-modules.c \
+	fe-messages.c
 
 noinst_HEADERS = \
 	module-formats.h \

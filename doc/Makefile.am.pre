@@ -28,7 +28,7 @@ all:
 	touch draft-riikonen-silc-pp-06.txt
 	touch draft-riikonen-silc-ke-auth-06.txt
 	touch draft-riikonen-silc-commands-04.txt
-	touch draft-riikonen-silc-flags-payloads-01.txt
+	touch draft-riikonen-silc-flags-payloads-02.txt
 	touch draft-riikonen-presence-attrs-01.txt
 
 if SILC_DIST_TOOLKIT
@@ -60,7 +60,7 @@ dist-hook:
 	touch draft-riikonen-silc-pp-06.txt
 	touch draft-riikonen-silc-ke-auth-06.txt
 	touch draft-riikonen-silc-commands-04.txt
-	touch draft-riikonen-silc-flags-payloads-01.txt
+	touch draft-riikonen-silc-flags-payloads-02.txt
 	touch draft-riikonen-presence-attrs-01.txt
 	$(makerfc) draft-riikonen-silc-spec-06.nroff \
 		draft-riikonen-silc-spec-06.txt
@@ -70,8 +70,8 @@ dist-hook:
 		draft-riikonen-silc-ke-auth-06.txt
 	$(makerfc) draft-riikonen-silc-commands-04.nroff \
 		draft-riikonen-silc-commands-04.txt
-	$(makerfc) draft-riikonen-silc-flags-payloads-01.nroff \
-		draft-riikonen-silc-flags-payloads-01.txt
+	$(makerfc) draft-riikonen-silc-flags-payloads-02.nroff \
+		draft-riikonen-silc-flags-payloads-02.txt
 	$(makerfc) draft-riikonen-presence-attrs-01.nroff \
 		draft-riikonen-presence-attrs-01.txt
 
@@ -83,7 +83,7 @@ dist-hook:
 	touch draft-riikonen-silc-pp-06.txt
 	touch draft-riikonen-silc-ke-auth-06.txt
 	touch draft-riikonen-silc-commands-04.txt
-	touch draft-riikonen-silc-flags-payloads-01.txt
+	touch draft-riikonen-silc-flags-payloads-02.txt
 	touch draft-riikonen-presence-attrs-01.txt
 endif
 

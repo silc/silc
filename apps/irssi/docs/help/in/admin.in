@@ -5,7 +5,6 @@ Displays the administrative details about the given server. If
 no server is specified, the server you are connected to is
 used.
 
-This command may be an alias.
+This command is an alias of INFO.
 
-See also: INFO
-
+See also: INFO, STATS

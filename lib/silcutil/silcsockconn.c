@@ -192,8 +192,8 @@ SILC_TASK_CALLBACK(silc_socket_host_lookup_finish)
      is cancelled also and we will not call the final callback. */
   if (lookup->sock->users == 1) {
     SILC_LOG_DEBUG(("Async host lookup was cancelled"));
-    silc_free(lookup);
     silc_socket_free(lookup->sock);
+    silc_free(lookup);
     return;
   }
 

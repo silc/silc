@@ -315,6 +315,11 @@ bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv)
 {
+#ifdef SILC_DEBUG
+  assert((len & (cipher->cipher->block_len - 1)) == 0);
+#endif
+  if (len & (cipher->cipher->block_len - 1))
+    return FALSE;
   return cipher->cipher->encrypt(cipher->context, src, dst, len,
 				 iv ? iv : cipher->iv);
 }
@@ -325,6 +330,11 @@ bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv)
 {
+#ifdef SILC_DEBUG
+  assert((len & (cipher->cipher->block_len - 1)) == 0);
+#endif
+  if (len & (cipher->cipher->block_len - 1))
+    return FALSE;
   return cipher->cipher->decrypt(cipher->context, src, dst, len,
 				 iv ? iv : cipher->iv);
 }

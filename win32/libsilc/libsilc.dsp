@@ -127,15 +127,15 @@ SOURCE=..\..\lib\silccore\silcidcache.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silccore\silcmessage.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silccore\silcnotify.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silccore\silcpacket.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccore\silcprivate.c
 # End Source File
 # End Group
 # Begin Group "silcske"
@@ -157,6 +157,10 @@ SOURCE=..\..\lib\silcske\silcske.c
 # Begin Group "silcutil"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcapputil.c
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silcutil\silcbuffmt.c
@@ -287,10 +291,6 @@ SOURCE=..\..\lib\silccrypt\cast.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\mars.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\md5.c
 # End Source File
 # Begin Source File
@@ -399,15 +399,15 @@ SOURCE=..\..\lib\silccore\silcidcache.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silccore\silcmessage.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silccore\silcmode.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silccore\silcnotify.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccore\silcpacket.h
 # End Source File
 # Begin Source File
 
@@ -441,6 +441,10 @@ SOURCE=..\..\lib\silcske\silcske_status.h
 # Begin Group "silcutil No. 1"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcapputil.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silcutil\silcbuffer.h
@@ -600,14 +604,6 @@ SOURCE=..\..\lib\silccrypt\ciphers.h
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\ciphers_def.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\mars.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\mars_internal.h
 # End Source File
 # Begin Source File
 

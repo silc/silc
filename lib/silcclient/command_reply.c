@@ -1744,10 +1744,18 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcClientCommandReplyContext r = (SilcClientCommandReplyContext)context2;
 
   SILC_LOG_DEBUG(("Start"));
 
   if (cmd->error != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_get_status_message(cmd->error));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  if (r && !silc_command_get_status(r->payload, NULL, &cmd->error)) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
     COMMAND_REPLY_ERROR;
@@ -1816,6 +1824,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
     if (!client_entry) {
       COMMAND_REPLY_ERROR;
       goto out;
+    }
+
+    /* Save fingerprint */
+    if (!client_entry->fingerprint) {
+      client_entry->fingerprint = silc_calloc(20, sizeof(unsigned char));
+      client_entry->fingerprint_len = 20;
+      silc_hash_make(cmd->client->sha1hash, tmp + 4, len - 4,
+		     client_entry->fingerprint);
     }
 
     /* Notify application */

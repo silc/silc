@@ -5,6 +5,9 @@ This command is used to manage the ban list of the channel.
 You must be channel operator to be able to use this command.
 Wildcards may be used with this command.
 
+In ban list it is possible to add nicknames, server name, username,
+hostname or netmask (IP/MASK), and public keys.
+
 Examples:
     /BAN #mychannel +foobar!mr.bar@foo.bar.com
         Adds nickname `foobar' with username `mr.bar' from host
@@ -17,6 +20,10 @@ Examples:
         Adds foo* nicknames from any server with any username from
         *.foobar.com hosts to the ban list on current channel.
 
+    /BAN * +/path/to/public_key.pub
+        Adds the public key from file /path/to/public_key.pub to
+        ban list of the current channel.
+
     /BAN * -looser
         Removes the nickname `looser' from the ban list on current
         channel.
@@ -24,5 +31,5 @@ Examples:
     /BAN *
         Shows the ban list of the current channel.
 
-See also: KNOCKOUT, KICKBAN
+See also: KICK
 

@@ -61,11 +61,53 @@ if test "$GCC"; then
 fi
 
 #
+# Library versioning.
+#
+# Do the releases and library versioning according to following rules:
+#
+#  - If any code has changed in library, increment [LIB]_REVISION
+#  - If functions were added, set [LIB]_REVISION to 0
+#  - If functions were added, removed or changed, increment [LIB]_CURRENT
+#  - If functions were added, increment [LIB]_AGE
+#  - If functions were removed, set [LIB]_AGE to 0
+#
+# where [LIB] is LIBSILC and LIBSILCCLIENT, and where "functions" means
+# functions public interfaces.
+#
+# The LIB_BASE_VERSION defines the SILC software major.minor version and 
+# it is increment only when these version numbers actually change.
+#
+
+# Base version for libraries.  Do not change this unless SILC version
+# changes too.
+LIB_BASE_VERSION=1.0
+
+# libsilc versions
+LIBSILC_CURRENT=1
+LIBSILC_REVISION=0
+LIBSILC_AGE=1
+
+# libsilcclient versions
+LIBSILCCLIENT_CURRENT=1
+LIBSILCCLIENT_REVISION=1
+LIBSILCCLIENT_AGE=0
+
+# Substitute the version numbers
+AC_SUBST(LIB_BASE_VERSION)
+AC_SUBST(LIBSILC_CURRENT)
+AC_SUBST(LIBSILC_REVISION)
+AC_SUBST(LIBSILC_AGE)
+AC_SUBST(LIBSILCCLIENT_CURRENT)
+AC_SUBST(LIBSILCCLIENT_REVISION)
+AC_SUBST(LIBSILCCLIENT_AGE)
+
+#
 # Program checking
 #
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_MAKE_SET
+AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 AC_PATH_PROG(sedpath, sed)
 
@@ -133,20 +175,21 @@ sim_support=false
 AC_MSG_CHECKING(for SIM support)
 AC_MSG_RESULT()
 AC_CHECK_HEADERS(dlfcn.h,
-  AC_CHECK_LIB(dl, dlopen,
-    [
-      AC_DEFINE(SILC_SIM)
-      sim_support=true
-      LIBS="$LIBS -ldl"
-    ],
-    [
-      AC_CHECK_LIB(c, dlopen,
-        [
-          AC_DEFINE(SILC_SIM)
-          sim_support=true
-        ])
-    ])
-  )
+  [
+    AC_CHECK_LIB(dl, dlopen,
+      [
+        AC_DEFINE(SILC_SIM)
+        sim_support=true
+        LIBS="$LIBS -ldl"
+      ],
+      [
+        AC_CHECK_LIB(c, dlopen,
+          [
+            AC_DEFINE(SILC_SIM)
+            sim_support=true
+          ])
+      ])
+   ])
 
 AM_CONDITIONAL(SILC_SIM, test x$sim_support = xtrue)
 if test x$sim_support = xtrue; then
@@ -606,13 +649,14 @@ AC_ARG_WITH(iconv,
     case "${withval}" in
       no)
         AC_MSG_RESULT(no)
-
-        AC_CHECK_HEADERS(iconv.h, AC_CHECK_FUNC(iconv, has_iconv=true))
+        AC_CHECK_HEADERS(iconv.h,
+          [
+            AC_CHECK_FUNC(iconv, has_iconv=true)
+          ])
         check_iconv=false
         ;;
       *)
         AC_MSG_RESULT(yes)
-
         if test -d $withval/include; then
           CPPFLAGS="$CPPFLAGS -I$withval/include"
           CFLAGS="$CFLAGS -I$withval/include"
@@ -620,16 +664,19 @@ AC_ARG_WITH(iconv,
         if test -d $withval/lib; then
           LDFLAGS="$LDFLAGS -L$withval/lib"
         fi
+        ;;
     esac
   ],
   [
     AC_MSG_RESULT(no)
-
-    AC_CHECK_HEADERS(iconv.h, AC_CHECK_FUNCS(iconv,
-                                [
-                                  has_iconv=true
-                                  check_iconv=false
-                                 ]))
+    AC_CHECK_HEADERS(iconv.h,
+      [
+        AC_CHECK_FUNCS(iconv,
+          [
+            has_iconv=true
+            check_iconv=false
+          ])
+      ])
   ])
 
 if test x$check_iconv = xtrue; then
@@ -950,6 +997,22 @@ AC_ARG_WITH(silcd,
     AC_MSG_RESULT(yes)
   ])
 
+libtoolfix=true
+AC_MSG_CHECKING(whether to do libtoolfix)
+AC_ARG_WITH(libtoolfix,
+  [  --without-libtoolfix     Do not fix libtool, for package builders],
+  [
+    AC_MSG_RESULT(no)
+    libtoolfix=false
+  ],
+  [
+    AC_MSG_RESULT(yes)
+  ])
+
+AC_SUBST(ETCDIR)
+AC_DEFINE_UNQUOTED(SILC_ETCDIR, "$ETCDIR")
+
+
 
 ##
 ##  Misc
@@ -979,6 +1042,18 @@ INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"
 AC_SUBST(INCLUDE_DEFINES_INT)
 AC_SUBST(SILC_DIST_SUBDIRS)
 
+#
+# Fix the libtool to support run-time configuration.  This allows us
+# to in run-time specify when to compile shared/static libraries without
+# need to reconfigure the entire libtool.
+#
+if test x$libtoolfix = xtrue; then
+  ./libtoolfix $SILC_TOP_SRCDIR/ltmain.sh
+fi
+AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
+
+
+#
 # Makefile outputs
 #
 AC_CONFIG_FILES(
@@ -990,7 +1065,9 @@ includes/Makefile
 lib/Makefile
 lib/contrib/Makefile
 lib/silccore/Makefile
+lib/silccore/tests/Makefile
 lib/silccrypt/Makefile
+lib/silccrypt/tests/Makefile
 lib/silcmath/Makefile
 lib/silcmath/mpi/Makefile.defines
 lib/silcmath/mpi/Makefile.defines_int
@@ -1085,7 +1162,7 @@ if test "x$silc_dist" = "xsilc-server" ||
    test "x$silc_dist" = "xsilc-toolkit"; then
   silcd="yes"
   if test x$without_silcd = xtrue; then
-    without_silcd="no"
+    silcd="no"
   fi
 echo " Compile SILC Server ...........: $silcd"
 echo " Server configuration file .....: $summary_silcd_configfile"

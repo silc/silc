@@ -1,16 +1,15 @@
 /*
 
-  silcnotify.c
+  silcnotify.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2000 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -88,8 +87,8 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
   unsigned char **argv;
   SilcUInt32 *argv_lens = NULL, *argv_types = NULL;
   unsigned char *x;
-  SilcUInt32 x_len;
-  int i, k = 0, len = 0;
+  SilcUInt32 x_len, len = 0;
+  int i, k = 0;
 
   if (argc) {
     argv = silc_calloc(argc, sizeof(unsigned char *));
@@ -161,7 +160,7 @@ SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type,
 					   SilcBuffer args)
 {
   SilcBuffer buffer;
-  int len;
+  SilcUInt32 len;
 
   len = 5 + (args ? args->len : 0);
   buffer = silc_buffer_alloc_size(len);

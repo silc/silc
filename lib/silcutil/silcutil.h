@@ -393,7 +393,8 @@ char *silc_client_chumode_char(SilcUInt32 mode);
  *
  * DESCRIPTION
  *
- *    Creates fingerprint from data, usually used with SHA1 digests.
+ *    Return a textual representation of the fingerprint in *data, the
+ *    caller must free the returned string.
  *
  ***/
 char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len);

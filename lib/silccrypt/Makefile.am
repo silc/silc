@@ -38,6 +38,15 @@ libsilccrypt_la_SOURCES = \
 	silcpkcs.c \
 	pkcs1.c
 
+if SILC_LIBTOOLFIX
+# Tell libtool to compile silccrypt as shared since silcsim will need it.
+LTFLAGS = --libtool-enable-shared
+else
+LTFLAGS = 
+endif
+
+CFLAGS = $(LTFLAGS)
+
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\
 	aes.h		\
@@ -61,6 +70,6 @@ include_HEADERS =	\
 	twofish.h
 endif
 
-EXTRA_DIST = *.h
+EXTRA_DIST = *.h tests
 
 include $(top_srcdir)/Makefile.defines.in

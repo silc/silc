@@ -38,18 +38,24 @@ int silc_server_packet_send_real(SilcServer server,
   if (SILC_IS_DISCONNECTING(sock))
     return -1;
 
-  /* If rekey protocol is active we must assure that all packets are
-     sent through packet queue. */
-  if (SILC_SERVER_IS_REKEY(sock))
-    force_send = FALSE;
-
-  /* If outbound data is already pending do not force send */
-  if (SILC_IS_OUTBUF_PENDING(sock))
-    force_send = FALSE;
-
   /* Send the packet */
-  ret = silc_packet_send(sock, force_send);
+  ret = silc_packet_send(sock, FALSE);
   if (ret != -2) {
+    if (ret == -1) {
+      SILC_LOG_ERROR(("Error sending packet to connection "
+		      "%s:%d [%s]", sock->hostname, sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
+
+      SILC_SET_DISCONNECTING(sock);
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_server_close_connection(server, sock);
+      return ret;
+    }
+
     server->stat.packets_sent++;
     return ret;
   }
@@ -741,6 +747,9 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 					    unsigned char *data,
 					    unsigned int data_len)
 {
+  SilcUInt32 mac_len, iv_len;
+  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+
   /* If we are router and the packet came from router and private key
      has not been set for the channel then we must encrypt the packet
      as it was decrypted with the session key shared between us and the
@@ -748,11 +757,17 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
      same channel key. */
   if (server->server_type == SILC_ROUTER &&
       sock->type == SILC_SOCKET_TYPE_ROUTER &&
-      !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY) &&
-      channel->channel_key) {
-    SilcUInt32 mac_len = silc_hmac_len(channel->hmac);
-    SilcUInt32 iv_len = silc_cipher_get_block_len(channel->channel_key);
-    unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+      !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY) && channel->key) {
+
+    /* If we are backup router and remote is our primary router and
+       we are currently doing backup resuming protocol we must not
+       re-encrypt message with session key. */
+    if (server->backup_router && SILC_SERVER_IS_BACKUP(sock) &&
+	SILC_PRIMARY_ROUTE(server) == sock)
+      return TRUE;
+
+    mac_len = silc_hmac_len(channel->hmac);
+    iv_len = silc_cipher_get_block_len(channel->channel_key);
 
     if (data_len <= mac_len + iv_len) {
       SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
@@ -760,8 +775,9 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
     }
 
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
-    silc_message_payload_encrypt(data, data_len - iv_len, iv, iv_len,
-				 channel->channel_key, channel->hmac);
+    silc_message_payload_encrypt(data, data_len - iv_len, data_len,
+				 iv, iv_len, channel->channel_key,
+				 channel->hmac);
   }
 
   return TRUE;
@@ -1991,7 +2007,6 @@ void silc_server_packet_queue_purge(SilcServer server,
       (SILC_IS_DISCONNECTED(sock) == FALSE)) {
     server->stat.packets_sent++;
     silc_packet_send(sock, TRUE);
-    SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
     SILC_UNSET_OUTBUF_PENDING(sock);
     silc_buffer_clear(sock->outbuf);
   }

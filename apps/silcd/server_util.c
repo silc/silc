@@ -1772,6 +1772,12 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   return ret;
 }
 
+static void silc_server_inviteban_dummy_dest(void *key, void *context,
+					     void *user_context)
+{
+  /* Nothing */
+}
+
 /* Process invite or ban information */
 
 void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
@@ -1797,7 +1803,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	char *string = NULL;
 	silc_hash_table_find(list, (void *)1,
 			     NULL, (void **)&string);
-	silc_hash_table_del(list, (void *)1);
+	silc_hash_table_del_ext(list, (void *)1, NULL, NULL, NULL, NULL,
+				silc_server_inviteban_dummy_dest, NULL);
 	if (!string)
 	  string = silc_calloc(len + 2, sizeof(*string));
 	else
@@ -1869,10 +1876,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	char *string = NULL, *start, *end, *n;
 
 	if (silc_hash_table_find(list, (void *)1, NULL, (void **)&string)) {
-	  silc_hash_table_del(list, (void *)1);
-
 	  if (!strncmp(string, tmp, strlen(string) - 1)) {
-	    silc_free(string);
+	    silc_hash_table_del(list, (void *)1);
 	    string = NULL;
 	  } else {
 	    start = strstr(string, tmp);
@@ -1881,7 +1886,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	      n = silc_calloc(strlen(string) - len, sizeof(*n));
 	      strncat(n, string, start - string);
 	      strncat(n, end + 1, ((string + strlen(string)) - end) - 1);
-	      silc_free(string);
+	      silc_hash_table_del(list, (void *)1);
 	      string = n;
 	    }
 	  }
@@ -1899,7 +1904,6 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
 	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)2, tmp2);
-	    silc_buffer_free(tmp2);
 	    break;
 	  }
 	}
@@ -1913,7 +1917,6 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
 	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)3, tmp2);
-	    silc_buffer_free(tmp2);
 	    break;
 	  }
 	}
@@ -1922,5 +1925,25 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 
       tmp = silc_argument_get_next_arg(args, &type, &len);
     }
+  }
+}
+
+/* Destructor for invite or ban list entrys */
+
+void silc_server_inviteban_destruct(void *key, void *context,
+				    void *user_context)
+{
+  switch ((SilcUInt32)key) {
+  case 1:
+    /* Invite string */
+    silc_free(context);
+    break;
+  case 2:
+  case 3:
+    /* Public key/Channel ID SilcBuffer */
+    silc_buffer_free(context);
+    break;
+  default:
+    break;
   }
 }

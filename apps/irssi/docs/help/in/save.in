@@ -1,8 +1,6 @@
 
 @SYNTAX:save@
 
-Saves the current Irssi configuration into the configuration
-file.
+Saves the current configuration.
 
-See also: RELOAD
-
+See also: RELOAD, LAYOUT

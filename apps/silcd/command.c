@@ -1133,9 +1133,10 @@ SILC_SERVER_CMD_FUNC(invite)
 
     /* Allocate hash table for invite list if it doesn't exist yet */
     if (!channel->invite_list)
-      channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						   NULL, NULL, NULL,
-						   NULL, NULL, TRUE);
+      channel->invite_list =
+	silc_hash_table_alloc(0, silc_hash_ptr,
+			      NULL, NULL, NULL,
+			      silc_server_inviteban_destruct, channel, TRUE);
 
     /* Check if the ID is in the list already */
     silc_hash_table_list(channel->invite_list, &htl);
@@ -1190,9 +1191,11 @@ SILC_SERVER_CMD_FUNC(invite)
       if (tmp[0] == 0x00) {
 	/* Allocate hash table for invite list if it doesn't exist yet */
 	if (!channel->invite_list)
-	  channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						       NULL, NULL, NULL,
-						       NULL, NULL, TRUE);
+	  channel->invite_list =
+	    silc_hash_table_alloc(0, silc_hash_ptr,
+				  NULL, NULL, NULL,
+				  silc_server_inviteban_destruct, channel,
+				  TRUE);
     
 	/* Check for resource limit */
 	if (silc_hash_table_count(channel->invite_list) > 64) {
@@ -2969,6 +2972,11 @@ SILC_SERVER_CMD_FUNC(cmode)
 						0);
 	  goto out;
 	}
+      } else {
+	/* If key was not sent and the channel mode has already founder
+	   then the key was not to be changed. */
+	if (channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)
+	  goto has_founder;
       }
 
       /* Set the founder authentication */
@@ -3013,6 +3021,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 	channel->founder_key = NULL;
 	goto out;
       }
+    has_founder:
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
@@ -3073,7 +3082,6 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  SilcIDListData idata = (SilcIDListData)client;
   SilcChannelID *channel_id = NULL;
   SilcClientID *client_id = NULL;
   SilcChannelEntry channel;
@@ -3205,9 +3213,7 @@ SILC_SERVER_CMD_FUNC(cumode)
       SilcHashTableList htl;
 
       if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
-	  !channel->founder_key || !idata->public_key ||
-	  !silc_pkcs_public_key_compare(channel->founder_key, 
-					idata->public_key)) {
+	  !channel->founder_key) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
 					      SILC_STATUS_ERR_AUTH_FAILED, 0);
 	goto out;
@@ -4177,9 +4183,11 @@ SILC_SERVER_CMD_FUNC(ban)
       if (tmp[0] == 0x00) {
 	/* Allocate hash table for ban list if it doesn't exist yet */
 	if (!channel->ban_list)
-	  channel->ban_list = silc_hash_table_alloc(0, silc_hash_ptr,
-						    NULL, NULL, NULL,
-						    NULL, NULL, TRUE);
+	  channel->ban_list =
+	    silc_hash_table_alloc(0, silc_hash_ptr,
+				  NULL, NULL, NULL,
+				  silc_server_inviteban_destruct, channel,
+				  TRUE);
     
 	/* Check for resource limit */
 	if (silc_hash_table_count(channel->ban_list) > 64) {

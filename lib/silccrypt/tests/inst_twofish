@@ -1,7 +1,0 @@
-gcc -I.. \
--I../../../includes -I../../silccore -I../../trq -I../../silcske \
--I../.. -I../../silccore -I../../silcmath -I../../silcutil \
--I../../silcmath/gmp -I../../silcske -I../../silcsim \
--Wall -finline-functions \
--o test_twofish test_twofish.c -L../.. -lsilc
-

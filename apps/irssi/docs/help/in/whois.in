@@ -26,5 +26,5 @@ informations is received.
 If you want to send your information in WHOIS you can set the
 information with ATTR command.  See HELP ATTR.
 
-See also: WHOWAS, CHANNEL, ATTR
+See also: WHOIS, CHANNEL, ATTR, NAMES, WHO
 

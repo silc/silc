@@ -1,14 +1,6 @@
 TODO for Irssi SILC Client 1.0
 ==============================
 
- o Support to set arbitrary pulic key in CMODE.
-
- o INVITE/BAN by public key file.
-
- o Signed message payload handling on UI
-
- o bugs parsing nicknames with @ in NICK_CHANGE
-
  o Testing - See test plan:
      http://silcnet.org/docs/silc-client-1.0-test.pdf
      http://silcnet.org/docs/silc-client-1.0-test.ps
@@ -16,6 +8,8 @@ TODO for Irssi SILC Client 1.0
 
 TODO for SILC Server 1.0
 ========================
+
+ o Fix CUMODE_CHANGE and CMODE_CHANGE for founder key things.
 
  o 1.2 backup router support
 
@@ -25,9 +19,11 @@ TODO for SILC Server 1.0
 TODO/bugs In SILC Libraries
 ===========================
 
- o WIN32 silc_net_create_connection_async does not work the same way
-   than on Unix.  Do it with threads on WIN32.  The function works but
-   is not actually async currently (Fix this to 0.9.x).
+ o Test cases for all cryptographic primitive in lib/silccrypt/
+
+ o Test cases for all payload encoding and decoding routins in lib/silccore/
+
+ o Test cases for math library routines in lib/silcmath/
 
 
 TODO in Toolkit Documentation

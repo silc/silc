@@ -1,29 +1,42 @@
 /*
 
-  silcchannel.c
+  silcchannel.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
 */
-/* Channel Payload, Channel Message Payload and Channel Key Payload 
-   implementations. */
+/* Channel Payload and Channel Key Payload implementations. */
 /* $Id$ */
 
 #include "silcincludes.h"
 #include "silcchannel.h"
-#include "silcchannel_i.h"
+
+/******************************************************************************
+
+                              Channel Payload
+
+******************************************************************************/
+
+/* Channel Message Payload structure. Contents of this structure is parsed
+   from SILC packets. */
+struct SilcChannelPayloadStruct {
+  unsigned char *channel_name;
+  unsigned char *channel_id;
+  SilcUInt32 mode;
+  SilcUInt16 name_len;
+  SilcUInt16 id_len;
+};
 
 /* Parses channel payload returning new channel payload structure. */
 
@@ -74,7 +87,8 @@ SilcDList silc_channel_payload_parse_list(const unsigned char *payload,
   SilcBufferStruct buffer;
   SilcDList list;
   SilcChannelPayload newp;
-  int len, ret;
+  SilcUInt32 len;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing channel payload list"));
 
@@ -216,6 +230,17 @@ SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload)
                              Channel Key Payload
 
 ******************************************************************************/
+
+/* Channel Key Payload structrue. Channel keys are parsed from SILC
+   packets into this structure. */
+struct SilcChannelKeyPayloadStruct {
+  unsigned char *id;
+  unsigned char *cipher;
+  unsigned char *key;
+  SilcUInt16 id_len;
+  SilcUInt16 cipher_len;
+  SilcUInt16 key_len;
+};
 
 /* Parses channel key payload returning new channel key payload structure */
 

@@ -405,10 +405,9 @@ ConnectionParams {
 #
 # The authentication data is specified by Passphrase and/or PublicKey.
 # If both are provided then both password and public key based authentication
-# is allowed.  If the Publickey is used it includes the file path to the
-# public key file.  If none of them is provided then authentication is not
-# required.  The PublicKey can be set multiple times to set multiple
-# public keys for one connection.
+# is allowed.  The "PublicKey" includes the single key contained in the
+# specified file, while "PublicKeyDir" includes all files in the specified
+# directory, which must all be valid public keys with ".pub" suffix.
 #
 # Next example connection will match to all incoming client connections,
 # and no authentication is required.
@@ -416,9 +415,10 @@ ConnectionParams {
 Client {
 	#Host = "10.1.*";
 	#Passphrase = "secret";
-	#PublicKey = "/path/to/the/user_my.key";
-	#PublicKey = "/path/to/the/user_221.key";
-	#PublicKey = "/path/to/the/user_313.key";
+	#PublicKey = "/path/to/the/user_my.pub";
+	#PublicKey = "/path/to/the/user_221.pub";
+	#PublicKey = "/path/to/the/user_313.pub";
+	#PublicKeyDir = "/path/to/keys/dir/";
 	Params = "normal";
 };
 
@@ -439,7 +439,7 @@ Admin {
 	User = "priikone";
 	Nick = "pekka";
 	Passphrase = "verysecret";
-	# PublicKey = "/path/to/the/public.key";
+	# PublicKey = "/path/to/the/public.pub";
 };
 
 #
@@ -463,7 +463,7 @@ Admin {
 ServerConnection {
 	Host = "10.2.1.7";
 	Passphrase = "verysecret";
-	#PublicKey = "/path/to/the/public.key";
+	#PublicKey = "/path/to/the/public.pub";
 	Params = "normal";
 	Backup = false;
 };
@@ -500,7 +500,7 @@ RouterConnection {
 	Host = "10.2.1.100";
 	Port = 706;
 	Passphrase = "verysecret";
-	#PublicKey = "/path/to/the/public.key";
+	#PublicKey = "/path/to/the/public.pub";
 	Params = "normal";
 	Initiator = true;
 	#BackupHost = "10.2.1.6";

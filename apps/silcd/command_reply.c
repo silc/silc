@@ -1000,16 +1000,46 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
   /* Get the ban list */
   tmp = silc_argument_get_arg_type(cmd->args, 8, &len);
-  if (tmp) {
-    silc_free(entry->ban_list);
-    entry->ban_list = silc_memdup(tmp, len);
+  if (tmp && len > 2) {
+    SilcArgumentPayload iargs;
+    SilcUInt16 iargc;
+    SILC_GET16_MSB(iargc, tmp);
+    iargs = silc_argument_payload_parse(tmp + 2, len - 2, iargc);
+    if (iargs) {
+      /* Delete old ban list */
+      if (entry->ban_list)
+	silc_hash_table_free(entry->ban_list);
+      entry->ban_list =
+	silc_hash_table_alloc(0, silc_hash_ptr,
+			      NULL, NULL, NULL,
+			      silc_server_inviteban_destruct, entry, TRUE);
+
+      /* Add new ban list */
+      silc_server_inviteban_process(server, entry->ban_list, 0, iargs);
+      silc_argument_payload_free(iargs);
+    }
   }
 
   /* Get the invite list */
   tmp = silc_argument_get_arg_type(cmd->args, 9, &len);
-  if (tmp) {
-    silc_free(entry->invite_list);
-    entry->invite_list = silc_memdup(tmp, len);
+  if (tmp && len > 2) {
+    SilcArgumentPayload iargs;
+    SilcUInt16 iargc;
+    SILC_GET16_MSB(iargc, tmp);
+    iargs = silc_argument_payload_parse(tmp + 2, len - 2, iargc);
+    if (iargs) {
+      /* Delete old invite list */
+      if (entry->invite_list)
+	silc_hash_table_free(entry->invite_list);
+      entry->invite_list =
+	silc_hash_table_alloc(0, silc_hash_ptr,
+			      NULL, NULL, NULL,
+			      silc_server_inviteban_destruct, entry, TRUE);
+
+      /* Add new invite list */
+      silc_server_inviteban_process(server, entry->invite_list, 0, iargs);
+      silc_argument_payload_free(iargs);
+    }
   }
 
   /* Get the topic */

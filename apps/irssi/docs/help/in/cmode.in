@@ -24,13 +24,22 @@ option(s).  The following modes are available:
                     be provided when joining to the channel.
     c <cipher>      Set/unset channel's cipher
     h <hmac>        Set/unset channel's hmac
-    f               Set/unset channel founder authentication.
+    f [<pubkeyfile> <privkeyfile> [<privkey passphrase>]]
+                    Set/unset channel founder authentication.
                     Channel founder may set this mode so that
                     if the client leaves the channel it can
                     claim the founder rights when it returns
                     to the channel, and to set the channel to
                     be permanent channel.  You can claim the
                     founder rights using CUMODE or JOIN commands.
+
+                    If the <pubkeyfile> and <privkeyfile> is
+                    provided then the <pubkeyfile> will the used
+                    as founder public key, and the private key
+                    is used to compute a signature for the SILC
+                    server.  If these are omitted then the default
+                    SILC keypair is used.  Normally you do not need
+                    to provide these arguments.
 
 Multiple modes can be set/unset at once if the modes does not
 require any arguments.  If mode requires an argument then only

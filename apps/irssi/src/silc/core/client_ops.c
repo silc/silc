@@ -153,17 +153,107 @@ void silc_say_error(char *msg, ...)
   va_end(va);
 }
 
+/* try to verify a message using locally stored public key data */
+int verify_message_signature(SilcClientEntry sender,
+			     SilcMessageSignedPayload sig,
+			     SilcMessagePayload message)
+{
+  SilcPublicKey pk;
+  char file[256], filename[256];
+  char *fingerprint, *fingerprint2;
+  unsigned char *pk_data;
+  SilcUInt32 pk_datalen;
+  struct stat st;
+  int ret = SILC_MSG_SIGNED_VERIFIED, i;
+
+  if (sig == NULL)
+    return SILC_MSG_SIGNED_UNKNOWN;
+
+  /* get public key from the signature payload and compare it with the
+     one stored in the client entry */
+  pk = silc_message_signed_get_public_key(sig, &pk_data, &pk_datalen);
+
+  if (pk != NULL) {
+    fingerprint = silc_hash_fingerprint(NULL, pk_data, pk_datalen);
+
+    if (sender->fingerprint) {
+      fingerprint2 = silc_fingerprint(sender->fingerprint,
+		    		      sender->fingerprint_len);
+      if (strcmp(fingerprint, fingerprint2)) {
+        /* since the public key differs from the senders public key, the
+           verification _failed_ */
+        silc_pkcs_public_key_free(pk);
+        silc_free(fingerprint);
+        ret = SILC_MSG_SIGNED_UNKNOWN;
+      }
+      silc_free(fingerprint2);
+    }
+  } else if (sender->fingerprint)
+    fingerprint = silc_fingerprint(sender->fingerprint,
+		    		   sender->fingerprint_len);
+  else
+    /* no idea, who or what signed that message ... */
+    return SILC_MSG_SIGNED_UNKNOWN;
+  
+  /* search our local client key cache */
+  for (i = 0; i < strlen(fingerprint); i++)
+    if (fingerprint[i] == ' ')
+      fingerprint[i] = '_';
+    
+  snprintf(file, sizeof(file) - 1, "clientkey_%s.pub", fingerprint);
+  snprintf(filename, sizeof(filename) - 1, "%s/clientkeys/%s", 
+	   get_irssi_dir(), file);
+  silc_free(fingerprint);
+  
+  if (stat(filename, &st) < 0)
+    /* we don't have the public key cached ... use the one from the sig */
+    ret = SILC_MSG_SIGNED_UNKNOWN;
+  else {
+    SilcPublicKey cached_pk=NULL;
+
+    /* try to load the file */
+    if (!silc_pkcs_load_public_key(filename, &cached_pk, SILC_PKCS_FILE_PEM) &&
+	!silc_pkcs_load_public_key(filename, &cached_pk, 
+				   SILC_PKCS_FILE_BIN)) {
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_COULD_NOT_LOAD, "client");
+      if (pk == NULL)
+	return SILC_MSG_SIGNED_UNKNOWN;
+      else
+	ret = SILC_MSG_SIGNED_UNKNOWN;
+    }
+
+    if (cached_pk) {
+      if (pk)
+        silc_pkcs_public_key_free(pk);
+      pk = cached_pk; 
+    }
+  }
+
+  /* the public key is now in pk, our "level of trust" in ret */
+  if ((pk) && silc_message_signed_verify(sig, message, pk, 
+			  		 silc_client->sha1hash)!= SILC_AUTH_OK)
+    ret = SILC_MSG_SIGNED_FAILED;
+
+  if (pk)
+    silc_pkcs_public_key_free(pk);
+
+  return ret;
+}
+
 /* Message for a channel. The `sender' is the nickname of the sender 
    received in the packet. The `channel_name' is the name of the channel. */
 
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcChannelEntry channel,
+			  SilcMessagePayload payload,
 			  SilcMessageFlags flags, const unsigned char *message,
 			  SilcUInt32 message_len)
 {
   SILC_SERVER_REC *server;
   SILC_NICK_REC *nick;
   SILC_CHANNEL_REC *chanrec;
+  int verified = 0;
   
   SILC_LOG_DEBUG(("Start"));
 
@@ -183,6 +273,16 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       nick = silc_nicklist_insert(chanrec, chu, FALSE);
   }
 
+  /* If the messages is digitally signed, verify it, if possible. */
+  if (flags & SILC_MESSAGE_FLAG_SIGNED) {
+    if (!settings_get_bool("ignore_message_signatures")) {
+      SilcMessageSignedPayload sig = silc_message_get_signature(payload);
+      verified = verify_message_signature(sender, sig, payload);
+    } else {
+      flags &= ~SILC_MESSAGE_FLAG_SIGNED;
+    }
+  }
+  
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     /* MIME object received, try to display it as well as we can */
     char type[128], enc[128];
@@ -211,6 +311,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   if (!message)
     return;
 
+  /* FIXME: replace those printformat calls with signals and add signature
+            information to them (if present) */
   if (flags & SILC_MESSAGE_FLAG_ACTION)
     printformat_module("fe-common/silc", server, channel->channel_name,
 		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION, 
@@ -232,18 +334,30 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 
       silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
 		       cp, message_len);
-      signal_emit("message public", 6, server, cp,
-		  nick == NULL ? "[<unknown>]" : nick->nick,
-		  nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
-		  chanrec->name, nick);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message signed_public", 6, server, cp,
+		    nick == NULL ? "[<unknown>]" : nick->nick,
+		    nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
+		    chanrec->name, verified);
+      else
+        signal_emit("message public", 6, server, cp,
+		    nick == NULL ? "[<unknown>]" : nick->nick,
+		    nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
+		    chanrec->name, nick);
       silc_free(dm);
       return;
     }
 
-    signal_emit("message public", 6, server, message,
-		nick == NULL ? "[<unknown>]" : nick->nick,
-		nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
-		chanrec->name, nick);
+    if (flags & SILC_MESSAGE_FLAG_SIGNED)
+      signal_emit("message signed_public", 6, server, message,
+		  nick == NULL ? "[<unknown>]" : nick->nick,
+		  nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
+		  chanrec->name, verified);
+    else
+      signal_emit("message public", 6, server, message,
+		  nick == NULL ? "[<unknown>]" : nick->nick,
+		  nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
+		  chanrec->name, nick);
   }
 }
 
@@ -251,12 +365,14 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
    sender received in the packet. */
 
 void silc_private_message(SilcClient client, SilcClientConnection conn,
-			  SilcClientEntry sender, SilcMessageFlags flags,
+			  SilcClientEntry sender, SilcMessagePayload payload,
+			  SilcMessageFlags flags,
 			  const unsigned char *message,
 			  SilcUInt32 message_len)
 {
   SILC_SERVER_REC *server;
   char userhost[256];
+  int verified = 0;
   
   SILC_LOG_DEBUG(("Start"));
 
@@ -266,6 +382,16 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     sender->username, sender->hostname);
 
+  /* If the messages is digitally signed, verify it, if possible. */
+  if (flags & SILC_MESSAGE_FLAG_SIGNED) {
+    if (!settings_get_bool("ignore_message_signatures")) {
+      SilcMessageSignedPayload sig = silc_message_get_signature(payload);
+      verified = verify_message_signature(sender, sig, payload);
+    } else {
+      flags &= ~SILC_MESSAGE_FLAG_SIGNED;
+    }
+  }
+  
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     /* MIME object received, try to display it as well as we can */
     char type[128], enc[128];
@@ -307,16 +433,26 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 
     silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
 		     cp, message_len);
-    signal_emit("message private", 4, server, cp,
-		sender->nickname ? sender->nickname : "[<unknown>]",
-		sender->username ? userhost : NULL);
+    if (flags & SILC_MESSAGE_FLAG_SIGNED)
+      signal_emit("message signed_private", 5, server, cp,
+		  sender->nickname ? sender->nickname : "[<unknown>]",
+		  sender->username ? userhost : NULL, verified);
+    else
+      signal_emit("message private", 4, server, cp,
+		  sender->nickname ? sender->nickname : "[<unknown>]",
+		  sender->username ? userhost : NULL);
     silc_free(dm);
     return;
   }
 
-  signal_emit("message private", 4, server, message,
-	      sender->nickname ? sender->nickname : "[<unknown>]",
-	      sender->username ? userhost : NULL);
+  if (flags & SILC_MESSAGE_FLAG_SIGNED)
+    signal_emit("message signed_private", 5, server, message,
+	        sender->nickname ? sender->nickname : "[<unknown>]",
+	        sender->username ? userhost : NULL, verified);
+  else
+    signal_emit("message private", 4, server, message,
+	        sender->nickname ? sender->nickname : "[<unknown>]",
+	        sender->username ? userhost : NULL);
 }
 
 /* Notify message to the client. The notify arguments are sent in the
@@ -422,9 +558,9 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	       client_entry->username, client_entry->hostname);
     signal_emit("message part", 5, server, channel->channel_name,
-		client_entry->nickname,  client_entry->username ? 
+	 	client_entry->nickname,  client_entry->username ? 
 		buf : "", client_entry->nickname);
-    
+
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
       nickrec = silc_nicklist_find(chanrec, client_entry);
@@ -444,15 +580,20 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     tmp = va_arg(va, char *);
     
     silc_server_free_ftp(server, client_entry);
-    
-    memset(buf, 0, sizeof(buf));
-    if (client_entry->username)
-      snprintf(buf, sizeof(buf) - 1, "%s@%s",
-	       client_entry->username, client_entry->hostname);
-    signal_emit("message quit", 4, server, client_entry->nickname,
-		client_entry->username ? buf : "", 
-		tmp ? tmp : "");
-    
+
+    /* Print only if we have the nickname.  If this cliente has just quit
+       when we were only resolving it, it is possible we don't have the
+       nickname. */
+    if (client_entry->nickname) {
+      memset(buf, 0, sizeof(buf));
+      if (client_entry->username)
+        snprintf(buf, sizeof(buf) - 1, "%s@%s",
+		 client_entry->username, client_entry->hostname);
+      signal_emit("message quit", 4, server, client_entry->nickname,
+		  client_entry->username ? buf : "", 
+		  tmp ? tmp : "");
+    }
+
     list1 = nicklist_get_same_unique(SERVER(server), client_entry);
     for (list_tmp = list1; list_tmp != NULL; list_tmp = 
 	   list_tmp->next->next) {
@@ -791,12 +932,18 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   
       for (i = 0; i < clients_count; i++) {
 	memset(buf, 0, sizeof(buf));
-	if (clients[i]->username)
-	  snprintf(buf, sizeof(buf) - 1, "%s@%s",
-		   clients[i]->username, clients[i]->hostname);
-	signal_emit("message quit", 4, server, clients[i]->nickname,
-		    clients[i]->username ? buf : "", 
-		    "server signoff");
+
+	/* Print only if we have the nickname.  If this client has just quit
+	   when we were only resolving it, it is possible we don't have the
+	   nickname. */
+	if (clients[i]->nickname) {
+	  if (clients[i]->username)
+	    snprintf(buf, sizeof(buf) - 1, "%s@%s",
+		     clients[i]->username, clients[i]->hostname);
+	  signal_emit("message quit", 4, server, clients[i]->nickname,
+		      clients[i]->username ? buf : "", 
+		      "server signoff");
+	}
 
 	silc_server_free_ftp(server, clients[i]);
 	
@@ -1060,12 +1207,13 @@ static void silc_client_join_get_users(SilcClient client,
 		       channel->channel_name, chanrec->topic);
 
   if (founder) {
-    if (founder == conn->local_entry)
+    if (founder == conn->local_entry) {
       printformat_module("fe-common/silc", 
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_FOUNDER_YOU,
 			 channel->channel_name);
-    else
+      signal_emit("nick mode changed", 2, chanrec, ownnick);
+    } else
       printformat_module("fe-common/silc", 
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_FOUNDER,
@@ -1157,9 +1305,10 @@ void  silc_parse_inviteban_list(SilcClient client,
 	  /* a public key */
 	  char *fingerprint, *babbleprint;
 
-	  fingerprint = silc_hash_fingerprint(NULL, tmp, len);
-	  babbleprint = silc_hash_fingerprint(NULL, tmp, len);
-
+	  /* tmp is Public Key Payload, take public key from it. */
+	  fingerprint = silc_hash_fingerprint(NULL, tmp + 4, len - 4);
+	  babbleprint = silc_hash_babbleprint(NULL, tmp + 4, len - 4);
+	  
 	  printformat_module("fe-common/silc", server,
 			     (chanrec ? chanrec->visible_name : NULL),
 			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_PUBKEY,

@@ -4,6 +4,9 @@
 This command is used to invite an client to a channel and to manage
 the channel's invite list.  Wildcards may be used with this command.
 
+In invite list it is possible to add nicknames, server name, username,
+hostname or netmask (IP/MASK), and public keys.
+
 Examples:
     /INVITE silc joe
         Invites nickname `joe' to channel 'silc', and adds the client
@@ -16,6 +19,10 @@ Examples:
     /INVITE * +foo*@silcnet.org!*@*.foobar.com
         Adds nicknames foo* from silcnet.org server from *.foobar.com
         hosts to the invite list of the current channel.
+
+    /INVITE * +/path/to/public_key.pub
+        Adds the public key from file /path/to/public_key.pub to
+        invite list of the current channel.
 
     /INVITE * -joe
         Removes nickname `joe' from the invite list of the current

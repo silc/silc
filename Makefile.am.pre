@@ -33,7 +33,7 @@ dist-bzip: distdir
 	-rm -rf $(distdir)
 
 SILC_EXTRA_DIST = SILC_DISTRIBUTION_EXTRA
-EXTRA_DIST = CHANGES CREDITS $(SILC_EXTRA_DIST)
+EXTRA_DIST = libtoolfix CHANGES CREDITS $(SILC_EXTRA_DIST)
 
 #
 # Installing of SILC into the system

@@ -203,4 +203,8 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 				   SilcUInt8 action, SilcArgumentPayload args);
 
+/* Destructor for invite or ban list entrys */
+void silc_server_inviteban_destruct(void *key, void *context,
+				    void *user_context);
+
 #endif /* SERVER_UTIL_H */

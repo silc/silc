@@ -30,7 +30,6 @@
 SILC_TASK_CALLBACK(silc_server_rehash_close_connection);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 SILC_TASK_CALLBACK(silc_server_connect_router);
-SILC_TASK_CALLBACK(silc_server_connect_to_router);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_second);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_final);
 SILC_TASK_CALLBACK(silc_server_accept_new_connection);
@@ -42,7 +41,6 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final);
 SILC_TASK_CALLBACK(silc_server_free_client_data_timeout);
 SILC_TASK_CALLBACK(silc_server_timeout_remote);
 SILC_TASK_CALLBACK(silc_server_channel_key_rekey);
-SILC_TASK_CALLBACK(silc_server_failure_callback);
 SILC_TASK_CALLBACK(silc_server_get_stats);
 
 /* Allocates a new SILC server object. This has to be done before the server
@@ -1006,7 +1004,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
    server to do authentication and key exchange with our router - called
    from schedule. */
 
-SILC_TASK_CALLBACK(silc_server_connect_to_router)
+SILC_TASK_CALLBACK_GLOBAL(silc_server_connect_to_router)
 {
   SilcServer server = (SilcServer)context;
   SilcServerConnection sconn;
@@ -1109,8 +1107,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
       silc_ske_free(ctx->ske);
     silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
 
@@ -1154,8 +1150,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
       silc_ske_free(ctx->ske);
     silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
 
@@ -1230,8 +1224,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     silc_free(sconn->remote_host);
     silc_free(sconn->backup_replace_ip);
     silc_free(sconn);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     return;
@@ -1673,8 +1665,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     silc_server_config_unref(&ctx->sconfig);
     silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED,
 				  NULL);
@@ -1706,8 +1696,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     silc_server_config_unref(&ctx->sconfig);
     silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, 
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     server->stat.auth_failures++;
@@ -1795,8 +1783,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     silc_server_config_unref(&ctx->sconfig);
     silc_server_config_unref(&ctx->rconfig);
     silc_free(ctx);
-    silc_schedule_task_del_by_callback(server->schedule,
-				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, SILC_STATUS_ERR_AUTH_FAILED,
 				  NULL);
     server->stat.auth_failures++;
@@ -2133,8 +2119,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 			server->schedule);
 
  out:
-  silc_schedule_task_del_by_callback(server->schedule,
-				     silc_server_failure_callback);
   silc_protocol_free(protocol);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
@@ -2159,6 +2143,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
   SilcUInt32 sequence = 0;
+  bool local_is_router;
   int ret;
 
   if (!sock) {
@@ -2254,7 +2239,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
       else
 	silc_server_free_sock_user_data(server, sock, NULL);
     } else if (server->router_conn && server->router_conn->sock == sock &&
-	     !server->router && server->standalone)
+	       !server->router && server->standalone)
       silc_schedule_task_add(server->schedule, 0,
 			     silc_server_connect_to_router,
 			     server, 1, 0,
@@ -2280,10 +2265,20 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     sequence = idata->psn_receive;
   }
 
-  /* Process the packet. This will call the parser that will then
+  /* Then, process the packet. This will call the parser that will then
      decrypt and parse the packet. */
-  ret = silc_packet_receive_process(sock, server->server_type == SILC_ROUTER ?
-			            TRUE : FALSE, cipher, hmac, sequence,
+
+  local_is_router = (server->server_type == SILC_ROUTER);
+
+  /* If socket connection is our primary, we are backup and we are doing
+     backup resuming, we won't process the packet as being a router 
+     (affects channel message decryption). */
+  if (server->backup_router && SILC_SERVER_IS_BACKUP(sock) &&
+      SILC_PRIMARY_ROUTE(server) == sock)
+    local_is_router = FALSE;
+
+  ret = silc_packet_receive_process(sock, local_is_router,
+			            cipher, hmac, sequence,
 			            silc_server_packet_parse, server);
 
   /* If processing failed the connection is closed. */
@@ -2421,14 +2416,14 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
        and we want to call this processor with valid cipher. */
     if (idata)
       ret = silc_packet_receive_process(
-				  sock, server->server_type == SILC_ROUTER ?
-				  TRUE : FALSE, idata->receive_key,
+				  sock, server->server_type == SILC_ROUTER,
+				  idata->receive_key,
 				  idata->hmac_receive, idata->psn_receive,
 				  silc_server_packet_parse, server);
     else
       ret = silc_packet_receive_process(
-				  sock, server->server_type == SILC_ROUTER ?
-				  TRUE : FALSE, NULL, NULL, 0,
+				  sock, server->server_type == SILC_ROUTER,
+				  NULL, NULL, 0,
 				  silc_server_packet_parse, server);
 
     if (!ret) {
@@ -2534,14 +2529,8 @@ void silc_server_packet_parse_type(SilcServer server,
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     if (sock->protocol) {
-      SilcServerFailureContext f;
-      f = silc_calloc(1, sizeof(*f));
-      f->sock = silc_socket_dup(sock);
-
-      /* We will wait 5 seconds to process this failure packet */
-      silc_schedule_task_add(server->schedule, sock->sock,
-			     silc_server_failure_callback, (void *)f, 5, 0,
-			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+      sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
+      silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
     }
     break;
 
@@ -2940,7 +2929,9 @@ void silc_server_close_connection(SilcServer server,
   char tmp[128];
 
   if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
-    silc_schedule_task_add(server->schedule, 0,
+    silc_schedule_unset_listen_fd(server->schedule, sock->sock);
+    silc_schedule_task_del_by_fd(server->schedule, sock->sock);
+    silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_close_connection_final,
 			   (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_NORMAL);
@@ -2956,9 +2947,6 @@ void silc_server_close_connection(SilcServer server,
                    sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
                    "Router"), tmp[0] ? tmp : ""));
 
-  /* We won't listen for this connection anymore */
-  silc_schedule_unset_listen_fd(server->schedule, sock->sock);
-
   /* Unregister all tasks */
   silc_schedule_task_del_by_fd(server->schedule, sock->sock);
 
@@ -2972,7 +2960,8 @@ void silc_server_close_connection(SilcServer server,
   if (!sock->user_data) {
     /* If any protocol is active cancel its execution. It will call
        the final callback which will finalize the disconnection. */
-    if (sock->protocol) {
+    if (sock->protocol && sock->protocol->protocol &&
+	sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
       SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
       silc_protocol_cancel(sock->protocol, server->schedule);
       sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -2982,7 +2971,10 @@ void silc_server_close_connection(SilcServer server,
     }
   }
 
-  silc_schedule_task_add(server->schedule, 0,
+  /* We won't listen for this connection anymore */
+  silc_schedule_unset_listen_fd(server->schedule, sock->sock);
+
+  silc_schedule_task_add(server->schedule, sock->sock,
 			 silc_server_close_connection_final,
 			 (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
@@ -3169,6 +3161,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  server->id_entry->router = NULL;
 	  server->router = NULL;
 	  server->standalone = TRUE;
+	  server->backup_primary = FALSE;
 	  backup_router = NULL;
 	} else {
 	  if (server->id_entry != backup_router) {
@@ -3219,11 +3212,15 @@ void silc_server_free_sock_user_data(SilcServer server,
 			       SILC_TASK_PRI_NORMAL);
       }
 
+      SILC_SERVER_SEND_OPERS(server, FALSE, TRUE, SILC_NOTIFY_TYPE_NONE,
+			     ("Server %s signoff", user_data->server_name));
+
       if (!backup_router) {
 	/* Remove all servers that are originated from this server, and
 	   remove the clients of those servers too. */
 	silc_server_remove_servers_by_server(server, user_data, TRUE);
 
+#if 0
 	/* Remove the clients that this server owns as they will become
 	   invalid now too.  For backup router the server is actually
 	   coming from the primary router, so mark that as the owner
@@ -3233,6 +3230,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  silc_server_remove_clients_by_server(server, server->router,
 					       user_data, TRUE);
 	else
+#endif
 	  silc_server_remove_clients_by_server(server, user_data,
 					       user_data, TRUE);
 
@@ -3329,7 +3327,8 @@ void silc_server_free_sock_user_data(SilcServer server,
   }
 
   /* If any protocol is active cancel its execution */
-  if (sock->protocol) {
+  if (sock->protocol && sock->protocol->protocol &&
+      sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
     SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
     silc_protocol_cancel(sock->protocol, server->schedule);
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -3575,7 +3574,8 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
 
   /* If we have protocol active we must assure that we call the protocol's
      final callback so that all the memory is freed. */
-  if (sock->protocol) {
+  if (sock->protocol && sock->protocol->protocol &&
+      sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
     protocol = sock->protocol->protocol->type;
     silc_protocol_cancel(sock->protocol, server->schedule);
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -4590,27 +4590,6 @@ void silc_server_announce_channels(SilcServer server,
   silc_free(channel_ids);
 }
 
-/* Failure timeout callback. If this is called then we will immediately
-   process the received failure. We always process the failure with timeout
-   since we do not want to blindly trust to received failure packets.
-   This won't be called (the timeout is cancelled) if the failure was
-   bogus (it is bogus if remote does not close the connection after sending
-   the failure). */
-
-SILC_TASK_CALLBACK(silc_server_failure_callback)
-{
-  SilcServer server = app_context;
-  SilcServerFailureContext f = (SilcServerFailureContext)context;
-
-  if (f->sock->protocol) {
-    f->sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
-    silc_protocol_execute(f->sock->protocol, server->schedule, 0, 0);
-  }
-
-  silc_socket_free(f->sock);
-  silc_free(f);
-}
-
 /* Assembles user list and users mode list from the `channel'. */
 
 bool silc_server_get_users_on_channel(SilcServer server,
@@ -5083,7 +5062,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
-    SILC_LOG_ERROR(("Error occurred during rekey protocol"));
+    SILC_LOG_ERROR(("Error occurred during rekey protocol with
+		   %s (%s)", sock->hostname, sock->ip));
     silc_protocol_cancel(protocol, server->schedule);
     silc_protocol_free(protocol);
     sock->protocol = NULL;
