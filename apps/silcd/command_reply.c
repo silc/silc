@@ -85,14 +85,21 @@ void silc_server_command_reply_process(SilcServer server,
   ctx->payload = payload;
   ctx->args = silc_command_get_args(ctx->payload);
   ctx->ident = silc_command_get_ident(ctx->payload);
+  command = silc_command_get(ctx->payload);
+
+  /* Client is not allowed to send reply to all commands */
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT &&
+      command != SILC_COMMAND_WHOIS) {
+    silc_server_command_reply_free(ctx);
+    return;
+  }
       
   /* Check for pending commands and mark to be exeucted */
   ctx->callbacks = 
-    silc_server_command_pending_check(server, silc_command_get(ctx->payload), 
+    silc_server_command_pending_check(server, command,
 				      ctx->ident, &ctx->callbacks_count);
 
   /* Execute command reply */
-  command = silc_command_get(ctx->payload);
   for (cmd = silc_command_reply_list; cmd->cb; cmd++)
     if (cmd->cmd == command)
       break;
