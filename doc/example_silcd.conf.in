@@ -414,7 +414,7 @@ Admin {
 #
 # If the connection is backup connection then set the "Backup" option
 # to true. For normal connections set it false. If it is set to true then
-# this server will be backup router.
+# your server will be backup router.
 #
 ServerConnection {
 	Host = "10.2.1.7";
