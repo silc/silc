@@ -74,7 +74,7 @@ typedef SilcUInt8 SilcAttribute;
 #define SILC_ATTRIBUTE_STATUS_MESSAGE           5 /* SilcAttributeObjMime */
 #define SILC_ATTRIBUTE_PREFERRED_LANGUAGE       6 /* char * (UTF-8 string) */
 #define SILC_ATTRIBUTE_PREFERRED_CONTACT        7 /* SilcAttributeContact */
-#define SILC_ATTRIBUTE_TIMEZONE                 8 /* char * (UTF-8 string */
+#define SILC_ATTRIBUTE_TIMEZONE                 8 /* char * (UTF-8 string) */
 #define SILC_ATTRIBUTE_GEOLOCATION              9 /* SilcAttributeObjGeo */
 #define SILC_ATTRIBUTE_DEVICE_INFO              10 /* SilcAttributeObjDevice */
 #define SILC_ATTRIBUTE_EXTENSION                11 /* SilcAttributeObjMime */

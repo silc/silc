@@ -57,7 +57,7 @@ typedef struct {
 /* General definitions */
 
 /* SILC port */
-#define SILC_PORT 706;
+#define SILC_PORT 706
 
 /* Server and router. Used internally by the code. */
 #define SILC_SERVER 0

@@ -1239,12 +1239,12 @@ void silc_server_query_send_reply(SilcServer server,
 	  if (query->attrs) {
 	    if (!entry->attrs) {
 	      tmpattrs = silc_server_query_reply_attrs(server, query, entry);
-	      attrs = tmpattrs->data;
-	      len = tmpattrs->len;
-	    } else {
-	      attrs = entry->attrs;
-	      len = entry->attrs_len;
+	      entry->attrs = silc_memdup(tmpattrs->data, tmpattrs->len);
+	      entry->attrs_len = tmpattrs->len;
+	      silc_buffer_free(tmpattrs);
 	    }
+	    attrs = entry->attrs;
+	    len = entry->attrs_len;
 	  }
 
 	  /* Send command reply */
@@ -1267,14 +1267,17 @@ void silc_server_query_send_reply(SilcServer server,
 
 	  sent_reply = TRUE;
 
-	  /* For now we will delete Requested Attributes */
-	  silc_free(entry->attrs);
-	  entry->attrs = NULL;
+	  /* For now we always delete Requested Attributes, unless the client
+	     is detached, in which case we don't want to reconstruct the
+	     same data everytime */
+	  if (!(entry->mode & SILC_UMODE_DETACHED) &&
+	      !(entry->data.status & SILC_IDLIST_STATUS_NOATTR)) {
+	    silc_free(entry->attrs);
+	    entry->attrs = NULL;
+	  }
 
 	  if (channels)
 	    silc_buffer_free(channels);
-	  if (tmpattrs)
-	    silc_buffer_free(tmpattrs);
 	  if (umode_list) {
 	    silc_buffer_free(umode_list);
 	    umode_list = NULL;
@@ -1515,10 +1518,13 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 					 SilcClientEntry client_entry)
 {
   SilcBuffer buffer = NULL;
-  SilcAttributePayload attr;
   SilcAttribute attribute;
-  unsigned char *tmp;
+  SilcAttributePayload attr;
   SilcAttributeObjPk pk;
+  SilcAttributeObjService service;
+  unsigned char *tmp;
+  unsigned char sign[2048];
+  SilcUInt32 sign_len;
 
   SILC_LOG_DEBUG(("Constructing Requested Attributes"));
 
@@ -1531,6 +1537,19 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
     case SILC_ATTRIBUTE_USER_INFO:
       /* Put USER_INFO */
       SILC_NOT_IMPLEMENTED("SILC_ATTRIBUTE_USER_INFO");
+      break;
+
+    case SILC_ATTRIBUTE_SERVICE:
+      /* Put SERVICE.  Put only SILC service. */
+      memset(&service, 0, sizeof(service));
+      service.port = (server->config->server_info->primary ?
+		      server->config->server_info->primary->port : SILC_PORT);
+      silc_strncat(service.address, sizeof(service.address),
+		   server->server_name, strlen(server->server_name));
+      service.status = !(client_entry->mode & SILC_UMODE_DETACHED);
+      buffer = silc_attribute_payload_encode(buffer, attribute,
+					     SILC_ATTRIBUTE_FLAG_VALID,
+					     &service, sizeof(service));
       break;
 
     case SILC_ATTRIBUTE_STATUS_MOOD:
@@ -1583,7 +1602,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 
     default:
       /* Ignore SERVER_PUBLIC_KEY since we are going to put it anyway later */
-      if (attribute == SILC_ATTRIBUTE_SERVER_PUBLIC_KEY)
+      if (attribute == SILC_ATTRIBUTE_SERVER_PUBLIC_KEY ||
+	  attribute == SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE)
 	break;
       
       /* For other attributes we cannot reply so mark it invalid */
@@ -1596,7 +1616,6 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 
   /* Always put our public key.  This assures that we send at least
      something valid back always. */
-  /* XXX We should also compute digital signature */
   pk.type = "silc-rsa";
   pk.data = silc_pkcs_public_key_encode(server->public_key, &pk.data_len);
   buffer = silc_attribute_payload_encode(buffer,
@@ -1605,6 +1624,22 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 					 SILC_ATTRIBUTE_FLAG_INVALID,
 					 &pk, sizeof(pk));
   silc_free(pk.data);
+
+  /* Finally compute the digital signature of all the data we provided
+     as an indication that we provided rightfull information, and this
+     also authenticates our public key. */
+  if (silc_pkcs_sign_with_hash(server->pkcs, server->sha1hash,
+			       buffer->data, buffer->len,
+			       sign, &sign_len)) {
+    pk.type = NULL;
+    pk.data = sign;
+    pk.data_len = sign_len;
+    buffer =
+      silc_attribute_payload_encode(buffer,
+				    SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE,
+				    SILC_ATTRIBUTE_FLAG_VALID,
+				    &pk, sizeof(pk));
+  }
 
   return buffer;
 }

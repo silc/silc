@@ -1,3 +1,10 @@
+Tue Oct  8 17:58:28 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Add also SERVICE attribute for server-constructed attribute
+	  data.  Also digitally sign the attributes and add
+	  SERVER_DIGITAL_SIGNATURE attribute.  Affected file is
+	  silcd/server_query.c.
+
 Mon Oct  7 18:25:35 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the silc_attribute_payload_encode to support list
