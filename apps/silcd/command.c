@@ -3436,7 +3436,7 @@ SILC_SERVER_CMD_FUNC(oper)
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
 					    SILC_STATUS_ERR_AUTH_FAILED,
 					    0);
-      SILC_LOG_INFO(("OPER authentication failed for username '%s' by"
+      SILC_LOG_INFO(("OPER authentication failed for username '%s' by "
 		     "nickname '%s' from %s", username,
 		     client->nickname, cmd->sock->hostname));
       goto out;
@@ -3836,7 +3836,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
     if (!admin) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
 					    SILC_STATUS_ERR_AUTH_FAILED, 0);
-      SILC_LOG_INFO(("SILCOPER authentication failed for username '%s' by"
+      SILC_LOG_INFO(("SILCOPER authentication failed for username '%s' by "
 		     "nickname '%s' from %s", username,
 		     client->nickname, cmd->sock->hostname));
       goto out;
