@@ -423,12 +423,6 @@ int main()
 	   in includes/version.h file. */
 	client = silc_client_alloc(&ops, NULL, NULL, silc_version_string);
 
-	/* Register default ciphers, pkcs, hash funtions and hmacs. */
-	silc_cipher_register_default();
-	silc_pkcs_register_default();
-	silc_hash_register_default();
-	silc_hmac_register_default();
-
 	/* Set the mandatory pointers, read public and private key from
 	   files (or somewhere) and return pointers and PKCS context. */
 	client->username = silc_get_username();

@@ -122,8 +122,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
    silc_client_close_connection. */
 
 static void
-silc_connect(SilcClient client, SilcClientConnection conn,
-	     SilcClientConnectionStatus status)
+silc_connected(SilcClient client, SilcClientConnection conn,
+	       SilcClientConnectionStatus status)
 {
 
 }
@@ -135,8 +135,8 @@ silc_connect(SilcClient client, SilcClientConnection conn,
    received from server. */
 
 static void
-silc_disconnect(SilcClient client, SilcClientConnection conn,
-		SilcStatus status, const char *message)
+silc_disconnected(SilcClient client, SilcClientConnection conn,
+		  SilcStatus status, const char *message)
 {
 
 }
@@ -270,8 +270,8 @@ SilcClientOperations ops = {
   silc_notify,
   silc_command,
   silc_command_reply,
-  silc_connect,
-  silc_disconnect,
+  silc_connected,
+  silc_disconnected,
   silc_get_auth_method,
   silc_verify_public_key,
   silc_ask_passphrase,

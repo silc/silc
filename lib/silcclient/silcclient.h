@@ -378,15 +378,15 @@ typedef struct {
      The `status' indicated whether the connection were successful.  If it
      is error value the application must always call the function
      silc_client_close_connection. */
-  void (*connect)(SilcClient client, SilcClientConnection conn,
-		  SilcClientConnectionStatus status);
+  void (*connected)(SilcClient client, SilcClientConnection conn,
+		    SilcClientConnectionStatus status);
 
   /* Called to indicate that connection was disconnected to the server.
      The `status' may tell the reason of the disconnection, and if the
      `message' is non-NULL it may include the disconnection message
      received from server. */
-  void (*disconnect)(SilcClient client, SilcClientConnection conn,
-		     SilcStatus status, const char *message);
+  void (*disconnected)(SilcClient client, SilcClientConnection conn,
+		       SilcStatus status, const char *message);
 
   /* Find authentication method and authentication data by hostname and
      port. The hostname may be IP address as well. When the authentication
@@ -605,7 +605,7 @@ typedef struct {
 SilcClient silc_client_alloc(SilcClientOperations *ops, 
 			     SilcClientParams *params,
 			     void *application,
-			     const char *silc_version);
+			     const char *version_string);
 
 /****f* silcclient/SilcClientAPI/silc_client_free
  *
@@ -1404,6 +1404,14 @@ void silc_client_command_call(SilcClientCommand command,
  *    to perform the commands by itself, it can do so and send the data
  *    directly to the server using this function.  If application is using
  *    the silc_client_command_call, this function is usually not used.
+ *
+ *    The variable arguments are a pair of { type, data, data_length },
+ *    and the `argc' is the number of these pairs.
+ *
+ * EXAMPLE
+ *
+ *    silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, 0, 1,
+ *                             1, nickname, strlen(nickname));
  *
  ***/
 void silc_client_command_send(SilcClient client, SilcClientConnection conn,

@@ -26,18 +26,15 @@ extern "C" {
 
 #include "version_internal.h"
 
-/* Version type definition */
-typedef unsigned char SilcVersion;
-
 /* SILC Protocol version number */
 #define SILC_PROTOCOL_VERSION_CURRENT 11
 
 /* SILC version string */
-const char *silc_version = SILC_VERSION_STRING;
-const char *silc_dist_version = SILC_DIST_VERSION_STRING;
-const char *silc_version_string = SILC_PROTOCOL_VERSION_STRING;
-const char *silc_name = SILC_NAME;
-const char *silc_fullname = "Secure Internet Live Conferencing";
+#define silc_version SILC_VERSION_STRING
+#define silc_dist_version SILC_DIST_VERSION_STRING
+#define silc_version_string SILC_PROTOCOL_VERSION_STRING
+#define silc_name SILC_NAME
+#define silc_fullname "Secure Internet Live Conferencing"
 
 #ifdef __cplusplus
 }

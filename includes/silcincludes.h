@@ -221,6 +221,7 @@ extern "C" {
 
 /* Include generic SILC type definitions */
 #include "silctypes.h"
+#include "silcversion.h"
 
 /* Math library includes */
 #include "silcmp.h"

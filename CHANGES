@@ -3,6 +3,9 @@ Thu Oct 31 22:44:07 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* If version string in silc_clinet_alloc is NULL the library
 	  puts it automatically.  Affected file lib/silcclient/client.c.
 
+	* Changed the version strings from variables to #define's
+	  in includes/silcversion.h.
+
 Wed Oct 30 16:17:30 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added shared library complation support.

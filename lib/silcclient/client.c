@@ -21,7 +21,6 @@
 #include "silcincludes.h"
 #include "silcclient.h"
 #include "client_internal.h"
-#include "silcversion.h"
 
 /* Static task callback prototypes */
 SILC_TASK_CALLBACK(silc_client_connect_to_server_start);
@@ -48,7 +47,7 @@ void silc_client_resolve_auth_method(bool success,
 SilcClient silc_client_alloc(SilcClientOperations *ops, 
 			     SilcClientParams *params,
 			     void *application,
-			     const char *silc_version)
+			     const char *version_string)
 {
   SilcClient new_client;
 
@@ -59,9 +58,9 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
   new_client->internal->ops = ops;
   new_client->internal->params = 
     silc_calloc(1, sizeof(*new_client->internal->params));
-  if (!silc_version)
-    silc_version = silc_version_string;
-  new_client->internal->silc_client_version = strdup(silc_version);
+  if (!version_string)
+    version_string = silc_version_string;
+  new_client->internal->silc_client_version = strdup(version_string);
 
   if (params)
     memcpy(new_client->internal->params, params, sizeof(*params));
@@ -427,7 +426,7 @@ static void silc_client_start_key_exchange_cb(SilcSocketConnection sock,
     client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 			       "Error: Could not start key exchange protocol");
     silc_net_close_connection(conn->sock->sock);
-    client->internal->ops->connect(client, conn, SILC_CLIENT_CONN_ERROR);
+    client->internal->ops->connected(client, conn, SILC_CLIENT_CONN_ERROR);
     return;
   }
   conn->sock->protocol = protocol;
@@ -482,8 +481,8 @@ SILC_TASK_CALLBACK(silc_client_connect_failure)
     (SilcClientKEInternalContext *)context;
   SilcClient client = (SilcClient)ctx->client;
 
-  client->internal->ops->connect(client, ctx->sock->user_data, 
-				 SILC_CLIENT_CONN_ERROR);
+  client->internal->ops->connected(client, ctx->sock->user_data, 
+				   SILC_CLIENT_CONN_ERROR);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
   silc_free(ctx);
@@ -498,8 +497,8 @@ SILC_TASK_CALLBACK(silc_client_connect_failure_auth)
     (SilcClientConnAuthInternalContext *)context;
   SilcClient client = (SilcClient)ctx->client;
 
-  client->internal->ops->connect(client, ctx->sock->user_data, 
-				 SILC_CLIENT_CONN_ERROR);
+  client->internal->ops->connected(client, ctx->sock->user_data, 
+				   SILC_CLIENT_CONN_ERROR);
   silc_free(ctx);
 }
 
@@ -547,7 +546,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
       silc_free(ctx);
 
       /* Notify application of failure */
-      client->internal->ops->connect(client, conn, SILC_CLIENT_CONN_ERROR);
+      client->internal->ops->connected(client, conn, SILC_CLIENT_CONN_ERROR);
       silc_client_del_connection(client, conn);
     }
     return;
@@ -905,14 +904,14 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
 	 close the connection */
       if (SILC_IS_DISCONNECTING(sock)) {
 	if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
-	  client->internal->ops->disconnect(client, conn, 0, NULL);
+	  client->internal->ops->disconnected(client, conn, 0, NULL);
 	silc_client_close_connection_real(client, sock, conn);
 	return;
       }
       
       SILC_LOG_DEBUG(("EOF from connection %d", sock->sock));
       if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
-	client->internal->ops->disconnect(client, conn, 0, NULL);
+	client->internal->ops->disconnected(client, conn, 0, NULL);
       silc_client_close_connection_real(client, sock, conn);
       return;
     }
@@ -1427,7 +1426,7 @@ void silc_client_close_connection_real(SilcClient client,
       sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
       silc_protocol_execute_final(sock->protocol, client->schedule);
       /* The application will recall this function with these protocols
-	 (the ops->connect client operation). */
+	 (the ops->connected client operation). */
       return;
     } else {
       sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -1566,7 +1565,7 @@ void silc_client_disconnected_by_server(SilcClient client,
 
   conn = (SilcClientConnection)sock->user_data;
   if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
-    client->internal->ops->disconnect(client, conn, status, message);
+    client->internal->ops->disconnected(client, conn, status, message);
 
   silc_free(message);
 
@@ -1619,9 +1618,9 @@ static void silc_client_resume_session_cb(SilcClient client,
   SilcBuffer sidp;
 
   /* Notify application that connection is created to server */
-  client->internal->ops->connect(client, conn, success ?
-				 SILC_CLIENT_CONN_SUCCESS_RESUME :
-				 SILC_CLIENT_CONN_ERROR);
+  client->internal->ops->connected(client, conn, success ?
+				   SILC_CLIENT_CONN_SUCCESS_RESUME :
+				   SILC_CLIENT_CONN_ERROR);
 
   if (success) {
     /* Issue INFO command to fetch the real server name and server
@@ -1714,7 +1713,7 @@ void silc_client_receive_new_id(SilcClient client,
 
       /* Notify application of successful connection. We do it here now that
 	 we've received the Client ID and are allowed to send traffic. */
-      client->internal->ops->connect(client, conn, SILC_CLIENT_CONN_SUCCESS);
+      client->internal->ops->connected(client, conn, SILC_CLIENT_CONN_SUCCESS);
 
       /* Issue INFO command to fetch the real server name and server
 	 information and other stuff. */

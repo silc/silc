@@ -29,8 +29,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth);
 SILC_TASK_CALLBACK(silc_server_protocol_key_exchange);
 SILC_TASK_CALLBACK(silc_server_protocol_rekey);
 
-extern char *silc_version_string;
-
 /*
  * Key Exhange protocol functions
  */

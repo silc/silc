@@ -29,7 +29,6 @@
 #include "silc-channels.h"
 #include "silc-queries.h"
 #include "silc-nicklist.h"
-#include "silcversion.h"
 
 #include "signals.h"
 #include "levels.h"
