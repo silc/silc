@@ -34,7 +34,7 @@
 #
 # NOTE: Also note that if any subdirectory has Makefile.am.pre then you
 #       must list it here as _<name>_SUBDIRS_<dir>. To define all sub
-#       directories use $(COMMONLIBS) that must be defined in the Makefile
+#       directories use $(COMMONDIRS) that must be defined in the Makefile
 #       and list all subdirs.
 #
 # Example:

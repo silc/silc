@@ -26,7 +26,6 @@ COMMONDIRS = \
 	silcmath \
 	silcske \
 	silcutil \
-	silcclient \
 	dotconf \
 	trq
 #        zlib
