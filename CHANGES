@@ -1,3 +1,7 @@
+Tue May 15 22:05:46 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Merged dotconf version 1.0.2 into lib/dotconf.
+
 Sun May 13 19:32:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Do not compile anything in lib/silcsim/* if the SIM support
