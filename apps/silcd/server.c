@@ -25,8 +25,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/03 05:51:29  priikone
+ * 	Added remove_from_one_channel to implement LEAVE command.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -757,6 +760,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
     return;
   }
 
+  SILC_LOG_INFO(("Incoming connection from %s (%s)", newsocket->hostname,
+		 newsocket->ip));
+
   /* Allocate internal context for key exchange protocol. This is
      sent as context for the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
@@ -901,6 +907,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
       SILC_LOG_DEBUG(("Remote host is client"));
 
+      SILC_LOG_INFO(("Connection from %s (%s) is client", sock->hostname,
+		     sock->ip));
+
       /* Add the client to the client ID list. We have not created the
 	 client ID for the client yet. This is done when client registers
 	 itself by sending NEW_CLIENT packet. */
@@ -931,6 +940,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 		      sock->type == SILC_SOCKET_TYPE_SERVER ? 
 		      "server" : "router"));
       
+      SILC_LOG_INFO(("Connection from %s (%s) is %s", sock->hostname,
+		     sock->ip, sock->type == SILC_SOCKET_TYPE_SERVER ? 
+		     "server" : "router"));
+
       /* Add the server to the ID list. We don't have the server's ID
 	 yet but we will receive it after the server sends NEW_SERVER
 	 packet to us. */
@@ -2546,8 +2559,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       }
 
       /* If the client has set router it means that it is not locally
-	 connected client and we won't send message to those in this
-	 function (they will be routed separately by the caller). */
+	 connected client and we will route the packet further. */
       if (server->server_type == SILC_ROUTER && client->router) {
 	int k;
 
@@ -2623,7 +2635,6 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       
       /* XXX Check client's mode on the channel. */
 
-
       /* Get data used in packet header encryption, keys and stuff. */
       sock = (SilcSocketConnection)client->connection;
       cipher = client->send_key;
@@ -2679,6 +2690,41 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 
   silc_free(packetdata.src_id);
   silc_free(packetdata.dst_id);
+}
+
+/* This function is used to send packets strictly to all local clients
+   on a particular channel.  This is used for example to distribute new
+   channel key to all our locally connected clients on the channel. 
+   The packets are always encrypted with the session key shared between
+   the client. */
+
+void silc_server_packet_send_local_channel(SilcServer server,
+					   SilcChannelList *channel,
+					   SilcPacketType type,
+					   SilcPacketFlags flags,
+					   unsigned char *data,
+					   unsigned int data_len,
+					   int force_send)
+{
+  int i;
+  SilcClientList *client;
+  SilcSocketConnection sock = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Send the message to clients on the channel's client list. */
+  for (i = 0; i < channel->user_list_count; i++) {
+    client = channel->user_list[i].client;
+
+    if (client) {
+      sock = (SilcSocketConnection)client->connection;
+
+      /* Send the packet to the client */
+      silc_server_packet_send_dest(server, sock, type, flags, client->id,
+				   SILC_ID_CLIENT, data, data_len,
+				   force_send);
+    }
+  }
 }
 
 /* Relays received command reply packet to the correct destination. The
@@ -2912,9 +2958,66 @@ void silc_server_remove_from_channels(SilcServer server,
 	channel->user_list[k].client = NULL;
 	channel->user_list[k].mode = SILC_CHANNEL_UMODE_NONE;
 
-	/* XXX */
 	/* Send notify to channel about client leaving SILC and thus
 	   the entire channel. */
+	silc_server_send_notify_to_channel(server, channel,
+					   "Signoff: %s",
+					   client->nickname);
+      }
+    }
+  }
+
+  if (client->channel_count)
+    silc_free(client->channel);
+  client->channel = NULL;
+#undef LCC
+#undef LCCC
+}
+
+/* Removes client from one channel. This is used for example when client
+   calls LEAVE command to remove itself from the channel. Returns TRUE
+   if channel still exists and FALSE if the channel is removed when
+   last client leaves the channel. */
+
+int silc_server_remove_from_one_channel(SilcServer server, 
+					SilcSocketConnection sock,
+					SilcChannelList *channel,
+					SilcClientList *client)
+{
+  int i, k;
+  SilcChannelList *ch;
+
+#define LCC(x) server->local_list->channel_cache[(x) - 32]
+#define LCCC(x) server->local_list->channel_cache_count[(x) - 32]
+
+  /* Remove the client from the channel. The client is removed from
+     the channel's user list. */
+  for (i = 0; i < client->channel_count; i++) {
+    ch = client->channel[i];
+    if (!ch || ch != channel)
+      continue;
+
+    /* XXX */
+    client->channel[i] = NULL;
+
+    /* Remove from channel */
+    for (k = 0; k < channel->user_list_count; k++) {
+      if (channel->user_list[k].client == client) {
+	
+	/* If this client is last one on the channel the channel
+	   is removed all together. */
+	if (channel->user_list_count == 1) {
+	  silc_idcache_del_by_id(LCC(channel->channel_name[0]),
+				 LCCC(channel->channel_name[0]),
+				 SILC_ID_CHANNEL, channel->id);
+	  silc_idlist_del_channel(&server->local_list->channels, channel);
+	  return FALSE;
+	}
+	
+	channel->user_list[k].client = NULL;
+	channel->user_list[k].mode = SILC_CHANNEL_UMODE_NONE;
+
+	/* Send notify to channel about client leaving the channel */
 	silc_server_send_notify_to_channel(server, channel,
 					   "%s has left channel %s",
 					   client->nickname,
@@ -2923,9 +3026,7 @@ void silc_server_remove_from_channels(SilcServer server,
     }
   }
 
-  if (client->channel_count)
-    silc_free(client->channel);
-  client->channel = NULL;
+  return TRUE;
 #undef LCC
 #undef LCCC
 }
@@ -3179,9 +3280,11 @@ void silc_server_channel_message(SilcServer server,
 				 SilcPacketContext *packet)
 {
   SilcChannelList *channel = NULL;
+  SilcClientList *client = NULL;
   SilcChannelID *id = NULL;
-  SilcClientID *sender;
+  SilcClientID *sender = NULL;
   SilcBuffer buffer = packet->buffer;
+  int i;
 
   SILC_LOG_DEBUG(("Processing channel message"));
   
@@ -3196,7 +3299,7 @@ void silc_server_channel_message(SilcServer server,
     goto out;
   }
 
-  /* Send to local clients */
+  /* Find channel entry */
   id = silc_id_str2id(packet->dst_id, SILC_ID_CHANNEL);
   channel = silc_find_channel(server, id);
   if (!channel) {
@@ -3204,20 +3307,35 @@ void silc_server_channel_message(SilcServer server,
     goto out;
   }
 
+  /* See that this client is on the channel */
+  sender = silc_id_str2id(packet->src_id, packet->src_id_type);
+  for (i = 0; i < channel->user_list_count; i++) {
+    client = channel->user_list[i].client;
+    if (client && !SILC_ID_CLIENT_COMPARE(client->id, sender))
+      break;
+  }
+  if (i >= channel->user_list_count)
+    goto out;
+
   /* Distribute the packet to our local clients. This will send the
      packet for further routing as well, if needed. */
-  sender = silc_id_str2id(packet->src_id, packet->src_id_type);
   silc_server_packet_relay_to_channel(server, sock, channel, sender,
 				      packet->src_id_type,
 				      packet->buffer->data,
 				      packet->buffer->len, FALSE);
 
  out:
+  if (sender)
+    silc_free(sender);
+  if (id)
+    silc_free(id);
   silc_buffer_free(buffer);
 }
 
 /* Received channel key packet. We distribute the key to all of our locally
-   connected clients on the channel. Router ignores the packet. */
+   connected clients on the channel. */
+/* XXX Router must accept this packet and distribute the key to all its
+   server that has clients on the channel */
 
 void silc_server_channel_key(SilcServer server,
 			     SilcSocketConnection sock,
@@ -3232,9 +3350,6 @@ void silc_server_channel_key(SilcServer server,
   unsigned int key_len;
   char *cipher;
   int i;
-
-  if (server->server_type == SILC_ROUTER)
-    goto out;
 
   if (packet->src_id_type != SILC_ID_SERVER &&
       sock->type != SILC_SOCKET_TYPE_ROUTER)
@@ -3267,7 +3382,7 @@ void silc_server_channel_key(SilcServer server,
   cipher = silc_channel_key_get_cipher(payload, NULL);;
   if (!cipher)
     goto out;
-  channel->key_len = key_len;
+  channel->key_len = key_len * 8;
   channel->key = silc_calloc(key_len, sizeof(unsigned char));
   memcpy(channel->key, key, key_len);
   silc_cipher_alloc(cipher, &channel->channel_key);
@@ -3436,7 +3551,7 @@ SilcChannelList *silc_server_new_channel(SilcServer server,
 					 SilcServerID *router_id,
 					 char *cipher, char *channel_name)
 {
-  int i, channel_len;
+  int i, channel_len, key_len;
   SilcChannelID *channel_id;
   SilcChannelList *entry;
   SilcCipher key;
@@ -3456,8 +3571,9 @@ SilcChannelList *silc_server_new_channel(SilcServer server,
     cipher = "twofish";
 
   /* Allocate keys */
+  key_len = 16;
   silc_cipher_alloc(cipher, &key);
-  key->cipher->set_key(key->context, channel_key, 16);
+  key->cipher->set_key(key->context, channel_key, key_len);
 
   /* Create the channel */
   silc_id_create_channel_id(router_id, server->rng, &channel_id);
@@ -3468,9 +3584,9 @@ SilcChannelList *silc_server_new_channel(SilcServer server,
 					   LCCC(channel_name[0]),
 					   channel_name, SILC_ID_CHANNEL, 
 					   channel_id, (void *)entry);
-  entry->key = silc_calloc(16, sizeof(*entry->key));
-  entry->key_len = 16;
-  memcpy(entry->key, channel_key, 16);
+  entry->key = silc_calloc(key_len, sizeof(*entry->key));
+  entry->key_len = key_len * 8;
+  memcpy(entry->key, channel_key, key_len);
   memset(channel_key, 0, sizeof(channel_key));
 
   /* Notify other routers about the new channel. We send the packet

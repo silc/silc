@@ -72,6 +72,13 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					 unsigned char *data,
 					 unsigned int data_len,
 					 int force_send);
+void silc_server_packet_send_local_channel(SilcServer server,
+					   SilcChannelList *channel,
+					   SilcPacketType type,
+					   SilcPacketFlags flags,
+					   unsigned char *data,
+					   unsigned int data_len,
+					   int force_send);
 void silc_server_packet_relay_command_reply(SilcServer server,
 					    SilcSocketConnection sock,
 					    SilcPacketContext *packet);
@@ -82,6 +89,10 @@ void silc_server_free_sock_user_data(SilcServer server,
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
 				      SilcClientList *client);
+int silc_server_remove_from_one_channel(SilcServer server, 
+					SilcSocketConnection sock,
+					SilcChannelList *channel,
+					SilcClientList *client);
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
 				   const char *fmt, ...);
