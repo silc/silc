@@ -43,23 +43,27 @@ TODO/bugs In SILC Server
    hash tables should replace the lists.  Thus, the ID cache should be
    rewritten to use hash tables internally.
 
- o New configuration file format must be added.  The new one will be
-   done using the dotconf config library.
-
  o The backup router support described in the protocol specification
    should be done at some point.
 
- o Server says that it is able to listen on multiple ports but currently
-   that is bogus.  It can, but internals are for single server.
+ o New configuration file format must be added.  The new one will be
+   done using the dotconf config library (lib/dotconf).  The following
+   tasks relates closely to this as well and must be done at the same time
+   when adding the new config file format:
 
- o Protocol execution timeouts are hard coded, should be configurable.
+	o Server says that it is able to listen on multiple ports but
+	  currently that is bogus.  It can, but internals are for single
+	  server.
 
- o IP address fields in configuration file should accept mask format
-   as well, IP/MASK, and not just plain IP.
+ 	o Protocol execution timeouts are hard coded, should be
+	  configurable.
 
- o Connection classes should be actually implemented in serverconfig.c.
-   They can be defined but they are totally ignored currently.  And they
-   should be redefined also.
+ 	o IP address fields in configuration file should accept mask
+	  format as well, IP/MASK, and not just plain IP.
+
+	 o Connection classes should be actually implemented in
+	  serverconfig.c.  They can be defined but they are totally
+	  ignored currently.  And they should be redefined also.
 
 
 TODO/bugs In SILC Libraries
@@ -85,6 +89,8 @@ TODO/bugs In SILC Libraries
 
  o The CAST cipher is not compiled currently due to compilation errors;
    check those.  Cast is in lib/silccrypt/cast.c.
+
+ o SIMs did not compile under cygwin.
 
 
 TODO After 1.0
