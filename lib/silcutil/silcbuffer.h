@@ -134,9 +134,13 @@ SilcBuffer silc_buffer_alloc(SilcUInt32 len)
 
   /* Allocate new SilcBuffer */
   sb = (SilcBuffer)silc_calloc(1, sizeof(*sb));
+  if (!sb)
+    return NULL;
 
   /* Allocate the actual data area */
   sb->head = (unsigned char *)silc_calloc(len, sizeof(*sb->head));
+  if (!sb->head)
+    return NULL;
 
   /* Set pointers to the new buffer */
   sb->truelen = len;
@@ -366,6 +370,20 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
   return (unsigned char *)memcpy(sb->tail, data, len);
 }
 
+/* Allocates `len' bytes size buffer and moves the tail area automaticlly
+   `len' bytes so that the buffer is ready to use without calling the
+   silc_buffer_pull_tail. */
+
+static inline
+SilcBuffer silc_buffer_alloc_size(SilcUInt32 len)
+{
+  SilcBuffer sb = silc_buffer_alloc(len);
+  if (!sb)
+    return NULL;
+  silc_buffer_pull_tail(sb, len);
+  return sb;
+}
+
 /* Clears and initialiazes the buffer to the state as if it was just
    allocated by silc_buffer_alloc. */
 
@@ -387,8 +405,9 @@ SilcBuffer silc_buffer_copy(SilcBuffer sb)
 {
   SilcBuffer sb_new;
 
-  sb_new = silc_buffer_alloc(sb->len);
-  silc_buffer_pull_tail(sb_new, SILC_BUFFER_END(sb_new));
+  sb_new = silc_buffer_alloc_size(sb->len);
+  if (!sb_new)
+    return NULL;
   silc_buffer_put(sb_new, sb->data, sb->len);
 
   return sb_new;
@@ -403,8 +422,9 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
 {
   SilcBuffer sb_new;
 
-  sb_new = silc_buffer_alloc(sb->truelen);
-  silc_buffer_pull_tail(sb_new, SILC_BUFFER_END(sb_new));
+  sb_new = silc_buffer_alloc_size(sb->truelen);
+  if (!sb_new)
+    return NULL;
   silc_buffer_put(sb_new, sb->head, sb->truelen);
   sb_new->data = sb_new->head + (sb->data - sb->head);
   sb_new->tail = sb_new->data + sb->len;
@@ -428,8 +448,9 @@ SilcBuffer silc_buffer_realloc(SilcBuffer sb, SilcUInt32 newsize)
   if (newsize <= sb->truelen)
     return sb;
 
-  sb_new = silc_buffer_alloc(newsize);
-  silc_buffer_pull_tail(sb_new, SILC_BUFFER_END(sb_new));
+  sb_new = silc_buffer_alloc_size(newsize);
+  if (!sb_new)
+    return NULL;
   silc_buffer_put(sb_new, sb->head, sb->truelen);
   sb_new->data = sb_new->head + (sb->data - sb->head);
   sb_new->tail = sb_new->data + sb->len;

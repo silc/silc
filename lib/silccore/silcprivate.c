@@ -48,7 +48,7 @@ silc_private_message_payload_parse(unsigned char *payload,
 				   SilcCipher cipher)
 {
   SilcBufferStruct buffer;
-  SilcPrivateMessagePayload new;
+  SilcPrivateMessagePayload newp;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing private message payload"));
@@ -60,29 +60,31 @@ silc_private_message_payload_parse(unsigned char *payload,
     silc_cipher_decrypt(cipher, buffer.data, buffer.data, 
 			buffer.len, cipher->iv);
 
-  new = silc_calloc(1, sizeof(*new));
+  newp = silc_calloc(1, sizeof(*newp));
+  if (!newp)
+    return NULL;
 
   /* Parse the Private Message Payload. Ignore the padding. */
   ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_SHORT(&new->flags),
-			     SILC_STR_UI16_NSTRING_ALLOC(&new->message, 
-							 &new->message_len),
+			     SILC_STR_UI_SHORT(&newp->flags),
+			     SILC_STR_UI16_NSTRING_ALLOC(&newp->message, 
+							 &newp->message_len),
 			     SILC_STR_END);
   if (ret == -1) {
     SILC_LOG_DEBUG(("Incorrect private message payload"));
     goto err;
   }
 
-  if ((new->message_len < 1 || new->message_len > buffer.len)) {
+  if ((newp->message_len < 1 || newp->message_len > buffer.len)) {
     SILC_LOG_DEBUG(("Incorrect private message payload in packet, "
 		    "packet dropped"));
     goto err;
   }
 
-  return new;
+  return newp;
 
  err:
-  silc_private_message_payload_free(new);
+  silc_private_message_payload_free(newp);
   return NULL;
 }
 
@@ -114,10 +116,11 @@ SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
   }
 
   /* Allocate private message payload buffer */
-  buffer = silc_buffer_alloc(len);
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer)
+    return NULL;
 
   /* Encode the Channel Message Payload */
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_SHORT(flags),
 		     SILC_STR_UI_SHORT(data_len),

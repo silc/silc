@@ -44,40 +44,42 @@ SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
 					SilcUInt32 data_len)
 {
   SilcBufferStruct buffer;
-  SilcAuthPayload new;
+  SilcAuthPayload newp;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing Authentication Payload"));
 
   silc_buffer_set(&buffer, (unsigned char *)data, data_len);
-  new = silc_calloc(1, sizeof(*new));
+  newp = silc_calloc(1, sizeof(*newp));
+  if (!newp)
+    return NULL;
 
   /* Parse the payload */
   ret = silc_buffer_unformat(&buffer, 
-			     SILC_STR_UI_SHORT(&new->len),
-			     SILC_STR_UI_SHORT(&new->auth_method),
-			     SILC_STR_UI16_NSTRING_ALLOC(&new->random_data,
-							 &new->random_len),
-			     SILC_STR_UI16_NSTRING_ALLOC(&new->auth_data,
-							 &new->auth_len),
+			     SILC_STR_UI_SHORT(&newp->len),
+			     SILC_STR_UI_SHORT(&newp->auth_method),
+			     SILC_STR_UI16_NSTRING_ALLOC(&newp->random_data,
+							 &newp->random_len),
+			     SILC_STR_UI16_NSTRING_ALLOC(&newp->auth_data,
+							 &newp->auth_len),
 			     SILC_STR_END);
   if (ret == -1) {
-    silc_free(new);
+    silc_free(newp);
     return NULL;
   }
 
-  if (new->len != buffer.len) {
-    silc_auth_payload_free(new);
+  if (newp->len != buffer.len) {
+    silc_auth_payload_free(newp);
     return NULL;
   }
 
   /* If password authentication, random data must not be set */
-  if (new->auth_method == SILC_AUTH_PASSWORD && new->random_len) {
-    silc_auth_payload_free(new);
+  if (newp->auth_method == SILC_AUTH_PASSWORD && newp->random_len) {
+    silc_auth_payload_free(newp);
     return NULL;
   }
 
-  return new;
+  return newp;
 }
 
 /* Encodes authentication payload into buffer and returns it */
@@ -94,8 +96,9 @@ SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
   SILC_LOG_DEBUG(("Encoding Authentication Payload"));
 
   len = 2 + 2 + 2 + random_len + 2 + auth_len;
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer)
+    return NULL;
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(len),
 		     SILC_STR_UI_SHORT(method),
@@ -173,8 +176,12 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
   }
   id_len = silc_id_get_len(id, type);
 
-  buf = silc_buffer_alloc(random_len + id_len + pk_len);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  buf = silc_buffer_alloc_size(random_len + id_len + pk_len);
+  if (!buf) {
+    silc_free(pk);
+    silc_free(id_data);
+    return NULL;
+  }
   silc_buffer_format(buf,
 		     SILC_STR_UI_XNSTRING(random, random_len),
 		     SILC_STR_UI_XNSTRING(id_data, id_len),
@@ -182,6 +189,8 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
 		     SILC_STR_END);
   
   ret = silc_memdup(buf->data, buf->len);
+  if (!ret)
+    return NULL;
 
   if (ret_len)
     *ret_len = buf->len;
@@ -420,26 +429,28 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
 				 SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
-  SilcKeyAgreementPayload new;
+  SilcKeyAgreementPayload newp;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing Key Agreement Payload"));
 
   silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
-  new = silc_calloc(1, sizeof(*new));
+  newp = silc_calloc(1, sizeof(*newp));
+  if (!newp)
+    return NULL;
 
   /* Parse the payload */
   ret = silc_buffer_unformat(&buffer, 
-			     SILC_STR_UI16_NSTRING_ALLOC(&new->hostname,
-							 &new->hostname_len),
-			     SILC_STR_UI_INT(&new->port),
+			     SILC_STR_UI16_NSTRING_ALLOC(&newp->hostname,
+							 &newp->hostname_len),
+			     SILC_STR_UI_INT(&newp->port),
 			     SILC_STR_END);
   if (ret == -1) {
-    silc_free(new);
+    silc_free(newp);
     return NULL;
   }
 
-  return new;
+  return newp;
 }
 
 /* Encodes the Key Agreement protocol and returns the encoded buffer */
@@ -452,8 +463,9 @@ SilcBuffer silc_key_agreement_payload_encode(const char *hostname,
 
   SILC_LOG_DEBUG(("Encoding Key Agreement Payload"));
 
-  buffer = silc_buffer_alloc(2 + len + 4);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(2 + len + 4);
+  if (!buffer)
+    return NULL;
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(len),
 		     SILC_STR_UI_XNSTRING(hostname, len),

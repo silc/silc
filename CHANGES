@@ -6,6 +6,12 @@ Thu Mar  7 19:21:22 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Added more error printing to logs in server code.  Affected
 	  files silcd/server.c and silcd/protocol.c.
 
+	* Fixed -S option parsing in Irssi SILC Client.  Affected file
+	  irssi/src/silc/core/silc-core.c.
+
+	* Added silc_buffer_alloc_size function.  Affected file is
+	  lib/silcutil/silcbuffer.h.
+
 Tue Mar  5 14:37:27 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed all silc_[hash|hmac|cipher|pkcs]_default tables to

@@ -45,7 +45,7 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
 					      SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
-  SilcCommandPayload new;
+  SilcCommandPayload newp;
   unsigned char args_num;
   SilcUInt16 p_len;
   int ret;
@@ -53,42 +53,44 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
   SILC_LOG_DEBUG(("Parsing command payload"));
 
   silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
-  new = silc_calloc(1, sizeof(*new));
+  newp = silc_calloc(1, sizeof(*newp));
+  if (!newp)
+    return NULL;
 
   /* Parse the Command Payload */
   ret = silc_buffer_unformat(&buffer, 
 			     SILC_STR_UI_SHORT(&p_len),
-			     SILC_STR_UI_CHAR(&new->cmd),
+			     SILC_STR_UI_CHAR(&newp->cmd),
 			     SILC_STR_UI_CHAR(&args_num),
-			     SILC_STR_UI_SHORT(&new->ident),
+			     SILC_STR_UI_SHORT(&newp->ident),
 			     SILC_STR_END);
   if (ret == -1) {
-    silc_free(new);
+    silc_free(newp);
     return NULL;
   }
 
   if (p_len != buffer.len) {
     SILC_LOG_ERROR(("Incorrect command payload in packet, packet dropped"));
-    silc_free(new);
+    silc_free(newp);
     return NULL;
   }
 
-  if (new->cmd == 0) {
-    silc_free(new);
+  if (newp->cmd == 0) {
+    silc_free(newp);
     return NULL;
   }
 
   silc_buffer_pull(&buffer, SILC_COMMAND_PAYLOAD_LEN);
   if (args_num) {
-    new->args = silc_argument_payload_parse(buffer.data, buffer.len, args_num);
-    if (!new->args) {
-      silc_free(new);
+    newp->args = silc_argument_payload_parse(buffer.data, buffer.len, args_num);
+    if (!newp->args) {
+      silc_free(newp);
       return NULL;
     }
   }
   silc_buffer_push(&buffer, SILC_COMMAND_PAYLOAD_LEN);
 
-  return new;
+  return newp;
 }
 
 /* Encodes Command Payload returning it to SilcBuffer. */
@@ -112,8 +114,9 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
   }
 
   len += SILC_COMMAND_PAYLOAD_LEN;
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer)
+    return NULL;
 
   /* Create Command payload */
   silc_buffer_format(buffer,
@@ -155,8 +158,12 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
   }
 
   len += SILC_COMMAND_PAYLOAD_LEN;
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer) {
+    if (args)
+      silc_buffer_free(args);
+    return NULL;
+  }
 
   /* Create Command payload */
   silc_buffer_format(buffer,
@@ -212,13 +219,19 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
   unsigned char *x;
   SilcUInt32 x_len;
   SilcUInt32 x_type;
-  SilcBuffer buffer;
+  SilcBuffer buffer = NULL;
   int i, k = 0;
 
   if (argc) {
     argv = silc_calloc(argc, sizeof(unsigned char *));
+    if (!argv)
+      return NULL;
     argv_lens = silc_calloc(argc, sizeof(SilcUInt32));
+    if (!argv_lens)
+      return NULL;
     argv_types = silc_calloc(argc, sizeof(SilcUInt32));
+    if (!argv_types)
+      return NULL;
 
     for (i = 0, k = 0; i < argc; i++) {
       x_type = va_arg(ap, SilcUInt32);
@@ -229,6 +242,8 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
 	continue;
       
       argv[k] = silc_memdup(x, x_len);
+      if (!argv[k])
+	goto out;
       argv_lens[k] = x_len;
       argv_types[k] = x_type;
       k++;
@@ -238,6 +253,7 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
   buffer = silc_command_payload_encode(cmd, k, argv, argv_lens, 
 				       argv_types, ident);
 
+ out:
   for (i = 0; i < k; i++)
     silc_free(argv[i]);
   silc_free(argv);
@@ -280,16 +296,33 @@ silc_command_reply_payload_encode_vap(SilcCommand cmd,
   unsigned char *x;
   SilcUInt32 x_len;
   SilcUInt32 x_type;
-  SilcBuffer buffer;
+  SilcBuffer buffer = NULL;
   int i, k;
 
   argc++;
   argv = silc_calloc(argc, sizeof(unsigned char *));
+  if (!argv)
+    return NULL;
   argv_lens = silc_calloc(argc, sizeof(SilcUInt32));
+  if (!argv_lens) {
+    silc_free(argv);
+    return NULL;
+  }
   argv_types = silc_calloc(argc, sizeof(SilcUInt32));
+  if (!argv_types) {
+    silc_free(argv_lens);
+    silc_free(argv);
+    return NULL;
+  }
 
   SILC_PUT16_MSB(status, status_data);
   argv[0] = silc_memdup(status_data, sizeof(status_data));
+  if (!argv[0]) {
+    silc_free(argv_types);
+    silc_free(argv_lens);
+    silc_free(argv);
+    return NULL;
+  }
   argv_lens[0] = sizeof(status_data);
   argv_types[0] = 1;
 
@@ -302,6 +335,8 @@ silc_command_reply_payload_encode_vap(SilcCommand cmd,
       continue;
 
     argv[k] = silc_memdup(x, x_len);
+    if (!argv[k])
+      goto out;
     argv_lens[k] = x_len;
     argv_types[k] = x_type;
     k++;
@@ -310,6 +345,7 @@ silc_command_reply_payload_encode_vap(SilcCommand cmd,
   buffer = silc_command_payload_encode(cmd, k, argv, argv_lens, 
 				       argv_types, ident);
 
+ out:
   for (i = 0; i < k; i++)
     silc_free(argv[i]);
   silc_free(argv);

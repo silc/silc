@@ -1293,7 +1293,7 @@ bool silc_server_config_register_ciphers(SilcServer server)
       int i;
       for (i = 0; silc_default_ciphers[i].name; i++)
 	if (!strcmp(silc_default_ciphers[i].name, cipher->name)) {
-	  silc_cipher_register(&silc_default_ciphers[i]);
+	  silc_cipher_register((SilcCipherObject *)&silc_default_ciphers[i]);
 	  break;
 	}
       if (!silc_cipher_is_supported(cipher->name)) {
@@ -1394,7 +1394,7 @@ bool silc_server_config_register_hashfuncs(SilcServer server)
       int i;
       for (i = 0; silc_default_hash[i].name; i++)
 	if (!strcmp(silc_default_hash[i].name, hash->name)) {
-	  silc_hash_register(&silc_default_hash[i]);
+	  silc_hash_register((SilcHashObject *)&silc_default_hash[i]);
 	  break;
 	}
       if (!silc_hash_is_supported(hash->name)) {
@@ -1478,6 +1478,7 @@ bool silc_server_config_register_hmacs(SilcServer server)
       silc_server_stop(server);
       exit(1);
     }
+
     /* Register the HMAC */
     memset(&hmac_obj, 0, sizeof(hmac_obj));
     hmac_obj.name = hmac->name;
@@ -1506,7 +1507,7 @@ bool silc_server_config_register_pkcs(SilcServer server)
     int i;
     for (i = 0; silc_default_pkcs[i].name; i++)
       if (!strcmp(silc_default_pkcs[i].name, pkcs->name)) {
-	silc_pkcs_register(&silc_default_pkcs[i]);
+	silc_pkcs_register((SilcPKCSObject *)&silc_default_pkcs[i]);
 	break;
       }
     if (!silc_pkcs_is_supported(pkcs->name)) {

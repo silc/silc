@@ -40,19 +40,21 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
 					    SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
-  SilcNotifyPayload new;
+  SilcNotifyPayload newp;
   SilcUInt16 len;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing Notify payload"));
 
   silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
-  new = silc_calloc(1, sizeof(*new));
+  newp = silc_calloc(1, sizeof(*newp));
+  if (!newp)
+    return NULL;
 
   ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_SHORT(&new->type),
+			     SILC_STR_UI_SHORT(&newp->type),
 			     SILC_STR_UI_SHORT(&len),
-			     SILC_STR_UI_CHAR(&new->argc),
+			     SILC_STR_UI_CHAR(&newp->argc),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
@@ -60,17 +62,17 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
   if (len > buffer.len)
     goto err;
 
-  if (new->argc) {
+  if (newp->argc) {
     silc_buffer_pull(&buffer, 5);
-    new->args = silc_argument_payload_parse(buffer.data, buffer.len, 
-					    new->argc);
+    newp->args = silc_argument_payload_parse(buffer.data, buffer.len, 
+					    newp->argc);
     silc_buffer_push(&buffer, 5);
   }
 
-  return new;
+  return newp;
 
  err:
-  silc_free(new);
+  silc_free(newp);
   return NULL;
 }
 
@@ -91,8 +93,19 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
 
   if (argc) {
     argv = silc_calloc(argc, sizeof(unsigned char *));
+    if (!argv)
+      return NULL;
     argv_lens = silc_calloc(argc, sizeof(SilcUInt32));
+    if (!argv_lens) {
+      silc_free(argv);
+      return NULL;
+    }
     argv_types = silc_calloc(argc, sizeof(SilcUInt32));
+    if (!argv_types) {
+      silc_free(argv_lens);
+      silc_free(argv);
+      return NULL;
+    }
     
     for (i = 0, k = 0; i < argc; i++) {
       x = va_arg(ap, unsigned char *);
@@ -102,6 +115,8 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
 	continue;
       
       argv[k] = silc_memdup(x, x_len);
+      if (!argv[k])
+	return NULL;
       argv_lens[k] = x_len;
       argv_types[k] = i + 1;
       k++;
@@ -118,8 +133,9 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
   }
 
   len += 5;
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer)
+    return NULL;
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(type),
 		     SILC_STR_UI_SHORT(len),
@@ -148,8 +164,9 @@ SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type,
   int len;
 
   len = 5 + (args ? args->len : 0);
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer)
+    return NULL;
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(type),
 		     SILC_STR_UI_SHORT(len),

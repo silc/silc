@@ -90,14 +90,6 @@ least could be done.
 	  SILC_BUFFER_LEN macro can do the same.  These would save
 	  totally 8 bytes of memory per buffer.
 
-	  Add also perhaps function silc_buffer_alloc_size that would
-	  effectively do: 
-
-		return silc_buffer_pull_tail(silc_buffer_alloc(size),
-					     size);
-
-	  to not require the user to give the pull_tail anymore.
-
 	o Scheduler can be optimized for FD tasks by changing the fd_queue
 	  to SilcHashTable instead of using linked list.  We need to do
 	  one-to-one mapping of FD to task and hash table is more efficient

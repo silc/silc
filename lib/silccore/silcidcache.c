@@ -106,6 +106,8 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
   SILC_LOG_DEBUG(("Allocating new cache"));
 
   cache = silc_calloc(1, sizeof(*cache));
+  if (!cache)
+    return NULL;
   cache->id_table = silc_hash_table_alloc(count, silc_hash_id, 
 					  (void *)(SilcUInt32)id_type,
 					  silc_hash_id_compare, 
@@ -119,6 +121,17 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
 					       NULL, NULL, NULL, NULL, FALSE);
   cache->destructor = destructor;
   cache->type = id_type;
+
+  if (!cache->id_table || !cache->name_table || !cache->context_table) {
+    if (cache->id_table)
+      silc_hash_table_free(cache->id_table);
+    if (cache->name_table)
+      silc_hash_table_free(cache->name_table);
+    if (cache->context_table)
+      silc_hash_table_free(cache->context_table);
+    silc_free(cache);
+    return NULL;
+  }
 
   return cache;
 }
@@ -150,6 +163,8 @@ bool silc_idcache_add(SilcIDCache cache, char *name, void *id,
 
   /* Allocate new cache entry */
   c = silc_calloc(1, sizeof(*c));
+  if (!c)
+    return FALSE;
   c->id = id;
   c->name = name;
   c->expire = expire;
@@ -380,6 +395,8 @@ bool silc_idcache_get_all(SilcIDCache cache, SilcIDCacheList *ret)
     return TRUE;
 
   list = silc_idcache_list_alloc();
+  if (!list)
+    return FALSE;
   silc_hash_table_foreach(cache->id_table, silc_idcache_get_all_foreach, list);
 
   if (silc_idcache_list_count(list) == 0) {
@@ -400,6 +417,8 @@ bool silc_idcache_find_by_id(SilcIDCache cache, void *id,
   SilcIDCacheList list;
 
   list = silc_idcache_list_alloc();
+  if (!list)
+    return FALSE;
 
   if (!ret)
     return TRUE;
@@ -458,6 +477,8 @@ bool silc_idcache_find_by_name(SilcIDCache cache, char *name,
   SilcIDCacheList list;
 
   list = silc_idcache_list_alloc();
+  if (!list)
+    return FALSE;
 
   if (!ret)
     return TRUE;
@@ -493,6 +514,8 @@ static SilcIDCacheList silc_idcache_list_alloc()
   SilcIDCacheList list;
 
   list = silc_calloc(1, sizeof(*list));
+  if (!list)
+    return FALSE;
 
   return list;
 }
@@ -529,6 +552,8 @@ static void silc_idcache_list_add(SilcIDCacheList list, SilcIDCacheEntry cache)
     i = list->cache_dyn_count;
     list->cache_dyn = silc_realloc(list->cache_dyn, 
 				   sizeof(*list->cache_dyn) * (i + 5));
+    if (!list->cache_dyn)
+      return;
 
     /* NULL the reallocated area */
     for (k = i; k < (i + 5); k++)

@@ -377,6 +377,8 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 
     SILC_UNSET_INBUF_PENDING(sock);
     parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
+    if (!parse_ctx)
+      return FALSE;
     parse_ctx->packet = silc_packet_context_alloc();
     parse_ctx->packet->buffer = silc_buffer_alloc(paddedlen + mac_len);
     parse_ctx->packet->type = sock->inbuf->data[3];
@@ -746,6 +748,8 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
 SilcPacketContext *silc_packet_context_alloc(void)
 {
   SilcPacketContext *ctx = silc_calloc(1, sizeof(*ctx));
+  if (!ctx)
+    return NULL;
   ctx->users++;
   return ctx;
 }

@@ -43,7 +43,7 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
 						SilcUInt32 argc)
 {
   SilcBufferStruct buffer;
-  SilcArgumentPayload new;
+  SilcArgumentPayload newp;
   SilcUInt16 p_len = 0;
   unsigned char arg_num = 0;
   unsigned char arg_type = 0;
@@ -53,10 +53,18 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
   SILC_LOG_DEBUG(("Parsing argument payload"));
 
   silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
-  new = silc_calloc(1, sizeof(*new));
-  new->argv = silc_calloc(argc, sizeof(unsigned char *));
-  new->argv_lens = silc_calloc(argc, sizeof(SilcUInt32));
-  new->argv_types = silc_calloc(argc, sizeof(SilcUInt32));
+  newp = silc_calloc(1, sizeof(*newp));
+  if (!newp)
+    return NULL;
+  newp->argv = silc_calloc(argc, sizeof(unsigned char *));
+  if (!newp->argv)
+    goto err;
+  newp->argv_lens = silc_calloc(argc, sizeof(SilcUInt32));
+  if (!newp->argv_lens)
+    goto err;
+  newp->argv_types = silc_calloc(argc, sizeof(SilcUInt32));
+  if (!newp->argv_types)
+    goto err;
     
   /* Get arguments */
   arg_num = 1;
@@ -68,8 +76,8 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
     if (ret == -1)
       goto err;
     
-    new->argv_lens[i] = p_len;
-    new->argv_types[i] = arg_type;
+    newp->argv_lens[i] = p_len;
+    newp->argv_types[i] = arg_type;
 
     if (p_len > buffer.len - 3)
       break;
@@ -77,7 +85,7 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
     /* Get argument data */
     silc_buffer_pull(&buffer, 3);
     ret = silc_buffer_unformat(&buffer,
-			       SILC_STR_UI_XNSTRING_ALLOC(&new->argv[i], 
+			       SILC_STR_UI_XNSTRING_ALLOC(&newp->argv[i], 
 							  p_len),
 			       SILC_STR_END);
     if (ret == -1)
@@ -90,27 +98,22 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
   if (buffer.len != 0)
     goto err;
 
-  new->argc = argc;
-  new->pos = 0;
+  newp->argc = argc;
+  newp->pos = 0;
 
   silc_buffer_push(&buffer, pull_len);
 
-  return new;
+  return newp;
 
  err:
-  if (i) {
-    int k;
+  if (i)
+    for (ret = 0; ret < i; ret++)
+      silc_free(newp->argv[ret]);
 
-    for (k = 0; k < i; k++)
-      silc_free(new->argv[k]);
-  }
-
-  silc_free(new->argv);
-  silc_free(new->argv_lens);
-  silc_free(new->argv_types);
-
-  if (new)
-    silc_free(new);
+  silc_free(newp->argv);
+  silc_free(newp->argv_lens);
+  silc_free(newp->argv_types);
+  silc_free(newp);
 
   return NULL;
 }
@@ -132,8 +135,9 @@ SilcBuffer silc_argument_payload_encode(SilcUInt32 argc,
   for (i = 0; i < argc; i++)
     len += 3 + argv_lens[i];
 
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer)
+    return NULL;
 
   /* Put arguments */
   for (i = 0; i < argc; i++) {
@@ -165,8 +169,9 @@ SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload)
   for (i = 0; i < payload->argc; i++)
     len += 3 + payload->argv_lens[i];
 
-  buffer = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(len);
+  if (!buffer)
+    return NULL;
 
   /* Put arguments */
   for (i = 0; i < payload->argc; i++) {
