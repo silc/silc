@@ -947,8 +947,8 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
       schedule->fd_list[i].fd = 0;
       schedule->fd_list[i].events = 0;
       schedule->fd_list[i].revents = 0;
-      if (schedule->last_fd == i)
-	schedule->last_fd = schedule->max_fd - 1;
+      if (schedule->last_fd == i && i > 0)
+	schedule->last_fd = i - 1;
       break;
     }
 
