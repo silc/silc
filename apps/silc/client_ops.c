@@ -284,8 +284,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommand command, SilcCommandStatus status, ...)
 {
   SilcClientInternal app = (SilcClientInternal)client->application;
+  SilcChannelUser chu;
   va_list vp;
-  int i;
 
   if (!success)
     return;
@@ -319,16 +319,19 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       break;
 
     case SILC_COMMAND_NAMES:
-      for (i = 0; i < conn->current_channel->clients_count; i++)
-	if (conn->current_channel->clients[i].client == conn->local_entry) {
+      silc_list_start(conn->current_channel->clients);
+      while ((chu = silc_list_get(conn->current_channel->clients)) 
+	     != SILC_LIST_END) {
+	if (chu->client == conn->local_entry) {
 	  if (app->screen->bottom_line->mode)
 	    silc_free(app->screen->bottom_line->mode);
 	  app->screen->bottom_line->mode = 
-	    silc_client_chumode_char(conn->current_channel->clients[i].mode);
+	    silc_client_chumode_char(chu->mode);
 	  silc_screen_print_bottom_line(app->screen, 0);
 	  break;
 	}
       break;
+      }
     }
 }
 

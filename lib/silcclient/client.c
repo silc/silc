@@ -1294,6 +1294,7 @@ void silc_client_notify_by_server(SilcClient client,
   SilcClientEntry client_entry;
   SilcClientEntry client_entry2;
   SilcChannelEntry channel;
+  SilcChannelUser chu;
   SilcIDCacheEntry id_cache = NULL;
   unsigned char *tmp;
   unsigned int tmp_len, mode;
@@ -1390,22 +1391,9 @@ void silc_client_notify_by_server(SilcClient client,
     channel = (SilcChannelEntry)id_cache->context;
 
     /* Add client to channel */
-    for (i = 0; i < channel->clients_count; i++) {
-      if (channel->clients[i].client == NULL) {
-	channel->clients[channel->clients_count].client = client_entry;
-	channel->clients_count++;
-	break;
-      }
-    }
-
-    if (i == channel->clients_count) {
-      channel->clients = silc_realloc(channel->clients, 
-				      sizeof(*channel->clients) * 
-				      (channel->clients_count + 1));
-      channel->clients[channel->clients_count].client = client_entry;
-      channel->clients[channel->clients_count].mode = 0;
-      channel->clients_count++;
-    }
+    chu = silc_calloc(1, sizeof(*chu));
+    chu->client = client_entry;
+    silc_list_add(channel->clients, chu);
 
     /* XXX add support for multiple same nicks on same channel. Check
        for them here */
@@ -1444,10 +1432,11 @@ void silc_client_notify_by_server(SilcClient client,
     channel = (SilcChannelEntry)id_cache->context;
 
     /* Remove client from channel */
-    for (i = 0; i < channel->clients_count; i++) {
-      if (channel->clients[i].client == client_entry) {
-	channel->clients[i].client = NULL;
-	channel->clients_count--;
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      if (chu->client == client_entry) {
+	silc_list_del(channel->clients, chu);
+	silc_free(chu);
 	break;
       }
     }
@@ -1694,9 +1683,10 @@ void silc_client_notify_by_server(SilcClient client,
     channel = (SilcChannelEntry)id_cache->context;
 
     /* Save the mode */
-    for (i = 0; i < channel->clients_count; i++) {
-      if (channel->clients[i].client == client_entry2) {
-	channel->clients[i].mode = mode;
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      if (chu->client == client_entry) {
+	chu->mode = mode;
 	break;
       }
     }
@@ -1792,6 +1782,8 @@ void silc_client_new_channel_id(SilcClient client,
   channel->channel_name = channel_name;
   channel->id = silc_id_payload_get_id(idp);
   channel->mode = mode;
+  silc_list_init(channel->clients, struct SilcChannelUserStruct, next);
+
   conn->current_channel = channel;
 
   /* Put it to the ID cache */
@@ -1873,6 +1865,7 @@ void silc_client_channel_message(SilcClient client,
   SilcChannelPayload payload = NULL;
   SilcChannelID *id = NULL;
   SilcChannelEntry channel;
+  SilcChannelUser chu;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id = NULL;
   int i;
@@ -1907,10 +1900,12 @@ void silc_client_channel_message(SilcClient client,
 
   /* Find nickname */
   nickname = "[unknown]";
-  for (i = 0; i < channel->clients_count; i++) {
-    if (channel->clients[i].client && 
-	!SILC_ID_CLIENT_COMPARE(channel->clients[i].client->id, client_id))
-      nickname = channel->clients[i].client->nickname;
+  silc_list_start(channel->clients);
+  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+    if (!SILC_ID_CLIENT_COMPARE(chu->client->id, client_id)) {
+      nickname = chu->client->nickname;
+      break;
+    }
   }
 
   /* Pass the message to application */
@@ -2011,6 +2006,7 @@ void silc_client_remove_from_channels(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list;
   SilcChannelEntry channel;
+  SilcChannelUser chu;
   int i;
 
   if (!silc_idcache_find_by_id(conn->channel_cache, SILC_ID_CACHE_ANY,
@@ -2023,10 +2019,11 @@ void silc_client_remove_from_channels(SilcClient client,
   while (channel) {
     
     /* Remove client from channel */
-    for (i = 0; i < channel->clients_count; i++) {
-      if (channel->clients[i].client == client_entry) {
-	channel->clients[i].client = NULL;
-	channel->clients_count--;
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      if (chu->client == client_entry) {
+	silc_list_del(channel->clients, chu);
+	silc_free(chu);
 	break;
       }
     }
@@ -2053,6 +2050,7 @@ void silc_client_replace_from_channels(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list;
   SilcChannelEntry channel;
+  SilcChannelUser chu;
   int i;
 
   if (!silc_idcache_find_by_id(conn->channel_cache, SILC_ID_CACHE_ANY,
@@ -2064,10 +2062,11 @@ void silc_client_replace_from_channels(SilcClient client,
   
   while (channel) {
     
-    /* Remove client from channel */
-    for (i = 0; i < channel->clients_count; i++) {
-      if (channel->clients[i].client == old) {
-	channel->clients[i].client = new;
+    /* Replace client entry */
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      if (chu->client == old) {
+	chu->client = new;
 	break;
       }
     }

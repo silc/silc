@@ -955,6 +955,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   SilcCommandStatus status;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
+  SilcChannelUser chu;
   SilcChannelID *channel_id = NULL;
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
@@ -1035,15 +1036,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
     }
   list_count++;
 
-  /* Remove old client list from channel, if exists */
-  if (channel->clients) {
-    silc_free(channel->clients);
-    channel->clients = NULL;
-    channel->clients_count = 0;
+  /* Remove old client list from channel. */
+  silc_list_start(channel->clients);
+  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+    silc_list_del(channel->clients, chu);
+    silc_free(chu);
   }
-
-  /* Allocate room for clients in the channel */
-  channel->clients = silc_calloc(list_count, sizeof(*channel->clients));
 
   /* Cache the received name list, client ID's and modes. This cache expires
      whenever server sends notify message to channel. It means two things;
@@ -1085,24 +1083,25 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
       id_cache = NULL;
     }
 
-    channel->clients[channel->clients_count].client = client;
-    channel->clients[channel->clients_count].mode = mode;
-    channel->clients_count++;
+    chu = silc_calloc(1, sizeof(*chu));
+    chu->client = client;
+    chu->mode = mode;
+    silc_list_add(channel->clients, chu);
 
     name_list += nick_len + 1;
   }
 
   name_list = cp;
   for (i = 0; i < list_count; i++) {
-    int c;
+    int c = 0;
     int nick_len = strcspn(name_list, " ");
     char *nickname = silc_calloc(nick_len + 1, sizeof(*nickname));
     memcpy(nickname, name_list, nick_len);
 
-    for (c = 0, k = 0; k < channel->clients_count; k++) {
-      if (channel->clients[k].client && 
-	  !strncmp(channel->clients[k].client->nickname, 
-		   nickname, strlen(channel->clients[k].client->nickname))) {
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      if (!strncmp(chu->client->nickname, nickname, 
+		   strlen(chu->client->nickname))) {
 	char t[8];
 	
 	if (!c) {
@@ -1111,13 +1110,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
 	}
 	
 	memset(t, 0, sizeof(t));
-	channel->clients[k].client->nickname = 
-	  silc_calloc(strlen(nickname) + 8, sizeof(*channel->clients[k].
-						   client->nickname));
+	chu->client->nickname = silc_calloc(strlen(nickname) + 8, 1);
 	snprintf(t, sizeof(t), "[%d]", c++);
-	strncat(channel->clients[k].client->nickname, t, strlen(t));
-	strncat(channel->clients[k].client->nickname, nickname, 
-		strlen(nickname));
+	strncat(chu->client->nickname, t, strlen(t));
+	strncat(chu->client->nickname, nickname, strlen(nickname));
       }
     }
 
@@ -1131,13 +1127,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
     cmd->client->ops->say(cmd->client, conn, "Users on %s", 
 			  channel->channel_name);
     
-    for (k = 0; k < channel->clients_count; k++) {
-      SilcClientEntry e = channel->clients[k].client;
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      SilcClientEntry e = chu->client;
       char *m, tmp[80], line[80];
 
       memset(line, 0, sizeof(line));
       memset(tmp, 0, sizeof(tmp));
-      m = silc_client_chumode_char(channel->clients[k].mode);
+      m = silc_client_chumode_char(chu->mode);
 
       strcat(line, " ");
       strcat(line, e->nickname);
@@ -1175,14 +1172,17 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   } else {
     name_list = NULL;
     len1 = 0;
-    for (k = 0; k < channel->clients_count; k++) {
-      char *m, *n = channel->clients[k].client->nickname;
+    k = 0;
+
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      char *m, *n = chu->client->nickname;
       len2 = strlen(n);
       len1 += len2;
 
       name_list = silc_realloc(name_list, sizeof(*name_list) * (len1 + 3));
 
-      m = silc_client_chumode_char(channel->clients[k].mode);
+      m = silc_client_chumode_char(chu->mode);
       if (m) {
 	memcpy(name_list + (len1 - len2), m, strlen(m));
 	len1 += strlen(m);
@@ -1191,15 +1191,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
 
       memcpy(name_list + (len1 - len2), n, len2);
       name_list[len1] = 0;
-    
-      if (k == channel->clients_count - 1)
+      
+      if (k == silc_list_count(channel->clients) - 1)
 	break;
       memcpy(name_list + len1, " ", 1);
       len1++;
+      k++;
     }
 
-    cmd->client->ops->say(cmd->client, conn,
-			  "Users on %s: %s", channel->channel_name, name_list);
+    cmd->client->ops->say(cmd->client, conn, "Users on %s: %s",
+			  channel->channel_name, name_list);
     silc_free(name_list);
   }
 

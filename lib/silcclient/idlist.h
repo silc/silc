@@ -37,15 +37,14 @@ typedef struct SilcClientEntryStruct {
      with the remote client. */
   SilcCipher send_key;
   SilcCipher receive_key;
-} SilcClientEntryObject;
-
-typedef SilcClientEntryObject *SilcClientEntry;
+} *SilcClientEntry;
 
 /* Client and its mode on a channel */
-typedef struct {
+typedef struct SilcChannelUserStruct {
   SilcClientEntry client;
   unsigned int mode;
-} SilcChannelUsers;
+  struct SilcChannelUserStruct *next;
+} *SilcChannelUser;
 
 /* Channel entry context. This is allocate for every channel client has
    joined to. This includes for example the channel specific keys */
@@ -57,17 +56,15 @@ typedef struct SilcChannelEntryStruct {
   unsigned int mode;
   int on_channel;
 
-  SilcChannelUsers *clients;
-  unsigned int clients_count;
+  /* Joined clients */
+  SilcList clients;
 
   /* Channel keys */
   SilcCipher channel_key;
   unsigned char *key;
   unsigned int key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
-} SilcChannelEntryObject;
-
-typedef SilcChannelEntryObject *SilcChannelEntry;
+} *SilcChannelEntry;
 
 /* Prototypes */
 

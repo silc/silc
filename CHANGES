@@ -1,3 +1,8 @@
+Sun Nov  5 22:28:44 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed client librarys channel->clients table to SilcList and
+	  changed code accordingly.
+
 Thu Nov  2 16:28:01 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed client's channel table to SilcList and changed code 

@@ -928,6 +928,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
+  SilcChannelUser chu;
   SilcClientEntry client_entry;
   SilcBuffer buffer, clidp, chidp;
   unsigned char *name, *cp, modebuf[4];
@@ -986,11 +987,12 @@ SILC_CLIENT_CMD_FUNC(cumode)
     return;
   }
   
-  for (i = 0; i < channel->clients_count; i++)
-    if (channel->clients[i].client == client_entry) {
-      mode = channel->clients[i].mode;
+  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+    if (chu->client == client_entry) {
+      chu->mode = mode;
       break;
     }
+  }
 
   /* Are we adding or removing mode */
   if (cmd->argv[2][0] == '-')
