@@ -165,7 +165,7 @@ void silc_idcache_free(SilcIDCache cache);
  * SYNOPSIS
  *
  *    bool silc_idcache_add(SilcIDCache cache, char *name, void *id, 
- *                          void *context, int expire);
+ *                          void *context, int expire, SilcIDCacheEntry *ret);
  *
  * DESCRIPTION
  *

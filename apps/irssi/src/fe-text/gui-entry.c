@@ -37,7 +37,8 @@ static void entry_text_grow(GUI_ENTRY_REC *entry, int grow_size)
 		return;
 
 	entry->text_alloc = nearest_power(entry->text_alloc+grow_size);
-	entry->text = g_realloc(entry->text, entry->text_alloc);
+	entry->text = g_realloc(entry->text,
+				sizeof(unichar) * entry->text_alloc);
 }
 
 GUI_ENTRY_REC *gui_entry_create(int xpos, int ypos, int width, int utf8)
@@ -323,6 +324,9 @@ char *gui_entry_get_cutbuffer(GUI_ENTRY_REC *entry)
 
 	g_return_val_if_fail(entry != NULL, NULL);
 
+	if (entry->cutbuffer == NULL)
+                return NULL;
+
 	buf = g_malloc(entry->cutbuffer_len*6 + 1);
 	if (entry->utf8)
 		utf16_to_utf8(entry->cutbuffer, buf);
@@ -333,23 +337,25 @@ char *gui_entry_get_cutbuffer(GUI_ENTRY_REC *entry)
 	return buf;
 }
 
-void gui_entry_erase(GUI_ENTRY_REC *entry, int size)
+void gui_entry_erase(GUI_ENTRY_REC *entry, int size, int update_cutbuffer)
 {
         g_return_if_fail(entry != NULL);
 
 	if (entry->pos < size)
 		return;
 
-        /* put erased text to cutbuffer */
-	if (entry->cutbuffer == NULL || entry->cutbuffer_len < size) {
-		g_free(entry->cutbuffer);
-		entry->cutbuffer = g_new(unichar, size+1);
-	}
+	if (update_cutbuffer) {
+		/* put erased text to cutbuffer */
+		if (entry->cutbuffer == NULL || entry->cutbuffer_len < size) {
+			g_free(entry->cutbuffer);
+			entry->cutbuffer = g_new(unichar, size+1);
+		}
 
-	entry->cutbuffer_len = size;
-        entry->cutbuffer[size] = '\0';
-	memcpy(entry->cutbuffer, entry->text + entry->pos - size,
-	       size * sizeof(unichar));
+		entry->cutbuffer_len = size;
+		entry->cutbuffer[size] = '\0';
+		memcpy(entry->cutbuffer, entry->text + entry->pos - size,
+		       size * sizeof(unichar));
+	}
 
 	if (size == 0) {
                 /* we just wanted to clear the cutbuffer */
@@ -390,7 +396,7 @@ void gui_entry_erase_word(GUI_ENTRY_REC *entry, int to_space)
 	}
 	if (to > 0) to++;
 
-        gui_entry_erase(entry, entry->pos-to);
+        gui_entry_erase(entry, entry->pos-to, TRUE);
 }
 
 void gui_entry_erase_next_word(GUI_ENTRY_REC *entry, int to_space)
@@ -416,7 +422,7 @@ void gui_entry_erase_next_word(GUI_ENTRY_REC *entry, int to_space)
 
         size = to-entry->pos;
 	entry->pos = to;
-        gui_entry_erase(entry, size);
+        gui_entry_erase(entry, size, TRUE);
 }
 
 void gui_entry_transpose_chars(GUI_ENTRY_REC *entry)

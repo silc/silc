@@ -549,6 +549,31 @@ char *format_add_linestart(const char *text, const char *linestart)
         return ret;
 }
 
+char *format_add_lineend(const char *text, const char *linestart)
+{
+	GString *str;
+	char *ret;
+
+	if (linestart == NULL)
+		return g_strdup(text);
+
+	if (strchr(text, '\n') == NULL)
+		return g_strconcat(text, linestart, NULL);
+
+	str = g_string_new(NULL);
+	while (*text != '\0') {
+		if (*text == '\n')
+			g_string_append(str, linestart);
+		g_string_append_c(str, *text);
+		text++;
+	}
+	g_string_append(str, linestart);
+
+	ret = str->str;
+	g_string_free(str, FALSE);
+        return ret;
+}
+
 #define LINE_START_IRSSI_LEVEL \
 	(MSGLEVEL_CLIENTERROR | MSGLEVEL_CLIENTNOTICE)
 
@@ -729,8 +754,10 @@ static const char *get_ansi_color(THEME_REC *theme, const char *str,
 			flags |= GUI_PRINT_FLAG_REVERSE;
 			break;
 		default:
-			if (num >= 30 && num <= 37)
+			if (num >= 30 && num <= 37) {
+				if (fg == -1) fg = 0;
 				fg = (fg & 0xf8) | ansitab[num-30];
+			}
 			if (num >= 40 && num <= 47) {
 				if (bg == -1) bg = 0;
 				bg = (bg & 0xf8) | ansitab[num-40];
@@ -875,8 +902,10 @@ char *strip_codes(const char *input)
                         }
 		}
 
-		if (*p == 27 && p[1] != '\0')
+		if (*p == 27 && p[1] != '\0') {
+                        p++;
 			p = get_ansi_color(current_theme, p, NULL, NULL, NULL);
+		}
 
                 if (!IS_COLOR_CODE(*p))
                         *out++ = *p;   
@@ -889,13 +918,17 @@ char *strip_codes(const char *input)
 /* send a fully parsed text string for GUI to print */
 void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 {
+        THEME_REC *theme;
 	char *dup, *str, *ptr, type;
 	int fgcolor, bgcolor;
 	int flags;
 
+        theme = dest->window != NULL && dest->window->theme != NULL ?
+		dest->window->theme : current_theme;
+
 	dup = str = g_strdup(text);
 
-	flags = 0; fgcolor = -1; bgcolor = -1;
+	flags = 0; fgcolor = theme->default_color; bgcolor = -1;
 	while (*str != '\0') {
                 type = '\0';
 		for (ptr = str; *ptr != '\0'; ptr++) {
@@ -980,7 +1013,8 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 				break;
 			}
 			case FORMAT_STYLE_DEFAULTS:
-				fgcolor = bgcolor = -1;
+                                fgcolor = theme->default_color;
+				bgcolor = -1;
 				flags &= GUI_PRINT_FLAG_INDENT;
 				break;
 			case FORMAT_STYLE_CLRTOEOL:
@@ -1020,7 +1054,8 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 			break;
 		case 15:
 			/* remove all styling */
-			fgcolor = bgcolor = -1;
+			fgcolor = theme->default_color;
+			bgcolor = -1;
 			flags &= GUI_PRINT_FLAG_INDENT;
 			break;
 		case 22:
@@ -1036,9 +1071,7 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 		case 27:
 			/* ansi color code */
 			ptr = (char *)
-				get_ansi_color(dest->window == NULL || dest->window->theme == NULL ?
-					       current_theme : dest->window->theme,
-					       ptr,
+				get_ansi_color(theme, ptr,
 					       hide_text_style ? NULL : &fgcolor,
 					       hide_text_style ? NULL : &bgcolor,
 					       hide_text_style ? NULL : &flags);

@@ -48,6 +48,7 @@ typedef struct {
 
 static KEYBOARD_REC *keyboard;
 static ENTRY_REDIRECT_REC *redir;
+static int escape_next_key;
 
 static int readtag;
 static time_t idle_time;
@@ -161,8 +162,9 @@ void handle_key(unichar key)
 		str[utf16_char_to_utf8(key, str)] = '\0';
 	}
 
-	if (!key_pressed(keyboard, str)) {
-                /* key wasn't used for anything, print it */
+	if (escape_next_key || !key_pressed(keyboard, str)) {
+		/* key wasn't used for anything, print it */
+                escape_next_key = FALSE;
 		gui_entry_insert_char(active_entry, key);
 	}
 }
@@ -173,7 +175,7 @@ static void key_send_line(void)
         char *str, *add_history;
 
 	str = gui_entry_get_text(active_entry);
-	if (str == NULL || *str == '\0') {
+	if (str == NULL || (*str == '\0' && redir == NULL)) {
                 g_free(str);
 		return;
 	}
@@ -278,7 +280,7 @@ static void key_forward_to_space(void)
 static void key_erase_line(void)
 {
 	gui_entry_set_pos(active_entry, active_entry->text_len);
-	gui_entry_erase(active_entry, active_entry->text_len);
+	gui_entry_erase(active_entry, active_entry->text_len, TRUE);
 }
 
 static void key_erase_to_beg_of_line(void)
@@ -286,7 +288,7 @@ static void key_erase_to_beg_of_line(void)
 	int pos;
 
 	pos = gui_entry_get_pos(active_entry);
-	gui_entry_erase(active_entry, pos);
+	gui_entry_erase(active_entry, pos, TRUE);
 }
 
 static void key_erase_to_end_of_line(void)
@@ -295,7 +297,7 @@ static void key_erase_to_end_of_line(void)
 
 	pos = gui_entry_get_pos(active_entry);
 	gui_entry_set_pos(active_entry, active_entry->text_len);
-	gui_entry_erase(active_entry, active_entry->text_len - pos);
+	gui_entry_erase(active_entry, active_entry->text_len - pos, TRUE);
 }
 
 static void key_yank_from_cutbuffer(void)
@@ -303,8 +305,10 @@ static void key_yank_from_cutbuffer(void)
 	char *cutbuffer;
 
         cutbuffer = gui_entry_get_cutbuffer(active_entry);
-	if (cutbuffer != NULL)
+	if (cutbuffer != NULL) {
 		gui_entry_insert_text(active_entry, cutbuffer);
+                g_free(cutbuffer);
+	}
 }
 
 static void key_transpose_characters(void)
@@ -316,13 +320,13 @@ static void key_delete_character(void)
 {
 	if (gui_entry_get_pos(active_entry) < active_entry->text_len) {
 		gui_entry_move_pos(active_entry, 1);
-		gui_entry_erase(active_entry, 1);
+		gui_entry_erase(active_entry, 1, FALSE);
 	}
 }
 
 static void key_backspace(void)
 {
-	gui_entry_erase(active_entry, 1);
+	gui_entry_erase(active_entry, 1, FALSE);
 }
 
 static void key_delete_previous_word(void)
@@ -519,6 +523,11 @@ static void key_next_window_item(void)
 	}
 }
 
+static void key_escape(void)
+{
+        escape_next_key = TRUE;
+}
+
 static void key_insert_text(const char *data)
 {
 	char *str;
@@ -566,6 +575,7 @@ void gui_readline_init(void)
 	char *key, data[MAX_INT_STRLEN];
 	int n;
 
+        escape_next_key = FALSE;
 	redir = NULL;
 	idle_time = time(NULL);
         input_listen_init(STDIN_FILENO);
@@ -673,6 +683,7 @@ void gui_readline_init(void)
 	key_bind("scroll_end", "End of the window", "", NULL, (SIGNAL_FUNC) key_scroll_end);
 
         /* inserting special input characters to line.. */
+	key_bind("escape_char", "Escape the next keypress", NULL, NULL, (SIGNAL_FUNC) key_escape);
 	key_bind("insert_text", "Append text to line", NULL, NULL, (SIGNAL_FUNC) key_insert_text);
 
         /* autoreplaces */
@@ -743,6 +754,7 @@ void gui_readline_deinit(void)
 	key_unbind("scroll_start", (SIGNAL_FUNC) key_scroll_start);
 	key_unbind("scroll_end", (SIGNAL_FUNC) key_scroll_end);
 
+	key_unbind("escape_char", (SIGNAL_FUNC) key_escape);
 	key_unbind("insert_text", (SIGNAL_FUNC) key_insert_text);
 	key_unbind("change_window", (SIGNAL_FUNC) key_change_window);
 	key_unbind("stop_irc", (SIGNAL_FUNC) key_sig_stop);

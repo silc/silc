@@ -221,7 +221,7 @@ static void theme_format_append_next(THEME_REC *theme, GString *str,
 	}
 
 	index = (flags & EXPAND_FLAG_IGNORE_REPLACES) ? -1 :
-		theme->replace_keys[(int) chr];
+		theme->replace_keys[(int) (unsigned char) chr];
 	if (index == -1)
 		g_string_append_c(str, chr);
 	else {
@@ -542,7 +542,7 @@ static void theme_read_replaces(CONFIG_REC *config, THEME_REC *theme)
 
 		if (node->key != NULL && node->value != NULL) {
 			for (p = node->key; *p != '\0'; p++)
-                                theme->replace_keys[(int) *p] = index;
+                                theme->replace_keys[(int) (unsigned char) *p] = index;
 
 			theme->replace_values =
 				g_slist_append(theme->replace_values,
@@ -844,6 +844,8 @@ static int theme_read(THEME_REC *theme, const char *path, const char *data)
 
 	theme->default_color =
 		config_get_int(config, NULL, "default_color", -1);
+	theme->info_eol = config_get_bool(config, NULL, "info_eol", FALSE);
+
 	/* FIXME: remove after 0.7.99 */
 	if (theme->default_color == 0 &&
 	    config_get_int(config, NULL, "default_real_color", -1) != -1)
@@ -1157,6 +1159,8 @@ static void sig_complete_format(GList **list, WINDOW_REC *window,
 
 	words = 0;
 	do {
+                ptr++;
+
 		words++;
                 ptr = strchr(ptr, ' ');
 	} while (ptr != NULL);

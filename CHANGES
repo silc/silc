@@ -1,3 +1,7 @@
+Mon Mar 11 23:37:38 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Merged Irssi 0.8.2 from irssi.org CVS.
+
 Sun Mar 10 23:34:48 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* If silc_debug is TRUE, also output standard logging messages

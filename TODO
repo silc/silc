@@ -37,6 +37,10 @@ TODO/bugs In SILC Server
 
  o Configuration file additions:
 
+	o Add support for multipe PublicKey params in connections 
+	  sections.  For now, add this support only in Client and not
+	  in ServerConnection nor RouterConnection.
+
 	o Add version handling, to allow, disallow certain versions to
 	  connect.
 

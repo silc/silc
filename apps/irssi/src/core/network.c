@@ -415,8 +415,7 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 #else
 	hp = gethostbyname(addr);
 	if (hp == NULL)
-                return -1;
-		//return h_errno;
+		return h_errno;
 
 	ip4->family = AF_INET;
 	memcpy(&ip4->ip, hp->h_addr, 4);
@@ -590,7 +589,7 @@ int is_ipv4_address(const char *host)
 int is_ipv6_address(const char *host)
 {
 	while (*host != '\0') {
-		if (*host != ':' && !isxdigit(*host))
+		if (*host != ':' && !i_isxdigit(*host))
 			return 0;
                 host++;
 	}
