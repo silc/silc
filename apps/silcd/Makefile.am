@@ -33,11 +33,10 @@ silcd_SOURCES = \
 	server_version.c
 
 LDADD = -L. -L.. -L../lib -lsilc
-#LDADD = -L. -L.. -L../lib -lsilc -L../lib/silcmath/gmp-3.0.1/lib -lgmp
 
 EXTRA_DIST = *.h
 
 INCLUDES = -I. -I.. -I../lib/silccore -I../lib/silccrypt \
 	-I../lib/silcmath -I../lib/silcske -I../lib/silcsim \
 	-I../includes \
-	-I../lib/silcmath/gmp-3.0.1
+	-I../lib/silcmath/gmp

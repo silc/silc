@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-SUBDIRS = gmp-3.0.1
+SUBDIRS = gmp
 
 noinst_LIBRARIES = libsilcmath.a
 
@@ -31,4 +31,4 @@ EXTRA_DIST = *.h
 
 INCLUDES = -I. -I.. -I../silccrypt -I../silccore -I../silcske \
 	-I../silcsim -I../.. -I../../includes \
-	-I./gmp-3.0.1
+	-I./gmp

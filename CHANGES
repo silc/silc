@@ -1,3 +1,7 @@
+Thu Sep  7 10:49:33 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added GMP 3.1 into math library.
+
 Sun Aug 20 21:27:26 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added SILC_PACKET_REMOVE_CHANNEL_USER to remove a client from

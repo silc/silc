@@ -28,4 +28,4 @@ EXTRA_DIST = *.h
 
 INCLUDES = -I. -I.. -I../silccrypt -I../silcmath -I../silcske \
 	-I../silcsim -I../.. -I../../includes -I../silccore \
-	-I../silcmath/gmp-3.0.1
+	-I../silcmath/gmp
