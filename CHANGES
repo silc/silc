@@ -6,6 +6,9 @@ Mon Nov  4 16:02:59 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed the INVITE command to send the invite list in
 	  command reply.  Affected file silcd/command_reply.c.
 
+	* Fixed MOTD command reply sending.  Affected file
+	  silcd/command.c.
+
 Sun Nov  3 17:59:15 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the INVITE command to not crash Irssi SILC client

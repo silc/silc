@@ -2371,7 +2371,7 @@ SILC_SERVER_CMD_FUNC(motd)
     }
 
     if (!entry) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_MOTD,
 					    SILC_STATUS_ERR_NO_SUCH_SERVER, 0);
       goto out;
     }
