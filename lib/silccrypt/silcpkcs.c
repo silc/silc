@@ -25,9 +25,9 @@
 
 /* The main SILC PKCS structure. */
 struct SilcPKCSStruct {
-  void *context;
-  SilcPKCSObject *pkcs;
-  SilcUInt32 key_len;
+  void *context;		/* Algorithm internal context */
+  SilcPKCSObject *pkcs;		/* Algorithm implementation */
+  SilcUInt32 key_len;		/* Key length in bits */
 };
 
 #ifndef SILC_EPOC

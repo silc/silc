@@ -274,7 +274,7 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
   silc_pkcs_private_key_set(pkcs, private_key);
 
   /* Compute the hash and the signature. */
-  if (silc_pkcs_get_key_len(pkcs) > sizeof(auth_data) - 1 ||
+  if (silc_pkcs_get_key_len(pkcs) / 8 > sizeof(auth_data) - 1 ||
       !silc_pkcs_sign_with_hash(pkcs, hash, tmp, tmp_len, auth_data,
 				&auth_len)) {
     memset(randomdata, 0, 256);

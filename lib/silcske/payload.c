@@ -37,6 +37,8 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
     return SILC_SKE_STATUS_ERROR;
 
   buf = silc_buffer_alloc(payload->len);
+  if (!buf)
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
 
   /* Encode the payload */
@@ -99,6 +101,8 @@ silc_ske_payload_start_decode(SilcSKE ske,
   SILC_LOG_HEXDUMP(("KE Start Payload"), buffer->data, buffer->len);
 
   payload = silc_calloc(1, sizeof(*payload));
+  if (!payload)
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
   payload->cookie_len = SILC_SKE_COOKIE_LEN;
 
   /* Parse start of the payload */
@@ -125,18 +129,20 @@ silc_ske_payload_start_decode(SilcSKE ske,
 						     &payload->comp_alg_len),
 			 SILC_STR_END);
   if (ret == -1) {
-    status = SILC_SKE_STATUS_ERROR;
+    SILC_LOG_ERROR(("Malformed KE Start Payload"));
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
 
   if (tmp != 0) {
     SILC_LOG_DEBUG(("Bad reserved field"));
+    SILC_LOG_ERROR(("Bad RESERVED field in KE Start Payload"));
     status = SILC_SKE_STATUS_BAD_RESERVED_FIELD;
     goto err;
   }
 
   if (payload->len != buffer->len) {
-    SILC_LOG_DEBUG(("Bad payload length"));
+    SILC_LOG_ERROR(("Garbage after KE Start Payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
     goto err;
   }
@@ -201,6 +207,8 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
      is 4 + public key + 2 + x + 2 + signature. */
   buf = silc_buffer_alloc(4 + payload->pk_len + 2 + x_len + 
 			  2 + payload->sign_len);
+  if (!buf)
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
 
   /* Encode the payload */
@@ -252,6 +260,8 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
   SILC_LOG_HEXDUMP(("KE Payload"), buffer->data, buffer->len);
 
   payload = silc_calloc(1, sizeof(*payload));
+  if (!payload)
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
   len2 = buffer->len;
 
@@ -261,13 +271,15 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 			     SILC_STR_UI_SHORT(&payload->pk_type),
 			     SILC_STR_END);
   if (ret == -1) {
-    status = SILC_SKE_STATUS_ERROR;
+    SILC_LOG_ERROR(("Cannot decode public key from KE payload"));
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
 
   if (ske->start_payload && 
       (payload->pk_type < SILC_SKE_PK_TYPE_SILC || 
        payload->pk_type > SILC_SKE_PK_TYPE_SPKI)) {
+    SILC_LOG_ERROR(("Malformed public key in KE payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
@@ -284,7 +296,8 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 							 &payload->sign_len),
 			     SILC_STR_END);
   if (ret == -1) {
-    status = SILC_SKE_STATUS_ERROR;
+    SILC_LOG_ERROR(("Malformed KE Payload"));
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
 
@@ -292,6 +305,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
   tot_len += payload->sign_len + 2;
 
   if (x_len < 3) {
+    SILC_LOG_ERROR(("Too short signature in KE Payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
@@ -299,13 +313,14 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
   if (ske->start_payload && 
       (ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) &&
       (payload->sign_len < 3 || !payload->sign_data)) {
-    SILC_LOG_DEBUG(("The signature data is missing - both parties are "
+    SILC_LOG_ERROR(("The signature data is missing - both parties are "
 		    "required to do authentication"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
 
   if (tot_len != len2) {
+    SILC_LOG_ERROR(("Garbage after KE payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
     goto err;
   }

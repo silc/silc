@@ -50,6 +50,8 @@ SilcSKE silc_ske_alloc(SilcRng rng, void *context)
   SILC_LOG_DEBUG(("Allocating new Key Exchange object"));
 
   ske = silc_calloc(1, sizeof(*ske));
+  if (!ske)
+    return NULL;
   ske->status = SILC_SKE_STATUS_OK;
   ske->rng = rng;
   ske->user_data = context;
@@ -157,6 +159,8 @@ void silc_ske_set_callbacks(SilcSKE ske,
   if (ske->callbacks)
     silc_free(ske->callbacks);
   ske->callbacks = silc_calloc(1, sizeof(*ske->callbacks));
+  if (!ske->callbacks)
+    return;
   ske->callbacks->send_packet = send_packet;
   ske->callbacks->payload_receive = payload_receive;
   ske->callbacks->verify_key = verify_key;
@@ -236,7 +240,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
   /* Check that the cookie is returned unmodified */
   if (memcmp(ske->start_payload->cookie, payload->cookie,
 	     ske->start_payload->cookie_len)) {
-    SILC_LOG_DEBUG(("Responder modified our cookie and it must not do it"));
+    SILC_LOG_ERROR(("Responder modified our cookie and it must not do it"));
     ske->status = SILC_SKE_STATUS_INVALID_COOKIE;
     silc_ske_payload_start_free(ske->start_payload);
     return status;
@@ -262,6 +266,8 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
      exchange. The same data is returned to upper levels by calling
      the callback function. */
   ske->prop = prop = silc_calloc(1, sizeof(*prop));
+  if (!ske->prop)
+    goto err;
   prop->flags = payload->flags;
   status = silc_ske_group_get_by_name(payload->ke_grp_list, &group);
   if (status != SILC_SKE_STATUS_OK)
@@ -341,6 +347,10 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 
   /* Create the random number x, 1 < x < q. */
   x = silc_calloc(1, sizeof(*x));
+  if (!x){
+    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    return ske->status;
+  }
   silc_mp_init(x);
   status = 
     silc_ske_create_rnd(ske, &ske->prop->group->group_order,
@@ -356,6 +366,12 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   /* Encode the result to Key Exchange Payload. */
 
   payload = silc_calloc(1, sizeof(*payload));
+  if (!payload) {
+    silc_mp_uninit(x);
+    silc_free(x);
+    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    return ske->status;
+  }
   ske->ke1_payload = payload;
 
   SILC_LOG_DEBUG(("Computing e = g ^ x mod p"));
@@ -397,15 +413,15 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
     /* Sign the hash value */
     silc_pkcs_private_key_data_set(ske->prop->pkcs, private_key->prv, 
 				   private_key->prv_len);
-    if (silc_pkcs_get_key_len(ske->prop->pkcs) > sizeof(sign) - 1 ||
+    if (silc_pkcs_get_key_len(ske->prop->pkcs) / 8 > sizeof(sign) - 1 ||
 	!silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len)) {
       silc_mp_uninit(x);
       silc_free(x);
       silc_mp_uninit(&payload->x);
       silc_free(payload->pk_data);
       silc_free(payload);
-      ske->status = status;
-      return status;
+      ske->status = SILC_SKE_STATUS_SIGNATURE_ERROR;
+      return ske->status;
     }
     payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
     memcpy(payload->sign_data, sign, sign_len);
@@ -503,7 +519,6 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
 			 payload->sign_len, hash, hash_len) == FALSE) {
       
       SILC_LOG_DEBUG(("Signature don't match"));
-      
       status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
       goto err;
     }
@@ -1015,7 +1030,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
     /* Get the public key */
     pk = silc_pkcs_public_key_encode(public_key, &pk_len);
     if (!pk) {
-      status = SILC_SKE_STATUS_ERROR;
+      status = SILC_SKE_STATUS_OUT_OF_MEMORY;
       goto err;
     }
     ske->ke2_payload->pk_data = pk;
@@ -1038,9 +1053,11 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
     /* Sign the hash value */
     silc_pkcs_private_key_data_set(ske->prop->pkcs, private_key->prv, 
 				   private_key->prv_len);
-    if (silc_pkcs_get_key_len(ske->prop->pkcs) > sizeof(sign) - 1 ||
-	!silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len))
+    if (silc_pkcs_get_key_len(ske->prop->pkcs) / 8 > sizeof(sign) - 1 ||
+	!silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len)) {
+      status = SILC_SKE_STATUS_SIGNATURE_ERROR;
       goto err;
+    }
     ske->ke2_payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
     memcpy(ske->ke2_payload->sign_data, sign, sign_len);
     memset(sign, 0, sizeof(sign));
@@ -1087,8 +1104,9 @@ SilcSKEStatus silc_ske_end(SilcSKE ske)
 
   SILC_LOG_DEBUG(("Start"));
 
-  packet = silc_buffer_alloc(4);
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  packet = silc_buffer_alloc_size(4);
+  if (!packet)
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
   silc_buffer_format(packet,
 		     SILC_STR_UI_INT((SilcUInt32)SILC_SKE_STATUS_OK),
 		     SILC_STR_END);
@@ -1115,8 +1133,9 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status)
   if (status > SILC_SKE_STATUS_INVALID_COOKIE)
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
 
-  packet = silc_buffer_alloc(4);
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  packet = silc_buffer_alloc_size(4);
+  if (!packet)
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
   silc_buffer_format(packet,
 		     SILC_STR_UI_INT((SilcUInt32)status),
 		     SILC_STR_END);
@@ -1581,7 +1600,7 @@ static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
   /* Get the random number as string */
   string = silc_rng_get_rn_data(ske->rng, (len / 8));
   if (!string)
-    return SILC_SKE_STATUS_ERROR;
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
   /* Decode the string into a MP integer */
   silc_mp_bin2mp(string, (len / 8), rnd);
@@ -1624,11 +1643,12 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
     KEY = silc_mp_mp2bin(ske->KEY, 0, &KEY_len);
     
     /* Format the buffer used to compute the hash value */
-    buf = silc_buffer_alloc(ske->start_payload_copy->len + 
-			    ske->ke2_payload->pk_len + 
-			    ske->ke1_payload->pk_len + 
-			    e_len + f_len + KEY_len);
-    silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+    buf = silc_buffer_alloc_size(ske->start_payload_copy->len + 
+				 ske->ke2_payload->pk_len + 
+				 ske->ke1_payload->pk_len + 
+				 e_len + f_len + KEY_len);
+    if (!buf)
+      return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
     /* Initiator is not required to send its public key */
     if (!ske->ke1_payload->pk_data) {
@@ -1680,9 +1700,10 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
   } else {
     e = silc_mp_mp2bin(&ske->ke1_payload->x, 0, &e_len);
 
-    buf = silc_buffer_alloc(ske->start_payload_copy->len + 
-			    ske->ke1_payload->pk_len + e_len);
-    silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+    buf = silc_buffer_alloc_size(ske->start_payload_copy->len + 
+				  ske->ke1_payload->pk_len + e_len);
+    if (!buf)
+      return SILC_SKE_STATUS_OUT_OF_MEMORY;
     
     /* Format the buffer used to compute the hash value */
     ret = 
@@ -1741,8 +1762,9 @@ silc_ske_process_key_material_data(unsigned char *data,
   if (!req_iv_len || !req_enc_key_len || !req_hmac_key_len)
     return SILC_SKE_STATUS_ERROR;
 
-  buf = silc_buffer_alloc(1 + data_len);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  buf = silc_buffer_alloc_size(1 + data_len);
+  if (!buf)
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
   silc_buffer_format(buf,
 		     SILC_STR_UI_CHAR(0),
 		     SILC_STR_UI_XNSTRING(data, data_len),
@@ -1779,8 +1801,9 @@ silc_ske_process_key_material_data(unsigned char *data,
     silc_hash_make(hash, buf->data, buf->len, k1);
     
     /* Take second round */
-    dist = silc_buffer_alloc(data_len + hash_len);
-    silc_buffer_pull_tail(dist, SILC_BUFFER_END(dist));
+    dist = silc_buffer_alloc_size(data_len + hash_len);
+    if (!dist)
+      return SILC_SKE_STATUS_OUT_OF_MEMORY;
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(data, data_len),
 		       SILC_STR_UI_XNSTRING(k1, hash_len),
@@ -1839,8 +1862,9 @@ silc_ske_process_key_material_data(unsigned char *data,
     silc_hash_make(hash, buf->data, buf->len, k1);
     
     /* Take second round */
-    dist = silc_buffer_alloc(data_len + hash_len);
-    silc_buffer_pull_tail(dist, SILC_BUFFER_END(dist));
+    dist = silc_buffer_alloc_size(data_len + hash_len);
+    if (!dist)
+      return SILC_SKE_STATUS_OUT_OF_MEMORY;
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(data, data_len),
 		       SILC_STR_UI_XNSTRING(k1, hash_len),
@@ -1920,8 +1944,9 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
   /* Encode KEY to binary data */
   tmpbuf = silc_mp_mp2bin(ske->KEY, 0, &klen);
 
-  buf = silc_buffer_alloc(klen + ske->hash_len);
-  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
+  buf = silc_buffer_alloc_size(klen + ske->hash_len);
+  if (!buf)
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
   silc_buffer_format(buf,
 		     SILC_STR_UI_XNSTRING(tmpbuf, klen),
 		     SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
@@ -1992,7 +2017,8 @@ const char *silc_ske_status_string[] =
   "Key exchange protocol is not active",
   "Bad reserved field in packet",
   "Bad payload length in packet",
-  "Incorrect hash",
+  "Error computing signature",
+  "System out of memory",
 
   NULL
 };

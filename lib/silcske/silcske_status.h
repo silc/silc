@@ -63,6 +63,8 @@ typedef enum {
   SILC_SKE_STATUS_KEY_EXCHANGE_NOT_ACTIVE,     /* SKE is not started */
   SILC_SKE_STATUS_BAD_RESERVED_FIELD,	       /* Reserved field was not 0 */
   SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH,	       /* Payload includes garbage */
+  SILC_SKE_STATUS_SIGNATURE_ERROR,	       /* Error computing signature */
+  SILC_SKE_STATUS_OUT_OF_MEMORY,	       /* System out of memory */
 
   /* Other internal status types */
   SILC_SKE_STATUS_FREED,		       /* Internal library status */
