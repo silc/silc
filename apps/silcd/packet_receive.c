@@ -1280,6 +1280,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   char *username = NULL, *realname = NULL, *id_string;
   uint32 id_len;
   int ret;
+  char *hostname, *nickname;
 
   SILC_LOG_DEBUG(("Creating new client"));
 
@@ -1322,6 +1323,86 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     return NULL;
   }
 
+  nickname = strdup(username);
+
+  /* Make sanity checks for the hostname of the client. If the hostname
+     is provided in the `username' check that it is the same than the
+     resolved hostname, or if not resolved the hostname that appears in
+     the client's public key. If the hostname is not present then put
+     it from the resolved name or from the public key. */
+  if (strchr(username, '@')) {
+    SilcPublicKeyIdentifier pident;
+    int tlen = strcspn(username, "@");
+    char *phostname = NULL;
+
+    hostname = silc_calloc((strlen(username) - tlen) + 1, sizeof(char));
+    memcpy(hostname, username + tlen + 1, strlen(username) - tlen - 1);
+
+    pident = silc_pkcs_decode_identifier(client->data.public_key->identifier);
+    if (pident) {
+      phostname = strdup(pident->host);
+      silc_pkcs_free_identifier(pident);
+    }
+
+    if (strcmp(sock->hostname, sock->ip) && 
+	strcmp(sock->hostname, hostname)) {
+      silc_free(username);
+      silc_free(phostname);
+      silc_free(hostname);
+      if (realname)
+	silc_free(realname);
+      silc_server_disconnect_remote(server, sock, 
+				    "Server closed connection: "
+				    "Incomplete client information");
+      return NULL;
+    }
+    
+    if (!strcmp(sock->hostname, sock->ip) && 
+	phostname && strcmp(phostname, hostname)) {
+      silc_free(username);
+      silc_free(phostname);
+      silc_free(hostname);
+      if (realname)
+	silc_free(realname);
+      silc_server_disconnect_remote(server, sock, 
+				    "Server closed connection: "
+				    "Incomplete client information");
+      return NULL;
+    }
+    
+    if (phostname)
+      silc_free(phostname);
+  } else {
+    /* The hostname is not present, add it. */
+    char *newusername;
+    
+    if (strcmp(sock->hostname, sock->ip)) {
+      newusername = silc_calloc(strlen(username) + 
+				strlen(sock->hostname) + 2,
+				sizeof(*newusername));
+      strncat(newusername, username, strlen(username));
+      strncat(newusername, "@", 1);
+      strncat(newusername, sock->hostname, strlen(sock->hostname));
+      silc_free(username);
+      username = newusername;
+    } else {
+      SilcPublicKeyIdentifier pident = 
+	silc_pkcs_decode_identifier(client->data.public_key->identifier);
+      
+      if (pident) {
+	newusername = silc_calloc(strlen(username) + 
+				  strlen(pident->host) + 2,
+				  sizeof(*newusername));
+	strncat(newusername, username, strlen(username));
+	strncat(newusername, "@", 1);
+	strncat(newusername, pident->host, strlen(pident->host));
+	silc_free(username);
+	username = newusername;
+	silc_pkcs_free_identifier(pident);
+      }
+    }
+  }
+
   /* Create Client ID */
   silc_id_create_client_id(server->id, server->rng, server->md5hash,
 			   username, &client_id);
@@ -1331,7 +1412,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Update client entry */
   idata->registered = TRUE;
-  client->nickname = strdup(username);
+  client->nickname = nickname;
   client->username = username;
   client->userinfo = realname ? realname : strdup(" ");
   client->id = client_id;

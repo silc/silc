@@ -1,3 +1,11 @@
+Thu Jun  7 16:29:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added sanity check to the silc_server_new_client. If the hostname
+	  is provided inside username then check that the provided hostname
+	  really is the same as the resolved one.  If the hostname was not
+	  resolved then check it from the public key.  Affected file is
+	  silcd/packet_receive.c.
+
 Thu Jun  7 08:57:16 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Close log file after open.  Affected file 
