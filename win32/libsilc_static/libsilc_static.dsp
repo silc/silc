@@ -127,6 +127,10 @@ SOURCE=..\..\lib\silccore\silcnotify.c
 
 SOURCE=..\..\lib\silccore\silcpacket.c
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccore\silcstatus.c
+# End Source File
 # End Group
 # Begin Group "silcske"
 
@@ -285,15 +289,7 @@ SOURCE=..\..\lib\silccrypt\none.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\pkcs1.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\rc5.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc6.c
 # End Source File
 # Begin Source File
 
@@ -318,6 +314,10 @@ SOURCE=..\..\lib\silccrypt\silchmac.c
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\silcpkcs.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\silcpkcs1.c
 # End Source File
 # Begin Source File
 
@@ -605,23 +605,11 @@ SOURCE=..\..\lib\silccrypt\none.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\pkcs1.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\rc5.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\rc5_internal.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc6.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc6_internal.h
 # End Source File
 # Begin Source File
 
