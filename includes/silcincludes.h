@@ -237,6 +237,7 @@ extern "C" {
 #include "silcsockconn.h"
 
 /* SILC core library includes */
+#include "silcstatus.h"
 #include "silcid.h"
 #include "silcidcache.h"
 #include "silcargument.h"

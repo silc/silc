@@ -271,8 +271,8 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
 
 SilcBuffer 
 silc_command_reply_payload_encode_va(SilcCommand cmd, 
-				     SilcCommandStatus status,
-				     SilcCommandStatus error,
+				     SilcStatus status,
+				     SilcStatus error,
 				     SilcUInt16 ident,
 				     SilcUInt32 argc, ...)
 {
@@ -289,8 +289,8 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
 
 SilcBuffer 
 silc_command_reply_payload_encode_vap(SilcCommand cmd, 
-				      SilcCommandStatus status,
-				      SilcCommandStatus error,
+				      SilcStatus status,
+				      SilcStatus error,
 				      SilcUInt16 ident, SilcUInt32 argc, 
 				      va_list ap)
 {
@@ -394,8 +394,8 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload)
 /* Return command status */
 
 bool silc_command_get_status(SilcCommandPayload payload, 
-			     SilcCommandStatus *status,
-			     SilcCommandStatus *error)
+			     SilcStatus *status,
+			     SilcStatus *error)
 {
   unsigned char *tmp;
   SilcUInt32 tmp_len;
@@ -409,7 +409,7 @@ bool silc_command_get_status(SilcCommandPayload payload,
   /* Check for 1.0 protocol version which didn't have `error' */
   if (tmp[0] == 0 && tmp[1] != 0) {
     /* Protocol 1.0 version */
-    SilcCommandStatus s;
+    SilcStatus s;
     SILC_GET16_MSB(s, tmp);
     if (status)
       *status = s;
@@ -422,9 +422,9 @@ bool silc_command_get_status(SilcCommandPayload payload,
 
   /* Take both status and possible error */
   if (status)
-    *status = (SilcCommandStatus)tmp[0];
+    *status = (SilcStatus)tmp[0];
   if (error)
-    *error = (SilcCommandStatus)tmp[1];
+    *error = (SilcStatus)tmp[1];
 
   /* If single error occurred have the both `status' and `error' indicate
      the error value for convenience. */

@@ -109,19 +109,12 @@ TODO in SILC Protocol
     *after* sending successfully found entries (this way receiver may
     ignore them).  To be included in protocol version 1.1.
 
- 4. Add "request parameters" or similar to the WHOIS command, which can
-    be used to request various parameters (something not returned by
-    standard WHOIS command) about clients (info that could be fetched
-    even from clients).  Additional specification (or appendix) should 
-    be done to define the payload and the parameters.  It could be used
-    to make the WHOIS command support various search conditions as well.
-    This would be the way to extend the WHOIS command to support various
-    new features without always making the command incompatible to previous
-    version.  To be included in protocol version 1.1.
-
  17. Cell wide channel founder support, and permanent channels when
      founder mode set.
 
  20. Services support?
 
  21. Subscription/IRC's notify kind support?
+
+ 24. Implement the <Requested Attributes> and the Attribute Payload to
+     the core library, client and server.

@@ -42,7 +42,7 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 		  SilcCommand command);
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
-			SilcCommand command, SilcCommandStatus status, ...);
+			SilcCommand command, SilcStatus status, ...);
 void silc_connect(SilcClient client, SilcClientConnection conn,
 		  SilcClientConnectionStatus status);
 void silc_disconnect(SilcClient client, SilcClientConnection conn);

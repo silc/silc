@@ -37,8 +37,8 @@ struct SilcClientCommandReplyContextStruct {
   SilcClient client;
   SilcSocketConnection sock;
   SilcCommandPayload payload;
-  SilcCommandStatus status;
-  SilcCommandStatus error;
+  SilcStatus status;
+  SilcStatus error;
   SilcArgumentPayload args;
   SilcPacketContext *packet;
 
@@ -67,20 +67,20 @@ void silc_client_command_reply_##func(void *context, void *context2)
 
 /* Status message structure. Messages are defined below. */
 typedef struct {
-  SilcCommandStatus status;
+  SilcStatus status;
   char *message;
-} SilcCommandStatusMessage;
+} SilcStatusMessage;
 
 /* Status messages returned by the server */
 #define STAT(x) SILC_STATUS_ERR_##x
-DLLAPI extern const SilcCommandStatusMessage silc_command_status_messages[];
+DLLAPI extern const SilcStatusMessage silc_command_status_messages[];
 
 /* Prototypes */
 
+char *silc_client_status_message(SilcStatus status);
 void silc_client_command_reply_process(SilcClient client,
 				       SilcSocketConnection sock,
 				       SilcPacketContext *packet);
-char *silc_client_command_status_message(SilcCommandStatus status);
 void silc_client_command_reply_free(SilcClientCommandReplyContext cmd);
 SILC_CLIENT_CMD_REPLY_FUNC(whois);
 SILC_CLIENT_CMD_REPLY_FUNC(whowas);

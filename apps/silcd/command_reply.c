@@ -254,7 +254,7 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
 
   COMMAND_CHECK_STATUS;
 
@@ -390,7 +390,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
 SILC_SERVER_CMD_REPLY_FUNC(whowas)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
 
   COMMAND_CHECK_STATUS;
 
@@ -615,7 +615,7 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
 
   COMMAND_CHECK_STATUS;
 
@@ -664,7 +664,7 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
   SilcServerEntry entry;
   SilcServerID *server_id;
   SilcUInt32 tmp_len;
@@ -721,7 +721,7 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
   SilcServerEntry entry = NULL;
   SilcServerID *server_id;
   SilcUInt32 tmp_len;
@@ -770,7 +770,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
   SilcIDCacheEntry cache = NULL;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
   SilcChannelID *id;
   SilcClientID *client_id = NULL;
   SilcChannelEntry entry;
@@ -973,7 +973,7 @@ SILC_SERVER_CMD_REPLY_FUNC(stats)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
   unsigned char *tmp;
   SilcUInt32 tmp_len;
   SilcBufferStruct buf;
@@ -1011,7 +1011,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
   SilcChannelEntry channel;
   SilcChannelID *channel_id = NULL;
   SilcBuffer client_id_list;
@@ -1103,7 +1103,7 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
   SilcClientEntry client = NULL;
   SilcServerEntry server_entry = NULL;
   SilcClientID *client_id = NULL;
@@ -1190,7 +1190,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status, error;
+  SilcStatus status, error;
   SilcChannelID *channel_id = NULL;
   SilcChannelEntry channel;
   SilcIDCacheEntry cache;

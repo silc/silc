@@ -362,7 +362,7 @@ SILC_CLIENT_CMD_FUNC(nick_change)
   SilcClientConnection conn = cmd->conn;
   SilcClientCommandReplyContext reply = 
     (SilcClientCommandReplyContext)context2;
-  SilcCommandStatus status;
+  SilcStatus status;
 
   silc_command_get_status(reply->payload, &status, NULL);
   if (status == SILC_STATUS_OK) {
@@ -789,7 +789,7 @@ SILC_CLIENT_CMD_FUNC(kill_remove)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientCommandReplyContext reply = 
     (SilcClientCommandReplyContext)context2;
-  SilcCommandStatus status;
+  SilcStatus status;
 
   silc_command_get_status(reply->payload, &status, NULL);
   if (status == SILC_STATUS_OK) {
@@ -2178,7 +2178,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
       } else {
 	SilcClientCommandReplyContext reply = 
 	  (SilcClientCommandReplyContext)context2;
-	SilcCommandStatus error;
+	SilcStatus error;
 
 	/* If nickname was not found, then resolve the server. */
 	silc_command_get_status(reply->payload, NULL, &error);
@@ -2202,9 +2202,9 @@ SILC_CLIENT_CMD_FUNC(getkey)
 	   server and did not find anybody. */
 	if (error == SILC_STATUS_ERR_NO_SUCH_SERVER) {
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
-	     silc_client_command_status_message(SILC_STATUS_ERR_NO_SUCH_NICK));
+	     silc_client_status_message(SILC_STATUS_ERR_NO_SUCH_NICK));
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
-           silc_client_command_status_message(error));
+           silc_client_status_message(error));
 	  COMMAND_ERROR;
 	  goto out;
 	}

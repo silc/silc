@@ -614,6 +614,15 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     }
     break;
 
+  case SILC_NOTIFY_TYPE_ERROR:
+    {
+      SilcStatus error = va_arg(va, int);
+
+      silc_say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		"%s", silc_client_status_message(error));
+    }
+    break;
+
   default:
     /* Unknown notify */
     printformat_module("fe-common/silc", server, NULL,
@@ -842,7 +851,7 @@ void silc_getkey_cb(bool success, void *context)
 void 
 silc_command_reply(SilcClient client, SilcClientConnection conn,
 		   SilcCommandPayload cmd_payload, int success,
-		   SilcCommand command, SilcCommandStatus status, ...)
+		   SilcCommand command, SilcStatus status, ...)
 
 {
   SILC_SERVER_REC *server = conn->context;
@@ -869,7 +878,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 				     3, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp, 
-			 silc_client_command_status_message(status));
+			 silc_client_status_message(status));
 	break;
       } else if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
 	/* Try to find the entry for the unknown client ID, since we
@@ -886,7 +895,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 							client_id);
 	    if (client_entry && client_entry->nickname)
 	      silc_say_error("%s: %s", client_entry->nickname,
-			     silc_client_command_status_message(status));
+			     silc_client_status_message(status));
 	    silc_free(client_id);
 	  }
 	}
@@ -1008,7 +1017,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 				     3, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp, 
-			 silc_client_command_status_message(status));
+			 silc_client_status_message(status));
 	break;
       } else if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
 	/* Try to find the entry for the unknown client ID, since we
@@ -1025,7 +1034,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 							client_id);
 	    if (client_entry && client_entry->nickname)
 	      silc_say_error("%s: %s", client_entry->nickname,
-			     silc_client_command_status_message(status));
+			     silc_client_status_message(status));
 	    silc_free(client_id);
 	  }
 	}
@@ -1046,7 +1055,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 					 3, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp, 
-			 silc_client_command_status_message(status));
+			 silc_client_status_message(status));
 	break;
       }
       

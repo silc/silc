@@ -1475,6 +1475,27 @@ UTF-8 [RFC2279] encoded.
       <removing client> is defined in the [SILC4] with SILC_COMMAND_BAN
       command.
 
+
+16    SILC_NOTIFY_TYPE_ERROR
+
+      Sent when an error occurs during processing some SILC procedure.
+      This is not used when error occurs during command processing, see
+      [SILC3] for more information about commands and command replies.
+      This type is sent directly to the sender of the packet whose packet
+      caused the error.  See [SILC1] for definition when this type
+      can be sent.
+
+      Max Arguments:  256
+          Arguments:  (1) <Status Type>        (n) [...]
+
+      The <Status Type> is the error type defined in [SILC3].  Note that
+      same types are also used with command replies to indicate the
+      status of a command.  Both commands and this notify type share
+      same status types.  Rest of the arguments are status type
+      dependent and are specified with those status types that can be
+      sent currently inside this notify type in [SILC3].  The <Status
+      Type> is of size of 1 byte.
+
 .in 3
 
 Notify types starting from 16384 are reserved for private notify

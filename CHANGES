@@ -1,3 +1,30 @@
+Mon Apr 15 19:57:57 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added new notify type SILC_NOTIFY_TYPE_ERROR and specified
+	  that it is used to send error notifys if error occurs during
+	  some SILC packet processing, except commands.  The error
+	  types are same as for command reply types.  Defined that
+	  if private message is sent to unknown Client ID the error
+	  is sent in SILC_NOTIFY_TYPE_ERROR instead of command reply.
+	  Updated the protocol specs and code.  Affected files are
+	  lib/silccore/silcnotify.h, added lib/silccore/silcstatus.h,
+	  lib/silcclient/client_notify.c, silcd/packet_receive.c,
+	  and irssi/src/silc/core/client_ops.c.  Renamed the
+          SilcCommandStatus to SilcStatus.
+
+	* Defined the use of extra WHOIS attributes in WHOIS command.
+	  The <Requested Attributes> (defined in a separate document)
+	  can be used to request additional information about user 
+	  not returned by standard WHOIS command.  Defined that server
+	  can send WHOIS command directly to client.  Client provides
+ 	  the requested attributes to the server.  Updated the protocol
+	  specs.  Protocol TODO #4.  Implementation is not done yet
+          (Protocol TODO #24).
+
+	* Renamed function silc_client_command_status_message to	
+	  silc_client_status_message.  Affected files are
+	  lib/silcclient/command_reply.[ch].
+
 Sun Apr 14 21:13:42 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the WHOIS, IDENTIFY and WHOWAS count arguments to

@@ -4,10 +4,11 @@
 @LINK=silcauth.html:SILC Authentication Interface
 @LINK=silcchannel.html:SILC Channel Interface
 @LINK=silccommand.html:SILC Command Interface
+@LINK=silcnotify.html:SILC Notify Interface
+@LINK=silcstatus.html:SILC Status Types
+@LINK=silcmode.html:SILC Modes
 @LINK=silcid.html:SILC ID Interface
 @LINK=silcidcache.html:SILC ID Cache Interface
-@LINK=silcmode.html:SILC Modes
-@LINK=silcnotify.html:SILC Notify Interface
 @LINK=silcargument.html:SILC Argument Interface
 @LINK=silcprivate.html:SILC Private Message Interface
 @LINK=silcpacket.html:Packet Protocol Interface

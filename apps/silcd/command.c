@@ -29,11 +29,11 @@ static int silc_server_is_registered(SilcServer server,
 static void 
 silc_server_command_send_status_reply(SilcServerCommandContext cmd,
 				      SilcCommand command,
-				      SilcCommandStatus status);
+				      SilcStatus status);
 static void 
 silc_server_command_send_status_data(SilcServerCommandContext cmd,
 				     SilcCommand command,
-				     SilcCommandStatus status,
+				     SilcStatus status,
 				     SilcUInt32 arg_type,
 				     const unsigned char *arg,
 				     SilcUInt32 arg_len);
@@ -389,7 +389,7 @@ silc_server_command_pending_check(SilcServer server,
 static void 
 silc_server_command_send_status_reply(SilcServerCommandContext cmd,
 				      SilcCommand command,
-				      SilcCommandStatus status)
+				      SilcStatus status)
 {
   SilcBuffer buffer;
 
@@ -411,7 +411,7 @@ silc_server_command_send_status_reply(SilcServerCommandContext cmd,
 static void 
 silc_server_command_send_status_data(SilcServerCommandContext cmd,
 				     SilcCommand command,
-				     SilcCommandStatus status,
+				     SilcStatus status,
 				     SilcUInt32 arg_type,
 				     const unsigned char *arg,
 				     SilcUInt32 arg_len)
@@ -704,7 +704,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   int i, k, len, valid_count;
   SilcBuffer packet, idp, channels, umode_list = NULL;
   SilcClientEntry entry;
-  SilcCommandStatus status;
+  SilcStatus status;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char nh[256], uh[256];
   unsigned char idle[4], mode[4];
@@ -1097,7 +1097,7 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
   int i, k, count = 0, len;
   SilcBuffer packet, idp;
   SilcClientEntry entry = NULL;
-  SilcCommandStatus status;
+  SilcStatus status;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char nh[256], uh[256];
   int valid_count;
@@ -1752,7 +1752,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
   SilcServer server = cmd->server;
   int i, k, len, valid_count;
   SilcBuffer packet, idp;
-  SilcCommandStatus status;
+  SilcStatus status;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char nh[256], uh[256];
   SilcSocketConnection hsock;
@@ -2103,7 +2103,7 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
   int i, k;
   SilcBuffer packet, idp;
   SilcChannelEntry entry;
-  SilcCommandStatus status;
+  SilcStatus status;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char *topic;
   unsigned char usercount[4];

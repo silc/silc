@@ -79,6 +79,7 @@ typedef SilcUInt16 SilcNotifyType;
 #define SILC_NOTIFY_TYPE_KILLED          13 /* Killed from the network */
 #define SILC_NOTIFY_TYPE_UMODE_CHANGE    14 /* user mode was changed */
 #define SILC_NOTIFY_TYPE_BAN             15 /* ban list change */
+#define SILC_NOTIFY_TYPE_ERROR           16 /* error notify */
 /***/
 
 /* Prototypes */
@@ -87,7 +88,7 @@ typedef SilcUInt16 SilcNotifyType;
  *
  * SYNOPSIS
  *
- *    SilcNotifyPayload 
+ *    SilcNotifyPayload
  *    silc_notify_payload_parse(const unsigned char *payload,
  *                              SilcUInt32 payload_len);
  *
@@ -104,14 +105,15 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc, 
+ *    SilcBuffer silc_notify_payload_encode(SilcNotifyType type,
+ *                                          SilcUInt32 argc,
  *                                          va_list ap);
  *
  * DESCRIPTION
  *
  *    Encode notify payload with variable argument list. If `argc' is > 0
  *    argument payloads will be associated to the notify payload. Variable
- *    arguments must be {usigned char *, SilcUInt32 (len)}.
+ *    arguments must be {unsigned char *, SilcUInt32 (len)}.
  *
  ***/
 SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc, 
@@ -121,7 +123,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
+ *    SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type,
  *                                               SilcUInt32 argc,
  *                                               SilcBuffer args);
  *

@@ -75,12 +75,11 @@ Table of Contents
 2 SILC Commands .................................................  2
   2.1 SILC Commands Syntax ......................................  2
   2.2 SILC Commands List ........................................  4
-  2.3 SILC Command Status Types ................................. 33
-      2.3.1 SILC Command Status Payload ......................... 33
-      2.3.2 SILC Command Status List ............................ 33
-3 Security Considerations ....................................... 38
-4 References .................................................... 38
-5 Author's Address .............................................. 40
+  2.3 SILC Command Status Payload ............................... 33
+3 SILC Status Types ............................................. 33
+4 Security Considerations ....................................... 38
+5 References .................................................... 38
+6 Author's Address .............................................. 40
 Appendix A ...................................................... xx
 
 
@@ -197,7 +196,7 @@ Status messages:
 
 Every command reply also defines set of status message that it
 may return inside the <Status Payload>.  All status messages
-are defined in the section 2.3 SILC Command Status Types.
+are defined in the section 2.3 SILC Command Status Payload
 
 .in 3
 Every command that has some kind of ID as argument (for example
@@ -256,18 +255,19 @@ List of all defined commands in SILC follows.
         The WHOIS request MUST be always sent to the router by server
         so that all users are searched.  However, the server still MUST
         search its locally connected clients.  The router MUST send
-        this command to the server which owns the requested client.  That
-        server MUST reply to the command.  Server MUST NOT send whois
-        replies to the client until it has received the reply from its
-        router.
+        this command to the server which owns the requested client, if
+        the router is unable to provide all mandatory information about
+        the client.  That server MUST reply to the command.  Server MUST
+        NOT send whois replies to the client until it has received the
+        reply from its router.
 
         The <Requested Attributes> is defined in [ATTRS] and can be used
         to request various information about the client.  See Appendix A
-        for definition of using these attaributes in SILC.
+        for definition of using these attributes in SILC.
 
         Reply messages to the command:
 
-        Max Arguments:  10
+        Max Arguments:  11
             Arguments:  (1) <Status Payload>       (2) <Client ID> 
                         (3) <nickname>[@<server>]  (4) <username@host> 
                         (5) <real name>            (6) [<Channel Payload 
@@ -275,6 +275,7 @@ List of all defined commands in SILC follows.
                         (7) [<user mode>]          (8) [<idle time>]
                         (9) [<fingerprint>]        (10) <channel user
                                                          mode list>
+                        (11) [<Attributes>]
 
 
         This command may reply with several command reply messages to
@@ -309,6 +310,9 @@ List of all defined commands in SILC follows.
         be sent if the server has not verified the proof of posession of
         the corresponding private key.  Server can do this during the
         SILC Key Exchange protocol.  The <fingerprint> is SHA1 digest.
+
+        The <Attributes> is the reply to the <Requested Attributes>.
+        See the Appendix A for more information.
 
         Status messages:
 
@@ -1725,16 +1729,14 @@ List of all defined commands in SILC follows.
 
 
 .ti 0
-2.3 SILC Command Status Types
-
-.ti 0
 2.3.1 SILC Command Status Payload
 
 Command Status Payload is sent in command reply messages to indicate
 the status of the command.  The payload is one of argument in the
 command thus this is the data area in Command Argument Payload described
-in [SILC2].  The payload is only 2 bytes of length.  The following diagram
-represents the Command Status Payload (field is always in MSB order).
+in [SILC2].  The payload is only 2 bytes of length.  The following
+diagram represents the Command Status Payload (field is always in
+MSB first order).
 
 
 .in 21
@@ -1796,17 +1798,31 @@ All Status messages are described in the next section.
 
 
 .ti 0
-2.3.2 SILC Command Status List
+2.3.2 SILC Status Types
 
-Command Status messages are returned in the command reply messages
-to indicate whether the command were executed without errors.  If error
-has occurred the status indicates which error occurred.  Status payload
-only sends numeric reply about the status.  Receiver of the payload must
-convert the numeric values into human readable error messages.  The
-list of status messages below has an example human readable error
-messages that client may display for the user.
+Status messages are returned in SILC protocol in command reply
+packet and in notify packet.  The SILC_PACKET_COMMAND_REPLY is
+the command reply packet and status types are sent inside the
+Status Payload as one of command reply argument, as defined in
+previous sections.  For SILC_PACKET_NOTIFY packet they can be sent
+as defined in [SILC2] for SILC_NOTIFY_TYPE_ERROR type.  The same
+types defined in this section are used in both cases.
 
-List of all defined command status messages following.
+When returning status messages in the command reply message they
+indicate whether the command was executed without errors.  If error
+occurred the status indicates which error occurred.
+
+When sending status messages in SILC_NOTIFY_TYPE_ERROR notify type
+they always send some error status.  Usually they are sent to
+indicate that error occurred while processing some SILC packet.
+Please see the [SILC1] and [SILC2] for more information sending
+status types in SILC_NOTIFY_TYPE_ERROR notify.
+
+The Status Types are only numeric values and the receiver must
+convert the numeric values into human readable messages if this
+is desired in the application.
+
+List of all defined status types:
 
 .in 0
    Generic status messages:
@@ -1900,10 +1916,14 @@ List of all defined command status messages following.
    22   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
 
         "No such Client ID".  Client ID provided does not exist.
+        The unknown Client ID MUST be provided as next argument
+        in the reply.
 
    23   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
 
         "No such Channel ID".  Channel ID provided does not exist.
+        The unknown Channel ID MUST be provided as next argument
+        in the reply.
 
    24   SILC_STATUS_ERR_NICKNAME_IN_USE
 
@@ -2026,6 +2046,8 @@ List of all defined command status messages following.
    47   SILC_STATUS_ERR_NO_SUCH_SERVER_ID
 
         "No such Server ID".  Server ID provided does not exist.
+        The unknown Server ID MUST be provided as next argument
+        in the reply.
 
 .in 3
 
@@ -2123,6 +2145,8 @@ Finland
 
 EMail: priikone@iki.fi
 
+This Internet-Draft expires XXX
+
 
 .ti 0
 Appendix A
@@ -2137,8 +2161,53 @@ requested attributes.  This requires the servers to relay the WHOIS
 command to the client, and it requires capability for handling the WHOIS
 command in the client end.
 
+The <Requested Attributes> MAY include several attributes that are
+requested.  The format and encoding of the <Requested Attributes> is as
+defined in [ATTRS].  When <Requested Attributes> argument is set the
+server MAY process the attributes to see whether it can narrow down
+the WHOIS search, for example when searching with a nickname.  The
+normal servers MUST process the WHOIS command as normal WHOIS command,
+that is to send the command directly to the router.  The router MAY
+process the attributes, but it MUST send the command to the server
+that owns the requested client.
 
+The server that owns the client and receives the command MUST check
+whether the client is detached from the network.  If it is detached,
+that is the user mode has the SILC_UMODE_DETACHED mode set, it SHOULD
+process the attributes and provide as many of the requested attributes
+as possible and then send reply back to the sender.  If the client is
+active in the network it MUST send the command to the client for
+processing.
 
+The client receiving WHOIS command SHOULD check whether the
+<Requested Attributes> argument is set.  If it is not set then the
+WHOIS command SHOULD be discarded.  The client processes the requested
+attributes and SHOULD reply to each of the requested attribute with
+either valid value, or with an indication that the requested attribute
+is not known or supported.  This is to be done as defined in [ATTRS].
+The client always MUST send a reply to the command when some attributes
+were requested.  The client MAY also add additional attributes to the
+reply even if they were not requested.  The client MAY also digitally
+sign the attributes with ATTRIBUTE_USER_DIGITAL_SIGNATURE as defined
+in [ATTRS].  Then the client sends the reply back to the sender of
+the command.  The command reply that client assembles does not need
+to include any other argument but the <Status Payload> (1), and the
+<Attributes> (11).  The server receiving reply from client MUST allow
+this sort of command reply for WHOIS command.
 
-This Internet-Draft expires XXX
+The information received from the client MAY be cached in the
+server's end.  The caching may be desired for example if the client
+can be detached from the network.  This way the server is then able
+to provide at least partial information for a requestor.  The
+server MAY also process the command reply and verify whether the
+attributes provided in the reply are actually valid.  If it can do
+this, and verify that they indeed are valid values it MAY append
+a digital signature at the end of the attributes with the
+ATTRIBUTE_SERVER_DIGITAL_SIGNATURE as defined in [ATTRS].  The
+server then MUST provide valid WHOIS command reply to the sender
+of the command.   Other servers and routers that receive the command
+reply enroute to the original sender MAY also cache the information.
 
+The client which receives the command reply to the WHOIS command
+SHOULD verify the ATTRIBUTE_USER_DIGITAL_SIGNATURE and the
+ATTRIBUTE_SERVER_DIGITAL_SIGNATURE if they are provided.

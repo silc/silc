@@ -1367,6 +1367,42 @@ void silc_server_notify(SilcServer server,
     }
     break;
 
+  case SILC_NOTIFY_TYPE_ERROR:
+    {
+      /*
+       * Error notify
+       */
+      SilcStatus error;
+
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!tmp && tmp_len != 1)
+	goto out;
+      error = (SilcStatus)tmp[0];
+
+      SILC_LOG_DEBUG(("ERROR notify (%d)", error));
+
+      if (error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID &&
+	  sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+	if (tmp) {
+	  SILC_LOG_DEBUG(("Received invalid client ID notification, deleting "
+			  "the entry from cache"));
+	  client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+	  if (!client_id)
+	    goto out;
+	  client = silc_idlist_find_client_by_id(server->global_list, 
+						 client_id, FALSE, NULL);
+	  if (client) {
+	    silc_server_remove_from_channels(server, NULL, client, TRUE, 
+					     NULL, TRUE);
+	    silc_idlist_del_client(server->global_list, client);
+	  }
+	  silc_free(client_id);
+	}
+      }
+    }
+    break;
+
     /* Ignore rest of the notify types for now */
   case SILC_NOTIFY_TYPE_NONE:
   case SILC_NOTIFY_TYPE_MOTD:
@@ -1458,34 +1494,37 @@ void silc_server_private_message(SilcServer server,
 					  &idata, &client);
   if (!dst_sock) {
     SilcBuffer idp;
+    unsigned char error;
 
     if (client && client->mode & SILC_UMODE_DETACHED) {
       SILC_LOG_DEBUG(("Client is detached, discarding packet"));
       return;
     }
 
-    /* Send IDENTIFY command reply with error status to indicate that
-       such destination ID does not exist or is invalid */
+    /* Send SILC_NOTIFY_TYPE_ERROR to indicate that such destination ID
+       does not exist or is invalid. */
     idp = silc_id_payload_encode_data(packet->dst_id,
 				      packet->dst_id_len,
 				      packet->dst_id_type);
     if (!idp)
       return;
 
+    error = SILC_STATUS_ERR_NO_SUCH_CLIENT_ID;
     if (packet->src_id_type == SILC_ID_CLIENT) {
       SilcClientID *client_id = silc_id_str2id(packet->src_id,
 					       packet->src_id_len,
 					       packet->src_id_type);
-      silc_server_send_dest_command_reply(server, sock, 
-					  client_id, SILC_ID_CLIENT,
-					  SILC_COMMAND_IDENTIFY,
-					  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 
-					  0, 0, 1, 2, idp->data, idp->len);
+      silc_server_send_notify_dest(server, sock, FALSE,
+				   client_id, SILC_ID_CLIENT,
+				   SILC_NOTIFY_TYPE_ERROR, 2,
+				   &error, 1,
+				   idp->data, idp->len);
       silc_free(client_id);
     } else {
-      silc_server_send_command_reply(server, sock, SILC_COMMAND_IDENTIFY,
-				     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0,
-				     0, 1, 2, idp->data, idp->len);
+      silc_server_send_notify(server, sock, FALSE,
+			      SILC_NOTIFY_TYPE_ERROR, 2,
+			      &error, 1,
+			      idp->data, idp->len);
     }
 
     silc_buffer_free(idp);

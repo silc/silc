@@ -836,12 +836,14 @@ to set nickname, join to channel, change modes and many other things.
 
 Client usually sends the commands and server replies by sending a reply
 packet to the command.  Server MAY also send commands usually to serve
-the original client's request.  However, server MUST NOT send commands
-to client and there are some commands that server must not send.
+the original client's request.  Usually server cannot send commands to
+clients, however there MAY be commands that allow the server to send
+commands to client.  By default servers MAY send commands only to other
+servers and routers.
 
 Note that the command reply is usually sent only after client has sent
 the command request but server is allowed to send command reply packet
-to client even if client has not requested the command.  Client MAY,
+to client even if client has not requested the command.  Client MAY
 choose to ignore the command reply.
 
 It is expected that some of the commands may be miss-used by clients
@@ -1972,8 +1974,9 @@ If the sender has received earlier a private message from the receiver
 it should have cached the Client ID from the SILC Packet Header.
 
 If server receives a private message packet which includes invalid
-destionation Client ID the server MUST send SILC_COMMAND_IDENTIFY
-command reply packet destined to the client with error status.
+destionation Client ID the server MUST send SILC_NOTIFY_TYPE_ERROR
+notify to the client with error status indicating that such ID does
+not exist to the client.
 
 See [SILC2] for description of private message encryption and decryption
 process.

@@ -104,7 +104,7 @@ silc_command(SilcClient client, SilcClientConnection conn,
 static void 
 silc_command_reply(SilcClient client, SilcClientConnection conn, 
 		   SilcCommandPayload cmd_payload, int success, 
-		   SilcCommand command, SilcCommandStatus status, ...)
+		   SilcCommand command, SilcStatus status, ...)
 {
 
 }

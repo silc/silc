@@ -1723,8 +1723,8 @@ void silc_server_send_command(SilcServer server,
 void silc_server_send_command_reply(SilcServer server, 
 				    SilcSocketConnection sock,
 				    SilcCommand command, 
-				    SilcCommandStatus status,
-				    SilcCommandStatus error,
+				    SilcStatus status,
+				    SilcStatus error,
 				    SilcUInt16 ident,
 				    SilcUInt32 argc, ...)
 {
@@ -1749,8 +1749,8 @@ void silc_server_send_dest_command_reply(SilcServer server,
 					 void *dst_id,
 					 SilcIdType dst_id_type,
 					 SilcCommand command, 
-					 SilcCommandStatus status,
-					 SilcCommandStatus error,
+					 SilcStatus status,
+					 SilcStatus error,
 					 SilcUInt16 ident,
 					 SilcUInt32 argc, ...)
 {

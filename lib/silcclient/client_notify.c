@@ -1031,6 +1031,38 @@ void silc_client_notify_by_server(SilcClient client,
     }
     break;
 
+  case SILC_NOTIFY_TYPE_ERROR:
+    {
+      /*
+       * Some has occurred and server is notifying us about it.
+       */
+      SilcStatus error;
+
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!tmp && tmp_len != 1)
+	goto out;
+      error = (SilcStatus)tmp[0];
+
+      SILC_LOG_DEBUG(("Notify: ERROR (%d)", error));
+
+      if (error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+	tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+	if (tmp) {
+	  client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+	  if (!client_id)
+	    goto out;
+	  client_entry = silc_client_get_client_by_id(client, conn,
+						      client_id);
+	  if (client_entry)
+	    silc_client_del_client(client, conn, client_entry);
+	}
+      }
+
+      /* Notify application. */
+      client->internal->ops->notify(client, conn, type, error);
+    }
+    break;
+
   default:
     break;
   }

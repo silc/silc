@@ -363,7 +363,7 @@ typedef struct {
      SilcClientEntry. */
   void (*command_reply)(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
-			SilcCommand command, SilcCommandStatus status, ...);
+			SilcCommand command, SilcStatus status, ...);
 
   /* Called to indicate that connection was either successfully established
      or connecting failed.  This is also the first time application receives
