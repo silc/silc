@@ -500,7 +500,7 @@ int net_gethostbyaddr(IPADDR *ip, char **name)
 
 	freeaddrinfo(ai);
 #else
-	if (ip->family != AF_NET) return -1;
+	if (ip->family != AF_INET) return -1;
 	hp = gethostbyaddr(&ip->ip, 4, AF_INET);
 	if (hp == NULL) return -1;
 
