@@ -1,3 +1,8 @@
+Fri Feb 27 11:25:26 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the JOIN command calling when called with both
+	 -auth and -founder.  Affected file is lib/silcclien/command.c.
+
 Wed Feb 25 23:12:11 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check watcher list for resumed clients as well.  Affected
