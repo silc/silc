@@ -284,8 +284,11 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
 			"the entry from cache"));
 	client = silc_idlist_find_client_by_id(server->global_list, 
 					       client_id, FALSE, NULL);
-	if (client)
+	if (client) {
+	  silc_server_remove_from_channels(server, NULL, client, TRUE, 
+					   NULL, TRUE);
 	  silc_idlist_del_client(server->global_list, client);
+	}
 	silc_free(client_id);
       }
     }
@@ -642,8 +645,11 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
 			"the entry from cache"));
 	client = silc_idlist_find_client_by_id(server->global_list, 
 					       client_id, FALSE, NULL);
-	if (client)
+	if (client) {
+	  silc_server_remove_from_channels(server, NULL, client, TRUE, 
+					   NULL, TRUE);
 	  silc_idlist_del_client(server->global_list, client);
+	}
 	silc_free(client_id);
       }
     }

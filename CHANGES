@@ -1,3 +1,9 @@
+Sat Jan 26 10:45:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Call silc_server_remove_from_channels when removing client
+	  entry when NO_SUCH_CLIENT_ID was received.  Affected file
+	  is silcd/command_reply.c.
+
 Fri Jan 25 19:12:36 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added server & router operator statistics updating.  Affected
