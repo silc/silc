@@ -1222,14 +1222,9 @@ SILC_SERVER_CMD_FUNC(invite)
 					  channel->invite_list)),
 		       SILC_STR_END);
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
-      if (type == 1)
-	list = silc_argument_payload_encode_one(list, (char *)tmp2,
-						strlen((char *)tmp2), type);
-      else
-	list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
-						type);
-    }
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+      list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
+					      type);
     silc_hash_table_list_reset(&htl);
   }
 
@@ -2050,17 +2045,10 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply)) {
-      if (tmp_len == 1)
-	invite_list = silc_argument_payload_encode_one(invite_list,
-						       (char *)reply,
-						       strlen((char *)reply),
-						       tmp_len);
-      else
-	invite_list = silc_argument_payload_encode_one(invite_list,
-						       reply->data,
-						       reply->len, tmp_len);
-    }
+    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply))
+      invite_list = silc_argument_payload_encode_one(invite_list,
+						     reply->data,
+						     reply->len, tmp_len);
     silc_hash_table_list_reset(&htl);
   }
 
@@ -2076,17 +2064,10 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply)) {
-      if (tmp_len == 1)
-	ban_list = silc_argument_payload_encode_one(ban_list,
-						    (char *)reply,
-						    strlen((char *)reply),
-						    tmp_len);
-      else
-	ban_list = silc_argument_payload_encode_one(ban_list,
-						    reply->data,
-						    reply->len, tmp_len);
-    }
+    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply))
+      ban_list = silc_argument_payload_encode_one(ban_list,
+						  reply->data,
+						  reply->len, tmp_len);
     silc_hash_table_list_reset(&htl);
   }
 
@@ -4215,14 +4196,9 @@ SILC_SERVER_CMD_FUNC(ban)
 					  channel->ban_list)),
 		       SILC_STR_END);
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
-      if (type == 1)
-	list = silc_argument_payload_encode_one(list, (char *)tmp2,
-						strlen((char *)tmp2), type);
-      else
-	list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
-						type);
-    }
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2))
+      list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
+					      type);
     silc_hash_table_list_reset(&htl);
   }
 

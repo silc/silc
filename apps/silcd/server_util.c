@@ -1798,13 +1798,11 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	  tmp2 = silc_calloc(1, sizeof(*tmp2));
 	  silc_hash_table_add(list, (void *)1, tmp2);
 	}
-	if (tmp[len - 1] == ',') {
+	if (tmp[len - 1] == ',')
 	  tmp[len - 1] = '\0';
-	  len--;
-	}
 	if (len) {
-	  silc_buffer_strformat(tmp2, tmp, len, SILC_STR_END);
-	  silc_buffer_strformat(tmp2, ",", 1, SILC_STR_END);
+	  silc_buffer_strformat(tmp2, tmp, SILC_STR_END);
+	  silc_buffer_strformat(tmp2, ",", SILC_STR_END);
 	}
 
       } else if (type == 2) {
@@ -1874,8 +1872,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	    if (start && strlen(start) >= len) {
 	      end = start + len;
 	      n = silc_calloc(strlen(string) - len, sizeof(*n));
-	      memcpy(n, string, start - string);
-	      memcpy(n, end + 1, ((string + strlen(string)) - end) - 1);
+	      strncat(n, string, start - string);
+	      strncat(n, end + 1, ((string + strlen(string)) - end) - 1);
 	      silc_free(tmp2->head);
 	      silc_buffer_set(tmp2, n, strlen(n));
 	    }
