@@ -503,7 +503,7 @@ int silc_packet_receive(SilcSocketConnection sock);
  *
  * SYNOPSIS
  *
- *    void silc_packet_receive_process(SilcSocketConnection sock,
+ *    bool silc_packet_receive_process(SilcSocketConnection sock,
  *                                     bool local_is_router,
  *                                     SilcCipher cipher, SilcHmac hmac,
  *                                     SilcPacketParserCallback parser,
@@ -525,7 +525,7 @@ int silc_packet_receive(SilcSocketConnection sock);
  *    packet was normal or special packet.
  *
  ***/
-void silc_packet_receive_process(SilcSocketConnection sock,
+bool silc_packet_receive_process(SilcSocketConnection sock,
 				 bool local_is_router,
 				 SilcCipher cipher, SilcHmac hmac,
 				 uint32 sequence,

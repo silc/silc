@@ -36,6 +36,13 @@ ROBO=$4
 headers=`find $SRC -name "silc*.h"`
 
 #
+# ASCII documentation
+#
+if [ "$TYPE" = "ASCII" ]; then
+
+fi
+
+#
 # HTML documentation
 #
 if [ "$TYPE" = "HTML" ]; then
@@ -58,7 +65,7 @@ if [ "$TYPE" = "HTML" ]; then
     do
       n=`grep $k $i |cut -d=  -f2 |cut -d:  -f2`
       echo "<LI><A HREF="$k">$n</A>" >>$DST/$fname.links
-      echo "&nbsp;&nbsp;&nbsp;> <A HREF="$k">$n</A><BR>" >>$DST/index.tmpl
+      echo "&nbsp;&nbsp;&nbsp; <A HREF="$k">$n</A><BR>" >>$DST/index.tmpl
     done
   done
 

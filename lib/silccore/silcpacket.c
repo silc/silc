@@ -323,7 +323,7 @@ int silc_packet_receive(SilcSocketConnection sock)
    SilcPacketParserContext will indicate also whether the received
    packet was normal or special packet. */
 
-void silc_packet_receive_process(SilcSocketConnection sock,
+bool silc_packet_receive_process(SilcSocketConnection sock,
 				 bool local_is_router,
 				 SilcCipher cipher, SilcHmac hmac,
 				 uint32 sequence,
@@ -336,10 +336,10 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 
   /* Do not process for disconnected connection */
   if (SILC_IS_DISCONNECTED(sock))
-    return;
-  
+    return TRUE;
+
   if (sock->inbuf->len < SILC_PACKET_MIN_HEADER_LEN)
-    return;
+    return TRUE;
 
   if (hmac)
     mac_len = silc_hmac_len(hmac);
@@ -349,7 +349,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 
     if (sock->inbuf->len < SILC_PACKET_MIN_HEADER_LEN) {
       SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
-      return;
+      return TRUE;
     }
 
     /* Decrypt first 16 bytes of the packet */
@@ -364,14 +364,14 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     if (packetlen < SILC_PACKET_MIN_LEN) {
       SILC_LOG_DEBUG(("Received invalid packet, dropped"));
       silc_buffer_clear(sock->inbuf);
-      return;
+      return FALSE;
     }
 
     if (sock->inbuf->len < paddedlen + mac_len) {
       SILC_LOG_DEBUG(("Received partial packet, waiting for the rest"
 		      "(%d < %d)", sock->inbuf->len, paddedlen + mac_len));
       SILC_SET_INBUF_PENDING(sock);
-      return;
+      return TRUE;
     }
 
     SILC_UNSET_INBUF_PENDING(sock);
@@ -433,10 +433,11 @@ void silc_packet_receive_process(SilcSocketConnection sock,
   }
 
   if (cont == FALSE && sock->inbuf->len > 0)
-    return;
+    return TRUE;
 
   SILC_LOG_DEBUG(("Clearing inbound buffer"));
   silc_buffer_clear(sock->inbuf);
+  return TRUE;
 }
 
 /* Checks MAC in the packet. Returns TRUE if MAC is Ok. This is called

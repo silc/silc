@@ -1,3 +1,14 @@
+Thu Dec 20 16:14:52 CET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* The silc_packet_receive_process now returns FALSE if the
+	  read data was invalid packet, and TRUE if it was ok.
+
+	  The server now checks that if unauthenticated connection
+	  sends data and its processing fails the server will close
+	  the connection since it could be a malicious flooder. 
+
+	  Affected files lib/silccore/silcpacket.[ch], silcd/server.c.
+
 Wed Dec 19 21:31:25 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Make sure the warning about error opening a log file is
