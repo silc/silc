@@ -11,6 +11,11 @@ Fri Feb  2 11:42:56 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  Affected files lib/silcclient/command.[ch],
 	  lib/silcclient/client.c and lib/silcclient/idlist.[ch].
 
+	* Added `sender' argument to silc_server_packet_send_to_channel
+	  to indicaet the sender who originally sent the packet to us
+	  that we are now re-sending.  Ignored if NULL.  Affected file
+	  silcd/packet_send.[ch].
+
 Thu Feb  1 23:31:21 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed channel ID decoding in server's JOIN command reply in
