@@ -635,31 +635,6 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
     /* Error */
     if (errno == EINTR)
       break;
-#if 1
-#ifndef SILC_WIN32
-    if (errno == EBADF) {
-      int i;
-
-      SILC_LOG_ERROR(("Error in select(): %s, last_fd %d",
-		      strerror(errno), schedule->last_fd));
-
-      for (i = 0; i < schedule->last_fd + 1; i++) {
-	if (!schedule->fd_list[i].events)
-	  continue;
-
-	SILC_LOG_ERROR((
-		"  %d (%s%s)",
-		(unsigned int)schedule->fd_list[i].fd,
-		schedule->fd_list[i].events & SILC_TASK_READ ? "r" : "",
-		schedule->fd_list[i].events & SILC_TASK_WRITE ? "w" : ""));
-      }
-      fflush(stdout);
-      fflush(stderr);
-      abort();
-      break;
-    }
-#endif
-#endif
     SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
     break;
   case 0:
