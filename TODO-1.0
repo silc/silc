@@ -105,6 +105,8 @@ least could be done.
 	  silc_select but at least it removes one extra tarversing later
 	  for the same list).
 
+	  Other task queues should be changed to use SilcList.
+
  o Optimizations in Server
 
 	o Remove the big switch statement from the function 
