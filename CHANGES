@@ -1,3 +1,18 @@
+Fri Feb 15 13:23:03 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Fixes to the silcd config template.  Affected file is
+	  doc/example_silcd.conf.in.
+
+	* Removed type casts from silc_calloc(), conforming to the
+	  CodingStyle.  Affected file is lib/silcutil/silcconfig.c.
+
+	* Removed param_name member from client, server, and router
+	  section structs, now identifying the param directly.
+
+	  Added CONFIG_FREE_AUTH macro in config file parsing.
+
+	  Affected files are silcd/serverconfig.[ch].
+
 Fri Feb 15 12:24:08 EET 2002  Timo Sirainen <tss@iki.fi>
 
 	* Fixed command line parameter handling. All SILC initialization

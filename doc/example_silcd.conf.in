@@ -95,7 +95,7 @@ ServerInfo {
 	#
 	# Admin's email address
 	#
-	EMail = "priikone@poseidon.pspt.fi";
+	AdminEmail = "priikone@poseidon.pspt.fi";
 
 	#
 	# Run SILC server as specific user and group. The server must be 
@@ -236,11 +236,11 @@ ConnectionParam {
 # Next example connection will match to all incoming client connections,
 # and no authentication is required
 #
-Client { 
-	#host = "";
-	#passphrase = "secret";
-	#publickey = "/path/to/the/public.key";
-	param = "normal";
+Client {
+	#Host = "10.1.*";
+	#Passphrase = "secret";
+	#PublicKey = "/path/to/the/public.key";
+	Param = "normal";
 };
 
 #
@@ -284,7 +284,7 @@ Admin {
 ServerConnection {
 	Host = "10.2.1.7";
 	Passphrase = "verysecret";
-	# Publickey = "/path/to/the/public.key";
+	#Publickey = "/path/to/the/public.key";
 	VersionID = 1;
 	Param = "normal";
 	Backup = false;
@@ -319,7 +319,7 @@ RouterConnection {
 	Host = "10.2.1.100";
 	Port = 706;
 	Passphrase = "verysecret";
-	# Publickey = "/path/to/the/public.key";
+	#Publickey = "/path/to/the/public.key";
 	VersionID = 1;
 	Param = "normal";
 	Initiator = true;

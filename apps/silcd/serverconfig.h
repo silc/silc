@@ -78,7 +78,7 @@ typedef struct SilcServerConfigSectionConnectionParam {
   uint32 reconnect_interval;
   uint32 reconnect_interval_max;
   bool reconnect_keep_trying;
-  /* 
+  /*
   uint32 connect_freq;
   uint32 max_links;
   */
@@ -92,7 +92,6 @@ typedef struct SilcServerConfigSectionClientStruct {
   uint32 passphrase_len;
   void *publickey;
   uint16 port;
-  char *param_name;
   SilcServerConfigSectionConnectionParam *param;
   struct SilcServerConfigSectionClientStruct *next;
 } SilcServerConfigSectionClient;
@@ -123,7 +122,6 @@ typedef struct SilcServerConfigSectionServerStruct {
   uint32 passphrase_len;
   void *publickey;
   char *version;
-  char *param_name;
   SilcServerConfigSectionConnectionParam *param;
   bool backup_router;
   struct SilcServerConfigSectionServerStruct *next;
@@ -137,7 +135,6 @@ typedef struct SilcServerConfigSectionRouterStruct {
   void *publickey;
   uint16 port;
   char *version;
-  char *param_name;
   SilcServerConfigSectionConnectionParam *param;
   bool initiator;
   bool backup_router;

@@ -259,7 +259,7 @@ SilcConfigFile *silc_config_open(char *configfile)
   if (!(buffer = silc_file_readfile(configfile, &filelen)))
     return NULL;
 
-  ret = (SilcConfigFile *) silc_calloc(1, sizeof(*ret));
+  ret = silc_calloc(1, sizeof(*ret));
   ret->filename = strdup(configfile);
   ret->base = ret->p = buffer;
   ret->len = filelen;
@@ -293,10 +293,12 @@ void silc_config_close(SilcConfigFile *file)
 SilcConfigEntity silc_config_init(SilcConfigFile *file)
 {
   SilcConfigEntity ret;
+
   if (!file)
     return NULL;
+
   SILC_CONFIG_DEBUG(("Allocating new config entity"));
-  ret = (SilcConfigEntity) silc_calloc(1, sizeof(*ret));
+  ret = silc_calloc(1, sizeof(*ret));
   ret->file = file;
   return ret;
 };
@@ -403,7 +405,7 @@ bool silc_config_register(SilcConfigEntity ent, const char *name,
   }
 
   /* allocate and append the new option */
-  newopt = (SilcConfigOption *) silc_calloc(1, sizeof(*newopt));
+  newopt = silc_calloc(1, sizeof(*newopt));
   newopt->name = strdup(name);
   newopt->type = type;
   newopt->cb = cb;

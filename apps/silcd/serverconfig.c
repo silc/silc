@@ -51,35 +51,33 @@
     tmp = (void *) di->next;
 
 /* Set EDOUBLE error value and bail out if necessary */
-#define CONFIG_IS_DOUBLE(x)			\
- if ((x)) { 					\
-   got_errno = SILC_CONFIG_EDOUBLE; 		\
-   goto got_err; 				\
- }
+#define CONFIG_IS_DOUBLE(__x__)						\
+  if ((__x__)) {							\
+    got_errno = SILC_CONFIG_EDOUBLE; 					\
+    goto got_err;							\
+  }
+
+/* Free the authentication fields in the specified struct
+ * Expands to two instructions */
+#define CONFIG_FREE_AUTH(__section__)					\
+  silc_free(__section__->passphrase);					\
+  silc_pkcs_public_key_free(__section__->publickey)
 
 /* Find connection parameters by the parameter block name. */
 static SilcServerConfigSectionConnectionParam *
-my_find_param(SilcServerConfig config, const char *name)
+my_find_param(SilcServerConfig config, const char *name, uint32 line)
 {
   SilcServerConfigSectionConnectionParam *param;
-
-  if (!name)
-    return NULL;
 
   for (param = config->conn_params; param; param = param->next) {
     if (!strcasecmp(param->name, name))
       return param;
   }
 
-  return NULL;
-}
+  fprintf(stderr, "\nError while parsing config file at line %lu: "
+	  "Cannot find Param \"%s\".\n", line, name);
 
-/* free an authdata according to its auth method */
-static void my_free_authdata(char *passphrase, void *public_key)
-{
-  silc_free(passphrase);
-  if (public_key)
-    silc_pkcs_public_key_free((SilcPublicKey) public_key);
+  return NULL;
 }
 
 /* parse an authdata according to its auth method */
@@ -108,7 +106,7 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, uint32 line,
       *auth_data_len = 0;
   } else {
     fprintf(stderr, "\nError while parsing config file at line %lu: "
-	    "Unkonwn authentication method\n", line);
+	    "Unknown authentication method.\n", line);
     return FALSE;
   }
   return TRUE;
@@ -132,16 +130,16 @@ SILC_CONFIG_CALLBACK(fetch_generic)
     config->require_reverse_lookup = *(bool *)val;
   }
   else if (!strcmp(name, "keepalive_secs")) {
-    config->param.keepalive_secs = *(uint32 *)val;
+    config->param.keepalive_secs = (uint32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_count")) {
-    config->param.reconnect_count = *(uint32 *)val;
+    config->param.reconnect_count = (uint32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_interval")) {
-    config->param.reconnect_interval = *(uint32 *)val;
+    config->param.reconnect_interval = (uint32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_interval_max")) {
-    config->param.reconnect_interval_max = *(uint32 *)val;
+    config->param.reconnect_interval_max = (uint32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_keep_trying")) {
     config->param.reconnect_keep_trying = *(bool *)val;
@@ -159,7 +157,7 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionCipher);
 
-  SERVER_CONFIG_DEBUG(("Received CIPHER type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received CIPHER type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
@@ -211,7 +209,7 @@ SILC_CONFIG_CALLBACK(fetch_hash)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionHash);
 
-  SERVER_CONFIG_DEBUG(("Received HASH type=%d name=%s (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received HASH type=%d name=%s (val=%x)",
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
@@ -264,7 +262,7 @@ SILC_CONFIG_CALLBACK(fetch_hmac)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionHmac);
 
-  SERVER_CONFIG_DEBUG(("Received HMAC type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received HMAC type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
@@ -565,34 +563,20 @@ SILC_CONFIG_CALLBACK(fetch_client)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionClient);
 
-  SERVER_CONFIG_DEBUG(("Received CLIENT type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received CLIENT type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
 
-  if (type == SILC_CONFIG_ARG_BLOCK) {
-    if (!tmp) /* empty sub-block? */
-      return SILC_CONFIG_OK;
-
-    /* Find connection parameter block */
-    if (tmp->param_name) {
-      tmp->param = my_find_param(config, tmp->param_name);
-      if (!tmp->param) {
-	fprintf(stderr, "Unknown ConnectionParam: %s\n", tmp->param_name);
-	silc_free(tmp->param_name);
-	got_errno = SILC_CONFIG_ESILENT;
-	goto got_err;
-      }
-      silc_free(tmp->param_name);
-    }
-
-    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->clients);
-    config->tmp = NULL;
-    return SILC_CONFIG_OK;
-  }
-
-  /* if there isn't a temporary struct alloc one */
+  /* alloc tmp before block checking (empty sub-blocks are welcome here) */
   if (!tmp) {
     config->tmp = silc_calloc(1, sizeof(*findtmp));
     tmp = (SilcServerConfigSectionClient *) config->tmp;
+  }
+
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* closing the block */
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->clients);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
   }
 
   /* Identify and save this value */
@@ -602,7 +586,7 @@ SILC_CONFIG_CALLBACK(fetch_client)
   }
   else if (!strcmp(name, "passphrase")) {
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
-			   (void **)&tmp->passphrase, 
+			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
@@ -619,14 +603,18 @@ SILC_CONFIG_CALLBACK(fetch_client)
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
       fprintf(stderr, "Invalid port number!\n");
-      got_errno = SILC_CONFIG_ESILENT; 
+      got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
     }
     tmp->port = (uint16) port;
   }
   else if (!strcmp(name, "param")) {
-    CONFIG_IS_DOUBLE(tmp->param_name);
-    tmp->param_name = (*(char *)val ? strdup((char *) val) : NULL);
+    CONFIG_IS_DOUBLE(tmp->param);
+    tmp->param = my_find_param(config, (char *) val, line);
+    if (!tmp->param) { /* error already output */
+      got_errno = SILC_CONFIG_ESILENT;
+      goto got_err;
+    }
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -634,7 +622,7 @@ SILC_CONFIG_CALLBACK(fetch_client)
 
  got_err:
   silc_free(tmp->host);
-  my_free_authdata(tmp->passphrase, tmp->publickey);
+  CONFIG_FREE_AUTH(tmp);
   silc_free(tmp);
   config->tmp = NULL;
   return got_errno;
@@ -644,7 +632,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionAdmin);
 
-  SERVER_CONFIG_DEBUG(("Received CLIENT type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received CLIENT type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
@@ -678,7 +666,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   }
   else if (!strcmp(name, "passphrase")) {
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
-			   (void **)&tmp->passphrase, 
+			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
@@ -699,7 +687,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   silc_free(tmp->host);
   silc_free(tmp->user);
   silc_free(tmp->nick);
-  my_free_authdata(tmp->passphrase, tmp->publickey);
+  CONFIG_FREE_AUTH(tmp);
   silc_free(tmp);
   config->tmp = NULL;
   return got_errno;
@@ -709,7 +697,7 @@ SILC_CONFIG_CALLBACK(fetch_deny)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionDeny);
 
-  SERVER_CONFIG_DEBUG(("Received DENY type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received DENY type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
@@ -762,7 +750,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionServer);
 
-  SERVER_CONFIG_DEBUG(("Received SERVER type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received SERVER type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
@@ -770,17 +758,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
     if (!tmp) /* empty sub-block? */
       return SILC_CONFIG_OK;
 
-    /* Find connection parameter block */
-    if (tmp->param_name) {
-      tmp->param = my_find_param(config, tmp->param_name);
-      if (!tmp->param) {
-	fprintf(stderr, "Unknown ConnectionParam: %s\n", tmp->param_name);
-	silc_free(tmp->param_name);
-	got_errno = SILC_CONFIG_ESILENT;
-	goto got_err;
-      }
-      silc_free(tmp->param_name);
-    }
+    /* XXX mandatory fields for server? */
 
     /* the temporary struct is ok, append it to the list */
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->servers);
@@ -801,7 +779,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
   }
   else if (!strcmp(name, "passphrase")) {
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
-			   (void **)&tmp->passphrase, 
+			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
@@ -819,8 +797,12 @@ SILC_CONFIG_CALLBACK(fetch_server)
     tmp->version = strdup((char *) val);
   }
   else if (!strcmp(name, "param")) {
-    CONFIG_IS_DOUBLE(tmp->param_name);
-    tmp->param_name = (*(char *)val ? strdup((char *) val) : NULL);
+    CONFIG_IS_DOUBLE(tmp->param);
+    tmp->param = my_find_param(config, (char *) val, line);
+    if (!tmp->param) { /* error already output */
+      got_errno = SILC_CONFIG_ESILENT;
+      goto got_err;
+    }
   }
   else if (!strcmp(name, "backup")) {
     tmp->backup_router = *(bool *)val;
@@ -833,7 +815,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
  got_err:
   silc_free(tmp->host);
   silc_free(tmp->version);
-  my_free_authdata(tmp->passphrase, tmp->publickey);
+  CONFIG_FREE_AUTH(tmp);
   silc_free(tmp);
   config->tmp = NULL;
   return got_errno;
@@ -843,24 +825,14 @@ SILC_CONFIG_CALLBACK(fetch_router)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionRouter);
 
-  SERVER_CONFIG_DEBUG(("Received ROUTER type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received ROUTER type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
     if (!tmp) /* empty sub-block? */
       return SILC_CONFIG_OK;
 
-    /* Find connection parameter block */
-    if (tmp->param_name) {
-      tmp->param = my_find_param(config, tmp->param_name);
-      if (!tmp->param) {
-	fprintf(stderr, "Unknown ConnectionParam: %s\n", tmp->param_name);
-	silc_free(tmp->param_name);
-	got_errno = SILC_CONFIG_ESILENT;
-	goto got_err;
-      }
-      silc_free(tmp->param_name);
-    }
+    /* XXX mandatory fields for router? */
 
     /* the temporary struct is ok, append it to the list */
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->routers);
@@ -889,7 +861,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   }
   else if (!strcmp(name, "passphrase")) {
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
-			   (void **)&tmp->passphrase, 
+			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_ESILENT;
       goto got_err;
@@ -907,15 +879,19 @@ SILC_CONFIG_CALLBACK(fetch_router)
     tmp->version = strdup((char *) val);
   }
   else if (!strcmp(name, "param")) {
-    CONFIG_IS_DOUBLE(tmp->param_name);
-    tmp->param_name = (*(char *)val ? strdup((char *) val) : NULL);
+    CONFIG_IS_DOUBLE(tmp->param);
+    tmp->param = my_find_param(config, (char *) val, line);
+    if (!tmp->param) { /* error already output */
+      got_errno = SILC_CONFIG_ESILENT;
+      goto got_err;
+    }
   }
   else if (!strcmp(name, "initiator")) {
     tmp->initiator = *(bool *)val;
   }
   else if (!strcmp(name, "backuphost")) {
     CONFIG_IS_DOUBLE(tmp->backup_replace_ip);
-    tmp->backup_replace_ip = (*(char *)val ? strdup((char *) val) : 
+    tmp->backup_replace_ip = (*(char *)val ? strdup((char *) val) :
 			      strdup("*"));
   }
   else
@@ -927,7 +903,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   silc_free(tmp->host);
   silc_free(tmp->version);
   silc_free(tmp->backup_replace_ip);
-  my_free_authdata(tmp->passphrase, tmp->publickey);
+  CONFIG_FREE_AUTH(tmp);
   silc_free(tmp);
   config->tmp = NULL;
   return got_errno;
@@ -1198,14 +1174,14 @@ void silc_server_config_destroy(SilcServerConfig config)
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionClient,
 				  config->clients)
     silc_free(di->host);
-    my_free_authdata(di->passphrase, di->publickey);
+    CONFIG_FREE_AUTH(di);
     silc_free(di);
   }
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionAdmin, config->admins)
     silc_free(di->host);
     silc_free(di->user);
     silc_free(di->nick);
-    my_free_authdata(di->passphrase, di->publickey);
+    CONFIG_FREE_AUTH(di);
     silc_free(di);
   }
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionDeny, config->denied)
@@ -1217,7 +1193,7 @@ void silc_server_config_destroy(SilcServerConfig config)
 				  config->servers)
     silc_free(di->host);
     silc_free(di->version);
-    my_free_authdata(di->passphrase, di->publickey);
+    CONFIG_FREE_AUTH(di);
     silc_free(di);
   }
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionRouter,
@@ -1225,7 +1201,7 @@ void silc_server_config_destroy(SilcServerConfig config)
     silc_free(di->host);
     silc_free(di->version);
     silc_free(di->backup_replace_ip);
-    my_free_authdata(di->passphrase, di->publickey);
+    CONFIG_FREE_AUTH(di);
     silc_free(di);
   }
 }
@@ -1698,7 +1674,7 @@ bool silc_server_config_set_defaults(SilcServer server)
   config->param.reconnect_interval = (config->param.reconnect_interval ? 
 				      config->param.reconnect_interval :
 				      SILC_SERVER_RETRY_INTERVAL_MIN);
-  config->param.reconnect_interval_max = 
+  config->param.reconnect_interval_max =
     (config->param.reconnect_interval_max ? 
      config->param.reconnect_interval_max :
      SILC_SERVER_RETRY_INTERVAL_MAX);
