@@ -1,3 +1,12 @@
+Wed May  2 20:50:49 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Register default ciphers and stuff when using -C option with
+	  the server.  Affected file sildc/silcd.c.
+
+	* Put back the servers public key filename format, it is better
+	  than the new one.  For now, the client keys are saved with the
+	  new filename format.  The affected file silc/client_ops.c.
+
 Wed May  2 13:31:26 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Register default ciphers and stuff when using the -S option
