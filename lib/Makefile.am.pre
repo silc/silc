@@ -65,7 +65,6 @@ else
 all:  remove libsilc.a
 endif
 endif
-endif
 
 remove:
 	-rm -rf libsilc.a
