@@ -71,17 +71,17 @@ remove:
 
 if SILC_DIST_TOOLKIT
 install-exec-hook:
-	-mkdir -p $(libdir)
-	-$(LIBTOOL) $(INSTALL) libsilc.la $(libdir)/
-	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(libdir)/
+	-mkdir -p $(DESTDIR)$(libdir)
+	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
 else
 install-exec-hook:
 	-mkdir -p $(libdir)
-	-$(LIBTOOL) $(INSTALL) libsilc.la $(libdir)/
-	-rm -rf $(libdir)/libsilc.a
+	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-rm -rf $(DESTDIR)$(libdir)/libsilc.a
 if SILC_DIST_CLIENT
-	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(libdir)/
-	-rm -rf $(libdir)/libsilcclient.a
+	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
+	-rm -rf $(DESTDIR)$(libdir)/libsilcclient.a
 endif
 endif
 
@@ -111,13 +111,13 @@ libsilc.a:
 	find $(SILCLIB_DIRS) -type f -name *.lo | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
 	-version-info $(LIBSILC_CURRENT):$(LIBSILC_REVISION):$(LIBSILC_AGE) \
-	-release $(LIB_BASE_VERSION) -rpath $(libdir) -o libsilc.la
+	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilc.la
 
 libsilcclient.a:
 	find $(SILCCLIENTLIB_DIRS) -type f -name *.lo | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
 	-version-info $(LIBSILCCLIENT_CURRENT):$(LIBSILCCLIENT_REVISION):$(LIBSILCCLIENT_AGE) \
-	-release $(LIB_BASE_VERSION) -rpath $(libdir) -o libsilcclient.la
+	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilcclient.la
 
 if SILC_DIST_TOOLKIT
 SILC_EXTRA_DIST = doc
