@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.8  2000/07/20 05:49:32  priikone
+ * 	Added default mail directory path.
+ *
  * Revision 1.7  2000/07/19 07:07:16  priikone
  * 	Search mail by From:
  *
@@ -130,6 +133,10 @@ char *silc_get_mail_path()
 {
   char pathbuf[MAXPATHLEN];
   char *path;
+
+#ifndef _PATH_MAILDIR
+#define _PATH_MAILDIR "/var/mail"
+#endif
   
   path = getenv("MAIL");
   if (path) {
