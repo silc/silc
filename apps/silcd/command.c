@@ -369,7 +369,6 @@ void silc_server_command_pending_del(SilcServer server,
     if (r->reply_cmd == reply_cmd && r->ident == ident) {
       silc_dlist_del(server->pending_commands, r);
       silc_free(r);
-      break;
     }
   }
 }
