@@ -247,8 +247,6 @@ void silc_server_channel_message(SilcServer server,
 
 /* Received channel key packet. We distribute the key to all of our locally
    connected clients on the channel. */
-/* XXX Router must accept this packet and distribute the key to all its
-   server that has clients on the channel */
 
 void silc_server_channel_key(SilcServer server,
 			     SilcSocketConnection sock,
@@ -262,9 +260,9 @@ void silc_server_channel_key(SilcServer server,
   unsigned char *tmp;
   unsigned int tmp_len;
   char *cipher;
+  int exist = FALSE;
 
-  if (packet->src_id_type != SILC_ID_SERVER &&
-      sock->type != SILC_SOCKET_TYPE_ROUTER)
+  if (packet->src_id_type != SILC_ID_SERVER)
     goto out;
 
   /* Decode channel key payload */
@@ -287,29 +285,43 @@ void silc_server_channel_key(SilcServer server,
     goto out;
   }
 
-  /* Save the key for us as well */
   tmp = silc_channel_key_get_key(payload, &tmp_len);
   if (!tmp)
     goto out;
+
   cipher = silc_channel_key_get_cipher(payload, NULL);;
   if (!cipher)
     goto out;
+
+  /* Remove old key if exists */
+  if (channel->key) {
+    memset(channel->key, 0, channel->key_len);
+    silc_free(channel_key);
+    silc_cipher_free(channel->channel_key);
+    exist = TRUE;
+  }
+
+  /* Create new cipher */
   if (!silc_cipher_alloc(cipher, &channel->channel_key))
     goto out;
 
-  /* Distribute the key to all clients on the channel */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    silc_server_packet_send(server, chl->client->connection,
-			    SILC_PACKET_CHANNEL_KEY, 0,
-			    buffer->data, buffer->len, TRUE);
-  }
-
+  /* Save the key */
   channel->key_len = tmp_len * 8;
   channel->key = silc_calloc(tmp_len, sizeof(unsigned char));
   memcpy(channel->key, tmp, tmp_len);
   channel->channel_key->cipher->set_key(channel->channel_key->context, 
 					tmp, tmp_len);
+
+  /* Distribute the key to everybody who is on the channel. If we are router
+     we will also send it to locally connected servers. If we are normal
+     server and old key did not exist then we don't use this function
+     as the client is not in our channel user list just yet. We send the
+     key after receiveing JOIN notify from router. */
+  if (server->server_type == SILC_SERVER && exist)
+    silc_server_send_channel_key(server, channel, FALSE);
+  if (server->server_type == SILC_ROUTER)
+    silc_server_send_channel_key(server, channel, FALSE);
+
  out:
   if (id)
     silc_free(id);
@@ -581,8 +593,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 }
 
 /* Processes incoming New ID packet. New ID Payload is used to distribute
-   information about newly registered clients, servers and created 
-   channels. */
+   information about newly registered clients and servers. */
 
 void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 			SilcPacketContext *packet)
@@ -833,15 +844,23 @@ void silc_server_notify(SilcServer server,
   SilcNotifyPayload payload;
   SilcNotifyType type;
   SilcArgumentPayload args;
+  SilcClientID *client_id;
+  SilcChannelID *channel_id;
+  SilcClientEntry client;
+  SilcChannelEntry channel;
+  unsigned char *tmp;
+  unsigned int tmp_len;
   int i;
+
+  SILC_LOG_DEBUG(("Start"));
 
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       packet->src_id_type != SILC_ID_SERVER)
     return;
 
-  /* For now we expect that the we are normal server and that the
+  /* XXX: For now we expect that the we are normal server and that the
      sender is router. Server could send (protocol allows it) notify to
-     router but we don't support it yet. XXX! */
+     router but we don't support it yet. */
   if (server->server_type != SILC_SERVER &&
       sock->type != SILC_SOCKET_TYPE_ROUTER)
     return;
@@ -857,6 +876,32 @@ void silc_server_notify(SilcServer server,
 
   switch(type) {
   case SILC_NOTIFY_TYPE_JOIN:
+    {
+      /* Get Client ID */
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!tmp)
+	goto out;
+
+      client_id = silc_id_payload_parse_id(tmp, tmp_len);
+
+      /* Get client entry */
+      client = silc_idlist_find_client_by_id(server->local_list, client_id);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+
+      //      channel_id = ;
+
+      /* Get channel entry */
+      channel = silc_idlist_find_channel_by_id(server->local_list, channel_id);
+      if (!channel) {
+	silc_free(client_id);
+	goto out;
+      }
+      
+      silc_free(client_id);
+    }
     break;
 
   case SILC_NOTIFY_TYPE_LEAVE:

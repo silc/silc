@@ -271,6 +271,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   channel_name = strdup(tmp);
   id = silc_id_payload_parse_id(id_string, len);
 
+  /* XXX We should check that we have sent JOIN command to the router
+     in the first place. Also should check that we don't have the channel
+     already in the cache. These checks must be made because of possible
+     buggy routers. */
+
   SILC_LOG_DEBUG(("Adding new channel %s id(%s)", channel_name,
 		  silc_id_render(id, SILC_ID_CHANNEL)));
 
@@ -286,9 +291,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
   //entry->global_users = TRUE;
 
-  /* Execute pending JOIN command so that the client who originally
-     wanted to join the channel will be joined after all. */
-  SILC_LOG_DEBUG(("Re-executing JOIN command"));
+  /* Execute any pending commands */
   SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_JOIN);
 
  out:

@@ -1224,11 +1224,11 @@ void silc_server_command_send_names(SilcServer server,
    has been either created or resolved from ID lists. This joins the sent
    client to the channel. */
 
-static void
-silc_server_command_join_channel(SilcServer server, 
-				 SilcServerCommandContext cmd,
-				 SilcChannelEntry channel,
-				 unsigned int umode)
+static void silc_server_command_join_channel(SilcServer server, 
+					     SilcServerCommandContext cmd,
+					     SilcChannelEntry channel,
+					     int created,
+					     unsigned int umode)
 {
   SilcSocketConnection sock = cmd->sock;
   unsigned char *tmp;
@@ -1236,7 +1236,7 @@ silc_server_command_join_channel(SilcServer server,
   unsigned char *passphrase = NULL, mode[4];
   SilcClientEntry client;
   SilcChannelClientEntry chl;
-  SilcBuffer packet, idp;
+  SilcBuffer reply, chidp, clidp;
 
   if (!channel)
     return;
@@ -1295,9 +1295,7 @@ silc_server_command_join_channel(SilcServer server,
   /* If the JOIN request was forwarded to us we will make a bit slower
      query to get the client pointer. Otherwise, we get the client pointer
      real easy. */
-  if (!(cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED)) {
-    client = (SilcClientEntry)sock->user_data;
-  } else {
+  if (cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
     void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
     client = silc_idlist_find_client_by_id(server->local_list, id);
     if (!client) {
@@ -1307,6 +1305,8 @@ silc_server_command_join_channel(SilcServer server,
       goto out;
     }
     silc_free(id);
+  } else {
+    client = (SilcClientEntry)sock->user_data;
   }
 
   /* Check whether the client already is on the channel */
@@ -1315,6 +1315,10 @@ silc_server_command_join_channel(SilcServer server,
 					  SILC_STATUS_ERR_USER_ON_CHANNEL);
     goto out;
   }
+
+  /* Generate new channel key as protocol dictates */
+  if (!created)
+    silc_server_create_channel_key(server, channel, 0);
 
   /* Join the client to the channel by adding it to channel's user list.
      Add also the channel to client entry's channels list for fast cross-
@@ -1326,106 +1330,91 @@ silc_server_command_join_channel(SilcServer server,
   silc_list_add(channel->user_list, chl);
   silc_list_add(client->channels, chl);
 
-  /* Notify router about new user on channel. If we are normal server
-     we send it to our router, if we are router we send it to our
-     primary route. */
-  if (!server->standalone) {
+  /* Encode Client ID Payload of the original client who wants to join */
+  clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
+  /* Encode command reply packet */
+  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  SILC_PUT32_MSB(channel->mode, mode);
+  if (!channel->topic) {
+    reply = 
+      silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
+					   SILC_STATUS_OK, 0, 3,
+					   2, channel->channel_name,
+					   strlen(channel->channel_name),
+					   3, chidp->data, chidp->len,
+					   4, mode, 4);
+  } else {
+    reply = 
+      silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
+					   SILC_STATUS_OK, 0, 4, 
+					   2, channel->channel_name, 
+					   strlen(channel->channel_name),
+					   3, chidp->data, chidp->len,
+					   4, mode, 4,
+					   5, channel->topic, 
+					   strlen(channel->topic));
   }
-
-  /* Send command reply to the client. Client receives the Channe ID,
-     channel mode and possibly other information in this reply packet. */
-  if (!cmd->pending) {
-    idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
-    SILC_PUT32_MSB(channel->mode, mode);
-
-    if (!channel->topic)
-      packet = 
-	silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					     SILC_STATUS_OK, 0, 3,
-					     2, channel->channel_name,
-					     strlen(channel->channel_name),
-					     3, idp->data, idp->len,
-					     4, mode, 4);
-    else
-      packet = 
-	silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					     SILC_STATUS_OK, 0, 4, 
-					     2, channel->channel_name, 
-					     strlen(channel->channel_name),
-					     3, idp->data, idp->len,
-					     4, mode, 4,
-					     5, channel->topic, 
-					     strlen(channel->topic));
-
-    if (cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
-      void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
-      silc_server_packet_send_dest(cmd->server, cmd->sock, 
-				   SILC_PACKET_COMMAND_REPLY, 0,
-				   id, cmd->packet->src_id_type,
-				   packet->data, packet->len, FALSE);
-      silc_free(id);
-    } else
-      silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0, 
-			      packet->data, packet->len, FALSE);
-    silc_buffer_free(packet);
-
-    /* Send channel key to the client. Client cannot start transmitting
-       to the channel until we have sent the key. */
-    tmp_len = strlen(channel->channel_key->cipher->name);
-    packet = 
-      silc_channel_key_payload_encode(idp->len, idp->data, 
-				      strlen(channel->channel_key->
-					     cipher->name),
-				      channel->channel_key->cipher->name,
-				      channel->key_len / 8, channel->key);
     
-    silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
-			    packet->data, packet->len, FALSE);
+  if (server->server_type == SILC_ROUTER && 
+      cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
+    /* We are router and server has forwarded this command to us. Send
+       all replys to the server. */
+    void *tmpid;
 
-    silc_buffer_free(packet);
-    silc_buffer_free(idp);
-  }
+    /* Send command reply destined to the original client */
+    tmpid = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
+    silc_server_packet_send_dest(cmd->server, sock, 
+				 SILC_PACKET_COMMAND_REPLY, 0,
+				 tmpid, cmd->packet->src_id_type,
+				 reply->data, reply->len, FALSE);
 
-  /* Finally, send notify message to all clients on the channel about
-     new user on the channel. */
-  if (!(cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED)) {
-    if (!cmd->pending) {
-      /* Send JOIN notify to clients */
-      SilcBuffer clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-      silc_server_send_notify_to_channel(server, channel, FALSE,
-					 SILC_NOTIFY_TYPE_JOIN, 1,
-					 clidp->data, clidp->len);
-      silc_buffer_free(clidp);
+    /* Distribute new channel key to local cell and local clients. */
+    silc_server_send_channel_key(server, sock, channel, TRUE);
+    
+    /* Distribute JOIN notify into the cell for everbody on the channel */
+    silc_server_send_notify_to_channel(server, channel, FALSE,
+				       SILC_NOTIFY_TYPE_JOIN, 1,
+				       clidp->data, clidp->len);
 
-      /* Send NEW_CHANNEL_USER packet to primary route */
-      if (!server->standalone)
-	silc_server_send_new_channel_user(server, server->router->connection,
-					  server->server_type == SILC_SERVER ?
-					  FALSE : TRUE,
-					  channel->id, SILC_ID_CHANNEL_LEN,
-					  client->id, SILC_ID_CLIENT_LEN);
-    } else {
-      /* This is pending command request. Send the notify after we have
-	 received the key for the channel from the router. */
-      JoinInternalContext *ctx = silc_calloc(1, sizeof(*ctx));
-      ctx->channel_name = channel->channel_name;
-      ctx->nickname = client->nickname;
-      ctx->username = client->username;
-      ctx->hostname = sock->hostname ? sock->hostname : sock->ip;
-      ctx->channel = channel;
-      ctx->server = server;
-      ctx->client = client;
-      silc_task_register(server->timeout_queue, sock->sock,
-			 silc_server_command_join_notify, ctx,
-			 0, 10000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
-      goto out;
-    }
+    /* Broadcast NEW_CHANNEL_USER packet to primary route */
+    silc_server_send_new_channel_user(server, server->router->connection,
+				      TRUE, channel->id, SILC_ID_CHANNEL_LEN,
+				      client->id, SILC_ID_CLIENT_LEN);
+
+    silc_free(tmpid);
+  } else {
+    /* Client sent the command. Send all replies directly to the client. */
+
+    /* Send command reply */
+    silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0, 
+			    reply->data, reply->len, FALSE);
+
+    /* Send the channel key. Channel key is sent before any other packet
+       to the channel. */
+    silc_server_send_channel_key(server, sock, channel, server->standalone ?
+				 FALSE : TRUE);
+    
+    /* Send JOIN notify to locally connected clients on the channel */
+    silc_server_send_notify_to_channel(server, channel, FALSE,
+				       SILC_NOTIFY_TYPE_JOIN, 1,
+				       clidp->data, clidp->len);
+
+    /* Send NEW_CHANNEL_USER packet to our primary router */
+    if (!server->standalone)
+      silc_server_send_new_channel_user(server, server->router->connection,
+					FALSE, 
+					channel->id, SILC_ID_CHANNEL_LEN,
+					client->id, SILC_ID_CLIENT_LEN);
 
     /* Send NAMES command reply to the joined channel so the user sees who
        is currently on the channel. */
     silc_server_command_send_names(server, sock, channel);
   }
+
+  silc_buffer_free(reply);
+  silc_buffer_free(clidp);
+  silc_buffer_free(chidp);
 
  out:
   if (passphrase)
@@ -1442,7 +1431,8 @@ SILC_SERVER_CMD_FUNC(join)
   int argc, tmp_len;
   char *tmp, *channel_name = NULL, *cipher = NULL;
   SilcChannelEntry channel;
-  unsigned int umode = SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO;
+  unsigned int umode = 0;
+  int created = FALSE;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1488,27 +1478,25 @@ SILC_SERVER_CMD_FUNC(join)
     if (server->standalone) {
       channel = silc_server_create_new_channel(server, server->id, cipher, 
 					       channel_name);
+      umode |= SILC_CHANNEL_UMODE_CHANOP;
+      umode |= SILC_CHANNEL_UMODE_CHANFO;
+      created = TRUE;
     } else {
 
-      /* The channel does not exist on our server. We send JOIN command to
-	 our router which will handle the joining procedure (either creates
-	 the channel if it doesn't exist or joins the client to it) - if we
-	 are normal server. */
+      /* The channel does not exist on our server. If we are normal server 
+	 we will send JOIN command to our router which will handle the joining
+	 procedure (either creates the channel if it doesn't exist or joins
+	 the client to it). */
       if (server->server_type == SILC_SERVER) {
-	SilcBuffer buffer = cmd->packet->buffer;
-	
 	/* Forward the original JOIN command to the router */
-	silc_buffer_push(buffer, buffer->data - buffer->head);
+	silc_buffer_push(cmd->packet->buffer, 
+			 cmd->packet->buffer->data - 
+			 cmd->packet->buffer->head);
 	silc_server_packet_forward(server, (SilcSocketConnection)
 				   server->router->connection,
-				   buffer->data, buffer->len, TRUE);
-	
-	/* Add the command to be pending. It will be re-executed after
-	   router has replied back to us. */
-	cmd->pending = TRUE;
-	silc_server_command_pending(server, SILC_COMMAND_JOIN, 0,
-				    silc_server_command_join, context);
-	return;
+				   cmd->packet->buffer->data, 
+				   cmd->packet->buffer->len, TRUE);
+	goto out;
       }
       
       /* We are router and the channel does not seem exist so we will check
@@ -1521,12 +1509,13 @@ SILC_SERVER_CMD_FUNC(join)
 						 channel_name);
 	umode |= SILC_CHANNEL_UMODE_CHANOP;
 	umode |= SILC_CHANNEL_UMODE_CHANFO;
+	created = TRUE;
       }
     }
   }
 
   /* Join to the channel */
-  silc_server_command_join_channel(server, cmd, channel, umode);
+  silc_server_command_join_channel(server, cmd, channel, created, umode);
 
  out:
   silc_server_command_free(cmd);
@@ -1732,23 +1721,12 @@ SILC_SERVER_CMD_FUNC(cmode)
       /* The mode is removed and we need to generate and distribute
 	 new channel key. Clients are not using private channel keys
 	 anymore after this. */
-      unsigned int key_len;
-      unsigned char channel_key[32];
 
       /* XXX Duplicated code, make own function for this!! LEAVE uses this
 	 as well */
 
       /* Re-generate channel key */
-      key_len = channel->key_len / 8;
-      for (i = 0; i < key_len; i++)
-	channel_key[i] = silc_rng_get_byte(server->rng);
-      channel->channel_key->cipher->set_key(channel->channel_key->context, 
-					    channel_key, key_len);
-      memset(channel->key, 0, key_len);
-      silc_free(channel->key);
-      channel->key = silc_calloc(key_len, sizeof(*channel->key));
-      memcpy(channel->key, channel_key, key_len);
-      memset(channel_key, 0, sizeof(channel_key));
+      silc_server_create_channel_key(server, channel, 0);
       
       /* Encode channel key payload to be distributed on the channel */
       packet = 
@@ -1756,7 +1734,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 					strlen(channel->channel_key->
 					       cipher->name),
 					channel->channel_key->cipher->name,
-					key_len, channel->key);
+					channel->key_len / 8, channel->key);
       
       /* If we are normal server then we will send it to our router.  If we
 	 are router we will send it to all local servers that has clients on
@@ -1882,7 +1860,6 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (!(channel->mode & SILC_CHANNEL_MODE_CIPHER)) {
       /* Cipher to use protect the traffic */
       unsigned int key_len = 128;
-      unsigned char channel_key[32];
       char *cp;
 
       /* Get cipher */
@@ -1905,20 +1882,12 @@ SILC_SERVER_CMD_FUNC(cmode)
       silc_cipher_free(channel->channel_key);
       silc_cipher_alloc(tmp, &channel->channel_key);
 
-      /* Re-generate channel key */
       key_len /= 8;
-      if (key_len > sizeof(channel_key))
-	key_len = sizeof(channel_key);
+      if (key_len > 32)
+	key_len = 32;
 
-      for (i = 0; i < key_len; i++)
-	channel_key[i] = silc_rng_get_byte(server->rng);
-      channel->channel_key->cipher->set_key(channel->channel_key->context, 
-					    channel_key, key_len);
-      memset(channel->key, 0, key_len);
-      silc_free(channel->key);
-      channel->key = silc_calloc(key_len, sizeof(*channel->key));
-      memcpy(channel->key, channel_key, key_len);
-      memset(channel_key, 0, sizeof(channel_key));
+      /* Re-generate channel key */
+      silc_server_create_channel_key(server, channel, key_len);
     
       /* Encode channel key payload to be distributed on the channel */
       packet = 
@@ -1926,7 +1895,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 					strlen(channel->channel_key->
 					       cipher->name),
 					channel->channel_key->cipher->name,
-					key_len, channel->key);
+					channel->key_len / 8, channel->key);
     
       /* If we are normal server then we will send it to our router.  If we
 	 are router we will send it to all local servers that has clients on
@@ -1951,8 +1920,6 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (channel->mode & SILC_CHANNEL_MODE_CIPHER) {
       /* Cipher mode is unset. Remove the cipher and revert back to 
 	 default cipher */
-      unsigned int key_len;
-      unsigned char channel_key[32];
 
       if (channel->mode_data.cipher) {
 	silc_free(channel->mode_data.cipher);
@@ -1972,16 +1939,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 	silc_cipher_alloc(channel->cipher, &channel->channel_key);
 
       /* Re-generate channel key */
-      key_len = channel->key_len / 8;
-      for (i = 0; i < key_len; i++)
-	channel_key[i] = silc_rng_get_byte(server->rng);
-      channel->channel_key->cipher->set_key(channel->channel_key->context, 
-					    channel_key, key_len);
-      memset(channel->key, 0, key_len);
-      silc_free(channel->key);
-      channel->key = silc_calloc(key_len, sizeof(*channel->key));
-      memcpy(channel->key, channel_key, key_len);
-      memset(channel_key, 0, sizeof(channel_key));
+      silc_server_create_channel_key(server, channel, 0);
       
       /* Encode channel key payload to be distributed on the channel */
       packet = 
@@ -1989,7 +1947,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 					strlen(channel->channel_key->
 					       cipher->name),
 					channel->channel_key->cipher->name,
-					key_len, channel->key);
+					channel->key_len / 8, channel->key);
       
       /* If we are normal server then we will send it to our router.  If we
 	 are router we will send it to all local servers that has clients on
@@ -2255,8 +2213,8 @@ SILC_SERVER_CMD_FUNC(leave)
   SilcChannelID *id;
   SilcChannelEntry channel;
   SilcBuffer packet;
-  unsigned int i, argc, key_len, len;
-  unsigned char *tmp, channel_key[32];
+  unsigned int i, argc, len;
+  unsigned char *tmp;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -2315,23 +2273,14 @@ SILC_SERVER_CMD_FUNC(leave)
     goto out;
 
   /* Re-generate channel key */
-  key_len = channel->key_len / 8;
-  for (i = 0; i < key_len; i++)
-    channel_key[i] = silc_rng_get_byte(server->rng);
-  channel->channel_key->cipher->set_key(channel->channel_key->context, 
-					channel_key, key_len);
-  memset(channel->key, 0, key_len);
-  silc_free(channel->key);
-  channel->key = silc_calloc(key_len, sizeof(*channel->key));
-  memcpy(channel->key, channel_key, key_len);
-  memset(channel_key, 0, sizeof(channel_key));
+  silc_server_create_channel_key(server, channel, 0);
 
   /* Encode channel key payload to be distributed on the channel */
   packet = 
     silc_channel_key_payload_encode(len, tmp,
 				    strlen(channel->channel_key->cipher->name),
 				    channel->channel_key->cipher->name,
-				    key_len, channel->key);
+				    channel->key_len / 8, channel->key);
 
   /* If we are normal server then we will send it to our router.  If we
      are router we will send it to all local servers that has clients on

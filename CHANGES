@@ -1,3 +1,34 @@
+Mon Nov 27 21:39:40 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed a channel user mode bug when joining to a channel server gave
+	  everybody channel founder rights, oops.
+
+	* We mark ourselves as the router of the incoming server connection
+	  if we are router ourselves.  This way we can check in some packet
+	  sending functions whether it is locally connected server.  For
+	  incoming router connections we put NULL.
+
+	* For router sending packets locally means now always sending the
+	  packet cell wide; to local clients and local servers.  For normal
+	  server sending packet locally means sending it to only local
+	  clients.
+
+	* Fixed the JOIN command to really work in router environment.  If the
+	  channel is created it is always created by the router.  Router is
+	  also responsible of making the initial joining to the channel,
+	  sending JOIN notify to the sending server and distributing 
+	  NEW_CHANNEL and NEW_CHANNEL_USER packets.  Hence, if the channel
+	  does not exist server doesn't do anything else but forward the
+	  command to the router which performs everything.
+
+	* Added silc_server_send_channel_key function to send the Channel Key
+	  payload.
+
+	* Added silc_server_create_channel_key to create new channel key.  The
+	  channel key is now re-generated everytime someone joins or leaves
+	  a channel, as protocol dictates.  Note: channel->key_len is the
+	  key length in bits.
+
 Wed Nov 22 22:14:19 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Splitted server.[ch] finally.  Created now packet_send.[ch] and

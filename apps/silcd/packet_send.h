@@ -129,5 +129,9 @@ void silc_server_send_new_channel_user(SilcServer server,
 				       unsigned int channel_id_len,
 				       void *client_id,
 				       unsigned int client_id_len);
+void silc_server_send_channel_key(SilcServer server,
+				  SilcSocketConnection sock,
+				  SilcChannelEntry channel,
+				  unsigned char route);
 
 #endif

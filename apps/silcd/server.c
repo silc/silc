@@ -981,11 +981,14 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
       /* Add the server into server cache. The server name and Server ID
 	 is updated after we have received NEW_SERVER packet from the
-	 server. */
+	 server. We mark ourselves as router for this server if we really
+	 are router. */
       new_server = 
 	silc_idlist_add_server(server->local_list, NULL,
 			       sock->type == SILC_SOCKET_TYPE_SERVER ?
-			       SILC_SERVER : SILC_ROUTER, NULL, NULL, sock);
+			       SILC_SERVER : SILC_ROUTER, NULL, 
+			       sock->type == SILC_SOCKET_TYPE_SERVER ?
+			       server->id_entry : NULL, sock);
       if (!new_server) {
 	SILC_LOG_ERROR(("Could not add new server to cache"));
 	silc_free(sock->user_data);
@@ -1793,24 +1796,17 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 						char *cipher, 
 						char *channel_name)
 {
-  int i, key_len;
   SilcChannelID *channel_id;
   SilcChannelEntry entry;
   SilcCipher key;
-  unsigned char channel_key[32];
 
   SILC_LOG_DEBUG(("Creating new channel"));
-
-  /* Create channel key */
-  for (i = 0; i < 32; i++) channel_key[i] = silc_rng_get_byte(server->rng);
 
   if (!cipher)
     cipher = "twofish";
 
-  /* Allocate keys */
-  key_len = 16;
+  /* Allocate cipher */
   silc_cipher_alloc(cipher, &key);
-  key->cipher->set_key(key->context, channel_key, key_len);
 
   channel_name = strdup(channel_name);
 
@@ -1824,10 +1820,8 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
     return NULL;
   }
 
-  entry->key = silc_calloc(key_len, sizeof(*entry->key));
-  entry->key_len = key_len * 8;
-  memcpy(entry->key, channel_key, key_len);
-  memset(channel_key, 0, sizeof(channel_key));
+  /* Now create the actual key material */
+  silc_server_create_channel_key(server, entry, 16);
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
@@ -1837,4 +1831,43 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   }
 
   return entry;
+}
+
+/* Generates new channel key. This is used to create the initial channel key
+   but also to re-generate new key for channel. If `key_len' is provided
+   it is the bytes of the key length. */
+
+void silc_server_create_channel_key(SilcServer server, 
+				    SilcChannelEntry channel,
+				    unsigned int key_len)
+{
+  int i;
+  unsigned char channel_key[32];
+  unsigned int len;
+
+  if (key_len)
+    len = key_len;
+  else if (channel->key_len)
+    len = channel->key_len / 8;
+  else
+    len = 32;
+
+  /* Create channel key */
+  for (i = 0; i < len; i++) channel_key[i] = silc_rng_get_byte(server->rng);
+  
+  /* Set the key */
+  channel->channel_key->cipher->set_key(channel->channel_key->context, 
+					channel_key, len);
+
+  /* Remove old key if exists */
+  if (channel->key) {
+    memset(channel->key, 0, channel->key_len);
+    silc_free(channel->key);
+  }
+
+  /* Save the key */
+  channel->key_len = len * 8;
+  channel->key = silc_calloc(len, sizeof(*channel->key));
+  memcpy(channel->key, channel_key, len);
+  memset(channel_key, 0, sizeof(channel_key));
 }

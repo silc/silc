@@ -319,7 +319,7 @@ silc_server_packet_send_to_channel_real(SilcServer server,
    the channel. Usually this is used to send notify messages to the
    channel, things like notify about new user joining to the channel. 
    If `route' is FALSE then the packet is sent only locally and will not
-   be routed anywhere. */
+   be routed anywhere (for router locally means cell wide). */
 
 void silc_server_packet_send_to_channel(SilcServer server,
 					SilcChannelEntry channel,
@@ -381,9 +381,10 @@ void silc_server_packet_send_to_channel(SilcServer server,
     client = chl->client;
 
     /* If client has router set it is not locally connected client and
-       we will route the message to the router set in the client. */
-    if (route && client && client->router && 
-	server->server_type == SILC_ROUTER) {
+       we will route the message to the router set in the client. Though,
+       send locally connected server in all cases. */
+    if (server->server_type == SILC_ROUTER && client && client->router && 
+	((!route && client->router->router == server->id_entry) || route)) {
       int k;
 
       /* Check if we have sent the packet to this route already */
@@ -589,7 +590,6 @@ void silc_server_packet_send_local_channel(SilcServer server,
 					   unsigned int data_len,
 					   int force_send)
 {
-  SilcClientEntry client;
   SilcChannelClientEntry chl;
   SilcSocketConnection sock = NULL;
 
@@ -598,13 +598,11 @@ void silc_server_packet_send_local_channel(SilcServer server,
   /* Send the message to clients on the channel's client list. */
   silc_list_start(channel->user_list);
   while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    client = chl->client;
-
-    if (client) {
-      sock = (SilcSocketConnection)client->connection;
+    if (chl->client) {
+      sock = (SilcSocketConnection)chl->client->connection;
 
       /* Send the packet to the client */
-      silc_server_packet_send_dest(server, sock, type, flags, client->id,
+      silc_server_packet_send_dest(server, sock, type, flags, chl->client->id,
 				   SILC_ID_CLIENT, data, data_len,
 				   force_send);
     }
@@ -1086,4 +1084,38 @@ void silc_server_send_new_channel_user(SilcServer server,
   silc_free(clid);
   silc_free(chid);
   silc_buffer_free(packet);
+}
+
+/* Send Channel Key payload to distribute the new channel key. Normal server
+   sends this to router when new client joins to existing channel. Router
+   sends this to the local server who forwarded join command in case where
+   the channel did not exist yet.  Both normal and router servers uses this
+   also to send this to locally connected clients on the channel. This
+   must not be broadcasted packet. */
+
+void silc_server_send_channel_key(SilcServer server,
+				  SilcSocketConnection sock,
+				  SilcChannelEntry channel,
+				  unsigned char route)
+{
+  SilcBuffer packet;
+  unsigned char *chid;
+  unsigned int tmp_len;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  chid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+  if (!chid)
+    return;
+
+  /* Encode channel key packet */
+  tmp_len = strlen(channel->channel_key->cipher->name);
+  packet = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, chid, tmp_len,
+					   channel->channel_key->cipher->name,
+					   channel->key_len / 8, channel->key);
+
+  silc_server_packet_send_to_channel(server, channel, SILC_PACKET_CHANNEL_KEY,
+				     route, packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
+  silc_free(chid);
 }
