@@ -64,10 +64,13 @@ int silc_gettimeofday(struct timeval *tv)
 
 char *silc_get_username(void)
 {
-  return strdup("foo");
+  DWORD maxlen = 128;
+  char username[maxlen];
+  GetUserName(username, &maxlen);
+  return strdup(username);
 }
 
 char *silc_get_real_name(void)
 {
-  return strdup("Foo T. Bar");
+  return silc_get_username();
 }
