@@ -35,8 +35,8 @@
  *
  *    SilcArgumentPayload 
  *    silc_argument_payload_parse(const unsigned char *payload,
- *                                uint32 payload_len,
- *                                uint32 argc);
+ *                                SilcUInt32 payload_len,
+ *                                SilcUInt32 argc);
  *
  * DESCRIPTION
  *
@@ -49,17 +49,17 @@
  *
  ***/
 SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
-						uint32 payload_len,
-						uint32 argc);
+						SilcUInt32 payload_len,
+						SilcUInt32 argc);
 
 /****f* silccore/SilcArgumentAPI/silc_argument_payload_encode
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_argument_payload_encode(uint32 argc,
+ *    SilcBuffer silc_argument_payload_encode(SilcUInt32 argc,
  *                                            unsigned char **argv,
- *                                            uint32 *argv_lens,
- *                                            uint32 *argv_types);
+ *                                            SilcUInt32 *argv_lens,
+ *                                            SilcUInt32 *argv_types);
  *
  * DESCRIPTION
  *
@@ -70,10 +70,10 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
  *    number of arguments.
  *
  ***/
-SilcBuffer silc_argument_payload_encode(uint32 argc,
+SilcBuffer silc_argument_payload_encode(SilcUInt32 argc,
 					unsigned char **argv,
-					uint32 *argv_lens,
-					uint32 *argv_types);
+					SilcUInt32 *argv_lens,
+					SilcUInt32 *argv_types);
 
 /****f* silccore/SilcArgumentAPI/silc_argument_payload_encode_payload
  *
@@ -107,21 +107,21 @@ void silc_argument_payload_free(SilcArgumentPayload payload);
  *
  * SYNOPSIS
  *
- *    uint32 silc_argument_get_arg_num(SilcArgumentPayload payload);
+ *    SilcUInt32 silc_argument_get_arg_num(SilcArgumentPayload payload);
  *
  * DESCRIPTION
  *
  *    Returns the number of argument in the Argument Payload.
  *
  ***/
-uint32 silc_argument_get_arg_num(SilcArgumentPayload payload);
+SilcUInt32 silc_argument_get_arg_num(SilcArgumentPayload payload);
 
 /****f* silccore/SilcArgumentAPI/silc_argument_get_first_arg
  *
  * SYNOPSIS
  *
  *    unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
- *                                               uint32 *ret_len);
+ *                                               SilcUInt32 *ret_len);
  *
  * DESCRIPTION
  *
@@ -131,14 +131,14 @@ uint32 silc_argument_get_arg_num(SilcArgumentPayload payload);
  *
  ***/
 unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
-					   uint32 *ret_len);
+					   SilcUInt32 *ret_len);
 
 /****f* silccore/SilcArgumentAPI/silc_argument_get_next_arg
  *
  * SYNOPSIS
  *
  *    unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
- *                                              uint32 *ret_len);
+ *                                              SilcUInt32 *ret_len);
  *
  * DESCRIPTION
  *
@@ -149,15 +149,15 @@ unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
  *
  ***/
 unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
-					  uint32 *ret_len);
+					  SilcUInt32 *ret_len);
 
 /****f* silccore/SilcArgumentAPI/silc_argument_get_arg_type
  *
  * SYNOPSIS
  *
  *    unsigned char *silc_argument_get_arg_type(SilcArgumentPayload payload,
- *                                              uint32 type,
- *                                              uint32 *ret_len);
+ *                                              SilcUInt32 type,
+ *                                              SilcUInt32 *ret_len);
  *
  * DESCRIPTION
  *
@@ -169,7 +169,7 @@ unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
  *
  ***/
 unsigned char *silc_argument_get_arg_type(SilcArgumentPayload payload,
-					  uint32 type,
-					  uint32 *ret_len);
+					  SilcUInt32 type,
+					  SilcUInt32 *ret_len);
 
 #endif

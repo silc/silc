@@ -179,7 +179,7 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
 {
   SilcBuffer buf;
   unsigned char *x_str;
-  uint32 x_len;
+  SilcUInt32 x_len;
   int ret;
 
   SILC_LOG_DEBUG(("Encoding KE Payload"));
@@ -243,8 +243,8 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
   SilcSKEStatus status = SILC_SKE_STATUS_ERROR;
   SilcSKEKEPayload *payload;
   unsigned char *x = NULL;
-  uint16 x_len;
-  uint32 tot_len = 0, len2;
+  SilcUInt16 x_len;
+  SilcUInt32 tot_len = 0, len2;
   int ret;
 
   SILC_LOG_DEBUG(("Decoding Key Exchange Payload"));

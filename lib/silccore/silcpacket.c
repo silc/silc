@@ -77,11 +77,11 @@ int silc_packet_send(SilcSocketConnection sock, bool force_send)
    other process of HMAC computing and encryption is needed this function
    cannot be used. */
 
-void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, uint32 sequence,
-			 SilcBuffer buffer, uint32 len)
+void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
+			 SilcBuffer buffer, SilcUInt32 len)
 {
   unsigned char mac[32];
-  uint32 mac_len;
+  SilcUInt32 mac_len;
 
   /* Compute HMAC. This assumes that HMAC is created from the entire
      data area thus this uses the length found in buffer, not the length
@@ -224,9 +224,9 @@ void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher)
    outgoing buffer in SilcSocketConnection object. */
 
 void silc_packet_send_prepare(SilcSocketConnection sock,
-			      uint32 header_len,
-			      uint32 padlen,
-			      uint32 data_len)
+			      SilcUInt32 header_len,
+			      SilcUInt32 padlen,
+			      SilcUInt32 data_len)
 {
   int totlen, oldlen;
 
@@ -284,7 +284,7 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
 ******************************************************************************/
 
 static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac, 
-			       uint32 sequence, SilcBuffer buffer, 
+			       SilcUInt32 sequence, SilcBuffer buffer, 
 			       bool normal);
 
 /* Receives packet from network and reads the data into connection's
@@ -327,7 +327,7 @@ int silc_packet_receive(SilcSocketConnection sock)
 bool silc_packet_receive_process(SilcSocketConnection sock,
 				 bool local_is_router,
 				 SilcCipher cipher, SilcHmac hmac,
-				 uint32 sequence,
+				 SilcUInt32 sequence,
 				 SilcPacketParserCallback parser,
 				 void *parser_context)
 {
@@ -445,12 +445,12 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
    after packet has been totally decrypted and parsed. */
 
 static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer,
-				 uint32 sequence)
+				 SilcUInt32 sequence)
 {
   /* Check MAC */
   if (hmac) {
     unsigned char mac[32], psn[4];
-    uint32 mac_len;
+    SilcUInt32 mac_len;
     
     SILC_LOG_DEBUG(("Verifying MAC"));
 
@@ -523,7 +523,7 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 {
   /* Decrypt rest of the header plus padding */
   if (cipher) {
-    uint16 len;
+    SilcUInt16 len;
 
     /* Pull MAC from packet before decryption */
     if (hmac) {
@@ -539,8 +539,8 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 
     /* padding length + src id len + dst id len + header length - 16
        bytes already decrypted, gives the rest of the encrypted packet */
-    len = (((uint8)buffer->data[4] + (uint8)buffer->data[6] + 
-	   (uint8)buffer->data[7] + SILC_PACKET_HEADER_LEN) -
+    len = (((SilcUInt8)buffer->data[4] + (SilcUInt8)buffer->data[6] + 
+	   (SilcUInt8)buffer->data[7] + SILC_PACKET_HEADER_LEN) -
 	   SILC_PACKET_MIN_HEADER_LEN);
 
     silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
@@ -573,7 +573,7 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
    is special and requires special procesing. */
 
 static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
-			       uint32 sequence, SilcBuffer buffer, 
+			       SilcUInt32 sequence, SilcBuffer buffer, 
 			       bool normal)
 {
   /* If the packet type is not any special type lets decrypt rest
@@ -611,7 +611,7 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher)
 {
   SilcBuffer buffer = ctx->buffer;
-  uint8 tmp;
+  SilcUInt8 tmp;
   int len, ret;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));
@@ -679,7 +679,7 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
 					 SilcCipher cipher)
 {
   SilcBuffer buffer = ctx->buffer;
-  uint8 tmp;
+  SilcUInt8 tmp;
   int len, ret;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));

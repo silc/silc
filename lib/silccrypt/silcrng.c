@@ -46,9 +46,9 @@ extern pid_t getpgid (pid_t __pid);
 /* Byte size of the random data pool. */
 #define SILC_RNG_POOLSIZE 1024
 
-static uint32 silc_rng_get_position(SilcRng rng);
+static SilcUInt32 silc_rng_get_position(SilcRng rng);
 static void silc_rng_stir_pool(SilcRng rng);
-static void silc_rng_xor(SilcRng rng, uint32 val, unsigned int pos);
+static void silc_rng_xor(SilcRng rng, SilcUInt32 val, unsigned int pos);
 static void silc_rng_exec_command(SilcRng rng, char *command);
 static void silc_rng_get_hard_noise(SilcRng rng);
 static void silc_rng_get_medium_noise(SilcRng rng);
@@ -63,8 +63,8 @@ static void silc_rng_get_soft_noise(SilcRng rng);
    from the same point of the pool. Short description of the fields
    following.
 
-   uint32 low
-   uint32 pos
+   SilcUInt32 low
+   SilcUInt32 pos
 
        The index for the random pool buffer. Lowest and current
        positions.
@@ -76,8 +76,8 @@ static void silc_rng_get_soft_noise(SilcRng rng);
 
 */
 typedef struct SilcRngStateContext {
-  uint32 low;
-  uint32 pos;
+  SilcUInt32 low;
+  SilcUInt32 pos;
   struct SilcRngStateContext *next;
 } *SilcRngState;
 
@@ -111,7 +111,7 @@ typedef struct SilcRngStateContext {
        random pool. This is allocated when RNG object is allocated and
        free'd when RNG object is free'd.
 
-   uint8 threshold
+   SilcUInt8 threshold
 
        Threshold to indicate when it is required to acquire more
        noise from the environment.  More soft noise is acquired after
@@ -123,7 +123,7 @@ struct SilcRngStruct {
   unsigned char key[64];
   SilcRngState state;
   SilcHash sha1;
-  uint8 threshold;
+  SilcUInt8 threshold;
   char *devrandom;
   int fd_devurandom;
 };
@@ -219,7 +219,7 @@ static void silc_rng_get_soft_noise(SilcRng rng)
 #ifndef SILC_WIN32
   struct tms ptime;
 #endif
-  uint32 pos;
+  SilcUInt32 pos;
   
   pos = silc_rng_get_position(rng);
 
@@ -361,9 +361,9 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
 /* This function adds the contents of the buffer as noise into random 
    pool. After adding the noise the pool is stirred. */
 
-void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, uint32 len)
+void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, SilcUInt32 len)
 {
-  uint32 i, pos;
+  SilcUInt32 i, pos;
 
   pos = silc_rng_get_position(rng);
 
@@ -380,7 +380,7 @@ void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, uint32 len)
 
 /* XOR's data into the pool */
 
-static void silc_rng_xor(SilcRng rng, uint32 val, unsigned int pos)
+static void silc_rng_xor(SilcRng rng, SilcUInt32 val, unsigned int pos)
 {
   assert(rng != NULL);
   rng->pool[pos] ^= val + val;
@@ -392,7 +392,7 @@ static void silc_rng_xor(SilcRng rng, uint32 val, unsigned int pos)
 static void silc_rng_stir_pool(SilcRng rng)
 {
   int i;
-  uint32 iv[5];
+  SilcUInt32 iv[5];
 
   /* Get the IV */
   memcpy(iv, &rng->pool[16], sizeof(iv));
@@ -426,10 +426,10 @@ static void silc_rng_stir_pool(SilcRng rng)
 /* Returns next position where data is fetched from the pool or
    put to the pool. */
 
-static uint32 silc_rng_get_position(SilcRng rng)
+static SilcUInt32 silc_rng_get_position(SilcRng rng)
 {
   SilcRngState next;
-  uint32 pos;
+  SilcUInt32 pos;
 
   next = rng->state->next;
 
@@ -449,7 +449,7 @@ static uint32 silc_rng_get_position(SilcRng rng)
 
 /* Returns random byte. */
 
-uint8 silc_rng_get_byte(SilcRng rng)
+SilcUInt8 silc_rng_get_byte(SilcRng rng)
 {
   rng->threshold++;
 
@@ -468,10 +468,10 @@ uint8 silc_rng_get_byte(SilcRng rng)
 
 /* Returns 16 bit random number */
 
-uint16 silc_rng_get_rn16(SilcRng rng)
+SilcUInt16 silc_rng_get_rn16(SilcRng rng)
 {
   unsigned char rn[2];
-  uint16 num;
+  SilcUInt16 num;
 
   rn[0] = silc_rng_get_byte(rng);
   rn[1] = silc_rng_get_byte(rng);
@@ -482,10 +482,10 @@ uint16 silc_rng_get_rn16(SilcRng rng)
 
 /* Returns 32 bit random number */
 
-uint32 silc_rng_get_rn32(SilcRng rng)
+SilcUInt32 silc_rng_get_rn32(SilcRng rng)
 {
   unsigned char rn[4];
-  uint16 num;
+  SilcUInt16 num;
 
   rn[0] = silc_rng_get_byte(rng);
   rn[1] = silc_rng_get_byte(rng);
@@ -498,7 +498,7 @@ uint32 silc_rng_get_rn32(SilcRng rng)
 
 /* Returns random number string. Returned string is in HEX format. */
 
-unsigned char *silc_rng_get_rn_string(SilcRng rng, uint32 len)
+unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len)
 {
   int i;
   unsigned char *string;
@@ -513,7 +513,7 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, uint32 len)
 
 /* Returns random number binary data. */
 
-unsigned char *silc_rng_get_rn_data(SilcRng rng, uint32 len)
+unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len)
 {
   int i;
   unsigned char *data;
@@ -560,7 +560,7 @@ bool silc_rng_global_uninit(void)
 
 /* These are analogous to the functions above. */
 
-uint8 silc_rng_global_get_byte(void)
+SilcUInt8 silc_rng_global_get_byte(void)
 {
   return global_rng ? silc_rng_get_byte(global_rng) : 0;
 }
@@ -568,7 +568,7 @@ uint8 silc_rng_global_get_byte(void)
 /* Return random byte as fast as possible. Reads from /dev/urandom if
    available. If not then return from normal RNG (not so fast). */
 
-uint8 silc_rng_global_get_byte_fast(void)
+SilcUInt8 silc_rng_global_get_byte_fast(void)
 {
 #ifndef SILC_WIN32
   unsigned char buf[1];
@@ -592,27 +592,27 @@ uint8 silc_rng_global_get_byte_fast(void)
 #endif
 }
 
-uint16 silc_rng_global_get_rn16(void)
+SilcUInt16 silc_rng_global_get_rn16(void)
 {
   return global_rng ? silc_rng_get_rn16(global_rng) : 0;
 }
 
-uint32 silc_rng_global_get_rn32(void)
+SilcUInt32 silc_rng_global_get_rn32(void)
 {
   return global_rng ? silc_rng_get_rn32(global_rng) : 0;
 }
 
-unsigned char *silc_rng_global_get_rn_string(uint32 len)
+unsigned char *silc_rng_global_get_rn_string(SilcUInt32 len)
 {
   return global_rng ? silc_rng_get_rn_string(global_rng, len) : NULL;
 }
 
-unsigned char *silc_rng_global_get_rn_data(uint32 len)
+unsigned char *silc_rng_global_get_rn_data(SilcUInt32 len)
 {
   return global_rng ? silc_rng_get_rn_data(global_rng, len) : NULL;
 }
 
-void silc_rng_global_add_noise(unsigned char *buffer, uint32 len)
+void silc_rng_global_add_noise(unsigned char *buffer, SilcUInt32 len)
 {
   if (global_rng)
     silc_rng_add_noise(global_rng, buffer, len);

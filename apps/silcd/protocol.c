@@ -38,7 +38,7 @@ extern char *silc_version_string;
 static bool 
 silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
 				SilcSocketType conn_type,
-				unsigned char *pk, uint32 pk_len, 
+				unsigned char *pk, SilcUInt32 pk_len, 
 				SilcSKEPKType pk_type)
 {
   char file[256], filename[256], *fingerprint;
@@ -103,7 +103,7 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
     /* The key already exists, verify it. */
     SilcPublicKey public_key;
     unsigned char *encpk;
-    uint32 encpk_len;
+    SilcUInt32 encpk_len;
 
     SILC_LOG_DEBUG(("We have the public key saved locally"));
 
@@ -159,7 +159,7 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
 static void 
 silc_server_protocol_ke_verify_key(SilcSKE ske,
 				   unsigned char *pk_data,
-				   uint32 pk_len,
+				   SilcUInt32 pk_len,
 				   SilcSKEPKType pk_type,
 				   void *context,
 				   SilcSKEVerifyCbCompletion completion,
@@ -315,7 +315,7 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
 /* Check remote host version string */
 
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
-				     uint32 len, void *context)
+				     SilcUInt32 len, void *context)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   char *cp;
@@ -736,7 +736,7 @@ static int
 silc_server_public_key_authentication(SilcServer server,
 				      SilcPublicKey pub_key,
 				      unsigned char *sign,
-				      uint32 sign_len,
+				      SilcUInt32 sign_len,
 				      SilcSKE ske)
 {
   SilcPKCS pkcs;
@@ -779,7 +779,7 @@ silc_server_public_key_authentication(SilcServer server,
 static int
 silc_server_get_public_key_auth(SilcServer server,
 				unsigned char **auth_data,
-				uint32 *auth_data_len,
+				SilcUInt32 *auth_data_len,
 				SilcSKE ske)
 {
   int len;
@@ -819,7 +819,7 @@ silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
 			       char *local_passphrase,
 			       void *local_publickey,
 			       unsigned char *remote_auth,
-			       uint32 remote_auth_len)
+			       SilcUInt32 remote_auth_len)
 {
   SilcServer server = (SilcServer)ctx->server;
   SilcSKE ske = ctx->ske;
@@ -886,8 +886,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	 * We are receiving party
 	 */
 	int ret;
-	uint16 payload_len;
-	uint16 conn_type;
+	SilcUInt16 payload_len;
+	SilcUInt16 conn_type;
 	unsigned char *auth_data = NULL;
 
 	SILC_LOG_INFO(("Performing authentication protocol for %s (%s)",
@@ -1052,7 +1052,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	SilcBuffer packet;
 	int payload_len = 0;
 	unsigned char *auth_data = NULL;
-	uint32 auth_data_len = 0;
+	SilcUInt32 auth_data_len = 0;
 	
 	switch(ctx->auth_meth) {
 	case SILC_AUTH_NONE:
@@ -1259,8 +1259,8 @@ void silc_server_protocol_rekey_generate(SilcServer server,
 {
   SilcIDListData idata = (SilcIDListData)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
-  uint32 key_len = silc_cipher_get_key_len(idata->send_key);
-  uint32 hash_len = idata->hash->hash->hash_len;
+  SilcUInt32 key_len = silc_cipher_get_key_len(idata->send_key);
+  SilcUInt32 hash_len = idata->hash->hash->hash_len;
 
   SILC_LOG_DEBUG(("Generating new %s session keys (no PFS)",
 		  send ? "sending" : "receiving"));
@@ -1288,10 +1288,10 @@ silc_server_protocol_rekey_generate_pfs(SilcServer server,
 {
   SilcIDListData idata = (SilcIDListData)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
-  uint32 key_len = silc_cipher_get_key_len(idata->send_key);
-  uint32 hash_len = idata->hash->hash->hash_len;
+  SilcUInt32 key_len = silc_cipher_get_key_len(idata->send_key);
+  SilcUInt32 hash_len = idata->hash->hash->hash_len;
   unsigned char *tmpbuf;
-  uint32 klen;
+  SilcUInt32 klen;
 
   SILC_LOG_DEBUG(("Generating new %s session keys (with PFS)",
 		  send ? "sending" : "receiving"));

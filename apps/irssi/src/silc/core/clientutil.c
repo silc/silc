@@ -158,7 +158,7 @@ int silc_client_create_key_pair(char *pkcs_name, int bits,
   SilcPrivateKey prv_key;
   SilcRng rng;
   unsigned char *key;
-  uint32 key_len;
+  SilcUInt32 key_len;
   char line[256];
   char *pkfile = NULL, *prvfile = NULL;
 
@@ -553,7 +553,7 @@ int silc_client_show_key(char *keyfile)
   SilcPublicKeyIdentifier ident;
   char *fingerprint, *babbleprint;
   unsigned char *pk;
-  uint32 pk_len;
+  SilcUInt32 pk_len;
   SilcPKCS pkcs;
   int key_len = 0;
 

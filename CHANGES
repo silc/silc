@@ -1,3 +1,10 @@
+Sun Feb 24 12:53:25 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed all integer type names:
+	  [u]int[8/16/32/64] -> Silc[UInt/Int][8/16/32/64].  This is
+	  to avoid collisions with other libraries using same type names
+	  as we did.
+
 Sat Feb 23 20:31:43 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added `prefer_ipv6' argument to the functions

@@ -56,7 +56,7 @@ typedef struct SilcPrivateMessagePayloadStruct *SilcPrivateMessagePayload;
  *
  *    SilcPrivateMessagePayload 
  *    silc_private_message_payload_parse(unsigned char *payload,
- *                                       uint32 payload_len,
+ *                                       SilcUInt32 payload_len,
  *                                       SilcCipher cipher);
  *
  * DESCRIPTION
@@ -67,15 +67,15 @@ typedef struct SilcPrivateMessagePayloadStruct *SilcPrivateMessagePayload;
  ***/
 SilcPrivateMessagePayload 
 silc_private_message_payload_parse(unsigned char *payload,
-				   uint32 payload_len,
+				   SilcUInt32 payload_len,
 				   SilcCipher cipher);
 
 /****f* silccore/SilcPrivateAPI/silc_private_message_payload_encode
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_private_message_payload_encode(uint16 flags,
- *                                                   uint16 data_len,
+ *    SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
+ *                                                   SilcUInt16 data_len,
  *                                                   const unsigned char *data,
  *                                                   SilcCipher cipher);
  *
@@ -86,8 +86,8 @@ silc_private_message_payload_parse(unsigned char *payload,
  *    if the private message private keys are used.
  *
  ***/
-SilcBuffer silc_private_message_payload_encode(uint16 flags,
-					       uint16 data_len,
+SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
+					       SilcUInt16 data_len,
 					       const unsigned char *data,
 					       SilcCipher cipher);
 
@@ -109,7 +109,7 @@ void silc_private_message_payload_free(SilcPrivateMessagePayload payload);
  *
  * SYNOPSIS
  *
- *    uint16 
+ *    SilcUInt16 
  *    silc_private_message_get_flags(SilcPrivateMessagePayload payload);
  *
  * DESCRIPTION
@@ -119,7 +119,7 @@ void silc_private_message_payload_free(SilcPrivateMessagePayload payload);
  *    channel message flags.
  *
  ***/
-uint16 
+SilcUInt16 
 silc_private_message_get_flags(SilcPrivateMessagePayload payload);
 
 /****f* silccore/SilcPrivateAPI/silc_private_message_get_message
@@ -128,7 +128,7 @@ silc_private_message_get_flags(SilcPrivateMessagePayload payload);
  *
  *    unsigned char *
  *    silc_private_message_get_nickname(SilcPrivateMessagePayload payload,
- *                                      uint32 *nickname_len);
+ *                                      SilcUInt32 *nickname_len);
  *
  * DESCRIPTION
  *
@@ -137,6 +137,6 @@ silc_private_message_get_flags(SilcPrivateMessagePayload payload);
  ***/
 unsigned char *
 silc_private_message_get_message(SilcPrivateMessagePayload payload,
-				 uint32 *message_len);
+				 SilcUInt32 *message_len);
 
 #endif

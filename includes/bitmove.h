@@ -20,28 +20,28 @@
 #ifndef BITMOVE_H
 #define BITMOVE_H
 
-#define GET_WORD(cp) ((uint32)(uint8)(cp)[0]) << 24	\
-		    | ((uint32)(uint8)(cp)[1] << 16)	\
-		    | ((uint32)(uint8)(cp)[2] << 8)	\
-		    | ((uint32)(uint8)(cp)[3])
+#define GET_WORD(cp) ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
+		    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)	\
+		    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)	\
+		    | ((SilcUInt32)(SilcUInt8)(cp)[3])
 
 /* Returns eight 8-bit bytes, most significant bytes first. */
 #define SILC_GET64_MSB(l, cp)			\
-       (l) = ((((uint64)GET_WORD((cp))) << 32) |	\
-	      ((uint64)GET_WORD((cp) + 4)))
+       (l) = ((((SilcUInt64)GET_WORD((cp))) << 32) |	\
+	      ((SilcUInt64)GET_WORD((cp) + 4)))
 #define SILC_PUT64_MSB(l, cp) 				\
 do {							\
-  SILC_PUT32_MSB((uint32)((uint64)(l) >> 32), (cp));	\
-  SILC_PUT32_MSB((uint32)(l), (cp) + 4); 		\
+  SILC_PUT32_MSB((SilcUInt32)((SilcUInt64)(l) >> 32), (cp));	\
+  SILC_PUT32_MSB((SilcUInt32)(l), (cp) + 4); 		\
 } while(0)
 
 
 /* Returns four 8-bit bytes, most significant bytes first. */
 #define SILC_GET32_MSB(l, cp)			\
-	(l) = ((uint32)(uint8)(cp)[0]) << 24	\
-	    | ((uint32)(uint8)(cp)[1] << 16)	\
-	    | ((uint32)(uint8)(cp)[2] << 8)	\
-	    | ((uint32)(uint8)(cp)[3])
+	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)	\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)	\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[3])
 #define SILC_PUT32_MSB(l, cp)			\
 	(cp)[0] = l >> 24;			\
 	(cp)[1] = l >> 16;			\
@@ -51,16 +51,16 @@ do {							\
 
 /* Returns four 8-bit bytes, less significant bytes first. */
 #define SILC_GET32_LSB(l, cp)			\
-	(l) = ((uint32)(uint8)(cp)[0])		\
-	    | ((uint32)(uint8)(cp)[1] << 8)	\
-	    | ((uint32)(uint8)(cp)[2] << 16)	\
-	    | ((uint32)(uint8)(cp)[3] << 24)
+	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)	\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)	\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24)
 /* same as upper but XOR the result always */
 #define SILC_GET32_X_LSB(l, cp)			\
-	(l) ^= ((uint32)(uint8)(cp)[0])		\
-	    | ((uint32)(uint8)(cp)[1] << 8)	\
-	    | ((uint32)(uint8)(cp)[2] << 16)	\
-	    | ((uint32)(uint8)(cp)[3] << 24)
+	(l) ^= ((SilcUInt32)(SilcUInt8)(cp)[0])		\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)	\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)	\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24)
 #define SILC_PUT32_LSB(l, cp)			\
 	(cp)[0] = l;				\
 	(cp)[1] = l >> 8;			\
@@ -70,16 +70,16 @@ do {							\
 
 /* Returns two 8-bit bytes, most significant bytes first. */
 #define SILC_GET16_MSB(l, cp)			\
-	(l) = ((uint32)(uint8)(cp)[0] << 8)	\
-	    | ((uint32)(uint8)(cp)[1])
+	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0] << 8)	\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[1])
 #define SILC_PUT16_MSB(l, cp)			\
 	(cp)[0] = l >> 8;			\
 	(cp)[1] = l;
 
 /* Returns two 8-bit bytes, less significant bytes first. */
 #define SILC_GET16_LSB(l, cp)			\
-	(l) = ((uint32)(uint8)(cp)[0])		\
-	    | ((uint32)(uint8)(cp)[1] << 8)
+	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
+	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)
 #define SILC_PUT16_LSB(l, cp)			\
 	(cp)[0] = l;				\
 	(cp)[1] = l >> 8;

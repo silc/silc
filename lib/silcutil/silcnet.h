@@ -221,7 +221,7 @@ bool silc_net_is_ip(const char *addr);
  *
  * SYNOPSIS
  *
- *    bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
+ *    bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len);
  *
  * DESCRIPTION
  *
@@ -230,7 +230,7 @@ bool silc_net_is_ip(const char *addr);
  *    IPv4 or IPv6 address.
  *
  ***/
-bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
+bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len);
 
 /****f* silcutil/SilcNetAPI/SilcNetResolveCallback
  *
@@ -253,7 +253,7 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  * SYNOPSIS
  *
  *    bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, 
- *                                char *address, uint32 address_len);
+ *                                char *address, SilcUInt32 address_len);
  *
  * DESCRIPTION
  *
@@ -267,7 +267,7 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  *
  ***/
 bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address, 
-			    uint32 address_len);
+			    SilcUInt32 address_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyname_async
  *
@@ -302,7 +302,7 @@ void silc_net_gethostbyname_async(const char *name,
  * SYNOPSIS
  *
  *   bool silc_net_gethostbyaddr(const char *addr, char *name, 
- *                               uint32 name_len);
+ *                               SilcUInt32 name_len);
  *
  * DESCRIPTION
  *
@@ -312,7 +312,7 @@ void silc_net_gethostbyname_async(const char *name,
  *    This is synchronous function and will block the calling process.
  *
  ***/
-bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len);
+bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyaddr_async
  *
@@ -368,27 +368,27 @@ bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
  *
  * SYNOPSIS
  *
- *    uint16 silc_net_get_remote_port(int sock);
+ *    SilcUInt16 silc_net_get_remote_port(int sock);
  *
  * DESCRIPTION
  *
  *    Return remote port by socket.
  *
  ***/
-uint16 silc_net_get_remote_port(int sock);
+SilcUInt16 silc_net_get_remote_port(int sock);
 
 /****f* silcutil/SilcNetAPI/silc_net_get_local_port
  *
  * SYNOPSIS
  *
- *    uint16 silc_net_get_local_port(int sock);
+ *    SilcUInt16 silc_net_get_local_port(int sock);
  *
  * DESCRIPTION
  *
  *    Return local port by socket.
  *
  ***/
-uint16 silc_net_get_local_port(int sock);
+SilcUInt16 silc_net_get_local_port(int sock);
 
 /****f* silcutil/SilcNetAPI/silc_net_localhost
  *

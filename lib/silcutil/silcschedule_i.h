@@ -26,10 +26,10 @@
 /* Schedule FD structure. Includes the file descriptors that the scheduler
    will listen. This is given as argument to the silc_select function. */
 typedef struct {
-  uint32 fd;			/* The file descriptor (or handle on WIN32) */
-  uint16 events;		/* Mask of task events, if events is 0 then
+  SilcUInt32 fd;			/* The file descriptor (or handle on WIN32) */
+  SilcUInt16 events;		/* Mask of task events, if events is 0 then
 				   the fd must be omitted. */
-  uint16 revents;		/* Returned events mask */
+  SilcUInt16 revents;		/* Returned events mask */
 } *SilcScheduleFd;
 
 #endif

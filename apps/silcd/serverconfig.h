@@ -24,23 +24,23 @@
 typedef struct SilcServerConfigCipherStruct {
   char *name;
   char *module;
-  uint32 key_length;
-  uint32 block_length;
+  SilcUInt32 key_length;
+  SilcUInt32 block_length;
   struct SilcServerConfigCipherStruct *next;
 } SilcServerConfigCipher;
 
 typedef struct SilcServerConfigHashStruct {
   char *name;
   char *module;
-  uint32 block_length;
-  uint32 digest_length;
+  SilcUInt32 block_length;
+  SilcUInt32 digest_length;
   struct SilcServerConfigHashStruct *next;
 } SilcServerConfigHash;
 
 typedef struct SilcServerConfigHmacStruct {
   char *name;
   char *hash;
-  uint32 mac_length;
+  SilcUInt32 mac_length;
   struct SilcServerConfigHmacStruct *next;
 } SilcServerConfigHmac;
 
@@ -52,7 +52,7 @@ typedef struct SilcServerConfigPkcsStruct {
 typedef struct SilcServerConfigServerInfoStruct {
   char *server_name;
   char *server_ip;
-  uint16 port;
+  SilcUInt16 port;
   char *server_type;	/* E.g. "Test Server" */
   char *location;	/* geographic location */
   char *admin;		/* admin full name */
@@ -67,20 +67,20 @@ typedef struct SilcServerConfigServerInfoStruct {
 
 typedef struct SilcServerConfigLoggingStruct {
   char *file;
-  uint32 maxsize;
+  SilcUInt32 maxsize;
 } SilcServerConfigLogging;
 
 /* Connection parameters */
 typedef struct SilcServerConfigConnParams {
   char *name;
-  uint32 connections_max;
-  uint32 connections_max_per_host;
-  uint32 keepalive_secs;
-  uint32 reconnect_count;
-  uint32 reconnect_interval;
-  uint32 reconnect_interval_max;
+  SilcUInt32 connections_max;
+  SilcUInt32 connections_max_per_host;
+  SilcUInt32 keepalive_secs;
+  SilcUInt32 reconnect_count;
+  SilcUInt32 reconnect_interval;
+  SilcUInt32 reconnect_interval_max;
   bool reconnect_keep_trying;
-  uint32 key_exchange_rekey;
+  SilcUInt32 key_exchange_rekey;
   bool key_exchange_pfs;
   struct SilcServerConfigConnParams *next;
 } SilcServerConfigConnParams;
@@ -89,7 +89,7 @@ typedef struct SilcServerConfigConnParams {
 typedef struct SilcServerConfigClientStruct {
   char *host;
   unsigned char *passphrase;
-  uint32 passphrase_len;
+  SilcUInt32 passphrase_len;
   void *publickey;
   SilcServerConfigConnParams *param;
   struct SilcServerConfigClientStruct *next;
@@ -101,7 +101,7 @@ typedef struct SilcServerConfigAdminStruct {
   char *user;
   char *nick;
   unsigned char *passphrase;
-  uint32 passphrase_len;
+  SilcUInt32 passphrase_len;
   void *publickey;
   struct SilcServerConfigAdminStruct *next;
 } SilcServerConfigAdmin;
@@ -117,7 +117,7 @@ typedef struct SilcServerConfigDenyStruct {
 typedef struct SilcServerConfigServerStruct {
   char *host;
   unsigned char *passphrase;
-  uint32 passphrase_len;
+  SilcUInt32 passphrase_len;
   void *publickey;
   char *version;
   SilcServerConfigConnParams *param;
@@ -129,15 +129,15 @@ typedef struct SilcServerConfigServerStruct {
 typedef struct SilcServerConfigRouterStruct {
   char *host;
   unsigned char *passphrase;
-  uint32 passphrase_len;
+  SilcUInt32 passphrase_len;
   void *publickey;
-  uint16 port;
+  SilcUInt16 port;
   char *version;
   SilcServerConfigConnParams *param;
   bool initiator;
   bool backup_router;
   char *backup_replace_ip;
-  uint16 backup_replace_port;
+  SilcUInt16 backup_replace_port;
   bool backup_local;
   struct SilcServerConfigRouterStruct *next;
 } SilcServerConfigRouter;
@@ -150,9 +150,9 @@ typedef struct {
   char *module_path;
   bool prefer_passphrase_auth;
   bool require_reverse_lookup;
-  uint32 channel_rekey_secs;
-  uint32 key_exchange_timeout;
-  uint32 conn_auth_timeout;
+  SilcUInt32 channel_rekey_secs;
+  SilcUInt32 key_exchange_timeout;
+  SilcUInt32 conn_auth_timeout;
   SilcServerConfigConnParams param;
 
   /* Other configuration sections */

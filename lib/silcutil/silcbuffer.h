@@ -31,13 +31,13 @@
    the allocated data area. Following short description of the fields
    of the buffer.
 
-   uint32 truelen;
+   SilcUInt32 truelen;
 
        True length of the buffer. This is set at the allocation of the
        buffer and it should not be touched after that. This field should
        be considered read-only.
 
-   uint32 len;
+   SilcUInt32 len;
 
        Length of the currently valid data area. Tells the length of the 
        data at the buffer. This is set to zero at the allocation of the
@@ -111,8 +111,8 @@
 */
 
 typedef struct {
-  uint32 truelen;
-  uint32 len;
+  SilcUInt32 truelen;
+  SilcUInt32 len;
   unsigned char *head;
   unsigned char *data;
   unsigned char *tail;
@@ -128,7 +128,7 @@ typedef struct {
 /* Inline functions */
 
 static inline
-SilcBuffer silc_buffer_alloc(uint32 len)
+SilcBuffer silc_buffer_alloc(SilcUInt32 len)
 {
   SilcBuffer sb;
 
@@ -165,7 +165,7 @@ void silc_buffer_free(SilcBuffer sb)
    memory allocations. The `data' will not be copied to the buffer. */
 
 static inline
-void silc_buffer_set(SilcBuffer sb, unsigned char *data, uint32 data_len)
+void silc_buffer_set(SilcBuffer sb, unsigned char *data, SilcUInt32 data_len)
 {
   sb->data = sb->head = data;
   sb->tail = sb->end = data + data_len;
@@ -190,12 +190,12 @@ void silc_buffer_set(SilcBuffer sb, unsigned char *data, uint32 data_len)
 */
 
 static inline 
-unsigned char *silc_buffer_pull(SilcBuffer sb, uint32 len)
+unsigned char *silc_buffer_pull(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_data = sb->data;
 
 #ifdef SILC_DEBUG
-  assert(len <= (uint32)(sb->tail - sb->data));
+  assert(len <= (SilcUInt32)(sb->tail - sb->data));
 #endif
 
   sb->data += len;
@@ -222,7 +222,7 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, uint32 len)
 */
 
 static inline 
-unsigned char *silc_buffer_push(SilcBuffer sb, uint32 len)
+unsigned char *silc_buffer_push(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_data = sb->data;
 
@@ -254,12 +254,12 @@ unsigned char *silc_buffer_push(SilcBuffer sb, uint32 len)
 */
 
 static inline 
-unsigned char *silc_buffer_pull_tail(SilcBuffer sb, uint32 len)
+unsigned char *silc_buffer_pull_tail(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_tail = sb->tail;
 
 #ifdef SILC_DEBUG
-  assert((uint32)(sb->end - sb->tail) >= len);
+  assert((SilcUInt32)(sb->end - sb->tail) >= len);
 #endif
 
   sb->tail += len;
@@ -286,7 +286,7 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, uint32 len)
 */
 
 static inline
-unsigned char *silc_buffer_push_tail(SilcBuffer sb, uint32 len)
+unsigned char *silc_buffer_push_tail(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_tail = sb->tail;
 
@@ -314,10 +314,10 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, uint32 len)
 static inline
 unsigned char *silc_buffer_put_head(SilcBuffer sb, 
 				    const unsigned char *data,
-				    uint32 len)
+				    SilcUInt32 len)
 {
 #ifdef SILC_DEBUG
-  assert((uint32)(sb->data - sb->head) >= len);
+  assert((SilcUInt32)(sb->data - sb->head) >= len);
 #endif
   return (unsigned char *)memcpy(sb->head, data, len);
 }
@@ -336,10 +336,10 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 static inline
 unsigned char *silc_buffer_put(SilcBuffer sb, 
 			       const unsigned char *data,
-			       uint32 len)
+			       SilcUInt32 len)
 {
 #ifdef SILC_DEBUG
-  assert((uint32)(sb->tail - sb->data) >= len);
+  assert((SilcUInt32)(sb->tail - sb->data) >= len);
 #endif
   return (unsigned char *)memcpy(sb->data, data, len);
 }
@@ -358,10 +358,10 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 static inline
 unsigned char *silc_buffer_put_tail(SilcBuffer sb, 
 				    const unsigned char *data,
-				    uint32 len)
+				    SilcUInt32 len)
 {
 #ifdef SILC_DEBUG
-  assert((uint32)(sb->end - sb->tail) >= len);
+  assert((SilcUInt32)(sb->end - sb->tail) >= len);
 #endif
   return (unsigned char *)memcpy(sb->tail, data, len);
 }
@@ -418,7 +418,7 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
    except that there is now more space at the end of buffer. */
 
 static inline
-SilcBuffer silc_buffer_realloc(SilcBuffer sb, uint32 newsize)
+SilcBuffer silc_buffer_realloc(SilcBuffer sb, SilcUInt32 newsize)
 {
   SilcBuffer sb_new;
 

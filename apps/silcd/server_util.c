@@ -144,9 +144,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
   SilcClientEntry client = NULL;
   SilcBuffer idp;
   SilcClientEntry *clients = NULL;
-  uint32 clients_c = 0;
+  SilcUInt32 clients_c = 0;
   unsigned char **argv = NULL;
-  uint32 *argv_lens = NULL, *argv_types = NULL, argc = 0;
+  SilcUInt32 *argv_lens = NULL, *argv_types = NULL, argc = 0;
   SilcHashTableList htl;
   SilcChannelEntry channel;
   SilcHashTable channels;
@@ -753,7 +753,7 @@ bool silc_server_client_on_channel(SilcClientEntry client,
 
 /* Checks string for bad characters and returns TRUE if they are found. */
 
-bool silc_server_name_bad_chars(const char *name, uint32 name_len)
+bool silc_server_name_bad_chars(const char *name, SilcUInt32 name_len)
 {
   int i;
 
@@ -773,7 +773,7 @@ bool silc_server_name_bad_chars(const char *name, uint32 name_len)
 /* Modifies the `name' if it includes bad characters and returns new
    allocated name that does not include bad characters. */
 
-char *silc_server_name_modify_bad(const char *name, uint32 name_len)
+char *silc_server_name_modify_bad(const char *name, SilcUInt32 name_len)
 {
   int i;
   char *newname = strdup(name);
@@ -793,7 +793,7 @@ char *silc_server_name_modify_bad(const char *name, uint32 name_len)
 /* Find number of sockets by IP address indicated by `ip'. Returns 0 if
    socket connections with the IP address does not exist. */
 
-uint32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip)
+SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip)
 {
   int i, count;
 

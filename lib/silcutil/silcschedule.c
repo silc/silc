@@ -28,7 +28,7 @@ typedef struct SilcTaskQueueStruct *SilcTaskQueue;
 /* System specific routines. Implemented under unix/ and win32/. */
 
 /* System specific select(). Returns same values as normal select(). */
-int silc_select(SilcScheduleFd fds, uint32 fds_count, struct timeval *timeout);
+int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeout);
 
 /* Initializes the wakeup of the scheduler. In multi-threaded environment
    the scheduler needs to be wakenup when tasks are added or removed from
@@ -49,7 +49,7 @@ void silc_schedule_wakeup_internal(void *context);
 
 static void silc_task_queue_alloc(SilcTaskQueue *queue);
 static void silc_task_queue_free(SilcTaskQueue queue);
-static SilcTask silc_task_find(SilcTaskQueue queue, uint32 fd);
+static SilcTask silc_task_find(SilcTaskQueue queue, SilcUInt32 fd);
 static SilcTask silc_task_add(SilcTaskQueue queue, SilcTask newtask, 
 			      SilcTaskPriority priority);
 static SilcTask silc_task_get_first(SilcTaskQueue queue, SilcTask first);
@@ -61,7 +61,7 @@ static int silc_schedule_task_timeout_compare(struct timeval *smaller,
 static void silc_task_del_by_context(SilcTaskQueue queue, void *context);
 static void silc_task_del_by_callback(SilcTaskQueue queue,
 				      SilcTaskCallback callback);
-static void silc_task_del_by_fd(SilcTaskQueue queue, uint32 fd);
+static void silc_task_del_by_fd(SilcTaskQueue queue, SilcUInt32 fd);
 
 /* Returns the task queue by task type */
 #define SILC_SCHEDULE_GET_QUEUE(type)					\
@@ -71,7 +71,7 @@ static void silc_task_del_by_fd(SilcTaskQueue queue, uint32 fd);
 
 /* SILC Task object. Represents one task in the scheduler. */
 struct SilcTaskStruct {
-  uint32 fd;
+  SilcUInt32 fd;
   struct timeval timeout;
   SilcTaskCallback callback;
   void *context;
@@ -131,8 +131,8 @@ struct SilcTaskQueueStruct {
        List of file descriptors the scheduler is supposed to be listenning.
        This is updated internally.
 
-   uint32 max_fd
-   uint32 last_fd
+   SilcUInt32 max_fd
+   SilcUInt32 last_fd
 
        Size of the fd_list list. There can be `max_fd' many tasks in
        the scheduler at once. The `last_fd' is the last valid entry
@@ -172,8 +172,8 @@ struct SilcScheduleStruct {
   SilcTaskQueue timeout_queue;
   SilcTaskQueue generic_queue;
   SilcScheduleFd fd_list;
-  uint32 max_fd;
-  uint32 last_fd;
+  SilcUInt32 max_fd;
+  SilcUInt32 last_fd;
   struct timeval *timeout;
   bool valid;
   void *wakeup;
@@ -284,7 +284,7 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 {
   SilcTask task;
   int i, last_fd = schedule->last_fd;
-  uint32 fd;
+  SilcUInt32 fd;
 
   for (i = 0; i <= last_fd; i++) {
     if (schedule->fd_list[i].events == 0)
@@ -621,7 +621,7 @@ void silc_schedule_wakeup(SilcSchedule schedule)
 
 /* Add new task to the scheduler */
 
-SilcTask silc_schedule_task_add(SilcSchedule schedule, uint32 fd,
+SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 				SilcTaskCallback callback, void *context, 
 				long seconds, long useconds, 
 				SilcTaskType type, 
@@ -757,7 +757,7 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 
 /* Remove task by fd */
 
-void silc_schedule_task_del_by_fd(SilcSchedule schedule, uint32 fd)
+void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
 {
   SILC_LOG_DEBUG(("Unregister task by fd %d", fd));
 
@@ -793,7 +793,7 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context)
    one file descriptor to set different iomasks. */
 
 void silc_schedule_set_listen_fd(SilcSchedule schedule,
-				 uint32 fd, SilcTaskEvent iomask)
+				 SilcUInt32 fd, SilcTaskEvent iomask)
 {
   int i;
   bool found = FALSE;
@@ -825,7 +825,7 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule,
 
 /* Removes a file descriptor from listen list. */
 
-void silc_schedule_unset_listen_fd(SilcSchedule schedule, uint32 fd)
+void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
 {
   int i;
 
@@ -863,7 +863,7 @@ static void silc_task_queue_free(SilcTaskQueue queue)
 
 /* Return task by its fd. */
 
-static SilcTask silc_task_find(SilcTaskQueue queue, uint32 fd)
+static SilcTask silc_task_find(SilcTaskQueue queue, SilcUInt32 fd)
 {
   SilcTask next;
 
@@ -1147,7 +1147,7 @@ static int silc_schedule_task_timeout_compare(struct timeval *smaller,
   return FALSE;
 }
 
-static void silc_task_del_by_fd(SilcTaskQueue queue, uint32 fd)
+static void silc_task_del_by_fd(SilcTaskQueue queue, SilcUInt32 fd)
 {
   SilcTask next;
 

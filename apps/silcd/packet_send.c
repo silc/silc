@@ -78,7 +78,7 @@ void silc_server_packet_send(SilcServer server,
 			     SilcPacketType type, 
 			     SilcPacketFlags flags,
 			     unsigned char *data, 
-			     uint32 data_len,
+			     SilcUInt32 data_len,
 			     bool force_send)
 {
   void *dst_id = NULL;
@@ -133,16 +133,16 @@ void silc_server_packet_send_dest(SilcServer server,
 				  void *dst_id,
 				  SilcIdType dst_id_type,
 				  unsigned char *data, 
-				  uint32 data_len,
+				  SilcUInt32 data_len,
 				  bool force_send)
 {
   SilcPacketContext packetdata;
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
-  uint32 sequence = 0;
+  SilcUInt32 sequence = 0;
   unsigned char *dst_id_data = NULL;
-  uint32 dst_id_len = 0;
+  SilcUInt32 dst_id_len = 0;
   int block_len = 0;
 
   /* If disconnecting, ignore the data */
@@ -232,18 +232,18 @@ void silc_server_packet_send_srcdest(SilcServer server,
 				     void *dst_id,
 				     SilcIdType dst_id_type,
 				     unsigned char *data, 
-				     uint32 data_len,
+				     SilcUInt32 data_len,
 				     bool force_send)
 {
   SilcPacketContext packetdata;
   SilcIDListData idata;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
-  uint32 sequence = 0;
+  SilcUInt32 sequence = 0;
   unsigned char *dst_id_data = NULL;
-  uint32 dst_id_len = 0;
+  SilcUInt32 dst_id_len = 0;
   unsigned char *src_id_data = NULL;
-  uint32 src_id_len = 0;
+  SilcUInt32 src_id_len = 0;
   int block_len = 0;
 
   SILC_LOG_DEBUG(("Sending packet, type %d", type));
@@ -392,18 +392,18 @@ void silc_server_packet_route(SilcServer server,
 
 void silc_server_packet_send_clients(SilcServer server,
 				     SilcClientEntry *clients,
-				     uint32 clients_count,
+				     SilcUInt32 clients_count,
 				     SilcPacketType type, 
 				     SilcPacketFlags flags,
 				     bool route,
 				     unsigned char *data, 
-				     uint32 data_len,
+				     SilcUInt32 data_len,
 				     bool force_send)
 {
   SilcSocketConnection sock = NULL;
   SilcClientEntry client = NULL;
   SilcServerEntry *routed = NULL;
-  uint32 routed_count = 0;
+  SilcUInt32 routed_count = 0;
   bool gone = FALSE;
   int i, k;
 
@@ -469,9 +469,9 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 					SilcPacketContext *packet,
 					SilcCipher cipher,
 					SilcHmac hmac,
-					uint32 sequence,
+					SilcUInt32 sequence,
 					unsigned char *data,
-					uint32 data_len,
+					SilcUInt32 data_len,
 					bool channel_message,
 					bool force_send)
 {
@@ -538,7 +538,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
 					SilcPacketType type,
 					bool route,
 					unsigned char *data,
-					uint32 data_len,
+					SilcUInt32 data_len,
 					bool force_send)
 {
   SilcSocketConnection sock = NULL;
@@ -548,7 +548,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
   SilcIDListData idata;
-  uint32 routed_count = 0;
+  SilcUInt32 routed_count = 0;
   bool gone = FALSE;
   int k;
 
@@ -688,8 +688,8 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
       !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY) &&
       channel->channel_key) {
     SilcBuffer chp;
-    uint32 iv_len, i;
-    uint16 dlen, flags;
+    SilcUInt32 iv_len, i;
+    SilcUInt16 dlen, flags;
 
     iv_len = silc_cipher_get_block_len(channel->channel_key);
     if (channel->iv[0] == '\0')
@@ -734,7 +734,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					 SilcIdType sender_type,
 					 void *sender_entry,
 					 unsigned char *data,
-					 uint32 data_len,
+					 SilcUInt32 data_len,
 					 bool force_send)
 {
   bool found = FALSE;
@@ -743,7 +743,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   SilcClientEntry client = NULL;
   SilcServerEntry *routed = NULL;
   SilcChannelClientEntry chl;
-  uint32 routed_count = 0;
+  SilcUInt32 routed_count = 0;
   SilcIDListData idata;
   SilcHashTableList htl;
   bool gone = FALSE;
@@ -961,7 +961,7 @@ void silc_server_packet_send_local_channel(SilcServer server,
 					   SilcPacketType type,
 					   SilcPacketFlags flags,
 					   unsigned char *data,
-					   uint32 data_len,
+					   SilcUInt32 data_len,
 					   bool force_send)
 {
   SilcChannelClientEntry chl;
@@ -995,7 +995,7 @@ void silc_server_send_private_message(SilcServer server,
 				      SilcSocketConnection dst_sock,
 				      SilcCipher cipher,
 				      SilcHmac hmac,
-				      uint32 sequence,
+				      SilcUInt32 sequence,
 				      SilcPacketContext *packet)
 {
   SilcBuffer buffer = packet->buffer;
@@ -1036,7 +1036,7 @@ void silc_server_send_motd(SilcServer server,
 			   SilcSocketConnection sock)
 {
   char *motd, *motd_file = NULL;
-  uint32 motd_len;
+  SilcUInt32 motd_len;
 
   if (server->config)
     motd_file = server->config->server_info->motd_file;
@@ -1080,7 +1080,7 @@ void silc_server_send_notify(SilcServer server,
 			     SilcSocketConnection sock,
 			     bool broadcast,
 			     SilcNotifyType type,
-			     uint32 argc, ...)
+			     SilcUInt32 argc, ...)
 {
   va_list ap;
   SilcBuffer packet;
@@ -1110,7 +1110,7 @@ void silc_server_send_notify_args(SilcServer server,
 				  SilcSocketConnection sock,
 				  bool broadcast,
 				  SilcNotifyType type,
-				  uint32 argc,
+				  SilcUInt32 argc,
 				  SilcBuffer args)
 {
   SilcBuffer packet;
@@ -1210,7 +1210,7 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcSocketConnection sock,
 				   bool broadcast,
 				   SilcChannelEntry channel,
-				   uint32 mode_mask,
+				   SilcUInt32 mode_mask,
 				   void *id, SilcIdType id_type,
 				   char *cipher, char *hmac,
 				   char *passphrase)
@@ -1240,7 +1240,7 @@ void silc_server_send_notify_cumode(SilcServer server,
 				    SilcSocketConnection sock,
 				    bool broadcast,
 				    SilcChannelEntry channel,
-				    uint32 mode_mask,
+				    SilcUInt32 mode_mask,
 				    void *id, SilcIdType id_type,
 				    SilcClientID *target)
 {
@@ -1361,7 +1361,7 @@ void silc_server_send_notify_umode(SilcServer server,
 				   SilcSocketConnection sock,
 				   bool broadcast,
 				   SilcClientID *client_id,
-				   uint32 mode_mask)
+				   SilcUInt32 mode_mask)
 {
   SilcBuffer idp;
   unsigned char mode[4];
@@ -1432,7 +1432,7 @@ void silc_server_send_notify_dest(SilcServer server,
 				  void *dest_id,
 				  SilcIdType dest_id_type,
 				  SilcNotifyType type,
-				  uint32 argc, ...)
+				  SilcUInt32 argc, ...)
 {
   va_list ap;
   SilcBuffer packet;
@@ -1460,7 +1460,7 @@ void silc_server_send_notify_to_channel(SilcServer server,
 					SilcChannelEntry channel,
 					bool route_notify,
 					SilcNotifyType type,
-					uint32 argc, ...)
+					SilcUInt32 argc, ...)
 {
   va_list ap;
   SilcBuffer packet;
@@ -1486,23 +1486,23 @@ void silc_server_send_notify_on_channels(SilcServer server,
 					 SilcClientEntry sender,
 					 SilcClientEntry client,
 					 SilcNotifyType type,
-					 uint32 argc, ...)
+					 SilcUInt32 argc, ...)
 {
   int k;
   SilcSocketConnection sock = NULL;
   SilcPacketContext packetdata;
   SilcClientEntry c;
   SilcClientEntry *sent_clients = NULL;
-  uint32 sent_clients_count = 0;
+  SilcUInt32 sent_clients_count = 0;
   SilcServerEntry *routed = NULL;
-  uint32 routed_count = 0;
+  SilcUInt32 routed_count = 0;
   SilcHashTableList htl, htl2;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl, chl2;
   SilcIDListData idata;
   SilcBuffer packet;
   unsigned char *data;
-  uint32 data_len;
+  SilcUInt32 data_len;
   bool force_send = FALSE;
   va_list ap;
 
@@ -1637,7 +1637,7 @@ void silc_server_send_new_id(SilcServer server,
 			     SilcSocketConnection sock,
 			     bool broadcast,
 			     void *id, SilcIdType id_type, 
-			     uint32 id_len)
+			     SilcUInt32 id_len)
 {
   SilcBuffer idp;
 
@@ -1667,12 +1667,12 @@ void silc_server_send_new_channel(SilcServer server,
 				  bool broadcast,
 				  char *channel_name,
 				  void *channel_id, 
-				  uint32 channel_id_len,
-				  uint32 mode)
+				  SilcUInt32 channel_id_len,
+				  SilcUInt32 mode)
 {
   SilcBuffer packet;
   unsigned char *cid;
-  uint32 name_len = strlen(channel_name);
+  SilcUInt32 name_len = strlen(channel_name);
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1716,7 +1716,7 @@ void silc_server_send_channel_key(SilcServer server,
 {
   SilcBuffer packet;
   unsigned char *chid;
-  uint32 tmp_len;
+  SilcUInt32 tmp_len;
  
   SILC_LOG_DEBUG(("Sending key to channel %s", channel->channel_name));
  
@@ -1745,8 +1745,8 @@ void silc_server_send_channel_key(SilcServer server,
 void silc_server_send_command(SilcServer server, 
 			      SilcSocketConnection sock,
 			      SilcCommand command, 
-			      uint16 ident,
-			      uint32 argc, ...)
+			      SilcUInt16 ident,
+			      SilcUInt32 argc, ...)
 {
   SilcBuffer packet;
   va_list ap;
@@ -1767,8 +1767,8 @@ void silc_server_send_command_reply(SilcServer server,
 				    SilcSocketConnection sock,
 				    SilcCommand command, 
 				    SilcCommandStatus status,
-				    uint16 ident,
-				    uint32 argc, ...)
+				    SilcUInt16 ident,
+				    SilcUInt32 argc, ...)
 {
   SilcBuffer packet;
   va_list ap;
@@ -1792,8 +1792,8 @@ void silc_server_send_dest_command_reply(SilcServer server,
 					 SilcIdType dst_id_type,
 					 SilcCommand command, 
 					 SilcCommandStatus status,
-					 uint16 ident,
-					 uint32 argc, ...)
+					 SilcUInt16 ident,
+					 SilcUInt32 argc, ...)
 {
   SilcBuffer packet;
   va_list ap;
@@ -1825,7 +1825,7 @@ void silc_server_relay_packet(SilcServer server,
 			      SilcSocketConnection dst_sock,
 			      SilcCipher cipher,
 			      SilcHmac hmac,
-			      uint32 sequence,
+			      SilcUInt32 sequence,
 			      SilcPacketContext *packet,
 			      bool force_send)
 {
@@ -1850,7 +1850,7 @@ void silc_server_relay_packet(SilcServer server,
 
 void silc_server_send_connection_auth_request(SilcServer server,
 					      SilcSocketConnection sock,
-					      uint16 conn_type,
+					      SilcUInt16 conn_type,
 					      SilcAuthMethod auth_meth)
 {
   SilcBuffer packet;

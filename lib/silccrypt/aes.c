@@ -51,7 +51,7 @@ Mean:          500 cycles =    51.2 mbits/sec
 
 SILC_CIPHER_API_SET_KEY(aes)
 {
-  uint32 k[8];
+  SilcUInt32 k[8];
 
   SILC_GET_WORD_KEY(key, k, keylen);
   rijndael_set_key((RijndaelContext *)context, k, keylen);
@@ -87,7 +87,7 @@ SILC_CIPHER_API_CONTEXT_LEN(aes)
 
 SILC_CIPHER_API_ENCRYPT_CBC(aes)
 {
-  uint32 tiv[4];
+  SilcUInt32 tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);
@@ -112,7 +112,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(aes)
 
 SILC_CIPHER_API_DECRYPT_CBC(aes)
 {
-  uint32 tmp[4], tmp2[4], tiv[4];
+  SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);

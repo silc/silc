@@ -87,7 +87,7 @@ void silc_server_backup_send(SilcServer server,
 			     SilcPacketType type,
 			     SilcPacketFlags flags,
 			     unsigned char *data,
-			     uint32 data_len,
+			     SilcUInt32 data_len,
 			     bool force_send,
 			     bool local);
 
@@ -102,7 +102,7 @@ void silc_server_backup_send_dest(SilcServer server,
 				  void *dst_id,
 				  SilcIdType dst_id_type,
 				  unsigned char *data,
-				  uint32 data_len,
+				  SilcUInt32 data_len,
 				  bool force_send,
 				  bool local);
 
@@ -117,7 +117,7 @@ void silc_server_backup_resume_router(SilcServer server,
    `ip' and `port'. The `connected' callback will be called when the
    connection is created. */
 void silc_server_backup_reconnect(SilcServer server,
-				  const char *ip, uint16 port,
+				  const char *ip, SilcUInt16 port,
 				  SilcServerConnectRouterCallback callback,
 				  void *context);
 

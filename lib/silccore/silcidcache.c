@@ -87,9 +87,9 @@ struct SilcIDCacheStruct {
 struct SilcIDCacheListStruct {
   SilcIDCacheEntry cache[64];
   SilcIDCacheEntry *cache_dyn;
-  uint32 cache_dyn_count;
-  uint32 cache_count;
-  uint32 pos;
+  SilcUInt32 cache_dyn_count;
+  SilcUInt32 cache_count;
+  SilcUInt32 pos;
   bool dyn;
 };
 
@@ -98,7 +98,7 @@ struct SilcIDCacheListStruct {
    The `id_type' defines the types of the ID's that will be saved to the
    cache. */
 
-SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
+SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
 			       SilcIDCacheDestructor destructor)
 {
   SilcIDCache cache;
@@ -107,9 +107,9 @@ SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
 
   cache = silc_calloc(1, sizeof(*cache));
   cache->id_table = silc_hash_table_alloc(count, silc_hash_id, 
-					  (void *)(uint32)id_type,
+					  (void *)(SilcUInt32)id_type,
 					  silc_hash_id_compare, 
-					  (void *)(uint32)id_type, 
+					  (void *)(SilcUInt32)id_type, 
 					  silc_idcache_destructor, NULL, 
 					  FALSE);
   cache->name_table = silc_hash_table_alloc(count, silc_hash_string, NULL,
@@ -296,7 +296,7 @@ static void silc_idcache_purge_foreach(void *key, void *context,
 				       void *user_context)
 {
   SilcIDCache cache = (SilcIDCache)user_context;
-  uint32 curtime = time(NULL);
+  SilcUInt32 curtime = time(NULL);
   SilcIDCacheEntry c = (SilcIDCacheEntry)context;
 
   if (c->expire && c->expire < curtime) {

@@ -112,9 +112,9 @@ gint SilcerMainDlg::InputBoxKeyPress(GdkEventKey *key)
       SilcClientCommand cmd;
       SilcClientCommandContext ctx;
       char *tmpcmd;
-      uint32 argc = 0;
+      SilcUInt32 argc = 0;
       unsigned char **argv;
-      uint32 *argv_lens, *argv_types;
+      SilcUInt32 *argv_lens, *argv_types;
 
       // Parse arguments
       tmpcmd = parse_command(msg.c_str());

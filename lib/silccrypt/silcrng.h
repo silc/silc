@@ -109,46 +109,46 @@ void silc_rng_init(SilcRng rng);
  *
  * SYNOPSIS
  *
- *    uint8 silc_rng_get_byte(SilcRng rng);
+ *    SilcUInt8 silc_rng_get_byte(SilcRng rng);
  *
  * DESCRIPTION
  *
  *    Returns one 8-bit random byte from the random number generator.
  *
  ***/
-uint8 silc_rng_get_byte(SilcRng rng);
+SilcUInt8 silc_rng_get_byte(SilcRng rng);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_get_rn16
  *
  * SYNOPSIS
  *
- *    uint16 silc_rng_get_rn16(SilcRng rng);
+ *    SilcUInt16 silc_rng_get_rn16(SilcRng rng);
  *
  * DESCRIPTION
  *
  *    Returns one 16-bit random number from the random number generator.
  *
  ***/
-uint16 silc_rng_get_rn16(SilcRng rng);
+SilcUInt16 silc_rng_get_rn16(SilcRng rng);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_get_rn32
  *
  * SYNOPSIS
  *
- *    uint32 silc_rng_get_rn32(SilcRng rng);
+ *    SilcUInt32 silc_rng_get_rn32(SilcRng rng);
  *
  * DESCRIPTION
  *
  *    Returns one 32-bit random number from the random number generator.
  *
  ***/
-uint32 silc_rng_get_rn32(SilcRng rng);
+SilcUInt32 silc_rng_get_rn32(SilcRng rng);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_get_rn_string
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_rng_get_rn_string(SilcRng rng, uint32 len);
+ *    unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len);
  *
  * DESCRIPTION
  *
@@ -156,13 +156,13 @@ uint32 silc_rng_get_rn32(SilcRng rng);
  *    The caller must free returned data buffer.
  *
  ***/
-unsigned char *silc_rng_get_rn_string(SilcRng rng, uint32 len);
+unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_get_rn_data
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_rng_get_rn_data(SilcRng rng, uint32 len);
+ *    unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len);
  *
  * DESCRIPTION
  *
@@ -170,13 +170,13 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, uint32 len);
  *    caller must free returned data buffer.
  *
  ***/
-unsigned char *silc_rng_get_rn_data(SilcRng rng, uint32 len);
+unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_add_noise
  *
  * SYNOPSIS
  *
- *    void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, uint32 len);
+ *    void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, SilcUInt32 len);
  *
  * DESCRIPTION
  *
@@ -185,7 +185,7 @@ unsigned char *silc_rng_get_rn_data(SilcRng rng, uint32 len);
  *    is restirred (reseeded) when this function is called.
  *
  ***/
-void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, uint32 len);
+void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, SilcUInt32 len);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_init
  *
@@ -231,20 +231,20 @@ bool silc_rng_global_uninit(void);
  *
  * SYNOPSIS
  *
- *    uint8 silc_rng_global_get_byte(void);
+ *    SilcUInt8 silc_rng_global_get_byte(void);
  *
  * DESCRIPTION
  *
  *    Returns one 8-bit random byte from the random number generator.
  *
  ***/
-uint8 silc_rng_global_get_byte(void);
+SilcUInt8 silc_rng_global_get_byte(void);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_get_byte_fast
  *
  * SYNOPSIS
  *
- *    uint8 silc_rng_global_get_byte_fast(void);
+ *    SilcUInt8 silc_rng_global_get_byte_fast(void);
  *
  * DESCRIPTION
  *
@@ -259,39 +259,39 @@ uint8 silc_rng_global_get_byte(void);
  *    the byte from SILC RNG and is effectively same as silc_rng_get_byte.
  *
  ***/
-uint8 silc_rng_global_get_byte_fast(void);
+SilcUInt8 silc_rng_global_get_byte_fast(void);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_get_rn16
  *
  * SYNOPSIS
  *
- *    uint16 silc_rng_global_get_rn16(void);
+ *    SilcUInt16 silc_rng_global_get_rn16(void);
  *
  * DESCRIPTION
  *
  *    Returns one 16-bit random number from the random number generator.
  *
  ***/
-uint16 silc_rng_global_get_rn16(void);
+SilcUInt16 silc_rng_global_get_rn16(void);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_get_rn32
  *
  * SYNOPSIS
  *
- *    uint32 silc_rng_global_get_rn32(void);
+ *    SilcUInt32 silc_rng_global_get_rn32(void);
  *
  * DESCRIPTION
  *
  *    Returns one 32-bit random number from the random number generator.
  *
  ***/
-uint32 silc_rng_global_get_rn32(void);
+SilcUInt32 silc_rng_global_get_rn32(void);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_get_rn_string
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_rng_global_get_rn_string(uint32 len);
+ *    unsigned char *silc_rng_global_get_rn_string(SilcUInt32 len);
  *
  * DESCRIPTION
  *
@@ -299,13 +299,13 @@ uint32 silc_rng_global_get_rn32(void);
  *    The caller must free returned data buffer.
  *
  ***/
-unsigned char *silc_rng_global_get_rn_string(uint32 len);
+unsigned char *silc_rng_global_get_rn_string(SilcUInt32 len);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_get_rn_data
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_rng_global_get_rn_data(uint32 len);
+ *    unsigned char *silc_rng_global_get_rn_data(SilcUInt32 len);
  *
  * DESCRIPTION
  *
@@ -313,13 +313,13 @@ unsigned char *silc_rng_global_get_rn_string(uint32 len);
  *    caller must free returned data buffer.
  *
  ***/
-unsigned char *silc_rng_global_get_rn_data(uint32 len);
+unsigned char *silc_rng_global_get_rn_data(SilcUInt32 len);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_add_noise
  *
  * SYNOPSIS
  *
- *    void silc_rng_global_add_noise(unsigned char *buffer, uint32 len);
+ *    void silc_rng_global_add_noise(unsigned char *buffer, SilcUInt32 len);
  *
  * DESCRIPTION
  *
@@ -329,6 +329,6 @@ unsigned char *silc_rng_global_get_rn_data(uint32 len);
  *
  ***/
 
-void silc_rng_global_add_noise(unsigned char *buffer, uint32 len);
+void silc_rng_global_add_noise(unsigned char *buffer, SilcUInt32 len);
 
 #endif

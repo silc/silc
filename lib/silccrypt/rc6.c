@@ -48,7 +48,7 @@ Mean:          249 cycles =   103.0 mbits/sec
 
 SILC_CIPHER_API_SET_KEY(rc6)
 {
-  uint32 k[8];
+  SilcUInt32 k[8];
 
   SILC_GET_WORD_KEY(key, k, keylen);
   rc6_set_key((RC6Context *)context, k, keylen);
@@ -69,7 +69,7 @@ SILC_CIPHER_API_SET_KEY_WITH_STRING(rc6)
 
 SILC_CIPHER_API_ENCRYPT_CBC(rc6)
 {
-  uint32 tiv[4];
+  SilcUInt32 tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);
@@ -94,7 +94,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(rc6)
 
 SILC_CIPHER_API_DECRYPT_CBC(rc6)
 {
-  uint32 tmp[4], tmp2[4], tiv[4];
+  SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);

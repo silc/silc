@@ -31,7 +31,7 @@
 
    Following short description of the fields.
 
-   uint32 dest
+   SilcUInt32 dest
 
        Destination IPv4 address.  Can be used to quickly check whether
        the found route entry is what the caller wanted.
@@ -42,7 +42,7 @@
 
 */
 typedef struct {
-  uint32 dest;
+  SilcUInt32 dest;
   SilcServerEntry router;
 } SilcServerRouteTable;
 
@@ -55,10 +55,10 @@ extern SilcServerRouteTable silc_route_cache[SILC_SERVER_ROUTE_SIZE];
    `port' argument may be zero (0) if it doesn't exist.  This has been
    taken from Linux kernel's route cache code. */
 extern inline
-uint32 silc_server_route_hash(unsigned int addr, 
-				    uint16 port)
+SilcUInt32 silc_server_route_hash(unsigned int addr, 
+				    SilcUInt16 port)
 {
-  uint32 hash;
+  SilcUInt32 hash;
   
   hash = ((addr & 0xf0f0f0f0) >> 4) | ((addr & 0x0f0f0f0f) << 4);
   hash ^= port;
@@ -69,10 +69,10 @@ uint32 silc_server_route_hash(unsigned int addr,
 }
 
 /* Prototypes */
-void silc_server_route_add(uint32 index, unsigned int dest,
+void silc_server_route_add(SilcUInt32 index, unsigned int dest,
 			   SilcServerEntry router);
-SilcServerEntry silc_server_route_check(uint32 dest, 
-					uint16 port);
+SilcServerEntry silc_server_route_check(SilcUInt32 dest, 
+					SilcUInt16 port);
 SilcSocketConnection silc_server_route_get(SilcServer server, void *id,
 					   SilcIdType id_type);
 

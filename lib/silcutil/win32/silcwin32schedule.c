@@ -50,7 +50,7 @@
 
 */
 
-int silc_select(SilcScheduleFd fds, uint32 fds_count, struct timeval *timeout)
+int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeout)
 {
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
   DWORD ready, curtime, timeo;

@@ -205,62 +205,54 @@ extern "C" {
 #endif
 
 /* Define types. The types must be at least of the specified size */
-#undef uint8
-#undef uint16
-#undef uint32
-#undef uin64
-#undef int8
-#undef int16
-#undef int32
-#undef int64
 
-typedef unsigned char uint8;
-typedef signed char int8;
+typedef unsigned char SilcUInt8;
+typedef signed char SilcInt8;
 
 #if SILC_SIZEOF_SHORT > 2
 #error "size of the short must be 2 bytes"
 #endif
 
-typedef unsigned short uint16;
-typedef signed short int16;
+typedef unsigned short SilcUInt16;
+typedef signed short SilcInt16;
 
 #if SILC_SIZEOF_LONG == 4
-typedef unsigned long uint32;
-typedef signed long int32;
+typedef unsigned long SilcUInt32;
+typedef signed long SilcInt32;
 #else
 #if SILC_SIZEOF_INT == 4
-typedef unsigned long uint32;
-typedef signed long int32;
+typedef unsigned int SilcUInt32;
+typedef signed int SilcInt32;
 #else
 #if SILC_SIZEOF_LONG_LONG >= 4
 #ifndef WIN32
-typedef unsigned long long uint32;
-typedef signed long long int32;
+typedef unsigned long long SilcUInt32;
+typedef signed long long SilcInt32;
 #endif
 #endif
 #endif
 #endif
 
 #if SILC_SIZEOF_LONG >= 8
-typedef unsigned long uint64;
-typedef signed long int64;
+typedef unsigned long SilcUInt64;
+typedef signed long SilcInt64;
 #else
 #if SILC_SIZEOF_LONG_LONG >= 8
 #ifndef WIN32
-typedef unsigned long long uint64;
-typedef signed long long int64;
+typedef unsigned long long SilcUInt64;
+typedef signed long long SilcInt64;
 #else
-typedef uint32 uint64; /* XXX Use Windows's own 64 bit types */
-typedef int32 int64;
+typedef SilcUInt32 SilcUInt64; /* XXX Use Windows's own 64 bit types */
+typedef SilcInt32 SilcInt64;
 #endif
 #else
-typedef uint32 uint64;
-typedef int32 int64;
+typedef SilcUInt32 SilcUInt64;
+typedef SilcInt32 SilcInt64;
 #endif
 #endif
 
 #if SILC_SIZEOF_VOID_P < 4
-typedef uint32 * void *;
+typedef SilcUInt32 * void *;
 #endif
 
 #ifndef __cplusplus

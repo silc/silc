@@ -35,14 +35,14 @@
 
 struct SilcIDPayloadStruct {
   SilcIdType type;
-  uint16 len;
+  SilcUInt16 len;
   unsigned char *id;
 };
 
 /* Parses buffer and return ID payload into payload structure */
 
 SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
-				    uint32 payload_len)
+				    SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
   SilcIDPayload new;
@@ -82,11 +82,11 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
 
 /* Return the ID directly from the raw payload data. */
 
-void *silc_id_payload_parse_id(const unsigned char *data, uint32 len)
+void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len)
 {
   SilcBufferStruct buffer;
   SilcIdType type;
-  uint16 idlen;
+  SilcUInt16 idlen;
   unsigned char *id_data = NULL;
   int ret;
   void *id;
@@ -124,7 +124,7 @@ SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type)
 {
   SilcBuffer buffer;
   unsigned char *id_data;
-  uint32 len;
+  SilcUInt32 len;
 
   id_data = silc_id_id2str(id, type);
   len = silc_id_get_len(id, type);
@@ -135,7 +135,7 @@ SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type)
 }
 
 SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
-				       uint32 id_len, SilcIdType type)
+				       SilcUInt32 id_len, SilcIdType type)
 {
   SilcBuffer buffer;
 
@@ -190,7 +190,7 @@ unsigned char *silc_id_payload_get_data(SilcIDPayload payload)
 
 /* Get length of ID */
 
-uint32 silc_id_payload_get_len(SilcIDPayload payload)
+SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload)
 {
   return payload ? payload->len : 0;
 }
@@ -203,7 +203,7 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type)
   SilcServerID *server_id;
   SilcClientID *client_id;
   SilcChannelID *channel_id;
-  uint32 id_len = silc_id_get_len(id, type);
+  SilcUInt32 id_len = silc_id_get_len(id, type);
 
   switch(type) {
   case SILC_ID_SERVER:
@@ -237,7 +237,7 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type)
 
 /* Converts string to a ID */
 
-void *silc_id_str2id(const unsigned char *id, uint32 id_len, SilcIdType type)
+void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, SilcIdType type)
 {
 
   switch(type) {
@@ -299,7 +299,7 @@ void *silc_id_str2id(const unsigned char *id, uint32 id_len, SilcIdType type)
 
 /* Returns length of the ID */
 
-uint32 silc_id_get_len(const void *id, SilcIdType type)
+SilcUInt32 silc_id_get_len(const void *id, SilcIdType type)
 {
   switch(type) {
   case SILC_ID_SERVER:

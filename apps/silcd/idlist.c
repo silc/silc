@@ -381,7 +381,7 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 					char *server, 
 					SilcClientEntry **clients,
-					uint32 *clients_count)
+					SilcUInt32 *clients_count)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
@@ -414,7 +414,7 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 				    SilcHash md5hash,
 				    SilcClientEntry **clients,
-				    uint32 *clients_count)
+				    SilcUInt32 *clients_count)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
@@ -748,7 +748,7 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
 
 SilcChannelEntry *
 silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
-			 uint32 *channels_count)
+			 SilcUInt32 *channels_count)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;

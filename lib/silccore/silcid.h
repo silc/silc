@@ -44,7 +44,7 @@
  *
  * NAME
  * 
- *    typedef uint16 SilcIdType;
+ *    typedef SilcUInt16 SilcIdType;
  *
  * DESCRIPTION
  *
@@ -52,7 +52,7 @@
  *
  * SOURCE
  */
-typedef uint16 SilcIdType;
+typedef SilcUInt16 SilcIdType;
 
 /* The SILC ID Types */
 #define SILC_ID_NONE        0
@@ -108,7 +108,7 @@ typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
  * SYNOPSIS
  *
  *    SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
- *                                        uint32 payload_len);
+ *                                        SilcUInt32 payload_len);
  *
  * DESCRIPTION
  *
@@ -117,13 +117,13 @@ typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
  *
  ***/
 SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
-				    uint32 payload_len);
+				    SilcUInt32 payload_len);
 
 /****f* silccore/SilcIDAPI/silc_id_payload_parse_id
  *
  * SYNOPSIS
  *
- *    void *silc_id_payload_parse_id(const unsigned char *data, uint32 len);
+ *    void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len);
  *
  * DESCRIPTION
  *
@@ -131,7 +131,7 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
  *    caller must free the returned ID.
  *
  ***/
-void *silc_id_payload_parse_id(const unsigned char *data, uint32 len);
+void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len);
 
 /****f* silccore/SilcIDAPI/silc_id_payload_encode
  *
@@ -161,7 +161,7 @@ SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type);
  *
  ***/
 SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
-				       uint32 id_len, SilcIdType type);
+				       SilcUInt32 id_len, SilcIdType type);
 
 /****f* silccore/SilcIDAPI/silc_id_payload_free
  *
@@ -222,14 +222,14 @@ unsigned char *silc_id_payload_get_data(SilcIDPayload payload);
  *
  * SYNOPSIS
  *
- *    uint32 silc_id_payload_get_len(SilcIDPayload payload);
+ *    SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload);
  *
  * DESCRIPTION
  *
  *    Returns the length of the ID in the ID Payload.
  *
  ***/
-uint32 silc_id_payload_get_len(SilcIDPayload payload);
+SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload);
 
 /****s* silccore/SilcIDAPI/SilcIDIP
  *
@@ -247,7 +247,7 @@ uint32 silc_id_payload_get_len(SilcIDPayload payload);
  */
 typedef struct {
   unsigned char data[16];	/* IP data (in MSB first order) */
-  uint8 data_len;		/* Length of the data (4 or 16) */
+  SilcUInt8 data_len;		/* Length of the data (4 or 16) */
 } SilcIDIP;
 /***/
 
@@ -269,8 +269,8 @@ typedef struct {
  */
 typedef struct {
   SilcIDIP ip;			/* n bit IP address */
-  uint16 port;			/* 16 bit port */
-  uint16 rnd;			/* 16 bit random number */
+  SilcUInt16 port;			/* 16 bit port */
+  SilcUInt16 rnd;			/* 16 bit random number */
 } SilcServerID;
 /***/
 
@@ -315,8 +315,8 @@ typedef struct {
  */
 typedef struct {
   SilcIDIP ip;					/* n bit IP address */
-  uint16 port;					/* 16 bit port */
-  uint16 rnd;					/* 16 bit random number */
+  SilcUInt16 port;					/* 16 bit port */
+  SilcUInt16 rnd;					/* 16 bit random number */
 } SilcChannelID;
 /***/
 
@@ -443,7 +443,7 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type);
  *
  * SYNOPSIS
  *
- *    void *silc_id_str2id(const unsigned char *id, uint32 id_len, 
+ *    void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, 
  *                         SilcIdType type);
  *
  * DESCRIPTION
@@ -452,20 +452,20 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type);
  *    ID out of data that has been taken for example from packet.
  *
  ***/
-void *silc_id_str2id(const unsigned char *id, uint32 id_len, SilcIdType type);
+void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, SilcIdType type);
 
 /****f* silccore/SilcIDAPI/silc_id_get_len
  *
  * SYNOPSIS
  *
- *    uint32 silc_id_get_len(const void *id, SilcIdType type);
+ *    SilcUInt32 silc_id_get_len(const void *id, SilcIdType type);
  *
  * DESCRIPTION
  *
  *    Returns the true length of the ID of the type `type'.
  *
  ***/
-uint32 silc_id_get_len(const void *id, SilcIdType type);
+SilcUInt32 silc_id_get_len(const void *id, SilcIdType type);
 
 /****f* silccore/SilcIDAPI/silc_id_dup
  *

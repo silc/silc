@@ -39,7 +39,7 @@ void silc_client_send_channel_message(SilcClient client,
 				      SilcChannelPrivateKey key,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
-				      uint32 data_len, 
+				      SilcUInt32 data_len, 
 				      int force_send)
 {
   int i;
@@ -49,7 +49,7 @@ void silc_client_send_channel_message(SilcClient client,
   SilcCipher cipher;
   SilcHmac hmac;
   unsigned char *id_string;
-  uint32 iv_len;
+  SilcUInt32 iv_len;
   int block_len;
 
   SILC_LOG_DEBUG(("Sending packet to channel"));
@@ -165,7 +165,7 @@ typedef struct {
 static void silc_client_channel_message_cb(SilcClient client,
 					   SilcClientConnection conn,
 					   SilcClientEntry *clients,
-					   uint32 clients_count,
+					   SilcUInt32 clients_count,
 					   void *context)
 {
   SilcChannelClientResolve res = (SilcChannelClientResolve)context;
@@ -343,7 +343,7 @@ void silc_client_save_channel_key(SilcClient client,
 				  SilcChannelEntry channel)
 {
   unsigned char *id_string, *key, *cipher, *hmac, hash[32];
-  uint32 tmp_len;
+  SilcUInt32 tmp_len;
   SilcChannelID *id;
   SilcChannelKeyPayload payload;
 
@@ -474,7 +474,7 @@ int silc_client_add_channel_private_key(SilcClient client,
 					char *cipher,
 					char *hmac,
 					unsigned char *key,
-					uint32 key_len)
+					SilcUInt32 key_len)
 {
   SilcChannelPrivateKey entry;
   unsigned char hash[32];
@@ -629,10 +629,10 @@ SilcChannelPrivateKey *
 silc_client_list_channel_private_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
-				      uint32 *key_count)
+				      SilcUInt32 *key_count)
 {
   SilcChannelPrivateKey *keys = NULL, entry;
-  uint32 count = 0;
+  SilcUInt32 count = 0;
 
   if (!channel->private_keys)
     return NULL;
@@ -653,7 +653,7 @@ silc_client_list_channel_private_keys(SilcClient client,
 /* Frees the SilcChannelPrivateKey array. */
 
 void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
-					   uint32 key_count)
+					   SilcUInt32 key_count)
 {
   silc_free(keys);
 }

@@ -57,7 +57,7 @@ typedef struct SilcSFTPStruct *SilcSFTP;
  *
  * NAME
  * 
- *    typedef uint32 SilcSFTPVersion;
+ *    typedef SilcUInt32 SilcSFTPVersion;
  *
  * DESCRIPTION
  *
@@ -65,7 +65,7 @@ typedef struct SilcSFTPStruct *SilcSFTP;
  *
  * SOURCE
  */
-typedef uint32 SilcSFTPVersion;
+typedef SilcUInt32 SilcSFTPVersion;
 /***/
 
 /* SFTP protocol version */
@@ -136,15 +136,15 @@ typedef enum {
  *
  ***/
 typedef struct {
-  uint32 flags;			/* Flags to indicate present attributes */
-  uint64 size;			/* Sife of the file in bytes */
-  uint32 uid;			/* Unix user ID */
-  uint32 gid;			/* Unix group ID */
-  uint32 permissions;		/* POSIX file permission bitmask */
-  uint32 atime;			/* Access time of file */
-  uint32 mtime;			/* Modification time of file */
+  SilcUInt32 flags;			/* Flags to indicate present attributes */
+  SilcUInt64 size;			/* Sife of the file in bytes */
+  SilcUInt32 uid;			/* Unix user ID */
+  SilcUInt32 gid;			/* Unix group ID */
+  SilcUInt32 permissions;		/* POSIX file permission bitmask */
+  SilcUInt32 atime;			/* Access time of file */
+  SilcUInt32 mtime;			/* Modification time of file */
 
-  uint32 extended_count;	/* Extended type and data count */
+  SilcUInt32 extended_count;	/* Extended type and data count */
   SilcBuffer *extended_type;
   SilcBuffer *extended_data;
 } *SilcSFTPAttributes, SilcSFTPAttributesStruct;
@@ -167,7 +167,7 @@ typedef struct  {
   char **filename;
   char **long_filename;
   SilcSFTPAttributes *attrs;
-  uint32 count;			/* Number of files */
+  SilcUInt32 count;			/* Number of files */
 } *SilcSFTPName, SilcSFTPNameStruct;
 
 /****s* silcsftp/SilcSFTPAPI/SilcSFTPHandle
@@ -280,7 +280,7 @@ typedef void (*SilcSFTPHandleCallback)(SilcSFTP sftp,
  *    typedef void (*SilcSFTPDataCallback)(SilcSFTP sftp,
  *                                         SilcSFTPStatus status,
  *                                         const unsigned char *data,
- *                                         uint32 data_len,
+ *                                         SilcUInt32 data_len,
  *                                         void *context);
  *
  * DESCRIPTION
@@ -293,7 +293,7 @@ typedef void (*SilcSFTPHandleCallback)(SilcSFTP sftp,
 typedef void (*SilcSFTPDataCallback)(SilcSFTP sftp,
 				     SilcSFTPStatus status,
 				     const unsigned char *data,
-				     uint32 data_len,
+				     SilcUInt32 data_len,
 				     void *context);
 
 /****f* silcsftp/SilcSFTPAPI/SilcSFTPNameCallback
@@ -346,7 +346,7 @@ typedef void (*SilcSFTPAttrCallback)(SilcSFTP sftp,
  *    typedef void (*SilcSFTPExtendedCallback)(SilcSFTP sftp,
  *                                             SilcSFTPStatus status,
  *                                             const unsigned char *data,
- *                                             uint32 data_len,
+ *                                             SilcUInt32 data_len,
  *                                             void *context);
  *
  * DESCRIPTION
@@ -359,7 +359,7 @@ typedef void (*SilcSFTPAttrCallback)(SilcSFTP sftp,
 typedef void (*SilcSFTPExtendedCallback)(SilcSFTP sftp,
 					 SilcSFTPStatus status,
 					 const unsigned char *data,
-					 uint32 data_len,
+					 SilcUInt32 data_len,
 					 void *context);
 
 
@@ -464,8 +464,8 @@ void silc_sftp_close(SilcSFTP sftp,
  *
  *    void silc_sftp_read(SilcSFTP sftp,
  *                        SilcSFTPHandle handle,
- *                        uint64 offset, 
- *                        uint32 len,
+ *                        SilcUInt64 offset, 
+ *                        SilcUInt32 len,
  *                        SilcSFTPDataCallback callback,
  *                        void *context);
  *
@@ -478,8 +478,8 @@ void silc_sftp_close(SilcSFTP sftp,
  ***/
 void silc_sftp_read(SilcSFTP sftp,
 		    SilcSFTPHandle handle,
-		    uint64 offset, 
-		    uint32 len,
+		    SilcUInt64 offset, 
+		    SilcUInt32 len,
 		    SilcSFTPDataCallback callback,
 		    void *context);
 
@@ -489,9 +489,9 @@ void silc_sftp_read(SilcSFTP sftp,
  *
  *    void silc_sftp_write(SilcSFTP sftp,
  *                         SilcSFTPHandle handle,
- *                         uint64 offset,
+ *                         SilcUInt64 offset,
  *                         const unsigned char *data,
- *                         uint32 data_len,
+ *                         SilcUInt32 data_len,
  *                         SilcSFTPStatusCallback callback,
  *                         void *context);
  *
@@ -504,9 +504,9 @@ void silc_sftp_read(SilcSFTP sftp,
  ***/
 void silc_sftp_write(SilcSFTP sftp,
 		     SilcSFTPHandle handle,
-		     uint64 offset,
+		     SilcUInt64 offset,
 		     const unsigned char *data,
-		     uint32 data_len,
+		     SilcUInt32 data_len,
 		     SilcSFTPStatusCallback callback,
 		     void *context);
 
@@ -813,7 +813,7 @@ void silc_sftp_realpath(SilcSFTP sftp,
  *    void silc_sftp_extended(SilcSFTP sftp,
  *                            const char *request,
  *                            const unsigned char *data,
- *                            uint32 data_len,
+ *                            SilcUInt32 data_len,
  *                            SilcSFTPExtendedCallback callback,
  *                            void *context);
  *
@@ -827,7 +827,7 @@ void silc_sftp_realpath(SilcSFTP sftp,
 void silc_sftp_extended(SilcSFTP sftp,
 			const char *request,
 			const unsigned char *data,
-			uint32 data_len,
+			SilcUInt32 data_len,
 			SilcSFTPExtendedCallback callback,
 			void *context);
 
@@ -932,8 +932,8 @@ typedef struct {
 				   _SETSTAT, _READLINK, _SYMLINK, _REALPATH */
   char *name2;			/* _RENAME, _SYMLINK */
   SilcSFTPFileOperation pflags;	/* _OPEN */
-  uint64 offset;		/* _READ, _WRITE */
-  uint32 data_len;		/* _READ, _WRITE */
+  SilcUInt64 offset;		/* _READ, _WRITE */
+  SilcUInt32 data_len;		/* _READ, _WRITE */
   SilcSFTPName names;		/* _READDIR, _READLINK, _REALPATH */
 } *SilcSFTPMonitorData, SilcSFTPMonitorDataStruct;
 /***/

@@ -25,7 +25,7 @@
 /* Request context. Every request will allocate this context and set
    the correct callback function according the `type' field. */
 typedef struct SilcSFTPRequestStruct {
-  uint32 id;
+  SilcUInt32 id;
   SilcSFTPPacket type;
   SilcSFTPStatusCallback status;
   SilcSFTPHandleCallback handle;
@@ -44,7 +44,7 @@ typedef struct {
   void *send_context;
   SilcSFTPVersionCallback version;
   void *version_context;
-  uint32 id;
+  SilcUInt32 id;
   SilcList requests;
   SilcBuffer packet;
 } *SilcSFTPClient;
@@ -52,14 +52,14 @@ typedef struct {
 /* File handle */
 struct SilcSFTPHandleStruct {
   unsigned char *data;
-  uint32 data_len;
+  SilcUInt32 data_len;
 };
 
 /* Creates SilcSFTPHandle and returns pointer to it. The caller must free
    the context. */
 
 static SilcSFTPHandle silc_sftp_handle_create(unsigned char *data,
-					      uint32 data_len)
+					      SilcUInt32 data_len)
 {
   SilcSFTPHandle handle;
 
@@ -83,7 +83,7 @@ static void silc_sftp_handle_delete(SilcSFTPHandle handle)
 
 static void silc_sftp_handle_get(SilcSFTPHandle handle, 
 				 const unsigned char **data,
-				 uint32 *data_len)
+				 SilcUInt32 *data_len)
 {
   *data = (const unsigned char *)handle->data;
   *data_len = handle->data_len;
@@ -93,7 +93,7 @@ static void silc_sftp_handle_get(SilcSFTPHandle handle,
 
 static void silc_sftp_send_packet(SilcSFTPClient sftp,
 				  SilcSFTPPacket type, 
-				  uint32 len, ...)
+				  SilcUInt32 len, ...)
 {
   SilcBuffer tmp;
   va_list vp;
@@ -118,7 +118,7 @@ static void silc_sftp_send_packet(SilcSFTPClient sftp,
 
 /* Finds request by request ID. */
 
-static SilcSFTPRequest silc_sftp_find_request(SilcSFTPClient sftp, uint32 id)
+static SilcSFTPRequest silc_sftp_find_request(SilcSFTPClient sftp, SilcUInt32 id)
 {
   SilcSFTPRequest req;
 
@@ -156,7 +156,7 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
     {
       /* Data returned */
       unsigned char *data;
-      uint32 data_len;
+      SilcUInt32 data_len;
 
       if (status != SILC_SFTP_STATUS_OK) {
 	if (req->data)
@@ -165,7 +165,7 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
       }
 
       data = (unsigned char *)va_arg(vp, unsigned char *);
-      data_len = (uint32)va_arg(vp, uint32);
+      data_len = (SilcUInt32)va_arg(vp, SilcUInt32);
 
       if (req->data)
 	(*req->data)((SilcSFTP)sftp, status, (const unsigned char *)data, 
@@ -179,7 +179,7 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
       /* Handle returned */
       SilcSFTPHandle handle;
       unsigned char *hdata;
-      uint32 hdata_len;
+      SilcUInt32 hdata_len;
 
       if (status != SILC_SFTP_STATUS_OK) {
 	if (req->handle)
@@ -188,7 +188,7 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
       }
 
       hdata = (unsigned char *)va_arg(vp, unsigned char *);
-      hdata_len = (uint32)va_arg(vp, uint32);
+      hdata_len = (SilcUInt32)va_arg(vp, SilcUInt32);
       handle = silc_sftp_handle_create(hdata, hdata_len);
 
       if (req->handle)
@@ -263,7 +263,7 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
     {
       /* Extended reply returned */
       unsigned char *data;
-      uint32 data_len;
+      SilcUInt32 data_len;
 
       if (status != SILC_SFTP_STATUS_OK) {
 	if (req->extended)
@@ -272,7 +272,7 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
       }
 
       data = (unsigned char *)va_arg(vp, unsigned char *);
-      data_len = (uint32)va_arg(vp, uint32);
+      data_len = (SilcUInt32)va_arg(vp, SilcUInt32);
 
       if (req->extended)
 	(*req->extended)((SilcSFTP)sftp, status, (const unsigned char *)data, 
@@ -350,10 +350,10 @@ void silc_sftp_client_receive_process(SilcSFTP context,
   SilcSFTPRequest req;
   SilcSFTPPacket type;
   const unsigned char *payload = NULL;
-  uint32 payload_len;
+  SilcUInt32 payload_len;
   int ret;
   SilcBufferStruct buf;
-  uint32 id;
+  SilcUInt32 id;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -389,7 +389,7 @@ void silc_sftp_client_receive_process(SilcSFTP context,
 
   case SILC_SFTP_STATUS:
     {
-      uint32 status;
+      SilcUInt32 status;
       char *message = NULL, *language_tag = NULL;
 
       SILC_LOG_DEBUG(("Status packet"));
@@ -432,7 +432,7 @@ void silc_sftp_client_receive_process(SilcSFTP context,
   case SILC_SFTP_HANDLE:
     {
       unsigned char *handle = NULL;
-      uint32 handle_len;
+      SilcUInt32 handle_len;
 
       SILC_LOG_DEBUG(("Handle packet"));
 
@@ -458,7 +458,7 @@ void silc_sftp_client_receive_process(SilcSFTP context,
   case SILC_SFTP_DATA:
     {
       unsigned char *data = NULL;
-      uint32 data_len = 0;
+      SilcUInt32 data_len = 0;
 
       SILC_LOG_DEBUG(("Data packet"));
 
@@ -482,7 +482,7 @@ void silc_sftp_client_receive_process(SilcSFTP context,
 
   case SILC_SFTP_NAME:
     {
-      uint32 count;
+      SilcUInt32 count;
       SilcSFTPName name = NULL;
 
       SILC_LOG_DEBUG(("Name packet"));
@@ -580,7 +580,7 @@ void silc_sftp_open(SilcSFTP sftp,
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
   SilcBuffer attrs_buf;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Open request"));
 
@@ -613,9 +613,9 @@ void silc_sftp_close(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
   const unsigned char *hdata;
-  uint32 hdata_len;
+  SilcUInt32 hdata_len;
 
   SILC_LOG_DEBUG(("Close request"));
 
@@ -638,16 +638,16 @@ void silc_sftp_close(SilcSFTP sftp,
 
 void silc_sftp_read(SilcSFTP sftp,
 		    SilcSFTPHandle handle,
-		    uint64 offset, 
-		    uint32 len,
+		    SilcUInt64 offset, 
+		    SilcUInt32 len,
 		    SilcSFTPDataCallback callback,
 		    void *context)
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len2 = 0;
+  SilcUInt32 len2 = 0;
   const unsigned char *hdata;
-  uint32 hdata_len;
+  SilcUInt32 hdata_len;
 
   SILC_LOG_DEBUG(("Read request"));
 
@@ -672,17 +672,17 @@ void silc_sftp_read(SilcSFTP sftp,
 
 void silc_sftp_write(SilcSFTP sftp,
 		     SilcSFTPHandle handle,
-		     uint64 offset,
+		     SilcUInt64 offset,
 		     const unsigned char *data,
-		     uint32 data_len,
+		     SilcUInt32 data_len,
 		     SilcSFTPStatusCallback callback,
 		     void *context)
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
   const unsigned char *hdata;
-  uint32 hdata_len;
+  SilcUInt32 hdata_len;
 
   SILC_LOG_DEBUG(("Write request"));
 
@@ -713,7 +713,7 @@ void silc_sftp_remove(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Remove request"));
 
@@ -741,7 +741,7 @@ void silc_sftp_rename(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Rename request"));
 
@@ -771,7 +771,7 @@ void silc_sftp_mkdir(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
   SilcBuffer attrs_buf;
 
   SILC_LOG_DEBUG(("Mkdir request"));
@@ -804,7 +804,7 @@ void silc_sftp_rmdir(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Rmdir request"));
 
@@ -831,7 +831,7 @@ void silc_sftp_opendir(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Opendir request"));
 
@@ -858,9 +858,9 @@ void silc_sftp_readdir(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
   const unsigned char *hdata;
-  uint32 hdata_len;
+  SilcUInt32 hdata_len;
 
   SILC_LOG_DEBUG(("Readdir request"));
 
@@ -888,7 +888,7 @@ void silc_sftp_stat(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Stat request"));
 
@@ -915,7 +915,7 @@ void silc_sftp_lstat(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Lstat request"));
 
@@ -942,9 +942,9 @@ void silc_sftp_fstat(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
   const unsigned char *hdata;
-  uint32 hdata_len;
+  SilcUInt32 hdata_len;
 
   SILC_LOG_DEBUG(("Fstat request"));
 
@@ -973,7 +973,7 @@ void silc_sftp_setstat(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
   SilcBuffer attrs_buf;
 
   SILC_LOG_DEBUG(("Setstat request"));
@@ -1007,10 +1007,10 @@ void silc_sftp_fsetstat(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
   SilcBuffer attrs_buf;
   const unsigned char *hdata;
-  uint32 hdata_len;
+  SilcUInt32 hdata_len;
 
   SILC_LOG_DEBUG(("Fsetstat request"));
 
@@ -1043,7 +1043,7 @@ void silc_sftp_readlink(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Readlink request"));
 
@@ -1071,7 +1071,7 @@ void silc_sftp_symlink(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Symlink request"));
 
@@ -1100,7 +1100,7 @@ void silc_sftp_realpath(SilcSFTP sftp,
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Realpath request"));
 
@@ -1123,13 +1123,13 @@ void silc_sftp_realpath(SilcSFTP sftp,
 void silc_sftp_extended(SilcSFTP sftp,
 			const char *request,
 			const unsigned char *data,
-			uint32 data_len,
+			SilcUInt32 data_len,
 			SilcSFTPExtendedCallback callback,
 			void *context)
 {
   SilcSFTPClient client = (SilcSFTPClient)sftp;
   SilcSFTPRequest req;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Extended request"));
 

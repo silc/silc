@@ -89,7 +89,7 @@ typedef struct SilcHashTableListStruct SilcHashTableList;
 struct SilcHashTableListStruct {
   SilcHashTable ht;
   void *entry;
-  uint32 index;
+  SilcUInt32 index;
   bool auto_rehash;
 };
 /***/
@@ -98,7 +98,7 @@ struct SilcHashTableListStruct {
  *
  * SYNOPSIS
  *
- *    typedef uint32 (*SilcHashFunction)(void *key, void *user_context);
+ *    typedef SilcUInt32 (*SilcHashFunction)(void *key, void *user_context);
  *
  * DESCRIPTION
  *
@@ -108,7 +108,7 @@ struct SilcHashTableListStruct {
  *    to the callback.
  *
  ***/
-typedef uint32 (*SilcHashFunction)(void *key, void *user_context);
+typedef SilcUInt32 (*SilcHashFunction)(void *key, void *user_context);
 
 /****f* silcutil/SilcHashTableAPI/SilcHashCompare
  *
@@ -168,7 +168,7 @@ typedef void (*SilcHashForeach)(void *key, void *context, void *user_context);
  *
  * SYNOPSIS
  *
- *    SilcHashTable silc_hash_table_alloc(uint32 table_size, 
+ *    SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size, 
  *                                        SilcHashFunction hash,
  *                                        void *hash_user_context,
  *                                        SilcHashCompare compare,
@@ -188,7 +188,7 @@ typedef void (*SilcHashForeach)(void *key, void *context, void *user_context);
  *    are optional.
  *
  ***/
-SilcHashTable silc_hash_table_alloc(uint32 table_size, 
+SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size, 
 				    SilcHashFunction hash,
 				    void *hash_user_context,
 				    SilcHashCompare compare,
@@ -215,7 +215,7 @@ void silc_hash_table_free(SilcHashTable ht);
  *
  * SYNOPSIS
  *
- *    uint32 silc_hash_table_size(SilcHashTable ht);
+ *    SilcUInt32 silc_hash_table_size(SilcHashTable ht);
  *
  * DESCRIPTION
  *
@@ -223,13 +223,13 @@ void silc_hash_table_free(SilcHashTable ht);
  *    hash table.
  *
  ***/
-uint32 silc_hash_table_size(SilcHashTable ht);
+SilcUInt32 silc_hash_table_size(SilcHashTable ht);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_count
  *
  * SYNOPSIS
  *
- *    uint32 silc_hash_table_count(SilcHashTable ht);
+ *    SilcUInt32 silc_hash_table_count(SilcHashTable ht);
  *
  * DESCRIPTION
  *
@@ -238,7 +238,7 @@ uint32 silc_hash_table_size(SilcHashTable ht);
  *    silc_hash_table_rehash is recommended.
  *
  ***/
-uint32 silc_hash_table_count(SilcHashTable ht);
+SilcUInt32 silc_hash_table_count(SilcHashTable ht);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_add
  *
@@ -375,7 +375,7 @@ void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
  *
  * SYNOPSIS
  *
- *    void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size);
+ *    void silc_hash_table_rehash(SilcHashTable ht, SilcUInt32 new_size);
  *
  * DESCRIPTION
  *
@@ -385,7 +385,7 @@ void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
  *    very slow.
  *
  ***/
-void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size);
+void silc_hash_table_rehash(SilcHashTable ht, SilcUInt32 new_size);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_list
  *
@@ -635,7 +635,7 @@ void silc_hash_table_find_foreach_ext(SilcHashTable ht, void *key,
  *
  * SYNOPSIS
  *
- *    void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
+ *    void silc_hash_table_rehash_ext(SilcHashTable ht, SilcUInt32 new_size,
  *                                    SilcHashFunction hash, 
  *                                    void *hash_user_context);
  *
@@ -650,7 +650,7 @@ void silc_hash_table_find_foreach_ext(SilcHashTable ht, void *key,
  *    function. If not provided the hash table's default is used.
  *
  ***/
-void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
+void silc_hash_table_rehash_ext(SilcHashTable ht, SilcUInt32 new_size,
 				SilcHashFunction hash, 
 				void *hash_user_context);
 

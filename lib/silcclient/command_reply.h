@@ -37,7 +37,7 @@ struct SilcClientCommandReplyContextStruct {
   /* If defined this executes the pending command. */
   SilcCommandCb callback;
   void *context;
-  uint16 ident;
+  SilcUInt16 ident;
 };
 
 /* Macros */

@@ -224,7 +224,7 @@ void silc_net_close_connection(int sock)
 /* Converts the IP number string from numbers-and-dots notation to
    binary form. */
 
-bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len)
+bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
 {
   unsigned long ret;
 

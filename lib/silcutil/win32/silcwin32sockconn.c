@@ -122,7 +122,7 @@ int silc_socket_read(SilcSocketConnection sock)
 /* Returns human readable socket error message */
 
 bool silc_socket_get_error(SilcSocketConnection sock, char *error,
-			   uint32 error_len)
+			   SilcUInt32 error_len)
 {
   /* XXX TODO */
   return FALSE;

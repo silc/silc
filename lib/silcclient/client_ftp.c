@@ -34,7 +34,7 @@ static void silc_client_ftp_start_key_agreement(SilcClientFtpSession session,
 
 /* File transmission session */
 struct SilcClientFtpSessionStruct {
-  uint32 session_id;
+  SilcUInt32 session_id;
   SilcClient client;
   SilcClientConnection conn;
   SilcClientEntry client_entry;
@@ -43,7 +43,7 @@ struct SilcClientFtpSessionStruct {
   SilcBuffer packet;
 
   char *hostname;
-  uint16 port;
+  SilcUInt16 port;
   int listener;
 
   SilcClientFileMonitor monitor;
@@ -56,8 +56,8 @@ struct SilcClientFtpSessionStruct {
 
   SilcSFTPHandle dir_handle;
   SilcSFTPHandle read_handle;
-  uint64 filesize;
-  uint64 read_offset;
+  SilcUInt64 filesize;
+  SilcUInt64 read_offset;
   int fd;
 };
 
@@ -222,7 +222,7 @@ static void silc_client_ftp_monitor(SilcSFTP sftp,
 static void silc_client_ftp_data(SilcSFTP sftp,
 				 SilcSFTPStatus status,
 				 const unsigned char *data,
-				 uint32 data_len,
+				 SilcUInt32 data_len,
 				 void *context)
 {
   SilcClientFtpSession session = (SilcClientFtpSession)context;
@@ -780,10 +780,10 @@ silc_client_file_send(SilcClient client,
 		      SilcClientFileMonitor monitor,
 		      void *monitor_context,
 		      const char *local_ip,
-		      uint32 local_port,
+		      SilcUInt32 local_port,
 		      SilcClientEntry client_entry,
 		      const char *filepath,
-		      uint32 *session_id)
+		      SilcUInt32 *session_id)
 {
   SilcClientFtpSession session;
   SilcBuffer keyagr, ftp;
@@ -891,7 +891,7 @@ silc_client_file_receive(SilcClient client,
 			 SilcClientConnection conn,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
-			 uint32 session_id)
+			 SilcUInt32 session_id)
 {
   SilcClientFtpSession session;
   SilcBuffer keyagr, ftp;
@@ -973,7 +973,7 @@ silc_client_file_receive(SilcClient client,
 
 SilcClientFileError silc_client_file_close(SilcClient client,
 					   SilcClientConnection conn,
-					   uint32 session_id)
+					   SilcUInt32 session_id)
 {
   SilcClientFtpSession session;
 
@@ -1005,7 +1005,7 @@ SilcClientFileError silc_client_file_close(SilcClient client,
 static void silc_client_ftp_resolve_cb(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry *clients,
-				       uint32 clients_count,
+				       SilcUInt32 clients_count,
 				       void *context)
 {
   SilcPacketContext *packet = (SilcPacketContext *)context;
@@ -1013,7 +1013,7 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
   SilcKeyAgreementPayload payload = NULL;
   SilcClientEntry client_entry;
   char *hostname;
-  uint16 port;
+  SilcUInt16 port;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1094,7 +1094,7 @@ void silc_client_ftp(SilcClient client,
 		     SilcPacketContext *packet)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  uint8 type;
+  SilcUInt8 type;
   int ret;
 
   SILC_LOG_DEBUG(("Start"));

@@ -41,7 +41,7 @@
 static void 
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				const char *name, SilcSocketType conn_type, 
-				unsigned char *pk, uint32 pk_len, 
+				unsigned char *pk, SilcUInt32 pk_len, 
 				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context);
 
@@ -160,7 +160,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   SilcServerEntry server_entry;
   SilcIdType idtype;
   void *entry;
-  uint32 mode;
+  SilcUInt32 mode;
   char userhost[512];
   char *name, *tmp;
   GSList *list1, *list_tmp;
@@ -351,7 +351,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     idtype = va_arg(va, int);
     entry = va_arg(va, void *);
-    mode = va_arg(va, uint32);
+    mode = va_arg(va, SilcUInt32);
     (void)va_arg(va, char *);
     (void)va_arg(va, char *);
     channel = va_arg(va, SilcChannelEntry);
@@ -394,7 +394,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     SILC_LOG_DEBUG(("Notify: CUMODE_CHANGE"));
 
     client_entry = va_arg(va, SilcClientEntry);
-    mode = va_arg(va, uint32);
+    mode = va_arg(va, SilcUInt32);
     client_entry2 = va_arg(va, SilcClientEntry);
     channel = va_arg(va, SilcChannelEntry);
     
@@ -516,13 +516,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
        */
       int i;
       SilcClientEntry *clients;
-      uint32 clients_count;
+      SilcUInt32 clients_count;
 
       SILC_LOG_DEBUG(("Notify: SIGNOFF"));
       
       (void)va_arg(va, void *);
       clients = va_arg(va, SilcClientEntry *);
-      clients_count = va_arg(va, uint32);
+      clients_count = va_arg(va, SilcUInt32);
   
       for (i = 0; i < clients_count; i++) {
 	memset(userhost, 0, sizeof(userhost));
@@ -642,7 +642,7 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 static void silc_client_join_get_users(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry *clients,
-				       uint32 clients_count,
+				       SilcUInt32 clients_count,
 				       void *context)
 {
   SilcChannelEntry channel = (SilcChannelEntry)context;
@@ -758,7 +758,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       char buf[1024], *nickname, *username, *realname, *nick;
       unsigned char *fingerprint;
-      uint32 idle, mode;
+      SilcUInt32 idle, mode;
       SilcBuffer channels;
       SilcClientEntry client_entry;
       
@@ -774,7 +774,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       } else if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
 	/* Try to find the entry for the unknown client ID, since we
 	   might have, and print the nickname of it for user. */
-	uint32 tmp_len;
+	SilcUInt32 tmp_len;
 	unsigned char *tmp =
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 				     2, &tmp_len);
@@ -800,8 +800,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       username = va_arg(vp, char *);
       realname = va_arg(vp, char *);
       channels = va_arg(vp, SilcBuffer);
-      mode = va_arg(vp, uint32);
-      idle = va_arg(vp, uint32);
+      mode = va_arg(vp, SilcUInt32);
+      idle = va_arg(vp, SilcUInt32);
       fingerprint = va_arg(vp, unsigned char *);
       
       silc_parse_userfqdn(nickname, &nick, NULL);
@@ -822,7 +822,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_dlist_start(list);
 	  while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
 	    char *m = silc_client_chumode_char(silc_channel_get_mode(entry));
-	    uint32 name_len;
+	    SilcUInt32 name_len;
 	    char *name = silc_channel_get_name(entry, &name_len);
 	    
 	    if (m)
@@ -890,7 +890,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       } else if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
 	/* Try to find the entry for the unknown client ID, since we
 	   might have, and print the nickname of it for user. */
-	uint32 tmp_len;
+	SilcUInt32 tmp_len;
 	unsigned char *tmp =
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 				     2, &tmp_len);
@@ -971,24 +971,24 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   case SILC_COMMAND_JOIN: 
     {
       char *channel, *mode, *topic;
-      uint32 modei;
+      SilcUInt32 modei;
       SilcChannelEntry channel_entry;
       SilcBuffer client_id_list;
-      uint32 list_count;
+      SilcUInt32 list_count;
 
       if (!success)
 	return;
 
       channel = va_arg(vp, char *);
       channel_entry = va_arg(vp, SilcChannelEntry);
-      modei = va_arg(vp, uint32);
-      (void)va_arg(vp, uint32);
+      modei = va_arg(vp, SilcUInt32);
+      (void)va_arg(vp, SilcUInt32);
       (void)va_arg(vp, unsigned char *);
       (void)va_arg(vp, unsigned char *);
       (void)va_arg(vp, unsigned char *);
       topic = va_arg(vp, char *);
       (void)va_arg(vp, unsigned char *);
-      list_count = va_arg(vp, uint32);
+      list_count = va_arg(vp, SilcUInt32);
       client_id_list = va_arg(vp, SilcBuffer);
 
       chanrec = silc_channel_find(server, channel);
@@ -1067,12 +1067,12 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     
   case SILC_COMMAND_UMODE:
     {
-      uint32 mode;
+      SilcUInt32 mode;
       
       if (!success)
 	return;
       
-      mode = va_arg(vp, uint32);
+      mode = va_arg(vp, SilcUInt32);
       
       if (mode & SILC_UMODE_SERVER_OPERATOR &&
 	  !(server->umode & SILC_UMODE_SERVER_OPERATOR))
@@ -1177,14 +1177,14 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       void *entry;
       SilcPublicKey public_key;
       unsigned char *pk;
-      uint32 pk_len;
+      SilcUInt32 pk_len;
       GetkeyContext getkey;
       char *name;
       
       if (!success)
 	return;
       
-      id_type = va_arg(vp, uint32);
+      id_type = va_arg(vp, SilcUInt32);
       entry = va_arg(vp, void *);
       public_key = va_arg(vp, SilcPublicKey);
 
@@ -1278,7 +1278,7 @@ typedef struct {
   char *entity;
   char *entity_name;
   unsigned char *pk;
-  uint32 pk_len;
+  SilcUInt32 pk_len;
   SilcSKEPKType pk_type;
   SilcVerifyPublicKey completion;
   void *context;
@@ -1322,7 +1322,7 @@ static void verify_public_key_completion(const char *line, void *context)
 static void 
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				const char *name, SilcSocketType conn_type, 
-				unsigned char *pk, uint32 pk_len, 
+				unsigned char *pk, SilcUInt32 pk_len, 
 				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context)
 {
@@ -1435,7 +1435,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     /* The key already exists, verify it. */
     SilcPublicKey public_key;
     unsigned char *encpk;
-    uint32 encpk_len;
+    SilcUInt32 encpk_len;
 
     /* Load the key file, try for both IP filename and hostname filename */
     if (!silc_pkcs_load_public_key(ipf, &public_key, 
@@ -1526,7 +1526,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 void 
 silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 		       SilcSocketType conn_type, unsigned char *pk, 
-		       uint32 pk_len, SilcSKEPKType pk_type,
+		       SilcUInt32 pk_len, SilcSKEPKType pk_type,
 		       SilcVerifyPublicKey completion, void *context)
 {
   silc_verify_public_key_internal(client, conn, NULL, conn_type, pk,
@@ -1607,7 +1607,7 @@ static void silc_get_auth_method_callback(SilcClient client,
    is found and FALSE if not. `conn' may be NULL. */
 
 void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
-			  char *hostname, uint16 port,
+			  char *hostname, SilcUInt16 port,
 			  SilcGetAuthMeth completion, void *context)
 {
   InternalGetAuthMethod internal;
@@ -1674,7 +1674,7 @@ void silc_failure(SilcClient client, SilcClientConnection conn,
   }
 
   if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_CONNECTION_AUTH) {
-    uint32 err = (uint32)failure;
+    SilcUInt32 err = (SilcUInt32)failure;
 
     if (err == SILC_AUTH_FAILED)
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
@@ -1691,7 +1691,7 @@ void silc_failure(SilcClient client, SilcClientConnection conn,
 
 int silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		       SilcClientEntry client_entry, const char *hostname,
-		       uint16 port, SilcKeyAgreementCallback *completion,
+		       SilcUInt16 port, SilcKeyAgreementCallback *completion,
 		       void **context)
 {
   char portstr[12];
@@ -1719,8 +1719,8 @@ int silc_key_agreement(SilcClient client, SilcClientConnection conn,
 }
 
 void silc_ftp(SilcClient client, SilcClientConnection conn,
-	      SilcClientEntry client_entry, uint32 session_id,
-	      const char *hostname, uint16 port)
+	      SilcClientEntry client_entry, SilcUInt32 session_id,
+	      const char *hostname, SilcUInt16 port)
 {
   SILC_SERVER_REC *server;
   char portstr[12];

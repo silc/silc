@@ -112,10 +112,10 @@ static unsigned char pem_enc[64] =
    data string. Note: This is originally public domain code and is 
    still PD. */
 
-char *silc_encode_pem(unsigned char *data, uint32 len)
+char *silc_encode_pem(unsigned char *data, SilcUInt32 len)
 {
   int i, j;
-  uint32 bits, c, char_count;
+  SilcUInt32 bits, c, char_count;
   char *pem;
 
   char_count = 0;
@@ -160,10 +160,10 @@ char *silc_encode_pem(unsigned char *data, uint32 len)
 
 /* Same as above but puts newline ('\n') every 72 characters. */
 
-char *silc_encode_pem_file(unsigned char *data, uint32 data_len)
+char *silc_encode_pem_file(unsigned char *data, SilcUInt32 data_len)
 {
   int i, j;
-  uint32 len, cols;
+  SilcUInt32 len, cols;
   char *pem, *pem2;
 
   pem = silc_encode_pem(data, data_len);
@@ -189,11 +189,11 @@ char *silc_encode_pem_file(unsigned char *data, uint32 data_len)
 /* Decodes PEM into data. Returns the decoded data. Note: This is
    originally public domain code and is still PD. */
 
-unsigned char *silc_decode_pem(unsigned char *pem, uint32 pem_len,
-			       uint32 *ret_len)
+unsigned char *silc_decode_pem(unsigned char *pem, SilcUInt32 pem_len,
+			       SilcUInt32 *ret_len)
 {
   int i, j;
-  uint32 len, c, char_count, bits;
+  SilcUInt32 len, c, char_count, bits;
   unsigned char *data;
   static char ialpha[256], decoder[256];
 
@@ -260,7 +260,7 @@ unsigned char *silc_decode_pem(unsigned char *pem, uint32 pem_len,
 
 bool silc_parse_userfqdn(const char *string, char **left, char **right)
 {
-  uint32 tlen;
+  SilcUInt32 tlen;
 
   if (!string)
     return FALSE;
@@ -298,10 +298,10 @@ bool silc_parse_userfqdn(const char *string, char **left, char **right)
 
 void silc_parse_command_line(unsigned char *buffer, 
 			     unsigned char ***parsed,
-			     uint32 **parsed_lens,
-			     uint32 **parsed_types,
-			     uint32 *parsed_num,
-			     uint32 max_args)
+			     SilcUInt32 **parsed_lens,
+			     SilcUInt32 **parsed_types,
+			     SilcUInt32 *parsed_num,
+			     SilcUInt32 max_args)
 {
   int i, len = 0;
   int argc = 0;
@@ -383,7 +383,7 @@ char *silc_format(char *fmt, ...)
 
 static char rid[256];
 
-char *silc_id_render(void *id, uint16 type)
+char *silc_id_render(void *id, SilcUInt16 type)
 {
   char tmp[100];
   unsigned char tmps[2];
@@ -549,10 +549,10 @@ int silc_string_compare(char *string1, char *string2)
    this is used usually with nicknames, channel and server names to provide
    case insensitive keys. */
 
-uint32 silc_hash_string(void *key, void *user_context)
+SilcUInt32 silc_hash_string(void *key, void *user_context)
 {
   char *s = (char *)key;
-  uint32 h = 0, g;
+  SilcUInt32 h = 0, g;
   
   while (*s != '\0') {
     h = (h << 4) + tolower(*s);
@@ -568,31 +568,31 @@ uint32 silc_hash_string(void *key, void *user_context)
 
 /* Basic hash function to hash integers. May be used with the SilcHashTable. */
 
-uint32 silc_hash_uint(void *key, void *user_context)
+SilcUInt32 silc_hash_uint(void *key, void *user_context)
 {
-  return *(uint32 *)key;
+  return *(SilcUInt32 *)key;
 }
 
 /* Basic hash funtion to hash pointers. May be used with the SilcHashTable. */
 
-uint32 silc_hash_ptr(void *key, void *user_context)
+SilcUInt32 silc_hash_ptr(void *key, void *user_context)
 {
-  return (uint32)key;
+  return (SilcUInt32)key;
 }
 
 /* Hash a ID. The `user_context' is the ID type. */
 
-uint32 silc_hash_id(void *key, void *user_context)
+SilcUInt32 silc_hash_id(void *key, void *user_context)
 {
-  SilcIdType id_type = (SilcIdType)(uint32)user_context;
-  uint32 h = 0;
+  SilcIdType id_type = (SilcIdType)(SilcUInt32)user_context;
+  SilcUInt32 h = 0;
   int i;
 
   switch (id_type) {
   case SILC_ID_CLIENT:
     {
       SilcClientID *id = (SilcClientID *)key;
-      uint32 g;
+      SilcUInt32 g;
   
       /* The client ID is hashed by hashing the hash of the ID 
 	 (which is a truncated MD5 hash of the nickname) so that we
@@ -641,9 +641,9 @@ uint32 silc_hash_id(void *key, void *user_context)
 
 /* Hash binary data. The `user_context' is the data length. */
 
-uint32 silc_hash_data(void *key, void *user_context)
+SilcUInt32 silc_hash_data(void *key, void *user_context)
 {
-  uint32 len = (uint32)user_context, h = 0;
+  SilcUInt32 len = (SilcUInt32)user_context, h = 0;
   unsigned char *data = (unsigned char *)key;
   int i;
 
@@ -667,7 +667,7 @@ bool silc_hash_string_compare(void *key1, void *key2, void *user_context)
 
 bool silc_hash_id_compare(void *key1, void *key2, void *user_context)
 {
-  SilcIdType id_type = (SilcIdType)(uint32)user_context;
+  SilcIdType id_type = (SilcIdType)(SilcUInt32)user_context;
   return (id_type == SILC_ID_CLIENT ? 
 	  SILC_ID_COMPARE_HASH((SilcClientID *)key1, (SilcClientID *)key2) :
 	  SILC_ID_COMPARE_TYPE(key1, key2, id_type));
@@ -684,13 +684,13 @@ bool silc_hash_client_id_compare(void *key1, void *key2, void *user_context)
 
 bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
 {
-  uint32 len = (uint32)user_context;
+  SilcUInt32 len = (SilcUInt32)user_context;
   return !memcmp(key1, key2, len);
 }
 
 /* Parses mode mask and returns the mode as string. */
 
-char *silc_client_chmode(uint32 mode, const char *cipher, const char *hmac)
+char *silc_client_chmode(SilcUInt32 mode, const char *cipher, const char *hmac)
 {
   char string[100];
 
@@ -736,7 +736,7 @@ char *silc_client_chmode(uint32 mode, const char *cipher, const char *hmac)
 
 /* Parses channel user mode mask and returns te mode as string */
 
-char *silc_client_chumode(uint32 mode)
+char *silc_client_chumode(SilcUInt32 mode)
 {
   char string[4];
 
@@ -756,7 +756,7 @@ char *silc_client_chumode(uint32 mode)
 
 /* Parses channel user mode and returns it as special mode character. */
 
-char *silc_client_chumode_char(uint32 mode)
+char *silc_client_chumode_char(SilcUInt32 mode)
 {
   char string[4];
 
@@ -776,7 +776,7 @@ char *silc_client_chumode_char(uint32 mode)
 
 /* Creates fingerprint from data, usually used with SHA1 digests */
 
-char *silc_fingerprint(const unsigned char *data, uint32 data_len)
+char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
 {
   char fingerprint[64], *cp;
   int i;

@@ -32,7 +32,7 @@
    from SILC packets. */
 struct SilcCommandPayloadStruct {
   SilcCommand cmd;
-  uint16 ident;
+  SilcUInt16 ident;
   SilcArgumentPayload args;
 };
 
@@ -42,12 +42,12 @@ struct SilcCommandPayloadStruct {
 /* Parses command payload returning new command payload structure */
 
 SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
-					      uint32 payload_len)
+					      SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
   SilcCommandPayload new;
   unsigned char args_num;
-  uint16 p_len;
+  SilcUInt16 p_len;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing command payload"));
@@ -94,15 +94,15 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
 /* Encodes Command Payload returning it to SilcBuffer. */
 
 SilcBuffer silc_command_payload_encode(SilcCommand cmd,
-				       uint32 argc,
+				       SilcUInt32 argc,
 				       unsigned char **argv,
-				       uint32 *argv_lens,
-				       uint32 *argv_types,
-				       uint16 ident)
+				       SilcUInt32 *argv_lens,
+				       SilcUInt32 *argv_types,
+				       SilcUInt16 ident)
 {
   SilcBuffer buffer;
   SilcBuffer args = NULL;
-  uint32 len = 0;
+  SilcUInt32 len = 0;
 
   SILC_LOG_DEBUG(("Encoding command payload"));
 
@@ -143,8 +143,8 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
 {
   SilcBuffer buffer;
   SilcBuffer args = NULL;
-  uint32 len = 0;
-  uint32 argc = 0;
+  SilcUInt32 len = 0;
+  SilcUInt32 argc = 0;
 
   SILC_LOG_DEBUG(("Encoding command payload"));
 
@@ -180,16 +180,16 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
 }
 
 /* Encodes Command payload with variable argument list. The arguments
-   must be: uint32, unsigned char *, unsigned int, ... One 
-   {uint32, unsigned char * and unsigned int} forms one argument, 
-   thus `argc' in case when sending one {uint32, unsigned char * 
-   and uint32} equals one (1) and when sending two of those it
+   must be: SilcUInt32, unsigned char *, unsigned int, ... One 
+   {SilcUInt32, unsigned char * and unsigned int} forms one argument, 
+   thus `argc' in case when sending one {SilcUInt32, unsigned char * 
+   and SilcUInt32} equals one (1) and when sending two of those it
    equals two (2), and so on. This has to be preserved or bad things
    will happen. The variable arguments is: {type, data, data_len}. */
 
 SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
-					  uint16 ident, 
-					  uint32 argc, ...)
+					  SilcUInt16 ident, 
+					  SilcUInt32 argc, ...)
 {
   va_list ap;
   SilcBuffer buffer;
@@ -204,26 +204,26 @@ SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
 /* Same as above but with va_list. */
 
 SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
-					   uint16 ident, 
-					   uint32 argc, va_list ap)
+					   SilcUInt16 ident, 
+					   SilcUInt32 argc, va_list ap)
 {
   unsigned char **argv = NULL;
-  uint32 *argv_lens = NULL, *argv_types = NULL;
+  SilcUInt32 *argv_lens = NULL, *argv_types = NULL;
   unsigned char *x;
-  uint32 x_len;
-  uint32 x_type;
+  SilcUInt32 x_len;
+  SilcUInt32 x_type;
   SilcBuffer buffer;
   int i, k = 0;
 
   if (argc) {
     argv = silc_calloc(argc, sizeof(unsigned char *));
-    argv_lens = silc_calloc(argc, sizeof(uint32));
-    argv_types = silc_calloc(argc, sizeof(uint32));
+    argv_lens = silc_calloc(argc, sizeof(SilcUInt32));
+    argv_types = silc_calloc(argc, sizeof(SilcUInt32));
 
     for (i = 0, k = 0; i < argc; i++) {
-      x_type = va_arg(ap, uint32);
+      x_type = va_arg(ap, SilcUInt32);
       x = va_arg(ap, unsigned char *);
-      x_len = va_arg(ap, uint32);
+      x_len = va_arg(ap, SilcUInt32);
       
       if (!x_type || !x || !x_len)
 	continue;
@@ -255,8 +255,8 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
 SilcBuffer 
 silc_command_reply_payload_encode_va(SilcCommand cmd, 
 				     SilcCommandStatus status,
-				     uint16 ident,
-				     uint32 argc, ...)
+				     SilcUInt16 ident,
+				     SilcUInt32 argc, ...)
 {
   va_list ap;
   SilcBuffer buffer;
@@ -271,22 +271,22 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
 SilcBuffer 
 silc_command_reply_payload_encode_vap(SilcCommand cmd, 
 				      SilcCommandStatus status,
-				      uint16 ident, uint32 argc, 
+				      SilcUInt16 ident, SilcUInt32 argc, 
 				      va_list ap)
 {
   unsigned char **argv;
-  uint32 *argv_lens = NULL, *argv_types = NULL;
+  SilcUInt32 *argv_lens = NULL, *argv_types = NULL;
   unsigned char status_data[2];
   unsigned char *x;
-  uint32 x_len;
-  uint32 x_type;
+  SilcUInt32 x_len;
+  SilcUInt32 x_type;
   SilcBuffer buffer;
   int i, k;
 
   argc++;
   argv = silc_calloc(argc, sizeof(unsigned char *));
-  argv_lens = silc_calloc(argc, sizeof(uint32));
-  argv_types = silc_calloc(argc, sizeof(uint32));
+  argv_lens = silc_calloc(argc, sizeof(SilcUInt32));
+  argv_types = silc_calloc(argc, sizeof(SilcUInt32));
 
   SILC_PUT16_MSB(status, status_data);
   argv[0] = silc_memdup(status_data, sizeof(status_data));
@@ -294,9 +294,9 @@ silc_command_reply_payload_encode_vap(SilcCommand cmd,
   argv_types[0] = 1;
 
   for (i = 1, k = 1; i < argc; i++) {
-    x_type = va_arg(ap, uint32);
+    x_type = va_arg(ap, SilcUInt32);
     x = va_arg(ap, unsigned char *);
-    x_len = va_arg(ap, uint32);
+    x_len = va_arg(ap, SilcUInt32);
 
     if (!x_type || !x || !x_len)
       continue;
@@ -345,7 +345,7 @@ SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload)
 
 /* Returns identifier */
 
-uint16 silc_command_get_ident(SilcCommandPayload payload)
+SilcUInt16 silc_command_get_ident(SilcCommandPayload payload)
 {
   return payload->ident;
 }
@@ -354,7 +354,7 @@ uint16 silc_command_get_ident(SilcCommandPayload payload)
    payloads are frequentlly resent in SILC and thusly this makes it easy
    to set the identifier. */
 
-void silc_command_set_ident(SilcCommandPayload payload, uint16 ident)
+void silc_command_set_ident(SilcCommandPayload payload, SilcUInt16 ident)
 {
   payload->ident = ident;
 }

@@ -132,7 +132,7 @@ void silc_mp_set(SilcMPInt *dst, SilcMPInt *src);
  *
  * SYNOPSIS
  *
- *    void silc_mp_set_ui(SilcMPInt *dst, uint32 ui);
+ *    void silc_mp_set_ui(SilcMPInt *dst, SilcUInt32 ui);
  *
  * DESCRIPTION
  *
@@ -140,13 +140,13 @@ void silc_mp_set(SilcMPInt *dst, SilcMPInt *src);
  *    initialized.
  *
  ***/
-void silc_mp_set_ui(SilcMPInt *dst, uint32 ui);
+void silc_mp_set_ui(SilcMPInt *dst, SilcUInt32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_set_si
  *
  * SYNOPSIS
  *
- *    void silc_mp_set_si(SilcMPInt *dst, int32 si);
+ *    void silc_mp_set_si(SilcMPInt *dst, SilcInt32 si);
  *
  * DESCRIPTION
  *
@@ -154,7 +154,7 @@ void silc_mp_set_ui(SilcMPInt *dst, uint32 ui);
  *    already be initialized.
  *
  ***/
-void silc_mp_set_si(SilcMPInt *dst, int32 si);
+void silc_mp_set_si(SilcMPInt *dst, SilcInt32 si);
 
 /****f* silcmath/SilcMPAPI/silc_mp_set_str
  *
@@ -174,14 +174,14 @@ void silc_mp_set_str(SilcMPInt *dst, const char *str, int base);
  *
  * SYNOPSIS
  *
- *    uint32 silc_mp_get_ui(SilcMPInt *mp);
+ *    SilcUInt32 silc_mp_get_ui(SilcMPInt *mp);
  *
  * DESCRIPTION
  *
  *    Returns the least significant unsigned word from `mp'.
  *
  ***/
-uint32 silc_mp_get_ui(SilcMPInt *mp);
+SilcUInt32 silc_mp_get_ui(SilcMPInt *mp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_get_str
  *
@@ -215,7 +215,7 @@ void silc_mp_add(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * SYNOPSIS
  *
- *    void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+ *    void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
  *
  * DESCRIPTION
  *
@@ -223,7 +223,7 @@ void silc_mp_add(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *    to `dst'.
  *
  ***/
-void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_sub
  *
@@ -242,7 +242,7 @@ void silc_mp_sub(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * SYNOPSIS
  *
- *    void silc_mp_sub_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+ *    void silc_mp_sub_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
  *
  * DESCRIPTION
  *
@@ -250,7 +250,7 @@ void silc_mp_sub(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *    to `dst'.
  *
  ***/
-void silc_mp_sub_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+void silc_mp_sub_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_mul
  *
@@ -269,7 +269,7 @@ void silc_mp_mul(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * SYNOPSIS
  *
- *    void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+ *    void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
  *
  * DESCRIPTION
  *
@@ -277,13 +277,13 @@ void silc_mp_mul(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *    to `dst'.
  *
  ***/
-void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_mul_2exp
  *
  * SYNOPSIS
  *
- *    void silc_mp_mul_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp);
+ *    void silc_mp_mul_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
  *
  * DESCRIPTION
  *
@@ -291,7 +291,7 @@ void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
  *    `dst'. This is equivalent to dst = mp1 * (2 ^ exp).
  *
  ***/
-void silc_mp_mul_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp);
+void silc_mp_mul_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_sqrt
  *
@@ -324,7 +324,7 @@ void silc_mp_div(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * SYNOPSIS
  *
- *    void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+ *    void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
  *
  * DESCRIPTION
  *
@@ -332,7 +332,7 @@ void silc_mp_div(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *    `dst'. This is equivalent to dst = mp1 / ui;
  *
  ***/
-void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_div_qr
  *
@@ -364,14 +364,14 @@ void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
  *    This is equivalent to dst = mp1 / (2 ^ exp).
  *
  ***/
-void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp);
+void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_div_2exp_qr
  *
  * SYNOPSIS
  *
  *    void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
- *                             uint32 exp);
+ *                             SilcUInt32 exp);
  *
  * DESCRIPTION
  *
@@ -382,7 +382,7 @@ void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp);
  *
  ***/
 void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
-			 uint32 exp);
+			 SilcUInt32 exp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_mod
  *
@@ -404,7 +404,7 @@ void silc_mp_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * SYNOPSIS
  *
- *    void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+ *    void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
  *
  * DESCRIPTION
  *
@@ -413,7 +413,7 @@ void silc_mp_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *    to dst = mp1 mod ui.
  *
  ***/
-void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_mod_2exp
  *
@@ -429,7 +429,7 @@ void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
  *    function returns the remainder as well.
  *
  ***/
-void silc_mp_mod_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
+void silc_mp_mod_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_pow
  *
@@ -449,7 +449,7 @@ void silc_mp_pow(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp);
  *
  * SYNOPSIS
  *
- *    void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp);
+ *    void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
  *
  * DESCRIPTION
  *
@@ -457,7 +457,7 @@ void silc_mp_pow(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp);
  *    equivalent to dst = mp1 ^ exp.
  *
  ***/
-void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp);
+void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_pow_mod
  *
@@ -479,7 +479,7 @@ void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp,
  *
  * SYNOPSIS
  *
- *    void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp, 
+ *    void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp, 
  *                            SilcMPInt *mod);
  *
  * DESCRIPTION
@@ -488,7 +488,7 @@ void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp,
  *    This is equivalent to dst = (mp1 ^ exp) mod mod.
  *
  ***/
-void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp, 
+void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp, 
 			SilcMPInt *mod);
 
 /****f* silcmath/SilcMPAPI/silc_mp_modinv
@@ -567,7 +567,7 @@ int silc_mp_cmp(SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * SYNOPSIS
  *
- *    int silc_mp_cmp_si(SilcMPInt *mp1, int32 si);
+ *    int silc_mp_cmp_si(SilcMPInt *mp1, SilcInt32 si);
  *
  * DESCRIPTION
  *
@@ -575,13 +575,13 @@ int silc_mp_cmp(SilcMPInt *mp1, SilcMPInt *mp2);
  *    if `mp1' > `si', `mp1' == `si', or `mp1' < `si', respectively.
  *
  ***/
-int silc_mp_cmp_si(SilcMPInt *mp1, int32 si);
+int silc_mp_cmp_si(SilcMPInt *mp1, SilcInt32 si);
 
 /****f* silcmath/SilcMPAPI/silc_mp_cmp_ui
  *
  * SYNOPSIS
  *
- *    int silc_mp_cmp_ui(SilcMPInt *mp1, uint32 ui);
+ *    int silc_mp_cmp_ui(SilcMPInt *mp1, SilcUInt32 ui);
  *
  * DESCRIPTION
  *
@@ -590,14 +590,14 @@ int silc_mp_cmp_si(SilcMPInt *mp1, int32 si);
  *    respectively.
  *
  ***/
-int silc_mp_cmp_ui(SilcMPInt *mp1, uint32 ui);
+int silc_mp_cmp_ui(SilcMPInt *mp1, SilcUInt32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_mp2bin
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_mp_mp2bin(SilcMPInt *val, uint32 len, 
- *                                  uint32 *ret_len);
+ *    unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len, 
+ *                                  SilcUInt32 *ret_len);
  *
  * DESCRIPTION
  *
@@ -606,15 +606,15 @@ int silc_mp_cmp_ui(SilcMPInt *mp1, uint32 ui);
  *    buffer is allocated that large. If zero then the size is approximated.
  *
  ***/
-unsigned char *silc_mp_mp2bin(SilcMPInt *val, uint32 len, 
-			      uint32 *ret_len);
+unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len, 
+			      SilcUInt32 *ret_len);
 
 /****f* silcmath/SilcMPAPI/silc_mp_mp2bin_noalloc
  *
  * SYNOPSIS
  *
  *    void silc_mp_mp2bin_noalloc(SilcMPInt *val, unsigned char *dst,
- *                                uint32 dst_len);
+ *                                SilcUInt32 dst_len);
  *
  * DESCRIPTION
  *
@@ -623,13 +623,13 @@ unsigned char *silc_mp_mp2bin(SilcMPInt *val, uint32 len,
  *
  ***/
 void silc_mp_mp2bin_noalloc(SilcMPInt *val, unsigned char *dst,
-			    uint32 dst_len);
+			    SilcUInt32 dst_len);
 
 /****f* silcmath/SilcMPAPI/silc_mp_bin2mp
  *
  * SYNOPSIS
  *
- *    void silc_mp_bin2mp(unsigned char *data, uint32 len, 
+ *    void silc_mp_bin2mp(unsigned char *data, SilcUInt32 len, 
  *                        SilcMPInt *ret);
  *
  * DESCRIPTION
@@ -638,7 +638,7 @@ void silc_mp_mp2bin_noalloc(SilcMPInt *val, unsigned char *dst,
  *    must be initialized.
  *
  ***/
-void silc_mp_bin2mp(unsigned char *data, uint32 len, SilcMPInt *ret);
+void silc_mp_bin2mp(unsigned char *data, SilcUInt32 len, SilcMPInt *ret);
 
 /****f* silcmath/SilcMPAPI/silc_mp_abs
  *

@@ -77,7 +77,7 @@ SILC_CIPHER_API_CONTEXT_LEN(blowfish)
 
 SILC_CIPHER_API_ENCRYPT_CBC(blowfish)
 {
-  uint32 tiv[4];
+  SilcUInt32 tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);
@@ -102,7 +102,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(blowfish)
 
 SILC_CIPHER_API_DECRYPT_CBC(blowfish)
 {
-  uint32 tmp[4], tmp2[4], tiv[4];
+  SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);
@@ -393,7 +393,7 @@ static u32 bf_sbox[256 * 4] =
 
 /* 
  * Round loop unrolling macros, S is a pointer to a S-Box array
- * organized in 4 uint32s at a row.
+ * organized in 4 SilcUInt32s at a row.
  */
 
 #define GET32_3(x) (((x) & 0xff))

@@ -36,18 +36,18 @@ struct SilcClientEntryStruct {
   char *hostname;		/* hostname */
   char *server;			/* SILC server name */
   char *realname;		/* Realname (userinfo) */
-  uint32 num;
-  uint32 mode;			/* User mode in SILC */
+  SilcUInt32 num;
+  SilcUInt32 mode;			/* User mode in SILC */
   SilcClientID *id;		/* The Client ID */
   unsigned char *fingerprint;	/* Fingerprint of client's public key */
-  uint32 fingerprint_len;	/* Length of the fingerprint */
+  SilcUInt32 fingerprint_len;	/* Length of the fingerprint */
   bool valid;			/* FALSE if this entry is not valid */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */
   unsigned char *key;		/* Set only if appliation provided the
 				   key material. NULL if the library 
 				   generated the key. */
-  uint32 key_len;
+  SilcUInt32 key_len;
   bool generated;		/* TRUE if library generated the key */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
   SilcClientStatus status;	/* Status mask */
@@ -57,7 +57,7 @@ struct SilcClientEntryStruct {
 /* Client and its mode on a channel */
 struct SilcChannelUserStruct {
   SilcClientEntry client;
-  uint32 mode;
+  SilcUInt32 mode;
   SilcChannelEntry channel;
 };
 
@@ -66,7 +66,7 @@ struct SilcChannelPrivateKeyStruct {
   SilcCipher cipher;		      /* The cipher and key */
   SilcHmac hmac;		      /* The HMAC and hmac key */
   unsigned char *key;		      /* The key data */
-  uint32 key_len;		      /* The key length */
+  SilcUInt32 key_len;		      /* The key length */
 };
 
 /* Channel entry context. This is allocate for every channel client has
@@ -74,7 +74,7 @@ struct SilcChannelPrivateKeyStruct {
 struct SilcChannelEntryStruct {
   char *channel_name;
   SilcChannelID *id;
-  uint32 mode;
+  SilcUInt32 mode;
 
   /* All clients that has joined this channel */
   SilcHashTable user_list;
@@ -82,7 +82,7 @@ struct SilcChannelEntryStruct {
   /* Channel keys */
   SilcCipher channel_key;                    /* The channel key */
   unsigned char *key;			     /* Raw key data */
-  uint32 key_len;
+  SilcUInt32 key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
   SilcHmac hmac;			     /* Current HMAC */
   SilcDList private_keys;		     /* List of private keys or NULL */
@@ -111,14 +111,14 @@ struct SilcServerEntryStruct {
 SilcClientEntry
 silc_client_add_client(SilcClient client, SilcClientConnection conn,
 		       char *nickname, char *username, 
-		       char *userinfo, SilcClientID *id, uint32 mode);
+		       char *userinfo, SilcClientID *id, SilcUInt32 mode);
 void silc_client_update_client(SilcClient client,
 			       SilcClientConnection conn,
 			       SilcClientEntry client_entry,
 			       const char *nickname,
 			       const char *username,
 			       const char *userinfo,
-			       uint32 mode);
+			       SilcUInt32 mode);
 void silc_client_del_client_entry(SilcClient client, 
 				  SilcClientConnection conn,
 				  SilcClientEntry client_entry);
@@ -130,7 +130,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 const char *channel_name,
-					 uint32 mode, 
+					 SilcUInt32 mode, 
 					 SilcChannelID *channel_id);
 bool silc_client_replace_channel_id(SilcClient client,
 				    SilcClientConnection conn,

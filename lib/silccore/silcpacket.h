@@ -174,21 +174,21 @@ typedef unsigned char SilcPacketFlags;
  *      Packet flags. Flags are defined above.
  *
  *    unsigned char *src_id
- *    uint8 src_id_len
+ *    SilcUInt8 src_id_len
  *    unsigned char src_id_type
  *
  *      Source ID, its length and type. On packet reception retuned ID's
  *      are always the hash values of the ID's from the packet.
  *
  *    unsigned char *dst_id;
- *    uint8 dst_id_len;
+ *    SilcUInt8 dst_id_len;
  *    unsigned char src_id_type;
  *
  *      Destination ID, its length and type. On packet reception retuned
  *      ID's are always the hash values of the ID's from the packet.
  *
- *    uint16 truelen
- *    uint8 padlen
+ *    SilcUInt16 truelen
+ *    SilcUInt8 padlen
  *
  *      The true lenght of the packet and the padded length of the packet.
  *      These may be set by the caller before calling any of the 
@@ -202,7 +202,7 @@ typedef unsigned char SilcPacketFlags;
  *      calling silc_packet_context_dup and decreased by calling the
  *      silc_packet_context_free.
  *
- *    uint32 sequence;
+ *    SilcUInt32 sequence;
  *
  *      Packet sequence number.
  *
@@ -210,24 +210,24 @@ typedef unsigned char SilcPacketFlags;
 typedef struct {
   SilcBuffer buffer;
 
-  uint16 truelen;
+  SilcUInt16 truelen;
   SilcPacketFlags flags;
   SilcPacketType type;
-  uint8 padlen;
+  SilcUInt8 padlen;
 
   unsigned char *src_id;
-  uint8 src_id_len;
-  uint8 src_id_type;
+  SilcUInt8 src_id_len;
+  SilcUInt8 src_id_type;
 
   unsigned char *dst_id;
-  uint8 dst_id_len;
-  uint8 dst_id_type;
+  SilcUInt8 dst_id_len;
+  SilcUInt8 dst_id_type;
 
   int users;
   bool long_pad;		/* Set to TRUE to use maximum padding
 				   in packet (up to 256 bytes). */
 
-  uint32 sequence;
+  SilcUInt32 sequence;
 } SilcPacketContext;
 
 /****s* silccore/SilcPacketAPI/SilcPacketParserContext
@@ -389,7 +389,7 @@ int silc_packet_send(SilcSocketConnection sock, bool force_send);
  * SYNOPSIS
  *
  *    void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, 
- *                             SilcBuffer buffer, uint32 len);
+ *                             SilcBuffer buffer, SilcUInt32 len);
  *
  * DESCRIPTION
  *
@@ -401,8 +401,8 @@ int silc_packet_send(SilcSocketConnection sock, bool force_send);
  *    cannot be used. 
  *
  ***/
-void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, uint32 sequence,
-			 SilcBuffer buffer, uint32 len);
+void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
+			 SilcBuffer buffer, SilcUInt32 len);
 
 /****f* silccore/SilcPacketAPI/silc_packet_assemble
  *
@@ -464,9 +464,9 @@ void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher);
  * SYNOPSIS
  *
  *    void silc_packet_send_prepare(SilcSocketConnection sock,
- *                                  uint32 header_len,
- *                                  uint32 padlen,
- *                                  uint32 data_len);
+ *                                  SilcUInt32 header_len,
+ *                                  SilcUInt32 padlen,
+ *                                  SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
@@ -477,9 +477,9 @@ void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher);
  *
  ***/
 void silc_packet_send_prepare(SilcSocketConnection sock,
-			      uint32 header_len,
-			      uint32 padlen,
-			      uint32 data_len);
+			      SilcUInt32 header_len,
+			      SilcUInt32 padlen,
+			      SilcUInt32 data_len);
 
 /****f* silccore/SilcPacketAPI/silc_packet_receive
  *
@@ -528,7 +528,7 @@ int silc_packet_receive(SilcSocketConnection sock);
 bool silc_packet_receive_process(SilcSocketConnection sock,
 				 bool local_is_router,
 				 SilcCipher cipher, SilcHmac hmac,
-				 uint32 sequence,
+				 SilcUInt32 sequence,
 				 SilcPacketParserCallback parser,
 				 void *parser_context);
 

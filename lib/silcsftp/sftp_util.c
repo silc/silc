@@ -30,7 +30,7 @@
    fit to `packet_buf' will be reallocated. */
 
 SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet, 
-				   SilcBuffer packet_buf, uint32 len, ...)
+				   SilcBuffer packet_buf, SilcUInt32 len, ...)
 {
   SilcBuffer buffer;
   va_list vp;
@@ -46,7 +46,7 @@ SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet,
    pointer as argument. */
 
 SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet, 
-				      SilcBuffer packet_buf, uint32 len, 
+				      SilcBuffer packet_buf, SilcUInt32 len, 
 				      va_list vp)
 {
   SilcBuffer buffer;
@@ -89,10 +89,10 @@ SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet,
 
 SilcSFTPPacket silc_sftp_packet_decode(SilcBuffer packet,
 				       unsigned char **payload,
-				       uint32 *payload_len)
+				       SilcUInt32 *payload_len)
 {
-  uint32 len;
-  uint8 type;
+  SilcUInt32 len;
+  SilcUInt8 type;
   int ret;
 
   ret = silc_buffer_unformat(packet,
@@ -280,7 +280,7 @@ SilcSFTPAttributes silc_sftp_attr_decode(SilcBuffer buffer)
 				      sizeof(*attr->extended_data));
     for (i = 0; i < attr->extended_count; i++) {
       unsigned char *tmp, *tmp2;
-      uint32 tmp_len, tmp2_len;
+      SilcUInt32 tmp_len, tmp2_len;
 
       if (silc_buffer_unformat(buffer, 
 			       SILC_STR_UI32_NSTRING(&tmp, &tmp_len),
@@ -387,7 +387,7 @@ SilcBuffer silc_sftp_name_encode(SilcSFTPName name)
    `count' many name, longname and attribute values. Returns the allocated
    structure or NULL on error. */
 
-SilcSFTPName silc_sftp_name_decode(uint32 count, SilcBuffer buffer)
+SilcSFTPName silc_sftp_name_decode(SilcUInt32 count, SilcBuffer buffer)
 {
   SilcSFTPName name;
   int i;

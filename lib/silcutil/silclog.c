@@ -32,7 +32,7 @@
 struct SilcLogStruct {
   char *filename;
   FILE *fp;
-  uint32 maxsize;
+  SilcUInt32 maxsize;
   char *typename;
   SilcLogType type;
   SilcLogCb cb;
@@ -241,7 +241,7 @@ char *silc_log_get_file(SilcLogType type)
 }
 
 /* Set and initialize the specified logging channel. See the API reference */
-bool silc_log_set_file(SilcLogType type, char *filename, uint32 maxsize,
+bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
 		       SilcSchedule scheduler)
 {
   FILE *fp = NULL;
@@ -367,7 +367,7 @@ void silc_log_output_debug(char *file, char *function,
 
 void silc_log_output_hexdump(char *file, char *function,
 			     int line, void *data_in,
-			     uint32 len, char *string)
+			     SilcUInt32 len, char *string)
 {
   int i, k;
   int off, pos, count;

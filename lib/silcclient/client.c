@@ -37,7 +37,7 @@ static void silc_client_packet_parse_type(SilcClient client,
 void silc_client_resolve_auth_method(bool success,
 				     SilcProtocolAuthMeth auth_meth,
 				     const unsigned char *auth_data,
-				     uint32 auth_data_len, void *context);
+				     SilcUInt32 auth_data_len, void *context);
 
 /* Allocates new client object. This has to be done before client may
    work. After calling this one must call silc_client_init to initialize
@@ -600,7 +600,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
 void silc_client_resolve_auth_method(bool success,
 				     SilcProtocolAuthMeth auth_meth,
 				     const unsigned char *auth_data,
-				     uint32 auth_data_len, void *context)
+				     SilcUInt32 auth_data_len, void *context)
 {
   SilcClientConnAuthInternalContext *proto_ctx =
     (SilcClientConnAuthInternalContext *)context;
@@ -1180,12 +1180,12 @@ void silc_client_packet_send(SilcClient client,
 			     SilcCipher cipher,
 			     SilcHmac hmac,
 			     unsigned char *data, 
-			     uint32 data_len, 
+			     SilcUInt32 data_len, 
 			     int force_send)
 {
   SilcPacketContext packetdata;
   int block_len;
-  uint32 sequence = 0;
+  SilcUInt32 sequence = 0;
 
   if (!sock)
     return;
@@ -1613,7 +1613,7 @@ void silc_client_process_failure(SilcClient client,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet)
 {
-  uint32 failure = 0;
+  SilcUInt32 failure = 0;
 
   if (sock->protocol) {
     if (packet->buffer->len >= 4)
@@ -1715,7 +1715,7 @@ void silc_client_connection_auth_request(SilcClient client,
 					 SilcPacketContext *packet)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  uint16 conn_type, auth_meth;
+  SilcUInt16 conn_type, auth_meth;
   int ret;
 
   /* If we haven't send our request then ignore this one. */

@@ -25,8 +25,8 @@
 typedef struct SilcClientConfigSectionAlgStruct {
   char *alg_name;
   char *sim_name;
-  uint32 block_len;
-  uint32 key_len;
+  SilcUInt32 block_len;
+  SilcUInt32 key_len;
   struct SilcClientConfigSectionAlgStruct *next;
   struct SilcClientConfigSectionAlgStruct *prev;
 #define SILC_CLIENT_CONFIG_MODNAME "builtin"
@@ -37,7 +37,7 @@ typedef struct SilcClientConfigSectionConnectionStruct {
   char *host;
   int auth_meth;
   char *auth_data;
-  uint16 port;
+  SilcUInt16 port;
   struct SilcClientConfigSectionConnectionStruct *next;
   struct SilcClientConfigSectionConnectionStruct *prev;
 #define SILC_CLIENT_CONFIG_AUTH_METH_PASSWD "passwd"
@@ -114,7 +114,7 @@ int silc_client_config_parse(SilcClientConfig config, SilcBuffer buffer,
 			     SilcClientConfigParse *return_config);
 int silc_client_config_parse_lines(SilcClientConfig config, 
 				   SilcClientConfigParse parse_config);
-int silc_client_config_check_sections(uint32 checkmask);
+int silc_client_config_check_sections(SilcUInt32 checkmask);
 void silc_client_config_setlogfiles(SilcClientConfig config);
 bool silc_client_config_register_ciphers(SilcClientConfig config);
 bool silc_client_config_register_pkcs(SilcClientConfig config);

@@ -20,7 +20,7 @@
 #ifndef SFTP_UTIL_H
 #define SFTP_UTIL_H
 
-typedef uint32 SilcSFTPPacket;
+typedef SilcUInt32 SilcSFTPPacket;
 
 /* SFTP packet types */
 #define SILC_SFTP_INIT               1
@@ -65,12 +65,12 @@ typedef uint32 SilcSFTPPacket;
    to that buffer instead of allocating new one.  If the new data cannot
    fit to `packet_buf' will be reallocated. */
 SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet, 
-				   SilcBuffer packet_buf, uint32 len, ...);
+				   SilcBuffer packet_buf, SilcUInt32 len, ...);
 
 /* Same as silc_sftp_packet_encode but takes the variable argument list
    pointer as argument. */
 SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet, 
-				      SilcBuffer packet_buf, uint32 len, 
+				      SilcBuffer packet_buf, SilcUInt32 len, 
 				      va_list vp);
 
 /* Decodes the SFTP packet data `data' and return the SFTP packet type.
@@ -78,7 +78,7 @@ SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet,
    NULL if error occurred during decoding. */
 SilcSFTPPacket silc_sftp_packet_decode(SilcBuffer packet,
 				       unsigned char **payload,
-				       uint32 *payload_len);
+				       SilcUInt32 *payload_len);
 
 /* Encodes the SFTP attributes to a buffer and returns the allocated buffer.
    The caller must free the buffer. */
@@ -102,7 +102,7 @@ SilcBuffer silc_sftp_name_encode(SilcSFTPName name);
 /* Decodes a SilcSFTPName structure from the `buffer' that must include
    `count' many name, longname and attribute values. Returns the allocated
    structure or NULL on error. */
-SilcSFTPName silc_sftp_name_decode(uint32 count, SilcBuffer buffer);
+SilcSFTPName silc_sftp_name_decode(SilcUInt32 count, SilcBuffer buffer);
 
 /* Frees the name context and its internals. */
 void silc_sftp_name_free(SilcSFTPName name);

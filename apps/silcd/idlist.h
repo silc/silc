@@ -31,14 +31,14 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 typedef struct {
   SilcIDCache cache;
   SilcSchedule schedule;
-  uint32 timeout;
+  SilcUInt32 timeout;
 } *SilcIDListPurge;
 
 /* Channel key re-key context. */
 typedef struct {
   void *context;
   SilcChannelEntry channel;
-  uint32 key_len;
+  SilcUInt32 key_len;
   SilcTask task;
 } *SilcServerChannelRekey;
 
@@ -47,15 +47,15 @@ typedef struct {
   /* Current sending encryption key, provided for re-key. The `pfs'
      is TRUE if the Perfect Forward Secrecy is performed in re-key. */
   unsigned char *send_enc_key;
-  uint32 enc_key_len;
+  SilcUInt32 enc_key_len;
   int ske_group;
   bool pfs;
-  uint32 timeout;
+  SilcUInt32 timeout;
   void *context;
 } *SilcServerRekey;
 
 /* ID List Entry status type and all the types. */
-typedef uint8 SilcIDListStatus;
+typedef SilcUInt8 SilcIDListStatus;
 #define SILC_IDLIST_STATUS_NONE         0x00    /* No status */
 #define SILC_IDLIST_STATUS_REGISTERED   0x01    /* Entry is registered */
 #define SILC_IDLIST_STATUS_RESOLVED     0x02    /* Entry info is resolved */
@@ -86,8 +86,8 @@ typedef struct {
   SilcHmac hmac_receive;
 
   /* Packet sequence numbers */
-  uint32 psn_send;
-  uint32 psn_receive;
+  SilcUInt32 psn_send;
+  SilcUInt32 psn_receive;
 
   /* Hash selected in the SKE protocol, NULL if not needed at all */
   SilcHash hash;
@@ -135,7 +135,7 @@ typedef struct {
        Logical name of the server. There is no limit of the length of the
        server name. This is usually the same name as defined in DNS.
 
-   uint8 server_type
+   SilcUInt8 server_type
 
        Type of the server. SILC_SERVER or SILC_ROUTER are the possible
        choices for this.
@@ -176,7 +176,7 @@ struct SilcServerEntryStruct {
   SilcIDListDataStruct data;
 
   char *server_name;
-  uint8 server_type;
+  SilcUInt8 server_type;
   SilcServerID *id;
   char *server_info;
   char *motd;
@@ -199,7 +199,7 @@ struct SilcServerEntryStruct {
 
        Pointer to the client list. This is the client currently on channel.
 
-   uint32 mode
+   SilcUInt32 mode
 
        Client's current mode on the channel.
 
@@ -212,7 +212,7 @@ struct SilcServerEntryStruct {
 */
 typedef struct SilcChannelClientEntryStruct {
   SilcClientEntry client;
-  uint32 mode;
+  SilcUInt32 mode;
   SilcChannelEntry channel;
 } *SilcChannelClientEntry;
 
@@ -284,7 +284,7 @@ typedef struct SilcChannelClientEntryStruct {
        nickname. Nickname is not relevant information that would need to be 
        saved as plain.
 
-   uint32 mode
+   SilcUInt32 mode
 
        Client's mode.  Client maybe for example server operator or
        router operator (SILC operator).
@@ -295,7 +295,7 @@ typedef struct SilcChannelClientEntryStruct {
        not allow any command to be exeucted more than once in about
        2 seconds. This is result of normal time().
 
-   uint8 fast_command
+   SilcUInt8 fast_command
 
        Counter to check command bursts.  By default, up to 5 commands
        are allowed before limiting the execution.  See command flags
@@ -320,7 +320,7 @@ typedef struct SilcChannelClientEntryStruct {
        but as just said, this is usually pointer to the socket connection
        list.
 
-   uint16 resolve_cmd_ident
+   SilcUInt16 resolve_cmd_ident
 
        Command identifier for the entry when the entry's data.status
        is SILC_IDLIST_STATUS_RESOLVING.  If this entry is asked to be
@@ -338,10 +338,10 @@ struct SilcClientEntryStruct {
   char *username;
   char *userinfo;
   SilcClientID *id;
-  uint32 mode;
+  SilcUInt32 mode;
 
   long last_command;
-  uint8 fast_command;
+  SilcUInt8 fast_command;
 
   /* Pointer to the router */
   SilcServerEntry router;
@@ -354,7 +354,7 @@ struct SilcClientEntryStruct {
 
   /* data.status is RESOLVING and this includes the resolving command 
      reply identifier. */
-  uint16 resolve_cmd_ident;
+  SilcUInt16 resolve_cmd_ident;
 };
 
 /* 
@@ -379,7 +379,7 @@ struct SilcClientEntryStruct {
 
        Logical name of the channel.
 
-   uint32 mode
+   SilcUInt32 mode
 
        Current mode of the channel.  See lib/silccore/silcchannel.h for
        all modes.
@@ -416,7 +416,7 @@ struct SilcClientEntryStruct {
    SilcPublicKey founder_key
    SilcAuthMethod founder_method
    unsigned char *founder_passwd
-   uint32 founder_passwd_len
+   SilcUInt32 founder_passwd_len
 
        If the SILC_CMODE_FOUNDER_AUTH has been set then these will include
        the founder's public key, authentication method and the password
@@ -440,7 +440,7 @@ struct SilcClientEntryStruct {
        The key of the channel (the cipher actually).
 
    unsigned char *key
-   uint32 key_len
+   SilcUInt32 key_len
 
        Raw key data of the channel key.
 
@@ -460,7 +460,7 @@ struct SilcClientEntryStruct {
 */
 struct SilcChannelEntryStruct {
   char *channel_name;
-  uint32 mode;
+  SilcUInt32 mode;
   SilcChannelID *id;
   bool global_users;
   char *topic;
@@ -470,16 +470,16 @@ struct SilcChannelEntryStruct {
   SilcPublicKey founder_key;
   SilcAuthMethod founder_method;
   unsigned char *founder_passwd;
-  uint32 founder_passwd_len;
+  SilcUInt32 founder_passwd_len;
 
-  uint32 user_limit;
+  SilcUInt32 user_limit;
   unsigned char *passphrase;
   char *invite_list;
   char *ban_list;
 
   /* All users on this channel */
   SilcHashTable user_list;
-  uint32 user_count;
+  SilcUInt32 user_count;
 
   /* Pointer to the router */
   SilcServerEntry router;
@@ -487,7 +487,7 @@ struct SilcChannelEntryStruct {
   /* Channel keys */
   SilcCipher channel_key;
   unsigned char *key;
-  uint32 key_len;
+  SilcUInt32 key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
   SilcHmac hmac;
 
@@ -587,11 +587,11 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
 int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 					char *server, 
 					SilcClientEntry **clients,
-					uint32 *clients_count);
+					SilcUInt32 *clients_count);
 int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 				    SilcHash md5hash,
 				    SilcClientEntry **clients,
-				    uint32 *clients_count);
+				    SilcUInt32 *clients_count);
 SilcClientEntry
 silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 			      bool registered, SilcIDCacheEntry *ret_entry);
@@ -617,6 +617,6 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
 			       SilcChannelID *new_id);
 SilcChannelEntry *
 silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
-			 uint32 *channels_count);
+			 SilcUInt32 *channels_count);
 
 #endif

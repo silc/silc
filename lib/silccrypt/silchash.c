@@ -154,7 +154,7 @@ void silc_hash_free(SilcHash hash)
 
 /* Returns the length of the hash digest. */
 
-uint32 silc_hash_len(SilcHash hash)
+SilcUInt32 silc_hash_len(SilcHash hash)
 {
   return hash->hash->hash_len;
 }
@@ -205,7 +205,7 @@ char *silc_hash_get_supported(void)
 /* Creates the hash value and returns it to the return_hash argument. */
 
 void silc_hash_make(SilcHash hash, const unsigned char *data, 
-		    uint32 len, unsigned char *return_hash)
+		    SilcUInt32 len, unsigned char *return_hash)
 {
   hash->hash->init(hash->context);
   hash->hash->update(hash->context, (unsigned char *)data, len);
@@ -217,7 +217,7 @@ void silc_hash_make(SilcHash hash, const unsigned char *data,
    caller. */
 
 char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
-			    uint32 data_len)
+			    SilcUInt32 data_len)
 {
   SilcHash new_hash = NULL;
   unsigned char h[32];
@@ -245,7 +245,7 @@ static const char co[]= "bcdfghklmnprstvzx";
    fingerprint to the babbleprint. */
 
 char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
-			    uint32 data_len)
+			    SilcUInt32 data_len)
 {
   SilcHash new_hash = NULL;
   char *babbleprint;

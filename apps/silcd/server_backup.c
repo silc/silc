@@ -27,7 +27,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done);
 typedef struct {
   SilcServerEntry server;
   SilcIDIP ip;
-  uint16 port;
+  SilcUInt16 port;
   bool local;
 } SilcServerBackupEntry;
 
@@ -35,20 +35,20 @@ typedef struct {
    by backup router. */
 typedef struct {
   SilcIDIP ip;
-  uint16 port;
+  SilcUInt16 port;
   SilcServerEntry server;	/* Backup router that replaced the primary */
 } SilcServerBackupReplaced;
 
 /* Backup context */
 struct SilcServerBackupStruct {
   SilcServerBackupEntry *servers;
-  uint32 servers_count;
+  SilcUInt32 servers_count;
   SilcServerBackupReplaced **replaced;
-  uint32 replaced_count;
+  SilcUInt32 replaced_count;
 };
 
 typedef struct {
-  uint8 session;
+  SilcUInt8 session;
   bool connected;
   SilcServerEntry server_entry;
 } SilcServerBackupProtocolSession;
@@ -58,10 +58,10 @@ typedef struct {
   SilcServer server;
   SilcSocketConnection sock;
   bool responder;
-  uint8 type;
-  uint8 session;
+  SilcUInt8 type;
+  SilcUInt8 session;
   SilcServerBackupProtocolSession *sessions;
-  uint32 sessions_count;
+  SilcUInt32 sessions_count;
   long start;
 } *SilcServerBackupProtocolContext;
 
@@ -319,7 +319,7 @@ void silc_server_backup_send(SilcServer server,
 			     SilcPacketType type,
 			     SilcPacketFlags flags,
 			     unsigned char *data,
-			     uint32 data_len,
+			     SilcUInt32 data_len,
 			     bool force_send,
 			     bool local)
 {
@@ -361,7 +361,7 @@ void silc_server_backup_send_dest(SilcServer server,
 				  void *dst_id,
 				  SilcIdType dst_id_type,
 				  unsigned char *data,
-				  uint32 data_len,
+				  SilcUInt32 data_len,
 				  bool force_send,
 				  bool local)
 {
@@ -400,7 +400,7 @@ void silc_server_backup_resume_router(SilcServer server,
 				      SilcSocketConnection sock, 
 				      SilcPacketContext *packet)
 {
-  uint8 type, session;
+  SilcUInt8 type, session;
   SilcServerBackupProtocolContext ctx;
   int i, ret;
 
@@ -544,7 +544,7 @@ SILC_TASK_CALLBACK(silc_server_backup_connect_to_router)
    connection is created. */
 
 void silc_server_backup_reconnect(SilcServer server,
-				  const char *ip, uint16 port,
+				  const char *ip, SilcUInt16 port,
 				  SilcServerConnectRouterCallback callback,
 				  void *context)
 {
@@ -682,7 +682,7 @@ SILC_TASK_CALLBACK(silc_server_backup_send_resumed)
 
    SILC_PACKET_RESUME_ROUTER:
 
-   <uint8 type> <uint8 Session ID>
+   <SilcUInt8 type> <SilcUInt8 Session ID>
 
    <type>          = the protocol opcode
    <Session ID>    = Identifier for this packet and any subsequent reply

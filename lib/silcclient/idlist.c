@@ -41,7 +41,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 					       SilcClientConnection conn,
 					       const char *nickname,
 					       const char *format,
-					       uint32 *clients_count)
+					       SilcUInt32 *clients_count)
 {
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list = NULL;
@@ -123,7 +123,7 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
 {
   GetClientInternal i = (GetClientInternal)context;
   SilcClientEntry *clients;
-  uint32 clients_count;
+  SilcUInt32 clients_count;
 
   /* Get the clients */
   clients = silc_client_get_clients_local(i->client, i->conn,
@@ -283,7 +283,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 typedef struct {
   SilcClient client;
   SilcClientConnection conn;
-  uint32 list_count;
+  SilcUInt32 list_count;
   SilcBuffer client_id_list;
   SilcGetClientCallback completion;
   void *context;
@@ -295,14 +295,14 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
   SilcIDCacheEntry id_cache = NULL;
   SilcBuffer client_id_list = i->client_id_list;
   SilcClientEntry *clients = NULL;
-  uint32 clients_count = 0;
+  SilcUInt32 clients_count = 0;
   bool found = FALSE;
   int c;
 
   SILC_LOG_DEBUG(("Start"));
 
   for (c = 0; c < i->list_count; c++) {
-    uint16 idp_len;
+    SilcUInt16 idp_len;
     SilcClientID *client_id;
 
     /* Get Client ID */
@@ -352,7 +352,7 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
 
 void silc_client_get_clients_by_list(SilcClient client,
 				     SilcClientConnection conn,
-				     uint32 list_count,
+				     SilcUInt32 list_count,
 				     SilcBuffer client_id_list,
 				     SilcGetClientCallback completion,
 				     void *context)
@@ -360,7 +360,7 @@ void silc_client_get_clients_by_list(SilcClient client,
   SilcIDCacheEntry id_cache = NULL;
   int i;
   unsigned char **res_argv = NULL;
-  uint32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
+  SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
   GetClientsByListInternal in;
 
   SILC_LOG_DEBUG(("Start"));
@@ -374,7 +374,7 @@ void silc_client_get_clients_by_list(SilcClient client,
   in->context = context;
 
   for (i = 0; i < list_count; i++) {
-    uint16 idp_len;
+    SilcUInt16 idp_len;
     SilcClientID *client_id;
     SilcClientEntry entry;
 
@@ -567,7 +567,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 SilcClientEntry
 silc_client_add_client(SilcClient client, SilcClientConnection conn,
 		       char *nickname, char *username, 
-		       char *userinfo, SilcClientID *id, uint32 mode)
+		       char *userinfo, SilcClientID *id, SilcUInt32 mode)
 {
   SilcClientEntry client_entry;
   char *nick = NULL;
@@ -615,7 +615,7 @@ void silc_client_update_client(SilcClient client,
 			       const char *nickname,
 			       const char *username,
 			       const char *userinfo,
-			       uint32 mode)
+			       SilcUInt32 mode)
 {
   char *nick = NULL;
 
@@ -689,7 +689,7 @@ bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 const char *channel_name,
-					 uint32 mode, 
+					 SilcUInt32 mode, 
 					 SilcChannelID *channel_id)
 {
   SilcChannelEntry channel;
@@ -967,7 +967,7 @@ void silc_client_nickname_format(SilcClient client,
   char *newnick = NULL;
   int i, off = 0, len;
   SilcClientEntry *clients;
-  uint32 clients_count = 0;
+  SilcUInt32 clients_count = 0;
   SilcClientEntry unformatted = NULL;
 
   SILC_LOG_DEBUG(("Start"));

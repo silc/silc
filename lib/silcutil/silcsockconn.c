@@ -23,7 +23,7 @@
 
 /* Heartbeat context */
 struct SilcSocketConnectionHBStruct {
-  uint32 heartbeat;
+  SilcUInt32 heartbeat;
   SilcSocketConnectionHBCb hb_callback;
   void *hb_context;
   SilcSchedule schedule;
@@ -123,7 +123,7 @@ SILC_TASK_CALLBACK(silc_socket_heartbeat)
    `schedule' is the application's scheduler. */
 
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
-			       uint32 heartbeat,
+			       SilcUInt32 heartbeat,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
 			       SilcSchedule schedule)

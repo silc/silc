@@ -51,7 +51,7 @@ typedef struct SilcNotifyPayloadStruct *SilcNotifyPayload;
  *
  * NAME
  * 
- *    typedef uint16 SilcNotifyType;
+ *    typedef SilcUInt16 SilcNotifyType;
  *
  * DESCRIPTION
  *
@@ -59,7 +59,7 @@ typedef struct SilcNotifyPayloadStruct *SilcNotifyPayload;
  *
  * SOURCE
  */
-typedef uint16 SilcNotifyType;
+typedef SilcUInt16 SilcNotifyType;
 
 /* SILC notify types. Server may send these notify types to client to
    notify of some action. */
@@ -89,7 +89,7 @@ typedef uint16 SilcNotifyType;
  *
  *    SilcNotifyPayload 
  *    silc_notify_payload_parse(const unsigned char *payload,
- *                              uint32 payload_len);
+ *                              SilcUInt32 payload_len);
  *
  * DESCRIPTION
  *
@@ -98,23 +98,23 @@ typedef uint16 SilcNotifyType;
  *
  ***/
 SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
-					    uint32 payload_len);
+					    SilcUInt32 payload_len);
 
 /****f* silccore/SilcNotifyAPI/silc_notify_payload_encode
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_notify_payload_encode(SilcNotifyType type, uint32 argc, 
+ *    SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc, 
  *                                          va_list ap);
  *
  * DESCRIPTION
  *
  *    Encode notify payload with variable argument list. If `argc' is > 0
  *    argument payloads will be associated to the notify payload. Variable
- *    arguments must be {usigned char *, uint32 (len)}.
+ *    arguments must be {usigned char *, SilcUInt32 (len)}.
  *
  ***/
-SilcBuffer silc_notify_payload_encode(SilcNotifyType type, uint32 argc, 
+SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc, 
 				      va_list ap);
 
 /****f* silccore/SilcNotifyAPI/silc_notify_payload_encode_args
@@ -122,7 +122,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, uint32 argc,
  * SYNOPSIS
  *
  *    SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
- *                                               uint32 argc,
+ *                                               SilcUInt32 argc,
  *                                               SilcBuffer args);
  *
  * DESCRIPTION
@@ -132,7 +132,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, uint32 argc,
  *
  ***/
 SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
-					   uint32 argc,
+					   SilcUInt32 argc,
 					   SilcBuffer args);
 
 /****f* silccore/SilcNotifyAPI/silc_notify_payload_free
@@ -165,14 +165,14 @@ SilcNotifyType silc_notify_get_type(SilcNotifyPayload payload);
  *
  * SYNOPSIS
  *
- *    uint32 silc_notify_get_arg_num(SilcNotifyPayload payload);
+ *    SilcUInt32 silc_notify_get_arg_num(SilcNotifyPayload payload);
  *
  * DESCRIPTION
  *
  *    Return the number of the arguments associated with the Notify Payload.
  *
  ***/
-uint32 silc_notify_get_arg_num(SilcNotifyPayload payload);
+SilcUInt32 silc_notify_get_arg_num(SilcNotifyPayload payload);
 
 /****f* silccore/SilcNotifyAPI/silc_notify_get_args
  *

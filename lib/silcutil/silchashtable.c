@@ -64,8 +64,8 @@ typedef struct SilcHashTableEntryStruct {
 /* Hash table. */
 struct SilcHashTableStruct {
   SilcHashTableEntry *table;
-  uint32 table_size;
-  uint32 entry_count;
+  SilcUInt32 table_size;
+  SilcUInt32 entry_count;
   SilcHashFunction hash;
   SilcHashCompare compare;
   SilcHashDestructor destructor;
@@ -77,7 +77,7 @@ struct SilcHashTableStruct {
 
 /* Prime sizes for the hash table. The size of the table will always
    be one of these. */
-const uint32 primesize[42] = 
+const SilcUInt32 primesize[42] = 
 {
   1, 3, 5, 11, 17, 37, 67, 109, 131, 163, 257, 367, 521, 823, 1031, 
   1237, 2053, 2777, 4099, 6247, 8209, 14057, 16411, 21089, 32771, 47431,
@@ -87,7 +87,7 @@ const uint32 primesize[42] =
 
 /* Find appropriate size for the hash table. The size will be a prime. */
 
-static uint32 silc_hash_table_primesize(uint32 size, uint32 *index)
+static SilcUInt32 silc_hash_table_primesize(SilcUInt32 size, SilcUInt32 *index)
 {
   int i;
 
@@ -114,7 +114,7 @@ silc_hash_table_find_internal(SilcHashTable ht, void *key,
 			      void *compare_user_context)
 {
   SilcHashTableEntry *entry, prev = NULL;
-  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
+  SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -148,7 +148,7 @@ silc_hash_table_find_internal_context(SilcHashTable ht, void *key,
 				      void *compare_user_context)
 {
   SilcHashTableEntry *entry, prev = NULL;
-  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
+  SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p context %p", i, key, context));
 
@@ -184,7 +184,7 @@ silc_hash_table_find_internal_simple(SilcHashTable ht, void *key,
 				     void *compare_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
+  SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -215,7 +215,7 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 {
   SilcHashTableEntry *entry, *tmp;
   bool auto_rehash;
-  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
+  SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -258,7 +258,7 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
 			     void *hash_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
+  SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -302,7 +302,7 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
 				 void *hash_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
+  SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -334,7 +334,7 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
    destructor function, respectively. The `hash' is mandatory, the others
    are optional. */
 
-SilcHashTable silc_hash_table_alloc(uint32 table_size, 
+SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size, 
 				    SilcHashFunction hash,
 				    void *hash_user_context,
 				    SilcHashCompare compare,
@@ -344,7 +344,7 @@ SilcHashTable silc_hash_table_alloc(uint32 table_size,
 				    bool auto_rehash)
 {
   SilcHashTable ht;
-  uint32 size_index = SILC_HASH_TABLE_SIZE;
+  SilcUInt32 size_index = SILC_HASH_TABLE_SIZE;
 
   if (!hash)
     return NULL;
@@ -391,7 +391,7 @@ void silc_hash_table_free(SilcHashTable ht)
 
 /* Returns the size of the hash table */
 
-uint32 silc_hash_table_size(SilcHashTable ht)
+SilcUInt32 silc_hash_table_size(SilcHashTable ht)
 {
   return primesize[ht->table_size];
 }
@@ -400,7 +400,7 @@ uint32 silc_hash_table_size(SilcHashTable ht)
    entries in the table thatn the size of the hash table calling the
    silc_hash_table_rehash is recommended. */
 
-uint32 silc_hash_table_count(SilcHashTable ht)
+SilcUInt32 silc_hash_table_count(SilcHashTable ht)
 {
   return ht->entry_count;
 }
@@ -751,11 +751,11 @@ void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
    the new table of a suitable size. Note that this operation may be
    very slow. */
 
-void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size)
+void silc_hash_table_rehash(SilcHashTable ht, SilcUInt32 new_size)
 {
   int i;
   SilcHashTableEntry *table, e, tmp;
-  uint32 table_size, size_index;
+  SilcUInt32 table_size, size_index;
 
   SILC_HT_DEBUG(("Start"));
 
@@ -797,13 +797,13 @@ void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size)
 
 /* Same as above but with specific hash function. */
 
-void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
+void silc_hash_table_rehash_ext(SilcHashTable ht, SilcUInt32 new_size,
 				SilcHashFunction hash, 
 				void *hash_user_context)
 {
   int i;
   SilcHashTableEntry *table, e, tmp;
-  uint32 table_size, size_index;
+  SilcUInt32 table_size, size_index;
 
   SILC_HT_DEBUG(("Start"));
 

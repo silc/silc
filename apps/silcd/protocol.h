@@ -71,9 +71,9 @@ typedef struct {
   /* Authentication method and data if we alreay know it. This is filled
      before starting the protocol if we know the authentication data.
      Otherwise these are and remain NULL. Used when we are initiating. */
-  uint32 auth_meth;
+  SilcUInt32 auth_meth;
   void *auth_data;
-  uint32 auth_data_len;
+  SilcUInt32 auth_data_len;
 
   /* Destinations ID from KE protocol context */
   void *dest_id;
@@ -86,7 +86,7 @@ typedef struct {
 
   SilcTask timeout_task;
   SilcPacketContext *packet;
-  uint16 conn_type;
+  SilcUInt16 conn_type;
 } SilcServerConnAuthInternalContext;
 
 /* Internal context for the rekey protocol */

@@ -54,17 +54,17 @@ void silc_connect(SilcClient client, SilcClientConnection conn, int success)
 }
 
 int silc_auth_meth(SilcClient client, SilcClientConnection conn,
-			 char *hostname, uint16 port,
+			 char *hostname, SilcUInt16 port,
 			 SilcProtocolAuthMeth *auth_meth,
 			 unsigned char **auth_data,
-			 uint32 *auth_data_len)
+			 SilcUInt32 *auth_data_len)
 {
     *auth_meth = SILC_AUTH_NONE;
 	return TRUE;
 }
 void silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 			    SilcSocketType conn_type, unsigned char *pk, 
-			    uint32 pk_len, SilcSKEPKType pk_type,
+			    SilcUInt32 pk_len, SilcSKEPKType pk_type,
 			    SilcVerifyPublicKey completion, void *context)
 {
   completion(TRUE, context);
@@ -113,7 +113,7 @@ void silc_debugl(char *file, char *function,
 
 void silc_hexdumpl(char *file, char *function, 
 							   int line, unsigned char *data_in,
-							   uint32 data_len, char *message)
+							   SilcUInt32 data_len, char *message)
 {
   int i, k;
   int off, pos, count;
@@ -209,7 +209,7 @@ silc_create_key_pair(char *pkcs_name, int bits, char *path,
   SilcPrivateKey prv_key;
   SilcRng rng;
   unsigned char *key;
-  uint32 key_len;
+  SilcUInt32 key_len;
   char pkfile[256], prvfile[256];
 
   if (!pkcs_name || !path)

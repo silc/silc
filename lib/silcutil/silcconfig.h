@@ -143,7 +143,7 @@ typedef enum {
  * SYNOPSIS
  *
  *    typedef int (*SilcConfigCallback)(SilcConfigType type, const char *name,
- *                                      uint32 line, void *val, void *context);
+ *                                      SilcUInt32 line, void *val, void *context);
  * DESCRIPTION
  *
  *    This is the callback prototype for the options handler.  The pointer
@@ -154,7 +154,7 @@ typedef enum {
  *
  ***/
 typedef int (*SilcConfigCallback)(SilcConfigType type, const char *name,
-				  uint32 line, void *val, void *context);
+				  SilcUInt32 line, void *val, void *context);
 
 /****s* silcutil/SilcConfigAPI/SilcConfigTable
  *
@@ -249,7 +249,7 @@ typedef struct SilcConfigEntityObject *SilcConfigEntity;
  */
 #define SILC_CONFIG_CALLBACK(func)				\
 static int func(SilcConfigType type, const char *name,		\
-		uint32 line, void *val, void *context)
+		SilcUInt32 line, void *val, void *context)
 /***/
 
 /* Prototypes */
@@ -338,20 +338,20 @@ char *silc_config_get_filename(SilcConfigFile *file);
  *
  * SYNOPSIS
  *
- *    uint32 silc_config_get_line(SilcConfigFile *file);
+ *    SilcUInt32 silc_config_get_line(SilcConfigFile *file);
  *
  * DESCRIPTION
  *
  *    Returns the current line that file parsing arrived at.
  *
  ***/
-uint32 silc_config_get_line(SilcConfigFile *file);
+SilcUInt32 silc_config_get_line(SilcConfigFile *file);
 
 /****f* silcutil/SilcConfigAPI/silc_config_read_line
  *
  * SYNOPSIS
  *
- *    char *silc_config_read_line(SilcConfigFile *file, uint32 line);
+ *    char *silc_config_read_line(SilcConfigFile *file, SilcUInt32 line);
  *
  * DESCRIPTION
  *
@@ -363,7 +363,7 @@ uint32 silc_config_get_line(SilcConfigFile *file);
  *    silc_config_read_current_line
  *
  ***/
-char *silc_config_read_line(SilcConfigFile *file, uint32 line);
+char *silc_config_read_line(SilcConfigFile *file, SilcUInt32 line);
 
 /****f* silcutil/SilcConfigAPI/silc_config_read_current_line
  *

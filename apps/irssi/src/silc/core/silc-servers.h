@@ -24,15 +24,15 @@ typedef struct {
 typedef struct {
   SilcClientEntry client_entry;
   SilcClientConnection conn;
-  uint32 session_id;
+  SilcUInt32 session_id;
   char *filepath;
   bool send;
 
   long starttime;		/* Start time of transfer */
   double kps;			/* Kilos per second */
-  uint64 offset;		/* Current offset */
-  uint64 filesize;		/* Total file size */
-  uint32 percent;		/* Percent of current transmission */
+  SilcUInt64 offset;		/* Current offset */
+  SilcUInt64 filesize;		/* Total file size */
+  SilcUInt32 percent;		/* Percent of current transmission */
 } *FtpSession;
 
 #define STRUCT_SERVER_CONNECT_REC SILC_SERVER_CONNECT_REC
@@ -56,7 +56,7 @@ typedef struct {
   
   gpointer chanqueries;
   SilcClientConnection conn;
-  uint32 umode;
+  SilcUInt32 umode;
 } SILC_SERVER_REC;
 
 SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn);

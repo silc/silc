@@ -49,12 +49,12 @@ void SHA1Init(SHA1_CTX* context)
   context->count[0] = context->count[1] = 0;
 }
 
-#define rol(x, nr) (((x) << ((uint32)(nr))) | ((x) >> (32 - (uint32)(nr))))
+#define rol(x, nr) (((x) << ((SilcUInt32)(nr))) | ((x) >> (32 - (SilcUInt32)(nr))))
 
-#define GET_WORD(cp) ((uint32)(uint8)(cp)[0]) << 24	\
-		    | ((uint32)(uint8)(cp)[1] << 16)	\
-		    | ((uint32)(uint8)(cp)[2] << 8)	\
-		    | ((uint32)(uint8)(cp)[3])
+#define GET_WORD(cp) ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
+		    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)	\
+		    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)	\
+		    | ((SilcUInt32)(SilcUInt8)(cp)[3])
 
 #define blk0(i) (W[i] = GET_WORD(data))
 #define blk1(i) (W[i&15] = rol(W[(i+13)&15]^W[(i+8)&15]^W[(i+2)&15]^W[i&15],1))
@@ -71,16 +71,16 @@ void SHA1Init(SHA1_CTX* context)
 #define R3(v,w,x,y,z,i) z+=f3(w,x,y)+blk1(i)+0x8F1BBCDC+rol(v,5);w=rol(w,30);
 #define R4(v,w,x,y,z,i) z+=f4(w,x,y)+blk1(i)+0xCA62C1D6+rol(v,5);w=rol(w,30);
 
-void SHA1Transform(uint32 *state, const unsigned char *data)
+void SHA1Transform(SilcUInt32 *state, const unsigned char *data)
 {
-  uint32 W[16];
+  SilcUInt32 W[16];
   
   /* Copy context->state[] to working vars */
-  uint32 a = state[0];
-  uint32 b = state[1];
-  uint32 c = state[2];
-  uint32 d = state[3];
-  uint32 e = state[4];
+  SilcUInt32 a = state[0];
+  SilcUInt32 b = state[1];
+  SilcUInt32 c = state[2];
+  SilcUInt32 d = state[3];
+  SilcUInt32 e = state[4];
   
   /* 4 rounds of 20 operations each. Loop unrolled. */
   R0(a,b,c,d,e, 0); R0(e,a,b,c,d, 1); R0(d,e,a,b,c, 2); R0(c,d,e,a,b, 3);
@@ -118,9 +118,9 @@ void SHA1Transform(uint32 *state, const unsigned char *data)
 
 /* Run your data through this. */
 
-void SHA1Update(SHA1_CTX* context, unsigned char* data, uint32 len)
+void SHA1Update(SHA1_CTX* context, unsigned char* data, SilcUInt32 len)
 {
-  uint32 i, j;
+  SilcUInt32 i, j;
 
   j = (context->count[0] >> 3) & 63;
   if ((context->count[0] += len << 3) < (len << 3)) context->count[1]++;
@@ -141,7 +141,7 @@ void SHA1Update(SHA1_CTX* context, unsigned char* data, uint32 len)
 
 void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 {
-  uint32 i, j;
+  SilcUInt32 i, j;
   unsigned char finalcount[8];
   
   for (i = 0; i < 8; i++) {

@@ -34,8 +34,8 @@
 /* Private Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcPrivateMessagePayloadStruct {
-  uint16 flags;
-  uint16 message_len;
+  SilcUInt16 flags;
+  SilcUInt16 message_len;
   unsigned char *message;
 };
 
@@ -44,7 +44,7 @@ struct SilcPrivateMessagePayloadStruct {
 
 SilcPrivateMessagePayload 
 silc_private_message_payload_parse(unsigned char *payload,
-				   uint32 payload_len,
+				   SilcUInt32 payload_len,
 				   SilcCipher cipher)
 {
   SilcBufferStruct buffer;
@@ -90,14 +90,14 @@ silc_private_message_payload_parse(unsigned char *payload,
    the cipher is provided the packet is also encrypted here.  It is provided
    if the private message private keys are used. */
 
-SilcBuffer silc_private_message_payload_encode(uint16 flags,
-					       uint16 data_len,
+SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
+					       SilcUInt16 data_len,
 					       const unsigned char *data,
 					       SilcCipher cipher)
 {
   int i;
   SilcBuffer buffer;
-  uint32 len, pad_len = 0;
+  SilcUInt32 len, pad_len = 0;
   unsigned char pad[16];
 
   SILC_LOG_DEBUG(("Encoding private message payload"));
@@ -148,7 +148,7 @@ void silc_private_message_payload_free(SilcPrivateMessagePayload payload)
 
 /* Return flags */
 
-uint16 
+SilcUInt16 
 silc_private_message_get_flags(SilcPrivateMessagePayload payload)
 {
   return payload->flags;
@@ -158,7 +158,7 @@ silc_private_message_get_flags(SilcPrivateMessagePayload payload)
 
 unsigned char *
 silc_private_message_get_message(SilcPrivateMessagePayload payload,
-				 uint32 *message_len)
+				 SilcUInt32 *message_len)
 {
   if (message_len)
     *message_len = payload->message_len;

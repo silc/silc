@@ -165,9 +165,9 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
 {
   SILC_CHANNEL_REC *chanrec;
   char *tmpcmd = "ME", *tmp;
-  uint32 argc = 0;
+  SilcUInt32 argc = 0;
   unsigned char **argv;
-  uint32 *argv_lens, *argv_types;
+  SilcUInt32 *argv_lens, *argv_types;
   int i;
  
   if (!IS_SILC_SERVER(server) || !server->connected)
@@ -213,9 +213,9 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
 {
   SILC_CHANNEL_REC *chanrec;
   char *tmpcmd = "ME", *tmp;
-  uint32 argc = 0;
+  SilcUInt32 argc = 0;
   unsigned char **argv;
-  uint32 *argv_lens, *argv_types;
+  SilcUInt32 *argv_lens, *argv_types;
   int i;
  
   if (!IS_SILC_SERVER(server) || !server->connected)
@@ -260,9 +260,9 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
 {
   SILC_CHANNEL_REC *chanrec;
   char *tmpcmd = "ME", *tmp;
-  uint32 argc = 0;
+  SilcUInt32 argc = 0;
   unsigned char **argv;
-  uint32 *argv_lens, *argv_types;
+  SilcUInt32 *argv_lens, *argv_types;
   int i;
  
   if (!IS_SILC_SERVER(server) || !server->connected)
@@ -422,7 +422,7 @@ typedef struct {
 static void silc_client_command_key_get_clients(SilcClient client,
 						SilcClientConnection conn,
 						SilcClientEntry *clients,
-						uint32 clients_count,
+						SilcUInt32 clients_count,
 						void *context)
 {
   KeyGetClients internal = (KeyGetClients)context;
@@ -449,15 +449,15 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 {
   SilcClientConnection conn;
   SilcClientEntry *entrys, client_entry = NULL;
-  uint32 entry_count;
+  SilcUInt32 entry_count;
   SilcChannelEntry channel_entry = NULL;
   char *nickname = NULL, *tmp;
   int command = 0, port = 0, type = 0;
   char *hostname = NULL;
   KeyInternal internal = NULL;
-  uint32 argc = 0;
+  SilcUInt32 argc = 0;
   unsigned char **argv;
-  uint32 *argv_lens, *argv_types;
+  SilcUInt32 *argv_lens, *argv_types;
   char *bindhost = NULL;
  
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
@@ -605,7 +605,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     } else if (type == 2) {
       /* Unset channel key(s) */
       SilcChannelPrivateKey *keys;
-      uint32 keys_count;
+      SilcUInt32 keys_count;
       int number;
 
       if (argc == 4)
@@ -640,7 +640,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 
     if (type == 1) {
       SilcPrivateMessageKeys keys;
-      uint32 keys_count;
+      SilcUInt32 keys_count;
       int k, i, len;
       char buf[1024];
 
@@ -714,7 +714,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 
     } else if (type == 2) {
       SilcChannelPrivateKey *keys;
-      uint32 keys_count;
+      SilcUInt32 keys_count;
       int k, i, len;
       char buf[1024];
 

@@ -91,34 +91,34 @@ typedef enum {
 #define SILC_STR_SI_CHAR(x) SILC_BUFFER_PARAM_SI8_CHAR, (x)
 #define SILC_STR_UI_CHAR(x) SILC_BUFFER_PARAM_UI8_CHAR, (x)
 
-/* Signed/uint16. 
+/* Signed/SilcUInt16. 
 
    Formatting:    SILC_STR_SI_SHORT(short)
-                  SILC_STR_UI_SHORT(uint16)
+                  SILC_STR_UI_SHORT(SilcUInt16)
    Unformatting:  SILC_STR_SI_SHORT(short *)
-                  SILC_STR_UI_SHORT(uint16 *)
+                  SILC_STR_UI_SHORT(SilcUInt16 *)
 
 */
 #define SILC_STR_SI_SHORT(x) SILC_BUFFER_PARAM_SI16_SHORT, (x)
 #define SILC_STR_UI_SHORT(x) SILC_BUFFER_PARAM_UI16_SHORT, (x)
 
-/* Signed/uint32. 
+/* Signed/SilcUInt32. 
 
    Formatting:    SILC_STR_SI_INT(int)
-                  SILC_STR_UI_INT(uint32)
+                  SILC_STR_UI_INT(SilcUInt32)
    Unformatting:  SILC_STR_SI_INT(int *)
-                  SILC_STR_UI_INT(uint32 *)
+                  SILC_STR_UI_INT(SilcUInt32 *)
 
 */
 #define SILC_STR_SI_INT(x) SILC_BUFFER_PARAM_SI32_INT, (x)
 #define SILC_STR_UI_INT(x) SILC_BUFFER_PARAM_UI32_INT, (x)
 
-/* Signed/uint64. 
+/* Signed/SilcUInt64. 
 
    Formatting:    SILC_STR_SI_INT64(int)
-                  SILC_STR_UI_INT64(uint32)
+                  SILC_STR_UI_INT64(SilcUInt32)
    Unformatting:  SILC_STR_SI_INT64(int *)
-                  SILC_STR_UI_INT64(uint32 *)
+                  SILC_STR_UI_INT64(SilcUInt32 *)
 
 */
 #define SILC_STR_SI_INT64(x) SILC_BUFFER_PARAM_SI64_INT, (x)
@@ -161,8 +161,8 @@ typedef enum {
 
 /* Unsigned string. Second argument is the length of the string.
 
-   Formatting:    SILC_STR_UI32_NSTRING(unsigned char *, uint32)
-   Unformatting:  SILC_STR_UI32_NSTRING(unsigned char **, uint32 *)
+   Formatting:    SILC_STR_UI32_NSTRING(unsigned char *, SilcUInt32)
+   Unformatting:  SILC_STR_UI32_NSTRING(unsigned char **, SilcUInt32 *)
 
    Unformatting procedure will check for length of the string from the
    buffer before trying to get the string out. Thus, one *must* format the
@@ -203,7 +203,7 @@ typedef enum {
    the string.
 
    Formatting:    This is equal to using *_NSTRING
-   Unformatting:  SILC_STR_UI_XNSTRING(unsigned char **, uint32)
+   Unformatting:  SILC_STR_UI_XNSTRING(unsigned char **, SilcUInt32)
 
    This type can be used to take arbitrary length string from the buffer
    by sending the requested amount of bytes as argument. This differs

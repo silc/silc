@@ -142,7 +142,7 @@ typedef enum {
  *      Protocol object for the socket. Currently only one protocol can be
  *      executing at a time for a particular socket.
  *
- *    uint32 flags
+ *    SilcUInt32 flags
  *
  *      Socket flags that indicate the status of the socket. This can
  *      indicate several different status that can affect the use of the
@@ -155,7 +155,7 @@ typedef enum {
  *
  *    char *hostname
  *    char *ip
- *    uint16 port
+ *    SilcUInt16 port
  *
  *      Resolved hostname, IP address and port of the connection who owns
  *      this object.
@@ -178,13 +178,13 @@ struct SilcSocketConnectionStruct {
   SilcSocketType type;
   void *user_data;
   SilcProtocol protocol;
-  uint32 flags;
-  uint8 sock_error;
+  SilcUInt32 flags;
+  SilcUInt8 sock_error;
   int users;
 
   char *hostname;
   char *ip;
-  uint16 port;
+  SilcUInt16 port;
 
   SilcBuffer inbuf;
   SilcBuffer outbuf;
@@ -319,7 +319,7 @@ int silc_socket_write(SilcSocketConnection sock);
  * SYNOPSIS
  *
  *    bool silc_socket_get_error(SilcSocketConnection sock, char *error,
- *                               uint32 error_len);
+ *                               SilcUInt32 error_len);
  *
  * DESCRIPTION
  *
@@ -329,7 +329,7 @@ int silc_socket_write(SilcSocketConnection sock);
  *
  ***/
 bool silc_socket_get_error(SilcSocketConnection sock, char *error,
-			   uint32 error_len);
+			   SilcUInt32 error_len);
 
 /****f* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionHBCb
  *
@@ -353,7 +353,7 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
  * SYNOPSIS
  *
  *    void silc_socket_set_heartbeat(SilcSocketConnection sock, 
- *                                   uint32 heartbeat,
+ *                                   SilcUInt32 heartbeat,
  *                                   void *hb_context,
  *                                   SilcSocketConnectionHBCb hb_callback,
  *                                   SilcSchedule schedule);
@@ -370,7 +370,7 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
  *
  ***/
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
-			       uint32 heartbeat,
+			       SilcUInt32 heartbeat,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
 			       SilcSchedule schedule);

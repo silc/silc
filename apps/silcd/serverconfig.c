@@ -90,7 +90,7 @@ my_set_param_defaults(SilcServerConfigConnParams *params,
 
 /* Find connection parameters by the parameter block name. */
 static SilcServerConfigConnParams *
-my_find_param(SilcServerConfig config, const char *name, uint32 line)
+my_find_param(SilcServerConfig config, const char *name, SilcUInt32 line)
 {
   SilcServerConfigConnParams *param;
 
@@ -106,15 +106,15 @@ my_find_param(SilcServerConfig config, const char *name, uint32 line)
 }
 
 /* parse an authdata according to its auth method */
-static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, uint32 line,
-			      void **auth_data, uint32 *auth_data_len)
+static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, SilcUInt32 line,
+			      void **auth_data, SilcUInt32 *auth_data_len)
 {
   if (auth_meth == SILC_AUTH_PASSWORD) {
     /* p is a plain text password */
     if (auth_data)
       *auth_data = (void *) strdup(p);
     if (auth_data_len)
-      *auth_data_len = (uint32) strlen(p);
+      *auth_data_len = (SilcUInt32) strlen(p);
   } else if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
     /* p is a public key */
     SilcPublicKey public_key;
@@ -155,40 +155,40 @@ SILC_CONFIG_CALLBACK(fetch_generic)
     config->require_reverse_lookup = *(bool *)val;
   }
   else if (!strcmp(name, "connections_max")) {
-    config->param.connections_max = (uint32) *(int *)val;
+    config->param.connections_max = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "connections_max_per_host")) {
-    config->param.connections_max_per_host = (uint32) *(int *)val;
+    config->param.connections_max_per_host = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "keepalive_secs")) {
-    config->param.keepalive_secs = (uint32) *(int *)val;
+    config->param.keepalive_secs = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_count")) {
-    config->param.reconnect_count = (uint32) *(int *)val;
+    config->param.reconnect_count = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_interval")) {
-    config->param.reconnect_interval = (uint32) *(int *)val;
+    config->param.reconnect_interval = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_interval_max")) {
-    config->param.reconnect_interval_max = (uint32) *(int *)val;
+    config->param.reconnect_interval_max = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_keep_trying")) {
     config->param.reconnect_keep_trying = *(bool *)val;
   }
   else if (!strcmp(name, "key_exchange_rekey")) {
-    config->param.key_exchange_rekey = (uint32) *(int *)val;
+    config->param.key_exchange_rekey = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "key_exchange_pfs")) {
     config->param.key_exchange_pfs = *(bool *)val;
   }
   else if (!strcmp(name, "channel_rekey_secs")) {
-    config->channel_rekey_secs = (uint32) *(int *)val;
+    config->channel_rekey_secs = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "key_exchange_timeout")) {
-    config->key_exchange_timeout = (uint32) *(int *)val;
+    config->key_exchange_timeout = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "conn_auth_timeout")) {
-    config->conn_auth_timeout = (uint32) *(int *)val;
+    config->conn_auth_timeout = (SilcUInt32) *(int *)val;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -234,10 +234,10 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
     tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "keylength")) {
-    tmp->key_length = *(uint32 *)val;
+    tmp->key_length = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "blocklength")) {
-    tmp->block_length = *(uint32 *)val;
+    tmp->block_length = *(SilcUInt32 *)val;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -423,7 +423,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
       fprintf(stderr, "Invalid port number!\n");
       return SILC_CONFIG_ESILENT;
     }
-    server_info->port = (uint16) port;
+    server_info->port = (SilcUInt16) port;
   }
   else if (!strcmp(name, "servertype")) {
     CONFIG_IS_DOUBLE(server_info->server_type);
@@ -539,7 +539,7 @@ SILC_CONFIG_CALLBACK(fetch_logging)
       config->tmp = silc_calloc(1, sizeof(*tmp));
       tmp = (SilcServerConfigLogging *) config->tmp;
     }
-    tmp->maxsize = *(uint32 *) val;
+    tmp->maxsize = *(SilcUInt32 *) val;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -587,28 +587,28 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
     tmp->name = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "connections_max")) {
-    tmp->connections_max = *(uint32 *)val;
+    tmp->connections_max = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "connections_max_per_host")) {
-    tmp->connections_max_per_host = *(uint32 *)val;
+    tmp->connections_max_per_host = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "keepalive_secs")) {
-    tmp->keepalive_secs = *(uint32 *)val;
+    tmp->keepalive_secs = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "reconnect_count")) {
-    tmp->reconnect_count = *(uint32 *)val;
+    tmp->reconnect_count = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "reconnect_interval")) {
-    tmp->reconnect_interval = *(uint32 *)val;
+    tmp->reconnect_interval = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "reconnect_interval_max")) {
-    tmp->reconnect_interval_max = *(uint32 *)val;
+    tmp->reconnect_interval_max = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "reconnect_keep_trying")) {
     tmp->reconnect_keep_trying = *(bool *)val;
   }
   else if (!strcmp(name, "key_exchange_rekey")) {
-    tmp->key_exchange_rekey = *(uint32 *)val;
+    tmp->key_exchange_rekey = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "key_exchange_pfs")) {
     tmp->key_exchange_pfs = *(bool *)val;
@@ -902,7 +902,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
       fprintf(stderr, "Invalid port number!\n");
       return SILC_CONFIG_ESILENT;
     }
-    tmp->port = (uint16) port;
+    tmp->port = (SilcUInt16) port;
   }
   else if (!strcmp(name, "passphrase")) {
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
@@ -945,7 +945,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
       fprintf(stderr, "Invalid port number!\n");
       return SILC_CONFIG_ESILENT;
     }
-    tmp->backup_replace_port = (uint16) port;
+    tmp->backup_replace_port = (SilcUInt16) port;
   }
   else if (!strcmp(name, "backuplocal")) {
     tmp->backup_local = *(bool *)val;
@@ -1163,7 +1163,7 @@ SilcServerConfig silc_server_config_alloc(char *filename)
     /* handle this special error return which asks to quietly return */
     if (ret != SILC_CONFIG_ESILENT) {
       char *linebuf, *filename = silc_config_get_filename(file);
-      uint32 line = silc_config_get_line(file);
+      SilcUInt32 line = silc_config_get_line(file);
       fprintf(stderr, "\nError while parsing config file: %s.\n",
 		silc_config_strerror(ret));
       linebuf = silc_config_read_line(file, line);

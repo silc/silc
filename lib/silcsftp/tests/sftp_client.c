@@ -31,14 +31,14 @@ Client gclient;
 char *dir;
 char *file;
 bool opendir;
-uint64 offset;
+SilcUInt64 offset;
 
 static void sftp_name(SilcSFTP sftp, SilcSFTPStatus status,
 		      const SilcSFTPName name, void *context);
 static void sftp_handle(SilcSFTP sftp, SilcSFTPStatus status,
 			SilcSFTPHandle handle, void *context);
 static void sftp_data(SilcSFTP sftp, SilcSFTPStatus status,
-		      const unsigned char *data, uint32 data_len,
+		      const unsigned char *data, SilcUInt32 data_len,
 		      void *context);
 
 static void send_packet(SilcSocketConnection sock,
@@ -120,7 +120,7 @@ SILC_TASK_CALLBACK(packet_process)
 }
 
 static void sftp_data(SilcSFTP sftp, SilcSFTPStatus status,
-		      const unsigned char *data, uint32 data_len,
+		      const unsigned char *data, SilcUInt32 data_len,
 		      void *context)
 {
   SilcSFTPHandle handle = (SilcSFTPHandle)context;

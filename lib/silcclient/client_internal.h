@@ -61,14 +61,14 @@ struct SilcClientInternalStruct {
 
   /* Table of connections in client. All the connection data is saved here. */
   SilcClientConnection *conns;
-  uint32 conns_count;
+  SilcUInt32 conns_count;
 
   /* Table of listenning sockets in client.  Client can have listeners
      (like key agreement protocol server) and those sockets are saved here.
      This table is checked always if the connection object cannot be found
      from the `conns' table. */
   SilcSocketConnection *sockets;
-  uint32 sockets_count;
+  SilcUInt32 sockets_count;
 
   /* Registered commands */
   SilcList commands;
@@ -153,7 +153,7 @@ void silc_client_packet_send(SilcClient client,
 			     SilcCipher cipher,
 			     SilcHmac hmac,
 			     unsigned char *data, 
-			     uint32 data_len, 
+			     SilcUInt32 data_len, 
 			     int force_send);
 void silc_client_disconnected_by_server(SilcClient client,
 					SilcSocketConnection sock,

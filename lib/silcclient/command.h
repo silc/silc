@@ -35,8 +35,8 @@ struct SilcClientCommandStruct {
   SilcCommandCb command;	   /* Command function */
   SilcCommandCb reply;		   /* Command reply callback */
   char *name;			   /* Name of the command (optional) */
-  uint8 max_args;		   /* Maximum arguments (optional)  */
-  uint16 ident;			   /* Identifier for command (optional)  */
+  SilcUInt8 max_args;		   /* Maximum arguments (optional)  */
+  SilcUInt16 ident;			   /* Identifier for command (optional)  */
   struct SilcClientCommandStruct *next;
 };
 
@@ -48,10 +48,10 @@ struct SilcClientCommandContextStruct {
   SilcClient client;
   SilcClientConnection conn;
   SilcClientCommand command;
-  uint32 argc;
+  SilcUInt32 argc;
   unsigned char **argv;
-  uint32 *argv_lens;
-  uint32 *argv_types;
+  SilcUInt32 *argv_lens;
+  SilcUInt32 *argv_types;
   int pending;			/* Command is being re-processed when TRUE */
   int users;			/* Reference counter */
 };
@@ -62,7 +62,7 @@ typedef struct SilcClientCommandPendingStruct {
   SilcCommand reply_cmd;
   SilcCommandCb callback;
   void *context;
-  uint16 ident;
+  SilcUInt16 ident;
   struct SilcClientCommandPendingStruct *next;
 } SilcClientCommandPending;
 
@@ -100,22 +100,22 @@ bool silc_client_command_register(SilcClient client,
 				  const char *name,
 				  SilcCommandCb command_function,
 				  SilcCommandCb command_reply_function,
-				  uint8 max_args,
-				  uint16 ident);
+				  SilcUInt8 max_args,
+				  SilcUInt16 ident);
 bool silc_client_command_unregister(SilcClient client,
 				    SilcCommand command,
 				    SilcCommandCb command_function,
 				    SilcCommandCb command_reply_function,
-				    uint16 ident);
+				    SilcUInt16 ident);
 void silc_client_commands_register(SilcClient client);
 void silc_client_commands_unregister(SilcClient client);
 void silc_client_command_pending_del(SilcClientConnection conn,
 				     SilcCommand reply_cmd,
-				     uint16 ident);
+				     SilcUInt16 ident);
 int silc_client_command_pending_check(SilcClientConnection conn,
 				      SilcClientCommandReplyContext ctx,
 				      SilcCommand command, 
-				      uint16 ident);
+				      SilcUInt16 ident);
 
 SILC_CLIENT_CMD_FUNC(whois);
 SILC_CLIENT_CMD_FUNC(whowas);

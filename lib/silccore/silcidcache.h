@@ -52,7 +52,7 @@
  *
  *      A name associated with the ID.
  *
- *    uint32 expire
+ *    SilcUInt32 expire
  *
  *      Time when this cache entry expires.  This is normal time() value
  *      plus the validity.  Cache entry has expired if current time is
@@ -68,7 +68,7 @@
 typedef struct {
   void *id;
   char *name;
-  uint32 expire;
+  SilcUInt32 expire;
   void *context;
 } *SilcIDCacheEntry;
 /***/
@@ -133,7 +133,7 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
  *
  * SYNOPSIS
  *
- *    SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
+ *    SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
  *                                   SilcIDCacheDestructor destructor);
  *
  * DESCRIPTION
@@ -144,7 +144,7 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
  *    cache.
  *
  ***/
-SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
+SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
 			       SilcIDCacheDestructor destructor);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_free

@@ -48,7 +48,7 @@ silc_create_key_pair(char *pkcs_name, int bits, char *path,
   SilcPrivateKey prv_key;
   SilcRng rng;
   unsigned char *key;
-  uint32 key_len;
+  SilcUInt32 key_len;
   char pkfile[256], prvfile[256];
 
   if (!pkcs_name || !path)
@@ -144,7 +144,7 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn)
 static
 void silc_auth_meth(SilcClient client, 
 		    SilcClientConnection conn,
-		    char *hostname, uint16 port,
+		    char *hostname, SilcUInt16 port,
 		    SilcGetAuthMeth completion, void *context)
 {
   completion(TRUE, SILC_AUTH_NONE, NULL, 0, context);
@@ -153,7 +153,7 @@ void silc_auth_meth(SilcClient client,
 static
 void silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 			    SilcSocketType conn_type, unsigned char *pk, 
-			    uint32 pk_len, SilcSKEPKType pk_type,
+			    SilcUInt32 pk_len, SilcSKEPKType pk_type,
 			    SilcVerifyPublicKey completion, void *context)
 {
   completion(TRUE, context);

@@ -50,7 +50,7 @@ Mean:          373 cycles =    68.7 mbits/sec
 
 SILC_CIPHER_API_SET_KEY(mars)
 {
-  uint32 k[8];
+  SilcUInt32 k[8];
 
   SILC_GET_WORD_KEY(key, k, keylen);
   mars_set_key((MarsContext *)context, k, keylen);
@@ -85,7 +85,7 @@ SILC_CIPHER_API_CONTEXT_LEN(mars)
 
 SILC_CIPHER_API_ENCRYPT_CBC(mars)
 {
-  uint32 tiv[4];
+  SilcUInt32 tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);
@@ -110,7 +110,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(mars)
 
 SILC_CIPHER_API_DECRYPT_CBC(mars)
 {
-  uint32 tmp[4], tmp2[4], tiv[4];
+  SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);

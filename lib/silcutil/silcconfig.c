@@ -45,8 +45,8 @@ struct SilcConfigFileObject {
   int level;	/* parsing level, how many nested silc_config_main we have */
   char *base;	/* this is a fixed pointer to the base location */
   char *p;	/* the Parser poitner */
-  uint32 len;	/* fixed length of the whole file */
-  uint32 line;	/* current parsing line, strictly linked to p */
+  SilcUInt32 len;	/* fixed length of the whole file */
+  SilcUInt32 line;	/* current parsing line, strictly linked to p */
   bool included; /* wether this file is main or included */
 };
 
@@ -177,7 +177,7 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
   int val_int;
   bool val_bool;
   char *val_tmp;
-  uint32 val_size;
+  SilcUInt32 val_size;
 
   switch (type) {
     case SILC_CONFIG_ARG_TOGGLE:
@@ -202,7 +202,7 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
       *(int *)pt = val_int;
       return pt;
     case SILC_CONFIG_ARG_SIZE:
-      val_size = (uint32) strtol(val, &val_tmp, 0);
+      val_size = (SilcUInt32) strtol(val, &val_tmp, 0);
       if (val == val_tmp)
 	return NULL; /* really wrong, there must be at least one digit */
       /* Search for a designator */
@@ -210,13 +210,13 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
 	case '\0': /* None */
 	  break;
 	case 'k': /* Kilobytes */
-	  val_size *= (uint32) 1024;
+	  val_size *= (SilcUInt32) 1024;
 	  break;
 	case 'm': /* Megabytes */
-	  val_size *= (uint32) (1024 * 1024);
+	  val_size *= (SilcUInt32) (1024 * 1024);
 	  break;
 	case 'g':
-	  val_size *= (uint32) (1024 * 1024 * 1024);
+	  val_size *= (SilcUInt32) (1024 * 1024 * 1024);
 	  break;
 	default:
 	  return NULL;
@@ -225,7 +225,7 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
       if (val_tmp[1])
 	return NULL;
       pt = silc_calloc(1, sizeof(val_size));
-      *(uint32 *)pt = val_size;
+      *(SilcUInt32 *)pt = val_size;
       return pt;
     case SILC_CONFIG_ARG_STR: /* the only difference between STR and STRE is */
       if (!val[0])	      /* that STR cannot be empty, while STRE can.  */
@@ -253,7 +253,7 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
 SilcConfigFile *silc_config_open(char *configfile)
 {
   char *buffer;
-  uint32 filelen;
+  SilcUInt32 filelen;
   SilcConfigFile *ret;
 
   if (!(buffer = silc_file_readfile(configfile, &filelen)))
@@ -273,8 +273,8 @@ void silc_config_close(SilcConfigFile *file)
 {
   if (file) {
     /* XXX FIXME: this check could probably be removed later */
-    uint32 my_len = (uint32) (strchr(file->base, EOF) - file->base);
-    SILC_CONFIG_DEBUG(("file=0x%x name=\"%s\" level=%d line=%lu", (uint32) file,
+    SilcUInt32 my_len = (SilcUInt32) (strchr(file->base, EOF) - file->base);
+    SILC_CONFIG_DEBUG(("file=0x%x name=\"%s\" level=%d line=%lu", (SilcUInt32) file,
 			file->filename, file->level, file->line));
     if (my_len != file->len) {
       fprintf(stderr, "FATAL ERROR: saved len and current len does not match!\n");
@@ -314,7 +314,7 @@ char *silc_config_get_filename(SilcConfigFile *file)
 
 /* Returns the current line that file parsing arrived at */
 
-uint32 silc_config_get_line(SilcConfigFile *file)
+SilcUInt32 silc_config_get_line(SilcConfigFile *file)
 {
   if (file)
     return file->line;
@@ -324,7 +324,7 @@ uint32 silc_config_get_line(SilcConfigFile *file)
 /* Returns a pointer to the beginning of the requested line.  If the line
  * was not found, NULL is returned */
 
-char *silc_config_read_line(SilcConfigFile *file, uint32 line)
+char *silc_config_read_line(SilcConfigFile *file, SilcUInt32 line)
 {
   register char *p;
   int len;
@@ -367,7 +367,7 @@ static void silc_config_destroy(SilcConfigEntity ent)
 {
   SilcConfigOption *oldopt, *nextopt;
   SILC_CONFIG_DEBUG(("Freeing config entity [ent=0x%x] [opts=0x%x]",
-			(uint32) ent, (uint32) ent->opts));
+			(SilcUInt32) ent, (SilcUInt32) ent->opts));
   for (oldopt = ent->opts; oldopt; oldopt = nextopt) {
     nextopt = oldopt->next;
     memset(oldopt->name, 'F', strlen(oldopt->name) + 1);
@@ -388,7 +388,7 @@ bool silc_config_register(SilcConfigEntity ent, const char *name,
 {
   SilcConfigOption *newopt;
   SILC_CONFIG_DEBUG(("Register new option=\"%s\" type=%u cb=0x%08x context=0x%08x",
-		name, type, (uint32) cb, (uint32) context));
+		name, type, (SilcUInt32) cb, (SilcUInt32) context));
 
   /* if we are registering a block, make sure there is a specified sub-table */
   if (!ent || !name || ((type == SILC_CONFIG_ARG_BLOCK) && !subtable))

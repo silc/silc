@@ -54,7 +54,7 @@ do {
 } while(0)
 
 bool silc_socket_get_error(SilcSocketConnection sock, char *error,
-			   uint32 error_len)
+			   SilcUInt32 error_len)
 {
   if (sock->sock_error == KErrNone)
     return FALSE;

@@ -30,7 +30,7 @@ extern SilcClient silc_client;
 #ifdef SILC_SIM
 /* SIM (SILC Module) table */
 extern SilcSimContext **sims;
-extern uint32 sims_count;
+extern SilcUInt32 sims_count;
 #endif
 
 #define IS_SILC_ITEM(rec) (IS_SILC_CHANNEL(rec) || IS_SILC_QUERY(rec))

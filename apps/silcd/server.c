@@ -845,7 +845,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   SilcBuffer packet;
   SilcServerHBContext hb_context;
   unsigned char *id_string;
-  uint32 id_len;
+  SilcUInt32 id_len;
   SilcIDListData idata;
   SilcServerConfigConnParams *param;
 
@@ -1284,8 +1284,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   SilcServerHBContext hb_context;
   SilcUnknownEntry entry = (SilcUnknownEntry)sock->user_data;
   void *id_entry;
-  uint32 hearbeat_timeout = server->config->param.keepalive_secs;
-  uint32 num_sockets;
+  SilcUInt32 hearbeat_timeout = server->config->param.keepalive_secs;
+  SilcUInt32 num_sockets;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1317,7 +1317,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     {
       SilcClientEntry client;
       SilcServerConfigClient *conn = ctx->cconfig;
-      uint32 max_per_host = server->config->param.connections_max_per_host;
+      SilcUInt32 max_per_host = server->config->param.connections_max_per_host;
 
       /* Check for maximum connections limit */
       if (conn->param) {
@@ -1383,10 +1383,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       bool backup_local = FALSE;
       bool backup_router = FALSE;
       char *backup_replace_ip = NULL;
-      uint16 backup_replace_port = 0;
+      SilcUInt16 backup_replace_port = 0;
       SilcServerConfigServer *sconn = ctx->sconfig;
       SilcServerConfigRouter *rconn = ctx->rconfig;
-      uint32 max_per_host = server->config->param.connections_max_per_host;
+      SilcUInt32 max_per_host = server->config->param.connections_max_per_host;
 
       if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER && rconn) {
 	if (rconn->param) {
@@ -1562,7 +1562,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   SilcIDListData idata;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
-  uint32 sequence = 0;
+  SilcUInt32 sequence = 0;
   int ret;
 
   if (!sock)
@@ -2288,7 +2288,7 @@ void silc_server_packet_parse_type(SilcServer server,
 /* Creates connection to a remote router. */
 
 void silc_server_create_connection(SilcServer server,
-				   const char *remote_host, uint32 port)
+				   const char *remote_host, SilcUInt32 port)
 {
   SilcServerConnection sconn;
 
@@ -3026,11 +3026,11 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
 
 bool silc_server_create_channel_key(SilcServer server, 
 				    SilcChannelEntry channel,
-				    uint32 key_len)
+				    SilcUInt32 key_len)
 {
   int i;
   unsigned char channel_key[32], hash[32];
-  uint32 len;
+  SilcUInt32 len;
 
   SILC_LOG_DEBUG(("Generating channel key"));
 
@@ -3109,7 +3109,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   SilcChannelKeyPayload payload = NULL;
   SilcChannelID *id = NULL;
   unsigned char *tmp, hash[32];
-  uint32 tmp_len;
+  SilcUInt32 tmp_len;
   char *cipher;
 
   SILC_LOG_DEBUG(("Start"));
@@ -3281,7 +3281,7 @@ static void silc_server_announce_get_servers(SilcServer server,
 }
 
 static SilcBuffer 
-silc_server_announce_encode_notify(SilcNotifyType notify, uint32 argc, ...)
+silc_server_announce_encode_notify(SilcNotifyType notify, SilcUInt32 argc, ...)
 {
   va_list ap;
   SilcBuffer p;
@@ -3531,7 +3531,7 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcBuffer *channels,
 				       SilcBuffer *channel_users,
 				       SilcBuffer **channel_users_modes,
-				       uint32 *channel_users_modes_c,
+				       SilcUInt32 *channel_users_modes_c,
 				       SilcBuffer **channel_topics,
 				       SilcChannelID ***channel_ids,
 				       unsigned long creation_time)
@@ -3540,8 +3540,8 @@ void silc_server_announce_get_channels(SilcServer server,
   SilcIDCacheEntry id_cache;
   SilcChannelEntry channel;
   unsigned char *cid;
-  uint32 id_len;
-  uint16 name_len;
+  SilcUInt32 id_len;
+  SilcUInt16 name_len;
   int len;
   int i = *channel_users_modes_c;
   bool announce;
@@ -3628,7 +3628,7 @@ void silc_server_announce_channels(SilcServer server,
   SilcBuffer channels = NULL, channel_users = NULL;
   SilcBuffer *channel_users_modes = NULL;
   SilcBuffer *channel_topics = NULL;
-  uint32 channel_users_modes_c = 0;
+  SilcUInt32 channel_users_modes_c = 0;
   SilcChannelID **channel_ids = NULL;
 
   SILC_LOG_DEBUG(("Announcing channels and channel users"));
@@ -3750,14 +3750,14 @@ void silc_server_get_users_on_channel(SilcServer server,
 				      SilcChannelEntry channel,
 				      SilcBuffer *user_list,
 				      SilcBuffer *mode_list,
-				      uint32 *user_count)
+				      SilcUInt32 *user_count)
 {
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   SilcBuffer idp;
-  uint32 list_count = 0, len = 0;
+  SilcUInt32 list_count = 0, len = 0;
 
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl))
@@ -3803,11 +3803,11 @@ void silc_server_save_users_on_channel(SilcServer server,
 				       SilcClientID *noadd,
 				       SilcBuffer user_list,
 				       SilcBuffer mode_list,
-				       uint32 user_count)
+				       SilcUInt32 user_count)
 {
   int i;
-  uint16 idp_len;
-  uint32 mode;
+  SilcUInt16 idp_len;
+  SilcUInt32 mode;
   SilcClientID *client_id;
   SilcClientEntry client;
   SilcIDCacheEntry cache;
@@ -3894,7 +3894,7 @@ void silc_server_save_users_on_channel(SilcServer server,
 
 SilcSocketConnection silc_server_get_client_route(SilcServer server,
 						  unsigned char *id_data,
-						  uint32 id_len,
+						  SilcUInt32 id_len,
 						  SilcClientID *client_id,
 						  SilcIDListData *idata)
 {
@@ -3979,8 +3979,8 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
   unsigned char *cid;
-  uint32 id_len;
-  uint16 name_len;
+  SilcUInt32 id_len;
+  SilcUInt16 name_len;
   int len;
 
   silc_hash_table_list(client->channels, &htl);

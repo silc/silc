@@ -65,7 +65,7 @@ typedef struct SilcHmacStruct *SilcHmac;
  ***/
 typedef struct {
   char *name;
-  uint32 len;
+  SilcUInt32 len;
 } SilcHmacObject;
 
 /* Marks for all hmacs. This can be used in silc_hmac_unregister
@@ -197,14 +197,14 @@ char *silc_hmac_get_supported(void);
  *
  * SYNOPSIS
  *
- *    uint32 silc_hmac_len(SilcHmac hmac);
+ *    SilcUInt32 silc_hmac_len(SilcHmac hmac);
  *
  * DESCRIPTION
  *
  *    Returns the length of the MAC that the HMAC will produce.
  *
  ***/
-uint32 silc_hmac_len(SilcHmac hmac);
+SilcUInt32 silc_hmac_len(SilcHmac hmac);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_get_hash
  *
@@ -238,7 +238,7 @@ const char *silc_hmac_get_name(SilcHmac hmac);
  * SYNOPSIS
  *
  *    void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
- *                           uint32 key_len);
+ *                           SilcUInt32 key_len);
  *
  * DESCRIPTION
  *
@@ -250,15 +250,15 @@ const char *silc_hmac_get_name(SilcHmac hmac);
  *
  ***/
 void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
-		       uint32 key_len);
+		       SilcUInt32 key_len);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_make
  *
  * SYNOPSIS
  *
  *    void silc_hmac_make(SilcHmac hmac, unsigned char *data,
- *                        uint32 data_len, unsigned char *return_hash,
- *                        uint32 *return_len);
+ *                        SilcUInt32 data_len, unsigned char *return_hash,
+ *                        SilcUInt32 *return_len);
  *
  * DESCRIPTION
  *
@@ -270,18 +270,18 @@ void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
  *
  ***/
 void silc_hmac_make(SilcHmac hmac, unsigned char *data,
-		    uint32 data_len, unsigned char *return_hash,
-		    uint32 *return_len);
+		    SilcUInt32 data_len, unsigned char *return_hash,
+		    SilcUInt32 *return_len);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_make_with_key
  *
  * SYNOPSIS
  *
  *    void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
- *                                 uint32 data_len, 
- *                                 unsigned char *key, uint32 key_len,
+ *                                 SilcUInt32 data_len, 
+ *                                 unsigned char *key, SilcUInt32 key_len,
  *                                 unsigned char *return_hash,
- *                                 uint32 *return_len);
+ *                                 SilcUInt32 *return_len);
  *
  * DESCRIPTION
  *
@@ -291,10 +291,10 @@ void silc_hmac_make(SilcHmac hmac, unsigned char *data,
  *
  ***/
 void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
-			     uint32 data_len, 
-			     unsigned char *key, uint32 key_len,
+			     SilcUInt32 data_len, 
+			     unsigned char *key, SilcUInt32 key_len,
 			     unsigned char *return_hash,
-			     uint32 *return_len);
+			     SilcUInt32 *return_len);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_make_truncated
  *
@@ -302,8 +302,8 @@ void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
  *
  *    void silc_hmac_make_truncated(SilcHmac hmac, 
  *                                  unsigned char *data, 
- *                                  uint32 data_len,
- *                                  uint32 truncated_len,
+ *                                  SilcUInt32 data_len,
+ *                                  SilcUInt32 truncated_len,
  *                                  unsigned char *return_hash);
  *
  * DESCRIPTION
@@ -323,8 +323,8 @@ void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
  ***/
 void silc_hmac_make_truncated(SilcHmac hmac, 
 			      unsigned char *data, 
-			      uint32 data_len,
-			      uint32 truncated_len,
+			      SilcUInt32 data_len,
+			      SilcUInt32 truncated_len,
 			      unsigned char *return_hash);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_init
@@ -355,7 +355,7 @@ void silc_hmac_init(SilcHmac hmac);
  * SYNOPSIS
  *
  *    void silc_hmac_init_with_key(SilcHmac hmac, const unsigned char *key,
- *                                 uint32 key_len);
+ *                                 SilcUInt32 key_len);
  *
  * DESCRIPTION
  *
@@ -364,14 +364,14 @@ void silc_hmac_init(SilcHmac hmac);
  *
  ***/
 void silc_hmac_init_with_key(SilcHmac hmac, const unsigned char *key,
-			     uint32 key_len);
+			     SilcUInt32 key_len);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_update
  *
  * SYNOPSIS
  *
  *    void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
- *                          uint32 data_len);
+ *                          SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
@@ -384,7 +384,7 @@ void silc_hmac_init_with_key(SilcHmac hmac, const unsigned char *key,
  * EXAMPLE
  *
  *    unsigned char mac[20];
- *    uint32 mac_len;
+ *    SilcUInt32 mac_len;
  *
  *    silc_hmac_init(hmac);
  *    silc_hmac_update(hmac, data, data_len);
@@ -393,14 +393,14 @@ void silc_hmac_init_with_key(SilcHmac hmac, const unsigned char *key,
  *
  ***/
 void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
-		      uint32 data_len);
+		      SilcUInt32 data_len);
 
 /****f* silccrypt/SilcHMACAPI/silc_hmac_final
  *
  * SYNOPSIS
  *
  *    void silc_hmac_final(SilcHmac hmac, unsigned char *return_hash,
- *                         uint32 *return_len);
+ *                         SilcUInt32 *return_len);
  *
  * DESCRIPTION
  *
@@ -413,6 +413,6 @@ void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
  *
  ***/
 void silc_hmac_final(SilcHmac hmac, unsigned char *return_hash,
-		     uint32 *return_len);
+		     SilcUInt32 *return_len);
 
 #endif

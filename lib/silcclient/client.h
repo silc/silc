@@ -28,10 +28,10 @@ typedef struct {
   /* Current sending encryption key, provided for re-key. The `pfs'
      is TRUE if the Perfect Forward Secrecy is performed in re-key. */
   unsigned char *send_enc_key;
-  uint32 enc_key_len;
+  SilcUInt32 enc_key_len;
   int ske_group;
   bool pfs;
-  uint32 timeout;
+  SilcUInt32 timeout;
   void *context;
 } *SilcClientRekey;
 
@@ -58,7 +58,7 @@ struct SilcClientConnectionStruct {
   /* Decoded local ID so that the above defined ID would not have
      to be decoded for every packet. */
   unsigned char *local_id_data;
-  uint32 local_id_data_len;
+  SilcUInt32 local_id_data_len;
 
   /* Own client entry. */
   SilcClientEntry local_entry;
@@ -77,7 +77,7 @@ struct SilcClientConnectionStruct {
   /* Decoded remote ID so that the above defined ID would not have
      to be decoded for every packet. */
   unsigned char *remote_id_data;
-  uint32 remote_id_data_len;
+  SilcUInt32 remote_id_data_len;
 
   /*
    * Common data 
@@ -88,8 +88,8 @@ struct SilcClientConnectionStruct {
   SilcHmac hmac_send;
   SilcHmac hmac_receive;
   SilcHash hash;
-  uint32 psn_send;
-  uint32 psn_receive;
+  SilcUInt32 psn_send;
+  SilcUInt32 psn_receive;
 
   /* Client ID and Channel ID cache. Messages transmitted in SILC network
      are done using different unique ID's. These are the cache for
@@ -111,11 +111,11 @@ struct SilcClientConnectionStruct {
   SilcDList pending_commands;
 
   /* Current command identifier, 0 not used */
-  uint16 cmd_ident;
+  SilcUInt16 cmd_ident;
 
   /* Requested pings. */
   SilcClientPing *ping;
-  uint32 ping_count;
+  SilcUInt32 ping_count;
 
   /* Set away message */
   SilcClientAway *away;
@@ -128,7 +128,7 @@ struct SilcClientConnectionStruct {
 
   /* File transmission sessions */
   SilcDList ftp_sessions;
-  uint32 next_session_id;
+  SilcUInt32 next_session_id;
   SilcClientFtpSession active_session;
 
   /* Pointer back to the SilcClient. This object is passed to the application

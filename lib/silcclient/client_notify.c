@@ -105,7 +105,7 @@ void silc_client_notify_by_server(SilcClient client,
   SilcChannelUser chu;
   SilcServerEntry server;
   unsigned char *tmp;
-  uint32 tmp_len, mode;
+  SilcUInt32 tmp_len, mode;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -823,7 +823,7 @@ void silc_client_notify_by_server(SilcClient client,
        * from channels as they quit as well.
        */
       SilcClientEntry *clients = NULL;
-      uint32 clients_count = 0;
+      SilcUInt32 clients_count = 0;
       int i;
 
       SILC_LOG_DEBUG(("Notify: SIGNOFF"));

@@ -24,7 +24,7 @@
 
 /* Calls normal select() system call. */
 
-int silc_select(SilcScheduleFd fds, uint32 fds_count, struct timeval *timeout)
+int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeout)
 {
   fd_set in, out;
   int ret, i, max_fd = 0;

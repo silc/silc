@@ -35,7 +35,7 @@
  *
  * SYNOPSIS
  *
- *    int silc_math_gen_prime(SilcMPInt *prime, uint32 bits, bool verbose);
+ *    int silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose);
  *
  * DESCRIPTION
  *
@@ -48,7 +48,7 @@
  *    about the progress of generation.
  *
  ***/
-bool silc_math_gen_prime(SilcMPInt *prime, uint32 bits, bool verbose);
+bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose);
 
 /****f* silcmath/SilcMathAPI/silc_math_prime_test
  *

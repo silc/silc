@@ -78,7 +78,7 @@ static void silc_client_verify_key_cb(bool success, void *context)
 
 void silc_client_protocol_ke_verify_key(SilcSKE ske,
 					unsigned char *pk_data,
-					uint32 pk_len,
+					SilcUInt32 pk_len,
 					SilcSKEPKType pk_type,
 					void *context,
 					SilcSKEVerifyCbCompletion completion,
@@ -167,7 +167,7 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 /* Checks the version string of the server. */
 
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
-				     uint32 len, void *context)
+				     SilcUInt32 len, void *context)
 {
   SilcClientConnection conn = (SilcClientConnection)ske->sock->user_data;
   SilcClient client = (SilcClient)ske->user_data;
@@ -549,7 +549,7 @@ static int
 silc_client_get_public_key_auth(SilcClient client,
 				SilcClientConnection conn,
 				unsigned char *auth_data,
-				uint32 *auth_data_len,
+				SilcUInt32 *auth_data_len,
 				SilcSKE ske)
 {
   int len;
@@ -585,7 +585,7 @@ silc_client_get_public_key_auth(SilcClient client,
 
 static void 
 silc_client_conn_auth_continue(unsigned char *auth_data,
-			       uint32 auth_data_len, void *context)
+			       SilcUInt32 auth_data_len, void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
   SilcClientConnAuthInternalContext *ctx = 
@@ -637,7 +637,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
        * to be authenticated.
        */
       unsigned char *auth_data = NULL;
-      uint32 auth_data_len = 0;
+      SilcUInt32 auth_data_len = 0;
       unsigned char sign[1024];
 
       switch(ctx->auth_meth) {
@@ -799,8 +799,8 @@ silc_client_protocol_rekey_generate(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
-  uint32 key_len = silc_cipher_get_key_len(conn->send_key);
-  uint32 hash_len = conn->hash->hash->hash_len;
+  SilcUInt32 key_len = silc_cipher_get_key_len(conn->send_key);
+  SilcUInt32 hash_len = conn->hash->hash->hash_len;
 
   SILC_LOG_DEBUG(("Generating new %s session keys (no PFS)",
 		  send ? "sending" : "receiving"));
@@ -828,10 +828,10 @@ silc_client_protocol_rekey_generate_pfs(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
-  uint32 key_len = silc_cipher_get_key_len(conn->send_key);
-  uint32 hash_len = conn->hash->hash->hash_len;
+  SilcUInt32 key_len = silc_cipher_get_key_len(conn->send_key);
+  SilcUInt32 hash_len = conn->hash->hash->hash_len;
   unsigned char *tmpbuf;
-  uint32 klen;
+  SilcUInt32 klen;
 
   SILC_LOG_DEBUG(("Generating new %s session keys (with PFS)",
 		  send ? "sending" : "receiving"));

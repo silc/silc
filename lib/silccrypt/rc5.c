@@ -50,7 +50,7 @@
 
 SILC_CIPHER_API_SET_KEY(rc5)
 {
-  uint32 k[8];
+  SilcUInt32 k[8];
 
   SILC_GET_WORD_KEY(key, k, keylen);
   rc5_set_key((RC5Context *)context, k, keylen);
@@ -78,7 +78,7 @@ SILC_CIPHER_API_CONTEXT_LEN(rc5)
 
 SILC_CIPHER_API_ENCRYPT_CBC(rc5)
 {
-  uint32 tiv[4];
+  SilcUInt32 tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);
@@ -103,7 +103,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(rc5)
 
 SILC_CIPHER_API_DECRYPT_CBC(rc5)
 {
-  uint32 tmp[4], tmp2[4], tiv[4];
+  SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
 
   SILC_CBC_GET_IV(tiv, iv);
@@ -139,7 +139,7 @@ SILC_CIPHER_API_DECRYPT_CBC(rc5)
 
 /* Sets RC5 key */
 
-int rc5_set_key(RC5Context *ctx, const uint32 in_key[], int key_len)
+int rc5_set_key(RC5Context *ctx, const SilcUInt32 in_key[], int key_len)
 {
 	u32 i, j, k, A, B, L[c];
 	u32 *out_key = ctx->out_key;

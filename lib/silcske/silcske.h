@@ -183,7 +183,7 @@ typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
  *
  *    typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
  *                                    unsigned char *pk_data,
- *                                    uint32 pk_len,
+ *                                    SilcUInt32 pk_len,
  *                                    SilcSKEPKType pk_type,
  *                                    void *context,
  *                                    SilcSKEVerifyCbCompletion completion,
@@ -202,7 +202,7 @@ typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
  ***/
 typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
 				unsigned char *pk_data,
-				uint32 pk_len,
+				SilcUInt32 pk_len,
 				SilcSKEPKType pk_type,
 				void *context,
 				SilcSKEVerifyCbCompletion completion,
@@ -214,7 +214,7 @@ typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
  *
  *    typedef SilcSKEStatus (*SilcSKECheckVersion)(SilcSKE ske,
  *                                                 unsigned char *version,
- *                                                 uint32 len, void *context);
+ *                                                 SilcUInt32 len, void *context);
  *
  * DESCRIPTION
  *
@@ -227,7 +227,7 @@ typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
  ***/
 typedef SilcSKEStatus (*SilcSKECheckVersion)(SilcSKE ske,
 					     unsigned char *version,
-					     uint32 len, void *context);
+					     SilcUInt32 len, void *context);
 
 /****s* silcske/SilcSKEAPI/SilcSKEKeyMaterial
  *
@@ -245,13 +245,13 @@ typedef SilcSKEStatus (*SilcSKECheckVersion)(SilcSKE ske,
 typedef struct {
   unsigned char *send_iv;
   unsigned char *receive_iv;
-  uint32 iv_len;
+  SilcUInt32 iv_len;
   unsigned char *send_enc_key;
   unsigned char *receive_enc_key;
-  uint32 enc_key_len;
+  SilcUInt32 enc_key_len;
   unsigned char *send_hmac_key;
   unsigned char *receive_hmac_key;
-  uint32 hmac_key_len;
+  SilcUInt32 hmac_key_len;
 } SilcSKEKeyMaterial;
 
 /* Length of cookie in Start Payload */
@@ -349,7 +349,7 @@ struct SilcSKEStruct {
 
   /* The hash value HASH of the key exchange */
   unsigned char *hash;
-  uint32 hash_len;
+  SilcUInt32 hash_len;
 
   /* Random Number Generator. This is set by the caller and must
      be free'd by the caller. */
@@ -370,7 +370,7 @@ struct SilcSKEStruct {
   SilcSKECallbacks callbacks;
 
   /* Backwards support version indicator */
-  uint32 backward_version;
+  SilcUInt32 backward_version;
 };
 /***/
 
@@ -820,9 +820,9 @@ silc_ske_select_security_properties(SilcSKE ske,
  * SYNOPSIS
  *
  *    SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
- *                                                uint32 req_iv_len,
- *                                                uint32 req_enc_key_len,
- *                                                uint32 req_hmac_key_len,
+ *                                                SilcUInt32 req_iv_len,
+ *                                                SilcUInt32 req_enc_key_len,
+ *                                                SilcUInt32 req_hmac_key_len,
  *                                                SilcSKEKeyMaterial *key);
  *
  * DESCRIPTION
@@ -840,9 +840,9 @@ silc_ske_select_security_properties(SilcSKE ske,
  *
  ***/
 SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
-					    uint32 req_iv_len,
-					    uint32 req_enc_key_len,
-					    uint32 req_hmac_key_len,
+					    SilcUInt32 req_iv_len,
+					    SilcUInt32 req_enc_key_len,
+					    SilcUInt32 req_hmac_key_len,
 					    SilcSKEKeyMaterial *key);
 
 /****f* silcske/SilcSKEAPI/silc_ske_process_key_material_data
@@ -851,10 +851,10 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
  *
  *    SilcSKEStatus
  *    silc_ske_process_key_material_data(unsigned char *data,
- *                                       uint32 data_len,
- *                                       uint32 req_iv_len,
- *                                       uint32 req_enc_key_len,
- *                                       uint32 req_hmac_key_len,
+ *                                       SilcUInt32 data_len,
+ *                                       SilcUInt32 req_iv_len,
+ *                                       SilcUInt32 req_enc_key_len,
+ *                                       SilcUInt32 req_hmac_key_len,
  *                                       SilcHash hash,
  *                                       SilcSKEKeyMaterial *key);
  *
@@ -872,10 +872,10 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
  ***/
 SilcSKEStatus
 silc_ske_process_key_material_data(unsigned char *data,
-				   uint32 data_len,
-				   uint32 req_iv_len,
-				   uint32 req_enc_key_len,
-				   uint32 req_hmac_key_len,
+				   SilcUInt32 data_len,
+				   SilcUInt32 req_iv_len,
+				   SilcUInt32 req_enc_key_len,
+				   SilcUInt32 req_hmac_key_len,
 				   SilcHash hash,
 				   SilcSKEKeyMaterial *key);
 

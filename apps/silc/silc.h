@@ -63,7 +63,7 @@ typedef struct {
 #ifdef SILC_SIM
   /* SIM (SILC Module) table */
   SilcSimContext **sim;
-  uint32 sim_count;
+  SilcUInt32 sim_count;
 #endif
 
   /* The allocated client */

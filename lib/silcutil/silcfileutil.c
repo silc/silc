@@ -40,14 +40,14 @@ int silc_file_open_mode(const char *filename, int flags, int mode)
 
 /* Reads data from file descriptor `fd' to `buf'. */
 
-int silc_file_read(int fd, unsigned char *buf, uint32 buf_len)
+int silc_file_read(int fd, unsigned char *buf, SilcUInt32 buf_len)
 {
   return read(fd, (void *)buf, buf_len);
 }
 
 /* Writes `buffer' of length of `len' to file descriptor `fd. */
 
-int silc_file_write(int fd, const char *buffer, uint32 len)
+int silc_file_write(int fd, const char *buffer, SilcUInt32 len)
 {
   return write(fd, (const void *)buffer, len);
 }
@@ -61,7 +61,7 @@ int silc_file_close(int fd)
 
 /* Writes a buffer to the file. */
 
-int silc_file_writefile(const char *filename, const char *buffer, uint32 len)
+int silc_file_writefile(const char *filename, const char *buffer, SilcUInt32 len)
 {
   int fd;
         
@@ -86,7 +86,7 @@ int silc_file_writefile(const char *filename, const char *buffer, uint32 len)
    set to the file. */
 
 int silc_file_writefile_mode(const char *filename, const char *buffer, 
-			     uint32 len, int mode)
+			     SilcUInt32 len, int mode)
 {
   int fd;
         
@@ -110,7 +110,7 @@ int silc_file_writefile_mode(const char *filename, const char *buffer,
 /* Reads a file to a buffer. The allocated buffer is returned. Length of
    the file read is returned to the return_len argument. */
 
-char *silc_file_readfile(const char *filename, uint32 *return_len)
+char *silc_file_readfile(const char *filename, SilcUInt32 *return_len)
 {
   int fd;
   char *buffer;
@@ -161,7 +161,7 @@ char *silc_file_readfile(const char *filename, uint32 *return_len)
 
 /* Returns files size. Returns 0 on error. */
 
-uint64 silc_file_size(const char *filename)
+SilcUInt64 silc_file_size(const char *filename)
 {
   int ret;
   struct stat stats;
@@ -174,5 +174,5 @@ uint64 silc_file_size(const char *filename)
   if (ret < 0)
     return 0;
 
-  return (uint64)stats.st_size;
+  return (SilcUInt64)stats.st_size;
 }

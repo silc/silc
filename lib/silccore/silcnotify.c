@@ -37,11 +37,11 @@ struct SilcNotifyPayloadStruct {
 /* Parse notify payload buffer and return data into payload structure */
 
 SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
-					    uint32 payload_len)
+					    SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
   SilcNotifyPayload new;
-  uint16 len;
+  SilcUInt16 len;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing Notify payload"));
@@ -76,27 +76,27 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
 
 /* Encode notify payload with variable argument list. If `argc' is > 0
    argument payloads will be associated to the notify payload. Variable
-   arguments must be {usigned char *, uint32 (len)}. */
+   arguments must be {usigned char *, SilcUInt32 (len)}. */
 
-SilcBuffer silc_notify_payload_encode(SilcNotifyType type, uint32 argc, 
+SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc, 
 				      va_list ap)
 {
   SilcBuffer buffer;
   SilcBuffer args = NULL;
   unsigned char **argv;
-  uint32 *argv_lens = NULL, *argv_types = NULL;
+  SilcUInt32 *argv_lens = NULL, *argv_types = NULL;
   unsigned char *x;
-  uint32 x_len;
+  SilcUInt32 x_len;
   int i, k = 0, len = 0;
 
   if (argc) {
     argv = silc_calloc(argc, sizeof(unsigned char *));
-    argv_lens = silc_calloc(argc, sizeof(uint32));
-    argv_types = silc_calloc(argc, sizeof(uint32));
+    argv_lens = silc_calloc(argc, sizeof(SilcUInt32));
+    argv_types = silc_calloc(argc, sizeof(SilcUInt32));
     
     for (i = 0, k = 0; i < argc; i++) {
       x = va_arg(ap, unsigned char *);
-      x_len = va_arg(ap, uint32);
+      x_len = va_arg(ap, SilcUInt32);
 
       if (!x || !x_len)
 	continue;
@@ -141,7 +141,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, uint32 argc,
 /* Same as above but takes argument from the `args' Argument Payload. */
 
 SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
-					   uint32 argc,
+					   SilcUInt32 argc,
 					   SilcBuffer args)
 {
   SilcBuffer buffer;
@@ -186,7 +186,7 @@ SilcNotifyType silc_notify_get_type(SilcNotifyPayload payload)
 
 /* Return argument nums */
 
-uint32 silc_notify_get_arg_num(SilcNotifyPayload payload)
+SilcUInt32 silc_notify_get_arg_num(SilcNotifyPayload payload)
 {
   return payload->argc;
 }

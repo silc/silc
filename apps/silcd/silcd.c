@@ -107,7 +107,7 @@ static void silc_server_checkpid(SilcServer silcd)
   if (silcd->config->server_info->pid_file) {
     int oldpid;
     char *buf;
-    uint32 buf_len;
+    SilcUInt32 buf_len;
 
     SILC_LOG_DEBUG(("Checking for another silcd running"));
     buf = silc_file_readfile(silcd->config->server_info->pid_file, &buf_len);
@@ -329,7 +329,7 @@ silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
   SilcPrivateKey prv_key;
   SilcRng rng;
   unsigned char *key;
-  uint32 key_len;
+  SilcUInt32 key_len;
   char pkfile[256], prvfile[256];
 
   if (!pkcs_name || !path)

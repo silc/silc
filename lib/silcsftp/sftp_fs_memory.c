@@ -35,7 +35,7 @@ typedef struct MemFSEntryStruct {
   bool directory;		    /* TRUE if this is directory */
   SilcSFTPFSMemoryPerm perm;	    /* Permissions */
   struct MemFSEntryStruct **entry;  /* Files and sub-directories */
-  uint32 entry_count;		    /* Number of files and sub-directories */
+  SilcUInt32 entry_count;		    /* Number of files and sub-directories */
   struct MemFSEntryStruct *parent;  /* non-NULL if `directory' is TRUE,
 				       includes parent directory. */
   unsigned long created;	    /* Time of creation */
@@ -43,7 +43,7 @@ typedef struct MemFSEntryStruct {
 
 /* File handle. */
 typedef struct {
-  uint32 handle;		    /* Handle index */
+  SilcUInt32 handle;		    /* Handle index */
   int fd;			    /* Real file handle */
   MemFSEntry entry;		    /* Filesystem entry */
 } *MemFSFileHandle;
@@ -53,7 +53,7 @@ typedef struct {
   MemFSEntry root;		    /* Root of the filesystem hierarchy */
   SilcSFTPFSMemoryPerm root_perm;
   MemFSFileHandle *handles;	    /* Open file handles */
-  uint32 handles_count;
+  SilcUInt32 handles_count;
 } *MemFS;
 
 /* Generates absolute path from relative path that may include '.' and '..'
@@ -151,7 +151,7 @@ static bool mem_del_entry(MemFSEntry entry, bool check_perm)
    This does not check subdirectories recursively. */
 
 static MemFSEntry mem_find_entry(MemFSEntry dir, const char *name,
-				 uint32 name_len)
+				 SilcUInt32 name_len)
 {
   int i;
 
@@ -205,7 +205,7 @@ static MemFSEntry mem_find_entry_path(MemFSEntry dir, const char *p)
    not check subdirectories recursively. */
 
 static bool mem_del_entry_name(MemFSEntry dir, const char *name,
-			       uint32 name_len, bool check_perm)
+			       SilcUInt32 name_len, bool check_perm)
 {
   MemFSEntry entry;
 
@@ -287,7 +287,7 @@ static bool mem_del_handle(MemFS fs, MemFSFileHandle handle)
 
 /* Find handle by handle index. */
 
-static MemFSFileHandle mem_find_handle(MemFS fs, uint32 handle)
+static MemFSFileHandle mem_find_handle(MemFS fs, SilcUInt32 handle)
 {
   if (handle > fs->handles_count)
     return NULL;
@@ -432,10 +432,10 @@ bool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
 
 SilcSFTPHandle mem_get_handle(void *context, SilcSFTP sftp,
 			      const unsigned char *data,
-			      uint32 data_len)
+			      SilcUInt32 data_len)
 {
   MemFS fs = (MemFS)context;
-  uint32 handle;
+  SilcUInt32 handle;
 
   if (data_len < 4)
     return NULL;
@@ -446,7 +446,7 @@ SilcSFTPHandle mem_get_handle(void *context, SilcSFTP sftp,
 
 unsigned char *mem_encode_handle(void *context, SilcSFTP sftp,
 				 SilcSFTPHandle handle,
-				 uint32 *handle_len)
+				 SilcUInt32 *handle_len)
 {
   unsigned char *data;
   MemFSFileHandle h = (MemFSFileHandle)handle;
@@ -552,8 +552,8 @@ void mem_close(void *context, SilcSFTP sftp,
 
 void mem_read(void *context, SilcSFTP sftp,
 	      SilcSFTPHandle handle,
-	      uint64 offset, 
-	      uint32 len,
+	      SilcUInt64 offset, 
+	      SilcUInt32 len,
 	      SilcSFTPDataCallback callback,
 	      void *callback_context)
 {
@@ -587,9 +587,9 @@ void mem_read(void *context, SilcSFTP sftp,
 
 void mem_write(void *context, SilcSFTP sftp,
 	       SilcSFTPHandle handle,
-	       uint64 offset,
+	       SilcUInt64 offset,
 	       const unsigned char *data,
-	       uint32 data_len,
+	       SilcUInt32 data_len,
 	       SilcSFTPStatusCallback callback,
 	       void *callback_context)
 {
@@ -699,7 +699,7 @@ void mem_readdir(void *context, SilcSFTP sftp,
   SilcSFTPAttributes attrs;
   int i;
   char long_name[256];
-  uint64 filesize = 0;
+  SilcUInt64 filesize = 0;
   char *date;
   struct stat stats;
 
@@ -1005,7 +1005,7 @@ void mem_realpath(void *context, SilcSFTP sftp,
 void mem_extended(void *context, SilcSFTP sftp,
 		  const char *request,
 		  const unsigned char *data,
-		  uint32 data_len,
+		  SilcUInt32 data_len,
 		  SilcSFTPExtendedCallback callback,
 		  void *callback_context)
 {

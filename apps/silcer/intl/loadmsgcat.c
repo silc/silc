@@ -468,7 +468,7 @@ _nl_load_domain (domain_file, domainbinding)
       domain->trans_tab = (struct string_desc *)
 	((char *) data + W (domain->must_swap, data->trans_tab_offset));
       domain->hash_size = W (domain->must_swap, data->hash_tab_size);
-      domain->hash_tab = (nls_uint32 *)
+      domain->hash_tab = (nls_SilcUInt32 *)
 	((char *) data + W (domain->must_swap, data->hash_tab_offset));
       break;
     default:

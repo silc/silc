@@ -253,7 +253,7 @@ char *silc_cipher_get_supported(void)
 /* Encrypts */
 
 bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
-			 unsigned char *dst, uint32 len, 
+			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv)
 {
   return cipher->cipher->encrypt(cipher->context, src, dst, len, iv);
@@ -262,7 +262,7 @@ bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 /* Decrypts */
 
 bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
-			 unsigned char *dst, uint32 len, 
+			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv)
 {
   return cipher->cipher->decrypt(cipher->context, src, dst, len, iv);
@@ -271,7 +271,7 @@ bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 /* Sets the key for the cipher */
 
 bool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
-			 uint32 keylen)
+			 SilcUInt32 keylen)
 {
   return cipher->cipher->set_key(cipher->context, key, keylen);
 }
@@ -294,14 +294,14 @@ void silc_cipher_get_iv(SilcCipher cipher, unsigned char *iv)
 
 /* Returns the key length of the cipher. */
 
-uint32 silc_cipher_get_key_len(SilcCipher cipher)
+SilcUInt32 silc_cipher_get_key_len(SilcCipher cipher)
 {
   return cipher->cipher->key_len;
 }
 
 /* Returns the block size of the cipher. */
 
-uint32 silc_cipher_get_block_len(SilcCipher cipher)
+SilcUInt32 silc_cipher_get_block_len(SilcCipher cipher)
 {
   return cipher->cipher->block_len;
 }

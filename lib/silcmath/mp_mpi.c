@@ -54,12 +54,12 @@ void silc_mp_set(SilcMPInt *dst, SilcMPInt *src)
   (void)mp_copy(src, dst);
 }
 
-void silc_mp_set_ui(SilcMPInt *dst, uint32 ui)
+void silc_mp_set_ui(SilcMPInt *dst, SilcUInt32 ui)
 {
   mp_set(dst, ui);
 }
 
-void silc_mp_set_si(SilcMPInt *dst, int32 si)
+void silc_mp_set_si(SilcMPInt *dst, SilcInt32 si)
 {
   (void)mp_set_int(dst, si);
 }
@@ -69,9 +69,9 @@ void silc_mp_set_str(SilcMPInt *dst, const char *str, int base)
   (void)mp_read_variable_radix(dst, str, base);
 }
 
-uint32 silc_mp_get_ui(SilcMPInt *mp)
+SilcUInt32 silc_mp_get_ui(SilcMPInt *mp)
 {
-  return (uint32)MP_DIGIT(mp, 0);
+  return (SilcUInt32)MP_DIGIT(mp, 0);
 }
 
 char *silc_mp_get_str(char *str, SilcMPInt *mp, int base)
@@ -86,7 +86,7 @@ void silc_mp_add(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   (void)mp_add(mp1, mp2, dst);
 }
 
-void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   mp_add_d(mp1, ui, dst);
 }
@@ -96,7 +96,7 @@ void silc_mp_sub(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   (void)mp_sub(mp1, mp2, dst);
 }
 
-void silc_mp_sub_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_sub_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   (void)mp_sub_d(mp1, (mp_digit)ui, dst);
 }
@@ -106,12 +106,12 @@ void silc_mp_mul(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   (void)mp_mul(mp1, mp2, dst);
 }
 
-void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   (void)mp_mul_d(mp1, (mp_digit)ui, dst);
 }
 
-void silc_mp_mul_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp)
+void silc_mp_mul_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp)
 {
   SilcMPInt tmp;
   silc_mp_init(&tmp);
@@ -130,7 +130,7 @@ void silc_mp_div(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   (void)mp_div(mp1, mp2, dst, NULL);
 }
 
-void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   (void)mp_div_d(mp1, (mp_digit)ui, dst, NULL);
 }
@@ -141,7 +141,7 @@ void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
   (void)mp_div(mp1, mp2, q, r);
 }
 
-void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp)
+void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp)
 {
   SilcMPInt tmp;
   silc_mp_init(&tmp);
@@ -151,7 +151,7 @@ void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp)
 }
 
 void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
-			 uint32 exp)
+			 SilcUInt32 exp)
 {
   if (q) {
     (void)mp_2expt(q, (mp_digit)exp);
@@ -164,14 +164,14 @@ void silc_mp_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   (void)mp_mod(mp1, mp2, dst);
 }
 
-void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   mp_digit uidst;
   (void)mp_mod_d(mp1, (mp_digit)ui, &uidst);
   mp_set(dst, uidst);
 }
 
-void silc_mp_mod_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_mod_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   SilcMPInt tmp;
   silc_mp_init(&tmp);
@@ -185,7 +185,7 @@ void silc_mp_pow(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp)
   (void)mp_expt(mp1, exp, dst);
 }
 
-void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp)
+void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp)
 {
   (void)mp_expt_d(mp1, (mp_digit)exp, dst);
 }
@@ -196,7 +196,7 @@ void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp,
   (void)mp_exptmod(mp1, exp, mod, dst);
 }
 
-void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp, 
+void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp, 
 			SilcMPInt *mod)
 {
   (void)mp_exptmod_d(mp1, (mp_digit)exp, mod, dst);
@@ -218,12 +218,12 @@ int silc_mp_cmp(SilcMPInt *mp1, SilcMPInt *mp2)
   return mp_cmp(mp1, mp2);
 }
 
-int silc_mp_cmp_si(SilcMPInt *mp1, int32 si)
+int silc_mp_cmp_si(SilcMPInt *mp1, SilcInt32 si)
 {
   return mp_cmp_int(mp1, (long)si);
 }
 
-int silc_mp_cmp_ui(SilcMPInt *mp1, uint32 ui)
+int silc_mp_cmp_ui(SilcMPInt *mp1, SilcUInt32 ui)
 {
   return mp_cmp_d(mp1, ui);
 }

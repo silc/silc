@@ -116,7 +116,7 @@ typedef bool (*SilcLogDebugCb)(char *file, char *function, int line,
  * SYNOPSIS
  *
  *    typedef bool (*SilcDebugHexdumpCb)(char *file, char *function, int line,
- *                                       unsigned char *data, uint32 data_len,
+ *                                       unsigned char *data, SilcUInt32 data_len,
  *                                       char *message, void *context;
  *
  * DESCRIPTION
@@ -137,7 +137,7 @@ typedef bool (*SilcLogDebugCb)(char *file, char *function, int line,
  *
  ***/
 typedef bool (*SilcLogHexdumpCb)(char *file, char *function, int line,
-				 unsigned char *data, uint32 data_len,
+				 unsigned char *data, SilcUInt32 data_len,
 				 char *message, void *context);
 
 /* Global Variables */
@@ -421,7 +421,7 @@ char *silc_log_get_file(SilcLogType type);
  *
  * SYNOPSIS
  *
- *    bool silc_log_set_file(SilcLogType type, char *filename, uint32 maxsize,
+ *    bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
  *                           SilcSchedule scheduler);
  *
  * DESCRIPTION
@@ -436,7 +436,7 @@ char *silc_log_get_file(SilcLogType type);
  *    buffered output and thus to save HD activity.
  *
  ***/
-bool silc_log_set_file(SilcLogType type, char *filename, uint32 maxsize,
+bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
 		       SilcSchedule scheduler);
 
 /****f* silcutil/SilcLogAPI/silc_log_set_callback
@@ -537,7 +537,7 @@ void silc_log_output_debug(char *file, char *function,
  *
  *    void silc_log_output_hexdump(char *file, char *function,
  *                                 int line, void *data_in,
- *                                 uint32 len, char *string);
+ *                                 SilcUInt32 len, char *string);
  *
  * DESCRIPTION
  *
@@ -551,7 +551,7 @@ void silc_log_output_debug(char *file, char *function,
  ***/
 void silc_log_output_hexdump(char *file, char *function,
 			     int line, void *data_in,
-			     uint32 len, char *string);
+			     SilcUInt32 len, char *string);
 
 /****f* silcutil/SilcLogAPI/silc_log_set_debug_callbacks
  *

@@ -46,12 +46,12 @@ void silc_mp_set(SilcMPInt *dst, SilcMPInt *src)
   mpz_set(dst, src);
 }
 
-void silc_mp_set_ui(SilcMPInt *dst, uint32 ui)
+void silc_mp_set_ui(SilcMPInt *dst, SilcUInt32 ui)
 {
   mpz_set_ui(dst, ui);
 }
 
-void silc_mp_set_si(SilcMPInt *dst, int32 si)
+void silc_mp_set_si(SilcMPInt *dst, SilcInt32 si)
 {
   mpz_set_si(dst, si);
 }
@@ -61,9 +61,9 @@ void silc_mp_set_str(SilcMPInt *dst, const char *str, int base)
   mpz_set_str(dst, str, base);
 }
 
-uint32 silc_mp_get_ui(SilcMPInt *mp)
+SilcUInt32 silc_mp_get_ui(SilcMPInt *mp)
 {
-  return (uint32)mpz_get_ui(mp);
+  return (SilcUInt32)mpz_get_ui(mp);
 }
 
 char *silc_mp_get_str(char *str, SilcMPInt *mp, int base)
@@ -76,7 +76,7 @@ void silc_mp_add(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   mpz_add(dst, mp1, mp2);
 }
 
-void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   mpz_add_ui(dst, mp1, ui);
 }
@@ -86,7 +86,7 @@ void silc_mp_sub(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   mpz_sub(dst, mp1, mp2);
 }
 
-void silc_mp_sub_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_sub_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   mpz_sub_ui(dst, mp1, ui);
 }
@@ -96,12 +96,12 @@ void silc_mp_mul(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   mpz_mul(dst, mp1, mp2);
 }
 
-void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   mpz_mul_ui(dst, mp1, ui);
 }
 
-void silc_mp_mul_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp)
+void silc_mp_mul_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp)
 {
   mpz_mul_2exp(dst, mp1, exp);
 }
@@ -116,7 +116,7 @@ void silc_mp_div(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   mpz_div(dst, mp1, mp2);
 }
 
-void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   mpz_div_ui(dst, mp1, ui);
 }
@@ -132,13 +132,13 @@ void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
     mpz_mod(r, mp1, mp2);
 }
 
-void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp)
+void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp)
 {
   mpz_fdiv_q_2exp(dst, mp1, exp);
 }
 
 void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
-			 uint32 exp)
+			 SilcUInt32 exp)
 {
   if (q)
     mpz_fdiv_q_2exp(q, mp1, exp);
@@ -151,23 +151,23 @@ void silc_mp_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2)
   mpz_mod(dst, mp1, mp2);
 }
 
-void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   mpz_mod_ui(dst, mp1, ui);
 }
 
-void silc_mp_mod_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui)
+void silc_mp_mod_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
 {
   mpz_mod_2exp(dst, mp1, ui);
 }
 
 void silc_mp_pow(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp)
 {
-  uint32 uiexp = mpz_get_ui(exp);
+  SilcUInt32 uiexp = mpz_get_ui(exp);
   mpz_pow_ui(dst, mp1, uiexp);
 }
 
-void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp)
+void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp)
 {
   mpz_pow_ui(dst, mp1, exp);
 }
@@ -178,7 +178,7 @@ void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp,
   mpz_powm(dst, mp1, exp, mod);
 }
 
-void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp, 
+void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp, 
 			SilcMPInt *mod)
 {
   mpz_powm_ui(dst, mp1, exp, mod);
@@ -200,12 +200,12 @@ int silc_mp_cmp(SilcMPInt *mp1, SilcMPInt *mp2)
   return mpz_cmp(mp1, mp2);
 }
 
-int silc_mp_cmp_si(SilcMPInt *mp1, int32 si)
+int silc_mp_cmp_si(SilcMPInt *mp1, SilcInt32 si)
 {
   return mpz_cmp_si(mp1, si);
 }
 
-int silc_mp_cmp_ui(SilcMPInt *mp1, uint32 ui)
+int silc_mp_cmp_ui(SilcMPInt *mp1, SilcUInt32 ui)
 {
   return mpz_cmp_ui(mp1, ui);
 }

@@ -46,9 +46,9 @@ void silc_server_notify(SilcServer server,
   SilcChannelClientEntry chl;
   SilcIDCacheEntry cache;
   SilcHashTableList htl;
-  uint32 mode;
+  SilcUInt32 mode;
   unsigned char *tmp;
-  uint32 tmp_len;
+  SilcUInt32 tmp_len;
   bool local;
 
   SILC_LOG_DEBUG(("Start"));
@@ -993,7 +993,7 @@ void silc_server_notify(SilcServer server,
        * Distribute the notify to local clients on channels
        */
       unsigned char *id;
-      uint32 id_len;
+      SilcUInt32 id_len;
     
       SILC_LOG_DEBUG(("KILLED notify"));
       
@@ -1193,7 +1193,7 @@ void silc_server_notify_list(SilcServer server,
 {
   SilcPacketContext *new;
   SilcBuffer buffer;
-  uint16 len;
+  SilcUInt16 len;
 
   SILC_LOG_DEBUG(("Processing Notify List"));
 
@@ -1523,8 +1523,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcBuffer reply;
   SilcIDListData idata;
   char *username = NULL, *realname = NULL, *id_string;
-  uint16 username_len;
-  uint32 id_len;
+  SilcUInt16 username_len;
+  SilcUInt32 id_len;
   int ret;
   char *hostname, *nickname;
   int nickfail = 0;
@@ -1772,7 +1772,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   SilcServerID *server_id;
   SilcIDListData idata;
   unsigned char *server_name, *id_string;
-  uint16 id_len, name_len;
+  SilcUInt16 id_len, name_len;
   int ret;
   bool local = TRUE;
 
@@ -2110,7 +2110,7 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
 {
   SilcPacketContext *new_id;
   SilcBuffer idp;
-  uint16 id_len;
+  SilcUInt16 id_len;
 
   SILC_LOG_DEBUG(("Processing New ID List"));
 
@@ -2182,10 +2182,10 @@ void silc_server_new_channel(SilcServer server,
   SilcChannelPayload payload;
   SilcChannelID *channel_id;
   char *channel_name;
-  uint32 name_len;
+  SilcUInt32 name_len;
   unsigned char *id;
-  uint32 id_len;
-  uint32 mode;
+  SilcUInt32 id_len;
+  SilcUInt32 mode;
   SilcServerEntry server_entry;
   SilcChannelEntry channel;
 
@@ -2388,7 +2388,7 @@ void silc_server_new_channel_list(SilcServer server,
 {
   SilcPacketContext *new;
   SilcBuffer buffer;
-  uint16 len1, len2;
+  SilcUInt16 len1, len2;
 
   SILC_LOG_DEBUG(("Processing New Channel List"));
 
@@ -2500,7 +2500,7 @@ void silc_server_connection_auth_request(SilcServer server,
 					 SilcPacketContext *packet)
 {
   SilcServerConfigClient *client = NULL;
-  uint16 conn_type;
+  SilcUInt16 conn_type;
   int ret;
   SilcAuthMethod auth_meth = SILC_AUTH_NONE;
 

@@ -146,7 +146,7 @@ typedef struct {
 					 provided it. This is NULL if the
 					 library generated the key or if
 					 the SKE key material was used. */
-  uint32 key_len;		      /* The key length */
+  SilcUInt32 key_len;		      /* The key length */
 } *SilcPrivateMessageKeys;
 /***/
 
@@ -156,7 +156,7 @@ typedef struct {
  * SYNOPSIS
  *
  *    typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
- *			                uint32 passphrase_len,
+ *			                SilcUInt32 passphrase_len,
  *			                void *context);
  *
  * DESCRIPTION
@@ -167,7 +167,7 @@ typedef struct {
  *
  ***/
 typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
-				  uint32 passphrase_len,
+				  SilcUInt32 passphrase_len,
 				  void *context);
 
 /****f* silcclient/SilcClientAPI/SilcVerifyPublicKey
@@ -192,7 +192,7 @@ typedef void (*SilcVerifyPublicKey)(bool success, void *context);
  *    typedef void (*SilcGetAuthMeth)(bool success, 
  *                                    SilcProtocolAuthMeth auth_meth,
  *                                    const unsigned char *auth_data,
- *                                    uint32 auth_data_len, void *context);
+ *                                    SilcUInt32 auth_data_len, void *context);
  * 
  * DESCRIPTION
  *
@@ -209,7 +209,7 @@ typedef void (*SilcVerifyPublicKey)(bool success, void *context);
 typedef void (*SilcGetAuthMeth)(bool success, 
 				SilcProtocolAuthMeth auth_meth,
 				const unsigned char *auth_data,
-				uint32 auth_data_len, void *context);
+				SilcUInt32 auth_data_len, void *context);
 
 /****d* silcclient/SilcClientAPI/SilcClientMessageType
  *
@@ -328,7 +328,7 @@ typedef struct {
      authentication method and authentication data is called. The `conn'
      may be NULL. */
   void (*get_auth_method)(SilcClient client, SilcClientConnection conn,
-			  char *hostname, uint16 port,
+			  char *hostname, SilcUInt16 port,
 			  SilcGetAuthMeth completion, void *context);
 
   /* Verifies received public key. The `conn_type' indicates which entity
@@ -337,7 +337,7 @@ typedef struct {
      `completion' must be called after the public key has been verified. */
   void (*verify_public_key)(SilcClient client, SilcClientConnection conn,
 			    SilcSocketType conn_type, unsigned char *pk, 
-			    uint32 pk_len, SilcSKEPKType pk_type,
+			    SilcUInt32 pk_len, SilcSKEPKType pk_type,
 			    SilcVerifyPublicKey completion, void *context);
 
   /* Ask (interact, that is) a passphrase from user. The passphrase is
@@ -365,7 +365,7 @@ typedef struct {
      `completion' and `context' arguments must be set by the application. */
   int (*key_agreement)(SilcClient client, SilcClientConnection conn,
 		       SilcClientEntry client_entry, const char *hostname,
-		       uint16 port, SilcKeyAgreementCallback *completion,
+		       SilcUInt16 port, SilcKeyAgreementCallback *completion,
 		       void **context);
 
   /* Notifies application that file transfer protocol session is being
@@ -375,8 +375,8 @@ typedef struct {
      transfer request, by calling the silc_client_file_receive or
      silc_client_file_close, respectively. */
   void (*ftp)(SilcClient client, SilcClientConnection conn,
-	      SilcClientEntry client_entry, uint32 session_id,
-	      const char *hostname, uint16 port);
+	      SilcClientEntry client_entry, SilcUInt32 session_id,
+	      const char *hostname, SilcUInt16 port);
 } SilcClientOperations;
 /***/
 
@@ -744,7 +744,7 @@ void silc_client_close_connection(SilcClient client,
  *                                          SilcChannelPrivateKey key,
  *                                          SilcMessageFlags flags,
  *                                          unsigned char *data, 
- *                                          uint32 data_len, 
+ *                                          SilcUInt32 data_len, 
  *                                          int force_send);
  *
  * DESCRIPTION
@@ -769,7 +769,7 @@ void silc_client_send_channel_message(SilcClient client,
 				      SilcChannelPrivateKey key,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
-				      uint32 data_len, 
+				      SilcUInt32 data_len, 
 				      int force_send);
 
 /****f* silcclient/SilcClientAPI/silc_client_send_private_message
@@ -781,7 +781,7 @@ void silc_client_send_channel_message(SilcClient client,
  *                                          SilcClientEntry client_entry,
  *                                          SilcMessageFlags flags,
  *                                          unsigned char *data, 
- *                                          uint32 data_len, 
+ *                                          SilcUInt32 data_len, 
  *                                          int force_send);
  *
  * DESCRIPTION
@@ -800,7 +800,7 @@ void silc_client_send_private_message(SilcClient client,
 				      SilcClientEntry client_entry,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
-				      uint32 data_len, 
+				      SilcUInt32 data_len, 
 				      int force_send);
 
 
@@ -813,7 +813,7 @@ void silc_client_send_private_message(SilcClient client,
  *    typedef void (*SilcGetClientCallback)(SilcClient client,
  *                                          SilcClientConnection conn,
  *                                          SilcClientEntry *clients,
- *                                          uint32 clients_count,
+ *                                          SilcUInt32 clients_count,
  *                                          void *context);
  *
  * DESCRIPTION
@@ -827,7 +827,7 @@ void silc_client_send_private_message(SilcClient client,
 typedef void (*SilcGetClientCallback)(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry *clients,
-				      uint32 clients_count,
+				      SilcUInt32 clients_count,
 				      void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_clients
@@ -872,7 +872,7 @@ void silc_client_get_clients(SilcClient client,
  *                                                   SilcClientConnection conn,
  *                                                   const char *nickname,
  *                                                   const char *format,
- *                                                   uint32 *clients_count);
+ *                                                   SilcUInt32 *clients_count);
  *
  * DESCRIPTION
  *
@@ -891,7 +891,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 					       SilcClientConnection conn,
 					       const char *nickname,
 					       const char *format,
-					       uint32 *clients_count);
+					       SilcUInt32 *clients_count);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_clients_by_list
  *
@@ -899,7 +899,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
  *
  *    void silc_client_get_clients_by_list(SilcClient client,
  *                                         SilcClientConnection conn,
- *                                         uint32 list_count,
+ *                                         SilcUInt32 list_count,
  *                                         SilcBuffer client_id_list,
  *                                         SilcGetClientCallback completion,
  *                                         void *context);
@@ -918,7 +918,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
  ***/
 void silc_client_get_clients_by_list(SilcClient client,
 				     SilcClientConnection conn,
-				     uint32 list_count,
+				     SilcUInt32 list_count,
 				     SilcBuffer client_id_list,
 				     SilcGetClientCallback completion,
 				     void *context);
@@ -991,7 +991,7 @@ bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
  *    typedef void (*SilcGetChannelCallback)(SilcClient client,
  *                                           SilcClientConnection conn,
  *                                           SilcChannelEntry *channels,
- *                                           uint32 channels_count,
+ *                                           SilcUInt32 channels_count,
  *                                           void *context);
  *
  * DESCRIPTION
@@ -1005,7 +1005,7 @@ bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 typedef void (*SilcGetChannelCallback)(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcChannelEntry *channels,
-				       uint32 channels_count,
+				       SilcUInt32 channels_count,
 				       void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_channel
@@ -1253,8 +1253,8 @@ void silc_client_command_call(SilcClientCommand command,
  *
  *    void silc_client_command_send(SilcClient client, 
  *                                  SilcClientConnection conn,
- *                                  SilcCommand command, uint16 ident,
- *                                  uint32 argc, ...);
+ *                                  SilcCommand command, SilcUInt16 ident,
+ *                                  SilcUInt32 argc, ...);
  *
  * DESCRIPTION
  *
@@ -1266,8 +1266,8 @@ void silc_client_command_call(SilcClientCommand command,
  *
  ***/
 void silc_client_command_send(SilcClient client, SilcClientConnection conn,
-			      SilcCommand command, uint16 ident,
-			      uint32 argc, ...);
+			      SilcCommand command, SilcUInt16 ident,
+			      SilcUInt32 argc, ...);
 
 /****f* silcclient/SilcClientAPI/silc_client_command_pending
  *
@@ -1275,7 +1275,7 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
  *
  *    void silc_client_command_pending(SilcClientConnection conn,
  *                                     SilcCommand reply_cmd,
- *                                     uint16 ident,
+ *                                     SilcUInt16 ident,
  *                                     SilcCommandCb callback,
  *                                     void *context);
  *
@@ -1294,7 +1294,7 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
  ***/
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
-				 uint16 ident,
+				 SilcUInt16 ident,
 				 SilcCommandCb callback,
 				 void *context);
 
@@ -1310,7 +1310,7 @@ void silc_client_command_pending(SilcClientConnection conn,
  *                                            SilcClientEntry client_entry,
  *                                            char *cipher,
  *                                            unsigned char *key,
- *                                            uint32 key_len,
+ *                                            SilcUInt32 key_len,
  *                                            bool generate_key,
  *                                            bool responder);
  *
@@ -1343,7 +1343,7 @@ int silc_client_add_private_message_key(SilcClient client,
 					SilcClientEntry client_entry,
 					char *cipher,
 					unsigned char *key,
-					uint32 key_len,
+					SilcUInt32 key_len,
 					bool generate_key,
 					bool responder);
 
@@ -1426,7 +1426,7 @@ int silc_client_del_private_message_key(SilcClient client,
  *    SilcPrivateMessageKeys
  *    silc_client_list_private_message_keys(SilcClient client,
  *                                          SilcClientConnection conn,
- *                                          uint32 *key_count);
+ *                                          SilcUInt32 *key_count);
  * 
  * DESCRIPTION
  *
@@ -1442,14 +1442,14 @@ int silc_client_del_private_message_key(SilcClient client,
 SilcPrivateMessageKeys
 silc_client_list_private_message_keys(SilcClient client,
 				      SilcClientConnection conn,
-				      uint32 *key_count);
+				      SilcUInt32 *key_count);
 
 /****f* silcclient/SilcClientAPI/silc_client_free_private_message_keys
  *
  * SYNOPSIS
  *
  *    void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
- *                                               uint32 key_count);
+ *                                               SilcUInt32 key_count);
  * 
  * DESCRIPTION
  *
@@ -1458,7 +1458,7 @@ silc_client_list_private_message_keys(SilcClient client,
  *
  ***/
 void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
-					   uint32 key_count);
+					   SilcUInt32 key_count);
 
 
 /* Channel private key management (client_channel.c, 
@@ -1474,7 +1474,7 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
  *                                            char *cipher,
  *                                            char *hmac,
  *                                            unsigned char *key,
- *                                            uint32 key_len);
+ *                                            SilcUInt32 key_len);
  * 
  * DESCRIPTION
  *
@@ -1513,7 +1513,7 @@ int silc_client_add_channel_private_key(SilcClient client,
 					char *cipher,
 					char *hmac,
 					unsigned char *key,
-					uint32 key_len);
+					SilcUInt32 key_len);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_channel_private_keys
  *
@@ -1566,7 +1566,7 @@ int silc_client_del_channel_private_key(SilcClient client,
  *    silc_client_list_channel_private_keys(SilcClient client,
  *                                          SilcClientConnection conn,
  *                                          SilcChannelEntry channel,
- *                                          uint32 *key_count);
+ *                                          SilcUInt32 *key_count);
  *
  * DESCRIPTION
  *
@@ -1581,14 +1581,14 @@ SilcChannelPrivateKey *
 silc_client_list_channel_private_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
-				      uint32 *key_count);
+				      SilcUInt32 *key_count);
 
 /****f* silcclient/SilcClientAPI/silc_client_free_channel_private_keys
  *
  * SYNOPSIS
  *
  *    void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
- *                                               uint32 key_count);
+ *                                               SilcUInt32 key_count);
  *
  * DESCRIPTION
  *
@@ -1596,7 +1596,7 @@ silc_client_list_channel_private_keys(SilcClient client,
  *
  ***/
 void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
-					   uint32 key_count);
+					   SilcUInt32 key_count);
 
 
 /* Key Agreement routines (client_keyagr.c) */
@@ -1610,7 +1610,7 @@ void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
  *                                        SilcClientEntry client_entry,
  *                                        char *hostname,
  *                                        int port,
- *                                        uint32 timeout_secs,
+ *                                        SilcUInt32 timeout_secs,
  *                                        SilcKeyAgreementCallback completion,
  *                                        void *context);
  *
@@ -1663,7 +1663,7 @@ void silc_client_send_key_agreement(SilcClient client,
 				    const char *hostname,
 				    const char *bindhost,
 				    int port,
-				    uint32 timeout_secs,
+				    SilcUInt32 timeout_secs,
 				    SilcKeyAgreementCallback completion,
 				    void *context);
 
@@ -1899,10 +1899,10 @@ typedef enum {
  *                                          SilcClientConnection conn,
  *                                          SilcClientMonitorStatus status,
  *                                          SilcClientFileError error,
- *                                          uint64 offset,
- *                                          uint64 filesize,
+ *                                          SilcUInt64 offset,
+ *                                          SilcUInt64 filesize,
  *                                          SilcClientEntry client_entry,
- *                                          uint32 session_id,
+ *                                          SilcUInt32 session_id,
  *                                          const char *filepath,
  *                                          void *context);
  *
@@ -1922,10 +1922,10 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientMonitorStatus status,
 				      SilcClientFileError error,
-				      uint64 offset,
-				      uint64 filesize,
+				      SilcUInt64 offset,
+				      SilcUInt64 filesize,
 				      SilcClientEntry client_entry,
-				      uint32 session_id,
+				      SilcUInt32 session_id,
 				      const char *filepath,
 				      void *context);
 
@@ -1939,10 +1939,10 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *                          SilcClientFileMonitor monitor,
  *                          void *monitor_context,
  *                          const char *local_ip,
- *                          uint32 local_port,
+ *                          SilcUInt32 local_port,
  *                          SilcClientEntry client_entry,
  *                          const char *filepath);
- *                          uint32 *session_id);
+ *                          SilcUInt32 *session_id);
  *
  * DESCRIPTION
  *
@@ -1977,10 +1977,10 @@ silc_client_file_send(SilcClient client,
 		      SilcClientFileMonitor monitor,
 		      void *monitor_context,
 		      const char *local_ip,
-		      uint32 local_port,
+		      SilcUInt32 local_port,
 		      SilcClientEntry client_entry,
 		      const char *filepath,
-		      uint32 *session_id);
+		      SilcUInt32 *session_id);
 
 /****f* silcclient/SilcClientAPI/silc_client_file_receive
  *
@@ -1991,7 +1991,7 @@ silc_client_file_send(SilcClient client,
  *                             SilcClientConnection conn,
  *                             SilcClientFileMonitor monitor,
  *                             void *monitor_context,
- *                             uint32 session_id);
+ *                             SilcUInt32 session_id);
  *
  * DESCRIPTION
  *
@@ -2013,7 +2013,7 @@ silc_client_file_receive(SilcClient client,
 			 SilcClientConnection conn,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
-			 uint32 session_id);
+			 SilcUInt32 session_id);
 
 /****f* silcclient/SilcClientAPI/silc_client_file_close
  *
@@ -2021,7 +2021,7 @@ silc_client_file_receive(SilcClient client,
  *
  *    SilcClientFileError silc_client_file_close(SilcClient client,
  *                                               SilcClientConnection conn,
- *                                               uint32 session_id);
+ *                                               SilcUInt32 session_id);
  *
  * DESCRIPTION
  *
@@ -2034,7 +2034,7 @@ silc_client_file_receive(SilcClient client,
  ***/
 SilcClientFileError silc_client_file_close(SilcClient client,
 					   SilcClientConnection conn,
-					   uint32 session_id);
+					   SilcUInt32 session_id);
 
 #include "client.h"
 #include "command.h"

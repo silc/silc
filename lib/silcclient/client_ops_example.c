@@ -137,7 +137,7 @@ silc_disconnect(SilcClient client, SilcClientConnection conn)
 
 static void 
 silc_get_auth_method(SilcClient client, SilcClientConnection conn, 
-		     char *hostname, uint16 port, SilcGetAuthMeth completion, 
+		     char *hostname, SilcUInt16 port, SilcGetAuthMeth completion, 
 		     void *context)
 {
 
@@ -152,7 +152,7 @@ silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 static void 
 silc_verify_public_key(SilcClient client, SilcClientConnection conn, 
 		       SilcSocketType conn_type, unsigned char *pk, 
-		       uint32 pk_len, SilcSKEPKType pk_type, 
+		       SilcUInt32 pk_len, SilcSKEPKType pk_type, 
 		       SilcVerifyPublicKey completion, void *context)
 {
 
@@ -198,7 +198,7 @@ silc_failure(SilcClient client, SilcClientConnection conn,
 static int 
 silc_key_agreement(SilcClient client, SilcClientConnection conn, 
 		   SilcClientEntry client_entry, const char *hostname, 
-		   uint16 port, SilcKeyAgreementCallback *completion, 
+		   SilcUInt16 port, SilcKeyAgreementCallback *completion, 
 		   void **context)
 {
 
@@ -214,8 +214,8 @@ silc_key_agreement(SilcClient client, SilcClientConnection conn,
 
 static void 
 silc_ftp(SilcClient client, SilcClientConnection conn, 
-	 SilcClientEntry client_entry, uint32 session_id, 
-	 const char *hostname, uint16 port)
+	 SilcClientEntry client_entry, SilcUInt32 session_id, 
+	 const char *hostname, SilcUInt16 port)
 {
 
 }

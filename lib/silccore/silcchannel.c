@@ -33,17 +33,17 @@
 /* Channel Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcChannelPayloadStruct {
-  uint16 name_len;
+  SilcUInt16 name_len;
   unsigned char *channel_name;
-  uint16 id_len;
+  SilcUInt16 id_len;
   unsigned char *channel_id;
-  uint32 mode;
+  SilcUInt32 mode;
 };
 
 /* Parses channel payload returning new channel payload structure. */
 
 SilcChannelPayload silc_channel_payload_parse(const unsigned char *payload,
-					      uint32 payload_len)
+					      SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
   SilcChannelPayload new;
@@ -81,7 +81,7 @@ SilcChannelPayload silc_channel_payload_parse(const unsigned char *payload,
 /* Parses list of channel payloads returning list of payloads. */
 
 SilcDList silc_channel_payload_parse_list(const unsigned char *payload,
-					  uint32 payload_len)
+					  SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
   SilcDList list;
@@ -129,10 +129,10 @@ SilcDList silc_channel_payload_parse_list(const unsigned char *payload,
 /* Encode new channel payload and returns it as buffer. */
 
 SilcBuffer silc_channel_payload_encode(const unsigned char *channel_name,
-				       uint16 channel_name_len,
+				       SilcUInt16 channel_name_len,
 				       const unsigned char *channel_id,
-				       uint32 channel_id_len,
-				       uint32 mode)
+				       SilcUInt32 channel_id_len,
+				       SilcUInt32 mode)
 {
   SilcBuffer buffer;
 
@@ -182,7 +182,7 @@ void silc_channel_payload_list_free(SilcDList list)
 /* Return the channel name */
 
 unsigned char *silc_channel_get_name(SilcChannelPayload payload,
-				     uint32 *channel_name_len)
+				     SilcUInt32 *channel_name_len)
 {
   if (channel_name_len)
     *channel_name_len = payload->name_len;
@@ -193,7 +193,7 @@ unsigned char *silc_channel_get_name(SilcChannelPayload payload,
 /* Return the channel ID */
 
 unsigned char *silc_channel_get_id(SilcChannelPayload payload,
-				   uint32 *channel_id_len)
+				   SilcUInt32 *channel_id_len)
 {
   if (channel_id_len)
     *channel_id_len = payload->id_len;
@@ -213,7 +213,7 @@ SilcChannelID *silc_channel_get_id_parse(SilcChannelPayload payload)
    channel or perhaps the mode of the client on the channel.  The protocol
    dictates what the usage of the mode is in different circumstances. */
 
-uint32 silc_channel_get_mode(SilcChannelPayload payload)
+SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload)
 {
   return payload->mode;
 }
@@ -230,7 +230,7 @@ uint32 silc_channel_get_mode(SilcChannelPayload payload)
    from SILC packets. */
 struct SilcChannelMessagePayloadStruct {
   SilcMessageFlags flags;
-  uint16 data_len;
+  SilcUInt16 data_len;
   unsigned char *data;
   unsigned char *mac;
   unsigned char *iv;
@@ -247,7 +247,7 @@ bool silc_channel_message_payload_decrypt(unsigned char *data,
 					  SilcCipher cipher,
 					  SilcHmac hmac)
 {
-  uint32 iv_len, mac_len;
+  SilcUInt32 iv_len, mac_len;
   unsigned char *end, *mac, mac2[32];
   unsigned char *dst, iv[SILC_CIPHER_MAX_IV_SIZE];
 
@@ -299,14 +299,14 @@ bool silc_channel_message_payload_decrypt(unsigned char *data,
 
 SilcChannelMessagePayload 
 silc_channel_message_payload_parse(unsigned char *payload,
-				   uint32 payload_len,
+				   SilcUInt32 payload_len,
 				   SilcCipher cipher,
 				   SilcHmac hmac)
 {
   SilcBufferStruct buffer;
   SilcChannelMessagePayload new;
   int ret;
-  uint32 iv_len, mac_len;
+  SilcUInt32 iv_len, mac_len;
 
   SILC_LOG_DEBUG(("Parsing channel message payload"));
 
@@ -353,17 +353,17 @@ silc_channel_message_payload_parse(unsigned char *payload,
    encrypted separately from other parts of the packet padding must
    be applied to the payload. */
 
-SilcBuffer silc_channel_message_payload_encode(uint16 flags,
-					       uint16 data_len,
+SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
+					       SilcUInt16 data_len,
 					       const unsigned char *data,
-					       uint16 iv_len,
+					       SilcUInt16 iv_len,
 					       unsigned char *iv,
 					       SilcCipher cipher,
 					       SilcHmac hmac)
 {
   int i;
   SilcBuffer buffer;
-  uint32 len, pad_len, mac_len;
+  SilcUInt32 len, pad_len, mac_len;
   unsigned char pad[16];
   unsigned char mac[32];
 
@@ -436,7 +436,7 @@ silc_channel_message_get_flags(SilcChannelMessagePayload payload)
 /* Return data */
 
 unsigned char *silc_channel_message_get_data(SilcChannelMessagePayload payload,
-					     uint32 *data_len)
+					     SilcUInt32 *data_len)
 {
   if (data_len)
     *data_len = payload->data_len;
@@ -467,11 +467,11 @@ unsigned char *silc_channel_message_get_iv(SilcChannelMessagePayload payload)
 /* Channel Key Payload structrue. Channel keys are parsed from SILC
    packets into this structure. */
 struct SilcChannelKeyPayloadStruct {
-  uint16 id_len;
+  SilcUInt16 id_len;
   unsigned char *id;
-  uint16 cipher_len;
+  SilcUInt16 cipher_len;
   unsigned char *cipher;
-  uint16 key_len;
+  SilcUInt16 key_len;
   unsigned char *key;
 };
 
@@ -479,7 +479,7 @@ struct SilcChannelKeyPayloadStruct {
 
 SilcChannelKeyPayload 
 silc_channel_key_payload_parse(const unsigned char *payload,
-			       uint32 payload_len)
+			       SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
   SilcChannelKeyPayload new;
@@ -522,15 +522,15 @@ silc_channel_key_payload_parse(const unsigned char *payload,
 /* Encodes channel key payload into a buffer and returns it. This is used 
    to add channel key payload into a packet. */
 
-SilcBuffer silc_channel_key_payload_encode(uint16 id_len,
+SilcBuffer silc_channel_key_payload_encode(SilcUInt16 id_len,
 					   const unsigned char *id,
-					   uint16 cipher_len,
+					   SilcUInt16 cipher_len,
 					   const unsigned char *cipher,
-					   uint16 key_len,
+					   SilcUInt16 key_len,
 					   const unsigned char *key)
 {
   SilcBuffer buffer;
-  uint32 len;
+  SilcUInt32 len;
 
   SILC_LOG_DEBUG(("Encoding channel key payload"));
 
@@ -572,7 +572,7 @@ void silc_channel_key_payload_free(SilcChannelKeyPayload payload)
 /* Return ID */
 
 unsigned char *silc_channel_key_get_id(SilcChannelKeyPayload payload, 
-				       uint32 *id_len)
+				       SilcUInt32 *id_len)
 {
   if (id_len)
     *id_len = payload->id_len;
@@ -583,7 +583,7 @@ unsigned char *silc_channel_key_get_id(SilcChannelKeyPayload payload,
 /* Return cipher name */
 
 unsigned char *silc_channel_key_get_cipher(SilcChannelKeyPayload payload,
-					   uint32 *cipher_len)
+					   SilcUInt32 *cipher_len)
 {
   if (cipher_len)
     *cipher_len = payload->cipher_len;
@@ -594,7 +594,7 @@ unsigned char *silc_channel_key_get_cipher(SilcChannelKeyPayload payload,
 /* Return key */
 
 unsigned char *silc_channel_key_get_key(SilcChannelKeyPayload payload,
-					uint32 *key_len)
+					SilcUInt32 *key_len)
 {
   if (key_len)
     *key_len = payload->key_len;

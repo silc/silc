@@ -24,11 +24,11 @@
 
 /* Static functions */
 static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n, 
-					 uint32 len, 
+					 SilcUInt32 len, 
 					 SilcMPInt *rnd);
 static SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
 					unsigned char *return_hash,
-					uint32 *return_hash_len,
+					SilcUInt32 *return_hash_len,
 					int initiator);
 
 /* Structure to hold all SKE callbacks. */
@@ -334,7 +334,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   SilcBuffer payload_buf;
   SilcMPInt *x;
   SilcSKEKEPayload *payload;
-  uint32 pk_len;
+  SilcUInt32 pk_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -382,7 +382,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   /* Compute signature data if we are doing mutual authentication */
   if (private_key && ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
     unsigned char hash[32], sign[1024];
-    uint32 hash_len, sign_len;
+    SilcUInt32 hash_len, sign_len;
 
     SILC_LOG_DEBUG(("We are doing mutual authentication"));
     SILC_LOG_DEBUG(("Computing HASH_i value"));
@@ -436,7 +436,7 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
 {
   SilcSKEKEPayload *payload;
   unsigned char hash[32];
-  uint32 hash_len;
+  SilcUInt32 hash_len;
   SilcPublicKey public_key = NULL;
 
   /* If the SKE was freed during the async call then free it really now,
@@ -822,7 +822,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
       ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
     SilcPublicKey public_key = NULL;
     unsigned char hash[32];
-    uint32 hash_len;
+    SilcUInt32 hash_len;
 
     /* Decode the public key */
     if (!silc_pkcs_public_key_decode(recv_payload->pk_data, 
@@ -986,7 +986,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   SilcBuffer payload_buf;
   SilcMPInt *KEY;
   unsigned char hash[32], sign[1024], *pk;
-  uint32 hash_len, sign_len, pk_len;
+  SilcUInt32 hash_len, sign_len, pk_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1078,7 +1078,7 @@ SilcSKEStatus silc_ske_end(SilcSKE ske)
   packet = silc_buffer_alloc(4);
   silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
   silc_buffer_format(packet,
-		     SILC_STR_UI_INT((uint32)SILC_SKE_STATUS_OK),
+		     SILC_STR_UI_INT((SilcUInt32)SILC_SKE_STATUS_OK),
 		     SILC_STR_END);
 
   if (ske->callbacks->send_packet)
@@ -1103,7 +1103,7 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status)
   packet = silc_buffer_alloc(4);
   silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
   silc_buffer_format(packet,
-		     SILC_STR_UI_INT((uint32)status),
+		     SILC_STR_UI_INT((SilcUInt32)status),
 		     SILC_STR_END);
 
   if (ske->callbacks->send_packet)
@@ -1553,7 +1553,7 @@ silc_ske_select_security_properties(SilcSKE ske,
    of len bits. The rnd sent as argument must be initialized. */
 
 static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n, 
-					 uint32 len, 
+					 SilcUInt32 len, 
 					 SilcMPInt *rnd)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
@@ -1590,13 +1590,13 @@ static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
 
 static SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
 					unsigned char *return_hash,
-					uint32 *return_hash_len,
+					SilcUInt32 *return_hash_len,
 					int initiator)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer buf;
   unsigned char *e, *f, *KEY;
-  uint32 e_len, f_len, KEY_len;
+  SilcUInt32 e_len, f_len, KEY_len;
   int ret;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1728,17 +1728,17 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
 
 SilcSKEStatus 
 silc_ske_process_key_material_data(unsigned char *data,
-				   uint32 data_len,
-				   uint32 req_iv_len,
-				   uint32 req_enc_key_len,
-				   uint32 req_hmac_key_len,
+				   SilcUInt32 data_len,
+				   SilcUInt32 req_iv_len,
+				   SilcUInt32 req_enc_key_len,
+				   SilcUInt32 req_hmac_key_len,
 				   SilcHash hash,
 				   SilcSKEKeyMaterial *key)
 {
   SilcBuffer buf;
   unsigned char hashd[32];
-  uint32 hash_len = req_hmac_key_len;
-  uint32 enc_key_len = req_enc_key_len / 8;
+  SilcUInt32 hash_len = req_hmac_key_len;
+  SilcUInt32 enc_key_len = req_enc_key_len / 8;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1911,15 +1911,15 @@ silc_ske_process_key_material_data(unsigned char *data,
    the actual keys to be used in the SILC. */
 
 SilcSKEStatus silc_ske_process_key_material(SilcSKE ske, 
-					    uint32 req_iv_len,
-					    uint32 req_enc_key_len,
-					    uint32 req_hmac_key_len,
+					    SilcUInt32 req_iv_len,
+					    SilcUInt32 req_enc_key_len,
+					    SilcUInt32 req_hmac_key_len,
 					    SilcSKEKeyMaterial *key)
 {
   SilcSKEStatus status;
   SilcBuffer buf;
   unsigned char *tmpbuf;
-  uint32 klen;
+  SilcUInt32 klen;
 
   /* Encode KEY to binary data */
   tmpbuf = silc_mp_mp2bin(ske->KEY, 0, &klen);

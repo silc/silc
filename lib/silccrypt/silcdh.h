@@ -159,7 +159,7 @@ bool silc_dh_compute_key(SilcDH dh, const SilcMPInt **z);
  * SYNOPSIS
  *
  *    bool silc_dh_compute_key_data(SilcDH dh, unsigned char **z, 
- *                                  uint32 *z_len);
+ *                                  SilcUInt32 *z_len);
  *
  * DESCRIPTION
  *
@@ -168,6 +168,6 @@ bool silc_dh_compute_key(SilcDH dh, const SilcMPInt **z);
  *
  ***/
 bool silc_dh_compute_key_data(SilcDH dh, unsigned char **z, 
-			      uint32 *z_len);
+			      SilcUInt32 *z_len);
 
 #endif

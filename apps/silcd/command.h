@@ -65,7 +65,7 @@ typedef struct SilcServerCommandPendingStruct {
   SilcCommand reply_cmd;
   SilcCommandCb callback;
   void *context;
-  uint16 ident;
+  SilcUInt16 ident;
   struct SilcServerCommandPendingStruct *next;
 } SilcServerCommandPending;
 
@@ -107,18 +107,18 @@ SilcServerCommandContext
 silc_server_command_dup(SilcServerCommandContext ctx);
 bool silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
-				 uint16 ident,
+				 SilcUInt16 ident,
 				 SilcCommandCb callback,
 				 void *context);
 void silc_server_command_pending_del(SilcServer server,
 				     SilcCommand reply_cmd,
-				     uint16 ident);
+				     SilcUInt16 ident);
 SilcServerCommandPendingCallbacks
 silc_server_command_pending_check(SilcServer server,
 				  SilcServerCommandReplyContext ctx,
 				  SilcCommand command, 
-				  uint16 ident,
-				  uint32 *callbacks_count);
+				  SilcUInt16 ident,
+				  SilcUInt32 *callbacks_count);
 SILC_SERVER_CMD_FUNC(whois);
 SILC_SERVER_CMD_FUNC(whowas);
 SILC_SERVER_CMD_FUNC(identify);

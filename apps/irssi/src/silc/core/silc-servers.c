@@ -71,7 +71,7 @@ typedef struct {
 static void silc_send_msg_clients(SilcClient client,
 				  SilcClientConnection conn,
 				  SilcClientEntry *clients,
-				  uint32 clients_count,
+				  SilcUInt32 clients_count,
 				  void *context)
 {
   PRIVMSG_REC *rec = context;
@@ -128,7 +128,7 @@ static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg)
 {
   PRIVMSG_REC *rec;
   SilcClientEntry *clients;
-  uint32 clients_count;
+  SilcUInt32 clients_count;
   char *nickname = NULL;
 
   if (!silc_parse_userfqdn(nick, &nickname, NULL)) {
@@ -327,9 +327,9 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
 {
-  uint32 argc = 0;
+  SilcUInt32 argc = 0;
   unsigned char **argv;
-  uint32 *argv_lens, *argv_types;
+  SilcUInt32 *argv_lens, *argv_types;
   char *data, *tmpcmd;
   SilcClientCommand cmd;
   SilcClientCommandContext ctx;
@@ -416,10 +416,10 @@ static void silc_client_file_monitor(SilcClient client,
 				     SilcClientConnection conn,
 				     SilcClientMonitorStatus status,
 				     SilcClientFileError error,
-				     uint64 offset,
-				     uint64 filesize,
+				     SilcUInt64 offset,
+				     SilcUInt64 filesize,
 				     SilcClientEntry client_entry,
-				     uint32 session_id,
+				     SilcUInt32 session_id,
 				     const char *filepath,
 				     void *context)
 {
@@ -532,7 +532,7 @@ typedef struct {
 static void silc_client_command_file_get_clients(SilcClient client,
 						 SilcClientConnection conn,
 						 SilcClientEntry *clients,
-						 uint32 clients_count,
+						 SilcUInt32 clients_count,
 						 void *context)
 {
   FileGetClients internal = (FileGetClients)context;
@@ -560,16 +560,16 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   SilcClientConnection conn;
   SilcClientEntry *entrys, client_entry;
   SilcClientFileError ret;
-  uint32 entry_count;
+  SilcUInt32 entry_count;
   char *nickname = NULL, *tmp;
   unsigned char **argv;
-  uint32 argc;
-  uint32 *argv_lens, *argv_types;
+  SilcUInt32 argc;
+  SilcUInt32 *argv_lens, *argv_types;
   int type = 0;
   FtpSession ftp;
   char *local_ip = NULL;
-  uint32 local_port = 0;
-  uint32 session_id;
+  SilcUInt32 local_port = 0;
+  SilcUInt32 session_id;
 
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
@@ -823,8 +823,8 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			 MSGLEVEL_CRAP, SILCTXT_FILE_SHOW_LINE,
 			 ftp->client_entry->nickname, 
 			 ftp->send ? "send" : "receive",
-			 (uint32)(ftp->offset + 1023) / 1024,
-			 (uint32)(ftp->filesize + 1023) / 1024,
+			 (SilcUInt32)(ftp->offset + 1023) / 1024,
+			 (SilcUInt32)(ftp->filesize + 1023) / 1024,
 			 ftp->percent, ftp->kps,
 			 ftp->filepath ? ftp->filepath : "[N/A]");
     }

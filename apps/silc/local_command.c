@@ -97,7 +97,7 @@ SILC_CLIENT_LCMD_FUNC(msg)
   SilcClientConnection conn = cmd->conn;
   SilcClient client = cmd->client;
   SilcClientEntry client_entry = NULL;
-  uint32 num = 0;
+  SilcUInt32 num = 0;
   char *nickname = NULL, *server = NULL;
 
   if (!cmd->conn) {
@@ -349,7 +349,7 @@ SILC_CLIENT_LCMD_FUNC(key)
   SilcClient client = cmd->client;
   SilcClientEntry client_entry = NULL;
   SilcChannelEntry channel_entry = NULL;
-  uint32 num = 0;
+  SilcUInt32 num = 0;
   char *nickname = NULL, *server = NULL;
   int command = 0, port = 0, type = 0;
   char *hostname = NULL;
@@ -498,7 +498,7 @@ SILC_CLIENT_LCMD_FUNC(key)
     } else if (type == 2) {
       /* Unset channel key(s) */
       SilcChannelPrivateKey *keys;
-      uint32 keys_count;
+      SilcUInt32 keys_count;
       int number;
 
       if (cmd->argc == 4)
@@ -532,7 +532,7 @@ SILC_CLIENT_LCMD_FUNC(key)
 
     if (type == 1) {
       SilcPrivateMessageKeys keys;
-      uint32 keys_count;
+      SilcUInt32 keys_count;
       int k, i, len;
       char buf[1024];
 
@@ -607,7 +607,7 @@ SILC_CLIENT_LCMD_FUNC(key)
       silc_client_free_private_message_keys(keys, keys_count);
     } else if (type == 2) {
       SilcChannelPrivateKey *keys;
-      uint32 keys_count;
+      SilcUInt32 keys_count;
       int k, i, len;
       char buf[1024];
 

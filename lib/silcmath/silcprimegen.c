@@ -53,7 +53,7 @@
 
 */
 
-static uint32 primetable[] =
+static SilcUInt32 primetable[] =
 {
   2, 3, 5, 7, 11, 13, 17, 19,
   23, 29, 31, 37, 41, 43, 47, 53,
@@ -195,11 +195,11 @@ static uint32 primetable[] =
    If argument verbose is TRUE this will display some status information
    about the progress of generation. */
 
-bool silc_math_gen_prime(SilcMPInt *prime, uint32 bits, bool verbose)
+bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose)
 {
   unsigned char *numbuf = NULL;
-  uint32 i, b, k;
-  uint32 *spmods;
+  SilcUInt32 i, b, k;
+  SilcUInt32 *spmods;
   SilcMPInt r, base, tmp, tmp2, oprime;
 
   silc_mp_init(&r);
@@ -238,7 +238,7 @@ bool silc_math_gen_prime(SilcMPInt *prime, uint32 bits, bool verbose)
 
   /* Init modulo table with the prime candidate and the primes
      in the primetable. */
-  spmods = silc_calloc(1, sizeof(primetable) * sizeof(uint32));
+  spmods = silc_calloc(1, sizeof(primetable) * sizeof(SilcUInt32));
   for (i = 0; primetable[i] != 0; i++) {
     silc_mp_mod_ui(&tmp, prime, primetable[i]);
     spmods[i] = silc_mp_get_ui(&tmp);

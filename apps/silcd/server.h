@@ -53,8 +53,8 @@ typedef struct {
   void *param;
 
   /* Current connection retry info */
-  uint32 retry_count;
-  uint32 retry_timeout;
+  SilcUInt32 retry_count;
+  SilcUInt32 retry_timeout;
 
   /* Back pointer to server */
   SilcServer server;
@@ -127,7 +127,7 @@ void silc_server_packet_parse_type(SilcServer server,
 				   SilcSocketConnection sock,
 				   SilcPacketContext *packet);
 void silc_server_create_connection(SilcServer server,
-				   const char *remote_host, uint32 port);
+				   const char *remote_host, SilcUInt32 port);
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock);
 void silc_server_free_client_data(SilcServer server, 
@@ -167,7 +167,7 @@ silc_server_create_new_channel_with_id(SilcServer server,
 				       int broadcast);
 bool silc_server_create_channel_key(SilcServer server, 
 				    SilcChannelEntry channel,
-				    uint32 key_len);
+				    SilcUInt32 key_len);
 SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 					      SilcBuffer key_payload,
 					      SilcChannelEntry channel);
@@ -185,7 +185,7 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcBuffer *channels,
 				       SilcBuffer *channel_users,
 				       SilcBuffer **channel_users_modes,
-				       uint32 *channel_users_modes_c,
+				       SilcUInt32 *channel_users_modes_c,
 				       SilcBuffer **channel_topics,
 				       SilcChannelID ***channel_ids,
 				       unsigned long creation_time);
@@ -202,17 +202,17 @@ void silc_server_get_users_on_channel(SilcServer server,
 				      SilcChannelEntry channel,
 				      SilcBuffer *user_list,
 				      SilcBuffer *mode_list,
-				      uint32 *user_count);
+				      SilcUInt32 *user_count);
 void silc_server_save_users_on_channel(SilcServer server,
 				       SilcSocketConnection sock,
 				       SilcChannelEntry channel,
 				       SilcClientID *noadd,
 				       SilcBuffer user_list,
 				       SilcBuffer mode_list,
-				       uint32 user_count);
+				       SilcUInt32 user_count);
 SilcSocketConnection silc_server_get_client_route(SilcServer server,
 						  unsigned char *id_data,
-						  uint32 id_len,
+						  SilcUInt32 id_len,
 						  SilcClientID *client_id,
 						  SilcIDListData *idata);
 SilcBuffer silc_server_get_client_channel_list(SilcServer server,

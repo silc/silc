@@ -95,13 +95,13 @@ typedef struct SilcSFTPFilesystemOpsStruct {
      If the handle is not found this returns NULL. */
   SilcSFTPHandle (*sftp_get_handle)(void *context, SilcSFTP sftp,
 				    const unsigned char *data,
-				    uint32 data_len);
+				    SilcUInt32 data_len);
 
   /* Return encoded handle of `handle' or NULL on error. The caller
      must free the returned buffer. */
   unsigned char *(*sftp_encode_handle)(void *context, SilcSFTP sftp,
 				       SilcSFTPHandle handle,
-				       uint32 *handle_len);
+				       SilcUInt32 *handle_len);
 
   /* Open a file indicated by the `filename' with flags indicated by the
      `pflags', and with attributes indicated by the `attr'.  Calls the
@@ -125,8 +125,8 @@ typedef struct SilcSFTPFilesystemOpsStruct {
      called to return the read data. */
   void (*sftp_read)(void *context, SilcSFTP sftp,
 		    SilcSFTPHandle handle, 
-		    uint64 offset, 
-		    uint32 len,
+		    SilcUInt64 offset, 
+		    SilcUInt32 len,
 		    SilcSFTPDataCallback callback,
 		    void *callback_context);
 
@@ -135,9 +135,9 @@ typedef struct SilcSFTPFilesystemOpsStruct {
      is called to indicate the status of the writing. */
   void (*sftp_write)(void *context, SilcSFTP sftp,
 		     SilcSFTPHandle handle,
-		     uint64 offset,
+		     SilcUInt64 offset,
 		     const unsigned char *data,
-		     uint32 data_len,
+		     SilcUInt32 data_len,
 		     SilcSFTPStatusCallback callback,
 		     void *callback_context);
 
@@ -256,7 +256,7 @@ typedef struct SilcSFTPFilesystemOpsStruct {
   void (*sftp_extended)(void *context, SilcSFTP sftp,
 			const char *request,
 			const unsigned char *data,
-			uint32 data_len,
+			SilcUInt32 data_len,
 			SilcSFTPExtendedCallback callback,
 			void *callback_context);
 } *SilcSFTPFilesystemOps;

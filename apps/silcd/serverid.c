@@ -25,7 +25,7 @@
 /* Creates a Server ID. Newly created Server ID is returned to the
    new_id argument. */
 
-void silc_id_create_server_id(const char *ip, uint16 port, SilcRng rng, 
+void silc_id_create_server_id(const char *ip, SilcUInt16 port, SilcRng rng, 
 			      SilcServerID **new_id)
 {
   SILC_LOG_DEBUG(("Creating new Server ID"));

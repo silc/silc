@@ -53,7 +53,7 @@ extern bool silc_debug_hexdump;
 #ifdef SILC_SIM
 /* SIM (SILC Module) table */
 SilcSimContext **sims = NULL;
-uint32 sims_count = 0;
+SilcUInt32 sims_count = 0;
 #endif
 
 static int my_silc_scheduler(void)

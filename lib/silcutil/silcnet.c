@@ -145,7 +145,7 @@ static void *silc_net_gethostbyaddr_thread(void *context)
 /* Resolves IP address for hostname. */
 
 bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address, 
-			    uint32 address_len)
+			    SilcUInt32 address_len)
 {
 #ifdef HAVE_IPV6
   struct addrinfo hints, *ai, *tmp, *ip4 = NULL, *ip6 = NULL;
@@ -226,7 +226,7 @@ void silc_net_gethostbyname_async(const char *name,
 
 /* Resolves hostname by IP address. */
 
-bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len)
+bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len)
 {
 #ifdef HAVE_IPV6
   struct addrinfo req, *ai;
@@ -406,7 +406,7 @@ bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
 
 /* Return remote port by socket. */
 
-uint16 silc_net_get_remote_port(int sock)
+SilcUInt16 silc_net_get_remote_port(int sock)
 {
 #ifdef HAVE_IPV6
   struct sockaddr_storage remote;
@@ -438,7 +438,7 @@ uint16 silc_net_get_remote_port(int sock)
 
 /* Return local port by socket. */
 
-uint16 silc_net_get_local_port(int sock)
+SilcUInt16 silc_net_get_local_port(int sock)
 {
 #ifdef HAVE_IPV6
   struct sockaddr_storage local;

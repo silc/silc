@@ -204,7 +204,7 @@ typedef enum {
  * SYNOPSIS
  *
  *    typedef void (*SilcTaskCallback)(SilcSchedule schedule, 
- *                                     SilcTaskEvent type, uint32 fd, 
+ *                                     SilcTaskEvent type, SilcUInt32 fd, 
  *                                     void *context);
  *
  * DESCRIPTION
@@ -224,7 +224,7 @@ typedef enum {
  *
  ***/
 typedef void (*SilcTaskCallback)(SilcSchedule schedule, SilcTaskEvent type,
-				 uint32 fd, void *context);
+				 SilcUInt32 fd, void *context);
 
 /* Macros */
 
@@ -259,7 +259,7 @@ typedef void (*SilcTaskCallback)(SilcSchedule schedule, SilcTaskEvent type,
  */
 #define SILC_TASK_CALLBACK(func)				\
 static void func(SilcSchedule schedule, SilcTaskEvent type,	\
-		 uint32 fd, void *context)
+		 SilcUInt32 fd, void *context)
 /***/
 
 /****d* silcutil/SilcScheduleAPI/SILC_TASK_CALLBACK_GLOBAL
@@ -279,7 +279,7 @@ static void func(SilcSchedule schedule, SilcTaskEvent type,	\
  */
 #define SILC_TASK_CALLBACK_GLOBAL(func)			\
 void func(SilcSchedule schedule, SilcTaskEvent type,	\
-	  uint32 fd, void *context)
+	  SilcUInt32 fd, void *context)
 /***/
 
 /* Prototypes */
@@ -409,7 +409,7 @@ void silc_schedule_wakeup(SilcSchedule schedule);
  *
  * SYNOPSIS
  *
- *    SilcTask silc_schedule_task_add(SilcSchedule schedule, uint32 fd,
+ *    SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
  *                                    SilcTaskCallback callback, 
  *                                    void *context, 
  *                                    long seconds, long useconds, 
@@ -448,7 +448,7 @@ void silc_schedule_wakeup(SilcSchedule schedule);
  *    in other threads as well.
  *   
  ***/
-SilcTask silc_schedule_task_add(SilcSchedule schedule, uint32 fd,
+SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 				SilcTaskCallback callback, void *context, 
 				long seconds, long useconds, 
 				SilcTaskType type, 
@@ -478,7 +478,7 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
  *
  * SYNOPSIS
  *
- *    void silc_schedule_task_del_by_fd(SilcSchedule schedule, uint32 fd);
+ *    void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd);
  *
  * DESCRIPTION
  *
@@ -492,7 +492,7 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
  *    since generic tasks does not match any specific fd.
  *
  ***/
-void silc_schedule_task_del_by_fd(SilcSchedule schedule, uint32 fd);
+void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del_by_callback
  *
@@ -536,7 +536,7 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context);
  *
  * SYNOPSIS
  *
- *    void silc_schedule_set_listen_fd(SilcSchedule schedule, uint32 fd,
+ *    void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
  *                                     SilcTaskEvent mask);
  *
  * DESCRIPTION
@@ -551,14 +551,14 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context);
  *    times to change the events.
  *
  ***/
-void silc_schedule_set_listen_fd(SilcSchedule schedule, uint32 fd,
+void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
 				 SilcTaskEvent mask);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_unset_listen_fd
  *
  * SYNOPSIS
  *
- *    void silc_schedule_unset_listen_fd(SilcSchedule schedule, uint32 fd);
+ *    void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
  *
  * DESCRIPTION
  *
@@ -567,6 +567,6 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, uint32 fd,
  *    after calling this function.
  *
  ***/
-void silc_schedule_unset_listen_fd(SilcSchedule schedule, uint32 fd);
+void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
 
 #endif
