@@ -1443,7 +1443,7 @@ sent inside arguments are actually Public Key Payloads.
           Arguments:  (1) <Client ID>  (2) <message>
 
       The <Client ID> is the client which left SILC network.  The
-      <message> is free UTF-8 text string indicating the reason of the
+      <message> is free text string indicating the reason of the
       signoff.
 
 
@@ -1559,8 +1559,8 @@ sent inside arguments are actually Public Key Payloads.
       Max Arguments:  1
           Arguments:  (1) <motd>
 
-      The <motd> is the Message of the Day.  It is UTF-8 encoded
-      string.  This notify MAY be ignored.
+      The <motd> is the Message of the Day.  This notify MAY be
+      ignored.
 
 
 10    SILC_NOTIFY_TYPE_CHANNEL_CHANGE
@@ -1618,8 +1618,8 @@ sent inside arguments are actually Public Key Payloads.
                       (3) <Kicker's Client ID>
 
       The <Client ID> is the client which was kicked from the channel.
-      The kicker may have set the UTF-8 <comment> string to indicate the 
-      reason for the kicking.  The <Kicker's Client ID> is the kicker.
+      The kicker may have set the <comment> to indicate the reason for
+      the kicking.  The <Kicker's Client ID> is the kicker.
 
 
 13    SILC_NOTIFY_TYPE_KILLED
@@ -1641,9 +1641,9 @@ sent inside arguments are actually Public Key Payloads.
                       (3) <Killer's ID>
 
       The <Client ID> is the client which was killed from the network.
-      The killer may have set the UTF-8 <comment> string to indicate the 
-      reason for the killing.  The <Killer's ID> is the killer, which
-      may be client but also router server.
+      The killer may have set the <comment> to indicate the reason for
+      the killing.  The <Killer's ID> is the killer, which may be
+      client but also router server.
 
 
 14    SILC_NOTIFY_TYPE_UMODE_CHANGE
@@ -1769,7 +1769,7 @@ Figure 14:  Error Payload
 
 .in 6
 o Error Message (variable length) - Human readable error
-  message as UTF-8 encoded string.
+  message as UTF-8 string.
 .in 3
 
 
@@ -2249,8 +2249,7 @@ o Username (variable length) - The username of the user on
 o Real Name Length (2 bytes) - Length of the Real Name field.
 
 o Real Name (variable length) - The real name of the user
-  on the host where connecting to the SILC server, as UTF-8
-  encoded string.
+  on the host where connecting to the SILC server.
 .in 3
 
 
