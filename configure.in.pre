@@ -546,8 +546,8 @@ AC_ARG_WITH(gmp,
 )
 
 AM_CONDITIONAL(SILC_MP_GMP, test x$mp_gmp = xtrue)
+AM_CONDITIONAL(SILC_MP_NSS_MPI, test x$mp_gmp = xfalse)
 if test x$mp_gmp = xfalse; then
-  AM_CONDITIONAL(SILC_MP_NSS_MPI, test x$mp_gmp = xfalse)
   AC_DEFINE(SILC_MP_NSS_MPI)
   AC_MSG_RESULT(Using NSS MPI as MP library)
 fi
