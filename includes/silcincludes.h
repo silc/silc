@@ -102,26 +102,18 @@ extern "C" {
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#else
-#error signal.h not found in the system
 #endif
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#else
-#error fcntl.h not found in the system
 #endif
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
-#else
-#error errno.h not found in the system
 #endif
 
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
-#else
-#error assert.h not found in the system
 #endif
 
 #if !defined(SILC_WIN32)
@@ -143,8 +135,6 @@ extern "C" {
 #include <sys/socket.h>
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
-#else
-#error netinet/in.h not found in the system
 #endif
 
 #ifdef HAVE_XTI_H
@@ -152,21 +142,15 @@ extern "C" {
 #else
 #ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
-#else
-#error xti.h nor even netinet/tcp.h found in the system
 #endif
 #endif
 
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
-#else
-#error netdb.h not found in the system
 #endif
 
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
-#else
-#error arpa/inet.h not found in the system
 #endif
 
 #ifdef HAVE_SYS_MMAN_H
