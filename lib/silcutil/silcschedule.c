@@ -399,7 +399,7 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 
       task = schedule->generic_queue->task;
       while(1) {
-	/* Validity of the task is checked always before and after
+	/* Validity of the task and fd is checked always before and after
 	   execution beacuse the task might have been unregistered
 	   in the callback function, ie. it is not valid anymore. */
 
@@ -414,7 +414,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	}
 
 	/* Is the task ready for writing */				
-	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE) {
+	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE &&
+	    fd == schedule->fd_list[i].fd) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
 	  task->callback(schedule, schedule->app_context,
