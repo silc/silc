@@ -172,5 +172,43 @@ SilcUInt32 silc_utf8_encoded_len(const unsigned char *bin, SilcUInt32 bin_len,
  ***/
 bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len);
 
+/****f* silcutil/SilcStrUtilAPI/silc_mime_parse
+ *
+ * SYNOPSIS
+ *
+ *    bool
+ *    silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
+ *                    char *version, SilcUInt32 version_size,
+ *                    char *content_type, SilcUInt32 content_type_size,
+ *                    char *transfer_encoding,
+ *                    SilcUInt32 transfer_encoding_size,
+ *                    unsigned char **mime_data_ptr,
+ *                    SilcUInt32 *mime_data_len);
+ *
+ * DESCRIPTION
+ *
+ *    Parses MIME header indicated by `mime' data block of length of
+ *    `mime_len'.  Returns TRUE if the `mime' is valid MIME object.
+ *    Parses from the MIME header the MIME Version (if present) and
+ *    copies it to the `version' pointer if provided, content type
+ *    indicating the data in the MIME object and copies it to the
+ *    `content_type' if provided, and the tranfer encoding (if present)
+ *    indicating the encoding of the data and copies it to the
+ *    `content_transfer_encoding' if provided.
+ *
+ *    The pointer to the actual data in the MIME object is saved into 
+ *    `mime_data_ptr'.  The pointer is a location in the `mime' and it 
+ *    does not allocate or copy anything, ie. the `mime_data_ptr' is a 
+ *    pointer to the `mime'.  The `mime_data_len' indicates the length of 
+ *    the data without the MIME header.  The caller is responsible of
+ *    NULL terminating the buffers it provides.
+ *
+ ***/
+bool
+silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
+                char *version, SilcUInt32 version_size,
+                char *content_type, SilcUInt32 content_type_size,
+                char *transfer_encoding, SilcUInt32 transfer_encoding_size,
+                unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len);
 
 #endif /* SILCSTRUTIL_H */

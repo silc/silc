@@ -408,3 +408,73 @@ bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
 {
   return silc_utf8_decode(utf8, utf8_len, 0, NULL, 0) != 0;
 }
+
+/* Mime constants and macros */
+#define MIME_VERSION "MIME-Version: "
+#define MIME_VERSION_LEN 14
+#define MIME_CONTENT_TYPE "Content-Type: "
+#define MIME_CONTENT_TYPE_LEN 14
+#define MIME_TRANSFER_ENCODING "Content-Transfer-Encoding: "
+#define MIME_TRANSFER_ENCODING_LEN 27
+
+#define MIME_GET_FIELD(header, mime, mime_len, field, field_len,	\
+		       dest, dest_size)					\
+do {									\
+  char *f = strstr(header, field);					\
+  if (f && dest) {							\
+    f = (char *)mime + (f - header) + field_len;			\
+    for (i = 0; i < (mime_len - (f - (char *)mime)); i++) {		\
+      if (f[i] == '\r' || f[i] == '\n' || i == dest_size)		\
+        break;								\
+      dest[i] = f[i];							\
+    }									\
+  }									\
+} while(0)
+
+/* Parses MIME object and MIME header in it. */
+
+bool 
+silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
+                char *version, SilcUInt32 version_size,
+                char *content_type, SilcUInt32 content_type_size,
+                char *transfer_encoding, SilcUInt32 transfer_encoding_size,
+                unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len)
+{ 
+  int i;
+  char header[512];
+   
+  memcpy(header, mime, 512 > mime_len ? mime_len : 512);
+  header[sizeof(header) - 1] = '\0';
+
+  /* Check for mandatory Content-Type field */
+  if (!strstr(header, MIME_CONTENT_TYPE))
+    return FALSE;
+  
+  /* Get the pointer to the data area in the object */
+  for (i = 0; i < mime_len; i++) {
+    if (mime_len >= i + 4 &&
+	mime[i    ] == '\r' && mime[i + 1] == '\n' &&
+	mime[i + 2] == '\r' && mime[i + 3] == '\n')
+      break;
+  }
+  if (i >= mime_len)
+    return FALSE;
+
+  if (mime_data_ptr)
+    *mime_data_ptr = (unsigned char *)mime + i + 4;
+  if (mime_data_len)
+    *mime_data_len = mime_len - ((mime + i + 4) - mime);
+  
+  /* Get MIME version, Content-Type and Transfer Encoding fields */
+  MIME_GET_FIELD(header, mime, mime_len,
+		 MIME_VERSION, MIME_VERSION_LEN,
+		 version, version_size);
+  MIME_GET_FIELD(header, mime, mime_len,
+		 MIME_CONTENT_TYPE, MIME_CONTENT_TYPE_LEN,
+		 content_type, content_type_size);
+  MIME_GET_FIELD(header, mime, mime_len,
+		 MIME_TRANSFER_ENCODING, MIME_TRANSFER_ENCODING_LEN,
+		 transfer_encoding, transfer_encoding_size);
+
+  return TRUE;
+}

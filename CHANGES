@@ -1,3 +1,8 @@
+Thu Apr 18 14:09:51 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_mime_parse function to parse MIME headers.
+	  Affected files are lib/silcutil/silcstruti.[ch].
+
 Wed Apr 17 22:07:59 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Fixed a bug in the pid writing function, which couldn't be
