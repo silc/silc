@@ -663,6 +663,8 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
       silc_hmac_free(entry->hmac);
     silc_free(entry->hmac_name);
     silc_free(entry->rekey);
+    if (entry->founder_key)
+      silc_pkcs_public_key_free(entry->founder_key);
 
     memset(entry, 'F', sizeof(*entry));
     silc_free(entry);

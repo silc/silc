@@ -141,8 +141,9 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcChannelEntry channel,
 				   SilcUInt32 mode_mask,
 				   void *id, SilcIdType id_type,
-				   char *cipher, char *hmac,
-				   char *passphrase);
+				   const char *cipher, const char *hmac,
+				   const char *passphrase,
+				   SilcPublicKey founder_key);
 void silc_server_send_notify_cumode(SilcServer server,
 				    SilcSocketConnection sock,
 				    bool broadcast,

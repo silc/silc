@@ -683,15 +683,16 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
       channel->channel_key) {
     SilcUInt32 mac_len = silc_hmac_len(channel->hmac);
     SilcUInt32 iv_len = silc_cipher_get_block_len(channel->channel_key);
+    unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
 
     if (data_len <= mac_len + iv_len) {
       SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
       return FALSE;
     }
 
-    memcpy(channel->iv, data + (data_len - iv_len), iv_len);
+    memcpy(iv, data + (data_len - iv_len), iv_len);
     silc_channel_message_payload_encrypt(data, data_len - iv_len - mac_len,
-					 data_len, channel->iv, iv_len,
+					 data_len, iv, iv_len,
 					 channel->channel_key, channel->hmac);
   }
 
@@ -1174,14 +1175,18 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcChannelEntry channel,
 				   SilcUInt32 mode_mask,
 				   void *id, SilcIdType id_type,
-				   char *cipher, char *hmac,
-				   char *passphrase)
+				   const char *cipher, const char *hmac,
+				   const char *passphrase,
+				   SilcPublicKey founder_key)
 {
   SilcBuffer idp;
-  unsigned char mode[4];
+  unsigned char mode[4], *key = NULL;
+  SilcUInt32 key_len = 0;
 
   idp = silc_id_payload_encode((void *)id, id_type);
   SILC_PUT32_MSB(mode_mask, mode);
+  if (founder_key)
+    key = silc_pkcs_public_key_encode(founder_key, &key_len);
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
@@ -1190,11 +1195,13 @@ void silc_server_send_notify_cmode(SilcServer server,
 			       cipher, cipher ? strlen(cipher) : 0,
 			       hmac, hmac ? strlen(hmac) : 0,
 			       passphrase, passphrase ? 
-			       strlen(passphrase) : 0);
+			       strlen(passphrase) : 0,
+			       key, key_len);
+  silc_free(key);
   silc_buffer_free(idp);
 }
 
-/* Sends CUMODE_CHANGE notify type. This tells that `client_id' changed the
+/* Sends CUMODE_CHANGE notify type. This tells that `id' changed the
    `target' client's mode on `channel'. The notify packet is always
    destined to the channel. */
 

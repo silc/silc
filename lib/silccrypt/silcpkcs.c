@@ -811,6 +811,25 @@ bool silc_pkcs_public_key_compare(SilcPublicKey key1, SilcPublicKey key2)
   return FALSE;
 }
 
+/* Copies the public key indicated by `public_key' and returns new allocated
+   public key which is indentical to the `public_key'. */
+
+SilcPublicKey silc_pkcs_public_key_copy(SilcPublicKey public_key)
+{
+  SilcPublicKey key = silc_calloc(1, sizeof(*key));
+  if (!key)
+    return NULL;
+
+  key->len = public_key->len;
+  key->name = silc_memdup(public_key->name, strlen(public_key->name));
+  key->identifier = silc_memdup(public_key->identifier,
+				strlen(public_key->identifier));
+  key->pk = silc_memdup(public_key->pk, public_key->pk_len);
+  key->pk_len = public_key->pk_len;
+
+  return key;
+}
+
 /* Encodes SILC private key from SilcPrivateKey. Returns the encoded data. */
 
 unsigned char *

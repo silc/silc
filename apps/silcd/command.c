@@ -3221,16 +3221,9 @@ static void silc_server_command_join_channel(SilcServer server,
     if (channel->founder_key && idata->public_key &&
 	silc_pkcs_public_key_compare(channel->founder_key, 
 				     idata->public_key)) {
-      void *auth_data = (channel->founder_method == SILC_AUTH_PASSWORD ?
-			 (void *)channel->founder_passwd : 
-			 (void *)channel->founder_key);
-      SilcUInt32 auth_data_len = 
-	(channel->founder_method == SILC_AUTH_PASSWORD ?
-	 channel->founder_passwd_len : 0);
-
       /* Check whether the client is to become founder */
-      if (silc_auth_verify_data(auth, auth_len, channel->founder_method, 
-				auth_data, auth_data_len,
+      if (silc_auth_verify_data(auth, auth_len, SILC_AUTH_PUBLIC_KEY,
+				channel->founder_key, 0,
 				idata->hash, client->id, SILC_ID_CLIENT)) {
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	founder = TRUE;
@@ -3350,6 +3343,7 @@ static void silc_server_command_join_channel(SilcServer server,
   silc_hash_table_add(channel->user_list, client, chl);
   silc_hash_table_add(client->channels, channel, chl);
   channel->user_count++;
+  channel->disabled = FALSE;
 
   /* Get users on the channel */
   silc_server_get_users_on_channel(server, channel, &user_list, &mode_list,
@@ -3526,7 +3520,8 @@ SILC_SERVER_CMD_FUNC(join)
     SilcClientEntry entry = (SilcClientEntry)cmd->sock->user_data;
     client_id = silc_id_dup(entry->id, SILC_ID_CLIENT);
 
-    if (!channel || channel->disabled) {
+    if (!channel || 
+	(channel->disabled && server->server_type != SILC_ROUTER)) {
       /* Channel not found */
 
       /* If we are standalone server we don't have a router, we just create 
@@ -3655,7 +3650,8 @@ SILC_SERVER_CMD_FUNC(join)
 
   /* If the channel does not have global users and is also empty the client
      will be the channel founder and operator. */
-  if (!channel->global_users && !silc_hash_table_count(channel->user_list))
+  if (!channel->disabled &&
+      !channel->global_users && !silc_hash_table_count(channel->user_list))
     umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 
   /* Join to the channel */
@@ -3898,6 +3894,9 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcUInt32 mode_mask = 0, tmp_len, tmp_len2;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   bool set_mask = FALSE;
+  SilcPublicKey founder_key = NULL;
+  unsigned char *fkey = NULL;
+  SilcUInt32 fkey_len = 0;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CMODE, cmd, 1, 7);
 
@@ -4184,46 +4183,28 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
       if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
 	/* Set the founder authentication */
-	SilcAuthPayload auth;
-	
 	tmp = silc_argument_get_arg_type(cmd->args, 7, &tmp_len);
 	if (!tmp) {
-	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+	  silc_server_command_send_status_reply(
+				     cmd, SILC_COMMAND_CMODE,
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
 	  goto out;
 	}
 
-	auth = silc_auth_payload_parse(tmp, tmp_len);
-	if (!auth) {
+	/* Verify the payload before setting the mode */
+	if (!silc_auth_verify_data(tmp, tmp_len, SILC_AUTH_PUBLIC_KEY, 
+				   idata->public_key, 0, idata->hash,
+				   client->id, SILC_ID_CLIENT)) {
 	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
+						SILC_STATUS_ERR_AUTH_FAILED,
+						0);
 	  goto out;
 	}
 
 	/* Save the public key */
-	tmp = silc_pkcs_public_key_encode(idata->public_key, &tmp_len);
-	silc_pkcs_public_key_decode(tmp, tmp_len, &channel->founder_key);
-	silc_free(tmp);
-	
-	channel->founder_method = silc_auth_get_method(auth);
-
-	if (channel->founder_method == SILC_AUTH_PASSWORD) {
-	  tmp = silc_auth_get_data(auth, &tmp_len);
-	  channel->founder_passwd = silc_memdup(tmp, tmp_len);
-	  channel->founder_passwd_len = tmp_len;
-	} else {
-	  /* Verify the payload before setting the mode */
-	  if (!silc_auth_verify(auth, channel->founder_method, 
-				channel->founder_key, 0, idata->hash,
-				client->id, SILC_ID_CLIENT)) {
-	    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-						  SILC_STATUS_ERR_AUTH_FAILED,
-						  0);
-	    goto out;
-	  }
-	}
-
-	silc_auth_payload_free(auth);
+	channel->founder_key = silc_pkcs_public_key_copy(idata->public_key);
+	founder_key = channel->founder_key;
+	fkey = silc_pkcs_public_key_encode(founder_key, &fkey_len);
       }
     }
   } else {
@@ -4231,10 +4212,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       if (channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
 	if (channel->founder_key)
 	  silc_pkcs_public_key_free(channel->founder_key);
-	if (channel->founder_passwd) {
-	  silc_free(channel->founder_passwd);
-	  channel->founder_passwd = NULL;
-	}
+	channel->founder_key = NULL;
       }
     }
   }
@@ -4245,13 +4223,14 @@ SILC_SERVER_CMD_FUNC(cmode)
   /* Send CMODE_CHANGE notify. */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 5,
+				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 6,
 				     cidp->data, cidp->len, 
 				     tmp_mask, 4,
 				     cipher, cipher ? strlen(cipher) : 0,
 				     hmac, hmac ? strlen(hmac) : 0,
 				     passphrase, passphrase ? 
-				     strlen(passphrase) : 0);
+				     strlen(passphrase) : 0,
+				     fkey, fkey_len);
 
   /* Set CMODE notify type to network */
   if (!server->standalone)
@@ -4259,7 +4238,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 				  server->server_type == SILC_ROUTER ? 
 				  TRUE : FALSE, channel,
 				  mode_mask, client->id, SILC_ID_CLIENT,
-				  cipher, hmac, passphrase);
+				  cipher, hmac, passphrase, founder_key);
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
@@ -4273,6 +4252,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   silc_buffer_free(cidp);
 
  out:
+  silc_free(fkey);
   silc_free(channel_id);
   silc_server_command_free(cmd);
 }
@@ -4406,38 +4386,33 @@ SILC_SERVER_CMD_FUNC(cumode)
     if (!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
       /* The client tries to claim the founder rights. */
       unsigned char *tmp_auth;
-      SilcUInt32 tmp_auth_len, auth_len;
-      void *auth;
-      
+      SilcUInt32 tmp_auth_len;
+
       if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
 	  !channel->founder_key || !idata->public_key ||
 	  !silc_pkcs_public_key_compare(channel->founder_key, 
 					idata->public_key)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					      SILC_STATUS_ERR_NOT_YOU, 0);
+					      SILC_STATUS_ERR_AUTH_FAILED, 0);
 	goto out;
       }
 
       tmp_auth = silc_argument_get_arg_type(cmd->args, 4, &tmp_auth_len);
       if (!tmp_auth) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
+					      SILC_STATUS_ERR_AUTH_FAILED, 0);
 	goto out;
       }
 
-      auth = (channel->founder_method == SILC_AUTH_PASSWORD ?
-	      (void *)channel->founder_passwd : (void *)channel->founder_key);
-      auth_len = (channel->founder_method == SILC_AUTH_PASSWORD ?
-		  channel->founder_passwd_len : 0);
-      
-      if (!silc_auth_verify_data(tmp_auth, tmp_auth_len,
-				 channel->founder_method, auth, auth_len,
-				 idata->hash, client->id, SILC_ID_CLIENT)) {
+      /* Verify the authentication payload */
+      if (!silc_auth_verify_data(tmp_auth, tmp_auth_len, SILC_AUTH_PUBLIC_KEY,
+				 channel->founder_key, 0, idata->hash,
+				 client->id, SILC_ID_CLIENT)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
 					      SILC_STATUS_ERR_AUTH_FAILED, 0);
 	goto out;
       }
-      
+
       sender_mask = chl->mode |= SILC_CHANNEL_UMODE_CHANFO;
       notify = TRUE;
     }

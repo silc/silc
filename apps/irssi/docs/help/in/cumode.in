@@ -14,17 +14,14 @@ are available:
         both founder and operator rights, can be used
         only to remove both modes at once).
 
-    f <nickname>[@<server>] [-pubkey|<password>]
+    f <nickname>[@<server>] [-pubkey]
 
         Set/Unset channel founder.  If the -pubkey
         option or <password> is provided then the
         client is claiming the founder rights by
-        providing the channel founder authentication
-        data.  If the -pubkey is provided then the
-        authentication is performed using the
-        client's public key.  If you are channel
-        founder you can set the channel founder
-        authentication using CMODE command.
+        providing your public key as argument.  If
+        you are channel founder you can set the channel
+        founder authentication using CMODEc command.
 
     o <nickname>[@<server>]
 

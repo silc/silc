@@ -139,14 +139,14 @@ void silc_server_free_sock_user_data(SilcServer server,
 void silc_server_remove_from_channels(SilcServer server,
 				      SilcSocketConnection sock,
 				      SilcClientEntry client,
-				      int notify,
-				      char *signoff_message,
-				      int keygen);
-int silc_server_remove_from_one_channel(SilcServer server,
-					SilcSocketConnection sock,
-					SilcChannelEntry channel,
-					SilcClientEntry client,
-					int notify);
+				      bool notify,
+				      const char *signoff_message,
+				      bool keygen);
+bool silc_server_remove_from_one_channel(SilcServer server,
+					 SilcSocketConnection sock,
+					 SilcChannelEntry channel,
+					 SilcClientEntry client,
+					 bool notify);
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
 				   SilcStatus status, ...);

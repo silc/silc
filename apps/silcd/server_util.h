@@ -67,6 +67,13 @@ bool silc_server_channel_has_global(SilcChannelEntry channel);
    returns TRUE and FALSE if there is not one locally connected client. */
 bool silc_server_channel_has_local(SilcChannelEntry channel);
 
+/* This function removes the channel and all users on the channel, unless
+   the channel is permanent.  In this case the channel is disabled but all
+   users are removed from the channel.  Returns TRUE if the channel is
+   destroyed totally, and FALSE if it is permanent and remains. */
+bool silc_server_channel_delete(SilcServer server,
+				SilcChannelEntry channel);
+
 /* Returns TRUE if the given client is on the channel.  FALSE if not. 
    This works because we assure that the user list on the channel is
    always in up to date thus we can only check the channel list from 
@@ -161,5 +168,13 @@ bool silc_server_check_watcher_list(SilcServer server,
    is not watching any nicknames. */
 bool silc_server_del_from_watcher_list(SilcServer server,
 				       SilcClientEntry client);
+
+/* Force the client indicated by `chl' to change the channel user mode
+   on channel indicated by `channel' to `forced_mode'. */
+bool silc_server_force_cumode_change(SilcServer server,
+				     SilcSocketConnection sock,
+				     SilcChannelEntry channel,
+				     SilcChannelClientEntry chl,
+				     SilcUInt32 forced_mode);
 
 #endif /* SERVER_UTIL_H */

@@ -575,9 +575,6 @@ void silc_server_notify(SilcServer server,
 				   FALSE : !server->standalone);
     }
 
-    /* Change mode */
-    channel->mode = mode;
-
     /* Get the hmac */
     tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
     if (tmp) {
@@ -602,6 +599,48 @@ void silc_server_notify(SilcServer server,
     if (tmp) {
       silc_free(channel->passphrase);
       channel->passphrase = silc_memdup(tmp, tmp_len);
+    }
+
+    /* Get founder public key */
+    tmp = silc_argument_get_arg_type(args, 6, &tmp_len);
+    if (tmp && mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+      if (channel->founder_key)
+	silc_pkcs_public_key_free(channel->founder_key);
+      channel->founder_key = NULL;
+      silc_pkcs_public_key_decode(tmp, tmp_len, &channel->founder_key);
+
+      if (!channel->founder_key || 
+	  (client && client->data.public_key && 
+	   server->server_type == SILC_ROUTER &&
+	   !silc_pkcs_public_key_compare(channel->founder_key,
+					 client->data.public_key))) {
+	/* A really buggy server isn't checking public keys correctly.
+	   It's not possible that the mode setter and founder wouldn't
+	   have same public key. */
+	SILC_LOG_DEBUG(("Enforcing sender to change channel mode"));
+
+	mode &= ~SILC_CHANNEL_MODE_FOUNDER_AUTH;
+	silc_server_send_notify_cmode(server, sock, FALSE, channel,
+				      mode, server->id, SILC_ID_SERVER,
+				      channel->cipher, 
+				      channel->hmac_name,
+				      channel->passphrase, NULL);
+	if (channel->founder_key)
+	  silc_pkcs_public_key_free(channel->founder_key);
+	channel->founder_key = NULL;
+      } else if (!client->data.public_key) {
+	client->data.public_key = 
+	  silc_pkcs_public_key_copy(channel->founder_key);
+      }
+    }
+
+    /* Change mode */
+    channel->mode = mode;
+
+    if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) &&
+	channel->founder_key) {
+      silc_pkcs_public_key_free(channel->founder_key);
+      channel->founder_key = NULL;
     }
 
     break;
@@ -713,66 +752,53 @@ void silc_server_notify(SilcServer server,
 	}
       }
 
-      /* Get entry to the channel user list */
-      silc_hash_table_list(channel->user_list, &htl);
-      while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
-	/* If the mode is channel founder and we already find a client 
-	   to have that mode on the channel we will enforce the sender
-	   to change the channel founder mode away. There can be only one
-	   channel founder on the channel. */
-	if (server->server_type == SILC_ROUTER &&
-	    mode & SILC_CHANNEL_UMODE_CHANFO &&
-	    chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
-	  SilcBuffer idp;
-	  unsigned char cumode[4];
+      if (mode & SILC_CHANNEL_UMODE_CHANFO &&
+	  !(chl->mode & SILC_CHANNEL_UMODE_CHANFO) && 
+	  server->server_type == SILC_ROUTER) {
+	/* Check whether this client is allowed to be channel founder on
+	   this channel. */
 
-	  if (chl->client == client && chl->mode == mode) {
-	    notify_sent = TRUE;
-	    break;
-	  }
-
+	/* If channel doesn't have founder auth mode then it's impossible
+	   that someone would be getting founder rights with CUMODE command.
+	   In that case there already either is founder or there isn't
+	   founder at all on the channel. */
+	if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
+	  /* Force the mode to not have founder mode */
 	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
-	  silc_server_send_notify_cumode(server, sock, FALSE, channel, mode,
-					 client2->id, SILC_ID_CLIENT,
-					 client2->id);
-	  
-	  idp = silc_id_payload_encode(client2->id, SILC_ID_CLIENT);
-	  SILC_PUT32_MSB(mode, cumode);
-	  silc_server_send_notify_to_channel(server, sock, channel, FALSE, 
-					     SILC_NOTIFY_TYPE_CUMODE_CHANGE,
-					     3, idp->data, idp->len,
-					     cumode, 4,
-					     idp->data, idp->len);
-	  silc_buffer_free(idp);
+	  silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	  notify_sent = TRUE;
-
-	  /* Force the mode change if we alredy set the mode */
-	  if (chl2) {
-	    chl2->mode = mode;
-	    silc_free(channel_id);
-	    silc_hash_table_list_reset(&htl);
-	    goto out;
-	  }
+	  break;
 	}
-	
-	if (chl->client == client2) {
-	  if (chl->mode == mode) {
+
+	/* Get the founder of the channel and if found then this client
+	   cannot be the founder since there already is one. */
+	silc_hash_table_list(channel->user_list, &htl);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
+	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	    mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	    notify_sent = TRUE;
 	    break;
 	  }
+	silc_hash_table_list_reset(&htl);
+	if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
+	  break;
 
-	  SILC_LOG_DEBUG(("Changing the channel user mode"));
-
-	  /* Change the mode */
-	  chl->mode = mode;
-	  if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
-	    break;
-	  
-	  chl2 = chl;
-	}
+	/* XXX Founder not found of the channel.  Since the founder auth mode
+	   is set on the channel now check whether this is the client that
+	   originally set the mode. If we don't have the public key it
+	   is resolved first.
+	if (!silc_pkcs_public_key_compare(channel->founder_key,
+					  client->data.public_key))
+	*/
+ 
       }
-      silc_hash_table_list_reset(&htl);
-      
+
+      SILC_LOG_DEBUG(("Changing the channel user mode"));
+
+      /* Change the mode */
+      chl->mode = mode;
+
       /* Send the same notify to the channel */
       if (!notify_sent)
 	silc_server_packet_send_to_channel(server, sock, channel, 
@@ -2627,14 +2653,14 @@ void silc_server_new_channel(SilcServer server,
 	SILC_LOG_DEBUG(("Forcing the server to change channel mode"));
 	silc_server_send_notify_cmode(server, sock, FALSE, channel,
 				      channel->mode, server->id,
-				      SILC_ID_SERVER,
-				      channel->cipher, channel->hmac_name,
-				      channel->passphrase);
+				      SILC_ID_SERVER, channel->cipher,
+				      channel->hmac_name,
+				      channel->passphrase,
+				      channel->founder_key);
       }
 
       /* Create new key for the channel and send it to the server and
 	 everybody else possibly on the channel. */
-
       if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
 	if (!silc_server_create_channel_key(server, channel, 0))
 	  return;

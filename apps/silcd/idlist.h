@@ -415,14 +415,10 @@ struct SilcClientEntryStruct {
        the cipher to be used. This can be set at SILC_COMMAND_JOIN.
 
    SilcPublicKey founder_key
-   SilcAuthMethod founder_method
-   unsigned char *founder_passwd
-   SilcUInt32 founder_passwd_len
 
-       If the SILC_CMODE_FOUNDER_AUTH has been set then these will include
-       the founder's public key, authentication method and the password
-       if the method is SILC_AUTH_PASSWORD.  If it is SILC_AUTH_PUBLIC_KEY
-       then the `founder_passwd' is NULL.
+       If the SILC_CMODE_FOUNDER_AUTH has been set then this will include
+       the founder's public key.  When the mode and this key is set the
+       channel is also permanent channel and cannot be destroyed.
 
    SilcHashTable user_list
 
@@ -463,15 +459,10 @@ struct SilcChannelEntryStruct {
   char *channel_name;
   SilcUInt32 mode;
   SilcChannelID *id;
-  bool global_users;
   char *topic;
   char *cipher;
   char *hmac_name;
-
   SilcPublicKey founder_key;
-  SilcAuthMethod founder_method;
-  unsigned char *founder_passwd;
-  SilcUInt32 founder_passwd_len;
 
   SilcUInt32 user_limit;
   unsigned char *passphrase;
@@ -489,14 +480,15 @@ struct SilcChannelEntryStruct {
   SilcCipher channel_key;
   unsigned char *key;
   SilcUInt32 key_len;
-  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
   SilcHmac hmac;
 
   SilcServerChannelRekey rekey;
-
   unsigned long created;
-  bool disabled;
-  bool users_resolved;
+
+  /* Flags */
+  unsigned int global_users : 1;
+  unsigned int disabled : 1;
+  unsigned int users_resolved : 1;
 };
 
 /* 

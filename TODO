@@ -24,12 +24,6 @@ TODO/bugs In SILC Server
 	  for single IP address, key exchange frequency, key exchange
 	  frequency for single IP. Add also frequency base.
 
- o If server send CUMODE_CHANGE notify (like setting founder) to router
-   and router does not have founder on channel (founder is left or there's
-   no founder on channel at all), the router will accept the server's
-   founder mode change, even though it perhaps should not do that (Fix 
-   this to 0.9).
-
  o Implement the SILC_CUMODE_QUIET user mode (Do this to 0.9.x).
 
  o Implement the <Requested Attributes> and the Attribute Payload to
@@ -90,10 +84,3 @@ Manual (Do these to 0.9 and 1.0).
  o Write "Platform Implementations" document to describe what platforms
    Toolkit support, what has been implemented, what has not been, what
    works differently etc.
-
-
-TODO in SILC Protocol
-=====================
-
- 17. Cell wide channel founder support, and permanent channels when
-     founder mode set.

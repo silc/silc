@@ -1350,7 +1350,6 @@ void silc_client_close_connection_real(SilcClient client,
 
   /* Unregister all tasks */
   silc_schedule_task_del_by_fd(client->schedule, sock->sock);
-  silc_schedule_task_del_by_fd(client->schedule, sock->sock);
 
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);

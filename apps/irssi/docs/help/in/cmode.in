@@ -24,18 +24,16 @@ option(s).  The following modes are available:
                     be provided when joining to the channel.
     c <cipher>      Set/unset channel's cipher
     h <hmac>        Set/unset channel's hmac
-    f <-pubkey|<password>
-                    Set/unset channel founder authentication.
+    f               Set/unset channel founder authentication.
                     Channel founder may set this mode so that
                     if the client leaves the channel it can
                     claim the founder rights when it returns
-                    to the channel.  If -pubkey is set then
-                    the authentication will be done using the
-                    client's public key.  You can claim the
-                    founder rights using the CUMODE command.
+                    to the channel, and to set the channel to
+                    be permanent channel.  You can claim the
+                    founder rights using CUMODE or JOIN commands.
 
 Multiple modes can be set/unset at once if the modes does not
 require any arguments.  If mode requires an argument then only
 one mode can be set at once.
 
-See also: CUMODE, UMODE
+See also: CUMODE, UMODE, JOIN

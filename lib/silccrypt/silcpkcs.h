@@ -227,6 +227,7 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
 int silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
 				SilcPublicKey *public_key);
 bool silc_pkcs_public_key_compare(SilcPublicKey key1, SilcPublicKey key2);
+SilcPublicKey silc_pkcs_public_key_copy(SilcPublicKey public_key);
 unsigned char *
 silc_pkcs_private_key_encode(SilcPrivateKey private_key, SilcUInt32 *len);
 unsigned char *

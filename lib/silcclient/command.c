@@ -1413,26 +1413,12 @@ SILC_CLIENT_CMD_FUNC(cmode)
       if (add) {
 	mode |= SILC_CHANNEL_MODE_FOUNDER_AUTH;
 	type = 7;
-
-	if (cmd->argc < 4) {
-	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
-	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-	  goto out;
-	}
-
-	if (!strcasecmp(cmd->argv[3], "-pubkey")) {
-	  auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
-						    cmd->client->private_key,
-						    cmd->client->rng, 
-						    conn->hash,
-						    conn->local_id,
-						    SILC_ID_CLIENT);
-	} else {
-	  auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
-					  cmd->argv[3], cmd->argv_lens[3]);
-	}
-
+	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+						  cmd->client->private_key,
+						  cmd->client->rng, 
+						  conn->hash,
+						  conn->local_id,
+						  SILC_ID_CLIENT);
 	arg = auth->data;
 	arg_len = auth->len;
       } else {

@@ -899,8 +899,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
        them in the entry */
     if (!(mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) && entry->founder_key) {
       silc_pkcs_public_key_free(entry->founder_key);
-      silc_free(entry->founder_passwd);
-      entry->founder_passwd = NULL;
+      entry->founder_key = NULL;
     }
   }
 

@@ -2729,9 +2729,9 @@ void silc_server_free_sock_user_data(SilcServer server,
 void silc_server_remove_from_channels(SilcServer server,
 				      SilcSocketConnection sock,
 				      SilcClientEntry client,
-				      int notify,
-				      char *signoff_message,
-				      int keygen)
+				      bool notify,
+				      const char *signoff_message,
+				      bool keygen)
 {
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
@@ -2744,6 +2744,8 @@ void silc_server_remove_from_channels(SilcServer server,
     return;
 
   clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+  if (!clidp)
+    notify = FALSE;
 
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
@@ -2751,22 +2753,15 @@ void silc_server_remove_from_channels(SilcServer server,
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
-    /* Remove channel from client's channel list */
-    silc_hash_table_del(client->channels, channel);
-
-    /* Remove channel if there is no users anymore */
+    /* Remove channel if this is last client leaving the channel, unless
+       the channel is permanent. */
     if (server->server_type == SILC_ROUTER &&
 	silc_hash_table_count(channel->user_list) < 2) {
-      if (channel->rekey)
-	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
-      if (silc_idlist_del_channel(server->local_list, channel))
-	server->stat.my_channels--;
-      else
-        silc_idlist_del_channel(server->global_list, channel);
+      silc_server_channel_delete(server, channel);
       continue;
     }
 
-    /* Remove client from channel's client list */
+    silc_hash_table_del(client->channels, channel);
     silc_hash_table_del(channel->user_list, chl->client);
     channel->user_count--;
 
@@ -2780,7 +2775,8 @@ void silc_server_remove_from_channels(SilcServer server,
     server->stat.my_chanclients--;
 
     /* If there is not at least one local user on the channel then we don't
-       need the channel entry anymore, we can remove it safely. */
+       need the channel entry anymore, we can remove it safely, unless the
+       channel is permanent channel */
     if (server->server_type != SILC_ROUTER &&
 	!silc_server_channel_has_local(channel)) {
       /* Notify about leaving client if this channel has global users. */
@@ -2792,37 +2788,13 @@ void silc_server_remove_from_channels(SilcServer server,
 					   signoff_message, signoff_message ?
 					   strlen(signoff_message) : 0);
 
-      if (channel->rekey)
-	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
-
-      if (channel->founder_key) {
-	/* The founder auth data exists, do not remove the channel entry */
-	SilcChannelClientEntry chl2;
-	SilcHashTableList htl2;
-
-	channel->disabled = TRUE;
-
-	silc_hash_table_list(channel->user_list, &htl2);
-	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
-	  silc_hash_table_del(chl2->client->channels, channel);
-	  silc_hash_table_del(channel->user_list, chl2->client);
-	  channel->user_count--;
-	  silc_free(chl2);
-	}
-	silc_hash_table_list_reset(&htl2);
-	continue;
-      }
-
-      /* Remove the channel entry */
-      if (silc_idlist_del_channel(server->local_list, channel))
-	server->stat.my_channels--;
-      else
-        silc_idlist_del_channel(server->global_list, channel);
+      silc_schedule_task_del_by_context(server->schedule, channel->rekey);
+      silc_server_channel_delete(server, channel);
+      silc_buffer_free(clidp);
       continue;
     }
 
-    /* Send notify to channel about client leaving SILC and thus
-       the entire channel. */
+    /* Send notify to channel about client leaving SILC and channel too */
     if (notify)
       silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 					 SILC_NOTIFY_TYPE_SIGNOFF,
@@ -2831,10 +2803,10 @@ void silc_server_remove_from_channels(SilcServer server,
 					 signoff_message, signoff_message ?
 					 strlen(signoff_message) : 0);
 
+    /* Re-generate channel key if needed */
     if (keygen && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
-      /* Re-generate channel key */
       if (!silc_server_create_channel_key(server, channel, 0))
-	goto out;
+	continue;
 
       /* Send the channel key to the channel. The key of course is not sent
 	 to the client who was removed from the channel. */
@@ -2844,7 +2816,6 @@ void silc_server_remove_from_channels(SilcServer server,
     }
   }
 
- out:
   silc_hash_table_list_reset(&htl);
   silc_buffer_free(clidp);
 }
@@ -2855,44 +2826,33 @@ void silc_server_remove_from_channels(SilcServer server,
    last client leaves the channel. If `notify' is FALSE notify messages
    are not sent. */
 
-int silc_server_remove_from_one_channel(SilcServer server,
-					SilcSocketConnection sock,
-					SilcChannelEntry channel,
-					SilcClientEntry client,
-					int notify)
+bool silc_server_remove_from_one_channel(SilcServer server,
+					 SilcSocketConnection sock,
+					 SilcChannelEntry channel,
+					 SilcClientEntry client,
+					 bool notify)
 {
   SilcChannelClientEntry chl;
   SilcBuffer clidp;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Removing %s from channel %s",
+		  silc_id_render(client->id, SILC_ID_CLIENT), 
+		  channel->channel_name));
 
   /* Get the entry to the channel, if this client is not on the channel
      then return Ok. */
   if (!silc_hash_table_find(client->channels, channel, NULL, (void *)&chl))
     return TRUE;
 
-  /* Remove the client from the channel. The client is removed from
-     the channel's user list. */
-
-  clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-
-  /* Remove channel from client's channel list */
-  silc_hash_table_del(client->channels, chl->channel);
-
-  /* Remove channel if there is no users anymore */
+  /* Remove channel if this is last client leaving the channel, unless
+     the channel is permanent. */
   if (server->server_type == SILC_ROUTER &&
       silc_hash_table_count(channel->user_list) < 2) {
-    if (channel->rekey)
-      silc_schedule_task_del_by_context(server->schedule, channel->rekey);
-    if (silc_idlist_del_channel(server->local_list, channel))
-      server->stat.my_channels--;
-    else
-      silc_idlist_del_channel(server->global_list, channel);
-    silc_buffer_free(clidp);
+    silc_server_channel_delete(server, channel);
     return FALSE;
   }
 
-  /* Remove client from channel's client list */
+  silc_hash_table_del(client->channels, chl->channel);
   silc_hash_table_del(channel->user_list, chl->client);
   channel->user_count--;
 
@@ -2905,8 +2865,13 @@ int silc_server_remove_from_one_channel(SilcServer server,
   silc_free(chl);
   server->stat.my_chanclients--;
 
+  clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+  if (!clidp)
+    notify = FALSE;
+
   /* If there is not at least one local user on the channel then we don't
-     need the channel entry anymore, we can remove it safely. */
+     need the channel entry anymore, we can remove it safely, unless the
+     channel is permanent channel */
   if (server->server_type != SILC_ROUTER &&
       !silc_server_channel_has_local(channel)) {
     /* Notify about leaving client if this channel has global users. */
@@ -2915,34 +2880,9 @@ int silc_server_remove_from_one_channel(SilcServer server,
 					 SILC_NOTIFY_TYPE_LEAVE, 1,
 					 clidp->data, clidp->len);
 
+    silc_schedule_task_del_by_context(server->schedule, channel->rekey);
+    silc_server_channel_delete(server, channel);
     silc_buffer_free(clidp);
-
-    if (channel->rekey)
-      silc_schedule_task_del_by_context(server->schedule, channel->rekey);
-
-    if (channel->founder_key) {
-      /* The founder auth data exists, do not remove the channel entry */
-      SilcChannelClientEntry chl2;
-      SilcHashTableList htl2;
-
-      channel->disabled = TRUE;
-
-      silc_hash_table_list(channel->user_list, &htl2);
-      while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
-	silc_hash_table_del(chl2->client->channels, channel);
-	silc_hash_table_del(channel->user_list, chl2->client);
-	channel->user_count--;
-	silc_free(chl2);
-      }
-      silc_hash_table_list_reset(&htl2);
-      return FALSE;
-    }
-
-    /* Remove the channel entry */
-    if (silc_idlist_del_channel(server->local_list, channel))
-      server->stat.my_channels--;
-    else
-      silc_idlist_del_channel(server->global_list, channel);
     return FALSE;
   }
 
