@@ -1,3 +1,10 @@
+Mon Jun 10 09:28:21 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Made the private key generation after expiration optional.
+	  If not created after expiration the old key will re-expire
+	  at a later time (and thus key pair is not necessary to
+	  change).  Affected file irssi/src/silc/core/clientutil.c.
+
 Sun Jun  9 18:58:25 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* The length arguments in bind() and connect() were wrong

@@ -408,6 +408,12 @@ int silc_client_check_silc_dir()
     }
   }
 
+  /* Check the owner of the public key */
+  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
+    fprintf(stderr, "You don't seem to own your public key!?\n");
+    return FALSE;
+  }
+  
   if ((stat(file_private_key, &st)) == -1) {
     /* If file doesn't exist */
     if (errno == ENOENT) {
@@ -422,12 +428,6 @@ int silc_client_check_silc_dir()
     }
   }
     
-  /* Check the owner of the public key */
-  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
-    fprintf(stderr, "You don't seem to own your public key!?\n");
-    return FALSE;
-  }
-  
   /* Check the owner of the private key */
   if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
     fprintf(stderr, "You don't seem to own your private key!?\n");
@@ -453,18 +453,34 @@ int silc_client_check_silc_dir()
     
   /* 86400 is seconds in a day. */
   if (curtime >= (86400 * SILC_CLIENT_KEY_EXPIRES)) {
-    fprintf(stdout, 
-	    "--------------------------------------------------\n"
-	    "Your private key has expired and needs to be\n" 
-	    "recreated.  This will be done automatically now.\n"
-	    "Your new key will expire in %d days from today.\n"
-	    "--------------------------------------------------\n",
-	    SILC_CLIENT_KEY_EXPIRES);
+    char *answer;
 
-    silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
-				SILC_CLIENT_DEF_PKCS_LEN,
-				file_public_key, 
-				file_private_key, identifier, NULL, NULL);
+    fprintf(stdout, 
+	    "----------------------------------------------------\n"
+	    "Your private key has expired and needs to be\n" 
+	    "recreated.  Would you like to create a new key pair\n"
+	    "now?  If you answer Yes, the new key will expire in\n"
+	    "%d days from today.  If you answer No, the old key\n"
+	    "will expire again in %d days from today.\n"
+	    "----------------------------------------------------\n",
+	    SILC_CLIENT_KEY_EXPIRES, SILC_CLIENT_KEY_EXPIRES);
+
+    answer = silc_get_input("Would you like to create a new key pair "
+			    "([y]/n)?: ", FALSE);
+    if (!answer || answer[0] == 'Y' || answer[0] == 'y') {
+      silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
+				  SILC_CLIENT_DEF_PKCS_LEN,
+				  file_public_key, 
+				  file_private_key, identifier, NULL, NULL);
+    } else {
+#ifdef HAVE_UTIME
+      struct utimbuf utim;
+      utim.actime = time(NULL);
+      utim.modtime = time(NULL);
+      utime(file_private_key, &utim);
+#endif
+    }
+    silc_free(answer);
   }
   
   if (identifier)

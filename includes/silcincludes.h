@@ -197,6 +197,10 @@ extern "C" {
 #include <termios.h>
 #endif
 
+#ifdef HAVE_UTIME_H
+#include <utime.h>
+#endif
+
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG
