@@ -158,6 +158,9 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   /* Check software version */
 
   cp = version + 9;
+  if (!cp)
+    status = SILC_SKE_STATUS_BAD_VERSION;
+
   maj = atoi(cp);
   cp = strchr(cp, '.');
   if (cp) {
@@ -171,6 +174,9 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   }
 
   cp = silc_version_string + 9;
+  if (!cp)
+    status = SILC_SKE_STATUS_BAD_VERSION;
+
   maj2 = atoi(cp);
   cp = strchr(cp, '.');
   if (cp) {
