@@ -1,3 +1,8 @@
+Thu Apr 19 19:52:46 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the configuration data fetching when accepting new
+	  connections in the server.  Affected file silcd/server.c.
+
 Thu Apr 19 11:40:20 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added `sender_entry' argument to the function

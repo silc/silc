@@ -40,6 +40,12 @@ TODO/bugs In SILC Server
    own resolver stuff (through scheduler, if possible without writing
    too much own stuff) or use threads.
 
+ o The ID List must be optimized.  When the lists grow the searching
+   becomes a lot slower and is some cases the lists are searched many
+   times, like with channel messages (twice at least).  Some sort of
+   hash tables should replace the lists.  Thus, the ID cache should be
+   rewritten to use hash tables internally.
+
  o [DenyConnection] config section is not implemented.
 
  o The backup router support described in the protocol specification
@@ -72,12 +78,6 @@ TODO/bugs In SILC Libraries
    to export a function that registers default algorithms, if application
    does not want to register them one by one (if for example SILC client
    is run without config files at all).
-
- o The ID List must be optimized.  When the lists grow the searching
-   becomes a lot slower and is some cases the lists are searched many
-   times, like with channel messages (twice at least).  Some sort of
-   hash tables should replace the lists.  Thus, the ID cache should be
-   rewritten to use hash tables internally.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be

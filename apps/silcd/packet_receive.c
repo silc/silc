@@ -1537,9 +1537,9 @@ static void silc_server_new_id_real(SilcServer server,
   else
     id_list = server->global_list;
 
-  /* If the packet is coming from router then use the sender as the
+  /* If the packet is coming from server then use the sender as the
      origin of the the packet. If it came from router then check the real
-     sender of the packet and use that as he origin. */
+     sender of the packet and use that as the origin. */
   if (sock->type == SILC_SOCKET_TYPE_SERVER) {
     router_sock = sock;
     router = sock->user_data;
@@ -1551,9 +1551,10 @@ static void silc_server_new_id_real(SilcServer server,
     if (!router)
       router = silc_idlist_find_server_by_id(server->local_list,
 					     sender_id, NULL);
-    assert(router != NULL);
-    router_sock = sock;
     silc_free(sender_id);
+    if (!router)
+      goto out;
+    router_sock = sock;
   }
 
   switch(id_type) {

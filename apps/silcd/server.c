@@ -947,7 +947,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   SilcSocketConnection newsocket;
   SilcServerKEInternalContext *proto_ctx;
   int sock, port;
-  void *config;
+  void *cconfig, *sconfig, *rconfig;
 
   SILC_LOG_DEBUG(("Accepting new connection"));
 
@@ -1007,30 +1007,29 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
      have to check all configurations since we don't know what type of
      connection this is. */
   port = server->sockets[fd]->port; /* Listenning port */
-  if (!(config = silc_server_config_find_client_conn(server->config,
+  if (!(cconfig = silc_server_config_find_client_conn(server->config,
+						      newsocket->ip, port)))
+    cconfig = silc_server_config_find_client_conn(server->config,
+						  newsocket->hostname, 
+						  port);
+  if (!(sconfig = silc_server_config_find_server_conn(server->config,
+						     newsocket->ip, 
+						     port)))
+    sconfig = silc_server_config_find_server_conn(server->config,
+						  newsocket->hostname,
+						  port);
+  if (!(rconfig = silc_server_config_find_router_conn(server->config,
 						     newsocket->ip, port)))
-    if (!(config = silc_server_config_find_client_conn(server->config,
-						       newsocket->hostname, 
-						       port)))
-      if (!(config = silc_server_config_find_server_conn(server->config,
-							 newsocket->ip, 
-							 port)))
-	if (!(config = silc_server_config_find_server_conn(server->config,
-							   newsocket->hostname,
-							   port)))
-	  if (!(config = 
-		silc_server_config_find_router_conn(server->config,
-						    newsocket->ip, port)))
-	    if (!(config = 
-		  silc_server_config_find_router_conn(server->config,
-						      newsocket->hostname, 
-						      port))) {
-	      silc_server_disconnect_remote(server, newsocket, 
-					    "Server closed connection: "
-					    "Connection refused");
-	      server->stat.conn_failures++;
-	      return;
-	    }
+    rconfig = silc_server_config_find_router_conn(server->config,
+						  newsocket->hostname, 
+						  port);
+  if (!cconfig && !sconfig && !rconfig) {
+    silc_server_disconnect_remote(server, newsocket, 
+				  "Server closed connection: "
+				  "Connection refused");
+    server->stat.conn_failures++;
+    return;
+  }
 
   /* The connection is allowed */
 
@@ -1044,7 +1043,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   proto_ctx->sock = newsocket;
   proto_ctx->rng = server->rng;
   proto_ctx->responder = TRUE;
-  proto_ctx->config = config;
+  proto_ctx->cconfig = cconfig;
+  proto_ctx->sconfig = sconfig;
+  proto_ctx->rconfig = rconfig;
 
   /* Prepare the connection for key exchange protocol. We allocate the
      protocol but will not start it yet. The connector will be the
@@ -1143,7 +1144,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   proto_ctx->responder = TRUE;
   proto_ctx->dest_id_type = ctx->dest_id_type;
   proto_ctx->dest_id = ctx->dest_id;
-  proto_ctx->config = ctx->config;
+  proto_ctx->cconfig = ctx->cconfig;
+  proto_ctx->sconfig = ctx->sconfig;
+  proto_ctx->rconfig = ctx->rconfig;
 
   /* Free old protocol as it is finished now */
   silc_protocol_free(protocol);
@@ -1243,7 +1246,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   case SILC_SOCKET_TYPE_ROUTER:
     {
       SilcServerEntry new_server;
-      SilcServerConfigSectionServerConnection *conn = ctx->config;
+      SilcServerConfigSectionServerConnection *conn = 
+	sock->type == SILC_SOCKET_TYPE_SERVER ? ctx->sconfig : ctx->rconfig;
 
       SILC_LOG_DEBUG(("Remote host is %s", 
 		      sock->type == SILC_SOCKET_TYPE_SERVER ? 
@@ -2209,7 +2213,8 @@ void silc_server_free_sock_user_data(SilcServer server,
 
       /* Free all client entries that this server owns as they will
 	 become invalid now as well. */
-      silc_server_remove_clients_by_server(server, user_data, TRUE);
+      if (user_data->id)
+	silc_server_remove_clients_by_server(server, user_data, TRUE);
 
       /* If this was our primary router connection then we're lost to
 	 the outside world. */
@@ -2534,8 +2539,6 @@ void silc_server_remove_from_channels(SilcServer server,
 					   signoff_message, signoff_message ?
 					   strlen(signoff_message) : 0);
 
-      server->stat.my_channels--;
-
       if (channel->rekey)
 	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
 
@@ -2556,6 +2559,7 @@ void silc_server_remove_from_channels(SilcServer server,
 
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
+      server->stat.my_channels--;
       continue;
     }
 
@@ -2649,7 +2653,6 @@ int silc_server_remove_from_one_channel(SilcServer server,
 					   SILC_NOTIFY_TYPE_LEAVE, 1,
 					   clidp->data, clidp->len);
 
-      server->stat.my_channels--;
       silc_buffer_free(clidp);
 
       if (channel->rekey)
@@ -2672,6 +2675,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
 
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
+      server->stat.my_channels--;
       return FALSE;
     }
 
