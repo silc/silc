@@ -1,0 +1,401 @@
+.pl 10.0i
+.po 0
+.ll 7.2i
+.lt 7.2i
+.nr LL 7.2i
+.nr LT 7.2i
+.ds LF Riikonen
+.ds RF FORMFEED[Page %]
+.ds CF
+.ds LH Internet Draft
+.ds RH XXX
+.ds CH
+.na
+.hy 0
+.in 0
+.nf
+Network Working Group                                        P. Riikonen
+Internet-Draft
+draft-riikonen-presence-attrs-00.txt                         XXX
+Expires: XXX
+
+.in 3
+
+.ce 3
+User Online Presence and Information Attributes
+<draft-riikonen-presence-attrs-00.txt>
+
+.ti 0
+Status of this Memo
+
+This document is an Internet-Draft and is in full conformance with   
+all provisions of Section 10 of RFC 2026.  Internet-Drafts are   
+working documents of the Internet Engineering Task Force (IETF), its   
+areas, and its working groups.  Note that other groups may also   
+distribute working documents as Internet-Drafts.   
+
+Internet-Drafts are draft documents valid for a maximum of six months   
+and may be updated, replaced, or obsoleted by other documents at any   
+time.  It is inappropriate to use Internet-Drafts as reference   
+material or to cite them other than as "work in progress."   
+
+The list of current Internet-Drafts can be accessed at   
+http://www.ietf.org/ietf/1id-abstracts.txt   
+
+The list of Internet-Draft Shadow Directories can be accessed at   
+http://www.ietf.org/shadow.html   
+
+The distribution of this memo is unlimited.  
+
+
+.ti 0
+Abstract
+
+ZZZ
+
+
+
+
+
+
+
+.ti 0
+Table of Contents
+
+.nf
+1 Introduction ..................................................  x
+  1.1 Requirements Terminology ..................................  x
+
+4 Security Considerations .......................................  x
+5 References ....................................................  x
+6 Author's Address ..............................................  x
+
+
+.ti 0
+1. Introduction
+
+
+.ti 0
+X.X Attribute Payload
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Attribute   |   Attr Flags  |        Attribute Length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                        Attribute Data                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 1:  Attribute Payload
+
+
+.in 6
+o Attribute (1 byte) - Indicates the attribute included in this
+  Attribute Payload.
+
+o Attribute Flags (1 byte) - Indicates the flags associated
+  with this attribute.  The following flags are defined:
+
+    0x01        ATTRIBUTE_FLAG_INVALID
+
+      The attribute value in Attribute Data is invalid, or
+      unknown.  This may be set to indicate that a requested
+      attribute is not available, its value is unknown, or
+      sender does not understand it.
+
+    0x02        ATTRIBUTE_FLAG_VALID
+
+      The attribute value is included in the Attribute Data.
+
+  When sending this payload to request attributes this value
+  MUST be set to zero (0) value.  When sending a reply to the
+  request this field MUST NOT include a zero (0) value.
+
+o Attribute Length (2 bytes) - Indicates the length of the
+  Attribute Data field, not including any other field.
+
+o Attribute Data (variable length) - The Attribute Data.
+  The contents of this field is attribute specific, defined
+  subsequently.
+
+
+.ti 0
+X.X Attributes
+
+The following values can appear in the Attribute field in the
+Attribute Payload to indicate the content of the attribute.  All
+integer values are stored in the MSB first order.  Strings are
+always UTF-8 [RFC2279] encoded, and include 2 bytes length field
+indicating the length of the string.  Hence, when string value
+appears in this documentation it is encoded as:
+
+.in 6
+Length       Type       Value
+2 bytes      integer    Length of String field
+variable     UTF-8      String
+.in 3
+
+If string is not present then the length field includes zero (0)
+value.
+
+The format of the attribute data is represented as length, type and
+value.  Example:
+
+.in 6
+Length       Type       Value
+2 bytes      integer    Some integer value
+variable     string     Some string
+1 byte       boolean    Boolean value
+.in 3
+
+When sending multiple Attribute Payloads it is possible to include
+multiple same attributes in the packet.
+
+
+.in 6
+0    ATTRIBUTE_NONE
+
+     This attribute is reserved and it is never sent.
+
+
+1    ATTRIBUTE_USER_INFO
+
+     This attribute includes general information about the user, their
+     name and contact information.  The content of this attribute is
+     a VCard version 3.0 as defined in RFC 2425 [RFC2425] and RFC 2426
+     [RFC2426].  Note that some of the information that VCard provides
+     can be also provided in the means of providing other attributes.
+     The rationale for this is that the VCard does not provide all the
+     information, or with the required precision that may be desired in
+     some applications.  It is therefore RECOMMENDED that this attribute
+     would be used to provide only basic and constant user information,
+     such as name and contact information, but not online status 
+     information.
+
+     Length       Type       Value
+     variable     VCard      Basic user information
+
+
+2    ATTRIBUTE_SERVICE
+
+     This attribute indicates a service in the Internet that the user
+     is currently using or has logged in.  The value of this attribute
+     is as follows:
+
+     Length       Type       Value
+     4 bytes      integer    Service Port (IANA specified)
+     variable     string     Service Address
+     1 byte       boolean    Online status.  If this is set to
+                             0x01 (true) it means the user is online
+                             in the service.  Set to 0x00 (false) when
+                             out of reach.
+
+
+x    ATTRIBUTE_STATUS_MOOD
+
+
+
+x    ATTRIBUTE_STATUS_FREETEXT
+
+     This attribute includes the user's online status free text.  It
+     can provide personal status as a text message.  The contents of
+     this attribute is a UTF-8 encoded free text string.
+
+     Length       Type       Value
+     variable     string     Free text status string
+
+
+x    ATTRIBUTE_STATUS_MESSAGE
+
+     This attribute includes the user's online status message.  It
+     could provide for example a multi media message showing the status
+     of the user.  The contents of this attribute is a MIME object,
+     which can be used to provide for example video, audio, image or
+     other similar status message.  It could also provide a reference
+     to the message, for example an URL address.
+
+     Length       Type       Value
+     variable     MIME       Status message as MIME object
+
+
+x    ATTRIBUTE_STATUS_COMMUNICATION
+
+
+
+
+x    ATTRIBUTE_PREFERRED_LANGUAGE
+
+
+x    ATTRIBUTE_PREFERRED_CONTACT
+
+
+x    ATTRIBUTE_TIMEZONE
+
+     This attribute can be used to provide the current local time for
+     the user.  The contents of this attribute is a UTF-8 encoded
+     string and the format of the string is UTC time zone defined
+     in the ISO 8601.
+
+     Length       Type       Value
+     variable     string     UTC date, format as in ISO 8601
+
+     Note that ATTRIBUTE_USER_INFO may also provide this information.
+     However it is RECOMMENDED that this attribute is used when
+     current time zone information is provided.
+
+
+x    ATTRIBUTE_GEOLOCATION
+
+     This attribute can be used to provide measured global location of
+     the user.  How this information is gathered is out of scope of
+     this document.  The attribute can provide latitude and longitude
+     lateral positions, but also a vertical position.  A parameter
+     describing the accuracy of the information can also be provided.
+
+
+
+     Note that ATTRIBUTE_USER_INFO may also provide this information,
+     however it does not have the vertical position, or the accuracy
+     parameter.  It is RECOMMENDED that this attribute is used when
+     providing current global position information.
+
+
+x    ATTRIBUTE_DEVICE_INFO
+
+
+x    ATTRIBUTE_EXTENSION
+
+     This attribute indicates that the attribute value is vendor,
+     application or service specific attribute extension.  This field
+     MUST include MIME object, which is the extension value.  This
+     document does not specify any explicit MIME objects for this
+     attribute.
+
+     Length       Type       Value
+     variable     MIME       Attribute extension as MIME object
+
+
+x    ATTRIBUTE_USER_PUBLIC_KEY
+
+     This attribute includes the user's public key or certificate.
+     As the public key and certificate format depends on which sort
+     of algorithm or certificate encoding user is using we need to
+     define a mechanism to differentiate the public key types from
+     each other.  This document specifies the most common public keys
+     and certificates.  This attribute can be used to deliver the
+     user's public key, and it MUST be present if also the
+     ATTRIBUTE_USER_DIGITAL_SIGNATURE is present.  Note that the
+     recipient of this attribute SHOULD verify the public key from
+     a third party, for example from Certification Authority.
+
+     Length       Type       Value
+     variable     string     Public key/certificate type
+     variable     data       Public key/certificate data
+
+     The following public key/certificate types are defined:
+
+     ssh-rsa           SSH RSA public key [SSH-TRANS]
+     ssh-dss           SSH DSS public key [SSH-TRANS]
+     silc-rsa          SILC RSA public key [SILC1]
+     silc-dss          SILC DSS public key [SILC1]
+     pgp-sign-rsa      OpenPGP RSA certificate [RFC2440]
+     pgp-sign-dss      OpenPGP DSS certificate [RFC2440]
+     x509v3-sign-rsa   X.509 Version 3 RSA certificate [RFC2459]
+     x509v3-sign-dss   X.509 Version 3 DSS certificate [RFC2459]
+
+     These public key/certificate types are equivalent to the types
+     specified for SSH protocol [SSH-TRANS] and are expected to be
+     officially assigned by IANA.  The silc-rsa and silc-dss are not
+     currently specified in SSH, however they are considered to be
+     IANA assigned later anyway.
+
+     The encoding of the public key/certificate data in the attribute
+     is done in the manner defined in their respective definitions.
+
+     Note that these public keys are intended for signing.  Some
+     certificates may have a key usage restrictions and same key cannot
+     be used for both encryption and signing.  Therefore, the name
+     of the certificate type indicates that they are intended for 
+     signing.
+
+
+x    ATTRIBUTE_SERVER_PUBLIC_KEY
+
+     This attribute includes a third party server or authority public
+     key or CA certificate and MUST be present if the attribute
+     ATTRIBUTE_SERVER_DIGITAL_SIGNATURE is also present.  The format
+     for this attribute is identical to the ATTRIBUTE_USER_PUBLIC_KEY 
+     attribute.
+
+
+x    ATTRIBUTE_USER_DIGITAL_SIGNATURE
+
+     This attribute value includes digital signature of all Attribute
+     Payloads except this attribute.  This signature can be provided by
+     the user.  This attribute SHOULD be last attribute provided in the 
+     reply so that it is easier for the receiver to compute the signature 
+     data to be verified.  The format and encoding of this attribute
+     depends on the public key or certificate used to produce the
+     signature.  See the ATTRIBUTE_USER_PUBLIC_KEY for all public keys
+     and certificates that can be used to produce a signature.
+
+     Length       Type       Value
+     variable     data       Digital signature data
+
+     The encodings are as follows per public key/certificate type:
+
+     ssh-rsa and ssh-dss                   Defined in [SSH-TRANS]
+     silc-rsa and silc-dss                 Defined in [SILC1]
+     pgp-sign-rsa and pgp-sign-dss         Defined in [RFC2440]
+     x509v3-sign-rsa and x509v3-sign-dss   Defined in [PKCS7]
+
+     The procedure producing the signature and encoding it are done
+     in the manner defined in their respective definitions, see the
+     provided references.
+
+
+x    ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
+
+     This attribute value includes digital signature of all Attribute
+     Payloads except this attribute, but including the attribute
+     ATTRIBUTE_USER_DIGITAL_SIGNATURE.  This signature can be provided
+     by a third party server or an authority which has verified the
+     information provided by the user.  How it verifies this information
+     is out of scope of this document, however it may base its
+     information to a previous registeration information and current
+     online status of the user in a service.  This attribute SHOULD be 
+     last when provided, so that it is easier for the receiver to
+     compute the signature data to be verified.  The format for this
+     attribute is identical to the ATTRIBUTE_USER_DIGITAL_SIGNATURE
+     attribute.
+.in 3
+
+
+.ti 0
+4 Security Considerations
+
+
+
+.ti 0
+5 References 
+
+
+
+.ti 0
+6 Author's Address
+
+Pekka Riikonen
+Snellmanninkatu 34 A 15
+70100 Kuopio
+Finland
+
+EMail: priikone@iki.fi
+
+This Internet-Draft expires XXX
