@@ -572,6 +572,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!client_entry)
       goto out;
     silc_free(client_id);
+    client_id = NULL;
 
     /* Wait for resolving if necessary */
     if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
@@ -1023,6 +1024,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     silc_free(channel_id);
+    channel_id = NULL;
 
     /* Get the new ID */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
@@ -1157,6 +1159,7 @@ void silc_client_notify_by_server(SilcClient client,
       tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
       if (tmp) {
 	silc_free(client_id);
+	client_id = NULL;
 	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
 	if (!id)
 	  goto out;
