@@ -119,12 +119,32 @@ static void silc_client_protocol_ke_set_keys(SilcSKE ske,
   silc_hmac_set_key(conn->hmac, keymat->hmac_key, keymat->hmac_key_len);
 }
 
-/* XXX TODO */
+/* Checks the version string of the server. */
 
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 				     unsigned int len)
 {
-  return SILC_SKE_STATUS_OK;
+  SilcSocketConnection conn = (SilcSocketConnection)ske->sock->user_data;
+  SilcClient client = (SilcClient)ske->user_data;
+  SilcSKEStatus status = SILC_SKE_STATUS_OK;
+
+  /* Check for initial version string */
+  if (!strstr(version, "SILC-1.0-"))
+    status = SILC_SKE_STATUS_BAD_VERSION;
+
+  /* Check software version */
+
+  if (len < strlen(silc_version_string))
+    status = SILC_SKE_STATUS_BAD_VERSION;
+
+  /* XXX for now there is no other tests due to the abnormal version
+     string that is used */
+
+  if (status != SILC_SKE_STATUS_OK)
+    client->ops->say(client, conn, 
+		     "We don't support server version `%s'", version);
+
+  return status;
 }
 
 /* Performs key exchange protocol. This is used for both initiator
@@ -156,6 +176,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       ske = silc_ske_alloc();
       ctx->ske = ske;
       ske->rng = client->rng;
+      ske->user_data = (void *)client;
       
       if (ctx->responder == TRUE) {
 #if 0

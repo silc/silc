@@ -775,6 +775,7 @@ silc_ske_select_security_properties(SilcSKE ske,
 				    SilcSKEStartPayload *payload,
 				    SilcSKEStartPayload *remote_payload)
 {
+  SilcSKEStatus status;
   SilcSKEStartPayload *rp;
   char *cp;
   int len;
@@ -783,6 +784,11 @@ silc_ske_select_security_properties(SilcSKE ske,
 
   rp = remote_payload;
 
+  /* Check version string */
+  status = silc_ske_check_version(ske, rp->version, rp->version_len);
+  if (status != SILC_SKE_STATUS_OK)
+    return status;
+
   /* Flags are returned unchanged. */
   payload->flags = rp->flags;
 
@@ -790,9 +796,6 @@ silc_ske_select_security_properties(SilcSKE ske,
   payload->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(unsigned char));
   payload->cookie_len = SILC_SKE_COOKIE_LEN;
   memcpy(payload->cookie, rp->cookie, SILC_SKE_COOKIE_LEN);
-
-  /* Check version string */
-  silc_ske_check_version(ske, rp->version, rp->version_len);
 
   /* Put our version to our reply */
   payload->version = strdup(version);

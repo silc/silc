@@ -1,3 +1,9 @@
+Sat Dec 16 17:39:54 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented version string checking to both client and server.
+	  The check is incomplete currently due to the abnormal version 
+	  strings used in development version of SILC.
+
 Fri Dec 15 15:55:12 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed char *data to unsigned char *data in ID Cache system to

@@ -115,12 +115,26 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
   sock->user_data = (void *)conn_data;
 }
 
-/* XXX TODO */
+/* Check remote host version string */
 
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 				     unsigned int len)
 {
-  return SILC_SKE_STATUS_OK;
+  SilcSKEStatus status = SILC_SKE_STATUS_OK;
+
+  /* Check for initial version string */
+  if (!strstr(version, "SILC-1.0-"))
+    status = SILC_SKE_STATUS_BAD_VERSION;
+
+  /* Check software version */
+
+  if (len < strlen(silc_version_string))
+    status = SILC_SKE_STATUS_BAD_VERSION;
+
+  /* XXX for now there is no other tests due to the abnormal version
+     string that is used */
+
+  return status;
 }
 
 /* Performs key exchange protocol. This is used for both initiator
