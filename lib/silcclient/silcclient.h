@@ -297,14 +297,16 @@ typedef struct {
   /* Message sent to the application by library. `conn' associates the
      message to a specific connection.  `conn', however, may be NULL. 
      The `type' indicates the type of the message sent by the library.
-     The applicationi can for example filter the message according the
+     The application can for example filter the message according the
      type. */
   void (*say)(SilcClient client, SilcClientConnection conn, 
 	      SilcClientMessageType type, char *msg, ...);
 
   /* Message for a channel. The `sender' is the sender of the message 
-     The `channel' is the channel. The `msg' is the message.  Note that
-     `msg' maybe NULL. */
+     The `channel' is the channel. The `message' is the message.  Note 
+     that `message' maybe NULL.  The `flags' indicates message flags 
+     and it is used to determine how the message can be interpreted
+     (like it may tell the message is multimedia message). */
   void (*channel_message)(SilcClient client, SilcClientConnection conn, 
 			  SilcClientEntry sender, SilcChannelEntry channel, 
 			  SilcMessageFlags flags,
@@ -312,7 +314,10 @@ typedef struct {
 			  SilcUInt32 message_len);
 
   /* Private message to the client. The `sender' is the sender of the
-     message. */
+     message. The message is `message'and maybe NULL.  The `flags' 
+     indicates message flags  and it is used to determine how the message 
+     can be interpreted (like it may tell the message is multimedia 
+     message). */
   void (*private_message)(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcMessageFlags flags,
 			  const unsigned char *message,
@@ -394,8 +399,9 @@ typedef struct {
 
   /* Verifies received public key. The `conn_type' indicates which entity
      (server, client etc.) has sent the public key. If user decides to trust
-     the key may be saved as trusted public key for later use. The 
-     `completion' must be called after the public key has been verified. */
+     the application may save the key as trusted public key for later 
+     use. The `completion' must be called after the public key has been 
+     verified. */
   void (*verify_public_key)(SilcClient client, SilcClientConnection conn,
 			    SilcSocketType conn_type, unsigned char *pk, 
 			    SilcUInt32 pk_len, SilcSKEPKType pk_type,
@@ -425,10 +431,10 @@ typedef struct {
      desired (application may start it later by calling the function
      silc_client_perform_key_agreement). If TRUE is returned also the
      `completion' and `context' arguments must be set by the application. */
-  int (*key_agreement)(SilcClient client, SilcClientConnection conn,
-		       SilcClientEntry client_entry, const char *hostname,
-		       SilcUInt16 port, SilcKeyAgreementCallback *completion,
-		       void **context);
+  bool (*key_agreement)(SilcClient client, SilcClientConnection conn,
+		        SilcClientEntry client_entry, const char *hostname,
+		        SilcUInt16 port, SilcKeyAgreementCallback *completion,
+		        void **context);
 
   /* Notifies application that file transfer protocol session is being
      requested by the remote client indicated by the `client_entry' from
