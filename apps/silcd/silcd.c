@@ -308,6 +308,8 @@ SILC_TASK_CALLBACK(dump_stats)
   STAT_OUTPUT("  Packets sent            : %d", silcd->stat.packets_sent);
   STAT_OUTPUT("  Packets received        : %d", silcd->stat.packets_received);
 
+#undef STAT_OUTPUT
+
   fflush(fdd);
   fclose(fdd);
 }
@@ -392,15 +394,28 @@ static void silc_get_debug_level(int level)
     }
 }
 
-/* This function should not be called directly but throught the wrapper
+/* This function should not be called directly but thru the wrapper
    macro SILC_SERVER_LOG_STDERR() */
 
 void silc_server_stderr(char *message)
 {
-  if (silcd->background)
+  if (silcd->background) {
+    char *p, *n = message;
+
+    /* remove newlines if we are going to output it to a log file */
+    for (p = n; *p; p++) {
+      if (*p != '\n') {
+	if (p != n)
+	  *n = *p;
+	n++;
+      }
+    }
+    *n = 0;
+
     silc_log_output(SILC_LOG_ERROR, message);
+  }
   else {
-    fprintf(stderr, "%s", message);
+    fprintf(stderr, "%s\n", message);
     silc_free(message);
   }
 }

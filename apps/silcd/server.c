@@ -201,7 +201,7 @@ static bool silc_server_listen(SilcServer server, const char *server_ip,
 {
   *sock = silc_net_create_server(port, server_ip);
   if (*sock < 0) {
-    SILC_LOG_ERROR(("Could not create server listener: %s on %hu",
+    SILC_SERVER_LOG_ERROR(("Could not create server listener: %s on %hu",
 			server_ip, port));
     return FALSE;
   }
@@ -285,7 +285,7 @@ bool silc_server_init(SilcServer server)
   server->starttime = time(NULL);
 
   /* Take config object for us */
-  silc_server_config_ref(&server->config_ref, server->config, 
+  silc_server_config_ref(&server->config_ref, server->config,
 			 server->config);
 
   /* Steal public and private key from the config object */
@@ -343,7 +343,7 @@ bool silc_server_init(SilcServer server)
   server->global_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
 
   /* Init watcher list */
-  server->watcher_list = 
+  server->watcher_list =
     silc_hash_table_alloc(1, silc_hash_client_id_hash, NULL,
 			  silc_hash_data_compare, (void *)CLIENTID_HASH_LEN,
 			  NULL, NULL, TRUE);

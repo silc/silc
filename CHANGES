@@ -1,3 +1,10 @@
+Wed Sep 18 15:13:48 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Various cleanup in error message output in config parsing code
+	  and in server init code.  Fixed error log files containing
+	  too many newlines ('\n') in some situations.  Affected files are
+	  silcd/serverconfig.c, silcd/silcd.c, and silcd/server.c.
+
 Wed Sep 18 10:51:23 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Use the reverse lookupped hostname in client internals

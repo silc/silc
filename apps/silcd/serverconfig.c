@@ -108,15 +108,14 @@ my_find_param(SilcServerConfig config, const char *name)
   }
 
   SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
-			 "Cannot find Params \"%s\".\n", name));
+			 "Cannot find Params \"%s\".", name));
 
   return NULL;
 }
 
 /* parse an authdata according to its auth method */
 static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
-			      SilcUInt32 line, void **auth_data,
-			      SilcUInt32 *auth_data_len)
+			      void **auth_data, SilcUInt32 *auth_data_len)
 {
   if (auth_meth == SILC_AUTH_PASSWORD) {
     /* p is a plain text password */
@@ -138,9 +137,8 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
 
     if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_BIN)) {
-	SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line "
-			       "%lu: Could not load public key file!\n",
-			       line));
+	SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			       "Could not load public key file!"));
 	return FALSE;
       }
 
@@ -153,11 +151,9 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
 					   TRUE);
       silc_hash_table_add(*auth_data, public_key, public_key);
     }
-  } else {
-    SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line %lu: "
-			   "Unknown authentication method.\n", line));
-    return FALSE;
-  }
+  } else
+    abort();
+
   return TRUE;
 }
 
@@ -466,7 +462,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigServerInfoInterface);
     if ((port <= 0) || (port > 65535)) {
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
-			     "Invalid port number!\n"));
+			     "Invalid port number!"));
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -512,9 +508,8 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 				   SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
 				     SILC_PKCS_FILE_BIN)) {
-	SILC_SERVER_LOG_ERROR(("Error: Could not load public key file.\n"));
-	SILC_SERVER_LOG_ERROR(("   line %lu, file \"%s\"\n", line, file_tmp));
-	return SILC_CONFIG_ESILENT;
+	SILC_SERVER_LOG_ERROR(("Error: Could not load public key file."));
+	return SILC_CONFIG_EPRINTLINE;
       }
   }
   else if (!strcmp(name, "privatekey")) {
@@ -525,9 +520,8 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 				    SILC_PKCS_FILE_BIN))
       if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
 				      SILC_PKCS_FILE_PEM)) {
-	SILC_SERVER_LOG_ERROR(("Error: Could not load private key file.\n"));
-	SILC_SERVER_LOG_ERROR(("   line %lu, file \"%s\"\n", line, file_tmp));
-	return SILC_CONFIG_ESILENT;
+	SILC_SERVER_LOG_ERROR(("Error: Could not load private key file."));
+	return SILC_CONFIG_EPRINTLINE;
       }
   }
   else
@@ -556,7 +550,7 @@ SILC_CONFIG_CALLBACK(fetch_logging)
     if (flushdelay < 2) { /* this value was taken from silclog.h (min delay) */
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
 			    "Invalid flushdelay value, use quicklogs if you "
-			    "want real-time logging.\n"));
+			    "want real-time logging."));
       return SILC_CONFIG_EPRINTLINE;
     }
     config->logging_flushdelay = (long) flushdelay;
@@ -710,17 +704,17 @@ SILC_CONFIG_CALLBACK(fetch_client)
   }
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
-    if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
+    if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
 			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
-      got_errno = SILC_CONFIG_ESILENT;
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickey")) {
-    if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val, line,
+    if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void **)&tmp->publickeys, NULL)) {
-      got_errno = SILC_CONFIG_ESILENT;
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
@@ -776,18 +770,18 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   }
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
-    if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
+    if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
 			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
-      got_errno = SILC_CONFIG_ESILENT;
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
-    if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val, line,
+    if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void **)&tmp->publickeys, NULL)) {
-      got_errno = SILC_CONFIG_ESILENT;
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
@@ -872,18 +866,18 @@ SILC_CONFIG_CALLBACK(fetch_server)
   }
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
-    if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
+    if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
 			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
-      got_errno = SILC_CONFIG_ESILENT;
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
-    if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val, line,
+    if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void **)&tmp->publickeys, NULL)) {
-      got_errno = SILC_CONFIG_ESILENT;
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
@@ -936,7 +930,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
-			     "Invalid port number!\n"));
+			     "Invalid port number!"));
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -944,18 +938,18 @@ SILC_CONFIG_CALLBACK(fetch_router)
   }
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
-    if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val, line,
+    if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
 			   (void **)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
-      got_errno = SILC_CONFIG_ESILENT;
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
-    if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val, line,
+    if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void **)&tmp->publickeys, NULL)) {
-      got_errno = SILC_CONFIG_ESILENT;
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
@@ -980,7 +974,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
-			     "Invalid port number!\n"));
+			     "Invalid port number!"));
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1222,7 +1216,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* obtain a config file object */
   file = silc_config_open(filename);
   if (!file) {
-    SILC_SERVER_LOG_ERROR(("\nError: can't open config file `%s'\n",
+    SILC_SERVER_LOG_ERROR(("\nError: can't open config file `%s'",
 			   filename));
     return NULL;
   }
@@ -1246,10 +1240,10 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
       char *linebuf, *filename = silc_config_get_filename(file);
       SilcUInt32 line = silc_config_get_line(file);
       if (ret != SILC_CONFIG_EPRINTLINE)
-        SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.\n",
+        SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.",
 			       silc_config_strerror(ret)));
       linebuf = silc_config_read_line(file, line);
-      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n\n", filename,
+      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename,
 			     line, linebuf));
       silc_free(linebuf);
     }
@@ -1263,7 +1257,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* If config_new is incomplete, abort the object and return NULL */
   if (!config_new->server_info) {
     SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block "
-			   "`server_info'\n"));
+			   "`server_info'"));
     silc_server_config_destroy(config_new);
     return NULL;
   }
