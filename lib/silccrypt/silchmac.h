@@ -133,6 +133,19 @@ bool silc_hmac_unregister(SilcHmacObject *hmac);
  ***/
 bool silc_hmac_register_default(void);
 
+/****f* silccrypt/SilcHMACAPI/silc_hmac_unregister_all
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_hmac_unregister_all(void);
+ *
+ * DESCRIPTION
+ *
+ *    Unregisters all registered HMACs.
+ *
+ ***/
+bool silc_hmac_unregister_all(void);
+
 /****f* silccrypt/SilcHMACAPI/silc_hmac_alloc
  *
  * SYNOPSIS

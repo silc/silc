@@ -20,6 +20,8 @@
 
 #include "silcincludes.h"
 
+#ifndef SILC_STACKTRACE
+
 void *silc_malloc(size_t size)
 {
   void *addr;
@@ -57,3 +59,5 @@ void *silc_memdup(const void *ptr, size_t size)
   addr[size] = '\0';
   return (void *)addr;
 }
+
+#endif /* !SILC_STACKTRACE */

@@ -287,6 +287,7 @@ bool silc_schedule_uninit(SilcSchedule schedule)
   silc_schedule_internal_uninit(schedule->internal);
 
   silc_mutex_free(schedule->lock);
+  silc_free(schedule);
 
   return TRUE;
 }

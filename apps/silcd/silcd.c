@@ -485,8 +485,15 @@ int main(int argc, char **argv)
   /* Flush the logging system */
   silc_log_flush_all();
 
+  silc_free(silcd_config_file);
+  silc_free(opt_identifier);
+  silc_free(opt_keypath);
   exit(0);
+
  fail:
+  silc_free(silcd_config_file);
+  silc_free(opt_identifier);
+  silc_free(opt_keypath);
   exit(1);
 }
 

@@ -120,6 +120,7 @@ SilcUInt32 silc_##cipher##_context_len()
 bool silc_cipher_register(const SilcCipherObject *cipher);
 bool silc_cipher_unregister(SilcCipherObject *cipher);
 bool silc_cipher_register_default(void);
+bool silc_cipher_unregister_all(void);
 bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
 void silc_cipher_free(SilcCipher cipher);
 bool silc_cipher_is_supported(const unsigned char *name);

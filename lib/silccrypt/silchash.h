@@ -168,6 +168,19 @@ bool silc_hash_unregister(SilcHashObject *hash);
  ***/
 bool silc_hash_register_default(void);
 
+/****f* silccrypt/SilcHashAPI/silc_hash_unregister_all
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_hash_unregister_all(void);
+ *
+ * DESCRIPTION
+ *
+ *    Unregisters all registered hash functions.
+ *
+ ***/
+bool silc_hash_unregister_all(void);
+
 /****f* silccrypt/SilcHashAPI/silc_hash_alloc
  *
  * SYNOPSIS

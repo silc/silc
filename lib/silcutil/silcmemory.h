@@ -35,6 +35,8 @@
 
 /* Prototypes */
 
+#ifndef SILC_STACKTRACE
+
 /****f* silcutil/SilcMemoryAPI/silc_malloc
  *
  * SYNOPSIS
@@ -116,5 +118,9 @@ void silc_free(void *ptr);
  *
  ***/
 void *silc_memdup(const void *ptr, size_t size);
+
+#else
+#include "stacktrace.h"
+#endif /* SILC_STACKTRACE */
 
 #endif /* SILCMEMORY_H */

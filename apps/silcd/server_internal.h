@@ -129,6 +129,10 @@ struct SilcServerStruct {
   /* Pending command queue */
   SilcDList pending_commands;
 
+  /* Purge context for disconnected clients */
+  SilcIDListPurge purge_i;
+  SilcIDListPurge purge_g;
+
 #ifdef SILC_SIM
   /* SIM (SILC Module) list */
   SilcDList sim;

@@ -49,7 +49,8 @@ libsilcutil_a_SOURCES = \
 	silcutil.c \
 	silchashtable.c \
 	silcsockconn.c	\
-	silcprotocol.c
+	silcprotocol.c	\
+	stacktrace.c
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\

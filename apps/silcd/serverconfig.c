@@ -1314,6 +1314,15 @@ void silc_server_config_destroy(SilcServerConfig config)
     silc_free(config->logging_errors->file);
   if (config->logging_fatals)
     silc_free(config->logging_fatals->file);
+  silc_free(config->logging_info);
+  silc_free(config->logging_warnings);
+  silc_free(config->logging_errors);
+  silc_free(config->logging_fatals);
+
+  silc_log_set_file(SILC_LOG_INFO, NULL, 0, NULL);
+  silc_log_set_file(SILC_LOG_WARNING, NULL, 0, NULL);
+  silc_log_set_file(SILC_LOG_ERROR, NULL, 0, NULL);
+  silc_log_set_file(SILC_LOG_FATAL, NULL, 0, NULL);
 
   /* Destroy the ServerInfo struct */
   if (config->server_info) {
@@ -1338,6 +1347,7 @@ void silc_server_config_destroy(SilcServerConfig config)
     silc_free(si->pid_file);
     silc_pkcs_public_key_free(si->public_key);
     silc_pkcs_private_key_free(si->private_key);
+    silc_free(si);
   }
 
   /* Now let's destroy the lists */

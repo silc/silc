@@ -1,3 +1,13 @@
+Mon Jun 17 21:30:55 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added --enable-stack-trace option to configure.  Added
+	  memory allocation stack trace support.  Added files
+	  lib/silcutil/stacktrace.[ch].  Affected files are
+	  lib/silcutil/silcmemory.[ch].
+
+	* Fixed memory leaks from libraries and server.  Affected
+	  files around the tree.
+
 Sun Jun 16 11:49:45 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_MESSAGE_FLAG_UTF8 to the protocol specs and the

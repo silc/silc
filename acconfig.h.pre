@@ -15,6 +15,7 @@
 
 /* Debugging */
 #undef SILC_DEBUG
+#undef SILC_STACKTRACE
 
 /* Multi-thread support */
 #undef SILC_HAVE_PTHREAD

@@ -421,7 +421,8 @@ char *silc_log_get_file(SilcLogType type);
  *
  * SYNOPSIS
  *
- *    bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
+ *    bool silc_log_set_file(SilcLogType type, char *filename, 
+ *                           SilcUInt32 maxsize,
  *                           SilcSchedule scheduler);
  *
  * DESCRIPTION

@@ -130,6 +130,8 @@ bool silc_hmac_unregister(SilcHmacObject *hmac)
   while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
     if (hmac == SILC_ALL_HMACS || entry == hmac) {
       silc_dlist_del(silc_hmac_list, entry);
+      silc_free(entry->name);
+      silc_free(entry);
 
       if (silc_dlist_count(silc_hmac_list) == 0) {
 	silc_dlist_uninit(silc_hmac_list);
@@ -156,6 +158,24 @@ bool silc_hmac_register_default(void)
   for (i = 0; silc_default_hmacs[i].name; i++)
     silc_hmac_register(&(silc_default_hmacs[i]));
 
+#endif /* SILC_EPOC */
+  return TRUE;
+}
+
+bool silc_hmac_unregister_all(void)
+{
+#ifndef SILC_EPOC
+  SilcHmacObject *entry;
+
+  if (!silc_hmac_list)
+    return FALSE;
+
+  silc_dlist_start(silc_hmac_list);
+  while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
+    silc_hmac_unregister(entry);
+    if (!silc_hmac_list)
+      break;
+  }
 #endif /* SILC_EPOC */
   return TRUE;
 }

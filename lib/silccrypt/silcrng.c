@@ -158,6 +158,8 @@ SilcRng silc_rng_alloc(void)
 void silc_rng_free(SilcRng rng)
 {
   if (rng) {
+    SilcRngState t, n;
+
     memset(rng->pool, 0, sizeof(rng->pool));
     memset(rng->key, 0, sizeof(rng->key));
     silc_hash_free(rng->sha1);
@@ -165,6 +167,13 @@ void silc_rng_free(SilcRng rng)
 
     if (rng->fd_devurandom != -1)
       close(rng->fd_devurandom);
+
+    for (t = rng->state->next; t != rng->state; ) {
+      n = t->next;
+      silc_free(t);
+      t = n;
+    }
+    silc_free(rng->state);
 
     silc_free(rng);
   }

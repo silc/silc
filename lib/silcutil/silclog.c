@@ -60,7 +60,7 @@ bool silc_debug_hexdump = FALSE;
 long silc_log_flushdelay = 300;
 
 /* Regular pattern matching expression for the debug output */
-char *silc_log_debug_string = NULL;
+char silc_log_debug_string[128];
 
 /* Debug callbacks. If set, these are triggered for each specific output. */
 static SilcLogDebugCb silc_log_debug_cb = NULL;
@@ -256,7 +256,7 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
   SilcLog log;
 
   log = silc_log_find_by_type(type);
-  if (!log || !scheduler)
+  if (!log)
     return FALSE;
 
   SILC_LOG_DEBUG(("Setting \"%s\" file to %s (max size=%d)",
@@ -286,15 +286,17 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
     log->maxsize = maxsize;
   }
 
-  if (silc_log_scheduled)
-    return TRUE;
+  if (scheduler) {
+    if (silc_log_scheduled)
+      return TRUE;
 
-  /* add schedule hook with a short delay to make sure we'll use right delay */
-  silc_schedule_task_add(scheduler, 0, silc_log_fflush_callback,
-			 (void *) scheduler, 10, 0,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-
-  silc_log_scheduled = TRUE;
+    /* Add schedule hook with a short delay to make sure we'll use 
+       right delay */
+    silc_schedule_task_add(scheduler, 0, silc_log_fflush_callback,
+			   (void *) scheduler, 10, 0,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    silc_log_scheduled = TRUE;
+  }
 
   return TRUE;
 }
@@ -483,10 +485,12 @@ void silc_log_reset_debug_callbacks()
 
 void silc_log_set_debug_string(const char *debug_string)
 {
-  silc_free(silc_log_debug_string);
+  char *string;
   if ((strchr(debug_string, '(') && strchr(debug_string, ')')) ||
       strchr(debug_string, '$'))
-    silc_log_debug_string = strdup(debug_string);
+    string = strdup(debug_string);
   else
-    silc_log_debug_string = silc_string_regexify(debug_string);
+    string = silc_string_regexify(debug_string);
+  strncpy(silc_log_debug_string, string, strlen(string));
+  silc_free(string);
 }

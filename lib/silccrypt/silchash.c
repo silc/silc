@@ -100,6 +100,8 @@ bool silc_hash_unregister(SilcHashObject *hash)
   while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
     if (hash == SILC_ALL_HASH_FUNCTIONS || entry == hash) {
       silc_dlist_del(silc_hash_list, entry);
+      silc_free(entry->name);
+      silc_free(entry);
 
       if (silc_dlist_count(silc_hash_list) == 0) {
 	silc_dlist_uninit(silc_hash_list);
@@ -126,6 +128,24 @@ bool silc_hash_register_default(void)
   for (i = 0; silc_default_hash[i].name; i++)
     silc_hash_register(&(silc_default_hash[i]));
 
+#endif /* SILC_EPOC */
+  return TRUE;
+}
+
+bool silc_hash_unregister_all(void)
+{
+#ifndef SILC_EPOC
+  SilcHashObject *entry;
+
+  if (!silc_hash_list)
+    return FALSE;
+
+  silc_dlist_start(silc_hash_list);
+  while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
+    silc_hash_unregister(entry);
+    if (!silc_hash_list)
+      break;
+  }
 #endif /* SILC_EPOC */
   return TRUE;
 }

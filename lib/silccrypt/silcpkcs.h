@@ -258,6 +258,7 @@ bool silc_pkcs_register(const SilcPKCSObject *pkcs);
 
 bool silc_pkcs_unregister(SilcPKCSObject *pkcs);
 bool silc_pkcs_register_default(void);
+bool silc_pkcs_unregister_all(void);
 bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs);
 void silc_pkcs_free(SilcPKCS pkcs);
 int silc_pkcs_is_supported(const unsigned char *name);

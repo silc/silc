@@ -77,42 +77,66 @@ int silc_server_alloc(SilcServer *new_server)
 
 void silc_server_free(SilcServer server)
 {
-  if (server) {
-#ifdef SILC_SIM
-    SilcSim sim;
+  int i;
 
+  if (!server)
+    return;
+
+#ifdef SILC_SIM
+  {
+    SilcSim sim;
+    
     while ((sim = silc_dlist_get(server->sim)) != SILC_LIST_END) {
       silc_dlist_del(server->sim, sim);
       silc_sim_free(sim);
     }
     silc_dlist_uninit(server->sim);
+  }
 #endif
 
-    silc_server_config_unref(&server->config_ref);
-    if (server->rng)
-      silc_rng_free(server->rng);
-    if (server->pkcs)
-      silc_pkcs_free(server->pkcs);
-    if (server->public_key)
-      silc_pkcs_public_key_free(server->public_key);
-    if (server->private_key)
-      silc_pkcs_private_key_free(server->private_key);
-    if (server->pending_commands)
-      silc_dlist_uninit(server->pending_commands);
-    if (server->id_entry)
-      silc_idlist_del_server(server->local_list, server->id_entry);
-
-    silc_idcache_free(server->local_list->clients);
-    silc_idcache_free(server->local_list->servers);
-    silc_idcache_free(server->local_list->channels);
-    silc_idcache_free(server->global_list->clients);
-    silc_idcache_free(server->global_list->servers);
-    silc_idcache_free(server->global_list->channels);
-    silc_hash_table_free(server->watcher_list);
-
-    silc_free(server->sockets);
-    silc_free(server);
+  for (i = 0; i < server->config->param.connections_max; i++) {
+    if (!server->sockets[i])
+      continue;
+    silc_socket_free(server->sockets[i]);
   }
+  silc_free(server->sockets);
+
+  silc_server_config_unref(&server->config_ref);
+  if (server->rng)
+    silc_rng_free(server->rng);
+  if (server->pkcs)
+    silc_pkcs_free(server->pkcs);
+  if (server->public_key)
+    silc_pkcs_public_key_free(server->public_key);
+  if (server->private_key)
+    silc_pkcs_private_key_free(server->private_key);
+  if (server->pending_commands)
+    silc_dlist_uninit(server->pending_commands);
+  if (server->id_entry)
+    silc_idlist_del_server(server->local_list, server->id_entry);
+
+  silc_idcache_free(server->local_list->clients);
+  silc_idcache_free(server->local_list->servers);
+  silc_idcache_free(server->local_list->channels);
+  silc_idcache_free(server->global_list->clients);
+  silc_idcache_free(server->global_list->servers);
+  silc_idcache_free(server->global_list->channels);
+  silc_hash_table_free(server->watcher_list);
+
+  silc_hash_free(server->md5hash);
+  silc_hash_free(server->sha1hash);
+  silc_hmac_unregister_all();
+  silc_hash_unregister_all();
+  silc_cipher_unregister_all();
+  silc_pkcs_unregister_all();
+
+  silc_free(server->local_list);
+  silc_free(server->global_list);
+  silc_free(server->server_name);
+  silc_free(server->id_string);
+  silc_free(server->purge_i);
+  silc_free(server->purge_g);
+  silc_free(server);
 }
 
 /* Creates a new server listener. */
@@ -130,15 +154,16 @@ static bool silc_server_listen(SilcServer server, const char *server_ip,
 }
 
 /* Adds a secondary listener. */
+
 bool silc_server_init_secondary(SilcServer server)
 {
-  int sock=0, sock_list[server->config->param.connections_max];
+  int sock = 0, sock_list[server->config->param.connections_max];
   SilcSocketConnection newsocket = NULL;
   SilcServerConfigServerInfoInterface *interface;
 
   for (interface = server->config->server_info->secondary; interface; 
 	interface = interface->next, sock++) {
-	  
+
     if (!silc_server_listen(server,
 	interface->server_ip, interface->port, &sock_list[sock]))
       goto err;
@@ -148,8 +173,8 @@ bool silc_server_init_secondary(SilcServer server)
 
     /* Add ourselves also to the socket table. The entry allocated above
        is sent as argument for fast referencing in the future. */
-    silc_socket_alloc(sock_list[sock], 
-		SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
+    silc_socket_alloc(sock_list[sock],
+		      SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
     server->sockets[sock_list[sock]] = newsocket;
 
     /* Perform name and address lookups to resolve the listenning address
@@ -168,23 +193,20 @@ bool silc_server_init_secondary(SilcServer server)
         newsocket->hostname = strdup(newsocket->ip);
     }
     newsocket->port = silc_net_get_local_port(sock);
-    
+
     newsocket->user_data = (void *)server->id_entry;
     silc_schedule_task_add(server->schedule, sock_list[sock],
 			 silc_server_accept_new_connection,
 			 (void *)server, 0, 0,
 			 SILC_TASK_FD,
 			 SILC_TASK_PRI_NORMAL);
-
   }
 
   return TRUE;
-  
-err:
 
+ err:
   do silc_net_close_server(sock_list[sock--]); while (sock >= 0);
   return FALSE;
-
 }
 
 /* Initializes the entire SILC server. This is called always before running
@@ -394,7 +416,7 @@ bool silc_server_init(SilcServer server)
      and removes the expired cache entries. */
 
   /* Clients local list */
-  purge = silc_calloc(1, sizeof(*purge));
+  server->purge_i = purge = silc_calloc(1, sizeof(*purge));
   purge->cache = server->local_list->clients;
   purge->schedule = server->schedule;
   purge->timeout = 600;
@@ -404,7 +426,7 @@ bool silc_server_init(SilcServer server)
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
   /* Clients global list */
-  purge = silc_calloc(1, sizeof(*purge));
+  server->purge_g = purge = silc_calloc(1, sizeof(*purge));
   purge->cache = server->global_list->clients;
   purge->schedule = server->schedule;
   purge->timeout = 300;

@@ -275,10 +275,12 @@ void silc_config_close(SilcConfigFile *file)
   if (file) {
     /* XXX FIXME: this check could probably be removed later */
     SilcUInt32 my_len = (SilcUInt32) (strchr(file->base, EOF) - file->base);
-    SILC_CONFIG_DEBUG(("file=0x%x name=\"%s\" level=%d line=%lu", (SilcUInt32) file,
+    SILC_CONFIG_DEBUG(("file=0x%x name=\"%s\" level=%d line=%lu", 
+		       (SilcUInt32) file,
 			file->filename, file->level, file->line));
     if (my_len != file->len) {
-      fprintf(stderr, "FATAL ERROR: saved len and current len does not match!\n");
+      fprintf(stderr, 
+	      "FATAL ERROR: saved len and current len does not match!\n");
       abort();
     }
     silc_free(file->filename);

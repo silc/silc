@@ -110,6 +110,8 @@ bool silc_pkcs_unregister(SilcPKCSObject *pkcs)
   while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
     if (pkcs == SILC_ALL_PKCS || entry == pkcs) {
       silc_dlist_del(silc_pkcs_list, entry);
+      silc_free(entry->name);
+      silc_free(entry);
 
       if (silc_dlist_count(silc_pkcs_list) == 0) {
 	silc_dlist_uninit(silc_pkcs_list);
@@ -136,6 +138,24 @@ bool silc_pkcs_register_default(void)
   for (i = 0; silc_default_pkcs[i].name; i++)
     silc_pkcs_register(&(silc_default_pkcs[i]));
 
+#endif /* SILC_EPOC */
+  return TRUE;
+}
+
+bool silc_pkcs_unregister_all(void)
+{
+#ifndef SILC_EPOC
+  SilcPKCSObject *entry;
+
+  if (!silc_pkcs_list)
+    return FALSE;
+
+  silc_dlist_start(silc_pkcs_list);
+  while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
+    silc_pkcs_unregister(entry);
+    if (!silc_pkcs_list)
+      break;
+  }
 #endif /* SILC_EPOC */
   return TRUE;
 }

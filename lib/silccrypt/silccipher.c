@@ -174,6 +174,24 @@ bool silc_cipher_register_default(void)
   return TRUE;
 }
 
+bool silc_cipher_unregister_all(void)
+{
+#ifndef SILC_EPOC
+  SilcCipherObject *entry;
+
+  if (!silc_cipher_list)
+    return FALSE;
+
+  silc_dlist_start(silc_cipher_list);
+  while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+    silc_cipher_unregister(entry);
+    if (!silc_cipher_list)
+      break;
+  }
+#endif /* SILC_EPOC */
+  return TRUE;
+}
+
 /* Allocates a new SILC cipher object. Function returns 1 on succes and 0 
    on error. The allocated cipher is returned in new_cipher argument. The
    caller must set the key to the cipher after this function has returned
