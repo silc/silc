@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/18 06:51:48  priikone
+ * 	Use length of data found from cache instead of length of searched
+ * 	data in comparison.
+ *
  * Revision 1.4  2000/07/17 11:46:36  priikone
  * 	Added debug logging
  *
@@ -203,7 +207,7 @@ int silc_idcache_find_by_data(SilcIDCache cache, char *data,
       break;
 
     if (cache->cache[i].data && 
-	!memcmp(cache->cache[i].data, data, strlen(data)))
+	!memcmp(cache->cache[i].data, data, strlen(cache->cache[i].data)))
       silc_idcache_list_add(list, &(cache->cache[i]));
   }
 
@@ -236,7 +240,7 @@ int silc_idcache_find_by_data_one(SilcIDCache cache, char *data,
 
   for (i = i; i < cache->cache_count; i++)
     if (cache->cache[i].data && 
-	!memcmp(cache->cache[i].data, data, strlen(data))) {
+	!memcmp(cache->cache[i].data, data, strlen(cache->cache[i].data))) {
       if (ret)
 	*ret = &(cache->cache[i]);
       return TRUE;
