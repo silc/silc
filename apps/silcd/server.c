@@ -5062,8 +5062,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
-    SILC_LOG_ERROR(("Error occurred during rekey protocol with
-		   %s (%s)", sock->hostname, sock->ip));
+    SILC_LOG_ERROR(("Error occurred during rekey protocol with "
+		   "%s (%s)", sock->hostname, sock->ip));
     silc_protocol_cancel(protocol, server->schedule);
     silc_protocol_free(protocol);
     sock->protocol = NULL;
