@@ -3604,6 +3604,7 @@ void silc_server_resume_client(SilcServer server,
     server->stat.clients--;
     if (server->stat.cell_clients)
       server->stat.cell_clients--;
+    silc_server_remove_from_channels(server, NULL, client, FALSE, NULL, FALSE);
     silc_server_del_from_watcher_list(server, client);
     silc_idlist_del_client(server->local_list, client);
     client = detached_client;
@@ -3772,10 +3773,40 @@ void silc_server_resume_client(SilcServer server,
       return;
     }
 
+    SILC_LOG_DEBUG(("Resuming detached client"));
+
+    /* If the sender of this packet is server and we are router we need to
+       broadcast this packet to other routers in the network. */
+    if (server->server_type == SILC_ROUTER &&
+	sock->type == SILC_SOCKET_TYPE_SERVER &&
+	!(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+      SILC_LOG_DEBUG(("Broadcasting received Resume Client packet"));
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
+			      packet->type, 
+			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			      buffer->data, buffer->len, FALSE);
+      silc_server_backup_send(server, sock->user_data, 
+			      packet->type, packet->flags,
+			      packet->buffer->data, packet->buffer->len, 
+			      FALSE, TRUE);
+    }
+
     /* Client is detached, and now it is resumed.  Remove the detached
        mode and mark that it is resumed. */
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
+    detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
+
+    /* Update channel information regarding global clients on channel. */
+    if (server->server_type == SILC_SERVER) {
+      silc_hash_table_list(detached_client->channels, &htl);
+      while (silc_hash_table_get(&htl, NULL, (void **)&chl))
+	chl->channel->global_users = 
+	  silc_server_channel_has_global(chl->channel);
+      silc_hash_table_list_reset(&htl);
+    }
+
+    silc_schedule_task_del_by_context(server->schedule, detached_client);
 
     /* Get the new owner of the resumed client */
     server_id = silc_id_str2id(packet->src_id, packet->src_id_len,
@@ -3805,8 +3836,6 @@ void silc_server_resume_client(SilcServer server,
 	server_entry->server_type == SILC_ROUTER)
       local = FALSE;
 
-    SILC_LOG_DEBUG(("Resuming detached client"));
-
     /* Change the client to correct list. */
     if (!silc_idcache_del_by_context(server->local_list->clients,
 				     detached_client))
@@ -3817,38 +3846,9 @@ void silc_server_resume_client(SilcServer server,
 		     server->global_list->clients, 
 		     detached_client->nickname,
 		     detached_client->id, detached_client, FALSE, NULL);
-    detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
 
-    /* Change the owner of the client if needed */
-    if (detached_client->router != server_entry)
-      detached_client->router = server_entry;
-
-    /* Update channel information regarding global clients on channel. */
-    if (server->server_type == SILC_SERVER) {
-      silc_hash_table_list(detached_client->channels, &htl);
-      while (silc_hash_table_get(&htl, NULL, (void **)&chl))
-	chl->channel->global_users = 
-	  silc_server_channel_has_global(chl->channel);
-      silc_hash_table_list_reset(&htl);
-    }
-
-    silc_schedule_task_del_by_context(server->schedule, detached_client);
-
-    /* If the sender of this packet is server and we are router we need to
-       broadcast this packet to other routers in the network. */
-    if (server->server_type == SILC_ROUTER &&
-	sock->type == SILC_SOCKET_TYPE_SERVER &&
-	!(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-      SILC_LOG_DEBUG(("Broadcasting received Resume Client packet"));
-      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
-			      packet->type, 
-			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			      buffer->data, buffer->len, FALSE);
-      silc_server_backup_send(server, sock->user_data, 
-			      packet->type, packet->flags,
-			      packet->buffer->data, packet->buffer->len, 
-			      FALSE, TRUE);
-    }
+    /* Change the owner of the client */
+    detached_client->router = server_entry;
 
     silc_free(server_id);
   }
