@@ -17,29 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.2  2000/09/28 08:50:31  priikone
- * 	Added silc_schedule_one function to run the scheduler only ones.
- * 	Patch by cras.
- *
- * Revision 1.1  2000/09/13 17:45:16  priikone
- * 	Splitted SILC core library. Core library includes now only
- * 	SILC protocol specific stuff. New utility library includes the
- * 	old stuff from core library that is more generic purpose stuff.
- *
- * Revision 1.3  2000/07/18 06:51:58  priikone
- * 	Debug version bug fixes.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -484,18 +462,18 @@ int silc_schedule_one(int timeout_usecs)
 		    schedule.timeout->tv_usec));
   }
 
+  if (timeout_usecs >= 0) {
+    timeout.tv_sec = 0;
+    timeout.tv_usec = timeout_usecs;
+    schedule.timeout = &timeout;
+  }
+
   /* This is the main select(). The program blocks here until some
      of the selected file descriptors change status or the selected
      timeout expires. */
   SILC_LOG_DEBUG(("Select"));
-  if (timeout_usecs < 0)
-    memcpy(&timeout, schedule.timeout, sizeof(timeout));
-  else {
-    timeout.tv_sec = 0;
-    timeout.tv_usec = timeout_usecs;
-  }
   switch (select(schedule.max_fd + 1, &schedule.in,
-		 &schedule.out, 0, &timeout)) {
+		 &schedule.out, 0, schedule.timeout)) {
   case -1:
     /* Error */
     SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
