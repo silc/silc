@@ -87,8 +87,7 @@ const Stringprep_profile stringprep_silc_identifier_prep[] =
   {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_9},
   {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_9},
   {STRINGPREP_PROHIBIT_TABLE, 0, silc_appendix_b},
-  {STRINGPREP_UNASSIGNED_TABLE, ~STRINGPREP_NO_UNASSIGNED,
-   stringprep_rfc3454_A_1},
+  {STRINGPREP_UNASSIGNED_TABLE, 0, stringprep_rfc3454_A_1},
   {0}
 };
 
