@@ -4,6 +4,9 @@ Fri May 17 17:23:45 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  when closing client connection.  Affected file is
 	  silcd/server.c.
 
+	* Added better CMODE command rights checking.  Affected file
+	  silcd/server_util.c.
+
 Fri May 17 08:33:41 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed watcher list checking during server signoff.  It
