@@ -1,18 +1,18 @@
 <html>
-<header>
+<head>
 <title>SILC Protocol White Paper</title>
 <link rev=made href="mailto:priikone@silcnet.org">
 <meta name="Author" content="Pekka Riikonen - SILC Project">
 <meta name="Description"
  content="SILC - Secure Internet Live Conferencing Protocol">
-<meta name="Created" content="Version 1.0 / 05 Aug 2001">
+<meta name="Created" content="Version 1.0 / 04 Aug 2001">
 </head>
 <body bgcolor="#ffffff">
 
 <font face="Helvetica">
 
-<font size="7"><b>SILC Protocol White Paper</b></font><br>
-<font size="2">Version 1.0 / 05 Aug 2001</font>
+<font size="6"><b>SILC Protocol White Paper</b></font><br>
+<font size="2">Version 1.0 / 04 Aug 2001</font>
 
 <p>
 <h1>Introduction</h1>
@@ -80,7 +80,33 @@ See the GNU General Public License for more details.
 <h1>SILC Protocol</h1>
 <p>
 
-<img src="silc_network.JPG" alt="SILC Network" align="center" border"0">
+The Secure Internet Live Conferencing (SILC) protocol provides secure
+conferencing services over insecure network channel.  The SILC is IRC
+like protocol, however it does not support IRC.  Strong cryptographic
+methods are used to protect SILC packets inside the SILC network.  SILC
+provides all the common conferencing services like channels, channel
+messages, private messages, nicknames and various commands.  Difference
+to other chat protocol is in the design of the protocol.  The SILC 
+protocol has been designed from the day one security in mind and it
+shows in the protocol design.
+<p>
+
+The network topology is also different to various other chat protocol,
+like for example IRC.  IRC has tree style network where SILC has so
+called cellular network.  A cell consists of a router, servers and clients.
+The cell can also have backup routers in case the private router becomes
+unresponsive.
+
+<p><br>
+<img src="silc_network.gif" alt="SILC Network" align="center" border"0">
+<p><br>
+
+The diagram above illustrates a portion of the SILC network.  It shows
+two cells that both has several servers, and backup routers and several
+clients.  Clients can connect to server and routers if they want to.
+The following sections will describe the entities of the SILC Network
+in greater detail.
+
 
 <p><br>
 <h2>Clients</h2>
@@ -146,8 +172,8 @@ have joined.  However, it does not know any global information.  It
 usually does not keep track of global clients, however, it may cache
 that information if it was queried.  The reason for this is that the
 server does not need to keep global information up to date and thus
-makes the server faster.  They can always query the information from
-the router.
+makes the server faster (and in the end the entire network faster).
+They can always query the information from the router.
 <p>
 
 When server connects to its router the SILC Key Exchange (SKE) protocol
@@ -193,9 +219,9 @@ route if it is a faster route.  The routers in the network forms a ring.
 Each router has a primary route to other router in the network.  Finally
 the ring is closed by the last router using the first router in the
 network as its primary route.
-<p>
 
-<img src="silc_routers.JPG" alt="SILC Routers" align="center" border"0">
+<p><br>
+<img src="silc_routers.png" alt="SILC Routers" align="center" border"0">
 <p><br>
 
 The diagram above illustrates how the routers forms a ring in the network.
@@ -228,9 +254,9 @@ defines several packet types and packet payloads.  Each packet type
 usually has a specific packet payload that actually defines the contents
 of the packet.  Hence, the actual data in the packet is the packet payload 
 defined in the protocol.
-<p>
 
-<img src="silc_packet.JPG" alt="Typical SILC Packet" align="center" border"0">
+<p><br>
+<img src="silc_packet.png" alt="Typical SILC Packet" align="center" border"0">
 <p><br>
 
 As the diagram above illustrates the SILC packet is constructed from the
@@ -409,9 +435,9 @@ have clients joined on a particular channel have also own key for the
 channel.  That key is not shared by other cells in the network.  Inside
 the cell the channel key is known by the router and all servers that
 have clients on the channel and all clients that have joined the channel.
-<p>
 
-<img src="silc_channel.JPG" alt="Channel Message Delivery" align="center" border"0">
+<p><br>
+<img src="silc_channel.png" alt="Channel Message Delivery" align="center" border"0">
 <p><br>
 
 The diagram above illustrates typical delivery of channel messages inside
@@ -450,6 +476,12 @@ does not require any special settings before engaging the conversation
 on the channel.  The client merely joins the channel, receives the
 channel key from the server and can start the conversation on the
 channel.
+<p>
+
+In addition of encrypting channel messages it also possible to digitally
+sign all sent channel messages.  The receiver could the verify the
+signature of each of the message using the sender's public key.
+
 
 <p><br>
 <h2>Channel Message Delivery With Channel Private Key</h2>
@@ -510,6 +542,11 @@ because none of the methods alone can satisfy the security requirements
 of all people.  The end user should decide the acceptable level of risk,
 the required level of security and other security and usability aspects when
 deciding what way of sending private message suites for them.
+<p>
+
+In addition of encrypting private messages it also possible to digitally
+sign all sent private messages.  The receiver could the verify the
+signature of each of the message using the sender's public key.
 
 
 <p><br>
@@ -520,9 +557,9 @@ in the SKE protocol.  This means that the private message is always encrypted
 with the session key of the next receiver of the message enroute to the 
 receiving client.  This also means that the message is decrypted and
 re-encrypted everytime it is sent further to the receiving client.
-<p>
 
-<img src="silc_priv1.JPG" alt="Basic Private Message Delivery" align="center" border"0">
+<p><br>
+<img src="silc_priv1.png" alt="Basic Private Message Delivery" align="center" border"0">
 <p><br>
 
 As the above diagram shows the private messages sent by Client A to the
@@ -561,9 +598,9 @@ through enroute to the receiver.  They cannot decrypt the message since
 they do not have the key.  When sending private messages in this way it
 does not matter whether the clients trust or do not trust the servers and
 routers in the SILC network.
-<p>
 
-<img src="silc_priv2.JPG" alt="Private Messages with Private Message Key" align="center" border"0">
+<p><br>
+<img src="silc_priv2.png" alt="Private Messages with Private Message Key" align="center" border"0">
 <p><br>
 
 As the above diagram shows the Client A encrypts the message with private
@@ -621,9 +658,9 @@ receiver's public key and send the message to the network.  The servers
 and routers cannot decrypt the messages since they do not have the
 receiver's private key.  The receiver on the other hand has the private
 key which it uses to decrypt the message.
-<p>
 
-<img src="silc_priv3.JPG" alt="Private Messges with Public Key Cryptosystem" align="center" border"0">
+<p><br>
+<img src="silc_priv3.png" alt="Private Messges with Public Key Cryptosystem" align="center" border"0">
 <p><br>
 
 As the above diagram shows the Client A has the Client B's public key.
@@ -660,6 +697,13 @@ method of private message delivery is very simple and recommended.
 
 <p><br>
 <h1>Conclusions</h1>
+
+The Secure Internet Live Conferencing (SILC) protocol is a new generation
+chat protocol that provides all the common conferencing services with
+strong support for security.  It has wide range of security properties
+that should meet the highest levels of security requirements, while not
+forgetting easy of use.  The network topology offers new architectural
+solution with better scalability over traditional chat protocols.
 
 
 <p><br>
@@ -698,42 +742,111 @@ For comprehensive introduction to cryptography refer to the
 
 - Asymmetric cryptosystem
 <p>
+Asymmetric cryptosystem provides public encryption.  It has two keys,
+one public key and one private key (also called as secret key).  The public
+key is publicly available allowing anyone to encrypt messages with the
+public key.  Only the posessor of the private key can decrypt those messages.
+Difference to symmetric cryptosystem is that symmetric cryptosystem use only
+one key, and the key is usually used to both encryption and decryption.  The
+asymmetric cryptosystem is also called as public key encryption, public key
+cryptosystem or public key algorithm.  SILC supports RSA and DSS asymmetric
+cryptosystems.
+<p>
 
 - Authentication
+<p>
+The verification of the identity of a person, host or process in order
+to gain access to a service or prove identity.  In data communications
+it also means verifying the origin of a message.
 <p>
 
 - Certificate
 <p>
+Certificate is a digital document which can be used to verify the 
+identity of a person or host.  In SILC certificates can be used to prove
+identity of clients, servers and routers.  Basically certificate is a public
+key with subject name.  SILC supports X.509, OpenPGP and SPKI certificates.
+Supported public keys are SILC style public key and SSH2 style public
+key.
+<p>
 
 - Certification Authority (CA)
+<p>
+A third party entity that can verify identity of a person or host.  CA
+is usually external company that provides certificates and their
+verification services.
 <p>
 
 - Diffie-Hellman key exchange
 <p>
+First public key algorithm ever invented.  It is used to generate a secret
+key between two or more parties.  It gets its security from the difficulty
+of calculating discrete lograrithms.
+<p>
 
 - Encryption
+<p>
+A mechanism (usually mathematical) to transfer plaintext (or cleartext)
+to ciphertext to provide confidentiality.  A process to transfer
+the ciphertext back to plaintext is called decryption.
 <p>
 
 - Integrity
 <p>
+The verification of data to detect any modifications.  If data is
+modified enroute from the sender to the receiver, the modification will
+be detected.
+<p>
 
 - HMAC
+<p>
+Hash Message Authentication Code.  Also called as keyed hash function.
+It is a secret key authentication algorithm which proves that the message
+is not modified and that the HMAC was computed by the sender of the
+message.
 <p>
 
 - Man-in-the-middle attack
 <p>
+An attack against two connecting entities where the attacker executes
+key exchange protocol with both of the parties indepently without
+their knowledge.  Both of the connecting entities will end up having secret
+key with the attacker, and the attacker can encrypt and decrypt all the
+messages that goes between the two entities.
+<p>
 
 - Message Authentication Code (MAC)
+<p>
+MAC provides message integrity by computing the MAC using a secret
+key authentication algorithm (HMAC).
 <p>
 
 - Perfect Forward Secrecy (PFS)
 <p>
+A property of rekey (or key re-generation) which defines whether the
+new key is derived from the old key.  If Perfect Forward Secrecy is
+selected the new key is never dependent of the old key which means
+that if the old key would get compromised at later time it will not
+compromise the new key.  In SILC setting PFS in the SKE protocol means
+executing the SKE protocol again.  If PFS is not selected the new key
+is always derived from the old key.
+<p>
 
 - Rekey
+<p>
+A key re-generation process where the old key has expired or is not
+secure anymore to use.  In this case rekey is performed and new key
+is generated.
 <p>
 
 - Symmetric cryptosystem
 <p>
+Symmetric cryptosystem is one key cryptosystem where one key is used
+usually to both encryption and decryption process.  The symmetric
+cryptosystems are usually significantly faster than asymmetric cryptosystems.
+DES, AES, Twofish and Blowfish are examples of symmetric cryptosystems.
+SILC supports all the common symmetric cryptosystems including AES.
+SILC does not support DES as it is insecure and 3DES as it is too slow.
 
 
 </font>
