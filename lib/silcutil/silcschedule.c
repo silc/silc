@@ -476,6 +476,12 @@ int silc_schedule_one(int timeout_usecs)
     /* Error */
     if (errno == EINTR)
       break;
+#if 1
+    if (errno == EINVAL && schedule.timeout) {
+      SILC_LOG_ERROR(("Invalid argument (invalid timeout): %lu %lu",
+		      schedule.timeout->tv_sec, schedule.timeout->tv_usec));
+    }
+#endif
     SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
     break;
   case 0:
