@@ -2098,19 +2098,6 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
-  /* If sock->user_data is NULL then we'll check for active protocols
-     here since the silc_server_free_sock_user_data has not been called
-     for this connection. */
-  if (!sock->user_data) {
-    /* If any protocol is active cancel its execution */
-    if (sock->protocol) {
-      silc_protocol_cancel(sock->protocol, server->schedule);
-      sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
-      silc_protocol_execute_final(sock->protocol, server->schedule);
-      sock->protocol = NULL;
-    }
-  }
-
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(server->schedule, sock->sock);
 
@@ -2121,6 +2108,21 @@ void silc_server_close_connection(SilcServer server,
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);
   server->sockets[sock->sock] = NULL;
+
+  /* If sock->user_data is NULL then we'll check for active protocols
+     here since the silc_server_free_sock_user_data has not been called
+     for this connection. */
+  if (!sock->user_data) {
+    /* If any protocol is active cancel its execution. It will call
+       the final callback which will finalize the disconnection. */
+    if (sock->protocol) {
+      silc_protocol_cancel(sock->protocol, server->schedule);
+      sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
+      silc_protocol_execute_final(sock->protocol, server->schedule);
+      sock->protocol = NULL;
+      return;
+    }
+  }
 
   silc_schedule_task_add(server->schedule, 0, 
 		     silc_server_close_connection_final,
