@@ -4,6 +4,9 @@ Fri Aug 30 08:57:33 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  fingerprint instead of two first bytes when determining
 	  if it is set.  Bug #18.  Affected file silcd/command.c.
 
+	* Fixed duplicate PKCS name registering to not allow it.
+	  Bugs #17.  Affected file lib/silccrypt/silcpkcs.c.
+
 Sun Aug 25 08:02:04 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
 
 	* Conditionalize non-gcc compiler optimizations for various

@@ -71,6 +71,16 @@ bool silc_pkcs_register(const SilcPKCSObject *pkcs)
 
   SILC_LOG_DEBUG(("Registering new PKCS `%s'", pkcs->name));
 
+  /* Check if exists already */
+  if (silc_pkcs_list) {
+    SilcPKCSObject *entry;
+    silc_dlist_start(silc_pkcs_list);
+    while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->name, pkcs->name))
+        return FALSE;
+    }
+  }
+
   new = silc_calloc(1, sizeof(*new));
   new->name = strdup(pkcs->name);
   new->init = pkcs->init;
