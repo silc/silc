@@ -59,8 +59,8 @@ typedef struct {
   char *bday;		    /* birth day, UTC date string */
   char *title;		    /* job title X.520, string */
   char *role;		    /* job role X.520, string */
-  char *org_name;	    /* organization name */
-  char *org_unit;	    /* organization unit */
+  char *org_name;	    /* organization name, string */
+  char *org_unit;	    /* organization unit, string */
   char *categories;	    /* application category, string */
   char *class;		    /* class (public, private, confidental), string */
   char *url;		    /* home page, URI string */
@@ -114,7 +114,7 @@ typedef struct {
  *    buffer.  Returns NULL on error.
  *
  ***/
-char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len);
+unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len);
 
 /****f* silcutil/SilcVCard/silc_vcard_decode
  *

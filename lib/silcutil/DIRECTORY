@@ -19,6 +19,7 @@
 @LINK=silcutil.html:SILC Util Interface
 @LINK=silclist.html:SILC List Interface
 @LINK=silcdlist.html:SILC Dynamic List Interface
+@LINK=silcvcard.html:SILC VCard Interface
 @LINK=silczip.html:SILC Zip API
 -->
 

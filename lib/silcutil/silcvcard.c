@@ -16,6 +16,7 @@
   GNU General Public License for more details.
 
 */
+/* $Id$ */
 /* Implementation of the VCard (RFC 2426) */
 
 #include "silcincludes.h"
@@ -73,7 +74,7 @@ static void silc_vcard_free_internal(SilcVCard vcard)
 
 /* Encode VCard */
 
-char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
+unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
 {
   SilcBufferStruct buffer;
   int i;
@@ -171,6 +172,7 @@ char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
   return buffer.head;
 }
 
+/* Take one token */
 #define VCARD_TOKEN(x)				\
   if (!(x)) {					\
     (x) = silc_memdup(val + off, i - off);	\
@@ -178,6 +180,7 @@ char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
     continue;					\
   }
 
+/* Take on TYPE= token and prepare for next token */
 #define VCARD_TYPETOKEN(x)				\
   if (!(x)) {						\
     int tmpi;						\
@@ -187,6 +190,7 @@ char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
     i = tmpi;						\
   }
 
+/* Take last token */
 #define VCARD_LASTTOKEN(x)			\
   if (!(x)) {					\
     if (off < len)				\
@@ -262,6 +266,7 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 	    break;
 	  }
 	}
+	/* It's possible to have ORG without last ';', so check for it */
 	if (!vcard->org_name) {
 	  VCARD_LASTTOKEN(vcard->org_name);
 	} else {
