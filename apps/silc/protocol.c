@@ -23,6 +23,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/14 06:12:29  priikone
+ * 	Put the HMAC keys into the HMAC object instead on having them
+ * 	saved elsewhere; we can use now silc_hmac_make instead of
+ * 	silc_hmac_make_with_key.
+ *
  * Revision 1.5  2000/07/07 11:36:09  priikone
  * 	Inform user when received unsupported public key from server.
  *
@@ -143,11 +148,7 @@ static void silc_client_protocol_ke_set_keys(SilcSKE ske,
   /* Save HMAC key to be used in the communication. */
   silc_hash_alloc(hash->hash->name, &nhash);
   silc_hmac_alloc(nhash, &win->hmac);
-  win->hmac_key_len = keymat->hmac_key_len;
-  win->hmac_key = silc_calloc(win->hmac_key_len,
-				    sizeof(unsigned char));
-  memcpy(win->hmac_key, keymat->hmac_key, keymat->hmac_key_len);
-
+  silc_hmac_set_key(win->hmac, keymat->hmac_key, keymat->hmac_key_len);
 }
 
 /* Performs key exchange protocol. This is used for both initiator
