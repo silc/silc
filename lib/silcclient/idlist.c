@@ -1359,7 +1359,7 @@ void silc_client_nickname_format(SilcClient client,
     if (clients[i]->valid && clients[i] != client_entry)
       len++;
     if (clients[i]->valid && clients[i] != client_entry &&
-	!strcmp(clients[i]->nickname, client_entry->nickname))
+	!strcasecmp(clients[i]->nickname, client_entry->nickname))
       freebase = FALSE;
   }
   if (!len || freebase)
