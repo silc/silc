@@ -698,7 +698,6 @@ doc/Makefile
 includes/Makefile
 lib/Makefile
 lib/contrib/Makefile
-lib/silcclient/Makefile
 lib/silccore/Makefile
 lib/silccrypt/Makefile 
 lib/silcmath/Makefile
@@ -715,6 +714,7 @@ lib/silcutil/win32/Makefile
 if test "x$silc_dist" = "xsilc-client" || 
    test "x$silc_dist" = "xsilc-toolkit"; then
 AC_CONFIG_FILES( \
+lib/silcclient/Makefile
 irssi/Makefile.defines
 irssi/Makefile.defines_int
 )
