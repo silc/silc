@@ -376,9 +376,10 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcCommandStatus status;
   SilcChannelID *id;
   SilcChannelEntry entry;
+  SilcHmac hmac = NULL;
   unsigned int id_len, len;
   unsigned char *id_string;
-  char *channel_name, *tmp, *hmac;
+  char *channel_name, *tmp;
   unsigned int mode, created;
   SilcBuffer keyp;
 
@@ -421,7 +422,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     goto out;
 
   /* Get hmac */
-  hmac = silc_argument_get_arg_type(cmd->args, 10, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 10, NULL);
+  if (tmp) {
+    if (!silc_hmac_alloc(tmp, NULL, &hmac))
+      goto out;
+  }
 
   /* See whether we already have the channel. */
   entry = silc_idlist_find_channel_by_id(server->local_list, id, NULL);

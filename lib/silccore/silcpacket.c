@@ -572,24 +572,33 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
    the HMAC of the packet. If any other special or customized decryption
    processing is required this function cannot be used. This returns
    -1 on error, 0 when packet is normal packet and 1 when the packet
-   is special and requires special processing. */
+   is special and requires special processing. 
+
+   The `check_packet' is a callback funtion that this function will 
+   call.  The callback relates to the checking whether the packet is
+   normal packet or special packet and how it should be processed.  If
+   the callback return TRUE the packet is normal and FALSE if the packet
+   is special and requires special procesing. */
 
 int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
-			SilcBuffer buffer, SilcPacketContext *packet)
+			SilcBuffer buffer, SilcPacketContext *packet,
+			SilcPacketCheckDecrypt check_packet,
+			void *context)
 {
+  int check;
 
   /* Decrypt start of the packet header */
   if (cipher)
-    cipher->cipher->decrypt(cipher->context, buffer->data + 2,
-			    buffer->data + 2, SILC_PACKET_MIN_HEADER_LEN - 2,
-			    cipher->iv);
+    silc_cipher_decrypt(cipher, buffer->data + 2, buffer->data + 2, 
+			SILC_PACKET_MIN_HEADER_LEN - 2, cipher->iv);
+
+  /* Do packet checking, whether the packet is normal or special */ 
+  check = check_packet((SilcPacketType)buffer->data[3], buffer,
+		       packet, context);
 
   /* If the packet type is not any special type lets decrypt rest
      of the packet here. */
-  if ((buffer->data[3] == SILC_PACKET_PRIVATE_MESSAGE &&
-      !(buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY)) ||
-      buffer->data[3] != SILC_PACKET_CHANNEL_MESSAGE) {
-
+  if (check == TRUE) {
     /* Normal packet, decrypt rest of the packet */
     if (!silc_packet_decrypt_rest(cipher, hmac, buffer))
       return -1;

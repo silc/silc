@@ -42,6 +42,17 @@ void silc_server_packet_send_dest(SilcServer server,
 				  unsigned char *data, 
 				  unsigned int data_len,
 				  int force_send);
+void silc_server_packet_send_srcdest(SilcServer server,
+				     SilcSocketConnection sock, 
+				     SilcPacketType type, 
+				     SilcPacketFlags flags,
+				     void *src_id,
+				     SilcIdType src_id_type,
+				     void *dst_id,
+				     SilcIdType dst_id_type,
+				     unsigned char *data, 
+				     unsigned int data_len,
+				     int force_send);
 void silc_server_packet_broadcast(SilcServer server,
 				  SilcSocketConnection sock,
 				  SilcPacketContext *packet);

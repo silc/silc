@@ -2121,6 +2121,12 @@ their own channel keys thus the channel message traveling from one
 cell to another must be protected as it would be any normal SILC
 packet.
 
+If the SILC_CMODE_PRIVKEY channel mode has been set for the channel
+then the router cannot decrypt the packet as it does not know the
+private key.  In this case the entire packet is encrypted with the
+session key and sent to the router.  The router receiving the packet
+must check the channel mode and decrypt the packet accordingly.
+
 
 .ti 0
 2.5.3 Private Message Encryption And Decryption

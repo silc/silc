@@ -186,6 +186,11 @@ typedef struct {
 typedef void (*SilcPacketParserCallback)(SilcPacketParserContext 
 					 *parse_context);
 
+/* The packet check callback in decryption phase */
+typedef int (*SilcPacketCheckDecrypt)(SilcPacketType packet_type,
+				      SilcBuffer buffer,
+				      SilcPacketContext *packet,
+				      void *context);
 
 /* SILC Packet types. */
 #define SILC_PACKET_NONE		 0       /* NULL, never sent */
@@ -245,7 +250,9 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
 int silc_packet_read(int sock, SilcBuffer dest);
 int silc_packet_receive(SilcSocketConnection sock);
 int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
-			SilcBuffer buffer, SilcPacketContext *packet);
+			SilcBuffer buffer, SilcPacketContext *packet,
+			SilcPacketCheckDecrypt check_packet,
+			void *context);
 void silc_packet_receive_process(SilcSocketConnection sock,
 				 SilcCipher cipher, SilcHmac hmac,
 				 SilcPacketParserCallback parser,

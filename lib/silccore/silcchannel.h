@@ -30,6 +30,10 @@ typedef struct SilcChannelPayloadStruct *SilcChannelPayload;
 typedef struct SilcChannelKeyPayloadStruct *SilcChannelKeyPayload;
 
 /* Prototypes */
+int silc_channel_payload_decrypt(unsigned char *data,
+				 size_t data_len,
+				 SilcCipher cipher,
+				 SilcHmac hmac);
 SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
 					      SilcCipher cipher,
 					      SilcHmac hmac);

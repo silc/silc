@@ -361,10 +361,9 @@ struct SilcClientEntryStruct {
        Current initial vector. Initial vector is received always along
        with the channel packet. By default this is filled with NULL.
 
-   char *hmac;
+   SilcHmac hmac;
 
-       HMAC of the channel.  Server only saves the name of the HMAC as
-       it never actually needs to compute the MAC.
+       HMAC of the channel.
 
 */
 struct SilcChannelEntryStruct {
@@ -396,7 +395,7 @@ struct SilcChannelEntryStruct {
   unsigned char *key;
   unsigned int key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
-  char *hmac;
+  SilcHmac hmac;
 };
 
 /* 
@@ -506,7 +505,7 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
-			SilcCipher channel_key, char *hmac);
+			SilcCipher channel_key, SilcHmac hmac);
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry);
 SilcChannelEntry
 silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,

@@ -1370,9 +1370,13 @@ SILC_SERVER_CMD_FUNC(topic)
   channel = silc_idlist_find_channel_by_id(server->local_list, 
 					   channel_id, NULL);
   if (!channel) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
-					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-    goto out;
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
   }
 
   if (argc > 1) {
@@ -1498,9 +1502,13 @@ SILC_SERVER_CMD_FUNC(invite)
   channel = silc_idlist_find_channel_by_id(server->local_list, 
 					   channel_id, NULL);
   if (!channel) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-    goto out;
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
   }
 
   /* Check whether the sender of this command is on the channel. */
@@ -2288,9 +2296,13 @@ SILC_SERVER_CMD_FUNC(cmode)
   channel = silc_idlist_find_channel_by_id(server->local_list, 
 					   channel_id, NULL);
   if (!channel) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-    goto out;
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
   }
 
   /* Check whether this client is on the channel */
@@ -2644,9 +2656,13 @@ SILC_SERVER_CMD_FUNC(cumode)
   channel = silc_idlist_find_channel_by_id(server->local_list, 
 					   channel_id, NULL);
   if (!channel) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-    goto out;
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
   }
 
   /* Check whether sender is on the channel */
@@ -2835,9 +2851,13 @@ SILC_SERVER_CMD_FUNC(kick)
   channel = silc_idlist_find_channel_by_id(server->local_list, 
 					   channel_id, NULL);
   if (!channel) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
-					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-    goto out;
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
   }
 
   /* Check whether sender is on the channel */
@@ -3142,9 +3162,12 @@ SILC_SERVER_CMD_FUNC(leave)
   /* Get channel entry */
   channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
   if (!channel) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-    goto out;
+    channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
+    if (!channel) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
+    }
   }
 
   /* Check whether this client is on the channel */

@@ -1374,6 +1374,37 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 			      server);
 }
 
+/* Callback function that the silc_packet_decrypt will call to make the
+   decision whether the packet is normal or special packet. We will 
+   return TRUE if it is normal and FALSE if it is special */
+
+static int silc_server_packet_decrypt_check(SilcPacketType packet_type,
+					    SilcBuffer buffer,
+					    SilcPacketContext *packet,
+					    void *context)
+{
+  SilcPacketParserContext *parse_ctx = (SilcPacketParserContext *)context;
+  SilcServer server = (SilcServer)parse_ctx->context;
+
+  /* Packet is normal packet, if: 
+
+     1) packet is private message packet and does not have private key set
+     2) is other packet than channel message packet
+     3) is channel message packet and remote is router and we are router 
+
+     all other packets are special packets 
+  */
+  if ((packet_type == SILC_PACKET_PRIVATE_MESSAGE &&
+       !(buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY)) ||
+      packet_type != SILC_PACKET_CHANNEL_MESSAGE || 
+      (packet_type == SILC_PACKET_CHANNEL_MESSAGE &&
+       parse_ctx->sock->type == SILC_SOCKET_TYPE_ROUTER &&
+       server->server_type == SILC_ROUTER))
+    return TRUE;
+
+  return FALSE;
+}
+
 /* Parses whole packet, received earlier. */
 
 SILC_TASK_CALLBACK(silc_server_packet_parse_real)
@@ -1388,7 +1419,8 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 
   /* Decrypt the received packet */
   ret = silc_packet_decrypt(parse_ctx->cipher, parse_ctx->hmac, 
-			    packet->buffer, packet);
+			    packet->buffer, packet,
+			    silc_server_packet_decrypt_check, parse_ctx);
   if (ret < 0)
     goto out;
 
@@ -2313,6 +2345,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   SilcChannelID *channel_id;
   SilcChannelEntry entry;
   SilcCipher key;
+  SilcHmac newhmac;
 
   SILC_LOG_DEBUG(("Creating new channel"));
 
@@ -2325,13 +2358,19 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   if (!silc_cipher_alloc(cipher, &key))
     return NULL;
 
+  /* Allocate hmac */
+  if (!silc_hmac_alloc(hmac, NULL, &newhmac)) {
+    silc_cipher_free(key);
+    return NULL;
+  }
+
   channel_name = strdup(channel_name);
 
   /* Create the channel */
   silc_id_create_channel_id(router_id, server->rng, &channel_id);
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
-				  NULL, key, hmac);
+				  NULL, key, newhmac);
   if (!entry) {
     silc_free(channel_name);
     return NULL;
@@ -2365,6 +2404,7 @@ silc_server_create_new_channel_with_id(SilcServer server,
 {
   SilcChannelEntry entry;
   SilcCipher key;
+  SilcHmac newhmac;
 
   SILC_LOG_DEBUG(("Creating new channel"));
 
@@ -2377,12 +2417,18 @@ silc_server_create_new_channel_with_id(SilcServer server,
   if (!silc_cipher_alloc(cipher, &key))
     return NULL;
 
+  /* Allocate hmac */
+  if (!silc_hmac_alloc(hmac, NULL, &newhmac)) {
+    silc_cipher_free(key);
+    return NULL;
+  }
+
   channel_name = strdup(channel_name);
 
   /* Create the channel */
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
-				  NULL, key, hmac);
+				  NULL, key, newhmac);
   if (!entry) {
     silc_free(channel_name);
     return NULL;
@@ -2413,7 +2459,7 @@ void silc_server_create_channel_key(SilcServer server,
 				    unsigned int key_len)
 {
   int i;
-  unsigned char channel_key[32];
+  unsigned char channel_key[32], hash[32];
   unsigned int len;
 
   if (!channel->channel_key)
@@ -2431,8 +2477,7 @@ void silc_server_create_channel_key(SilcServer server,
   for (i = 0; i < len; i++) channel_key[i] = silc_rng_get_byte(server->rng);
   
   /* Set the key */
-  channel->channel_key->cipher->set_key(channel->channel_key->context, 
-					channel_key, len);
+  silc_cipher_set_key(channel->channel_key, channel_key, len * 8);
 
   /* Remove old key if exists */
   if (channel->key) {
@@ -2445,6 +2490,13 @@ void silc_server_create_channel_key(SilcServer server,
   channel->key = silc_calloc(len, sizeof(*channel->key));
   memcpy(channel->key, channel_key, len);
   memset(channel_key, 0, sizeof(channel_key));
+
+  /* Generate HMAC key from the channel key data and set it */
+  if (!channel->hmac)
+    silc_hmac_alloc("hmac-sha1-96", NULL, &channel->hmac);
+  silc_hash_make(channel->hmac->hash, channel->key, len, hash);
+  silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
+  memset(hash, 0, sizeof(hash));
 }
 
 /* Saves the channel key found in the encoded `key_payload' buffer. This 
@@ -2457,7 +2509,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 {
   SilcChannelKeyPayload payload = NULL;
   SilcChannelID *id = NULL;
-  unsigned char *tmp;
+  unsigned char *tmp, hash[32];
   unsigned int tmp_len;
   char *cipher;
 
@@ -2519,8 +2571,16 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   channel->key_len = tmp_len * 8;
   channel->key = silc_calloc(tmp_len, sizeof(unsigned char));
   memcpy(channel->key, tmp, tmp_len);
-  channel->channel_key->cipher->set_key(channel->channel_key->context, 
-					tmp, tmp_len);
+  silc_cipher_set_key(channel->channel_key, tmp, channel->key_len);
+
+  /* Generate HMAC key from the channel key data and set it */
+  if (!channel->hmac)
+    silc_hmac_alloc("hmac-sha1-96", NULL, &channel->hmac);
+  silc_hash_make(channel->hmac->hash, tmp, tmp_len, hash);
+  silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
+
+  memset(hash, 0, sizeof(hash));
+  memset(tmp, 0, tmp_len);
 
  out:
   if (id)

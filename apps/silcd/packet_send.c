@@ -179,6 +179,102 @@ void silc_server_packet_send_dest(SilcServer server,
     silc_free(packetdata.dst_id);
 }
 
+/* Assembles a new packet to be sent out to network. This doesn't actually
+   send the packet but creates the packet and fills the outgoing data
+   buffer and marks the packet ready to be sent to network. However, If 
+   argument force_send is TRUE the packet is sent immediately and not put 
+   to queue. Normal case is that the packet is not sent immediately. 
+   The source and destination information is sent as argument for this
+   function. */
+
+void silc_server_packet_send_srcdest(SilcServer server,
+				     SilcSocketConnection sock, 
+				     SilcPacketType type, 
+				     SilcPacketFlags flags,
+				     void *src_id,
+				     SilcIdType src_id_type,
+				     void *dst_id,
+				     SilcIdType dst_id_type,
+				     unsigned char *data, 
+				     unsigned int data_len,
+				     int force_send)
+{
+  SilcPacketContext packetdata;
+  SilcIDListData idata;
+  SilcCipher cipher = NULL;
+  SilcHmac hmac = NULL;
+  unsigned char *dst_id_data = NULL;
+  unsigned int dst_id_len = 0;
+  unsigned char *src_id_data = NULL;
+  unsigned int src_id_len = 0;
+
+  SILC_LOG_DEBUG(("Sending packet, type %d", type));
+
+  /* Get data used in the packet sending, keys and stuff */
+  idata = (SilcIDListData)sock->user_data;
+
+  if (dst_id) {
+    dst_id_data = silc_id_id2str(dst_id, dst_id_type);
+    dst_id_len = silc_id_get_len(dst_id_type);
+  }
+
+  if (src_id) {
+    src_id_data = silc_id_id2str(src_id, src_id_type);
+    src_id_len = silc_id_get_len(src_id_type);
+  }
+
+  /* Set the packet context pointers */
+  packetdata.type = type;
+  packetdata.flags = flags;
+  packetdata.src_id = src_id_data;
+  packetdata.src_id_len = src_id_len;
+  packetdata.src_id_type = src_id_type;
+  packetdata.dst_id = dst_id_data;
+  packetdata.dst_id_len = dst_id_len;
+  packetdata.dst_id_type = dst_id_type;
+  packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
+    packetdata.src_id_len + dst_id_len;
+  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
+
+  /* Prepare outgoing data buffer for packet sending */
+  silc_packet_send_prepare(sock, 
+			   SILC_PACKET_HEADER_LEN +
+			   packetdata.src_id_len + 
+			   packetdata.dst_id_len,
+			   packetdata.padlen,
+			   data_len);
+
+  SILC_LOG_DEBUG(("Putting data to outgoing buffer, len %d", data_len));
+
+  packetdata.buffer = sock->outbuf;
+
+  /* Put the data to the buffer */
+  if (data && data_len)
+    silc_buffer_put(sock->outbuf, data, data_len);
+
+  /* Create the outgoing packet */
+  silc_packet_assemble(&packetdata);
+
+  if (idata) {
+    cipher = idata->send_key;
+    hmac = idata->hmac;
+  }
+
+  /* Encrypt the packet */
+  silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
+
+  SILC_LOG_HEXDUMP(("Outgoing packet, len %d", sock->outbuf->len),
+		   sock->outbuf->data, sock->outbuf->len);
+
+  /* Now actually send the packet */
+  silc_server_packet_send_real(server, sock, force_send);
+
+  if (packetdata.src_id)
+    silc_free(packetdata.src_id);
+  if (packetdata.dst_id)
+    silc_free(packetdata.dst_id);
+}
+
 /* Broadcast received packet to our primary route. This function is used
    by router to further route received broadcast packet. It is expected
    that the broadcast flag from the packet is checked before calling this
@@ -538,12 +634,6 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 			silc_id_render(client->id, SILC_ID_CLIENT),
 			sock->hostname, sock->ip));
 
-	/* Send the packet */
-	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-						idata->send_key, idata->hmac, 
-						data, data_len, TRUE, 
-						force_send);
-	
 	/* We want to make sure that the packet is routed to same router
 	   only once. Mark this route as sent route. */
 	k = routed_count;
@@ -551,6 +641,55 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	routed[k] = client->router;
 	routed_count++;
 	
+	/* If the remote connection is router then we'll decrypt the
+	   channel message and re-encrypt it with the session key shared
+	   between us and the remote router. This is done because the
+	   channel keys are cell specific and we have different channel
+	   key than the remote router has. */
+	if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+
+	  /* If private key mode is not set then decrypt the packet
+	     and re-encrypt it */
+	  if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+	    unsigned char *tmp = silc_calloc(data_len, sizeof(*data));
+	    memcpy(tmp, data, data_len);
+
+	    /* Decrypt the channel message (we don't check the MAC) */
+	    if (!silc_channel_payload_decrypt(tmp, data_len, 
+					      channel->channel_key,
+					      NULL)) {
+	      memset(tmp, 0, data_len);
+	      silc_free(tmp);
+	      continue;
+	    }
+
+	    /* Now re-encrypt and send it to the router */
+	    silc_server_packet_send_srcdest(server, sock, 
+					    SILC_PACKET_CHANNEL_MESSAGE, 0,
+					    sender, sender_type,
+					    channel->id, SILC_ID_CHANNEL,
+					    tmp, data_len, force_send);
+	    
+	    /* Free the copy of the channel message */
+	    memset(tmp, 0, data_len);
+	    silc_free(tmp);
+	  } else {
+	    /* Private key mode is set, we don't have the channel key, so
+	       just re-encrypt the entire packet and send it to the router. */
+	    silc_server_packet_send_dest(server, sock, 
+					 SILC_PACKET_CHANNEL_MESSAGE, 0,
+					 channel->id, SILC_ID_CHANNEL,
+					 data, data_len, force_send);
+	  }
+	  continue;
+	}
+  
+	/* Send the packet (to normal server) */
+	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
+						idata->send_key, idata->hmac, 
+						data, data_len, TRUE, 
+						force_send);
+
 	continue;
       }
 

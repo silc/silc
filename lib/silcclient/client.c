@@ -625,6 +625,31 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
   }
 }
 
+/* Callback function that the silc_packet_decrypt will call to make the
+   decision whether the packet is normal or special packet. We will 
+   return TRUE if it is normal and FALSE if it is special */
+
+static int silc_client_packet_decrypt_check(SilcPacketType packet_type,
+					    SilcBuffer buffer,
+					    SilcPacketContext *packet,
+					    void *context)
+{
+
+  /* Packet is normal packet, if: 
+
+     1) packet is private message packet and does not have private key set
+     2) is other packet than channel message packet
+
+     all other packets are special packets 
+  */
+  if ((packet_type == SILC_PACKET_PRIVATE_MESSAGE &&
+       !(buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY)) ||
+      packet_type != SILC_PACKET_CHANNEL_MESSAGE)
+    return TRUE;
+
+  return FALSE;
+}
+
 /* Parses whole packet, received earlier. */
 
 SILC_TASK_CALLBACK(silc_client_packet_parse_real)
@@ -640,7 +665,8 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real)
   SILC_LOG_DEBUG(("Start"));
 
   /* Decrypt the received packet */
-  ret = silc_packet_decrypt(conn->receive_key, conn->hmac, buffer, packet);
+  ret = silc_packet_decrypt(conn->receive_key, conn->hmac, buffer, packet,
+			    silc_client_packet_decrypt_check, parse_ctx);
   if (ret < 0)
     goto out;
 

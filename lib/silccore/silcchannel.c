@@ -38,6 +38,47 @@ struct SilcChannelPayloadStruct {
   unsigned char *iv;
 };
 
+/* Decrypts the channel message payload. */
+
+int silc_channel_payload_decrypt(unsigned char *data,
+				 size_t data_len,
+				 SilcCipher cipher,
+				 SilcHmac hmac)
+{
+  unsigned int iv_len, mac_len;
+  unsigned char *end, *mac, mac2[32];
+
+  /* Decrypt the channel message. First push the IV out of the packet.
+     The IV is used in the decryption process. Then decrypt the message.
+     After decyprtion, take the MAC from the decrypted packet, compute MAC
+     and compare the MACs.  If they match, the decryption was successfull
+     and we have the channel message ready to be displayed. */
+  end = data + data_len;
+
+  /* Push the IV out of the packet */
+  iv_len = silc_cipher_get_block_len(cipher);
+
+  /* Decrypt the channel message */
+  silc_cipher_decrypt(cipher, data, data, data_len - iv_len, (end - iv_len));
+
+  /* Take the MAC */
+  if (hmac) {
+    mac_len = silc_hmac_len(hmac);
+    mac = (end - iv_len - mac_len);
+
+    /* Check the MAC of the message */
+    SILC_LOG_DEBUG(("Checking channel message MACs"));
+    silc_hmac_make(hmac, data, (data_len - iv_len - mac_len), mac2, &mac_len);
+    if (memcmp(mac, mac2, mac_len)) {
+      SILC_LOG_DEBUG(("Channel message MACs does not match"));
+      return FALSE;
+    }
+    SILC_LOG_DEBUG(("MAC is Ok"));
+  }
+
+  return TRUE;
+}
+
 /* Parses channel payload returning new channel payload structure. This
    also decrypts it and checks the MAC. */
 
@@ -48,38 +89,17 @@ SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
   SilcChannelPayload new;
   int ret;
   unsigned int iv_len, mac_len;
-  unsigned char *mac, mac2[32];
 
   SILC_LOG_DEBUG(("Parsing channel payload"));
 
-  /* Decrypt the channel message. First push the IV out of the packet.
-     The IV is used in the decryption process. Then decrypt the message.
-     After decyprtion, take the MAC from the decrypted packet, compute MAC
-     and compare the MACs.  If they match, the decryption was successfull
-     and we have the channel message ready to be displayed. */
-
-  /* Push the IV out of the packet (it will be in buffer->tail) */
-  iv_len = silc_cipher_get_block_len(cipher);
-  silc_buffer_push_tail(buffer, iv_len);
-
-  /* Decrypt the channel message */
-  silc_cipher_decrypt(cipher, buffer->data, buffer->data,
-		      buffer->len, buffer->tail);
-
-  /* Take the MAC */
-  mac_len = silc_hmac_len(hmac);
-  silc_buffer_push_tail(buffer, mac_len);
-  mac = buffer->tail;
-
-  /* Check the MAC of the message */
-  SILC_LOG_DEBUG(("Checking channel message MACs"));
-  silc_hmac_make(hmac, buffer->data, buffer->len, mac2, &mac_len);
-  if (memcmp(mac, mac2, mac_len)) {
-    SILC_LOG_DEBUG(("Channel message MACs does not match"));
+  /* Decrypt the payload */
+  ret = silc_channel_payload_decrypt(buffer->data, buffer->len,
+				     cipher, hmac);
+  if (ret == FALSE)
     return NULL;
-  }
-  SILC_LOG_DEBUG(("MAC is Ok"));
-  silc_buffer_pull_tail(buffer, iv_len + mac_len);
+
+  iv_len = silc_cipher_get_block_len(cipher);
+  mac_len = silc_hmac_len(hmac);
 
   new = silc_calloc(1, sizeof(*new));
 
@@ -176,8 +196,10 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
 void silc_channel_payload_free(SilcChannelPayload payload)
 {
   if (payload) {
-    if (payload->data)
+    if (payload->data) {
+      memset(payload->data, 0, payload->data_len);
       silc_free(payload->data);
+    }
     silc_free(payload);
   }
 }

@@ -190,6 +190,10 @@ char *silc_hmac_get_supported()
 void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
 		       unsigned int key_len)
 {
+  if (hmac->key) {
+    memset(hmac->key, 0, hmac->key_len);
+    silc_free(hmac->key);
+  }
   hmac->key = silc_calloc(key_len, sizeof(unsigned char));
   hmac->key_len = key_len;
   memcpy(hmac->key, key, key_len);

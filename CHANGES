@@ -1,11 +1,41 @@
 Fri Mar  9 12:40:42 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Minor fix t the channel payload; allocate the data area, as it
+	* Minor fix to the channel payload; allocate the data area, as it
 	  needs to be of specific length.
 
 	* If the key agreement port is zero then the operating
 	  system will define the bound port.  Affected files are
 	  lib/silcclient/silcapi.h and lib/silcclient/client_keyagr.c.
+
+	* Added new function silc_channel_payload_decrypt into the file
+	  lib/silccore/silcchannel.[ch].
+
+	* Moved the channel message etc, check from silc_packet_decrypt
+	  to applications.  The library calls now a generic 
+	  SilcPacketCheckDecrypt callback which is to return TRUE or FALSE
+	  when the packet is either normal or special.  This was done to
+	  allow more wide range of checking that was not allowed when
+	  the code was in library.  Now applications can do virtually any
+	  checks to the packet and return to the library the decision how
+	  the packet should be processed.  Affected files are
+	  lib/silccore/silcpacket.[ch].
+
+	  Added silc_server_packet_decrypt_check to the server and
+	  silc_client_packet_decrypt_check to the client library.
+
+	* Added silc_server_packet_send_srcdest into silcd/packet_send.[ch]
+	  to send with specified source and destination information.
+
+	* Channel message delivery between routers was broken after the
+	  channel key distribution was fixed earlier.  The channel key
+	  was used be to distributed to other routers as well which is not
+	  allowed by the protocol.  Now this is fixed and channel keys
+	  really are cell specific and the channel message delivery between
+	  routers comply with the protocol specification.
+
+	* Fixed various commands in server to check also the global list
+	  for the channel entry and not just the local list.  The affected
+	  file silcd/command.c.
 
 Thu Mar  8 21:39:03 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
@@ -33,7 +63,7 @@ Thu Mar  8 21:39:03 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added Hmac field to the Channel Message Payload.  The integrity
 	  of plaintext channel messages are now protected by computing
 	  MAC of the message and attaching the MAC to the payload.  The
-	  MAC is not encrypted.  Now, it is clear that this causes some
+	  MAC is encrypted.  Now, it is clear that this causes some
 	  overhead to the size of the packet but rationale for this is that
 	  now the receiver can verify whether the channel message decrypted
 	  correctly and also when private keys are set for the channel the
@@ -49,13 +79,6 @@ Thu Mar  8 21:39:03 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Rewrote parts of Silc Channel Payload interface in the
 	  lib/silccore/silcchannel.[ch].  The encode function now also
 	  encrypts the packet and parse function decrypts it.
-
-	* Channel message delivery between routers was broken after the
-	  channel key distribution was fixed earlier.  The channel key
-	  was used be to distributed to other routers as well which is not
-	  allowed by the protocol.  Now this is fixed and channel keys
-	  really are cell specific and the channel message delivery between
-	  routers comply with the protocol specification.
 
 Wed Mar  7 20:58:50 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
