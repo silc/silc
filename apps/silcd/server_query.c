@@ -21,11 +21,13 @@
 #include "serverincludes.h"
 #include "server_internal.h"
 
+/* Represents an SILC ID */
 typedef struct {
-  void *id;
-  SilcIdType id_type;
+  void *id;			    /* ID */
+  SilcIdType id_type;		    /* ID type */
 } *SilcServerQueryID;
 
+/* Represents one error occurred during query */
 typedef struct {
   SilcUInt32 index;		    /* Index to IDs */
   bool from_cmd;		    /* TRUE if `index' is from command args,
@@ -33,11 +35,27 @@ typedef struct {
   SilcStatus error;		    /* The actual error */
 } *SilcServerQueryError;
 
+/* Context for ongoing queries that server the original query (like to
+   resolve detailed information from some other server before replying
+   to the original sender). */
 typedef struct {
+  unsigned char **arg;		    /* Query argument */
+  SilcUInt32 *arg_lens;		    /* Query argument lengths */
+  SilcUInt32 *arg_types;	    /* Query argument types */
+  SilcUInt32 argc;		    /* Number of query arguments */
+  SilcUInt32 timeout;		    /* Max timeout for query to complete */
+  SilcUInt16 ident;		    /* Query command identifier */
+} *SilcServerQueryList;
+
+/* Query session context */
+typedef struct {
+  /* Query session data */
   SilcCommand querycmd;		    /* Query command */
   SilcServerCommandContext cmd;	    /* Command context for query */
+  SilcServerQueryList queries;	    /* Ongoing queries */
   SilcUInt32 num_query;		    /* Number of ongoing queries left */
 
+  /* Queried data */
   char *nickname;		    /* Queried nickname */
   char *nick_server;		    /* Queried nickname's server */
   char *server_name;		    /* Queried server name */
@@ -142,7 +160,6 @@ void silc_server_query_send_error(SilcServer server,
 				  SilcStatus error, ...)
 {
   va_list va;
-  SilcBuffer packet;
   unsigned char *data = NULL;
   SilcUInt32 data_len = 0, data_type = 0, argc = 0;
 
@@ -155,15 +172,10 @@ void silc_server_query_send_error(SilcServer server,
   }
 
   /* Send the command reply with error */
-  packet = silc_command_reply_payload_encode_va(
-			       query->querycmd, error, 0,
-			       silc_command_get_ident(query->cmd->payload),
-			       argc, data_type, data, data_len);
-  silc_server_packet_send(server, query->cmd->sock,
-			  SILC_PACKET_COMMAND_REPLY, 0, 
-			  packet->data, packet->len, FALSE);
-
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, query->cmd->sock,
+				 query->querycmd, error, 0, 
+				 silc_command_get_ident(query->cmd->payload),
+				 argc, data_type, data, data_len);
   va_end(va);
 }
 
@@ -451,8 +463,8 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query)
   bool check_global = FALSE;
   void *entry;
   SilcClientEntry *clients = NULL, client_entry;
-  SilcChannelEntry *channels = NULL, channel_entry;
-  SilcServerEntry *servers = NULL, server_entry;
+  SilcChannelEntry *channels = NULL;
+  SilcServerEntry *servers = NULL;
   SilcUInt32 clients_count = 0, channels_count = 0, servers_count = 0;
   int i;
 
@@ -604,6 +616,48 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query)
   switch (query->querycmd) {
 
   case SILC_COMMAND_WHOIS:
+    for (i = 0; i < clients_count; i++) {
+      client_entry = clients[i];
+
+      if (!client_entry)
+	continue;
+
+      /* If requested attributes is set then we always resolve the client
+	 information, if not then check whether the entry is complete or not
+	 and decide whether we need to resolve or not. */
+      if (!query->attrs) {
+	if ((client_entry->nickname && client_entry->username &&
+	     client_entry->userinfo) ||
+	    !(client_entry->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+
+	  /* Check if cannot query this anyway, so take next one */
+	  if (!client_entry->router)
+	    continue;
+
+	  /* If we are router, client is local to us, or client is on channel
+	     we do not need to resolve the client information. */
+	  if (server->server_type != SILC_SERVER || SILC_IS_LOCAL(client_entry)
+	      || silc_hash_table_count(client_entry->channels))
+	    continue;
+	}
+      }
+
+      /* When requested attributes is present and local client is detached
+	 we cannot send the command to the client, we'll reply on behalf of
+	 the client instead. */
+      if (query->attrs && SILC_IS_LOCAL(client_entry) &&
+	  client_entry->mode & SILC_UMODE_DETACHED)
+	continue;
+
+      /* Resolve the detailed client information. If client is local we
+	 know that attributes were present and we will resolve directly
+	 from the client. Otherwise resolve from client's owner. */
+      silc_server_query_resolve(server, query,
+				(SILC_IS_LOCAL(client_entry) ?
+				 client_entry->connection :
+				 client_entry->router->connection),
+				client_entry);
+    }
     break;
 
   case SILC_COMMAND_WHOWAS:
@@ -650,12 +704,15 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query)
     break;
   }
 
-  /* If we didn't have to do any resolving, continue with sending the
-     command reply to the original sender. */
   if (!query->num_query)
+    /* If we didn't have to do any resolving, continue with sending the
+       command reply to the original sender. */
     silc_server_query_send_reply(server, query, clients, clients_count,
 				 servers, servers_count, channels,
 				 channels_count);
+  else
+    /* Now actually send the resolvings we gathered earlier */
+    silc_server_query_resolve(server, query, NULL, NULL);
 
   silc_free(clients);
   silc_free(servers);
@@ -673,8 +730,15 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
 #if 0
   SilcUInt16 ident;
 
-  if (!sock)
+  if (!sock && client_entry)
     return;
+
+  /* If arguments are NULL we will now actually send the resolvings
+     that earlier has been gathered by calling this function. */
+  if (!sock && !client_entry) {
+
+    return;
+  }
 
   if (client_entry->data.status & SILC_IDLIST_STATUS_RESOLVING) {
     /* The entry is being resolved by some other external query already.
