@@ -544,7 +544,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 
 static int
 silc_client_get_public_key_auth(SilcClient client,
-				char *filepath,
+				SilcClientConnection conn,
 				unsigned char *auth_data,
 				uint32 *auth_data_len,
 				SilcSKE ske)
@@ -552,18 +552,9 @@ silc_client_get_public_key_auth(SilcClient client,
   int len;
   SilcPKCS pkcs;
   SilcBuffer auth;
-  SilcPublicKey pub_key;
 
-  if (!silc_pkcs_load_public_key(filepath,&pub_key, SILC_PKCS_FILE_PEM))
-    if (!silc_pkcs_load_public_key(filepath, &pub_key, SILC_PKCS_FILE_BIN))
-      return FALSE;
-
-  silc_pkcs_alloc(pub_key->name, &pkcs);
-  if (!silc_pkcs_public_key_set(pkcs, pub_key)) {
-    silc_pkcs_free(pkcs);
-    silc_pkcs_public_key_free(pub_key);
-    return FALSE;
-  }
+  /* Use our default key */
+  pkcs = client->pkcs;
 
   /* Make the authentication data. Protocol says it is HASH plus
      KE Start Payload. */
@@ -576,16 +567,13 @@ silc_client_get_public_key_auth(SilcClient client,
 					  ske->start_payload_copy->len),
 		     SILC_STR_END);
 
-  if (silc_pkcs_sign(pkcs, auth->data, auth->len, auth_data, auth_data_len)) {
-    silc_pkcs_free(pkcs);
+  if (silc_pkcs_sign_with_hash(pkcs, ske->prop->hash, auth->data, 
+			       auth->len, auth_data, auth_data_len)) {
     silc_buffer_free(auth);
-    silc_pkcs_public_key_free(pub_key);
     return TRUE;
   }
 
-  silc_pkcs_free(pkcs);
   silc_buffer_free(auth);
-  silc_pkcs_public_key_free(pub_key);
   return FALSE;
 }
 
@@ -619,11 +607,6 @@ silc_client_conn_auth_continue(unsigned char *auth_data,
 			  SILC_PACKET_CONNECTION_AUTH,
 			  NULL, 0, NULL, NULL,
 			  packet->data, packet->len, TRUE);
-
-  if (auth_data) {
-    memset(auth_data, 0, auth_data_len);
-    silc_free(auth_data);
-  }
   silc_buffer_free(packet);
       
   /* Next state is end of protocol */
@@ -652,6 +635,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
        */
       unsigned char *auth_data = NULL;
       uint32 auth_data_len = 0;
+      unsigned char sign[1024];
 
       switch(ctx->auth_meth) {
       case SILC_AUTH_NONE:
@@ -676,17 +660,17 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	break;
 
       case SILC_AUTH_PUBLIC_KEY:
-	{
-	  unsigned char sign[1024];
-
+	if (!ctx->auth_data) {
 	  /* Public key authentication */
-	  silc_client_get_public_key_auth(client, ctx->auth_data,
-					  sign, &auth_data_len, 
+	  silc_client_get_public_key_auth(client, conn, sign, &auth_data_len, 
 					  ctx->ske);
-	  auth_data = silc_calloc(auth_data_len, sizeof(*auth_data));
-	  memcpy(auth_data, sign, auth_data_len);
-	  break;
+	  auth_data = sign;
+	} else {
+	  auth_data = ctx->auth_data;
+	  auth_data_len = ctx->auth_data_len;
 	}
+	
+	break;
       }
 
       silc_client_conn_auth_continue(auth_data,

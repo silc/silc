@@ -366,7 +366,7 @@ silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
   int sock;
 
   /* Create connection to server asynchronously */
-  sock = silc_net_create_connection_async(ctx->port, ctx->host);
+  sock = silc_net_create_connection_async(NULL, ctx->port, ctx->host);
   if (sock < 0)
     return -1;
 

@@ -24,46 +24,25 @@
 void *silc_malloc(size_t size)
 {
   void *addr;
-#ifdef HAVE_MLOCK
-  addr = malloc(size);
-  assert(addr != NULL);
-  mlock(addr, size);
-  return addr;
-#else
   addr = malloc(size);
   assert(addr != NULL);
   return addr;
-#endif
 }
 
 void *silc_calloc(size_t items, size_t size)
 {
   void *addr;
-#ifdef HAVE_MLOCK
-  addr = calloc(items, size);
-  assert(addr != NULL);
-  mlock(addr, size);
-  return addr;
-#else
   addr = calloc(items, size);
   assert(addr != NULL);
   return addr;
-#endif
 }
 
 void *silc_realloc(void *ptr, size_t size)
 {
   void *addr;
-#ifdef HAVE_MLOCK
-  addr = realloc(ptr, size);
-  assert(addr != NULL);
-  mlock(addr, size);
-  return addr;
-#else
   addr = realloc(ptr, size);
   assert(addr != NULL);
   return addr;
-#endif
 }
 
 void silc_free(void *ptr)

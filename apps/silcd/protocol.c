@@ -712,7 +712,8 @@ silc_server_public_key_authentication(SilcServer server,
 		     SILC_STR_END);
 
   /* Verify signature */
-  if (silc_pkcs_verify(pkcs, sign, sign_len, auth->data, auth->len)) {
+  if (silc_pkcs_verify_with_hash(pkcs, ske->prop->hash, sign, sign_len, 
+				 auth->data, auth->len)) {
     silc_pkcs_free(pkcs);
     silc_buffer_free(auth);
     return TRUE;
@@ -725,7 +726,6 @@ silc_server_public_key_authentication(SilcServer server,
 
 static int
 silc_server_get_public_key_auth(SilcServer server,
-				SilcPublicKey pub_key,
 				unsigned char *auth_data,
 				uint32 *auth_data_len,
 				SilcSKE ske)
@@ -734,14 +734,7 @@ silc_server_get_public_key_auth(SilcServer server,
   SilcPKCS pkcs;
   SilcBuffer auth;
 
-  if (!pub_key)
-    return FALSE;
-
-  silc_pkcs_alloc(pub_key->name, &pkcs);
-  if (!silc_pkcs_public_key_set(pkcs, pub_key)) {
-    silc_pkcs_free(pkcs);
-    return FALSE;
-  }
+  pkcs = server->pkcs;
 
   /* Make the authentication data. Protocol says it is HASH plus
      KE Start Payload. */
@@ -754,13 +747,12 @@ silc_server_get_public_key_auth(SilcServer server,
 					  ske->start_payload_copy->len),
 		     SILC_STR_END);
 
-  if (silc_pkcs_sign(pkcs, auth->data, auth->len, auth_data, auth_data_len)) {
-    silc_pkcs_free(pkcs);
+  if (silc_pkcs_sign_with_hash(pkcs, ske->prop->hash, auth->data, 
+			       auth->len, auth_data, auth_data_len)) {
     silc_buffer_free(auth);
     return TRUE;
   }
 
-  silc_pkcs_free(pkcs);
   silc_buffer_free(auth);
   return FALSE;
 }
@@ -1081,8 +1073,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    unsigned char sign[1024];
 
 	    /* Public key authentication */
-	    silc_server_get_public_key_auth(server, ctx->auth_data,
-					    sign, &auth_data_len,
+	    silc_server_get_public_key_auth(server, sign, &auth_data_len,
 					    ctx->ske);
 	    auth_data = silc_calloc(auth_data_len, sizeof(*auth_data));
 	    memcpy(auth_data, sign, auth_data_len);
@@ -1545,7 +1536,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     if (ctx->packet->type != SILC_PACKET_REKEY_DONE) {
       /* Error in protocol */
       protocol->state = SILC_PROTOCOL_STATE_ERROR;
-      silc_protocol_execute(protocol, server->schedule, 0, 0);
+      silc_protocol_execute(protocol, server->schedule, 0, 300000);
       return;
     }
 

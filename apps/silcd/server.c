@@ -84,6 +84,9 @@ void silc_server_free(SilcServer server)
     if (server->rng)
       silc_rng_free(server->rng);
 
+    if (server->pkcs)
+      silc_pkcs_free(server->pkcs);
+
 #ifdef SILC_SIM
     while ((sim = silc_dlist_get(server->sim)) != SILC_LIST_END) {
       silc_dlist_del(server->sim, sim);
@@ -115,6 +118,7 @@ int silc_server_init(SilcServer server)
   SilcServerID *id;
   SilcServerEntry id_entry;
   SilcIDListPurge purge;
+  SilcServerConfigSectionListenPort *listen;
 
   SILC_LOG_DEBUG(("Initializing server"));
   assert(server);
@@ -166,22 +170,27 @@ int silc_server_init(SilcServer server)
   /* Initialize none cipher */
   silc_cipher_alloc("none", &server->none_cipher);
 
-  /* Create a listening server. Note that our server can listen on
-     multiple ports. All listeners are created here and now. */
-  /* XXX Still check this whether to use server_info or listen_port. */
+  /* Allocate PKCS context for local public and private keys */
+  silc_pkcs_alloc(server->public_key->name, &server->pkcs);
+  silc_pkcs_public_key_set(server->pkcs, server->public_key);
+  silc_pkcs_private_key_set(server->pkcs, server->private_key);
+
+  /* Create a listening server. Note that our server can listen on multiple
+     ports. All listeners are created here and now. */
   sock_count = 0;
-  while(server->config->listen_port) {
+  listen = server->config->listen_port;
+  while(listen) {
     int tmp;
 
     tmp = silc_net_create_server(server->config->listen_port->port,
-				 server->config->listen_port->host);
+				 server->config->listen_port->listener_ip);
     if (tmp < 0)
       goto err0;
 
     sock = silc_realloc(sock, (sizeof(int *) * (sock_count + 1)));
     sock[sock_count] = tmp;
-    server->config->listen_port = server->config->listen_port->next;
     sock_count++;
+    listen = listen->next;
   }
 
   /* Initialize ID caches */
@@ -522,7 +531,8 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
 		 sconn->remote_host, sconn->remote_port));
 
   /* Connect to remote host */
-  sock = silc_net_create_connection(sconn->remote_port, 
+  sock = silc_net_create_connection(server->config->listen_port->local_ip,
+				    sconn->remote_port, 
 				    sconn->remote_host);
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not connect to router"));

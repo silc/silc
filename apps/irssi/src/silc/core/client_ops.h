@@ -47,11 +47,9 @@ void silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 			    SilcSocketType conn_type, unsigned char *pk, 
 			    uint32 pk_len, SilcSKEPKType pk_type,
 			    SilcVerifyPublicKey completion, void *context);
-int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
-			 char *hostname, uint16 port,
-			 SilcProtocolAuthMeth *auth_meth,
-			 unsigned char **auth_data,
-			 uint32 *auth_data_len);
+void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
+			  char *hostname, uint16 port,
+			  SilcGetAuthMeth completion, void *context);
 void silc_failure(SilcClient client, SilcClientConnection conn, 
 		  SilcProtocol protocol, void *failure);
 int silc_key_agreement(SilcClient client, SilcClientConnection conn,

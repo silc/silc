@@ -1,3 +1,40 @@
+Tue Sep  4 12:39:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the get_auth_methdod client operation to be asynchronous.
+	  It can be async if the application resolves the authentication
+	  method from the server during the negotiation.  Added new
+	  SilcGetAuthMeth completion callback that the application will
+	  call after resolving the authentication method.
+
+	  Added function silc_client_request_authentication_method that
+	  the application can use to resolve the authentication method
+	  from the server.  Added also SilcConnectionAuthRequest callback
+	  that the library will call after the server has replied.  The
+	  application can call this function if it does not know the
+	  current authentication method.
+
+	  Affected files are lib/silcclient/client.c and 
+	  lib/silcclient/silcapi.h.
+
+	* The Irssi SILC client now automatically resolves the authentication
+	  method incase any configuration information is not present (and
+	  currently there never is).  The affected file is
+	  irssi/src/silc/core/client_ops.c.
+
+	* Fixed public key authentication from the client library.
+	  Affected file lib/silcclient/protocol.c.  Changed also the
+	  protocol specification about the public key authentication in
+	  the connection authentication protocol.  The actual data to be
+	  signed is now computed with a hash function before signing.
+
+	* Fixed the public key authentication from the server as well.
+	  Affected file silcd/protocol.c.
+
+	* Removed the mlock()'s from the memory allocation routines.
+	  Affected file lib/silcutil/silcmemory.c.  The ./configure does
+	  not check anymore for the mlock().  Affected file is
+	  configure.in.pre.
+
 Mon Sep  3 20:09:59 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the lib/silcmath/mpi/mpi.h to always use 32-bit data
@@ -7,6 +44,16 @@ Mon Sep  3 20:09:59 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not check for threads at all on BSD systems.  Affected
 	  file configure.in.pre.
+
+	* Removed -n and -h options from the Irssi SILC Client since
+	  they are not used in silc.
+
+	* Fixed the prime generation to assure that the first digit
+	  of the generated random number is not zero since our conversion
+	  routines does not like number strings that starts with zero
+	  digit.  If zero digit is seen the random number is regenerated.
+	  This caused some corrupted RSA keys when the zero first digit
+	  was met.  Affected file lib/silcmath/silcprimegen.c.
 
 Sun Sep  2 17:17:24 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 

@@ -77,6 +77,7 @@ SILC_PKCS_API_INIT(rsa)
 {
   uint32 prime_bits = keylen / 2;
   SilcMPInt p, q;
+  bool found = FALSE;
 
   printf("Generating RSA Public and Private keys, might take a while...\n");
 
@@ -84,16 +85,17 @@ SILC_PKCS_API_INIT(rsa)
   silc_mp_init(&q);
 
   /* Find p and q */
- retry_primes:
-  printf("Finding p: ");
-  silc_math_gen_prime(&p, prime_bits, TRUE);
-  
-  printf("\nFinding q: ");
-  silc_math_gen_prime(&q, prime_bits, TRUE);
-  
-  if ((silc_mp_cmp(&p, &q)) == 0) {
-    printf("\nFound equal primes, not good, retrying...\n");
-    goto retry_primes;
+  while (!found) {
+    printf("Finding p: ");
+    silc_math_gen_prime(&p, prime_bits, TRUE);
+    
+    printf("\nFinding q: ");
+    silc_math_gen_prime(&q, prime_bits, TRUE);
+
+    if ((silc_mp_cmp(&p, &q)) == 0)
+      printf("\nFound equal primes, not good, retrying...\n");
+    else
+      found = TRUE;
   }
 
   /* If p is smaller than q, switch them */
@@ -480,7 +482,7 @@ void rsa_generate_keys(RsaKey *key, uint32 bits,
   /* Set the primes */
   silc_mp_set(&key->p, p);
   silc_mp_set(&key->q, q);
-  
+
   /* Compute modulus, n = p * q */
   silc_mp_mul(&key->n, &key->p, &key->q);
   

@@ -72,32 +72,41 @@ void silc_net_close_server(int sock);
  *
  * SYNOPSIS
  *
- *    int silc_net_create_connection(int port, char *host);
+ *    int silc_net_create_connection(const char *local_ip, int port, 
+ *                                   const char *host);
  *
  * DESCRIPTION
  *
  *    Creates a connection (TCP/IP) to a remote host. Returns the connection
  *    socket or -1 on error. This blocks the process while trying to create
- *    the connection.
+ *    the connection. If the `local_ip' is not NULL then this will bind
+ *    the `local_ip' address to a port before creating the connection.  If
+ *    it is NULL then this will directly create the connection.
  *
  ***/
-int silc_net_create_connection(int port, char *host);
+int silc_net_create_connection(const char *localhost, int port, 
+			       const char *host);
 
 /****f* silcutil/SilcNetAPI/silc_net_create_connection_async
  *
  * SYNOPSIS
  *
- *    int silc_net_create_connection_async(int port, char *host);
+ *    int silc_net_create_connection_async(const char *local_ip, int port, 
+ *                                         const char *host);
  *
  * DESCRIPTION
  *
  *    Creates a connection (TCP/IP) to a remote host. Returns the connection
  *    socket or -1 on error. This creates non-blocking socket hence the
  *    connection returns directly. To get the result of the connect() one
- *    must select() the socket and read the result after it's ready.
+ *    must select() the socket and read the result after it's ready. If the
+ *    `local_ip' is not NULL then this will bind the `local_ip' address to
+ *    a port before creating the connection.  If it is NULL then this will
+ *    directly create the connection.
  *
  ***/
-int silc_net_create_connection_async(int port, char *host);
+int silc_net_create_connection_async(const char *local_ip, int port, 
+				     const char *host);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_connection
  *

@@ -44,6 +44,15 @@ typedef struct {
   void *context;
 } *SilcClientRekey;
 
+/* Context to hold the connection authentication request callbacks that
+   will be called when the server has replied back to our request about
+   current authentication method in the session. */
+typedef struct {
+  SilcConnectionAuthRequest callback;
+  void *context;
+  SilcTask timeout;
+} *SilcClientConnAuthRequest;
+
 /* Connection structure used in client to associate all the important
    connection specific data to this structure. */
 struct SilcClientConnectionStruct {
@@ -120,6 +129,9 @@ struct SilcClientConnectionStruct {
 
   /* Re-key context */
   SilcClientRekey rekey;
+
+  /* Authentication request context. */
+  SilcClientConnAuthRequest connauth;
 
   /* Pointer back to the SilcClient. This object is passed to the application
      and the actual client object is accesible through this pointer. */
@@ -295,5 +307,8 @@ void silc_client_notify_by_server(SilcClient client,
 void silc_client_private_message(SilcClient client, 
 				 SilcSocketConnection sock, 
 				 SilcPacketContext *packet);
+void silc_client_connection_auth_request(SilcClient client,
+					 SilcSocketConnection sock,
+					 SilcPacketContext *packet);
 
 #endif

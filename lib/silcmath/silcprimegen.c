@@ -197,7 +197,7 @@ static uint32 primetable[] =
 
 bool silc_math_gen_prime(SilcMPInt *prime, uint32 bits, bool verbose)
 {
-  unsigned char *numbuf;
+  unsigned char *numbuf = NULL;
   uint32 i, b, k;
   uint32 *spmods;
   SilcMPInt r, base, tmp, tmp2, oprime;
@@ -212,13 +212,20 @@ bool silc_math_gen_prime(SilcMPInt *prime, uint32 bits, bool verbose)
 
   SILC_LOG_DEBUG(("Generating new prime"));
 
-  /* Get random number */
-  numbuf = silc_rng_global_get_rn_string((bits / 8));
-  if (!numbuf)
-    return FALSE;
+  /* Get random number and assure that the first digit is not zero since
+     our conversion routines does not like the first digit being zero. */
+  do {
+    if (numbuf) {
+      memset(numbuf, 0, (bits / 8));
+      silc_free(numbuf);
+    }
+    numbuf = silc_rng_global_get_rn_string((bits / 8));
+    if (!numbuf)
+      return FALSE;
+  } while (numbuf[0] == '0');
 
   /* Convert into MP and set the size */
-  silc_mp_set_str(prime, numbuf, 16);
+  silc_mp_set_str(prime, numbuf, 16);  
   silc_mp_mod_2exp(prime, prime, bits);
 
   /* Empty buffer */

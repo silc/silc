@@ -2135,7 +2135,7 @@ void silc_server_key_agreement(SilcServer server,
    actually be received at anytime but usually it is used only during
    the connection authentication phase. Now, protocol says that this packet
    can come from client or server, however, we support only this coming
-   from client and expect that server's always knows what authentication
+   from client and expect that server always knows what authentication
    method to use. */
 
 void silc_server_connection_auth_request(SilcServer server,
@@ -2144,7 +2144,7 @@ void silc_server_connection_auth_request(SilcServer server,
 {
   SilcServerConfigSectionClientConnection *client = NULL;
   uint16 conn_type;
-  int ret;
+  int ret, port;
   SilcAuthMethod auth_meth;
 
   SILC_LOG_DEBUG(("Start"));
@@ -2165,13 +2165,14 @@ void silc_server_connection_auth_request(SilcServer server,
 
   /* Get the authentication method for the client */
   auth_meth = SILC_AUTH_NONE;
+  port = server->sockets[server->sock]->port; /* Listenning port */
   client = silc_server_config_find_client_conn(server->config,
 					       sock->ip,
-					       sock->port);
+					       port);
   if (!client)
     client = silc_server_config_find_client_conn(server->config,
 						 sock->hostname,
-						 sock->port);
+						 port);
   if (client)
     auth_meth = client->auth_meth;
 	  

@@ -34,6 +34,10 @@ static void silc_client_packet_parse(SilcPacketParserContext *parser_context);
 static void silc_client_packet_parse_type(SilcClient client, 
 					  SilcSocketConnection sock,
 					  SilcPacketContext *packet);
+void silc_client_resolve_auth_method(bool success,
+				     SilcProtocolAuthMeth auth_meth,
+				     const unsigned char *auth_data,
+				     uint32 auth_data_len, void *context);
 
 /* Allocates new client object. This has to be done before client may
    work. After calling this one must call silc_client_init to initialize
@@ -58,6 +62,9 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
 
   if (!new_client->params->rekey_secs)
     new_client->params->rekey_secs = 3600;
+
+  if (!new_client->params->connauth_request_secs)
+    new_client->params->connauth_request_secs = 2;
 
   return new_client;
 }
@@ -247,7 +254,7 @@ silc_client_connect_to_server_internal(SilcClientInternalConnectContext *ctx)
   /* XXX In the future we should give up this non-blocking connect all
      together and use threads instead. */
   /* Create connection to server asynchronously */
-  sock = silc_net_create_connection_async(ctx->port, ctx->host);
+  sock = silc_net_create_connection_async(NULL, ctx->port, ctx->host);
   if (sock < 0)
     return -1;
 
@@ -482,13 +489,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
   proto_ctx->dest_id_type = ctx->dest_id_type;
   proto_ctx->dest_id = ctx->dest_id;
 
-  /* Resolve the authentication method to be used in this connection */
-  if (!client->ops->get_auth_method(client, sock->user_data, sock->hostname,
-				    sock->port, &proto_ctx->auth_meth,
-				    &proto_ctx->auth_data, 
-				    &proto_ctx->auth_data_len))
-    proto_ctx->auth_meth = SILC_AUTH_NONE;
-
   /* Free old protocol as it is finished now */
   silc_protocol_free(protocol);
   if (ctx->packet)
@@ -496,13 +496,46 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
   silc_free(ctx);
   sock->protocol = NULL;
 
+  /* Resolve the authentication method to be used in this connection. The
+     completion callback is called after the application has resolved
+     the authentication method. */
+  client->ops->get_auth_method(client, sock->user_data, sock->hostname,
+			       sock->port, silc_client_resolve_auth_method,
+			       proto_ctx);
+}
+
+/* Authentication method resolving callback. Application calls this function
+   after we've called the client->ops->get_auth_method client operation
+   to resolve the authentication method. We will continue the executiong
+   of the protocol in this function. */
+
+void silc_client_resolve_auth_method(bool success,
+				     SilcProtocolAuthMeth auth_meth,
+				     const unsigned char *auth_data,
+				     uint32 auth_data_len, void *context)
+{
+  SilcClientConnAuthInternalContext *proto_ctx =
+    (SilcClientConnAuthInternalContext *)context;
+  SilcClient client = (SilcClient)proto_ctx->client;
+
+  if (!success)
+    auth_meth = SILC_AUTH_NONE;
+
+  proto_ctx->auth_meth = auth_meth;
+
+  if (auth_data && auth_data_len) {
+    proto_ctx->auth_data = silc_calloc(auth_data_len, sizeof(*auth_data));
+    memcpy(proto_ctx->auth_data, auth_data, auth_data_len);
+    proto_ctx->auth_data_len = auth_data_len;
+  }
+
   /* Allocate the authenteication protocol and execute it. */
   silc_protocol_alloc(SILC_PROTOCOL_CLIENT_CONNECTION_AUTH, 
-		      &sock->protocol, (void *)proto_ctx, 
+		      &proto_ctx->sock->protocol, (void *)proto_ctx, 
 		      silc_client_connect_to_server_final);
 
   /* Execute the protocol */
-  silc_protocol_execute(sock->protocol, client->schedule, 0, 0);
+  silc_protocol_execute(proto_ctx->sock->protocol, client->schedule, 0, 0);
 }
 
 /* Finalizes the connection to the remote SILC server. This is called
@@ -571,9 +604,9 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->rekey->timeout = client->params->rekey_secs;
   conn->rekey->context = (void *)client;
   silc_schedule_task_add(client->schedule, conn->sock->sock, 
-		     silc_client_rekey_callback,
-		     (void *)conn->sock, conn->rekey->timeout, 0,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+			 silc_client_rekey_callback,
+			 (void *)conn->sock, conn->rekey->timeout, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   silc_protocol_free(protocol);
   if (ctx->auth_data)
@@ -788,10 +821,10 @@ void silc_client_packet_parse(SilcPacketParserContext *parser_context)
 
   /* Parse the packet */
   silc_schedule_task_add(client->schedule, parser_context->sock->sock, 
-		     silc_client_packet_parse_real,
-		     (void *)parser_context, 0, 1, 
-		     SILC_TASK_TIMEOUT,
-		     SILC_TASK_PRI_NORMAL);
+			 silc_client_packet_parse_real,
+			 (void *)parser_context, 0, 1, 
+			 SILC_TASK_TIMEOUT,
+			 SILC_TASK_PRI_NORMAL);
 }
 
 /* Parses the packet type and calls what ever routines the packet type
@@ -1043,6 +1076,15 @@ void silc_client_packet_parse_type(SilcClient client,
       SILC_LOG_ERROR(("Received Re-key done packet but no re-key "
 		      "protocol active, packet dropped."));
     }
+    break;
+
+  case SILC_PACKET_CONNECTION_AUTH_REQUEST:
+    /*
+     * Reveived reply to our connection authentication method request
+     * packet. This is used to resolve the authentication method for the
+     * current session from the server if the client does not know it.
+     */
+    silc_client_connection_auth_request(client, sock, packet);
     break;
 
   default:
@@ -1515,9 +1557,9 @@ SILC_TASK_CALLBACK(silc_client_rekey_callback)
 
   /* Re-register re-key timeout */
   silc_schedule_task_add(client->schedule, sock->sock, 
-		     silc_client_rekey_callback,
-		     context, conn->rekey->timeout, 0,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+			 silc_client_rekey_callback,
+			 context, conn->rekey->timeout, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* The final callback for the REKEY protocol. This will actually take the
@@ -1557,4 +1599,108 @@ SILC_TASK_CALLBACK(silc_client_rekey_final)
     silc_ske_free(ctx->ske);
   silc_socket_free(ctx->sock);
   silc_free(ctx);
+}
+
+/* Processes incoming connection authentication method request packet.
+   It is a reply to our previously sent request. The packet can be used
+   to resolve the authentication method for the current session if the
+   client does not know it beforehand. */
+
+void silc_client_connection_auth_request(SilcClient client,
+					 SilcSocketConnection sock,
+					 SilcPacketContext *packet)
+{
+  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  uint16 conn_type, auth_meth;
+  int ret;
+
+  /* If we haven't send our request then ignore this one. */
+  if (!conn->connauth)
+    return;
+
+  /* Parse the payload */
+  ret = silc_buffer_unformat(packet->buffer,
+			     SILC_STR_UI_SHORT(&conn_type),
+			     SILC_STR_UI_SHORT(&auth_meth),
+			     SILC_STR_END);
+  if (ret == -1)
+    auth_meth = SILC_AUTH_NONE;
+
+  /* Call the request callback to notify application for received 
+     authentication method information. */
+  if (conn->connauth->callback)
+    (*conn->connauth->callback)(client, conn, auth_meth,
+				conn->connauth->context);
+
+  silc_schedule_task_del(client->schedule, conn->connauth->timeout);
+
+  silc_free(conn->connauth);
+  conn->connauth = NULL;
+}
+
+/* Timeout task callback called if the server does not reply to our 
+   connection authentication method request in the specified time interval. */
+
+SILC_TASK_CALLBACK(silc_client_request_authentication_method_timeout)
+{
+  SilcClientConnection conn = (SilcClientConnection)context;
+  SilcClient client = conn->client;
+
+  if (!conn->connauth)
+    return;
+
+  /* Call the request callback to notify application */
+  if (conn->connauth->callback)
+    (*conn->connauth->callback)(client, conn, SILC_AUTH_NONE,
+				conn->connauth->context);
+
+  silc_free(conn->connauth);
+  conn->connauth = NULL;
+}
+
+/* This function can be used to request the current authentication method
+   from the server. This may be called when connecting to the server
+   and the client library requests the authentication data from the
+   application. If the application does not know the current authentication
+   method it can request it from the server using this function.
+   The `callback' with `context' will be called after the server has
+   replied back with the current authentication method. */
+
+void 
+silc_client_request_authentication_method(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcConnectionAuthRequest callback,
+					  void *context)
+{
+  SilcClientConnAuthRequest connauth;
+  SilcBuffer packet;
+
+  connauth = silc_calloc(1, sizeof(*connauth));
+  connauth->callback = callback;
+  connauth->context = context;
+
+  if (conn->connauth)
+    silc_free(conn->connauth);
+
+  conn->connauth = connauth;
+
+  /* Assemble the request packet and send it to the server */
+  packet = silc_buffer_alloc(4);
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_SHORT(SILC_SOCKET_TYPE_CLIENT),
+		     SILC_STR_UI_SHORT(SILC_AUTH_NONE),
+		     SILC_STR_END);
+  silc_client_packet_send(client, conn->sock, 
+			  SILC_PACKET_CONNECTION_AUTH_REQUEST,
+			  NULL, 0, NULL, NULL, 
+			  packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
+
+  /* Register a timeout in case server does not reply anything back. */
+  connauth->timeout =
+    silc_schedule_task_add(client->schedule, conn->sock->sock, 
+			   silc_client_request_authentication_method_timeout,
+			   conn, client->params->connauth_request_secs, 0,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }

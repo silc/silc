@@ -961,7 +961,7 @@ void ask_passphrase_completion(const char *passphrase, void *context)
 }
 
 void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
-				SilcAskPassphrase completion, void *context)
+			 SilcAskPassphrase completion, void *context)
 {
   AskPassphrase p = silc_calloc(1, sizeof(*p));
   p->completion = completion;
@@ -971,34 +971,69 @@ void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 			  "Passphrase: ", ENTRY_REDIRECT_FLAG_HIDDEN, p);
 }
 
+typedef struct {
+  SilcGetAuthMeth completion;
+  void *context;
+} *InternalGetAuthMethod;
+
+/* Callback called when we've received the authentication method information
+   from the server after we've requested it. This will get the authentication
+   data from the user if needed. */
+
+static void silc_get_auth_method_callback(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcAuthMethod auth_meth,
+					  void *context)
+{
+  InternalGetAuthMethod internal = (InternalGetAuthMethod)context;
+
+  switch (auth_meth) {
+  case SILC_AUTH_NONE:
+    /* No authentication required. */
+    (*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
+    break;
+  case SILC_AUTH_PASSWORD:
+    /* Do not ask the passphrase from user, the library will ask it if
+       we do not provide it here. */
+    (*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
+    break;
+  case SILC_AUTH_PUBLIC_KEY:
+    /* Do not get the authentication data now, the library will generate
+       it using our default key, if we do not provide it here. */
+    /* XXX In the future when we support multiple local keys and multiple
+       local certificates we will need to ask from user which one to use. */
+    (*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
+    break;
+  }
+
+  silc_free(internal);
+}
+
 /* Find authentication method and authentication data by hostname and
    port. The hostname may be IP address as well. The found authentication
    method and authentication data is returned to `auth_meth', `auth_data'
    and `auth_data_len'. The function returns TRUE if authentication method
    is found and FALSE if not. `conn' may be NULL. */
 
-int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
-			 char *hostname, uint16 port,
-			 SilcProtocolAuthMeth *auth_meth,
-			 unsigned char **auth_data,
-			 uint32 *auth_data_len)
+void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
+			  char *hostname, uint16 port,
+			  SilcGetAuthMeth completion, void *context)
 {
-  bool ret = TRUE;
-  SILC_SERVER_REC *server = conn ? conn->context : NULL;
+  InternalGetAuthMethod internal;
 
   /* XXX must resolve from configuration whether this connection has
      any specific authentication data */
 
-  *auth_meth = SILC_AUTH_NONE;
-  *auth_data = NULL;
-  *auth_data_len = 0;
+  /* If we do not have this connection configured by the user in a
+     configuration file then resolve the authentication method from the
+     server for this session. */
+  internal = silc_calloc(1, sizeof(*internal));
+  internal->completion = completion;
+  internal->context = context;
 
-  if (ret == FALSE) {
-    printformat_module("fe-common/silc", server, NULL,
-		       MSGLEVEL_MODES, SILCTXT_AUTH_METH_UNRESOLVED);
-  }
-
-  return ret;
+  silc_client_request_authentication_method(client, conn, 
+					    silc_get_auth_method_callback,
+					    internal);
 }
 
 /* Notifies application that failure packet was received.  This is called

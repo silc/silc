@@ -872,10 +872,10 @@ to have plaintext passphrase.  See the section 3.2.1 Passphrase
 Authentication for more information.
 
 If authentication method is public key authentication the authentication
-data is signature of the hash value HASH plus Key Exchange Start Payload,
-established by the SILC Key Exchange protocol.  This signature MUST then
-be verified by the server.  See the section 3.2.2 Public Key
-Authentication for more information.
+data is a signature of the hash value of hash HASH plus Key Exchange
+Start Payload, established by the SILC Key Exchange protocol.  This
+signature MUST then be verified by the server.  See the section 3.2.2
+Public Key Authentication for more information.
 
 The connecting client of this protocol MUST wait after successful execution
 of this protocol for the SILC_PACKET_NEW_ID packet where it will receive
@@ -969,8 +969,16 @@ which the server has received earlier in SKE protocol.
 The signature is computed using the private key of the sender by signing
 the HASH value provided by the SKE protocol previously, and the Key
 Exchange Start Payload from SKE protocol that was sent to the server.
-The server MUST verify the data, thus it must keep the HASH and the
-Key Exchange Start Payload saved during SKE and authentication protocols.
+These are concatenated and hash function is used to compute a hash value
+which is then signed.
+
+  auth_hash = hash(HASH | Key Exchange Start Payload);
+  signature = sign(auth_hash);
+
+The hash() function used to compute the value is the hash function negotiated
+in the SKE protocol.  The server MUST verify the data, thus it must keep
+the HASH and the Key Exchange Start Payload saved during SKE and
+authentication protocols.
 
 If the verified signature matches the sent signature, the authentication
 were successful and SILC_PACKET_SUCCESS is sent.  If it failed the protocol

@@ -557,13 +557,13 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 
       SILC_SERVER_CONFIG_LIST_ALLOC(config->listen_port);
 
-      /* Get host */
-      ret = silc_config_get_token(line, &config->listen_port->host);
+      /* Get local IP */
+      ret = silc_config_get_token(line, &config->listen_port->local_ip);
       if (ret < 0)
 	break;
 
-      /* Get remote IP */
-      ret = silc_config_get_token(line, &config->listen_port->remote_ip);
+      /* Get listener IP */
+      ret = silc_config_get_token(line, &config->listen_port->listener_ip);
       if (ret < 0)
 	break;
 

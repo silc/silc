@@ -99,7 +99,8 @@ void silc_net_close_server(int sock)
    socket or -1 on error. This blocks the process while trying to create
    the connection. */
 
-int silc_net_create_connection(int port, char *host)
+int silc_net_create_connection(const char *local_ip, int port, 
+			       const char *host)
 {
   SOCKET sock;
   int rval, err;
@@ -155,7 +156,8 @@ int silc_net_create_connection(int port, char *host)
    connection returns directly. To get the result of the connect() one
    must select() the socket and read the result after it's ready. */
 
-int silc_net_create_connection_async(int port, char *host)
+int silc_net_create_connection_async(const char *local_ip, int port, 
+				     const char *host)
 {
   SOCKET sock;
   int rval, err;

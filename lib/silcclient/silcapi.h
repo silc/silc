@@ -166,6 +166,32 @@ typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
  ***/
 typedef void (*SilcVerifyPublicKey)(bool success, void *context);
 
+/****f* silcclient/SilcClientAPI/SilcGetAuthMeth
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcGetAuthMeth)(bool success, 
+ *                                    SilcProtocolAuthMeth auth_meth,
+ *                                    const unsigned char *auth_data,
+ *                                    uint32 auth_data_len, void *context);
+ * 
+ * DESCRIPTION
+ *
+ *    Authentication method resolving callback. This is called by the
+ *    application to return the resolved authentication method. The client
+ *    library has called the get_auth_method client operation and given
+ *    this function pointer as argument. The `success' will indicate whether
+ *    the authentication method could be resolved. The `auth_meth' is the
+ *    resolved authentication method. The `auth_data' and the `auth_data_len'
+ *    are the resolved authentication data. The `context' is the libary's
+ *    context sent to the get_auth_method client operation.
+ *
+ ***/
+typedef void (*SilcGetAuthMeth)(bool success, 
+				SilcProtocolAuthMeth auth_meth,
+				const unsigned char *auth_data,
+				uint32 auth_data_len, void *context);
+
 /****d* silcclient/SilcClientAPI/SilcClientMessageType
  *
  * NAME
@@ -277,15 +303,13 @@ typedef struct {
   void (*disconnect)(SilcClient client, SilcClientConnection conn);
 
   /* Find authentication method and authentication data by hostname and
-     port. The hostname may be IP address as well. The found authentication
-     method and authentication data is returned to `auth_meth', `auth_data'
-     and `auth_data_len'. The function returns TRUE if authentication method
-     is found and FALSE if not. `conn' may be NULL. */
-  int (*get_auth_method)(SilcClient client, SilcClientConnection conn,
-			 char *hostname, uint16 port,
-			 SilcProtocolAuthMeth *auth_meth,
-			 unsigned char **auth_data,
-			 uint32 *auth_data_len);
+     port. The hostname may be IP address as well. When the authentication
+     method has been resolved the `completion' callback with the found
+     authentication method and authentication data is called. The `conn'
+     may be NULL. */
+  void (*get_auth_method)(SilcClient client, SilcClientConnection conn,
+			  char *hostname, uint16 port,
+			  SilcGetAuthMeth completion, void *context);
 
   /* Verifies received public key. The `conn_type' indicates which entity
      (server, client etc.) has sent the public key. If user decides to trust
@@ -351,6 +375,12 @@ typedef struct {
   /* Rekey timeout in seconds. The client will perform rekey in this
      time interval. If set to zero, the default value will be used. */
   unsigned int rekey_secs;
+
+  /* Connection authentication method request timeout. If server does not
+     reply back the current authentication method when we've requested it
+     in this time interval we'll assume the reply will not come at all. 
+     If set to zero, the default value (2 seconds) will be used. */
+  unsigned int connauth_request_secs;
 } SilcClientParams;
 /***/
 
@@ -1599,5 +1629,56 @@ void silc_client_abort_key_agreement(SilcClient client,
 void silc_client_set_away_message(SilcClient client,
 				  SilcClientConnection conn,
 				  char *message);
+
+
+/****f* silcclient/SilcClientAPI/SilcConnectionAuthRequest
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcConnectionAuthRequest)(SilcClient client,
+ *                                              SilcClientConnection conn,
+ *                                              SilcAuthMethod auth_meth,
+ *                                              void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Connection authentication method request callback. This is called
+ *    by the client library after it has received the authentication method
+ *    that the application requested by calling the function
+ *    silc_client_request_authentication_method.
+ *
+ ***/
+typedef void (*SilcConnectionAuthRequest)(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcAuthMethod auth_meth,
+					  void *context);
+
+/****f* silcclient/SilcClientAPI/silc_client_request_authentication_method
+ *
+ * SYNOPSIS
+ *
+ *    void 
+ *    silc_client_request_authentication_method(SilcClient client,
+ *                                              SilcClientConnection conn,
+ *                                              SilcConnectionAuthRequest 
+ *                                                callback,
+ *                                              void *context);
+ *
+ * DESCRIPTION
+ *
+ *    This function can be used to request the current authentication method
+ *    from the server. This may be called when connecting to the server
+ *    and the client library requests the authentication data from the
+ *    application. If the application does not know the current authentication
+ *    method it can request it from the server using this function.
+ *    The `callback' with `context' will be called after the server has
+ *    replied back with the current authentication method.
+ *
+ ***/
+void 
+silc_client_request_authentication_method(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcConnectionAuthRequest callback,
+					  void *context);
 
 #endif

@@ -56,8 +56,8 @@ typedef struct {
 
 /* Holds all the ports the server is listenning on */
 typedef struct SilcServerConfigSectionListenPortStruct {
-  char *host;
-  char *remote_ip;
+  char *local_ip;
+  char *listener_ip;
   uint16 port;
   struct SilcServerConfigSectionListenPortStruct *next;
   struct SilcServerConfigSectionListenPortStruct *prev;
@@ -66,8 +66,8 @@ typedef struct SilcServerConfigSectionListenPortStruct {
 /* Holds server's execution identity, or the user and group which
    to change from root when server starts */
 typedef struct {
- char *user;
- char *group;
+  char *user;
+  char *group;
 } SilcServerConfigSectionIdentity;
 
 /* Holds all the configured log files. */

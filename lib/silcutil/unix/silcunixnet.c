@@ -37,7 +37,7 @@ int silc_net_create_server(int port, char *ip_addr)
   SILC_LOG_DEBUG(("Creating a new server listener"));
 
   /* Create the socket */
-  sock = socket(PF_INET, SOCK_STREAM, 0);
+  sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     return -1;
@@ -52,7 +52,7 @@ int silc_net_create_server(int port, char *ip_addr)
 
   /* Set the socket information for bind() */
   memset(&server, 0, sizeof(server));
-  server.sin_family = PF_INET;
+  server.sin_family = AF_INET;
   if (port)
     server.sin_port = htons(port);
 
@@ -98,7 +98,8 @@ void silc_net_close_server(int sock)
    socket or -1 on error. This blocks the process while trying to create
    the connection. */
 
-int silc_net_create_connection(int port, char *host)
+int silc_net_create_connection(const char *local_ip, int port, 
+			       const char *host)
 {
   int sock, rval;
   struct hostent *dest;
@@ -117,14 +118,36 @@ int silc_net_create_connection(int port, char *host)
   /* Set socket information */
   memset(&desthost, 0, sizeof(desthost));
   desthost.sin_port = htons(port);
-  desthost.sin_family = PF_INET;
+  desthost.sin_family = AF_INET;
   memcpy(&desthost.sin_addr, dest->h_addr_list[0], sizeof(desthost.sin_addr));
 
   /* Create the connection socket */
-  sock = socket(PF_INET, SOCK_STREAM, 0);
+  sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     return -1;
+  }
+
+  /* Bind to the local address if provided */
+  if (local_ip) {
+    struct sockaddr_in local;
+    int local_len = sizeof(local.sin_addr);
+
+    /* Set the socket information for bind() */
+    memset(&local, 0, sizeof(local));
+    local.sin_family = AF_INET;
+
+    /* Convert IP address to network byte order */
+    silc_net_addr2bin(local_ip, (unsigned char *)&local.sin_addr.s_addr, 
+		      local_len);
+
+    /* Bind the local socket */
+    rval = bind(sock, (struct sockaddr *)&local, sizeof(local));
+    if (rval < 0) {
+      SILC_LOG_ERROR(("Cannot connect to remote host: "
+		      "cannot bind socket: %s", strerror(errno)));
+      return -1;
+    }
   }
 
   /* Connect to the host */
@@ -152,7 +175,8 @@ int silc_net_create_connection(int port, char *host)
    connection returns directly. To get the result of the connect() one
    must select() the socket and read the result after it's ready. */
 
-int silc_net_create_connection_async(int port, char *host)
+int silc_net_create_connection_async(const char *local_ip, int port, 
+				     const char *host)
 {
   int sock, rval;
   struct hostent *dest;
@@ -172,14 +196,36 @@ int silc_net_create_connection_async(int port, char *host)
   /* Set socket information */
   memset(&desthost, 0, sizeof(desthost));
   desthost.sin_port = htons(port);
-  desthost.sin_family = PF_INET;
+  desthost.sin_family = AF_INET;
   memcpy(&desthost.sin_addr, dest->h_addr_list[0], sizeof(desthost.sin_addr));
 
   /* Create the connection socket */
-  sock = socket(PF_INET, SOCK_STREAM, 0);
+  sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     return -1;
+  }
+
+  /* Bind to the local address if provided */
+  if (local_ip) {
+    struct sockaddr_in local;
+    int local_len = sizeof(local.sin_addr);
+
+    /* Set the socket information for bind() */
+    memset(&local, 0, sizeof(local));
+    local.sin_family = AF_INET;
+
+    /* Convert IP address to network byte order */
+    silc_net_addr2bin(local_ip, (unsigned char *)&local.sin_addr.s_addr, 
+		      local_len);
+
+    /* Bind the local socket */
+    rval = bind(sock, (struct sockaddr *)&local, sizeof(local));
+    if (rval < 0) {
+      SILC_LOG_ERROR(("Cannot connect to remote host: "
+		      "cannot bind socket: %s", strerror(errno)));
+      return -1;
+    }
   }
 
   /* Set the socket to non-blocking mode */

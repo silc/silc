@@ -1,15 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o If the configuration for a server connection does not exist then 
-   resolve the authentication method always from the server.  Otherwise
-   password and/or public key auth with server does not work since it
-   now assumes that config exists or NONE is used.
-
- o -n and -c options does not work.
-
- o Switching servers while on channel is supposed to crash the client?
-
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the
@@ -87,9 +78,6 @@ TODO/bugs In SILC Libraries
 ===========================
 
  o Some ./prepare problems with latest autoconf and automake.
-
- o Remove the mlock() stuff from the lib/silcutil/silcmemory.c, they
-   are redundant.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be

@@ -2,7 +2,7 @@
 #
 #  prepare
 #
-#  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+#  Author: Pekka Riikonen <priikone@silcnet.org>
 #
 #  Copyright (C) 2000 - 2001 Pekka Riikonen
 #
@@ -60,7 +60,7 @@ if test "$dist_version" = ""; then
   dist_version=$version
 fi
 
-echo "Preparing $distribution distribution version $version"
+echo "Preparing $distribution distribution version $version (package $dist_version)"
 
 #
 # Go though the subdirs and create the Makefile.ams from the

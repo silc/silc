@@ -123,8 +123,10 @@ void fe_common_core_init(void)
 		{ "password", 'w', POPT_ARG_STRING, &autocon_password, 0, "Autoconnect password", "SERVER" },
 		{ "port", 'p', POPT_ARG_INT, &autocon_port, 0, "Autoconnect port", "PORT" },
 		{ "noconnect", '!', POPT_ARG_NONE, &no_autoconnect, 0, "Disable autoconnecting", NULL },
+		/*
 		{ "nick", 'n', POPT_ARG_STRING, &cmdline_nick, 0, "Specify nick to use", NULL },
 		{ "hostname", 'h', POPT_ARG_STRING, &cmdline_hostname, 0, "Specify host name to use", NULL },
+		*/
 		{ NULL, '\0', 0, NULL }
 	};
 

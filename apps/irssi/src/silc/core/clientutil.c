@@ -537,6 +537,10 @@ int silc_client_load_keys(SilcClient client)
 				  SILC_PKCS_FILE_BIN) == FALSE)
       return FALSE;
 
+  silc_pkcs_alloc(client->public_key->name, &client->pkcs);
+  silc_pkcs_public_key_set(client->pkcs, client->public_key);
+  silc_pkcs_private_key_set(client->pkcs, client->private_key);
+
   return TRUE;
 }
 
