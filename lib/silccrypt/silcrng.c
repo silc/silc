@@ -44,7 +44,7 @@ extern pid_t getpgid (pid_t __pid);
 #define SILC_RNG_STATE_NUM 4
 
 /* Byte size of the random data pool. */
-#define SILC_RNG_POOLSIZE 1024 + 1
+#define SILC_RNG_POOLSIZE (20 * 48)
 
 static SilcUInt32 silc_rng_get_position(SilcRng rng);
 static void silc_rng_stir_pool(SilcRng rng);
@@ -391,8 +391,11 @@ void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, SilcUInt32 len)
 
 static void silc_rng_xor(SilcRng rng, SilcUInt32 val, unsigned int pos)
 {
-  assert(rng != NULL);
-  rng->pool[pos] ^= val + val;
+  SilcUInt32 tmp;
+
+  SILC_GET32_MSB(tmp, &rng->pool[pos]);
+  val ^= tmp + val;
+  SILC_PUT32_MSB(val, &rng->pool[pos]);
 }
 
 /* This function stirs the random pool by encrypting buffer in CFB 
@@ -401,32 +404,66 @@ static void silc_rng_xor(SilcRng rng, SilcUInt32 val, unsigned int pos)
 static void silc_rng_stir_pool(SilcRng rng)
 {
   int i;
-  SilcUInt32 iv[5];
+  SilcUInt32 iv[5], tmp;
 
   /* Get the IV */
-  memcpy(iv, &rng->pool[16], sizeof(iv));
+  SILC_GET32_MSB(iv[0], &rng->pool[16     ]);
+  SILC_GET32_MSB(iv[1], &rng->pool[16 +  4]);
+  SILC_GET32_MSB(iv[2], &rng->pool[16 +  8]);
+  SILC_GET32_MSB(iv[3], &rng->pool[16 + 12]);
+  SILC_GET32_MSB(iv[4], &rng->pool[16 + 16]);
 
   /* First CFB pass */
-  for (i = 0; i < SILC_RNG_POOLSIZE; i += 5) {
+  for (i = 0; i < SILC_RNG_POOLSIZE; i += 20) {
     silc_hash_transform(rng->sha1, iv, rng->key);
-    iv[0] = rng->pool[i] ^= iv[0];
-    iv[1] = rng->pool[i + 1] ^= iv[1];
-    iv[2] = rng->pool[i + 2] ^= iv[2];
-    iv[3] = rng->pool[i + 3] ^= iv[3];
-    iv[4] = rng->pool[i + 4] ^= iv[4];
+
+    SILC_GET32_MSB(tmp, &rng->pool[i]);
+    iv[0] ^= tmp;
+    SILC_PUT32_MSB(iv[0], &rng->pool[i]);
+
+    SILC_GET32_MSB(tmp, &rng->pool[i + 4]);
+    iv[1] ^= tmp;
+    SILC_PUT32_MSB(iv[1], &rng->pool[i + 4]);
+
+    SILC_GET32_MSB(tmp, &rng->pool[i + 8]);
+    iv[2] ^= tmp;
+    SILC_PUT32_MSB(iv[2], &rng->pool[i + 8]);
+
+    SILC_GET32_MSB(tmp, &rng->pool[i + 12]);
+    iv[3] ^= tmp;
+    SILC_PUT32_MSB(iv[3], &rng->pool[i + 12]);
+
+    SILC_GET32_MSB(tmp, &rng->pool[i + 16]);
+    iv[4] ^= tmp;
+    SILC_PUT32_MSB(iv[4], &rng->pool[i + 16]);
   }
 
   /* Get new key */
   memcpy(rng->key, &rng->pool[silc_rng_get_position(rng)], sizeof(rng->key));
 
   /* Second CFB pass */
-  for (i = 0; i < SILC_RNG_POOLSIZE; i += 5) {
+  for (i = 0; i < SILC_RNG_POOLSIZE; i += 20) {
     silc_hash_transform(rng->sha1, iv, rng->key);
-    iv[0] = rng->pool[i] ^= iv[0];
-    iv[1] = rng->pool[i + 1] ^= iv[1];
-    iv[2] = rng->pool[i + 2] ^= iv[2];
-    iv[3] = rng->pool[i + 3] ^= iv[3];
-    iv[4] = rng->pool[i + 4] ^= iv[4];
+
+    SILC_GET32_MSB(tmp, &rng->pool[i]);
+    iv[0] ^= tmp;
+    SILC_PUT32_MSB(iv[0], &rng->pool[i]);
+
+    SILC_GET32_MSB(tmp, &rng->pool[i + 4]);
+    iv[1] ^= tmp;
+    SILC_PUT32_MSB(iv[1], &rng->pool[i + 4]);
+
+    SILC_GET32_MSB(tmp, &rng->pool[i + 8]);
+    iv[2] ^= tmp;
+    SILC_PUT32_MSB(iv[2], &rng->pool[i + 8]);
+
+    SILC_GET32_MSB(tmp, &rng->pool[i + 12]);
+    iv[3] ^= tmp;
+    SILC_PUT32_MSB(iv[3], &rng->pool[i + 12]);
+
+    SILC_GET32_MSB(tmp, &rng->pool[i + 16]);
+    iv[4] ^= tmp;
+    SILC_PUT32_MSB(iv[4], &rng->pool[i + 16]);
   }
 
   memset(iv, 0, sizeof(iv));
