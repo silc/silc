@@ -230,6 +230,91 @@ SILC Commands
 		specified.  If the channel cannot be found then all
 		channels are listed.
 
+	/KEY	msg|channel <nickname|channel> 
+		set|unset|list|agreement|negotiate [<arguments>]
+
+	  	This command is used to set and unset private keys for
+		channels, set and unset private keys for private messages
+		with remote clients and to send key agreement requests and
+		negotiate the key agreement protocol with remote client.
+		The key agreement is supported only to negotiate private
+		message keys, it currently cannot be used to negotiate
+		private keys for channels, as it is not convenient for that
+		purpose.
+
+		Types:		
+
+		msg	The command is performed for private messages
+			affecting the <nickname>.
+
+		channel	The command is performed for channel affecting
+			the <channel>.
+
+
+		Commands:
+
+		set	[<key> [<cipher>] [<hmac>]]
+
+			Set the key into use.  If the <key> is provided it
+			is used as the key material.  If the <key> is not
+			provided the negotiated key material is used.  If
+			the negotiation has not been performed this command
+			has no effect.
+
+			If the type is `msg' and the <key> is `*' then
+			random key will be generated automatically.
+
+			The <cipher> may be set for both private message
+			and channel private keys and the <hmac> may be set
+			only to the channel private keys.
+
+		unset	[<number>]
+
+			Unset the key.  The private key is not used after
+			this command.  The key must be set again or the key
+			material must be re-negotiated to be able to use
+			the private keys again.
+
+			The channel may have several private keys set.  The
+			<number> can be used to indicate what key is being
+			unset.  If it is not provided all keys are removed.
+
+
+		list	List all private keys that has been set.
+
+			If the type is `msg' and the <nickname> is ´*' then
+			all private message keys that you've set will be
+			listed.
+
+		agreement [<hostname> [<port>]]
+
+			Send key agreement request to remote client.  If
+			the <hostname> is provided it is sent in the request.
+			The receiver may use the hostname to start the
+			key agreement.  If the <port> is also provided your
+			key agreement protocol server is bound to that
+			port.  Note that it cannot be privileged port (<1023).
+			If the <hostname> and <port> is not provided then
+			the receiver will never initiate the key agreement.
+			In this case you must start the key agreement after
+			receiving the reply to the request, by giving the
+			/KEYAGR start command.
+
+			This command may be used to send reply to the
+			remote client.  When receiving empty key agreement
+			you can reply to the sender with the hostname and
+			port of your key agreement server with this command.
+
+		negotiate [<hostname> [<port>]]
+
+			This may be called to start the key agreement with
+			<nickname>.  This command has effect only if the
+			<nickname> has replied to your key agreement request.
+			You will see a notify on the screen when the reply
+			arrives.  The <hostname> and <port> is the hostname
+			and port of the remote client's key agreement
+			server.
+
 
 Features
 ========

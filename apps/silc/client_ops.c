@@ -841,11 +841,12 @@ unsigned char *silc_ask_passphrase(SilcClient client,
 }
 
 /* Verifies received public key. If user decides to trust the key it is
-   saved as trusted server key for later use. If user does not trust the
+   saved as public server key for later use. If user does not trust the
    key this returns FALSE. */
 
-int silc_verify_server_key(SilcClient client,
+int silc_verify_public_key(SilcClient client,
 			   SilcClientConnection conn, 
+			   SilcSocketType conn_type,
 			   unsigned char *pk, unsigned int pk_len,
 			   SilcSKEPKType pk_type)
 {
@@ -855,11 +856,15 @@ int silc_verify_server_key(SilcClient client,
   char *hostname, *fingerprint;
   struct passwd *pw;
   struct stat st;
+  char *entity = ((conn_type == SILC_SOCKET_TYPE_SERVER ||
+		   conn_type == SILC_SOCKET_TYPE_ROUTER) ? 
+		  "server" : "client");
 
   hostname = sock->hostname ? sock->hostname : sock->ip;
 
   if (pk_type != SILC_SKE_PK_TYPE_SILC) {
-    silc_say(client, conn, "We don't support server %s key type", hostname);
+    silc_say(client, conn, "We don't support %s %s key type", 
+	     entity, hostname);
     return FALSE;
   }
 
@@ -869,17 +874,18 @@ int silc_verify_server_key(SilcClient client,
 
   memset(filename, 0, sizeof(filename));
   memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "serverkey_%s_%d.pub", hostname,
+  snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, hostname,
 	   sock->port);
-  snprintf(filename, sizeof(filename) - 1, "%s/.silc/serverkeys/%s", 
-	   pw->pw_dir, file);
+  snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
+	   pw->pw_dir, entity, file);
 
   /* Check wheter this key already exists */
   if (stat(filename, &st) < 0) {
 
     fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-    silc_say(client, conn, "Received server %s public key", hostname);
-    silc_say(client, conn, "Fingerprint for the server %s key is", hostname);
+    silc_say(client, conn, "Received %s %s public key", entity, hostname);
+    silc_say(client, conn, "Fingerprint for the %s %s key is", entity, 
+	     hostname);
     silc_say(client, conn, "%s", fingerprint);
     silc_free(fingerprint);
 
@@ -904,12 +910,13 @@ int silc_verify_server_key(SilcClient client,
       if (!silc_pkcs_load_public_key(filename, &public_key, 
 				     SILC_PKCS_FILE_BIN)) {
 	fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-	silc_say(client, conn, "Received server %s public key", hostname);
-	silc_say(client, conn, "Fingerprint for the server %s key is", hostname);
+	silc_say(client, conn, "Received %s %s public key", entity, hostname);
+	silc_say(client, conn, "Fingerprint for the %s %s key is", 
+		 entity, hostname);
 	silc_say(client, conn, "%s", fingerprint);
 	silc_free(fingerprint);
-	silc_say(client, conn, "Could not load your local copy of the server %s key",
-		 hostname);
+	silc_say(client, conn, "Could not load your local copy of the %s %s key",
+		 entity, hostname);
 	if (silc_client_ask_yes_no(client, 
 	   "Would you like to accept the key anyway (y/n)? "))
 	  {
@@ -927,12 +934,13 @@ int silc_verify_server_key(SilcClient client,
     encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
     if (!encpk) {
       fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-      silc_say(client, conn, "Received server %s public key", hostname);
-      silc_say(client, conn, "Fingerprint for the server %s key is", hostname);
+      silc_say(client, conn, "Received %s %s public key", entity, hostname);
+      silc_say(client, conn, "Fingerprint for the %s %s key is", 
+	       entity, hostname);
       silc_say(client, conn, "%s", fingerprint);
       silc_free(fingerprint);
-      silc_say(client, conn, "Your local copy of the server %s key is malformed",
-	       hostname);
+      silc_say(client, conn, "Your local copy of the %s %s key is malformed",
+	       entity, hostname);
       if (silc_client_ask_yes_no(client, 
          "Would you like to accept the key anyway (y/n)? "))
 	{
@@ -948,12 +956,13 @@ int silc_verify_server_key(SilcClient client,
 
     if (memcmp(encpk, pk, encpk_len)) {
       fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-      silc_say(client, conn, "Received server %s public key", hostname);
-      silc_say(client, conn, "Fingerprint for the server %s key is", hostname);
+      silc_say(client, conn, "Received %s %s public key", entity, hostname);
+      silc_say(client, conn, "Fingerprint for the %s %s key is", 
+	       entity, hostname);
       silc_say(client, conn, "%s", fingerprint);
       silc_free(fingerprint);
-      silc_say(client, conn, "Server %s key does not match with your local copy",
-	       hostname);
+      silc_say(client, conn, "%s %s key does not match with your local copy",
+	       entity, hostname);
       silc_say(client, conn, "It is possible that the key has expired or changed");
       silc_say(client, conn, "It is also possible that some one is performing "
 	               "man-in-the-middle attack");
@@ -969,7 +978,7 @@ int silc_verify_server_key(SilcClient client,
 	  return TRUE;
 	}
 
-      silc_say(client, conn, "Will not accept server %s key", hostname);
+      silc_say(client, conn, "Will not accept %s %s key", entity, hostname);
       return FALSE;
     }
 
@@ -977,7 +986,7 @@ int silc_verify_server_key(SilcClient client,
     return TRUE;
   }
 
-  silc_say(client, conn, "Will not accept server %s key", hostname);
+  silc_say(client, conn, "Will not accept %s %s key", entity, hostname);
   return FALSE;
 }
 
@@ -1048,6 +1057,21 @@ int silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		       SilcKeyAgreementCallback *completion,
 		       void **context)
 {
+  char host[256];
+
+  /* We will just display the info on the screen and return FALSE and user
+     will have to start the key agreement with a command. */
+
+  if (hostname) {
+    memset(host, 0, sizeof(host));
+    snprintf(host, sizeof(host) - 1, "(%s on port %d)", hostname, port); 
+  }
+
+  silc_say(client, conn, "%s wants to perform key agreement %s",
+	   client_entry->nickname, hostname ? host : "");
+
+  *completion = NULL;
+  *context = NULL;
 
   return FALSE;
 }
@@ -1063,7 +1087,7 @@ SilcClientOperations ops = {
   connect:              silc_connect,
   disconnect:           silc_disconnect,
   get_auth_method:      silc_get_auth_method,
-  verify_server_key:    silc_verify_server_key,
+  verify_public_key:    silc_verify_public_key,
   ask_passphrase:       silc_ask_passphrase,
   failure:              silc_failure,
   key_agreement:        silc_key_agreement,

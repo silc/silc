@@ -25,12 +25,9 @@ TODO General
 TODO In SILC Client Library
 ===========================
 
- o TODO in commands (silc/local_command.c, lib/silcclient/command.c and
+ o TODO in commands (lib/silcclient/command.c and
 		     silc/silclient/command_reply.c):
 
-	o Local command to handle private message keys is not done
-	o Local command to handle channel private keys is not done
-	o Local command to handle key agreement protocol is not done
 	o RESTART command is not implemented
 
  o Client library crashes if for example server timeouts protocol
@@ -78,6 +75,13 @@ TODO In SILC Server
 	  When implementing this check that all commands handle the
 	  situation correctly when it is called as pending command
 	  (it should most likely check that cmd->pending == TRUE/FALSE).
+	o WHOIS and IDENTIFY command reply sending is buggy because
+	  it may put status to be SILC_STATUS_LIST_START even though
+	  there is only one valid entry (thus should be SILC_STATUS_OK).
+	  This happens because it does not check the data.registered == FALSE
+	  clients before setting the status.  Good fix for this would be
+	  to make sure that the clients table does not include any
+	  unregistered clients in the first place.
 
  o TODO in notify types (packet_receive.c):
 

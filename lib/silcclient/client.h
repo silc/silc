@@ -152,6 +152,13 @@ struct SilcClientStruct {
   SilcClientConnection *conns;
   unsigned int conns_count;
 
+  /* Table of listenning sockets in client.  Client can have listeners
+     (like key agreement protocol server) and those sockets are saved here.
+     This table is checked always if the connection object cannot be found
+     from the `conns' table. */
+  SilcSocketConnection *sockets;
+  unsigned int sockets_count;
+
   /* Generic cipher and hash objects. These can be used and referenced
      by the application as well. */
   SilcCipher none_cipher;
@@ -197,12 +204,18 @@ do {							\
   int __i;						\
 							\
   for (__i = 0; __i < (__x)->conns_count; __i++)	\
-    if ((__x)->conns[__i]->sock->sock == (__fd))	\
+    if ((__x)->conns[__i] &&				\
+	(__x)->conns[__i]->sock->sock == (__fd))	\
       break;						\
 							\
-  if (__i >= (__x)->conns_count)			\
+  if (__i >= (__x)->conns_count) {			\
     (__sock) = NULL;					\
- (__sock) = (__x)->conns[__i]->sock;			\
+    for (__i = 0; __i < (__x)->sockets_count; __i++)	\
+      if ((__x)->sockets[__i] &&			\
+	  (__x)->sockets[__i]->sock == (__fd))		\
+        (__sock) = (__x)->sockets[__i];			\
+  } else						\
+    (__sock) = (__x)->conns[__i]->sock;			\
 } while(0)
 
 /* Prototypes (some of the prototypes are defined in the silcapi.h) */

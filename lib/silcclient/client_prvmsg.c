@@ -323,7 +323,7 @@ int silc_client_add_private_message_key(SilcClient client,
     return FALSE;
 
   /* Generate key if not provided */
-  if (!key && generate_key == TRUE) {
+  if (generate_key == TRUE) {
     len = 32;
     for (i = 0; i < len; i++) private_key[i] = silc_rng_get_byte(client->rng);
     key = private_key;

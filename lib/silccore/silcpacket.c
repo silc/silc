@@ -316,7 +316,7 @@ int silc_packet_read(int sock, SilcBuffer dest)
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       return -2;
     }
-    SILC_LOG_ERROR(("Cannot read from socket: %d", strerror(errno)));
+    SILC_LOG_ERROR(("Cannot read from socket: %d:%s", sock, strerror(errno)));
     return -1;
   }
 

@@ -51,7 +51,7 @@ SilcClientOperations ops = {
   connect:              silc_connect,
   disconnect:           silc_disconnect,
   get_auth_method:      silc_get_auth_method,
-  verify_server_key:    silc_verify_server_key,
+  verify_public_key:    silc_verify_public_key,
   ask_passphrase:       silc_ask_passphrase,
   failure:              silc_failure,
 };

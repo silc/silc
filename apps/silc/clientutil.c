@@ -506,7 +506,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 int silc_client_check_silc_dir()
 {
   char filename[256], file_public_key[256], file_private_key[256];
-  char servfilename[256];
+  char servfilename[256], clientfilename[256];
   char *identifier;
   struct stat st;
   struct passwd *pw;
@@ -530,6 +530,8 @@ int silc_client_check_silc_dir()
   /* We'll take home path from /etc/passwd file to be sure. */
   snprintf(filename, sizeof(filename) - 1, "%s/.silc/", pw->pw_dir);
   snprintf(servfilename, sizeof(servfilename) - 1, "%s/.silc/serverkeys", 
+	   pw->pw_dir);
+  snprintf(clientfilename, sizeof(clientfilename) - 1, "%s/.silc/clientkeys", 
 	   pw->pw_dir);
 
   /*
@@ -588,6 +590,28 @@ int silc_client_check_silc_dir()
       } else {
 	fprintf(stderr, "Couldn't create `%s' directory due to a wrong uid!\n",
 		servfilename);
+	return FALSE;
+      }
+    } else {
+      fprintf(stderr, "%s\n", strerror(errno));
+      return FALSE;
+    }
+  }
+  
+  /*
+   * Check ~./silc/clientkeys directory
+   */
+  if ((stat(clientfilename, &st)) == -1) {
+    /* If dir doesn't exist */
+    if (errno == ENOENT) {
+      if (pw->pw_uid == geteuid()) {
+	if ((mkdir(clientfilename, 0755)) == -1) {
+	  fprintf(stderr, "Couldn't create `%s' directory\n", clientfilename);
+	  return FALSE;
+	}
+      } else {
+	fprintf(stderr, "Couldn't create `%s' directory due to a wrong uid!\n",
+		clientfilename);
 	return FALSE;
       }
     } else {

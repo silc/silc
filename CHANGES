@@ -1,3 +1,38 @@
+Wed Mar 28 15:52:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added SilcKeyAgreementStatus type to the key agreement routines
+	  to indicate the current status and error if one occured.
+	  The status types are defined in the lib/silcclient/silcapi.h.
+
+	* Added new local command KEY that is used to set and unset private
+	  keys for channels, set and unset private keys for private messages
+	  with remote clients and to send key agreement requests and
+	  negotiate the key agreement protocol with remote client.  The
+	  key agreement is supported only to negotiate private message keys,
+	  it currently cannot be used to negotiate private keys for channels,
+	  as it is not convenient for that purpose.
+
+	* Fixed a minor pending callback setting bug in the function
+	  silc_client_get_client_by_id_resolve, now the function works.
+	  Affected file lib/silcclient/idlist.c.
+
+	* Added function silc_net_get_local_port to get local bound
+	  port by socket.  Added to lib/silcutil/silcnet.[ch].
+
+	* Added `sockets' and `sockets_count' fields to the SilcClient
+	  object.  They hold the sockets of the listenning sockets in
+	  the client.  Listenning sockets may be for example the key 
+	  agreement server.  Affected file lib/silcclient/client.[ch].
+	  Added functions the silc_client_add_socket and the
+	  silc_client_del_socket.  They are exported to the application
+	  as well.
+
+	* Added ~./silc/clientkeys to support other client's public keys.
+
+	* Renamed verify_server_key client operation to verify_public_key
+	  and added one argument to indicate the type of the connection
+	  (server, client etc.).
+
 Tue Mar 27 22:22:38 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_server_connection_auth_request to handle the

@@ -499,7 +499,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
       
   /* Add pending callback */
   silc_client_command_pending(conn, SILC_COMMAND_WHOIS, 
-			      ++conn->cmd_ident, 
+			      conn->cmd_ident, 
 			      silc_client_get_client_by_id_destructor,
 			      silc_client_command_get_client_by_id_callback, 
 			      (void *)i);

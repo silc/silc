@@ -179,6 +179,51 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
     }
 }
 
+/* Adds listener socket to the listener sockets table. This function is
+   used to add socket objects that are listeners to the client.  This should
+   not be used to add other connection objects. */
+
+void silc_client_add_socket(SilcClient client, SilcSocketConnection sock)
+{
+  int i;
+
+  if (!client->sockets) {
+    client->sockets = silc_calloc(1, sizeof(*client->sockets));
+    client->sockets[0] = sock;
+    client->sockets_count = 1;
+    return;
+  }
+
+  for (i = 0; i < client->sockets_count; i++) {
+    if (client->sockets[i] == NULL) {
+      client->sockets[i] = sock;
+      return;
+    }
+  }
+
+  client->sockets = silc_realloc(client->sockets, sizeof(*client->sockets) *
+				 (client->sockets_count + 1));
+  client->sockets[client->sockets_count] = sock;
+  client->sockets_count++;
+}
+
+/* Deletes listener socket from the listener sockets table. */
+
+void silc_client_del_socket(SilcClient client, SilcSocketConnection sock)
+{
+  int i;
+
+  if (!client->sockets)
+    return;
+
+  for (i = 0; i < client->sockets_count; i++) {
+    if (client->sockets[i] == sock) {
+      client->sockets[i] = NULL;
+      return;
+    }
+  }
+}
+
 static int 
 silc_client_connect_to_server_internal(SilcClientInternalConnectContext *ctx)
 {
@@ -621,8 +666,12 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
 
     /* Process the packet. This will call the parser that will then
        decrypt and parse the packet. */
-    silc_packet_receive_process(sock, conn->receive_key, conn->hmac,
-				silc_client_packet_parse, client);
+    if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
+      silc_packet_receive_process(sock, conn->receive_key, conn->hmac,
+				  silc_client_packet_parse, client);
+    else
+      silc_packet_receive_process(sock, NULL, NULL,
+				  silc_client_packet_parse, client);
   }
 }
 
@@ -666,8 +715,13 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real)
   SILC_LOG_DEBUG(("Start"));
 
   /* Decrypt the received packet */
-  ret = silc_packet_decrypt(conn->receive_key, conn->hmac, buffer, packet,
-			    silc_client_packet_decrypt_check, parse_ctx);
+  if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
+    ret = silc_packet_decrypt(conn->receive_key, conn->hmac, buffer, packet,
+			      silc_client_packet_decrypt_check, parse_ctx);
+  else
+    ret = silc_packet_decrypt(NULL, NULL, buffer, packet,
+			      silc_client_packet_decrypt_check, parse_ctx);
+
   if (ret < 0)
     goto out;
 
@@ -795,7 +849,8 @@ void silc_client_packet_parse_type(SilcClient client,
     break;
 
   case SILC_PACKET_KEY_EXCHANGE:
-    if (sock->protocol) {
+    if (sock->protocol && sock->protocol->protocol->type 
+	== SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
       SilcClientKEInternalContext *proto_ctx = 
 	(SilcClientKEInternalContext *)sock->protocol->context;
 
@@ -818,15 +873,32 @@ void silc_client_packet_parse_type(SilcClient client,
     break;
 
   case SILC_PACKET_KEY_EXCHANGE_1:
-    if (sock->protocol) {
+    if (sock->protocol && sock->protocol->protocol->type 
+	== SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
+      SilcClientKEInternalContext *proto_ctx = 
+	(SilcClientKEInternalContext *)sock->protocol->context;
 
+      if (proto_ctx->packet)
+	silc_packet_context_free(proto_ctx->packet);
+
+      proto_ctx->packet = silc_packet_context_dup(packet);
+      proto_ctx->dest_id_type = packet->src_id_type;
+      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+					  packet->src_id_type);
+      if (!proto_ctx->dest_id)
+	break;
+
+      /* Let the protocol handle the packet */
+      sock->protocol->execute(client->timeout_queue, 0,
+			      sock->protocol, sock->sock, 0, 0);
     } else {
       SILC_LOG_ERROR(("Received Key Exchange 1 packet but no key exchange "
 		      "protocol active, packet dropped."));
     }
     break;
   case SILC_PACKET_KEY_EXCHANGE_2:
-    if (sock->protocol) {
+    if (sock->protocol && sock->protocol->protocol->type 
+	== SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
       SilcClientKEInternalContext *proto_ctx = 
 	(SilcClientKEInternalContext *)sock->protocol->context;
 
@@ -929,7 +1001,8 @@ void silc_client_packet_send(SilcClient client,
   /* Set the packet context pointers */
   packetdata.flags = 0;
   packetdata.type = type;
-  if (((SilcClientConnection)sock->user_data)->local_id_data)
+  if (sock->user_data && 
+      ((SilcClientConnection)sock->user_data)->local_id_data)
     packetdata.src_id = ((SilcClientConnection)sock->user_data)->local_id_data;
   else 
     packetdata.src_id = silc_calloc(SILC_ID_CLIENT_LEN, sizeof(unsigned char));

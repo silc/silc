@@ -31,6 +31,7 @@ extern SilcClientCommand silc_local_command_list[];
 #define SILC_LOCAL_COMMAND_SERVER       4
 #define SILC_LOCAL_COMMAND_MSG 	        5
 #define SILC_LOCAL_COMMAND_AWAY		6
+#define SILC_LOCAL_COMMAND_KEY      	7
 
 /* Macros */
 
@@ -51,5 +52,6 @@ SILC_CLIENT_LCMD_FUNC(version);
 SILC_CLIENT_LCMD_FUNC(msg);
 SILC_CLIENT_LCMD_FUNC(server);
 SILC_CLIENT_LCMD_FUNC(away);
+SILC_CLIENT_LCMD_FUNC(key);
 
 #endif

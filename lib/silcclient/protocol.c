@@ -68,8 +68,9 @@ SilcSKEStatus silc_client_protocol_ke_verify_key(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Verify server key from user. */
-  if (!client->ops->verify_server_key(client, ctx->sock->user_data, 
+  /* Verify public key from user. */
+  if (!client->ops->verify_public_key(client, ctx->sock->user_data, 
+				      ctx->sock->type,
 				      pk_data, pk_len, pk_type))
     return SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
 

@@ -306,6 +306,21 @@ unsigned short silc_net_get_remote_port(int sock)
   return ntohs(remote.sin_port);
 }
 
+/* Return local port by socket. */
+
+unsigned short silc_net_get_local_port(int sock)
+{
+  struct sockaddr_in local;
+  int len;
+
+  memset(&local, 0, sizeof(local));
+  len = sizeof(local);
+  if (getsockname(sock, (struct sockaddr *)&local, &len) < 0)
+    return 0;
+
+  return ntohs(local.sin_port);
+}
+
 /* Return name of localhost. */
 
 char *silc_net_localhost()

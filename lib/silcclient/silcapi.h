@@ -37,6 +37,14 @@
 
 /* General definitions */
 
+/* Key agreement status types indicating the status of the protocol. */
+typedef enum {
+  SILC_KEY_AGREEMENT_OK,	       /* Everything is Ok */
+  SILC_KEY_AGREEMENT_ERROR,	       /* Unknown error occured */
+  SILC_KEY_AGREEMENT_FAILURE,	       /* The protocol failed */
+  SILC_KEY_AGREEMENT_TIMEOUT,	       /* The protocol timeout */
+} SilcKeyAgreementStatus;
+
 /* Key agreement callback that is called after the key agreement protocol
    has been performed. This is called also if error occured during the
    key agreement protocol. The `key' is the allocated key material and
@@ -47,6 +55,7 @@
 typedef void (*SilcKeyAgreementCallback)(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
+					 SilcKeyAgreementStatus status,
 					 SilcSKEKeyMaterial *key,
 					 void *context);
 
@@ -154,13 +163,14 @@ typedef struct {
 			 unsigned char **auth_data,
 			 unsigned int *auth_data_len);
 
-  /* Verifies received public key. The public key has been received from
-     a server. If user decides to trust the key may be saved as trusted
-     server key for later use. If user does not trust the key this returns
-     FALSE. If everything is Ok this returns TRUE. */ 
-  int (*verify_server_key)(SilcClient client, SilcClientConnection conn,
-			   unsigned char *pk, unsigned int pk_len,
-			   SilcSKEPKType pk_type);
+  /* Verifies received public key. The `conn_type' indicates which entity
+     (server, client etc.) has sent the public key. If user decides to trust
+     the key may be saved as trusted public key for later use. If user does
+     not trust the key this returns FALSE. If everything is Ok this returns
+     TRUE. */ 
+  int (*verify_public_key)(SilcClient client, SilcClientConnection conn,
+			   SilcSocketType conn_type, unsigned char *pk, 
+			   unsigned int pk_len, SilcSKEPKType pk_type);
 
   /* Ask (interact, that is) a passphrase from user. Returns the passphrase
      or NULL on error. */
@@ -254,6 +264,14 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
 
 /* Removes connection from client. Frees all memory. */
 void silc_client_del_connection(SilcClient client, SilcClientConnection conn);
+
+/* Adds listener socket to the listener sockets table. This function is
+   used to add socket objects that are listeners to the client.  This should
+   not be used to add other connection objects. */
+void silc_client_add_socket(SilcClient client, SilcSocketConnection sock);
+
+/* Deletes listener socket from the listener sockets table. */
+void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
 
 /* Start SILC Key Exchange (SKE) protocol to negotiate shared secret
    key material between client and server.  This function can be called
@@ -648,6 +666,7 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
 					  SilcClientConnection conn,
 					  SilcClientEntry client_entry,
 					  int sock,
+					  char *hostname,
 					  SilcKeyAgreementCallback completion,
 					  void *context);
 
