@@ -1,3 +1,14 @@
+Mon Jan 28 17:49:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed memory leaks in silc_server_create_new_channel*
+	  functions.  Affected file silcd/server.c.
+
+	* Fixed the CHANNEL_CHANGE notify to re-announce the channel
+	  which ID was changed.  This way the router will send the
+	  user list for the channel again, and server won't be in 
+	  desync in some rare circumstances.  Affected file is
+	  silcd/packet_receive.c.
+
 Sun Jan 27 21:04:19 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check for NULL socket pointer in the function

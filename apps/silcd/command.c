@@ -3859,22 +3859,22 @@ SILC_SERVER_CMD_FUNC(cmode)
       /* The mode is removed and we need to generate and distribute
 	 new channel key. Clients are not using private channel keys
 	 anymore after this. */
-
+      
       /* Re-generate channel key */
       if (!silc_server_create_channel_key(server, channel, 0))
 	goto out;
-      
+	
       /* Send the channel key. This sends it to our local clients and if
 	 we are normal server to our router as well. */
       silc_server_send_channel_key(server, NULL, channel, 
 				   server->server_type == SILC_ROUTER ? 
 				   FALSE : !server->standalone);
-
+	
       cipher = channel->channel_key->cipher->name;
       hmac = (char *)silc_hmac_get_name(channel->hmac);
     }
   }
-  
+
   if (mode_mask & SILC_CHANNEL_MODE_ULIMIT) {
     /* User limit is set on channel */
     uint32 user_limit;

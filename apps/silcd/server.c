@@ -2815,7 +2815,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 
   channel_name = strdup(channel_name);
 
-  /* Create the channel */
+  /* Create the channel ID */
   if (!silc_id_create_channel_id(server, router_id, server->rng, 
 				 &channel_id)) {
     silc_free(channel_name);
@@ -2823,6 +2823,8 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
     silc_hmac_free(newhmac);
     return NULL;
   }
+
+  /* Create the channel */
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
 				  NULL, key, newhmac, 0);
@@ -2830,6 +2832,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
     silc_free(channel_name);
     silc_cipher_free(key);
     silc_hmac_free(newhmac);
+    silc_free(channel_id);
     return NULL;
   }
 
@@ -2839,11 +2842,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   /* Now create the actual key material */
   if (!silc_server_create_channel_key(server, entry, 
 				      silc_cipher_get_key_len(key) / 8)) {
-    silc_free(channel_name);
-    silc_cipher_free(key);
-    silc_hmac_free(newhmac);
-    silc_free(entry->cipher);
-    silc_free(entry->hmac_name);
+    silc_idlist_del_channel(server->local_list, entry);
     return NULL;
   }
 
@@ -2898,6 +2897,8 @@ silc_server_create_new_channel_with_id(SilcServer server,
 				  SILC_CHANNEL_MODE_NONE, channel_id, 
 				  NULL, key, newhmac, 0);
   if (!entry) {
+    silc_cipher_free(key);
+    silc_hmac_free(newhmac);
     silc_free(channel_name);
     return NULL;
   }
@@ -2905,7 +2906,7 @@ silc_server_create_new_channel_with_id(SilcServer server,
   /* Now create the actual key material */
   if (!silc_server_create_channel_key(server, entry, 
 				      silc_cipher_get_key_len(key) / 8)) {
-    silc_free(channel_name);
+    silc_idlist_del_channel(server->local_list, entry);
     return NULL;
   }
 
@@ -3032,7 +3033,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   /* Decode channel key payload */
-  payload = silc_channel_key_payload_parse(key_payload->data,
+  payload = silc_channel_key_payload_parse(key_payload->data, 
 					   key_payload->len);
   if (!payload) {
     SILC_LOG_ERROR(("Bad channel key payload received, dropped"));
@@ -3055,7 +3056,8 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
     if (!channel) {
       channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
       if (!channel) {
-	SILC_LOG_ERROR(("Received key for non-existent channel"));
+	SILC_LOG_ERROR(("Received key for non-existent channel %s",
+			silc_id_render(id, SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -3140,8 +3142,7 @@ void silc_server_perform_heartbeat(SilcSocketConnection sock,
 {
   SilcServerHBContext hb = (SilcServerHBContext)hb_context;
 
-  SILC_LOG_DEBUG(("Sending heartbeat to %s (%s)", sock->hostname,
-		  sock->ip));
+  SILC_LOG_DEBUG(("Sending heartbeat to %s (%s)", sock->hostname, sock->ip));
 
   /* Send the heartbeat */
   silc_server_send_heartbeat(hb->server, sock);

@@ -212,6 +212,8 @@ void silc_server_notify(SilcServer server,
       /* The channel is global now */
       channel->global_users = TRUE;
 
+    SILC_LOG_DEBUG(("Joining to channel %s", channel->channel_name));
+
     /* JOIN the global client to the channel (local clients (if router 
        created the channel) is joined in the pending JOIN command). */
     chl = silc_calloc(1, sizeof(*chl));
@@ -638,6 +640,8 @@ void silc_server_notify(SilcServer server,
 	    break;
 	  }
 
+	  SILC_LOG_DEBUG(("Changing the channel user mode"));
+
 	  /* Change the mode */
 	  chl->mode = mode;
 	  if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
@@ -750,10 +754,10 @@ void silc_server_notify(SilcServer server,
       goto out;
 
     /* Get the channel entry */
-    channel = silc_idlist_find_channel_by_id(server->global_list, 
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
 					     channel_id, NULL);
     if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->local_list, 
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
 					       channel_id, NULL);
       if (!channel) {
 	silc_free(channel_id);
@@ -780,9 +784,9 @@ void silc_server_notify(SilcServer server,
 		    silc_id_render(channel_id2, SILC_ID_CHANNEL)));
 
     /* Replace the Channel ID */
-    if (!silc_idlist_replace_channel_id(server->global_list, channel_id,
+    if (!silc_idlist_replace_channel_id(server->local_list, channel_id,
 					channel_id2))
-      if (!silc_idlist_replace_channel_id(server->local_list, channel_id,
+      if (!silc_idlist_replace_channel_id(server->global_list, channel_id,
 					  channel_id2)) {
 	silc_free(channel_id2);
 	channel_id2 = NULL;
@@ -790,7 +794,14 @@ void silc_server_notify(SilcServer server,
 
     if (channel_id2) {
       SilcBuffer users = NULL, users_modes = NULL;
-      
+
+      /* Re-announce this channel which ID was changed. */
+      silc_server_send_new_channel(server, sock, FALSE, channel->channel_name,
+				   channel->id, 
+				   silc_id_get_len(channel->id, 
+						   SILC_ID_CHANNEL),
+				   channel->mode);
+
       /* Re-announce our clients on the channel as the ID has changed now */
       silc_server_announce_get_channel_users(server, channel, &users,
 					     &users_modes);

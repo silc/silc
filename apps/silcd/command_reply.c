@@ -823,7 +823,6 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
     silc_buffer_put(keyp, tmp, len);
   }
-
   id = silc_id_payload_parse_id(id_string, id_len);
   if (!id)
     goto out;
@@ -873,8 +872,13 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
        local list. */
     entry = silc_idlist_find_channel_by_name(server->global_list, 
 					     channel_name, &cache);
-    if (entry)
+    if (entry) {
+      if (entry->rekey) {
+	silc_schedule_task_del_by_context(server->schedule, entry->rekey);
+	SILC_LOG_ERROR(("global_list->channels: entry->rekey != NULL, inform Pekka now!!!"));
+      }
       silc_idlist_del_channel(server->global_list, entry);
+    }
 
     /* Add the channel to our local list. */
     entry = silc_idlist_add_channel(server->local_list, strdup(channel_name), 

@@ -734,10 +734,7 @@ bool silc_server_client_on_channel(SilcClientEntry client,
   if (!client || !channel)
     return FALSE;
 
-  if (silc_hash_table_find(client->channels, channel, NULL, NULL))
-    return TRUE;
-
-  return FALSE;
+  return silc_hash_table_find(client->channels, channel, NULL, NULL);
 }
 
 /* Checks string for bad characters and returns TRUE if they are found. */

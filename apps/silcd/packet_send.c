@@ -1654,9 +1654,8 @@ void silc_server_send_new_id(SilcServer server,
 }
 
 /* Send New Channel Payload to notify about newly created channel in the
-   SILC network. Normal server nevers sends this packet. Router uses this
-   to notify other routers in the network about new channel. This packet
-   is broadcasted. */
+   SILC network. Router uses this to notify other routers in the network 
+   about new channel. This packet is broadcasted by router. */
 
 void silc_server_send_new_channel(SilcServer server,
 				  SilcSocketConnection sock,
@@ -1686,7 +1685,8 @@ void silc_server_send_new_channel(SilcServer server,
 
   /* Send to backup routers if this is being broadcasted to primary
      router. */
-  if (server->router && server->router->connection &&
+  if (server->server_type == SILC_ROUTER &&
+      server->router && server->router->connection &&
       sock == server->router->connection && broadcast)
     silc_server_backup_send(server, NULL, SILC_PACKET_NEW_CHANNEL, 0,
 			    packet->data, packet->len, FALSE, TRUE);
