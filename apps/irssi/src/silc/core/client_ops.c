@@ -106,6 +106,29 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       nick = silc_nicklist_insert(chanrec, chu, FALSE);
   }
 
+  if (flags & SILC_MESSAGE_FLAG_DATA) {
+    /* MIME object received, try to display it as well as we can */
+    char type[128];
+    unsigned char *data;
+
+    memset(type, 0, sizeof(type));
+    if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
+			 NULL, 0, &data, NULL))
+      return;
+
+    /* Then figure out what we can display */
+    if (strstr(type, "text/") && !strstr(type, "text/t140") &&
+	!strstr(type, "text/vnd")) {
+      /* It is something textual, display it */
+      message = (const unsigned char *)data;
+    } else {
+      message = NULL;
+    }
+  }
+
+  if (!message)
+    return;
+
   if (flags & SILC_MESSAGE_FLAG_ACTION)
     printformat_module("fe-common/silc", server, channel->channel_name,
 		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION, 
@@ -114,27 +137,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
     printformat_module("fe-common/silc", server, channel->channel_name,
 		       MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE, 
                        nick == NULL ? "[<unknown>]" : nick->nick, message);
-  else if (flags & SILC_MESSAGE_FLAG_DATA) {
-    /* MIME object received, try to display it as well as we can */
-    char type[128];
-    unsigned char *data;
-
-    memset(type, 0, sizeof(type));
-    if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
-			NULL, 0, &data, NULL))
-      return;
-
-    /* Then figure out what we can display */
-    if (strstr(type, "text/") && !strstr(type, "text/t140") &&
-	!strstr(type, "text/vnd")) {
-
-      /* It is something textual */
-      signal_emit("message public", 6, server, data,
-		  nick == NULL ? "[<unknown>]" : nick->nick,
-		  nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
-		  chanrec->name, nick);
-    }
-  } else
+  else
     signal_emit("message public", 6, server, message,
 		nick == NULL ? "[<unknown>]" : nick->nick,
 		nick == NULL ? "" : nick->host == NULL ? "" : nick->host,

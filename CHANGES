@@ -3,6 +3,10 @@ Thu Apr 18 14:09:51 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Added silc_mime_parse function to parse MIME headers.
 	  Affected files are lib/silcutil/silcstruti.[ch].
 
+	* Added MIME header parsing in Irssi SILC Client.  It displays
+	  all textual MIME objects, others it ignores.  Affected file
+	  is irssi/src/silc/core/clien_ops.c.
+
 Wed Apr 17 22:07:59 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Fixed a bug in the pid writing function, which couldn't be
