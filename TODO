@@ -167,6 +167,10 @@ describe new stuff to be added to protocol versions 1.x.
     payload definition is left out for now.  To be included in protocol
     version 1.1.
 
+ 10. Check command reply error status types in various commands,
+     specifically NO_FOPRIV is missing from many commands.  To be 
+     included in protocol version 1.1.
+
 
 TODO After 1.0
 ==============
