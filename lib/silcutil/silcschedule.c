@@ -720,9 +720,6 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   if (!schedule->valid)
     return NULL;
 
-  SILC_LOG_DEBUG(("Registering new task, fd=%d type=%d priority=%d", fd, 
-		  type, priority));
-
   queue = SILC_SCHEDULE_GET_QUEUE(type);
     
   /* If the task is generic task, we check whether this task has already
@@ -730,6 +727,9 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
      the same task applies to all file descriptors to be registered. */
   if (type == SILC_TASK_GENERIC) {
     silc_mutex_lock(queue->lock);
+
+    SILC_LOG_DEBUG(("Registering new task, fd=%d type=%d priority=%d", fd, 
+		    type, priority));
 
     if (queue->task) {
       SilcTask task = queue->task;
@@ -756,6 +756,12 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   }
 
   newtask = silc_calloc(1, sizeof(*newtask));
+  if (!newtask)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Registering new task %p, fd=%d type=%d priority=%d",
+		  newtask, fd, type, priority));
+
   newtask->fd = fd;
   newtask->context = context;
   newtask->callback = callback;
@@ -1225,7 +1231,7 @@ static int silc_schedule_task_remove(SilcTaskQueue queue, SilcTask task)
     return TRUE;
   }
 
-  SILC_LOG_DEBUG(("Removing task"));
+  SILC_LOG_DEBUG(("Removing task %p", task));
 
   /* Unregister the task */
   old = first;
