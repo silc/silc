@@ -193,7 +193,15 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 	    VCARD_TOKEN(vcard->middle_names);
 	    VCARD_TOKEN(vcard->prefix);
 	  }
-	VCARD_LASTTOKEN(vcard->suffix);
+	if (!vcard->family_name && !vcard->first_name) {
+	  VCARD_LASTTOKEN(vcard->family_name);
+	  off += (len - off);
+	}
+	if (!vcard->first_name) {
+	  VCARD_LASTTOKEN(vcard->first_name);
+	} else {
+	  VCARD_LASTTOKEN(vcard->suffix);
+	}
       }
     } else if (!strncasecmp(val, "NICKNAME:", 9)) {
       if (vcard->nickname)
