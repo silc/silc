@@ -175,6 +175,14 @@ do {						\
   }						\
 } while(0)
 
+#define SILC_GET_SKE_FLAGS(x, p)			\
+  if ((x)) {						\
+    if ((x)->param && (x)->param->key_exchange_pfs)	\
+      (p)->flags |= SILC_SKE_SP_FLAG_PFS;		\
+    if (!(x)->publickey)				\
+      (p)->flags |= SILC_SKE_SP_FLAG_MUTUAL;		\
+  }
+
 /* Prototypes */
 SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final);
 

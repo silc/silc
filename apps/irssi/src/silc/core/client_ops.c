@@ -590,7 +590,7 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (server->conn) {
+  if (server->conn && server->conn->local_entry) {
     nicklist_rename_unique(SERVER(server),
 			   server->conn->local_entry, server->nick,
 			   server->conn->local_entry, 

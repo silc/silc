@@ -787,3 +787,18 @@ char *silc_server_name_modify_bad(const char *name, uint32 name_len)
 
   return newname;
 }
+
+/* Find number of sockets by IP address indicated by `ip'. Returns 0 if
+   socket connections with the IP address does not exist. */
+
+uint32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip)
+{
+  int i, count;
+
+  for (i = 0, count = 0; i < server->config->param.connections_max; i++) {
+    if (server->sockets[i] && !strcmp(server->sockets[i]->ip, ip))
+      count++;
+  }
+
+  return count;
+}

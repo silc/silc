@@ -867,7 +867,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
       protocol->state++;
     } else {
       /* Responder of the protocol. */
-      SilcServerConfigSectionRouter *primary;
+      SilcServerConfigRouter *primary;
 
       /* We should have received START or START_GLOBAL packet */
       if (ctx->type != SILC_SERVER_BACKUP_START &&

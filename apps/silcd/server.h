@@ -63,8 +63,6 @@ typedef struct {
   void *callback_context;
 } *SilcServerConnection;
 
-#define SILC_SERVER_MAX_CONNECTIONS 1000
-
 /* General definitions */
 
 /* SILC port */
@@ -86,7 +84,13 @@ typedef struct {
 #define SILC_SERVER_RETRY_INTERVAL_MIN 10	 /* Min retry timeout */
 #define SILC_SERVER_RETRY_INTERVAL_MAX 600	 /* Max generated timeout */
 
-#define SILC_SERVER_KEEPALIVE          300       /* Heartbeat interval */
+#define SILC_SERVER_KEEPALIVE          300	 /* Heartbeat interval */
+#define SILC_SERVER_CHANNEL_REKEY      3600	 /* Channel rekey interval */
+#define SILC_SERVER_REKEY              3600	 /* Session rekey interval */
+#define SILC_SERVER_SKE_TIMEOUT        60	 /* SKE timeout */
+#define SILC_SERVER_CONNAUTH_TIMEOUT   60	 /* CONN_AUTH timeout */
+#define SILC_SERVER_MAX_CONNECTIONS    1000	 /* Max connections */
+#define SILC_SERVER_MAX_CONNECTIONS_SINGLE 1000  /* Max connections per host */
 
 /* Macros */
 

@@ -4583,7 +4583,7 @@ SILC_SERVER_CMD_FUNC(oper)
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   unsigned char *username, *auth;
   uint32 tmp_len;
-  SilcServerConfigSectionAdmin *admin;
+  SilcServerConfigAdmin *admin;
   SilcIDListData idata = (SilcIDListData)client;
   bool result = FALSE;
 
@@ -4670,7 +4670,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   unsigned char *username, *auth;
   uint32 tmp_len;
-  SilcServerConfigSectionAdmin *admin;
+  SilcServerConfigAdmin *admin;
   SilcIDListData idata = (SilcIDListData)client;
   bool result = FALSE;
 

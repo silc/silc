@@ -157,8 +157,7 @@ int silc_server_init(SilcServer server)
 
   /* Create a listening server */
   sock = silc_net_create_server(server->config->server_info->port,
-			       server->config->server_info->server_ip);
-  /* XXX What if I want my errno? Where is my errno?!?  -Johnny */
+				server->config->server_info->server_ip);
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not create server listener: %s on %hu",
 		    server->config->server_info->server_ip,
@@ -184,7 +183,7 @@ int silc_server_init(SilcServer server)
      all connections will have entry in this table (it is a table of
      pointers to the actual object that is allocated individually
      later). */
-  server->sockets = silc_calloc(SILC_SERVER_MAX_CONNECTIONS,
+  server->sockets = silc_calloc(server->config->param.connections_max,
 				sizeof(*server->sockets));
 
   do {
@@ -252,7 +251,7 @@ int silc_server_init(SilcServer server)
   silc_server_protocols_register();
 
   /* Initialize the scheduler. */
-  server->schedule = silc_schedule_init(SILC_SERVER_MAX_CONNECTIONS);
+  server->schedule = silc_schedule_init(server->config->param.connections_max);
   if (!server->schedule)
     goto err;
 
@@ -282,7 +281,7 @@ int silc_server_init(SilcServer server)
   /* If server connections has been configured then we must be router as
      normal server cannot have server connections, only router connections. */
   if (server->config->servers) {
-    SilcServerConfigSectionServer *ptr = server->config->servers;
+    SilcServerConfigServer *ptr = server->config->servers;
 
     server->server_type = SILC_ROUTER;
     while (ptr) {
@@ -477,6 +476,7 @@ void silc_server_start_key_exchange(SilcServer server,
   SilcSocketConnection newsocket;
   SilcProtocol protocol;
   SilcServerKEInternalContext *proto_ctx;
+  SilcServerConfigRouter *conn = sconn->conn;
   void *context;
 
   /* Cancel any possible retry timeouts */
@@ -507,6 +507,12 @@ void silc_server_start_key_exchange(SilcServer server,
   proto_ctx->rng = server->rng;
   proto_ctx->responder = FALSE;
 
+  /* Set Key Exchange flags from configuration, but fall back to global
+     settings too. */
+  SILC_GET_SKE_FLAGS(conn, proto_ctx);
+  if (server->config->param.key_exchange_pfs)
+    proto_ctx->flags |= SILC_SKE_SP_FLAG_PFS;
+
   /* Perform key exchange protocol. silc_server_connect_to_router_second
      will be called after the protocol is finished. */
   silc_protocol_alloc(SILC_PROTOCOL_SERVER_KEY_EXCHANGE, 
@@ -519,7 +525,7 @@ void silc_server_start_key_exchange(SilcServer server,
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock, 
 			   silc_server_timeout_remote,
-			   server, 60, 0, /* XXX hardcoded */
+			   server, server->config->key_exchange_timeout, 0,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 
@@ -545,9 +551,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 {
   SilcServerConnection sconn = (SilcServerConnection)context;
   SilcServer server = sconn->server;
-  SilcServerConfigSectionConnectionParam *param;
-
-  param = (sconn->param ? sconn->param : &server->config->param);
+  SilcServerConfigConnParams *param = 
+    (sconn->param ? sconn->param : &server->config->param);
 
   SILC_LOG_INFO(("Retrying connecting to a router"));
 
@@ -564,7 +569,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
     silc_rng_get_rn32(server->rng) % SILC_SERVER_RETRY_RANDOMIZER;
 
   /* If we've reached max retry count, give up. */
-  if (sconn->retry_count > param->reconnect_count && 
+  if (sconn->retry_count > param->reconnect_count &&
       param->reconnect_keep_trying == FALSE) {
     SILC_LOG_ERROR(("Could not connect to router, giving up"));
     silc_free(sconn->remote_host);
@@ -620,7 +625,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 {
   SilcServer server = (SilcServer)context;
   SilcServerConnection sconn;
-  SilcServerConfigSectionRouter *ptr;
+  SilcServerConfigRouter *ptr;
 
   SILC_LOG_DEBUG(("Connecting to router(s)"));
 
@@ -690,7 +695,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   SilcServerConnection sconn = (SilcServerConnection)ctx->context;
   SilcSocketConnection sock = ctx->sock;
   SilcServerConnAuthInternalContext *proto_ctx;
-  SilcServerConfigSectionRouter *conn = NULL;
+  SilcServerConfigRouter *conn = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -816,7 +821,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   proto_ctx->timeout_task =
     silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_timeout_remote,
-			   (void *)server, 15, 0, /* XXX hardcoded */
+			   (void *)server, 
+			   server->config->conn_auth_timeout, 0, 
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 
@@ -841,7 +847,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   unsigned char *id_string;
   uint32 id_len;
   SilcIDListData idata;
-  SilcServerConfigSectionConnectionParam *param;
+  SilcServerConfigConnParams *param;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -923,8 +929,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   param = (sconn->param ? sconn->param : &server->config->param);
 
   /* Perform keepalive. The `hb_context' will be freed automatically
-     when finally calling the silc_socket_free function. XXX hardcoded 
-     timeout!! */
+     when finally calling the silc_socket_free function. */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
   silc_socket_set_heartbeat(sock, param->keepalive_secs, hb_context,
@@ -932,7 +937,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 			    server->schedule);
 
   /* Register re-key timeout */
-  idata->rekey->timeout = 3600; /* XXX hardcoded */
+  idata->rekey->timeout = param->key_exchange_rekey;
   idata->rekey->context = (void *)server;
   silc_schedule_task_add(server->schedule, sock->sock, 
 			 silc_server_rekey_callback,
@@ -1002,8 +1007,10 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 {
   SilcServer server = (SilcServer)context;
   SilcServerKEInternalContext *proto_ctx;
-  void *cconfig, *sconfig, *rconfig;
-  SilcServerConfigSectionDeny *deny;
+  SilcServerConfigClient *cconfig = NULL;
+  SilcServerConfigServer *sconfig = NULL;
+  SilcServerConfigRouter *rconfig = NULL;
+  SilcServerConfigDeny *deny;
   int port;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1052,13 +1059,16 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   /* Check whether we have configred this sort of connection at all. We
      have to check all configurations since we don't know what type of
      connection this is. */
-  if (!(cconfig = silc_server_config_find_client(server, sock->ip, port)))
-    cconfig = silc_server_config_find_client(server, sock->hostname, port);
+  if (!(cconfig = silc_server_config_find_client(server, sock->ip)))
+    cconfig = silc_server_config_find_client(server, sock->hostname);
   if (!(sconfig = silc_server_config_find_server_conn(server, sock->ip)))
     sconfig = silc_server_config_find_server_conn(server, sock->hostname);
-  if (!(rconfig = silc_server_config_find_router_conn(server, sock->ip, port)))
-    rconfig = silc_server_config_find_router_conn(server, sock->hostname, 
-						  sock->port);
+  if (server->server_type == SILC_ROUTER) {
+    if (!(rconfig = silc_server_config_find_router_conn(server, 
+							sock->ip, port)))
+      rconfig = silc_server_config_find_router_conn(server, sock->hostname, 
+						    sock->port);
+  }
   if (!cconfig && !sconfig && !rconfig) {
     SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname, 
 		   sock->ip));
@@ -1082,6 +1092,15 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   proto_ctx->sconfig = sconfig;
   proto_ctx->rconfig = rconfig;
 
+  /* Take flags for key exchange. Since we do not know what type of connection
+     this is, we go through all found configuratios and use the global ones
+     as well. This will result always into strictest key exchange flags. */
+  SILC_GET_SKE_FLAGS(cconfig, proto_ctx);
+  SILC_GET_SKE_FLAGS(sconfig, proto_ctx);
+  SILC_GET_SKE_FLAGS(rconfig, proto_ctx);
+  if (server->config->param.key_exchange_pfs)
+    proto_ctx->flags |= SILC_SKE_SP_FLAG_PFS;
+
   /* Prepare the connection for key exchange protocol. We allocate the
      protocol but will not start it yet. The connector will be the
      initiator of the protocol thus we will wait for initiation from 
@@ -1092,13 +1111,12 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 		      silc_server_accept_new_connection_second);
 
   /* Register a timeout task that will be executed if the connector
-     will not start the key exchange protocol within 60 seconds. For
-     now, this is a hard coded limit. After the timeout the connection will
-     be closed if the key exchange protocol has not been started. */
+     will not start the key exchange protocol within specified timeout
+     and the connection will be closed. */
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock->sock, 
 			   silc_server_timeout_remote,
-			   context, 60, 0, /* XXX hardcoded */
+			   context, server->config->key_exchange_timeout, 0,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 }
@@ -1123,12 +1141,12 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
     return;
   }
 
-  /* Check max connections */
-  if (sock > SILC_SERVER_MAX_CONNECTIONS) {
-    SILC_LOG_ERROR(("Refusing connection, server is full"));
+  /* Check for maximum allowed connections */
+  if (sock > server->config->param.connections_max) {
+    SILC_LOG_ERROR(("Refusing connection, server is full, try again later"));
     server->stat.conn_failures++;
     return;
-  }
+  }  
 
   /* Set socket options */
   silc_net_set_socket_nonblock(sock);
@@ -1246,7 +1264,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock->sock, 
 			   silc_server_timeout_remote,
-			   (void *)server, 60, 0, /* XXX hardcoded */
+			   (void *)server, 
+			   server->config->conn_auth_timeout, 0, 
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 }
@@ -1265,7 +1284,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   SilcServerHBContext hb_context;
   SilcUnknownEntry entry = (SilcUnknownEntry)sock->user_data;
   void *id_entry;
-  uint32 hearbeat_timeout = SILC_SERVER_KEEPALIVE;
+  uint32 hearbeat_timeout = server->config->param.keepalive_secs;
+  uint32 num_sockets;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1290,11 +1310,36 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
   entry->data.last_receive = time(NULL);
 
+  num_sockets = silc_server_num_sockets_by_ip(server, sock->ip);
+
   switch (ctx->conn_type) {
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry client;
-      SilcServerConfigSectionClient *conn = ctx->cconfig;
+      SilcServerConfigClient *conn = ctx->cconfig;
+      uint32 max_per_host = server->config->param.connections_max_per_host;
+
+      /* Check for maximum connections limit */
+      if (conn->param) {
+	if (conn->param->connections_max &&
+	    server->stat.my_clients >= conn->param->connections_max) {
+	  silc_server_disconnect_remote(server, sock, 
+					"Server closed connection: "
+					"Server is full, try again later");
+	  server->stat.auth_failures++;
+	  goto out;
+	}
+
+	max_per_host = conn->param->connections_max_per_host;
+      }
+
+      if (num_sockets > max_per_host) {
+	silc_server_disconnect_remote(server, sock, 
+				      "Server closed connection: "
+				      "Too many connections from your host");
+	server->stat.auth_failures++;
+	goto out;
+      }
 
       SILC_LOG_DEBUG(("Remote host is client"));
       SILC_LOG_INFO(("Connection from %s (%s) is client", sock->hostname,
@@ -1339,29 +1384,60 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       bool backup_router = FALSE;
       char *backup_replace_ip = NULL;
       uint16 backup_replace_port = 0;
-      SilcServerConfigSectionServer *sconn = ctx->sconfig;
-      SilcServerConfigSectionRouter *rconn = ctx->rconfig;
+      SilcServerConfigServer *sconn = ctx->sconfig;
+      SilcServerConfigRouter *rconn = ctx->rconfig;
+      uint32 max_per_host = server->config->param.connections_max_per_host;
 
       if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER && rconn) {
+	if (rconn->param) {
+	  /* Check for maximum connections limit */
+	  if (rconn->param->connections_max &&
+	      server->stat.my_routers >= rconn->param->connections_max) {
+	    silc_server_disconnect_remote(server, sock, 
+					  "Server closed connection: "
+					  "Server is full, try again later");
+	    server->stat.auth_failures++;
+	    goto out;
+	  }
+	  max_per_host = rconn->param->connections_max_per_host;
+
+	  if (rconn->param->keepalive_secs)
+	    hearbeat_timeout = rconn->param->keepalive_secs;
+	}
+
 	initiator = rconn->initiator;
 	backup_local = rconn->backup_local;
 	backup_router = rconn->backup_router;
 	backup_replace_ip = rconn->backup_replace_ip;
 	backup_replace_port = rconn->backup_replace_port;
-
-	if (rconn->param) {
-	  if (rconn->param->keepalive_secs)
-	    hearbeat_timeout = rconn->param->keepalive_secs;
-	}
       }
 
       if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER && sconn) {
-	backup_router = sconn->backup_router;
-
 	if (sconn->param) {
+	  /* Check for maximum connections limit */
+	  if (sconn->param->connections_max &&
+	      server->stat.my_servers >= sconn->param->connections_max) {
+	    silc_server_disconnect_remote(server, sock, 
+					  "Server closed connection: "
+					  "Server is full, try again later");
+	    server->stat.auth_failures++;
+	    goto out;
+	  }
+	  max_per_host = sconn->param->connections_max_per_host;
+
 	  if (sconn->param->keepalive_secs)
 	    hearbeat_timeout = sconn->param->keepalive_secs;
 	}
+
+	backup_router = sconn->backup_router;
+      }
+
+      if (num_sockets > max_per_host) {
+	silc_server_disconnect_remote(server, sock, 
+				      "Server closed connection: "
+				      "Too many connections from your host");
+	server->stat.auth_failures++;
+	goto out;
       }
 
       SILC_LOG_DEBUG(("Remote host is %s", 
@@ -3010,7 +3086,8 @@ bool silc_server_create_channel_key(SilcServer server,
     channel->rekey->task = 
       silc_schedule_task_add(server->schedule, 0, 
 			     silc_server_channel_key_rekey,
-			     (void *)channel->rekey, 3600, 0,
+			     (void *)channel->rekey, 
+			     server->config->channel_rekey_secs, 0,
 			     SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
   }
@@ -3122,7 +3199,8 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
     channel->rekey->task = 
       silc_schedule_task_add(server->schedule, 0, 
 			     silc_server_channel_key_rekey,
-			     (void *)channel->rekey, 3600, 0,
+			     (void *)channel->rekey, 
+			     server->config->channel_rekey_secs, 0,
 			     SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
   }

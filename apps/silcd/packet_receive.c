@@ -2499,9 +2499,9 @@ void silc_server_connection_auth_request(SilcServer server,
 					 SilcSocketConnection sock,
 					 SilcPacketContext *packet)
 {
-  SilcServerConfigSectionClient *client = NULL;
+  SilcServerConfigClient *client = NULL;
   uint16 conn_type;
-  int ret, port;
+  int ret;
   SilcAuthMethod auth_meth = SILC_AUTH_NONE;
 
   SILC_LOG_DEBUG(("Start"));
@@ -2522,10 +2522,9 @@ void silc_server_connection_auth_request(SilcServer server,
 
   /* Get the authentication method for the client */
   auth_meth = SILC_AUTH_NONE;
-  port = server->sockets[server->sock]->port; /* Listenning port */
-  client = silc_server_config_find_client(server, sock->ip, port);
+  client = silc_server_config_find_client(server, sock->ip);
   if (!client)
-    client = silc_server_config_find_client(server, sock->hostname, port);
+    client = silc_server_config_find_client(server, sock->hostname);
   if (client) {
     if (client->passphrase) {
       if (client->publickey && !server->config->prefer_passphrase_auth)

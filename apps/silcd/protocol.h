@@ -51,6 +51,7 @@ typedef struct {
 
   SilcTask timeout_task;
   SilcPacketContext *packet;
+  SilcSKESecurityPropertyFlag flags;
   SilcSKE ske;
   SilcSKEKeyMaterial *keymat;
 } SilcServerKEInternalContext;

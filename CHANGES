@@ -8,6 +8,23 @@ Sat Feb 16 13:44:24 EET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 	  little timeout after connecting.  The affected file is
 	  lib/silcclient/client.c.
 
+	* Added following new config file settings:
+	  channel_rekey_secs, key_exchange_rekey, key_exchange_pfs,
+	  key_exchange_timeout, conn_auth_timeout, connections_max,
+	  links_max.
+
+	  Implemented all the new config settings handling in the server.
+
+	  Optimized the use of SKE Mutual flag usage.  Use it only
+	  if connection authentication protocol is not based in public
+	  key authentication.
+
+	  Renamed all SilcServerConfigSection* to SilcServerConfig*
+	  to have a bit shorter names.
+
+	  Affected files silcd/serverconfig.[ch], server.[ch], and
+	  protocol.[ch].
+
 Sat Feb 16 02:46:43 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Cleaned up the listening sockets code, preparing for the rehash

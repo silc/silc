@@ -125,7 +125,7 @@ typedef enum {
    to negotiate what security properties should be used in the
    communication. */
 struct SilcSKESecurityPropertiesStruct {
-  unsigned char flags;
+  SilcSKESecurityPropertyFlag flags;
   SilcSKEDiffieHellmanGroup group;
   SilcPKCS pkcs;
   SilcCipher cipher;
@@ -208,7 +208,7 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
 				       char *version,
 				       SilcBuffer start_payload,
-				       bool mutual_auth);
+				       SilcSKESecurityPropertyFlag flags);
 SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske, 
 					 SilcSKEStartPayload *start_payload);
 SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
@@ -221,7 +221,7 @@ SilcSKEStatus silc_ske_end(SilcSKE ske);
 SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status);
 SilcSKEStatus 
 silc_ske_assemble_security_properties(SilcSKE ske,
-				      unsigned char flags,
+				      SilcSKESecurityPropertyFlag flags,
 				      char *version,
 				      SilcSKEStartPayload **return_payload);
 SilcSKEStatus 

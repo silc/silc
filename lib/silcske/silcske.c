@@ -624,7 +624,7 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
 				       char *version,
 				       SilcBuffer start_payload,
-				       bool mutual_auth)
+				       SilcSKESecurityPropertyFlag flags)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcSKEStartPayload *remote_payload = NULL, *payload = NULL;
@@ -646,9 +646,15 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
   ske->start_payload_copy = silc_buffer_copy(start_payload);
 
   /* Force the mutual authentication flag if we want to do it. */
-  if (mutual_auth) {
+  if (flags & SILC_SKE_SP_FLAG_MUTUAL) {
     SILC_LOG_DEBUG(("Force mutual authentication"));
     remote_payload->flags |= SILC_SKE_SP_FLAG_MUTUAL;
+  }
+
+  /* Force PFS flag if we require it */
+  if (flags & SILC_SKE_SP_FLAG_PFS) {
+    SILC_LOG_DEBUG(("Force PFS"));
+    remote_payload->flags |= SILC_SKE_SP_FLAG_PFS;
   }
 
   /* Parse and select the security properties from the payload */
@@ -1107,7 +1113,7 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status)
 
 SilcSKEStatus 
 silc_ske_assemble_security_properties(SilcSKE ske,
-				      unsigned char flags,
+				      SilcSKESecurityPropertyFlag flags,
 				      char *version,
 				      SilcSKEStartPayload **return_payload)
 {

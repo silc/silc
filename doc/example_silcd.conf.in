@@ -17,7 +17,7 @@ Include "@ETCDIR@/silcalgs.conf";
 # General configuration options
 #
 # These defines the default behaviour of the server.  Most of these values
-# can be overridden with ConnectionParam, which can be defined independently
+# can be overridden with ConnectionParams, which can be defined independently
 # for different connections.
 #
 General {
@@ -33,11 +33,22 @@ General {
 	#prefer_passphrase_auth = true;
 
 	# Set this to true if the server should require fully qualified
-	# domain names (FQDN) for incoming connections.
-	#require_reverse_lookup = false;	
+	# domain names (FQDN) for incoming connections. If true, a host
+	# without FQDN cannot connect to the server.
+	#require_reverse_lookup = true;
+
+	# Maximum number of incoming connections allowed to this server.
+	# If more attempt to connet they will be refused.
+	connections_max = 1000;
+
+	# Maximum number of incoming connections allowed per single host.
+	# For example, if this is one (1) it means a host can link only
+	# once to the server. Attempting to connect more than once would be
+	# refused. This can be overridden with ConnectionParams.
+	#connections_max_per_host = 10;
 
 	# Default keepalive frequency (seconds). This can be overridden
-	# with ConnectionParam.
+	# with ConnectionParams.
 	keepalive_secs = 300;
 
 	# Default reconnection parameters defines how the server reconnect
@@ -58,11 +69,39 @@ General {
 	#                          reconnect_count is reached (the interval
 	#                          will be reconnect_interval_max).
 	#
-	# These can be overridden with ConnectionParam.
+	# These can be overridden with ConnectionParams.
 	reconnect_count = 7;
 	reconnect_interval = 10;
 	reconnect_interval_max = 600;
 	reconnect_keep_trying = true;
+
+	# Key exchange protocol rekey interval (seconds). How often to
+	# regenerate the session key with the remote. Initiator will perform
+	# the rekey and this setting affects only when connecting as intiator.
+	# This can be overridden with ConnectionParams.
+	#key_exchange_rekey = 3600;
+
+	# Key exchange with Perfect Forward Secrecy (PFS). This will perform
+	# the rekey process with PFS, making the new key more secure since it
+	# is not dependent in any way of the old key. This will make the rekey
+	# process somewhat slower, than without PFS.  This can be overridden
+	# with ConnectionParams.
+	#key_exchange_pfs = true;
+
+	# Key exchange timeout (seconds). If the key exchange protocol is not
+	# finished in this time period the remote connection will be closed.
+	#key_exchange_timeout = 60;
+
+	# Connection authentication timeout (seconds). If the connection
+	# authentication protocol is not finished in this time period the
+	# remote connection will be closed.
+	#conn_auth_timeout = 60;
+
+	# Channel key rekey interval (seconds). How often channel key is
+	# regenerated. Note that channel key regenerated also always when
+ 	# someone joins or leaves the channel.
+	#channel_rekey_secs = 3600;
+
 };
 
 #
@@ -90,12 +129,12 @@ ServerInfo {
 	#
 	# Full admin name
 	#
-	Admin = "Pekka Riikonen";
+	Admin = "Foo T. Bar";
 
 	#
 	# Admin's email address
 	#
-	AdminEmail = "priikone@poseidon.pspt.fi";
+	AdminEmail = "foo-admin@bar.com";
 
 	#
 	# Run SILC server as specific user and group. The server must be 
@@ -180,10 +219,24 @@ Logging {
 # (or values defined in General section).  You can have multiple
 # ConnectionParams blocks defined.
 #
-ConnectionParam {
+ConnectionParams {
 	# unique name. The name is used to reference to this parameter 
-	# block from the connections.
+	# block from the connections. This field is mandatory.
 	name = "normal";
+
+	# Maximum number of connections allowed. More connections will be
+	# refused. This can be used for example to limit number of clients.
+	# Note that this never can be larger than the connections_max
+	# specified in General section.
+	connections_max = 200;
+
+	# Maximum number of connections allowed per host. For example, if
+	# this is one (1) it means a host can link only once to the server.
+	# Attempting to link more than once would be refused.
+	#
+	# If this connection parameters block is used with incoming server
+	# connections it is recommended that this value is set to one (1).
+	connections_max_per_host = 10;
 
 	# Keepalive frequency (seconds).
 	keepalive_secs = 300;
@@ -210,12 +263,18 @@ ConnectionParam {
 	reconnect_interval_max = 600;
 	reconnect_keep_trying = true;
 
-	#TODO:
-	#key_exchange_rekey - rekey timeout
-	#key_exchange_pfs - rekey PFS
-	#key_exchange_mutual_auth - SKE mutual auth
+	# Key exchange protocol rekey interval (seconds). How often to
+	# regenerate the session key with the remote. Initiator will perform
+	# the rekey and this setting affects only when connecting as initiator.
+	#key_exchange_rekey = 3600;
 
-	#connections_max - max incoming connection
+	# Key exchange with Perfect Forward Secrecy (PFS). This will perform
+	# the rekey process with PFS, making the new key more secure since it
+	# is not dependent in any way of the old key. This will make the rekey
+	# process somewhat slower, than without PFS.
+	#key_exchange_pfs = true;
+
+	#TODO:
 	#connections_interval - incoming connection interval limit ?
 };
 
@@ -240,7 +299,7 @@ Client {
 	#Host = "10.1.*";
 	#Passphrase = "secret";
 	#PublicKey = "/path/to/the/public.key";
-	Param = "normal";
+	Params = "normal";
 };
 
 #
@@ -286,7 +345,7 @@ ServerConnection {
 	Passphrase = "verysecret";
 	#Publickey = "/path/to/the/public.key";
 	VersionID = 1;
-	Param = "normal";
+	Params = "normal";
 	Backup = false;
 };
 
@@ -321,7 +380,7 @@ RouterConnection {
 	Passphrase = "verysecret";
 	#Publickey = "/path/to/the/public.key";
 	VersionID = 1;
-	Param = "normal";
+	Params = "normal";
 	Initiator = true;
 	#BackupHost = "10.2.1.6";
 	#BackupPort = 706;

@@ -283,7 +283,7 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
 	 keymat->send_enc_key, keymat->enc_key_len / 8);
   idata->rekey->enc_key_len = keymat->enc_key_len / 8;
 
-  if (ske->start_payload->flags & SILC_SKE_SP_FLAG_PFS)
+  if (ske->prop->flags & SILC_SKE_SP_FLAG_PFS)
     idata->rekey->pfs = TRUE;
   idata->rekey->ske_group = silc_ske_group_get_number(group);
 
@@ -471,12 +471,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
 					  silc_version_string,
-					  ctx->packet->buffer, TRUE);
+					  ctx->packet->buffer, ctx->flags);
       } else {
 	SilcSKEStartPayload *start_payload;
 
 	/* Assemble security properties. */
-	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_MUTUAL, 
+	silc_ske_assemble_security_properties(ske, ctx->flags, 
 					      silc_version_string,
 					      &start_payload);
 
@@ -953,7 +953,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	/* Remote end is client */
 	if (conn_type == SILC_SOCKET_TYPE_CLIENT) {
-	  SilcServerConfigSectionClient *client = ctx->cconfig;
+	  SilcServerConfigClient *client = ctx->cconfig;
 	  
 	  if (client) {
 	    ret = silc_server_get_authentication(ctx, client->passphrase,
@@ -982,7 +982,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is server */
 	if (conn_type == SILC_SOCKET_TYPE_SERVER) {
-	  SilcServerConfigSectionServer *serv = ctx->sconfig;
+	  SilcServerConfigServer *serv = ctx->sconfig;
 	  
 	  if (serv) {
 	    ret = silc_server_get_authentication(ctx, serv->passphrase,
@@ -1011,7 +1011,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is router */
 	if (conn_type == SILC_SOCKET_TYPE_ROUTER) {
-	  SilcServerConfigSectionRouter *serv = ctx->rconfig;
+	  SilcServerConfigRouter *serv = ctx->rconfig;
 
 	  if (serv) {
 	    ret = silc_server_get_authentication(ctx, serv->passphrase,

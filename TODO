@@ -37,19 +37,9 @@ TODO/bugs In SILC Server
 
  o Configuration file additions:
 
-	o Allow configuration of protocol execution timeouts.  This 
-	  includes SKE, CONN_AUTH and REKEY timeouts. Check all
-	  "XXX hardcoded" from the code for these.
-
- 	o IP address fields in configuration file should accept mask
-	  format as well, IP/MASK, and not just plain IP.  This would
-	  allow subnet filtering etc.
-
-	o Add channel key rekey default timeout.
-
-	o Add (advanced options in General) to set how often certain ID
-	  caches are purged (could be used to optimize the server's
-	  behaviour).
+	o Add incoming connection frequency, incoming connection frequency
+	  for single IP address, key exchange frequency, key exchange
+	  frequency for single IP. Add also frequency base.
 
 	o Add hashed passwords to config file.
 
