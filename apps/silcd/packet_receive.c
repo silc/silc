@@ -477,11 +477,15 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Welcome to the SILC Network %s@%s",
 			   username, sock->hostname));
+  SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			  ("Your host is %s, running version %s",
+			   server->config->server_info->server_name,
+			   server_version));
   if (server->server_type == SILC_ROUTER) {
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("There are %d clients on %d servers in SILC "
 			     "Network", server->stat.clients,
-			     server->stat.servers));
+			     server->stat.servers + 1));
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("There are %d clients on %d server in our cell",
 			     server->stat.cell_clients,
@@ -507,10 +511,6 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 			    ("%d operators online",
 			     server->stat.my_server_ops));
   }
-  SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			  ("Your host is %s, running version %s",
-			   server->config->server_info->server_name,
-			   server_version));
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your connection is secured with %s cipher, "
 			   "key length %d bits",

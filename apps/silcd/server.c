@@ -1666,6 +1666,7 @@ void silc_server_free_sock_user_data(SilcServer server,
       silc_idlist_del_data(user_data);
       silc_idlist_del_client(server->local_list, user_data);
       server->stat.my_clients--;
+      server->stat.clients--;
       break;
     }
   case SILC_SOCKET_TYPE_SERVER:
@@ -1684,6 +1685,7 @@ void silc_server_free_sock_user_data(SilcServer server,
       silc_idlist_del_data(user_data);
       silc_idlist_del_server(server->local_list, user_data);
       server->stat.my_servers--;
+      server->stat.servers--;
       break;
     }
   default:
