@@ -1,3 +1,18 @@
+Thu Jul 12 10:18:40 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not cancel the protocol in silc_server_close_connection
+	  it might cause recursion.  Now cancelled in the function
+	  silc_server_free_sock_user_data.  Affected file silcd/server.c.
+
+	* Fixed the silc_server_remove_clients_by_server to regenerate
+	  the channel keys correctly finally.  Added also new function
+	  silc_server_remove_clients_channels to actually do it.
+	  Affected file silcd/server.c.
+
+	* Fixed the silc_server_new_channel to not crash by giving
+	  wrong router to the new channel.  Affected file is
+	  silcd/packet_receive.c.
+
 Wed Jul 11 18:31:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SilcClientParams structure to the lib/silcclient/silcapi.h

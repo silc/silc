@@ -1872,7 +1872,7 @@ void silc_server_new_channel(SilcServer server,
 		    sock->hostname));
     
     silc_idlist_add_channel(server->global_list, strdup(channel_name), 
-			    0, channel_id, server->router->connection, 
+			    0, channel_id, sock->user_data, 
 			    NULL, NULL);
 
     server->stat.channels++;

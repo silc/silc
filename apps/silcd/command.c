@@ -4798,11 +4798,11 @@ SILC_SERVER_CMD_FUNC(users)
       return;
     }
 
-    /* We are router and we will check the global list as well. */
+    /* Check the global list as well. */
     if (id)
       channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
     else
-      channel = silc_idlist_find_channel_by_name(server->local_list, 
+      channel = silc_idlist_find_channel_by_name(server->global_list, 
 						 channel_name, NULL);
     if (!channel) {
       /* Channel really does not exist */
