@@ -145,7 +145,7 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   SilcClient client = (SilcClient)ske->user_data;
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   char *cp;
-  int maj = 0, min = 0, build = 0, maj2, min2, build2;
+  int maj = 0, min = 0, build = 0, maj2 = 0, min2 = 0, build2 = 0;
 
   /* Check for initial version string */
   if (!strstr(version, "SILC-1.0-"))
@@ -183,10 +183,8 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 
   if (maj != maj2)
     status = SILC_SKE_STATUS_BAD_VERSION;
-#if 0
   if (min < min2)
     status = SILC_SKE_STATUS_BAD_VERSION;
-#endif
 
   if (status != SILC_SKE_STATUS_OK)
     client->ops->say(client, conn, 

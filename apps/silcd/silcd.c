@@ -49,6 +49,7 @@ static struct option long_opts[] =
   { "create-key-pair", 1, NULL, 'C' },
   { "pkcs", 1, NULL, 10 },
   { "bits", 1, NULL, 11 },
+  { "identifier", 1, NULL, 12 },
 
   { NULL, 0, NULL, 0 }
 };
@@ -57,6 +58,7 @@ static struct option long_opts[] =
 static bool opt_create_keypair = FALSE;
 static char *opt_keypath = NULL;
 static char *opt_pkcs = "rsa";
+static char *opt_identifier = NULL;
 static int opt_bits = 1024;
 
 /* Prints out the usage of silc client */
@@ -76,6 +78,19 @@ Usage: silcd [options]\n\
   -C, --create-key-pair=PATH    Create new public key pair\n\
       --pkcs=PKCS               Set the PKCS of the public key pair\n\
       --bits=VALUE              Set length of the public key pair\n\
+      --identifier=IDENTIFIER   Public key identifier\n\
+\n\
+      The public key identifier may be of the following format:\n\
+\n\
+      UN=<username>, HN=<hostname or IP>, RN=<real name>, E=<email>,\n\
+      O=<organization>, C=<country>\n\
+\n\
+      The UN and HN must be provided, the others are optional.  If the\n\
+      --identifier option is not used an identifier will be created for\n\
+      the public key automatically.\n\
+\n\
+      Example identifier: \"UN=foobar, HN=foo.bar.com, RN=Foo T. Bar, \n\
+                           E=foo@bar.com, C=FI\"\n\
 \n");
   exit(0);
 }
@@ -128,6 +143,10 @@ int main(int argc, char **argv)
 	  if (optarg)
 	    opt_bits = atoi(optarg);
 	  break;
+	case 12:
+	  if (optarg)
+	    opt_identifier = strdup(optarg);
+	  break;
 
 	default:
 	  silc_usage();
@@ -143,7 +162,7 @@ int main(int argc, char **argv)
     silc_hash_register_default();
     silc_hmac_register_default();
     silc_server_create_key_pair(opt_pkcs, opt_bits, opt_keypath,
-				NULL, NULL, NULL);
+				opt_identifier, NULL, NULL);
     exit(0);
   }
 

@@ -146,7 +146,7 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   char *cp;
-  int maj = 0, min = 0, build = 0, maj2, min2, build2;
+  int maj = 0, min = 0, build = 0, maj2 = 0, min2 = 0, build2 = 0;
 
   SILC_LOG_INFO(("%s (%s) is version %s", ske->sock->hostname,
 		 ske->sock->ip, version));
@@ -191,10 +191,8 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 
   if (maj != maj2)
     status = SILC_SKE_STATUS_BAD_VERSION;
-#if 0
   if (min < min2)
     status = SILC_SKE_STATUS_BAD_VERSION;
-#endif
 
   return status;
 }

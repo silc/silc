@@ -3,6 +3,13 @@ Thu May  3 21:23:50 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Check minor version as well in the SKE.  Affected files are
 	  silcd/protocol.c and lib/silcclient/protocol.c.
 
+	* Added --identifier option to the server so that an identifier
+	  can be when creating the public key for the server.  Affected
+	  file is silcd/silcd.c.
+
+	* Fixed minor decoding bug in silc_pkcs_decode_identifier in
+	  lib/silccrypt/silcpkcs.c.
+
 Wed May  2 20:50:49 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Register default ciphers and stuff when using -C option with

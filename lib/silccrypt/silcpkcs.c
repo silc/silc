@@ -446,8 +446,12 @@ SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier)
   while (cp) {
     len = strcspn(cp, ",");
     if (len - 1 >= 0 && cp[len - 1] == '\\') {
-      cp += len + 1;
-      continue;
+      while (cp) {
+	cp += len + 1;
+	len = strcspn(cp, ",") + len;
+	if (len - 1 >= 0 && cp[len - 1] != '\\')
+	  break;
+      }
     }
 
     item = silc_calloc(len + 1, sizeof(char));
