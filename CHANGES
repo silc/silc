@@ -1,3 +1,17 @@
+Sun Nov  3 17:59:15 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the INVITE command to not crash Irssi SILC client
+	  when given without nickname argument.  AFfected file
+	  irssi/src/silc/core/client_ops.c.
+
+	* Fixed double free in WHOIS query on normal server when
+	  forwarding query to router.  Affected file is
+	  silcd/server_query.c.
+
+	* Fixed WATCH command reply handling on normal server which
+	  was missing altogether.  Affected file silcd/command_reply.c.
+	  Bug #44.
+
 Sat Nov  2 21:26:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for encrypted private key files.  Now

@@ -52,6 +52,7 @@ SilcServerCommandReply silc_command_reply_list[] =
   SILC_SERVER_CMD_REPLY(users, USERS),
   SILC_SERVER_CMD_REPLY(getkey, GETKEY),
   SILC_SERVER_CMD_REPLY(list, LIST),
+  SILC_SERVER_CMD_REPLY(watch, WATCH),
 
   { NULL, 0 },
 };
@@ -1075,7 +1076,7 @@ SILC_SERVER_CMD_REPLY_FUNC(stats)
 
   /* Get statistics structure */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-  if (server->server_type == SILC_SERVER && tmp) {
+  if (server->server_type != SILC_ROUTER && tmp) {
     silc_buffer_set(&buf, tmp, tmp_len);
     silc_buffer_unformat(&buf,
 			 SILC_STR_UI_INT(NULL),

@@ -490,7 +490,7 @@ bool silc_server_init(SilcServer server)
 
   /* If we are normal server we'll retrieve network statisticial information
      once in a while from the router. */
-  if (server->server_type == SILC_SERVER)
+  if (server->server_type != SILC_ROUTER)
     silc_schedule_task_add(server->schedule, 0, silc_server_get_stats,
 			   server, 10, 0, SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);

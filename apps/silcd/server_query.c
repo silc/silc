@@ -407,6 +407,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	      for (i = 0; i < query->ids_count; i++)
 		silc_free(query->ids[i].id);
 	      silc_free(query->ids);
+	      query->ids = NULL;
+	      query->ids_count = 0;
 	      silc_free(id);
 	      return;
 	    }
@@ -524,6 +526,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 		for (i = 0; i < query->ids_count; i++)
 		  silc_free(query->ids[i].id);
 		silc_free(query->ids);
+		query->ids = NULL;
+		query->ids_count = 0;
 		silc_free(id);
 		return;
 	      }
@@ -535,6 +539,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	    for (i = 0; i < query->ids_count; i++)
 	      silc_free(query->ids[i].id);
 	    silc_free(query->ids);
+	    query->ids = NULL;
+	    query->ids_count = 0;
 	    silc_free(id);
 	    return;
 	  }

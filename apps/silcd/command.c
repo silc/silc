@@ -823,7 +823,7 @@ SILC_SERVER_CMD_FUNC(list)
 
   /* If we are normal server, send the command to router, since we
      want to know all channels in the network. */
-  if (!cmd->pending && server->server_type == SILC_SERVER && 
+  if (!cmd->pending && server->server_type != SILC_ROUTER && 
       !server->standalone) {
     SilcBuffer tmpbuf;
     SilcUInt16 old_ident;
@@ -3633,11 +3633,13 @@ SILC_SERVER_CMD_FUNC(watch)
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WATCH, cmd, 1, 3);
 
-  if (server->server_type == SILC_SERVER && !server->standalone) {
+  if (server->server_type != SILC_ROUTER && !server->standalone) {
     if (!cmd->pending) {
       /* Send the command to router */
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;
+
+      SILC_LOG_DEBUG(("Forwarding WATCH to router"));
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
@@ -3659,6 +3661,8 @@ SILC_SERVER_CMD_FUNC(watch)
       /* Received reply from router, just send same data to the client. */
       SilcServerCommandReplyContext reply = context2;
       SilcStatus status;
+
+      SILC_LOG_DEBUG(("Received reply to WATCH from router"));
       silc_command_get_status(reply->payload, &status, NULL);
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH, status,
 					    0);
