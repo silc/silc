@@ -1,3 +1,8 @@
+Sat Jan  3 16:37:15 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed whois public key hash table deleting and adding in
+	  detached client case.  Affected file silcd/packet_receive.c.
+
 Sat Jan 03 12:15:38 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Changed filenames of silc/fe module not to collide with filenames

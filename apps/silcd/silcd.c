@@ -591,7 +591,7 @@ int main(int argc, char **argv)
 	  printf("SILCd Secure Internet Live Conferencing daemon, "
 		 "version %s (base: SILC Toolkit %s)\n",
 		 silc_dist_version, silc_version);
-	  printf("(c) 1997 - 2002 Pekka Riikonen "
+	  printf("(c) 1997 - 2004 Pekka Riikonen "
 		 "<priikone@silcnet.org>\n");
 	  exit(0);
 	  break;

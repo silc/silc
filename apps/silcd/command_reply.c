@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -892,7 +892,7 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
 	 be bogus client or some router in the net is buggy. */
       if (server->server_type != SILC_SERVER)
 	goto out;
- 
+
       /* entry isn't known so we IDENTIFY it. otherwise the
          silc_server_command_motd won't know about it and tell
          the client that there is no such server */
@@ -905,7 +905,7 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
 	  		      SILC_PACKET_COMMAND, 0, buffer->data,
 			      buffer->len, TRUE);
       silc_server_command_pending(server, SILC_COMMAND_IDENTIFY,
-	  			  server->cmd_ident, 
+	  			  server->cmd_ident,
 				  silc_server_command_reply_motd,
 				  cmd);
       silc_buffer_free(buffer);
@@ -1369,12 +1369,14 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
 	goto out;
     }
 
-    if (!silc_hash_table_find_by_context(server->pk_hash, public_key,
-					 client, NULL))
-      silc_hash_table_add(server->pk_hash, public_key, client);
+    if (!client->data.public_key) {
+      if (!silc_hash_table_find_by_context(server->pk_hash, public_key,
+					   client, NULL))
+	silc_hash_table_add(server->pk_hash, public_key, client);
 
-    client->data.public_key = public_key;
-    public_key = NULL;
+      client->data.public_key = public_key;
+      public_key = NULL;
+    }
   } else if (id_type == SILC_ID_SERVER) {
     server_id = silc_id_payload_get_id(idp);
 

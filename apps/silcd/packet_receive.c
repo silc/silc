@@ -3793,10 +3793,13 @@ void silc_server_resume_client(SilcServer server,
     sock->user_data = detached_client;
     detached_client->connection = sock;
 
-    if (client->data.public_key)
+    if (detached_client->data.public_key)
       silc_hash_table_del_by_context(server->pk_hash,
 	                             detached_client->data.public_key,
-				     client);
+				     detached_client);
+    if (idata->public_key)
+      silc_hash_table_del_by_context(server->pk_hash,
+				     idata->public_key, idata);
 
     /* Take new keys and stuff into use in the old entry */
     silc_idlist_del_data(detached_client);
@@ -3804,7 +3807,7 @@ void silc_server_resume_client(SilcServer server,
 
     if (detached_client->data.public_key)
       silc_hash_table_add(server->pk_hash,
-                          detached_client->data.public_key, client);
+			  detached_client->data.public_key, detached_client);
 
     detached_client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
@@ -3847,12 +3850,6 @@ void silc_server_resume_client(SilcServer server,
       server->stat.cell_clients--;
     silc_server_remove_from_channels(server, NULL, client, FALSE,
 				     NULL, FALSE, FALSE);
-
-    /* Remove from public key hash table. */
-    if (client->data.public_key)
-      silc_hash_table_del_by_context(server->pk_hash,
-	                             client->data.public_key,
-				     client);
 
     silc_server_del_from_watcher_list(server, client);
     if (!silc_idlist_del_client(server->local_list, client))
@@ -4051,8 +4048,6 @@ void silc_server_resume_client(SilcServer server,
     /* Client is detached, and now it is resumed.  Remove the detached
        mode and mark that it is resumed. */
 
-    /* we need to delete the public key from the has .. but do we need to
-     * get the key again? */
     if (detached_client->data.public_key)
       silc_hash_table_del_by_context(server->pk_hash,
 	                             detached_client->data.public_key,
