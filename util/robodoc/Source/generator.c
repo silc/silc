@@ -335,7 +335,7 @@ RB_Generate_Doc_Start (
 
 		      if (index)
 			{
-			  fprintf (index, " >> <A HREF=\"%s\">%s</A><BR>\n",
+			  fprintf (index, "<A HREF=\"%s\"><IMG SRC=\"index_pic.gif\" BORDER=\"0\" ALT=\"\">%s</A><BR>\n",
 				   name, cur_header->function_name);
 			}
 
@@ -346,7 +346,7 @@ RB_Generate_Doc_Start (
 		      fprintf (dest_doc, "<LI><A HREF=\"%s\">%s</A>\n",
 			       fname, cur_header->function_name);
 		      if (index)
-			fprintf (index, " >> <A HREF=\"%s\">%s</A><BR>\n",
+			fprintf (index, "<A HREF=\"%s\"><IMG SRC=\"index_pic.gif\" BORDER=\"0\" ALT=\"\">%s</A><BR>\n",
 				 fname, cur_header->function_name);
 		    }
 		}
@@ -574,28 +574,28 @@ RB_Generate_Header_Start (FILE * dest_doc, struct RB_header *cur_header)
 #endif
 	  if (cur_header->type == FUNCTION_HEADER)
 	    fprintf (dest_doc, 
-		     "\n<FONT SIZE=\"+3\" COLOR=\"#000044\"><B>"
+		     "\n<FONT SIZE=\"+2\" COLOR=\"#000055\"><B>"
 		     "Function <A NAME=\"%s\">%s</A>"
 		     "</FONT></B><BR><BR>\n\n",
 		     cur_header->function_name,
 		     cur_header->function_name);
 	  else if (cur_header->type == STRUCT_HEADER)
 	    fprintf (dest_doc, 
-		     "\n<FONT SIZE=\"+3\" COLOR=\"#000044\"><B>"
+		     "\n<FONT SIZE=\"+2\" COLOR=\"#000055\"><B>"
 		     "Structure <A NAME=\"%s\">%s</A>"
 		     "</FONT></B><BR><BR>\n\n",
 		     cur_header->function_name,
 		     cur_header->function_name);
 	  else if (cur_header->type == VARIABLE_HEADER)
 	    fprintf (dest_doc, 
-		     "\n<FONT SIZE=\"+3\" COLOR=\"#000044\"><B>"
+		     "\n<FONT SIZE=\"+2\" COLOR=\"#000055\"><B>"
 		     "Variable <A NAME=\"%s\">%s</A>"
 		     "</FONT></B><BR><BR>\n\n",
 		     cur_header->function_name,
 		     cur_header->function_name);
 	  else
 	    fprintf (dest_doc, 
-		     "\n<FONT SIZE=\"+3\" COLOR=\"#000044\"><B>"
+		     "\n<FONT SIZE=\"+2\" COLOR=\"#000055\"><B>"
 		     "<A NAME=\"%s\">%s</A>"
 		     "</FONT></B><BR><BR>\n\n",
 		     cur_header->function_name,
@@ -746,7 +746,7 @@ RB_Generate_Item_Name (FILE * dest_doc, int item_type)
       fprintf (dest_doc, format_str,
 	       att_start_command[MAKE_BOLD][output_mode]);
       if (output_mode == HTML)
-	fprintf (dest_doc, "\n<FONT COLOR=\"#000044\">");
+	fprintf (dest_doc, "\n<FONT COLOR=\"#000055\">");
       fprintf (dest_doc, format_str, item_names[item_type]);
       if (output_mode == HTML)
 	fprintf (dest_doc, "\n</FONT>");

@@ -3,11 +3,13 @@
  the SILC Document generator.
 -->
 
-<FONT SIZE="+3" COLOR="#000044"><B>SILC Toolkit Reference Manual</B></FONT>
+<FONT SIZE="+2" COLOR="#000044"><B>SILC Toolkit Reference Manual</B></FONT>
 <BR>
-Copyright (C) 2001 - 2002 The SILC Project<BR>
+<small>
+Copyright &copy; 2001 - 2002 The SILC Project<BR>
 Version: @VERSION@<BR>
 Updated: @DATE@
+</small>
 <BR><BR>
 <B><FONT SIZE="2">Note that this document is still under work and does not
 include yet all references for SILC Toolkit interfaces.</FONT></B>
@@ -15,7 +17,7 @@ include yet all references for SILC Toolkit interfaces.</FONT></B>
 @BODY@
 
 <BR><BR>
-<FONT SIZE="+2" COLOR="#000044"><B>Resource Links</B></FONT>
+<BIG><B>Resource Links</B></BIG>
 <BR><BR>
 <LI><A HREF="http://silcnet.org">SILC Project Website</a><BR>
 <LI><A HREF="http://silcnet.org/?page=docs">SILC Protocol Documentation</a><BR>
