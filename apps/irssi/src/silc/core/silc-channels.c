@@ -405,6 +405,17 @@ static void keyagr_completion(SilcClient client,
     printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_ABORTED, client_entry->nickname);
     break;
+
+  case SILC_KEY_AGREEMENT_ALREADY_STARTED:
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
+		       SILCTXT_KEY_AGREEMENT_ALREADY_STARTED,
+		       client_entry->nickname);
+    break;
+    
+  case SILC_KEY_AGREEMENT_SELF_DENIED:
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
+		       SILCTXT_KEY_AGREEMENT_SELF_DENIED);
+    break;
     
   default:
     break;

@@ -81,6 +81,8 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "key_agreement_failure", "Key agreement failed with {nick $0}", 1, { 0 } },
 	{ "key_agreement_timeout", "Timeout during key agreement. The key agreement was not performed with {nick $0}", 1, { 0 } },
 	{ "key_agreement_aborted", "Key agreement was aborted with {nick $0}", 1, { 0 } },
+	{ "key_agreement_started", "Key agreement is already started with {nick $0}", 1, { 0 } },
+	{ "key_agreement_denied", "Key agreement cannot be started with yourself", 0 },
 	{ "pubkey_received", "Received {hilight $0} public key", 1, { 0 } },
 	{ "pubkey_fingerprint", "Fingerprint and babbleprint for the {hilight $0} key are %: $1", 2, { 0, 0 } },
 	{ "pubkey_babbleprint", " $0", 1, { 0 } },

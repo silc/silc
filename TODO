@@ -4,17 +4,9 @@ TODO/bugs in Irssi SILC client
  o /cumode for unknown nick does not give any error message (Fix this to
    0.9.x).
 
- o The paths in Irssi SILC client binary are wrong.  Stuff gets installed
-   in (fe.) /usr/local/share but binary checks from /usr/local/lib and
-   never from share.
-
- o /KEY is broken?  KEY is broken when negotiating with itself.
-
 
 TODO/bugs In SILC Client Library
 ================================
-
- o file transfer does not work everytime, and not with large files?
 
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation

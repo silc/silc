@@ -370,7 +370,7 @@ SilcBuffer silc_sftp_name_encode(SilcSFTPName name)
   for (i = 0; i < name->count; i++) {
     len += (8 + strlen(name->filename[i]) + strlen(name->long_filename[i]));
     attr_buf[i] = silc_sftp_attr_encode(name->attrs[i]);
-    if (attr_buf[i])
+    if (!attr_buf[i])
       return NULL;
     len += attr_buf[i]->len;
   }

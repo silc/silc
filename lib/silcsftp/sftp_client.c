@@ -601,7 +601,7 @@ void silc_sftp_open(SilcSFTP sftp,
   silc_list_add(client->requests, req);
 
   attrs_buf = silc_sftp_attr_encode(attrs);
-  if (attrs_buf)
+  if (!attrs_buf)
     return;
   len = 4 + 4 + strlen(filename) + 4 + attrs_buf->len;
 
@@ -807,7 +807,7 @@ void silc_sftp_mkdir(SilcSFTP sftp,
   silc_list_add(client->requests, req);
 
   attrs_buf = silc_sftp_attr_encode(attrs);
-  if (attrs_buf)
+  if (!attrs_buf)
     return;
   len = 4 + 4 + strlen(path) + attrs_buf->len;
 
@@ -1025,7 +1025,7 @@ void silc_sftp_setstat(SilcSFTP sftp,
   silc_list_add(client->requests, req);
 
   attrs_buf = silc_sftp_attr_encode(attrs);
-  if (attrs_buf)
+  if (!attrs_buf)
     return;
   len = 4 + 4 + strlen(path) + attrs_buf->len;
 
@@ -1066,7 +1066,7 @@ void silc_sftp_fsetstat(SilcSFTP sftp,
 
   silc_sftp_handle_get(handle, &hdata, &hdata_len);
   attrs_buf = silc_sftp_attr_encode(attrs);
-  if (attrs_buf)
+  if (!attrs_buf)
     return;
   len = 4 + 4 + hdata_len + attrs_buf->len;
 

@@ -92,6 +92,8 @@ typedef enum {
   SILC_KEY_AGREEMENT_FAILURE,	       /* The protocol failed */
   SILC_KEY_AGREEMENT_TIMEOUT,	       /* The protocol timeout */
   SILC_KEY_AGREEMENT_ABORTED,	       /* The protocol aborted */
+  SILC_KEY_AGREEMENT_ALREADY_STARTED,  /* Already started */
+  SILC_KEY_AGREEMENT_SELF_DENIED,      /* Negotiationg with itself denied */
 } SilcKeyAgreementStatus;
 /***/
 

@@ -307,8 +307,20 @@ void silc_client_send_key_agreement(SilcClient client,
   SilcClientKeyAgreement ke = NULL;
   SilcBuffer buffer;
 
-  if (!client_entry || client_entry->ke)
+  if (!client_entry)
     return;
+
+  if (client_entry->ke) {
+    completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ALREADY_STARTED,
+	       NULL, context);
+    return;
+  }
+
+  if (client_entry == conn->local_entry) {
+    completion(client, conn, client_entry, SILC_KEY_AGREEMENT_SELF_DENIED,
+	       NULL, context);
+    return;
+  }
 
   /* Create the listener if hostname and port was provided.
    * also, use bindhost if it was specified.
@@ -330,7 +342,6 @@ void silc_client_send_key_agreement(SilcClient client,
       completion(client, conn, client_entry, SILC_KEY_AGREEMENT_FAILURE,
 		 NULL, context);
       silc_free(ke);
-
       return;
     }
 
@@ -367,7 +378,6 @@ void silc_client_send_key_agreement(SilcClient client,
 			  client_entry->id, SILC_ID_CLIENT, NULL, NULL,
 			  buffer->data, buffer->len, FALSE);
   silc_buffer_free(buffer);
-
 }
 
 static int 
@@ -517,8 +527,20 @@ void silc_client_perform_key_agreement(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!client_entry || !hostname || !port)
+  if (!client_entry)
     return;
+
+  if (!hostname || !port) {
+    completion(client, conn, client_entry, SILC_KEY_AGREEMENT_FAILURE,
+	       NULL, context);
+    return;
+  }
+
+  if (client_entry == conn->local_entry) {
+    completion(client, conn, client_entry, SILC_KEY_AGREEMENT_SELF_DENIED,
+	       NULL, context);
+    return;
+  }
 
   ke = silc_calloc(1, sizeof(*ke));
   ke->client = client;
@@ -558,6 +580,12 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
 
   if (!client_entry)
     return;
+
+  if (client_entry == conn->local_entry) {
+    completion(client, conn, client_entry, SILC_KEY_AGREEMENT_SELF_DENIED,
+	       NULL, context);
+    return;
+  }
 
   ke = silc_calloc(1, sizeof(*ke));
   ke->client = client;
