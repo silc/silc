@@ -10,6 +10,10 @@ Wed Dec 31 17:06:55 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 	  client_ops.[ch], silc-servers.c, 
 	  irssi/src/silc/fe-common/silc/module-formats.[ch]
 
+	* Use the same set of libtool files for the MPI lib as for the
+	  rest of the toolkit.  Affected files lib/silcmath/mpi/config.guess,
+	  config.sub, configure.in, install-sh, missing, mkinstalldirs
+
 Sun Dec 28 21:57:39 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed server statistics decrementing error to not go to
