@@ -402,11 +402,6 @@ int main(int argc, char **argv)
   silc_schedule_signal_register(silcd->schedule, SIGTERM, stop_server, NULL);
   silc_schedule_signal_register(silcd->schedule, SIGINT, stop_server, NULL);
 
-  /* Drop root if we are not in debug mode, so you don't need to bother about
-     file writing permissions and so on */
-  if (!silc_debug)
-    silc_server_drop_privs(silcd);
-
   if (!foreground) {
     /* Before running the server, fork to background. */
     silc_server_daemonise(silcd);
@@ -419,6 +414,11 @@ int main(int argc, char **argv)
       silc_file_writefile(pidfile, buf, strlen(buf));
     }
   }
+
+  /* Drop root if we are not in debug mode, so you don't need to bother about
+     file writing permissions and so on */
+  if (!silc_debug)
+    silc_server_drop_privs(silcd);
 
   /* Run the server. When this returns the server has been stopped
      and we will exit. */
