@@ -55,7 +55,7 @@ silc_server_remove_clients_channels(SilcServer server,
 
     /* Remove channel if this is last client leaving the channel, unless
        the channel is permanent. */
-    if (server->server_type == SILC_ROUTER &&
+    if (server->server_type != SILC_SERVER &&
 	silc_hash_table_count(channel->user_list) < 2) {
       if (silc_hash_table_find(channels, channel, NULL, NULL))
 	silc_hash_table_del(channels, channel);
@@ -87,7 +87,7 @@ silc_server_remove_clients_channels(SilcServer server,
     /* If there is not at least one local user on the channel then we don't
        need the channel entry anymore, we can remove it safely, unless the
        channel is permanent channel */
-    if (server->server_type != SILC_ROUTER &&
+    if (server->server_type == SILC_SERVER &&
 	!silc_server_channel_has_local(channel)) {
       if (silc_hash_table_find(channels, channel, NULL, NULL))
 	silc_hash_table_del(channels, channel);
@@ -323,6 +323,12 @@ bool silc_server_remove_clients_by_server(SilcServer server,
     silc_free(argv_lens);
     silc_free(argv_types);
     silc_hash_table_free(clients);
+  }
+
+  /* Return now if we are shutting down */
+  if (server->server_shutdown) {
+    silc_hash_table_free(channels);
+    return TRUE;
   }
 
   /* We must now re-generate the channel key for all channels that had

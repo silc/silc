@@ -83,6 +83,7 @@ struct SilcServerStruct {
 				        router to a backup router. */
   unsigned int wait_backup    : 1;   /* Set if we are waiting for backup
 				        router to connect to us. */
+  unsigned int server_shutdown: 1;   /* Set when shutting down */
 
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */

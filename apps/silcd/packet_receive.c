@@ -2497,6 +2497,30 @@ SilcServerEntry silc_server_new_server(SilcServer server,
       silc_server_announce_channels(server, 0, sock);
     }
 
+    /* Announce our information to backup router */
+    if (new_server->server_type == SILC_BACKUP_ROUTER &&
+	sock->type == SILC_SOCKET_TYPE_SERVER &&
+	server->server_type == SILC_ROUTER) {
+      silc_server_announce_servers(server, TRUE, 0, sock);
+      silc_server_announce_clients(server, 0, sock);
+      silc_server_announce_channels(server, 0, sock);
+    }
+
+    /* If backup router, mark it as one of ours.  This server is considered
+       to be backup router after this setting. */
+    if (new_server->server_type == SILC_BACKUP_ROUTER) {
+      SilcServerConfigRouter *backup;
+      backup = silc_server_config_find_backup_conn(server, sock->ip);
+      if (!backup)
+	backup = silc_server_config_find_backup_conn(server, sock->hostname);
+      if (backup) {
+	/* Add as our backup router */
+	silc_server_backup_add(server, new_server, backup->backup_replace_ip,
+			       backup->backup_replace_port,
+			       backup->backup_local);
+      }
+    }
+
     /* By default the servers connected to backup router are disabled
        until backup router has become the primary */
     if (server->server_type == SILC_BACKUP_ROUTER &&

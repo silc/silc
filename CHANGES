@@ -4,6 +4,21 @@ Thu Jun 27 11:27:07 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  directly after backup router has arrived.  Affected file
 	  silcd/server.c.
 
+	* Do not re-create channel keys and send them when removing
+	  clients in server shutdown.  Affected files are
+	  silcd/server_internal.h and silcd/server_util.c.
+
+	* Notify distribution to backup routers was missing from
+	  the silc_server_send_notify_dest function which caused
+	  desyncing problems with backup router.  Affected file is
+	  silcd/packet_send.c.
+
+	* The client's channel removing was working wrong on
+	  backup router.  It assumed that it doesn't know global
+	  information but backup router does know.  For this reason
+	  it could remove channel when it wasn't supposed to do that.
+	  Affected file silcd/server.c and silcd/server_util.c.
+
 Wed Jun 26 15:14:12 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Stop for a couple seconds after badkup router has become

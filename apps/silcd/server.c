@@ -668,6 +668,8 @@ void silc_server_stop(SilcServer server)
   if (server->schedule) {
     int i;
 
+    server->server_shutdown = TRUE;
+
     /* Close all connections */
     for (i = 0; i < server->config->param.connections_max; i++) {
       if (!server->sockets[i])
@@ -1909,13 +1911,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       /* If the incoming connection is router and marked as backup router
 	 then add it to be one of our backups */
       if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER && backup_router) {
-	silc_server_backup_add(server, new_server, backup_replace_ip,
-			       backup_replace_port, backup_local);
-
 	/* Change it back to SERVER type since that's what it really is. */
 	if (backup_local)
 	  ctx->conn_type = SILC_SOCKET_TYPE_SERVER;
-
 	new_server->server_type = SILC_BACKUP_ROUTER;
       }
 
@@ -3176,7 +3174,7 @@ void silc_server_remove_from_channels(SilcServer server,
 
     /* Remove channel if this is last client leaving the channel, unless
        the channel is permanent. */
-    if (server->server_type == SILC_ROUTER &&
+    if (server->server_type != SILC_SERVER &&
 	silc_hash_table_count(channel->user_list) < 2) {
       silc_server_channel_delete(server, channel);
       continue;
@@ -3188,7 +3186,7 @@ void silc_server_remove_from_channels(SilcServer server,
 
     /* If there is no global users on the channel anymore mark the channel
        as local channel. Do not check if the removed client is local client. */
-    if (server->server_type != SILC_ROUTER && channel->global_users &&
+    if (server->server_type == SILC_SERVER && channel->global_users &&
 	chl->client->router && !silc_server_channel_has_global(channel))
       channel->global_users = FALSE;
 
@@ -3205,7 +3203,7 @@ void silc_server_remove_from_channels(SilcServer server,
     /* If there is not at least one local user on the channel then we don't
        need the channel entry anymore, we can remove it safely, unless the
        channel is permanent channel */
-    if (server->server_type != SILC_ROUTER &&
+    if (server->server_type == SILC_SERVER &&
 	!silc_server_channel_has_local(channel)) {
       /* Notify about leaving client if this channel has global users. */
       if (notify && channel->global_users)
@@ -3229,6 +3227,10 @@ void silc_server_remove_from_channels(SilcServer server,
 					 clidp->data, clidp->len,
 					 signoff_message, signoff_message ?
 					 strlen(signoff_message) : 0);
+
+    /* Don't create keys if we are shutting down */
+    if (server->server_shutdown)
+      continue;
 
     /* Re-generate channel key if needed */
     if (keygen && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
@@ -3274,7 +3276,7 @@ bool silc_server_remove_from_one_channel(SilcServer server,
 
   /* Remove channel if this is last client leaving the channel, unless
      the channel is permanent. */
-  if (server->server_type == SILC_ROUTER &&
+  if (server->server_type != SILC_SERVER &&
       silc_hash_table_count(channel->user_list) < 2) {
     silc_server_channel_delete(server, channel);
     return FALSE;
@@ -3286,7 +3288,7 @@ bool silc_server_remove_from_one_channel(SilcServer server,
 
   /* If there is no global users on the channel anymore mark the channel
      as local channel. Do not check if the client is local client. */
-  if (server->server_type != SILC_ROUTER && channel->global_users &&
+  if (server->server_type == SILC_SERVER && channel->global_users &&
       chl->client->router && !silc_server_channel_has_global(channel))
     channel->global_users = FALSE;
 
@@ -3307,7 +3309,7 @@ bool silc_server_remove_from_one_channel(SilcServer server,
   /* If there is not at least one local user on the channel then we don't
      need the channel entry anymore, we can remove it safely, unless the
      channel is permanent channel */
-  if (server->server_type != SILC_ROUTER &&
+  if (server->server_type == SILC_SERVER &&
       !silc_server_channel_has_local(channel)) {
     /* Notify about leaving client if this channel has global users. */
     if (notify && channel->global_users)
@@ -3566,6 +3568,10 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
 
   rekey->task = NULL;
 
+  /* Return now if we are shutting down */
+  if (server->server_shutdown)
+    return;
+
   if (!silc_server_create_channel_key(server, rekey->channel, rekey->key_len))
     return;
 
@@ -3690,6 +3696,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
       if (!channel) {
 	SILC_LOG_ERROR(("Received key for non-existent channel %s",
 			silc_id_render(id, SILC_ID_CHANNEL)));
+	assert(FALSE);
 	goto out;
       }
     }

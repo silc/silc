@@ -220,6 +220,8 @@ SilcServerConfigServer *
 silc_server_config_find_server_conn(SilcServer server, char *host);
 SilcServerConfigRouter *
 silc_server_config_find_router_conn(SilcServer server, char *host, int port);
+SilcServerConfigRouter *
+silc_server_config_find_backup_conn(SilcServer server, char *host);
 bool silc_server_config_is_primary_route(SilcServer server);
 SilcServerConfigRouter *
 silc_server_config_get_primary_router(SilcServer server);

@@ -1494,6 +1494,16 @@ void silc_server_send_notify_dest(SilcServer server,
 			       broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
 			       dest_id, dest_id_type,
 			       packet->data, packet->len, FALSE);
+
+  /* Send to backup routers if this is being broadcasted to primary
+     router.  The silc_server_backup_send checks further whether to
+     actually send it or not. */
+  if ((broadcast && sock && sock == SILC_PRIMARY_ROUTE(server)) ||
+      (broadcast && !sock && !SILC_PRIMARY_ROUTE(server)))
+    silc_server_backup_send_dest(server, NULL, SILC_PACKET_NOTIFY, 0,
+				 dest_id, dest_id_type,
+				 packet->data, packet->len, FALSE, TRUE);
+
   silc_buffer_free(packet);
   va_end(ap);
 }

@@ -1811,6 +1811,31 @@ silc_server_config_find_router_conn(SilcServer server, char *host, int port)
   return serv;
 }
 
+/* Find backup router connection by host (name or ip) */
+
+SilcServerConfigRouter *
+silc_server_config_find_backup_conn(SilcServer server, char *host)
+{
+  SilcServerConfig config = server->config;
+  SilcServerConfigRouter *serv = NULL;
+
+  if (!host)
+    return NULL;
+
+  if (!config->routers)
+    return NULL;
+
+  for (serv = config->routers; serv; serv = serv->next) {
+    if (!serv->backup_router)
+      continue;
+    if (!silc_string_compare(serv->host, host))
+      continue;
+    break;
+  }
+
+  return serv;
+}
+
 /* Returns TRUE if configuration for a router connection that we are
    initiating exists. */
 
