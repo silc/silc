@@ -1,3 +1,10 @@
+Thu Mar 14 12:53:57 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for valid socket connection in client entries before
+	  sending any messages.  Fixes a crash, but doesn't fix some
+	  other underlaying bug that is lurking there.  Affected
+	  file silcd/packet_send.c.
+
 Thu Mar 14 13:38:12 EET 2002  Timo Sirainen <tss@iki.fi>
 
 	* $usermode, $cumode and $cumode_space expandos shouldn't do
