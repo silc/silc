@@ -886,7 +886,7 @@ Packets are naturally the most important part of the protocol and the
 packets are what actually makes the protocol.  Packets in SILC network
 are always encrypted using, usually the shared secret session key
 or some other key, for example, channel key, when encrypting channel
-messages.  It is not possible to send packet in SILC network without
+messages.  It is not possible to send a packet in SILC network without
 encryption.  The SILC Packet Protocol is a wide protocol and is described
 in [SILC2].  This document does not define or describe details of
 SILC packets.
@@ -896,7 +896,7 @@ SILC packets.
 3.8 Packet Encryption
 
 All packets passed in SILC network MUST be encrypted.  This section
-gives generic description how packets must be encrypted in the SILC
+gives generic description of how packets must be encrypted in the SILC
 network.  The detailed description of the actual encryption process
 of the packets are described in [SILC2].
 
