@@ -1,3 +1,17 @@
+Thu Nov  6 21:08:28 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_hash_table_find_by_context_ext.  Affected files
+	  lib/silcutil/silchashtable.[ch].
+
+	* Save the public key on normal server in WHOIS command reply
+	  from attributes, if present, and add it to public key hash
+	  table.  Fixes WHOIS resolving by public key on normal server.
+
+	  Optimized the attributes resolving on normal server to not
+	  resolve if we resolved them already from router.
+
+	  Affected files are silcd/server_query.c, command_reply.c.
+
 Wed Nov  5 19:36:30 CET 2003 Patrik Weiskircher <pat@icore.at>
 
 	* Added support for whois using attributes.
