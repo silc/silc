@@ -477,8 +477,9 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <nickname>
 
         Set/change nickname.  This command is used to set nickname for
-        user.  Nickname MUST NOT include any spaces (` '), non-printable
-        characters, commas (`,') and any wildcard characters.
+        user.  Nickname MUST NOT include any whitespaces (` '), 
+        non-printable characters, commas (`,'), '@', '!' or any wildcard 
+        characters.
 
         When nickname is changed new Client ID is generated.  Server MUST
         distribute SILC_NOTIFY_TYPE_NICK_CHANGE to local clients on the
@@ -625,7 +626,7 @@ List of all defined commands in SILC follows.
             [<nickname>[@<server>]!][<username>]@[<hostname or IP/MASK>]
 
             The <hostname> may also be in format of IP/MASK to indicate
-            a network.
+            a network, for example 10.2.1.0/255.255.0.0.
 
           0x02 - Argument is the public key of a client
           0x03 - Argument is the Client ID of a client
