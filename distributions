@@ -1,0 +1,42 @@
+#
+# Distributions
+#
+# Distributions file describing the different distributions that are
+# created out of the SILC source tree.  The ./prepare script will read
+# this file to determine what kind of distributions are created.
+#
+# Give the name of the distribution and the version as arguments to the
+# ./prepare script to prepare the source tree for the specific
+# distribution.
+#
+# The format of this file is as follows:
+#
+# _<name>_SUBDIRS			Subdirs for the distribution
+# _<name>_SUBIDRS_<dir>                 Subdirs under <dir>
+#
+# NOTE: For now this supports only one sublevel of the directories.
+#       Also make sure that the <dir> directory includes Makefile.am.pre
+#       instead of Makefile.am, otherwise it won't work.  The Makefile.am.pre
+#       must have DIST_SUBDIRS = SILC_DISTRIBUTIONS_SUBDIRS line in it.
+#
+# NOTE: Also note that if any subdirectory has Makefile.am.pre then you
+#       must list it here as _<name>_SUBDIRS_<dir> and either define the
+#       directories one by one or use $(SUBDIRS) to use default to that
+#       Makefile.  Otherwise, ./prepare cannot create correct Makefile.am.
+#
+# Example:
+#
+# _xyz_SUBDIRS=lib irssi doc includes
+# _xyz_SUBDIRS_lib=$(SUBDIRS)
+#
+# To prepare the distribution give command ./prepare xyz 1.0.4
+#
+
+_toolkit_SUBDIRS=lib silc silcd doc includes
+_toolkit_SUBDIRS_lib=$(SUBDIRS)
+
+_client_SUBDIRS=lib irssi doc includes
+_client_SUBDIRS_lib=$(SUBDIRS)
+
+_server_SUBDIRS=lib silcd doc includes
+_server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf

@@ -25,14 +25,47 @@
 # temporary files (including these prepare* scripts) are removed.
 #
 
-SILC_VERSION=0.2.6
+#
+# SILC Distribution versions. Set here or give the version on the command
+# line, as argument.
+#
+SILC_VERSION=0.2.6			# Base version
 
-version=$1
+
+#############################################################################
+
+echo "Preparing SILC source tree for configuration and compilation..."
+
+distribution=$1
+if test "$distribution" = ""; then
+  distribution="toolkit";
+fi
+
+version=$2
 if test "$version" = ""; then
   version=$SILC_VERSION;
 fi
 
-echo "Preparing SILC source tree for configuration and compilation..."
+echo "Preparing $distribution distribution version $version"
+
+# Go though the subdirs and create the Makefile.ams from the
+# Makefile.am.pre files.
+
+subdirs=`grep _"$distribution"_SUBDIRS= distributions |cut -d=  -f2`
+sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$subdirs/" Makefile.am.pre >Makefile.am
+path=`pwd`
+for i in $subdirs
+do
+  cd $i
+  sub=`grep _"$distribution"_SUBDIRS_"$i"= $path/distributions |cut -d=  -f2`
+  if test "$sub" = ""; then
+    cd $path
+    continue;
+  fi
+  sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$sub/" Makefile.am.pre >Makefile.am 2>/dev/null
+  cd $path
+done
+cd $path
 
 # Replace version string and create configure.in
 sed -e "/SILC_VERSION/s//$version/" configure.in.pre >configure.in

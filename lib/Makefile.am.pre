@@ -30,6 +30,7 @@ SUBDIRS = \
 	trq \
 	dotconf
 #        zlib
+DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 
 # SILC Library dirs
 SILCLIB_DIRS = \

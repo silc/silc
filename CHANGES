@@ -1,3 +1,18 @@
+Sun May 27 22:24:57 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Created new distribution system.  Added file `distributions'
+	  that defines all the distributions that can be created out of
+	  the SILC source tree.  The ./prepare script now reads that
+	  file to determine how to prepare the distributions.  The
+	  first argument to the ./prepare is the name of the distribution
+	  and second is the version of the distribution.  If given
+	  without arguments it creates the default (toolkit) distribution
+	  with the default version (defined in ./prepare).
+
+	  All Makefile.am files that are subject to the distributions
+	  are now named as Makefile.am.pre.  These are ./Makefile.am
+	  and lib/Makefile.am.  Others may be changed later.
+
 Sun May 27 15:57:17 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added invite list, ban list, some key management and connection
