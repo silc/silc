@@ -308,7 +308,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: PING */
 /* SYNTAX: SCONNECT <server> [<port>] */
 /* SYNTAX: USERS <channel> */
-/* SYNTAX: FILE SEND <filepath> <nickname> */
+/* SYNTAX: FILE SEND <filepath> <nickname> [<local IP> [<local port>]] */
 /* SYNTAX: FILE RECEIVE [<nickname>] */
 /* SYNTAX: FILE CLOSE [<nickname>] */
 /* SYNTAX: FILE */
@@ -573,6 +573,8 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   uint32 *argv_lens, *argv_types;
   int type = 0;
   FtpSession ftp;
+  char *local_ip = NULL;
+  uint32 local_port = 0;
 
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
@@ -581,7 +583,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 
   /* Now parse all arguments */
   tmp = g_strconcat("FILE", " ", data, NULL);
-  silc_parse_command_line(tmp, &argv, &argv_lens, &argv_types, &argc, 4);
+  silc_parse_command_line(tmp, &argv, &argv_lens, &argv_types, &argc, 6);
   g_free(tmp);
 
   if (argc == 1)
@@ -627,10 +629,16 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     client_entry = entrys[0];
     silc_free(entrys);
 
+    if (argc >= 5)
+      local_ip = argv[4];
+    if (argc >= 6)
+      local_port = atoi(argv[5]);
+
     ftp = silc_calloc(1, sizeof(*ftp));
     ftp->session_id = 
       silc_client_file_send(silc_client, conn, silc_client_file_monitor, 
-			    server, client_entry, argv[2]);
+			    server, local_ip, local_port, 
+			    client_entry, argv[2]);
 
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_FILE_SEND, client_entry->nickname,

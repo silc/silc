@@ -1847,6 +1847,14 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *    file indicated by the `filepath' is being transmitted to the remote
  *    client indicated by the `client_entry', already.
  *
+ *    If the `local_ip' is provided then this will try to bind the 
+ *    listener for key exchange protocol to that IP.  If `local_port' is
+ *    non-zero that port is used.  If `local_ip' is NULL then this will
+ *    automatically attempt to bind it to local IP address of the machine.
+ *    If that fails then this does not bind to any address and port, and
+ *    assume that the remote client will provide the listener for the
+ *    key exchange protocol.
+ *
  *    If error will occur during the file transfer process the error
  *    status will be returned in the monitor callback.  In this case
  *    the application must call silc_client_file_close to close the
@@ -1857,6 +1865,8 @@ uint32 silc_client_file_send(SilcClient client,
 			     SilcClientConnection conn,
 			     SilcClientFileMonitor monitor,
 			     void *monitor_context,
+			     const char *local_ip,
+			     uint32 local_port,
 			     SilcClientEntry client_entry,
 			     const char *filepath);
 

@@ -181,8 +181,12 @@ int silc_server_init(SilcServer server)
 
     tmp = silc_net_create_server(server->config->listen_port->port,
 				 server->config->listen_port->listener_ip);
-    if (tmp < 0)
+    if (tmp < 0) {
+      SILC_LOG_ERROR(("Could not create server listener: %s on %d",
+		      server->config->listen_port->listener_ip,
+		      server->config->listen_port->port));
       goto err0;
+    }
 
     sock = silc_realloc(sock, (sizeof(int *) * (sock_count + 1)));
     sock[sock_count] = tmp;

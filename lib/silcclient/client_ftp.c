@@ -477,13 +477,22 @@ SILC_TASK_CALLBACK(silc_client_ftp_key_agreement_final)
 				   ctx->ske->prop->group,
 				   ctx->responder);
 
-  /* If we are the SFTP client then start the SFTP session and retrieve
-     the info about the file available for download. */
   if (!session->server) {
+    /* If we are the SFTP client then start the SFTP session and retrieve
+       the info about the file available for download. */
     session->sftp = silc_sftp_client_start(conn->sock,
 					   silc_client_ftp_send_packet,
 					   session, 
 					   silc_client_ftp_version, session);
+  } else {
+    /* Start SFTP server */
+    session->sftp = silc_sftp_server_start(conn->sock,
+					   silc_client_ftp_send_packet,
+					   session, session->fs);
+
+    /* Monitor transmission */
+    silc_sftp_server_set_monitor(session->sftp, SILC_SFTP_MONITOR_READ,
+				 silc_client_ftp_monitor, session);
   }
 
   /* Set this as active session */
@@ -531,17 +540,6 @@ static void silc_client_ftp_start_key_agreement(SilcClientFtpSession session,
   conn->sock->hostname = strdup(session->hostname);
   conn->sock->port = silc_net_get_remote_port(sock);
   session->sock = silc_socket_dup(conn->sock);
-
-  /* Allocate the SFTP */
-  if (session->server) {
-    session->sftp = silc_sftp_server_start(conn->sock,
-					   silc_client_ftp_send_packet,
-					   session, session->fs);
-
-    /* Monitor transmission */
-    silc_sftp_server_set_monitor(session->sftp, SILC_SFTP_MONITOR_READ,
-				 silc_client_ftp_monitor, session);
-  }
 
   /* Allocate internal context for key exchange protocol. This is
      sent as context for the protocol. */
@@ -777,6 +775,8 @@ uint32 silc_client_file_send(SilcClient client,
 			     SilcClientConnection conn,
 			     SilcClientFileMonitor monitor,
 			     void *monitor_context,
+			     const char *local_ip,
+			     uint32 local_port,
 			     SilcClientEntry client_entry,
 			     const char *filepath)
 {
@@ -822,8 +822,29 @@ uint32 silc_client_file_send(SilcClient client,
 
   session->filesize = silc_file_size(filepath);
 
+  /* Create the listener for incoming key exchange protocol. */
+  if (local_ip)
+    session->hostname = strdup(local_ip);
+  else
+    session->hostname = silc_net_localip();
+  session->listener = silc_net_create_server(local_port, session->hostname);
+  if (session->listener < 0) {
+    /* Could not create listener. Do the second best thing; send empty
+       key agreement packet and let the remote client provide the point
+       for the key exchange. */
+    SILC_LOG_DEBUG(("Could not create listener"));
+    silc_free(session->hostname);
+    session->hostname = NULL;
+  } else {
+    /* Listener ready */
+    session->port = silc_net_get_local_port(session->listener);
+    silc_schedule_task_add(client->schedule, session->listener,
+			   silc_client_ftp_process_key_agreement, session,
+			   0, 0, SILC_TASK_FD, SILC_TASK_PRI_NORMAL);
+  }
+
   /* Send the key agreement inside FTP packet */
-  keyagr = silc_key_agreement_payload_encode(NULL, 0);
+  keyagr = silc_key_agreement_payload_encode(session->hostname, session->port);
 
   ftp = silc_buffer_alloc(1 + keyagr->len);
   silc_buffer_pull_tail(ftp, SILC_BUFFER_END(ftp));
@@ -897,6 +918,9 @@ silc_client_file_receive(SilcClient client,
     session->listener = silc_net_create_server(0, session->hostname);
     if (session->listener < 0) {
       SILC_LOG_DEBUG(("Could not create listener"));
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 
+		       "Cannot create listener on %s: %s", 
+		       session->hostname, strerror(errno));
       return SILC_CLIENT_FILE_ERROR;
     }
     session->port = silc_net_get_local_port(session->listener);

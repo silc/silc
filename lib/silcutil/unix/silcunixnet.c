@@ -66,7 +66,7 @@ int silc_net_create_server(int port, char *ip_addr)
   /* Bind the server socket */
   rval = bind(sock, (struct sockaddr *)&server, sizeof(server));
   if (rval < 0) {
-    SILC_LOG_ERROR(("Cannot bind socket: %s", strerror(errno)));
+    SILC_LOG_DEBUG(("Cannot bind socket: %s", strerror(errno)));
     return -1;
   }
 

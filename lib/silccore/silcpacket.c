@@ -332,8 +332,11 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 {
   SilcPacketParserContext *parse_ctx;
   int packetlen, paddedlen, mac_len = 0;
-  int block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
   bool cont = TRUE;
+
+  /* Do not process for disconnected connection */
+  if (SILC_IS_DISCONNECTED(sock))
+    return;
   
   if (sock->inbuf->len < SILC_PACKET_MIN_HEADER_LEN)
     return;
@@ -386,7 +389,8 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     		    paddedlen + mac_len);
 
     SILC_LOG_HEXDUMP(("Incoming packet (%d) (%dB decrypted), len %d", 
-		      sequence - 1, block_len, paddedlen + mac_len),
+		      sequence - 1, SILC_PACKET_MIN_HEADER_LEN, 
+		      paddedlen + mac_len),
 		     sock->inbuf->data, paddedlen + mac_len);
 
     /* Check whether this is normal or special packet */

@@ -778,7 +778,7 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
   SilcPacketContext *packet = parser_context->packet;
   SilcPacketType ret;
 
-  if (conn && conn->hmac_receive)
+  if (conn && conn->hmac_receive && conn->sock == sock)
     conn->psn_receive = parser_context->packet->sequence + 1;
 
   /* Parse the packet immediately */
@@ -1231,6 +1231,8 @@ void silc_client_close_connection(SilcClient client,
 {
   int del = FALSE;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!sock || (sock && conn->sock == sock))
     del = TRUE;
   if (!sock)
@@ -1343,6 +1345,22 @@ void silc_client_close_connection(SilcClient client,
    closes our end properly and displays the reason of the disconnection
    on the screen. */
 
+SILC_TASK_CALLBACK(silc_client_disconnected_by_server_later)
+{
+  SilcClient client = (SilcClient)context;
+  SilcSocketConnection sock;
+
+  SILC_CLIENT_GET_SOCK(client, fd, sock);
+  if (sock == NULL)
+    return;
+
+  silc_client_close_connection(client, sock, sock->user_data);
+}
+
+/* Called when we receive disconnection packet from server. This 
+   closes our end properly and displays the reason of the disconnection
+   on the screen. */
+
 void silc_client_disconnected_by_server(SilcClient client,
 					SilcSocketConnection sock,
 					SilcBuffer message)
@@ -1357,7 +1375,12 @@ void silc_client_disconnected_by_server(SilcClient client,
   silc_free(msg);
 
   SILC_SET_DISCONNECTED(sock);
-  silc_client_close_connection(client, sock, sock->user_data);
+
+  /* Close connection through scheduler. */
+  silc_schedule_task_add(client->schedule, sock->sock, 
+			 silc_client_disconnected_by_server_later,
+			 client, 0, 1, SILC_TASK_TIMEOUT, 
+			 SILC_TASK_PRI_NORMAL);
 }
 
 /* Received error message from server. Display it on the screen. 

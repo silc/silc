@@ -246,7 +246,7 @@ char *silc_net_localip(void)
   if (!dest)
     return NULL;
 
-  SILC_GET32_LSB(ip.s_addr, dest->h_addr_list[0]);
+  memcpy(&ip.s_addr, dest->h_addr_list[0], 4);
   ips = inet_ntoa(ip);
 
   return strdup(ips);
