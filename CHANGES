@@ -16,6 +16,10 @@ Wed Mar 27 19:43:16 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed the lib/silcmath/Makefile.am to include the MPI and GMP
 	  sources correctly to distribution.  Fixes --with-gmp option.
 
+	* Removed the manual rehashing from ID Cache, and changed it
+	  to use the SILC Hash Table's auto rehash feature.  Affected
+	  file is lib/silccore/silcidcache.c.
+
 Wed Mar 27 00:07:11 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a bug in the silc_client_nickname_format function that
