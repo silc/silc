@@ -63,7 +63,7 @@ sub read_mime_database {
         Irssi::printformat(MSGLEVEL_CRAP, 'no_temp_dir',
             Irssi::settings_get_str("mime_temp_dir"));
 
-        Irssi:settings_set_str("mime_temp_dir", "/tmp");
+        Irssi::settings_set_str("mime_temp_dir", "/tmp");
 
     }
 }
