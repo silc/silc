@@ -1271,8 +1271,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       silc_ske_free(ctx->ske);
     silc_free(ctx->dest_id);
     silc_free(ctx);
-    if (sock)
-      sock->protocol = NULL;
     silc_schedule_task_del_by_callback(server->schedule,
 				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
@@ -2172,6 +2170,9 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
+  if (!server->sockets[sock->sock])
+    return;
+
   SILC_LOG_INFO(("Closing connection %s:%d [%s]", sock->hostname,
                   sock->port,
                   (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
