@@ -2085,8 +2085,9 @@ SILC_SERVER_CMD_FUNC(nick)
  send_reply:
   /* Send the new Client ID as reply command back to client */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_NICK, 
-						SILC_STATUS_OK, 0, ident, 1, 
-						2, nidp->data, nidp->len);
+						SILC_STATUS_OK, 0, ident, 2,
+						2, nidp->data, nidp->len,
+						3, nick, strlen(nick));
   silc_server_packet_send(cmd->server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			  0, packet->data, packet->len, FALSE);
 

@@ -1262,8 +1262,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
   case SILC_COMMAND_NICK: 
     {
-      SilcClientEntry client = va_arg(vp, SilcClientEntry);
       char *old;
+      SilcClientEntry client = va_arg(vp, SilcClientEntry);
       
       if (!success)
 	return;

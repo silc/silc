@@ -355,37 +355,6 @@ SILC_CLIENT_CMD_FUNC(identify)
   silc_client_command_free(cmd);
 }
 
-/* Pending callbcak that will be called after the NICK command was
-   replied by the server.  This sets the nickname if there were no
-   errors. */
-
-SILC_CLIENT_CMD_FUNC(nick_change)
-{
-  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-  SilcClientConnection conn = cmd->conn;
-  SilcClientCommandReplyContext reply = 
-    (SilcClientCommandReplyContext)context2;
-  SilcStatus status;
-
-  silc_command_get_status(reply->payload, &status, NULL);
-  if (status == SILC_STATUS_OK) {
-    /* Set the nickname */
-    silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
-    if (conn->nickname)
-      silc_free(conn->nickname);
-    conn->nickname = strdup(cmd->argv[1]);
-    conn->local_entry->nickname = conn->nickname;
-    silc_client_nickname_format(cmd->client, conn, conn->local_entry);
-    silc_idcache_add(conn->client_cache, strdup(cmd->argv[1]), 
-		     conn->local_entry->id, conn->local_entry, 0, NULL);
-    COMMAND(SILC_STATUS_OK);
-  } else {
-    COMMAND_ERROR(status);
-  }
-
-  silc_client_command_free(cmd);
-}
-
 /* Command NICK. Shows current nickname/sets new nickname on current
    window. */
 
@@ -439,14 +408,6 @@ SILC_CLIENT_CMD_FUNC(nick)
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-
-  /* Register pending callback that will actually set the new nickname
-     if there were no errors returned by the server. */
-  silc_client_command_pending(conn, SILC_COMMAND_NICK, 
-			      cmd->conn->cmd_ident,
-			      silc_client_command_nick_change,
-			      silc_client_command_dup(cmd));
-  cmd->pending = TRUE;
 
  out:
   silc_client_command_free(cmd);

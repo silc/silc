@@ -514,12 +514,22 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
     goto out;
   }
   silc_client_receive_new_id(cmd->client, cmd->sock, idp);
+
+  /* Take the new nickname too */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+  if (tmp) {
+    silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
+    if (conn->nickname)
+      silc_free(conn->nickname);
+    conn->nickname = strdup(tmp);
+    conn->local_entry->nickname = conn->nickname;
+    silc_client_nickname_format(cmd->client, conn, conn->local_entry);
+    silc_idcache_add(conn->client_cache, strdup(tmp),
+                     conn->local_entry->id, conn->local_entry, 0, NULL);
+  }
     
   /* Notify application */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_NICK);
-  COMMAND_REPLY((ARGS, conn->local_entry));
-  silc_client_command_reply_free(cmd);
-  return;
+  COMMAND_REPLY((ARGS, conn->local_entry, conn->local_entry->nickname));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_NICK);
