@@ -195,6 +195,9 @@ if test x$check_ipv6 = xtrue; then
   summary_ipv6="no"
   AC_TRY_COMPILE(
     [
+      #ifdef HAVE_SYS_TYPES_H
+      #include <sys/types.h>
+      #endif
       #ifdef HAVE_NETINET_TCP_H
       #include <netinet/tcp.h>
       #endif
@@ -919,7 +922,10 @@ if test x$without_irssi = xfalse; then
   fi
 fi
 
-AC_CONFIG_SUBDIRS(lib/silcmath/mpi)
+if test x$mp_gmp = xfalse; then
+  AC_CONFIG_SUBDIRS(lib/silcmath/mpi)
+fi
+
 #AC_CONFIG_SUBDIRS(lib/zlib)
 
 SILC_TOP_SRCDIR=`pwd`
