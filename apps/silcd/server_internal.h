@@ -120,10 +120,6 @@ struct SilcServerStruct {
   SilcHash md5hash;
   SilcHash sha1hash;
 
-  /* HMAC objects for MAC's. */
-  SilcHmac md5hmac;
-  SilcHmac sha1hmac;
-
   /* Configuration object */
   SilcServerConfig config;
   SilcServerConfigRef config_ref;
