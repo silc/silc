@@ -1,10 +1,10 @@
 /*
 
-  silcstrutil.c 
+  silcstrutil.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2003 Pekka Riikonen
+  Copyright (C) 2002 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -391,9 +391,15 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       if (i + 2 >= utf8_len)
 	return 0;
 
-      if (((utf8[i + 1] & 0xc0) != 0x80) || 
+      if (((utf8[i + 1] & 0xc0) != 0x80) ||
 	  ((utf8[i + 2] & 0xc0) != 0x80))
         return 0;
+
+      /* Surrogates not allowed (D800-DFFF) */
+      if (utf8[i] == 0xed &&
+	  utf8[i + 1] >= 0xa0 && utf8[i + 1] <= 0xbf &&
+	  utf8[i + 2] >= 0x80 && utf8[i + 2] <= 0xbf)
+	return 0;
 
       charval = (utf8[i++]  & 0xf)  << 12;
       charval |= (utf8[i++] & 0x3f) << 6;
@@ -404,7 +410,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       if (i + 3 >= utf8_len)
 	return 0;
 
-      if (((utf8[i + 1] & 0xc0) != 0x80) || 
+      if (((utf8[i + 1] & 0xc0) != 0x80) ||
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
 	  ((utf8[i + 3] & 0xc0) != 0x80))
         return 0;
@@ -419,7 +425,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       if (i + 4 >= utf8_len)
 	return 0;
 
-      if (((utf8[i + 1] & 0xc0) != 0x80) || 
+      if (((utf8[i + 1] & 0xc0) != 0x80) ||
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
 	  ((utf8[i + 3] & 0xc0) != 0x80) ||
 	  ((utf8[i + 4] & 0xc0) != 0x80))
@@ -436,7 +442,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       if (i + 5 >= utf8_len)
 	return 0;
 
-      if (((utf8[i + 1] & 0xc0) != 0x80) || 
+      if (((utf8[i + 1] & 0xc0) != 0x80) ||
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
 	  ((utf8[i + 3] & 0xc0) != 0x80) ||
 	  ((utf8[i + 4] & 0xc0) != 0x80) ||
@@ -559,13 +565,13 @@ do {									\
 
 /* Parses MIME object and MIME header in it. */
 
-bool 
+bool
 silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
                 char *version, SilcUInt32 version_size,
                 char *content_type, SilcUInt32 content_type_size,
                 char *transfer_encoding, SilcUInt32 transfer_encoding_size,
                 unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len)
-{ 
+{
   int i;
   unsigned char *tmp;
 
@@ -582,7 +588,7 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
     return FALSE;
 
   if (mime_data_ptr)
-    *mime_data_ptr = (unsigned char *)mime + i + 
+    *mime_data_ptr = (unsigned char *)mime + i +
 	    (mime[i] == '\n' ? 2 : 4);
   if (mime_data_len)
     *mime_data_len = mime_len - (i + (mime[i] == '\n' ? 2 : 4));
@@ -591,7 +597,7 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
   tmp = strstr(mime, MIME_CONTENT_TYPE);
   if (!tmp || (tmp - mime) >= i)
     return FALSE;
-  
+
   /* Get MIME version, Content-Type and Transfer Encoding fields */
   MIME_GET_FIELD(mime, mime_len,
 		 MIME_VERSION, MIME_VERSION_LEN,

@@ -1,3 +1,9 @@
+Tue Feb  3 23:25:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Surrogates not allowed in UTF-8 strings, updated decoder.
+	  Affected file lib/silcutil/silcstrutil.c.  Added UTF-8
+	  testers in lib/silcutil/tests/ directory.
+
 Wed Jan 14 18:42:44 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_CLIENT_CONN_ERROR_KE, ERROR_AUTH, ERROR_RESUME and
@@ -16,7 +22,7 @@ Tue Jan 04 12:16:04 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 	* Added DIST_SUBDIRS symbols to include all subdirs in distributions.
 	  Affected files lib/silcutil/Makefile.am, lib/silcmath/Makefile.am
 
-	* Typofix in Irssi::Silc module.  Affected file 
+	* Typofix in Irssi::Silc module.  Affected file
 	  irssi/src/perl/silc/Silc.xs.
 
 Tue Jan 04 02:43:44 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
@@ -27,12 +33,12 @@ Tue Jan 04 02:43:44 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 	  irssi/src/fe-common/silc/module-formats.[ch], fe-silc-messages.c;
 	  irssi/src/silc/core/client_ops.c, silc-channels.c, silc-servers.c
 
-	* Fixed typo in /ACTION help.  Affected file 
+	* Fixed typo in /ACTION help.  Affected file
 	  irssi/docs/help/in/action.in
 
 Mon Jan 03 23:26:38 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
-	* Fixed typo in perl module.  Affected file 
+	* Fixed typo in perl module.  Affected file
 	  irssi/src/perl/silc/Server.xs
 
 	* Changed the way ACTION flagged messages are treated. Added support

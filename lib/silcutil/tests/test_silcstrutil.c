@@ -1,0 +1,85 @@
+/* UTF-8 decoding tests */
+
+#include "silcincludes.h"
+
+#define utf8fail(n, data, len)			\
+const unsigned char u##n[] = (data);		\
+int u##n##l = len;
+
+#define utf8failc(n)							      \
+do {									      \
+  if (!silc_utf8_valid(u##n, u##n##l))					      \
+    SILC_LOG_DEBUG(("%d: not valid UTF-8, correctly detected, no error", n)); \
+  else {								      \
+    SILC_LOG_DEBUG(("%d: parser did not detect malformed UTF-8, error", n));  \
+    goto err;								      \
+  }									      \
+} while(0)
+
+/* UTF-8 Test vectors that MUST fail */
+utf8fail(1, "\x80", 1);
+utf8fail(2, "\xbf", 1);
+utf8fail(3, "\xfe", 1);
+utf8fail(4, "\xff", 1);
+utf8fail(5, "\xfe\xfe\xff\xff", 4);
+utf8fail(6, "\xc0\xa0", 2);
+utf8fail(7, "\xe0\x80\xaf", 3);
+utf8fail(8, "\xf0\x80\x80\xaf", 4);
+utf8fail(9, "\xf8\x80\x80\x80\xaf", 5);
+utf8fail(10, "\xfc\x80\x80\x80\x80\xaf", 6);
+utf8fail(11, "\xc0\x80", 2);
+utf8fail(12, "\xe0\x80\x80", 3);
+utf8fail(13, "\xf0\x80\x80\x80", 4);
+utf8fail(14, "\xf8\x80\x80\x80\x80", 5);
+utf8fail(15, "\xfc\x80\x80\x80\x80\x80", 6);
+utf8fail(16, "\xc1\xbf", 2);
+utf8fail(17, "\xe0\x9f\xbf", 3);
+utf8fail(18, "\xf0\x8f\xbf\xbf", 4);
+utf8fail(19, "\xf8\x87\xbf\xbf\xbf", 5);
+utf8fail(20, "\xfc\x83\xbf\xbf\xbf\xbf", 6);
+utf8fail(21, "\xed\xa0\x80", 3);
+utf8fail(22, "\xed\xad\xbf", 3);
+utf8fail(23, "\xed\xae\x80", 3);
+utf8fail(24, "\xed\xaf\xbf", 3);
+utf8fail(25, "\xed\xb0\x80", 3);
+utf8fail(26, "\xed\xbe\x80", 3);
+utf8fail(27, "\xed\xbf\xbf", 3);
+utf8fail(28, "\xfc\x20\xfd\x20", 4);
+utf8fail(29, "\xf8\xf9\xfa\xfb", 4);
+utf8fail(30, "\xf0\x20\xf9\x20\xfa\x20\xfb\x20", 8);
+
+int main(int argc, char **argv)
+{
+  bool success = FALSE;
+
+  if (argc > 1 && !strcmp(argv[1], "-d")) {
+    silc_debug = 1;
+    silc_debug_hexdump = 1;
+    silc_log_set_debug_string("*strutil*");
+  }
+
+  /* Failure tests */
+  utf8failc(1);  utf8failc(2);
+  utf8failc(3);  utf8failc(4);
+  utf8failc(5);  utf8failc(6);
+  utf8failc(7);  utf8failc(8);
+  utf8failc(9);  utf8failc(10);
+  utf8failc(11);  utf8failc(12);
+  utf8failc(13);  utf8failc(14);
+  utf8failc(15);  utf8failc(16);
+  utf8failc(17);  utf8failc(18);
+  utf8failc(19);  utf8failc(20);
+  utf8failc(21);  utf8failc(22);
+  utf8failc(23);  utf8failc(24);
+  utf8failc(25);  utf8failc(26);
+  utf8failc(27);  utf8failc(28);
+  utf8failc(29);  utf8failc(30);
+
+  success = TRUE;
+
+ err:
+  SILC_LOG_DEBUG(("Testing was %s", success ? "SUCCESS" : "FAILURE"));
+  fprintf(stderr, "Testing was %s\n", success ? "SUCCESS" : "FAILURE");
+
+  return success;
+}
