@@ -94,6 +94,7 @@ Table of Contents
 4 Security Considerations ....................................... 21
 5 References .................................................... 21
 6 Author's Address .............................................. 23
+7 Full Copyright Statement ...................................... 23
 
 
 .ti 0
@@ -284,7 +285,6 @@ include white spaces (` ').
 
 .ce
 Figure 1:  Key Exchange Start Payload
-
 
 
 .in 6
@@ -723,7 +723,7 @@ FFFFFFFF FFFFFFFF
 The generator used with this prime is g = 2.  The group order q is
 (p - 1) / 2.
 
-This group was taken from the OAKLEY specification.
+This group was taken from RFC 2412.
 
 
 .ti 0
@@ -748,7 +748,7 @@ C2007CB8 A163BF05 98DA4836 1C55D39A 69163FA8 FD24CF5F
 The generator used with this prime is g = 2.  The group order q is
 (p - 1) / 2.
 
-This group was taken from the OAKLEY specification.
+This group was taken from RFC 3526.
 
 
 .ti 0
@@ -776,8 +776,10 @@ DE2BCBF6 95581718 3995497C EA956AE5 15D22618 98FA0510
 The generator used with this prime is g = 2.  The group order q is
 (p - 1) / 2.
 
+This group was taken from RFC 3526.
 
-
+Additional larger groups are defined in RFC 3526 and may be used in SKE
+by defining name for them using the above name format.
 
 
 .ti 0
@@ -1147,4 +1149,32 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 17 December 2003
+
+.ti 0
+7 Full Copyright Statement
+
+Copyright (C) The Internet Society (2003). All Rights Reserved.
+
+This document and translations of it may be copied and furnished to
+others, and derivative works that comment on or otherwise explain it
+or assist in its implementation may be prepared, copied, published
+and distributed, in whole or in part, without restriction of any
+kind, provided that the above copyright notice and this paragraph are
+included on all such copies and derivative works. However, this
+document itself may not be modified in any way, such as by removing
+the copyright notice or references to the Internet Society or other
+Internet organizations, except as needed for the purpose of
+developing Internet standards in which case the procedures for
+copyrights defined in the Internet Standards process must be
+followed, or as required to translate it into languages other than
+English.
+
+The limited permissions granted above are perpetual and will not be
+revoked by the Internet Society or its successors or assigns.
+
+This document and the information contained herein is provided on an
+"AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
