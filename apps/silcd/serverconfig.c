@@ -21,6 +21,7 @@
 
 #include "serverincludes.h"
 #include "server_internal.h"
+#include <dirent.h>
 
 #if 0
 #define SERVER_CONFIG_DEBUG(fmt) SILC_LOG_DEBUG(fmt)
@@ -118,7 +119,7 @@ my_find_param(SilcServerConfig config, const char *name)
 }
 
 /* parse an authdata according to its auth method */
-static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
+static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
 			      void **auth_data, SilcUInt32 *auth_data_len)
 {
   if (auth_meth == SILC_AUTH_PASSWORD) {
@@ -138,6 +139,7 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
   } else if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
     /* p is a public key file name */
     SilcPublicKey public_key;
+    SilcPublicKey cached_key;
 
     if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_BIN)) {
@@ -145,6 +147,16 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
 			       "Could not load public key file!"));
 	return FALSE;
       }
+
+    if (*auth_data &&
+	silc_hash_table_find_ext(*auth_data, public_key, (void **)&cached_key,
+				 NULL, silc_hash_public_key, NULL,
+				 silc_hash_public_key_compare, NULL)) {
+      silc_pkcs_public_key_free(public_key);
+      SILC_SERVER_LOG_WARNING(("Warning: file \"%s\" contains a double "
+			       "public key (key discarded)", p));
+      return TRUE; /* non fatal error */
+    }
 
     /* The auth_data is a pointer to the hash table of public keys. */
     if (auth_data) {
@@ -158,6 +170,46 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
   } else
     abort();
 
+  return TRUE;
+}
+
+static bool my_parse_publickeydir(const char *dirname, void **auth_data)
+{
+  int total = 0;
+  struct dirent *get_file;
+  DIR *dp;
+
+  if (!(dp = opendir(dirname))) {
+    SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			   "Could not open directory \"%s\"", dirname));
+    return FALSE;
+  }
+
+  /* errors are not considered fatal */
+  while ((get_file = readdir(dp))) {
+    int dirname_len = strlen(dirname);
+    char buf[1023];
+    const char *filename = get_file->d_name;
+    struct stat check_file;
+
+    if (!strcmp(filename, ".") || !strcmp(filename, ".."))
+      continue;
+
+    snprintf(buf, sizeof(buf) - 2, "%s%s%s", dirname,
+	     (dirname[dirname_len - 1] == '/' ? "" : "/"), filename);
+    buf[sizeof(buf) - 1] = 0;
+
+    if (stat(buf, &check_file) < 0) {
+      SILC_SERVER_LOG_ERROR(("Error stating file %s: %s", buf,
+			     strerror(errno)));
+    }
+    else if (S_ISREG(check_file.st_mode)) {
+      my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL);
+      total++;
+    }
+  }
+
+  SILC_LOG_DEBUG(("Tried to load %d public keys in \"%s\"", total, dirname));
   return TRUE;
 }
 
@@ -521,6 +573,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   }
   else if (!strcmp(name, "publickey")) {
     char *file_tmp = (char *) val;
+    CONFIG_IS_DOUBLE(server_info->public_key);
 
     /* try to load specified file, if fail stop config parsing */
     if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
@@ -533,6 +586,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   }
   else if (!strcmp(name, "privatekey")) {
     char *file_tmp = (char *) val;
+    CONFIG_IS_DOUBLE(server_info->private_key);
 
     /* try to load specified file, if fail stop config parsing */
     if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
@@ -752,6 +806,12 @@ SILC_CONFIG_CALLBACK(fetch_client)
       goto got_err;
     }
   }
+  else if (!strcmp(name, "publickeydir")) {
+    if (!my_parse_publickeydir((char *) val, (void **)&tmp->publickeys)) {
+      got_errno = SILC_CONFIG_EPRINTLINE;
+      goto got_err;
+    }
+  }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
     tmp->param = my_find_param(config, (char *) val);
@@ -812,9 +872,14 @@ SILC_CONFIG_CALLBACK(fetch_admin)
     }
   }
   else if (!strcmp(name, "publickey")) {
-    CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void **)&tmp->publickeys, NULL)) {
+      got_errno = SILC_CONFIG_EPRINTLINE;
+      goto got_err;
+    }
+  }
+  else if (!strcmp(name, "publickeydir")) {
+    if (!my_parse_publickeydir((char *) val, (void **)&tmp->publickeys)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1158,6 +1223,7 @@ static const SilcConfigTable table_client[] = {
   { "host",		SILC_CONFIG_ARG_STRE,	fetch_client,	NULL },
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
+  { "publickeydir",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { "params",		SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { 0, 0, 0, 0 }
 };
@@ -1168,6 +1234,7 @@ static const SilcConfigTable table_admin[] = {
   { "nick",		SILC_CONFIG_ARG_STRE,	fetch_admin,	NULL },
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
+  { "publickeydir",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "port",		SILC_CONFIG_ARG_INT,	fetch_admin,	NULL },
   { "params",		SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { 0, 0, 0, 0 }

@@ -405,10 +405,9 @@ ConnectionParams {
 #
 # The authentication data is specified by Passphrase and/or PublicKey.
 # If both are provided then both password and public key based authentication
-# is allowed.  If the Publickey is used it includes the file path to the
-# public key file.  If none of them is provided then authentication is not
-# required.  The PublicKey can be set multiple times to set multiple
-# public keys for one connection.
+# is allowed.  The "PublicKey" includes the single key contained in the
+# specified file, while "PublicKeyDir" includes all files in the specified
+# directory, which must all be valid public keys, non recursively.
 #
 # Next example connection will match to all incoming client connections,
 # and no authentication is required.
@@ -419,6 +418,7 @@ Client {
 	#PublicKey = "/path/to/the/user_my.key";
 	#PublicKey = "/path/to/the/user_221.key";
 	#PublicKey = "/path/to/the/user_313.key";
+	#PublicKeyDir = "/path/to/keys/dir";
 	Params = "normal";
 };
 
