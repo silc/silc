@@ -381,9 +381,6 @@ int main(int argc, char **argv)
   if (silcd->config == NULL)
     goto fail;
   silcd->config_file = silcd_config_file;
-  /* Since silc_server_config_alloc returns an unreferenced config object
-     we must immediately increment it. */
-  silc_server_config_ref(&silcd->config_ref, silcd->config, silcd->config);
 
   /* Check for another silcd running */
   silc_server_checkpid(silcd);
@@ -428,6 +425,7 @@ int main(int argc, char **argv)
   /* Stop the server and free it. */
   silc_server_stop(silcd);
   silc_server_free(silcd);
+  silc_server_config_destroy(silcd->config);
 
   /* Flush the logging system */
   silc_log_flush_all();

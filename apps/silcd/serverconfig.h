@@ -122,7 +122,6 @@ typedef struct SilcServerConfigServerStruct {
   unsigned char *passphrase;
   SilcUInt32 passphrase_len;
   SilcHashTable publickeys;
-  char *version;
   SilcServerConfigConnParams *param;
   bool backup_router;
   struct SilcServerConfigServerStruct *next;
@@ -135,7 +134,6 @@ typedef struct SilcServerConfigRouterStruct {
   SilcUInt32 passphrase_len;
   SilcHashTable publickeys;
   SilcUInt16 port;
-  char *version;
   SilcServerConfigConnParams *param;
   bool initiator;
   bool backup_router;
