@@ -436,9 +436,6 @@ EXPORTS
 	silc_schedule_uninit @ 659 ; 
 	silc_schedule_unset_listen_fd @ 660 ; 
 	silc_schedule_wakeup @ 661 ; 
-	silc_schedule_wakeup_init @ 662 ; 
-	silc_schedule_wakeup_internal @ 663 ; 
-	silc_schedule_wakeup_uninit @ 664 ; 
 	silc_select @ 665 ; 
 	silc_sha1_context_len @ 666 ; 
 	silc_sha1_final @ 667 ; 
