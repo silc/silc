@@ -868,7 +868,7 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 char *channel);
 
-/****f* silcclient/SilcClientAPI/silc_client_get_channel
+/****f* silcclient/SilcClientAPI/silc_client_get_channel_id_resolve
  *
  * SYNOPSIS
  *
@@ -966,7 +966,7 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcServerID *server_id);
 
-/****f* silcclient/SilcClientAPI/silc_client_get_server_by_id
+/****f* silcclient/SilcClientAPI/silc_client_del_server
  *
  * SYNOPSIS
  *
@@ -1255,7 +1255,7 @@ silc_client_list_private_message_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      uint32 *key_count);
 
-/****f* silcclient/SilcClientAPI/silc_client_list_private_message_keys
+/****f* silcclient/SilcClientAPI/silc_client_free_private_message_keys
  *
  * SYNOPSIS
  *
