@@ -47,7 +47,7 @@
 #
 
 # Default Toolkit distribution
-_toolkit_SUBDIRS=lib irssi silc silcd doc includes
+_toolkit_SUBDIRS=lib irssi silc silcd doc includes win32
 _toolkit_SUBDIRS_lib=$(COMMONDIRS)
 _toolkit_SUBDIRS_doc=$(COMMONDIRS)
 _toolkit_DISTLABEL=SILC_DIST_TOOLKIT

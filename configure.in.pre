@@ -702,4 +702,7 @@ lib/silcutil/Makefile
 lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
 silc/Makefile
-silcd/Makefile)
+silcd/Makefile
+win32/Makefile
+win32/libsilc/Makefile
+win32/libsilcclient/Makefile)

@@ -18,16 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-all:
-	-cd ..
+EXTRA_DIST = *.dsp
 
-include_HEADERS = \
-	bitmove.h \
-	clientlibincludes.h \
-	silcincludes.h \
-	silcwin32.h \
-	version.h \
-	version_internal.h
+include $(top_srcdir)/Makefile.defines.in
 
-EXTRA_DIST = \
-	silcdefs.h.in

@@ -301,7 +301,7 @@ bool silc_net_win32_init(void);
  *    this function the SILC Net API routines will not work anymore.
  *
  ***/
-void silc_net_win32_init(void);
+void silc_net_win32_uninit(void);
 
 #endif
 

@@ -18,16 +18,8 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-all:
-	-cd ..
+SUBDIRS = libsilc libsilcclient
 
-include_HEADERS = \
-	bitmove.h \
-	clientlibincludes.h \
-	silcincludes.h \
-	silcwin32.h \
-	version.h \
-	version_internal.h
+EXTRA_DIST = silcdefs.h trq_conf.h silc.dsw
 
-EXTRA_DIST = \
-	silcdefs.h.in
+include $(top_srcdir)/Makefile.defines.in
