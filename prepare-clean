@@ -23,10 +23,22 @@
 # and compilation by calling ./prepare.
 #
 
+if [ -z "$MAKE" ]; then
+	MAKE=`which gmake`
+	if [ -z "$MAKE" ]; then
+		MAKE=`which make`
+		if [ -z "$MAKE" ]; then
+			echo "Error, no [g]make in your path."
+			exit 0
+		fi
+	fi
+fi
+echo "Using $MAKE as a make program..."
+
 echo "Cleaning entire SILC source tree..."
 echo "All errors and warnings may be safely ignored."
-gmake clean -k
-gmake distclean -k
+$MAKE clean -k
+$MAKE distclean -k
 rm -f ltmain.sh
 rm -f ltconfig
 rm -f ltcf*
