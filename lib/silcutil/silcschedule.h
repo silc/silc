@@ -653,7 +653,7 @@ void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal,
  *    Mark the `signal' to be called later.  Every signal that has been
  *    registered by silc_schedule_signal_register is delivered by calling
  *    this function.  When signal really occurs, the application is 
- *    responsible of calling this function int the signal handler.  After
+ *    responsible of calling this function in the signal handler.  After
  *    signal is over the scheduler will then safely deliver the callback
  *    that was given to silc_schedule_signal_register function.
  *
