@@ -4823,7 +4823,11 @@ SILC_SERVER_CMD_FUNC(ban)
   }
 
   /* Get entry to the channel user list */
-  silc_hash_table_find(channel->user_list, client, NULL, (void *)&chl);
+  if (!silc_hash_table_find(channel->user_list, client, NULL, (void *)&chl)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
+					  SILC_STATUS_ERR_NOT_ON_CHANNEL);
+    goto out;
+  }
 
   /* The client must be at least channel operator. */
   if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {
@@ -4884,7 +4888,7 @@ SILC_SERVER_CMD_FUNC(ban)
 					 2, id, id_len,
 					 3, channel->ban_list, 
 					 channel->ban_list ? 
-					 strlen(channel->ban_list) - 1 : 0);
+					 strlen(channel->ban_list) : 0);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
     

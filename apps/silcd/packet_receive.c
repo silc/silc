@@ -1143,7 +1143,7 @@ do {						\
     if (tmp && channel->ban_list) {
       char *start, *end, *n;
       
-      if (!strcmp(channel->ban_list, tmp)) {
+      if (!strncmp(channel->ban_list, tmp, strlen(channel->ban_list) - 1)) {
 	silc_free(channel->ban_list);
 	channel->ban_list = NULL;
       } else {
