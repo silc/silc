@@ -44,6 +44,21 @@ SILC_TASK_CALLBACK(silc_client_notify_check_client)
   silc_free(res);
 }
 
+SILC_TASK_CALLBACK(silc_client_notify_del_client_cb)
+{
+  SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
+  SilcClient client = res->context;
+  SilcClientConnection conn = res->sock->user_data;
+  SilcClientID *client_id = res->packet;
+  SilcClientEntry client_entry;
+  client_entry = silc_client_get_client_by_id(client, conn, client_id);
+  if (client_entry)
+    silc_client_del_client(client, conn, client_entry);
+  silc_free(client_id);
+  silc_socket_free(res->sock);
+  silc_free(res);
+}
+
 /* Called when notify is received and some async operation (such as command)
    is required before processing the notify message. This calls again the
    silc_client_notify_by_server and reprocesses the original notify packet. */
@@ -1086,6 +1101,7 @@ void silc_client_notify_by_server(SilcClient client,
        * Received notify about some client we are watching
        */
       SilcNotifyType notify = 0;
+      bool del_client = FALSE;
 
       SILC_LOG_DEBUG(("Notify: WATCH"));
 
@@ -1147,11 +1163,22 @@ void silc_client_notify_by_server(SilcClient client,
 	 client is on some channel */
       if (tmp && notify == SILC_NOTIFY_TYPE_NICK_CHANGE &&
 	  !silc_hash_table_count(client_entry->channels))
-	silc_client_del_client(client, conn, client_entry);
+	del_client = TRUE;
       else if (notify == SILC_NOTIFY_TYPE_SIGNOFF ||
 	       notify == SILC_NOTIFY_TYPE_SERVER_SIGNOFF ||
 	       notify == SILC_NOTIFY_TYPE_KILLED)
-	silc_client_del_client(client, conn, client_entry);
+	del_client = TRUE;
+
+      if (del_client) {
+	SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
+	res->context = client;
+	res->sock = silc_socket_dup(conn->sock);
+	res->packet = client_id;
+        client_id = NULL;
+	silc_schedule_task_add(client->schedule, conn->sock->sock,
+			       silc_client_notify_del_client_cb, res,
+			       1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+      }
     }
     break;
 

@@ -554,6 +554,20 @@ void silc_server_notify(SilcServer server,
 	SILC_LOG_DEBUG(("CMODE change is not allowed"));
 	goto out;
       }
+    } else {
+      if (server->server_type == SILC_ROUTER &&
+	  channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH &&
+	  !(mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
+	SILC_LOG_DEBUG(("Enforcing sender to change channel mode"));
+	silc_server_send_notify_cmode(server, sock, FALSE, channel,
+				      channel->mode, server->id,
+				      SILC_ID_SERVER,
+				      channel->cipher,
+				      channel->hmac_name,
+				      channel->passphrase,
+				      channel->founder_key);
+	goto out;
+      }
     }
 
     /* Send the same notify to the channel */
