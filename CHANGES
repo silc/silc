@@ -1,3 +1,9 @@
+Tue Jan  7 20:08:15 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed error handling of invalid client entry when calling
+	  commands in server.  Fixes a crash.  Affected file
+	  silcd/command.c.
+
 Thu Dec 26 14:19:29 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added some sanity checks in server for correctness of the

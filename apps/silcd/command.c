@@ -160,6 +160,7 @@ SILC_TASK_CALLBACK(silc_server_command_process_timeout)
     SILC_LOG_DEBUG(("Client entry is invalid"));
     silc_server_command_free(timeout->ctx);
     silc_free(timeout);
+    return;
   }
 
   /* Update access time */
@@ -239,6 +240,7 @@ void silc_server_command_process(SilcServer server,
     if (!client) {
       SILC_LOG_DEBUG(("Client entry is invalid"));
       silc_server_command_free(ctx);
+      return;
     }
 
     timeout = silc_calloc(1, sizeof(*timeout));
