@@ -601,7 +601,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       if (server->server_type != SILC_SERVER)
 	goto error;
       
-      /* We don't have that server anywhere, add it. */
+      /* We don't have that channel anywhere, add it. */
       channel = silc_idlist_add_channel(server->global_list, strdup(name),
 					SILC_CHANNEL_MODE_NONE, channel_id, 
 					server->router, NULL, NULL, 0);
@@ -1061,7 +1061,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
 	goto out;
 
       idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
-      silc_server_send_command(server, server->router->connection,
+      silc_server_send_command(server, SILC_PRIMARY_ROUTE(server),
 			       SILC_COMMAND_IDENTIFY, ++server->cmd_ident,
 			       1, 5, idp->data, idp->len);
       silc_buffer_free(idp);

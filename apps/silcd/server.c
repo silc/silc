@@ -1147,11 +1147,11 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       /* If we are router then announce our possible servers. */
       if (server->server_type == SILC_ROUTER)
 	silc_server_announce_servers(server, FALSE, 0,
-				     server->router->connection);
+				     SILC_PRIMARY_ROUTE(server));
 
       /* Announce our clients and channels to the router */
-      silc_server_announce_clients(server, 0, server->router->connection);
-      silc_server_announce_channels(server, 0, server->router->connection);
+      silc_server_announce_clients(server, 0, SILC_PRIMARY_ROUTE(server));
+      silc_server_announce_channels(server, 0, SILC_PRIMARY_ROUTE(server));
 
 #ifdef BACKUP_SINGLE_ROUTER
       /* If we are backup router then this primary router is whom we are
@@ -1549,11 +1549,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (!silc_server_connection_allowed(server, sock, ctx->conn_type,
 					  &server->config->param,
 					  conn->param, ctx->ske)) {
-	SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
-		       sock->ip));
-	silc_server_disconnect_remote(server, sock,
-				      SILC_STATUS_ERR_BANNED_FROM_SERVER,
-				      NULL);
 	server->stat.auth_failures++;
 	goto out;
       }
@@ -1608,11 +1603,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 					    &server->config->param,
 					    rconn ? rconn->param : NULL,
 					    ctx->ske)) {
-	  SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
-			 sock->ip));
-	  silc_server_disconnect_remote(server, sock,
-					SILC_STATUS_ERR_BANNED_FROM_SERVER,
-					NULL);
 	  server->stat.auth_failures++;
 	  goto out;
 	}
@@ -1637,11 +1627,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 					    &server->config->param,
 					    sconn ? sconn->param : NULL,
 					    ctx->ske)) {
-	  SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
-			 sock->ip));
-	  silc_server_disconnect_remote(server, sock,
-					SILC_STATUS_ERR_BANNED_FROM_SERVER,
-					NULL);
 	  server->stat.auth_failures++;
 	  goto out;
 	}
@@ -1987,19 +1972,17 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   /* Parse the incoming packet type */
   silc_server_packet_parse_type(server, sock, packet);
 
-  if (server->server_type == SILC_ROUTER) {
-    /* Broadcast packet if it is marked as broadcast packet and it is
-       originated from router and we are router. */
-    if (sock->type == SILC_SOCKET_TYPE_ROUTER &&
-	packet->flags & SILC_PACKET_FLAG_BROADCAST &&
-	!server->standalone) {
-      /* Broadcast to our primary route */
-      silc_server_packet_broadcast(server, server->router->connection, packet);
+  /* Broadcast packet if it is marked as broadcast packet and it is
+     originated from router and we are router. */
+  if (server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_ROUTER &&
+      packet->flags & SILC_PACKET_FLAG_BROADCAST) {
+    /* Broadcast to our primary route */
+    silc_server_packet_broadcast(server, SILC_PRIMARY_ROUTE(server), packet);
 
-      /* If we have backup routers then we need to feed all broadcast
-	 data to those servers. */
-      silc_server_backup_broadcast(server, sock, packet);
-    }
+    /* If we have backup routers then we need to feed all broadcast
+       data to those servers. */
+    silc_server_backup_broadcast(server, sock, packet);
   }
 
  out:
@@ -2564,6 +2547,7 @@ void silc_server_close_connection(SilcServer server,
     /* If any protocol is active cancel its execution. It will call
        the final callback which will finalize the disconnection. */
     if (sock->protocol) {
+      SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
       silc_protocol_cancel(sock->protocol, server->schedule);
       sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
       silc_protocol_execute_final(sock->protocol, server->schedule);
@@ -2656,6 +2640,18 @@ void silc_server_free_client_data(SilcServer server,
 {
   FreeClientInternal i = silc_calloc(1, sizeof(*i));
 
+  SILC_LOG_DEBUG(("Freeing client data"));
+
+#if 1
+  if (!client->router && !client->connection &&
+      !(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+    SILC_LOG_ERROR(("****** freeing data for already unregistered client -s"));
+    SILC_LOG_ERROR(("****** Contact Pekka"));
+    SILC_LOG_ERROR(("****** freeing data for already unregistered client -e"));
+    return;
+  }
+#endif
+
   /* If there is pending outgoing data for the client then purge it
      to the network before removing the client entry. */
   silc_server_packet_queue_purge(server, sock);
@@ -2667,22 +2663,22 @@ void silc_server_free_client_data(SilcServer server,
 				     SILC_NOTIFY_TYPE_SIGNOFF);
 
     /* Send SIGNOFF notify to routers. */
-    if (notify && !server->standalone && server->router)
-      silc_server_send_notify_signoff(server, server->router->connection,
-				      server->server_type == SILC_SERVER ?
-				      FALSE : TRUE, client->id, signoff);
-
-    /* Remove client from all channels */
     if (notify)
-      silc_server_remove_from_channels(server, NULL, client,
-				       TRUE, (char *)signoff, TRUE);
-    else
-      silc_server_remove_from_channels(server, NULL, client,
-				       FALSE, NULL, FALSE);
-
-    /* Remove this client from watcher list if it is */
-    silc_server_del_from_watcher_list(server, client);
+      silc_server_send_notify_signoff(server, SILC_PRIMARY_ROUTE(server),
+				      SILC_BROADCAST(server), client->id,
+				      signoff);
   }
+
+  /* Remove client from all channels */
+  if (notify)
+    silc_server_remove_from_channels(server, NULL, client,
+				     TRUE, (char *)signoff, TRUE);
+  else
+    silc_server_remove_from_channels(server, NULL, client,
+				     FALSE, NULL, FALSE);
+
+  /* Remove this client from watcher list if it is */
+  silc_server_del_from_watcher_list(server, client);
 
   /* Update statistics */
   server->stat.my_clients--;
@@ -2715,8 +2711,6 @@ void silc_server_free_sock_user_data(SilcServer server,
 				     SilcSocketConnection sock,
 				     const char *signoff_message)
 {
-  SILC_LOG_DEBUG(("Start"));
-
   switch (sock->type) {
   case SILC_SOCKET_TYPE_CLIENT:
     {
@@ -2730,6 +2724,8 @@ void silc_server_free_sock_user_data(SilcServer server,
     {
       SilcServerEntry user_data = (SilcServerEntry)sock->user_data;
       SilcServerEntry backup_router = NULL;
+
+      SILC_LOG_DEBUG(("Freeing server data"));
 
       if (user_data->id)
 	backup_router = silc_server_backup_get(server, user_data->id);
@@ -2848,6 +2844,8 @@ void silc_server_free_sock_user_data(SilcServer server,
     {
       SilcUnknownEntry user_data = (SilcUnknownEntry)sock->user_data;
 
+      SILC_LOG_DEBUG(("Freeing unknown connection data"));
+
       silc_idlist_del_data(user_data);
       silc_free(user_data);
       break;
@@ -2856,6 +2854,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 
   /* If any protocol is active cancel its execution */
   if (sock->protocol) {
+    SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
     silc_protocol_cancel(sock->protocol, server->schedule);
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
     silc_protocol_execute_final(sock->protocol, server->schedule);
@@ -2879,16 +2878,21 @@ void silc_server_remove_from_channels(SilcServer server,
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
-  SilcBuffer clidp;
+  SilcBuffer clidp = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  if (!client || !client->id)
+  if (!client)
     return;
 
-  clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-  if (!clidp)
+  SILC_LOG_DEBUG(("Removing client from joined channels"));
+
+  if (notify && !client->id)
     notify = FALSE;
+
+  if (notify) {
+    clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+    if (!clidp)
+      notify = FALSE;
+  }
 
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
@@ -2966,7 +2970,8 @@ void silc_server_remove_from_channels(SilcServer server,
   }
 
   silc_hash_table_list_reset(&htl);
-  silc_buffer_free(clidp);
+  if (clidp)
+    silc_buffer_free(clidp);
 }
 
 /* Removes client from one channel. This is used for example when client
@@ -3109,7 +3114,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   SilcCipher key;
   SilcHmac newhmac;
 
-  SILC_LOG_DEBUG(("Creating new channel"));
+  SILC_LOG_DEBUG(("Creating new channel %s", channel_name));
 
   if (!cipher)
     cipher = SILC_DEFAULT_CIPHER;
@@ -3161,8 +3166,8 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
-  if (broadcast && server->standalone == FALSE)
-    silc_server_send_new_channel(server, server->router->connection, TRUE,
+  if (broadcast)
+    silc_server_send_new_channel(server, SILC_PRIMARY_ROUTE(server), TRUE,
 				 channel_name, entry->id,
 				 silc_id_get_len(entry->id, SILC_ID_CHANNEL),
 				 entry->mode);
@@ -3207,7 +3212,7 @@ silc_server_create_new_channel_with_id(SilcServer server,
   SilcCipher key;
   SilcHmac newhmac;
 
-  SILC_LOG_DEBUG(("Creating new channel"));
+  SILC_LOG_DEBUG(("Creating new channel %s", channel_name));
 
   if (!cipher)
     cipher = SILC_DEFAULT_CIPHER;
@@ -3246,8 +3251,8 @@ silc_server_create_new_channel_with_id(SilcServer server,
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
-  if (broadcast && server->standalone == FALSE)
-    silc_server_send_new_channel(server, server->router->connection, TRUE,
+  if (broadcast)
+    silc_server_send_new_channel(server, SILC_PRIMARY_ROUTE(server), TRUE,
 				 channel_name, entry->id,
 				 silc_id_get_len(entry->id, SILC_ID_CHANNEL),
 				 entry->mode);
@@ -4408,7 +4413,7 @@ silc_server_get_client_route(SilcServer server,
     silc_free(id);
     if (idata)
       *idata = (SilcIDListData)server->router;
-    return server->router->connection;
+    return SILC_PRIMARY_ROUTE(server);
   }
 
   /* We are router and we will perform route lookup for the destination
@@ -4544,7 +4549,7 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
 					    server->cmd_ident, 1,
 					    4, idp->data, idp->len);
     silc_server_packet_send(server, client ? client->router->connection :
-			    server->router->connection,
+			    SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_COMMAND, 0,
 			    buffer->data, buffer->len, FALSE);
     silc_buffer_free(idp);
@@ -4653,7 +4658,7 @@ SILC_TASK_CALLBACK(silc_server_get_stats)
     packet = silc_command_payload_encode_va(SILC_COMMAND_STATS, 
 					    ++server->cmd_ident, 1,
 					    1, idp->data, idp->len);
-    silc_server_packet_send(server, server->router->connection,
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_COMMAND, 0, packet->data,
 			    packet->len, FALSE);
     silc_buffer_free(packet);

@@ -50,14 +50,11 @@ void silc_server_notify(SilcServer server,
   SilcUInt32 tmp_len;
   bool local;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      packet->src_id_type != SILC_ID_SERVER)
+      packet->src_id_type != SILC_ID_SERVER || !packet->dst_id) {
+    SILC_LOG_DEBUG(("Bad notify packet received"));
     return;
-
-  if (!packet->dst_id)
-    return;
+  }
 
   /* If the packet is destined directly to a client then relay the packet
      before processing it. */
@@ -98,7 +95,7 @@ void silc_server_notify(SilcServer server,
 	goto out;
 
       if (!server->standalone)
-	silc_server_packet_send_dest(server, server->router->connection, 
+	silc_server_packet_send_dest(server, SILC_PRIMARY_ROUTE(server), 
 				     packet->type, packet->flags | 
 				     SILC_PACKET_FLAG_BROADCAST, 
 				     channel_id, SILC_ID_CHANNEL,
@@ -112,7 +109,7 @@ void silc_server_notify(SilcServer server,
     } else {
       /* Packet is destined to client or server */
       if (!server->standalone)
-	silc_server_packet_send(server, server->router->connection, 
+	silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server), 
 				packet->type,
 				packet->flags | SILC_PACKET_FLAG_BROADCAST, 
 				packet->buffer->data, packet->buffer->len, 
@@ -344,6 +341,7 @@ void silc_server_notify(SilcServer server,
       server->stat.cell_clients--;
     SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
     SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+    silc_schedule_task_del_by_context(server->schedule, client);
 
     /* Remove the client from all channels. */
     silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, FALSE);
@@ -352,6 +350,9 @@ void silc_server_notify(SilcServer server,
     if (server->server_type == SILC_ROUTER)
       silc_server_check_watcher_list(server, client, NULL,
 				     SILC_NOTIFY_TYPE_SIGNOFF);
+
+    /* Remove this client from watcher list if it is */
+    silc_server_del_from_watcher_list(server, client);
 
     client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
@@ -556,8 +557,10 @@ void silc_server_notify(SilcServer server,
     SILC_GET32_MSB(mode, tmp);
 
     /* Check if mode changed */
-    if (channel->mode == mode)
+    if (channel->mode == mode) {
+      SILC_LOG_DEBUG(("Mode is changed already"));
       break;
+    }
 
     /* Get user's channel entry and check that mode change is allowed */
     if (client) {
@@ -582,11 +585,6 @@ void silc_server_notify(SilcServer server,
 	goto out;
       }
     }
-
-    /* Send the same notify to the channel */
-    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
 
     /* If the channel had private keys set and the mode was removed then
        we must re-generate and re-distribute a new channel key */
@@ -672,6 +670,11 @@ void silc_server_notify(SilcServer server,
 				    channel->hmac_name,
 				    channel->passphrase, NULL);
     }
+
+    /* Send the same notify to the channel */
+    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
 
     /* Change mode */
     channel->mode = mode;
@@ -817,10 +820,20 @@ void silc_server_notify(SilcServer server,
 	silc_hash_table_list(channel->user_list, &htl);
 	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
 	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
-	    mode &= ~SILC_CHANNEL_UMODE_CHANFO;
-	    silc_server_force_cumode_change(server, sock, channel,
-					    chl, mode);
-	    notify_sent = TRUE;
+	    /* If the founder on the channel is not the one whom has set
+	       the founder mode, then it's possible that this CUMODE_CHANGE
+	       is correct.  Due to netsplits it's possible that this
+	       situation happens. */
+	    if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
+		(channel->founder_key && chl2->client->data.public_key &&
+		 silc_pkcs_public_key_compare(
+					channel->founder_key,
+					chl2->client->data.public_key))) {
+	      mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	      silc_server_force_cumode_change(server, sock, channel,
+					      chl, mode);
+	      notify_sent = TRUE;
+	    }
 	    break;
 	  }
 	silc_hash_table_list_reset(&htl);
@@ -877,7 +890,7 @@ void silc_server_notify(SilcServer server,
 	  silc_pkcs_public_key_free(founder_key);
       }
 
-      if (server->server_type == SILC_ROUTER && chl->mode == mode) {
+      if (chl->mode == mode) {
 	SILC_LOG_DEBUG(("Mode is changed already"));
 	break;
       }
@@ -889,7 +902,7 @@ void silc_server_notify(SilcServer server,
 
       /* Send the same notify to the channel */
       if (!notify_sent)
-	silc_server_packet_send_to_channel(server, sock, channel, 
+	silc_server_packet_send_to_channel(server, NULL, channel, 
 					   packet->type, 
 					   FALSE, packet->buffer->data, 
 					   packet->buffer->len, FALSE);
@@ -2173,11 +2186,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 		   client_id, client, 0, NULL);
 
   /* Notify our router about new client on the SILC network */
-  if (!server->standalone)
-    silc_server_send_new_id(server, (SilcSocketConnection) 
-			    server->router->connection, 
-			    server->server_type == SILC_ROUTER ? TRUE : FALSE,
-			    client->id, SILC_ID_CLIENT, id_len);
+  silc_server_send_new_id(server, SILC_PRIMARY_ROUTE(server),
+			  SILC_BROADCAST(server), client->id,
+			  SILC_ID_CLIENT, id_len);
 
   /* Distribute to backup routers */
   if (server->server_type == SILC_ROUTER) {
@@ -2334,8 +2345,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
      to our router. If we are normal server we won't send anything
      since this connection must be our router connection. */
   if (server->server_type == SILC_ROUTER && !server->standalone &&
-      server->router->connection != sock)
-    silc_server_send_new_id(server, server->router->connection,
+      SILC_PRIMARY_ROUTE(server) != sock)
+    silc_server_send_new_id(server, SILC_PRIMARY_ROUTE(server),
 			    TRUE, new_server->id, SILC_ID_SERVER, 
 			    silc_id_get_len(server_id, SILC_ID_SERVER));
 
@@ -2438,7 +2449,7 @@ static void silc_server_new_id_real(SilcServer server,
 	id_type == SILC_ID_SERVER && 
 	server->id_entry->server_type != SILC_BACKUP_ROUTER) {
       id_list = server->global_list;
-      router_sock = server->router ? server->router->connection : sock;
+      router_sock = server->router ? SILC_PRIMARY_ROUTE(server) : sock;
     }
   } else {
     void *sender_id = silc_id_str2id(packet->src_id, packet->src_id_len,
@@ -2571,11 +2582,10 @@ static void silc_server_new_id_real(SilcServer server,
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received New ID packet"));
-    if (!server->standalone)
-      silc_server_packet_send(server, server->router->connection,
-			      packet->type, 
-			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			      buffer->data, buffer->len, FALSE);
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
+			    packet->type, 
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			    buffer->data, buffer->len, FALSE);
     silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
@@ -2619,12 +2629,11 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received New ID List packet"));
-    if (!server->standalone)
-      silc_server_packet_send(server, server->router->connection,
-			      packet->type, 
-			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			      packet->buffer->data, 
-			      packet->buffer->len, FALSE);
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
+			    packet->type, 
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			    packet->buffer->data, 
+			    packet->buffer->len, FALSE);
     silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
@@ -2929,12 +2938,11 @@ void silc_server_new_channel_list(SilcServer server,
       sock->type == SILC_SOCKET_TYPE_SERVER &&
       !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
     SILC_LOG_DEBUG(("Broadcasting received New Channel List packet"));
-    if (!server->standalone)
-      silc_server_packet_send(server, server->router->connection,
-			      packet->type, 
-			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			      packet->buffer->data, 
-			      packet->buffer->len, FALSE);
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
+			    packet->type, 
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			    packet->buffer->data, 
+			    packet->buffer->len, FALSE);
     silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
@@ -3161,6 +3169,8 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				  "Resuming not possible");
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
     goto out;
   }
 
@@ -3177,6 +3187,8 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				      "Resuming not possible");
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock, NULL);
 	goto out;
       }
     }
@@ -3187,6 +3199,8 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				    "Resuming not possible");
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
       goto out;
     }
   }
@@ -3223,8 +3237,6 @@ void silc_server_resume_client(SilcServer server,
   SilcChannelClientEntry chl;
   SilcServerResumeResolve r;
 
-  SILC_LOG_DEBUG(("Start"));
-
   ret = silc_buffer_unformat(buffer,
 			     SILC_STR_UI16_NSTRING(&id_string, &id_len),
 			     SILC_STR_END);
@@ -3249,6 +3261,9 @@ void silc_server_resume_client(SilcServer server,
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				    "Resuming not possible");
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_free(client_id);
       return;
     }
 
@@ -3270,7 +3285,7 @@ void silc_server_resume_client(SilcServer server,
 	r->server = server;
 	r->sock = silc_socket_dup(sock);
 	r->packet = silc_packet_context_dup(packet);
-	r->data = silc_id_dup(client_id, SILC_ID_CLIENT);
+	r->data = client_id;
 	silc_server_command_pending(server, SILC_COMMAND_WHOIS,
 				    server->cmd_ident,
 				    silc_server_command_resume_resolve, r);
@@ -3280,6 +3295,9 @@ void silc_server_resume_client(SilcServer server,
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				      "Resuming not possible");
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock, NULL);
+	silc_free(client_id);
       }
       return;
     }
@@ -3304,7 +3322,7 @@ void silc_server_resume_client(SilcServer server,
 	r->server = server;
 	r->sock = silc_socket_dup(sock);
 	r->packet = silc_packet_context_dup(packet);
-	r->data = silc_id_dup(client_id, SILC_ID_CLIENT);
+	r->data = client_id;
 	silc_server_command_pending(server, SILC_COMMAND_WHOIS,
 				    server->cmd_ident,
 				    silc_server_command_resume_resolve, r);
@@ -3316,6 +3334,9 @@ void silc_server_resume_client(SilcServer server,
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				      "Resuming not possible");
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock, NULL);
+	silc_free(client_id);
 	return;
       }
     }
@@ -3324,9 +3345,14 @@ void silc_server_resume_client(SilcServer server,
        resolve it first. */
     if (!detached_client->data.public_key) {
       if (server->server_type == SILC_SERVER && server->standalone) {
+	SILC_LOG_ERROR(("Detached client's public key not present, "
+			"closing connection"));
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				      "Resuming not possible");
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock, NULL);
+	silc_free(client_id);
       } else {
 	/* We must retrieve the detached client's public key by sending
 	   GETKEY command. Reprocess this packet after receiving the key */
@@ -3337,13 +3363,15 @@ void silc_server_resume_client(SilcServer server,
 	SILC_LOG_DEBUG(("Resolving client public key"));
 
 	silc_server_send_command(server, dest_sock ? dest_sock : 
-				 server->router->connection,
+				 SILC_PRIMARY_ROUTE(server),
 				 SILC_COMMAND_GETKEY, ++server->cmd_ident,
 				 1, 1, idp->data, idp->len);
 
 	r = silc_calloc(1, sizeof(*r));
-	if (!r)
+	if (!r) {
+	  silc_free(client_id);
 	  return;
+	}
 
 	r->server = server;
 	r->sock = silc_socket_dup(sock);
@@ -3354,14 +3382,20 @@ void silc_server_resume_client(SilcServer server,
 
 	silc_buffer_free(idp);
       }
+      silc_free(client_id);
       return;
     } else if (!silc_pkcs_public_key_compare(detached_client->data.public_key,
 					     idata->public_key)) {
       /* We require that the connection and resuming authentication data
 	 must be using same key pair. */
+      SILC_LOG_ERROR(("Resuming attempted with wrong public key, "
+		      "closing connection"));
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				    "Resuming not possible");
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_free(client_id);
       return;
     }
 
@@ -3377,6 +3411,9 @@ void silc_server_resume_client(SilcServer server,
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				    "Resuming not possible");
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_free(client_id);
       return;
     }
 
@@ -3403,10 +3440,9 @@ void silc_server_resume_client(SilcServer server,
 		       SILC_STR_END);
 
     /* Send to primary router */
-    if (!server->standalone)
-      silc_server_packet_send(server, server->router->connection,
-			      SILC_PACKET_RESUME_CLIENT, 0, 
-			      buf->data, buf->len, TRUE);
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
+			    SILC_PACKET_RESUME_CLIENT, 0, 
+			    buf->data, buf->len, TRUE);
 
     /* As router we must deliver this packet directly to the original
        server whom this client was earlier. */
@@ -3430,6 +3466,7 @@ void silc_server_resume_client(SilcServer server,
 
     /* If the ID is not based in our ID then change it */
     if (!SILC_ID_COMPARE(client->id, server->id, server->id->ip.data_len)) {
+      silc_free(client_id);
       while (!silc_id_create_client_id(server, server->id, server->rng, 
 				       server->md5hash, client->nickname, 
 				       &client_id)) {
@@ -3437,6 +3474,8 @@ void silc_server_resume_client(SilcServer server,
 	if (nickfail > 9) {
 	  silc_server_disconnect_remote(server, sock, 
 					SILC_STATUS_ERR_BAD_NICKNAME, NULL);
+	  if (sock->user_data)
+	    silc_server_free_sock_user_data(server, sock, NULL);
 	  return;
 	}
 	snprintf(&client->nickname[strlen(client->nickname) - 1], 1, 
@@ -3447,10 +3486,10 @@ void silc_server_resume_client(SilcServer server,
 
     if (nick_change) {
       /* Notify about Client ID change, nickname doesn't actually change. */
-      if (!server->standalone)
-	silc_server_send_notify_nick_change(server, server->router->connection,
-					    FALSE, client->id, client_id,
-					    client->nickname);
+      silc_server_send_notify_nick_change(server, SILC_PRIMARY_ROUTE(server),
+					  SILC_BROADCAST(server),
+					  client->id, client_id,
+					  client->nickname);
     }
 
     /* Resolve users on those channels that client has joined but we
@@ -3462,7 +3501,7 @@ void silc_server_resume_client(SilcServer server,
 	SILC_LOG_DEBUG(("Resolving users for %s channel", 
 			channel->channel_name));
 	if (channel->disabled || !channel->users_resolved) {
-	  silc_server_send_command(server, server->router->connection,
+	  silc_server_send_command(server, SILC_PRIMARY_ROUTE(server),
 				   SILC_COMMAND_USERS, ++server->cmd_ident,
 				   1, 2, channel->channel_name,
 				   strlen(channel->channel_name));
@@ -3534,9 +3573,8 @@ void silc_server_resume_client(SilcServer server,
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
 			      keyp->data, keyp->len, FALSE);
 
-      if (created && server->server_type == SILC_SERVER && 
-	  !server->standalone)
-	silc_server_packet_send(server, server->router->connection, 
+      if (created && server->server_type == SILC_SERVER)
+	silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server), 
 				SILC_PACKET_CHANNEL_KEY, 0, 
 				keyp->data, keyp->len, FALSE);
 
@@ -3550,8 +3588,10 @@ void silc_server_resume_client(SilcServer server,
     SilcServerEntry server_entry;
     SilcServerID *server_id;
 
-    if (!client_id)
+    if (!client_id) {
+      SILC_LOG_DEBUG(("Malformed resuming packet"));
       return;
+    }
 
     /* Get entry to the client, and resolve it if we don't have it. */
     detached_client = silc_idlist_find_client_by_id(server->local_list, 
@@ -3559,8 +3599,11 @@ void silc_server_resume_client(SilcServer server,
     if (!detached_client) {
       detached_client = silc_idlist_find_client_by_id(server->global_list,
 						      client_id, TRUE, NULL);
-      if (!detached_client)
+      if (!detached_client) {
+	SILC_LOG_DEBUG(("Resuming client is unknown"));
+	silc_free(client_id);
 	return;
+      }
     }
 
     /* Check that the client has not been resumed already because it is
@@ -3571,14 +3614,19 @@ void silc_server_resume_client(SilcServer server,
       /* The client is clearly attempting to resume more than once and
 	 perhaps playing around by resuming from several different places
 	 at the same time. */
+      SILC_LOG_DEBUG(("Attempting to re-resume client, killing both"));
       silc_server_kill_client(server, detached_client, NULL,
 			      server->id, SILC_ID_SERVER);
+      silc_free(client_id);
       return;
     }
 
     /* Check whether client is detached at all */
-    if (!(detached_client->mode & SILC_UMODE_DETACHED))
+    if (!(detached_client->mode & SILC_UMODE_DETACHED)) {
+      SILC_LOG_DEBUG(("Client is not detached"));
+      silc_free(client_id);
       return;
+    }
 
     /* Client is detached, and now it is resumed.  Remove the detached
        mode and mark that it is resumed. */
@@ -3588,8 +3636,10 @@ void silc_server_resume_client(SilcServer server,
     /* Get the new owner of the resumed client */
     server_id = silc_id_str2id(packet->src_id, packet->src_id_len,
 			       packet->src_id_type);
-    if (!server_id)
+    if (!server_id) {
+      silc_free(client_id);
       return;
+    }
 
     /* Get server entry */
     server_entry = silc_idlist_find_server_by_id(server->global_list, 
@@ -3601,6 +3651,7 @@ void silc_server_resume_client(SilcServer server,
       local = FALSE;
       if (!server_entry) {
 	silc_free(server_id);
+	silc_free(client_id);
 	return;
       }
     }
@@ -3644,11 +3695,10 @@ void silc_server_resume_client(SilcServer server,
 	sock->type == SILC_SOCKET_TYPE_SERVER &&
 	!(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
       SILC_LOG_DEBUG(("Broadcasting received Resume Client packet"));
-      if (!server->standalone)
-	silc_server_packet_send(server, server->router->connection,
-				packet->type, 
-				packet->flags | SILC_PACKET_FLAG_BROADCAST,
-				buffer->data, buffer->len, FALSE);
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
+			      packet->type, 
+			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			      buffer->data, buffer->len, FALSE);
       silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
 			      packet->type, packet->flags,
 			      packet->buffer->data, packet->buffer->len, 

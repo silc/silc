@@ -38,17 +38,14 @@ silc_server_remove_clients_channels(SilcServer server,
   SilcChannelEntry channel;
   SilcChannelClientEntry chl, chl2;
   SilcHashTableList htl, htl2;
-  SilcBuffer clidp;
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!client || !client->id)
+  if (!client)
     return;
 
   if (silc_hash_table_find(clients, client, NULL, NULL))
     silc_hash_table_del(clients, client);
-
-  clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
@@ -120,7 +117,6 @@ silc_server_remove_clients_channels(SilcServer server,
       silc_hash_table_add(channels, channel, channel);
   }
   silc_hash_table_list_reset(&htl);
-  silc_buffer_free(clidp);
 }
 
 /* This function is used to remove all client entries by the server `entry'.
@@ -208,15 +204,15 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
-	/* Remove the client entry */
 	silc_server_remove_clients_channels(server, entry, clients,
 					    client, channels);
+	silc_server_del_from_watcher_list(server, client);
+
+	/* Remove the client entry */
 	if (!server_signoff) {
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
-	  /* Remove this client from watcher list if it is */
-	  silc_server_del_from_watcher_list(server, client);
 	  silc_idlist_del_client(server->local_list, client);
 	}
 
@@ -268,9 +264,11 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
-	/* Remove the client entry */
 	silc_server_remove_clients_channels(server, entry, clients,
 					    client, channels);
+	silc_server_del_from_watcher_list(server, client);
+
+	/* Remove the client entry */
 	if (!server_signoff) {
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
@@ -290,20 +288,15 @@ bool silc_server_remove_clients_by_server(SilcServer server,
     SilcBuffer args, not;
 
     /* Send SERVER_SIGNOFF notify to our primary router */
-    if (!server->standalone && server->router &&
-	server->router != entry) {
+    if (server->router != entry) {
       args = silc_argument_payload_encode(1, argv, argv_lens,
 					  argv_types);
-      silc_server_send_notify_args(server, 
-				   server->router->connection,
-				   server->server_type == SILC_SERVER ? 
-				   FALSE : TRUE, 
+      silc_server_send_notify_args(server, SILC_PRIMARY_ROUTE(server),
+				   SILC_BROADCAST(server),
 				   SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
 				   argc, args);
       silc_buffer_free(args);
     }
-
-    
 
     /* Send to local clients. We also send the list of client ID's that
        is to be removed for those servers that would like to use that list. */
@@ -1277,10 +1270,9 @@ void silc_server_kill_client(SilcServer server,
 				      killer->data, killer->len);
 
   /* Send KILLED notify to primary route */
-  if (!server->standalone)
-    silc_server_send_notify_killed(server, server->router->connection, TRUE,
-				   remote_client->id, comment, 
-				   killer_id, killer_id_type);
+  silc_server_send_notify_killed(server, SILC_PRIMARY_ROUTE(server),
+				 SILC_BROADCAST(server), remote_client->id,
+				 comment, killer_id, killer_id_type);
 
   /* Send KILLED notify to the client directly */
   if (remote_client->connection || remote_client->router)
@@ -1369,7 +1361,7 @@ bool silc_server_check_watcher_list(SilcServer server,
   WatcherNotifyContext n;
 
   SILC_LOG_DEBUG(("Checking watcher list %s",
-		  client->nickname ? client->nickname : ""));
+		  client->nickname ? client->nickname : (unsigned char *)""));
 
   /* If the watching is rejected by the client do nothing */
   if (client->mode & SILC_UMODE_REJECT_WATCHING)
@@ -1414,8 +1406,9 @@ bool silc_server_del_from_watcher_list(SilcServer server,
     if (entry == client) {
       silc_hash_table_del_by_context(server->watcher_list, key, client);
 
-      SILC_LOG_DEBUG(("Removing %s from WATCH list",
-		      silc_id_render(client->id, SILC_ID_CLIENT)));
+      if (client->id)
+	SILC_LOG_DEBUG(("Removing %s from WATCH list",
+			silc_id_render(client->id, SILC_ID_CLIENT)));
 
       /* Now check whether there still exists entries with this key, if not
 	 then free the key to not leak memory. */
@@ -1442,7 +1435,7 @@ bool silc_server_force_cumode_change(SilcServer server,
   SilcBuffer idp1, idp2;
   unsigned char cumode[4];
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Enforcing sender to change mode"));
 
   if (sock)
     silc_server_send_notify_cumode(server, sock, FALSE, channel, forced_mode,

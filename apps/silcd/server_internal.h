@@ -155,6 +155,13 @@ typedef struct {
 
 /* Macros */
 
+/* Return pointer to the primary router connection */
+#define SILC_PRIMARY_ROUTE(server) \
+  (!server->standalone && server->router ? server->router->connection : NULL)
+
+/* Return TRUE if a packet must be broadcasted (router broadcasts) */
+#define SILC_BROADCAST(server) (server->server_type == SILC_ROUTER) 
+
 /* Registers generic task for file descriptor for reading from network and
    writing to network. As being generic task the actual task is allocated 
    only once and after that the same task applies to all registered fd's. */

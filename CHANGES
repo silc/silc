@@ -1,3 +1,37 @@
+Sat Jun 22 12:49:21 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* All CMODE_CHANGE and CUMODE_CHANGE notifys are now sent back
+	  to the sender of the notify too, to avoid situation where two
+	  notifys are in the network at the same time going to oppsite
+	  directions.  Affected file silcd/packet_receice.c.
+
+Fri Jun 21 10:00:32 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Delete the client from channel even if the cilent->id is
+	  NULL.  It was possible that client was deleted without
+	  removing from channels (theoretically at least).  Affected
+	  file silcd/server.c and silcd/server_util.c.
+
+	* Free the client data too when resuming is not successful.
+	  Affected file silcd/packet_receive.c.
+
+	* Merged some code from c0ffee's silc-plugin.  Affected files
+	  irssi/src/silc/core/silc-channels.c and silc-expandos.c.
+
+	* Added SILC_PRIMARY_ROUTE and SILC_BROADXAST macros to
+	  silcd/server_internal.h.  SILC_PRIMARY_ROUTE Returns pointer
+	  to the primary router connection, the other one returns
+	  TRUE if packet must be broadcasted to network.
+
+	* All notifys that are destined to primary router (to network)
+	  are now automatically sent to backup routers even if the
+	  router is standalone (and has backup router).  Affected files
+	  in silcd/.
+
+	* Added --without-irssi and --without-silcd configuration
+	  options for disabling the compilation of these applications.
+	  Affected file configure.in.pre and prepare.
+
 Thu Jun 20 13:48:15 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Implemented SILC_STRING_BMP and SILC_STRING_UNIVERSAL for
@@ -14,7 +48,7 @@ Thu Jun 20 13:48:15 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	* Added macro SILC_NOT_IMPLEMENTED to lib/silcutil/silclog.h.
 
 	* Added function silc_get_command_name to the file
-	  lib/silcutil/silcutil.[ch
+	  lib/silcutil/silcutil.[ch].
 
 	* Improved the server debug output a bit.  Affected files are
 	  in silcd/.

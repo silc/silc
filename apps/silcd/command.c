@@ -902,7 +902,7 @@ silc_server_command_whois_send_router(SilcServerCommandContext cmd)
 
   /* Send WHOIS command to our router */
   silc_server_packet_send(server, (SilcSocketConnection)
-			  server->router->connection,
+			  SILC_PRIMARY_ROUTE(server),
 			  SILC_PACKET_COMMAND, cmd->packet->flags,
 			  tmpbuf->data, tmpbuf->len, TRUE);
 
@@ -1266,8 +1266,7 @@ silc_server_command_whowas_process(SilcServerCommandContext cmd)
     tmpbuf = silc_command_payload_encode_payload(cmd->payload);
 
     /* Send WHOWAS command to our router */
-    silc_server_packet_send(server, (SilcSocketConnection)
-			    server->router->connection,
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_COMMAND, cmd->packet->flags,
 			    tmpbuf->data, tmpbuf->len, TRUE);
 
@@ -1369,7 +1368,7 @@ silc_server_command_identify_send_router(SilcServerCommandContext cmd)
 
   /* Send IDENTIFY command to our router */
   silc_server_packet_send(server, (SilcSocketConnection)
-			  server->router->connection,
+			  SILC_PRIMARY_ROUTE(server),
 			  SILC_PACKET_COMMAND, cmd->packet->flags,
 			  tmpbuf->data, tmpbuf->len, TRUE);
 
@@ -2117,11 +2116,9 @@ SILC_SERVER_CMD_FUNC(nick)
   /* Send notify about nickname change to our router. We send the new
      ID and ask to replace it with the old one. If we are router the
      packet is broadcasted. Send NICK_CHANGE notify. */
-  if (!server->standalone)
-    silc_server_send_notify_nick_change(server, server->router->connection, 
-					server->server_type == SILC_SERVER ? 
-					FALSE : TRUE, client->id,
-					new_id, nick);
+  silc_server_send_notify_nick_change(server, SILC_PRIMARY_ROUTE(server),
+				      SILC_BROADCAST(server), client->id,
+				      new_id, nick);
 
   /* Check if anyone is watching the old nickname */
   if (server->server_type == SILC_ROUTER)
@@ -2316,7 +2313,7 @@ SILC_SERVER_CMD_FUNC(list)
     old_ident = silc_command_get_ident(cmd->payload);
     silc_command_set_ident(cmd->payload, ++server->cmd_ident);
     tmpbuf = silc_command_payload_encode_payload(cmd->payload);
-    silc_server_packet_send(server, server->router->connection,
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_COMMAND, cmd->packet->flags,
 			    tmpbuf->data, tmpbuf->len, TRUE);
 
@@ -2448,12 +2445,10 @@ SILC_SERVER_CMD_FUNC(topic)
     channel->topic = strdup(tmp);
 
     /* Send TOPIC_SET notify type to the network */
-    if (!server->standalone)
-      silc_server_send_notify_topic_set(server, server->router->connection,
-					server->server_type == SILC_ROUTER ?
-					TRUE : FALSE, channel, 
-					client->id, SILC_ID_CLIENT,
-					channel->topic);
+    silc_server_send_notify_topic_set(server, SILC_PRIMARY_ROUTE(server),
+				      SILC_BROADCAST(server), channel,
+				      client->id, SILC_ID_CLIENT,
+				      channel->topic);
 
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -2684,11 +2679,9 @@ SILC_SERVER_CMD_FUNC(invite)
   }
 
   /* Send notify to the primary router */
-  if (!server->standalone)
-    silc_server_send_notify_invite(server, server->router->connection,
-				   server->server_type == SILC_ROUTER ?
-				   TRUE : FALSE, channel,
-				   sender->id, add, del);
+  silc_server_send_notify_invite(server, SILC_PRIMARY_ROUTE(server),
+				 SILC_BROADCAST(server), channel,
+				 sender->id, add, del);
 
   /* Send command reply */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
@@ -2978,7 +2971,7 @@ SILC_SERVER_CMD_FUNC(info)
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
 
-      silc_server_packet_send(server, server->router->connection,
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			      SILC_PACKET_COMMAND, cmd->packet->flags,
 			      tmpbuf->data, tmpbuf->len, TRUE);
 
@@ -3111,7 +3104,7 @@ SILC_SERVER_CMD_FUNC(stats)
     packet = silc_command_payload_encode_va(SILC_COMMAND_STATS, 
 					    ++server->cmd_ident, 1,
 					    1, idp->data, idp->len);
-    silc_server_packet_send(server, server->router->connection,
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_COMMAND, 0, packet->data,
 			    packet->len, FALSE);
 
@@ -3456,10 +3449,8 @@ static void silc_server_command_join_channel(SilcServer server,
 
   if (!cmd->pending) {
     /* Send JOIN notify packet to our primary router */
-    if (!server->standalone)
-      silc_server_send_notify_join(server, server->router->connection,
-				   server->server_type == SILC_ROUTER ?
-				   TRUE : FALSE, channel, client->id);
+    silc_server_send_notify_join(server, SILC_PRIMARY_ROUTE(server),
+				 SILC_BROADCAST(server), channel, client->id);
 
     if (keyp)
       /* Distribute the channel key to all backup routers. */
@@ -3480,10 +3471,9 @@ static void silc_server_command_join_channel(SilcServer server,
   }
 
   /* Set CUMODE notify type to network */
-  if (founder && !server->standalone)
-    silc_server_send_notify_cumode(server, server->router->connection,
-				   server->server_type == SILC_ROUTER ?
-				   TRUE : FALSE, channel,
+  if (founder)
+    silc_server_send_notify_cumode(server, SILC_PRIMARY_ROUTE(server),
+				   SILC_BROADCAST(server), channel,
 				   chl->mode, client->id, SILC_ID_CLIENT,
 				   client->id, channel->founder_key);
 
@@ -3611,7 +3601,7 @@ SILC_SERVER_CMD_FUNC(join)
 	  
 	  /* Send JOIN command to our router */
 	  silc_server_packet_send(server, (SilcSocketConnection)
-				  server->router->connection,
+				  SILC_PRIMARY_ROUTE(server),
 				  SILC_PACKET_COMMAND, cmd->packet->flags,
 				  tmpbuf->data, tmpbuf->len, TRUE);
 	  
@@ -3828,7 +3818,7 @@ SILC_SERVER_CMD_FUNC(motd)
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
 
-      silc_server_packet_send(server, server->router->connection,
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			      SILC_PACKET_COMMAND, cmd->packet->flags,
 			      tmpbuf->data, tmpbuf->len, TRUE);
 
@@ -3929,9 +3919,9 @@ SILC_SERVER_CMD_FUNC(umode)
     client->mode = mask;
 
     /* Send UMODE change to primary router */
-    if (!server->standalone)
-      silc_server_send_notify_umode(server, server->router->connection, TRUE,
-				    client->id, client->mode);
+    silc_server_send_notify_umode(server, SILC_PRIMARY_ROUTE(server),
+				  SILC_BROADCAST(server), client->id,
+				  client->mode);
 
     /* Check if anyone is watching this nickname */
     if (server->server_type == SILC_ROUTER)
@@ -4321,12 +4311,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 				     fkey, fkey_len);
 
   /* Set CMODE notify type to network */
-  if (!server->standalone)
-    silc_server_send_notify_cmode(server, server->router->connection,
-				  server->server_type == SILC_ROUTER ? 
-				  TRUE : FALSE, channel,
-				  mode_mask, client->id, SILC_ID_CLIENT,
-				  cipher, hmac, passphrase, founder_key);
+  silc_server_send_notify_cmode(server, SILC_PRIMARY_ROUTE(server),
+				SILC_BROADCAST(server), channel,
+				mode_mask, client->id, SILC_ID_CLIENT,
+				cipher, hmac, passphrase, founder_key);
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
@@ -4680,13 +4668,10 @@ SILC_SERVER_CMD_FUNC(cumode)
 				       fkey, fkey_len);
 
     /* Set CUMODE notify type to network */
-    if (!server->standalone)
-      silc_server_send_notify_cumode(server, server->router->connection,
-				     server->server_type == SILC_ROUTER ? 
-				     TRUE : FALSE, channel,
-				     target_mask, client->id, 
-				     SILC_ID_CLIENT,
-				     target_client->id, founder_key);
+    silc_server_send_notify_cumode(server, SILC_PRIMARY_ROUTE(server),
+				   SILC_BROADCAST(server), channel,
+				   target_mask, client->id, SILC_ID_CLIENT,
+				   target_client->id, founder_key);
   }
 
   /* Send command reply to sender */
@@ -4835,11 +4820,9 @@ SILC_SERVER_CMD_FUNC(kick)
     goto out;
 
   /* Send KICKED notify to primary route */
-  if (!server->standalone)
-    silc_server_send_notify_kicked(server, server->router->connection,
-				   server->server_type == SILC_ROUTER ?
-				   TRUE : FALSE, channel,
-				   target_client->id, client->id, comment);
+  silc_server_send_notify_kicked(server, SILC_PRIMARY_ROUTE(server),
+				 SILC_BROADCAST(server), channel,
+				 target_client->id, client->id, comment);
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Re-generate channel key */
@@ -4941,9 +4924,9 @@ SILC_SERVER_CMD_FUNC(oper)
     server->stat.server_ops++;
 
   /* Send UMODE change to primary router */
-  if (!server->standalone)
-    silc_server_send_notify_umode(server, server->router->connection, TRUE,
-				  client->id, client->mode);
+  silc_server_send_notify_umode(server, SILC_PRIMARY_ROUTE(server),
+				SILC_BROADCAST(server), client->id,
+				client->mode);
 
   /* Check if anyone is watching this nickname */
   if (server->server_type == SILC_ROUTER)
@@ -4961,18 +4944,27 @@ SILC_SERVER_CMD_FUNC(oper)
 SILC_TASK_CALLBACK(silc_server_command_detach_cb)
 {
   QuitInternal q = (QuitInternal)context;
-  SilcClientEntry client = (SilcClientEntry)q->sock->user_data;
+  SilcClientID *client_id = (SilcClientID *)q->sock;
+  SilcClientEntry client;
+  SilcSocketConnection sock;
 
-  /* If there is pending outgoing data for the client then purge it
-     to the network before closing connection. */
-  silc_server_packet_queue_purge(q->server, q->sock);
+  client = silc_idlist_find_client_by_id(q->server->local_list, client_id,
+					 TRUE, NULL);
+  if (client && client->connection) {
+    sock = client->connection;
 
-  /* Close the connection on our side */
-  client->router = NULL;
-  client->connection = NULL;
-  q->sock->user_data = NULL;
-  silc_server_close_connection(q->server, q->sock);
+    /* If there is pending outgoing data for the client then purge it
+       to the network before closing connection. */
+    silc_server_packet_queue_purge(q->server, sock);
 
+    /* Close the connection on our side */
+    client->router = NULL;
+    client->connection = NULL;
+    sock->user_data = NULL;
+    silc_server_close_connection(q->server, sock);
+  }
+
+  silc_free(client_id);
   silc_free(q);
 }
 
@@ -4983,11 +4975,12 @@ SILC_TASK_CALLBACK(silc_server_command_detach_timeout)
   SilcClientEntry client;
 
   client = silc_idlist_find_client_by_id(q->server->local_list, client_id,
-					 FALSE, NULL);
-
-  if (client && client->mode & SILC_UMODE_DETACHED)
+					 TRUE, NULL);
+  if (client && client->mode & SILC_UMODE_DETACHED) {
+    SILC_LOG_DEBUG(("Detach timeout"));
     silc_server_free_client_data(q->server, NULL, client, TRUE,
 				 "Detach timeout");
+  }
 
   silc_free(client_id);
   silc_free(q);
@@ -5019,10 +5012,9 @@ SILC_SERVER_CMD_FUNC(detach)
   client->data.status &= ~SILC_IDLIST_STATUS_RESUMED;
   client->last_command = 0;
   client->fast_command = 0;
-  if (!server->standalone)
-    silc_server_send_notify_umode(server, server->router->connection,
-				  server->server_type == SILC_SERVER ?
-				  FALSE : TRUE, client->id, client->mode);
+  silc_server_send_notify_umode(server, SILC_PRIMARY_ROUTE(server),
+				SILC_BROADCAST(server), client->id,
+				client->mode);
   server->stat.my_detached++;
 
   /* Check if anyone is watching this nickname */
@@ -5032,7 +5024,7 @@ SILC_SERVER_CMD_FUNC(detach)
 
   q = silc_calloc(1, sizeof(*q));
   q->server = server;
-  q->sock = cmd->sock;
+  q->sock = silc_id_dup(client->id, SILC_ID_CLIENT);
   silc_schedule_task_add(server->schedule, 0, silc_server_command_detach_cb,
 			 q, 0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
@@ -5079,7 +5071,7 @@ SILC_SERVER_CMD_FUNC(watch)
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
 
-      silc_server_packet_send(server, server->router->connection,
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			      SILC_PACKET_COMMAND, cmd->packet->flags,
 			      tmpbuf->data, tmpbuf->len, TRUE);
 
@@ -5318,9 +5310,9 @@ SILC_SERVER_CMD_FUNC(silcoper)
     server->stat.router_ops++;
 
   /* Send UMODE change to primary router */
-  if (!server->standalone)
-    silc_server_send_notify_umode(server, server->router->connection, TRUE,
-				  client->id, client->mode);
+  silc_server_send_notify_umode(server, SILC_PRIMARY_ROUTE(server),
+				SILC_BROADCAST(server), client->id,
+				client->mode);
 
   /* Check if anyone is watching this nickname */
   if (server->server_type == SILC_ROUTER)
@@ -5436,10 +5428,9 @@ SILC_SERVER_CMD_FUNC(ban)
   }
 
   /* Send the BAN notify type to our primary router. */
-  if (!server->standalone && (add || del))
-    silc_server_send_notify_ban(server, server->router->connection,
-				server->server_type == SILC_ROUTER ?
-				TRUE : FALSE, channel, add, del);
+  if (add || del)
+    silc_server_send_notify_ban(server, SILC_PRIMARY_ROUTE(server),
+				SILC_BROADCAST(server), channel, add, del);
 
   /* Send the reply back to the client */
   packet = 
@@ -5509,10 +5500,8 @@ SILC_SERVER_CMD_FUNC(leave)
 
   /* Notify routers that they should remove this client from their list
      of clients on the channel. Send LEAVE notify type. */
-  if (!server->standalone)
-    silc_server_send_notify_leave(server, server->router->connection,
-				  server->server_type == SILC_ROUTER ?
-				  TRUE : FALSE, channel, id_entry->id);
+  silc_server_send_notify_leave(server, SILC_PRIMARY_ROUTE(server),
+				SILC_BROADCAST(server), channel, id_entry->id);
 
   silc_server_command_send_status_data(cmd, SILC_COMMAND_LEAVE,
 				       SILC_STATUS_OK, 0, 2, tmp, len);
@@ -5601,7 +5590,7 @@ SILC_SERVER_CMD_FUNC(users)
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
       
       /* Send USERS command */
-      silc_server_packet_send(server, server->router->connection,
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			      SILC_PACKET_COMMAND, cmd->packet->flags,
 			      tmpbuf->data, tmpbuf->len, TRUE);
       
@@ -5814,7 +5803,7 @@ SILC_SERVER_CMD_FUNC(getkey)
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
       
-      silc_server_packet_send(server, server->router->connection,
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			      SILC_PACKET_COMMAND, cmd->packet->flags,
 			      tmpbuf->data, tmpbuf->len, TRUE);
       

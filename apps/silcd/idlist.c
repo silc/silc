@@ -565,7 +565,7 @@ void silc_idlist_client_destructor(SilcIDCache cache,
     silc_free(client->id);
     silc_hash_table_free(client->channels);
 
-    memset(client, 'F', sizeof(*client));
+    memset(client, 'A', sizeof(*client));
     silc_free(client);
   }
 }
@@ -587,7 +587,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 {
   SilcChannelEntry channel;
 
-  SILC_LOG_DEBUG(("Adding new channel entry"));
+  SILC_LOG_DEBUG(("Adding new channel %s", channel_name));
 
   channel = silc_calloc(1, sizeof(*channel));
   channel->channel_name = channel_name;
@@ -638,9 +638,9 @@ static void silc_idlist_del_channel_foreach(void *key, void *context,
 
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
-  SILC_LOG_DEBUG(("Start"));
-
   if (entry) {
+    SILC_LOG_DEBUG(("Deleting channel %s", entry->channel_name));
+
     /* Remove from cache */
     if (!silc_idcache_del_by_context(id_list->channels, entry))
       return FALSE;

@@ -85,10 +85,12 @@ void silc_server_packet_send(SilcServer server,
 {
   void *dst_id = NULL;
   SilcIdType dst_id_type = SILC_ID_NONE;
-  SilcIDListData idata = (SilcIDListData)sock->user_data;
+  SilcIDListData idata;
 
   if (!sock)
     return;
+
+  idata = (SilcIDListData)sock->user_data;
 
   /* If disconnecting, ignore the data */
   if (SILC_IS_DISCONNECTING(sock))
@@ -140,7 +142,7 @@ void silc_server_packet_send_dest(SilcServer server,
 {
   SilcPacketContext packetdata;
   const SilcBufferStruct packet;
-  SilcIDListData idata = (SilcIDListData)sock->user_data;
+  SilcIDListData idata;
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
   SilcUInt32 sequence = 0;
@@ -149,8 +151,10 @@ void silc_server_packet_send_dest(SilcServer server,
   int block_len = 0;
 
   /* If disconnecting, ignore the data */
-  if (SILC_IS_DISCONNECTING(sock))
+  if (!sock || SILC_IS_DISCONNECTING(sock))
     return;
+
+  idata = (SilcIDListData)sock->user_data;
 
   /* If entry is disabled do not sent anything. */
   if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED)
@@ -243,6 +247,9 @@ void silc_server_packet_send_srcdest(SilcServer server,
 
   SILC_LOG_DEBUG(("Sending %s packet", silc_get_packet_name(type)));
 
+  if (!sock)
+    return;
+
   /* Get data used in the packet sending, keys and stuff */
   idata = (SilcIDListData)sock->user_data;
 
@@ -314,6 +321,9 @@ void silc_server_packet_broadcast(SilcServer server,
   SilcBuffer buffer = packet->buffer;
   SilcIDListData idata;
   void *id;
+
+  if (!sock)
+    return;
 
   SILC_LOG_DEBUG(("Broadcasting received broadcast packet"));
 
@@ -549,8 +559,6 @@ void silc_server_packet_send_to_channel(SilcServer server,
   /* This doesn't send channel message packets */
   assert(type != SILC_PACKET_CHANNEL_MESSAGE);
   
-  SILC_LOG_DEBUG(("Sending packet to channel"));
-
   /* Set the packet context pointers. */
   packetdata.flags = 0;
   packetdata.type = type;
@@ -574,7 +582,6 @@ void silc_server_packet_send_to_channel(SilcServer server,
     
     if (sock != sender) {
       SILC_LOG_DEBUG(("Sending packet to router for routing"));
-      
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      idata->send_key, 
 					      idata->hmac_send, 
@@ -583,6 +590,13 @@ void silc_server_packet_send_to_channel(SilcServer server,
 					      force_send);
     }
   }
+
+  if (!silc_hash_table_count(channel->user_list)) {
+    SILC_LOG_DEBUG(("Channel %s is empty", channel->channel_name));
+    goto out;
+  }
+
+  SILC_LOG_DEBUG(("Sending packet to channel %s", channel->channel_name));
 
   routed = silc_calloc(silc_hash_table_count(channel->user_list), 
 		       sizeof(*routed));
@@ -655,8 +669,9 @@ void silc_server_packet_send_to_channel(SilcServer server,
 					    data, data_len, FALSE, 
 					    force_send);
   }
-
   silc_hash_table_list_reset(&htl);
+
+ out:
   silc_free(routed);
   silc_free(packetdata.src_id);
   silc_free(packetdata.dst_id);
@@ -1055,9 +1070,10 @@ void silc_server_send_notify(SilcServer server,
 			  packet->data, packet->len, FALSE);
 
   /* Send to backup routers if this is being broadcasted to primary
-     router. */
-  if (server->router && server->router->connection &&
-      sock == server->router->connection && broadcast)
+     router.  The silc_server_backup_send checks further whether to
+     actually send it or not. */
+  if ((broadcast && sock && sock == SILC_PRIMARY_ROUTE(server)) ||
+      (broadcast && !sock && !SILC_PRIMARY_ROUTE(server)))
     silc_server_backup_send(server, NULL, SILC_PACKET_NOTIFY, 0,
 			    packet->data, packet->len, FALSE, TRUE);
 
@@ -1513,10 +1529,12 @@ void silc_server_send_notify_on_channels(SilcServer server,
   bool force_send = FALSE;
   va_list ap;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  if (!silc_hash_table_count(client->channels))
+  if (!silc_hash_table_count(client->channels)) {
+    SILC_LOG_DEBUG(("Client is not joined to any channels"));
     return;
+  }
+
+  SILC_LOG_DEBUG(("Sending notify to joined channels"));
 
   va_start(ap, argc);
   packet = silc_notify_payload_encode(type, argc, ap);

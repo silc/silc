@@ -318,50 +318,56 @@ typedef struct {
 } DebugLevel;
 
 static DebugLevel debug_levels[] = {
-  /* Basic stuff from silcd/ */
-  { 5, "silc_server_*" },
+  /* Very basic stuff from silcd/ */
+  { 3, "silcd\\.c,server\\.c" },
+
+  /* More stuff from silcd/ */
+  { 7, "silcd\\.c,server\\.c,command\\.c" },
+
+  /* All basic stuff from silcd/ */
+  { 10, "silc_server_*" },
 
   /* All from silcd/ */
-  { 10, "*silcd*,*serverid*,silc_server_*,*idlist*" },
+  { 15, "*silcd*,*serverid*,silc_server_*,*idlist*" },
 
   /* All from silcd/ and basic stuff from libs */
-  { 15, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,*silcske*" },
+  { 20, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,*silcske*" },
 
   /* All from silcd/ and more stuff from libs */
-  { 20, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+  { 25, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
     "*silcpacket*,*ske*,*silcrng*" },
 
   /* All from silcd/ and even more stuff from libs */
-  { 25, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+  { 30, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
     "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*" },
 
   /* All from silcd/ and even more stuff from libs + all from silccore */
-  { 30, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+  { 35, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
     "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
     "*silcid*,*argument*" },
 
   /* All from silcd/, all from silccore, silccrypt and silcmath */
-  { 35, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+  { 40, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
     "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
     "*silcid*,*argument*,*pkcs*,*hmac*,*hash*,*cipher*,silc_math*" },
 
   /* All from silcd/, all from silccore, silccrypt and silcmath + stuff
      from silcutil */
-  { 40, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+  { 45, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
     "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
     "*silcid*,*argument*,*pkcs*,*hmac*,*hash*,*cipher*,silc_math*,*sim*"
     "*sockconn*" },
 
   /* All from silcd/, all from silccore, silccrypt and silcmath + more stuff
      from silcutil */
-  { 45, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+  { 50, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
     "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
     "*silcid*,*argument*,*pkcs*,*hmac*,*hash*,*cipher*,silc_math*,*sim*"
     "*sockconn*,*net*" },
 
   /* All from silcd/, all from silccore, silccrypt and silcmath + more stuff
      from silcutil */
-  { 50, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
+  { 55, "*silcd*,*serverid*,silc_server_*,*idlist*,*silcauth*,"
     "*silcpacket*,*ske*,*silcrng*,*command*,*channel*,*private*,*notify*"
     "*silcid*,*argument*,*pkcs*,*hmac*,*hash*,*cipher*,silc_math*,*sim*"
     "*sockconn*,*net*,*log*,*config*" },
