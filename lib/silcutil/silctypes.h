@@ -216,8 +216,8 @@ typedef signed long SilcInt64;
 typedef unsigned long long SilcUInt64;
 typedef signed long long SilcInt64;
 #else
-typedef SilcUInt32 SilcUInt64; /* XXX Use Windows's own 64 bit types */
-typedef SilcInt32 SilcInt64;
+typedef unsigned __int64 SilcUInt64;
+typedef signed __int64 SilcInt64;
 #endif
 #else
 typedef SilcUInt32 SilcUInt64;
