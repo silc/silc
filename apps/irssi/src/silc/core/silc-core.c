@@ -55,7 +55,6 @@ static int opt_bits = 0;
 static int idletag;
 
 SilcClient silc_client = NULL;
-SilcClientConfig silc_config = NULL;
 extern SilcClientOperations ops;
 extern bool silc_debug;
 extern bool silc_debug_hexdump;
@@ -175,12 +174,61 @@ static void silc_nickname_format_parse(const char *nickname,
   silc_parse_userfqdn(nickname, ret_nickname, NULL);
 }
 
+static void silc_register_cipher(SilcClient client, const char *cipher)
+{
+  int i;
+  
+  for (i = 0; silc_default_ciphers[i].name; i++)
+    if (!strcmp(silc_default_ciphers[i].name, cipher)) {
+      silc_cipher_register(&silc_default_ciphers[i]);
+      break;
+    }
+
+  if (!silc_cipher_is_supported(cipher)) {
+    SILC_LOG_ERROR(("Unknown cipher `%s'", cipher));
+    exit(1);
+  }
+}
+
+static void silc_register_hash(SilcClient client, const char *hash)
+{
+  int i;
+  
+  for (i = 0; silc_default_hash[i].name; i++)
+    if (!strcmp(silc_default_hash[i].name, hash)) {
+      silc_hash_register(&silc_default_hash[i]);
+      break;
+    }
+  
+  if (!silc_hash_is_supported(hash)) {
+    SILC_LOG_ERROR(("Unknown hash function `%s'", hash));
+    exit(1);
+  }
+}
+
+static void silc_register_hmac(SilcClient client, const char *hmac)
+{
+  int i;
+  
+  for (i = 0; silc_default_hmacs[i].name; i++)
+    if (!strcmp(silc_default_hmacs[i].name, hmac)) {
+      silc_hmac_register(&silc_default_hmacs[i]);
+      break;
+    }
+  
+  if (!silc_hmac_is_supported(hmac)) {
+    SILC_LOG_ERROR(("Unknown HMAC `%s'", hmac));
+    exit(1);
+  }
+}
+
 /* Finalize init. Init finish signal calls this. */
 
 void silc_core_init_finish(SERVER_REC *server)
 {
   CHAT_PROTOCOL_REC *rec;
   SilcClientParams params;
+  const char *def_cipher, *def_hash, *def_hmac;
 
   if (opt_create_keypair == TRUE) {
     /* Create new key pair and exit */
@@ -271,33 +319,25 @@ void silc_core_init_finish(SERVER_REC *server)
   /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);
 
-  /* Load local config file */
-  silc_config = silc_client_config_alloc(SILC_CLIENT_HOME_CONFIG_FILE);
+  /* Crypto settings */
+  settings_add_str("server", "crypto_default_cipher", "aes-256-cbc");
+  settings_add_str("server", "crypto_default_hash", "sha1");
+  settings_add_str("server", "crypto_default_hmac", "hmac-sha1-96");
+
+  /* Get the ciphers and stuff from config file */
+  def_cipher = settings_get_str("crypto_default_cipher");
+  def_hash = settings_get_str("crypto_default_hash");
+  def_hmac = settings_get_str("crypto_default_hmac");
+  silc_register_cipher(silc_client, def_cipher);
+  silc_register_hash(silc_client, def_hash);
+  silc_register_hmac(silc_client, def_hmac);
+  silc_pkcs_register_default();
 
   /* Get user information */
   silc_client->username = g_strdup(settings_get_str("user_name"));
   silc_client->nickname = g_strdup(settings_get_str("nick"));
   silc_client->hostname = silc_net_localhost();
   silc_client->realname = g_strdup(settings_get_str("real_name"));
-
-  /* Register all configured ciphers, PKCS and hash functions. */
-  if (silc_config) {
-    silc_config->client = silc_client;
-    if (!silc_client_config_register_ciphers(silc_config))
-      silc_cipher_register_default();
-    if (!silc_client_config_register_pkcs(silc_config))
-      silc_pkcs_register_default();
-    if (!silc_client_config_register_hashfuncs(silc_config))
-      silc_hash_register_default();
-    if (!silc_client_config_register_hmacs(silc_config))
-      silc_hmac_register_default();
-  } else {
-    /* Register default ciphers, pkcs, hash funtions and hmacs. */
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
-  }
 
   /* Check ~/.silc directory and public and private keys */
   if (silc_client_check_silc_dir() == FALSE) {
@@ -357,11 +397,11 @@ void silc_core_init(void)
       "Set the length of the public key pair", "VALUE" },
     { "show-key", 'S', POPT_ARG_STRING, &opt_keyfile, 0, 
       "Show the contents of the public key", "FILE" },
-    { "list-ciphers", 'C', POPT_ARG_NONE, &opt_list_ciphers, 0,
+    { "list-ciphers", 'c', POPT_ARG_NONE, &opt_list_ciphers, 0,
       "List supported ciphers", NULL },
     { "list-hash-funcs", 'H', POPT_ARG_NONE, &opt_list_hash, 0,
       "List supported hash functions", NULL },
-    { "list-hmacs", 'H', POPT_ARG_NONE, &opt_list_hmac, 0,
+    { "list-hmacs", 'M', POPT_ARG_NONE, &opt_list_hmac, 0,
       "List supported HMACs", NULL },
     { "list-pkcs", 'P', POPT_ARG_NONE, &opt_list_pkcs, 0,
       "List supported PKCSs", NULL },
