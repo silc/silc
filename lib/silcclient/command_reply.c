@@ -284,6 +284,7 @@ silc_client_command_reply_whois_print(SilcClientCommandReplyContext cmd,
       client_entry->realname = strdup(realname);
 
     id_cache->data = client_entry->nickname;
+    silc_idcache_sort_by_data(conn->client_cache);
 
     silc_free(client_id);
   }
@@ -448,7 +449,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
 	client_entry->username = strdup(username);
 
       id_cache->data = client_entry->nickname;
-
+      silc_idcache_sort_by_data(conn->client_cache);
+    
       silc_free(client_id);
     }
   }
