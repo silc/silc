@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/06 07:16:43  priikone
+ * 	Fixed a wrong way of sending command replies. The fixed way
+ * 	does comply with the protocol.
+ *
  * Revision 1.4  2000/07/05 06:13:38  priikone
  * 	Added PING, INVITE and NAMES command.
  *
@@ -141,28 +145,8 @@ static void silc_server_command_free(SilcServerCommandContext cmd)
   }
 }
 
-/* Sends command status message as command reply packet. */
-
-static void 
-silc_server_command_send_status_msg(SilcServerCommandContext cmd,
-				    SilcCommand command,
-				    SilcCommandStatus status,
-				    unsigned char *msg,
-				    unsigned int msg_len)
-{
-  SilcBuffer sp_buf, buffer;
-
-  SILC_LOG_DEBUG(("Sending command status %d", status));
-
-  sp_buf = silc_command_encode_status_payload(status, msg, msg_len);
-  buffer = silc_command_encode_payload_va(command, 1, 
-					  sp_buf->data, sp_buf->len);
-  silc_server_packet_send(cmd->server, cmd->sock,
-			  SILC_PACKET_COMMAND_REPLY, 0, 
-			  buffer->data, buffer->len, FALSE);
-  silc_buffer_free(buffer);
-  silc_buffer_free(sp_buf);
-}
+#define SILC_COMMAND_STATUS_DATA(x) \
+  (
 
 /* Sends simple status message as command reply packet */
 
@@ -171,18 +155,38 @@ silc_server_command_send_status_reply(SilcServerCommandContext cmd,
 				      SilcCommand command,
 				      SilcCommandStatus status)
 {
-  SilcBuffer sp_buf, buffer;
+  SilcBuffer buffer;
 
   SILC_LOG_DEBUG(("Sending command status %d", status));
 
-  sp_buf = silc_command_encode_status_payload(status, NULL, 0);
-  buffer = silc_command_encode_payload_va(command, 1, 
-					  sp_buf->data, sp_buf->len);
+  buffer = silc_command_encode_reply_payload_va(command, status, 0);
   silc_server_packet_send(cmd->server, cmd->sock,
 			  SILC_PACKET_COMMAND_REPLY, 0, 
 			  buffer->data, buffer->len, FALSE);
   silc_buffer_free(buffer);
-  silc_buffer_free(sp_buf);
+}
+
+/* Sends command status reply with one extra argument. The argument
+   type must be sent as argument. */
+
+static void 
+silc_server_command_send_status_data(SilcServerCommandContext cmd,
+				     SilcCommand command,
+				     SilcCommandStatus status,
+				     unsigned int arg_type,
+				     unsigned char *arg,
+				     unsigned int arg_len)
+{
+  SilcBuffer buffer;
+
+  SILC_LOG_DEBUG(("Sending command status %d", status));
+
+  buffer = silc_command_encode_reply_payload_va(command, status, 1,
+						arg_type, arg, arg_len);
+  silc_server_packet_send(cmd->server, cmd->sock,
+			  SILC_PACKET_COMMAND_REPLY, 0, 
+			  buffer->data, buffer->len, FALSE);
+  silc_buffer_free(buffer);
 }
 
 /* Server side of command WHOIS. Processes user's query and sends found 
@@ -194,7 +198,7 @@ SILC_SERVER_CMD_FUNC(whois)
   char *tmp, *nick = NULL, *server = NULL;
   unsigned int argc, count = 0, len;
   SilcClientList *entry;
-  SilcBuffer sp_buf, packet;
+  SilcBuffer packet;
   unsigned char *id_string;
 
   SILC_LOG_DEBUG(("Start"));
@@ -262,17 +266,17 @@ SILC_SERVER_CMD_FUNC(whois)
 	silc_idlist_find_client_by_nickname(cmd->server->global_list->clients,
 					    nick, server);
       if (!entry) {
-	silc_server_command_send_status_msg(cmd, SILC_COMMAND_WHOIS,
-					    SILC_STATUS_ERR_NO_SUCH_NICK,
-					    tmp, strlen(tmp));
+	silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
+					     SILC_STATUS_ERR_NO_SUCH_NICK,
+					     3, tmp, strlen(tmp));
 	goto out;
       }
       goto ok;
     }
 
-    silc_server_command_send_status_msg(cmd, SILC_COMMAND_WHOIS,
-					SILC_STATUS_ERR_NO_SUCH_NICK,
-					tmp, strlen(tmp));
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
+					 SILC_STATUS_ERR_NO_SUCH_NICK,
+					 3, tmp, strlen(tmp));
     goto out;
   }
 
@@ -281,8 +285,7 @@ SILC_SERVER_CMD_FUNC(whois)
 
   /* Send WHOIS reply */
   id_string = silc_id_id2str(entry->id, SILC_ID_CLIENT);
-  tmp = silc_command_get_first_arg(cmd->payload, NULL),
-  sp_buf = silc_command_encode_status_payload(SILC_STATUS_OK, NULL, 0);
+  tmp = silc_command_get_first_arg(cmd->payload, NULL);
 
   /* XXX */
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
@@ -308,36 +311,36 @@ SILC_SERVER_CMD_FUNC(whois)
     /* XXX */
     if (entry->userinfo)
       packet = 
-        silc_command_encode_payload_va(SILC_COMMAND_WHOIS, 5, 
-  				       sp_buf->data, sp_buf->len,
-  				       id_string, SILC_ID_CLIENT_LEN,
-  				       nh, strlen(nh),
-				       uh, strlen(uh),
-				       entry->userinfo, 
-				       strlen(entry->userinfo));
+        silc_command_encode_reply_payload_va(SILC_COMMAND_WHOIS,
+					     SILC_STATUS_OK, 4, 
+					     2, id_string, SILC_ID_CLIENT_LEN,
+					     3, nh, strlen(nh),
+					     4, uh, strlen(uh),
+					     5, entry->userinfo, 
+					     strlen(entry->userinfo));
     else
       packet = 
-        silc_command_encode_payload_va(SILC_COMMAND_WHOIS, 4,
-  				       sp_buf->data, sp_buf->len,
-  				       id_string, SILC_ID_CLIENT_LEN,
-  				       nh, strlen(nh),
-				       uh, strlen(uh));
+        silc_command_encode_reply_payload_va(SILC_COMMAND_WHOIS,
+					     SILC_STATUS_OK, 3, 
+					     2, id_string, SILC_ID_CLIENT_LEN,
+					     3, nh, strlen(nh),
+					     4, uh, strlen(uh));
 
   } else {
     /* XXX */
     packet = 
-      silc_command_encode_payload_va(SILC_COMMAND_WHOIS, 4, 
-				     sp_buf->data, sp_buf->len,
-				     id_string, SILC_ID_CLIENT_LEN,
-				     entry->nickname, strlen(entry->nickname),
-				     tmp, strlen(tmp)); /* XXX */
+      silc_command_encode_reply_payload_va(SILC_COMMAND_WHOIS, 
+					   SILC_STATUS_OK, 3, 
+					   2, id_string, SILC_ID_CLIENT_LEN,
+					   3, entry->nickname, 
+					   strlen(entry->nickname),
+					   4, tmp, strlen(tmp)); /* XXX */
   }
   silc_server_packet_send(cmd->server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			  0, packet->data, packet->len, FALSE);
 
   silc_free(id_string);
   silc_buffer_free(packet);
-  silc_free(sp_buf);
 
  out:
   silc_server_command_free(cmd);
@@ -352,7 +355,7 @@ SILC_SERVER_CMD_FUNC(identify)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   char *tmp, *nick = NULL, *server = NULL;
   unsigned int argc, count = 0, len;
-  SilcClientList *entry;  SilcBuffer sp_buf, packet;
+  SilcClientList *entry;  SilcBuffer packet;
   unsigned char *id_string;
 
   SILC_LOG_DEBUG(("Start"));
@@ -422,17 +425,17 @@ SILC_SERVER_CMD_FUNC(identify)
 	silc_idlist_find_client_by_hash(cmd->server->global_list->clients,
 					nick, cmd->server->md5hash);
       if (!entry) {
-	silc_server_command_send_status_msg(cmd, SILC_COMMAND_IDENTIFY,
-					    SILC_STATUS_ERR_NO_SUCH_NICK,
-					    tmp, strlen(tmp));
+	silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
+					     SILC_STATUS_ERR_NO_SUCH_NICK,
+					     3, tmp, strlen(tmp));
 	goto out;
       }
       goto ok;
     }
 
-    silc_server_command_send_status_msg(cmd, SILC_COMMAND_IDENTIFY,
-					SILC_STATUS_ERR_NO_SUCH_NICK,
-					tmp, strlen(tmp));
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
+					 SILC_STATUS_ERR_NO_SUCH_NICK,
+					 3, tmp, strlen(tmp));
     goto out;
   }
 
@@ -440,11 +443,11 @@ SILC_SERVER_CMD_FUNC(identify)
   /* Send IDENTIFY reply */
   id_string = silc_id_id2str(entry->id, SILC_ID_CLIENT);
   tmp = silc_command_get_first_arg(cmd->payload, NULL);
-  sp_buf = silc_command_encode_status_payload(SILC_STATUS_OK, NULL, 0);
-  packet = silc_command_encode_payload_va(SILC_COMMAND_IDENTIFY, 3,
-					  sp_buf->data, sp_buf->len,
-					  id_string, SILC_ID_CLIENT_LEN,
-					  nick, strlen(nick));
+  packet = silc_command_encode_reply_payload_va(SILC_COMMAND_IDENTIFY,
+						SILC_STATUS_OK, 2,
+						2, id_string, 
+						SILC_ID_CLIENT_LEN,
+						3, nick, strlen(nick));
 #if 0
   if (cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
     void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
@@ -461,7 +464,6 @@ SILC_SERVER_CMD_FUNC(identify)
 
   silc_free(id_string);
   silc_buffer_free(packet);
-  silc_free(sp_buf);
 
  out:
   if (nick)
@@ -496,7 +498,7 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcClientList *id_entry = (SilcClientList *)cmd->sock->user_data;
   SilcServer server = cmd->server;
-  SilcBuffer packet, sp_buf;
+  SilcBuffer packet;
   SilcClientID *new_id;
   char *id_string;
   char *nick;
@@ -567,16 +569,15 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Send the new Client ID as reply command back to client */
   id_string = silc_id_id2str(id_entry->id, SILC_ID_CLIENT);
-  sp_buf = silc_command_encode_status_payload(SILC_STATUS_OK, NULL, 0);
-  packet = silc_command_encode_payload_va(SILC_COMMAND_NICK, 2, 
-					  sp_buf->data, sp_buf->len,
-					  id_string, SILC_ID_CLIENT_LEN);
+  packet = silc_command_encode_reply_payload_va(SILC_COMMAND_NICK, 
+						SILC_STATUS_OK, 1, 
+						2, id_string, 
+						SILC_ID_CLIENT_LEN);
   silc_server_packet_send(cmd->server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			  0, packet->data, packet->len, FALSE);
 
   silc_free(id_string);
   silc_buffer_free(packet);
-  silc_free(sp_buf);
 
  out:
   silc_server_command_free(cmd);
@@ -821,7 +822,7 @@ void silc_server_command_send_names(SilcServer server,
 
   id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   buffer = silc_command_encode_payload_va(SILC_COMMAND_NAMES, 1,
-					  id_string, SILC_ID_CHANNEL_LEN);
+					  1, id_string, SILC_ID_CHANNEL_LEN);
 
   cmd = silc_calloc(1, sizeof(*cmd));
   cmd->payload = silc_command_parse_payload(buffer);
@@ -849,7 +850,7 @@ SILC_SERVER_CMD_FUNC(join)
   SilcChannelList *channel;
   SilcServerID *router_id;
   SilcIDCache *id_cache;
-  SilcBuffer packet, sp_buf;
+  SilcBuffer packet;
   SilcClientList *client;
 
   SILC_LOG_DEBUG(("Start"));
@@ -890,6 +891,11 @@ SILC_SERVER_CMD_FUNC(join)
   
   /* Get cipher name */
   cipher = silc_command_get_arg_type(cmd->payload, 3, NULL);
+  if (!cipher) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
 
   /* See if the channel exists */
   if (silc_idcache_find_by_data(LCC(channel_name[0]), LCCC(channel_name[0]), 
@@ -985,24 +991,26 @@ SILC_SERVER_CMD_FUNC(join)
      channel mode and possibly other information in this reply packet. */
   if (!cmd->pending) {
     id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
-    sp_buf = silc_command_encode_status_payload(SILC_STATUS_OK, NULL, 0);
     SILC_PUT32_MSB(channel->mode, mode);
 
     if (!channel->topic)
       packet = 
-	silc_command_encode_payload_va(SILC_COMMAND_JOIN, 4,
-				       sp_buf->data, sp_buf->len,
-				       channel_name, strlen(channel_name),
-				       id_string, SILC_ID_CHANNEL_LEN,
-				       mode, 4);
+	silc_command_encode_reply_payload_va(SILC_COMMAND_JOIN,
+					     SILC_STATUS_OK, 3,
+					     2, channel_name, 
+					     strlen(channel_name),
+					     3, id_string, SILC_ID_CHANNEL_LEN,
+					     4, mode, 4);
     else
       packet = 
-	silc_command_encode_payload_va(SILC_COMMAND_JOIN, 5,
-				       sp_buf->data, sp_buf->len,
-				       channel_name, strlen(channel_name),
-				       id_string, SILC_ID_CHANNEL_LEN,
-				       mode, 4,
-				       channel->topic, strlen(channel->topic));
+	silc_command_encode_reply_payload_va(SILC_COMMAND_JOIN,
+					     SILC_STATUS_OK, 4, 
+					     2, channel_name, 
+					     strlen(channel_name),
+					     3, id_string, SILC_ID_CHANNEL_LEN,
+					     4, mode, 4,
+					     5, channel->topic, 
+					     strlen(channel->topic));
 
     if (cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
       void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
@@ -1016,7 +1024,6 @@ SILC_SERVER_CMD_FUNC(join)
 			      packet->data, packet->len, FALSE);
     
     silc_buffer_free(packet);
-    silc_free(sp_buf);
   }
 
   /* Send channel key to the client. Client cannot start transmitting
@@ -1225,9 +1232,11 @@ SILC_SERVER_CMD_FUNC(names)
   SilcServer server = cmd->server;
   SilcChannelList *channel;
   SilcChannelID *id;
+  SilcBuffer packet;
   unsigned int i, len, len2, argc;
   unsigned char *tmp;
   char *name_list = NULL, *n;
+  SilcBuffer client_id_list;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1275,6 +1284,9 @@ SILC_SERVER_CMD_FUNC(names)
   name_list = NULL;
   len = 0;
   for (i = 0; i < channel->user_list_count; i++) {
+    if (!channel->user_list[i].client)
+      continue;
+
     n = channel->user_list[i].client->nickname;
     if (n) {
       len2 = strlen(n);
@@ -1290,11 +1302,42 @@ SILC_SERVER_CMD_FUNC(names)
     }
   }
 
-  /* Send the reply */
-  silc_server_command_send_status_msg(cmd, SILC_COMMAND_NAMES, SILC_STATUS_OK,
-				      name_list, strlen(name_list));
+  /* Assemble the Client ID list now */
+  client_id_list = silc_buffer_alloc(SILC_ID_CLIENT_LEN * 
+				     channel->user_list_count);
+  silc_buffer_pull_tail(client_id_list, (SILC_ID_CLIENT_LEN *
+					 channel->user_list_count));
+  for (i = 0; i < channel->user_list_count; i++) {
+    unsigned char *id_string;
 
+    if (!channel->user_list[i].client)
+      continue;
+
+    id_string = silc_id_id2str(channel->user_list[i].client->id,
+			       SILC_ID_CLIENT);
+    silc_buffer_format(client_id_list,
+		       SILC_STR_UI_XNSTRING(id_string, SILC_ID_CLIENT_LEN),
+		       SILC_STR_END);
+    silc_buffer_pull(client_id_list, SILC_ID_CLIENT_LEN);
+    silc_free(id_string);
+  }
+  silc_buffer_push(client_id_list, 
+		   client_id_list->data - client_id_list->head);
+
+  /* Send reply */
+  packet = silc_command_encode_reply_payload_va(SILC_COMMAND_NAMES,
+						SILC_STATUS_OK, 3,
+						2, tmp, SILC_ID_CHANNEL_LEN,
+						3, name_list, 
+						strlen(name_list),
+						4, client_id_list->data,
+						client_id_list->len);
+  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
+			  packet->data, packet->len, FALSE);
+    
+  silc_buffer_free(packet);
   silc_free(name_list);
+  silc_buffer_free(client_id_list);
   silc_free(id);
 
  out:
