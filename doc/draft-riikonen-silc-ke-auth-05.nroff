@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet-Draft
-.ds RH XXX
+.ds RH 15 May 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-ke-auth-05.txt                      XXX
-Expires: XXX
+draft-riikonen-silc-ke-auth-05.txt                           15 May 2002
+Expires: 15 November 2002
 
 .in 3
 
@@ -81,7 +81,7 @@ Table of Contents
       2.1.2 Key Exchange Payload ................................  8
   2.2 Key Exchange Procedure .................................... 10
   2.3 Processing the Key Material ............................... 12
-  2.4 SILC Key Exchange Groups .................................. 13
+  2.4 SILC Key Exchange Groups .................................. 14
       2.4.1 diffie-hellman-group1 ............................... 14
       2.4.2 diffie-hellman-group2 ............................... 14
   2.5 Key Exchange Status Types ................................. 15
@@ -89,10 +89,10 @@ Table of Contents
   3.1 Connection Auth Payload ................................... 18
   3.2 Connection Authentication Types ........................... 19
       3.2.1 Passphrase Authentication ........................... 19
-      3.2.2 Public Key Authentication ........................... 19
+      3.2.2 Public Key Authentication ........................... 20
   3.3 Connection Authentication Status Types .................... 20
-4 Security Considerations ....................................... 20
-5 References .................................................... 20
+4 Security Considerations ....................................... 21
+5 References .................................................... 21
 6 Author's Address .............................................. 22
 
 
@@ -121,7 +121,7 @@ and the OAKLEY Key Determination protocol.
 The SILC Connection Authentication protocol provides user level
 authentication used when creating connections in SILC network.  The
 protocol is transparent to the authentication data which means that it
-can be used to authenticate the user with, for example, pass phrase
+can be used to authenticate the user with, for example, passphrase
 (pre-shared- secret) or public key (and certificate).
 
 The basis of secure SILC session requires strong and secure key exchange
@@ -223,7 +223,7 @@ returned to the original sender by the responder.
 
 Following diagram represents the Key Exchange Start Payload.  The lists
 mentioned below are always comma (`,') separated and the list MUST NOT
-include spaces (` ').
+include white spaces (` ').
 
 
 .in 5
@@ -410,7 +410,7 @@ flag may be omitted.  However, if the connection authentication protocol
 for the connecting entity is not based on public key authentication (it
 is based on passphrase) then the Mutual Authentication flag SHOULD be 
 enabled.  This way the connecting entity has to provide proof of
-posession of the private key for the public key it will provide in
+possession of the private key for the public key it will provide in
 SILC Key Exchange protocol.
 
 When performing re-key with PFS selected this is the only payload that
@@ -728,6 +728,9 @@ This group was taken from the OAKLEY specification.
 The length of this group is 1536 bits.  This is OPTIONAL group.
 The prime is 2^1536 - 2^1472 - 1 + 2^64 * { [2^1406 pi] + 741804 }.
 
+
+
+
 Its decimal value is
 
 .in 6
@@ -984,6 +987,7 @@ possible to approximate the length of the password from the encrypted
 packet.
 
 
+
 .ti 0
 3.2.2 Public Key Authentication
 
@@ -1026,8 +1030,6 @@ SILC_AUTH_STATUS_OK type MUST be sent in SILC_PACKET_FAILURE packet.
 The length of status is 32 bits (4 bytes).  The following status types
 are defined:
 
-
-
 0   SILC_AUTH_OK
 
     Protocol was executed successfully.
@@ -1038,6 +1040,8 @@ are defined:
     Authentication failed.
 
 
+
+
 .ti 0
 4 Security Considerations
 
@@ -1046,6 +1050,7 @@ considerations permeate the specification.  Common security considerations
 such as keeping private keys truly private and using adequate lengths for 
 symmetric and asymmetric keys must be followed in order to maintain the   
 security of this protocol.
+
 
 
 .ti 0
@@ -1121,10 +1126,10 @@ security of this protocol.
 
 .nf
 Pekka Riikonen
-Snellmanninkatu 34 A 15
+Snellmaninkatu 34 A 15
 70100 Kuopio
 Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 15 November 2002

@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 15 May 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-05.txt                           XXX
-Expires: XXX
+draft-riikonen-silc-pp-05.txt                                15 May 2002
+Expires: 15 November 2002
 
 .in 3
 
@@ -75,49 +75,49 @@ Table of Contents
 2 SILC Packet Protocol ..........................................  4
   2.1 SILC Packet ...............................................  4
   2.2 SILC Packet Header ........................................  5
-  2.3 SILC Packet Types .........................................  7
-      2.3.1 SILC Packet Payloads ................................ 16
-      2.3.2 Generic payloads .................................... 16
+  2.3 SILC Packet Types .........................................  8
+      2.3.1 SILC Packet Payloads ................................ 17
+      2.3.2 Generic payloads .................................... 17
             2.3.2.1 ID Payload .................................. 17
             2.3.2.2 Argument Payload ............................ 18
-            2.3.2.3 Channel Payload ............................. 18
-            2.3.2.4 Public Key Payload .......................... 19
+            2.3.2.3 Channel Payload ............................. 19
+            2.3.2.4 Public Key Payload .......................... 20
       2.3.3 Disconnect Payload .................................. 20
       2.3.4 Success Payload ..................................... 21
-      2.3.5 Failure Payload ..................................... 21
+      2.3.5 Failure Payload ..................................... 22
       2.3.6 Reject Payload ...................................... 22
-      2.3.7 Notify Payload ...................................... 22
-      2.3.8 Error Payload ....................................... 28
-      2.3.9 Channel Message Payload ............................. 29
-      2.3.10 Channel Key Payload ................................ 32
-      2.3.11 Private Message Payload ............................ 34
-      2.3.12 Private Message Key Payload ........................ 35
-      2.3.13 Command Payload .................................... 37
-      2.3.14 Command Reply Payload .............................. 38
-      2.3.15 Connection Auth Request Payload .................... 38
-      2.3.16 New ID Payload ..................................... 39
-      2.3.17 New Client Payload ................................. 40
-      2.3.18 New Server Payload ................................. 41
-      2.3.19 New Channel Payload ................................ 42
-      2.3.20 Key Agreement Payload .............................. 43
-      2.3.21 Resume Router Payload .............................. 44
-      2.3.22 File Transfer Payload .............................. 44
-      2.3.23 Resume Client Payload .............................. XXXXXX
-  2.4 SILC ID Types ............................................. 46
-  2.5 Packet Encryption And Decryption .......................... 46
-      2.5.1 Normal Packet Encryption And Decryption ............. 46
-      2.5.2 Channel Message Encryption And Decryption ........... 47
-      2.5.3 Private Message Encryption And Decryption ........... 48
-  2.6 Packet MAC Generation ..................................... 48
-  2.7 Packet Padding Generation ................................. 49
-  2.8 Packet Compression ........................................ 50
-  2.9 Packet Sending ............................................ 50
-  2.10 Packet Reception ......................................... 51
-  2.11 Packet Routing ........................................... 51
-  2.12 Packet Broadcasting ...................................... 52
-3 Security Considerations ....................................... 53
-4 References .................................................... 53
-5 Author's Address .............................................. 54
+      2.3.7 Notify Payload ...................................... 23
+      2.3.8 Error Payload ....................................... 31
+      2.3.9 Channel Message Payload ............................. 31
+      2.3.10 Channel Key Payload ................................ 35
+      2.3.11 Private Message Payload ............................ 36
+      2.3.12 Private Message Key Payload ........................ 38
+      2.3.13 Command Payload .................................... 39
+      2.3.14 Command Reply Payload .............................. 40
+      2.3.15 Connection Auth Request Payload .................... 40
+      2.3.16 New ID Payload ..................................... 42
+      2.3.17 New Client Payload ................................. 42
+      2.3.18 New Server Payload ................................. 43
+      2.3.19 New Channel Payload ................................ 44
+      2.3.20 Key Agreement Payload .............................. 45
+      2.3.21 Resume Router Payload .............................. 46
+      2.3.22 File Transfer Payload .............................. 46
+      2.3.23 Resume Client Payload .............................. 48
+  2.4 SILC ID Types ............................................. 49
+  2.5 Packet Encryption And Decryption .......................... 49
+      2.5.1 Normal Packet Encryption And Decryption ............. 50
+      2.5.2 Channel Message Encryption And Decryption ........... 50
+      2.5.3 Private Message Encryption And Decryption ........... 51
+  2.6 Packet MAC Generation ..................................... 52
+  2.7 Packet Padding Generation ................................. 52
+  2.8 Packet Compression ........................................ 53
+  2.9 Packet Sending ............................................ 53
+  2.10 Packet Reception ......................................... 54
+  2.11 Packet Routing ........................................... 54
+  2.12 Packet Broadcasting ...................................... 55
+3 Security Considerations ....................................... 56
+4 References .................................................... 56
+5 Author's Address .............................................. 58
 
 .ti 0
 List of Figures
@@ -160,7 +160,7 @@ the contents of the packets.  The protocol provides secure binary packet
 protocol that assures that the contents of the packets are secured and
 authenticated.  The packet protocol is designed to be compact to avoid
 unnecessary overhead as much as possible.  This makes the SILC suitable
-also in environment of low bandwith requirements such as mobile networks.
+also in environment of low bandwidth requirements such as mobile networks.
 All packet payloads can also be compressed to further reduce the size
 of the packets.
 
@@ -335,7 +335,7 @@ o Flags (1 byte) - Indicates flags to be used in packet
        Marks that the payload of the packet is compressed.
        The sender of the packet marks this flag when it
        compresses the payload, and any server or router
-       en route to the receipient MUST NOT unset this flag.
+       en route to the recipient MUST NOT unset this flag.
        See section 2.8 Packet Compression for description of
        packet compressing.
 
@@ -470,6 +470,7 @@ List of SILC Packet types are defined as follows.
           distributed to all clients on the channel.
 
           Payload of the packet:  See section 2.3.7 Notify Payload.
+
 
 
      6    SILC_PACKET_ERROR
@@ -761,6 +762,8 @@ List of SILC Packet types are defined as follows.
           Payload of the packet:  See section 2.3.20 Key Agreement Payload
 
 
+
+
      26   SILC_PACKET_RESUME_ROUTER
 
           This packet is used during backup router protocol when the 
@@ -812,8 +815,6 @@ List of SILC Packet types are defined as follows.
           not be defined by this document.
 
 
-
-
      255  SILC_PACKET_MAX
 
           This type is reserved for future extensions and currently it 
@@ -858,6 +859,11 @@ thus this payload provides a way to send variable length ID's.
 
 The following diagram represents the ID Payload.
 
+
+
+
+
+
 .in 5
 .nf
                      1                   2                   3
@@ -895,12 +901,6 @@ associated with a packet MUST be indicated by the packet payload which
 needs the arguments.  Argument Payloads MUST always reside right after
 the packet payload needing the arguments.  Incorrect amount of argument
 payloads MUST cause rejection of the packet.
-
-
-
-
-
-
 
 The following diagram represents the Argument Payload.
 
@@ -945,17 +945,6 @@ Generic Channel Payload may be used to send information about channel,
 its name, the Channel ID and a mode.
 
 The following diagram represents the Channel Payload.
-
-
-
-
-
-
-
-
-
-
-
 
 .in 5
 .nf
@@ -1227,6 +1216,8 @@ Note that all ID's sent in arguments are sent inside ID Payload.  Also
 note that all passphrases that may be sent inside arguments MUST be
 UTF-8 [RFC2279] encoded.
 
+
+
 .in 6
 0     SILC_NOTIFY_TYPE_NONE
 
@@ -1323,6 +1314,8 @@ UTF-8 [RFC2279] encoded.
       usually is Client ID but it can be Server ID and Channel ID as well.
 
 
+
+
 6     SILC_NOTIFY_TYPE_NICK_CHANGE
 
       Sent when client changes nick on a channel.  The server MUST
@@ -1369,6 +1362,8 @@ UTF-8 [RFC2279] encoded.
       server in the network.
 
 
+
+
 8     SILC_NOTIFY_TYPE_CUMODE_CHANGE
 
       Sent when user mode on channel has changed.  This type MUST be
@@ -1413,6 +1408,8 @@ UTF-8 [RFC2279] encoded.
 
       The <Old Channel ID> is the channel's old ID and the <New
       Channel ID> is the new one that MUST replace the old one.
+
+
 
 
 11    SILC_NOTIFY_TYPE_SERVER_SIGNOFF
@@ -1552,11 +1549,13 @@ message types.
 Router server which receives SILC_NOTIFY_TYPE_SIGNOFF, 
 SILC_NOTIFY_TYPE_SERVER_SIGNOFF, SILC_NOTIFY_TYPE_KILLED,
 SILC_NOTIFY_TYPE_NICK_CHANGE and SILC_NOTIFY_TYPE_UMODE_CHANGE
-MUST chech whether someone in the local cell is watching the nickname
+MUST check whether someone in the local cell is watching the nickname
 the client has, and send the SILC_NOTIFY_TYPE_WATCH notify to the
 watcher, unless the client in case has the SILC_UMODE_REJECT_WATCHING
 user mode set.  If the watcher client and the client that was
 watched is same the notify SHOULD NOT be sent.
+
+
 
 
 .ti 0
@@ -1884,12 +1883,6 @@ packet.  It MUST NOT be sent in any other packet type.  The following
 diagram represents the Private Message Payload.
 
 
-
-
-
-
-
-
 .in 5
 .nf
                      1                   2                   3
@@ -2145,6 +2138,8 @@ o Authentication Method (2 bytes) - Indicates the authentication
 .in 3
 
 
+
+
 .ti 0
 2.3.16 New ID Payload
 
@@ -2204,17 +2199,6 @@ MUST NOT be sent in any other packet type.  The following diagram
 represents the New Client Payload.
 
 
-
-
-
-
-
-
-
-
-
-
-
 .in 5
 .nf
                      1                   2                   3
@@ -2265,8 +2249,6 @@ name of the server that is associated to the Server ID.
 The payload may only be sent with SILC_PACKET_NEW_SERVER packet.  It
 MUST NOT be sent in any other packet type.  The following diagram
 represents the New Server Payload.
-
-
 
 
 
@@ -2506,7 +2488,7 @@ mandatory authentication method is public key authentication.
 Server or router that receives this from the client also sends this,
 without the Authentication Payload, to routers in the network so that
 they know the detached client has resumed.  Refer to the [SILC1] for
-detailed description how the detaching and resuming prodecure is
+detailed description how the detaching and resuming procedure is
 performed.
 
 The payload may only be sent with SILC_PACKET_RESUME CLIENT packet.  It
@@ -2848,7 +2830,7 @@ routed to the primary route (default route).
 However, there are some issues when routing channel messages to group
 of users.  Routers are responsible of routing the channel message to
 other routers, local servers and local clients as well.  Routers MUST
-send the channel message to only one router in the network, preferrably
+send the channel message to only one router in the network, preferably
 to the shortest route to reach the channel users.  The message can be
 routed into either upstream or downstream.  After the message is sent
 to a router in the network it MUST NOT be sent to any other router in
@@ -2996,10 +2978,10 @@ security of this protocol.
 
 .nf
 Pekka Riikonen
-Snellmanninkatu 34 A 15
+Snellmaninkatu 34 A 15
 70100 Kuopio
 Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 15 November 2002

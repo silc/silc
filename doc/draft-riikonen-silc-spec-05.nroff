@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 15 May 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-05.txt                        XXX
-Expires: XXX
+draft-riikonen-silc-spec-05.txt                              15 May 2002
+Expires: 15 November 2002
 
 .in 3
 
@@ -86,49 +86,49 @@ Table of Contents
       3.2.2 Server ID ........................................... 11
       3.2.3 SILC Server Ports ................................... 12
   3.3 Router .................................................... 12
-      3.3.1 Router's Local ID List .............................. 12
+      3.3.1 Router's Local ID List .............................. 13
       3.3.2 Router's Global ID List ............................. 13
       3.3.3 Router's Server ID .................................. 14
   3.4 Channels .................................................. 14
-      3.4.1 Channel ID .......................................... 16
+      3.4.1 Channel ID .......................................... 15
   3.5 Operators ................................................. 16
   3.6 SILC Commands ............................................. 16
   3.7 SILC Packets .............................................. 17
   3.8 Packet Encryption ......................................... 17
-      3.8.1 Determination of the Source and the Destination ..... 17
+      3.8.1 Determination of the Source and the Destination ..... 18
       3.8.2 Client To Client .................................... 18
-      3.8.3 Client To Channel ................................... 19
+      3.8.3 Client To Channel ................................... 20
       3.8.4 Server To Server .................................... 20
   3.9 Key Exchange And Authentication ........................... 20
-      3.9.1 Authentication Payload .............................. 20
-  3.10 Algorithms ............................................... 22
-      3.10.1 Ciphers ............................................ 22
-      3.10.2 Public Key Algorithms .............................. 23
+      3.9.1 Authentication Payload .............................. 21
+  3.10 Algorithms ............................................... 23
+      3.10.1 Ciphers ............................................ 23
+      3.10.2 Public Key Algorithms .............................. 24
       3.10.3 Hash Functions ..................................... 24
-      3.10.4 MAC Algorithms ..................................... 24
+      3.10.4 MAC Algorithms ..................................... 25
       3.10.5 Compression Algorithms ............................. 25
-  3.11 SILC Public Key .......................................... 25
-  3.12 SILC Version Detection ................................... 27
+  3.11 SILC Public Key .......................................... 26
+  3.12 SILC Version Detection ................................... 28
   3.13 Backup Routers ........................................... 28
-      3.13.1 Switching to Backup Router ......................... 29
-      3.13.2 Resuming Primary Router ............................ 30
-      3.13.3 Discussion on Backup Router Scheme ................. 32
-4 SILC Procedures ............................................... 33
-  4.1 Creating Client Connection ................................ 33
-  4.2 Creating Server Connection ................................ 34
-      4.2.1 Announcing Clients, Channels and Servers ............ 35
-  4.3 Joining to a Channel ...................................... 36
-  4.4 Channel Key Generation .................................... 37
-  4.5 Private Message Sending and Reception ..................... 38
-  4.6 Private Message Key Generation ............................ 38
-  4.7 Channel Message Sending and Reception ..................... 39
-  4.8 Session Key Regeneration .................................. 39
-  4.9 Command Sending and Reception ............................. 40
-  4.10 Closing Connection ....................................... 41
-  4.11 Detaching and Resuming a Session ......................... XXXXX
-5 Security Considerations ....................................... 41
-6 References .................................................... 42
-7 Author's Address .............................................. 44
+      3.13.1 Switching to Backup Router ......................... 30
+      3.13.2 Resuming Primary Router ............................ 31
+      3.13.3 Discussion on Backup Router Scheme ................. 33
+4 SILC Procedures ............................................... 34
+  4.1 Creating Client Connection ................................ 34
+  4.2 Creating Server Connection ................................ 35
+      4.2.1 Announcing Clients, Channels and Servers ............ 36
+  4.3 Joining to a Channel ...................................... 37
+  4.4 Channel Key Generation .................................... 38
+  4.5 Private Message Sending and Reception ..................... 39
+  4.6 Private Message Key Generation ............................ 39
+  4.7 Channel Message Sending and Reception ..................... 40
+  4.8 Session Key Regeneration .................................. 40
+  4.9 Command Sending and Reception ............................. 41
+  4.10 Closing Connection ....................................... 42
+  4.11 Detaching and Resuming a Session ......................... 42
+5 Security Considerations ....................................... 44
+6 References .................................................... 45
+7 Author's Address .............................................. 47
 
 
 
@@ -152,7 +152,7 @@ network channel.  SILC is IRC [IRC] like protocol, however, it is
 not equivalent to IRC and does not support IRC.  Some of the SILC's
 features are not found in IRC but in traditional Instant Message (IM)
 protocols.  SILC combines features from both of these chat protocol
-styles, and SILC can be implemeneted as either IRC-like system or
+styles, and SILC can be implemented as either IRC-like system or
 IM-like system.
 
 Strong cryptographic methods are used to protect SILC packets inside
@@ -166,7 +166,7 @@ described in [SILC2] and should be read to fully comprehend this
 document and protocol.  [SILC2] also describes the packet encryption
 and decryption in detail.  The SILC Packet Protocol provides secured
 and authenticated packets, and the protocol is designed to be compact.
-This makes SILC also suitable in environment of low bandwith
+This makes SILC also suitable in environment of low bandwidth
 requirements such as mobile networks.  All packet payloads in SILC
 can be also compressed.
 
@@ -223,11 +223,6 @@ keep global information up to date at all time.
 
 This, on the other hand, leads to cellular like network, where routers 
 are in the center of the cell and servers are connected to the router.
-
-
-
-
-
 
 
 The following diagram represents SILC network topology.
@@ -328,6 +323,9 @@ router routes the message to its primary route.  The following diagram
 represents message sending between cells.
 
 
+
+
+
 .in 16
 .nf
 1 --- S1     S4 --- 5            S2 --- 1
@@ -386,12 +384,6 @@ Every router has their primary route which is a connection to another
 router in the network.  Unless there is only two routers in the network
 must not routers use each other as their primary routes.  The router
 connections in the network must form a ring.
-
-
-
-
-
-
 
 Example with three routers in the network:
 
@@ -1528,7 +1520,7 @@ the first backup router as their primary route.
 Also, if any other router in the network is using the cell's primary
 router as its own primary router, it must also have passive connection
 to the cell's backup router.  It too is prepared to switch to use the
-backup router as its new primary router as soon as the orignal primary
+backup router as its new primary router as soon as the original primary
 router becomes unresponsive.
 
 All of the parties of this protocol knows which one is the backup router
@@ -1568,7 +1560,7 @@ replace the old connection to the primary router with first configured
 backup router.  The backup router usually needs to do local modifications
 to its database in order to update all the information needed to maintain
 working routes.  The backup router must understand that clients that
-were orignated from the primary router are now originated from some of
+were originated from the primary router are now originated from some of
 the existing server connections and must update them accordingly.  It
 must also remove those clients that were owned by the primary router
 since those connections were lost when the primary router became
@@ -1597,7 +1589,7 @@ normal manner defined later in this specification.
 3.13.2 Resuming Primary Router
 
 Usually the primary router is unresponsive only a short period of time
-and it is intended that the original router of the cell will reassume
+and it is intended that the original router of the cell will resume
 its position as primary router when it comes back online.  The backup
 router that is now acting as primary router of the cell must constantly
 try to connect to the original primary router of the cell.  It is
@@ -1703,7 +1695,7 @@ is defined in [SILC2].
 3.13.3 Discussion on Backup Router Scheme
 
 It is clear that this backup router support is not able to handle all
-possible situations arrising in unreliable network environment.  This
+possible situations arising in unreliable network environment.  This
 scheme for example does not handle situation when the router actually
 does not go offline but the network link goes down temporarily.  It would
 require some intelligence to figure out when it is best time to switch
@@ -2006,7 +1998,7 @@ If the sender has received earlier a private message from the receiver
 it should have cached the Client ID from the SILC Packet Header.
 
 If server receives a private message packet which includes invalid
-destionation Client ID the server MUST send SILC_NOTIFY_TYPE_ERROR
+destination Client ID the server MUST send SILC_NOTIFY_TYPE_ERROR
 notify to the client with error status indicating that such Client ID
 does not exist.
 
@@ -2057,11 +2049,11 @@ distribute the message to all clients on the channel by sending the
 channel message destined explicitly to a client on the channel.
 
 If server receives a channel message packet which includes invalid
-destionation Channel ID the server MUST send SILC_NOTIFY_TYPE_ERROR
+destination Channel ID the server MUST send SILC_NOTIFY_TYPE_ERROR
 notify to the sender with error status indicating that such Channel ID
 does not exist.
 
-See the [SILC2] for description of channel messege routing for router
+See the [SILC2] for description of channel message routing for router
 servers, and channel message encryption and decryption process.
 
 
@@ -2266,9 +2258,9 @@ on the security and the integrity of the servers and administrators that
 are running the service.  It is recommended that some form of registration
 is required by the server and router administrator prior acceptance to
 the SILC Network.  Even though, the SILC protocol is secure in a network
-of mutual distrust between clients, servers, routers and adminstrators
+of mutual distrust between clients, servers, routers and administrators
 of the servers, the client should be able to trust the servers they are
-using if they whish to do so.
+using if they wish to do so.
 
 It however must be noted that if the client requires absolute security
 by not trusting any of the servers or routers in the SILC Network, it can
@@ -2278,20 +2270,20 @@ other external means for distributing the keys.  This applies for all
 messages, private messages and channel messages.
 
 It is important to note that SILC, like any other security protocol is
-not full proof system and cannot secure from insecure environment; the
-SILC servers and routers could very well be compromised.  However, to
-provide acceptable level of security and usability for end user the
-protocol use many times session keys or other keys generated by the
-servers to secure the messages.  This is intentional design feature to
-allow ease of use for end user.  This way the network is still usable,
-and remains encrypted even if the external means of distributing the
-keys is not working.  The implementation, however, may like to not
-follow this design feature, and always negotiate the keys outside SILC
-network.  This is acceptable solution and many times recommended.  The
-implementation still must be able to work with the server generated keys.
+not full proof system; the SILC servers and routers could very well be
+compromised.  However, to provide acceptable level of security and
+usability for end user the protocol use many times session keys or other
+keys generated by the servers to secure the messages.  This is
+intentional design feature to allow ease of use for end user.  This way
+the network is still usable, and remains encrypted even if the external
+means of distributing the keys is not working.  The implementation,
+however, may like to not follow this design feature, and always negotiate
+the keys outside SILC network.  This is acceptable solution and many times
+recommended.  The implementation still must be able to work with the
+server generated keys.
 
 If this is unacceptable for the client or end user, the private keys
-negotiatied outside the SILC Network should always be used.  In the end
+negotiated outside the SILC Network should always be used.  In the end
 it is always implementor's choice whether to negotiate private keys by
 default or whether to use the keys generated by the servers.
 
@@ -2377,10 +2369,10 @@ should have a forum to discuss the cell management issues.
 
 .nf
 Pekka Riikonen
-Snellmanninkatu 34 A 15
+Snellmaninkatu 34 A 15
 70100 Kuopio
 Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 15 November 2002

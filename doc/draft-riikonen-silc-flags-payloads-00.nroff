@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 15 May 2002
 .ds CH
 .na
 .hy 0
@@ -16,12 +16,12 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-flags-payloads-00.txt                         XXX
-Expires: XXX
+draft-riikonen-flags-payloads-00.txt                         15 May 2002
+Expires: 15 November 2002
 
 .in 3
 
-.ce 3
+.ce 2
 SILC Message Flag Payloads
 <draft-riikonen-flags-payloads-00.txt>
 
@@ -71,17 +71,17 @@ payloads.
 Table of Contents
 
 .nf
-1 Introduction ..................................................  x
-  1.1 Requirements Terminology ..................................  x
-2 SILC Message Flags ............................................  x
-3 SILC Message Flag Payloads ....................................  x
-  3.1 SILC_MESSAGE_FLAG_REQUEST .................................  x
-  3.2 SILC_MESSAGE_FLAG_REPLY ...................................  x
-  3.3 SILC_MESSAGE_FLAG_SIGNED ..................................  x
-  3.4 SILC_MESSAGE_FLAG_DATA ....................................  x
-4 Security Considerations .......................................  x
-5 References ....................................................  x
-6 Author's Address ..............................................  x
+1 Introduction ..................................................  2
+  1.1 Requirements Terminology ..................................  2
+2 SILC Message Flags ............................................  2
+3 SILC Message Flag Payloads ....................................  3
+  3.1 SILC_MESSAGE_FLAG_REQUEST .................................  3
+  3.2 SILC_MESSAGE_FLAG_REPLY ...................................  3
+  3.3 SILC_MESSAGE_FLAG_SIGNED ..................................  4
+  3.4 SILC_MESSAGE_FLAG_DATA ....................................  4
+4 Security Considerations .......................................  5
+5 References ....................................................  5
+6 Author's Address ..............................................  6
 
 
 .ti 0
@@ -140,7 +140,7 @@ bits, so there is a limited number of flags available.  For this reason a
 flag that defines some generic way of sending any kind of data as a
 message, and that it can be easily interpreted at the receiver's end is
 important.  For this reason the flag SILC_MESSAGE_FLAG_DATA was added to
-the protocol which can represent any data.  This memo desribes how this 
+the protocol which can represent any data.  This memo describe how this 
 flag is used and how the associated payload is constructed and processed.  
 This memo also describes payloads for all the other flags that can have 
 associated payloads.
@@ -295,10 +295,10 @@ support S/MIME may be desired in some implementations.
 6 Author's Address
 
 Pekka Riikonen
-Snellmanninkatu 34 A 15
+Snellmaninkatu 34 A 15
 70100 Kuopio
 Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 15 November 2002

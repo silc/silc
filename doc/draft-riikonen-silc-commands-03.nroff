@@ -308,7 +308,7 @@ List of all defined commands in SILC follows.
         The server also returns client's user mode, idle time, and the
         fingerprint of the client's public key.  The <fingerprint> is the
         binary hash digest of the public key.  The fingerprint MUST NOT
-        be sent if the server has not verified the proof of posession of
+        be sent if the server has not verified the proof of possession of
         the corresponding private key.  Server can do this during the
         SILC Key Exchange protocol.  The <fingerprint> is SHA1 digest.
 
@@ -1182,7 +1182,7 @@ List of all defined commands in SILC follows.
         of a channel.  Modes may be masked together by ORing them thus
         having several modes set.  The <Channel ID> is the ID of the
         target channel.  The client changing channel mode MUST be on
-        the same channel and poses sufficient privileges to be able to
+        the same channel and posses sufficient privileges to be able to
         change the mode.
 
         When the mode is changed SILC_NOTIFY_TYPE_CMODE_CHANGE notify
@@ -1431,7 +1431,7 @@ List of all defined commands in SILC follows.
         The <Channel ID> is the ID of the target channel.  The <mode mask>
         is OR'ed mask of modes.  The <Client ID> is the target client.
         The client changing channel user modes MUST be on the same channel
-        as the target client and poses sufficient privileges to be able to
+        as the target client and posses sufficient privileges to be able to
         change the mode.
 
         When the mode is changed SILC_NOTIFY_TYPE_CUMODE_CHANGE notify
@@ -2373,7 +2373,7 @@ security of this protocol.
 
 .nf
 Pekka Riikonen
-Snellmanninkatu 34 A 15
+Snellmaninkatu 34 A 15
 70100 Kuopio
 Finland
 
