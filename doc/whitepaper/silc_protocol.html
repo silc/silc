@@ -111,8 +111,12 @@ encrypted.  This is the problem of most other chat protocols that provide
 so called plugin encryption.  They are not secure by default but try
 to provide security by applying external security protocol such as PGP
 or SSL.  In these cases the security is achieved usually by encrypting the
-data while key management and other security issues are left out, leaving
-the implementation vulnerable to various security problems.
+data while key management and other security issues may be left out, leaving
+the implementation vulnerable to various security problems.  The other
+problem is also that the external protocols tend to leave the network
+only party secured; usually only two points in the network are secured with
+for example SSL.  While SSL does provide provable security it is not
+enough to provide security for a network as a whole.
 <p>
 
 The network topology is also different to various other chat protocol,
