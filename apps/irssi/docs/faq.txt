@@ -1,0 +1,36 @@
+Q: Why doesn't irssi display colors even when ircii etc. displays them?
+A: Irssi uses curses, ircii and others don't (no, not even if ldd says they
+   use it). Curses decides if terminal supports colors based on the TERM
+   variable, so changing it should help. Some values to try when running
+   in xterm are: xterm, xterm-color and color_xterm.
+
+Q: Why does irssi crash when pressing Ctrl-4?
+A: Most unices are usually configured to send SIGQUIT to active process when
+   Ctrl-\ is pressed. Some terminals also treat Ctrl-4 and Ctrl-\ equally, so
+   Irssi will die to SIGQUIT. Two ways to fix this: change it to something 
+   else with stty (stty quit undef) or in irssi /SET ignore_signals quit
+
+Q: Where's the GUI version?
+A: Read http://irssi.org/?page=about
+
+Q: How do I easily write text to channel that starts with '/' character?
+A: / /text
+
+Q: I connected to some server which isn't responding but now irssi tries
+   to connect back to it all the time! How can I stop it?
+A: Two ways. The "good way" to do it is with /DISCONNECT. Check the server
+   tags first with /SERVER without giving it any parameters, reconnections
+   are those that have tag starting with "recon" text. So most probably you're
+   going to do /DISCONNECT recon-1. The other way is to remove all the
+   reconnections with /RMRECONNS, easier but may remove some connections
+   you actually wanted to reconnect (if you used multiple servers..).
+
+Q: Why does irssi say "Irssi: Channel not fully synchronized yet, try again
+   after a while" when I try to use /BAN etc?
+A: IRC server you use is coded badly, do something like this:
+     /IRCNET ADD -querychans 1 quakenet
+     /SERVER ADD -ircnet quakenet irc.quakenet.org
+     /SAVE
+   After that /CONNECT quakenet should work properly (NOTE: when you do this
+   the first time you'll have to /DISCONNECT and /CONNECT again, /SERVER
+   doesn't work correctly).
