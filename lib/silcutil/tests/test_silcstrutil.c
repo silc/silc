@@ -78,7 +78,7 @@ int main(int argc, char **argv)
   utf8failc(29);  utf8failc(30);
 
   /* LDAP DN simple test */
-  s1 = "#&?*Pekka, Riikonen, <foobar@foobar.com>\xc4\x8d ";
+  s1 = "#&?*Pekka, \\Riikonen, <foobar@foobar.com>\xc4\x8d\\ ";
   SILC_LOG_DEBUG(("s1 = %s", s1));
 
   /* To LDAP DN */

@@ -75,15 +75,17 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
 
 	  i += 2;
 	  enclen++;
+	  continue;
 	}
-      } else {
-	if (utf8) {
-	  if (enclen + 1 > utf8_size)
-	    return 0;
-	  utf8[enclen] = bin[i];
-	}
-	enclen++;
+	i++;
       }
+
+      if (utf8) {
+	if (enclen + 1 > utf8_size)
+	  return 0;
+	utf8[enclen] = bin[i];
+      }
+      enclen++;
     }
 
     return enclen;
