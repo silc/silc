@@ -495,6 +495,10 @@ SOURCE=..\..\lib\silcutil\silcthread.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silctypes.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silcutil.h
 # End Source File
 # End Group

@@ -551,3 +551,5 @@ EXPORTS
 	silc_hash_table_list_reset @ 849 ;
 	silc_debug_hexdump @ 850 DATA ;
 	silc_memdup @ 851 ;
+	silc_command_get_status @ 852 ;
+
