@@ -32,8 +32,6 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o Get rid of VERSION, PACKAGE and other autoconf stuff from silcdefs.h.
-
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but
    is not actually async currently (Fix this to 0.9.x).
