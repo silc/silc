@@ -25,6 +25,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/07 06:55:59  priikone
+ * 	Added SILC style public key support and made server to use
+ * 	it at all time.
+ *
  * Revision 1.5  2000/07/06 13:18:07  priikone
  * 	Check for NULL in client_on_channel.
  *
@@ -166,44 +170,47 @@ int silc_server_init(SilcServer server)
     unsigned char *public_key;
     unsigned char *private_key;
     unsigned int pk_len, prv_len;
-    SilcPublicKey pub_key;
-    SilcPrivateKey prv_key;
+    struct stat st;
 
-    if (silc_pkcs_alloc("rsa", &server->public_key) == FALSE) {
-      SILC_LOG_ERROR(("Could not create RSA key pair"));
-      goto err0;
+    if (stat("pubkey.pub", &st) < 0 && stat("privkey.prv", &st) < 0) {
+
+      if (silc_pkcs_alloc("rsa", &server->pkcs) == FALSE) {
+	SILC_LOG_ERROR(("Could not create RSA key pair"));
+	goto err0;
+      }
+      
+      if (server->pkcs->pkcs->init(server->pkcs->context, 
+				   1024, server->rng) == FALSE) {
+	SILC_LOG_ERROR(("Could not generate RSA key pair"));
+	goto err0;
+      }
+      
+      public_key = server->pkcs->pkcs->get_public_key(server->pkcs->context,
+						      &pk_len);
+      private_key = server->pkcs->pkcs->get_private_key(server->pkcs->context,
+							&prv_len);
+      
+      SILC_LOG_HEXDUMP(("public key"), public_key, pk_len);
+      SILC_LOG_HEXDUMP(("private key"), private_key, prv_len);
+      
+      server->public_key = 
+	silc_pkcs_public_key_alloc("rsa", "UN=root, HN=dummy",
+				   public_key, pk_len);
+      server->private_key = 
+	silc_pkcs_private_key_alloc("rsa", private_key, prv_len);
+      
+      /* XXX Save keys */
+      silc_pkcs_save_public_key("pubkey.pub", server->public_key);
+      silc_pkcs_save_private_key("privkey.prv", server->private_key, NULL);
+
+      memset(public_key, 0, pk_len);
+      memset(private_key, 0, prv_len);
+      silc_free(public_key);
+      silc_free(private_key);
+    } else {
+      silc_pkcs_load_public_key("pubkey.pub", &server->public_key);
+      silc_pkcs_load_private_key("privkey.prv", &server->private_key);
     }
-
-    if (server->public_key->pkcs->init(server->public_key->context, 
-				       1024, server->rng) == FALSE) {
-      SILC_LOG_ERROR(("Could not generate RSA key pair"));
-      goto err0;
-    }
-
-    public_key = 
-      server->public_key->pkcs->get_public_key(server->public_key->context,
-					       &pk_len);
-    private_key = 
-      server->public_key->pkcs->get_private_key(server->public_key->context,
-						&prv_len);
-
-    SILC_LOG_HEXDUMP(("public key"), public_key, pk_len);
-    SILC_LOG_HEXDUMP(("private key"), private_key, prv_len);
-
-    pub_key = silc_pkcs_public_key_alloc("rsa", "UN=root, HN=dummy",
-					 public_key, pk_len);
-    prv_key = silc_pkcs_private_key_alloc("rsa", private_key, prv_len);
-
-    /* XXX Save keys */
-    silc_pkcs_save_public_key("pubkey.pub", pub_key);
-    silc_pkcs_save_private_key("privkey.prv", prv_key, NULL);
-
-    memset(public_key, 0, pk_len);
-    memset(private_key, 0, prv_len);
-    silc_free(public_key);
-    silc_free(private_key);
-    silc_pkcs_public_key_free(pub_key);
-    silc_pkcs_private_key_free(prv_key);
   }
 
   /* Create a listening server. Note that our server can listen on
@@ -416,13 +423,13 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       newsocket->protocol = protocol;
       
       /* Register a timeout task that will be executed if the protocol
-	 is not executed within 15 seconds. For now, this is a hard coded 
-	 limit. After 15 secs the connection will be closed if the key 
+	 is not executed within 60 seconds. For now, this is a hard coded 
+	 limit. After 60 secs the connection will be closed if the key 
 	 exchange protocol has not been executed. */
       proto_ctx->timeout_task = 
 	silc_task_register(server->timeout_queue, sock, 
 			   silc_server_timeout_remote,
-			   context, 15, 0,
+			   context, 60, 0,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 
@@ -488,13 +495,13 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       newsocket->protocol = protocol;
 
       /* Register a timeout task that will be executed if the protocol
-	 is not executed within 15 seconds. For now, this is a hard coded 
-	 limit. After 15 secs the connection will be closed if the key 
+	 is not executed within 60 seconds. For now, this is a hard coded 
+	 limit. After 60 secs the connection will be closed if the key 
 	 exchange protocol has not been executed. */
       proto_ctx->timeout_task = 
 	silc_task_register(server->timeout_queue, sock, 
 			   silc_server_timeout_remote,
-			   context, 15, 0,
+			   context, 60, 0,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 
@@ -795,13 +802,13 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
 		      silc_server_accept_new_connection_second);
 
   /* Register a timeout task that will be executed if the connector
-     will not start the key exchange protocol within 15 seconds. For
-     now, this is a hard coded limit. After 15 secs the connection will
+     will not start the key exchange protocol within 60 seconds. For
+     now, this is a hard coded limit. After 60 secs the connection will
      be closed if the key exchange protocol has not been started. */
   proto_ctx->timeout_task = 
     silc_task_register(server->timeout_queue, newsocket->sock, 
 		       silc_server_timeout_remote,
-		       context, 15, 0,
+		       context, 60, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_LOW);
 

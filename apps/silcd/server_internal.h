@@ -60,7 +60,9 @@ typedef struct SilcServerObjectStruct {
   SilcCipher none_cipher;
 
   /* Server public key */
-  SilcPKCS public_key;
+  SilcPKCS pkcs;
+  SilcPublicKey public_key;
+  SilcPrivateKey private_key;
 
   /* Hash objects for general hashing */
   SilcHash md5hash;

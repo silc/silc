@@ -23,6 +23,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/07 06:55:59  priikone
+ * 	Added SILC style public key support and made server to use
+ * 	it at all time.
+ *
  * Revision 1.3  2000/07/06 07:15:31  priikone
  * 	Cleaner code fro password and public key authentication.
  * 	Deprecated old `channel_auth' protocol.
@@ -290,34 +294,20 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
        * Finish protocol
        */
       if (ctx->responder == TRUE) {
-	unsigned char *pk, *prv;
-	unsigned int pk_len, prv_len;
-
-	/* Get our public key to be sent to the initiator */
-	pk = silc_pkcs_get_public_key(server->public_key, &pk_len);
-
-	/* Get out private key to sign some data. */
-	prv = silc_pkcs_get_private_key(server->public_key, &prv_len);
-
 	/* This creates the key exchange material and sends our
 	   public parts to the initiator inside Key Exchange 2 Payload. */
 	status = 
 	  silc_ske_responder_finish(ctx->ske, 
-				    pk, pk_len, prv, prv_len,
+				    server->public_key, server->private_key,
 				    SILC_SKE_PK_TYPE_SILC,
 				    silc_server_protocol_ke_send_packet,
 				    context);
-
-	memset(pk, 0, pk_len);
-	memset(prv, 0, prv_len);
-	silc_free(pk);
-	silc_free(prv);
       } else {
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. */
 	status = 
 	  silc_ske_initiator_finish(ctx->ske,
-				    ctx->packet, NULL, NULL);
+				    ctx->packet, NULL, NULL, NULL, NULL);
       }
 
       if (status != SILC_SKE_STATUS_OK) {
