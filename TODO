@@ -18,17 +18,11 @@ TODO for SILC Server 1.0
    - test all resume error cases for primary router
    - test communication
 
-   NOTIFYS
-
-   Problems:
-
-   - INVITE (and probably BAN) list notification from backup to primary
-     after resuming does not work.  Primary does not get the list.
-
-   Works:
-
+   NOTIFYS (works)
+   
    JOIN, TOPIC_SET, CMODE_CHANGE, CUMODE_CHANGE, CHANNEL_CHANGE,
-   UMODE_CHANGE (rest of the notifys does not apply, no testing required)
+   UMODE_CHANGE, INVITE, BAN (rest of the notifys does not apply, no 
+   testing required)
 
  o Testing
 
