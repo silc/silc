@@ -25,6 +25,7 @@
 #define SILC_PROTOCOL_CLIENT_NONE               0
 #define SILC_PROTOCOL_CLIENT_CONNECTION_AUTH    1
 #define SILC_PROTOCOL_CLIENT_KEY_EXCHANGE       2
+#define SILC_PROTOCOL_CLIENT_REKEY              3
 /* #define SILC_PROTOCOL_CLIENT_MAX             255 */
 
 /* Internal context for key exchange protocol */
@@ -72,6 +73,18 @@ typedef struct {
   SilcTask timeout_task;
 } SilcClientConnAuthInternalContext;
 
+/* Internal context for the rekey protocol */
+typedef struct {
+  void *client;
+  void *context;
+  SilcSocketConnection sock;
+  bool responder;		    /* TRUE if we are receiving party */
+  bool pfs;			    /* TRUE if PFS is to be used */
+  SilcSKE ske;			    /* Defined if PFS is used */
+  SilcSKEKeyMaterial *keymat;	    /* Defined if PFS is used */
+  SilcPacketContext *packet;
+} SilcClientRekeyInternalContext;
+
 /* Prototypes */
 void silc_client_protocols_register(void);
 void silc_client_protocols_unregister(void);
@@ -90,6 +103,12 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      SilcCipher cipher,
 				      SilcPKCS pkcs,
 				      SilcHash hash,
-				      SilcHmac hmac);
+				      SilcHmac hmac,
+				      SilcSKEDiffieHellmanGroup group);
+void silc_client_protocol_rekey_generate(SilcClient client,
+					 SilcClientRekeyInternalContext *ctx);
+void 
+silc_client_protocol_rekey_generate_pfs(SilcClient client,
+					SilcClientRekeyInternalContext *ctx);
 
 #endif

@@ -27,6 +27,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_second);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_final);
 SILC_TASK_CALLBACK(silc_client_packet_parse_real);
+SILC_TASK_CALLBACK(silc_client_rekey_callback);
+SILC_TASK_CALLBACK(silc_client_rekey_final);
 
 static void silc_client_packet_parse(SilcPacketParserContext *parser_context);
 static void silc_client_packet_parse_type(SilcClient client, 
@@ -448,7 +450,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
 				   ctx->ske->prop->cipher,
 				   ctx->ske->prop->pkcs,
 				   ctx->ske->prop->hash,
-				   ctx->ske->prop->hmac);
+				   ctx->ske->prop->hmac,
+				   ctx->ske->prop->group);
   silc_ske_free_key_material(ctx->keymat);
 
   /* Allocate internal context for the authentication protocol. This
@@ -552,6 +555,14 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->remote_id = ctx->dest_id;
   conn->remote_id_data = silc_id_id2str(ctx->dest_id, SILC_ID_SERVER);
   conn->remote_id_data_len = SILC_ID_SERVER_LEN;
+
+  /* Register re-key timeout */
+  conn->rekey->timeout = 3600; /* XXX hardcoded */
+  conn->rekey->context = (void *)client;
+  silc_task_register(client->timeout_queue, conn->sock->sock, 
+		     silc_client_rekey_callback,
+		     (void *)conn->sock, conn->rekey->timeout, 0,
+		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   silc_task_unregister_by_callback(client->timeout_queue,
 				   silc_client_failure_callback);
@@ -879,23 +890,39 @@ void silc_client_packet_parse_type(SilcClient client,
 
   case SILC_PACKET_KEY_EXCHANGE_1:
     if (sock->protocol && sock->protocol->protocol && 
-	sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
-      SilcClientKEInternalContext *proto_ctx = 
-	(SilcClientKEInternalContext *)sock->protocol->context;
+	(sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE ||
+	 sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY)) {
 
-      if (proto_ctx->packet)
-	silc_packet_context_free(proto_ctx->packet);
+      if (sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY) {
+	SilcClientRekeyInternalContext *proto_ctx = 
+	  (SilcClientRekeyInternalContext *)sock->protocol->context;
+	
+	if (proto_ctx->packet)
+	  silc_packet_context_free(proto_ctx->packet);
+	
+	proto_ctx->packet = silc_packet_context_dup(packet);
 
-      proto_ctx->packet = silc_packet_context_dup(packet);
-      proto_ctx->dest_id_type = packet->src_id_type;
-      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
-					  packet->src_id_type);
-      if (!proto_ctx->dest_id)
-	break;
-
-      /* Let the protocol handle the packet */
-      sock->protocol->execute(client->timeout_queue, 0,
-			      sock->protocol, sock->sock, 0, 0);
+	/* Let the protocol handle the packet */
+	sock->protocol->execute(client->timeout_queue, 0, 
+				sock->protocol, sock->sock, 0, 0);
+      } else {
+	SilcClientKEInternalContext *proto_ctx = 
+	  (SilcClientKEInternalContext *)sock->protocol->context;
+	
+	if (proto_ctx->packet)
+	  silc_packet_context_free(proto_ctx->packet);
+	
+	proto_ctx->packet = silc_packet_context_dup(packet);
+	proto_ctx->dest_id_type = packet->src_id_type;
+	proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+					    packet->src_id_type);
+	if (!proto_ctx->dest_id)
+	  break;
+	
+	/* Let the protocol handle the packet */
+	sock->protocol->execute(client->timeout_queue, 0,
+				sock->protocol, sock->sock, 0, 0);
+      }
     } else {
       SILC_LOG_ERROR(("Received Key Exchange 1 packet but no key exchange "
 		      "protocol active, packet dropped."));
@@ -903,23 +930,39 @@ void silc_client_packet_parse_type(SilcClient client,
     break;
   case SILC_PACKET_KEY_EXCHANGE_2:
     if (sock->protocol && sock->protocol->protocol && 
-	sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE) {
-      SilcClientKEInternalContext *proto_ctx = 
-	(SilcClientKEInternalContext *)sock->protocol->context;
+	(sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE ||
+	 sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY)) {
 
-      if (proto_ctx->packet)
-	silc_packet_context_free(proto_ctx->packet);
+      if (sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY) {
+	SilcClientRekeyInternalContext *proto_ctx = 
+	  (SilcClientRekeyInternalContext *)sock->protocol->context;
+	
+	if (proto_ctx->packet)
+	  silc_packet_context_free(proto_ctx->packet);
+	
+	proto_ctx->packet = silc_packet_context_dup(packet);
 
-      proto_ctx->packet = silc_packet_context_dup(packet);
-      proto_ctx->dest_id_type = packet->src_id_type;
-      proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
-					  packet->src_id_type);
-      if (!proto_ctx->dest_id)
-	break;
-
-      /* Let the protocol handle the packet */
-      sock->protocol->execute(client->timeout_queue, 0,
-			      sock->protocol, sock->sock, 0, 0);
+	/* Let the protocol handle the packet */
+	sock->protocol->execute(client->timeout_queue, 0, 
+				sock->protocol, sock->sock, 0, 0);
+      } else {
+	SilcClientKEInternalContext *proto_ctx = 
+	  (SilcClientKEInternalContext *)sock->protocol->context;
+	
+	if (proto_ctx->packet)
+	  silc_packet_context_free(proto_ctx->packet);
+	
+	proto_ctx->packet = silc_packet_context_dup(packet);
+	proto_ctx->dest_id_type = packet->src_id_type;
+	proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
+					    packet->src_id_type);
+	if (!proto_ctx->dest_id)
+	  break;
+	
+	/* Let the protocol handle the packet */
+	sock->protocol->execute(client->timeout_queue, 0,
+				sock->protocol, sock->sock, 0, 0);
+      }
     } else {
       SILC_LOG_ERROR(("Received Key Exchange 2 packet but no key exchange "
 		      "protocol active, packet dropped."));
@@ -960,6 +1003,34 @@ void silc_client_packet_parse_type(SilcClient client,
      */
     SILC_LOG_DEBUG(("Key agreement packet"));
     silc_client_key_agreement(client, sock, packet);
+    break;
+
+  case SILC_PACKET_REKEY:
+    SILC_LOG_DEBUG(("Re-key packet"));
+    /* We ignore this for now */
+    break;
+
+  case SILC_PACKET_REKEY_DONE:
+    SILC_LOG_DEBUG(("Re-key done packet"));
+
+    if (sock->protocol && sock->protocol->protocol && 
+	sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY) {
+
+      SilcClientRekeyInternalContext *proto_ctx = 
+	(SilcClientRekeyInternalContext *)sock->protocol->context;
+      
+      if (proto_ctx->packet)
+	silc_packet_context_free(proto_ctx->packet);
+      
+      proto_ctx->packet = silc_packet_context_dup(packet);
+      
+      /* Let the protocol handle the packet */
+      sock->protocol->execute(client->timeout_queue, 0, 
+			      sock->protocol, sock->sock, 0, 100000);
+    } else {
+      SILC_LOG_ERROR(("Received Re-key done packet but no re-key "
+		      "protocol active, packet dropped."));
+    }
     break;
 
   default:
@@ -1109,12 +1180,10 @@ void silc_client_close_connection(SilcClient client,
       silc_cipher_free(conn->receive_key);
     if (conn->hmac)
       silc_hmac_free(conn->hmac);
-    if (conn->hmac_key) {
-      memset(conn->hmac_key, 0, conn->hmac_key_len);
-      silc_free(conn->hmac_key);
-    }
     if (conn->pending_commands)
       silc_dlist_uninit(conn->pending_commands);
+    if (conn->rekey)
+      silc_free(conn->rekey);
 
     conn->sock = NULL;
     conn->remote_port = 0;
@@ -1122,13 +1191,12 @@ void silc_client_close_connection(SilcClient client,
     conn->send_key = NULL;
     conn->receive_key = NULL;
     conn->hmac = NULL;
-    conn->hmac_key = NULL;
-    conn->hmac_key_len = 0;
     conn->local_id = NULL;
     conn->local_id_data = NULL;
     conn->remote_host = NULL;
     conn->current_channel = NULL;
     conn->pending_commands = NULL;
+    conn->rekey = NULL;
 
     silc_client_del_connection(client, conn);
   }
@@ -1485,4 +1553,89 @@ void silc_client_process_failure(SilcClient client,
 		       silc_client_failure_callback, (void *)f, 5, 0,
 		       SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
   }
+}
+
+/* A timeout callback for the re-key. We will be the initiator of the
+   re-key protocol. */
+
+SILC_TASK_CALLBACK(silc_client_rekey_callback)
+{
+  SilcSocketConnection sock = (SilcSocketConnection)context;
+  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  SilcClient client = (SilcClient)conn->rekey->context;
+  SilcProtocol protocol;
+  SilcClientRekeyInternalContext *proto_ctx;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Allocate internal protocol context. This is sent as context
+     to the protocol. */
+  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+  proto_ctx->client = (void *)client;
+  proto_ctx->sock = sock;
+  proto_ctx->responder = FALSE;
+  proto_ctx->pfs = conn->rekey->pfs;
+      
+  /* Perform rekey protocol. Will call the final callback after the
+     protocol is over. */
+  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_REKEY, 
+		      &protocol, proto_ctx, silc_client_rekey_final);
+  sock->protocol = protocol;
+      
+  /* Run the protocol */
+  protocol->execute(client->timeout_queue, 0, protocol, 
+		    sock->sock, 0, 0);
+
+  /* Re-register re-key timeout */
+  silc_task_register(client->timeout_queue, sock->sock, 
+		     silc_client_rekey_callback,
+		     context, conn->rekey->timeout, 0,
+		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+}
+
+/* The final callback for the REKEY protocol. This will actually take the
+   new key material into use. */
+
+SILC_TASK_CALLBACK(silc_client_rekey_final)
+{
+  SilcProtocol protocol = (SilcProtocol)context;
+  SilcClientRekeyInternalContext *ctx =
+    (SilcClientRekeyInternalContext *)protocol->context;
+  SilcClient client = (SilcClient)ctx->client;
+  SilcSocketConnection sock = ctx->sock;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
+    /* Error occured during protocol */
+    silc_protocol_cancel(client->timeout_queue, protocol);
+    silc_protocol_free(protocol);
+    sock->protocol = NULL;
+    if (ctx->keymat)
+      silc_ske_free_key_material(ctx->keymat);
+    if (ctx->packet)
+      silc_packet_context_free(ctx->packet);
+    if (ctx->ske)
+      silc_ske_free(ctx->ske);
+    silc_free(ctx);
+    return;
+  }
+
+  /* Take the keys into use */
+  if (ctx->pfs == TRUE)
+    silc_client_protocol_rekey_generate_pfs(client, ctx);
+  else
+    silc_client_protocol_rekey_generate(client, ctx);
+
+  /* Cleanup */
+  silc_protocol_free(protocol);
+  sock->protocol = NULL;
+  if (ctx->keymat)
+    silc_ske_free_key_material(ctx->keymat);
+  if (ctx->packet)
+    silc_packet_context_free(ctx->packet);
+  if (ctx->ske)
+    silc_ske_free(ctx->ske);
+  silc_free(ctx);
 }

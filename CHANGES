@@ -1,3 +1,26 @@
+Thu Apr  5 17:42:30 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added the PFS support as defined in the specification to the
+	  SKE protocol.  Affected files lib/silcske/*.c.
+
+	* Added `ske_group' field to the SilcServerRekey context to hold
+	  the number of the SKE group that is used with PFS in re-key.
+	  Affected file silcd/idlist.h.
+
+	* Added PFS re-key support to the server.  Affected file is
+	  silcd/protocol.c.
+
+	* Added silc_protocol_cancel to cancel execution of the next
+	  state of the protocol.  Affected file is
+	  lib/silccore/silcprotocol.[ch].
+
+	* Added the re-key support with and without PFS to the client
+	  library.  Re-key is performed once in an hour, by default.
+
+	* Removed the `hmac_key' and `hmac_key_len' fields from the
+	  SilcClientConnection structure; not needed.  Affected file is
+	  lib/silcclient/client.h.
+
 Wed Apr  4 16:32:31 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Do not ask whether user wants to use the negotiated private key
