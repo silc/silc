@@ -764,19 +764,88 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       break;
 
     case SILC_COMMAND_USERS:
-      if (!success)
-	return;
+      {
+	SilcChannelEntry channel;
+	int line_len;
+	char *line;
+	
+	if (!success)
+	  return;
 
-      silc_list_start(conn->current_channel->clients);
-      while ((chu = silc_list_get(conn->current_channel->clients)) 
-	     != SILC_LIST_END) {
-	if (chu->client == conn->local_entry) {
-	  if (app->screen->bottom_line->mode)
-	    silc_free(app->screen->bottom_line->mode);
-	  app->screen->bottom_line->mode = silc_client_chumode_char(chu->mode);
-	  silc_screen_print_bottom_line(app->screen, 0);
-	  break;
+	channel = va_arg(vp, SilcChannelEntry);
+
+	/* There are two ways to do this, either parse the list (that
+	   the command_reply sends (just take it with va_arg())) or just
+	   traverse the channel'c client list.  I'll do the latter.  See
+	   JOIN command reply for example for the list. */
+
+	silc_say(client, conn, "Users on %s", channel->channel_name);
+	
+	line = silc_calloc(1024, sizeof(*line));
+	line_len = 1024;
+	silc_list_start(channel->clients);
+	while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+	  SilcClientEntry e = chu->client;
+	  int i, len1;
+	  char *m, tmp[80];
+
+	  memset(line, 0, line_len);
+
+	  if (chu->client == conn->local_entry) {
+	    /* Update status line */
+	    if (app->screen->bottom_line->mode)
+	      silc_free(app->screen->bottom_line->mode);
+	    app->screen->bottom_line->mode = 
+	      silc_client_chumode_char(chu->mode);
+	    silc_screen_print_bottom_line(app->screen, 0);
+	  }
+
+	  if (strlen(e->nickname) + strlen(e->server) + 100 > line_len) {
+	    silc_free(line);
+	    line_len += strlen(e->nickname) + strlen(e->server) + 100;
+	    line = silc_calloc(line_len, sizeof(*line));
+	  }
+
+	  memset(tmp, 0, sizeof(tmp));
+	  m = silc_client_chumode_char(chu->mode);
+
+	  strncat(line, " ", 1);
+	  strncat(line, e->nickname, strlen(e->nickname));
+	  strncat(line, e->server ? "@" : "", 1);
+	  
+	  len1 = 0;
+	  if (e->server)
+	    len1 = strlen(e->server);
+	  strncat(line, e->server ? e->server : "", len1 > 30 ? 30 : len1);
+	  
+	  len1 = strlen(line);
+	  if (len1 >= 30) {
+	    memset(&line[29], 0, len1 - 29);
+	  } else {
+	    for (i = 0; i < 30 - len1 - 1; i++)
+	      strcat(line, " ");
+	  }
+	  
+	  if (e->mode & SILC_UMODE_GONE)
+	    strcat(line, "  G");
+	  else
+	    strcat(line, "  H");
+	  strcat(tmp, m ? m : "");
+	  strncat(line, tmp, strlen(tmp));
+	  
+	  if (strlen(tmp) < 5)
+	    for (i = 0; i < 5 - strlen(tmp); i++)
+	      strcat(line, " ");
+	  
+	  strcat(line, e->username ? e->username : "");
+	  
+	  silc_say(client, conn, "%s", line);
+	  
+	  if (m)
+	    silc_free(m);
 	}
+	
+	silc_free(line);
       }
       break;
 

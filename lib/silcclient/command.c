@@ -1927,8 +1927,7 @@ SILC_CLIENT_CMD_FUNC(users)
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, idp;
-  char *name, *line = NULL;
-  unsigned int line_len = 0;
+  char *name;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1992,73 +1991,6 @@ SILC_CLIENT_CMD_FUNC(users)
     cmd->pending = TRUE;
     return;
   }
-
-  if (cmd->pending) {
-    /* Pending command. Now we've resolved the information from server and
-       we are ready to display the information on screen. */
-    int i;
-    SilcChannelUser chu;
-
-    cmd->client->ops->say(cmd->client, conn, "Users on %s", 
-			  channel->channel_name);
-
-    line = silc_calloc(4096, sizeof(*line));
-    line_len = 4096;
-    silc_list_start(channel->clients);
-    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-      SilcClientEntry e = chu->client;
-      char *m, tmp[80], len1;
-
-      memset(line, 0, sizeof(line_len));
-
-      if (strlen(e->nickname) + strlen(e->server) + 100 > line_len) {
-	silc_free(line);
-	line_len += strlen(e->nickname) + strlen(e->server) + 100;
-	line = silc_calloc(line_len, sizeof(*line));
-      }
-
-      memset(tmp, 0, sizeof(tmp));
-      m = silc_client_chumode_char(chu->mode);
-
-      strncat(line, " ", 1);
-      strncat(line, e->nickname, strlen(e->nickname));
-      strncat(line, e->server ? "@" : "", 1);
-
-      len1 = 0;
-      if (e->server)
-	len1 = strlen(e->server);
-      strncat(line, e->server ? e->server : "", len1 > 30 ? 30 : len1);
-
-      len1 = strlen(line);
-      if (len1 >= 30) {
-	memset(&line[29], 0, len1 - 29);
-      } else {
-	for (i = 0; i < 30 - len1 - 1; i++)
-	  strcat(line, " ");
-      }
-
-      if (e->mode & SILC_UMODE_GONE)
-	strcat(line, "  G");
-      else
-	strcat(line, "  H");
-      strcat(tmp, m ? m : "");
-      strncat(line, tmp, strlen(tmp));
-
-      if (strlen(tmp) < 5)
-	for (i = 0; i < 5 - strlen(tmp); i++)
-	  strcat(line, " ");
-
-      strcat(line, e->username ? e->username : "");
-
-      cmd->client->ops->say(cmd->client, conn, "%s", line);
-
-      if (m)
-	silc_free(m);
-    }
-  }
-
-  if (line)
-    silc_free(line);
 
   /* Notify application */
   COMMAND;
