@@ -1305,7 +1305,7 @@ void silc_server_notify(SilcServer server,
     silc_free(server_id);
 
     /* Sending SERVER_SIGNOFF is not right way to signoff local connection */
-    if (SILC_IS_LOCAL(server_entry))
+    if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry)
       break;
 
     /* Remove all servers that are originated from this server, and
