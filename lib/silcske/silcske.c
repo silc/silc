@@ -111,6 +111,8 @@ void silc_ske_free(SilcSKE ske)
     }
     silc_free(ske->hash);
     silc_free(ske->callbacks);
+
+    memset(ske, 'F', sizeof(*ske));
     silc_free(ske);
   }
 }
@@ -1185,7 +1187,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
   /* Set random cookie */
   rp->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(*rp->cookie));
   for (i = 0; i < SILC_SKE_COOKIE_LEN; i++)
-    rp->cookie[i] = silc_rng_get_byte(ske->rng);
+    rp->cookie[i] = silc_rng_get_byte_fast(ske->rng);
   rp->cookie_len = SILC_SKE_COOKIE_LEN;
 
   /* Put version */
@@ -1214,8 +1216,8 @@ silc_ske_assemble_security_properties(SilcSKE ske,
 
   /* XXX */
   /* Get supported compression algorithms */
-  rp->comp_alg_list = strdup("");
-  rp->comp_alg_len = 0;
+  rp->comp_alg_list = strdup("none");
+  rp->comp_alg_len = strlen("none");
 
   rp->len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN + 
     2 + rp->version_len +
@@ -1541,9 +1543,8 @@ silc_ske_select_security_properties(SilcSKE ske,
     payload->hmac_alg_list = strdup(rp->hmac_alg_list);
   }
 
-#if 0
   /* Get supported compression algorithms */
-  cp = rp->hash_alg_list;
+  cp = rp->comp_alg_list;
   if (cp && strchr(cp, ',')) {
     while(cp) {
       char *item;
@@ -1552,15 +1553,23 @@ silc_ske_select_security_properties(SilcSKE ske,
       item = silc_calloc(len + 1, sizeof(char));
       memcpy(item, cp, len);
 
-      SILC_LOG_DEBUG(("Proposed hash alg `%s'", item));
+      SILC_LOG_DEBUG(("Proposed Compression `%s'", item));
 
-      if (silc_hash_is_supported(item) == TRUE) {
-	SILC_LOG_DEBUG(("Found hash alg `%s'", item));
-
-	payload->hash_alg_len = len;
-	payload->hash_alg_list = item;
+#if 1
+      if (!strcmp(item, "none")) {
+	SILC_LOG_DEBUG(("Found Compression `%s'", item));
+	payload->comp_alg_len = len;
+	payload->comp_alg_list = item;
 	break;
       }
+#else
+      if (silc_hmac_is_supported(item) == TRUE) {
+	SILC_LOG_DEBUG(("Found Compression `%s'", item));
+	payload->comp_alg_len = len;
+	payload->comp_alg_list = item;
+	break;
+      }
+#endif
 
       cp += len;
       if (strlen(cp) == 0)
@@ -1571,20 +1580,7 @@ silc_ske_select_security_properties(SilcSKE ske,
       if (item)
 	silc_free(item);
     }
-
-    if (!payload->hash_alg_len && !payload->hash_alg_list) {
-      SILC_LOG_DEBUG(("Could not find supported hash alg"));
-      silc_ske_abort(ske, SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION);
-      silc_free(payload->ke_grp_list);
-      silc_free(payload->pkcs_alg_list);
-      silc_free(payload->enc_alg_list);
-      silc_free(payload);
-      return;
-    }
-  } else {
-
   }
-#endif
 
   payload->len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN + 
     2 + payload->version_len + 
@@ -1604,16 +1600,22 @@ static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   unsigned char *string;
+  SilcUInt32 l;
+
+  if (!len)
+    return SILC_SKE_STATUS_ERROR;
 
   SILC_LOG_DEBUG(("Creating random number"));
 
+  l = ((len - 1) / 8);
+
   /* Get the random number as string */
-  string = silc_rng_get_rn_data(ske->rng, ((len - 1) / 8));
+  string = silc_rng_get_rn_data(ske->rng, l);
   if (!string)
     return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
   /* Decode the string into a MP integer */
-  silc_mp_bin2mp(string, ((len - 1) / 8), rnd);
+  silc_mp_bin2mp(string, l, rnd);
   silc_mp_mod_2exp(rnd, rnd, len);
 
   /* Checks */
@@ -1622,7 +1624,7 @@ static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
   if (silc_mp_cmp(rnd, n) >= 0)
     status = SILC_SKE_STATUS_ERROR;
 
-  memset(string, 'F', (len / 8));
+  memset(string, 'F', l);
   silc_free(string);
 
   return status;

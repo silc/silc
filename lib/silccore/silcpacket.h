@@ -335,7 +335,7 @@ typedef bool (*SilcPacketParserCallback)(SilcPacketParserContext
 #define SILC_PACKET_LENGTH(__packetdata, __ret_truelen, __ret_paddedlen) \
 do {									 \
   SILC_GET16_MSB((__ret_truelen), (__packetdata));			 \
-  (__ret_paddedlen) = (__ret_truelen) + (__packetdata)[4];		 \
+  (__ret_paddedlen) = (__ret_truelen) + (SilcUInt8)(__packetdata)[4];	 \
 } while(0)
 /***/
 

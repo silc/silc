@@ -116,7 +116,7 @@ bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
 			  const SilcBuffer assembled_packet)
 { 
   unsigned char tmppad[SILC_PACKET_MAX_PADLEN];   
-  int block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
+  unsigned int block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
   int i, ret;
 
   SILC_LOG_DEBUG(("Assembling outgoing packet"));
@@ -202,9 +202,9 @@ bool silc_packet_send_prepare(SilcSocketConnection sock,
 			      SilcHmac hmac,
 			      const SilcBuffer packet)
 { 
-  int totlen;
+  SilcUInt32 totlen;
   unsigned char *oldptr;
-  int mac_len = hmac ? silc_hmac_len(hmac) : 0;
+  unsigned int mac_len = hmac ? silc_hmac_len(hmac) : 0;
 
   if (!packet)
     return FALSE;
@@ -305,7 +305,9 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 				 void *parser_context)
 {
   SilcPacketParserContext *parse_ctx;
-  int packetlen, paddedlen, mac_len = 0, ret, block_len;
+  SilcUInt16 packetlen;
+  SilcUInt32 paddedlen, mac_len = 0, block_len;
+  int ret;
   bool cont = TRUE;
   unsigned char tmp[SILC_PACKET_MIN_HEADER_LEN], *header;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
@@ -381,8 +383,8 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
       return FALSE;
     parse_ctx->packet = silc_packet_context_alloc();
     parse_ctx->packet->buffer = silc_buffer_alloc_size(paddedlen);
-    parse_ctx->packet->type = header[3];
-    parse_ctx->packet->padlen = header[4];
+    parse_ctx->packet->type = (SilcPacketType)header[3];
+    parse_ctx->packet->padlen = (SilcUInt8)header[4];
     parse_ctx->packet->sequence = sequence++;
     parse_ctx->sock = sock;
     parse_ctx->context = parser_context;
@@ -515,7 +517,7 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
     /* Decrypt rest of the header plus padding */
     if (cipher) {
       SilcUInt16 len;
-      int block_len = silc_cipher_get_block_len(cipher);
+      SilcUInt32 block_len = silc_cipher_get_block_len(cipher);
 
       SILC_LOG_DEBUG(("Decrypting the header"));
 

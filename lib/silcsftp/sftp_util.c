@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -133,7 +133,8 @@ SilcSFTPPacket silc_sftp_packet_decode(SilcBuffer packet,
 SilcBuffer silc_sftp_attr_encode(SilcSFTPAttributes attr)
 {
   SilcBuffer buffer;
-  int i, ret, len = 4;
+  int i, ret;
+  SilcUInt32 len = 4;
 
   if (attr->flags & SILC_SFTP_ATTR_SIZE)
     len += 8;
@@ -152,10 +153,9 @@ SilcBuffer silc_sftp_attr_encode(SilcSFTPAttributes attr)
     }
   }
 
-  buffer = silc_buffer_alloc(len);
+  buffer = silc_buffer_alloc_size(len);
   if (!buffer)
     return NULL;
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
 
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_INT(attr->flags), 

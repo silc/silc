@@ -1431,9 +1431,11 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
         SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.",
 			       silc_config_strerror(ret)));
       linebuf = silc_config_read_line(file, line);
-      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename,
-			     line, linebuf));
-      silc_free(linebuf);
+      if (linebuf) {
+	SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename,
+			       line, linebuf));
+	silc_free(linebuf);
+      }
     }
     silc_server_config_destroy(config_new);
     return NULL;

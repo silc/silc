@@ -108,6 +108,13 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Re-encoding was successful"));
 
 
+  SILC_LOG_DEBUG(("Checking number of arguments"));
+  SILC_LOG_DEBUG(("Number of arguments: %d (expecting %d)",
+		 silc_argument_get_arg_num(payload), ARG_NUM + 1));
+  if (silc_argument_get_arg_num(payload) != ARG_NUM + 1)
+    goto out;
+
+
   SILC_LOG_DEBUG(("Traversing the parsed arguments"));
   i = 0;
   a = silc_argument_get_first_arg(payload, &t, &l);

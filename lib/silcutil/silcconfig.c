@@ -41,13 +41,14 @@ typedef struct SilcConfigOptionStruct {
 
 /* unique for each config file (and included ones) */
 struct SilcConfigFileObject {
-  char *filename; /* the original filename opened */
-  int level;	/* parsing level, how many nested silc_config_main we have */
-  char *base;	/* this is a fixed pointer to the base location */
-  char *p;	/* the Parser poitner */
+  char *filename;	/* the original filename opened */
+  int level;		/* parsing level, how many nested
+			   silc_config_main we have */
+  char *base;		/* this is a fixed pointer to the base location */
+  char *p;		/* the Parser poitner */
   SilcUInt32 len;	/* fixed length of the whole file */
   SilcUInt32 line;	/* current parsing line, strictly linked to p */
-  bool included; /* wether this file is main or included */
+  bool included;	/* wether this file is main or included */
 };
 
 /* We need the entity to base our block-style parsing on */
@@ -58,23 +59,23 @@ struct SilcConfigEntityObject {
 
 /* access error descriptions only with silc_config_strerror() */
 static char *errorstrs[] = {
-  "-OK",					/* SILC_CONFIG_OK */
-  "-SILENT",					/* SILC_CONFIG_ESILENT */
-  "-PRINTLINE",					/* SILC_CONFIG_EPRINTLINE */
-  "Invalid syntax",				/* SILC_CONFIG_EGENERIC */
-  "Internal error! Please report this bug",	/* SILC_CONFIG_EINTERNAL */
-  "Can't open specified file",			/* SILC_CONFIG_ECANTOPEN */
-  "Expected open-brace '{'",			/* SILC_CONFIG_EOPENBRACE */
-  "Missing close-brace '}'",			/* SILC_CONFIG_ECLOSEBRACE */
-  "Invalid data type",				/* SILC_CONFIG_ETYPE */
-  "Unknown option",				/* SILC_CONFIG_EBADOPTION */
-  "Invalid text",				/* SILC_CONFIG_EINVALIDTEXT */
-  "Double option specification",		/* SILC_CONFIG_EDOUBLE */
-  "Expected data but not found",		/* SILC_CONFIG_EEXPECTED */
-  "Expected '='",				/* SILC_CONFIG_EEXPECTEDEQUAL */
-  "Unexpected data",				/* SILC_CONFIG_EUNEXPECTED */
-  "Missing mandatory fields",			/* SILC_CONFIG_EMISSFIELDS */
-  "Missing ';'",				/* SILC_CONFIG_EMISSCOLON */
+  "-OK",				      /* SILC_CONFIG_OK */
+  "-SILENT",				      /* SILC_CONFIG_ESILENT */
+  "-PRINTLINE",				      /* SILC_CONFIG_EPRINTLINE */
+  "Invalid syntax",			      /* SILC_CONFIG_EGENERIC */
+  "Internal error! Please report this bug",   /* SILC_CONFIG_EINTERNAL */
+  "Can't open specified file",		      /* SILC_CONFIG_ECANTOPEN */
+  "Expected open-brace '{'",		      /* SILC_CONFIG_EOPENBRACE */
+  "Missing close-brace '}'",		      /* SILC_CONFIG_ECLOSEBRACE */
+  "Invalid data type",			      /* SILC_CONFIG_ETYPE */
+  "Unknown option",			      /* SILC_CONFIG_EBADOPTION */
+  "Invalid text",			      /* SILC_CONFIG_EINVALIDTEXT */
+  "Double option specification",	      /* SILC_CONFIG_EDOUBLE */
+  "Expected data but not found",	      /* SILC_CONFIG_EEXPECTED */
+  "Expected '='",			      /* SILC_CONFIG_EEXPECTEDEQUAL */
+  "Unexpected data",			      /* SILC_CONFIG_EUNEXPECTED */
+  "Missing mandatory fields",		      /* SILC_CONFIG_EMISSFIELDS */
+  "Missing ';'",			      /* SILC_CONFIG_EMISSCOLON */
 };
 
 /* return string describing SilcConfig's error code */
@@ -321,7 +322,7 @@ char *silc_config_read_line(SilcConfigFile *file, SilcUInt32 line)
 {
   register char *p;
   int len;
-  char *ret, *endbuf;
+  char *ret = NULL, *endbuf;
 
   if (!file || (line <= 0))
     return NULL;
@@ -336,7 +337,8 @@ char *silc_config_read_line(SilcConfigFile *file, SilcUInt32 line)
  found:
   if ((endbuf = strchr(p, '\n'))) {
     len = endbuf - p;
-    ret = silc_memdup(p, len);
+    if (len > 0)
+      ret = silc_memdup(p, len);
   } else {
     ret = silc_memdup(p, strlen(p));
   }
@@ -383,8 +385,9 @@ bool silc_config_register(SilcConfigEntity ent, const char *name,
 			  const SilcConfigTable *subtable, void *context)
 {
   SilcConfigOption *newopt;
-  SILC_CONFIG_DEBUG(("Register new option=\"%s\" type=%u cb=0x%08x context=0x%08x",
-		name, type, (SilcUInt32) cb, (SilcUInt32) context));
+  SILC_CONFIG_DEBUG(("Register new option=\"%s\" "
+		     "type=%u cb=0x%08x context=0x%08x",
+		     name, type, (SilcUInt32) cb, (SilcUInt32) context));
 
   /* if we are registering a block, make sure there is a specified sub-table */
   if (!ent || !name || ((type == SILC_CONFIG_ARG_BLOCK) && !subtable))
@@ -469,7 +472,8 @@ static int silc_config_main_internal(SilcConfigEntity ent)
 
     /* obtain the keyword */
     my_next_token(file, buf);
-    SILC_CONFIG_DEBUG(("Looking up keyword=\"%s\" [line=%lu]", buf, file->line));
+    SILC_CONFIG_DEBUG(("Looking up keyword=\"%s\" [line=%lu]",
+		       buf, file->line));
 
     /* handle special directive */
     if (!strcasecmp(buf, "include")) {

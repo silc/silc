@@ -1,24 +1,22 @@
 /*
 
-  silcchannel.c
+  silcchannel.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
 */
-/* Channel Payload, Channel Message Payload and Channel Key Payload 
-   implementations. */
+/* Channel Payload and Channel Key Payload implementations. */
 /* $Id$ */
 
 #include "silcincludes.h"
@@ -89,7 +87,8 @@ SilcDList silc_channel_payload_parse_list(const unsigned char *payload,
   SilcBufferStruct buffer;
   SilcDList list;
   SilcChannelPayload newp;
-  int len, ret;
+  SilcUInt32 len;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing channel payload list"));
 

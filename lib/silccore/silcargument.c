@@ -132,7 +132,7 @@ SilcBuffer silc_argument_payload_encode(SilcUInt32 argc,
 
   len = 0;
   for (i = 0; i < argc; i++)
-    len += 3 + argv_lens[i];
+    len += 3 + (SilcUInt16)argv_lens[i];
 
   buffer = silc_buffer_alloc_size(len);
   if (!buffer)
@@ -143,9 +143,9 @@ SilcBuffer silc_argument_payload_encode(SilcUInt32 argc,
     silc_buffer_format(buffer,
 		       SILC_STR_UI_SHORT(argv_lens[i]),
 		       SILC_STR_UI_CHAR(argv_types[i]),
-		       SILC_STR_UI_XNSTRING(argv[i], argv_lens[i]),
+		       SILC_STR_UI_XNSTRING(argv[i], (SilcUInt16)argv_lens[i]),
 		       SILC_STR_END);
-    silc_buffer_pull(buffer, 3 + argv_lens[i]);
+    silc_buffer_pull(buffer, 3 + (SilcUInt16)argv_lens[i]);
   }
 
   silc_buffer_push(buffer, len);
@@ -161,9 +161,9 @@ SilcBuffer silc_argument_payload_encode_one(SilcBuffer args,
 					    SilcUInt32 arg_type)
 {
   SilcBuffer buffer = args;
-  int len;
+  SilcUInt32 len;
 
-  len = 3 + arg_len;
+  len = 3 + (SilcUInt16)arg_len;
   buffer = silc_buffer_realloc(buffer,
 			       (buffer ? buffer->truelen + len : len));
   if (!buffer)
@@ -173,7 +173,7 @@ SilcBuffer silc_argument_payload_encode_one(SilcBuffer args,
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_SHORT(arg_len),
 		     SILC_STR_UI_CHAR(arg_type),
-		     SILC_STR_UI_XNSTRING(arg, arg_len),
+		     SILC_STR_UI_XNSTRING(arg, (SilcUInt16)arg_len),
 		     SILC_STR_END);
   silc_buffer_push(buffer, buffer->data - buffer->head);
 
