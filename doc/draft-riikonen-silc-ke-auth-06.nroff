@@ -616,12 +616,12 @@ protocol produces a hash value HASH as well.
 The keys MUST be derived from the key material as follows:
 
 .in 6
-Sending Initial Vector (IV)     = hash(0 | KEY | HASH)
-Receiving Initial Vector (IV)   = hash(1 | KEY | HASH)
-Sending Encryption Key          = hash(2 | KEY | HASH)
-Receiving Encryption Key        = hash(3 | KEY | HASH)
-Sending HMAC Key                = hash(4 | KEY | HASH)
-Receiving HMAC Key              = hash(5 | KEY | HASH)
+Sending Initial Vector (IV)     = hash(0x0 | KEY | HASH)
+Receiving Initial Vector (IV)   = hash(0x1 | KEY | HASH)
+Sending Encryption Key          = hash(0x2 | KEY | HASH)
+Receiving Encryption Key        = hash(0x3 | KEY | HASH)
+Sending HMAC Key                = hash(0x4 | KEY | HASH)
+Receiving HMAC Key              = hash(0x5 | KEY | HASH)
 .in 3
 
 
@@ -638,14 +638,14 @@ output is too short for the encryption algorithm more key material MUST
 be produced in the following manner:
 
 .in 6
-K1 = hash(2 | KEY | HASH)
+K1 = hash(0x2 | KEY | HASH)
 K2 = hash(KEY | HASH | K1)
 K3 = hash(KEY | HASH | K1 | K2)  ...
 
 Sending Encryption Key = K1 | K2 | K3 ...
 
 
-K1 = hash(3 | KEY | HASH)
+K1 = hash(0x3 | KEY | HASH)
 K2 = hash(KEY | HASH | K1)
 K3 = hash(KEY | HASH | K1 | K2)  ...
 
