@@ -20,6 +20,13 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.8  2000/10/06 08:10:23  priikone
+ * 	Added WHOIS to send multiple replies if multiple nicknames are
+ * 	found.
+ * 	Added MOTD command and [motd] config section and server also sends
+ * 	motd to client on connection now.
+ * 	Fixed TOPIC command some more.
+ *
  * Revision 1.7  2000/07/26 07:04:01  priikone
  * 	Added server_find_by_id, replace_[server/client]_id.
  *
@@ -217,6 +224,38 @@ void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
     if (entry->hmac)
       silc_hmac_free(entry->hmac);
   }
+}
+
+/* Returns all clients matching requested nickname. Number of clients is
+   returned to `clients_count'. Caller must free the returned table. */
+
+SilcClientEntry *
+silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
+				    char *server, unsigned int *clients_count)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry *clients;
+  int i;
+
+  if (!silc_idcache_find_by_data(id_list->clients, nickname, &list))
+    return NULL;
+
+  clients = silc_calloc(silc_idcache_list_count(list), sizeof(*clients));
+
+  i = 0;
+  silc_idcache_list_first(list, &id_cache);
+  clients[i++] = (SilcClientEntry)id_cache->context;
+
+  while (silc_idcache_list_next(list, &id_cache))
+    clients[i++] = (SilcClientEntry)id_cache->context;
+  
+  silc_idcache_list_free(list);
+  
+  if (clients_count)
+    *clients_count = i;
+
+  return clients;
 }
 
 /* Finds client entry by nickname. */

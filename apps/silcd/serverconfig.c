@@ -20,6 +20,13 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/10/06 08:10:23  priikone
+ * 	Added WHOIS to send multiple replies if multiple nicknames are
+ * 	found.
+ * 	Added MOTD command and [motd] config section and server also sends
+ * 	motd to client on connection now.
+ * 	Fixed TOPIC command some more.
+ *
  * Revision 1.3  2000/07/10 05:41:20  priikone
  * 	Added missing token to administrative information.
  *
@@ -189,6 +196,8 @@ SilcConfigServerSection silc_config_server_sections[] = {
     SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION, 4 },
   { "[RedirectClient]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_REDIRECT_CLIENT, 2 },
+  { "[motd]", 
+    SILC_CONFIG_SERVER_SECTION_TYPE_MOTD, 1 },
   
   { NULL, SILC_CONFIG_SERVER_SECTION_TYPE_NONE, 0 }
 };
@@ -249,6 +258,7 @@ void silc_config_server_free(SilcConfigServer config)
     silc_free(config->routers);
     silc_free(config->denied);
     silc_free(config->redirect);
+    silc_free(config->motd);
     silc_free(config);
   }
 }
@@ -978,6 +988,20 @@ int silc_config_server_parse_lines(SilcConfigServer config,
     case SILC_CONFIG_SERVER_SECTION_TYPE_REDIRECT_CLIENT:
       /* Not implemented yet */
       check = TRUE;
+      break;
+
+    case SILC_CONFIG_SERVER_SECTION_TYPE_MOTD:
+
+      if (!config->motd)
+	config->motd = silc_calloc(1, sizeof(*config->motd));
+
+      /* Get motd file */
+      ret = silc_config_get_token(line, &config->motd->motd_file);
+      if (ret < 0)
+	break;
+
+      check = TRUE;
+      checkmask |= (1L << pc->section->type);
       break;
 
     case SILC_CONFIG_SERVER_SECTION_TYPE_NONE:

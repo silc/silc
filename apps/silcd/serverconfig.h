@@ -133,6 +133,11 @@ typedef struct {
   unsigned short port;
 } SilcConfigServerSectionRedirectClient;
 
+/* Holds motd file */
+typedef struct {
+  char *motd_file;
+} SilcConfigServerSectionMotd;
+
 /* 
    SILC Server Config object. 
 
@@ -162,6 +167,7 @@ typedef struct {
   SilcConfigServerSectionAdminConnection *admins;
   SilcConfigServerSectionDenyConnection *denied;
   SilcConfigServerSectionRedirectClient *redirect;
+  SilcConfigServerSectionMotd *motd;
 } SilcConfigServerObject;
 
 typedef SilcConfigServerObject *SilcConfigServer;
@@ -183,6 +189,7 @@ typedef enum {
   SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_CONNECTION,
   SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION,
   SILC_CONFIG_SERVER_SECTION_TYPE_REDIRECT_CLIENT,
+  SILC_CONFIG_SERVER_SECTION_TYPE_MOTD,
 } SilcConfigServerSectionType;
 
 /* SILC Configuration Section structure. */

@@ -442,6 +442,9 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 		       SilcPKCS pkcs, SilcHmac hmac, 
 		       SilcPublicKey public_key, void *connection);
 void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
+SilcClientEntry *
+silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
+				    char *server, unsigned int *clients_count);
 SilcClientEntry
 silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
 				    char *server);

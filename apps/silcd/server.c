@@ -2643,6 +2643,46 @@ void silc_server_channel_key(SilcServer server,
   silc_buffer_free(buffer);
 }
 
+/* Sends current motd to client */
+
+void silc_server_send_motd(SilcServer server,
+			   SilcSocketConnection sock)
+{
+  char *motd, *cp;
+  char line[256];
+  int i, motd_len;
+
+  if (server->config && server->config->motd && 
+      server->config->motd->motd_file) {
+
+    motd = silc_file_read(server->config->motd->motd_file, &motd_len);
+    if (!motd)
+      return;
+
+    /* Send motd */
+    i = 0;
+    cp = motd;
+    while(cp[i] != 0) {
+      if (cp[i++] == '\n') {
+	memset(line, 0, sizeof(line));
+	strncat(line, cp, i - 1);
+	cp += i;
+
+	if (i == 2)
+	  line[0] = ' ';
+
+	silc_server_send_notify(server, sock, SILC_NOTIFY_TYPE_NONE, line);
+
+	if (!strlen(cp))
+	  break;
+	i = 0;
+      }
+    }
+
+    silc_free(motd);
+  }
+}
+
 /* Sends error message. Error messages may or may not have any 
    implications. */
 
@@ -3114,7 +3154,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 			  "Your current nickname is %s",
 			  client->nickname);
 
-  /* XXX Send motd */
+  /* Send motd */
+  silc_server_send_motd(server, sock);
 
   return client;
 }

@@ -113,6 +113,8 @@ void silc_server_channel_message(SilcServer server,
 void silc_server_channel_key(SilcServer server,
 			     SilcSocketConnection sock,
 			     SilcPacketContext *packet);
+void silc_server_send_motd(SilcServer server,
+			   SilcSocketConnection sock);
 void silc_server_send_error(SilcServer server,
 			    SilcSocketConnection sock,
 			    const char *fmt, ...);
