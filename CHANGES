@@ -1,3 +1,17 @@
+Sat Jun 22 17:06:58 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Don't send or handle TOPIC_SET if topic is already set and
+	  is same as being set.  Affected files silcd/command.c and
+	  silcd/packet_receive.c.
+
+	* Fixed CMODE change rights checking to work correctly when
+	  removing modes by operator.  Affected file is
+	  silcd/server_util.c.
+
+	* Fixed some handling with New Channel packet in router and
+	  fixed some CMODE_CHANGE notify handling in server and router.
+	  Affected file is silcd/packet_receive.c.
+
 Sat Jun 22 12:49:21 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* All CMODE_CHANGE and CUMODE_CHANGE notifys are now sent back

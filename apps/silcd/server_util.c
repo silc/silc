@@ -1068,8 +1068,10 @@ bool silc_server_check_cmode_rights(SilcServer server,
   }
   
   if (mode & SILC_CHANNEL_MODE_PASSPHRASE) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_PASSPHRASE)) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
       if (is_op && !is_fo)
@@ -1078,8 +1080,10 @@ bool silc_server_check_cmode_rights(SilcServer server,
   }
 
   if (mode & SILC_CHANNEL_MODE_CIPHER) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_CIPHER)) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_CIPHER) {
       if (is_op && !is_fo)
@@ -1088,8 +1092,10 @@ bool silc_server_check_cmode_rights(SilcServer server,
   }
   
   if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
       if (is_op && !is_fo)
@@ -1098,8 +1104,10 @@ bool silc_server_check_cmode_rights(SilcServer server,
   }
   
   if (mode & SILC_CHANNEL_MODE_SILENCE_USERS) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS)) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS) {
       if (is_op && !is_fo)
@@ -1108,8 +1116,10 @@ bool silc_server_check_cmode_rights(SilcServer server,
   }
   
   if (mode & SILC_CHANNEL_MODE_SILENCE_OPERS) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS)) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS) {
       if (is_op && !is_fo)

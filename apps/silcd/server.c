@@ -726,6 +726,9 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
     return;
   }
 
+  SILC_LOG_DEBUG(("Retrying connecting to a router in %d seconds",
+		  sconn->retry_timeout));
+
   /* We will lookup a fresh pointer later */
   silc_server_config_unref(&sconn->conn);
 
@@ -3390,7 +3393,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   SilcUInt32 tmp_len;
   char *cipher;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Saving new channel key"));
 
   /* Decode channel key payload */
   payload = silc_channel_key_payload_parse(key_payload->data,

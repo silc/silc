@@ -2440,24 +2440,26 @@ SILC_SERVER_CMD_FUNC(topic)
       goto out;
     }
 
-    /* Set the topic for channel */
-    silc_free(channel->topic);
-    channel->topic = strdup(tmp);
+    if (!channel->topic || strcmp(channel->topic, tmp)) {
+      /* Set the topic for channel */
+      silc_free(channel->topic);
+      channel->topic = strdup(tmp);
 
-    /* Send TOPIC_SET notify type to the network */
-    silc_server_send_notify_topic_set(server, SILC_PRIMARY_ROUTE(server),
-				      SILC_BROADCAST(server), channel,
-				      client->id, SILC_ID_CLIENT,
-				      channel->topic);
+      /* Send TOPIC_SET notify type to the network */
+      silc_server_send_notify_topic_set(server, SILC_PRIMARY_ROUTE(server),
+					SILC_BROADCAST(server), channel,
+					client->id, SILC_ID_CLIENT,
+					channel->topic);
 
-    idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-
-    /* Send notify about topic change to all clients on the channel */
-    silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
-				       SILC_NOTIFY_TYPE_TOPIC_SET, 2,
-				       idp->data, idp->len,
-				       channel->topic, strlen(channel->topic));
-    silc_buffer_free(idp);
+      /* Send notify about topic change to all clients on the channel */
+      idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
+					 SILC_NOTIFY_TYPE_TOPIC_SET, 2,
+					 idp->data, idp->len,
+					 channel->topic,
+					 strlen(channel->topic));
+      silc_buffer_free(idp);
+    }
   }
 
   /* Send the topic to client as reply packet */
@@ -4010,6 +4012,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   /* Check that client has rights to change any requested channel modes */
   if (set_mask && !silc_server_check_cmode_rights(server, channel, chl, 
 						  mode_mask)) {
+    SILC_LOG_DEBUG(("Client does not have rights to change mode"));
     silc_server_command_send_status_reply(
 			     cmd, SILC_COMMAND_CMODE,
 			     (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) ? 

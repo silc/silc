@@ -94,13 +94,12 @@ void silc_server_notify(SilcServer server,
       if (!channel_id)
 	goto out;
 
-      if (!server->standalone)
-	silc_server_packet_send_dest(server, SILC_PRIMARY_ROUTE(server), 
-				     packet->type, packet->flags | 
-				     SILC_PACKET_FLAG_BROADCAST, 
-				     channel_id, SILC_ID_CHANNEL,
-				     packet->buffer->data, 
-				     packet->buffer->len, FALSE);
+      silc_server_packet_send_dest(server, SILC_PRIMARY_ROUTE(server), 
+				   packet->type, packet->flags | 
+				   SILC_PACKET_FLAG_BROADCAST, 
+				   channel_id, SILC_ID_CHANNEL,
+				   packet->buffer->data, 
+				   packet->buffer->len, FALSE);
       silc_server_backup_send_dest(server, (SilcServerEntry)sock->user_data, 
 				   packet->type, packet->flags,
 				   channel_id, SILC_ID_CHANNEL,
@@ -108,12 +107,11 @@ void silc_server_notify(SilcServer server,
 				   FALSE, TRUE);
     } else {
       /* Packet is destined to client or server */
-      if (!server->standalone)
-	silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server), 
-				packet->type,
-				packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-				packet->buffer->data, packet->buffer->len, 
-				FALSE);
+      silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server), 
+			      packet->type,
+			      packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+			      packet->buffer->data, packet->buffer->len, 
+			      FALSE);
       silc_server_backup_send(server, (SilcServerEntry)sock->user_data,
 			      packet->type, packet->flags,
 			      packet->buffer->data, packet->buffer->len, 
@@ -148,6 +146,7 @@ void silc_server_notify(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
+	SILC_LOG_DEBUG(("Notify for unknown channel"));
 	silc_free(channel_id);
 	goto out;
       }
@@ -259,6 +258,7 @@ void silc_server_notify(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
+	SILC_LOG_DEBUG(("Notify for unknown channel"));
 	silc_free(channel_id);
 	goto out;
       }
@@ -409,13 +409,16 @@ void silc_server_notify(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
+	SILC_LOG_DEBUG(("Notify for unknown channel"));
 	silc_free(channel_id);
 	goto out;
       }
     }
 
-    if (channel->topic && !strcmp(channel->topic, tmp))
+    if (channel->topic && !strcmp(channel->topic, tmp)) {
+      SILC_LOG_DEBUG(("Topic is already set and same"));
       goto out;
+    }
 
     if (client) {
       /* Get user's channel entry and check that topic set is allowed. */
@@ -504,9 +507,9 @@ void silc_server_notify(SilcServer server,
     /* 
      * Distribute the notify to local clients on the channel
      */
-    
+
     SILC_LOG_DEBUG(("CMODE CHANGE notify"));
-      
+
     /* Get client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -544,6 +547,7 @@ void silc_server_notify(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
+	SILC_LOG_DEBUG(("Notify for unknown channel"));
 	silc_free(channel_id);
 	goto out;
       }
@@ -568,21 +572,50 @@ void silc_server_notify(SilcServer server,
 	goto out;
       if (!silc_server_check_cmode_rights(server, channel, chl, mode)) {
 	SILC_LOG_DEBUG(("CMODE change is not allowed"));
+	silc_server_send_notify_cmode(server, sock, FALSE, channel,
+				      channel->mode, server->id,
+				      SILC_ID_SERVER, channel->cipher,
+				      channel->hmac_name,
+				      channel->passphrase,
+				      channel->founder_key);
 	goto out;
       }
     } else {
+      /* Assure that server is not removing founder mode from us */
       if (server->server_type == SILC_ROUTER &&
+	  sock != SILC_PRIMARY_ROUTE(server) &&
 	  channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH &&
 	  !(mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
 	SILC_LOG_DEBUG(("Enforcing sender to change channel mode"));
 	silc_server_send_notify_cmode(server, sock, FALSE, channel,
 				      channel->mode, server->id,
-				      SILC_ID_SERVER,
-				      channel->cipher,
+				      SILC_ID_SERVER, channel->cipher,
 				      channel->hmac_name,
 				      channel->passphrase,
 				      channel->founder_key);
 	goto out;
+      }
+
+      /* If server is adding founder mode, check whether there is founder
+	 on channel already and is not from this server */
+      if (server->server_type == SILC_ROUTER &&
+	  sock != SILC_PRIMARY_ROUTE(server) &&
+	  mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+	silc_hash_table_list(channel->user_list, &htl);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl))
+	  if (chl->mode & SILC_CHANNEL_UMODE_CHANFO &&
+	      chl->client->router != sock->user_data) {
+	    SILC_LOG_DEBUG(("Enforcing sender to change channel mode"));
+	    silc_server_send_notify_cmode(server, sock, FALSE, channel,
+					  channel->mode, server->id,
+					  SILC_ID_SERVER, channel->cipher,
+					  channel->hmac_name,
+					  channel->passphrase,
+					  channel->founder_key);
+	    silc_hash_table_list_reset(&htl);
+	    goto out;
+	  }
+	silc_hash_table_list_reset(&htl);
       }
     }
 
@@ -694,9 +727,9 @@ void silc_server_notify(SilcServer server,
        */
       SilcChannelClientEntry chl2 = NULL;
       bool notify_sent = FALSE;
-      
+
       SILC_LOG_DEBUG(("CUMODE CHANGE notify"));
-      
+
       /* Get client ID */
       tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
       if (!tmp)
@@ -734,6 +767,7 @@ void silc_server_notify(SilcServer server,
 	channel = silc_idlist_find_channel_by_id(server->local_list, 
 						 channel_id, NULL);
 	if (!channel) {
+	  SILC_LOG_DEBUG(("Notify for unknown channel"));
 	  silc_free(channel_id);
 	  goto out;
 	}
@@ -797,10 +831,15 @@ void silc_server_notify(SilcServer server,
       if (!silc_server_client_on_channel(client2, channel, &chl))
 	goto out;
 
+      if (server->server_type == SILC_SERVER && chl->mode == mode) {
+	SILC_LOG_DEBUG(("Mode is changed already"));
+	break;
+      }
+
       if (mode & SILC_CHANNEL_UMODE_CHANFO &&
 	  !(chl->mode & SILC_CHANNEL_UMODE_CHANFO) &&
 	  server->server_type == SILC_ROUTER &&
-	  sock->user_data != server->router) {
+	  sock != SILC_PRIMARY_ROUTE(server)) {
 	SilcPublicKey founder_key = NULL;
 
 	/* If channel doesn't have founder auth mode then it's impossible
@@ -890,7 +929,7 @@ void silc_server_notify(SilcServer server,
 	  silc_pkcs_public_key_free(founder_key);
       }
 
-      if (chl->mode == mode) {
+      if (server->server_type != SILC_SERVER && chl->mode == mode) {
 	SILC_LOG_DEBUG(("Mode is changed already"));
 	break;
       }
@@ -933,6 +972,7 @@ void silc_server_notify(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
+	SILC_LOG_DEBUG(("Notify for unknown channel"));
 	silc_free(channel_id);
 	goto out;
       }
@@ -1040,6 +1080,7 @@ void silc_server_notify(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->global_list, 
 					       channel_id, NULL);
       if (!channel) {
+	SILC_LOG_DEBUG(("Notify for unknown channel"));
 	silc_free(channel_id);
 	goto out;
       }
@@ -1247,6 +1288,7 @@ void silc_server_notify(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
+	SILC_LOG_DEBUG(("Notify for unknown channel"));
 	silc_free(channel_id);
 	goto out;
       }
@@ -1507,6 +1549,7 @@ void silc_server_notify(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
+	SILC_LOG_DEBUG(("Notify for unknown channel"));
 	silc_free(channel_id);
 	goto out;
       }
@@ -2693,8 +2736,6 @@ void silc_server_new_channel(SilcServer server,
   SilcServerEntry server_entry;
   SilcChannelEntry channel;
 
-  SILC_LOG_DEBUG(("Processing New Channel"));
-
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       packet->src_id_type != SILC_ID_SERVER ||
       server->server_type == SILC_SERVER)
@@ -2766,6 +2807,8 @@ void silc_server_new_channel(SilcServer server,
     /* If the channel does not exist, then create it. This creates a new
        key to the channel as well that we will send to the server. */
     if (!channel) {
+      SILC_LOG_DEBUG(("Channel is new to us"));
+
       /* The protocol says that the Channel ID's IP address must be based
 	 on the router's IP address.  Check whether the ID is based in our
 	 IP and if it is not then create a new ID and enforce the server
@@ -2793,6 +2836,7 @@ void silc_server_new_channel(SilcServer server,
 	return;
       }
       channel->disabled = TRUE;
+      channel->mode = silc_channel_get_mode(payload);
 
       /* Send the new channel key to the server */
       id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
@@ -2812,6 +2856,8 @@ void silc_server_new_channel(SilcServer server,
 	 We also create a new key for the channel. */
       SilcBuffer modes = NULL, users = NULL, users_modes = NULL;
 
+      SILC_LOG_DEBUG(("Channel already exists"));
+
       if (!SILC_ID_CHANNEL_COMPARE(channel_id, channel->id)) {
 	/* They don't match, send CHANNEL_CHANGE notify to the server to
 	   force the ID change. */
@@ -2823,8 +2869,8 @@ void silc_server_new_channel(SilcServer server,
 	return;
       }
 
-#if 0 /* Lets expect that server send CMODE_CHANGE notify anyway to
-	 (attempt) force mode change, and may very well get it. */
+#if 0 /* We will announce our CMODE anyway for this channel, so no need
+	 to check it (implicit enforce). */
 
       /* If the mode is different from what we have then enforce the
 	 mode change. */

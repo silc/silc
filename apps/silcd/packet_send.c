@@ -745,10 +745,10 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   bool gone = FALSE;
   int k;
 
-  SILC_LOG_DEBUG(("Relaying packet to channel"));
-
   if (!silc_server_client_on_channel(sender_entry, channel, &chl_sender))
     return;
+
+  SILC_LOG_DEBUG(("Relaying packet to channel %s", channel->channel_name));
 
   /* This encrypts the packet, if needed. It will be encrypted if
      it came from the router thus it needs to be encrypted with the
@@ -950,7 +950,8 @@ void silc_server_packet_send_local_channel(SilcServer server,
   SilcHashTableList htl;
   SilcSocketConnection sock = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Send packet to local clients on channel %s",
+		  channel->channel_name));
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
