@@ -8,6 +8,9 @@ Mon Jun 17 21:30:55 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	* Fixed memory leaks from libraries and server.  Affected
 	  files around the tree.
 
+	* Reverted back a fix made to CUMODE which broke it.
+	  Affected file silcd/command.c.
+
 Sun Jun 16 11:49:45 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_MESSAGE_FLAG_UTF8 to the protocol specs and the

@@ -4503,11 +4503,27 @@ SILC_SERVER_CMD_FUNC(cumode)
   if (target_mask & SILC_CHANNEL_UMODE_CHANOP) {
     /* Promote to operator */
     if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {
+      if (!(sender_mask & SILC_CHANNEL_UMODE_CHANOP) && 
+          !(sender_mask & SILC_CHANNEL_UMODE_CHANFO)) {
+        silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+                                              SILC_STATUS_ERR_NO_CHANNEL_PRIV,
+                                              0);
+        goto out;
+      }
+
       chl->mode |= SILC_CHANNEL_UMODE_CHANOP;
       notify = TRUE;
     }
   } else {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANOP) {
+      if (!(sender_mask & SILC_CHANNEL_UMODE_CHANOP) &&
+          !(sender_mask & SILC_CHANNEL_UMODE_CHANFO)) {
+        silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,   
+                                              SILC_STATUS_ERR_NO_CHANNEL_PRIV,
+                                              0);
+        goto out;
+      }
+      
       /* Demote to normal user */
       chl->mode &= ~SILC_CHANNEL_UMODE_CHANOP;
       notify = TRUE;

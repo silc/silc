@@ -77,8 +77,6 @@ int silc_server_alloc(SilcServer *new_server)
 
 void silc_server_free(SilcServer server)
 {
-  int i;
-
   if (!server)
     return;
 
@@ -93,13 +91,6 @@ void silc_server_free(SilcServer server)
     silc_dlist_uninit(server->sim);
   }
 #endif
-
-  for (i = 0; i < server->config->param.connections_max; i++) {
-    if (!server->sockets[i])
-      continue;
-    silc_socket_free(server->sockets[i]);
-  }
-  silc_free(server->sockets);
 
   silc_server_config_unref(&server->config_ref);
   if (server->rng)
@@ -584,6 +575,16 @@ void silc_server_stop(SilcServer server)
   SILC_LOG_DEBUG(("Stopping server"));
 
   if (server->schedule) {
+    int i;
+
+    for (i = 0; i < server->config->param.connections_max; i++) {
+      if (!server->sockets[i])
+	continue;
+      silc_socket_free(server->sockets[i]);
+    }
+    silc_free(server->sockets);
+    server->sockets = NULL;
+
     silc_schedule_stop(server->schedule);
     silc_schedule_uninit(server->schedule);
     server->schedule = NULL;
