@@ -1303,7 +1303,8 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (sock->outbuf->data - sock->outbuf->head)
      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
 
-    ret = silc_server_packet_send_real(server, sock, TRUE);
+    /* Send the packet */
+    ret = silc_packet_send(sock, TRUE);
 
     /* If returned -2 could not write to connection now, will do
        it later. */

@@ -581,13 +581,14 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
-				 int force_send)
+				 bool force_send,
+				 bool flush)
 {
   int ret;
 
   /* If rekey protocol is active we must assure that all packets are
      sent through packet queue. */
-  if (SILC_CLIENT_IS_REKEY(sock))
+  if (flush == FALSE && SILC_CLIENT_IS_REKEY(sock))
     force_send = FALSE;
 
   /* Send the packet */
@@ -635,7 +636,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
       silc_buffer_push(sock->outbuf, 
 		       sock->outbuf->data - sock->outbuf->head);
 
-    ret = silc_client_packet_send_real(client, sock, TRUE);
+    ret = silc_client_packet_send_real(client, sock, TRUE, TRUE);
 
     /* If returned -2 could not write to connection now, will do
        it later. */
@@ -1129,7 +1130,7 @@ void silc_client_packet_send(SilcClient client,
 		   sock->outbuf->data, sock->outbuf->len);
 
   /* Now actually send the packet */
-  silc_client_packet_send_real(client, sock, force_send);
+  silc_client_packet_send_real(client, sock, force_send, FALSE);
 }
 
 /* Closes connection to remote end. Free's all allocated data except
