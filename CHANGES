@@ -1,3 +1,12 @@
+Tue Jun 18 10:26:27 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* The log file is not dupped internally anymore in
+	  lib/silcutil/silclog.c.  Fixed memory leaks too.
+
+	* The scheduler now dispatches all pending timeout tasks
+	  when it is uninitialized with silc_schedule_uninit.
+	  Affected file lib/silcutil/silcschedule.c.
+
 Mon Jun 17 21:30:55 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added --enable-stack-trace option to configure.  Added
