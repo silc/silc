@@ -243,8 +243,11 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 
   /* Take Requested Attributes if set. */
   tmp = silc_argument_get_arg_type(cmd->args, 11, &len);
-  if (tmp)
+  if (tmp) {
+    if (client_entry->attrs)
+      silc_attribute_payload_list_free(client_entry->attrs);
     client_entry->attrs = silc_attribute_payload_parse(tmp, len);
+  }
 
   client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 
