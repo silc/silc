@@ -60,3 +60,12 @@ giving the ./configure.
 After compilation there should be silc.dll and silcclient.dll files in
 the lib/ directory.  It will also generate silc.lib and silcclient.lib
 files for linking against a client application.
+
+
+Compiling SILC Toolkit with Cygwin
+==================================
+
+Compiling the Toolkit with Cygwin is equivalent to compiling with MinGW
+except that the ./configure does not take the --with-win32 option.  In this
+case it will compile using Cygwin's libraries and the binaries will require
+the Cygwin DLL.
