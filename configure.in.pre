@@ -232,12 +232,12 @@ AC_ARG_WITH(gmp,
     AC_CHECK_HEADER(gmp.h,
       AC_CHECK_LIB(gmp, __gmpz_init,
         AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval = yes)
-        AC_MSG_RESULT(no),
+        AC_MSG_RESULT(GMP will not be compiled),
         AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval != yes)
-        AC_MSG_RESULT(yes)
+        AC_MSG_RESULT(GMP will be compiled)
       ),
       AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval != yes)
-      AC_MSG_RESULT(yes)
+      AC_MSG_RESULT(GMP will be compiled)
     )
     ;;
 esac ], [
@@ -245,14 +245,14 @@ esac ], [
     AC_CHECK_LIB(gmp, __gmpz_init,
       build_gmp=false
       AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
-      AC_MSG_RESULT(no),
+      AC_MSG_RESULT(GMP will not be compiled),
       build_gmp=true
       AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
-      AC_MSG_RESULT(yes)
+      AC_MSG_RESULT(GMP will be compiled)
     ),
     build_gmp=true
     AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
-    AC_MSG_RESULT(yes)
+    AC_MSG_RESULT(GMP will be compiled)
   )
 ])
 
