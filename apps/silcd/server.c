@@ -2233,15 +2233,8 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 			            TRUE : FALSE, cipher, hmac, sequence,
 			            silc_server_packet_parse, server);
 
-  /* If this socket connection is not authenticated yet and the packet
-     processing failed we will drop the connection since it can be
-     a malicious flooder. */
-  if (sock->type == SILC_SOCKET_TYPE_UNKNOWN && ret == FALSE &&
-      (!sock->protocol || sock->protocol->protocol->type ==
-       SILC_PROTOCOL_SERVER_KEY_EXCHANGE)) {
-    SILC_LOG_DEBUG(("Bad data sent from unknown connection %d", sock->sock));
-    SILC_SET_DISCONNECTING(sock);
-
+  /* If processing failed the connection is closed. */
+  if (!ret) {
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock, NULL);
     silc_server_close_connection(server, sock);

@@ -333,7 +333,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 
     /* Sanity checks */
     if (packetlen < SILC_PACKET_MIN_LEN) {
-      SILC_LOG_DEBUG(("Received invalid packet, dropped"));
+      SILC_LOG_ERROR(("Received invalid packet, dropped"));
       silc_buffer_clear(sock->inbuf);
       return FALSE;
     }
@@ -395,6 +395,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 			   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 			   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 			   "Router")));
+	return FALSE;
       }
 
     /* Pull the packet from inbuf thus we'll get the next one
@@ -463,7 +464,7 @@ static int silc_packet_decrypt_rest(SilcCipher cipher, SilcHmac hmac,
       if ((buffer->len - silc_hmac_len(hmac)) > SILC_PACKET_MIN_LEN) {
 	silc_buffer_push_tail(buffer, silc_hmac_len(hmac));
       } else {
-	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
+	SILC_LOG_ERROR(("Bad MAC length in packet, packet dropped"));
 	return FALSE;
       }
     }
@@ -502,7 +503,7 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
       if ((buffer->len - silc_hmac_len(hmac)) > SILC_PACKET_MIN_LEN) {
 	silc_buffer_push_tail(buffer, silc_hmac_len(hmac));
       } else {
-	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
+	SILC_LOG_ERROR(("Bad MAC length in packet, packet dropped"));
 	return FALSE;
       }
     }
@@ -517,7 +518,7 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 
     silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
     if (len > buffer->len) {
-      SILC_LOG_DEBUG(("Garbage in header of packet, bad packet length, "
+      SILC_LOG_ERROR(("Garbage in header of packet, bad packet length, "
 		      "packet dropped"));
       return FALSE;
     }
