@@ -41,6 +41,7 @@ typedef struct SilcServerStruct *SilcServer;
 #include "protocol.h"
 #include "command.h"
 #include "command_reply.h"
+#include "server_query.h"
 #include "silcd.h"
 #include "server_backup.h"
 

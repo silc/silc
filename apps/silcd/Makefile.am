@@ -33,6 +33,7 @@ silcd_SOURCES = \
 	server_util.c \
 	server_backup.c \
 	serverconfig.c \
+	server_query.c \
 	serverid.c \
 	server_version.c
 

@@ -233,10 +233,6 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 					       bool get_private,
 					       bool get_secret,
 					       SilcBuffer *user_mode_list);
-SilcClientEntry silc_server_get_client_resolve(SilcServer server,
-					       SilcClientID *client_id,
-					       bool always_resolve,
-					       bool *resolved);
 void silc_server_stderr(char *message);
 
 #endif

@@ -8,8 +8,7 @@
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation; version 2 of the License.
   
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -1182,11 +1181,10 @@ silc_server_command_whois_process(SilcServerCommandContext cmd)
 SILC_SERVER_CMD_FUNC(whois)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  int ret = 0;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WHOIS, cmd, 1, 3328);
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WHOIS, cmd, 1, 256);
 
-  ret = silc_server_command_whois_process(cmd);
+  silc_server_command_whois_process(cmd);
   silc_server_command_free(cmd);
 }
 
@@ -2183,7 +2181,7 @@ SILC_SERVER_CMD_FUNC(identify)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   int ret = 0;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_IDENTIFY, cmd, 1, 3328);
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_IDENTIFY, cmd, 1, 256);
 
   ret = silc_server_command_identify_process(cmd);
   silc_server_command_free(cmd);
@@ -2693,7 +2691,7 @@ SILC_SERVER_CMD_FUNC(invite)
     }
 
     /* Get the client entry */
-    dest = silc_server_get_client_resolve(server, dest_id, FALSE, &resolve);
+    dest = silc_server_query_client(server, dest_id, FALSE, &resolve);
     if (!dest) {
       if (server->server_type != SILC_SERVER || !resolve) {
 	silc_server_command_send_status_reply(
@@ -3325,8 +3323,8 @@ static void silc_server_command_join_channel(SilcServer server,
     if (!client)
       return;
   } else {
-    client = silc_server_get_client_resolve(server, client_id, FALSE, 
-					    &resolve);
+    client = silc_server_query_client(server, client_id, FALSE, 
+				      &resolve);
     if (!client) {
       if (cmd->pending)
 	goto out;

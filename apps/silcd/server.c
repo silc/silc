@@ -4935,61 +4935,6 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
   return buffer;
 }
 
-/* Finds client entry by Client ID and if it is not found then resolves
-   it using WHOIS command. */
-
-SilcClientEntry silc_server_get_client_resolve(SilcServer server,
-					       SilcClientID *client_id,
-					       bool always_resolve,
-					       bool *resolved)
-{
-  SilcClientEntry client;
-
-  if (resolved)
-    *resolved = FALSE;
-
-  client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					 TRUE, NULL);
-  if (!client) {
-    client = silc_idlist_find_client_by_id(server->global_list,
-					   client_id, TRUE, NULL);
-    if (!client && server->server_type == SILC_ROUTER)
-      return NULL;
-  }
-
-  if (!client && server->standalone)
-    return NULL;
-
-  if (!client || !client->nickname || !client->username ||
-      always_resolve) {
-    SilcBuffer buffer, idp;
-
-    if (client) {
-      client->data.status |= SILC_IDLIST_STATUS_RESOLVING;
-      client->data.status &= ~SILC_IDLIST_STATUS_RESOLVED;
-      client->resolve_cmd_ident = ++server->cmd_ident;
-    }
-
-    idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
-					    server->cmd_ident, 1,
-					    4, idp->data, idp->len);
-    silc_server_packet_send(server, client ? client->router->connection :
-			    SILC_PRIMARY_ROUTE(server),
-			    SILC_PACKET_COMMAND, 0,
-			    buffer->data, buffer->len, FALSE);
-    silc_buffer_free(idp);
-    silc_buffer_free(buffer);
-
-    if (resolved)
-      *resolved = TRUE;
-
-    return NULL;
-  }
-
-  return client;
-}
-
 /* A timeout callback for the re-key. We will be the initiator of the
    re-key protocol. */
 

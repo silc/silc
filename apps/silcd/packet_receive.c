@@ -3463,8 +3463,8 @@ void silc_server_resume_client(SilcServer server,
     idata = (SilcIDListData)client;
 
     /* Get entry to the client, and resolve it if we don't have it. */
-    detached_client = silc_server_get_client_resolve(server, client_id, FALSE,
-						     &resolved);
+    detached_client = silc_server_query_client(server, client_id, FALSE,
+					       &resolved);
     if (!detached_client) {
       if (resolved) {
 	/* The client info is being resolved. Reprocess this packet after
@@ -3508,7 +3508,7 @@ void silc_server_resume_client(SilcServer server,
 	/* The client info is being resolved. Reprocess this packet after
 	   receiving the reply to the query. */
 	SILC_LOG_DEBUG(("Resolving client info"));
-	silc_server_get_client_resolve(server, client_id, TRUE, NULL);
+	silc_server_query_client(server, client_id, TRUE, NULL);
 	r = silc_calloc(1, sizeof(*r));
 	if (!r)
 	  return;
