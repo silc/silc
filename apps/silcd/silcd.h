@@ -25,18 +25,12 @@
    compilation time. Otherwise, use default. This can be overridden on
    command line as well. */
 #ifndef SILC_SERVER_CONFIG_FILE
-#define SILC_SERVER_CONFIG_FILE "/etc/silc/silcd.conf\0"
+#define SILC_SERVER_CONFIG_FILE "/etc/silc/silcd.conf"
 #endif
 
-void usage();
-
-char file_public_key[100];       /* server public key */
-char file_private_key[100];      /* server private key */
-
-#define PUBLICKEY_NAME "/silc_host_public"
-#define PRIVATEKEY_NAME "/silc_host_private"
+#define SILC_SERVER_PUBLIC_KEY_NAME "/silcd.pub"
+#define SILC_SERVER_PRIVATE_KEY_NAME "/silcd.prv"
 
 #define SERVER_KEY_EXPIRATION_DAYS 180
-int key_expires;
 
 #endif

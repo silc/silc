@@ -124,53 +124,6 @@ int silc_get_number_of_emails()
   return num;
 }
 
-/* Returns the username of the user. If the global variable LOGNAME
-   does not exists we will get the name from the password file. */
-
-char *silc_get_username()
-{
-  char *logname = NULL;
-  
-  logname = strdup(getenv("LOGNAME"));
-  if (!logname) {
-    logname = getlogin();
-    if (!logname) {
-      struct passwd *pw;
-
-      pw = getpwuid(getuid());
-      if (!pw) {
-	fprintf(stderr, "silc_get_username: %s\n", strerror(errno));
-	return NULL;
-      }
-      
-      logname = strdup(pw->pw_name);
-    }
-  }
-  
-  return logname;
-}                          
-
-/* Returns the real name of ther user. */
-
-char *silc_get_real_name()
-{
-  char *realname = NULL;
-  struct passwd *pw;
-    
-  pw = getpwuid(getuid());
-  if (!pw) {
-    fprintf(stderr, "silc_get_username: %s\n", strerror(errno));
-    return NULL;
-  }
-
-  if (strchr(pw->pw_gecos, ','))
-    *strchr(pw->pw_gecos, ',') = 0;
-
-  realname = strdup(pw->pw_gecos);
-
-  return realname;
-}
-
 /* Returns time til next minute changes. Used to update the clock when
    needed. */
 
@@ -226,21 +179,27 @@ int silc_client_ask_yes_no(SilcClient client, char *prompt)
 
 void silc_client_list_ciphers()
 {
-
+  char *ciphers = silc_cipher_get_supported();
+  fprintf(stdout, "%s\n", ciphers);
+  silc_free(ciphers);
 }
 
 /* Lists supported (builtin) hash functions */
 
 void silc_client_list_hash_funcs()
 {
-
+  char *hash = silc_hash_get_supported();
+  fprintf(stdout, "%s\n", hash);
+  silc_free(hash);
 }
 
 /* Lists supported PKCS algorithms */
 
 void silc_client_list_pkcs()
 {
-
+  char *pkcs = silc_pkcs_get_supported();
+  fprintf(stdout, "%s\n", pkcs);
+  silc_free(pkcs);
 }
 
 /* Displays input prompt on command line and takes input data from user */
@@ -482,7 +441,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (ret_prv_key)
     *ret_prv_key = prv_key;
 
-  printf("Public key has been save into `%s'.\n", pkfile);
+  printf("Public key has been saved into `%s'.\n", pkfile);
   printf("Private key has been saved into `%s'.\n", prvfile);
   printf("Press <Enter> to continue...\n");
   getchar();

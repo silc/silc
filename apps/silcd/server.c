@@ -120,6 +120,14 @@ int silc_server_init(SilcServer server)
   assert(server);
   assert(server->config);
 
+  /* Set public and private keys */
+  server->public_key = server->config->server_keys->public_key;
+  server->private_key = server->config->server_keys->private_key;
+  if (!server->public_key || !server->private_key) {
+    SILC_LOG_ERROR(("Server public key and/or private key does not exist"));
+    return FALSE;
+  }
+
   /* XXX After server is made as Silc Server Library this can be given
      as argument, for now this is hard coded */
   server->params = silc_calloc(1, sizeof(*server->params));
@@ -151,58 +159,6 @@ int silc_server_init(SilcServer server)
 
   /* Initialize none cipher */
   silc_cipher_alloc("none", &server->none_cipher);
-
-  /* XXXXX Generate RSA key pair */
-  {
-    unsigned char *public_key;
-    unsigned char *private_key;
-    uint32 pk_len, prv_len;
-    struct stat st;
-
-    if (stat("pubkey.pub", &st) < 0 && stat("privkey.prv", &st) < 0) {
-
-      if (silc_pkcs_alloc("rsa", &server->pkcs) == FALSE) {
-	SILC_LOG_ERROR(("Could not create RSA key pair"));
-	goto err0;
-      }
-      
-      if (server->pkcs->pkcs->init(server->pkcs->context, 
-				   1024, server->rng) == FALSE) {
-	SILC_LOG_ERROR(("Could not generate RSA key pair"));
-	goto err0;
-      }
-      
-      public_key = server->pkcs->pkcs->get_public_key(server->pkcs->context,
-						      &pk_len);
-      private_key = server->pkcs->pkcs->get_private_key(server->pkcs->context,
-							&prv_len);
-      
-      SILC_LOG_HEXDUMP(("public key"), public_key, pk_len);
-      SILC_LOG_HEXDUMP(("private key"), private_key, prv_len);
-      
-      server->public_key = 
-	silc_pkcs_public_key_alloc("rsa", "UN=root, HN=dummy",
-				   public_key, pk_len);
-      server->private_key = 
-	silc_pkcs_private_key_alloc("rsa", private_key, prv_len);
-      
-      /* XXX Save keys */
-      silc_pkcs_save_public_key("pubkey.pub", server->public_key,
-				SILC_PKCS_FILE_PEM);
-      silc_pkcs_save_private_key("privkey.prv", server->private_key, NULL,
-				 SILC_PKCS_FILE_BIN);
-
-      memset(public_key, 0, pk_len);
-      memset(private_key, 0, prv_len);
-      silc_free(public_key);
-      silc_free(private_key);
-    } else {
-      silc_pkcs_load_public_key("pubkey.pub", &server->public_key,
-				SILC_PKCS_FILE_PEM);
-      silc_pkcs_load_private_key("privkey.prv", &server->private_key,
-				 SILC_PKCS_FILE_BIN);
-    }
-  }
 
   /* Create a listening server. Note that our server can listen on
      multiple ports. All listeners are created here and now. */

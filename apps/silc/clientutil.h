@@ -26,8 +26,6 @@ void silc_print_to_window(WINDOW *win, char *message);
 void silc_print(SilcClient client, char *msg, ...);
 char *silc_get_mail_path();
 int silc_get_number_of_emails();
-char *silc_get_username();
-char *silc_get_real_name();
 int silc_client_time_til_next_min();
 int silc_client_ask_yes_no(SilcClient client, char *prompt);
 char *silc_client_get_input(const char *prompt);

@@ -44,19 +44,20 @@ install-dirs:
 	-mkdir -p $(docdir)
 
 generate-server-key:
-	-umask 022;
-	-echo Generating SILC Server key into $(etcdir)
-	-$(sbindir)/silcd -k $(etcdir)
+	-$(sbindir)/silcd -C $(etcdir)
 
 sim-install:
-	-echo Installing SIM modules into $(modulesdir)
 	-cp -fR $(srcdir)/lib/silcsim/modules/*.so $(modulesdir)/
 
 doc-install:
 	-cp -fR $(srcdir)/doc/* $(docdir)/
+	-cp -fR $(srcdir)/COPYING $(docdir)/
+	-cp -fR $(srcdir)/README $(docdir)/
+	-cp -fR $(srcdir)/INSTALL $(docdir)/
+	-cp -fR $(srcdir)/TODO $(docdir)/
 
 etc-install:
 	-cp -fR $(srcdir)/doc/example_silcd.conf $(etcdir)/silcd.conf
 	-cp -fR $(srcdir)/doc/example_silc.conf $(etcdir)/silc.conf
 
-install-data-hook: install-dirs generate-server-key sim-install doc-install
+install-data-hook: install-dirs generate-server-key sim-install doc-install etc-install

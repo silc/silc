@@ -72,9 +72,9 @@ static char *opt_cipher = NULL;
 static char *opt_public_key = NULL;
 static char *opt_private_key = NULL;
 static char *opt_config_file = NULL;
-static int opt_no_silcrc = FALSE;
+static bool opt_no_silcrc = FALSE;
 
-static int opt_create_keypair = FALSE;
+static bool opt_create_keypair = FALSE;
 static char *opt_pkcs = NULL;
 static int opt_bits = 0;
 

@@ -1,3 +1,11 @@
+Sun Apr  8 15:30:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Made the key generation options to the silcd program.  Added
+	  -C option, equivalent to client's option.
+
+	* Added new [ServerKeys] config section to the server.  It
+	  configures the server's public and private key.
+
 Sun Apr  8 01:37:21 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Made preliminary `make install' work.

@@ -31,6 +31,8 @@ SilcServerConfigSection silc_server_config_sections[] = {
     SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION, 4 },
   { "[hmac]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_HMAC, 3 },
+  { "[ServerKeys]", 
+    SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_KEYS, 2 },
   { "[ServerInfo]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO, 4 },
   { "[AdminInfo]", 
@@ -79,6 +81,8 @@ SilcServerConfig silc_server_config_alloc(char *filename)
 
   new->filename = filename;
 
+  SILC_LOG_DEBUG(("Loading config data from `%s'", filename));
+
   /* Open configuration file and parse it */
   config_parse = NULL;
   buffer = NULL;
@@ -105,6 +109,7 @@ void silc_server_config_free(SilcServerConfig config)
 {
   if (config) {
     silc_free(config->filename);
+    silc_free(config->server_keys);
     silc_free(config->server_info);
     silc_free(config->admin_info);
     silc_free(config->listen_port);
@@ -433,6 +438,54 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 	break;
       }
       config->hmac->key_len = atoi(tmp);
+      silc_free(tmp);
+
+      check = TRUE;
+      checkmask |= (1L << pc->section->type);
+      break;
+
+    case SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_KEYS:
+
+      if (!config->server_keys)
+	config->server_keys = silc_calloc(1, sizeof(*config->server_keys));
+
+      ret = silc_config_get_token(line, &tmp);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: Public key name not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+      
+      if (!silc_pkcs_load_public_key(tmp, &config->server_keys->public_key, 
+				     SILC_PKCS_FILE_PEM))
+	if (!silc_pkcs_load_public_key(tmp, &config->server_keys->public_key, 
+				       SILC_PKCS_FILE_BIN)) {
+	  fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
+		  config->filename, pc->linenum, tmp);
+	  break;
+	}
+      silc_free(tmp);
+
+      ret = silc_config_get_token(line, &tmp);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: Private key name not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+      
+      if (!silc_pkcs_load_private_key(tmp, &config->server_keys->private_key, 
+				     SILC_PKCS_FILE_BIN))
+	if (!silc_pkcs_load_private_key(tmp, 
+					&config->server_keys->private_key, 
+					SILC_PKCS_FILE_PEM)) {
+	  fprintf(stderr, "%s:%d: Could not load private key file `%s'\n",
+		  config->filename, pc->linenum, tmp);
+	  break;
+	}
       silc_free(tmp);
 
       check = TRUE;
@@ -1490,65 +1543,4 @@ silc_server_config_find_admin(SilcServerConfig config,
     return NULL;
 
   return admin;
-}
-
-/* Prints out example configuration file with default built in
-   configuration values. */
-
-void silc_server_config_print()
-{
-  char *buf;
-
-  buf = "\
-#\n\
-# Automatically generated example SILCd configuration file with default\n\
-# built in values. Use this as a guide to configure your SILCd configuration\n\
-# file for your system. For detailed description of different configuration\n\
-# sections refer to silcd(8) manual page.\n\
-#\n";
-  /*
-#<Cipher>
-#+blowfish
-#+twofish
-#+rc5
-#+rc6
-#+3des
-
-#<HashFunction>
-#+md5
-#+sha1
-
-<ServerInfo>
-+lassi.kuo.fi.ssh.com:10.2.1.6:Kuopio, Finland:1333
-
-<AdminInfo>
-+Mun huone:Mun servo:Pekka Riikonen:priikone@poseidon.pspt.fi
-
-<ListenPort>
-+10.2.1.6:10.2.1.6:1333
-
-<Logging>
-+infologfile:silcd.log:10000
-#+warninglogfile:/var/log/silcd_warning.log:10000
-#+errorlogfile:ERROR.log:10000
-#+fatallogfile:/var/log/silcd_error.log:
-
-<ConnectionClass>
-	  	+1:100:100:100
-			+2:200:300:400
-
-<ClientAuth>
-+10.2.1.199:priikone:333:1
-
-<AdminAuth>
-+10.2.1.199:priikone:priikone:1
-
-<ServerConnection>
-
-<RouterConnection>
-
-<DenyConnection>
-  */
-
-  fprintf(stdout, "%s\n", buf);
 }

@@ -32,6 +32,12 @@ typedef struct SilcServerConfigSectionAlgStruct {
 #define SILC_CONFIG_SERVER_MODNAME "builtin"
 } SilcServerConfigSectionAlg;
 
+/* Holds server keys from config file */
+typedef struct {
+  SilcPublicKey public_key;
+  SilcPrivateKey private_key;
+} SilcServerConfigSectionServerKeys;
+
 /* Holds server information from config file */
 typedef struct {
   char *server_name;
@@ -162,6 +168,7 @@ typedef struct {
   SilcServerConfigSectionAlg *pkcs;
   SilcServerConfigSectionAlg *hash_func;
   SilcServerConfigSectionAlg *hmac;
+  SilcServerConfigSectionServerKeys *server_keys;
   SilcServerConfigSectionServerInfo *server_info;
   SilcServerConfigSectionAdminInfo *admin_info;
   SilcServerConfigSectionListenPort *listen_port;
@@ -185,6 +192,7 @@ typedef enum {
   SILC_CONFIG_SERVER_SECTION_TYPE_PKCS,
   SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION,
   SILC_CONFIG_SERVER_SECTION_TYPE_HMAC,
+  SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_KEYS,
   SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO,
   SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO,
   SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT,

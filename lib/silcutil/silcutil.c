@@ -77,12 +77,13 @@ int silc_file_write(const char *filename, const char *buffer, uint32 len)
   int fd;
         
   if ((fd = creat(filename, 0644)) == -1) {
-    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", strerror(errno)));
+    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
+		    strerror(errno)));
     return -1;
   }
   
   if ((write(fd, buffer, len)) == -1) {
-    SILC_LOG_ERROR(("Cannot write to file %s: %s", strerror(errno)));
+    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
     return -1;
   }
 
@@ -100,12 +101,13 @@ int silc_file_write_mode(const char *filename, const char *buffer,
   int fd;
         
   if ((fd = creat(filename, mode)) == -1) {
-    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", strerror(errno)));
+    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
+		    strerror(errno)));
     return -1;
   }
   
   if ((write(fd, buffer, len)) == -1) {
-    SILC_LOG_ERROR(("Cannot write to file %s: %s", strerror(errno)));
+    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
     return -1;
   }
 
@@ -693,4 +695,51 @@ int silc_string_match(const char *string1, const char *string2)
   silc_free(s1);
 
   return ret;
+}
+
+/* Returns the username of the user. If the global variable LOGNAME
+   does not exists we will get the name from the password file. */
+
+char *silc_get_username()
+{
+  char *logname = NULL;
+  
+  logname = strdup(getenv("LOGNAME"));
+  if (!logname) {
+    logname = getlogin();
+    if (!logname) {
+      struct passwd *pw;
+
+      pw = getpwuid(getuid());
+      if (!pw) {
+	fprintf(stderr, "silc_get_username: %s\n", strerror(errno));
+	return NULL;
+      }
+      
+      logname = strdup(pw->pw_name);
+    }
+  }
+  
+  return logname;
+}                          
+
+/* Returns the real name of ther user. */
+
+char *silc_get_real_name()
+{
+  char *realname = NULL;
+  struct passwd *pw;
+    
+  pw = getpwuid(getuid());
+  if (!pw) {
+    fprintf(stderr, "silc_get_username: %s\n", strerror(errno));
+    return NULL;
+  }
+
+  if (strchr(pw->pw_gecos, ','))
+    *strchr(pw->pw_gecos, ',') = 0;
+
+  realname = strdup(pw->pw_gecos);
+
+  return realname;
 }

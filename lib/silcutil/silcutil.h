@@ -48,5 +48,7 @@ int silc_string_compare(char *string1, char *string2);
 char *silc_string_regexify(const char *string);
 int silc_string_regex_match(const char *regex, const char *string);
 int silc_string_match(const char *string1, const char *string2);
+char *silc_get_username();
+char *silc_get_real_name();
 
 #endif
