@@ -1,3 +1,16 @@
+Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Made some sanity checks to silc_server_daemonise like to check
+	  whether the reuqested user and group actually exists.
+
+	* Added sanity check to SKE's silc_ske_responder_finish to check
+	  that the public and private key actually is valid. 
+
+	* Invalidate the client's nickname when receiving Replace ID
+	  packet and the Client ID is being replaced.  This means that the
+	  server will query the nickname if someone needs it (client)
+	  a bit later.
+
 Tue Feb 13 19:55:59 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added --with-gmp configuration option.  If set the GMP
