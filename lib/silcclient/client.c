@@ -126,7 +126,7 @@ void silc_client_run(SilcClient client)
 SilcClientConnection silc_client_add_connection(SilcClient client,
 						char *hostname,
 						int port,
-						void *context);
+						void *context)
 {
   SilcClientConnection conn;
   int i;

@@ -108,11 +108,12 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
    Usage: COMMAND_REPLY((ARGS, argument1, argument2, etc...)), */
 #define COMMAND_REPLY(args) cmd->client->ops->command_reply args
 #define ARGS cmd->client, cmd->sock->user_data, \
-             cmd->payload, TRUE, silc_command_get(cmd->payload)
+             cmd->payload, TRUE, status, silc_command_get(cmd->payload)
 
 /* Error reply to application. Usage: COMMAND_REPLY_ERROR; */
 #define COMMAND_REPLY_ERROR cmd->client->ops->command_reply(cmd->client, \
-  cmd->sock->user_data, cmd->payload, FALSE, silc_command_get(cmd->payload))
+  cmd->sock->user_data, cmd->payload, FALSE, status, \
+  silc_command_get(cmd->payload))
 
 /* Process received command reply. */
 

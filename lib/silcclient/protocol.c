@@ -129,7 +129,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
     (SilcClientKEInternalContext *)protocol->context;
   SilcClient client = (SilcClient)ctx->client;
   SilcClientConnection conn = ctx->sock->user_data;
-  SilcSKEStatus status;
+  SilcSKEStatus status = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -176,11 +176,14 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       }
 
       if (status != SILC_SKE_STATUS_OK) {
-	switch(status) {
-	  
-	default:
-	  break;
-	}
+	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
+			  status));
+	SILC_LOG_DEBUG(("Error (type %d) during Key Exchange protocol",
+			status));
+
+	protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
+	return;
       }
 
       /* Advance the state of the protocol. */
@@ -208,9 +211,15 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	status = silc_ske_initiator_phase_1(ctx->ske, ctx->packet, NULL, NULL);
       }
 
-      switch(status) {
-      default:
-	break;
+      if (status != SILC_SKE_STATUS_OK) {
+	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
+			  status));
+	SILC_LOG_DEBUG(("Error (type %d) during Key Exchange protocol",
+			status));
+
+	protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
+	return;
       }
 
       /* Advance the state of the protocol and call the next state. */
@@ -242,9 +251,15 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 				     context);
       }
 
-      switch(status) {
-      default:
-	break;
+      if (status != SILC_SKE_STATUS_OK) {
+	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
+			  status));
+	SILC_LOG_DEBUG(("Error (type %d) during Key Exchange protocol",
+			status));
+
+	protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
+	return;
       }
 
       /* Advance the state of the protocol. */

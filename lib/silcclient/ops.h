@@ -44,7 +44,7 @@ typedef struct {
 		  SilcCommand command);
   void (*command_reply)(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
-			SilcCommand command, ...);
+			SilcCommandStatus status, SilcCommand command, ...);
   void (*connect)(SilcClient client, SilcClientConnection conn, int success);
   void (*disconnect)(SilcClient client, SilcClientConnection conn);
   int (*get_auth_method)(SilcClient client, SilcClientConnection conn,
@@ -105,7 +105,7 @@ typedef struct {
 
    void (*command_reply)(SilcClient client, SilcClientConnection conn,
 			 SilcCommandPayload cmd_payload, int success,
-			 SilcCommand command, ...);
+			 SilcCommandStatus status, SilcCommand command, ...);
 
    Command reply handler. This function is called always in the command reply
    function. If error occurs it will be called as well. Normal scenario
@@ -118,9 +118,10 @@ typedef struct {
    if the application would like to re-parse the received command data,
    however, it must be noted that the data is parsed already by the library
    thus the payload can be ignored. `success' is FALSE if error occured.
-   In this case arguments are not sent to the application. `command' is the
-   command reply being processed. The function has variable argument list
-   and each command defines the number and type of arguments it passes to the
+   In this case arguments are not sent to the application. The `status' is
+   the command reply status server returned. The `command' is the command
+   reply being processed. The function has variable argument list and each
+   command defines the number and type of arguments it passes to the
    application (on error they are not sent).
 
 
