@@ -363,7 +363,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
   case SILC_COMMAND_WHOIS:
     /* Get requested attributes if set */
     tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-    if (tmp && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN) {
+    if (tmp && !query->attrs && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN) {
       query->attrs = silc_attribute_payload_parse(tmp, tmp_len);
 
       /* When Requested Attributes is present we will assure that this
