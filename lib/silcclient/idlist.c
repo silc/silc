@@ -543,6 +543,7 @@ silc_client_add_client(SilcClient client, SilcClientConnection conn,
   /* Save the client infos */
   client_entry = silc_calloc(1, sizeof(*client_entry));
   client_entry->id = id;
+  client_entry->valid = TRUE;
   silc_parse_userfqdn(nickname, &nick, &client_entry->server);
   silc_parse_userfqdn(username, &client_entry->username, 
 		      &client_entry->hostname);
@@ -845,7 +846,7 @@ void silc_client_nickname_format(SilcClient client,
   char *newnick = NULL;
   int i, off = 0, len;
   SilcClientEntry *clients;
-  uint32 clients_count;
+  uint32 clients_count = 0;
 
   if (!client->params->nickname_format[0])
     return;
@@ -860,6 +861,13 @@ void silc_client_nickname_format(SilcClient client,
 					  client_entry->nickname, NULL,
 					  &clients_count);
   if (!clients && !client->params->nickname_force_format)
+    return;
+
+  len = 0;
+  for (i = 0; i < clients_count; i++)
+    if (clients[i]->valid)
+      len++;
+  if (!len)
     return;
 
   cp = client->params->nickname_format;
@@ -925,7 +933,7 @@ void silc_client_nickname_format(SilcClient client,
 	  break;
 
 	for (i = 0; i < clients_count; i++) {
-	  if (strncmp(clients[i]->nickname, newnick, off))
+	  if (strncasecmp(clients[i]->nickname, newnick, off))
 	    continue;
 	  if (strlen(clients[i]->nickname) <= off)
 	    continue;

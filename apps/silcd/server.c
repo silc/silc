@@ -772,7 +772,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
       silc_free(ctx->dest_id);
     silc_free(ctx);
     silc_schedule_task_del_by_callback(server->schedule,
-				     silc_server_failure_callback);
+				       silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
     return;
@@ -1215,6 +1215,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   SilcServer server = (SilcServer)ctx->server;
   SilcSocketConnection sock = ctx->sock;
   SilcServerHBContext hb_context;
+  SilcUnknownEntry entry = (SilcUnknownEntry)sock->user_data;
   void *id_entry = NULL;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1240,6 +1241,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     server->stat.auth_failures++;
     return;
   }
+
+  entry->data.last_receive = time(NULL);
 
   switch (ctx->conn_type) {
   case SILC_SOCKET_TYPE_CLIENT:
@@ -1363,7 +1366,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
  out:
   silc_schedule_task_del_by_callback(server->schedule,
-				   silc_server_failure_callback);
+				     silc_server_failure_callback);
   silc_protocol_free(protocol);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
@@ -1493,7 +1496,6 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   /* Get keys and stuff from ID entry */
   idata = (SilcIDListData)sock->user_data;
   if (idata) {
-    idata->last_receive = time(NULL);
     cipher = idata->receive_key;
     hmac = idata->hmac_receive;
   }
@@ -1673,6 +1675,7 @@ void silc_server_packet_parse_type(SilcServer server,
 				   SilcPacketContext *packet)
 {
   SilcPacketType type = packet->type;
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
 
   SILC_LOG_DEBUG(("Parsing packet type %d", type));
 
@@ -1750,6 +1753,7 @@ void silc_server_packet_parse_type(SilcServer server,
     SILC_LOG_DEBUG(("Channel Message packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
+    idata->last_receive = time(NULL);
     silc_server_channel_message(server, sock, packet);
     break;
 
@@ -1803,6 +1807,7 @@ void silc_server_packet_parse_type(SilcServer server,
     SILC_LOG_DEBUG(("Private Message packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
+    idata->last_receive = time(NULL);
     silc_server_private_message(server, sock, packet);
     break;
 

@@ -580,6 +580,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   }
 
   /* Continue to final state */
+  ske->users++;
   silc_ske_initiator_finish_final(ske, SILC_SKE_STATUS_OK, NULL);
 
   return SILC_SKE_STATUS_OK;
@@ -933,6 +934,7 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
   }
 
   /* Continue to final state */
+  ske->users++;
   silc_ske_responder_phase2_final(ske, SILC_SKE_STATUS_OK, NULL);
 
   return SILC_SKE_STATUS_OK;

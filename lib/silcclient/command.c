@@ -600,12 +600,11 @@ SILC_CLIENT_CMD_FUNC(invite)
       client_entry = silc_idlist_get_client(client, conn, nickname, 
 					    cmd->argv[2], TRUE);
       if (!client_entry) {
-	silc_free(nickname);
-	
 	if (cmd->pending) {
 	  COMMAND_ERROR;
 	  goto out;
 	}
+	silc_free(nickname);
       
 	/* Client entry not found, it was requested thus mark this to be
 	   pending command. */
@@ -717,6 +716,56 @@ SILC_CLIENT_CMD_FUNC(quit)
   silc_client_command_free(cmd);
 }
 
+/* Timeout callback to remove the killed client from cache */
+
+SILC_TASK_CALLBACK(silc_client_command_kill_remove_later)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClient client = cmd->client;
+  SilcClientConnection conn = cmd->conn;
+  SilcClientEntry target;
+  char *nickname = NULL;
+  
+  /* Parse the typed nickname. */
+  if (client->params->nickname_parse)
+    client->params->nickname_parse(cmd->argv[1], &nickname);
+  else
+    nickname = strdup(cmd->argv[1]);
+
+  /* Get the target client */
+  target = silc_idlist_get_client(cmd->client, conn, nickname, 
+				  cmd->argv[1], FALSE);
+  if (target) {
+    silc_client_remove_from_channels(client, conn, target);
+    silc_client_del_client(client, conn, target);
+  }
+
+  silc_free(nickname);
+  silc_client_command_free(cmd);
+}
+
+/* Kill command's pending command callback to actually remove the killed
+   client from our local cache. */
+
+SILC_CLIENT_CMD_FUNC(kill_remove)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientCommandReplyContext reply = 
+    (SilcClientCommandReplyContext)context2;
+  SilcCommandStatus status;
+
+  SILC_GET16_MSB(status, silc_argument_get_arg_type(reply->args, 1, NULL));
+  if (status == SILC_STATUS_OK) {
+    /* Remove with timeout */
+    silc_schedule_task_add(cmd->client->schedule, cmd->conn->sock->sock,
+			   silc_client_command_kill_remove_later, context,
+			   1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    return;
+  }
+
+  silc_client_command_free(cmd);
+}
+
 /* Command KILL. Router operator can use this command to remove an client
    fromthe SILC Network. */
 
@@ -752,12 +801,12 @@ SILC_CLIENT_CMD_FUNC(kill)
   target = silc_idlist_get_client(cmd->client, conn, nickname, 
 				  cmd->argv[1], TRUE);
   if (!target) {
-    silc_free(nickname);
-
     if (cmd->pending) {
       COMMAND_ERROR;
       goto out;
     }
+
+    silc_free(nickname);
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
@@ -773,10 +822,12 @@ SILC_CLIENT_CMD_FUNC(kill)
   /* Send the KILL command to the server */
   idp = silc_id_payload_encode(target->id, SILC_ID_CLIENT);
   if (cmd->argc == 2)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_KILL, 0, 1, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_KILL, 
+					    ++conn->cmd_ident, 1, 
 					    1, idp->data, idp->len);
   else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_KILL, 0, 2, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_KILL, 
+					    ++conn->cmd_ident, 2, 
 					    1, idp->data, idp->len,
 					    2, cmd->argv[2], 
 					    strlen(cmd->argv[2]));
@@ -787,6 +838,12 @@ SILC_CLIENT_CMD_FUNC(kill)
 
   /* Notify application */
   COMMAND;
+
+  /* Register a pending callback that will actually remove the killed
+     client from our cache. */
+  silc_client_command_pending(conn, SILC_COMMAND_KILL, conn->cmd_ident,
+			      NULL, silc_client_command_kill_remove,
+			      silc_client_command_dup(cmd));
 
  out:
   silc_free(nickname);
@@ -1370,12 +1427,12 @@ SILC_CLIENT_CMD_FUNC(cumode)
   client_entry = silc_idlist_get_client(cmd->client, conn, nickname,
 					cmd->argv[3], TRUE);
   if (!client_entry) {
-    silc_free(nickname);
-
     if (cmd->pending) {
       COMMAND_ERROR;
       goto out;
     }
+
+    silc_free(nickname);
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */

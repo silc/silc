@@ -2,7 +2,7 @@
 
   client_notify.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
@@ -123,7 +123,7 @@ void silc_client_notify_by_server(SilcClient client,
     /* Get the channel entry */
     channel = NULL;
     if (silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				&id_cache))
+				    &id_cache))
       channel = (SilcChannelEntry)id_cache->context;
 
     /* Get sender Client ID */
@@ -201,9 +201,6 @@ void silc_client_notify_by_server(SilcClient client,
       chu->client = client_entry;
       silc_list_add(channel->clients, chu);
     }
-
-    /* XXX add support for multiple same nicks on same channel. Check
-       for them here */
 
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
@@ -365,6 +362,8 @@ void silc_client_notify_by_server(SilcClient client,
     if (!client_entry)
       goto out;
     silc_free(client_id);
+
+    client_entry->valid = FALSE;
 
     /* Get new Client ID */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
@@ -767,8 +766,6 @@ void silc_client_notify_by_server(SilcClient client,
 
  out:
   silc_notify_payload_free(payload);
-  if (client_id)
-    silc_free(client_id);
-  if (channel_id)
-    silc_free(channel_id);
+  silc_free(client_id);
+  silc_free(channel_id);
 }

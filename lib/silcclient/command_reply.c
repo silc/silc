@@ -742,10 +742,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(kill)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
-  unsigned char *tmp;
 
-  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-  SILC_GET16_MSB(status, tmp);
+  SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	     "%s", silc_client_command_status_message(status));

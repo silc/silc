@@ -34,13 +34,14 @@ typedef struct {
   uint32 num;
   uint32 mode;			/* User mode in SILC */
   SilcClientID *id;		/* The Client ID */
+  bool valid;			/* FALSE if this entry is not valid */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */
   unsigned char *key;		/* Set only if appliation provided the
 				   key material. NULL if the library 
 				   generated the key. */
   uint32 key_len;
-  int generated;		/* TRUE if library generated the key */
+  bool generated;		/* TRUE if library generated the key */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
 } *SilcClientEntry;
 

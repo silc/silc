@@ -11,6 +11,29 @@ Sun Sep 16 12:32:58 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Print the selected security properties to the log files in
 	  the server.  Affected file silcd/protocol.c.
 
+	* Add SKE's reference counter even if calling the completion
+	  callback manually.  Otherwise it goes negative, although it
+	  does not cause any problems.  The affected file is
+	  lib/silcske/silcske.c.
+
+	* Remove the client entry with short timeout after giving the
+	  KILL command.  Affected file lib/silcclient/command.c.
+
+	* Fixed to send error reply in WHOIS and IDENTIFY commands in
+	  case all found clients are already disconnected (WHOWAS would
+	  found them) in the server.  Affected file silcd/command.c.
+
+	* Update the last_receive (time of last data received) to be 
+	  updated only when received private or channel message so that
+	  the idle time showed in WHOIS makes more sense.
+
+	* Added boolean field `valid' in to the SilcClientEntry in the
+	  client library to indicate whether the entry is valid or not.
+	  This fixes the nickname change bug on channel when changing
+	  the nickname to be same than the old (like nick to Nick) the
+	  nickname formatter doesn't set the new nick anymore to Nick@host.
+	  Affected file lib/silcclient/idlist.[ch].
+
 Sat Sep 15 13:29:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check that the public key exists in the GETKEY command before

@@ -1388,6 +1388,7 @@ void silc_client_receive_new_id(SilcClient client,
     conn->local_entry->hostname = strdup(client->hostname);
   conn->local_entry->server = strdup(conn->remote_host);
   conn->local_entry->id = conn->local_id;
+  conn->local_entry->valid = TRUE;
   
   /* Put it to the ID cache */
   silc_idcache_add(conn->client_cache, strdup(conn->nickname), conn->local_id, 
