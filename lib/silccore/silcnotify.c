@@ -164,7 +164,7 @@ SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type,
   return buffer;
 }
 
-/* Free's notify payload */
+/* Frees notify payload */
 
 void silc_notify_payload_free(SilcNotifyPayload payload)
 {

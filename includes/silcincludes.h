@@ -189,9 +189,7 @@ typedef uint32 * void *;
 
 /* Math library includes */
 #include "silcmp.h"
-#include "modinv.h"
-#include "mpbin.h"
-#include "silcprimegen.h"
+#include "silcmath.h"
 
 /* Crypto library includes */
 #include "silccipher.h"

@@ -7,12 +7,20 @@ Sat Jun  2 10:45:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Renamed silc_command_free_payload to silc_command_payload_free.
 	  Affected file lib/silccore/silccommand.h
 
+	* Added silcmath.h to include the prototoypes of various routines
+	  in the lib/silcmath.  Removed the old modinv.h, mpbin.h and
+	  silcprimegen.h.
+
 	* Changed the following headers to ROBODoc format:
 
 		lib/silccore/silcchannel.h
 		lib/silccore/silccommand.h
 		lib/silccore/silcid.h
 		lib/silccore/silcidcache.h
+		lib/silccore/silcmode.h
+		lib/silccore/silcnotify.h
+		lib/silccore/silcpacket.h
+		lib/silcmath/silcmath.h
 
 Fri Jun  1 22:19:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
