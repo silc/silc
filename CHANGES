@@ -1,3 +1,14 @@
+Wed Mar 14 20:37:35 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new SILC_CF_LAG_STRICT command flag that strictly forces
+	  that the command may be executed only once in (about) 2 seconds.
+	  The old SILC_CF_LAG flag is same but allows command bursts up
+	  to five before limiting.
+
+	  Added the support for CF_LAG and CF_LAG_STRICT flags to the
+	  server code.  Various commands now includes the CF_LAG_STRICT
+	  flag to disallow any kind of miss-use of the command.
+
 Wed Mar 14 16:10:30 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed the format of AdminConnection configuration section

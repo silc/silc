@@ -241,6 +241,12 @@ typedef struct SilcChannelClientEntryStruct {
        not allow any command to be exeucted more than once in about
        2 seconds. This is result of normal time().
 
+   char fast_command
+
+       Counter to check command bursts.  By default, up to 5 commands
+       are allowed before limiting the execution.  See command flags
+       for more detail.
+
    SilcServerEntry router
 
        This is a pointer to the server list. This is the router server whose 
@@ -270,6 +276,7 @@ struct SilcClientEntryStruct {
   int mode;
 
   long last_command;
+  char fast_command;
 
   /* Pointer to the router */
   SilcServerEntry router;

@@ -36,19 +36,24 @@ typedef struct SilcCommandPayloadStruct *SilcCommandPayload;
 typedef enum {
   SILC_CF_NONE           = 0,
 
-  /* Command may only be used once per (about) 2 seconds */
+  /* Command may only be used once per (about) 2 seconds. Bursts up
+     to 5 commands are allowed though. */
   SILC_CF_LAG            = (1L << 1),
+
+  /* Command may only be used once per (about) 2 seconds. No bursts
+     are allowed at all. */
+  SILC_CF_LAG_STRICT     = (1L << 2),
 
   /* Command is available for registered connections (connections
      whose ID has been created. */
-  SILC_CF_REG            = (1L << 2),
+  SILC_CF_REG            = (1L << 3),
 
   /* Command is available only for server operators */
-  SILC_CF_OPER           = (1L << 3),
+  SILC_CF_OPER           = (1L << 4),
 
   /* Command is available only for SILC (router) operators. If this 
      is set SILC_CF_OPER is not necessary to be set. */
-  SILC_CF_SILC_OPER      = (1L << 4),
+  SILC_CF_SILC_OPER      = (1L << 5),
 
 } SilcCommandFlag;
 

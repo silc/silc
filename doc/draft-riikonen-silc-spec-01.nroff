@@ -847,8 +847,12 @@ however, choose ignore the command reply, but should not.
 It is expected that some of the commands may be miss-used by clients
 resulting various problems on the server side.  Every implementation
 should assure that commands may not be executed more than once, say,
-in two (2) seconds.  This should be sufficient to prevent the miss-use
-of commands.
+in two (2) seconds.  However, to keep response rate up, allowing for
+example five (5) commands before limiting is allowed.  It is recommended
+that commands such as SILC_COMMAND_NICK, SILC_COMMAND_JOIN and 
+SILC_COMMAND_LEAVE should be limited in all cases as they require
+heavy operations.  This should be sufficient to prevent the miss-use of
+commands.
 
 SILC commands are described in section 5 SILC Commands.
 
