@@ -19,7 +19,7 @@ or [F] if the signature verificationn failed.  If you do not have
 the sender's public key you can fetch it with GETKEY command.
 
 If you don't want to verify the signatures from received messages
-you may do /SET ignore_messages_signatures on.  In this case
+you may do /SET ignore_message_signatures on.  In this case
 signatures in messages are ignored and they appear as normal
 non-signed messages.  By default, all message signatures are
 verified.
