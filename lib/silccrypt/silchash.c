@@ -238,3 +238,68 @@ char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
   
   return strdup(fingerprint);
 }
+
+static const char vo[]= "aeiouy";
+static const char co[]= "bcdfghklmnprstvzx";
+
+/* Creates a babbleprint (Bubble Babble Encoding, developed by Antti
+   Huima (draft-huima-babble-01.txt)), by first computing real fingerprint
+   using `hash' or if NULL, then using SHA1, and then encoding the
+   fingerprint to the babbleprint. */
+
+char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
+			    uint32 data_len)
+{
+  char *babbleprint;
+  unsigned char hval[32];
+  unsigned int a, b, c, d, e, check;
+  int i, k, out_len;
+
+  if (!hash)
+    silc_hash_alloc("sha1", &hash);
+
+  /* Take fingerprint */
+  silc_hash_make(hash, data, data_len, hval);
+
+  /* Encode babbleprint */
+  out_len = (((hash->hash->hash_len + 1) / 2) + 1) * 6;
+  babbleprint = silc_calloc(out_len, sizeof(*babbleprint));
+  babbleprint[0] = co[16];
+
+  check = 1;
+  for (i = 0, k = 1; i < hash->hash->hash_len - 1; i += 2, k += 6) { 
+    a = (((hval[i] >> 6) & 3) + check) % 6;
+    b = (hval[i] >> 2) & 15;
+    c = ((hval[i] & 3) + (check / 6)) % 6;
+    d = (hval[i + 1] >> 4) & 15;
+    e = hval[i + 1] & 15;
+    
+    check = ((check * 5) + (hval[i] * 7) + hval[i + 1]) % 36;
+    
+    babbleprint[k + 0] = vo[a];
+    babbleprint[k + 1] = co[b];
+    babbleprint[k + 2] = vo[c];
+    babbleprint[k + 3] = co[d];
+    babbleprint[k + 4] = '-';
+    babbleprint[k + 5] = co[e];
+  }
+
+  if ((hash->hash->hash_len % 2) != 0) {
+    a = (((hval[i] >> 6) & 3) + check) % 6;
+    b = (hval[i] >> 2) & 15;
+    c = ((hval[i] & 3) + (check / 6)) % 6;
+    babbleprint[k + 0] = vo[a];
+    babbleprint[k + 1] = co[b];
+    babbleprint[k + 2] = vo[c];
+  } else { 
+    a = check % 6;
+    b = 16;
+    c = check / 6;
+    babbleprint[k + 0] = vo[a];
+    babbleprint[k + 1] = co[b];
+    babbleprint[k + 2] = vo[c];
+  }
+  babbleprint[k + 3] = co[16];
+
+  return babbleprint;
+}

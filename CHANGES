@@ -1,3 +1,16 @@
+Tue Nov  6 21:31:54 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_hash_babbleprint to create a Bubble Babble
+	  Encoded fingerprint.  The encoding is developed by Antti
+	  Huima (draft-huima-babble-01.txt), and it creates human
+	  readable strings out of binary data.  Affected file
+	  lib/silccrypt/silchash.[ch].
+
+	* Print the babble print now in addition of fingerprint as well
+	  in Irssi SILC client.  Affected files are
+	  irssi/src/fe-common/silc/module-formats.[ch],
+	  irssi/src/fe-common/silc/core/client_ops.c.
+
 Sun Nov  4 23:37:28 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a security problem found in SKE.  The initiator's

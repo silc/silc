@@ -863,7 +863,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				SilcVerifyPublicKey completion, void *context)
 {
   int i;
-  char file[256], filename[256], *fingerprint, *format;
+  char file[256], filename[256], *fingerprint, *babbleprint, *format;
   struct passwd *pw;
   struct stat st;
   char *entity = ((conn_type == SILC_SOCKET_TYPE_SERVER ||
@@ -911,6 +911,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 
   /* Take fingerprint of the public key */
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+  babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
 
   verify = silc_calloc(1, sizeof(*verify));
   verify->client = client;
@@ -932,6 +933,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 		       SILCTXT_PUBKEY_RECEIVED, entity);
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 		       SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
+    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+		       SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
     format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			     SILCTXT_PUBKEY_ACCEPT);
     keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
@@ -955,6 +958,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			   SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
 	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			   SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
+	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			   SILCTXT_PUBKEY_COULD_NOT_LOAD, entity);
 	format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 				 SILCTXT_PUBKEY_ACCEPT_ANYWAY);
@@ -973,6 +978,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			 SILCTXT_PUBKEY_MALFORMED, entity);
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
@@ -989,6 +996,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			 SILCTXT_PUBKEY_RECEIVED, entity);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			 SILCTXT_PUBKEY_NO_MATCH, entity);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 

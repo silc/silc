@@ -96,5 +96,7 @@ void silc_hash_make(SilcHash hash, const unsigned char *data,
 		    uint32 len, unsigned char *return_hash);
 char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
 			    uint32 data_len);
+char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
+			    uint32 data_len);
 
 #endif

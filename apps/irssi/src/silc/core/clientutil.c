@@ -550,7 +550,7 @@ int silc_client_show_key(char *keyfile)
 {
   SilcPublicKey public_key;
   SilcPublicKeyIdentifier ident;
-  char *fingerprint;
+  char *fingerprint, *babbleprint;
   unsigned char *pk;
   uint32 pk_len;
   SilcPKCS pkcs;
@@ -568,6 +568,7 @@ int silc_client_show_key(char *keyfile)
 
   pk = silc_pkcs_public_key_encode(public_key, &pk_len);
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+  babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
 
   if (silc_pkcs_alloc(public_key->name, &pkcs)) {
     key_len = silc_pkcs_public_key_set(pkcs, public_key);
@@ -591,6 +592,7 @@ int silc_client_show_key(char *keyfile)
   if (ident->country)
     printf("Country            : %s\n", ident->country);
   printf("Fingerprint (SHA1) : %s\n", fingerprint); 
+  printf("Babbleprint (SHA1) : %s\n", babbleprint); 
 
   fflush(stdout);
 
