@@ -1,6 +1,18 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o /cmode #c +p says "not channel operator" even though is operator.
+
+ o /WHOIS without arguments should so client's own info.
+
+ o Do not let the Irssi show the passphrase of the channel on the screen.
+
+ o Do not execute PING for invalid entities.
+
+ o Do not let irssi u pdate the status bar on JOIN until the join command
+   is successful, so that it does not update that I'm on the channel
+   even though I could not join the channel.
+
  o The CMODE notify handling in client library may return NULL
    client entry pointer to the application (when server was the CMODE's
    executor).  Fix this somehow.
@@ -25,6 +37,9 @@ TODO/bugs in Irssi SILC client
 
 TODO/bugs In SILC Client Library
 ================================
+
+ o Library should save the cumode and not start from 0 everytime then
+   CUMODE is issued.
 
  o Add some silc_client_del_client and other deletion funtions for
    application to delete client entrys from the cache.
@@ -145,6 +160,11 @@ TODO In SILC Protocol
 	  feature when sending privat messages without having negotiated
 	  private keys, thus the servers decrypts and re-ecnrypts the
 	  messages.  Other applications exists as well.
+
+ o If channel founder mode is set and the invite mode is set on channel
+   then the founder should be added to the list automatically so that
+   if the founder signoff's it will be able join again to the invite only
+   channel wihtout being invited.
 
 
 TODO After 1.0

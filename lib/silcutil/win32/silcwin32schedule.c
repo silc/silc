@@ -21,20 +21,6 @@
 
 #include "silcincludes.h"
 
-/* XXX This probably does not work at all the way we want. We mostly
-   need the scheduler to handle socket connections. The MSDN says the 
-   WaitForMultipleObjects should not be used for sockets. Instead they
-   should be handled through windows messages (Like WSAAsyncSelect) but
-   that would require some different approach to this whole thing. Also,
-   I don't know whether I could use the Winsock's select()?? Maybe it would
-   be possible to use select(), WaitForMultipleObjects and handle the
-   windows messages with the PeekMessage() etc... Dunno... Someone who
-   knows these things should take a look at this. Also, If it requires
-   some more tweaking I can abandon this silc_select() thingy all together
-   and move the generic code to unix/ and program the SILC Scheduler
-   interface all together as platform specific. It is here just to
-   use as much common code as possible... -Pekka */
-
 /* Our "select()" for WIN32. This actually is not the select() and does
    not call Winsock's select() (since it cannot be used for our purposes)
    but mimics the functions of select(). 
@@ -74,8 +60,8 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
   if (nhandles == 0)
     return -1;
   else
-    ready = WaitForMultipleObjects(nhandles, handles, FALSE, timeo,
-				   QS_ALLINPUT);
+    ready = MsgWaitForMultipleObjects(nhandles, handles, FALSE, timeo,
+				      QS_ALLINPUT);
 
   if (ready == WAIT_FAILED) {
     SILC_LOG_WARNING(("WaitForMultipleObjects() failed"));
