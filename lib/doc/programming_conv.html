@@ -1,0 +1,207 @@
+<big><b>Programming Conventions</b></big>
+
+<br />&nbsp;<br />
+The SILC Toolkit has been programmed with a specific programming style that
+is consistent across all libraries and interfaces.  The programming style
+defines for example naming conventions for functions, structures, macros,
+enumerations, and other constants.
+
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Naming Conventions</b>
+
+<br />&nbsp;<br />
+<b>Macros and Defines</b>
+
+<br />&nbsp;<br />
+Macros are always capitalised and include underscores to separate words
+in the name.  All macros start with the "SILC_" prefix.  Example:
+
+<br />&nbsp;<br />
+<tt>
+#define SILC_PACKET_PADLEN(__packetlen, __blocklen)      \<br />
+&nbsp;&nbsp;SILC_PACKET_DEFAULT_PADLEN - (__packetlen) % \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN)
+</tt>
+
+<br />&nbsp;<br />
+Also defines (#define) are always capitalised and include underscores to
+separate words in the name.  Also all defines start with the "SILC_" prefix.
+
+<br />&nbsp;<br />
+<b>Structures</b>
+
+<br />&nbsp;<br />
+All structure names being with "Silc" prefix, and the name is mixed-case,
+for example: SilcClientConnection, SilcCommandPayload.  Many of the 
+structures used in SILC are actually private structures, and application
+cannot access them directly.  In these cases the structures are forward
+declared in the public header, and the implementation of the structure
+is in the source file.  In these case application does not need to know
+the contents of the structure, and is usually provided with a helper API
+to access the structure when needed.
+
+<br />&nbsp;<br />
+In the most of the cases the forward declaration for a structure is pointer, 
+for example:
+
+<br />&nbsp;<br />
+<tt>typedef struct SilcClientStruct *SilcClient;</tt>
+
+<br />&nbsp;<br />
+Application should always use the type defined pointer instead of the
+actual structure.
+
+<br />&nbsp;<br />
+<b>Functions</b>
+
+<br />&nbsp;<br />
+Function naming uses the common naming convention used in Toolkit.  All
+functions are always lowercase and they use underscores.  The name of
+the function always starts with prefix "silc_".  The name tells what
+the function do.  The name of a function is constructed from following parts:
+
+<br />&nbsp;<br />
+<tt>silc_(module)_(function)</tt>
+
+<br />&nbsp;<br />
+The (module) is the library, or interface this functions is part of.  For
+example: "cipher", "config", "command", "packet", etc.
+
+<br />&nbsp;<br />
+The (function) is the description of the functionality of the function.
+For example: "read", "new_id", "register", "find_by_name", etc.  Examples:
+
+<br />&nbsp;<br />
+<tt>
+silc_server_packet_send<br />
+silc_server_packet_send_to_channel<br />
+silc_idcache_del_by_id<br />
+silc_schedule_init<br />
+silc_protocol_excute_final<br />
+silc_buffer_alloc
+</tt>
+
+<br />&nbsp;<br />
+When function registers something the name of the function generally is
+"silc_function_register" and unregistering is done with
+"silc_function_unregister".  When function allocates something it
+is "silc_function_alloc" and when freeing it is
+"silc_function_free".  Respectively, with init/uninit functions.
+
+<br />&nbsp;<br />
+<b>Enumerations</b>
+
+<br />&nbsp;<br />
+Enumerations are always capitalised and include underscores to separate
+words in the name.  All enumerations start with the "SILC_" prefix.  Also,
+usually all enumerations are type defined to a specific name which can
+be used as type for the enumeration.  Example:
+
+<br />&nbsp;<br />
+<tt>
+typedef enum {<br />
+&nbsp;&nbsp;SILC_EXAMPLE_ENUM_NONE,<br />
+&nbsp;&nbsp;SILC_EXAMPLE_ENUM_LIST,<br />
+&nbsp;&nbsp;SILC_EXAMPLE_ENUM_STATUS,<br />
+} SilcExampleEnum;
+</tt>
+
+<br />&nbsp;<br />
+The naming for the type definition for the enumerations follow the
+normal naming convention; the name starts with "Silc" prefix and the
+name is mixed-case.
+
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Layout</b>
+
+<br />&nbsp;<br />
+<b>Indentation</b>
+
+<br />&nbsp;<br />
+The indendation in the source code is 2 characters, and tabulators are
+not used.  Example piece of code:
+
+<br />&nbsp;<br />
+<tt>
+void silc_client_free(SilcClient client)<br />
+{<br />
+&nbsp;&nbsp;if (client) {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;if (client->rng)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;silc_rng_free(client->rng);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;silc_free(client);<br />
+&nbsp;&nbsp;}<br />
+}
+</tt>
+
+<br />&nbsp;<br />
+<b>Placing Braces</b>
+
+<br />&nbsp;<br />
+Generally the braces placing the SILC code follows the K&R style; the
+opening of the brace is put to the last on the line, and the closing brace
+is on first on its own line, except for functions.  Examples:
+
+<br />&nbsp;<br />
+<tt>
+if (condition) {<br />
+&nbsp;&nbsp;silc_something();<br />
+&nbsp;&nbsp;silc_something_more();<br />
+}
+</tt>
+
+<br />&nbsp;<br />
+<tt>
+int silc_client_function()<br />
+{<br />
+&nbsp;&nbsp;return 0;<br />
+}
+</tt>
+
+<br />&nbsp;<br />
+<tt>
+if (condition) {<br />
+&nbsp;&nbsp;something;<br />
+&nbsp;&nbsp;silc_something_more();<br />
+} else {<br />
+&nbsp;&nbsp;something_else;<br />
+}
+</tt>
+
+<br />&nbsp;<br />
+<tt>
+if (condition) {<br />
+&nbsp;&nbsp;something;<br />
+&nbsp;&nbsp;silc_something_more();<br />
+} else if (other_condition) {<br />
+&nbsp;&nbsp;something;<br />
+&nbsp;&nbsp;silc_something_more();<br />
+} else {<br />
+&nbsp;&nbsp;something_else;<br />
+}
+</tt>
+
+<br />&nbsp;<br />
+<b>Header Files</b>
+<br />&nbsp;<br />
+
+Standard anti-nesting method is used in the header files to avoid 
+multiple inclusion of the header file.  Example:
+
+<br />&nbsp;<br />
+<tt>
+#ifndef SILCHEADER_H<br />
+#define SILCHEADER_H<br />
+...<br />
+#endif /* SILCHEADER_H */
+</tt>
+
+<br />&nbsp;<br />
+All public header files have the "silc" prefix in the filename, for example:
+silcclient.h, silcprivate.h, silcutil.h.  There are other header files in
+the Toolkit as well.  Application should not directly include these headers,
+however if needed it may access them.
+
+<br />&nbsp;<br />
+Every header file also includes a copyright notice.

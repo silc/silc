@@ -100,11 +100,7 @@ Manual.
    Toolkit, how the build system works, where is everything, how
    new (external) projects can be glued into Toolkit (use irssi as an
    example), and how external projects can use Toolkit without gluing into
-   it (how to link etc).
-
- o Write "Programming conventions" document to describe the coding
-   and naming conventions used in the Toolkit (should not be 
-   actually the CodingStyle document, but something more general).
+   it (how to link etc), debugging, architecture, types, etc.
 
  o Write "Platform Implementations" document to describe what platforms
    Toolkit support, what has been implemented, what has not been, what
