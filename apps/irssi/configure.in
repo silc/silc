@@ -794,6 +794,7 @@ src/perl/Makefile
 src/perl/common/Makefile.PL
 src/perl/ui/Makefile.PL
 src/perl/textui/Makefile.PL
+src/perl/silc/Makefile.PL
 scripts/Makefile
 docs/Makefile
 docs/help/Makefile
