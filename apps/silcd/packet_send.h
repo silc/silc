@@ -4,13 +4,13 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -27,30 +27,30 @@ int silc_server_packet_send_real(SilcServer server,
 				 SilcSocketConnection sock,
 				 bool force_send);
 void silc_server_packet_send(SilcServer server,
-			     SilcSocketConnection sock, 
-			     SilcPacketType type, 
+			     SilcSocketConnection sock,
+			     SilcPacketType type,
 			     SilcPacketFlags flags,
-			     unsigned char *data, 
+			     unsigned char *data,
 			     SilcUInt32 data_len,
 			     bool force_send);
 void silc_server_packet_send_dest(SilcServer server,
-				  SilcSocketConnection sock, 
-				  SilcPacketType type, 
+				  SilcSocketConnection sock,
+				  SilcPacketType type,
 				  SilcPacketFlags flags,
 				  void *dst_id,
 				  SilcIdType dst_id_type,
-				  unsigned char *data, 
+				  unsigned char *data,
 				  SilcUInt32 data_len,
 				  bool force_send);
 void silc_server_packet_send_srcdest(SilcServer server,
-				     SilcSocketConnection sock, 
-				     SilcPacketType type, 
+				     SilcSocketConnection sock,
+				     SilcPacketType type,
 				     SilcPacketFlags flags,
 				     void *src_id,
 				     SilcIdType src_id_type,
 				     void *dst_id,
 				     SilcIdType dst_id_type,
-				     unsigned char *data, 
+				     unsigned char *data,
 				     SilcUInt32 data_len,
 				     bool force_send);
 void silc_server_packet_broadcast(SilcServer server,
@@ -64,7 +64,7 @@ void silc_server_packet_send_clients(SilcServer server,
 				     SilcPacketType type,
 				     SilcPacketFlags flags,
 				     bool route,
-				     unsigned char *data, 
+				     unsigned char *data,
 				     SilcUInt32 data_len,
 				     bool force_send);
 void silc_server_packet_send_to_channel(SilcServer server,
@@ -78,7 +78,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
 void silc_server_packet_relay_to_channel(SilcServer server,
 					 SilcSocketConnection sender_sock,
 					 SilcChannelEntry channel,
-					 void *sender_id, 
+					 void *sender_id,
 					 SilcIdType sender_type,
 					 SilcClientEntry sender_entry,
 					 unsigned char *data,
@@ -142,7 +142,8 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   void *id, SilcIdType id_type,
 				   const char *cipher, const char *hmac,
 				   const char *passphrase,
-				   SilcPublicKey founder_key);
+				   SilcPublicKey founder_key,
+				   SilcBuffer channel_pubkeys);
 void silc_server_send_notify_cumode(SilcServer server,
 				    SilcSocketConnection sock,
 				    bool broadcast,
@@ -220,36 +221,36 @@ void silc_server_send_notify_on_channels(SilcServer server,
 void silc_server_send_new_id(SilcServer server,
 			     SilcSocketConnection sock,
 			     bool broadcast,
-			     void *id, SilcIdType id_type, 
+			     void *id, SilcIdType id_type,
 			     SilcUInt32 id_len);
 void silc_server_send_new_channel(SilcServer server,
 				  SilcSocketConnection sock,
 				  bool broadcast,
 				  char *channel_name,
-				  void *channel_id, 
+				  void *channel_id,
 				  SilcUInt32 channel_id_len,
 				  SilcUInt32 mode);
 void silc_server_send_channel_key(SilcServer server,
 				  SilcSocketConnection sender,
 				  SilcChannelEntry channel,
 				  unsigned char route);
-void silc_server_send_command(SilcServer server, 
+void silc_server_send_command(SilcServer server,
 			      SilcSocketConnection sock,
-			      SilcCommand command, 
+			      SilcCommand command,
 			      SilcUInt16 ident,
 			      SilcUInt32 argc, ...);
-void silc_server_send_command_reply(SilcServer server, 
+void silc_server_send_command_reply(SilcServer server,
 				    SilcSocketConnection sock,
-				    SilcCommand command, 
+				    SilcCommand command,
 				    SilcStatus status,
 				    SilcStatus error,
 				    SilcUInt16 ident,
 				    SilcUInt32 argc, ...);
-void silc_server_send_dest_command_reply(SilcServer server, 
+void silc_server_send_dest_command_reply(SilcServer server,
 					 SilcSocketConnection sock,
 					 void *dst_id,
 					 SilcIdType dst_id_type,
-					 SilcCommand command, 
+					 SilcCommand command,
 					 SilcStatus status,
 					 SilcStatus error,
 					 SilcUInt16 ident,
@@ -273,7 +274,7 @@ void silc_server_send_opers(SilcServer server,
 			    SilcPacketType type,
 			    SilcPacketFlags flags,
 			    bool route, bool local,
-			    unsigned char *data, 
+			    unsigned char *data,
 			    SilcUInt32 data_len,
 			    bool force_send);
 void silc_server_send_opers_notify(SilcServer server,

@@ -49,9 +49,9 @@ int silc_server_packet_send_real(SilcServer server,
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router")));
 
-      SILC_SET_DISCONNECTING(sock);
       if (sock->user_data)
 	silc_server_free_sock_user_data(server, sock, NULL);
+      SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
       return ret;
     }
@@ -1285,7 +1285,8 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   void *id, SilcIdType id_type,
 				   const char *cipher, const char *hmac,
 				   const char *passphrase,
-				   SilcPublicKey founder_key)
+				   SilcPublicKey founder_key,
+				   SilcBuffer channel_pubkeys)
 {
   SilcBuffer idp, fkey = NULL;
   unsigned char mode[4];
@@ -1297,14 +1298,16 @@ void silc_server_send_notify_cmode(SilcServer server,
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
-			       6, idp->data, idp->len,
+			       7, idp->data, idp->len,
 			       mode, 4,
 			       cipher, cipher ? strlen(cipher) : 0,
 			       hmac, hmac ? strlen(hmac) : 0,
 			       passphrase, passphrase ?
 			       strlen(passphrase) : 0,
-			       fkey ? fkey->data : NULL, fkey ? fkey->len : 0);
-  silc_buffer_free(fkey),
+			       fkey ? fkey->data : NULL, fkey ? fkey->len : 0,
+			       channel_pubkeys ? channel_pubkeys->data : NULL,
+			       channel_pubkeys ? channel_pubkeys->len : 0);
+  silc_buffer_free(fkey);
   silc_buffer_free(idp);
 }
 
@@ -2004,7 +2007,7 @@ void silc_server_packet_queue_purge(SilcServer server,
 				    SilcSocketConnection sock)
 {
   if (sock && SILC_IS_OUTBUF_PENDING(sock) &&
-      (SILC_IS_DISCONNECTED(sock) == FALSE)) {
+      !(SILC_IS_DISCONNECTING(sock)) && !(SILC_IS_DISCONNECTED(sock))) {
     SILC_LOG_DEBUG(("Purging outgoing queue"));
     server->stat.packets_sent++;
     silc_packet_send(sock, TRUE);
