@@ -18,6 +18,8 @@ Sat Feb 24 16:03:45 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added new command status type SILC_STATUS_ERR_NO_CHANNEL_FOPRIV
 	  to indicate that the client is not channel founder.
 
+	* Updated TODO.
+
 Sat Feb 24 00:00:55 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Removed the rng context from SilcPacketContext structure and

@@ -125,12 +125,6 @@ TODO In SILC Server
 
  o Protocol execution timeouts are hard coded, should be configurable.
 
- o Implement DENY_CONNECTION section in serverconfig.c and in server.
-
- o Implement REDIRECT_CLIENT section in serverconfig.c and in server.
-
- o Configuration file format - could be better.
-
  o IP address fields in configuration file should accept mask format
    as well, IP/MASK, and not just plain IP.
 
@@ -141,9 +135,6 @@ TODO In SILC Server
    should be checked before key exchange protocol.  Currently it is
    checked at the authentication phase after KE, that is ok, but it should
    be checked before starting KE, as well.
-
- o Statistics are totally missing from the server.  It would be nice
-   to gather some statistics.
 
 
 TODO In SILC Libraries
@@ -157,30 +148,9 @@ TODO In SILC Libraries
    server, actually).  If PFS is set, re-key must cause new key exchange.
    This is required by the SILC protocol.
 
- o silc_id_str2id must also take ID length as argument. Otherwise, variable
-   length ID's (after we add IPv6) will not work.
-
  o Re-key in general is actually missing (from everywhere) and must be done.
 
  o ID Cache expiry does not work.
-
- o PKCS#1 style RSA public key encryption/decryption/sign/verify is 
-   missing, and should be added for interoperability reasons.  The thing 
-   I've done now is bad and should be removed as soon as possible (or 
-   the protocol should then state the method of how they should be done).
-
- o Scheduler needs to be analyzed on high load as it might be unfair
-   towards select() because it may run timeout tasks before select() and
-   after select().  If it is found to be unfair the timeout task running
-   before select() should probably be removed.
-
- o On select() issue; maybe we should use poll() instead if it is
-   available? poll() doesn't have max fd limit...
-
- o SIM support for SILC PKCS API needs to made so that they could be
-   used as SIM's.  At the same time some work is required on prime
-   generation as the way it is done now sucks.  Read from code for
-   more (silcpkcs.h).
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
@@ -194,20 +164,21 @@ TODO In SILC Libraries
    cleaner.  Introducing silc_cipher_encrypt/decrypt/set_key etc.
    functions (I actually don't understand why have I left these un-done).
 
+ o SIM support for SILC PKCS API needs to made so that they could be
+   used as SIM's.  At the same time some work is required on prime
+   generation as the way it is done now sucks.  Read from code for
+   more (silcpkcs.h).
+
  o Random Number Generator needs some tweaking.  Reading /dev/random may
    block resulting slow initialization of RNG.  Some other things in the
    RNG may block as well.  Also, I have some pending changes to the RNG 
    that needs to be commited (from Schneier's Yarrow-160 paper).  They 
    should make the RNG even better.
 
- o silc_buffer_[un]format() needs to be made more stable as it may
-   crash the SILC if malformed data is sent as argument.  There are a
-   lot of places in client and server where we trust directly data coming
-   from network and try to unformat it.  The unformatting routine needs
-   to be able handle situations where data sent is malformed, by mistake
-   or intentionally.  This is important as it is easy to crash the SILC
-   now by just sending malformed data.  Also, in client and server we
-   must start checking the return value from silc_buffer_[un]format.
+ o Scheduler needs to be analyzed on high load as it might be unfair
+   towards select() because it may run timeout tasks before select() and
+   after select().  If it is found to be unfair the timeout task running
+   before select() should probably be removed.
 
 
 Other Things TODO

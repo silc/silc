@@ -1911,6 +1911,8 @@ int silc_server_remove_clients_by_server(SilcServer server,
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client = NULL;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (silc_idcache_find_by_id(server->local_list->clients, 
 			      SILC_ID_CACHE_ANY, SILC_ID_CLIENT, &list)) {
 
