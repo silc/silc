@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.7  2000/07/19 07:07:16  priikone
+ * 	Search mail by From:
+ *
  * Revision 1.6  2000/07/14 06:11:32  priikone
  * 	Fixed key-pair generation.
  *
@@ -128,7 +131,8 @@ char *silc_get_mail_path()
   char pathbuf[MAXPATHLEN];
   char *path;
   
-  if ((path = (char *)getenv("MAIL")) != 0) {
+  path = getenv("MAIL");
+  if (path) {
     strncpy(pathbuf, path, strlen(path));
   } else {
     strcpy(pathbuf, _PATH_MAILDIR);
@@ -155,7 +159,7 @@ int silc_get_number_of_emails()
     fprintf(stderr, "Couldn't open mail file (%s).\n", filename);
   } else {
     while((fscanf(tl, "%s", data)) != EOF) { 
-      if(!strcmp(data, "Subject:"))
+      if(!strcmp(data, "From:"))
 	num++;
     }
     
