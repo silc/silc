@@ -23,6 +23,16 @@
 #include "payload_internal.h"
 #include "groups_internal.h"
 
+/* Structure to hold all SKE callbacks-> */
+struct SilcSKECallbacksStruct {
+  SilcSKESendPacketCb send_packet;
+  SilcSKECb payload_receive;
+  SilcSKEVerifyCb verify_key;
+  SilcSKECb proto_continue;
+  SilcSKECheckVersion check_version;
+  void *context;
+};
+
 /* Allocates new SKE object. */
 
 SilcSKE silc_ske_alloc()
@@ -92,10 +102,62 @@ void silc_ske_free(SilcSKE ske)
   }
 }
 
+/* Sets the callback functions for the SKE session. 
+
+   The `send_packet' callback is a function that sends the packet to
+   network. The SKE library will call it at any time packet needs to
+   be sent to the remote host. 
+
+   The `payload_receive' callback is called when the remote host's Key
+   Exchange Start Payload has been processed.  The payload is saved
+   to ske->start_payload if the application would need it.  The application
+   must also provide the payload to the next state of the SKE.
+
+   The `verify_key' callback is called to verify the received public key
+   or certificate.  The verification process is most likely asynchronous.
+   That is why the application must call the completion callback when the
+   verification process has been completed. The library then calls the user
+   callback (`proto_continue'), if it is provided to indicate that the SKE
+   protocol may continue. 
+   
+   The `proto_continue' callback is called to indicate that it is
+   safe to continue the execution of the SKE protocol after executing
+   an asynchronous operation, such as calling the `verify_key' callback
+   function, which is asynchronous. The application should check the
+   ske->status in this function to check whether it is Ok to continue
+   the execution of the protocol.
+
+   The `check_version' callback is called to verify the remote host's
+   version. The application may check its own version against the remote
+   host's version and determine whether supporting the remote host
+   is possible. 
+
+   The `context' is passed as argument to all of the above callback
+   functions. */
+
+void silc_ske_set_callbacks(SilcSKE ske,
+			    SilcSKESendPacketCb send_packet,
+			    SilcSKECb payload_receive,
+			    SilcSKEVerifyCb verify_key,
+			    SilcSKECb proto_continue,
+			    SilcSKECheckVersion check_version,
+			    void *context)
+{
+  if (ske->callbacks)
+    silc_free(ske->callbacks);
+  ske->callbacks = silc_calloc(1, sizeof(*ske->callbacks));
+  ske->callbacks->send_packet = send_packet;
+  ske->callbacks->payload_receive = payload_receive;
+  ske->callbacks->verify_key = verify_key;
+  ske->callbacks->proto_continue = proto_continue;
+  ske->callbacks->check_version = check_version;
+  ske->callbacks->context = context;
+}
+
 /* Starts the SILC Key Exchange protocol for initiator. The connection
    to the remote end must be established before calling this function
    and the connecting socket must be sent as argument. This function
-   creates the Key Exchange Start Paload which includes all our
+   creates the Key Exchange Start Payload which includes all our
    configured security properties. This payload is then sent to the
    remote end for further processing. This payload must be sent as
    argument to the function, however, it must not be encoded
@@ -106,9 +168,7 @@ void silc_ske_free(SilcSKE ske)
 
 SilcSKEStatus silc_ske_initiator_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
-				       SilcSKEStartPayload *start_payload,
-				       SilcSKESendPacketCb send_packet,
-				       void *context)
+				       SilcSKEStartPayload *start_payload)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
@@ -128,8 +188,9 @@ SilcSKEStatus silc_ske_initiator_start(SilcSKE ske, SilcRng rng,
   ske->start_payload_copy = silc_buffer_copy(payload_buf);
 
   /* Send the packet. */
-  if (send_packet)
-    (*send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE, context);
+  if (ske->callbacks->send_packet)
+    (*ske->callbacks->send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE, 
+				  ske->callbacks->context);
 
   silc_buffer_free(payload_buf);
 
@@ -142,9 +203,7 @@ SilcSKEStatus silc_ske_initiator_start(SilcSKE ske, SilcRng rng,
    sent in the silc_ske_initiator_start function. */
 
 SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske, 
-					 SilcBuffer start_payload,
-					 SilcSKECb callback,
-					 void *context)
+					 SilcBuffer start_payload)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcSKEStartPayload *payload;
@@ -195,8 +254,8 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
   ske->start_payload = payload;
 
   /* Return the received payload by calling the callback function. */
-  if (callback)
-    (*callback)(ske, context);
+  if (ske->callbacks->payload_receive)
+    (*ske->callbacks->payload_receive)(ske, ske->callbacks->context);
 
   return status;
 
@@ -230,9 +289,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
 
 SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 					 SilcPublicKey public_key,
-					 SilcPrivateKey private_key,
-					 SilcSKESendPacketCb send_packet,
-					 void *context)
+					 SilcPrivateKey private_key)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
@@ -323,8 +380,10 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   ske->x = x;
 
   /* Send the packet. */
-  if (send_packet)
-    (*send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE_1, context);
+  if (ske->callbacks->send_packet)
+    (*ske->callbacks->send_packet)(ske, payload_buf, 
+				  SILC_PACKET_KEY_EXCHANGE_1, 
+				  ske->callbacks->context);
 
   silc_buffer_free(payload_buf);
 
@@ -334,16 +393,10 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 /* An initiator finish final callback that is called to indicate that
    the SKE protocol may continue. */
 
-typedef struct {
-  SilcSKECb callback;
-  void *context;
-} *SKEInitiatorFinish;
-
 static void silc_ske_initiator_finish_final(SilcSKE ske,
 					    SilcSKEStatus status,
 					    void *context)
 {
-  SKEInitiatorFinish finish = (SKEInitiatorFinish)context;
   SilcSKEKEPayload *payload;
   unsigned char hash[32];
   uint32 hash_len;
@@ -370,9 +423,8 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
      by the caller is not authentic. */
   if (status != SILC_SKE_STATUS_OK) {
     ske->status = status;
-    if (finish->callback)
-      finish->callback(ske, finish->context);
-    silc_free(finish);
+    if (ske->callbacks->proto_continue)
+      ske->callbacks->proto_continue(ske, ske->callbacks->context);
     return;
   }
 
@@ -381,9 +433,8 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
     if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
 				     &public_key)) {
       status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
-      if (finish->callback)
-	finish->callback(ske, finish->context);
-      silc_free(finish);
+      if (ske->callbacks->proto_continue)
+	ske->callbacks->proto_continue(ske, ske->callbacks->context);
       return;
     }
 
@@ -420,10 +471,9 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
   ske->status = SILC_SKE_STATUS_OK;
 
   /* Call the callback. The caller may now continue the SKE protocol. */
-  if (finish->callback)
-    finish->callback(ske, finish->context);
+  if (ske->callbacks->proto_continue)
+    ske->callbacks->proto_continue(ske, ske->callbacks->context);
 
-  silc_free(finish);
   return;
 
  err:
@@ -450,9 +500,8 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
   ske->status = status;
 
   /* Call the callback. */
-  if (finish->callback)
-    finish->callback(ske, finish->context);
-  silc_free(finish);
+  if (ske->callbacks->proto_continue)
+    ske->callbacks->proto_continue(ske, ske->callbacks->context);
 }
 
 /* Receives Key Exchange Payload from responder consisting responders
@@ -475,16 +524,11 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
    required for the remote to send its public key. */
 
 SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
-					SilcBuffer ke_payload,
-					SilcSKEVerifyCb verify_key,
-					void *verify_context,
-					SilcSKECb callback,
-					void *context)
+					SilcBuffer ke_payload)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcSKEKEPayload *payload;
   SilcMPInt *KEY;
-  SKEInitiatorFinish finish;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -496,7 +540,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   }
   ske->ke2_payload = payload;
 
-  if (!payload->pk_data && verify_key) {
+  if (!payload->pk_data && ske->callbacks->verify_key) {
     SILC_LOG_DEBUG(("Remote end did not send its public key (or certificate), "
 		    "even though we require it"));
     ske->status = SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED;
@@ -511,17 +555,13 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   silc_mp_pow_mod(KEY, &payload->x, ske->x, &ske->prop->group->group);
   ske->KEY = KEY;
 
-  finish = silc_calloc(1, sizeof(*finish));
-  finish->callback = callback;
-  finish->context = context;
-
-  if (payload->pk_data && verify_key) {
+  if (payload->pk_data && ske->callbacks->verify_key) {
     SILC_LOG_DEBUG(("Verifying public key"));
     
     ske->users++;
-    (*verify_key)(ske, payload->pk_data, payload->pk_len,
-		  payload->pk_type, verify_context,
-		  silc_ske_initiator_finish_final, finish);
+    (*ske->callbacks->verify_key)(ske, payload->pk_data, payload->pk_len,
+				 payload->pk_type, ske->callbacks->context,
+				 silc_ske_initiator_finish_final, NULL);
     
     /* We will continue to the final state after the public key has
        been verified by the caller. */
@@ -529,7 +569,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   }
 
   /* Continue to final state */
-  silc_ske_initiator_finish_final(ske, SILC_SKE_STATUS_OK, finish);
+  silc_ske_initiator_finish_final(ske, SILC_SKE_STATUS_OK, NULL);
 
   return SILC_SKE_STATUS_OK;
 
@@ -558,9 +598,7 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
 				       char *version,
 				       SilcBuffer start_payload,
-				       int mutual_auth,
-				       SilcSKECb callback,
-				       void *context)
+				       bool mutual_auth)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcSKEStartPayload *remote_payload = NULL, *payload = NULL;
@@ -597,8 +635,8 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
   ske->start_payload = payload;
 
   /* Call the callback function. */
-  if (callback)
-    (*callback)(ske, context);
+  if (ske->callbacks->payload_receive)
+    (*ske->callbacks->payload_receive)(ske, ske->callbacks->context);
 
   return status;
 
@@ -619,9 +657,7 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
    encoded into Key Exchange Start Payload and sent to the initiator. */
 
 SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske, 
-					 SilcSKEStartPayload *start_payload,
-					 SilcSKESendPacketCb send_packet,
-					 void *context)
+					 SilcSKEStartPayload *start_payload)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
@@ -670,8 +706,9 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
     goto err;
 
   /* Send the packet. */
-  if (send_packet)
-    (*send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE, context);
+  if (ske->callbacks->send_packet)
+    (*ske->callbacks->send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE, 
+				  ske->callbacks->context);
 
   silc_buffer_free(payload_buf);
 
@@ -702,16 +739,10 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
 /* An responder phase 2 final callback that is called to indicate that
    the SKE protocol may continue. */
 
-typedef struct {
-  SilcSKECb callback;
-  void *context;
-} *SKEResponderPhaseII;
-
 static void silc_ske_responder_phase2_final(SilcSKE ske,
 					    SilcSKEStatus status,
 					    void *context)
 {
-  SKEResponderPhaseII finish = (SKEResponderPhaseII)context;
   SilcSKEKEPayload *recv_payload, *send_payload;
   SilcMPInt *x, f;
 
@@ -736,9 +767,8 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
      by the caller is not authentic. */
   if (status != SILC_SKE_STATUS_OK) {
     ske->status = status;
-    if (finish->callback)
-      finish->callback(ske, finish->context);
-    silc_free(finish);
+    if (ske->callbacks->proto_continue)
+      ske->callbacks->proto_continue(ske, ske->callbacks->context);
     return;
   }
 
@@ -755,9 +785,8 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
 				     recv_payload->pk_len, 
 				     &public_key)) {
       ske->status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
-      if (finish->callback)
-	finish->callback(ske, finish->context);
-      silc_free(finish);
+      if (ske->callbacks->proto_continue)
+	ske->callbacks->proto_continue(ske, ske->callbacks->context);
       return;
     }
 
@@ -767,9 +796,8 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
     status = silc_ske_make_hash(ske, hash, &hash_len, TRUE);
     if (status != SILC_SKE_STATUS_OK) {
       ske->status = status;
-      if (finish->callback)
-	finish->callback(ske, finish->context);
-      silc_free(finish);
+      if (ske->callbacks->proto_continue)
+	ske->callbacks->proto_continue(ske, ske->callbacks->context);
       return;
     }
 
@@ -783,9 +811,8 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
       SILC_LOG_DEBUG(("Signature don't match"));
       
       ske->status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
-      if (finish->callback)
-	finish->callback(ske, finish->context);
-      silc_free(finish);
+      if (ske->callbacks->proto_continue)
+	ske->callbacks->proto_continue(ske, ske->callbacks->context);
       return;
     }
     
@@ -806,9 +833,8 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
     silc_mp_uninit(x);
     silc_free(x);
     ske->status = status;
-    if (finish->callback)
-      finish->callback(ske, finish->context);
-    silc_free(finish);
+    if (ske->callbacks->proto_continue)
+      ske->callbacks->proto_continue(ske, ske->callbacks->context);
     return;
   }
 
@@ -827,9 +853,8 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
 
   /* Call the callback. The caller may now continue with the SKE protocol. */
   ske->status = SILC_SKE_STATUS_OK;
-  if (finish->callback)
-    finish->callback(ske, finish->context);
-  silc_free(finish);
+  if (ske->callbacks->proto_continue)
+    ske->callbacks->proto_continue(ske, ske->callbacks->context);
 }
 
 /* This function receives the Key Exchange Payload from the initiator.
@@ -852,15 +877,10 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
    is considered to be an error if remote does not send its public key. */
 
 SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
-					 SilcBuffer ke_payload,
-					 SilcSKEVerifyCb verify_key,
-					 void *verify_context,
-					 SilcSKECb callback,
-					 void *context)
+					 SilcBuffer ke_payload)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcSKEKEPayload *recv_payload;
-  SKEResponderPhaseII finish;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -873,10 +893,6 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
 
   ske->ke1_payload = recv_payload;
 
-  finish = silc_calloc(1, sizeof(*finish));
-  finish->callback = callback;
-  finish->context = context;
-
   /* Verify the received public key and verify the signature if we are
      doing mutual authentication. */
   if (ske->start_payload && 
@@ -884,20 +900,22 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
 
     SILC_LOG_DEBUG(("We are doing mutual authentication"));
     
-    if (!recv_payload->pk_data && verify_key) {
+    if (!recv_payload->pk_data && ske->callbacks->verify_key) {
       SILC_LOG_DEBUG(("Remote end did not send its public key (or "
 		      "certificate), even though we require it"));
       ske->status = SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED;
       return status;
     }
 
-    if (recv_payload->pk_data && verify_key) {
+    if (recv_payload->pk_data && ske->callbacks->verify_key) {
       SILC_LOG_DEBUG(("Verifying public key"));
 
       ske->users++;
-      (*verify_key)(ske, recv_payload->pk_data, recv_payload->pk_len,
-		    recv_payload->pk_type, verify_context,
-		    silc_ske_responder_phase2_final, finish);
+      (*ske->callbacks->verify_key)(ske, recv_payload->pk_data, 
+				   recv_payload->pk_len,
+				   recv_payload->pk_type, 
+				   ske->callbacks->context,
+				   silc_ske_responder_phase2_final, NULL);
 
       /* We will continue to the final state after the public key has
 	 been verified by the caller. */
@@ -906,7 +924,7 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
   }
 
   /* Continue to final state */
-  silc_ske_responder_phase2_final(ske, SILC_SKE_STATUS_OK, finish);
+  silc_ske_responder_phase2_final(ske, SILC_SKE_STATUS_OK, NULL);
 
   return SILC_SKE_STATUS_OK;
 }
@@ -918,9 +936,7 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
 SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 					SilcPublicKey public_key,
 					SilcPrivateKey private_key,
-					SilcSKEPKType pk_type,
-					SilcSKESendPacketCb send_packet,
-					void *context)
+					SilcSKEPKType pk_type)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
@@ -983,8 +999,9 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
     goto err;
 
   /* Send the packet. */
-  if (send_packet)
-    (*send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE_2, context);
+  if (ske->callbacks->send_packet)
+    (*ske->callbacks->send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE_2,
+				  ske->callbacks->context);
 
   silc_buffer_free(payload_buf);
 
@@ -1007,9 +1024,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
    must not be called until the keys are processed like the protocol
    defines. This function is for both initiator and responder. */
 
-SilcSKEStatus silc_ske_end(SilcSKE ske,
-			   SilcSKESendPacketCb send_packet,
-			   void *context)
+SilcSKEStatus silc_ske_end(SilcSKE ske)
 {
   SilcBuffer packet;
 
@@ -1021,8 +1036,9 @@ SilcSKEStatus silc_ske_end(SilcSKE ske,
 		     SILC_STR_UI_INT((uint32)SILC_SKE_STATUS_OK),
 		     SILC_STR_END);
 
-  if (send_packet)
-    (*send_packet)(ske, packet, SILC_PACKET_SUCCESS, context);
+  if (ske->callbacks->send_packet)
+    (*ske->callbacks->send_packet)(ske, packet, SILC_PACKET_SUCCESS, 
+				  ske->callbacks->context);
 
   silc_buffer_free(packet);
 
@@ -1033,9 +1049,7 @@ SilcSKEStatus silc_ske_end(SilcSKE ske,
    while performing the protocol. The status argument is the error
    status and it is sent to the remote end. */
 
-SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status,
-			     SilcSKESendPacketCb send_packet,
-			     void *context)
+SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status)
 {
   SilcBuffer packet;
 
@@ -1047,8 +1061,9 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status,
 		     SILC_STR_UI_INT((uint32)status),
 		     SILC_STR_END);
 
-  if (send_packet)
-    (*send_packet)(ske, packet, SILC_PACKET_FAILURE, context);
+  if (ske->callbacks->send_packet)
+    (*ske->callbacks->send_packet)(ske, packet, SILC_PACKET_FAILURE, 
+				   ske->callbacks->context);
 
   silc_buffer_free(packet);
 
@@ -1143,10 +1158,14 @@ silc_ske_select_security_properties(SilcSKE ske,
   rp = remote_payload;
 
   /* Check version string */
-  status = silc_ske_check_version(ske, rp->version, rp->version_len);
-  if (status != SILC_SKE_STATUS_OK) {
-    ske->status = status;
-    return status;
+  if (ske->callbacks->check_version) {
+    status = ske->callbacks->check_version(ske, rp->version, 
+					   rp->version_len,
+					   ske->callbacks->context);
+    if (status != SILC_SKE_STATUS_OK) {
+      ske->status = status;
+      return status;
+    }
   }
 
   /* Flags are returned unchanged. */

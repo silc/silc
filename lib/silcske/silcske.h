@@ -29,6 +29,9 @@ typedef struct SilcSKEStruct *SilcSKE;
 /* Forward declaration for security properties. */
 typedef struct SilcSKESecurityPropertiesStruct *SilcSKESecurityProperties;
 
+/* Forward declaration for SKE callbacks structure. */
+typedef struct SilcSKECallbacksStruct *SilcSKECallbacks;
+
 /* Supported Public Key Types, defined by the protocol */
 typedef enum {
   SILC_SKE_PK_TYPE_SILC    = 1,	/* Mandatory type */
@@ -40,7 +43,8 @@ typedef enum {
 } SilcSKEPKType;
 
 /* Packet sending callback. Caller of the SKE routines must provide
-   a routine to send packets to negotiation parties. */
+   a routine to send packets to negotiation parties. See the
+   silc_ske_set_callbacks for more information. */
 typedef void (*SilcSKESendPacketCb)(SilcSKE ske, SilcBuffer packet, 
 				    SilcPacketType type, void *context);
 
@@ -49,7 +53,8 @@ typedef void (*SilcSKESendPacketCb)(SilcSKE ske, SilcBuffer packet,
    callers routine might need (payloads etc). This is usually called
    to indicate that the application may continue the execution of the
    SKE protocol. The application should check the ske->status in this
-   callback function. */
+   callback function. This callback is also called when Start Payload
+   is processed. See silc_ske_set_callbacks function for more information. */
 typedef void (*SilcSKECb)(SilcSKE ske, void *context);
 
 /* Completion callback that will be called when the public key
@@ -57,7 +62,8 @@ typedef void (*SilcSKECb)(SilcSKE ske, void *context);
    key were trusted or not. If the `status' is PENDING then the status
    is not considered to be available at this moment. In this case the
    SKE libary will assume that the caller will call this callback again
-   when the status is available. */
+   when the status is available. See silc_ske_set_callbacks for more
+   information. */
 typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
 					  SilcSKEStatus status,
 					  void *context);
@@ -67,7 +73,8 @@ typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
    application must call the `completion' callback when the verification
    process has been completed. The library then calls the user callback
    (SilcSKECb), if it was provided for the function that takes this callback
-   function as argument, to indicate that the SKE protocol may continue. */
+   function as argument, to indicate that the SKE protocol may continue. 
+   See silc_ske_set_callbacks for more information. */
 typedef void (*SilcSKEVerifyCb)(SilcSKE ske, 
 				unsigned char *pk_data,
 				uint32 pk_len,
@@ -75,6 +82,15 @@ typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
 				void *context,
 				SilcSKEVerifyCbCompletion completion,
 				void *completion_context);
+
+/* Callback function used to check the version of the remote SKE server.
+   The SKE library will call this function so that the appliation may
+   check its version against the remote host's version. This returns
+   SILC_SKE_STATUS_OK if the version string is Ok, and returns
+   SILC_SKE_STATUS_BAD_VERSION if the version was not acceptable. */
+typedef SilcSKEStatus (*SilcSKECheckVersion)(SilcSKE ske, 
+					     unsigned char *version, 
+					     uint32 len, void *context);
 
 /* Context passed to key material processing function. The function
    returns the processed key material into this structure. */
@@ -164,60 +180,46 @@ struct SilcSKEStruct {
   /* Reference counter. This is used when SKE library is performing async
      operations, like public key verification. */
   int users;
+
+  /* SKE callbacks. */
+  SilcSKECallbacks callbacks;
 };
 
 /* Prototypes */
 SilcSKE silc_ske_alloc();
 void silc_ske_free(SilcSKE ske);
+void silc_ske_set_callbacks(SilcSKE ske,
+			    SilcSKESendPacketCb send_packet,
+			    SilcSKECb payload_receive,
+			    SilcSKEVerifyCb verify_key,
+			    SilcSKECb proto_continue,
+			    SilcSKECheckVersion check_version,
+			    void *context);
 SilcSKEStatus silc_ske_initiator_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
-				       SilcSKEStartPayload *start_payload,
-				       SilcSKESendPacketCb send_packet,
-				       void *context);
+				       SilcSKEStartPayload *start_payload);
 SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske, 
-					 SilcBuffer start_payload,
-					 SilcSKECb callback,
-					 void *context);
+					 SilcBuffer start_payload);
 SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 					 SilcPublicKey public_key,
-					 SilcPrivateKey private_key,
-					 SilcSKESendPacketCb send_packet,
-					 void *context);
+					 SilcPrivateKey private_key);
 SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
-					SilcBuffer ke_payload,
-					SilcSKEVerifyCb verify_key,
-					void *verify_context,
-					SilcSKECb callback,
-					void *context);
+					SilcBuffer ke_payload);
 SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
 				       char *version,
 				       SilcBuffer start_payload,
-				       int mutual_auth,
-				       SilcSKECb callback,
-				       void *context);
+				       bool mutual_auth);
 SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske, 
-					 SilcSKEStartPayload *start_payload,
-					 SilcSKESendPacketCb send_packet,
-					 void *context);
+					 SilcSKEStartPayload *start_payload);
 SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
-					 SilcBuffer ke_payload,
-					 SilcSKEVerifyCb verify_key,
-					 void *verify_context,
-					 SilcSKECb callback,
-					 void *context);
+					 SilcBuffer ke_payload);
 SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 					SilcPublicKey public_key,
 					SilcPrivateKey private_key,
-					SilcSKEPKType pk_type,
-					SilcSKESendPacketCb send_packet,
-					void *context);
-SilcSKEStatus silc_ske_end(SilcSKE ske,
-			   SilcSKESendPacketCb send_packet,
-			   void *context);
-SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status,
-			     SilcSKESendPacketCb send_packet,
-			     void *context);
+					SilcSKEPKType pk_type);
+SilcSKEStatus silc_ske_end(SilcSKE ske);
+SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status);
 SilcSKEStatus 
 silc_ske_assemble_security_properties(SilcSKE ske,
 				      unsigned char flags,
@@ -248,9 +250,6 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 					    uint32 req_enc_key_len,
 					    uint32 req_hmac_key_len,
 					    SilcSKEKeyMaterial *key);
-SilcSKEStatus silc_ske_check_version(SilcSKE ske,
-				     unsigned char *version,
-				     uint32 version_len);
 void silc_ske_free_key_material(SilcSKEKeyMaterial *key);
 
 #endif

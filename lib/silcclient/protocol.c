@@ -167,7 +167,7 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 /* Checks the version string of the server. */
 
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
-				     uint32 len)
+				     uint32 len, void *context)
 {
   SilcClientConnection conn = (SilcClientConnection)ske->sock->user_data;
   SilcClient client = (SilcClient)ske->user_data;
@@ -264,7 +264,7 @@ static void silc_client_protocol_ke_continue(SilcSKE ske,
      if we are initiator. This is happens when this callback was sent
      to silc_ske_initiator_finish function. */
   if (ctx->responder == FALSE) {
-    silc_ske_end(ctx->ske, ctx->send_packet, context);
+    silc_ske_end(ctx->ske);
 
     /* End the protocol on the next round */
     protocol->state = SILC_PROTOCOL_STATE_END;
@@ -309,14 +309,19 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       ctx->ske = ske;
       ske->rng = client->rng;
       ske->user_data = (void *)client;
+
+      silc_ske_set_callbacks(ske, ctx->send_packet, NULL,
+			     ctx->verify,
+			     silc_client_protocol_ke_continue,
+			     silc_ske_check_version, 
+			     context);
       
       if (ctx->responder == TRUE) {
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
 					  silc_version_string,
-					  ctx->packet->buffer, TRUE,
-					  NULL, NULL);
+					  ctx->packet->buffer, TRUE);
       } else {
 	SilcSKEStartPayload *start_payload;
 
@@ -328,9 +333,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	/* Start the key exchange by sending our security properties
 	   to the remote end. */
 	status = silc_ske_initiator_start(ske, ctx->rng, ctx->sock,
-					  start_payload,
-					  ctx->send_packet,
-					  context);
+					  start_payload);
       }
 
       /* Return now if the procedure is pending */
@@ -363,16 +366,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	/* Sends the selected security properties to the initiator. */
 	status = 
 	  silc_ske_responder_phase_1(ctx->ske, 
-				     ctx->ske->start_payload,
-				     ctx->send_packet,
-				     context);
+				     ctx->ske->start_payload);
       } else {
 	/* Call Phase-1 function. This processes the Key Exchange Start
 	   paylaod reply we just got from the responder. The callback
 	   function will receive the processed payload where we will
 	   save it. */
-	status = silc_ske_initiator_phase_1(ctx->ske, ctx->packet->buffer, 
-					    NULL, NULL);
+	status = silc_ske_initiator_phase_1(ctx->ske, ctx->packet->buffer);
       }
 
       if (status != SILC_SKE_STATUS_OK) {
@@ -402,19 +402,14 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	   the initiator. This also creates our parts of the Diffie
 	   Hellman algorithm. The silc_client_protocol_ke_continue will
 	   be called after the public key has been verified. */
-	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
-					    ctx->verify, context, 
-					    silc_client_protocol_ke_continue,
-					    context);
+	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer);
       } else {
 	/* Call the Phase-2 function. This creates Diffie Hellman
 	   key exchange parameters and sends our public part inside
 	   Key Exhange 1 Payload to the responder. */
 	status = silc_ske_initiator_phase_2(ctx->ske,
 					    client->public_key,
-					    client->private_key,
-					    ctx->send_packet,
-					    context);
+					    client->private_key);
 	protocol->state++;
       }
 
@@ -445,9 +440,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	status = 
 	  silc_ske_responder_finish(ctx->ske, 
 				    client->public_key, client->private_key,
-				    SILC_SKE_PK_TYPE_SILC,
-				    ctx->send_packet,
-				    context);
+				    SILC_SKE_PK_TYPE_SILC);
 
 	/* End the protocol on the next round */
 	protocol->state = SILC_PROTOCOL_STATE_END;
@@ -455,10 +448,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. The silc_client_protocol_ke_continue will
 	   be called after the public key has been verified. */
-	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer,
-					   ctx->verify, context, 
-					   silc_client_protocol_ke_continue,
-					   context);
+	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer);
       }
 
       /* Return now if the procedure is pending */
@@ -506,7 +496,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       /* Send Ok to the other end if we are responder. If we are initiator
 	 we have sent this already. */
       if (ctx->responder == TRUE)
-	silc_ske_end(ctx->ske, ctx->send_packet, context);
+	silc_ske_end(ctx->ske);
 
       /* Unregister the timeout task since the protocol has ended. 
 	 This was the timeout task to be executed if the protocol is
@@ -528,8 +518,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
      */
     
     /* Send abort notification */
-    silc_ske_abort(ctx->ske, ctx->ske->status, 
-		   ctx->send_packet, context);
+    silc_ske_abort(ctx->ske, ctx->ske->status);
 
     /* On error the final callback is always called. */
     if (protocol->final_callback)
@@ -957,8 +946,12 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	  silc_ske_get_group_by_number(conn->rekey->ske_group,
 				       &ctx->ske->prop->group);
 
-	  status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer,
-					      NULL, NULL, NULL, NULL);
+	  silc_ske_set_callbacks(ctx->ske, 
+				 silc_client_protocol_rekey_send_packet,
+				 NULL,  NULL, NULL, silc_ske_check_version,
+				 context);
+      
+	  status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer);
 	  if (status != SILC_SKE_STATUS_OK) {
 	    SILC_LOG_WARNING(("Error (type %d) during Re-key (PFS)",
 			      status));
@@ -1010,11 +1003,12 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	  silc_ske_get_group_by_number(conn->rekey->ske_group,
 				       &ctx->ske->prop->group);
 
-	  status = 
-	    silc_ske_initiator_phase_2(ctx->ske, NULL, NULL,
-				       silc_client_protocol_rekey_send_packet,
-				       context);
-
+	  silc_ske_set_callbacks(ctx->ske, 
+				 silc_client_protocol_rekey_send_packet,
+				 NULL,  NULL, NULL, silc_ske_check_version,
+				 context);
+      
+	  status =  silc_ske_initiator_phase_2(ctx->ske, NULL, NULL);
 	  if (status != SILC_SKE_STATUS_OK) {
 	    SILC_LOG_WARNING(("Error (type %d) during Re-key (PFS)",
 			      status));
@@ -1059,11 +1053,8 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	 * Send our KE packe to the initiator now that we've processed
 	 * the initiator's KE packet.
 	 */
-	status = 
-	  silc_ske_responder_finish(ctx->ske, NULL, NULL, 
-				    SILC_SKE_PK_TYPE_SILC,
-				    silc_client_protocol_rekey_send_packet,
-				    context);
+	status = silc_ske_responder_finish(ctx->ske, NULL, NULL, 
+					   SILC_SKE_PK_TYPE_SILC);
 
 	  if (status != SILC_SKE_STATUS_OK) {
 	    SILC_LOG_WARNING(("Error (type %d) during Re-key (PFS)",
@@ -1086,8 +1077,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	  silc_protocol_execute(protocol, client->timeout_queue, 0, 300000);
 	}
 	
-	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer,
-					   NULL, NULL, NULL, NULL);
+	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer);
 	if (status != SILC_SKE_STATUS_OK) {
 	  SILC_LOG_WARNING(("Error (type %d) during Re-key (PFS)",
 			    status));
@@ -1142,9 +1132,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 
     if (ctx->pfs == TRUE) {
       /* Send abort notification */
-      silc_ske_abort(ctx->ske, ctx->ske->status, 
-		     silc_client_protocol_ke_send_packet,
-		     context);
+      silc_ske_abort(ctx->ske, ctx->ske->status);
     }
 
     /* On error the final callback is always called. */

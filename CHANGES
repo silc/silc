@@ -1,3 +1,12 @@
+Tue Jun 26 19:23:07 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed the silc_ske_check_version function and created
+	  a SilcSKECheckVersion callback.  Added also a function
+	  silc_ske_set_callbacks that is now used to set all SKE
+	  callbacks.  The callback functions are not given to
+	  the SKE functions anymore, but this function is used to
+	  set the callbacks.
+
 Mon Jun 25 21:42:51 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not add regex.h for WIN32.  The affected file
