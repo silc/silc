@@ -1,3 +1,7 @@
+Tue Mar 20 16:29:00 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Update TODO.  Todo in commands in the server.
+
 Tue Mar 20 15:45:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new notify type SILC_NOTIFY_TYPE_UMODE_CHANGE that is

@@ -100,6 +100,23 @@ TODO In SILC Client Library
 TODO In SILC Server
 ===================
 
+ o TODO in command.c and in command_reply.c:
+
+	o LIST is not implemented
+	o RESTART is not implemented
+	o INVITE is probably not working correctly
+	o INFO works only with local server.  It must work with any
+	  server in the network, implement the sending to other servers.
+	o PING works only with local server.  It must work with any
+	  server in the network, implement the sending to other servers.
+	o MOTD works only with local server.  It must work with any
+	  server in the network, implement the sending to other servers.
+	o JOIN does not check the invite and ban lists
+	o CMODE should be rewritten as it uses a lot duplicated code.
+	  Some of the modes may still not be implemented or is implemented
+	  the wrong way.  Also, setting ban and invite lists does not
+	  work at all and requires some thinking how to do them.
+
  o Packet processing can be made faster. All packet function in the
    packet_receive.c has same prototypes.  Instead of calling those from
    huge switch() make a table of callback functions that can be called
@@ -110,21 +127,13 @@ TODO In SILC Server
    own resolver stuff (through scheduler, if possible without writing
    too much own stuff) or use threads.
 
- o Length of the packet processing timeouts needs to be checked whether
-   they are too short or too long.  I haven't really tested whether they
-   are suitable.  They should be tested on high load which I haven't done
-   at all yet.
-
- o INVITE command must set the channel's invite list if channel is 
-   invite-only channel.
+ o Acceptance of incoming connections (client and server connections)
+   should be checked before key exchange protocol.  Currently it is
+   checked at the authentication phase after KE, that is ok, but it should
+   be checked before starting KE, as well.
 
  o Server says that it is able to listen on multiple ports but currently
    that is bogus.  It can, but internals are for single server.
-
- o Command flag usage in general is not implemented yet.
-
- o Client history must be implemented.  Protocol says that server must
-   keep history information about clients for some period of time.
 
  o Protocol execution timeouts are hard coded, should be configurable.
 
@@ -133,11 +142,6 @@ TODO In SILC Server
 
  o Connection classes should be actually implemented in serverconfig.c.
    They can be defined but they are totally ignored currently.
-
- o Acceptance of incoming connections (client and server connections)
-   should be checked before key exchange protocol.  Currently it is
-   checked at the authentication phase after KE, that is ok, but it should
-   be checked before starting KE, as well.
 
 
 TODO In SILC Libraries

@@ -2235,6 +2235,10 @@ List of all defined commands in SILC follows.
         for that channel will be changed, if the channel modes permit
         this action.
 
+        After setting the topic the server must send the notify type
+        SILC_NOTIFY_TYPE_TOPIC_SET to its primary router and then to
+        the channel which mode was changed.
+
         Reply messages to the command:
 
         Max Arguments:  2
@@ -2949,6 +2953,10 @@ List of all defined commands in SILC follows.
         channel.  If <comment> is provided it will be sent to the removed
         client.
 
+        After kicking the client the server must send the notify type
+        SILC_NOTIFY_TYPE_KICKED to the channel and to its primary router.
+        The channel key must also be re-generated after kicking.
+
         Reply messages to the command:
 
         Max Arguments:  1
@@ -3092,9 +3100,12 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <Channel ID>
 
         This command is used by client to leave a channel the client is
-        joined to.  After a client has leaved the channel the server
-        must create new key for the channel and distribute to all clients
-        still currently on the channel.
+        joined to. 
+
+        When leaving the channel the server must send the notify type
+        SILC_NOTIFY_TYPE_LEAVE to its primary router and to the channel.
+        The channel key must also be re-generated when leaving the channel
+        and distribute it to all clients still currently on the channel.
 
         Reply messages to the command:
 
