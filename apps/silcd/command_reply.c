@@ -177,7 +177,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   SilcClientEntry client;
   SilcIDCacheEntry cache = NULL;
   char global = FALSE;
-  char *nick;
+  char *nick = NULL;
   SilcUInt32 mode = 0, len, len2, id_len, flen;
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
@@ -224,11 +224,10 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 				    cmd->sock->user_data, NULL, 0);
     if (!client) {
       SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
-      silc_free(tmp);
       silc_free(nick);
+      silc_free(servername);
       return FALSE;
     }
-    silc_free(tmp);
 
     client->data.status |=
       (SILC_IDLIST_STATUS_REGISTERED | SILC_IDLIST_STATUS_RESOLVED);
@@ -465,7 +464,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   SilcClientID *client_id;
   SilcClientEntry client;
   SilcIDCacheEntry cache = NULL;
-  char *nick;
+  char *nick = NULL;
   int global = FALSE;
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
@@ -510,6 +509,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     if (!client) {
       SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
       silc_free(nick);
+      silc_free(servername);
       return FALSE;
     }
 
