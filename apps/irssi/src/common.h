@@ -11,6 +11,8 @@
 #define IRSSI_GLOBAL_CONFIG "silc.conf" /* config file name in /etc/ */
 #define IRSSI_HOME_CONFIG "silc.conf" /* config file name in ~/.irssi/ */
 
+#define DEFAULT_SERVER_ADD_PORT 706
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
