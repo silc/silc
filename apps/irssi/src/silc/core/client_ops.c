@@ -1052,7 +1052,7 @@ int silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		       SilcKeyAgreementCallback *completion,
 		       void **context)
 {
-  char portstr[6];
+  char portstr[12];
 
   /* We will just display the info on the screen and return FALSE and user
      will have to start the key agreement with a command. */

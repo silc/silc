@@ -36,12 +36,13 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start);
 struct SilcClientKeyAgreementStruct {
   SilcClient client;
   SilcClientConnection conn;
-  int fd;			        /* Listening/connection socket */
-  SilcSocketConnection sock;		/* Remote socket connection */
-  SilcClientEntry client_entry;		/* Destination client */
-  SilcKeyAgreementCallback completion;	/* Key agreement completion */
-  void *context;			/* User context */
-  SilcTask timeout;		        /* Timeout task */
+  int fd;			          /* Listening/connection socket */
+  SilcSocketConnection sock;		  /* Remote socket connection */
+  SilcClientEntry client_entry;		  /* Destination client */
+  SilcKeyAgreementCallback completion;	  /* Key agreement completion */
+  void *context;			  /* User context */
+  SilcTask timeout;			  /* Timeout task */
+  SilcClientKEInternalContext *proto_ctx; /* Key Exchange protocol context */
 };
 
 /* Packet sending function used by the SKE in the key agreement process. */
@@ -201,12 +202,13 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
      sent as context for the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->client = client;
-  proto_ctx->sock = newsocket;
+  proto_ctx->sock = silc_socket_dup(newsocket);
   proto_ctx->rng = client->rng;
   proto_ctx->responder = TRUE;
   proto_ctx->context = context;
   proto_ctx->send_packet = silc_client_key_agreement_send_packet;
   proto_ctx->verify = silc_client_protocol_ke_verify_key;
+  ke->proto_ctx = proto_ctx;
 
   /* Prepare the connection for key exchange protocol. We allocate the
      protocol but will not start it yet. The connector will be the
@@ -242,6 +244,8 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
     silc_client_del_socket(ke->client, ke->sock);
     silc_socket_free(ke->sock);
   }
+  if (ke->proto_ctx && ke->proto_ctx->ske)
+    silc_ske_free(ke->proto_ctx->ske);
   ke->client_entry->ke = NULL;
   if (ke->fd)
     silc_task_unregister_by_fd(ke->client->io_queue, ke->fd);
@@ -556,12 +560,13 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
      sent as context for the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->client = client;
-  proto_ctx->sock = ke->sock;
+  proto_ctx->sock = silc_socket_dup(ke->sock);
   proto_ctx->rng = client->rng;
   proto_ctx->responder = FALSE;
   proto_ctx->context = ke;
   proto_ctx->send_packet = silc_client_key_agreement_send_packet;
   proto_ctx->verify = silc_client_protocol_ke_verify_key;
+  ke->proto_ctx = proto_ctx;
 
   /* Perform key exchange protocol. */
   silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 

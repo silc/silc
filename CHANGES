@@ -15,6 +15,11 @@ Tue Jun 26 19:23:07 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  against the remote host's (usually a server) version
 	  string.  Affected file lib/silcclient/silcapi.h
 
+	* Added the KE protocol context to Key Agreement context
+	  in client library so that we can abort the SKE if it
+	  is in process when we get timeout.  Affected file is
+	  lib/silcclient/client_keyagr.c.
+
 Mon Jun 25 21:42:51 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not add regex.h for WIN32.  The affected file
