@@ -1,5 +1,5 @@
 lservers = (
-  { address = "silc.pspt.fi"; chatnet = SILCNet; port = 706; }
+  { address = "silc.silcnet.org"; chatnet = SILCNet; port = 706; }
 );
 
 chatnets = {
