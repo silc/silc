@@ -1140,6 +1140,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   tmp = silc_argument_get_arg_type(cmd->args, 17, &len);
   if (tmp && len == 4)
     SILC_GET32_MSB(channel->user_limit, tmp);
+  if (!(channel->mode & SILC_CHANNEL_MODE_ULIMIT))
+    channel->user_limit = 0;
 
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(cmd->args, 16, &len);
@@ -1316,6 +1318,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
   tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
   if (tmp && len == 4)
     SILC_GET32_MSB(channel->user_limit, tmp);
+  if (!(channel->mode & SILC_CHANNEL_MODE_ULIMIT))
+    channel->user_limit = 0;
 
   /* Get channel public key(s) */
   tmp = silc_argument_get_arg_type(cmd->args, 5, &len);

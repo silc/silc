@@ -848,6 +848,8 @@ void silc_client_notify_by_server(SilcClient client,
       tmp = silc_argument_get_arg_type(args, 8, &tmp_len);
       if (tmp && tmp_len == 4)
         SILC_GET32_MSB(channel->user_limit, tmp);
+      if (!(channel->mode & SILC_CHANNEL_MODE_ULIMIT))
+        channel->user_limit = 0;
 
       /* Get the channel public key that was added or removed */
       tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
