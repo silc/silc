@@ -655,7 +655,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
       }
       fflush(stdout);
       fflush(stderr);
-      assert(FALSE);
+      abort();
       break;
     }
 #endif
