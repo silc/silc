@@ -20,10 +20,14 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 HTML2PS = ../../scripts/html2ps -f ../../scripts/html2psrc
 
-all:	make-html2ps make-ps2pdf
+all:	make-html2ps make-ps2pdf zip
 
 make-html2ps:
 	$(HTML2PS) -o silc_protocol.ps silc_protocol.html
 
 make-ps2pdf:
 	ps2pdf silc_protocol.ps
+
+zip:
+	gzip silc_protocol.ps
+	gzip silc_protocol.pdf
