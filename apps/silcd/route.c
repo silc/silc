@@ -25,13 +25,18 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/04 08:30:24  priikone
+ * 	Added silc_server_get_route to return communication object
+ * 	for fastest route.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
 
 #include "serverincludes.h"
+#include "server_internal.h"
 #include "route.h"
 
 /* Route cache hash table */
@@ -62,4 +67,42 @@ SilcServerList *silc_server_route_check(unsigned int dest,
     return silc_route_cache[index].router;
 
   return NULL;
+}
+
+/* Returns the connection object for the fastest route for the given ID.
+   If we are normal server then this just returns our primary route. If
+   we are router we will do route lookup. */
+
+SilcSocketConnection silc_server_get_route(SilcServer server, void *id,
+					   SilcIdType id_type)
+{
+  unsigned int dest = 0;
+  unsigned short port = 0;
+  SilcServerList *router = NULL;
+
+  if (server->server_type == SILC_SERVER)
+    return (SilcSocketConnection)server->id_entry->router->connection;
+  
+  switch(id_type) {
+  case SILC_ID_CLIENT:
+    dest = ((SilcClientID *)id)->ip.s_addr;
+    port = server->id->port;
+    break;
+  case SILC_ID_SERVER:
+    dest = ((SilcServerID *)id)->ip.s_addr;
+    port = ((SilcServerID *)id)->port;
+    break;
+  case SILC_ID_CHANNEL:
+    dest = ((SilcChannelID *)id)->ip.s_addr;
+    port = ((SilcChannelID *)id)->port;
+    break;
+  default:
+    return NULL;
+  }
+
+  router = silc_server_route_check(dest, port);
+  if (!router)
+    return (SilcSocketConnection)server->id_entry->router->connection;
+
+  return (SilcSocketConnection)router->connection;
 }
