@@ -101,8 +101,8 @@ bool silc_create_key_pair(const char *pkcs_name,
  *
  *    bool silc_load_key_pair(const char *pub_filename,
  *                            const char *prv_filename,
- *                            SilcPKCS *return_pkcs,
  *                            const char *passphrase,
+ *                            SilcPKCS *return_pkcs,
  *                            SilcPublicKey *return_public_key,
  *                            SilcPrivateKey *return_private_key);
  *
