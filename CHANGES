@@ -1,3 +1,8 @@
+Thu Oct  9 20:24:09 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check that a string is not already part on invite/ban
+	  string when processing it.  Affected file silcd/server_util.c.
+
 Thu Oct  9 12:06:40 CEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the CUMODE_CHANGE for founder mode changes to comply

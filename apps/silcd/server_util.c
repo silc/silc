@@ -1836,11 +1836,57 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	  tmp2 = silc_calloc(1, sizeof(*tmp2));
 	  silc_hash_table_add(list, (void *)1, tmp2);
 	}
-	if (tmp[len - 1] == ',')
-	  tmp[len - 1] = '\0';
-	if (len) {
-	  silc_buffer_strformat(tmp2, tmp, SILC_STR_END);
-	  silc_buffer_strformat(tmp2, ",", SILC_STR_END);
+
+	/* Check that the string is not part of invite string already */
+	if (action == 0x00) {
+	  if (silc_string_match(tmp2->data, tmp))
+	    break;
+
+	  if (len) {
+	    if (tmp[len - 1] == ',')
+	      tmp[len - 1] = '\0';
+	    silc_buffer_strformat(tmp2, tmp, SILC_STR_END);
+	    silc_buffer_strformat(tmp2, ",", SILC_STR_END);
+	  }
+	} else {
+	  /* Announced list.  Check each entry in the list */
+	  unsigned char e[256];
+	  char *start, *end, *n, *rtmp;
+	  int i, k;
+
+	  rtmp = silc_memdup(tmp, len);
+	  for (i = 0, k = 0; i < len; i++) {
+	    if (tmp[i] != ',')
+	      continue;
+
+	    memset(e, 0, sizeof(e));
+	    silc_strncat(e, sizeof(e), tmp + k, i - k);
+	    if (!silc_string_match(tmp2->data, e)) {
+	      k = i + 1;
+	      continue;
+	    }
+
+	    /* Matches.  Delete it since we have it already */
+	    start = strstr(rtmp, e);
+	    if (start && strlen(start) >= (i - k)) {
+	      end = start + (i - k);
+	      n = silc_calloc(strlen(rtmp) - (i - k), sizeof(*n));
+	      strncat(n, rtmp, start - rtmp);
+	      if (strlen(end) > 1)
+		strncat(n, end + 1, ((rtmp + strlen(rtmp)) - end) - 1);
+	      silc_free(rtmp);
+	      rtmp = n;
+	    }
+
+	    k = i + 1;
+	  }
+
+	  /* Save the part that we didn't already have. */
+	  if (strlen(rtmp) > 1) {
+	    silc_buffer_strformat(tmp2, rtmp, SILC_STR_END);
+	    silc_buffer_strformat(tmp2, ",", SILC_STR_END);
+	  }
+	  silc_free(rtmp);
 	}
 
       } else if (type == 2) {
@@ -1911,7 +1957,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	      end = start + len;
 	      n = silc_calloc(strlen(string) - len, sizeof(*n));
 	      strncat(n, string, start - string);
-	      strncat(n, end + 1, ((string + strlen(string)) - end) - 1);
+	      if (strlen(end) > 1)
+		strncat(n, end + 1, ((string + strlen(string)) - end) - 1);
 	      silc_free(tmp2->head);
 	      silc_buffer_set(tmp2, n, strlen(n));
 	    }

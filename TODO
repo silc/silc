@@ -14,13 +14,15 @@ TODO for SILC Server 1.0
    - test all resume error cases for backup router
    - test all resume error cases for normal server
    - test all resume error cases for primary router
-   - test communication
 
-   NOTIFYS (works)
-   
+   - Notifys (works)
    JOIN, TOPIC_SET, CMODE_CHANGE, CUMODE_CHANGE, CHANNEL_CHANGE,
    UMODE_CHANGE, INVITE, BAN (rest of the notifys does not apply, no 
    testing required)
+
+   - Communication
+    - Test communication during switching, after switching, during
+      resuming and after resuming.
 
  o Testing
 
