@@ -3,10 +3,10 @@
 @FILENAME=silccryptlib.html
 @LINK=silcrng_intro.html:Introduction to SILC RNG
 @LINK=silcrng.html:SILC RNG Interface
-@LINK=silchmac.html:SILC HMAC Interface
-@LINK=silchash.html:SILC Hash Interface
 @LINK=silccipher.html:SILC Cipher API
 @LINK=silcpkcs.html:SILC PKCS API
+@LINK=silchash.html:SILC Hash Interface
+@LINK=silchmac.html:SILC HMAC Interface
 -->
 
 <big><b>SILC Crypto Library</b></big>

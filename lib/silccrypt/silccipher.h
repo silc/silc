@@ -309,7 +309,7 @@ void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv);
  ***/
 unsigned char *silc_cipher_get_iv(SilcCipher cipher);
 
-/****f* silccrypt/SilcCipherAPI/SilcUInt32 silc_cipher_get_key_len
+/****f* silccrypt/SilcCipherAPI/silc_cipher_get_key_len
  *
  * SYNOPSIS
  *
