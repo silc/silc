@@ -1,3 +1,25 @@
+Sun Oct 12 19:58:18 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed SERVER_SIGNOFF handling in servers.  The client
+	  was removed from wrong list thus not removing the client
+	  at all.  Affected file silcd/packet_receive.c.
+
+	* Do not execute rekey protocol for disabled connections as
+	  it would never go through.  Affected file silcd/server.c.
+
+	* Added timeout for rekey protocol to catch if the protocol
+	  never executes successfully.  Affected files silcd/server.c
+	  and protocol.h.
+
+Sat Oct 11 15:39:22 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Abandon packet processing for disconnected sockets.  Check
+	  this always after calling packet processing callback.
+	  Affected file lib/silccore/silcpacket.c.
+
+	* Fixed double registration disconnection code in server.
+	  Closed wrong connection.  Affected file silcd/packet_receive.c.
+
 Fri Oct 10 16:27:12 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* On normal server reconnect to primary during resuming 4
