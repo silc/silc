@@ -177,6 +177,16 @@ static void silc_client_channel_message_cb(SilcClient client,
     if (!channel)
       goto out;
 
+    /* If this client is not on channel, add it there since it clearly
+       is there. */
+    if (!silc_client_on_channel(channel, clients[0])) {
+      SilcChannelUser chu = silc_calloc(1, sizeof(*chu));
+      chu->client = clients[0];
+      chu->channel = channel;
+      silc_hash_table_add(channel->user_list, clients[0], chu);
+      silc_hash_table_add(clients[0]->channels, channel, chu);
+    }
+
     message = silc_channel_message_get_data(res->payload, NULL);
     
     /* Pass the message to application */

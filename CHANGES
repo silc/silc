@@ -1,3 +1,9 @@
+Thu Feb 14 16:02:26 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Add the client on channel after it was resolved at the
+	  channel message receiving, and it was not already on the
+	  channel.  Affected file lib/silcclient/client_channel.c.
+
 Wed Feb 13 23:16:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the public key authentication to allocate always the
