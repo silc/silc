@@ -23,6 +23,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/07 11:36:09  priikone
+ * 	Inform user when received unsupported public key from server.
+ *
  * Revision 1.4  2000/07/07 06:53:45  priikone
  * 	Added support for server public key verification.
  *
@@ -299,6 +302,14 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       }
 
       if (status != SILC_SKE_STATUS_OK) {
+
+        if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY) {
+          silc_say(client, "Received unsupported server %s public key",
+                   ctx->sock->hostname);
+        } else {
+          silc_say(client, "Error during key exchange protocol with server %s",
+                   ctx->sock->hostname);
+        }
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
 	return;
