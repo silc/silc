@@ -1633,9 +1633,19 @@ void silc_client_receive_new_id(SilcClient client,
 		   (void *)conn->local_entry, 0, NULL);
 
   if (connecting) {
-    if (!conn->params.detach_data) {
-      SilcBuffer sidp;
+    SilcBuffer sidp;
 
+    /* Issue IDENTIFY command for itself to get resolved hostname
+       correctly from server. */
+    silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
+				 silc_client_command_reply_identify_i, 0, 
+				 ++conn->cmd_ident);
+    sidp = silc_id_payload_encode(conn->local_entry->id, SILC_ID_CLIENT);
+    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+			     conn->cmd_ident, 1, 5, sidp->data, sidp->len);
+    silc_buffer_free(sidp);
+
+    if (!conn->params.detach_data) {
       /* Send NICK command if the nickname was set by the application (and is
 	 not same as the username). Send this with little timeout. */
       if (client->nickname && strcmp(client->nickname, client->username))
