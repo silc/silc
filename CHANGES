@@ -10,6 +10,11 @@ Tue Jan 29 19:49:31 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed TRQ from lib/trq, not needed anymore.
 
+	* Do more frequent heartbeats (5 minutes instead of 10 minutes)
+	  with server connections.  Later this will be configurable
+	  in config file after new config file is done.  Affected file
+	  silcd/server.c.
+
 Tue Jan 29 10:35:03 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a crash in server related to channel announcements.

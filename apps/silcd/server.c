@@ -952,7 +952,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
      timeout!! */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
-  silc_socket_set_heartbeat(sock, 600, hb_context,
+  silc_socket_set_heartbeat(sock, 300, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->schedule);
 
@@ -1462,7 +1462,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
      timeout!! */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
-  silc_socket_set_heartbeat(sock, 600, hb_context,
+  silc_socket_set_heartbeat(sock, 400, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->schedule);
 
