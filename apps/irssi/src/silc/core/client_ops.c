@@ -457,6 +457,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcBuffer client_id_list;
       uint32 list_count;
 
+      if (!success)
+	return;
+
       channel = va_arg(vp, char *);
       channel_entry = va_arg(vp, SilcChannelEntry);
       modei = va_arg(vp, uint32);
@@ -468,9 +471,6 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       (void)va_arg(vp, unsigned char *);
       list_count = va_arg(vp, uint32);
       client_id_list = va_arg(vp, SilcBuffer);
-
-      if (!success)
-	return;
 
       chanrec = silc_channel_find(server, channel);
       if (chanrec != NULL && !success)
@@ -645,6 +645,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcPublicKey public_key;
       unsigned char *pk;
       uint32 pk_len;
+      
+      if (!success)
+	return;
       
       id_type = va_arg(vp, uint32);
       entry = va_arg(vp, void *);

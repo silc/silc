@@ -1,3 +1,7 @@
+Sat Jun 16 18:00:00 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed GETKEY crash, it crashed if the command did not succseed.
+
 Tue Jun 12 21:36:18 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Redefined the SILC MP API in lib/silcmath/silcmp.h. The API
