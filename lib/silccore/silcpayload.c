@@ -394,7 +394,7 @@ SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload)
   return buffer;
 }
 
-/* Free's Command Payload */
+/* Frees Argument Payload */
 
 void silc_argument_payload_free(SilcArgumentPayload payload)
 {

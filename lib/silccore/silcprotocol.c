@@ -100,12 +100,10 @@ void silc_protocol_alloc(SilcProtocolType type, SilcProtocol *new_protocol,
   (*new_protocol)->protocol = protocol;
   (*new_protocol)->state = SILC_PROTOCOL_STATE_UNKNOWN;
   (*new_protocol)->context = context;
-  (*new_protocol)->execute = silc_protocol_execute;
-  (*new_protocol)->execute_final = silc_protocol_execute_final;
   (*new_protocol)->final_callback = callback;
 }
 
-/* Free's a protocol object. */
+/* Frees a protocol object. */
 
 void silc_protocol_free(SilcProtocol protocol)
 {
@@ -116,42 +114,30 @@ void silc_protocol_free(SilcProtocol protocol)
 /* Executes next state of the protocol. The state must be set before
    calling this function. */
 
-void silc_protocol_execute(void *qptr, int type,
-			   void *context, int fd,
+void silc_protocol_execute(SilcProtocol protocol, void *timeout_queue,
 			   long secs, long usecs)
 {
-  SilcProtocol protocol = (SilcProtocol)context;
-
-  SILC_LOG_DEBUG(("Start"));
-
   if (secs + usecs) 
-    silc_task_register(qptr, fd, protocol->protocol->callback, context, 
+    silc_task_register(timeout_queue, 0, 
+		       protocol->protocol->callback, (void *)protocol, 
 		       secs, usecs, 
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   else
-    protocol->protocol->callback(qptr, 0, context, fd);
+    protocol->protocol->callback(timeout_queue, 0, (void *)protocol, 0);
 }
 
 /* Executes the final callback of the protocol. */
 
-void silc_protocol_execute_final(void *qptr, int type,
-				 void *context, int fd)
+void silc_protocol_execute_final(SilcProtocol protocol, void *timeout_queue)
 {
-  SilcProtocol protocol = (SilcProtocol)context;
- 
-  SILC_LOG_DEBUG(("Start, state=%d", protocol->state));
-
-  protocol->final_callback(qptr, 0, context, fd);
+  protocol->final_callback(timeout_queue, 0, (void *)protocol, 0);
 }
 
 /* Cancels the execution of the next state of the protocol. */
 
-void silc_protocol_cancel(void *qptr, void *context)
+void silc_protocol_cancel(SilcProtocol protocol, void *timeout_queue)
 {
-  SilcProtocol protocol = (SilcProtocol)context;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  silc_task_unregister_by_callback(qptr, protocol->protocol->callback);
+  silc_task_unregister_by_callback(timeout_queue, 
+				   protocol->protocol->callback);
 }

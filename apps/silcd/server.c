@@ -603,7 +603,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   SILC_REGISTER_CONNECTION_FOR_IO(sock);
   
   /* Run the protocol */
-  protocol->execute(server->timeout_queue, 0, protocol, sock, 0, 0);
+  silc_protocol_execute(protocol, server->timeout_queue, 0, 0);
 }
   
 /* This function connects to our primary router or if we are a router this
@@ -813,8 +813,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 		       SILC_TASK_PRI_LOW);
 
   /* Run the protocol */
-  sock->protocol->execute(server->timeout_queue, 0, 
-			  sock->protocol, sock->sock, 0, 0);
+  silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
 }
 
 /* Finalizes the connection to router. Registers a server task to the
@@ -1652,10 +1651,8 @@ void silc_server_packet_parse_type(SilcServer server,
     SILC_LOG_DEBUG(("Success packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
-    if (sock->protocol) {
-      sock->protocol->execute(server->timeout_queue, 0,
-			      sock->protocol, sock->sock, 0, 0);
-    }
+    if (sock->protocol)
+      silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
     break;
 
   case SILC_PACKET_FAILURE:
@@ -1793,8 +1790,7 @@ void silc_server_packet_parse_type(SilcServer server,
       proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
-      sock->protocol->execute(server->timeout_queue, 0, 
-			      sock->protocol, sock->sock, 0, 100000);
+      silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 100000);
     } else {
       SILC_LOG_ERROR(("Received Key Exchange packet but no key exchange "
 		      "protocol active, packet dropped."));
@@ -1822,8 +1818,7 @@ void silc_server_packet_parse_type(SilcServer server,
 	proto_ctx->packet = silc_packet_context_dup(packet);
 
 	/* Let the protocol handle the packet */
-	sock->protocol->execute(server->timeout_queue, 0, 
-				sock->protocol, sock->sock, 0, 0);
+	silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
       } else {
 	SilcServerKEInternalContext *proto_ctx = 
 	  (SilcServerKEInternalContext *)sock->protocol->context;
@@ -1839,9 +1834,8 @@ void silc_server_packet_parse_type(SilcServer server,
 	  break;
 
 	/* Let the protocol handle the packet */
-	sock->protocol->execute(server->timeout_queue, 0, 
-				sock->protocol, sock->sock,
-				0, 100000);
+	silc_protocol_execute(sock->protocol, server->timeout_queue, 
+			      0, 100000);
       }
     } else {
       SILC_LOG_ERROR(("Received Key Exchange 1 packet but no key exchange "
@@ -1868,8 +1862,7 @@ void silc_server_packet_parse_type(SilcServer server,
 	proto_ctx->packet = silc_packet_context_dup(packet);
 
 	/* Let the protocol handle the packet */
-	sock->protocol->execute(server->timeout_queue, 0, 
-				sock->protocol, sock->sock, 0, 0);
+	silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
       } else {
 	SilcServerKEInternalContext *proto_ctx = 
 	  (SilcServerKEInternalContext *)sock->protocol->context;
@@ -1885,9 +1878,8 @@ void silc_server_packet_parse_type(SilcServer server,
 	  break;
 
 	/* Let the protocol handle the packet */
-	sock->protocol->execute(server->timeout_queue, 0, 
-				sock->protocol, sock->sock,
-				0, 100000);
+	silc_protocol_execute(sock->protocol, server->timeout_queue, 
+			      0, 100000);
       }
     } else {
       SILC_LOG_ERROR(("Received Key Exchange 2 packet but no key exchange "
@@ -1927,8 +1919,7 @@ void silc_server_packet_parse_type(SilcServer server,
       proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
-      sock->protocol->execute(server->timeout_queue, 0, 
-			      sock->protocol, sock->sock, 0, 0);
+      silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
     } else {
       SILC_LOG_ERROR(("Received Connection Auth packet but no authentication "
 		      "protocol active, packet dropped."));
@@ -2035,8 +2026,7 @@ void silc_server_packet_parse_type(SilcServer server,
       proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
-      sock->protocol->execute(server->timeout_queue, 0, 
-			      sock->protocol, sock->sock, 0, 0);
+      silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
     } else {
       SILC_LOG_ERROR(("Received Re-key done packet but no re-key "
 		      "protocol active, packet dropped."));
@@ -3423,8 +3413,7 @@ SILC_TASK_CALLBACK(silc_server_failure_callback)
 
   if (f->sock->protocol) {
     f->sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
-    f->sock->protocol->execute(f->server->timeout_queue, 0,
-			       f->sock->protocol, f->sock->sock, 0, 0);
+    silc_protocol_execute(f->sock->protocol, f->server->timeout_queue, 0, 0);
   }
 
   silc_free(f);
@@ -3754,8 +3743,7 @@ SILC_TASK_CALLBACK(silc_server_rekey_callback)
   sock->protocol = protocol;
       
   /* Run the protocol */
-  protocol->execute(server->timeout_queue, 0, protocol, 
-		    sock->sock, 0, 0);
+  silc_protocol_execute(protocol, server->timeout_queue, 0, 0);
 
   /* Re-register re-key timeout */
   silc_task_register(server->timeout_queue, sock->sock, 
@@ -3780,7 +3768,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
-    silc_protocol_cancel(server->timeout_queue, protocol);
+    silc_protocol_cancel(protocol, server->timeout_queue);
     silc_protocol_free(protocol);
     sock->protocol = NULL;
     if (ctx->packet)

@@ -1,3 +1,16 @@
+Sun Jun  3 14:21:32 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed the protocol API a bit more consistent in the
+	  lib/silccore/silcprotocol.[ch].
+
+	* Changed the following headers to ROBODoc format:
+
+		lib/silccore/silcpayload.h
+		lib/silccore/silcprotocol.h
+		lib/silccore/silcsockconn.h
+
+	  All core library headers are now formatted.
+
 Sat Jun  2 10:45:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a bug in Irssi SILC client; do not show that you are

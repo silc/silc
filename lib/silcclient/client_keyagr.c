@@ -579,7 +579,7 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
   SILC_CLIENT_REGISTER_CONNECTION_FOR_IO(sock);
 
   /* Execute the protocol */
-  protocol->execute(client->timeout_queue, 0, protocol, sock, 0, 0);
+  silc_protocol_execute(protocol, client->timeout_queue, 0, 0);
 }
 
 /* This function can be called to unbind the hostname and the port for

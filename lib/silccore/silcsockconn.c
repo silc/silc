@@ -21,6 +21,16 @@
 
 #include "silcincludes.h"
 
+/* Heartbeat context */
+struct SilcSocketConnectionHB {
+  uint32 heartbeat;
+  SilcSocketConnectionHBCb hb_callback;
+  void *hb_context;
+  void *timeout_queue;
+  SilcTask hb_task;
+  SilcSocketConnection sock;
+};
+
 /* Allocates a new socket connection object. The allocated object is 
    returned to the new_socket argument. */
 
