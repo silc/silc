@@ -3805,16 +3805,17 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   SilcIDListData idata = (SilcIDListData)client;
-  SilcChannelID *channel_id;
+  SilcChannelID *channel_id = NULL;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask;
   char *cipher = NULL, *hmac = NULL, *passphrase = NULL;
-  SilcUInt32 mode_mask, tmp_len, tmp_len2;
+  SilcUInt32 mode_mask = 0, tmp_len, tmp_len2;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
+  bool set_mask = FALSE;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CMODE, cmd, 2, 7);
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CMODE, cmd, 1, 7);
 
   /* Get Channel ID */
   tmp_id = silc_argument_get_arg_type(cmd->args, 1, &tmp_len2);
@@ -3832,12 +3833,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Get the channel mode mask */
   tmp_mask = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (!tmp_mask) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
+  if (tmp_mask) {
+    SILC_GET32_MSB(mode_mask, tmp_mask);
+    set_mask = TRUE;
   }
-  SILC_GET32_MSB(mode_mask, tmp_mask);
 
   /* Get channel entry */
   channel = silc_idlist_find_channel_by_id(server->local_list, 
@@ -3860,11 +3859,27 @@ SILC_SERVER_CMD_FUNC(cmode)
   }
 
   /* Check that client has rights to change any requested channel modes */
-  if (!silc_server_check_cmode_rights(server, channel, chl, mode_mask)) {
+  if (set_mask && !silc_server_check_cmode_rights(server, channel, chl, 
+						  mode_mask)) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 					  (chl->mode == 0 ? 
 					   SILC_STATUS_ERR_NO_CHANNEL_PRIV :
 					   SILC_STATUS_ERR_NO_CHANNEL_FOPRIV));
+    goto out;
+  }
+
+  /* If mode mask was not sent as argument then merely return the current
+     mode mask to the sender. */
+  if (!set_mask) {
+    unsigned char m[4];
+    SILC_PUT32_MSB(channel->mode, m);
+    packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
+						  SILC_STATUS_OK, 0, ident, 2,
+						  2, tmp_id, tmp_len2,
+						  3, m, sizeof(m));
+    silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
+			    packet->data, packet->len, FALSE);
+    silc_buffer_free(packet);
     goto out;
   }
 
@@ -4168,10 +4183,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 			  packet->data, packet->len, FALSE);
     
   silc_buffer_free(packet);
-  silc_free(channel_id);
   silc_buffer_free(cidp);
 
  out:
+  silc_free(channel_id);
   silc_server_command_free(cmd);
 }
 

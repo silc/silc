@@ -553,7 +553,8 @@ typedef struct {
  *    the client. The `application' is application specific user data pointer
  *    and caller must free it. The `silc_version' is the application version
  *    that will be used to compare against remote host's (usually a server)
- *    version string.
+ *    version string.  The `application' context is accessible by the
+ *    application by client->application, client being SilcClient.
  *
  ***/
 SilcClient silc_client_alloc(SilcClientOperations *ops, 

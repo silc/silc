@@ -1101,7 +1101,7 @@ List of all defined commands in SILC follows.
    17   SILC_COMMAND_CMODE
 
         Max Arguments:  7
-            Arguments:  (1) <Channel ID>      (2) <channel mode mask>
+            Arguments:  (1) <Channel ID>      (2) [<channel mode mask>]
                         (3) [<user limit>]    (4) [<passphrase>]
                         (5) [<cipher>]        (6) [<hmac>]
                         (7) [<auth payload>]
@@ -1311,7 +1311,9 @@ List of all defined commands in SILC follows.
         channel the server MUST distribute the changed channel mode mask
         to all clients on the channel by sending the notify type
         SILC_NOTIFY_TYPE_CMODE_CHANGE.  The notify type MUST also be sent
-        to the server's primary router.
+        to the server's primary router.  If the <channel mode mask> was
+        not provided this command merely returns the mode mask to the
+        client.
 
         Reply messages to the command:
 
