@@ -8,6 +8,9 @@ Tue Dec 17 10:05:00 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  SilcMutex on WIN32.  A patch by Mikko Lähteenmäki
 	  <mikko.lahteenmaki@pikabaana.net>.
 
+	* Added some Winsock WIN32 compatiblity defines into
+	  includes/silcwin32.h.
+
 Mon Dec 16 19:33:05 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in async host lookup code.  Affected file
