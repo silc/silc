@@ -29,16 +29,6 @@ typedef struct SilcSKEStruct *SilcSKE;
 /* Forward declaration for security properties. */
 typedef struct SilcSKESecurityPropertiesStruct *SilcSKESecurityProperties;
 
-/* Packet sending callback. Caller of the SKE routines must provide
-   a routine to send packets to negotiation parties. */
-typedef void (*SilcSKESendPacketCb)(SilcSKE ske, SilcBuffer packet, 
-				    SilcPacketType type, void *context);
-
-/* Generic SKE callback function. This is called in various SKE
-   routines. The SilcSKE object sent as argument provides all the data
-   callers routine might need (payloads etc). */
-typedef void (*SilcSKECb)(SilcSKE ske, void *context);
-
 /* Supported Public Key Types, defined by the protocol */
 typedef enum {
   SILC_SKE_PK_TYPE_SILC = 1,	/* Mandatory type */
@@ -49,6 +39,23 @@ typedef enum {
   SILC_SKE_PK_TYPE_SPKI = 5
   */
 } SilcSKEPKType;
+
+/* Packet sending callback. Caller of the SKE routines must provide
+   a routine to send packets to negotiation parties. */
+typedef void (*SilcSKESendPacketCb)(SilcSKE ske, SilcBuffer packet, 
+				    SilcPacketType type, void *context);
+
+/* Generic SKE callback function. This is called in various SKE
+   routines. The SilcSKE object sent as argument provides all the data
+   callers routine might need (payloads etc). */
+typedef void (*SilcSKECb)(SilcSKE ske, void *context);
+
+/* Callback function used to verify the received public key. */
+typedef SilcSKEStatus (*SilcSKEVerifyCb)(SilcSKE ske, 
+					 unsigned char *pk_data,
+					 unsigned int pk_len,
+					 SilcSKEPKType pk_type,
+					 void *context);
 
 /* Context passed to key material processing function. The function
    returns the processed key material into this structure. */
@@ -147,6 +154,8 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 					 void *context);
 SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 					SilcBuffer ke2_payload,
+					SilcSKEVerifyCb verify_key,
+					void *verify_context,
 					SilcSKECb callback,
 					void *context);
 SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
@@ -163,10 +172,8 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
 					 SilcSKECb callback,
 					 void *context);
 SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
-					unsigned char *pk,
-					unsigned int pk_len,
-					unsigned char *prv,
-					unsigned int prv_len,
+					SilcPublicKey public_key,
+					SilcPrivateKey private_key,
 					SilcSKEPKType pk_type,
 					SilcSKESendPacketCb send_packet,
 					void *context);
@@ -186,9 +193,6 @@ silc_ske_select_security_properties(SilcSKE ske,
 SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n, 
 				  unsigned int len, 
 				  SilcInt *rnd);
-SilcSKEStatus silc_ske_verify_public_key(SilcSKE ske, 
-					 unsigned char *pubkey,
-					 unsigned int pubkey_len);
 SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
 				 unsigned char *return_hash,
 				 unsigned int *return_hash_len);

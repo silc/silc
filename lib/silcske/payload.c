@@ -22,6 +22,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/07 06:46:43  priikone
+ * 	Removed ske_verify_public_key function as it is not needed
+ * 	anymore. Added support to the public key verification as callback
+ * 	function. Other minor changes and bug fixes.
+ *
  * Revision 1.2  2000/07/05 06:05:15  priikone
  * 	Global cosmetic change.
  *
@@ -370,7 +375,6 @@ SilcSKEStatus silc_ske_payload_one_decode(SilcSKE ske,
 void silc_ske_payload_one_free(SilcSKEOnePayload *payload)
 {
   if (payload) {
-    silc_mp_clear(&payload->e);
     silc_free(payload);
   }
 }
@@ -538,7 +542,6 @@ void silc_ske_payload_two_free(SilcSKETwoPayload *payload)
       silc_free(payload->pk_data);
     if (payload->sign_data)
       silc_free(payload->sign_data);
-    silc_mp_clear(&payload->f);
     silc_free(payload);
   }
 }

@@ -20,6 +20,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/07 06:46:43  priikone
+ * 	Removed ske_verify_public_key function as it is not needed
+ * 	anymore. Added support to the public key verification as callback
+ * 	function. Other minor changes and bug fixes.
+ *
  * Revision 1.3  2000/07/06 07:12:39  priikone
  * 	Support for SILC style public keys added.
  *
@@ -84,8 +89,10 @@ void silc_ske_free(SilcSKE ske)
       silc_buffer_free(ske->start_payload_copy);
     if (ske->pk)
       silc_free(ske->pk);
+    /* XXX
     silc_mp_clear(&ske->x);
     silc_mp_clear(&ske->KEY);
+    */
     if (ske->hash)
       silc_free(ske->hash);
     silc_free(ske);
@@ -276,11 +283,14 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 
 SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 					SilcBuffer ke2_payload,
+					SilcSKEVerifyCb verify_key,
+					void *verify_context,
 					SilcSKECb callback,
 					void *context)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcSKETwoPayload *payload;
+  SilcPublicKey public_key = NULL;
   SilcInt KEY;
   unsigned char hash[32];
   unsigned int hash_len;
@@ -302,12 +312,19 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Verifying public key"));
 
-  /* Verify the public key */ /* XXX */
-  status = silc_ske_verify_public_key(ske, payload->pk_data, 
-				      payload->pk_len);
-  if (status != SILC_SKE_STATUS_OK)
+  if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
+				   &public_key)) {
+    status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
     goto err;
-  
+  }
+
+  if (verify_key) {
+    status = (*verify_key)(ske, payload->pk_data, payload->pk_len,
+			   payload->pk_type, verify_context);
+    if (status != SILC_SKE_STATUS_OK)
+      goto err;
+  }  
+
   SILC_LOG_DEBUG(("Public key is authentic"));
 
   /* Compute the hash value */
@@ -322,8 +339,8 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   SILC_LOG_DEBUG(("Verifying signature"));
 
   /* Verify signature */
-  silc_pkcs_public_key_data_set(ske->prop->pkcs, payload->pk_data, 
-				payload->pk_len);
+  silc_pkcs_public_key_data_set(ske->prop->pkcs, public_key->pk, 
+				public_key->pk_len);
   if (ske->prop->pkcs->pkcs->verify(ske->prop->pkcs->context,
 				    payload->sign_data, payload->sign_len,
 				    hash, hash_len) == FALSE) {
@@ -336,6 +353,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Signature is Ok"));
 
+  silc_pkcs_public_key_free(public_key);
   memset(hash, 'F', hash_len);
 
   /* Call the callback. */
@@ -345,10 +363,14 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   return status;
 
  err:
-  memset(hash, 'F', hash_len);
+  memset(hash, 'F', sizeof(hash));
   silc_ske_payload_two_free(payload);
+  ske->ke2_payload = NULL;
 
   silc_mp_clear(&ske->KEY);
+
+  if (public_key)
+    silc_pkcs_public_key_free(public_key);
 
   if (ske->hash) {
     memset(ske->hash, 'F', hash_len);
@@ -553,10 +575,8 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
    encodes Key Exchange 2 Payload and sends it to the other end. */
 
 SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
-					unsigned char *pk,
-					unsigned int pk_len,
-					unsigned char *prv,
-					unsigned int prv_len,
+					SilcPublicKey public_key,
+					SilcPrivateKey private_key,
 					SilcSKEPKType pk_type,
 					SilcSKESendPacketCb send_packet,
 					void *context)
@@ -564,8 +584,8 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
   SilcInt KEY;
-  unsigned char hash[32], sign[256];
-  unsigned int hash_len, sign_len;
+  unsigned char hash[32], sign[256], *pk;
+  unsigned int hash_len, sign_len, pk_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -580,8 +600,8 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   SILC_LOG_DEBUG(("Getting public key"));
 
   /* Get the public key */
-  ske->ke2_payload->pk_data = silc_calloc(pk_len, sizeof(unsigned char));
-  memcpy(ske->ke2_payload->pk_data, pk, pk_len);
+  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  ske->ke2_payload->pk_data = pk;
   ske->ke2_payload->pk_len = pk_len;
   ske->ke2_payload->pk_type = pk_type;
 
@@ -600,7 +620,8 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   SILC_LOG_DEBUG(("Signing HASH value"));
 
   /* Sign the hash value */
-  silc_pkcs_private_key_data_set(ske->prop->pkcs, prv, prv_len);
+  silc_pkcs_private_key_data_set(ske->prop->pkcs, private_key->prv, 
+				 private_key->prv_len);
   ske->prop->pkcs->pkcs->sign(ske->prop->pkcs->context,
 			      hash, hash_len,
 			      sign, &sign_len);
@@ -1056,17 +1077,6 @@ SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n,
 
   memset(string, 'F', (len / 8));
   silc_free(string);
-
-  return status;
-}
-
-/* XXX TODO */
-
-SilcSKEStatus silc_ske_verify_public_key(SilcSKE ske, 
-					 unsigned char *pubkey,
-					 unsigned int pubkey_len)
-{
-  SilcSKEStatus status = SILC_SKE_STATUS_OK;
 
   return status;
 }
