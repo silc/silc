@@ -83,8 +83,10 @@ SilcSKEStatus silc_ske_group_get_by_number(int number,
       break;
   }
 
-  if (silc_ske_groups[i].name == NULL)
+  if (silc_ske_groups[i].name == NULL) {
+    SILC_LOG_ERROR(("Unsupported Diffie-Hellman group number %d", number));
     return SILC_SKE_STATUS_UNKNOWN_GROUP;
+  }
 
   /* Return the group */
   if (ret) {
@@ -117,8 +119,10 @@ SilcSKEStatus silc_ske_group_get_by_name(const char *name,
       break;
   }
 
-  if (silc_ske_groups[i].name == NULL)
+  if (silc_ske_groups[i].name == NULL) {
+    SILC_LOG_ERROR(("Unsupported Diffie-Hellman group `%s'", name));
     return SILC_SKE_STATUS_UNKNOWN_GROUP;
+  }
 
   /* Return the group */
   if (ret) {

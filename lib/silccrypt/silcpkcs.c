@@ -631,7 +631,7 @@ SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
   }
 
   public_key->identifier = strdup(identifier);
-  public_key->len = 4 + 2 + strlen(name) + 2 + strlen(identifier) + pk_len;
+  public_key->len = 2 + strlen(name) + 2 + strlen(identifier) + pk_len;
   silc_free(tmp);
 
   return public_key;
@@ -687,7 +687,7 @@ silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len)
   SilcBuffer buf;
   unsigned char *ret;
 
-  buf = silc_buffer_alloc(public_key->len);
+  buf = silc_buffer_alloc(public_key->len + 4);
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
 
   silc_buffer_format(buf,
@@ -700,7 +700,7 @@ silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len)
 					  public_key->pk_len),
 		     SILC_STR_END);
   if (len)
-    *len = public_key->len;
+    *len = public_key->len + 4;
 
   ret = silc_calloc(buf->len, sizeof(*ret));
   memcpy(ret, buf->data, buf->len);
@@ -720,8 +720,8 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
   unsigned char *ret;
   SilcUInt32 totlen;
 
-  totlen = 4 + 2 + strlen(pkcs) + 2 + strlen(identifier) + pk_len;
-  buf = silc_buffer_alloc(totlen);
+  totlen = 2 + strlen(pkcs) + 2 + strlen(identifier) + pk_len;
+  buf = silc_buffer_alloc(totlen + 4);
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
 
   silc_buffer_format(buf,
@@ -733,7 +733,7 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
 		     SILC_STR_UI_XNSTRING(pk, pk_len),
 		     SILC_STR_END);
   if (len)
-    *len = totlen;
+    *len = totlen + 4;
 
   ret = silc_calloc(buf->len, sizeof(*ret));
   memcpy(ret, buf->data, buf->len);
@@ -768,7 +768,12 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
     return FALSE;
   }
 
-  if (totlen != data_len) {
+#if 1 /* Backwards support, remove! */
+  if (totlen == data_len)
+    totlen -= 4;
+#endif
+
+  if (totlen + 4 != data_len) {
     silc_buffer_free(buf);
     return FALSE;
   }

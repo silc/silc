@@ -1621,6 +1621,9 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
  *    called when an command reply is received to an earlier sent command.
  *    The `reply_cmd' is the command that must be received in order for
  *    the pending command callback indicated by `callback' to be called.
+ *    The `callback' will deliver the `context' and 
+ *    SilcClientCommandReplyContext which includes the internals of the 
+ *    command reply.
  *
  *    The `ident' is a command identifier which was set for the earlier
  *    sent command.  The command reply will include the same identifier

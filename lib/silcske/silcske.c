@@ -495,6 +495,7 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
     if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
 				     &public_key)) {
       status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+      SILC_LOG_ERROR(("Unsupported/malformed public key received"));
       if (ske->callbacks->proto_continue)
 	ske->callbacks->proto_continue(ske, ske->callbacks->context);
       return;
@@ -517,8 +518,7 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
     silc_pkcs_public_key_set(ske->prop->pkcs, public_key);
     if (silc_pkcs_verify(ske->prop->pkcs, payload->sign_data, 
 			 payload->sign_len, hash, hash_len) == FALSE) {
-      
-      SILC_LOG_DEBUG(("Signature don't match"));
+      SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
       status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
       goto err;
     }
@@ -854,6 +854,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
 				     recv_payload->pk_len, 
 				     &public_key)) {
       ske->status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+      SILC_LOG_ERROR(("Unsupported/malformed public key received"));
       if (ske->callbacks->proto_continue)
 	ske->callbacks->proto_continue(ske, ske->callbacks->context);
       return;
@@ -876,9 +877,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
     silc_pkcs_public_key_set(ske->prop->pkcs, public_key);
     if (silc_pkcs_verify(ske->prop->pkcs, recv_payload->sign_data, 
 			 recv_payload->sign_len, hash, hash_len) == FALSE) {
-      
-      SILC_LOG_DEBUG(("Signature don't match"));
-      
+      SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
       ske->status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
       if (ske->callbacks->proto_continue)
 	ske->callbacks->proto_continue(ske, ske->callbacks->context);
@@ -969,7 +968,7 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
     SILC_LOG_DEBUG(("We are doing mutual authentication"));
     
     if (!recv_payload->pk_data && ske->callbacks->verify_key) {
-      SILC_LOG_DEBUG(("Remote end did not send its public key (or "
+      SILC_LOG_ERROR(("Remote end did not send its public key (or "
 		      "certificate), even though we require it"));
       ske->status = SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED;
       return status;
