@@ -27,8 +27,8 @@
 
 #include "silcincludes.h"
 
-//#undef SILC_RNG_DEBUG
-#define SILC_RNG_DEBUG
+#undef SILC_RNG_DEBUG
+/*#define SILC_RNG_DEBUG*/
 
 static uint32 silc_rng_get_position(SilcRng rng);
 static void silc_rng_stir_pool(SilcRng rng);

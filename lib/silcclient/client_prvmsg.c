@@ -49,8 +49,7 @@ void silc_client_send_private_message(SilcClient client,
   SILC_LOG_DEBUG(("Sending private message"));
 
   /* Encode private message payload */
-  buffer = silc_private_message_payload_encode(flags, strlen(conn->nickname),
-					       conn->nickname,
+  buffer = silc_private_message_payload_encode(flags,
 					       data_len, data,
 					       client_entry->send_key);
 

@@ -26,11 +26,6 @@
 /* Version type definition */
 typedef unsigned char SilcVersion;
 
-/* SILC Versions. XXX not used currently */
-#define SILC_VERSION_MAJ 1
-#define SILC_VERSION_MIN 0
-#define SILC_VERSION_BUILD 0
-
 /* SILC Protocol version number used in SILC packets */
 #define SILC_VERSION_1 '\1'
 

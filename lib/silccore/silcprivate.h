@@ -29,8 +29,6 @@ typedef struct SilcPrivateMessagePayloadStruct *SilcPrivateMessagePayload;
 SilcPrivateMessagePayload 
 silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher);
 SilcBuffer silc_private_message_payload_encode(uint16 flags,
-					       uint32 nickname_len,
-					       unsigned char *nickname,
 					       uint16 data_len,
 					       unsigned char *data,
 					       SilcCipher cipher);

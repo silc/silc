@@ -122,9 +122,10 @@ Table of Contents
   4.8 Session Key Regeneration .................................. 36
   4.9 Command Sending and Reception ............................. 37
   4.10 Closing Connection ....................................... 37
-5 Security Considerations ....................................... XXX
-6 References .................................................... XXX
-7 Author's Address .............................................. XXX
+5 Security Considerations ....................................... 38
+6 References .................................................... 38
+7 Author's Address .............................................. 40
+
 
 
 .ti 0
@@ -211,8 +212,13 @@ keep global information up to date at all time.
 This, on the other hand, leads to cellular like network, where routers 
 are in the center of the cell and servers are connected to the router.
 
-The following diagram represents SILC network topology.
 
+
+
+
+
+
+The following diagram represents SILC network topology.
 
 .in 8
 .nf
@@ -2010,6 +2016,11 @@ should have a forum to discuss the cell management issues.
 
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
+
+
+
+
+
 
 
 .ti 0

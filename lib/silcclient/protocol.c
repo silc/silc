@@ -144,6 +144,8 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   SilcClientConnection conn = (SilcClientConnection)ske->sock->user_data;
   SilcClient client = (SilcClient)ske->user_data;
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
+  char *cp;
+  int maj = 0, min = 0, build = 0, maj2, min2, build2;
 
   /* Check for initial version string */
   if (!strstr(version, "SILC-1.0-"))
@@ -154,8 +156,34 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   if (len < strlen(silc_version_string))
     status = SILC_SKE_STATUS_BAD_VERSION;
 
-  /* XXX for now there is no other tests due to the abnormal version
-     string that is used */
+  cp = version + 9;
+  maj = atoi(cp);
+  cp = strchr(cp, '.');
+  if (cp) {
+    min = atoi(cp + 1);
+    cp++;
+  }
+  cp = strchr(cp, '.');
+  if (cp)
+    build = atoi(cp + 1);
+
+  cp = silc_version_string + 9;
+  maj2 = atoi(cp);
+  cp = strchr(cp, '.');
+  if (cp) {
+    min2 = atoi(cp + 1);
+    cp++;
+  }
+  cp = strchr(cp, '.');
+  if (cp)
+    build2 = atoi(cp + 1);
+
+  if (maj != maj2)
+    status = SILC_SKE_STATUS_BAD_VERSION;
+#if 0
+  if (min < min2)
+    status = SILC_SKE_STATUS_BAD_VERSION;
+#endif
 
   if (status != SILC_SKE_STATUS_OK)
     client->ops->say(client, conn, 

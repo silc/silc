@@ -33,8 +33,6 @@
    from SILC packets. */
 struct SilcPrivateMessagePayloadStruct {
   uint16 flags;
-  uint16 nickname_len;
-  unsigned char *nickname;
   uint16 message_len;
   unsigned char *message;
 };
@@ -60,16 +58,13 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
   /* Parse the Private Message Payload. Ignore the padding. */
   ret = silc_buffer_unformat(buffer,
 			     SILC_STR_UI_SHORT(&new->flags),
-			     SILC_STR_UI16_NSTRING_ALLOC(&new->nickname, 
-							 &new->nickname_len),
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->message, 
 							 &new->message_len),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
 
-  if ((new->message_len < 1 || new->message_len > buffer->len) ||
-      (new->nickname_len < 1 || new->nickname_len > buffer->len)) {
+  if ((new->message_len < 1 || new->message_len > buffer->len)) {
     SILC_LOG_ERROR(("Incorrect private message payload in packet, "
 		    "packet dropped"));
     goto err;
@@ -87,8 +82,6 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
    if the private message private keys are used. */
 
 SilcBuffer silc_private_message_payload_encode(uint16 flags,
-					       uint32 nickname_len,
-					       unsigned char *nickname,
 					       uint16 data_len,
 					       unsigned char *data,
 					       SilcCipher cipher)
@@ -100,7 +93,7 @@ SilcBuffer silc_private_message_payload_encode(uint16 flags,
 
   SILC_LOG_DEBUG(("Encoding private message payload"));
 
-  len = 4 + nickname_len + 2 + data_len;
+  len = 4 + data_len;
 
   if (cipher) {
     /* Calculate length of padding. */
@@ -118,8 +111,6 @@ SilcBuffer silc_private_message_payload_encode(uint16 flags,
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_SHORT(flags),
-		     SILC_STR_UI_SHORT(nickname_len),
-		     SILC_STR_UI_XNSTRING(nickname, nickname_len),
 		     SILC_STR_UI_SHORT(data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_UI_XNSTRING(pad, pad_len),
@@ -139,7 +130,6 @@ SilcBuffer silc_private_message_payload_encode(uint16 flags,
 
 void silc_private_message_payload_free(SilcPrivateMessagePayload payload)
 {
-  silc_free(payload->nickname);
   if (payload->message) {
     memset(payload->message, 0, payload->message_len);
     silc_free(payload->message);
@@ -153,18 +143,6 @@ uint16
 silc_private_message_get_flags(SilcPrivateMessagePayload payload)
 {
   return payload->flags;
-}
-
-/* Return nickname */
-
-unsigned char *
-silc_private_message_get_nickname(SilcPrivateMessagePayload payload,
-				  uint32 *nickname_len)
-{
-  if (nickname_len)
-    *nickname_len = payload->nickname_len;
-
-  return payload->nickname;
 }
 
 /* Return message */
