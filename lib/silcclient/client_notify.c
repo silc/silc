@@ -814,7 +814,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Replace the Channel ID */
-    silc_client_replace_channel_id(client, conn, channel, channel_id);
+    if (silc_client_replace_channel_id(client, conn, channel, channel_id))
+      channel_id = NULL;
 
     /* Notify application */
     client->internal->ops->notify(client, conn, type, channel, channel);
