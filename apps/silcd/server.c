@@ -3074,7 +3074,7 @@ bool silc_server_create_channel_key(SilcServer server,
 
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
     SILC_LOG_DEBUG(("Channel has private keys, will not generate new key"));
-    return FALSE;
+    return TRUE;
   }
 
   if (!channel->channel_key)

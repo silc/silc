@@ -37,7 +37,7 @@ if (Is_Readable($page.".html"))
 </td>
 
 <td>
-<table bgcolor="#dddddd" cellpadding=2 cellspacing=0 border=0 
+<table bgcolor="#dddddd" cellpadding=4 cellspacing=0 border=0 
 width="99%" align=center>
 <tr><td>
 <font face="Helvetica,Arial,Sans-serif" size="1">
@@ -46,8 +46,8 @@ width="99%" align=center>
 /* Get the index for this page */
 $len = strcspn($page, "_");
 $fname = substr($page, 0, $len);
-if (Is_Readable($fname."_index.html"))
-  require $fname."_index.html";
+if (Is_Readable($fname."_index.tmpl"))
+  require $fname."_index.tmpl";
 eit
 ?>
 

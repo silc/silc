@@ -264,7 +264,7 @@ RB_Generate_Doc_Start (
 	  fprintf (dest_doc, "<OL>\n");
 
 	  /* Generate quick index file, for fast referencing */
-	  sprintf(iname, "%s_index.html", doc_base);
+	  sprintf(iname, "%s_index.tmpl", doc_base);
           index = fopen(iname, "w");
 
 	  for (cur_header = first_header;

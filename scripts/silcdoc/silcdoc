@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# Author: Pekka Riikonen <priikone@silcnet.org>
+#
+# Copyright (C) GNU GPL 2001 Pekka Riikonen
+#
+# SILC Toolkit Reference Manual documentation script.  This will automatically
+# generate documentation from the source tree.  This will require the 
+# robodoc compiled in util/robodoc and php utility installed in your system.
+#
+# This will tarverse the given directory and all subdirectories for the
+# SILC style header files.  All header files starting with prefix `silc' 
+# will be checked.  For example, silcpkcs.h.
+#
+# Usage: ./sildoc <type> <source directory> <destination directory> <robodoc>
+#
+# The <source directory> is the directory where this starts checking for
+# the headers and will traverse all subdirectories.  The <destination
+# directory> is the directory to where the documentation is generated.
+#
+
+# Arguments checking
+if [ $# -lt "4" ]; then
+  echo "Usage: ./silcdoc <type> <source directory> <destination directory> <robodoc>"
+  echo "Supported types: HTML"
+#  echo "Supported types: HTML, ASCII, LATEX or RTF"
+  exit 1
+fi
+
+TYPE=$1
+SRC=$2
+DST=$3
+ROBO=$4
+
+# Get all headers in the source directory
+headers=`find $SRC -name "silc*.h"`
+
+#
+# HTML documentation
+#
+if [ "$TYPE" = "HTML" ]; then
+  mkdir /tmp/silcdoc.html
+  cp $headers /tmp/silcdoc.html
+
+  # Generate the first pass of the documentation. This will generate
+  # the HTML from the headers.
+  path=`pwd`
+  cd /tmp/silcdoc.html
+  headers=`find . -name "silc*.h" |cut -d/  -f2 |cut -d.  -f1`
+  cd $path
+  for i in $headers
+  do
+    $ROBO /tmp/silcdoc.html/$i.h $DST/$i.html $TYPE
+
+    # Generate the TOC file
+    sh gen.sh gen_toc.php $DST/$i.html $DST/$i.html
+
+    # Generate the details
+    files=`find $DST -name "silc_*.html"`
+    for k in $files
+    do
+      sh gen.sg gen_detail.php $k $k
+    done
+  done
+
+  # Make the second pass to create the actual layout for the files
+  rm -f $DST/*.tmpl
+  files=`find $DST -name "silc*.html"`
+  for i in $files
+  do
+    sh gen.sh index.php $i $i
+  done
+
+  rm -rf /tmp/silcdoc.html
+  rm -f $DST/tmp.php
+fi
