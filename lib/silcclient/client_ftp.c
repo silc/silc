@@ -49,6 +49,7 @@ struct SilcClientFtpSessionStruct {
   SilcClientFileMonitor monitor;
   void *monitor_context;
   char *filepath;
+  char *path;
 
   SilcSFTP sftp;
   SilcSFTPFilesystem fs;
@@ -291,6 +292,7 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
 					void *context)
 {
   SilcClientFtpSession session = (SilcClientFtpSession)context;
+  char path[512];
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -310,8 +312,14 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
   }
 
   /* Open the actual local file */
-  session->fd = silc_file_open(session->filepath, 
-			       O_RDWR | O_CREAT | O_EXCL);
+  memset(path, 0, sizeof(path));
+  if (session->path && strlen(session->path) < sizeof(path))
+    strncat(path, session->path, strlen(session->path));
+  if (strlen(session->filepath) > sizeof(path) - strlen(path))
+    strncat(path, session->filepath, sizeof(path) - strlen(path) - 1);
+  else
+    strncat(path, session->filepath, strlen(session->filepath));
+  session->fd = silc_file_open(path, O_RDWR | O_CREAT | O_EXCL);
   if (session->fd < 0) {
     /* Call monitor callback */
     session->client->internal->ops->say(session->client, session->conn, 
@@ -379,7 +387,7 @@ static void silc_client_ftp_readdir_name(SilcSFTP sftp,
   silc_sftp_open(sftp, name->filename[0], SILC_SFTP_FXF_READ, &attr,
 		 silc_client_ftp_open_handle, session);
 
-  /* Save the important attributes */
+  /* Save the important attributes like filename and file size */
   session->filepath = strdup(name->filename[0]);
   session->filesize = name->attrs[0]->size;
 
@@ -891,6 +899,7 @@ silc_client_file_receive(SilcClient client,
 			 SilcClientConnection conn,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
+			 const char *path,
 			 SilcUInt32 session_id)
 {
   SilcClientFtpSession session;
@@ -920,6 +929,7 @@ silc_client_file_receive(SilcClient client,
   session->monitor = monitor;
   session->monitor_context = monitor_context;
   session->conn = conn;
+  session->path = path ? strdup(path) : NULL;
 
   /* If the hostname and port already exists then the remote client did
      provide the connection point to us and we won't create listener, but

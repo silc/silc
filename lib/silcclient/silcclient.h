@@ -2128,6 +2128,7 @@ silc_client_file_send(SilcClient client,
  *                             SilcClientConnection conn,
  *                             SilcClientFileMonitor monitor,
  *                             void *monitor_context,
+ *                             const char *path,
  *                             SilcUInt32 session_id);
  *
  * DESCRIPTION
@@ -2137,7 +2138,9 @@ silc_client_file_send(SilcClient client,
  *    received in the `ftp' client operation function.  This will actually
  *    perform the key agreement protocol with the remote client before
  *    actually starting the file transmission.  The `monitor' callback
- *    will be called to monitor the transmission.
+ *    will be called to monitor the transmission.  If `path' is non NULL
+ *    the file will be saved into that directory.  If NULL the file is
+ *    saved in the current working directory.
  *
  *    If error will occur during the file transfer process the error
  *    status will be returned in the monitor callback.  In this case
@@ -2150,6 +2153,7 @@ silc_client_file_receive(SilcClient client,
 			 SilcClientConnection conn,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
+			 const char *path,
 			 SilcUInt32 session_id);
 
 /****f* silcclient/SilcClientAPI/silc_client_file_close
