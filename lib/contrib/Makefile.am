@@ -18,7 +18,16 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
+if HAVE_GETOPT_LONG
+if HAVE_REGEX
+noinst_LTLIBRARIES =
+else
 noinst_LTLIBRARIES = libcontrib.la
+endif
+else
+noinst_LTLIBRARIES = libcontrib.la
+endif
+
 
 if HAVE_GETOPT_LONG
 GETOPT =
