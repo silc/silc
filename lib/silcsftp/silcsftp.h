@@ -1,10 +1,10 @@
 /*
 
-  silcsftp.h 
+  silcsftp.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
 /****s* silcsftp/SilcSFTPAPI/SilcSFTP
  *
  * NAME
- * 
+ *
  *    typedef struct SilcSFTPStruct *SilcSFTP;
  *
  * DESCRIPTION
@@ -47,7 +47,7 @@
  *    This context is the actual SFTP client and SFTP server, and is
  *    allocated by silc_sftp_client_start or silc_sftp_server_start and
  *    given as argument usually to all silc_sftp_* functions.  It is freed
- *    by the silc_sftp_client_shutdown or silc_sftp_server_shutdown 
+ *    by the silc_sftp_client_shutdown or silc_sftp_server_shutdown
  *    functions.
  *
  ***/
@@ -56,7 +56,7 @@ typedef struct SilcSFTPStruct *SilcSFTP;
 /****d* silcsftp/SilcSFTPAPI/SilcSFTPVersion
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt32 SilcSFTPVersion;
  *
  * DESCRIPTION
@@ -74,7 +74,7 @@ typedef SilcUInt32 SilcSFTPVersion;
 /****d* silcsftp/SilcSFTPAPI/SilcSFTPStatus
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcSFTPStatus
  *
  * DESCRIPTION
@@ -95,13 +95,33 @@ typedef enum {
   SILC_SFTP_STATUS_NO_CONNECTION       = 6,  /* No connection to server */
   SILC_SFTP_STATUS_CONNECTION_LOST     = 7,  /* Connection lost to server */
   SILC_SFTP_STATUS_OP_UNSUPPORTED      = 8,  /* Operation unsupported */
+  SILC_SFTP_STATUS_INVALID_HANDLE      = 9,  /* Invalid file handle */
+  SILC_SFTP_STATUS_NO_SUCH_PATH        = 10, /* Path does not exist */
+  SILC_SFTP_STATUS_FILE_ALREADY_EXIST  = 11, /* File already exists */
+  SILC_SFTP_STATUS_WRITE_PROTECT       = 12, /* Read-only or protected */
+  SILC_SFTP_STATUS_NO_MEDIA            = 13, /* No media available */
+  SILC_SFTP_STATUS_NO_SPACE_ON_DEVICE  = 14, /* No space on device */
+  SILC_SFTP_STATUS_QUOTA_EXCEEDED      = 15, /* Quota limit reached */
+  SILC_SFTP_STATUS_UNKNOWN_PRINCIBLE   = 16, /* Unknown princible */
+  SILC_SFTP_STATUS_LOCK_CONFLICT       = 17, /* File already locked */
+  SILC_SFTP_STATUS_NOT_EMPTY           = 18, /* Directory not empty */
+  SILC_SFTP_STATUS_NOT_A_DIRECTORY     = 19, /* Not a directory */
+  SILC_SFTP_STATUS_INVALID_FILENAME    = 20, /* Invalid filename */
+  SILC_SFTP_STATUS_LINK_LOOP           = 21, /* Too many symlinks */
+  SILC_SFTP_STATUS_CANNOT_DELETE       = 22, /* Could not delete file */
+  SILC_SFTP_STATUS_INVALID_PARAMETER   = 23, /* Invalid parameter */
+  SILC_SFTP_STATUS_FILE_IS_A_DIRECTORY = 24, /* File is a directory file */
+  SILC_SFTP_STATUS_BR_LOCK_CONFLICT    = 25, /* Byte range lock conflict */
+  SILC_SFTP_STATUS_BR_LOCK_REFUSED     = 26, /* Byte range lock refused */
+  SILC_SFTP_STATUS_DELETE_PENDING      = 27, /* File is being deleted */
+  SILC_SFTP_STATUS_FILE_CORRUPT        = 28, /* File is corrupted */
 } SilcSFTPStatus;
 /***/
 
 /****d* silcsftp/SilcSFTPAPI/SilcSFTPFileOperation
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcSFTPFileOperation
  *
  * DESCRIPTION
@@ -125,13 +145,13 @@ typedef enum {
 /****s* silcsftp/SilcSFTPAPI/SilcSFTPAttributes
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } *SilcSFTPAttributes, SilcSFTPAttributesStruct;
  *
  * DESCRIPTION
  *
  *    SFTP File attributes structure represents the attributes for a file.
- *    This structure can be used by the client to send attributes to the 
+ *    This structure can be used by the client to send attributes to the
  *    server, and by server to return file attributes to the client.
  *
  ***/
@@ -152,7 +172,7 @@ typedef struct {
 /****s* silcsftp/SilcSFTPAPI/SilcSFTPName
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } *SilcSFTPName, SilcSFTPNameStruct
  *
  * DESCRIPTION
@@ -173,7 +193,7 @@ typedef struct {
 /****s* silcsftp/SilcSFTPAPI/SilcSFTPHandle
  *
  * NAME
- * 
+ *
  *    typedef struct SilcSFTPHandleStruct *SilcSFTPHandle;
  *
  * DESCRIPTION
@@ -189,7 +209,7 @@ typedef struct SilcSFTPHandleStruct *SilcSFTPHandle;
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcSFTPSendPacketCallback)(SilcBuffer packet, 
+ *    typedef void (*SilcSFTPSendPacketCallback)(SilcBuffer packet,
  *                                               void *context);
  *
  * DESCRIPTION
@@ -412,7 +432,7 @@ void silc_sftp_client_receive_process(SilcSFTP sftp,
  *
  * SYNOPSIS
  *
- *    void silc_sftp_open(SilcSFTP sftp, 
+ *    void silc_sftp_open(SilcSFTP sftp,
  *                        const char *filename,
  *                        SilcSFTPFileOperation pflags,
  *                        SilcSFTPAttributes attrs,
@@ -426,7 +446,7 @@ void silc_sftp_client_receive_process(SilcSFTP sftp,
  *    `callback' to return the opened file handle.
  *
  ***/
-void silc_sftp_open(SilcSFTP sftp, 
+void silc_sftp_open(SilcSFTP sftp,
 		    const char *filename,
 		    SilcSFTPFileOperation pflags,
 		    SilcSFTPAttributes attrs,
@@ -459,7 +479,7 @@ void silc_sftp_close(SilcSFTP sftp,
  *
  *    void silc_sftp_read(SilcSFTP sftp,
  *                        SilcSFTPHandle handle,
- *                        SilcUInt64 offset, 
+ *                        SilcUInt64 offset,
  *                        SilcUInt32 len,
  *                        SilcSFTPDataCallback callback,
  *                        void *context);
@@ -473,7 +493,7 @@ void silc_sftp_close(SilcSFTP sftp,
  ***/
 void silc_sftp_read(SilcSFTP sftp,
 		    SilcSFTPHandle handle,
-		    SilcUInt64 offset, 
+		    SilcUInt64 offset,
 		    SilcUInt32 len,
 		    SilcSFTPDataCallback callback,
 		    void *context);
@@ -493,7 +513,7 @@ void silc_sftp_read(SilcSFTP sftp,
  * DESCRIPTION
  *
  *    Writes to a file indicated by the file handle `handle' starting from
- *    offset of `offset' at most `data_len' bytes of `data'.  The `callback' 
+ *    offset of `offset' at most `data_len' bytes of `data'.  The `callback'
  *    is called to indicate the status of the writing.
  *
  ***/
@@ -814,7 +834,7 @@ void silc_sftp_realpath(SilcSFTP sftp,
  *
  * DESCRIPTION
  *
- *    Performs an extended operation indicated by the `request' with 
+ *    Performs an extended operation indicated by the `request' with
  *    optional extended operation data indicated by the `data'.  The callback
  *    is called to return any data associated with the extended request.
  *
@@ -836,7 +856,7 @@ void silc_sftp_extended(SilcSFTP sftp,
  * SYNOPSIS
  *
  *    SilcSFTP silc_sftp_server_start(SilcSFTPSendPacketCallback send_packet,
- *                                    void *send_context, 
+ *                                    void *send_context,
  *                                    SilcSFTPFilesystem fs);
  *
  * DESCRIPTION
@@ -849,7 +869,7 @@ void silc_sftp_extended(SilcSFTP sftp,
  *
  ***/
 SilcSFTP silc_sftp_server_start(SilcSFTPSendPacketCallback send_packet,
-				void *send_context, 
+				void *send_context,
 				SilcSFTPFilesystem fs);
 
 /****f* silcsftp/SilcSFTPAPI/silc_sftp_server_shutdown
@@ -870,7 +890,7 @@ void silc_sftp_server_shutdown(SilcSFTP sftp);
 /****d* silcsftp/SilcSFTPAPI/SilcSFTPMonitors
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcSFTPMonitors;
  *
  * DESCRIPTION
@@ -907,7 +927,7 @@ typedef enum {
 /****s* silcsftp/SilcSFTPAPI/SilcSFTPMonitorData
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } *SilcSFTPMonitorData, SilcSFTPMonitorDataStruct;
  *
  * DESCRIPTION
@@ -958,7 +978,7 @@ typedef void (*SilcSFTPMonitor)(SilcSFTP sftp,
  *
  *    void silc_sftp_server_set_monitor(SilcSFTP sftp,
  *                                      SilcSFTPMonitors monitors,
- *                                      SilcSFTPMonitor monitor, 
+ *                                      SilcSFTPMonitor monitor,
  *                                      void *context);
  *
  * DESCRIPTION
@@ -970,7 +990,7 @@ typedef void (*SilcSFTPMonitor)(SilcSFTP sftp,
  ***/
 void silc_sftp_server_set_monitor(SilcSFTP sftp,
 				  SilcSFTPMonitors monitors,
-				  SilcSFTPMonitor monitor, 
+				  SilcSFTPMonitor monitor,
 				  void *context);
 
 /* Function that is called to process the incmoing SFTP packet. */

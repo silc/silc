@@ -1,3 +1,18 @@
+Sat Apr  2 18:09:30 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Splitted the SILC libraries configuration into a configure
+	  fragment into lib/configure.ad.  It is now possible, once
+	  this feature is added, to specify whether to compile or not
+	  compile included SILC libraries.  Affected files are
+	  configure.in.pre, lib/silcmath/mpi/configure.ad,
+	  lib/configure.ad, Makefile.defines.pre and
+	  Makefile.defines_int.pre.
+
+	* Added --with-silc-includes and --with-silc-libs to configure.
+	  If specified the included libs are not compiled, but the
+	  specified libs are used.  Pkg-config is not yet supported.
+	  Affected file configure.in.pre.
+
 Fri Apr  1 18:52:47 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed announcing to not announce unregistered clients.
