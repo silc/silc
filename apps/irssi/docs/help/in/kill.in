@@ -1,18 +1,27 @@
 
 @SYNTAX:kill@
 
-This command can be used for two purpose:  SILC operator may use it
-to remove a client from the network, or user may use it to remove
-its own client entries from the network.
+This command can be used for two purpose:  SILC operator may use it to
+remove a client from the network, or user may use it to remove its own
+client entries from the network.  If you are not SILC operator you cannot
+use this command to remove anybody else except yourself from the network.
+Only SILC operator is able to kill other clients from the network.
 
-If you are not SILC operator you cannot use this command to remove
-anybody else except yourself from the network.  Only SILC operator
-is able to kill other clients from the network.  When killing your
-own client entry you must provide -pubkey argument to the command.
-For killing your own client from network you also must be connected
-to the same server as your own client entry (the client entry may
-be for example detached client entry).  When using this command as
-SILC operator -pubkey has no effect.
+Killing own client entry from network:
+
+When killing your own client entry you must provide -pubkey option to the
+command. For killing your own client from network you also must be
+connected to the same server as your own client entry (the client entry
+may be for example detached client entry).  If you are not connected to
+the same server you won't be able to kill the client.  Also, if you have
+changed or lost your old public key pair you won't be able to kill the
+client.
+
+Killing as SILC Operator:
+
+Before killing you must elevate your privileges to SILC Operator by using
+the /SILCOPER command.  After that you can kill a client.  When using this
+command as SILC operator -pubkey option has no effect and can be omitted.
 
 Examples:
 

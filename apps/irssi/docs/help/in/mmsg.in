@@ -8,15 +8,14 @@ message to the specified channel.  The message IS NOT private message, it
 is normal channel message.
 
 If the -sign optin is provided, the message will be additionally
-signed.
+digitally signed and the receiver may verify it with your public key.
 
-Messages that exceed roughly 64k have to be split up into smaller packets.
-This is done automatically.
+Messages that exceed roughly 64k will be fragmented automatically and
+sent as separate messages.  The reassembly of the fragments will be done
+automatically by the recipient.
 
-If no transfer-encoding is given it defaults to binary or 7bit for messages
-that have to be split up.
-
-If no content-type is given it is guessed using a MIME magic file.
+If no transfer-encoding is given it defaults to binary.  If no 
+content-type is given it is guessed using a MIME magic file.
 
 NOTE: You have to have enabled perl support at compile time, and you need to
 load the perl script silc-mime.pl for this to work!

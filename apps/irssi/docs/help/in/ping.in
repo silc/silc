@@ -1,7 +1,6 @@
 
 @SYNTAX:ping@
 
-Sends PING to the connected server.
-
-
+Sends PING to the connected server.  It is not possible to ping any
+other server but the one you are directly connected with.
 

@@ -19,9 +19,6 @@ MAY return following information about the user:
   o User's geographical location
   o Information about the device user is using (computer, PDA, etc)
 
-If the -pubkey option is used WHOIS will only retrieve the clients
-with the corresponding public key.
-
 NOTE: It is also possible to receive other information. Note that
 all users do not want to send these informations or may send only
 some of the information. It also possible that none of these
@@ -29,6 +26,9 @@ informations is received.  It also possible that some server
 responds to your request on the behalf of the user if the user
 does not want to respond to you.  In this case the returned
 information may be incomplete.
+
+If the -pubkey option is used WHOIS will only retrieve the clients
+with the corresponding public key.
 
 If you want to send your information in WHOIS you can set the
 information with ATTR command.  See HELP ATTR.
