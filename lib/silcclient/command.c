@@ -966,8 +966,11 @@ SILC_CLIENT_CMD_FUNC(join)
 
   /* See if we have joined to the requested channel already */
   if (silc_idcache_find_by_name_one(conn->channel_cache, cmd->argv[1],
-				    &id_cache))
-    goto out;
+				    &id_cache)) {
+    SilcChannelEntry channel = (SilcChannelEntry)id_cache->context;
+    if (channel->on_channel)
+      goto out;
+  }
 
   idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
 
@@ -2012,6 +2015,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   }
 
   channel = (SilcChannelEntry)id_cache->context;
+  channel->on_channel = FALSE;
 
   /* Send LEAVE command to the server */
   idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);

@@ -281,10 +281,8 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 	return FALSE;
 
     /* Free data */
-    if (entry->server_name)
-      silc_free(entry->server_name);
-    if (entry->id)
-      silc_free(entry->id);
+    silc_free(entry->server_name);
+    silc_free(entry->id);
 
     memset(entry, 'F', sizeof(*entry));
     silc_free(entry);
@@ -352,14 +350,10 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 	return FALSE;
 
     /* Free data */
-    if (entry->nickname)
-      silc_free(entry->nickname);
-    if (entry->username)
-      silc_free(entry->username);
-    if (entry->userinfo)
-      silc_free(entry->userinfo);
-    if (entry->id)
-      silc_free(entry->id);
+    silc_free(entry->nickname);
+    silc_free(entry->username);
+    silc_free(entry->userinfo);
+    silc_free(entry->id);
 
     memset(entry, 'F', sizeof(*entry));
     silc_free(entry);
@@ -622,24 +616,18 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 	return FALSE;
 
     /* Free data */
-    if (entry->channel_name)
-      silc_free(entry->channel_name);
-    if (entry->id)
-      silc_free(entry->id);
-    if (entry->topic)
-      silc_free(entry->topic);
+    silc_free(entry->channel_name);
+    silc_free(entry->id);
+    silc_free(entry->topic);
     if (entry->channel_key)
       silc_cipher_free(entry->channel_key);
     if (entry->key) {
       memset(entry->key, 0, entry->key_len / 8);
       silc_free(entry->key);
     }
-    if (entry->cipher)
-      silc_free(entry->cipher);
-    if (entry->hmac_name)
-      silc_free(entry->hmac_name);
-    if (entry->rekey)
-      silc_free(entry->rekey);
+    silc_free(entry->cipher);
+    silc_free(entry->hmac_name);
+    silc_free(entry->rekey);
 
     /* Free all client entrys from the users list. The silc_hash_table_free
        will free all the entries so they are not freed at the foreach 

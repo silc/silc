@@ -1,3 +1,15 @@
+Thu Sep 20 18:04:12 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* When processing JOIN command reply in server check that if
+	  the channel exists in our global list we'll move it the local
+	  list.  Affected file silcd/command_reply.c.
+
+	* Fixed the check whether client is joined on the channel already
+	  in JOIN command.  Affected file lib/silcclient/command.c.
+
+	* Fixed the JOIN command reply to check whether the channel
+	  already exists.  Affected file lib/silcclient/command_reply.c.
+
 Wed Sep 19 22:58:32 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_ske_status_string to map the SKE error numbers

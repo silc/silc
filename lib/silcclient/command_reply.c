@@ -963,6 +963,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   /* Get topic */
   topic = silc_argument_get_arg_type(cmd->args, 10, NULL);
 
+  /* If we have the channel entry, remove it and create a new one */
+  channel = silc_client_get_channel(cmd->client, conn, channel_name);
+  if (channel)
+    silc_client_del_channel(cmd->client, conn, channel);
+
   /* Save received Channel ID. This actually creates the channel */
   channel = silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, 
 				       mode, idp);

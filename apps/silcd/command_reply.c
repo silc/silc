@@ -798,6 +798,13 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 		    (created == 0 ? "existing" : "created"), channel_name,
 		    silc_id_render(id, SILC_ID_CHANNEL)));
 
+    /* If the channel is found from global list we must move it to the
+       local list. */
+    entry = silc_idlist_find_channel_by_name(server->global_list, 
+					     channel_name, &cache);
+    if (entry)
+      silc_idlist_del_channel(server->global_list, entry);
+
     /* Add the channel to our local list. */
     entry = silc_idlist_add_channel(server->local_list, strdup(channel_name), 
 				    SILC_CHANNEL_MODE_NONE, id, 

@@ -46,6 +46,9 @@ TODO/bugs In SILC Server
 
  o Add perhaps /var/run/silcd.pid for PID information for the server.
 
+ o The backup router support described in the protocol specification
+   should be done at some point.
+
  o Add a timeout to handling incmoing JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
    seconds.  Now it is possible to accept n incoming JOIN commands
@@ -53,8 +56,10 @@ TODO/bugs In SILC Server
    each JOIN command will create and distribute the new channel key
    to everybody on the channel.
 
- o The backup router support described in the protocol specification
-   should be done at some point.
+ o Add support for sending the LIST command to primary router on normal
+   server to receive all the created channels.  Currently the command
+   returns only the channels the server knows about.  The protocol spec
+   does not prohibit of sending the LIST to the router.
 
  o Incomplete IPv6 support:
 

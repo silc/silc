@@ -66,7 +66,7 @@ typedef struct SilcChannelEntryStruct {
   char *channel_name;
   SilcChannelID *id;
   uint32 mode;
-  int on_channel;
+  bool on_channel;
 
   /* Joined clients */
   SilcList clients;
