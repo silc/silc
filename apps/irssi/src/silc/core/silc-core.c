@@ -262,6 +262,16 @@ void silc_opt_callback(poptContext con,
 		       const struct poptOption *opt,
 		       const char *arg, void *data)
 {
+  if (strcmp(opt->longName, "nick") == 0) {
+    g_free(silc_client->nickname);  
+    silc_client->nickname = g_strdup(arg);
+  }
+
+  if (strcmp(opt->longName, "hostname") == 0) {
+    silc_free(silc_client->hostname);  
+    silc_client->hostname = g_strdup(arg);
+  }
+
   if (strcmp(opt->longName, "list-ciphers") == 0) {
     silc_cipher_register_default();
     silc_client_list_ciphers();

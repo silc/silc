@@ -1,3 +1,13 @@
+Tue Jan  4 13:06:26 CET 2005  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Adopt configuration toolchain to current auto-tools.
+	  Affected files prepare, irssi/configure.in
+	* Revert most of the UTF-8 fixes to SILC Client 1.0.1.  Will
+	  redo that.  Affected files irssi/src/silc/core/client_ops.c,
+	  irssi/src/fe-common/silc/fe-silc-channels.c
+	* Take over command line options into silcclient data structure.
+	  Affected file irssi/src/silc/core/silc-core.c
+
 Wed Dec  8 16:15:11 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not try to initiate backup resuming protocol forever.
