@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet-Draft
-.ds RH XXX
+.ds RH 17 June 2003
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-ke-auth-07.txt                      XXX
-Expires: XXX
+draft-riikonen-silc-ke-auth-07.txt                          17 June 2003
+Expires: 17 December 2003
 
 .in 3
 
@@ -521,6 +521,7 @@ o Signature Data (variable length) - The signature signed
   always MUST provide this field.  The encoding for signature
   is defined in [SILC1].
 .in 3
+
 
 
 .ti 0
@@ -1146,4 +1147,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 17 December 2003
