@@ -62,7 +62,7 @@ int silc_socket_write(SilcSocketConnection sock)
 int silc_socket_read(SilcSocketConnection sock)
 {
   int len = 0;
-  unsigned char buf[SILC_PACKET_READ_SIZE];
+  unsigned char buf[SILC_SOCKET_READ_SIZE];
   int fd = sock->sock;
 
   SILC_LOG_DEBUG(("Reading data from socket %d", fd));
@@ -84,7 +84,7 @@ int silc_socket_read(SilcSocketConnection sock)
   /* Insert the data to the buffer. */
 
   if (!sock->inbuf)
-    sock->inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
+    sock->inbuf = silc_buffer_alloc(SILC_SOCKET_BUF_SIZE);
   
   /* If the data does not fit to the buffer reallocate it */
   if ((sock->inbuf->end - sock->inbuf->tail) < len)

@@ -32,11 +32,8 @@
 #ifndef SILCPACKET_H
 #define SILCPACKET_H
 
-/* Amount of bytes to be read from the socket connection at once. */
-#define SILC_PACKET_READ_SIZE 16384
-
 /* Default byte size of the packet. */
-#define SILC_PACKET_DEFAULT_SIZE 1024
+#define SILC_PACKET_DEFAULT_SIZE SILC_SOCKET_BUF_SIZE
 
 /* Header length without source and destination ID's. */
 #define SILC_PACKET_HEADER_LEN 8 + 2

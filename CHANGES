@@ -1,3 +1,14 @@
+Sun Jun 24 12:19:52 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Moved the lib/silccore/silcsockconn.[ch] to the utility
+	  library as they clearly belong there.  As a plus side we
+	  can make the actual socket connection routines platform
+	  specific.
+
+	  Added also new generic function silc_socket_read and
+	  silc_socket_write (that used to be silc_packet_[read/write].
+	  The implementation of these are platform specific.
+
 Sat Jun 23 16:01:00 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added preliminary support for native WIN32 compilation under

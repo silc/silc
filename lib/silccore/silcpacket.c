@@ -30,37 +30,6 @@
 
 ******************************************************************************/
 
-/* Writes data from encrypted buffer to the socket connection. If the
-   data cannot be written at once, it will be written later with a timeout. 
-   The data is written from the data section of the buffer, not from head
-   or tail section. This automatically pulls the data section towards end
-   after writing the data. */
-
-int silc_packet_write(int sock, SilcBuffer src)
-{
-  int ret = 0;
-
-  SILC_LOG_DEBUG(("Writing data to socket %d", sock));
-
-  if (src->len > 0) {
-    ret = write(sock, src->data, src->len);
-    if (ret < 0) {
-      if (errno == EAGAIN) {
-	SILC_LOG_DEBUG(("Could not write immediately, will do it later"));
-	return -2;
-      }
-      SILC_LOG_ERROR(("Cannot write to socket: %s", strerror(errno)));
-      return -1;
-    }
-
-    silc_buffer_pull(src, ret);
-  }
-
-  SILC_LOG_DEBUG(("Wrote data %d bytes", ret));
-
-  return ret;
-}
-
 /* Actually sends the packet. This flushes the connections outgoing data
    buffer. If data is sent directly to the network this returns the bytes
    written, if error occured this returns -1 and if the data could not
@@ -85,7 +54,7 @@ int silc_packet_send(SilcSocketConnection sock, int force_send)
     SILC_LOG_DEBUG(("Forcing packet send, packet sent immediately"));
 
     /* Write to network */
-    ret = silc_packet_write(sock->sock, sock->outbuf);
+    ret = silc_socket_write(sock);
 
     if (ret == -1) {
       SILC_LOG_ERROR(("Error sending packet, dropped"));
@@ -299,58 +268,6 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
 
 ******************************************************************************/
 
-/* Reads data from the socket connection into the incoming data buffer.
-   However, this does not parse the packet, it only reads some amount from
-   the network. If there are more data available that can be read at a time
-   the rest of the data will be read later with a timeout and only after
-   that the packet is ready to be parsed. 
-
-   The destination buffer sent as argument must be initialized before 
-   calling this function, and, the data section and the start of the tail
-   section must be same. Ie. we add the read data to the tail section of
-   the buffer hence the data section is the start of the buffer.
-
-   This returns amount of bytes read or -1 on error or -2 on case where
-   all of the data could not be read at once. */
-
-int silc_packet_read(int fd, SilcSocketConnection sock)
-{
-  int len = 0;
-  unsigned char buf[SILC_PACKET_READ_SIZE];
-
-  SILC_LOG_DEBUG(("Reading data from socket %d", fd));
-
-  /* Read the data from the socket. */
-  len = read(fd, buf, sizeof(buf));
-  if (len < 0) {
-    if (errno == EAGAIN || errno == EINTR) {
-      SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
-      return -2;
-    }
-    SILC_LOG_ERROR(("Cannot read from socket: %d:%s", fd, strerror(errno)));
-    return -1;
-  }
-
-  if (!len)
-    return 0;
-
-  /* Insert the data to the buffer. */
-
-  if (!sock->inbuf)
-    sock->inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
-  
-  /* If the data does not fit to the buffer reallocate it */
-  if ((sock->inbuf->end - sock->inbuf->tail) < len)
-    sock->inbuf = silc_buffer_realloc(sock->inbuf, sock->inbuf->truelen + 
-				      (len * 2));
-  silc_buffer_put_tail(sock->inbuf, buf, len);
-  silc_buffer_pull_tail(sock->inbuf, len);
-
-  SILC_LOG_DEBUG(("Read %d bytes", len));
-
-  return len;
-}
-
 /* Processes the received data. This checks the received data and 
    calls parser callback that handles the actual packet decryption
    and parsing. If more than one packet was received this calls the
@@ -442,7 +359,7 @@ int silc_packet_receive(SilcSocketConnection sock)
 		   "Router")));
 
   /* Read some data from connection */
-  ret = silc_packet_read(sock->sock, sock);
+  ret = silc_socket_read(sock);
 
   return ret;
 }

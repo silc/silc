@@ -33,7 +33,7 @@
    some more tweaking I can abandon this silc_select() thingy all together
    and move the generic code to unix/ and program the SILC Scheduler
    interface all together as platform specific. It is here just to
-   use as match common code as possible... -Pekka */
+   use as much common code as possible... -Pekka */
 
 /* Our "select()" for WIN32. This actually is not the select() and does
    not call Winsock's select() (since it cannot be used for our purposes)

@@ -152,8 +152,6 @@ int silc_net_create_connection(int port, char *host)
    connection returns directly. To get the result of the connect() one
    must select() the socket and read the result after it's ready. */
 
-/* XXX Is the socket on WIN32 always non-blocking? */
-
 int silc_net_create_connection_async(int port, char *host)
 {
   SOCKET sock;

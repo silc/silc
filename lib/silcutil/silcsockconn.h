@@ -297,7 +297,7 @@ SilcSocketConnection silc_socket_dup(SilcSocketConnection sock);
  *    Reads data from the socket connection into the incoming data buffer.
  *    It reads as much as possible from the socket connection. This returns
  *    amount of bytes read or -1 on error or -2 on case where all of the
- *    data could not be read at once. Implementation of this funtion
+ *    data could not be read at once. Implementation of this function
  *    may be platform specific.
  *
  ***/
@@ -315,7 +315,7 @@ int silc_socket_read(SilcSocketConnection sock);
  *    data cannot be written at once, it must be written at later time. 
  *    The data is written from the data section of the buffer, not from head
  *    or tail section. This automatically pulls the data section towards end
- *    after writing the data. Implementation of this functions may be
+ *    after writing the data. Implementation of this function may be
  *    platform specific.
  *
  ***/

@@ -27,7 +27,6 @@ libsilccore_a_SOURCES = \
 	silccommand.c \
 	silcpacket.c \
 	silcprotocol.c \
-	silcsockconn.c \
 	silcpayload.c \
 	silcnotify.c \
 	silcauth.c \
