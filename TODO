@@ -35,6 +35,10 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
+ o If the silc_client_channel_message does not find the client entry
+   then it should attempt to resolve it at least once and no return
+   NULL entry to the application.
+
  o All protocol execution timeouts are hard coded. They should be 
    configurable and the Irssi SILC client should be able to set them
    with for example /set key_exchange_timeout etc.  The silc_client_alloc

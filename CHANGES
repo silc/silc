@@ -1,3 +1,15 @@
+Tue Jun 19 22:10:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed a possible crash in silc_packet_send_prepare.  It now
+	  assures always that there is enough space in the buffer and
+	  at the tail area of the buffer (for MAC). 
+
+	  Fixed the inbound buffer reallocation in silc_packet_read.
+	  It was old code and did not handle the reallocation correctly.
+	  Affected
+
+	  The affected file is lib/silccore/silcpacket.c.
+
 Tue Jun 19 13:40:09 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* make install generates new server keys only if there is not
