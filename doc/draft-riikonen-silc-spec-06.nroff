@@ -74,12 +74,12 @@ Table of Contents
   1.1 Requirements Terminology ..................................  4
 2 SILC Concepts .................................................  4
   2.1 SILC Network Topology .....................................  4
-  2.2 Communication Inside a Cell ...............................  5
+  2.2 Communication Inside a Cell ...............................  6
   2.3 Communication in the Network ..............................  6
   2.4 Channel Communication .....................................  7
-  2.5 Router Connections ........................................  7
+  2.5 Router Connections ........................................  8
 3 SILC Specification ............................................  8
-  3.1 Client ....................................................  8
+  3.1 Client ....................................................  9
       3.1.1 Client ID ...........................................  9
   3.2 Server .................................................... 10
       3.2.1 Server's Local ID List .............................. 10
@@ -103,35 +103,35 @@ Table of Contents
       3.9.1 Authentication Payload .............................. 21
   3.10 Algorithms ............................................... 23
       3.10.1 Ciphers ............................................ 23
-             3.10.1.1 CBC Mode .................................. XXX
-             3.10.1.2 CTR Mode .................................. XXX
-             3.10.1.3 Randomized CBC Mode ....................... XXX
-      3.10.2 Public Key Algorithms .............................. 24
-      3.10.3 Hash Functions ..................................... 24
-      3.10.4 MAC Algorithms ..................................... 25
-      3.10.5 Compression Algorithms ............................. 25
-  3.11 SILC Public Key .......................................... 26
-  3.12 SILC Version Detection ................................... 28
-  3.13 Backup Routers ........................................... 28
-      3.13.1 Switching to Backup Router ......................... 30
-      3.13.2 Resuming Primary Router ............................ 31
-      3.13.3 Discussion on Backup Router Scheme ................. 33
-4 SILC Procedures ............................................... 34
-  4.1 Creating Client Connection ................................ 34
-  4.2 Creating Server Connection ................................ 35
-      4.2.1 Announcing Clients, Channels and Servers ............ 36
-  4.3 Joining to a Channel ...................................... 37
-  4.4 Channel Key Generation .................................... 38
-  4.5 Private Message Sending and Reception ..................... 39
-  4.6 Private Message Key Generation ............................ 39
-  4.7 Channel Message Sending and Reception ..................... 40
-  4.8 Session Key Regeneration .................................. 40
-  4.9 Command Sending and Reception ............................. 41
-  4.10 Closing Connection ....................................... 42
-  4.11 Detaching and Resuming a Session ......................... 42
-5 Security Considerations ....................................... 44
-6 References .................................................... 45
-7 Author's Address .............................................. 47
+             3.10.1.1 CBC Mode .................................. 24
+             3.10.1.2 CTR Mode .................................. 24
+             3.10.1.3 Randomized CBC Mode ....................... 25
+      3.10.2 Public Key Algorithms .............................. 26
+      3.10.3 Hash Functions ..................................... 26
+      3.10.4 MAC Algorithms ..................................... 27
+      3.10.5 Compression Algorithms ............................. 27
+  3.11 SILC Public Key .......................................... 27
+  3.12 SILC Version Detection ................................... 30
+  3.13 Backup Routers ........................................... 30
+      3.13.1 Switching to Backup Router ......................... 32
+      3.13.2 Resuming Primary Router ............................ 33
+      3.13.3 Discussion on Backup Router Scheme ................. 35
+4 SILC Procedures ............................................... 36
+  4.1 Creating Client Connection ................................ 36
+  4.2 Creating Server Connection ................................ 38
+      4.2.1 Announcing Clients, Channels and Servers ............ 38
+  4.3 Joining to a Channel ...................................... 39
+  4.4 Channel Key Generation .................................... 41
+  4.5 Private Message Sending and Reception ..................... 41
+  4.6 Private Message Key Generation ............................ 42
+  4.7 Channel Message Sending and Reception ..................... 43
+  4.8 Session Key Regeneration .................................. 43
+  4.9 Command Sending and Reception ............................. 44
+  4.10 Closing Connection ....................................... 44
+  4.11 Detaching and Resuming a Session ......................... 45
+5 Security Considerations ....................................... 47
+6 References .................................................... 48
+7 Author's Address .............................................. 49
 
 
 
@@ -374,6 +374,7 @@ routed further.
 Server distributes the channel message to its local clients which are 
 joined to the channel.  Router also distributes the message to its 
 local clients on the channel.
+
 
 
 .ti 0
@@ -1080,7 +1081,6 @@ used.
 
 The format of the Authentication Payload is as follows:
 
-
 .in 5
 .nf
                      1                   2                   3
@@ -1186,7 +1186,6 @@ must be supported in order to be compliant with this protocol.
 
 The following ciphers are defined in SILC protocol:
 
-.in 6
 aes-256-cbc          AES in CBC mode, 256 bit key            (REQUIRED)
 aes-256-ctr          AES in CTR mode, 256 bit key            (RECOMMENDED)
 aes-256-rcbc         AES in randomized CBC mode, 256 bit key (OPTIONAL)
@@ -1202,8 +1201,6 @@ serpent-<len>-<mode> Serpent in <mode> mode, <len> bit key   (OPTIONAL)
 rc6-<len>-<mode>     RC6 in <mode> mode, <len> bit key       (OPTIONAL)
 mars-<len>-<mode>    MARS in <mode> mode, <len> bit key      (OPTIONAL)
 none                 No encryption                           (OPTIONAL)
-.in 3
-
 
 The <mode> is either "cbc", "ctr" or "rcbc".  Other encryption modes MAY
 be defined as to be used in SILC using the same format.  The <len> is
@@ -1370,6 +1367,7 @@ md5              MD5, length = 16        (RECOMMENDED)
 .in 3
 
 
+
 .ti 0
 3.10.4 MAC Algorithms
 
@@ -1397,8 +1395,6 @@ are used as part of the HMACs are described in [Scheneir] and in
 [Menezes].
 
 Additional MAC algorithms MAY be defined to be used in SILC.
-
-
 
 
 .ti 0
@@ -1985,7 +1981,7 @@ ID Payloads into the SILC_PACKET_NEW_ID packet.
 
 Also, clients' modes (user modes in SILC) MUST be announced.  This is
 done by compiling a list of Notify Payloads with SILC_NOTIFY_UMODE_CHANGE
-nofity type into the SILC_PACKET_NOTIFY packet.  Also, channel's topics
+notify type into the SILC_PACKET_NOTIFY packet.  Also, channel's topics
 MUST be announced by compiling a list of Notify Payloads with the
 SILC_NOTIFY_TOPIC_SET notify type into the SILC_PACKET_NOTIFY packet.
 
@@ -2076,6 +2072,7 @@ channel in the command reply.  Note that the channel key is never
 generated if the SILC_CMODE_PRIVKEY mode is set.
 
 
+
 .ti 0
 4.4 Channel Key Generation
 
@@ -2115,7 +2112,7 @@ Note that the server also MUST save the channel key.
 .ti 0
 4.5 Private Message Sending and Reception
 
-Private messages are sent point to point.  Client explicitly destines
+Private messages are sent point to point.  Client explicitly destine
 a private message to specific client that is delivered to only to that
 client.  No other client may receive the private message.  The receiver
 of the private message is destined in the SILC Packet Header as any
