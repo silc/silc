@@ -31,6 +31,8 @@ SilcBuffer silc_id_payload_encode(void *id, unsigned short len,
 				  SilcIdType type);
 SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
 						unsigned int argc);
+SilcIDPayload silc_id_payload_parse_data(unsigned char *data, 
+					 unsigned int len);
 void silc_id_payload_free(SilcIDPayload payload);
 SilcIdType silc_id_payload_get_type(SilcIDPayload payload);
 void *silc_id_payload_get_id(SilcIDPayload payload);

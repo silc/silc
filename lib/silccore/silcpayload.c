@@ -36,7 +36,7 @@ struct SilcIDPayloadStruct {
   unsigned char *id;
 };
 
-/* Parses data and return ID payload into payload structure */
+/* Parses buffer and return ID payload into payload structure */
 
 SilcIDPayload silc_id_payload_parse(SilcBuffer buffer)
 {
@@ -51,10 +51,11 @@ SilcIDPayload silc_id_payload_parse(SilcBuffer buffer)
 		       SILC_STR_UI_SHORT(&new->len),
 		       SILC_STR_END);
 
+  silc_buffer_pull(buffer, 4);
+
   if (new->len > buffer->len)
     goto err;
 
-  silc_buffer_pull(buffer, 4);
   silc_buffer_unformat(buffer,
 		       SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
 		       SILC_STR_END);
@@ -63,6 +64,45 @@ SilcIDPayload silc_id_payload_parse(SilcBuffer buffer)
   return new;
 
  err:
+  silc_free(new);
+  return NULL;
+}
+
+/* Parses data and return ID payload into payload structure. */
+
+SilcIDPayload silc_id_payload_parse_data(unsigned char *data, 
+					 unsigned int len)
+{
+  SilcIDPayload new;
+  SilcBuffer buffer;
+
+  SILC_LOG_DEBUG(("Parsing ID payload"));
+
+  buffer = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  silc_buffer_put(buffer, data, len);
+
+  new = silc_calloc(1, sizeof(*new));
+
+  silc_buffer_unformat(buffer,
+		       SILC_STR_UI_SHORT(&new->type),
+		       SILC_STR_UI_SHORT(&new->len),
+		       SILC_STR_END);
+
+  silc_buffer_pull(buffer, 4);
+
+  if (new->len > buffer->len)
+    goto err;
+
+  silc_buffer_unformat(buffer,
+		       SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
+		       SILC_STR_END);
+
+  silc_buffer_free(buffer);
+  return new;
+
+ err:
+  silc_buffer_free(buffer);
   silc_free(new);
   return NULL;
 }
