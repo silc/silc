@@ -536,16 +536,16 @@ Setup:  p is a large and public safe prime.  This is one of the
         If the Mutual Authentication flag is set then initiator
         MUST also produce signature data SIGN_i which the responder
         will verify.  The initiator MUST compute a hash value
-        HASH_i = hash(Key Exchange Start Payload | public key
-        (or certificate) | e).  It then signs the HASH_i value with
-        its private key resulting a signature SIGN_i.
+        HASH_i = hash(Initiator's Key Exchange Start Payload |
+        public key (or certificate) | e).  It then signs the HASH_i
+        value with its private key resulting a signature SIGN_i.
 
     2.  Responder generates a random number y, where 1 < y < q,
         and computes f = g ^ y mod p.  It then computes the
         shared secret KEY = e ^ y mod p, and, a hash value 
-        HASH = hash(Key Exchange Start Payload data | public 
-        key (or certificate) | Initiator's public key (or
-        certificate) | e | f | KEY).  It then signs
+        HASH = hash(Initiator's Key Exchange Start Payload |
+        public key (or certificate) | Initiator's public key
+        (or certificate) | e | f | KEY).  It then signs
         the HASH value with its private key resulting a signature
         SIGN.  
 
