@@ -381,11 +381,7 @@ bool silc_server_rehash(SilcServer server)
   silc_server_config_ref(&server->config_ref, server->config, server->config);
 
   /* Fix the server_name field */
-  if (!strcmp(server->server_name, newconfig->server_info->server_name)) {
-    /* We don't need any update */
-    silc_free(newconfig->server_info->server_name);
-    newconfig->server_info->server_name = NULL;
-  } else {
+  if (strcmp(server->server_name, newconfig->server_info->server_name)) {
     silc_free(server->server_name);
     server->server_name = newconfig->server_info->server_name;
     newconfig->server_info->server_name = NULL;
