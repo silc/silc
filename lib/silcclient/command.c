@@ -2327,7 +2327,6 @@ SILC_CLIENT_CMD_FUNC(leave)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
-  SilcChannelUser chu;
   SilcBuffer buffer, idp;
   char *name;
 
@@ -2361,14 +2360,6 @@ SILC_CLIENT_CMD_FUNC(leave)
     goto out;
   }
 
-  /* Remove us from channel */
-  chu = silc_client_on_channel(channel, conn->local_entry);
-  if (chu) {
-    silc_hash_table_del(chu->client->channels, chu->channel);
-    silc_hash_table_del(chu->channel->user_list, chu->client);
-    silc_free(chu);
-  }
-
   /* Send LEAVE command to the server */
   idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   buffer = silc_command_payload_encode_va(SILC_COMMAND_LEAVE, 0, 1,
@@ -2383,8 +2374,6 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   if (conn->current_channel == channel)
     conn->current_channel = NULL;
-
-  silc_client_del_channel(cmd->client, cmd->conn, channel);
 
  out:
   silc_client_command_free(cmd);

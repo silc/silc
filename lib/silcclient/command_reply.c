@@ -1538,6 +1538,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcChannelID *channel_id;
   SilcChannelEntry channel = NULL;
+  SilcChannelUser chu;
   unsigned char *tmp;
   SilcUInt32 len;
 
@@ -1563,11 +1564,23 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
       goto out;
     }
 
+    /* Remove us from this channel. */
+    chu = silc_client_on_channel(channel, conn->local_entry);
+    if (chu) {
+      silc_hash_table_del(chu->client->channels, chu->channel);
+      silc_hash_table_del(chu->channel->user_list, chu->client);
+      silc_free(chu);
+    }
+
     silc_free(channel_id);
   }
 
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel));
+
+  /* Now delete the channel. */
+  if (channel)
+    silc_client_del_channel(cmd->client, conn, channel);
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_LEAVE);
