@@ -44,7 +44,8 @@ libcore_a_SOURCES = \
 	settings.c \
 	signals.c \
 	special-vars.c \
-	write-buffer.c
+	write-buffer.c \
+	blob.c
 
 structure_headers = \
 	channel-rec.h \
@@ -54,7 +55,8 @@ structure_headers = \
 	server-rec.h \
 	server-setup-rec.h \
 	server-connect-rec.h \
-	window-item-rec.h
+	window-item-rec.h \
+	blob.h
 
 noinst_HEADERS = \
 	args.h \

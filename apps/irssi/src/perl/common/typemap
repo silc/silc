@@ -13,6 +13,7 @@ Irssi::Logitem       	T_PlainObj
 Irssi::Rawlog		T_PlainObj
 Irssi::Module		T_PlainObj
 Irssi::Windowitem	T_IrssiObj
+Irssi::Blob		T_PlainObj
 
 INPUT
 

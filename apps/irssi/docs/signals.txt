@@ -324,3 +324,10 @@ gui-printtext.c:
 
 statusbar-items.c:
  "mail counter"
+
+SILC
+----
+
+client_ops.c:
+ "mime", SERVER_REC, CHANNEL_REC, BLOB_REC, char *mime, char *enc, char *nick
+ "mime-send", SERVER_REC, WI_ITEM_REC, char *data, int data_len, char *enc, char *type

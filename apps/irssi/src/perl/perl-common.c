@@ -39,6 +39,7 @@
 #include "channels.h"
 #include "queries.h"
 #include "nicklist.h"
+#include "blob.h"
 
 #include "perl-common.h"
 
@@ -227,6 +228,12 @@ void irssi_callXS(void (*subaddr)(CV* cv), CV *cv, SV **mark)
 	(*subaddr)(cv);
 
 	PUTBACK;
+}
+
+static void perl_blob_fill_hash(HV *hv, BLOB_REC *blob)
+{
+	hv_store(hv, "octets", 6, newSViv(blob->octets), 0);
+	hv_store(hv, "data", 4, newSVpv(blob->data, blob->octets), 0);
 }
 
 void perl_chatnet_fill_hash(HV *hv, CHATNET_REC *chatnet)
@@ -624,6 +631,10 @@ void perl_common_start(void)
 	plain_stashes = g_hash_table_new((GHashFunc) g_str_hash,
 					 (GCompareFunc) g_str_equal);
         irssi_add_plains(core_plains);
+	irssi_add_object(module_get_uniq_id("BLOB", 0), 0,
+			"Irssi::Blob",
+			(PERL_OBJECT_FUNC) perl_blob_fill_hash);
+
 
         use_protocols = NULL;
 	g_slist_foreach(chat_protocols, (GFunc) perl_register_protocol, NULL);

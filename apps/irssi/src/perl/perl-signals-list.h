@@ -175,6 +175,8 @@ static PERL_SIGNAL_ARGS_REC perl_signal_args[] =
     { "message dcc", { "siobject", "string", NULL } },
     { "message dcc action", { "siobject", "string", NULL } },
     { "message dcc ctcp", { "siobject", "string", "string", NULL } },
+    { "mime", { "iobject", "iobject", "siobject", "string", "string", "string", NULL } },
+    { "mime-send", { "iobject", "iobject", "string", "int", "string", "string", NULL } },
 
     { NULL }
 };

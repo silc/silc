@@ -39,6 +39,7 @@
 #include "fe-common/silc/module-formats.h"
 
 #include "core.h"
+#include "blob.h"
 
 static void 
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
@@ -110,6 +111,20 @@ void silc_say_error(char *msg, ...)
   va_end(va);
 }
 
+void silc_emit_mime_sig(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
+			const char *data, SilcUInt32 data_len,
+			const char *encoding, const char *type,
+			const char *nick)
+{
+  BLOB_REC blob;
+
+  blob_fill(&blob);
+  blob.octets = data_len;
+  blob.data = (char *)data;
+
+  signal_emit("mime", 6, server, channel, &blob, encoding, type, nick);
+}
+
 /* Message for a channel. The `sender' is the nickname of the sender 
    received in the packet. The `channel_name' is the name of the channel. */
 
@@ -142,12 +157,14 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     /* MIME object received, try to display it as well as we can */
-    char type[128];
+    char type[128], enc[128];
     unsigned char *data;
+    SilcUInt32 data_len;
 
     memset(type, 0, sizeof(type));
+    memset(enc, 0, sizeof(enc));
     if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
-			 NULL, 0, &data, NULL))
+			 enc, sizeof(enc) - 1, &data, &data_len))
       return;
 
     /* Then figure out what we can display */
@@ -156,9 +173,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       /* It is something textual, display it */
       message = (const unsigned char *)data;
     } else {
-      printformat_module("fe-common/silc", server, channel->channel_name,
-			 MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
-			 nick == NULL ? "[<unknown>]" : nick->nick, type);
+      silc_emit_mime_sig(server, chanrec, data, data_len, 
+			 enc, type, nick->nick);
       message = NULL;
     }
   }
@@ -223,12 +239,14 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     /* MIME object received, try to display it as well as we can */
-    char type[128];
+    char type[128], enc[128];
     unsigned char *data;
+    SilcUInt32 data_len;
 
     memset(type, 0, sizeof(type));
+    memset(enc, 0, sizeof(enc));
     if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
-			 NULL, 0, &data, NULL))
+			 enc, sizeof(enc) - 1, &data, &data_len))
       return;
 
     /* Then figure out what we can display */
@@ -237,10 +255,8 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       /* It is something textual, display it */
       message = (const unsigned char *)data;
     } else {
-      printformat_module("fe-common/silc", server, NULL,
-			 MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
-			 sender->nickname ? sender->nickname : "[<unknown>]",
-			 type);
+      silc_emit_mime_sig(server, NULL, data, data_len, 
+			 enc, type, sender->nickname);
       message = NULL;
     }
   }
