@@ -104,17 +104,18 @@ typedef struct SilcChannelKeyPayloadStruct *SilcChannelKeyPayload;
 typedef SilcUInt16 SilcMessageFlags;
 
 /* The message flags (shared by both channel and private messages) */
-#define SILC_MESSAGE_FLAG_NONE        0x0000
-#define SILC_MESSAGE_FLAG_AUTOREPLY   0x0001
-#define SILC_MESSAGE_FLAG_NOREPLY     0x0002
-#define SILC_MESSAGE_FLAG_ACTION      0x0004
-#define SILC_MESSAGE_FLAG_NOTICE      0x0008
-#define SILC_MESSAGE_FLAG_REQUEST     0x0010
-#define SILC_MESSAGE_FLAG_SIGNED      0x0020
-#define SILC_MESSAGE_FLAG_REPLY       0x0040
-#define SILC_MESSAGE_FLAG_DATA        0x0080
-#define SILC_MESSAGE_FLAG_RESERVED    0x0100 /* to 0x0800 */
-#define SILC_MESSAGE_FLAG_PRIVATE     0x1000 /* to 0x8000 */
+#define SILC_MESSAGE_FLAG_NONE        0x0000      /* No flags */
+#define SILC_MESSAGE_FLAG_AUTOREPLY   0x0001	  /* Automatically replied */
+#define SILC_MESSAGE_FLAG_NOREPLY     0x0002	  /* Send no reply to this */
+#define SILC_MESSAGE_FLAG_ACTION      0x0004	  /* Action message */
+#define SILC_MESSAGE_FLAG_NOTICE      0x0008	  /* Notice message */
+#define SILC_MESSAGE_FLAG_REQUEST     0x0010	  /* A request */
+#define SILC_MESSAGE_FLAG_SIGNED      0x0020	  /* Message is signed */
+#define SILC_MESSAGE_FLAG_REPLY       0x0040	  /* A reply */
+#define SILC_MESSAGE_FLAG_DATA        0x0080	  /* MIME object */
+#define SILC_MESSAGE_FLAG_UTF8        0x0100	  /* UTF-8 string */
+#define SILC_MESSAGE_FLAG_RESERVED    0x0200	  /* to 0x0800 */
+#define SILC_MESSAGE_FLAG_PRIVATE     0x1000	  /* to 0x8000 */
 /***/
 
 /* Prototypes */

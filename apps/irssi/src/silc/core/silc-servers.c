@@ -62,7 +62,8 @@ static void silc_send_channel(SILC_SERVER_REC *server,
   }
 
   silc_client_send_channel_message(silc_client, server->conn, rec->entry, 
-				   NULL, 0, msg, strlen(msg), TRUE);
+				   NULL, SILC_MESSAGE_FLAG_UTF8,
+				   msg, strlen(msg), TRUE);
 }
 
 typedef struct {
@@ -119,7 +120,8 @@ static void silc_send_msg_clients(SilcClient client,
     }
 
     /* Send the private message */
-    silc_client_send_private_message(client, conn, target, 0,
+    silc_client_send_private_message(client, conn, target, 
+				     SILC_MESSAGE_FLAG_UTF8,
 				     rec->msg, strlen(rec->msg),
 				     TRUE);
   }
@@ -162,7 +164,8 @@ static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg)
   /* Send the private message directly */
   silc_free(nickname);
   silc_client_send_private_message(silc_client, server->conn, 
-				   clients[0], 0, msg, strlen(msg), TRUE);
+				   clients[0], SILC_MESSAGE_FLAG_UTF8,
+				   msg, strlen(msg), TRUE);
 }
 
 static int isnickflag_func(char flag)
@@ -183,14 +186,26 @@ const char *get_nick_flags(void)
 static void send_message(SILC_SERVER_REC *server, char *target,
 			 char *msg, int target_type)
 {
+  char *message = NULL;
+  int len;
+
   g_return_if_fail(server != NULL);
   g_return_if_fail(target != NULL);
   g_return_if_fail(msg != NULL);
 
+  if (!silc_term_utf8()) {
+    len = silc_utf8_encoded_len(msg, strlen(msg), SILC_STRING_ASCII);
+    message = silc_calloc(len + 1, sizeof(*message));
+    g_return_if_fail(message != NULL);
+    silc_utf8_encode(msg, strlen(msg), SILC_STRING_ASCII, message, len);
+  }
+
   if (target_type == SEND_TARGET_CHANNEL)
-    silc_send_channel(server, target, msg);
+    silc_send_channel(server, target, message ? message : msg);
   else
-    silc_send_msg(server, target, msg);
+    silc_send_msg(server, target, message ? message : msg);
+
+  silc_free(message);
 }
 
 static void sig_connected(SILC_SERVER_REC *server)
@@ -253,8 +268,7 @@ static void sig_disconnected(SILC_SERVER_REC *server)
   }
 }
 
-SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn)
-{
+SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn){
   SILC_SERVER_REC *server;
 
   g_return_val_if_fail(IS_SILC_SERVER_CONNECT(conn), NULL);
@@ -951,4 +965,14 @@ void silc_server_free_ftp(SILC_SERVER_REC *server,
       silc_free(ftp);
     }
   }
+}
+
+bool silc_term_utf8(void)
+{
+  const char *str;
+  str = settings_get_str("term_type");
+  if (str)
+    if (g_strcasecmp(str, "utf-8") == 0)
+      return TRUE;
+  return FALSE;
 }

@@ -173,6 +173,7 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
   SILC_CHANNEL_REC *chanrec;
   char *tmpcmd = "ME", *tmp;
   SilcUInt32 argc = 0;
+  unsigned char *message = NULL;
   unsigned char **argv;
   SilcUInt32 *argv_lens, *argv_types;
   int i;
@@ -198,11 +199,21 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
   if (chanrec == NULL) 
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
+  if (!silc_term_utf8()) {
+    int len = silc_utf8_encoded_len(argv[1], argv_lens[1], SILC_STRING_ASCII);
+    message = silc_calloc(len + 1, sizeof(*message));
+    g_return_if_fail(message != NULL);
+    silc_utf8_encode(argv[1], argv_lens[1], SILC_STRING_ASCII, message, len);
+  }
+
   /* Send the action message */
   silc_client_send_channel_message(silc_client, server->conn, 
 				   chanrec->entry, NULL,
-				   SILC_MESSAGE_FLAG_ACTION, 
-				   argv[1], argv_lens[1], TRUE);
+				   SILC_MESSAGE_FLAG_ACTION |
+				   SILC_MESSAGE_FLAG_UTF8,
+				   message ? message : argv[1],
+				   message ? strlen(message) : argv_lens[1],
+				   TRUE);
 
   printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
 		     MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_OWNACTION, 
@@ -212,6 +223,7 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
     silc_free(argv[i]);
   silc_free(argv_lens);
   silc_free(argv_types);
+  silc_free(message);
 }
 
 /* ACTION local command. Same as ME but takes the channel as mandatory
@@ -223,6 +235,7 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
   SILC_CHANNEL_REC *chanrec;
   char *tmpcmd = "ME", *tmp;
   SilcUInt32 argc = 0;
+  unsigned char *message = NULL;
   unsigned char **argv;
   SilcUInt32 *argv_lens, *argv_types;
   int i;
@@ -247,11 +260,21 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
   if (chanrec == NULL) 
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
+  if (!silc_term_utf8()) {
+    int len = silc_utf8_encoded_len(argv[2], argv_lens[2], SILC_STRING_ASCII);
+    message = silc_calloc(len + 1, sizeof(*message));
+    g_return_if_fail(message != NULL);
+    silc_utf8_encode(argv[2], argv_lens[2], SILC_STRING_ASCII, message, len);
+  }
+
   /* Send the action message */
   silc_client_send_channel_message(silc_client, server->conn, 
 				   chanrec->entry, NULL,
-				   SILC_MESSAGE_FLAG_ACTION, 
-				   argv[2], argv_lens[2], TRUE);
+				   SILC_MESSAGE_FLAG_ACTION |
+				   SILC_MESSAGE_FLAG_UTF8,
+				   message ? message : argv[2],
+				   message ? strlen(message) : argv_lens[2],
+				   TRUE);
 
   printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
 		     MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_OWNACTION, 
@@ -261,6 +284,7 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
     silc_free(argv[i]);
   silc_free(argv_lens);
   silc_free(argv_types);
+  silc_free(message);
 }
 
 /* NOTICE local command. */
@@ -271,6 +295,7 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
   SILC_CHANNEL_REC *chanrec;
   char *tmpcmd = "ME", *tmp;
   SilcUInt32 argc = 0;
+  unsigned char *message = NULL;
   unsigned char **argv;
   SilcUInt32 *argv_lens, *argv_types;
   int i;
@@ -295,11 +320,21 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
   if (chanrec == NULL) 
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
+  if (!silc_term_utf8()) {
+    int len = silc_utf8_encoded_len(argv[1], argv_lens[1], SILC_STRING_ASCII);
+    message = silc_calloc(len + 1, sizeof(*message));
+    g_return_if_fail(message != NULL);
+    silc_utf8_encode(argv[1], argv_lens[1], SILC_STRING_ASCII, message, len);
+  }
+
   /* Send the action message */
   silc_client_send_channel_message(silc_client, server->conn, 
 				   chanrec->entry, NULL,
-				   SILC_MESSAGE_FLAG_NOTICE, 
-				   argv[1], argv_lens[1], TRUE);
+				   SILC_MESSAGE_FLAG_NOTICE |
+				   SILC_MESSAGE_FLAG_UTF8,
+				   message ? message : argv[1],
+				   message ? strlen(message) : argv_lens[1],
+				   TRUE);
 
   printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
 		     MSGLEVEL_NOTICES, SILCTXT_CHANNEL_OWNNOTICE, 
@@ -309,6 +344,7 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
     silc_free(argv[i]);
   silc_free(argv_lens);
   silc_free(argv_types);
+  silc_free(message);
 }
 
 /* AWAY local command.  Sends UMODE command that sets the SILC_UMODE_GONE

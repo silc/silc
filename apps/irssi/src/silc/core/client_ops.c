@@ -174,11 +174,32 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
     printformat_module("fe-common/silc", server, channel->channel_name,
 		       MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE, 
                        nick == NULL ? "[<unknown>]" : nick->nick, message);
-  else
+  else {
+    if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
+
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if (message_len > sizeof(tmp) - 1) {
+	dm = silc_calloc(message_len + 1, sizeof(*dm));
+	cp = dm;
+      }
+
+      silc_utf8_decode(message, message_len, SILC_STRING_ASCII,
+		       cp, message_len);
+      signal_emit("message public", 6, server, cp,
+		  nick == NULL ? "[<unknown>]" : nick->nick,
+		  nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
+		  chanrec->name, nick);
+      silc_free(dm);
+      return;
+    }
+
     signal_emit("message public", 6, server, message,
 		nick == NULL ? "[<unknown>]" : nick->nick,
 		nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
 		chanrec->name, nick);
+  }
 }
 
 /* Private message to the client. The `sender' is the nickname of the
@@ -226,6 +247,25 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 
   if (!message)
     return;
+
+  if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+    char tmp[256], *cp, *dm = NULL;
+
+    memset(tmp, 0, sizeof(tmp));
+    cp = tmp;
+    if (message_len > sizeof(tmp) - 1) {
+      dm = silc_calloc(message_len + 1, sizeof(*dm));
+      cp = dm;
+    }
+
+    silc_utf8_decode(message, message_len, SILC_STRING_ASCII,
+		     cp, message_len);
+    signal_emit("message private", 4, server, cp,
+		sender->nickname ? sender->nickname : "[<unknown>]",
+		sender->username ? userhost : NULL);
+    silc_free(dm);
+    return;
+  }
 
   signal_emit("message private", 4, server, message,
 	      sender->nickname ? sender->nickname : "[<unknown>]",

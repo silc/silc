@@ -1720,7 +1720,14 @@ o Message Flags (2 bytes) - Includes the Message Flags of
           document should define how this flag is interpreted
           and define any associated payloads.
 
-  0x0100 - 0x0800 RESERVED
+  0x0100  SILC_MESSAGE_FLAG_UTF8
+
+          This flag indicates that the message is UTF-8 encoded
+          textual message.  When sending text messages this
+          flag SHOULD be used.  When this flag is used the text
+          sent as message MUST be UTF-8 encoded.
+
+  0x0200 - 0x0800 RESERVED
 
           Reserved for future flags
 

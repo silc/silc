@@ -70,5 +70,6 @@ void silc_server_init(void);
 void silc_server_deinit(void);
 void silc_server_free_ftp(SILC_SERVER_REC *server,
 			  SilcClientEntry client_entry);
+bool silc_term_utf8(void);
 
 #endif

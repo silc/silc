@@ -1,3 +1,14 @@
+Sun Jun 16 11:49:45 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_MESSAGE_FLAG_UTF8 to the protocol specs and the
+	  core library, and implemented it.  All textual messages SHOULD
+	  use this flag and the message MUST be UTF-8 encoded.
+	  All text messages sent by Irssi SILC client are now UTF-8
+	  encoded (regardless whether the terminal supports UTF-8 or not).
+	  Affected files are lib/silccore/silcchannel.h,
+	  irssi/src/silc/core/silc-servers.c, silc-channels.c and
+	  client_ops.c.
+
 Sat Jun 15 18:23:39 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added lots of new statistics updating that was missing from
