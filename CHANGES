@@ -1,7 +1,14 @@
+Sun Aug 25 08:02:04 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
+
+	* Conditionalize non-gcc compiler optimizations for various
+	  platforms, enable those commented out.  Cleanups.
+	  Affected file lib/silcmath/mpi/configure.in
+
 Sat Aug 24 15:11:32 EEST 2002 Timo Sirainen <tss@iki.fi>
 
 	* silc_rng_exec_command() left zombie processes if command
-	  didn't generate any output.
+	  didn't generate any output.  Affected file
+	  lib/silccrypt/silcrng.c
 
 Fri Aug 23 22:05:44 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
 
