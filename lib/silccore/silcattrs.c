@@ -312,7 +312,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
       SilcAttributeObjMime *mime = *object;
       if (object_size != sizeof(*mime))
 	break;
-      mime->mime = silc_memdup(payload->data, payload->data_len);
+      mime->mime = (const unsigned char *)payload->data;
       mime->mime_len = payload->data_len;
       ret = TRUE;
     }

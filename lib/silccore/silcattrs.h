@@ -189,6 +189,7 @@ typedef enum {
  *
  *    Parses one attribute payload sent as argument and saves it to
  *    SilcAttributePayload context.  The new allocated context is returned.
+ *
  ***/
 SilcAttributePayload
 silc_attribute_payload_parse(const unsigned char *payload,
@@ -354,14 +355,14 @@ typedef struct {
  *
  * DESCRIPTION
  *
- *    Data type for MIME object as attribute.  Caller must free the
- *    MIME data buffer inside the structure.
+ *    Data type for MIME object as attribute.  The data in the structure
+ *    is valid as long as the payload structure is valid.
  *
  * SOURCE
  */
 typedef struct {
-  unsigned char *mime;		/* allocated MIME buffer */
-  SilcUInt32 mime_len;		/* length of the allocated MIME buffer */
+  const unsigned char *mime;	/* MIME buffer */
+  SilcUInt32 mime_len;		/* length of the MIME buffer */
 } SilcAttributeObjMime;
 /***/
 
@@ -448,7 +449,7 @@ typedef struct {
  *    Returns TRUE if the `attribute' attribute was found and FALSE
  *    if such attribute is not present in the `payload', or the `object_size'
  *    is not sufficient.  See the definition of SilcAttribute for the
- *    list attributes and the required object types for attributes.
+ *    list of attributes and the required object types for attributes.
  *
  ***/
 bool silc_attribute_get_object(SilcAttributePayload payload,
