@@ -1,3 +1,16 @@
+Fri Jan 25 19:12:36 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added server & router operator statistics updating.  Affected
+	  file silcd/packet_receive.c and silcd/command.c.
+
+	* Fixed the SERVER_SIGNOFF notify handling on normal server
+	  not to save the history information for clients.  Same was
+	  fixed earlier in remove_clients_by_server function, but not
+	  here.  Affected file silcd/packet_receive.c.
+
+	* Raised the default connection-retry count from 4 to 7 in
+	  server.  Affected file silcd/server.h.
+
 Tue Jan 22 18:19:36 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed assert()'s from the lib/silcclient/client_keyagr.c.

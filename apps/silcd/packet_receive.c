@@ -324,14 +324,18 @@ void silc_server_notify(SilcServer server,
     if (tmp_len > 128)
       tmp = NULL;
 
+    /* Update statistics */
+    server->stat.clients--;
+    if (server->server_type == SILC_ROUTER)
+      server->stat.cell_clients--;
+    SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+    SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+
     /* Remove the client from all channels. */
     silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, FALSE);
 
     client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
-    server->stat.clients--;
-    if (server->server_type == SILC_ROUTER)
-      server->stat.cell_clients--;
     break;
 
   case SILC_NOTIFY_TYPE_TOPIC_SET:
@@ -849,6 +853,7 @@ void silc_server_notify(SilcServer server,
 	if (server->server_type != SILC_ROUTER &&
 	    silc_argument_get_arg_num(args) > 1) {
 	  int i;
+	  bool local;
 
 	  for (i = 1; i < silc_argument_get_arg_num(args); i++) {
 	    /* Get Client ID */
@@ -862,9 +867,11 @@ void silc_server_notify(SilcServer server,
 	    /* Get client entry */
 	    client = silc_idlist_find_client_by_id(server->global_list, 
 						   client_id, TRUE, &cache);
+	    local = TRUE;
 	    if (!client) {
 	      client = silc_idlist_find_client_by_id(server->local_list, 
 						     client_id, TRUE, &cache);
+	      local = FALSE;
 	      if (!client) {
 		silc_free(client_id);
 		continue;
@@ -872,15 +879,20 @@ void silc_server_notify(SilcServer server,
 	    }
 	    silc_free(client_id);
 
-	    /* Remove the client from all channels. */
-	    silc_server_remove_from_channels(server, NULL, client, 
-					     TRUE, NULL, FALSE);
-	    
-	    client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
-	    cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+	    /* Update statistics */
 	    server->stat.clients--;
 	    if (server->server_type == SILC_ROUTER)
 	      server->stat.cell_clients--;
+	    SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+	    SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+
+	    /* Remove the client from all channels. */
+	    silc_server_remove_from_channels(server, NULL, client, 
+					     TRUE, NULL, FALSE);
+
+	    /* Remove the client */
+	    silc_idlist_del_client(local ? server->local_list :
+				   server->global_list, client);
 	  }
 	}
 
@@ -1025,7 +1037,7 @@ void silc_server_notify(SilcServer server,
      */
 
     SILC_LOG_DEBUG(("UMODE_CHANGE notify"));
-      
+
     /* Get client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -1051,9 +1063,33 @@ void silc_server_notify(SilcServer server,
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp)
       goto out;
+    SILC_GET32_MSB(mode, tmp);
+
+#define SILC_UMODE_STATS_UPDATE(oper, mod)	\
+do {						\
+    if (client->mode & (mod)) {			\
+      if (!(mode & (mod))) {			\
+	if (client->connection)			\
+	  server->stat.my_ ## oper ## _ops--;	\
+        if (server->server_type == SILC_ROUTER)	\
+	  server->stat. oper ## _ops--;		\
+      }						\
+    } else {					\
+      if (mode & (mod)) {			\
+	if (client->connection)			\
+	  server->stat.my_ ## oper ## _ops++;	\
+        if (server->server_type == SILC_ROUTER)	\
+	  server->stat. oper ## _ops++;		\
+      }						\
+    }						\
+} while(0)
+
+    /* Update statistics */
+    SILC_UMODE_STATS_UPDATE(server, SILC_UMODE_SERVER_OPERATOR);
+    SILC_UMODE_STATS_UPDATE(router, SILC_UMODE_ROUTER_OPERATOR);
 
     /* Save the mode */
-    SILC_GET32_MSB(client->mode, tmp);
+    client->mode = mode;
 
     break;
 
@@ -1121,7 +1157,6 @@ void silc_server_notify(SilcServer server,
 	}
       }
     }
-
     break;
 
     /* Ignore rest of the notify types for now */
@@ -1673,10 +1708,14 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 			     server->stat.my_servers,
 			     server->stat.my_routers));
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			    ("%d server operators and %d router operators "
-			     "online",
-			     server->stat.my_server_ops,
-			     server->stat.my_router_ops));
+			    ("There are %d server operators and %d router "
+			     "operators online",
+			     server->stat.server_ops,
+			     server->stat.router_ops));
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("I have %d operators online",
+			     server->stat.my_router_ops +
+			     server->stat.my_server_ops));
   } else {
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("I have %d clients and %d channels formed",

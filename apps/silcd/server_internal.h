@@ -173,6 +173,16 @@ do {									      \
   silc_schedule_set_listen_fd((s), (fd), (SILC_TASK_READ | SILC_TASK_WRITE)); \
 } while(0)
 
+#define SILC_OPER_STATS_UPDATE(c, type, mod)	\
+do {						\
+  if ((c)->mode & (mod)) {			\
+    if ((c)->connection)			\
+      server->stat.my_ ## type ## _ops--;	\
+    if (server->server_type == SILC_ROUTER)	\
+      server->stat. type ## _ops--;		\
+  }						\
+} while(0)
+
 /* Prototypes */
 SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final);
 

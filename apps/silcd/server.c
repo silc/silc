@@ -2351,6 +2351,14 @@ void silc_server_free_client_data(SilcServer server,
     silc_server_remove_from_channels(server, NULL, client, 
 				     FALSE, NULL, FALSE);
     
+  /* Update statistics */
+  server->stat.my_clients--;
+  server->stat.clients--;
+  if (server->server_type == SILC_ROUTER)
+    server->stat.cell_clients--;
+  SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+  SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+
   /* We will not delete the client entry right away. We will take it
      into history (for WHOWAS command) for 5 minutes */
   i->server = server;
@@ -2362,12 +2370,7 @@ void silc_server_free_client_data(SilcServer server,
   client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
   client->router = NULL;
   client->connection = NULL;
-
-  /* Free the client entry and everything in it */
-  server->stat.my_clients--;
-  server->stat.clients--;
-  if (server->server_type == SILC_ROUTER)
-    server->stat.cell_clients--;
+  client->mode = 0;
 }
 
 /* Frees user_data pointer from socket connection object. This also sends

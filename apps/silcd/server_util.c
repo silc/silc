@@ -210,6 +210,13 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	  silc_buffer_free(idp);
 	}
 
+	/* Update statistics */
+	server->stat.clients--;
+	if (server->server_type == SILC_ROUTER)
+	  server->stat.cell_clients--;
+	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+
 	/* Remove the client entry */
 	silc_server_remove_clients_channels(server, NULL, client, channels);
 	if (!server_signoff) {
@@ -218,9 +225,6 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	} else {
 	  silc_idlist_del_client(server->local_list, client);
 	}
-	server->stat.clients--;
-	if (server->server_type == SILC_ROUTER)
-	  server->stat.cell_clients--;
 
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
@@ -270,6 +274,13 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	  silc_buffer_free(idp);
 	}
 
+	/* Update statistics */
+	server->stat.clients--;
+	if (server->server_type == SILC_ROUTER)
+	  server->stat.cell_clients--;
+	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+
 	/* Remove the client entry */
 	silc_server_remove_clients_channels(server, NULL, client, channels);
 	if (!server_signoff) {
@@ -278,9 +289,6 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	} else {
 	  silc_idlist_del_client(server->global_list, client);
 	}
-	server->stat.clients--;
-	if (server->server_type == SILC_ROUTER)
-	  server->stat.cell_clients--;
 
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;

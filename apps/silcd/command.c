@@ -2657,6 +2657,7 @@ SILC_SERVER_CMD_FUNC(kill)
   SilcClientID *client_id;
   unsigned char *tmp, *comment;
   uint32 tmp_len, tmp_len2;
+  bool local;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_KILL, cmd, 1, 2);
 
@@ -2694,9 +2695,11 @@ SILC_SERVER_CMD_FUNC(kill)
   /* Get the client entry */
   remote_client = silc_idlist_find_client_by_id(server->local_list, 
 						client_id, TRUE, NULL);
+  local = TRUE;
   if (!remote_client) {
     remote_client = silc_idlist_find_client_by_id(server->global_list, 
 						  client_id, TRUE, NULL);
+    local = FALSE;
     if (!remote_client) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
 					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
@@ -2750,9 +2753,17 @@ SILC_SERVER_CMD_FUNC(kill)
     silc_server_free_client_data(server, sock, remote_client, FALSE, NULL);
     silc_server_close_connection(server, sock);
   } else {
+    /* Update statistics */
+    if (remote_client->connection)
+      server->stat.my_clients--;
+    if (server->server_type == SILC_ROUTER)
+      server->stat.cell_clients--;
+    SILC_OPER_STATS_UPDATE(remote_client, server, SILC_UMODE_SERVER_OPERATOR);
+    SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
+
     /* Remove remote client */
-    if (!silc_idlist_del_client(server->global_list, remote_client))
-      silc_idlist_del_client(server->local_list, remote_client);
+    silc_idlist_del_client(local ? server->local_list :
+			   server->global_list, remote_client);
   }
 
  out:
@@ -3640,9 +3651,14 @@ SILC_SERVER_CMD_FUNC(umode)
       goto out;
     }
   } else {
-    if (client->mode & SILC_UMODE_SERVER_OPERATOR)
-      /* Remove the server operator rights */
+    /* Remove the server operator rights */
+    if (client->mode & SILC_UMODE_SERVER_OPERATOR) {
       client->mode &= ~SILC_UMODE_SERVER_OPERATOR;
+      if (client->connection)
+	server->stat.my_server_ops--;
+      if (server->server_type == SILC_ROUTER)
+	server->stat.server_ops--;
+    }
   }
 
   if (mask & SILC_UMODE_ROUTER_OPERATOR) {
@@ -3653,9 +3669,14 @@ SILC_SERVER_CMD_FUNC(umode)
       goto out;
     }
   } else {
-    if (client->mode & SILC_UMODE_ROUTER_OPERATOR)
-      /* Remove the router operator rights */
+    /* Remove the router operator rights */
+    if (client->mode & SILC_UMODE_ROUTER_OPERATOR) {
       client->mode &= ~SILC_UMODE_ROUTER_OPERATOR;
+      if (client->connection)
+	server->stat.my_router_ops--;
+      if (server->server_type == SILC_ROUTER)
+	server->stat.router_ops--;
+    }
   }
 
   if (mask & SILC_UMODE_GONE) {
@@ -4590,6 +4611,12 @@ SILC_SERVER_CMD_FUNC(oper)
   /* Client is now server operator */
   client->mode |= SILC_UMODE_SERVER_OPERATOR;
 
+  /* Update statistics */
+  if (client->connection)
+    server->stat.my_server_ops++;
+  if (server->server_type == SILC_ROUTER)
+    server->stat.server_ops++;
+
   /* Send UMODE change to primary router */
   if (!server->standalone)
     silc_server_send_notify_umode(server, server->router->connection, TRUE,
@@ -4667,6 +4694,12 @@ SILC_SERVER_CMD_FUNC(silcoper)
 
   /* Client is now router operator */
   client->mode |= SILC_UMODE_ROUTER_OPERATOR;
+
+  /* Update statistics */
+  if (client->connection)
+    server->stat.my_router_ops++;
+  if (server->server_type == SILC_ROUTER)
+    server->stat.router_ops++;
 
   /* Send UMODE change to primary router */
   if (!server->standalone)
