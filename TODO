@@ -14,6 +14,10 @@ TODO/bugs in Irssi SILC client
    cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
    file.
 
+ o Resolve the users during the JOIN process with WHOIS and not with
+   IDENTIFY.  Otherwise the userinfo is never resolved without explicitly
+   doing WHOIS to the user.
+
  o The QUIT command should wait for server's disconnection (at least for
    a while) before exiting the application.
 
