@@ -193,6 +193,8 @@ This flag defines a payload which is used to deliver the actual message,
 sender's public key and the digital signature.  The payload for
 SILC_MESSAGE_FLAG_SIGNED is as follows:
 
+(*) indicates that the field is not encrypted.
+
 .in 5
 .nf
                      1                   2                   3
@@ -203,13 +205,13 @@ SILC_MESSAGE_FLAG_SIGNED is as follows:
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-~                      Public Key Payload                       ~
+~                      Public Key Payload *                     ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|     Signature Data Length     |                               |
+|     Signature Data Length *   |                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
 |                                                               |
-~                        Signature Data                         ~
+~                        Signature Data *                       ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
@@ -240,18 +242,22 @@ o Public Key Payload (variable length) - This includes the
   include the public key data.  The Public Key Type field in
   the Public Key Payload MUST be set to the correct type of
   the key, even if the actual public key data is not included.
+  This field is not encrypted but is authenticated.
 
 o Signature Data Length (2 bytes) - Indicates the length of
   the Signature Data field not including any other field.
+  This field is not encrypted but is authenticated.
 
 o Signature Data (variable length) - Includes the actual
   signature data.  The signature computation and encoding
   is key type specific.  See [SILC3] for all key types, and
   their respective references for how to compute and encode
-  the signature.
+  the signature.  This field is not encrypted but is
+  authenticated.
 
 o Initial Vector (variable length) - the IV of the Message
-  Payload as defined in [SILC2].  This field is not encrypted.
+  Payload as defined in [SILC2].  This field is not encrypted
+  but is authenticated.
 
 o MAC (variable length) - the MAC of the Message Payload as
   defined in [SILC2].  The MAC is computed after encryption
