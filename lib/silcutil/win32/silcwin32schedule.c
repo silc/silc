@@ -95,8 +95,8 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
 	timeo -= GetTickCount() - curtime;
 	if (timeo < 0)
 	  timeo = 0;
-	timer = SetTimer(NULL, 0, timeo, NULL);
       }
+      timer = SetTimer(NULL, 0, timeo, NULL);
     }
   }
 
