@@ -282,7 +282,7 @@ bool silc_server_init(SilcServer server)
      timeout. It expires as soon as the caller calls silc_server_run. This
      task performs authentication protocol and key exchange with our
      primary router. */
-  silc_schedule_task_add(server->schedule, 0,
+  silc_schedule_task_add(server->schedule, sock,
 			 silc_server_connect_to_router,
 			 (void *)server, 0, 1,
 			 SILC_TASK_TIMEOUT,
@@ -356,7 +356,6 @@ bool silc_server_init(SilcServer server)
 bool silc_server_rehash(SilcServer server)
 {
   SilcServerConfig newconfig;
-  SilcUInt32 max_conns;
 
   SILC_LOG_INFO(("Rehashing server"));
 
@@ -371,8 +370,6 @@ bool silc_server_rehash(SilcServer server)
     return FALSE;
   }
 
-  max_conns = server->config->param.connections_max;
-
   /* Our old config is gone now. We'll unreference our reference made in
      silc_server_init and then destroy it since we are destroying it
      underneath the application (layer which called silc_server_init). */
@@ -382,11 +379,6 @@ bool silc_server_rehash(SilcServer server)
   /* Take new config context */
   server->config = newconfig;
   silc_server_config_ref(&server->config_ref, server->config, server->config);
-
-  /* Reinit scheduler if necessary */
-  if (server->config->param.connections_max > max_conns)
-    silc_schedule_reinit(server->schedule, 
-			 server->config->param.connections_max);
 
   /* Fix the server_name field */
   if (strcmp(server->server_name, newconfig->server_info->server_name)) {
@@ -423,31 +415,6 @@ bool silc_server_rehash(SilcServer server)
     silc_pkcs_public_key_set(server->pkcs, server->public_key);
     silc_pkcs_private_key_set(server->pkcs, server->private_key);
   }
-
-  /* Go through all configured routers after rehash */
-  silc_schedule_task_add(server->schedule, 0,
-			 silc_server_connect_to_router,
-			 (void *)server, 0, 1,
-			 SILC_TASK_TIMEOUT,
-			 SILC_TASK_PRI_NORMAL);
-
-  /* Check whether our router status has changed */
-  if (server->config->servers) {
-    SilcServerConfigServer *ptr = server->config->servers;
-
-    server->server_type = SILC_ROUTER;
-    while (ptr) {
-      if (ptr->backup_router) {
-	server->server_type = SILC_BACKUP_ROUTER;
-	server->backup_router = TRUE;
-	server->id_entry->server_type = SILC_BACKUP_ROUTER;
-	break;
-      }
-      ptr = ptr->next;
-    }
-  }
-
-  SILC_LOG_DEBUG(("Server rehashed"));
 
   return TRUE;
 }
@@ -695,17 +662,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 		    ptr->host, ptr->port));
 
     if (ptr->initiator) {
-      /* Check whether we are connected to this host already */
-      if (silc_server_num_sockets_by_remote(server, 
-					    silc_net_is_ip(ptr->host) ?
-					    ptr->host : NULL,
-					    silc_net_is_ip(ptr->host) ?
-					    NULL : ptr->host, ptr->port,
-					    SILC_SOCKET_TYPE_ROUTER)) {
-	SILC_LOG_DEBUG(("We are already connected to this router"));
-	continue;
-      }
-
       /* Allocate connection object for hold connection specific stuff. */
       sconn = silc_calloc(1, sizeof(*sconn));
       sconn->server = server;
@@ -720,7 +676,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       if (!server->router_conn && !sconn->backup)
 	server->router_conn = sconn;
 
-      silc_schedule_task_add(server->schedule, 0,
+      silc_schedule_task_add(server->schedule, fd,
 			     silc_server_connect_router,
 			     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
