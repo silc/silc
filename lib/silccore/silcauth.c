@@ -241,7 +241,7 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      const void *id, SilcIdType type)
 {
   unsigned char *randomdata;
-  unsigned char auth_data[2048];
+  unsigned char auth_data[2048 + 1];
   SilcUInt32 auth_len;
   unsigned char *tmp;
   SilcUInt32 tmp_len;

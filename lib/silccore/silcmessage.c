@@ -544,7 +544,7 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
 {
   SilcBuffer buffer, sign;
   SilcPKCS pkcs;
-  unsigned char auth_data[2048];
+  unsigned char auth_data[2048 + 1];
   SilcUInt32 auth_len;
   unsigned char *pk = NULL;
   SilcUInt32 pk_len = 0;
