@@ -540,7 +540,7 @@ silc_server_command_send_status_data2(SilcServerCommandContext cmd,
   buffer =
     silc_command_reply_payload_encode_va(command, status, 0,
 					 silc_command_get_ident(cmd->payload),
-					 2, arg_type1, arg1, arg_len2,
+					 2, arg_type1, arg1, arg_len1,
 					 arg_type2, arg2, arg_len2);
   silc_server_packet_send(cmd->server, cmd->sock,
 			  SILC_PACKET_COMMAND_REPLY, 0,
