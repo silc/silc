@@ -2345,8 +2345,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   if (!nicknamec) {
     silc_free(username);
     silc_free(realname);
-    SILC_LOG_ERROR(("Client %s (%s) sent bad username string, closing "
-		    "connection", sock->hostname, sock->ip));
+    SILC_LOG_ERROR(("Client %s (%s) sent bad username string '%s', closing "
+		    "connection", sock->hostname, sock->ip, username));
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				  NULL);

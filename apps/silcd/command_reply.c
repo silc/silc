@@ -245,7 +245,9 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     nickname = silc_identifier_check(nick, strlen(nick), SILC_STRING_UTF8,
 				     128, NULL);
     if (!nickname) {
-      SILC_LOG_ERROR(("Malformed nickname received in WHOIS reply"));
+      SILC_LOG_ERROR(("Malformed nickname '%s' received in WHOIS reply "
+		      "from %s",
+		      cmd->sock->hostname ? cmd->sock->hostname : "", nick));
       silc_free(nick);
       silc_free(servername);
       return FALSE;
@@ -257,7 +259,9 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
       silc_free(tmp);
       silc_free(nick);
       silc_free(servername);
-      SILC_LOG_ERROR(("Malformed username received in WHOIS reply"));
+      SILC_LOG_ERROR(("Malformed username '%s' received in WHOIS reply "
+		      "from %s",
+		      cmd->sock->hostname ? cmd->sock->hostname : "", tmp));
       return FALSE;
     }
     silc_free(tmp);
@@ -521,7 +525,9 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     nickname = silc_identifier_check(nick, strlen(nick), SILC_STRING_UTF8,
 				     128, NULL);
     if (!nickname) {
-      SILC_LOG_ERROR(("Malformed nickname received in WHOWAS reply"));
+      SILC_LOG_ERROR(("Malformed nickname '%s' received in WHOWAS reply "
+		      "from %s",
+		      cmd->sock->hostname ? cmd->sock->hostname : "", nick));
       silc_free(nick);
       silc_free(servername);
       return FALSE;
@@ -533,7 +539,9 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
       silc_free(tmp);
       silc_free(nick);
       silc_free(servername);
-      SILC_LOG_ERROR(("Malformed username received in WHOWAS reply"));
+      SILC_LOG_ERROR(("Malformed username '%s' received in WHOWAS reply "
+		      "from %s",
+		      cmd->sock->hostname ? cmd->sock->hostname : "", tmp));
       return FALSE;
     }
     silc_free(tmp);
@@ -689,7 +697,10 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	name = silc_identifier_check(nick, strlen(nick), SILC_STRING_UTF8,
 				     128, NULL);
 	if (!name) {
-	  SILC_LOG_ERROR(("Malformed nickname received in IDENTIFY reply"));
+	  SILC_LOG_ERROR(("Malformed nickname '%s' received in IDENTIFY reply "
+			  "from %s",
+			  cmd->sock->hostname ?
+			  cmd->sock->hostname : "", nick));
 	  return FALSE;
 	}
 
