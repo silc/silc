@@ -144,6 +144,10 @@ SilcBuffer silc_command_encode_payload(SilcCommand cmd,
 				       unsigned int *argv_types);
 SilcBuffer silc_command_encode_payload_va(SilcCommand cmd, 
 					  unsigned int argc, ...);
+SilcBuffer 
+silc_command_encode_reply_payload_va(SilcCommand cmd, 
+				     SilcCommandStatus status,
+				     unsigned int argc, ...);
 void silc_command_free_payload(SilcCommandPayload payload);
 SilcCommand silc_command_get(SilcCommandPayload payload);
 unsigned int silc_command_get_arg_num(SilcCommandPayload payload);
@@ -154,8 +158,5 @@ unsigned char *silc_command_get_next_arg(SilcCommandPayload payload,
 unsigned char *silc_command_get_arg_type(SilcCommandPayload payload,
 					 unsigned int type,
 					 unsigned int *ret_len);
-SilcBuffer silc_command_encode_status_payload(SilcCommandStatus status,
-					      unsigned char *data,
-					      unsigned int len);
 
 #endif
