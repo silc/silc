@@ -1777,7 +1777,8 @@ process.
 
 Session keys should be regenerated periodically, say, once in an hour.
 The re-key process is started by sending SILC_PACKET_REKEY packet to
-other end, to indicate that re-key must be performed.
+other end, to indicate that re-key must be performed.  The initiator
+of the connection should perform the re-key.
 
 If perfect forward secrecy (PFS) flag was selected in the SILC Key
 Exchange protocol [SILC3] the re-key must cause new key exchange with
@@ -1788,13 +1789,17 @@ will perform the SKE protocol.
 
 If PFS flag was not set, which is the default case, then re-key is done
 without executing SKE protocol.  In this case, the new key is created by
-hashing the old key with hash function selected earlier in the SKE
-protocol.  If the digest length of the hash function is too short for the
-key, then the key is distributed as described in section Processing the
-Key Material in [SILC3].  After both parties has regenerated the session
-key, both send SILC_PACKET_REKEY_DONE packet to each other.  These packets
-are still secured with the old key.  After these packets, the following
-packets must be protected with the new key.
+providing the current sending encryption key to the SKE protocol's key
+processing function.  The process is described in the section Processing
+the Key Material in [SILC3].  The difference in the processing is that
+the initial data for the hash function is the current sending encryption
+key and not the SKE's KEY and HASH values.  Other than that, the key
+processing is equivalent to normal SKE negotiation.
+
+After both parties has regenerated the session key, both send
+SILC_PACKET_REKEY_DONE packet to each other.  These packets are still
+secured with the old key.  After these packets, the subsequent packets
+must be protected with the new key.
 
 
 .ti 0

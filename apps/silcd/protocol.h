@@ -22,10 +22,11 @@
 #define PROTOCOL_H
 
 /* SILC client protocol types */
-#define SILC_PROTOCOL_SERVER_NONE 0
-#define SILC_PROTOCOL_SERVER_CONNECTION_AUTH 1
-#define SILC_PROTOCOL_SERVER_KEY_EXCHANGE 2
-/* #define SILC_PROTOCOL_SERVER_MAX 255 */
+#define SILC_PROTOCOL_SERVER_NONE               0
+#define SILC_PROTOCOL_SERVER_CONNECTION_AUTH    1
+#define SILC_PROTOCOL_SERVER_KEY_EXCHANGE       2
+#define SILC_PROTOCOL_SERVER_REKEY              3
+/* #define SILC_PROTOCOL_SERVER_MAX             255 */
 
 /* Internal context for Key Exchange protocol. */
 typedef struct {
@@ -35,7 +36,7 @@ typedef struct {
   SilcRng rng;
 
   /* TRUE if we are receiveing part of the protocol */
-  int responder;
+  bool responder;
 
   /* Destinations ID taken from authenticataed packet so that we can
      get the destinations ID. */
@@ -55,7 +56,7 @@ typedef struct {
   SilcSocketConnection sock;
 
   /* TRUE if we are receiving part of the protocol */
-  int responder;
+  bool responder;
 
   /* SKE object from Key Exchange protocol. */
   SilcSKE ske;
@@ -80,6 +81,18 @@ typedef struct {
   uint16 conn_type;
 } SilcServerConnAuthInternalContext;
 
+/* Internal context for the rekey protocol */
+typedef struct {
+  void *server;
+  void *context;
+  SilcSocketConnection sock;
+  bool responder;		    /* TRUE if we are receiving party */
+  bool pfs;			    /* TRUE if PFS is to be used */
+  SilcSKE ske;			    /* Defined if PFS is used */
+  SilcSKEKeyMaterial *keymat;	    /* Defined if PFS is used */
+  SilcPacketContext *packet;
+} SilcServerRekeyInternalContext;
+
 /* Prototypes */
 void silc_server_protocols_register(void);
 void silc_server_protocols_unregister(void);
@@ -90,6 +103,8 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
 				     SilcPKCS pkcs,
 				     SilcHash hash,
 				     SilcHmac hmac,
-				     int is_responder);
+				     bool is_responder);
+void silc_server_protocol_rekey_generate(SilcServer server,
+					 SilcServerRekeyInternalContext *ctx);
 
 #endif

@@ -39,6 +39,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process);
 SILC_TASK_CALLBACK(silc_server_packet_parse_real);
 SILC_TASK_CALLBACK(silc_server_timeout_remote);
 SILC_TASK_CALLBACK(silc_server_failure_callback);
+SILC_TASK_CALLBACK(silc_server_rekey_callback);
 
 /* Allocates a new SILC server object. This has to be done before the server
    can be used. After allocation one must call silc_server_init to initialize
@@ -709,7 +710,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
   SilcServerConnection sconn = (SilcServerConnection)ctx->context;
-  SilcSocketConnection sock = NULL;
+  SilcSocketConnection sock = server->sockets[fd];
   SilcServerConnAuthInternalContext *proto_ctx;
   SilcServerConfigSectionServerConnection *conn = NULL;
 
@@ -719,6 +720,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_protocol_free(protocol);
+    sock->protocol = NULL;
     silc_ske_free_key_material(ctx->keymat);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
@@ -744,6 +746,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 					ctx->ske->prop->hmac,
 					ctx->responder)) {
     silc_protocol_free(protocol);
+    sock->protocol = NULL;
     silc_ske_free_key_material(ctx->keymat);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
@@ -765,7 +768,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->server = (void *)server;
   proto_ctx->context = (void *)sconn;
-  proto_ctx->sock = sock = server->sockets[fd];
+  proto_ctx->sock = sock;
   proto_ctx->ske = ctx->ske;	   /* Save SKE object from previous protocol */
   proto_ctx->dest_id_type = ctx->dest_id_type;
   proto_ctx->dest_id = ctx->dest_id;
@@ -786,6 +789,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     SILC_LOG_ERROR(("Could not find connection data for %s (%s) on port",
 		    sock->hostname, sock->ip, sock->port));
     silc_protocol_free(protocol);
+    sock->protocol = NULL;
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
     if (ctx->ske)
@@ -845,6 +849,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   SilcBuffer packet;
   SilcServerHBContext hb_context;
   unsigned char *id_string;
+  SilcIDListData idata;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -909,7 +914,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   sock->type = SILC_SOCKET_TYPE_ROUTER;
   server->id_entry->router = id_entry;
   server->router = id_entry;
-  server->router->data.registered = TRUE;
+  idata = (SilcIDListData)sock->user_data;
+  idata->registered = TRUE;
 
   /* Perform keepalive. The `hb_context' will be freed automatically
      when finally calling the silc_socket_free function. XXX hardcoded 
@@ -919,6 +925,14 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   silc_socket_set_heartbeat(sock, 600, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
+
+  /* Register re-key timeout */
+  idata->rekey->timeout = 60; /* XXX hardcoded */
+  idata->rekey->context = (void *)server;
+  silc_task_register(server->timeout_queue, sock->sock, 
+		     silc_server_rekey_callback,
+		     (void *)sock, idata->rekey->timeout, 0,
+		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   /* If we are router then announce our possible servers. */
   if (server->server_type == SILC_ROUTER)
@@ -1049,7 +1063,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
   SilcServerKEInternalContext *ctx = 
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
-  SilcSocketConnection sock = NULL;
+  SilcSocketConnection sock = server->sockets[fd];
   SilcServerConnAuthInternalContext *proto_ctx;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1058,6 +1072,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_protocol_free(protocol);
+    sock->protocol = NULL;
     silc_ske_free_key_material(ctx->keymat);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
@@ -1084,6 +1099,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
 					ctx->ske->prop->hmac,
 					ctx->responder)) {
     silc_protocol_free(protocol);
+    sock->protocol = NULL;
     silc_ske_free_key_material(ctx->keymat);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
@@ -1105,7 +1121,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
      is sent as context for the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->server = (void *)server;
-  proto_ctx->sock = sock = server->sockets[fd];
+  proto_ctx->sock = sock;
   proto_ctx->ske = ctx->ske;	/* Save SKE object from previous protocol */
   proto_ctx->responder = TRUE;
   proto_ctx->dest_id_type = ctx->dest_id_type;
@@ -1157,6 +1173,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     silc_protocol_free(protocol);
+    sock->protocol = NULL;
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
     if (ctx->ske)
@@ -1900,6 +1917,46 @@ void silc_server_packet_parse_type(SilcServer server,
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_key_agreement(server, sock, packet);
+    break;
+
+  case SILC_PACKET_REKEY:
+    /*
+     * Received re-key packet. The sender wants to regenerate the session
+     * keys.
+     */
+    SILC_LOG_DEBUG(("Re-key packet"));
+    if (packet->flags & SILC_PACKET_FLAG_LIST)
+      break;
+    silc_server_rekey(server, sock, packet);
+    break;
+
+  case SILC_PACKET_REKEY_DONE:
+    /*
+     * The re-key is done.
+     */
+    SILC_LOG_DEBUG(("Re-key done packet"));
+    if (packet->flags & SILC_PACKET_FLAG_LIST)
+      break;
+
+    if (sock->protocol && sock->protocol->protocol &&
+	sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY) {
+
+      SilcServerRekeyInternalContext *proto_ctx = 
+	(SilcServerRekeyInternalContext *)sock->protocol->context;
+
+      if (proto_ctx->packet)
+	silc_packet_context_free(proto_ctx->packet);
+
+      proto_ctx->packet = silc_packet_context_dup(packet);
+
+      /* Let the protocol handle the packet */
+      sock->protocol->execute(server->timeout_queue, 0, 
+			      sock->protocol, sock->sock,
+			      0, 100000);
+    } else {
+      SILC_LOG_ERROR(("Received Re-key done packet but no re-key "
+		      "protocol active, packet dropped."));
+    }
     break;
 
   default:
@@ -3540,4 +3597,89 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
   }
 
   return client;
+}
+
+/* A timeout callback for the re-key. We will be the initiator of the
+   re-key protocol. */
+
+SILC_TASK_CALLBACK(silc_server_rekey_callback)
+{
+  SilcSocketConnection sock = (SilcSocketConnection)context;
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
+  SilcServer server = (SilcServer)idata->rekey->context;
+  SilcProtocol protocol;
+  SilcServerRekeyInternalContext *proto_ctx;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Allocate internal protocol context. This is sent as context
+     to the protocol. */
+  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+  proto_ctx->server = (void *)server;
+  proto_ctx->sock = sock;
+  proto_ctx->responder = FALSE;
+      
+  /* Perform rekey protocol. Will call the final callback after the
+     protocol is over. */
+  silc_protocol_alloc(SILC_PROTOCOL_SERVER_REKEY, 
+		      &protocol, proto_ctx, silc_server_rekey_final);
+  sock->protocol = protocol;
+      
+  /* Run the protocol */
+  protocol->execute(server->timeout_queue, 0, protocol, 
+		    sock->sock, 0, 0);
+
+  /* Re-register re-key timeout */
+  silc_task_register(server->timeout_queue, sock->sock, 
+		     silc_server_rekey_callback,
+		     context, idata->rekey->timeout, 0,
+		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+}
+
+/* The final callback for the REKEY protocol. This will actually take the
+   new key material into use. */
+
+SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
+{
+  SilcProtocol protocol = (SilcProtocol)context;
+  SilcServerRekeyInternalContext *ctx =
+    (SilcServerRekeyInternalContext *)protocol->context;
+  SilcServer server = (SilcServer)ctx->server;
+  SilcSocketConnection sock = ctx->sock;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
+    /* Error occured during protocol */
+    silc_protocol_free(protocol);
+    sock->protocol = NULL;
+    if (ctx->keymat)
+      silc_ske_free_key_material(ctx->keymat);
+    if (ctx->packet)
+      silc_packet_context_free(ctx->packet);
+    if (ctx->ske)
+      silc_ske_free(ctx->ske);
+    silc_free(ctx);
+    return;
+  }
+
+  /* Take the keys into use */
+  if (ctx->pfs == TRUE) {
+
+  } else {
+    /* Then just generate the new keys and take them into use */
+    silc_server_protocol_rekey_generate(server, ctx);
+  }
+
+  /* Cleanup */
+  silc_protocol_free(protocol);
+  sock->protocol = NULL;
+  if (ctx->keymat)
+    silc_ske_free_key_material(ctx->keymat);
+  if (ctx->packet)
+    silc_packet_context_free(ctx->packet);
+  if (ctx->ske)
+    silc_ske_free(ctx->ske);
+  silc_free(ctx);
 }

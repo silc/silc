@@ -40,6 +40,17 @@ typedef struct {
   uint32 key_len;
 } *SilcServerChannelRekey;
 
+/* Generic rekey context for connections */
+typedef struct {
+  /* Current sending encryption key, provided for re-key. The `pfs'
+     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
+  unsigned char *send_enc_key;
+  uint32 enc_key_len;
+  bool pfs;
+  uint32 timeout;
+  void *context;
+} *SilcServerRekey;
+
 /*
    Generic ID list data structure.
 
@@ -58,20 +69,21 @@ typedef struct {
   SilcCipher send_key;
   SilcCipher receive_key;
 
+  /* Re-key context */
+  SilcServerRekey rekey;
+
   /* Hash selected in the SKE protocol, NULL if not needed at all */
   SilcHash hash;
 
-  /* HMAC and raw key data */
+  /* HMAC */
   SilcHmac hmac;
-  unsigned char *hmac_key;
-  uint32 hmac_key_len;
 
-  /* public key */
+  /* Public key */
   SilcPublicKey public_key;
 
   long last_receive;         /* Time last received data */
   long last_sent;	     /* Time last sent data */
-  unsigned char registered;  /* Boolean whether connection is registered */
+  bool registered;           /* Boolean whether connection is registered */
 } *SilcIDListData, SilcIDListDataStruct;
 
 /* 
@@ -264,7 +276,7 @@ typedef struct SilcChannelClientEntryStruct {
        not allow any command to be exeucted more than once in about
        2 seconds. This is result of normal time().
 
-   char fast_command
+   uint8 fast_command
 
        Counter to check command bursts.  By default, up to 5 commands
        are allowed before limiting the execution.  See command flags
@@ -299,7 +311,7 @@ struct SilcClientEntryStruct {
   int mode;
 
   long last_command;
-  char fast_command;
+  uint8 fast_command;
 
   /* Pointer to the router */
   SilcServerEntry router;
@@ -343,7 +355,7 @@ struct SilcClientEntryStruct {
        ID of the channel. This includes all the information SILC will ever
        need.
 
-   int global_users
+   bool global_users
  
        Boolean value to tell whether there are users outside this server
        on this channel. This is set to TRUE if router sends message to
@@ -410,7 +422,7 @@ struct SilcChannelEntryStruct {
   char *channel_name;
   uint32 mode;
   SilcChannelID *id;
-  int global_users;
+  bool global_users;
   char *topic;
   char *cipher;
   char *hmac_name;

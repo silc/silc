@@ -72,5 +72,8 @@ void silc_server_key_agreement(SilcServer server,
 void silc_server_connection_auth_request(SilcServer server,
 					 SilcSocketConnection sock,
 					 SilcPacketContext *packet);
+void silc_server_rekey(SilcServer server,
+		       SilcSocketConnection sock,
+		       SilcPacketContext *packet);
 
 #endif

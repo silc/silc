@@ -2026,3 +2026,32 @@ void silc_server_connection_auth_request(SilcServer server,
 					   conn_type,
 					   auth_meth);
 }
+
+/* Received REKEY packet. The sender of the packet wants to regenerate
+   its session keys. This starts the REKEY protocol. */
+
+void silc_server_rekey(SilcServer server,
+		       SilcSocketConnection sock,
+		       SilcPacketContext *packet)
+{
+  SilcProtocol protocol;
+  SilcServerRekeyInternalContext *proto_ctx;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Allocate internal protocol context. This is sent as context
+     to the protocol. */
+  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+  proto_ctx->server = (void *)server;
+  proto_ctx->sock = sock;
+  proto_ctx->responder = TRUE;
+      
+  /* Perform rekey protocol. Will call the final callback after the
+     protocol is over. */
+  silc_protocol_alloc(SILC_PROTOCOL_SERVER_REKEY, 
+		      &protocol, proto_ctx, silc_server_rekey_final);
+  sock->protocol = protocol;
+
+  /* Run the protocol */
+  protocol->execute(server->timeout_queue, 0, protocol, sock->sock, 0, 0);
+}

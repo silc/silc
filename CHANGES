@@ -1,3 +1,28 @@
+Wed Apr  4 16:32:31 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Do not ask whether user wants to use the negotiated private key
+	  for private messages, just use it.  Affected file is 
+	  silc/local_command.c.
+
+	* Added `send_enc_key' and `enc_key_len' fields to the 
+	  SilcIDListData structure since they are needed in the re-key
+	  phase.  Affected file is silcd/idlist.[ch].
+
+	* Implemented the simple re-key protocol into the server.
+	  Affected files silcd/server.c and silcd/protocol.[ch].  The
+	  re-key will be performed once in an hour, by default.
+
+	  Added new protocol type SILC_PROTOCOL_SERVER_REKEY.
+	  Added silc_server_rekey, silc_server_rekey_callback and
+	  silc_server_rekey_final.
+
+	* Removed Tunneled flag from the protocol.  Updated the code
+	  and the specifications.
+
+	* Adde `pfs' field to the SilcIDListData to indicate whether
+	  the PFS is to be performed in the re-key.  Affected file is
+	  silcd/idlist.h.
+
 Tue Apr  3 21:52:42 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Defined uint8, int8, uint16, int16, uint32, int32, uint64 and

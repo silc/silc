@@ -25,35 +25,35 @@
    various things. */
 typedef struct {
   /* Local stats (server and router) */
-  uint32 my_clients;	  /* Locally connected clients */
-  uint32 my_servers;	  /* Locally connected servers */
-  uint32 my_routers;	  /* Locally connected routers */
-  uint32 my_channels;	  /* Locally created channels */
+  uint32 my_clients;	          /* Locally connected clients */
+  uint32 my_servers;		  /* Locally connected servers */
+  uint32 my_routers;		  /* Locally connected routers */
+  uint32 my_channels;		  /* Locally created channels */
   uint32 my_chanclients;	  /* Local clients on local channels */
-  uint32 my_aways;	  /* Local clients away (XXX) */
-  uint32 my_server_ops;	  /* Local server operators */
-  uint32 my_router_ops;	  /* Local router operators */
+  uint32 my_aways;		  /* Local clients away (XXX) */
+  uint32 my_server_ops;		  /* Local server operators */
+  uint32 my_router_ops;		  /* Local router operators */
 
   /* Global stats (mainly for router) */
-  uint32 cell_clients;	  /* All clients in cell */
-  uint32 cell_servers;	  /* All servers in cell */
-  uint32 cell_channels;	  /* All channels in cell */
-  uint32 cell_chanclients; /* All clients on cell's channels */
-  uint32 clients;	  /* All clients */
-  uint32 servers;	  /* All servers */
-  uint32 routers;	  /* All routers */
-  uint32 channels;	  /* All channels */
-  uint32 chanclients;	  /* All clients on channels */
-  uint32 server_ops;	  /* All server operators */
-  uint32 router_ops;	  /* All router operators */
+  uint32 cell_clients;		  /* All clients in cell */
+  uint32 cell_servers;		  /* All servers in cell */
+  uint32 cell_channels;		  /* All channels in cell */
+  uint32 cell_chanclients;	  /* All clients on cell's channels */
+  uint32 clients;		  /* All clients */
+  uint32 servers;		  /* All servers */
+  uint32 routers;		  /* All routers */
+  uint32 channels;		  /* All channels */
+  uint32 chanclients;		  /* All clients on channels */
+  uint32 server_ops;		  /* All server operators */
+  uint32 router_ops;		  /* All router operators */
 
   /* General */
-  uint32 conn_attempts;	  /* Connection attempts */
-  uint32 conn_failures;	  /* Connection failure */
-  uint32 auth_attempts;	  /* Authentication attempts */
-  uint32 auth_failures;	  /* Authentication failures */
-  uint32 packets_sent;	  /* Sent packets */
-  uint32 packets_received; /* Received packets */
+  uint32 conn_attempts;		  /* Connection attempts */
+  uint32 conn_failures;		  /* Connection failure */
+  uint32 auth_attempts;		  /* Authentication attempts */
+  uint32 auth_failures;		  /* Authentication failures */
+  uint32 packets_sent;		  /* Sent packets */
+  uint32 packets_received;	  /* Received packets */
 } SilcServerStatistics;
 
 typedef struct {
@@ -187,5 +187,6 @@ do {									\
 } while(0)
 
 /* Prototypes */
+SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final);
 
 #endif

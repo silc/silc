@@ -302,13 +302,6 @@ static void keyagr_completion(SilcClient client,
 	     client_entry->nickname);;
 
     if (i->type == 1) {
-      if (!silc_client_ask_yes_no(client, 
-         "Would you like to use the key with private messages (y/n)? ")) {
-	silc_say(client, conn, "You can set the key material into use later by giving /KEY msg set command");
-	curr_key = key;
-	break;
-      }
-      
       /* Set the private key for this client */
       silc_client_del_private_message_key(client, conn, client_entry);
       silc_client_add_private_message_key_ske(client, conn, client_entry,

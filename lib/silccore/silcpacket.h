@@ -61,8 +61,8 @@ typedef unsigned char SilcPacketFlags;
 #define SILC_PACKET_FLAG_PRIVMSG_KEY      0x01
 #define SILC_PACKET_FLAG_LIST             0x02
 #define SILC_PACKET_FLAG_BROADCAST        0x04
-#define SILC_PACKET_FLAG_TUNNELED         0x08
 /* Rest of flags still available
+#define SILC_PACKET_FLAG_XXX              0x08
 #define SILC_PACKET_FLAG_XXX              0x10
 #define SILC_PACKET_FLAG_XXX              0x20
 #define SILC_PACKET_FLAG_XXX              0x40

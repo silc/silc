@@ -134,7 +134,7 @@ This document refers constantly to other SILC protocol specification
 Internet Drafts that are a must read for those who wants to understand
 the function of these protocols.  The most important references are
 the Secure Internet Live Conferencing, Protocol Specification [SILC1]
-and SILC Packet Protocol [SILC2] Internet Drafts.
+and the SILC Packet Protocol [SILC2] Internet Drafts.
 
 The protocol is intended to be used with the SILC protocol thus it
 does not define own framework that could be used.  The framework is
@@ -158,7 +158,7 @@ The purpose of SILC Key Exchange protocol is to create session keys to
 be used in current SILC session.  The keys are valid only for some period
 of time (usually an hour) or at most until the session ends.  These keys
 are used to protect packets like commands, command replies and other
-communication between two entities.  If connection is server to server
+communication between two entities.  If connection is server to router
 connection, the keys are used to protect all traffic between those
 servers.  In client connections usually all the packets are protected
 with this key except channel messages; channels has their own keys and 
@@ -195,16 +195,14 @@ by responder must include only one chosen property per list.
 
 The Key Exchange Start Payload is used to tell connecting entities what
 security properties and algorithms should be used in the communication.
-If perfect forward secrecy (PFS) is not desired (PFS is undefined by
-default) Key Exchange Start Payload is sent only once per session, thus,
-for example, re-keying will not cause sending of a new payload.  If PFS
-is desired, re-keying will always cause new key exchange thus causes
-sending of a new Key Exchange Start Payload.
+The Key Exchange Start Payload is sent only once per session.  Even if
+the PFS (Perfect Forward Secrecy) flag is se the Key Exchange Start Payload
+is not re-sent.   When PFS is desired the Key Exchange Payloads are sent
+to negotiate new key material.  The procedure is equivalent to the very
+first negotiation except that the Key Exchange Start Payload is not sent.
 
-When performing first key exchange this payload is never encrypted, as
-there are no existing keys to encrypt it with.  If performing re-keying
-(PFS was selected) this payload is encrypted with the existing key and
-encryption algorithm.
+As this payload is used only with the very first key exchnage the payload
+is never encrypted, as there are no keys to encrypt it with.
 
 A cookie is also sent in this payload.  A cookie is used to uniform the
 payload so that none of the key exchange parties can determine this
@@ -307,12 +305,15 @@ o Flags (1 byte) - Indicates flags to be used in the key
 
        Perfect Forward Secrecy (PFS) to be used in the
        key exchange protocol.  If not set, re-keying
-       is performed using the old key.  When PFS is used, 
+       is performed using the old key.  See the [SILC1]
+       for more information on this issue.  When PFS is used, 
        re-keying and creating new keys for any particular 
-       purpose will cause new key exchange.
-
-       Rest of the flags are reserved for the future and
-       must not be set.
+       purpose will cause new key exchange.  In this key
+       exchange only the Key Exchange Payload is sent and
+       the Key Exchange Start Payload must not be sent.
+       When doing PFS the Key Exchange Payloads are 
+       encrypted with the old keys.  With the PFS, the
+       Mutual Authentication flag must be ignored.
 
      Mutual Authentication    0x04
 
@@ -323,6 +324,9 @@ o Flags (1 byte) - Indicates flags to be used in the key
        inititator must also provide it.  Initiator may
        set this but also responder may set this even if
        initiator did not set it.
+
+     Rest of the flags are reserved for the future and
+     must not be set.
 
 o Payload Length (2 bytes) - Length of the entire Key Exchange
   Start payload, not including any other field.
@@ -488,7 +492,7 @@ o Signature Data (variable length) - The signature signed
 
 The key exchange begins by sending SILC_PACKET_KEY_EXCHANGE packet with
 Key Exchange Start Payload to select the security properties to be used
-in the key exchange and later in the  communication.
+in the key exchange and later in the communication.
 
 After Key Exchange Start Payload has been processed by both of the
 parties the protocol proceeds as follows:
@@ -651,7 +655,7 @@ first group diffie-hellman-group1 is mandatory, other groups maybe
 negotiated to be used in the connection with Key Exchange Start Payload
 and SILC_PACKET_KEY_EXCHANGE packet.  However, the first group must be
 proposed in the Key Exchange Start Payload regardless of any other
-requested group (however, it does not have to be the first on the list).
+requested group (however, it does not have to be the first in the list).
 
 
 .ti 0
@@ -683,7 +687,7 @@ FFFFFFFF FFFFFFFF
 .in 3
 
 
-The generator used with this prime is g = 2. The group order q is
+The generator used with this prime is g = 2.  The group order q is
 (p - 1) / 2.
 
 This group was taken from the OAKLEY specification.
@@ -721,7 +725,7 @@ C2007CB8 A163BF05 98DA4836 1C55D39A 69163FA8 FD24CF5F
 670C354E 4ABC9804 F1746C08 CA237327 FFFFFFFF FFFFFFFF
 .in 3
 
-The generator used with this prime is g = 2. The group order q is
+The generator used with this prime is g = 2.  The group order q is
 (p - 1) / 2.
 
 This group was taken from the OAKLEY specification.
@@ -735,7 +739,7 @@ returned in the SILC_PACKET_SUCCESS or SILC_PACKET_FAILURE packets to
 indicate the status of the protocol.  Implementations may map the
 status types to human readable error message.  All types except the
 SILC_SKE_STATUS_OK type must be sent in SILC_PACKET_FAILURE packet.
-The length of status is 32 bits (4 bytes). Following status types are 
+The length of status is 32 bits (4 bytes).  Following status types are 
 defined:
 
 .in 6
@@ -789,7 +793,7 @@ defined:
     Provided signature was incorrect.
 
 
-10   SILC_SKE_STATUS_BAD_VERSION
+10  SILC_SKE_STATUS_BAD_VERSION
 
     Provided version string was not acceptable.
 .in 3
@@ -1059,5 +1063,4 @@ Finland
 
 EMail: priikone@poseidon.pspt.fi
 
-This Internet-Draft expires 6 Jun 2001 
-
+This Internet-Draft expires 6 Jun 2001

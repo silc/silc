@@ -111,7 +111,6 @@ Table of Contents
   2.10 Packet Reception ......................................... 43
   2.11 Packet Routing ........................................... 44
   2.12 Packet Broadcasting ...................................... 45
-  2.13 Packet Tunneling ......................................... 45
 3 Security Considerations ....................................... 46
 4 References .................................................... 46
 5 Author's Address .............................................. 47
@@ -315,14 +314,6 @@ o Flags (1 byte) - Indicates flags to be used in packet
        section 2.13 Packet Broadcasting for description of 
        packet broadcasting.
 
-
-     Tunneled                  0x08
-
-       Marks that the packet is tunneled.  Tunneling means
-       that extra SILC Packet Header has been applied to the
-       original packet.  The outer header has this flag
-       set.  See section 2.14 Packet Tunneling for more
-       information.
 .in 3
 
 
@@ -2556,24 +2547,6 @@ the router as its primary route.
 Routers use broadcast packets to broadcast for example information
 about newly registered clients, servers, channels etc. so that all the
 routers may keep these informations up to date.
-
-
-.ti 0
-2.13 Packet Tunneling
-
-Tunneling is a feature that is available in SILC protocol.  Tunneling
-means that extra SILC Packet Header is applied to the original packet
-and thus hiding the original packet entirely.  There can be some
-interesting applications using tunneling, such as, using ID's based on
-private network IP addresses inside in the tunneled packet.  This can
-open many interesting features relating to connecting to private network
-from the Internet with SILC and many more.  However, this feature is
-optional currently in SILC as there does not exist thorough analysis of
-this feature.  It is with out a doubt that there will be many more
-applications that has not yet been discovered.  Thus, it is left
-to Internet Community to investigate the use of tunneling in SILC
-protocol.  This document is updated according those investigations
-and additional documents on the issue may be written.
 
 
 .ti 0
