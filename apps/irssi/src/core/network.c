@@ -468,6 +468,7 @@ int net_gethostbyaddr(IPADDR *ip, char **name)
 #ifdef HAVE_IPV6
 	struct addrinfo req, *ai;
 	int host_error;
+	char hostname[NI_MAXHOST];
 #else
 	struct hostent *hp;
 #endif
@@ -488,6 +489,13 @@ int net_gethostbyaddr(IPADDR *ip, char **name)
 	host_error = getaddrinfo(ipname, NULL, &req, &ai);
 	if (host_error != 0)
 		return host_error;
+        host_error = getnameinfo(ai->ai_addr, ai->ai_addrlen,
+                                 hostname, NI_MAXHOST, NULL, 0, 0);
+        if (host_error != 0) {
+                freeaddrinfo(ai);
+                return host_error;
+        }
+
 	*name = g_strdup(ai->ai_canonname);
 
 	freeaddrinfo(ai);
