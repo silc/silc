@@ -1092,6 +1092,10 @@ void silc_client_start_key_exchange(SilcClient client,
  *
  *    Closes connection to remote end. Free's all allocated data except
  *    for some information such as nickname etc. that are valid at all time.
+ *    Usually application does not need to directly call this, except
+ *    when explicitly closing the connection, or if an error occurs
+ *    during connection to server (see 'connect' client operation for
+ *    more information).
  *
  ***/
 void silc_client_close_connection(SilcClient client,
