@@ -1,3 +1,13 @@
+Sat Sep  7 14:22:43 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
+
+	* Rewritten check for POSIX threads.  Use --with-pthreads[=DIR]
+	  for implied search (not needed on platforms which has native
+	  pthreads library).  Use --without-pthreads to disable threads.
+	  Affected file is configure.in.pre
+
+	* Fixed --with-iconv on platforms which need to bypass (broken)
+          native iconv().  Affected file is configure.in.pre
+
 Sat Sep  7 15:08:13 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Moved -C option parsing in Irssi SILC client at same time
