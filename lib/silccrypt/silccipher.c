@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/10/02 18:31:46  priikone
+ * 	Added rijndael (AES) to cipher list.
+ *
  * Revision 1.3  2000/09/28 11:28:20  priikone
  * 	Changed cipher list order.
  *
@@ -56,6 +59,9 @@ SilcCipherObject silc_cipher_builtin_list[] =
   { "twofish", 16, 16, silc_twofish_set_key, silc_twofish_set_key_with_string,
     silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc, 
     silc_twofish_context_len },
+  { "rijndael", 16, 16, silc_rijndael_set_key, 
+    silc_rijndael_set_key_with_string, silc_rijndael_encrypt_cbc,
+    silc_rijndael_decrypt_cbc, silc_rijndael_context_len },
   { "rc6", 16, 16, silc_rc6_set_key, silc_rc6_set_key_with_string,
     silc_rc6_encrypt_cbc, silc_rc6_decrypt_cbc, 
     silc_rc6_context_len },
