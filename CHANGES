@@ -1,3 +1,8 @@
+Tue Oct 21 13:35:57 CEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for disconnected socket in QUIT callback.  Affected
+	  file silcd/command.c.
+
 Thu Oct 21 09:43:17 CEST 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
         * Modified the MIME parsing to allow \n and \r\n as delimiters.

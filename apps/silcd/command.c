@@ -1332,11 +1332,13 @@ SILC_TASK_CALLBACK(silc_server_command_quit_cb)
   SilcServer server = app_context;
   QuitInternal q = (QuitInternal)context;
 
-  /* Free all client specific data, such as client entry and entires
-     on channels this client may be on. */
-  silc_server_free_client_data(server, q->sock, q->sock->user_data,
-			       TRUE, q->signoff);
-  q->sock->user_data = NULL;
+  if (q->sock->user_data) {
+    /* Free all client specific data, such as client entry and entires
+       on channels this client may be on. */
+    silc_server_free_client_data(server, q->sock, q->sock->user_data,
+			         TRUE, q->signoff);
+    q->sock->user_data = NULL;
+  }
 
   /* Close the connection on our side */
   silc_server_close_connection(server, q->sock);
