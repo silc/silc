@@ -6038,6 +6038,12 @@ SILC_SERVER_CMD_FUNC(close)
     goto out;
   }
 
+  if (server_entry == server->id_entry) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CLOSE,
+					  SILC_STATUS_ERR_NO_SERVER_ID, 0);
+    goto out;
+  }
+
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CLOSE,
 					SILC_STATUS_OK, 0);
