@@ -336,8 +336,8 @@ typedef struct {
      after application has called the command. Just to tell application
      that the command really was processed. */
   void (*command)(SilcClient client, SilcClientConnection conn, 
-		  SilcClientCommandContext cmd_context, int success,
-		  SilcCommand command);
+		  SilcClientCommandContext cmd_context, bool success,
+		  SilcCommand command, SilcStatus status);
 
   /* Command reply handler. This function is called always in the command reply
      function. If error occurs it will be called as well. Normal scenario
@@ -362,7 +362,7 @@ typedef struct {
      ID. For example, if Client ID is receives application receives 
      SilcClientEntry. */
   void (*command_reply)(SilcClient client, SilcClientConnection conn,
-			SilcCommandPayload cmd_payload, int success,
+			SilcCommandPayload cmd_payload, bool success,
 			SilcCommand command, SilcStatus status, ...);
 
   /* Called to indicate that connection was either successfully established

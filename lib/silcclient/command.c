@@ -27,13 +27,14 @@
 	   "You are not connected to a server, use /SERVER to connect");
 
 /* Command operation that is called at the end of all commands. 
-   Usage: COMMAND; */
-#define COMMAND cmd->client->internal->ops->command(cmd->client, cmd->conn, \
-  cmd, TRUE, cmd->command->cmd)
+   Usage: COMMAND(status); */
+#define COMMAND(status) cmd->client->internal->ops->command(cmd->client, \
+  cmd->conn, cmd, TRUE, cmd->command->cmd, (status))
 
-/* Error to application. Usage: COMMAND_ERROR; */
-#define COMMAND_ERROR cmd->client->internal->ops->command(cmd->client, \
-  cmd->conn, cmd, FALSE, cmd->command->cmd)
+/* Error to application. Usage: COMMAND_ERROR(status); */
+#define COMMAND_ERROR(status) 				\
+  cmd->client->internal->ops->command(cmd->client,	\
+  cmd->conn, cmd, FALSE, cmd->command->cmd, (status))
 
 #define SAY cmd->client->internal->ops->say
 
@@ -217,7 +218,7 @@ SILC_CLIENT_CMD_FUNC(whois)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -251,7 +252,7 @@ SILC_CLIENT_CMD_FUNC(whois)
   silc_buffer_free(buffer);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -269,14 +270,15 @@ SILC_CLIENT_CMD_FUNC(whowas)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2 || cmd->argc > 3) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /WHOWAS <nickname>[@<server>] [<count>]");
-    COMMAND_ERROR;
+    COMMAND_ERROR((cmd->argc < 2 ? SILC_STATUS_ERR_NOT_ENOUGH_PARAMS :
+		   SILC_STATUS_ERR_TOO_MANY_PARAMS));
     goto out;
   }
 
@@ -300,7 +302,7 @@ SILC_CLIENT_CMD_FUNC(whowas)
   silc_buffer_free(buffer);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -321,6 +323,7 @@ SILC_CLIENT_CMD_FUNC(identify)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -375,9 +378,9 @@ SILC_CLIENT_CMD_FUNC(nick_change)
     silc_client_nickname_format(cmd->client, conn, conn->local_entry);
     silc_idcache_add(conn->client_cache, strdup(cmd->argv[1]), 
 		     conn->local_entry->id, conn->local_entry, 0, NULL);
-    COMMAND;
+    COMMAND(SILC_STATUS_OK);
   } else {
-    COMMAND_ERROR;
+    COMMAND_ERROR(status);
   }
 
   silc_client_command_free(cmd);
@@ -394,14 +397,14 @@ SILC_CLIENT_CMD_FUNC(nick)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /NICK <nickname>");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -419,7 +422,7 @@ SILC_CLIENT_CMD_FUNC(nick)
 	  "Your nickname is %s", conn->nickname);
     }
 
-    COMMAND;
+    COMMAND(SILC_STATUS_OK);
     goto out;
   }
 
@@ -462,7 +465,7 @@ SILC_CLIENT_CMD_FUNC(list)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -492,7 +495,7 @@ SILC_CLIENT_CMD_FUNC(list)
     silc_buffer_free(idp);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -511,14 +514,15 @@ SILC_CLIENT_CMD_FUNC(topic)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2 || cmd->argc > 3) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /TOPIC <channel> [<topic>]");
-    COMMAND_ERROR;
+    COMMAND_ERROR((cmd->argc < 2 ? SILC_STATUS_ERR_NOT_ENOUGH_PARAMS :
+		   SILC_STATUS_ERR_TOO_MANY_PARAMS));
     goto out;
   }
 
@@ -526,7 +530,7 @@ SILC_CLIENT_CMD_FUNC(topic)
     if (!conn->current_channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are not on any channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
     name = conn->current_channel->channel_name;
@@ -537,7 +541,7 @@ SILC_CLIENT_CMD_FUNC(topic)
   if (!conn->current_channel) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"You are not on that channel");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
 
@@ -545,7 +549,7 @@ SILC_CLIENT_CMD_FUNC(topic)
   if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"You are not on that channel");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
 
@@ -569,7 +573,7 @@ SILC_CLIENT_CMD_FUNC(topic)
   silc_buffer_free(idp);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -592,7 +596,7 @@ SILC_CLIENT_CMD_FUNC(invite)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -600,7 +604,7 @@ SILC_CLIENT_CMD_FUNC(invite)
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /INVITE <channel> [<nickname>[@server>]"
 	"[+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -608,7 +612,7 @@ SILC_CLIENT_CMD_FUNC(invite)
     if (!conn->current_channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are not on any channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
 
@@ -620,7 +624,7 @@ SILC_CLIENT_CMD_FUNC(invite)
     if (!channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are on that channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
   }
@@ -638,7 +642,7 @@ SILC_CLIENT_CMD_FUNC(invite)
 					    cmd->argv[2], TRUE);
       if (!client_entry) {
 	if (cmd->pending) {
-	  COMMAND_ERROR;
+	  COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
 	  goto out;
 	}
       
@@ -686,7 +690,7 @@ SILC_CLIENT_CMD_FUNC(invite)
   silc_buffer_free(chidp);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_free(nickname);
@@ -719,7 +723,7 @@ SILC_CLIENT_CMD_FUNC(quit)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -748,7 +752,7 @@ SILC_CLIENT_CMD_FUNC(quit)
 			 1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -817,14 +821,14 @@ SILC_CLIENT_CMD_FUNC(kill)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /KILL <nickname> [<comment>]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -839,7 +843,7 @@ SILC_CLIENT_CMD_FUNC(kill)
 				  cmd->argv[1], TRUE);
   if (!target) {
     if (cmd->pending) {
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
       goto out;
     }
 
@@ -871,7 +875,7 @@ SILC_CLIENT_CMD_FUNC(kill)
   silc_buffer_free(idp);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
   /* Register a pending callback that will actually remove the killed
      client from our cache. */
@@ -896,7 +900,7 @@ SILC_CLIENT_CMD_FUNC(info)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -917,7 +921,7 @@ SILC_CLIENT_CMD_FUNC(info)
     silc_free(name);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -936,7 +940,7 @@ SILC_CLIENT_CMD_FUNC(ping)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -953,7 +957,7 @@ SILC_CLIENT_CMD_FUNC(ping)
 		      SILC_ID_SERVER);
   if (!id) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -976,7 +980,7 @@ SILC_CLIENT_CMD_FUNC(ping)
   }
   
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -995,12 +999,12 @@ SILC_CLIENT_CMD_FUNC(join)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   
@@ -1071,7 +1075,7 @@ SILC_CLIENT_CMD_FUNC(join)
   silc_free(passphrase);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -1087,14 +1091,15 @@ SILC_CLIENT_CMD_FUNC(motd)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 1 || cmd->argc > 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /MOTD [<server>]");
-    COMMAND_ERROR;
+    COMMAND_ERROR((cmd->argc < 1 ? SILC_STATUS_ERR_NOT_ENOUGH_PARAMS :
+		   SILC_STATUS_ERR_TOO_MANY_PARAMS));
     goto out;
   }
 
@@ -1112,7 +1117,7 @@ SILC_CLIENT_CMD_FUNC(motd)
   silc_buffer_free(buffer);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -1132,14 +1137,14 @@ SILC_CLIENT_CMD_FUNC(umode)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /UMODE +|-<modes>");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1220,7 +1225,7 @@ SILC_CLIENT_CMD_FUNC(umode)
 	mode &= ~SILC_UMODE_BLOCK_PRIVMSG;
       break;
     default:
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_UNKNOWN_MODE);
       goto out;
       break;
     }
@@ -1241,7 +1246,7 @@ SILC_CLIENT_CMD_FUNC(umode)
   silc_buffer_free(idp);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -1263,14 +1268,14 @@ SILC_CLIENT_CMD_FUNC(cmode)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 3) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1278,7 +1283,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
     if (!conn->current_channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are not on any channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
 
@@ -1290,7 +1295,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
     if (!channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are on that channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
   }
@@ -1361,7 +1366,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	if (cmd->argc < 4) {
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
-	  COMMAND_ERROR;
+	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
 	}
 	ll = atoi(cmd->argv[3]);
@@ -1379,7 +1384,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	if (cmd->argc < 4) {
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
-	  COMMAND_ERROR;
+	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
 	}
 	arg = cmd->argv[3];
@@ -1395,7 +1400,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	if (cmd->argc < 4) {
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
-	  COMMAND_ERROR;
+	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
 	}
 	arg = cmd->argv[3];
@@ -1411,7 +1416,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	if (cmd->argc < 4) {
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
-	  COMMAND_ERROR;
+	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
 	}
 	arg = cmd->argv[3];
@@ -1428,7 +1433,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	if (cmd->argc < 4) {
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
-	  COMMAND_ERROR;
+	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
 	}
 
@@ -1451,7 +1456,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
       }
       break;
     default:
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_UNKNOWN_MODE);
       goto out;
       break;
     }
@@ -1483,7 +1488,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
     silc_buffer_free(auth);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -1507,14 +1512,14 @@ SILC_CLIENT_CMD_FUNC(cumode)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 4) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /CUMODE <channel> +|-<modes> <nickname>[@<server>]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1522,7 +1527,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
     if (!conn->current_channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are not on any channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
 
@@ -1534,7 +1539,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
     if (!channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are on that channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
   }
@@ -1550,7 +1555,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
 					cmd->argv[3], TRUE);
   if (!client_entry) {
     if (cmd->pending) {
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
       goto out;
     }
 
@@ -1622,7 +1627,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
 	mode &= ~SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
       break;
     default:
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_UNKNOWN_MODE);
       goto out;
       break;
     }
@@ -1651,7 +1656,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
     silc_buffer_free(auth);
   
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_free(nickname);
@@ -1674,14 +1679,14 @@ SILC_CLIENT_CMD_FUNC(kick)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 3) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /KICK <channel> <nickname> [<comment>]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1689,7 +1694,7 @@ SILC_CLIENT_CMD_FUNC(kick)
     if (!conn->current_channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are not on any channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
     name = conn->current_channel->channel_name;
@@ -1700,7 +1705,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   if (!conn->current_channel) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"You are not on that channel");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
 
@@ -1708,7 +1713,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"You are not on that channel");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
 
@@ -1726,7 +1731,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   if (!target) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"No such client: %s", cmd->argv[2]);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
     goto out;
   }
 
@@ -1750,7 +1755,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   silc_buffer_free(idp2);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_free(nickname);
@@ -1788,7 +1793,7 @@ static void silc_client_command_oper_send(unsigned char *data,
   silc_buffer_free(auth);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 }
 
 /* OPER command. Used to obtain server operator privileges. */
@@ -1800,14 +1805,14 @@ SILC_CLIENT_CMD_FUNC(oper)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /OPER <username> [-pubkey]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1857,7 +1862,7 @@ static void silc_client_command_silcoper_send(unsigned char *data,
   silc_buffer_free(auth);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 }
 
 /* SILCOPER command. Used to obtain router operator privileges. */
@@ -1869,14 +1874,14 @@ SILC_CLIENT_CMD_FUNC(silcoper)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /SILCOPER <username> [-pubkey]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1907,7 +1912,7 @@ SILC_CLIENT_CMD_FUNC(ban)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -1915,7 +1920,7 @@ SILC_CLIENT_CMD_FUNC(ban)
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /BAN <channel> "
 	"[+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1923,7 +1928,7 @@ SILC_CLIENT_CMD_FUNC(ban)
     if (!conn->current_channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are not on any channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
 
@@ -1934,8 +1939,8 @@ SILC_CLIENT_CMD_FUNC(ban)
     channel = silc_client_get_channel(cmd->client, conn, name);
     if (!channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-	  "You are on that channel");
-      COMMAND_ERROR;
+	  "You are noton that channel");
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
   }
@@ -1963,7 +1968,7 @@ SILC_CLIENT_CMD_FUNC(ban)
   silc_buffer_free(chidp);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -1979,7 +1984,7 @@ SILC_CLIENT_CMD_FUNC(detach)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -1990,7 +1995,7 @@ SILC_CLIENT_CMD_FUNC(detach)
   silc_buffer_free(buffer);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -2009,14 +2014,14 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc != 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /LEAVE <channel>");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -2024,7 +2029,7 @@ SILC_CLIENT_CMD_FUNC(leave)
     if (!conn->current_channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are not on any channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
     name = conn->current_channel->channel_name;
@@ -2037,7 +2042,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   if (!channel) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"You are not on that channel");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
 
@@ -2059,7 +2064,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   silc_buffer_free(idp);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
   if (conn->current_channel == channel)
     conn->current_channel = NULL;
@@ -2082,14 +2087,14 @@ SILC_CLIENT_CMD_FUNC(users)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc != 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /USERS <channel>");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -2097,7 +2102,7 @@ SILC_CLIENT_CMD_FUNC(users)
     if (!conn->current_channel) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "You are not on any channel");
-      COMMAND_ERROR;
+      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
     name = conn->current_channel->channel_name;
@@ -2115,7 +2120,7 @@ SILC_CLIENT_CMD_FUNC(users)
   silc_buffer_free(buffer);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -2137,14 +2142,14 @@ SILC_CLIENT_CMD_FUNC(getkey)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
     client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO, 
 		     "Usage: /GETKEY <nickname or server name>");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -2205,11 +2210,11 @@ SILC_CLIENT_CMD_FUNC(getkey)
 	     silc_client_status_message(SILC_STATUS_ERR_NO_SUCH_NICK));
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
            silc_client_status_message(error));
-	  COMMAND_ERROR;
+	  COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
 	  goto out;
 	}
 
-	COMMAND_ERROR;
+	COMMAND_ERROR(error);
 	goto out;
       }
     }
@@ -2227,7 +2232,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
   silc_buffer_free(idp);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_free(nickname);
@@ -2311,14 +2316,14 @@ SILC_CLIENT_CMD_FUNC(connect)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /CONNECT <server> [<port>]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -2341,7 +2346,7 @@ SILC_CLIENT_CMD_FUNC(connect)
   silc_buffer_free(buffer);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -2360,14 +2365,14 @@ SILC_CLIENT_CMD_FUNC(close)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
   if (cmd->argc < 2) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"Usage: /CLOSE <server> [<port>]");
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -2390,7 +2395,7 @@ SILC_CLIENT_CMD_FUNC(close)
   silc_buffer_free(buffer);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);
@@ -2404,7 +2409,7 @@ SILC_CLIENT_CMD_FUNC(shutdown)
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
     goto out;
   }
 
@@ -2413,7 +2418,7 @@ SILC_CLIENT_CMD_FUNC(shutdown)
 			   SILC_COMMAND_PRIV_SHUTDOWN, 0, 0);
 
   /* Notify application */
-  COMMAND;
+  COMMAND(SILC_STATUS_OK);
 
  out:
   silc_client_command_free(cmd);

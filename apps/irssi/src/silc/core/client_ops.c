@@ -162,6 +162,30 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   if (sender->username)
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     sender->username, sender->hostname);
+
+  if (flags & SILC_MESSAGE_FLAG_DATA) {
+    /* MIME object received, try to display it as well as we can */
+    char type[128];
+    unsigned char *data;
+
+    memset(type, 0, sizeof(type));
+    if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
+			 NULL, 0, &data, NULL))
+      return;
+
+    /* Then figure out what we can display */
+    if (strstr(type, "text/") && !strstr(type, "text/t140") &&
+	!strstr(type, "text/vnd")) {
+      /* It is something textual, display it */
+      message = (const unsigned char *)data;
+    } else {
+      message = NULL;
+    }
+  }
+
+  if (!message)
+    return;
+
   signal_emit("message private", 4, server, message,
 	      sender->nickname ? sender->nickname : "[<unknown>]",
 	      sender->username ? userhost : NULL);
@@ -740,8 +764,8 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn)
    that the command really was processed. */
 
 void silc_command(SilcClient client, SilcClientConnection conn, 
-		  SilcClientCommandContext cmd_context, int success,
-		  SilcCommand command)
+		  SilcClientCommandContext cmd_context, bool success,
+		  SilcCommand command, SilcStatus status)
 {
   SILC_SERVER_REC *server = conn->context;
 
@@ -873,7 +897,7 @@ void silc_getkey_cb(bool success, void *context)
 
 void 
 silc_command_reply(SilcClient client, SilcClientConnection conn,
-		   SilcCommandPayload cmd_payload, int success,
+		   SilcCommandPayload cmd_payload, bool success,
 		   SilcCommand command, SilcStatus status, ...)
 
 {

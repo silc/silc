@@ -38,10 +38,10 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 void silc_notify(SilcClient client, SilcClientConnection conn, 
 		 SilcNotifyType type, ...);
 void silc_command(SilcClient client, SilcClientConnection conn, 
-		  SilcClientCommandContext cmd_context, int success,
-		  SilcCommand command);
+		  SilcClientCommandContext cmd_context, bool success,
+		  SilcCommand command, SilcStatus status);
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
-			SilcCommandPayload cmd_payload, int success,
+			SilcCommandPayload cmd_payload, bool success,
 			SilcCommand command, SilcStatus status, ...);
 void silc_connect(SilcClient client, SilcClientConnection conn,
 		  SilcClientConnectionStatus status);

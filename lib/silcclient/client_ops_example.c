@@ -77,8 +77,8 @@ silc_notify(SilcClient client, SilcClientConnection conn,
 
 static void
 silc_command(SilcClient client, SilcClientConnection conn,
-	     SilcClientCommandContext cmd_context, int success,
-	     SilcCommand command)
+	     SilcClientCommandContext cmd_context, bool success,
+	     SilcCommand command, SilcStatus status)
 {
 
 }
@@ -103,7 +103,7 @@ silc_command(SilcClient client, SilcClientConnection conn,
 
 static void
 silc_command_reply(SilcClient client, SilcClientConnection conn,
-		   SilcCommandPayload cmd_payload, int success,
+		   SilcCommandPayload cmd_payload, bool success,
 		   SilcCommand command, SilcStatus status, ...)
 {
 
