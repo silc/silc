@@ -66,7 +66,7 @@ int silc_socket_write(SilcSocketConnection sock)
 }
 
 /* QoS read handler, this will call the read and write events to indicate
-   that data is available again after a timeout */
+   that data is available again after a timeout. */
 
 SILC_TASK_CALLBACK(silc_socket_read_qos)
 {
