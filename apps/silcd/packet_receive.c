@@ -378,9 +378,6 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
 
-    if (channel->topic && !strcmp(channel->topic, tmp))
-      goto out;
-
     if (!channel_id) {
       channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
 				  packet->dst_id_type);
@@ -399,6 +396,9 @@ void silc_server_notify(SilcServer server,
 	goto out;
       }
     }
+
+    if (channel->topic && !strcmp(channel->topic, tmp))
+      goto out;
 
     /* Get user's channel entry and check that topic set is allowed. */
     if (!silc_server_client_on_channel(client, channel, &chl))

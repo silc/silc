@@ -1,3 +1,9 @@
+Thu Mar 28 12:17:21 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the TOPIC_SET notify to not cras.  It changed the topic
+	  too early, before getting the channel entry.  Affected file
+	  is silcd/packet_receive.c.
+
 Thu Mar 28 09:58:16 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Added functions silc_server_config_[ref/unref], these are used
