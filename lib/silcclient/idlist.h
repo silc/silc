@@ -68,7 +68,7 @@ typedef struct SilcChannelEntryStruct {
 
 /* Command identifier used by ID list routines when sending WHOIS/IDENTIFY
    commands to routers. */
-#define SILC_IDILIST_IDENT 3333
+#define SILC_IDLIST_IDENT 3333
 
 /* Prototypes */
 
