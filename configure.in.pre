@@ -175,20 +175,21 @@ sim_support=false
 AC_MSG_CHECKING(for SIM support)
 AC_MSG_RESULT()
 AC_CHECK_HEADERS(dlfcn.h,
-  AC_CHECK_LIB(dl, dlopen,
-    [
-      AC_DEFINE(SILC_SIM)
-      sim_support=true
-      LIBS="$LIBS -ldl"
-    ],
-    [
-      AC_CHECK_LIB(c, dlopen,
-        [
-          AC_DEFINE(SILC_SIM)
-          sim_support=true
-        ])
-    ])
-  )
+  [
+    AC_CHECK_LIB(dl, dlopen,
+      [
+        AC_DEFINE(SILC_SIM)
+        sim_support=true
+        LIBS="$LIBS -ldl"
+      ],
+      [
+        AC_CHECK_LIB(c, dlopen,
+          [
+            AC_DEFINE(SILC_SIM)
+            sim_support=true
+          ])
+      ])
+   ])
 
 AM_CONDITIONAL(SILC_SIM, test x$sim_support = xtrue)
 if test x$sim_support = xtrue; then
@@ -648,13 +649,14 @@ AC_ARG_WITH(iconv,
     case "${withval}" in
       no)
         AC_MSG_RESULT(no)
-
-        AC_CHECK_HEADERS(iconv.h, AC_CHECK_FUNC(iconv, has_iconv=true))
+        AC_CHECK_HEADERS(iconv.h,
+          [
+            AC_CHECK_FUNC(iconv, has_iconv=true)
+          ])
         check_iconv=false
         ;;
       *)
         AC_MSG_RESULT(yes)
-
         if test -d $withval/include; then
           CPPFLAGS="$CPPFLAGS -I$withval/include"
           CFLAGS="$CFLAGS -I$withval/include"
@@ -662,16 +664,19 @@ AC_ARG_WITH(iconv,
         if test -d $withval/lib; then
           LDFLAGS="$LDFLAGS -L$withval/lib"
         fi
+        ;;
     esac
   ],
   [
     AC_MSG_RESULT(no)
-
-    AC_CHECK_HEADERS(iconv.h, AC_CHECK_FUNCS(iconv,
-                                [
-                                  has_iconv=true
-                                  check_iconv=false
-                                 ]))
+    AC_CHECK_HEADERS(iconv.h,
+      [
+        AC_CHECK_FUNCS(iconv,
+          [
+            has_iconv=true
+            check_iconv=false
+          ])
+      ])
   ])
 
 if test x$check_iconv = xtrue; then
