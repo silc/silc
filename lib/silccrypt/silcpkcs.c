@@ -553,16 +553,33 @@ SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier)
   cp = identifier;
   while (cp) {
     len = strcspn(cp, ",");
+    if (len < 1) {
+      cp = NULL;
+      break;
+    }
     if (len - 1 >= 0 && cp[len - 1] == '\\') {
       while (cp) {
+	if (len + 1 > strlen(cp)) {
+	  cp = NULL;
+	  break;
+	}
 	cp += len + 1;
 	len = strcspn(cp, ",") + len;
+	if (len < 1) {
+	  cp = NULL;
+	  break;
+	}
 	if (len - 1 >= 0 && cp[len - 1] != '\\')
 	  break;
       }
     }
 
+    if (!cp)
+      break;
+
     item = silc_calloc(len + 1, sizeof(char));
+    if (len > strlen(cp))
+      break;
     memcpy(item, cp, len);
 
     if (strstr(item, "UN="))
@@ -579,7 +596,7 @@ SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier)
       ident->country = strdup(item + strcspn(cp, "=") + 1);
 
     cp += len;
-    if (strlen(cp) == 0)
+    if (strlen(cp) < 1)
       cp = NULL;
     else
       cp += 1;
