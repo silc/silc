@@ -3626,7 +3626,8 @@ SILC_SERVER_CMD_FUNC(detach)
 
   if (server->config->detach_disabled) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_DETACH,
-					  SILC_STATUS_ERR_UNKNOWN_COMMAND, 0);
+					  SILC_STATUS_ERR_OPERATION_ALLOWED,
+					  0);
     goto out;
   }
 
@@ -4208,7 +4209,7 @@ SILC_SERVER_CMD_FUNC(users)
     id = silc_id_payload_parse_id(channel_id, channel_id_len, NULL);
     if (!id) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
-					    SILC_STATUS_ERR_NO_CHANNEL_ID, 0);
+					    SILC_STATUS_ERR_BAD_CHANNEL_ID, 0);
       goto out;
     }
   }

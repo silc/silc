@@ -1,3 +1,7 @@
+Tue Nov 12 08:50:12 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed NICK command to not crash if nickname was not sent.
+
 Mon Nov 11 19:32:00 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added Encrypt-Then-MAC order to SILC packet MAC generation.
