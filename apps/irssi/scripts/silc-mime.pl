@@ -22,6 +22,7 @@ use IO::Scalar;
 use IO::File;
 use File::Temp qw/ tempfile /;
 use Sys::Hostname;
+use POSIX qw/ ceil /;
 
 my @mcaps;
 my $magic = new File::MMagic;
@@ -386,17 +387,37 @@ sub cmd_mmsg {
     $is_channel = (lc($is_channel) eq "-channel" ? 1 : 0);
     $sign = (lc($sign) eq "-sign" ? 1 : 0);
 
+    if ($is_channel) {
+      $dest = $server->channel_find($target);
+    } else {
+      $dest = $server->query_find($target);
+    }
+
     
     # 21:27 <@pekka> c0ffee: the core routines will crop the message if it
     #                doesn't fit.. I would use a bit shorter than the MAX_LEN
     # 21:28 <@pekka> c0ffee: -1024 bytes is sufficient
     # 21:28 <@pekka> c0ffee: should be sufficient in all possible cases
     if ((stat($tempfile))[7] < 0xfbff) {
-    
+      $format = ($sign ? "mime_data_send_signed" : "mime_data_send");
+      if ($dest->{type}) {
+        $dest->printformat(MSGLEVEL_CRAP, $format, $type);
+      } else {
+        Irssi::printformat(MSGLEVEL_CRAP, $format, $type);
+      }
+
       unlink $tempfile;
       Irssi::signal_emit("mime-send", $server, \$is_channel,
 			 $target, escape($entity->stringify), \$sign);
     } else {
+
+      $format = ($sign ? "mime_data_multi_signed" : "mime_data_multi");
+      $chunks = ceil((stat $tempfile)[7] / 0xfb00);
+      if ($dest->{type}) {
+        $dest->printformat(MSGLEVEL_CRAP, $format, $type, $chunks);
+      } else {
+        Irssi::printformat(MSGLEVEL_CRAP, $format, $type, $chunks);
+      }
 
       open TFILE, $tempfile;
       $id = sprintf "id-%06d-%08d\@%s", int(rand(65535)), time(), hostname();;
@@ -450,7 +471,12 @@ Irssi::theme_register(['load_mailcap', 'Loading mailcaps from {hilight $0}',
 	'mime_data_received', '{nick $0} sent "{hilight $1}" data message',
 	'mime_data_received_signed', '{nick $0} sent "{hilight $1}" data message (signature {flag_signed})',
 	'mime_data_received_unknown', '{nick $0} sent "{hilight $1}" data message (signature {flag_unknown})',
-	'mime_data_received_failed', '{nick $0} sent "{hilight $1}" data message (signature {flag_failed})']);
+	'mime_data_received_failed', '{nick $0} sent "{hilight $1}" data message (signature {flag_failed})',
+	'mime_data_send', 'sending "{hilight $0}" data message',
+	'mime_data_send_signed', 'sending "{hilight $0}" data message (signature {flag_signed})',
+	'mime_data_multi', 'sending "{hilight $0}" data message ($1 chunks)',
+	'mime_data_multi_signed', 'sending "{hilight $0}" data message ($1 chunks, signaute {flag_signed})']);
+
 
 
 read_mime_database();
