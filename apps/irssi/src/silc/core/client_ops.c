@@ -1302,11 +1302,24 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
     break;
 
   default:
-    server->connection_lost = TRUE;
-    if (server->conn)
-      server->conn->context = NULL;
-    server_disconnect(SERVER(server));
-    break;
+    {
+      char * file;
+
+      file = silc_get_session_filename(server);
+
+      if (silc_file_size(file) > 0)
+        printformat_module("fe-common/silc", server, NULL,
+		           MSGLEVEL_CRAP, SILCTXT_REATTACH_FAILED, file);
+
+      silc_free(file);
+
+      server->connection_lost = TRUE;
+      if (server->conn)
+        server->conn->context = NULL;
+      server_disconnect(SERVER(server));
+
+      break;
+    }
   }
 }
 

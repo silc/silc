@@ -190,6 +190,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "message_data", "{nick $0} sent \"{hilight $1}\" data message: cannot display", 2, { 0, 0 } },
 	{ "stats", "$[25]0: {hilight $1}", 2, { 0, 0 } },
 	{ "reattach", "Resuming old session on {hilight $0}, may take a while ...", 1, { 0 } },
+	{ "reattach_failed", "Resuming session failed, you may want to remove {hilight $0} before the next connection attempt", 1, { 0 } },
 
 	/* File transfer messages */
 	{ NULL, "FileTransfer", 0 },
