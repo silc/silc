@@ -567,7 +567,7 @@ static void silc_client_process_message(SilcClientInternal app)
       silc_client_send_channel_message(app->client, 
 				       app->conn,
 				       app->conn->current_channel, NULL,
-				       data, strlen(data), TRUE);
+				       0, data, strlen(data), TRUE);
     }
   }
 

@@ -36,6 +36,7 @@ void silc_client_send_channel_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
 				      SilcChannelPrivateKey key,
+				      SilcMessageFlags flags,
 				      unsigned char *data, 
 				      unsigned int data_len, 
 				      int force_send)
@@ -98,7 +99,7 @@ void silc_client_send_channel_message(SilcClient client,
     silc_hash_make(client->md5hash, channel->iv, iv_len, channel->iv);
 
   /* Encode the channel payload. This also encrypts the message payload. */
-  payload = silc_channel_message_payload_encode(0, data_len, data, iv_len, 
+  payload = silc_channel_message_payload_encode(flags, data_len, data, iv_len, 
 						channel->iv, cipher, hmac);
 
   /* Get data used in packet header encryption, keys and stuff. */
@@ -233,7 +234,9 @@ void silc_client_channel_message(SilcClient client,
 
   /* Pass the message to application */
   client->ops->channel_message(client, conn, found ? chu->client : NULL,
-			       channel, message);
+			       channel, 
+			       silc_channel_message_get_flags(payload),
+			       message);
 
  out:
   if (id)

@@ -396,6 +396,14 @@ void silc_channel_message_payload_free(SilcChannelMessagePayload payload)
   silc_free(payload);
 }
 
+/* Return flags */
+
+unsigned short 
+silc_channel_message_get_flags(SilcChannelMessagePayload payload)
+{
+  return payload->flags;
+}
+
 /* Return data */
 
 unsigned char *silc_channel_message_get_data(SilcChannelMessagePayload payload,

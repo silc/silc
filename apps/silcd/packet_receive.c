@@ -1130,7 +1130,8 @@ void silc_server_channel_message(SilcServer server,
       sock->type == SILC_SOCKET_TYPE_ROUTER &&
       !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     SilcBuffer chp;
-    unsigned int iv_len, i, data_len;
+    unsigned int iv_len, i;
+    unsigned short data_len, flags;
 
     iv_len = silc_cipher_get_block_len(channel->channel_key);
     if (channel->iv[0] == '\0')
@@ -1140,12 +1141,13 @@ void silc_server_channel_message(SilcServer server,
       silc_hash_make(server->md5hash, channel->iv, iv_len, channel->iv);
     
     /* Encode new payload. This encrypts it also. */
-    SILC_GET16_MSB(data_len, packet->buffer->data);
-    chp = silc_channel_message_payload_encode(data_len, 
-					      packet->buffer->data + 2,
+    SILC_GET16_MSB(flags, packet->buffer->data);
+    SILC_GET16_MSB(data_len, packet->buffer->data + 2);
+    chp = silc_channel_message_payload_encode(flags, data_len, 
+					      packet->buffer->data + 4,
 					      iv_len, channel->iv,
 					      channel->channel_key,
-					      channel->hmac, server->rng);
+					      channel->hmac);
     silc_buffer_put(packet->buffer, chp->data, chp->len);
     silc_buffer_free(chp);
   }

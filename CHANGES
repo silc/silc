@@ -1,3 +1,15 @@
+Wed Mar 28 23:55:54 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new local command ME to the client.  It is used to send
+	  message to a channel with SILC_MESSAGE_FLAG_ACTION to indicate
+	  some action.  Affected file silc/local_command.[ch].
+
+	* Changed channel_message and private_message client operations 
+	  to deliver the message flags to the application.  Added also
+	  the `flags' arguments to the silc_client_send_channel_message
+	  and silc_client_send_private_message functions.  Affected file
+	  silcapi.h.
+
 Wed Mar 28 20:50:47 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Redefined the Private Message Payload to support private message
@@ -18,7 +30,7 @@ Wed Mar 28 20:50:47 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Defined some of the message (for channel and private message)
 	  flags.  Updated the protocol specs and added the flags to the
-	  lib/silccore/silcchannel.h.
+	  lib/silccore/silcchannel.h.  The type is SilcMessageFlags.
 
 Wed Mar 28 15:52:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 

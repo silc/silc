@@ -599,8 +599,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  /* Get authentication data */
 	  silc_buffer_pull(ctx->packet->buffer, 4);
 	  ret = silc_buffer_unformat(ctx->packet->buffer,
-				     SILC_STR_UI_XNSTRING(&auth_data, 
-							  payload_len),
+				     SILC_STR_UI_XNSTRING_ALLOC(&auth_data, 
+								payload_len),
 				     SILC_STR_END);
 	  if (ret == -1) {
 	    SILC_LOG_DEBUG(("Bad payload in authentication packet"));
@@ -649,6 +649,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
+	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      protocol->execute(server->timeout_queue, 0, 
 				protocol, fd, 0, 300000);
@@ -669,6 +670,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
+	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      protocol->execute(server->timeout_queue, 0, 
 				protocol, fd, 0, 300000);
@@ -678,6 +680,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_DEBUG(("No configuration for remote connection"));
 	    SILC_LOG_ERROR(("Remote connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
+	    silc_free(auth_data);
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    protocol->execute(server->timeout_queue, 0, 
 			      protocol, fd, 0, 300000);
@@ -715,12 +718,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
+	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      protocol->execute(server->timeout_queue, 0, 
 				protocol, fd, 0, 300000);
 	      return;
 	      break;
-	      
+
 	    case SILC_AUTH_PUBLIC_KEY:
 	      /* Public key authentication */
 	      SILC_LOG_DEBUG(("Public key authentication"));
@@ -735,6 +739,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
+	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      protocol->execute(server->timeout_queue, 0, 
 				protocol, fd, 0, 300000);
@@ -747,6 +752,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    protocol->execute(server->timeout_queue, 0, 
 			      protocol, fd, 0, 300000);
+	    silc_free(auth_data);
 	    return;
 	  }
 	}
@@ -781,6 +787,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      /* Authentication failed */
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
+	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      protocol->execute(server->timeout_queue, 0, 
 				protocol, fd, 0, 300000);
@@ -798,9 +805,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 							  
 	      if (ret)
 		break;
-
+	      
 	      SILC_LOG_ERROR(("Authentication failed"));
 	      SILC_LOG_DEBUG(("Authentication failed"));
+	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	      protocol->execute(server->timeout_queue, 0, 
 				protocol, fd, 0, 300000);
@@ -810,6 +818,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_DEBUG(("No configuration for remote connection"));
 	    SILC_LOG_ERROR(("Remote connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
+	    silc_free(auth_data);
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    protocol->execute(server->timeout_queue, 0, 
 			      protocol, fd, 0, 300000);
@@ -817,6 +826,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  }
 	}
 	
+	silc_free(auth_data);
+
 	/* Save connection type. This is later used to create the
 	   ID for the connection. */
 	ctx->conn_type = conn_type;

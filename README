@@ -315,6 +315,10 @@ SILC Commands
 			and port of the remote client's key agreement
 			server.
 
+	/ME	<channel> <action message>
+
+		This command is used to send an action to the channel.
+		This equals to CTCP's ACTION (IRC's /ME) command.
 
 Features
 ========

@@ -35,6 +35,7 @@
 void silc_client_send_private_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry,
+				      SilcMessageFlags flags,
 				      unsigned char *data, 
 				      unsigned int data_len, 
 				      int force_send)
@@ -48,7 +49,7 @@ void silc_client_send_private_message(SilcClient client,
   SILC_LOG_DEBUG(("Sending private message"));
 
   /* Encode private message payload */
-  buffer = silc_private_message_payload_encode(0, strlen(conn->nickname),
+  buffer = silc_private_message_payload_encode(flags, strlen(conn->nickname),
 					       conn->nickname,
 					       data_len, data,
 					       client_entry->send_key);
@@ -172,7 +173,8 @@ void silc_client_private_message(SilcClient client,
   }
 
   /* Pass the private message to application */
-  client->ops->private_message(client, conn, remote_client, 
+  client->ops->private_message(client, conn, remote_client,
+			       silc_private_message_get_flags(payload),
 			       silc_private_message_get_message(payload, 
 								NULL));
 
@@ -185,6 +187,7 @@ void silc_client_private_message(SilcClient client,
 
     /* Send the away message */
     silc_client_send_private_message(client, conn, remote_client,
+				     SILC_MESSAGE_FLAG_AUTOREPLY,
 				     conn->away->away,
 				     strlen(conn->away->away), TRUE);
   }

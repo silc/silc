@@ -32,9 +32,9 @@
 /* Private Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcPrivateMessagePayloadStruct {
+  unsigned short flags;
   unsigned short nickname_len;
   unsigned char *nickname;
-  unsigned short flags;
   unsigned short message_len;
   unsigned char *message;
 };
@@ -59,9 +59,9 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
 
   /* Parse the Private Message Payload. Ignore the padding. */
   ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI_SHORT(&new->flags),
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->nickname, 
 							 &new->nickname_len),
-			     SILC_STR_UI_SHORT(&new->flags),
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->message, 
 							 &new->message_len),
 			     SILC_STR_END);
@@ -86,9 +86,9 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
    the cipher is provided the packet is also encrypted here.  It is provided
    if the private message private keys are used. */
 
-SilcBuffer silc_private_message_payload_encode(unsigned int nickname_len,
+SilcBuffer silc_private_message_payload_encode(unsigned short flags,
+					       unsigned int nickname_len,
 					       unsigned char *nickname,
-					       unsigned short flags,
 					       unsigned short data_len,
 					       unsigned char *data,
 					       SilcCipher cipher)
@@ -100,7 +100,7 @@ SilcBuffer silc_private_message_payload_encode(unsigned int nickname_len,
 
   SILC_LOG_DEBUG(("Encoding private message payload"));
 
-  len = 2 + nickname_len + 4 + data_len;
+  len = 4 + nickname_len + 2 + data_len;
 
   if (cipher) {
     /* Calculate length of padding. */
@@ -117,9 +117,9 @@ SilcBuffer silc_private_message_payload_encode(unsigned int nickname_len,
   /* Encode the Channel Message Payload */
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
   silc_buffer_format(buffer, 
+		     SILC_STR_UI_SHORT(flags),
 		     SILC_STR_UI_SHORT(nickname_len),
 		     SILC_STR_UI_XNSTRING(nickname, nickname_len),
-		     SILC_STR_UI_SHORT(flags),
 		     SILC_STR_UI_SHORT(data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_UI_XNSTRING(pad, pad_len),
@@ -147,6 +147,14 @@ void silc_private_message_payload_free(SilcPrivateMessagePayload payload)
   silc_free(payload);
 }
 
+/* Return flags */
+
+unsigned short 
+silc_private_message_get_flags(SilcPrivateMessagePayload payload)
+{
+  return payload->flags;
+}
+
 /* Return nickname */
 
 unsigned char *
@@ -169,12 +177,4 @@ silc_private_message_get_message(SilcPrivateMessagePayload payload,
     *message_len = payload->message_len;
 
   return payload->message;
-}
-
-/* Return flags */
-
-unsigned short 
-silc_private_message_get_flags(SilcPrivateMessagePayload payload)
-{
-  return payload->flags;
 }

@@ -78,6 +78,8 @@ SilcBuffer silc_channel_message_payload_encode(unsigned short flags,
 					       SilcCipher cipher,
 					       SilcHmac hmac);
 void silc_channel_message_payload_free(SilcChannelMessagePayload payload);
+unsigned short 
+silc_channel_message_get_flags(SilcChannelMessagePayload payload);
 unsigned char *silc_channel_message_get_data(SilcChannelMessagePayload payload,
 				     unsigned int *data_len);
 unsigned char *silc_channel_message_get_mac(SilcChannelMessagePayload payload);

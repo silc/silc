@@ -1436,8 +1436,8 @@ represents the Channel Message Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         Message Length        |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|            Flags              |         Message Length        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
 ~                         Message Data                          ~
 |                                                               |
@@ -1463,6 +1463,39 @@ Figure 12:  Channel Message Payload
 
 
 .in 6
+o Flags (2 bytes) - Includes the flags of the channel
+  messages.  The flags can indicate a reason or purpose
+  for the channel message.  Note, that the Private Message
+  Payload use these same flags for the same purpose.  The
+  following flags are defined:
+
+  0x0000  SILC_MESSAGE_FLAG_NONE
+
+          No specific flags set.
+
+  0x0001  SILC_MESSAGE_FLAG_AUTREPLY
+
+          This message is an automatic reply to a earlier
+          received message.
+
+  0x0002  SILC_MESSAGE_FLAG_NOREPLY
+
+          There should not be reply messages to this
+          message.
+
+  0x0004  SILC_MESSAGE_FLAG_ACTION
+
+          The sender is performing an action and the message
+          is the indication of the action.
+
+  0x0008 - 0x0200 RESERVED
+
+          Reserved for future flags
+
+  0x0400 - 0x8000 PRIVATE RANGE
+
+	  Private range for free use.
+
 o Message Length (2 bytes) - Indicates the length of the
   the Message Data field in the payload, not including any 
   other field.
@@ -1634,14 +1667,14 @@ diagram represents the Private Message Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Nickname Length        |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|            Flags              |        Nickname Length        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
 ~                            Nickname                           ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|            Flags              |      Message Data Length      |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Message Data Length      |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
 |                                                               |
 ~                          Message Data                         ~
 |                                                               |
@@ -1657,6 +1690,13 @@ Figure 14:  Private Message Payload
 
 
 .in 6
+o Flags (2 bytes) - This field includes the flags of the
+  private message.  They can indicate a different reason or
+  purpose for the private message.  See the section 2.3.9
+  Channel Message Payload for defined flags.  Note, that
+  the Channel Message Payload use the same flags for the
+  same purpose.
+
 o Nickname Length (2 bytes) - Indicates the length of the
   Nickname field, not including any other field.
 
@@ -1667,11 +1707,6 @@ o Nickname (variable length) - Nickname of the sender of the
   client should verify that the nickname sent here belongs 
   to the Client ID in the SILC Packet Header.  This nickname 
   is merely provided to be displayed by the client.
-
-o Flags (2 bytes) - This field includes the flags of the
-  private message.  They can indicate a different reason or
-  purpose for the private message.  See section XXX for the
-  defined flags.
 
 o Message Data Length (2 bytes) - Indicates the length of the
   Message Data field, not includes any other field.
