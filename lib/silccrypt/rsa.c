@@ -4,7 +4,7 @@
  *
  * Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
  *
- * Copyright (C) 1997 - 2000 Pekka Riikonen
+ * Copyright (C) 1997 - 2001 Pekka Riikonen
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
  *	Public key exponent:
  *	e   relatively prime to (p-1) * (q-1)
  *	Private key exponent:
- *	d = e ^ -1 mod ((p-1) * (q-1))
+ *	d = e ^ -1 mod lcm(((p-1) * (q-1)))
  *
  *	Encryption:
  *	c = m ^ e mod n
@@ -44,6 +44,17 @@
  *
  */
 /* $Id$ */
+
+/*
+   ChangeLog
+
+   o Mon Feb 12 11:20:32 EET 2001  Pekka
+
+     Changed RSA private exponent generation to what PKCS #1 suggests.  We
+     try to find the smallest possible d by doing modinv(e, lcm(phi)) instead
+     of modinv(e, phi).  Note: this is not security fix but optimization.
+
+*/
 
 #include "silcincludes.h"
 #include "rsa.h"
@@ -460,7 +471,7 @@ void rsa_generate_keys(RsaKey *key, unsigned int bits,
 		       SilcInt *p, SilcInt *q)
 {
   SilcInt phi, hlp;
-  SilcInt dq;
+  SilcInt div, lcm;
   SilcInt pm1, qm1;
   
   /* Initialize variables */
@@ -471,7 +482,8 @@ void rsa_generate_keys(RsaKey *key, unsigned int bits,
   silc_mp_init(&key->d);
   silc_mp_init(&phi);
   silc_mp_init(&hlp);
-  silc_mp_init(&dq);
+  silc_mp_init(&div);
+  silc_mp_init(&lcm);
   silc_mp_init(&pm1);
   silc_mp_init(&qm1);
 
@@ -500,14 +512,15 @@ void rsa_generate_keys(RsaKey *key, unsigned int bits,
     goto retry_e;
   }
   
-  /* Find d, the private exponent. First we do phi / 2, to get it a 
-     bit smaller */
-  silc_mp_div_ui(&dq, &phi, 2);
-  silc_mp_modinv(&key->d, &key->e, &dq);
+  /* Find d, the private exponent. */
+  silc_mp_gcd(&div, &pm1, &qm1);
+  silc_mp_fdiv_q(&lcm, &phi, &div);
+  silc_mp_modinv(&key->d, &key->e, &lcm);
   
   silc_mp_clear(&phi);
   silc_mp_clear(&hlp);
-  silc_mp_clear(&dq);
+  silc_mp_clear(&div);
+  silc_mp_clear(&lcm);
   silc_mp_clear(&pm1);
   silc_mp_clear(&qm1);
 }
