@@ -1230,7 +1230,7 @@ typedef void (*SilcGetClientCallback)(SilcClient client,
  *    completion callback will be called when the client entries has been
  *    found.  After the server returns the client information it is cached
  *    and can be accesses locally at a later time.  The resolving is done
- *    with IDENTIFY command.
+ *    with IDENTIFY command.  The `server' may be NULL.
  *
  * NOTES
  *

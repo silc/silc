@@ -174,9 +174,10 @@ parsed with silc_argument_payload_parse function.
 <tr>
 <td><small>SILC_COMMAND_KILL</td>
 <td><small>
-Called after killing a client.  There is no arguments to this reply.
+Called after killing a client.  Returns the client that was killed.
+The `client_entry' may be NULL.
 </td>
-<td width="50%"><small>none
+<td width="50%"><small>SilcClientEntry client_entry
 </td>
 </tr>
 
@@ -297,9 +298,10 @@ SilcClientEntry target_client
 <tr>
 <td><small>SILC_COMMAND_KICK</td>
 <td><small>
-Called after kicking a client.  There is no arguments to this reply.
+Called after kicking a client.  Returns the client that was kicked from
+the 'channel'.  The `client_entry' and 'channel' may be NULL.
 </td>
-<td width="50%"><small>none
+<td width="50%"><small>SilcChannelEntry channel, SilcClientEntry client_entry
 </td>
 </tr>
 
