@@ -12,15 +12,8 @@ help is really appreciated - and needed.
 							- Pekka
 
 
-New features TODO
-=================
-
- o Optimization in general.  I have not focused to program optimized code
-   in many circumstances.  It has been more important to get this up and
-   working.  A lot must be optimized especially the ID cache.  Instead of
-   using lists some hash tables should be used.  The searching by ID and
-   such must be made a lot faster.  If someone would like dedicate their
-   efforts purely to generate optimized code I'd be appreaciated.
+TODO General
+============
 
  o We should replace all short, int, long, unsigned short, unsigned int,
    unsigned long with some pre-defined datatypes that really are what
@@ -28,39 +21,17 @@ New features TODO
    what we could use or maybe SilcInt16, SilcUInt16 etc.  Also, boolean
    datatype should be defined.
 
- o Add boolean (or bool), typedef of unsigned char.
-
- o More platform supports should be added.  The code is pretty much
-   generic but there are some parts that require porting (SIM).  Also, 
-   some support for different platforms is needed into configure.in.
-
- o SILC requires currently GCC to work because we use GCC specific 
-   compilation options.  Generally any compiler that supports inline
-   functions and can build shared libraries (for SIMs) should work.  
-   These cases should be included into configure.in.
-
- o Extended SIM (SILC Module) support.  Currently only SILC Cipher API
-   and SILC Hash API may be used as SIM's.  What I have in mind is to
-   have extended support for SIM's so that basically any SILC API could
-   be used as SIM's.  This would open tremendous possiblities but
-   opens also issues on security that needs to be dealt with.
-
-   Some sort of SIM compilation environment should be defined so that
-   the SIM's could use SILC specific symbols from the modules (which they
-   cannot do currently).  In the future modules could add new features
-   to SILC easily with this support.  I'm more thinking this from client's
-   perspective to add new features to client (such as IRC support as SIM)
-   but server should have the support as well.  Anyhow, this is an 
-   interesting feature...
-
-   This maybe post 1.0 task - dunno.
-
- o SIM support for other platforms than just for Linux.  Apache has
-   example code (code that we could use directly pretty easily) for
-   other platforms.
 
 TODO In SILC Client Library
 ===========================
+
+ o TODO in commands (silc/local_command.c, lib/silcclient/command.c and
+		     silc/silclient/command_reply.c):
+
+	o Local command to handle private message keys is not done
+	o Local command to handle channel private keys is not done
+	o Local command to handle key agreement protocol is not done
+	o RESTART command is not implemented
 
  o Client library crashes if for example server timeouts protocol
    execution and disconnects the client.  The client, on the other hand
@@ -68,6 +39,18 @@ TODO In SILC Client Library
    the EOF.  Reason for this is that the clien library does not handle
    the SilcSocketConnection reference counter at all.  This must be
    fixed.
+
+ o Logic for handling multiple same nicknames for example in private
+   message sending.  I guess the logic is done in server side but is
+   missing from client.
+
+ o I guess, public key authentication (when connecting to a server)
+   is not working currently.  It is just matter of loading the keys
+   from file and using them (see corresponding code in server, it should
+   support public key authentication already).
+
+ o Connection Authentication request resolving is missing and must be
+   done.  This is required by the protocol.
 
  o Add client library parameters or options that handle what kind of
    messages the library should print out (using `say' client operation,
@@ -83,18 +66,6 @@ TODO In SILC Client Library
 
  o Input line on UI is buggy.  Cursor movement etc bugs.  Too lazy to
    fix it.
-
- o Logic for handling multiple same nicknames for example in private
-   message sending.  I guess the logic is done in server side but is
-   missing from client.
-
- o I guess, public key authentication (when connecting to a server)
-   is not working currently.  It is just matter of loading the keys
-   from file and using them (see corresponding code in server, it should
-   support public key authentication already).
-
- o Connection Authentication request resolving is missing and must be
-   done.  This is required by the protocol.
 
 
 TODO In SILC Server
@@ -165,23 +136,21 @@ TODO In SILC Server
 TODO In SILC Libraries
 ======================
 
- o Rewrite the task system.  I made it too complex and too "neat" and
-   it really should be rewritten.  We don't need priorities really, one
-   priority is enough.  This will simplify a lot the task system.
-
  o Implement PFS (Perfect Forward Secrecy) flag in SKE (and in client and
    server, actually).  If PFS is set, re-key must cause new key exchange.
    This is required by the SILC protocol.
 
  o Re-key in general is actually missing (from everywhere) and must be done.
 
- o ID Cache expiry does not work.
-
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
    defined.  zlib package is already included into the lib dir (in CVS,
    not in distribution), but it is not used yet, and it requires some
    tweaking on the Makefiles (we want static lib not shared).
+
+ o Rewrite the task system.  I made it too complex and too "neat" and
+   it really should be rewritten.  We don't need priorities really, one
+   priority is enough.  This will simplify a lot the task system.
 
  o SIM support for SILC PKCS API needs to made so that they could be
    used as SIM's.  At the same time some work is required on prime
@@ -198,20 +167,6 @@ TODO In SILC Libraries
    towards select() because it may run timeout tasks before select() and
    after select().  If it is found to be unfair the timeout task running
    before select() should probably be removed.
-
-
-Other Things TODO
-=================
-
- o Write manuals for server.
-
- o Write manuals for client.
-
- o Write SILC Library Reference manual.  This would include all the SILC
-   API's with simple examples how the functions are to be used.  This is
-   pretty easy to create by taking all the functions plus their comments
-   from source/header files.  However, same sort of reference manual 
-   should be written for client and server as well.
 
 
 TODO After 1.0
