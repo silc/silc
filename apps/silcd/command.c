@@ -4879,9 +4879,9 @@ SILC_SERVER_CMD_FUNC(getkey)
   SilcServerID *server_id = NULL;
   SilcIDPayload idp = NULL;
   uint16 ident = silc_command_get_ident(cmd->payload);
-  unsigned char *tmp;
-  uint32 tmp_len;
-  SilcBuffer pk;
+  unsigned char *tmp, *pkdata;
+  uint32 tmp_len, pklen;
+  SilcBuffer pk = NULL;
   SilcIdType id_type;
 
   SILC_LOG_DEBUG(("Start"));
@@ -4946,7 +4946,7 @@ SILC_SERVER_CMD_FUNC(getkey)
       return;
     }
 
-    if (!client && cmd->pending) {
+    if (!client) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
 					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
       goto out;
@@ -4963,7 +4963,8 @@ SILC_SERVER_CMD_FUNC(getkey)
 		       SILC_STR_UI_XNSTRING(tmp, tmp_len),
 		       SILC_STR_END);
     silc_free(tmp);
-
+    pkdata = pk->data;
+    pklen = pk->len;
   } else if (id_type == SILC_ID_SERVER) {
     server_id = silc_id_payload_get_id(idp);
 
@@ -4975,11 +4976,12 @@ SILC_SERVER_CMD_FUNC(getkey)
       server_entry = silc_idlist_find_server_by_id(server->global_list, 
 						   server_id, TRUE, NULL);
     
-    if ((!server_entry && !cmd->pending && !server->standalone) ||
-	(server_entry && !server_entry->connection && !cmd->pending &&
-	 !server->standalone) ||
-	(server_entry && !server_entry->data.public_key && !cmd->pending &&
-	 !server->standalone)) {
+    if (server_entry != server->id_entry &&
+	((!server_entry && !cmd->pending && !server->standalone) ||
+	 (server_entry && !server_entry->connection && !cmd->pending &&
+	  !server->standalone) ||
+	 (server_entry && !server_entry->data.public_key && !cmd->pending &&
+	  !server->standalone))) {
       SilcBuffer tmpbuf;
       uint16 old_ident;
       
@@ -5004,36 +5006,46 @@ SILC_SERVER_CMD_FUNC(getkey)
       return;
     }
 
-    if (!server_entry && cmd->pending) {
+    if (!server_entry) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
 					    SILC_STATUS_ERR_NO_SUCH_SERVER_ID);
       goto out;
     }
 
-    /* The client is locally connected, just get the public key and
-       send it back. */
-    tmp = silc_pkcs_public_key_encode(server_entry->data.public_key, &tmp_len);
-    pk = silc_buffer_alloc(4 + tmp_len);
-    silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
-    silc_buffer_format(pk,
+    /* If they key does not exist then do not send it, send just OK reply */
+    if (!server_entry->data.public_key) {
+      pkdata = NULL;
+      pklen = 0;
+    } else {
+      tmp = silc_pkcs_public_key_encode(server_entry->data.public_key, 
+					&tmp_len);
+      pk = silc_buffer_alloc(4 + tmp_len);
+      silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
+      silc_buffer_format(pk,
 		       SILC_STR_UI_SHORT(tmp_len),
-		       SILC_STR_UI_SHORT(SILC_SKE_PK_TYPE_SILC),
-		       SILC_STR_UI_XNSTRING(tmp, tmp_len),
-		       SILC_STR_END);
-    silc_free(tmp);
+			 SILC_STR_UI_SHORT(SILC_SKE_PK_TYPE_SILC),
+			 SILC_STR_UI_XNSTRING(tmp, tmp_len),
+			 SILC_STR_END);
+      silc_free(tmp);
+      pkdata = pk->data;
+      pklen = pk->len;
+    }
   } else {
     goto out;
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_GETKEY,
-						SILC_STATUS_OK, ident, 2,
+						SILC_STATUS_OK, ident, 
+						pkdata ? 2 : 1,
 						2, tmp, tmp_len,
-						3, pk->data, pk->len);
+						3, pkdata, pklen);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
-  silc_buffer_free(pk);
+
+  if (pk)
+    silc_buffer_free(pk);
 
  out:
   if (idp)

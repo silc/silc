@@ -1,3 +1,15 @@
+Fri Aug 17 23:07:45 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the getkey command handling in the server.  Send just
+	  empty OK reply to the sender if the key could not be fetched
+	  (but everything else was ok, like the key just was not available).
+	  Changed the public key parameter to optional in the protocol
+	  specs so that empty OK reply can be sent.  Affected file
+	  silcd/command.c.
+
+	  Added a message to Irssi SILC client to tell to user if the
+	  server did not return a public key.
+
 Tue Aug 14 07:29:27 CEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a channel key regeneration bug.  It registered new

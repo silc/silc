@@ -1545,7 +1545,7 @@ List of all defined commands in SILC follows.
 
         Max Arguments:  3
             Arguments:  (1) <Status Payload>      (2) <ID Payload>
-                        (3) <Public Key Payload>
+                        (3) [<Public Key Payload>]
 
         This command replies with the client's or server's ID and with
         the <Public Key Payload>.

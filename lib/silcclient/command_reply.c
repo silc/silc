@@ -1935,21 +1935,19 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
 
   /* Get the public key payload */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
-  if (!tmp)
-    goto out;
-
-  /* Decode the public key */
-
-  SILC_GET16_MSB(pk_len, tmp);
-  SILC_GET16_MSB(type, tmp + 2);
-  pk = tmp + 4;
-
-  if (type != SILC_SKE_PK_TYPE_SILC)
-    goto out;
-
-  if (!silc_pkcs_public_key_decode(pk, pk_len, &public_key))
-    goto out;
-
+  if (tmp) {
+    /* Decode the public key */
+    SILC_GET16_MSB(pk_len, tmp);
+    SILC_GET16_MSB(type, tmp + 2);
+    pk = tmp + 4;
+    
+    if (type != SILC_SKE_PK_TYPE_SILC)
+      goto out;
+    
+    if (!silc_pkcs_public_key_decode(pk, pk_len, &public_key))
+      goto out;
+  } 
+   
   id_type = silc_id_payload_get_type(idp);
   if (id_type == SILC_ID_CLIENT) {
     /* Received client's public key */

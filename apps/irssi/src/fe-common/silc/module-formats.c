@@ -88,6 +88,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "pubkey_no_match", "{hilight $0} key does not match with your local copy", 1, { 0 } },
 	{ "pubkey_maybe_expired", "It is possible that the key has expired or changed", 0 },
 	{ "pubkey_mitm_attach", "It is also possible that someone is performing man-in-the-middle attack", 0 },
+	{ "getkey_notkey", "Server did not return any public key", 0 },
 
 	/* Misc messages */
 	{ NULL, "Misc", 0 },
