@@ -9,7 +9,7 @@ The library has been designed to be complete SILC client without actual
 user interface.  The library provides the API for the appliation which
 it can use to implement generally whatever user interface it wants.  The
 SILC Client Library recides in the lib/silcclient/ directory.  It uses
-common and core compomnent of SILC protocol from the lib/silccore, SKE
+common and core component of SILC protocol from the lib/silccore, SKE
 from lib/silcske and general utility routines from lib/silcutil.
 
 <br />&nbsp;<br />
@@ -317,7 +317,7 @@ int main()
 
 	/* Allocate SILC client. The `silc_version_string' is defined
 	   in includes/version.h file. */
-	client = silc_client_alloc(&ops, NULL, silc_version_string);
+	client = silc_client_alloc(&ops, NULL, NULL, silc_version_string);
 
 	/* Register default ciphers, pkcs, hash funtions and hmacs. */
 	silc_cipher_register_default();
