@@ -10,6 +10,13 @@
 /* Default configuration file */
 #undef SILC_SERVER_CONFIG_FILE
 
+/* Default paths */
+#undef SILC_ETCDIR
+#undef SILC_HELPDIR
+#undef SILC_DOCDIR
+#undef SILC_MODULESDIR
+#undef SILC_LOGSDIR
+
 /* SIM (SILC Module) support */
 #undef SILC_SIM
 #undef HAVE_RTLD_NOW

@@ -1,3 +1,11 @@
+Sun Jun 10 16:08:35 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added the server's public key sving and verification to the
+	  server when performing the SKE.  This was missing and the
+	  remote server's (or router's) public key was accepted without
+	  checking whether we have it previously or trust it at all.
+	  Affected file silcd/protocol.c.
+
 Sat Jun  9 20:17:30 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Check in the silc_server_timeout_remote if protocol is active

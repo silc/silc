@@ -35,6 +35,150 @@ extern char *silc_version_string;
  * Key Exhange protocol functions
  */
 
+static bool 
+silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
+				SilcSocketType conn_type,
+				unsigned char *pk, uint32 pk_len, 
+				SilcSKEPKType pk_type)
+{
+  char file[256], filename[256], *fingerprint;
+  struct stat st;
+
+  if (pk_type != SILC_SKE_PK_TYPE_SILC) {
+    SILC_LOG_WARNING(("We don't support %s (%s) port %d public key type %d", 
+		      sock->hostname, sock->ip, sock->port, pk_type));
+    return FALSE;
+  }
+
+  /* Accept client keys without verification */
+  if (conn_type == SILC_SOCKET_TYPE_CLIENT) {
+    SILC_LOG_DEBUG(("Accepting client public key without verification"));
+    return TRUE;
+  }
+
+  memset(filename, 0, sizeof(filename));
+  memset(file, 0, sizeof(file));
+  snprintf(file, sizeof(file) - 1, "serverkey_%s_%d.pub", sock->hostname, 
+	   sock->port);
+  snprintf(filename, sizeof(filename) - 1, SILC_ETCDIR "/serverkeys/%s", 
+	   file);
+
+  /* Create serverkeys directory if it doesn't exist. */
+  if (stat(SILC_ETCDIR "/serverkeys", &st) < 0) {
+    /* If dir doesn't exist */
+    if (errno == ENOENT) {  
+      if (mkdir(SILC_ETCDIR "/serverkeys", 0755) < 0) {
+	SILC_LOG_ERROR(("Couldn't create `%s' directory\n", 
+			SILC_ETCDIR "/serverkeys"));
+	return TRUE;
+      }
+    } else {
+      SILC_LOG_ERROR(("%s\n", strerror(errno)));
+      return TRUE;
+    }
+  }
+
+  /* Take fingerprint of the public key */
+  fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+  SILC_LOG_DEBUG(("Received server %s (%s) port %d public key (%s)", 
+		  sock->hostname, sock->ip, sock->port, fingerprint));
+  silc_free(fingerprint);
+
+  /* Check whether this key already exists */
+  if (stat(filename, &st) < 0) {
+    /* We don't have it, then cache it. */
+    SILC_LOG_DEBUG(("New public key from server"));
+
+    silc_pkcs_save_public_key_data(filename, pk, pk_len, 
+				   SILC_PKCS_FILE_PEM);
+    return TRUE;
+  } else {
+    /* The key already exists, verify it. */
+    SilcPublicKey public_key;
+    unsigned char *encpk;
+    uint32 encpk_len;
+
+    SILC_LOG_DEBUG(("We have the public key saved locally"));
+
+    /* Load the key file */
+    if (!silc_pkcs_load_public_key(filename, &public_key, 
+				   SILC_PKCS_FILE_PEM))
+      if (!silc_pkcs_load_public_key(filename, &public_key, 
+				     SILC_PKCS_FILE_BIN)) {
+	SILC_LOG_WARNING(("Could not load local copy of the %s (%s) port %d "
+			  "server public key", sock->hostname, sock->ip, 
+			  sock->port));
+
+	/* Save the key for future checking */
+	unlink(filename);
+	silc_pkcs_save_public_key_data(filename, pk, pk_len,
+				       SILC_PKCS_FILE_PEM);
+	return TRUE;
+      }
+  
+    /* Encode the key data */
+    encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
+    if (!encpk) {
+      SILC_LOG_WARNING(("Local copy of the server %s (%s) port %d public key "
+			"is malformed", sock->hostname, sock->ip, sock->port));
+
+      /* Save the key for future checking */
+      unlink(filename);
+      silc_pkcs_save_public_key_data(filename, pk, pk_len,
+				     SILC_PKCS_FILE_PEM);
+      return TRUE;
+    }
+
+    if (memcmp(encpk, pk, encpk_len)) {
+      SILC_LOG_WARNING(("%s (%s) port %d server public key does not match "
+			"with local copy", sock->hostname, sock->ip, 
+			sock->port));
+      SILC_LOG_WARNING(("It is possible that the key has expired or changed"));
+      SILC_LOG_WARNING(("It is also possible that some one is performing "
+			"man-in-the-middle attack"));
+      SILC_LOG_WARNING(("Will not accept the server %s (%s) port %d public "
+			"key",
+			sock->hostname, sock->ip, sock->port));
+      return FALSE;
+    }
+
+    /* Local copy matched */
+    return TRUE;
+  }
+}
+
+/* Callback that is called when we have received KE2 payload from
+   responder. We try to verify the public key now. */
+
+static void 
+silc_server_protocol_ke_verify_key(SilcSKE ske,
+				   unsigned char *pk_data,
+				   uint32 pk_len,
+				   SilcSKEPKType pk_type,
+				   void *context,
+				   SilcSKEVerifyCbCompletion completion,
+				   void *completion_context)
+{
+  SilcProtocol protocol = (SilcProtocol)context;
+  SilcServerKEInternalContext *ctx = 
+    (SilcServerKEInternalContext *)protocol->context;
+  SilcServer server = (SilcServer)ctx->server;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (silc_verify_public_key_internal(server, ctx->sock, 
+				      (ctx->responder == FALSE ?
+				       SILC_SOCKET_TYPE_ROUTER:
+				       ctx->sconfig ? SILC_SOCKET_TYPE_SERVER :
+				       ctx->rconfig ? SILC_SOCKET_TYPE_ROUTER :
+				       SILC_SOCKET_TYPE_CLIENT),
+				      pk_data, pk_len, pk_type))
+    completion(ske, SILC_SKE_STATUS_OK, completion_context);
+  else
+    completion(ske, SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY, 
+	       completion_context);
+}
+
 /* Packet sending callback. This function is provided as packet sending
    routine to the Key Exchange functions. */
 
@@ -199,12 +343,13 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 
 /* Callback that is called by the SKE to indicate that it is safe to
    continue the execution of the protocol. This is used only if we are
-   initiator.  Is given as argument to the silc_ske_initiator_finish
-   function. This is called due to the fact that the public key verification
-   process is asynchronous and we must not continue the protocl until
-   the public key has been verified and this callback is called. */
+   initiator.  Is given as argument to the silc_ske_initiator_finish or
+   silc_ske_responder_phase_2 functions. This is called due to the fact
+   that the public key verification process is asynchronous and we must
+   not continue the protocl until the public key has been verified and
+   this callback is called. */
 
-static void silc_server_protocol_ke_finish(SilcSKE ske, void *context)
+static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
   SilcServerKEInternalContext *ctx = 
@@ -226,11 +371,20 @@ static void silc_server_protocol_ke_finish(SilcSKE ske, void *context)
 
   /* Send Ok to the other end. We will end the protocol as responder
      sends Ok to us when we will take the new keys into use. */
-  if (ctx->responder == FALSE)
+  if (ctx->responder == FALSE) {
     silc_ske_end(ctx->ske, silc_server_protocol_ke_send_packet, context);
 
-  /* End the protocol on the next round */
-  protocol->state = SILC_PROTOCOL_STATE_END;
+    /* End the protocol on the next round */
+    protocol->state = SILC_PROTOCOL_STATE_END;
+  }
+
+  /* Advance protocol state and call the next state if we are responder. 
+     This happens when this callback was sent to silc_ske_responder_phase_2
+     function. */
+  if (ctx->responder == TRUE) {
+    protocol->state++;
+    silc_protocol_execute(protocol, server->timeout_queue, 0, 100000);
+  }
 }
 
 /* Performs key exchange protocol. This is used for both initiator
@@ -359,15 +513,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       if (ctx->responder == TRUE) {
 	/* Process the received Key Exchange 1 Payload packet from
 	   the initiator. This also creates our parts of the Diffie
-	   Hellman algorithm. */
-	/* XXX TODO: If mutual authentication flag is set then the
-	   verify_key callback should be set to verify the remote ends
-	   public key!! */
-	/* XXX TODO: when the verify_key is set then the `callback'
-	   must be set as well as the verify_key is asynchronous
-	   (take a look to silc_ske_initiator_finish for example. */
-	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
-					    NULL, NULL, NULL, NULL);
+	   Hellman algorithm. The silc_server_protocol_ke_continue
+	   will be called after the public key has been verified. */
+	status = 
+	  silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
+				     silc_server_protocol_ke_verify_key, 
+				     context, 
+				     silc_server_protocol_ke_continue, 
+				     context);
       } else {
 	/* Call the Phase-2 function. This creates Diffie Hellman
 	   key exchange parameters and sends our public part inside
@@ -378,6 +531,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 				     server->private_key,
 				     silc_server_protocol_ke_send_packet,
 				     context);
+	protocol->state++;
       }
 
       /* Return now if the procedure is pending. */
@@ -394,11 +548,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
 	return;
       }
-
-      /* Advance protocol state and call the next state if we are responder */
-      protocol->state++;
-      if (ctx->responder == TRUE)
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 100000);
     }
     break;
   case 4:
@@ -420,11 +569,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	protocol->state = SILC_PROTOCOL_STATE_END;
       } else {
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
-	   sent by responder. */
-	/* XXX TODO: the verify_key callback is not set!!! */
+	   sent by responder. The silc_server_protocol_ke_continue will
+	   be called after the public key has been verified. */
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer, 
-					   NULL, NULL, 
-					   silc_server_protocol_ke_finish, 
+					   silc_server_protocol_ke_verify_key,
+					   context,
+					   silc_server_protocol_ke_continue, 
 					   context);
       }
 

@@ -57,10 +57,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o The SKE protocol in the server does not verify the remote hosts 
-   (the router's) public key at all.  All public keys are accepted without
-   verification - this obviously is not secure.
-
  o When server quits and all clients of that server are removed from all
    channels the channel keys are re-generated for all clients.  This is
    a bug and should be done only once per channel after all clients of

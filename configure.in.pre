@@ -348,6 +348,7 @@ AC_ARG_WITH(etcdir,
   esac ],
 )
 AC_SUBST(ETCDIR)
+AC_DEFINE_UNQUOTED(SILC_ETCDIR, "$ETCDIR")
 
 # help directory
 HELPDIR="help"
@@ -365,6 +366,7 @@ AC_ARG_WITH(helpdir,
   esac ],
 )
 AC_SUBST(HELPDIR)
+AC_DEFINE_UNQUOTED(SILC_HELPDIR, "$HELPDIR")
 
 # doc directory
 DOCDIR="doc"
@@ -382,6 +384,7 @@ AC_ARG_WITH(docdir,
   esac ],
 )
 AC_SUBST(DOCDIR)
+AC_DEFINE_UNQUOTED(SILC_DOCDIR, "$DOCDIR")
 
 # SIM modules directory
 MODULESDIR="modules"
@@ -399,6 +402,7 @@ AC_ARG_WITH(simdir,
   esac ],
 )
 AC_SUBST(MODULESDIR)
+AC_DEFINE_UNQUOTED(SILC_MODULESDIR, "$MODULESDIR")
 
 # Logs directory
 LOGSDIR="logs"
@@ -416,6 +420,7 @@ AC_ARG_WITH(logsdir,
   esac ],
 )
 AC_SUBST(LOGSDIR)
+AC_DEFINE_UNQUOTED(SILC_LOGSDIR, "$LOGSDIR")
 
 # Debug checking
 AC_MSG_CHECKING(for enabled debugging)
