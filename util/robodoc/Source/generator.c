@@ -46,7 +46,6 @@ RB_Generate_Documentation (
 			    FILE * dest_doc, char *src_name, char *dest_name)
 {
   struct RB_header *cur_header;
-  int expc = 0;
   char fname[256];
   FILE *orig_doc = dest_doc;
 
@@ -65,7 +64,7 @@ RB_Generate_Documentation (
 
       if (output_mode == HTML)
         {
-          sprintf(fname, "%s_exp_%d.html", doc_base, expc++);
+          sprintf(fname, "%s_%s.html", doc_base, cur_header->function_name);
           dest_doc = fopen(fname, "w");
         }
 
@@ -253,9 +252,9 @@ RB_Generate_Doc_Start (
       fprintf (dest_doc, "<BR>\n");
       if (toc)
 	{
-	  int expc = 0;
 	  char iname[256];
 	  FILE *index;
+	  int start = 0;
 
 	  /* do toc if not in fold */
 #if 0
@@ -274,11 +273,12 @@ RB_Generate_Doc_Start (
 	    {
 	      char fname[256];
 
-	      sprintf(fname, "%s_exp_%d.html", doc_base, expc);
+	      sprintf(fname, "%s_%s.html", doc_base, 
+		      cur_header->function_name);
 
 	      if (cur_header->name && cur_header->function_name)
 		{
-		  if (expc == 0) 
+		  if (start == 0) 
 		    {
 		      int item_type;
 		      char *next_line, *item_line = NULL;
@@ -325,6 +325,8 @@ RB_Generate_Doc_Start (
 			  fprintf (index, " >> <A HREF=\"%s\">%s</A><BR>\n",
 				   name, cur_header->function_name);
 			}
+
+		      start = 1;
 		    }
 		  else
 		    {
@@ -334,8 +336,6 @@ RB_Generate_Doc_Start (
 			fprintf (index, " >> <A HREF=\"%s\">%s</A><BR>\n",
 				 fname, cur_header->function_name);
 		    }
-
-		  expc++;
 		}
 	    }
 
@@ -1259,8 +1259,12 @@ RB_Generate_Item_Body (FILE * dest_doc, char *dest_name,
 		    {
 		      if (strcmp (label_name, function_name))
 			{
+#if 0
 			  fprintf (dest_doc, "<A HREF=\"#%s\">%s</A>",
 				   label_name, label_name);
+#endif
+			  fprintf (dest_doc, "<A HREF=\"%s_%s.html\">%s</A>",
+				   doc_base, label_name, label_name);
 			}
 		      else
 			{
