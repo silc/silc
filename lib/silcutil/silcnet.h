@@ -2,9 +2,9 @@
 
   silcnet.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@ int silc_net_accept_connection(int sock);
 int silc_net_set_socket_nonblock(int sock);
 int silc_net_set_socket_opt(int sock, int level, int option, int on);
 int silc_net_is_ip(const char *addr);
+bool silc_net_addr2bin(const char *addr, unsigned char *bin,
+		       uint32 bin_len);
 bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
 bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
 uint16 silc_net_get_remote_port(int sock);
