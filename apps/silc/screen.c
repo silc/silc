@@ -26,8 +26,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:12:05  priikone
+ * 	Global cosmetic changes.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -39,11 +42,6 @@ SilcScreen silc_screen_init()
   SilcScreen new;
 
   new = silc_malloc(sizeof(*new));
-  if (new == NULL) {
-    SILC_LOG_ERROR(("Could not create new screen object"));
-    return NULL;
-  }
-
   new->output_win_count = 0;
   new->input_pos = 0;
   new->cursor_pos = 0;

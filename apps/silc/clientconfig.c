@@ -20,12 +20,15 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/05 06:12:05  priikone
+ * 	Global cosmetic changes.
+ *
  * Revision 1.2  2000/07/03 05:49:11  priikone
  * 	Remove ':' from the end of line when in commands section.  Command
  * 	execution should work now from config file ok.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -64,11 +67,6 @@ SilcClientConfig silc_client_config_alloc(char *filename)
   SILC_LOG_DEBUG(("Allocating new configuration object"));
 
   new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    fprintf(stderr, "Could not allocate new configuration object");
-    return NULL;
-  }
-
   new->filename = filename;
 
   /* Open configuration file and parse it */
@@ -159,7 +157,7 @@ int silc_client_config_parse(SilcClientConfig config, SilcBuffer buffer,
       
       /* Check for matching sections */
       for (cptr = silc_client_config_sections; cptr->section; cptr++)
-	if (!strcmp(cp, cptr->section))
+	if (!strncasecmp(cp, cptr->section, strlen(cptr->section)))
 	  break;
 
       if (!cptr->section) {

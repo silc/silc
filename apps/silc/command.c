@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/05 06:12:05  priikone
+ * 	Global cosmetic changes.
+ *
  * Revision 1.4  2000/07/04 08:28:03  priikone
  * 	Added INVITE, PING and NAMES command.
  *
@@ -30,7 +33,7 @@
  * 	Added missing goto flag.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */

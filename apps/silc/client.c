@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/05 06:12:05  priikone
+ * 	Global cosmetic changes.
+ *
  * Revision 1.3  2000/07/04 08:29:12  priikone
  * 	Added support for PING command. The ping times are calculated
  * 	and showed to the user.
@@ -28,7 +31,7 @@
  * 	Implemented LEAVE command.  Minor bug fixes.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -73,11 +76,6 @@ int silc_client_alloc(SilcClient *new_client)
 {
 
   *new_client = silc_calloc(1, sizeof(**new_client));
-  if (*new_client == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new client object"));
-    return FALSE;
-  }
-
   (*new_client)->input_buffer = NULL;
   (*new_client)->screen = NULL;
   (*new_client)->windows = NULL;
@@ -127,63 +125,9 @@ int silc_client_init(SilcClient client)
   silc_rng_init(client->rng);
   silc_math_primegen_init(); /* XXX */
 
-#if 0
-  {
-    SilcCipher twofish;
-    unsigned char *src, *dst, *dec;
-    SilcBuffer packet;
-    int payload_len;
-
-    payload_len = 4 + strlen("pekka riikonen");
-    packet = silc_buffer_alloc(payload_len);
-    silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-    silc_buffer_format(packet,
-		       SILC_STR_UI_SHORT(payload_len),
-		       SILC_STR_UI_SHORT(SILC_SOCKET_TYPE_CLIENT),
-		       SILC_STR_UI_XNSTRING("pekka riikonen", 
-					    strlen("pekka riikonen")),
-		       SILC_STR_END);
-
-    silc_cipher_alloc("twofish", &twofish);
-    twofish->cipher->set_key(twofish->context, "1234567890123456", 16);
-    twofish->set_iv(twofish, "6543210987654321");
-    SILC_LOG_HEXDUMP(("source: len %d", packet->len), 
-		     packet->data, packet->len );
-    silc_packet_encrypt(twofish, packet, packet->len);
-    SILC_LOG_HEXDUMP(("encrypted"), packet->data, packet->len);
-    silc_packet_decrypt(twofish, packet, packet->len);
-    SILC_LOG_HEXDUMP(("decrypted"), packet->data, packet->len);
-
-  }
-
-  {
-    SilcCipher cipher1, cipher2;
-    unsigned char *src, *dst, *dec;
-    int len = strlen("12345678901234561234567890123456123456789012345612345678901234561234567890123456");
-
-    src = silc_calloc(len + 1, sizeof(unsigned char));
-    dst = silc_calloc(len + 1, sizeof(unsigned char));
-    dec = silc_calloc(len + 1, sizeof(unsigned char));
-
-    memcpy(src, "12345678901234561234567890123456123456789012345612345678901234561234567890123456", len);
-    
-    silc_cipher_alloc("twofish", &cipher1);
-    cipher1->cipher->set_key(cipher1->context, "1234567890123456", 128);
-    cipher1->set_iv(cipher1, "6543210987654321");
-
-    silc_cipher_alloc("twofish", &cipher2);
-    cipher2->cipher->set_key(cipher2->context, "1234567890123456", 128);
-    cipher2->set_iv(cipher2, "6543210987654321");
-
-    SILC_LOG_HEXDUMP(("source: %d", len), src, len);
-    cipher1->cipher->encrypt(cipher1->context, src, src, len, cipher1->iv);
-    SILC_LOG_HEXDUMP(("encrypted"), src, len);
-    cipher2->set_iv(cipher2, "6543210987654321");
-    cipher2->cipher->decrypt(cipher2->context, src, src, len, cipher2->iv);
-    SILC_LOG_HEXDUMP(("decrypted"), src, len);
-
-  }
-#endif
+  /* Load public and private key */
+  if (silc_client_load_keys(client) == FALSE)
+    goto err0;
 
   /* Register the task queues. In SILC we have by default three task queues. 
      One task queue for non-timeout tasks which perform different kind of 
@@ -300,10 +244,6 @@ SilcClientWindow silc_client_create_main_window(SilcClient client)
   assert(client->screen != NULL);
 
   win = silc_calloc(1, sizeof(*win));
-  if (win == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new window"));
-    return NULL;
-  }
 
   client->screen->u_stat_line.program_name = silc_name;
   client->screen->u_stat_line.program_version = silc_version;
@@ -351,10 +291,6 @@ SilcClientWindow silc_client_add_window(SilcClient client,
   assert(client->screen != NULL);
 
   win = silc_calloc(1, sizeof(*win));
-  if (win == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new window"));
-    return NULL;
-  }
 
   /* Add the pointers */
   win->screen = silc_screen_add_output_window(client->screen);
@@ -2096,8 +2032,6 @@ void silc_client_close_connection(SilcClient client,
       silc_cipher_free(win->send_key);
     if (win->receive_key)
       silc_cipher_free(win->receive_key);
-    if (win->public_key)
-      silc_pkcs_free(win->public_key);
     if (win->hmac)
       silc_hmac_free(win->hmac);
     if (win->hmac_key) {
@@ -2110,7 +2044,6 @@ void silc_client_close_connection(SilcClient client,
     win->remote_type = 0;
     win->send_key = NULL;
     win->receive_key = NULL;
-    win->public_key = NULL;
     win->hmac = NULL;
     win->hmac_key = NULL;
     win->hmac_key_len = 0;
