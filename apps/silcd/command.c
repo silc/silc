@@ -1108,8 +1108,6 @@ SILC_SERVER_CMD_FUNC(invite)
 				  silc_server_command_invite, 
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
-      silc_free(channel_id);
-      silc_free(dest_id);
       goto out;
     }
 
