@@ -225,7 +225,7 @@ silc_ske_select_security_properties(SilcSKE ske,
 				    char *version,
 				    SilcSKEStartPayload *payload,
 				    SilcSKEStartPayload *remote_payload);
-SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt n, 
+SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n, 
 				  uint32 len, 
 				  SilcMPInt *rnd);
 SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 

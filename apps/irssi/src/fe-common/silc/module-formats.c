@@ -106,6 +106,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "ke_unknown_hash_function", "Server does not support one of your proposed hash function", 0 },
 	{ "ke_unknown_hmac", "Server does not support one of your proposed HMAC", 0 },
 	{ "ke_incorrect_signature", "Incorrect signature", 0 },
+	{ "ke_invalid_cookie", "Invalid cookie", 0 },
 	{ "auth_failed", "Authentication failed", 0 },
 	{ "set_away", "You have meen marked as being away (away message: {hilight $0})", 1, { 0 } },
 	{ "unset_away", "You are no longer marked as being away", 0 },

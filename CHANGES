@@ -1,3 +1,17 @@
+Fri Jul 20 13:16:00 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a minor bug in SKE that might cause some problem on
+	  some platforms.  Affected file lib/silcske/silcske.c.
+
+	* Added the cookie checking for initiator in the SKE.  It checks
+	  that the responder returns the sent cookie unmodified.  The
+	  affected file is lib/silcske/silcske.c.  Added new SKE
+	  error type INVALID_COOKIE that can be sent during the
+	  negotiation.  Fixed some memory leaks as well.
+
+	* Added the "invalid cookie" error message to Irssi SILC client's
+	  message formats.
+
 Thu Jul 19 21:44:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added `task_max' field to the SilcClientParams to indicate

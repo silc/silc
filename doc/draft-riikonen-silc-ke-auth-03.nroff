@@ -816,6 +816,11 @@ are defined:
 10  SILC_SKE_STATUS_BAD_VERSION
 
     Provided version string was not acceptable.
+
+11  SILC_SKE_STATUS_INVALID_COOKIE
+
+    The cookie in the Key Exchange Start Payload was malformed,
+    because responder modified the cookie.
 .in 3
 
 

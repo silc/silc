@@ -1028,6 +1028,9 @@ void silc_failure(SilcClient client, SilcClientConnection conn,
     if (status == SILC_SKE_STATUS_INCORRECT_SIGNATURE)
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
 			 SILCTXT_KE_INCORRECT_SIGNATURE);
+    if (status == SILC_SKE_STATUS_INVALID_COOKIE)
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP, 
+			 SILCTXT_KE_INVALID_COOKIE);
   }
 
   if (protocol->protocol->type == SILC_PROTOCOL_CLIENT_CONNECTION_AUTH) {

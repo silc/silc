@@ -159,7 +159,8 @@ void silc_ske_set_callbacks(SilcSKE ske,
    configured security properties. This payload is then sent to the
    remote end for further processing. This payload must be sent as
    argument to the function, however, it must not be encoded
-   already, it is done by this function.
+   already, it is done by this function. The caller must not free
+   the `start_payload' since the SKE library will save it.
 
    The packet sending is done by calling a callback function. Caller
    must provide a routine to send the packet. */
@@ -184,11 +185,12 @@ SilcSKEStatus silc_ske_initiator_start(SilcSKE ske, SilcRng rng,
   /* Take a copy of the payload buffer for future use. It is used to
      compute the HASH value. */
   ske->start_payload_copy = silc_buffer_copy(payload_buf);
+  ske->start_payload = start_payload;
 
   /* Send the packet. */
   if (ske->callbacks->send_packet)
     (*ske->callbacks->send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE, 
-				  ske->callbacks->context);
+				   ske->callbacks->context);
 
   silc_buffer_free(payload_buf);
 
@@ -216,6 +218,18 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
     ske->status = status;
     return status;
   }
+
+  /* Check that the cookie is returned unmodified */
+  if (memcmp(ske->start_payload->cookie, payload->cookie,
+	     ske->start_payload->cookie_len)) {
+    SILC_LOG_DEBUG(("Responder modified our cookie and it must not do it"));
+    ske->status = SILC_SKE_STATUS_INVALID_COOKIE;
+    silc_ske_payload_start_free(ske->start_payload);
+    return status;
+  }
+
+  /* Free our KE Start Payload context, we don't need it anymore. */
+  silc_ske_payload_start_free(ske->start_payload);
 
   /* Take the selected security properties into use while doing
      the key exchange. This is used only while doing the key 
@@ -249,6 +263,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
     goto err;
   }
 
+  /* Save remote's KE Start Payload */
   ske->start_payload = payload;
 
   /* Return the received payload by calling the callback function. */
@@ -291,7 +306,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
-  SilcMPInt *x, e;
+  SilcMPInt *x;
   SilcSKEKEPayload *payload;
   uint32 pk_len;
 
@@ -301,7 +316,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   x = silc_calloc(1, sizeof(*x));
   silc_mp_init(x);
   status = 
-    silc_ske_create_rnd(ske, ske->prop->group->group_order,
+    silc_ske_create_rnd(ske, &ske->prop->group->group_order,
 			silc_mp_sizeinbase(&ske->prop->group->group_order, 2),
 			x);
   if (status != SILC_SKE_STATUS_OK) {
@@ -311,19 +326,17 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
     return status;
   }
 
-  SILC_LOG_DEBUG(("Computing e = g ^ x mod p"));
-
-  /* Do the Diffie Hellman computation, e = g ^ x mod p */
-  silc_mp_init(&e);
-  silc_mp_pow_mod(&e, &ske->prop->group->generator, x, 
-		  &ske->prop->group->group);
-
   /* Encode the result to Key Exchange Payload. */
 
   payload = silc_calloc(1, sizeof(*payload));
   ske->ke1_payload = payload;
 
-  payload->x = e;
+  SILC_LOG_DEBUG(("Computing e = g ^ x mod p"));
+
+  /* Do the Diffie Hellman computation, e = g ^ x mod p */
+  silc_mp_init(&payload->x);
+  silc_mp_pow_mod(&payload->x, &ske->prop->group->generator, x, 
+		  &ske->prop->group->group);
 
   /* Get public key */
   if (public_key) {
@@ -331,7 +344,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
     if (!payload->pk_data) {
       silc_mp_uninit(x);
       silc_free(x);
-      silc_mp_uninit(&e);
+      silc_mp_uninit(&payload->x);
       silc_free(payload);
       ske->status = SILC_SKE_STATUS_OK;
       return ske->status;
@@ -368,7 +381,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   if (status != SILC_SKE_STATUS_OK) {
     silc_mp_uninit(x);
     silc_free(x);
-    silc_mp_uninit(&e);
+    silc_mp_uninit(&payload->x);
     silc_free(payload->pk_data);
     silc_free(payload);
     ske->status = status;
@@ -742,7 +755,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
 					    void *context)
 {
   SilcSKEKEPayload *recv_payload, *send_payload;
-  SilcMPInt *x, f;
+  SilcMPInt *x;
 
   /* If the SKE was freed during the async call then free it really now,
      otherwise just decrement the reference counter. */
@@ -824,7 +837,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
   x = silc_calloc(1, sizeof(*x));
   silc_mp_init(x);
   status = 
-    silc_ske_create_rnd(ske, ske->prop->group->group_order,
+    silc_ske_create_rnd(ske, &ske->prop->group->group_order,
 			silc_mp_sizeinbase(&ske->prop->group->group_order, 2),
 			x);
   if (status != SILC_SKE_STATUS_OK) {
@@ -836,19 +849,18 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
     return;
   }
 
-  SILC_LOG_DEBUG(("Computing f = g ^ x mod p"));
-
-  /* Do the Diffie Hellman computation, f = g ^ x mod p */
-  silc_mp_init(&f);
-  silc_mp_pow_mod(&f, &ske->prop->group->generator, x, 
-		  &ske->prop->group->group);
-  
   /* Save the results for later processing */
   send_payload = silc_calloc(1, sizeof(*send_payload));
-  send_payload->x = f;
   ske->x = x;
   ske->ke2_payload = send_payload;
 
+  SILC_LOG_DEBUG(("Computing f = g ^ x mod p"));
+
+  /* Do the Diffie Hellman computation, f = g ^ x mod p */
+  silc_mp_init(&send_payload->x);
+  silc_mp_pow_mod(&send_payload->x, &ske->prop->group->generator, x, 
+		  &ske->prop->group->group);
+  
   /* Call the callback. The caller may now continue with the SKE protocol. */
   ske->status = SILC_SKE_STATUS_OK;
   if (ske->callbacks->proto_continue)
@@ -998,8 +1010,9 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 
   /* Send the packet. */
   if (ske->callbacks->send_packet)
-    (*ske->callbacks->send_packet)(ske, payload_buf, SILC_PACKET_KEY_EXCHANGE_2,
-				  ske->callbacks->context);
+    (*ske->callbacks->send_packet)(ske, payload_buf, 
+				   SILC_PACKET_KEY_EXCHANGE_2,
+				   ske->callbacks->context);
 
   silc_buffer_free(payload_buf);
 
@@ -1036,7 +1049,7 @@ SilcSKEStatus silc_ske_end(SilcSKE ske)
 
   if (ske->callbacks->send_packet)
     (*ske->callbacks->send_packet)(ske, packet, SILC_PACKET_SUCCESS, 
-				  ske->callbacks->context);
+				   ske->callbacks->context);
 
   silc_buffer_free(packet);
 
@@ -1123,7 +1136,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
 
   /* XXX */
   /* Get supported compression algorithms */
-  rp->comp_alg_list = "";
+  rp->comp_alg_list = strdup("");
   rp->comp_alg_len = 0;
 
   rp->len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN + 
@@ -1169,7 +1182,7 @@ silc_ske_select_security_properties(SilcSKE ske,
   /* Flags are returned unchanged. */
   payload->flags = rp->flags;
 
-  /* Take cookie */
+  /* Take cookie, we must return it to sender unmodified. */
   payload->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(unsigned char));
   payload->cookie_len = SILC_SKE_COOKIE_LEN;
   memcpy(payload->cookie, rp->cookie, SILC_SKE_COOKIE_LEN);
@@ -1505,7 +1518,7 @@ silc_ske_select_security_properties(SilcSKE ske,
 /* Creates random number such that 1 < rnd < n and at most length
    of len bits. The rnd sent as argument must be initialized. */
 
-SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt n, 
+SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n, 
 				  uint32 len, 
 				  SilcMPInt *rnd)
 {
@@ -1527,7 +1540,7 @@ SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt n,
   if (silc_mp_cmp_ui(rnd, 1) < 0)
     status = SILC_SKE_STATUS_ERROR;
 
-  if (silc_mp_cmp(rnd, &n) >= 0)
+  if (silc_mp_cmp(rnd, n) >= 0)
     status = SILC_SKE_STATUS_ERROR;
 
   memset(string, 'F', (len / 8));
@@ -1635,7 +1648,7 @@ SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
 }
 
 /* Processes the provided key material `data' as the SILC protocol 
-   specification specifies. */
+   specification defines. */
 
 SilcSKEStatus 
 silc_ske_process_key_material_data(unsigned char *data,
