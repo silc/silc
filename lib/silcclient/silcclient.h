@@ -2617,6 +2617,16 @@ const SilcHashTable silc_client_attributes_get(SilcClient client,
  *    You can give the returned buffer as argument to for example
  *    silc_client_get_client_by_id_resolve function.
  *
+ * EXAMPLE
+ *
+ *    Request all attributes
+ *    buffer = silc_client_attributes_request(0);
+ *
+ *    Request only the following attributes
+ *    buffer = silc_client_attributes_request(SILC_ATTRIBUTE_USER_INFO,
+ *                                            SILC_ATTRIBUTE_SERVICE,
+ *                                            SILC_ATTRIBUTE_MOOD, 0);
+ *
  ***/
 SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
 
