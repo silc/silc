@@ -38,7 +38,7 @@ bool silc_map_load_ppm(SilcMap map, const char *filename)
 
   fp = fopen(filename, "r");
   if (!fp) {
-    fprintf(stderr, "fopen: %s\n", strerror(errno));
+    fprintf(stderr, "fopen: %s: %s\n", strerror(errno), filename);
     return FALSE;
   }
 
@@ -78,7 +78,7 @@ bool silc_map_write_ppm(SilcMap map, const char *filename)
 
   fp = fopen(filename, "w+");
   if (!fp) {
-    fprintf(stderr, "fopen: %s\n", strerror(errno));
+    fprintf(stderr, "fopen: %s: %s\n", strerror(errno), filename);
     return FALSE;
   }
 

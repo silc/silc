@@ -55,6 +55,7 @@ static const SilcConfigTable silc_map_table_writemaphtml[] =
 static const SilcConfigTable silc_map_table_writehtml[] =
 {
   { "filename", SILC_CONFIG_ARG_STR, silc_map_cmd_writehtml, NULL },
+  { "class", SILC_CONFIG_ARG_STRE, silc_map_cmd_writehtml, NULL },
 };
 
 static const SilcConfigTable silc_map_table_cut[] =
@@ -466,14 +467,16 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_writehtml)
 
     /* Will generate HTML pages */
     map->writehtml.filename = filename;
+    map->writehtml.text = text;		/* class */
     map->writehtml.writehtml = TRUE;
-    filename = NULL;
+    filename = text = NULL;
 
     return retval;
   }
-
   if (!strcmp(name, "filename"))
     filename = strdup((char *)val);
+  else if (!strcmp(name, "class"))
+    text = strdup((char *)val);
   else
     retval = SILC_CONFIG_ESILENT;
 

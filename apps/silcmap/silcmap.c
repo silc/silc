@@ -129,6 +129,7 @@ void silc_map_free(SilcMap map)
 
   silc_free(map->writemap.filename);
   silc_free(map->writehtml.filename);
+  silc_free(map->writehtml.text);
   silc_free(map->writemaphtml.filename);
   silc_free(map->writemaphtml.text);
   silc_free(map->cut.filename);
