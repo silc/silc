@@ -60,7 +60,6 @@ static struct option long_opts[] =
 };
 
 /* Command line option variables */
-static bool opt_create_keypair = FALSE;
 static char *opt_keypath = NULL;
 static char *opt_pkcs = "rsa";
 static char *opt_identifier = NULL;
@@ -102,7 +101,7 @@ static void silc_usage(void)
   exit(0);
 }
 
-/* Dies if a *valid* pid file exists already */
+/* Die if a *valid* pid file exists already */
 
 static void silc_server_checkpid(SilcServer silcd)
 {
@@ -130,6 +129,113 @@ static void silc_server_checkpid(SilcServer silcd)
   }
 }
 
+/* Drop root privileges. If some system call fails, die. */
+
+static void silc_server_drop(SilcServer server)
+{
+  /* Are we executing silcd as root or a regular user? */
+  if (geteuid()) {
+    SILC_LOG_DEBUG(("Server started as user"));
+  }
+  else {
+    struct passwd *pw;
+    struct group *gr;
+    char *user, *group;
+
+    SILC_LOG_DEBUG(("Server started as root. Dropping privileges."));
+
+    /* Get the values given for user and group in configuration file */
+    user = server->config->server_info->user;
+    group = server->config->server_info->group;
+
+    if (!user || !group) {
+      fprintf(stderr, "Error:"
+       "\tSILC server must not be run as root.  For the security of your\n"
+       "\tsystem it is strongly suggested that you run SILC under dedicated\n"
+       "\tuser account.  Modify the ServerInfo configuration section to run\n"
+       "\tthe server as non-root user.\n");
+      exit(1);
+    }
+
+    /* Check whether the user/group does not begin with a number */
+    if (isdigit(user[0]) || isdigit(group[0])) {
+      SILC_LOG_DEBUG(("User and/or group starts with a number"));
+      fprintf(stderr, "Invalid user and/or group information\n");
+      fprintf(stderr, "Please assign them as names, not numbers\n");
+      exit(1);
+    }
+
+    if (!(pw = getpwnam(user))) {
+      fprintf(stderr, "Error: No such user %s found.\n", user);
+      exit(1);
+    }
+    if (!(gr = getgrnam(group))) {
+      fprintf(stderr, "Error: No such group %s found.\n", group);
+      exit(1);
+    }
+
+    /* Check whether user and/or group is set to root. If yes, exit
+       immediately. Otherwise, setgid and setuid server to user.group */
+    if ((gr->gr_gid == 0) || (pw->pw_uid == 0)) {
+      fprintf(stderr, "Error:"
+       "\tSILC server must not be run as root.  For the security of your\n"
+       "\tsystem it is strongly suggested that you run SILC under dedicated\n"
+       "\tuser account.  Modify the ServerInfo configuration section to run\n"
+       "\tthe server as non-root user.\n");
+      exit(1);
+    }
+
+    SILC_LOG_DEBUG(("Changing to group %s (gid=%u)", group, gr->gr_gid));
+    if (setgid(gr->gr_gid) != 0) {
+      fprintf(stderr, "Error: Failed setgid() to %s (gid=%u). Exiting.\n",
+	      group, gr->gr_gid);
+      exit(1);
+    }
+#if defined HAVE_SETGROUPS && defined HAVE_INITGROUPS
+    SILC_LOG_DEBUG(("Removing supplementary groups"));
+    if (setgroups(0, NULL) != 0) {
+      fprintf(stderr, "Error: Failed setgroups() to NULL. Exiting.\n");
+      exit(1);
+    }
+    SILC_LOG_DEBUG(("Setting supplementary groups for user %s", user));
+    if (initgroups(user, gr->gr_gid) != 0) {
+      fprintf(stderr, "Error: Failed initgroups() for user %s (gid=%u). "
+	      "Exiting.\n", user, gr->gr_gid);
+      exit(1);
+    }
+#endif
+    SILC_LOG_DEBUG(("Changing to user %s (uid=%u)", user, pw->pw_uid));
+    if (setuid(pw->pw_uid) != 0) {
+      fprintf(stderr, "Error: Failed to setuid() to %s (gid=%u). Exiting.\n",
+              user, pw->pw_uid);
+      exit(1);
+    }
+  }
+}
+
+/* Fork server to background */
+
+static void silc_server_daemonise(SilcServer server)
+{
+  int i;
+
+  SILC_LOG_DEBUG(("Forking SILC server to background"));
+
+  if ((i = fork()) < 0) {
+    fprintf(stderr, "Error: fork() failed: %s\n", strerror(errno));
+    exit(1);
+  }
+
+  if (i) /* Kill the parent */
+    exit(0);
+
+  server->background = TRUE;
+  setsid();
+
+  /* XXX close stdin, stdout, stderr -- before this, check that all writes
+     to stderr are changed to SILC_SERVER_LOG_ERROR() */
+}
+
 static void signal_handler(int sig)
 {
   /* Mark the signal to be caller after this signal is over. */
@@ -153,6 +259,9 @@ SILC_TASK_CALLBACK(stop_server)
   silc_schedule_stop(silcd->schedule);
 }
 
+/* This function should not be called directly but throught the wrapper
+   macro SILC_SERVER_LOG_STDERR() */
+
 void silc_server_stderr(char *message)
 {
   if (silcd->background)
@@ -167,6 +276,7 @@ int main(int argc, char **argv)
 {
   int ret, opt, option_index;
   bool foreground = FALSE;
+  bool opt_create_keypair = FALSE;
   char *silcd_config_file = NULL;
   struct sigaction sa;
 
@@ -174,15 +284,14 @@ int main(int argc, char **argv)
   if (argc > 1) {
     while ((opt = getopt_long(argc, argv, "f:p:d::xhFVC:",
 			      long_opts, &option_index)) != EOF) {
-      switch(opt)
-	{
+      switch(opt) {
 	case 'h':
 	  silc_usage();
 	  break;
 	case 'V':
 	  printf("SILCd Secure Internet Live Conferencing daemon, "
 		 "version %s (base: SILC Toolkit %s)\n",
-                 silc_dist_version, silc_version);
+		 silc_dist_version, silc_version);
 	  printf("(c) 1997 - 2002 Pekka Riikonen "
 		 "<priikone@silcnet.org>\n");
 	  exit(0);
@@ -243,7 +352,7 @@ int main(int argc, char **argv)
 	default:
 	  silc_usage();
 	  break;
-	}
+      }
     }
   }
 
@@ -272,6 +381,9 @@ int main(int argc, char **argv)
   if (silcd->config == NULL)
     goto fail;
   silcd->config_file = silcd_config_file;
+  /* Since silc_server_config_alloc returns an unreferenced config object
+     we must immediately increment it. */
+  silc_server_config_ref(&silcd->config_ref, silcd->config, silcd->config);
 
   /* Check for another silcd running */
   silc_server_checkpid(silcd);
@@ -316,7 +428,6 @@ int main(int argc, char **argv)
   /* Stop the server and free it. */
   silc_server_stop(silcd);
   silc_server_free(silcd);
-  silc_server_config_destroy(silcd->config);
 
   /* Flush the logging system */
   silc_log_flush_all();

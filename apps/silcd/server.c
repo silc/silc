@@ -147,19 +147,6 @@ bool silc_server_init(SilcServer server)
   SilcSocketConnection newsocket = NULL;
 
   SILC_LOG_DEBUG(("Initializing server"));
-  assert(server);
-  assert(server->config);
-
-  silc_server_config_ref(&server->config_ref, server->config, 
-			 server->config);
-
-  /* Set public and private keys */
-  if (!server->config->server_info ||
-      !server->config->server_info->public_key ||
-      !server->config->server_info->private_key) {
-    SILC_LOG_ERROR(("Server public key and/or private key does not exist"));
-    return FALSE;
-  }
 
   /* Steal public and private key from the config object */
   server->public_key = server->config->server_info->public_key;
@@ -277,7 +264,7 @@ bool silc_server_init(SilcServer server)
     goto err;
   }
   id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
-  
+
   /* Put the allocated socket pointer also to the entry allocated above
      for fast back-referencing to the socket list. */
   newsocket->user_data = (void *)id_entry;
@@ -366,35 +353,25 @@ bool silc_server_rehash(SilcServer server)
 {
   SilcServerConfig newconfig;
 
-  /* Our old config is gone now. We'll unreference our reference made in
-     silc_server_init and then destroy it since we are destroying it 
-     underneath the application (layer which called silc_server_init). */
-  silc_server_config_unref(&server->config_ref);
-  silc_server_config_destroy(server->config);
+  SILC_LOG_INFO(("Rehashing server"));
 
   /* Reset the logging system */
   silc_log_quick = TRUE;
   silc_log_flush_all();
 
   /* Start the main rehash phase (read again the config file) */
-  SILC_LOG_INFO(("Rehashing server"));
   newconfig = silc_server_config_alloc(server->config_file);
   if (!newconfig) {
     SILC_LOG_ERROR(("Rehash FAILED."));
     return FALSE;
   }
 
-  /* Take new config context */
+  /* Config file parsing went fine, so our old config is gone now. We
+     unreference the basic pointer and it should be destroyed as soon
+     as all other references are released. */
+  silc_server_config_unref(&server->config_ref);
   server->config = newconfig;
   silc_server_config_ref(&server->config_ref, server->config, server->config);
-
-  /* Set public and private keys */
-  if (!server->config->server_info ||
-      !server->config->server_info->public_key ||
-      !server->config->server_info->private_key) {
-    SILC_LOG_ERROR(("Server public key and/or private key does not exist"));
-    return FALSE;
-  }
 
   /* Fix the server_name field */
   if (!strcmp(server->server_name, newconfig->server_info->server_name)) {
@@ -410,7 +387,7 @@ bool silc_server_rehash(SilcServer server)
     silc_free(server->id_entry->server_name);
     server->id_entry->server_name = strdup(server->server_name);
     silc_idcache_del_by_context(server->local_list->servers, server->id_entry);
-    silc_idcache_add(server->local_list->servers, 
+    silc_idcache_add(server->local_list->servers,
 		     server->id_entry->server_name,
 		     server->id_entry->id, server->id_entry, 0, NULL);
   }
@@ -418,9 +395,9 @@ bool silc_server_rehash(SilcServer server)
   silc_server_config_setlogfiles(server);
 
   /* Change new key pair if necessary */
-  if (server->config->server_info->public_key &&
+  if (newconfig->server_info->public_key &&
       !silc_pkcs_public_key_compare(server->public_key,
-				    server->config->server_info->public_key)) {
+				    newconfig->server_info->public_key)) {
     silc_pkcs_public_key_free(server->public_key);
     silc_pkcs_private_key_free(server->private_key);
     server->public_key = server->config->server_info->public_key;
@@ -437,113 +414,6 @@ bool silc_server_rehash(SilcServer server)
   }
 
   return TRUE;
-}
-
-/* Drop root privileges. If some system call fails, die. */
-
-void silc_server_drop(SilcServer server)
-{
-  /* Are we executing silcd as root or a regular user? */
-  if (geteuid()) {
-    SILC_LOG_DEBUG(("Server started as user"));
-  }
-  else {
-    struct passwd *pw;
-    struct group *gr;
-    char *user, *group;
-
-    SILC_LOG_DEBUG(("Server started as root. Dropping privileges."));
-
-    /* Get the values given for user and group in configuration file */
-    user = server->config->server_info->user;
-    group = server->config->server_info->group;
-
-    if (!user || !group) {
-      fprintf(stderr, "Error:"
-       "\tSILC server must not be run as root.  For the security of your\n"
-       "\tsystem it is strongly suggested that you run SILC under dedicated\n"
-       "\tuser account.  Modify the ServerInfo configuration section to run\n"
-       "\tthe server as non-root user.\n");
-      exit(1);
-    }
-
-    /* Check whether the user/group does not begin with a number */
-    if (isdigit(user[0]) || isdigit(group[0])) {
-      SILC_LOG_DEBUG(("User and/or group starts with a number"));
-      fprintf(stderr, "Invalid user and/or group information\n");
-      fprintf(stderr, "Please assign them as names, not numbers\n");
-      exit(1);
-    }
-
-    if (!(pw = getpwnam(user))) {
-      fprintf(stderr, "Error: No such user %s found.\n", user);
-      exit(1);
-    }
-    if (!(gr = getgrnam(group))) {
-      fprintf(stderr, "Error: No such group %s found.\n", group);
-      exit(1);
-    }
-
-    /* Check whether user and/or group is set to root. If yes, exit
-       immediately. Otherwise, setgid and setuid server to user.group */
-    if ((gr->gr_gid == 0) || (pw->pw_uid == 0)) {
-      fprintf(stderr, "Error:"
-       "\tSILC server must not be run as root.  For the security of your\n"
-       "\tsystem it is strongly suggested that you run SILC under dedicated\n"
-       "\tuser account.  Modify the ServerInfo configuration section to run\n"
-       "\tthe server as non-root user.\n");
-      exit(1);
-    }
-
-    SILC_LOG_DEBUG(("Changing to group %s (gid=%u)", group, gr->gr_gid));
-    if (setgid(gr->gr_gid) != 0) {
-      fprintf(stderr, "Error: Failed setgid() to %s (gid=%u). Exiting.\n",
-	      group, gr->gr_gid);
-      exit(1);
-    }
-#if defined HAVE_SETGROUPS && defined HAVE_INITGROUPS
-    SILC_LOG_DEBUG(("Removing supplementary groups"));
-    if (setgroups(0, NULL) != 0) {
-      fprintf(stderr, "Error: Failed setgroups() to NULL. Exiting.\n");
-      exit(1);
-    }
-    SILC_LOG_DEBUG(("Setting supplementary groups for user %s", user));
-    if (initgroups(user, gr->gr_gid) != 0) {
-      fprintf(stderr, "Error: Failed initgroups() for user %s (gid=%u). "
-	      "Exiting.\n", user, gr->gr_gid);
-      exit(1);
-    }
-#endif
-    SILC_LOG_DEBUG(("Changing to user %s (uid=%u)", user, pw->pw_uid));
-    if (setuid(pw->pw_uid) != 0) {
-      fprintf(stderr, "Error: Failed to setuid() to %s (gid=%u). Exiting.\n",
-              user, pw->pw_uid);
-      exit(1);
-    }
-  }
-}
-
-/* Fork server to background */
-
-void silc_server_daemonise(SilcServer server)
-{
-  int i;
-
-  SILC_LOG_DEBUG(("Forking SILC server to background"));
-
-  if ((i = fork()) < 0) {
-    fprintf(stderr, "Error: fork() failed: %s\n", strerror(errno));
-    exit(1);
-  }
-
-  if (i) /* Kill the parent */
-    exit(0);
-
-  server->background = TRUE;
-  setsid();
-
-  /* XXX close stdin, stdout, stderr -- before this, check that all writes
-     to stderr are changed to SILC_SERVER_LOG_ERROR() */
 }
 
 /* The heart of the server. This runs the scheduler thus runs the server.
