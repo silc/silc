@@ -20,8 +20,8 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
