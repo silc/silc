@@ -3,8 +3,8 @@ Version 3.50
 
 ## Globals Section:
 
-X -248
-Y 565
+X -296
+Y 40
 Scale 100
 PosterRows 1
 PosterCols 1
@@ -16,7 +16,7 @@ Color5 0,255,255
 Color6 0,0,255
 Color7 0,0,160
 Color8 128,0,128
-Color9 239,231,239
+Color9 243,237,243
 Color10 219,219,219
 Color11 244,244,244
 Color12 255,242,230
@@ -45,8 +45,8 @@ SBarLblHeight 32
 SBarConHeight 24
 Parent ""
 LargeDropMenus FALSE
-LastEnd "block shorter"
-LastEndLen 36
+LastEnd "block"
+LastEndLen 25
 ConPointMarks 0
 CornerRadius 18
 Template "silc_template.edg"
@@ -78,7 +78,7 @@ DevNames 68
 {
 080011002200010077696E73706F6F6C004850204C617365724A657420313130
 30004C5054313A00000000000000000000000000000000000000000000000000
-50F0FF00
+94395900
 }
 
 Preview 700
@@ -1592,6 +1592,724 @@ ConnectorStyle "SILC Server To Router"
   Behavior 0x00000000
 }
 
+ConnectorStyle "Router to Router Prime"
+{
+  HasButton TRUE
+  End1 "block"
+  End2 "block"
+  End1Length 36
+  End2Length 36
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
 ## Figures & Connectors Section:
+
+Figure 1
+{
+  Style "SILC Background"
+  Text ""
+  Bounds 400,416,1584,1440
+  BorderColor 192,192,192
+  FillColor 243,237,243
+  TextColor 130,130,130
+  BorderWidth 3
+  TextFormat 0x0042
+  Behavior 0x00024E22
+  Symbol "rounded box 1"
+  TypeSize 18
+  TypeWeight 700
+  TypeFace "Arial"
+}
+
+Figure 2
+{
+  Label TRUE
+  Style "Title"
+  Text "Router Connections"
+  Bounds 656,455,1332,537
+  TextColor 192,192,192
+  TextFormat 0x0022
+  Behavior 0x00824192
+  Symbol "lbl"
+  TypeSize 20
+  TypeWeight 700
+  TypeFace "Arial"
+}
+
+Figure 3
+{
+  Style "SILC Router"
+  Text "Router"
+  Bounds 544,720,800,848
+  BorderColor 130,130,130
+  FillColor 255,242,230
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "data"
+  TypeSize 12
+  TypeFace "Arial"
+}
+
+Figure 4
+{
+  Style "SILC Router"
+  Text "Router"
+  Bounds 448,912,704,1040
+  BorderColor 130,130,130
+  FillColor 255,242,230
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "data"
+  TypeSize 12
+  TypeFace "Arial"
+}
+
+Figure 5
+{
+  Style "SILC Router"
+  Text "Router"
+  Bounds 560,1104,816,1232
+  BorderColor 130,130,130
+  FillColor 255,242,230
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "data"
+  TypeSize 12
+  TypeFace "Arial"
+}
+
+Figure 6
+{
+  Style "SILC Router"
+  Text "Router"
+  Bounds 880,1264,1136,1392
+  BorderColor 130,130,130
+  FillColor 255,242,230
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "data"
+  TypeSize 12
+  TypeFace "Arial"
+}
+
+Figure 7
+{
+  Style "SILC Router"
+  Text "Router"
+  Bounds 1216,1104,1472,1232
+  BorderColor 130,130,130
+  FillColor 255,242,230
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "data"
+  TypeSize 12
+  TypeFace "Arial"
+}
+
+Figure 8
+{
+  Style "SILC Router"
+  Text "Router"
+  Bounds 1280,912,1536,1040
+  BorderColor 130,130,130
+  FillColor 255,242,230
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "data"
+  TypeSize 12
+  TypeFace "Arial"
+}
+
+Figure 9
+{
+  Style "SILC Router"
+  Text "Router"
+  Bounds 1216,720,1472,848
+  BorderColor 130,130,130
+  FillColor 255,242,230
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "data"
+  TypeSize 12
+  TypeFace "Arial"
+}
+
+Figure 10
+{
+  Style "SILC Router"
+  Text "Router"
+  Bounds 880,560,1136,688
+  BorderColor 130,130,130
+  FillColor 255,242,230
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "data"
+  TypeSize 12
+  TypeFace "Arial"
+}
+
+Figure 11
+{
+  Style "SILC INFO"
+  Text "INFO"
+  Bounds 496,1456,1520,1616
+  BorderColor 192,192,192
+  FillColor 252,252,252
+  TextColor 130,130,130
+  BorderWidth 3
+  Shadow TRUE
+  BindToStyle FALSE
+  TextFormat 0x0044
+  Behavior 0x00024E11
+  Symbol "data"
+  TypeSize 8
+  TypeWeight 700
+  TypeOutPrec 3
+  TypeClpPrec 2
+  TypeQuality 1
+  TypeFace "Arial"
+}
+
+Figure 12
+{
+  Text ""
+  Bounds 1033,921,1048,936
+  FillColor 0,0,0
+  BorderWidth 0
+  BindToStyle FALSE
+  TextFormat 0x0000
+  Behavior 0x00327A12
+  Symbol "null"
+  TypeSize 8
+  TypeFace "Arial"
+}
+
+Connector 13
+{
+  Style "SILC Router to Router"
+  Figure1 12
+  Figure2 8
+  EndPoint1 1040,928
+  EndPoint2 1280,959
+  SuppressEnd1 TRUE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 36
+  End2Length 25
+  PenStyle 4
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 14
+{
+  Style "SILC Router to Router"
+  Figure1 10
+  Figure2 12
+  EndPoint1 1015,688
+  EndPoint2 1040,928
+  SuppressEnd1 FALSE
+  SuppressEnd2 TRUE
+  End1 "null"
+  End2 "block"
+  End1Length 36
+  End2Length 25
+  PenStyle 4
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Figure 15
+{
+  Text ""
+  Bounds 953,921,968,936
+  FillColor 0,0,0
+  BorderWidth 0
+  BindToStyle FALSE
+  TextFormat 0x0000
+  Behavior 0x00327A12
+  Symbol "null"
+  TypeSize 8
+  TypeFace "Arial"
+}
+
+Connector 16
+{
+  Style "SILC Router to Router"
+  Figure1 -1
+  Figure2 15
+  EndPoint1 923,704
+  EndPoint2 960,928
+  SuppressEnd1 FALSE
+  SuppressEnd2 TRUE
+  End1 "null"
+  End2 "block"
+  End1Length 36
+  End2Length 25
+  PenStyle 4
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 17
+{
+  Style "SILC Router to Router"
+  Figure1 15
+  Figure2 5
+  EndPoint1 960,928
+  EndPoint2 761,1104
+  SuppressEnd1 TRUE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 36
+  End2Length 25
+  PenStyle 4
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Figure 18
+{
+  Text ""
+  Bounds 1049,1129,1064,1144
+  FillColor 0,0,0
+  BorderWidth 0
+  BindToStyle FALSE
+  TextFormat 0x0000
+  Behavior 0x00327A12
+  Symbol "null"
+  TypeSize 8
+  TypeFace "Arial"
+}
+
+Connector 19
+{
+  Style "SILC Router to Router"
+  Figure1 9
+  Figure2 18
+  EndPoint1 1291,848
+  EndPoint2 1056,1136
+  SuppressEnd1 FALSE
+  SuppressEnd2 TRUE
+  End1 "null"
+  End2 "block"
+  End1Length 36
+  End2Length 25
+  PenStyle 4
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 20
+{
+  Style "SILC Router to Router"
+  Figure1 18
+  Figure2 5
+  EndPoint1 1056,1136
+  EndPoint2 816,1156
+  SuppressEnd1 TRUE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 36
+  End2Length 25
+  PenStyle 4
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 21
+{
+  Style "Router to Router Prime"
+  Figure1 -1
+  Figure2 -1
+  EndPoint1 624,1504
+  EndPoint2 912,1504
+  SuppressEnd1 FALSE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 36
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 22
+{
+  Style "Router to Router Prime"
+  Figure1 -1
+  Figure2 -1
+  EndPoint1 624,1552
+  EndPoint2 912,1552
+  SuppressEnd1 FALSE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 36
+  End2Length 25
+  PenStyle 21
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Figure 23
+{
+  Label TRUE
+  Style "Title"
+  Text "Primary Route"
+  Bounds 1064,1490,1244,1522
+  TextColor 130,130,130
+  TextFormat 0x0022
+  Behavior 0x00824192
+  Symbol "lbl"
+  TypeSize 8
+  TypeItalic TRUE
+  TypeFace "Arial"
+}
+
+Figure 24
+{
+  Label TRUE
+  Style "Title"
+  Text "Secondary Routes"
+  Bounds 1064,1536,1299,1568
+  TextColor 130,130,130
+  TextFormat 0x0022
+  Behavior 0x00824192
+  Symbol "lbl"
+  TypeSize 8
+  TypeItalic TRUE
+  TypeFace "Arial"
+}
+
+Connector 25
+{
+  Style "Flow Closed"
+  Figure1 9
+  Figure2 8
+  EndPoint1 1366,848
+  EndPoint2 1386,912
+  SuppressEnd1 FALSE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000000
+}
+
+Connector 26
+{
+  Style "Flow Closed"
+  Figure1 8
+  Figure2 7
+  EndPoint1 1386,1040
+  EndPoint2 1366,1104
+  SuppressEnd1 FALSE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000000
+}
+
+Connector 27
+{
+  Style "Flow Closed"
+  Figure1 5
+  Figure2 4
+  EndPoint1 650,1104
+  EndPoint2 614,1040
+  SuppressEnd1 FALSE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000000
+}
+
+Connector 28
+{
+  Style "Flow Closed"
+  Figure1 4
+  Figure2 3
+  EndPoint1 608,912
+  EndPoint2 640,848
+  SuppressEnd1 FALSE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000000
+}
+
+Figure 29
+{
+  Text ""
+  Bounds 1321,633,1336,648
+  FillColor 0,0,0
+  BorderWidth 0
+  BindToStyle FALSE
+  TextFormat 0x0000
+  Behavior 0x00327A12
+  Symbol "null"
+  TypeSize 8
+  TypeFace "Arial"
+}
+
+Connector 30
+{
+  Style "Flow Closed Smoothed"
+  Figure1 10
+  Figure2 29
+  EndPoint1 1136,631
+  EndPoint2 1328,640
+  SuppressEnd1 FALSE
+  SuppressEnd2 TRUE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 31
+{
+  Style "Flow Closed Smoothed"
+  Figure1 29
+  Figure2 9
+  EndPoint1 1328,640
+  EndPoint2 1336,720
+  SuppressEnd1 TRUE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Figure 32
+{
+  Text ""
+  Bounds 665,633,680,648
+  FillColor 0,0,0
+  BorderWidth 0
+  BindToStyle FALSE
+  TextFormat 0x0000
+  Behavior 0x00327A12
+  Symbol "null"
+  TypeSize 8
+  TypeFace "Arial"
+}
+
+Connector 33
+{
+  Style "Flow Closed Smoothed"
+  Figure1 3
+  Figure2 32
+  EndPoint1 672,720
+  EndPoint2 672,640
+  SuppressEnd1 FALSE
+  SuppressEnd2 TRUE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 34
+{
+  Style "Flow Closed Smoothed"
+  Figure1 32
+  Figure2 10
+  EndPoint1 672,640
+  EndPoint2 880,631
+  SuppressEnd1 TRUE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Figure 35
+{
+  Text ""
+  Bounds 1321,1337,1336,1352
+  FillColor 0,0,0
+  BorderWidth 0
+  BindToStyle FALSE
+  TextFormat 0x0000
+  Behavior 0x00327A12
+  Symbol "null"
+  TypeSize 8
+  TypeFace "Arial"
+}
+
+Connector 36
+{
+  Style "Flow Closed Smoothed"
+  Figure1 7
+  Figure2 35
+  EndPoint1 1338,1232
+  EndPoint2 1328,1344
+  SuppressEnd1 FALSE
+  SuppressEnd2 TRUE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 37
+{
+  Style "Flow Closed Smoothed"
+  Figure1 35
+  Figure2 6
+  EndPoint1 1328,1344
+  EndPoint2 1136,1335
+  SuppressEnd1 TRUE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Figure 38
+{
+  Text ""
+  Bounds 713,1337,728,1352
+  FillColor 0,0,0
+  BorderWidth 0
+  BindToStyle FALSE
+  TextFormat 0x0000
+  Behavior 0x00327A12
+  Symbol "null"
+  TypeSize 8
+  TypeFace "Arial"
+}
+
+Connector 39
+{
+  Style "Flow Closed Smoothed"
+  Figure1 6
+  Figure2 38
+  EndPoint1 880,1336
+  EndPoint2 720,1344
+  SuppressEnd1 FALSE
+  SuppressEnd2 TRUE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
+Connector 40
+{
+  Style "Flow Closed Smoothed"
+  Figure1 38
+  Figure2 5
+  EndPoint1 720,1344
+  EndPoint2 700,1232
+  SuppressEnd1 TRUE
+  SuppressEnd2 FALSE
+  End1 "null"
+  End2 "block"
+  End1Length 18
+  End2Length 25
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
 
 ## Staples Section:
