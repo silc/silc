@@ -156,45 +156,45 @@ void command_attr(const char *data, SILC_SERVER_REC *server,
 
   if (!strcasecmp(argv[1], "-del")) {
     /* Delete attribute */
-    if (!strcasecmp(argv[1], "vcard")) {
+    if (!strcasecmp(argv[2], "vcard")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_USER_INFO, NULL);
       settings_set_str("attr_vcard", "");
-    } else if (!strcasecmp(argv[1], "services")) {
+    } else if (!strcasecmp(argv[2], "services")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_SERVICE, NULL);
       settings_set_str("attr_services", argv[2]);
-    } else if (!strcasecmp(argv[1], "status_mood")) {
+    } else if (!strcasecmp(argv[2], "status_mood")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_STATUS_MOOD, NULL);
       settings_set_str("attr_status_mood", "");
-    } else if (!strcasecmp(argv[1], "status_text")) {
+    } else if (!strcasecmp(argv[2], "status_text")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_STATUS_FREETEXT, NULL);
       settings_set_str("attr_status_text", "");
-    } else if (!strcasecmp(argv[1], "status_message")) {
+    } else if (!strcasecmp(argv[2], "status_message")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_STATUS_MESSAGE, NULL);
       settings_set_str("attr_status_message", "");
-    } else if (!strcasecmp(argv[1], "preferred_language")) {
+    } else if (!strcasecmp(argv[2], "preferred_language")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_PREFERRED_LANGUAGE, NULL);
       settings_set_str("attr_preferred_language", "");
-    } else if (!strcasecmp(argv[1], "preferred_contact")) {
+    } else if (!strcasecmp(argv[2], "preferred_contact")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_PREFERRED_CONTACT, NULL);
       settings_set_str("attr_preferred_contact", "");
-    } else if (!strcasecmp(argv[1], "timezone")) {
+    } else if (!strcasecmp(argv[2], "timezone")) {
       return;
-    } else if (!strcasecmp(argv[1], "geolocation")) {
+    } else if (!strcasecmp(argv[2], "geolocation")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_GEOLOCATION, NULL);
       settings_set_str("attr_geolocation", "");
-    } else if (!strcasecmp(argv[1], "device_info")) {
+    } else if (!strcasecmp(argv[2], "device_info")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_DEVICE_INFO, NULL);
       settings_set_str("attr_device_info", "");
-    } else if (!strcasecmp(argv[1], "public_keys")) {
+    } else if (!strcasecmp(argv[2], "public_keys")) {
       silc_client_attribute_del(silc_client, server->conn,
 				SILC_ATTRIBUTE_USER_PUBLIC_KEY, NULL);
       settings_set_str("attr_public_keys", "");
