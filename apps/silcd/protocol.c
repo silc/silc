@@ -1545,7 +1545,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     if (ctx->packet->type != SILC_PACKET_REKEY_DONE) {
       /* Error in protocol */
       protocol->state = SILC_PROTOCOL_STATE_ERROR;
-      silc_protocol_execute(protocol, server->schedule, 0, 300000);
+      silc_protocol_execute(protocol, server->schedule, 0, 0);
       return;
     }
 
