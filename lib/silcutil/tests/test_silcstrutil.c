@@ -51,7 +51,7 @@ utf8fail(30, "\xf0\x20\xf9\x20\xfa\x20\xfb\x20", 8);
 int main(int argc, char **argv)
 {
   bool success = FALSE;
-  unsigned char *s1, *s3, *s4;
+  unsigned char *s1, *s2, *s3, *s4;
   int l;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
@@ -101,6 +101,31 @@ int main(int argc, char **argv)
     SILC_LOG_DEBUG(("UTF-8 mismatch"));
     goto err;
   }
+  silc_free(s3);
+  silc_free(s4);
+
+  /* UTF-8 strcasecmp test */
+  SILC_LOG_DEBUG(("silc_utf8_strcasecmp test"));
+  s1 = "Päivää vuan Yrjö";
+  s2 = "PÄIVÄÄ VUAN YRJÖ";
+  l = silc_utf8_encoded_len(s1, strlen(s1), SILC_STRING_LOCALE);
+  if (!l)
+    goto err;  
+  s3 = silc_calloc(l + 1, sizeof(*s3));
+  silc_utf8_encode(s1, strlen(s1), SILC_STRING_LOCALE, s3, l);
+
+  l = silc_utf8_encoded_len(s2, strlen(s2), SILC_STRING_LOCALE);
+  if (!l)
+    goto err;  
+  s4 = silc_calloc(l + 1, sizeof(*s4));
+  silc_utf8_encode(s2, strlen(s2), SILC_STRING_LOCALE, s4, l);
+
+  SILC_LOG_DEBUG(("%s == %s", s3, s4));
+  if (!silc_utf8_strcasecmp(s3, s4)) {
+    SILC_LOG_DEBUG(("mismatch"));
+    goto err;
+  }
+  SILC_LOG_DEBUG(("match"));
 
   silc_free(s3);
   silc_free(s4);

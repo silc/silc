@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2004, 2005 Pekka Riikonen
+  Copyright (C) 2004 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -123,5 +123,44 @@ SilcUInt32 silc_utf8_decoded_len(const unsigned char *bin, SilcUInt32 bin_len,
  *
  ***/
 bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len);
+
+/****f* silcutil/SilcStrUtilAPI/silc_utf8_strcasecmp
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_utf8_strcasecmp(const char *s1, const char *s2);
+ *
+ * DESCRIPTION
+ *
+ *    The silc_utf8_strcasecmp() function compares the two strings s1 and s2,
+ *    ignoring the case of the characters.  It returns TRUE if the strings
+ *    match and FALSE if they differ.
+ *
+ *    This functions expects NULL terminated UTF-8 strings.  The strings
+ *    will be casefolded and normalized before comparing.  Certain special
+ *    Unicode characters will be ignored when comparing.
+ *
+ ***/
+bool silc_utf8_strcasecmp(const char *s1, const char *s2);
+
+/****f* silcutil/SilcStrUtilAPI/silc_utf8_strncasecmp
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_utf8_strcasecmp(const char *s1, const char *s2,
+ *                              SilcUInt32 n);
+ *
+ * DESCRIPTION
+ *
+ *    The silc_utf8_strcasecmp() function compares the two strings s1 and s2,
+ *    ignoring the case of the characters.  It returns TRUE if the strings
+ *    match and FALSE if they differ.
+ *
+ *    This functions expects NULL terminated UTF-8 strings.  The strings
+ *    will be casefolded and normalized before comparing.  Certain special
+ *    Unicode characters will be ignored when comparing.
+ *
+ ***/
+bool silc_utf8_strncasecmp(const char *s1, const char *s2, SilcUInt32 n);
 
 #endif /* SILCUTF8_H */

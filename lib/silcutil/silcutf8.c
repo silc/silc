@@ -540,3 +540,53 @@ bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
 {
   return silc_utf8_decode(utf8, utf8_len, 0, NULL, 0) != 0;
 }
+
+/* Pretty close strcasecmp */
+
+bool silc_utf8_strcasecmp(const char *s1, const char *s2)
+{
+  SilcUInt32 n;
+
+  if (s1 == s2)
+    return TRUE;
+
+  n = strlen(s2);
+  if (strlen(s1) > n)
+    n = strlen(s1);
+
+  return silc_utf8_strncasecmp(s1, s2, n);
+}
+
+/* Pretty close strcasecmp */
+
+bool silc_utf8_strncasecmp(const char *s1, const char *s2, SilcUInt32 n)
+{
+  unsigned char *s1u, *s2u;
+  SilcUInt32 s1u_len, s2u_len;
+  SilcStringprepStatus status;
+  bool ret;
+
+  if (s1 == s2)
+    return TRUE;
+
+  /* Casefold and normalize */
+  status = silc_stringprep(s1, strlen(s1), SILC_STRING_UTF8,
+			   SILC_IDENTIFIERC_PREP, 0, &s1u,
+			   &s1u_len, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK)
+    return FALSE;
+
+  /* Casefold and normalize */
+  status = silc_stringprep(s2, strlen(s2), SILC_STRING_UTF8,
+			   SILC_IDENTIFIERC_PREP, 0, &s2u,
+			   &s2u_len, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK)
+    return FALSE;
+
+  ret = !memcmp(s1u, s2u, n);
+
+  silc_free(s1u);
+  silc_free(s2u);
+
+  return ret;
+}
