@@ -172,3 +172,4 @@ least could be done.
 
  o Check whether we can fully comply with RFC 2779.
 
+ o The CMODE cipher & hmac change problem (#101).

@@ -1487,7 +1487,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_free(umodes);
 	}
       }
-      
+
       if (mode) {
 	memset(buf, 0, sizeof(buf));
 	silc_get_umode_string(mode, buf, sizeof(buf - 1));

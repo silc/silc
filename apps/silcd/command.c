@@ -1026,8 +1026,9 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcArgumentPayload args;
   SilcHashTableList htl;
   SilcBuffer packet, list, tmp2;
-  unsigned char *tmp;
-  SilcUInt32 len, type;
+  SilcBufferStruct alist;
+  unsigned char *tmp, *atype = NULL;
+  SilcUInt32 len, type, len2;
   SilcUInt16 argc = 0, ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_INVITE, cmd, 1, 4);
@@ -1173,11 +1174,11 @@ SILC_SERVER_CMD_FUNC(invite)
   }
 
   /* Get the invite information */
-  tmp = silc_argument_get_arg_type(cmd->args, 4, &len);
-  if (tmp && len > 2) {
+  tmp = silc_argument_get_arg_type(cmd->args, 4, &len2);
+  if (tmp && len2 > 2) {
     /* Parse the arguments to see they are constructed correctly */
     SILC_GET16_MSB(argc, tmp);
-    args = silc_argument_payload_parse(tmp + 2, len - 2, argc);
+    args = silc_argument_payload_parse(tmp + 2, len2 - 2, argc);
     if (!args) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
 					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
@@ -1186,9 +1187,9 @@ SILC_SERVER_CMD_FUNC(invite)
     }
 
     /* Get the type of action */
-    tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
-    if (tmp && len == 1) {
-      if (tmp[0] == 0x00) {
+    atype = silc_argument_get_arg_type(cmd->args, 3, &len);
+    if (atype && len == 1) {
+      if (atype[0] == 0x00) {
 	/* Allocate hash table for invite list if it doesn't exist yet */
 	if (!channel->invite_list)
 	  channel->invite_list =
@@ -1196,7 +1197,7 @@ SILC_SERVER_CMD_FUNC(invite)
 				  NULL, NULL, NULL,
 				  silc_server_inviteban_destruct, channel,
 				  TRUE);
-    
+
 	/* Check for resource limit */
 	if (silc_hash_table_count(channel->invite_list) > 64) {
 	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
@@ -1208,7 +1209,7 @@ SILC_SERVER_CMD_FUNC(invite)
 
       /* Now add or delete the information. */
       silc_server_inviteban_process(server, channel->invite_list,
-				    (SilcUInt8)tmp[0], args);
+				    (SilcUInt8)atype[0], args);
     }
     silc_argument_payload_free(args);
   }
@@ -1229,13 +1230,15 @@ SILC_SERVER_CMD_FUNC(invite)
   }
 
   /* Send notify to the primary router */
-  silc_server_send_notify_invite(
-			 server, SILC_PRIMARY_ROUTE(server),
-			 SILC_BROADCAST(server), channel, sender->id,
-			 silc_argument_get_arg_type(cmd->args, 3, NULL),
-			 list);
+  if (atype && tmp && len2) {
+    silc_buffer_set(&alist, tmp, len2);
+    silc_server_send_notify_invite(server, SILC_PRIMARY_ROUTE(server),
+				   SILC_BROADCAST(server), channel,
+				   sender->id, atype,
+				   tmp ? &alist : NULL);
+  }
 
-  /* Send invite list back only if the list was modified, or now arguments
+  /* Send invite list back only if the list was modified, or no arguments
      was given. */
   type = 0;
   argc = silc_argument_get_arg_num(cmd->args);
@@ -4094,12 +4097,13 @@ SILC_SERVER_CMD_FUNC(ban)
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcChannelID *channel_id = NULL;
-  unsigned char *id, *tmp;
-  SilcUInt32 id_len, len;
+  unsigned char *id, *tmp, *atype = NULL;
+  SilcUInt32 id_len, len, len2;
   SilcArgumentPayload args;
   SilcHashTableList htl;
   SilcUInt32 type;
   SilcUInt16 argc = 0, ident = silc_command_get_ident(cmd->payload);
+  SilcBufferStruct blist;
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
@@ -4147,11 +4151,11 @@ SILC_SERVER_CMD_FUNC(ban)
   }
 
   /* Get the ban information */
-  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
-  if (tmp && len > 2) {
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &len2);
+  if (tmp && len2 > 2) {
     /* Parse the arguments to see they are constructed correctly */
     SILC_GET16_MSB(argc, tmp);
-    args = silc_argument_payload_parse(tmp + 2, len - 2, argc);
+    args = silc_argument_payload_parse(tmp + 2, len2 - 2, argc);
     if (!args) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
 					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
@@ -4160,9 +4164,9 @@ SILC_SERVER_CMD_FUNC(ban)
     }
 
     /* Get the type of action */
-    tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
-    if (tmp && len == 1) {
-      if (tmp[0] == 0x00) {
+    atype = silc_argument_get_arg_type(cmd->args, 2, &len);
+    if (atype && len == 1) {
+      if (atype[0] == 0x00) {
 	/* Allocate hash table for ban list if it doesn't exist yet */
 	if (!channel->ban_list)
 	  channel->ban_list =
@@ -4182,7 +4186,7 @@ SILC_SERVER_CMD_FUNC(ban)
 
       /* Now add or delete the information. */
       silc_server_inviteban_process(server, channel->ban_list,
-				    (SilcUInt8)tmp[0], args);
+				    (SilcUInt8)atype[0], args);
     }
     silc_argument_payload_free(args);
   }
@@ -4203,11 +4207,12 @@ SILC_SERVER_CMD_FUNC(ban)
   }
 
   /* Send the BAN notify type to our primary router. */
-  if (list)
+  if (atype && tmp && len2) {
+    silc_buffer_set(&blist, tmp, len2);
     silc_server_send_notify_ban(server, SILC_PRIMARY_ROUTE(server),
-				SILC_BROADCAST(server), channel,
-				silc_argument_get_arg_type(cmd->args, 2, NULL),
-				list);
+				SILC_BROADCAST(server), channel, atype,
+				&blist);
+  }
 
   /* Send the reply back to the client */
   packet = 

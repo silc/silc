@@ -279,6 +279,20 @@ void silc_client_notify_by_server(SilcClient client,
 
     SILC_LOG_DEBUG(("Notify: JOIN"));
 
+    /* Get Channel ID */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel)
+      break;
+
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -325,20 +339,6 @@ void silc_client_notify_by_server(SilcClient client,
       if (client_entry != conn->local_entry)
 	silc_client_nickname_format(client, conn, client_entry);
     }
-
-    /* Get Channel ID */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp)
-      goto out;
-
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_client_get_channel_by_id(client, conn, channel_id);
-    if (!channel)
-      break;
 
     /* If information is being resolved for this channel, wait for it */
     if (channel->resolve_cmd_ident) {

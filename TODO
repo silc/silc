@@ -9,11 +9,6 @@ TODO for Irssi SILC Client 1.0
 TODO for SILC Server 1.0
 ========================
 
- o INVITE and BAN notifys send the entire list as notify, but only the
-   added/removed info should be sent.
-
- o The CMODE cipher & hmac change problem (#101).
-
  o Fix CUMODE_CHANGE and CMODE_CHANGE for founder key things.
 
  o 1.2 backup router support

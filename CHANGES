@@ -1,3 +1,23 @@
+Mon Mar 17 18:35:24 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Rewrote SilcList, affected file lib/silcutil/silc*list.h.
+
+	* Fixed EOF handling in SILC Config, affected file
+	  lib/silcutil/silcconfig.c.
+
+	* Fixed buffer overflows in lib/silcutil/silcstrutil.c.
+
+	* Fixed RESOLVING flag handling in JOIN notify and other
+	  notifys to handle the resolvings correctly in client library.
+	  Affected file lib/silcclient/client_notify.c.
+
+	* Do not send full INVITE and BAN lists in INVITE and BAN
+	  notifys, only the changed information.  Affected file
+	  silcd/command.c.
+
+	* Fixed INVITE notify sending in INVITE command, send it
+	  only when needed.  Affected file silcd/command.c.
+
 Sun Mar  9 16:29:20 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Remove the mark for output (mark it only for input) after
