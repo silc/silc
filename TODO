@@ -11,8 +11,6 @@ TODO/bugs in Irssi SILC client
    keys is not possible because changing the key is not possible by the
    user.
 
- o Add the server/router operator info to the statusbar.
-
  o /cumode for unknown nick does not give any error message.
 
 

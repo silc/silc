@@ -34,7 +34,13 @@
 
 static char *expando_usermode(SERVER_REC *server, void *item, int *free_ret)
 {
-  return "";
+  SILC_SERVER_REC *s = SILC_SERVER(server);
+
+  if (!s)
+    return "";
+
+  return (s->umode & SILC_UMODE_SERVER_OPERATOR) ? "Server Operator" :
+    (s->umode & SILC_UMODE_ROUTER_OPERATOR) ? "Router Operator" : "";
 }
 
 /* Expands to your usermode on channel */

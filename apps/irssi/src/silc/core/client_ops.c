@@ -1085,12 +1085,16 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			   MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
 
       server->umode = mode;
+      signal_emit("user mode changed", 2, server, NULL);
     }
     break;
     
   case SILC_COMMAND_OPER:
     if (!success)
       return;
+
+    server->umode |= SILC_UMODE_SERVER_OPERATOR;
+    signal_emit("user mode changed", 2, server, NULL);
 
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_SERVER_OPER);
@@ -1099,6 +1103,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   case SILC_COMMAND_SILCOPER:
     if (!success)
       return;
+
+    server->umode |= SILC_UMODE_ROUTER_OPERATOR;
+    signal_emit("user mode changed", 2, server, NULL);
 
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
