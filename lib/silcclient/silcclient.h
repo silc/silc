@@ -850,6 +850,11 @@ typedef struct {
      not want to use them set this to TRUE.  See SilcAttribute and
      silc_client_attribute_add for more information on attributes. */
   bool ignore_requested_attributes;
+  
+  /* If this is set to TRUE, the silcclient library will not register and 
+     deregister the cipher, pkcs, hash and hmac algorithms. The application
+	 itself will need to handle that. */
+  bool dont_register_crypto_library;
 
 } SilcClientParams;
 /***/

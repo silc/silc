@@ -87,11 +87,13 @@ void silc_client_free(SilcClient client)
   if (client) {
     if (client->rng)
       silc_rng_free(client->rng);
-
-    silc_cipher_unregister_all();
-    silc_pkcs_unregister_all();
-    silc_hash_unregister_all();
-    silc_hmac_unregister_all();
+	
+    if (!client->internal->params->dont_register_crypto_library) {
+      silc_cipher_unregister_all();
+      silc_pkcs_unregister_all();
+      silc_hash_unregister_all();
+      silc_hmac_unregister_all();
+    }
 
     silc_hash_free(client->md5hash);
     silc_hash_free(client->sha1hash);
@@ -118,13 +120,15 @@ bool silc_client_init(SilcClient client)
   assert(client->hostname);
   assert(client->realname);
 
-  /* Initialize the crypto library.  If application has done this already
-     this has no effect.  Also, we will not be overriding something
-     application might have registered earlier. */
-  silc_cipher_register_default();
-  silc_pkcs_register_default();
-  silc_hash_register_default();
-  silc_hmac_register_default();
+  if (!client->internal->params->dont_register_crypto_library) {
+    /* Initialize the crypto library.  If application has done this already
+       this has no effect.  Also, we will not be overriding something
+       application might have registered earlier. */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
+  }
 
   /* Initialize hash functions for client to use */
   silc_hash_alloc("md5", &client->md5hash);
