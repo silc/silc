@@ -2921,7 +2921,17 @@ void silc_server_create_connection(SilcServer server,
 
 SILC_TASK_CALLBACK(silc_server_close_connection_final)
 {
-  silc_socket_free(context);
+  SilcServer server = app_context;
+  SilcSocketConnection sock = context;
+
+  /* Close the actual connection */
+  silc_net_close_connection(sock->sock);
+
+  /* We won't listen for this connection anymore */
+  silc_schedule_task_del_by_fd(server->schedule, sock->sock);
+  silc_schedule_unset_listen_fd(server->schedule, sock->sock);
+
+  silc_socket_free(sock);
 }
 
 /* Closes connection to socket connection */
@@ -2932,9 +2942,6 @@ void silc_server_close_connection(SilcServer server,
   char tmp[128];
 
   if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
-    silc_schedule_unset_listen_fd(server->schedule, sock->sock);
-    silc_schedule_task_del_by_fd(server->schedule, sock->sock);
-    silc_net_close_connection(sock->sock);
     silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_close_connection_final,
 			   (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
@@ -2972,12 +2979,6 @@ void silc_server_close_connection(SilcServer server,
       return;
     }
   }
-
-  /* Close the actual connection */
-  silc_net_close_connection(sock->sock);
-
-  /* We won't listen for this connection anymore */
-  silc_schedule_unset_listen_fd(server->schedule, sock->sock);
 
   silc_schedule_task_add(server->schedule, sock->sock,
 			 silc_server_close_connection_final,
