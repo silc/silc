@@ -73,7 +73,7 @@ Table of Contents
 1 Introduction ..................................................  3
   1.1 Requirements Terminology ..................................  4
 2 SILC Concepts .................................................  4
-  2.1 SILC Network Topology .....................................  4
+  2.1 SILC Network Topology .....................................  5
   2.2 Communication Inside a Cell ...............................  6
   2.3 Communication in the Network ..............................  7
   2.4 Channel Communication .....................................  7
@@ -89,7 +89,7 @@ Table of Contents
       3.3.1 Router's Local ID List .............................. 13
       3.3.2 Router's Global ID List ............................. 14
       3.3.3 Router's Server ID .................................. 14
-  3.4 Channels .................................................. 14
+  3.4 Channels .................................................. 15
       3.4.1 Channel ID .......................................... 16
   3.5 Operators ................................................. 16
   3.6 SILC Commands ............................................. 17
@@ -111,32 +111,32 @@ Table of Contents
       3.10.3 Hash Functions ..................................... 27
       3.10.4 MAC Algorithms ..................................... 27
       3.10.5 Compression Algorithms ............................. 28
-  3.11 SILC Public Key .......................................... 29
+  3.11 SILC Public Key .......................................... 28
   3.12 SILC Version Detection ................................... 31
-  3.13 UTF-8 Strings in SILC .................................... XXXX
-      3.13.1 UTF-8 Identifier Strings ........................... XXXX
-  3.14 Backup Routers ........................................... 31
-      3.14.1 Switching to Backup Router ......................... 33
-      3.14.2 Resuming Primary Router ............................ 34
-4 SILC Procedures ............................................... 36
-  4.1 Creating Client Connection ................................ 37
-  4.2 Creating Server Connection ................................ 38
-      4.2.1 Announcing Clients, Channels and Servers ............ 39
-  4.3 Joining to a Channel ...................................... 40
-  4.4 Channel Key Generation .................................... 41
-  4.5 Private Message Sending and Reception ..................... 42
-  4.6 Private Message Key Generation ............................ 42
-  4.7 Channel Message Sending and Reception ..................... 43
-  4.8 Session Key Regeneration .................................. 44
-  4.9 Command Sending and Reception ............................. 44
-  4.10 Closing Connection ....................................... 45
-  4.11 Detaching and Resuming a Session ......................... 46
-5 Security Considerations ....................................... 47
-6 References .................................................... 48
-7 Author's Address .............................................. 50
-Appendix A ...................................................... XXXX
-Appendix B ...................................................... XXXX
-Full Copyright Statement ........................................ XXXX
+  3.13 UTF-8 Strings in SILC .................................... 31
+      3.13.1 UTF-8 Identifier Strings ........................... 32
+  3.14 Backup Routers ........................................... 33
+      3.14.1 Switching to Backup Router ......................... 35
+      3.14.2 Resuming Primary Router ............................ 36
+4 SILC Procedures ............................................... 38
+  4.1 Creating Client Connection ................................ 38
+  4.2 Creating Server Connection ................................ 40
+      4.2.1 Announcing Clients, Channels and Servers ............ 40
+  4.3 Joining to a Channel ...................................... 42
+  4.4 Channel Key Generation .................................... 43
+  4.5 Private Message Sending and Reception ..................... 44
+  4.6 Private Message Key Generation ............................ 44
+  4.7 Channel Message Sending and Reception ..................... 45
+  4.8 Session Key Regeneration .................................. 46
+  4.9 Command Sending and Reception ............................. 46
+  4.10 Closing Connection ....................................... 47
+  4.11 Detaching and Resuming a Session ......................... 48
+5 Security Considerations ....................................... 49
+6 References .................................................... 50
+7 Author's Address .............................................. 52
+Appendix A ...................................................... 52
+Appendix B ...................................................... 54
+Full Copyright Statement ........................................ 54
 
 .ti 0
 List of Figures
@@ -214,6 +214,7 @@ known as a channel.
 This section does not focus to security issues.  Instead, basic network
 concepts are introduced to make the topology of the SILC network
 clear.
+
 
 
 .ti 0
@@ -580,7 +581,6 @@ client list        - All clients in server
    o Receiving key
    o Public key
 
-
 channel list       - All channels in server
    o Channel name
    o Channel ID
@@ -588,7 +588,6 @@ channel list       - All channels in server
    o Client ID modes on channel
    o Channel key
 .in 3
-
 
 
 .ti 0
@@ -642,7 +641,6 @@ numbers must be officially assigned by the IANA.
 
 Server on network above privileged ports (>1023) SHOULD NOT be trusted
 as they could have been set up by untrusted party.
-
 
 
 .ti 0
@@ -742,6 +740,8 @@ channel list       - All channels in SILC
 Router's Server ID is equivalent to normal Server ID.  As routers are
 normal servers same types of IDs applies for routers as well.  See
 section 3.2.2 Server ID.
+
+
 
 
 .ti 0
@@ -1406,7 +1406,6 @@ md5              MD5, length = 16        (RECOMMENDED)
 .in 3
 
 
-
 .ti 0
 3.10.4 MAC Algorithms
 
@@ -1952,8 +1951,6 @@ so on.  The references [SILC2], [SILC3] and [SILC4] permeate this
 section's definitions.
 
 
-
-
 .ti 0
 4.1 Creating Client Connection
 
@@ -2021,6 +2018,8 @@ the SILC network).  More information about this in [SILC2].
 Router server MUST also check whether some client in the local cell
 is watching for the nickname this new client has, and send the
 SILC_NOTIFY_TYPE_WATCH to the watcher.
+
+
 
 
 .ti 0
@@ -2264,37 +2263,44 @@ process.
 4.6 Private Message Key Generation
 
 Private message MAY be protected with a key generated by the client.
-The key may be generated and sent to the other client by sending packet
-SILC_PACKET_PRIVATE_MESSAGE_KEY which travels through the network
-and is secured by session keys.  After that the private message key
-is used in the private message communication between those clients.
-The key sent inside the payload SHOULD be randomly generated.  This
-packet MUST NOT be used to send pre-shared keys.
+One way to generate private message key is to use static or pre-shared
+keys in the client implementation.  Client that wants to indicate other
+client on the network that a private message key should be set, the
+client MAY send SILC_PACKET_PRIVATE_MESSAGE_KEY packet to indicate this.
+The actual key material has to be transferred outside the SILC network,
+or it has to be pre-shared key.  The client receiving this packet knows
+that the sender wishes to use private message key in private message
+communication.  In case of static or pre-shared keys the IV used in
+the encryption SHOULD be chosen randomly.  Sending the
+SILC_PACKET_PRIVATE_MESSAGE_KEY is not mandatory, and clients may
+naturally agree to use a key without sending the packet.
 
-Another choice is to entirely use keys that are not sent through
-the SILC network at all.  This significantly adds security.  This key
-could be a pre-shared key that is known by both of the clients.  Both
-agree about using the key and start sending packets that indicate
-that the private message is secured using private message key.  In
-case of pre-shared keys (static keys) the IV used in encryption SHOULD
-be chosen randomly.
-
-It is also possible to negotiate fresh key material by performing
-Key Agreement.  The SILC_PACKET_KEY_AGREEMENT packet MAY be used to
-negotiate the fresh key material.  In this case the resulting key
-material is used to secure the private messages.  Also, the IV used
-in encryption is used as defined in [SILC3], unless otherwise stated
-by the encryption mode used.  By performing Key Agreement the clients
-may negotiate the cipher and HMAC to be used in the private message
-encryption and to negotiate additional security parameters.
+Another choice to use private message keys is to negotiate fresh key
+material by performing the Key Agreement.  The SILC_PACKET_KEY_AGREEMENT
+packet MAY be used to negotiate the fresh key material.  In this case
+the resulting key material is used to secure the private messages.
+Also, the IV used in encryption is used as defined in [SILC3], unless
+otherwise stated by the encryption mode used.  By performing Key
+Agreement the clients can also negotiate the cipher and HMAC to be used
+in the private message encryption and to negotiate additional security
+parameters.  The actual Key Agreement [SILC2] is performed by executing
+the SILC Key Exchange protocol [SILC3], peer to peer.  Because of NAT
+devices in the network, it might be impossible to perform the Key
+Agreement.  In this case using static or pre-shared key and sending the
+SILC_PACKET_PRIVATE_MESSAGE_KEY to indicate the use of a private message
+key is a working alternative.
 
 If the key is pre-shared key or other key material not generated by
 Key Agreement, then the key material SHOULD be processed as defined
-in [SILC3].  The hash function to be used SHOULD be SHA1.  In the
-processing, however, the HASH, as defined in [SILC3] MUST be ignored.
-After processing the key material it is employed as defined in [SILC3].
-In this case also, implementations SHOULD use the SILC protocol's
-mandatory cipher and HMAC in private message encryption.
+in [SILC3].  In the processing, however, the HASH, as defined in [SILC3]
+MUST be ignored.  After processing the key material it is employed as
+defined in [SILC3].  If the SILC_PACKET_PRIVATE_MESSAGE_KEY was sent,
+then it defines the cipher and HMAC to be used.  The hash algorithm to be
+used in the key material processing is the one that HMAC algorithm is
+defined to use.  If the SILC_PACKET_PRIVATE_MESSAGE_KEY was not sent at
+all, then the hash algorithm to be used SHOULD be SHA1.  In this case
+also, implementations SHOULD use the SILC protocol's mandatory cipher
+and HMAC in private message encryption.
 
 
 .ti 0
@@ -2411,8 +2417,6 @@ Router server MUST also check whether some client in the local cell
 is watching for the nickname this client has, and send the
 SILC_NOTIFY_TYPE_WATCH to the watcher, unless the client which left
 the network has the SILC_UMODE_REJECT_WATCHING user mode set.
-
-
 
 
 .ti 0
@@ -2712,6 +2716,7 @@ document defines the profile.  This document defines the first version of
 this profile.
 
 
+.ti 0
 Appendix B
 
 This appendix defines additional prohibited characters in the identifier
