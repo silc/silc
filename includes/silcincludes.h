@@ -255,6 +255,7 @@ extern "C" {
 #include "silcprotocol.h"
 #include "silcsockconn.h"
 #include "silcvcard.h"
+#include "silcapputil.h"
 
 /* SILC core library includes */
 #include "silcstatus.h"
@@ -270,7 +271,6 @@ extern "C" {
 #include "silcprivate.h"
 #include "silcattrs.h"
 #include "silcvcard.h"
-#include "silcapputil.h"
 
 #if defined(SILC_SIM)
 /* SILC Module library includes */

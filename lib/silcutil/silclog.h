@@ -266,7 +266,7 @@ extern DLLAPI bool silc_debug_hexdump;
 #define SILC_ENABLE_DEBUG	\
   #ifndef SILC_DEBUG		\
   #define SILC_DEBUG 1		\
-  #endif SILC_DEBUG		\
+  #endif SILC_DEBUG
 /***/
 
 /****d* silcutil/SilcLogAPI/SILC_LOG_INFO
