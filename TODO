@@ -65,6 +65,9 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o removing other's modes on channel seems to be possible due to some
+   cumode bug.
+
  o Topic notifications seem to go double times occasionally to a channel.
 
  o Backup router related issues
