@@ -76,10 +76,12 @@ SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer)
   }
 
   silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
-  new->args = silc_argument_payload_parse(buffer, args_num);
-  if (!new->args) {
-    silc_free(new);
-    return NULL;
+  if (args_num) {
+    new->args = silc_argument_payload_parse(buffer, args_num);
+    if (!new->args) {
+      silc_free(new);
+      return NULL;
+    }
   }
   silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
 

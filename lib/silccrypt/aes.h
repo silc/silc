@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.1  2001/02/26 17:32:08  priikone
+ * 	updates.
+ *
  * Revision 1.2  2000/10/02 18:31:46  priikone
  * 	Added rijndael (AES) to cipher list.
  *
@@ -38,11 +41,11 @@
  * SILC Crypto API for Rijndael
  */
 
-SILC_CIPHER_API_SET_KEY(rijndael);
-SILC_CIPHER_API_SET_KEY_WITH_STRING(rijndael);
-SILC_CIPHER_API_CONTEXT_LEN(rijndael);
-SILC_CIPHER_API_ENCRYPT_CBC(rijndael);
-SILC_CIPHER_API_DECRYPT_CBC(rijndael);
+SILC_CIPHER_API_SET_KEY(aes);
+SILC_CIPHER_API_SET_KEY_WITH_STRING(aes);
+SILC_CIPHER_API_CONTEXT_LEN(aes);
+SILC_CIPHER_API_ENCRYPT_CBC(aes);
+SILC_CIPHER_API_DECRYPT_CBC(aes);
 
 
 #endif

@@ -351,10 +351,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
        * End protocol
        */
       SilcSKEKeyMaterial *keymat;
+      int key_len = silc_cipher_get_key_len(ctx->ske->prop->cipher, NULL);
+      int hash_len = ctx->ske->prop->hash->hash->hash_len;
 
       /* Process the key material */
       keymat = silc_calloc(1, sizeof(*keymat));
-      silc_ske_process_key_material(ctx->ske, 16, (16 * 8), 16, keymat);
+      silc_ske_process_key_material(ctx->ske, 16, key_len, hash_len, 
+				    keymat);
 
       /* Take the negotiated keys into use. */
       silc_client_protocol_ke_set_keys(ctx->ske, ctx->sock, keymat,

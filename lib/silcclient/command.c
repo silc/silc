@@ -1233,6 +1233,7 @@ SILC_CLIENT_CMD_FUNC(connect)
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
   unsigned char port[4];
+  unsigned int tmp;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1247,8 +1248,10 @@ SILC_CLIENT_CMD_FUNC(connect)
     goto out;
   }
 
-  if (cmd->argc == 3)
-    SILC_PUT32_MSB(atoi(cmd->argv[2]), port);
+  if (cmd->argc == 3) {
+    tmp = atoi(cmd->argv[2]);
+    SILC_PUT32_MSB(tmp, port);
+  }
 
   if (cmd->argc == 3)
     buffer = silc_command_payload_encode_va(SILC_COMMAND_CONNECT, 0, 2, 
@@ -1282,6 +1285,7 @@ SILC_CLIENT_CMD_FUNC(close)
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
   unsigned char port[4];
+  unsigned int tmp;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1296,8 +1300,10 @@ SILC_CLIENT_CMD_FUNC(close)
     goto out;
   }
 
-  if (cmd->argc == 3)
-    SILC_PUT32_MSB(atoi(cmd->argv[2]), port);
+  if (cmd->argc == 3) {
+    tmp = atoi(cmd->argv[2]);
+    SILC_PUT32_MSB(tmp, port);
+  }
 
   if (cmd->argc == 3)
     buffer = silc_command_payload_encode_va(SILC_COMMAND_CLOSE, 0, 2, 

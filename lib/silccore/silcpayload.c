@@ -403,7 +403,7 @@ void silc_argument_payload_free(SilcArgumentPayload payload)
 
 unsigned int silc_argument_get_arg_num(SilcArgumentPayload payload)
 {
-  return payload->argc;
+  return payload ? payload->argc : 0;
 }
 
 /* Returns first argument from payload. */

@@ -2241,10 +2241,11 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   SILC_LOG_DEBUG(("Creating new channel"));
 
   if (!cipher)
-    cipher = "twofish";
+    cipher = "aes-256-cbc";
 
   /* Allocate cipher */
-  silc_cipher_alloc(cipher, &key);
+  if (!silc_cipher_alloc(cipher, &key))
+    return NULL;
 
   channel_name = strdup(channel_name);
 
@@ -2259,7 +2260,7 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   }
 
   /* Now create the actual key material */
-  silc_server_create_channel_key(server, entry, 16);
+  silc_server_create_channel_key(server, entry, 32);
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
@@ -2288,10 +2289,11 @@ silc_server_create_new_channel_with_id(SilcServer server,
   SILC_LOG_DEBUG(("Creating new channel"));
 
   if (!cipher)
-    cipher = "twofish";
+    cipher = "aes-256-cbc";
 
   /* Allocate cipher */
-  silc_cipher_alloc(cipher, &key);
+  if (!silc_cipher_alloc(cipher, &key))
+    return NULL;
 
   channel_name = strdup(channel_name);
 
@@ -2305,7 +2307,7 @@ silc_server_create_new_channel_with_id(SilcServer server,
   }
 
   /* Now create the actual key material */
-  silc_server_create_channel_key(server, entry, 16);
+  silc_server_create_channel_key(server, entry, 32);
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
@@ -2332,7 +2334,8 @@ void silc_server_create_channel_key(SilcServer server,
   unsigned int len;
 
   if (!channel->channel_key)
-    silc_cipher_alloc("twofish", &channel->channel_key);
+    if (!silc_cipher_alloc("aes-256-cbc", &channel->channel_key))
+      return;
 
   if (key_len)
     len = key_len;
@@ -2410,7 +2413,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
     goto out;
   }
 
-  cipher = silc_channel_key_get_cipher(payload, NULL);;
+  cipher = silc_channel_key_get_cipher(payload, NULL);
   if (!cipher) {
     channel = NULL;
     goto out;

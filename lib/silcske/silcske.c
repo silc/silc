@@ -1265,30 +1265,31 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
     if (enc_key_len > (3 * hash_len))
       return SILC_SKE_STATUS_ERROR;
     
+    /* Take first round */
     memset(k1, 0, sizeof(k1));
     silc_hash_make(ske->prop->hash, buf->data, buf->len, k1);
     
-    /* XXX */
-    dist = silc_buffer_alloc(hash_len * 3);
-    
-    silc_buffer_pull_tail(dist, klen + hash_len);
+    /* Take second round */
+    dist = silc_buffer_alloc(klen + hash_len);
+    silc_buffer_pull_tail(dist, SILC_BUFFER_END(dist));
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(tmpbuf, klen),
 		       SILC_STR_UI_XNSTRING(k1, hash_len),
 		       SILC_STR_END);
-    
     memset(k2, 0, sizeof(k2));
     silc_hash_make(ske->prop->hash, dist->data, dist->len, k2);
     
+    /* Take third round */
+    dist = silc_buffer_realloc(dist, klen + hash_len + hash_len);
     silc_buffer_pull(dist, klen + hash_len);
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(k2, hash_len),
 		       SILC_STR_END);
     silc_buffer_push(dist, klen + hash_len);
-    
     memset(k3, 0, sizeof(k3));
     silc_hash_make(ske->prop->hash, dist->data, dist->len, k3);
-    
+
+    /* Then, save the keys */
     dtmp = silc_calloc((3 * hash_len), sizeof(unsigned char));
     memcpy(dtmp, k1, hash_len);
     memcpy(dtmp + hash_len, k2, hash_len);
@@ -1323,30 +1324,31 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
     if (enc_key_len > (3 * hash_len))
       return SILC_SKE_STATUS_ERROR;
     
+    /* Take first round */
     memset(k1, 0, sizeof(k1));
     silc_hash_make(ske->prop->hash, buf->data, buf->len, k1);
     
-    /* XXX */
-    dist = silc_buffer_alloc(hash_len * 3);
-    
-    silc_buffer_pull_tail(dist, klen + hash_len);
+    /* Take second round */
+    dist = silc_buffer_alloc(klen + hash_len);
+    silc_buffer_pull_tail(dist, SILC_BUFFER_END(dist));
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(tmpbuf, klen),
 		       SILC_STR_UI_XNSTRING(k1, hash_len),
 		       SILC_STR_END);
-    
     memset(k2, 0, sizeof(k2));
     silc_hash_make(ske->prop->hash, dist->data, dist->len, k2);
     
+    /* Take third round */
+    dist = silc_buffer_realloc(dist, klen + hash_len + hash_len);
     silc_buffer_pull(dist, klen + hash_len);
     silc_buffer_format(dist,
 		       SILC_STR_UI_XNSTRING(k2, hash_len),
 		       SILC_STR_END);
     silc_buffer_push(dist, klen + hash_len);
-    
     memset(k3, 0, sizeof(k3));
     silc_hash_make(ske->prop->hash, dist->data, dist->len, k3);
-    
+
+    /* Then, save the keys */
     dtmp = silc_calloc((3 * hash_len), sizeof(unsigned char));
     memcpy(dtmp, k1, hash_len);
     memcpy(dtmp + hash_len, k2, hash_len);

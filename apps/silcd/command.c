@@ -1921,7 +1921,8 @@ static void silc_server_command_join_channel(SilcServer server,
   SILC_PUT32_MSB(created, tmp2);
   tmp = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   keyp = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, tmp, 
-					 SILC_ID_CHANNEL_LEN,
+					 strlen(channel->channel_key->
+						cipher->name),
 					 channel->channel_key->cipher->name,
 					 channel->key_len / 8, channel->key);
   silc_free(tmp);
@@ -2472,7 +2473,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (mode_mask & SILC_CHANNEL_MODE_CIPHER) {
     if (!(channel->mode & SILC_CHANNEL_MODE_CIPHER)) {
       /* Cipher to use protect the traffic */
-      unsigned int key_len = 128;
+      unsigned int key_len = 256;
       char *cp;
 
       /* Get cipher */
@@ -2493,7 +2494,11 @@ SILC_SERVER_CMD_FUNC(cmode)
     
       /* Delete old cipher and allocate the new one */
       silc_cipher_free(channel->channel_key);
-      silc_cipher_alloc(tmp, &channel->channel_key);
+      if (!silc_cipher_alloc(tmp, &channel->channel_key)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	goto out;
+      }
 
       key_len /= 8;
       if (key_len > 32)
@@ -2547,9 +2552,14 @@ SILC_SERVER_CMD_FUNC(cmode)
       /* Delete old cipher and allocate default one */
       silc_cipher_free(channel->channel_key);
       if (!channel->cipher)
-	silc_cipher_alloc("twofish", &channel->channel_key);
-      else
-	silc_cipher_alloc(channel->cipher, &channel->channel_key);
+	silc_cipher_alloc("aes-256-cbc", &channel->channel_key);
+      else {
+	if (!silc_cipher_alloc(channel->cipher, &channel->channel_key)) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+				  SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	  goto out;
+	}
+      }
 
       /* Re-generate channel key */
       silc_server_create_channel_key(server, channel, 0);
@@ -2978,7 +2988,7 @@ SILC_SERVER_CMD_FUNC(connect)
   unsigned int tmp_len;
   unsigned int port = SILC_PORT;
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CONNECT, cmd, 0, 0);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CONNECT, cmd, 1, 2);
 
   if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
@@ -3038,7 +3048,7 @@ SILC_SERVER_CMD_FUNC(close)
   unsigned char *name;
   unsigned int port = SILC_PORT;
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CLOSE, cmd, 0, 0);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CLOSE, cmd, 1, 2);
 
   if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;

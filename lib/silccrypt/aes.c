@@ -40,7 +40,7 @@ Mean:          500 cycles =    51.2 mbits/sec
 */
 
 #include "silcincludes.h"
-#include "rijndael.h"
+#include "aes.h"
 
 /* 
  * SILC Crypto API for Rijndael
@@ -48,7 +48,7 @@ Mean:          500 cycles =    51.2 mbits/sec
 
 /* Sets the key for the cipher. */
 
-SILC_CIPHER_API_SET_KEY(rijndael)
+SILC_CIPHER_API_SET_KEY(aes)
 {
   rijndael_set_key((RijndaelContext *)context, (unsigned int *)key, keylen);
   return 1;
@@ -57,7 +57,7 @@ SILC_CIPHER_API_SET_KEY(rijndael)
 /* Sets the string as a new key for the cipher. The string is first
    hashed and then used as a new key. */
 
-SILC_CIPHER_API_SET_KEY_WITH_STRING(rijndael)
+SILC_CIPHER_API_SET_KEY_WITH_STRING(aes)
 {
   /*  unsigned char key[md5_hash_len];
   SilcMarsContext *ctx = (SilcMarsContext *)context;
@@ -72,7 +72,7 @@ SILC_CIPHER_API_SET_KEY_WITH_STRING(rijndael)
 
 /* Returns the size of the cipher context. */
 
-SILC_CIPHER_API_CONTEXT_LEN(rijndael)
+SILC_CIPHER_API_CONTEXT_LEN(aes)
 {
   return sizeof(RijndaelContext);
 }
@@ -80,7 +80,7 @@ SILC_CIPHER_API_CONTEXT_LEN(rijndael)
 /* Encrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_ENCRYPT_CBC(rijndael)
+SILC_CIPHER_API_ENCRYPT_CBC(aes)
 {
   unsigned int *in, *out, *tiv;
   unsigned int tmp[4];
@@ -119,7 +119,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(rijndael)
 /* Decrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_DECRYPT_CBC(rijndael)
+SILC_CIPHER_API_DECRYPT_CBC(aes)
 {
   unsigned int *tiv, *in, *out;
   unsigned int tmp[4], tmp2[4];

@@ -27,7 +27,7 @@ libsilccrypt_a_SOURCES = \
 	rc6.c \
 	mars.c \
 	md5.c \
-	rijndael.c \
+	aes.c \
 	rsa.c \
 	sha1.c \
 	twofish.c \

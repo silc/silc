@@ -1,3 +1,26 @@
+Mon Feb 26 12:13:58 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Redefined ciphers for the SILC protocol.  Added some new ciphers
+	  and defined the key lengths for the algorithms.  Changed the
+	  code accordingly.  The default key length is now 256 bits.
+
+	* Fixed SKE key distribution function silc_ske_process_key_material
+	  when the key length is more than 128 bits.  The default key 
+	  length in SILC is now 256 bits.
+
+	* Added new command status type: SILC_STATUS_ERR_UNKOWN_ALGORITHM
+	  to indicate unsupported algorithm.
+
+	* Renamed rijndael.c to aes.c and all functions as well.
+
+	* Fixed a long standing channel key setting bug in client library.
+	  Weird that it has never surfaced before.
+
+	* Fixed bug in channel deletion.  If the entire channel is removed
+	  then it must also delete the references of the channel entry
+	  from the client's channel list as the client's channel entry and
+	  the channel's client entry share same memory.
+
 Sun Feb 25 20:47:29 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented CONNECT and SHUTDOWN commands in the client.

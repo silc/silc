@@ -156,7 +156,7 @@ int silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
       h = h->next;
     }
 
-    if (!h)
+    if (!h || !h->hash->context_len)
       goto check_builtin;
 
     /* Set the pointers */
@@ -174,6 +174,7 @@ int silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 
   if (silc_hash_builtin_list[i].name == NULL) {
     silc_free(*new_hash);
+    *new_hash = NULL;
     return FALSE;
   }
   

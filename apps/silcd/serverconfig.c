@@ -430,18 +430,6 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       if (ret < 0)
 	break;
 
-      /* Get block length */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Cipher block length not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      config->cipher->block_len = atoi(tmp);
-      silc_free(tmp);
-
       /* Get key length */
       ret = silc_config_get_token(line, &tmp);
       if (ret < 0)
@@ -452,6 +440,18 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 	break;
       }
       config->cipher->key_len = atoi(tmp);
+      silc_free(tmp);
+
+      /* Get block length */
+      ret = silc_config_get_token(line, &tmp);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	fprintf(stderr, "%s:%d: Cipher block length not defined\n",
+		config->filename, pc->linenum);
+	break;
+      }
+      config->cipher->block_len = atoi(tmp);
       silc_free(tmp);
 
       check = TRUE;
@@ -1192,6 +1192,7 @@ void silc_server_config_register_ciphers(SilcServerConfig config)
       /* Load (try at least) the crypto SIM module */
       SilcCipherObject cipher;
       SilcSimContext *sim;
+      char *alg_name;
 
       memset(&cipher, 0, sizeof(cipher));
       cipher.name = alg->alg_name;
@@ -1202,30 +1203,36 @@ void silc_server_config_register_ciphers(SilcServerConfig config)
       sim->type = SILC_SIM_CIPHER;
       sim->libname = alg->sim_name;
 
+      alg_name = strdup(alg->alg_name);
+      if (strchr(alg_name, '-'))
+	*strchr(alg_name, '-') = '\0';
+
       if ((silc_sim_load(sim))) {
 	cipher.set_key = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name, 
+	  silc_sim_getsym(sim, silc_sim_symname(alg_name, 
 						SILC_CIPHER_SIM_SET_KEY));
 	SILC_LOG_DEBUG(("set_key=%p", cipher.set_key));
 	cipher.set_key_with_string = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name, 
+	  silc_sim_getsym(sim, silc_sim_symname(alg_name, 
 						SILC_CIPHER_SIM_SET_KEY_WITH_STRING));
 	SILC_LOG_DEBUG(("set_key_with_string=%p", cipher.set_key_with_string));
 	cipher.encrypt = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
 						SILC_CIPHER_SIM_ENCRYPT_CBC));
 	SILC_LOG_DEBUG(("encrypt_cbc=%p", cipher.encrypt));
         cipher.decrypt = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
 						SILC_CIPHER_SIM_DECRYPT_CBC));
 	SILC_LOG_DEBUG(("decrypt_cbc=%p", cipher.decrypt));
         cipher.context_len = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
 						SILC_CIPHER_SIM_CONTEXT_LEN));
 	SILC_LOG_DEBUG(("context_len=%p", cipher.context_len));
 
 	/* Put the SIM to the list of all SIM's in server */
 	silc_dlist_add(server->sim, sim);
+
+	silc_free(alg_name);
       } else {
 	SILC_LOG_ERROR(("Error configuring ciphers"));
 	silc_server_stop(server);

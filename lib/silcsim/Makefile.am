@@ -39,7 +39,7 @@ SIM_CIPHER_OBJS = \
         rc5.o \
         rc6.o \
         mars.o \
-        rijndael.o \
+        aes.o \
         rsa.o \
         twofish.o
 

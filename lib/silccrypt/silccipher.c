@@ -34,22 +34,47 @@ struct SilcCipherListStruct {
 /* Dynamically registered list of ciphers. */
 struct SilcCipherListStruct *silc_cipher_list = NULL;
 
-/* XXX: add the other good ciphers here as well */
-
 /* Staticly declared list of ciphers. This is used if system doesn't
    support SIM's. */
 SilcCipherObject silc_cipher_builtin_list[] =
 {
-  { "twofish", 16, 16, silc_twofish_set_key, silc_twofish_set_key_with_string,
+  { "aes-256-cbc", 16, 256, silc_aes_set_key, 
+    silc_aes_set_key_with_string, silc_aes_encrypt_cbc,
+    silc_aes_decrypt_cbc, silc_aes_context_len },
+  { "aes-192-cbc", 16, 192, silc_aes_set_key, 
+    silc_aes_set_key_with_string, silc_aes_encrypt_cbc,
+    silc_aes_decrypt_cbc, silc_aes_context_len },
+  { "aes-128-cbc", 16, 128, silc_aes_set_key, 
+    silc_aes_set_key_with_string, silc_aes_encrypt_cbc,
+    silc_aes_decrypt_cbc, silc_aes_context_len },
+  { "twofish-256-cbc", 16, 256, silc_twofish_set_key, 
+    silc_twofish_set_key_with_string,
     silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc, 
     silc_twofish_context_len },
-  { "aes", 16, 16, silc_rijndael_set_key, 
-    silc_rijndael_set_key_with_string, silc_rijndael_encrypt_cbc,
-    silc_rijndael_decrypt_cbc, silc_rijndael_context_len },
-  { "rc6", 16, 16, silc_rc6_set_key, silc_rc6_set_key_with_string,
+  { "twofish-192-cbc", 16, 192, silc_twofish_set_key, 
+    silc_twofish_set_key_with_string,
+    silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc, 
+    silc_twofish_context_len },
+  { "twofish-128-cbc", 16, 128, silc_twofish_set_key, 
+    silc_twofish_set_key_with_string,
+    silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc, 
+    silc_twofish_context_len },
+  { "rc6-256-cbc", 16, 256, silc_rc6_set_key, silc_rc6_set_key_with_string,
     silc_rc6_encrypt_cbc, silc_rc6_decrypt_cbc, 
     silc_rc6_context_len },
-  { "mars", 16, 16, silc_mars_set_key, silc_mars_set_key_with_string,
+  { "rc6-192-cbc", 16, 192, silc_rc6_set_key, silc_rc6_set_key_with_string,
+    silc_rc6_encrypt_cbc, silc_rc6_decrypt_cbc, 
+    silc_rc6_context_len },
+  { "rc6-128-cbc", 16, 128, silc_rc6_set_key, silc_rc6_set_key_with_string,
+    silc_rc6_encrypt_cbc, silc_rc6_decrypt_cbc, 
+    silc_rc6_context_len },
+  { "mars-256-cbc", 16, 256, silc_mars_set_key, silc_mars_set_key_with_string,
+    silc_mars_encrypt_cbc, silc_mars_decrypt_cbc, 
+    silc_mars_context_len },
+  { "mars-192-cbc", 16, 192, silc_mars_set_key, silc_mars_set_key_with_string,
+    silc_mars_encrypt_cbc, silc_mars_decrypt_cbc, 
+    silc_mars_context_len },
+  { "mars-128-cbc", 16, 128, silc_mars_set_key, silc_mars_set_key_with_string,
     silc_mars_encrypt_cbc, silc_mars_decrypt_cbc, 
     silc_mars_context_len },
   { "none", 0, 0, silc_none_set_key, silc_none_set_key_with_string,
@@ -175,7 +200,7 @@ int silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
       c = c->next;
     }
 
-    if (!c)
+    if (!c || !c->cipher->context_len)
       goto check_builtin;
 
     /* Set the pointers */
@@ -197,6 +222,7 @@ int silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 
   if (silc_cipher_builtin_list[i].name == NULL) {
     silc_free(*new_cipher);
+    *new_cipher = NULL;
     return FALSE;
   }
 
@@ -305,20 +331,16 @@ void silc_cipher_get_iv(SilcCipher itself, unsigned char *iv)
 }
 
 /* Returns the key length of the cipher. */
-/* XXX */
 
 unsigned int silc_cipher_get_key_len(SilcCipher itself, 
 				     const unsigned char *name)
 {
-
-  return TRUE;
+  return itself->cipher->key_len;
 }
 
 /* Returns the block size of the cipher. */
-/* XXX */
 
 unsigned int silc_cipher_get_block_len(SilcCipher itself)
 {
-
-  return TRUE;
+  return itself->cipher->block_len;
 }

@@ -610,9 +610,12 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
       memset(entry->key, 0, entry->key_len / 8);
       silc_free(entry->key);
     }
-    
+
+    /* Free all data, free also any reference from the client's channel
+       list since they share the same memory. */
     silc_list_start(entry->user_list);
     while ((chl = silc_list_get(entry->user_list)) != SILC_LIST_END) {
+      silc_list_del(chl->client->channels, chl);
       silc_list_del(entry->user_list, chl);
       silc_free(chl);
     }

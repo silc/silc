@@ -112,6 +112,7 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
   { STAT(BAD_NICKNAME),    "Bad nickname" },
   { STAT(BAD_CHANNEL),     "Bad channel name" },
   { STAT(AUTH_FAILED),     "Authentication failed" },
+  { STAT(UNKNOWN_ALGORITHM), "Unsupported algorithm" },
 
   { 0, NULL }
 };

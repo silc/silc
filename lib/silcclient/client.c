@@ -970,6 +970,7 @@ void silc_client_packet_send_to_channel(SilcClient client,
   SilcCipher cipher;
   SilcHmac hmac;
   unsigned char *id_string;
+  unsigned int block_len;
 
   SILC_LOG_DEBUG(("Sending packet to channel"));
 
@@ -980,14 +981,15 @@ void silc_client_packet_send_to_channel(SilcClient client,
   }
 
   /* Generate IV */
-  if (!channel->iv)
-    for (i = 0; i < 16; i++) channel->iv[i] = silc_rng_get_byte(client->rng);
+  block_len = silc_cipher_get_block_len(channel->channel_key);
+  if (channel->iv[0] == '\0')
+    for (i = 0; i < block_len; i++) channel->iv[i] = silc_rng_get_byte(client->rng);
   else
-    silc_hash_make(client->md5hash, channel->iv, 16, channel->iv);
+    silc_hash_make(client->md5hash, channel->iv, block_len, channel->iv);
 
   /* Encode the channel payload */
-  payload = silc_channel_payload_encode(data_len, data, 16, channel->iv, 
-					client->rng);
+  payload = silc_channel_payload_encode(data_len, data, block_len, 
+					channel->iv, client->rng);
   if (!payload) {
     client->ops->say(client, conn, 
 		     "Error: Could not create packet to be sent to channel");
@@ -1031,7 +1033,7 @@ void silc_client_packet_send_to_channel(SilcClient client,
   /* Encrypt payload of the packet. This is encrypted with the channel key. */
   channel->channel_key->cipher->encrypt(channel->channel_key->context,
 					payload->data, payload->data,
-					payload->len - 16, /* -IV_LEN */
+					payload->len - block_len, /* -IV_LEN */
 					channel->iv);
 
   /* Put the actual encrypted payload data into the buffer. */
@@ -2013,7 +2015,7 @@ void silc_client_save_channel_key(SilcClientConnection conn,
   /* Save the key */
   key = silc_channel_key_get_key(payload, &tmp_len);
   cipher = silc_channel_key_get_cipher(payload, NULL);
-  channel->key_len = tmp_len;
+  channel->key_len = tmp_len * 8;
   channel->key = silc_calloc(tmp_len, sizeof(*channel->key));
   memcpy(channel->key, key, tmp_len);
 
@@ -2023,7 +2025,7 @@ void silc_client_save_channel_key(SilcClientConnection conn,
     goto out;
   }
   channel->channel_key->cipher->set_key(channel->channel_key->context, 
-					key, tmp_len);
+					key, channel->key_len);
 
   /* Client is now joined to the channel */
   channel->on_channel = TRUE;
@@ -2066,6 +2068,7 @@ void silc_client_channel_message(SilcClient client,
   SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id = NULL;
   int found = FALSE;
+  unsigned int block_len;
 
   /* Sanity checks */
   if (packet->dst_id_type != SILC_ID_CHANNEL)
@@ -2088,11 +2091,12 @@ void silc_client_channel_message(SilcClient client,
 
   /* Decrypt the channel message payload. Push the IV out of the way,
      since it is not encrypted (after pushing buffer->tail has the IV). */
-  silc_buffer_push_tail(buffer, 16);
+  block_len = silc_cipher_get_block_len(channel->channel_key);
+  silc_buffer_push_tail(buffer, block_len);
   channel->channel_key->cipher->decrypt(channel->channel_key->context,
 					buffer->data, buffer->data,
 					buffer->len, buffer->tail);
-  silc_buffer_pull_tail(buffer, 16);
+  silc_buffer_pull_tail(buffer, block_len);
 
   /* Parse the channel message payload */
   payload = silc_channel_payload_parse(buffer);
