@@ -65,9 +65,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o strerror messages from premature EOF's to signoff messages.
-   (add perhaps a socket error thingy to SilcSocketConnection).
-
  o Backup router related issues
 
  	o Channel user mode changes are notified unnecessarely when
