@@ -256,7 +256,8 @@ abstracts = {
   prompt = "[$*] ";
 
   sb = " %c[%n$*%c]%n";
-  sbmode = "(%c%n$*)";
+  sbmode = "(%c+%n$*)";
+  sbusermode = "(%n$*)";
   sbaway = " (%GzZzZ%n)";
   sbservertag = ":$0 (change with ^X)";
 
