@@ -16,7 +16,7 @@ TODO for SILC Server 1.0
 
  o Check that getting MOTD from other servers works.
 
- o invite (with @server!*@host) not working from normal server/backup 
+ o invite (with @server!*@host) not working from normal server/backup
    router?
 
  o Testing
@@ -24,8 +24,6 @@ TODO for SILC Server 1.0
 
 TODO/bugs In SILC Libraries
 ===========================
-
- o Test cases for all cryptographic primitive in lib/silccrypt/
 
  o Test cases for all payload encoding and decoding routins in lib/silccore/
 
