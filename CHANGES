@@ -1,3 +1,7 @@
+Fri Nov  7 23:01:47 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed RC6 from distributions.
+
 Fri Nov  7 19:38:42 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added some better comments to lib/silccrypt/silcpkcs.h,

@@ -35,7 +35,6 @@ SIM_CIPHER_OBJS = \
         none.o \
         blowfish.o \
         rc5.o \
-        rc6.o \
         aes.o \
         rsa.o \
         twofish.o \

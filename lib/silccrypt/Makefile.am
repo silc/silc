@@ -23,7 +23,6 @@ noinst_LTLIBRARIES = libsilccrypt.la
 libsilccrypt_la_SOURCES = \
 	none.c \
 	rc5.c \
-	rc6.c \
 	md5.c \
 	aes.c \
 	rsa.c \
@@ -58,7 +57,6 @@ include_HEADERS =	\
 	none.h		\
 	pkcs1.h		\
 	rc5.h		\
-	rc6.h		\
 	rsa.h		\
 	sha1.h		\
 	silccipher.h	\

@@ -370,11 +370,6 @@ EXPORTS
 	silc_rc5_encrypt_cbc @ 612 ;
 	silc_rc5_set_key @ 613 ;
 	silc_rc5_set_key_with_string @ 614 ;
-	silc_rc6_context_len @ 615 ;
-	silc_rc6_decrypt_cbc @ 616 ;
-	silc_rc6_encrypt_cbc @ 617 ;
-	silc_rc6_set_key @ 618 ;
-	silc_rc6_set_key_with_string @ 619 ;
 	silc_realloc @ 620 ;
 	silc_rng_add_noise @ 621 ;
 	silc_rng_alloc @ 622 ;
