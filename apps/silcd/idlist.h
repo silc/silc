@@ -461,7 +461,8 @@ silc_idlist_add_server(SilcIDList id_list,
 		       SilcServerID *id, SilcServerEntry router,
 		       void *connection);
 SilcServerEntry
-silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id);
+silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
+			      SilcIDCacheEntry *ret_entry);
 SilcServerEntry
 silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 			      SilcServerID *new_id);
@@ -473,14 +474,20 @@ void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
 SilcClientEntry *
 silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 				    char *server, unsigned int *clients_count);
+SilcClientEntry *
+silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
+				SilcHash md5hash,
+				unsigned int *clients_count);
 SilcClientEntry
 silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
-				    char *server);
+				    char *server,
+				    SilcIDCacheEntry *ret_entry);
 SilcClientEntry
 silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
-				SilcHash md5hash);
+				SilcHash md5hash, SilcIDCacheEntry *ret_entry);
 SilcClientEntry
-silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id);
+silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
+			      SilcIDCacheEntry *ret_entry);
 SilcClientEntry
 silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 			      SilcClientID *new_id);
@@ -490,8 +497,10 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcCipher channel_key);
 void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry);
 SilcChannelEntry
-silc_idlist_find_channel_by_name(SilcIDList id_list, char *name);
+silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,
+				 SilcIDCacheEntry *ret_entry);
 SilcChannelEntry
-silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id);
+silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
+			       SilcIDCacheEntry *ret_entry);
 
 #endif

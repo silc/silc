@@ -107,7 +107,8 @@ silc_idlist_add_server(SilcIDList id_list,
 /* Finds server by Server ID */
 
 SilcServerEntry
-silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id)
+silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
+			      SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server;
@@ -122,6 +123,9 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id)
     return NULL;
 
   server = (SilcServerEntry)id_cache->context;
+
+  if (ret_entry)
+    *ret_entry = id_cache;
 
   return server;
 }
@@ -245,11 +249,47 @@ silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
   return clients;
 }
 
+/* Returns all clients matching requested nickname. Number of clients is
+   returned to `clients_count'. Caller must free the returned table. */
+
+SilcClientEntry *
+silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
+				SilcHash md5hash,
+				unsigned int *clients_count)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry *clients;
+  unsigned char hash[32];
+  int i;
+
+  silc_hash_make(md5hash, nickname, strlen(nickname), hash);
+
+  if (!silc_idcache_find_by_data(id_list->clients, hash, &list))
+    return NULL;
+
+  clients = silc_calloc(silc_idcache_list_count(list), sizeof(*clients));
+
+  i = 0;
+  silc_idcache_list_first(list, &id_cache);
+  clients[i++] = (SilcClientEntry)id_cache->context;
+
+  while (silc_idcache_list_next(list, &id_cache))
+    clients[i++] = (SilcClientEntry)id_cache->context;
+  
+  silc_idcache_list_free(list);
+  
+  if (clients_count)
+    *clients_count = i;
+
+  return clients;
+}
+
 /* Finds client entry by nickname. */
 
 SilcClientEntry
 silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
-				    char *server)
+				    char *server, SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
@@ -281,6 +321,9 @@ silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
       return NULL;
 
     client = (SilcClientEntry)id_cache->context;
+
+    if (ret_entry)
+      *ret_entry = id_cache;
   }
 
   return client;
@@ -290,7 +333,7 @@ silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
 
 SilcClientEntry
 silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
-				SilcHash md5hash)
+				SilcHash md5hash, SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
@@ -325,13 +368,17 @@ silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
   
   silc_idcache_list_free(list);
 
+  if (ret_entry)
+    *ret_entry = id_cache;
+
   return client;
 }
 
 /* Finds client by Client ID */
 
 SilcClientEntry
-silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id)
+silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
+			      SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client;
@@ -346,6 +393,9 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id)
     return NULL;
 
   client = (SilcClientEntry)id_cache->context;
+
+  if (ret_entry)
+    *ret_entry = id_cache;
 
   return client;
 }
@@ -372,6 +422,16 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
   silc_free(client->id);
   client->id = new_id;
   id_cache->id = (void *)new_id;
+
+  /* If the old ID Cache data was the hash value of the old Client ID
+     replace it with the hash of new Client ID */
+  if (id_cache->data && !SILC_ID_COMPARE_HASH(old_id, id_cache->data)) {
+    silc_free(id_cache->data);
+    id_cache->data = silc_calloc(sizeof(new_id->hash), 
+				 sizeof(unsigned char));
+    memcpy(id_cache->data, new_id->hash, sizeof(new_id->hash));
+    silc_idcache_sort_by_data(id_list->clients);
+  }
 
   return client;
 }
@@ -451,7 +511,8 @@ void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
    are not case-sensitive. */
 
 SilcChannelEntry
-silc_idlist_find_channel_by_name(SilcIDList id_list, char *name)
+silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,
+				 SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
@@ -469,6 +530,9 @@ silc_idlist_find_channel_by_name(SilcIDList id_list, char *name)
 
   channel = (SilcChannelEntry)id_cache->context;
 
+  if (ret_entry)
+    *ret_entry = id_cache;
+
   silc_idcache_list_free(list);
 
   return channel;
@@ -477,7 +541,8 @@ silc_idlist_find_channel_by_name(SilcIDList id_list, char *name)
 /* Finds channel by Channel ID. */
 
 SilcChannelEntry
-silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id)
+silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
+			       SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
@@ -492,6 +557,9 @@ silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id)
     return NULL;
 
   channel = (SilcChannelEntry)id_cache->context;
+
+  if (ret_entry)
+    *ret_entry = id_cache;
 
   return channel;
 }

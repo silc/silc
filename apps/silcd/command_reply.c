@@ -49,7 +49,7 @@ do {									  \
 SilcServerCommandReply silc_command_reply_list[] =
 {
   SILC_SERVER_CMD_REPLY(join, JOIN),
-  SILC_SERVER_CMD_REPLY(identify, WHOIS),
+  SILC_SERVER_CMD_REPLY(whois, WHOIS),
   SILC_SERVER_CMD_REPLY(identify, IDENTIFY),
 
   { NULL, 0 },
@@ -115,10 +115,8 @@ void silc_server_command_reply_free(SilcServerCommandReplyContext cmd)
 }
 
 /* Caches the received WHOIS information. If we are normal server currently
-   we cache global information only for short period of time.  If we are
-   router we want to cache them a bit longer since we can receive information
-   if any of the information becomes invalid. Normal server cannot receive
-   that information. Returns FALSE if something was wrong with the reply. */
+   we cache global information only for short period of time.  */
+/* XXX cache expirying not implemented yet! */
 
 static char
 silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
@@ -129,6 +127,9 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   char *nickname, *username, *realname;
   SilcClientID *client_id;
   SilcClientEntry client;
+  SilcIDCacheEntry cache = NULL;
+  char global = FALSE;
+  char *nick;
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -141,29 +142,68 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
   /* Check if we have this client cached already. */
 
-  client = silc_idlist_find_client_by_id(server->local_list, client_id);
-  if (!client && server->server_type == SILC_ROUTER)
-    client = silc_idlist_find_client_by_id(server->global_list, client_id);
+  client = silc_idlist_find_client_by_id(server->local_list, client_id,
+					 &cache);
+  if (!client) {
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, &cache);
+    global = TRUE;
+  }
 
   if (!client) {
+    /* If router did not find such Client ID in its lists then this must
+       be bogus client or some router in the net is buggy. */
+    if (server->server_type == SILC_ROUTER)
+      return FALSE;
+
+    /* Take hostname out of nick string if it includes it. */
+    if (strchr(nickname, '@')) {
+      int len = strcspn(nickname, "@");
+      nick = silc_calloc(len + 1, sizeof(char));
+      memcpy(nick, nickname, len);
+    } else {
+      nick = strdup(nickname);
+    }
+
     /* We don't have that client anywhere, add it. The client is added
-       to global list since server or router didn't have it in the lists
-       so it must be global. */
-    silc_idlist_add_client(server->global_list, strdup(nickname),
-			   username, realname, client_id, NULL, NULL);
+       to global list since server didn't have it in the lists so it must be 
+       global. */
+    silc_idlist_add_client(server->global_list, nick,
+			   strdup(username), 
+			   strdup(realname), client_id, NULL, NULL);
   } else {
     /* We have the client already, update the data */
 
+    SILC_LOG_DEBUG(("Updating client data"));
+
+    /* Take hostname out of nick string if it includes it. */
+    if (strchr(nickname, '@')) {
+      int len = strcspn(nickname, "@");
+      nick = silc_calloc(len + 1, sizeof(char));
+      memcpy(nick, nickname, len);
+    } else {
+      nick = strdup(nickname);
+    }
+
+    if (client->nickname)
+      silc_free(client->nickname);
     if (client->username)
       silc_free(client->username);
     if (client->userinfo)
       silc_free(client->userinfo);
     
+    client->nickname = nick;
     client->username = strdup(username);
     client->userinfo = strdup(realname);
-  }
 
-  silc_free(client_id);
+    if (cache) {
+      cache->data = nick;
+      silc_idcache_sort_by_data(global ? server->global_list->clients : 
+				server->local_list->clients);
+    }
+
+    silc_free(client_id);
+  }
 
   return TRUE;
 }
@@ -212,6 +252,100 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
   silc_server_command_reply_free(cmd);
 }
 
+/* Caches the received IDENTIFY information. */
+
+static char
+silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
+{
+  SilcServer server = cmd->server;
+  int len, id_len;
+  unsigned char *id_data;
+  char *nickname, *username;
+  SilcClientID *client_id;
+  SilcClientEntry client;
+  SilcIDCacheEntry cache = NULL;
+  char global = FALSE;
+  char *nick = NULL;
+
+  id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
+  nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
+  username = silc_argument_get_arg_type(cmd->args, 4, &len);
+  if (!id_data)
+    return FALSE;
+
+  client_id = silc_id_payload_parse_id(id_data, id_len);
+
+  /* Check if we have this client cached already. */
+
+  client = silc_idlist_find_client_by_id(server->local_list, client_id,
+					 &cache);
+  if (!client) {
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, &cache);
+    global = TRUE;
+  }
+
+  if (!client) {
+    /* If router did not find such Client ID in its lists then this must
+       be bogus client or some router in the net is buggy. */
+    if (server->server_type == SILC_ROUTER)
+      return FALSE;
+
+    /* Take hostname out of nick string if it includes it. */
+    if (nickname) {
+      if (strchr(nickname, '@')) {
+	int len = strcspn(nickname, "@");
+	nick = silc_calloc(len + 1, sizeof(char));
+	memcpy(nick, nickname, len);
+      } else {
+	nick = strdup(nickname);
+      }
+    }
+
+    /* We don't have that client anywhere, add it. The client is added
+       to global list since server didn't have it in the lists so it must be 
+       global. */
+    silc_idlist_add_client(server->global_list, nick,
+			   username ? strdup(username) : NULL, NULL,
+			   client_id, NULL, NULL);
+  } else {
+    /* We have the client already, update the data */
+
+    SILC_LOG_DEBUG(("Updating client data"));
+
+    /* Take hostname out of nick string if it includes it. */
+    if (nickname) {
+      if (strchr(nickname, '@')) {
+	int len = strcspn(nickname, "@");
+	nick = silc_calloc(len + 1, sizeof(char));
+	memcpy(nick, nickname, len);
+      } else {
+	nick = strdup(nickname);
+      }
+    }
+
+    if (nickname && client->nickname) {
+      silc_free(client->nickname);
+      client->nickname = nick;
+    }
+
+    if (username && client->username) {
+      silc_free(client->username);
+      client->username = strdup(username);
+    }
+
+    if (nickname && cache) {
+      cache->data = nick;
+      silc_idcache_sort_by_data(global ? server->global_list->clients : 
+				server->local_list->clients);
+    }
+
+    silc_free(client_id);
+  }
+
+  return TRUE;
+}
+
 /* Received reply for forwarded IDENTIFY command. We have received the
    requested identify information now and we will cache it. After this we
    will call the pending command so that the requestee gets the information
@@ -220,33 +354,19 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
 SILC_SERVER_CMD_REPLY_FUNC(identify)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
-  SilcServer server = cmd->server;
   SilcCommandStatus status;
 
   SILC_LOG_DEBUG(("Start"));
 
   COMMAND_CHECK_STATUS_LIST;
 
-  /* Process one identify reply */
+  if (!silc_server_command_reply_identify_save(cmd))
+    goto out;
+
+  /* XXX */
+
   if (status == SILC_STATUS_OK) {
-    SilcClientID *client_id;
-    unsigned int len;
-    unsigned char *id_data;
-    char *nickname, *username;
 
-    id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
-    nickname = silc_argument_get_arg_type(cmd->args, 3, NULL);
-    if (!id_data || !nickname)
-      goto out;
-
-    username = silc_argument_get_arg_type(cmd->args, 4, NULL);
-    client_id = silc_id_payload_parse_id(id_data, len);
-
-    /* Add the client always to our global list. If normal or router server
-       ever gets here it means they don't have this client's information
-       in their cache. */
-    silc_idlist_add_client(server->global_list, strdup(nickname),
-			   username, NULL, client_id, NULL, NULL);
   }
 
   if (status == SILC_STATUS_LIST_START) {

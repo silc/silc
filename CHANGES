@@ -1,3 +1,39 @@
+Fri Dec 15 15:55:12 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed char *data to unsigned char *data in ID Cache system to
+	  support binary data as ID Cache data. Changed code to support
+	  binary data in lib/silccore/idcache.c.
+
+	* Renamed silc_server_packet_relay_command_reply to 
+	  silc_server_command_reply as it is normal packet receiving
+	  function. Rewrote the function to accept command replys for
+	  servers and not only for clients.
+
+	* Mark remote router always as registered server if we are connecting
+	  to it.  Otherwise, commands sent by the router to us are ignored.
+
+	* All ID List find routines now returns the ID Cache Entry pointer
+	  as well if requested.
+
+	* WHOIS command works now in router environment, tested with two
+	  routers, two servers and two clients.
+
+	* Cleaned up and rewrote IDENTIFY command. IDENTIFY should work now
+	  in router environment (as it is almost equivalent to WHOIS) but
+	  hasn't been tested thoroughly.  Added new functions:
+
+	  silc_server_command_identify_parse
+	  silc_server_command_identify_send_reply
+	  silc_server_command_identify_from_client
+	  silc_server_command_identify_from_server
+
+	* Disabled route cache adding because adding two different ID's with
+	  same IP replaces the old cache entry thus giving wrong route.
+	  The entry->router->connection is always the fastest route anyway
+	  so route cache may not be needed.  Of course, new routes maybe
+	  established after receiving the ID when the entry->router->connection
+	  might not be anymore the most optimal.
+
 Thu Dec 14 15:55:35 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Add route cache for received ID for fast routing.

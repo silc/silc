@@ -26,9 +26,9 @@
 void silc_server_private_message(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
-void silc_server_packet_relay_command_reply(SilcServer server,
-					    SilcSocketConnection sock,
-					    SilcPacketContext *packet);
+void silc_server_command_reply(SilcServer server,
+			       SilcSocketConnection sock,
+			       SilcPacketContext *packet);
 void silc_server_channel_message(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);

@@ -739,6 +739,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   sock->type = SILC_SOCKET_TYPE_ROUTER;
   server->id_entry->router = id_entry;
   server->router = id_entry;
+  server->router->data.registered = TRUE;
 
  out:
   /* Free the temporary connection data context */
@@ -1326,7 +1327,7 @@ void silc_server_packet_parse_type(SilcServer server,
      * This must be the case here or we will ignore the packet.
      */
     SILC_LOG_DEBUG(("Command Reply packet"));
-    silc_server_packet_relay_command_reply(server, sock, packet);
+    silc_server_command_reply(server, sock, packet);
     break;
 
     /*

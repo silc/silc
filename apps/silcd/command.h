@@ -56,7 +56,7 @@ typedef struct {
   SilcCommandPayload payload;
   SilcArgumentPayload args;
   SilcPacketContext *packet;
-  int pending;
+  int pending;			/* Command is being re-processed when TRUE */
 } *SilcServerCommandContext;
 
 /* Structure holding pending commands. If command is pending it will be
