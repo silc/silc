@@ -1,3 +1,47 @@
+Tue Nov 21 19:49:31 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* silc_server_replace_id now broadcasts the received replace ID
+	  packet if it is not broadcast packet already. The router must
+	  broadcast to inform other routers about changed ID.
+
+	* Added backpointer to server's router into SilcServer context in
+	  silcd/server_internal.h.
+
+	* Fixed silc_server_packet_broadcast to send correct broadcast
+	  packets.
+
+	* The channel key is now distributed to the local client as soon
+	  as it is received from the router (in router environment) so that
+	  no other packet may be sent for the channel until client has 
+	  received the key.
+
+	* silc_server_remove_channel_user now broadcasts the received
+	  Remove Channel User packet if it is not broadcast packet already.
+	  The router must broadcast to inform other routers about removed
+	  channel user.
+
+	* Added users field into SilcPacketContext that is a reference count
+	  of the context.  One can increase the reference count by calling
+	  silc_packet_context_dup which is now changed to just increase the
+	  reference count instead of duplicating the data.  The reference
+	  count is decresed by calling silc_packet_context_free that will
+	  free the data after the reference count hits zero.
+
+	  For now on the packet context and everything allocated into it
+	  (including the raw packet from network) must be freed by calling
+	  the new silc_packet_context_free function.  Added also new function
+	  silc_packet_context_alloc that must be used now to allocate the
+	  context.  This also means that if a routine is asynchronous from
+	  silc_[client/server]_packet_parse_type the packet context must
+	  be duplicated by calling silc_packet_context_dup.  Otherwise it
+	  gets free'd after silc_[client/server]_packet_parse_type returns.
+	  Also, one must remember that if packet is duplicated then its 
+	  reference count must be decresed by calling the free function as
+	  many times as it was duplicated.
+
+	* Changed SilcBuffer field from protocol contexts to SilcPacketContext
+	  from both client and server.
+
 Mon Nov 20 23:47:03 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Made joining to a channel working in router environment.

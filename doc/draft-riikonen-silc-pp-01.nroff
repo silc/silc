@@ -729,7 +729,7 @@ List of SILC Packet types are defined as follows.
           that is indirectly connected to the sender.
 
           When received, the server or router must distribute
-          SILC_NOTIFY_TYPE_LEAVEW to local clients on the channel.
+          SILC_NOTIFY_TYPE_LEAVE to local clients on the channel.
 
           Payload of the packet:  See section 2.3.26 Remove Channel User
                                   Payload
@@ -1028,8 +1028,7 @@ Notify payload is used to send notify messages.  The payload is usually
 sent from server to client, however, server may send it to another
 server as well.  This payload may also be sent to a channel.  Client must
 not send this payload.  The receiver of this payload may totally ignore the
-contents of the payload, however, notify message should be noted and
-possibly logged.
+contents of the payload, however, notify message should be audited.
 
 The payload may only be sent with SILC_PACKET_NOTIFY packet.  It must
 not be sent in any other packet type.  Following diagram represents the
