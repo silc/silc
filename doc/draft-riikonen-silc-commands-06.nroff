@@ -213,7 +213,10 @@ ID, length of the ID and the actual ID data.  This way variable length
 ID's can be sent as arguments.
 
 All passphrases that may be sent in commands as arguments MUST be
-UTF-8 [RFC2279] encoded.
+UTF-8 [RFC2279] encoded.  All strings, with exeption of nicknames and
+channel names [SILC1], are UTF-8 encoded.  This includes strings like
+algorithm names, quit, kick and kill messages, service identifiers and
+others.
 
 All public keys and certificates that are sent as arguments are actually
 Public Key Payloads [SILC2].  This way it is possible to send different
@@ -1995,7 +1998,7 @@ List of all defined commands in SILC follows.
         remote service.  The authentication to a service may be based
         on previous agreement with the requester and the service
         provider.  The command MAY also take additional service
-        specific arguments.
+        specific arguments.  The <service name> is UTF-8 string.
 
         This document does not specify any services.  How the services
         are configured and put available in a server is also out of
@@ -2383,7 +2386,8 @@ List of all defined status types:
    46   SILC_STATUS_ERR_UNKOWN_ALGORITHM
 
         "The algorithm was not supported."  The server does not support the
-        requested algorithm.
+        requested algorithm.  The next argument MUST be the algorithm name
+        string.
 
    47   SILC_STATUS_ERR_NO_SUCH_SERVER_ID
 
@@ -2399,7 +2403,7 @@ List of all defined status types:
    49   SILC_STATUS_ERR_NO_SUCH_SERVICE
 
         "Service does not exist".  Requested service identifier is
-        unknown.
+        unknown.  The next argument MUST be the service identifier.
 
    50   SILC_STATUS_ERR_NOT_AUTHENTICATED
 

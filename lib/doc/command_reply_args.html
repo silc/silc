@@ -11,6 +11,15 @@ specific arguments to the application.  This document describes these
 arguments for all command replies to help SILC client software developers
 to process them.
 
+<br />&nbsp;<br />
+<b>NOTE: </b>The following list of command reply arguments are sent when
+the command was executed successfully.  If an error occurred, the
+`command_reply' client operation's 'success' argument is FALSE, and the
+'status' argument includes the error status.  In this case the arguments
+returned are dependent of the 'status' argument.  See all
+<a href="silcstatus_args.html">SilcStatus error arguments</a> for these
+arguments.
+
 <br />&nbsp;<br />&nbsp;<br />
 <b>command_reply Client Library operation</b>
 
@@ -34,7 +43,8 @@ is the raw SilcCommandPayload and application usually ignores it, the
 'success' boolean value indicates whether the earlier command was a success
 or not, the 'command' is the command reply enumeration, and the 'status'
 indicates the status of the command reply.  If 'success' is FALSE then
-'status' includes error status.
+'status' includes error status (see <a href="silcstatus_args.html">SilcStatus
+error arguments</a>).
 
 <br />&nbsp;<br />
 Rest of the arguments are 'command' specific and implementation should
@@ -68,8 +78,11 @@ library sends in the 'command_reply' client operation to the application.
 By default all arguments that the library sends to application are valid
 pointers.  However, it is possible that some pointers may be NULL.  If
 this is the case it is separately mentioned that the argument may be NULL.
-In this case application must ignore that argument.  The 'command_reply'
-arguments per SilcCommand is as follows:
+In this case application must ignore that argument.
+
+<br />&nbsp;<br />
+The 'command_reply' arguments for successful SilcCommand replies are as
+follows:
 
 <br />&nbsp;<br />
 <table border="1" width="100%" cellpadding="3" cellspacing="0">
