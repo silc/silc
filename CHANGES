@@ -1,3 +1,10 @@
+Wed Nov 24 18:24:05 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* ID change in resuming has to be done before changing
+	  detached client's modes, since the ID change may fail and
+	  leave ghosts on the network.  Affected file is
+	  silcd/packet_receive.c.
+
 Tue Nov 23 16:54:35 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed Win32 scheduler to not stuck anymore.  A patch from

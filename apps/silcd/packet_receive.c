@@ -3830,6 +3830,30 @@ void silc_server_resume_client(SilcServer server,
       return;
     }
 
+    /* If the ID is not based in our ID then change it */
+    if (!SILC_ID_COMPARE(detached_client->id, server->id, 
+			 server->id->ip.data_len)) {
+      silc_free(client_id);
+      while (!silc_id_create_client_id(server, server->id, server->rng,
+				       server->md5hash,
+				       detached_client->nickname,
+				       &client_id)) {
+	nickfail++;
+	if (nickfail > 9) {
+	  silc_server_disconnect_remote(server, sock,
+					SILC_STATUS_ERR_BAD_NICKNAME,
+					"Resuming not possible");
+	  if (sock->user_data)
+	    silc_server_free_sock_user_data(server, sock, NULL);
+	  return;
+	}
+	snprintf(&detached_client->
+		 nickname[strlen(detached_client->nickname) - 1], 1,
+		 "%d", nickfail);
+      }
+      nick_change = TRUE;
+    }
+
     /* Now resume the client to the network */
 
     silc_schedule_task_del_by_context(server->schedule, detached_client);
@@ -3859,13 +3883,27 @@ void silc_server_resume_client(SilcServer server,
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     server->stat.my_detached--;
 
-    /* we are finished - reset resuming client */
+    /* We are finished - reset resuming client */
     detached_client->resuming_client = NULL;
 
     /* Check if anyone is watching this client */
     if (server->server_type == SILC_ROUTER)
       silc_server_check_watcher_list(server, detached_client, NULL,
 				     SILC_NOTIFY_TYPE_UMODE_CHANGE);
+
+    /* Delete this current client entry since we're resuming to old one. */
+    server->stat.my_clients--;
+    server->stat.clients--;
+    if (server->stat.cell_clients)
+      server->stat.cell_clients--;
+    silc_server_remove_from_channels(server, NULL, client, FALSE,
+				     NULL, FALSE, FALSE);
+    silc_server_del_from_watcher_list(server, client);
+    if (!silc_idlist_del_client(server->local_list, client))
+      silc_idlist_del_client(server->global_list, client);
+    client = detached_client;
+    silc_free(client->servername);
+    client->servername = strdup(server->server_name);
 
     /* Send the RESUME_CLIENT packet to our primary router so that others
        know this client isn't detached anymore. */
@@ -3879,55 +3917,19 @@ void silc_server_resume_client(SilcServer server,
     silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_RESUME_CLIENT, 0,
 			    buf->data, buf->len, TRUE);
-    silc_server_backup_send(server, detached_client->router,
+    silc_server_backup_send(server, client->router,
 			    SILC_PACKET_RESUME_CLIENT, 0,
 			    buf->data, buf->len, TRUE, TRUE);
 
     /* As router we must deliver this packet directly to the original
        server whom this client was earlier. */
-    if (server->server_type == SILC_ROUTER && detached_client->router &&
-	detached_client->router->server_type != SILC_ROUTER)
-      silc_server_packet_send(server, detached_client->router->connection,
+    if (server->server_type == SILC_ROUTER && client->router &&
+	client->router->server_type != SILC_ROUTER)
+      silc_server_packet_send(server, client->router->connection,
 			      SILC_PACKET_RESUME_CLIENT, 0,
 			      buf->data, buf->len, TRUE);
     silc_buffer_free(buf);
-
-    detached_client->router = NULL;
-
-    /* Delete this client entry since we're resuming to old one. */
-    server->stat.my_clients--;
-    server->stat.clients--;
-    if (server->stat.cell_clients)
-      server->stat.cell_clients--;
-    silc_server_remove_from_channels(server, NULL, client, FALSE,
-				     NULL, FALSE, FALSE);
-
-    silc_server_del_from_watcher_list(server, client);
-    if (!silc_idlist_del_client(server->local_list, client))
-      silc_idlist_del_client(server->global_list, client);
-    client = detached_client;
-    silc_free(client->servername);
-    client->servername = strdup(server->server_name);
-
-    /* If the ID is not based in our ID then change it */
-    if (!SILC_ID_COMPARE(client->id, server->id, server->id->ip.data_len)) {
-      silc_free(client_id);
-      while (!silc_id_create_client_id(server, server->id, server->rng,
-				       server->md5hash, client->nickname,
-				       &client_id)) {
-	nickfail++;
-	if (nickfail > 9) {
-	  silc_server_disconnect_remote(server, sock,
-					SILC_STATUS_ERR_BAD_NICKNAME, NULL);
-	  if (sock->user_data)
-	    silc_server_free_sock_user_data(server, sock, NULL);
-	  return;
-	}
-	snprintf(&client->nickname[strlen(client->nickname) - 1], 1,
-		 "%d", nickfail);
-      }
-      nick_change = TRUE;
-    }
+    client->router = NULL;
 
     if (nick_change) {
       /* Notify about Client ID change, nickname doesn't actually change. */
