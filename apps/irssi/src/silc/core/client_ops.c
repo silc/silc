@@ -1102,6 +1102,118 @@ void silc_getkey_cb(bool success, void *context)
   silc_free(getkey);
 }
 
+/* Parse an invite or ban list */
+void  silc_parse_inviteban_list(SilcClient client,
+				SilcClientConnection conn,
+				SILC_SERVER_REC *server, 
+				SilcChannelEntry channel, 
+				const char *list_type,
+				SilcArgumentPayload list)
+{
+  unsigned char *tmp;
+  SilcUInt32 type, len;
+  SILC_CHANNEL_REC *chanrec = silc_channel_find_entry(server, channel);
+  int counter=0, resolving = FALSE;
+
+  if (!silc_argument_get_arg_num(list)) {
+    printformat_module("fe-common/silc", server,
+		       (chanrec ? chanrec->visible_name : NULL),
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_NO_INVITEBAN_LIST,
+		       channel->channel_name, list_type);
+    return;
+  }
+  
+  printformat_module("fe-common/silc", server,
+		     (chanrec ? chanrec->visible_name : NULL),
+		     MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_LIST,
+		     channel->channel_name, list_type);
+
+  /* parse the list */
+  tmp = silc_argument_get_first_arg(list, &type, &len);
+  while (tmp) {
+    switch (type) {
+      case 1:
+	{
+	  /* an invite string */
+	  unsigned char **list;
+	  int i=0;
+		
+	  if (tmp[len-1] == ',')
+	    tmp[len-1] = '\0';
+	  
+	  list = g_strsplit(tmp, ",", -1);
+	  while (list[i])
+	    printformat_module("fe-common/silc", server,
+			       (chanrec ? chanrec->visible_name : NULL),
+			       MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_STRING,
+			       ++counter, channel->channel_name, list_type,
+			       list[i++]);
+	  g_strfreev(list);
+	}
+	break;
+
+      case 2:
+	{
+	  /* a public key */
+	  char *fingerprint, *babbleprint;
+
+	  fingerprint = silc_hash_fingerprint(NULL, tmp, len);
+	  babbleprint = silc_hash_fingerprint(NULL, tmp, len);
+
+	  printformat_module("fe-common/silc", server,
+			     (chanrec ? chanrec->visible_name : NULL),
+			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_PUBKEY,
+			     ++counter, channel->channel_name, list_type,
+			     fingerprint, babbleprint);
+	}
+	break;
+	
+      case 3:
+	{
+	  /* a client ID */
+	  SilcClientID *client_id;
+	  SilcClientEntry client_entry;
+	  
+	  client_id = silc_id_payload_parse_id(tmp, len, NULL);
+			  
+	  if (client_id == NULL) {
+	    silc_say_error("Invalid data in %s list encountered", list_type);
+	    break;
+	  }
+
+	  client_entry = silc_client_get_client_by_id(client, conn, client_id);
+
+	  if (client_entry) {
+	    printformat_module("fe-common/silc", server,
+			       (chanrec ? chanrec->visible_name : NULL),
+			       MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_STRING,
+			       ++counter, channel->channel_name, list_type,
+			       client_entry->nickname);
+	  } else {
+	    resolving = TRUE;
+	    silc_client_get_client_by_id_resolve(client, conn, client_id,
+						 NULL, NULL, NULL);
+	  }
+
+	  silc_free(client_id);
+	}
+	break;
+	
+      default:
+	/* "trash" */
+	silc_say_error("Unkown type in %s list: %u (len %u)",
+		       list_type, type, len);
+    }
+    tmp = silc_argument_get_next_arg(list, &type, &len);
+  }
+
+  if (resolving)
+    printformat_module("fe-common/silc", server, 
+		       (chanrec ? chanrec->visible_name : NULL),
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITEBAN_REGET,
+		       list_type, channel->channel_name);
+}
+
 /* Command reply handler. This function is called always in the command reply
    function. If error occurs it will be called as well. Normal scenario
    is that it will be called after the received command data has been parsed
@@ -1326,28 +1438,26 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   case SILC_COMMAND_INVITE:
     {
       SilcChannelEntry channel;
-      char *invite_list;
-      SilcArgumentPayload args;
-      int argc = 0;
+      SilcBuffer payload;
+      SilcArgumentPayload invite_list;
+      SilcUInt32 argc;
       
       if (!success)
 	return;
       
       channel = va_arg(vp, SilcChannelEntry);
-      invite_list = va_arg(vp, char *);
+      payload = va_arg(vp, SilcBuffer);
 
-      args = silc_command_get_args(cmd_payload);
-      if (args)
-	argc = silc_argument_get_arg_num(args);
-
-      if (invite_list)
-	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
-			   SILCTXT_CHANNEL_INVITE_LIST, channel->channel_name,
-			   invite_list);
-      else if (argc == 3)
-	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
-			   SILCTXT_CHANNEL_NO_INVITE_LIST, 
-			   channel->channel_name);
+      if (payload) {
+	SILC_GET16_MSB(argc, payload->data);
+	invite_list = silc_argument_payload_parse(payload->data + 2, 
+						  payload->len - 2, argc);
+	if (invite_list) {
+	  silc_parse_inviteban_list(client, conn, server, channel, 
+				    "invite", invite_list);
+	  silc_argument_payload_free(invite_list);
+	}
+      }
     }
     break;
 
@@ -1624,22 +1734,26 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   case SILC_COMMAND_BAN:
     {
       SilcChannelEntry channel;
-      char *ban_list;
+      SilcBuffer payload;
+      SilcArgumentPayload ban_list;
+      SilcUInt32 argc;
       
       if (!success)
 	return;
       
       channel = va_arg(vp, SilcChannelEntry);
-      ban_list = va_arg(vp, char *);
-      
-      if (ban_list)
-	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
-			   SILCTXT_CHANNEL_BAN_LIST, channel->channel_name,
-			   ban_list);
-      else
-	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
-			   SILCTXT_CHANNEL_NO_BAN_LIST, 
-			   channel->channel_name);
+      payload = va_arg(vp, SilcBuffer);
+
+      if (payload) {
+	SILC_GET16_MSB(argc, payload->data);
+	ban_list = silc_argument_payload_parse(payload->data + 2, 
+					       payload->len - 2, argc);
+	if (ban_list) {
+	  silc_parse_inviteban_list(client, conn, server, channel, 
+				    "ban", ban_list);
+	  silc_argument_payload_free(ban_list);
+	}
+      }
     }
     break;
     
