@@ -2,7 +2,7 @@
 
   silchashtable.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 2001 Pekka Riikonen
 
@@ -472,7 +472,9 @@ bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
 			     SilcHashFunction hash, 
 			     void *hash_user_context,
 			     SilcHashCompare compare, 
-			     void *compare_user_context)
+			     void *compare_user_context,
+			     SilcHashDestructor destructor,
+			     void *destructor_user_context)
 {
   SilcHashTableEntry *entry, prev, e;
 
@@ -498,8 +500,12 @@ bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
   if (prev && e->next)
     prev->next = e->next;
 
-  if (ht->destructor)
-    ht->destructor(e->key, e->context, ht->destructor_user_context);
+  if (destructor) {
+    destructor(e->key, e->context, destructor_user_context);
+  } else {
+    if (ht->destructor)
+      ht->destructor(e->key, e->context, ht->destructor_user_context);
+  }
   silc_free(e);
 
   ht->entry_count--;
@@ -558,7 +564,9 @@ bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
 					SilcHashFunction hash, 
 					void *hash_user_context,
 					SilcHashCompare compare, 
-					void *compare_user_context)
+					void *compare_user_context,
+					SilcHashDestructor destructor,
+					void *destructor_user_context)
 {
   SilcHashTableEntry *entry, prev, e;
 
@@ -586,8 +594,12 @@ bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
   if (prev && e->next)
     prev->next = e->next;
 
-  if (ht->destructor)
-    ht->destructor(e->key, e->context, ht->destructor_user_context);
+  if (destructor) {
+    destructor(e->key, e->context, destructor_user_context);
+  } else {
+    if (ht->destructor)
+      ht->destructor(e->key, e->context, ht->destructor_user_context);
+  }
   silc_free(e);
 
   ht->entry_count--;

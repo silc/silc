@@ -122,7 +122,7 @@ static int silc_server_is_registered(SilcServer server,
 				     SilcCommand command)
 {
   SilcIDListData idata = (SilcIDListData)sock->user_data;
-  if (idata->registered)
+  if (idata->status & SILC_IDLIST_STATUS_REGISTERED)
     return TRUE;
 
   silc_server_command_send_status_reply(cmd, command,
@@ -289,7 +289,8 @@ silc_server_command_dup(SilcServerCommandContext ctx)
 
 /* Add new pending command to be executed when reply to a command has been
    received. The `reply_cmd' is the command that will call the `callback'
-   with `context' when reply has been received.  If `ident' is non-zero
+   with `context' when reply has been received.  It can be SILC_COMMAND_NONE
+   to match any command with the `ident'.  If `ident' is non-zero
    the `callback' will be executed when received reply with command
    identifier `ident'. */
 
@@ -331,25 +332,32 @@ void silc_server_command_pending_del(SilcServer server,
 /* Checks for pending commands and marks callbacks to be called from
    the command reply function. Returns TRUE if there were pending command. */
 
-int silc_server_command_pending_check(SilcServer server,
-				      SilcServerCommandReplyContext ctx,
-				      SilcCommand command, 
-				      uint16 ident)
+SilcServerCommandPendingCallbacks
+silc_server_command_pending_check(SilcServer server,
+				  SilcServerCommandReplyContext ctx,
+				  SilcCommand command, 
+				  uint16 ident,
+				  uint32 *callbacks_count)
 {
   SilcServerCommandPending *r;
+  SilcServerCommandPendingCallbacks callbacks = NULL;
+  int i = 0;
 
   silc_dlist_start(server->pending_commands);
   while ((r = silc_dlist_get(server->pending_commands)) != SILC_LIST_END) {
-    if (r->reply_cmd == command && r->ident == ident) {
-      ctx->context = r->context;
-      ctx->callback = r->callback;
-      ctx->destructor = r->destructor;
+    if ((r->reply_cmd == command || r->reply_cmd == SILC_COMMAND_NONE)
+	&& r->ident == ident) {
+      callbacks = silc_realloc(callbacks, sizeof(*callbacks) * (i + 1));
+      callbacks[i].context = r->context;
+      callbacks[i].callback = r->callback;
+      callbacks[i].destructor = r->destructor;
       ctx->ident = ident;
-      return TRUE;
+      i++;
     }
   }
 
-  return FALSE;
+  *callbacks_count = i;
+  return callbacks;
 }
 
 /* Destructor function for pending callbacks. This is called when using
@@ -460,15 +468,7 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
     /* No ID, get the nickname@server string and parse it. */
     tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
     if (tmp) {
-      if (strchr(tmp, '@')) {
-	len = strcspn(tmp, "@");
-	*nickname = silc_calloc(len + 1, sizeof(char));
-	memcpy(*nickname, tmp, len);
-	*server_name = silc_calloc(strlen(tmp) - len, sizeof(char));
-	memcpy(*server_name, tmp + len + 1, strlen(tmp) - len - 1);
-      } else {
-	*nickname = strdup(tmp);
-      }
+      silc_parse_userfqdn(tmp, nickname, server_name);
     } else {
       silc_server_command_send_status_reply(cmd, command,
 					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
@@ -518,51 +518,140 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
   return TRUE;
 }
 
+/* Resolve context used by both WHOIS and IDENTIFY commands */
+typedef struct {
+  SilcServerEntry router;
+  uint16 ident;
+  unsigned char **res_argv;
+  uint32 *res_argv_lens;
+  uint32 *res_argv_types;
+  uint32 res_argc;
+} *SilcServerResolveContext;
+
 static char
 silc_server_command_whois_check(SilcServerCommandContext cmd,
 				SilcClientEntry *clients,
 				uint32 clients_count)
 {
   SilcServer server = cmd->server;
-  int i;
   SilcClientEntry entry;
+  SilcServerResolveContext resolve = NULL, r = NULL;
+  uint32 resolve_count = 0;
+  int i, k;
 
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
 
-    if (!entry || entry->data.registered == FALSE)
+    if (!entry || (entry->nickname && entry->username && entry->userinfo) ||
+	!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	!entry->router)
       continue;
 
-    if (!entry->nickname || !entry->username || !entry->userinfo) {
-      SilcBuffer tmpbuf;
-      uint16 old_ident;
+    /* We need to resolve this entry since it is not complete */
 
-      if (!entry->router)
-	continue;
-      
-      old_ident = silc_command_get_ident(cmd->payload);
-      silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
-      tmpbuf = silc_command_payload_encode_payload(cmd->payload);
-
-      /* Send WHOIS command */
-      silc_server_packet_send(server, entry->router->connection,
-			      SILC_PACKET_COMMAND, cmd->packet->flags,
-			      tmpbuf->data, tmpbuf->len, TRUE);
-      
-      /* Reprocess this packet after received reply */
-      silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
-				  silc_command_get_ident(cmd->payload),
+    if (!cmd->pending && entry->data.status & SILC_IDLIST_STATUS_RESOLVING) {
+      /* The entry is being resolved (and we are not the resolver) so attach
+	 to the command reply and we're done with this one. */
+      silc_server_command_pending(server, SILC_COMMAND_NONE, 
+				  entry->resolve_cmd_ident,
 				  silc_server_command_destructor,
-				  silc_server_command_whois, 
+				  silc_server_command_whois,
 				  silc_server_command_dup(cmd));
-      cmd->pending = TRUE;
-      
-      silc_command_set_ident(cmd->payload, old_ident);
+    } else {
+      if (entry->data.status & SILC_IDLIST_STATUS_RESOLVING) {
+	/* We've resolved this and it still is not ready.  We'll return
+	   and are that this will be handled again after it is resolved. */
+	for (i = 0; i < resolve_count; i++) {
+	  for (k = 0; k < r->res_argc; k++)
+	    silc_free(r->res_argv[k]);
+	  silc_free(r->res_argv);
+	  silc_free(r->res_argv_lens);
+	  silc_free(r->res_argv_types);
+	}
+	silc_free(resolve);
+	return FALSE;
+      } else {
+	/* We'll resolve this client */
+	SilcBuffer idp;
 
-      silc_buffer_free(tmpbuf);
-      return FALSE;
+	r = NULL;
+	for (k = 0; k < resolve_count; k++) {
+	  if (resolve[k].router == entry->router) {
+	    r = &resolve[k];
+	    break;
+	  }
+	}
+
+	if (!r) {
+	  resolve = silc_realloc(resolve, sizeof(*resolve) * 
+				 (resolve_count + 1));
+	  r = &resolve[resolve_count];
+	  memset(r, 0, sizeof(*r));
+	  r->router = entry->router;
+	  r->ident = ++server->cmd_ident;
+	  resolve_count++;
+	}
+
+	r->res_argv = silc_realloc(r->res_argv, sizeof(*r->res_argv) *
+				   (r->res_argc + 1));
+	r->res_argv_lens = silc_realloc(r->res_argv_lens, 
+					sizeof(*r->res_argv_lens) *
+					(r->res_argc + 1));
+	r->res_argv_types = silc_realloc(r->res_argv_types, 
+					 sizeof(*r->res_argv_types) *
+					 (r->res_argc + 1));
+	idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
+	r->res_argv[r->res_argc] = silc_calloc(idp->len, 
+					       sizeof(**r->res_argv));
+	memcpy(r->res_argv[r->res_argc], idp->data, idp->len);
+	r->res_argv_lens[r->res_argc] = idp->len;
+	r->res_argv_types[r->res_argc] = r->res_argc + 3;
+	r->res_argc++;
+	silc_buffer_free(idp);
+
+	entry->resolve_cmd_ident = r->ident;
+	entry->data.status |= SILC_IDLIST_STATUS_RESOLVING;
+	entry->data.status &= ~SILC_IDLIST_STATUS_RESOLVED;
+      }
     }
   }
+
+  /* Do the resolving */
+  for (i = 0; i < resolve_count; i++) {
+    SilcBuffer res_cmd;
+
+    r = &resolve[i];
+
+    /* Send WHOIS request. We send WHOIS since we're doing the requesting
+       now anyway so make it a good one. */
+    res_cmd = silc_command_payload_encode(SILC_COMMAND_WHOIS,
+					  r->res_argc, r->res_argv, 
+					  r->res_argv_lens,
+					  r->res_argv_types, 
+					  r->ident);
+    silc_server_packet_send(server, r->router->connection,
+			    SILC_PACKET_COMMAND, cmd->packet->flags,
+			    res_cmd->data, res_cmd->len, TRUE);
+
+    /* Reprocess this packet after received reply */
+    silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
+				r->ident,
+				silc_server_command_destructor,
+				silc_server_command_whois,
+				silc_server_command_dup(cmd));
+    cmd->pending = TRUE;
+
+    silc_buffer_free(res_cmd);
+    for (k = 0; k < r->res_argc; k++)
+      silc_free(r->res_argv[k]);
+    silc_free(r->res_argv);
+    silc_free(r->res_argv_lens);
+    silc_free(r->res_argv_types);
+  }
+  silc_free(resolve);
+
+  if (resolve_count)
+    return FALSE;
 
   return TRUE;
 }
@@ -586,7 +675,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
 
   len = 0;
   for (i = 0; i < clients_count; i++)
-    if (clients[i]->data.registered)
+    if (clients[i]->data.status & SILC_IDLIST_STATUS_REGISTERED)
       len++;
 
   status = SILC_STATUS_OK;
@@ -596,7 +685,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   for (i = 0, k = 0; i < clients_count; i++) {
     entry = clients[i];
 
-    if (entry->data.registered == FALSE) {
+    if (!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
       if (clients_count == 1) {
 	if (entry->nickname) {
 	  silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
@@ -881,15 +970,8 @@ silc_server_command_whowas_parse(SilcServerCommandContext cmd,
   }
 
   /* Get the nickname@server string and parse it. */
-  if (strchr(tmp, '@')) {
-    len = strcspn(tmp, "@");
-    *nickname = silc_calloc(len + 1, sizeof(char));
-    memcpy(*nickname, tmp, len);
-    *server_name = silc_calloc(strlen(tmp) - len, sizeof(char));
-    memcpy(*server_name, tmp + len + 1, strlen(tmp) - len - 1);
-  } else {
-    *nickname = strdup(tmp);
-  }
+  silc_parse_userfqdn(tmp, nickname, server_name);
+
   /* Get the max count of reply messages allowed */
   tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
   if (tmp)
@@ -971,7 +1053,7 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
     /* We will take only clients that are not valid anymore. They are the
        ones that are not registered anymore but still have a ID. They
        have disconnected us, and thus valid for WHOWAS. */
-    if (entry->data.registered == TRUE)
+    if (entry->data.status & SILC_IDLIST_STATUS_REGISTERED)
       continue;
     if (entry->id == NULL)
       continue;
@@ -1143,12 +1225,9 @@ silc_server_command_whowas_process(SilcServerCommandContext cmd)
   silc_server_command_whowas_send_reply(cmd, clients, clients_count);
 
  out:
-  if (clients)
-    silc_free(clients);
-  if (nick)
-    silc_free(nick);
-  if (server_name)
-    silc_free(server_name);
+  silc_free(clients);
+  silc_free(nick);
+  silc_free(server_name);
 
   return ret;
 }
@@ -1210,15 +1289,7 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
       char *nick = NULL;
       char *nick_server = NULL;
 
-      if (strchr(tmp, '@')) {
-	len = strcspn(tmp, "@");
-	nick = silc_calloc(len + 1, sizeof(char));
-	memcpy(nick, tmp, len);
-	nick_server = silc_calloc(strlen(tmp) - len, sizeof(char));
-	memcpy(nick_server, tmp + len + 1, strlen(tmp) - len - 1);
-      } else {
-	nick = strdup(tmp);
-      }
+      silc_parse_userfqdn(tmp, &nick, &nick_server);
 
       if (!silc_idlist_get_clients_by_hash(server->local_list, 
 					   nick, server->md5hash,
@@ -1408,50 +1479,124 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
 					  uint32 clients_count)
 {
   SilcServer server = cmd->server;
-  int i;
   SilcClientEntry entry;
+  SilcServerResolveContext resolve = NULL, r = NULL;
+  uint32 resolve_count = 0;
+  int i, k;
 
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
 
-    if (!entry || entry->data.registered == FALSE)
+    if (!entry || entry->nickname || 
+	!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	!entry->router)
       continue;
 
-    if (!entry->nickname) {
-      SilcBuffer tmpbuf;
-      uint16 old_ident;
-      
-      if (!entry->router)
-	continue;
-      
-      old_ident = silc_command_get_ident(cmd->payload);
-      silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
-      silc_command_set_command(cmd->payload, SILC_COMMAND_WHOIS);
-      tmpbuf = silc_command_payload_encode_payload(cmd->payload);
-      
-      /* Send WHOIS request. We send WHOIS since we're doing the requesting
-	 now anyway so make it a good one. */
-      silc_server_packet_send(server, entry->router->connection,
-			      SILC_PACKET_COMMAND, cmd->packet->flags,
-			      tmpbuf->data, tmpbuf->len, TRUE);
-      
-      /* Reprocess this packet after received reply */
-      silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
-				  silc_command_get_ident(cmd->payload),
+    /* We need to resolve this entry since it is not complete */
+
+    if (!cmd->pending && entry->data.status & SILC_IDLIST_STATUS_RESOLVING) {
+      /* The entry is being resolved (and we are not the resolver) so attach
+	 to the command reply and we're done with this one. */
+      silc_server_command_pending(server, SILC_COMMAND_NONE, 
+				  entry->resolve_cmd_ident,
 				  silc_server_command_destructor,
 				  silc_server_command_identify,
 				  silc_server_command_dup(cmd));
+    } else {
+      if (entry->data.status & SILC_IDLIST_STATUS_RESOLVING) {
+	/* We've resolved this and it still is not ready.  We'll return
+	   and are that this will be handled again after it is resolved. */
+	for (i = 0; i < resolve_count; i++) {
+	  for (k = 0; k < r->res_argc; k++)
+	    silc_free(r->res_argv[k]);
+	  silc_free(r->res_argv);
+	  silc_free(r->res_argv_lens);
+	  silc_free(r->res_argv_types);
+	}
+	silc_free(resolve);
+	return FALSE;
+      } else {
+	/* We'll resolve this client */
+	SilcBuffer idp;
 
-      cmd->pending = TRUE;
-      
-      /* Put old data back to the Command Payload we just changed */
-      silc_command_set_ident(cmd->payload, old_ident);
-      silc_command_set_command(cmd->payload, SILC_COMMAND_IDENTIFY);
+	r = NULL;
+	for (k = 0; k < resolve_count; k++) {
+	  if (resolve[k].router == entry->router) {
+	    r = &resolve[k];
+	    break;
+	  }
+	}
 
-      silc_buffer_free(tmpbuf);
-      return FALSE;
+	if (!r) {
+	  resolve = silc_realloc(resolve, sizeof(*resolve) * 
+				 (resolve_count + 1));
+	  r = &resolve[resolve_count];
+	  memset(r, 0, sizeof(*r));
+	  r->router = entry->router;
+	  r->ident = ++server->cmd_ident;
+	  resolve_count++;
+	}
+
+	r->res_argv = silc_realloc(r->res_argv, sizeof(*r->res_argv) *
+				   (r->res_argc + 1));
+	r->res_argv_lens = silc_realloc(r->res_argv_lens, 
+					sizeof(*r->res_argv_lens) *
+					(r->res_argc + 1));
+	r->res_argv_types = silc_realloc(r->res_argv_types, 
+					 sizeof(*r->res_argv_types) *
+					 (r->res_argc + 1));
+	idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
+	r->res_argv[r->res_argc] = silc_calloc(idp->len, 
+					       sizeof(**r->res_argv));
+	memcpy(r->res_argv[r->res_argc], idp->data, idp->len);
+	r->res_argv_lens[r->res_argc] = idp->len;
+	r->res_argv_types[r->res_argc] = r->res_argc + 3;
+	r->res_argc++;
+	silc_buffer_free(idp);
+
+	entry->resolve_cmd_ident = r->ident;
+	entry->data.status |= SILC_IDLIST_STATUS_RESOLVING;
+	entry->data.status &= ~SILC_IDLIST_STATUS_RESOLVED;
+      }
     }
   }
+
+  /* Do the resolving */
+  for (i = 0; i < resolve_count; i++) {
+    SilcBuffer res_cmd;
+
+    r = &resolve[i];
+
+    /* Send WHOIS request. We send WHOIS since we're doing the requesting
+       now anyway so make it a good one. */
+    res_cmd = silc_command_payload_encode(SILC_COMMAND_WHOIS,
+					  r->res_argc, r->res_argv, 
+					  r->res_argv_lens,
+					  r->res_argv_types, 
+					  r->ident);
+    silc_server_packet_send(server, r->router->connection,
+			    SILC_PACKET_COMMAND, cmd->packet->flags,
+			    res_cmd->data, res_cmd->len, TRUE);
+
+    /* Reprocess this packet after received reply */
+    silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
+				r->ident,
+				silc_server_command_destructor,
+				silc_server_command_identify,
+				silc_server_command_dup(cmd));
+    cmd->pending = TRUE;
+
+    silc_buffer_free(res_cmd);
+    for (k = 0; k < r->res_argc; k++)
+      silc_free(r->res_argv[k]);
+    silc_free(r->res_argv);
+    silc_free(r->res_argv_lens);
+    silc_free(r->res_argv_types);
+  }
+  silc_free(resolve);
+
+  if (resolve_count)
+    return FALSE;
 
   return TRUE;
 }
@@ -1481,7 +1626,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 
     len = 0;
     for (i = 0; i < clients_count; i++)
-      if (clients[i]->data.registered)
+      if (clients[i]->data.status & SILC_IDLIST_STATUS_REGISTERED)
 	len++;
 
     if (len > 1)
@@ -1490,7 +1635,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
     for (i = 0, k = 0; i < clients_count; i++) {
       entry = clients[i];
       
-      if (entry->data.registered == FALSE) {
+      if (!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
 	if (clients_count == 1) {
 	  SilcBuffer idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
 	  silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,

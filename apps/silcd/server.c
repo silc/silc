@@ -245,7 +245,7 @@ int silc_server_init(SilcServer server)
       SILC_LOG_ERROR(("Could not add ourselves to cache"));
       goto err0;
     }
-    id_entry->data.registered = TRUE;
+    id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     
     /* Add ourselves also to the socket table. The entry allocated above
        is sent as argument for fast referencing in the future. */
@@ -889,7 +889,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   server->id_entry->router = id_entry;
   server->router = id_entry;
   idata = (SilcIDListData)sock->user_data;
-  idata->registered = TRUE;
+  idata->status |= SILC_IDLIST_STATUS_REGISTERED;
 
   /* Perform keepalive. The `hb_context' will be freed automatically
      when finally calling the silc_socket_free function. XXX hardcoded 
@@ -2239,7 +2239,7 @@ void silc_server_free_client_data(SilcServer server,
 		     silc_server_free_client_data_timeout,
 		     (void *)i, 300, 0,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
-  client->data.registered = FALSE;
+  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
   client->router = NULL;
   client->connection = NULL;
 
@@ -2464,7 +2464,7 @@ int silc_server_remove_clients_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-	if (client->data.registered == FALSE) {
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
@@ -2516,7 +2516,7 @@ int silc_server_remove_clients_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-	if (client->data.registered == FALSE) {
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  else
@@ -3275,6 +3275,7 @@ void silc_server_perform_heartbeat(SilcSocketConnection sock,
    form is dictated by the New ID payload. */
 
 static void silc_server_announce_get_servers(SilcServer server,
+					     SilcServerEntry remote,
 					     SilcIDList id_list,
 					     SilcBuffer *servers)
 {
@@ -3288,6 +3289,14 @@ static void silc_server_announce_get_servers(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	entry = (SilcServerEntry)id_cache->context;
+
+	/* Do not announce the one we've sending our announcments and
+	   do not announce ourself. */
+	if (entry == remote || entry == server->id_entry) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  continue;
+	}
 
 	idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
 
@@ -3319,10 +3328,12 @@ void silc_server_announce_servers(SilcServer server)
   SILC_LOG_DEBUG(("Announcing servers"));
 
   /* Get servers in local list */
-  silc_server_announce_get_servers(server, server->local_list, &servers);
+  silc_server_announce_get_servers(server, server->router,
+				   server->local_list, &servers);
 
   /* Get servers in global list */
-  silc_server_announce_get_servers(server, server->global_list, &servers);
+  silc_server_announce_get_servers(server, server->router,
+				   server->global_list, &servers);
 
   if (servers) {
     silc_buffer_push(servers, servers->data - servers->head);
@@ -3764,7 +3775,7 @@ void silc_server_save_users_on_channel(SilcServer server,
 	continue;
       }
 
-      client->data.registered = TRUE;
+      client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     }
 
     silc_free(client_id);
@@ -3933,9 +3944,13 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
   if (!client || !client->nickname || !client->username) {
     SilcBuffer buffer, idp;
 
+    client->data.status |= SILC_IDLIST_STATUS_RESOLVING;
+    client->data.status &= ~SILC_IDLIST_STATUS_RESOLVED;
+    client->resolve_cmd_ident = ++server->cmd_ident;
+
     idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
     buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
-					    ++server->cmd_ident, 1,
+					    server->cmd_ident, 1,
 					    3, idp->data, idp->len);
     silc_server_packet_send(server, client ? client->router->connection :
 			    server->router->connection,

@@ -35,6 +35,13 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
+ o Someone changing nickname on the channel from nick to Nick will cause
+   that the new nick becomes Nick@host, because the old nick is not
+   removed from the cache before adding the new one.  This is because
+   of the way NICK_CHANGE notify is handled.  This should be fixed so
+   that if the old nick is to be removed the new nick will *replace*
+   the old one.
+
  o JOIN command's argument handling is buggy.  See the XXX in the code.
 
 

@@ -32,6 +32,13 @@ typedef struct {
 /* All server command replys */
 extern SilcServerCommandReply silc_command_reply_list[];
 
+/* Context holding pending command callbacks. */
+typedef struct {
+  SilcServerPendingDestructor destructor;
+  SilcCommandCb callback;
+  void *context;
+} *SilcServerCommandPendingCallbacks;
+
 /* Context sent as argument to all command reply functions */
 typedef struct {
   SilcServer server;
@@ -40,9 +47,8 @@ typedef struct {
   SilcArgumentPayload args;
 
   /* If defined this executes the pending command. */
-  SilcServerPendingDestructor destructor;
-  SilcCommandCb callback;
-  void *context;
+  SilcServerCommandPendingCallbacks callbacks;
+  uint32 callbacks_count;
   uint16 ident;
 } *SilcServerCommandReplyContext;
 

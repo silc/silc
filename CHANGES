@@ -1,3 +1,68 @@
+Sun Sep  9 15:49:16 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added check to the silc_server_new_id_real to not accept
+	  new ID if it is the sender's own ID.  Affected file is
+	  silcd/packet_receive.c.
+
+	* Assure that we do not announce ourself or the one we've
+	  sending our announcements when we're router and are announcing
+	  servers to our primary router.  Affected file silcd/server.c.
+
+	* Fixed silc_server_command_identify_check_client to assemble
+	  correct WHOIS packet.  It send corrupted WHOIS packet and
+	  caused problem with router to router connections.  Affected
+	  file silcd/command.c.
+
+	  Fixed also silc_server_command_whois_check the same way
+	  as for the IDENTIFY command.
+
+	* Added new SilcIDListStatus to the server in the SilcIDListData
+	  structure.   The status now includes the current status of
+	  the entry (like registered, resolved etc.).  Affected file
+	  silcd/idlist.[ch].  Defined a bunch of different status types
+	  as well.  This replaced the old boolean registered field as well.
+
+	  Added resolve_cmd_ident field to the SilcClientEntry structure
+	  too so that if the entry is for example being resolved so 
+	  another command may attach to the same pending command reply
+	  without requiring to resolve the same entry again.  This concept
+	  should optimize the WHOIS and the IDENTIFY resolving under
+	  heavy load by taking away unnecessary resolving for entries
+	  that are being resolved already.
+
+	  Added support for adding multiple pending commands for one
+	  command idenfier.  Affected file silcd/command[_reply].[ch].
+
+	* Fixed WHOIS and IDENTIFY save to remove the cache entry
+	  before deleting the data.  Otherwise the hash table will have
+	  freed data in comparison functions.  Affected file is
+	  silcd/command_reply.c.
+
+	* Fixed silc_idlist_replace_client_id to add the new entry to
+	  the cache with NULL nickname.  Otherwise there will be invalid
+	  memory as the nickname after the nickname is freed.  Affected
+	  file silcd/packet_receive.c.
+
+	* Fixed the silc_idlist_get_clients_by_hash.  The entries was
+	  saved into wrong slots because the previous number of entries
+	  was not taken into account.  Affected file silcd/idlist.c.
+	  Fixed same thing in silc_idlist_get_clients_by_nickname too.
+
+	* If we are router and we receive JOIN notify to a channel that
+	  does not have any users then notified client is marked as the
+	  channel founder, as it is it.  The affected file is
+	  silcd/packet_receive.c
+
+	* Added to the extended hash table API's table_del_*ext functions
+	  the destructor as argument too, so that the caller can decide
+	  which destructor to use or whether to use destructor at all.
+	  Affected file lib/silcutil/silchashtable.[ch].
+
+	* Fixed ID Cache purging.  It actually deleted the entries from
+	  the hash table after the data was freed.  The hash table ended
+	  up comparing freed memory.  The affected file is
+	  lib/silccore/silcidcache.c.
+
 Sat Sep  8 10:22:10 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed Irssi SILC client's KILL command's HELP syntax.

@@ -162,12 +162,12 @@ void silc_server_notify(SilcServer server,
 	  goto out;
 	}
 
-	client->data.registered = TRUE;
+	client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
       }
     }
 
     /* Do not process the notify if the client is not registered */
-    if (client->data.registered == FALSE)
+    if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED))
       break;
 
     /* Do not add client to channel if it is there already */
@@ -184,6 +184,12 @@ void silc_server_notify(SilcServer server,
     chl = silc_calloc(1, sizeof(*chl));
     chl->client = client;
     chl->channel = channel;
+
+    /* If this is the first one on the channel then it is the founder off
+       the channel. */
+    if (!silc_hash_table_count(channel->user_list))
+      chl->mode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+
     silc_hash_table_add(channel->user_list, client, chl);
     silc_hash_table_add(client->channels, channel, chl);
     silc_free(client_id);
@@ -283,7 +289,7 @@ void silc_server_notify(SilcServer server,
     /* Remove the client from all channels. */
     silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, FALSE);
 
-    client->data.registered = FALSE;
+    client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
     server->stat.clients--;
     if (server->server_type == SILC_ROUTER)
@@ -1449,7 +1455,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   }
 
   /* Update client entry */
-  idata->registered = TRUE;
+  idata->status |= SILC_IDLIST_STATUS_REGISTERED;
   client->nickname = nickname;
   client->username = username;
   client->userinfo = realname ? realname : strdup(" ");
@@ -1600,7 +1606,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   silc_free(id_string);
 
   /* Update server entry */
-  idata->registered = TRUE;
+  idata->status |= SILC_IDLIST_STATUS_REGISTERED;
   new_server->server_name = server_name;
   new_server->id = server_id;
 
@@ -1720,7 +1726,7 @@ static void silc_server_new_id_real(SilcServer server,
 	goto out;
       }
       entry->nickname = NULL;
-      entry->data.registered = TRUE;
+      entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
 
       if (sock->type == SILC_SOCKET_TYPE_SERVER)
 	server->stat.cell_clients++;
@@ -1735,6 +1741,12 @@ static void silc_server_new_id_real(SilcServer server,
       /* If the ID is mine, ignore it. */
       if (SILC_ID_SERVER_COMPARE(id, server->id)) {
 	SILC_LOG_DEBUG(("Ignoring my own ID as new ID"));
+	break;
+      }
+
+      /* If the ID is the sender's ID, ignore it (we have it already) */
+      if (SILC_ID_SERVER_COMPARE(id, router->id)) {
+	SILC_LOG_DEBUG(("Ignoring sender's own ID"));
 	break;
       }
       
@@ -1752,7 +1764,7 @@ static void silc_server_new_id_real(SilcServer server,
 	SILC_LOG_ERROR(("Could not add new server to the ID Cache"));
 	goto out;
       }
-      entry->data.registered = TRUE;
+      entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
       
       if (sock->type == SILC_SOCKET_TYPE_SERVER)
 	server->stat.cell_servers++;

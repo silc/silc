@@ -52,15 +52,23 @@ typedef struct {
   void *context;
 } *SilcServerRekey;
 
+/* ID List Entry status type and all the types. */
+typedef uint8 SilcIDListStatus;
+#define SILC_IDLIST_STATUS_NONE         0x00    /* No status */
+#define SILC_IDLIST_STATUS_REGISTERED   0x01    /* Entry is registered */
+#define SILC_IDLIST_STATUS_RESOLVED     0x02    /* Entry info is resolved */
+#define SILC_IDLIST_STATUS_RESOLVING    0x04    /* Entry is being resolved
+						   with WHOIS or IDENTIFY */
+
 /*
    Generic ID list data structure.
 
    This structure is included in all ID list entries and it includes data
    pointers that are common to all ID entries.  This structure is always
    defined to the first field in the ID entries and is used to explicitly
-   cast to this type without first explicitly casting to correct ID entry
-   type.  Hence, the ID list entry is casted to this type to get this data
-   from the ID entry (which is usually opaque pointer).
+   type cast to this type without first explicitly casting to correct ID
+   entry type.  Hence, the ID list entry is type casted to this type to
+   get this data from the ID entry (which is usually opaque pointer).
 
    Note that some of the fields may be NULL.
 
@@ -83,9 +91,10 @@ typedef struct {
   /* Public key */
   SilcPublicKey public_key;
 
-  long last_receive;         /* Time last received data */
-  long last_sent;	     /* Time last sent data */
-  bool registered;           /* Boolean whether connection is registered */
+  long last_receive;		/* Time last received data */
+  long last_sent;		/* Time last sent data */
+
+  SilcIDListStatus status;	/* Status mask of the entry */
 } *SilcIDListData, SilcIDListDataStruct;
 
 /* 
@@ -301,6 +310,14 @@ typedef struct SilcChannelClientEntryStruct {
        but as just said, this is usually pointer to the socket connection
        list.
 
+   uint16 resolve_cmd_ident
+
+       Command identifier for the entry when the entry's data.status
+       is SILC_IDLIST_STATUS_RESOLVING.  If this entry is asked to be
+       resolved when the status is set then the resolver may attach to
+       this command identifier and handle the process after the resolving
+       is over.
+
 */
 struct SilcClientEntryStruct {
   /* Generic data structure. DO NOT add anything before this! */
@@ -324,6 +341,10 @@ struct SilcClientEntryStruct {
 
   /* Connection data */
   void *connection;
+
+  /* data.status is RESOLVING and this includes the resolving command 
+     reply identifier. */
+  uint16 resolve_cmd_ident;
 };
 
 /* 

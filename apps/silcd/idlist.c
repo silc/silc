@@ -43,7 +43,7 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
   data->public_key = idata->public_key;
   data->last_receive = idata->last_receive;
   data->last_sent = idata->last_sent;
-  data->registered = idata->registered;
+  data->status = idata->status;
 }
 
 /* Free's all data in the common ID entry data structure. */
@@ -144,7 +144,8 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
   if (ret_entry)
     *ret_entry = id_cache;
 
-  if (server && registered && !server->data.registered)
+  if (server && registered && 
+      !(server->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return NULL;
 
   SILC_LOG_DEBUG(("Found"));
@@ -171,7 +172,8 @@ silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
   if (ret_entry)
     *ret_entry = id_cache;
 
-  if (server && registered && !server->data.registered)
+  if (server && registered &&
+      !(server->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return NULL;
 
   SILC_LOG_DEBUG(("Found"));
@@ -222,7 +224,8 @@ silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
   if (ret_entry)
     *ret_entry = id_cache;
 
-  if (server && registered && !server->data.registered)
+  if (server && registered &&
+      !(server->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return NULL;
 
   SILC_LOG_DEBUG(("Found"));
@@ -377,7 +380,6 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
-  int i;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -388,18 +390,15 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 			  (silc_idcache_list_count(list) + *clients_count) * 
 			  sizeof(**clients));
 
-  i = 0;
   silc_idcache_list_first(list, &id_cache);
-  (*clients)[i++] = (SilcClientEntry)id_cache->context;
+  (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
 
   while (silc_idcache_list_next(list, &id_cache))
-    (*clients)[i++] = (SilcClientEntry)id_cache->context;
+    (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
   
   silc_idcache_list_free(list);
   
-  *clients_count += i;
-
-  SILC_LOG_DEBUG(("Found %d clients", *clients_count));
+  SILC_LOG_DEBUG(("Found total %d clients", *clients_count));
 
   return TRUE;
 }
@@ -415,7 +414,6 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
   unsigned char hash[32];
-  int i;
   SilcClientID client_id;
 
   SILC_LOG_DEBUG(("Start"));
@@ -435,18 +433,15 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 			  (silc_idcache_list_count(list) + *clients_count) * 
 			  sizeof(**clients));
 
-  i = 0;
   silc_idcache_list_first(list, &id_cache);
-  (*clients)[i++] = (SilcClientEntry)id_cache->context;
+  (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
 
   while (silc_idcache_list_next(list, &id_cache))
-    (*clients)[i++] = (SilcClientEntry)id_cache->context;
+    (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
   
   silc_idcache_list_free(list);
   
-  *clients_count += i;
-
-  SILC_LOG_DEBUG(("Found %d clients", *clients_count));
+  SILC_LOG_DEBUG(("Found total %d clients", *clients_count));
 
   return TRUE;
 }
@@ -481,7 +476,8 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
   if (ret_entry)
     *ret_entry = id_cache;
 
-  if (client && registered && !client->data.registered)
+  if (client && registered &&
+      !(client->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return NULL;
 
   SILC_LOG_DEBUG(("Found"));
@@ -522,8 +518,7 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
   silc_free(client->id);
   client->id = new_id;
 
-  silc_idcache_add(id_list->clients, client->nickname, client->id, 
-		   client, FALSE);
+  silc_idcache_add(id_list->clients, NULL, client->id, client, FALSE);
 
   SILC_LOG_DEBUG(("Replaced"));
 

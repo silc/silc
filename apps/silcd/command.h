@@ -96,18 +96,22 @@ void silc_server_command_##func(void *context, void *context2)
 /* Executed pending command. The first argument to the callback function
    is the user specified context. The second argument is always the
    SilcServerCommandReply context. */
-#define SILC_SERVER_PENDING_EXEC(ctx, cmd)	\
-do {						\
-  if (ctx->callback)				\
-    (*ctx->callback)(ctx->context, ctx);	\
+#define SILC_SERVER_PENDING_EXEC(ctx, cmd)     				\
+do {									\
+  int _i;								\
+  for (_i = 0; _i < ctx->callbacks_count; _i++)				\
+    if (ctx->callbacks[_i].callback)					\
+      (*ctx->callbacks[_i].callback)(ctx->callbacks[_i].context, ctx);	\
 } while(0)
 
 /* Execute destructor for pending command */
-#define SILC_SERVER_PENDING_DESTRUCTOR(ctx, cmd)			\
-do {									\
-  silc_server_command_pending_del(ctx->server, cmd, ctx->ident);	\
-  if (ctx->destructor)							\
-    (*ctx->destructor)(ctx->context);					\
+#define SILC_SERVER_PENDING_DESTRUCTOR(ctx, cmd)			   \
+do {									   \
+  int _i;								   \
+  silc_server_command_pending_del(ctx->server, cmd, ctx->ident);	   \
+  for (_i = 0; _i < ctx->callbacks_count; _i++)				   \
+    if (ctx->callbacks[_i].destructor)					   \
+      (*ctx->callbacks[_i].destructor)(ctx->callbacks[_i].context);	   \
 } while(0)
 
 /* Prototypes */
@@ -127,10 +131,12 @@ void silc_server_command_pending(SilcServer server,
 void silc_server_command_pending_del(SilcServer server,
 				     SilcCommand reply_cmd,
 				     uint16 ident);
-int silc_server_command_pending_check(SilcServer server,
-				      SilcServerCommandReplyContext ctx,
-				      SilcCommand command, 
-				      uint16 ident);
+SilcServerCommandPendingCallbacks
+silc_server_command_pending_check(SilcServer server,
+				  SilcServerCommandReplyContext ctx,
+				  SilcCommand command, 
+				  uint16 ident,
+				  uint32 *callbacks_count);
 SILC_SERVER_CMD_FUNC(whois);
 SILC_SERVER_CMD_FUNC(whowas);
 SILC_SERVER_CMD_FUNC(identify);

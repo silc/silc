@@ -238,7 +238,8 @@ bool silc_idcache_del_by_id_ext(SilcIDCache cache, void *id,
     ret = silc_hash_table_del(cache->context_table, c->context);
   if (c->id)
     ret = silc_hash_table_del_ext(cache->id_table, c->id, hash,
-				  hash_context, compare, compare_context);
+				  hash_context, compare, compare_context,
+				  NULL, NULL);
 
   return ret;
 }
@@ -276,6 +277,12 @@ bool silc_idcache_del_all(SilcIDCache cache)
   return TRUE;
 }
 
+static void silc_idcache_destructor_dummy(void *key, void *context,
+					  void *user_context)
+{
+  /* Dummy - nothing */
+}
+
 /* Foreach callback fro silc_idcache_purge. */
 
 static void silc_idcache_purge_foreach(void *key, void *context,
@@ -286,12 +293,22 @@ static void silc_idcache_purge_foreach(void *key, void *context,
   SilcIDCacheEntry c = (SilcIDCacheEntry)context;
 
   if (c->expire && c->expire < curtime) {
+    /* Remove the entry from the hash tables */
+    if (c->name)
+      silc_hash_table_del_by_context(cache->name_table, c->name, c);
+    if (c->context)
+      silc_hash_table_del(cache->context_table, c->context);
+    if (c->id)
+      silc_hash_table_del_by_context_ext(cache->id_table, c->id, c,
+					 NULL, NULL, NULL, NULL, 
+					 silc_idcache_destructor_dummy, NULL);
+
     /* Call the destructor */
     if (cache->destructor)
       cache->destructor(cache, c);
 
-    /* Delete the entry */
-    silc_idcache_del(cache, c);
+    /* Free the entry, it has been deleted from the hash tables */
+    silc_free(c);
   }
 }
 
@@ -308,24 +325,30 @@ bool silc_idcache_purge(SilcIDCache cache)
 
 bool silc_idcache_purge_by_context(SilcIDCache cache, void *context)
 {
-  SilcIDCacheEntry entry;
+  SilcIDCacheEntry c;
   bool ret = FALSE;
 
   if (!silc_hash_table_find(cache->context_table, context, NULL, 
-			    (void *)&entry))
+			    (void *)&c))
     return FALSE;
 
+    /* Remove the entry from the hash tables */
+  if (c->name)
+    ret = silc_hash_table_del_by_context(cache->name_table, c->name, c);
+  if (c->context)
+    ret = silc_hash_table_del(cache->context_table, c->context);
+  if (c->id)
+    ret =
+      silc_hash_table_del_by_context_ext(cache->id_table, c->id, c,
+					 NULL, NULL, NULL, NULL, 
+					 silc_idcache_destructor_dummy, NULL);
+  
   /* Call the destructor */
   if (cache->destructor)
-    cache->destructor(cache, entry);
-  
-  if (entry->name)
-    ret = silc_hash_table_del_by_context(cache->name_table, entry->name, 
-					 entry);
-  if (entry->context)
-    ret = silc_hash_table_del(cache->context_table, entry->context);
-  if (entry->id)
-    ret = silc_hash_table_del_by_context(cache->id_table, entry->id, entry);
+    cache->destructor(cache, c);
+
+  /* Free the entry, it has been deleted from the hash tables */
+  silc_free(c);
 
   return ret;
 }

@@ -462,7 +462,9 @@ void silc_hash_table_replace_ext(SilcHashTable ht, void *key, void *context,
  *                                 SilcHashFunction hash, 
  *                                 void *hash_user_context,
  *                                 SilcHashCompare compare, 
- *                                 void *compare_user_context);
+ *                                 void *compare_user_context,
+ *                                 SilcHashDestructor destructor,
+ *                                 void *destructor_user_context);
  *
  * DESCRIPTION
  *
@@ -474,13 +476,17 @@ void silc_hash_table_replace_ext(SilcHashTable ht, void *key, void *context,
  *    function. If not provided the hash table's default is used.
  *    The `compare' and `compare_user_context' are application specified
  *    comparing function. If not provided the hash table's default is used.
+ *    The `destructor' and `destructor_user_context' are application
+ *    specific destructor function.
  *
  ***/
 bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
 			     SilcHashFunction hash, 
 			     void *hash_user_context,
 			     SilcHashCompare compare, 
-			     void *compare_user_context);
+			     void *compare_user_context,
+			     SilcHashDestructor destructor,
+			     void *destructor_user_context);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_del_by_context_ext
  *
@@ -491,7 +497,9 @@ bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
  *                                            SilcHashFunction hash, 
  *                                            void *hash_user_context,
  *                                            SilcHashCompare compare, 
- *                                            void *compare_user_context);
+ *                                            void *compare_user_context,
+ *                                            SilcHashDestructor destructor,
+ *                                            void *destructor_user_context);
  *
  * DESCRIPTION
  *
@@ -504,6 +512,8 @@ bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
  *    function. If not provided the hash table's default is used.
  *    The `compare' and `compare_user_context' are application specified
  *    comparing function. If not provided the hash table's default is used.
+ *    The `destructor' and `destructor_user_context' are application
+ *    specific destructor function.
  *
  ***/
 bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key, 
@@ -511,7 +521,9 @@ bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
 					SilcHashFunction hash, 
 					void *hash_user_context,
 					SilcHashCompare compare, 
-					void *compare_user_context);
+					void *compare_user_context,
+					SilcHashDestructor destructor,
+					void *destructor_user_context);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_find_ext
  *
