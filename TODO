@@ -1,6 +1,8 @@
 TODO/bugs in Irssi SILC Client
 ==============================
 
+ o bugs parsing nicknames with @ in NICK_CHANGE.
+
  o UTF-8 encode/decode WHOIS userinfos, topic, etc.
 
  o Manaul file for silc(1) and silc.conf.
