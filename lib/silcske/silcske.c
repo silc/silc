@@ -397,7 +397,16 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
     /* Sign the hash value */
     silc_pkcs_private_key_data_set(ske->prop->pkcs, private_key->prv, 
 				   private_key->prv_len);
-    silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len);
+    if (silc_pkcs_get_key_len(ske->prop->pkcs) > sizeof(sign) - 1 ||
+	!silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len)) {
+      silc_mp_uninit(x);
+      silc_free(x);
+      silc_mp_uninit(&payload->x);
+      silc_free(payload->pk_data);
+      silc_free(payload);
+      ske->status = status;
+      return status;
+    }
     payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
     memcpy(payload->sign_data, sign, sign_len);
     memset(sign, 0, sizeof(sign));
@@ -1029,7 +1038,9 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
     /* Sign the hash value */
     silc_pkcs_private_key_data_set(ske->prop->pkcs, private_key->prv, 
 				   private_key->prv_len);
-    silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len);
+    if (silc_pkcs_get_key_len(ske->prop->pkcs) > sizeof(sign) - 1 ||
+	!silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len))
+      goto err;
     ske->ke2_payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
     memcpy(ske->ke2_payload->sign_data, sign, sign_len);
     memset(sign, 0, sizeof(sign));

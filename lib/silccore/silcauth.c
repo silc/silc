@@ -241,7 +241,7 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      const void *id, SilcIdType type)
 {
   unsigned char *randomdata;
-  unsigned char auth_data[1024];
+  unsigned char auth_data[2048];
   SilcUInt32 auth_len;
   unsigned char *tmp;
   SilcUInt32 tmp_len;
@@ -274,7 +274,8 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
   silc_pkcs_private_key_set(pkcs, private_key);
 
   /* Compute the hash and the signature. */
-  if (!silc_pkcs_sign_with_hash(pkcs, hash, tmp, tmp_len, auth_data,
+  if (silc_pkcs_get_key_len(pkcs) > sizeof(auth_data) - 1 ||
+      !silc_pkcs_sign_with_hash(pkcs, hash, tmp, tmp_len, auth_data,
 				&auth_len)) {
     memset(randomdata, 0, 256);
     memset(tmp, 0, tmp_len);

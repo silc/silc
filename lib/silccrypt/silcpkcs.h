@@ -271,7 +271,7 @@ unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
 unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len);
 SilcUInt32 silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key);
 SilcUInt32 silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
-				     SilcUInt32 pk_len);
+					 SilcUInt32 pk_len);
 int silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key);
 int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
 				   SilcUInt32 prv_len);
