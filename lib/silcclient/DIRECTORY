@@ -2,7 +2,7 @@
 @LIBRARY=SILC Client Library
 @FILENAME=silcclientlib.html
 @LINK=silcclient_using.html:Using SILC Client Library
-@LINK=silcclient_using.html:notify Client Operation Arguments
+@LINK=notifyargs.html:Arguments for notify Client Operation
 @LINK=silcclient.html:Client Library Interface
 -->
 
