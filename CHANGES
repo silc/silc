@@ -1,3 +1,13 @@
+Mon Sep  2 23:00:30 CEST 2002 Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Added global variable silc_log_timestamp that tells silclog
+	  wether to print or not the timestamp in the logging files.
+	  Affected file lib/silcutil/silclog.[ch].
+
+	* Added silcd configuration option Timestamp in the Logging
+	  section.  Affected file silcd/serverconfig.[ch],
+	  doc/example_silcd.conf.in.
+
 Fri Aug 30 08:57:33 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed fingerprint checking to check for entirely empty

@@ -142,6 +142,22 @@ typedef bool (*SilcLogHexdumpCb)(char *file, char *function, int line,
 
 /* Global Variables */
 
+/****v* silcutil/SilcLogAPI/silc_log_timestamp
+ *
+ * NAME
+ *
+ *    bool silc_log_timestamp -- enable/disable fast logging timestamp
+ *
+ * DESCRIPTION
+ *
+ *    Causes SilcLog to add a timestamp as returned by silc_get_time().
+ *    This may be useful for example if you run your application under a
+ *    daemon helper like watchdog that adds its own timestamp.  Defaults to
+ *    true.
+ *
+ ***/
+extern DLLAPI bool silc_log_timestamp;
+
 /****v* silcutil/SilcLogAPI/silc_log_quick
  *
  * NAME

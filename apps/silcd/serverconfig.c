@@ -545,7 +545,10 @@ SILC_CONFIG_CALLBACK(fetch_logging)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigLogging);
 
-  if (!strcmp(name, "quicklogs")) {
+  if (!strcmp(name, "timestamp")) {
+    config->logging_timestamp = *(bool *)val;
+  }
+  else if (!strcmp(name, "quicklogs")) {
     config->logging_quick = *(bool *)val;
   }
   else if (!strcmp(name, "flushdelay")) {
@@ -1081,6 +1084,7 @@ static const SilcConfigTable table_logging_c[] = {
 };
 
 static const SilcConfigTable table_logging[] = {
+  { "timestamp",	SILC_CONFIG_ARG_TOGGLE,	fetch_logging,	NULL },
   { "quicklogs",	SILC_CONFIG_ARG_TOGGLE,	fetch_logging,	NULL },
   { "flushdelay",	SILC_CONFIG_ARG_INT,	fetch_logging,	NULL },
   { "info",		SILC_CONFIG_ARG_BLOCK,	fetch_logging,	table_logging_c },
@@ -1207,6 +1211,9 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   config_new->refcount = 1;
   if (!config_new)
     return NULL;
+
+  /* general config defaults */
+  config_new->logging_timestamp = TRUE;
 
   /* obtain a config file object */
   file = silc_config_open(filename);
@@ -1665,6 +1672,7 @@ void silc_server_config_setlogfiles(SilcServer server)
 
   SILC_LOG_DEBUG(("Setting configured log file names and options"));
 
+  silc_log_timestamp = config->logging_timestamp;
   silc_log_quick = config->logging_quick;
   silc_log_flushdelay = (config->logging_flushdelay ?
 			 config->logging_flushdelay :

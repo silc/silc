@@ -166,6 +166,7 @@ typedef struct {
   SilcServerConfigConnParams param;
   bool detach_disabled;
   SilcUInt32 detach_timeout;
+  bool logging_timestamp;
   bool logging_quick;
   long logging_flushdelay;
 

@@ -49,6 +49,9 @@ static struct SilcLogStruct silclogs[SILC_LOG_MAX] = {
   {"", NULL, 0, "Fatal", SILC_LOG_FATAL, NULL, NULL},
 };
 
+/* Causes logging output to contain timestamps */
+bool silc_log_timestamp = TRUE;
+
 /* If TRUE, log files will be flushed for each log input */
 bool silc_log_quick = FALSE;
 
@@ -220,7 +223,12 @@ void silc_log_output(SilcLogType type, char *string)
   goto end;
 
  found:
-  fprintf(fp, "[%s] [%s] %s\n", silc_get_time(), typename, string);
+  /* writes the logging string to the selected channel */
+  if (silc_log_timestamp)
+    fprintf(fp, "[%s] [%s] %s\n", silc_get_time(), typename, string);
+  else
+    fprintf(fp, "[%s] %s\n", typename, string);
+
   if (silc_log_quick || silc_log_starting) {
     fflush(fp);
     if (log) /* we may have been redirected to stderr */

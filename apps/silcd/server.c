@@ -726,7 +726,7 @@ void silc_server_run(SilcServer server)
 
 void silc_server_stop(SilcServer server)
 {
-  SILC_LOG_DEBUG(("Stopping server"));
+  SILC_LOG_INFO(("SILC Server shutting down"));
 
   if (server->schedule) {
     int i;
