@@ -93,6 +93,8 @@ int silc_server_remove_from_one_channel(SilcServer server,
 					SilcSocketConnection sock,
 					SilcChannelList *channel,
 					SilcClientList *client);
+int silc_server_client_on_channel(SilcClientList *client,
+				  SilcChannelList *channel);
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
 				   const char *fmt, ...);
@@ -111,6 +113,11 @@ void silc_server_send_error(SilcServer server,
 void silc_server_send_notify(SilcServer server,
 			     SilcSocketConnection sock,
 			     const char *fmt, ...);
+void silc_server_send_notify_dest(SilcServer server,
+				  SilcSocketConnection sock,
+				  void *dest_id,
+				  SilcIdType dest_id_type,
+				  const char *fmt, ...);
 void silc_server_send_notify_to_channel(SilcServer server,
 					SilcChannelList *channel,
 					const char *fmt, ...);

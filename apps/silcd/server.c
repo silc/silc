@@ -25,8 +25,9 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.2  2000/07/03 05:51:29  priikone
- * 	Added remove_from_one_channel to implement LEAVE command.
+ * Revision 1.3  2000/07/04 08:13:53  priikone
+ * 	Changed message route discovery to use silc_server_get_route.
+ * 	Added silc_server_client_on_channel function.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
  * 	Importet from internal CVS/Added Log headers.
@@ -3031,6 +3032,25 @@ int silc_server_remove_from_one_channel(SilcServer server,
 #undef LCCC
 }
 
+/* Returns TRUE if the given client is on the channel.  FALSE if not. 
+   This works because we assure that the user list on the channel is
+   always in up to date thus we can only check the channel list from 
+   `client' which is faster than checking the user list from `channel'. */
+/* XXX This really is utility function and should be in eg. serverutil.c */
+
+int silc_server_client_on_channel(SilcClientList *client,
+				  SilcChannelList *channel)
+{
+  int i;
+
+  for (i = 0; i < client->channel_count; i++) {
+    if (client->channel[i] == channel)
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
 /* Timeout callback. This is called if connection is idle or for some
    other reason is not responding within some period of time. This 
    disconnects the remote end. */
@@ -3195,7 +3215,7 @@ void silc_server_private_message(SilcServer server,
      is so sucky that it cannot be used... it MUST be rewritten! Using
      this search is probably faster than if we'd use here the current
      idcache system. */
-  client =  silc_idlist_find_client_by_id(server->local_list->clients, id);
+  client = silc_idlist_find_client_by_id(server->local_list->clients, id);
   if (client) {
     /* It exists, now deliver the message to the destination */
     dst_sock = (SilcSocketConnection)client->connection;
@@ -3226,22 +3246,13 @@ void silc_server_private_message(SilcServer server,
   }
 
   /* We are router and we will perform route lookup for the destination 
-     and send the message to the correct route. */
+     and send the message to fastest route. */
   if (server->server_type == SILC_ROUTER && !server->standalone) {
 
-    /* If we don't have specific route for the destination we will send
-       it to our primary route (default route). */
-    router = silc_server_route_check(id->ip.s_addr, server->id->port);
-    if (router) {
-      dst_sock = (SilcSocketConnection)router->connection;
-    } else {
-      router = server->id_entry->router;
-      dst_sock = (SilcSocketConnection)router->connection;
-    }
-
-    /* Send packet */
+    /* Get fastest route and send packet. */
+    dst_sock = silc_server_get_route(server, id, SILC_ID_CLIENT);
     silc_server_private_message_send_internal(server, dst_sock, 
-					      router, packet);
+					      dst_sock->user_data, packet);
     goto out;
   }
 
@@ -3445,8 +3456,32 @@ void silc_server_send_notify(SilcServer server,
 			  buf, strlen(buf), FALSE);
 }
 
+/* Sends notify message destined to specific entity. */
+
+void silc_server_send_notify_dest(SilcServer server,
+				  SilcSocketConnection sock,
+				  void *dest_id,
+				  SilcIdType dest_id_type,
+				  const char *fmt, ...)
+{
+  va_list ap;
+  unsigned char buf[4096];
+
+  memset(buf, 0, sizeof(buf));
+  va_start(ap, fmt);
+  vsprintf(buf, fmt, ap);
+  va_end(ap);
+
+  silc_server_packet_send_dest(server, sock, SILC_PACKET_NOTIFY, 0, 
+			       dest_id, dest_id_type,
+			       buf, strlen(buf), FALSE);
+}
+
 /* Sends notify message to a channel. The notify message sent is 
-   distributed to all clients on the channel. */
+   distributed to all clients on the channel. Actually this is not real
+   notify message, instead it is message to channel sent by server. But
+   as server is sending it it will appear as notify type message on the
+   client side. */
 
 void silc_server_send_notify_to_channel(SilcServer server,
 					SilcChannelList *channel,
