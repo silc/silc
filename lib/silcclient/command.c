@@ -367,6 +367,9 @@ SILC_CLIENT_CMD_FUNC(nick_change)
     if (conn->nickname)
       silc_free(conn->nickname);
     conn->nickname = strdup(cmd->argv[1]);
+    COMMAND;
+  } else {
+    COMMAND_ERROR;
   }
 
   silc_client_command_free(cmd);
@@ -433,10 +436,8 @@ SILC_CLIENT_CMD_FUNC(nick)
 			      silc_client_command_destructor,
 			      silc_client_command_nick_change,
 			      silc_client_command_dup(cmd));
-  cmd->pending = 1;
-
-  /* Notify application */
-  COMMAND;
+  cmd->pending = TRUE;
+  return;
 
  out:
   silc_client_command_free(cmd);

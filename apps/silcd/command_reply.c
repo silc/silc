@@ -134,11 +134,12 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   SilcServer server = cmd->server;
   unsigned char *tmp, *id_data;
   char *nickname, *username, *realname, *servername = NULL;
+  unsigned char *fingerprint;
   SilcClientID *client_id;
   SilcClientEntry client;
   char global = FALSE;
   char *nick;
-  uint32 mode = 0, len, id_len;
+  uint32 mode = 0, len, id_len, flen;
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -159,6 +160,8 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   client_id = silc_id_payload_parse_id(id_data, id_len);
   if (!client_id)
     return FALSE;
+
+  fingerprint = silc_argument_get_arg_type(cmd->args, 9, &flen);
 
   /* Check if we have this client cached already. */
 
@@ -227,6 +230,9 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 		     client, FALSE);
     silc_free(client_id);
   }
+
+  if (fingerprint && flen == sizeof(client->data.fingerprint))
+    memcpy(client->data.fingerprint, fingerprint, flen);
 
   return TRUE;
 }
