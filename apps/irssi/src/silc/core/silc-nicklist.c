@@ -36,7 +36,9 @@ SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
 
   rec = g_new0(SILC_NICK_REC, 1);
   rec->nick = g_strdup(user->client->nickname);
-  rec->host = g_strdup(user->client->username);
+  rec->host = g_strdup_printf("%s@%s", user->client->username,
+			      user->client->hostname);
+  rec->realname = g_strdup(user->client->realname);
   rec->silc_user = user;
   rec->unique_id = user->client;
 

@@ -1,3 +1,8 @@
+Tue Dec  3 12:02:41 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* Set realname and hostname in NICK_REC records. Affected file
+	  irssi/src/silc/core/silc-nicklist.c
+
 Mon Dec  2 20:50:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Remove 1.0 protocol backwards compat code from client
