@@ -81,6 +81,7 @@ Table of Contents
 3 Security Considerations ....................................... 38
 4 References .................................................... 38
 5 Author's Address .............................................. 40
+Appendix A ...................................................... xx
 
 
 .ti 0
@@ -261,7 +262,8 @@ List of all defined commands in SILC follows.
         router.
 
         The <Requested Attributes> is defined in [ATTRS] and can be used
-        to request various information about the client.
+        to request various information about the client.  See Appendix A
+        for definition of using these attaributes in SILC.
 
         Reply messages to the command:
 
@@ -2121,5 +2123,22 @@ Finland
 
 EMail: priikone@iki.fi
 
+
+.ti 0
+Appendix A
+
+This appendix defines the usage of the <Requested Attributes> argument in
+the SILC_COMMAND_WHOIS command.  The attributes are defined in [ATTRS], 
+and may be used to request additional information about the user.  Since
+the information that may be requested using the attributes is something 
+that server cannot deliver to the sender, it is possible to send the WHOIS
+command directly to the destination client whom will then provide the
+requested attributes.  This requires the servers to relay the WHOIS
+command to the client, and it requires capability for handling the WHOIS
+command in the client end.
+
+
+
+
 This Internet-Draft expires XXX
- 
+
