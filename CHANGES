@@ -1,3 +1,35 @@
+Sat Mar 16 18:04:30 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed all library interfaces that use Global RNG to also
+	  accept SilcRng as argument.  Affected files are
+	  lib/silcclient/command.c, lib/silccore/silcauth.[ch],
+	  lib/silccore/silcchanel.[ch], lib/silcclient/client_channel.c,
+	  silcd/packet_send.c, lib/silccore/silcprivate.[ch],
+	  lib/silcmath/silcprimegen.c, lib/silcmath/silcmath.h, and
+	  lib/silccrypt/rsa.c.
+
+	* Added function silc_pkcs_generate_key to the
+	  lib/silccrypt/silcpkcs.[ch] for applications so that they
+	  don't need to do pkcs->pkcs->init calls anymore.
+
+	* Remove SilcSocketConnection from the SFTP API since it really
+	  wasn't needed there.  The application has the information
+	  saved in its contexts anyway and the SFTP layer doesn't need
+	  know about it.  Affected files lib/silcsft/silcsftp.h and
+	  lib/silcsftp/sftp_[server/client].c.
+
+	* Rewrote the SILC SIM (modules) interface in lib/silcsim.[ch].
+	  The SilcSimContext is not SilcSim.
+
+	* Fixed possible buffer overflows in silc_id_render in the
+	  lib/silcutil/silcutil.c.
+
+	* On EPOC the global crypto module lists are not used at all
+	  in the crypto library.  Added support for using the constant
+	  algorithm list on EPOC.  Affected files are
+	  lib/silccrypt/silccipher.c, silchash.c, silchmac.c and
+	  silcpkcs.c.
+
 Sat Mar 16 09:07:27 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Handled CHANNEL_CHANGE notify (ignore it) in Irssi SILC

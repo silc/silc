@@ -357,7 +357,7 @@ silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
 
   /* Generate keys */
   silc_pkcs_alloc(pkcs_name, &pkcs);
-  pkcs->pkcs->init(pkcs->context, bits, rng);
+  silc_pkcs_generate_key(pkcs, bits, rng);
 
   /* Save public key into file */
   key = silc_pkcs_get_public_key(pkcs, &key_len);

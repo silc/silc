@@ -34,8 +34,10 @@ struct SilcHmacStruct {
   void *hash_context;
 };
 
+#ifndef SILC_EPOC
 /* List of dynamically registered HMACs. */
 SilcDList silc_hmac_list = NULL;
+#endif /* SILC_EPOC */
 
 /* Default hmacs for silc_hmac_register_default(). */
 const SilcHmacObject silc_default_hmacs[] =
@@ -82,6 +84,7 @@ static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
 
 bool silc_hmac_register(SilcHmacObject *hmac)
 {
+#ifndef SILC_EPOC
   SilcHmacObject *new;
 
   SILC_LOG_DEBUG(("Registering new HMAC `%s'", hmac->name));
@@ -105,6 +108,7 @@ bool silc_hmac_register(SilcHmacObject *hmac)
     silc_hmac_list = silc_dlist_init();
   silc_dlist_add(silc_hmac_list, new);
 
+#endif /* SILC_EPOC */
   return TRUE;
 }
 
@@ -112,6 +116,7 @@ bool silc_hmac_register(SilcHmacObject *hmac)
 
 bool silc_hmac_unregister(SilcHmacObject *hmac)
 {
+#ifndef SILC_EPOC
   SilcHmacObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering HMAC"));
@@ -133,6 +138,7 @@ bool silc_hmac_unregister(SilcHmacObject *hmac)
     }
   }
 
+#endif /* SILC_EPOC */
   return FALSE;
 }
 
@@ -142,11 +148,13 @@ bool silc_hmac_unregister(SilcHmacObject *hmac)
 
 bool silc_hmac_register_default(void)
 {
+#ifndef SILC_EPOC
   int i;
 
   for (i = 0; silc_default_hmacs[i].name; i++)
     silc_hmac_register((SilcHmacObject *)&(silc_default_hmacs[i]));
 
+#endif /* SILC_EPOC */
   return TRUE;
 }
 
@@ -157,8 +165,6 @@ bool silc_hmac_register_default(void)
 
 bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac)
 {
-  SilcHmacObject *entry;
-
   SILC_LOG_DEBUG(("Allocating new HMAC"));
 
   /* Allocate the new object */
@@ -186,7 +192,9 @@ bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac)
 
   (*new_hmac)->hash = hash;
 
+#ifndef SILC_EPOC
   if (silc_hmac_list) {
+    SilcHmacObject *entry;
     silc_dlist_start(silc_hmac_list);
     while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
       if (!strcmp(entry->name, name)) {
@@ -195,6 +203,18 @@ bool silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac)
       }
     }
   }
+#else
+  {
+    /* On EPOC which don't have globals we check our constant hash list. */
+    int i;
+    for (i = 0; silc_default_hmacs[i].name; i++) {
+      if (!strcmp(silc_default_hmacs[i].name, name)) {
+	(*new_hmac)->hmac = (SilcHmacObject *)&(silc_default_hmacs[i]);
+	return TRUE;
+      }
+    }
+  }
+#endif /* SILC_EPOC */
 
   silc_free(*new_hmac);
   *new_hmac = NULL;
@@ -244,6 +264,7 @@ const char *silc_hmac_get_name(SilcHmac hmac)
 
 bool silc_hmac_is_supported(const char *name)
 {
+#ifndef SILC_EPOC
   SilcHmacObject *entry;
 
   if (!name)
@@ -256,7 +277,14 @@ bool silc_hmac_is_supported(const char *name)
 	return TRUE;
     }
   }
-
+#else
+  {
+    int i;
+    for (i = 0; silc_default_hmacs[i].name; i++)
+      if (!strcmp(silc_default_hmacs[i].name, name))
+	return TRUE;
+  }
+#endif /* SILC_EPOC */
   return FALSE;
 }
 
@@ -266,9 +294,9 @@ char *silc_hmac_get_supported()
 {
   SilcHmacObject *entry;
   char *list = NULL;
-  int len;
+  int len = 0;
 
-  len = 0;
+#ifndef SILC_EPOC
   if (silc_hmac_list) {
     silc_dlist_start(silc_hmac_list);
     while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
@@ -280,8 +308,24 @@ char *silc_hmac_get_supported()
       memcpy(list + len, ",", 1);
       len++;
     }
-    list[len - 1] = 0;
   }
+#else
+  {
+    int i;
+    for (i = 0; silc_default_hmacs[i].name; i++) {
+      entry = (SilcHmacObject *)&(silc_default_hmacs[i]);
+      len += strlen(entry->name);
+      list = silc_realloc(list, len + 1);
+      
+      memcpy(list + (len - strlen(entry->name)), 
+	     entry->name, strlen(entry->name));
+      memcpy(list + len, ",", 1);
+      len++;
+    }
+  }
+#endif /* SILC_EPOC */
+
+  list[len - 1] = 0;
 
   return list;
 }

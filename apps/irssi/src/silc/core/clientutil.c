@@ -245,7 +245,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
   /* Generate keys */
   silc_pkcs_alloc(pkcs_name, &pkcs);
-  pkcs->pkcs->init(pkcs->context, bits, rng);
+  silc_pkcs_generate_key(pkcs, bits, rng);
 
   /* Save public key into file */
   key = silc_pkcs_get_public_key(pkcs, &key_len);

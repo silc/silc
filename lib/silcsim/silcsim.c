@@ -43,45 +43,77 @@
 
 #include "silcincludes.h"
 
+/* 
+   SILC Module (SIM) Context.
+
+   This context holds relevant information about the SIM loaded into
+   the system. Following short description of the fields.
+
+   void *handle
+
+       Pointer to the SIM. This is used to get the symbols out of
+       the SIM. This is initalized by system specific routine.
+
+   SilcSimType type
+
+       Type of the SIM.
+
+   char *libname;
+
+       Filename and path to the SIM library file.
+
+   int flags
+
+       Flags used with the SIM. These are system specific flags.
+       See below for more information.
+
+*/
+struct SilcSimStruct {
+  void *handle;
+  SilcSimType type;
+  char *libname;
+  int flags;
+};
+
 #ifdef SILC_SIM			/* SIM upport enabled */
 
 /* Allocates new SIM context. This is later send to all SIM 
    routines. */
 
-SilcSimContext *silc_sim_alloc()
+SilcSim silc_sim_alloc(SilcSimType type, const char *libname, 
+		       SilcUInt32 flags)
 {
-  SilcSimContext *new;
+  SilcSim sim;
 
   SILC_LOG_DEBUG(("Initializing new SIM context"));
 
-  new = silc_calloc(1, sizeof(*new));
-  if (!new) {
+  sim = silc_calloc(1, sizeof(*sim));
+  if (!sim) {
     SILC_LOG_ERROR(("Could not allocate new SIM context"));
     return NULL;
   }
 
-  new->handle = NULL;
-  new->type = SILC_SIM_NONE;
-  new->libname = NULL;
-  new->flags = SILC_SIM_FLAGS;
+  sim->handle = NULL;
+  sim->type = type;
+  sim->libname = strdup(libname);
+  sim->flags = !flags ? SILC_SIM_FLAGS : flags;
 
-  return new;
+  return sim;
 }
 
 /* Free's SIM context. SIM must be closed with silc_sim_close before
    calling this. */
 
-void silc_sim_free(SilcSimContext *sim)
+void silc_sim_free(SilcSim sim)
 {
   assert(sim->handle == NULL);
-
-  if (sim)
-    silc_free(sim);
+  silc_free(sim->libname);
+  silc_free(sim);
 }
 
 /* Loads SIM into the SILC system. */
 
-int silc_sim_load(SilcSimContext *sim)
+int silc_sim_load(SilcSim sim)
 {
   assert(sim != NULL);
 
@@ -90,7 +122,7 @@ int silc_sim_load(SilcSimContext *sim)
   /* Load the library */
   sim->handle = dlopen(sim->libname, sim->flags);
   if (!sim->handle) {
-    SILC_LOG_ERROR(("Error loading SIM: %s", silc_sim_error()));
+    SILC_LOG_ERROR(("Error loading SIM: %s", silc_sim_error(sim)));
     return FALSE;
   }
 
@@ -100,7 +132,7 @@ int silc_sim_load(SilcSimContext *sim)
 /* Closes SIM. This is called when execution of program is ending or
    one explicitly wants to remove this SIM from SILC. */
 
-int silc_sim_close(SilcSimContext *sim)
+int silc_sim_close(SilcSim sim)
 {
   assert(sim != NULL);
 
@@ -115,7 +147,7 @@ int silc_sim_close(SilcSimContext *sim)
 
 /* Returns error string if error has occured while processing SIM's. */
 
-char *silc_sim_error()
+char *silc_sim_error(SilcSim sim)
 {
   return dlerror();
 }
@@ -124,7 +156,7 @@ char *silc_sim_error()
    symbols they want to get from SIM and use the returned pointer to
    what ever it is intended. */
 
-void *silc_sim_getsym(SilcSimContext *sim, const char *symbol)
+void *silc_sim_getsym(SilcSim sim, const char *symbol)
 {
   assert(sim != NULL);
 

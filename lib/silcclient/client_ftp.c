@@ -159,8 +159,7 @@ silc_client_connect_to_client(SilcClient client,
 /* SFTP packet send callback. This will use preallocated buffer to avoid
    reallocation of outgoing data buffer everytime. */
 
-static void silc_client_ftp_send_packet(SilcSocketConnection sock,
-					SilcBuffer packet, void *context)
+static void silc_client_ftp_send_packet(SilcBuffer packet, void *context)
 {
   SilcClientFtpSession session = (SilcClientFtpSession)context;
   SilcClient client = session->client;
@@ -183,8 +182,9 @@ static void silc_client_ftp_send_packet(SilcSocketConnection sock,
 		     SILC_STR_END);
 
   /* Send the packet immediately */
-  silc_client_packet_send(client, sock, SILC_PACKET_FTP, NULL, 0, NULL, NULL,
-			  session->packet->data, session->packet->len, TRUE);
+  silc_client_packet_send(client, session->sock, SILC_PACKET_FTP, NULL, 
+			  0, NULL, NULL, session->packet->data, 
+			  session->packet->len, TRUE);
 
   /* Clear buffer */
   session->packet->data = session->packet->tail = session->packet->head;
@@ -490,14 +490,12 @@ SILC_TASK_CALLBACK(silc_client_ftp_key_agreement_final)
   if (!session->server) {
     /* If we are the SFTP client then start the SFTP session and retrieve
        the info about the file available for download. */
-    session->sftp = silc_sftp_client_start(conn->sock,
-					   silc_client_ftp_send_packet,
-					   session, 
-					   silc_client_ftp_version, session);
+    session->sftp = silc_sftp_client_start(silc_client_ftp_send_packet,
+					   session, silc_client_ftp_version, 
+					   session);
   } else {
     /* Start SFTP server */
-    session->sftp = silc_sftp_server_start(conn->sock,
-					   silc_client_ftp_send_packet,
+    session->sftp = silc_sftp_server_start(silc_client_ftp_send_packet,
 					   session, session->fs);
 
     /* Monitor transmission */

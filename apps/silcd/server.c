@@ -74,7 +74,7 @@ void silc_server_free(SilcServer server)
 {
   if (server) {
 #ifdef SILC_SIM
-    SilcSimContext *sim;
+    SilcSim sim;
 #endif
 
     silc_free(server->local_list);

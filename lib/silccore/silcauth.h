@@ -185,6 +185,7 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
  *
  *    SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
  *                                                  SilcPrivateKey private_key,
+ *                                                  SilcRng rng,
  *                                                  SilcHash hash,
  *                                                  const void *id, 
  *                                                  SilcIdType type);
@@ -196,10 +197,16 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
  *    and the actual authentication data. Returns NULL on error and the
  *    encoded Authentication Payload on success.
  *
+ *    The `private_key' is used to sign the payload.  The `public_key', the
+ *    and the `id' is encoded in the payload and signed.  If the `rng' is
+ *    NULL then global RNG is used, if non-NULL then `rng' is used as
+ *    random number generator.  Also random number is encoded in the
+ *    payload before signing it with `private_key'.
+ *
  ***/
 SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      SilcPrivateKey private_key,
-					      SilcHash hash,
+					      SilcRng rng, SilcHash hash,
 					      const void *id, SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_public_key_auth_verify

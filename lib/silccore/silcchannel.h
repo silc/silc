@@ -326,7 +326,8 @@ silc_channel_message_payload_parse(unsigned char *payload,
  *                                                   SilcUInt16 iv_len,
  *                                                   unsigned char *iv,
  *                                                   SilcCipher cipher,
- *                                                   SilcHmac hmac);
+ *                                                   SilcHmac hmac.
+ *                                                   SilcRng rng);
  *
  * DESCRIPTION
  *
@@ -336,7 +337,8 @@ silc_channel_message_payload_parse(unsigned char *payload,
  *    must be applied to the payload. The function generates the padding
  *    automatically from random data.  The `cipher' is the cipher used
  *    encrypt the payload and `hmac' is used to compute the MAC for the
- *    payload.
+ *    payload.  If `rng' is NULL then global RNG is used, if non-NULL then
+ *    the `rng' is used.
  *
  ***/
 SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
@@ -345,7 +347,8 @@ SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
 					       SilcUInt16 iv_len,
 					       unsigned char *iv,
 					       SilcCipher cipher,
-					       SilcHmac hmac);
+					       SilcHmac hmac,
+					       SilcRng rng);
 
 /****f* silccore/SilcChannelAPI/silc_channel_message_payload_free
  *

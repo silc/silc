@@ -208,7 +208,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
 
 SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      SilcPrivateKey private_key,
-					      SilcHash hash,
+					      SilcRng rng, SilcHash hash,
 					      const void *id, SilcIdType type)
 {
   unsigned char *random;
@@ -222,7 +222,10 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
   SILC_LOG_DEBUG(("Generating Authentication Payload with data"));
 
   /* Get 256 bytes of random data */
-  random = silc_rng_global_get_rn_data(256);
+  if (rng)
+    random = silc_rng_get_rn_data(rng, 256);
+  else
+    random = silc_rng_global_get_rn_data(256);
   if (!random)
     return NULL;
   

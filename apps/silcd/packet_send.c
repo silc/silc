@@ -710,7 +710,7 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
     chp = silc_channel_message_payload_encode(flags, dlen, data + 4,
 					      iv_len, channel->iv,
 					      channel->channel_key,
-					      channel->hmac);
+					      channel->hmac, NULL);
     memcpy(data, chp->data, chp->len);
     silc_buffer_free(chp);
   }

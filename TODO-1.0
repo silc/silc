@@ -132,12 +132,32 @@ least could be done.
 	  SERVER_SIGNOFF away entirely).
 
  o Add SilcAsyncOperation to utility library.  Any function that takes
-   callback as an argument must return SilcAsyncOperation.
+   callback as an argument must/should return SilcAsyncOperation (see 
+   ~/silcasync).
+
+ o Rewrite SilcProtocol to be SilcFSM (see ~/silcfsm).
+
+ o Change SILC_TASK_CALLBACK to non-static, and remove the macro
+   SILC_TASK_CALLBACK_GLOBAL.
 
  o Add DSS support.
+
+ o SILC RNG does not implement random seed files, and they should be
+   implemented.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
 
  o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
    SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
    in separately.
+
+ o EPOC specific additions/changes required:
+
+	o In lib/silccore/silcpacket.c global RNG is used.  Change the
+	  interface for that function.  The PKCS#1 also calls global RNG
+	  (even though it is not used currently in SILC, the interface
+	  allows its use).
+
+	o Something needs to be thought to the logging globals as well, 
+	  like silc_debug etc.  They won't work on EPOC.  Perhaps logging
+	  and debugging is to be disabled on EPOC.

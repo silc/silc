@@ -195,7 +195,8 @@ static SilcUInt32 primetable[] =
    If argument verbose is TRUE this will display some status information
    about the progress of generation. */
 
-bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose)
+bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
+			 SilcRng rng)
 {
   unsigned char *numbuf = NULL;
   SilcUInt32 i, b, k;
@@ -219,7 +220,10 @@ bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose)
       memset(numbuf, 0, (bits / 8));
       silc_free(numbuf);
     }
-    numbuf = silc_rng_global_get_rn_string((bits / 8));
+    if (rng)
+      numbuf = silc_rng_get_rn_string(rng, (bits / 8));
+    else
+      numbuf = silc_rng_global_get_rn_string((bits / 8));
     if (!numbuf)
       return FALSE;
   } while (numbuf[0] == '0');

@@ -53,7 +53,8 @@ void silc_client_send_private_message(SilcClient client,
   /* Encode private message payload */
   buffer = silc_private_message_payload_encode(flags,
 					       data_len, data,
-					       client_entry->send_key);
+					       client_entry->send_key,
+					       client->rng);
 
   /* If we don't have private message specific key then private messages
      are just as any normal packet thus call normal packet sending.  If

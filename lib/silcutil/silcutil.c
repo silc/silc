@@ -382,11 +382,22 @@ char *silc_format(char *fmt, ...)
 /* Renders ID to suitable to print for example to log file. */
 
 static char rid[256];
+#define _PUT_STRING(d, s)				\
+do {							\
+  int sp = (sizeof(d) - 1) - strlen(d);			\
+  if (sp < strlen(s)) {					\
+    if (sp)						\
+      strncat(d, s, (sizeof(d) - 1) - strlen(d));	\
+  } else {						\
+    strncat(d, s, strlen(s));				\
+  }							\
+} while(0)
 
 char *silc_id_render(void *id, SilcUInt16 type)
 {
   char tmp[100];
   unsigned char tmps[2];
+  char *cp;
 
   memset(rid, 0, sizeof(rid));
   switch(type) {
@@ -400,22 +411,24 @@ char *silc_id_render(void *id, SilcUInt16 type)
 	ipv6.sin6_family = AF_INET6;
 	memmove(&ipv6.sin6_addr, server_id->ip.data, sizeof(ipv6.sin6_addr));
 	if (!getnameinfo((struct sockaddr *)&ipv6, sizeof(ipv6),
-			 tmp, sizeof(tmp), NULL, 0, NI_NUMERICHOST))
-	  strcat(rid, tmp);
+			 tmp, sizeof(tmp) - 1, NULL, 0, NI_NUMERICHOST))
+	  _PUT_STRING(rid, tmp);
 #endif
       } else {
 	struct in_addr ipv4;
 	memmove(&ipv4.s_addr, server_id->ip.data, 4);
-	strcat(rid, inet_ntoa(ipv4));
+	cp = inet_ntoa(ipv4);
+	if (cp)
+	  _PUT_STRING(rid, cp);
       }
 
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp), ",%d,", ntohs(server_id->port));
-      strcat(rid, tmp);
+      snprintf(tmp, sizeof(tmp) - 1, ",%d,", ntohs(server_id->port));
+      _PUT_STRING(rid, tmp);
       SILC_PUT16_MSB(server_id->rnd, tmps);
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp), "[%02x %02x]", tmps[0], tmps[1]);
-      strcat(rid, tmp);
+      snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x]", tmps[0], tmps[1]);
+      _PUT_STRING(rid, tmp);
     }
     break;
   case SILC_ID_CLIENT:
@@ -428,23 +441,25 @@ char *silc_id_render(void *id, SilcUInt16 type)
 	ipv6.sin6_family = AF_INET6;
 	memmove(&ipv6.sin6_addr, client_id->ip.data, sizeof(ipv6.sin6_addr));
 	if (!getnameinfo((struct sockaddr *)&ipv6, sizeof(ipv6),
-			 tmp, sizeof(tmp), NULL, 0, NI_NUMERICHOST))
-	  strcat(rid, tmp);
+			 tmp, sizeof(tmp) - 1, NULL, 0, NI_NUMERICHOST))
+	  _PUT_STRING(rid, tmp);
 #endif
       } else {
 	struct in_addr ipv4;
 	memmove(&ipv4.s_addr, client_id->ip.data, 4);
-	strcat(rid, inet_ntoa(ipv4));
+	cp = inet_ntoa(ipv4);
+	if (cp)
+	  _PUT_STRING(rid, cp);
       }
 
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp), ",%02x,", client_id->rnd);
-      strcat(rid, tmp);
+      snprintf(tmp, sizeof(tmp) - 1, ",%02x,", client_id->rnd);
+      _PUT_STRING(rid, tmp);
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp), "[%02x %02x %02x %02x...]", 
+      snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x %02x %02x...]", 
 	       client_id->hash[0], client_id->hash[1],
 	       client_id->hash[2], client_id->hash[3]);
-      strcat(rid, tmp);
+      _PUT_STRING(rid, tmp);
     }
     break;
   case SILC_ID_CHANNEL:
@@ -457,22 +472,24 @@ char *silc_id_render(void *id, SilcUInt16 type)
 	ipv6.sin6_family = AF_INET6;
 	memmove(&ipv6.sin6_addr, channel_id->ip.data, sizeof(ipv6.sin6_addr));
 	if (!getnameinfo((struct sockaddr *)&ipv6, sizeof(ipv6),
-			 tmp, sizeof(tmp), NULL, 0, NI_NUMERICHOST))
-	  strcat(rid, tmp);
+			 tmp, sizeof(tmp) - 1, NULL, 0, NI_NUMERICHOST))
+	  _PUT_STRING(rid, tmp);
 #endif
       } else {
 	struct in_addr ipv4;
 	memmove(&ipv4.s_addr, channel_id->ip.data, 4);
-	strcat(rid, inet_ntoa(ipv4));
+	cp = inet_ntoa(ipv4);
+	if (cp)
+	  _PUT_STRING(rid, cp);
       }
 
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp), ",%d,", ntohs(channel_id->port));
-      strcat(rid, tmp);
+      snprintf(tmp, sizeof(tmp) - 1, ",%d,", ntohs(channel_id->port));
+      _PUT_STRING(rid, tmp);
       SILC_PUT16_MSB(channel_id->rnd, tmps);
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp), "[%02x %02x]", tmps[0], tmps[1]);
-      strcat(rid, tmp);
+      snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x]", tmps[0], tmps[1]);
+      _PUT_STRING(rid, tmp);
     }
     break;
   }

@@ -101,7 +101,8 @@ void silc_client_send_channel_message(SilcClient client,
 
   /* Encode the channel payload. This also encrypts the message payload. */
   payload = silc_channel_message_payload_encode(flags, data_len, data, iv_len, 
-						channel->iv, cipher, hmac);
+						channel->iv, cipher, hmac,
+						client->rng);
 
   /* Get data used in packet header encryption, keys and stuff. */
   cipher = conn->send_key;

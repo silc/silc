@@ -50,11 +50,6 @@ SilcClient silc_client = NULL;
 extern SilcClientOperations ops;
 extern bool silc_debug;
 extern bool silc_debug_hexdump;
-#ifdef SILC_SIM
-/* SIM (SILC Module) table */
-SilcSimContext **sims = NULL;
-SilcUInt32 sims_count = 0;
-#endif
 
 void silc_expandos_init(void);
 void silc_expandos_deinit(void);

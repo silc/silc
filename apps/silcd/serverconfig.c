@@ -1326,7 +1326,7 @@ bool silc_server_config_register_ciphers(SilcServer server)
       /* Load (try at least) the crypto SIM module */
       char buf[1023], *alg_name;
       SilcCipherObject cipher_obj;
-      SilcSimContext *sim;
+      SilcSim sim;
 
       memset(&cipher_obj, 0, sizeof(cipher_obj));
       cipher_obj.name = cipher->name;
@@ -1336,9 +1336,7 @@ bool silc_server_config_register_ciphers(SilcServer server)
       /* build the libname */
       snprintf(buf, sizeof(buf), "%s/%s", config->module_path,
 		cipher->module);
-      sim = silc_sim_alloc();
-      sim->type = SILC_SIM_CIPHER;
-      sim->libname = buf;
+      sim = silc_sim_alloc(SILC_SIM_CIPHER, buf, 0);
 
       alg_name = strdup(cipher->name);
       if (strchr(alg_name, '-'))
@@ -1426,16 +1424,14 @@ bool silc_server_config_register_hashfuncs(SilcServer server)
 #ifdef SILC_SIM
       /* Load (try at least) the hash SIM module */
       SilcHashObject hash_obj;
-      SilcSimContext *sim;
+      SilcSim sim;
 
       memset(&hash_obj, 0, sizeof(hash_obj));
       hash_obj.name = hash->name;
       hash_obj.block_len = hash->block_length;
       hash_obj.hash_len = hash->digest_length;
 
-      sim = silc_sim_alloc();
-      sim->type = SILC_SIM_HASH;
-      sim->libname = hash->module;
+      sim = silc_sim_alloc(SILC_SIM_HASH, hash->module, 0);
 
       if ((silc_sim_load(sim))) {
 	hash_obj.init =

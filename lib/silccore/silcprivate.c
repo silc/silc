@@ -95,7 +95,8 @@ silc_private_message_payload_parse(unsigned char *payload,
 SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
 					       SilcUInt16 data_len,
 					       const unsigned char *data,
-					       SilcCipher cipher)
+					       SilcCipher cipher,
+					       SilcRng rng)
 {
   int i;
   SilcBuffer buffer;

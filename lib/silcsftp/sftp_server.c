@@ -25,7 +25,6 @@
 
 /* SFTP Server context */
 typedef struct {
-  SilcSocketConnection sock;
   SilcSFTPSendPacketCallback send_packet;
   void *send_context;
   SilcSFTPMonitors monitors;
@@ -55,7 +54,7 @@ static void silc_sftp_send_packet(SilcSFTPServer sftp,
 		   sftp->packet->len);
 
   /* Send the packet */
-  (*sftp->send_packet)(sftp->sock, sftp->packet, sftp->send_context);
+  (*sftp->send_packet)(sftp->packet, sftp->send_context);
 
   /* Clear packet */
   sftp->packet->data = sftp->packet->tail = sftp->packet->head;
@@ -255,21 +254,18 @@ static void silc_sftp_server_extended(SilcSFTP sftp,
 			SILC_STR_END);
 }
 
-/* Starts SFTP server by associating the socket connection `sock' to the
-   created SFTP server context.  This function returns the allocated
-   SFTP client context or NULL on error. The `send_packet' is called
+/* Starts SFTP server and returns context to it.  This function returns the
+   allocated SFTP client context or NULL on error. The `send_packet' is called
    by the library when it needs to send a packet. The `fs' is the
    structure containing filesystem access callbacks. */
 
-SilcSFTP silc_sftp_server_start(SilcSocketConnection sock,
-				SilcSFTPSendPacketCallback send_packet,
+SilcSFTP silc_sftp_server_start(SilcSFTPSendPacketCallback send_packet,
 				void *send_context,
 				SilcSFTPFilesystem fs)
 {
   SilcSFTPServer server;
 
   server = silc_calloc(1, sizeof(*server));
-  server->sock = sock;
   server->send_packet = send_packet;
   server->send_context = send_context;
   server->fs = fs;

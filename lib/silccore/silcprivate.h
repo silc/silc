@@ -77,19 +77,22 @@ silc_private_message_payload_parse(unsigned char *payload,
  *    SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
  *                                                   SilcUInt16 data_len,
  *                                                   const unsigned char *data,
- *                                                   SilcCipher cipher);
+ *                                                   SilcCipher cipher,
+ *                                                   SilcRng rng);
  *
  * DESCRIPTION
  *
  *    Encodes private message payload into a buffer and returns it.  If
  *    the cipher is provided the packet is also encrypted here.  It is provided
- *    if the private message private keys are used.
+ *    if the private message private keys are used.  If the `rng' is NULL
+ *    then global RNG is used, if non-NULL then `rng' is used.
  *
  ***/
 SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
 					       SilcUInt16 data_len,
 					       const unsigned char *data,
-					       SilcCipher cipher);
+					       SilcCipher cipher,
+					       SilcRng rng);
 
 /****f* silccore/SilcPrivateAPI/silc_private_message_payload_free
  *

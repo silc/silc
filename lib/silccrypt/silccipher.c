@@ -20,11 +20,12 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-
 #include "ciphers.h"		/* Includes cipher definitions */
 
+#ifndef SILC_EPOC
 /* Dynamically registered list of ciphers. */
 SilcDList silc_cipher_list = NULL;
+#endif /* SILC_EPOC */
 
 /* Static list of ciphers for silc_cipher_register_default(). */
 const SilcCipherObject silc_default_ciphers[] =
@@ -91,6 +92,7 @@ const SilcCipherObject silc_default_ciphers[] =
 
 bool silc_cipher_register(SilcCipherObject *cipher)
 {
+#ifndef SILC_EPOC
   SilcCipherObject *new;
 
   SILC_LOG_DEBUG(("Registering new cipher `%s'", cipher->name));
@@ -120,6 +122,7 @@ bool silc_cipher_register(SilcCipherObject *cipher)
     silc_cipher_list = silc_dlist_init();
   silc_dlist_add(silc_cipher_list, new);
 
+#endif /* SILC_EPOC */
   return TRUE;
 }
 
@@ -127,6 +130,7 @@ bool silc_cipher_register(SilcCipherObject *cipher)
 
 bool silc_cipher_unregister(SilcCipherObject *cipher)
 {
+#ifndef SILC_EPOC
   SilcCipherObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering cipher"));
@@ -150,6 +154,7 @@ bool silc_cipher_unregister(SilcCipherObject *cipher)
     }
   }
 
+#endif /* SILC_EPOC */
   return FALSE;
 }
 
@@ -159,11 +164,13 @@ bool silc_cipher_unregister(SilcCipherObject *cipher)
 
 bool silc_cipher_register_default(void)
 {
+#ifndef SILC_EPOC
   int i;
 
   for (i = 0; silc_default_ciphers[i].name; i++)
     silc_cipher_register((SilcCipherObject *)&(silc_default_ciphers[i]));
 
+#endif /* SILC_EPOC */
   return TRUE;
 }
 
@@ -174,24 +181,40 @@ bool silc_cipher_register_default(void)
 
 bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 {
-  SilcCipherObject *entry;
+  SilcCipherObject *entry = NULL;
 
   SILC_LOG_DEBUG(("Allocating new cipher object"));
   
+#ifndef SILC_EPOC
   if (silc_cipher_list) {
     silc_dlist_start(silc_cipher_list);
     while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
-      if (!strcmp(entry->name, name)) {
-	*new_cipher = silc_calloc(1, sizeof(**new_cipher));
-	(*new_cipher)->cipher = entry; 
-	(*new_cipher)->context = silc_calloc(1, entry->context_len());
-	(*new_cipher)->set_iv = silc_cipher_set_iv;
-	(*new_cipher)->get_iv = silc_cipher_get_iv;
-	(*new_cipher)->get_key_len = silc_cipher_get_key_len;
-	(*new_cipher)->get_block_len = silc_cipher_get_block_len;
-	return TRUE;
+      if (!strcmp(entry->name, name))
+	break;
+    }
+  }
+#else
+  {
+    /* On EPOC which don't have globals we check our constant cipher list. */
+    int i;
+    for (i = 0; silc_default_ciphers[i].name; i++) {
+      if (!strcmp(silc_default_ciphers[i].name, name)) {
+	entry = (SilcCipherObject *)&(silc_default_ciphers[i]);
+	break;
       }
     }
+  }
+#endif /* SILC_EPOC */
+
+  if (entry) {
+    *new_cipher = silc_calloc(1, sizeof(**new_cipher));
+    (*new_cipher)->cipher = entry; 
+    (*new_cipher)->context = silc_calloc(1, entry->context_len());
+    (*new_cipher)->set_iv = silc_cipher_set_iv;
+    (*new_cipher)->get_iv = silc_cipher_get_iv;
+    (*new_cipher)->get_key_len = silc_cipher_get_key_len;
+    (*new_cipher)->get_block_len = silc_cipher_get_block_len;
+    return TRUE;
   }
 
   return FALSE;
@@ -211,6 +234,7 @@ void silc_cipher_free(SilcCipher cipher)
 
 bool silc_cipher_is_supported(const unsigned char *name)
 {
+#ifndef SILC_EPOC
   SilcCipherObject *entry;
 
   if (silc_cipher_list) {
@@ -220,7 +244,14 @@ bool silc_cipher_is_supported(const unsigned char *name)
 	return TRUE;
     }
   }
-
+#else
+  {
+    int i;
+    for (i = 0; silc_default_ciphers[i].name; i++)
+      if (!strcmp(silc_default_ciphers[i].name, name))
+	return TRUE;
+  }
+#endif /* SILC_EPOC */
   return FALSE;
 }
 
@@ -230,9 +261,9 @@ char *silc_cipher_get_supported(void)
 {
   SilcCipherObject *entry;
   char *list = NULL;
-  int len;
+  int len = 0;
 
-  len = 0;
+#ifndef SILC_EPOC
   if (silc_cipher_list) {
     silc_dlist_start(silc_cipher_list);
     while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
@@ -244,8 +275,24 @@ char *silc_cipher_get_supported(void)
       memcpy(list + len, ",", 1);
       len++;
     }
-    list[len - 1] = 0;
   }
+#else
+  {
+    int i;
+    for (i = 0; silc_default_ciphers[i].name; i++) {
+      entry = (SilcCipherObject *)&(silc_default_ciphers[i]);
+      len += strlen(entry->name);
+      list = silc_realloc(list, len + 1);
+      
+      memcpy(list + (len - strlen(entry->name)), 
+	     entry->name, strlen(entry->name));
+      memcpy(list + len, ",", 1);
+      len++;
+    }
+  }
+#endif /* SILC_EPOC */
+
+  list[len - 1] = 0;
 
   return list;
 }

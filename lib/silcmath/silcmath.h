@@ -31,6 +31,8 @@
 #ifndef SILCMATH_H
 #define SILCMATH_H
 
+#include "silcrng.h"
+
 /****f* silcmath/SilcMathAPI/silc_math_gen_prime
  *
  * SYNOPSIS
@@ -45,10 +47,13 @@
  *    (r.joosten@pijnenburg.nl) for such a good help with prime tests. 
  *
  *    If argument verbose is TRUE this will display some status information
- *    about the progress of generation.
+ *    about the progress of generation.  If the `rng' is NULL then global
+ *    RNG is used, if non-NULL then `rng' is used to generate the random
+ *    number number.
  *
  ***/
-bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose);
+bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
+			 SilcRng rng);
 
 /****f* silcmath/SilcMathAPI/silc_math_prime_test
  *

@@ -179,6 +179,8 @@ bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs);
 void silc_pkcs_free(SilcPKCS pkcs);
 int silc_pkcs_is_supported(const unsigned char *name);
 char *silc_pkcs_get_supported(void);
+int silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
+			   SilcRng rng);
 SilcUInt32 silc_pkcs_get_key_len(SilcPKCS self);
 unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
 unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len);

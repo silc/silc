@@ -987,7 +987,7 @@ SILC_CLIENT_CMD_FUNC(join)
       if (!strcasecmp(cmd->argv[i + 1], "-pubkey")) {
 	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						  cmd->client->private_key,
-						  conn->hash,
+						  cmd->client->rng, conn->hash,
 						  conn->local_id,
 						  SILC_ID_CLIENT);
       } else {
@@ -1336,6 +1336,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	if (!strcasecmp(cmd->argv[3], "-pubkey")) {
 	  auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						    cmd->client->private_key,
+						    cmd->client->rng, 
 						    conn->hash,
 						    conn->local_id,
 						    SILC_ID_CLIENT);
@@ -1494,6 +1495,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
 	  if (!strcasecmp(cmd->argv[4], "-pubkey")) {
 	    auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						      cmd->client->private_key,
+						      cmd->client->rng,
 						      conn->hash,
 						      conn->local_id,
 						      SILC_ID_CLIENT);
@@ -1660,7 +1662,7 @@ static void silc_client_command_oper_send(unsigned char *data,
     /* Encode the public key authentication payload */
     auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 					      cmd->client->private_key,
-					      conn->hash,
+					      cmd->client->rng, conn->hash,
 					      conn->local_id,
 					      SILC_ID_CLIENT);
   } else {
@@ -1728,7 +1730,7 @@ static void silc_client_command_silcoper_send(unsigned char *data,
     /* Encode the public key authentication payload */
     auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 					      cmd->client->private_key,
-					      conn->hash,
+					      cmd->client->rng, conn->hash,
 					      conn->local_id,
 					      SILC_ID_CLIENT);
   } else {

@@ -370,7 +370,8 @@ SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
 					       SilcUInt16 iv_len,
 					       unsigned char *iv,
 					       SilcCipher cipher,
-					       SilcHmac hmac)
+					       SilcHmac hmac,
+					       SilcRng rng)
 {
   int i;
   SilcBuffer buffer;
@@ -393,7 +394,11 @@ SilcBuffer silc_channel_message_payload_encode(SilcUInt16 flags,
     return NULL;
 
   /* Generate padding */
-  for (i = 0; i < pad_len; i++) pad[i] = silc_rng_global_get_byte();
+  if (rng) {
+    for (i = 0; i < pad_len; i++) pad[i] = silc_rng_get_byte(rng);
+  } else {
+    for (i = 0; i < pad_len; i++) pad[i] = silc_rng_global_get_byte();
+  }
 
   /* Encode the Channel Message Payload */
   silc_buffer_pull_tail(buffer, 6 + data_len + pad_len);

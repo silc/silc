@@ -21,44 +21,14 @@
 #ifndef SILCSIM_H
 #define SILCSIM_H
 
+typedef struct SilcSimStruct *SilcSim;
+
 /* All SIM types. New types maybe freely added. */
 typedef enum {
   SILC_SIM_NONE = 0,
   SILC_SIM_CIPHER,
   SILC_SIM_HASH,
 } SilcSimType;
-
-/* 
-   SILC Module (SIM) Context.
-
-   This context holds relevant information about the SIM loaded into
-   the system. Following short description of the fields.
-
-   void *handle
-
-       Pointer to the SIM. This is used to get the symbols out of
-       the SIM. This is initalized by system specific routine.
-
-   SilcSimType type
-
-       Type of the SIM.
-
-   char *libname;
-
-       Filename and path to the SIM library file.
-
-   int flags
-
-       Flags used with the SIM. These are system specific flags.
-       See below for more information.
-
-*/
-typedef struct {
-  void *handle;
-  SilcSimType type;
-  char *libname;
-  int flags;
-} SilcSimContext;
 
 /* Flags used to retrieve the symbols from the library file. Default
    is that the symbols are resolved as they are loaded. However, if
@@ -68,11 +38,12 @@ typedef struct {
 /*#define SILC_SIM_FLAGS RTLD_LAZY */
 
 /* Prototypes */
-SilcSimContext *silc_sim_alloc();
-void silc_sim_free(SilcSimContext *sim);
-int silc_sim_load(SilcSimContext *sim);
-int silc_sim_close(SilcSimContext *sim);
-char *silc_sim_error();
-void *silc_sim_getsym(SilcSimContext *sim, const char *symbol);
+SilcSim silc_sim_alloc(SilcSimType type, const char *libname, 
+		       SilcUInt32 flags);
+void silc_sim_free(SilcSim sim);
+int silc_sim_load(SilcSim sim);
+int silc_sim_close(SilcSim sim);
+char *silc_sim_error(SilcSim sim);
+void *silc_sim_getsym(SilcSim sim, const char *symbol);
 
 #endif

@@ -24,8 +24,13 @@
 #include "rsa.h"
 #include "pkcs1.h"
 
+#ifndef SILC_EPOC
 /* Dynamically registered list of PKCS. */
 SilcDList silc_pkcs_list = NULL;
+#define SILC_PKCS_LIST silc_pkcs_list
+#else
+#define SILC_PKCS_LIST TRUE
+#endif /* SILC_EPOC */
 
 /* Static list of PKCS for silc_pkcs_register_default(). */
 const SilcPKCSObject silc_default_pkcs[] =
@@ -55,6 +60,7 @@ const SilcPKCSObject silc_default_pkcs[] =
 
 bool silc_pkcs_register(SilcPKCSObject *pkcs)
 {
+#ifndef SILC_EPOC
   SilcPKCSObject *new;
 
   SILC_LOG_DEBUG(("Registering new PKCS `%s'", pkcs->name));
@@ -78,6 +84,7 @@ bool silc_pkcs_register(SilcPKCSObject *pkcs)
     silc_pkcs_list = silc_dlist_init();
   silc_dlist_add(silc_pkcs_list, new);
 
+#endif /* SILC_EPOC */
   return TRUE;
 }
 
@@ -85,6 +92,7 @@ bool silc_pkcs_register(SilcPKCSObject *pkcs)
 
 bool silc_pkcs_unregister(SilcPKCSObject *pkcs)
 {
+#ifndef SILC_EPOC
   SilcPKCSObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering PKCS"));
@@ -106,6 +114,7 @@ bool silc_pkcs_unregister(SilcPKCSObject *pkcs)
     }
   }
 
+#endif /* SILC_EPOC */
   return FALSE;
 }
 
@@ -115,11 +124,13 @@ bool silc_pkcs_unregister(SilcPKCSObject *pkcs)
 
 bool silc_pkcs_register_default(void)
 {
+#ifndef SILC_EPOC
   int i;
 
   for (i = 0; silc_default_pkcs[i].name; i++)
     silc_pkcs_register((SilcPKCSObject *)&(silc_default_pkcs[i]));
 
+#endif /* SILC_EPOC */
   return TRUE;
 }
 
@@ -128,21 +139,37 @@ bool silc_pkcs_register_default(void)
 
 bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
 {
-  SilcPKCSObject *entry;
+  SilcPKCSObject *entry = NULL;
 
   SILC_LOG_DEBUG(("Allocating new PKCS object"));
 
+#ifndef SILC_EPOC
   if (silc_pkcs_list) {
     silc_dlist_start(silc_pkcs_list);
     while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
-      if (!strcmp(entry->name, name)) {
-	*new_pkcs = silc_calloc(1, sizeof(**new_pkcs));
-	(*new_pkcs)->pkcs = entry;
-	(*new_pkcs)->context = silc_calloc(1, entry->context_len());
-	(*new_pkcs)->get_key_len = silc_pkcs_get_key_len;
-	return TRUE;
+      if (!strcmp(entry->name, name))
+	break;
+    }
+  }
+#else
+  {
+    /* On EPOC which don't have globals we check our constant hash list. */
+    int i;
+    for (i = 0; silc_default_pkcs[i].name; i++) {
+      if (!strcmp(silc_default_pkcs[i].name, name)) {
+	entry = (SilcPKCSObject *)&(silc_default_pkcs[i]);
+	break;
       }
     }
+  }
+#endif /* SILC_EPOC */
+
+  if (entry) {
+    *new_pkcs = silc_calloc(1, sizeof(**new_pkcs));
+    (*new_pkcs)->pkcs = entry;
+    (*new_pkcs)->context = silc_calloc(1, entry->context_len());
+    (*new_pkcs)->get_key_len = silc_pkcs_get_key_len;
+    return TRUE;
   }
 
   return FALSE;
@@ -163,6 +190,7 @@ void silc_pkcs_free(SilcPKCS pkcs)
 
 int silc_pkcs_is_supported(const unsigned char *name)
 {
+#ifndef SILC_EPOC
   SilcPKCSObject *entry;
 
   if (silc_pkcs_list) {
@@ -172,7 +200,14 @@ int silc_pkcs_is_supported(const unsigned char *name)
 	return TRUE;
     }
   }
-
+#else
+  {
+    int i;
+    for (i = 0; silc_default_pkcs[i].name; i++)
+      if (!strcmp(silc_default_pkcs[i].name, name))
+	return TRUE;
+  }
+#endif /* SILC_EPOC */
   return FALSE;
 }
 
@@ -182,9 +217,9 @@ char *silc_pkcs_get_supported(void)
 {
   SilcPKCSObject *entry;
   char *list = NULL;
-  int len;
+  int len = 0;
 
-  len = 0;
+#ifndef SILC_EPOC
   if (silc_pkcs_list) {
     silc_dlist_start(silc_pkcs_list);
     while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
@@ -196,10 +231,34 @@ char *silc_pkcs_get_supported(void)
       memcpy(list + len, ",", 1);
       len++;
     }
-    list[len - 1] = 0;
   }
+#else
+  {
+    int i;
+    for (i = 0; silc_default_pkcs[i].name; i++) {
+      entry = (SilcPKCSObject *)&(silc_default_pkcs[i]);
+      len += strlen(entry->name);
+      list = silc_realloc(list, len + 1);
+      
+      memcpy(list + (len - strlen(entry->name)), 
+	     entry->name, strlen(entry->name));
+      memcpy(list + len, ",", 1);
+      len++;
+    }
+  }
+#endif /* SILC_EPOC */
+
+  list[len - 1] = 0;
 
   return list;
+}
+
+/* Generate new key pair into the `pkcs' context. */
+
+int silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
+			   SilcRng rng)
+{
+  return pkcs->pkcs->init(pkcs->context, bits_key_len, rng);
 }
 
 /* Returns the length of the key */
@@ -668,7 +727,7 @@ int silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
     goto err;
 
   /* See if we support this algorithm (check only if PKCS are registered) */
-  if (silc_pkcs_list && !silc_pkcs_is_supported(pkcs_name)) {
+  if (SILC_PKCS_LIST && !silc_pkcs_is_supported(pkcs_name)) {
     SILC_LOG_DEBUG(("Unknown PKCS %s", pkcs_name));
     goto err;
   }
@@ -693,7 +752,7 @@ int silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
   /* Try to set the key. If this fails the key must be malformed. This
      code assumes that the PKCS routine checks the format of the key. 
      (check only if PKCS are registered) */
-  if (silc_pkcs_list) {
+  if (SILC_PKCS_LIST) {
     silc_pkcs_alloc(pkcs_name, &alg);
     if (!alg->pkcs->set_public_key(alg->context, key_data, key_len))
       goto err;
@@ -829,7 +888,7 @@ int silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
     goto err;
 
   /* See if we support this algorithm (check only if PKCS are registered). */
-  if (silc_pkcs_list && !silc_pkcs_is_supported(pkcs_name)) {
+  if (SILC_PKCS_LIST && !silc_pkcs_is_supported(pkcs_name)) {
     SILC_LOG_DEBUG(("Unknown PKCS `%s'", pkcs_name));
     goto err;
   }
@@ -846,7 +905,7 @@ int silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
   /* Try to set the key. If this fails the key must be malformed. This
      code assumes that the PKCS routine checks the format of the key. 
      (check only if PKCS are registered) */
-  if (silc_pkcs_list) {
+  if (SILC_PKCS_LIST) {
     silc_pkcs_alloc(pkcs_name, &alg);
     if (!alg->pkcs->set_private_key(alg->context, key_data, key_len))
       goto err;

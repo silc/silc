@@ -61,6 +61,11 @@
      The `tmplen' in encrypt, decrypt, sign and verify PKCS API functions
      is now calculated by (key->bits + 7) / 8.  It is the length of one block.
 
+   o Sat Mar 16 18:27:19 EET 2002  Pekka
+
+     Use the SilcRng sent as argument to SILC_PKCS_API_INIT in prime 
+     generation.
+
 */
 
 #include "silcincludes.h"
@@ -87,10 +92,10 @@ SILC_PKCS_API_INIT(rsa)
   /* Find p and q */
   while (!found) {
     printf("Finding p: ");
-    silc_math_gen_prime(&p, prime_bits, TRUE);
+    silc_math_gen_prime(&p, prime_bits, TRUE, rng);
     
     printf("\nFinding q: ");
-    silc_math_gen_prime(&q, prime_bits, TRUE);
+    silc_math_gen_prime(&q, prime_bits, TRUE, rng);
 
     if ((silc_mp_cmp(&p, &q)) == 0)
       printf("\nFound equal primes, not good, retrying...\n");

@@ -39,7 +39,6 @@ typedef struct SilcSFTPRequestStruct {
 
 /* SFTP client context */
 typedef struct {
-  SilcSocketConnection sock;
   SilcSFTPSendPacketCallback send_packet;
   void *send_context;
   SilcSFTPVersionCallback version;
@@ -109,7 +108,7 @@ static void silc_sftp_send_packet(SilcSFTPClient sftp,
 		   sftp->packet->len);
 
   /* Send the packet */
-  (*sftp->send_packet)(sftp->sock, sftp->packet, sftp->send_context);
+  (*sftp->send_packet)(sftp->packet, sftp->send_context);
 
   /* Clear packet */
   sftp->packet->data = sftp->packet->tail = sftp->packet->head;
@@ -291,15 +290,13 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
   va_end(vp);
 }
 
-/* Starts SFTP client by associating the socket connection `sock' to the
-   created SFTP client context.  The version callback indicated by the
-   `callback' will be called after the SFTP session has been started
-   and server has returned the version of the protocol.  The SFTP client
-   context is returned in the callback too.  This returns the allocated
-   SFTP client context or NULL on error. */
+/* Starts SFTP client and returns context for it.  The version callback
+   indicated by the `callback' will be called after the SFTP session has
+   been started and server has returned the version of the protocol.  The
+   SFTP client context is returned in the callback too.  This returns 
+   allocated SFTP client context or NULL on error. */
 
-SilcSFTP silc_sftp_client_start(SilcSocketConnection sock,
-				SilcSFTPSendPacketCallback send_packet,
+SilcSFTP silc_sftp_client_start(SilcSFTPSendPacketCallback send_packet,
 				void *send_context,
 				SilcSFTPVersionCallback callback,
 				void *context)
@@ -310,7 +307,6 @@ SilcSFTP silc_sftp_client_start(SilcSocketConnection sock,
     return NULL;
 
   sftp = silc_calloc(1, sizeof(*sftp));
-  sftp->sock = sock;
   sftp->send_packet = send_packet;
   sftp->send_context = send_context;
   sftp->version = callback;

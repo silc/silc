@@ -309,6 +309,7 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
     return FALSE;
 #else
   struct sockaddr_in remote;
+  char *host_ip;
 
   *hostname = NULL;
   *ip = NULL;
@@ -381,6 +382,7 @@ bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
     return FALSE;
 #else
   struct sockaddr_in local;
+  char *host_ip;
 
   *hostname = NULL;
   *ip = NULL;
