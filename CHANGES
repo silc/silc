@@ -4,6 +4,23 @@ Sun Nov 24 18:26:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  automatically the cipher's internal IV.  Affected files
 	  lib/silccrypt/silccipher.[ch].
 
+	* Assure the RESUME_CLIENT packet is not sent to twice to
+	  backup router if the detached client was originated from
+	  the backup.  Affected file silcd/server.c.  Bug #76.
+
+	* Changed silc_sim_symname to not allocate memory.  Affected
+	  file lib/silcsim/silcsimutil.c.
+
+	* Fixed memory leaks with SIMs in server.  Affected files
+	  silcd/serverconfig.c, silcd/server.c.
+
+	* Fixed channel key distribution after resuming detached
+	  client.  Affected files silcd/packet_receive.c.
+
+	* Fixed channel's global_user boolean checking after detaching.
+	  Check it after changing the owner of the client not before.
+	  Affected file silcd/packet_receive.c.
+
 Fri Nov 22 18:34:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support to backup router protocol for backup to tell

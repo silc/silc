@@ -1540,6 +1540,7 @@ bool silc_server_config_register_ciphers(SilcServer server)
 	silc_free(alg_name);
       } else {
 	SILC_LOG_ERROR(("Error configuring ciphers"));
+        silc_sim_free(sim);
 	silc_server_stop(server);
 	exit(1);
       }
@@ -1623,6 +1624,7 @@ bool silc_server_config_register_hashfuncs(SilcServer server)
 	silc_dlist_add(server->sim, sim);
       } else {
 	SILC_LOG_ERROR(("Error configuring hash functions"));
+        silc_sim_free(sim);
 	silc_server_stop(server);
 	exit(1);
       }

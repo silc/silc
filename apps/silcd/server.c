@@ -85,9 +85,10 @@ void silc_server_free(SilcServer server)
 #ifdef SILC_SIM
   {
     SilcSim sim;
-    
+    silc_dlist_start(server->sim);
     while ((sim = silc_dlist_get(server->sim)) != SILC_LIST_END) {
       silc_dlist_del(server->sim, sim);
+      silc_sim_close(sim);
       silc_sim_free(sim);
     }
     silc_dlist_uninit(server->sim);

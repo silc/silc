@@ -3646,7 +3646,8 @@ void silc_server_resume_client(SilcServer server,
     silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_RESUME_CLIENT, 0, 
 			    buf->data, buf->len, TRUE);
-    silc_server_backup_send(server, NULL, SILC_PACKET_RESUME_CLIENT, 0,
+    silc_server_backup_send(server, detached_client->router,
+			    SILC_PACKET_RESUME_CLIENT, 0,
 			    buf->data, buf->len, TRUE, TRUE);
 
     /* As router we must deliver this packet directly to the original
@@ -3777,14 +3778,18 @@ void silc_server_resume_client(SilcServer server,
 					channel->key_len / 8, channel->key);
       silc_free(id_string);
 
-      /* Send the key packet to client */
+      /* Send the channel key to the client */
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
 			      keyp->data, keyp->len, FALSE);
 
-      if (created && server->server_type == SILC_SERVER)
-	silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server), 
-				SILC_PACKET_CHANNEL_KEY, 0, 
-				keyp->data, keyp->len, FALSE);
+      /* Distribute the channel key to channel */
+      if (created) {
+	silc_server_send_channel_key(server, NULL, channel,
+				     server->server_type == SILC_ROUTER ? 
+				     FALSE : !server->standalone);
+	silc_server_backup_send(server, NULL, SILC_PACKET_CHANNEL_KEY, 0,
+				keyp->data, keyp->len, FALSE, TRUE);
+      }
 
       silc_buffer_free(keyp);
     }
@@ -3863,15 +3868,6 @@ void silc_server_resume_client(SilcServer server,
     detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
     id_cache->expire = 0;
 
-    /* Update channel information regarding global clients on channel. */
-    if (server->server_type == SILC_SERVER) {
-      silc_hash_table_list(detached_client->channels, &htl);
-      while (silc_hash_table_get(&htl, NULL, (void **)&chl))
-	chl->channel->global_users = 
-	  silc_server_channel_has_global(chl->channel);
-      silc_hash_table_list_reset(&htl);
-    }
-
     silc_schedule_task_del_by_context(server->schedule, detached_client);
 
     /* Get the new owner of the resumed client */
@@ -3898,7 +3894,7 @@ void silc_server_resume_client(SilcServer server,
     }
 
     if (server->server_type == SILC_ROUTER &&
-	sock->type == SILC_SOCKET_TYPE_ROUTER && 
+	sock->type == SILC_SOCKET_TYPE_ROUTER &&
 	server_entry->server_type == SILC_ROUTER)
       local = FALSE;
 
@@ -3907,14 +3903,23 @@ void silc_server_resume_client(SilcServer server,
 				     detached_client))
       silc_idcache_del_by_context(server->global_list->clients,
 				  detached_client);
-    silc_idcache_add(local && server->server_type == SILC_ROUTER ? 
-		     server->local_list->clients : 
-		     server->global_list->clients, 
+    silc_idcache_add(local && server->server_type == SILC_ROUTER ?
+		     server->local_list->clients :
+		     server->global_list->clients,
 		     detached_client->nickname,
 		     detached_client->id, detached_client, FALSE, NULL);
 
     /* Change the owner of the client */
     detached_client->router = server_entry;
+
+    /* Update channel information regarding global clients on channel. */
+    if (server->server_type != SILC_ROUTER) {
+      silc_hash_table_list(detached_client->channels, &htl);
+      while (silc_hash_table_get(&htl, NULL, (void **)&chl))
+	chl->channel->global_users = 
+	  silc_server_channel_has_global(chl->channel);
+      silc_hash_table_list_reset(&htl);
+    }
 
     silc_free(server_id);
   }
