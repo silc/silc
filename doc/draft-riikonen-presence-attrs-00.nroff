@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 15 May 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-presence-attrs-00.txt                         XXX
-Expires: XXX
+draft-riikonen-presence-attrs-00.txt                         15 May 2002
+Expires: 15 November 2002
 
 .in 3
 
@@ -51,7 +51,15 @@ The distribution of this memo is unlimited.
 .ti 0
 Abstract
 
-ZZZ
+This document defines set of attributes that can represent the online
+user's presence in a network, and to provide general information about
+the user.  The purpose is to provide a generic mechanism to share
+online presence and status, and general information about the user
+to be used in several kind of network protocols and applications.
+These attributes could be used by for example chat and conferencing
+protocols (such as Instant Message protocols), network games, and
+other similar network protocols and applications that has online
+users in a network.
 
 
 
@@ -65,18 +73,140 @@ Table of Contents
 .nf
 1 Introduction ..................................................  x
   1.1 Requirements Terminology ..................................  x
-
-4 Security Considerations .......................................  x
-5 References ....................................................  x
-6 Author's Address ..............................................  x
+2 Attributes Concept ............................................  x
+  2.1 Requesting Attributes .....................................  x
+  2.2 Replying Attributes .......................................  x
+  2.3 Attribute Data Types ......................................  x
+  2.4 Attribute Payload .........................................  x
+  2.5 Attributes ................................................  x
+3 Security Considerations .......................................  x
+4 References ....................................................  x
+5 Author's Address ..............................................  x
 
 
 .ti 0
 1. Introduction
 
+This document defines set of attributes that can represent the online
+user's presence in a network, and to provide general information about
+the user.  The purpose is to provide a generic mechanism to share
+online presence and status, and general information about the user
+to be used in several kind of network protocols and applications.
+These attributes could be used by for example chat and conferencing
+protocols (such as Instant Message protocols), network games, and
+other similar network protocols and applications that has online
+users in a network.
+
+This document does not define these attributes to be used in any
+specific protocol, but assumes that they can be used generally in
+any kind of online network protocol.  Furthermore, the document
+pays attention to special needs of various protocols, such as
+mobile network protocols, which requires the attributes to be
+both robust and compact.  The attributes are also considered to be
+easily implementable and for this reason a clear and robust structure
+was chosen for the attributes.
+
+This document is strongly influenced by Wireless Village Initiative
+where similar attributes are defined.  However, they are defined
+only in the context of the Wireless Village, and the format of the
+attributes used is not suitable for general purpose usage.
+
 
 .ti 0
-X.X Attribute Payload
+1.1 Requirements Terminology
+
+The keywords MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, RECOMMENDED, 
+MAY, and OPTIONAL, when they appear in this document, are to be
+interpreted as described in [RFC2119].
+
+
+.ti 0
+2 Attributes Concept
+
+Many network protocols needs a way to transfer and retrieve status
+information about users in a network.  For example, many chat and
+conferencing protocols such as IRC, and all Instant Message (IM)
+protocols, such as ICQ has a way to retrieve presence and status
+information about the users in the network.  This could be added to
+several other kind of network protocols as well, and for this reason
+a defined mechanism to provide these informations is needed.
+
+The attributes are usually requested by an entity in the network
+from other entity, usually a user or end user's device in the network.
+The recipient then replies to each of the requested attributes and
+sends the reply to the requester.
+
+This document does not define the actual transport for requesting and
+providing the replies to the requests, since this is irrelevant.
+This document defines a payload for requesting, and providing the
+information, but how the payload is transported is not defined in
+this document.  In a client-server network model the user requesting
+attributes usually destines the request to a remote user and the
+server relays the attributes to the remote user.
+
+
+.ti 0
+2.1 Requesting Attributes
+
+When an entity requests attributes from a user in the network,
+it assembles a list of Attribute Payloads, and sets the requested
+attribute value into the payload.  Each requested attribute is a separate
+Attribute Payload and they MUST be appended one after the other.  The
+requester need to understand that the recipient may not understand all
+the requested attributes, and may not reply to all of the requested
+attributes.  The requester also need to understand that the recipient
+may reply with additional attributes that were not requested.
+
+
+.ti 0
+2.2 Replying Attributes
+
+When user receives the Attribute Payloads it parses them one after
+the other.  The user can parse each of the Attribute Payload separately
+since it knows the length of the current attribute; next attribute
+begins after the current attribute ends.  The user then checks the
+requested attribute and SHOULD reply either with valid value or with
+an indication that the attribute is unsupported or unknown.  It is
+also possible to reply with additional attributes that were not
+requested.
+
+When replying to the requested attributes the user assembles a list
+of Attribute Payloads, each including the attribute type and the
+actual attribute data.
+
+
+.ti 0
+2.3 Attribute Data Types
+
+This section defines basic data types that can appear in the attributes
+in this document.
+
+All integer values are stored in the MSB first order.  The size of the
+integer is provided separately with the attribute.  Integer is
+represented as "integer" in this documentation.
+
+Strings are always UTF-8 [RFC2279] encoded, and include 2 bytes length
+field indicating the length of the string.  Hence, when "string" value
+appears in this documentation it is encoded as:
+
+.in 6
+Length       Type       Value
+2 bytes      integer    Length of String field
+variable     UTF-8      String
+.in 3
+
+If string is not present then the length field includes zero (0)
+value.
+
+Boolean value is represented as "boolean" and its size is 1 byte.
+Value 0x00 indicates false value and value 0x01 indicates true value.
+
+
+.ti 0
+2.4 Attribute Payload
+
+The Attribute Payload is used to request an attribute, and to reply
+to the requested attribute.  One payload includes one attribute.
 
 
 .in 5
@@ -127,25 +257,11 @@ o Attribute Data (variable length) - The Attribute Data.
 
 
 .ti 0
-X.X Attributes
+2.5 Attributes
 
 The following values can appear in the Attribute field in the
-Attribute Payload to indicate the content of the attribute.  All
-integer values are stored in the MSB first order.  Strings are
-always UTF-8 [RFC2279] encoded, and include 2 bytes length field
-indicating the length of the string.  Hence, when string value
-appears in this documentation it is encoded as:
-
-.in 6
-Length       Type       Value
-2 bytes      integer    Length of String field
-variable     UTF-8      String
-.in 3
-
-If string is not present then the length field includes zero (0)
-value.
-
-The format of the attribute data is represented as length, type and
+Attribute Payload to indicate the content of the attribute.  The
+format of the attribute data is represented as length, type and
 value.  Example:
 
 .in 6
@@ -198,11 +314,78 @@ multiple same attributes in the packet.
                              out of reach.
 
 
-x    ATTRIBUTE_STATUS_MOOD
+3    ATTRIBUTE_STATUS_MOOD
+
+     This attribute indicates the mood of the user.  It can indicate
+     whether the user is eager to participate in the network.  The
+     value of this attribute is as follows:
+
+     Length       Type       Value
+     4 bytes      integer    Mood mask (values ORed together)
+
+     The following mood values are defined:
+
+     0x00000000   MOOD_NORMAL
+
+       No specific mood, the normal mood for a user.
 
 
+     0x00000001   MOOD_HAPPY
 
-x    ATTRIBUTE_STATUS_FREETEXT
+       The user feels happy.
+
+
+     0x00000002   MOOD_SAD
+
+       The user feels sad.
+
+
+     0x00000004   MOOD_ANGRY
+
+       The user feels angry.
+
+
+     0x00000008   MOOD_JEALOUS
+
+       The user feels jealous.
+
+
+     0x00000010   MOOD_ASHAMED
+
+       The user feels ashamed.
+
+
+     0x00000020   MOOD_INVINCIBLE
+
+       The user feels invincible.
+
+
+     0x00000040   MOOD_INLOVE
+
+       The user feels being in love.
+
+
+     0x00000080   MOOD_SLEEPY
+
+       The user feels sleepy.
+
+
+     0x00000100   MOOD_BORED
+
+       The user feels bored.
+
+
+     0x00000200   MOOD_EXCITED
+
+       The user feels exited.
+
+
+     0x00000400   MOOD_ANXIOUS
+
+       The user feels anxious.
+
+
+4    ATTRIBUTE_STATUS_FREETEXT
 
      This attribute includes the user's online status free text.  It
      can provide personal status as a text message.  The contents of
@@ -212,7 +395,7 @@ x    ATTRIBUTE_STATUS_FREETEXT
      variable     string     Free text status string
 
 
-x    ATTRIBUTE_STATUS_MESSAGE
+5    ATTRIBUTE_STATUS_MESSAGE
 
      This attribute includes the user's online status message.  It
      could provide for example a multi media message showing the status
@@ -225,18 +408,18 @@ x    ATTRIBUTE_STATUS_MESSAGE
      variable     MIME       Status message as MIME object
 
 
-x    ATTRIBUTE_STATUS_COMMUNICATION
+6    ATTRIBUTE_STATUS_COMMUNICATION
+
+     
 
 
+7    ATTRIBUTE_PREFERRED_LANGUAGE
 
 
-x    ATTRIBUTE_PREFERRED_LANGUAGE
+8    ATTRIBUTE_PREFERRED_CONTACT
 
 
-x    ATTRIBUTE_PREFERRED_CONTACT
-
-
-x    ATTRIBUTE_TIMEZONE
+9    ATTRIBUTE_TIMEZONE
 
      This attribute can be used to provide the current local time for
      the user.  The contents of this attribute is a UTF-8 encoded
@@ -251,7 +434,7 @@ x    ATTRIBUTE_TIMEZONE
      current time zone information is provided.
 
 
-x    ATTRIBUTE_GEOLOCATION
+10   ATTRIBUTE_GEOLOCATION
 
      This attribute can be used to provide measured global location of
      the user.  How this information is gathered is out of scope of
@@ -259,7 +442,11 @@ x    ATTRIBUTE_GEOLOCATION
      lateral positions, but also a vertical position.  A parameter
      describing the accuracy of the information can also be provided.
 
-
+     Length       Type       Value
+     variable     string     Longitude
+     variable     string     Latitude
+     variable     string     Altitude
+     variable     string     Accuracy in meters
 
      Note that ATTRIBUTE_USER_INFO may also provide this information,
      however it does not have the vertical position, or the accuracy
@@ -267,10 +454,27 @@ x    ATTRIBUTE_GEOLOCATION
      providing current global position information.
 
 
-x    ATTRIBUTE_DEVICE_INFO
+11   ATTRIBUTE_DEVICE_INFO
+
+     This attribute includes information about the user's device
+     The encoding of this attribute is as follows:
+
+     Length       Type       Value
+     4 bytes      integer    Device type
+     variable     string     Name of the device manufacturer
+     variable     string     Device version
+     variable     string     Device model
+     variable     string     Device language (ISO 639-2/T)
+
+     The following Device types are defined:
+
+     0    DEVICE_COMPUTER        Device is a computer
+     1    DEVICE_MOBILE_PHONE    Device is a mobile phone
+     2    DEVICE_PDA             Device is a PDA
+     3    DEVICE_TERMINAL        Device is a terminal
 
 
-x    ATTRIBUTE_EXTENSION
+12   ATTRIBUTE_EXTENSION
 
      This attribute indicates that the attribute value is vendor,
      application or service specific attribute extension.  This field
@@ -282,7 +486,7 @@ x    ATTRIBUTE_EXTENSION
      variable     MIME       Attribute extension as MIME object
 
 
-x    ATTRIBUTE_USER_PUBLIC_KEY
+13   ATTRIBUTE_USER_PUBLIC_KEY
 
      This attribute includes the user's public key or certificate.
      As the public key and certificate format depends on which sort
@@ -324,7 +528,7 @@ x    ATTRIBUTE_USER_PUBLIC_KEY
      signing only.
 
 
-x    ATTRIBUTE_SERVER_PUBLIC_KEY
+14   ATTRIBUTE_SERVER_PUBLIC_KEY
 
      This attribute includes a third party server or authority public
      key or CA certificate and MUST be present if the attribute
@@ -333,7 +537,7 @@ x    ATTRIBUTE_SERVER_PUBLIC_KEY
      attribute.
 
 
-x    ATTRIBUTE_USER_DIGITAL_SIGNATURE
+15   ATTRIBUTE_USER_DIGITAL_SIGNATURE
 
      This attribute value includes digital signature of all Attribute
      Payloads except this attribute.  This signature can be provided by
@@ -359,7 +563,7 @@ x    ATTRIBUTE_USER_DIGITAL_SIGNATURE
      provided references.
 
 
-x    ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
+16   ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
 
      This attribute value includes digital signature of all Attribute
      Payloads except this attribute, but including the attribute
@@ -377,12 +581,12 @@ x    ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
 
 
 .ti 0
-4 Security Considerations
+3 Security Considerations
 
 
 
 .ti 0
-5 References 
+4 References 
 
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
@@ -414,7 +618,7 @@ x    ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
 
 
 .ti 0
-6 Author's Address
+5 Author's Address
 
 Pekka Riikonen
 Snellmaninkatu 34 A 15
@@ -423,4 +627,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 15 November 2002
