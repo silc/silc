@@ -78,15 +78,15 @@ D: Bughunting
 
 N: Lubomir Sedlacik
 E: salo@Xtrmntr.org
+E: salo@NetBSD.org
 W: http://Xtrmntr.org
-P: 1024/7E3B70E2 DB EC 8B EC 9A 90 EC EC  0F EF 71 6E 59 CE B7 0B  7E 3B 70 E2
-D: web pages
+P: 1024/54BC7263 75 B2 2B 96 CD 75 03 85  1C 49 39 B8 8B 08 C3 0E  54 BC 72 63
 D: configure.in bugfixes
-D: NetBSD and Solaris packages
+D: NetBSD packages
 D: project server administrator
 D: mirrors coordinator
-S: 92101 Piestany
-S: Slovakia
+S: 15000 Prague
+S: Czech Republic
 
 N: Timo Sirainen
 E: tss@iki.fi
