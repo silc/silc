@@ -36,9 +36,8 @@ S: Finland
 N: Jochen "c0ffee" Eisinger
 E: jochen@penguin-breeder.org
 W: http://penguin-breeder.org/
-D: various patches to the SILC client
-D: maintainer of the SILC plugin
-D: patch for multiple network interfaces to the SILC server
+D: maintainer of the SILC Client & SILC Plugin
+D: several new subtle bugs disguised as fixes and patches
 S: Haslacher Str. 45
 S: 79115 Freiburg
 S: Germany
