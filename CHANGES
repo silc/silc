@@ -1,4 +1,4 @@
-Sat Feb 16 13:44:24 EET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+Sat Feb 16 13:44:24 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Rewrote the notify handling in Irssi SILC client to not call
 	  the events as signals.  Fixes problems with Perl support.
