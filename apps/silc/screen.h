@@ -103,6 +103,7 @@ WINDOW *silc_screen_create_output_window(SilcScreen screen);
 WINDOW *silc_screen_add_output_window(SilcScreen screen);
 void silc_screen_create_input_window(SilcScreen screen);
 void silc_screen_init_upper_status_line(SilcScreen screen);
+void silc_screen_print_upper_stat_line(SilcScreen screen);
 void silc_screen_init_output_status_line(SilcScreen screen);
 void silc_screen_print_clock(SilcScreen screen);
 void silc_screen_print_coordinates(SilcScreen screen, int win_index);

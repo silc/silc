@@ -26,6 +26,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/07 06:52:10  priikone
+ * 	Fixed screen refresh routine.
+ *
  * Revision 1.2  2000/07/05 06:12:05  priikone
  * 	Global cosmetic changes.
  *
@@ -109,15 +112,20 @@ void silc_screen_create_input_window(SilcScreen screen)
 
 void silc_screen_init_upper_status_line(SilcScreen screen)
 {
-  int i;
-  int justify;
-  
   assert(screen != NULL);
 
   /* Create upper status line */
   screen->upper_stat_line = newwin(0, COLS, 0, 0);
   scrollok(screen->upper_stat_line, FALSE);
   wattrset(screen->upper_stat_line, A_REVERSE);
+
+  silc_screen_print_upper_stat_line(screen);
+}
+
+void silc_screen_print_upper_stat_line(SilcScreen screen)
+{
+  int i;
+  int justify;
   
   /* Print empty line */
   for (i = 0; i < COLS - 1; i++)
@@ -128,13 +136,6 @@ void silc_screen_init_upper_status_line(SilcScreen screen)
   mvwprintw(screen->upper_stat_line, 0, 1, "%s %s", 
 	    screen->u_stat_line.program_name, 
 	    screen->u_stat_line.program_version);
-  /*
-  mvwprintw(screen->upper_stat_line, 0, justify, "[Your Connection: %s]", 
-	    stat.uconnect_status[stat.uconnect]);
-  mvwprintw(screen->upper_stat_line, 0, 
-	    (justify + justify + justify), "[SILC: %s]", 
-	    stat.silc_status[stat.silc]);
-  */
 
   /* Prints clock on upper stat line */	
   silc_screen_print_clock(screen);
@@ -242,15 +243,20 @@ void silc_screen_refresh_all(SilcScreen screen)
 
   assert(screen != NULL);
 
-  redrawwin(screen->upper_stat_line);
+  wclear(screen->upper_stat_line);
+  silc_screen_print_upper_stat_line(screen);
+
+  wclear(screen->output_stat_line[0]);
+  silc_screen_print_bottom_line(screen, 0);
+  silc_screen_print_coordinates(screen, 0);
 
   for (i = 0; i < screen->output_win_count; i++) {
+    wclear(screen->output_win[i]);
     wrefresh(screen->output_win[i]);
-    redrawwin(screen->output_win[i]);
   }
 
+  wclear(screen->input_win);
   wrefresh(screen->input_win);
-  redrawwin(screen->input_win);
 }
 
 /* Refreshes a window */
