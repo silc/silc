@@ -51,6 +51,8 @@ utf8fail(30, "\xf0\x20\xf9\x20\xfa\x20\xfb\x20", 8);
 int main(int argc, char **argv)
 {
   bool success = FALSE;
+  unsigned char *s1, *s3, *s4;
+  int l;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_debug = 1;
@@ -74,6 +76,34 @@ int main(int argc, char **argv)
   utf8failc(25);  utf8failc(26);
   utf8failc(27);  utf8failc(28);
   utf8failc(29);  utf8failc(30);
+
+  /* LDAP DN simple test */
+  s1 = "#&?*Pekka, Riikonen, <foobar@foobar.com>\xc4\x8d ";
+  SILC_LOG_DEBUG(("s1 = %s", s1));
+
+  /* To LDAP DN */
+  l = silc_utf8_decoded_len(s1, strlen(s1), SILC_STRING_LDAP_DN);
+  if (!l)
+    goto err;
+  s3 = silc_calloc(l + 1, sizeof(*s3));
+  silc_utf8_decode(s1, strlen(s1), SILC_STRING_LDAP_DN, s3, l);
+  SILC_LOG_DEBUG(("ldapdn = %s", s3));
+
+  /* To UTF-8 */
+  l = silc_utf8_encoded_len(s3, strlen(s3), SILC_STRING_LDAP_DN);
+  if (!l)
+    goto err;  
+  s4 = silc_calloc(l + 1, sizeof(*s4));
+  silc_utf8_encode(s3, strlen(s3), SILC_STRING_LDAP_DN, s4, l);
+  SILC_LOG_DEBUG(("utf8 = %s", s4));
+
+  if (memcmp(s4, s1, strlen(s4))) {
+    SILC_LOG_DEBUG(("UTF-8 mismatch"));
+    goto err;
+  }
+
+  silc_free(s3);
+  silc_free(s4);
 
   success = TRUE;
 

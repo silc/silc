@@ -46,6 +46,49 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     return bin_len;
   }
 
+  /* The SILC_STRING_LDAP_DN is alredy UTF-8 but it may be escaped.  We
+     remove the escaping and we're done. */
+  if (bin_encoding == SILC_STRING_LDAP_DN ||
+      bin_encoding == SILC_STRING_UTF8_ESCAPE) {
+    unsigned char cv;
+
+    for (i = 0; i < bin_len; i++) {
+      if (bin[i] == '\\') {
+	if (i + 1 >= bin_len)
+	  return 0;
+
+	/* If escaped character is any of the following no processing is
+	   needed, otherwise it is a hex value and we need to read it. */
+	cv = bin[i + 1];
+	if (cv != ',' && cv != '+' && cv != '"' && cv != '\\' && cv != '<' &&
+	    cv != '>' && cv != ';' && cv != ' ' && cv != '#') {
+	  unsigned int hexval;
+	  if (i + 2 >= bin_len)
+	    return 0;
+	  if (sscanf(&bin[i + 1], "%02X", &hexval) != 1)
+	    return 0;
+	  if (utf8) {
+	    if (enclen + 1 > utf8_size)
+	      return 0;
+	    utf8[enclen] = (unsigned char)hexval;
+	  }
+
+	  i += 2;
+	  enclen++;
+	}
+      } else {
+	if (utf8) {
+	  if (enclen + 1 > utf8_size)
+	    return 0;
+	  utf8[enclen] = bin[i];
+	}
+	enclen++;
+      }
+    }
+
+    return enclen;
+  }
+
   if (bin_encoding == SILC_STRING_LOCALE) {
 #if defined(HAVE_ICONV) && defined(HAVE_NL_LANGINFO) && defined(CODESET)
     char *fromconv, *icp, *ocp;
@@ -119,31 +162,6 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     case SILC_STRING_NUMERICAL:
       if (bin[i] != 0x20 && !isdigit(bin[i]))
 	return 0;
-      charval = bin[i];
-      break;
-    case SILC_STRING_LDAP_DN:
-      /* Remove any escaping */
-      if (bin[i] == '\\') {
-	unsigned char cv;
-	if (i + 1 >= bin_len)
-	  return 0;
-
-	/* If escaped character is any of the following no processing is
-	   needed, otherwise it is a hex value and we need to read it. */
-	cv = bin[++i];
-	if (cv != ',' && cv != '+' && cv != '"' && cv != '\\' && cv != '<' &&
-	    cv != '>' && cv != ';' && cv != ' ' && cv != '#') {
-	  unsigned int hexval;
-	  if (i + 1 >= bin_len)
-	    return 0;
-	  if (sscanf(&bin[++i], "%02X", &hexval) != 1)
-	    return 0;
-	  cv = (unsigned char)hexval;
-	}
-
-	charval = cv;
-	break;
-      }
       charval = bin[i];
       break;
     default:
@@ -231,7 +249,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 			    SilcStringEncoding bin_encoding,
 			    unsigned char *bin, SilcUInt32 bin_size)
 {
-  SilcUInt32 enclen = 0, i, charval;
+  SilcUInt32 enclen = 0, i, charval, bytes;
 
   if (!utf8 || !utf8_len)
     return 0;
@@ -277,6 +295,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
   for (i = 0; i < utf8_len; i++) {
     if ((utf8[i] & 0x80) == 0x00) {
       charval = utf8[i] & 0x7f;
+      bytes = 1;
     } else if ((utf8[i] & 0xe0) == 0xc0) {
       if (i + 1 >= utf8_len)
 	return 0;
@@ -288,6 +307,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       charval |= utf8[i] & 0x3f;
       if (charval < 0x80)
         return 0;
+      bytes = 2;
     } else if ((utf8[i] & 0xf0) == 0xe0) {
       if (i + 2 >= utf8_len)
 	return 0;
@@ -307,6 +327,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       charval |= utf8[i] & 0x3f;
       if (charval < 0x800)
         return 0;
+      bytes = 3;
     } else if ((utf8[i] & 0xf8) == 0xf0) {
       if (i + 3 >= utf8_len)
 	return 0;
@@ -322,6 +343,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       charval |= utf8[i] & 0x3f;
       if (charval < 0x10000)
         return 0;
+      bytes = 4;
     } else if ((utf8[i] & 0xfc) == 0xf8) {
       if (i + 4 >= utf8_len)
 	return 0;
@@ -339,6 +361,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       charval |= utf8[i] & 0x3f;
       if (charval < 0x200000)
         return 0;
+      bytes = 5;
     } else if ((utf8[i] & 0xfe) == 0xfc) {
       if (i + 5 >= utf8_len)
 	return 0;
@@ -358,6 +381,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       charval |= utf8[i] & 0x3f;
       if (charval < 0x4000000)
         return 0;
+      bytes = 6;
     } else {
       return 0;
     }
@@ -414,64 +438,70 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       break;
     case SILC_STRING_LDAP_DN:
       {
-	/* XXX multibyte handling */
-	unsigned char cv = (unsigned char)charval;
+        int k;
+	unsigned char cv;
 
-	/* If string starts with space or # escape it */
-	if (!enclen && (cv == '#' || cv == ' ')) {
-	  if (bin) {
-	    if (enclen + 2 > bin_size)
-	      return 0;
-	    bin[enclen] = '\\';
-	    bin[enclen + 1] = cv;
+	/* Non-printable UTF-8 characters will be escaped, printable will
+	   be as is.  We take the bytes directly from the original data. */
+	for (k = 0; k < bytes; k++) {
+	  cv = utf8[(i - (bytes - 1)) + k];
+
+	  /* If string starts with space or # escape it */
+	  if (!enclen && (cv == '#' || cv == ' ')) {
+	    if (bin) {
+	      if (enclen + 2 > bin_size)
+		return 0;
+	      bin[enclen] = '\\';
+	      bin[enclen + 1] = cv;
+	    }
+	    enclen += 2;
+	    continue;
 	  }
-	  enclen += 2;
-	  break;
-	}
 
-	/* If string ends with space escape it */
-	if (i == utf8_len - 1 && cv == ' ') {
-	  if (bin) {
-	    if (enclen + 2 > bin_size)
-	      return 0;
-	    bin[enclen] = '\\';
-	    bin[enclen + 1] = cv;
+	  /* If string ends with space escape it */
+	  if (i == utf8_len - 1 && cv == ' ') {
+	    if (bin) {
+	      if (enclen + 2 > bin_size)
+		return 0;
+	      bin[enclen] = '\\';
+	      bin[enclen + 1] = cv;
+	    }
+	    enclen += 2;
+	    continue;
 	  }
-	  enclen += 2;
-	  break;
-	}
 
-	/* If character is any of following then escape */
-	if (cv == ',' || cv == '+' || cv == '"' || cv == '\\' || cv == '<' ||
-	    cv == '>' || cv == ';') {
-	  if (bin) {
-	    if (enclen + 2 > bin_size)
-	      return 0;
-	    bin[enclen] = '\\';
-	    bin[enclen + 1] = cv;
+	  /* If character is any of following then escape */
+	  if (cv == ',' || cv == '+' || cv == '"' || cv == '\\' || cv == '<' ||
+	      cv == '>' || cv == ';') {
+	    if (bin) {
+	      if (enclen + 2 > bin_size)
+		return 0;
+	      bin[enclen] = '\\';
+	      bin[enclen + 1] = cv;
+	    }
+	    enclen += 2;
+	    continue;
 	  }
-	  enclen += 2;
-	  break;
-	}
 
-	/* If character is not printable escape it with hex character */
-	if (!isprint((int)cv)) {
-	  if (bin) {
-	    if (enclen + 2 > bin_size)
-	      return 0;
-	    bin[enclen] = '\\';
-	    snprintf(bin + enclen + 1, 3, "%02X", cv);
+	  /* If character is not printable escape it with hex character */
+	  if (!isprint((int)cv)) {
+	    if (bin) {
+	      if (enclen + 3 > bin_size)
+		return 0;
+	      bin[enclen] = '\\';
+	      snprintf(bin + enclen + 1, 3, "%02X", cv);
+	    }
+	    enclen += 3;
+	    continue;
 	  }
-	  enclen += 2;
-	  break;
-	}
 
-	if (bin) {
-	  if (enclen + 1 > bin_size)
-	    return 0;
-	  bin[enclen] = cv;
+	  if (bin) {
+	    if (enclen + 1 > bin_size)
+	      return 0;
+	    bin[enclen] = cv;
+	  }
+	  enclen++;
 	}
-	enclen++;
       }
       break;
     default:

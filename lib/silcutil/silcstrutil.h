@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2004 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ typedef enum {
   SILC_STRING_TELETEX       = 10, /* Teletex ASCII string */
   SILC_STRING_NUMERICAL     = 11, /* Numerical ASCII string (digits) */
   SILC_STRING_LDAP_DN       = 12, /* Strings for LDAP DNs, RFC 2253 */
+  SILC_STRING_UTF8_ESCAPE   = 12, /* Escaped UTF-8 as defined in RFC 2253 */
 
   SILC_STRING_LANGUAGE      = 6,  /* _Deprecated_, use SILC_STRING_LOCALE. */
 } SilcStringEncoding;

@@ -853,7 +853,7 @@ typedef struct {
   
   /* If this is set to TRUE, the silcclient library will not register and 
      deregister the cipher, pkcs, hash and hmac algorithms. The application
-	 itself will need to handle that. */
+     itself will need to handle that. */
   bool dont_register_crypto_library;
 
 } SilcClientParams;
