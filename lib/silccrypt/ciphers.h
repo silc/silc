@@ -25,5 +25,6 @@
 #include "mars.h"
 #include "rc6.h"
 #include "twofish.h"
+#include "rijndael.h"
 
 #endif
