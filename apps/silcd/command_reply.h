@@ -54,7 +54,7 @@ typedef struct {
 
 /* Macro used to declare command reply functions */
 #define SILC_SERVER_CMD_REPLY_FUNC(func) \
-void silc_server_command_reply_##func(void *context)
+void silc_server_command_reply_##func(void *context, void *context2)
 
 /* Prototypes */
 void silc_server_command_reply_free(SilcServerCommandReplyContext cmd);

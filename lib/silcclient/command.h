@@ -101,13 +101,13 @@ extern SilcClientCommandPending *silc_command_pending;
 
 /* Macro used to declare command functions */
 #define SILC_CLIENT_CMD_FUNC(func) \
-void silc_client_command_##func(void *context)
+void silc_client_command_##func(void *context, void *context2)
 
 /* Executed pending command callback */
 #define SILC_CLIENT_PENDING_EXEC(ctx, cmd)	\
 do {						\
   if ((ctx)->callback)				\
-    (*ctx->callback)(ctx->context);		\
+    (*ctx->callback)(ctx->context, ctx);	\
 } while(0)
 
 /* Execute destructor for pending command */

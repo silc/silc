@@ -829,6 +829,24 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 char *channel);
 
+/****f* silcclient/SilcClientAPI/silc_client_get_server_by_id
+ *
+ * SYNOPSIS
+ *
+ *    SilcServerEntry silc_client_get_server_by_id(SilcClient client,
+ *                                                 SilcClientConnection conn,
+ *                                                 SilcServerID *server_id);
+ *
+ * DESCRIPTION
+ *
+ *    Finds entry for server by the server ID. Returns the entry or NULL
+ *    if the entry was not found.
+ *
+ ***/
+SilcServerEntry silc_client_get_server_by_id(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcServerID *server_id);
+
 
 /* Command management (command.c) */
 

@@ -496,11 +496,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       client_id_list = va_arg(vp, SilcBuffer);
 
       chanrec = silc_channel_find(server, channel);
-      if (chanrec != NULL && !success)
-	channel_destroy(CHANNEL(chanrec));
-      else if (chanrec == NULL && success)
+      if (!chanrec)
 	chanrec = silc_channel_create(server, channel, TRUE);
-      
+
       if (topic) {
 	g_free_not_null(chanrec->topic);
 	chanrec->topic = *topic == '\0' ? NULL : g_strdup(topic);

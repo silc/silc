@@ -1,23 +1,15 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o Do not let irssi update the status bar on JOIN until the join command
-   is successful, so that it does not update that I'm on the channel
-   even though I could not join the channel.
-
- o The CMODE notify handling in client library may return NULL
-   client entry pointer to the application (when server was the CMODE's
-   executor).  Fix this somehow.
-
- o Add PERL scripting support from Irssi CVS.
+ o We should get rid of the clientconfig.[ch] in Irssi SILC and move the
+   cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
+   file.
 
  o Add local commands to list the current server and client public keys
    that the user has.  And a local command to dump the contents of the
    public key to the screen.  Something like LISTKEYS, SHOWKEY...
 
- o We should get rid of the clientconfig.[ch] in Irssi SILC and move the
-   cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
-   file.
+ o Add PERL scripting support from Irssi CVS.
 
  o Extend the /HELP command to support sub commands or something.  So
    that user can say /help set mutual_authentication they would get
@@ -30,19 +22,10 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o Library should save the cumode and not start from 0 everytime then
-   CUMODE is issued.  A mechanism of getting the channel entry for
-   CMODE and CUMODE by the command reply identifier must be added.
-   Otherwise saving the modes for the channels and channel user
-   entries are impossible since server does not send Channel ID as
-   command reply in these commands.
-
  o All protocol execution timeouts are hard coded. They should be 
    configurable and the Irssi SILC client should be able to set them
    with for example /set key_exchange_timeout etc.  The silc_client_alloc
    should take a Params structure or something as argument.
-
- o silc_client_close_connection leaks memory.  Read the XXX from code.
 
  o The client library must manage somehow when receiving client that has
    same nickname, same server, same username but different Client ID than
@@ -51,6 +34,8 @@ TODO/bugs In SILC Client Library
    using the client->num so that they can be accessed from the user
    interface separately or it could just remove the old client unless
    it is on some channels.
+
+ o silc_client_close_connection leaks memory.  Read the XXX from code.
 
 
 TODO/bugs In SILC Server

@@ -53,7 +53,7 @@ typedef struct {
 
 /* Macro used to declare command reply functions */
 #define SILC_CLIENT_CMD_REPLY_FUNC(func) \
-void silc_client_command_reply_##func(void *context)
+void silc_client_command_reply_##func(void *context, void *context2)
 
 /* Status message structure. Messages are defined below. */
 typedef struct {

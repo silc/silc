@@ -85,15 +85,21 @@ typedef struct SilcServerCommandPendingStruct {
 #define SILC_SERVER_CMD(func, cmd, flags) \
 { silc_server_command_##func, SILC_COMMAND_##cmd, flags }
 
-/* Macro used to declare command functions */
+/* Macro used to declare command functions. The `context' will be the
+   SilcServerCommandContext and the `context2' is the 
+   SilcServerCommandReplyContext if this function is called from the
+   command reply as pending command callback. Otherwise `context2' 
+   is NULL. */
 #define SILC_SERVER_CMD_FUNC(func) \
-void silc_server_command_##func(void *context)
+void silc_server_command_##func(void *context, void *context2)
 
-/* Executed pending command */
-#define SILC_SERVER_PENDING_EXEC(ctx, cmd)				\
-do {									\
-  if (ctx->callback)							\
-    (*ctx->callback)(ctx->context);					\
+/* Executed pending command. The first argument to the callback function
+   is the user specified context. The second argument is always the
+   SilcServerCommandReply context. */
+#define SILC_SERVER_PENDING_EXEC(ctx, cmd)	\
+do {						\
+  if (ctx->callback)				\
+    (*ctx->callback)(ctx->context, ctx);	\
 } while(0)
 
 /* Execute destructor for pending command */

@@ -1,3 +1,75 @@
+Tue Jul 10 18:05:38 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SilcServerEntry context into the client library
+	  to represent one server.  The INFO command now allocates
+	  these to save the resolved server info.  For now on the
+	  client library will also keep information about servers,
+	  connected and resolved with INFO.
+
+	  The INFO command now allocates the SilcServerEntry context
+	  and saves the server info there.  The COMMAND_REPLY in
+	  the INFO now returns the parameters to application in 
+	  same order as defined in the protocol specification.
+
+	  The entries are cached in the client->server_cache.
+
+	* The INFO command is now issued after received the Client ID
+	  from the server.  Affected file lib/silcclient/client.c.
+
+	* The CMODE_CHANGE notify may now return also an SilcServerEntry
+	  to the application as the mode changer might be server.
+	  It is guaranteed that NULL is not returned anymore to the
+	  application.  Affected file lib/silcclient/client_notify.c.
+
+	  The ID Type is now also passed to the application so that
+	  it can check whether the returned entry is SilcClientEntry
+	  or SilcServerEntry.
+
+	  Added new function silc_client_get_server_by_id to return
+	  the server entry by ID.  Affected files are the
+	  lib/silcclient/silcapi.h and lib/silcclient/idlist.c.
+
+	* Do not create the channel in the Irssi SILC Client when issuing
+	  the JOIN command but when received the sucessful JOIN command
+	  reply.  Otherwise the channel might get created even though we
+	  could not join it.  The Affected file is
+	  irssi/src/silc/core/[silc-channels.c/client_ops.c].
+
+	* Fixed a channel joining bug in router.  The router must also
+	  check the channel modes, invite and ban lists etc. when serving
+	  the JOIN command sent by normal server.  Affected file is
+	  silcd/command.c.  The router now resolves the client's 
+	  information from the server who sent the JOIN command if it
+	  does not know it, and processes the JOIN command only after
+	  that.
+
+	* Changed the SilcCommandCb to take new argument; void *context2.
+	  Affected file lib/silccore/silccommand.h
+
+	  The second argument in the command callbacks in the server now
+	  includes the SilcServerCommandReplyContext if the command was
+	  called as pending command callback from the command reply.
+	  Otherwise it is NULL. When called as pending the status of the
+	  command reply will be checked and if it was erronous the
+	  error will be sent to the original sender of the command.
+	  This way the client always receives the error messages even
+	  though the server was actually the one who received the error
+	  when it resent the command to router, for example.  Affected
+	  files silcd/command[_reply].[ch].
+
+	* Fixed sending WHOWAS command's error message to client if
+	  the requested client could not be found.  It was missing.
+	  silcd/command.c.
+
+	* Changed the CMODE and CUMODE commands reply arguments in the
+	  protocol specification.  The Channel ID is now sent in both
+	  of the commands to identify the channel.  Implemented this
+	  new feature to the client and server.  Affected files
+	  lib/silcclient/command_reply.c and silcd/command.c.
+
+	* Made better checks for invite and ban lists in the JOIN
+	  command in server.  Affected file silcd/command.c.
+
 Mon Jul  9 18:28:34 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* The server now performs the incoming host IP/DNS lookup

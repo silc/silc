@@ -25,7 +25,7 @@
    (it receives its ID, for example, by IDENTIFY request) we create new
    client entry. This entry also includes the private message keys if
    they are used. */
-typedef struct SilcClientEntryStruct {
+typedef struct {
   char *nickname;		/* nickname */
   char *username;		/* username[@host] */
   char *server;			/* SILC server name */
@@ -78,6 +78,15 @@ typedef struct SilcChannelEntryStruct {
   SilcDList private_keys;		     /* List of private keys or NULL */
   SilcChannelPrivateKey curr_key;	     /* Current private key */
 } *SilcChannelEntry;
+
+/* Server entry context. This represents one server. When server information
+   is resolved with INFO command the server info is saved in this context. 
+   Also the connected servers are saved here. */
+typedef struct {
+  char *server_name;
+  char *server_info;
+  SilcServerID *server_id;
+} *SilcServerEntry;
 
 /* Prototypes (some functions are defined in the silcapi.h) */
 

@@ -3834,6 +3834,7 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
 			    buffer->data, buffer->len, FALSE);
     silc_buffer_free(idp);
     silc_buffer_free(buffer);
+    return NULL;
   }
 
   return client;

@@ -101,7 +101,7 @@ void silc_client_get_clients(SilcClient client,
   i->context = context;
 
   /* Call the command */
-  ctx->command->cb(ctx);
+  ctx->command->cb(ctx, NULL);
 
   /* Add pending callback */
   silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
@@ -338,7 +338,7 @@ void silc_client_get_clients_by_list(SilcClient client,
 		   client_id_list->head);
 
   /* We have the clients in cache, get them and call the completion */
-  silc_client_command_get_clients_list_callback((void *)in);
+  silc_client_command_get_clients_list_callback((void *)in, NULL);
 }
 
 /* The old style function to find client entry. This is used by the
@@ -377,7 +377,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
       snprintf(ident, sizeof(ident), "IDENTIFY %s", nickname);
       silc_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
 			      &ctx->argv_types, &ctx->argc, 2);
-      ctx->command->cb(ctx);
+      ctx->command->cb(ctx, NULL);
       
       if (list)
 	silc_idcache_list_free(list);
@@ -552,6 +552,24 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
     return NULL;
 
   entry = (SilcChannelEntry)id_cache->context;
+
+  return entry;
+}
+
+/* Finds entry for server by the server ID. */
+
+SilcServerEntry silc_client_get_server_by_id(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcServerID *server_id)
+{
+  SilcIDCacheEntry id_cache;
+  SilcServerEntry entry;
+
+  if (!silc_idcache_find_by_id_one(conn->server_cache, (void *)server_id, 
+				   &id_cache))
+    return NULL;
+
+  entry = (SilcServerEntry)id_cache->context;
 
   return entry;
 }

@@ -1262,6 +1262,7 @@ void silc_client_receive_new_id(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   int connecting = FALSE;
+  SilcBuffer sidp;
 
   if (!conn->local_entry)
     connecting = TRUE;
@@ -1298,6 +1299,13 @@ void silc_client_receive_new_id(SilcClient client,
   /* Put it to the ID cache */
   silc_idcache_add(conn->client_cache, conn->nickname, conn->local_id, 
 		   (void *)conn->local_entry, FALSE);
+
+  /* Issue INFO command to fetch the real server name and server information
+     and other stuff. */
+  sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
+  silc_client_send_command(client, conn, SILC_COMMAND_INFO,
+			   ++conn->cmd_ident, 1, 2, sidp->data, sidp->len);
+  silc_buffer_free(sidp);
 
   /* Notify application of successful connection. We do it here now that
      we've received the Client ID and are allowed to send traffic. */

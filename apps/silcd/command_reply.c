@@ -107,7 +107,7 @@ void silc_server_command_reply_process(SilcServer server,
     return;
   }
 
-  cmd->cb(ctx);
+  cmd->cb(ctx, NULL);
 }
 
 /* Free command reply context and its internals. */

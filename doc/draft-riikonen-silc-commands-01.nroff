@@ -1163,8 +1163,9 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  2
-            Arguments:  (1) <Status Payload>  (2) <channel mode mask>
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) <channel mode mask>
 
         This command replies with the changed channel mode mask that
         client MUST keep locally.
@@ -1230,12 +1231,13 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  3
+        Max Arguments:  4
             Arguments:  (1) <Status Payload>  (2) <channel user mode mask>
-                        (3) <Client ID>
+                        (3) <Channel ID>      (4) <Client ID>
 
         This command replies with the changed channel user mode mask that
-        client MUST keep locally.  The <Client ID> is the target client.
+        client MUST keep locally. The <Channel ID> is the specified
+        channel.  The <Client ID> is the target client.
 
         Status messages:
 

@@ -35,16 +35,18 @@
  *
  * SYNOPSIS
  *
- *    SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);
+ *    typedef void (*SilcCommandCb)(void *context, void *context2);
  *
  * DESCRIPTION
  *
  *    Command function callback. The actual command function pointer.
  *    This is generic command callback that the application may choose to
- *    use with its command routines.
+ *    use with its command routines.  However, none of the generic
+ *    routines depend on this callback so application may freely define
+ *    their own command callback if desired.
  *
  ***/
-typedef void (*SilcCommandCb)(void *context);
+typedef void (*SilcCommandCb)(void *context, void *context2);
 
 /****s* silccore/SilcCommandAPI/SilcCommandPayload
  *

@@ -318,7 +318,7 @@ void silc_command_exec(SILC_SERVER_REC *server,
   ctx->argv_types = argv_types;
   
   /* Execute command */
-  (*cmd->cb)(ctx);
+  (*cmd->cb)(ctx, NULL);
 }
 
 /* Generic command function to call any SILC command directly. */

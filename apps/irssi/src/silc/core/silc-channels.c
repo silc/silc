@@ -89,7 +89,6 @@ static void silc_channels_join(SILC_SERVER_REC *server,
       continue;
     }
 
-    silc_channel_create(server, channel, FALSE);
     silc_command_exec(server, "JOIN", channel);
     g_free(channel);
   }
@@ -289,12 +288,16 @@ static void event_nick(SILC_SERVER_REC *server, va_list va)
 static void event_cmode(SILC_SERVER_REC *server, va_list va)
 {
   SILC_CHANNEL_REC *chanrec;
+  void *entry;
   SilcClientEntry client;
+  SilcServerEntry server_entry;
   SilcChannelEntry channel;
   char *mode;
   uint32 modei;
+  SilcIdType idtype;
 
-  client = va_arg(va, SilcClientEntry);
+  idtype = va_arg(va, SilcIdType);
+  entry = va_arg(va, void *);
   modei = va_arg(va, uint32);
   (void)va_arg(va, char *);
   (void)va_arg(va, char *);
@@ -311,10 +314,19 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
     signal_emit("channel mode changed", 1, chanrec);
   }
   
-  printformat_module("fe-common/silc", server, channel->channel_name,
-		     MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
-		     channel->channel_name, mode ? mode : "removed all",
-		     client->nickname);
+  if (idtype == SILC_ID_CLIENT) {
+    client = (SilcClientEntry)entry;
+    printformat_module("fe-common/silc", server, channel->channel_name,
+		       MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
+		       channel->channel_name, mode ? mode : "removed all",
+		       client->nickname);
+  } else {
+    server_entry = (SilcServerEntry)entry;
+    printformat_module("fe-common/silc", server, channel->channel_name,
+		       MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
+		       channel->channel_name, mode ? mode : "removed all",
+		       server_entry->server_name);
+  }
   
   g_free(mode);
 }

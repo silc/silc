@@ -144,6 +144,8 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
   if (ret_entry)
     *ret_entry = id_cache;
 
+  SILC_LOG_DEBUG(("Found"));
+
   return server;
 }
 

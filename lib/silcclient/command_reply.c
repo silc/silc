@@ -168,7 +168,7 @@ void silc_client_command_reply_process(SilcClient client,
     return;
   }
 
-  cmd->cb(ctx);
+  cmd->cb(ctx, NULL);
 }
 
 /* Returns status message string */
@@ -800,9 +800,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-  SilcClient client = cmd->client;
   SilcCommandStatus status;
   unsigned char *tmp;
+  SilcIDCacheEntry id_cache;
+  SilcServerEntry server;
+  SilcServerID *server_id = NULL;
+  char *server_name, *server_info;
+  uint32 len;
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
@@ -816,32 +820,50 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
   }
 
   /* Get server ID */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!tmp)
     goto out;
 
-  /* XXX save server id */
+  server_id = silc_id_payload_parse_id(tmp, len);
+  if (!server_id)
+    goto out;
 
   /* Get server name */
-  tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
-  if (!tmp)
+  server_name = silc_argument_get_arg_type(cmd->args, 3, NULL);
+  if (!server_name)
     goto out;
 
   /* Get server info */
-  tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
-  if (!tmp)
+  server_info = silc_argument_get_arg_type(cmd->args, 4, NULL);
+  if (!server_info)
     goto out;
 
-  client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-		   "Info: %s", tmp);
+  /* See whether we have this server cached. If not create it. */
+  if (!silc_idcache_find_by_id_one(conn->server_cache, (void *)server_id,
+				   &id_cache)) {
+    SILC_LOG_DEBUG(("New server entry"));
 
+    server = silc_calloc(1, sizeof(*server));
+    server->server_name = strdup(server_name);
+    server->server_info = strdup(server_info);
+    server->server_id = silc_id_dup(server_id, SILC_ID_SERVER);
+
+    /* Add it to the cache */
+    silc_idcache_add(conn->server_cache, server->server_name,
+		     server->server_id, (void *)server, FALSE);
+  } else {
+    server = (SilcServerEntry)id_cache->context;
+  }
+  
   /* Notify application */
-  COMMAND_REPLY((ARGS, NULL, (char *)tmp));
+  COMMAND_REPLY((ARGS, server, server->server_name, server->server_info));
 
   /* Execute any pending command callbacks */
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
 
  out:
+  if (server_id)
+    silc_free(server_id);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INFO);
   silc_client_command_reply_free(cmd);
 }
@@ -1210,6 +1232,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
   SilcCommandStatus status;
   unsigned char *tmp;
   uint32 mode;
+  SilcIDCacheEntry id_cache;
+  SilcChannelID *channel_id;
+  SilcChannelEntry channel;
+  uint32 len;
 
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
@@ -1219,17 +1245,39 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
     goto out;
   }
 
+  /* Take Channel ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (!tmp)
+    goto out;
+  channel_id = silc_id_payload_parse_id(tmp, len);
+  if (!channel_id)
+    goto out;
+
+  /* Get the channel entry */
+  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				   &id_cache)) {
+    silc_free(channel_id);
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+  
+  channel = (SilcChannelEntry)id_cache->context;
+
   /* Get channel mode */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
   if (!tmp) {
+    silc_free(channel_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
+  /* Save the mode */
   SILC_GET32_MSB(mode, tmp);
+  channel->mode = mode;
 
   /* Notify application */
-  COMMAND_REPLY((ARGS, mode));
+  COMMAND_REPLY((ARGS, channel, mode));
+  silc_free(channel_id);
 
   /* Execute any pending command callbacks */
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CMODE);
@@ -1248,6 +1296,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   SilcCommandStatus status;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id;
+  SilcChannelID *channel_id;
+  SilcClientEntry client_entry;
+  SilcChannelEntry channel;
+  SilcChannelUser chu;
   unsigned char *tmp, *id;
   uint32 len, mode;
   
@@ -1266,14 +1318,34 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
     goto out;
   }
 
+  /* Take Channel ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+  if (!tmp)
+    goto out;
+  channel_id = silc_id_payload_parse_id(tmp, len);
+  if (!channel_id)
+    goto out;
+
+  /* Get the channel entry */
+  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				   &id_cache)) {
+    silc_free(channel_id);
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+  
+  channel = (SilcChannelEntry)id_cache->context;
+
   /* Get Client ID */
-  id = silc_argument_get_arg_type(cmd->args, 3, &len);
+  id = silc_argument_get_arg_type(cmd->args, 4, &len);
   if (!id) {
+    silc_free(channel_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
   client_id = silc_id_payload_parse_id(id, len);
   if (!client_id) {
+    silc_free(channel_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -1283,15 +1355,27 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
 				       NULL, NULL, 
 				       silc_hash_client_id_compare, NULL,
 				       &id_cache)) {
+    silc_free(channel_id);
+    silc_free(client_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
+  client_entry = (SilcClientEntry)id_cache->context;
+
+  /* Save the mode */
   SILC_GET32_MSB(mode, tmp);
+  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+    if (chu->client == client_entry) {
+      chu->mode = mode;
+      break;
+    }
+  }
 
   /* Notify application */
-  COMMAND_REPLY((ARGS, mode, (SilcClientEntry)id_cache->context));
+  COMMAND_REPLY((ARGS, mode, channel, client_entry));
   silc_free(client_id);
+  silc_free(channel_id);
   
   /* Execute any pending command callbacks */
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CUMODE);

@@ -752,7 +752,8 @@ SILC_CLIENT_CMD_FUNC(kill)
 
   /* Parse the typed nickname. */
   if (!silc_parse_nickname(cmd->argv[1], &nickname, &server, &num)) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "Bad nickname");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "Bad nickname");
     COMMAND_ERROR;
     goto out;
   }
