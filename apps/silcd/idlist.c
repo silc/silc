@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/03 05:52:11  priikone
+ * 	Fixed typo and a bug.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -367,7 +370,7 @@ void silc_idlist_del_channel(SilcChannelList **list, SilcChannelList *entry)
     if (entry->channel_key)
       silc_cipher_free(entry->channel_key);
     if (entry->key) {
-      memset(entry->key, 0, entry->key_len);
+      memset(entry->key, 0, entry->key_len / 8);
       silc_free(entry->key);
     }
     memset(entry->iv, 0, sizeof(entry->iv));
