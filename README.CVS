@@ -46,7 +46,7 @@ The actual SILC source tree is checked out using the cvs co silc command,
 described above. This command will fetch the source tree and save it into
 directory named silc. SILC CVS repository currently does not have any
 branches thus this will check out the trunk. The size of the trunk is
-currently about 1.5 Mb but will grow in the future.
+currently about 8 Mb but will grow in the future.
 
 
 What SILC Source Tree Includes
