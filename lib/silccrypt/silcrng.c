@@ -1,16 +1,15 @@
 /*
 
-  silcrng.c
+  silcrng.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -119,7 +118,7 @@ typedef struct SilcRngStateContext {
        64 bits of output and hard noise every 160 bits of output.
 
 */
-typedef struct SilcRngObjectStruct {
+struct SilcRngStruct {
   unsigned char pool[SILC_RNG_POOLSIZE];
   unsigned char key[64];
   SilcRngState state;
@@ -127,11 +126,11 @@ typedef struct SilcRngObjectStruct {
   uint8 threshhold;
   char *devrandom;
   int fd_devurandom;
-} SilcRngObject;
+};
 
 /* Allocates new RNG object. */
 
-SilcRng silc_rng_alloc()
+SilcRng silc_rng_alloc(void)
 {
   SilcRng new;
 
@@ -450,7 +449,7 @@ static uint32 silc_rng_get_position(SilcRng rng)
 
 /* Returns random byte. */
 
-unsigned char silc_rng_get_byte(SilcRng rng)
+uint8 silc_rng_get_byte(SilcRng rng)
 {
   rng->threshhold++;
 
@@ -537,7 +536,7 @@ SilcRng global_rng = NULL;
 /* Initialize global RNG. If `rng' is provided it is set as the global
    RNG object (it can be allocated by the application for example). */
 
-int silc_rng_global_init(SilcRng rng)
+bool silc_rng_global_init(SilcRng rng)
 {
   if (rng)
     global_rng = rng;
@@ -549,7 +548,7 @@ int silc_rng_global_init(SilcRng rng)
 
 /* Uninitialize global RNG */
 
-int silc_rng_global_uninit()
+bool silc_rng_global_uninit(void)
 {
   if (global_rng) {
     silc_rng_free(global_rng);
@@ -561,7 +560,7 @@ int silc_rng_global_uninit()
 
 /* These are analogous to the functions above. */
 
-unsigned char silc_rng_global_get_byte()
+uint8 silc_rng_global_get_byte(void)
 {
   return global_rng ? silc_rng_get_byte(global_rng) : 0;
 }
@@ -569,7 +568,7 @@ unsigned char silc_rng_global_get_byte()
 /* Return random byte as fast as possible. Reads from /dev/urandom if
    available. If not then return from normal RNG (not so fast). */
 
-unsigned char silc_rng_global_get_byte_fast()
+uint8 silc_rng_global_get_byte_fast(void)
 {
 #ifndef SILC_WIN32
   unsigned char buf[1];
@@ -593,12 +592,12 @@ unsigned char silc_rng_global_get_byte_fast()
 #endif
 }
 
-uint16 silc_rng_global_get_rn16()
+uint16 silc_rng_global_get_rn16(void)
 {
   return global_rng ? silc_rng_get_rn16(global_rng) : 0;
 }
 
-uint32 silc_rng_global_get_rn32()
+uint32 silc_rng_global_get_rn32(void)
 {
   return global_rng ? silc_rng_get_rn32(global_rng) : 0;
 }

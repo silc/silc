@@ -1,11 +1,12 @@
 <!--
 @LIBRARY=SILC Crypto Library
 @FILENAME=silccryptlib.html
+@LINK=silcrng_intro.html:Introduction to Random Number Generator
+@LINK=silcrng.html:SILC RNG Interface
 @LINK=silccipher.html:SILC Cipher API
 @LINK=silchash.html:SILC Hash API
 @LINK=silchmac.html:SILC HMAC API
 @LINK=silcpkcs.html:SILC PKCS API
-@LINK=silcrng.html:SILC RNG API
 -->
 
 <BIG><B>SILC Crypto Library</B></BIG>

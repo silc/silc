@@ -1,9 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o When autoconnect="yes" is set in silc.conf the irssi complains about
-   unknown chat protocol.
-
  o Rewrite the notify handling in the new Irssi SILC client.
 
  o /cumode for unknown nick does not give any error message.
@@ -131,9 +128,6 @@ Manual.
  o Write "Programming conventions" document to describe the coding
    and naming conventions used in the Toolkit (should not be 
    actually the CodingStyle document, but something more general).
-
- o Move the lib/silccrypt/silcrng.h's "how the RNG works" documentation
-   to its own html file and link it to the reference manual.
 
 
 TODO in SILC Protocol

@@ -1,3 +1,8 @@
+Fri Feb 15 19:10:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Create lib/doc/silcrng_intro.html document as introduction
+	  to SILC RNG.  ROBOdoc documented lib/silccrypt/silcrng.h.
+
 Fri Feb 15 13:23:03 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Fixes to the silcd config template.  Affected file is
