@@ -39,10 +39,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o If auto-reconnecting to router and EOF is received during the
-   connecting phase the server will not try to auto-reconnect anymore
-   after that.  Fix to auto-reconnect.
-
  o Backup router related issues
 
  	o Channel user mode changes are notified unnecessarely when
