@@ -34,13 +34,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <time.h>
 
 #ifdef HAVE_SIGNAL_H
@@ -69,6 +67,8 @@
 
 #ifndef SILC_WIN32
 
+#include <unistd.h>
+#include <sys/time.h>
 #include <pwd.h>
 #include <grp.h>
 #include <sys/times.h>

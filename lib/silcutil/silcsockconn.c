@@ -22,7 +22,7 @@
 #include "silcincludes.h"
 
 /* Heartbeat context */
-struct SilcSocketConnectionHB {
+struct SilcSocketConnectionHBStruct {
   uint32 heartbeat;
   SilcSocketConnectionHBCb hb_callback;
   void *hb_context;

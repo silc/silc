@@ -23,7 +23,6 @@
 #define SILCWIN32_H
 
 #include <windows.h>
-#include <dir.h>
 #include <io.h>
 
 #define snprintf _snprintf

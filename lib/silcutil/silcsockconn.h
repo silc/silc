@@ -65,7 +65,7 @@ typedef struct SilcSocketConnectionStruct *SilcSocketConnection;
  *    interface routines.
  *
  ***/
-typedef struct SilcSocketConnectionHB *SilcSocketConnectionHB;
+typedef struct SilcSocketConnectionHBStruct *SilcSocketConnectionHB;
 
 /****d* silcutil/SilcSocketConnectionAPI/SilcSocketType
  *
