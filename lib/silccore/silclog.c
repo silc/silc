@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/17 16:46:37  priikone
+ * 	Still bug fix in silc_log_format :)
+ *
  * Revision 1.4  2000/07/17 16:44:57  priikone
  * 	Buffer overflow bug fixe in silc_log_format.
  *
@@ -65,7 +68,7 @@ char *silc_log_format(char *fmt, ...)
   va_list args;
   static char buf[8192];
 
-  memset(buf, 0, sizeof(buf);
+  memset(buf, 0, sizeof(buf));
   va_start(args, fmt);
   vsnprintf(buf, sizeof(buf) - 1, fmt, args);
   va_end(args);
