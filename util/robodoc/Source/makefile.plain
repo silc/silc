@@ -1,0 +1,215 @@
+#****h* ROBODoc/Makefile.plain
+# NAME
+#   Makefile.plain -- Plain makefile that does not need autoconf 
+# SYNOPSIS
+#   make robodoc
+#   make html   
+#   make example
+#   make count
+#   make test
+#   make clean
+# PURPOSE
+#   The makefile for SAS C compiler v6.x and Dice, and GCC.
+#   You can use it if you are on a non Unix system or a system
+#   that does not support autoconfiguration.
+#
+#
+#
+#   The following targets are the most useful for the user.
+#
+#   robodoc -  makes the robodc executable.
+#   example -  makes robodoc and shows you the autodocs
+#              generated from the ROBODoc source code
+#              using browser.         
+#   html    -  makes autodocs for robodoc in html format.
+#
+#   Developers might try:
+#   test    -
+#   count   -
+#   clean   -  
+# NOTES
+#   This documentation is not complete. It is just a test to see
+#   how to best use ROBODoc with make files.
+#
+#****
+#
+# $Id$
+#
+
+SHELL = /bin/sh
+.SUFFIXES:
+.SUFFIXES: .c .o
+
+#--------------------------------------
+# use DICE C under AmigaOS
+#--------------------------------------
+#CC = dcc
+#CFLAGS =
+
+#--------------------------------------
+# use gcc (optimising for AmigaOS)
+#--------------------------------------
+#CC = gcc
+#CFLAGS = -O2 -fstrength-reduce -s -m68020-40 -noixemul
+
+#--------------------------------------
+# use gcc (generic)
+#--------------------------------------
+
+CC = gcc
+CFLAGS = -Wall -ansi -pedantic
+LIBS=
+
+#
+#
+#
+
+BROWSER=netscape
+ROBODOC=./robodoc
+ETAGS=/usr/bin/etags
+EGREP=/bin/egrep
+RM=/bin/rm
+
+all: robodoc
+
+#--------------------------------------
+# sources for the robodoc executable
+#--------------------------------------
+
+SOURCES=analyser.c generator.c items.c util.c folds.c headers.c \
+        links.c robodoc.c     
+
+OBJECTS=analyser.o generator.o items.o util.o folds.o headers.o \
+        links.o robodoc.o     
+
+#****** makefile.plain/robodoc
+# NAME
+#   robodoc --
+# NOTE
+#   This assumes that you version of make knows how to make an .o file
+#   out of an .c file.
+# SOURCE
+#
+
+robodoc : $(OBJECTS) 
+	$(CC) $(OBJECTS) -o robodoc $(LIBS)
+
+#****
+
+
+#****** makefile.plain/html
+# NAME
+#   html -- ROBODoc HTML autodocs for ROBODoc
+# FUNCTION
+#   
+#****
+
+DOCS=analyser.c.html generator.c.html items.c.html util.c.html \
+  folds.c.html headers.c.html links.c.html robodoc.c.html \
+  analyser.h.html generator.h.html items.h.html util.h.html \
+  folds.h.html headers.h.html links.h.html robodoc.h.html
+
+XREF=$(DOCS:.html=.xref)
+
+XREFSFILE=robodoc.html.xrefs 
+
+html : robodoc masterindex.html 
+
+#
+# create xrefs file (file with the names of all .xref files).
+#
+robodoc.html.xrefs : $(XREF)
+	/bin/ls *.xref > $@
+
+#
+# Rule to create an .xref file from a source file.
+#
+%.xref : %
+	$(ROBODOC) $< $(@:.xref=.html) INTERNAL GENXREF $@
+
+#
+# Rule to create an .html file from a source file.
+#
+%.html : % $(XREFSFILE)
+	$(ROBODOC) $< $@ HTML INTERNAL XREF $(XREFSFILE)
+
+
+masterindex.html : $(XREFSFILE) $(DOCS)
+	$(ROBODOC) $(XREFSFILE) $@ INDEX HTML TITLE "ROBODoc Master Index"
+
+
+#****** makefile.plain/example
+# NAME
+#   example -- create and show autodocs extracted from ROBODoc source.
+# FUNCTION
+#
+#****
+
+example : html 
+	$(BROWSER) masterindex.html
+
+#----------------------------
+# Development
+#----------------------------
+
+tags :
+	$(ETAGS) *.c *.h
+
+#****** makefile.plain/count
+# NAME
+#   count -- count the number of lines of the ROBODoc source.
+#****
+
+count :
+	$(EGREP) -v -G "^ \*" *.c *.h | egrep -v -G "/\*"  | wc
+
+
+#****** makefile.plain/test
+# NAME
+#   test -- run some tests
+# FUNCTION
+#   Runs robodoc on file with a number of different headers.
+#
+#****
+
+test : $(ROBODOC)
+	$(ROBODOC) testheaders.c testheaders.html HTML -v
+
+
+#****** makefile.plain/clean
+# NAME
+#   clean -- Clean up the mess we made.
+# FUNCTION
+#   Cleans up the mess we made.
+#*****
+
+clean :
+	$(RM) -f $(DOCS) $(XREF)
+	$(RM) -f robodoc
+	$(RM) -f *~
+	$(RM) -f *.o *.tex *.toc *.dvi *.aux *.log *.ps
+	$(RM) -f masterindex.html
+	$(RM) -f testheaders.html
+	$(RM) -f stamp-h* makefile.in config.h robodoc.html.xrefs
+
+#------------------------------
+# Construction of the makefile
+#------------------------------
+
+depend :
+	makedepend -Y"" -f makefile.plain *.c *.h
+
+# DO NOT DELETE
+
+analyser.o: config.h.in robodoc.h headers.h items.h util.h folds.h links.h
+analyser.o: analyser.h
+folds.o: config.h.in folds.h robodoc.h
+generator.o: config.h.in robodoc.h headers.h items.h folds.h util.h links.h
+generator.o: generator.h analyser.h
+headers.o: config.h.in robodoc.h headers.h
+items.o: config.h.in robodoc.h items.h
+links.o: config.h.in headers.h robodoc.h util.h links.h
+robodoc.o: config.h.in robodoc.h folds.h headers.h items.h util.h links.h
+robodoc.o: analyser.h generator.h
+util.o: config.h.in robodoc.h links.h headers.h folds.h items.h util.h
+

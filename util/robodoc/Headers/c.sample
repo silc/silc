@@ -1,0 +1,46 @@
+/****h* projectname/module_name [1.0]
+*  NAME
+*  COPYRIGHT
+*  FUNCTION
+*  AUTHOR
+*  CREATION DATE
+*  MODIFICATION HISTORY
+*  NOTES
+*******
+*/
+
+
+/****f* module_name/funtion_name [1.0] *
+*  NAME
+*  SYNOPSIS
+*  FUNCTION
+*  INPUTS
+*  RESULT
+*  EXAMPLE
+*  NOTES
+*  BUGS
+*  SEE ALSO
+**********
+*/
+
+
+/****s* module_name/stucture_name [1.0] *
+*  NAME
+*  PURPOSE
+*  ATTRIBUTES
+*  NOTES
+*  BUGS
+*  SEE ALSO
+**********
+*/
+
+
+/****v* module_name/variable_name [1.0] *
+*  NAME
+*  PURPOSE
+*  NOTES
+*  BUGS
+*  SEE ALSO
+**********
+*/
+

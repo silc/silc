@@ -1,0 +1,17 @@
+V3.2.3  o Bug fix. The crosslink generator did not recognize links that
+          contained a '/' and ended with an '.' or ','.
+        o make install  installs additional documentation.
+
+V3.2.2  o Added a Master Index File for LaTeX output.  
+        o New NOSOURCE option to exclude source items from the documentation.
+        o New SINGLEDOC option to all documentation to be included into one
+          single document.
+        o New TITLE option to set the title for a master index file.
+          example make files includes commands to view the
+          generated documentation.
+        o Made the search for remark markers case insensitive.  So you
+          can use REM and Rem or even rEM.
+
+V3.2.1  Some small bugfixes, support for mailto:... links, and updates
+in the manual.
+

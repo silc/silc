@@ -1,0 +1,106 @@
+BODY { 
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 2.5em;
+  margin-right: 2.5em;
+  font-family: sans-serif;
+}
+
+#A:link { 
+#  color: #00FF00; 
+#}
+#A:visited {
+#  color: #003333;  
+#}
+#A:active {
+#  color: #FF00FF;
+#}
+
+p, form {
+  font-family:sans-serif;
+  font-size:12pt; 
+}
+
+#p { text-align: justify; }
+
+B, STRONG, I, EM, CITE, VAR, TT, CODE, KBD, SAMP, IMG
+{ 
+ display: inline;
+}
+
+UL {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  list-style-type: disc;
+  display: block;
+}
+
+LI {
+  margin-bottom: 0.2em;
+}
+
+
+B, STRONG { 
+  font-variant: small-caps;
+  font-weight: bold;
+}
+
+I, CITE, EM, VAR, ADDRESS, BLOCKQUOTE { font-style: italic }
+
+PRE, TT, KBD, SAMP { font-family: monospace }
+
+
+TABLE {
+  color: #000000;
+  background-color: #AAAAAA;
+}
+
+TT {
+  white-space: pre;
+}
+
+CODE {
+  font-family: monospace;
+  font-style:none;
+  white-space: pre;
+}
+
+PRE { 
+  white-space: pre;
+  margin-top: 0.5em; 
+}
+
+ADDRESS { 
+  font-family: monospace;
+  font-size: 12pt; 
+  text-align: left;
+  margin-bottom: 0.5em;
+}
+
+
+
+H2, H3 { 
+  margin-top: 0.5em; 
+}
+
+H1, H2, h3 { font-weight: bold }
+
+H1 { 
+  font-family: sans-serif;
+  font-size:24pt; 
+  text-align:right;
+  margin-right:36px;
+  margin-top: 0.5em; 
+  margin-bottom: 0.5em;
+}
+
+H2 { 
+  font-family:sans-serif;
+  font-size:18pt; 
+}
+
+H3 { 
+  font-family:sans-serif;
+  font-size:14pt;  
+}
+

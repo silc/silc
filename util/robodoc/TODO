@@ -1,0 +1,8 @@
+My wish list:
+
+o Add XML output
+o Improve the support for LaTeX. Instead of a lot of
+  individual documents robodoc should create one big
+  book with documentation. 
+o Fix the man page so that it also looks good with tkMan
+
