@@ -1076,7 +1076,7 @@ void silc_server_notify(SilcServer server,
 
       /* Get invite list */
       tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
-      if (!tmp)
+      if (!tmp || tmp_len < 2)
 	goto out;
 
       /* Parse the arguments to see they are constructed correctly */
@@ -1650,7 +1650,7 @@ void silc_server_notify(SilcServer server,
 
       /* Get ban list */
       tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
-      if (!tmp)
+      if (!tmp || tmp_len < 2)
 	goto out;
 
       /* Parse the arguments to see they are constructed correctly */

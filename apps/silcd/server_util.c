@@ -1854,7 +1854,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
   }
 
   /* Delete information to invite list */
-  if (action && list) {
+  if (action == 0x01 && list) {
     /* Now delete the arguments from invite list */
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {

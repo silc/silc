@@ -1173,7 +1173,7 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Get the invite information */
   tmp = silc_argument_get_arg_type(cmd->args, 4, &len);
-  if (tmp) {
+  if (tmp && len > 2) {
     /* Parse the arguments to see they are constructed correctly */
     SILC_GET16_MSB(argc, tmp);
     args = silc_argument_payload_parse(tmp + 2, len - 2, argc);
@@ -4148,7 +4148,7 @@ SILC_SERVER_CMD_FUNC(ban)
 
   /* Get the ban information */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
-  if (tmp) {
+  if (tmp && len > 2) {
     /* Parse the arguments to see they are constructed correctly */
     SILC_GET16_MSB(argc, tmp);
     args = silc_argument_payload_parse(tmp + 2, len - 2, argc);
