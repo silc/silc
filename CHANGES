@@ -1,3 +1,8 @@
+Tue Mar 26 19:33:03 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Don't change the topic if olod topic is same as new one.
+	  Affected file is silcd/packet_receive.c.
+
 Mon Mar 25 21:11:35 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added cross-reference support to the SILC Documentation
