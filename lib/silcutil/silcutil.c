@@ -389,7 +389,7 @@ int silc_string_compare(char *string1, char *string2)
   slen2 = strlen(string2);
 
   /* See if they are same already */
-  if (!strncmp(string1, string2, strlen(string2)))
+  if (!strncmp(string1, string2, slen2) && slen2 == slen1)
     return TRUE;
 
   if (slen2 < slen1)
@@ -1030,6 +1030,7 @@ static const SilcStatusMessage silc_status_messages[] = {
   { STAT(BAD_SERVER_ID), "Server ID is not valid" },
   { STAT(KEY_EXCHANGE_FAILED), "Key exchange failed" },
   { STAT(BAD_VERSION), "Bad version" },
+  { STAT(TIMEDOUT), "Service timed out" },
 
   { 0, NULL }
 };

@@ -2291,6 +2291,11 @@ List of all defined status types:
 
         "Bad version".  Protocol or software version mismatch.
 
+   54   SILC_STATUS_ERR_TIMEDOUT
+
+        "Operation timed out".  Operation or service request timed
+        out, and thus was not processed.
+
 .in 3
 
 

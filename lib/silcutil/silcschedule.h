@@ -205,8 +205,9 @@ typedef enum {
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcTaskCallback)(SilcSchedule schedule, 
- *                                     SilcTaskEvent type, SilcUInt32 fd, 
+ *    typedef void (*SilcTaskCallback)(SilcSchedule schedule,
+ *                                     void *app_context,
+ *                                     SilcTaskEvent type, SilcUInt32 fd,
  *                                     void *context);
  *
  * DESCRIPTION
@@ -218,15 +219,18 @@ typedef enum {
  *    The `schedule' is the scheduler context, the `type' is the indicated
  *    event, the `fd' is the file descriptor of the task and the `context'
  *    is a caller specified context. If multiple events occurred this
- *    callback is called separately for all events.
+ *    callback is called separately for all events.  The `app_context'
+ *    is application specific context that was given as argument to the
+ *    silc_schedule_init function.
  *
  *    To specify task callback function in the application using the
  *    SILC_TASK_CALLBACK and SILC_TASK_CALLBACK_GLOBAL macros is
  *    recommended.
  *
  ***/
-typedef void (*SilcTaskCallback)(SilcSchedule schedule, SilcTaskEvent type,
-				 SilcUInt32 fd, void *context);
+typedef void (*SilcTaskCallback)(SilcSchedule schedule, void *app_context,
+				 SilcTaskEvent type, SilcUInt32 fd,
+				 void *context);
 
 /* Macros */
 
@@ -260,7 +264,8 @@ typedef void (*SilcTaskCallback)(SilcSchedule schedule, SilcTaskEvent type,
  * SOURCE
  */
 #define SILC_TASK_CALLBACK(func)				\
-static void func(SilcSchedule schedule, SilcTaskEvent type,	\
+static void func(SilcSchedule schedule, void *app_context,	\
+		 SilcTaskEvent type,				\
 		 SilcUInt32 fd, void *context)
 /***/
 
@@ -279,8 +284,8 @@ static void func(SilcSchedule schedule, SilcTaskEvent type,	\
  *
  * SOURCE
  */
-#define SILC_TASK_CALLBACK_GLOBAL(func)			\
-void func(SilcSchedule schedule, SilcTaskEvent type,	\
+#define SILC_TASK_CALLBACK_GLOBAL(func)					\
+void func(SilcSchedule schedule, void *app_context, SilcTaskEvent type,	\
 	  SilcUInt32 fd, void *context)
 /***/
 
@@ -290,17 +295,20 @@ void func(SilcSchedule schedule, SilcTaskEvent type,	\
  *
  * SYNOPSIS
  *
- *    SilcSchedule silc_schedule_init(int max_tasks);
+ *    SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
  *
  * DESCRIPTION
  *
  *    Initializes the scheduler. This returns the scheduler context that
  *    is given as argument usually to all silc_schedule_* functions.
  *    The `max_tasks' indicates the number of maximum tasks that the
- *    scheduler can handle.
+ *    scheduler can handle. The `app_context' is application specific
+ *    context that is delivered to all task callbacks. The caller must
+ *    free that context.  The 'app_context' can be for example the
+ *    application itself.
  *
  ***/
-SilcSchedule silc_schedule_init(int max_tasks);
+SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_uninit
  *
@@ -406,6 +414,22 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs);
  *
  ***/
 void silc_schedule_wakeup(SilcSchedule schedule);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_get_context
+ *
+ * SYNOPSIS
+ *
+ *    void *silc_schedule_get_context(SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the application specific context that was saved into the
+ *    scheduler in silc_schedule_init function.  The context is also
+ *    returned to application in task callback functions, but this function
+ *    may be used to get it as well if needed.
+ *
+ ***/
+void *silc_schedule_get_context(SilcSchedule schedule);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_add
  *

@@ -1116,11 +1116,11 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  }
 	}
 	break;
-      }
-      
-      if (!success)
+      } else if (!success) {
+	silc_say_error("WHOIS: %s", silc_get_status_message(status));
 	return;
-      
+      }
+
       client_entry = va_arg(vp, SilcClientEntry);
       nickname = va_arg(vp, char *);
       username = va_arg(vp, char *);
@@ -1247,10 +1247,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_say_error("%s: %s", tmp, 
 			 silc_get_status_message(status));
 	break;
-      }
-      
-      if (!success)
+      } else if (!success) {
+	silc_say_error("WHOWAS: %s", silc_get_status_message(status));
 	return;
+      }
       
       (void)va_arg(vp, SilcClientEntry);
       nickname = va_arg(vp, char *);

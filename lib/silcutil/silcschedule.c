@@ -35,7 +35,7 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count,
    the wakeup mechanism of the scheduler.  In multi-threaded environment
    the scheduler needs to be wakenup when tasks are added or removed from
    the task queues.  Returns context to the platform specific scheduler. */
-void *silc_schedule_internal_init(SilcSchedule schedule);
+void *silc_schedule_internal_init(SilcSchedule schedule, void *context);
 
 /* Uninitializes the platform specific scheduler context. */
 void silc_schedule_internal_uninit(void *context);
@@ -210,6 +210,7 @@ struct SilcTaskQueueStruct {
 
 */
 struct SilcScheduleStruct {
+  void *app_context;		/* Application specific context */
   SilcTaskQueue fd_queue;
   SilcTaskQueue timeout_queue;
   SilcTaskQueue generic_queue;
@@ -227,9 +228,10 @@ struct SilcScheduleStruct {
 /* Initializes the scheduler. This returns the scheduler context that
    is given as arugment usually to all silc_schedule_* functions.
    The `max_tasks' indicates the number of maximum tasks that the
-   scheduler can handle. */
+   scheduler can handle. The `app_context' is application specific
+   context that is delivered to task callbacks. */
 
-SilcSchedule silc_schedule_init(int max_tasks)
+SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
 {
   SilcSchedule schedule;
 
@@ -251,12 +253,13 @@ SilcSchedule silc_schedule_init(int max_tasks)
   schedule->max_fd = max_tasks;
   schedule->timeout = NULL;
   schedule->valid = TRUE;
+  schedule->app_context = app_context;
 
   /* Allocate scheduler lock */
   silc_mutex_alloc(&schedule->lock);
 
   /* Initialize the platform specific scheduler. */
-  schedule->internal = silc_schedule_internal_init(schedule);
+  schedule->internal = silc_schedule_internal_init(schedule, app_context);
 
   return schedule;
 }
@@ -366,7 +369,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
       if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
 	silc_mutex_unlock(schedule->fd_queue->lock);
 	SILC_SCHEDULE_UNLOCK(schedule);
-	task->callback(schedule, SILC_TASK_READ, task->fd, task->context);
+	task->callback(schedule, schedule->app_context,
+		       SILC_TASK_READ, task->fd, task->context);
 	SILC_SCHEDULE_LOCK(schedule);
 	silc_mutex_lock(schedule->fd_queue->lock);
       }
@@ -375,7 +379,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
       if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE) {
 	silc_mutex_unlock(schedule->fd_queue->lock);
 	SILC_SCHEDULE_UNLOCK(schedule);
-	task->callback(schedule, SILC_TASK_WRITE, task->fd, task->context);
+	task->callback(schedule, schedule->app_context,
+		       SILC_TASK_WRITE, task->fd, task->context);
 	SILC_SCHEDULE_LOCK(schedule);
 	silc_mutex_lock(schedule->fd_queue->lock);
       }
@@ -405,7 +410,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
-	  task->callback(schedule, SILC_TASK_READ, fd, task->context);
+	  task->callback(schedule, schedule->app_context,
+			 SILC_TASK_READ, fd, task->context);
 	  SILC_SCHEDULE_LOCK(schedule);
 	  silc_mutex_lock(schedule->generic_queue->lock);
 	}
@@ -414,7 +420,8 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
-	  task->callback(schedule, SILC_TASK_WRITE, fd, task->context);
+	  task->callback(schedule, schedule->app_context,
+			 SILC_TASK_WRITE, fd, task->context);
 	  SILC_SCHEDULE_LOCK(schedule);
 	  silc_mutex_lock(schedule->generic_queue->lock);
 	}
@@ -476,7 +483,8 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
         if (task->valid) {
 	  silc_mutex_unlock(queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
-	  task->callback(schedule, SILC_TASK_EXPIRE, task->fd, task->context);
+	  task->callback(schedule, schedule->app_context,
+			 SILC_TASK_EXPIRE, task->fd, task->context);
 	  SILC_SCHEDULE_LOCK(schedule);
 	  silc_mutex_lock(queue->lock);
 	}
@@ -686,6 +694,16 @@ void silc_schedule_wakeup(SilcSchedule schedule)
   silc_schedule_internal_wakeup(schedule->internal);
   SILC_SCHEDULE_UNLOCK(schedule);
 #endif
+}
+
+/* Returns the application specific context that was saved into the
+   scheduler in silc_schedule_init function.  The context is also
+   returned to application in task callback functions, but this function
+   may be used to get it as well if needed. */
+
+void *silc_schedule_get_context(SilcSchedule schedule)
+{
+  return schedule->app_context;
 }
 
 /* Add new task to the scheduler */

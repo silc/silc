@@ -2,7 +2,7 @@
 #
 # Author: Pekka Riikonen <priikone@silcnet.org>
 #
-# Copyright (C) GNU GPL 2001 Pekka Riikonen
+# Copyright (C) GNU GPL 2001 - 2002 Pekka Riikonen
 #
 # SILC Toolkit Reference Manual documentation script.  This will automatically
 # generate documentation from the source tree.  This will require the 

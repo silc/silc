@@ -76,6 +76,7 @@ typedef struct {
 
 /* Internal context. */
 typedef struct {
+  void *app_context;
   int wakeup_pipe[2];
   SilcTask wakeup_task;
   sigset_t signals;
@@ -100,7 +101,8 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
    the scheduler needs to be wakenup when tasks are added or removed from
    the task queues.  Returns context to the platform specific scheduler. */
 
-void *silc_schedule_internal_init(SilcSchedule schedule)
+void *silc_schedule_internal_init(SilcSchedule schedule,
+				  void *app_context)
 {
   SilcUnixScheduler internal;
 
@@ -130,6 +132,8 @@ void *silc_schedule_internal_init(SilcSchedule schedule)
     return NULL;
   }
 #endif
+
+  internal->app_context = app_context;
 
   return (void *)internal;
 }
@@ -256,7 +260,8 @@ void silc_schedule_internal_signals_call(void *context,
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].call &&
         internal->signal_call[i].callback) {
-      internal->signal_call[i].callback(schedule, SILC_TASK_INTERRUPT,
+      internal->signal_call[i].callback(schedule, internal->app_context,
+					SILC_TASK_INTERRUPT,
 					internal->signal_call[i].signal,
 					internal->signal_call[i].context);
       internal->signal_call[i].call = FALSE;

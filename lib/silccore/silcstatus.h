@@ -99,6 +99,7 @@ typedef SilcUInt8 SilcStatus;
 #define SILC_STATUS_ERR_BAD_SERVER_ID       51
 #define SILC_STATUS_ERR_KEY_EXCHANGE_FAILED 52
 #define SILC_STATUS_ERR_BAD_VERSION         53
+#define SILC_STATUS_ERR_TIMEDOUT            54
 /***/
 
 #define SILC_STATUS_IS_ERROR(status) (status >= SILC_STATUS_ERR_NO_SUCH_NICK)

@@ -123,14 +123,16 @@ void silc_protocol_execute(SilcProtocol protocol, SilcSchedule schedule,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_NORMAL);
   else
-    protocol->protocol->callback(schedule, 0, 0, (void *)protocol);
+    protocol->protocol->callback(schedule, silc_schedule_get_context(schedule),
+				 0, 0, (void *)protocol);
 }
 
 /* Executes the final callback of the protocol. */
 
 void silc_protocol_execute_final(SilcProtocol protocol, SilcSchedule schedule)
 {
-  protocol->final_callback(schedule, 0, 0, (void *)protocol);
+  protocol->final_callback(schedule, silc_schedule_get_context(schedule),
+			   0, 0, (void *)protocol);
 }
 
 /* Cancels the execution of the next state of the protocol. */

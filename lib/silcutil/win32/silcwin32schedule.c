@@ -193,7 +193,7 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
    the scheduler needs to be wakenup when tasks are added or removed from
    the task queues.  Returns context to the platform specific scheduler. */
 
-void *silc_schedule_internal_init(SilcSchedule schedule)
+void *silc_schedule_internal_init(SilcSchedule schedule, void *app_context)
 {
 #ifdef SILC_THREADS
   SilcWin32Wakeup wakeup;

@@ -120,7 +120,7 @@ int silc_client_init(SilcClient client)
   /* Initialize the scheduler */
   client->schedule = 
     silc_schedule_init(client->internal->params->task_max ?
-		       client->internal->params->task_max : 200);
+		       client->internal->params->task_max : 200, client);
   if (!client->schedule)
     return FALSE;
 
