@@ -441,7 +441,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
         signal_emit("message silc signed_action", 6, server, cp, nick->nick,
 		    nick->host, channel->channel_name, verified);
       else
-        signal_emit("message silc action", 6, server, cp, nick->nick,
+        signal_emit("message silc action", 5, server, cp, nick->nick,
 		    nick->host, channel->channel_name);
       silc_free(dm);
     } else {
@@ -449,7 +449,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
         signal_emit("message silc signed_action", 6, server, message,
 		    nick->nick, nick->host, channel->channel_name, verified);
       else
-        signal_emit("message silc action", 6, server, message,
+        signal_emit("message silc action", 5, server, message,
 		    nick->nick, nick->host, channel->channel_name);
     }
   /* FIXME: replace those printformat calls with signals and add signature
@@ -577,7 +577,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 		    sender->username ? userhost : NULL, 
 		    NULL, verified);
       else
-        signal_emit("message silc private_action", 6, server, cp, 
+        signal_emit("message silc private_action", 5, server, cp, 
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
       silc_free(dm);
@@ -588,7 +588,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 		    sender->username ? userhost : NULL, 
 		    NULL, verified);
       else
-        signal_emit("message silc private_action", 6, server, message, 
+        signal_emit("message silc private_action", 5, server, message, 
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
     }
