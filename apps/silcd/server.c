@@ -784,10 +784,12 @@ void silc_server_stop(SilcServer server)
 	silc_server_disconnect_remote(server, server->sockets[i],
 				      SILC_STATUS_OK,
 				      "Server is shutting down");
-	if (sock->user_data)
-	  silc_server_free_sock_user_data(server, sock,
-					  "Server is shutting down");
-	silc_socket_free(sock);
+	if (server->sockets[i]) {
+	  if (sock->user_data)
+	    silc_server_free_sock_user_data(server, sock,
+					    "Server is shutting down");
+	  silc_socket_free(sock);
+	}
       } else {
 	silc_socket_free(server->sockets[i]);
 	server->sockets[i] = NULL;
@@ -1064,7 +1066,32 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_connect_to_router)
 					    NULL : ptr->host, ptr->port,
 					    SILC_SOCKET_TYPE_ROUTER)) {
 	SILC_LOG_DEBUG(("We are already connected to this router"));
-	continue;
+
+	/* If we don't have primary router and this connection is our
+	   primary router we are in desync.  Reconnect to the primary. */
+	if (server->standalone && !server->router) {
+	  SilcServerConfigRouter *primary =
+	    silc_server_config_get_primary_router(server);
+	  if (primary == ptr) {
+	    SilcSocketConnection sock =
+	      silc_server_find_socket_by_host(server, SILC_SOCKET_TYPE_ROUTER,
+					      ptr->host, ptr->port);
+	    if (sock) {
+	      server->backup_noswitch = TRUE;
+	      if (sock->user_data)
+		silc_server_free_sock_user_data(server, sock, NULL);
+	      silc_server_disconnect_remote(server, sock, 0, NULL);
+	      server->backup_noswitch = FALSE;
+	      SILC_LOG_DEBUG(("Reconnecting to primary router"));
+	    } else {
+	      continue;
+	    }
+	  } else {
+	    continue;
+	  }
+	} else {
+	  continue;
+	}
       }
       if (silc_server_num_sockets_by_remote(server,
 					    silc_net_is_ip(ptr->host) ?
@@ -2167,7 +2194,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 			server->schedule);
 
  out:
-  silc_protocol_free(protocol);
+  if (sock->protocol == protocol)
+    silc_protocol_free(protocol);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
   if (ctx->ske)
@@ -2595,11 +2623,6 @@ void silc_server_packet_parse_type(SilcServer server,
      */
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
-    if (sock->protocol) {
-      sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
-      silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
-      break;
-    }
 
     /* Check for failure START_USE from backup router */
     if (server->server_type == SILC_SERVER &&
@@ -2609,8 +2632,25 @@ void silc_server_packet_parse_type(SilcServer server,
       if (type == SILC_SERVER_BACKUP_START_USE) {
 	/* Attempt to reconnect to primary */
 	SILC_LOG_DEBUG(("Received failed START_USE from backup %s", sock->ip));
+
+	/* If backup is our primary, disconnect now. */
+	if (server->router == sock->user_data) {
+	  if (sock->user_data)
+	    silc_server_free_sock_user_data(server, sock, NULL);
+	  SILC_SET_DISCONNECTING(sock);
+	  silc_server_close_connection(server, sock);
+	}
+
+	/* Reconnect */
 	silc_server_create_connections(server);
       }
+    }
+
+    /* Execute protocol */
+    if (sock->protocol) {
+      sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
+      silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
+      break;
     }
     break;
 
@@ -2723,7 +2763,12 @@ void silc_server_packet_parse_type(SilcServer server,
       silc_protocol_execute(sock->protocol, server->schedule, 0, 100000);
     } else {
       SILC_LOG_ERROR(("Received Key Exchange packet but no key exchange "
-		      "protocol active, packet dropped."));
+		      "protocol active (%s:%d [%s]).", sock->hostname,
+		      sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
     }
     break;
 
@@ -2766,7 +2811,12 @@ void silc_server_packet_parse_type(SilcServer server,
       }
     } else {
       SILC_LOG_ERROR(("Received Key Exchange 1 packet but no key exchange "
-		      "protocol active, packet dropped."));
+		      "protocol active (%s:%d [%s]).", sock->hostname,
+		      sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
     }
     break;
 
@@ -2809,7 +2859,12 @@ void silc_server_packet_parse_type(SilcServer server,
       }
     } else {
       SILC_LOG_ERROR(("Received Key Exchange 2 packet but no key exchange "
-		      "protocol active, packet dropped."));
+		      "protocol active (%s:%d [%s]).", sock->hostname,
+		      sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
     }
     break;
 
@@ -2846,7 +2901,12 @@ void silc_server_packet_parse_type(SilcServer server,
       silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
     } else {
       SILC_LOG_ERROR(("Received Connection Auth packet but no authentication "
-		      "protocol active, packet dropped."));
+		      "protocol active (%s:%d [%s]).", sock->hostname,
+		      sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
     }
     break;
 
@@ -2945,7 +3005,12 @@ void silc_server_packet_parse_type(SilcServer server,
       silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
     } else {
       SILC_LOG_ERROR(("Received Re-key done packet but no re-key "
-		      "protocol active, packet dropped."));
+		      "protocol active (%s:%d [%s]).", sock->hostname,
+		      sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
     }
     break;
 
@@ -3281,7 +3346,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  /* We stop here to take a breath */
 	  sleep(2);
 
-	  if (server->server_type == SILC_BACKUP_ROUTER) {
+	  if (server->backup_router) {
 	    server->server_type = SILC_ROUTER;
 
 	    /* We'll need to constantly try to reconnect to the primary
@@ -4379,7 +4444,7 @@ void silc_server_announce_get_inviteban(SilcServer server,
     silc_buffer_free(idp2);
     silc_buffer_free(list);
   }
-  
+
   /* Encode ban list */
   if (channel->ban_list && silc_hash_table_count(channel->ban_list)) {
     list = silc_buffer_alloc_size(2);
@@ -5249,6 +5314,18 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
   if (sock->protocol && sock->protocol->protocol &&
       sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)
     return;
+
+  /* If any other protocol is active do not start this protocol yet. */
+  if (sock->protocol) {
+    SILC_LOG_DEBUG(("Waiting for other protocol to finish before rekeying"));
+    silc_schedule_task_add(server->schedule, sock->sock,
+			   silc_server_rekey_callback,
+			   sock, 60, 0, SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_NORMAL);
+    return;
+  }
+
+  SILC_LOG_DEBUG(("Executing rekey protocol"));
 
   /* Allocate internal protocol context. This is sent as context
      to the protocol. */

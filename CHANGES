@@ -1,3 +1,17 @@
+Fri Oct 10 16:27:12 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* On normal server reconnect to primary during resuming 4
+	  times, then give up.  Affected file silcd/server_backup.c.
+
+	* If during reconnecting to routers we notice we have router
+	  connection but no primary router set, the server is in desync.
+	  Reconnect to primary to restore network.  Affected file
+	  silcd/server.c.
+
+	* Assure that only one protocol is exeucting at the same time.
+	  Added checks for all protocols.  Affected files are
+	  silcd/server.c and server_backup.c.
+
 Thu Oct  9 20:24:09 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check that a string is not already part on invite/ban

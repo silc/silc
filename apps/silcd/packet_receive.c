@@ -949,8 +949,8 @@ void silc_server_notify(SilcServer server,
       }
 
       /* Check whether to give founder rights to this user or not.  The
-	 problem here is that we get only the public key of the client, 
-	 but no authentication data.  We must assume that server has 
+	 problem here is that we get only the public key of the client,
+	 but no authentication data.  We must assume that server has
 	 already authenticated the user (and thus we must trust the
 	 server). */
       if (mode & SILC_CHANNEL_UMODE_CHANFO &&
@@ -962,7 +962,7 @@ void silc_server_notify(SilcServer server,
 	/* If channel doesn't have founder auth mode then it's impossible
 	   that someone would be getting founder rights with CUMODE command.
 	   In that case there already either is founder or there isn't
-	   founder at all on the channel (valid only when 'client' is 
+	   founder at all on the channel (valid only when 'client' is
 	   valid). */
 	if (client && !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
 	  /* Force the mode to not have founder mode */
@@ -3400,7 +3400,16 @@ void silc_server_rekey(SilcServer server,
   SilcServerRekeyInternalContext *proto_ctx;
   SilcIDListData idata = (SilcIDListData)sock->user_data;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Received rekey request"));
+
+  /* If we have other protocol executing we have no other choice but to
+     not execute rekey. XXX This is very bad thing.  Let's hope this
+     doesn't happen often. */
+  if (sock->protocol) {
+    SILC_LOG_WARNING(("Cannot execute REKEY protocol because other protocol "
+		      "is executing at the same time"));
+    return;
+  }
 
   /* Allocate internal protocol context. This is sent as context
      to the protocol. */

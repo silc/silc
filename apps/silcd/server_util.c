@@ -1215,6 +1215,7 @@ bool silc_server_connection_allowed(SilcServer server,
 	r_protocol_version < l_protocol_version) {
       SILC_LOG_INFO(("Connection %s (%s) is too old version",
 		     sock->hostname, sock->ip));
+      sock->protocol = NULL;
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old protocol version");
@@ -1226,6 +1227,7 @@ bool silc_server_connection_allowed(SilcServer server,
 	r_software_version < l_software_version) {
       SILC_LOG_INFO(("Connection %s (%s) is too old version",
 		     sock->hostname, sock->ip));
+      sock->protocol = NULL;
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old software version");
@@ -1237,6 +1239,7 @@ bool silc_server_connection_allowed(SilcServer server,
 	!silc_string_match(l_vendor_version, r_vendor_version)) {
       SILC_LOG_INFO(("Connection %s (%s) is unsupported version",
 		     sock->hostname, sock->ip));
+      sock->protocol = NULL;
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "Your software is not supported");
@@ -1255,6 +1258,7 @@ bool silc_server_connection_allowed(SilcServer server,
   if (max_hosts && conn_number >= max_hosts) {
     SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
 		   sock->hostname, sock->ip));
+    sock->protocol = NULL;
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Server is full, try again later");
@@ -1264,6 +1268,7 @@ bool silc_server_connection_allowed(SilcServer server,
   if (num_sockets >= max_per_host) {
     SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
 		   sock->hostname, sock->ip));
+    sock->protocol = NULL;
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Too many connections from your host");
