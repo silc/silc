@@ -1,4 +1,4 @@
-How to Create SILC distributions
+How to create SILC distributions
 ================================
 
 This document describes how to prepare SILC distributions in SILC source
@@ -14,7 +14,7 @@ The 'distributions' file descibres all distributions that can be created
 from the SILC CVS source tree.  You should read that file if you want to 
 learn how to create new distributions.  The file already defines the main 
 distributions that can be created from the soure tree.  These are the 
-'client, 'server' and 'toolkit' distributions.
+'client', 'server' and 'toolkit' distributions.
 
 
 Preparing distribution
