@@ -216,11 +216,6 @@ EXPORTS
 	silc_log_set_debug_callbacks @ 445 ; 
 	silc_log_set_file @ 446 ; 
 	silc_malloc @ 448 ; 
-	silc_mars_context_len @ 449 ; 
-	silc_mars_decrypt_cbc @ 450 ; 
-	silc_mars_encrypt_cbc @ 451 ; 
-	silc_mars_set_key @ 452 ; 
-	silc_mars_set_key_with_string @ 453 ; 
 	silc_math_gen_prime @ 454 ; 
 	silc_math_prime_test @ 455 ; 
 	silc_md5_context_len @ 456 ; 
@@ -546,7 +541,6 @@ EXPORTS
 	silc_get_status_message @ 858 ;
 	silc_get_mode_list @ 859 ;
 	silc_hash_table_find_by_context @ 860 ;
-	silc_channel_message_payload_encrypt @ 861 ;
 	silc_string_is_ascii @ 862 ;
 	silc_parse_version_string @ 863 ;
 	silc_version_to_num @ 864 ;
@@ -584,4 +578,15 @@ EXPORTS
 	silc_message_signed_payload_encode @ 896 ; 
 	silc_message_signed_payload_free @ 897 ; 
 	silc_message_signed_verify @ 898 ; 
-	silc_message_signed_get_public_key @ 899 ; 
+        silc_message_signed_get_public_key @ 899 ;
+        silc_hmac_unregister_all @ 900 ;
+        silc_hash_unregister_all @ 901 ;
+        silc_pkcs_unregister_all @ 902 ;
+        silc_cipher_unregister_all @ 903 ;
+        silc_rng_get_byte_fast @ 904 ;
+        silc_cipher_get_name @ 905 ;
+        silc_hmac_get_name @ 906 ;
+        silc_hash_get_name @ 907 ;
+        silc_pkcs_public_key_payload_encode @ 908 ;
+        silc_pkcs_public_key_payload_decode @ 909 ;
+

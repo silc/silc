@@ -61,3 +61,13 @@ int silc_gettimeofday(struct timeval *tv)
 
   return 0;
 }
+
+char *silc_get_username(void)
+{
+  return strdup("foo");
+}
+
+char *silc_get_real_name(void)
+{
+  return strdup("Foo T. Bar");
+}
