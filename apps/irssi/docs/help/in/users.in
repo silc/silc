@@ -1,8 +1,8 @@
 
 @SYNTAX:users@
 
-Shows users of the specified channel.  You must
-already be on the channel.
+Shows users of the specified channel. The channel must be either joined or it
+needs to be a public channel (without secret or private flags set).
 
 Alias WHO is by default USERS * command.
 

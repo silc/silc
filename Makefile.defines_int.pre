@@ -45,3 +45,4 @@ silc_modulesdir=@MODULESDIR@
 silc_helpdir=@HELPDIR@
 silc_docdir=@DOCDIR@
 silc_logsdir=@LOGSDIR@
+silc_mandir=@MANDIR@

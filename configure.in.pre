@@ -386,6 +386,23 @@ AC_ARG_WITH(logsdir,
 AC_SUBST(LOGSDIR)
 AC_DEFINE_UNQUOTED(SILC_LOGSDIR, "$LOGSDIR")
 
+# Manual directory
+#
+MANDIR="$silc_prefix/man"
+AC_ARG_WITH(mandir,
+  [[  --with-mandir=DIR       directory for SILC manual pages [PREFIX/man]]],
+  [
+    case "$withval" in
+      no)
+        ;;
+      *)
+        MANDIR="$withval"
+        ;;
+    esac
+  ])
+AC_SUBST(MANDIR)
+AC_DEFINE_UNQUOTED(SILC_MANDIR, "$MANDIR")
+
 # silcd config file checking
 #
 summary_silcd_configfile="/etc/silc/silcd.conf"
@@ -1010,7 +1027,6 @@ AC_OUTPUT
 
 s_bindir=`eval echo $bindir`;s_bindir=`eval echo $s_bindir`
 s_sbindir=`eval echo $sbindir`;s_sbindir=`eval echo $s_sbindir`
-s_mandir=`eval echo $mandir`;s_mandir=`eval echo $s_mandir`
 s_includedir=`eval echo $includedir`;s_includedir=`eval echo $s_includedir`
 
 echo ""
@@ -1026,7 +1042,7 @@ echo ""
 echo " Installation prefix ...........: $prefix"
 echo " bin directory .................: $s_bindir"
 echo " sbin directory ................: $s_sbindir"
-echo " man directory .................: $s_mandir"
+echo " man directory .................: $MANDIR"
 echo " help directory ................: $HELPDIR"
 echo " doc directory .................: $DOCDIR"
 echo " logs directory ................: $LOGSDIR"
