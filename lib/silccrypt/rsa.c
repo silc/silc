@@ -66,6 +66,11 @@
      Use the SilcRng sent as argument to SILC_PKCS_API_INIT in prime 
      generation.
 
+   o Sat Sep 26 19:59:48 EEST 2002  Pekka
+
+     Fixed double free in public key setting.  Use a bit larger e as
+     starting point in key generation.
+
 */
 
 #include "silcincludes.h"
@@ -516,7 +521,7 @@ void rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
   /* Set e, the public exponent. We try to use same public exponent
      for all keys. Also, to make encryption faster we use small 
      number. */
-  silc_mp_set_ui(&key->e, 127);
+  silc_mp_set_ui(&key->e, 65533);
  retry_e:
   /* See if e is relatively prime to phi. gcd == greates common divisor,
      if gcd equals 1 they are relatively prime. */
@@ -526,7 +531,7 @@ void rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
     goto retry_e;
   }
   
-  /* Find d, the private exponent. */
+  /* Find d, the private exponent, e ^ -1 mod lcm(phi). */
   silc_mp_gcd(&div, &pm1, &qm1);
   silc_mp_div(&lcm, &phi, &div);
   silc_mp_modinv(&key->d, &key->e, &lcm);
