@@ -1207,6 +1207,7 @@ void silc_server_query_send_reply(SilcServer server,
 	  SilcBuffer channels, umode_list = NULL;
 
 	  memset(fempty, 0, sizeof(fempty));
+	  memset(idle, 0, sizeof(idle));
 	  silc_strncat(uh, sizeof(uh), entry->username,
 		       strlen(entry->username));
 	  if (!strchr(entry->username, '@') && entry->connection) {
