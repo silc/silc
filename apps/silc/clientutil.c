@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/14 06:11:32  priikone
+ * 	Fixed key-pair generation.
+ *
  * Revision 1.5  2000/07/12 05:55:50  priikone
  * 	Added client_parse_nickname.
  *
@@ -86,7 +89,7 @@ static void silc_print_to_window(WINDOW *win, char *message)
 void silc_say(SilcClient client, char *msg, ...)
 {
   va_list vp;
-  char message[1024];
+  char message[2048];
   
   memset(message, 0, sizeof(message));
   strncat(message, "\n***  ", 5);
@@ -105,7 +108,7 @@ void silc_say(SilcClient client, char *msg, ...)
 void silc_print(SilcClient client, char *msg, ...)
 {
   va_list vp;
-  char message[1024];
+  char message[2048];
   
   memset(message, 0, sizeof(message));
   strncat(message, "\n ", 2);
@@ -458,6 +461,7 @@ int silc_client_create_key_pair(char *pkcs_name, int bits,
   SilcRng rng;
   unsigned char *key;
   unsigned int key_len;
+  char line[256];
   char *pkfile = NULL, *prvfile = NULL;
 
   if (!pkcs_name || !public_key || !private_key)
@@ -497,17 +501,19 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (!identifier) {
     char *def = silc_client_create_identifier();
 
-    if (identifier)
-      snprintf(def, sizeof(def), "Public key identifier [%s]: ", def);
+    memset(line, 0, sizeof(line));
+    if (def)
+      snprintf(line, sizeof(line), "Identifier [%s]: ", def);
     else
-      snprintf(def, sizeof(def),
-	       "Public key identifier (eg. UN=priikone, HN=poseidon.pspt.fi, "
-	       "RN=Pekka Riikonen, E=priikone@poseidon.pspt.fi): ");
+      snprintf(line, sizeof(line),
+	       "Identifier (eg. UN=jon, HN=jon.dummy.com, "
+	       "RN=Jon Johnson, E=jon@dummy.com): ");
 
-  again_ident:
-    identifier = silc_client_get_input(def);
-    if (!identifier)
-      goto again_ident;
+    while (!identifier) {
+      identifier = silc_client_get_input(line);
+      if (!identifier && def)
+	identifier = strdup(def);
+    }
 
     if (def)
       silc_free(def);
@@ -518,23 +524,23 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   silc_math_primegen_init();
 
   if (!public_key) {
-  again_pk:
-    pkfile = silc_client_get_input("Public key filename: ");
-    if (!pkfile) {
-      printf("Public key filename must be defined\n");
-      goto again_pk;
-    }
+    memset(line, 0, sizeof(line));
+    snprintf(line, sizeof(line), "Public key filename [%s] ", 
+	     SILC_CLIENT_PUBLIC_KEY_NAME);
+    pkfile = silc_client_get_input(line);
+    if (!pkfile)
+      pkfile = SILC_CLIENT_PUBLIC_KEY_NAME;
   } else {
     pkfile = public_key;
   }
 
   if (!private_key) {
-  again_prv:
-    prvfile = silc_client_get_input("Private key filename: ");
-    if (!prvfile) {
-      printf("Private key filename must be defined\n");
-      goto again_prv;
-    }
+    memset(line, 0, sizeof(line));
+    snprintf(line, sizeof(line), "Public key filename [%s] ", 
+	     SILC_CLIENT_PRIVATE_KEY_NAME);
+    prvfile = silc_client_get_input(line);
+    if (!prvfile)
+      prvfile = SILC_CLIENT_PRIVATE_KEY_NAME;
   } else {
     prvfile = private_key;
   }

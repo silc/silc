@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/14 06:11:32  priikone
+ * 	Fixed key-pair generation.
+ *
  * Revision 1.3  2000/07/05 06:11:00  priikone
  * 	Added ~./silc directory checking, autoloading of keys and
  * 	tweaked the key pair generation function.
@@ -221,6 +224,13 @@ SILC Secure Internet Live Conferencing, version %s\n",
   signal(SIGFPE, SIG_DFL);
   //  signal(SIGINT, SIG_IGN);
   
+  if (opt_create_keypair == TRUE) {
+    /* Create new key pair and exit */
+    silc_client_create_key_pair(opt_pkcs, opt_bits, 
+				NULL, NULL, NULL, NULL, NULL);
+    exit(0);
+  }
+
   /* Default configuration file */
   if (!opt_config_file)
     opt_config_file = strdup(SILC_CLIENT_CONFIG_FILE);
@@ -229,13 +239,6 @@ SILC Secure Internet Live Conferencing, version %s\n",
   config = silc_client_config_alloc(opt_config_file);
   if (config == NULL)
     goto fail;
-
-  if (opt_create_keypair == TRUE) {
-    /* Create new key pair and exit */
-    silc_client_create_key_pair(opt_pkcs, opt_bits, 
-				NULL, NULL, NULL, NULL, NULL);
-    exit(0);
-  }
 
   /* Read local configuration file */
 
