@@ -1304,14 +1304,15 @@ not stateful and receiver cannot precompute the key stream.
 3.10.1.3 Randomized CBC Mode
 
 The "rcbc" encryption mode is CBC mode with randomized IV.  This means
-that each IV for each packet MUST be chosen randomly (same IV is used
-to encrypt all blocks in the given packet).  In this mode the IV is
-appended at the end of the last ciphertext block and thus delivered to
-the recipient.  This mode increases the ciphertext size by one
-ciphertext block.  Note also that some data payloads in SILC are capable
-of delivering the IV to the recipient.  When explicitly encrypting these
-payloads with randomized CBC the IV MUST NOT be appended at the end
-of the ciphertext.
+that each IV for each packet MUST be chosen randomly.  When encrypting
+more than one block the normal inter-packet chaining is used, but for
+the first block new random IV is selected in each packet.  In this mode
+the IV is appended at the end of the last ciphertext block and thus
+delivered to the recipient.  This mode increases the ciphertext size by
+one ciphertext block.  Note also that some data payloads in SILC are
+capable of delivering the IV to the recipient.  When explicitly
+encrypting these payloads with randomized CBC the IV MUST NOT be appended
+at the end of the ciphertext.
 
 
 .ti 0
