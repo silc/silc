@@ -1,3 +1,8 @@
+Mon Jan 03 23:26:38 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed typo in perl module.  Affected file 
+	  irssi/src/perl/silc/Server.xs
+
 Mon Jan 03 16:04:29 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Incorrectly reported error when client had to be resolved from

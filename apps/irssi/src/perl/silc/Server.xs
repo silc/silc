@@ -10,5 +10,5 @@ PREINIT:
 	char *ret;
 PPCODE:
 	ret = silc_server_get_channels(server);
-	XPUSHs(sv2_mortal(new_pv(ret)));
+	XPUSHs(sv_2mortal(new_pv(ret)));
 	g_free(ret);
