@@ -359,6 +359,12 @@ bool silc_server_rehash(SilcServer server)
 
   SILC_LOG_INFO(("Rehashing server"));
 
+  /* Our old config is gone now. We'll unreference our reference made in
+     silc_server_init and then destroy it since we are destroying it
+     underneath the application (layer which called silc_server_init). */
+  silc_server_config_unref(&server->config_ref);
+  silc_server_config_destroy(server->config);
+
   /* Reset the logging system */
   silc_log_quick = TRUE;
   silc_log_flush_all();
@@ -370,18 +376,16 @@ bool silc_server_rehash(SilcServer server)
     return FALSE;
   }
 
-  /* Our old config is gone now. We'll unreference our reference made in
-     silc_server_init and then destroy it since we are destroying it
-     underneath the application (layer which called silc_server_init). */
-  silc_server_config_unref(&server->config_ref);
-  silc_server_config_destroy(server->config);
-
   /* Take new config context */
   server->config = newconfig;
   silc_server_config_ref(&server->config_ref, server->config, server->config);
 
   /* Fix the server_name field */
-  if (strcmp(server->server_name, newconfig->server_info->server_name)) {
+  if (!strcmp(server->server_name, newconfig->server_info->server_name)) {
+    /* We don't need any update */
+    silc_free(newconfig->server_info->server_name);
+    newconfig->server_info->server_name = NULL;
+  } else {
     silc_free(server->server_name);
     server->server_name = newconfig->server_info->server_name;
     newconfig->server_info->server_name = NULL;
