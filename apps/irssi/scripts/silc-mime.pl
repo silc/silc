@@ -3,26 +3,28 @@
 use vars qw($VERSION %IRSSI);
 
 use Irssi 20020704;
-$VERSION = "1.0";
+$VERSION = "1.1";
 %IRSSI = (
     authors	=> "Jochen 'c0ffee' Eisinger",
     contact	=> "c0ffee\@penguin-breeder.org",
     name	=> "SILC2 MIME handler",
-    description => "This script implements MIME handlers for SILC2, according to draft-riikonen-silc-flags-payloads-00, RFC 822, 1525, 2046, 2733, 2822, 3009",
+    description => "This script implements MIME handlers for SILC2, according to draft-riikonen-silc-flags-payloads-00",
     license	=> "GPL2 or any later",
     url		=> "http://www.penguin-breeder.org/silc/",
-    changed	=> "Sun Aug 24 17:52 CEST 2003",
+    changed	=> "Wed Aug 29 10:45 CET 2003",
 );
 
 use MIME::Parser;
 use Mail::Field;
 use Mail::Cap;
+use File::MMagic;
 use IO::Scalar;
 use IO::File;
-use File::Temp qw/ :POSIX /;
+use File::Temp qw/ tempfile /;
 use Sys::Hostname;
 
 my @mcaps;
+my $magic = new File::MMagic;
 
 ## 
 # read_mime_database
@@ -30,16 +32,36 @@ my @mcaps;
 # Loads all mailcap databases specified in the setting
 # mime_database.  Default is ~/.mailcap and /etc/mailcap in
 # that order.  Function is invoked on startup.
+#
+# MIME Magic Info is also read...
 sub read_mime_database {
     # read mailcap databases rfc1525
     foreach (split /\s+/, Irssi::settings_get_str("mime_database")) {
         if (( -f $_ ) and ( -R $_ )) {
-	    Irssi::printformat(MSGLEVEL_CRAP, 'load_mailcap', $_);
+	    Irssi::printformat(MSGLEVEL_CRAP, 'load_mailcap', $_)
+	      if Irssi::settings_get_bool("mime_verbose");
 	    $mcap = new Mail::Cap $_;
 	    push @mcaps, $mcap;
 	} else {
-	    Irssi::printformat(MSGLEVEL_CRAP, 'load_mailcap_fail', $_);
+	    Irssi::printformat(MSGLEVEL_CRAP, 'load_mailcap_fail', $_)
+	      if Irssi::settings_get_bool("mime_verbose");
 	}
+    }
+
+    $mfile = Irssi::settings_get_str("mime_magic");
+
+    if ($mfile ne "") {
+        Irssi::printformat(MSGLEVEL_CRAP, 'load_mime_magic', $mfile);
+        $magic = File::MMagic::new($mfile);
+    }
+
+    if ( not -d Irssi::settings_get_str("mime_temp_dir")) {
+
+        Irssi::printformat(MSGLEVEL_CRAP, 'no_temp_dir',
+            Irssi::settings_get_str("mime_temp_dir"));
+
+        Irssi:settings_set_str("mime_temp_dir", "/tmp");
+
     }
 }
 
@@ -70,14 +92,42 @@ sub escape {
     return $unescaped;
 }
 
+##
+# background_exec
+#
+# fork and execute
+#
+sub background_exec {
+  my ($witem, $signed, $sender, $type, $cmd) = @_;
+
+  if ($signed == -1) {
+    $format = "mime_data_received";
+  } elsif ($signed == 0) {
+    $format = "mime_data_received_signed";
+  } elsif ($signed == 1) {
+    $format = "mime_data_received_unknown";
+  } elsif ($signed == 2) {
+    $format = "mime_data_received_failed";
+  }
+
+  if ($witem->{type}) {
+    $witem->printformat(MSGLEVEL_CRAP, $format, $sender, $type);
+  } else {
+    Irssi::printformat(MSGLEVEL_CRAP, $format, $sender, $type);
+  }
+
+  Irssi::command("EXEC " . Irssi::settings_get_str("mime_exec_param") .
+		 $cmd);
+}
+
 my %partial;
 
 ##
-# process_mime_entity(MIME::Entity $msg)
+# process_mime_entity(WI_ITEM_REC, $signed, $sender, MIME::Entity $msg)
 #
 # -1 failure, 0 success
 sub process_mime_entity {
-  my ($entity) = @_;
+  my ($witem, $signed, $sender, $entity) = @_;
 
   $mimetype = Mail::Field->new('Content-type', $entity->head->get('Content-Type'));
 
@@ -105,8 +155,7 @@ sub process_mime_entity {
 
       # create a new record
       $partial{$mimetype->id}{received} = 1;
-      $partial{$mimetype->id}{name} = tmpnam();
-      $fh = new IO::File "> $partial{$mimetype->id}{name}";
+      ($fh, $partial{$mimetype->id}{name})= tempfile("msg-XXXXXXXX", SUFFIX => ".dat", DIR => Irssi::settings_get_str("mime_temp_dir"));
       $partial{$mimetype->id}{file} = $fh;
       $partial{$mimetype->id}{count} = 1;
       $partial{$mimetype->id}{total} = $mimetype->total;
@@ -172,10 +221,10 @@ sub process_mime_entity {
     undef $partial{$mimetype->id};
 
     $parser = new MIME::Parser;
-    $parser->output_dir("/tmp");
+    $parser->output_dir(Irssi::settings_get_str("mime_temp_dir"));
     $mime = $parser->parse_open($tempfile);
 
-    $ret = process_mime_entity($mime);
+    $ret = process_mime_entity($witem, $signed, $sender, $mime);
 
     $parser->filer->purge;
     unlink $tempfile;
@@ -186,20 +235,20 @@ sub process_mime_entity {
   # we could check for */parityfec (RTP packets) rfc2733, 3009
 
   # save to temporary file
-  $tempfile = tmpnam();
-  open TFILE, '>', $tempfile;
+  ($fh, $tempfile) = tempfile("msg-XXXXXXXX", SUFFIX => ".dat", DIR => Irssi::settings_get_str("mime_temp_dir"));
   if ($io = $entity->open("r")) {
-    while (defined($_ = $io->getline)) { print TFILE $_; }
+    while (defined($_ = $io->getline)) { print $fh $_; }
     $io->close;
   }
-  close TFILE;  
+  close $fh;  
 
   # try to handle it
   foreach $mcap (@mcaps) {
-    $mcap->view($mimetype->type, $tempfile);
 
-    next if not $?;
-    unlink $tempfile if Irssi::settings_get_bool("mime_unlink_tempfiles");
+    $cmd = $mcap->viewCmd($mimetype->type, $tempfile);
+    next if not defined $cmd;
+
+    background_exec($witem, $signed, $sender, $mimetype->type, $cmd);
     return 1;
   }
 
@@ -223,19 +272,28 @@ sub sig_mime {
     my ($server, $witem, $blob, $sender, $verified) = @_;
 
     $parser = new MIME::Parser;
-    $parser->output_dir("/tmp");
+    $parser->output_dir(Irssi::settings_get_str("mime_temp_dir"));
     $mime = $parser->parse_data(unescape($blob));
 
-    $ret = process_mime_entity($mime);
+    $ret = process_mime_entity($witem, $verified, $sender, $mime);
 
     $parser->filer->purge;
 
     if ($ret == 1) {
-      Irssi::signal_stop();
+        Irssi::signal_stop();
     } elsif  ($ret == -1) {
-      return;
+        return;
     } else {
-      Irssi::print "Unknown MIME type $ret received...";
+        $theme = $witem->{theme} || Irssi::current_theme;
+	$format = $theme->get_format("fe-common/silc", "message_data");
+	$format =~ s/\$0/$sender/;
+	$format =~ s/\$1/$ret/;
+	if ($witem->{type}) {
+            $witem->print($theme->format_expand($format));
+        } else {
+            Irssi::print($theme->format_expand($format));
+        }
+        Irssi::signal_stop();
     }
 }
 
@@ -244,7 +302,7 @@ sub sig_mime {
 #
 # Sends a file with a given MIME type and transfer encoding.
 #
-# MMSG [<-channel>] <target> <file> [<content-type>  [<transfer-encoding>]]
+# MMSG [<-sign>] [<-channel>] <target> <file> [<type>  [<encoding>]]
 #
 # Sends a private data message to other user in the network.  The message
 # will be send as a MIME encoded data message.
@@ -253,13 +311,23 @@ sub sig_mime {
 # message to the specified channel.  The message IS NOT private message, it
 # is normal channel message.
 #
+# If the -sign optin is provided, the message will be additionally
+# signed.
+#
 # Messages that exceed roughly 64k have to be split up into smaller packets.
 # This is done automatically.
 #
 # If no transfer-encoding is given it defaults to binary or 7bit for messages
 # that have to be split up.
 #
-# If no content-type is given it defaults to application/octet-stream.
+# If no content-type is given it is guessed using a MIME magic file.
+#
+# Settings
+#
+#   mime_magic            - path to MIME magic file, or internal 
+#                           defaults if empty
+#   mime_default_encoding - encoding to use if none specified
+#   mime_temp_dir         - where to store temporary files
 #
 # Examples
 #
@@ -274,8 +342,9 @@ sub cmd_mmsg {
 	return;
     }
 
-    ($is_channel, $target, $file, $type, $encoding) =
-        $data =~ /^\s*(?:(-channel)?\s+)? # match the -channel
+    ($sign, $is_channel, $target, $file, $type, $encoding) =
+        $data =~ /^\s*(?:(-sign)?\s+)?    # match the -sign
+		  \s*(?:(-channel)?\s+)?  # match the -channel
 	          (\*|\S+)\s+             # target
 		  (\S+)                   # filename
 		  (?:\s+(\S+)             # mime type
@@ -288,7 +357,7 @@ sub cmd_mmsg {
     Irssi::printformat(MSGLEVEL_CRAP, 'mmsg_file', $file), return
         if not ( -f $file );
 
-    $type = Irssi::settings_get_str("mime_default_type")
+    $type = $magic->checktype_filename($file)
         if not defined $type;
     $encoding = Irssi::settings_get_str("mime_default_encoding")
         if not defined $encoding;
@@ -296,8 +365,12 @@ sub cmd_mmsg {
     # does the target exist? we don't test that... especially the
     # -channel parameter is ignored :/
 
-    # XXX
-    $to = $witem;
+    if ($target eq "*") {
+
+      $is_channel = ($witem->{type} eq "CHANNEL" ? "-channel" : "");
+      $target = $witem->{name};
+
+    }
 
     $entity = new MIME::Entity->build(
         'MIME-Version' => "1.0",
@@ -306,10 +379,12 @@ sub cmd_mmsg {
 	Path	       => $file
     );
 
-    $tempfile = tmpnam();
-    open TFILE, '>', $tempfile;
-    $entity->print(\*TFILE);
-    close TFILE;
+    ($fh, $tempfile) = tempfile( DIR => Irssi::settings_get_str("mime_temp_dir"));
+    $entity->print($fh);
+    close $fh;
+
+    $is_channel = (lc($is_channel) eq "-channel" ? 1 : 0);
+    $sign = (lc($sign) eq "-sign" ? 1 : 0);
 
     
     # 21:27 <@pekka> c0ffee: the core routines will crop the message if it
@@ -319,7 +394,8 @@ sub cmd_mmsg {
     if ((stat($tempfile))[7] < 0xfbff) {
     
       unlink $tempfile;
-      Irssi::signal_emit("mime-send", $server, $to, escape($entity->stringify), 0);
+      Irssi::signal_emit("mime-send", $server, \$is_channel,
+			 $target, escape($entity->stringify), \$sign);
     } else {
 
       open TFILE, $tempfile;
@@ -336,7 +412,8 @@ sub cmd_mmsg {
 	    			(eof(TFILE) ? "; total=$chunks" : ""),
 	    Data           => $data
         );
-        Irssi::signal_emit("mime-send", $server, $to, escape($entity->stringify), 0);
+        Irssi::signal_emit("mime-send", $server, \$is_channel,
+				$target, escape($entity->stringify), \$sign);
 
     } while (!eof(TFILE));
     close TFILE;
@@ -354,9 +431,12 @@ Irssi::command_bind("mmsg", "cmd_mmsg");
 # Settings
 Irssi::settings_add_str("misc", "mime_database", 
     "$ENV{HOME}/.mailcap /etc/mailcap");
-Irssi::settings_add_bool("misc", "mime_unlink_tempfiles", 0);
-Irssi::settings_add_str("misc", "mime_default_type", "application/octet-stream");
+Irssi::settings_add_bool("misc", "mime_unlink_tempfiles", 1);
 Irssi::settings_add_str("misc", "mime_default_encoding", "binary");
+Irssi::settings_add_bool("misc", "mime_verbose", 0);
+Irssi::settings_add_str("misc", "mime_temp_dir", "/tmp");
+Irssi::settings_add_str("misc", "mime_magic", "");
+Irssi::settings_add_str("misc", "mime_exec_param", "");
 
 # Init
 Irssi::theme_register(['load_mailcap', 'Loading mailcaps from {hilight $0}',
@@ -364,6 +444,13 @@ Irssi::theme_register(['load_mailcap', 'Loading mailcaps from {hilight $0}',
 	'message_partial_failure', 'message/partial: {hilight $0-}',
 	'mmsg_chattype', 'command was not designed for this chat type',
 	'mmsg_parameters', 'not enough parameters given',
-	'mmsg_file', 'File {hilight $0} not found']);
+	'mmsg_file', 'File {hilight $0} not found',
+	'load_mime_magic', 'Loading MIME magic types from {hilight $0}',
+	'no_temp_dir', 'Directory {hilight $0} does not exist, defaulting to /tmp',
+	'mime_data_received', '{nick $0} sent "{hilight $1}" data message',
+	'mime_data_received_signed', '{nick $0} sent "{hilight $1}" data message (signature {flag_signed})',
+	'mime_data_received_unknown', '{nick $0} sent "{hilight $1}" data message (signature {flag_unknown})',
+	'mime_data_received_failed', '{nick $0} sent "{hilight $1}" data message (signature {flag_failed})']);
+
 
 read_mime_database();
