@@ -119,18 +119,74 @@ void silc_server_free(SilcServer server)
    XXX This function will become more general and will support multiple
    listening ports */
 
-static bool silc_server_listen(SilcServer server, int *sock)
+static bool silc_server_listen(SilcServer server, const char *server_ip,
+				SilcUInt16 port, int *sock)
 {
-
-  *sock = silc_net_create_server(server->config->server_info->port,
-				server->config->server_info->server_ip);
+  *sock = silc_net_create_server(port, server_ip);
   if (*sock < 0) {
     SILC_LOG_ERROR(("Could not create server listener: %s on %hu",
-		    server->config->server_info->server_ip,
-		    server->config->server_info->port));
+			server_ip, port));
     return FALSE;
   }
   return TRUE;
+}
+
+/* Adds a secondary listener. */
+bool silc_server_init_secondary(SilcServer server)
+{
+  int sock=0, sock_list[server->config->param.connections_max];
+  SilcSocketConnection newsocket = NULL;
+  SilcServerConfigServerInfoInterface *interface;
+
+  for (interface = server->config->server_info->secondary; interface; 
+	interface = interface->next, sock++) {
+	  
+    if (!silc_server_listen(server,
+	interface->server_ip, interface->port, &sock_list[sock]))
+      goto err;
+
+    /* Set socket to non-blocking mode */
+    silc_net_set_socket_nonblock(sock_list[sock]);
+
+    /* Add ourselves also to the socket table. The entry allocated above
+       is sent as argument for fast referencing in the future. */
+    silc_socket_alloc(sock_list[sock], 
+		SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
+    server->sockets[sock_list[sock]] = newsocket;
+
+    /* Perform name and address lookups to resolve the listenning address
+       and port. */
+    if (!silc_net_check_local_by_sock(sock_list[sock], &newsocket->hostname,
+      			    &newsocket->ip)) {
+      if ((server->config->require_reverse_lookup && !newsocket->hostname) ||
+        !newsocket->ip) {
+        SILC_LOG_ERROR(("IP/DNS lookup failed for local host %s",
+        	      newsocket->hostname ? newsocket->hostname :
+        	      newsocket->ip ? newsocket->ip : ""));
+        server->stat.conn_failures++;
+        goto err;
+      }
+      if (!newsocket->hostname)
+        newsocket->hostname = strdup(newsocket->ip);
+    }
+    newsocket->port = silc_net_get_local_port(sock);
+    
+    newsocket->user_data = (void *)server->id_entry;
+    silc_schedule_task_add(server->schedule, sock_list[sock],
+			 silc_server_accept_new_connection,
+			 (void *)server, 0, 0,
+			 SILC_TASK_FD,
+			 SILC_TASK_PRI_NORMAL);
+
+  }
+
+  return TRUE;
+  
+err:
+
+  do silc_net_close_server(sock_list[sock--]); while (sock >= 0);
+  return FALSE;
+
 }
 
 /* Initializes the entire SILC server. This is called always before running
@@ -218,7 +274,12 @@ bool silc_server_init(SilcServer server)
     goto err;
 
   /* Create a listening server */
-  if (!silc_server_listen(server, &sock))
+  if (!silc_server_listen(server,
+		server->config->server_info->primary == NULL ? NULL :
+			server->config->server_info->primary->server_ip,
+		server->config->server_info->primary == NULL ? 0 :
+			server->config->server_info->primary->port,
+		&sock))
     goto err;
 
   /* Set socket to non-blocking mode */
@@ -308,6 +369,10 @@ bool silc_server_init(SilcServer server)
 			 (void *)server, 0, 0,
 			 SILC_TASK_FD,
 			 SILC_TASK_PRI_NORMAL);
+
+  if (silc_server_init_secondary(server) == FALSE)
+    goto err;
+  
   server->listenning = TRUE;
 
   /* If server connections has been configured then we must be router as
@@ -659,9 +724,10 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   silc_server_config_ref(&sconn->conn, server->config, (void *)rconn);
 
   /* Connect to remote host */
-  sock = silc_net_create_connection(server->config->server_info->server_ip,
-				    sconn->remote_port,
-				    sconn->remote_host);
+  sock = silc_net_create_connection(server->config->server_info->primary == NULL ? NULL :
+		 server->config->server_info->primary->server_ip,
+		 sconn->remote_port,
+		 sconn->remote_host);
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not connect to router %s:%d",
 		    sconn->remote_host, sconn->remote_port));
@@ -1094,13 +1160,15 @@ static void
 silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 					 void *context)
 {
-  SilcServer server = (SilcServer)context;
-  SilcServerKEInternalContext *proto_ctx;
+  SilcServerKEInternalContext *proto_ctx = (SilcServerKEInternalContext *)context;
+  SilcServer server = (SilcServer)proto_ctx->server;
   SilcServerConfigClient *cconfig = NULL;
   SilcServerConfigServer *sconfig = NULL;
   SilcServerConfigRouter *rconfig = NULL;
   SilcServerConfigDeny *deny;
   int port;
+
+  context = (void *)server;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1114,6 +1182,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
 				  "Unknown host or IP");
+    silc_free(proto_ctx);
     return;
   }
 
@@ -1128,7 +1197,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   SILC_LOG_INFO(("Incoming connection %s (%s)", sock->hostname,
 		 sock->ip));
 
-  port = server->sockets[server->sock]->port; /* Listenning port */
+  port = server->sockets[(SilcUInt32)proto_ctx->context]->port; /* Listenning port */
 
   /* Check whether this connection is denied to connect to us. */
   deny = silc_server_config_find_denied(server, sock->ip);
@@ -1142,6 +1211,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 				  SILC_STATUS_ERR_BANNED_FROM_SERVER,
 				  deny->reason);
     server->stat.conn_failures++;
+    silc_free(proto_ctx);
     return;
   }
 
@@ -1154,9 +1224,9 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     sconfig = silc_server_config_find_server_conn(server, sock->hostname);
   if (server->server_type == SILC_ROUTER) {
     if (!(rconfig = silc_server_config_find_router_conn(server,
-							sock->ip, port)))
+							sock->ip, sock->port)))
       rconfig = silc_server_config_find_router_conn(server, sock->hostname,
-						    port);
+						    sock->port);
   }
   if (!cconfig && !sconfig && !rconfig) {
     SILC_LOG_INFO(("Connection %s (%s) is not allowed", sock->hostname,
@@ -1164,15 +1234,14 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_BANNED_FROM_SERVER);
     server->stat.conn_failures++;
+    silc_free(proto_ctx);
     return;
   }
 
   /* The connection is allowed */
 
-  /* Allocate internal context for key exchange protocol. This is
+  /* Set internal context for key exchange protocol. This is
      sent as context for the protocol. */
-  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
-  proto_ctx->server = context;
   proto_ctx->sock = sock;
   proto_ctx->rng = server->rng;
   proto_ctx->responder = TRUE;
@@ -1204,7 +1273,8 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   proto_ctx->timeout_task =
     silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_timeout_remote,
-			   context, server->config->key_exchange_timeout, 0,
+			   (void *)server,
+			   server->config->key_exchange_timeout, 0,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 }
@@ -1216,13 +1286,14 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
 {
   SilcServer server = (SilcServer)context;
   SilcSocketConnection newsocket;
+  SilcServerKEInternalContext *proto_ctx;
   int sock;
 
   SILC_LOG_DEBUG(("Accepting new connection"));
 
   server->stat.conn_attempts++;
 
-  sock = silc_net_accept_connection(server->sock);
+  sock = silc_net_accept_connection(fd);
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not accept new connection: %s", strerror(errno)));
     server->stat.conn_failures++;
@@ -1249,9 +1320,12 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   /* Perform asynchronous host lookup. This will lookup the IP and the
      FQDN of the remote connection. After the lookup is done the connection
      is accepted further. */
+  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+  proto_ctx->server = server;
+  proto_ctx->context = (void *)fd;
   silc_socket_host_lookup(newsocket, TRUE,
-			  silc_server_accept_new_connection_lookup, context,
-			  server->schedule);
+			  silc_server_accept_new_connection_lookup,
+			  (void *)proto_ctx, server->schedule);
 }
 
 /* Second part of accepting new connection. Key exchange protocol has been

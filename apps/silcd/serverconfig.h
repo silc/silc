@@ -49,10 +49,16 @@ typedef struct SilcServerConfigPkcsStruct {
   struct SilcServerConfigPkcsStruct *next;
 } SilcServerConfigPkcs;
 
-typedef struct SilcServerConfigServerInfoStruct {
-  char *server_name;
+typedef struct SilcServerConfigServerInfoInterfaceStruct {
   char *server_ip;
   SilcUInt16 port;
+  struct SilcServerConfigServerInfoInterfaceStruct *next;
+} SilcServerConfigServerInfoInterface;
+
+typedef struct SilcServerConfigServerInfoStruct {
+  char *server_name;
+  SilcServerConfigServerInfoInterface *primary;
+  SilcServerConfigServerInfoInterface *secondary;
   char *server_type;	/* E.g. "Test Server" */
   char *location;	/* geographic location */
   char *admin;		/* admin full name */

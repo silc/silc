@@ -423,9 +423,8 @@ SILC_CONFIG_CALLBACK(fetch_pkcs)
 
 SILC_CONFIG_CALLBACK(fetch_serverinfo)
 {
-  SilcServerConfig config = (SilcServerConfig) context;
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigServerInfoInterface);
   SilcServerConfigServerInfo *server_info = config->server_info;
-  int got_errno = 0;
 
   /* if there isn't the struct alloc it */
   if (!server_info)
@@ -433,8 +432,20 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 		silc_calloc(1, sizeof(*server_info));
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
-    /* check for mandatory inputs */
-    if (!server_info->public_key || !server_info->private_key) {
+    if (!strcmp(name, "primary")) {
+      CONFIG_IS_DOUBLE(server_info->primary);
+      if (!tmp)
+	return SILC_CONFIG_OK;
+      server_info->primary = tmp;
+      config->tmp = NULL;
+      return SILC_CONFIG_OK;
+    } else if (!strcmp(name, "secondary")) {
+      if (!tmp)
+	return SILC_CONFIG_OK;
+      SILC_SERVER_CONFIG_LIST_APPENDTMP(server_info->secondary);
+      config->tmp = NULL;
+      return SILC_CONFIG_OK;
+    } else if (!server_info->public_key || !server_info->private_key) {
       got_errno = SILC_CONFIG_EMISSFIELDS;
       goto got_err;
     }
@@ -445,18 +456,20 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     server_info->server_name = strdup((char *) val);
   }
   else if (!strcmp(name, "ip")) {
-    CONFIG_IS_DOUBLE(server_info->server_ip);
-    server_info->server_ip = strdup((char *) val);
+    SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigServerInfoInterface);
+    CONFIG_IS_DOUBLE(tmp->server_ip);
+    tmp->server_ip = strdup((char *) val);
   }
   else if (!strcmp(name, "port")) {
     int port = *(int *)val;
+    SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigServerInfoInterface);
     if ((port <= 0) || (port > 65535)) {
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
 			     "Invalid port number!\n"));
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
-    server_info->port = (SilcUInt16) port;
+    tmp->port = (SilcUInt16) port;
   }
   else if (!strcmp(name, "servertype")) {
     CONFIG_IS_DOUBLE(server_info->server_type);
@@ -521,6 +534,9 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   return SILC_CONFIG_OK;
 
  got_err:
+  silc_free(tmp);
+  silc_free(config->tmp);
+  config->tmp = NULL;
   return got_errno;
 }
 
@@ -1032,10 +1048,16 @@ static const SilcConfigTable table_pkcs[] = {
   { 0, 0, 0, 0 }
 };
 
-static const SilcConfigTable table_serverinfo[] = {
-  { "hostname",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+static const SilcConfigTable table_serverinfo_c[] = {
   { "ip",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
   { "port",		SILC_CONFIG_ARG_INT,	fetch_serverinfo, NULL},
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_serverinfo[] = {
+  { "hostname",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "primary",		SILC_CONFIG_ARG_BLOCK,	fetch_serverinfo, table_serverinfo_c},
+  { "secondary",	SILC_CONFIG_ARG_BLOCK,	fetch_serverinfo, table_serverinfo_c},
   { "servertype",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
   { "location",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
   { "admin",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
@@ -1298,7 +1320,15 @@ void silc_server_config_destroy(SilcServerConfig config)
   if (config->server_info) {
     register SilcServerConfigServerInfo *si = config->server_info;
     silc_free(si->server_name);
-    silc_free(si->server_ip);
+    if (si->primary) {
+      silc_free(si->primary->server_ip);
+      silc_free(si->primary);
+    }
+    SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigServerInfoInterface,
+				  si->secondary)
+      silc_free(di->server_ip);
+      silc_free(di);
+    }
     silc_free(si->server_type);
     silc_free(si->location);
     silc_free(si->admin);

@@ -523,13 +523,15 @@ SILC_TASK_CALLBACK(silc_server_backup_connect_to_router)
   SilcServerConnection sconn = (SilcServerConnection)context;
   SilcServer server = sconn->server;
   int sock;
+  const char *server_ip;
 
   SILC_LOG_DEBUG(("Connecting to router %s:%d", sconn->remote_host,
 		  sconn->remote_port));
 
   /* Connect to remote host */
-  sock = silc_net_create_connection(server->config->server_info->server_ip,
-				    sconn->remote_port,
+  server_ip = server->config->server_info->primary == NULL ? NULL :
+	  	server->config->server_info->primary->server_ip;
+  sock = silc_net_create_connection(server_ip, sconn->remote_port,
 				    sconn->remote_host);
   if (sock < 0) {
     silc_schedule_task_add(server->schedule, 0,
