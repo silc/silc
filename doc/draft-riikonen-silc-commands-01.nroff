@@ -586,7 +586,8 @@ List of all defined commands in SILC follows.
                         (3) [<invite list>]
 
 	This command replies with the invite list of the channel if it
-	exists.
+	exists.  The <invite list> may be omitted if the list was not
+        altered.
 
         Status messages:
 

@@ -367,6 +367,12 @@ SILC_CLIENT_CMD_FUNC(nick)
     goto out;
   }
 
+  if (cmd->argc < 2) {
+    cmd->client->ops->say(cmd->client, conn, "Usage: /NICK <nickname>");
+    COMMAND_ERROR;
+    goto out;
+  }
+
   if (!strcmp(conn->nickname, cmd->argv[1]))
     goto out;
 
@@ -613,10 +619,6 @@ SILC_CLIENT_CMD_FUNC(invite)
 	cmd->pending = 1;
 	return;
       }
-      
-      cmd->client->ops->say(cmd->client, conn, 
-			    "Inviting %s to channel %s", cmd->argv[2], 
-			    channel->channel_name);
     } else {
       invite = cmd->argv[2];
       invite++;
@@ -1209,6 +1211,12 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	int ll;
 	mode |= SILC_CHANNEL_MODE_ULIMIT;
 	type = 3;
+	if (cmd->argc < 4) {
+	  cmd->client->ops->say(cmd->client, conn, 
+	       "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
+	  COMMAND_ERROR;
+	  goto out;
+	}
 	ll = atoi(cmd->argv[3]);
 	SILC_PUT32_MSB(ll, tmp);
 	arg = tmp;
@@ -1221,6 +1229,12 @@ SILC_CLIENT_CMD_FUNC(cmode)
       if (add) {
 	mode |= SILC_CHANNEL_MODE_PASSPHRASE;
 	type = 4;
+	if (cmd->argc < 4) {
+	  cmd->client->ops->say(cmd->client, conn, 
+	       "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
+	  COMMAND_ERROR;
+	  goto out;
+	}
 	arg = cmd->argv[3];
 	arg_len = cmd->argv_lens[3];
       } else {
@@ -1231,6 +1245,12 @@ SILC_CLIENT_CMD_FUNC(cmode)
       if (add) {
 	mode |= SILC_CHANNEL_MODE_CIPHER;
 	type = 5;
+	if (cmd->argc < 4) {
+	  cmd->client->ops->say(cmd->client, conn, 
+	       "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
+	  COMMAND_ERROR;
+	  goto out;
+	}
 	arg = cmd->argv[3];
 	arg_len = cmd->argv_lens[3];
       } else {
@@ -1241,6 +1261,12 @@ SILC_CLIENT_CMD_FUNC(cmode)
       if (add) {
 	mode |= SILC_CHANNEL_MODE_HMAC;
 	type = 6;
+	if (cmd->argc < 4) {
+	  cmd->client->ops->say(cmd->client, conn, 
+	       "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
+	  COMMAND_ERROR;
+	  goto out;
+	}
 	arg = cmd->argv[3];
 	arg_len = cmd->argv_lens[3];
       } else {
@@ -1251,6 +1277,13 @@ SILC_CLIENT_CMD_FUNC(cmode)
       if (add) {
 	mode |= SILC_CHANNEL_MODE_FOUNDER_AUTH;
 	type = 7;
+
+	if (cmd->argc < 4) {
+	  cmd->client->ops->say(cmd->client, conn, 
+	       "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
+	  COMMAND_ERROR;
+	  goto out;
+	}
 
 	if (!strcasecmp(cmd->argv[3], "-pubkey")) {
 	  auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
@@ -1274,11 +1307,6 @@ SILC_CLIENT_CMD_FUNC(cmode)
       goto out;
       break;
     }
-  }
-
-  if (type && cmd->argc < 3) {
-    COMMAND_ERROR;
-    goto out;
   }
 
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);

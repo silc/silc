@@ -1881,6 +1881,9 @@ void silc_server_new_channel(SilcServer server,
 	return;
       }
 
+      /* Get the mode and set it to the channel */
+      channel->mode = silc_channel_get_mode(payload);
+
       /* Send the new channel key to the server */
       chk = silc_channel_key_payload_encode(id_len, id,
 					    strlen(channel->channel_key->

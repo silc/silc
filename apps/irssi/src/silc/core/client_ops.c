@@ -223,6 +223,23 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 		  SilcClientCommandContext cmd_context, int success,
 		  SilcCommand command)
 {
+  SILC_SERVER_REC *server = conn->context;
+
+  if (!success)
+    return;
+
+  switch(command) {
+  case SILC_COMMAND_INVITE:
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_INVITING,
+		       cmd_context->argv[2], 
+		       (cmd_context->argv[1][0] == '*' ?
+			(char *)conn->current_channel->channel_name :
+			(char *)cmd_context->argv[1]));
+    break;
+  default:
+    break;
+  }
 }
 
 /* Client info resolving callback when JOIN command reply is received.
@@ -431,18 +448,24 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       SilcChannelEntry channel;
       char *invite_list;
+      SilcArgumentPayload args;
+      int argc = 0;
       
       if (!success)
 	return;
       
       channel = va_arg(vp, SilcChannelEntry);
       invite_list = va_arg(vp, char *);
-      
+
+      args = silc_command_get_args(cmd_payload);
+      if (args)
+	argc = silc_argument_get_arg_num(args);
+
       if (invite_list)
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			   SILCTXT_CHANNEL_INVITE_LIST, channel->channel_name,
 			   invite_list);
-      else
+      else if (argc == 3)
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			   SILCTXT_CHANNEL_NO_INVITE_LIST, 
 			   channel->channel_name);

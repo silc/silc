@@ -33,6 +33,22 @@ Mon Jun 18 18:49:07 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  but check whether the channel by that name already exists.
 	  Affected file irssi/silc/core/silc-channels.c.
 
+	* Do not send the SERVER_SIGNOFF to router if the disconnected
+	  entity was the router.  Affected file silcd/server.c.
+
+	* Added the handling of the SERVER_SIGNOFF notify to the Irssi
+	  SILC client as it was missing from there.
+
+	  Added the handling of the KICK notify to the Irssi SILC client
+	  as it was missing.  Added "you have been kicked" message to
+	  Irssi SILC client's message modules formats.
+
+	  Added the handing of the KILL notify to the Irssi SILC client
+	  as it was missing.  Added the kill message module formats 
+	  as well.
+
+  	  The affected file is irssi/src/silc/core/silc-channels.c.
+
 Sun Jun 17 15:26:05 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the GETKEY command in the server to check also the

@@ -2654,13 +2654,20 @@ SILC_SERVER_CMD_FUNC(info)
   server_name = entry->server_name;
 
   /* Send the reply */
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INFO,
-						SILC_STATUS_OK, ident, 3,
-						2, idp->data, idp->len,
-						3, server_name, 
-						strlen(server_name),
-						4, server_info, 
-						strlen(server_info));
+  if (server_info)
+    packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INFO,
+						  SILC_STATUS_OK, ident, 3,
+						  2, idp->data, idp->len,
+						  3, server_name, 
+						  strlen(server_name),
+						  4, server_info, 
+						  strlen(server_info));
+  else
+    packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INFO,
+						  SILC_STATUS_OK, ident, 2,
+						  2, idp->data, idp->len,
+						  3, server_name, 
+						  strlen(server_name));
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
     

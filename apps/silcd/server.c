@@ -2406,7 +2406,8 @@ int silc_server_remove_clients_by_server(SilcServer server,
     SilcBuffer args;
 
     /* Send SERVER_SIGNOFF notify to our primary router */
-    if (!server->standalone && server->router) {
+    if (!server->standalone && server->router &&
+	server->router != entry) {
       args = silc_argument_payload_encode(1, argv, argv_lens,
 					  argv_types);
       silc_server_send_notify_args(server, 

@@ -386,7 +386,7 @@ static void event_motd(SILC_SERVER_REC *server, va_list va)
 
 static void event_channel_change(SILC_SERVER_REC *server, va_list va)
 {
-
+  /* Nothing interesting to do */
 }
 
 /*
@@ -395,7 +395,18 @@ static void event_channel_change(SILC_SERVER_REC *server, va_list va)
 
 static void event_server_signoff(SILC_SERVER_REC *server, va_list va)
 {
-
+  SilcClientEntry *clients;
+  uint32 clients_count;
+  int i;
+  
+  (void)va_arg(va, void *);
+  clients = va_arg(va, SilcClientEntry *);
+  clients_count = va_arg(va, uint32);
+  
+  for (i = 0; i < clients_count; i++)
+    signal_emit("message quit", 4, server, clients[i]->nickname,
+		clients[i]->username ? clients[i]->username : "", 
+		"server signoff");
 }
 
 /*
@@ -404,7 +415,25 @@ static void event_server_signoff(SILC_SERVER_REC *server, va_list va)
 
 static void event_kick(SILC_SERVER_REC *server, va_list va)
 {
+  SilcClientConnection conn = server->conn;
+  SilcClientEntry client_entry;
+  SilcChannelEntry channel_entry;
+  char *tmp;
 
+  client_entry = va_arg(va, SilcClientEntry);
+  tmp = va_arg(va, char *);
+  channel_entry = va_arg(va, SilcChannelEntry);
+  
+  if (client_entry == conn->local_entry) {
+    printformat_module("fe-common/silc", server, channel_entry->channel_name,
+		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_KICKED_YOU, 
+		       channel_entry->channel_name, tmp ? tmp : "");
+  } else {
+    printformat_module("fe-common/silc", server, channel_entry->channel_name,
+		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_KICKED, 
+		       client_entry->nickname,
+		       channel_entry->channel_name, tmp ? tmp : "");
+  }
 }
 
 /*
@@ -413,16 +442,25 @@ static void event_kick(SILC_SERVER_REC *server, va_list va)
 
 static void event_kill(SILC_SERVER_REC *server, va_list va)
 {
+  SilcClientConnection conn = server->conn;
+  SilcClientEntry client_entry;
+  SilcChannelEntry channel_entry;
+  char *tmp;
 
-}
-
-/*
- * "event ban". Someone was banned or ban list was modified.
- */
-
-static void event_ban(SILC_SERVER_REC *server, va_list va)
-{
-
+  client_entry = va_arg(va, SilcClientEntry);
+  tmp = va_arg(va, char *);
+  channel_entry = va_arg(va, SilcChannelEntry);
+  
+  if (client_entry == conn->local_entry) {
+    printformat_module("fe-common/silc", server, channel_entry->channel_name,
+		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_KILLED_YOU, 
+		       channel_entry->channel_name, tmp ? tmp : "");
+  } else {
+    printformat_module("fe-common/silc", server, channel_entry->channel_name,
+		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_KILLED, 
+		       client_entry->nickname,
+		       channel_entry->channel_name, tmp ? tmp : "");
+  }
 }
 
 /* PART (LEAVE) command. */
@@ -1117,7 +1155,6 @@ void silc_channels_init(void)
   signal_add("silc event server_signoff", (SIGNAL_FUNC) event_server_signoff);
   signal_add("silc event kick", (SIGNAL_FUNC) event_kick);
   signal_add("silc event kill", (SIGNAL_FUNC) event_kill);
-  signal_add("silc event ban", (SIGNAL_FUNC) event_ban);
   
   command_bind("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
   command_bind("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
@@ -1150,7 +1187,6 @@ void silc_channels_deinit(void)
 		(SIGNAL_FUNC) event_server_signoff);
   signal_remove("silc event kick", (SIGNAL_FUNC) event_kick);
   signal_remove("silc event kill", (SIGNAL_FUNC) event_kill);
-  signal_remove("silc event ban", (SIGNAL_FUNC) event_ban);
   
   command_unbind("part", (SIGNAL_FUNC) command_part);
   command_unbind("me", (SIGNAL_FUNC) command_me);
