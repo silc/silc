@@ -905,14 +905,14 @@ established by the SILC Key Exchange Protocol, described in [SILC3].
 Every packet sent from client to server, with exception of packets for
 channels, are encrypted with this session key.
 
-Channels has a channel key that are shared by every client on the channel.
-However, the channel keys are cell specific thus one cell does not know
-the channel key of the other cell, even if that key is for same channel.
-Channel key is also known by the routers and all servers that has clients
-on the channel.  However, channels MAY have channel private keys that
-are entirely local setting for the client.  All clients on the channel
-MUST know the channel private key before hand to be able to talk on the
-channel.  In this case, no server or router know the key for channel.
+Channels have a channel key that are shared by every client on the channel.
+However, the channel keys are cell specific thus one cell does not know 
+the channel key of the other cell, even if that key is for same channel.  
+Channel key is also known by the routers and all servers that have clients 
+on the channel.  However, channels MAY have channel private keys that are 
+entirely local setting for the client.  All clients on the channel MUST 
+know the channel private key beforehand to be able to talk on the
+channel.  In this case, no server or router knows the key for channel.
 
 Server shares secret symmetric session key with router which is
 established by the SILC Key Exchange Protocol.  Every packet passed from
