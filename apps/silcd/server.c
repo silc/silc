@@ -10,7 +10,7 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -28,6 +28,7 @@
 #include "server_internal.h"
 
 /* Static prototypes */
+SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 SILC_TASK_CALLBACK(silc_server_connect_router);
 SILC_TASK_CALLBACK(silc_server_connect_to_router);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_second);
@@ -37,7 +38,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second);
 SILC_TASK_CALLBACK(silc_server_accept_new_connection_final);
 SILC_TASK_CALLBACK(silc_server_packet_process);
 SILC_TASK_CALLBACK(silc_server_packet_parse_real);
+SILC_TASK_CALLBACK(silc_server_close_connection_final);
+SILC_TASK_CALLBACK(silc_server_free_client_data_timeout);
 SILC_TASK_CALLBACK(silc_server_timeout_remote);
+SILC_TASK_CALLBACK(silc_server_channel_key_rekey);
 SILC_TASK_CALLBACK(silc_server_failure_callback);
 SILC_TASK_CALLBACK(silc_server_rekey_callback);
 
@@ -518,22 +522,22 @@ void silc_server_start_key_exchange(SilcServer server,
 
   /* Perform key exchange protocol. silc_server_connect_to_router_second
      will be called after the protocol is finished. */
-  silc_protocol_alloc(SILC_PROTOCOL_SERVER_KEY_EXCHANGE, 
+  silc_protocol_alloc(SILC_PROTOCOL_SERVER_KEY_EXCHANGE,
 		      &protocol, proto_ctx,
 		      silc_server_connect_to_router_second);
   newsocket->protocol = protocol;
-      
+
   /* Register a timeout task that will be executed if the protocol
      is not executed within set limit. */
-  proto_ctx->timeout_task = 
-    silc_schedule_task_add(server->schedule, sock, 
+  proto_ctx->timeout_task =
+    silc_schedule_task_add(server->schedule, sock,
 			   silc_server_timeout_remote,
 			   server, server->config->key_exchange_timeout, 0,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 
   /* Register the connection for network input and output. This sets
-     that scheduler will listen for incoming packets for this connection 
+     that scheduler will listen for incoming packets for this connection
      and sets that outgoing packets may be sent to this connection as
      well. However, this doesn't set the scheduler for outgoing traffic,
      it will be set separately by calling SILC_SET_CONNECTION_FOR_OUTPUT,
@@ -554,7 +558,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 {
   SilcServerConnection sconn = (SilcServerConnection)context;
   SilcServer server = sconn->server;
-  SilcServerConfigConnParams *param = 
+  SilcServerConfigConnParams *param =
     (sconn->param ? sconn->param : &server->config->param);
 
   SILC_LOG_INFO(("Retrying connecting to a router"));
@@ -594,15 +598,15 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   SilcServer server = sconn->server;
   int sock;
 
-  SILC_LOG_INFO(("Connecting to the %s %s on port %d", 
-		 (sconn->backup ? "backup router" : "router"), 
+  SILC_LOG_INFO(("Connecting to the %s %s on port %d",
+		 (sconn->backup ? "backup router" : "router"),
 		 sconn->remote_host, sconn->remote_port));
 
   server->router_connect = time(NULL);
 
   /* Connect to remote host */
   sock = silc_net_create_connection(server->config->server_info->server_ip,
-				    sconn->remote_port, 
+				    sconn->remote_port,
 				    sconn->remote_host);
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not connect to router %s:%d",
@@ -618,7 +622,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   /* Continue with key exchange protocol */
   silc_server_start_key_exchange(server, sconn, sock);
 }
-  
+
 /* This function connects to our primary router or if we are a router this
    establishes all our primary routes. This is called at the start of the
    server to do authentication and key exchange with our router - called
@@ -643,7 +647,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
   /* Create the connections to all our routes */
   ptr = server->config->routers;
   while (ptr) {
-    
+
     SILC_LOG_DEBUG(("%s connection [%s] %s:%d",
 		    ptr->backup_router ? "Backup router" : "Router",
 		    ptr->initiator ? "Initiator" : "Responder",
@@ -667,20 +671,20 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       sconn->conn = ptr;
       sconn->param = ptr->param;
 
-      silc_schedule_task_add(server->schedule, fd, 
+      silc_schedule_task_add(server->schedule, fd,
 			     silc_server_connect_router,
-			     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
+			     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
     }
 
     if (!ptr->next)
       return;
-    
+
     ptr = ptr->next;
   }
 
   SILC_LOG_DEBUG(("No router(s), server will be standalone"));
-  
+
   /* There wasn't a configured router, we will continue but we don't
      have a connection to outside world.  We will be standalone server. */
   server->standalone = TRUE;
@@ -692,7 +696,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerKEInternalContext *ctx = 
+  SilcServerKEInternalContext *ctx =
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
   SilcServerConnection sconn = (SilcServerConnection)ctx->context;
@@ -3243,9 +3247,9 @@ static void silc_server_announce_get_servers(SilcServer server,
 
 	idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
 
-	*servers = silc_buffer_realloc(*servers, 
-				       (*servers ? 
-					(*servers)->truelen + idp->len : 
+	*servers = silc_buffer_realloc(*servers,
+				       (*servers ?
+					(*servers)->truelen + idp->len :
 					idp->len));
 	silc_buffer_pull_tail(*servers, ((*servers)->end - (*servers)->data));
 	silc_buffer_put(*servers, idp->data, idp->len);
@@ -3261,7 +3265,7 @@ static void silc_server_announce_get_servers(SilcServer server,
   }
 }
 
-static SilcBuffer 
+static SilcBuffer
 silc_server_announce_encode_notify(SilcNotifyType notify, SilcUInt32 argc, ...)
 {
   va_list ap;
@@ -3270,7 +3274,7 @@ silc_server_announce_encode_notify(SilcNotifyType notify, SilcUInt32 argc, ...)
   va_start(ap, argc);
   p = silc_notify_payload_encode(notify, argc, ap);
   va_end(ap);
- 
+
   return p;
 }
 
@@ -3341,9 +3345,9 @@ static void silc_server_announce_get_clients(SilcServer server,
 
 	idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
-	*clients = silc_buffer_realloc(*clients, 
-				       (*clients ? 
-					(*clients)->truelen + idp->len : 
+	*clients = silc_buffer_realloc(*clients,
+				       (*clients ?
+					(*clients)->truelen + idp->len :
 					idp->len));
 	silc_buffer_pull_tail(*clients, ((*clients)->end - (*clients)->data));
 	silc_buffer_put(*clients, idp->data, idp->len);
@@ -3353,9 +3357,9 @@ static void silc_server_announce_get_clients(SilcServer server,
 	tmp = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_UMODE_CHANGE,
 						 2, idp->data, idp->len,
 						 mode, 4);
-	*umodes = silc_buffer_realloc(*umodes, 
-				      (*umodes ? 
-				       (*umodes)->truelen + tmp->len :  
+	*umodes = silc_buffer_realloc(*umodes,
+				      (*umodes ?
+				       (*umodes)->truelen + tmp->len :
 				       tmp->len));
 	silc_buffer_pull_tail(*umodes, ((*umodes)->end - (*umodes)->data));
 	silc_buffer_put(*umodes, tmp->data, tmp->len);
@@ -3433,7 +3437,7 @@ void silc_server_announce_get_channel_topic(SilcServer server,
     chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
     *topic = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_TOPIC_SET, 2,
 						chidp->data, chidp->len,
-						channel->topic, 
+						channel->topic,
 						strlen(channel->topic));
     silc_buffer_free(chidp);
   }
@@ -3664,7 +3668,7 @@ void silc_server_announce_channels(SilcServer server,
     for (i = 0; i < channel_users_modes_c; i++) {
       if (!channel_users_modes[i])
         continue;
-      silc_buffer_push(channel_users_modes[i], 
+      silc_buffer_push(channel_users_modes[i],
 		       channel_users_modes[i]->data - 
 		       channel_users_modes[i]->head);
       SILC_LOG_HEXDUMP(("channel users modes"), channel_users_modes[i]->data, 
@@ -3687,15 +3691,15 @@ void silc_server_announce_channels(SilcServer server,
       if (!channel_topics[i])
 	continue;
 
-      silc_buffer_push(channel_topics[i], 
-		       channel_topics[i]->data - 
+      silc_buffer_push(channel_topics[i],
+		       channel_topics[i]->data -
 		       channel_topics[i]->head);
-      SILC_LOG_HEXDUMP(("channel topic"), channel_topics[i]->data, 
+      SILC_LOG_HEXDUMP(("channel topic"), channel_topics[i]->data,
 		       channel_topics[i]->len);
       silc_server_packet_send_dest(server, remote,
 				   SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
 				   channel_ids[i], SILC_ID_CHANNEL,
-				   channel_topics[i]->data, 
+				   channel_topics[i]->data,
 				   channel_topics[i]->len,
 				   FALSE);
       silc_buffer_free(channel_topics[i]);
@@ -3927,11 +3931,11 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
     return server->router->connection;
   }
 
-  /* We are router and we will perform route lookup for the destination 
+  /* We are router and we will perform route lookup for the destination
      and send the packet to fastest route. */
   if (server->server_type == SILC_ROUTER && !server->standalone) {
     /* Check first that the ID is valid */
-    client = silc_idlist_find_client_by_id(server->global_list, id, 
+    client = silc_idlist_find_client_by_id(server->global_list, id,
 					   TRUE, NULL);
     if (client) {
       SilcSocketConnection dst_sock;
@@ -3975,14 +3979,14 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
     cid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
     id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
     name_len = strlen(channel->channel_name);
-    
+
     len = 4 + name_len + id_len + 4;
-    buffer = silc_buffer_realloc(buffer, 
+    buffer = silc_buffer_realloc(buffer,
 				 (buffer ? (buffer)->truelen + len : len));
     silc_buffer_pull_tail(buffer, ((buffer)->end - (buffer)->data));
     silc_buffer_format(buffer,
 		       SILC_STR_UI_SHORT(name_len),
-		       SILC_STR_UI_XNSTRING(channel->channel_name, 
+		       SILC_STR_UI_XNSTRING(channel->channel_name,
 					    name_len),
 		       SILC_STR_UI_SHORT(id_len),
 		       SILC_STR_UI_XNSTRING(cid, id_len),
@@ -4014,7 +4018,7 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
   client = silc_idlist_find_client_by_id(server->local_list, client_id,
 					 TRUE, NULL);
   if (!client) {
-    client = silc_idlist_find_client_by_id(server->global_list, 
+    client = silc_idlist_find_client_by_id(server->global_list,
 					   client_id, TRUE, NULL);
     if (!client && server->server_type == SILC_ROUTER)
       return NULL;
