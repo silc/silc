@@ -75,14 +75,14 @@ Commands:
     sender with the hostname and port of your key agreement
     server with this command.
 
-    If the hostname and port are ommitted, the irssi boolean
+    If the hostname and port are ommitted, the boolean
     variable use_auto_addr will be examined.  If it is set
     the value of auto_bind_ip will be used as the IP address
     to listen for the return reply, the value of auto_public_ip
     will be the IP address sent to the remote client, and the
     auto_bind_port will be the port value to be bound to and
     sent to the remote client.  If auto_public_ip is unset, but
-    auto_bind_ip is set, irssi will send the auto_bind_ip
+    auto_bind_ip is set, silc client will send the auto_bind_ip
     variable's value to the remote client.
 
   negotiate  [<hostname> [<port>]]

@@ -1,3 +1,34 @@
+Sun Oct  5 20:22:08 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Backup router protocol version 1.2 implemented.  Testing still
+	  required.  Affected files in silcd/server_backup.[ch], server.c,
+	  packet_receive.c and server_internal.h.
+
+Sun Oct  5 12:36:37 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* silc_client_send_[channel|private]_message now return TRUE
+	  or FALSE.  Affected file lib/silcclien/client_channel.c and
+	  client_prvmsg.c.
+
+Thu Oct  2 17:03:09 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for explicit nickname in INVITE and BAN processing
+	  during join as well (and don't expect only wildcards in
+	  invite/ban strings).  Affected file silcd/command.c.
+
+	* Fixed the INVITE and BAN by public key.  The public key saved
+	  is the PK payload (as specified) not the raw data.  Affected
+	  file silcd/server_util.c.
+
+Wed Oct  1 20:29:06 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* UTF-8 text message support for actions and notices in SILC
+	  Client.  Affected file irssi/src/silc/core/client_ops.c.
+
+	* silc_get_username and silc_get_real_name now returns sensible
+	  data on Win32.  Patch by Toni Willberg.  Affected file is
+	  lib/silcutil/win32/silcwin32util.c.
+
 Sun Aug 24 23:35:19 CEST 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Provide a signal handler to send MIME encoded messages and emit
@@ -6,8 +37,8 @@ Sun Aug 24 23:35:19 CEST 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	  A sample perl script will be supplied at a later point.
 
-	  Affected files are irssi/docs/signals.txt, 
-	  irssi/src/silc/core/client_ops.[ch], 
+	  Affected files are irssi/docs/signals.txt,
+	  irssi/src/silc/core/client_ops.[ch],
 	  irssi/src/silc/core/silc-{channels,servers}.c
 
 Sun Aug 24 12:58:30 CEST 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
@@ -17,6 +48,34 @@ Sun Aug 24 12:58:30 CEST 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
 	  exceeds a specified limit.
 
 	  Affected files are irssi/src/silc/core/silc-{lag,core}.c.
+
+Mon Aug 11 17:14:17 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Remove the channel auth list in normal server if router
+	  encofrces its list during connecting.  Send notify to channel
+	  to remove the mode to remove the list.  Affected files are
+	  silcd/server_util.c and silcd/packet_receive.c.
+
+Wed Aug  6 14:52:04 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for channel public keys.  Updated protocol specs
+	  and implemented it.  Affected files are
+	  silcd/command.c, command_reply.c, lib/silcclient/command.c,
+	  lib/silcclient/command_reply.c.
+
+Wed Jul 23 12:17:01 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Ignore SIGXFSZ and SIGXCPU signals in server.  They can
+	  terminate the process on Linux.  Affected file silcd/silcd.c.
+
+Mon Jun  2 19:13:27 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for NULL buffer in silc_buffer_clear.  Affected file
+	  is lib/silcutil/silcbuffer.h.
+
+	* Simplified the backup router protocol by removing the _GLOBAL
+	  types.  Updated protocol specs and the code.  Affected files
+	  are silcd/server_backup.[ch].
 
 Thu Apr 24 19:50:25 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
@@ -228,13 +287,13 @@ Thu Dec 12 23:22:50 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  lib/silcutil/silcschedule.c.
 
 	* Changed Win32 implementation of SilcThread to use modern
-	  Win32 interface.  Affected file is 
+	  Win32 interface.  Affected file is
 	  lib/silcutil/win32/silcwin32thread.c  A patch by Mikko L.
 
 Thu Dec 12 12:06:59 CET 2002 Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Don't print signed messages when sending failed.  Affected files
-	  irssi/src/silc/core/silc-[servers.c/commands.h] 
+	  irssi/src/silc/core/silc-[servers.c/commands.h]
 
 	* Send adquate signal when founding a channel by joing it.  Affect
 	  file irssi/src/silc/core/client_ops.c
@@ -265,7 +324,7 @@ Wed Dec 11 10:01:26 CET 2002 Pekka Riikonen <priikone@silcnet.org>
 	* Fixed double free in SKE library error hadling when signature
 	  error occurred.  Affected file lib/silcske/silcske.c.
 
-	* Save the fingerprint to new SilcClientEntry after changing 
+	* Save the fingerprint to new SilcClientEntry after changing
 	  nickname.  Affected file lib/silcclient/client_notify.c.
 
 	* Print SIGNOFF in Irssi SILC client only if the nickname is
@@ -341,7 +400,7 @@ Wed Dec  4 21:08:52 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Fixed bugs in Irssi's theme parsing. Affected files
 	  irssi/src/fe-common/core/themes.c
-	  
+
 Wed Dec  4 18:29:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Calculate the correct length for signed messages before
@@ -474,7 +533,7 @@ Thu Nov 28 17:17:11 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 	* Do reverse lookups for server when /connecting. Affected files
 	  irssi/silc.conf, irssi/src/core/servers.c, irssi/src/core/network.c,
 	  irssi/src/core/net-nonblock.*
-	
+
 Thu Nov 28 16:19:18 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added library versioning for shared libraries.  Affected
@@ -641,7 +700,7 @@ Thu Nov 14 09:44:54 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* SILC_UMODE_GONE changes are now propagated correctly to the
 	  Irssi client. Closes #54
-	
+
 Tue Nov 12 19:42:18 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Fixed example in /HELP KEY
@@ -743,7 +802,7 @@ Wed Nov  6 17:18:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  the command call simpler for the application.  The library
 	  now handles the command line parsing, command finding and
 	  execution.  Application only needs to call the function
-	  with the command line.  Affected files are 
+	  with the command line.  Affected files are
 	  lib/silcclient/silcclient.h, command.[ch].
 
 	* Fixed silc_get_input to NULL-terminate the returned input.
@@ -820,7 +879,7 @@ Sat Nov  2 12:53:09 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed connection closing in client library to not crash.
 	  Moved the connection freeing totally to function
-	  silc_clinet_del_connection.  Affected file 
+	  silc_clinet_del_connection.  Affected file
 	  lib/silcclinet/client.c.
 
 Fri Nov  1 18:57:02 EET 2002  Pekka Riikonen <priikone@silcnet.org>
@@ -880,7 +939,7 @@ Sun Oct 27 11:44:32 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  usage.  Affected files lib/silcclient/client_internal.h
 	  lib/silcclient/silcclient.h.
 
-	* Fixed a bug in query resolving in server.  Used wrong 
+	* Fixed a bug in query resolving in server.  Used wrong
 	  variable in a for loop and crashed.  Affected file is
 	  silcd/server_query.c.
 
@@ -901,7 +960,7 @@ Sun Oct 27 11:44:32 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  over.  Affected file silcd/packet_receive.c.  Bug #37.
 
 	* Resolve incomplete client entrys in CUMODE_CHANGE and
-	  CMODE_CHANGE notifys.  Affected file is 
+	  CMODE_CHANGE notifys.  Affected file is
 	  lib/silcclient/client_notify.c.  Bug #42.
 
 Thu Oct 24 12:22:35 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
@@ -1051,7 +1110,7 @@ Mon Oct 14 17:55:44 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed attribute encoding and decoding bugs.  Affected
 	  files lib/silccore/silcattrs.[ch].
 
-	* Added ATTR command to Irssi SILC Client which is used to	
+	* Added ATTR command to Irssi SILC Client which is used to
 	  manage user's Requested Attributes sending and values for
 	  WHOIS command.  Affected files around Irssi SILC client.
 
@@ -1075,7 +1134,7 @@ Fri Oct 11 23:52:17 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  Affected files lib/silcske/silcske.c, silcske_status.h and
 	  payload.c.
 
-	* Save the PKCS key length even if only private key is set to	
+	* Save the PKCS key length even if only private key is set to
 	  SilcPKCS.  Affected file lib/silccrypt/silcpkcs.[ch] and rsa.c.
 
 	* Fixed the usage of silc_pkcs_get_key_len since it returns the
@@ -1297,7 +1356,7 @@ Sat Sep  7 16:02:09 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  silcd/packet_receive.c.
 
 	* From now on distribution versions are used as protocol versions
-	  instead of by default using the Toolkit base version as protocol 
+	  instead of by default using the Toolkit base version as protocol
 	  version.  Affected file prepare.
 
 	* Do not set the locally resolved hostname for local client
@@ -1419,7 +1478,7 @@ Sun Jun 30 01:30:22 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed pending command deletion in server and client library
 	  to check the whole list instead of breaking after first found.
-	  The affected files are silcd/command.[ch] and 
+	  The affected files are silcd/command.[ch] and
 	  lib/silcclient/command.[ch].
 
 Sat Jun 29 17:40:12 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
@@ -1739,7 +1798,7 @@ Wed Jun 19 17:46:31 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  It expected it to always be only client and ignored the
 	  notify.  Affected file silcd/packet_recieve.c.
 
-	* Removed some (unnecessary) debug printing from 
+	* Removed some (unnecessary) debug printing from
 	  lib/silccore/silcid.c and lib/silccore/silcargument.c.
 
 	* Do not force CMODE_CHANGE when server is announcing new
@@ -1752,7 +1811,7 @@ Wed Jun 19 17:46:31 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  fixes some problems too.  Affected file silcd/packet_receive.c.
 
 	* Fixed SERVER_SIGNOFF sending to local clients.  It was
-	  totally broken and sent the notify to all local clients, 
+	  totally broken and sent the notify to all local clients,
 	  instead of only to those that was on same channel as the
 	  signing off clients.  Affected file silcd/server_util.c.
 
@@ -2076,7 +2135,7 @@ Mon May  6 19:46:12 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  when that mode is set.  Protocol TODO #17.  Affected
 	  files are silcd/server.[ch], server_util.[ch],
 	  silcd/command.c, silcd/packet_receive.c and
-	  lib/silcclient/command.c. 
+	  lib/silcclient/command.c.
 
 Fri May  3 18:36:51 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
@@ -2103,7 +2162,7 @@ Fri May  3 11:37:10 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  silcd/command.c and silcd/command_reply.c.
 
 	* Fixed client info resolving on LEAVE command in client
-	  library to not crash.  Affected file is 
+	  library to not crash.  Affected file is
 	  lib/silcclient/client_notify.c.
 
 Thu May  2 08:45:11 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
@@ -2158,7 +2217,7 @@ Sun Apr 21 19:44:38 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  Moved the silc_client_command_status_messages table to the
 	  lib/silcutil/silcutil.c and added new funtion
 	  silc_get_status_message, which deprecates function
-	  silc_client_status_message.  Affected files are 
+	  silc_client_status_message.  Affected files are
 	  lib/silccore/silcstatus.h, lib/silcclient/command_reply.[ch],
 	  lib/silcutil/silcutil.[ch].
 
@@ -2248,14 +2307,14 @@ Mon Apr 15 19:57:57 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined the use of extra WHOIS attributes in WHOIS command.
 	  The <Requested Attributes> (defined in a separate document)
-	  can be used to request additional information about user 
+	  can be used to request additional information about user
 	  not returned by standard WHOIS command.  Defined that server
 	  can send WHOIS command directly to client.  Client provides
  	  the requested attributes to the server.  Updated the protocol
 	  specs.  Protocol TODO #4.  Implementation is not done yet
           (Protocol TODO #24).
 
-	* Renamed function silc_client_command_status_message to	
+	* Renamed function silc_client_command_status_message to
 	  silc_client_status_message.  Affected files are
 	  lib/silcclient/command_reply.[ch].
 
@@ -2281,7 +2340,7 @@ Sat Apr 13 13:09:24 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 Fri Apr 12 20:09:08 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added resolve_cmd_ident field to the SilcClientEntry structure
-	  too so that if the entry is for example being resolved so 
+	  too so that if the entry is for example being resolved so
 	  another command may attach to the same pending command reply
 	  without requiring to resolve the same entry again.  Added
           support for adding multiple pending commands for one
@@ -2350,7 +2409,7 @@ Tue Apr  9 17:15:42 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  Private Message Key flag is set (using private keys to protect
 	  private messages).  Updated protocol specs and code in client
 	  and server and core library.  Protocol TODO #23.  Affected
-	  files are lib/silccore/silcmode.h, silcd/server.[ch], 
+	  files are lib/silccore/silcmode.h, silcd/server.[ch],
 	  irssi/src/silc/core/client_ops.c, silcd/packet_receive.c,
 	  irssi/docs/help/in/umode.in, lib/silcclient/command.c.
 
@@ -2396,7 +2455,7 @@ Mon Apr  8 17:00:41 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Added more IM-like features by introducing new user modes
 	  for setting various presence information.  Added new modes:
 	  INDISPOSED, BUSY, PAGE, HYPER and ROBOT.  Updated protocol
-          specs and code.  Protocol TODO #19. Affected files are 
+          specs and code.  Protocol TODO #19. Affected files are
           lib/silccore/silcmode.h, irssi/src/silc/core/client_ops.c,
 	  irssi/docs/help/in/umode.in and lib/silcclient/command.c.
 
@@ -2405,7 +2464,7 @@ Sun Apr  7 17:07:59 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Added STATS command to the protocol after all, to return
 	  various statistical information about the network.  It can
 	  be used by clients to retrieve statistical information, and
-	  servers may use it to to fetch cell and network wide 
+	  servers may use it to to fetch cell and network wide
 	  statistics from router.  Updated the protocol specs and
 	  implemented it to the server.  Protocol TODO #16.
 	  Affected files are lib/silccore/silccommand, silcd/command.[ch],
@@ -2414,7 +2473,7 @@ Sun Apr  7 17:07:59 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 Sat Apr  6 17:08:58 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* The LIST command reply in client libary now adds new channel
-	  entry if the returned channel doesn't exist yet in cache, 
+	  entry if the returned channel doesn't exist yet in cache,
 	  and returns the channel entry to the application in the
 	  command_reply client operation.  Affected file is
 	  lib/silcclient/command_reply.c.
@@ -2443,12 +2502,12 @@ Fri Apr  5 16:03:03 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined that the security property fields in SKE SHOULD be
 	  UTF-8 encoded, defined that version string MUST be US-ASCII
-	  encoded, defined that passphrases sent in connection 
+	  encoded, defined that passphrases sent in connection
 	  authentication protocol MUST be UTF-8 encoded.  Implemented
 	  these to the client and server.  Defined also that other
 	  passphrases sent in the protocol MUST be UTF-8 encoded.
-	  Affected files are lib/silcske/silcske.c, 
-	  lib/silcclient/protocol.c, silcd/protocol.c, 
+	  Affected files are lib/silcske/silcske.c,
+	  lib/silcclient/protocol.c, silcd/protocol.c,
 	  silcd/serverconfig.c, and lib/silccore/silcauth.c.
 
 	* Changed the silc_client_close_connection interface to not
@@ -2473,7 +2532,7 @@ Wed Apr  3 16:24:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Added the killer's client ID to the KILLED notify and added
 	  it to protocol specs and implemented it to client and server.
 	  Protocol TODO #13.  Affected files are silcd/command.c,
-	  silcd/packet_receive.c, packet_send.[ch], 
+	  silcd/packet_receive.c, packet_send.[ch],
 	  lib/silcclient/client_notify.c, irssi/src/silc/core/client_ops.c.
 	  The killer's client entry is now returned to application in
 	  the `notify' client operation.
@@ -2507,7 +2566,7 @@ Wed Apr  3 16:24:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	  Changed the client library to return the message length
 	  to application as well in the channel_message and private_message
-	  client operations.  Affected files are 
+	  client operations.  Affected files are
 	  lib/silcclient/client_prvmsg, lib/silcclient/client_channel.c,
 	  lib/silcclient/silcclient.h, irssi/src/silc/core/client_ops.c,
 	  and lib/silcclient/client_ops_example.c.
@@ -2524,7 +2583,7 @@ Wed Apr  3 16:24:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Deprecated all administrative commands from SILC protocol
 	  since they are highly implementation specific commands.
-	  Updated protocol specs.  Moved the old commands in 
+	  Updated protocol specs.  Moved the old commands in
 	  implementations to private range of command types.  Affected
 	  files are silcd/command.c, lib/silcclient/command.c and
 	  lib/silcclient/command_reply.c.  Protocol TODO #8.
@@ -2535,7 +2594,7 @@ Wed Apr  3 16:24:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 Wed Apr  3 09:57:47 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_PROTOCOLVERSION macro to check protocol version
-	  of a socket connection.  The affected file is 
+	  of a socket connection.  The affected file is
 	  lib/silcutil/silcsockconn.h.
 
 	* Added better error logging in rekey protocol.  Affected file
@@ -2550,9 +2609,9 @@ Wed Apr  3 09:57:47 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 Tue Apr  2 14:55:06 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Some client implementations quit network by doing first LEAVE
-	  and then immediately SIGNOFF (like Bombyx).  We now do check 
-	  after a short time after LEAVE notify and check whether the 
-	  client is still valid after LEAVE, and if not we remove it from 
+	  and then immediately SIGNOFF (like Bombyx).  We now do check
+	  after a short time after LEAVE notify and check whether the
+	  client is still valid after LEAVE, and if not we remove it from
 	  cache.  Affected file is lib/silcclient/client_notify.c.
 
 Tue Apr  2 13:39:04 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
@@ -2671,7 +2730,7 @@ Thu Mar 28 17:01:43 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed the silc_log_quick handling in the logging routines.
 	  It didn't log quickly when it was TRUE.  Affected file is
 	  lib/silcutil/silclog.c.  Also the flush delay was set even
-	  if it was 0 in config file.  Affected file is 
+	  if it was 0 in config file.  Affected file is
 	  silcd/serverconfig.c.
 
 	* Added support for changing key pair of the server in rehash.
@@ -2893,7 +2952,7 @@ Tue Mar 19 16:32:43 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  called the application does not call silc_packet_send_prepare
 	  because the library will call it automatically.  These
 	  interfaces now also return a reference to the outgoing buffer
-	  which includes the assembled packet, which the application can 
+	  which includes the assembled packet, which the application can
 	  use to encrypt the packet.
 
 	  Affected files are lib/silccore/silcpacket.[ch],
@@ -2908,7 +2967,7 @@ Tue Mar 19 16:32:43 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 Mon Mar 18 21:00:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added macro SILC_PACKET_DATALEN which can be used during
-	  packet assembling to check whether the data to be added to	
+	  packet assembling to check whether the data to be added to
 	  the packet will fit to SILC_PACKET_MAX_LEN.  If not the data
 	  len is truncated until it fits it.
 
@@ -2934,7 +2993,7 @@ Sun Mar 17 19:26:16 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added the deleting of server's own ID cache entry to the
 	  silc_server_free function.  Free also everything else that
-	  has been allocated in silc_server_init.  The affected file 
+	  has been allocated in silc_server_init.  The affected file
 	  is silcd/server.c.
 
 Sun Mar 17 15:44:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
@@ -2947,7 +3006,7 @@ Sun Mar 17 15:44:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Added new configuration params: version_protocol, version_software
 	  and version_software_vendor to specify what version the remote
 	  host must at least be to be able to connect to server.  The vendor
-	  string can be regex matched too.  Added new function 
+	  string can be regex matched too.  Added new function
 	  silc_server_connection_allowed to check maximum number of allowed
 	  connections, and allowed versions for incoming connections.
 	  Affected files are silcd/server.c, server_util.[ch] and
@@ -2965,7 +3024,7 @@ Sun Mar 17 10:24:50 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  Renamed silc_schedule_wakeup_init and silc_schedule_wakeup_uninit
 	  to silc_schedule_internal_init and silc_schedule_internal_uninit.
 	  Added new platform specific routines
-	  silc_schedule_internal_signals_[un]block and 
+	  silc_schedule_internal_signals_[un]block and
 	  silc_schedule_internal_signal_[un]register.
 
 	  Added new functions to SILC Schedule API:
@@ -3029,7 +3088,7 @@ Sat Mar 16 18:04:30 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  it was mistakenly updated to SILC Protocol 1.0 even though it
 	  is to be included in 1.1.  Since it is not in 1.0 it is not
 	  mandatory, and this fix now handles it only if it is provided,
-	  and it is not error if it is not provided.  Affected file 
+	  and it is not error if it is not provided.  Affected file
 	  lib/silcclient/client_notify.c.
 
 Sat Mar 16 09:07:27 EET 2002  Pekka Riikonen <priikone@silcnet.org>
@@ -3104,7 +3163,7 @@ Sun Mar 10 20:07:49 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed the server to check correctly the amount of connections
 	  from single host, by checking also the type of the connection.
 	  Fixed also the comparison of number of connections and number
-	  of allowed connections.  Affected files are silcd/server.c, 
+	  of allowed connections.  Affected files are silcd/server.c,
 	  server_util.[ch].
 
 Fri Mar  8 17:16:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
@@ -3333,7 +3392,7 @@ Thu Feb 14 22:03:58 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  reconnect_interval_max, reconnect_keep_trying and
 	  require_reverser_lookup.  Added ConnectionParam block, and
 	  implemented the connection parameters when connecting as
-	  initiator and when accepting connections as responder. 
+	  initiator and when accepting connections as responder.
 
 	  Added CONFIG_IS_DOUBLE macro in config file parsing, to check
 	  whether given configuration value has been given already.
@@ -3370,7 +3429,7 @@ Wed Feb 13 20:51:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Removed doc/example_silc.conf.in since it is redundant.
 	  The make install will now install irssi/silc.conf file.
 
-	* Added new Passphrase and Publickey authentication methods to	
+	* Added new Passphrase and Publickey authentication methods to
 	  config file, allowing both public key and passphrase based
 	  authentication to be set at the same time.
 
@@ -3434,7 +3493,7 @@ Sun Feb  3 17:20:52 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the file transfer's key agreement payload to include
 	  zero port also if the hostname is NULL because it could not
-	  be bound.  
+	  be bound.
 
 	  Call file transfer monitor callback now also if error occurs
 	  during key agreement protocol.
@@ -3503,12 +3562,12 @@ Thu Jan 31 23:34:33 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 Thu Jan 31 19:06:22 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
-	* Added function silc_client_add_channel, 
+	* Added function silc_client_add_channel,
 	  silc_client_replace_channel_id, and removed functions
 	  silc_client_new_channel_id and silc_idlist_get_channel_by_id
 	  from client library.
 
-	* Added cross reference of the joined channels to the 
+	* Added cross reference of the joined channels to the
 	  SilcClientEntry, and changed the SilcChannelEntry's
 	  users list to SilcHashTable.  The affected files are
 	  lib/silcclient/idlist.[ch].
@@ -3525,7 +3584,7 @@ Thu Jan 31 19:06:22 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Changed all hash table traversing to call the new
 	  silc_hash_table_list_reset in server and in client library.
 
-	* Added function silc_client_on_channel to return the 
+	* Added function silc_client_on_channel to return the
 	  SilcChannelUser entry if the specified client entry is joined
 	  on the specified channel.  This is exported to application as
 	  well.  Affected files lib/silcclient/client_channel.c, silcapi.h.
@@ -3587,7 +3646,7 @@ Mon Jan 28 17:49:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the CHANNEL_CHANGE notify to re-announce the channel
 	  which ID was changed.  This way the router will send the
-	  user list for the channel again, and server won't be in 
+	  user list for the channel again, and server won't be in
 	  desync in some rare circumstances.  Affected file is
 	  silcd/packet_receive.c.
 
@@ -3667,7 +3726,7 @@ Mon Jan 21 19:07:53 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_client_start_key_exchange_cb and lookup the
 	  remote hostname and IP address before starting the key
-	  exchange with server.  The affected file is 
+	  exchange with server.  The affected file is
 	  lib/silcclient/client.c.
 
 	* The server's public key is now saved using the IP address
@@ -3708,7 +3767,7 @@ Thu Jan 17 18:59:11 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  context.  When error occurs during socket operation (read
 	  or write) the error is saved.  Added also new function
 	  silc_socket_get_error to return human readable socket error
-	  message.  Affected files are lib/silcutil/silcsockconn.[ch], 
+	  message.  Affected files are lib/silcutil/silcsockconn.[ch],
 	  lib/silcutil/unix/silcunixsockconn.c, and
 	  lib/silcutil/win32/silcwin32sockconn.c.
 
@@ -3717,12 +3776,12 @@ Thu Jan 17 18:59:11 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the `created' channel information sending from router
 	  to server in JOIN command.  Checks now whether the channel
-	  really was created or not and set it according that. 
+	  really was created or not and set it according that.
 
 	  Fixed the JOIN command to use the client entry's current
 	  ID during the joining procedure instead of the one it sent
 	  in the command (it is checked though), since it can change
-	  between the packet processing and command processing, and 
+	  between the packet processing and command processing, and
 	  would just case unnecessary pain in the client end.  Affected
 	  file silcd/command.c.
 
@@ -3875,7 +3934,7 @@ Thu Dec 20 16:14:52 CET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	  The server now checks that if unauthenticated connection
 	  sends data and its processing fails the server will close
-	  the connection since it could be a malicious flooder. 
+	  the connection since it could be a malicious flooder.
 
 	  Affected files lib/silccore/silcpacket.[ch], silcd/server.c.
 
@@ -3886,20 +3945,20 @@ Wed Dec 19 21:31:25 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	  too much useless log).  Affected file lib/silcutil/silclog.c.
 
 Wed Dec 19 18:21:51 CET 2001  Johnny Mnemonic <johnny@themnemonic.org>
- 
+
  	* Made the silc_server_daemonise() function more readable.
  	  Affected file silcd/server.c.
- 
+
  	* Pid file is now optional, the user may comment it out from
  	  the config file. Removed define SILC_SERVER_PID_FILE, we
  	  don't need a default any longer.  Affected file
  	  configure.in.pre, lib/Makefile.am.pre.
- 
+
  	* Make some use of the pid file. The server now dies at startup
  	  if it detects a valid pid file on his path. The server would
  	  die anyway in this circumstance, because of the bind() failure.
  	  Affected file silcd/silcd.c.
- 
+
  	* No longer compiling lib/dotconf.
 
 Mon Dec 17 18:24:27 EET 2001  Pekka Riikonen <priikone@silcnet.org>
@@ -3909,7 +3968,7 @@ Mon Dec 17 18:24:27 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fied the NICK_CHANGE notify to add the new client entry
 	  even it is resolved.  This removes an <[unknown]> nick
-	  thingy bug in the client.  Affected file is 
+	  thingy bug in the client.  Affected file is
 	  lib/silcclient/client_notify.c.
 
 	* Do not try to allocate 0 bytes (efence does not like it)
@@ -4065,7 +4124,7 @@ Sun Dec  2 23:29:07 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	  in WHOIS or IDENTIFY from router, and it is global client,
 	  we'll check whether it is on some channel.  If it is not
 	  then we cannot be sure about its validity and will resolve it
-	  from router.  Fixes a bug in WHOIS and IDENTIFY.  Affected 
+	  from router.  Fixes a bug in WHOIS and IDENTIFY.  Affected
 	  file silcd/command.c.
 
 	* Search channel by name (if possible) rather than by ID
@@ -4080,7 +4139,7 @@ Sun Dec  2 13:48:46 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Implemented the <founder auth> payload handling in the JOIN
 	  command.  If provided all conditions for channel joining
-	  except requirement to provide correct passphrase can be 
+	  except requirement to provide correct passphrase can be
 	  overrided by the channel founder.  Updated the protocol specs.
 	  Affected file silcd/command.c.
 
@@ -4213,10 +4272,10 @@ Sun Nov 25 18:01:45 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	  IP/hostname.  Affected file lib/silcutil/silcnet.c.
 
 	* Defined <founder auth> argument to the SILC_COMMAND_JOIN
-	  command.  It can be used to gain founder privileges at 
+	  command.  It can be used to gain founder privileges at
 	  the same time when joining the channel.
 
-	  Defined that the SILC_NOTIFY_TYPE_KICKED send the 
+	  Defined that the SILC_NOTIFY_TYPE_KICKED send the
 	  kicker's client ID as well.  Updated protocol specs.
 
 	  Defined that the server must send SILC_COMMAND_IDENTIFY
@@ -4251,7 +4310,7 @@ Sat Nov 24 20:08:22 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 Fri Nov 23 23:30:59 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Pid file configuration, and server's config file fixes
-	  patch by toma.  Updated CREDITS file. 
+	  patch by toma.  Updated CREDITS file.
 
 Sun Nov 18 01:34:41 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
@@ -4342,7 +4401,7 @@ Sun Nov 11 10:49:10 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	  Should fix /NAMES bit more.  The affected file is
 	  irssi/src/silc/core/silc-channels.c.
 
-	* Added `fingerprint' field to the SilcIDListData in the 
+	* Added `fingerprint' field to the SilcIDListData in the
 	  silcd/idlist.h to hold the fingerprint of the client's
 	  public key.
 
@@ -4524,7 +4583,7 @@ Sat Nov  3 22:04:00 PST 2001  Brian Costello <bc@mksecure.com>
 
 Sat Nov  3 17:48:55 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
-	* Added silc_pkcs_public_key_compare to compare two 
+	* Added silc_pkcs_public_key_compare to compare two
 	  public keys.  Affected file lib/silccrypt/silcpkcs.[ch].
 
 	* Check that the client who set the founder mode on the
@@ -4542,7 +4601,7 @@ Fri Nov  2 18:52:08 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  client library.  Affected file lib/silcclient/client.c.
 
 	* Fixed the silc_client_packet_parse to not to increase
-	  the packet sequence number if the conn->sock and the 
+	  the packet sequence number if the conn->sock and the
 	  current socket connection is not same.  This can happen
 	  for example during key agreement when the conn includes
 	  multiple socket connections (listeners).  Affected file
@@ -4573,7 +4632,7 @@ Thu Nov  1 22:10:07 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  corresponding private key is verified by the server).
 	  Updated to the protocol specification.
 
-	* Added support of receiving the client's public key's 
+	* Added support of receiving the client's public key's
 	  fingerprint in command reply in client library.  Affected
 	  file is lib/silcclient/command_reply.c, and
 	  lib/silcclient/idlist.[ch].
@@ -4630,7 +4689,7 @@ Mon Oct 29 17:43:04 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  the provided table of client entries.  Affected file
 	  silcd/packet_send.[ch].
 
-	* Fixed a crash in client resolving in client_prvmsg.c in 
+	* Fixed a crash in client resolving in client_prvmsg.c in
 	  client library.  Affected file lib/silcclient/client_prvmsg.c.
 
 	* Do not actually remove the client directly from ID cache
@@ -4645,7 +4704,7 @@ Mon Oct 29 17:43:04 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  silcd/packet_receive.c.
 
 	* Check for partial packet in data queue after every packet that
-	  was found from the queue.  Return and wait for more data if 
+	  was found from the queue.  Return and wait for more data if
 	  there is partial data in queue.  Affected file is
 	  lib/silccore/silcpacket.c.
 
@@ -4733,7 +4792,7 @@ Mon Oct 22 16:35:05 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 	  lib/silcclient/client.c.
 
 	* SilcPacketParserCallback now returns TRUE or FALSE to indicate
-	  whether library should continue processing the packet. 
+	  whether library should continue processing the packet.
 	  Affected file lib/silccore/silcpacket.h.
 
 	* Added SilcSFTPMonitor callback, SilcSFTPMonitors and
@@ -4752,7 +4811,7 @@ Mon Oct 22 16:35:05 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Added new local command FILE to the Irssi SILC Client.
 	  It is used to perform the file transfer.  It has subcommands
 	  SEND, RECEIVE, SHOW and CLOSE.  Affected files
-	  irssi/src/silc/core/client_ops.c, 
+	  irssi/src/silc/core/client_ops.c,
 	  irssi/src/silc/core/silc-server.[ch].
 
 Mon Oct 22 12:50:08 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
@@ -4764,7 +4823,7 @@ Sun Oct 21 20:21:02 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Renamed silc_file_read and silc_file_write to functions
 	  silc_file_readfile and silc_file_writefile.  Added function
-	  silc_file_open and silc_file_close.  Affected files 
+	  silc_file_open and silc_file_close.  Affected files
 	  lib/silcutil/silcutil.[ch].
 
 Thu Oct 18 20:58:13 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
@@ -5049,7 +5108,7 @@ Thu Sep 27 22:52:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  (SSH File Transfer Protocol).  Affected file in addition
 	  of the internet draft is lib/silccore/silcpacket.h.
 
-	* Deprecated the SILC_PACKET_CELL_ROUTERS and defined new 
+	* Deprecated the SILC_PACKET_CELL_ROUTERS and defined new
 	  packet SILC_PACKET_RESUME_ROUTER instead.  The new packet
 	  is used as part of backup router protocol when the primary
 	  router of the cell is back online and wishes to resume
@@ -5062,7 +5121,7 @@ Thu Sep 27 22:52:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  change causes incompatibilities in the protocol.
 
 	* Redefined also the MAC computation from the packet.
-	  An packet sequence number is now added to the MAC 
+	  An packet sequence number is now added to the MAC
 	  computation.  This prevents possible replay attacks against
 	  the protocol.  This change too causes incompatibilities
 	  in the protocol.
@@ -5176,7 +5235,7 @@ Sun Sep 16 12:32:58 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  case all found clients are already disconnected (WHOWAS would
 	  found them) in the server.  Affected file silcd/command.c.
 
-	* Update the last_receive (time of last data received) to be 
+	* Update the last_receive (time of last data received) to be
 	  updated only when received private or channel message so that
 	  the idle time showed in WHOIS makes more sense.
 
@@ -5235,7 +5294,7 @@ Thu Sep 13 20:24:52 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed channel key rekey task deleting from the function
 	  silc_server_save_channel_key.  Affected file silcd/server.c.
-	  Added explicit timeout task context instead that is used to	
+	  Added explicit timeout task context instead that is used to
 	  delete the task if we are registering a new task before the
 	  new task has elapsed.
 
@@ -5270,7 +5329,7 @@ Sun Sep  9 15:49:16 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  as well.  This replaced the old boolean registered field as well.
 
 	  Added resolve_cmd_ident field to the SilcClientEntry structure
-	  too so that if the entry is for example being resolved so 
+	  too so that if the entry is for example being resolved so
 	  another command may attach to the same pending command reply
 	  without requiring to resolve the same entry again.  This concept
 	  should optimize the WHOIS and the IDENTIFY resolving under
@@ -5376,7 +5435,7 @@ Thu Sep  6 12:47:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the silc_client_get_clients_local to accept the formatted
 	  nickname as argument.  It accepts the real nickname too but the
-	  formatted nickname can be used to find the true entry from 
+	  formatted nickname can be used to find the true entry from
 	  multiple entries.  Affected file lib/silcclient/silcapi.h and
 	  lib/silcclient/idlist.c.
 
@@ -5390,7 +5449,7 @@ Thu Sep  6 12:47:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  provided then the library will use the string as is.  The
 	  affected file is lib/silcclient/silcapi.h.
 
-	* All the nickname strings passed to the client library in 
+	* All the nickname strings passed to the client library in
 	  commands are now expected to be formatted nickname strings.
 	  If the command does not support the formatted nickname string
 	  it will assume that the sent string is the actual nickname.
@@ -5417,7 +5476,7 @@ Tue Sep  4 12:39:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  application can call this function if it does not know the
 	  current authentication method.
 
-	  Affected files are lib/silcclient/client.c and 
+	  Affected files are lib/silcclient/client.c and
 	  lib/silcclient/silcapi.h.
 
 	* The Irssi SILC client now automatically resolves the authentication
@@ -5477,7 +5536,7 @@ Sat Sep  1 00:29:33 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the silc_id_create_client_id to be collision
 	  resistant.  It is now assured that there cannot be created
-	  two same client ID's.  I suspect that some weird bugs in 
+	  two same client ID's.  I suspect that some weird bugs in
 	  the server were actually caused by duplicate Client IDs.
 	  Affected file silcd/serverid.[ch].  A router receiving
 	  new ID now also assures and informs the sending server
@@ -5545,7 +5604,7 @@ Sat Aug 11 00:29:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  if client could not be added to ID cache.  Affected files
 	  silcd/packet_receive.c and silcd/server.c.
 
-	* When client's sock->user_data is freed, NULL also the 
+	* When client's sock->user_data is freed, NULL also the
 	  client->router and client->connection pointers.  Added check
 	  for these pointers being NULL to various places around the
 	  code.  Affected file silcd/server.c.
@@ -5555,7 +5614,7 @@ Sat Aug 11 00:29:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  are not handled when it is not allowed.  Affected file
 	  silcd/server.c.
 
-	* Added `bool registered' fields to all 
+	* Added `bool registered' fields to all
 	  silc_idlist_[server|client]_get_* routines to indicate whether
 	  the fetched client needs to be registered or not.  Affected
 	  file silcd/idlist.[ch].
@@ -5705,7 +5764,7 @@ Thu Jul 19 14:47:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 Wed Jul 18 18:34:01 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
-	* Call silc_schedule_task_del_by_context in the 
+	* Call silc_schedule_task_del_by_context in the
 	  silc_protocol_cancel instead of silc_schedule_task_del_by_callback.
 	  Affected file lib/silccore/silcprotocol.c.
 
@@ -5809,7 +5868,7 @@ Wed Jul 11 18:31:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  updated the protocol specs.
 
 	* Completed the GETKEY command in client. It can be now used
-	  to fetch also servers public key not only some clients. 
+	  to fetch also servers public key not only some clients.
 	  Affected files lib/silcclient/command[_reply].c.
 
 	* Added silc_client_get_server to return server entry by the
@@ -5844,7 +5903,7 @@ Tue Jul 10 18:05:38 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	  The INFO command now allocates the SilcServerEntry context
 	  and saves the server info there.  The COMMAND_REPLY in
-	  the INFO now returns the parameters to application in 
+	  the INFO now returns the parameters to application in
 	  same order as defined in the protocol specification.
 
 	  The entries are cached in the client->server_cache.
@@ -5874,7 +5933,7 @@ Tue Jul 10 18:05:38 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed a channel joining bug in router.  The router must also
 	  check the channel modes, invite and ban lists etc. when serving
 	  the JOIN command sent by normal server.  Affected file is
-	  silcd/command.c.  The router now resolves the client's 
+	  silcd/command.c.  The router now resolves the client's
 	  information from the server who sent the JOIN command if it
 	  does not know it, and processes the JOIN command only after
 	  that.
@@ -5957,7 +6016,7 @@ Sun Jul  8 18:44:53 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_MUTEX_DEFINE to define the mutex on environments
 	  that may or may not compile the mutex support in.
-	
+
 	  Changed the silc_mutex_alloc interface. It allocates the
 	  mutex now to the sent pointer and returns TRUE or FALSE.
 
@@ -6224,7 +6283,7 @@ Fri Jun 22 10:44:14 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the KICK notify handling in the Irssi SILC client to
 	  update the channel records so that the kicked client does not
-	  appear to be on the channel.  The affected file is 
+	  appear to be on the channel.  The affected file is
 	  irssi/src/silc/core/silc-channels.c.
 
 	* Always update the conn->current_channel when executing command
@@ -6253,13 +6312,13 @@ Thu Jun 21 17:10:08 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Fixed KILL notify handling, client does not crash anymore.
 	  Affected file irssi/src/silc/core/silc-channels.c.
 
-	* Reduced the default packet buffer size from 2048 to 1024 in	
+	* Reduced the default packet buffer size from 2048 to 1024 in
 	  lib/silccore/silcpacket.c.
 
 	* Added SILC_SKE_STATUS_FREED SKE status type and a reference
 	  counter to the SKE context that is incresed when the SKE library
 	  performs async operation outside the library.  If the outside
-	  process frees the SKE context and FREED status will be set 
+	  process frees the SKE context and FREED status will be set
 	  and the library will detect after the sync operation that the
 	  libary is freed.  The affected files are
 	  lib/silcske/silcske[_status].[ch].
@@ -6269,7 +6328,7 @@ Thu Jun 21 17:10:08 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  passed as client entry to the application. */
 
 	* Fixed the task timeout calculation to assure that there is
-	  never negative timeouts.  The affected file is 
+	  never negative timeouts.  The affected file is
 	  lib/silcutil/silcschedule.c.
 
 	* Fixed the channel user mode notification sending in server.
@@ -6287,7 +6346,7 @@ Tue Jun 19 22:10:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a possible crash in silc_packet_send_prepare.  It now
 	  assures always that there is enough space in the buffer and
-	  at the tail area of the buffer (for MAC). 
+	  at the tail area of the buffer (for MAC).
 
 	  Fixed the inbound buffer reallocation in silc_packet_read.
 	  It was old code and did not handle the reallocation correctly.
@@ -6349,7 +6408,7 @@ Mon Jun 18 18:49:07 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  Irssi SILC client's message modules formats.
 
 	  Added the handing of the KILL notify to the Irssi SILC client
-	  as it was missing.  Added the kill message module formats 
+	  as it was missing.  Added the kill message module formats
 	  as well.
 
   	  The affected file is irssi/src/silc/core/silc-channels.c.
@@ -6430,7 +6489,7 @@ Thu Jun  7 16:29:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 Thu Jun  7 08:57:16 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Close log file after open.  Affected file 
+	* Close log file after open.  Affected file
 	  lib/silcutil/silclog.c.
 
 	* Check whether sock == NULL in silc_client_send_packet and return
@@ -6442,7 +6501,7 @@ Thu Jun  7 08:57:16 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 Tue Jun  5 08:08:21 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Merged a splitted window bugfix from Irssi CVS tree.  The 
+	* Merged a splitted window bugfix from Irssi CVS tree.  The
 	  affected file is irssi/src/fe-text/textbuffer-view.c.
 
 	* Fixed the ME, ACTION and NOTICE printing in Irssi Client.
@@ -6513,7 +6572,7 @@ Fri Jun  1 22:19:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  silcd/serverconfig.[h] and silcd/server.c.
 
 	* Changed the layout of the header files of the public interfaces
-	  in the SILC libraries.  The new layout supports ROBODoc 
+	  in the SILC libraries.  The new layout supports ROBODoc
 	  documentation tool (and some others) so that it is easy to create
 	  a library reference manual.  All the other headers and source
 	  code must still follow the CodingStyle document.  Also source
@@ -6598,7 +6657,7 @@ Sun May 27 15:57:17 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  error message printing to module formats in the Irssi SILC client.
 
 	* Added new silc_client_set_away_message to set the away message
-	  that is back to the person who sent private message.  The 
+	  that is back to the person who sent private message.  The
 	  affected file lib/silcclient/silcapi.h and the
 	  lib/silcclient/client_prvmsg.c.
 
@@ -6636,7 +6695,7 @@ Sat May 26 17:43:42 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 Sat May 26 12:13:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed the ask_passphrase client operation to be ascynchronous.
-	  It has now a completion callback and a context that the 
+	  It has now a completion callback and a context that the
 	  application must call after it has got the passphrase from
 	  the user.  Affected files lib/silcclient/silcapi.h,
 	  lib/silcclient/protocol.c, lib/silcclient/command.c and
@@ -6668,7 +6727,7 @@ Sat May 26 12:13:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  as well.  Defined SilcVerifyPublicKey callback that is used to
 	  indicate the success of the public key verification process.
 
-	  Changed the server and client to use the new async client 
+	  Changed the server and client to use the new async client
 	  operations.
 
 	* Changed the Irssi SILC client's internal scheduler to be called
@@ -6736,7 +6795,7 @@ Mon May 21 21:46:20 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Replaced the client entry's `channel' list and channel entry's
 	  `user_list' list to hash tables for optimized lookup.  Changed
-	  the code to use the hash table interface around the code. 
+	  the code to use the hash table interface around the code.
 	  Affected file lib/silcd/idlist.[ch].
 
 	* Added `auto_rehash' boolean argument to the function
@@ -6772,7 +6831,7 @@ Sat May 19 16:30:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  with Client ID but with the hash of the ID (which is a hash of
 	  the nickname) as well without any difference in performance.
 
-	  Added also silc_idcache_find_by_id_one_ext to do one on one 
+	  Added also silc_idcache_find_by_id_one_ext to do one on one
 	  searching when we have the actual ID.  Added also function
 	  silc_hash_client_id_compare.  The affected files are
 	  lib/silccore/idcache.[ch] and lib/silcutil/silcutil.[ch].
@@ -6783,7 +6842,7 @@ Sat May 19 16:30:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  case sensitive.
 
 	* Fixed a bug in server with channel message sending.  It put
-	  wrong ID type as destination ID.  The affected file 
+	  wrong ID type as destination ID.  The affected file
 	  silcd/packet_send.c.
 
 	* silc_idcache_del_by_context now deletes from all hash tables
@@ -6926,8 +6985,8 @@ Sun May  6 13:59:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  The affected files are lib/silccore/id.[ch] and other files
 	  around the tree using these routines.
 
-	* Removed the ID length arguments in server from various 
-	  silc_server_send_notify_* routines -> they are not needed 
+	* Removed the ID length arguments in server from various
+	  silc_server_send_notify_* routines -> they are not needed
 	  anymore.
 
 Sat May  5 13:56:33 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
@@ -6968,7 +7027,7 @@ Wed May  2 13:31:26 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 Tue May  1 14:18:13 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the silc_verify_public_key client operation function to
-	  save the public keys differently.  The fingerprint is now 
+	  save the public keys differently.  The fingerprint is now
 	  used as filename and not the hostname.  This way also the
 	  client keys are saved uniquely and not with hostnames.  The
 	  affected file is silc/client_ops.c.
@@ -7114,8 +7173,8 @@ Tue Apr 17 21:18:19 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  incoming connection before executing any KE or authentication
 	  protocols.
 
-	* The connection configuration is now saved to the KE and 
-	  connection auth protocol contexts and not fetched anymore in 
+	* The connection configuration is now saved to the KE and
+	  connection auth protocol contexts and not fetched anymore in
 	  the protocol.  Affected files silcd/server.c, silcd/protocol.[ch].
 
 	* The local hosts listenning address and port is also resolved
@@ -7135,7 +7194,7 @@ Tue Apr 17 21:18:19 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added function silc_server_config_is_primary_route to check
 	  whether primary router connection has been configured (a router
-	  configuration that we are initiating).  If there is not, we 
+	  configuration that we are initiating).  If there is not, we
 	  will assume that there is only two routers in the SILC network
 	  and we will use the incoming router connection as our primary
 	  route.  Affected files silcd/serverconfig.[ch], silcd/server.c.
@@ -7189,7 +7248,7 @@ Fri Apr 13 17:12:46 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Removed the client's failure_callback handling with timeout
 	  and handle it immediately when received.
 
-	* The SKE library returned wrong type in SUCCESS and FAILURE 
+	* The SKE library returned wrong type in SUCCESS and FAILURE
 	  packets.  They must be 32 bit MSB not 16 bit MSB.
 
 Fri Apr 13 00:09:08 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
@@ -7228,7 +7287,7 @@ Wed Apr 11 22:10:15 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  function is silc_[server/client]_packet_send_real to check
 	  the situation.
 
-	* Replaced the SIM paths from example config files to 
+	* Replaced the SIM paths from example config files to
 	  /usr/local/modules.  Also, make install creates now
 	  /usr/local/silc/logs directory to hold all the SILC server
 	  logs.
@@ -7337,10 +7396,10 @@ Thu Apr  5 17:42:30 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 Wed Apr  4 16:32:31 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Do not ask whether user wants to use the negotiated private key
-	  for private messages, just use it.  Affected file is 
+	  for private messages, just use it.  Affected file is
 	  silc/local_command.c.
 
-	* Added `send_enc_key' and `enc_key_len' fields to the 
+	* Added `send_enc_key' and `enc_key_len' fields to the
 	  SilcIDListData structure since they are needed in the re-key
 	  phase.  Affected file is silcd/idlist.[ch].
 
@@ -7365,7 +7424,7 @@ Tue Apr  3 21:52:42 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  int64 of at least the xintXX size.  If void * is less that 4
 	  bytes uint32 * will be used.  Defined bool as boolean.
 
-	* Changed _ALL_ unsigned long and unsigned int to uint32, 
+	* Changed _ALL_ unsigned long and unsigned int to uint32,
 	  unsgined short to uint16 in the source tree.
 
 	* Fixed a fatal bug in silc_server_remove_clients_by_server.  Do
@@ -7403,7 +7462,7 @@ Tue Apr  3 16:39:19 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  This fixes some bugs with WHOIS, WHOWAS and IDENTIFY commands
 	  and command replies.
 
-	* All command reply functions in the server now calls the 
+	* All command reply functions in the server now calls the
 	  pending command callback even if error occured.  This way the
 	  error will be delivered to the client as well.  Affected files
 	  silcd/command.c and silcd/command_reply.c.
@@ -7464,7 +7523,7 @@ Sun Apr  1 19:49:34 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  code and the protocol specs.
 
 	* A little fix to IDENTIFY command in the server.  Search the
-	  client first by hash not nickname.  Affected file is 
+	  client first by hash not nickname.  Affected file is
 	  silcd/command.c.
 
 	* Fixed the silc_client_close_connection to support closing
@@ -7502,14 +7561,14 @@ Sun Apr  1 19:49:34 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  server's CMODE command.  Affected file silcd/command.c.
 
 	* Added the following new functions into lib/silccore/silcauth.[ch]:
-	  silc_auth_get_method and silc_auth_get_data.	  
+	  silc_auth_get_method and silc_auth_get_data.
 
 	* The server now saves the remote hosts public key to the
 	  SilcIDListData pointer.  Affected file silcd/protocol.c.
 
 	* The normal server now does not remove the channel entry from
 	  the cache if the founder authentication data is set.  It used
-	  to remove it if the founder was the last one on the channel on 
+	  to remove it if the founder was the last one on the channel on
 	  the server and left the channel.  The auth data is saved and
 	  if the channel is re-joined later the old entry is used with
 	  the old auth data.  Affected files silcd/command_reply.c and
@@ -7602,7 +7661,7 @@ Wed Mar 28 23:55:54 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  message to a channel with SILC_MESSAGE_FLAG_ACTION to indicate
 	  some action.  Affected file silc/local_command.[ch].
 
-	* Changed channel_message and private_message client operations 
+	* Changed channel_message and private_message client operations
 	  to deliver the message flags to the application.  Added also
 	  the `flags' arguments to the silc_client_send_channel_message
 	  and silc_client_send_private_message functions.  Affected file
@@ -7653,7 +7712,7 @@ Wed Mar 28 15:52:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added `sockets' and `sockets_count' fields to the SilcClient
 	  object.  They hold the sockets of the listenning sockets in
-	  the client.  Listenning sockets may be for example the key 
+	  the client.  Listenning sockets may be for example the key
 	  agreement server.  Affected file lib/silcclient/client.[ch].
 	  Added functions the silc_client_add_socket and the
 	  silc_client_del_socket.  They are exported to the application
@@ -7701,7 +7760,7 @@ Tue Mar 27 12:49:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added <cipher> and <hmac> argument to the CMODE_CHANGE notify
 	  type to indicate the change of the current cipher and hmac
 	  on the channel.  Client can safely ignore the <cipher> argument
-	  (if it chooses to do so) since the CHANNEL_KEY packet will 
+	  (if it chooses to do so) since the CHANNEL_KEY packet will
 	  force the channel key change anyway.  The <hmac> argument is
 	  important since the client is responsible of setting the new
 	  HMAC and the hmac key into use.
@@ -7720,7 +7779,7 @@ Mon Mar 26 14:39:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  client must be removed from all channels when receiving the
 	  KILLED notify.
 
-	  Also, do not remove the client entry when giving the KILL 
+	  Also, do not remove the client entry when giving the KILL
 	  command but when the KILLED notify is received.
 
 	* Removed silc_idlist_find_client_by_nickname from the server.
@@ -7765,7 +7824,7 @@ Sun Mar 25 13:52:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added silc_server_send_notify_ban to send the BAN notify
 	  type between routers.
 
-	* Chaned the silc_notify_payload_encode to support that if 
+	* Chaned the silc_notify_payload_encode to support that if
 	  argument is NULL it ignores and checks the next argument.
 	  Affected file lib/silccore/silcnotify.c.
 
@@ -7796,7 +7855,7 @@ Fri Mar 23 16:25:11 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added new command SILC_COMMAND_BAN that can be used to manage
 	  the ban list of the channel.  Updated the protocol specs.
 
-	* Removed the channel modes: the SILC_CMODE_BAN and the 
+	* Removed the channel modes: the SILC_CMODE_BAN and the
 	  SILC_CMODE_INVITE_LIST as they were a bit kludge to be included
 	  in the CMODE command.  The equivalent features are now available
 	  using INVITE and BAN commands.  Updated the protocol specs.
@@ -7805,7 +7864,7 @@ Fri Mar 23 16:25:11 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  in the network about change in the current ban list.  The notify
 	  type is not used by the client.
 
-	* Redefined parts of the SILC_NOTIFY_TYPE_INVITE command to 
+	* Redefined parts of the SILC_NOTIFY_TYPE_INVITE command to
 	  support the invite lists.
 
 Thu Mar 22 22:52:23 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
@@ -7877,7 +7936,7 @@ Tue Mar 20 21:05:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Fixed various bugs in WHOIS and IDENTIFY command handling as
 	  they were buggy because of the WHOWAS information.
 
-	* Fixed local command MSG to handle the async resolving of 
+	* Fixed local command MSG to handle the async resolving of
 	  the remote client properly.  It used to fail the first MSG.
 	  Affected file silc/local_command.c.
 
@@ -7894,7 +7953,7 @@ Tue Mar 20 15:45:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  about the changed user mode.
 
 	  Implemented the notify handling in the server.  Affected file is
-	  silcd/packet_receive.c.  Added the function 
+	  silcd/packet_receive.c.  Added the function
 	  silc_server_send_notify_umode to the silcd/packet_send.[ch].
 
 	* Added new generic Channel Payload and deprecated the New Channel
@@ -7962,7 +8021,7 @@ Mon Mar 19 16:13:07 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  like _send_private_message_key, _relay_notify etc.  Affected
 	  file is silcd/packet_send.[ch].
 
-	  Removed silc_server_send_key_agreement, 
+	  Removed silc_server_send_key_agreement,
 	  silc_server_send_private_message_key and
 	  silc_server_packet_relay_notify functions from the file
 	  silcd/packet_send.[ch].
@@ -7982,7 +8041,7 @@ Mon Mar 19 16:13:07 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  library in the file lib/silcclient/command.c.
 
 	* Changed the silc_server_send_notify_on_channels's `sender'
-	  argument from SilcSocketConnection to SilcClientEntry to 
+	  argument from SilcSocketConnection to SilcClientEntry to
 	  check the sender as entry and not as connection object and not
 	  to send to the client provided as argument.  The affected file
 	  is silcd/packet_send.[ch].
@@ -8011,7 +8070,7 @@ Sun Mar 18 21:02:47 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  it to the client.  Affected file silcd/packet_send.[ch].
 
 	  Added also silc_server_packet_process_relay_notify to check
-	  whereto relay the notify.  Affected file is 
+	  whereto relay the notify.  Affected file is
 	  silcd/packet_receive.[ch].
 
 	* Implemented the KILL command to the server.
@@ -8143,7 +8202,7 @@ Tue Mar 13 22:17:34 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 Tue Mar 13 13:26:18 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added support to the server to enforce that commands are not
-	  executed more than once in 2 seconds.  If server receives 
+	  executed more than once in 2 seconds.  If server receives
 	  commands from client more frequently, timeout is registered
 	  to process the commands.  Affected file silcd/command.c.
 	  Added new function silc_server_command_process_timeout.
@@ -8154,12 +8213,12 @@ Tue Mar 13 13:26:18 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Removed error printing from the WHOIS and IDENTIFY commands.
 	  If error occurs then it is ignored silently in the client library.
-	  The application, however, may map the received error to 
+	  The application, however, may map the received error to
 	  human readable error string.  The application currently maps
 	  the NO_SUCH_NICKNAME error to string.
 
 	* Made the command status message public to the application.  Moved
-	  them from lib/silcclient/command_reply.c to 
+	  them from lib/silcclient/command_reply.c to
 	  lib/silcclient/command_reply.h.  The application can map the
 	  received command status to the string with the
 	  silc_client_command_status_message function.
@@ -8225,8 +8284,8 @@ Sun Mar 11 14:59:05 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added SilcChannelPrivateKey argument to the function
 	  silc_client_send_channel_message so that application can choose
 	  to use specific private ke if it wants to.  If it is not provided,
-	  the normal channel key is used, unless private keys are set. 
-	  In this case the first (key that was added first) is used 
+	  the normal channel key is used, unless private keys are set.
+	  In this case the first (key that was added first) is used
 	  as the encryption key.
 
 	* Implemented the support for channel private key handling.
@@ -8252,7 +8311,7 @@ Sat Mar 10 21:36:22 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Removed the statement that server (or router) must send USERS
 	  command reply when joining to the channel so that the client
-	  knows who are on the channel.  Instead, the client list and 
+	  knows who are on the channel.  Instead, the client list and
 	  client's mode list is now sent in the JOIN command reply to the
 	  client who joined channel.  This is better solution.
 
@@ -8289,7 +8348,7 @@ Fri Mar  9 12:40:42 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  lib/silccore/silcchannel.[ch].
 
 	* Moved the channel message etc, check from silc_packet_decrypt
-	  to applications.  The library calls now a generic 
+	  to applications.  The library calls now a generic
 	  SilcPacketCheckDecrypt callback which is to return TRUE or FALSE
 	  when the packet is either normal or special.  This was done to
 	  allow more wide range of checking that was not allowed when
@@ -8322,7 +8381,7 @@ Thu Mar  8 21:39:03 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  file: lib/silcutil/silcbuffmt.c.
 
 	* Changed to auto-reconnect to check whether the remote host is
-	  router and register the re-connect timeout if it is.  It used 
+	  router and register the re-connect timeout if it is.  It used
 	  to check that whether we are normal server, but router must do
 	  auto-reconnect with another router as well.  Affected file
 	  silcd/server.c.
@@ -8366,7 +8425,7 @@ Wed Mar  7 20:58:50 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Redefined the mandatory HMAC algorithms and added new algorithms.
 	  Added hmac-sha1-96 and hmac-md5-96 which are normal hmac-sha1
-	  and hmac-md5 truncated to 96 bits.  The mandatory is now 
+	  and hmac-md5 truncated to 96 bits.  The mandatory is now
 	  hmac-sha1-96.  Rest are optional (including the one that used
 	  to be mandatory).  Rationale for this is that the truncated HMAC
 	  length is sufficient from security point of view and can actually
@@ -8437,7 +8496,7 @@ Tue Mar  6 15:36:11 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  another remote client.  The key material is passed to the
 	  application after the protocol is over.
 
-	* Created client_keyagr.c to include all the key agreement 
+	* Created client_keyagr.c to include all the key agreement
 	  routines.
 
 	* Added macro SILC_TASK_CALLBACK_GLOBAL which is equal to the
@@ -8507,7 +8566,7 @@ Tue Feb 27 20:24:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  files: lib/silccrypt/silccipher.[ch].
 
 	* Implemented silc silc_client_add_private_message_key,
-	  silc_client_add_private_message_key_ske, 
+	  silc_client_add_private_message_key_ske,
 	  silc_client_del_private_message_key,
 	  silc_client_list_private_message_keys and
 	  silc_client_free_private_message_keys functions in the
@@ -8556,7 +8615,7 @@ Mon Feb 26 12:13:58 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  code accordingly.  The default key length is now 256 bits.
 
 	* Fixed SKE key distribution function silc_ske_process_key_material
-	  when the key length is more than 128 bits.  The default key 
+	  when the key length is more than 128 bits.  The default key
 	  length in SILC is now 256 bits.
 
 	* Added new command status type: SILC_STATUS_ERR_UNKOWN_ALGORITHM
@@ -8656,7 +8715,7 @@ Thu Feb 22 15:08:20 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Also deprecated the following packet types: REPLACE_ID,
 	  NEW_CHANNEL_USER and REMOVE_CHANNEL_USER packet types.
-	 
+
 	* Added list support for Notify packet in server.
 
 	* Added silc_server_send_notify_channel_change to send the
@@ -8673,12 +8732,12 @@ Thu Feb 22 15:08:20 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added silc_server_send_notify_leave to send LEAVE notify type.
 	  Deprecates the function silc_server_send_remove_channel_user.
 
-	* Added silc_server_send_notify_cmode and 
+	* Added silc_server_send_notify_cmode and
 	  silc_server_send_notify_cumode to send CMODE and CUMODE notify
 	  types.  Deprecates the silc_server_send_set_mode function.
 
 	* Added SERVER_SIGNOFF notify type to indicate that server has
-	  quit.  This means that all clients on the channel from that 
+	  quit.  This means that all clients on the channel from that
 	  server will drop.  This can be also used when netsplit happens.
 
 	  Deprecated REMOVE_ID packet type since it is not needed anymore
@@ -8692,7 +8751,7 @@ Thu Feb 22 15:08:20 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  SIGNOFF notify type.
 
 	* Employed the PKCS #1. It is the mandatory way to do RSA in the
-	  SILC protocol from this day on.  Changed the protocol 
+	  SILC protocol from this day on.  Changed the protocol
 	  specification as well.
 
 	* Added silc_server_send_notify_topic_set to send TOPIC_SET
@@ -8707,7 +8766,7 @@ Thu Feb 22 15:08:20 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* The JOIN notify type now takes one extra argument <Channel ID>.
 	  The packet used to be destined to the channel but now the
-	  JOIN type may be sent as list thus it is impossible to 
+	  JOIN type may be sent as list thus it is impossible to
 	  destine it to any specific channel.  By adding this argument
 	  it is again possible.
 
@@ -8760,7 +8819,7 @@ Tue Feb 20 14:14:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Created Global RNG API which is global RNG that application can
 	  initialize.  After initializing, any routine anywhere in the
 	  code (including library) can use RNG without allocating a new
-	  RNG object.  This was done to allow this sort of use of the 
+	  RNG object.  This was done to allow this sort of use of the
 	  RNG in code that has no chance to allocate RNG object.  All
 	  applications currently allocate this and many routines in the
 	  library use this.  Affected file lib/silccrypt/silcrng.[ch].
@@ -8782,12 +8841,12 @@ Tue Feb 20 14:14:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_pkcs_encrypt, silc_pkcs_decrypt, silc_pkcs_sign,
 	  silc_pkcs_verify and silc_pkcs_sign_with_hash and
-	  silc_pkcs_verify_with_hash functions into the file 
+	  silc_pkcs_verify_with_hash functions into the file
 	  lib/silccrypt/silcpkcs.[ch].
 
 Mon Feb 19 19:59:28 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* The client entry's userinfo pointer must be always valid. 
+	* The client entry's userinfo pointer must be always valid.
 	  Otherwise the [<unknown>] bug will surface beacuse the WHOIS
 	  will fail since it requires the userinfo.  Now, the userinfo
 	  is allocated as "" if actual userinfo does not exist.  Actually,
@@ -8815,18 +8874,18 @@ Mon Feb 19 14:26:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  All this applies for client library code as well.  Similar
 	  changes were made there as well for the pending commands.
 
-	  In the client, the application must now allocate the 
+	  In the client, the application must now allocate the
 	  SilcClientCommandContext with the silc_client_command_alloc
 	  function.
 
 	* Added reference counter to the SilcServerCommandContext.  Added
-	  function silc_server_command_alloc and silc_server_command_dup 
+	  function silc_server_command_alloc and silc_server_command_dup
 	  functions.
 
 	  Same type of functions added to the client library for the same
 	  purpose as well.
 
-	* Removed the cmd_ident from IDListData away since it is now 
+	* Removed the cmd_ident from IDListData away since it is now
 	  global for all connections.  It is the command identifier used
 	  in command sending and with pending commands.  The affected file
 	  is silcd/idlist.h.
@@ -8925,7 +8984,7 @@ Fri Feb 16 23:57:29 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new functions into the silcd/packet_receive.[ch]:
 	  silc_server_new_id_list, silc_server_new_channel_list and
-	  silc_server_new_channel_user_list to handle the incoming 
+	  silc_server_new_channel_user_list to handle the incoming
 	  NEW_ID_LIST, NEW_CHANNEL_LIST and NEW_CHANNEL_USER_LIST packets.
 
 	* Added support of changing Channel ID in the function
@@ -8954,12 +9013,12 @@ Fri Feb 16 14:14:00 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 Thu Feb 15 20:07:37 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new packet type SILC_PACKET_HEARTBEAT that is used to
-	  send keepalive packets.  The packet can be sent by clients, 
+	  send keepalive packets.  The packet can be sent by clients,
 	  servers and routers.
 
 	  Added function silc_socket_set_heartbeat into the file
 	  lib/silccore/silcsockconn.[ch] to set the heartbeat timeout.
-	  If not set, the heartbeat is not performed.  The actual 
+	  If not set, the heartbeat is not performed.  The actual
 	  heartbeat is implemented in the low level socket connection
 	  library.  However, application is responsible of actually
 	  sending the packet.
@@ -8992,7 +9051,7 @@ Thu Feb 15 20:07:37 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  reverse order.  For this reason, MAC check failed.  Now, this
 	  is fixed by not sending the Channel Key packet immediately but
 	  putting it to queue.  However, this is more fundamental problem:
-	  packets that are in queue should actually not be encrypted 
+	  packets that are in queue should actually not be encrypted
 	  because packets that are sent immediately gets encrypted
 	  actually with wrong IV (and thus MAC check fails).  So, packets
 	  that are in queue should be encrypted when they are sent to
@@ -9033,7 +9092,7 @@ Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  whether the requested user and group actually exists.
 
 	* Added sanity check to SKE's silc_ske_responder_finish to check
-	  that the public and private key actually is valid. 
+	  that the public and private key actually is valid.
 
 	* Invalidate the client's nickname when receiving Replace ID
 	  packet and the Client ID is being replaced.  This means that the
@@ -9052,8 +9111,8 @@ Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed some places where client was added to the IDList.  The
 	  rule of thumb is following (in order to get everything right):
-	  If the client is directly connected local client then the 
-	  `connection' argument must be set and `router' argument must be 
+	  If the client is directly connected local client then the
+	  `connection' argument must be set and `router' argument must be
 	  NULL to silc_idlist_add_client function.  If the client is not
 	  directly connected client then the `router' argument must
 	  bet set and the `connection' argument must be NULL to the
@@ -9107,7 +9166,7 @@ Sun Feb 11 18:19:51 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 Sat Feb 10 21:13:45 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* A big code auditing weekend happening.  Auditing code for 
+	* A big code auditing weekend happening.  Auditing code for
 	  obvious mistakes, bugs and errors.  Also, removing any code
 	  that is obsolete.
 
@@ -9122,11 +9181,11 @@ Sat Feb 10 21:13:45 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	  o The buffer formatting routines now check that the destination
 	  buffer really has enough space to add the data.  This applies for
-	  both buffer formatting and unformatting 
+	  both buffer formatting and unformatting
 	  (lib/silcutil/silcbuffmt.[ch]).  Also, the entire buffer
-	  unformatting was changed to accomodate following rules: 
+	  unformatting was changed to accomodate following rules:
 	  XXX_*STRING_ALLOC will allocate space for the data into the pointer
-	  sent to the function while XXX_*STRING will not allocate or copy 
+	  sent to the function while XXX_*STRING will not allocate or copy
 	  the data into the buffer.  Instead it sets the pointer from the
 	  buffer into the pointer sent as argument (XXX_*STRING used to
 	  require that the pointer must be allocated already).  This change
@@ -9163,8 +9222,8 @@ Sun Feb  4 13:18:32 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  channels and clients channel modes) to all routers in the
 	  network.  Updated the protocol specification accordingly.
 
-	  Added functions into silcd/packet_send.c and 
-	  silcd/packet_receive.c: silc_server_send_set_mode, 
+	  Added functions into silcd/packet_send.c and
+	  silcd/packet_receive.c: silc_server_send_set_mode,
 	  silc_server_set_mode.
 
 	  Added new files silcmode.[ch] into lib/silccore that implements
@@ -9174,7 +9233,7 @@ Sun Feb  4 13:18:32 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 Sat Feb  3 15:44:54 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Oops, a little mistake in server's connection authentication 
+	* Oops, a little mistake in server's connection authentication
 	  protocol.  The protocol is not ended with FAILURE but with
 	  SUCCESS if the authentication is Ok. :)  Affected file is
 	  silcd/protocol.c.
@@ -9184,13 +9243,13 @@ Sat Feb  3 15:44:54 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  the local clients on the channel.  After the changing nickname
 	  in router environment snhould work and the [<unknown>] nickname
 	  should appear no more.
- 
+
 	  The silc_server_replace_id function that receives the Replace ID
 	  payload now sends the NICK_CHANGE notify type also in the file
 	  silcd/packet_receive.c
 
 	* Changed WHOIS and IDENTIFY command to support the maximum amount
-	  of arguments defined in protocol specs (3328 arguments).  This 
+	  of arguments defined in protocol specs (3328 arguments).  This
 	  fixed a bug that caused problems when there were more than three
 	  users on a channel.
 
@@ -9243,7 +9302,7 @@ Thu Feb  1 21:32:27 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Fixed some minor bugs in client when sending WHOIS command.  The
 	  arguments was in wrong order.
 
-	* Removed statis function add_to_channel from server in 
+	* Removed statis function add_to_channel from server in
 	  silcd/command.c that was previously used with the joining but
 	  is obsolete now.
 
@@ -9283,7 +9342,7 @@ Tue Jan 30 22:39:15 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	  Changed the function silc_client_command_pending and
 	  silc_client_command_pending_del and added new function
-	  silc_client_command_pending_check.  Removed the 
+	  silc_client_command_pending_check.  Removed the
 	  SILC_CLIENT_CMD_REPLY_EXEC, and SILC_CLIENT_PENDING_COMMAND_CHECK
 	  macros.
 
@@ -9357,13 +9416,13 @@ Sun Jan 28 16:19:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  global list who is joining and JOINs it to the channel.  This is
 	  for normal server, that is.
 
-	  Changed silc_server_send_notify_on_channel, 
-	  silc_server_packet_relay_to_channel and 
+	  Changed silc_server_send_notify_on_channel,
+	  silc_server_packet_relay_to_channel and
 	  silc_server_packet_send_to_channel check if we are normal server
 	  and client has router set (ie. global client) do not send the
 	  message to that client, as it is already routed to our router.
 
-	* Implemented LEAVE notify type handling in silc_server_notify 
+	* Implemented LEAVE notify type handling in silc_server_notify
 	  function.
 
 	* Tested LEAVE command in router environment successfully.  Tested
@@ -9410,7 +9469,7 @@ Thu Jan 11 03:22:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  client.[ch] into client library.
 
 	* Changed JOIN command reply to send information whether the channel
-	  was created or not (is existing already) and the channel key 
+	  was created or not (is existing already) and the channel key
 	  payload.  Changed protocol specs accordingly.
 
 	* Fixed bugs in WHOIS and IDENTIFY command reply sending when
@@ -9422,7 +9481,7 @@ Sat Dec 23 21:55:07 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Fixed a bug in Client library.  IDENTIFY and WHOIS reply functions
 	  now correctly save the received data.
 
-	* silc_server_free_sock_user_data now notifies routers in the 
+	* silc_server_free_sock_user_data now notifies routers in the
 	  network about entities leaving the network.
 
 	  At the same time implemented functions silc_server_remove_id
@@ -9444,7 +9503,7 @@ Sat Dec 23 21:55:07 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	  IDENTIFY command now also checks that client->nickname must be
 	  valid. If it is not if will request the data from the server who
-	  owns the client.  Added new function 
+	  owns the client.  Added new function
 	  silc_server_command_identify_check.
 
 	* Added silc_command_set_command into lib/silccore/silcommand.[ch]
@@ -9472,7 +9531,7 @@ Sun Dec 17 14:40:08 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 Sat Dec 16 17:39:54 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented version string checking to both client and server.
-	  The check is incomplete currently due to the abnormal version 
+	  The check is incomplete currently due to the abnormal version
 	  strings used in development version of SILC.
 
 	* Changed all command functions in server to use the new
@@ -9484,7 +9543,7 @@ Fri Dec 15 15:55:12 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  support binary data as ID Cache data. Changed code to support
 	  binary data in lib/silccore/idcache.c.
 
-	* Renamed silc_server_packet_relay_command_reply to 
+	* Renamed silc_server_packet_relay_command_reply to
 	  silc_server_command_reply as it is normal packet receiving
 	  function. Rewrote the function to accept command replys for
 	  servers and not only for clients.
@@ -9573,7 +9632,7 @@ Mon Nov 27 21:39:40 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Fixed the JOIN command to really work in router environment.  If the
 	  channel is created it is always created by the router.  Router is
 	  also responsible of making the initial joining to the channel,
-	  sending JOIN notify to the sending server and distributing 
+	  sending JOIN notify to the sending server and distributing
 	  NEW_CHANNEL and NEW_CHANNEL_USER packets.  Hence, if the channel
 	  does not exist server doesn't do anything else but forward the
 	  command to the router which performs everything.
@@ -9634,7 +9693,7 @@ Tue Nov 21 19:49:31 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* The channel key is now distributed to the local client as soon
 	  as it is received from the router (in router environment) so that
-	  no other packet may be sent for the channel until client has 
+	  no other packet may be sent for the channel until client has
 	  received the key.
 
 	* silc_server_remove_channel_user now broadcasts the received
@@ -9657,7 +9716,7 @@ Tue Nov 21 19:49:31 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  silc_[client/server]_packet_parse_type the packet context must
 	  be duplicated by calling silc_packet_context_dup.  Otherwise it
 	  gets free'd after silc_[client/server]_packet_parse_type returns.
-	  Also, one must remember that if packet is duplicated then its 
+	  Also, one must remember that if packet is duplicated then its
 	  reference count must be decresed by calling the free function as
 	  many times as it was duplicated.
 
@@ -9767,7 +9826,7 @@ Sun Nov  5 22:28:44 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 Thu Nov  2 16:28:01 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Changed client's channel table to SilcList and changed code 
+	* Changed client's channel table to SilcList and changed code
 	  accordingly.  Also changed SilcChannelClientEntry to include back-
 	  pointer to the channel so that client entry can use that structure
 	  as list as well and we have fast cross-reference to the channel.
@@ -9793,7 +9852,7 @@ Wed Nov  1 17:21:26 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* NAMES command reply now shows users mode with the nickname when
 	  joining to channel.
 
-	* Moved silc_client_ch[u]mode[_char] functions from 
+	* Moved silc_client_ch[u]mode[_char] functions from
 	  silc/clientutil.[ch] to lib/silcclient/client.[ch].  Though, that
 	  place sucks, they are utility functions and should be in some
 	  other file.
@@ -9816,7 +9875,7 @@ Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  already defined as a list.  It is not suitable to add just some
 	  context to the list (in TRQ, the context is the list actually).
 
-	  So, I defined SilcDList that can be used for the purpose where 
+	  So, I defined SilcDList that can be used for the purpose where
 	  predefined list structure does not exit.  This can be used as
 	  such list.  Now some context just can be added to the SilcDList.
 	  Currently this list is not used in the SILC just yet, though there
@@ -9828,7 +9887,7 @@ Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  Also fixed some annoying warning messages that the original TRQ
 	  code generated.  Also minor changes to TRQ's Makefile.in.
 
-	* Added support for querying by Client ID to both WHOIS and 
+	* Added support for querying by Client ID to both WHOIS and
 	  IDENTIFY commands into server, as required by the protocol.
 
 	* Removed method function pointers from SilcBuffer structure. They
@@ -9836,7 +9895,7 @@ Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  no good reason.  This change also made silc_buffer_alloc and
 	  silc_buffer_free functions inline functions.
 
-	* Disabled command flooding detection support until it's fixed so 
+	* Disabled command flooding detection support until it's fixed so
 	  that it accepts commands in but does not execute them more than once
 	  in two seconds.
 
@@ -9849,7 +9908,7 @@ Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  that the message is sent only once per client.
 
 	* Moved silc_log_format (from lib/silcutil/silclog.[ch] into
-	  lib/silcutil/silcutil.[ch] as silc_format function.  The new 
+	  lib/silcutil/silcutil.[ch] as silc_format function.  The new
 	  function is generic and is used by server as well, not only by
 	  the logging routines.
 
@@ -9860,7 +9919,7 @@ Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  does not reside in the SKE library.  The function checks the version
 	  string remote end sent.
 
-	* Added back pointers (to opaque context and to SilcSocketConnection) 
+	* Added back pointers (to opaque context and to SilcSocketConnection)
 	  into SilcPacketContext structure into lib/silccore/silcpacket.h.
 
 	* Added silc_packet_context_dup into lib/silccore/silcpacket.[ch] to
@@ -9873,14 +9932,14 @@ Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  to application (otherwise application doesn't know that it is for
 	  channel (library gets it from packet's Destination ID)).
 
-	* Added silc_client_remove_from_channels into client library to 
-	  remove a client from all channels it has joined to.  Used when 
+	* Added silc_client_remove_from_channels into client library to
+	  remove a client from all channels it has joined to.  Used when
 	  received SIGNOFF notify from server.  Added also new function
 	  silc_client_replace_from_channels to replace old ID entry with
 	  new ID entry on all channels.  Used when received NICK_CHANGE
 	  notify from server.
 
-	* Fixed ID Cache list handling in silc_idlist_get_client in 
+	* Fixed ID Cache list handling in silc_idlist_get_client in
 	  lib/silcclient/idlist.c.  Also, added silc_idlist_get_client_by_id
 	  to get (or query) client by ID.
 
@@ -9960,7 +10019,7 @@ Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 Mon Oct  9 20:57:02 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Changed SILC_COMMAND_IDENTIFY in protocol specification to 
+	* Changed SILC_COMMAND_IDENTIFY in protocol specification to
 	  accept searching by Client ID as well.
 
 	* Added support for LEAVE and SIGNOFF notify types in client library.
@@ -10259,7 +10318,7 @@ Wed Jul 12 18:28:07 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added into lib/silccore/silcbufutil.[ch] new function;
 	  silc_buffer_realloc.
 
-	* Moved generic packet sending/encryption functions to 
+	* Moved generic packet sending/encryption functions to
 	  lib/silccore/silcpacket.[ch] from client and server.  Some
 	  rewriting of the functions.
 
@@ -10274,7 +10333,7 @@ Wed Jul 12 18:28:07 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 Tue Jul 11 20:27:26 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Rewrote major parts of the ID cache system.  Don't know 
+	* Rewrote major parts of the ID cache system.  Don't know
 	  whether it is better now or not but at least the API is more
 	  cleaner now.
 
@@ -10331,7 +10390,7 @@ Thu Jul  6 18:12:24 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added public key verification process into client's protocol.c.
 	  The client now verifies the public key from user and saves
-	  it into ~./silc/serverkeys/ directory. 
+	  it into ~./silc/serverkeys/ directory.
 
 	  Added into: clientutil.[ch]: silc_client_verify_server_key.
 
@@ -10352,7 +10411,7 @@ Wed Jul  5 19:19:02 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Removed wrong way of sending command status messages from
 	  server to client in server's command.c.  The old way violated
-	  protocol specification.  
+	  protocol specification.
 
 	  Changes to silccore/silccommand.[ch]: removed
 	  silc_command_encode_status_payload -> not needed anymore,
@@ -10402,7 +10461,7 @@ Sun Jul  2 18:23:01 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented LEAVE command on client and server.
 
-	* Previously deprecated SILC_PACKET_FORWARDED flag is now in use 
+	* Previously deprecated SILC_PACKET_FORWARDED flag is now in use
 	  again.  This change was made to the protocol as well.  Server
 	  should not violate the protocol specification anymore.
 
