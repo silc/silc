@@ -24,6 +24,10 @@ Sun Nov 24 18:26:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed few double frees from client library.  Fixes at least
 	  Bug #81, possibly others too.
 
+	* UTF-8 decode topics also in JOIN command reply and TOPIC_SET
+	  notifys in Irssi SILC Client.  Affected file is
+	  irssi/src/silc/core/client_ops.c.  Bug #82.
+
 Fri Nov 22 18:34:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support to backup router protocol for backup to tell

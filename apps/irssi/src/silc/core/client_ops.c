@@ -477,9 +477,26 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
+      char tmp2[256], *cp, *dm = NULL;
+
       g_free_not_null(chanrec->topic);
+      if (tmp && !silc_term_utf8() && silc_utf8_valid(tmp, strlen(tmp))) {
+	memset(tmp2, 0, sizeof(tmp2));
+	cp = tmp2;
+	if (strlen(tmp) > sizeof(tmp2) - 1) {
+	  dm = silc_calloc(strlen(tmp) + 1, sizeof(*dm));
+	  cp = dm;
+	}
+
+	silc_utf8_decode(tmp, strlen(tmp), SILC_STRING_LANGUAGE,
+			 cp, strlen(tmp));
+	tmp = cp;
+      }
+
       chanrec->topic = *tmp == '\0' ? NULL : g_strdup(tmp);
       signal_emit("channel topic changed", 1, chanrec);
+
+      silc_free(dm);
     }
     
     if (idtype == SILC_ID_CLIENT) {
@@ -1362,9 +1379,26 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	chanrec = silc_channel_create(server, channel, channel, TRUE);
 
       if (topic) {
+	char tmp[256], *cp, *dm = NULL;
 	g_free_not_null(chanrec->topic);
+
+	if (!silc_term_utf8() && silc_utf8_valid(topic, strlen(topic))) {
+	  memset(tmp, 0, sizeof(tmp));
+	  cp = tmp;
+	  if (strlen(topic) > sizeof(tmp) - 1) {
+	    dm = silc_calloc(strlen(topic) + 1, sizeof(*dm));
+	    cp = dm;
+	  }
+
+	  silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+			   cp, strlen(topic));
+	  topic = cp;
+	}
+
 	chanrec->topic = *topic == '\0' ? NULL : g_strdup(topic);
 	signal_emit("channel topic changed", 1, chanrec);
+
+	silc_free(dm);
       }
 
       mode = silc_client_chmode(modei, 
