@@ -36,6 +36,9 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen,
 
   memset(dest, 0, destlen);
 
+  if (off + 1 >= srclen)
+    return EOF;
+
   i = 0;
   for ( ; off <= srclen; i++) {
     if (i > destlen)
@@ -50,8 +53,6 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen,
       break;
   }
   *begin = off;
-  if (off + 1 >= srclen)
-    return EOF;
 
   return off;
 }
