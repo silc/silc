@@ -1,3 +1,11 @@
+Tue Oct 14 18:24:53 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Save old channel keys in list to allow more rapid change
+	  of channel keys if server for some reason does that.  This
+	  avoids loosing so many channel messages due to not having
+	  key to decrypt.  Affected file lib/silcclient/silcclient.h,
+	  idlist.c and client_channel.c.
+
 Mon Oct 13 21:37:47 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Continued backup router tests and fixes.  Affected files

@@ -40,7 +40,7 @@ TODO for SILC Server 1.0
 	  and backup.  Server will be cut from rest of the network.
      - (6) server looses primary, backup doesn't, rejects server's use,
            then backup looses primary
-	- Same as (3), if primary crashed, normal resuming occurs.
+	- Same as (2), (3), if primary crashed, normal resuming occurs.
 
    - Resuming tests
      - (1) normal resuming (works)
@@ -88,7 +88,7 @@ TODO for SILC Server 1.0
    UMODE_CHANGE, INVITE, BAN (rest of the notifys does not apply, no 
    testing required)
 
-   - Communication
+   - Communication (works)
     - Test communication during switching, after switching, during
       resuming and after resuming.
 
