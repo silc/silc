@@ -4,7 +4,7 @@ static void perl_silc_server_fill_hash(HV *hv, SILC_SERVER_REC *server)
 {
 	perl_server_fill_hash(hv, (SERVER_REC *) server);
 
-	hv_store(hv, "umode", 6, newSViv(server->umode), 0);
+	hv_store(hv, "umode", 5, newSViv(server->umode), 0);
 }
 
 MODULE = Irssi::Silc	PACKAGE = Irssi::Silc
