@@ -1,4 +1,20 @@
-Sat Nov 16 13:14:45 EET 20022  Pekka Riikonen <priikone@silcnet.org>
+Mon Nov 18 18:58:26 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for setting FOUNDER mode on channel with
+	  specific public key which can be set with CMODE command.
+	  Updated protocol specs and implemented in client and server.
+
+	* Fixed the Irssi SILC client to correctly shutdown the client
+	  library to avoid memory leaks.  Affected files are
+	  irssi/src/silc/core/silc-core.c and silc-servers.c.
+
+Sun Nov 17 15:50:57 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the MPI implementation of silc_mp_sizeinbase to return
+	  < 32 bit values in correct size.  Affected file is
+	  lib/silcmath/mp_mpi.c.
+
+Sat Nov 16 13:14:45 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the KE Start Payload parsing to check that mandatory
 	  fields are present.  Affected file lib/silcske/payload.c.
