@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.11  2000/07/18 12:20:39  priikone
+ * 	Added ^U functionality, clears input line (patch form cras).
+ *
  * Revision 1.10  2000/07/18 06:53:15  priikone
  * 	Allow partial command strings in comparison.
  *
@@ -64,6 +67,7 @@
 
 /* Static function prototypes */
 static int silc_client_bad_keys(unsigned char key);
+static void silc_client_clear_input(SilcClient client);
 static void silc_client_process_message(SilcClient client);
 static char *silc_client_parse_command(unsigned char *buffer);
 
@@ -393,7 +397,6 @@ SILC_TASK_CALLBACK(silc_client_process_key_press)
     /* Enter, Return. User pressed enter we are ready to
        process the message. */
     silc_client_process_message(client);
-    silc_screen_input_reset(client->screen);
     break;
   case CTRL('l'):
     /* Refresh screen, Ctrl^l */
@@ -420,6 +423,7 @@ SILC_TASK_CALLBACK(silc_client_process_key_press)
   case KEY_DL:
   case CTRL('u'):
     /* Delete line */
+    silc_client_clear_input(client);
     break;
   default:
     /* 
@@ -463,6 +467,16 @@ static int silc_client_bad_keys(unsigned char key)
   default: 
     return FALSE; 
   }
+}
+
+/* Clears input buffer */
+
+static void silc_client_clear_input(SilcClient client)
+{
+  silc_buffer_clear(client->input_buffer);
+  silc_buffer_pull_tail(client->input_buffer,
+ 		        SILC_BUFFER_END(client->input_buffer));
+  silc_screen_input_reset(client->screen);
 }
 
 /* Processes messages user has typed on the screen. This either sends
@@ -535,9 +549,7 @@ static void silc_client_process_message(SilcClient client)
 
  out:
   /* Clear the input buffer */
-  silc_buffer_clear(client->input_buffer);
-  silc_buffer_pull_tail(client->input_buffer, 
-			SILC_BUFFER_END(client->input_buffer));
+  silc_client_clear_input(client);
 }
 
 /* Returns the command fetched from user typed command line */
