@@ -43,8 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "DLL" /D "HAVE_SILCDEFS_H" /FD /c
-# SUBTRACT CPP /YX
+# ADD CPP /nologo /MT /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "DLL" /D "HAVE_SILCDEFS_H" /FD /Zm300 /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -71,12 +70,11 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "_DEBUG" /D "SILC_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "DLL" /D "HAVE_SILCDEFS_H" /FD /GZ /c
-# SUBTRACT CPP /YX
+# ADD CPP /nologo /MTd /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "_DEBUG" /D "SILC_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "DLL" /D "HAVE_SILCDEFS_H" /FD /GZ /Zm300 /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG" /Zm300
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -175,6 +173,10 @@ SOURCE=..\..\lib\silcutil\silcconfig.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silcfileutil.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silchashtable.c
 # End Source File
 # Begin Source File
@@ -203,7 +205,15 @@ SOURCE=..\..\lib\silcutil\silcsockconn.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silcstringprep.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silcstrutil.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcutf8.c
 # End Source File
 # Begin Source File
 
@@ -358,6 +368,22 @@ SOURCE=..\..\lib\silcsftp\sftp_server.c
 SOURCE=..\..\lib\silcsftp\sftp_util.c
 # End Source File
 # End Group
+# Begin Group "contrib"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\nfkc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\rfc3454.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\stringprep.c
+# End Source File
+# End Group
 # End Group
 # Begin Group "Header Files"
 
@@ -467,10 +493,6 @@ SOURCE=..\..\lib\silcutil\silcdlist.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcfileutil.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silcutil\silchashtable.h
 # End Source File
 # Begin Source File
@@ -511,11 +533,19 @@ SOURCE=..\..\lib\silcutil\silcsockconn.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silcstringprep.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silcthread.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silcutil\silctypes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcutf8.h
 # End Source File
 # Begin Source File
 
@@ -696,6 +726,22 @@ SOURCE=..\..\lib\silcsftp\silcsftp.h
 # Begin Source File
 
 SOURCE=..\..\lib\silcsftp\silcsftp_fs.h
+# End Source File
+# End Group
+# Begin Group "contrib No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\gunicomp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\gunidecomp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\stringprep.h
 # End Source File
 # End Group
 # End Group

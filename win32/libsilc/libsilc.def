@@ -596,3 +596,5 @@ EXPORTS
 	silc_utf8_strcasecmp @ 921 ;
 	silc_utf8_strncasecmp @ 922 ;
 	silc_stringprep @ 923;
+	silc_identifier_check @ 924 ;
+	silc_identifier_verify @ 925 ;

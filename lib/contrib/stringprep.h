@@ -38,6 +38,12 @@ extern "C"
 #ifndef ssize_t
 #define ssize_t int
 #endif
+#ifndef uint16_t
+#define uint16_t SilcUInt16
+#endif
+#ifndef int16_t
+#define int16_t SilcInt16
+#endif
 
 #define STRINGPREP_VERSION "0.5.9"
 
