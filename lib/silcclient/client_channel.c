@@ -210,8 +210,20 @@ void silc_client_channel_message(SilcClient client,
     /* Parse the channel message payload. This also decrypts the payload */
     payload = silc_channel_message_payload_parse(buffer, channel->channel_key,
 						 channel->hmac);
-    if (!payload)
-      goto out;
+
+    /* If decryption failed and we have just performed channel key rekey
+       we will use the old key in decryption. If that fails too then we
+       cannot do more and will drop the packet. */
+    if (!payload) {
+      if (!channel->old_channel_key)
+	goto out;
+
+      payload = silc_channel_message_payload_parse(buffer, 
+						   channel->old_channel_key,
+						   channel->old_hmac);
+      if (!payload)
+	goto out;
+    }
   } else if (channel->private_keys) {
     SilcChannelPrivateKey entry;
 
@@ -262,6 +274,23 @@ void silc_client_channel_message(SilcClient client,
     silc_channel_message_payload_free(payload);
 }
 
+/* Timeout callback that is called after a short period of time after the
+   new channel key has been created. This removes the old channel key all
+   together. */
+
+SILC_TASK_CALLBACK(silc_client_save_channel_key_rekey)
+{
+  SilcChannelEntry channel = (SilcChannelEntry)context;
+
+  if (channel->old_channel_key)
+    silc_cipher_free(channel->old_channel_key);
+  if (channel->old_hmac)
+    silc_hmac_free(channel->old_hmac);
+  channel->old_channel_key = NULL;
+  channel->old_hmac = NULL;
+  channel->rekey_task = NULL;
+}
+
 /* Saves channel key from encoded `key_payload'. This is used when we
    receive Channel Key Payload and when we are processing JOIN command 
    reply. */
@@ -270,7 +299,7 @@ void silc_client_save_channel_key(SilcClientConnection conn,
 				  SilcBuffer key_payload, 
 				  SilcChannelEntry channel)
 {
-  unsigned char *id_string, *key, *cipher, hash[32];
+  unsigned char *id_string, *key, *cipher, *hmac, hash[32];
   uint32 tmp_len;
   SilcChannelID *id;
   SilcIDCacheEntry id_cache = NULL;
@@ -302,6 +331,27 @@ void silc_client_save_channel_key(SilcClientConnection conn,
     channel = (SilcChannelEntry)id_cache->context;
   }
 
+  hmac = channel->hmac ? channel->hmac->hmac->name : SILC_DEFAULT_HMAC;
+
+  /* Save the old key for a short period of time so that we can decrypt
+     channel message even after the rekey if some client would be sending
+     messages with the old key after the rekey. */
+  if (channel->old_channel_key)
+    silc_cipher_free(channel->old_channel_key);
+  if (channel->old_hmac)
+    silc_hmac_free(channel->old_hmac);
+  if (channel->rekey_task)
+    silc_schedule_task_del(conn->client->schedule, channel->rekey_task);
+  channel->old_channel_key = channel->channel_key;
+  channel->old_hmac = channel->hmac;
+  channel->rekey_task = 
+    silc_schedule_task_add(conn->client->schedule, 0,
+			   silc_client_save_channel_key_rekey, channel,
+			   10, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+
+  /* Free the old channel key data */
+  silc_free(channel->key);
+
   /* Save the key */
   key = silc_channel_key_get_key(payload, &tmp_len);
   cipher = silc_channel_key_get_cipher(payload, NULL);
@@ -311,7 +361,8 @@ void silc_client_save_channel_key(SilcClientConnection conn,
 
   if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
     conn->client->ops->say(conn->client, conn, SILC_CLIENT_MESSAGE_AUDIT,
-		     "Cannot talk to channel: unsupported cipher %s", cipher);
+			   "Cannot talk to channel: unsupported cipher %s", 
+			   cipher);
     goto out;
   }
 
@@ -319,8 +370,7 @@ void silc_client_save_channel_key(SilcClientConnection conn,
   silc_cipher_set_key(channel->channel_key, key, channel->key_len);
 
   /* Generate HMAC key from the channel key data and set it */
-  if (!channel->hmac)
-    silc_hmac_alloc("hmac-sha1-96", NULL, &channel->hmac);
+  silc_hmac_alloc(hmac, NULL, &channel->hmac);
   silc_hash_make(channel->hmac->hash, key, tmp_len, hash);
   silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
   memset(hash, 0, sizeof(hash));
@@ -391,9 +441,9 @@ int silc_client_add_channel_private_key(SilcClient client,
     return FALSE;
 
   if (!cipher)
-    cipher = "aes-256-cbc";
+    cipher = SILC_DEFAULT_CIPHER;
   if (!hmac)
-    hmac = "hmac-sha1-96";
+    hmac = SILC_DEFAULT_HMAC;
 
   if (!silc_cipher_is_supported(cipher))
     return FALSE;

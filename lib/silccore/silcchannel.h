@@ -383,7 +383,7 @@ silc_channel_message_get_flags(SilcChannelMessagePayload payload);
  *
  ***/
 unsigned char *silc_channel_message_get_data(SilcChannelMessagePayload payload,
-				     uint32 *data_len);
+					     uint32 *data_len);
 
 /****f* silccore/SilcChannelAPI/silc_channel_message_get_mac
  *

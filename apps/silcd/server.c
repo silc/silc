@@ -1241,7 +1241,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     return;
   }
 
-  switch(ctx->conn_type) {
+  switch (ctx->conn_type) {
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry client;
@@ -1646,19 +1646,19 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context)
   case SILC_SOCKET_TYPE_CLIENT:
     /* Parse the packet with timeout */
     silc_schedule_task_add(server->schedule, sock->sock,
-		       silc_server_packet_parse_real,
-		       (void *)parser_context, 0, 100000,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_NORMAL);
+			   silc_server_packet_parse_real,
+			   (void *)parser_context, 0, 100000,
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_NORMAL);
     break;
   case SILC_SOCKET_TYPE_SERVER:
   case SILC_SOCKET_TYPE_ROUTER:
     /* Packets from servers are parsed as soon as possible */
     silc_schedule_task_add(server->schedule, sock->sock,
-		       silc_server_packet_parse_real,
-		       (void *)parser_context, 0, 1,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_NORMAL);
+			   silc_server_packet_parse_real,
+			   (void *)parser_context, 0, 1,
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_NORMAL);
     break;
   default:
     return;
@@ -1677,7 +1677,7 @@ void silc_server_packet_parse_type(SilcServer server,
   SILC_LOG_DEBUG(("Parsing packet type %d", type));
 
   /* Parse the packet type */
-  switch(type) {
+  switch (type) {
   case SILC_PACKET_DISCONNECT:
     SILC_LOG_DEBUG(("Disconnect packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
@@ -2094,9 +2094,9 @@ void silc_server_create_connection(SilcServer server,
   sconn->remote_port = port;
 
   silc_schedule_task_add(server->schedule, 0, 
-		     silc_server_connect_router,
-		     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
-		     SILC_TASK_PRI_NORMAL);
+			 silc_server_connect_router,
+			 (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
+			 SILC_TASK_PRI_NORMAL);
 }
 
 SILC_TASK_CALLBACK(silc_server_close_connection_final)
@@ -2236,9 +2236,9 @@ void silc_server_free_client_data(SilcServer server,
   i->server = server;
   i->client = client;
   silc_schedule_task_add(server->schedule, 0, 
-		     silc_server_free_client_data_timeout,
-		     (void *)i, 300, 0,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+			 silc_server_free_client_data_timeout,
+			 (void *)i, 300, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
   client->router = NULL;
   client->connection = NULL;
@@ -2259,7 +2259,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 {
   SILC_LOG_DEBUG(("Start"));
 
-  switch(sock->type) {
+  switch (sock->type) {
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry user_data = (SilcClientEntry)sock->user_data;
@@ -2606,6 +2606,11 @@ int silc_server_remove_clients_by_server(SilcServer server,
   while (silc_hash_table_get(&htl, NULL, (void *)&channel)) {
     if (!silc_server_create_channel_key(server, channel, 0))
       return FALSE;
+
+    /* Do not send the channel key if private channel key mode is set */
+    if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY)
+      continue;
+
     silc_server_send_channel_key(server, NULL, channel, 
 				 server->server_type == SILC_ROUTER ? 
 				 FALSE : !server->standalone);
@@ -2935,9 +2940,9 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   SILC_LOG_DEBUG(("Creating new channel"));
 
   if (!cipher)
-    cipher = "aes-256-cbc";
+    cipher = SILC_DEFAULT_CIPHER;
   if (!hmac)
-    hmac = "hmac-sha1-96";
+    hmac = SILC_DEFAULT_HMAC;
 
   /* Allocate cipher */
   if (!silc_cipher_alloc(cipher, &key))
@@ -3013,9 +3018,9 @@ silc_server_create_new_channel_with_id(SilcServer server,
   SILC_LOG_DEBUG(("Creating new channel"));
 
   if (!cipher)
-    cipher = "aes-256-cbc";
+    cipher = SILC_DEFAULT_CIPHER;
   if (!hmac)
-    hmac = "hmac-sha1-96";
+    hmac = SILC_DEFAULT_HMAC;
 
   /* Allocate cipher */
   if (!silc_cipher_alloc(cipher, &key))
@@ -3065,8 +3070,11 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
   SilcServerChannelRekey rekey = (SilcServerChannelRekey)context;
   SilcServer server = (SilcServer)rekey->context;
 
+  rekey->task = NULL;
+
   if (!silc_server_create_channel_key(server, rekey->channel, rekey->key_len))
     return;
+
   silc_server_send_channel_key(server, NULL, rekey->channel, FALSE);
 }
 
@@ -3090,7 +3098,7 @@ bool silc_server_create_channel_key(SilcServer server,
   }
 
   if (!channel->channel_key)
-    if (!silc_cipher_alloc("aes-256-cbc", &channel->channel_key))
+    if (!silc_cipher_alloc(SILC_DEFAULT_CIPHER, &channel->channel_key))
       return FALSE;
 
   if (key_len)
@@ -3120,7 +3128,7 @@ bool silc_server_create_channel_key(SilcServer server,
 
   /* Generate HMAC key from the channel key data and set it */
   if (!channel->hmac)
-    silc_hmac_alloc("hmac-sha1-96", NULL, &channel->hmac);
+    silc_hmac_alloc(SILC_DEFAULT_HMAC, NULL, &channel->hmac);
   silc_hash_make(channel->hmac->hash, channel->key, len, hash);
   silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
   memset(hash, 0, sizeof(hash));
@@ -3131,12 +3139,15 @@ bool silc_server_create_channel_key(SilcServer server,
     channel->rekey->context = (void *)server;
     channel->rekey->channel = channel;
     channel->rekey->key_len = key_len;
+    if (channel->rekey->task)
+      silc_schedule_task_del(server->schedule, channel->rekey->task);
 
-    silc_schedule_task_add(server->schedule, 0, 
-		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 3600, 0,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_NORMAL);
+    channel->rekey->task = 
+      silc_schedule_task_add(server->schedule, 0, 
+			     silc_server_channel_key_rekey,
+			     (void *)channel->rekey, 3600, 0,
+			     SILC_TASK_TIMEOUT,
+			     SILC_TASK_PRI_NORMAL);
   }
 
   return TRUE;
@@ -3224,7 +3235,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 
   /* Generate HMAC key from the channel key data and set it */
   if (!channel->hmac)
-    silc_hmac_alloc("hmac-sha1-96", NULL, &channel->hmac);
+    silc_hmac_alloc(SILC_DEFAULT_HMAC, NULL, &channel->hmac);
   silc_hash_make(channel->hmac->hash, tmp, tmp_len, hash);
   silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
 
@@ -3236,19 +3247,19 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
       channel->rekey = silc_calloc(1, sizeof(*channel->rekey));
     channel->rekey->context = (void *)server;
     channel->rekey->channel = channel;
+    if (channel->rekey->task)
+      silc_schedule_task_del(server->schedule, channel->rekey->task);
 
-    silc_schedule_task_del_by_callback(server->schedule,
-				     silc_server_channel_key_rekey);
-    silc_schedule_task_add(server->schedule, 0, 
-		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 3600, 0,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_NORMAL);
+    channel->rekey->task = 
+      silc_schedule_task_add(server->schedule, 0, 
+			     silc_server_channel_key_rekey,
+			     (void *)channel->rekey, 3600, 0,
+			     SILC_TASK_TIMEOUT,
+			     SILC_TASK_PRI_NORMAL);
   }
 
  out:
-  if (id)
-    silc_free(id);
+  silc_free(id);
   if (payload)
     silc_channel_key_payload_free(payload);
 
@@ -3290,7 +3301,7 @@ static void silc_server_announce_get_servers(SilcServer server,
       while (id_cache) {
 	entry = (SilcServerEntry)id_cache->context;
 
-	/* Do not announce the one we've sending our announcments and
+	/* Do not announce the one we've sending our announcements and
 	   do not announce ourself. */
 	if (entry == remote || entry == server->id_entry) {
 	  if (!silc_idcache_list_next(list, &id_cache))
@@ -3722,9 +3733,6 @@ void silc_server_save_users_on_channel(SilcServer server,
 {
   int i;
 
-  /* Cache the received Client ID's and modes. This cache expires
-     whenever server sends notify message to channel. It means two things;
-     some user has joined or leaved the channel. XXX TODO! */
   for (i = 0; i < user_count; i++) {
     uint16 idp_len;
     uint32 mode;

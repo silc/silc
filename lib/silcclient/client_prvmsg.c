@@ -320,7 +320,7 @@ int silc_client_add_private_message_key(SilcClient client,
     return FALSE;
 
   if (!cipher)
-    cipher = "aes-256-cbc";
+    cipher = SILC_DEFAULT_CIPHER;
 
   /* Check the requested cipher */
   if (!silc_cipher_is_supported(cipher))
@@ -394,7 +394,7 @@ int silc_client_add_private_message_key_ske(SilcClient client,
     return FALSE;
 
   if (!cipher)
-    cipher = "aes-256-cbc";
+    cipher = SILC_DEFAULT_CIPHER;
 
   /* Check the requested cipher */
   if (!silc_cipher_is_supported(cipher))

@@ -3811,7 +3811,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Delete old cipher and allocate default one */
       silc_cipher_free(channel->channel_key);
-      if (!silc_cipher_alloc(cipher ? cipher : "aes-256-cbc", 
+      if (!silc_cipher_alloc(cipher ? cipher : SILC_DEFAULT_CIPHER, 
 			     &channel->channel_key)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				   SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
@@ -3868,7 +3868,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Delete old hmac and allocate default one */
       silc_hmac_free(channel->hmac);
-      if (!silc_hmac_alloc(hmac ? hmac : "hmac-sha1-96", NULL, 
+      if (!silc_hmac_alloc(hmac ? hmac : SILC_DEFAULT_HMAC, NULL, 
 			   &channel->hmac)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);

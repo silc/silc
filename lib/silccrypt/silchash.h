@@ -51,6 +51,9 @@ typedef struct SilcHashStruct {
 /* Default hash functions for silc_hash_register_default(). */
 extern SilcHashObject silc_default_hash[];
 
+/* Default HASH function in the SILC protocol */
+#define SILC_DEFAULT_HASH "sha1"
+
 /* Macros */
 
 /* Following macros are used to implement the SILC Hash API. These

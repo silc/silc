@@ -99,6 +99,9 @@ typedef struct {
 /* Static list of PKCS for silc_pkcs_register_default(). */
 extern SilcPKCSObject silc_default_pkcs[];
 
+/* Default PKXS in the SILC protocol */
+#define SILC_DEFAULT_PKCS "rsa"
+
 /* Macros */
 
 /* Macros used to implement the SILC PKCS API */

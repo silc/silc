@@ -576,7 +576,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   channel->channel_key = channel_key;
   channel->hmac = hmac;
   if (!channel->hmac)
-    if (!silc_hmac_alloc("hmac-sha1-96", NULL, &channel->hmac)) {
+    if (!silc_hmac_alloc(SILC_DEFAULT_HMAC, NULL, &channel->hmac)) {
       silc_free(channel);
       return NULL;
     }

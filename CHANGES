@@ -1,3 +1,21 @@
+Thu Sep 13 20:24:52 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added defines SILC_DEFAULT_CIPHER, SILC_DEFAULT_HMAC,
+	  SILC_DEFAULT_HASH and SILC_DEFAULT_PKCS in the file
+	  lib/silccrypt/[silccipher.h|silchmac.h|silchash.h|silcpkcs.h].
+
+	* Removed channel key rekey task deleting from the function
+	  silc_server_save_channel_key.  Affected file silcd/server.c.
+	  Added explicit timeout task context instead that is used to	
+	  delete the task if we are registering a new task before the
+	  new task has elapsed.
+
+	* When channel key rekey occurs the client library now saves
+	  the old channel key for a short period of time (10 seconds) and
+	  is able to use it in case some is still sending channel
+	  messages encrypted with the old key after the rekey.  Affected
+	  file lib/silcclient/[idlist.h|client_channel.c].
+
 Sun Sep  9 15:49:16 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added check to the silc_server_new_id_real to not accept

@@ -38,6 +38,7 @@ typedef struct {
   void *context;
   SilcChannelEntry channel;
   uint32 key_len;
+  SilcTask task;
 } *SilcServerChannelRekey;
 
 /* Generic rekey context for connections */

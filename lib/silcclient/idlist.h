@@ -78,6 +78,13 @@ typedef struct SilcChannelEntryStruct {
   SilcHmac hmac;			     /* Current HMAC */
   SilcDList private_keys;		     /* List of private keys or NULL */
   SilcChannelPrivateKey curr_key;	     /* Current private key */
+
+  /* Old channel key is saved for a short period of time when rekey occurs
+     in case if someone is sending messages after the rekey encrypted with
+     the old key, we can still decrypt them. */
+  SilcCipher old_channel_key;
+  SilcHmac old_hmac;
+  SilcTask rekey_task;
 } *SilcChannelEntry;
 
 /* Server entry context. This represents one server. When server information

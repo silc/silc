@@ -81,6 +81,9 @@ struct SilcHmacStruct {
 /* Default hmacs for silc_hmac_register_default(). */
 extern SilcHmacObject silc_default_hmacs[];
 
+/* Default HMAC in the SILC protocol */
+#define SILC_DEFAULT_HMAC "hmac-sha1-96"
+
 /* Prototypes */
 bool silc_hmac_register(SilcHmacObject *hmac);
 bool silc_hmac_unregister(SilcHmacObject *hmac);

@@ -642,6 +642,12 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
     silc_cipher_free(channel->channel_key);
   if (channel->hmac)
     silc_hmac_free(channel->hmac);
+  if (channel->old_channel_key)
+    silc_cipher_free(channel->old_channel_key);
+  if (channel->old_hmac)
+    silc_hmac_free(channel->old_hmac);
+  if (channel->rekey_task)
+    silc_schedule_task_del(conn->client->schedule, channel->rekey_task);
   silc_client_del_channel_private_keys(client, conn, channel);
   silc_free(channel);
   return ret;
