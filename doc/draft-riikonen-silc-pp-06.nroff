@@ -1203,7 +1203,7 @@ o Notify Type (2 bytes) - Indicates the type of the notify
 o Payload Length (2 bytes) - Length of the entire Notify Payload
   including any associated Argument Payloads.
 
-o Argument Nums (2 bytes) - Indicates the number of Argument
+o Argument Nums (1 byte) - Indicates the number of Argument
   Payloads associated to this payload.  Notify types may define
   arguments to be send along the notify message.
 .in 3

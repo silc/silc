@@ -851,10 +851,6 @@ is.  The type defines whether this is client, server or router
 connection.  Server uses this information to create the ID for the
 connection.
 
-After the authentication protocol has been successfully completed
-SILC_PACKET_NEW_ID must be sent to the connecting client by the server.
-See the [SILC1] for the details of the connecting procedure.
-
 Server MUST verify the authentication data received and if it is to fail
 the authentication MUST be failed by sending SILC_PACKET_FAILURE packet.
 If everything checks out fine the protocol is ended by server by sending
@@ -897,12 +893,10 @@ Start Payload, established by the SILC Key Exchange protocol.  This
 signature MUST then be verified by the server.  See the section 3.2.2
 Public Key Authentication for more information.
 
-The connecting client of this protocol MUST wait after successful execution
-of this protocol for the SILC_PACKET_NEW_ID packet where it will receive
-the ID it will be using in the SILC network.  The connecting client cannot
-start normal SILC session (sending messages or commands) until it has
-received its ID.  The ID's are always created by the server except
-for server to router connection where servers create their own ID's.
+See the section 4 SILC Procedures in [SILC1] for more information about
+client creating connection to server, and server creating connection
+to router, and how to register the session in the SILC Network after
+successful Connection Authentication protocol.
 
 
 .ti 0
