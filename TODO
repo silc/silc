@@ -116,12 +116,6 @@ TODO/bugs In SILC Libraries
 	o Do not allocate new buffer for every packet.  Use preallocated
 	  buffer and reallocate only if necessary.
 
- o Compression routines are missing.  The protocol supports packet
-   compression thus it must be implemented.  SILC Comp API must be
-   defined.  zlib package is already included into the lib dir (in CVS,
-   not in distribution), but it is not used yet, and it requires some
-   tweaking on the Makefiles (we want static lib not shared).
-
  o All payload parsing (decoding) functions should take unsigned char *
    and uint32 as data and data length as arguments.  Now some of the
    routines do already that but most of the routines use SilcBuffer.
@@ -136,10 +130,6 @@ TODO/bugs In SILC Libraries
 	  support IPv6.
 	o silc_id_render supports only IPv4 based ID's in the file
 	  lib/silcutil/silcutil.c.
-
- o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
-   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
-   in separately.
 
 
 TODO/Bugs in native WIN32 support (libraries)
@@ -161,6 +151,16 @@ TODO In SILC Protocol
 
 TODO After 1.0
 ==============
+
+ o Compression routines are missing.  The protocol supports packet
+   compression thus it must be implemented.  SILC Comp API must be
+   defined.  zlib package is already included into the lib dir (in CVS,
+   not in distribution), but it is not used yet, and it requires some
+   tweaking on the Makefiles (we want static lib not shared).
+
+ o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
+   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
+   in separately.
 
  o X.509 certificate support.  SILC protocol supports certificates and
    it would be great to have support for them.  This is a big task as
