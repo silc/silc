@@ -399,12 +399,17 @@ and the Mutual Authentication flag is not set then the initiator MUST
 NOT provide the signature data.  If the flag is set then the initiator
 MUST provide the signature data so that the responder can verify it.
 
-The Mutual Authentication flag is usually used only if a separate
+The Mutual Authentication flag is usually used when a separate 
 authentication protocol will not be executed for the initiator of the
 protocol.  This is case for example when the SKE is performed between
-two SILC clients.  In normal case, where client is connecting to the
-server, or server is connecting to the router the Mutual Authentication
-flag is not necessary.
+two SILC clients.  In normal case, where client is connecting to a
+server, or server is connecting to a router the Mutual Authentication
+flag may be omitted.  However, if the connection authentication protocol 
+for the connecting entity is not based on public key authentication (it
+is based on passphrase) then it is RECOMMENDED that Mutual Authentication 
+flag is enabled.  This way the connecting entity has to provide proof
+of posession of the private key for the public key it will provide in
+SILC Key Exchange protocol.
 
 When performing re-key with PFS selected this is the only payload that
 is sent in the SKE protocol.  The Key Exchange Start Payload MUST NOT
