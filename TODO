@@ -35,14 +35,6 @@ TODO/bugs In SILC Server
    a bug and should be done only once per channel after all clients of
    the server has been removed.
 
- o Acceptance of incoming connections (client and server connections)
-   should be checked before key exchange protocol.  Currently it is
-   checked at the authentication phase after KE, that is ok, but it should
-   be checked before starting KE, as well.  This should be done so that
-   is first checks denied connections, then client connections and then
-   server connections.  There is no use to execute the SKE if the connection
-   will not be allowed.
-
  o DNS/IP lookup blocks the server.  This must be fixed.  Check the
    resolver stuff (resolver(3), resolver(5)).  Either we have to do the
    own resolver stuff (through scheduler, if possible without writing

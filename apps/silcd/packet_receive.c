@@ -1191,36 +1191,6 @@ void silc_server_channel_message(SilcServer server,
     }
   }
 
-  /* If we are router and the packet came from router and private key
-     has not been set for the channel then we must encrypt the packet
-     as it was decrypted with the session key shared between us and the
-     router which sent it. This is so, because cells does not share the
-     same channel key */
-  if (server->server_type == SILC_ROUTER &&
-      sock->type == SILC_SOCKET_TYPE_ROUTER &&
-      !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
-    SilcBuffer chp;
-    uint32 iv_len, i;
-    uint16 data_len, flags;
-
-    iv_len = silc_cipher_get_block_len(channel->channel_key);
-    if (channel->iv[0] == '\0')
-      for (i = 0; i < iv_len; i++) channel->iv[i] = 
-				     silc_rng_get_byte(server->rng);
-    else
-      silc_hash_make(server->md5hash, channel->iv, iv_len, channel->iv);
-    
-    /* Encode new payload. This encrypts it also. */
-    SILC_GET16_MSB(flags, packet->buffer->data);
-    SILC_GET16_MSB(data_len, packet->buffer->data + 2);
-    chp = silc_channel_message_payload_encode(flags, data_len, 
-					      packet->buffer->data + 4,
-					      iv_len, channel->iv,
-					      channel->channel_key,
-					      channel->hmac);
-    silc_buffer_put(packet->buffer, chp->data, chp->len);
-    silc_buffer_free(chp);
-  }
 
   /* Distribute the packet to our local clients. This will send the
      packet for further routing as well, if needed. */

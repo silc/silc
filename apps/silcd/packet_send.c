@@ -533,6 +533,50 @@ void silc_server_packet_send_to_channel(SilcServer server,
   silc_free(packetdata.dst_id);
 }
 
+/* This checks whether the relayed packet came from router. If it did
+   then we'll need to encrypt it with the channel key. This is called
+   from the silc_server_packet_relay_to_channel. */
+
+static void
+silc_server_packet_relay_to_channel_encrypt(SilcServer server,
+					    SilcSocketConnection sock,
+					    SilcChannelEntry channel,
+					    unsigned char *data,
+					    unsigned int data_len)
+{
+  /* If we are router and the packet came from router and private key
+     has not been set for the channel then we must encrypt the packet
+     as it was decrypted with the session key shared between us and the
+     router which sent it. This is so, because cells does not share the
+     same channel key. */
+  if (server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_ROUTER &&
+      !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY) &&
+      channel->channel_key) {
+    SilcBuffer chp;
+    uint32 iv_len, i;
+    uint16 data_len, flags;
+
+    iv_len = silc_cipher_get_block_len(channel->channel_key);
+    if (channel->iv[0] == '\0')
+      for (i = 0; i < iv_len; i++) channel->iv[i] = 
+				     silc_rng_get_byte(server->rng);
+    else
+      silc_hash_make(server->md5hash, channel->iv, iv_len, channel->iv);
+    
+    /* Encode new payload. This encrypts it also. */
+    SILC_GET16_MSB(flags, data);
+    SILC_GET16_MSB(data_len, data + 2);
+    chp = silc_channel_message_payload_encode(flags, data_len, 
+					      data + 4,
+					      iv_len, channel->iv,
+					      channel->channel_key,
+					      channel->hmac);
+    memcpy(data, chp->data, chp->len);
+    silc_buffer_free(chp);
+  }
+}
+
 /* This routine is explicitly used to relay messages to some channel.
    Packets sent with this function we have received earlier and are
    totally encrypted. This just sends the packet to all clients on
@@ -551,7 +595,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					 uint32 data_len,
 					 int force_send)
 {
-  int found = FALSE;
+  bool found = FALSE;
   SilcSocketConnection sock = NULL;
   SilcPacketContext packetdata;
   SilcClientEntry client = NULL;
@@ -574,6 +618,14 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 					  packetdata.src_id_len +
 					  packetdata.dst_id_len));
+
+  /* This encrypts the packet, if needed. It will be encrypted if
+     it came from the router thus it needs to be encrypted with the
+     channel key. If the channel key does not exist, then we know we
+     don't have a single local user on the channel. */
+  silc_server_packet_relay_to_channel_encrypt(server, sender_sock,
+					      channel, data,
+					      data_len);
 
   /* If there are global users in the channel we will send the message
      first to our router for further routing. */
@@ -664,7 +716,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	    memcpy(tmp, data, data_len);
 
 	    /* Decrypt the channel message (we don't check the MAC) */
-	    if (!silc_channel_message_payload_decrypt(tmp, data_len, 
+	    if (channel->channel_key &&
+		!silc_channel_message_payload_decrypt(tmp, data_len, 
 						      channel->channel_key,
 						      NULL)) {
 	      memset(tmp, 0, data_len);
@@ -693,7 +746,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	  }
 	  continue;
 	}
-  
+
 	/* Send the packet (to normal server) */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 						idata->send_key, 

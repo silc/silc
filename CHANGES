@@ -1,3 +1,11 @@
+Wed Apr 18 22:19:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Moved the channel message encrypting in the router betwen
+	  router connections from silc_server_channel_message to the
+	  silc_server_packet_relay_to_channel since we want to check
+	  whether we have anybody channel before encrypting anything.
+	  Affected files silcd/packet_[receive/send].c.
+
 Tue Apr 17 21:18:19 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the [AdminConnection] server config section to support
