@@ -16,13 +16,13 @@ Naming
 Generic naming
 
 All identifiers, whether they defines, functions or something else, with
-execption of variables, has a common naming convention.  Usually all 
+exception of variables, has a common naming convention.  Usually all
 identifiers use `silc' prefix to indicate that the identifier is part of
-SILC distribution.  For example, silc_server_init(), SILC_PACKET_TYPE_ERROR, 
+SILC distribution.  For example, silc_server_init(), SILC_PACKET_TYPE_ERROR,
 etc.  As mentioned however, variables, local or global, does not use this
 naming convention.
 
-Lower lever routines, usually some library routines, may use their
+Lower level routines, usually some library routines, may use their
 own naming convention if generic API is defined over them.  The API uses
 the common naming convention while the lower level routines uses what
 ever they want.  For example, ciphers are implemented currently in this
@@ -127,7 +127,7 @@ variables but for real they are pointers, For example,
 
 	SilcDummy dummy;
 	dummy = silc_calloc(1, sizeof(*dummy));
-	dummy->flags = 0;
+	dummy->flags = SILC_DUMMY_EMPTY;
 
 This convention is very common in SILC code and has been used consistently
 throughout the code.  The pattern here is that all structures are named
@@ -177,8 +177,8 @@ called `silc_function_free'.  Respectively, with init/uninit functions.
 
 When this naming convention is used consistently it is easy to remember
 what the name of the function is.  For example, if you need buffer it
-is easy to figure out that the routines are most likely called 
-`silc_buffer_*',  and if you need to allocate buffer it is most likely 
+is easy to figure out that the routines are most likely called
+`silc_buffer_*',  and if you need to allocate buffer it is most likely
 called `silc_buffer_alloc'.  This sort of naming makes the programming,
 in the long run, much cleaner, simpler and faster.
 
@@ -198,14 +198,14 @@ extern inline void silc_dummy_inline(unsigned int flags)
 
 Because the function is defined as extern they can be included into
 public header files.  Do not forget to define inline function as extern.
-There are no any explicit prototype definitions for inline functions.
+There are no explicit prototype definitions for inline functions.
 
 
 Indentation
 ===========
 
 SILC has been coded with Emacs so standard indentation of Emacs is used
-in the SILC code.  The indentation is always 2 characters, not a 
+in the SILC code.  The indentation is always 2 characters, not a
 tabulator.  If you use Emacs then this should not be a problem.  So,
 if you code for SILC be sure to format the code to the standard way
 used in the SILC before submitting the code.
@@ -213,7 +213,7 @@ used in the SILC before submitting the code.
 A tip for those who think that these long function names etc are just
 too long to type, consider using dynamic abbreviation found in Emacs.
 With this cool feature you only have type some part of the string and
-then use the dabbrev to find the rest of the string.  I guess, by 
+then use the dabbrev to find the rest of the string.  I guess, by
 default it is M-/ in Emacs but I have binded it into Shift-TAB so it
 is fast to use when typing.
 
@@ -270,8 +270,8 @@ be commented.  If nothing more a line of comment telling what the function
 is about helps a lot when you go back to it after six months.  Static
 functions should be commented as well.
 
-When writing a new header it is preferred that the header file is 
-immediately written in the ROBOdoc documentation format.  This is 
+When writing a new header it is preferred that the header file is
+immediately written in the ROBOdoc documentation format.  This is
 important when you are doing library code under lib/.  There are plenty
 of examples of this format.  The ROBOdoc is used automatically generate
 the Toolkit documentation.
@@ -288,25 +288,25 @@ that looks good.  Here are some issues on general appearance.
 
 	o Use empty lines when appropriate but not too much.  There
 	  should not be excess empty lines at the end of file.  However,
-          using some empty lines in the code makes the code better 
-          looking.
+	  using some empty lines in the code makes the code better
+	  looking.
 
 	o The line is 79 characters long and not one character longer.
 	  Longer lines must be cut in two, or three, or ...
 
 	o Use spaces very much.  Do not write things like `if(!k)',
 	  instead write `if (!k)'.  Same with `for', `while', etc.
-	  Spaces should be put around all binary operators like `*', 
+	  Spaces should be put around all binary operators like `*',
 	  `==', `+', etc.  Also, when setting a value to variable be
-	  sure to set spaces around `='.  When writing argument list 
+	  sure to set spaces around `='.  When writing argument list
 	  to a function, space should follow each of the comma in the
-	  list.  However, do not use spaces with parenthesis, for 
+	  list.  However, do not use spaces with parenthesis, for
 	  example, `if ( !k )' is not accepted.
 
 	o If you are not sure about how something should be done or
 	  the code you've done is not finished, it should be commented
 	  with XXX plus explanation what is going on.  For example,
-          /* XXX hmm... how is this flushed? */
+	  /* XXX hmm... how is this flushed? */
 
 
 Source Files
@@ -343,7 +343,7 @@ Using gotos
 Gotos are used in the SILC code quite often.  If you know how to use
 goto's properly then it is ok to use them for example to optimize the
 code.  If you use goto's then use them only to make forward jumps, try
-to avoid backward jumps at all cost.  If you don't know how to use goto's 
+to avoid backward jumps at all cost.  If you don't know how to use goto's
 do not use them.
 
 
@@ -361,7 +361,7 @@ in the generic SILC code.  Few macros exist,
 	SILC_LOG_ERROR
 	SILC_LOG_FATAL
 
-When doing debugging the most used macros are SILC_LOG_DEBUG and 
+When doing debugging the most used macros are SILC_LOG_DEBUG and
 SILC_LOG_HEXDUMP.  With first macro you can print out any sort of debug
 messages with variable argument list, for example,
 
@@ -423,7 +423,7 @@ by memset() before freeing the memory.  Common way to do is,
 	silc_free(ptr);
 
 Where 'F' indicates free'd memory if you'd ever check it with debugger.
-Other choice is to use 0 instead of 'F'.  The pointer after freeing 
+Other choice is to use 0 instead of 'F'.  The pointer after freeing
 should be set to NULL if appropriate, ptr = NULL.
 
 Note that some functions in the SILC library handles the zeroing of
@@ -482,7 +482,7 @@ static void silc_callback(void *context)
 
 /* Register async operation */
 
-void silc_async_operation_register(int fd, SilcAsyncCb callback, 
+void silc_async_operation_register(int fd, SilcAsyncCb callback,
                                    void *context)
 {
   /* Register and return immediately */
@@ -502,7 +502,7 @@ void silc_async_operation(int fd, SilcAsyncCb callback, void *context)
   if (callback)
     (*callback)(context);
 }
-	
+
 
 Now, after the registeration of the async operation in this dumb example
 the silc_start returns immediately.  Lets say, 10 seconds later the
@@ -511,7 +511,7 @@ timeout) by calling silc_async_operation which on the other hand will
 call the callback function after it has finished.  The context that
 was passed to the registeration function is now passed back to the
 callback function.  Thus, you will get the context you wanted.  This is
-the typical scenario where callback functions come in very handy.  This 
+the typical scenario where callback functions come in very handy.  This
 is also the best way to pass context's that are needed later without
 making them global context's.  And as long as the context's are defined
 as void * they can be what ever contexts making the functions, that
@@ -530,7 +530,7 @@ and task system implemented in core library uses extensively callback
 functions.  Timeout's uses callbacks as well.  SILC Key Exchange protocol
 uses callback functions too.  The callback function in SKE provides
 packet sending without defining into the SKE code how the packets
-should be sent thus making it generic for both client and server 
+should be sent thus making it generic for both client and server
 (and actually to any application for that matter).
 
 There are some technical issues on callback programming that are
@@ -558,9 +558,9 @@ common in SILC code.
 
 	o You must explicitly cast the void * context's to correct
 	  type in the callback function.  Of course you must be careful
-	  to cast them to the correct type as they are void * they 
+	  to cast them to the correct type as they are void * they
 	  could be anything.  Many times this causes problems when you
-	  forget what was the type you passed to it.  Callback 
+	  forget what was the type you passed to it.  Callback
 	  programming may get very complex.
 
 	o You cannot use inline functions as callback functions,
@@ -568,7 +568,7 @@ common in SILC code.
 
 Callback programming may be hard to understand from first standing if
 you haven't done these before, and debugging them may be pain in the
-ass sometimes.  But after the grand idea behind callback functions 
+ass sometimes.  But after the grand idea behind callback functions
 becomes clear they are a wonderful tool.
 
 
@@ -576,8 +576,8 @@ Lists
 =====
 
 SILC has two different list API's.  The List API and the Dynamic List API.
-For definitions of List API see lib/silcutil/silclist.h and for Dynamic 
-List API see lib/silcutil/silcdlist.h.  Following short example of the 
+For definitions of List API see lib/silcutil/silclist.h and for Dynamic
+List API see lib/silcutil/silcdlist.h.  Following short example of the
 List API.
 
 List API
@@ -597,7 +597,7 @@ int main()
   /* Initialize the list */
   silc_list_init(list, struct SilcDummyStruct, next);
 
-  /* Allocate one list entry */	
+  /* Allocate one list entry */
   dummy = silc_calloc(1, sizeof(*dummy));
   dummy->dummy = 100;
   dummy->context = NULL;
@@ -605,14 +605,14 @@ int main()
   /* Add the entry to the list */
   silc_list_add(list, dummy);
 
-  /* Allocate second list entry */	
+  /* Allocate second list entry */
   dummy = silc_calloc(1, sizeof(*dummy));
   dummy->dummy = 3000;
   dummy->context = NULL;
 
   /* Add the entry to the list */
   silc_list_add(list, dummy);
-	
+
   /* Then traverse the list, print the values, remove from list and free
      memory */
   silc_list_start(list);
@@ -620,7 +620,7 @@ int main()
     fprintf(stderr, "%d\n", entry->dummy);
 
     /* Remove from list and free memory */
-    silc_list_del(list, entry);  
+    silc_list_del(list, entry);
     silc_free(entry);
   }
 
@@ -641,5 +641,5 @@ as such.
 
 Also, about authoring; If you write code to SILC don't forget to add
 yourself as author at the start of the file.  The reason for this is
-of course that everybody should get the credits they deserve but also 
+of course that everybody should get the credits they deserve but also
 if problems occur we know who to blame. :)
