@@ -444,6 +444,7 @@ AC_SUBST(PIDFILE)
 #
 SAVELIBS="$LIBS"
 SAVECFLAGS="$CFLAGS"
+SAVELDFLAGS="$LDFLAGS"
 AC_MSG_CHECKING(whether to support SOCKS4)
 AC_ARG_WITH(socks4,
   [[  --with-socks4[=DIR]     with SOCKS4 support [search in DIR/lib and DIR/include]]],
@@ -452,27 +453,18 @@ AC_ARG_WITH(socks4,
       no)
         AC_MSG_RESULT(no)
         ;;
-      yes)
-        AC_MSG_RESULT(yes)
-        socks=4
-        LIBS="-lsocks $LIBS"
-        ;;
       *)
         AC_MSG_RESULT(yes)
         socks=4
     
         if test -d "$withval/include"; then
           CFLAGS="$CFLAGS -I$withval/include"
-        else
-          CFLAGS="$CFLAGS -I$withval"
         fi
         if test -d "$withval/lib"; then
-          withval="-L$withval/lib -lsocks"
-        else
-          withval="-L$withval -lsocks"
+          LDFLAGS="$LDFLAGS -L$withval/lib"
         fi
     
-        LIBS="$withval $LIBS"
+        LIBS="-lsocks $LIBS"
         ;;
     esac
 
@@ -482,8 +474,9 @@ AC_ARG_WITH(socks4,
       ], [],
       [
         AC_MSG_ERROR(Could not find SOCKS4 library.)
-        CFLAGS="$SAVECFLAGS"
         LIBS="$SAVELIBS"
+        CFLAGS="$SAVECFLAGS"
+        LDFLAGS="$SAVELDFLAGS"
       ])
   ],
     AC_MSG_RESULT(no)
@@ -493,6 +486,7 @@ AC_ARG_WITH(socks4,
 #
 SAVELIBS="$LIBS"
 SAVECFLAGS="$CFLAGS"
+SAVELDFLAGS="$LDFLAGS"
 AC_MSG_CHECKING(whether to support SOCKS5)
 AC_ARG_WITH(socks5,
   [[  --with-socks5[=DIR]     with SOCKS5 support [search in DIR/lib and DIR/include]]],
@@ -501,27 +495,18 @@ AC_ARG_WITH(socks5,
       no)
         AC_MSG_RESULT(no)
         ;;
-      yes)
-        AC_MSG_RESULT(yes)
-        socks=5
-        LIBS="-lsocks5 $LIBS"
-        ;;
       *)
         AC_MSG_RESULT(yes)
         socks=5
 
         if test -d "$withval/include"; then
           CFLAGS="$CFLAGS -I$withval/include"
-        else
-          CFLAGS="$CFLAGS -I$withval"
         fi
         if test -d "$withval/lib"; then
-          withval="-L$withval/lib -lsocks5"
-        else
-          withval="-L$withval -lsocks5"
+          LDFLAGS="$LDFLAGS -L$withval/lib"
         fi
 
-        LIBS="$withval $LIBS"
+        LIBS="-lsocks5 $LIBS"
         ;;
     esac
 
@@ -531,8 +516,9 @@ AC_ARG_WITH(socks5,
       ], [],
       [
         AC_MSG_ERROR(Could not find SOCKS5 library.)
-        CFLAGS="$SAVECFLAGS"
         LIBS="$SAVELIBS"
+        CFLAGS="$SAVECFLAGS"
+        LDFLAGS="$SAVELDFLAGS"
       ])
   ],
     AC_MSG_RESULT(no)
@@ -576,6 +562,7 @@ fi
 mp_gmp=false
 SAVELIBS="$LIBS"
 SAVECFLAGS="$CFLAGS"
+SAVELDFLAGS="$LDFLAGS"
 AC_MSG_CHECKING(whether to search for GMP)
 AC_ARG_WITH(gmp,
   [[  --with-gmp[=DIR]        use GMP instead of MPI [search in DIR/lib and DIR/include]]],
@@ -584,25 +571,17 @@ AC_ARG_WITH(gmp,
       no)
         AC_MSG_RESULT(no)
         ;;
-      yes)
-        AC_MSG_RESULT(yes)
-        LIBS="-lgmp $LIBS"
-        ;;
       *)
         AC_MSG_RESULT(yes)
     
         if test -d "$withval/include"; then
           CFLAGS="$CFLAGS -I$withval/include"
-        else
-          CFLAGS="$CFLAGS -I$withval"
         fi
         if test -d "$withval/lib"; then
-          withval="-L$withval/lib -lgmp"
-        else
-          withval="-L$withval -lgmp"
+          LDFLAGS="$LDFLAGS -L$withval/lib"
         fi
     
-        LIBS="$withval $LIBS"
+        LIBS="-lgmp $LIBS"
         ;;
     esac
 
@@ -615,6 +594,7 @@ AC_ARG_WITH(gmp,
       [
         LIBS="$SAVELIBS"
         CFLAGS="$SAVECFLAGS"
+        LDFLAGS="$SAVELDFLAGS"
       ])
   ],
     AC_MSG_RESULT(no)
@@ -631,6 +611,10 @@ fi
 #
 check_iconv=true
 has_iconv=false
+SAVELIBS="$LIBS"
+SAVECFLAGS="$CFLAGS"
+SAVELDFLAGS="$LDFLAGS"
+SAVECPPFLAGS="$CPPFLAGS"
 AC_MSG_CHECKING(whether to implicit search for libiconv)
 AC_ARG_WITH(iconv,
   [[  --with-iconv[=DIR]      use libiconv [search in DIR/include and DIR/lib]]],
@@ -692,24 +676,25 @@ if test x$check_iconv = xtrue; then
         ],
         [
           echo "no"
+          LIBS="$SAVELIBS"
+          CFLAGS="$SAVECFLAGS"
+          LDFLAGS="$SAVELDFLAGS"
+          CPPFLAGS="$SAVECPPFLAGS"
         ])
      ])
 fi
 
 if test x$check_iconv = xtrue; then
   # search for iconv library..
-  SAVE_CPPFLAGS="$CPPFLAGS"
-  SAVE_CFLAGS="$CFLAGS"
-  SAVE_LDFLAGS="$LDFLAGS"
+  SAVELIBS="$LIBS"
+  SAVECFLAGS="$CFLAGS"
+  SAVELDFLAGS="$LDFLAGS"
+  SAVECPPFLAGS="$CPPFLAGS"
     
   for dir in `echo "/usr/local /usr/pkg /usr/contrib"`; do
     if test x$has_iconv = xfalse; then
       AC_MSG_RESULT(searching in $dir...)
-    
-      CPPFLAGS="$SAVE_CPPFLAGS"
-      CFLAGS="$SAVE_CFLAGS"
-      LDFLAGS="$SAVE_LDFLAGS"
-      
+     
       if test -d $dir/include; then
         CPPFLAGS="$CPPFLAGS -I$dir/include"
         CFLAGS="$CFLAGS -I$dir/include"
@@ -743,7 +728,17 @@ if test x$check_iconv = xtrue; then
             [
               echo "no"
               has_iconv=false
+ 
+              LIBS="$SAVELIBS"    
+              CFLAGS="$SAVECFLAGS"
+              LDFLAGS="$SAVELDFLAGS"
+              CPPFLAGS="$SAVECPPFLAGS"
             ])
+         ],
+         [
+           CFLAGS="$SAVECFLAGS"
+           LDFLAGS="$SAVELDFLAGS"
+           CPPFLAGS="$SAVECPPFLAGS"
          ])
       fi
     done
