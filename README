@@ -134,5 +134,6 @@ development mailing list.
 Official SILC project web site      : http://silcnet.org/
 FTP archive for SILC project        : ftp://ftp.silcnet.org/
 Development mailing list address    : silc-devel@lists.sourceforge.net
+SILC Server                         : /server silc.silcnet.org
 
 				Pekka Riikonen <priikone@silcnet.org>
