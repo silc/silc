@@ -3455,8 +3455,7 @@ SILC_SERVER_CMD_FUNC(join)
     if (silc_command_get(reply->payload) == SILC_COMMAND_JOIN) {
       tmp = silc_argument_get_arg_type(reply->args, 6, NULL);
       SILC_GET32_MSB(created, tmp);
-      if (silc_argument_get_arg_type(reply->args, 7, NULL)
-        create_key = FALSE;	/* Router returned the key already */
+      create_key = FALSE;	/* Router returned the key already */
     }
 
     if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS &&
