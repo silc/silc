@@ -32,5 +32,7 @@ typedef unsigned short SilcNotifyType;
 #define SILC_NOTIFY_TYPE_JOIN            2 /* "has joined channel" */
 #define SILC_NOTIFY_TYPE_LEAVE           3 /* "has left channel" */
 #define SILC_NOTIFY_TYPE_SIGNOFF         4 /* "signoff" */
+#define SILC_NOTIFY_TYPE_TOPIC_SET       5 /* "topic has been changed" */
+#define SILC_NOTIFY_TYPE_NICK_CHANGE     6 /* "has changed nickname" */
 
 #endif
