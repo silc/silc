@@ -769,10 +769,10 @@ silc_server_command_whois_process(SilcServerCommandContext cmd)
     /* Check all Client ID's received in the command packet */
     for (i = 0; i < client_id_count; i++) {
       entry = silc_idlist_find_client_by_id(server->local_list, 
-					    client_id[i], NULL);
+					    client_id[i], TRUE, NULL);
       if (!entry && check_global)
 	entry = silc_idlist_find_client_by_id(server->global_list, 
-					      client_id[i], NULL);
+					      client_id[i], TRUE, NULL);
       if (entry) {
 	clients = silc_realloc(clients, sizeof(*clients) * 
 			       (clients_count + 1));
@@ -1250,10 +1250,10 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
     tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
     if (tmp) {
       entry = silc_idlist_find_server_by_name(server->local_list,
-					      tmp, NULL);
+					      tmp, TRUE, NULL);
       if (!entry && check_global)
 	entry = silc_idlist_find_server_by_name(server->local_list,
-						tmp, NULL);
+						tmp, TRUE, NULL);
       if (entry) {
 	*servers = silc_realloc(*servers, sizeof(**servers) * 
 				(*servers_count + 1));
@@ -1323,10 +1323,10 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 	
       case SILC_ID_CLIENT:
 	entry = (void *)silc_idlist_find_client_by_id(server->local_list, 
-						      id, NULL);
+						      id, TRUE, NULL);
 	if (!entry && check_global)
 	  entry = (void *)silc_idlist_find_client_by_id(server->global_list, 
-							id, NULL);
+							id, TRUE, NULL);
 	if (entry) {
 	  *clients = silc_realloc(*clients, sizeof(**clients) * 
 				  (*clients_count + 1));
@@ -1342,10 +1342,10 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 	
       case SILC_ID_SERVER:
 	entry = (void *)silc_idlist_find_server_by_id(server->local_list, 
-						      id, NULL);
+						      id, TRUE, NULL);
 	if (!entry && check_global)
 	  entry = (void *)silc_idlist_find_server_by_id(server->global_list, 
-							id, NULL);
+							id, TRUE, NULL);
 	if (entry) {
 	  *servers = silc_realloc(*servers, sizeof(**servers) * 
 				  (*servers_count + 1));
@@ -2482,21 +2482,15 @@ SILC_SERVER_CMD_FUNC(kill)
 
   /* Get the client entry */
   remote_client = silc_idlist_find_client_by_id(server->local_list, 
-						client_id, NULL);
+						client_id, TRUE, NULL);
   if (!remote_client) {
     remote_client = silc_idlist_find_client_by_id(server->global_list, 
-						  client_id, NULL);
+						  client_id, TRUE, NULL);
     if (!remote_client) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
 					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
       goto out;
     }
-  }
-
-  if (remote_client->data.registered == FALSE) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
-					  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
-    goto out;
   }
 
   /* Get comment */
@@ -2589,10 +2583,10 @@ SILC_SERVER_CMD_FUNC(info)
   if (server_id) {
     /* Check whether we have this server cached */
     entry = silc_idlist_find_server_by_id(server->local_list,
-					  server_id, NULL);
+					  server_id, TRUE, NULL);
     if (!entry) {
       entry = silc_idlist_find_server_by_id(server->global_list,
-					    server_id, NULL);
+					    server_id, TRUE, NULL);
       if (!entry && server->server_type == SILC_ROUTER) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
 					      SILC_STATUS_ERR_NO_SUCH_SERVER);
@@ -2622,10 +2616,10 @@ SILC_SERVER_CMD_FUNC(info)
     /* Check whether we have this server cached */
     if (!entry && dest_server) {
       entry = silc_idlist_find_server_by_name(server->global_list,
-					      dest_server, NULL);
+					      dest_server, TRUE, NULL);
       if (!entry) {
 	entry = silc_idlist_find_server_by_name(server->local_list,
-						dest_server, NULL);
+						dest_server, TRUE, NULL);
       }
     }
 
@@ -3242,10 +3236,10 @@ SILC_SERVER_CMD_FUNC(motd)
 
     /* Check whether we have this server cached */
     entry = silc_idlist_find_server_by_name(server->global_list,
-					    dest_server, NULL);
+					    dest_server, TRUE, NULL);
     if (!entry) {
       entry = silc_idlist_find_server_by_name(server->local_list,
-					      dest_server, NULL);
+					      dest_server, TRUE, NULL);
     }
 
     if (server->server_type == SILC_ROUTER && !cmd->pending && 
@@ -3917,10 +3911,10 @@ SILC_SERVER_CMD_FUNC(cumode)
 
   /* Get target client's entry */
   target_client = silc_idlist_find_client_by_id(server->local_list, 
-						client_id, NULL);
+						client_id, TRUE, NULL);
   if (!target_client) {
     target_client = silc_idlist_find_client_by_id(server->global_list, 
-						  client_id, NULL);
+						  client_id, TRUE, NULL);
   }
 
   if (target_client != client &&
@@ -4154,10 +4148,10 @@ SILC_SERVER_CMD_FUNC(kick)
 
   /* Get target client's entry */
   target_client = silc_idlist_find_client_by_id(server->local_list, 
-						client_id, NULL);
+						client_id, TRUE, NULL);
   if (!target_client) {
     target_client = silc_idlist_find_client_by_id(server->global_list, 
-						  client_id, NULL);
+						  client_id, TRUE, NULL);
   }
 
   /* Check that the target client is not channel founder. Channel founder
@@ -4603,7 +4597,7 @@ SILC_SERVER_CMD_FUNC(close)
     SILC_GET32_MSB(port, tmp);
 
   server_entry = silc_idlist_find_server_by_conn(server->local_list,
-						 name, port, NULL);
+						 name, port, FALSE, NULL);
   if (!server_entry) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
 					  SILC_STATUS_ERR_NO_SERVER_ID);
@@ -4616,7 +4610,8 @@ SILC_SERVER_CMD_FUNC(close)
 
   /* Close the connection to the server */
   sock = (SilcSocketConnection)server_entry->connection;
-  silc_server_free_sock_user_data(server, sock);
+  if (sock->user_data)
+    silc_server_free_sock_user_data(server, sock);
   silc_server_close_connection(server, sock);
   
  out:
@@ -4908,10 +4903,10 @@ SILC_SERVER_CMD_FUNC(getkey)
     /* If the client is not found from local list there is no chance it
        would be locally connected client so send the command further. */
     client = silc_idlist_find_client_by_id(server->local_list, 
-					   client_id, NULL);
+					   client_id, TRUE, NULL);
     if (!client)
       client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, NULL);
+					     client_id, TRUE, NULL);
     
     if ((!client && !cmd->pending && !server->standalone) ||
 	(client && !client->connection && !cmd->pending && 
@@ -4972,10 +4967,10 @@ SILC_SERVER_CMD_FUNC(getkey)
     /* If the server is not found from local list there is no chance it
        would be locally connected server so send the command further. */
     server_entry = silc_idlist_find_server_by_id(server->local_list, 
-						 server_id, NULL);
+						 server_id, TRUE, NULL);
     if (!server_entry)
       server_entry = silc_idlist_find_server_by_id(server->global_list, 
-						   server_id, NULL);
+						   server_id, TRUE, NULL);
     
     if ((!server_entry && !cmd->pending && !server->standalone) ||
 	(server_entry && !server_entry->connection && !cmd->pending &&
