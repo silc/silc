@@ -392,9 +392,9 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
     *client_id_count = 1;
 
     /* Take all ID's from the command packet */
-    if (argc > 3) {
-      for (k = 1, i = 4; i < argc + 1; i++) {
-	tmp = silc_argument_get_arg_type(cmd->args, i, &len);
+    if (argc > 1) {
+      for (k = 1, i = 1; i < argc; i++) {
+	tmp = silc_argument_get_arg_type(cmd->args, i + 3, &len);
 	if (tmp) {
 	  *client_id = silc_realloc(*client_id, sizeof(**client_id) *
 				    (*client_id_count + 1));
@@ -948,7 +948,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
       
       if (!entry->username) {
 	packet = silc_command_reply_payload_encode_va(SILC_COMMAND_IDENTIFY,
-						      SILC_STATUS_OK, ident, 2,
+						      status, ident, 2,
 						      2, idp->data, idp->len, 
 						      3, nh, strlen(nh));
       } else {
@@ -961,7 +961,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 	}
       
 	packet = silc_command_reply_payload_encode_va(SILC_COMMAND_IDENTIFY,
-						      SILC_STATUS_OK, ident, 3,
+						      status, ident, 3,
 						      2, idp->data, idp->len, 
 						      3, nh, strlen(nh),
 						      4, uh, strlen(uh));

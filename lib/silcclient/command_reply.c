@@ -386,7 +386,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
-  if (status != SILC_STATUS_OK) {
+  if (status != SILC_STATUS_OK && 
+      status != SILC_STATUS_LIST_START &&
+      status != SILC_STATUS_LIST_ITEM &&
+      status != SILC_STATUS_LIST_END) {
     if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
       /* Take nickname which may be provided */
       tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
@@ -407,7 +410,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
   }
 
   /* Display one whois reply */
-  if (status == SILC_STATUS_OK) {
+  if (status == SILC_STATUS_OK ||
+      status == SILC_STATUS_LIST_START ||
+      status == SILC_STATUS_LIST_ITEM ||
+      status == SILC_STATUS_LIST_END) {
     unsigned int len;
     unsigned char *id_data;
     char *nickname;
@@ -458,12 +464,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
     }
   }
 
-  if (status == SILC_STATUS_LIST_START) {
-
-  }
-
-  if (status == SILC_STATUS_LIST_END) {
-
+  if (status != SILC_STATUS_OK &&
+      status != SILC_STATUS_LIST_END) {
+    silc_client_command_reply_free(cmd);
+    return;
   }
 
   /* Execute any pending command callbacks */
