@@ -1639,21 +1639,20 @@ may be generated and sent to the other client by sending packet
 SILC_PACKET_PRIVATE_MESSAGE_KEY which travels through the network
 and is secured by session keys.  After that the private message key
 is used in the private message communication between those clients.
-See more information about how this works technically in [SILC2].
 
 Other choice is to entirely use keys that are not sent through
 the SILC network at all.  This significantly adds security.  This key
 would be pre-shared-key that is known by both of the clients.  Both
 agree about using the key and starts sending packets that indicate
-that the private message is secured using private message key.  This
-is the technical aspect mentioned previously that is described
-in [SILC2].
+that the private message is secured using private message key.
 
-If the private message keys are not set to be used, which is the
-case by default in SILC, the private messages are secured by using
-normal session keys established by SILC Key Exchange protocol.
-
-
+The key material used as private message key is implementation issue.
+However, SILC_PACKET_KEY_AGREEMENT packet may be used to negotiate
+the key material.  If the key is normal pre-shared-key or randomly
+generated key, and the SILC_PACKET_KEY_AGREEMENT was not used, then
+the key material should be processed as defined in the [SILC3].  After
+processing the key material it is employed as defined in [SILC3],
+however, the HMAC key material must be discarded.
 
 
 .ti 0

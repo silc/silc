@@ -59,7 +59,10 @@ typedef struct {
 /* All client commands */
 extern SilcClientCommand silc_command_list[];
 
-/* Context sent as argument to all commands */
+/* Context sent as argument to all commands. This is used by the library
+   and application should use this as well. However, application may
+   choose to use some own context for its own local command. All library
+   commands, however, must use this context. */
 typedef struct {
   SilcClient client;
   SilcClientConnection conn;
@@ -72,12 +75,7 @@ typedef struct {
   int users;			/* Reference counter */
 } *SilcClientCommandContext;
 
-/* Pending Command callback destructor. This is called after calling the
-   pending callback or if error occurs while processing the pending command.
-   If error occurs then the callback won't be called at all, and only this
-   destructor is called. The `context' is the context given for the function
-   silc_client_command_pending. */
-typedef void (*SilcClientPendingDestructor)(void *context);
+#include "silcapi.h"
 
 /* Structure holding pending commands. If command is pending it will be
    executed after command reply has been executed. */
@@ -121,21 +119,7 @@ do {									\
     (*ctx->destructor)(ctx->context);					\
 } while(0)
 
-/* Prototypes */
-void silc_client_send_command(SilcClient client, SilcClientConnection conn,
-			      SilcCommand command, unsigned short ident,
-			      unsigned int argc, ...);
-SilcClientCommand *silc_client_command_find(const char *name);
-SilcClientCommandContext silc_client_command_alloc();
-void silc_client_command_free(SilcClientCommandContext ctx);
-SilcClientCommandContext 
-silc_client_command_dup(SilcClientCommandContext ctx);
-void silc_client_command_pending(SilcClientConnection conn,
-				 SilcCommand reply_cmd,
-				 unsigned short ident,
-				 SilcClientPendingDestructor destructor,
-				 SilcCommandCb callback,
-				 void *context);
+/* Prototypes (some prototypes are in the silcapi.h file) */
 void silc_client_command_pending_del(SilcClientConnection conn,
 				     SilcCommand reply_cmd,
 				     unsigned short ident);

@@ -1562,6 +1562,7 @@ o Private Message Key (variable length) - The actual private
 .in 3
 
 
+
 .ti 0
 2.3.13 Command Payload
 
@@ -1965,6 +1966,16 @@ o Port (4 bytes) - The port where the SKE protocol is bound.
   the receiver sends this payload as reply to the request it 
   must fill this field.  This is a 32 bit MSB first order value.
 .in 3
+
+
+After the key material has been received from the SKE protocol it is
+processed as the [SILC3] describes.  If the key material is used as
+channel private key then the Sending Encryption Key, as defined in
+[SILC3] is used as the channel private key.  Other key material must
+be discarded.  If the key material is used as private message key then
+the keys and the IV's are used as defined in the [SILC3].  The HMAC
+key, however, must be discarded.  Any other use for the key material
+is undefined.
 
 
 .ti 0

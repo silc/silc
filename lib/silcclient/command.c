@@ -75,7 +75,7 @@ SilcClientCommand silc_command_list[] =
   cmd, FALSE, cmd->command->cmd)
 
 /* Generic function to send any command. The arguments must be sent already
-   encoded into correct form in correct order. */
+   encoded into correct form and in correct order. */
 
 void silc_client_send_command(SilcClient client, SilcClientConnection conn,
 			      SilcCommand command, unsigned short ident,
@@ -201,8 +201,7 @@ void silc_client_command_free(SilcClientCommandContext ctx)
 /* Duplicate Command Context by adding reference counter. The context won't
    be free'd untill it hits zero. */
 
-SilcClientCommandContext 
-silc_client_command_dup(SilcClientCommandContext ctx)
+SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx)
 {
   ctx->users++;
   SILC_LOG_DEBUG(("Command context %p refcnt %d->%d", ctx, ctx->users - 1,

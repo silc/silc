@@ -11,6 +11,9 @@ Tue Feb 27 13:30:52 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  SILC Client Library.  Other files need not be included by
 	  the application anymore.
 
+	* Added new key_agreement client callback and also defined the
+	  Key Agreement library API for the application.
+
 Tue Feb 27 11:28:31 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new packet type: SILC_PACKET_KEY_AGREEMENT.  This packet
