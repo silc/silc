@@ -56,7 +56,8 @@ int silc_packet_send(SilcSocketConnection sock, bool force_send)
     ret = silc_socket_write(sock);
 
     if (ret == -1) {
-      SILC_LOG_ERROR(("Error sending packet, dropped"));
+      SILC_LOG_ERROR(("Error sending packet, dropped: %s", 
+                      strerror(errno)));
     }
     if (ret != -2)
       return ret;

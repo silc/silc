@@ -28,7 +28,8 @@ libsilcsftp_a_SOURCES = 	\
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\
-	silcsftp.h
+	silcsftp.h	\
+	silcsftp_fs.h
 endif
 
 EXTRA_DIST = *.h tests
