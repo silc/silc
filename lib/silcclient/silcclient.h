@@ -229,6 +229,9 @@ struct SilcClientEntryStruct {
   SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
   bool generated;		/* TRUE if library generated `key' */
   bool valid;			/* FALSE if this entry is not valid */
+
+  /* Application specific data.  Application may set here whatever it wants. */
+  void *context;
 };
 /***/
 
@@ -273,6 +276,9 @@ struct SilcChannelEntryStruct {
   SilcDList old_hmacs;
   SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
 						resolving this entry */
+
+  /* Application specific data.  Application may set here whatever it wants. */
+  void *context;
 };
 /***/
 
@@ -294,6 +300,9 @@ struct SilcChannelUserStruct {
   SilcClientEntry client;	             /* Client joined on channel */
   SilcUInt32 mode;			     /* mode, ChannelUserModes */
   SilcChannelEntry channel;		     /* The channel user has joined */
+
+  /* Application specific data.  Application may set here whatever it wants. */
+  void *context;
 };
 /***/
 
@@ -318,6 +327,9 @@ struct SilcServerEntryStruct {
   SilcServerID *server_id;		     /* Server ID */
   SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
 					        resolving this entry */
+
+  /* Application specific data.  Application may set here whatever it wants. */
+  void *context;
 };
 /***/
 
