@@ -3922,6 +3922,9 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
   if (!client && server->standalone)
     return NULL;
 
+  if (!client->data.registered)
+    return NULL;
+
   if (!client || !client->nickname || !client->username) {
     SilcBuffer buffer, idp;
 

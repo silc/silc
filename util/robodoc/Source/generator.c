@@ -286,7 +286,7 @@ RB_Generate_Doc_Start (
 	    {
 	      char fname[256];
 
-	      sprintf(fname, "%s_%s.html", doc_base, 
+	      sprintf(fname, "%s_%s.html", RB_FilePart(doc_base), 
 		      cur_header->function_name);
 
 	      if (cur_header->name && cur_header->function_name)
@@ -1277,7 +1277,8 @@ RB_Generate_Item_Body (FILE * dest_doc, char *dest_name,
 				   label_name, label_name);
 #endif
 			  fprintf (dest_doc, "<A HREF=\"%s_%s.html\">%s</A>",
-				   doc_base, label_name, label_name);
+				   RB_FilePart(doc_base), label_name, 
+					       label_name);
 			}
 		      else
 			{
