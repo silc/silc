@@ -1914,6 +1914,8 @@ SILC_SERVER_CMD_FUNC(join)
     goto out;
   }
   client_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!client_id)
+    goto out;
 
   /* Get cipher name */
   cipher = silc_argument_get_arg_type(cmd->args, 4, NULL);

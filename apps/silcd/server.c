@@ -1630,7 +1630,7 @@ void silc_server_free_sock_user_data(SilcServer server,
       /* XXX must take some info to history before freeing */
 
       /* Send REMOVE_ID packet to routers. */
-      if (!server->standalone)
+      if (!server->standalone && server->router)
 	silc_server_send_remove_id(server, server->router->connection,
 				   server->server_type == SILC_SERVER ?
 				   FALSE : TRUE, user_data->id, 
@@ -1647,10 +1647,11 @@ void silc_server_free_sock_user_data(SilcServer server,
       SilcServerEntry user_data = (SilcServerEntry)sock->user_data;
 
       /* Send REMOVE_ID packet to routers. */
-      silc_server_send_remove_id(server, server->router->connection,
-				 server->server_type == SILC_SERVER ?
-				 FALSE : TRUE, user_data->id, 
-				 SILC_ID_SERVER_LEN, SILC_ID_SERVER);
+      if (!server->standalone && server->router)
+	silc_server_send_remove_id(server, server->router->connection,
+				   server->server_type == SILC_SERVER ?
+				   FALSE : TRUE, user_data->id, 
+				   SILC_ID_CLIENT_LEN, SILC_ID_CLIENT);
       break;
     }
     break;
