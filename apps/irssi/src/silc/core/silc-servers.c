@@ -58,8 +58,7 @@ static int silc_send_channel(SILC_SERVER_REC *server,
   
   rec = silc_channel_find(server, channel);
   if (rec == NULL || rec->entry == NULL) {
-    cmd_return_error(CMDERR_NOT_JOINED);
-    return FALSE;
+    cmd_return_error_value(CMDERR_NOT_JOINED, FALSE);
   }
 
   silc_client_send_channel_message(silc_client, server->conn, rec->entry, 

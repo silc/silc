@@ -18,4 +18,12 @@
             cmd_return_error(CMDERR_NOT_CONNECTED); \
 	} G_STMT_END
 
+/* Returning from command function with error */
+#define cmd_return_error_value(a,v) \
+	G_STMT_START { \
+	  signal_emit("error command", 1, GINT_TO_POINTER(a)); \
+	  signal_stop(); \
+	  return (v); \
+	} G_STMT_END
+
 #endif
