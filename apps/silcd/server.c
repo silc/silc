@@ -3412,6 +3412,8 @@ void silc_server_free_sock_user_data(SilcServer server,
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
     silc_protocol_execute_final(sock->protocol, server->schedule);
     sock->protocol = NULL;
+    if (!sock->user_data)
+      return;
   }
 
   switch (sock->type) {
