@@ -1,6 +1,0 @@
-gcc -I../ 
--I../../../includes -I../../silccore \
--I../
--Wall -finline-functions
--o test_rsa test_rsa.c -L../.. -lsilc
-

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "silcincludes.h"
 
-#include "twofish.h"
+#include "aes.h"
 
 int main()
 {
@@ -20,7 +20,7 @@ int main()
 	memset(&cipher, 0, sizeof(cipher));
 	memset(&iv, 0, sizeof(iv));
 
-	context = malloc(silc_twofish_context_len());
+	context = malloc(silc_aes_context_len());
 
 	fprintf(stderr, "\nKey:\n");
 	for (i = 0; i < (sizeof(key) / 2); i += 2) {
@@ -28,7 +28,7 @@ int main()
 	}
 
 	fprintf(stderr, "\nSetting key\n");
-	silc_twofish_set_key(context, key, 256);
+	silc_aes_set_key(context, key, 256);
 
 	fprintf(stderr, "\nPlaintext:\n");
 	for (i = 0; i < (sizeof(plain) / 2); i += 2) {
@@ -38,7 +38,7 @@ int main()
 	}
 
 	fprintf(stderr, "\n\nEncrypting\n");
-	silc_twofish_encrypt_cbc(context, plain, cipher, 256, iv);
+	silc_aes_encrypt_cbc(context, plain, cipher, 256, iv);
 
 	fprintf(stderr, "Ciphertext:\n");
 	for (i = 0; i < (sizeof(cipher)/2); i += 2) {
@@ -49,7 +49,7 @@ int main()
 	memset(&iv, 0, sizeof(iv));
 
 	fprintf(stderr, "\n\nDecrypting\n");
-	silc_twofish_decrypt_cbc(context, cipher, plain2, 256, iv);
+	silc_aes_decrypt_cbc(context, cipher, plain2, 256, iv);
 
 	fprintf(stderr, "Decryptedtext:\n");
 	for (i = 0; i < (sizeof(plain2)/2); i += 2) {

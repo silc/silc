@@ -1,7 +1,0 @@
-gcc -I.. \
--I../../../includes -I../../silccore \
--I../.. -I../../silccore -I../../silcmath \
--I../../silcmath/gmp-2.0.2 -I../../silcske -I../../silcsim \
--Wall -finline-functions \
--o test_rsa test_rsa.c -L../.. -lsilc
-

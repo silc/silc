@@ -122,12 +122,12 @@ SILC_CIPHER_API_DECRYPT_CBC(aes)
 
   for (i = 16; i < len; i += 16) {
     SILC_CBC_DEC_PRE(tmp, src);
-    rijndael_decrypt((RijndaelContext *)context, tmp, tmp2);
+    rijndael_decrypt((RijndaelContext *)context, tmp, tmp2); 
     SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
   }
-
+  
   SILC_CBC_PUT_IV(tiv, iv);
-
+  
   return TRUE;
 }
 
