@@ -1660,21 +1660,29 @@ void silc_server_command_send_names(SilcServer server,
 {
   SilcServerCommandContext cmd;
   SilcBuffer buffer, idp;
+  SilcPacketContext *packet = silc_packet_context_alloc();
 
   idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   buffer = silc_command_payload_encode_va(SILC_COMMAND_NAMES, 0, 1,
 					  1, idp->data, idp->len);
+
+  packet->buffer = silc_buffer_copy(buffer);
+  packet->sock = sock;
+  packet->type = SILC_PACKET_COMMAND;
 
   cmd = silc_calloc(1, sizeof(*cmd));
   cmd->payload = silc_command_payload_parse(buffer);
   cmd->args = silc_command_get_args(cmd->payload);
   cmd->server = server;
   cmd->sock = sock;
+  cmd->packet = silc_packet_context_dup(packet);
   cmd->pending = FALSE;
 
   silc_server_command_names((void *)cmd);
+
   silc_free(buffer);
   silc_free(idp);
+  silc_packet_context_free(packet);
 }
 
 /* Internal routine that is called after router has replied to server's
@@ -2830,35 +2838,53 @@ SILC_SERVER_CMD_FUNC(names)
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   SilcBuffer idp;
+  unsigned short ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_NAMES, cmd, 1, 2);
 
   /* Get Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
   if (!tmp) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_NAMES,
 					  SILC_STATUS_ERR_NO_CHANNEL_ID);
     goto out;
   }
   id = silc_id_payload_parse_id(tmp, tmp_len);
 
-  /* Check whether the channel exists. If we are normal server and the
-     channel does not exist we will send this same command to our router
-     which will know if the channel exists. */
+  if (server->server_type == SILC_SERVER && !server->standalone &&
+      !cmd->pending) {
+    SilcBuffer tmpbuf;
+    
+    silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
+    tmpbuf = silc_command_payload_encode_payload(cmd->payload);
+    
+    /* Send NAMES command */
+    silc_server_packet_send(server, server->router->connection,
+			    SILC_PACKET_COMMAND, cmd->packet->flags,
+			    tmpbuf->data, tmpbuf->len, TRUE);
+    
+    /* Reprocess this packet after received reply */
+    silc_server_command_pending(server, SILC_COMMAND_NAMES, 
+				silc_command_get_ident(cmd->payload),
+				silc_server_command_names, (void *)cmd);
+    cmd->pending = TRUE;
+    silc_command_set_ident(cmd->payload, ident);
+    
+    silc_buffer_free(tmpbuf);
+    silc_free(id);
+    return;
+  }
+
+  /* Get the channel entry */
   channel = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
   if (!channel) {
-    if (server->server_type == SILC_SERVER && !server->standalone) {
-      /* XXX Send names command */
-
-      cmd->pending = TRUE;
-      silc_server_command_pending(server, SILC_COMMAND_NAMES, 0,
-				  silc_server_command_names, context);
-      return;
+    channel = silc_idlist_find_channel_by_id(server->global_list, id, NULL);
+    if (!channel) {
+      /* Channel really does not exist */
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_NAMES,
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+      goto out;
     }
-
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-    goto out;
   }
 
   /* Assemble the lists now */

@@ -665,7 +665,7 @@ SILC_CLIENT_CMD_FUNC(join)
   idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
 
   /* Send JOIN command to the server */
-  if (cmd->argc == 3)
+  if (cmd->argc == 2)
     buffer = 
       silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 2,
 				     1, cmd->argv[1], cmd->argv_lens[1],

@@ -1114,8 +1114,6 @@ void silc_server_new_channel_user(SilcServer server,
 			    packet->buffer->data, packet->buffer->len, FALSE);
   }
 
-  SILC_LOG_DEBUG(("Client ID: %s", silc_id_render(client_id, SILC_ID_CLIENT)));
-
   /* Get client entry */
   client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
   if (!client) {
