@@ -793,6 +793,20 @@ SILC_CLIENT_CMD_FUNC(kill)
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
 
+  /* Remove the client entry from the local cache. */
+  silc_idcache_del_by_context(conn->client_cache, target);
+  if (target->nickname)
+    silc_free(target->nickname);
+  if (target->server)
+    silc_free(target->server);
+  if (target->id)
+    silc_free(target->id);
+  if (target->send_key)
+    silc_cipher_free(target->send_key);
+  if (target->receive_key)
+    silc_cipher_free(target->receive_key);
+  silc_free(target);
+
   /* Notify application */
   COMMAND;
 

@@ -426,11 +426,11 @@ static void event_kick(SILC_SERVER_REC *server, va_list va)
   
   if (client_entry == conn->local_entry) {
     printformat_module("fe-common/silc", server, channel_entry->channel_name,
-		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_KICKED_YOU, 
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED_YOU, 
 		       channel_entry->channel_name, tmp ? tmp : "");
   } else {
     printformat_module("fe-common/silc", server, channel_entry->channel_name,
-		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_KICKED, 
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED, 
 		       client_entry->nickname,
 		       channel_entry->channel_name, tmp ? tmp : "");
   }
@@ -444,22 +444,20 @@ static void event_kill(SILC_SERVER_REC *server, va_list va)
 {
   SilcClientConnection conn = server->conn;
   SilcClientEntry client_entry;
-  SilcChannelEntry channel_entry;
   char *tmp;
 
   client_entry = va_arg(va, SilcClientEntry);
   tmp = va_arg(va, char *);
-  channel_entry = va_arg(va, SilcChannelEntry);
   
   if (client_entry == conn->local_entry) {
-    printformat_module("fe-common/silc", server, channel_entry->channel_name,
-		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_KILLED_YOU, 
-		       channel_entry->channel_name, tmp ? tmp : "");
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+		       tmp ? tmp : "");
   } else {
-    printformat_module("fe-common/silc", server, channel_entry->channel_name,
-		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_KILLED, 
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
 		       client_entry->nickname,
-		       channel_entry->channel_name, tmp ? tmp : "");
+		       tmp ? tmp : "");
   }
 }
 

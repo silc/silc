@@ -2080,6 +2080,14 @@ void silc_server_close_connection(SilcServer server,
 		  sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		  "Router"), sock->sock));
 
+  /* If any protocol is active cancel its execution */
+  if (sock->protocol) {
+    silc_protocol_cancel(sock->protocol, server->timeout_queue);
+    sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
+    silc_protocol_execute_final(sock->protocol, server->timeout_queue);
+    sock->protocol = NULL;
+  }
+
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(sock->sock);
 

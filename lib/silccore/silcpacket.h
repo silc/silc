@@ -35,9 +35,8 @@
 /* Amount of bytes to be read from the socket connection at once. */
 #define SILC_PACKET_READ_SIZE 16384
 
-/* Default byte size of the packet. This can be set larger if this
-   is not enough, we shall see. */
-#define SILC_PACKET_DEFAULT_SIZE 2048
+/* Default byte size of the packet. */
+#define SILC_PACKET_DEFAULT_SIZE 1024
 
 /* Header length without source and destination ID's. */
 #define SILC_PACKET_HEADER_LEN 8 + 2

@@ -74,7 +74,7 @@ static void silc_client_verify_key_cb(bool success, void *context)
   silc_free(verify);
 }
 
-/* Callback that is called when we have received KE2 payload from
+/* Callback that is called when we have received KE payload from
    responder. We try to verify the public key now. */
 
 void silc_client_protocol_ke_verify_key(SilcSKE ske,

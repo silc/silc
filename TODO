@@ -5,11 +5,6 @@ TODO/bugs in Irssi SILC client
 
  o /KICK does not remove the client from Irssi's NAMES list.
 
- o Giving KILL command crashes the client.
-
- o Waiting the answer for accepting new key after the protocol has
-   timeout and then ansering Y will crash the client.
-
  o Add PERL scripting support from Irssi CVS.
 
  o Add local commands to list the current server and client public keys
@@ -42,6 +37,9 @@ TODO/bugs In SILC Client Library
  o If the silc_client_channel_message does not find the client entry
    then it should attempt to resolve it at least once and no return
    NULL entry to the application.
+
+ o Add some silc_client_del_client and other deletion funtions for
+   application to delete client entrys from the cache.
 
  o All protocol execution timeouts are hard coded. They should be 
    configurable and the Irssi SILC client should be able to set them

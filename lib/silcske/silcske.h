@@ -160,6 +160,10 @@ struct SilcSKEStruct {
 
   /* Current status of SKE */
   SilcSKEStatus status;
+
+  /* Reference counter. This is used when SKE library is performing async
+     operations, like public key verification. */
+  int users;
 };
 
 /* Prototypes */

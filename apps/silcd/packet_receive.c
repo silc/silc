@@ -316,7 +316,7 @@ void silc_server_notify(SilcServer server,
 
     if (channel->topic)
       silc_free(channel->topic);
-    channel->topic = silc_calloc(tmp_len, sizeof(*channel->topic));
+    channel->topic = silc_calloc(tmp_len + 1, sizeof(*channel->topic));
     memcpy(channel->topic, tmp, tmp_len);
 
     /* Send the same notify to the channel */

@@ -4,6 +4,31 @@ Thu Jun 21 17:10:08 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  from the start and end of the arguments.  Affected file is
 	  lib/silcutil/silcutil.c.
 
+	* Cancel and free any active protocol in the function
+	  silc_server_close_connection.  Affected file silcd/server.c.
+
+	* Cancel and free any active protocol in the function
+	  silc_client_close_connction.  Affected file is
+	  lib/silcclient/client.c.
+
+	* Do not execute the KILL command for clients that are in
+	  history (ie. they are not in the network).  Affected file is
+	  silcd/command.c.
+
+	* Fixed KILL notify handling, client does not crash anymore.
+	  Affected file irssi/src/silc/core/silc-channels.c.
+
+	* Reduced the default packet buffer size from 2048 to 1024 in	
+	  lib/silccore/silcpacket.c.
+
+	* Added SILC_SKE_STATUS_FREED SKE status type and a reference
+	  counter to the SKE context that is incresed when the SKE library
+	  performs async operation outside the library.  If the outside
+	  process frees the SKE context and FREED status will be set 
+	  and the library will detect after the sync operation that the
+	  libary is freed.  The affected files are
+	  lib/silcske/silcske[_status].[ch].
+
 Tue Jun 19 22:10:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a possible crash in silc_packet_send_prepare.  It now

@@ -1156,16 +1156,34 @@ void silc_client_close_connection(SilcClient client,
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);
 
+  /* Cancel any active protocol */
+  if (sock->protocol) {
+    if (sock->protocol->protocol->type == 
+	SILC_PROTOCOL_CLIENT_KEY_EXCHANGE ||
+	sock->protocol->protocol->type == 
+	SILC_PROTOCOL_CLIENT_CONNECTION_AUTH) {
+      sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
+      silc_protocol_execute_final(sock->protocol, client->timeout_queue);
+      sock->protocol = NULL;
+      /* The application will recall this function with these protocols
+	 (the ops->connect client operation). */
+      return;
+    } else {
+      sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
+      silc_protocol_execute_final(sock->protocol, client->timeout_queue);
+      sock->protocol = NULL;
+    }
+  }
+
   /* Free everything */
   if (del && sock->user_data) {
     /* XXX Free all client entries and channel entries. */
 
-    client->ops->say(client, sock->user_data,
-		     "Closed connection to host %s", sock->hostname);
-
     /* Clear ID caches */
-    silc_idcache_del_all(conn->client_cache);
-    silc_idcache_del_all(conn->channel_cache);
+    if (conn->client_cache)
+      silc_idcache_del_all(conn->client_cache);
+    if (conn->channel_cache)
+      silc_idcache_del_all(conn->channel_cache);
 
     /* Free data */
     if (conn->remote_host)
@@ -1185,27 +1203,10 @@ void silc_client_close_connection(SilcClient client,
     if (conn->rekey)
       silc_free(conn->rekey);
 
-    conn->sock = NULL;
-    conn->remote_port = 0;
-    conn->remote_type = 0;
-    conn->send_key = NULL;
-    conn->receive_key = NULL;
-    conn->hmac_send = NULL;
-    conn->hmac_receive = NULL;
-    conn->local_id = NULL;
-    conn->local_id_data = NULL;
-    conn->remote_host = NULL;
-    conn->current_channel = NULL;
-    conn->pending_commands = NULL;
-    conn->rekey = NULL;
-
+    memset(conn, 0, sizeof(*conn));
     silc_client_del_connection(client, conn);
   }
 
-  if (sock->protocol) {
-    silc_protocol_free(sock->protocol);
-    sock->protocol = NULL;
-  }
   silc_socket_free(sock);
 }
 

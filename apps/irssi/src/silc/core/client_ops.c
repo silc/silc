@@ -184,7 +184,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
    or connecting failed.  This is also the first time application receives
    the SilcClientConnection objecet which it should save somewhere. */
 
-void  silc_connect(SilcClient client, SilcClientConnection conn, int success)
+void silc_connect(SilcClient client, SilcClientConnection conn, int success)
 {
   SILC_SERVER_REC *server = conn->context;
 

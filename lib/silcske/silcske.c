@@ -33,6 +33,7 @@ SilcSKE silc_ske_alloc()
 
   ske = silc_calloc(1, sizeof(*ske));
   ske->status = SILC_SKE_STATUS_OK;
+  ske->users = 1;
 
   return ske;
 }
@@ -41,6 +42,13 @@ SilcSKE silc_ske_alloc()
 
 void silc_ske_free(SilcSKE ske)
 {
+  ske->users--;
+  if (ske->users > 0) {
+    SILC_LOG_DEBUG(("Key Exchange set to FREED status"));
+    ske->status = SILC_SKE_STATUS_FREED;
+    return;
+  }
+
   SILC_LOG_DEBUG(("Freeing Key Exchange object"));
 
   if (ske) {
@@ -336,10 +344,21 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
 					    void *context)
 {
   SKEInitiatorFinish finish = (SKEInitiatorFinish)context;
-  SilcSKEKEPayload *payload = ske->ke2_payload;
+  SilcSKEKEPayload *payload;
   unsigned char hash[32];
   uint32 hash_len;
   SilcPublicKey public_key = NULL;
+
+  /* If the SKE was freed during the async call then free it really now,
+     otherwise just decrement the reference counter. */
+  if (ske->status == SILC_SKE_STATUS_FREED) {
+    silc_ske_free(ske);
+    return;
+  } else {
+    ske->users--;
+  }
+
+  payload = ske->ke2_payload;
 
   /* If the caller returns PENDING status SKE library will assume that
      the caller will re-call this callback when it is not anymore in
@@ -382,8 +401,7 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
     SILC_LOG_DEBUG(("Verifying signature (HASH)"));
 
     /* Verify signature */
-    silc_pkcs_public_key_data_set(ske->prop->pkcs, public_key->pk, 
-				  public_key->pk_len);
+    silc_pkcs_public_key_set(ske->prop->pkcs, public_key);
     if (silc_pkcs_verify(ske->prop->pkcs, payload->sign_data, 
 			 payload->sign_len, hash, hash_len) == FALSE) {
       
@@ -500,6 +518,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   if (payload->pk_data && verify_key) {
     SILC_LOG_DEBUG(("Verifying public key"));
     
+    ske->users++;
     (*verify_key)(ske, payload->pk_data, payload->pk_len,
 		  payload->pk_type, verify_context,
 		  silc_ske_initiator_finish_final, finish);
@@ -696,6 +715,15 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
   SilcSKEKEPayload *recv_payload, *send_payload;
   SilcMPInt *x, f;
 
+  /* If the SKE was freed during the async call then free it really now,
+     otherwise just decrement the reference counter. */
+  if (ske->status == SILC_SKE_STATUS_FREED) {
+    silc_ske_free(ske);
+    return;
+  } else {
+    ske->users--;
+  }
+
   recv_payload = ske->ke1_payload;
 
   /* If the caller returns PENDING status SKE library will assume that
@@ -748,8 +776,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
     SILC_LOG_DEBUG(("Verifying signature (HASH_i)"));
     
     /* Verify signature */
-    silc_pkcs_public_key_data_set(ske->prop->pkcs, public_key->pk, 
-				  public_key->pk_len);
+    silc_pkcs_public_key_set(ske->prop->pkcs, public_key);
     if (silc_pkcs_verify(ske->prop->pkcs, recv_payload->sign_data, 
 			 recv_payload->sign_len, hash, hash_len) == FALSE) {
       
@@ -867,6 +894,7 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
     if (recv_payload->pk_data && verify_key) {
       SILC_LOG_DEBUG(("Verifying public key"));
 
+      ske->users++;
       (*verify_key)(ske, recv_payload->pk_data, recv_payload->pk_len,
 		    recv_payload->pk_type, verify_context,
 		    silc_ske_responder_phase2_final, finish);

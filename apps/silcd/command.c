@@ -2458,6 +2458,12 @@ SILC_SERVER_CMD_FUNC(kill)
     }
   }
 
+  if (remote_client->data.registered == FALSE) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
+					  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
+    goto out;
+  }
+
   /* Get comment */
   comment = silc_argument_get_arg_type(cmd->args, 2, &tmp_len2);
   if (tmp_len2 > 128)
