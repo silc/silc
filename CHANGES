@@ -1,3 +1,9 @@
+Fri Feb 19 21:09:22 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for asking the destination filename where
+	  the downloaded file is saved in the file transfer.  Affected
+	  files are lib/silccilent/silcclient.h, client_ftp.c.
+
 Wed Feb 18 02:46:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed error handling in resuming data processing.  Affected

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,6 +48,8 @@ struct SilcClientFtpSessionStruct {
 
   SilcClientFileMonitor monitor;
   void *monitor_context;
+  SilcClientFileAskName ask_name;
+  void *ask_name_context;
   char *filepath;
   char *path;
 
@@ -329,7 +331,7 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
 			  SILC_CLIENT_FILE_MONITOR_ERROR,
-			  SILC_CLIENT_FILE_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_PERMISSION_DENIED, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
@@ -352,6 +354,37 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
 			session->filepath, session->monitor_context);
 }
 
+static void silc_client_ftp_ask_name(const char *filepath,
+				     void *context)
+{
+  SilcClientFtpSession session = (SilcClientFtpSession)context;
+  SilcSFTPAttributesStruct attr;
+  char *remote_file = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (filepath) {
+    remote_file = session->filepath;
+    session->filepath = NULL;
+    silc_free(session->path);
+    session->path = NULL;
+    session->filepath = strdup(filepath);
+  } else {
+    remote_file = strdup(session->filepath);
+  }
+
+  /* Now open the file */
+  memset(&attr, 0, sizeof(attr));
+  silc_sftp_open(session->sftp, remote_file, SILC_SFTP_FXF_READ, &attr,
+		 silc_client_ftp_open_handle, session);
+
+  /* Close the directory handle */
+  silc_sftp_close(session->sftp, session->dir_handle, NULL, NULL);
+  session->dir_handle = NULL;
+
+  silc_free(remote_file);
+}
+
 /* Returns the file name available for download. This is the downloader's
    function. */
 
@@ -361,7 +394,6 @@ static void silc_client_ftp_readdir_name(SilcSFTP sftp,
 					 void *context)
 {
   SilcClientFtpSession session = (SilcClientFtpSession)context;
-  SilcSFTPAttributesStruct attr;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -380,18 +412,21 @@ static void silc_client_ftp_readdir_name(SilcSFTP sftp,
     return;
   }
 
-  /* Now open the file */
-  memset(&attr, 0, sizeof(attr));
-  silc_sftp_open(sftp, name->filename[0], SILC_SFTP_FXF_READ, &attr,
-		 silc_client_ftp_open_handle, session);
-
   /* Save the important attributes like filename and file size */
   session->filepath = strdup(name->filename[0]);
   session->filesize = name->attrs[0]->size;
 
-  /* Close the directory handle */
-  silc_sftp_close(sftp, session->dir_handle, NULL, NULL);
-  session->dir_handle = NULL;
+  /* If the path was not provided, ask from application where to save the
+     downloaded file. */
+  if (!session->path && session->ask_name) {
+    session->ask_name(session->client, session->conn, session->session_id,
+		      name->filename[0], silc_client_ftp_ask_name, session,
+		      session->ask_name_context);
+    return;
+  }
+
+  /* Start downloading immediately to current directory. */
+  silc_client_ftp_ask_name(NULL, session);
 }
 
 /* Returns the file handle after giving opendir command. This is the
@@ -917,7 +952,9 @@ silc_client_file_receive(SilcClient client,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
 			 const char *path,
-			 SilcUInt32 session_id)
+			 SilcUInt32 session_id,
+			 SilcClientFileAskName ask_name,
+			 void *ask_name_context)
 {
   SilcClientFtpSession session;
   SilcBuffer keyagr, ftp;
@@ -948,6 +985,8 @@ silc_client_file_receive(SilcClient client,
 
   session->monitor = monitor;
   session->monitor_context = monitor_context;
+  session->ask_name = ask_name;
+  session->ask_name_context = ask_name_context;
   session->conn = conn;
   session->path = path ? strdup(path) : NULL;
 

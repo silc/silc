@@ -654,7 +654,9 @@ typedef struct {
   /* Called to indicate that connection was disconnected to the server.
      The `status' may tell the reason of the disconnection, and if the
      `message' is non-NULL it may include the disconnection message
-     received from server. */
+     received from server. Application must not call the
+     silc_client_close_connection in this callback.  The 'conn' is also
+     invalid after this function returns back to library. */
   void (*disconnected)(SilcClient client, SilcClientConnection conn,
 		       SilcStatus status, const char *message);
 
@@ -2456,6 +2458,54 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
 				      const char *filepath,
 				      void *context);
 
+/****f* silcclient/SilcClientAPI/SilcClientFileName
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcClientFileName)(SilcUInt32 session_id,
+ *                                       void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Completion callback for the SilcClientFileAskName callback function.
+ *    Application calls this to deliver the filepath and filename where
+ *    the downloaded file is to be saved.
+ *
+ ***/
+typedef void (*SilcClientFileName)(const char *filepath,
+				   void *context);
+
+/****f* silcclient/SilcClientAPI/SilcClientFileAskName
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcClientFileAskName)(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcUInt32 session_id,
+ *                                          const char *remote_filename,
+ *                                          SilcClientFileName completion,
+ *                                          void *completion_context,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    File name asking callback, that is called if it is given to the
+ *    silc_client_file_receive and the path given to that as argument was
+ *    NULL.  The library calls this to ask the filename and filepath to
+ *    where the file is to be saved.  The 'remote_filename' is the file
+ *    that is being downloaded.  Application must call the 'completion'
+ *    with 'completion_context' to continue with the file downloading.
+ *    It is not mandatory to provide this to the silc_client_file_receive.
+ *
+ ***/
+typedef void (*SilcClientFileAskName)(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcUInt32 session_id,
+				      const char *remote_filename,
+				      SilcClientFileName completion,
+				      void *completion_context,
+				      void *context);
+
 /****f* silcclient/SilcClientAPI/silc_client_file_send
  *
  * SYNOPSIS
@@ -2521,7 +2571,9 @@ silc_client_file_send(SilcClient client,
  *                             SilcClientFileMonitor monitor,
  *                             void *monitor_context,
  *                             const char *path,
- *                             SilcUInt32 session_id);
+ *                             SilcUInt32 session_id,
+ *                             SilcClientFileAskName ask_name,
+ *                             void *ask_name_context);
  *
  * DESCRIPTION
  *
@@ -2530,9 +2582,11 @@ silc_client_file_send(SilcClient client,
  *    received in the `ftp' client operation function.  This will actually
  *    perform the key agreement protocol with the remote client before
  *    actually starting the file transmission.  The `monitor' callback
- *    will be called to monitor the transmission.  If `path' is non NULL
+ *    will be called to monitor the transmission.  If `path' is non-NULL
  *    the file will be saved into that directory.  If NULL the file is
- *    saved in the current working directory.
+ *    saved in the current working directory, unless the 'ask_name'
+ *    callback is non-NULL.  In this case the callback is called to ask
+ *    the path and filename from application.
  *
  *    If error will occur during the file transfer process the error
  *    status will be returned in the monitor callback.  In this case
@@ -2546,7 +2600,9 @@ silc_client_file_receive(SilcClient client,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
 			 const char *path,
-			 SilcUInt32 session_id);
+			 SilcUInt32 session_id,
+			 SilcClientFileAskName ask_name,
+			 void *ask_name_context);
 
 /****f* silcclient/SilcClientAPI/silc_client_file_close
  *

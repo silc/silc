@@ -888,7 +888,8 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 
       ret = silc_client_file_receive(silc_client, conn,
 				     silc_client_file_monitor, server, NULL,
-				     server->current_session->session_id);
+				     server->current_session->session_id,
+				     NULL, NULL);
       if (ret != SILC_CLIENT_FILE_OK) {
 	if (ret == SILC_CLIENT_FILE_ALREADY_STARTED)
 	  printformat_module("fe-common/silc", server, NULL,
@@ -919,7 +920,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
       if (ftp->client_entry == client_entry && !ftp->filepath) {
 	ret = silc_client_file_receive(silc_client, conn,
 				       silc_client_file_monitor, server,
-				       NULL, ftp->session_id);
+				       NULL, ftp->session_id, NULL, NULL);
 	if (ret != SILC_CLIENT_FILE_OK) {
 	  if (ret == SILC_CLIENT_FILE_ALREADY_STARTED)
 	    printformat_module("fe-common/silc", server, NULL,
