@@ -335,7 +335,7 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 
   if (maj != maj2)
     status = SILC_SKE_STATUS_BAD_VERSION;
-  if (min < min2)
+  if (min > min2)
     status = SILC_SKE_STATUS_BAD_VERSION;
 
   return status;

@@ -56,11 +56,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o When server quits and all clients of that server are removed from all
-   channels the channel keys are re-generated for all clients.  This is
-   a bug and should be done only once per channel after all clients of
-   the server has been removed.
-
  o Incomplete IPv6 support:
 
  	o silc_server_get_users_on_channel does not support IPv6 based

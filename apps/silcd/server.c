@@ -2304,16 +2304,27 @@ int silc_server_remove_clients_by_server(SilcServer server,
   uint32 clients_c = 0;
   unsigned char **argv = NULL;
   uint32 *argv_lens = NULL, *argv_types = NULL, argc = 0;
+  SilcHashTable servers;
+  SilcChannelClientEntry chl;
+  SilcChannelEntry channel;
+  SilcHashTableList htl;
   int i;
 
   SILC_LOG_DEBUG(("Start"));
+
+  /* Allocate the hash table that holds the channels that require
+     channel key re-generation after we've removed this servers clients
+     from the channels. */
+  servers = silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL, NULL,
+				  NULL, NULL, TRUE);
 
   if (server_signoff) {
     idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
     argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
     argv_lens = silc_realloc(argv_lens,  sizeof(*argv_lens) * (argc + 1));
     argv_types = silc_realloc(argv_types, sizeof(*argv_types) * (argc + 1));
-    argv[argc] = idp->data;
+    argv[argc] = silc_calloc(idp->len, sizeof(*argv[0]));
+    memcpy(argv[argc], idp->data, idp->len);
     argv_lens[argc] = idp->len;
     argv_types[argc] = argc + 1;
     argc++;
@@ -2360,6 +2371,10 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	  argc++;
 	  silc_buffer_free(idp);
 	}
+
+	silc_hash_table_list(client->channels, &htl);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl))
+	  silc_hash_table_replace(servers, chl->channel, chl->channel);
 
 	/* Remove the client entry */
 	silc_server_remove_from_channels(server, NULL, client, FALSE, 
@@ -2414,6 +2429,10 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	  silc_buffer_free(idp);
 	}
 
+	silc_hash_table_list(client->channels, &htl);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl))
+	  silc_hash_table_replace(servers, chl->channel, chl->channel);
+
 	/* Remove the client entry */
 	silc_server_remove_from_channels(server, NULL, client, FALSE,
 					 NULL, FALSE);
@@ -2455,10 +2474,24 @@ int silc_server_remove_clients_by_server(SilcServer server,
 
     silc_free(clients);
     silc_buffer_free(args);
+    for (i = 0; i < argc; i++)
+      silc_free(argv[i]);
     silc_free(argv);
     silc_free(argv_lens);
     silc_free(argv_types);
   }
+
+  /* We must now re-generate the channel key for all channels that had
+     this server's client(s) on the channel. As they left the channel we
+     must re-generate the channel key. */
+  silc_hash_table_list(servers, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&channel)) {
+    silc_server_create_channel_key(server, channel, 0);
+    silc_server_send_channel_key(server, NULL, channel, 
+				 server->server_type == SILC_ROUTER ? 
+				 FALSE : !server->standalone);
+  }
+  silc_hash_table_free(servers);
 
   return TRUE;
 }
@@ -2546,9 +2579,9 @@ void silc_server_remove_from_channels(SilcServer server,
     server->stat.my_chanclients--;
 
     /* If there is no global users on the channel anymore mark the channel
-       as local channel. */
-    if (server->server_type == SILC_SERVER &&
-	!silc_server_channel_has_global(channel))
+       as local channel. Do not check if the removed client is local client. */
+    if (server->server_type == SILC_SERVER && channel->global_users && 
+	chl->client->router && !silc_server_channel_has_global(channel))
       channel->global_users = FALSE;
 
     /* If there is not at least one local user on the channel then we don't
@@ -2663,9 +2696,9 @@ int silc_server_remove_from_one_channel(SilcServer server,
   server->stat.my_chanclients--;
   
   /* If there is no global users on the channel anymore mark the channel
-     as local channel. */
-  if (server->server_type == SILC_SERVER &&
-      !silc_server_channel_has_global(channel))
+     as local channel. Do not check if the client is local client. */
+  if (server->server_type == SILC_SERVER && channel->global_users &&
+      chl->client->router && !silc_server_channel_has_global(channel))
     channel->global_users = FALSE;
 
   /* If there is not at least one local user on the channel then we don't

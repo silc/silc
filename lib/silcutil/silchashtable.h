@@ -264,7 +264,7 @@ void silc_hash_table_add(SilcHashTable ht, void *key, void *context);
  * DESCRIPTION
  *
  *    Same as silc_hash_table_add but if the `key' already exists in the
- *    hash table the old key and the old context will be replace with the
+ *    hash table the old key and the old context will be replaced with the
  *    `key' and the `context. The destructor function will be called for the
  *    replaced key and context.
  *
@@ -442,7 +442,7 @@ void silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
  * DESCRIPTION
  *
  *    Same as silc_hash_table_add_ext but if the `key' already exists in the
- *    hash table the old key and the old context will be replace with the
+ *    hash table the old key and the old context will be replaced with the
  *    `key' and the `context. The destructor function will be called for the
  *    replaced key and context.
  *

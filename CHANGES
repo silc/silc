@@ -1,3 +1,23 @@
+Thu Jul  5 21:22:32 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a possible crash in silc_server_remove_clients_by_server
+	  in silcd/server.c.  Fixed there also some memory leaks.
+
+	* Fixed the silc_idlist_replace_client_id.  It could replace
+	  wrong key in the hash table.  Affected file silcd/idlist.c.
+
+	* Do not check whether there are global users on the channel
+	  if the channel->global_users is FALSE.  Affected functions
+	  silc_server_remove_from_one_channel and
+	  silc_server_remove_from_channels in silcd/server.c.  Also,
+	  do not check if the removed client is local as we can be
+	  sure that global client was not removed from the channel
+	  and checking for global users is not needed.
+
+	* The silc_server_remove_clients_by_server now re-generates
+	  the channel keys correctly for those channels that had
+	  clients removed from them.  Affected file silcd/server.c.
+
 Tue Jul  3 11:39:20 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Found the reason of random crashes in the server.  We weren't

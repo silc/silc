@@ -502,7 +502,7 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 
   /* Remove the old entry and add a new one */
 
-  silc_idcache_del_by_id(id_list->clients, (void *)client->id);
+  silc_idcache_del_by_context(id_list->clients, client);
 
   silc_free(client->id);
   client->id = new_id;
