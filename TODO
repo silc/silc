@@ -44,6 +44,8 @@ TODO/bugs In SILC Server
    own resolver stuff (through scheduler, if possible without writing
    too much own stuff) or use threads.
 
+ o [DenyConnection] config section is not implemented.
+
  o The backup router support described in the protocol specification
    should be done at some point.
 
