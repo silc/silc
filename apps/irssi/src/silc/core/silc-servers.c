@@ -175,11 +175,13 @@ static int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
 }
 
 void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
-		    const char *data, int data_len,
+		    const char *data,
 		    const char *enc, const char *type)
 {
   SILC_CHANNEL_REC *channel;
   QUERY_REC *query;
+  char *unescaped_data;
+  int unescaped_data_len;
   char *mime_data;
   int mime_data_len;
 
@@ -187,9 +189,11 @@ void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
       (enc == NULL) || (type == NULL))
     return;
 
+  unescaped_data = silc_unescape_data(data, &unescaped_data_len);
+
 #define SILC_MIME_HEADER "MIME-Version: 1.0\r\nContent-Type: %s\r\nContent-Transfer-Encoding: %s\r\n\r\n"
 
-  mime_data_len = data_len + strlen(SILC_MIME_HEADER) - 4
+  mime_data_len = unescaped_data_len + strlen(SILC_MIME_HEADER) - 4
     + strlen(enc) + strlen(type);
   if (mime_data_len >= SILC_PACKET_MAX_LEN)
     return;
@@ -198,7 +202,7 @@ void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
   mime_data = silc_calloc(mime_data_len, sizeof(*mime_data));
   snprintf(mime_data, mime_data_len, SILC_MIME_HEADER, type, enc);
   memmove(mime_data + strlen(SILC_MIME_HEADER) - 4 + strlen(enc) + strlen(type),
-	  data, data_len);
+	  unescaped_data, unescaped_data_len);
 
 #undef SILC_MIME_HEADER
 
@@ -215,6 +219,7 @@ void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
   }
 
   silc_free(mime_data);
+  silc_free(unescaped_data);
 }
 
 static int isnickflag_func(char flag)

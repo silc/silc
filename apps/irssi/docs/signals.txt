@@ -324,3 +324,12 @@ gui-readline.c:
 
 gui-printtext.c:
  "beep"
+
+SILC
+---
+
+silc-channels.c:
+ "mime", SERVER_REC, CHANNEL_REC, char *blob, char *enc, char *type, char *nick
+
+silc-servers.c:
+ "mime-send", SERVER_REC, WI_ITEM_REC, char *blob, char *enc, char *type

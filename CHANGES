@@ -1,3 +1,15 @@
+Sun Aug 24 23:35:19 CEST 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* Provide a signal handler to send MIME encoded messages and emit
+	  a signal when a MIME encoded message is received. Also document
+	  the signals for usage with the perl interface.
+
+	  A sample perl script will be supplied at a later point.
+
+	  Affected files are irssi/docs/signals.txt, 
+	  irssi/src/silc/core/client_ops.[ch], 
+	  irssi/src/silc/core/silc-{channels,servers}.c
+
 Sun Aug 24 12:58:30 CEST 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Use SILC_COMMAND_PING to estimate the round-trip time to the

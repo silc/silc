@@ -288,6 +288,68 @@ int verify_message_signature(SilcClientEntry sender,
   return ret;
 }
 
+char * silc_unescape_data(const char *escaped_data, SilcUInt32 *length)
+{
+  SilcUInt32 ctr, dest=0;
+  char *data;
+
+  data = silc_calloc(strlen(escaped_data), sizeof(char));
+  
+  for (ctr = 0; ctr < strlen(escaped_data); ctr++)
+    if (escaped_data[ctr] == 1)
+      data[dest++] = escaped_data[++ctr] - 1;
+    else
+      data[dest++] = escaped_data[ctr];
+
+  *length = dest;
+  return data;
+}
+
+char * silc_escape_data(const char *data, SilcUInt32 len)
+{
+  char *escaped_data;
+  SilcUInt32 ctr, zeros=0;
+
+  for (ctr = 0; ctr < len; ctr++)
+    if (data[ctr] == 0 || data[ctr] == 1)
+      zeros++;
+
+  escaped_data = silc_calloc(zeros + len, sizeof(char));
+
+  zeros=0;
+  for (ctr = 0; ctr < len; ctr++)
+    switch (data[ctr]) {
+      case 0:
+	escaped_data[zeros++] = 1;
+	escaped_data[zeros++] = 1;
+	break;
+
+      case 1:
+	escaped_data[zeros++] = 1;
+	escaped_data[zeros++] = 2;
+	break;
+
+      default:
+	escaped_data[zeros++] = data[ctr];
+    } 
+
+    return escaped_data;
+}
+
+void silc_emit_mime_sig(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
+               const char *data, SilcUInt32 data_len,
+               const char *encoding, const char *type, const char *nick)
+{
+   char *escaped_data;
+
+   escaped_data = silc_escape_data(data, data_len);
+
+   signal_emit("mime", 6, server, channel, escaped_data, encoding, type, nick);
+ 
+   silc_free(escaped_data);
+}
+
+
 /* Message for a channel. The `sender' is the nickname of the sender
    received in the packet. The `channel_name' is the name of the channel. */
 
@@ -348,9 +410,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       /* It is something textual, display it */
       message = (const unsigned char *)data;
     } else {
-      printformat_module("fe-common/silc", server, channel->channel_name,
-			 MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
-			 nick == NULL ? "[<unknown>]" : nick->nick, type);
+      silc_emit_mime_sig(server, chanrec, data, data_len,
+      		enc, type, nick == NULL ? NULL : nick->nick);
       message = NULL;
     }
   }
@@ -457,10 +518,8 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       /* It is something textual, display it */
       message = (const unsigned char *)data;
     } else {
-      printformat_module("fe-common/silc", server, NULL,
-			 MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
-			 sender->nickname ? sender->nickname : "[<unknown>]",
-			 type);
+      silc_emit_mime_sig(server, NULL, data, data_len,
+      			enc, type, sender->nickname);
       message = NULL;
     }
   }

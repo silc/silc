@@ -70,5 +70,9 @@ void silc_ftp(SilcClient client, SilcClientConnection conn,
 void
 silc_detach(SilcClient client, SilcClientConnection conn,
             const unsigned char *detach_data, SilcUInt32 detach_data_len);
+char *
+silc_unescape_data(const char *escaped_data, SilcUInt32 *length);
+char * 
+silc_escape_data(const char *data, SilcUInt32 len);
 
 #endif
