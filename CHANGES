@@ -1,3 +1,8 @@
+Mon Nov 10 14:41:40 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed MIME header parsing for the hopefully last time.  Affected
+	  file lib/silcutil/silcstrutil.c
+
 Mon Nov 10 13:03:46 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Rewrote the PKCS#1 routines.  Added lib/silccrypt/silcpkcs1.[ch].
