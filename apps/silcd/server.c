@@ -3541,6 +3541,7 @@ void silc_server_announce_get_channel_topic(SilcServer server,
 
 void silc_server_announce_get_channel_users(SilcServer server,
 					    SilcChannelEntry channel,
+					    SilcBuffer *channel_modes,
 					    SilcBuffer *channel_users,
 					    SilcBuffer *channel_users_modes)
 {
@@ -3551,11 +3552,43 @@ void silc_server_announce_get_channel_users(SilcServer server,
   int len;
   unsigned char mode[4], *fkey = NULL;
   SilcUInt32 fkey_len = 0;
+  char *hmac;
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Now find all users on the channel */
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+
+  /* CMODE notify */
+  clidp = silc_id_payload_encode(server->id, SILC_ID_SERVER);
+  SILC_PUT32_MSB(channel->mode, mode);
+  hmac = channel->hmac ? (char *)silc_hmac_get_name(channel->hmac) : NULL;
+  if (channel->founder_key)
+    fkey = silc_pkcs_public_key_encode(channel->founder_key, &fkey_len);
+  tmp = 
+    silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CMODE_CHANGE,
+				       6, clidp->data, clidp->len,
+				       mode, sizeof(mode),
+				       NULL, 0,
+				       hmac, hmac ? strlen(hmac) : 0,
+				       channel->passphrase,
+				       channel->passphrase ?
+				       strlen(channel->passphrase) : 0,
+				       fkey, fkey_len);
+  len = tmp->len;
+  *channel_modes =
+    silc_buffer_realloc(*channel_modes,
+			(*channel_modes ?
+			 (*channel_modes)->truelen + len : len));
+  silc_buffer_pull_tail(*channel_modes,
+			((*channel_modes)->end -
+			 (*channel_modes)->data));
+  silc_buffer_put(*channel_modes, tmp->data, tmp->len);
+  silc_buffer_pull(*channel_modes, len);
+  silc_buffer_free(tmp);
+  silc_buffer_free(clidp);
+  silc_free(fkey);
+
+  /* Now find all users on the channel */
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     clidp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
@@ -3612,6 +3645,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
 void silc_server_announce_get_channels(SilcServer server,
 				       SilcIDList id_list,
 				       SilcBuffer *channels,
+				       SilcBuffer **channel_modes,
 				       SilcBuffer *channel_users,
 				       SilcBuffer **channel_users_modes,
 				       SilcUInt32 *channel_users_modes_c,
@@ -3670,10 +3704,14 @@ void silc_server_announce_get_channels(SilcServer server,
 					    sizeof(**channel_users_modes) *
 					    (i + 1));
 	(*channel_users_modes)[i] = NULL;
+	*channel_modes = silc_realloc(*channel_modes,
+				      sizeof(**channel_modes) * (i + 1));
+	(*channel_modes)[i] = NULL;
 	*channel_ids = silc_realloc(*channel_ids,
 				    sizeof(**channel_ids) * (i + 1));
 	(*channel_ids)[i] = NULL;
 	silc_server_announce_get_channel_users(server, channel,
+					       &(*channel_modes)[i], 
 					       channel_users,
 					       &(*channel_users_modes)[i]);
 	(*channel_ids)[i] = channel->id;
@@ -3708,7 +3746,7 @@ void silc_server_announce_channels(SilcServer server,
 				   unsigned long creation_time,
 				   SilcSocketConnection remote)
 {
-  SilcBuffer channels = NULL, channel_users = NULL;
+  SilcBuffer channels = NULL, *channel_modes = NULL, channel_users = NULL;
   SilcBuffer *channel_users_modes = NULL;
   SilcBuffer *channel_topics = NULL;
   SilcUInt32 channel_users_modes_c = 0;
@@ -3718,7 +3756,8 @@ void silc_server_announce_channels(SilcServer server,
 
   /* Get channels and channel users in local list */
   silc_server_announce_get_channels(server, server->local_list,
-				    &channels, &channel_users,
+				    &channels, &channel_modes,
+				    &channel_users,
 				    &channel_users_modes,
 				    &channel_users_modes_c,
 				    &channel_topics,
@@ -3727,7 +3766,8 @@ void silc_server_announce_channels(SilcServer server,
   /* Get channels and channel users in global list */
   if (server->server_type != SILC_SERVER)
     silc_server_announce_get_channels(server, server->global_list,
-				      &channels, &channel_users,
+				      &channels, &channel_modes,
+				      &channel_users,
 				      &channel_users_modes,
 				      &channel_users_modes_c,
 				      &channel_topics,
@@ -3744,6 +3784,28 @@ void silc_server_announce_channels(SilcServer server,
 			    FALSE);
 
     silc_buffer_free(channels);
+  }
+
+  if (channel_modes) {
+    int i;
+
+    for (i = 0; i < channel_users_modes_c; i++) {
+      if (!channel_modes[i])
+        continue;
+      silc_buffer_push(channel_modes[i],
+		       channel_modes[i]->data -
+		       channel_modes[i]->head);
+      SILC_LOG_HEXDUMP(("channel modes"), channel_modes[i]->data,
+		       channel_modes[i]->len);
+      silc_server_packet_send_dest(server, remote,
+				   SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				   channel_ids[i], SILC_ID_CHANNEL,
+				   channel_modes[i]->data,
+				   channel_modes[i]->len,
+				   FALSE);
+      silc_buffer_free(channel_modes[i]);
+    }
+    silc_free(channel_modes);
   }
 
   if (channel_users) {

@@ -3,6 +3,16 @@ Fri May 17 08:33:41 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	* Fixed watcher list checking during server signoff.  It
 	  crashed the server.  Affected file silcd/server_util.c.
 
+	* The JOIN command reply returns now the founder's public
+	  key.  Affected file is silcd/command.c.
+
+	* Announce the channel mode, and the mode properties with
+	  CMODE_CHANGE notify.  Affected file silcd/server.c.
+
+	* Mark new channels by default disabled, untill at least
+	  one user joins the channel.  Affected file is
+ 	  silcd/packet_receive.c.
+
 Thu May 16 13:05:13 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* The nickname argument to watch notify can be optional.

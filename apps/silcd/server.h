@@ -176,11 +176,13 @@ void silc_server_announce_get_channel_topic(SilcServer server,
 					    SilcBuffer *topic);
 void silc_server_announce_get_channel_users(SilcServer server,
 					    SilcChannelEntry channel,
+					    SilcBuffer *channel_modes,
 					    SilcBuffer *channel_users,
 					    SilcBuffer *channel_users_modes);
 void silc_server_announce_get_channels(SilcServer server,
 				       SilcIDList id_list,
 				       SilcBuffer *channels,
+				       SilcBuffer **channel_modes,
 				       SilcBuffer *channel_users,
 				       SilcBuffer **channel_users_modes,
 				       SilcUInt32 *channel_users_modes_c,

@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 15 May 2002
+.ds RH XXX
 .ds CH
 .na
 .hy 0
@@ -16,15 +16,15 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-05.txt                              15 May 2002
-Expires: 15 November 2002
+draft-riikonen-silc-spec-06.txt                              XXX
+Expires: XXX
 
 .in 3
 
 .ce 3
 Secure Internet Live Conferencing (SILC),
 Protocol Specification
-<draft-riikonen-silc-spec-05.txt>
+<draft-riikonen-silc-spec-06.txt>
 
 .ti 0
 Status of this Memo
@@ -1837,8 +1837,10 @@ MUST be announced.
 
 All clients are announced by compiling a list of ID Payloads into the
 SILC_PACKET_NEW_ID packet.  All channels are announced by compiling a
-list of Channel Payloads into the SILC_PACKET_NEW_CHANNEL packet.  Also, 
-the channel users on the channels must be announced by compiling a
+list of Channel Payloads into the SILC_PACKET_NEW_CHANNEL packet.
+Channels' mode and founder public key and other channel mode specific
+data is announced by sending SILC_NOTIFY_TYPE_CMODE_CHANGE notify list.
+Also, the channel users on the channels must be announced by compiling a
 list of Notify Payloads with the SILC_NOTIFY_TYPE_JOIN notify type into
 the SILC_PACKET_NOTIFY packet.  The users' modes on the channel must 
 also be announced by compiling list of Notify Payloads with the 
@@ -2375,4 +2377,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 15 November 2002
+This Internet-Draft expires XXX

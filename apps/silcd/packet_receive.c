@@ -229,6 +229,7 @@ void silc_server_notify(SilcServer server,
     silc_hash_table_add(client->channels, channel, chl);
     silc_free(client_id);
     channel->user_count++;
+    channel->disabled = FALSE;
 
     break;
 
@@ -628,7 +629,7 @@ void silc_server_notify(SilcServer server,
 	if (channel->founder_key)
 	  silc_pkcs_public_key_free(channel->founder_key);
 	channel->founder_key = NULL;
-      } else if (!client->data.public_key) {
+      } else if (client && !client->data.public_key) {
 	client->data.public_key = 
 	  silc_pkcs_public_key_copy(channel->founder_key);
       }
@@ -768,7 +769,7 @@ void silc_server_notify(SilcServer server,
 	  server->server_type == SILC_ROUTER) {
 	/* Check whether this client is allowed to be channel founder on
 	   this channel. */
-	SilcPublicKey founder_key;
+	SilcPublicKey founder_key = NULL;
 
 	/* If channel doesn't have founder auth mode then it's impossible
 	   that someone would be getting founder rights with CUMODE command.
@@ -810,15 +811,26 @@ void silc_server_notify(SilcServer server,
 	  break;
 	}
 
-	/* Now match the public key we have cached and publick key sent.
+	/* Now match the public key we have cached and public key sent.
 	   They must match. */
-	if (!silc_pkcs_public_key_compare(channel->founder_key,
+	if (client->data.public_key && 
+	    !silc_pkcs_public_key_compare(channel->founder_key,
 					  client->data.public_key)) {
 	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	  silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	  notify_sent = TRUE;
 	  break;
 	}
+	if (!silc_pkcs_public_key_compare(channel->founder_key,
+					  founder_key)) {
+	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	  silc_server_force_cumode_change(server, sock, channel, chl, mode);
+	  notify_sent = TRUE;
+	  break;
+	}
+
+	if (founder_key)
+	  silc_pkcs_public_key_free(founder_key);
       }
 
       SILC_LOG_DEBUG(("Changing the channel user mode"));
@@ -999,7 +1011,7 @@ void silc_server_notify(SilcServer server,
       }
 
     if (channel_id2) {
-      SilcBuffer users = NULL, users_modes = NULL;
+      SilcBuffer modes = NULL, users = NULL, users_modes = NULL;
 
       /* Re-announce this channel which ID was changed. */
       silc_server_send_new_channel(server, sock, FALSE, channel->channel_name,
@@ -1009,8 +1021,16 @@ void silc_server_notify(SilcServer server,
 				   channel->mode);
 
       /* Re-announce our clients on the channel as the ID has changed now */
-      silc_server_announce_get_channel_users(server, channel, &users,
+      silc_server_announce_get_channel_users(server, channel, &modes, &users,
 					     &users_modes);
+      if (modes) {
+	silc_buffer_push(modes, modes->data - modes->head);
+	silc_server_packet_send_dest(server, sock,
+				     SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				     channel->id, SILC_ID_CHANNEL,
+				     modes->data, modes->len, FALSE);
+	silc_buffer_free(modes);
+      }
       if (users) {
 	silc_buffer_push(users, users->data - users->head);
 	silc_server_packet_send(server, sock,
@@ -2621,6 +2641,7 @@ void silc_server_new_channel(SilcServer server,
 				0, channel_id, sock->user_data, NULL, NULL, 0);
       if (!channel)
 	return;
+      channel->disabled = TRUE;
 
       server->stat.channels++;
       if (server->server_type == SILC_ROUTER)
@@ -2671,9 +2692,13 @@ void silc_server_new_channel(SilcServer server,
 	silc_free(channel_id);
 	return;
       }
+      channel->disabled = TRUE;
 
+#if 0
+      /* CMODE change notify is expected */
       /* Get the mode and set it to the channel */
       channel->mode = silc_channel_get_mode(payload);
+#endif
 
       /* Send the new channel key to the server */
       id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
@@ -2692,7 +2717,7 @@ void silc_server_new_channel(SilcServer server,
       /* The channel exist by that name, check whether the ID's match.
 	 If they don't then we'll force the server to use the ID we have.
 	 We also create a new key for the channel. */
-      SilcBuffer users = NULL, users_modes = NULL;
+      SilcBuffer modes = NULL, users = NULL, users_modes = NULL;
 
       if (!SILC_ID_CHANNEL_COMPARE(channel_id, channel->id)) {
 	/* They don't match, send CHANNEL_CHANGE notify to the server to
@@ -2745,8 +2770,16 @@ void silc_server_new_channel(SilcServer server,
       /* Since the channel is coming from server and we also know about it
 	 then send the JOIN notify to the server so that it see's our
 	 users on the channel "joining" the channel. */
-      silc_server_announce_get_channel_users(server, channel, &users,
+      silc_server_announce_get_channel_users(server, channel, &modes, &users,
 					     &users_modes);
+      if (modes) {
+	silc_buffer_push(modes, modes->data - modes->head);
+	silc_server_packet_send_dest(server, sock,
+				     SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				     channel->id, SILC_ID_CHANNEL,
+				     modes->data, modes->len, FALSE);
+	silc_buffer_free(modes);
+      }
       if (users) {
 	silc_buffer_push(users, users->data - users->head);
 	silc_server_packet_send(server, sock,

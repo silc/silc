@@ -905,7 +905,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 7 || argc > 14) {
+  if (argc < 7 || argc > 15) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;

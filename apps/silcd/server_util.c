@@ -1018,6 +1018,10 @@ bool silc_server_check_cmode_rights(SilcServer server,
   if (is_op && is_fo)
     return TRUE;
 
+  /* Founder emplies operator */
+  if (is_fo)
+    is_op = TRUE;
+
   /* We know that client is channel operator, check that they are not
      changing anything that requires channel founder rights. Rest of the
      modes are available automatically for channel operator. */

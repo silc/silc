@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 15 May 2002
+.ds RH XXX
 .ds CH
 .na
 .hy 0
@@ -16,14 +16,14 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-03.txt                          15 May 2002
-Expires: 15 November 2002
+draft-riikonen-silc-commands-04.txt                          XXX
+Expires: XXX
 
 .in 3
 
 .ce 2
 SILC Commands
-<draft-riikonen-silc-commands-03.txt>
+<draft-riikonen-silc-commands-04.txt>
 
 .ti 0
 Status of this Memo
@@ -919,7 +919,7 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  14
+        Max Arguments:  15
             Arguments:  (1) <Status Payload>        (2) <channel> 
                         (3) <Channel ID>            (4) <Client ID>
                         (5) <channel mode mask>     (6) <created>
@@ -927,6 +927,7 @@ List of all defined commands in SILC follows.
                         (9) [<invite list>]         (10) [<topic>]
                         (11) [<hmac>]               (12) <list count>
                         (13) <Client ID list>       (14) <client mode list>
+                        (15) [<founder pubkey>]
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
@@ -940,7 +941,8 @@ List of all defined commands in SILC follows.
         the clients currently on the channel and their modes on the
         channel.  The <Client ID list> is formed by adding the ID Payloads
         one after the other.  The <client mode list> is formed by adding
-        32 bit MSB first order values one after the other.
+        32 bit MSB first order values one after the other.  The <founder
+        pubkey> is the public key of the channel founder.
 
         Client receives the channel key in the reply message as well
         inside <Channel Key Payload>.
@@ -2385,7 +2387,7 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 15 November 2002
+This Internet-Draft expires XXX
 
 
 .ti 0

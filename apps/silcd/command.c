@@ -3174,6 +3174,8 @@ static void silc_server_command_join_channel(SilcServer server,
   char check[512], check2[512];
   bool founder = FALSE;
   bool resolve;
+  unsigned char *fkey = NULL;
+  SilcUInt32 fkey_len = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -3370,9 +3372,12 @@ static void silc_server_command_join_channel(SilcServer server,
     silc_free(tmp);
   }
 
+  if (channel->founder_key)
+    fkey = silc_pkcs_public_key_encode(channel->founder_key, &fkey_len);
+
   reply = 
     silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					 SILC_STATUS_OK, 0, ident, 13,
+					 SILC_STATUS_OK, 0, ident, 14,
 					 2, channel->channel_name,
 					 strlen(channel->channel_name),
 					 3, chidp->data, chidp->len,
@@ -3396,7 +3401,8 @@ static void silc_server_command_join_channel(SilcServer server,
 					 12, tmp3, 4,
 					 13, user_list->data, user_list->len,
 					 14, mode_list->data, 
-					 mode_list->len);
+					 mode_list->len,
+					 15, fkey, fkey_len);
 
   /* Send command reply */
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0, 
@@ -3429,13 +3435,11 @@ static void silc_server_command_join_channel(SilcServer server,
        notify the mode change to the channel. */
     if (founder) {
       SILC_PUT32_MSB(chl->mode, mode);
-      tmp = silc_pkcs_public_key_encode(channel->founder_key, &tmp_len);
       silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
 					 SILC_NOTIFY_TYPE_CUMODE_CHANGE, 4,
 					 clidp->data, clidp->len,
 					 mode, 4, clidp->data, clidp->len,
-					 tmp, tmp_len);
-      silc_free(tmp);
+					 fkey, fkey_len);
       
       /* Set CUMODE notify type to network */
       if (!server->standalone)
@@ -3453,6 +3457,7 @@ static void silc_server_command_join_channel(SilcServer server,
   silc_buffer_free(keyp);
   silc_buffer_free(user_list);
   silc_buffer_free(mode_list);
+  silc_free(fkey);
 
  out:
   silc_free(passphrase);
@@ -3647,7 +3652,7 @@ SILC_SERVER_CMD_FUNC(join)
     }
 
     if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS &&
-	!silc_hash_table_count(channel->user_list))
+	!channel->disabled && !silc_hash_table_count(channel->user_list))
       created = TRUE;
   }
 

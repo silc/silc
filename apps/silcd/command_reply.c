@@ -781,6 +781,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   char *channel_name, *tmp;
   SilcUInt32 mode, created;
   SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
+  SilcPublicKey founder_key = NULL;
 
   COMMAND_CHECK_STATUS;
 
@@ -860,6 +861,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   silc_buffer_pull_tail(client_mode_list, len);
   silc_buffer_put(client_mode_list, tmp, len);
 
+  /* Get founder key */
+  tmp = silc_argument_get_arg_type(cmd->args, 15, &len);
+  if (tmp)
+    silc_pkcs_public_key_decode(tmp, len, &founder_key);
+
   /* See whether we already have the channel. */
   entry = silc_idlist_find_channel_by_name(server->local_list, 
 					   channel_name, &cache);
@@ -901,6 +907,13 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
       silc_pkcs_public_key_free(entry->founder_key);
       entry->founder_key = NULL;
     }
+  }
+
+  if (founder_key) {
+    if (entry->founder_key)
+      silc_pkcs_public_key_free(entry->founder_key);
+    entry->founder_key = founder_key;
+    founder_key = NULL;
   }
 
   if (entry->hmac_name && hmac) {
@@ -962,6 +975,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   silc_free(client_id);
   silc_server_command_reply_free(cmd);
 
+  silc_pkcs_public_key_free(founder_key);
   if (client_id_list)
     silc_buffer_free(client_id_list);
   if (client_mode_list)
