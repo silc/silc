@@ -611,14 +611,10 @@ static int silc_pkcs_save_public_key_internal(char *filename,
 
   /* Save into a file */
   if (silc_file_write(filename, buf->data, buf->len)) {
-    memset(data, 0, data_len);
-    silc_free(data);
     silc_buffer_free(buf);
     return FALSE;
   }
 
-  memset(data, 0, data_len);
-  silc_free(data);
   silc_buffer_free(buf);
   return TRUE;
 }
@@ -666,14 +662,10 @@ static int silc_pkcs_save_private_key_internal(char *filename,
 
   /* Save into a file */
   if (silc_file_write_mode(filename, buf->data, buf->len, 0600)) {
-    memset(data, 0, data_len);
-    silc_free(data);
     silc_buffer_free(buf);
     return FALSE;
   }
 
-  memset(data, 0, data_len);
-  silc_free(data);
   silc_buffer_free(buf);
   return TRUE;
 }
