@@ -1134,7 +1134,7 @@ Following compression algorithms are defined:
 
 .in 6
 none        No compression               (mandatory)
-zlib        GBU ZLIB (LZ77) compression  (optional)
+zlib        GNU ZLIB (LZ77) compression  (optional)
 .in 3
 
 Additional compression algorithms may be defined to be used in SILC.
@@ -1992,7 +1992,8 @@ List of all defined commands in SILC follows.
         Reply messages to the command:
 
         Max Arguments:  2
-            Arguments:  (1) <Status Payload>  (2) [<topic>]
+            Arguments:  (1) <Status Payload>  (2) <Channel ID> 
+                        (3) [<topic>]
 
         The command may reply with the topic of the channel if it is
         set.
@@ -2090,7 +2091,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
             SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_NO_CLIENT_ID
-
 
 
    10   SILC_COMMAND_INFO
@@ -2301,7 +2301,7 @@ List of all defined commands in SILC follows.
         Max Arguments:  1
             Arguments:  (1) <server>
 
-        This command is used to query the Message of the Day of a server.
+        This command is used to query the Message of the Day of the server.
 
         Reply messages to the command:
 
@@ -2898,7 +2898,12 @@ List of all defined command status messages following.
         Start of the list.  There will be several command replies and
         this reply is the start of the list.
 
-   2    SILC_STATUS_LIST_END
+   2    SILC_STATUS_LIST_ITEM
+
+        Item in the list.  This is one of the item in the list but not the
+        first or last one.
+
+   3    SILC_STATUS_LIST_END
 
         End of the list.  There were several command replies and this
         reply is the last of the list.  There won't be other replies

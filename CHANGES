@@ -1,3 +1,20 @@
+Fri Oct  5 21:16:28 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added support for multiple nicknames on same channel.  [n] is
+	  added locally to the nickname if there are more than one same
+	  nicknames on the channel.
+
+	* Server now sends all nicknames that matched WHOIS request.
+	  Client also shows the list received from server.
+
+	* Added TOPIC command to client side.  User can now set and show
+	  current topic on channel.
+
+	* Added MOTD command to client and server.  Also, server sends the
+	  motd when client connects to the server.
+
+	* Changed version strings to comply ISO 8601.
+
 Thu Oct  4 23:29:06 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed protocol error handling in client library.  It should now
