@@ -1559,9 +1559,19 @@ o Flags (2 bytes) - Includes the flags of the channel
   0x0010  SILC_MESSAGE_FLAG_REQUEST
 
           This is a generic request flag to send request
-          messages.
+          messages.  A separate document should define any 
+          payloads associated to this flag.
 
-  0x0020 - 0x0200 RESERVED
+  0x0020  SILC_MESSAGE_FLAG_SIGNED
+
+          This flag indicates that the message is signed
+          with sender's private key and thus can be verified
+          by the receiver using the sender's public key.  A
+          separate document should define the detailed procedure
+          of the signing process and any associated payloads
+          of this flag.
+
+  0x0040 - 0x0200 RESERVED
 
           Reserved for future flags
 

@@ -3287,9 +3287,13 @@ static SilcBuffer
 silc_server_announce_encode_notify(SilcNotifyType notify, uint32 argc, ...)
 {
   va_list ap;
+  SilcBuffer p;
 
   va_start(ap, argc);
-  return silc_notify_payload_encode(notify, argc, ap);
+  p = silc_notify_payload_encode(notify, argc, ap);
+  va_end(ap);
+ 
+  return p;
 }
 
 /* Returns assembled packets for channel users of the `channel'. */
@@ -3536,17 +3540,18 @@ void silc_server_get_users_on_channel(SilcServer server,
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   SilcBuffer idp;
-  uint32 list_count = 0;
+  uint32 list_count = 0, len = 0;
 
-  /* XXX rewrite - this does not support IPv6 based Client ID's. */
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl))
+    len += (silc_id_get_len(chl->client->id, SILC_ID_CLIENT) + 4);
 
-  client_id_list = 
-    silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
-		      silc_hash_table_count(channel->user_list));
+  client_id_list = silc_buffer_alloc(len);
   client_mode_list = 
     silc_buffer_alloc(4 * silc_hash_table_count(channel->user_list));
   silc_buffer_pull_tail(client_id_list, SILC_BUFFER_END(client_id_list));
   silc_buffer_pull_tail(client_mode_list, SILC_BUFFER_END(client_mode_list));
+
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     /* Client ID */
@@ -3684,15 +3689,15 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
   if (client) {
     silc_free(id);
 
-    if (client && client->data.registered == FALSE)
+    if (client->data.registered == FALSE)
       return NULL;
 
     /* If we are router and the client has router then the client is in
        our cell but not directly connected to us. */
     if (server->server_type == SILC_ROUTER && client->router) {
-      /* We are of course in this case the client's router thus the real
-	 "router" of the client is the server who owns the client. Thus
-	 we will send the packet to that server. */
+      /* We are of course in this case the client's router thus the route
+	 to the client is the server who owns the client. So, we will send
+	 the packet to that server. */
       if (idata)
 	*idata = (SilcIDListData)client->router;
       return client->router->connection;

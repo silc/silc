@@ -864,7 +864,7 @@ void silc_server_send_private_message(SilcServer server,
   SilcBuffer buffer = packet->buffer;
 
   /* Re-encrypt and send if private messge key does not exist */
-  if ((packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY) == FALSE) {
+  if (!(packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY)) {
 
     silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		     + packet->dst_id_len + packet->padlen);
@@ -954,6 +954,7 @@ void silc_server_send_notify(SilcServer server,
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
+  va_end(ap);
 }
 
 /* Sends notify message and gets the arguments from the `args' Argument
@@ -1288,6 +1289,7 @@ void silc_server_send_notify_dest(SilcServer server,
 			       dest_id, dest_id_type,
 			       packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
+  va_end(ap);
 }
 
 /* Sends notify message to a channel. The notify message sent is 
@@ -1314,6 +1316,7 @@ void silc_server_send_notify_to_channel(SilcServer server,
 				     SILC_PACKET_NOTIFY, route_notify,
 				     packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
+  va_end(ap);
 }
 
 /* Send notify message to all channels the client has joined. It is quaranteed
@@ -1464,6 +1467,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
   if (sent_clients_count)
     silc_free(sent_clients);
   silc_free(packetdata.src_id);
+  va_end(ap);
 }
 
 /* Sends New ID Payload to remote end. The packet is used to distribute
@@ -1580,6 +1584,7 @@ void silc_server_send_command(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND, 0,
 			  packet->data, packet->len, TRUE);
   silc_buffer_free(packet);
+  va_end(ap);
 }
 
 /* Send the heartbeat packet. */

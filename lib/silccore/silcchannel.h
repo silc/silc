@@ -110,7 +110,8 @@ typedef uint16 SilcMessageFlags;
 #define SILC_MESSAGE_FLAG_ACTION      0x0004
 #define SILC_MESSAGE_FLAG_NOTICE      0x0008
 #define SILC_MESSAGE_FLAG_REQUEST     0x0010
-#define SILC_MESSAGE_FLAG_RESERVED    0x0020 /* to 0x0200 */
+#define SILC_MESSAGE_FLAG_SIGNED      0x0020
+#define SILC_MESSAGE_FLAG_RESERVED    0x0040 /* to 0x0200 */
 #define SILC_MESSAGE_FLAG_PRIVATE     0x0400 /* to 0x8000 */
 /***/
 

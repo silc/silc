@@ -58,10 +58,6 @@ TODO/bugs In SILC Server
 
  o Incomplete IPv6 support:
 
- 	o silc_server_get_users_on_channel does not support IPv6 based
-	  Client ID's.
- 	o silc_server_route_get and the route code in general supports
-	  only IPv4.
 	o silcd/serverid.c and its routines supports only IPv4.
 
  o DNS/IP lookup blocks the server.  This must be fixed.  Check the
@@ -126,15 +122,6 @@ TODO/bugs In SILC Libraries
 
 TODO In SILC Protocol
 =====================
-
- o pp-03 draft:
-
-	o Add SILC_MESSAGE_FLAG_SIGNED flag that indicates that the
-	  messages is signed with the senders private key and thus can
-	  be verified with its public key.  This is especially handy
-	  feature when sending privat messages without having negotiated
-	  private keys, thus the servers decrypts and re-ecnrypts the
-	  messages.  Other applications exists as well.
 
  o If channel founder mode is set and the invite mode is set on channel
    then the founder should be added to the list automatically so that

@@ -42,7 +42,7 @@
 #define SILC_HASH_TABLE_SIZE 3
 
 /* Produce the index by hashing the key */
-#define SILC_HASH_TABLE_HASH_F(f, c) \
+#define SILC_HASH_TABLE_HASH(f, c) \
   ((f)(key, (c)) % primesize[ht->table_size])
 
 /* Check whether need to rehash */
@@ -115,7 +115,7 @@ silc_hash_table_find_internal(SilcHashTable ht, void *key,
 			      void *compare_user_context)
 {
   SilcHashTableEntry *entry, prev = NULL;
-  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
+  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -149,7 +149,7 @@ silc_hash_table_find_internal_context(SilcHashTable ht, void *key,
 				      void *compare_user_context)
 {
   SilcHashTableEntry *entry, prev = NULL;
-  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
+  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p context %p", i, key, context));
 
@@ -185,7 +185,7 @@ silc_hash_table_find_internal_simple(SilcHashTable ht, void *key,
 				     void *compare_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
+  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -215,7 +215,7 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 				  void *foreach_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
+  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -243,7 +243,7 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
 			     void *hash_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
+  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -287,7 +287,7 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
 				 void *hash_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
+  uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
@@ -306,6 +306,9 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
 
   (*entry)->key = key;
   (*entry)->context = context;
+
+  if (SILC_HASH_REHASH_INC)
+    silc_hash_table_rehash(ht, 0);
 }
 
 /* Allocates new hash table and returns it.  If the `table_size' is not

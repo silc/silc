@@ -2780,13 +2780,8 @@ static void silc_server_command_join_channel(SilcServer server,
   /* Check invite list if channel is invite-only channel */
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT && 
       channel->mode & SILC_CHANNEL_MODE_INVITE) {
-    if (!channel->invite_list) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					    SILC_STATUS_ERR_NOT_INVITED);
-      goto out;
-    }
-
-    if (!silc_string_match(channel->invite_list, check)) {
+    if (!channel->invite_list ||
+	!silc_string_match(channel->invite_list, check)) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					    SILC_STATUS_ERR_NOT_INVITED);
       goto out;

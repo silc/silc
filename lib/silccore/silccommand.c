@@ -227,6 +227,8 @@ SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
   silc_free(argv_lens);
   silc_free(argv_types);
 
+  va_end(ap);
+
   return buffer;
 }
 
@@ -332,6 +334,8 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
   silc_free(argv);
   silc_free(argv_lens);
   silc_free(argv_types);
+
+  va_end(ap);
 
   return buffer;
 }
