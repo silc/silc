@@ -856,3 +856,104 @@ SilcPublicKey silc_server_get_public_key(SilcServer server,
 
   return cached_key;
 }
+
+/* Check whether the connection `sock' is allowed to connect to us.  This
+   checks for example whether there is too much connections for this host,
+   and required version for the host etc. */
+
+bool silc_server_connection_allowed(SilcServer server, 
+				    SilcSocketConnection sock,
+				    SilcSocketType type,
+				    SilcServerConfigConnParams *global,
+				    SilcServerConfigConnParams *params,
+				    SilcSKE ske)
+{
+  SilcUInt32 conn_number = (type == SILC_SOCKET_TYPE_CLIENT ?
+			    server->stat.my_clients :
+			    type == SILC_SOCKET_TYPE_SERVER ?
+			    server->stat.my_servers :
+			    server->stat.my_routers);
+  SilcUInt32 num_sockets, max_hosts, max_per_host;
+  SilcUInt32 r_protocol_version, l_protocol_version;
+  SilcUInt32 r_software_version, l_software_version;
+  char *r_vendor_version = NULL, *l_vendor_version;
+
+  /* Check version */
+
+  l_protocol_version = 
+    silc_version_to_num(params && params->version_protocol ? 
+			params->version_protocol : 
+			global->version_protocol);
+  l_software_version = 
+    silc_version_to_num(params && params->version_software ? 
+			params->version_software : 
+			global->version_software);
+  l_vendor_version = (params && params->version_software_vendor ? 
+		      params->version_software_vendor : 
+		      global->version_software_vendor);
+  
+  if (ske && silc_ske_parse_version(ske, &r_protocol_version, NULL,
+				    &r_software_version, NULL,
+				    &r_vendor_version)) {
+    /* Match protocol version */
+    if (l_protocol_version && r_protocol_version &&
+	r_protocol_version < l_protocol_version) {
+      SILC_LOG_INFO(("Connection %s (%s) is too old version",
+		     sock->hostname, sock->ip));
+      silc_server_disconnect_remote(server, sock, 
+				    "Server closed connection: "
+				    "You support too old protocol version");
+      return FALSE;
+    }
+
+    /* Math software version */
+    if (l_software_version && r_software_version &&
+	r_software_version < l_software_version) {
+      SILC_LOG_INFO(("Connection %s (%s) is too old version",
+		     sock->hostname, sock->ip));
+      silc_server_disconnect_remote(server, sock, 
+				    "Server closed connection: "
+				    "You support too old software version");
+      return FALSE;
+    }
+
+    /* Regex match vendor version */
+    if (l_vendor_version && r_vendor_version && 
+	!silc_string_match(l_vendor_version, r_vendor_version)) {
+      SILC_LOG_INFO(("Connection %s (%s) is unsupported version",
+		     sock->hostname, sock->ip));
+      silc_server_disconnect_remote(server, sock, 
+				    "Server closed connection: "
+				    "Your software is not supported");
+      return FALSE;
+    }
+  }
+  silc_free(r_vendor_version);
+
+  /* Check for maximum connections limit */
+
+  num_sockets = silc_server_num_sockets_by_ip(server, sock->ip, type);
+  max_hosts = (params ? params->connections_max : global->connections_max);
+  max_per_host = (params ? params->connections_max_per_host :
+		  global->connections_max_per_host);
+
+  if (max_hosts && conn_number >= max_hosts) {
+    SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
+		   sock->hostname, sock->ip));
+    silc_server_disconnect_remote(server, sock, 
+				  "Server closed connection: "
+				  "Server is full, try again later");
+    return FALSE;
+  }
+
+  if (num_sockets >= max_per_host) {
+    SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
+		   sock->hostname, sock->ip));
+    silc_server_disconnect_remote(server, sock, 
+				  "Server closed connection: "
+				  "Too many connections from your host");
+    return FALSE;
+  }
+
+  return TRUE;
+}

@@ -62,5 +62,12 @@ char *silc_client_chumode_char(SilcUInt32 mode);
 int silc_gettimeofday(struct timeval *p);
 char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len);
 bool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len);
+bool silc_parse_version_string(const char *version,
+			       SilcUInt32 *protocol_version,
+			       char **protocol_version_string,
+			       SilcUInt32 *software_version, 
+			       char **software_version_string,
+			       char **vendor_version);
+SilcUInt32 silc_version_to_num(const char *version);
 
 #endif

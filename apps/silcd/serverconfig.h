@@ -82,6 +82,9 @@ typedef struct SilcServerConfigConnParams {
   bool reconnect_keep_trying;
   SilcUInt32 key_exchange_rekey;
   bool key_exchange_pfs;
+  char *version_protocol;
+  char *version_software;
+  char *version_software_vendor;
   struct SilcServerConfigConnParams *next;
 } SilcServerConfigConnParams;
 

@@ -1993,3 +1993,20 @@ const char *silc_ske_map_status(SilcSKEStatus status)
 
   return "";
 }
+
+/* Parses remote host's version string. */
+
+bool silc_ske_parse_version(SilcSKE ske, 
+			    SilcUInt32 *protocol_version,
+			    char **protocol_version_string,
+			    SilcUInt32 *software_version, 
+			    char **software_version_string,
+			    char **vendor_version)
+{
+  return silc_parse_version_string(ske->start_payload->version,
+				   protocol_version, 
+				   protocol_version_string, 
+				   software_version,
+				   software_version_string,
+				   vendor_version);
+}

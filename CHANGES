@@ -1,3 +1,19 @@
+Sun Mar 17 15:44:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added functions silc_parse_version_string, silc_version_to_num,
+	  and silc_ske_parse_version to parse SILC protocol style version
+	  strings.  Affected files lib/silcutil/silcutil.[ch] and
+	  lib/silcske/silcske.[ch].
+
+	* Added new configuration params: version_protocol, version_software
+	  and version_software_vendor to specify what version the remote
+	  host must at least be to be able to connect to server.  The vendor
+	  string can be regex matched too.  Added new function 
+	  silc_server_connection_allowed to check maximum number of allowed
+	  connections, and allowed versions for incoming connections.
+	  Affected files are silcd/server.c, server_util.[ch] and
+	  serverconfig.[ch].
+
 Sun Mar 17 10:24:50 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added preliminary support for signals in scheduler.  The

@@ -74,24 +74,17 @@ static void
 my_set_param_defaults(SilcServerConfigConnParams *params,
 		      SilcServerConfigConnParams *defaults)
 {
-#define SET_PARAM_DEFAULT(p, d)						\
+#define SET_PARAM_DEFAULT(p, d)	params->p =				\
   (params->p ? params->p : (defaults && defaults->p ? defaults->p : d))
 
-  params->connections_max = 
-    SET_PARAM_DEFAULT(connections_max, SILC_SERVER_MAX_CONNECTIONS);
-  params->connections_max_per_host = 
-    SET_PARAM_DEFAULT(connections_max_per_host, 
-		      SILC_SERVER_MAX_CONNECTIONS_SINGLE);
-  params->keepalive_secs = 
-    SET_PARAM_DEFAULT(keepalive_secs, SILC_SERVER_KEEPALIVE);
-  params->reconnect_count = 
-    SET_PARAM_DEFAULT(reconnect_count, SILC_SERVER_RETRY_COUNT);
-  params->reconnect_interval = 
-    SET_PARAM_DEFAULT(reconnect_interval, SILC_SERVER_RETRY_INTERVAL_MIN);
-  params->reconnect_interval_max = 
-    SET_PARAM_DEFAULT(reconnect_interval_max, SILC_SERVER_RETRY_INTERVAL_MAX);
-  params->key_exchange_rekey = 
-    SET_PARAM_DEFAULT(key_exchange_rekey, SILC_SERVER_REKEY);
+  SET_PARAM_DEFAULT(connections_max, SILC_SERVER_MAX_CONNECTIONS);
+  SET_PARAM_DEFAULT(connections_max_per_host, 
+		    SILC_SERVER_MAX_CONNECTIONS_SINGLE);
+  SET_PARAM_DEFAULT(keepalive_secs, SILC_SERVER_KEEPALIVE);
+  SET_PARAM_DEFAULT(reconnect_count, SILC_SERVER_RETRY_COUNT);
+  SET_PARAM_DEFAULT(reconnect_interval, SILC_SERVER_RETRY_INTERVAL_MIN);
+  SET_PARAM_DEFAULT(reconnect_interval_max, SILC_SERVER_RETRY_INTERVAL_MAX);
+  SET_PARAM_DEFAULT(key_exchange_rekey, SILC_SERVER_REKEY);
 }
 
 /* Find connection parameters by the parameter block name. */
@@ -202,6 +195,21 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   }
   else if (!strcmp(name, "conn_auth_timeout")) {
     config->conn_auth_timeout = (SilcUInt32) *(int *)val;
+  }
+  else if (!strcmp(name, "version_protocol")) {
+    CONFIG_IS_DOUBLE(config->param.version_protocol);
+    config->param.version_protocol = 
+      (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "version_software")) {
+    CONFIG_IS_DOUBLE(config->param.version_software);
+    config->param.version_software = 
+      (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "version_software_vendor")) {
+    CONFIG_IS_DOUBLE(config->param.version_software_vendor);;
+    config->param.version_software_vendor = 
+      (*(char *)val ? strdup((char *) val) : NULL);
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -626,6 +634,19 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
   else if (!strcmp(name, "key_exchange_pfs")) {
     tmp->key_exchange_pfs = *(bool *)val;
   }
+  else if (!strcmp(name, "version_protocol")) {
+    CONFIG_IS_DOUBLE(tmp->version_protocol);
+    tmp->version_protocol = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "version_software")) {
+    CONFIG_IS_DOUBLE(tmp->version_software);
+    tmp->version_software = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "version_software_vendor")) {
+    CONFIG_IS_DOUBLE(tmp->version_software_vendor);;
+    tmp->version_software_vendor = 
+      (*(char *)val ? strdup((char *) val) : NULL);
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -1002,6 +1023,9 @@ static const SilcConfigTable table_general[] = {
   { "channel_rekey_secs",	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "key_exchange_timeout",   	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "conn_auth_timeout",   	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "version_protocol",	        SILC_CONFIG_ARG_STR,    fetch_generic,	NULL },
+  { "version_software",	        SILC_CONFIG_ARG_STR,    fetch_generic,	NULL },
+  { "version_software_vendor",  SILC_CONFIG_ARG_STR,    fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1079,6 +1103,9 @@ static const SilcConfigTable table_connparam[] = {
   { "reconnect_keep_trying",   SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
   { "key_exchange_rekey",      SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
   { "key_exchange_pfs",	       SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
+  { "version_protocol",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
+  { "version_software",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
+  { "version_software_vendor", SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { 0, 0, 0, 0 }
 };
 

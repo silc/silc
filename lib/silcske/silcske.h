@@ -892,4 +892,32 @@ silc_ske_process_key_material_data(unsigned char *data,
  ***/
 void silc_ske_free_key_material(SilcSKEKeyMaterial *key);
 
+/****f* silcske/SilcSKEAPI/silc_ske_parse_version
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_ske_parse_version(SilcSKE ske, 
+ *                                SilcUInt32 *protocol_version,
+ *                                char **protocol_version_string,
+ *                                SilcUInt32 *software_version, 
+ *                                char **software_version_string,
+ *                                char **vendor_version);
+ *
+ * DESCRIPTION
+ *
+ *    This utility function can be used to parse the remote host's version
+ *    string.  This returns the protocol version, and software version into
+ *    the `protocol_version', `software_version' and `vendor_version' pointers
+ *    if they are provided.  The string versions of the versions are saved
+ *    in *_string pointers if they are provided.  Returns TRUE if the version
+ *    string was successfully parsed.
+ *
+ ***/
+bool silc_ske_parse_version(SilcSKE ske, 
+			    SilcUInt32 *protocol_version,
+			    char **protocol_version_string,
+			    SilcUInt32 *software_version, 
+			    char **software_version_string,
+			    char **vendor_version);
+
 #endif	/* !SILCSKE_H */

@@ -859,3 +859,95 @@ bool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len)
 
   return TRUE;
 }
+
+/* Parses SILC protocol style version string. */
+
+bool silc_parse_version_string(const char *version,
+			       SilcUInt32 *protocol_version,
+			       char **protocol_version_string,
+			       SilcUInt32 *software_version, 
+			       char **software_version_string,
+			       char **vendor_version)
+{
+  char *cp, buf[32];
+  int maj = 0, min = 0;
+
+  if (!strstr(version, "SILC-"))
+    return FALSE;
+
+  cp = (char *)version + 5;
+  if (!cp)
+    return FALSE;
+
+  /* Take protocol version */
+
+  maj = atoi(cp);
+  cp = strchr(cp, '.');
+  if (cp) {
+    min = atoi(cp + 1);
+    cp++;
+  }
+
+  memset(buf, 0, sizeof(buf));
+  snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
+  if (protocol_version)
+    *protocol_version = atoi(buf);
+  memset(buf, 0, sizeof(buf));
+  snprintf(buf, sizeof(buf) - 1, "%d.%d", maj, min);
+  if (protocol_version_string)
+    *protocol_version_string = strdup(buf);
+
+  /* Take software version */
+
+  maj = 0; 
+  min = 0;
+  cp = strchr(cp, '-');
+  if (!cp)
+    return FALSE;
+
+  maj = atoi(cp + 1);
+  cp = strchr(cp, '.');
+  if (cp)
+    min = atoi(cp + 1);
+
+  memset(buf, 0, sizeof(buf));
+  snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
+  if (software_version)
+    *software_version = atoi(buf);
+  memset(buf, 0, sizeof(buf));
+  snprintf(buf, sizeof(buf) - 1, "%d.%d", maj, min);
+  if (software_version_string)
+    *software_version_string = strdup(buf);
+
+  /* Take vendor string */
+
+  cp++;
+  if (cp) {
+    cp = strchr(cp, '.');
+    if (cp && cp + 1 && vendor_version)
+      *vendor_version = strdup(cp + 1);
+  }
+
+  return TRUE;
+}
+
+/* Converts version string x.x into number representation. */
+
+SilcUInt32 silc_version_to_num(const char *version)
+{
+  int maj = 0, min = 0;
+  char *cp, buf[32];
+
+  if (!version)
+    return 0;
+
+  cp = (char *)version;
+  maj = atoi(cp);
+  cp = strchr(cp, '.');
+  if (cp)
+    min = atoi(cp + 1);
+
+  memset(buf, 0, sizeof(buf));
+  snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
+  return (SilcUInt32)atoi(buf);
+}

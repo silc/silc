@@ -37,9 +37,6 @@ TODO/bugs In SILC Server
 
  o Configuration file additions:
 
-	o Add version handling, to allow, disallow certain versions to
-	  connect.
-
 	o Add incoming connection frequency, incoming connection frequency
 	  for single IP address, key exchange frequency, key exchange
 	  frequency for single IP. Add also frequency base.
@@ -94,8 +91,19 @@ TODO in Toolkit Documentation
 Stuff that needs to be done in order to complete the Tooolkit Reference
 Manual.
 
- o Lots of ROBOdoc header formatting is undone in lib/silcutil, and 
-   lib/silccrypt.
+ o ROBOdoc documenting missing from lib/silcutil/silcbuffer.h.
+
+ o ROBOdoc documenting missing from lib/silcutil/silcdlist.h.
+
+ o ROBOdoc documenting missing from lib/silcutil/silcfileutil.h.
+
+ o ROBOdoc documenting missing from lib/silcutil/silcutil.h.
+
+ o ROBOdoc documenting missing from lib/silccrypt/silchash.h.
+
+ o ROBOdoc documenting missing from lib/silccrypt/silccipher.h.
+
+ o ROBOdoc documenting missing from lib/silccrypt/silcpkcs.h.
 
  o Write "Programming with Toolkit" document, describing how to build
    Toolkit, how the build system works, where is everything, how

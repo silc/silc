@@ -101,4 +101,14 @@ SilcPublicKey silc_server_find_public_key(SilcServer server,
 SilcPublicKey silc_server_get_public_key(SilcServer server,
 					 SilcHashTable local_public_keys);
 
+/* Check whether the connection `sock' is allowed to connect to us.  This
+   checks for example whether there is too much connections for this host,
+   and required version for the host etc. */
+bool silc_server_connection_allowed(SilcServer server, 
+				    SilcSocketConnection sock,
+				    SilcSocketType type,
+				    SilcServerConfigConnParams *global,
+				    SilcServerConfigConnParams *params,
+				    SilcSKE ske);
+
 #endif /* SERVER_UTIL_H */

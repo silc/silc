@@ -371,14 +371,6 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 
   if (maj != maj2)
     status = SILC_SKE_STATUS_BAD_VERSION;
-#if 0
-  if (min > min2)
-    status = SILC_SKE_STATUS_BAD_VERSION;
-#endif
-
-  /* XXX < 0.6 is not allowed */
-  if (maj == 0 && min < 5)
-    status = SILC_SKE_STATUS_BAD_VERSION;
 
   if (status == SILC_SKE_STATUS_BAD_VERSION)
     SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version", 

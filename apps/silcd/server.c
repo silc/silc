@@ -1284,7 +1284,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   SilcUnknownEntry entry = (SilcUnknownEntry)sock->user_data;
   void *id_entry;
   SilcUInt32 hearbeat_timeout = server->config->param.keepalive_secs;
-  SilcUInt32 num_sockets;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1309,38 +1308,16 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
   entry->data.last_receive = time(NULL);
 
-  num_sockets = silc_server_num_sockets_by_ip(server, sock->ip, 
-					      ctx->conn_type);
-
   switch (ctx->conn_type) {
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry client;
       SilcServerConfigClient *conn = ctx->cconfig;
-      SilcUInt32 max_per_host = server->config->param.connections_max_per_host;
 
-      /* Check for maximum connections limit */
-      if (conn->param) {
-	if (conn->param->connections_max &&
-	    server->stat.my_clients >= conn->param->connections_max) {
-	  SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
-			 sock->hostname, sock->ip));
-	  silc_server_disconnect_remote(server, sock, 
-					"Server closed connection: "
-					"Server is full, try again later");
-	  server->stat.auth_failures++;
-	  goto out;
-	}
-
-	max_per_host = conn->param->connections_max_per_host;
-      }
-
-      if (num_sockets >= max_per_host) {
-	SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
-		       sock->hostname, sock->ip));
-	silc_server_disconnect_remote(server, sock, 
-				      "Server closed connection: "
-				      "Too many connections from your host");
+      /* Verify whether this connection is after all allowed to connect */
+      if (!silc_server_connection_allowed(server, sock, ctx->conn_type,
+					  &server->config->param,
+					  conn->param, ctx->ske)) {
 	server->stat.auth_failures++;
 	goto out;
       }
@@ -1390,69 +1367,55 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       SilcUInt16 backup_replace_port = 0;
       SilcServerConfigServer *sconn = ctx->sconfig;
       SilcServerConfigRouter *rconn = ctx->rconfig;
-      SilcUInt32 max_per_host = server->config->param.connections_max_per_host;
 
-      if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER && rconn) {
-	if (rconn->param) {
-	  /* Check for maximum connections limit */
-	  if (rconn->param->connections_max &&
-	      server->stat.my_routers >= rconn->param->connections_max) {
-	    silc_server_disconnect_remote(server, sock, 
-					  "Server closed connection: "
-					  "Server is full, try again later");
-	    server->stat.auth_failures++;
-	    goto out;
-	  }
-	  max_per_host = rconn->param->connections_max_per_host;
-
-	  if (rconn->param->keepalive_secs)
-	    hearbeat_timeout = rconn->param->keepalive_secs;
+      if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER) {
+	/* Verify whether this connection is after all allowed to connect */
+	if (!silc_server_connection_allowed(server, sock, ctx->conn_type,
+					    &server->config->param,
+					    rconn ? rconn->param : NULL, 
+					    ctx->ske)) {
+	  server->stat.auth_failures++;
+	  goto out;
 	}
 
-	initiator = rconn->initiator;
-	backup_local = rconn->backup_local;
-	backup_router = rconn->backup_router;
-	backup_replace_ip = rconn->backup_replace_ip;
-	backup_replace_port = rconn->backup_replace_port;
-      }
-
-      if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER && sconn) {
-	if (sconn->param) {
-	  /* Check for maximum connections limit */
-	  if (sconn->param->connections_max &&
-	      server->stat.my_servers >= sconn->param->connections_max) {
-	    SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
-			   sock->hostname, sock->ip));
-	    silc_server_disconnect_remote(server, sock, 
-					  "Server closed connection: "
-					  "Server is full, try again later");
-	    server->stat.auth_failures++;
-	    goto out;
+	if (rconn) {
+	  if (rconn->param) {
+	    if (rconn->param->keepalive_secs)
+	      hearbeat_timeout = rconn->param->keepalive_secs;
 	  }
-	  max_per_host = sconn->param->connections_max_per_host;
 
-	  if (sconn->param->keepalive_secs)
-	    hearbeat_timeout = sconn->param->keepalive_secs;
+	  initiator = rconn->initiator;
+	  backup_local = rconn->backup_local;
+	  backup_router = rconn->backup_router;
+	  backup_replace_ip = rconn->backup_replace_ip;
+	  backup_replace_port = rconn->backup_replace_port;
 	}
-
-	backup_router = sconn->backup_router;
       }
 
-      if (num_sockets >= max_per_host) {
-	SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
-		       sock->hostname, sock->ip));
-	silc_server_disconnect_remote(server, sock, 
-				      "Server closed connection: "
-				      "Too many connections from your host");
-	server->stat.auth_failures++;
-	goto out;
+      if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER) {
+	/* Verify whether this connection is after all allowed to connect */
+	if (!silc_server_connection_allowed(server, sock, ctx->conn_type,
+					    &server->config->param,
+					    sconn ? sconn->param : NULL, 
+					    ctx->ske)) {
+	  server->stat.auth_failures++;
+	  goto out;
+	}
+	if (sconn) {
+	  if (sconn->param) {
+	    if (sconn->param->keepalive_secs)
+	      hearbeat_timeout = sconn->param->keepalive_secs;
+	  }
+
+	  backup_router = sconn->backup_router;
+	}
       }
 
       SILC_LOG_DEBUG(("Remote host is %s", 
 		      ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
 		      "server" : (backup_router ? 
 				  "backup router" : "router")));
-      SILC_LOG_INFO(("Connection s (%s) is %s", sock->hostname,
+      SILC_LOG_INFO(("Connection %s (%s) is %s", sock->hostname,
 		     sock->ip, ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
 		     "server" : (backup_router ? 
 				 "backup router" : "router")));
