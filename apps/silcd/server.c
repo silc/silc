@@ -128,6 +128,9 @@ void silc_server_free(SilcServer server)
   if (list)
     silc_idcache_list_free(list);
 
+  if (server->pk_hash)
+    silc_hash_table_free(server->pk_hash);
+
   /* Delete all clients */
   list = NULL;
   if (silc_idcache_get_all(server->local_list->clients, &list) &&
@@ -148,8 +151,6 @@ void silc_server_free(SilcServer server)
   if (list)
     silc_idcache_list_free(list);
 
-  if (server->pk_hash)
-    silc_hash_table_free(server->pk_hash);
 
   /* Delete all servers */
   list = NULL;
