@@ -19,71 +19,73 @@
 1.7 What other algorithms SILC support?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_80" class="normal">
 1.8 What encryption modes SILC support?</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_85" class="normal">
+1.9 Is CBC mode going to be replaced in SILC?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_90" class="normal">
-1.9 What hash functions SILC support?</a><br />
+1.10 What hash functions SILC support?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_100" class="normal">
-1.10 What public key algorithms SILC support?</a><br />
+1.11 What public key algorithms SILC support?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_110" class="normal">
-1.11 Does SILC support PGP keys?</a><br />
+1.12 Does SILC support PGP keys?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_120" class="normal">
-1.12 Does SILC support SSH keys?</a><br />
+1.13 Does SILC support SSH keys?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_130" class="normal">
-1.13 Does SILC support X.509 certificates?</a><br />
+1.14 Does SILC support X.509 certificates?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_140" class="normal">
-1.14 So SILC can be used with other keys too instead of just SILC public 
+1.15 So SILC can be used with other keys too instead of just SILC public 
    keys?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_140" class="normal">
-1.15 How the MAC is computed in SILC?</a><br />
+1.16 How the MAC is computed in SILC?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_160" class="normal">
-1.16 Why SILC does not use PGP to encrypt messages?</a><br />
+1.17 Why SILC does not use PGP to encrypt messages?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_170" class="normal">
-1.17 Why SILC does not use TLS/SSL to encrypt messages?</a><br />
+1.18 Why SILC does not use TLS/SSL to encrypt messages?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_180" class="normal">
-1.18 Why SILC does not use SSH tunneling or IPSEC to encrypt messages?</a><br />
+1.19 Why SILC does not use SSH tunneling or IPSEC to encrypt messages?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_190" class="normal">
-1.19 How is the transport in SILC protected then?</a><br />
+1.20 How is the transport in SILC protected then?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_200" class="normal">
-1.20 Do I understand you correctly that TLS/SSL + PGP would be same as
+1.21 Do I understand you correctly that TLS/SSL + PGP would be same as
    SILCs own protection now?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_210" class="normal">
-1.21 Are you also saying that a chat protocol using TLS/SSL alone is not 
+1.22 Are you also saying that a chat protocol using TLS/SSL alone is not 
    actually sufficient (like IRC+SSL)?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_220" class="normal">
-1.22 Are you also saying that a chat protocol using PGP alone is not
+1.23 Are you also saying that a chat protocol using PGP alone is not
    actually sufficient (like ICQ+PGP)?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_230" class="normal">
-1.23 So chat protocol always needs both secured transport and secured 
+1.24 So chat protocol always needs both secured transport and secured 
    messages, right?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_240" class="normal">
-1.24 What is the purpose of the SILC key exchange (SKE) protocol?</a><br />
+1.25 What is the purpose of the SILC key exchange (SKE) protocol?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_250" class="normal">
-1.25 How does SKE protocol protect against man-in-the-middle attacks which can be used to attack Diffie-Hellman?</a><br />
+1.26 How does SKE protocol protect against man-in-the-middle attacks which can be used to attack Diffie-Hellman?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_260" class="normal">
-1.26 Would have it been possible to use some other key exchange protocol
+1.27 Would have it been possible to use some other key exchange protocol
    in SILC instead of developing SKE?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_270" class="normal">
-1.27 Should I verify the public key of the server when I connect to it?</a><br />
+1.28 Should I verify the public key of the server when I connect to it?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_280" class="normal">
-1.28 Should I verify all other public keys in SILC?</a><br />
+1.29 Should I verify all other public keys in SILC?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_290" class="normal">
-1.29 Why SILC does not used OpenSSL crypto library instead of its own?</a><br />
+1.30 Why SILC does not used OpenSSL crypto library instead of its own?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_300" class="normal">
-1.30 Is it possible to digitally sign messages in SILC?</a><br />
+1.31 Is it possible to digitally sign messages in SILC?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_310" class="normal">
-1.31 I am a Harry Hacker, and I want to crack your protocol.  What would be
+1.32 I am a Harry Hacker, and I want to crack your protocol.  What would be
    the best way to attack SILC protocol?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_320" class="normal">
-1.32 What could happen if a server in SILC network would become compromised?</a><br />
+1.33 What could happen if a server in SILC network would become compromised?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_330" class="normal">
-1.33 What could happen if a router would become compromised?</a><br />
+1.34 What could happen if a router would become compromised?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_340" class="normal">
-1.34 Is my channel messages protected on compromised server or not?</a><br />
+1.35 Is my channel messages protected on compromised server or not?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_350" class="normal">
-1.35 Is my private messages protected on compromised server or not?</a><br />
+1.36 Is my private messages protected on compromised server or not?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_360" class="normal">
-1.36 Should I then always use private keys for all messages?</a><br />
+1.37 Should I then always use private keys for all messages?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_370" class="normal">
-1.37 How likely is it that some server would become compromised?</a><br />
+1.38 How likely is it that some server would become compromised?</a><br />
 
 <br />&nbsp;<br />
 
@@ -152,6 +154,17 @@ A: The required mode is currently CBC.  Other modes are optional.
    for example CTR mode.  In the future, SILC is also going to have
    support for so called "authenticated encryption" modes as soon as
    NIST finalizes its selection process for these modes.
+<br />&nbsp;<br />
+
+<a name="f1_85"></a>
+<samp class="highlight">Q: Is CBC mode going to be replaced in SILC?</samp><br />
+A: Even if new encryption mode like CTR is introduced to SILC protocol the 
+CBC mode will not likely go away.  Recently new attacks has been 
+introduced to the traditional CBC (IV is the previous ciphertext block),
+so looking additional modes for the future is wise.  Another possiblity
+is to change the CBC to be so called randomized CBC (all IVs are random), 
+however most likely this will not be done in SILC.  Rather, new modes will
+be introduced instead.
 <br />&nbsp;<br />
 
 <a name="f1_90"></a>
