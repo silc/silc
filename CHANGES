@@ -12,6 +12,9 @@ Fri Dec  6 17:40:24 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* GETKEY to update the client entrys fingerprint too.
 	  Affected file lib/silcclient/command_reply.c.
 
+	* Added --without-libtoolfix for package builders using weird
+	  wrappers around libtool (BSD at least).
+
 Thu Dec  5 22:29:46 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed backup router bugs:  When backup resumes router and

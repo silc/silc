@@ -38,8 +38,14 @@ libsilccrypt_la_SOURCES = \
 	silcpkcs.c \
 	pkcs1.c
 
+if SILC_LIBTOOLFIX
 # Tell libtool to compile silccrypt as shared since silcsim will need it.
-CFLAGS = --libtool-enable-shared
+LTFLAGS = --libtool-enable-shared
+else
+LTFLAGS = 
+endif
+
+CFLAGS = $(LTFLAGS)
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\

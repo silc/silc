@@ -997,6 +997,22 @@ AC_ARG_WITH(silcd,
     AC_MSG_RESULT(yes)
   ])
 
+libtoolfix=true
+AC_MSG_CHECKING(whether to do libtoolfix)
+AC_ARG_WITH(libtoolfix,
+  [  --without-libtoolfix     Do not fix libtool, for package builders],
+  [
+    AC_MSG_RESULT(no)
+    libtoolfix=false
+  ],
+  [
+    AC_MSG_RESULT(yes)
+  ])
+
+AC_SUBST(ETCDIR)
+AC_DEFINE_UNQUOTED(SILC_ETCDIR, "$ETCDIR")
+
+
 
 ##
 ##  Misc
@@ -1031,7 +1047,11 @@ AC_SUBST(SILC_DIST_SUBDIRS)
 # to in run-time specify when to compile shared/static libraries without
 # need to reconfigure the entire libtool.
 #
-./libtoolfix $SILC_TOP_SRCDIR/ltmain.sh
+if test x$libtoolfix = xtrue; then
+  ./libtoolfix $SILC_TOP_SRCDIR/ltmain.sh
+fi
+AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
+
 
 #
 # Makefile outputs
