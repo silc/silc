@@ -21,6 +21,15 @@ Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  Irssi-silc client does support windows and can handle several
 	  connections without problems, see: www.irssi.org and SILC plugin.
 
+	* Fixed some places where client was added to the IDList.  The
+	  rule of thumb is following (in order to get everything right):
+	  If the client is directly connected local client then the 
+	  `connection' argument must be set and `router' argument must be 
+	  NULL to silc_idlist_add_client function.  If the client is not
+	  directly connected client then the `router' argument must
+	  bet set and the `connection' argument must be NULL to the
+	  silc_idlist_add_client function.
+
 Tue Feb 13 19:55:59 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added --with-gmp configuration option.  If set the GMP

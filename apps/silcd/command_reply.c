@@ -175,7 +175,8 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
        global. */
     silc_idlist_add_client(server->global_list, nick,
 			   strdup(username), 
-			   strdup(realname), client_id, NULL, NULL);
+			   strdup(realname), client_id, 
+			   cmd->sock->user_data, NULL);
   } else {
     /* We have the client already, update the data */
 
@@ -293,7 +294,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
        global. */
     silc_idlist_add_client(server->global_list, nick,
 			   username ? strdup(username) : NULL, NULL,
-			   client_id, NULL, NULL);
+			   client_id, cmd->sock->user_data, NULL);
   } else {
     /* We have the client already, update the data */
 

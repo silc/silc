@@ -68,10 +68,10 @@ void silc_server_private_message(SilcServer server,
       /* We are of course in this case the client's router thus the real
 	 "router" of the client is the server who owns the client. Thus
 	 we will send the packet to that server. */
-      router = (SilcServerEntry)dst_sock->user_data;
+      router = (SilcServerEntry)client->router;
       idata = (SilcIDListData)router;
 
-      silc_server_send_private_message(server, dst_sock,
+      silc_server_send_private_message(server, router->connection,
 				       idata->send_key,
 				       idata->hmac,
 				       packet);
@@ -718,7 +718,7 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
       memcpy(hash, ((SilcClientID *)id)->hash, 
 	     sizeof(((SilcClientID *)id)->hash));
       entry = silc_idlist_add_client(id_list, hash, NULL, NULL, id, 
-				     router, router_sock);
+				     router, NULL);
       entry->nickname = NULL;
 
       if (sock->type == SILC_SOCKET_TYPE_SERVER)
@@ -1000,7 +1000,7 @@ void silc_server_notify(SilcServer server,
 					     client_id, NULL);
       if (!client) {
 	client = silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
-					client_id, sock->user_data, sock);
+					client_id, sock->user_data, NULL);
 	if (!client) {
 	  silc_free(channel_id);
 	  silc_free(client_id);

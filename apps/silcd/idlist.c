@@ -183,7 +183,12 @@ void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 
 /* Add new client entry. This adds the client entry to ID cache system
    and returns the allocated client entry or NULL on error.  This is
-   called when new client connection is accepted to the server. */
+   called when new client connection is accepted to the server. If The
+   `router' is provided then the all server routines assume that the client
+   is not directly connected local client but it has router set and is
+   remote.  If this is the case then `connection' must be NULL.  If, on the
+   other hand, the `connection' is provided then the client is assumed
+   to be directly connected local client and `router' must be NULL. */
 
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
