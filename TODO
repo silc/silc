@@ -1,12 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o Server password is not used at all.  It is not possible to automize
-   the password authentication currently.  The silc_get_auth_method
-   in irssi/src/silc/core/client_ops.c should find the connection's
-   password, only if not found then continue resolving the auth method.
-   Alternatively it can do it after resolving in the callback.
-
  o UTF-8 encode/decode WHOIS userinfos, topic, etc.
 
  o Manaul file for silc(1) and silc.conf.

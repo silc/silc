@@ -461,8 +461,8 @@ void silc_client_start_key_exchange(SilcClient client,
 			  conn, client->schedule);
 }
 
-/* Callback called when error has occurred during connecting to the server.
-   The `connect' client operation will be called. */
+/* Callback called when error has occurred during connecting (KE) to
+   the server.  The `connect' client operation will be called. */
 
 SILC_TASK_CALLBACK(silc_client_connect_failure)
 {
@@ -474,6 +474,20 @@ SILC_TASK_CALLBACK(silc_client_connect_failure)
 				 SILC_CLIENT_CONN_ERROR);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
+  silc_free(ctx);
+}
+
+/* Callback called when error has occurred during connecting (auth) to
+   the server.  The `connect' client operation will be called. */
+
+SILC_TASK_CALLBACK(silc_client_connect_failure_auth)
+{
+  SilcClientConnAuthInternalContext *ctx =
+    (SilcClientConnAuthInternalContext *)context;
+  SilcClient client = (SilcClient)ctx->client;
+
+  client->internal->ops->connect(client, ctx->sock->user_data, 
+				 SILC_CLIENT_CONN_ERROR);
   silc_free(ctx);
 }
 
@@ -593,6 +607,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
   silc_protocol_free(protocol);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
+  ctx->packet = NULL;
   silc_free(ctx);
   sock->protocol = NULL;
 
@@ -625,7 +640,21 @@ void silc_client_resolve_auth_method(bool success,
 
   proto_ctx->auth_meth = auth_meth;
 
-  if (auth_data && auth_data_len) {
+  if (success && auth_data && auth_data_len) {
+
+    /* Passphrase must be UTF-8 encoded, if it isn't encode it */
+    if (auth_meth == SILC_AUTH_PASSWORD && 
+	!silc_utf8_valid(auth_data, auth_data_len)) {
+      int payload_len = 0;
+      unsigned char *autf8 = NULL;
+      payload_len = silc_utf8_encoded_len(auth_data, auth_data_len, 
+					  SILC_STRING_ASCII);
+      autf8 = silc_calloc(payload_len, sizeof(*autf8));
+      auth_data_len = silc_utf8_encode(auth_data, auth_data_len, 
+				       SILC_STRING_ASCII, autf8, payload_len);
+      auth_data = autf8;
+    }
+
     proto_ctx->auth_data = silc_memdup(auth_data, auth_data_len);
     proto_ctx->auth_data_len = auth_data_len;
   }
@@ -761,7 +790,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 
   /* Notify application of failure */
   silc_schedule_task_add(client->schedule, ctx->sock->sock,
-			 silc_client_connect_failure, ctx,
+			 silc_client_connect_failure_auth, ctx,
 			 0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 

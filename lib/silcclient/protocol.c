@@ -574,7 +574,7 @@ silc_client_conn_auth_continue(unsigned char *auth_data,
   int payload_len = 0;
   unsigned char *autf8 = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Sending authentication to server"));
 
   /* Passphrase must be UTF-8 encoded, if it isn't encode it */
   if (ctx->auth_meth == SILC_AUTH_PASSWORD && 

@@ -2072,9 +2072,20 @@ static void silc_get_auth_method_callback(SilcClient client,
     (*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
     break;
   case SILC_AUTH_PASSWORD:
-    /* Do not ask the passphrase from user, the library will ask it if
-       we do not provide it here. */
-    (*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
+    {
+      /* Check whether we find the password for this server in our
+	 configuration.  If not, then don't provide so library will ask
+	 it from the user. */
+      SERVER_SETUP_REC *setup = server_setup_find_port(conn->remote_host,
+						       conn->remote_port);
+      if (!setup || !setup->password) {
+	(*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
+	break;
+      }
+      
+      (*internal->completion)(TRUE, auth_meth, setup->password,
+			      strlen(setup->password), internal->context);
+    }
     break;
   case SILC_AUTH_PUBLIC_KEY:
     /* Do not get the authentication data now, the library will generate
@@ -2101,9 +2112,6 @@ void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
   InternalGetAuthMethod internal;
 
   SILC_LOG_DEBUG(("Start"));
-
-  /* XXX must resolve from configuration whether this connection has
-     any specific authentication data */
 
   /* If we do not have this connection configured by the user in a
      configuration file then resolve the authentication method from the
