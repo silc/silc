@@ -353,7 +353,7 @@ void silc_emit_mime_sig(SILC_SERVER_REC *server, WI_ITEM_REC *item,
 
    escaped_data = silc_escape_data(data, data_len);
 
-   signal_emit("mime", 4, server, item, escaped_data, nick, verified);
+   signal_emit("mime", 5, server, item, escaped_data, nick, verified);
  
    silc_free(escaped_data);
 }
