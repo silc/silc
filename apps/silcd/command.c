@@ -59,7 +59,7 @@ SilcServerCommand silc_command_list[] =
   SILC_SERVER_CMD(join, JOIN, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(motd, MOTD, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(umode, UMODE, SILC_CF_LAG | SILC_CF_REG),
-  SILC_SERVER_CMD(cmode, CMODE, SILC_CF_LAG | SILC_CF_REG),
+  SILC_SERVER_CMD(cmode, CMODE, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(cumode, CUMODE, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(kick, KICK, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(restart, RESTART, 
@@ -1686,7 +1686,7 @@ SILC_SERVER_CMD_FUNC(nick)
   nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
   /* Send NICK_CHANGE notify to the client's channels */
-  silc_server_send_notify_on_channels(server, client, 
+  silc_server_send_notify_on_channels(server, NULL, client, 
 				      SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
 				      oidp->data, oidp->len, 
 				      nidp->data, nidp->len);
@@ -2010,8 +2010,102 @@ SILC_SERVER_CMD_FUNC(quit)
   silc_server_command_free(cmd);
 }
 
+/* Server side of command KILL. This command is used by router operator
+   to remove an client from the SILC Network temporarily. */
+
 SILC_SERVER_CMD_FUNC(kill)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  SilcClientEntry remote_client;
+  SilcClientID *client_id;
+  unsigned char *tmp, *comment;
+  unsigned int tmp_len;
+  SilcBuffer idp;
+
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_KILL, cmd, 1, 2);
+
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  if (server->server_type != SILC_ROUTER)
+    goto out;
+
+  /* Check whether client has the permissions. */
+  if (!(client->mode & SILC_UMODE_ROUTER_OPERATOR)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
+					  SILC_STATUS_ERR_NO_ROUTER_PRIV);
+    goto out;
+  }
+
+  /* Get the client ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  client_id = silc_id_payload_parse_id(tmp, tmp_len);
+  if (!client_id) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
+					  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
+    goto out;
+  }
+
+  /* Get the client entry */
+  remote_client = silc_idlist_find_client_by_id(server->local_list, 
+						client_id, NULL);
+  if (!remote_client) {
+    remote_client = silc_idlist_find_client_by_id(server->global_list, 
+						  client_id, NULL);
+    if (!remote_client) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
+					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
+      goto out;
+    }
+  }
+
+  /* Get comment */
+  comment = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+
+  /* Send reply to the sender */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
+					SILC_STATUS_OK);
+
+  /* Send KILLED notify to the channels. It is not sent to the client
+     as it will be sent differently destined directly to the client and not
+     to the channel. */
+  idp = silc_id_payload_encode(remote_client->id, SILC_ID_CLIENT);
+  silc_server_send_notify_on_channels(server, remote_client->connection, 
+				      remote_client, SILC_NOTIFY_TYPE_KILLED,
+				      comment ? 2 : 1,
+				      idp->data, idp->len,
+				      comment, comment ? strlen(comment) : 0);
+  silc_buffer_free(idp);
+
+  /* Remove the client from all channels. This generates new keys to the
+     channels as well. */
+  silc_server_remove_from_channels(server, NULL, remote_client, FALSE, 
+				   NULL, TRUE);
+
+  /* Send KILLED notify to the client directly */
+  silc_server_send_notify_killed(server, remote_client->connection ? 
+				 remote_client->connection : 
+				 remote_client->router->connection, FALSE,
+				 remote_client->id, SILC_ID_CLIENT_LEN,
+				 comment);
+
+  /* Send KILLED notify to primary route */
+  if (!server->standalone)
+    silc_server_send_notify_killed(server, server->router->connection,
+				   server->server_type == SILC_ROUTER ?
+				   TRUE : FALSE,
+				   remote_client->id, SILC_ID_CLIENT_LEN,
+				   comment);
+
+ out:
+  silc_server_command_free(cmd);
 }
 
 /* Server side of command INFO. This sends information about us to 

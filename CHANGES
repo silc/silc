@@ -1,3 +1,42 @@
+Sun Mar 18 21:02:47 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added SILC_NOTIFY_TYPE_KILLED notify type.  It is sent when
+	  an client is killed from the SILC Network.  Updated the protocol
+	  specs accordingly.
+
+	  Added new function silc_server_send_notify_killed to the
+	  silcd/packet_send.[ch].
+
+	* Added function silc_server_packet_relay_notify to relay notify
+	  packets that are destined directly to a client.  In this case
+	  the server does not process the notify packets but merely relays
+	  it to the client.  Affected file silcd/packet_send.[ch].
+
+	  Added also silc_server_packet_process_relay_notify to check
+	  whereto relay the notify.  Affected file is 
+	  silcd/packet_receive.[ch].
+
+	* Implemented KILL command to the server.
+
+	* Updated TODO.
+
+	* Added the backup schema desgined last fall to the protocol
+	  specs for everyone to see.  The specification is in the
+	  *-spec-xx.txt draft and the packet type definitions for the
+	  backup routers is in *-pp-xx.txt draft.  Thusly, added also
+	  new packet type SILC_PACKET_CELL_ROUTERS.
+
+	* A big security problem in the implementation discovered.  The
+	  signoff of an client did not cause new channel key generation
+	  which it of course should've done.  The channel keys must be
+	  always re-generated when client leaves (or signoffs) the channel.
+	  The silc_server_remove_from_channels funtion now handles
+	  the channel key re-generation.
+
+	* Added `sender' argument to the silc_server_send_notify_on_channels
+	  to not to send the client provided as argument.  Affected file
+	  silcd/packet_send.[ch].
+
 Fri Mar 16 15:52:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented OPER and SILCOPER commands into the server and

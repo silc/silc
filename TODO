@@ -100,15 +100,22 @@ TODO In SILC Client Library
 TODO In SILC Server
 ===================
 
- o Packet processing can be made faster. All packet function in the
-   packet_receive.c has same prototypes.  Instead of calling those from
-   huge switch() make a table of callback functions that can be called
-   directly by the packet type.
+ o Functions such as silc_server_private_message, 
+   silc_server_private_message_key and 
+   silc_server_packet_process_relay_notify can be optimized.  I don't think
+   we need such a big lookups to lookup the router to the destination,
+   it is already provided in the client entry.
 
  o silc_server_send_key_agreement and silc_server_send_private_message_key
    are one and same function (also silc_server_send_private_message is
    almost same function).  These should be unified to one generic named
-   function and use that.
+   function and use that (silc_server_packet_relay_notify is also
+   same function).
+
+ o Packet processing can be made faster. All packet function in the
+   packet_receive.c has same prototypes.  Instead of calling those from
+   huge switch() make a table of callback functions that can be called
+   directly by the packet type.
 
  o DNS/IP lookup blocks the server.  This must be fixed.  Check the
    resolver stuff (resolver(3), resolver(5)).  Either we have to do the

@@ -106,7 +106,9 @@ int silc_server_remove_clients_by_server(SilcServer server,
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
 				      SilcClientEntry client,
-				      char *signoff_message);
+				      int notify,
+				      char *signoff_message,
+				      int keygen);
 int silc_server_remove_from_one_channel(SilcServer server, 
 					SilcSocketConnection sock,
 					SilcChannelEntry channel,

@@ -1977,7 +1977,7 @@ void silc_server_free_client_data(SilcServer server,
 {
   FreeClientInternal i = silc_calloc(1, sizeof(*i));
 
-  /* Send REMOVE_ID packet to routers. */
+  /* Send SIGNOFF notify to routers. */
   if (!server->standalone && server->router)
     silc_server_send_notify_signoff(server, server->router->connection,
 				    server->server_type == SILC_SERVER ?
@@ -1985,7 +1985,7 @@ void silc_server_free_client_data(SilcServer server,
 				    SILC_ID_CLIENT_LEN, signoff);
 
   /* Remove client from all channels */
-  silc_server_remove_from_channels(server, sock, client, signoff);
+  silc_server_remove_from_channels(server, sock, client, TRUE, signoff, TRUE);
 
   /* We will not delete the client entry right away. We will take it
      into history (for WHOWAS command) for 5 minutes */
@@ -2096,7 +2096,8 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	}
 
 	/* Remove the client entry */
-	silc_server_remove_from_channels(server, NULL, client, NULL);
+	silc_server_remove_from_channels(server, NULL, client, TRUE, 
+					 NULL, TRUE);
 	silc_idlist_del_client(server->local_list, client);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -2121,7 +2122,8 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	}
 
 	/* Remove the client entry */
-	silc_server_remove_from_channels(server, NULL, client, NULL);
+	silc_server_remove_from_channels(server, NULL, client, TRUE,
+					 NULL, TRUE);
 	silc_idlist_del_client(server->global_list, client);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -2173,7 +2175,9 @@ int silc_server_channel_has_local(SilcChannelEntry channel)
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
 				      SilcClientEntry client,
-				      char *signoff_message)
+				      int notify,
+				      char *signoff_message,
+				      int keygen)
 {
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
@@ -2220,7 +2224,7 @@ void silc_server_remove_from_channels(SilcServer server,
     if (server->server_type == SILC_SERVER &&
 	!silc_server_channel_has_local(channel)) {
       /* Notify about leaving client if this channel has global users. */
-      if (channel->global_users)
+      if (notify && channel->global_users)
 	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 					   SILC_NOTIFY_TYPE_SIGNOFF, 
 					   signoff_message ? 2 : 1,
@@ -2236,12 +2240,24 @@ void silc_server_remove_from_channels(SilcServer server,
 
     /* Send notify to channel about client leaving SILC and thus
        the entire channel. */
-    silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-				       SILC_NOTIFY_TYPE_SIGNOFF, 
-				       signoff_message ? 2 : 1,
-				       clidp->data, clidp->len,
-				       signoff_message, signoff_message ?
-				       strlen(signoff_message) : 0);
+    if (notify)
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+					 SILC_NOTIFY_TYPE_SIGNOFF, 
+					 signoff_message ? 2 : 1,
+					 clidp->data, clidp->len,
+					 signoff_message, signoff_message ?
+					 strlen(signoff_message) : 0);
+
+    if (keygen) {
+      /* Re-generate channel key */
+      silc_server_create_channel_key(server, channel, 0);
+      
+      /* Send the channel key to the channel. The key of course is not sent
+	 to the client who was removed f rom the channel. */
+      silc_server_send_channel_key(server, client->connection, channel, 
+				   server->server_type == SILC_ROUTER ? 
+				   FALSE : !server->standalone);
+    }
   }
 
   silc_buffer_free(clidp);
@@ -2501,6 +2517,8 @@ void silc_server_create_channel_key(SilcServer server,
   int i;
   unsigned char channel_key[32], hash[32];
   unsigned int len;
+
+  SILC_LOG_DEBUG(("Generating channel key"));
 
   if (!channel->channel_key)
     if (!silc_cipher_alloc("aes-256-cbc", &channel->channel_key))

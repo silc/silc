@@ -79,6 +79,7 @@ Table of Contents
   2.3 Communication in the Network ..............................  6
   2.4 Channel Communication .....................................  7
   2.5 Router Connections ........................................  7
+  2.6 Backup Routers ............................................ XX
 3 SILC Specification ............................................  8
   3.1 Client ....................................................  8
       3.1.1 Client ID ...........................................  9
@@ -415,6 +416,76 @@ primary routes.
 The issue of router connections are very important especially with SILC
 broadcast packets.  Usually all router wide information in the network is
 distributed by SILC broadcast packets.
+
+
+.ti 0
+2.6 Backup Routers
+
+Backup routers may exist in the cell in addition of the primary router.
+However, they must not be active routers and act as routers in the cell.
+Only one router may be acting as primary router in the cell.  In the case
+of failure of the primary router may one of the backup routers become
+active.  The purpose of backup routers are in case of failure of the
+primary router to maintain working connections inside the cell and outside
+the cell and to avoid netsplits.
+
+Backup routers are normal servers in the cell that are prepared to take
+over the tasks of primary router if needed.  They need to have at least
+one direct and active connection to the primary router of the cell.
+This communication channel is used to send the router information to
+the backup router.  Backup router must know everything that the primary
+router knows to be able to take over the tasks of the primary router.
+It is the primary router's responsibility to feed the data to the backup
+router.  If the backup router does not know all the data in the case of
+failure some connections may be lost.  The primary router of the cell
+must consider the backup router being normal router server and feed the
+data accordingly.
+
+In addition of having direct connection to the primary router of the
+cell the backup router must also have connection to the same router
+the primary router of the cell has connected.  However, it must not be
+active router connection meaning that the backup router must not use
+that channel as its primary route and it must not notify the router
+about having connected servers, channels and clients behind it.  It
+merely connects to the router.  This sort of connection is later
+referred as being passive connection.  Some keepalive actions may be
+needed by the router to keep the connection alive.
+
+The primary router notifies its primary router about having backup
+routers in the cell by sending SILC_PACKET_CELL_ROUTERS packet.  If
+and when the primary router of the cell becomes unresponsive, its
+primary router knows that there exists backup routers in the cell.  
+After that it will start using the first backup router sent in the
+packet as router of that cell.  In this case the backup router must
+notify its new primary router about the servers, channels and clients
+it has connected to it.  The primary router knows that this server
+has become a router of the cell because of failure of the primary
+router in the cell.  It must also cope with the fact that the servers,
+channels and clients that the new backup router announces are not
+really new, since they used to exist in the primary router of the
+cell.
+
+It is required that other normal servers has passive connections to
+the backup router(s) in the cell.  Some keepalive actions may be needed
+by the server to keep the connection alive.  After they notice the
+failure of the primary router they must start using the connection to
+the first backup router as their primary route.
+
+It is recommended that there would be at least one backup router in
+the cell.  It is not recommended to have all servers in the cell acting
+as backup routers as it requires establishing several connections to
+several servers in the cell.  Large cells can easily have several
+backup routers in the cell.  The order of the backup routers are decided
+at the primary router of the cell and servers and backup servers in the
+cell must be configured accordingly.  It is not required that the backup
+server is actually active server in the cell.  Backup router may be spare
+server in the cell that does not accept normal client connections at all.
+It maybe reserved purely for the backup purposes.  These, however, are
+cell management issues.
+
+If the first backup router is down as well and there is another backup
+router in the cell then it will start acting as the primary router as
+described above.
 
 
 .ti 0

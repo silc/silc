@@ -162,6 +162,12 @@ void silc_server_send_notify_kicked(SilcServer server,
 				    SilcClientID *client_id,
 				    unsigned int client_id_len,
 				    char *comment);
+void silc_server_send_notify_killed(SilcServer server,
+				    SilcSocketConnection sock,
+				    int broadcast,
+				    SilcClientID *client_id,
+				    unsigned int client_id_len,
+				    char *comment);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  int broadcast,
@@ -176,6 +182,7 @@ void silc_server_send_notify_to_channel(SilcServer server,
 					SilcNotifyType type,
 					unsigned int argc, ...);
 void silc_server_send_notify_on_channels(SilcServer server,
+					 SilcSocketConnection sender,
 					 SilcClientEntry client,
 					 SilcNotifyType type,
 					 unsigned int argc, ...);
@@ -210,5 +217,10 @@ void silc_server_send_private_message_key(SilcServer server,
 					  SilcCipher cipher,
 					  SilcHmac hmac,
 					  SilcPacketContext *packet);
+void silc_server_packet_relay_notify(SilcServer server,
+				     SilcSocketConnection dst_sock,
+				     SilcCipher cipher,
+				     SilcHmac hmac,
+				     SilcPacketContext *packet);
 
 #endif

@@ -726,7 +726,20 @@ List of SILC Packet types are defined as follows.
           Payload of the packet:  See section 2.3.20 Key Agreement Payload
 
 
-     26 - 199
+    26    SILC_PACKET_CELL_ROUTERS
+
+          This packet is used by primary router in the cell to notify its
+          primary router what other routers (backup routers) exist in the
+          cell.  In case of failure of the primary router in the cell the
+          first router in the list will act as primary router of the cell.
+          This packet may be sent at anytime after connection has been
+          registered to the primary router.  The client must not send this
+          packet.
+
+          Payload of the packet:  See section 2.3.21 Cell Routers Payload
+
+
+     27 - 199
 
          Currently undefined commands.
 
@@ -1213,6 +1226,24 @@ ID's sent in arguments are sent inside ID Payload.
       The <Client ID> is the client who was kicked from the channel.
       The kicker may have set the <comment> to indicate the reason for
       the kicking.
+
+
+13    SILC_NOTIFY_TYPE_KILLED
+
+      Sent when a client has been killed from the network.  This is sent 
+      also to the client who was killed from the network.  The client
+      who was killed from the network must be removed from the network.
+      This notify type is destined directly to the client who was killed
+      and to channel if the client is on any channel.  The router or
+      server receiving the packet distributes this type to the local
+      clients on the channel and broadcast it to the network.
+
+      Max Arguments:  2
+          Arguments:  (1) <Client ID>  (2) [<comment>]
+
+      The <Client ID> is the client who was killed from the network.
+      The killer may have set the <comment> to indicate the reason for
+      the killing.
 
 .in 3
 
@@ -1786,8 +1817,8 @@ set the real nickname of the user which is then used to create new
 client ID.
 
 The payload may only be sent with SILC_PACKET_NEW_CLIENT packet.  It
-must not be sent in any other packet type.  The following diagram represents
-the New Client Payload.
+must not be sent in any other packet type.  The following diagram
+represents the New Client Payload.
 
 
 
@@ -1979,7 +2010,6 @@ represents the Key Agreement Payload.
 Figure 20:  Key Agreement Payload
 
 
-
 .in 6
 o Hostname Length (2 bytes) - Indicates the length of the Hostname
   field.
@@ -2003,6 +2033,65 @@ channel private key then the Sending Encryption Key, as defined in
 be discarded.  The [SILC1] defines the way to use the key material if
 it is intended to be used as private message keys.  Any other use for
 the key material is undefined.
+
+
+.ti 0
+2.3.21 Cell Routers Payload
+
+Cell Routers payload is used by router to notify its primary router what
+other routers exist in the cell.  The other routers are considered to be
+backup routers and one of them will come active only in the case of
+failure of the primary router.  Normal server can send this packet if it
+is acting as backup router.  Client must not send this packet.  To send
+more than one backup router set the List flag and assemble the payloads
+as list.
+
+The payload may only be sent with SILC_PACKET_CELL_ROUTERS packet.  It
+must not be sent in any other packet type.  The Following diagram
+represents the Cell Routers Payload.
+
+         
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Hostname Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Hostname                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                             Port                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Server ID Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Server ID                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 21:  Cell Routers Payload
+
+
+.in 6
+o Hostname Length (2 bytes) - Indicates the length of the Hostname
+  field.
+
+o Hostname (variable length) - The hostname or IP address of
+  the backup router.
+
+o Port (4 bytes) - The port of the backup router it currently uses.
+  This is a 32 bit MSB first order value.
+
+o Server ID Length (2 bytes) - Indicates the length of the Server
+  ID field.
+
+o Server ID (variable length) - Consists of the Server ID of the
+  backup router.
+.in 3
 
 
 .ti 0

@@ -27,6 +27,99 @@
 
 extern char *server_version;
 
+/* Check whereto relay the received notify packet that was destined
+   to a client. */
+
+static void 
+silc_server_packet_process_relay_notify(SilcServer server,
+					SilcSocketConnection sock,
+					SilcPacketContext *packet)
+{
+  SilcClientID *id;
+  SilcServerEntry router;
+  SilcSocketConnection dst_sock;
+  SilcClientEntry client;
+  SilcIDListData idata;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Decode destination Client ID */
+  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CLIENT);
+  if (!id) {
+    SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
+    return;
+  }
+
+  /* If the destination belongs to our server we don't have to route
+     the packet anywhere but to send it to the local destination. */
+  client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
+  if (client) {
+    /* It exists, now deliver the packet to the destination */
+    dst_sock = (SilcSocketConnection)client->connection;
+
+    /* If we are router and the client has router then the client is in
+       our cell but not directly connected to us. */
+    if (server->server_type == SILC_ROUTER && client->router) {
+      /* We are of course in this case the client's router thus the real
+	 "router" of the client is the server who owns the client. Thus
+	 we will send the packet to that server. */
+      router = (SilcServerEntry)client->router;
+      idata = (SilcIDListData)router;
+      silc_server_packet_relay_notify(server, router->connection,
+				      idata->send_key,
+				      idata->hmac,
+				      packet);
+      silc_free(id);
+      return;
+    }
+
+    /* Seems that client really is directly connected to us */
+    idata = (SilcIDListData)client;
+    silc_server_packet_relay_notify(server, dst_sock, 
+				    idata->send_key,
+				    idata->hmac, packet);
+    silc_free(id);
+    return;
+  }
+
+  /* Destination belongs to someone not in this server. If we are normal
+     server our action is to send the packet to our router. */
+  if (server->server_type == SILC_SERVER && !server->standalone) {
+    router = server->router;
+
+    /* Send to primary route */
+    if (router) {
+      dst_sock = (SilcSocketConnection)router->connection;
+      idata = (SilcIDListData)router;
+      silc_server_packet_relay_notify(server, dst_sock, 
+				      idata->send_key,
+				      idata->hmac, packet);
+    }
+    silc_free(id);
+    return;
+  }
+
+  /* We are router and we will perform route lookup for the destination 
+     and send the packet to fastest route. */
+  if (server->server_type == SILC_ROUTER && !server->standalone) {
+    /* Check first that the ID is valid */
+    client = silc_idlist_find_client_by_id(server->global_list, id, NULL);
+    if (client) {
+      dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
+      router = (SilcServerEntry)dst_sock->user_data;
+      idata = (SilcIDListData)router;
+
+      /* Get fastest route and send packet. */
+      if (router)
+	silc_server_packet_relay_notify(server, dst_sock, 
+					idata->send_key,
+					idata->hmac, packet);
+      silc_free(id);
+      return;
+    }
+  }
+}
+
 /* Received notify packet. Server can receive notify packets from router. 
    Server then relays the notify messages to clients if needed. */
 
@@ -51,6 +144,13 @@ void silc_server_notify(SilcServer server,
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       packet->src_id_type != SILC_ID_SERVER)
     return;
+
+  /* If the packet is destined directly to a client, then we don't
+     process the packet at all but just relay it to the client. */
+  if (packet->dst_id_type == SILC_ID_CLIENT) {
+    silc_server_packet_process_relay_notify(server, sock, packet);
+    return;
+  }
 
   /* If we are router and this packet is not already broadcast packet
      we will broadcast it. The sending socket really cannot be router or
@@ -250,7 +350,7 @@ void silc_server_notify(SilcServer server,
       tmp = NULL;
 
     /* Remove the client from all channels */
-    silc_server_remove_from_channels(server, NULL, client, tmp);
+    silc_server_remove_from_channels(server, NULL, client, TRUE, tmp, TRUE);
 
     /* Remove the client entry */
     if (!silc_idlist_del_client(server->global_list, client))
@@ -346,7 +446,7 @@ void silc_server_notify(SilcServer server,
 
 	/* Send the NICK_CHANGE notify type to local clients on the channels
 	   this client is joined to. */
-	silc_server_send_notify_on_channels(server, client, 
+	silc_server_send_notify_on_channels(server, NULL, client, 
 					    SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
 					    id, tmp_len, 
 					    id2, tmp_len);
@@ -538,6 +638,15 @@ void silc_server_notify(SilcServer server,
 
     break;
 
+  case SILC_NOTIFY_TYPE_KILLED:
+    /* 
+     * Distribute the notify to local clients on channels
+     */
+    
+    SILC_LOG_DEBUG(("KILLED notify"));
+      
+    break;
+
     /* Ignore rest of the notify types for now */
   case SILC_NOTIFY_TYPE_NONE:
   case SILC_NOTIFY_TYPE_MOTD:
@@ -655,6 +764,7 @@ void silc_server_private_message(SilcServer server,
 				       idata->send_key,
 				       idata->hmac,
 				       packet);
+      silc_free(id);
       return;
     }
 
@@ -663,6 +773,7 @@ void silc_server_private_message(SilcServer server,
     silc_server_send_private_message(server, dst_sock, 
 				     idata->send_key,
 				     idata->hmac, packet);
+    silc_free(id);
     return;
   }
 
@@ -679,6 +790,7 @@ void silc_server_private_message(SilcServer server,
 				       idata->send_key,
 				       idata->hmac, packet);
     }
+    silc_free(id);
     return;
   }
 
@@ -697,6 +809,7 @@ void silc_server_private_message(SilcServer server,
 	silc_server_send_private_message(server, dst_sock, 
 					 idata->send_key,
 					 idata->hmac, packet);
+      silc_free(id);
       return;
     }
   }
@@ -752,6 +865,7 @@ void silc_server_private_message_key(SilcServer server,
 					   idata->send_key,
 					   idata->hmac,
 					   packet);
+      silc_free(id);
       return;
     }
 
@@ -760,6 +874,7 @@ void silc_server_private_message_key(SilcServer server,
     silc_server_send_private_message_key(server, dst_sock, 
 					 idata->send_key,
 					 idata->hmac, packet);
+    silc_free(id);
     return;
   }
 
@@ -776,6 +891,7 @@ void silc_server_private_message_key(SilcServer server,
 					   idata->send_key,
 					   idata->hmac, packet);
     }
+    silc_free(id);
     return;
   }
 
@@ -794,6 +910,7 @@ void silc_server_private_message_key(SilcServer server,
 	silc_server_send_private_message_key(server, dst_sock, 
 					     idata->send_key,
 					     idata->hmac, packet);
+      silc_free(id);
       return;
     }
   }
@@ -1677,10 +1794,10 @@ void silc_server_key_agreement(SilcServer server,
   }
 
   /* If the destination belongs to our server we don't have to route
-     the message anywhere but to send it to the local destination. */
+     the packet anywhere but to send it to the local destination. */
   client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
   if (client) {
-    /* It exists, now deliver the message to the destination */
+    /* It exists, now deliver the packet to the destination */
     dst_sock = (SilcSocketConnection)client->connection;
 
     /* If we are router and the client has router then the client is in
@@ -1695,6 +1812,7 @@ void silc_server_key_agreement(SilcServer server,
 				     idata->send_key,
 				     idata->hmac,
 				     packet);
+      silc_free(id);
       return;
     }
 
@@ -1703,6 +1821,7 @@ void silc_server_key_agreement(SilcServer server,
     silc_server_send_key_agreement(server, dst_sock, 
 				   idata->send_key,
 				   idata->hmac, packet);
+    silc_free(id);
     return;
   }
 
@@ -1719,6 +1838,7 @@ void silc_server_key_agreement(SilcServer server,
 				     idata->send_key,
 				     idata->hmac, packet);
     }
+    silc_free(id);
     return;
   }
 
@@ -1737,6 +1857,7 @@ void silc_server_key_agreement(SilcServer server,
 	silc_server_send_key_agreement(server, dst_sock, 
 				       idata->send_key,
 				       idata->hmac, packet);
+      silc_free(id);
       return;
     }
   }

@@ -43,6 +43,7 @@ typedef unsigned short SilcNotifyType;
 #define SILC_NOTIFY_TYPE_CHANNEL_CHANGE  10 /* Channel's ID has changed */
 #define SILC_NOTIFY_TYPE_SERVER_SIGNOFF  11 /* Server quitting SILC */
 #define SILC_NOTIFY_TYPE_KICKED          12 /* Kicked from channel */
+#define SILC_NOTIFY_TYPE_KILLED          13 /* Killed from the network */
 
 /* Prototypes */
 SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer);

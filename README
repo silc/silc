@@ -178,6 +178,11 @@ Following commands has been, at least partly, implemented:
 
 		Obtains router operator privileges.
 
+	/KILL	<nickname> [<comment>]
+
+		Router operator can use this command to remove an client
+		from the SILC Network temporarily.
+
 	/CONNECT <server> [<port>]
 
 		Connects to server the remote <server>.  You must be

@@ -1080,6 +1080,27 @@ void silc_server_send_notify_kicked(SilcServer server,
   silc_buffer_free(idp);
 }
 
+/* Send KILLED notify type. This tells that the `client_id' client was
+   killed from the network.  The `comment' may indicate the reason
+   for the killing. */
+
+void silc_server_send_notify_killed(SilcServer server,
+				    SilcSocketConnection sock,
+				    int broadcast,
+				    SilcClientID *client_id,
+				    unsigned int client_id_len,
+				    char *comment)
+{
+  SilcBuffer idp;
+
+  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  silc_server_send_notify_dest(server, sock, broadcast, (void *)client_id,
+			       SILC_ID_CLIENT, SILC_NOTIFY_TYPE_KILLED,
+			       comment ? 2 : 1, idp->data, idp->len,
+			       comment, comment ? strlen(comment) : 0);
+  silc_buffer_free(idp);
+}
+
 /* Sends notify message destined to specific entity. */
 
 void silc_server_send_notify_dest(SilcServer server,
@@ -1135,6 +1156,7 @@ void silc_server_send_notify_to_channel(SilcServer server,
    local servers if we are router). */
 
 void silc_server_send_notify_on_channels(SilcServer server,
+					 SilcSocketConnection sender,
 					 SilcClientEntry client,
 					 SilcNotifyType type,
 					 unsigned int argc, ...)
@@ -1204,6 +1226,9 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	sock = (SilcSocketConnection)c->router->connection;
 	idata = (SilcIDListData)c->router;
 	
+	if (sender && sock == sender)
+	  continue;
+
 	packetdata.dst_id = silc_id_id2str(c->router->id, SILC_ID_SERVER);
 	packetdata.dst_id_len = SILC_ID_SERVER_LEN;
 	packetdata.dst_id_type = SILC_ID_SERVER;
@@ -1239,6 +1264,9 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	sock = (SilcSocketConnection)c->connection;
 	idata = (SilcIDListData)c;
 	
+	if (sender && sock == sender)
+	  continue;
+
 	packetdata.dst_id = silc_id_id2str(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_len = SILC_ID_CLIENT_LEN;
 	packetdata.dst_id_type = SILC_ID_CLIENT;
@@ -1427,6 +1455,28 @@ void silc_server_send_private_message_key(SilcServer server,
 					  SilcCipher cipher,
 					  SilcHmac hmac,
 					  SilcPacketContext *packet)
+{
+  silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
+		   + packet->dst_id_len + packet->padlen);
+  silc_packet_send_prepare(dst_sock, 0, 0, packet->buffer->len);
+  silc_buffer_put(dst_sock->outbuf, packet->buffer->data, packet->buffer->len);
+  
+  /* Re-encrypt packet */
+  silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, packet->buffer->len);
+  
+  /* Send the packet */
+  silc_server_packet_send_real(server, dst_sock, FALSE);
+}
+
+/* Routine used to relay notify packets to a client. The notify packets
+   may be destined directly to a client and this routine is used to do
+   that. */
+
+void silc_server_packet_relay_notify(SilcServer server,
+				     SilcSocketConnection dst_sock,
+				     SilcCipher cipher,
+				     SilcHmac hmac,
+				     SilcPacketContext *packet)
 {
   silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		   + packet->dst_id_len + packet->padlen);
