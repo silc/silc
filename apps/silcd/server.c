@@ -602,6 +602,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
   if (sconn->retry_count > server->params->retry_count && 
       server->params->retry_keep_trying == FALSE) {
     SILC_LOG_ERROR(("Could not connect to router, giving up"));
+    silc_free(sconn->remote_host);
+    silc_free(sconn);
     return;
   }
 
@@ -993,6 +995,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
     silc_packet_context_free(ctx->packet);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
+  silc_free(ctx->auth_data);
   silc_free(ctx);
 }
 

@@ -1444,7 +1444,6 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcClientID *client_id;
   SilcBuffer reply;
   SilcIDListData idata;
-  SilcIDCacheEntry id_cache = NULL;
   char *username = NULL, *realname = NULL, *id_string;
   uint32 id_len;
   int ret;

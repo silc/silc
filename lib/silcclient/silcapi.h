@@ -1788,16 +1788,44 @@ silc_client_request_authentication_method(SilcClient client,
 					  SilcConnectionAuthRequest callback,
 					  void *context);
 
+/****d* silcclient/SilcClientAPI/SilcClientMonitorStatus
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcClientMonitorStatus;
+ *
+ * DESCRIPTION
+ *
+ *    File transmission session status types.  These will indicate
+ *    the status of the file transmission session.
+ *
+ * SOURCE
+ */
 typedef enum {
-  SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT,
-  SILC_CLIENT_FILE_MONITOR_SEND,
-  SILC_CLIENT_FILE_MONITOR_RECEIVE,
+  SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT,    /* In key agreemenet phase */
+  SILC_CLIENT_FILE_MONITOR_SEND,	     /* Sending file */
+  SILC_CLIENT_FILE_MONITOR_RECEIVE,	     /* Receiving file */
   SILC_CLIENT_FILE_MONITOR_GET,
   SILC_CLIENT_FILE_MONITOR_PUT,
-  SILC_CLIENT_FILE_MONITOR_CLOSED,
-  SILC_CLIENT_FILE_MONITOR_ERROR,
+  SILC_CLIENT_FILE_MONITOR_CLOSED,	     /* Session closed */
+  SILC_CLIENT_FILE_MONITOR_ERROR,	     /* Error during session */
 } SilcClientMonitorStatus;
+/***/
 
+/****d* silcclient/SilcClientAPI/SilcClientFileError
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcClientFileError;
+ *
+ * DESCRIPTION
+ *
+ *    File transmission error types.  These types are returned by
+ *    some of the file transmission functions, and by the monitor
+ *    callback to indicate error.
+ *
+ * SOURCE
+ */
 typedef enum {
   SILC_CLIENT_FILE_OK,
   SILC_CLIENT_FILE_ERROR,
@@ -1806,8 +1834,9 @@ typedef enum {
   SILC_CLIENT_FILE_NO_SUCH_FILE,
   SILC_CLIENT_FILE_PERMISSION_DENIED,
 } SilcClientFileError;
+/***/
 
-/****f* silcclient/SilcClientAPI/silc_client_file_receive
+/****f* silcclient/SilcClientAPI/SilcClientFileMonitor
  *
  * SYNOPSIS
  *
@@ -1826,10 +1855,12 @@ typedef enum {
  *
  *    Monitor callback that is called during the file transmission to
  *    monitor the transmission process.  The `status' indicates the current
- *    monitoring process.  The `offset' is the currently transmitted amount
- *    of total `filesize'.  The `client_entry' indicates the remote client,
- *    and the transmission session ID is the `session_id'.  The filename
- *    being transmitted is indicated by the `filepath'.
+ *    monitoring process.  The `error' will indicate the error type
+ *    if `status' is SILC_CLIENT_FILE_MONITOR_ERROR.  The `offset' is the
+ *    currently transmitted amount of total `filesize'.  The `client_entry'
+ *    indicates the remote client, and the transmission session ID is the 
+ *    `session_id'.  The filename being transmitted is indicated by the 
+ *    `filepath'.
  *
  ***/
 typedef void (*SilcClientFileMonitor)(SilcClient client,

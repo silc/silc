@@ -320,12 +320,9 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
   return SILC_SKE_STATUS_OK;
 
  err:
-  if (payload->pk_data)
-    silc_free(payload->pk_data);
-  if (payload->sign_data)
-    silc_free(payload->sign_data);
-  if (x)
-    silc_free(x);
+  silc_free(payload->pk_data);
+  silc_free(payload->sign_data);
+  silc_free(x);
   silc_free(payload);
   ske->status = status;
   return status;
@@ -336,11 +333,9 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 void silc_ske_payload_ke_free(SilcSKEKEPayload *payload)
 {
   if (payload) {
-    if (payload->pk_data)
-      silc_free(payload->pk_data);
+    silc_free(payload->pk_data);
     silc_mp_uninit(&payload->x);
-    if (payload->sign_data)
-      silc_free(payload->sign_data);
+    silc_free(payload->sign_data);
     silc_free(payload);
   }
 }

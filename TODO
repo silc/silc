@@ -41,6 +41,8 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o XXXXXXXXX cannot join +a channel from other servers
+
  o Implement the <founder auth> and founder privileges gaining to
    the JOIN command.  This will bypass invite-only mode as well for
    the client who got the founder mode during JOIN.
@@ -126,6 +128,9 @@ TODO After 1.0
    not in distribution), but it is not used yet, and it requires some
    tweaking on the Makefiles (we want static lib not shared).
 
+ o Implement the defined SilcDH API.  The definition is in
+   lib/silccrypt/silcdh.h.
+
  o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
    SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
    in separately.
@@ -145,11 +150,10 @@ TODO After 1.0
    to start writing one myself.  Anyhow, the OpenSSL X.509 lib should
    be checked.
 
-   Other package that should be checked is the NSS's X509 library.
+   Other package that should be checked is the NSS's X509 library,
+   which I like more over OpenSSL package.
 
- o SSH2 public keys support.  Maybe - not really needed but could be
-   nice as SSH is widely used all over the place.  SILC Protocol 
-   supports SSH2 public keys.
+ o SSH2 public keys support.
 
  o OpenPGP certificate support.
 

@@ -69,6 +69,8 @@ void silc_ske_free(SilcSKE ske)
     /* Free KE payload */
     if (ske->ke1_payload)
       silc_ske_payload_ke_free(ske->ke1_payload);
+    if (ske->ke2_payload)
+      silc_ske_payload_ke_free(ske->ke2_payload);
 
     /* Free rest */
     if (ske->prop) {
