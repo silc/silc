@@ -1408,6 +1408,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   case SILC_COMMAND_UMODE:
     {
       SilcUInt32 mode;
+      char *reason;
       
       if (!success)
 	return;
@@ -1423,6 +1424,20 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  !(server->umode & SILC_UMODE_ROUTER_OPERATOR))
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
+
+      if ((mode & SILC_UMODE_GONE) != (server->umode & SILC_UMODE_GONE)) {
+	if (mode & SILC_UMODE_GONE) {      
+	  if ((server->away_reason != NULL) && (server->away_reason[0] != '\0'))
+	    reason = g_strdup(server->away_reason);
+	  else
+	    reason = g_strdup("away");
+	} else
+	  reason = g_strdup("");
+
+	silc_set_away(reason, server);
+
+	g_free(reason);
+      }
 
       server->umode = mode;
       signal_emit("user mode changed", 2, server, NULL);

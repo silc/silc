@@ -1,3 +1,8 @@
+Thu Nov 14 09:44:54 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* SILC_UMODE_GONE changes are now propagated correctly to the
+	  Irssi client. Closes #54
+	
 Tue Nov 12 19:42:18 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Fixed example in /HELP KEY

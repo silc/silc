@@ -356,17 +356,14 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
 /* AWAY local command.  Sends UMODE command that sets the SILC_UMODE_GONE
    flag. */
 
-static void command_away(const char *data, SILC_SERVER_REC *server,
-			 WI_ITEM_REC *item)
+bool silc_set_away(const char *reason, SILC_SERVER_REC *server)
 {
   bool set;
-
-  CMD_SILC_SERVER(server);
-
+  
   if (!IS_SILC_SERVER(server) || !server->connected)
-    cmd_return_error(CMDERR_NOT_CONNECTED);
-
-  if (*data == '\0') {
+    return FALSE;
+  
+  if (*reason == '\0') {
     /* Remove any possible away message */
     silc_client_set_away_message(silc_client, server->conn, NULL);
     set = FALSE;
@@ -375,21 +372,37 @@ static void command_away(const char *data, SILC_SERVER_REC *server,
 		       SILCTXT_UNSET_AWAY);
   } else {
     /* Set the away message */
-    silc_client_set_away_message(silc_client, server->conn, (char *)data);
+    silc_client_set_away_message(silc_client, server->conn, (char *)reason);
     set = TRUE;
 
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP, 
-		       SILCTXT_SET_AWAY, data);
+		       SILCTXT_SET_AWAY, reason);
   }
 
   server->usermode_away = set;
   g_free_and_null(server->away_reason);
   if (set)
-    server->away_reason = g_strdup((char *)data);
+    server->away_reason = g_strdup((char *)reason);
 
   signal_emit("away mode changed", 1, server);
 
-  silc_command_exec(server, "UMODE", set ? "+g" : "-g");
+  return set;
+}
+
+static void command_away(const char *data, SILC_SERVER_REC *server,
+			 WI_ITEM_REC *item)
+{
+  CMD_SILC_SERVER(server);
+
+  if (!IS_SILC_SERVER(server) || !server->connected)
+    cmd_return_error(CMDERR_NOT_CONNECTED);
+
+  g_free_and_null(server->away_reason);
+  if ((data) && (*data != '\0'))
+    server->away_reason = g_strdup(data);
+  
+  silc_command_exec(server, "UMODE", 
+		    (server->away_reason != NULL) ? "+g" : "-g");
 }
 
 typedef struct {

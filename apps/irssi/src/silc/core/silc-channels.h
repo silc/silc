@@ -34,4 +34,5 @@ SILC_CHANNEL_REC *silc_channel_create(SILC_SERVER_REC *server,
 SILC_CHANNEL_REC *silc_channel_find_entry(SILC_SERVER_REC *server,
 					  SilcChannelEntry entry);
 
+bool silc_set_away(const char *reason, SILC_SERVER_REC *server);
 #endif
