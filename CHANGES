@@ -22,7 +22,6 @@ Fri Feb 15 12:24:08 EET 2002  Timo Sirainen <tss@iki.fi>
 	  Affected files irssi/src/silc/core/silc-core.c,
 	  irssi/src/fe-text/silc.c.
 
-
 Thu Feb 14 22:03:58 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new configuration options and blocks:
