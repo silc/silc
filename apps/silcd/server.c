@@ -3084,7 +3084,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 				 ("%s switched to backup router %s "
 				  "(we are primary router now)",
 				  server->server_name, server->server_name));
-	else
+	else if (server->router)
 	  SILC_SERVER_SEND_OPERS(server, FALSE, TRUE,
 				 SILC_NOTIFY_TYPE_NONE,
 				 ("%s switched to backup router %s",
