@@ -654,6 +654,10 @@ static void silc_idlist_del_channel_foreach(void *key, void *context,
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
   if (entry) {
+    SilcHashTableList htl;
+    SilcBuffer tmp;
+    SilcUInt32 type;
+
     /* Remove from cache */
     if (!silc_idcache_del_by_context(id_list->channels, entry))
       return FALSE;
@@ -671,8 +675,33 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
     silc_free(entry->channel_name);
     silc_free(entry->id);
     silc_free(entry->topic);
-    silc_free(entry->invite_list);
-    silc_free(entry->ban_list);
+
+    if (entry->invite_list) {
+      silc_hash_table_list(entry->invite_list, &htl);
+      while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp)) {
+	if (type == 1) {
+	  silc_free((char *)tmp);
+	  continue;
+	}
+	silc_buffer_free(tmp);
+      }
+      silc_hash_table_list_reset(&htl);
+      silc_hash_table_free(entry->invite_list);
+    }
+
+    if (entry->ban_list) {
+      silc_hash_table_list(entry->ban_list, &htl);
+      while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp)) {
+	if (type == 1) {
+	  silc_free((char *)tmp);
+	  continue;
+	}
+	silc_buffer_free(tmp);
+      }
+      silc_hash_table_list_reset(&htl);
+      silc_hash_table_free(entry->ban_list);
+    }
+
     if (entry->channel_key)
       silc_cipher_free(entry->channel_key);
     if (entry->key) {

@@ -1,13 +1,14 @@
 TODO for Irssi SILC Client 1.0
 ==============================
 
- o bugs parsing nicknames with @ in NICK_CHANGE.
+ o Signed message payload handling on UI
 
- o c0ffee's MIME signal
+ o Support to set arbitrary pulic key in CMODE
 
- o SILC protocol version 1.2 integration
+ o INVITE/BAN by public key file and Client ID, new INVITE/BAN list handling
+   in command reply.
 
- o Signed message payload handling
+ o bugs parsing nicknames with @ in NICK_CHANGE
 
  o Testing - See test plan:
      http://silcnet.org/docs/silc-client-1.0-test.pdf
@@ -17,18 +18,9 @@ TODO for Irssi SILC Client 1.0
 TODO for SILC Server 1.0
 ========================
 
- o New INVITE and BAN commands and notify types.
-
  o Remove client from invite lists in KICKED and KILLED.
 
  o 1.2 backup router support
-
- o Backup router related issues:
-
- 	o Add special handling in router and server for "connection
-	  timed out" error.  Be optimistic.
-
- o SILC protocol version 1.2 integration
 
  o Testing
 

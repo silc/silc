@@ -1,3 +1,24 @@
+Mon Nov 25 18:21:43 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* The silc_argument_get_[first/next] now return the argument
+	  type to caller.  Added silc_argument_payload_encode_one.
+
+	  Affected files are lib/silccore/silcargument.[ch].
+
+	* Added support for the SILC 1.2 INVITE command and new
+	  invite lists to server.  Affected files are silcd/command.c,
+	  silcd/server_util.[ch] and silcd/packet_[receive/send].[ch].
+
+	* Added support for the SILC 1.2 BAN command and new
+	  ban lists to server.  Affected files are silcd/command.c,
+	  silcd/server_util.[ch] and silcd/packet_[receive/send].[ch].
+
+	* Added support to client sending new INVITE command.  Affected
+	  file is lib/silcclient/command.c.
+
+	* Added support to client sending new BAN command.  Affected
+	  file is lib/silcclient/command.c.
+
 Sun Nov 24 18:26:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* If iv argument to silc_cipher_[encrypt/decrypt] is NULL, use

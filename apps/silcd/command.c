@@ -1021,10 +1021,12 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcChannelEntry channel;
   SilcChannelID *channel_id = NULL;
   SilcIDListData idata;
-  SilcBuffer idp, idp2, packet;
-  unsigned char *tmp, *add, *del;
-  SilcUInt32 len;
-  SilcUInt16 ident = silc_command_get_ident(cmd->payload);
+  SilcArgumentPayload args;
+  SilcHashTableList htl;
+  SilcBuffer packet, list, tmp2;
+  unsigned char *tmp;
+  SilcUInt32 len, type;
+  SilcUInt16 argc = 0, ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_INVITE, cmd, 1, 4);
 
@@ -1078,7 +1080,6 @@ SILC_SERVER_CMD_FUNC(invite)
   /* Get destination client ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (tmp) {
-    char invite[512];
     bool resolve;
 
     dest_id = silc_id_payload_parse_id(tmp, len, NULL);
@@ -1128,32 +1129,34 @@ SILC_SERVER_CMD_FUNC(invite)
       goto out;
     }
 
-    memset(invite, 0, sizeof(invite));
-    silc_strncat(invite, sizeof(invite),
-		 dest->nickname, strlen(dest->nickname));
-    silc_strncat(invite, sizeof(invite), "!", 1);
-    silc_strncat(invite, sizeof(invite),
-		 dest->username, strlen(dest->username));
-    if (!strchr(dest->username, '@')) {
-      silc_strncat(invite, sizeof(invite), "@", 1);
-      silc_strncat(invite, sizeof(invite), cmd->sock->hostname,
-		   strlen(cmd->sock->hostname));
-    }
+    /* Add the client to the invite list */
 
-    len = strlen(invite);
+    /* Allocate hash table for invite list if it doesn't exist yet */
     if (!channel->invite_list)
-      channel->invite_list = silc_calloc(len + 2, 
-					 sizeof(*channel->invite_list));
-    else
-      channel->invite_list = silc_realloc(channel->invite_list, 
-					  sizeof(*channel->invite_list) * 
-					  (len + 
-					   strlen(channel->invite_list) + 2));
-    strncat(channel->invite_list, invite, len);
-    strncat(channel->invite_list, ",", 1);
+      channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
+						   NULL, NULL, NULL,
+						   NULL, NULL, TRUE);
+
+    /* Check if the ID is in the list already */
+    silc_hash_table_list(channel->invite_list, &htl);
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+      if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+	tmp = NULL;
+	break;
+      }
+    }
+    silc_hash_table_list_reset(&htl);
+
+    /* Add new Client ID to invite list */
+    if (tmp) {
+      list = silc_buffer_alloc_size(len);
+      silc_buffer_put(list, tmp, len);
+      silc_hash_table_add(channel->invite_list, (void *)3, list);
+    }
 
     if (!(dest->mode & SILC_UMODE_BLOCK_INVITE)) {
       /* Send notify to the client that is invited to the channel */
+      SilcBuffer idp, idp2;
       idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
       idp2 = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
       silc_server_send_notify_dest(server, dest_sock, FALSE, dest_id, 
@@ -1168,65 +1171,83 @@ SILC_SERVER_CMD_FUNC(invite)
     }
   }
 
-  /* Add the client to the invite list of the channel */
-  add = silc_argument_get_arg_type(cmd->args, 3, &len);
-  if (add) {
-    if (!channel->invite_list)
-      channel->invite_list = silc_calloc(len + 2, 
-					 sizeof(*channel->invite_list));
-    else
-      channel->invite_list = silc_realloc(channel->invite_list, 
-					  sizeof(*channel->invite_list) * 
-					  (len + 
-					   strlen(channel->invite_list) + 2));
-    if (add[len - 1] == ',')
-      add[len - 1] = '\0';
+  /* Get the invite information */
+  tmp = silc_argument_get_arg_type(cmd->args, 4, &len);
+  if (tmp) {
+    /* Parse the arguments to see they are constructed correctly */
+    SILC_GET16_MSB(argc, tmp);
+    args = silc_argument_payload_parse(tmp + 2, len - 2, argc);
+    if (!args) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					    0);
+      goto out;
+    }
+
+    /* Get the type of action */
+    tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+    if (tmp && len == 1) {
+      if (tmp[0] == 0x00) {
+	/* Allocate hash table for invite list if it doesn't exist yet */
+	if (!channel->invite_list)
+	  channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
+						       NULL, NULL, NULL,
+						       NULL, NULL, TRUE);
     
-    strncat(channel->invite_list, add, len);
-    strncat(channel->invite_list, ",", 1);
+	/* Check for resource limit */
+	if (silc_hash_table_count(channel->invite_list) > 64) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+						SILC_STATUS_ERR_RESOURCE_LIMIT,
+						0);
+	  goto out;
+	}
+      }
+
+      /* Now add or delete the information. */
+      silc_server_inviteban_process(server, channel->invite_list,
+				    (SilcUInt8)tmp[0], args);
+    }
+    silc_argument_payload_free(args);
   }
 
-  /* Get the invite to be removed and remove it from the list */
-  del = silc_argument_get_arg_type(cmd->args, 4, &len);
-  if (del && channel->invite_list) {
-    char *start, *end, *n;
-
-    if (!strncmp(channel->invite_list, del, 
-		 strlen(channel->invite_list) - 1)) {
-      silc_free(channel->invite_list);
-      channel->invite_list = NULL;
-    } else {
-      start = strstr(channel->invite_list, del);
-      if (start && strlen(start) >= len) {
-	end = start + len;
-	n = silc_calloc(strlen(channel->invite_list) - len, sizeof(*n));
-	strncat(n, channel->invite_list, start - channel->invite_list);
-	strncat(n, end + 1, ((channel->invite_list + 
-			      strlen(channel->invite_list)) - end) - 1);
-	silc_free(channel->invite_list);
-	channel->invite_list = n;
-      }
+  /* Encode invite list */
+  list = NULL;
+  if (channel->invite_list) {
+    list = silc_buffer_alloc_size(2);
+    silc_buffer_format(list,
+		       SILC_STR_UI_SHORT(silc_hash_table_count(
+					  channel->invite_list)),
+		       SILC_STR_END);
+    silc_hash_table_list(channel->invite_list, &htl);
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+      if (type == 1)
+	list = silc_argument_payload_encode_one(list, (char *)tmp2,
+						strlen((char *)tmp2), type);
+      else
+	list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
+						type);
     }
+    silc_hash_table_list_reset(&htl);
   }
 
   /* Send notify to the primary router */
-  silc_server_send_notify_invite(server, SILC_PRIMARY_ROUTE(server),
-				 SILC_BROADCAST(server), channel,
-				 sender->id, add, del);
+  silc_server_send_notify_invite(
+			 server, SILC_PRIMARY_ROUTE(server),
+			 SILC_BROADCAST(server), channel, sender->id,
+			 silc_argument_get_arg_type(cmd->args, 3, NULL),
+			 list);
 
   /* Send command reply */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
-
-  packet = 
-    silc_command_reply_payload_encode_va(SILC_COMMAND_INVITE,
-					 SILC_STATUS_OK, 0, ident, 2,
-					 2, tmp, len,
-					 3, channel->invite_list,
-					 channel->invite_list ?
-					 strlen(channel->invite_list) : 0);
+  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INVITE,
+						SILC_STATUS_OK, 0, ident, 2,
+						2, tmp, len,
+						3, list ? list->data : NULL,
+						list ? list->len : 0);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
+  silc_buffer_free(list);
 
  out:
   silc_free(dest_id);
@@ -1743,7 +1764,8 @@ static void silc_server_command_join_channel(SilcServer server,
   unsigned char *passphrase = NULL, mode[4], tmp2[4], tmp3[4];
   SilcClientEntry client;
   SilcChannelClientEntry chl;
-  SilcBuffer reply, chidp, clidp, keyp = NULL, user_list, mode_list;
+  SilcBuffer reply, chidp, clidp, keyp = NULL;
+  SilcBuffer user_list, mode_list, invite_list, ban_list;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char check[512], check2[512];
   bool founder = FALSE;
@@ -1877,8 +1899,14 @@ static void silc_server_command_join_channel(SilcServer server,
     /* Check invite list if channel is invite-only channel */
     if (channel->mode & SILC_CHANNEL_MODE_INVITE) {
       if (!channel->invite_list ||
-	  (!silc_string_match(channel->invite_list, check) &&
-	   !silc_string_match(channel->invite_list, check2))) {
+	  (!silc_server_inviteban_match(server, channel->invite_list,
+					3, client->id) &&
+	   !silc_server_inviteban_match(server, channel->invite_list,
+					2, client->data.public_key) &&
+	   !silc_server_inviteban_match(server, channel->invite_list,
+					1, check) &&
+	   !silc_server_inviteban_match(server, channel->invite_list,
+					1, check2))) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					      SILC_STATUS_ERR_NOT_INVITED, 0);
 	goto out;
@@ -1889,8 +1917,14 @@ static void silc_server_command_join_channel(SilcServer server,
        username and/or hostname is in the ban list the access to the
        channel is denied. */
     if (channel->ban_list) {
-      if (silc_string_match(channel->ban_list, check) ||
-	  silc_string_match(channel->ban_list, check2)) {
+      if (silc_server_inviteban_match(server, channel->invite_list,
+				      3, client->id) ||
+	  silc_server_inviteban_match(server, channel->invite_list,
+				      2, client->data.public_key) ||
+	  !silc_server_inviteban_match(server, channel->invite_list,
+				       1, check) ||
+	  !silc_server_inviteban_match(server, channel->invite_list,
+				       1, check2)) {
 	silc_server_command_send_status_reply(
 				      cmd, SILC_COMMAND_JOIN,
 				      SILC_STATUS_ERR_BANNED_FROM_CHANNEL, 0);
@@ -1988,6 +2022,58 @@ static void silc_server_command_join_channel(SilcServer server,
   if (channel->founder_key)
     fkey = silc_pkcs_public_key_payload_encode(channel->founder_key);
 
+  /* Encode invite list */
+  invite_list = NULL;
+  if (channel->invite_list) {
+    SilcHashTableList htl;
+
+    invite_list = silc_buffer_alloc_size(2);
+    silc_buffer_format(invite_list,
+		       SILC_STR_UI_SHORT(silc_hash_table_count(
+					  channel->invite_list)),
+		       SILC_STR_END);
+
+    silc_hash_table_list(channel->invite_list, &htl);
+    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply)) {
+      if (tmp_len == 1)
+	invite_list = silc_argument_payload_encode_one(invite_list,
+						       (char *)reply,
+						       strlen((char *)reply),
+						       tmp_len);
+      else
+	invite_list = silc_argument_payload_encode_one(invite_list,
+						       reply->data,
+						       reply->len, tmp_len);
+    }
+    silc_hash_table_list_reset(&htl);
+  }
+
+  /* Encode ban list */
+  ban_list = NULL;
+  if (channel->ban_list) {
+    SilcHashTableList htl;
+
+    ban_list = silc_buffer_alloc_size(2);
+    silc_buffer_format(ban_list,
+		       SILC_STR_UI_SHORT(silc_hash_table_count(
+					  channel->ban_list)),
+		       SILC_STR_END);
+
+    silc_hash_table_list(channel->ban_list, &htl);
+    while (silc_hash_table_get(&htl, (void **)&tmp_len, (void **)&reply)) {
+      if (tmp_len == 1)
+	ban_list = silc_argument_payload_encode_one(ban_list,
+						    (char *)reply,
+						    strlen((char *)reply),
+						    tmp_len);
+      else
+	ban_list = silc_argument_payload_encode_one(ban_list,
+						    reply->data,
+						    reply->len, tmp_len);
+    }
+    silc_hash_table_list_reset(&htl);
+  }
+
   reply = 
     silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
 					 SILC_STATUS_OK, 0, ident, 14,
@@ -1999,12 +2085,11 @@ static void silc_server_command_join_channel(SilcServer server,
 					 6, tmp2, 4,
 					 7, keyp ? keyp->data : NULL, 
 					 keyp ? keyp->len : 0,
-					 8, channel->ban_list, 
-					 channel->ban_list ?
-					 strlen(channel->ban_list) : 0,
-					 9, channel->invite_list,
-					 channel->invite_list ?
-					 strlen(channel->invite_list) : 0,
+					 8, ban_list ? ban_list->data : NULL,
+					 ban_list ? ban_list->len : 0,
+					 9, invite_list ? invite_list->data :
+					 NULL,
+					 invite_list ? invite_list->len : 0,
 					 10, channel->topic,
 					 channel->topic ?
 					 strlen(channel->topic) : 0,
@@ -2079,6 +2164,8 @@ static void silc_server_command_join_channel(SilcServer server,
   silc_buffer_free(user_list);
   silc_buffer_free(mode_list);
   silc_buffer_free(fkey);
+  silc_buffer_free(invite_list);
+  silc_buffer_free(ban_list);
 
  out:
   silc_free(passphrase);
@@ -3991,13 +4078,16 @@ SILC_SERVER_CMD_FUNC(ban)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  SilcBuffer packet;
+  SilcBuffer packet, list, tmp2;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcChannelID *channel_id = NULL;
-  unsigned char *id, *add, *del;
-  SilcUInt32 id_len, tmp_len;
-  SilcUInt16 ident = silc_command_get_ident(cmd->payload);
+  unsigned char *id, *tmp;
+  SilcUInt32 id_len, len;
+  SilcArgumentPayload args;
+  SilcHashTableList htl;
+  SilcUInt32 type;
+  SilcUInt16 argc = 0, ident = silc_command_get_ident(cmd->payload);
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
@@ -4044,62 +4134,84 @@ SILC_SERVER_CMD_FUNC(ban)
     goto out;
   }
 
-  /* Get the new ban and add it to the ban list */
-  add = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (add) {
-    if (!channel->ban_list)
-      channel->ban_list = silc_calloc(tmp_len + 2, sizeof(*channel->ban_list));
-    else
-      channel->ban_list = silc_realloc(channel->ban_list, 
-				       sizeof(*channel->ban_list) * 
-				       (tmp_len + 
-					strlen(channel->ban_list) + 2));
-    if (add[tmp_len - 1] == ',')
-      add[tmp_len - 1] = '\0';
+  /* Get the ban information */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+  if (tmp) {
+    /* Parse the arguments to see they are constructed correctly */
+    SILC_GET16_MSB(argc, tmp);
+    args = silc_argument_payload_parse(tmp + 2, len - 2, argc);
+    if (!args) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					    0);
+      goto out;
+    }
 
-    strncat(channel->ban_list, add, tmp_len);
-    strncat(channel->ban_list, ",", 1);
+    /* Get the type of action */
+    tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+    if (tmp && len == 1) {
+      if (tmp[0] == 0x00) {
+	/* Allocate hash table for ban list if it doesn't exist yet */
+	if (!channel->ban_list)
+	  channel->ban_list = silc_hash_table_alloc(0, silc_hash_ptr,
+						    NULL, NULL, NULL,
+						    NULL, NULL, TRUE);
+    
+	/* Check for resource limit */
+	if (silc_hash_table_count(channel->ban_list) > 64) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_BAN,
+						SILC_STATUS_ERR_RESOURCE_LIMIT,
+						0);
+	  goto out;
+	}
+      }
+
+      /* Now add or delete the information. */
+      silc_server_inviteban_process(server, channel->ban_list,
+				    (SilcUInt8)tmp[0], args);
+    }
+    silc_argument_payload_free(args);
   }
 
-  /* Get the ban to be removed and remove it from the list */
-  del = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-  if (del && channel->ban_list) {
-    char *start, *end, *n;
-
-    if (!strncmp(channel->ban_list, del, strlen(channel->ban_list) - 1)) {
-      silc_free(channel->ban_list);
-      channel->ban_list = NULL;
-    } else {
-      start = strstr(channel->ban_list, del);
-      if (start && strlen(start) >= tmp_len) {
-	end = start + tmp_len;
-	n = silc_calloc(strlen(channel->ban_list) - tmp_len, sizeof(*n));
-	strncat(n, channel->ban_list, start - channel->ban_list);
-	strncat(n, end + 1, ((channel->ban_list + strlen(channel->ban_list)) - 
-			     end) - 1);
-	silc_free(channel->ban_list);
-	channel->ban_list = n;
-      }
+  /* Encode ban list */
+  list = NULL;
+  if (channel->ban_list) {
+    list = silc_buffer_alloc_size(2);
+    silc_buffer_format(list,
+		       SILC_STR_UI_SHORT(silc_hash_table_count(
+					  channel->ban_list)),
+		       SILC_STR_END);
+    silc_hash_table_list(channel->ban_list, &htl);
+    while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+      if (type == 1)
+	list = silc_argument_payload_encode_one(list, (char *)tmp2,
+						strlen((char *)tmp2), type);
+      else
+	list = silc_argument_payload_encode_one(list, tmp2->data, tmp2->len,
+						type);
     }
+    silc_hash_table_list_reset(&htl);
   }
 
   /* Send the BAN notify type to our primary router. */
-  if (add || del)
+  if (list)
     silc_server_send_notify_ban(server, SILC_PRIMARY_ROUTE(server),
-				SILC_BROADCAST(server), channel, add, del);
+				SILC_BROADCAST(server), channel,
+				silc_argument_get_arg_type(cmd->args, 2, NULL),
+				list);
 
   /* Send the reply back to the client */
   packet = 
     silc_command_reply_payload_encode_va(SILC_COMMAND_BAN,
 					 SILC_STATUS_OK, 0, ident, 2,
 					 2, id, id_len,
-					 3, channel->ban_list, 
-					 channel->ban_list ? 
-					 strlen(channel->ban_list) -1 : 0);
+					 3, list ? list->data : NULL,
+					 list ? list->len : 0);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
     
   silc_buffer_free(packet);
+  silc_buffer_free(list);
 
  out:
   silc_free(channel_id);

@@ -1067,46 +1067,33 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
 
-    /* Get the added invite */
+    /* Get the invite action */
     tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
-    if (tmp) {
-      if (!channel->invite_list)
-	channel->invite_list = silc_calloc(tmp_len + 2, 
-					   sizeof(*channel->invite_list));
-      else
-	channel->invite_list = silc_realloc(channel->invite_list, 
-					    sizeof(*channel->invite_list) * 
-					    (tmp_len + 
-					     strlen(channel->invite_list) + 
-					     2));
-      if (tmp[tmp_len - 1] == ',')
-	tmp[tmp_len - 1] = '\0';
-      
-      strncat(channel->invite_list, tmp, tmp_len);
-      strncat(channel->invite_list, ",", 1);
-    }
+    if (tmp && tmp_len == 1) {
+      SilcUInt8 action = (SilcUInt8)tmp[0];
+      SilcUInt16 iargc = 0;
+      SilcArgumentPayload iargs;
 
-    /* Get the deleted invite */
-    tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
-    if (tmp && channel->invite_list) {
-      char *start, *end, *n;
-      
-      if (!strncmp(channel->invite_list, tmp, 
-		   strlen(channel->invite_list) - 1)) {
-	silc_free(channel->invite_list);
-	channel->invite_list = NULL;
-      } else {
-	start = strstr(channel->invite_list, tmp);
-	if (start && strlen(start) >= tmp_len) {
-	  end = start + tmp_len;
-	  n = silc_calloc(strlen(channel->invite_list) - tmp_len, sizeof(*n));
-	  strncat(n, channel->invite_list, start - channel->invite_list);
-	  strncat(n, end + 1, ((channel->invite_list + 
-				strlen(channel->invite_list)) - end) - 1);
-	  silc_free(channel->invite_list);
-	  channel->invite_list = n;
-	}
-      }
+      /* Get invite list */
+      tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
+      if (!tmp)
+	goto out;
+
+      /* Parse the arguments to see they are constructed correctly */
+      SILC_GET16_MSB(iargc, tmp);
+      iargs = silc_argument_payload_parse(tmp + 2, tmp_len - 2, iargc);
+      if (!iargs)
+	goto out;
+
+      if (action == 0 && !channel->invite_list)
+	channel->invite_list = silc_hash_table_alloc(0, silc_hash_ptr,
+						     NULL, NULL, NULL,
+						     NULL, NULL, TRUE);
+
+      /* Proces the invite action */
+      silc_server_inviteban_process(server, channel->invite_list, action,
+				    iargs);
+      silc_argument_payload_free(iargs);
     }
 
     break;
@@ -1642,41 +1629,33 @@ void silc_server_notify(SilcServer server,
     }
     silc_free(channel_id);
 
-    /* Get the new ban and add it to the ban list */
+    /* Get the ban action */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (tmp) {
-      if (!channel->ban_list)
-	channel->ban_list = silc_calloc(tmp_len + 2, 
-					sizeof(*channel->ban_list));
-      else
-	channel->ban_list = silc_realloc(channel->ban_list, 
-					 sizeof(*channel->ban_list) * 
-					 (tmp_len + 
-					  strlen(channel->ban_list) + 2));
-      strncat(channel->ban_list, tmp, tmp_len);
-      strncat(channel->ban_list, ",", 1);
-    }
+    if (tmp && tmp_len == 1) {
+      SilcUInt8 action = (SilcUInt8)tmp[0];
+      SilcUInt16 iargc = 0;
+      SilcArgumentPayload iargs;
 
-    /* Get the ban to be removed and remove it from the list */
-    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
-    if (tmp && channel->ban_list) {
-      char *start, *end, *n;
-      
-      if (!strncmp(channel->ban_list, tmp, strlen(channel->ban_list) - 1)) {
-	silc_free(channel->ban_list);
-	channel->ban_list = NULL;
-      } else {
-	start = strstr(channel->ban_list, tmp);
-	if (start && strlen(start) >= tmp_len) {
-	  end = start + tmp_len;
-	  n = silc_calloc(strlen(channel->ban_list) - tmp_len, sizeof(*n));
-	  strncat(n, channel->ban_list, start - channel->ban_list);
-	  strncat(n, end + 1, ((channel->ban_list + 
-				strlen(channel->ban_list)) - end) - 1);
-	  silc_free(channel->ban_list);
-	  channel->ban_list = n;
-	}
-      }
+      /* Get ban list */
+      tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+      if (!tmp)
+	goto out;
+
+      /* Parse the arguments to see they are constructed correctly */
+      SILC_GET16_MSB(iargc, tmp);
+      iargs = silc_argument_payload_parse(tmp + 2, tmp_len - 2, iargc);
+      if (!iargs)
+	goto out;
+
+      if (action == 0 && !channel->ban_list)
+	channel->ban_list = silc_hash_table_alloc(0, silc_hash_ptr,
+						  NULL, NULL, NULL,
+						  NULL, NULL, TRUE);
+
+      /* Proces the ban action */
+      silc_server_inviteban_process(server, channel->ban_list, action,
+				    iargs);
+      silc_argument_payload_free(iargs);
     }
     break;
 

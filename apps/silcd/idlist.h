@@ -476,8 +476,8 @@ struct SilcChannelEntryStruct {
 
   SilcUInt32 user_limit;
   unsigned char *passphrase;
-  char *invite_list;
-  char *ban_list;
+  SilcHashTable invite_list;
+  SilcHashTable ban_list;
 
   /* All users on this channel */
   SilcHashTable user_list;

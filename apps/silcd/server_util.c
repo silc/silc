@@ -1714,3 +1714,208 @@ silc_server_find_socket_by_host(SilcServer server,
 
   return NULL;
 }
+
+/* This function can be used to match the invite and ban lists. */
+
+bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
+				 SilcUInt8 type, void *check)
+{
+  unsigned char *tmp = NULL;
+  SilcUInt32 len = 0, t;
+  SilcHashTableList htl;
+  SilcBuffer entry;
+  bool ret = FALSE;
+
+  if (type < 1 || type > 3 || !check)
+    return FALSE;
+
+  if (type == 1) {
+    tmp = strdup((char *)check);
+    if (!tmp)
+      return FALSE;
+  }
+  if (type == 2) {
+    tmp = silc_pkcs_public_key_encode(check, &len);
+    if (!tmp)
+      return FALSE;
+  }
+  if (type == 3) {
+    tmp = silc_id_id2str(check, SILC_ID_CLIENT);
+    if (!tmp)
+      return FALSE;
+    len = silc_id_get_len(check, SILC_ID_CLIENT);
+  }
+
+  /* Compare the list */
+  silc_hash_table_list(list, &htl);
+  while (silc_hash_table_get(&htl, (void **)&t, (void **)&entry)) {
+    if (type == t) {
+      if (type == 1) {
+	if (silc_string_match((char *)entry, tmp)) {
+	  ret = TRUE;
+	  break;
+	}
+      } else if (!memcmp(entry->data, tmp, len)) {
+	ret = TRUE;
+	break;
+      }
+    }
+  }
+  silc_hash_table_list_reset(&htl);
+
+  silc_free(tmp);
+  return ret;
+}
+
+/* Process invite or ban information */
+
+void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
+				   SilcUInt8 action, SilcArgumentPayload args)
+{
+  unsigned char *tmp;
+  SilcUInt32 type, len;
+  SilcBuffer tmp2;
+  SilcHashTableList htl;
+
+  SILC_LOG_DEBUG(("Processing invite/ban for %s action",
+		  action == 0x00 ? "ADD" : "DEL"));
+
+  /* Add the information to invite list */
+  if (action == 0x00) {
+    /* Traverse all arguments and add to the hash table according to
+       their type. */
+    tmp = silc_argument_get_first_arg(args, &type, &len);
+    while (tmp) {
+      if (type == 1) {
+	/* Invite string.  Get the old invite string from hash table
+	   and append this at the end of the existing one. */
+	char *string = NULL;
+	silc_hash_table_find(list, (void *)1,
+			     NULL, (void **)&string);
+	silc_hash_table_del(list, (void *)1);
+	if (!string)
+	  string = silc_calloc(len + 2, sizeof(*string));
+	else
+	  string = silc_realloc(string, sizeof(*string) *
+				(strlen(string) + len + 2));
+	memset(string + strlen(string), 0, len + 2);
+	if (tmp[len - 1] == ',')
+	  tmp[len - 1] = '\0';
+	strncat(string, tmp, len);
+	strncat(string, ",", 1);
+
+	/* Add new invite string to invite list */
+	silc_hash_table_add(list, (void *)1, string);
+
+      } else if (type == 2) {
+	/* Public key.  Check first if the public key is already on the
+	   list and ignore it if it is, otherwise, add it to hash table. */
+
+	/* Check if the public key is in the list already */
+	silc_hash_table_list(list, &htl);
+	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
+	    tmp = NULL;
+	    break;
+	  }
+	}
+	silc_hash_table_list_reset(&htl);
+
+	/* Add new public key to invite list */
+	if (tmp) {
+	  tmp2 = silc_buffer_alloc_size(len);
+	  silc_buffer_put(tmp2, tmp, len);
+	  silc_hash_table_add(list, (void *)2, tmp2);
+	}
+
+      } else if (type == 3) {
+	/* Client ID */
+
+	/* Check if the ID is in the list already */
+	silc_hash_table_list(list, &htl);
+	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+	    tmp = NULL;
+	    break;
+	  }
+	}
+	silc_hash_table_list_reset(&htl);
+
+	/* Add new Client ID to invite list */
+	if (tmp) {
+	  tmp2 = silc_buffer_alloc_size(len);
+	  silc_buffer_put(tmp2, tmp, len);
+	  silc_hash_table_add(list, (void *)3, tmp2);
+	}
+      }
+
+      tmp = silc_argument_get_next_arg(args, &type, &len);
+    }
+  }
+
+  /* Delete information to invite list */
+  if (action && list) {
+    /* Now delete the arguments from invite list */
+    tmp = silc_argument_get_first_arg(args, &type, &len);
+    while (tmp) {
+      if (type == 1) {
+	/* Invite string.  Get the old string from hash table and delete
+	   the requested string. */
+	char *string = NULL, *start, *end, *n;
+
+	if (silc_hash_table_find(list, (void *)1, NULL, (void **)&string)) {
+	  silc_hash_table_del(list, (void *)1);
+
+	  if (!strncmp(string, tmp, strlen(string) - 1)) {
+	    silc_free(string);
+	    string = NULL;
+	  } else {
+	    start = strstr(string, tmp);
+	    if (start && strlen(start) >= len) {
+	      end = start + len;
+	      n = silc_calloc(strlen(string) - len, sizeof(*n));
+	      strncat(n, string, start - string);
+	      strncat(n, end + 1, ((string + strlen(string)) - end) - 1);
+	      silc_free(string);
+	      string = n;
+	    }
+	  }
+
+	  /* Add new invite string to invite list */
+	  if (string)
+	    silc_hash_table_add(list, (void *)1, string);
+	}
+
+      } else if (type == 2) {
+	/* Public key. */
+
+	/* Delete from the invite list */
+	silc_hash_table_list(list, &htl);
+	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
+	    silc_hash_table_del_by_context(list, (void *)2, tmp2);
+	    silc_buffer_free(tmp2);
+	    break;
+	  }
+	}
+	silc_hash_table_list_reset(&htl);
+
+      } else if (type == 3) {
+	/* Client ID */
+
+	/* Delete from the invite list */
+	silc_hash_table_list(list, &htl);
+	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
+	    silc_hash_table_del_by_context(list, (void *)2, tmp2);
+	    silc_buffer_free(tmp2);
+	    break;
+	  }
+	}
+	silc_hash_table_list_reset(&htl);
+      }
+
+      tmp = silc_argument_get_next_arg(args, &type, &len);
+    }
+  }
+}

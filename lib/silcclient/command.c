@@ -624,10 +624,10 @@ SILC_CLIENT_CMD_FUNC(invite)
   SilcClientConnection conn = cmd->conn;
   SilcClientEntry client_entry = NULL;
   SilcChannelEntry channel;
-  SilcBuffer buffer, clidp, chidp;
-  SilcUInt32 type = 0;
+  SilcBuffer buffer, clidp, chidp, args = NULL;
   char *nickname = NULL, *name;
   char *invite = NULL;
+  unsigned char action[1];
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -690,10 +690,18 @@ SILC_CLIENT_CMD_FUNC(invite)
       invite = cmd->argv[2];
       invite++;
       if (cmd->argv[2][0] == '+')
-	type = 3;
+	action[0] = 0x00;
       else
-	type = 4;
+	action[0] = 0x01;
     }
+  }
+
+  if (invite) {
+    args = silc_buffer_alloc_size(2);
+    silc_buffer_format(args,
+		       SILC_STR_UI_SHORT(1),
+		       SILC_STR_END);
+    args = silc_argument_payload_encode_one(args, invite, strlen(invite), 1);
   }
 
   /* Send the command */
@@ -701,24 +709,29 @@ SILC_CLIENT_CMD_FUNC(invite)
   if (client_entry) {
     clidp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
     buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE, 
-					    ++conn->cmd_ident, 3,
+					    ++conn->cmd_ident, 4,
 					    1, chidp->data, chidp->len,
 					    2, clidp->data, clidp->len,
-					    type, invite, invite ?
-					    strlen(invite) : 0);
+					    3, args ? action : NULL,
+					    args ? 1 : 0,
+					    4, args ? args->data : NULL,
+					    args ? args->len : 0);
     silc_buffer_free(clidp);
   } else {
     buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE, 
-					    ++conn->cmd_ident, 2,
+					    ++conn->cmd_ident, 3,
 					    1, chidp->data, chidp->len,
-					    type, invite, invite ?
-					    strlen(invite) : 0);
+					    3, args ? action : NULL,
+					    args ? 1 : 0,
+					    4, args ? args->data : NULL,
+					    args ? args->len : 0);
   }
 
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
+  silc_buffer_free(args),
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1990,9 +2003,9 @@ SILC_CLIENT_CMD_FUNC(ban)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
-  SilcBuffer buffer, chidp;
-  int type = 0;
+  SilcBuffer buffer, chidp, args = NULL;
   char *name, *ban = NULL;
+  unsigned char action[1];
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -2027,25 +2040,37 @@ SILC_CLIENT_CMD_FUNC(ban)
 
   if (cmd->argc == 3) {
     if (cmd->argv[2][0] == '+')
-      type = 2;
+      action[0] = 0x00;
     else
-      type = 3;
+      action[0] = 0x01;
 
     ban = cmd->argv[2];
     ban++;
+  }
+
+  if (ban) {
+    args = silc_buffer_alloc_size(2);
+    silc_buffer_format(args,
+		       SILC_STR_UI_SHORT(1),
+		       SILC_STR_END);
+    args = silc_argument_payload_encode_one(args, ban, strlen(ban), 1);
   }
 
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
 
   /* Send the command */
   buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 
-					  ++conn->cmd_ident, 2,
+					  ++conn->cmd_ident, 3,
 					  1, chidp->data, chidp->len,
-					  type, ban, ban ? strlen(ban) : 0);
+					  2, args ? action : NULL,
+					  args ? 1 : 0,
+					  3, args ? args->data : NULL,
+					  args ? args->len : 0);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
+  silc_buffer_free(args);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);

@@ -1454,7 +1454,8 @@ void silc_server_send_notify_ban(SilcServer server,
 				 SilcSocketConnection sock,
 				 bool broadcast,
 				 SilcChannelEntry channel,
-				 char *add, char *del)
+				 unsigned char *action,
+				 SilcBuffer list)
 {
   SilcBuffer idp;
 
@@ -1462,8 +1463,8 @@ void silc_server_send_notify_ban(SilcServer server,
   silc_server_send_notify(server, sock, broadcast,
 			  SILC_NOTIFY_TYPE_BAN, 3,
 			  idp->data, idp->len,
-			  add, add ? strlen(add) : 0,
-			  del, del ? strlen(del) : 0);
+			  action ? action : NULL, action ? 1 : 0,
+			  list ? list->data : NULL, list ? list->len : 0);
   silc_buffer_free(idp);
 }
 
@@ -1477,7 +1478,8 @@ void silc_server_send_notify_invite(SilcServer server,
 				    bool broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
-				    char *add, char *del)
+				    unsigned char *action,
+				    SilcBuffer list)
 {
   SilcBuffer idp, idp2;
 
@@ -1488,8 +1490,8 @@ void silc_server_send_notify_invite(SilcServer server,
 			  idp->data, idp->len,
 			  channel->channel_name, strlen(channel->channel_name),
 			  idp2->data, idp2->len,
-			  add, add ? strlen(add) : 0,
-			  del, del ? strlen(del) : 0);
+			  action ? action : NULL, action ? 1 : 0,
+			  list ? list->data : NULL, list ? list->len : 0);
   silc_buffer_free(idp);
   silc_buffer_free(idp2);
 }

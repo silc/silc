@@ -195,4 +195,12 @@ silc_server_find_socket_by_host(SilcServer server,
 				SilcSocketType type,
 				const char *ip, SilcUInt16 port);
 
+/* This function can be used to match the invite and ban lists. */
+bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
+				 SilcUInt8 type, void *check);
+
+/* Process invite or ban information */
+void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
+				   SilcUInt8 action, SilcArgumentPayload args);
+
 #endif /* SERVER_UTIL_H */
