@@ -1148,6 +1148,7 @@ lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
 doc/example_silcd.conf
 includes/silcincludes.h
+silcmap/Makefile
 )
 
 if test "x$silc_dist" = "xsilc-client" ||

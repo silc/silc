@@ -26,7 +26,7 @@ silcmap_SOURCES = 		\
 	silcmap_client.c	\
 	silcmap_html.c
 
-LIBS = $(SILC_COMMON_LIBS) -lsilcclient -lsilc
+LIBS = $(SILC_COMMON_LIBS) -lsilcclient -lsilc -lm
 LDADD =
 
 EXTRA_DIST = *.h
