@@ -153,6 +153,11 @@ struct SilcClientConnectionStruct {
    * Common data
    */
 
+  /* Current command identifier for a command that was sent last.
+     Application may get the value from this variable to find out the
+     command identifier for last command. */
+  SilcUInt16 cmd_ident;
+
   /* User data context. Library does not touch this. Application may
      freely set and use this pointer for its needs. */
   void *context;
@@ -167,9 +172,6 @@ struct SilcClientConnectionStruct {
      use this if needed.  The sock->user_data is back pointer to this
      structure. */
   SilcSocketConnection sock;
-
-  /* Current command identifier, 0 not used */
-  SilcUInt16 cmd_ident;
 
   /* Internal data for client library. Application cannot access this
      data at all. */
@@ -1440,8 +1442,9 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *
  * EXAMPLE
  *
- *    silc_client_command_call(client, NULL, "PING", "silc.silcnet.org", NULL);
- *    silc_client_command_call(client, "PING silc.silcnet.org");
+ *    silc_client_command_call(client, conn, NULL, "PING", "silc.silcnet.org",
+ *                             NULL);
+ *    silc_client_command_call(client, conn, "PING silc.silcnet.org");
  *
  ***/
 bool silc_client_command_call(SilcClient client,
@@ -1490,15 +1493,40 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
  *
  * DESCRIPTION
  *
- *    Add new pending command to be executed when reply to a command has been
- *    received.  The `reply_cmd' is the command that will call the `callback'
- *    with `context' when reply has been received.  If `ident' is non-zero
- *    the `callback' will be executed when received reply with command 
- *    identifier `ident'. 
+ *    This function can be used to add pending command callback to be
+ *    called when an command reply is received to an earlier sent command.
+ *    The `reply_cmd' is the command that must be received in order for
+ *    the pending command callback indicated by `callback' to be called.
  *
- *    Note that the application is notified about the received command
+ *    The `ident' is a command identifier which was set for the earlier
+ *    sent command.  The command reply will include the same identifier
+ *    and pending command callback will be called when the reply is 
+ *    received with the same command identifier.  It is possible to
+ *    add multiple pending command callbacks for same command and for
+ *    same identifier.
+ *
+ *    Application may use this function to add its own command reply
+ *    handlers if it wishes not to use the standard `command_reply'
+ *    client operation.  However, note that the pending command callback
+ *    does not deliver parsed command reply, but application must parse
+ *    it itself.
+ *
+ *    Note also that the application is notified about the received command
  *    reply through the `command_reply' client operation before calling
- *    the `callback` pending command callback.
+ *    the `callback` pending command callback.  That is the normal 
+ *    command reply handling, and is called regardless whether pending
+ *    command callbacks are used or not.
+ *
+ *    Commands that application calls with silc_client_command_call
+ *    will use a command identifier from conn->cmd_ident variable.  After
+ *    calling the silc_client_command_call, the conn->cmd_ident includes
+ *    the command identifier that was used for the command sending.
+ *
+ * EXAMPLE
+ *
+ *    silc_client_command_call(client, conn, "PING silc.silcnet.org");
+ *    silc_client_command_pending(conn, SILC_COMMAND_PING, conn->cmd_ident,
+ *                                my_ping_handler, my_ping_context);
  *
  ***/
 void silc_client_command_pending(SilcClientConnection conn,
