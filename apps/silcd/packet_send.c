@@ -649,7 +649,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
     sock = (SilcSocketConnection)client->connection;
     idata = (SilcIDListData)client;
     
-    if (sender && sock == sender)
+    if (!sock || (sender && sock == sender))
       continue;
 
     /* Send the packet */
@@ -927,7 +927,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
     sock = (SilcSocketConnection)client->connection;
     idata = (SilcIDListData)client;
 
-    if (sender_sock && sock == sender_sock)
+    if (!sock || (sender_sock && sock == sender_sock))
       continue;
 
     SILC_LOG_DEBUG(("Sending packet to client ID(%s) %s (%s)", 
@@ -1596,6 +1596,9 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	sock = (SilcSocketConnection)c->connection;
 	idata = (SilcIDListData)c;
 	
+        if (!sock)
+          continue;
+
 	packetdata.dst_id = silc_id_id2str(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_len = silc_id_get_len(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_type = SILC_ID_CLIENT;
