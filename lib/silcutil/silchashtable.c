@@ -255,7 +255,7 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 
 /* Internal routine to add new key to the hash table */
 
-static inline void
+static inline bool
 silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
 			     SilcHashFunction hash,
 			     void *hash_user_context)
@@ -281,6 +281,8 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
     SILC_HT_DEBUG(("Collision; adding new key to list"));
 
     e->next = silc_calloc(1, sizeof(*e->next));
+    if (!e->next)
+      return FALSE;
     e->next->key = key;
     e->next->context = context;
     ht->entry_count++;
@@ -288,6 +290,8 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
     /* New key */
     SILC_HT_DEBUG(("New key"));
     *entry = silc_calloc(1, sizeof(**entry));
+    if (!(*entry))
+      return FALSE;
     (*entry)->key = key;
     (*entry)->context = context;
     ht->entry_count++;
@@ -295,11 +299,13 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
 
   if (SILC_HASH_REHASH_INC)
     silc_hash_table_rehash(ht, 0);
+
+  return TRUE;
 }
 
 /* Internal routine to replace old key with new one (if it exists) */
 
-static inline void
+static inline bool
 silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
 				 SilcHashFunction hash,
 				 void *hash_user_context)
@@ -319,6 +325,8 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
   } else {
     /* New key */
     *entry = silc_calloc(1, sizeof(**entry));
+    if (!(*entry))
+      return FALSE;
     ht->entry_count++;
   }
 
@@ -327,6 +335,8 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
 
   if (SILC_HASH_REHASH_INC)
     silc_hash_table_rehash(ht, 0);
+
+  return TRUE;
 }
 
 /* Allocates new hash table and returns it.  If the `table_size' is not
@@ -353,10 +363,14 @@ SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
     return NULL;
 
   ht = silc_calloc(1, sizeof(*ht));
+  if (!ht)
+    return NULL;
   ht->table = silc_calloc(table_size ? silc_hash_table_primesize(table_size,
 								 &size_index) :
 			  primesize[SILC_HASH_TABLE_SIZE],
 			  sizeof(*ht->table));
+  if (!ht->table)
+    return NULL;
   ht->table_size = size_index;
   ht->hash = hash;
   ht->compare = compare;
@@ -802,6 +816,8 @@ void silc_hash_table_rehash(SilcHashTable ht, SilcUInt32 new_size)
 
   /* Allocate new table */
   ht->table = silc_calloc(primesize[size_index], sizeof(*ht->table));
+  if (!ht->table)
+    return;
   ht->table_size = size_index;
   ht->entry_count = 0;
 
@@ -855,6 +871,8 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, SilcUInt32 new_size,
 
   /* Allocate new table */
   ht->table = silc_calloc(primesize[size_index], sizeof(*ht->table));
+  if (!ht->table)
+    return;
   ht->table_size = size_index;
   ht->entry_count = 0;
 
