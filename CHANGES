@@ -1,3 +1,14 @@
+Wed Nov 14 23:44:56 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_client_run_one into lib/silcclient/silcapi.h and
+	  lib/silcclient/client.c. This function is used when the SILC
+	  Client is run under some other scheduler, or event loop or
+	  main loop.  On GUI applications, for example this may be
+	  desired to used to run the client under the GUI application's
+	  main loop.  Typically the GUI application would register an
+	  idle task that calls this function multiple times in a second
+	  to quickly process the SILC specific data.
+
 Wed Nov 14 16:22:25 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* __pid_t -> pid_t in lib/silccrypt/silcrng.c.  A patch by

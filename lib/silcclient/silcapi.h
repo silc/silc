@@ -533,6 +533,25 @@ int silc_client_init(SilcClient client);
  ***/
 void silc_client_run(SilcClient client);
 
+/****f* silcclient/SilcClientAPI/silc_client_run_one
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_run_one(SilcClient client);
+ *
+ * DESCRIPTION
+ *
+ *    Runs the client and returns immeadiately. This function is used when
+ *    the SILC Client object indicated by the `client' is run under some
+ *    other scheduler, or event loop or main loop.  On GUI applications,
+ *    for example this may be desired to used to run the client under the
+ *    GUI application's main loop.  Typically the GUI application would
+ *    register an idle task that calls this function multiple times in
+ *    a second to quickly process the SILC specific data.
+ *
+ ***/
+void silc_client_run_one(SilcClient client);
+
 /****f* silcclient/SilcClientAPI/silc_client_stop
  *
  * SYNOPSIS

@@ -67,7 +67,7 @@ uint32 sims_count = 0;
 
 static int my_silc_scheduler(void)
 {
-  silc_schedule_one(silc_client->schedule, 0);
+  silc_client_run_one(silc_client);
   return 1;
 }
 
