@@ -39,34 +39,25 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o The accept_new_connection_final for router/server is broken. See XXX.
-
  o Configuration file additions:
 
 	o Allow configuration of protocol execution timeouts.  This 
-	  includes SKE, CONN_AUTH and REKEY timeouts.
-
-	o Add require_reverse_lookup boolean to set whether require
-	  reverse lookups for hostnames and IPs.
+	  includes SKE, CONN_AUTH and REKEY timeouts. Check all
+	  "XXX hardcoded" from the code for these.
 
  	o IP address fields in configuration file should accept mask
 	  format as well, IP/MASK, and not just plain IP.  This would
 	  allow subnet filtering etc.
 
-	o Implement Classes (or Params) for connections.
-
-	o Add also default keepalive etc. settings to General (can default
-	  when Classes are not used.
-
 	o Add channel key rekey default timeout.
 
-	o Add reconnection retry count, internal, max timeout, and
-	  whether to keep trying or not.
-
 	o Add (advanced options in General) to set how often certain ID
-	  caches are purged.
+	  caches are purged (could be used to optimize the server's
+	  behaviour).
 
 	o Add hashed passwords to config file.
+
+	o Add rehashing support.
 
  o Assure that server is allowed to connect only once to router.  Meaning
    if server connection is established already, same connection cannot be
