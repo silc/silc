@@ -351,19 +351,18 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
   /* Get data as much as we can get into the buffer */
   for (i = 0; i < sizeof(buf); i++) {
     c = fgetc(fd);
-    if (c == EOF) {
-      if (!i)
-	return;
+    if (c == EOF)
       break; 
-    }
     buf[i] = c;
   }
   
   pclose(fd);
   
-  /* Add the buffer into random pool */
-  silc_rng_add_noise(rng, buf, i);
-  memset(buf, 0, sizeof(buf));
+  if (i != 0) {
+    /* Add the buffer into random pool */
+    silc_rng_add_noise(rng, buf, i);
+    memset(buf, 0, sizeof(buf));
+  }
 #endif
 }
 
