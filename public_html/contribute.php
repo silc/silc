@@ -2,10 +2,9 @@
 <font size="2">
 <p>
 Developers are needed in SILC project.  Everyone who has the time and
-ability is welcome to come and join the project.  We need C coders,
-technical writers (to write documentation) and web administrator to take
-over these web pages.  Feel free to start narrowing down the TODO
-list.
+ability is welcome to come and join the project.  We need C coders and
+technical writers (to write documentation). Feel free to start narrowing
+down the TODO list.
 <p>
 Interested people are also welcome to give new ideas to the SILC protocol
 that is still in its draft phase.  You should probably go and read the

@@ -62,7 +62,7 @@
 $FTPRoot = "/home/ftp/pub/silc/";
 
 // directory where SILC HTML documents are located
-$DocRoot = "/home/priikone/public_html/silc/silc/";
+$DocRoot = "/home/priikone/public_html/silc/";
 
 // remove dangerous characters, only alphanumerical characters are passed
 $SecurityFilter = $DocRoot.EReg_Replace('([^a-zA-Z0-9])*','',$page).".php";

@@ -32,6 +32,13 @@ Both are available for free use.
 
 <p><br>
 
+<b>New Web Pages</b>
+<font size="2"><p>
+As you all can see the SILC Project has a new web page layout.  Enjoy!
+</font>
+
+<p><br>
+
 <b>Developers Wanted For SILC Project</b>
 <font size="2"><p>
 SILC Project needs developers who would like to contribute their time,
