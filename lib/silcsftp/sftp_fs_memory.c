@@ -1074,7 +1074,7 @@ void mem_realpath(void *context, SilcSFTP sftp,
     goto fail;
   name->count = 1;
 
-  (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, (const SilcSFTPName)name, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPName)name, 
 	      callback_context);
 
   silc_sftp_name_free(name);
