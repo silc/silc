@@ -525,7 +525,8 @@ silc_server_packet_send_to_channel_real(SilcServer server,
    If `route' is FALSE then the packet is sent only locally and will not
    be routed anywhere (for router locally means cell wide). If `sender'
    is provided then the packet is not sent to that connection since it
-   originally came from it. */
+   originally came from it. If `send_to_clients' is FALSE then the
+   packet is not sent clients, only servers. */
 
 void silc_server_packet_send_to_channel(SilcServer server,
 					SilcSocketConnection sender,
@@ -574,7 +575,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
     idata = (SilcIDListData)router;
     
     if (sock != sender) {
-      SILC_LOG_DEBUG(("Sending channel message to router for routing"));
+      SILC_LOG_DEBUG(("Sending packet to router for routing"));
       
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      idata->send_key, 
@@ -1204,7 +1205,8 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcChannelEntry channel,
 				   uint32 mode_mask,
 				   void *id, SilcIdType id_type,
-				   char *cipher, char *hmac)
+				   char *cipher, char *hmac,
+				   char *passphrase)
 {
   SilcBuffer idp;
   unsigned char mode[4];
@@ -1214,15 +1216,17 @@ void silc_server_send_notify_cmode(SilcServer server,
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
-			       4, idp->data, idp->len,
+			       5, idp->data, idp->len,
 			       mode, 4,
 			       cipher, cipher ? strlen(cipher) : 0,
-			       hmac, hmac ? strlen(hmac) : 0);
+			       hmac, hmac ? strlen(hmac) : 0,
+			       passphrase, passphrase ? 
+			       strlen(passphrase) : 0);
   silc_buffer_free(idp);
 }
 
 /* Sends CUMODE_CHANGE notify type. This tells that `client_id' changed the
-   `target' client's mode on `channel'. The Notify packet is always
+   `target' client's mode on `channel'. The notify packet is always
    destined to the channel. */
 
 void silc_server_send_notify_cumode(SilcServer server,
@@ -1271,7 +1275,7 @@ void silc_server_send_notify_signoff(SilcServer server,
   silc_buffer_free(idp);
 }
 
-/* Sends TOPIC_SET notify type. This tells that `client_id' changed
+/* Sends TOPIC_SET notify type. This tells that `id' changed
    the `channel's topic to `topic'. The Notify packet is always destined
    to the channel. This function is used to send the topic set notifies
    between routers. */
@@ -1280,17 +1284,18 @@ void silc_server_send_notify_topic_set(SilcServer server,
 				       SilcSocketConnection sock,
 				       bool broadcast,
 				       SilcChannelEntry channel,
-				       SilcClientID *client_id,
+				       void *id, SilcIdType id_type,
 				       char *topic)
 {
   SilcBuffer idp;
 
-  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
-  silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_TOPIC_SET,
-			  topic ? 2 : 1, 
-			  idp->data, idp->len, 
-			  topic, topic ? strlen(topic) : 0);
+  idp = silc_id_payload_encode(id, id_type);
+  silc_server_send_notify_dest(server, sock, broadcast,
+			       (void *)channel->id, SILC_ID_CHANNEL,
+			       SILC_NOTIFY_TYPE_TOPIC_SET,
+			       topic ? 2 : 1, 
+			       idp->data, idp->len, 
+			       topic, topic ? strlen(topic) : 0);
   silc_buffer_free(idp);
 }
 
@@ -1441,7 +1446,7 @@ void silc_server_send_notify_dest(SilcServer server,
 void silc_server_send_notify_to_channel(SilcServer server,
 					SilcSocketConnection sender,
 					SilcChannelEntry channel,
-					unsigned char route_notify,
+					bool route_notify,
 					SilcNotifyType type,
 					uint32 argc, ...)
 {
@@ -1714,7 +1719,8 @@ void silc_server_send_channel_key(SilcServer server,
                                            channel->key_len / 8, channel->key);
   silc_server_packet_send_to_channel(server, sender, channel, 
 				     SILC_PACKET_CHANNEL_KEY,
-                                     route, packet->data, packet->len, FALSE);
+                                     route, packet->data, packet->len, 
+				     FALSE);
   silc_buffer_free(packet);
   silc_free(chid);
 }

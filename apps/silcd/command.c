@@ -825,11 +825,18 @@ silc_server_command_whois_process(SilcServerCommandContext cmd)
   int i, ret = 0;
   bool check_global = FALSE;
 
-  /* Protocol dictates that we must always send the received WHOIS request
-     to our router if we are normal server, so let's do it now unless we
-     are standalone. We will not send any replies to the client until we
-     have received reply from the router. */
-  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT &&
+  /* Parse the whois request */
+  if (!silc_server_command_whois_parse(cmd, &client_id, &client_id_count, 
+				       &nick, &server_name, &count,
+				       SILC_COMMAND_WHOIS))
+    return 0;
+
+  /* Send the WHOIS request to the router only if it included nickname.
+     Since nicknames can be expanded into many clients we need to send it
+     to router.  If the WHOIS included only client ID's we will check them
+     first locally since we just might have them. */
+  if (nick && !client_id_count &&
+      cmd->sock->type == SILC_SOCKET_TYPE_CLIENT &&
       server->server_type == SILC_SERVER && !cmd->pending && 
       !server->standalone) {
     SilcBuffer tmpbuf;
@@ -860,19 +867,10 @@ silc_server_command_whois_process(SilcServerCommandContext cmd)
     goto out;
   }
 
-  /* We are ready to process the command request. Let's search for the
-     requested client and send reply to the requesting client. */
-
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
     check_global = TRUE;
   else if (server->server_type != SILC_SERVER)
     check_global = TRUE;
-
-  /* Parse the whois request */
-  if (!silc_server_command_whois_parse(cmd, &client_id, &client_id_count, 
-				       &nick, &server_name, &count,
-				       SILC_COMMAND_WHOIS))
-    return 0;
 
   /* Get all clients matching that ID or nickname from local list */
   if (client_id_count) {
@@ -1270,7 +1268,8 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
 				   uint32 *servers_count,
 				   SilcChannelEntry **channels,
 				   uint32 *channels_count,
-				   uint32 *count)
+				   uint32 *count,
+				   bool *names)
 {
   SilcServer server = cmd->server;
   unsigned char *tmp;
@@ -1291,6 +1290,7 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
   tmp = silc_argument_get_arg_type(cmd->args, 5, &len);
   if (!tmp) {
     /* No ID, get the names. */
+    *names = TRUE;
 
     /* Try to get nickname@server. */
     tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
@@ -1824,12 +1824,21 @@ silc_server_command_identify_process(SilcServerCommandContext cmd)
   SilcServerEntry *servers = NULL;
   SilcChannelEntry *channels = NULL;
   uint32 clients_count = 0, servers_count = 0, channels_count = 0;
+  bool names;
 
-  /* Protocol dictates that we must always send the received IDENTIFY request
-     to our router if we are normal server, so let's do it now unless we
-     are standalone. We will not send any replies to the client until we
-     have received reply from the router. */
-  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT && 
+  /* Parse the IDENTIFY request */
+  if (!silc_server_command_identify_parse(cmd,
+					  &clients, &clients_count,
+					  &servers, &servers_count,
+					  &channels, &channels_count,
+					  &count, &names))
+    return 0;
+
+  /* Send the IDENTIFY request to the router only if it included nickname.
+     Since nicknames can be expanded into many clients we need to send it
+     to router.  If the IDENTIFY included only client ID's we will check them
+     first locally since we just might have them. */
+  if (names && cmd->sock->type == SILC_SOCKET_TYPE_CLIENT && 
       server->server_type == SILC_SERVER && !cmd->pending && 
       !server->standalone) {
     SilcBuffer tmpbuf;
@@ -1859,17 +1868,6 @@ silc_server_command_identify_process(SilcServerCommandContext cmd)
     ret = -1;
     goto out;
   }
-
-  /* We are ready to process the command request. Let's search for the
-     requested client and send reply to the requesting client. */
-
-  /* Parse the IDENTIFY request */
-  if (!silc_server_command_identify_parse(cmd,
-					  &clients, &clients_count,
-					  &servers, &servers_count,
-					  &channels, &channels_count,
-					  &count))
-    return 0;
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
@@ -2287,13 +2285,14 @@ SILC_SERVER_CMD_FUNC(topic)
     if (!server->standalone)
       silc_server_send_notify_topic_set(server, server->router->connection,
 					server->server_type == SILC_ROUTER ?
-					TRUE : FALSE, channel, client->id,
+					TRUE : FALSE, channel, 
+					client->id, SILC_ID_CLIENT,
 					channel->topic);
 
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
     /* Send notify about topic change to all clients on the channel */
-    silc_server_send_notify_to_channel(server, NULL, channel, TRUE,
+    silc_server_send_notify_to_channel(server, NULL, channel, TRUE, 
 				       SILC_NOTIFY_TYPE_TOPIC_SET, 2,
 				       idp->data, idp->len,
 				       channel->topic, strlen(channel->topic));
@@ -2931,7 +2930,9 @@ static void silc_server_command_join_channel(SilcServer server,
 					     SilcClientID *client_id,
 					     bool created,
 					     bool create_key,
-					     uint32 umode)
+					     uint32 umode,
+					     const unsigned char *auth,
+					     uint32 auth_len)
 {
   SilcSocketConnection sock = cmd->sock;
   unsigned char *tmp;
@@ -2942,6 +2943,7 @@ static void silc_server_command_join_channel(SilcServer server,
   SilcBuffer reply, chidp, clidp, keyp = NULL, user_list, mode_list;
   uint16 ident = silc_command_get_ident(cmd->payload);
   char check[512], check2[512];
+  bool founder = FALSE;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -2971,79 +2973,109 @@ static void silc_server_command_join_channel(SilcServer server,
   }
 
   /*
+   * Check founder auth payload if provided.  If client can gain founder
+   * privileges it can override various conditions on joining the channel,
+   * and can have directly the founder mode set on the channel.
+   */
+  if (auth && auth_len && channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+    SilcIDListData idata = (SilcIDListData)client;
+
+    if (channel->founder_key && idata->public_key &&
+	silc_pkcs_public_key_compare(channel->founder_key, 
+				     idata->public_key)) {
+      void *auth_data = (channel->founder_method == SILC_AUTH_PASSWORD ?
+			 (void *)channel->founder_passwd : 
+			 (void *)channel->founder_key);
+      uint32 auth_data_len = (channel->founder_method == SILC_AUTH_PASSWORD ?
+			      channel->founder_passwd_len : 0);
+
+      /* Check whether the client is to become founder */
+      if (silc_auth_verify_data(auth, auth_len, channel->founder_method, 
+				auth_data, auth_data_len,
+				idata->hash, client->id, SILC_ID_CLIENT)) {
+	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+	founder = TRUE;
+      }
+    }
+  }
+
+  /*
    * Check channel modes
    */
 
-  memset(check, 0, sizeof(check));
-  memset(check2, 0, sizeof(check2));
-  strncat(check, client->nickname, strlen(client->nickname));
-  strncat(check, "!", 1);
-  strncat(check, client->username, strlen(client->username));
-  if (!strchr(client->username, '@')) {
-    strncat(check, "@", 1);
-    strncat(check, cmd->sock->hostname, strlen(cmd->sock->hostname));
-  }
+  if (!umode) {
+    memset(check, 0, sizeof(check));
+    memset(check2, 0, sizeof(check2));
+    strncat(check, client->nickname, strlen(client->nickname));
+    strncat(check, "!", 1);
+    strncat(check, client->username, strlen(client->username));
+    if (!strchr(client->username, '@')) {
+      strncat(check, "@", 1);
+      strncat(check, cmd->sock->hostname, strlen(cmd->sock->hostname));
+    }
 
-  strncat(check2, client->nickname, strlen(client->nickname));
-  if (!strchr(client->nickname, '@')) {
-    strncat(check2, "@", 1);
-    strncat(check2, server->server_name, strlen(server->server_name));
-  }
-  strncat(check2, "!", 1);
-  strncat(check2, client->username, strlen(client->username));
-  if (!strchr(client->username, '@')) {
-    strncat(check2, "@", 1);
-    strncat(check2, cmd->sock->hostname, strlen(cmd->sock->hostname));
-  }
+    strncat(check2, client->nickname, strlen(client->nickname));
+    if (!strchr(client->nickname, '@')) {
+      strncat(check2, "@", 1);
+      strncat(check2, server->server_name, strlen(server->server_name));
+    }
+    strncat(check2, "!", 1);
+    strncat(check2, client->username, strlen(client->username));
+    if (!strchr(client->username, '@')) {
+      strncat(check2, "@", 1);
+      strncat(check2, cmd->sock->hostname, strlen(cmd->sock->hostname));
+    }
+    
+    /* Check invite list if channel is invite-only channel */
+    if (channel->mode & SILC_CHANNEL_MODE_INVITE) {
+      if (!channel->invite_list ||
+	  (!silc_string_match(channel->invite_list, check) &&
+	   !silc_string_match(channel->invite_list, check2))) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					      SILC_STATUS_ERR_NOT_INVITED);
+	goto out;
+      }
+    }
 
-  /* Check invite list if channel is invite-only channel */
-  if (channel->mode & SILC_CHANNEL_MODE_INVITE) {
-    if (!channel->invite_list ||
-	(!silc_string_match(channel->invite_list, check) &&
-	 !silc_string_match(channel->invite_list, check2))) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					    SILC_STATUS_ERR_NOT_INVITED);
-      goto out;
+    /* Check ban list if it exists. If the client's nickname, server,
+       username and/or hostname is in the ban list the access to the
+       channel is denied. */
+    if (channel->ban_list) {
+      if (!channel->ban_list ||
+	  silc_string_match(channel->ban_list, check) ||
+	  silc_string_match(channel->ban_list, check2)) {
+	silc_server_command_send_status_reply(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_BANNED_FROM_CHANNEL);
+	goto out;
+      }
+    }
+    
+    /* Check user count limit if set. */
+    if (channel->mode & SILC_CHANNEL_MODE_ULIMIT) {
+      if (silc_hash_table_count(channel->user_list) + 1 > 
+	  channel->user_limit) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					      SILC_STATUS_ERR_CHANNEL_IS_FULL);
+	goto out;
+      }
     }
   }
 
-  /* Check ban list if it exists. If the client's nickname, server,
-     username and/or hostname is in the ban list the access to the
-     channel is denied. */
-  if (channel->ban_list) {
-    if (!channel->ban_list ||
-        silc_string_match(channel->ban_list, check) ||
-	silc_string_match(channel->ban_list, check2)) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-			      SILC_STATUS_ERR_BANNED_FROM_CHANNEL);
-      goto out;
-    }
-  }
-
-  /* Get passphrase */
-  tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-  if (tmp) {
-    passphrase = silc_calloc(tmp_len, sizeof(*passphrase));
-    memcpy(passphrase, tmp, tmp_len);
-  }
-  
   /* Check the channel passphrase if set. */
   if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
+    /* Get passphrase */
+    tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+    if (tmp) {
+      passphrase = silc_calloc(tmp_len, sizeof(*passphrase));
+      memcpy(passphrase, tmp, tmp_len);
+    }
+  
     if (!passphrase || !channel->passphrase ||
         memcmp(channel->passphrase, passphrase,
                strlen(channel->passphrase))) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					    SILC_STATUS_ERR_BAD_PASSWORD);
-      goto out;
-    }
-  }
-
-  /* Check user count limit if set. */
-  if (channel->mode & SILC_CHANNEL_MODE_ULIMIT) {
-    if (silc_hash_table_count(channel->user_list) + 1 > 
-	channel->user_limit) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					    SILC_STATUS_ERR_CHANNEL_IS_FULL);
       goto out;
     }
   }
@@ -3143,7 +3175,7 @@ static void silc_server_command_join_channel(SilcServer server,
      we'll ignore it (in packet_receive.c) so we must send it here. If
      we are router then this will send it to local clients and local
      servers. */
-  silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+  silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
 				     SILC_NOTIFY_TYPE_JOIN, 2,
 				     clidp->data, clidp->len,
 				     chidp->data, chidp->len);
@@ -3159,6 +3191,24 @@ static void silc_server_command_join_channel(SilcServer server,
       /* Distribute the channel key to all backup routers. */
       silc_server_backup_send(server, NULL, SILC_PACKET_CHANNEL_KEY, 0,
 			      keyp->data, keyp->len, FALSE, TRUE);
+
+    /* If client became founder by providing correct founder auth data
+       notify the mode change to the channel. */
+    if (founder) {
+      SILC_PUT32_MSB(chl->mode, mode);
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
+					 SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
+					 clidp->data, clidp->len,
+					 mode, 4, clidp->data, clidp->len);
+      
+      /* Set CUMODE notify type to network */
+      if (!server->standalone)
+	silc_server_send_notify_cumode(server, server->router->connection,
+				       server->server_type == SILC_ROUTER ? 
+				       TRUE : FALSE, channel,
+				       chl->mode, client->id, SILC_ID_CLIENT,
+				       client->id);
+    }
   }
 
   silc_buffer_free(reply);
@@ -3179,14 +3229,15 @@ SILC_SERVER_CMD_FUNC(join)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  uint32 tmp_len;
+  unsigned char *auth;
+  uint32 tmp_len, auth_len;
   char *tmp, *channel_name = NULL, *cipher, *hmac;
   SilcChannelEntry channel;
   uint32 umode = 0;
   bool created = FALSE, create_key = TRUE;
   SilcClientID *client_id;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_JOIN, cmd, 1, 4);
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_JOIN, cmd, 2, 6);
 
   /* Get channel name */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
@@ -3220,9 +3271,10 @@ SILC_SERVER_CMD_FUNC(join)
     goto out;
   }
 
-  /* Get cipher and hmac name */
+  /* Get cipher, hmac name and auth payload */
   cipher = silc_argument_get_arg_type(cmd->args, 4, NULL);
   hmac = silc_argument_get_arg_type(cmd->args, 5, NULL);
+  auth = silc_argument_get_arg_type(cmd->args, 6, &auth_len);
 
   /* See if the channel exists */
   channel = silc_idlist_find_channel_by_name(server->local_list, 
@@ -3364,7 +3416,8 @@ SILC_SERVER_CMD_FUNC(join)
 
   /* Join to the channel */
   silc_server_command_join_channel(server, cmd, channel, client_id,
-				   created, create_key, umode);
+				   created, create_key, umode,
+				   auth, auth_len);
 
   silc_free(client_id);
 
@@ -3672,7 +3725,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcChannelClientEntry chl;
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask;
-  char *cipher = NULL, *hmac = NULL;
+  char *cipher = NULL, *hmac = NULL, *passphrase = NULL;
   uint32 mode_mask, tmp_len, tmp_len2;
   uint16 ident = silc_command_get_ident(cmd->payload);
 
@@ -3796,7 +3849,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
 
       /* Save the passphrase */
-      channel->passphrase = strdup(tmp);
+      passphrase = channel->passphrase = strdup(tmp);
     }
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
@@ -4007,14 +4060,16 @@ SILC_SERVER_CMD_FUNC(cmode)
   /* Finally, set the mode */
   channel->mode = mode_mask;
 
-  /* Send CMODE_CHANGE notify */
+  /* Send CMODE_CHANGE notify. */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 4,
+				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 5,
 				     cidp->data, cidp->len, 
 				     tmp_mask, 4,
 				     cipher, cipher ? strlen(cipher) : 0,
-				     hmac, hmac ? strlen(hmac) : 0);
+				     hmac, hmac ? strlen(hmac) : 0,
+				     passphrase, passphrase ? 
+				     strlen(passphrase) : 0);
 
   /* Set CMODE notify type to network */
   if (!server->standalone)
@@ -4022,7 +4077,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 				  server->server_type == SILC_ROUTER ? 
 				  TRUE : FALSE, channel,
 				  mode_mask, client->id, SILC_ID_CLIENT,
-				  cipher, hmac);
+				  cipher, hmac, passphrase);
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
@@ -4255,7 +4310,7 @@ SILC_SERVER_CMD_FUNC(cumode)
 
   /* Send notify to channel, notify only if mode was actually changed. */
   if (notify) {
-    silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
 				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
 				       idp->data, idp->len,
 				       tmp_mask, 4, 

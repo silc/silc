@@ -3145,6 +3145,19 @@ static void silc_server_announce_get_servers(SilcServer server,
   }
 }
 
+static SilcBuffer 
+silc_server_announce_encode_notify(SilcNotifyType notify, uint32 argc, ...)
+{
+  va_list ap;
+  SilcBuffer p;
+
+  va_start(ap, argc);
+  p = silc_notify_payload_encode(notify, argc, ap);
+  va_end(ap);
+ 
+  return p;
+}
+
 /* This function is used by router to announce existing servers to our
    primary router when we've connected to it. If `creation_time' is non-zero
    then only the servers that has been created after the `creation_time'
@@ -3188,12 +3201,15 @@ void silc_server_announce_servers(SilcServer server, bool global,
 static void silc_server_announce_get_clients(SilcServer server,
 					     SilcIDList id_list,
 					     SilcBuffer *clients,
+					     SilcBuffer *umodes,
 					     unsigned long creation_time)
 {
   SilcIDCacheList list;
   SilcIDCacheEntry id_cache;
   SilcClientEntry client;
   SilcBuffer idp;
+  SilcBuffer tmp;
+  unsigned char mode[4];
 
   /* Go through all clients in the list */
   if (silc_idcache_get_all(id_list->clients, &list)) {
@@ -3216,6 +3232,20 @@ static void silc_server_announce_get_clients(SilcServer server,
 	silc_buffer_pull_tail(*clients, ((*clients)->end - (*clients)->data));
 	silc_buffer_put(*clients, idp->data, idp->len);
 	silc_buffer_pull(*clients, idp->len);
+
+	SILC_PUT32_MSB(client->mode, mode);
+	tmp = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_UMODE_CHANGE,
+						 2, idp->data, idp->len,
+						 mode, 4);
+	*umodes = silc_buffer_realloc(*umodes, 
+				      (*umodes ? 
+				       (*umodes)->truelen + tmp->len :  
+				       tmp->len));
+	silc_buffer_pull_tail(*umodes, ((*umodes)->end - (*umodes)->data));
+	silc_buffer_put(*umodes, tmp->data, tmp->len);
+	silc_buffer_pull(*umodes, tmp->len);
+	silc_buffer_free(tmp);
+
 	silc_buffer_free(idp);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -3237,17 +3267,18 @@ void silc_server_announce_clients(SilcServer server,
 				  SilcSocketConnection remote)
 {
   SilcBuffer clients = NULL;
+  SilcBuffer umodes = NULL;
 
   SILC_LOG_DEBUG(("Announcing clients"));
 
   /* Get clients in local list */
   silc_server_announce_get_clients(server, server->local_list,
-				   &clients, creation_time);
+				   &clients, &umodes, creation_time);
 
   /* As router we announce our global list as well */
   if (server->server_type == SILC_ROUTER)
     silc_server_announce_get_clients(server, server->global_list,
-				     &clients, creation_time);
+				     &clients, &umodes, creation_time);
 
   if (clients) {
     silc_buffer_push(clients, clients->data - clients->head);
@@ -3260,19 +3291,36 @@ void silc_server_announce_clients(SilcServer server,
 
     silc_buffer_free(clients);
   }
+
+  if (umodes) {
+    silc_buffer_push(umodes, umodes->data - umodes->head);
+    SILC_LOG_HEXDUMP(("umodes"), umodes->data, umodes->len);
+
+    /* Send the packet */
+    silc_server_packet_send(server, remote,
+			    SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+			    umodes->data, umodes->len, TRUE);
+
+    silc_buffer_free(umodes);
+  }
 }
 
-static SilcBuffer 
-silc_server_announce_encode_notify(SilcNotifyType notify, uint32 argc, ...)
-{
-  va_list ap;
-  SilcBuffer p;
+/* Returns channel's topic for announcing it */
 
-  va_start(ap, argc);
-  p = silc_notify_payload_encode(notify, argc, ap);
-  va_end(ap);
- 
-  return p;
+void silc_server_announce_get_channel_topic(SilcServer server,
+					    SilcChannelEntry channel,
+					    SilcBuffer *topic)
+{
+  SilcBuffer chidp;
+
+  if (channel->topic) {
+    chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+    *topic = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_TOPIC_SET, 2,
+						chidp->data, chidp->len,
+						channel->topic, 
+						strlen(channel->topic));
+    silc_buffer_free(chidp);
+  }
 }
 
 /* Returns assembled packets for channel users of the `channel'. */
@@ -3348,6 +3396,7 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcBuffer *channel_users,
 				       SilcBuffer **channel_users_modes,
 				       uint32 *channel_users_modes_c,
+				       SilcBuffer **channel_topics,
 				       SilcChannelID ***channel_ids,
 				       unsigned long creation_time)
 {
@@ -3397,6 +3446,7 @@ void silc_server_announce_get_channels(SilcServer server,
 	  silc_buffer_pull(*channels, len);
 	}
 
+	/* Channel user modes */
 	*channel_users_modes = silc_realloc(*channel_users_modes,
 					    sizeof(**channel_users_modes) * 
 					    (i + 1));
@@ -3408,6 +3458,13 @@ void silc_server_announce_get_channels(SilcServer server,
 					       channel_users,
 					       &(*channel_users_modes)[i]);
 	(*channel_ids)[i] = channel->id;
+
+	/* Channel's topic */
+	*channel_topics = silc_realloc(*channel_topics,
+				       sizeof(**channel_topics) * (i + 1));
+	(*channel_topics)[i] = NULL;
+	silc_server_announce_get_channel_topic(server, channel,
+					       &(*channel_topics)[i]);
 	i++;
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -3434,6 +3491,7 @@ void silc_server_announce_channels(SilcServer server,
 {
   SilcBuffer channels = NULL, channel_users = NULL;
   SilcBuffer *channel_users_modes = NULL;
+  SilcBuffer *channel_topics = NULL;
   uint32 channel_users_modes_c = 0;
   SilcChannelID **channel_ids = NULL;
 
@@ -3444,6 +3502,7 @@ void silc_server_announce_channels(SilcServer server,
 				    &channels, &channel_users,
 				    &channel_users_modes,
 				    &channel_users_modes_c,
+				    &channel_topics,
 				    &channel_ids, creation_time);
 
   /* Get channels and channel users in global list */
@@ -3452,6 +3511,7 @@ void silc_server_announce_channels(SilcServer server,
 				      &channels, &channel_users,
 				      &channel_users_modes,
 				      &channel_users_modes_c,
+				      &channel_topics,
 				      &channel_ids, creation_time);
 
   if (channels) {
@@ -3499,8 +3559,32 @@ void silc_server_announce_channels(SilcServer server,
       silc_buffer_free(channel_users_modes[i]);
     }
     silc_free(channel_users_modes);
-    silc_free(channel_ids);
   }
+
+  if (channel_topics) {
+    int i;
+
+    for (i = 0; i < channel_users_modes_c; i++) {
+      if (!channel_topics[i])
+	continue;
+
+      silc_buffer_push(channel_topics[i], 
+		       channel_topics[i]->data - 
+		       channel_topics[i]->head);
+      SILC_LOG_HEXDUMP(("channel topic"), channel_topics[i]->data, 
+		       channel_topics[i]->len);
+      silc_server_packet_send_dest(server, remote,
+				   SILC_PACKET_NOTIFY, SILC_PACKET_FLAG_LIST,
+				   channel_ids[i], SILC_ID_CHANNEL,
+				   channel_topics[i]->data, 
+				   channel_topics[i]->len,
+				   FALSE);
+      silc_buffer_free(channel_topics[i]);
+    }
+    silc_free(channel_topics);
+  }
+
+  silc_free(channel_ids);
 }
 
 /* Failure timeout callback. If this is called then we will immediately

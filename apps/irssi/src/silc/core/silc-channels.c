@@ -242,16 +242,18 @@ static void event_signoff(SILC_SERVER_REC *server, va_list va)
 static void event_topic(SILC_SERVER_REC *server, va_list va)
 {
   SILC_CHANNEL_REC *chanrec;
+  void *entry;
   SilcClientEntry client;
+  SilcServerEntry server_entry;
   SilcChannelEntry channel;
   char *topic;
   char userhost[256];
+  SilcIdType idtype;
 
-  client = va_arg(va, SilcClientEntry);
+  idtype = va_arg(va, int);
+  entry = va_arg(va, void *);
   topic = va_arg(va, char *);
   channel = va_arg(va, SilcChannelEntry);
-
-  silc_server_free_ftp(server, client);
 
   chanrec = silc_channel_find_entry(server, channel);
   if (chanrec != NULL) {
@@ -260,11 +262,23 @@ static void event_topic(SILC_SERVER_REC *server, va_list va)
     signal_emit("channel topic changed", 1, chanrec);
   }
 
-  memset(userhost, 0, sizeof(userhost));
-  snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
-	   client->username, client->hostname);
-  signal_emit("message topic", 5, server, channel->channel_name,
-	      topic, client->nickname, userhost);
+  if (idtype == SILC_ID_CLIENT) {
+    client = (SilcClientEntry)entry;
+    memset(userhost, 0, sizeof(userhost));
+    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	     client->username, client->hostname);
+    signal_emit("message topic", 5, server, channel->channel_name,
+		topic, client->nickname, userhost);
+  } else if (idtype == SILC_ID_SERVER) {
+    server_entry = (SilcServerEntry)entry;
+    signal_emit("message topic", 5, server, channel->channel_name,
+		topic, server_entry->server_name, 
+		server_entry->server_name);
+  } else {
+    channel = (SilcChannelEntry)entry;
+    signal_emit("message topic", 5, server, channel->channel_name,
+		topic, channel->channel_name, channel->channel_name);
+  }
 }
 
 /*
@@ -458,6 +472,8 @@ static void event_server_signoff(SILC_SERVER_REC *server, va_list va)
     signal_emit("message quit", 4, server, clients[i]->nickname,
 		clients[i]->username ? userhost : "", 
 		"server signoff");
+
+    silc_server_free_ftp(server, clients[i]);
 
     nicks = nicklist_get_same_unique(SERVER(server), clients[i]);
     for (tmp = nicks; tmp != NULL; tmp = tmp->next->next) {

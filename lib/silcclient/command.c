@@ -42,7 +42,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(ping, PING, "PING", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(oper, OPER, "OPER",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
-  SILC_CLIENT_CMD(join, JOIN, "JOIN", SILC_CF_LAG | SILC_CF_REG, 5),
+  SILC_CLIENT_CMD(join, JOIN, "JOIN", SILC_CF_LAG | SILC_CF_REG, 9),
   SILC_CLIENT_CMD(motd, MOTD, "MOTD", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(umode, UMODE, "UMODE", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(cmode, CMODE, "CMODE", SILC_CF_LAG | SILC_CF_REG, 4),
@@ -364,11 +364,11 @@ SILC_CLIENT_CMD_FUNC(nick_change)
   SILC_GET16_MSB(status, silc_argument_get_arg_type(reply->args, 1, NULL));
   if (status == SILC_STATUS_OK) {
     /* Set the nickname */
+    silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
     if (conn->nickname)
       silc_free(conn->nickname);
     conn->nickname = strdup(cmd->argv[1]);
     conn->local_entry->nickname = conn->nickname;
-    silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
     silc_idcache_add(conn->client_cache, strdup(cmd->argv[1]), 
 		     conn->local_entry->id, conn->local_entry, FALSE);
     COMMAND;
@@ -993,7 +993,9 @@ SILC_CLIENT_CMD_FUNC(join)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcIDCacheEntry id_cache = NULL;
-  SilcBuffer buffer, idp;
+  SilcBuffer buffer, idp, auth = NULL;
+  char *name, *passphrase = NULL, *cipher = NULL, *hmac = NULL;
+  int i;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1001,6 +1003,11 @@ SILC_CLIENT_CMD_FUNC(join)
     goto out;
   }
 
+  if (cmd->argc < 2) {
+    COMMAND_ERROR;
+    goto out;
+  }
+  
   /* See if we have joined to the requested channel already */
   if (silc_idcache_find_by_name_one(conn->channel_cache, cmd->argv[1],
 				    &id_cache)) {
@@ -1014,31 +1021,50 @@ SILC_CLIENT_CMD_FUNC(join)
   if (cmd->argv_lens[1] > 256)
     cmd->argv_lens[1] = 256;
 
-  /* Send JOIN command to the server */
-  if (cmd->argc == 2)
-    buffer = 
-      silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 2,
-				     1, cmd->argv[1], cmd->argv_lens[1],
-				     2, idp->data, idp->len);
-  else if (cmd->argc == 3)
-    /* XXX Buggy */
-    buffer = 
-      silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 3,
-				     1, cmd->argv[1], cmd->argv_lens[1],
-				     2, idp->data, idp->len,
-				     3, cmd->argv[2], cmd->argv_lens[2]);
-  else
-    buffer = 
-      silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 4,
-				     1, cmd->argv[1], cmd->argv_lens[1],
-				     2, idp->data, idp->len,
-				     3, cmd->argv[2], cmd->argv_lens[2],
-				     4, cmd->argv[3], cmd->argv_lens[3]);
+  name = cmd->argv[1];
 
+  for (i = 2; i < cmd->argc; i++) {
+    if (!strcasecmp(cmd->argv[i], "-cipher") && cmd->argc >= i + 1) {
+      cipher = cmd->argv[i + 1];
+      i++;
+    } else if (!strcasecmp(cmd->argv[i], "-hmac") && cmd->argc >= i + 1) {
+      hmac = cmd->argv[i + 1];
+      i++;
+    } else if (!strcasecmp(cmd->argv[i], "-founder") && cmd->argc >= i + 1) {
+      if (!strcasecmp(cmd->argv[i + 1], "-pubkey")) {
+	auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+						  cmd->client->private_key,
+						  conn->hash,
+						  conn->local_id,
+						  SILC_ID_CLIENT);
+      } else {
+	auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
+					cmd->argv[i + 1], 
+					cmd->argv_lens[i + 1]);
+      }
+      i++;
+    } else {
+      passphrase = cmd->argv[i];
+    }
+  }
+
+  /* Send JOIN command to the server */
+  buffer =
+    silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 6,
+				   1, name, strlen(name),
+				   2, idp->data, idp->len,
+				   3, passphrase, 
+				   passphrase ? strlen(passphrase) : 0,
+				   4, cipher, cipher ? strlen(cipher) : 0,
+				   5, hmac, hmac ? strlen(hmac) : 0,
+				   6, auth ? auth->data : NULL,
+				   auth ? auth->len : 0);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
+  if (auth)
+    silc_buffer_free(auth);
 
   /* Notify application */
   COMMAND;
@@ -1520,11 +1546,11 @@ SILC_CLIENT_CMD_FUNC(cumode)
       if (add) {
 	if (cmd->argc == 5) {
 	  if (!strcasecmp(cmd->argv[4], "-pubkey")) {
-	  auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
-						    cmd->client->private_key,
-						    conn->hash,
-						    conn->local_id,
-						    SILC_ID_CLIENT);
+	    auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+						      cmd->client->private_key,
+						      conn->hash,
+						      conn->local_id,
+						      SILC_ID_CLIENT);
 	  } else {
 	    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
 					    cmd->argv[4], cmd->argv_lens[4]);

@@ -367,10 +367,8 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
 
-    if (channel->topic)
-      silc_free(channel->topic);
-    channel->topic = silc_calloc(tmp_len + 1, sizeof(*channel->topic));
-    memcpy(channel->topic, tmp, tmp_len);
+    silc_free(channel->topic);
+    channel->topic = strdup(tmp);
 
     /* Send the same notify to the channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
@@ -518,6 +516,13 @@ void silc_server_notify(SilcServer server,
       silc_hmac_set_key(channel->hmac, hash, 
 			silc_hash_len(silc_hmac_get_hash(channel->hmac)));
       memset(hash, 0, sizeof(hash));
+    }
+
+    /* Get the passphrase */
+    tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
+    if (tmp) {
+      silc_free(channel->passphrase);
+      channel->passphrase = strdup(tmp);
     }
 
     break;
@@ -799,6 +804,15 @@ void silc_server_notify(SilcServer server,
 				     users_modes->data, 
 				     users_modes->len, FALSE);
 	silc_buffer_free(users_modes);
+      }
+
+      /* Re-announce channel's topic */
+      if (channel->topic) {
+	silc_server_send_notify_topic_set(server, sock,
+					  server->server_type == SILC_ROUTER ?
+					  TRUE : FALSE, channel, 
+					  channel->id, SILC_ID_CHANNEL,
+					  channel->topic);
       }
     }
 
@@ -2235,7 +2249,8 @@ void silc_server_new_channel(SilcServer server,
 	silc_server_send_notify_cmode(server, sock, FALSE, channel,
 				      channel->mode, server->id,
 				      SILC_ID_SERVER,
-				      channel->cipher, channel->hmac_name);
+				      channel->cipher, channel->hmac_name,
+				      channel->passphrase);
       }
 
       /* Create new key for the channel and send it to the server and

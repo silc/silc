@@ -846,10 +846,7 @@ List of all defined commands in SILC follows.
         privileges the same way as the client had given the
         SILC_COMMAND_CUMODE command to gain founder privileges.  The
         client is still able to join the channel even if the founder
-        privileges could not be gained.  If the channel is invite only
-        channel, the client is able to join the channel only if it 
-        was invited to the channel or was able to gain the founder
-        privileges.
+        privileges could not be gained.
 
         The server MUST check whether the user is allowed to join to
         the requested channel.  Various modes set to the channel affect
@@ -857,9 +854,7 @@ List of all defined commands in SILC follows.
         are:
 
             o  The user MUST be invited to the channel if the channel
-               is invite-only channel, or MUST provide correct
-               <founder auth> payload and gain founder privileges, and
-               bypass the invite-only mode.
+               is invite-only channel.
 
             o  The Client ID/nickname/username/host name MUST NOT match
                any active bans.
@@ -868,6 +863,11 @@ List of all defined commands in SILC follows.
                is set to the channel.
 
             o  The user count limit, if set, MUST NOT be reached.
+
+        If the client provided correct <founder auth> payload it can
+        override these conditions, except the condition for the passphrase.
+        The correct passphrase MUST be provided even if <founder auth>
+        payload is provided.
 
         Reply messages to the command:
 

@@ -178,6 +178,9 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 					      SilcChannelEntry channel);
 void silc_server_perform_heartbeat(SilcSocketConnection sock,
 				   void *hb_context);
+void silc_server_announce_get_channel_topic(SilcServer server,
+					    SilcChannelEntry channel,
+					    SilcBuffer *topic);
 void silc_server_announce_get_channel_users(SilcServer server,
 					    SilcChannelEntry channel,
 					    SilcBuffer *channel_users,
@@ -188,6 +191,7 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcBuffer *channel_users,
 				       SilcBuffer **channel_users_modes,
 				       uint32 *channel_users_modes_c,
+				       SilcBuffer **channel_topics,
 				       SilcChannelID ***channel_ids,
 				       unsigned long creation_time);
 void silc_server_announce_servers(SilcServer server, bool global,

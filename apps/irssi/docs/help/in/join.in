@@ -4,9 +4,21 @@
 Joins a specified channel. Channel names usually begin with #-sign,
 but note that the #-sign is not mandatory in channel names.
 
+If -cipher is provided and the channel does not exist the cipher to
+secure the channel messages on the channel will be set to <cipher>.  If
+the -hmac is provided and the channel does not exist the hmac to
+secure the channel messages on the channel will be set to <hmac>.
+
+If -founder is provided, and the channel's mode includes founder mode
+it is possible to gain channel founder privileges at the same time
+joining the channel.  If the channel has user limit, active bans,
+or is invite-only channel the founder can override these conditions
+and join the channel.  Only the client who set the founder mode on the
+channel is able to use -founder option.
+
 JOIN is aliased to J by default.
 
 Description
 
-See also: LEAVE, WINDOW CLOSE
+See also: LEAVE, WINDOW CLOSE, CMODE, CUMODE
 

@@ -312,6 +312,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: FILE RECEIVE [<nickname>] */
 /* SYNTAX: FILE CLOSE [<nickname>] */
 /* SYNTAX: FILE */
+/* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder <-pubkey|passwd>] */
 
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
@@ -331,7 +332,7 @@ void silc_command_exec(SILC_SERVER_REC *server,
   g_free(tmpcmd);
   if (cmd == NULL)
     return;
-
+  
   /* Now parse all arguments */
   data = g_strconcat(command, " ", args, NULL);
   silc_parse_command_line(data, &argv, &argv_lens,

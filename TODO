@@ -13,11 +13,6 @@ TODO/bugs in Irssi SILC client
    that the user has.  And a local command to dump the contents of the
    public key to the screen.  Something like LISTKEYS, SHOWKEY...
 
- o The JOIN command's HELP is generated from Irssi IRCs JOIN help and
-   the syntax is not same in SILC.  This must be fixed.  Most likely
-   we must forget the Irssi's JOIN command and mimic it to get our
-   required syntax for it too.
-
  o We should get rid of the clientconfig.[ch] in Irssi SILC and move the
    cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
    file.
@@ -35,47 +30,13 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o JOIN command's argument handling is buggy.  See the XXX in the code.
+ o N/A
 
 
 TODO/bugs In SILC Server
 ========================
 
- o XXXXXXXXX cannot join +a channel from other servers
-
- o Implement the <founder auth> and founder privileges gaining to
-   the JOIN command.  This will bypass invite-only mode as well for
-   the client who got the founder mode during JOIN.
-
- o Optimize the WHOIS and IDENTIFY commands to check if the request
-   includes an ID or multiple IDs, then they are checked from local cache
-   first, and not sent directly to router.  This is because if they
-   are found in the local cache there's no need to send them to the
-   router.  Only if some ID is not found, or an found entry is 
-   incomplete it can be queried from the router.  This way these
-   commands become faster, and for example JOIN command becomes a lot
-   faster since the server ends up resolving the same information only
-   once, as opposed to resolve it everytime JOIN command is issued, like
-   it does now.
-
-   The same thing can be done with WHOWAS command as well.
-
-   It is important to send these requests to router only if they can be
-   expanded to many results (as when doing WHOIS for nickname).  If
-   they are explicit (like requesting by ID) the local cache MUST be
-   searched before sending it to router.
-
- o Announcements are incomplete: channel topics are not announced,
-   user modes (UMODE) are not announced.
-
- o Change the server to connect to another server from low ports (706)
-   and not from high ports.  Currently we cannot do incoming connection
-   checking by remote port because the port is not fixed.
-
  o Backup router related issues
-
-	o After backup resume protocol the TOPIC_SET was not handled
-	  correctly by all (unknown Channel ID).
 
  	o Channel user mode changes are notified unnecessarely when
 	  switching to backup router on router crash.

@@ -371,7 +371,7 @@ bool silc_client_start_key_exchange(SilcClient client,
   silc_schedule_task_del_by_fd(client->schedule, fd);
 
   conn->nickname = strdup(client->username);
-  conn->sock->hostname = conn->remote_host;
+  conn->sock->hostname = strdup(conn->remote_host);
   conn->sock->ip = strdup(conn->remote_host);
   conn->sock->port = conn->remote_port;
 

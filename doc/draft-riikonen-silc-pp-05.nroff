@@ -1281,9 +1281,10 @@ Also, all ID's sent in arguments are sent inside ID Payload.
       topic was set or changed.
 
       Max Arguments:  2
-          Arguments:  (1) <Client ID>  (2) <topic>
+          Arguments:  (1) <ID Payload>  (2) <topic>
 
-      The <Client ID> is the client which set or changed the <topic>.
+      The <ID Payload> is the ID of the entity who set the topic.  It
+      usually is Client ID but it can be Server ID and Channel ID as well.
 
 
 6     SILC_NOTIFY_TYPE_NICK_CHANGE
@@ -1308,9 +1309,10 @@ Also, all ID's sent in arguments are sent inside ID Payload.
       to the clients which is joined on the channel which mode was
       changed.
 
-      Max Arguments:  4
-          Arguments:  (1) <ID Payload>  (2) <mode mask>
-                      (3) [<cipher>]    (4) <[hmac>]     
+      Max Arguments:  5
+          Arguments:  (1) <ID Payload>    (2) <mode mask>
+                      (3) [<cipher>]      (4) <[hmac>]     
+                      (5) [<passphrase>]
 
       The <ID Payload> is the ID (usually Client ID but it can be
       Server ID as well when the router is enforcing channel mode
@@ -1319,7 +1321,8 @@ Also, all ID's sent in arguments are sent inside ID Payload.
       ignore the <cipher> argument since the SILC_PACKET_CHANNEL_KEY
       packet will force the new channel key change anyway.  The <hmac>
       argument is important since the client is responsible of setting
-      the new HMAC and the hmac key into use.
+      the new HMAC and the hmac key into use.  The <passphrase> is
+      the passphrase of the channel, if it was now set.
 
 
 8     SILC_NOTIFY_TYPE_CUMODE_CHANGE

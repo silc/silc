@@ -1,3 +1,36 @@
+Sun Dec  2 13:48:46 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Distribute to the channel passphrase in CMODE_CHANGE notify.
+	  Updated specs and implemented it.  Affected file silcd/command.c,
+	  silcd/packet_send.c and silcd/packet_receive.c.
+
+	* Implemented the <founder auth> payload handling in the JOIN
+	  command.  If provided all conditions for channel joining
+	  except requirement to provide correct passphrase can be 
+	  overrided by the channel founder.  Updated the protocol specs.
+	  Affected file silcd/command.c.
+
+	  Added support for founder auth in JOIN command in client
+	  library.  Fixed the parsing of the JOIN command now to support
+	  all options as they should be.  The affected file is
+	  lib/silcclient/command.c.
+
+	* Optimized the WHOIS and IDENTIFY commands to send the request
+	  to router only if it includes nicknames or other names.  If
+	  they include only IDs then check the local cache first before
+	  routing.  Affected file is silcd/command.c.
+
+	* Added channels topic announcements.  Affected file is
+	  silcd/packet_receive.c and silcd/server.c.
+
+	* Fixed the silc_server_send_notify_topic_set to really destine
+	  the packet to channel.  Affected file silcd/packet_send.c.
+
+	* Fixed a crash in CHANNEL_CHANGE notify handling in the client
+	  library.  Affected file lib/silcclient/client_notify.c.
+
+	* Added UMODE announcements.  Affected file silcd/server.c.
+
 Sat Dec  1 12:52:39 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Memory leak fixes in:
