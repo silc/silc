@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/17 11:46:36  priikone
+ * 	Added debug logging
+ *
  * Revision 1.3  2000/07/12 05:54:01  priikone
  * 	Major rewrite of whole ID Cache system.
  *
@@ -111,7 +114,7 @@ SilcIDCache silc_idcache_alloc(unsigned int count)
 {
   SilcIDCache cache;
 
-  SILC_LOG_DEBUG(("Allocating new cache")),
+  SILC_LOG_DEBUG(("Allocating new cache"));
 
   cache = silc_calloc(1, sizeof(*cache));
   cache->cache = silc_calloc(count ? count : 5, sizeof(*cache->cache));
