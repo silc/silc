@@ -121,6 +121,11 @@ static void sig_connected(SILC_SERVER_REC *server)
     server->get_nick_flags = (void *) get_nick_flags;
 }
 
+void silc_change_nick(SILC_SERVER_REC *server, const char *newnick)
+{
+  server_change_nick((SERVER_REC *)server, newnick);
+}
+
 void silc_nicklist_init(void)
 {
   signal_add("server connected", (SIGNAL_FUNC) sig_connected);

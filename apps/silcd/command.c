@@ -122,6 +122,10 @@ static int silc_server_is_registered(SilcServer server,
 				     SilcCommand command)
 {
   SilcIDListData idata = (SilcIDListData)sock->user_data;
+
+  if (!idata)
+    return FALSE;
+
   if (idata->status & SILC_IDLIST_STATUS_REGISTERED)
     return TRUE;
 
@@ -5109,10 +5113,8 @@ SILC_SERVER_CMD_FUNC(getkey)
 					     client_id, TRUE, NULL);
     
     if ((!client && !cmd->pending && !server->standalone) ||
-	(client && !client->connection && !cmd->pending && 
-	 !server->standalone) ||
-	(client && !client->data.public_key && !cmd->pending &&
-	 !server->standalone)) {
+	(client && !client->connection && !cmd->pending) ||
+	(client && !client->data.public_key && !cmd->pending)) {
       SilcBuffer tmpbuf;
       uint16 old_ident;
       SilcSocketConnection dest_sock;

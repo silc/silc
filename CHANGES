@@ -34,6 +34,11 @@ Sun Sep 16 12:32:58 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  nickname formatter doesn't set the new nick anymore to Nick@host.
 	  Affected file lib/silcclient/idlist.[ch].
 
+	* Now actually fixed the nickname changing on disconnection.
+	  Added new function silc_change_nick to the Irssi SILC Client.
+	  Affected file irssi/src/silc/core/client_ops.c,
+	  irssi/src/silc/core/silc-nicklist.[ch].
+
 Sat Sep 15 13:29:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check that the public key exists in the GETKEY command before

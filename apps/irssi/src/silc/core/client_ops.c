@@ -214,6 +214,14 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn)
 {
   SILC_SERVER_REC *server = conn->context;
 
+  if (server->conn) {
+    nicklist_rename_unique(SERVER(server),
+			   server->conn->local_entry, server->nick,
+			   server->conn->local_entry, 
+			   silc_client->username);
+    silc_change_nick(server, silc_client->username);
+  }
+
   server->conn->context = NULL;
   server->conn = NULL;
   server->connection_lost = TRUE;

@@ -205,16 +205,10 @@ static void sig_connected(SILC_SERVER_REC *server)
 
 static void sig_disconnected(SILC_SERVER_REC *server)
 {
-  if (!IS_SILC_SERVER(server) || server->conn == NULL)
+  if (!IS_SILC_SERVER(server))
     return;
   
-  if (server->conn->sock != NULL) {
-    nicklist_rename_unique(SERVER(server),
-			   server->conn->local_entry, server->nick,
-			   server->conn->local_entry, 
-			   silc_client->username);
-    signal_emit("message own_nick", 4, server, server->nick, server->nick, "");
-
+  if (server->conn && server->conn->sock != NULL) {
     silc_client_close_connection(silc_client, NULL, server->conn);
     
     /* SILC closes the handle */

@@ -17,7 +17,7 @@ SILC_NICK_REC *silc_nicklist_find(SILC_CHANNEL_REC *channel,
 
 /* Check if `msg' is meant for `nick'. */
 int silc_nick_match(const char *nick, const char *msg);
-
+void silc_change_nick(SILC_SERVER_REC *server, const char *newnick);
 void silc_nicklist_init(void);
 void silc_nicklist_deinit(void);
 
