@@ -1,3 +1,7 @@
+Mon Apr  1 20:15:10 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* ROBOdoc documented lib/silcutil/silcutil.h.
+
 Sat Mar 30 21:06:45 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Optimized even more the SilcPacketContext structure.  Now

@@ -1,6 +1,6 @@
 /*
 
-  silcutil.c 
+  silcutil.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -32,27 +32,27 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
 {
   static int start = 0;
   int i;
-  
+
   memset(dest, 0, destlen);
-  
+
   if (begin != start)
     start = 0;
-  
+
   i = 0;
   for ( ; start <= srclen; i++, start++) {
     if (i > destlen)
       return -1;
-    
+
     dest[i] = src[start];
-    
-    if (dest[i] == EOF) 
+
+    if (dest[i] == EOF)
       return EOF;
-    
-    if (dest[i] == '\n') 
+
+    if (dest[i] == '\n')
       break;
   }
   start++;
-  
+
   return start;
 }
 
@@ -60,7 +60,7 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
    were found. This is used to check for bad lines when reading data from
    for example a configuration file. */
 
-int silc_check_line(char *buf) 
+int silc_check_line(char *buf)
 {
   /* Illegal characters in line */
   if (strchr(buf, '#')) return -1;
@@ -70,11 +70,11 @@ int silc_check_line(char *buf)
   if (strchr(buf, '\a')) return -1;
   if (strchr(buf, '\b')) return -1;
   if (strchr(buf, '\f')) return -1;
-  
+
   /* Empty line */
   if (buf[0] == '\n')
     return -1;
-  
+
   return 0;
 }
 
@@ -92,7 +92,7 @@ char *silc_get_time()
   return return_time;
 }
 
-/* Converts string to capital characters */
+/* Converts string to capital characters. */
 
 char *silc_to_upper(char *string)
 {
@@ -109,7 +109,7 @@ static unsigned char pem_enc[64] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* Encodes data into PEM encoding. Returns NULL terminated PEM encoded
-   data string. Note: This is originally public domain code and is 
+   data string. Note: This is originally public domain code and is
    still PD. */
 
 char *silc_encode_pem(unsigned char *data, SilcUInt32 len)
@@ -256,7 +256,7 @@ unsigned char *silc_decode_pem(unsigned char *pem, SilcUInt32 pem_len,
   return data;
 }
 
-/* Parse userfqdn string which is in user@fqdn format */
+/* Parse userfqdn string which is in user@fqdn format. */
 
 bool silc_parse_userfqdn(const char *string, char **left, char **right)
 {
@@ -273,12 +273,12 @@ bool silc_parse_userfqdn(const char *string, char **left, char **right)
 
   if (strchr(string, '@')) {
     tlen = strcspn(string, "@");
-    
+
     if (left) {
       *left = silc_calloc(tlen + 1, sizeof(char));
       memcpy(*left, string, tlen);
     }
-    
+
     if (right) {
       *right = silc_calloc((strlen(string) - tlen) + 1, sizeof(char));
       memcpy(*right, string + tlen + 1, strlen(string) - tlen - 1);
@@ -296,7 +296,7 @@ bool silc_parse_userfqdn(const char *string, char **left, char **right)
    arguments in the line. Note that the command name is counted as one
    argument and is saved. */
 
-void silc_parse_command_line(unsigned char *buffer, 
+void silc_parse_command_line(unsigned char *buffer,
 			     unsigned char ***parsed,
 			     SilcUInt32 **parsed_lens,
 			     SilcUInt32 **parsed_types,
@@ -335,9 +335,9 @@ void silc_parse_command_line(unsigned char *buffer,
 	len--;
       if (!len)
 	break;
-      
+
       *parsed = silc_realloc(*parsed, sizeof(**parsed) * (argc + 1));
-      *parsed_lens = silc_realloc(*parsed_lens, 
+      *parsed_lens = silc_realloc(*parsed_lens,
 				  sizeof(**parsed_lens) * (argc + 1));
       (*parsed)[argc] = silc_calloc(len + 1, sizeof(char));
       memcpy((*parsed)[argc], cp, len);
@@ -382,15 +382,15 @@ char *silc_format(char *fmt, ...)
 /* Renders ID to suitable to print for example to log file. */
 
 static char rid[256];
-#define _PUT_STRING(d, s)				\
-do {							\
-  int sp = (sizeof(d) - 1) - strlen(d);			\
-  if (sp < strlen(s)) {					\
-    if (sp)						\
-      strncat(d, s, (sizeof(d) - 1) - strlen(d));	\
-  } else {						\
-    strncat(d, s, strlen(s));				\
-  }							\
+#define _PUT_STRING(__d__, __s__)					\
+do {									\
+  int __sp = sizeof(__d__) - 1 - strlen(__d__);				\
+  if (__sp < strlen(__s__)) {						\
+    if (__sp)								\
+      strncat(__d__, __s__, (sizeof(__d__) - 1) - strlen(__d__));	\
+  } else {								\
+    strncat(__d__, __s__, strlen(__s__));				\
+  }									\
 } while(0)
 
 char *silc_id_render(void *id, SilcUInt16 type)
@@ -456,7 +456,7 @@ char *silc_id_render(void *id, SilcUInt16 type)
       snprintf(tmp, sizeof(tmp) - 1, ",%02x,", client_id->rnd);
       _PUT_STRING(rid, tmp);
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x %02x %02x...]", 
+      snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x %02x %02x...]",
 	       client_id->hash[0], client_id->hash[1],
 	       client_id->hash[2], client_id->hash[3]);
       _PUT_STRING(rid, tmp);
@@ -496,8 +496,9 @@ char *silc_id_render(void *id, SilcUInt16 type)
 
   return rid;
 }
+#undef _PUT_STRING
 
-/* Compares two strings. Strings may include wildcards * and ?.
+/* Compares two strings. Strings may include wildcards '*' and '?'.
    Returns TRUE if strings match. */
 
 int silc_string_compare(char *string1, char *string2)
@@ -520,15 +521,15 @@ int silc_string_compare(char *string1, char *string2)
   if (slen2 < slen1)
     if (!strchr(string1, '*'))
       return FALSE;
-  
+
   /* Take copies of the original strings as we will change them */
   tmpstr1 = silc_calloc(slen1 + 1, sizeof(char));
   memcpy(tmpstr1, string1, slen1);
   tmpstr2 = silc_calloc(slen2 + 1, sizeof(char));
   memcpy(tmpstr2, string2, slen2);
-  
+
   for (i = 0; i < slen1; i++) {
-    
+
     /* * wildcard. Only one * wildcard is possible. */
     if (tmpstr1[i] == '*')
       if (!strncmp(tmpstr1, tmpstr2, i)) {
@@ -536,7 +537,7 @@ int silc_string_compare(char *string1, char *string2)
 	strncpy(tmpstr2, tmpstr1, i);
 	break;
       }
-    
+
     /* ? wildcard */
     if (tmpstr1[i] == '?') {
       if (!strncmp(tmpstr1, tmpstr2, i)) {
@@ -544,17 +545,17 @@ int silc_string_compare(char *string1, char *string2)
 	  if (tmpstr1[i + 1] != '?' &&
 	      tmpstr1[i + 1] != tmpstr2[i + 1])
 	    continue;
-	
+
 	if (!(slen1 < slen2))
 	  tmpstr2[i] = '?';
       }
     }
   }
-  
+
   /* if using *, remove it */
   if (strchr(tmpstr1, '*'))
     *strchr(tmpstr1, '*') = 0;
-  
+
   if (!strcmp(tmpstr1, tmpstr2)) {
     memset(tmpstr1, 0, slen1);
     memset(tmpstr2, 0, slen2);
@@ -562,7 +563,7 @@ int silc_string_compare(char *string1, char *string2)
     silc_free(tmpstr2);
     return TRUE;
   }
-  
+
   memset(tmpstr1, 0, slen1);
   memset(tmpstr2, 0, slen2);
   silc_free(tmpstr1);
@@ -570,7 +571,7 @@ int silc_string_compare(char *string1, char *string2)
   return FALSE;
 }
 
-/* Basic has function to hash strings. May be used with the SilcHashTable. 
+/* Basic has function to hash strings. May be used with the SilcHashTable.
    Note that this lowers the characters of the string (with tolower()) so
    this is used usually with nicknames, channel and server names to provide
    case insensitive keys. */
@@ -579,7 +580,7 @@ SilcUInt32 silc_hash_string(void *key, void *user_context)
 {
   char *s = (char *)key;
   SilcUInt32 h = 0, g;
-  
+
   while (*s != '\0') {
     h = (h << 4) + tolower(*s);
     if ((g = h & 0xf0000000)) {
@@ -588,7 +589,7 @@ SilcUInt32 silc_hash_string(void *key, void *user_context)
     }
     s++;
   }
-  
+
   return h;
 }
 
@@ -619,8 +620,8 @@ SilcUInt32 silc_hash_id(void *key, void *user_context)
     {
       SilcClientID *id = (SilcClientID *)key;
       SilcUInt32 g;
-  
-      /* The client ID is hashed by hashing the hash of the ID 
+
+      /* The client ID is hashed by hashing the hash of the ID
 	 (which is a truncated MD5 hash of the nickname) so that we
 	 can access the entry from the cache with both Client ID but
 	 with just a hash from the ID as well. */
@@ -639,22 +640,22 @@ SilcUInt32 silc_hash_id(void *key, void *user_context)
   case SILC_ID_SERVER:
     {
       SilcServerID *id = (SilcServerID *)key;
-      
+
       h = id->port * id->rnd;
       for (i = 0; i < id->ip.data_len; i++)
 	h ^= id->ip.data[i];
-      
+
       return h;
     }
     break;
   case SILC_ID_CHANNEL:
     {
       SilcChannelID *id = (SilcChannelID *)key;
-      
+
       h = id->port * id->rnd;
       for (i = 0; i < id->ip.data_len; i++)
 	h ^= id->ip.data[i];
-      
+
       return h;
     }
     break;
@@ -690,21 +691,22 @@ SilcUInt32 silc_hash_public_key(void *key, void *user_context)
 	  silc_hash_data(pk->pk, (void *)pk->pk_len));
 }
 
-/* Compares two strings. May be used as SilcHashTable comparison function. */
+/* Compares two strings. It may be used as SilcHashTable comparison
+   function. */
 
 bool silc_hash_string_compare(void *key1, void *key2, void *user_context)
 {
   return !strcasecmp((char *)key1, (char *)key2);
 }
 
-/* Compares two ID's. May be used as SilcHashTable comparison function. 
+/* Compares two ID's. May be used as SilcHashTable comparison function.
    The Client ID's compares only the hash of the Client ID not any other
    part of the Client ID. Other ID's are fully compared. */
 
 bool silc_hash_id_compare(void *key1, void *key2, void *user_context)
 {
   SilcIdType id_type = (SilcIdType)(SilcUInt32)user_context;
-  return (id_type == SILC_ID_CLIENT ? 
+  return (id_type == SILC_ID_CLIENT ?
 	  SILC_ID_COMPARE_HASH((SilcClientID *)key1, (SilcClientID *)key2) :
 	  SILC_ID_COMPARE_TYPE(key1, key2, id_type));
 }
@@ -724,8 +726,8 @@ bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
   return !memcmp(key1, key2, len);
 }
 
-/* Compares two SILC Public keys. May be used as SilcHashTable comparison
-   function. */
+/* Compares two SILC Public keys. It may be used as SilcHashTable
+   comparison function. */
 
 bool silc_hash_public_key_compare(void *key1, void *key2, void *user_context)
 {
@@ -830,7 +832,7 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
   for (i = 0; i < data_len; i++) {
     snprintf(cp, sizeof(fingerprint), "%02X", data[i]);
     cp += 2;
-    
+
     if ((i + 1) % 2 == 0)
       snprintf(cp++, sizeof(fingerprint), " ");
 
@@ -842,7 +844,7 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
     cp[-2] = 0;
   if ((i + 1) % 10 == 0)
     cp[-1] = 0;
-  
+
   return strdup(fingerprint);
 }
 
@@ -865,7 +867,7 @@ bool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len)
 bool silc_parse_version_string(const char *version,
 			       SilcUInt32 *protocol_version,
 			       char **protocol_version_string,
-			       SilcUInt32 *software_version, 
+			       SilcUInt32 *software_version,
 			       char **software_version_string,
 			       char **vendor_version)
 {
@@ -899,7 +901,7 @@ bool silc_parse_version_string(const char *version,
 
   /* Take software version */
 
-  maj = 0; 
+  maj = 0;
   min = 0;
   cp = strchr(cp, '-');
   if (!cp)
