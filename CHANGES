@@ -1,3 +1,15 @@
+Mon Apr  2 15:13:23 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Updated TODO.
+
+	* Added channel key re-key support.  The re-key is perfomed
+	  only by the router and is done once in an hour.  Added `rekey'
+	  field to the SilcChannelEntry in the server.  Affected files
+	  silcd/server.c and silcd/idlist.h.
+
+	* Added silc_task_unregister_by_context into the file
+	  lib/silcutil/silctask.[ch].
+
 Sun Apr  1 19:49:34 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added SILC_UMODE_GONE mode to indicate when the client is not
