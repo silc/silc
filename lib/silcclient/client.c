@@ -1455,6 +1455,25 @@ void silc_client_packet_send(SilcClient client,
   silc_client_packet_send_real(client, sock, force_send);
 }
 
+/* Packet sending routine for application.  This is the only routine that
+   is provided for application to send SILC packets. */
+
+bool silc_client_send_packet(SilcClient client,
+			     SilcClientConnection conn,
+			     SilcPacketType type,
+			     const unsigned char *data,
+			     SilcUInt32 data_len)
+{
+
+  assert(client);
+  if (!conn)
+    return FALSE;
+
+  silc_client_packet_send(client, conn->sock, type, NULL, 0, NULL, NULL,
+			  (unsigned char *)data, data_len, TRUE);
+  return TRUE;
+}
+
 void silc_client_packet_queue_purge(SilcClient client,
 				    SilcSocketConnection sock)
 {

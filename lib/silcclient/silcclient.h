@@ -2378,42 +2378,31 @@ SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
 
 /* Low level packet sending functions */
 
-/****f* silcclient/SilcClientAPI/silc_client_packet_send
+/****f* silcclient/SilcClientAPI/silc_client_send_packet
  *
  * SYNOPSIS
  *
- *    void silc_client_packet_send(SilcClient client, 
- *                                 SilcSocketConnection sock,
- *                                 SilcPacketType type, 
- *                                 void *dst_id,
- *                                 SilcIdType dst_id_type,
- *                                 SilcCipher cipher,
- *                                 SilcHmac hmac,
- *                                 unsigned char *data, 
- *                                 SilcUInt32 data_len, 
- *                                 bool force_send);
+ *     bool silc_client_send_packet(SilcClient client, 
+ *                                  SilcClientConnection conn,
+ *                                  SilcPacketType type, 
+ *                                  const unsigned char *data, 
+ *                                  SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
- *    Constructs a Requested Attributes buffer. If the `attribute' is zero (0)
- *    then all attributes are requested.  Alternatively, `attribute' and
- *    all variable arguments can each be requested attribute.  In this case
- *    the last must be set to zero (0) to complete the variable list of
- *    requested attributes.  See SilcAttribute for all attributes.
- *    You can give the returned buffer as argument to for example
- *    silc_client_get_client_by_id_resolve function.
+ *    This routine can be used by application to send packets directly
+ *    to a connection indicated by `conn'.  Usually application does not
+ *    need this routine since the Client Library handles the packet
+ *    sending.  The `type' indicates the packet type.  If `data' is
+ *    NULL then empty packet is sent.  This returns FALSE if packet cannot 
+ *    be sent.
  *
  ***/
-void silc_client_packet_send(SilcClient client, 
-			     SilcSocketConnection sock,
+bool silc_client_send_packet(SilcClient client, 
+			     SilcClientConnection conn,
 			     SilcPacketType type, 
-			     void *dst_id,
-			     SilcIdType dst_id_type,
-			     SilcCipher cipher,
-			     SilcHmac hmac,
-			     unsigned char *data, 
-			     SilcUInt32 data_len, 
-			     bool force_send);
+			     const unsigned char *data, 
+			     SilcUInt32 data_len);
 
 #include "command.h"
 #include "command_reply.h"

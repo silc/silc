@@ -208,6 +208,16 @@ do {								\
 /* Prototypes */
 
 SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process);
+void silc_client_packet_send(SilcClient client,
+                             SilcSocketConnection sock,
+                             SilcPacketType type,
+                             void *dst_id,
+                             SilcIdType dst_id_type,
+                             SilcCipher cipher,
+                             SilcHmac hmac,
+                             unsigned char *data,
+                             SilcUInt32 data_len,
+                             bool force_send);
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
 				 bool force_send);
