@@ -3,9 +3,9 @@ Version 3.50
 
 ## Globals Section:
 
-X 198
-Y 137
-Scale 97
+X -296
+Y 40
+Scale 100
 PosterRows 1
 PosterCols 1
 Color1 221,208,221
@@ -16,13 +16,13 @@ Color5 0,255,255
 Color6 0,0,255
 Color7 0,0,160
 Color8 128,0,128
-Color9 239,231,239
+Color9 243,237,243
 Color10 219,219,219
 Color11 244,244,244
 Color12 255,242,230
 Color13 240,255,240
 Color14 0,128,0
-Color15 128,128,255
+Color15 223,223,255
 Color16 255,255,0
 GridX 32
 GridY 32
@@ -45,11 +45,11 @@ SBarLblHeight 32
 SBarConHeight 24
 Parent ""
 LargeDropMenus FALSE
-LastEnd "block shorter"
-LastEndLen 36
+LastEnd "block"
+LastEndLen 25
 ConPointMarks 0
 CornerRadius 18
-Template "General Purpose Diagram.EDG"
+Template "silc_template.edg"
 
 DevMode 580
 {
@@ -74,11 +74,10 @@ DevMode 580
 00000100
 }
 
-DevNames 68
+DevNames 56
 {
 080011002200010077696E73706F6F6C004850204C617365724A657420313130
-30004C5054313A00000000000000000000000000000000002E006500DC455D00
-CC395900
+30004C5054313A0000000000000000000000000000000000
 }
 
 Preview 4388
@@ -1466,6 +1465,23 @@ FigureStyle "SILC Client"
   TypeFace "Arial"
 }
 
+FigureStyle "SILC Network Cloud"
+{
+  HasButton TRUE
+  Height 480
+  Width 672
+  BorderColor 227,225,255
+  FillColor 240,240,255
+  TextColor 192,192,192
+  BorderWidth 3
+  TextFormat 0x0A22
+  Behavior 0x00024E12
+  Symbol "cloud"
+  TypeSize 18
+  TypeWeight 700
+  TypeFace "Arial"
+}
+
 ## Connector Styles Section:
 
 ConnectorStyle "Plain"
@@ -1691,13 +1707,26 @@ ConnectorStyle "SILC Server To Router"
   Behavior 0x00000000
 }
 
+ConnectorStyle "Router to Router Prime"
+{
+  HasButton TRUE
+  End1 "block"
+  End2 "block"
+  End1Length 36
+  End2Length 36
+  LineWidth 3
+  EndBorderWidth 2
+  Color 130,130,130
+  Behavior 0x00000008
+}
+
 ## Figures & Connectors Section:
 
 Figure 1
 {
   Style "SILC INFO"
   Text "INFO"
-  Bounds 480,1856,1568,2112
+  Bounds 448,1536,1536,1792
   BorderColor 192,192,192
   FillColor 252,252,252
   TextColor 130,130,130
@@ -1720,8 +1749,8 @@ Connector 2
   Style "SILC Server To Router"
   Figure1 -1
   Figure2 -1
-  EndPoint1 640,1936
-  EndPoint2 912,1936
+  EndPoint1 608,1616
+  EndPoint2 880,1616
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -1737,7 +1766,7 @@ Figure 3
 {
   Style "SILC Background"
   Text ""
-  Bounds 352,464,1696,1840
+  Bounds 320,144,1664,1520
   BorderColor 192,192,192
   FillColor 245,241,245
   TextColor 130,130,130
@@ -1756,7 +1785,7 @@ Figure 4
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 576,1072,768,1168
+  Bounds 544,752,736,848
   BorderColor 130,130,130
   FillColor 240,255,240
   TextColor 130,130,130
@@ -1773,7 +1802,7 @@ Figure 5
 {
   Style "SILC Router"
   Text "Router"
-  Bounds 688,912,944,1040
+  Bounds 656,592,912,720
   BorderColor 130,130,130
   FillColor 255,242,230
   TextColor 130,130,130
@@ -1790,7 +1819,7 @@ Figure 6
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 880,1072,1072,1168
+  Bounds 848,752,1040,848
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1807,7 +1836,7 @@ Figure 7
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 1008,928,1200,1024
+  Bounds 976,608,1168,704
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1824,7 +1853,7 @@ Figure 8
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 864,784,1056,880
+  Bounds 832,464,1024,560
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1841,7 +1870,7 @@ Figure 9
 {
   Style "SILC Server"
   Text "Server"
-  Bounds 576,784,768,880
+  Bounds 544,464,736,560
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1858,7 +1887,7 @@ Figure 10
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 432,928,624,1024
+  Bounds 400,608,592,704
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1875,7 +1904,7 @@ Figure 11
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 992,1568,1184,1664
+  Bounds 960,1248,1152,1344
   BorderColor 130,130,130
   FillColor 240,255,240
   TextColor 130,130,130
@@ -1892,7 +1921,7 @@ Figure 12
 {
   Style "Rectangle"
   Text "Router"
-  Bounds 1104,1408,1360,1536
+  Bounds 1072,1088,1328,1216
   BorderColor 130,130,130
   FillColor 255,242,230
   TextColor 130,130,130
@@ -1909,7 +1938,7 @@ Figure 13
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 1296,1568,1488,1664
+  Bounds 1264,1248,1456,1344
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1926,7 +1955,7 @@ Figure 14
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 1424,1424,1616,1520
+  Bounds 1392,1104,1584,1200
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1943,7 +1972,7 @@ Figure 15
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 1280,1280,1472,1376
+  Bounds 1248,960,1440,1056
   BorderColor 130,130,130
   FillColor 240,255,240
   TextColor 130,130,130
@@ -1960,7 +1989,7 @@ Figure 16
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 992,1280,1184,1376
+  Bounds 960,960,1152,1056
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1977,7 +2006,7 @@ Figure 17
 {
   Style "Rectangle"
   Text "Server"
-  Bounds 848,1424,1040,1520
+  Bounds 816,1104,1008,1200
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -1994,7 +2023,7 @@ Figure 18
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 448,688,544,752
+  Bounds 416,368,512,432
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2010,7 +2039,7 @@ Figure 18
 Figure 19
 {
   Text ""
-  Bounds 841,1337,856,1352
+  Bounds 809,1017,824,1032
   FillColor 0,0,0
   BorderWidth 0
   BindToStyle FALSE
@@ -2025,8 +2054,8 @@ Connector 20
 {
   Figure1 5
   Figure2 19
-  EndPoint1 822,1040
-  EndPoint2 848,1344
+  EndPoint1 790,720
+  EndPoint2 816,1024
   SuppressEnd1 FALSE
   SuppressEnd2 TRUE
   End1 "block"
@@ -2046,8 +2075,8 @@ Connector 21
   Style "Flow Closed 2"
   Figure1 19
   Figure2 12
-  EndPoint1 848,1344
-  EndPoint2 1104,1429
+  EndPoint1 816,1024
+  EndPoint2 1072,1109
   SuppressEnd1 TRUE
   SuppressEnd2 FALSE
   End1 "block"
@@ -2064,7 +2093,7 @@ Connector 21
 Figure 22
 {
   Text ""
-  Bounds 697,1609,712,1624
+  Bounds 665,1289,680,1304
   FillColor 0,0,0
   BorderWidth 0
   BindToStyle FALSE
@@ -2080,8 +2109,8 @@ Connector 23
   Style "SILC Router to Router"
   Figure1 22
   Figure2 -1
-  EndPoint1 704,1616
-  EndPoint2 480,1808
+  EndPoint1 672,1296
+  EndPoint2 448,1488
   SuppressEnd1 TRUE
   SuppressEnd2 FALSE
   End1 "block"
@@ -2100,8 +2129,8 @@ Connector 24
   Style "Flow Closed 2"
   Figure1 12
   Figure2 22
-  EndPoint1 1104,1507
-  EndPoint2 704,1616
+  EndPoint1 1072,1187
+  EndPoint2 672,1296
   SuppressEnd1 FALSE
   SuppressEnd2 TRUE
   End1 "block"
@@ -2118,7 +2147,7 @@ Connector 24
 Figure 25
 {
   Text ""
-  Bounds 873,649,888,664
+  Bounds 841,329,856,344
   FillColor 0,0,0
   BorderWidth 0
   BindToStyle FALSE
@@ -2134,8 +2163,8 @@ Connector 26
   Style "Flow Closed 2"
   Figure1 5
   Figure2 25
-  EndPoint1 829,912
-  EndPoint2 880,656
+  EndPoint1 797,592
+  EndPoint2 848,336
   SuppressEnd1 FALSE
   SuppressEnd2 TRUE
   End1 "block"
@@ -2154,8 +2183,8 @@ Connector 27
   Style "Flow Closed 2"
   Figure1 25
   Figure2 -1
-  EndPoint1 880,656
-  EndPoint2 1632,560
+  EndPoint1 848,336
+  EndPoint2 1600,240
   SuppressEnd1 TRUE
   SuppressEnd2 FALSE
   End1 "block"
@@ -2175,7 +2204,7 @@ Figure 28
   Style "Title"
   Text "Another Router\line \line \line \line \line \line \line \line \li-
 ne Cell B"
-  Bounds 1391,585,1676,1056
+  Bounds 1359,265,1644,736
   TextColor 130,130,130
   TextFormat 0x0022
   Behavior 0x00824192
@@ -2189,8 +2218,8 @@ Connector 29
   Style "Flow Closed"
   Figure1 10
   Figure2 5
-  EndPoint1 624,976
-  EndPoint2 688,976
+  EndPoint1 592,656
+  EndPoint2 656,656
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2207,8 +2236,8 @@ Connector 30
   Style "SILC Server To Router"
   Figure1 9
   Figure2 5
-  EndPoint1 720,880
-  EndPoint2 752,912
+  EndPoint1 688,560
+  EndPoint2 720,592
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2225,8 +2254,8 @@ Connector 31
   Style "Flow Closed"
   Figure1 8
   Figure2 5
-  EndPoint1 912,880
-  EndPoint2 880,912
+  EndPoint1 880,560
+  EndPoint2 848,592
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2242,8 +2271,8 @@ Connector 32
 {
   Figure1 7
   Figure2 5
-  EndPoint1 1008,976
-  EndPoint2 944,976
+  EndPoint1 976,656
+  EndPoint2 912,656
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2261,7 +2290,7 @@ Figure 33
   Label TRUE
   Style "Title"
   Text "SILC Network"
-  Bounds 790,494,1251,576
+  Bounds 758,174,1219,256
   TextColor 192,192,192
   TextFormat 0x0022
   Behavior 0x00824192
@@ -2275,7 +2304,7 @@ Figure 34
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 576,656,672,720
+  Bounds 544,336,640,400
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2294,7 +2323,7 @@ Figure 35
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 416,784,512,848
+  Bounds 384,464,480,528
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2311,7 +2340,7 @@ Figure 36
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1024,688,1120,752
+  Bounds 992,368,1088,432
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2328,7 +2357,7 @@ Figure 37
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1104,784,1200,848
+  Bounds 1072,464,1168,528
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2345,7 +2374,7 @@ Figure 38
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1200,704,1296,768
+  Bounds 1168,384,1264,448
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2362,7 +2391,7 @@ Figure 39
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1248,880,1344,944
+  Bounds 1216,560,1312,624
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2379,7 +2408,7 @@ Figure 40
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1408,1072,1504,1136
+  Bounds 1376,752,1472,816
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2396,7 +2425,7 @@ Figure 41
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1280,784,1376,848
+  Bounds 1248,464,1344,528
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2413,7 +2442,7 @@ Figure 42
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 416,1088,512,1152
+  Bounds 384,768,480,832
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2430,7 +2459,7 @@ Figure 43
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 464,1200,560,1264
+  Bounds 432,880,528,944
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2447,7 +2476,7 @@ Figure 44
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 640,1216,736,1280
+  Bounds 608,896,704,960
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2464,7 +2493,7 @@ Figure 45
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1344,1184,1440,1248
+  Bounds 1312,864,1408,928
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2481,7 +2510,7 @@ Figure 46
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1536,1120,1632,1184
+  Bounds 1504,800,1600,864
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2498,7 +2527,7 @@ Figure 47
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1504,1232,1600,1296
+  Bounds 1472,912,1568,976
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2515,7 +2544,7 @@ Figure 48
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1552,1680,1648,1744
+  Bounds 1520,1360,1616,1424
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2532,7 +2561,7 @@ Figure 49
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1424,1696,1520,1760
+  Bounds 1392,1376,1488,1440
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2549,7 +2578,7 @@ Figure 50
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1536,1568,1632,1632
+  Bounds 1504,1248,1600,1312
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2566,7 +2595,7 @@ Figure 51
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 848,1648,944,1712
+  Bounds 816,1328,912,1392
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2583,7 +2612,7 @@ Figure 52
 {
   Style "SILC Client"
   Text "Client"
-  Bounds 528,1296,624,1360
+  Bounds 496,976,592,1040
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2600,7 +2629,7 @@ Figure 53
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 1152,1712,1248,1776
+  Bounds 1120,1392,1216,1456
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2617,7 +2646,7 @@ Figure 54
 {
   Style "Rectangle"
   Text "Client"
-  Bounds 992,1728,1088,1792
+  Bounds 960,1408,1056,1472
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2634,8 +2663,8 @@ Connector 55
 {
   Figure1 4
   Figure2 5
-  EndPoint1 720,1072
-  EndPoint2 752,1040
+  EndPoint1 688,752
+  EndPoint2 720,720
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2652,8 +2681,8 @@ Connector 56
 {
   Figure1 6
   Figure2 5
-  EndPoint1 922,1072
-  EndPoint2 888,1040
+  EndPoint1 890,752
+  EndPoint2 856,720
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2670,8 +2699,8 @@ Connector 57
 {
   Figure1 16
   Figure2 12
-  EndPoint1 1136,1376
-  EndPoint2 1168,1408
+  EndPoint1 1104,1056
+  EndPoint2 1136,1088
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2688,8 +2717,8 @@ Connector 58
 {
   Figure1 15
   Figure2 12
-  EndPoint1 1328,1376
-  EndPoint2 1296,1408
+  EndPoint1 1296,1056
+  EndPoint2 1264,1088
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2706,8 +2735,8 @@ Connector 59
 {
   Figure1 14
   Figure2 12
-  EndPoint1 1424,1472
-  EndPoint2 1360,1472
+  EndPoint1 1392,1152
+  EndPoint2 1328,1152
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2724,8 +2753,8 @@ Connector 60
 {
   Figure1 13
   Figure2 12
-  EndPoint1 1338,1568
-  EndPoint2 1304,1536
+  EndPoint1 1306,1248
+  EndPoint2 1272,1216
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2742,8 +2771,8 @@ Connector 61
 {
   Figure1 11
   Figure2 12
-  EndPoint1 1136,1568
-  EndPoint2 1168,1536
+  EndPoint1 1104,1248
+  EndPoint2 1136,1216
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2760,8 +2789,8 @@ Connector 62
 {
   Figure1 17
   Figure2 12
-  EndPoint1 1040,1472
-  EndPoint2 1104,1472
+  EndPoint1 1008,1152
+  EndPoint2 1072,1152
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block short"
@@ -2779,8 +2808,8 @@ Connector 63
   Style "SILC Router to Router"
   Figure1 -1
   Figure2 -1
-  EndPoint1 624,1904
-  EndPoint2 928,1904
+  EndPoint1 592,1584
+  EndPoint2 896,1584
   SuppressEnd1 FALSE
   SuppressEnd2 FALSE
   End1 "block"
@@ -2799,7 +2828,7 @@ Figure 64
   Label TRUE
   Style "Title"
   Text "Router to Router Connection\line Server to Router Connection"
-  Bounds 1037,1888,1400,1951
+  Bounds 1005,1568,1368,1631
   TextColor 130,130,130
   TextFormat 0x0024
   Behavior 0x00824192
@@ -2816,7 +2845,7 @@ Figure 65
 {
   Style "Rectangle"
   Text ""
-  Bounds 624,2064,912,2096
+  Bounds 592,1744,880,1776
   BorderColor 130,130,130
   FillColor 219,219,219
   TextColor 130,130,130
@@ -2834,7 +2863,7 @@ Figure 66
 {
   Style "Rectangle"
   Text ""
-  Bounds 624,2032,912,2064
+  Bounds 592,1712,880,1744
   BorderColor 130,130,130
   FillColor 244,244,244
   TextColor 130,130,130
@@ -2852,7 +2881,7 @@ Figure 67
 {
   Style "Rectangle"
   Text ""
-  Bounds 624,1968,912,2000
+  Bounds 592,1648,880,1680
   BorderColor 130,130,130
   FillColor 255,242,230
   TextColor 130,130,130
@@ -2870,7 +2899,7 @@ Figure 68
 {
   Style "Rectangle"
   Text ""
-  Bounds 624,2000,912,2032
+  Bounds 592,1680,880,1712
   BorderColor 130,130,130
   FillColor 240,255,240
   TextColor 130,130,130
@@ -2889,7 +2918,7 @@ Figure 69
   Label TRUE
   Style "Title"
   Text "Router\line Server/Backup Router\line Server\line Client"
-  Bounds 1037,1971,1320,2096
+  Bounds 1005,1651,1288,1776
   TextColor 130,130,130
   TextFormat 0x0024
   Behavior 0x00824192
@@ -2905,7 +2934,7 @@ Figure 70
   Style "Title"
   Text "\line \line \line \line \line \line Cell A\line \line \line \line-
  \line \line \line Another Router"
-  Bounds 387,1112,672,1771
+  Bounds 355,792,640,1451
   TextColor 130,130,130
   TextFormat 0x0022
   Behavior 0x00824192

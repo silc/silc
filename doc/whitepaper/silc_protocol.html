@@ -270,9 +270,44 @@ The rekey process can be executed with or without the Perfect Forward
 Secrecy (PFS).
 <p>
 
-<img src="silc_ske.JPG" alt="SILC Key Exchange (SKE) Protocol" align="center" border"0">
-<p><br>
+The security properties that are used in the SILC session are also
+negotiated during the SKE.  The protocol has initiator and responder.
+The initator is the one who starts the SKE negotiation and responder is
+the one who receives the SKE negotiation.  When the protocol is started
+initiator sends a list of security properties that it supports.  The
+responder then selects the security properties it supports and sends
+its reply to the initiator.  The security properties includes ciphers,
+hash functions, public key algorithms, HMAC functions and other
+security properties.  The responder can always choose the properties
+it supports.
+<p>
 
+After the security properties are selected the protocol continues
+by performing the Diffie-Hellman key exchange algorithm.  At the same
+time the intiator and responder also sends their public keys or
+certificates to each other.  The responder also computes a signature
+that the initiator will verify.  It is also possible to perform a
+mutual authentication when both of the parties computes a signature
+which are verified by each other independently.  If any of the phases
+of the protocol are to fail the connection is closed immeadiately.
+<p>
+
+The public key or certificate that is received during the SKE protocol
+must be verified.  If it is not verified it would be possible to 
+execute a man-in-the-middle attack against the SKE protocol.  If
+certificates are used they can be verified by a third party Certification
+Authority (CA).  Verifying a public key requires either confirming
+a fingerprint of the public key over phone or email, or the server
+can for example publish the fingerprint (and the public key) on some 
+website.  In real life systems accepting the public key without
+verification, however is often desired.  In many security protocols,
+such as in SSH2, the public key is accepted without verification
+in the first time when the connection is created.  The public key is
+then cached on local hard disk.  When connecting next time to the
+server the public key on local cache is verified against the public
+key server sent.  In real life this works most of the time.  However,
+if client (or server) cannot trust this, it must find some other way
+to verify the received public key or certificate.
 
 
 <p><br>
@@ -612,7 +647,7 @@ protocol clients can fetch other clients public keys from servers.
 However, the servers may not have authenticated the fetched public key so
 that should not be fully trusted.  Use of certificates can solve the
 problem.  The receiver's certificate could be authenticated by a third
-party Certificate Authority (CA).
+party Certification Authority (CA).
 
 <p>
 Usually verifying the public key is not a problem since the receiver
@@ -670,7 +705,10 @@ For comprehensive introduction to cryptography refer to the
 - Certificate
 <p>
 
-- Certificate Authority (CA)
+- Certification Authority (CA)
+<p>
+
+- Diffie-Hellman key exchange
 <p>
 
 - Encryption
