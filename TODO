@@ -146,6 +146,9 @@ TODO In SILC Server
    are suitable.  They should be tested on high load which I haven't done
    at all yet.
 
+ o INVITE command must set the channel's invite list if channel is 
+   invite-only channel.
+
  o Public and private key generation is now done everytime the program
    is run.  Now, this is only for testing period as I've been lazy to
    do it any better for now.  This must be fixed.

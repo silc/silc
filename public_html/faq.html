@@ -62,6 +62,22 @@ A: Answer for both question is no.  IRC client is in no way compatible
    That just is not possible.
 <p><br>
 
+<i>Q: Why client/server protocol is based on IRC? Would it be more
+   interesting to implement something extensible and more powerful?</i><br>
+A: They are not, non the least.  Have you read the protocol specification?
+   The client superficially resembles IRC client but everything that
+   happens under the hood is nothing alike IRC.  SILC could *never*
+   support IRC because the entire network toppology is different
+   (hopefully more scalable and powerful).  So no, SILC protocol (client  
+   or server) is not based on IRC.  Instead, I've taken good things from
+   IRC and leaved all the bad things behind and not even tried to burden
+   myself with the IRC caveats that will burden IRC and future IRC
+   projects til the end.  SILC client resembles IRC client because it is  
+   easier for new users to start using SILC when they already know all the
+   commands.
+<p><br>
+
+
 <i>Q: Why SILC? Why not IRC3?</i><br>
 A: Question that is justified no doubt of that.  I didn't start doing SILC
    to be replacement for IRC.  SILC was something that didn't exist in

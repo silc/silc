@@ -1866,9 +1866,9 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  3
-            Arguments:  (1) <Status Payload>  (2) <channel>
-                        (3) <topic>
+        Max Arguments:  4
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) <channel>         (4) <topic>
 
         This command may reply with several command reply messages to form
         a list of results.  In this case the status payload will include
@@ -1876,7 +1876,7 @@ List of all defined commands in SILC follows.
         the last reply to indicate the end of the list.  If there are only 
         one reply the status is set to normal STATUS_OK.
 
-        This command replies with channel name and the topic of the
+        This command replies with Channel ID, name and the topic of the
         channel.  If the channel is private channel the <topic> includes
         "*private*" string.
 
@@ -1930,16 +1930,18 @@ List of all defined commands in SILC follows.
    8    SILC_COMMAND_INVITE
 
         Max Arguments:  2
-            Arguments:  (1) <Client ID>  (2) <channel>
+            Arguments:  (1) <Client ID>  (2) <Channel ID>
 
         This command is used to invite other clients to join to the
-        channel.  There is no requirement that the channel the target
-        client is being invited to must exist or be a valid channel.
-        The <Client ID> argument is the target client's ID that is being
-        invited.
+        channel.  The <Client ID> argument is the target client's ID that
+        is being invited.  The <Channel ID> is the Channel ID of the
+        requested channel.  The sender of this command must be on the
+        channel.  This command must fail if the requested channel does
+        not exist, the requested client is already on the channel or if
+        the channel is invite only channel and the caller of this command
+        does not have at least channel operator privileges.
 
         Reply messages to the command:
-
 
         Max Arguments:  2
             Arguments:  (1) <Status Payload>
@@ -1949,15 +1951,15 @@ List of all defined commands in SILC follows.
         Status messages:
 
             SILC_STATUS_OK
-            SILC_STATUS_ERR_NOT_ON_CHANNEL
-            SILC_STATUS_ERR_WILDCARDS
             SILC_STATUS_ERR_NOT_REGISTERED
             SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
-            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_TOO_MANY_PARAMS
-            SILC_STATUS_ERR_NO_RECIPIENT
-            SILC_STATUS_ERR_USER_ON_CHANNEL
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_NO_CLIENT_ID
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_USER_ON_CHANNEL
 
 
    9    SILC_COMMAND_QUIT
@@ -2074,10 +2076,10 @@ List of all defined commands in SILC follows.
         Max Arguments:  1
             Arguments:  (1) <Server ID>
 
-        This command is used by clients to test the communication
-        channel to its server if client suspects that the communication
-        is not working correctly.  The <Server ID> is the ID of the
-        server the client is connected to.
+        This command is used by client and server to test the communication
+        channel to its server if one suspects that the communication is not
+        working correctly.  The <Server ID> is the ID of the server the
+        sender is connected to.
 
         Reply messages to the command:
 
@@ -2092,7 +2094,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_OK
             SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
             SILC_STATUS_ERR_TOO_MANY_PARAMS
-            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+            SILC_STATUS_ERR_NO_SERVER_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER
             SILC_STATUS_ERR_NOT_REGISTERED
 
 
@@ -2688,11 +2691,12 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  2
-            Arguments:  (1) <Status Payload>  (2) <name list>
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) <name list>
 
         This command replies with the comma separated list of users on
-        the channel.
+        the channel and the Channel ID of the channel requested.
 
         Status messages:
 
@@ -2831,124 +2835,129 @@ List of all defined command status messages following.
         "No Channel ID given".  Channel ID were expected as command
         parameter but were not found.
 
-   19   SILC_STATUS_ERR_BAD_CLIENT_ID
+   19   SILC_STATUS_ERR_NO_SERVER_ID
+
+        "No Serve ID given".  Server ID were expected as command
+        parameter but were not found.
+
+   20   SILC_STATUS_ERR_BAD_CLIENT_ID
 
         "Bad Client ID".  Client ID provided were erroneous.
 
-   20   SILC_STATUS_ERR_BAD_CHANNEL_ID
+   21   SILC_STATUS_ERR_BAD_CHANNEL_ID
 
         "Bad Channel ID".  Channel ID provided were erroneous.
 
-   21   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+   22   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
 
         "No such Client ID".  Client ID provided does not exist.
 
 
-   22   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+   23   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
 
         "No such Channel ID".  Channel ID provided does not exist.
 
-   23   SILC_STATUS_ERR_NICKNAME_IN_USE
+   24   SILC_STATUS_ERR_NICKNAME_IN_USE
 
         "Nickname already exists".  Nickname created could not be 
         registered because number of same nicknames were already set to
         maximum.  This is not expected to happen in real life but is
         possible to occur.
 
-   24   SILC_STATUS_ERR_NOT_ON_CHANNEL
+   25   SILC_STATUS_ERR_NOT_ON_CHANNEL
 
         "You are not on that channel".  The command were specified for
         client user is not currently on.
 
-   25   SILC_STATUS_ERR_USER_ON_CHANNEL
+   26   SILC_STATUS_ERR_USER_ON_CHANNEL
 
         "User already on channel".  User were invited on channel they
         already are on.
 
-   26   SILC_STATUS_ERR_NOT_REGISTERED
+   27   SILC_STATUS_ERR_NOT_REGISTERED
 
         "You have not registered".  User executed command that requires
         the client to be registered on the server before it may be
         executed.
 
-   27   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+   28   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
 
         "Not enough parameters".  Command requires more parameters
         than provided.
 
-   28   SILC_STATUS_ERR_TOO_MANY_PARAMS
+   29   SILC_STATUS_ERR_TOO_MANY_PARAMS
 
         "Too many parameters".  Too many parameters were provided
         for the command.
 
-   29   SILC_STATUS_ERR_PERM_DENIED
+   30   SILC_STATUS_ERR_PERM_DENIED
 
         "Your host is not among the privileged".  The client tried to
         register on server that does not allow this host to connect.
 
-   30   SILC_STATUS_ERR_BANNED_FROM_SERVER
+   31   SILC_STATUS_ERR_BANNED_FROM_SERVER
 
         "You are banned from this server".  The client tried to register
         on server that has explicitly denied this host to connect.
 
 
 
-   31   SILC_STATUS_ERR_BAD_PASSWORD
+   32   SILC_STATUS_ERR_BAD_PASSWORD
 
         "Cannot join channel. Incorrect password".  Password provided for 
         channel were not accepted.
 
-   32   SILC_STATUS_ERR_CHANNEL_IS_FULL
+   33   SILC_STATUS_ERR_CHANNEL_IS_FULL
 
         "Cannot join channel. Channel is full".  The channel is full
         and client cannot be joined to it.
 
-   33   SILC_STATUS_ERR_NOT_INVITED
+   34   SILC_STATUS_ERR_NOT_INVITED
 
         "Cannot join channel. You have not been invited".  The channel
         is invite only channel and client has not been invited.
 
-   34   SILC_STATUS_ERR_BANNED_FROM_CHANNEL
+   35   SILC_STATUS_ERR_BANNED_FROM_CHANNEL
 
         "Cannot join channel. You have been banned".  The client has
         been banned from the channel.
 
-   35   SILC_STATUS_ERR_UNKNOWN_MODE
+   36   SILC_STATUS_ERR_UNKNOWN_MODE
 
         "Unknown mode".  Mode provided by the client were unknown to
         the server.
 
-   36   SILC_STATUS_ERR_NOT_YOU
+   37   SILC_STATUS_ERR_NOT_YOU
 
         "Cannot change mode for other users".  User tried to change
         someone else's mode.
 
-   37   SILC_STATUS_ERR_NO_CHANNEL_PRIV
+   38   SILC_STATUS_ERR_NO_CHANNEL_PRIV
 
         "Permission denied. You are not channel operator".  Command may 
         be executed only by channel operator.
 
-   38   SILC_STATUS_ERR_NO_SERVER_PRIV
+   39   SILC_STATUS_ERR_NO_SERVER_PRIV
 
         "Permission denied. You are not server operator".  Command may
         be executed only by server operator.
 
-   39   SILC_STATUS_ERR_NO_ROUTER_PRIV
+   40   SILC_STATUS_ERR_NO_ROUTER_PRIV
 
         "Permission denied. You are not SILC operator".  Command may be
         executed only by router (SILC) operator.
 
-   40   SILC_STATUS_ERR_BAD_NICKNAME
+   41   SILC_STATUS_ERR_BAD_NICKNAME
 
         "Bad nickname".  Nickname requested contained illegal characters
         or were malformed.
 
-   41   SILC_STATUS_ERR_BAD_CHANNEL
+   42   SILC_STATUS_ERR_BAD_CHANNEL
 
         "Bad channel name".  Channel requested contained illegal characters
         or were malformed.
 
-   42   SILC_STATUS_ERR_AUTH_FAILED
+   43   SILC_STATUS_ERR_AUTH_FAILED
 
         "Authentication failed".  The authentication data sent as 
         argument were wrong and thus authentication failed.

@@ -66,6 +66,15 @@ Following commands has been, at least partly, implemented:
 		Joins to a channel.  Channel names start with `#'
 		character.
 
+	/LEAVE	<channel>
+
+		Leaves the channel.  If /leave * is given the client
+		leaves the current channel.
+
+	/NAMES	<channel>
+
+		Lists clients currently joined to the channel.
+
 	/MSG    <nickname> <message>
 
 		Sends private message to remote client.  Support for
@@ -78,9 +87,18 @@ Following commands has been, at least partly, implemented:
 		handling multiple same nicknames with this command is
 		still missing.
 
+	/PING	[<server>]
+
+		Pings server.  Only locally connected server may be 
+		pinged.
+
 	/QUIT
 
 		Quits session.  Connection to remote server is closed.
+
+	/CLEAR
+
+		Clears current screen.
 
 
 Features

@@ -1,3 +1,18 @@
+Mon Jul  3 18:51:27 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_server_get_route (route.[ch]) to get connection
+	  data for the fastest route for given ID.
+
+	* Implemented INVITE command on client and server.  The command
+	  were re-defined in the SILC Protocol Specification and the
+	  implementation now complies with the specification.
+
+	* Implemented PING command on client and server.
+
+	* Implemented NAMES command on client and server.  The server side
+	  supports currently only normal server not router server yet.
+	  Some changes to NAMES definition is SILC Protocol Specification.
+
 Sun Jul  2 18:23:01 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented LEAVE command on client and server.

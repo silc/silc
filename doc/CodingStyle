@@ -152,7 +152,7 @@ The <module> is the module you are programming currently.  You should
 have a pretty good idea what you are programming and what the module
 does.  For example, <cipher>, <config>, <command>, <packet>, etc.
 
-The <function> is the describtion of the functionality of the function
+The <function> is the description of the functionality of the function
 you are writing.  Naturally it should be self explanatory and weird
 short names should be avoided.  It is better to have long function
 names than some odd name that does not tell what it is about.  Function
@@ -305,7 +305,8 @@ that looks good.  Here are some issues on general appearance.
 
 	o If you are not sure about how something should be done or
 	  the code you've done is not finished, it should be commented
-	  with XXX plus explanation what is going on.
+	  with XXX plus explanation what is going on.  For example,
+          /* XXX hmm... how is this flushed? */
 
 
 Source Files
@@ -334,6 +335,14 @@ of header files should include all definitions, typedefs, structure
 definitions etc.  After definitions should include macros and inline
 functions if any of those exist.  After macros should include the
 public prototypes of the functions.  Go see any header file as an example.
+
+
+Using gotos
+===========
+
+Gotos are used in the SILC code quite often.  If you know how to use
+goto's properly then it is ok to use them for example to optimize the
+code.  However, if you don' know how to use goto's do not use them.
 
 
 Debug Messages
