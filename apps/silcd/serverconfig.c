@@ -671,6 +671,9 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
     tmp->version_software_vendor =
       (*(char *)val ? strdup((char *) val) : NULL);
   }
+  else if (!strcmp(name, "anonymous")) {
+    tmp->anonymous = *(bool *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -1108,7 +1111,8 @@ static const SilcConfigTable table_connparam[] = {
   { "key_exchange_pfs",	       SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
   { "version_protocol",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { "version_software",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
-  { "version_software_vendor", SILC_CONFIG_ARG_STR,     fetch_connparam,	NULL },
+  { "version_software_vendor", SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
+  { "anonymous",               SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
   { 0, 0, 0, 0 }
 };
 

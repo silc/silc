@@ -4,6 +4,13 @@ Sat Sep  7 22:26:50 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  channel, do not re-create the channel since it creates
 	  duplicate same channels.  Affected file silcd/server.c.
 
+	* Added anonymous client connections support to server.  New
+	  "anonymous" configuration option to ConnectionParams section
+	  added.  If set to true, the username and hostname information
+	  of the client will be scrambled and anonymous user mode is
+	  set automatically to the user.  Affected files are
+	  silcd/serverconfig.[ch], silcd/packet_receive.c and server.c.
+
 Sat Sep  7 16:02:09 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* In JOIN notify handling, mark that the cache entry of the

@@ -79,18 +79,19 @@ typedef struct SilcServerConfigLoggingStruct {
 /* Connection parameters */
 typedef struct SilcServerConfigConnParams {
   char *name;
+  char *version_protocol;
+  char *version_software;
+  char *version_software_vendor;
   SilcUInt32 connections_max;
   SilcUInt32 connections_max_per_host;
   SilcUInt32 keepalive_secs;
   SilcUInt32 reconnect_count;
   SilcUInt32 reconnect_interval;
   SilcUInt32 reconnect_interval_max;
-  bool reconnect_keep_trying;
   SilcUInt32 key_exchange_rekey;
   bool key_exchange_pfs;
-  char *version_protocol;
-  char *version_software;
-  char *version_software_vendor;
+  bool reconnect_keep_trying;
+  bool anonymous;
   struct SilcServerConfigConnParams *next;
 } SilcServerConfigConnParams;
 

@@ -351,6 +351,13 @@ ConnectionParams {
 	# process somewhat slower, than without PFS.
 	#key_exchange_pfs = true;
 
+	# Anonymous connection.  This setting has effect only when this
+	# this is used with client connections.  If set to true then clients
+	# using this connection parameter will be anonymous connections.
+	# This means that the client's username and hostname information
+	# is scrambled and anonymous mode is set for the user.
+	#anonymous = true;
+
 	#TODO:
 	#connections_interval - incoming connection interval limit ?
 };

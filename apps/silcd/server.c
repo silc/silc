@@ -1852,6 +1852,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (conn->param) {
 	if (conn->param->keepalive_secs)
 	  hearbeat_timeout = conn->param->keepalive_secs;
+
+	/* Check if to be anonymous connection */
+	if (conn->param->anonymous)
+	  client->mode |= SILC_UMODE_ANONYMOUS;
       }
 
       id_entry = (void *)client;
