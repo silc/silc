@@ -498,6 +498,8 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
     (*client_id)[0] = silc_id_payload_parse_id(tmp, len);
     if ((*client_id)[0] == NULL) {
       silc_free(*client_id);
+      silc_server_command_send_status_reply(cmd, command,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       return FALSE;
     }
     *client_id_count = 1;
@@ -515,6 +517,9 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
 	    for (i = 0; i < *client_id_count; i++)
 	      silc_free((*client_id)[i]);
 	    silc_free(*client_id);
+	    silc_server_command_send_status_reply(
+					 cmd, command,
+					 SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	    return FALSE;
 	  }
 	  (*client_id_count)++;
