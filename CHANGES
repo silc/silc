@@ -1,3 +1,15 @@
+Wed Nov  6 17:18:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed manual page installation patch by Ville Räsänen.
+	  USERS help page fix patch by Ville Räsänen
+
+	* Changed the silc_client_command_call interface to make
+	  the command call simpler for the application.  The library
+	  now handles the command line parsing, command finding and
+	  execution.  Application only needs to call the function
+	  with the command line.  Affected files are 
+	  lib/silcclient/silcclient.h, command.[ch].
+
 Mon Nov  4 16:02:59 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Print notify for server opers when backup router comes
@@ -8,6 +20,10 @@ Mon Nov  4 16:02:59 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed MOTD command reply sending.  Affected file
 	  silcd/command.c.
+
+	* UTF-8 decode the topic in TOPIC command reply and LIST
+	  command reply in Irssi SILC client.  Affected file is
+	  irssi/src/silc/core/client_ops.c.
 
 Sun Nov  3 17:59:15 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 

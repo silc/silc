@@ -36,7 +36,7 @@ struct SilcClientCommandStruct {
   SilcCommandCb reply;		   /* Command reply callback */
   char *name;			   /* Name of the command (optional) */
   SilcUInt8 max_args;		   /* Maximum arguments (optional)  */
-  SilcUInt16 ident;			   /* Identifier for command (optional)  */
+  SilcUInt16 ident;		   /* Identifier for command (optional)  */
   struct SilcClientCommandStruct *next;
 };
 
@@ -97,6 +97,11 @@ do {									  \
   silc_client_command_pending_del(ctx->sock->user_data, cmd, ctx->ident); \
 } while(0)
 
+SilcClientCommandContext silc_client_command_alloc(void);
+void silc_client_command_free(SilcClientCommandContext ctx);
+SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx);
+SilcClientCommand silc_client_command_find(SilcClient client,
+					   const char *name);
 bool silc_client_command_register(SilcClient client,
 				  SilcCommand command,
 				  const char *name,

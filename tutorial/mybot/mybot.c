@@ -29,7 +29,7 @@
                 v
           silc_get_auth_method
                 v
-          silc_connected -> silc_client_send_command (JOIN)
+          silc_connected -> silc_client_command_call (JOIN)
                 v
           silc_command_reply -> silc_send_channel_message ("hello")
                 v
@@ -331,13 +331,8 @@ silc_connected(SilcClient client, SilcClientConnection conn,
   /* Save the connection context */
   mybot->conn = conn;
 
-  /* Now that we are connected, send the JOIN command to the "mybot"
-     channel */
-  idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
-  silc_client_command_send(client, conn, SILC_COMMAND_JOIN, 0, 2,
-			   1, "mybot", strlen("mybot"),
-			   2, idp->data, idp->len);
-  silc_buffer_free(idp);
+  /* Now that we are connected, join to mybot channel with JOIN command. */
+  silc_client_command_call(client, conn, "JOIN mybot");
 }
 
 

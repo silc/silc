@@ -1407,92 +1407,45 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
 
 /* Command management (command.c) */
 
-/****f* silcclient/SilcClientAPI/silc_client_command_alloc
- *
- * SYNOPSIS
- *
- *    SilcClientCommandContext silc_client_command_alloc(void);
- *
- * DESCRIPTION
- *
- *    Allocate Command Context. The context is defined in `command.h' file.
- *    The context is used by the library commands and applications should use
- *    it as well. However, application may choose to use some own context
- *    for its local commands. All library commands, however, must use this
- *    context. 
- *
- ***/
-SilcClientCommandContext silc_client_command_alloc(void);
-
-/****f* silcclient/SilcClientAPI/silc_client_command_free
- *
- * SYNOPSIS
- *
- *    void silc_client_command_free(SilcClientCommandContext ctx);
- *
- * DESCRIPTION
- *
- *    Free command context and its internals.  If the contex was duplicated
- *    with silc_client_command_dup this may not actually free the data, 
- *    instead it will decrease the reference counter of the context.  The
- *    context will be freed when the reference counter hits zero.
- *
- ***/
-void silc_client_command_free(SilcClientCommandContext ctx);
-
-/****f* silcclient/SilcClientAPI/silc_client_command_dup
- *
- * SYNOPSIS
- *
- *    SilcClientCommandContext 
- *    silc_client_command_dup(SilcClientCommandContext ctx);
- *
- * DESCRIPTION
- *
- *    Duplicate Command Context by adding reference counter. The context won't
- *    be free'd untill it hits zero. 
- *
- ***/
-SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx);
-
-/****f* silcclient/SilcClientAPI/silc_client_command_find
- *
- * SYNOPSIS
- *
- *    SilcClientCommand silc_client_command_find(SilcClient client,
- *                                               const char *name);
- *
- * DESCRIPTION
- *
- *    Finds and returns a pointer to the command list. Return NULL if the
- *    command is not found. See the `command.[ch]' for the command list. 
- *    Command names are not case-sensitive.
- *
- ***/
-SilcClientCommand silc_client_command_find(SilcClient client,
-					   const char *name);
-
 /****f* silcclient/SilcClientAPI/silc_client_command_call
  *
  * SYNOPSIS
  *
- *    void silc_client_command_call(SilcClientCommand command);
+ *    void silc_client_command_call(SilcClient client,
+ *                                  SilcClientConnection conn,
+ *                                  const char *command_line, ...);
  *
  * DESCRIPTION
  *
- *    Calls the command (executes it).  Application can call this after
- *    it has allocated the SilcClientCommandContext with the function
- *    silc_client_command_alloc and found the command from the client
- *    library by calling silc_client_command_find.  This will execute
- *    the command.
+ *    Calls and executes the command indicated by the `command_name'.
+ *    The `command_line' is a string which includes the command's name and
+ *    its arguments separated with whitespaces (' ').  If `command_line'
+ *    is non-NULL then all variable arguments are ignored by default.
  *
- *    Application can call the command function directly too if it
- *    wishes to do so.  See the command.h for details of the
- *    SilcClientCommand structure.
+ *    If `command_line' is NULL, then the variable arguments define the
+ *    command's nameand its arguments.  The variable argument list must
+ *    be terminated with NULL.
+ *
+ *    Returns FALSE if the command is not known and TRUE after command.
+ *    execution.  The "command" client operation is called when the
+ *    command is executed to indicate whether the command executed
+ *    successfully or not.
+ *
+ *    The "command_reply" client operation will be called when reply is
+ *    received from the server to the command.  Application may also use
+ *    the silc_client_command_pending to attach to the command reply.
+ *    The command identifier for silc_client_command_pending function after
+ *    this function call is conn->cmd_ident, which application may use.
+ *
+ * EXAMPLE
+ *
+ *    silc_client_command_call(client, NULL, "PING", "silc.silcnet.org", NULL);
+ *    silc_client_command_call(client, "PING silc.silcnet.org");
  *
  ***/
-void silc_client_command_call(SilcClientCommand command,
-			      SilcClientCommandContext cmd);
+bool silc_client_command_call(SilcClient client,
+			      SilcClientConnection conn,
+			      const char *command_line, ...);
 
 /****f* silcclient/SilcClientAPI/silc_client_command_send
  *

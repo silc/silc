@@ -448,41 +448,13 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
 {
-  SilcUInt32 argc = 0;
-  unsigned char **argv;
-  SilcUInt32 *argv_lens, *argv_types;
-  char *data, *tmpcmd;
-  SilcClientCommand cmd;
-  SilcClientCommandContext ctx;
-
+  char *data;
   g_return_if_fail(server != NULL);
 
-  tmpcmd = g_strdup(command); 
-  g_strup(tmpcmd);
-  cmd = silc_client_command_find(silc_client, tmpcmd);
-  g_free(tmpcmd);
-  if (cmd == NULL)
-    return;
-  
-  /* Now parse all arguments */
+  /* Call the command */
   data = g_strconcat(command, " ", args, NULL);
-  silc_parse_command_line(data, &argv, &argv_lens,
-			  &argv_types, &argc, cmd->max_args);
+  silc_client_command_call(silc_client, server->conn, data);
   g_free(data);
-
-  /* Allocate command context. This and its internals must be free'd
-     by the command routine receiving it. */
-  ctx = silc_client_command_alloc();
-  ctx->client = silc_client;
-  ctx->conn = server->conn;
-  ctx->command = cmd;
-  ctx->argc = argc;
-  ctx->argv = argv;
-  ctx->argv_lens = argv_lens;
-  ctx->argv_types = argv_types;
-  
-  /* Execute command */
-  silc_client_command_call(cmd, ctx);
 }
 
 /* Generic command function to call any SILC command directly. */

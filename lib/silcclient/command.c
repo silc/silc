@@ -71,24 +71,89 @@ SilcClientCommand silc_client_command_find(SilcClient client,
 
   silc_list_start(client->internal->commands);
   while ((cmd = silc_list_get(client->internal->commands)) != SILC_LIST_END) {
-    if (cmd->name && !strcmp(cmd->name, name))
+    if (cmd->name && !strcasecmp(cmd->name, name))
       return cmd;
   }
 
   return NULL;
 }
 
-/* Calls the command (executes it).  Application can call this after
-   it has allocated the SilcClientCommandContext with the function
-   silc_client_command_alloc and found the command from the client
-   library by calling silc_client_command_find.  This will execute
-   the command. */
+/* Executes a command */
 
-void silc_client_command_call(SilcClientCommand command, 
-			      SilcClientCommandContext cmd)
+bool silc_client_command_call(SilcClient client,
+			      SilcClientConnection conn,
+			      const char *command_line, ...)
 {
-  assert(command);
-  (*command->command)((void *)cmd, NULL);
+  va_list va;
+  SilcUInt32 argc = 0;
+  unsigned char **argv = NULL;
+  SilcUInt32 *argv_lens = NULL, *argv_types = NULL;
+  SilcClientCommand cmd;
+  SilcClientCommandContext ctx;
+  char *arg;
+
+  assert(client);
+
+  /* Parse arguments */
+  va_start(va, command_line);
+  if (command_line) {
+    char *command_name;
+
+    /* Get command name */
+    command_name = silc_memdup(command_line, strcspn(command_line, " "));
+    if (!command_name)
+      return FALSE;
+
+    /* Find command by name */
+    cmd = silc_client_command_find(client, command_name);
+    if (!cmd) {
+      silc_free(command_name);
+      return FALSE;
+    }
+
+    /* Parse command line */
+    silc_parse_command_line((char *)command_line, &argv, &argv_lens,
+			    &argv_types, &argc, cmd->max_args);
+
+    silc_free(command_name);
+  } else {
+    arg = va_arg(va, char *);
+    if (!arg)
+      return FALSE;
+
+    /* Find command by name */
+    cmd = silc_client_command_find(client, arg);
+    if (!cmd)
+      return FALSE;
+
+    while (arg) {
+      argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+      argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) * (argc + 1));
+      argv_types = silc_realloc(argv_types, sizeof(*argv_types) * (argc + 1));
+      argv[argc] = silc_memdup(arg, strlen(arg));
+      argv_lens[argc] = strlen(arg);
+      argv_types[argc] = argc + 1;
+      argc++;
+      arg = va_arg(va, char *);
+    }
+  }
+
+  /* Allocate command context. */
+  ctx = silc_client_command_alloc();
+  ctx->client = client;
+  ctx->conn = conn;
+  ctx->command = cmd;
+  ctx->argc = argc;
+  ctx->argv = argv;
+  ctx->argv_lens = argv_lens;
+  ctx->argv_types = argv_types;
+  
+  /* Call the command */
+  cmd->command(ctx, NULL);
+
+  va_end(va);
+
+  return TRUE;
 }
 
 /* Add new pending command to be executed when reply to a command has been
