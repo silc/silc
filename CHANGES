@@ -1,3 +1,22 @@
+Mon Nov  6 21:56:12 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Wow, found a bug in scheduler.  The scheduler uninitialized itself
+	  in some circumstances even if threre were timeout tasks, though not
+	  IO tasks, but tasks anyway.  Now fixed.
+
+	* Defined SilcServerConnection structure to hold connection specific
+	  stuff about directly connected servers and routers.  The definition
+	  is currently in silcd/server_internal.h.  I thought about having
+	  a bit more important role fro this struct but for now it is used
+	  only when connecting to other server (or router actually).
+
+	* Added connecting retry support in server when connecting to
+	  router(s).  The retry feature implement exponential backoff
+	  algorithm.  Also, added SilcServerParams structure to hold default
+	  parameters for server.  For now, it include these retry settings
+	  and are hard coded.  After server is moded to be as Silc Server
+	  Library this structure will be more important.
+
 Sun Nov  5 22:28:44 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed client librarys channel->clients table to SilcList and
