@@ -1697,12 +1697,9 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
     break;
   case SILC_SOCKET_TYPE_SERVER:
   case SILC_SOCKET_TYPE_ROUTER:
-    /* Packets from servers are parsed as soon as possible */
-    silc_schedule_task_add(server->schedule, sock->sock,
-			   silc_server_packet_parse_real,
-			   (void *)parser_context, 0, 1,
-			   SILC_TASK_TIMEOUT,
-			   SILC_TASK_PRI_NORMAL);
+    /* Packets from servers are parsed immediately */
+    silc_server_packet_parse_real(server->schedule, 0, sock->sock,
+				  parser_context);
     break;
   default:
     return TRUE;

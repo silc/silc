@@ -32,6 +32,7 @@ libsilcclient_a_SOURCES = \
 	idlist.c \
 	protocol.c
 
+if SILC_DIST_TOOLKIT
 include_HEADERS= 	\
 	client.h 	\
 	command.h	\
@@ -39,6 +40,7 @@ include_HEADERS= 	\
 	idlist.h	\
 	protocol.h	\
 	silcapi.h
+endif
 
 EXTRA_DIST = *.h
 

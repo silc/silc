@@ -187,7 +187,8 @@ void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher)
 
   /* Get random padding */
 #if 1
-  for (i = 0; i < ctx->padlen; i++) tmppad[i] = silc_rng_global_get_byte();
+  for (i = 0; i < ctx->padlen; i++) tmppad[i] = 
+				      silc_rng_global_get_byte_fast();
 #else
   /* XXX: For testing - to be removed */
   memset(tmppad, 65, sizeof(tmppad));
@@ -402,8 +403,16 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 
     /* Decrypt rest of the packet */
     if (cipher)
-      silc_packet_decrypt(cipher, hmac, parse_ctx->packet->sequence, 
-			  parse_ctx->packet->buffer, parse_ctx->normal);
+      if (silc_packet_decrypt(cipher, hmac, parse_ctx->packet->sequence, 
+			      parse_ctx->packet->buffer, 
+			      parse_ctx->normal) == -1) {
+	SILC_LOG_WARNING(("Packet decryption failed %s:%d [%s]", 
+			  sock->hostname, sock->port,
+			  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+			   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+			   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+			   "Router")));
+      }
 
     /* Pull the packet from inbuf thus we'll get the next one
        in the inbuf. */
@@ -445,9 +454,6 @@ static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer,
     /* Compare the HMAC's (buffer->tail has the packet's HMAC) */
     if (memcmp(mac, buffer->tail, mac_len)) {
       SILC_LOG_ERROR(("MAC failed"));
-
-      /* XXX Remove */
-      assert(FALSE);
       return FALSE;
     }
     

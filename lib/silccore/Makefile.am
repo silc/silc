@@ -31,6 +31,7 @@ libsilccore_a_SOURCES = \
 	silcauth.c \
 	silcprivate.c
 
+if SILC_DIST_TOOLKIT
 include_HEADERS =	\
 	silcauth.h	\
 	silcchannel.h	\
@@ -42,6 +43,7 @@ include_HEADERS =	\
 	silcpacket.h	\
 	silcpayload.h	\
 	silcprivate.h
+endif
 
 EXTRA_DIST = *.h
 

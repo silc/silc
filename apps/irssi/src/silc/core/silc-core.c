@@ -353,7 +353,7 @@ void silc_core_init_finish(void)
   silc_channels_init();
   silc_queries_init();
 
-  idletag = g_timeout_add(50, (GSourceFunc) my_silc_scheduler, NULL);
+  idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
 }
 
 /* Deinit SILC. Called from src/fe-text/silc.c */

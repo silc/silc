@@ -116,6 +116,7 @@ typedef struct SilcRngObjectStruct {
   SilcHash sha1;
   uint8 threshhold;
   char *devrandom;
+  int fd_devurandom;
 } SilcRngObject;
 
 /* Allocates new RNG object. */
@@ -127,6 +128,7 @@ SilcRng silc_rng_alloc()
   SILC_LOG_DEBUG(("Allocating new RNG object"));
 
   new = silc_calloc(1, sizeof(*new));
+  new->fd_devurandom = -1;
 
   memset(new->pool, 0, sizeof(new->pool));
   memset(new->key, 0, sizeof(new->key));
@@ -147,6 +149,10 @@ void silc_rng_free(SilcRng rng)
     memset(rng->key, 0, sizeof(rng->key));
     silc_hash_free(rng->sha1);
     silc_free(rng->devrandom);
+
+    if (rng->fd_devurandom != -1)
+      close(rng->fd_devurandom);
+
     silc_free(rng);
   }
 }
@@ -278,7 +284,7 @@ static void silc_rng_get_medium_noise(SilcRng rng)
 static void silc_rng_get_hard_noise(SilcRng rng)
 {
 #ifndef SILC_WIN32
-  char buf[32];
+  unsigned char buf[32];
   int fd, len, i;
   
   /* Get noise from /dev/[u]random if available */
@@ -310,7 +316,7 @@ static void silc_rng_get_hard_noise(SilcRng rng)
 static void silc_rng_exec_command(SilcRng rng, char *command)
 {
 #ifndef SILC_WIN32
-  char buf[1024];
+  unsigned char buf[1024];
   FILE *fd;
   int i;
   int c;
@@ -544,6 +550,33 @@ int silc_rng_global_uninit()
 unsigned char silc_rng_global_get_byte()
 {
   return global_rng ? silc_rng_get_byte(global_rng) : 0;
+}
+
+/* Return random byte as fast as possible. Reads from /dev/urandom if
+   available. If not then return from normal RNG (not so fast). */
+
+unsigned char silc_rng_global_get_byte_fast()
+{
+#ifndef SILC_WIN32
+  unsigned char buf[1];
+
+  if (!global_rng)
+    return 0;
+
+  if (global_rng->fd_devurandom == -1) {
+    global_rng->fd_devurandom = open("/dev/urandom", O_RDONLY);
+    if (global_rng < 0)
+      return silc_rng_global_get_byte();
+    fcntl(global_rng->fd_devurandom, F_SETFL, O_NONBLOCK);
+  }
+
+  if (read(global_rng->fd_devurandom, buf, sizeof(buf)) < 0)
+    return silc_rng_global_get_byte();
+
+  return buf[0];
+#else
+  return silc_rng_global_get_byte();
+#endif
 }
 
 uint16 silc_rng_global_get_rn16()

@@ -39,6 +39,7 @@ libsilccrypt_a_SOURCES = \
 	silcpkcs.c \
 	pkcs1.c
 
+if SILC_DIST_TOOLKIT
 include_HEADERS =	\
 	aes.h		\
 	blowfish.h	\
@@ -60,6 +61,7 @@ include_HEADERS =	\
 	silcpkcs.h	\
 	silcrng.h	\
 	twofish.h
+endif
 
 EXTRA_DIST = *.h
 

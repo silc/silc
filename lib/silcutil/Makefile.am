@@ -38,6 +38,7 @@ libsilcutil_a_SOURCES = \
 	silcsockconn.c	\
 	silcprotocol.c
 
+if SILC_DIST_TOOLKIT
 include_HEADERS =	\
 	silcbuffer.h	\
 	silcbuffmt.h	\
@@ -53,6 +54,7 @@ include_HEADERS =	\
 	silcprotocol.h	\
 	silcthread.h	\
 	silcutil.h
+endif
 
 EXTRA_DIST = *.h
 

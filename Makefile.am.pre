@@ -37,11 +37,11 @@ EXTRA_DIST = CHANGES CREDITS $(SILC_EXTRA_DIST)
 # Installing of SILC into the system
 #
 
-etcdir = $(silc_etcdir)
-modulesdir = $(silc_modulesdir)
-helpdir = $(silc_helpdir)
-docdir = $(silc_docdir)
-logsdir = $(silc_logsdir)
+etcdir = $(DESTDIR)$(silc_etcdir)
+modulesdir = $(DESTDIR)$(silc_modulesdir)
+helpdir = $(DESTDIR)$(silc_helpdir)
+docdir = $(DESTDIR)$(silc_docdir)
+logsdir = $(DESTDIR)$(silc_logsdir)
 
 install-dirs:
 	-mkdir -p $(etcdir)
@@ -81,4 +81,8 @@ etc-install:
 	  $(etcdir)/silc.conf; \
 	fi
 
+if SILC_DIST_CLIENT
+install-data-hook: install-dirs sim-install doc-install etc-install
+else
 install-data-hook: install-dirs generate-server-key sim-install doc-install etc-install
+endif

@@ -32,4 +32,4 @@ include_HEADERS = \
 endif
 
 EXTRA_DIST = \
-	silcdefs.h.in
+	silcdefs.h.in *.h

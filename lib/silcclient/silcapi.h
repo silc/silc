@@ -1767,12 +1767,21 @@ silc_client_request_authentication_method(SilcClient client,
 					  void *context);
 
 typedef enum {
+  SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT,
   SILC_CLIENT_FILE_MONITOR_SEND,
   SILC_CLIENT_FILE_MONITOR_RECEIVE,
   SILC_CLIENT_FILE_MONITOR_GET,
   SILC_CLIENT_FILE_MONITOR_PUT,
   SILC_CLIENT_FILE_MONITOR_CLOSE,
+  SILC_CLIENT_FILE_MONITOR_ERROR,
 } SilcClientMonitorStatus;
+
+typedef enum {
+  SILC_CLIENT_FILE_OK,
+  SILC_CLIENT_FILE_ERROR,
+  SILC_CLIENT_FILE_UNKNOWN_SESSION,
+  SILC_CLIENT_FILE_ALREADY_STARTED,
+} SilcClientFileError;
 
 /****f* silcclient/SilcClientAPI/silc_client_file_receive
  *
@@ -1834,6 +1843,11 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *    file indicated by the `filepath' is being transmitted to the remote
  *    client indicated by the `client_entry', already.
  *
+ *    If error will occur during the file transfer process the error
+ *    status will be returned in the monitor callback.  In this case
+ *    the application must call silc_client_file_close to close the
+ *    session.
+ *
  ***/
 uint32 silc_client_file_send(SilcClient client,
 			     SilcClientConnection conn,
@@ -1846,12 +1860,13 @@ uint32 silc_client_file_send(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool silc_client_file_receive(SilcClient client,
- *                                  SilcClientConnection conn,
- *                                  SilcClientFileMonitor monitor,
- *                                  void *monitor_context,
- *                                  SilcClientEntry client_entry,
- *                                  uint32 session_id);
+ *    SilcClientFileError 
+ *    silc_client_file_receive(SilcClient client,
+ *                             SilcClientConnection conn,
+ *                             SilcClientFileMonitor monitor,
+ *                             void *monitor_context,
+ *                             SilcClientEntry client_entry,
+ *                             uint32 session_id);
  *
  * DESCRIPTION
  *
@@ -1862,21 +1877,27 @@ uint32 silc_client_file_send(SilcClient client,
  *    actually starting the file transmission.  The `monitor' callback
  *    will be called to monitor the transmission.
  *
+ *    If error will occur during the file transfer process the error
+ *    status will be returned in the monitor callback.  In this case
+ *    the application must call silc_client_file_close to close the
+ *    session.
+ *
  ***/
-bool silc_client_file_receive(SilcClient client,
-			      SilcClientConnection conn,
-			      SilcClientFileMonitor monitor,
-			      void *monitor_context,
-			      SilcClientEntry client_entry,
-			      uint32 session_id);
+SilcClientFileError 
+silc_client_file_receive(SilcClient client,
+			 SilcClientConnection conn,
+			 SilcClientFileMonitor monitor,
+			 void *monitor_context,
+			 SilcClientEntry client_entry,
+			 uint32 session_id);
 
 /****f* silcclient/SilcClientAPI/silc_client_file_close
  *
  * SYNOPSIS
  *
- *    bool silc_client_file_close(SilcClient client,
- *                                SilcClientConnection conn,
- *                                uint32 session_id);
+ *    SilcClientFileError silc_client_file_close(SilcClient client,
+ *                                               SilcClientConnection conn,
+ *                                               uint32 session_id);
  *
  * DESCRIPTION
  *
@@ -1884,12 +1905,11 @@ bool silc_client_file_receive(SilcClient client,
  *    If file transmission is being conducted it will be aborted
  *    automatically. This function is also used to close the session
  *    after successful file transmission. This function can be used
- *    also to reject incoming file transmission request.  Returns TRUE
- *    if the session was closed and FALSE if such session does not exist.
+ *    also to reject incoming file transmission request.
  *
  ***/
-bool silc_client_file_close(SilcClient client,
-			    SilcClientConnection conn,
-			    uint32 session_id);
+SilcClientFileError silc_client_file_close(SilcClient client,
+					   SilcClientConnection conn,
+					   uint32 session_id);
 
 #endif

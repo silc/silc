@@ -26,8 +26,10 @@ libsilcsftp_a_SOURCES = 	\
 	sftp_util.c		\
 	sftp_fs_memory.c
 
+if SILC_DIST_TOOLKIT
 include_HEADERS =	\
 	silcsftp.h
+endif
 
 EXTRA_DIST = *.h tests
 

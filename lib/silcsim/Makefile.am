@@ -75,7 +75,9 @@ $(SIM_HASH_OBJS): ../silccrypt/libsilccrypt.a
 
 CLEANFILES = $(SIM_MODULES_DIR)/*.sim.so
 
+if SILC_DIST_TOOLKIT
 include_HEADERS = silcsim.h silcsimutil.h
+endif
 
 EXTRA_DIST = *.h
 

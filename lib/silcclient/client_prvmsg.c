@@ -166,6 +166,16 @@ void silc_client_private_message(SilcClient client,
 				       silc_hash_client_id_compare, NULL,
 				       &id_cache) || 
       ((SilcClientEntry)id_cache->context)->nickname == NULL) {
+
+    if (id_cache && id_cache->context) {
+      remote_client = (SilcClientEntry)id_cache->context;
+      if (remote_client->status & SILC_CLIENT_STATUS_RESOLVING) {
+	remote_client->status &= ~SILC_CLIENT_STATUS_RESOLVING;
+	goto out;
+      }
+      remote_client->status |= SILC_CLIENT_STATUS_RESOLVING;
+    }
+
     /* Resolve the client info */
     silc_client_get_client_by_id_resolve(client, conn, remote_id,
 					 silc_client_private_message_cb,
@@ -208,8 +218,7 @@ void silc_client_private_message(SilcClient client,
  out:
   if (payload)
     silc_private_message_payload_free(payload);
-  if (remote_id)
-    silc_free(remote_id);
+  silc_free(remote_id);
 }
 
 /* Function that actually employes the received private message key */

@@ -27,6 +27,12 @@ typedef struct {
   uint32 session_id;
   char *filepath;
   bool send;
+
+  long starttime;		/* Start time of transfer */
+  double kps;			/* Kilos per second */
+  uint64 offset;		/* Current offset */
+  uint64 filesize;		/* Total file size */
+  uint32 percent;		/* Percent of current transmission */
 } *FtpSession;
 
 #define STRUCT_SERVER_CONNECT_REC SILC_SERVER_CONNECT_REC

@@ -25,11 +25,13 @@ libsilcske_a_SOURCES = \
 	payload.c \
         groups.c
 
+if SILC_DIST_TOOLKIT
 include_HEADERS = 	\
 	groups.h	\
 	payload.h	\
 	silcske.h	\
 	silcske_status.h
+endif
 
 EXTRA_DIST = *.h
 

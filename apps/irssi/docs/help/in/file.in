@@ -1,0 +1,34 @@
+
+@SYNTAX:file@
+
+This command is used to tranfer files between clients.
+The actual file transfer stream is sent outside SILC network
+peer to peer between the clients.  Before the file transfer
+begins the SILC Key Exchange protocol is performed between
+the two clients to exchange key material.  This key material
+is then used to secure the file transfer stream between the
+clients.
+
+The currently active file transfer sessions can be seen by
+giving the FILE command without arguments.
+
+Commands:
+
+    SEND       <filepath> <nickname>
+
+      Sends file transfer request to <nickname>.  This
+      makes the <filepath> available to <nickname>.
+
+    RECEIVE    [<nickname>]
+
+      Accepts the file transfer request and starts
+      the file transfer session.  If the <nickname> is
+      omitted the last received request is used.
+
+    CLOSE      [<nickname>]
+
+      Closes the file transfer session, or rejects
+      file transfer request.  If this command is given
+      during the file transfer process it will be cancelled.
+
+

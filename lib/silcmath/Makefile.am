@@ -38,11 +38,13 @@ libsilcmath_a_SOURCES = \
 	mpbin.c \
 	$(MP_SOURCE)
 
+if SILC_DIST_TOOLKIT
 include_HEADERS = 	\
 	mp_gmp.h	\
 	mp_mpi.h	\
 	silcmath.h	\
 	silcmp.h
+endif
 
 EXTRA_DIST = *.h
 

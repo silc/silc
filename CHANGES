@@ -31,6 +31,9 @@ Sun Oct 28 18:46:27 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  now in server, to optimize packet processing.  Affected file
 	  silcd/server.c.
 
+	* Include files are installed now only in Toolkit distribution
+	  if make install is given.  Affected files: all Makefile.am's.
+
 Thu Oct 25 22:44:06 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Assure that silc_client_notify_by_server_resolve does not

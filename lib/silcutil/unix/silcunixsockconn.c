@@ -45,7 +45,7 @@ int silc_socket_write(SilcSocketConnection sock)
 	SILC_LOG_DEBUG(("Could not write immediately, will do it later"));
 	return -2;
       }
-      SILC_LOG_ERROR(("Cannot write to socket: %s", strerror(errno)));
+      SILC_LOG_DEBUG(("Cannot write to socket: %s", strerror(errno)));
       return -1;
     }
 
@@ -80,7 +80,7 @@ int silc_socket_read(SilcSocketConnection sock)
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       return -2;
     }
-    SILC_LOG_ERROR(("Cannot read from socket: %d:%s", fd, strerror(errno)));
+    SILC_LOG_DEBUG(("Cannot read from socket: %d:%s", fd, strerror(errno)));
     return -1;
   }
 

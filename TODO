@@ -1,8 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o Add the SFTP support.
-
  o /NAMES kees showing things wrong after JOIN and after ppl has left
    channel.
 
@@ -39,8 +37,6 @@ TODO/bugs in Irssi SILC client
 
 TODO/bugs In SILC Client Library
 ================================
-
- o Add the SFTP support.
 
  o JOIN command's argument handling is buggy.  See the XXX in the code.
 
@@ -121,9 +117,6 @@ TODO/bugs In SILC Server
 
 TODO/bugs In SILC Libraries
 ===========================
-
- o Add some silc_rng_get_byte_fast that read directly from /dev/urandom.
-   That can be used for padding generation.  The current is too slow.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be

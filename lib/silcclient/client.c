@@ -26,7 +26,6 @@
 SILC_TASK_CALLBACK(silc_client_connect_to_server_start);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_second);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_final);
-SILC_TASK_CALLBACK(silc_client_packet_parse_real);
 SILC_TASK_CALLBACK(silc_client_rekey_callback);
 SILC_TASK_CALLBACK(silc_client_rekey_final);
 
@@ -767,37 +766,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
   }
 }
 
-/* Parses whole packet, received earlier. */
-
-SILC_TASK_CALLBACK(silc_client_packet_parse_real)
-{
-  SilcPacketParserContext *parse_ctx = (SilcPacketParserContext *)context;
-  SilcClient client = (SilcClient)parse_ctx->context;
-  SilcPacketContext *packet = parse_ctx->packet;
-  SilcSocketConnection sock = parse_ctx->sock;
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  int ret;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Parse the packet */
-  if (parse_ctx->normal)
-    ret = silc_packet_parse(packet, conn->receive_key);
-  else
-    ret = silc_packet_parse_special(packet, conn->receive_key);
-
-  if (ret == SILC_PACKET_NONE)
-    goto out;
-
-  /* Parse the incoming packet type */
-  silc_client_packet_parse_type(client, sock, packet);
-
- out:
-  /*  silc_buffer_clear(sock->inbuf); */
-  silc_packet_context_free(packet);
-  silc_free(parse_ctx);
-}
-
 /* Parser callback called by silc_packet_receive_process. Thie merely
    registers timeout that will handle the actual parsing when appropriate. */
 
@@ -807,10 +775,24 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
   SilcClient client = (SilcClient)context;
   SilcSocketConnection sock = parser_context->sock;
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  SilcPacketContext *packet = parser_context->packet;
+  SilcPacketType ret;
 
   if (conn && conn->hmac_receive)
     conn->psn_receive = parser_context->packet->sequence + 1;
 
+  /* Parse the packet immediately */
+  if (parser_context->normal)
+    ret = silc_packet_parse(packet, conn->receive_key);
+  else
+    ret = silc_packet_parse_special(packet, conn->receive_key);
+
+  if (ret == SILC_PACKET_NONE) {
+    silc_packet_context_free(packet);
+    silc_free(parser_context);
+    return FALSE;
+  }
+  
   /* If protocol for this connection is key exchange or rekey then we'll
      process all packets synchronously, since there might be packets in
      queue that we are not able to decrypt without first processing the
@@ -818,11 +800,14 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
   if (sock->protocol && sock->protocol->protocol && 
       (sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE ||
        sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY)) {
-    silc_client_packet_parse_real(client->schedule, 0, sock->sock,
-				  parser_context);
+
+    /* Parse the incoming packet type */
+    silc_client_packet_parse_type(client, sock, packet);
+    silc_packet_context_free(packet);
+    silc_free(parser_context);
 
     /* Reprocess the buffer since we'll return FALSE. This is because
-       the `conn->receive_key' might have become valid bu processing
+       the `conn->receive_key' might have become valid by processing
        the previous packet */
     if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
       silc_packet_receive_process(sock, FALSE, conn->receive_key, 
@@ -831,16 +816,14 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
     else
       silc_packet_receive_process(sock, FALSE, NULL, NULL, 0, 
 				  silc_client_packet_parse, client);
+    
     return FALSE;
   }
 
-  /* Parse the packet */
-  silc_schedule_task_add(client->schedule, sock->sock, 
-			 silc_client_packet_parse_real,
-			 (void *)parser_context, 0, 1, 
-			 SILC_TASK_TIMEOUT,
-			 SILC_TASK_PRI_NORMAL);
-
+  /* Parse the incoming packet type */
+  silc_client_packet_parse_type(client, sock, packet);
+  silc_packet_context_free(packet);
+  silc_free(parser_context);
   return TRUE;
 }
 
