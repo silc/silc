@@ -13,6 +13,12 @@ option(s).  The following modes are available:
     i               Set/unset channel as invite only channel
     t               Set/unset that only channel operator or 
                     founder may set channel topic
+    m               Set/unset user silencing.  Normal users
+                    are not able to talk on channel.  Only
+                    channel founder may set this mode
+    M               Set/unset operator silencing.  Operators
+                    are not able to talk on channel.  Only
+                    channel founder may set this mode
     l <limit>       Set/unset channel's user limit
     a <passphrase>  Set/unset passphrase for channel that must
                     be provided when joining to the channel.

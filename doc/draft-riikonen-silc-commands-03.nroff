@@ -224,7 +224,7 @@ List of all defined commands in SILC follows.
 
    1    SILC_COMMAND_WHOIS
 
-        Max Arguments:  3328
+        Max Arguments:  256
             Arguments:  (1) [<nickname>[@<server>]]  (2) [<count>]
                         (3) [<Client ID>]            (n) [...]
 
@@ -359,7 +359,7 @@ List of all defined commands in SILC follows.
 
    3    SILC_COMMAND_IDENTIFY
 
-        Max Arguments:  3328
+        Max Arguments:  256
             Arguments:  (1) [<nickname>[@<server>]]  (2) [<server name>]
                         (3) [<channel name>]         (4) [<count>]
                         (5) [<ID Payload>]           (n) [...]
@@ -708,34 +708,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SERVER_ID
 
 
-   11   SILC_COMMAND_CONNECT
-
-        Max Arguments:  2
-            Arguments:  (1) <remote server/router>  (2) [<port>]
-
-        This command is used by operators to force a server to try to
-        establish a new connection to remote server or router.  The
-        Operator MUST specify the server/router to be connected by
-        setting <remote server> argument.  The port is 32 bit MSB value.
-
-        Reply messages to the command:
-
-        Max Arguments:  1
-            Arguments:  (1) <Status Payload>
-
-        This command replies only with Status Payload.
-
-
-
-        Status messages:
-
-            SILC_STATUS_OK
-            SILC_STATUS_ERR_WILDCARDS
-            SILC_STATUS_ERR_NOT_REGISTERED
-            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
-            SILC_STATUS_ERR_TOO_MANY_PARAMS
-            SILC_STATUS_ERR_NO_SERVER_PRIV
-            SILC_STATUS_ERR_NO_ROUTER_PRIV
+   11   <deprecated command>
 
 
    12   SILC_COMMAND_PING
@@ -954,14 +927,14 @@ List of all defined commands in SILC follows.
 
         The following client modes are defined:
 
-           0x0000    SILC_UMODE_NONE
+           0x00000000    SILC_UMODE_NONE
 
               No specific mode for client.  This is the initial
               setting when new client is created.  The client is
               normal client now.
 
 
-           0x0001    SILC_UMODE_SERVER_OPERATOR
+           0x00000001    SILC_UMODE_SERVER_OPERATOR
 
               Marks the user as server operator.  Client MUST NOT
               set this mode itself.  Server sets this mode to the
@@ -970,7 +943,7 @@ List of all defined commands in SILC follows.
               MAY unset the mode itself.
 
 
-           0x0002    SILC_UMODE_ROUTER_OPERATOR
+           0x00000002    SILC_UMODE_ROUTER_OPERATOR
 
               Marks the user as router (SILC) operator.  Client
               MUST NOT this mode itself.  Router sets this mode to
@@ -979,7 +952,7 @@ List of all defined commands in SILC follows.
               MAY unset the mode itself.
 
 
-           0x0004    SILC_UMODE_GONE
+           0x00000004    SILC_UMODE_GONE
 
               Marks that the user is not currently present in the
               SILC Network.  Client MAY set and unset this mode.
@@ -1028,14 +1001,14 @@ List of all defined commands in SILC follows.
 
         The following channel modes are defined:
 
-           0x0000    SILC_CMODE_NONE
+           0x00000000    SILC_CMODE_NONE
 
               No specific mode on channel.  This is the default when
               channel is created.  This means that channel is just plain
               normal channel.
 
 
-           0x0001    SILC_CMODE_PRIVATE
+           0x00000001    SILC_CMODE_PRIVATE
 
               Channel is private channel.  Private channels are shown
               in the channel list listed with SILC_COMMAND_LIST command
@@ -1049,7 +1022,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0002    SILC_CMODE_SECRET
+           0x00000002    SILC_CMODE_SECRET
 
               Channel is secret channel.  Secret channels are not shown
               in the list listed with SILC_COMMAND_LIST command.  Secret
@@ -1061,7 +1034,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0004    SILC_CMODE_PRIVKEY
+           0x00000004    SILC_CMODE_PRIVKEY
 
               Channel uses private channel key to protect the traffic
               on the channel.  When this mode is set the client will be
@@ -1093,7 +1066,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0008    SILC_CMODE_INVITE
+           0x00000008    SILC_CMODE_INVITE
 
               Channel is invite only channel.  Client may join to this
               channel only if it is invited to the channel.  Channel
@@ -1103,7 +1076,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0010    SILC_CMODE_TOPIC
+           0x00000010    SILC_CMODE_TOPIC
 
               The topic of the channel may only be set by client that
               is channel founder or channel operator.  Normal clients
@@ -1115,7 +1088,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0020    SILC_CMODE_ULIMIT
+           0x00000020    SILC_CMODE_ULIMIT
 
               User limit has been set to the channel.  New clients
               may not join to the channel when the limit set is
@@ -1127,7 +1100,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0040    SILC_CMODE_PASSPHRASE
+           0x00000040    SILC_CMODE_PASSPHRASE
 
               Passphrase has been set to the channel.  Client may
               join to the channel only if it is able to provide the
@@ -1141,7 +1114,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0080    SILC_CMODE_CIPHER
+           0x00000080    SILC_CMODE_CIPHER
 
               Sets specific cipher to be used to protect channel
               traffic.  The <cipher> argument is the requested cipher.
@@ -1154,7 +1127,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0100    SILC_CMODE_HMAC
+           0x00000100    SILC_CMODE_HMAC
 
               Sets specific hmac to be used to compute the MACs of the
               channel message.  The <hmac> argument is the requested hmac.
@@ -1164,7 +1137,7 @@ List of all defined commands in SILC follows.
               to set/unset this mode.
 
 
-           0x0200    SILC_CMODE_FOUNDER_AUTH
+           0x00000200    SILC_CMODE_FOUNDER_AUTH
 
               Channel founder may set this mode to be able to regain
               channel founder rights even if the client leaves the 
@@ -1191,6 +1164,27 @@ List of all defined commands in SILC follows.
 
               Typical implementation would use [+|-]f on user interface
               to set/unset this mode.
+
+
+           0x00000400    SILC_CMODE_SILENCE_USERS
+
+              Channel founder may set this mode to silence normal users
+              on the channel.  Users with operator privileges are not
+              affected by this mode.  Messages sent by normal users
+              are dropped by servers when this mode is set.  This mode
+              can be used to moderate the channel.  Only channel founder
+              may set/unset this mode.
+
+
+           0x00000800    SILC_CMODE_SILENCE_OPERS
+
+              Channel founder may set this mode to silence operators
+              on the channel.  When used with SILC_CMODE_SILENCE_USERS
+              mode this can be used to set the channel in state where only
+              the founder of the channel may send messages to the channel.
+              Messages sent by operators are dropped by servers when this
+              mode is set.  Only channel founder may set/unset this mode.
+
 
         To make the mode system work, client MUST keep the channel mode
         mask locally so that the mode setting and unsetting would work
@@ -1221,6 +1215,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_BAD_CHANNEL_ID
             SILC_STATUS_ERR_NO_CHANNEL_ID
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_NO_CHANNEL_FOPRIV
             SILC_STATUS_ERR_UNKNOWN_MODE
             SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_AUTH_FAILED
@@ -1246,14 +1241,14 @@ List of all defined commands in SILC follows.
 
         The following channel modes are defined:
 
-           0x0000    SILC_CUMODE_NONE
+           0x00000000    SILC_CUMODE_NONE
 
               No specific mode.  This is the normal situation for client.
               Also, this is the mode set when removing all modes from
               the target client.
 
 
-           0x0001    SILC_CUMODE_FOUNDER
+           0x00000001    SILC_CUMODE_FOUNDER
 
               The client is channel founder of the channel.  Usually this
               mode is set only by the server when the channel was created.
@@ -1266,7 +1261,7 @@ List of all defined commands in SILC follows.
               mode was set.  The client MAY remove this mode at any time.
 
 
-           0x0002    SILC_CUMODE_OPERATOR
+           0x00000002    SILC_CUMODE_OPERATOR
 
               Sets channel operator privileges on the channel for a
               client on the channel.  Channel founder and channel operator
@@ -1293,6 +1288,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_BAD_CHANNEL_ID
             SILC_STATUS_ERR_NO_CHANNEL_ID
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_NO_CHANNEL_FOPRIV
             SILC_STATUS_ERR_UNKNOWN_MODE
             SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_AUTH_FAILED
@@ -1381,53 +1377,10 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
 
 
-   21   SILC_COMMAND_CLOSE
-
-        Max Arguments:  2
-            Arguments:  (1) <remote server/router>  (2) [<port>]
-
-        This command is used only by operator to close connection to a
-        remote site.
-
-        Reply messages to the command:
-
-        Max Arguments:  1
-            Arguments:  (1) <Status Payload>
-
-        This command replies only with Status Payload.
-
-        Status messages:
-
-            SILC_STATUS_OK
-            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
-            SILC_STATUS_ERR_TOO_MANY_PARAMS
-            SILC_STATUS_ERR_NOT_REGISTERED
-            SILC_STATUS_ERR_NO_SUCH_SERVER
-            SILC_STATUS_ERR_NO_SERVER_PRIV
-            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+   21   <deprecated command>
 
 
-   22   SILC_COMMAND_SHUTDOWN
-
-        Max Arguments:  0
-            Arguments:  None
-
-        This command is used only by operator to shutdown the server.
-        All connections to the server will be closed and the server is
-        shutdown.
-
-        Reply messages to the command:
-
-        Max Arguments:  1
-            Arguments:  (1) <Status Payload>
-
-        This command replies only with Status Payload.
-
-        Status messages:
-
-            SILC_STATUS_OK
-            SILC_STATUS_ERR_NOT_REGISTERED
-            SILC_STATUS_ERR_NO_SERVER_PRIV
+   22   <deprecated command>
 
 
    23   SILC_COMMAND_SILCOPER
@@ -1493,10 +1446,10 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  1
-            Arguments:  (1) <Status Payload>
+        Max Arguments:  2
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
 
-        This command replies only with Status Payload.
+        The <Channel ID> is the ID of left channel.
 
         Status messages:
 

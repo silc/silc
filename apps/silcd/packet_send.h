@@ -123,7 +123,8 @@ void silc_server_send_notify_nick_change(SilcServer server,
 					 SilcSocketConnection sock,
 					 bool broadcast,
 					 SilcClientID *old_id,
-					 SilcClientID *new_id);
+					 SilcClientID *new_id,
+					 const char *nickname);
 void silc_server_send_notify_join(SilcServer server,
 				  SilcSocketConnection sock,
 				  bool broadcast,
@@ -171,7 +172,8 @@ void silc_server_send_notify_killed(SilcServer server,
 				    SilcSocketConnection sock,
 				    bool broadcast,
 				    SilcClientID *client_id,
-				    char *comment);
+				    char *comment,
+				    SilcClientID *killer);
 void silc_server_send_notify_umode(SilcServer server,
 				   SilcSocketConnection sock,
 				   bool broadcast,

@@ -479,41 +479,71 @@ void silc_client_notify_by_server(SilcClient client,
     if (!client_id)
       goto out;
 
-    /* Find Client entry and if not found resolve it */
-    client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry2) {
-      /* Resolve the entry information */
-      silc_client_notify_by_server_resolve(client, conn, packet, 
-					   SILC_ID_CLIENT, client_id);
+    /* From protocol version 1.1 we get the new nickname in notify as well,
+       so we don't have to resolve it.  Do it the hard way if server doesn't
+       send it to us. */
+    tmp = silc_argument_get_arg_type(args, 3, NULL);
+    if (tmp) {
+      /* Protocol version 1.1 */
 
-      /* Add the new entry even though we resolved it. This is because we
-	 want to replace the old entry with the new entry here right now. */
-      client_entry2 = 
-	silc_client_add_client(client, conn, NULL, NULL, NULL, 
-			       silc_id_dup(client_id, SILC_ID_CLIENT), 
-			       client_entry->mode);
+      /* Create new client entry, and save all old information with the
+	 new nickname and client ID */
+      client_entry2 = silc_client_add_client(client, conn, NULL, NULL, 
+					     client_entry->realname,
+					     silc_id_dup(client_id, 
+							 SILC_ID_CLIENT), 0);
+      if (!client_entry2)
+	goto out;
 
-      /* Replace old ID entry with new one on all channels. */
-      silc_client_replace_from_channels(client, conn, client_entry,
-					client_entry2);
+      if (client_entry->server)
+	client_entry2->server = strdup(client_entry->server);
+      if (client_entry->username)
+	client_entry2->username = strdup(client_entry->username);
+      if (client_entry->hostname)
+	client_entry2->hostname = strdup(client_entry->hostname);
+      silc_client_update_client(client, conn, client_entry2, tmp, NULL, NULL,
+				client_entry->mode);
     } else {
+      /* Protocol version 1.0 */
+
+      /* Find client entry and if not found resolve it */
+      client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
+      if (!client_entry2) {
+	/* Resolve the entry information */
+	silc_client_notify_by_server_resolve(client, conn, packet, 
+					     SILC_ID_CLIENT, client_id);
+
+	/* Add the new entry even though we resolved it. This is because we
+	   want to replace the old entry with the new entry here right now. */
+	client_entry2 = 
+	  silc_client_add_client(client, conn, NULL, NULL, NULL, 
+				 silc_id_dup(client_id, SILC_ID_CLIENT), 
+				 client_entry->mode);
+
+	/* Replace old ID entry with new one on all channels. */
+	silc_client_replace_from_channels(client, conn, client_entry,
+					  client_entry2);
+	break;
+      }
+
       if (client_entry2 != conn->local_entry)
 	silc_client_nickname_format(client, conn, client_entry2);
-
-      /* Remove the old from cache */
-      silc_idcache_del_by_context(conn->client_cache, client_entry);
-
-      /* Replace old ID entry with new one on all channels. */
-      silc_client_replace_from_channels(client, conn, client_entry,
-					client_entry2);
-
-      /* Notify application */
-      client->internal->ops->notify(client, conn, type, 
-				    client_entry, client_entry2);
-
-      /* Free data */
-      silc_client_del_client_entry(client, conn, client_entry);
     }
+
+    /* Remove the old from cache */
+    silc_idcache_del_by_context(conn->client_cache, client_entry);
+    
+    /* Replace old ID entry with new one on all channels. */
+    silc_client_replace_from_channels(client, conn, client_entry,
+				      client_entry2);
+
+    /* Notify application */
+    client->internal->ops->notify(client, conn, type, 
+				  client_entry, client_entry2);
+    
+    /* Free old client entry */
+    silc_client_del_client_entry(client, conn, client_entry);
+
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
@@ -795,9 +825,10 @@ void silc_client_notify_by_server(SilcClient client,
     if (!channel)
       break;
 
-    /* Get the kicker */
+    /* From protocol version 1.1 we get the kicker's client ID as well */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
     if (tmp) {
+      silc_free(client_id);
       client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
       if (!client_id)
 	goto out;
@@ -840,36 +871,60 @@ void silc_client_notify_by_server(SilcClient client,
     break;
 
   case SILC_NOTIFY_TYPE_KILLED:
-    /*
-     * A client (maybe me) was killed from the network.
-     */
+    {
+      /*
+       * A client (maybe me) was killed from the network.
+       */
+      char *comment;
+      SilcUInt32 comment_len;
 
-    SILC_LOG_DEBUG(("Notify: KILLED"));
+      SILC_LOG_DEBUG(("Notify: KILLED"));
 
-    /* Get Client ID */
-    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-    if (!tmp)
-      goto out;
+      /* Get Client ID */
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!tmp)
+	goto out;
 
-    client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
-    if (!client_id)
-      goto out;
+      client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+      if (!client_id)
+	goto out;
 
-    /* Find Client entry */
-    client_entry = silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry)
-      goto out;
+      /* Find Client entry */
+      client_entry = silc_client_get_client_by_id(client, conn, client_id);
+      if (!client_entry)
+	goto out;
 
-    /* Get comment */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+      /* Get comment */
+      comment = silc_argument_get_arg_type(args, 2, &comment_len);
 
-    /* Notify application. */
-    client->internal->ops->notify(client, conn, type, client_entry, tmp);
+      /* From protocol version 1.1 we get killer's client ID as well */
+      tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+      if (tmp) {
+	silc_free(client_id);
+	client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+	if (!client_id)
+	  goto out;
 
-    if (client_entry != conn->local_entry)
-      /* Remove the client from all channels and free it */
-      silc_client_del_client(client, conn, client_entry);
+	/* Find killer's client entry and if not found resolve it */
+	client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
+	if (!client_entry2) {
+	  silc_client_notify_by_server_resolve(client, conn, packet, 
+					       SILC_ID_CLIENT, client_id);
+	  goto out;
+	} else {
+	  if (client_entry2 != conn->local_entry)
+	    silc_client_nickname_format(client, conn, client_entry2);
+	}
+      }
 
+      /* Notify application. */
+      client->internal->ops->notify(client, conn, type, client_entry, 
+				    comment, client_entry2);
+
+      if (client_entry != conn->local_entry)
+	/* Remove the client from all channels and free it */
+	silc_client_del_client(client, conn, client_entry);
+    }
     break;
     
   case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:

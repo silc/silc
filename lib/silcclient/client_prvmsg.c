@@ -148,6 +148,8 @@ void silc_client_private_message(SilcClient client,
   SilcClientID *remote_id = NULL;
   SilcClientEntry remote_client;
   SilcMessageFlags flags;
+  unsigned char *message;
+  SilcUInt32 message_len;
 
   if (packet->src_id_type != SILC_ID_CLIENT)
     goto out;
@@ -187,10 +189,9 @@ void silc_client_private_message(SilcClient client,
   flags = silc_private_message_get_flags(payload);
 
   /* Pass the private message to application */
-  client->internal->ops->private_message(
-				 client, conn, remote_client, flags,
-				 silc_private_message_get_message(payload, 
-								  NULL));
+  message = silc_private_message_get_message(payload, &message_len);
+  client->internal->ops->private_message(client, conn, remote_client, flags,
+					 message, message_len);
 
   /* See if we are away (gone). If we are away we will reply to the
      sender with the set away message. */

@@ -1056,6 +1056,28 @@ bool silc_server_check_cmode_rights(SilcServer server,
     }
   }
   
+  if (mode & SILC_CHANNEL_MODE_SILENCE_USERS) {
+    if (!(channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS))
+      if (is_op && !is_fo)
+	return FALSE;
+  } else {
+    if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
+  }
+  
+  if (mode & SILC_CHANNEL_MODE_SILENCE_OPERS) {
+    if (!(channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS))
+      if (is_op && !is_fo)
+	return FALSE;
+  } else {
+    if (channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS) {
+      if (is_op && !is_fo)
+	return FALSE;
+    }
+  }
+  
   return TRUE;
 }
 

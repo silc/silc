@@ -134,7 +134,6 @@ typedef unsigned char SilcCommand;
 #define SILC_COMMAND_QUIT		8
 #define SILC_COMMAND_KILL		9
 #define SILC_COMMAND_INFO		10
-#define SILC_COMMAND_CONNECT	        11
 #define SILC_COMMAND_PING		12
 #define SILC_COMMAND_OPER		13
 #define SILC_COMMAND_JOIN		14
@@ -144,12 +143,15 @@ typedef unsigned char SilcCommand;
 #define SILC_COMMAND_CUMODE		18
 #define SILC_COMMAND_KICK		19
 #define SILC_COMMAND_BAN		20
-#define	SILC_COMMAND_CLOSE		21
-#define	SILC_COMMAND_SHUTDOWN		22
 #define SILC_COMMAND_SILCOPER	        23
 #define SILC_COMMAND_LEAVE		24
 #define SILC_COMMAND_USERS		25
 #define SILC_COMMAND_GETKEY		26
+
+/* Private range start */
+#define SILC_COMMAND_PRIV_CONNECT       200
+#define SILC_COMMAND_PRIV_CLOSE         201
+#define SILC_COMMAND_PRIV_SHUTDOWN      202
 
 /* Reserved */
 #define SILC_COMMAND_RESERVED           255

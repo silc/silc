@@ -43,10 +43,10 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "ban_list", "channel {channel $0} ban list: $1", 2, { 0, 0 } },
 	{ "no_ban_list", "channel {channel $0} ban list not set", 1, { 0 } },
 	{ "inviting", "Inviting {nick $0} to channel {channel $1}", 2, { 0, 0 } },
-	{ "kicked_you", "You have been kicked off channel {channel $0} by {nick $1} ($2)", 3, { 0, 0 } },
-	{ "kicked", "{nick $0} has been kicked off channel {channel $1} by {nick $2} ($3)", 4, { 0, 0, 0 } },
-	{ "killed_you", "You have been killed from the SILC Network", 0 },
-	{ "killed", "{nick $0} has been killed from the SILC Network ($1)", 2, { 0, 0 } },
+	{ "kicked_you", "You have been kicked off channel {channel $0} by {nick $1} ($2)", 3, { 0, 0, 0 } },
+	{ "kicked", "{nick $0} has been kicked off channel {channel $1} by {nick $2} ($3)", 4, { 0, 0, 0, 0 } },
+	{ "killed_you", "You have been killed from the SILC Network by {nick $0} ($1)", 2, { 0, 0 } },
+	{ "killed", "{nick $0} has been killed from the SILC Network by {nick $1} ($2)", 3, { 0, 0, 0 } },
 
 	/* WHOIS, WHOWAS and USERS (alias WHO) messages */
 	{ NULL, "Who Queries", 0 },

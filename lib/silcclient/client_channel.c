@@ -52,8 +52,23 @@ void silc_client_send_channel_message(SilcClient client,
   unsigned char *id_string;
   SilcUInt32 iv_len;
   int block_len;
+  SilcChannelUser chu;
 
   SILC_LOG_DEBUG(("Sending packet to channel"));
+
+  chu = silc_client_on_channel(channel, conn->local_entry);
+  if (!chu) {
+    SILC_LOG_ERROR(("Cannot send message to channel we are not joined"));
+    return;
+  }
+
+  /* Check if it is allowed to send messages to this channel by us. */
+  if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS && !chu->mode)
+    return;
+  if (channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS && 
+      chu->mode & SILC_CHANNEL_UMODE_CHANOP &&
+      !(chu->mode & SILC_CHANNEL_UMODE_CHANFO))
+    return;
 
   /* Take the key to be used */
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
@@ -173,6 +188,7 @@ static void silc_client_channel_message_cb(SilcClient client,
   if (clients_count == 1) {
     SilcChannelEntry channel;
     unsigned char *message;
+    SilcUInt32 message_len;
 
     channel = silc_client_get_channel_by_id(client, conn, res->channel_id);
     if (!channel)
@@ -188,13 +204,13 @@ static void silc_client_channel_message_cb(SilcClient client,
       silc_hash_table_add(clients[0]->channels, channel, chu);
     }
 
-    message = silc_channel_message_get_data(res->payload, NULL);
+    message = silc_channel_message_get_data(res->payload, &message_len);
     
     /* Pass the message to application */
     client->internal->ops->channel_message(
 			       client, conn, clients[0], channel,
 			       silc_channel_message_get_flags(res->payload),
-			       message);
+			       message, message_len);
   }
 
  out:
@@ -219,6 +235,7 @@ void silc_client_channel_message(SilcClient client,
   SilcClientEntry client_entry;
   SilcClientID *client_id = NULL;
   unsigned char *message;
+  SilcUInt32 message_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -301,13 +318,13 @@ void silc_client_channel_message(SilcClient client,
     goto out;
   }
 
-  message = silc_channel_message_get_data(payload, NULL);
+  message = silc_channel_message_get_data(payload, &message_len);
 
   /* Pass the message to application */
   client->internal->ops->channel_message(
 				 client, conn, client_entry, channel,
 				 silc_channel_message_get_flags(payload),
-				 message);
+				 message, message_len);
 
  out:
   silc_free(id);

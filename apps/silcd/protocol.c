@@ -325,60 +325,36 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 				     SilcUInt32 len, void *context)
 {
-  SilcSKEStatus status = SILC_SKE_STATUS_OK;
-  char *cp;
-  int maj = 0, min = 0, build = 0, maj2 = 0, min2 = 0, build2 = 0;
+  SilcUInt32 l_protocol_version = 0, r_protocol_version = 0;
 
   SILC_LOG_INFO(("%s (%s) is version %s", ske->sock->hostname,
 		 ske->sock->ip, version));
 
-  /* Check for initial version string. Allowed "SILC-x.x-". More 
-     specific protocol version is checked later in session. */
-  if (!strstr(version, "SILC-"))
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
-  /* Check software version */
-
-  cp = version + 9;
-  if (!cp)
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
-  maj = atoi(cp);
-  cp = strchr(cp, '.');
-  if (cp) {
-    min = atoi(cp + 1);
-    cp++;
-  }
-  if (cp) {
-    cp = strchr(cp, '.');
-    if (cp)
-      build = atoi(cp + 1);
-  }
-
-  cp = silc_version_string + 9;
-  if (!cp)
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
-  maj2 = atoi(cp);
-  cp = strchr(cp, '.');
-  if (cp) {
-    min2 = atoi(cp + 1);
-    cp++;
-  }
-  if (cp) {
-    cp = strchr(cp, '.');
-    if (cp)
-      build2 = atoi(cp + 1);
-  }
-
-  if (maj != maj2)
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
-  if (status == SILC_SKE_STATUS_BAD_VERSION)
+  if (!silc_parse_version_string(version, &r_protocol_version, NULL, NULL,
+				 NULL, NULL)) {
     SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version", 
 		    ske->sock->hostname, ske->sock->ip, version));
+    return SILC_SKE_STATUS_BAD_VERSION;
+  }
 
-  return status;
+  if (!silc_parse_version_string(silc_version_string, 
+				 &l_protocol_version, NULL, NULL,
+				 NULL, NULL)) {
+    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version", 
+		    ske->sock->hostname, ske->sock->ip, version));
+    return SILC_SKE_STATUS_BAD_VERSION;
+  }
+
+  /* If remote is too new, don't connect */
+  if (l_protocol_version < r_protocol_version) {
+    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version", 
+		    ske->sock->hostname, ske->sock->ip, version));
+    return SILC_SKE_STATUS_BAD_VERSION;
+  }
+
+  ske->sock->version = r_protocol_version;
+
+  return SILC_SKE_STATUS_OK;
 }
 
 /* Callback that is called by the SKE to indicate that it is safe to

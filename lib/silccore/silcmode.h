@@ -50,6 +50,8 @@
 #define SILC_CHANNEL_MODE_CIPHER       0x0080 /* sets cipher of the channel */
 #define SILC_CHANNEL_MODE_HMAC         0x0100 /* sets hmac of the channel */
 #define SILC_CHANNEL_MODE_FOUNDER_AUTH 0x0200 /* sets founder auth data */
+#define SILC_CHANNEL_MODE_SILENCE_USERS 0x0400 /* sets founder auth data */
+#define SILC_CHANNEL_MODE_SILENCE_OPERS 0x0800 /* sets founder auth data */
 /***/
 
 /****d* silccore/Modes/ChannelUserModes

@@ -426,6 +426,8 @@ void silc_server_notify(SilcServer server,
        * Distribute the notify to local clients on the channel
        */
       unsigned char *id, *id2;
+      char *nickname;
+      SilcUInt32 nickname_len;
 
       SILC_LOG_DEBUG(("NICK CHANGE notify"));
       
@@ -450,26 +452,24 @@ void silc_server_notify(SilcServer server,
       SILC_LOG_DEBUG(("New Client ID id(%s)", 
 		      silc_id_render(client_id2, SILC_ID_CLIENT)));
 
+      /* From protocol version 1.1 we also get the new nickname */
+      nickname = silc_argument_get_arg_type(args, 3, &nickname_len);;
+
       /* Replace the Client ID */
       client = silc_idlist_replace_client_id(server->global_list, client_id,
-					     client_id2);
+					     client_id2, nickname);
       if (!client)
 	client = silc_idlist_replace_client_id(server->local_list, client_id, 
-					       client_id2);
+					       client_id2, nickname);
 
       if (client) {
-	/* The nickname is not valid anymore, set it NULL. This causes that
-	   the nickname will be queried if someone wants to know it. */
-	if (client->nickname)
-	  silc_free(client->nickname);
-	client->nickname = NULL;
-
 	/* Send the NICK_CHANGE notify type to local clients on the channels
 	   this client is joined to. */
-	silc_server_send_notify_on_channels(server, NULL, client, 
-					    SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
-					    id, tmp_len, 
-					    id2, tmp_len);
+	silc_server_send_notify_on_channels(server, NULL, client,
+					    SILC_NOTIFY_TYPE_NICK_CHANGE, 3,
+					    id, tmp_len, id2, tmp_len,
+					    nickname, nickname ?
+					    nickname_len : 0);
       }
 
       silc_free(client_id);
@@ -1126,8 +1126,7 @@ void silc_server_notify(SilcServer server,
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO)
       goto out;
     
-    /* Get kicker. In protocol version 1.0 this is not mandatory argument
-       so we check it only if it is provided. */
+    /* From protocol version 1.1 we get the kicker's ID as well. */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
     if (tmp) {
       client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
@@ -1171,8 +1170,8 @@ void silc_server_notify(SilcServer server,
       /* 
        * Distribute the notify to local clients on channels
        */
-      unsigned char *id;
-      SilcUInt32 id_len;
+      unsigned char *id, *comment;
+      SilcUInt32 id_len, comment_len;
     
       SILC_LOG_DEBUG(("KILLED notify"));
       
@@ -1207,16 +1206,42 @@ void silc_server_notify(SilcServer server,
       }
 
       /* Get comment */
-      tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-      if (tmp_len > 128)
-	tmp = NULL;
+      comment = silc_argument_get_arg_type(args, 2, &comment_len);
+      if (comment_len > 128)
+	comment_len = 127;
+
+      /* From protocol version 1.1 we get the killer's ID as well. */
+      tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+      if (tmp) {
+	client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+	if (!client_id)
+	  goto out;
+
+	/* If the the client is not in local list we check global list */
+	client2 = silc_idlist_find_client_by_id(server->global_list, 
+						client_id, TRUE, NULL);
+	if (!client2) {
+	  client2 = silc_idlist_find_client_by_id(server->local_list, 
+						  client_id, TRUE, NULL);
+	  if (!client2) {
+	    silc_free(client_id);
+	    goto out;
+	  }
+	}
+	silc_free(client_id);
+
+	/* Killer must be router operator */
+	if (!(client2->mode & SILC_UMODE_ROUTER_OPERATOR)) {
+	  SILC_LOG_DEBUG(("Killing is not allowed"));
+	  goto out;
+	}
+      }
 
       /* Send the notify to local clients on the channels except to the
 	 client who is killed. */
       silc_server_send_notify_on_channels(server, client, client,
-					  SILC_NOTIFY_TYPE_KILLED, 
-					  tmp ? 2 : 1,
-					  id, id_len, 
+					  SILC_NOTIFY_TYPE_KILLED, 3,
+					  id, id_len, comment, comment_len,
 					  tmp, tmp_len);
 
       /* Remove the client from all channels */
@@ -1577,6 +1602,7 @@ void silc_server_channel_message(SilcServer server,
   SilcChannelID *id = NULL;
   void *sender_id = NULL;
   SilcClientEntry sender_entry = NULL;
+  SilcChannelClientEntry chl;
   bool local = TRUE;
 
   SILC_LOG_DEBUG(("Processing channel message"));
@@ -1615,8 +1641,21 @@ void silc_server_channel_message(SilcServer server,
 						   sender_id, TRUE, NULL);
     }
     if (!sender_entry || !silc_server_client_on_channel(sender_entry, 
-							channel, NULL)) {
+							channel, &chl)) {
       SILC_LOG_DEBUG(("Client not on channel"));
+      goto out;
+    }
+
+    /* If channel is moderated check that client is allowed to send
+       messages. */
+    if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS && !chl->mode) {
+      SILC_LOG_DEBUG(("Channel is silenced from normal users"));
+      goto out;
+    }
+    if (channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS && 
+	chl->mode & SILC_CHANNEL_UMODE_CHANOP &&
+	!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
+      SILC_LOG_DEBUG(("Channel is silenced from operators"));
       goto out;
     }
 

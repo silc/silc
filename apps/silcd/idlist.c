@@ -494,7 +494,7 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 
 SilcClientEntry
 silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
-			      SilcClientID *new_id)
+			      SilcClientID *new_id, const char *nickname)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client;
@@ -518,12 +518,17 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 
   /* Remove the old entry and add a new one */
 
-  silc_idcache_del_by_context(id_list->clients, client);
+  if (!silc_idcache_del_by_context(id_list->clients, client))
+    return NULL;
 
   silc_free(client->id);
+  silc_free(client->nickname);
   client->id = new_id;
+  client->nickname = nickname ? strdup(nickname) : NULL;
 
-  silc_idcache_add(id_list->clients, NULL, client->id, client, 0, NULL);
+  if (!silc_idcache_add(id_list->clients, client->nickname, client->id, 
+			client, 0, NULL))
+    return NULL;
 
   SILC_LOG_DEBUG(("Replaced"));
 

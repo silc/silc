@@ -81,7 +81,8 @@ void silc_say_error(char *msg, ...)
 
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcChannelEntry channel,
-			  SilcMessageFlags flags, char *msg)
+			  SilcMessageFlags flags, const unsigned char *message,
+			  SilcUInt32 message_len)
 {
   SILC_SERVER_REC *server;
   SILC_NICK_REC *nick;
@@ -89,7 +90,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   
   SILC_LOG_DEBUG(("Start"));
 
-  if (!msg)
+  if (!message)
     return;
 
   server = conn == NULL ? NULL : conn->context;
@@ -108,13 +109,13 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   if (flags & SILC_MESSAGE_FLAG_ACTION)
     printformat_module("fe-common/silc", server, channel->channel_name,
 		       MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION, 
-                       nick == NULL ? "[<unknown>]" : nick->nick, msg);
+                       nick == NULL ? "[<unknown>]" : nick->nick, message);
   else if (flags & SILC_MESSAGE_FLAG_NOTICE)
     printformat_module("fe-common/silc", server, channel->channel_name,
 		       MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE, 
-                       nick == NULL ? "[<unknown>]" : nick->nick, msg);
+                       nick == NULL ? "[<unknown>]" : nick->nick, message);
   else
-    signal_emit("message public", 6, server, msg,
+    signal_emit("message public", 6, server, message,
 		nick == NULL ? "[<unknown>]" : nick->nick,
 		nick == NULL ? "" : nick->host == NULL ? "" : nick->host,
 		chanrec->name, nick);
@@ -125,7 +126,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 
 void silc_private_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcMessageFlags flags,
-			  char *msg)
+			  const unsigned char *message,
+			  SilcUInt32 message_len)
 {
   SILC_SERVER_REC *server;
   char userhost[256];
@@ -137,7 +139,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   if (sender->username)
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     sender->username, sender->hostname);
-  signal_emit("message private", 4, server, msg,
+  signal_emit("message private", 4, server, message,
 	      sender->nickname ? sender->nickname : "[<unknown>]",
 	      sender->username ? userhost : NULL);
 }
@@ -516,10 +518,12 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     client_entry = va_arg(va, SilcClientEntry);
     tmp = va_arg(va, char *);
+    client_entry2 = va_arg(va, SilcClientEntry);
   
     if (client_entry == conn->local_entry) {
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+			 client_entry2 ? client_entry2->nickname : "",
 			 tmp ? tmp : "");
     } else {
       list1 = nicklist_get_same_unique(SERVER(server), client_entry);
@@ -533,6 +537,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
 			 client_entry->nickname,
+			 client_entry2 ? client_entry2->nickname : "",
 			 tmp ? tmp : "");
     }
     break;

@@ -71,7 +71,7 @@ General {
 	# number of the software.  The string can be a regex string to match
 	# more widely.  Usually the vendor version checking is not necessary
 	# and can be omitted.  These can be overridden with ConnectionParams.
-	#version_protocol = "1.0";
+	#version_protocol = "1.1";
 	#version_software = "1.3";
 	#version_software_vendor = "SomeVendor";
 
@@ -284,7 +284,7 @@ ConnectionParams {
 	# number of the software.  The string can be a regex string to match
 	# more widely.  Usually the vendor version checking is not necessary
 	# and can be omitted.
-	#version_protocol = "1.0";
+	#version_protocol = "1.1";
 	#version_software = "1.3";
 	#version_software_vendor = "SomeVendor";
 

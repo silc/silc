@@ -27,10 +27,14 @@ void silc_say_error(char *msg, ...);
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, 
 			  SilcChannelEntry channel, 
-			  SilcMessageFlags flags, char *msg);
+			  SilcMessageFlags flags, 
+			  const unsigned char *message,
+			  SilcUInt32 message_len);
 void silc_private_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, 
-			  SilcMessageFlags flags, char *msg);
+			  SilcMessageFlags flags, 
+			  const unsigned char *message,
+			  SilcUInt32 message_len);
 void silc_notify(SilcClient client, SilcClientConnection conn, 
 		 SilcNotifyType type, ...);
 void silc_command(SilcClient client, SilcClientConnection conn, 

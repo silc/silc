@@ -1252,6 +1252,18 @@ SILC_CLIENT_CMD_FUNC(cmode)
       else
 	mode &= ~SILC_CHANNEL_MODE_TOPIC;
       break;
+    case 'm':
+      if (add)
+	mode |= SILC_CHANNEL_MODE_SILENCE_USERS;
+      else
+	mode &= ~SILC_CHANNEL_MODE_SILENCE_USERS;
+      break;
+    case 'M':
+      if (add)
+	mode |= SILC_CHANNEL_MODE_SILENCE_OPERS;
+      else
+	mode &= ~SILC_CHANNEL_MODE_SILENCE_OPERS;
+      break;
     case 'l':
       if (add) {
 	int ll;
@@ -1785,54 +1797,6 @@ SILC_CLIENT_CMD_FUNC(silcoper)
   silc_client_command_free(cmd);
 }
 
-/* CONNECT command. Connects the server to another server. */
-
-SILC_CLIENT_CMD_FUNC(connect)
-{
-  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-  SilcClientConnection conn = cmd->conn;
-  SilcBuffer buffer;
-  unsigned char port[4];
-  SilcUInt32 tmp;
-
-  if (!cmd->conn) {
-    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-	"Usage: /CONNECT <server> [<port>]");
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  if (cmd->argc == 3) {
-    tmp = atoi(cmd->argv[2]);
-    SILC_PUT32_MSB(tmp, port);
-  }
-
-  if (cmd->argc == 3)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_CONNECT, 0, 2, 
-					    1, cmd->argv[1], 
-					    strlen(cmd->argv[1]),
-					    2, port, 4);
-  else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_CONNECT, 0, 1,
-					    1, cmd->argv[1], 
-					    strlen(cmd->argv[1]));
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
-			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
-  silc_buffer_free(buffer);
-
-  /* Notify application */
-  COMMAND;
-
- out:
-  silc_client_command_free(cmd);
-}
-
 /* Command BAN. This is used to manage the ban list of the channel. */
 
 SILC_CLIENT_CMD_FUNC(ban)
@@ -1904,77 +1868,6 @@ SILC_CLIENT_CMD_FUNC(ban)
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
-
-  /* Notify application */
-  COMMAND;
-
- out:
-  silc_client_command_free(cmd);
-}
-
-/* CLOSE command. Close server connection to the remote server */
- 
-SILC_CLIENT_CMD_FUNC(close)
-{
-  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-  SilcClientConnection conn = cmd->conn;
-  SilcBuffer buffer;
-  unsigned char port[4];
-  SilcUInt32 tmp;
-
-  if (!cmd->conn) {
-    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-	"Usage: /CLOSE <server> [<port>]");
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  if (cmd->argc == 3) {
-    tmp = atoi(cmd->argv[2]);
-    SILC_PUT32_MSB(tmp, port);
-  }
-
-  if (cmd->argc == 3)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_CLOSE, 0, 2, 
-					    1, cmd->argv[1], 
-					    strlen(cmd->argv[1]),
-					    2, port, 4);
-  else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_CLOSE, 0, 1,
-					    1, cmd->argv[1], 
-					    strlen(cmd->argv[1]));
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
-			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
-  silc_buffer_free(buffer);
-
-  /* Notify application */
-  COMMAND;
-
- out:
-  silc_client_command_free(cmd);
-}
- 
-/* SHUTDOWN command. Shutdowns the server. */
-
-SILC_CLIENT_CMD_FUNC(shutdown)
-{
-  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-
-  if (!cmd->conn) {
-    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  /* Send the command */
-  silc_client_command_send(cmd->client, cmd->conn, 
-			   SILC_COMMAND_SHUTDOWN, 0, 0);
 
   /* Notify application */
   COMMAND;
@@ -2282,6 +2175,129 @@ bool silc_client_command_unregister(SilcClient client,
   return FALSE;
 }
 
+/* Private range commands, specific to this implementation (and compatible
+   with SILC Server). */
+
+/* CONNECT command. Connects the server to another server. */
+
+SILC_CLIENT_CMD_FUNC(connect)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+  unsigned char port[4];
+  SilcUInt32 tmp;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+	"Usage: /CONNECT <server> [<port>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc == 3) {
+    tmp = atoi(cmd->argv[2]);
+    SILC_PUT32_MSB(tmp, port);
+  }
+
+  if (cmd->argc == 3)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CONNECT, 0, 2, 
+					    1, cmd->argv[1], 
+					    strlen(cmd->argv[1]),
+					    2, port, 4);
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CONNECT, 0, 1,
+					    1, cmd->argv[1], 
+					    strlen(cmd->argv[1]));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
+}
+
+
+/* CLOSE command. Close server connection to the remote server */
+ 
+SILC_CLIENT_CMD_FUNC(close)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+  unsigned char port[4];
+  SilcUInt32 tmp;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+	"Usage: /CLOSE <server> [<port>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc == 3) {
+    tmp = atoi(cmd->argv[2]);
+    SILC_PUT32_MSB(tmp, port);
+  }
+
+  if (cmd->argc == 3)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CLOSE, 0, 2, 
+					    1, cmd->argv[1], 
+					    strlen(cmd->argv[1]),
+					    2, port, 4);
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CLOSE, 0, 1,
+					    1, cmd->argv[1], 
+					    strlen(cmd->argv[1]));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
+}
+ 
+/* SHUTDOWN command. Shutdowns the server. */
+
+SILC_CLIENT_CMD_FUNC(shutdown)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Send the command */
+  silc_client_command_send(cmd->client, cmd->conn, 
+			   SILC_COMMAND_PRIV_SHUTDOWN, 0, 0);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
+}
+
 /* Register all default commands provided by the client library for the
    application. */
 
@@ -2300,7 +2316,6 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(quit, QUIT, "QUIT", 2);
   SILC_CLIENT_CMD(kill, KILL, "KILL", 3);
   SILC_CLIENT_CMD(info, INFO, "INFO", 2);
-  SILC_CLIENT_CMD(connect, CONNECT, "CONNECT", 3);
   SILC_CLIENT_CMD(ping, PING, "PING", 2);
   SILC_CLIENT_CMD(oper, OPER, "OPER", 3);
   SILC_CLIENT_CMD(join, JOIN, "JOIN", 9);
@@ -2310,12 +2325,14 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(cumode, CUMODE, "CUMODE", 5);
   SILC_CLIENT_CMD(kick, KICK, "KICK", 4);
   SILC_CLIENT_CMD(ban, BAN, "BAN", 3);
-  SILC_CLIENT_CMD(close, CLOSE, "CLOSE", 3);
-  SILC_CLIENT_CMD(shutdown, SHUTDOWN, "SHUTDOWN", 1);
   SILC_CLIENT_CMD(silcoper, SILCOPER, "SILCOPER", 3);
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", 2);
   SILC_CLIENT_CMD(users, USERS, "USERS", 2);
   SILC_CLIENT_CMD(getkey, GETKEY, "GETKEY", 2);
+
+  SILC_CLIENT_CMD(connect, PRIV_CONNECT, "CONNECT", 3);
+  SILC_CLIENT_CMD(close, PRIV_CLOSE, "CLOSE", 3);
+  SILC_CLIENT_CMD(shutdown, PRIV_SHUTDOWN, "SHUTDOWN", 1);
 }
 
 /* Unregister all commands. */
@@ -2332,7 +2349,6 @@ void silc_client_commands_unregister(SilcClient client)
   SILC_CLIENT_CMDU(quit, QUIT, "QUIT");
   SILC_CLIENT_CMDU(kill, KILL, "KILL");
   SILC_CLIENT_CMDU(info, INFO, "INFO");
-  SILC_CLIENT_CMDU(connect, CONNECT, "CONNECT");
   SILC_CLIENT_CMDU(ping, PING, "PING");
   SILC_CLIENT_CMDU(oper, OPER, "OPER");
   SILC_CLIENT_CMDU(join, JOIN, "JOIN");
@@ -2342,10 +2358,12 @@ void silc_client_commands_unregister(SilcClient client)
   SILC_CLIENT_CMDU(cumode, CUMODE, "CUMODE");
   SILC_CLIENT_CMDU(kick, KICK, "KICK");
   SILC_CLIENT_CMDU(ban, BAN, "BAN");
-  SILC_CLIENT_CMDU(close, CLOSE, "CLOSE");
-  SILC_CLIENT_CMDU(shutdown, SHUTDOWN, "SHUTDOWN");
   SILC_CLIENT_CMDU(silcoper, SILCOPER, "SILCOPER");
   SILC_CLIENT_CMDU(leave, LEAVE, "LEAVE");
   SILC_CLIENT_CMDU(users, USERS, "USERS");
   SILC_CLIENT_CMDU(getkey, GETKEY, "GETKEY");
+
+  SILC_CLIENT_CMDU(connect, PRIV_CONNECT, "CONNECT");
+  SILC_CLIENT_CMDU(close, PRIV_CLOSE, "CLOSE");
+  SILC_CLIENT_CMDU(shutdown, PRIV_SHUTDOWN, "SHUTDOWN");
 }

@@ -281,13 +281,16 @@ typedef struct {
      `msg' maybe NULL. */
   void (*channel_message)(SilcClient client, SilcClientConnection conn, 
 			  SilcClientEntry sender, SilcChannelEntry channel, 
-			  SilcMessageFlags flags, char *msg);
+			  SilcMessageFlags flags,
+			  const unsigned char *message,
+			  SilcUInt32 message_len);
 
   /* Private message to the client. The `sender' is the sender of the
      message. */
   void (*private_message)(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcMessageFlags flags,
-			  char *msg);
+			  const unsigned char *message,
+			  SilcUInt32 message_len);
 
   /* Notify message to the client. The notify arguments are sent in the
      same order as servers sends them. The arguments are same as received

@@ -16,10 +16,6 @@ TODO/bugs In SILC Client Library
 
  o Additions to do after protocol version 1.1:
 
-	o Fix the NICK_CHANGE notify handling not to create new entry
-	  for the changed client, but take the nickname from the notify
-	  (removes need for resolving as well).  Protocol TODO entry 3.
-
 	o Add support for list of errors in command replies.  Protocol
 	  TODO entry 1.
 
@@ -44,7 +40,6 @@ TODO/bugs In SILC Server
 
 	o JOIN (check that joining is allowed)
 	o SIGNOFF (maybe should check that notifier owns the client)
-	o KILLED (check that killling is allowed (Protocol TODO #13))
 
  o Backup router related issues (Fix this to 1.0):
 
@@ -128,13 +123,6 @@ describe new stuff to be added to protocol versions 1.x.
     *after* sending successfully found entries (this way receiver may
     ignore them).  To be included in protocol version 1.1.
 
- 3. Define the NICK_CHANGE notify to send the changed nickname as a new
-    third argument.  This will make the NICK_CHANGE notify handling easier
-    in the receiver's end (client primarily) since it removes the
-    requirement that receiver must resolve (using IDENTIFY or WHOIS) the
-    new Client ID received in the notify (because of the new nickname is
-    unknown).  To be included in protocol version 1.1.
-
  4. Add "request parameters" or similar to the WHOIS command, which can
     be used to request various parameters (something not returned by
     standard WHOIS command) about clients (info that could be fetched
@@ -148,10 +136,6 @@ describe new stuff to be added to protocol versions 1.x.
  5. Inviting and banning by public key should be made possible.  To be
     included in protocol version 1.x.
 
- 6. Add perhaps SILENCE_USERS, SILENCE_OPERS channel user modes which
-    can be used to silence (moderate) normal users and opers (this set
-    only by founder).  To be included in protocol version 1.1.
-
  7. Channel Message Payload needs slight redesining to include the IV
     field to the MAC generation of the payload.  It is authenticated
     by the packet's MAC but not by the payload's MAC.  Since the IV
@@ -159,40 +143,11 @@ describe new stuff to be added to protocol versions 1.x.
     payload MAC and not alone by packet MAC.  To be included in protocol 
     version 1.1.
 
- 8. Remove the administrative commands from the protocol all together.
-    It does not make sense for the protocol to define how a server is
-    reconnected or shutdown, since they are implementation and 
-    configuration issues.  Besides protocol provides only limited set of
-    administrative commands and cannot define all that one could imagine.
-    To be included in protocol version 1.1.
-
- 9. Add SILC_MESAGE_FLAG_REPLY for being other side to the
-    SILC_MESSAGE_FLAG_REQUEST.  Add generic SILC_MESSAGE_FLAG_DATA, which
-    can include generic payload, which can include generic data.  The
-    payload definition is left out for now.  To be included in protocol
-    version 1.1.
-
- 10. Check command reply error status types in various commands,
-     specifically NO_FOPRIV is missing from many commands.  To be 
-     included in protocol version 1.1.
-
  11. Change the wording in Private Message Key Payload definition to
      describe the problems of trusting the payload, and to indicate that
      the receiver may not accept the key in the payload, and to describe
      other means of distributing a key.
 
- 13. Add the killer's client ID to the KILLED notify.  To be included in 
-     protocol version 1.1.
-
- 14. The length of Arguments Num field in Notify Payload and Command
-     Payload enforces that total of 256 arguments can be associated
-     to a such payload.  However, command-xx draft specified much higher
-     values, and these should be fixed.
-
- 15. The LEAVE command reply should return the Channel ID of the channel
-     that was parted.
-
  16. Add STATS command after all to the protocol for providing practically
      same information client gets when connects to a server.  Normal
      server would send this to router always when received from client.
-

@@ -1093,7 +1093,8 @@ void silc_server_send_notify_nick_change(SilcServer server,
 					 SilcSocketConnection sock,
 					 bool broadcast,
 					 SilcClientID *old_id,
-					 SilcClientID *new_id)
+					 SilcClientID *new_id,
+					 const char *nickname)
 {
   SilcBuffer idp1, idp2;
 
@@ -1102,7 +1103,8 @@ void silc_server_send_notify_nick_change(SilcServer server,
 
   silc_server_send_notify(server, sock, broadcast, 
 			  SILC_NOTIFY_TYPE_NICK_CHANGE,
-			  2, idp1->data, idp1->len, idp2->data, idp2->len);
+			  3, idp1->data, idp1->len, idp2->data, idp2->len,
+			  nickname, nickname ? strlen(nickname) : 0);
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 }
@@ -1284,16 +1286,21 @@ void silc_server_send_notify_killed(SilcServer server,
 				    SilcSocketConnection sock,
 				    bool broadcast,
 				    SilcClientID *client_id,
-				    char *comment)
+				    char *comment,
+				    SilcClientID *killer)
 {
-  SilcBuffer idp;
+  SilcBuffer idp1;
+  SilcBuffer idp2;
 
-  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  idp1 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  idp2 = silc_id_payload_encode((void *)killer, SILC_ID_CLIENT);
   silc_server_send_notify_dest(server, sock, broadcast, (void *)client_id,
 			       SILC_ID_CLIENT, SILC_NOTIFY_TYPE_KILLED,
-			       comment ? 2 : 1, idp->data, idp->len,
-			       comment, comment ? strlen(comment) : 0);
-  silc_buffer_free(idp);
+			       3, idp1->data, idp1->len,
+			       comment, comment ? strlen(comment) : 0,
+			       idp2->data, idp2->len);
+  silc_buffer_free(idp1);
+  silc_buffer_free(idp2);
 }
 
 /* Sends UMODE_CHANGE notify type. This tells that `client_id' client's

@@ -56,8 +56,6 @@ SilcServerCommand silc_command_list[] =
   SILC_SERVER_CMD(quit, QUIT, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(kill, KILL, SILC_CF_LAG_STRICT | SILC_CF_REG | SILC_CF_OPER),
   SILC_SERVER_CMD(info, INFO, SILC_CF_LAG | SILC_CF_REG),
-  SILC_SERVER_CMD(connect, CONNECT, 
-		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER),
   SILC_SERVER_CMD(ping, PING, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(oper, OPER, SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER),
   SILC_SERVER_CMD(join, JOIN, SILC_CF_LAG_STRICT | SILC_CF_REG),
@@ -67,15 +65,18 @@ SilcServerCommand silc_command_list[] =
   SILC_SERVER_CMD(cumode, CUMODE, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(kick, KICK, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(ban, BAN, SILC_CF_LAG_STRICT | SILC_CF_REG),
-  SILC_SERVER_CMD(close, CLOSE,
-		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER),
-  SILC_SERVER_CMD(shutdown, SHUTDOWN, SILC_CF_LAG | SILC_CF_REG | 
-		  SILC_CF_OPER),
   SILC_SERVER_CMD(silcoper, SILCOPER,
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER),
   SILC_SERVER_CMD(leave, LEAVE, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(users, USERS, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(getkey, GETKEY, SILC_CF_LAG | SILC_CF_REG),
+
+  SILC_SERVER_CMD(connect, PRIV_CONNECT, 
+		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER),
+  SILC_SERVER_CMD(close, PRIV_CLOSE,
+		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER),
+  SILC_SERVER_CMD(shutdown, PRIV_SHUTDOWN, SILC_CF_LAG | SILC_CF_REG | 
+		  SILC_CF_OPER),
 
   { NULL, 0 },
 };
@@ -205,7 +206,7 @@ void silc_server_command_process(SilcServer server,
     if (cmd->cmd == command)
       break;
 
-  if (cmd == NULL) {
+  if (!cmd || !cmd->cb) {
     silc_server_command_send_status_reply(ctx, command,
 					  SILC_STATUS_ERR_UNKNOWN_COMMAND);
     silc_server_command_free(ctx);
@@ -2027,7 +2028,7 @@ SILC_SERVER_CMD_FUNC(nick)
     silc_server_send_notify_nick_change(server, server->router->connection, 
 					server->server_type == SILC_SERVER ? 
 					FALSE : TRUE, client->id,
-					new_id);
+					new_id, nick);
 
   oidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -2051,9 +2052,11 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Send NICK_CHANGE notify to the client's channels */
   silc_server_send_notify_on_channels(server, NULL, client, 
-				      SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
+				      SILC_NOTIFY_TYPE_NICK_CHANGE, 3,
 				      oidp->data, oidp->len, 
-				      nidp->data, nidp->len);
+				      nidp->data, nidp->len,
+				      client->nickname, 
+				      strlen(client->nickname));
 
  send_reply:
   /* Send the new Client ID as reply command back to client */
@@ -2671,6 +2674,7 @@ SILC_SERVER_CMD_FUNC(kill)
   SilcClientID *client_id;
   unsigned char *tmp, *comment;
   SilcUInt32 tmp_len, tmp_len2;
+  SilcBuffer killer;
   bool local;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_KILL, cmd, 1, 2);
@@ -2724,7 +2728,7 @@ SILC_SERVER_CMD_FUNC(kill)
   /* Get comment */
   comment = silc_argument_get_arg_type(cmd->args, 2, &tmp_len2);
   if (tmp_len2 > 128)
-    comment = NULL;
+    tmp_len2 = 128;
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
@@ -2737,22 +2741,24 @@ SILC_SERVER_CMD_FUNC(kill)
   /* Send KILLED notify to the channels. It is not sent to the client
      as it will be sent differently destined directly to the client and not
      to the channel. */
+  killer = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   silc_server_send_notify_on_channels(server, remote_client, 
 				      remote_client, SILC_NOTIFY_TYPE_KILLED,
-				      comment ? 2 : 1,
-				      tmp, tmp_len,
-				      comment, comment ? tmp_len2 : 0);
+				      3, tmp, tmp_len,
+				      comment, comment ? tmp_len2 : 0,
+				      killer->data, killer->len);
+  silc_buffer_free(killer);
 
   /* Send KILLED notify to primary route */
   if (!server->standalone)
     silc_server_send_notify_killed(server, server->router->connection, TRUE,
-				   remote_client->id, comment);
+				   remote_client->id, comment, client->id);
 
   /* Send KILLED notify to the client directly */
   silc_server_send_notify_killed(server, remote_client->connection ? 
 				 remote_client->connection : 
 				 remote_client->router->connection, FALSE,
-				 remote_client->id, comment);
+				 remote_client->id, comment, client->id);
 
   /* Remove the client from all channels. This generates new keys to the
      channels as well. */
@@ -3748,7 +3754,9 @@ SILC_SERVER_CMD_FUNC(cmode)
   /* Check that client has rights to change any requested channel modes */
   if (!silc_server_check_cmode_rights(server, channel, chl, mode_mask)) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-					  SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+					  (chl->mode == 0 ? 
+					   SILC_STATUS_ERR_NO_CHANNEL_PRIV :
+					   SILC_STATUS_ERR_NO_CHANNEL_FOPRIV));
     goto out;
   }
 
@@ -4173,7 +4181,7 @@ SILC_SERVER_CMD_FUNC(cumode)
      but themselves. */
   if (chl->mode & SILC_CHANNEL_UMODE_CHANFO && client != target_client) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+					  SILC_STATUS_ERR_NO_CHANNEL_FOPRIV);
     goto out;
   }
 
@@ -4638,61 +4646,6 @@ SILC_SERVER_CMD_FUNC(silcoper)
   silc_server_command_free(cmd);
 }
 
-/* Server side command of CONNECT. Connects us to the specified remote
-   server or router. */
-
-SILC_SERVER_CMD_FUNC(connect)
-{
-  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  SilcServer server = cmd->server;
-  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  unsigned char *tmp, *host;
-  SilcUInt32 tmp_len;
-  SilcUInt32 port = SILC_PORT;
-
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CONNECT, cmd, 1, 2);
-
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
-    goto out;
-
-  /* Check whether client has the permissions. */
-  if (client->mode == SILC_UMODE_NONE) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
-					  SILC_STATUS_ERR_NO_SERVER_PRIV);
-    goto out;
-  }
-
-  if (server->server_type == SILC_ROUTER && 
-      client->mode & SILC_UMODE_SERVER_OPERATOR) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
-					  SILC_STATUS_ERR_NO_ROUTER_PRIV);
-    goto out;
-  }
-
-  /* Get the remote server */
-  host = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-  if (!host) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-
-  /* Get port */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp)
-    SILC_GET32_MSB(port, tmp);
-
-  /* Create the connection. It is done with timeout and is async. */
-  silc_server_create_connection(server, host, port);
-
-  /* Send reply to the sender */
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CONNECT,
-					SILC_STATUS_OK);
-
- out:
-  silc_server_command_free(cmd);
-}
-
 /* Server side of command BAN. This is used to manage the ban list of the
    channel. To add clients and remove clients from the ban list. */
 
@@ -4816,111 +4769,6 @@ SILC_SERVER_CMD_FUNC(ban)
   silc_server_command_free(cmd);
 }
 
-/* Server side command of CLOSE. Closes connection to a specified server. */
- 
-SILC_SERVER_CMD_FUNC(close)
-{
-  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  SilcServer server = cmd->server;
-  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  SilcServerEntry server_entry;
-  SilcSocketConnection sock;
-  unsigned char *tmp;
-  SilcUInt32 tmp_len;
-  unsigned char *name;
-  SilcUInt32 port = SILC_PORT;
-
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CLOSE, cmd, 1, 2);
-
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
-    goto out;
-
-  /* Check whether client has the permissions. */
-  if (client->mode == SILC_UMODE_NONE) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
-					  SILC_STATUS_ERR_NO_SERVER_PRIV);
-    goto out;
-  }
-
-  /* Get the remote server */
-  name = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-  if (!name) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-
-  /* Get port */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp)
-    SILC_GET32_MSB(port, tmp);
-
-  server_entry = silc_idlist_find_server_by_conn(server->local_list,
-						 name, port, FALSE, NULL);
-  if (!server_entry)
-    server_entry = silc_idlist_find_server_by_conn(server->global_list,
-						   name, port, FALSE, NULL);
-  if (!server_entry) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
-					  SILC_STATUS_ERR_NO_SERVER_ID);
-    goto out;
-  }
-
-  /* Send reply to the sender */
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
-					SILC_STATUS_OK);
-
-  /* Close the connection to the server */
-  sock = (SilcSocketConnection)server_entry->connection;
-
-  /* If we shutdown primary router connection manually then don't trigger
-     any reconnect or backup router connections, by setting the router
-     to NULL here. */
-  if (server->router == server_entry) {
-    server->id_entry->router = NULL;
-    server->router = NULL;
-    server->standalone = TRUE;
-  }
-  silc_server_free_sock_user_data(server, sock, NULL);
-  silc_server_close_connection(server, sock);
-  
- out:
-  silc_server_command_free(cmd);
-}
-
-/* Server side command of SHUTDOWN. Shutdowns the server and closes all
-   active connections. */
- 
-SILC_SERVER_CMD_FUNC(shutdown)
-{
-  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  SilcServer server = cmd->server;
-  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SHUTDOWN, cmd, 0, 0);
-
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
-    goto out;
-
-  /* Check whether client has the permission. */
-  if (client->mode == SILC_UMODE_NONE) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SHUTDOWN,
-					  SILC_STATUS_ERR_NO_SERVER_PRIV);
-    goto out;
-  }
-
-  /* Send reply to the sender */
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_SHUTDOWN,
-					SILC_STATUS_OK);
-
-  /* Then, gracefully, or not, bring the server down. */
-  silc_server_stop(server);
-  exit(0);
-
- out:
-  silc_server_command_free(cmd);
-}
- 
 /* Server side command of LEAVE. Removes client from a channel. */
 
 SILC_SERVER_CMD_FUNC(leave)
@@ -4975,8 +4823,8 @@ SILC_SERVER_CMD_FUNC(leave)
 				  server->server_type == SILC_ROUTER ?
 				  TRUE : FALSE, channel, id_entry->id);
 
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					SILC_STATUS_OK);
+  silc_server_command_send_status_data(cmd, SILC_COMMAND_LEAVE,
+				       SILC_STATUS_OK, 2, tmp, len);
 
   /* Remove client from channel */
   if (!silc_server_remove_from_one_channel(server, sock, channel, id_entry,
@@ -5331,5 +5179,168 @@ SILC_SERVER_CMD_FUNC(getkey)
     silc_id_payload_free(idp);
   silc_free(client_id);
   silc_free(server_id);
+  silc_server_command_free(cmd);
+}
+
+
+/* Private range commands, specific to this implementation */
+
+/* Server side command of CONNECT. Connects us to the specified remote
+   server or router. */
+
+SILC_SERVER_CMD_FUNC(connect)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  unsigned char *tmp, *host;
+  SilcUInt32 tmp_len;
+  SilcUInt32 port = SILC_PORT;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_CONNECT, cmd, 1, 2);
+
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  /* Check whether client has the permissions. */
+  if (client->mode == SILC_UMODE_NONE) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CONNECT,
+					  SILC_STATUS_ERR_NO_SERVER_PRIV);
+    goto out;
+  }
+
+  if (server->server_type == SILC_ROUTER && 
+      client->mode & SILC_UMODE_SERVER_OPERATOR) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CONNECT,
+					  SILC_STATUS_ERR_NO_ROUTER_PRIV);
+    goto out;
+  }
+
+  /* Get the remote server */
+  host = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!host) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CONNECT,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  /* Get port */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (tmp)
+    SILC_GET32_MSB(port, tmp);
+
+  /* Create the connection. It is done with timeout and is async. */
+  silc_server_create_connection(server, host, port);
+
+  /* Send reply to the sender */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CONNECT,
+					SILC_STATUS_OK);
+
+ out:
+  silc_server_command_free(cmd);
+}
+
+/* Server side command of CLOSE. Closes connection to a specified server. */
+ 
+SILC_SERVER_CMD_FUNC(close)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+  SilcServerEntry server_entry;
+  SilcSocketConnection sock;
+  unsigned char *tmp;
+  SilcUInt32 tmp_len;
+  unsigned char *name;
+  SilcUInt32 port = SILC_PORT;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_CLOSE, cmd, 1, 2);
+
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  /* Check whether client has the permissions. */
+  if (client->mode == SILC_UMODE_NONE) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CLOSE,
+					  SILC_STATUS_ERR_NO_SERVER_PRIV);
+    goto out;
+  }
+
+  /* Get the remote server */
+  name = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!name) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CLOSE,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  /* Get port */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (tmp)
+    SILC_GET32_MSB(port, tmp);
+
+  server_entry = silc_idlist_find_server_by_conn(server->local_list,
+						 name, port, FALSE, NULL);
+  if (!server_entry)
+    server_entry = silc_idlist_find_server_by_conn(server->global_list,
+						   name, port, FALSE, NULL);
+  if (!server_entry) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CLOSE,
+					  SILC_STATUS_ERR_NO_SERVER_ID);
+    goto out;
+  }
+
+  /* Send reply to the sender */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CLOSE,
+					SILC_STATUS_OK);
+
+  /* Close the connection to the server */
+  sock = (SilcSocketConnection)server_entry->connection;
+
+  /* If we shutdown primary router connection manually then don't trigger
+     any reconnect or backup router connections, by setting the router
+     to NULL here. */
+  if (server->router == server_entry) {
+    server->id_entry->router = NULL;
+    server->router = NULL;
+    server->standalone = TRUE;
+  }
+  silc_server_free_sock_user_data(server, sock, NULL);
+  silc_server_close_connection(server, sock);
+  
+ out:
+  silc_server_command_free(cmd);
+}
+
+/* Server side command of SHUTDOWN. Shutdowns the server and closes all
+   active connections. */
+ 
+SILC_SERVER_CMD_FUNC(shutdown)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_SHUTDOWN, cmd, 0, 0);
+
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
+  /* Check whether client has the permission. */
+  if (client->mode == SILC_UMODE_NONE) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_SHUTDOWN,
+					  SILC_STATUS_ERR_NO_SERVER_PRIV);
+    goto out;
+  }
+
+  /* Send reply to the sender */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_SHUTDOWN,
+					SILC_STATUS_OK);
+
+  /* Then, gracefully, or not, bring the server down. */
+  silc_server_stop(server);
+  exit(0);
+
+ out:
   silc_server_command_free(cmd);
 }

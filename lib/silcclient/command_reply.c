@@ -1356,26 +1356,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(oper)
   silc_client_command_reply_free(cmd);
 }
 
-SILC_CLIENT_CMD_REPLY_FUNC(connect)
-{
-  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-
-  if (cmd->status != SILC_STATUS_OK) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	"%s", silc_client_command_status_message(cmd->status));
-    COMMAND_REPLY_ERROR;
-    goto out;
-  }
-
-  /* Notify application */
-  COMMAND_REPLY((ARGS));
-
- out:
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CONNECT);
-  silc_client_command_reply_free(cmd);
-}
-
 SILC_CLIENT_CMD_REPLY_FUNC(ban)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
@@ -1420,52 +1400,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   silc_client_command_reply_free(cmd);
 }
 
-SILC_CLIENT_CMD_REPLY_FUNC(close)
-{
-  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-
-  if (cmd->status != SILC_STATUS_OK) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	"%s", silc_client_command_status_message(cmd->status));
-    COMMAND_REPLY_ERROR;
-    goto out;
-  }
-
-  /* Notify application */
-  COMMAND_REPLY((ARGS));
-
- out:
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CLOSE);
-  silc_client_command_reply_free(cmd);
-}
- 
-SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
-{
-  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-
-  if (cmd->status != SILC_STATUS_OK) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	"%s", silc_client_command_status_message(cmd->status));
-    COMMAND_REPLY_ERROR;
-    goto out;
-  }
-
-  /* Notify application */
-  COMMAND_REPLY((ARGS));
-
- out:
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_SHUTDOWN);
-  silc_client_command_reply_free(cmd);
-}
- 
 /* Reply to LEAVE command. */
 
 SILC_CLIENT_CMD_REPLY_FUNC(leave)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcChannelID *channel_id;
+  SilcChannelEntry channel = NULL;
+  unsigned char *tmp;
+  SilcUInt32 len;
 
   if (cmd->status != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
@@ -1474,8 +1418,26 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
     goto out;
   }
 
+  /* From protocol version 1.1 we get the channel ID of the left channel */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (tmp) {
+    channel_id = silc_id_payload_parse_id(tmp, len, NULL);
+    if (!channel_id)
+      goto out;
+
+    /* Get the channel entry */
+    channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
+    if (!channel) {
+      silc_free(channel_id);
+      COMMAND_REPLY_ERROR;
+      goto out;
+    }
+
+    silc_free(channel_id);
+  }
+
   /* Notify application */
-  COMMAND_REPLY((ARGS));
+  COMMAND_REPLY((ARGS, channel));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_LEAVE);
@@ -1955,3 +1917,68 @@ SILC_CLIENT_CMD_REPLY_FUNC(info_i)
   silc_free(server_id);
   silc_client_command_reply_free(cmd);
 }
+
+
+/* Private range commands, specific to this implementation (and compatible
+   with SILC Server). */
+
+SILC_CLIENT_CMD_REPLY_FUNC(connect)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+
+  if (cmd->status != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(cmd->status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_PRIV_CONNECT);
+  silc_client_command_reply_free(cmd);
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(close)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+
+  if (cmd->status != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(cmd->status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_PRIV_CLOSE);
+  silc_client_command_reply_free(cmd);
+}
+ 
+SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+
+  if (cmd->status != SILC_STATUS_OK) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(cmd->status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_PRIV_SHUTDOWN);
+  silc_client_command_reply_free(cmd);
+}
+

@@ -1,3 +1,76 @@
+Wed Apr  3 16:24:51 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Upgraded the protocol version to 1.1, updated protocol specs
+	  and software.
+
+	* Added the nickname as new argument to NICK_CHANGE notify and
+	  added it to protocol specs and implemented it to client and
+	  server.  Protocol TODO #3.  Affected files are silcd/idlist.[ch],
+	  silcd/command.c, silcd/packet_receive.c, packet_send.[ch], and
+	  lib/silcclient/client_notify.c.
+
+	* Added the killer's client ID to the KILLED notify and added
+	  it to protocol specs and implemented it to client and server.
+	  Protocol TODO #13.  Affected files are silcd/command.c,
+	  silcd/packet_receive.c, packet_send.[ch], 
+	  lib/silcclient/client_notify.c, irssi/src/silc/core/client_ops.c.
+	  The killer's client entry is now returned to application in
+	  the `notify' client operation.
+
+	* Fixed the Max Argument fields that had too large value set
+	  in the protocol specs.  Protocol TODO #14.
+
+	* Added the LEAVE command reply to return the ID of parted
+	  channel.  Updated protocol specs and implemented it to the
+	  client and server.  Protocol TODO #15.  Affected files are
+	  silcd/command.c, lib/silcclient/command_reply.c.  The channel
+	  entry is now returned to application in the `command_reply'
+	  client operation.
+
+	* Rewrote the version SKE version checking in client libary
+	  and in server to use the silc_parse_version_string.  Affected
+	  files are lib/silcclient/protocol.c, silcd/protocol.c.
+
+	* Added SILC_STATUS_ERR_NO_CHANNEL_FOPRIV error status to few
+	  commands that was missing it, and updated protocol specs and
+	  the server implementation.  Protocol TODO #10.  The affected
+	  file is silcd/command.c.
+
+	* Defined new message flags SILC_MESSAGE_FLAG_REPLY to be
+	  generic reply to a generic request (REQUEST flag), and
+	  SILC_MESSAGE_FLAG_DATA to send any kind of data in a generic
+	  way.  A draft-riikonen-silc-flags-payloads-00.txt is written
+	  to define the payload for DATA flag.  Added the flags to
+	  the implementation.  Protocol TODO #9.  Affected file is
+	  lib/silccore/silcchannel.h.
+
+	  Changed the client library to return the message length
+	  to application as well in the channel_message and private_message
+	  client operations.  Affected files are 
+	  lib/silcclient/client_prvmsg, lib/silcclient/client_channel.c,
+	  lib/silcclient/silcclient.h, irssi/src/silc/core/client_ops.c,
+	  and lib/silcclient/client_ops_example.c.
+
+	* Added two new channel modes: SILC_CMODE_SILENCE_USERS
+	  and SILC_CMODE_SILENCE_OPERS which can be used to moderate
+	  the channel.  Updated protocol specs and impelemented this
+	  to client and server.  Protocol TODO #6.  Affected files are
+	  silcd/packet_receive.c, server_util.c, lib/silcclient/command.c,
+	  lib/silcclient/client_channel.c, lib/silccore/silcmode.h.
+
+	  Added new options m and M to CMODE command in Irssi SILC
+	  client to set these modes.
+
+	* Deprecated all administrative commands from SILC protocol
+	  since they are highly implementation specific commands.
+	  Updated protocol specs.  Moved the old commands in 
+	  implementations to private range of command types.  Affected
+	  files are silcd/command.c, lib/silcclient/command.c and
+	  lib/silcclient/command_reply.c.  Protocol TODO #8.
+
+	* Fixed a bug in server where sending unknown command crashes
+	  the server.  Affected file silcd/command.c.
+
 Wed Apr  3 09:57:47 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_PROTOCOLVERSION macro to check protocol version

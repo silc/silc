@@ -769,6 +769,12 @@ char *silc_client_chmode(SilcUInt32 mode, const char *cipher, const char *hmac)
   if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)
     strncat(string, "f", 1);
 
+  if (mode & SILC_CHANNEL_MODE_SILENCE_USERS)
+    strncat(string, "m", 1);
+
+  if (mode & SILC_CHANNEL_MODE_SILENCE_OPERS)
+    strncat(string, "M", 1);
+
   if (mode & SILC_CHANNEL_MODE_CIPHER)
     strncat(string, cipher, strlen(cipher));
 

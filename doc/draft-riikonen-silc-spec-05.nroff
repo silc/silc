@@ -1422,7 +1422,7 @@ software version = <major>[.<minor>[.<build or vendor string>]]
 
 Protocol version MAY provide both major and minor version.  Currently
 implementations MUST set the protocol version and accept the protocol
-version as SILC-1.0-<software version>.  If new protocol version causes
+version as SILC-1.1-<software version>.  If new protocol version causes
 in compatibilities with older version the the <minor> versio number MUST
 be incremented.  The <major> is incremented if new protocol version is
 fully incompatible.
@@ -1434,9 +1434,9 @@ software version MAY be freely set and accepted.
 Thus, the version strings could be, for example:
 
 .in 6
-SILC-1.0-1.2
 SILC-1.1-2.0.2
-SILC-1.0-1.0.VendorXYZ
+SILC-1.0-1.2
+SILC-1.1-1.0.VendorXYZ
 .in 3
 
 
