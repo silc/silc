@@ -43,6 +43,11 @@
 /* Command line option variables */
 static bool opt_create_keypair = FALSE;
 static bool opt_debug = FALSE;
+static bool opt_list_ciphers = FALSE;
+static bool opt_list_hash = FALSE;
+static bool opt_list_hmac = FALSE;
+static bool opt_list_pkcs = FALSE;
+static bool opt_version = FALSE;
 static char *opt_pkcs = NULL;
 static char *opt_keyfile = NULL;
 static int opt_bits = 0;
@@ -180,8 +185,18 @@ void silc_core_init(void)
       "Set the length of the public key pair", "VALUE" },
     { "show-key", 'S', POPT_ARG_STRING, &opt_keyfile, 0, 
       "Show the contents of the public key", "FILE" },
+    { "list-ciphers", 'C', POPT_ARG_NONE, &opt_list_ciphers, 0,
+      "List supported ciphers", NULL },
+    { "list-hash-funcs", 'H', POPT_ARG_NONE, &opt_list_hash, 0,
+      "List supported hash functions", NULL },
+    { "list-hmacs", 'H', POPT_ARG_NONE, &opt_list_hmac, 0,
+      "List supported HMACs", NULL },
+    { "list-pkcs", 'P', POPT_ARG_NONE, &opt_list_pkcs, 0,
+      "List supported PKCSs", NULL },
     { "debug", 'd', POPT_ARG_NONE, &opt_debug, 0,
       "Enable debugging", NULL },
+    { "version", 'V', POPT_ARG_NONE, &opt_version, 0,
+      "Show version", NULL },
     { NULL, '\0', 0, NULL }
   };
 
@@ -213,6 +228,37 @@ void silc_core_init_finish(void)
     silc_hmac_register_default();
     silc_client_show_key(opt_keyfile);
     exit(0);
+  }
+
+  if (opt_list_ciphers) {
+    silc_cipher_register_default();
+    silc_client_list_ciphers();
+    exit(0);
+  }
+
+  if (opt_list_hash) {
+    silc_hash_register_default();
+    silc_client_list_hash_funcs();
+    exit(0);
+  }
+
+  if (opt_list_hmac) {
+    silc_hmac_register_default();
+    silc_client_list_hmacs();
+    exit(0);
+  }
+
+  if (opt_list_pkcs) {
+    silc_pkcs_register_default();
+    silc_client_list_pkcs();
+    exit(0);
+  }
+
+  if (opt_version) {
+    printf("SILC Secure Internet Live Conferencing, version %s\n", 
+	   silc_version);
+    printf("(c) 1997 - 2001 Pekka Riikonen <priikone@poseidon.pspt.fi>\n");
+    exit(0); 
   }
 
   silc_debug = opt_debug;

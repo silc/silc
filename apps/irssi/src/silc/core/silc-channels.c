@@ -550,8 +550,6 @@ typedef struct {
   SILC_SERVER_REC *server;
 } *KeyInternal;
 
-static SilcSKEKeyMaterial *curr_key = NULL;
-
 /* Key agreement callback that is called after the key agreement protocol
    has been performed. This is called also if error occured during the
    key agreement protocol. The `key' is the allocated key material and
@@ -568,8 +566,6 @@ static void keyagr_completion(SilcClient client,
 			      void *context)
 {
   KeyInternal i = (KeyInternal)context;
-
-  curr_key = NULL;
 
   switch(status) {
   case SILC_KEY_AGREEMENT_OK:
@@ -740,15 +736,6 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   /* Set command */
   if (!strcasecmp(argv[3], "set")) {
     command = 1;
-
-    if (argc == 4) {
-      if (curr_key && type == 1 && client_entry) {
-	silc_client_del_private_message_key(silc_client, conn, client_entry);
-	silc_client_add_private_message_key_ske(silc_client, conn, 
-						client_entry, NULL, curr_key);
-	goto out;
-      }
-    }
 
     if (argc >= 5) {
       if (type == 1 && client_entry) {

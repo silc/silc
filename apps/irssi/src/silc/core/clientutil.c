@@ -43,7 +43,7 @@
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/keyboard.h"
 
-/* Lists supported (builtin) ciphers */
+/* Lists supported ciphers */
 
 void silc_client_list_ciphers()
 {
@@ -52,11 +52,20 @@ void silc_client_list_ciphers()
   silc_free(ciphers);
 }
 
-/* Lists supported (builtin) hash functions */
+/* Lists supported hash functions */
 
 void silc_client_list_hash_funcs()
 {
   char *hash = silc_hash_get_supported();
+  fprintf(stdout, "%s\n", hash);
+  silc_free(hash);
+}
+
+/* Lists supported hash functions */
+
+void silc_client_list_hmacs()
+{
+  char *hash = silc_hmac_get_supported();
   fprintf(stdout, "%s\n", hash);
   silc_free(hash);
 }
@@ -107,14 +116,16 @@ char *silc_client_get_input(const char *prompt)
 char *silc_client_create_identifier()
 {
   char *username = NULL, *realname = NULL;
-  char hostname[256], email[256];
+  char *hostname, email[256];
+  char *ident;
   
   /* Get realname */
   realname = silc_get_real_name();
 
   /* Get hostname */
-  memset(hostname, 0, sizeof(hostname));
-  gethostname(hostname, sizeof(hostname));
+  hostname = silc_net_localhost();
+  if (!hostname)
+    return NULL;
 
   /* Get username (mandatory) */
   username = silc_get_username();
@@ -124,8 +135,14 @@ char *silc_client_create_identifier()
   /* Create default email address, whether it is right or not */
   snprintf(email, sizeof(email), "%s@%s", username, hostname);
 
-  return silc_pkcs_encode_identifier(username, hostname, realname, email,
-				     NULL, NULL);
+  ident = silc_pkcs_encode_identifier(username, hostname, realname, email,
+				      NULL, NULL);
+  if (realname)
+    silc_free(realname);
+  silc_free(hostname);
+  silc_free(username);
+
+  return ident;
 }
 
 /* Creates new public key and private key pair. This is used only

@@ -29,33 +29,32 @@
 SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
 				    SilcChannelUser user, int send_massjoin)
 {
-	SILC_NICK_REC *rec;
+  SILC_NICK_REC *rec;
 
-	g_return_val_if_fail(IS_SILC_CHANNEL(channel), NULL);
-	g_return_val_if_fail(user != NULL, NULL);
+  g_return_val_if_fail(IS_SILC_CHANNEL(channel), NULL);
+  g_return_val_if_fail(user != NULL, NULL);
 
-	rec = g_new0(SILC_NICK_REC, 1);
-	rec->nick = g_strdup(user->client->nickname);
-        rec->host = g_strdup(user->client->username);
-	rec->silc_user = user;
-	rec->unique_id = user->client;
+  rec = g_new0(SILC_NICK_REC, 1);
+  rec->nick = g_strdup(user->client->nickname);
+  rec->host = g_strdup(user->client->username);
+  rec->silc_user = user;
+  rec->unique_id = user->client;
 
-	if (user->mode & SILC_CHANNEL_UMODE_CHANOP) 
-	  rec->op = TRUE;
-	if (user->mode & SILC_CHANNEL_UMODE_CHANFO) 
-	  rec->founder = TRUE;
-	rec->send_massjoin = send_massjoin;
+  if (user->mode & SILC_CHANNEL_UMODE_CHANOP) 
+    rec->op = TRUE;
+  if (user->mode & SILC_CHANNEL_UMODE_CHANFO) 
+    rec->founder = TRUE;
+  rec->send_massjoin = send_massjoin;
 
-	nicklist_insert(CHANNEL(channel), (NICK_REC *) rec);
-	return rec;
+  nicklist_insert(CHANNEL(channel), (NICK_REC *) rec);
+  return rec;
 }
 
 SILC_NICK_REC *silc_nicklist_find(SILC_CHANNEL_REC *channel,
 				  SilcClientEntry client)
 {
-	return (SILC_NICK_REC *)
-		nicklist_find_unique(CHANNEL(channel),
-				     client->nickname, client);
+  return (SILC_NICK_REC *)nicklist_find_unique(CHANNEL(channel),
+					       client->nickname, client);
 }
 
 #define isnickchar(a) \
@@ -66,66 +65,68 @@ SILC_NICK_REC *silc_nicklist_find(SILC_CHANNEL_REC *channel,
 /* Remove all "extra" characters from `nick'. Like _nick_ -> nick */
 char *silc_nick_strip(const char *nick)
 {
-	char *stripped, *spos;
+  char *stripped, *spos;
 
-	g_return_val_if_fail(nick != NULL, NULL);
+  g_return_val_if_fail(nick != NULL, NULL);
+  
+  spos = stripped = g_strdup(nick);
+  while (isnickchar(*nick)) {
+    if (isalnum((int) *nick))
+      *spos++ = *nick;
+    nick++;
+  }
+  if ((unsigned char) *nick >= 128)
+    *spos++ = *nick; /* just add it so that nicks won't match.. */
+  *spos = '\0';
 
-	spos = stripped = g_strdup(nick);
-	while (isnickchar(*nick)) {
-		if (isalnum((int) *nick))
-			*spos++ = *nick;
-		nick++;
-	}
-	if ((unsigned char) *nick >= 128)
-		*spos++ = *nick; /* just add it so that nicks won't match.. */
-	*spos = '\0';
-	return stripped;
+  return stripped;
 }
 
 /* Check is `msg' is meant for `nick'. */
 int silc_nick_match(const char *nick, const char *msg)
 {
-	char *stripnick, *stripmsg;
-	int ret, len;
+  char *stripnick, *stripmsg;
+  int ret, len;
 
-	g_return_val_if_fail(nick != NULL, FALSE);
-	g_return_val_if_fail(msg != NULL, FALSE);
+  g_return_val_if_fail(nick != NULL, FALSE);
+  g_return_val_if_fail(msg != NULL, FALSE);
 
-	len = strlen(nick);
-	if (g_strncasecmp(msg, nick, len) == 0 && !isalnum((int) msg[len]))
-		return TRUE;
+  len = strlen(nick);
+  if (g_strncasecmp(msg, nick, len) == 0 && !isalnum((int) msg[len]))
+    return TRUE;
+  
+  stripnick = silc_nick_strip(nick);
+  stripmsg = silc_nick_strip(msg);
+  
+  len = strlen(stripnick);
+  ret = len > 0 && g_strncasecmp(stripmsg, stripnick, len) == 0 &&
+    !isalnum((int) stripmsg[len]) &&
+    (unsigned char) stripmsg[len] < 128;
+  
+  g_free(stripnick);
+  g_free(stripmsg);
 
-	stripnick = silc_nick_strip(nick);
-	stripmsg = silc_nick_strip(msg);
-
-	len = strlen(stripnick);
-	ret = len > 0 && g_strncasecmp(stripmsg, stripnick, len) == 0 &&
-		!isalnum((int) stripmsg[len]) &&
-		(unsigned char) stripmsg[len] < 128;
-
-	g_free(stripnick);
-	g_free(stripmsg);
-	return ret;
+  return ret;
 }
 
 static const char *get_nick_flags(void)
 {
-	static char flags[3] = { '@', '+', '\0' };
-	return flags;
+  static char flags[3] = { '@', '+', '\0' };
+  return flags;
 }
 
 static void sig_connected(SILC_SERVER_REC *server)
 {
-	if (IS_SILC_SERVER(server))
-		server->get_nick_flags = (void *) get_nick_flags;
+  if (IS_SILC_SERVER(server))
+    server->get_nick_flags = (void *) get_nick_flags;
 }
 
 void silc_nicklist_init(void)
 {
-	signal_add("server connected", (SIGNAL_FUNC) sig_connected);
+  signal_add("server connected", (SIGNAL_FUNC) sig_connected);
 }
 
 void silc_nicklist_deinit(void)
 {
-	signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
+  signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
 }

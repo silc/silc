@@ -27,6 +27,7 @@
 char *silc_client_get_input(const char *prompt);
 void silc_client_list_ciphers();
 void silc_client_list_hash_funcs();
+void silc_client_list_hmacs();
 void silc_client_list_pkcs();
 char *silc_client_create_identifier();
 int silc_client_create_key_pair(char *pkcs_name, int bits,
