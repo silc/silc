@@ -31,4 +31,13 @@ are available:
         Set/unset channel operator.  Requires that 
         you are channel operator or channel founder.
 
+    b <nickname>[@<server>]
+
+        Set/unset channel message blocking.  Client
+        may set this mode only to itself.  When set
+        the server will not send channel message to
+        to the client.  This mode can be used to block
+        unwanted messages if desired.
+
+
 See also: CMODE, UMODE

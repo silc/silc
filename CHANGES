@@ -1,3 +1,24 @@
+Tue Apr  9 17:15:42 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added new user modes ANONYMOUS for special anonymous servers
+	  that may set the mode for client, and BLOCK_PRIVMSG which
+	  client may set to block incoming private messages unless the
+	  Private Message Key flag is set (using private keys to protect
+	  private messages).  Updated protocol specs and code in client
+	  and server and core library.  Protocol TODO #23.  Affected
+	  files are lib/silccore/silcmode.h, silcd/server.[ch], 
+	  irssi/src/silc/core/client_ops.c, silcd/packet_receive.c,
+	  irssi/docs/help/in/umode.in, lib/silcclient/command.c.
+
+	* Added new channel user mode BLOCK_MESSAGES which the client
+	  may set to itself to tell server not send channel messages.
+	  Other packets such as channel key packets are still sent.
+	  Protocol TODO #23.  Updated the protocol specs, client and
+	  server.  Affected files are lib/silccore/silcmode.h,
+	  irssi/docs/help/in/cumode.in, lib/silcclient/command.c,
+	  lib/silcutil/silcutil.c, silcd/command.c, and
+	  silcd/packet_send.c.
+
 Mon Apr  8 23:57:32 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Redefined the Status Payload to include now two 8 bit fields,

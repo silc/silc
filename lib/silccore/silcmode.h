@@ -58,13 +58,16 @@
  *
  * DESCRIPTION
  *
- *    All user modes on channel
+ *    All user modes on channel.  These indicate the user's status on the
+ *    channel.  Some of the modes can be set by channel founder and channel
+ *    operator.  Some modes may be set by users themself.
  *
  * SOURCE
  */
-#define SILC_CHANNEL_UMODE_NONE        0x0000 /* Normal user */
-#define SILC_CHANNEL_UMODE_CHANFO      0x0001 /* channel founder */
-#define SILC_CHANNEL_UMODE_CHANOP      0x0002 /* channel operator */
+#define SILC_CHANNEL_UMODE_NONE            0x00000000 /* Normal user */
+#define SILC_CHANNEL_UMODE_CHANFO          0x00000001 /* channel founder */
+#define SILC_CHANNEL_UMODE_CHANOP          0x00000002 /* channel operator */
+#define SILC_CHANNEL_UMODE_BLOCK_MESSAGES  0x00000004 /* messages blocked */
 /***/
 
 /****d* silccore/Modes/SilcUserMode
@@ -76,15 +79,17 @@
  *
  * SOURCE
  */
-#define SILC_UMODE_NONE                0x00000000 /* Normal SILC user */
-#define SILC_UMODE_SERVER_OPERATOR     0x00000001 /* Server operator */
-#define SILC_UMODE_ROUTER_OPERATOR     0x00000002 /* Router (SILC) operator */
-#define SILC_UMODE_GONE                0x00000004 /* Client is gone */
-#define SILC_UMODE_INDISPOSED          0x00000008 /* Client is indisposed */
-#define SILC_UMODE_BUSY                0x00000010 /* Client is busy */
-#define SILC_UMODE_PAGE                0x00000020 /* Client requests paging */
-#define SILC_UMODE_HYPER               0x00000040 /* Client is hyper active */
-#define SILC_UMODE_ROBOT               0x00000080 /* Client is a robot */
+#define SILC_UMODE_NONE              0x00000000 /* Normal SILC user */
+#define SILC_UMODE_SERVER_OPERATOR   0x00000001 /* Server operator */
+#define SILC_UMODE_ROUTER_OPERATOR   0x00000002 /* Router (SILC) operator */
+#define SILC_UMODE_GONE              0x00000004 /* Client is gone */
+#define SILC_UMODE_INDISPOSED        0x00000008 /* Client is indisposed */
+#define SILC_UMODE_BUSY              0x00000010 /* Client is busy */
+#define SILC_UMODE_PAGE              0x00000020 /* Client requests paging */
+#define SILC_UMODE_HYPER             0x00000040 /* Client is hyper active */
+#define SILC_UMODE_ROBOT             0x00000080 /* Client is a robot */
+#define SILC_UMODE_ANONYMOUS         0x00000100 /* Client is anonymous */
+#define SILC_UMODE_BLOCK_PRIVMSG     0x00000200 /* Client blocks privmsgs */
 /***/
 
 #endif

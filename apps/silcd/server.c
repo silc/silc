@@ -3961,11 +3961,13 @@ void silc_server_save_users_on_channel(SilcServer server,
    could not be found to the client. If the `client_id' is specified then
    it is used and the `id_data' is ignored. */
 
-SilcSocketConnection silc_server_get_client_route(SilcServer server,
-						  unsigned char *id_data,
-						  SilcUInt32 id_len,
-						  SilcClientID *client_id,
-						  SilcIDListData *idata)
+SilcSocketConnection
+silc_server_get_client_route(SilcServer server,
+			     unsigned char *id_data,
+			     SilcUInt32 id_len,
+			     SilcClientID *client_id,
+			     SilcIDListData *idata,
+			     SilcClientEntry *client_entry)
 {
   SilcClientID *id;
   SilcClientEntry client;
@@ -3982,6 +3984,9 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
   } else {
     id = silc_id_dup(client_id, SILC_ID_CLIENT);
   }
+
+  if (client_entry)
+    *client_entry = NULL;
 
   /* If the destination belongs to our server we don't have to route
      the packet anywhere but to send it to the local destination. */
@@ -4003,6 +4008,8 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
     /* Seems that client really is directly connected to us */
     if (idata)
       *idata = (SilcIDListData)client;
+    if (client_entry)
+      *client_entry = client;
     return client->connection;
   }
 

@@ -16,5 +16,11 @@ modes are available:
     p        Set/unset to await paging
     h        Set/unset to be hyper active
     t        Set/unset to be actually robot
+    P        Set/unset to block incoming private messages.
+             If set then only private message secured with
+             private message keys are delivered.  Other
+             private messages server automatically discards.
+             This can be used to block unwanted private
+             messages.
 
 See also: CMODE, CUMODE, AWAY

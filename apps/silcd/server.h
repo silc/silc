@@ -208,11 +208,13 @@ void silc_server_save_users_on_channel(SilcServer server,
 				       SilcBuffer user_list,
 				       SilcBuffer mode_list,
 				       SilcUInt32 user_count);
-SilcSocketConnection silc_server_get_client_route(SilcServer server,
-						  unsigned char *id_data,
-						  SilcUInt32 id_len,
-						  SilcClientID *client_id,
-						  SilcIDListData *idata);
+SilcSocketConnection
+silc_server_get_client_route(SilcServer server,
+			     unsigned char *id_data,
+			     SilcUInt32 id_len,
+			     SilcClientID *client_id,
+			     SilcIDListData *idata,
+			     SilcClientEntry *client_entry);
 SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 					       SilcClientEntry client);
 SilcClientEntry silc_server_get_client_resolve(SilcServer server,

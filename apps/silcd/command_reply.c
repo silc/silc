@@ -135,13 +135,8 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
   username = silc_argument_get_arg_type(cmd->args, 4, &len);
   realname = silc_argument_get_arg_type(cmd->args, 5, &len);
-  if (!id_data || !nickname || !username || !realname) {
-    SILC_LOG_ERROR(("Incomplete WHOIS info: %s %s %s",
-		    nickname ? nickname : "",
-		    username ? username : "",
-		    realname ? realname : ""));
+  if (!id_data || !nickname || !username || !realname)
     return FALSE;
-  }
 
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
   if (tmp)

@@ -1173,6 +1173,12 @@ SILC_CLIENT_CMD_FUNC(umode)
       else
 	mode &= ~SILC_UMODE_ROBOT;
       break;
+    case 'P':
+      if (add)
+	mode |= SILC_UMODE_BLOCK_PRIVMSG;
+      else
+	mode &= ~SILC_UMODE_BLOCK_PRIVMSG;
+      break;
     default:
       COMMAND_ERROR;
       goto out;
@@ -1538,6 +1544,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
       if (add) {
 	mode |= SILC_CHANNEL_UMODE_CHANFO;
 	mode |= SILC_CHANNEL_UMODE_CHANOP;
+	mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
       } else {
 	mode = SILC_CHANNEL_UMODE_NONE;
       }
@@ -1567,6 +1574,12 @@ SILC_CLIENT_CMD_FUNC(cumode)
 	mode |= SILC_CHANNEL_UMODE_CHANOP;
       else
 	mode &= ~SILC_CHANNEL_UMODE_CHANOP;
+      break;
+    case 'b':
+      if (add)
+	mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
+      else
+	mode &= ~SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
       break;
     default:
       COMMAND_ERROR;

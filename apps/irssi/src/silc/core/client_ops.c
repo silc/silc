@@ -900,6 +900,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  strcat(buf, " hyper active");
 	if (mode & SILC_UMODE_ROBOT)
 	  strcat(buf, " robot");
+	if (mode & SILC_UMODE_ANONYMOUS)
+	  strcat(buf, " anonymous");
+	if (mode & SILC_UMODE_BLOCK_PRIVMSG)
+	  strcat(buf, " blocks private messages");
 
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			   SILCTXT_WHOIS_MODES, buf);
@@ -1199,6 +1203,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  strcat(stat, "H");
 	else if (e->mode & SILC_UMODE_ROBOT)
 	  strcat(stat, "R");
+	else if (e->mode & SILC_UMODE_ANONYMOUS)
+	  strcat(stat, "?");
 	else
 	  strcat(stat, "A");
 	if (mode)

@@ -652,6 +652,9 @@ char *silc_client_chumode(SilcUInt32 mode)
   if (mode & SILC_CHANNEL_UMODE_CHANOP)
     strncat(string, "o", 1);
 
+  if (mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES)
+    strncat(string, "b", 1);
+
   return strdup(string);
 }
 

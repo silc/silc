@@ -999,8 +999,8 @@ List of all defined commands in SILC follows.
            0x00000002    SILC_UMODE_ROUTER_OPERATOR
 
               Marks the user as router (SILC) operator.  Client
-              MUST NOT this mode itself.  Router sets this mode to
-              the client when client attains the router operator
+              MUST NOT set this mode itself.  Router sets this mode
+              to the client when client attains the router operator
               privileges by SILC_COMMAND_SILCOPER command.  Client
               MAY unset the mode itself.
 
@@ -1046,6 +1046,33 @@ List of all defined commands in SILC follows.
 
               Marks that the client is actually a robot program.
               Client MAY set and unset this mode.
+
+
+           0x00000100    SILC_UMODE_ANONYMOUS
+
+              Marks that the client is anonymous client.  Server
+              that specificly is designed for anonymous services
+              can set and unset this mode.  Client MUST NOT set or
+              unset this mode itself.  A client with this mode set
+              would have the username and the hostname information
+              scrambled by the server which set this mode.
+
+
+           0x00000200    SILC_UMODE_BLOCK_PRIVMSG
+
+              Marks that the client wishes to block private
+              messages sent to the client, unless the Private
+              Message Key flag is set in the SILC packet header.
+              If this mode is set server MUST NOT deliver private
+              messages to the client without the Private Message
+              Key flag being set.
+
+              A separate service could provide additional filtering
+              features for accepting private messages from certain
+              sender.  However, this document does not specify such
+              service.
+
+              The client MAY set and unset this mode.
 
 
         Reply messages to the command:
@@ -1356,7 +1383,24 @@ List of all defined commands in SILC follows.
 
               Sets channel operator privileges on the channel for a
               client on the channel.  Channel founder and channel operator
-              MAY set/unset this mode.
+              MAY set/unset this mode.  The client MAY remove this mode
+              at any time.
+
+
+           0x00000004    SILC_CUMODE_BLOCK_MESSAGES
+
+              Marks that the client wishes not to receive any channel
+              messages sent for the channel.  Client MAY set and unset
+              this mode to itself.  Client MUST NOT set it to anyone else.
+              When this mode is set server MUST NOT deliver channel
+              messages to this client.  Other packets such as channel
+              key packets are still sent to the client.
+
+              A separate service could provide additional filtering
+              features for accepting channel messages from certain
+              sender.  However, this document does not specify such
+              service.
+
 
         Reply messages to the command:
 

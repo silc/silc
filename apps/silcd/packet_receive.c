@@ -69,7 +69,8 @@ void silc_server_notify(SilcServer server,
 
     /* Get the route to the client */
     dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					    packet->dst_id_len, NULL, &idata);
+					    packet->dst_id_len, NULL, 
+					    &idata, NULL);
     if (dst_sock)
       /* Relay the packet */
       silc_server_relay_packet(server, dst_sock, idata->send_key,
@@ -1439,6 +1440,7 @@ void silc_server_private_message(SilcServer server,
 {
   SilcSocketConnection dst_sock;
   SilcIDListData idata;
+  SilcClientEntry client;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1448,7 +1450,8 @@ void silc_server_private_message(SilcServer server,
 
   /* Get the route to the client */
   dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					  packet->dst_id_len, NULL, &idata);
+					  packet->dst_id_len, NULL, 
+					  &idata, &client);
   if (!dst_sock) {
     /* Send IDENTIFY command reply with error status to indicate that
        such destination ID does not exist or is invalid */
@@ -1475,6 +1478,13 @@ void silc_server_private_message(SilcServer server,
     }
 
     silc_buffer_free(idp);
+    return;
+  }
+
+  /* Check whether destination client wishes to receive private messages */
+  if (client && !(packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY) &&
+      client->mode & SILC_UMODE_BLOCK_PRIVMSG) {
+    SILC_LOG_DEBUG(("Client blocks private messages, discarding packet"));
     return;
   }
 
@@ -1507,7 +1517,8 @@ void silc_server_private_message_key(SilcServer server,
 
   /* Get the route to the client */
   dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					  packet->dst_id_len, NULL, &idata);
+					  packet->dst_id_len, NULL, 
+					  &idata, NULL);
   if (!dst_sock)
     return;
 
@@ -2710,7 +2721,8 @@ void silc_server_key_agreement(SilcServer server,
 
   /* Get the route to the client */
   dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					  packet->dst_id_len, NULL, &idata);
+					  packet->dst_id_len, NULL, 
+					  &idata, NULL);
   if (!dst_sock)
     return;
 
@@ -2827,7 +2839,8 @@ void silc_server_ftp(SilcServer server,
 
   /* Get the route to the client */
   dst_sock = silc_server_get_client_route(server, packet->dst_id,
-					  packet->dst_id_len, NULL, &idata);
+					  packet->dst_id_len, NULL, 
+					  &idata, NULL);
   if (!dst_sock)
     return;
 

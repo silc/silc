@@ -781,7 +781,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
-    if (!client || client == sender_entry)
+    if (!client || client == sender_entry || 
+	chl->mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES)
       continue;
 
     /* If the client has set router it means that it is not locally

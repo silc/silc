@@ -2480,7 +2480,8 @@ SILC_SERVER_CMD_FUNC(invite)
     }
     
     /* Get route to the client */
-    dest_sock = silc_server_get_client_route(server, NULL, 0, dest_id, &idata);
+    dest_sock = silc_server_get_client_route(server, NULL, 0, dest_id, 
+					     &idata, NULL);
     if (!dest_sock) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
 					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
@@ -3761,6 +3762,21 @@ SILC_SERVER_CMD_FUNC(umode)
     goto out;
   }
 
+  /* Anonymous mode cannot be set by client */
+  if (mask & SILC_UMODE_ANONYMOUS) {
+    if (!(client->mode & SILC_UMODE_ANONYMOUS)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					    SILC_STATUS_ERR_PERM_DENIED);
+      goto out;
+    }
+  } else {
+    if (client->mode & SILC_UMODE_ANONYMOUS) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_UMODE,
+					    SILC_STATUS_ERR_PERM_DENIED);
+      goto out;
+    }
+  }
+
   /* Change the mode */
   client->mode = mask;
 
@@ -4276,18 +4292,18 @@ SILC_SERVER_CMD_FUNC(cumode)
   }
 
   if (target_mask & SILC_CHANNEL_UMODE_CHANFO) {
+    if (target_client != client) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					    SILC_STATUS_ERR_NOT_YOU);
+      goto out;
+    }
+
     if (!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
       /* The client tries to claim the founder rights. */
       unsigned char *tmp_auth;
       SilcUInt32 tmp_auth_len, auth_len;
       void *auth;
       
-      if (target_client != client) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					      SILC_STATUS_ERR_NOT_YOU);
-	goto out;
-      }
-
       if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
 	  !channel->founder_key || !idata->public_key ||
 	  !silc_pkcs_public_key_compare(channel->founder_key, 
@@ -4361,6 +4377,31 @@ SILC_SERVER_CMD_FUNC(cumode)
       notify = TRUE;
     }
   }
+
+  if (target_mask & SILC_CHANNEL_UMODE_BLOCK_MESSAGES) {
+    if (target_client != client) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					    SILC_STATUS_ERR_NOT_YOU);
+      goto out;
+    }
+
+    if (!(chl->mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES)) {
+      chl->mode |= SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
+      notify = TRUE;
+    }
+  } else {
+    if (chl->mode & SILC_CHANNEL_UMODE_BLOCK_MESSAGES) {
+      if (target_client != client) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
+					      SILC_STATUS_ERR_NOT_YOU);
+	goto out;
+      }
+
+      chl->mode &= ~SILC_CHANNEL_UMODE_BLOCK_MESSAGES;
+      notify = TRUE;
+    }
+  }
+
 
   idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   tmp_id = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
@@ -5133,7 +5174,7 @@ SILC_SERVER_CMD_FUNC(getkey)
       SilcSocketConnection dest_sock;
       
       dest_sock = silc_server_get_client_route(server, NULL, 0, 
-					       client_id, NULL);
+					       client_id, NULL, NULL);
       if (!dest_sock)
 	goto out;
       

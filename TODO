@@ -132,9 +132,6 @@ describe new stuff to be added to protocol versions 1.x.
 
  22. Session detachment/resume?
 
- 23. Message blocking via user modes (which could be expanded via 
-     services, but basic blocking would be a feature)?
-
  o Inviting and banning by public key should be made possible.  To be
    included in protocol version 1.2.
 
