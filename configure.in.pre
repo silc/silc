@@ -308,7 +308,7 @@ AC_ARG_WITH(etcdir,
   [[  --with-etcdir=DIR       directory for system files [/etc/silc]]],
   [
     case "$withval" in
-      no)
+      no|yes)
         ;;
       *)
         ETCDIR="$withval"
@@ -325,7 +325,7 @@ AC_ARG_WITH(helpdir,
   [[  --with-helpdir=DIR      directory for SILC help files [PREFIX/help]]],
   [
     case "$withval" in
-      no)
+      no|yes)
         ;;
       *)
        HELPDIR="$withval"
@@ -342,7 +342,7 @@ AC_ARG_WITH(docdir,
   [[  --with-docdir=DIR       directory for SILC documentation [PREFIX/doc]]],
   [
     case "$withval" in
-      no)
+      no|yes)
         ;;
       *)
         DOCDIR="$withval"
@@ -359,7 +359,7 @@ AC_ARG_WITH(simdir,
   [[  --with-simdir=DIR       directory for SIM modules [PREFIX/modules]]],
   [
     case "$withval" in
-      no)
+      no|yes)
         ;;
       *)
         MODULESDIR="$withval"
@@ -376,7 +376,7 @@ AC_ARG_WITH(logsdir,
   [[  --with-logsdir=DIR      directory for SILC Server logs [PREFIX/logs]]],
   [
     case "$withval" in
-      no)
+      no|yes)
         ;;
       *)
         LOGSDIR="$withval"
@@ -393,7 +393,7 @@ AC_ARG_WITH(mandir,
   [[  --with-mandir=DIR       directory for SILC manual pages [PREFIX/man]]],
   [
     case "$withval" in
-      no)
+      no|yes)
         ;;
       *)
         MANDIR="$withval"
@@ -426,7 +426,7 @@ AC_ARG_WITH(silcd-pid-file,
                                  Server [/var/run/silcd.pid]]],
   [
     case "$withval" in
-      no)
+      no|yes)
         ;;
       *)
         PIDFILE="$withval"
