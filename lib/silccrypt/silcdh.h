@@ -57,7 +57,7 @@ SilcDH silc_dh_alloc(SilcRng rng, SilcInt *g, SilcInt *p, SilcInt *lpf);
    allocation. Frees all the allocated data inside the DH context. */
 void silc_dh_free(SilcDH dh);
 
-/* Generates random private value `x' such that 0 < x < lpf at least of
+/* Generates random private value `x' such that 0 < x < lpf at most of
    length of lpf. Returns FALSE if the random number could not be generated.
    Returns the generated value into `x' pointer sent as argument, unless
    the `x' is NULL. The returned `x' must no be freed by the caller. */
