@@ -38,9 +38,9 @@ headers=`find $SRC -name "silc*.h"`
 #
 # ASCII documentation
 #
-if [ "$TYPE" = "ASCII" ]; then
-
-fi
+#if [ "$TYPE" = "ASCII" ]; then
+#
+#fi
 
 #
 # HTML documentation
