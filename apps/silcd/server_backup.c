@@ -983,6 +983,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
       /* Switch announced informations to our primary router of using the
 	 backup router. */
+      silc_server_update_servers_by_server(server, ctx->sock->user_data, 
+					   server->router);
       silc_server_update_clients_by_server(server, ctx->sock->user_data,
 					   server->router, TRUE, FALSE);
 
