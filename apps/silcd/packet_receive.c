@@ -364,6 +364,12 @@ void silc_server_replace_id(SilcServer server,
 	oidp = silc_id_payload_encode(id, SILC_ID_CLIENT);
 	nidp = silc_id_payload_encode(id2, SILC_ID_CLIENT);
 
+	/* The nickname is not valid anymore, set it NULL. This causes that
+	   the nickname will be queried if someone wants to know it. */
+	if (client->nickname)
+	  silc_free(client->nickname);
+	client->nickname = NULL;
+
 	/* Send the NICK_CHANGE notify type to local clients on the channels
 	   this client is joined to. */
 	silc_server_send_notify_on_channels(server, client, 
