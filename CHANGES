@@ -1,3 +1,9 @@
+Sun Jun 17 15:26:05 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the GETKEY command in the server to check also the
+	  global list.  Otherwise the GETKEY would not work correctly
+	  in normal SILC server.  Affected file silcd/command.c.
+
 Sat Jun 16 18:00:00 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed GETKEY crash, it crashed if the command did not succseed.

@@ -4757,6 +4757,8 @@ SILC_SERVER_CMD_FUNC(getkey)
   SilcBuffer pk;
   SilcIdType id_type;
 
+  SILC_LOG_DEBUG(("Start"));
+
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
   if (!tmp) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
@@ -4778,9 +4780,15 @@ SILC_SERVER_CMD_FUNC(getkey)
        would be locally connected client so send the command further. */
     client = silc_idlist_find_client_by_id(server->local_list, 
 					   client_id, NULL);
+    if (!client)
+      client = silc_idlist_find_client_by_id(server->global_list, 
+					     client_id, NULL);
     
     if ((!client && !cmd->pending && !server->standalone) ||
-	(client && !client->connection)) {
+	(client && !client->connection && !cmd->pending && 
+	 !server->standalone) ||
+	(client && !client->data.public_key && !cmd->pending &&
+	 !server->standalone)) {
       SilcBuffer tmpbuf;
       uint16 old_ident;
       SilcSocketConnection dest_sock;
@@ -4836,9 +4844,15 @@ SILC_SERVER_CMD_FUNC(getkey)
        would be locally connected server so send the command further. */
     server_entry = silc_idlist_find_server_by_id(server->local_list, 
 						 server_id, NULL);
+    if (!server_entry)
+      server_entry = silc_idlist_find_server_by_id(server->global_list, 
+						   server_id, NULL);
     
     if ((!server_entry && !cmd->pending && !server->standalone) ||
-	(server_entry && !server_entry->connection)) {
+	(server_entry && !server_entry->connection && !cmd->pending &&
+	 !server->standalone) ||
+	(server_entry && !server_entry->data.public_key && !cmd->pending &&
+	 !server->standalone)) {
       SilcBuffer tmpbuf;
       uint16 old_ident;
       
