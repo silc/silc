@@ -871,11 +871,12 @@ SilcUInt32 silc_version_to_num(const char *version)
 char *silc_get_input(const char *prompt, bool echo_off)
 {
 #ifdef SILC_UNIX
+  int fd;
+  char input[2048];
+
   if (echo_off) {
     char *ret = NULL;
 #ifdef HAVE_TERMIOS_H
-    char input[2048];
-    int fd;
     struct termios to;
     struct termios to_old;
 
@@ -891,8 +892,10 @@ char *silc_get_input(const char *prompt, bool echo_off)
     tcgetattr(fd, &to);
     to_old = to;
 
-    /* Echo OFF */
+    /* Echo OFF, and assure we can prompt and get input */
     to.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
+    to.c_lflag |= ICANON;
+    to.c_cc[VMIN] = 255;
     tcsetattr(fd, TCSANOW, &to);
 
     memset(input, 0, sizeof(input));
@@ -902,6 +905,7 @@ char *silc_get_input(const char *prompt, bool echo_off)
 
     if ((read(fd, input, sizeof(input))) < 0) {
       fprintf(stderr, "silc: %s\n", strerror(errno));
+      tcsetattr(fd, TCSANOW, &to_old);
       return NULL;
     }
 
@@ -923,9 +927,6 @@ char *silc_get_input(const char *prompt, bool echo_off)
 #endif /* HAVE_TERMIOS_H */
     return ret;
   } else {
-    char input[2048];
-    int fd;
-
     fd = open("/dev/tty", O_RDONLY);
     if (fd < 0) {
       fprintf(stderr, "silc: %s\n", strerror(errno));
