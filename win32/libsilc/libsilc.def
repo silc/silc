@@ -587,3 +587,5 @@ EXPORTS
         silc_cipher_get_name @ 905 ;
         silc_pkcs_public_key_payload_encode @ 908 ;
         silc_pkcs_public_key_payload_decode @ 909 ;
+	silc_auth_get_public_data @ 910 ;
+	silc_auth_public_key_auth_generate_wpub @ 911 ;
