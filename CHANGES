@@ -1,3 +1,22 @@
+Fri Aug 23 22:05:44 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
+
+	* Rewrote iconv checking, introduce --with-iconv for systems
+	  which rely on libiconv.  Check if iconv() provided by libc
+	  is good enough, otherwise demand libiconv.  Affected file
+	  configure.in.pre
+
+Fri Aug 23 07:10:52 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
+
+	* Search for ldopen() also in libc.  This enables SIM support
+	  on *BSD systems.  Based on patch from Alex Zepeda.  Affected
+	  file configure.in.pre
+
+Sun Aug 18 04:44:30 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
+
+	* Don't call AM_CONDITIONAL conditonally for SILC_THREADS.
+	  This fixes prepare on *BSD systems.  Affected file
+	  configure.in.pre
+
 Sun Aug  4 15:55:40 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* More fixed for not having purge timeout for global clients
