@@ -409,6 +409,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	      for (i = 0; i < query->ids_count; i++)
 		silc_free(query->ids[i].id);
 	      silc_free(query->ids);
+	      silc_free(id);
 	      return;
 	    }
 	  }
@@ -481,6 +482,13 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       if (tmp && tmp_len <= 256)
 	query->channel_name = silc_memdup(tmp, tmp_len);
 
+      if (!query->nickname && !query->server_name && !query->channel_name) {
+	silc_server_query_send_error(server, query,
+				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
+	silc_server_query_free(query);
+	return;
+      }
+
     } else {
       /* Parse the IDs included in the query */
       query->ids = silc_calloc(argc, sizeof(*query->ids));
@@ -493,7 +501,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
 	if (!id) {
 	  silc_server_query_add_error(server, query, TRUE, i + 5,
-				      SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+				      SILC_STATUS_ERR_BAD_CLIENT_ID);
 	  continue;
 	}
 
@@ -509,6 +517,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	      for (i = 0; i < query->ids_count; i++)
 		silc_free(query->ids[i].id);
 	      silc_free(query->ids);
+	      silc_free(id);
 	      return;
 	    }
 	  }
@@ -1020,6 +1029,7 @@ void silc_server_query_resolve_reply(void *context, void *reply)
     id = &query->queries[i];
 
     if (error == SILC_STATUS_ERR_TIMEDOUT) {
+
       /* If timeout occurred for local entry when resolving attributes
 	 mark that this client doesn't support attributes in WHOIS. This
 	 assures we won't send the request again to the client. */
@@ -1028,8 +1038,22 @@ void silc_server_query_resolve_reply(void *context, void *reply)
 						     id->id, TRUE, NULL);
 	SILC_LOG_DEBUG(("Client %s does not support Requested Attributes",
 			silc_id_render(id->id, SILC_ID_CLIENT)));
-	if (client_entry && SILC_IS_LOCAL(client_entry))
+	if (client_entry && SILC_IS_LOCAL(client_entry)) {
 	  client_entry->data.status |= SILC_IDLIST_STATUS_NOATTR;
+	  client_entry->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
+          continue;
+	}
+      }
+
+      /* Remove the RESOLVING status from the client entry */
+      if (query->querycmd != SILC_COMMAND_WHOWAS) {
+	client_entry = silc_idlist_find_client_by_id(server->local_list,
+						     id->id, TRUE, NULL);
+	if (!client_entry)
+	  client_entry = silc_idlist_find_client_by_id(server->global_list,
+						       id->id, TRUE, NULL);
+	if (client_entry)
+	  client_entry->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
       }
     }
   }
@@ -1179,7 +1203,7 @@ void silc_server_query_send_reply(SilcServer server,
       case SILC_COMMAND_WHOIS:
 	{
 	  unsigned char idle[4], mode[4];
-	  unsigned char *fingerprint, fempty[20], *attrs;
+	  unsigned char *fingerprint, fempty[20], *attrs = NULL;
 	  SilcBuffer channels, umode_list = NULL;
 
 	  memset(fempty, 0, sizeof(fempty));
@@ -1212,6 +1236,7 @@ void silc_server_query_send_reply(SilcServer server,
 
 	  /* If Requested Attribute were present, and we do not have the
 	     attributes we will reply to them on behalf of the client. */
+	  len = 0;
 	  if (query->attrs) {
 	    if (!entry->attrs) {
 	      attrs = silc_server_query_reply_attrs(server, query, &len);
@@ -1223,7 +1248,7 @@ void silc_server_query_send_reply(SilcServer server,
 
 	  /* Send command reply */
 	  silc_server_send_command_reply(server, cmd->sock, query->querycmd,
-					 status, 0, ident, 9,
+					 status, 0, ident, 10,
 					 2, idp->data, idp->len,
 					 3, nh, strlen(nh),
 					 4, uh, strlen(uh),
@@ -1237,7 +1262,8 @@ void silc_server_query_send_reply(SilcServer server,
 					 fingerprint ? 20 : 0,
 					 10, umode_list ? umode_list->data :
 					 NULL, umode_list ? umode_list->len :
-					 0);
+					 0, 11, attrs, len);
+
 	  sent_reply = TRUE;
 
 	  /* For now we will delete Requested Attributes */
@@ -1415,6 +1441,7 @@ void silc_server_query_send_reply(SilcServer server,
 
       /* Take error argument */
       if (query->errors[i].from_cmd) {
+	len = 0;
 	tmp = silc_argument_get_arg_type(cmd->args,
 					 query->errors[i].index, &len);
 	if (query->errors[i].index == 1)
