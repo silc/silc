@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 
   /* Parse command line arguments */
   if (argc > 1) {
-    while ((opt = getopt_long(argc, argv, "f:p:d::xhFVC:",
+    while ((opt = getopt_long(argc, argv, "f:p:d:xhFVC:",
 			      long_opts, &option_index)) != EOF) {
       switch(opt) {
 	case 'h':
