@@ -848,8 +848,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   SilcServerEntry id_entry;
   SilcBuffer packet;
   SilcServerHBContext hb_context;
+  SilcServerRekeyContext rekey;
   unsigned char *id_string;
-  SilcIDListData idata;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -914,8 +914,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   sock->type = SILC_SOCKET_TYPE_ROUTER;
   server->id_entry->router = id_entry;
   server->router = id_entry;
-  idata = (SilcIDListData)sock->user_data;
-  idata->registered = TRUE;
+  server->router->data.registered = TRUE;
 
   /* Perform keepalive. The `hb_context' will be freed automatically
      when finally calling the silc_socket_free function. XXX hardcoded 
@@ -926,12 +925,14 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
-  /* Register re-key timeout */
-  idata->rekey->timeout = 60; /* XXX hardcoded */
-  idata->rekey->context = (void *)server;
+  /* Registed re-key timeout */
+  rekey = silc_calloc(1, sizeof(*rekey));
+  rekey->server = server;
+  rekey->sock = sock;
+  rekey->timeout = 3600; /* XXX hardcoded */
   silc_task_register(server->timeout_queue, sock->sock, 
 		     silc_server_rekey_callback,
-		     (void *)sock, idata->rekey->timeout, 0,
+		     (void *)rekey, rekey->timeout, 0,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   /* If we are router then announce our possible servers. */
@@ -3604,9 +3605,8 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
 
 SILC_TASK_CALLBACK(silc_server_rekey_callback)
 {
-  SilcSocketConnection sock = (SilcSocketConnection)context;
-  SilcIDListData idata = (SilcIDListData)sock->user_data;
-  SilcServer server = (SilcServer)idata->rekey->context;
+  SilcServerRekeyContext rekey = (SilcServerRekeyContext)context;
+  SilcServer server = rekey->server;
   SilcProtocol protocol;
   SilcServerRekeyInternalContext *proto_ctx;
 
@@ -3616,23 +3616,24 @@ SILC_TASK_CALLBACK(silc_server_rekey_callback)
      to the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->server = (void *)server;
-  proto_ctx->sock = sock;
+  proto_ctx->context = context;
+  proto_ctx->sock = rekey->sock;
   proto_ctx->responder = FALSE;
       
   /* Perform rekey protocol. Will call the final callback after the
      protocol is over. */
   silc_protocol_alloc(SILC_PROTOCOL_SERVER_REKEY, 
 		      &protocol, proto_ctx, silc_server_rekey_final);
-  sock->protocol = protocol;
+  rekey->sock->protocol = protocol;
       
   /* Run the protocol */
   protocol->execute(server->timeout_queue, 0, protocol, 
-		    sock->sock, 0, 0);
+		    rekey->sock->sock, 0, 0);
 
   /* Re-register re-key timeout */
-  silc_task_register(server->timeout_queue, sock->sock, 
+  silc_task_register(server->timeout_queue, 0, 
 		     silc_server_rekey_callback,
-		     context, idata->rekey->timeout, 0,
+		     context, rekey->timeout, 0,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 

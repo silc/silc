@@ -160,6 +160,13 @@ typedef struct {
   uint32 failure;
 } *SilcServerFailureContext;
 
+/* Session key's re-key context. */
+typedef struct {
+  SilcServer server;
+  SilcSocketConnection sock;
+  uint32 timeout;
+} *SilcServerRekeyContext;
+
 /* Macros */
 
 /* Registers generic task for file descriptor for reading from network and

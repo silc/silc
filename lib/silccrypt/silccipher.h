@@ -44,7 +44,7 @@
 typedef struct {
   char *name;
   uint32 block_len;
-  unsigned key_len;
+  uint32 key_len;
 
   int (*set_key)(void *, const unsigned char *, uint32);
   int (*set_key_with_string)(void *, const unsigned char *, uint32);

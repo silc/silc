@@ -281,7 +281,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
     uint32 hash_len, sign_len;
 
     SILC_LOG_DEBUG(("We are doing mutual authentication"));
-    SILC_LOG_DEBUG(("Computing HASH value"));
+    SILC_LOG_DEBUG(("Computing HASH_i value"));
 
     /* Compute the hash value */
     memset(hash, 0, sizeof(hash));
