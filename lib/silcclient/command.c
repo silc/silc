@@ -1302,6 +1302,8 @@ SILC_CLIENT_CMD_FUNC(users)
       SilcClientEntry e = chu->client;
       char *m, tmp[80], len1;
 
+      memset(line, 0, sizeof(line_len));
+
       if (strlen(e->nickname) + strlen(e->server) + 100 > line_len) {
 	silc_free(line);
 	line_len += strlen(e->nickname) + strlen(e->server) + 100;
