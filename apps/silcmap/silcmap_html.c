@@ -108,7 +108,7 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
     fprintf(fp, "Algorithm</td><td>&nbsp;:</td><td>&nbsp;%s</td></tr>\n", public_key->name);
     if (key_len) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
-      fprintf(fp, "Key length (bits)</td><td>&nbsp;:</td><td>&nbsp;%d</td></tr>\n", (unsigned int)key_len);
+      fprintf(fp, "Key length</td><td>&nbsp;:</td><td>&nbsp;%d bits</td></tr>\n", (unsigned int)key_len);
     }
     if (ident->realname) {
       fprintf(fp, "<tr><td>&nbsp;&nbsp;");
@@ -135,9 +135,9 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
       fprintf(fp, "Country</td><td>&nbsp;:</td><td>&nbsp;%s</td></tr>\n", ident->country);
     }
     fprintf(fp, "<tr><td>&nbsp;&nbsp;");
-    fprintf(fp, "Fingerprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;<tt>%s</tt></td></tr>\n", fingerprint);
+    fprintf(fp, "Fingerprint</td><td>&nbsp;:</td><td>&nbsp;<tt>%s</tt></td></tr>\n", fingerprint);
     fprintf(fp, "<tr><td>&nbsp;&nbsp;");
-    fprintf(fp, "Babbleprint (SHA1)</td><td>&nbsp;:</td><td>&nbsp;<tt>%s</tt></td></tr>\n", babbleprint);
+    fprintf(fp, "Babbleprint</td><td>&nbsp;:</td><td>&nbsp;<tt>%s</tt></td></tr>\n", babbleprint);
     fprintf(fp, "</table>\n");
 
     pd = fopen(mapconn->public_key, "r");
