@@ -24,7 +24,8 @@ noinst_LIBRARIES = libsilcmath.a
 
 libsilcmath_a_SOURCES = \
 	silcprimegen.c \
-	modinv.c
+	modinv.c \
+	mpbin.c
 
 EXTRA_DIST = *.h
 
