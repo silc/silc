@@ -1263,18 +1263,18 @@ case of CTR mode it refers to the counter block.  The format of the
 Figure 6:  Counter Block
 
 .in 6
-o Truncated HASH from SKE (4 bytes) - This value is the 32 most
-  significant bits from the HASH value that was computed as a
-  result of SKE protocol.  This acts as session identifier and
-  each rekey MUST produce a new HASH value.
+o Truncated HASH from SKE (4 bytes) - This value is the first 4
+  bytes from the HASH value that was computed as a result of SKE
+  protocol.  This acts as session identifier and each rekey MUST
+  produce a new HASH value.
 
-o Sending/Receiving IV from SKE (8 bytes) - This value is the 64
-  most significant bits from the Sending IV or Receiving IV
-  generated in the SKE protocol.  When this mode is used to
-  encrypt sending traffic the Sending IV is used, when used to
-  decrypt receiving traffic the Receiving IV is used.  This
-  assures that two parties of the protocol use different IV
-  for sending traffic.  Each rekey MUST produce a new value.
+o Sending/Receiving IV from SKE (8 bytes) - This value is the
+  first 8 bytes from the Sending IV or Receiving IV generated in
+  the SKE protocol.  When this mode is used to encrypt sending
+  traffic the Sending IV is used, when used to decrypt receiving
+  traffic the Receiving IV is used.  This assures that two parties
+  of the protocol use different IV for sending traffic.  Each rekey
+  MUST produce a new value.
 
 o Block Counter (4 bytes) - This is the counter value for the
   counter block and is MSB ordered number starting from one (1)

@@ -418,7 +418,7 @@ two SILC clients.  In normal case, where client is connecting to a
 server, or server is connecting to a router the Mutual Authentication
 flag MAY be omitted.  However, if the connection authentication protocol 
 for the connecting entity is not based on digital signatures (it is
-on pre-shared key) then the Mutual Authentication flag SHOULD be 
+based on pre-shared key) then the Mutual Authentication flag SHOULD be 
 enabled.  This way the connecting entity has to provide proof of
 possession of the private key for the public key it will provide in
 this protocol.
