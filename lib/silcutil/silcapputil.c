@@ -252,7 +252,8 @@ bool silc_load_key_pair(const char *pub_filename,
 				SILC_PKCS_FILE_PEM) == FALSE)
     if (silc_pkcs_load_public_key((char *)pub_filename, return_public_key,
 				  SILC_PKCS_FILE_BIN) == FALSE) {
-      memset(pass, 0, strlen(pass));
+      if (pass)
+	memset(pass, 0, strlen(pass));
       silc_free(pass);
       return FALSE;
     }
@@ -388,7 +389,7 @@ bool silc_change_private_key_passphrase(const char *prv_filename,
       pass = strdup("");
   }
 
-  silc_pkcs_save_private_key(prv_filename, private_key,
+  silc_pkcs_save_private_key((char *)prv_filename, private_key,
 			     (unsigned char *)pass, strlen(pass),
 			     base64 ? SILC_PKCS_FILE_PEM : SILC_PKCS_FILE_BIN);
 
