@@ -1,3 +1,9 @@
+Fri Sep  7 17:28:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the configure.in.pre and the compilation and distribution
+	  environment to support the new autoconf 2.52.  That version is
+	  now required to compile the CVS trunk.
+
 Thu Sep  6 12:47:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Renamed function silc_parse_nickname to silc_parse_userfqdn

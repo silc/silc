@@ -33,19 +33,19 @@ esac
 
 # ./prepare script will automatically put the correct version. Do not edit!
 AM_INIT_AUTOMAKE(SILC_PACKAGE, SILC_VERSION)
-AC_PREREQ(2.3)
+AC_PREREQ(2.52)
 AM_CONFIG_HEADER(includes/silcdefs.h)
 
 AC_PROG_CC
 AC_C_INLINE
 AC_C_CONST
-AC_ARG_PROGRAM
 
 AC_PROG_LN_S
 AC_SUBST(LN_S)
 
 # Distribution definition. ./prepare will automatically add here a correct
 # value. Do not edit!
+silc_dist=SILC_PACKAGE
 AC_DEFINE(SILC_DIST_DEFINE)
 
 # XXX
@@ -187,8 +187,7 @@ AC_DEFUN(AC_NCURSES, [
 	    AC_MSG_RESULT(Found ncurses on $1/$2)
 
 	    CURSES_LIBS="$3"
-	    AC_CHECK_LIB(ncurses, initscr, [
-	    ], [
+	    AC_CHECK_LIB(ncurses, initscr, , [
                 CHECKLIBS=`echo "$3"|sed 's/-lncurses/-lcurses/g'`
 		AC_CHECK_LIB(curses, initscr, [
 			CURSES_LIBS="$CHECKLIBS"
@@ -691,20 +690,17 @@ AC_SUBST(INCLUDE_DEFINES_INT)
 #
 # Makefile outputs
 #
-AC_OUTPUT( \
+AC_CONFIG_FILES( \
 Makefile
 Makefile.defines
 Makefile.defines_int
-irssi/Makefile.defines
-irssi/Makefile.defines_int
-doc/Makefile
-doc/whitepaper/Makefile
+doc/Makefile  
 includes/Makefile
 lib/Makefile
 lib/contrib/Makefile
 lib/silcclient/Makefile
 lib/silccore/Makefile
-lib/silccrypt/Makefile
+lib/silccrypt/Makefile 
 lib/silcmath/Makefile
 lib/silcmath/mpi/Makefile.defines
 lib/silcmath/mpi/Makefile.defines_int
@@ -714,8 +710,30 @@ lib/silcske/Makefile
 lib/silcutil/Makefile
 lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
-silc/Makefile
+)     
+
+if test "x$silc_dist" = "xsilc-client" || 
+   test "x$silc_dist" = "xsilc-toolkit"; then
+AC_CONFIG_FILES( \
+irssi/Makefile.defines
+irssi/Makefile.defines_int
+)
+fi
+
+if test "x$silc_dist" = "xsilc-server" ||
+   test "x$silc_dist" = "xsilc-toolkit"; then
+AC_CONFIG_FILES( \
 silcd/Makefile
+)
+fi
+
+if test "x$silc_dist" = "xsilc-toolkit"; then
+AC_CONFIG_FILES( \
+silc/Makefile
 win32/Makefile
 win32/libsilc/Makefile
-win32/libsilcclient/Makefile)
+win32/libsilcclient/Makefile
+)
+fi
+
+AC_OUTPUT

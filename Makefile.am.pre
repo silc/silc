@@ -26,7 +26,7 @@ include $(top_srcdir)/Makefile.defines.in
 
 dist-bzip: distdir
 	-chmod -R a+r $(distdir)
-	-$(TAR) chof $(distdir).tar $(distdir)
+	-tar chof $(distdir).tar $(distdir)
 	-bzip2 $(distdir).tar
 	-rm -rf $(distdir)
 

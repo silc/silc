@@ -10,7 +10,7 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_STDC_HEADERS
 AC_ARG_PROGRAM
-AM_PROG_LIBTOOL
+AC_PROG_RANLIB
 
 dnl * ahem.. :) we don't want static libraries for modules
 if test "x$lt_target" = "x"; then
@@ -26,14 +26,6 @@ if test "x$enable_static" = "xno"; then
 fi
 
 AC_CONFIG_AUX_DIR(.)
-
-#${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
-#$libtool_flags --disable-static --output=libtool-shared --no-verify
-#$ac_aux_dir/ltmain.sh $lt_target \
-#|| { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
-#${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
-#$libtool_flags --no-verify $ac_aux_dir/ltmain.sh $host \
-#|| { echo "configure: error: libtool configure failed" 1>&2; exit 1; }
 
 AC_CHECK_HEADERS(string.h stdlib.h unistd.h dirent.h sys/ioctl.h libintl.h)
 
@@ -355,62 +347,6 @@ fi
 PROG_LIBS="$PROG_LIBS $GLIB_LIBS"
 
 dnl **
-dnl ** check if we can link dynamic libraries to modules
-dnl ** also checks if libraries are built to .libs dir
-dnl **
-
-AC_MSG_CHECKING([if we can link dynamic libraries with modules])
-DYNLIB_MODULES=no
-
-dnl ** compile object file
-cat > conftest.c <<EOF
-#include <math.h>
-int modfunc(void){return (int)floor(1.2);}
-EOF
-
-./libtool --mode=compile $CC $CFLAGS -c conftest.c 2> /dev/null > /dev/null
-if test ! -s conftest.lo; then
-  AC_ERROR([error compiling test module])
-fi
-
-dnl ** link to library
-./libtool --mode=link $CC $CFLAGS $LDFLAGS -rpath /usr/lib conftest.lo -lm -o libconftest.la > /dev/null
-if test ! -s .libs/libconftest.a; then
-  AC_ERROR([error, can't even find .a library])
-fi
-
-dnl ** check if dynamic linking worked
-libfile=`grep '^library_names' libconftest.la|$sedpath "s/library_names='\(.*\)'.*/\1/"|$sedpath 's/.* \([[^ ]]*\)$/\1/'`
-if test ! -s .libs/$libfile; then
-  AC_MSG_RESULT([no, error linking test module])
-else
-  cat > conftest.c <<EOF
-#include <gmodule.h>
-main() {
-GModule *m; int (*modfunc)(void);
-m = g_module_open(".libs/$libfile", 0);
-if (!m) g_print("error loading: %s", g_module_error());
-else if (!g_module_symbol(m, "modfunc", (gpointer *) &modfunc))
-  g_print("modfunc() symbol not found from module");
-else if (modfunc() == 1) g_print("ok"); else g_print("wrong result?! 1 vs %d", modfunc());
-return 0; }
-EOF
-  $CC $CFLAGS conftest.c -o conftest $GLIB_CFLAGS $GLIB_LIBS 2> /dev/null > /dev/null
-  if test ! -s conftest; then
-    AC_MSG_RESULT([no, error compiling test program])
-  else
-    status="`./conftest`"
-    if test "x$status" = "xok"; then
-      DYNLIB_MODULES=yes
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no, error running: $status])
-    fi
-  fi
-fi
-rm -rf conftest conftest.* libconftest.* .libs
-
-dnl **
 dnl ** curses checks
 dnl **
 
@@ -626,8 +562,7 @@ AC_DEFUN(AC_NCURSES, [
 	    AC_MSG_RESULT(Found ncurses on $1/$2)
 
 	    CURSES_LIBS="$3"
-	    AC_CHECK_LIB(ncurses, initscr, [
-	    ], [
+	    AC_CHECK_LIB(ncurses, initscr, , [
                 CHECKLIBS=`echo "$3"|sed 's/-lncurses/-lcurses/g'`
 		AC_CHECK_LIB(curses, initscr, [
 			CURSES_LIBS="$CHECKLIBS"

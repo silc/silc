@@ -81,8 +81,6 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o Some ./prepare problems with latest autoconf and automake.
-
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
    defined.  zlib package is already included into the lib dir (in CVS,

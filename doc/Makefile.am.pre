@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-COMMONDIRS = 
+COMMONDIRS =
 SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 makerfc = ../scripts/makerfc
@@ -38,6 +38,29 @@ dist-hook:
 	touch draft-riikonen-silc-ke-auth-04.txt
 	touch draft-riikonen-silc-commands-02.txt
 else
+if SILC_DIST_TOOLKIT
+dist-hook:
+	-@if test -f ../util/robodoc/Source/robodoc ; then \
+	  echo Generating Toolkit Reference Manual ; \
+	  rm -rf toolkit ; mkdir toolkit ; cd ../scripts/silcdoc ; \
+	  ./silcdoc HTML ../../lib/ ../../doc/toolkit \
+	  ../../util/robodoc/Source/robodoc ; \
+	else  \
+	  echo ROBODoc is not compiled! Cannot generate documentation! ; \
+        fi
+	touch draft-riikonen-silc-spec-04.txt
+	touch draft-riikonen-silc-pp-04.txt
+	touch draft-riikonen-silc-ke-auth-04.txt
+	touch draft-riikonen-silc-commands-02.txt
+	$(makerfc) draft-riikonen-silc-spec-04.nroff \
+		draft-riikonen-silc-spec-04.txt
+	$(makerfc) draft-riikonen-silc-pp-04.nroff \
+		draft-riikonen-silc-pp-04.txt
+	$(makerfc) draft-riikonen-silc-ke-auth-04.nroff \
+		draft-riikonen-silc-ke-auth-04.txt
+	$(makerfc) draft-riikonen-silc-commands-02.nroff \
+		draft-riikonen-silc-commands-02.txt
+else
 dist-hook:
 	touch draft-riikonen-silc-spec-04.txt
 	touch draft-riikonen-silc-pp-04.txt
@@ -52,10 +75,17 @@ dist-hook:
 	$(makerfc) draft-riikonen-silc-commands-02.nroff \
 		draft-riikonen-silc-commands-02.txt
 endif
+endif
+
+if SILC_DIST_TOOLKIT
+SILC_EXTRA_DIST = toolkit
+else
+SILC_EXTRA_DIST =
+endif
 
 EXTRA_DIST = \
 	CodingStyle \
 	FAQ \
 	example_silcd.conf \
 	example_silc.conf \
-	draft-riikonen*.txt
+	draft-riikonen*.txt $(SILC_EXTRA_DIST)
