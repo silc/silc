@@ -30,7 +30,7 @@
 #define vsnprintf _vsnprintf
 
 #ifdef WIN32
-#define strcasecmp strcmp
+#define strcasecmp stricmp
 #define strncasecmp strncmp
 #endif
 
