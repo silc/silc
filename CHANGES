@@ -1,3 +1,29 @@
+Thu Jul 13 22:10:21 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Optimized packet reception. MAC computation and checking is now
+	  also more optimized.  A lot previously duplicated code is now
+	  used as generic by both client and server.
+
+	* Fixed key pair generation in clientutil.c
+
+Wed Jul 12 18:28:07 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added into lib/silccore/silcbufutil.[ch] new function;
+	  silc_buffer_realloc.
+
+	* Moved generic packet sending/encryption functions to 
+	  lib/silccore/silcpacket.[ch] from client and server.  Some
+	  rewriting of the functions.
+
+	* Moved all generic packet reception/decryption functions to
+	  lib/silccore/silcpacket.[ch] from client and server.  The
+	  packet processing is now much cleaner in both client and server.
+	  These were major changes in both client and server.
+
+	* Created many common functions in server to do packet sending.
+	  Previously code were duplicated a lot, this has been removed
+	  with these changes.
+
 Tue Jul 11 20:27:26 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Rewrote major parts of the ID cache system.  Don't know 

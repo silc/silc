@@ -143,13 +143,13 @@
 #include "silcconfig.h"
 #include "id.h"
 #include "idcache.h"
-#include "silcpacket.h"
 #include "silctask.h"
 #include "silcschedule.h"
 #include "silcprotocol.h"
+#include "silcsockconn.h"
 #include "silccommand.h"
 #include "silcchannel.h"
-#include "silcsockconn.h"
+#include "silcpacket.h"
 
 #ifdef SILC_SIM
 /* SILC Module library includes */
