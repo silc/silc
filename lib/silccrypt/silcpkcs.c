@@ -593,10 +593,20 @@ int silc_pkcs_private_key_decode(unsigned char *data, unsigned int data_len,
 
 static int silc_pkcs_save_public_key_internal(char *filename,
 					      unsigned char *data,
-					      unsigned int data_len)
+					      unsigned int data_len,
+					      unsigned int encoding)
 {
   SilcBuffer buf;
   unsigned int len;
+
+  switch(encoding) {
+  case SILC_PKCS_FILE_BIN:
+    break;
+  case SILC_PKCS_FILE_PEM:
+    data = silc_encode_pem_file(data, data_len);
+    data_len = strlen(data);
+    break;
+  }
 
   len = data_len + (strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) +
 		    strlen(SILC_PKCS_PUBLIC_KEYFILE_END));
@@ -609,7 +619,7 @@ static int silc_pkcs_save_public_key_internal(char *filename,
 		     SILC_STR_UI32_STRING(SILC_PKCS_PUBLIC_KEYFILE_END),
 		     SILC_STR_END);
 
-  /* Save into a file */
+  /* Save into file */
   if (silc_file_write(filename, buf->data, buf->len)) {
     silc_buffer_free(buf);
     return FALSE;
@@ -620,34 +630,46 @@ static int silc_pkcs_save_public_key_internal(char *filename,
 }
 
 /* Saves public key into file */
-/* XXX encoding should be defined (PEM or binary). */
 
-int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key)
+int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
+			      unsigned int encoding)
 {
   unsigned char *data;
   unsigned int data_len;
 
   data = silc_pkcs_public_key_encode(public_key, &data_len);
-  return silc_pkcs_save_public_key_internal(filename, data, data_len);
+  return silc_pkcs_save_public_key_internal(filename, data, data_len,
+					    encoding);
 }
 
 /* Saves public key into file */
-/* XXX encoding should be defined (PEM or binary). */
 
 int silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
-				   unsigned int data_len)
+				   unsigned int data_len,
+				   unsigned int encoding)
 {
-  return silc_pkcs_save_public_key_internal(filename, data, data_len);
+  return silc_pkcs_save_public_key_internal(filename, data, data_len,
+					    encoding);
 }
 
 /* Internal routine to save private key. */
 
 static int silc_pkcs_save_private_key_internal(char *filename,
 					       unsigned char *data,
-					       unsigned int data_len)
+					       unsigned int data_len,
+					       unsigned int encoding)
 {
   SilcBuffer buf;
   unsigned int len;
+
+  switch(encoding) {
+  case SILC_PKCS_FILE_BIN:
+    break;
+  case SILC_PKCS_FILE_PEM:
+    data = silc_encode_pem_file(data, data_len);
+    data_len = strlen(data);
+    break;
+  }
 
   len = data_len + (strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN) +
 		    strlen(SILC_PKCS_PRIVATE_KEYFILE_END));
@@ -672,34 +694,36 @@ static int silc_pkcs_save_private_key_internal(char *filename,
 
 /* Saves private key into file. */
 /* XXX The buffer should be encrypted if passphrase is provided. */
-/* XXX encoding should be defined (PEM or binary). */
 
 int silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
-			       unsigned char *passphrase)
+			       unsigned char *passphrase,
+			       unsigned int encoding)
 {
   unsigned char *data;
   unsigned int data_len;
 
   data = silc_pkcs_private_key_encode(private_key, &data_len);
-  return silc_pkcs_save_private_key_internal(filename, data, data_len);
+  return silc_pkcs_save_private_key_internal(filename, data, data_len,
+					     encoding);
 }
 
 /* Saves private key into file. */
 /* XXX The buffer should be encrypted if passphrase is provided. */
-/* XXX encoding should be defined (PEM or binary). */
 
 int silc_pkcs_save_private_key_data(char *filename, unsigned char *data, 
 				    unsigned int data_len,
-				    unsigned char *passphrase)
+				    unsigned char *passphrase,
+				    unsigned int encoding)
 {
-  return silc_pkcs_save_private_key_internal(filename, data, data_len);
+  return silc_pkcs_save_private_key_internal(filename, data, data_len,
+					     encoding);
 }
 
 /* Loads public key from file and allocates new public key. Returns TRUE
    is loading was successful. */
-/* XXX Encoding should be defined. */
 
-int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key)
+int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
+			      unsigned int encoding)
 {
   unsigned char *cp, *old, *data, byte;
   unsigned int i, data_len, len;
@@ -725,6 +749,15 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key)
   if (public_key) {
     len = data_len - (strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) +
 		      strlen(SILC_PKCS_PUBLIC_KEYFILE_END));
+
+    switch(encoding) {
+    case SILC_PKCS_FILE_BIN:
+      break;
+    case SILC_PKCS_FILE_PEM:
+      data = silc_decode_pem(data, len, &len);
+      break;
+    }
+
     if (!silc_pkcs_public_key_decode(data, len, public_key)) {
       memset(old, 0, data_len);
       silc_free(old);
@@ -739,10 +772,10 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key)
 
 /* Load private key from file and allocates new private key. Returns TRUE
    if loading was successful. */
-/* XXX Encoding should be defined. */
 /* XXX Should support encrypted private key files */
 
-int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key)
+int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
+			       unsigned int encoding)
 {
   unsigned char *cp, *old, *data, byte;
   unsigned int i, data_len, len;
@@ -768,6 +801,15 @@ int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key)
   if (private_key) {
     len = data_len - (strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN) +
 		      strlen(SILC_PKCS_PRIVATE_KEYFILE_END));
+
+    switch(encoding) {
+    case SILC_PKCS_FILE_BIN:
+      break;
+    case SILC_PKCS_FILE_PEM:
+      data = silc_decode_pem(data, len, &len);
+      break;
+    }
+
     if (!silc_pkcs_private_key_decode(data, len, private_key)) {
       memset(old, 0, data_len);
       silc_free(old);

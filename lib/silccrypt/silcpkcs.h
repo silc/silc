@@ -84,6 +84,10 @@ typedef struct {
 #define SILC_PKCS_PRIVATE_KEYFILE_BEGIN "-----BEGIN SILC PRIVATE KEY-----\n"
 #define SILC_PKCS_PRIVATE_KEYFILE_END "\n-----END SILC PRIVATE KEY-----\n"
 
+/* Public and private key file encoding types */
+#define SILC_PKCS_FILE_BIN 0
+#define SILC_PKCS_FILE_PEM 1
+
 /* Macros */
 
 /* Macros used to implement the SILC PKCS API */
@@ -198,15 +202,21 @@ silc_pkcs_private_key_data_encode(unsigned char *prv, unsigned int prv_len,
 				  char *pkcs, unsigned int *len);
 int silc_pkcs_private_key_decode(unsigned char *data, unsigned int data_len,
 				 SilcPrivateKey *private_key);
-int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key);
+int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
+			      unsigned int encoding);
 int silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
-				   unsigned int data_len);
+				   unsigned int data_len,
+				   unsigned int encoding);
 int silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
-			       unsigned char *passphrase);
+			       unsigned char *passphrase,
+			       unsigned int encoding);
 int silc_pkcs_save_private_key_data(char *filename, unsigned char *data, 
 				    unsigned int data_len,
-				    unsigned char *passphrase);
-int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key);
-int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key);
+				    unsigned char *passphrase,
+				    unsigned int encoding);
+int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
+			      unsigned int encoding);
+int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
+			       unsigned int encoding);
 
 #endif
