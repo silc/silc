@@ -44,6 +44,9 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Private channels are shown on the USERS channel list. They must not
+   be shown.
+
  o Add perhaps /var/run/silcd.pid for PID information for the server.
 
  o Add a timeout to handling incmoing JOIN commands.  It should be 
