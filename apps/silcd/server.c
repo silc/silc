@@ -3891,7 +3891,7 @@ SILC_TASK_CALLBACK(silc_server_failure_callback)
 
 /* Assembles user list and users mode list from the `channel'. */
 
-void silc_server_get_users_on_channel(SilcServer server,
+bool silc_server_get_users_on_channel(SilcServer server,
 				      SilcChannelEntry channel,
 				      SilcBuffer *user_list,
 				      SilcBuffer *mode_list,
@@ -3903,6 +3903,9 @@ void silc_server_get_users_on_channel(SilcServer server,
   SilcBuffer client_mode_list;
   SilcBuffer idp;
   SilcUInt32 list_count = 0, len = 0;
+
+  if (!silc_hash_table_count(channel->user_list))
+    return FALSE;
 
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl))
@@ -3938,6 +3941,7 @@ void silc_server_get_users_on_channel(SilcServer server,
   *user_list = client_id_list;
   *mode_list = client_mode_list;
   *user_count = list_count;
+  return TRUE;
 }
 
 /* Saves users and their modes to the `channel'. */

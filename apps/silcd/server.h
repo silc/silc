@@ -198,7 +198,7 @@ void silc_server_announce_clients(SilcServer server,
 void silc_server_announce_channels(SilcServer server,
 				   unsigned long creation_time,
 				   SilcSocketConnection remote);
-void silc_server_get_users_on_channel(SilcServer server,
+bool silc_server_get_users_on_channel(SilcServer server,
 				      SilcChannelEntry channel,
 				      SilcBuffer *user_list,
 				      SilcBuffer *mode_list,

@@ -187,6 +187,8 @@ void silc_server_command_process(SilcServer server,
   SilcServerCommand *cmd;
   SilcCommand command;
 
+  SILC_LOG_DEBUG(("Start"));
+
   /* Allocate command context. This must be free'd by the
      command routine receiving it. */
   ctx = silc_server_command_alloc();
@@ -5472,7 +5474,8 @@ SILC_SERVER_CMD_FUNC(users)
     channel = silc_idlist_find_channel_by_name(server->local_list, 
 					       channel_name, NULL);
 
-  if (!channel || channel->disabled || !channel->users_resolved) {
+  if (!channel || (!server->standalone && (channel->disabled || 
+		    !channel->users_resolved))) {
     if (server->server_type != SILC_ROUTER && !server->standalone &&
 	!cmd->pending) {
       SilcBuffer tmpbuf;
@@ -5525,8 +5528,12 @@ SILC_SERVER_CMD_FUNC(users)
   }
 
   /* Get the users list */
-  silc_server_get_users_on_channel(server, channel, &client_id_list,
-				   &client_mode_list, &list_count);
+  if (!silc_server_get_users_on_channel(server, channel, &client_id_list,
+					&client_mode_list, &list_count)) {
+    list_count = 0;
+    client_id_list = NULL;
+    client_mode_list = NULL;
+  }
 
   /* List count */
   SILC_PUT32_MSB(list_count, lc);
@@ -5537,17 +5544,23 @@ SILC_SERVER_CMD_FUNC(users)
 						SILC_STATUS_OK, 0, ident, 4,
 						2, idp->data, idp->len,
 						3, lc, 4,
-						4, client_id_list->data,
-						client_id_list->len,
-						5, client_mode_list->data,
-						client_mode_list->len);
+						4, client_id_list ? 
+						client_id_list->data : NULL,
+						client_id_list ?
+						client_id_list->len : 0,
+						5, client_mode_list ?
+						client_mode_list->data : NULL,
+						client_mode_list ?
+						client_mode_list->len : 0);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
     
   silc_buffer_free(idp);
   silc_buffer_free(packet);
-  silc_buffer_free(client_id_list);
-  silc_buffer_free(client_mode_list);
+  if (client_id_list)
+    silc_buffer_free(client_id_list);
+  if (client_mode_list)
+    silc_buffer_free(client_mode_list);
   silc_free(id);
 
  out:

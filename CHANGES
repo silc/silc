@@ -7,6 +7,9 @@ Sun May 19 18:59:00 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	* Fixed CUMODE_CHANGE notify handling in server.  Affected
 	  file silcd/packet_receive.c.
 
+	* Fixed USERS command to support empty channels.  Affected
+	  file silcd/command.c.
+
 Sat May 18 11:35:19 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Allow multiple identical pending commands to be registered
