@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 #
-#  Copyright (C) 2000 - 2002 Pekka Riikonen
+#  Copyright (C) 2000 - 2003 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,8 @@ libsilccore_la_SOURCES = \
 	silcargument.c \
 	silcnotify.c \
 	silcauth.c \
-	silcattrs.c
+	silcattrs.c \
+	silcstatus.c
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\

@@ -48,11 +48,11 @@ do {								\
   if (!silc_command_get_status(cmd->payload, NULL, NULL)) {	\
     if (SILC_STATUS_IS_ERROR(cmd->status)) {			\
       /* Single error */					\
-      COMMAND_REPLY_ERROR;					\
+      COMMAND_REPLY_ERROR(cmd->status);	       			\
       goto out;							\
     }								\
     /* List of errors */					\
-    COMMAND_REPLY_ERROR;					\
+    COMMAND_REPLY_ERROR(cmd->error);		       		\
     if (cmd->status == SILC_STATUS_LIST_END)			\
       goto out;							\
     goto err;							\
@@ -181,14 +181,14 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!id_data) {
     if (notify)
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     return;
   }
 
   client_id = silc_id_payload_parse_id(id_data, len, NULL);
   if (!client_id) {
     if (notify)
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     return;
   }
 
@@ -197,7 +197,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   realname = silc_argument_get_arg_type(cmd->args, 5, &len);
   if (!nickname || !username || !realname) {
     if (notify)
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     return;
   }
 
@@ -323,13 +323,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!id_data) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
   client_id = silc_id_payload_parse_id(id_data, len, NULL);
   if (!client_id) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -341,7 +341,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
   username = silc_argument_get_arg_type(cmd->args, 4, &len);
   realname = silc_argument_get_arg_type(cmd->args, 5, &len);
   if (!nickname || !username) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -385,13 +385,13 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
   id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!id_data) {
     if (notify)
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     return;
   }
   idp = silc_id_payload_parse(id_data, len);
   if (!idp) {
     if (notify)
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     return;
   }
 
@@ -438,7 +438,7 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 					    silc_id_dup(server_id, id_type));
       if (!server_entry) {
 	if (notify)
-	  COMMAND_REPLY_ERROR;
+	  COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	return;
       }
     } else {
@@ -547,7 +547,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot set nickname: %s",
 	silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -555,7 +555,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   if (argc < 2 || argc > 3) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot set nickname: bad reply to command");
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -566,7 +566,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   idp = silc_id_payload_parse(tmp, len);
   if (!idp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   silc_client_receive_new_id(cmd->client, cmd->sock, idp);
@@ -609,19 +609,19 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
   channel_id = silc_id_payload_parse_id(tmp, len, NULL);
   if (!channel_id) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
   name = silc_argument_get_arg_type(cmd->args, 3, NULL);
   if (!name) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -638,7 +638,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
     channel_entry = silc_client_add_channel(cmd->client, conn, name, 0,
 					    channel_id);
     if (!channel_entry) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
     channel_id = NULL;
@@ -676,13 +676,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot set topic: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
   if (argc < 1 || argc > 3) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -704,7 +704,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
   channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
   if (!channel) {
     silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -731,7 +731,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot invite: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -748,7 +748,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
   if (!channel) {
     silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -779,7 +779,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(kill)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot kill: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -787,7 +787,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(kill)
   if (id_data) {
     client_id = silc_id_payload_parse_id(id_data, len, NULL);
     if (!client_id) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
 
@@ -822,7 +822,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s",
 	silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -877,7 +877,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(stats)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -910,7 +910,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -918,7 +918,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
   id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_len,
 		      cmd->packet->src_id_type);
   if (!id || !conn->internal->ping) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -973,7 +973,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     if (cmd->error != SILC_STATUS_ERR_USER_ON_CHANNEL)
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	  "Cannot join channel: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -981,7 +981,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   if (argc < 7) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot join channel: Bad reply packet");
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -990,7 +990,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   if (!tmp) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot join channel: Bad reply packet");
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   channel_name = tmp;
@@ -1000,12 +1000,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   if (!tmp) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot join channel: Bad reply packet");
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   channel_id = silc_id_payload_parse_id(tmp, len, NULL);
   if (!channel_id) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1044,7 +1044,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     if (!silc_hmac_alloc(hmac, NULL, &channel->hmac)) {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	  "Cannot join channel: Unsupported HMAC `%s'", hmac);
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
   }
@@ -1160,20 +1160,20 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     return;
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
   if (argc > 3) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
   if (argc == 3) {
     motd = silc_argument_get_arg_type(cmd->args, 3, NULL);
     if (!motd) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
 
@@ -1217,13 +1217,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(umode)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot change mode: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1255,7 +1255,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot change mode: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1271,7 +1271,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
   channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
   if (!channel) {
     silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1279,7 +1279,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
   tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
   if (!tmp) {
     silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1329,14 +1329,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot change mode: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
   /* Get channel mode */
   modev = silc_argument_get_arg_type(cmd->args, 2, NULL);
   if (!modev) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1352,7 +1352,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
   if (!channel) {
     silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1360,13 +1360,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   id = silc_argument_get_arg_type(cmd->args, 4, &len);
   if (!id) {
     silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   client_id = silc_id_payload_parse_id(id, len, NULL);
   if (!client_id) {
     silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1375,7 +1375,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   if (!client_entry) {
     silc_free(channel_id);
     silc_free(client_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1409,7 +1409,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(kick)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot kick: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1418,14 +1418,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(kick)
   if (tmp) {
     channel_id = silc_id_payload_parse_id(tmp, len, NULL);
     if (!channel_id) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
 
     /* Get the channel entry */
     channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
     if (!channel) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
   }
@@ -1435,14 +1435,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(kick)
   if (tmp) {
     client_id = silc_id_payload_parse_id(tmp, len, NULL);
     if (!client_id) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
 
     /* Get client entry */
     client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
     if (!client_entry) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
   }
@@ -1465,7 +1465,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(silcoper)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1485,7 +1485,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(oper)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1506,7 +1506,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(detach)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1535,7 +1535,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(watch)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1560,7 +1560,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1577,7 +1577,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
   if (!channel) {
     silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1609,7 +1609,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1624,7 +1624,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
     channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
     if (!channel) {
       silc_free(channel_id);
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
 
@@ -1666,7 +1666,7 @@ static void silc_client_command_reply_users_cb(SilcClient client,
     cmd->status = cmd->error = SILC_STATUS_ERR_NO_SUCH_CHANNEL;
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
     silc_client_command_reply_free(cmd);
     return;
@@ -1701,19 +1701,19 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
   /* Get channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
   if (!channel_id) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
   /* Get the list count */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   SILC_GET32_MSB(list_count, tmp);
@@ -1721,7 +1721,7 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
   /* Get Client ID list */
   tmp = silc_argument_get_arg_type(cmd->args, 4, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   silc_buffer_set(&client_id_list, tmp, tmp_len);
@@ -1729,7 +1729,7 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
   /* Get client mode list */
   tmp = silc_argument_get_arg_type(cmd->args, 5, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   silc_buffer_set(&client_mode_list, tmp, tmp_len);
@@ -1858,7 +1858,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Query failed: %s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -1874,7 +1874,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     } else {
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	  "Query failed: %s", silc_get_status_message(cmd->error));
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
   }
@@ -1911,18 +1911,18 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
   idp = silc_id_payload_parse(tmp, len);
   if (!idp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
 
@@ -1939,7 +1939,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
     client_id = silc_id_payload_get_id(idp);
     client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
     if (!client_entry) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
 
@@ -1958,7 +1958,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
     server_id = silc_id_payload_get_id(idp);
     server_entry = silc_client_get_server_by_id(cmd->client, conn, server_id);
     if (!server_entry) {
-      COMMAND_REPLY_ERROR;
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
 
@@ -2146,7 +2146,7 @@ static void silc_client_command_reply_users_i_cb(SilcClient client,
     cmd->status = cmd->error = SILC_STATUS_ERR_NO_SUCH_CHANNEL;
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
     silc_client_command_reply_free(cmd);
     return;
@@ -2191,7 +2191,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(connect)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -2211,7 +2211,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(close)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 
@@ -2231,7 +2231,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"%s", silc_get_status_message(cmd->error));
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(cmd->error);
     goto out;
   }
 

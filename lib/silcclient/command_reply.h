@@ -1,10 +1,10 @@
 /*
 
-  command_reply.h 
+  command_reply.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -51,16 +51,30 @@ struct SilcClientCommandReplyContextStruct {
 
 /* Macros */
 
-/* Command reply operation that is called at the end of all command replys. 
+/* Command reply operation that is called at the end of all command replys.
    Usage: COMMAND_REPLY((ARGS, argument1, argument2, etc...)), */
 #define COMMAND_REPLY(args) cmd->client->internal->ops->command_reply args
 #define SILC_ARGS cmd->client, cmd->sock->user_data,	       		\
              cmd->payload, TRUE, silc_command_get(cmd->payload), cmd->status
 
 /* Error reply to application. Usage: COMMAND_REPLY_ERROR; */
-#define COMMAND_REPLY_ERROR cmd->client->internal->ops->		\
-  command_reply(cmd->client, cmd->sock->user_data, cmd->payload,	\
-  FALSE, silc_command_get(cmd->payload), cmd->status)
+#define COMMAND_REPLY_ERROR(error) \
+do { \
+  if (cmd->status == SILC_STATUS_OK) { \
+    cmd->client->internal->ops->		\
+      command_reply(cmd->client, cmd->sock->user_data, cmd->payload,	\
+                    FALSE, silc_command_get(cmd->payload), error); \
+  } else { \
+    void *arg1 = NULL, *arg2 = NULL; \
+    silc_status_get_args(cmd->status, cmd->args, &arg1, &arg2); \
+    cmd->client->internal->ops->		\
+      command_reply(cmd->client, cmd->sock->user_data, cmd->payload,	\
+                    FALSE, silc_command_get(cmd->payload), cmd->status, \
+	            arg1, arg2); \
+    silc_free(arg1); \
+    silc_free(arg2); \
+  } \
+} while(0)
 
 /* Macro used to declare command reply functions */
 #define SILC_CLIENT_CMD_REPLY_FUNC(func)				\

@@ -8,6 +8,15 @@ Wed Oct  8 09:32:12 CEST 2003  Pekka Riikonen <priikone@silcnet.org>
 	* Implemented INVITE and BAN announcing.  Affected files are
 	  silcd/server.[ch], server_util.c.
 
+	* Implemented SilcStatus error type argument returning in
+	  command reply error in server.  Affected file silcd/command.c.
+
+	* Implemented SilcStatus argument returning in comand reply
+	  in client library.  The command_reply client operation now
+	  returns error specific arguments as well.  Affected files
+	  are lib/silcclient/command_reply.[ch], client_resume.c,
+	  lib/silccore/silcstatus.[ch].
+
 Sun Oct  5 20:22:08 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Backup router protocol version 1.2 implemented.  Testing still

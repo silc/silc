@@ -64,10 +64,9 @@ are defined in lib/silccore/silcstatus.h header file.  A short example.
 <br />&nbsp;<br />
 The following table describes all status values and arguments that the client
 library sends in the 'command_reply' client operation to the application
-in case of error.  By default all arguments that the library sends to
-application are valid pointers.  However, it is possible that some pointers
-may be NULL.  If this is the case it is separately mentioned that the
-argument may be NULL.  In this case application must ignore that argument.
+in case of error.  All arguments listed below are usually valid when
+returned by the library.  However applicationn must be able to handle that
+any of those arguments may be NULL.
 
 <br />&nbsp;<br />
 The 'command_reply' arguments in case of error are as follows:
@@ -232,9 +231,9 @@ Server ID provided does not exist.  The unknown ID is returned.
 <td><small>SILC_STATUS_ERR_NOT_ON_CHANNEL</td>
 <td><small>
 The command required for you to be on channel but you were not.
-The channel is returned.  The 'channel' may be NULL.
+The channel ID is returned.
 </td>
-<td width="50%"><small>SilcChannelEntry channel
+<td width="50%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -242,9 +241,10 @@ The channel is returned.  The 'channel' may be NULL.
 <td><small>SILC_STATUS_ERR_USER_NOT_ON_CHANNEL</td>
 <td><small>
 The requested target client is not on requested channel.  Returns the
-target client and channel.  The 'target_client' and 'channel' may be NULL.
+target client ID and channel ID.
 </td>
-<td width="50%"><small>SilcClientEntry target_client, SilcChannelEntry channel
+<td width="50%"><small>const SilcClientID *client_id,
+const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -252,9 +252,10 @@ target client and channel.  The 'target_client' and 'channel' may be NULL.
 <td><small>SILC_STATUS_ERR_USER_ON_CHANNEL</td>
 <td><small>
 User were invited on channel they already are on.  Returns the
-target client and channel.  The 'target_client' and 'channel' may be NULL.
+target client ID and channel ID.
 </td>
-<td width="50%"><small>SilcClientEntry target_client, SilcChannelEntry channel
+<td width="50%"><small>const SilcClientID *client_id,
+const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -309,9 +310,9 @@ Password provided for channel were not accepted.  No arguments returned.
 <td><small>SILC_STATUS_ERR_CHANNEL_IS_FULL</td>
 <td><small>
 The channel is full and client cannot join the channel.  Returns the
-channel, which may be NULL.
+channel ID.
 </td>
-<td width="50%"><small>SilcChannelEntry channel
+<td width="50%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -319,19 +320,18 @@ channel, which may be NULL.
 <td><small>SILC_STATUS_ERR_NOT_INVITED</td>
 <td><small>
 The channel is invite only channel and client has not been invited.
-Returns the channel, which may be NULL.
+Returns the channel ID.
 </td>
-<td width="50%"><small>SilcChannelEntry channel
+<td width="50%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
 <tr>
 <td><small>SILC_STATUS_ERR_BANNED_FROM_CHANNEL</td>
 <td><small>
-The client has been banned from the channel.  Returns the channel, which
-may be NULL.
+The client has been banned from the channel.  Returns the channel ID.
 </td>
-<td width="50%"><small>SilcChannelEntry channel
+<td width="50%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -359,9 +359,9 @@ No arguments returned.
 <td><small>SILC_STATUS_ERR_NO_CHANNEL_PRIV</td>
 <td><small>
 Command may be executed only by channel operator.  The next argument is
-the channel, which may be NULL.
+the channel ID.
 </td>
-<td width="50%"><small>SilcChannelEntry channel
+<td width="50%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 
@@ -369,9 +369,9 @@ the channel, which may be NULL.
 <td><small>SILC_STATUS_ERR_NO_CHANNEL_FOPRIV</td>
 <td><small>
 Command may be executed only by channel founder.  The next argument is
-the channel, which may be NULL.
+the channel ID.
 </td>
-<td width="50%"><small>SilcChannelEntry channel
+<td width="50%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 

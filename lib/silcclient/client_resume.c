@@ -502,19 +502,19 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   /* Get channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
   channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
   if (!channel_id) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
 
   /* Get the list count */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
   SILC_GET32_MSB(list_count, tmp);
@@ -522,7 +522,7 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   /* Get Client ID list */
   tmp = silc_argument_get_arg_type(cmd->args, 4, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
   silc_buffer_set(&client_id_list, tmp, tmp_len);
@@ -530,7 +530,7 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   /* Get client mode list */
   tmp = silc_argument_get_arg_type(cmd->args, 5, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
   silc_buffer_set(&client_mode_list, tmp, tmp_len);
