@@ -67,13 +67,9 @@ typedef union {
     unsigned long l[16];
 } CHAR64LONG16;
 CHAR64LONG16* block;
-#ifdef SHA1HANDSOFF
 static unsigned char workspace[64];
     block = (CHAR64LONG16*)workspace;
     memcpy(block, buffer, 64);
-#else
-    block = (CHAR64LONG16*)buffer;
-#endif
     /* Copy context->state[] to working vars */
     a = state[0];
     b = state[1];
@@ -174,9 +170,7 @@ unsigned char finalcount[8];
     memset(context->state, 0, 20);
     memset(context->count, 0, 8);
     memset(finalcount, 0, 8);
-#ifdef SHA1HANDSOFF  /* make SHA1Transform overwrite it's own static vars */
     SHA1Transform(context->state, context->buffer);
-#endif
 }
 
 
