@@ -1853,3 +1853,31 @@ silc_server_config_get_primary_router(SilcServer server)
 
   return NULL;
 }
+
+/* If we have backup router configured that is going to replace us this
+   function returns it. */
+
+SilcServerConfigRouter *
+silc_server_config_get_backup_router(SilcServer server)
+{
+  SilcServerConfig config = server->config;
+  SilcServerConfigRouter *serv = NULL;
+  int i;
+
+  if (server->server_type != SILC_ROUTER)
+    return NULL;
+
+  serv = config->routers;
+  for (i = 0; serv; i++) {
+    if (serv->initiator == FALSE && serv->backup_router == TRUE &&
+	serv->backup_local == TRUE &&
+	!strcmp(server->config->server_info->primary->server_ip,
+		serv->backup_replace_ip) &&
+	server->config->server_info->primary->port ==
+	serv->backup_replace_port)
+      return serv;
+    serv = serv->next;
+  }
+
+  return NULL;
+}

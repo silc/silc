@@ -97,8 +97,10 @@ void silc_server_packet_send(SilcServer server,
     return;
 
   /* If entry is disabled do not sent anything. */
-  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED)
+  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
+    SILC_LOG_DEBUG(("Connection is disabled"));
     return;
+  }
 
   /* Get data used in the packet sending, keys and stuff */
   switch(sock->type) {
@@ -157,8 +159,10 @@ void silc_server_packet_send_dest(SilcServer server,
   idata = (SilcIDListData)sock->user_data;
 
   /* If entry is disabled do not sent anything. */
-  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED)
+  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
+    SILC_LOG_DEBUG(("Connection is disabled"));
     return;
+  }
 
   SILC_LOG_DEBUG(("Sending %s packet", silc_get_packet_name(type)));
 

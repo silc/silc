@@ -572,6 +572,18 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
     silc_free(client_id);
 
+    /* Wait for resolving if necessary */
+    if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+      SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
+      res->packet = silc_packet_context_dup(packet);
+      res->context = client;
+      res->sock = silc_socket_dup(conn->sock);
+      silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+				  client_entry->resolve_cmd_ident,
+				  silc_client_notify_by_server_pending, res);
+      goto out;
+    }
+
     client_entry->valid = FALSE;
 
     /* Get new Client ID */

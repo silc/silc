@@ -673,6 +673,11 @@ void silc_server_stop(SilcServer server)
       if (!server->sockets[i])
 	continue;
       if (!SILC_IS_LISTENER(server->sockets[i])) {
+	SilcIDListData idata = server->sockets[i]->user_data;
+
+	if (idata)
+	  idata->status &= ~SILC_IDLIST_STATUS_DISABLED;
+
 	silc_schedule_task_del_by_context(server->schedule,
 					  server->sockets[i]);
 	silc_server_disconnect_remote(server, server->sockets[i], 
@@ -920,6 +925,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 		    ptr->initiator ? "Initiator" : "Responder",
 		    ptr->host, ptr->port));
 
+    if (server->server_type == SILC_ROUTER && ptr->backup_router &&
+	ptr->initiator == FALSE && !server->backup_router)
+      server->wait_backup = TRUE;
+
     if (ptr->initiator) {
       /* Check whether we are connected to this host already */
       if (silc_server_num_sockets_by_remote(server, 
@@ -995,6 +1004,11 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 			     SILC_TASK_PRI_NORMAL);
       return;
     }
+
+    /* Call completion to indicate error */
+    if (sconn->callback)
+      (*sconn->callback)(server, NULL, sconn->callback_context);
+
     silc_server_config_unref(&sconn->conn);
     silc_free(sconn->remote_host);
     silc_free(sconn->backup_replace_ip);
@@ -1035,6 +1049,11 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 			     SILC_TASK_PRI_NORMAL);
       return;
     }
+
+    /* Call completion to indicate error */
+    if (sconn->callback)
+      (*sconn->callback)(server, NULL, sconn->callback_context);
+
     silc_server_config_unref(&sconn->conn);
     silc_free(sconn->remote_host);
     silc_free(sconn->backup_replace_ip);
@@ -1140,7 +1159,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   SilcServer server = (SilcServer)ctx->server;
   SilcServerConnection sconn = (SilcServerConnection)ctx->context;
   SilcSocketConnection sock = ctx->sock;
-  SilcServerEntry id_entry;
+  SilcServerEntry id_entry = NULL;
   SilcBuffer packet;
   SilcServerHBContext hb_context;
   unsigned char *id_string;
@@ -1235,7 +1254,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   sock->user_data = (void *)id_entry;
   sock->type = SILC_SOCKET_TYPE_ROUTER;
   idata = (SilcIDListData)sock->user_data;
-  idata->status |= SILC_IDLIST_STATUS_REGISTERED;
+  idata->status |= (SILC_IDLIST_STATUS_REGISTERED |
+		    SILC_IDLIST_STATUS_LOCAL);
 
   conn = sconn->conn.ref_ptr;
   param = &server->config->param;
@@ -1287,12 +1307,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 
   sock->protocol = NULL;
 
+ out:
   /* Call the completion callback to indicate that we've connected to
      the router */
   if (sconn->callback)
     (*sconn->callback)(server, id_entry, sconn->callback_context);
 
- out:
   /* Free the temporary connection data context */
   if (sconn) {
     silc_server_config_unref(&sconn->conn);
@@ -1618,6 +1638,14 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
 			   SILC_TASK_PRI_LOW);
 }
 
+/* After this is called, server don't wait for backup router anymore */
+
+SILC_TASK_CALLBACK(silc_server_backup_router_wait)
+{
+  SilcServer server = context;
+  server->wait_backup = FALSE;
+}
+
 /* Final part of accepting new connection. The connection has now
    been authenticated and keys has been exchanged. We also know whether
    this is client or server connection. */
@@ -1671,6 +1699,36 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 					  conn->param, ctx->ske)) {
 	server->stat.auth_failures++;
 	goto out;
+      }
+
+      /* If we are primary router and we have backup router configured
+	 but it has not connected to use yet, do not accept any other
+	 connection. */
+      if (server->wait_backup && server->server_type == SILC_ROUTER &&
+	  !server->backup_router) {
+	SilcServerConfigRouter *router;
+	router = silc_server_config_get_backup_router(server);
+	if (router && strcmp(server->config->server_info->primary->server_ip,
+			     sock->ip) &&
+	    silc_server_find_socket_by_host(server,
+					    SILC_SOCKET_TYPE_SERVER,
+					    router->backup_replace_ip, 0)) {
+	  SILC_LOG_INFO(("Will not accept connections because we do "
+			 "not have backup router connection established"));
+	  silc_server_disconnect_remote(server, sock, 
+					SILC_STATUS_ERR_PERM_DENIED,
+					"We do not have connection to backup "
+					"router established, try later");
+	  silc_free(sock->user_data);
+	  server->stat.auth_failures++;
+
+	  /* From here on, wait 10 seconds for the backup router to appear. */
+	  silc_schedule_task_add(server->schedule, 0,
+				 silc_server_backup_router_wait,
+				 (void *)server, 10, 0,
+				 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+	  goto out;
+	}
       }
 
       SILC_LOG_DEBUG(("Remote host is client"));
@@ -1780,6 +1838,36 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	}
       }
 
+      /* If we are primary router and we have backup router configured
+	 but it has not connected to use yet, do not accept any other
+	 connection. */
+      if (server->wait_backup && server->server_type == SILC_ROUTER &&
+	  !server->backup_router && !backup_router) {
+	SilcServerConfigRouter *router;
+	router = silc_server_config_get_backup_router(server);
+	if (router && strcmp(server->config->server_info->primary->server_ip,
+			     sock->ip) &&
+	    silc_server_find_socket_by_host(server,
+					    SILC_SOCKET_TYPE_SERVER,
+					    router->backup_replace_ip, 0)) {
+	  SILC_LOG_INFO(("Will not accept connections because we do "
+			 "not have backup router connection established"));
+	  silc_server_disconnect_remote(server, sock, 
+					SILC_STATUS_ERR_PERM_DENIED,
+					"We do not have connection to backup "
+					"router established, try later");
+	  silc_free(sock->user_data);
+	  server->stat.auth_failures++;
+
+	  /* From here on, wait 10 seconds for the backup router to appear. */
+	  silc_schedule_task_add(server->schedule, 0,
+				 silc_server_backup_router_wait,
+				 (void *)server, 10, 0,
+				 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+	  goto out;
+	}
+      }
+
       SILC_LOG_DEBUG(("Remote host is %s",
 		      ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
 		      "server" : (backup_router ?
@@ -1829,6 +1917,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  ctx->conn_type = SILC_SOCKET_TYPE_SERVER;
 
 	new_server->server_type = SILC_BACKUP_ROUTER;
+	server->wait_backup = FALSE;
       }
 
       /* Statistics */
@@ -2076,7 +2165,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   /* Check that the the current client ID is same as in the client's packet. */
   if (sock->type == SILC_SOCKET_TYPE_CLIENT) {
     SilcClientEntry client = (SilcClientEntry)sock->user_data;
-    if (client && client->id) {
+    if (client && client->id && packet->src_id) {
       void *id = silc_id_str2id(packet->src_id, packet->src_id_len,
 				packet->src_id_type);
       if (!id || !SILC_ID_CLIENT_COMPARE(client->id, id)) {
@@ -2091,7 +2180,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   if (server->server_type == SILC_ROUTER) {
     /* Route the packet if it is not destined to us. Other ID types but
        server are handled separately after processing them. */
-    if (!(packet->flags & SILC_PACKET_FLAG_BROADCAST) &&
+    if (packet->dst_id && !(packet->flags & SILC_PACKET_FLAG_BROADCAST) &&
 	packet->dst_id_type == SILC_ID_SERVER &&
 	sock->type != SILC_SOCKET_TYPE_CLIENT &&
 	memcmp(packet->dst_id, server->id_string, server->id_string_len)) {
@@ -2230,6 +2319,11 @@ void silc_server_packet_parse_type(SilcServer server,
 		     silc_get_status_message(status), status,
 		     message ? message : ""));
       silc_free(message);
+
+      /* Handle the disconnection from our end too */
+      if (sock->user_data && SILC_IS_LOCAL(sock->user_data))
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_server_close_connection(server, sock);
     }
     break;
 
@@ -2660,7 +2754,10 @@ void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
   if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
-    silc_socket_free(sock);
+    silc_schedule_task_add(server->schedule, 0,
+			   silc_server_close_connection_final,
+			   (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_NORMAL);
     return;
   }
 
@@ -2895,7 +2992,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	    server->router_connect = time(0);
 	    server->backup_primary = TRUE;
 	  } else {
-	    SILC_LOG_INFO(("We are now new router in this cell"));
+	    SILC_LOG_INFO(("We are now new primary router in this cell"));
 	    server->id_entry->router = NULL;
 	    server->router = NULL;
 	    server->standalone = TRUE;
@@ -2942,10 +3039,10 @@ void silc_server_free_sock_user_data(SilcServer server,
 	/* Update the client entries of this server to the new backup
 	   router. This also removes the clients that *really* was owned
 	   by the primary router and went down with the router.  */
+	silc_server_local_servers_toggle_enabled(server, TRUE);
 	silc_server_update_clients_by_server(server, user_data, backup_router,
 					     TRUE, TRUE);
-	silc_server_update_servers_by_server(server, user_data, backup_router,
-					     TRUE);
+	silc_server_update_servers_by_server(server, user_data, backup_router);
 	if (server->server_type == SILC_SERVER)
 	  silc_server_update_channels_by_server(server, user_data,
 						backup_router);
@@ -4082,13 +4179,12 @@ void silc_server_announce_get_channels(SilcServer server,
 	(*channel_topics)[i] = NULL;
 	silc_server_announce_get_channel_topic(server, channel,
 					       &(*channel_topics)[i]);
+	(*channel_users_modes_c)++;
 	i++;
 
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
       }
-
-      *channel_users_modes_c += i;
     }
 
     silc_idcache_list_free(list);

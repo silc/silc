@@ -81,6 +81,8 @@ struct SilcServerStruct {
   unsigned int backup_router  : 1;   /* Set if this is backup router */
   unsigned int backup_primary : 1;   /* Set if we've switched our primary
 				        router to a backup router. */
+  unsigned int wait_backup    : 1;   /* Set if we are waiting for backup
+				        router to connect to us. */
 
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */
@@ -163,9 +165,8 @@ typedef struct {
 #define SILC_BROADCAST(server) (server->server_type == SILC_ROUTER) 
 
 /* Return TRUE if entry is locally connected or local to us */
-#define SILC_IS_LOCAL(entry)						\
-  ((entry)->connection ? TRUE :						\
-   (entry)->data.status & SILC_IDLIST_STATUS_LOCAL ? TRUE : FALSE)
+#define SILC_IS_LOCAL(entry) \
+  (((SilcIDListData)entry)->status & SILC_IDLIST_STATUS_LOCAL)
 
 /* Registers generic task for file descriptor for reading from network and
    writing to network. As being generic task the actual task is allocated 

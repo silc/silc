@@ -290,12 +290,13 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 
 int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 {
-  SILC_LOG_DEBUG(("Start"));
-
   if (entry) {
     /* Remove from cache */
     if (!silc_idcache_del_by_context(id_list->servers, entry))
       return FALSE;
+
+    SILC_LOG_DEBUG(("Deleting server %s", entry->server_name ?
+		    entry->server_name : ""));
 
     /* Free data */
     silc_free(entry->server_name);

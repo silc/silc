@@ -26,7 +26,7 @@ typedef struct SilcServerBackupStruct *SilcServerBackup;
 
 /* Callback function that is called after the key exchange and connection
    authentication protocols has been completed with a remote router. The
-   `server_entry' is the remote router entry. */
+   `server_entry' is the remote router entry or NULL on error. */
 typedef void (*SilcServerConnectRouterCallback)(SilcServer server,
 						SilcServerEntry server_entry,
 						void *context);

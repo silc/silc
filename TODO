@@ -27,6 +27,9 @@ TODO/bugs In SILC Server
    the core library, client and server.  Maybe implementations of
    RFC 2425 and RFC 2426 to make it complete.
 
+ o Add special handling in router and server for "connection timed out"
+   error.  Be optimistic.
+
  o Backup router related issues (Fix this to 0.9.x):
 
 	o Complete backup router support with standalone router
@@ -34,6 +37,11 @@ TODO/bugs In SILC Server
 	o Make the backup router work even if not all servers in the
 	  cell use it.  When primary goes down, also those that are
 	  not using it (are not connected locally) are signoffed.
+
+	  o When primary goes down and removing clients of non-backup
+	    aware server the SERVER_SIGNOFF includes the router's ID
+	    not the server's ID, which it should include.  The notify
+	    is sent by backup.
 
 	o Testing
 

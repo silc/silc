@@ -783,11 +783,12 @@ bool silc_parse_version_string(const char *version,
   /* Take protocol version */
 
   maj = atoi(cp);
-  cp = strchr(cp, '.');
-  if (cp) {
-    min = atoi(cp + 1);
-    cp++;
-  }
+  if (!strchr(cp, '.'))
+    return FALSE;
+  cp = strchr(cp, '.') + 1;
+  if (!cp || !(*cp))
+    return FALSE;
+  min = atoi(cp);
 
   memset(buf, 0, sizeof(buf));
   snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
@@ -802,14 +803,18 @@ bool silc_parse_version_string(const char *version,
 
   maj = 0;
   min = 0;
-  cp = strchr(cp, '-');
-  if (!cp)
+  if (!strchr(cp, '-'))
+    return FALSE;
+  cp = strchr(cp, '-') + 1;
+  if (!cp || !(*cp))
     return FALSE;
 
-  maj = atoi(cp + 1);
-  cp = strchr(cp, '.');
-  if (cp)
-    min = atoi(cp + 1);
+  maj = atoi(cp);
+  if (strchr(cp, '.')) {
+    cp = strchr(cp, '.') + 1;
+    if (cp && *cp)
+      min = atoi(cp);
+  }
 
   memset(buf, 0, sizeof(buf));
   snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
@@ -822,11 +827,10 @@ bool silc_parse_version_string(const char *version,
 
   /* Take vendor string */
 
-  cp++;
-  if (cp) {
-    cp = strchr(cp, '.');
-    if (cp && cp + 1 && vendor_version)
-      *vendor_version = strdup(cp + 1);
+  if (strchr(cp, '.')) {
+    cp = strchr(cp, '.') + 1;
+    if (cp && *cp && vendor_version)
+      *vendor_version = strdup(cp);
   }
 
   return TRUE;

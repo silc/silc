@@ -1,3 +1,32 @@
+Tue Jun 25 18:47:39 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Enable all local server connections before updating client
+	  caches when we've become backup router.  Otherwise, signoff
+	  packets may not reach the clients.  Affected files are
+	  silcd/server.c and silcd/server_util.[ch].
+
+	* Fixed a bug in version string parsing which could crash
+	  the program with specially formatted version string.
+	  Bug reported and patch provided by Ville Räsänen.  Affected
+	  file lib/silcutil/silcutil.c.
+
+	* Handle the disconnection immediately when DISCONNECT
+	  packet is received in server.  Affected file silcd/server.c.
+
+	* Primary router now waits a short time (10 seconds) for
+	  backup router connection before accepting any other
+	  connection (except local).  Affected file silcd/server.c,
+	  serverconfig.[ch].
+
+	* Fixed a crash in client libary in NICK_CHANGE notify when
+	  NICK_CHANGE arrived for client entry we are resolving
+	  currently.  Affected file lib/silcclient/client_notify.c.
+
+	* Call the sconn->callback completion even if error had
+	  occurred.  Start reconnecting always if connection to
+	  primary router fails during backup router protocol.
+	  Affected files silcd/server.c and server_backup.c.
+
 Mon Jun 24 17:47:52 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added functions silc_server_send_opers and
