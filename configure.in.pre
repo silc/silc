@@ -1114,7 +1114,7 @@ else
 fi
 echo " SIM support ...................: $sim_support"
 echo " IPv6 support ..................: $summary_ipv6"
-echo " Assmebler optimizations .......: $summary_asm"
+echo " Assembler optimizations .......: $summary_asm"
 
 mp="MPI"
 if test x$mp_gmp = xtrue; then
