@@ -445,27 +445,32 @@ SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier)
   cp = identifier;
   while (cp) {
     len = strcspn(cp, ",");
+    if (len - 1 >= 0 && cp[len - 1] == '\\') {
+      cp += len + 1;
+      continue;
+    }
+
     item = silc_calloc(len + 1, sizeof(char));
     memcpy(item, cp, len);
 
     if (strstr(item, "UN="))
-      ident->username = strdup(item + 3);
+      ident->username = strdup(item + strcspn(cp, "=") + 1);
     else if (strstr(item, "HN="))
-      ident->host = strdup(item + 3);
+      ident->host = strdup(item + strcspn(cp, "=") + 1);
     else if (strstr(item, "RN="))
-      ident->realname = strdup(item + 3);
+      ident->realname = strdup(item + strcspn(cp, "=") + 1);
     else if (strstr(item, "E="))
-      ident->email = strdup(item + 2);
+      ident->email = strdup(item + strcspn(cp, "=") + 1);
     else if (strstr(item, "O="))
-      ident->org = strdup(item + 2);
+      ident->org = strdup(item + strcspn(cp, "=") + 1);
     else if (strstr(item, "C="))
-      ident->country = strdup(item + 2);
+      ident->country = strdup(item + strcspn(cp, "=") + 1);
     
     cp += len;
     if (strlen(cp) == 0)
       cp = NULL;
     else
-      cp += 2;
+      cp += 1;
     
     if (item)
       silc_free(item);
