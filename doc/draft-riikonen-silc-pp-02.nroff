@@ -1988,7 +1988,7 @@ the client.  Server always creates the ID for the client.
 
 This payload is also used when server tells its router that new client
 has registered to the SILC network.  In this case the server sends
-the Client ID of the client to the router.  Similary when router
+the Client ID of the client to the router.  Similarly when router
 distributes information to other routers about the client in the SILC
 network this payload is used.  
 
