@@ -131,7 +131,7 @@ static void silc_server_checkpid(SilcServer silcd)
 
 /* Drop root privileges. If some system call fails, die. */
 
-static void silc_server_drop(SilcServer server)
+static void silc_server_drop_privs(SilcServer server)
 {
   /* Are we executing silcd as root or a regular user? */
   if (geteuid()) {
@@ -402,10 +402,12 @@ int main(int argc, char **argv)
   silc_schedule_signal_register(silcd->schedule, SIGTERM, stop_server, NULL);
   silc_schedule_signal_register(silcd->schedule, SIGINT, stop_server, NULL);
 
-  if (!foreground) {
-    /* Drop root. */
-    silc_server_drop(silcd);
+  /* Drop root if we are not in debug mode, so you don't need to bother about
+     file writing permissions and so on */
+  if (!silc_debug)
+    silc_server_drop_privs(silcd);
 
+  if (!foreground) {
     /* Before running the server, fork to background. */
     silc_server_daemonise(silcd);
 

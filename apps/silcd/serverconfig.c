@@ -34,6 +34,13 @@
   __type__ *findtmp, *tmp = (__type__ *) config->tmp;			\
   int got_errno = 0
 
+/* allocate the tmp field for fetching data */
+#define SILC_SERVER_CONFIG_ALLOCTMP(__type__)				\
+  if (!tmp) {								\
+    config->tmp = silc_calloc(1, sizeof(*findtmp));			\
+    tmp = (__type__ *) config->tmp;					\
+  }
+
 /* append the tmp field to the specified list */
 #define SILC_SERVER_CONFIG_LIST_APPENDTMP(__list__)			\
   if (!__list__) {							\
@@ -78,7 +85,7 @@ my_set_param_defaults(SilcServerConfigConnParams *params,
   (params->p ? params->p : (defaults && defaults->p ? defaults->p : d))
 
   SET_PARAM_DEFAULT(connections_max, SILC_SERVER_MAX_CONNECTIONS);
-  SET_PARAM_DEFAULT(connections_max_per_host, 
+  SET_PARAM_DEFAULT(connections_max_per_host,
 		    SILC_SERVER_MAX_CONNECTIONS_SINGLE);
   SET_PARAM_DEFAULT(keepalive_secs, SILC_SERVER_KEEPALIVE);
   SET_PARAM_DEFAULT(reconnect_count, SILC_SERVER_RETRY_COUNT);
@@ -91,7 +98,7 @@ my_set_param_defaults(SilcServerConfigConnParams *params,
 
 /* Find connection parameters by the parameter block name. */
 static SilcServerConfigConnParams *
-my_find_param(SilcServerConfig config, const char *name, SilcUInt32 line)
+my_find_param(SilcServerConfig config, const char *name)
 {
   SilcServerConfigConnParams *param;
 
@@ -100,15 +107,15 @@ my_find_param(SilcServerConfig config, const char *name, SilcUInt32 line)
       return param;
   }
 
-  SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line %lu: "
-			 "Cannot find Param \"%s\".\n", line, name));
+  SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			 "Cannot find Params \"%s\".\n", name));
 
   return NULL;
 }
 
 /* parse an authdata according to its auth method */
-static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, 
-			      SilcUInt32 line, void **auth_data, 
+static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
+			      SilcUInt32 line, void **auth_data,
 			      SilcUInt32 *auth_data_len)
 {
   if (auth_meth == SILC_AUTH_PASSWORD) {
@@ -131,7 +138,7 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
     if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_BIN)) {
 	SILC_SERVER_LOG_ERROR(("\nError while parsing config file at line "
-			       "%lu: Could not load public key file!\n", 
+			       "%lu: Could not load public key file!\n",
 			       line));
 	return FALSE;
       }
@@ -208,17 +215,17 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   }
   else if (!strcmp(name, "version_protocol")) {
     CONFIG_IS_DOUBLE(config->param.version_protocol);
-    config->param.version_protocol = 
+    config->param.version_protocol =
       (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "version_software")) {
     CONFIG_IS_DOUBLE(config->param.version_software);
-    config->param.version_software = 
+    config->param.version_software =
       (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "version_software_vendor")) {
     CONFIG_IS_DOUBLE(config->param.version_software_vendor);;
-    config->param.version_software_vendor = 
+    config->param.version_software_vendor =
       (*(char *)val ? strdup((char *) val) : NULL);
   }
   else
@@ -238,22 +245,18 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
-    if (!tmp) /* empty sub-block? */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
     if (!tmp->name) {
       got_errno = SILC_CONFIG_EMISSFIELDS;
       goto got_err;
     }
-    /* the temporary struct is ok, append it to the list */
+
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->cipher);
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigCipher *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigCipher);
 
   /* Identify and save this value */
   if (!strcmp(name, "name")) {
@@ -290,23 +293,18 @@ SILC_CONFIG_CALLBACK(fetch_hash)
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
-    if (!tmp) /* empty sub-block? */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
     if (!tmp->name || (tmp->block_length == 0) || (tmp->digest_length == 0)) {
       got_errno = SILC_CONFIG_EMISSFIELDS;
       goto got_err;
     }
-    /* the temporary struct in tmp is ok */
+
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->hash);
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigHash *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigHash);
 
   /* Identify and save this value */
   if (!strcmp(name, "name")) {
@@ -343,22 +341,18 @@ SILC_CONFIG_CALLBACK(fetch_hmac)
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
-    if (!tmp) /* empty sub-block? */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
     if (!tmp->name || !tmp->hash || (tmp->mac_length == 0)) {
       got_errno = SILC_CONFIG_EMISSFIELDS;
       goto got_err;
     }
-    /* the temporary struct is ok, append it to the list */
+
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->hmac);
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigHmac *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigHmac);
 
   /* Identify and save this value */
   if (!strcmp(name, "name")) {
@@ -392,22 +386,18 @@ SILC_CONFIG_CALLBACK(fetch_pkcs)
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
-    if (!tmp) /* empty sub-block? */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
     if (!tmp->name) {
       got_errno = SILC_CONFIG_EMISSFIELDS;
       goto got_err;
     }
-    /* the temporary struct is ok, append it to the list */
+
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->pkcs);
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigPkcs *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigPkcs);
 
   /* Identify and save this value */
   if (!strcmp(name, "name")) {
@@ -455,8 +445,10 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   else if (!strcmp(name, "port")) {
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
-      SILC_SERVER_LOG_ERROR(("Error: line %lu: Invalid port number!\n", line));
-      return SILC_CONFIG_ESILENT;
+      SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			     "Invalid port number!\n"));
+      got_errno = SILC_CONFIG_EPRINTLINE;
+      goto got_err;
     }
     server_info->port = (SilcUInt16) port;
   }
@@ -501,7 +493,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
       if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
 				     SILC_PKCS_FILE_BIN)) {
 	SILC_SERVER_LOG_ERROR(("Error: Could not load public key file.\n"));
-	SILC_SERVER_LOG_ERROR(("   line %lu: file \"%s\"\n", line, file_tmp));
+	SILC_SERVER_LOG_ERROR(("   line %lu, file \"%s\"\n", line, file_tmp));
 	return SILC_CONFIG_ESILENT;
       }
   }
@@ -514,7 +506,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
       if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
 				      SILC_PKCS_FILE_PEM)) {
 	SILC_SERVER_LOG_ERROR(("Error: Could not load private key file.\n"));
-	SILC_SERVER_LOG_ERROR(("   line %lu: file \"%s\"\n", line, file_tmp));
+	SILC_SERVER_LOG_ERROR(("   line %lu, file \"%s\"\n", line, file_tmp));
 	return SILC_CONFIG_ESILENT;
       }
   }
@@ -528,10 +520,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 
 SILC_CONFIG_CALLBACK(fetch_logging)
 {
-  SilcServerConfig config = (SilcServerConfig) context;
-  SilcServerConfigLogging *tmp =
-	(SilcServerConfigLogging *) config->tmp;
-  int got_errno;
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigLogging);
 
   if (!strcmp(name, "quicklogs")) {
     config->logging_quick = *(bool *)val;
@@ -539,12 +528,19 @@ SILC_CONFIG_CALLBACK(fetch_logging)
   else if (!strcmp(name, "flushdelay")) {
     int flushdelay = *(int *)val;
     if (flushdelay < 2) { /* this value was taken from silclog.h (min delay) */
-      SILC_SERVER_LOG_ERROR(("Error: line %lu: Invalid flushdelay value, use "
-			"quicklogs if you want real-time logging.\n", line));
-      return SILC_CONFIG_ESILENT;
+      SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			    "Invalid flushdelay value, use quicklogs if you "
+			    "want real-time logging.\n"));
+      return SILC_CONFIG_EPRINTLINE;
     }
     config->logging_flushdelay = (long) flushdelay;
   }
+
+  /* The following istances happens only in Logging's sub-blocks, a match
+     for the sub-block name means that you should store the filename/maxsize
+     temporary struct to the proper logging channel.
+     If we get a match for "file" or "maxsize" this means that we are inside
+     a sub-sub-block and it is safe to alloc a new tmp. */
 #define FETCH_LOGGING_CHAN(__chan__, __member__)		\
   else if (!strcmp(name, __chan__)) {				\
     if (!tmp) return SILC_CONFIG_OK;				\
@@ -560,13 +556,8 @@ SILC_CONFIG_CALLBACK(fetch_logging)
   FETCH_LOGGING_CHAN("fatals", logging_fatals)
 #undef FETCH_LOGGING_CHAN
   else if (!strcmp(name, "file")) {
-    if (!tmp) { /* FIXME: what the fuck is this? */
-      config->tmp = silc_calloc(1, sizeof(*tmp));
-      tmp = (SilcServerConfigLogging *) config->tmp;
-    }
-    if (tmp->file) {
-      got_errno = SILC_CONFIG_EMISSFIELDS; goto got_err;
-    }
+    SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigLogging);
+    CONFIG_IS_DOUBLE(tmp->file);
     tmp->file = strdup((char *) val);
   }
   else if (!strcmp(name, "size")) {
@@ -591,18 +582,16 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigConnParams);
 
-  SERVER_CONFIG_DEBUG(("Received CONNPARAM type=%d name=\"%s\" (val=%x)", 
+  SERVER_CONFIG_DEBUG(("Received CONNPARAM type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
-
   if (type == SILC_CONFIG_ARG_BLOCK) {
-    if (!tmp)
+    /* check the temporary struct's fields */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
-
     if (!tmp->name) {
       got_errno = SILC_CONFIG_EMISSFIELDS;
       goto got_err;
     }
-
     /* Set defaults */
     my_set_param_defaults(tmp, &config->param);
 
@@ -610,12 +599,7 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigConnParams *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigConnParams);
 
   if (!strcmp(name, "name")) {
     CONFIG_IS_DOUBLE(tmp->name);
@@ -658,7 +642,7 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
   }
   else if (!strcmp(name, "version_software_vendor")) {
     CONFIG_IS_DOUBLE(tmp->version_software_vendor);;
-    tmp->version_software_vendor = 
+    tmp->version_software_vendor =
       (*(char *)val ? strdup((char *) val) : NULL);
   }
   else
@@ -680,14 +664,11 @@ SILC_CONFIG_CALLBACK(fetch_client)
   SERVER_CONFIG_DEBUG(("Received CLIENT type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
 
-  /* alloc tmp before block checking (empty sub-blocks are welcome here) */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigClient *) config->tmp;
-  }
+  /* Alloc before block checking, because empty sub-blocks are welcome here */
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigClient);
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
-    /* closing the block */
+    /* empty sub-blocks are welcome */
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->clients);
     config->tmp = NULL;
     return SILC_CONFIG_OK;
@@ -716,9 +697,9 @@ SILC_CONFIG_CALLBACK(fetch_client)
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
-    tmp->param = my_find_param(config, (char *) val, line);
-    if (!tmp->param) { /* error already output */
-      got_errno = SILC_CONFIG_ESILENT;
+    tmp->param = my_find_param(config, (char *) val);
+    if (!tmp->param) { /* error message already output */
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
@@ -740,22 +721,16 @@ SILC_CONFIG_CALLBACK(fetch_admin)
 
   SERVER_CONFIG_DEBUG(("Received CLIENT type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
-
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
-    if (!tmp) /* empty sub-block? */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
 
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->admins);
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigAdmin *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigAdmin);
 
   /* Identify and save this value */
   if (!strcmp(name, "host")) {
@@ -809,21 +784,18 @@ SILC_CONFIG_CALLBACK(fetch_deny)
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
-    if (!tmp) /* empty sub-block? */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
     if (!tmp->reason) {
       got_errno = SILC_CONFIG_EMISSFIELDS;
       goto got_err;
     }
+
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->denied);
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigDeny *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigDeny);
 
   /* Identify and save this value */
   if (!strcmp(name, "host")) {
@@ -852,10 +824,9 @@ SILC_CONFIG_CALLBACK(fetch_server)
 
   SERVER_CONFIG_DEBUG(("Received SERVER type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
-
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check the temporary struct's fields */
-    if (!tmp) /* empty sub-block? */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
 
     /* the temporary struct is ok, append it to the list */
@@ -863,12 +834,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigServer *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigServer);
 
   /* Identify and save this value */
   if (!strcmp(name, "host")) {
@@ -894,9 +860,9 @@ SILC_CONFIG_CALLBACK(fetch_server)
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
-    tmp->param = my_find_param(config, (char *) val, line);
-    if (!tmp->param) { /* error already output */
-      got_errno = SILC_CONFIG_ESILENT;
+    tmp->param = my_find_param(config, (char *) val);
+    if (!tmp->param) { /* error message already output */
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
@@ -922,22 +888,15 @@ SILC_CONFIG_CALLBACK(fetch_router)
 
   SERVER_CONFIG_DEBUG(("Received ROUTER type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
-
   if (type == SILC_CONFIG_ARG_BLOCK) {
-    if (!tmp) /* empty sub-block? */
+    if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
 
-    /* the temporary struct is ok, append it to the list */
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->routers);
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-
-  /* if there isn't a temporary struct alloc one */
-  if (!tmp) {
-    config->tmp = silc_calloc(1, sizeof(*findtmp));
-    tmp = (SilcServerConfigRouter *) config->tmp;
-  }
+  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigRouter);
 
   /* Identify and save this value */
   if (!strcmp(name, "host")) {
@@ -947,8 +906,10 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "port")) {
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
-      SILC_SERVER_LOG_ERROR(("Error: line %lu: Invalid port number!\n", line));
-      return SILC_CONFIG_ESILENT;
+      SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			     "Invalid port number!\n"));
+      got_errno = SILC_CONFIG_EPRINTLINE;
+      goto got_err;
     }
     tmp->port = (SilcUInt16) port;
   }
@@ -971,9 +932,9 @@ SILC_CONFIG_CALLBACK(fetch_router)
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
-    tmp->param = my_find_param(config, (char *) val, line);
-    if (!tmp->param) { /* error already output */
-      got_errno = SILC_CONFIG_ESILENT;
+    tmp->param = my_find_param(config, (char *) val);
+    if (!tmp->param) { /* error message already output */
+      got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
@@ -988,8 +949,10 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "backupport")) {
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
-      SILC_SERVER_LOG_ERROR(("Error: line %lu: Invalid port number!\n", line));
-      return SILC_CONFIG_ESILENT;
+      SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			     "Invalid port number!\n"));
+      got_errno = SILC_CONFIG_EPRINTLINE;
+      goto got_err;
     }
     tmp->backup_replace_port = (SilcUInt16) port;
   }
@@ -1027,9 +990,9 @@ static const SilcConfigTable table_general[] = {
   { "channel_rekey_secs",	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "key_exchange_timeout",   	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "conn_auth_timeout",   	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
-  { "version_protocol",	        SILC_CONFIG_ARG_STR,    fetch_generic,	NULL },
-  { "version_software",	        SILC_CONFIG_ARG_STR,    fetch_generic,	NULL },
-  { "version_software_vendor",  SILC_CONFIG_ARG_STR,    fetch_generic,	NULL },
+  { "version_protocol",	        SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
+  { "version_software",		SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
+  { "version_software_vendor",	SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1109,7 +1072,7 @@ static const SilcConfigTable table_connparam[] = {
   { "key_exchange_pfs",	       SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
   { "version_protocol",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { "version_software",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
-  { "version_software_vendor", SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
+  { "version_software_vendor", SILC_CONFIG_ARG_STR,     fetch_connparam,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1239,10 +1202,11 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
     if (ret != SILC_CONFIG_ESILENT) {
       char *linebuf, *filename = silc_config_get_filename(file);
       SilcUInt32 line = silc_config_get_line(file);
-      SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.\n",
-			     silc_config_strerror(ret)));
+      if (ret != SILC_CONFIG_EPRINTLINE)
+        SILC_SERVER_LOG_ERROR(("Error while parsing config file: %s.\n",
+			       silc_config_strerror(ret)));
       linebuf = silc_config_read_line(file, line);
-      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename,
+      SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n\n", filename,
 			     line, linebuf));
       silc_free(linebuf);
     }
@@ -1460,7 +1424,7 @@ bool silc_server_config_register_ciphers(SilcServer server)
 						SILC_CIPHER_SIM_SET_KEY));
 	SILC_LOG_DEBUG(("set_key=%p", cipher_obj.set_key));
 	cipher_obj.set_key_with_string =
-	  silc_sim_getsym(sim, 
+	  silc_sim_getsym(sim,
 	    silc_sim_symname(alg_name,
 	      SILC_CIPHER_SIM_SET_KEY_WITH_STRING));
 	SILC_LOG_DEBUG(("set_key_with_string=%p",
@@ -1659,7 +1623,7 @@ void silc_server_config_setlogfiles(SilcServer server)
   SILC_LOG_DEBUG(("Setting configured log file names and options"));
 
   silc_log_quick = config->logging_quick;
-  silc_log_flushdelay = (config->logging_flushdelay ? 
+  silc_log_flushdelay = (config->logging_flushdelay ?
 			 config->logging_flushdelay :
 			 SILC_SERVER_LOG_FLUSH_DELAY);
 
@@ -1703,7 +1667,7 @@ silc_server_config_find_client(SilcServer server, char *host)
    nickname. */
 
 SilcServerConfigAdmin *
-silc_server_config_find_admin(SilcServer server, char *host, char *user, 
+silc_server_config_find_admin(SilcServer server, char *host, char *user,
 			      char *nick)
 {
   SilcServerConfig config = server->config;
