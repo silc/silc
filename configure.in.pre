@@ -213,7 +213,7 @@ if test x$check_ipv6 = xtrue; then
     [
       AC_DEFINE(HAVE_IPV6)
       AC_MSG_RESULT(yes)
-      summary_ipv6="ues"
+      summary_ipv6="yes"
     ],
       AC_MSG_RESULT(no)
     )
