@@ -30,8 +30,10 @@ silc_SOURCES = \
 
 silc_DEPENDENCIES = ../lib/libsilcclient.a ../lib/libsilc.a
 
-LIBS=$(SILC_COMMON_LIBS)
+LIBS = $(SILC_COMMON_LIBS)
 LDADD = -L. -L.. -L../lib -lsilcclient
+
+ADD_INCLUDES = $(CURSES_INCLUDEDIR)
 
 EXTRA_DIST = *.h
 

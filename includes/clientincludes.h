@@ -23,7 +23,11 @@
 
 #include "silcdefs.h"
 
+#if defined(USE_NCURSES) && !defined(RENAMED_NCURSES)
+#include <ncurses.h>
+#else
 #include <curses.h>
+#endif
 #include <sys/param.h>
 
 #ifdef HAVE_PATHS_H

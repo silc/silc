@@ -23,6 +23,7 @@ silc_LDADD = \
         $(CURSES_LIBS) \
 	-L../../../lib -lsilcclient
 
+
 silc_SOURCES = \
         gui-entry.c \
 	gui-expandos.c \
