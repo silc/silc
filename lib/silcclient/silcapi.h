@@ -462,7 +462,7 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
    silc_client_send_key_agreement) then the `key' MUST be the
    key->send_enc_key as this is dictated by the SILC protocol. However,
    currently it is not expected that the SKE key material would be used
-   as channel private key. */
+   as channel private key. However, this API allows it. */
 int silc_client_add_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
