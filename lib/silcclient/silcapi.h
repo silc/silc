@@ -827,7 +827,8 @@ typedef void (*SilcGetClientCallback)(SilcClient client,
  *
  *    Finds client entry or entries by the `nickname' and `server'. The 
  *    completion callback will be called when the client entries has been
- *    found.
+ *    found.  After the server returns the client information it is cached
+ *    and can be accesses locally at a later time.
  *
  * NOTES
  *
@@ -892,7 +893,9 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
  *    so this function might take a while. The `client_id_list' is a list
  *    of ID Payloads added one after other.  JOIN command reply and USERS
  *    command reply for example returns this sort of list. The `completion'
- *    will be called after the entries are available. 
+ *    will be called after the entries are available. When server returns
+ *    the client information it will be cached and can be accessed locally
+ *    at a later time.
  *
  ***/
 void silc_client_get_clients_by_list(SilcClient client,
@@ -913,7 +916,8 @@ void silc_client_get_clients_by_list(SilcClient client,
  * DESCRIPTION
  *
  *    Find entry for client by the client's ID. Returns the entry or NULL
- *    if the entry was not found. 
+ *    if the entry was not found.  This checks the local cache and does
+ *    not resolve anything from server.
  *
  ***/
 SilcClientEntry silc_client_get_client_by_id(SilcClient client,
@@ -936,7 +940,8 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
  *    Same as silc_client_get_client_by_id but will always resolve the
  *    information from the server. Use this only if you know that you
  *    do not have the entry and the only thing you know about the client
- *    is its ID. 
+ *    is its ID. When server returns the client information it will be
+ *    cache and can be accessed locally at a later time.
  *
  ***/
 void silc_client_get_client_by_id_resolve(SilcClient client,
