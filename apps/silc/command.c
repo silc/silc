@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/06/27 19:38:40  priikone
+ * 	Added missing goto flag.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -350,6 +353,7 @@ SILC_CLIENT_CMD_FUNC(quit)
   cmd->client->screen->bottom_line->connection = NULL;
   silc_screen_print_bottom_line(cmd->client->screen, 0);
 
+out:
   silc_client_command_free(cmd);
 }
 
