@@ -66,6 +66,10 @@ typedef struct SilcChannelEntryStruct {
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
 } *SilcChannelEntry;
 
+/* Command identifier used by ID list routines when sending WHOIS/IDENTIFY
+   commands to routers. */
+#define SILC_IDILIST_IDENT 3333
+
 /* Prototypes */
 
 SilcClientEntry silc_idlist_get_client(SilcClient client,

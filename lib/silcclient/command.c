@@ -78,14 +78,15 @@ SilcClientCommand silc_command_list[] =
    encoded into correct form in correct order. */
 
 void silc_client_send_command(SilcClient client, SilcClientConnection conn,
-			      SilcCommand command, unsigned int argc, ...)
+			      SilcCommand command, unsigned short ident,
+			      unsigned int argc, ...)
 {
   SilcBuffer packet;
   va_list ap;
 
   va_start(ap, argc);
 
-  packet = silc_command_payload_encode_vap(command, 0, argc, ap);
+  packet = silc_command_payload_encode_vap(command, ident, argc, ap);
   silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND, 
 			  NULL, 0, NULL, NULL, packet->data, 
 			  packet->len, TRUE);

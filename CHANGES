@@ -1,3 +1,16 @@
+Fri Feb  2 11:42:56 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added extra parameter, command identifier, to the
+	  silc_client_send_command so that explicit command identifier
+	  can be defined.
+
+	  Changed that ID list routines uses specific command identifier
+	  when sending WHOIS/IDENTIFY requests to the server so that they
+	  can be identified when the reply comes back.
+
+	  Affected files lib/silcclient/command.[ch],
+	  lib/silcclient/client.c and lib/silcclient/idlist.[ch].
+
 Thu Feb  1 23:31:21 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed channel ID decoding in server's JOIN command reply in

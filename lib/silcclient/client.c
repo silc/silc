@@ -1326,7 +1326,7 @@ void silc_client_notify_by_server(SilcClient client,
       SilcPacketContext *p = silc_packet_context_dup(packet);
       p->context = (void *)client;
       p->sock = sock;
-      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, 0,
+      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT,
 				  silc_client_notify_by_server_pending, p);
       goto out;
     }
@@ -1372,7 +1372,7 @@ void silc_client_notify_by_server(SilcClient client,
       SilcPacketContext *p = silc_packet_context_dup(packet);
       p->context = (void *)client;
       p->sock = sock;
-      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, 0, 
+      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT, 
 				  silc_client_notify_by_server_pending, p);
       goto out;
     }
@@ -1546,7 +1546,7 @@ void silc_client_notify_by_server(SilcClient client,
       SilcPacketContext *p = silc_packet_context_dup(packet);
       p->context = (void *)client;
       p->sock = sock;
-      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, 0, 
+      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT,
 				  silc_client_notify_by_server_pending, p);
       goto out;
     }

@@ -109,7 +109,8 @@ do {									\
 /* Prototypes */
 void silc_client_command_free(SilcClientCommandContext cmd);
 void silc_client_send_command(SilcClient client, SilcClientConnection conn,
-			      SilcCommand command, unsigned int argc, ...);
+			      SilcCommand command, unsigned short ident,
+			      unsigned int argc, ...);
 SilcClientCommand *silc_client_command_find(const char *name);
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
