@@ -52,9 +52,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o LIST command reply sending is broken.  It is possible it does not
-   end the list with LIST_END, but sends LIST_ENTRY as last entry.
-
  o Backup router related issues
 
  	o Channel user mode changes are notified unnecessarely when
