@@ -59,10 +59,10 @@ typedef unsigned char SilcPacketFlags;
 /* All defined packet flags */
 #define SILC_PACKET_FLAG_NONE             0x00
 #define SILC_PACKET_FLAG_PRIVMSG_KEY      0x01
-#define SILC_PACKET_FLAG_FORWARDED        0x02
-#define SILC_PACKET_FLAG_BROADCAST        0x04
-#define SILC_PACKET_FLAG_TUNNELED         0x08
+#define SILC_PACKET_FLAG_BROADCAST        0x02
+#define SILC_PACKET_FLAG_TUNNELED         0x04
 /* Rest of flags still available
+#define SILC_PACKET_FLAG_XXX              0x08
 #define SILC_PACKET_FLAG_XXX              0x10
 #define SILC_PACKET_FLAG_XXX              0x20
 #define SILC_PACKET_FLAG_XXX              0x40

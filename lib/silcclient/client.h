@@ -110,6 +110,12 @@ struct SilcClientConnectionObject {
      referencing (sock->user_data). */
   SilcSocketConnection sock;
 
+  /* Pending command queue for this connection */
+  SilcDList pending_commands;
+
+  /* Current command identifier, 0 not used */
+  unsigned short cmd_ident;
+
   /* Requested pings. */
   SilcClientPing *ping;
   unsigned int ping_count;

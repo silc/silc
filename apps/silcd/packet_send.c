@@ -180,52 +180,6 @@ void silc_server_packet_send_dest(SilcServer server,
     silc_free(packetdata.dst_id);
 }
 
-/* Forwards packet. Packets sent with this function will be marked as
-   forwarded (in the SILC header flags) so that the receiver knows that
-   we have forwarded the packet to it. Forwarded packets are handled
-   specially by the receiver as they are not destined to the receiver
-   originally. However, the receiver knows this because the forwarded
-   flag has been set (and the flag is authenticated). */
-
-void silc_server_packet_forward(SilcServer server,
-				SilcSocketConnection sock,
-				unsigned char *data, unsigned int data_len,
-				int force_send)
-{
-  SilcIDListData idata;
-  SilcCipher cipher = NULL;
-  SilcHmac hmac = NULL;
-
-  SILC_LOG_DEBUG(("Forwarding packet"));
-
-  /* Get data used in the packet sending, keys and stuff */
-  idata = (SilcIDListData)sock->user_data;
-
-  /* Prepare outgoing data buffer for packet sending */
-  silc_packet_send_prepare(sock, 0, 0, data_len);
-
-  /* Put the data to the buffer */
-  if (data && data_len)
-    silc_buffer_put(sock->outbuf, data, data_len);
-
-  /* Add the FORWARDED flag to packet flags */
-  sock->outbuf->data[2] |= (unsigned char)SILC_PACKET_FLAG_FORWARDED;
-
-  if (idata) {
-    cipher = idata->send_key;
-    hmac = idata->hmac;
-  }
-
-  /* Encrypt the packet */
-  silc_packet_encrypt(cipher, hmac, sock->outbuf, sock->outbuf->len);
-
-  SILC_LOG_HEXDUMP(("Forwarded packet, len %d", sock->outbuf->len),
-		   sock->outbuf->data, sock->outbuf->len);
-
-  /* Now actually send the packet */
-  silc_server_packet_send_real(server, sock, force_send);
-}
-
 /* Broadcast received packet to our primary route. This function is used
    by router to further route received broadcast packet. It is expected
    that the broadcast flag from the packet is checked before calling this

@@ -141,6 +141,7 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
   conn->remote_host = strdup(hostname);
   conn->remote_port = port;
   conn->context = context;
+  conn->pending_commands = silc_dlist_init();
 
   /* Add the connection to connections table */
   for (i = 0; i < client->conns_count; i++)
@@ -165,6 +166,8 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
 
   for (i = 0; i < client->conns_count; i++)
     if (client->conns[i] == conn) {
+      if (conn->pending_commands)
+	silc_dlist_uninit(conn->pending_commands);
       silc_free(conn);
       client->conns[i] = NULL;
     }
@@ -1195,6 +1198,8 @@ void silc_client_close_connection(SilcClient client,
       memset(conn->hmac_key, 0, conn->hmac_key_len);
       silc_free(conn->hmac_key);
     }
+    if (conn->pending_commands)
+      silc_dlist_uninit(conn->pending_commands);
 
     conn->sock = NULL;
     conn->remote_port = 0;
@@ -1208,6 +1213,7 @@ void silc_client_close_connection(SilcClient client,
     conn->local_id_data = NULL;
     conn->remote_host = NULL;
     conn->current_channel = NULL;
+    conn->pending_commands = NULL;
 
     silc_client_del_connection(client, conn);
   }
@@ -1277,7 +1283,6 @@ void silc_client_notify_by_server(SilcClient client,
   SilcNotifyPayload payload;
   SilcNotifyType type;
   SilcArgumentPayload args;
-  int i;
 
   SilcClientID *client_id = NULL;
   SilcChannelID *channel_id = NULL;
@@ -1321,7 +1326,7 @@ void silc_client_notify_by_server(SilcClient client,
       SilcPacketContext *p = silc_packet_context_dup(packet);
       p->context = (void *)client;
       p->sock = sock;
-      silc_client_command_pending(SILC_COMMAND_WHOIS, 
+      silc_client_command_pending(conn,SILC_COMMAND_WHOIS, 0, 
 				  silc_client_notify_by_server_pending, p);
       goto out;
     }
@@ -1367,7 +1372,7 @@ void silc_client_notify_by_server(SilcClient client,
       SilcPacketContext *p = silc_packet_context_dup(packet);
       p->context = (void *)client;
       p->sock = sock;
-      silc_client_command_pending(SILC_COMMAND_WHOIS, 
+      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, 0, 
 				  silc_client_notify_by_server_pending, p);
       goto out;
     }
@@ -1541,7 +1546,7 @@ void silc_client_notify_by_server(SilcClient client,
       SilcPacketContext *p = silc_packet_context_dup(packet);
       p->context = (void *)client;
       p->sock = sock;
-      silc_client_command_pending(SILC_COMMAND_WHOIS, 
+      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, 0, 
 				  silc_client_notify_by_server_pending, p);
       goto out;
     }
@@ -1872,7 +1877,6 @@ void silc_client_channel_message(SilcClient client,
   SilcChannelUser chu;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id = NULL;
-  int i;
   char *nickname;
 
   /* Sanity checks */
@@ -2011,7 +2015,6 @@ void silc_client_remove_from_channels(SilcClient client,
   SilcIDCacheList list;
   SilcChannelEntry channel;
   SilcChannelUser chu;
-  int i;
 
   if (!silc_idcache_find_by_id(conn->channel_cache, SILC_ID_CACHE_ANY,
 			       SILC_ID_CHANNEL, &list))
@@ -2055,7 +2058,6 @@ void silc_client_replace_from_channels(SilcClient client,
   SilcIDCacheList list;
   SilcChannelEntry channel;
   SilcChannelUser chu;
-  int i;
 
   if (!silc_idcache_find_by_id(conn->channel_cache, SILC_ID_CACHE_ANY,
 			       SILC_ID_CHANNEL, &list))

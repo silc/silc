@@ -71,7 +71,9 @@ int silc_server_alloc(SilcServer *new_server)
 void silc_server_free(SilcServer server)
 {
   if (server) {
+#ifdef SILC_SIM
     SilcSimContext *sim;
+#endif
 
     if (server->local_list)
       silc_free(server->local_list);
@@ -1164,8 +1166,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   if (server->server_type == SILC_ROUTER) {
     /* Route the packet if it is not destined to us. Other ID types but
        server are handled separately after processing them. */
-    if (packet->dst_id_type == SILC_ID_SERVER &&
-	!(packet->flags & SILC_PACKET_FLAG_FORWARDED) && 
+    if (packet->dst_id_type == SILC_ID_SERVER && 
 	sock->type != SILC_SOCKET_TYPE_CLIENT &&
 	SILC_ID_SERVER_COMPARE(packet->dst_id, server->id_string)) {
       
@@ -1327,7 +1328,7 @@ void silc_server_packet_parse_type(SilcServer server,
     /*
      * Received command reply packet. Received command reply to command. It
      * may be reply to command sent by us or reply to command sent by client
-     * that we've forwarded.
+     * that we've routed further.
      */
     SILC_LOG_DEBUG(("Command Reply packet"));
     silc_server_command_reply(server, sock, packet);

@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  2001/01/30 21:40:21  priikone
+ * 	updates.
+ *
  * Revision 1.1  2000/09/13 17:47:54  priikone
  * 	Created SILC Client Libary by moving stuff from silc/ directory.
  * 	SILC client library is SILC client without UI. Old UI still exists
@@ -137,7 +140,7 @@ SILC_CLIENT_LCMD_FUNC(msg)
   if (!client_entry) {
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(SILC_COMMAND_IDENTIFY, 
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 0,
 				silc_client_local_command_msg, context);
     return;
   }

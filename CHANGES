@@ -1,6 +1,47 @@
+Tue Jan 30 22:39:15 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed the client's pending command handling to the same as the
+	  server's pending command handling.  It is also now possible to
+	  execute command reply functions from other command reply
+	  function as the function callbacks for commands and command
+	  replies are one and same.  The pending commands are not static
+	  list anymore, it is mallocated SilcDList in lib/silcclient/client.h
+	  in client connection context.  Thus, pending commands are server
+	  connection specific as it is convenient.
+
+	  Changed the function silc_client_command_pending and
+	  silc_client_command_pending_del and added new function
+	  silc_client_command_pending_check.  Removed the 
+	  SILC_CLIENT_CMD_REPLY_EXEC, and SILC_CLIENT_PENDING_COMMAND_CHECK
+	  macros.
+
+	* Added cmd_ident, current command identifier, to the client
+	  connection context in lib/silcclient/client.h to keep track on
+	  command identifiers used in command sending.  Client's command reply
+	  function handling now supports the mandatory command identifiers.
+
+	* Added SILC_CLIENT_COMMAND_EXEC_PENDING macros to all command reply
+	  funtions in client to fully support pending command callbacks.
+
+	* NOTE: the name_list in USERS (old NAMES) command is NOT sent anymore
+	  as one of the arguments to the application in the command reply
+	  client operation.
+
+	* NOTE: The FORWARDED flag is depracated.  It used to be depracated
+	  before first releasing SILC but came back.  Now it is removed again
+	  and should come back nomore.  The FORWARDED flag was used only
+	  by the JOINing procedure by forwarding the command packet to router.
+	  Now, the JOINing procedure has been changed to more generic (due
+	  to various router environment issues) and FORWARDED is not needed
+	  anymore for anything.  The protocol specification is yet to be
+	  updated.
+
+	  Now, removed silc_server_packet_forward from server and the flag
+	  SILC_PACKET_FORWARDED from lib/silccore/silcpacket.h.
+
 Tue Jan 30 00:05:05 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-	* Renames NAMES command to USERS command.  The NAMES was named that
+	* Renamed NAMES command to USERS command.  The NAMES was named that
 	  due to historical reasons.  Now it is renamed.  Also, rewrote
 	  parts of the USERS command.  The nickname list is not sent anymore
 	  by the server.  Only Client ID and mode lists are sent in the USERS
@@ -14,7 +55,7 @@ Tue Jan 30 00:05:05 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  in the network by sending only one WHOIS or IDENTIFY command.
 	  Changed the code and the protocol specifications.
 
-	* Remove silc_server_command_identify_parse and changed that IDENTIFY
+	* Removed silc_server_command_identify_parse and changed that IDENTIFY
 	  uses silc_server_command_whois_parse to parse the request. */
 
 	* If normal server, do not parse the WHOIS and IDENTIFY requests

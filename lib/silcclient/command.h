@@ -21,6 +21,8 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include "command_reply.h"
+
 /* 
    Structure holding one command and pointer to its function. 
 
@@ -59,10 +61,6 @@ typedef struct {
 /* All client commands */
 extern SilcClientCommand silc_command_list[];
 
-/* Client command callback function. This included into Command Context, 
-   and if it is defined it will be executed when executing the command. */
-typedef void (*SilcClientCommandCallback)(void *context);
-
 /* Context sent as argument to all commands */
 typedef struct {
   SilcClient client;
@@ -80,9 +78,9 @@ typedef struct {
    replies, if needed later. */
 typedef struct SilcClientCommandPendingStruct {
   SilcCommand reply_cmd;
+  SilcCommandCb callback;
   void *context;
-  SilcClientCommandCallback callback;
-
+  unsigned short ident;
   struct SilcClientCommandPendingStruct *next;
 } SilcClientCommandPending;
 
@@ -99,31 +97,14 @@ extern SilcClientCommandPending *silc_command_pending;
 #define SILC_CLIENT_CMD_FUNC(func) \
 void silc_client_command_##func(void *context)
 
-/* Checks for pending commands */
-#define SILC_CLIENT_COMMAND_CHECK_PENDING(ctx)		\
-do {							\
-  if (silc_command_pending) {				\
-    SilcClientCommandPending *r;			\
-    SilcCommand cmd;					\
-							\
-    cmd = silc_command_get(payload);			\
-    for (r = silc_command_pending; r; r = r->next) {	\
-      if (r->reply_cmd == cmd) {			\
-	ctx->context = r->context;			\
-	ctx->callback = r->callback;			\
-	break;						\
-      }							\
-    }							\
-  }							\
-} while(0)
-
-/* Executed pending command */
-#define SILC_CLIENT_COMMAND_EXEC_PENDING(ctx, cmd)	\
-do {							\
-  if (ctx->callback) {					\
-    (*ctx->callback)(ctx->context);			\
-    silc_client_command_pending_del((cmd));		\
-  }							\
+/* Executed pending command callback */
+#define SILC_CLIENT_COMMAND_EXEC_PENDING(ctx, cmd)			\
+do {									\
+  if ((ctx)->callback) {						\
+    (*ctx->callback)(ctx->context);					\
+    silc_client_command_pending_del((ctx)->sock->user_data, (cmd),	\
+				    (ctx)->ident);			\
+  }									\
 } while(0)
 
 /* Prototypes */
@@ -131,10 +112,18 @@ void silc_client_command_free(SilcClientCommandContext cmd);
 void silc_client_send_command(SilcClient client, SilcClientConnection conn,
 			      SilcCommand command, unsigned int argc, ...);
 SilcClientCommand *silc_client_command_find(const char *name);
-void silc_client_command_pending(SilcCommand reply_cmd,
-				 SilcClientCommandCallback callback,
+void silc_client_command_pending(SilcClientConnection conn,
+				 SilcCommand reply_cmd,
+				 unsigned short ident,
+				 SilcCommandCb callback,
 				 void *context);
-void silc_client_command_pending_del(SilcCommand reply_cmd);
+void silc_client_command_pending_del(SilcClientConnection conn,
+				     SilcCommand reply_cmd,
+				     unsigned short ident);
+int silc_client_command_pending_check(SilcClientConnection conn,
+				      SilcClientCommandReplyContext ctx,
+				      SilcCommand command, 
+				      unsigned short ident);
 SILC_CLIENT_CMD_FUNC(whois);
 SILC_CLIENT_CMD_FUNC(whowas);
 SILC_CLIENT_CMD_FUNC(identify);

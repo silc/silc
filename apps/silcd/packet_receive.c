@@ -559,12 +559,12 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 {
   SilcBuffer buffer = packet->buffer;
   SilcIDList id_list;
-  SilcServerEntry tmpserver, router;
+  SilcServerEntry router;
   SilcSocketConnection router_sock;
   SilcIDPayload idp;
   SilcIdType id_type;
   unsigned char *hash = NULL;
-  void *id, *tmpid;
+  void *id;
 
   SILC_LOG_DEBUG(("Processing new ID"));
 

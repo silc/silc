@@ -74,9 +74,6 @@ SilcClientCommand silc_command_list[] =
 #define COMMAND_ERROR cmd->client->ops->command(cmd->client, cmd->conn, \
   cmd, FALSE, cmd->command->cmd)
 
-/* List of pending commands. */
-SilcClientCommandPending *silc_command_pending = NULL;
-
 /* Generic function to send any command. The arguments must be sent already
    encoded into correct form in correct order. */
 
@@ -110,63 +107,66 @@ SilcClientCommand *silc_client_command_find(const char *name)
   return NULL;
 }
 
-/* Add new pending command to the list of pending commands. Currently
-   pending commands are executed from command replies, thus we can
-   execute any command after receiving some specific command reply.
+/* Add new pending command to be executed when reply to a command has been
+   received.  The `reply_cmd' is the command that will call the `callback'
+   with `context' when reply has been received.  If `ident is non-zero
+   the `callback' will be executed when received reply with command 
+   identifier `ident'. */
 
-   The argument `reply_cmd' is the command reply from where the callback
-   function is to be called, thus, it IS NOT the command to be executed.
-
-   XXX: If needed in the future this support may be extended for
-   commands as well, when any command could be executed after executing
-   some specific command. */
-
-void silc_client_command_pending(SilcCommand reply_cmd,
-				 SilcClientCommandCallback callback,
+void silc_client_command_pending(SilcClientConnection conn,
+				 SilcCommand reply_cmd,
+				 unsigned short ident,
+				 SilcCommandCb callback,
 				 void *context)
 {
-  SilcClientCommandPending *reply, *r;
+  SilcClientCommandPending *reply;
 
   reply = silc_calloc(1, sizeof(*reply));
   reply->reply_cmd = reply_cmd;
+  reply->ident = ident;
   reply->context = context;
   reply->callback = callback;
+  silc_dlist_add(conn->pending_commands, reply);
+}
 
-  if (silc_command_pending == NULL) {
-    silc_command_pending = reply;
-    return;
-  }
+/* Deletes pending command by reply command type. */
 
-  for (r = silc_command_pending; r; r = r->next) {
-    if (r->next == NULL) {
-      r->next = reply;
+void silc_client_command_pending_del(SilcClientConnection conn,
+				     SilcCommand reply_cmd,
+				     unsigned short ident)
+{
+  SilcClientCommandPending *r;
+
+  silc_dlist_start(conn->pending_commands);
+  while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
+    if (r->reply_cmd == reply_cmd && r->ident == ident) {
+      silc_dlist_del(conn->pending_commands, r);
       break;
     }
   }
 }
 
-/* Deletes pending command by reply command type. */
+/* Checks for pending commands and marks callbacks to be called from
+   the command reply function. Returns TRUE if there were pending command. */
 
-void silc_client_command_pending_del(SilcCommand reply_cmd)
+int silc_client_command_pending_check(SilcClientConnection conn,
+				      SilcClientCommandReplyContext ctx,
+				      SilcCommand command, 
+				      unsigned short ident)
 {
-  SilcClientCommandPending *r, *tmp;
-  
-  if (silc_command_pending) {
-    if (silc_command_pending->reply_cmd == reply_cmd) {
-      silc_free(silc_command_pending);
-      silc_command_pending = NULL;
-      return;
-    }
+  SilcClientCommandPending *r;
 
-    for (r = silc_command_pending; r; r = r->next) {
-      if (r->next && r->next->reply_cmd == reply_cmd) {
-	tmp = r->next;
-	r->next = r->next->next;
-	silc_free(tmp);
-	break;
-      }
+  silc_dlist_start(conn->pending_commands);
+  while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
+    if (r->reply_cmd == command && r->ident == ident) {
+      ctx->context = r->context;
+      ctx->callback = r->callback;
+      ctx->ident = ident;
+      return TRUE;
     }
   }
+
+  return FALSE;
 }
 
 /* Free command context and its internals */
@@ -445,7 +445,7 @@ SILC_CLIENT_CMD_FUNC(invite)
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(SILC_COMMAND_IDENTIFY, 
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 0,
 				silc_client_command_invite, context);
     return;
   }
@@ -988,7 +988,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
   if (!client_entry) {
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(SILC_COMMAND_CUMODE, 
+    silc_client_command_pending(conn, SILC_COMMAND_CUMODE, 0,  
 				silc_client_command_cumode, context);
     return;
   }
@@ -1230,7 +1230,7 @@ SILC_CLIENT_CMD_FUNC(users)
   /* XXX this is kludge and should be removed after pending command reply 
      support is added. Currently only commands may be pending not command
      replies. */
-  silc_client_command_pending(SILC_COMMAND_USERS, 
+  silc_client_command_pending(conn, SILC_COMMAND_USERS, 0, 
 			      silc_client_command_users, NULL);
 
   /* Notify application */
