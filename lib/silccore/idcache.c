@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/26 07:03:20  priikone
+ * 	Use ID check as well in silc_idcache_add.
+ *
  * Revision 1.5  2000/07/18 06:51:48  priikone
  * 	Use length of data found from cache instead of length of searched
  * 	data in comparison.
@@ -307,8 +310,8 @@ int silc_idcache_find_by_data_loose(SilcIDCache cache, char *data,
   return TRUE;
 }
 
-/* Find ID Cache entry by ID. Returns list of cache entries. */
-/* XXX this may be useless, need for list really? */
+/* Find ID Cache entry by ID. Returns list of cache entries. If `id' is
+   SILC_ID_CACHE_ANY this returns all ID's of type `type'. */
 
 int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
 			    SilcIDCacheList *ret)
@@ -323,9 +326,15 @@ int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
 
   list = silc_idcache_list_alloc();
 
-  for (i = 0; i < cache->cache_count; i++)
-    if (cache->cache[i].id && !memcmp(cache->cache[i].id, id, id_len))
-      silc_idcache_list_add(list, &(cache->cache[i]));
+  if (id != SILC_ID_CACHE_ANY) {
+    for (i = 0; i < cache->cache_count; i++)
+      if (cache->cache[i].id && !memcmp(cache->cache[i].id, id, id_len))
+	silc_idcache_list_add(list, &(cache->cache[i]));
+  } else {
+    for (i = 0; i < cache->cache_count; i++)
+      if (cache->cache[i].id && cache->cache[i].type == type)
+	silc_idcache_list_add(list, &(cache->cache[i]));
+  }
 
   if (!silc_idcache_list_count(list))
     return FALSE;
@@ -412,7 +421,7 @@ int silc_idcache_add(SilcIDCache cache, char *data, SilcIdType id_type,
     return FALSE;
 
   for (i = 0; i < count; i++) {
-    if (c[i].data == NULL) {
+    if (c[i].data == NULL && c[i].id == NULL) {
       c[i].data = data;
       c[i].type = id_type;
       c[i].id = id;

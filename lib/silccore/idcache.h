@@ -68,6 +68,8 @@ typedef struct SilcIDCacheStruct *SilcIDCache;
 /* Forward declaration for ID Cache List */
 typedef struct SilcIDCacheListStruct *SilcIDCacheList;
 
+#define SILC_ID_CACHE_ANY ((void *)1)
+
 #define SILC_ID_CACHE_EXPIRE 3600
 
 /* Prototypes */
