@@ -23,6 +23,12 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.10  2000/10/09 11:41:17  priikone
+ * 	Changed to use new generic payloads.
+ * 	Implemented new protocol compliant notify messages.
+ * 	Implemented protocol compliant channel messages.
+ * 	Bugfixes.
+ *
  * Revision 1.9  2000/07/20 10:17:25  priikone
  * 	Added dynamic protocol registering/unregistering support.  The
  * 	patch was provided by cras.
@@ -182,6 +188,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       /* Allocate Key Exchange object */
       ske = silc_ske_alloc();
       ctx->ske = ske;
+      ske->rng = server->rng;
       
       if (ctx->responder == TRUE) {
 	/* Start the key exchange by processing the received security
@@ -193,7 +200,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	SilcSKEStartPayload *start_payload;
 
 	/* Assemble security properties. */
-	silc_ske_assemble_security_properties(ske, silc_version_string,
+	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_NONE, 
+					      silc_version_string,
 					      &start_payload);
 
 	/* Start the key exchange by sending our security properties

@@ -2219,6 +2219,10 @@ void silc_server_remove_from_channels(SilcServer server,
 {
   int i, k;
   SilcChannelEntry channel;
+  SilcBuffer id_payload;
+
+  id_payload = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL_LEN,
+				      SILC_ID_CHANNEL);
 
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
@@ -2241,11 +2245,15 @@ void silc_server_remove_from_channels(SilcServer server,
 	     notify that this client has left the channel. */
 	  if (channel->global_users)
 	    silc_server_send_notify_to_channel(server, channel,
-					       SILC_NOTIFY_TYPE_SIGNOFF,
+					       SILC_NOTIFY_TYPE_SIGNOFF, 3,
+					       FALSE,
 					       "Signoff: %s@%s",
 					       client->nickname,
-					       sock->hostname ?
-					       sock->hostname : sock->ip);
+					       strlen(client->nickname),
+					       sock->hostname,
+					       strlen(sock->hostname),
+					       id_payload->data,
+					       id_payload->len);
 
 	  silc_idlist_del_channel(server->local_list, channel);
 	  break;
@@ -2257,11 +2265,15 @@ void silc_server_remove_from_channels(SilcServer server,
 	/* Send notify to channel about client leaving SILC and thus
 	   the entire channel. */
 	silc_server_send_notify_to_channel(server, channel,
-					   SILC_NOTIFY_TYPE_SIGNOFF,
+					   SILC_NOTIFY_TYPE_SIGNOFF, 3,
+					   FALSE,
 					   "Signoff: %s@%s",
-					   client->nickname,
-					   sock->hostname ?
-					   sock->hostname : sock->ip);
+					   client->nickname, 
+					   strlen(client->nickname),
+					   sock->hostname,
+					   strlen(sock->hostname),
+					   id_payload->data,
+					   id_payload->len);
       }
     }
   }
@@ -2269,6 +2281,7 @@ void silc_server_remove_from_channels(SilcServer server,
   if (client->channel_count)
     silc_free(client->channel);
   client->channel = NULL;
+  silc_buffer_free(id_payload);
 }
 
 /* Removes client from one channel. This is used for example when client
@@ -2285,6 +2298,10 @@ int silc_server_remove_from_one_channel(SilcServer server,
 {
   int i, k;
   SilcChannelEntry ch;
+  SilcBuffer id_payload;
+
+  id_payload = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL_LEN,
+				      SILC_ID_CHANNEL);
 
   /* Remove the client from the channel. The client is removed from
      the channel's user list. */
@@ -2307,14 +2324,20 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	     ie. the channel is not created locally. */
 	  if (notify && channel->global_users)
 	    silc_server_send_notify_to_channel(server, channel,
-					       SILC_NOTIFY_TYPE_LEAVE,
+					       SILC_NOTIFY_TYPE_LEAVE, 4,
+					       FALSE,
 					       "%s@%s has left channel %s",
-					       client->nickname, 
-					       sock->hostname ?
-					       sock->hostname : sock->ip,
-					       channel->channel_name);
+					       client->nickname,
+					       strlen(client->nickname),
+					       sock->hostname,
+					       strlen(sock->hostname),
+					       id_payload->data,
+					       id_payload->len,
+					       channel->channel_name,
+					       strlen(channel->channel_name));
 
 	  silc_idlist_del_channel(server->local_list, channel);
+	  silc_buffer_free(id_payload);
 	  return FALSE;
 	}
 	
@@ -2324,15 +2347,22 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	/* Send notify to channel about client leaving the channel */
 	if (notify)
 	  silc_server_send_notify_to_channel(server, channel,
-					     SILC_NOTIFY_TYPE_LEAVE,
+					     SILC_NOTIFY_TYPE_LEAVE, 4,
+					     FALSE,
 					     "%s@%s has left channel %s",
-					     client->nickname, sock->hostname ?
-					     sock->hostname : sock->ip,
-					     channel->channel_name);
+					     client->nickname,
+					     strlen(client->nickname),
+					     sock->hostname,
+					     strlen(sock->hostname),
+					     id_payload->data,
+					     id_payload->len,
+					     channel->channel_name,
+					     strlen(channel->channel_name));
       }
     }
   }
 
+  silc_buffer_free(id_payload);
   return TRUE;
 }
 
@@ -2592,7 +2622,7 @@ void silc_server_channel_key(SilcServer server,
     goto out;
 
   /* Decode channel key payload */
-  payload = silc_channel_key_parse_payload(buffer);
+  payload = silc_channel_key_payload_parse(buffer);
   if (!payload) {
     SILC_LOG_ERROR(("Bad channel key payload, dropped"));
     goto out;
@@ -2639,7 +2669,7 @@ void silc_server_channel_key(SilcServer server,
   if (id)
     silc_free(id);
   if (payload)
-    silc_channel_key_free_payload(payload);
+    silc_channel_key_payload_free(payload);
   silc_buffer_free(buffer);
 }
 
@@ -2668,10 +2698,11 @@ void silc_server_send_motd(SilcServer server,
 	strncat(line, cp, i - 1);
 	cp += i;
 
-	if (i == 2)
+	if (i == 1)
 	  line[0] = ' ';
 
-	silc_server_send_notify(server, sock, SILC_NOTIFY_TYPE_NONE, line);
+	silc_server_send_notify(server, sock, SILC_NOTIFY_TYPE_NONE, 
+				0, FALSE, line);
 
 	if (!strlen(cp))
 	  break;
@@ -2702,29 +2733,37 @@ void silc_server_send_error(SilcServer server,
 			  buf, strlen(buf), FALSE);
 }
 
-/* Sends notify message */
+/* Sends notify message. If `format' is TRUE then the message and the
+   arguments sent are formatted and that message is sent to the other
+   end, if FALSE then arguments are encoded into argument payloads and
+   the message is sent as is. */
 
 void silc_server_send_notify(SilcServer server,
 			     SilcSocketConnection sock,
 			     SilcNotifyType type,
+			     unsigned int argc,
+			     unsigned int format,
 			     const char *fmt, ...)
 {
   va_list ap;
+  char *cp;
   unsigned char buf[4096];
   SilcBuffer packet;
 
-  memset(buf, 0, sizeof(buf));
-  va_start(ap, fmt);
-  vsprintf(buf, fmt, ap);
-  va_end(ap);
+  cp = (char *)fmt;
 
-  packet = silc_buffer_alloc(2 + strlen(buf));
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(type),
-		     SILC_STR_UI16_STRING(buf),
-		     SILC_STR_END);
+  if (argc)
+    va_start(ap, fmt);
 
+  if (format && argc) {
+    memset(buf, 0, sizeof(buf));
+    vsprintf(buf, fmt, ap);
+    va_end(ap);
+    argc = 0;
+    cp = buf;
+  }
+
+  packet = silc_notify_payload_encode(type, cp, argc, ap);
   silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY, 0, 
 			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
@@ -2737,24 +2776,25 @@ void silc_server_send_notify_dest(SilcServer server,
 				  void *dest_id,
 				  SilcIdType dest_id_type,
 				  SilcNotifyType type,
+				  unsigned int argc,
+				  unsigned int format,
 				  const char *fmt, ...)
 {
   va_list ap;
   unsigned char buf[4096];
   SilcBuffer packet;
 
-  memset(buf, 0, sizeof(buf));
-  va_start(ap, fmt);
-  vsprintf(buf, fmt, ap);
-  va_end(ap);
+  if (argc)
+    va_start(ap, fmt);
 
-  packet = silc_buffer_alloc(2 + strlen(buf));
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(type),
-		     SILC_STR_UI16_STRING(buf),
-		     SILC_STR_END);
+  if (format && argc) {
+    memset(buf, 0, sizeof(buf));
+    vsprintf(buf, fmt, ap);
+    va_end(ap);
+    argc = 0;
+  }
 
+  packet = silc_notify_payload_encode(type, (char *)fmt, argc, ap);
   silc_server_packet_send_dest(server, sock, SILC_PACKET_NOTIFY, 0, 
 			       dest_id, dest_id_type,
 			       packet->data, packet->len, FALSE);
@@ -2767,24 +2807,25 @@ void silc_server_send_notify_dest(SilcServer server,
 void silc_server_send_notify_to_channel(SilcServer server,
 					SilcChannelEntry channel,
 					SilcNotifyType type,
+					unsigned int argc,
+					unsigned int format,
 					const char *fmt, ...)
 {
   va_list ap;
   unsigned char buf[4096];
   SilcBuffer packet;
 
-  memset(buf, 0, sizeof(buf));
-  va_start(ap, fmt);
-  vsprintf(buf, fmt, ap);
-  va_end(ap);
+  if (argc)
+    va_start(ap, fmt);
 
-  packet = silc_buffer_alloc(2 + strlen(buf));
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(type),
-		     SILC_STR_UI16_STRING(buf),
-		     SILC_STR_END);
+  if (format && argc) {
+    memset(buf, 0, sizeof(buf));
+    vsprintf(buf, fmt, ap);
+    va_end(ap);
+    argc = 0;
+  }
 
+  packet = silc_notify_payload_encode(type, (char *)fmt, argc, ap);
   silc_server_packet_send_to_channel(server, channel, 
 				     SILC_PACKET_NOTIFY,
 				     packet->data, packet->len, FALSE);
@@ -3134,23 +3175,22 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   
   /* Send some nice info to the client */
   silc_server_send_notify(server, sock, 
-			  SILC_NOTIFY_TYPE_NONE,
+			  SILC_NOTIFY_TYPE_NONE, 2, TRUE,
 			  "Welcome to the SILC Network %s@%s",
-			  username, 
-			  sock->hostname ? sock->hostname : sock->ip);
+			  username, sock->hostname);
   silc_server_send_notify(server, sock,
-			  SILC_NOTIFY_TYPE_NONE,
+			  SILC_NOTIFY_TYPE_NONE, 2, TRUE, 
 			  "Your host is %s, running version %s",
 			  server->config->server_info->server_name,
 			  server_version);
   silc_server_send_notify(server, sock, 
-			  SILC_NOTIFY_TYPE_NONE,
+			  SILC_NOTIFY_TYPE_NONE, 2, TRUE, 
 			  "Your connection is secured with %s cipher, "
 			  "key length %d bits",
 			  client->send_key->cipher->name,
 			  client->send_key->cipher->key_len);
   silc_server_send_notify(server, sock, 
-			  SILC_NOTIFY_TYPE_NONE,
+			  SILC_NOTIFY_TYPE_NONE, 1, TRUE, 
 			  "Your current nickname is %s",
 			  client->nickname);
 

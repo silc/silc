@@ -17,31 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.5  2000/07/26 07:05:11  priikone
- * 	Fixed the server to server (server to router actually) connections
- * 	and made the private message work inside a cell. Added functin
- * 	silc_server_replace_id.
- *
- * Revision 1.4  2000/07/12 05:59:41  priikone
- * 	Major rewrite of ID Cache system. Support added for the new
- * 	ID cache system. Major rewrite of ID List stuff on server.  All
- * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
- * 	by default. A lot rewritten ID list functions.
- *
- * Revision 1.3  2000/07/05 06:14:01  priikone
- * 	Global costemic changes.
- *
- * Revision 1.2  2000/07/03 05:52:22  priikone
- * 	Implemented LEAVE command.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 #include "server_internal.h"
@@ -67,7 +43,7 @@ void silc_server_command_reply_process(SilcServer server,
   SilcCommandPayload payload;
 
   /* Get command reply payload from packet */
-  payload = silc_command_parse_payload(buffer);
+  payload = silc_command_payload_parse(buffer);
   if (!payload) {
     /* Silently ignore bad reply packet */
     SILC_LOG_DEBUG(("Bad command reply packet"));
@@ -80,6 +56,7 @@ void silc_server_command_reply_process(SilcServer server,
   ctx->server = server;
   ctx->sock = sock;
   ctx->payload = payload;
+  ctx->args = silc_command_get_args(ctx->payload);
       
   /* Check for pending commands and mark to be exeucted */
   SILC_SERVER_COMMAND_CHECK_PENDING(ctx);
@@ -114,18 +91,18 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
   SILC_LOG_DEBUG(("Start"));
 
-  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK)
     goto out;
 
   /* Get channel name */
-  tmp = silc_command_get_arg_type(cmd->payload, 2, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 2, NULL);
   if (!tmp)
     goto out;
 
   /* Get channel ID */
-  id_string = silc_command_get_arg_type(cmd->payload, 3, NULL);
+  id_string = silc_argument_get_arg_type(cmd->args, 3, NULL);
   if (!id_string)
     goto out;
 
@@ -163,7 +140,7 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
 
   SILC_LOG_DEBUG(("Start"));
 
-  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK)
     goto out;
@@ -174,12 +151,12 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
     unsigned char *id_data;
     char *nickname, *username;
 
-    id_data = silc_command_get_arg_type(cmd->payload, 2, NULL);
-    nickname = silc_command_get_arg_type(cmd->payload, 3, NULL);
+    id_data = silc_argument_get_arg_type(cmd->args, 2, NULL);
+    nickname = silc_argument_get_arg_type(cmd->args, 3, NULL);
     if (!id_data || !nickname)
       goto out;
 
-    username = silc_command_get_arg_type(cmd->payload, 4, NULL);
+    username = silc_argument_get_arg_type(cmd->args, 4, NULL);
 
     client_id = silc_id_str2id(id_data, SILC_ID_CLIENT);
 

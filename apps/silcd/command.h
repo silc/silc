@@ -52,6 +52,7 @@ typedef struct {
   SilcServer server;
   SilcSocketConnection sock;
   SilcCommandPayload payload;
+  SilcArgumentPayload args;
   SilcPacketContext *packet;
   int pending;
 } *SilcServerCommandContext;
