@@ -24,7 +24,7 @@
  *
  * DESCRIPTION
  *
- *    SILC SFTP Interface is the implementation of the SSH File Transfer
+ *    SILC SFTP Interface is the implementation of the Secure File Transfer
  *    Protocol.  The interface defines the SFTP client and the SFTP server.
  *    The SFTP is the mandatory file transfer protocol in the SILC protocol.
  *    The SFTP server implementation is filesystem independent and generic
