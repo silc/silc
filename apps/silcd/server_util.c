@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1728,10 +1728,8 @@ bool silc_server_check_watcher_list(SilcServer server,
 
   /* Make hash from the nick, or take it from Client ID */
   if (client->nickname) {
-    char nick[128 + 1];
-    memset(nick, 0, sizeof(nick));
-    silc_to_lower(client->nickname, nick, sizeof(nick) - 1);
-    silc_hash_make(server->md5hash, nick, strlen(nick), hash);
+    silc_hash_make(server->md5hash, client->nickname,
+		   strlen(client->nickname), hash);
   } else {
     memset(hash, 0, sizeof(hash));
     memcpy(hash, client->id->hash, sizeof(client->id->hash));

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2004 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -272,4 +272,40 @@ char *silc_strncat(char *dest, SilcUInt32 dest_size,
   }
 
   return dest;
+}
+
+/* Checks that the 'identifier' string is valid identifier string
+   and does not contain any unassigned or prohibited character.  This
+   function is used to check for valid nicknames, channel names,
+   server names, usernames, hostnames, service names, algorithm names,
+   other security property names, and SILC Public Key name. */
+
+unsigned char *silc_identifier_check(const unsigned char *identifier,
+				     SilcUInt32 identifier_len,
+				     SilcStringEncoding identifier_encoding,
+				     SilcUInt32 max_allowed_length,
+				     SilcUInt32 *out_len)
+{
+  unsigned char *utf8s;
+  SilcUInt32 utf8s_len;
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return NULL;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return NULL;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_PREP, 0,
+			   &utf8s, &utf8s_len, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return NULL;
+  }
+
+  if (out_len)
+    *out_len = utf8s_len;
+
+  return utf8s;
 }

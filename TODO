@@ -28,8 +28,6 @@ TODO for SILC Server 1.0
  o Basic UTF-8 stringprep profile that makes sure UTF-8 strings are
    as defined in spec-08 section 3.13.
 
- o Start using the stringprep for identifier strings.
-
  o Check that founder key is distributed ok during backup resuming.
 
  o Testing
@@ -37,6 +35,8 @@ TODO for SILC Server 1.0
 
 TODO/bugs In SILC Libraries
 ===========================
+
+ o Stringprep checks to the Client Library.
 
  o Add following defines in silcincludes.h and silcclient.h for 
    third-party software:

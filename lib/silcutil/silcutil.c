@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -156,7 +156,7 @@ bool silc_parse_userfqdn(const char *string, char **left, char **right)
     }
   } else {
     if (left)
-      *left = strdup(string);
+      *left = silc_memdup(string, strlen(string));
   }
 
   return TRUE;
@@ -1046,6 +1046,8 @@ static const SilcStatusMessage silc_status_messages[] = {
   { STAT(TIMEDOUT), "Service timed out" },
   { STAT(UNSUPPORTED_PUBLIC_KEY), "Unsupported public key type" },
   { STAT(OPERATION_ALLOWED), "Operation is not allowed" },
+  { STAT(BAD_SERVER), "Bad server name" },
+  { STAT(BAD_USERNAME), "Bad user name" },
 
   { 0, NULL }
 };

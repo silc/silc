@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2003 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -399,6 +399,17 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	return;
       }
 
+      /* Check nickname */
+      tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				  SILC_STRING_UTF8, 128, &tmp_len);
+      if (!tmp) {
+	silc_server_query_send_error(server, query,
+				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
+	silc_server_query_free(query);
+      }
+      silc_free(query->nickname);
+      query->nickname = tmp;
+
     } else {
       /* Parse the IDs included in the query */
       query->ids = silc_calloc(argc, sizeof(*query->ids));
@@ -465,6 +476,17 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       silc_server_query_free(query);
       return;
     }
+
+    /* Check nickname */
+    tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				SILC_STRING_UTF8, 128, &tmp_len);
+    if (!tmp) {
+      silc_server_query_send_error(server, query,
+				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
+      silc_server_query_free(query);
+    }
+    silc_free(query->nickname);
+    query->nickname = tmp;
 
     /* Get the max count of reply messages allowed */
     tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);

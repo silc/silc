@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,21 +56,19 @@ void silc_id_create_server_id(const char *ip, SilcUInt16 port, SilcRng rng,
 
 bool silc_id_create_client_id(SilcServer server,
 			      SilcServerID *server_id, SilcRng rng,
-			      SilcHash md5hash, char *nickname, 
+			      SilcHash md5hash,
+			      unsigned char *nickname, SilcUInt32 nick_len,
 			      SilcClientID **new_id)
 {
   unsigned char hash[16];
   bool finding = FALSE;
-  char nick[128 + 1];
 
   SILC_LOG_DEBUG(("Creating new Client ID"));
 
   *new_id = silc_calloc(1, sizeof(**new_id));
 
   /* Create hash of the nickanem */
-  memset(nick, 0, sizeof(nick));
-  silc_to_lower(nickname, nick, sizeof(nick) - 1);
-  silc_hash_make(md5hash, nick, strlen(nick), hash);
+  silc_hash_make(md5hash, nickname, nick_len, hash);
 
   /* Create the ID */
   memcpy((*new_id)->ip.data, server_id->ip.data, server_id->ip.data_len);
@@ -80,9 +78,9 @@ bool silc_id_create_client_id(SilcServer server,
 
   /* Assure that the ID does not exist already */
   while (1) {
-    if (!silc_idlist_find_client_by_id(server->local_list, 
+    if (!silc_idlist_find_client_by_id(server->local_list,
 				       *new_id, FALSE, NULL))
-      if (!silc_idlist_find_client_by_id(server->global_list, 
+      if (!silc_idlist_find_client_by_id(server->global_list,
 					 *new_id, FALSE, NULL))
 	break;
 
@@ -126,15 +124,15 @@ bool silc_id_create_channel_id(SilcServer server,
 
   /* Assure that the ID does not exist already */
   while (1) {
-    if (!silc_idlist_find_channel_by_id(server->local_list, 
+    if (!silc_idlist_find_channel_by_id(server->local_list,
 					*new_id, NULL))
       break;
 
     (*new_id)->rnd++;
-    
+
     if (finding && (*new_id)->rnd == 0)
       return FALSE;
-    
+
     if (!finding) {
       (*new_id)->rnd = 0;
       finding = TRUE;

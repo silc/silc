@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -427,11 +427,20 @@ bool silc_server_init(SilcServer server)
   if (!id)
     goto err;
 
+  /* Check server name */
+  server->server_name =
+    silc_identifier_check(server->config->server_info->server_name,
+			  strlen(server->config->server_info->server_name),
+			  SILC_STRING_LOCALE, 256, NULL);
+  if (!server->server_name) {
+    SILC_LOG_ERROR(("Malformed server name string '%s'",
+		    server->config->server_info->server_name));
+    goto err;
+  }
+
   server->id = id;
   server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
   server->id_string_len = silc_id_get_len(id, SILC_ID_SERVER);
-  server->server_name = server->config->server_info->server_name;
-  server->config->server_info->server_name = NULL;
 
   /* Add ourselves to the server list. We don't have a router yet
      beacuse we haven't established a route yet. It will be done later.
@@ -585,8 +594,17 @@ bool silc_server_rehash(SilcServer server)
   /* Fix the server_name field */
   if (strcmp(server->server_name, newconfig->server_info->server_name)) {
     silc_free(server->server_name);
-    server->server_name = newconfig->server_info->server_name;
-    newconfig->server_info->server_name = NULL;
+
+    /* Check server name */
+    server->server_name =
+      silc_identifier_check(newconfig->server_info->server_name,
+			    strlen(newconfig->server_info->server_name),
+			    SILC_STRING_LOCALE, 256, NULL);
+    if (!server->server_name) {
+      SILC_LOG_ERROR(("Malformed server name string '%s'",
+		      server->config->server_info->server_name));
+      return FALSE;
+    }
 
     /* Update the idcache list with a fresh pointer */
     silc_free(server->id_entry->server_name);
@@ -970,9 +988,9 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 }
 
 /* Callback for async connection to remote router */
-      
+
 SILC_TASK_CALLBACK(silc_server_connection_established)
-{ 
+{
   SilcServer server = app_context;
   SilcServerConnection sconn = (SilcServerConnection)context;
   int sock = fd;
@@ -1000,14 +1018,14 @@ SILC_TASK_CALLBACK(silc_server_connection_established)
     }
     return;
   }
-                 
+
   SILC_LOG_DEBUG(("Connection to router %s:%d established", sconn->remote_host,
 		 sconn->remote_port));
-  
+
   /* Continue with key exchange protocol */
   silc_server_start_key_exchange(server, sconn, sock);
-}   
-    
+}
+
 /* Generic routine to use connect to a router. */
 
 SILC_TASK_CALLBACK(silc_server_connect_router)

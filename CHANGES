@@ -1,3 +1,18 @@
+Tue Mar 29 16:51:35 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for the new identifier strings and their
+	  validity checking.  Nicknames, channel names and usernames
+	  can now include practically any kind of letters and various
+	  other characters.  Affected files in silcd/ and in libraries.
+
+	  NOTE: comparing these strings should now be done with memcmp()
+	  to check binary compatibility.  All these strings are normalized
+	  and casing is irrelevant.
+
+	* Added silc_identifier_check to lib/silcutil/silcstrutil.[ch]
+	  as easy function for applications to check whether identifier
+	  strings are valid.
+
 Tue Mar 29 00:45:11 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed SILC_STRING_LDAP_DN encoding and decoding.  Affected
@@ -91,8 +106,8 @@ Tue Nov 23 16:54:35 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 Wed Sep 22 19:46:32 CEST 2004  Patrik Weiskircher <pat@icore.at>
 
 	* When using silc_net_create_connection[_async], and your system can
-	  create IPv6 sockets, it will try to connect to the IPv6 host. 
-	  Now it tries to connect to an IPv4 host if IPv6 fails. Affected 
+	  create IPv6 sockets, it will try to connect to the IPv6 host.
+	  Now it tries to connect to an IPv4 host if IPv6 fails. Affected
 	  file lib/silcutil/unix/silcunixnet.c
 
 Fri Jun 18 19:26:58 CEST 2004  Pekka Riikonen <priikone@silcnet.org>
@@ -108,7 +123,7 @@ Sat May  1 13:55:54 CEST 2004  Patrik Weiskircher <pat@icore.at>
 
 Fri Apr 30 19:40:28 CEST 2004  Patrik Weiskircher <pat@icore.at>
 
-	* Added check to ignore Port value if Initiator is FALSE. 
+	* Added check to ignore Port value if Initiator is FALSE.
 	  Remote router coudln't connect if Port was set. Affected file
 	  silcd/serverconfig.c
 

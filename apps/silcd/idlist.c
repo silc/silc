@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -419,7 +419,6 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 
   while (silc_idcache_list_next(list, &id_cache))
     (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
-
   silc_idcache_list_free(list);
 
   SILC_LOG_DEBUG(("Found total %d clients", *clients_count));
@@ -439,13 +438,10 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   SilcIDCacheEntry id_cache = NULL;
   unsigned char hash[32];
   SilcClientID client_id;
-  char nick[128 + 1];
 
   SILC_LOG_DEBUG(("Start"));
 
-  memset(nick, 0, sizeof(nick));
-  silc_to_lower(nickname, nick, sizeof(nick) - 1);
-  silc_hash_make(md5hash, nick, strlen(nick), hash);
+  silc_hash_make(md5hash, nickname, strlen(nickname), hash);
 
   /* As the Client ID is hashed in the ID cache by hashing only the hash
      from the Client ID, we can do a lookup with only the hash not the
@@ -552,7 +548,7 @@ silc_idlist_replace_client_id(SilcServer server,
   silc_free(client->id);
   silc_free(client->nickname);
   client->id = new_id;
-  client->nickname = nickname ? strdup(nickname) : NULL;
+  client->nickname = nickname ? silc_memdup(nickname, strlen(nickname)) : NULL;
 
   /* Check if anyone is watching new nickname */
   if (server->server_type == SILC_ROUTER)

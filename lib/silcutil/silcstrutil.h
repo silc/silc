@@ -167,4 +167,50 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
 char *silc_strncat(char *dest, SilcUInt32 dest_size,
 		   const char *src, SilcUInt32 src_len);
 
+/****f* silcutil/SilcStrUtilAPI/silc_identifier_check
+ *
+ * SYNOPSIS
+ *
+ *    unsigned char *
+ *    silc_identifier_check(const unsigned char *identifier,
+ *                          SilcUInt32 identifier_len,
+ *                          SilcStringEncoding identifier_encoding,
+ *                          SilcUInt32 max_allowed_length,
+ *                          SilcUInt32 *out_len);
+ *
+ * DESCRIPTION
+ *
+ *    Checks that the 'identifier' string is valid identifier string
+ *    and does not contain any unassigned or prohibited character.  This
+ *    function is used to check for valid nicknames, channel names,
+ *    server names, usernames, hostnames, service names, algorithm names,
+ *    other security property names, and SILC Public Key name.
+ *
+ *    If the 'max_allowed_length' is non-zero the identifier cannot be
+ *    longer than that, and NULL is returned if it is.  If zero (0), no
+ *    length limit exist.  For nicknames the max length must be 128 bytes
+ *    and for channel names 256 bytes.  Other identifiers has no default
+ *    limit, but application may choose one anyway.
+ *
+ *    Returns the validated string, that the caller must free.  Returns
+ *    NULL if the identifier string is not valid or contain unassigned or
+ *    prohibited characters.  Such identifier strings must not be used
+ *    SILC protocol.  The returned string is always in UTF-8 encoding.
+ *    The length of the returned string is in 'out_len'.
+ *
+ * NOTES
+ *
+ *    In addition of validating the identifier string, this function
+ *    may map characters to other characters or remove characters from the
+ *    original string.  This is done as defined in the SILC protocol.  Error
+ *    is returned only if the string contains unassigned or prohibited
+ *    characters.  The original 'identifier' is not modified at any point.
+ *
+ ***/
+unsigned char *silc_identifier_check(const unsigned char *identifier,
+				     SilcUInt32 identifier_len,
+				     SilcStringEncoding identifier_encoding,
+				     SilcUInt32 max_allowed_length,
+				     SilcUInt32 *out_len);
+
 #endif /* SILCSTRUTIL_H */

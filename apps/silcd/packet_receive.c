@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -2256,9 +2256,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcIDListData idata;
   char *username = NULL, *realname = NULL;
   SilcUInt16 username_len;
-  SilcUInt32 id_len;
+  SilcUInt32 id_len, tmp_len;
   int ret;
-  char *hostname, *nickname;
+  char *hostname, *nickname, *tmp;
   int nickfail = 0;
 
   SILC_LOG_DEBUG(("Creating new client"));
@@ -2322,16 +2322,32 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     return NULL;
   }
 
-  if (username_len > 128)
+  if (username_len > 128) {
     username[128] = '\0';
-
-  /* Check for bad characters for nickname, and modify the nickname if
-     it includes those. */
-  if (silc_server_name_bad_chars(username, username_len)) {
-    nickname = silc_server_name_modify_bad(username, username_len);
-  } else {
-    nickname = strdup(username);
+    username_len = 128;
   }
+
+  /* Check for valid username string */
+  tmp = silc_identifier_check(username, username_len, SILC_STRING_UTF8, 128,
+			      &tmp_len);
+  if (!tmp) {
+    silc_free(username);
+    silc_free(realname);
+    SILC_LOG_ERROR(("Client %s (%s) sent bad username string, closing "
+		    "connection", sock->hostname, sock->ip));
+    silc_server_disconnect_remote(server, sock,
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				  NULL);
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
+    return NULL;
+  }
+  silc_free(username);
+  username = tmp;
+  username_len = tmp_len;
+
+  /* Nickname is initially same as username */
+  nickname = silc_memdup(username, username_len);
 
   /* Make sanity checks for the hostname of the client. If the hostname
      is provided in the `username' check that it is the same than the
@@ -2422,7 +2438,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Create Client ID */
   while (!silc_id_create_client_id(server, server->id, server->rng,
-				   server->md5hash, nickname, &client_id)) {
+				   server->md5hash, nickname,
+				   strlen(nickname), &client_id)) {
     nickfail++;
     if (nickfail > 9) {
       silc_server_disconnect_remote(server, sock,
@@ -3835,12 +3852,13 @@ void silc_server_resume_client(SilcServer server,
     }
 
     /* If the ID is not based in our ID then change it */
-    if (!SILC_ID_COMPARE(detached_client->id, server->id, 
+    if (!SILC_ID_COMPARE(detached_client->id, server->id,
 			 server->id->ip.data_len)) {
       silc_free(client_id);
       while (!silc_id_create_client_id(server, server->id, server->rng,
 				       server->md5hash,
 				       detached_client->nickname,
+				       strlen(detached_client->nickname),
 				       &client_id)) {
 	nickfail++;
 	if (nickfail > 9) {
@@ -3851,8 +3869,16 @@ void silc_server_resume_client(SilcServer server,
 	    silc_server_free_sock_user_data(server, sock, NULL);
 	  return;
 	}
+	if (nickfail < 2) {
+	  detached_client->nickname =
+	    silc_realloc(detached_client->nickname,
+			 sizeof(*detached_client->nickname) *
+			 (strlen(detached_client->nickname) + 2));
+	  detached_client->
+	    nickname[strlen(detached_client->nickname) - 1] = '\0';
+	}
 	snprintf(&detached_client->
-		 nickname[strlen(detached_client->nickname) - 1], 1,
+		 nickname[strlen(detached_client->nickname) - 2], 1,
 		 "%d", nickfail);
       }
       nick_change = TRUE;

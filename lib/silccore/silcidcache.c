@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 - 2004 Pekka Riikonen
+  Copyright (C) 2000 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
 					  SILC_32_TO_PTR(id_type),
 					  silc_idcache_destructor, NULL, TRUE);
   cache->name_table = silc_hash_table_alloc(count, silc_hash_string, NULL,
-					    silc_hash_string_compare, NULL,
+					    silc_hash_data_compare, NULL,
 					    NULL, NULL, TRUE);
   cache->context_table = silc_hash_table_alloc(count, silc_hash_ptr, NULL,
 					       NULL, NULL, NULL, NULL, TRUE);
