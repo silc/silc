@@ -591,6 +591,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
 					SilcChannelEntry channel,
 					SilcPacketType type,
 					bool route,
+					bool send_to_clients,
 					unsigned char *data,
 					SilcUInt32 data_len,
 					bool force_send)
@@ -704,7 +705,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
       continue;
     }
 
-    if (client->router)
+    if (client->router || !send_to_clients)
       continue;
 
     /* Send to locally connected client */
@@ -1586,6 +1587,7 @@ void silc_server_send_notify_to_channel(SilcServer server,
 					SilcSocketConnection sender,
 					SilcChannelEntry channel,
 					bool route_notify,
+					bool send_to_clients,
 					SilcNotifyType type,
 					SilcUInt32 argc, ...)
 {
@@ -1597,6 +1599,7 @@ void silc_server_send_notify_to_channel(SilcServer server,
   packet = silc_notify_payload_encode(type, argc, ap);
   silc_server_packet_send_to_channel(server, sender, channel,
 				     SILC_PACKET_NOTIFY, route_notify,
+				     send_to_clients,
 				     packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
   va_end(ap);
@@ -1853,7 +1856,7 @@ void silc_server_send_channel_key(SilcServer server,
                                            channel->key_len / 8, channel->key);
   silc_server_packet_send_to_channel(server, sender, channel,
 				     SILC_PACKET_CHANNEL_KEY,
-                                     route, packet->data, packet->len,
+                                     route, TRUE, packet->data, packet->len,
 				     FALSE);
   silc_buffer_free(packet);
   silc_free(chid);

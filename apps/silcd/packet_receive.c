@@ -209,7 +209,7 @@ void silc_server_notify(SilcServer server,
 
     /* Send to channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type,
-				       FALSE, packet->buffer->data,
+				       FALSE, TRUE, packet->buffer->data,
 				       packet->buffer->len, FALSE);
 
     if (server->server_type != SILC_ROUTER &&
@@ -314,7 +314,7 @@ void silc_server_notify(SilcServer server,
 
     /* Send the leave notify to channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type,
-				       FALSE, packet->buffer->data,
+				       FALSE, TRUE, packet->buffer->data,
 				       packet->buffer->len, FALSE);
 
     /* Remove the user from channel */
@@ -458,7 +458,7 @@ void silc_server_notify(SilcServer server,
 
     /* Send the same notify to the channel */
     silc_server_packet_send_to_channel(server, NULL, channel, packet->type,
-				       FALSE, packet->buffer->data,
+				       FALSE, TRUE, packet->buffer->data,
 				       packet->buffer->len, FALSE);
     break;
 
@@ -639,7 +639,7 @@ void silc_server_notify(SilcServer server,
 	  break;
 	sidp = silc_id_payload_encode(server->router->id, SILC_ID_SERVER);
 	SILC_PUT32_MSB(channel->mode, mask);
-	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+	silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 					   SILC_NOTIFY_TYPE_CMODE_CHANGE, 7,
 					   sidp->data, sidp->len,
 					   mask, 4,
@@ -810,7 +810,7 @@ void silc_server_notify(SilcServer server,
 
     /* Send the same notify to the channel */
     silc_server_packet_send_to_channel(server, NULL, channel, packet->type,
-				       FALSE, packet->buffer->data,
+				       FALSE, TRUE, packet->buffer->data,
 				       packet->buffer->len, FALSE);
 
     /* Change mode */
@@ -1061,7 +1061,7 @@ void silc_server_notify(SilcServer server,
       if (!notify_sent)
 	silc_server_packet_send_to_channel(server, NULL, channel,
 					   packet->type,
-					   FALSE, packet->buffer->data,
+					   FALSE, TRUE, packet->buffer->data,
 					   packet->buffer->len, FALSE);
 
       silc_free(channel_id);
@@ -1119,13 +1119,15 @@ void silc_server_notify(SilcServer server,
     silc_free(client_id);
 
     /* Get user's channel entry and check that inviting is allowed. */
-    if (!silc_server_client_on_channel(client, channel, &chl))
-      goto out;
-    if (channel->mode & SILC_CHANNEL_MODE_INVITE &&
-	!(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
-	!(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
-      SILC_LOG_DEBUG(("Inviting is not allowed"));
-      goto out;
+    if (server->server_type == SILC_ROUTER) {
+      if (!silc_server_client_on_channel(client, channel, &chl))
+        goto out;
+      if (channel->mode & SILC_CHANNEL_MODE_INVITE &&
+	  !(chl->mode & SILC_CHANNEL_UMODE_CHANOP) &&
+	  !(chl->mode & SILC_CHANNEL_UMODE_CHANFO)) {
+        SILC_LOG_DEBUG(("Inviting is not allowed"));
+        goto out;
+      }
     }
 
     /* Get the invite action */
@@ -1156,6 +1158,15 @@ void silc_server_notify(SilcServer server,
       silc_server_inviteban_process(server, channel->invite_list, action,
 				    iargs);
       silc_argument_payload_free(iargs);
+
+      /* If we are router we must send this notify to our local servers on
+         the channel.  Normal server does nothing.  The notify is not
+         sent to clients. */
+      if (server->server_type == SILC_ROUTER)
+	silc_server_packet_send_to_channel(server, sock, channel,
+					   packet->type, FALSE, FALSE,
+					   packet->buffer->data,
+					   packet->buffer->len, FALSE);
     }
 
     break;
@@ -1194,7 +1205,7 @@ void silc_server_notify(SilcServer server,
 
     /* Send the notify to the channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type,
-				       FALSE, packet->buffer->data,
+				       FALSE, TRUE, packet->buffer->data,
 				       packet->buffer->len, FALSE);
 
     /* Get the new Channel ID */
@@ -1490,7 +1501,7 @@ void silc_server_notify(SilcServer server,
 
     /* Send to channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type,
-				       FALSE, packet->buffer->data,
+				       FALSE, TRUE, packet->buffer->data,
 				       packet->buffer->len, FALSE);
 
     /* Remove the client from channel's invite list */
@@ -1744,6 +1755,15 @@ void silc_server_notify(SilcServer server,
       silc_server_inviteban_process(server, channel->ban_list, action,
 				    iargs);
       silc_argument_payload_free(iargs);
+
+      /* If we are router we must send this notify to our local servers on
+         the channel.  Normal server does nothing.  The notify is not
+         sent to clients. */
+      if (server->server_type == SILC_ROUTER)
+	silc_server_packet_send_to_channel(server, sock, channel,
+					   packet->type, FALSE, FALSE,
+					   packet->buffer->data,
+					   packet->buffer->len, FALSE);
     }
     break;
 

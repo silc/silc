@@ -1719,7 +1719,7 @@ bool silc_server_force_cumode_change(SilcServer server,
   idp1 = silc_id_payload_encode(server->id, SILC_ID_SERVER);
   idp2 = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
   SILC_PUT32_MSB(forced_mode, cumode);
-  silc_server_send_notify_to_channel(server, sock, channel, FALSE,
+  silc_server_send_notify_to_channel(server, sock, channel, FALSE, TRUE,
 				     SILC_NOTIFY_TYPE_CUMODE_CHANGE,
 				     3, idp1->data, idp1->len,
 				     cumode, sizeof(cumode),
@@ -2127,7 +2127,7 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
     /* Send notify that removes the old list */
     sidp = silc_id_payload_encode(server->id, SILC_ID_SERVER);
     SILC_PUT32_MSB((channel->mode & (~SILC_CHANNEL_MODE_CHANNEL_AUTH)), mask);
-    silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 				       SILC_NOTIFY_TYPE_CMODE_CHANGE, 7,
 				       sidp->data, sidp->len,
 				       mask, 4,

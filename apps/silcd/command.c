@@ -981,7 +981,7 @@ SILC_SERVER_CMD_FUNC(topic)
 
       /* Send notify about topic change to all clients on the channel */
       idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-      silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 					 SILC_NOTIFY_TYPE_TOPIC_SET, 2,
 					 idp->data, idp->len,
 					 channel->topic,
@@ -1229,9 +1229,29 @@ SILC_SERVER_CMD_FUNC(invite)
     silc_hash_table_list_reset(&htl);
   }
 
-  /* Send notify to the primary router */
+  /* The notify is sent to local servers (not clients), and to network. */
   if (atype && tmp && len2) {
     silc_buffer_set(&alist, tmp, len2);
+
+    /* Send to local servers if we are router */
+    if (server->server_type == SILC_ROUTER) {
+      SilcBuffer idp, idp2;
+      idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
+      idp2 = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE, FALSE,
+                                         SILC_NOTIFY_TYPE_INVITE, 5,
+					 idp->data, idp->len,
+					 channel->channel_name,
+					 strlen(channel->channel_name),
+					 idp2->data, idp2->len,
+					 atype, 1,
+					 tmp ? alist.data : NULL,
+					 tmp ? alist.len : 0);
+      silc_buffer_free(idp);
+      silc_buffer_free(idp2);
+    }
+
+    /* Send to network */
     silc_server_send_notify_invite(server, SILC_PRIMARY_ROUTE(server),
 				   SILC_BROADCAST(server), channel,
 				   sender->id, atype,
@@ -2138,7 +2158,7 @@ static void silc_server_command_join_channel(SilcServer server,
      we are router then this will send it to local clients and local
      servers. */
   SILC_LOG_DEBUG(("Send JOIN notify to channel"));
-  silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+  silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 				     SILC_NOTIFY_TYPE_JOIN, 2,
 				     clidp->data, clidp->len,
 				     chidp->data, chidp->len);
@@ -2165,7 +2185,7 @@ static void silc_server_command_join_channel(SilcServer server,
     if (founder) {
       SILC_PUT32_MSB(chl->mode, mode);
       SILC_LOG_DEBUG(("Send CUMODE_CHANGE notify to channel"));
-      silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 					 SILC_NOTIFY_TYPE_CUMODE_CHANGE, 4,
 					 clidp->data, clidp->len,
 					 mode, 4, clidp->data, clidp->len,
@@ -3091,7 +3111,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Send CMODE_CHANGE notify. */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+  silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 7,
 				     cidp->data, cidp->len,
 				     tmp_mask, 4,
@@ -3466,7 +3486,7 @@ SILC_SERVER_CMD_FUNC(cumode)
 
   /* Send notify to channel, notify only if mode was actually changed. */
   if (notify) {
-    silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 4,
 				       idp->data, idp->len,
 				       tmp_mask, 4,
@@ -3630,7 +3650,7 @@ SILC_SERVER_CMD_FUNC(kick)
 
   /* Send KICKED notify to local clients on the channel */
   idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+  silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 				     SILC_NOTIFY_TYPE_KICKED, 3,
 				     target_idp, target_idp_len,
 				     comment, comment ? strlen(comment) : 0,
@@ -4301,9 +4321,21 @@ SILC_SERVER_CMD_FUNC(ban)
     silc_hash_table_list_reset(&htl);
   }
 
-  /* Send the BAN notify type to our primary router. */
+  /* Send BAN notify type to local servers (but not clients) and to
+     network. */
   if (atype && tmp && len2) {
     silc_buffer_set(&blist, tmp, len2);
+
+    /* Send to local servers if we are router */
+    if (server->server_type == SILC_ROUTER)
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE, FALSE,
+                                         SILC_NOTIFY_TYPE_BAN, 3,
+					 id, id_len,
+					 atype, 1,
+					 tmp ? blist.data : NULL,
+					 tmp ? blist.len : 0);
+
+    /* Send to network. */
     silc_server_send_notify_ban(server, SILC_PRIMARY_ROUTE(server),
 				SILC_BROADCAST(server), channel, atype,
 				&blist);
