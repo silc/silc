@@ -47,6 +47,24 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "whois_idle", " idle     : $0", 1, { 0 } },
 	{ "whowas", "{nick $0} was {nickhost $1} ($2)", 3, { 0, 0, 0 } },
 
+	/* Key management and key agreement */
+	{ NULL, "Key Management And Key Agreement", 0 },
+
+	{ "channel_private_key_add", "Private key set to channel {channel $0}", 1, { 0 } },
+	{ "channel_private_key_nomode", "Private key mode is not set on channel {channel $0}", 1, { 0 } },
+	{ "channel_private_key_error", "Could not add private key to channel {channel $0}", 1, { 0 } },
+	{ "channel_private_key_list", "Channel {channel $0} private keys%:  Cipher           Hmac             Key", 1, { 0 } },
+	{ "private_key_list", "Private message keys%:  Client                         Cipher         Key", 0, { 0 } },
+	{ "private_key_list_nick", "Private message keys with {nick $0}%:  Client                         Cipher         Key", 1, { 0 } },
+	{ "key_agreement", "Requesting key agreement with {nick $0}", 1, { 0 } },
+	{ "key_agreement_request", "{nick $0} wants to perform key agreement", 1, { 0 } },
+	{ "key_agreement_request_host", "{nick $0} wants to perform key agreement on {nickhost $1} port {hilight $2}", 3, { 0, 0, 0 } },
+	{ "key_agreement_negotiate", "Starting key agreement with {nick $0}", 1, { 0 } },
+	{ "key_agreement_privmsg", "The private messages with the {nick $0} are now protected with the private key", 1, { 0 } },
+	{ "key_agreement_ok", "Key agreement completed successfully with {nick $0}", 1, { 0 } },
+	{ "key_agreement_error", "Error occurred during key agreement with {nick $0}", 1, { 0 } },
+	{ "key_agreement_failure", "Key agreement failed with {nick $0}", 1, { 0 } },
+	{ "key_agreement_timeout", "Timeout during key agreement. The key agreement was not performed with {nick $0}", 1, { 0 } },
+
 	{ NULL, NULL, 0 }
 };
-

@@ -62,6 +62,9 @@ typedef struct {
   char *msg;
 } PRIVMSG_REC;
 
+/* Callback function that sends the private message if the client was
+   resolved from the server. */
+
 static void silc_send_msg_clients(SilcClient client,
 				  SilcClientConnection conn,
 				  SilcClientEntry *clients,
@@ -89,13 +92,32 @@ static void silc_send_msg_clients(SilcClient client,
 static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg)
 {
   PRIVMSG_REC *rec;
+  SilcClientEntry client_entry;
+  uint32 num = 0;
+  char *nickname = NULL, *serv = NULL;
   
-  rec = g_new0(PRIVMSG_REC, 1);
-  rec->nick = g_strdup(nick);
-  rec->msg = g_strdup(msg);
-  
-  silc_client_get_clients(silc_client, server->conn,
-			  nick, "", silc_send_msg_clients, rec);
+  if (!silc_parse_nickname(nick, &nickname, &serv, &num)) {
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Bad nickname: %s", nick);
+    return;
+  }
+
+  /* Find client entry */
+  client_entry = silc_idlist_get_client(silc_client, server->conn, 
+					nickname, serv, num, FALSE);
+  if (!client_entry) {
+    rec = g_new0(PRIVMSG_REC, 1);
+    rec->nick = g_strdup(nick);
+    rec->msg = g_strdup(msg);
+
+    /* Could not find client with that nick, resolve it from server. */
+    silc_client_get_clients(silc_client, server->conn,
+			    nickname, serv, silc_send_msg_clients, rec);
+    return;
+  }
+
+  /* Send the private message directly */
+  silc_client_send_private_message(silc_client, server->conn, client_entry, 0,
+				   msg, strlen(msg), TRUE);
 }
 
 static int isnickflag_func(char flag)
@@ -261,12 +283,6 @@ void silc_command_exec(SILC_SERVER_REC *server,
   
   /* Execute command */
   (*cmd->cb)(ctx);
-}
-
-static void command_users(const char *data, SILC_SERVER_REC *server,
-			  WI_ITEM_REC *item)
-{
-  signal_emit("command names", 3, data, server, item);
 }
 
 static void command_self(const char *data, SILC_SERVER_REC *server)
