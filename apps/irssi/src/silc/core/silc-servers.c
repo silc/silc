@@ -296,7 +296,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: INVITE <channel> [<nickname>[@hostname>] */
 /* SYNTAX: INVITE <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]] */
 /* SYNTAX: KEY MSG <nickname> set|unset|list|agreement|negotiate [<arguments>] */
-/* SYNTAX: KEY CHANNEL <channel> set|unset|list|agreement|negotiate [<arguments>] */
+/* SYNTAX: KEY CHANNEL <channel> set|unset|list [<arguments>] */
 /* SYNTAX: KICK <channel> <nickname>[@<hostname>] [<comment>] */
 /* SYNTAX: KILL <nickname>[@<hostname>] [<comment>] */
 /* SYNTAX: OPER <username> [-pubkey] */

@@ -204,9 +204,9 @@ char *silc_pkcs_get_supported(void)
 
 /* Returns the length of the key */
 
-uint32 silc_pkcs_get_key_len(SilcPKCS self)
+uint32 silc_pkcs_get_key_len(SilcPKCS pkcs)
 {
-  return self->key_len;
+  return pkcs->key_len;
 }
 
 /* Returns SILC style public key */

@@ -27,7 +27,7 @@
    Hence, the encoding is always in PKCS #1 version 1.5 format.
 
    Any questions and comments regarding this modified version should be
-   sent to priikone@poseidon.pspt.fi.
+   sent to priikone@silcnet.org.
 
    References: ftp://ftp.rsasecurity.com/pub/pkcs/ascii/pkcs-1v2.asc,
                ftp://ftp.rsasecurity.com/pub/pkcs/ascii/pkcs-1.asc,

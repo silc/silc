@@ -12,84 +12,73 @@ purpose.
 
 Types:
 
-    MSG        The command is performed for private messages
-               affecting the <nickname>.
+  MSG        The command is performed for private messages
+             affecting the <nickname>.
 
-    CHANNEL    The command is performed for channel affecting
-               the <channel>.
+  CHANNEL    The command is performed for channel affecting
+             the <channel>.
 
 Commands:
 
-    set        [<key> [<cipher>] [<hmac>]]
+  set        [<key> [<cipher>] [<hmac>]]
 
-      Set the key into use.  If the <key> is provided it
-      is used as the key material.  If the <key> is not
-      provided the negotiated key material is used.  If
-      the negotiation has not been performed this command
-      has no effect.
+    Set the key into use.  If the <key> is provided it is used
+    as the key material.  If the <key> is not provided the
+    negotiated key material is used.  If the negotiation has not
+    been performed this command has no effect.
 
-      If the type is `msg' and the <key> is `*' then
-      random key will be generated automatically.
+    If the type is `msg' and the <key> is `*' then random key
+    will be generated automatically.  The <cipher> may be set
+    for both private message and channel private keys and the
+    <hmac> may be set only to the channel private keys.
 
-      The <cipher> may be set for both private message
-      and channel private keys and the <hmac> may be set
-      only to the channel private keys.
+  unset      [<number>]
 
-    unset      [<number>]
+    Unset the key.  The private key is not used after this
+    command.  The key must be set again or the key material must
+    be re-negotiated to be able to use the private keys again.
+    The channel may have several private keys set.  The <number>
+    can be used to indicate what key is being unset.  If it is
+    not provided all keys are removed.
 
-      Unset the key.  The private key is not used after
-      this command.  The key must be set again or the key
-      material must be re-negotiated to be able to use
-      the private keys again.
+  list
 
-      The channel may have several private keys set.  The
-      <number> can be used to indicate what key is being
-      unset.  If it is not provided all keys are removed.
+    List all private keys that has been set.  If the type is
+    `msg' and the <nickname> is ´*' then all private message
+    keys that you've set will be listed.
 
-    list
+  agreement  [<hostname> [<port>]]
 
-      List all private keys that has been set.  If the
-      type is `msg' and the <nickname> is ´*' then
-      all private message keys that you've set will be
-      listed.
+    Send key agreement request to remote client.  If the
+    <hostname> is provided it is sent in the request. The
+    receiver may use the hostname to start the key agreement.
+    If the <port> is also provided your key agreement protocol
+    server is bound to that port.  Note that it cannot be
+    privileged port (<1024).  If the <hostname> and <port> is
+    not provided then the receiver will never initiate the key
+    agreement.  In this case you may start the key agreement
+    after receiving the reply to the request, by giving the
+    negotiate command.
 
-    agreement  [<hostname> [<port>]]
+    This command may be used to send reply to the remote client.
+    When receiving empty key agreement you can reply to the
+    sender with the hostname and port of your key agreement
+    server with this command.
 
-      Send key agreement request to remote client.  If
-      the <hostname> is provided it is sent in the request.
-      The receiver may use the hostname to start the
-      key agreement.  If the <port> is also provided your
-      key agreement protocol server is bound to that
-      port.  Note that it cannot be privileged port (<1024).
-      If the <hostname> and <port> is not provided then
-      the receiver will never initiate the key agreement.
-      In this case you may start the key agreement after
-      receiving the reply to the request, by giving the
-      negotiate command.
+    If the hostname and port are ommitted, the irssi boolean
+    variable use_auto_addr will be examined.  If it is set
+    the value of auto_bind_ip will be used as the IP address
+    to listen for the return reply, the value of auto_public_ip
+    will be the IP address sent to the remote client, and the
+    auto_bind_port will be the port value to be bound to and
+    sent to the remote client.  If auto_public_ip is unset, but
+    auto_bind_ip is set, irssi will send the auto_bind_ip
+    variable's value to the remote client.
 
-      This command may be used to send reply to the
-      remote client.  When receiving empty key agreement
-      you can reply to the sender with the hostname and
-      port of your key agreement server with this command.
+  negotiate  [<hostname> [<port>]]
 
-      If the hostname and port are ommitted, the irssi
-      boolean variable use_auto_addr will be examined.  If
-      this variable is set, the value of auto_bind_ip will
-      be used as the IP address to listen for the return
-      reply, the value of auto_public_ip will be the IP
-      address sent to the remote client, and auto_bind_port
-      will be the port value to be bound to AND sent to
-      the remote client.  If auto_public_ip is unset, but
-      auto_bind_ip IS, irssi will send the auto_bind_ip
-      variable's value to the remote client.
-
-    negotiate  [<hostname> [<port>]]
-
-      This may be called to start the key agreement with
-      <nickname>.  This command has effect only if the
-      <nickname> has replied to your key agreement request.
-      You will see a notify on the screen when the reply
-      arrives.  The <hostname> and <port> is the hostname
-      and port of the remote client's key agreement
-      server.
-
+    This may be called to start the key agreement with <nickname>.
+    This command has effect only if the <nickname> has replied to
+    your key agreement request.  You will see a notify on the
+    screen when the reply arrives.  The <hostname> and <port> is the
+    hostname and port of the remote client's key agreement server.

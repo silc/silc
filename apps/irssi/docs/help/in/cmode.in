@@ -30,6 +30,6 @@ option(s).  The following modes are available:
 
 Multiple modes can be set/unset at once if the modes does not
 require any arguments.  If mode requires an argument then only
-one mode can be set at once
+one mode can be set at once.
 
 See also: CUMODE, UMODE
