@@ -175,8 +175,8 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   char *cp;
   int maj = 0, min = 0, build = 0, maj2 = 0, min2 = 0, build2 = 0;
 
-  /* Check for initial version string */
-  if (!strstr(version, "SILC-1.0-"))
+  /* Check for initial version string. Allowed "SILC-1.x-". */
+  if (!strstr(version, "SILC-1."))
     status = SILC_SKE_STATUS_BAD_VERSION;
 
   /* Check software version */
