@@ -1,7 +1,7 @@
 /*
  silc-nicklist.c : irssi
 
-    Copyright (C) 2000 Timo Sirainen
+    Copyright (C) 2000, 2003 Timo Sirainen, Pekka Riikonen
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,7 +32,12 @@ SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
   SILC_NICK_REC *rec;
 
   g_return_val_if_fail(IS_SILC_CHANNEL(channel), NULL);
-  g_return_val_if_fail(user != NULL, NULL);
+  if (!user)
+    return NULL;
+  if (!user->client)
+    return NULL;
+  if (!user->client->nickname)
+    return NULL;
 
   rec = g_new0(SILC_NICK_REC, 1);
   rec->nick = g_strdup(user->client->nickname);
@@ -42,9 +47,9 @@ SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
   rec->silc_user = user;
   rec->unique_id = user->client;
 
-  if (user->mode & SILC_CHANNEL_UMODE_CHANOP) 
+  if (user->mode & SILC_CHANNEL_UMODE_CHANOP)
     rec->op = TRUE;
-  if (user->mode & SILC_CHANNEL_UMODE_CHANFO) 
+  if (user->mode & SILC_CHANNEL_UMODE_CHANFO)
     rec->founder = TRUE;
   rec->send_massjoin = send_massjoin;
 
@@ -73,7 +78,7 @@ char *silc_nick_strip(const char *nick)
   char *stripped, *spos;
 
   g_return_val_if_fail(nick != NULL, NULL);
-  
+
   spos = stripped = g_strdup(nick);
   while (isnickchar(*nick)) {
     if (isalnum((int) *nick))
@@ -99,15 +104,15 @@ int silc_nick_match(const char *nick, const char *msg)
   len = strlen(nick);
   if (g_strncasecmp(msg, nick, len) == 0 && !isalnum((int) msg[len]))
     return TRUE;
-  
+
   stripnick = silc_nick_strip(nick);
   stripmsg = silc_nick_strip(msg);
-  
+
   len = strlen(stripnick);
   ret = len > 0 && g_strncasecmp(stripmsg, stripnick, len) == 0 &&
     !isalnum((int) stripmsg[len]) &&
     (unsigned char) stripmsg[len] < 128;
-  
+
   g_free(stripnick);
   g_free(stripmsg);
 

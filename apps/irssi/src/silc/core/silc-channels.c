@@ -45,6 +45,21 @@
 
 #include "silc-commands.h"
 
+void sig_mime(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
+               const char *blob, const char *enc, const char *type,
+               const char *nick)
+{
+
+  if (!(IS_SILC_SERVER(server)))
+    return;
+  
+  printformat_module("fe-common/silc", server, 
+                        channel == NULL ? NULL : channel->name,
+                        MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
+                        nick == NULL ? "[<unknown>]" : nick, type);
+
+}
+
 SILC_CHANNEL_REC *silc_channel_create(SILC_SERVER_REC *server,
 				      const char *name,
 				      const char *visible_name,
@@ -1007,6 +1022,7 @@ void silc_channels_init(void)
   signal_add("server connected", (SIGNAL_FUNC) sig_connected);
   signal_add("server quit", (SIGNAL_FUNC) sig_server_quit);
   signal_add("gui exit", (SIGNAL_FUNC) sig_gui_quit);
+  signal_add("mime", (SIGNAL_FUNC) sig_mime);
 
   command_bind_silc("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
   command_bind_silc("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
@@ -1014,7 +1030,7 @@ void silc_channels_init(void)
   command_bind_silc("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   command_bind_silc("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
   command_bind_silc("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
-  command_bind_silc("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
+/*  command_bind_silc("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys); */
 
   silc_nicklist_init();
 }
@@ -1025,6 +1041,7 @@ void silc_channels_deinit(void)
   signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
   signal_remove("server quit", (SIGNAL_FUNC) sig_server_quit);
   signal_remove("gui exit", (SIGNAL_FUNC) sig_gui_quit);
+  signal_remove("mime", (SIGNAL_FUNC) sig_mime);
 
   command_unbind("part", (SIGNAL_FUNC) command_part);
   command_unbind("me", (SIGNAL_FUNC) command_me);
@@ -1032,7 +1049,7 @@ void silc_channels_deinit(void)
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
   command_unbind("away", (SIGNAL_FUNC) command_away);
   command_unbind("key", (SIGNAL_FUNC) command_key);
-  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys);
+/*  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys); */
 
   silc_nicklist_deinit();
 }

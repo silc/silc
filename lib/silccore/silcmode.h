@@ -52,6 +52,7 @@
 #define SILC_CHANNEL_MODE_FOUNDER_AUTH 0x0200 /* sets founder auth data */
 #define SILC_CHANNEL_MODE_SILENCE_USERS 0x0400 /* sets founder auth data */
 #define SILC_CHANNEL_MODE_SILENCE_OPERS 0x0800 /* sets founder auth data */
+#define SILC_CHANNEL_MODE_CHANNEL_AUTH 0x1000 /* channel auth (signature) */
 /***/
 
 /****d* silccore/Modes/ChannelUserModes

@@ -95,7 +95,7 @@ char *silc_config_strerror(int errnum)
 static void my_trim_spaces(SilcConfigFile *file)
 {
   register char *r = file->p;
-  while (isspace(*r))
+  while ((*r != '\0' && *r != EOF) && isspace(*r))
     if (*r++ == '\n') file->line++;
   file->p = r;
 }
@@ -103,8 +103,8 @@ static void my_trim_spaces(SilcConfigFile *file)
 static void my_skip_line(SilcConfigFile *file)
 {
   register char *r = file->p;
-  while (*r && (*r != '\n') && (*r != '\r')) r++;
-  file->p = (*r ? r + 1 : r);
+  while ((*r != '\0' && *r != EOF) && (*r != '\n') && (*r != '\r')) r++;
+  file->p = ((*r != '\0' && *r != EOF) ? r + 1 : r);
   file->line++;
 }
 /* Obtains a text token from the current position until first separator.

@@ -4,13 +4,13 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -85,11 +85,15 @@ struct SilcServerStruct {
   unsigned int backup_router  : 1;   /* Set if this is backup router */
   unsigned int backup_primary : 1;   /* Set if we've switched our primary
 				        router to a backup router. */
-  unsigned int backup_noswitch: 1;   /* Set if we've won't switch to 
+  unsigned int backup_noswitch: 1;   /* Set if we've won't switch to
 					become primary (we are backup) */
+  unsigned int backup_closed  : 1;   /* Set if backup closed connection.
+					Do not allow resuming in this case. */
   unsigned int wait_backup    : 1;   /* Set if we are waiting for backup
 				        router to connect to us. */
   unsigned int server_shutdown: 1;   /* Set when shutting down */
+  unsigned int no_reconnect   : 1;   /* If set, server won't reconnect to
+					router after disconnection. */
 
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */
@@ -162,14 +166,14 @@ typedef struct {
   (!server->standalone && server->router ? server->router->connection : NULL)
 
 /* Return TRUE if a packet must be broadcasted (router broadcasts) */
-#define SILC_BROADCAST(server) (server->server_type == SILC_ROUTER) 
+#define SILC_BROADCAST(server) (server->server_type == SILC_ROUTER)
 
 /* Return TRUE if entry is locally connected or local to us */
 #define SILC_IS_LOCAL(entry) \
   (((SilcIDListData)entry)->status & SILC_IDLIST_STATUS_LOCAL)
 
 /* Registers generic task for file descriptor for reading from network and
-   writing to network. As being generic task the actual task is allocated 
+   writing to network. As being generic task the actual task is allocated
    only once and after that the same task applies to all registered fd's. */
 #define SILC_REGISTER_CONNECTION_FOR_IO(fd)		\
 do {							\
@@ -184,7 +188,7 @@ do {							\
 do {									\
   silc_schedule_set_listen_fd((s), (fd), SILC_TASK_READ, FALSE);	\
 } while(0)
-     
+
 #define SILC_SET_CONNECTION_FOR_OUTPUT(s, fd)				     \
 do {									     \
   silc_schedule_set_listen_fd((s), (fd), (SILC_TASK_READ | SILC_TASK_WRITE), \

@@ -252,10 +252,6 @@ SOURCE=..\..\lib\silcmath\mpi\mplogic.c
 
 SOURCE=..\..\lib\silcmath\mpi\mpmontg.c
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mpi\mpprime.c
-# End Source File
 # End Group
 # Begin Source File
 

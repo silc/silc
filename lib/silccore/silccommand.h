@@ -1,16 +1,16 @@
 /*
- 
+
   silccommand.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
+
   Copyright (C) 1997 - 2001 Pekka Riikonen
- 
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -51,7 +51,7 @@ typedef void (*SilcCommandCb)(void *context, void *context2);
 /****s* silccore/SilcCommandAPI/SilcCommandPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcCommandPayloadStruct *SilcCommandPayload;
  *
  * DESCRIPTION
@@ -67,7 +67,7 @@ typedef struct SilcCommandPayloadStruct *SilcCommandPayload;
 /****d* silccore/SilcCommandAPI/SilcCommandFlags
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcCommandFlags;
  *
  * DESCRIPTION
@@ -98,7 +98,7 @@ typedef enum {
   /* Command is available only for server operators */
   SILC_CF_OPER           = (1L << 4),
 
-  /* Command is available only for SILC (router) operators. If this 
+  /* Command is available only for SILC (router) operators. If this
      is set SILC_CF_OPER is not necessary to be set. */
   SILC_CF_SILC_OPER      = (1L << 5),
 
@@ -108,7 +108,7 @@ typedef enum {
 /****d* silccore/SilcCommandAPI/SilcCommand
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt8 SilcCommand;
  *
  * DESCRIPTION
@@ -168,7 +168,7 @@ typedef SilcUInt8 SilcCommand;
  *
  * SYNOPSIS
  *
- *    SilcCommandPayload 
+ *    SilcCommandPayload
  *    silc_command_payload_parse(const unsigned char *payload,
  *                               SilcUInt32 payload_len);
  *
@@ -208,7 +208,7 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
  *
  * SYNOPSIS
  *
- *    SilcBuffer 
+ *    SilcBuffer
  *    silc_command_payload_encode_payload(SilcCommandPayload payload);
  *
  * DESCRIPTION
@@ -223,31 +223,31 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload);
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
- *                                              SilcUInt16 ident, 
+ *    SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
+ *                                              SilcUInt16 ident,
  *                                              SilcUInt32 argc, ...);
  *
  * DESCRIPTION
  *
  *    Encodes Command payload with variable argument list. The arguments
- *    must be: SilcUInt32, unsigned char *, unsigned int, ... One 
- *    {SilcUInt32, unsigned char * and unsigned int} forms one argument, 
- *    thus `argc' in case when sending one {SilcUInt32, unsigned char * 
+ *    must be: SilcUInt32, unsigned char *, unsigned int, ... One
+ *    {SilcUInt32, unsigned char * and unsigned int} forms one argument,
+ *    thus `argc' in case when sending one {SilcUInt32, unsigned char *
  *    and SilcUInt32} equals one (1) and when sending two of those it
  *    equals two (2), and so on. This has to be preserved or bad things
  *    will happen. The variable arguments is: {type, data, data_len}.
  *
  ***/
-SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
-					  SilcUInt16 ident, 
+SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
+					  SilcUInt16 ident,
 					  SilcUInt32 argc, ...);
 
 /****f* silccore/SilcCommandAPI/silc_command_payload_encode_vap
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
- *                                               SilcUInt16 ident, 
+ *    SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
+ *                                               SilcUInt16 ident,
  *                                               SilcUInt32 argc, va_list ap);
  *
  * DESCRIPTION
@@ -256,16 +256,16 @@ SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
  *    takes the va_list as argument.
  *
  ***/
-SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
-					   SilcUInt16 ident, 
+SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
+					   SilcUInt16 ident,
 					   SilcUInt32 argc, va_list ap);
 
 /****f* silccore/SilcCommandAPI/silc_command_reply_payload_encode_va
  *
  * SYNOPSIS
  *
- *    SilcBuffer 
- *    silc_command_reply_payload_encode_va(SilcCommand cmd, 
+ *    SilcBuffer
+ *    silc_command_reply_payload_encode_va(SilcCommand cmd,
  *                                         SilcStatus status,
  *                                         SilcStatus error,
  *                                         SilcUInt16 ident,
@@ -273,8 +273,8 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
  *
  * DESCRIPTION
  *
- *    Same as silc_command_payload_encode_va except that this is used to 
- *    encode strictly command reply packets.  The `argc' must not count 
+ *    Same as silc_command_payload_encode_va except that this is used to
+ *    encode strictly command reply packets.  The `argc' must not count
  *    `status' and `error' as arguments.  The `status' includes the
  *    command reply status.  If single reply will be sent then it includes
  *    SILC_STATUS_OK if error did not occur.  It includes an error value
@@ -292,8 +292,8 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
  *    replies are sent after the successful replies.
  *
  ***/
-SilcBuffer 
-silc_command_reply_payload_encode_va(SilcCommand cmd, 
+SilcBuffer
+silc_command_reply_payload_encode_va(SilcCommand cmd,
 				     SilcStatus status,
 				     SilcStatus error,
 				     SilcUInt16 ident,
@@ -303,8 +303,8 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
  *
  * SYNOPSIS
  *
- *    SilcBuffer 
- *    silc_command_reply_payload_encode_vap(SilcCommand cmd, 
+ *    SilcBuffer
+ *    silc_command_reply_payload_encode_vap(SilcCommand cmd,
  *                                          SilcStatus status,
  *                                          SilcStatus error,
  *                                          SilcUInt16 ident, SilcUInt32 argc,
@@ -316,11 +316,11 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
  *    takes the va_list as argument.
  *
  ***/
-SilcBuffer 
-silc_command_reply_payload_encode_vap(SilcCommand cmd, 
+SilcBuffer
+silc_command_reply_payload_encode_vap(SilcCommand cmd,
 				      SilcStatus status,
 				      SilcStatus error,
-				      SilcUInt16 ident, SilcUInt32 argc, 
+				      SilcUInt16 ident, SilcUInt32 argc,
 				      va_list ap);
 
 /****f* silccore/SilcCommandAPI/silc_command_free
@@ -383,7 +383,7 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload);
  *
  * SYNOPSIS
  *
- *    bool silc_command_get_status(SilcCommandPayload payload, 
+ *    bool silc_command_get_status(SilcCommandPayload payload,
  *                                 SilcStatus *status,
  *                                 SilcStatus *error);
  *
@@ -397,7 +397,7 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload);
  *    which indicates that there will be list of errors.
  *
  ***/
-bool silc_command_get_status(SilcCommandPayload payload, 
+bool silc_command_get_status(SilcCommandPayload payload,
 			     SilcStatus *status,
 			     SilcStatus *error);
 
@@ -405,14 +405,14 @@ bool silc_command_get_status(SilcCommandPayload payload,
  *
  * SYNOPSIS
  *
- *    void silc_command_set_ident(SilcCommandPayload payload, 
+ *    void silc_command_set_ident(SilcCommandPayload payload,
  *                                SilcUInt16 ident);
  *
  * DESCRIPTION
  *
  *    Function to set identifier to already allocated Command Payload. Command
  *    payloads are frequentlly resent in SILC and thusly this makes it easy
- *    to set the identifier without encoding new Command Payload. 
+ *    to set the identifier without encoding new Command Payload.
  *
  ***/
 void silc_command_set_ident(SilcCommandPayload payload, SilcUInt16 ident);
@@ -421,7 +421,7 @@ void silc_command_set_ident(SilcCommandPayload payload, SilcUInt16 ident);
  *
  * SYNOPSIS
  *
- *    void silc_command_set_command(SilcCommandPayload payload, 
+ *    void silc_command_set_command(SilcCommandPayload payload,
  *                                  SilcCommand command);
  *
  * DESCRIPTION

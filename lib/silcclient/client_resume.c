@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002, 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -99,7 +99,7 @@ SilcBuffer silc_client_get_detach_data(SilcClient client,
 /* Processes the detachment data. This creates channels and other
    stuff according the data found in the the connection parameters.
    This doesn't actually resolve any detailed information from the
-   server.  To do that call silc_client_resume_session function. 
+   server.  To do that call silc_client_resume_session function.
    This returns the old detached session client ID. */
 
 bool silc_client_process_detach_data(SilcClient client,
@@ -114,14 +114,14 @@ bool silc_client_process_detach_data(SilcClient client,
   SILC_LOG_DEBUG(("Start"));
 
   silc_free(conn->nickname);
-  silc_buffer_set(&detach, conn->internal->params.detach_data, 
+  silc_buffer_set(&detach, conn->internal->params.detach_data,
 		  conn->internal->params.detach_data_len);
 
   SILC_LOG_HEXDUMP(("Detach data"), detach.data, detach.len);
 
   /* Take the old client ID from the detachment data */
   len = silc_buffer_unformat(&detach,
-			     SILC_STR_UI16_NSTRING_ALLOC(&conn->nickname, 
+			     SILC_STR_UI16_NSTRING_ALLOC(&conn->nickname,
 							 NULL),
 			     SILC_STR_UI16_NSTRING_ALLOC(old_id, old_id_len),
 			     SILC_STR_UI_INT(NULL),
@@ -212,7 +212,7 @@ SILC_TASK_CALLBACK(silc_client_resume_call_completion)
   SILC_LOG_DEBUG(("Session completed"));
 
   for (i = 0; i < session->cmd_idents_count; i++)
-    silc_client_command_pending_del(session->conn, SILC_COMMAND_IDENTIFY, 
+    silc_client_command_pending_del(session->conn, SILC_COMMAND_IDENTIFY,
 				    session->cmd_idents[i]);
   silc_free(session->cmd_idents);
 
@@ -294,7 +294,7 @@ void silc_client_resume_session(SilcClient client,
       silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
 				   silc_client_command_reply_resume_special,
 				   0, ++conn->cmd_ident);
-      silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+      silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY,
 				  conn->cmd_ident,
 				  silc_client_command_resume_identify,
 				  session);
@@ -302,7 +302,7 @@ void silc_client_resume_session(SilcClient client,
       tmp = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
 					res_argc, res_argv, res_argv_lens,
 					res_argv_types, conn->cmd_ident);
-      silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND, 
+      silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND,
 			      NULL, 0, NULL, NULL, tmp->data, tmp->len, TRUE);
 
       session->cmd_idents = silc_realloc(session->cmd_idents,
@@ -402,7 +402,7 @@ SILC_CLIENT_CMD_FUNC(resume_identify)
     return;
 
   /* Unregister this command reply */
-  silc_client_command_unregister(client, SILC_COMMAND_IDENTIFY, NULL, 
+  silc_client_command_unregister(client, SILC_COMMAND_IDENTIFY, NULL,
 				 silc_client_command_reply_resume,
 				 cmd->ident);
   return;
@@ -429,7 +429,7 @@ SILC_CLIENT_CMD_FUNC(resume_cmode)
   SILC_LOG_DEBUG(("Start"));
 
   /* Unregister this command reply */
-  silc_client_command_unregister(client, SILC_COMMAND_CMODE, NULL, 
+  silc_client_command_unregister(client, SILC_COMMAND_CMODE, NULL,
 				 silc_client_command_reply_resume,
 				 cmd->ident);
 
@@ -492,7 +492,7 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   SILC_LOG_DEBUG(("Start"));
 
   /* Unregister this command reply */
-  silc_client_command_unregister(client, SILC_COMMAND_USERS, NULL, 
+  silc_client_command_unregister(client, SILC_COMMAND_USERS, NULL,
 				 silc_client_command_reply_users_i,
 				 cmd->ident);
 
@@ -502,19 +502,19 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   /* Get channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
   channel_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
   if (!channel_id) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
 
   /* Get the list count */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
   SILC_GET32_MSB(list_count, tmp);
@@ -522,7 +522,7 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   /* Get Client ID list */
   tmp = silc_argument_get_arg_type(cmd->args, 4, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
   silc_buffer_set(&client_id_list, tmp, tmp_len);
@@ -530,7 +530,7 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   /* Get client mode list */
   tmp = silc_argument_get_arg_type(cmd->args, 5, &tmp_len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR;
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto err;
   }
   silc_buffer_set(&client_mode_list, tmp, tmp_len);
@@ -544,8 +544,8 @@ SILC_CLIENT_CMD_FUNC(resume_users)
   client->internal->ops->command_reply(client, conn, cmd->payload, TRUE,
 				       SILC_COMMAND_JOIN, cmd->status,
 				       channel->channel_name, channel,
-				       channel->mode, 0, 
-				       NULL, NULL, NULL, NULL, 
+				       channel->mode, 0,
+				       NULL, NULL, NULL, NULL,
 				       channel->hmac, list_count,
 				       &client_id_list, client_mode_list);
 

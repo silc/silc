@@ -78,7 +78,7 @@ typedef struct SilcPKCSObjectStruct {
  *
  * NAME
  *
- *    typedef struct { ... } *SilcPublicKey;
+ *    typedef struct { ... } *SilcPublicKey, SilcPublicKeyStruct;
  *
  * DESCRIPTION
  *
@@ -98,14 +98,15 @@ typedef struct {
   char *identifier;
   unsigned char *pk;
   SilcUInt32 pk_len;
-} *SilcPublicKey;
+} *SilcPublicKey, SilcPublicKeyStruct;
 /***/
 
 /****s* silccrypt/SilcPKCSAPI/SilcPublicKeyIdentifier
  *
  * NAME
  *
- *    typedef struct { ... } *SilcPublicKeyIdentifier;
+ *    typedef struct { ... } *SilcPublicKeyIdentifier,
+ *                            SilcPublicKeyIdentifierStruct;
  *
  * DESCRIPTION
  *
@@ -124,14 +125,14 @@ typedef struct {
   char *email;
   char *org;
   char *country;
-} *SilcPublicKeyIdentifier;
+} *SilcPublicKeyIdentifier, SilcPublicKeyIdentifierStruct;
 /***/
 
 /****s* silccrypt/SilcPKCSAPI/SilcPrivateKey
  *
  * NAME
  *
- *    typedef struct { ... } *SilcPrivateKey;
+ *    typedef struct { ... } *SilcPrivateKey, SilcPrivateKeyStruct;
  *
  * DESCRIPTION
  *
@@ -145,7 +146,7 @@ typedef struct {
   char *name;
   unsigned char *prv;
   SilcUInt32 prv_len;
-} *SilcPrivateKey;
+} *SilcPrivateKey, SilcPrivateKeyStruct;
 
 /* Public and private key file headers */
 #define SILC_PKCS_PUBLIC_KEYFILE_BEGIN "-----BEGIN SILC PUBLIC KEY-----\n"

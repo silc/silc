@@ -28,23 +28,22 @@
    This doesn't remove the newline sign from the destination buffer. The
    argument begin is returned and should be passed again for the function. */
 
-int silc_gets(char *dest, int destlen, const char *src, int srclen,
-	      int *begin)
+int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
 {
-  int off = *begin;
+  static int start = 0;
   int i;
 
   memset(dest, 0, destlen);
 
-  if (off + 1 >= srclen)
-    return EOF;
+  if (begin != start)
+    start = 0;
 
   i = 0;
-  for ( ; off <= srclen; i++) {
+  for ( ; start <= srclen; i++, start++) {
     if (i > destlen)
       return -1;
 
-    dest[i] = src[off++];
+    dest[i] = src[start];
 
     if (dest[i] == EOF)
       return EOF;
@@ -52,9 +51,9 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen,
     if (dest[i] == '\n')
       break;
   }
-  *begin = off;
+  start++;
 
-  return off;
+  return start;
 }
 
 /* Checks line for illegal characters. Return -1 when illegal character
@@ -652,6 +651,9 @@ char *silc_client_chmode(SilcUInt32 mode, const char *cipher, const char *hmac)
 
   if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)
     strncat(string, "f", 1);
+
+  if (mode & SILC_CHANNEL_MODE_CHANNEL_AUTH)
+    strncat(string, "C", 1);
 
   if (mode & SILC_CHANNEL_MODE_SILENCE_USERS)
     strncat(string, "m", 1);

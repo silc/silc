@@ -15,7 +15,7 @@ The default theme of Irssi SILC Client shows the digital signed
 messages with [S] at start of the nickname who sent the message, when
 the message was successfully verified, [?] if the message could not
 be verified since the public key of the sender isn't cached locally,
-or [F] if the signature verificationn failed.  If you do not have
+or [F] if the signature verification failed.  If you do not have
 the sender's public key you can fetch it with GETKEY command.
 
 If you don't want to verify the signatures from received messages

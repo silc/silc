@@ -1,0 +1,12 @@
+Compiling SILC Toolkit for Win32
+================================
+
+- The MSVC++ 6.0 is required to compile the SILC Toolkit.
+
+- Load the silc.dsw workspace file and build the libsilc and
+  libsilcclient libraries.  Both Debug and Release versions can
+  be compiled.
+
+- The include/ directory includes all include files from the
+  SILC Toolkit.  Use that directory as your include source for
+  SILC include files when you are programming new application.

@@ -1,0 +1,491 @@
+<big><b>SilcStatus Arguments</b></big>
+
+<br />&nbsp;<br />
+The <a href="silcstatus-SilcStatus.html">SilcStatus</a> is used to indicate
+a status (usually error status) of command execution and command reply
+status.  It is also used to deliver disconnection status when server
+disconnects client from the server.  For application it is mainly important
+in case of `command_reply' client operation, where the SilcStatus indicates
+the error status of the command that was executed.  If error occurred the
+arguments returned by the `command_reply' are then dependent of the SilcStatus
+type instead of the <a href="command_reply_args.html">SilcCommand
+arguments</a>.
+
+<br />&nbsp;<br />
+This documents describes how the application should interpret the SilcStatus
+type in the `command_reply' client operation to be able to handle all
+error conditions properly.  Any status type can be returned for any
+SilcCommand.  For this reason application should be able to handle any
+error with any command.
+
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Error Status In command_reply Client Operation</b>
+
+<br />&nbsp;<br />
+When error occurs in execution of a command the `command_reply' client
+operation is called with error status.  In this case the 'success'
+argument of the client operation is set to FALSE, to indicate that command
+execution failed, and the 'status' argument indicates the error.
+If the 'status' argument is SILC_STATUS_OK then error did not occur and the
+arguments are as described in <a href="command_reply_args.html">SilcCommand
+arguments</a>.
+
+<br />&nbsp;<br />
+Application should handle the error status arguments by the SilcStatus
+type for example in a <tt>switch</tt> statement.  The SilcStatus values
+are defined in lib/silccore/silcstatus.h header file.  A short example.
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;switch(status)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_STATUS_ERR_NO_SUCH_NICK:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;nick = va_arg(va, char *);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_STATUS_ERR_NO_SUCH_CHANNEL:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_STATUS_ERR_NO_SUCH_SERVER:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;default:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</tt>
+
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Arguments</b>
+
+<br />&nbsp;<br />
+The following table describes all status values and arguments that the client
+library sends in the 'command_reply' client operation to the application
+in case of error.  All arguments listed below are usually valid when
+returned by the library.  However applicationn must be able to handle that
+any of those arguments may be NULL.
+
+<br />&nbsp;<br />
+The 'command_reply' arguments in case of error are as follows:
+
+<br />&nbsp;<br />
+<table border="1" width="100%" cellpadding="3" cellspacing="0">
+
+<tr>
+<td><small>Name</td>
+<td><small>Description</td>
+<td width="40%"><small>Error Arguments</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_OK</td>
+<td><small>
+No error.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SUCH_NICK</td>
+<td><small>
+Requested nickname does not exist.  Argument is the unknown name.
+</td>
+<td width="40%"><small>const char *nickname
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SUCH_CHANNEL</td>
+<td><small>
+The requested channel does not exist.  Argument is the unknown name.
+</td>
+<td width="40%"><small>const char *channel_name
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SUCH_SERVER</td>
+<td><small>
+The requested server does not exist.  Argument is the unknown name.
+</td>
+<td width="40%"><small>const char *server_name
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_RECIPIENT</td>
+<td><small>
+Command required recipient but none was provided.  No arguments returned.
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_UNKNOWN_COMMAND</td>
+<td><small>
+Command sent to server is unknown or unsupported by the server.  No
+arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_WILDCARDS</td>
+<td><small>
+Wildcards were provided by they were not permitted.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_CLIENT_ID</td>
+<td><small>
+Client ID was expected as command parameter but was not found.  No
+arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_CHANNEL_ID</td>
+<td><small>
+Channel ID was expected as command parameter but was not found.  No
+arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SERVER_ID</td>
+<td><small>
+Server ID was expected as command parameter but was not found.  No
+arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_BAD_CLIENT_ID</td>
+<td><small>
+Client ID provided was malformed.  Returns the malformed ID.
+</td>
+<td width="40%"><small>const SilcClientID *client_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_BAD_CHANNEL_ID</td>
+<td><small>
+Channel ID provided was malformed.  Returns the malformed ID.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_BAD_SERVER_ID</td>
+<td><small>
+Server ID provided was malformed.  Returns the malformed ID.
+</td>
+<td width="40%"><small>const SilcServerID *server_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SUCH_CLIENT_ID</td>
+<td><small>
+Client ID provided does not exist.  The unknown ID is returned.
+</td>
+<td width="40%"><small>const SilcClientID *client_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID</td>
+<td><small>
+Channel ID provided does not exist.  The unknown ID is returned.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SUCH_SERVER_ID</td>
+<td><small>
+Server ID provided does not exist.  The unknown ID is returned.
+</td>
+<td width="40%"><small>const SilcServerID *server_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NOT_ON_CHANNEL</td>
+<td><small>
+The command required for you to be on channel but you were not.
+The channel ID is returned.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_USER_NOT_ON_CHANNEL</td>
+<td><small>
+The requested target client is not on requested channel.  Returns the
+target client ID and channel ID.
+</td>
+<td width="40%"><small>const SilcClientID *client_id,
+const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_USER_ON_CHANNEL</td>
+<td><small>
+User were invited on channel they already are on.  Returns the
+target client ID and channel ID.
+</td>
+<td width="40%"><small>const SilcClientID *client_id,
+const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NOT_REGISTERED</td>
+<td><small>
+User executed command that requires the client to be registered on the
+server before it may be executed.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NOT_ENOUGH_PARAMS</td>
+<td><small>
+Command required more parameters than provided.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_TOO_MANY_PARAMS</td>
+<td><small>
+Too many parameters provided for the command.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_PERM_DENIED</td>
+<td><small>
+Generic permission denied error status, to indicat disallowed access.
+No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_BAD_PASSWORD</td>
+<td><small>
+Password provided for channel were not accepted.  Returns the channel ID.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_CHANNEL_IS_FULL</td>
+<td><small>
+The channel is full and client cannot join the channel.  Returns the
+channel ID.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NOT_INVITED</td>
+<td><small>
+The channel is invite only channel and client has not been invited.
+Returns the channel ID.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_BANNED_FROM_CHANNEL</td>
+<td><small>
+The client has been banned from the channel.  Returns the channel ID.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_UNKNOWN_MODE</td>
+<td><small>
+Mode provided by the client was unknown to or unsupported by the server.
+No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NOT_YOU</td>
+<td><small>
+User tried to change someone else's mode which is not allowed.
+No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_CHANNEL_PRIV</td>
+<td><small>
+Command may be executed only by channel operator.  The next argument is
+the channel ID.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_CHANNEL_FOPRIV</td>
+<td><small>
+Command may be executed only by channel founder.  The next argument is
+the channel ID.
+</td>
+<td width="40%"><small>const SilcChannelID *channel_id
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SERVER_PRIV</td>
+<td><small>
+Command may be executed only by server operator.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_ROUTER_PRIV</td>
+<td><small>
+Command may be executed only by router (SILC) operator.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_BAD_NICKNAME</td>
+<td><small>
+Nickname requested contained illegal characters or was malformed.  No
+arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_BAD_CHANNEL</td>
+<td><small>
+Channel name requested contained illegal characters or was malformed.  No
+arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_AUTH_FAILED</td>
+<td><small>
+The authentication data (passphrase or digital signature) sent as argument
+was wrong and thus authentication failed.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_UNKNOWN_ALGORITHM</td>
+<td><small>
+The server does not support requested algorithm.  Returns the unknown
+algorithm.
+</td>
+<td width="40%"><small>const char *alg_name
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_RESOURCE_LIMIT</td>
+<td><small>
+Server cannot or will not accept the action due to resource limitations.
+No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_NO_SUCH_SERVICE</td>
+<td><small>
+Requestes service identifier is unknown.  Returns the unknown service
+identifier.
+</td>
+<td width="40%"><small>const char *service_identifier
+</td>
+</tr>
+
+<tr>
+<td><small>SILC_STATUS_ERR_TIMEDOUT</td>
+<td><small>
+Operation (command execution) or service request timed out, and thus was
+not processed.  This usually happens due to network failure between servers
+and routers in the network.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+<tr>
+
+<td><small>SILC_STATUS_ERR_UNSUPPORTED_PUBLIC_KEY</td>
+<td><small>
+The public key or certificate type is not supported in ths implementation.
+No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+<td><small>SILC_STATUS_ERR_OPERATION_ALLOWED</td>
+<td><small>
+A operation, for example a command, is not allowed or it's execution is
+not allowed.  No arguments returned.
+</td>
+<td width="40%"><small>N/A
+</td>
+</tr>
+
+</table>
+
+<br />&nbsp;<br />
+SILC protocol defines some additional status types but those status
+types are not returned in `command_reply' client operation.  Only
+the status types listed above are delivered to application.

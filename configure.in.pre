@@ -79,13 +79,13 @@ AC_DEFINE(SILC_DIST_DEFINE)
 LIB_BASE_VERSION=1.0
 
 # libsilc versions
-LIBSILC_CURRENT=1
+LIBSILC_CURRENT=2
 LIBSILC_REVISION=0
-LIBSILC_AGE=1
+LIBSILC_AGE=0
 
 # libsilcclient versions
-LIBSILCCLIENT_CURRENT=1
-LIBSILCCLIENT_REVISION=1
+LIBSILCCLIENT_CURRENT=2
+LIBSILCCLIENT_REVISION=0
 LIBSILCCLIENT_AGE=0
 
 # Substitute the version numbers
@@ -361,6 +361,29 @@ else
   fi
 fi
 
+#
+# Workaround a bug in GCC 2.x which causes memory exhaustion
+# when compiling sha1 with optimizations on UltraSPARC.
+#
+FIX_SHA1='#'
+if test "$GCC" -a "$host_cpu" = "sparc64"; then
+  AC_MSG_CHECKING(whether to enable GCC 2.x workaround for SHA1)
+  AC_TRY_COMPILE(
+    [
+      #if defined(__sparc64__) && (__GNUC__ == 2)
+      #else
+      choke me
+      #endif
+    ],
+    [],
+    [
+      FIX_SHA1=''
+      AC_MSG_RESULT(yes)
+    ],
+      AC_MSG_RESULT(no)
+    )
+fi
+AC_SUBST(FIX_SHA1)
 
 ##
 ##  Installation
@@ -977,7 +1000,7 @@ fi
 #
 AC_MSG_CHECKING(whether to compile native WIN32 code)
 AC_ARG_WITH(win32,
-  [  --with-win32            compile native WIN32 code (-mno-cygwin)],
+  [  --with-win32            compile native WIN32 (MinGW) code (-mno-cygwin)],
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(SILC_WIN32)
@@ -1031,6 +1054,13 @@ AC_ARG_WITH(silcd,
   [
     AC_MSG_RESULT(yes)
   ])
+
+# Irssi perl support
+#
+AC_ARG_WITH(perl,
+  [[  --with-perl[=yes|no|module]  Build with Perl support - also specifies
+                               if it should be built into main silc binary
+                               (static, default) or as a module]])
 
 libtoolfix=true
 AC_MSG_CHECKING(whether to do libtoolfix)
@@ -1118,7 +1148,6 @@ lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
 doc/example_silcd.conf
 includes/silcincludes.h
-silcmap/Makefile
 )
 
 if test "x$silc_dist" = "xsilc-client" ||

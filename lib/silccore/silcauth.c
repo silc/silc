@@ -1,10 +1,10 @@
 /*
 
-  silcauth.c 
+  silcauth.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2002 Pekka Riikonen
+  Copyright (C) 2001 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
     return NULL;
   }
 
-  if (newp->len != buffer.len || 
+  if (newp->len != buffer.len ||
       newp->random_len + newp->auth_len > buffer.len - 8) {
     silc_auth_payload_free(newp);
     return NULL;
@@ -163,13 +163,24 @@ SilcAuthMethod silc_auth_get_method(SilcAuthPayload payload)
   return payload->auth_method;
 }
 
+/* Get the public data from the auth payload. */
+
+unsigned char *silc_auth_get_public_data(SilcAuthPayload payload,
+					 SilcUInt32 *pubdata_len)
+{
+  if (pubdata_len)
+    *pubdata_len = (SilcUInt32)payload->random_len;
+
+  return payload->random_data;
+}
+
 /* Get the authentication data. If this is passphrase it is UTF-8 encoded. */
 
 unsigned char *silc_auth_get_data(SilcAuthPayload payload,
 				  SilcUInt32 *auth_len)
 {
   if (auth_len)
-    *auth_len = payload->auth_len;
+    *auth_len = (SilcUInt32)payload->auth_len;
 
   return payload->auth_data;
 }
@@ -235,14 +246,7 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      const void *id, SilcIdType type)
 {
   unsigned char *randomdata;
-  unsigned char auth_data[2048 + 1];
-  SilcUInt32 auth_len;
-  unsigned char *tmp;
-  SilcUInt32 tmp_len;
   SilcBuffer buf;
-  SilcPKCS pkcs;
-
-  SILC_LOG_DEBUG(("Generating Authentication Payload with data"));
 
   /* Get 256 bytes of random data */
   if (rng)
@@ -252,8 +256,39 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
   if (!randomdata)
     return NULL;
 
+  buf = silc_auth_public_key_auth_generate_wpub(public_key, private_key,
+						randomdata, 256, hash,
+						id, type);
+
+  memset(randomdata, 0, 256);
+  silc_free(randomdata);
+
+  return buf;
+}
+
+/* Generates Authentication Payload with authentication data. This is used
+   to do public key based authentication. This generates the random data
+   and the actual authentication data. Returns NULL on error. */
+
+SilcBuffer
+silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
+					SilcPrivateKey private_key,
+					const unsigned char *pubdata,
+					SilcUInt32 pubdata_len,
+					SilcHash hash,
+					const void *id, SilcIdType type)
+{
+  unsigned char auth_data[2048 + 1];
+  SilcUInt32 auth_len;
+  unsigned char *tmp;
+  SilcUInt32 tmp_len;
+  SilcBuffer buf;
+  SilcPKCS pkcs;
+
+  SILC_LOG_DEBUG(("Generating Authentication Payload with data"));
+
   /* Encode the auth data */
-  tmp = silc_auth_public_key_encode_data(public_key, randomdata, 256, id, 
+  tmp = silc_auth_public_key_encode_data(public_key, pubdata, pubdata_len, id,
 					 type, &tmp_len);
   if (!tmp)
     return NULL;
@@ -271,23 +306,19 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
   if (silc_pkcs_get_key_len(pkcs) / 8 > sizeof(auth_data) - 1 ||
       !silc_pkcs_sign_with_hash(pkcs, hash, tmp, tmp_len, auth_data,
 				&auth_len)) {
-    memset(randomdata, 0, 256);
     memset(tmp, 0, tmp_len);
     silc_free(tmp);
-    silc_free(randomdata);
     silc_pkcs_free(pkcs);
     return NULL;
   }
 
   /* Encode Authentication Payload */
-  buf = silc_auth_payload_encode(SILC_AUTH_PUBLIC_KEY, randomdata, 256,
+  buf = silc_auth_payload_encode(SILC_AUTH_PUBLIC_KEY, pubdata, pubdata_len,
 				 auth_data, auth_len);
 
   memset(tmp, 0, tmp_len);
   memset(auth_data, 0, sizeof(auth_data));
-  memset(randomdata, 0, 256);
   silc_free(tmp);
-  silc_free(randomdata);
   silc_pkcs_free(pkcs);
 
   return buf;
@@ -479,7 +510,7 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
 							 &newp->hostname_len),
 			     SILC_STR_UI_INT(&newp->port),
 			     SILC_STR_END);
-  if (ret == -1) {
+  if (ret == -1 || newp->hostname_len > buffer.len - 6) {
     silc_free(newp);
     return NULL;
   }

@@ -1,10 +1,10 @@
 /*
 
-  server_util.h 
+  server_util.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 
 /* This function removes all client entries that are originated from
    `router' and are owned by `entry'.  `router' and `entry' can be same
-   too.  If `server_signoff' is TRUE then SERVER_SIGNOFF notify is 
+   too.  If `server_signoff' is TRUE then SERVER_SIGNOFF notify is
    distributed to our local clients. */
 bool silc_server_remove_clients_by_server(SilcServer server,
 					  SilcServerEntry router,
@@ -34,8 +34,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
    attempt to figure out which clients really are originated from the
    `from' and which are originated from a server that we have connection
    to, when we've acting as backup router. If it is FALSE the `to' will
-   be the new source. */
-void silc_server_update_clients_by_server(SilcServer server, 
+   be the new source.  If `from' is NULL then all clients (except locally
+   connected) are updated `to'. */
+void silc_server_update_clients_by_server(SilcServer server,
 					  SilcServerEntry from,
 					  SilcServerEntry to,
 					  bool resolve_real_server);
@@ -62,11 +63,11 @@ void silc_server_remove_servers_by_server(SilcServer server,
 					  bool remove_clients);
 
 /* Removes channels that are from `from. */
-void silc_server_remove_channels_by_server(SilcServer server, 
+void silc_server_remove_channels_by_server(SilcServer server,
 					   SilcServerEntry from);
 
 /* Updates channels that are from `from' to be originated from `to'.  */
-void silc_server_update_channels_by_server(SilcServer server, 
+void silc_server_update_channels_by_server(SilcServer server,
 					   SilcServerEntry from,
 					   SilcServerEntry to);
 
@@ -85,9 +86,9 @@ bool silc_server_channel_has_local(SilcChannelEntry channel);
 bool silc_server_channel_delete(SilcServer server,
 				SilcChannelEntry channel);
 
-/* Returns TRUE if the given client is on the channel.  FALSE if not. 
+/* Returns TRUE if the given client is on the channel.  FALSE if not.
    This works because we assure that the user list on the channel is
-   always in up to date thus we can only check the channel list from 
+   always in up to date thus we can only check the channel list from
    `client' which is faster than checking the user list from `channel'. */
 bool silc_server_client_on_channel(SilcClientEntry client,
 				   SilcChannelEntry channel,
@@ -95,6 +96,7 @@ bool silc_server_client_on_channel(SilcClientEntry client,
 
 /* Checks string for bad characters and returns TRUE if they are found. */
 bool silc_server_name_bad_chars(const char *name, SilcUInt32 name_len);
+bool silc_server_name_bad_chchars(const char *name, SilcUInt32 name_len);
 
 /* Modifies the `nick' if it includes bad characters and returns new
    allocated nickname that does not include bad characters. */
@@ -108,17 +110,17 @@ SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
 /* Find number of sockets by IP address indicated by remote host, indicated
    by `ip' or `hostname', `port', and `type'.  Returns 0 if socket connections
    does not exist. If `ip' is provided then `hostname' is ignored. */
-SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server, 
+SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server,
 					     const char *ip,
 					     const char *hostname,
 					     SilcUInt16 port,
 					     SilcSocketType type);
 
-/* Finds locally cached public key by the public key received in the SKE. 
+/* Finds locally cached public key by the public key received in the SKE.
    If we have it locally cached then we trust it and will use it in the
    authentication protocol.  Returns the locally cached public key or NULL
    if we do not find the public key.  */
-SilcPublicKey silc_server_find_public_key(SilcServer server, 
+SilcPublicKey silc_server_find_public_key(SilcServer server,
 					  SilcHashTable local_public_keys,
 					  SilcPublicKey remote_public_key);
 
@@ -132,7 +134,7 @@ SilcPublicKey silc_server_get_public_key(SilcServer server,
 /* Check whether the connection `sock' is allowed to connect to us.  This
    checks for example whether there is too much connections for this host,
    and required version for the host etc. */
-bool silc_server_connection_allowed(SilcServer server, 
+bool silc_server_connection_allowed(SilcServer server,
 				    SilcSocketConnection sock,
 				    SilcSocketType type,
 				    SilcServerConfigConnParams *global,
@@ -207,7 +209,36 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 void silc_server_inviteban_destruct(void *key, void *context,
 				    void *user_context);
 
-/* Creates connections accoring to configuration. */
+/* Creates connections according to configuration. */
 void silc_server_create_connections(SilcServer server);
+
+
+/* Processes a channel public key, either adds or removes it. */
+SilcStatus
+silc_server_process_channel_pk(SilcServer server,
+			       SilcChannelEntry channel,
+			       SilcUInt32 type, const unsigned char *pk,
+			       SilcUInt32 pk_len);
+
+/* Returns the channel public keys as Argument List payload. */
+SilcBuffer silc_server_get_channel_pk_list(SilcServer server,
+					   SilcChannelEntry channel,
+					   bool announce,
+					   bool delete);
+
+/* Sets the channel public keys into channel from the list of public keys. */
+SilcStatus silc_server_set_channel_pk_list(SilcServer server,
+					   SilcSocketConnection sender,
+					   SilcChannelEntry channel,
+					   const unsigned char *pklist,
+					   SilcUInt32 pklist_len);
+
+/* Verifies the Authentication Payload `auth' with one of the public keys
+   on the `channel' public key list. */
+bool silc_server_verify_channel_auth(SilcServer server,
+				     SilcChannelEntry channel,
+				     SilcClientID *client_id,
+				     const unsigned char *auth,
+				     SilcUInt32 auth_len);
 
 #endif /* SERVER_UTIL_H */

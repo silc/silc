@@ -307,8 +307,13 @@ int silc_client_check_silc_dir()
 	    SILC_CLIENT_KEY_EXPIRES, SILC_CLIENT_KEY_EXPIRES);
 
     answer = silc_get_input("Would you like to create a new key pair "
-			    "([y]/n)?: ", FALSE);
-    if (!answer || answer[0] == 'Y' || answer[0] == 'y') {
+			    "(y/n)?: ", FALSE);
+    while (!answer) {
+      printf("Answer 'y' or 'n' and press Enter\n");
+      answer = silc_get_input("Would you like to create a new key pair "
+			      "(y/n)?: ", FALSE);
+    }
+    if (answer[0] == 'Y' || answer[0] == 'y') {
       silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
 			   SILC_CLIENT_DEF_PKCS_LEN,
 			   file_public_key, file_private_key, NULL,

@@ -78,7 +78,7 @@ bool silc_message_payload_decrypt(unsigned char *data,
   if (!private_message || (private_message && static_key))
     iv_len = silc_cipher_get_block_len(cipher);
 
-  if (data_len < mac_len)
+  if (data_len <= (mac_len + iv_len))
     return FALSE;
 
   if (check_mac) {
@@ -514,7 +514,7 @@ silc_message_signed_payload_parse(const unsigned char *data,
 			     SILC_STR_UI16_NSTRING_ALLOC(&sig->sign_data,
 							 &sig->sign_len),
 			     SILC_STR_END);
-  if (ret == -1) {
+  if (ret == -1 || sig->sign_len > buffer.len - sig->pk_len - 2) {
     silc_message_signed_payload_free(sig);
     SILC_LOG_DEBUG(("Malformed SILC_MESSAGE_FLAG_SIGNED Payload"));
     return NULL;

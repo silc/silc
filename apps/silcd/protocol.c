@@ -4,13 +4,13 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,17 +33,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey);
  * Key Exhange protocol functions
  */
 
-static bool 
+static bool
 silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
 				SilcSocketType conn_type,
-				unsigned char *pk, SilcUInt32 pk_len, 
+				unsigned char *pk, SilcUInt32 pk_len,
 				SilcSKEPKType pk_type)
 {
   char file[256], filename[256], *fingerprint;
   struct stat st;
 
   if (pk_type != SILC_SKE_PK_TYPE_SILC) {
-    SILC_LOG_WARNING(("We don't support %s (%s) port %d public key type %d", 
+    SILC_LOG_WARNING(("We don't support %s (%s) port %d public key type %d",
 		      sock->hostname, sock->ip, sock->port, pk_type));
     return FALSE;
   }
@@ -60,20 +60,20 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
      conn auth protocol with public key we MUST have the key already. */
   return TRUE;
   /* Rest is unreachable code! */
-  
+
   memset(filename, 0, sizeof(filename));
   memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "serverkey_%s_%d.pub", sock->hostname, 
+  snprintf(file, sizeof(file) - 1, "serverkey_%s_%d.pub", sock->hostname,
 	   sock->port);
-  snprintf(filename, sizeof(filename) - 1, SILC_ETCDIR "/serverkeys/%s", 
+  snprintf(filename, sizeof(filename) - 1, SILC_ETCDIR "/serverkeys/%s",
 	   file);
 
   /* Create serverkeys directory if it doesn't exist. */
   if (stat(SILC_ETCDIR "/serverkeys", &st) < 0) {
     /* If dir doesn't exist */
-    if (errno == ENOENT) {  
+    if (errno == ENOENT) {
       if (mkdir(SILC_ETCDIR "/serverkeys", 0755) < 0) {
-	SILC_LOG_ERROR(("Couldn't create `%s' directory\n", 
+	SILC_LOG_ERROR(("Couldn't create `%s' directory\n",
 			SILC_ETCDIR "/serverkeys"));
 	return TRUE;
       }
@@ -85,7 +85,7 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
 
   /* Take fingerprint of the public key */
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-  SILC_LOG_DEBUG(("Received server %s (%s) port %d public key (%s)", 
+  SILC_LOG_DEBUG(("Received server %s (%s) port %d public key (%s)",
 		  sock->hostname, sock->ip, sock->port, fingerprint));
   silc_free(fingerprint);
 
@@ -94,7 +94,7 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
     /* We don't have it, then cache it. */
     SILC_LOG_DEBUG(("New public key from server"));
 
-    silc_pkcs_save_public_key_data(filename, pk, pk_len, 
+    silc_pkcs_save_public_key_data(filename, pk, pk_len,
 				   SILC_PKCS_FILE_PEM);
     return TRUE;
   } else {
@@ -106,12 +106,12 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
     SILC_LOG_DEBUG(("We have the public key saved locally"));
 
     /* Load the key file */
-    if (!silc_pkcs_load_public_key(filename, &public_key, 
+    if (!silc_pkcs_load_public_key(filename, &public_key,
 				   SILC_PKCS_FILE_PEM))
-      if (!silc_pkcs_load_public_key(filename, &public_key, 
+      if (!silc_pkcs_load_public_key(filename, &public_key,
 				     SILC_PKCS_FILE_BIN)) {
 	SILC_LOG_WARNING(("Could not load local copy of the %s (%s) port %d "
-			  "server public key", sock->hostname, sock->ip, 
+			  "server public key", sock->hostname, sock->ip,
 			  sock->port));
 
 	/* Save the key for future checking */
@@ -120,7 +120,7 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
 				       SILC_PKCS_FILE_PEM);
 	return TRUE;
       }
-  
+
     /* Encode the key data */
     encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
     if (!encpk) {
@@ -135,7 +135,7 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
 
     if (memcmp(pk, encpk, encpk_len)) {
       SILC_LOG_WARNING(("%s (%s) port %d server public key does not match "
-			"with local copy", sock->hostname, sock->ip, 
+			"with local copy", sock->hostname, sock->ip,
 			sock->port));
       SILC_LOG_WARNING(("It is possible that the key has expired or changed"));
       SILC_LOG_WARNING(("It is also possible that some one is performing "
@@ -154,7 +154,7 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
 /* Callback that is called when we have received KE2 payload from
    responder. We try to verify the public key now. */
 
-static void 
+static void
 silc_server_protocol_ke_verify_key(SilcSKE ske,
 				   unsigned char *pk_data,
 				   SilcUInt32 pk_len,
@@ -164,14 +164,14 @@ silc_server_protocol_ke_verify_key(SilcSKE ske,
 				   void *completion_context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerKEInternalContext *ctx = 
+  SilcServerKEInternalContext *ctx =
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
 
   SILC_LOG_DEBUG(("Verifying received public key"));
 
   if (silc_verify_public_key_internal(
-		  server, ctx->sock, 
+		  server, ctx->sock,
 		  (ctx->responder == FALSE ?
 		   SILC_SOCKET_TYPE_ROUTER:
 		   ctx->sconfig.ref_ptr ? SILC_SOCKET_TYPE_SERVER :
@@ -180,7 +180,7 @@ silc_server_protocol_ke_verify_key(SilcSKE ske,
 		  pk_data, pk_len, pk_type))
     completion(ske, SILC_SKE_STATUS_OK, completion_context);
   else
-    completion(ske, SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY, 
+    completion(ske, SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY,
 	       completion_context);
 }
 
@@ -193,7 +193,7 @@ static void silc_server_protocol_ke_send_packet(SilcSKE ske,
 						void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerKEInternalContext *ctx = 
+  SilcServerKEInternalContext *ctx =
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
 
@@ -235,49 +235,49 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
     SILC_LOG_ERROR(("Cannot allocate algorithm: %s", cname));
     return FALSE;
   }
-  
-  if (!silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, 
+
+  if (!silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL,
 		       &idata->hmac_send)) {
     silc_cipher_free(idata->send_key);
     silc_cipher_free(idata->receive_key);
     silc_free(conn_data);
-    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", 
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s",
 		    silc_hmac_get_name(hmac)));
     return FALSE;
   }
 
-  if (!silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, 
+  if (!silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL,
 		       &idata->hmac_receive)) {
     silc_cipher_free(idata->send_key);
     silc_cipher_free(idata->receive_key);
     silc_hmac_free(idata->hmac_send);
     silc_free(conn_data);
-    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", 
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s",
 		    silc_hmac_get_name(hmac)));
     return FALSE;
   }
 
   if (is_responder == TRUE) {
-    silc_cipher_set_key(idata->send_key, keymat->receive_enc_key, 
+    silc_cipher_set_key(idata->send_key, keymat->receive_enc_key,
 			keymat->enc_key_len);
     silc_cipher_set_iv(idata->send_key, keymat->receive_iv);
-    silc_cipher_set_key(idata->receive_key, keymat->send_enc_key, 
+    silc_cipher_set_key(idata->receive_key, keymat->send_enc_key,
 			keymat->enc_key_len);
     silc_cipher_set_iv(idata->receive_key, keymat->send_iv);
-    silc_hmac_set_key(idata->hmac_send, keymat->receive_hmac_key, 
+    silc_hmac_set_key(idata->hmac_send, keymat->receive_hmac_key,
 		      keymat->hmac_key_len);
-    silc_hmac_set_key(idata->hmac_receive, keymat->send_hmac_key, 
+    silc_hmac_set_key(idata->hmac_receive, keymat->send_hmac_key,
 		      keymat->hmac_key_len);
   } else {
-    silc_cipher_set_key(idata->send_key, keymat->send_enc_key, 
+    silc_cipher_set_key(idata->send_key, keymat->send_enc_key,
 			keymat->enc_key_len);
     silc_cipher_set_iv(idata->send_key, keymat->send_iv);
-    silc_cipher_set_key(idata->receive_key, keymat->receive_enc_key, 
+    silc_cipher_set_key(idata->receive_key, keymat->receive_enc_key,
 			keymat->enc_key_len);
     silc_cipher_set_iv(idata->receive_key, keymat->receive_iv);
-    silc_hmac_set_key(idata->hmac_send, keymat->send_hmac_key, 
+    silc_hmac_set_key(idata->hmac_send, keymat->send_hmac_key,
 		      keymat->hmac_key_len);
-    silc_hmac_set_key(idata->hmac_receive, keymat->receive_hmac_key, 
+    silc_hmac_set_key(idata->hmac_receive, keymat->receive_hmac_key,
 		      keymat->hmac_key_len);
   }
 
@@ -297,13 +297,13 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
     silc_hmac_free(idata->hmac_send);
     silc_hmac_free(idata->hmac_receive);
     silc_free(conn_data);
-    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", 
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s",
 		    silc_hash_get_name(hash)));
     return FALSE;
   }
 
   /* Save the remote host's public key */
-  silc_pkcs_public_key_decode(ske->ke1_payload->pk_data, 
+  silc_pkcs_public_key_decode(ske->ke1_payload->pk_data,
 			      ske->ke1_payload->pk_len, &idata->public_key);
   if (ske->prop->flags & SILC_SKE_SP_FLAG_MUTUAL)
     silc_hash_make(server->sha1hash, ske->ke1_payload->pk_data,
@@ -311,7 +311,7 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
 
   sock->user_data = (void *)conn_data;
 
-  SILC_LOG_INFO(("%s (%s) security properties: %s %s %s %s", 
+  SILC_LOG_INFO(("%s (%s) security properties: %s %s %s %s",
 		 sock->hostname, sock->ip,
 		 silc_cipher_get_name(idata->send_key),
 		 (char *)silc_hmac_get_name(idata->hmac_send),
@@ -333,22 +333,22 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 
   if (!silc_parse_version_string(version, &r_protocol_version, NULL, NULL,
 				 NULL, NULL)) {
-    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version", 
+    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version",
 		    ske->sock->hostname, ske->sock->ip, version));
     return SILC_SKE_STATUS_BAD_VERSION;
   }
 
-  if (!silc_parse_version_string(silc_version_string, 
+  if (!silc_parse_version_string(silc_version_string,
 				 &l_protocol_version, NULL, NULL,
 				 NULL, NULL)) {
-    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version", 
+    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version",
 		    ske->sock->hostname, ske->sock->ip, version));
     return SILC_SKE_STATUS_BAD_VERSION;
   }
 
   /* If remote is too new, don't connect */
   if (l_protocol_version < r_protocol_version) {
-    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version", 
+    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version",
 		    ske->sock->hostname, ske->sock->ip, version));
     return SILC_SKE_STATUS_BAD_VERSION;
   }
@@ -369,7 +369,7 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerKEInternalContext *ctx = 
+  SilcServerKEInternalContext *ctx =
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
 
@@ -393,7 +393,7 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
     protocol->state = SILC_PROTOCOL_STATE_END;
   }
 
-  /* Advance protocol state and call the next state if we are responder. 
+  /* Advance protocol state and call the next state if we are responder.
      This happens when this callback was sent to silc_ske_responder_phase_2
      function. */
   if (ctx->responder == TRUE) {
@@ -409,7 +409,7 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
 SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerKEInternalContext *ctx = 
+  SilcServerKEInternalContext *ctx =
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
@@ -429,12 +429,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 
       /* Allocate Key Exchange object */
       ctx->ske = ske = silc_ske_alloc(server->rng, server);
-      
+
       silc_ske_set_callbacks(ske, silc_server_protocol_ke_send_packet, NULL,
 			     silc_server_protocol_ke_verify_key,
 			     silc_server_protocol_ke_continue,
 			     silc_ske_check_version, context);
-      
+
       if (ctx->responder == TRUE) {
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
@@ -448,7 +448,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	SILC_LOG_DEBUG(("Send security property list (KE)"));
 
 	/* Assemble security properties. */
-	silc_ske_assemble_security_properties(ske, ctx->flags, 
+	silc_ske_assemble_security_properties(ske, ctx->flags,
 					      silc_version_string,
 					      &start_payload);
 
@@ -480,8 +480,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
     break;
   case 2:
     {
-      /* 
-       * Phase 1 
+      /*
+       * Phase 1
        */
       if (ctx->responder == TRUE) {
 	/* Sends the selected security properties to the initiator. */
@@ -518,8 +518,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
     break;
   case 3:
     {
-      /* 
-       * Phase 2 
+      /*
+       * Phase 2
        */
       if (ctx->responder == TRUE) {
 	/* Process the received Key Exchange 1 Payload packet from
@@ -557,15 +557,15 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
     break;
   case 4:
     {
-      /* 
+      /*
        * Finish protocol
        */
       if (ctx->responder == TRUE) {
 	/* This creates the key exchange material and sends our
 	   public parts to the initiator inside Key Exchange 2 Payload. */
 	SILC_LOG_DEBUG(("Process KE2 packet"));
-	status = silc_ske_responder_finish(ctx->ske, 
-					   server->public_key, 
+	status = silc_ske_responder_finish(ctx->ske,
+					   server->public_key,
 					   server->private_key,
 					   SILC_SKE_PK_TYPE_SILC);
 
@@ -597,7 +597,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 
   case SILC_PROTOCOL_STATE_END:
     {
-      /* 
+      /*
        * End protocol
        */
       SilcSKEKeyMaterial *keymat;
@@ -628,14 +628,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	silc_ske_end(ctx->ske);
       }
 
-      /* Unregister the timeout task since the protocol has ended. 
+      /* Unregister the timeout task since the protocol has ended.
 	 This was the timeout task to be executed if the protocol is
 	 not completed fast enough. */
       if (ctx->timeout_task)
 	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
       /* Assure that after calling final callback there cannot be pending
-	 executions for this protocol anymore. This just unregisters any 
+	 executions for this protocol anymore. This just unregisters any
 	 timeout callbacks for this protocol. */
       silc_protocol_cancel(protocol, server->schedule);
 
@@ -655,14 +655,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
     /* Send abort notification */
     silc_ske_abort(ctx->ske, ctx->ske->status);
 
-    /* Unregister the timeout task since the protocol has ended. 
+    /* Unregister the timeout task since the protocol has ended.
        This was the timeout task to be executed if the protocol is
        not completed fast enough. */
     if (ctx->timeout_task)
       silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
     /* Assure that after calling final callback there cannot be pending
-       executions for this protocol anymore. This just unregisters any 
+       executions for this protocol anymore. This just unregisters any
        timeout callbacks for this protocol. */
     silc_protocol_cancel(protocol, server->schedule);
 
@@ -678,17 +678,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
      * We have received failure from remote
      */
 
-    /* Unregister the timeout task since the protocol has ended. 
+    /* Unregister the timeout task since the protocol has ended.
        This was the timeout task to be executed if the protocol is
        not completed fast enough. */
     if (ctx->timeout_task)
       silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
     /* Assure that after calling final callback there cannot be pending
-       executions for this protocol anymore. This just unregisters any 
+       executions for this protocol anymore. This just unregisters any
        timeout callbacks for this protocol. */
     silc_protocol_cancel(protocol, server->schedule);
-    
+
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -705,8 +705,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
  * Connection Authentication protocol functions
  */
 
-static int 
-silc_server_password_authentication(SilcServer server, char *local_auth, 
+static int
+silc_server_password_authentication(SilcServer server, char *local_auth,
 				    char *remote_auth)
 {
   if (!remote_auth || !local_auth || strlen(local_auth) != strlen(remote_auth))
@@ -750,7 +750,7 @@ silc_server_public_key_authentication(SilcServer server,
 		     SILC_STR_END);
 
   /* Verify signature */
-  if (silc_pkcs_verify_with_hash(pkcs, ske->prop->hash, sign, sign_len, 
+  if (silc_pkcs_verify_with_hash(pkcs, ske->prop->hash, sign, sign_len,
 				 auth->data, auth->len)) {
     silc_pkcs_free(pkcs);
     silc_buffer_free(auth);
@@ -787,7 +787,7 @@ silc_server_get_public_key_auth(SilcServer server,
 
   *auth_data = silc_calloc((silc_pkcs_get_key_len(pkcs) / 8) + 1,
 			   sizeof(**auth_data));
-  if (silc_pkcs_sign_with_hash(pkcs, ske->prop->hash, auth->data, 
+  if (silc_pkcs_sign_with_hash(pkcs, ske->prop->hash, auth->data,
 			       auth->len, *auth_data, auth_data_len)) {
     silc_buffer_free(auth);
     return TRUE;
@@ -803,7 +803,7 @@ silc_server_get_public_key_auth(SilcServer server,
 /* Function that actually performs the authentication to the remote. This
    supports both passphrase and public key authentication. */
 
-static bool 
+static bool
 silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
 			       char *local_passphrase,
 			       SilcHashTable local_publickeys,
@@ -816,7 +816,7 @@ silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
 
   /* If we don't have authentication data set at all we do not require
      authentication at all */
-  if (!local_passphrase && (!local_publickeys || 
+  if (!local_passphrase && (!local_publickeys ||
 			    !silc_hash_table_count(local_publickeys))) {
     SILC_LOG_DEBUG(("No authentication required"));
     return TRUE;
@@ -836,7 +836,7 @@ silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
   /* Try public key authenetication */
   if (!result && local_publickeys) {
     SilcPublicKey cached_key;
-    SilcPublicKey remote_key = 
+    SilcPublicKey remote_key =
       ((SilcIDListData)ctx->sock->user_data)->public_key;
 
     SILC_LOG_DEBUG(("Public key authentication"));
@@ -857,14 +857,14 @@ silc_server_get_authentication(SilcServerConnAuthInternalContext *ctx,
   return result;
 }
 
-/* Performs connection authentication protocol. If responder, we 
+/* Performs connection authentication protocol. If responder, we
    authenticate the remote data received. If initiator, we will send
    authentication data to the remote end. */
 
 SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerConnAuthInternalContext *ctx = 
+  SilcServerConnAuthInternalContext *ctx =
     (SilcServerConnAuthInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
 
@@ -876,7 +876,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
   switch(protocol->state) {
   case SILC_PROTOCOL_STATE_START:
     {
-      /* 
+      /*
        * Start protocol.
        */
 
@@ -904,17 +904,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
-	
+
 	if (payload_len != ctx->packet->buffer->len) {
 	  SILC_LOG_ERROR(("Bad payload length in authentication packet"));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
-	
+
 	payload_len -= 4;
-	
-	if (conn_type < SILC_SOCKET_TYPE_CLIENT || 
+
+	if (conn_type < SILC_SOCKET_TYPE_CLIENT ||
 	    conn_type > SILC_SOCKET_TYPE_ROUTER) {
 	  SILC_LOG_ERROR(("Bad connection type (%d) in authentication packet",
 			  conn_type));
@@ -922,12 +922,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
-	
+
 	if (payload_len > 0) {
 	  /* Get authentication data */
 	  silc_buffer_pull(ctx->packet->buffer, 4);
 	  ret = silc_buffer_unformat(ctx->packet->buffer,
-				     SILC_STR_UI_XNSTRING_ALLOC(&auth_data, 
+				     SILC_STR_UI_XNSTRING_ALLOC(&auth_data,
 								payload_len),
 				     SILC_STR_END);
 	  if (ret == -1) {
@@ -938,7 +938,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  }
 	}
 
-	/* 
+	/*
 	 * Check the remote connection type and make sure that we have
 	 * configured this connection. If we haven't allowed this connection
 	 * the authentication must be failed.
@@ -967,12 +967,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    silc_free(auth_data);
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->schedule, 
+	    silc_protocol_execute(protocol, server->schedule,
 				  0, 300000);
 	    return;
 	  }
 	}
-	
+
 	/* Remote end is server */
 	if (conn_type == SILC_SOCKET_TYPE_SERVER) {
 	  SilcServerConfigServer *serv = ctx->sconfig.ref_ptr;
@@ -993,13 +993,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_ERROR(("Remote server connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->schedule, 
+	    silc_protocol_execute(protocol, server->schedule,
 				  0, 300000);
 	    silc_free(auth_data);
 	    return;
 	  }
 	}
-	
+
 	/* Remote end is router */
 	if (conn_type == SILC_SOCKET_TYPE_ROUTER) {
 	  SilcServerConfigRouter *serv = ctx->rconfig.ref_ptr;
@@ -1021,38 +1021,38 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    silc_free(auth_data);
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->schedule, 
+	    silc_protocol_execute(protocol, server->schedule,
 				  0, 300000);
 	    return;
 	  }
 	}
-	
+
 	silc_free(auth_data);
 
 	/* Save connection type. This is later used to create the
 	   ID for the connection. */
 	ctx->conn_type = conn_type;
-	  
+
 	/* Advance protocol state. */
 	protocol->state = SILC_PROTOCOL_STATE_END;
 	silc_protocol_execute(protocol, server->schedule, 0, 0);
 
       } else {
-	/* 
+	/*
 	 * We are initiator. We are authenticating ourselves to a
 	 * remote server. We will send the authentication data to the
-	 * other end for verify. 
+	 * other end for verify.
 	 */
 	SilcBuffer packet;
 	int payload_len = 0;
 	unsigned char *auth_data = NULL;
 	SilcUInt32 auth_data_len = 0;
-	
+
 	switch(ctx->auth_meth) {
 	case SILC_AUTH_NONE:
 	  /* No authentication required */
 	  break;
-	  
+
 	case SILC_AUTH_PASSWORD:
 	  /* Password authentication */
 	  if (ctx->auth_data && ctx->auth_data_len) {
@@ -1061,7 +1061,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    break;
 	  }
 	  break;
-	  
+
 	case SILC_AUTH_PUBLIC_KEY:
 	  {
 	    /* Public key authentication */
@@ -1070,30 +1070,30 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    break;
 	  }
 	}
-	
+
 	payload_len = 4 + auth_data_len;
 	packet = silc_buffer_alloc(payload_len);
 	silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
 	silc_buffer_format(packet,
 			   SILC_STR_UI_SHORT(payload_len),
-			   SILC_STR_UI_SHORT(server->server_type 
+			   SILC_STR_UI_SHORT(server->server_type
 					      == SILC_SERVER ?
 					      SILC_SOCKET_TYPE_SERVER :
 					      SILC_SOCKET_TYPE_ROUTER),
 			   SILC_STR_UI_XNSTRING(auth_data, auth_data_len),
 			   SILC_STR_END);
-	
+
 	/* Send the packet to server */
 	silc_server_packet_send(server, ctx->sock,
-				SILC_PACKET_CONNECTION_AUTH, 0, 
+				SILC_PACKET_CONNECTION_AUTH, 0,
 				packet->data, packet->len, TRUE);
-	
+
 	if (auth_data) {
 	  memset(auth_data, 0, auth_data_len);
 	  silc_free(auth_data);
 	}
 	silc_buffer_free(packet);
-	
+
 	/* Next state is end of protocol */
 	protocol->state = SILC_PROTOCOL_STATE_END;
       }
@@ -1102,7 +1102,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
   case SILC_PROTOCOL_STATE_END:
     {
-      /* 
+      /*
        * End protocol
        */
       unsigned char ok[4];
@@ -1113,17 +1113,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
       silc_server_packet_send(server, ctx->sock, SILC_PACKET_SUCCESS,
 			      0, ok, 4, TRUE);
 
-      /* Unregister the timeout task since the protocol has ended. 
+      /* Unregister the timeout task since the protocol has ended.
 	 This was the timeout task to be executed if the protocol is
 	 not completed fast enough. */
       if (ctx->timeout_task)
 	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
       /* Assure that after calling final callback there cannot be pending
-	 executions for this protocol anymore. This just unregisters any 
+	 executions for this protocol anymore. This just unregisters any
 	 timeout callbacks for this protocol. */
       silc_protocol_cancel(protocol, server->schedule);
-    
+
       /* Protocol has ended, call the final callback */
       if (protocol->final_callback)
 	silc_protocol_execute_final(protocol, server->schedule);
@@ -1143,17 +1143,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
       silc_server_packet_send(server, ctx->sock, SILC_PACKET_FAILURE,
 			      0, error, 4, TRUE);
 
-      /* Unregister the timeout task since the protocol has ended. 
+      /* Unregister the timeout task since the protocol has ended.
 	 This was the timeout task to be executed if the protocol is
 	 not completed fast enough. */
       if (ctx->timeout_task)
 	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
       /* Assure that after calling final callback there cannot be pending
-	 executions for this protocol anymore. This just unregisters any 
+	 executions for this protocol anymore. This just unregisters any
 	 timeout callbacks for this protocol. */
       silc_protocol_cancel(protocol, server->schedule);
-    
+
       /* On error the final callback is always called. */
       if (protocol->final_callback)
 	silc_protocol_execute_final(protocol, server->schedule);
@@ -1169,17 +1169,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
     SILC_LOG_ERROR(("Received Authentication Failure"));
 
-    /* Unregister the timeout task since the protocol has ended. 
+    /* Unregister the timeout task since the protocol has ended.
        This was the timeout task to be executed if the protocol is
        not completed fast enough. */
     if (ctx->timeout_task)
       silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
     /* Assure that after calling final callback there cannot be pending
-       executions for this protocol anymore. This just unregisters any 
+       executions for this protocol anymore. This just unregisters any
        timeout callbacks for this protocol. */
     silc_protocol_cancel(protocol, server->schedule);
-    
+
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -1198,7 +1198,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 /* Actually takes the new keys into use. */
 
-static void 
+static void
 silc_server_protocol_rekey_validate(SilcServer server,
 				    SilcServerRekeyInternalContext *ctx,
 				    SilcIDListData idata,
@@ -1207,30 +1207,30 @@ silc_server_protocol_rekey_validate(SilcServer server,
 {
   if (ctx->responder == TRUE) {
     if (send) {
-      silc_cipher_set_key(idata->send_key, keymat->receive_enc_key, 
+      silc_cipher_set_key(idata->send_key, keymat->receive_enc_key,
 			  keymat->enc_key_len);
       silc_cipher_set_iv(idata->send_key, keymat->receive_iv);
-      silc_hmac_set_key(idata->hmac_send, keymat->receive_hmac_key, 
+      silc_hmac_set_key(idata->hmac_send, keymat->receive_hmac_key,
 			keymat->hmac_key_len);
     } else {
-      silc_cipher_set_key(idata->receive_key, keymat->send_enc_key, 
+      silc_cipher_set_key(idata->receive_key, keymat->send_enc_key,
 			  keymat->enc_key_len);
       silc_cipher_set_iv(idata->receive_key, keymat->send_iv);
-      silc_hmac_set_key(idata->hmac_receive, keymat->send_hmac_key, 
+      silc_hmac_set_key(idata->hmac_receive, keymat->send_hmac_key,
 			keymat->hmac_key_len);
     }
   } else {
     if (send) {
-      silc_cipher_set_key(idata->send_key, keymat->send_enc_key, 
+      silc_cipher_set_key(idata->send_key, keymat->send_enc_key,
 			  keymat->enc_key_len);
       silc_cipher_set_iv(idata->send_key, keymat->send_iv);
-      silc_hmac_set_key(idata->hmac_send, keymat->send_hmac_key, 
+      silc_hmac_set_key(idata->hmac_send, keymat->send_hmac_key,
 			keymat->hmac_key_len);
     } else {
-      silc_cipher_set_key(idata->receive_key, keymat->receive_enc_key, 
+      silc_cipher_set_key(idata->receive_key, keymat->receive_enc_key,
 			  keymat->enc_key_len);
       silc_cipher_set_iv(idata->receive_key, keymat->receive_iv);
-      silc_hmac_set_key(idata->hmac_receive, keymat->receive_hmac_key, 
+      silc_hmac_set_key(idata->hmac_receive, keymat->receive_hmac_key,
 			keymat->hmac_key_len);
     }
   }
@@ -1264,7 +1264,7 @@ void silc_server_protocol_rekey_generate(SilcServer server,
   keymat = silc_calloc(1, sizeof(*keymat));
   silc_ske_process_key_material_data(idata->rekey->send_enc_key,
 				     idata->rekey->enc_key_len,
-				     16, key_len, hash_len, 
+				     16, key_len, hash_len,
 				     idata->hash, keymat);
 
   /* Set the keys into use */
@@ -1276,7 +1276,7 @@ void silc_server_protocol_rekey_generate(SilcServer server,
 /* This function actually re-generates (with PFS) the keys and
    takes them into use. */
 
-void 
+void
 silc_server_protocol_rekey_generate_pfs(SilcServer server,
 					SilcServerRekeyInternalContext *ctx,
 					bool send)
@@ -1296,7 +1296,7 @@ silc_server_protocol_rekey_generate_pfs(SilcServer server,
 
   /* Generate the new key */
   keymat = silc_calloc(1, sizeof(*keymat));
-  silc_ske_process_key_material_data(tmpbuf, klen, 16, key_len, hash_len, 
+  silc_ske_process_key_material_data(tmpbuf, klen, 16, key_len, hash_len,
 				     idata->hash, keymat);
 
   /* Set the keys into use */
@@ -1310,14 +1310,14 @@ silc_server_protocol_rekey_generate_pfs(SilcServer server,
 /* Packet sending callback. This function is provided as packet sending
    routine to the Key Exchange functions. */
 
-static void 
+static void
 silc_server_protocol_rekey_send_packet(SilcSKE ske,
 				       SilcBuffer packet,
 				       SilcPacketType type,
 				       void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerRekeyInternalContext *ctx = 
+  SilcServerRekeyInternalContext *ctx =
     (SilcServerRekeyInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
 
@@ -1331,7 +1331,7 @@ silc_server_protocol_rekey_send_packet(SilcSKE ske,
 SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerRekeyInternalContext *ctx = 
+  SilcServerRekeyInternalContext *ctx =
     (SilcServerRekeyInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
   SilcIDListData idata = (SilcIDListData)ctx->sock->user_data;
@@ -1345,7 +1345,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
   switch(protocol->state) {
   case SILC_PROTOCOL_STATE_START:
     {
-      /* 
+      /*
        * Start protocol.
        */
 
@@ -1355,7 +1355,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	 */
 
 	if (ctx->pfs == TRUE) {
-	  /* 
+	  /*
 	   * Use Perfect Forward Secrecy, ie. negotiate the key material
 	   * using the SKE protocol.
 	   */
@@ -1363,7 +1363,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	  if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
 	    SILC_LOG_ERROR(("Error during Re-key (R PFS): re-key state is "
 			    "incorrect (received %d, expected %d packet), "
-			    "with %s (%s)", ctx->packet->type, 
+			    "with %s (%s)", ctx->packet->type,
 			    SILC_PACKET_KEY_EXCHANGE_1, ctx->sock->hostname,
 			    ctx->sock->ip));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -1376,11 +1376,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	  silc_ske_group_get_by_number(idata->rekey->ske_group,
 				       &ctx->ske->prop->group);
 
-	  silc_ske_set_callbacks(ctx->ske, 
-				 silc_server_protocol_rekey_send_packet, 
+	  silc_ske_set_callbacks(ctx->ske,
+				 silc_server_protocol_rekey_send_packet,
 				 NULL, NULL, NULL, silc_ske_check_version,
 				 context);
-      
+
 	  status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer);
 	  if (status != SILC_SKE_STATUS_OK) {
 	    SILC_LOG_ERROR(("Error (%s) during Re-key (R PFS), with %s (%s)",
@@ -1407,11 +1407,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	     key to the new key since all packets after this packet must
 	     encrypted with the new key. */
 	  silc_server_protocol_rekey_generate(server, ctx, TRUE);
+	  silc_server_packet_queue_purge(server, ctx->sock);
 
 	  /* The protocol ends in next stage. */
 	  protocol->state = SILC_PROTOCOL_STATE_END;
 	}
-      
+
       } else {
 	/*
 	 * We are the initiator of this protocol
@@ -1422,7 +1423,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 				0, NULL, 0, FALSE);
 
 	if (ctx->pfs == TRUE) {
-	  /* 
+	  /*
 	   * Use Perfect Forward Secrecy, ie. negotiate the key material
 	   * using the SKE protocol.
 	   */
@@ -1431,11 +1432,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	  silc_ske_group_get_by_number(idata->rekey->ske_group,
 				       &ctx->ske->prop->group);
 
-	  silc_ske_set_callbacks(ctx->ske, 
-				 silc_server_protocol_rekey_send_packet, 
+	  silc_ske_set_callbacks(ctx->ske,
+				 silc_server_protocol_rekey_send_packet,
 				 NULL, NULL, NULL, silc_ske_check_version,
 				 context);
-      
+
 	  status = silc_ske_initiator_phase_2(ctx->ske, NULL, NULL, 0);
 	  if (status != SILC_SKE_STATUS_OK) {
 	    SILC_LOG_ERROR(("Error (%s) during Re-key (I PFS), with %s (%s)",
@@ -1453,8 +1454,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	   * Do normal and simple re-key.
 	   */
 
-	  /* Send the REKEY_DONE to indicate we will take new keys into use 
-	     now. */ 
+	  /* Send the REKEY_DONE to indicate we will take new keys into use
+	     now. */
 	  silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
 				  0, NULL, 0, FALSE);
 
@@ -1462,6 +1463,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	     key to the new key since all packets after this packet must
 	     encrypted with the new key. */
 	  silc_server_protocol_rekey_generate(server, ctx, TRUE);
+	  silc_server_packet_queue_purge(server, ctx->sock);
 
 	  /* The protocol ends in next stage. */
 	  protocol->state = SILC_PROTOCOL_STATE_END;
@@ -1472,15 +1474,15 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
   case 2:
     /*
-     * Second state, used only when oding re-key with PFS.
+     * Second state, used only when doing re-key with PFS.
      */
     if (ctx->responder == TRUE) {
       if (ctx->pfs == TRUE) {
 	/*
-	 * Send our KE packe to the initiator now that we've processed
+	 * Send our KE packet to the initiator now that we've processed
 	 * the initiator's KE packet.
 	 */
-	status = silc_ske_responder_finish(ctx->ske, NULL, NULL, 
+	status = silc_ske_responder_finish(ctx->ske, NULL, NULL,
 					   SILC_SKE_PK_TYPE_SILC);
 	if (status != SILC_SKE_STATUS_OK) {
 	  SILC_LOG_ERROR(("Error (%s) during Re-key (R PFS), with %s (%s)",
@@ -1500,14 +1502,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_2) {
 	  SILC_LOG_ERROR(("Error during Re-key (I PFS): re-key state is "
 			  "incorrect (received %d, expected %d packet), "
-			  "with %s (%s)", ctx->packet->type, 
+			  "with %s (%s)", ctx->packet->type,
 			  SILC_PACKET_KEY_EXCHANGE_2, ctx->sock->hostname,
 			  ctx->sock->ip));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
-	
+
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer);
 	if (status != SILC_SKE_STATUS_OK) {
 	  SILC_LOG_ERROR(("Error (%s) during Re-key (I PFS), with %s (%s)",
@@ -1520,11 +1522,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       }
     }
 
-    /* Send the REKEY_DONE to indicate we will take new keys into use 
-       now. */ 
+    /* Send the REKEY_DONE to indicate we will take new keys into use
+       now. */
     silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
 			    0, NULL, 0, FALSE);
-    
+
     /* After we send REKEY_DONE we must set the sending encryption
        key to the new key since all packets after this packet must
        encrypted with the new key. */
@@ -1535,7 +1537,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     break;
 
   case SILC_PROTOCOL_STATE_END:
-    /* 
+    /*
      * End protocol
      */
 
@@ -1558,10 +1560,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       silc_server_protocol_rekey_generate(server, ctx, FALSE);
 
     /* Assure that after calling final callback there cannot be pending
-       executions for this protocol anymore. This just unregisters any 
+       executions for this protocol anymore. This just unregisters any
        timeout callbacks for this protocol. */
     silc_protocol_cancel(protocol, server->schedule);
-    
+
     /* Protocol has ended, call the final callback */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -1579,10 +1581,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       silc_ske_abort(ctx->ske, ctx->ske->status);
 
     /* Assure that after calling final callback there cannot be pending
-       executions for this protocol anymore. This just unregisters any 
+       executions for this protocol anymore. This just unregisters any
        timeout callbacks for this protocol. */
     silc_protocol_cancel(protocol, server->schedule);
-    
+
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -1598,10 +1600,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     SILC_LOG_ERROR(("Error during Re-Key: received Failure"));
 
     /* Assure that after calling final callback there cannot be pending
-       executions for this protocol anymore. This just unregisters any 
+       executions for this protocol anymore. This just unregisters any
        timeout callbacks for this protocol. */
     silc_protocol_cancel(protocol, server->schedule);
-    
+
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);

@@ -32,7 +32,7 @@
    message. The `data' is the private message. If the `force_send' is
    TRUE the packet is sent immediately. */
 
-void silc_client_send_private_message(SilcClient client,
+bool silc_client_send_private_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry,
 				      SilcMessageFlags flags,
@@ -47,6 +47,7 @@ void silc_client_send_private_message(SilcClient client,
   SilcCipher cipher;
   SilcHmac hmac;
   int block_len;
+  bool ret = FALSE;
 
   assert(client && conn && client_entry);
   sock = conn->sock;
@@ -60,6 +61,10 @@ void silc_client_send_private_message(SilcClient client,
 				       client_entry->hmac_send,
 				       client->rng, NULL, client->private_key,
 				       client->sha1hash);
+  if (!buffer) {
+    SILC_LOG_ERROR(("Error encoding private message"));
+    return FALSE;
+  }
 
   /* If we don't have private message specific key then private messages
      are just as any normal packet thus call normal packet sending.  If
@@ -126,8 +131,12 @@ void silc_client_send_private_message(SilcClient client,
 
   silc_free(packetdata.dst_id);
 
+  ret = TRUE;
+
  out:
   silc_buffer_free(buffer);
+
+  return ret;
 }     
 
 static void silc_client_private_message_cb(SilcClient client,

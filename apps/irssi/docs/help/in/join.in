@@ -1,8 +1,9 @@
 
 @SYNTAX:join@
 
-Joins a specified channel. Channel names usually begin with #-sign,
-but note that the #-sign is not mandatory in channel names.
+Joins a specified channel.  Note that, in SILC the #-sign is NOT
+mandatory part of the channel names, and names "#foo" and "foo" will
+join to two different channels.
 
 If -cipher is provided and the channel does not exist the cipher to
 secure the channel messages on the channel will be set to <cipher>.  If
@@ -16,9 +17,17 @@ or is invite-only channel the founder can override these conditions
 and join the channel.  Only the client who set the founder mode on the
 channel is able to use -founder option.
 
+If the channel has the +C (channel public key authentication,
+see /HELP CMODE) mode set then the user joining the channel must
+provide the -auth option to JOIN command.  This option will attempt to
+authenticate the user on the channel.  If the user's public key has
+not been added to the channel's public key list, user will not be
+able to join.  User may optionally provide the <pubkeyfile>,
+<privkeyfile> and <privkey passphrase> to authenticate with some other
+key pair than with the user's default key pair.
+
 JOIN is aliased to J by default.
 
 Description
 
 See also: LEAVE, WINDOW CLOSE, CMODE, CUMODE
-

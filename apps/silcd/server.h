@@ -209,6 +209,8 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcBuffer **channel_users_modes,
 				       SilcUInt32 *channel_users_modes_c,
 				       SilcBuffer **channel_topics,
+				       SilcBuffer **channel_invites,
+				       SilcBuffer **channel_bans,
 				       SilcChannelID ***channel_ids,
 				       unsigned long creation_time);
 void silc_server_announce_servers(SilcServer server, bool global,

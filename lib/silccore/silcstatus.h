@@ -1,10 +1,10 @@
 /*
 
-  silcstatus.h 
+  silcstatus.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 /****d* silccore/StatusTypes/SilcStatus
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt8 SilcStatus
  *
  * DESCRIPTION
@@ -105,5 +105,25 @@ typedef SilcUInt8 SilcStatus;
 /***/
 
 #define SILC_STATUS_IS_ERROR(status) (status >= SILC_STATUS_ERR_NO_SUCH_NICK)
+
+/****f* silccore/SilcStatusTypes/silc_status_get_args
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_status_get_args(SilcStatus status,
+ *                                    SilcArgumentPayload args,
+ *                                    void **ret_arg1, **ret_arg2);
+ *
+ * DESCRIPTION
+ *
+ *    Parses and returns the arguments from the `args' by the status type
+ *    indicated by `status'.  Returns the number of arguments (0, 1 or 2)
+ *    parsed.  The caller must free with silc_free the returned arguments.
+ *
+ ***/
+SilcUInt32 silc_status_get_args(SilcStatus status,
+				SilcArgumentPayload args,
+				void **ret_arg1, void **ret_arg2);
+
 
 #endif /* SILCSTATUS_H */

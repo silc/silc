@@ -344,16 +344,17 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
   SilcTask task;
   int i;
   SilcUInt32 fd, last_fd = schedule->last_fd;
+  SilcUInt16 revents;
 
   for (i = 0; i <= last_fd; i++) {
     if (schedule->fd_list[i].events == 0)
       continue;
 
-    fd = schedule->fd_list[i].fd;
-
     /* First check whether this fd has task in the fd queue */
     silc_mutex_lock(schedule->fd_queue->lock);
+    fd = schedule->fd_list[i].fd;
     task = silc_task_find(schedule->fd_queue, fd);
+    revents = schedule->fd_list[i].revents;
 
     /* If the task was found then execute its callbacks. If not then
        execute all generic tasks for that fd. */
@@ -363,7 +364,7 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	 in the callback function, ie. it is not valid anymore. */
 
       /* Is the task ready for reading */
-      if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
+      if (task->valid && revents & SILC_TASK_READ) {
 	silc_mutex_unlock(schedule->fd_queue->lock);
 	SILC_SCHEDULE_UNLOCK(schedule);
 	task->callback(schedule, schedule->app_context,
@@ -373,7 +374,7 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
       }
 
       /* Is the task ready for writing */
-      if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE) {
+      if (task->valid && revents & SILC_TASK_WRITE) {
 	silc_mutex_unlock(schedule->fd_queue->lock);
 	SILC_SCHEDULE_UNLOCK(schedule);
 	task->callback(schedule, schedule->app_context,
@@ -404,7 +405,7 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	   in the callback function, ie. it is not valid anymore. */
 
 	/* Is the task ready for reading */				
-	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ &&
+	if (task->valid && revents & SILC_TASK_READ &&
 	    fd == schedule->fd_list[i].fd) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
@@ -415,7 +416,7 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	}
 
 	/* Is the task ready for writing */				
-	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE &&
+	if (task->valid && revents & SILC_TASK_WRITE &&
 	    fd == schedule->fd_list[i].fd) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);

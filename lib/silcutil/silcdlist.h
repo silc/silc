@@ -2,15 +2,14 @@
 
   silcdlist.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2000 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,22 +21,22 @@
 #define SILDCLIST_H
 
 #include "silclist.h"
- 
+
 /****h* silcutil/SILC Dynamic List Interface
  *
  * DESCRIPTION
  *
- *    SILC Dynamic List API can be used to add opaque contexts to list that
- *    will automatically allocate list entries.  Normal SILC List API cannot
- *    be used for this purpose because in that case the context passed to the
- *    list must be defined as list structure already.  This is not the case in
- *    SilcDList.
+ * SILC Dynamic List API can be used to add opaque contexts to list that
+ * will automatically allocate list entries.  Normal SILC List API cannot
+ * be used for this purpose because in that case the context passed to the
+ * list must be defined as list structure already.  This is not the case in
+ * SilcDList.
  *
- *    This is slower than SilcList because this requires one extra memory
- *    allocation when adding new entries to the list.  The context is probably
- *    allocated already and the new list entry requires one additional memory
- *    allocation.  The memory allocation and freeing is done automatically in
- *    the API and does not show to the caller.
+ * This is slower than SilcList because this requires one extra memory
+ * allocation when adding new entries to the list.  The context is probably
+ * allocated already and the new list entry requires one additional memory
+ * allocation.  The memory allocation and freeing is done automatically in
+ * the API and does not show to the caller.
  *
  ***/
 
@@ -55,7 +54,7 @@
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcDListStruct {
   SilcList list;
 } *SilcDList;
 /***/
@@ -65,14 +64,15 @@ typedef struct {
 typedef struct SilcDListEntryStruct {
   void *context;
   struct SilcDListEntryStruct *next;
+  struct SilcDListEntryStruct *prev;
 } *SilcDListEntry;
 
 /****f* silcutil/SilcDListAPI/silc_dlist_init
  *
  * SYNOPSIS
- * 
+ *
  *    static inline
- *    SilcDList silc_dlist_init();
+ *    SilcDList silc_dlist_init(void);
  *
  * DESCRIPTION
  *
@@ -81,12 +81,14 @@ typedef struct SilcDListEntryStruct {
  ***/
 
 static inline
-SilcDList silc_dlist_init()
+SilcDList silc_dlist_init(void)
 {
   SilcDList list;
 
-  list = (SilcDList)silc_calloc(1, sizeof(*list));
-  silc_list_init(list->list, struct SilcDListEntryStruct, next);
+  list = (SilcDList)silc_malloc(sizeof(*list));
+  if (!list)
+    return NULL;
+  silc_list_init_prev(list->list, struct SilcDListEntryStruct, next, prev);
 
   return list;
 }
@@ -148,7 +150,7 @@ int silc_dlist_count(SilcDList list)
  * DESCRIPTION
  *
  *    Set the start of the list. This prepares the list for traversing entries
- *    from the start of the list.
+ *    from the start of the list towards end of the list.
  *
  ***/
 
@@ -156,6 +158,26 @@ static inline
 void silc_dlist_start(SilcDList list)
 {
   silc_list_start(list->list);
+}
+
+/****f* silcutil/SilcDListAPI/silc_dlist_end
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    void silc_dlist_end(SilcDList list);
+ *
+ * DESCRIPTION
+ *
+ *    Set the end of the list. This prepares the list for traversing entries
+ *    from the end of the list towards start of the list.
+ *
+ ***/
+
+static inline
+void silc_dlist_end(SilcDList list)
+{
+  silc_list_end(list->list);
 }
 
 /****f* silcutil/SilcDListAPI/silc_dlist_add
@@ -175,7 +197,9 @@ void silc_dlist_start(SilcDList list)
 static inline
 void silc_dlist_add(SilcDList list, void *context)
 {
-  SilcDListEntry e = (SilcDListEntry)silc_calloc(1, sizeof(*e));
+  SilcDListEntry e = (SilcDListEntry)silc_malloc(sizeof(*e));
+  if (!e)
+    return;
   e->context = context;
   silc_list_add(list->list, e);
 }
@@ -223,12 +247,12 @@ void silc_dlist_del(SilcDList list, void *context)
  *    Returns current entry from the list and moves the list pointer forward
  *    so that calling this next time returns the next entry from the list.
  *    This can be used to traverse the list. Return SILC_LIST_END when the
- *    entire list has been traversed. Later, silc_list_start must be called
- *    again when re-starting list traversing.
+ *    entire list has been traversed. Later, silc_list_start (or
+ *    silc_dlist_end) must be called again when re-starting list traversing.
  *
  * EXAMPLE
  *
- *    // Traverse the list from the beginning to the end 
+ *    // Traverse the list from the beginning to the end
  *    silc_dlist_start(list)
  *    while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
  *      ...

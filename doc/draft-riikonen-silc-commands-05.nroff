@@ -1,0 +1,2598 @@
+.pl 10.0i
+.po 0
+.ll 7.2i
+.lt 7.2i
+.nr LL 7.2i
+.nr LT 7.2i
+.ds LF Riikonen
+.ds RF FORMFEED[Page %]
+.ds CF
+.ds LH Internet Draft
+.ds RH 27 June 2003
+.ds CH
+.na
+.hy 0
+.in 0
+.nf
+Network Working Group                                        P. Riikonen
+Internet-Draft
+draft-riikonen-silc-commands-05.txt                         27 June 2003
+Expires: 27 December 2003
+
+.in 3
+
+.ce 2
+SILC Commands
+<draft-riikonen-silc-commands-05.txt>
+
+.ti 0
+Status of this Memo
+
+This document is an Internet-Draft and is in full conformance with
+all provisions of Section 10 of RFC 2026.  Internet-Drafts are
+working documents of the Internet Engineering Task Force (IETF), its
+areas, and its working groups.  Note that other groups may also
+distribute working documents as Internet-Drafts.
+
+Internet-Drafts are draft documents valid for a maximum of six months
+and may be updated, replaced, or obsoleted by other documents at any
+time.  It is inappropriate to use Internet-Drafts as reference
+material or to cite them other than as "work in progress."
+
+The list of current Internet-Drafts can be accessed at
+http://www.ietf.org/ietf/1id-abstracts.txt
+
+The list of Internet-Draft Shadow Directories can be accessed at
+http://www.ietf.org/shadow.html
+
+The distribution of this memo is unlimited.
+
+
+.ti 0
+Abstract
+
+This memo describes the commands used in the Secure Internet Live
+Conferencing (SILC) protocol, specified in the Secure Internet Live
+Conferencing, Protocol Specification [SILC1].  The SILC Commands are
+very important part of the SILC protocol.  Usually the commands are used
+by SILC clients to manage the SILC session, but also SILC servers may
+use the commands.  This memo specifies detailed command messages and
+command reply messages.
+
+
+
+
+
+
+
+
+.ti 0
+Table of Contents
+
+.nf
+1 Introduction ..................................................  2
+  1.1 Requirements Terminology ..................................  2
+2 SILC Commands .................................................  2
+  2.1 SILC Commands Syntax ......................................  4
+  2.2 SILC Command Argument Idioms ..............................  4
+  2.3 SILC Commands List ........................................  5
+  2.4 SILC Command Status Payload ............................... 42
+3 SILC Status Types ............................................. 43
+4 Security Considerations ....................................... 50
+5 References .................................................... 50
+6 Author's Address .............................................. 51
+Appendix A ...................................................... 51
+Full Copyright Statement ........................................ 53
+
+
+.ti 0
+1. Introduction
+
+This document describes the commands used in the Secure Internet Live
+Conferencing (SILC) protocol, specified in the Secure Internet Live
+Conferencing, Protocol Specification [SILC1].  This document specifies
+detailed command messages and command reply messages.
+
+Commands are very important part on SILC network especially for client
+which uses commands to operate on the SILC network.  Commands are used
+to set nickname, join to channel, change modes and many other things.
+
+See the [SILC1] for the requirements and the restrictions for the usage
+of the SILC commands.  The [SILC2] defines the command packet type and
+the Command Payload which is actually used to deliver the commands and
+command reply messages.
+
+
+.ti 0
+1.1 Requirements Terminology
+
+The keywords MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, RECOMMENDED,
+MAY, and OPTIONAL, when they appear in this document, are to be
+interpreted as described in [RFC2119].
+
+
+.ti 0
+2 SILC Commands
+
+.ti 0
+2.1 SILC Commands Syntax
+
+This section briefly describes the syntax of the command notions
+in this document.  Every field in command is separated from each
+other by whitespaces (` ') indicating that each field is independent
+argument and each argument MUST have own Command Argument Payload.
+The number of maximum arguments are defined with each command
+separately.  The Command Argument Payload is described in [SILC2].
+
+Every command defines specific number for each argument.  Currently,
+they are defined in ascending order; first argument has number one
+(1), second has number two (2) and so on.  This number is set into the
+Argument Type field in the Command Argument Payload.  This makes it
+possible to send the arguments in free order as the number MUST be
+used to identify the type of the argument.  This makes is it also
+possible to have multiple optional arguments in commands and in
+command replies.  The number of argument is marked in parentheses
+before the actual argument.
+
+
+
+.in 6
+Example:  Arguments:  (1) <nickname> (2) <username@host>
+.in 3
+
+
+Every command replies with Status Payload.  This payload tells the
+sender of the command whether the command was completed successfully or
+whether there was an error.  If error occurred the payload includes the
+error type.  In the next section the Status Payload is not described
+as it is common to all commands and has been described here.  Commands
+MAY reply with other arguments as well.  These arguments are command
+specific and are described in the next section.
+
+Example command:
+.in 6
+
+EXAMPLE_COMMAND
+
+.in 8
+Max Arguments:  3
+    Arguments:  (1) <nickname>[@<server>]  (2) <message>
+                (3) [<count>]
+
+The command has maximum of 3 arguments.  However, only first
+and second arguments are mandatory.
+
+First argument <nickname> is mandatory but may have optional
+<nickname@server> format as well.  Second argument is mandatory
+<message> argument.  Third argument is optional <count> argument.
+
+The numbers in parentheses are the argument specific numbers
+that specify the type of the argument in Command Argument Payload.
+The receiver always knows that, say, argument number two (2) is
+<message> argument, regardless of the ordering of the arguments in
+the Command Payload.
+
+Reply messages to the command:
+
+Max Arguments:  4
+    Arguments:  (1) <Status Payload>  (2) [<channel list>]
+                (3) <idle time>       (4) [<away message>]
+
+This command may reply with maximum of 4 arguments.  However,
+only the first and third arguments are mandatory.  The numbers
+in the parentheses have the same meaning as in the upper
+command sending specification.
+
+Every command reply with <Status Payload>, it is mandatory
+argument for all command replies and for this reason it is not
+described in the command reply descriptions.
+
+
+
+Status messages:
+
+    SILC_STATUS_OK
+    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+    SILC_STATUS_ERR_NO_SUCH_NICK
+
+Every command reply also defines set of status message that it
+may return inside the <Status Payload>.  All status messages
+are defined in the section 2.3 SILC Command Status Payload
+The status messages defined with the command are recommendations.
+It is possible to return other status messages not listed with
+the command reply definition.
+.in 3
+
+
+.ti 0
+2.2 SILC Command Argument Idioms
+
+All commands that has an ID as argument (for example <Client ID>) are
+actually ID Payloads, defined in [SILC2] that includes the type of the
+ID, length of the ID and the actual ID data.  This way variable length
+ID's can be sent as arguments.
+
+All passphrases that may be sent in commands as arguments MUST be
+UTF-8 [RFC2279] encoded.
+
+All public keys and certificates that are sent as arguments are actually
+Public Key Payloads [SILC2].  This way it is possible to send different
+kind of public keys and certificate types as arguments.
+
+
+
+
+.ti 0
+2.3 SILC Commands List
+
+This section lists all SILC commands, however, it is expected that a
+implementation and especially client implementation has many more
+commands that has only local affect.  These commands are official
+SILC commands that has both client and server sides and cannot be
+characterized as local commands.
+
+List of all defined commands in SILC follows.
+
+.in 0
+   0    SILC_COMMAND_NONE
+
+        None.  This is reserved command and MUST NOT be sent.
+
+
+   1    SILC_COMMAND_WHOIS
+
+        Max Arguments:  256
+            Arguments:  (1) [<nickname>[@<server>]]   (2) [<count>]
+                        (3) [<Requested Attributes>]  (4) [<Client ID>]
+                        (n) [...]
+
+        Whois command is used to query various information about specific
+        user.  The user may be requested by their nickname and server name.
+        The query may find multiple matching users as there are no unique
+        nicknames in the SILC.  The <count> option may be given to narrow
+        down the number of accepted results.  If this is not defined there
+        are no limit of accepted results.  The query may also be narrowed
+        down by defining the server name of the nickname.  The <count> is
+        32 bit MSB first order integer.
+
+        It is also possible to search the user by Client ID.  If the
+        <Client ID> is provided server MUST use it as the search value
+        instead of the <nickname>.  One of the arguments MUST be given.
+        It is also possible to define multiple Client ID's to search
+        multiple users sending only one WHOIS command.  In this case the
+        Client ID's are appended as normal arguments.
+
+        To prevent miss-use of this command wildcards in the nickname
+        or in the server name are not permitted.  It is not allowed
+        to request all users on some server.  The WHOIS requests MUST
+        be based on explicit nickname request.
+
+        The WHOIS request MUST be always sent to the router by server
+        so that all users are searched.  However, the server still MUST
+        search its locally connected clients.  The router MUST send
+        this command to the server which owns the requested client, if
+        the router is unable to provide all mandatory information about
+        the client.  That server MUST reply to the command.  Server MUST
+        NOT send whois replies to the client until it has received the
+        reply from its router.
+
+        The <Requested Attributes> is defined in [ATTRS] and can be used
+        to request various information about the client.  See Appendix A
+        for definition of using these attributes in SILC.
+
+        Reply messages to the command:
+
+        Max Arguments:  11
+            Arguments:  (1) <Status Payload>       (2) <Client ID>
+                        (3) <nickname>[@<server>]  (4) <username@host>
+                        (5) <real name>            (6) [<Channel Payload
+                                                         list>]
+                        (7) [<user mode>]          (8) [<idle time>]
+                        (9) [<fingerprint>]        (10) <channel user
+                                                         mode list>
+                        (11) [<Attributes>]
+
+
+        This command may reply with several command reply messages to
+        form a list of results.  In this case the status payload will
+        include STATUS_LIST_START status in the first reply and
+        STATUS_LIST_END in the last reply to indicate the end of the
+        list.  If there are only one reply the status is set to normal
+        STATUS_OK.  If multiple Client IDs was requested then each found
+        and unfound client MUST cause successful or error reply,
+        respectively.
+
+        The command replies include the Client ID of the nickname,
+        nickname and server name, user name and host name and user's real
+        name.  Client should process these replies only after the last
+        reply has been received with the STATUS_LIST_END status.  If the
+        <count> option were defined in the query there will be only
+        <count> many replies from the server.
+
+        The server returns the list of channels if the client has
+        joined channels.  In this case the list is list of Channel
+        Payloads.  The Mode Mask in the Channel Payload is the channel's
+        mode.  The list is encoded by adding the Channel Payloads one
+        after the other.  Private and secret channels MUST NOT be sent,
+        except if the sender of this command is on those channels, or
+        the sender is server.  The <channel user mode list> MUST also
+        be sent if client is joined channels.  This list includes 32 bit
+        MSB first order values one after the other and each indicate
+        the user's mode on a channel.  The order of these values MUST
+        be same as the channel order in the <Channel Payload list>.
+
+        The server also returns client's user mode, idle time, and the
+        fingerprint of the client's public key.  The <fingerprint> is the
+        binary hash digest of the public key.  The fingerprint MUST NOT
+        be sent if the server has not verified the proof of possession of
+        the corresponding private key.  Server can do this during the
+        SILC Key Exchange protocol.  The <fingerprint> is SHA1 digest.
+
+        The <Attributes> is the reply to the <Requested Attributes>.
+        See the Appendix A for more information.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_LIST_START
+            SILC_STATUS_LIST_END
+            SILC_STATUS_ERR_NO_SUCH_NICK
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+
+
+   2    SILC_COMMAND_WHOWAS
+
+        Max Arguments:  2
+            Arguments:  (1) <nickname>[@<server>]  (2) [<count>]
+
+        Whowas.  This command is used to query history information about
+        specific user.  The user may be requested by their nickname and
+        server name.  The query may find multiple matching users as there
+        are no unique nicknames in the SILC.  The <count> option may be
+        given to narrow down the number of accepted results.  If this
+        is not defined there are no limit of accepted results.  The query
+        may also be narrowed down by defining the server name of the
+        nickname.  The <count> is 32 bit MSB first order integer.
+
+        To prevent miss-use of this command wildcards in the nickname
+        or in the server name are not permitted.  The WHOWAS requests MUST
+        be based on specific nickname request.
+
+        The WHOWAS request MUST be always sent to the router by server
+        so that all users are searched.  However, the server still must
+        search its locally connected clients.
+
+        Reply messages to the command:
+
+        Max Arguments:  5
+            Arguments:  (1) <Status Payload>        (2) <Client ID>
+                        (3) <nickname>[@<server>]   (4) <username@host>
+                        (5) [<real name>]
+
+        This command may reply with several command reply messages to form
+        a list of results.  In this case the status payload will include
+        STATUS_LIST_START status in the first reply and STATUS_LIST_END in
+        the last reply to indicate the end of the list.  If there are only
+        one reply the status is set to normal STATUS_OK.
+
+        The command replies with nickname and user name and host name.
+        Every server MUST keep history for some period of time of its
+        locally connected clients.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_LIST_START
+            SILC_STATUS_LIST_END
+            SILC_STATUS_ERR_NO_SUCH_NICK
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+
+
+   3    SILC_COMMAND_IDENTIFY
+
+        Max Arguments:  256
+            Arguments:  (1) [<nickname>[@<server>]]  (2) [<server name>]
+                        (3) [<channel name>]         (4) [<count>]
+                        (5) [<ID Payload>]           (n) [...]
+
+        Identify command is used to query information about an entity by
+        the entity's name or ID.  This command can be used to query
+        information about clients, servers and channels.
+
+        The query may find multiple matching entities.  The <count> option
+        may be given to narrow down the number of accepted results.  If
+        this is not defined there are no limit of accepted results.  The
+        <count> is 32 bit MSB first order integer.
+
+        It is also possible to search the entity by its ID.  If the
+        <ID Payload> is provided server must use it as the search value
+        instead of the entity's name.  One of the arguments MUST be given.
+        It is also possible to define multiple ID Payloads to search
+        multiple entities sending only one IDENTIFY command.  In this case
+        the ID Payloads are appended as normal arguments.  The type of the
+        entity is defined by the type of the ID Payload.
+
+        To prevent miss-use of this command wildcards in the names are
+        not permitted.  It is not allowed to request for example all users
+        on server.
+
+        Implementations may not want to give interface access to this
+        command as it is hardly a command that would be used by an end
+        user.  However, it must be implemented as it is most likely used
+        with private message sending.
+
+        The IDENTIFY command MUST be always sent to the router by server
+        so that all users are searched.  However, server MUST still search
+        its locally connected clients.
+
+        Reply messages to the command:
+
+        Max Arguments:  4
+            Arguments:  (1) <Status Payload>   (2) <ID Payload>
+                        (3) [<entity's name>]  (4) [<info>]
+
+        This command may reply with several command reply messages to form
+        a list of results.  In this case the status payload will include
+        STATUS_LIST_START status in the first reply and STATUS_LIST_END in
+        the last reply to indicate the end of the list.  If there are only
+        one reply the status is set to normal STATUS_OK.  If multiple Client
+        IDs was requested then each found and unfound client must cause
+        successful or error reply, respectively.
+
+        When querying clients the <entity's name> must include the client's
+        nickname in the following format: nickname[@server].  The
+        <info> must include the client's username and host in the following
+        format: username@host.
+
+        When querying servers the <entity's name> must include the server's
+        full name.  The <info> may be omitted.
+
+        When querying channels the <entity's name> must include the
+        channel's name.  The <info> may be omitted.
+
+        If the <count> option were defined in the query there will be only
+        <count> many replies from the server.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_LIST_START
+            SILC_STATUS_LIST_END
+            SILC_STATUS_ERR_NO_SUCH_NICK
+            SILC_STATUS_ERR_NO_SUCH_SERVER
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+
+
+   4    SILC_COMMAND_NICK
+
+        Max Arguments:  1
+            Arguments:  (1) <nickname>
+
+        Set/change nickname.  This command is used to set nickname for
+        user.  Nickname MUST NOT include any whitespaces (` '),
+        non-printable characters, commas (`,'), '@', '!' or any wildcard
+        characters.
+
+        When nickname is changed new Client ID is generated.  Server MUST
+        distribute SILC_NOTIFY_TYPE_NICK_CHANGE to local clients on the
+        channels (if any) the client is joined on.  Then it MUST send
+        SILC_NOTIFY_TYPE_NICK_CHANGE notify to its primary route to
+        notify about nickname and Client ID change.
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <New ID Payload>
+                        (3) <nickname>
+
+        This command replies always with <New ID Payload> that is
+        generated by the server every time user changes their nickname.
+        Client receiving this payload MUST start using the received
+        Client ID as its current valid Client ID.  The New ID Payload
+        is described in [SILC2].  The <nickname> is the user's new
+        nickname.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NICKNAME_IN_USE
+            SILC_STATUS_ERR_BAD_NICKNAME
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+
+
+   5    SILC_COMMAND_LIST
+
+        Max Arguments:  1
+            Arguments:  (1) [<Channel ID>]
+
+        The list command is used to list channels and their topics on the
+        current server.  If the <Channel ID> parameter is used, only the
+        status of that channel is displayed.  Secret channels are not
+        listed at all.  Private channels are listed with status indicating
+        that the channel is private.  Router MAY reply with all channels
+        it knows about.
+
+        Reply messages to the command:
+
+        Max Arguments:  5
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) <channel>         (4) [<topic>]
+                        (5) [<user count>]
+
+        This command may reply with several command reply messages to form
+        a list of results.  In this case the status payload will include
+        STATUS_LIST_START status in the first reply and STATUS_LIST_END in
+        the last reply to indicate the end of the list.  If there are only
+        one reply the status is set to normal STATUS_OK.
+
+        This command replies with Channel ID, name and the topic of the
+        channel.  If the channel is private channel the <topic> SHOULD
+        include the "*private*" string.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_LIST_START
+            SILC_STATUS_LIST_END
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER
+
+
+   6    SILC_COMMAND_TOPIC
+
+        Max Arguments:  2
+            Arguments:  (1) <Channel ID>  (2) [<topic>]
+
+        This command is used to change or view the topic of a channel.
+        The topic for channel <Channel ID> is returned if there is no
+        <topic> given.  If the <topic> parameter is present, the topic
+        for that channel will be changed, if the channel modes permit
+        this action.
+
+        After setting the topic the server MUST send the notify type
+        SILC_NOTIFY_TYPE_TOPIC_SET to its primary router and then to
+        the channel which topic was changed.
+
+        Reply messages to the command:
+
+        Max Arguments:  2
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) [<topic>]
+
+        The command may reply with the topic of the channel if it is
+        set.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_BAD_CHANNEL_ID
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
+
+
+   7    SILC_COMMAND_INVITE
+
+        Max Arguments:  4
+            Arguments:  (1) <Channel ID>       (2) [<Client ID>]
+                        (3) [<add | del>]      (4) [<invite list>]
+
+        This command can be used to invite other clients to join to a
+        channel, and to manage the channel's invite list.  The <Client
+        ID> argument is the target client's ID that is being invited.
+        The <Channel ID> is the Channel ID of the requested channel.
+        The sender of this command MUST be on the channel.  The server
+        MUST also send the notify type SILC_NOTIFY_TYPE_INVITE to its
+        primary router and then to the client indicated by the <Client
+        ID>.
+
+        The <add | del> is an argument of size of 1 byte where 0x00 means
+        adding a client to invite list, and 0x01 means deleting a client
+        from invite list.  The <invite list>, if present, indicates
+        the information to be added to or removed from the invite list.
+        It may include a string for matching clients, public key of a
+        client or Client ID of a client.  The <invite list> is an
+        Argument List Payload.
+
+        The following Argument Types has been defined for invite list
+        Argument Payloads:
+
+          0x01 - Argument is an invite string of following format:
+
+            [<nickname>[@<server>]!][<username>]@[<hostname or IP/MASK>]
+
+            The <hostname> may also be in format of IP/MASK to indicate
+            a network, for example 10.2.1.0/255.255.0.0.
+
+          0x02 - Argument is the public key of a client
+          0x03 - Argument is the Client ID of a client
+
+        If unknown type value is received or there is invalid amount of
+        Argument Payloads present in the list, the command MUST be
+        discarded.  When argument that is to be deleted from the invite
+        list does not exist in the list the argument is ignored.
+
+        When adding to or removing from the invite list the server MUST
+        send the notify type SILC_NOTIFY_TYPE_INVITE to its primary router.
+        The client which executes this command MUST have at least channel
+        operator privileges to be able to add to or remove from the invite
+        list.  The wildcards MAY be used with this command.  When this
+        command is used to invite explicit client with <Client ID> the
+        ID MUST be added to the invite list by the server.
+
+        When this command is given with only <Channel ID> argument then
+        the command merely returns the invite list of the channel.   This
+        command MUST fail if the requested channel does not exist, the
+        requested <Client ID> is already on the channel or if the channel
+        is invite only channel and the caller of this command does not
+        have at least channel operator privileges on the channel.
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) [<invite list>]
+
+	This command replies with the invite list of the channel if it
+	exists.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_NO_CLIENT_ID
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_USER_ON_CHANNEL
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_RESOURCE_LIMIT
+
+
+   8    SILC_COMMAND_QUIT
+
+        Max Arguments:  1
+            Arguments:  (1) [<quit message>]
+
+        This command is used by client to end SILC session.  The server
+        must close the connection to a client which sends this command.
+        if <quit message> is given it will be sent to other clients on
+        channel if the client is on channel when quitting.
+
+        Reply messages to the command:
+
+        This command does not reply anything.
+
+
+    9   SILC_COMMAND_KILL
+
+        Max Arguments:  3
+            Arguments:  (1) <Client ID>          (2) [<comment>]
+                        (3) [<auth payload>]
+
+        This command can be used by SILC operators to remove a client from
+        SILC network.  It also can be used by a normal client to remove
+        its own client from network by providing correct authentication
+        data.
+
+        Router operator killing a client:
+
+        The removing has temporary effects and client may reconnect to
+        SILC network.  The <Client ID> is the client to be removed from SILC.
+        The <comment> argument may be provided to give to the removed client
+        some information why it was removed from the network.  The killer
+        MUST have SILC operator privileges.
+
+        When killing a client the router MUST first send notify type
+        SILC_NOTIFY_TYPE_KILLED to all channels the client has joined.
+        The packet MUST NOT be sent to the killed client on the channels.
+        Then, the router MUST send the same notify type to its primary
+        router.  Finally, the router MUST send the same notify type
+        destined directly to the client which was killed.  The killed
+        client MUST also be removed from the invite lists of joined
+        channels if it is explicitly added in the invite lists.
+
+        Normal client killing by authentication:
+
+        When normal client executes this command the <Client ID> is the
+        destination client to be removed from the network.  The client
+        MUST provide the <auth payload> which includes a digital signature
+        that MUST be verified with the public key of the client indicated
+        by <Client ID>.  The <Client ID> MUST be local client to the server.
+        If the signature verification is successful the server sends
+        SILC_NOTIFY_TYPE_SIGNOFF to network and to the destination client.
+        The SILC_NOTIFY_TYPE_KILLED MUST NOT be used in this case.  If the
+        verification fails the destination client remains in network.
+        The hash function used in <auth payload> computing is SHA1.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with Status Payload.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_NO_CLIENT_ID
+            SILC_STATUS_ERR_NO_ROUTER_PRIV
+
+
+   10   SILC_COMMAND_INFO
+
+        Max Arguments:  2
+            Arguments:  (1) [<server>]  (2) [<Server ID>]
+
+        This command is used to fetch various information about a server.
+        If <server> argument is specified the command MUST be sent to
+        the requested server.
+
+        If the <Server ID> is specified the server information if fetched
+        by the provided Server ID.  One of the arguments MUST always be
+        present.
+
+        Reply messages to the command:
+
+        Max Arguments:  4
+            Arguments:  (1) <Status Payload>  (2) <Server ID>
+                        (3) <server name>     (4) <string>
+
+        This command replies with the Server ID of the server and a
+        string which tells the information about the server.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_SERVER
+            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+            SILC_STATUS_ERR_NO_SERVER_ID
+
+
+   11   SILC_COMMAND_STATS
+
+        Max Arguments:  1
+            Arguments:  (1) <Server ID>
+
+        This command is used to fetch various statistical information
+        from the server indicated by <Server ID>, which is the ID of
+        server where sender is connected to.  Server receiving this
+        command MAY also send this further to its router for fetching
+        other cell and network wide statistics to accompany the reply.
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>          (2) <Server ID>
+                        (3) [<statistics structure>]
+
+        This command replies with the Server ID of the server and
+        optional statistics structure which includes 32 bit MSB first
+        ordered integer values to represent various statistical
+        information.  The structure is as follows:
+
+          starttime      - time when server was started
+          uptime         - uptime of the server
+          my clients     - number of locally connected clients
+          my channels    - number of locally created channels
+          my server ops  - number of local server operators
+          my router ops  - number of local router operators
+          cell clients   - number of clients in local cell
+          cell channels  - number of channels in local cell
+          cell servers   - number of servers in local cell
+          clients        - number of client in SILC network
+          channels       - number of channels in SILC network
+          servers        - number of servers in SILC network
+          routers        - number of routers in SILC network
+          server ops     - number of server operators in SILC network
+          router ops     - number of router operators in SILC network
+
+        If some value is unknown it is set to zero (0) value.  The
+        "starttime" is the start time of the server, and is seconds
+        since Epoch (POSIX.1).  The "uptime" is time difference of
+        current time and "starttime" in the server, and is seconds
+        in value.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER
+            SILC_STATUS_ERR_NO_SERVER_ID
+
+
+   12   SILC_COMMAND_PING
+
+        Max Arguments:  1
+            Arguments:  (1) <Server ID>
+
+        This command is used by client and server to test the communication
+        channel to its server if one suspects that the communication is not
+        working correctly.  The <Server ID> is the ID of the server the
+        sender is connected to.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with Status Payload.  Server returns
+        SILC_STATUS_OK in Status Payload if pinging was successful.
+
+
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SERVER_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER
+            SILC_STATUS_ERR_NOT_REGISTERED
+
+
+   13   SILC_COMMAND_OPER
+
+        Max Arguments:  2
+            Arguments:  (1) <username>  (2) <authentication payload>
+
+        This command is used by normal client to obtain server operator
+        privileges on some server or router.  Note that router operator
+        has router privileges that supersedes the server operator
+        privileges and this does not obtain those privileges.  Client
+        MUST use SILCOPER command to obtain router level privileges.
+
+        The <username> is the username set in the server configurations
+        as operator.  The <authentication payload> is the data that the
+        client is authenticated against.  It may be passphrase prompted
+        for user on client's screen or it may be public key authentication
+        based on digital signatures.  The public key used to verify the
+        signature should be locally saved in the server, and server should
+        not use public key received during the SKE to verify this signature.
+
+        After changing the mode the server MUST send the notify type
+        SILC_NOTIFY_TYPE_UMODE_CHANGE to its primary router.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with Status Payload.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_AUTH_FAILED
+
+
+   14   SILC_COMMAND_JOIN
+
+        Max Arguments:  7
+            Arguments:  (1) <channel>         (2) <Client ID>
+                        (3) [<passphrase>]    (4) [<cipher>]
+                        (5) [<hmac>]          (6) [<founder auth>]
+                        (7) [<channel auth>]
+
+        Join to channel/create new channel.  This command is used to
+        join to a channel.  If the channel does not exist the channel is
+        created.  If server is normal server this command MUST be sent
+        to router which will create the channel.  The channel MAY be
+        protected with passphrase.  If this is the case the passphrase
+        MUST be sent along the join command.
+
+        The name of the <channel> MUST NOT include any spaces (` '),
+        non-printable characters, commas (`,') or any wildcard characters.
+
+        The second argument <Client ID> is the Client ID of the client
+        which is joining to the client.  When client sends this command
+        to the server the <Client ID> MUST be the client's own ID.
+
+        Cipher to be used to secure the traffic on the channel MAY be
+        requested by sending the name of the requested <cipher>.  This
+        is used only if the channel does not exist and is created.  If
+        the channel already exists the cipher set previously for the
+        channel will be used to secure the traffic.  The computed MACs
+        of the channel message are produced by the default HMAC or by
+        the <hmac> provided for the command.
+
+        The <founder auth> is Authentication Payload providing the
+        authentication for gaining founder privileges on the channel
+        when joining the channel.  The client may provide this if it
+        knows that it is the founder of the channel and that the
+        SILC_CMODE_FOUNDER_AUTH mode is set on the channel.  The server
+        MUST verify whether the client is able to gain the founder
+        privileges the same way as the client had given the
+        SILC_COMMAND_CUMODE command to gain founder privileges.  The
+        client is still able to join the channel even if the founder
+        privileges could not be gained.  The hash function used with
+        the <founder payload> MUST be sha1.
+
+        If the <channel auth> is present and the channel mode
+        SILC_CMODE_CHANNEL_AUTH is set the server MUST verify the
+        <channel auth> with channel public key(s).  If public key that
+        can verify <channel auth> does not exist on the channel public
+        key list the client MUST NOT be allowed to join the channel.
+        Because more than one public key may be set on channel the
+        <channel auth> Authentication Payload's Public Data field
+        MUST include an indication of the public key to be used.  The
+        first 20 bytes of the Public Data field MUST be SHA-1 digest of
+        the public key that must be used in verification.  Rest of the
+        Public Data field are set as defined in [SILC1].  This way server
+        can determine from the digest whether that public key exist on the
+        channel and then use that key in verification.  The hash function
+        used with <channel auth> MUST be sha1.
+
+        The server MUST check whether the user is allowed to join to
+        the requested channel.  Various modes set to the channel affect
+        the ability of the user to join the channel.  These conditions
+        are:
+
+            o  The user MUST be invited to the channel if the channel
+               is invite-only channel.
+
+            o  The Client ID/nickname/username/host name/public key
+               MUST NOT match any active bans.
+
+            o  The correct passphrase MUST be provided if passphrase
+               is set to the channel, and/or digital signature verification
+               with channel public key MUST be successful if public keys
+               has been set to the channel.
+
+            o  The user count limit, if set, MUST NOT be reached.
+
+        If the client provided correct <founder auth> payload it can
+        override these conditions, except the condition for the passphrase.
+        The correct passphrase MUST be provided even if <founder auth>
+        payload is provided.
+
+        Reply messages to the command:
+
+        Max Arguments:  15
+            Arguments:  (1) <Status Payload>        (2) <channel>
+                        (3) <Channel ID>            (4) <Client ID>
+                        (5) <channel mode mask>     (6) <created>
+                        (7) [<Channel Key Payload>] (8) [<ban list>]
+                        (9) [<invite list>]         (10) [<topic>]
+                        (11) [<hmac>]               (12) <list count>
+                        (13) <Client ID list>       (14) <client mode list>
+                        (15) [<founder pubkey>]
+
+        This command replies with the channel name requested by the
+        client, channel ID of the channel and topic of the channel
+        if it exists.  The <Client ID> is the Client ID which was joined
+        to the channel.  It also replies with the channel mode mask
+        which tells all the modes set on the channel.  If the channel
+        is created the mode mask is zero (0) and <created> is 0x01.
+        If ban mask and/or invite list is set they are sent as well.
+
+        The <list count>, <Client ID list> and <client mode list> are
+        the clients currently on the channel and their modes on the
+        channel.  The <Client ID list> is formed by adding the ID Payloads
+        one after the other.  The <client mode list> is formed by adding
+        32 bit MSB first order values one after the other.  The <founder
+        pubkey> is the public key (or certificate) of the channel founder.
+
+        Client receives the channel key in the reply message as well
+        inside <Channel Key Payload>.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_BAD_PASSWORD
+            SILC_STATUS_ERR_CHANNEL_IS_FULL
+            SILC_STATUS_ERR_NOT_INVITED
+            SILC_STATUS_ERR_BANNED_FROM_CHANNEL
+            SILC_STATUS_ERR_BAD_CHANNEL
+            SILC_STATUS_ERR_USER_ON_CHANNEL
+
+
+   15   SILC_COMMAND_MOTD
+
+        Max Arguments:  1
+            Arguments:  (1) <server>
+
+        This command is used to query the Message of the Day of the server.
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Server ID>
+                        (3) [<motd>]
+
+        This command replies with the motd message if it exists.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NO_SUCH_SERVER
+
+
+   16   SILC_COMMAND_UMODE
+
+        Max Arguments:  2
+            Arguments:  (1) <Client ID>  (2) [<client mode mask>]
+
+        This command is used by client to set/unset modes for itself.
+        However, there are some modes that the client MUST NOT set itself,
+        but they will be set by server.  However, client MAY unset any
+        mode.  Modes may be masked together ORing them thus having
+        several modes set.  Client MUST keep its client mode mask
+        locally so that the mode setting/unsetting would work without
+        problems.  Client may change only its own modes.
+
+        After changing the mode server MUST send the notify type
+        SILC_NOTIFY_TYPE_UMODE_CHANGE to its primary router.
+
+        The following client modes are defined:
+
+           0x00000000    SILC_UMODE_NONE
+
+              No specific mode for client.  This is the initial
+              setting when new client is created.  The client is
+              normal client and is present in the network.
+
+
+           0x00000001    SILC_UMODE_SERVER_OPERATOR
+
+              Marks the user as server operator.  Client MUST NOT
+              set this mode itself.  Server sets this mode to the
+              client when client attains the server operator
+              privileges by SILC_COMMAND_OPER command.  Client
+              MAY unset the mode itself.
+
+
+           0x00000002    SILC_UMODE_ROUTER_OPERATOR
+
+              Marks the user as router (SILC) operator.  Client
+              MUST NOT set this mode itself.  Router sets this mode
+              to the client when client attains the router operator
+              privileges by SILC_COMMAND_SILCOPER command.  Client
+              MAY unset the mode itself.
+
+
+           0x00000004    SILC_UMODE_GONE
+
+              Marks that the user is not currently present in the
+              SILC Network.  Client MAY set and unset this mode.
+
+
+           0x00000008    SILC_UMODE_INDISPOSED
+
+              Marks that the user is currently indisposed and may
+              not be able to receive any messages, and that user may
+              not be present in the network.  Client MAY set and
+              unset this mode.
+
+
+           0x00000010    SILC_UMODE_BUSY
+
+              Marks that the user is currently busy and may not
+              want to receive any messages, and that user may not
+              be present in the network.  Client MAY set and unset
+              this mode.
+
+
+           0x00000020    SILC_UMODE_PAGE
+
+              User is not currently present or is unable to receive
+              messages, and prefers to be paged in some mechanism
+              if the user needs to be reached.  Client MAY set and
+              unset this mode.
+
+
+           0x00000040    SILC_UMODE_HYPER
+
+              Marks that the user is hyper active and is eager to
+              receive and send messages.   Client MAY set and unset
+              this mode.
+
+
+           0x00000080    SILC_UMODE_ROBOT
+
+              Marks that the client is actually a robot program.
+              Client MAY set and unset this mode.
+
+
+           0x00000100    SILC_UMODE_ANONYMOUS
+
+              Marks that the client is anonymous client.  Server
+              that specifically is designed for anonymous services
+              can set and unset this mode.  Client MUST NOT set or
+              unset this mode itself.  A client with this mode set
+              would have the username and the hostname information
+              scrambled by the server which set this mode.
+
+
+           0x00000200    SILC_UMODE_BLOCK_PRIVMSG
+
+              Marks that the client wishes to block private
+              messages sent to the client, unless the Private
+              Message Key flag is set in the SILC packet header.
+              If this mode is set server MUST NOT deliver private
+              messages to the client without the Private Message
+              Key flag being set.  The Private Message Key flag set
+              indicates that the private message is protected with
+              a key shared between the sender and the recipient.
+
+              A separate service could provide additional filtering
+              features for accepting private messages from certain
+              sender.  However, this document does not specify such
+              service.
+
+              The client MAY set and unset this mode.
+
+
+           0x00000400    SILC_UMODE_DETACHED
+
+              Marks that the client is detached from the SILC network.
+              This means that the actual network connection to the
+              client is lost but the client entry is still valid.  The
+              detached client can be resumed at a later time.  This
+              mode MUST NOT be set by client.  It can only be set when
+              client has issued command SILC_COMMAND_DETACH.  The server
+              sets this mode.  This mode cannot be unset with this
+              command.  It is unset when the client is resuming back to
+              the network and SILC_PACKET_RESUME_CLIENT packet is
+              received.
+
+              This flag MUST NOT be used to determine whether a packet
+              can be sent to the client or not.  Only the server that
+              had the original client connection can make the decision
+              by knowing that the network connection is not active.
+              In this case the default case is to discard the packet.
+
+
+           0x00000800    SILC_UMODE_REJECT_WATCHING
+
+              Marks that the client rejects that it could be watched
+              by someone else.  If this mode is set notifications about
+              this client is not send, even if someone is watching the
+              same nickname this client has.  Client MAY set and unset
+              this mode.  Any changes for this client MUST NOT be
+              notified to any watcher when this mode is set.
+
+              A separate service could provide additional filtering
+              features for rejecting and accepting the watching from
+              certain users.  However, this document does not specify
+              such service.
+
+
+           0x00001000    SILC_UMODE_BLOCK_INVITE
+
+              Marks that the client wishes to block incoming invite
+              notifications.  Client MAY set and unset this mode.
+              When set server does not deliver invite notifications
+              to the client.  Note that this mode may make it harder
+              to join invite-only channels.
+
+        If the <client mode mask> was not provided this command merely
+        returns the mode mask to the client.
+
+
+        Reply messages to the command:
+
+        Max Arguments:  2
+            Arguments:  (1) <Status Payload>  (2) <client mode mask>
+
+        This command replies with the changed client mode mask that
+        the client MUST to keep locally.
+
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_BAD_CLIENT_ID
+            SILC_STATUS_ERR_NOT_YOU
+            SILC_STATUS_ERR_PERM_DENIED
+            SILC_STATUS_ERR_UNKNOWN_MODE
+            SILC_STATUS_ERR_NO_CLIENT_ID
+
+
+   17   SILC_COMMAND_CMODE
+
+        Max Arguments:  10
+            Arguments:  (1) <Channel ID>      (2) [<channel mode mask>]
+                        (3) [<user limit>]    (4) [<passphrase>]
+                        (5) [<cipher>]        (6) [<hmac>]
+                        (7) [<auth payload>]  (8) [<founder pubkey>]
+                        (9) [<add | del>]     (10) [<channel pubkey>]
+
+        This command is used by client to set or change channel flags on
+        a channel.  Channel has several modes that set various properties
+        of a channel.  Modes may be masked together by ORing them thus
+        having several modes set.  The <Channel ID> is the ID of the
+        target channel.  The client changing channel mode MUST be on
+        the same channel and posses sufficient privileges to be able to
+        change the mode.
+
+        When the mode is changed SILC_NOTIFY_TYPE_CMODE_CHANGE notify
+        type MUST be distributed to the channel.
+
+        The following channel modes are defined:
+
+           0x00000000    SILC_CMODE_NONE
+
+              No specific mode on channel.  This is the default when
+              channel is created.  This means that channel is just plain
+              normal channel.
+
+
+           0x00000001    SILC_CMODE_PRIVATE
+
+              Channel is private channel.  Private channels are shown
+              in the channel list listed with SILC_COMMAND_LIST command
+              with indication that the channel is private.  Also,
+              client on private channel will no be detected to be on
+              the channel as the channel is not shown in the client's
+              currently joined channel list.  Channel founder and
+              channel operator MAY set/unset this mode.
+
+
+           0x00000002    SILC_CMODE_SECRET
+
+              Channel is secret channel.  Secret channels are not shown
+              in the list listed with SILC_COMMAND_LIST command.  Secret
+              channels can be considered to be invisible channels.
+              Channel founder and channel operator MAY set/unset this
+              mode.
+
+
+           0x00000004    SILC_CMODE_PRIVKEY
+
+              Channel uses private channel key to protect the traffic
+              on the channel.  When this mode is set the client will be
+              responsible to set the key it wants to use to encrypt and
+              decrypt the traffic on channel.  Server generated channel
+              keys are not used at all.  This mode provides additional
+              security as clients on channel may agree to use private
+              channel key that even servers do not know.  Naturally,
+              this requires that every client on the channel knows
+              the key before hand (it is considered to be pre-shared-
+              key).  The key material SHOULD be processed as stated
+              in the [SILC3] in the section Processing the Key Material.
+
+              As it is local setting it is possible to have several
+              private channel keys on one channel.  In this case several
+              clients can talk on same channel but only those clients
+              that share the key with the message sender will be able
+              to hear the talking.  Client SHOULD NOT display those
+              message for the end user that it is not able to decrypt
+              when this mode is set.
+
+              Only channel founder MAY set/unset this mode.  If this
+              mode is unset the server will distribute new channel
+              key to all clients on the channel which will be used
+              thereafter.
+
+
+           0x00000008    SILC_CMODE_INVITE
+
+              Channel is invite only channel.  Client may join to this
+              channel only if it is invited to the channel.  Channel
+              founder and channel operator MAY set/unset this mode.
+
+
+           0x00000010    SILC_CMODE_TOPIC
+
+              The topic of the channel may only be set by client that
+              is channel founder or channel operator.  Normal clients
+              on channel will not be able to set topic when this mode
+              is set.  Channel founder and channel operator MAY set/
+              unset this mode.
+
+
+           0x00000020    SILC_CMODE_ULIMIT
+
+              User limit has been set to the channel.  New clients
+              may not join to the channel when the limit set is
+              reached.  Channel founder and channel operator MAY set/
+              unset the limit.  The <user limit> argument is the
+              number of limited users.
+
+
+           0x00000040    SILC_CMODE_PASSPHRASE
+
+              Passphrase has been set to the channel.  Client may
+              join to the channel only if it is able to provide the
+              correct passphrase.  Setting passphrases to channel
+              is entirely safe as all commands are protected in the
+              SILC network.  Only channel founder MAY set/unset
+              the passphrase.  The <passphrase> argument is the
+              set passphrase.
+
+
+           0x00000080    SILC_CMODE_CIPHER
+
+              Sets specific cipher to be used to protect channel
+              traffic.  The <cipher> argument is the requested cipher.
+              When set or unset the server must re-generate new
+              channel key.  Only channel founder MAY set the cipher of
+              the channel.  When unset the new key is generated using
+              default cipher for the channel.
+
+
+           0x00000100    SILC_CMODE_HMAC
+
+              Sets specific hmac to be used to compute the MACs of the
+              channel message.  The <hmac> argument is the requested hmac.
+              Only channel founder may set the hmac of the channel.
+
+
+           0x00000200    SILC_CMODE_FOUNDER_AUTH
+
+              Channel founder may set this mode to be able to regain
+              channel founder rights even if the client leaves the
+              channel.  The <auth payload> is the Authentication Payload
+              consisting of the public key authentication method and the
+              digital signature for that method.  The passphrase or NONE
+              authentication methods MUST NOT be accepted.
+
+              The server does not save <auth payload> but MUST verify it.
+              The public key used to verify the payload is the <founder
+              pubkey> if present, or the public key of the client sending
+              this command.  If <founder pubkey> is present also that
+              public key MUST be saved as founder's public key.  This
+              mode may be set only if the <auth payload> was verified
+              successfully.  The hash function used with the <auth
+              payload> MUST be sha1.
+
+              The public key of the founder is sent in the
+              SILC_NOTIFY_TYPE_CMODE_CHANGE notify type so that other
+              routers and servers in the network may save the public key.
+              This way the founder can reclaim the founder rights back
+              to the channel from any server in the network.  The founder
+              rights can be regained by the SILC_CUMODE_FOUNDER channel
+              user mode, or during joining procedure with the command
+              SILC_COMMAND_JOIN.
+
+              If this mode is already set but the <founder pubkey> is
+              different the new key will replace the old founder key and
+              the new key is distributed in the network with the
+              SILC_NOTIFY_TYPE_CMODE_CHANGE notify.  Only the original
+              founder may set this mode multiple times and the client
+              MUST have SILC_CUMODE_FOUNDER mode on the channel.
+
+              When this channel mode is set the channel also becomes
+              permanent.  If all clients leave the channel while this
+              mode is set the channel MUST NOT be destroyed.  The founder
+              can reclaim the founder mode back on these empty channels
+              at any time.  Implementations MAY limit the number of how
+              many channels a user can own and how long they remain
+              persistent.
+
+
+           0x00000400    SILC_CMODE_SILENCE_USERS
+
+              Channel founder may set this mode to silence normal users
+              on the channel.  Users with operator privileges are not
+              affected by this mode.  Messages sent by normal users
+              are dropped by servers when this mode is set.  This mode
+              can be used to moderate the channel.  Only channel founder
+              may set/unset this mode.
+
+
+           0x00000800    SILC_CMODE_SILENCE_OPERS
+
+              Channel founder may set this mode to silence operators
+              on the channel.  When used with SILC_CMODE_SILENCE_USERS
+              mode this can be used to set the channel in state where only
+              the founder of the channel may send messages to the channel.
+              Messages sent by operators are dropped by servers when this
+              mode is set.  Only channel founder may set/unset this mode.
+
+
+           0x00001000    SILC_CMODE_CHANNEL_AUTH
+
+              When this mode is set the channel has one or more public keys
+              or certificates set, and ability to join the channel requires
+              a client to provide digital signature that can be successfully
+              verified with one of the channel public keys.  This mode is
+              equivalent to the SILC_MODE_PASSPHRASE except that digital
+              signatures are used to gain access to the channel.  Both
+              modes MAY be set at the same time.  Channel founder may set
+              and unset this mode.
+
+              To add one public key to channel this mode is set and the
+              <add | del> argument includes 0x00 value, and the <channel
+              pubkey> is the public key.  To remove one public key from
+              channel public key list the <add | del> includes 0x01 value
+              and <channel pubkey> is the public key to be removed.  To
+              remove all public keys at once this mode is unset.  An
+              implementation MAY limit the number of public keys that can
+              be set on the channel.  This mode MUST NOT be set if <channel
+              pubkey> is not present when the mode is set for the first
+              time.
+
+
+        To make the mode system work, client MUST keep the channel mode
+        mask locally so that the mode setting and unsetting would work
+        without problems.  The client receives the initial channel mode
+        mask when it joins to the channel.  When the mode changes on
+        channel the server MUST distribute the changed channel mode mask
+        to all clients on the channel by sending the notify type
+        SILC_NOTIFY_TYPE_CMODE_CHANGE.  The notify type MUST also be sent
+        to the server's primary router.  If the <channel mode mask> was
+        not provided this command merely returns the mode mask to the
+        client.
+
+        Reply messages to the command:
+
+        Max Arguments:  5
+            Arguments:  (1) <Status Payload>    (2) <Channel ID>
+                        (3) <channel mode mask> (4) [<founder pubkey>]
+                        (5) [<channel pubkeys>]
+
+        This command replies with the changed channel mode mask that
+        client MUST keep locally.  It may also return the channel
+        founder's public key if it is set.  It may also return list of
+        channel public keys.  The <channel pubkeys> is Argument List
+        Payload and each argument includes one public key.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_BAD_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_NO_CHANNEL_FOPRIV
+            SILC_STATUS_ERR_UNKNOWN_MODE
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_AUTH_FAILED
+
+
+   18   SILC_COMMAND_CUMODE
+
+        Max Arguments:  4
+            Arguments:  (1) <Channel ID>    (2) <mode mask>
+                        (3) <Client ID>     (4) [<auth payload>]
+
+        This command is used by client to change channel user modes on
+        channel.  Users on channel may have some special modes and this
+        command is used by channel operators to set or change these modes.
+        The <Channel ID> is the ID of the target channel.  The <mode mask>
+        is OR'ed mask of modes.  The <Client ID> is the target client.
+        The client changing channel user modes MUST be on the same channel
+        as the target client and posses sufficient privileges to be able to
+        change the mode.
+
+        When the mode is changed SILC_NOTIFY_TYPE_CUMODE_CHANGE notify
+        type is distributed to the channel.
+
+        The following channel modes are defined:
+
+           0x00000000    SILC_CUMODE_NONE
+
+              No specific mode.  This is the normal situation for client.
+              Also, this is the mode set when removing all modes from
+              the target client.
+
+
+           0x00000001    SILC_CUMODE_FOUNDER
+
+              The client is channel founder of the channel.  Usually this
+              mode is set only by the server when the channel was created.
+              However, if the SILC_CMODE_FOUNDER_AUTH channel mode has
+              been set, the client can claim channel founder privileges
+              by providing the <auth payload> that the server will use
+              to authenticate the client.  The public key that server will
+              use to verify the <auth payload> MUST be the same public key
+              that was saved when the SILC_CMODE_FOUNDER_AUTH channel
+              mode was set.  The client MAY remove this mode at any time.
+
+
+           0x00000002    SILC_CUMODE_OPERATOR
+
+              Sets channel operator privileges on the channel for a
+              client on the channel.  Channel founder and channel operator
+              MAY set/unset this mode.  The client MAY remove this mode
+              at any time.
+
+
+           0x00000004    SILC_CUMODE_BLOCK_MESSAGES
+
+              Marks that the client wishes not to receive any channel
+              messages sent for the channel.  Client MAY set and unset
+              this mode to itself.  Client MUST NOT set it to anyone else.
+              When this mode is set server MUST NOT deliver channel
+              messages to this client.  Other packets such as channel
+              key packets are still sent to the client.
+
+              A separate service could provide additional filtering
+              features for accepting channel messages from certain
+              sender.  However, this document does not specify such
+              service.
+
+
+           0x00000008    SILC_CUMODE_BLOCK_MESSAGES_USERS
+
+              Marks that the client wishes not to receive any channel
+              messages sent from normal users.  Only messages sent by
+              channel founder or channel operator is accepted.  Client
+              MAY set and unset this mode to itself.  Client MUST NOT
+              set it to anyone else.  When this mode is set server MUST
+              NOT deliver channel messages that are sent by normal users
+              to this client.
+
+              A separate service could provide additional filtering
+              features for accepting channel messages from certain
+              sender.  However, this document does not specify such
+              service.
+
+
+           0x00000010    SILC_CUMODE_BLOCK_MESSAGES_ROBOTS
+
+              Marks that the client wishes not to receive any channel
+              messages sent from robots.  Messages sent by users with
+              the SILC_UMODE_ROBOT user mode set are not delivered.
+              Client MAY set and unset this mode to itself.  Client MUST
+              NOT set it to anyone else.  When this mode is set server
+              MUST NOT deliver channel messages that are sent by robots
+              to this client.
+
+
+           0x00000020    SILC_CUMODE_QUIET
+
+              Marks that the client cannot talk on the channel.  This
+              mode can be set by channel operator or channel founder to
+              some other user that is not operator or founder.  The
+              target client MUST NOT unset this mode.  When this mode
+              is set the server MUST drop messages sent by this client
+              to the channel.
+
+
+        Reply messages to the command:
+
+        Max Arguments:  4
+            Arguments:  (1) <Status Payload>  (2) <channel user mode mask>
+                        (3) <Channel ID>      (4) <Client ID>
+
+        This command replies with the changed channel user mode mask that
+        client MUST keep locally. The <Channel ID> is the specified
+        channel.  The <Client ID> is the target client.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_BAD_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_NO_CHANNEL_FOPRIV
+            SILC_STATUS_ERR_UNKNOWN_MODE
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_AUTH_FAILED
+
+
+   19   SILC_COMMAND_KICK
+
+        Max Arguments:  3
+            Arguments:  (1) <Channel ID>      (2) <Client ID>
+                        (3) [<comment>]
+
+        This command is used by channel operators to remove a client from
+        channel.  The <channel> argument is the channel the client to be
+        removed is on currently.  Note that the "kicker" must be on the same
+        channel.  If <comment> is provided it will be sent to the removed
+        client.
+
+        After kicking the client the server MUST send the notify type
+        SILC_NOTIFY_TYPE_KICKED to the channel and to its primary router.
+        The client is removed from the channel after sending this notify.
+        The kicked client MUST be removed from the invite list of the
+        channel if it is explicitly added in the list.  The channel key
+        MUST also be re-generated after kicking, unless the
+        SILC_CMODE_PRIVKEY mode is set.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with Status Payload.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_NO_CLIENT_ID
+
+
+
+   20   SILC_COMMAND_BAN
+
+        Max Arguments:  3
+            Arguments:  (1) <Channel ID>         (2) [<add | del>]
+                        (3) [<ban list>]
+
+        This command is used to manage the ban list of the channel
+        indicated by the <Channel ID>.  A client that is banned from
+        channel is no longer able to join the channel.  The client which
+        is executing this command MUST have at least channel operator
+        privileges on the channel.
+
+        The <add | del> is an argument of size of 1 byte where 0x00 means
+        adding a client to ban list, and 0x01 means deleting a client
+        from ban list.  The <ban list>, if present, indicates the
+        information to be added to or removed from the ban list.  It
+        may include a string for matching clients, public key of a
+        client or Client ID of a client.  The <ban list> is an Argument
+        List Payload.
+
+        The following Argument Types has been defined for ban list
+        Argument Payloads:
+
+          0x01 - Argument is an ban string of following format:
+
+            [<nickname>[@<server>]!][<username>]@[<hostname or IP/MASK>]
+
+            The <hostname> may also be in format of IP/MASK to indicate
+            a network.
+
+          0x02 - Argument is the public key of a client
+          0x03 - Argument is the Client ID of a client
+
+        If unknown type value is received or there is invalid amount of
+        Argument Payloads present in the list, the command MUST be
+        discarded.  When argument that is to be deleted from the ban
+        list does not exist in the list the argument is ignored.
+
+        The server MUST send the notify type SILC_NOTIFY_TYPE_BAN to its
+        primary router after adding to or removing from the ban list.
+        The wildcards MAY be used with this command.  If this command
+        is executed without the ban arguments the command merely replies
+        with the current ban list.
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) [<ban list>]
+
+        This command replies with the <Channel ID> of the channel and
+        the current <ban list> of the channel if it exists.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_RESOURCE_LIMIT
+
+
+
+
+   21   SILC_COMMAND_DETACH
+
+        Max Arguments:  0
+            Arguments:
+
+        This command is used to detach from the network.  Client can
+        send this command to its server to indicate that it will be
+        detached.  By detaching the client remains in the network but
+        the actual network connection to the server is closed.  The
+        client may then later resume the old session back.
+
+        When this command is received the server MUST check that the
+        client is locally connected client, and set the user mode
+        SILC_UMODE_DETACHED flag.  The SILC_NOTIFY_TYPE_UMODE_CHANGE
+        MUST be also sent to routers.  The server then sends command
+        reply to this command and closes the network connection.
+        The server MUST NOT remove the client from its lists, or send
+        any signoff notifications for this client.  See the [SILC1]
+        for detailed information about detaching.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with the status indication.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+
+
+
+   22   SILC_COMMAND_WATCH
+
+        Max Arguments:  3
+            Arguments:  (1) <Client ID>       (2) [<add nickname>]
+                        (3) [<del nickname>]
+
+        This command is used to set up a watch for <add nickname>
+        nickname.  When a user in the network appears with the
+        nickname, or signoffs the network or user's mode is changed
+        the client which set up the watch will be notified about
+        this change.  This can be used to watch for certain nicknames
+        in the network and receive notifications when for example a
+        friend appears in the network or leaves the network.
+
+        The <del nickname> is a nickname that has been previously
+        added to watch list and is now removed from it.  Notifications
+        for that nickname will not be delivered anymore.
+
+        The <Client ID> is the Client ID of the sender of this command.
+
+        The nickname set to watch MUST NOT include any wildcards.
+        Note also that a nickname may match several users since
+        nicknames are not unique.  Implementations MAY set limits
+        for how many nicknames client can watch.
+
+        When normal server receives this command from client it
+        MUST send it to its router.  Router will process the command
+        and actually keeps the watch list.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with the status indication.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_BAD_NICKNAME
+            SILC_STATUS_ERR_WILDCARDS
+            SILC_STATUS_ERR_RESOURCE_LIMIT
+            SILC_STATUS_ERR_NO_SUCH_NICK
+            SILC_STATUS_ERR_NICKNAME_IN_USE
+
+
+   23   SILC_COMMAND_SILCOPER
+
+        Max Arguments:  2
+            Arguments:  (1) <username>  (2) <authentication payload>
+
+        This command is used by normal client to obtain router operator
+        privileges (also known as SILC operator) on the router.  Note
+        that router operator has privileges that supersedes the server
+        operator privileges.
+
+        The <username> is the username set in the server configurations
+        as operator.  The <authentication payload> is the data that the
+        client is authenticated against.  It may be passphrase prompted
+        for user on client's screen or it may be public key or certificate
+        authentication data (data signed with private key).  The public
+        key that router will use to verify the signature found in the
+        payload should be verified.  It is recommended that the public
+        key is saved locally in the router and router would not use
+        any public keys received during the SKE.
+
+        Difference between router operator and server operator is that
+        router operator is able to handle cell level properties while
+        server operator (even on router server) is able to handle only
+        local properties, such as, local connections and normal server
+        administration.  The router operator is also able to use the
+        SILC_COMMAND_KILL command.
+
+        After changing the mode server MUST send the notify type
+        SILC_NOTIFY_TYPE_UMODE_CHANGE to its primary router.
+
+        Reply messages to the command:
+
+        Max Arguments:  1
+            Arguments:  (1) <Status Payload>
+
+        This command replies only with Status Payload.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_AUTH_FAILED
+
+
+
+
+   24   SILC_COMMAND_LEAVE
+
+        Max Arguments:  1
+            Arguments:  (1) <Channel ID>
+
+        This command is used by client to leave a channel the client is
+        joined to.
+
+        When leaving channel the server MUST send the notify type
+        SILC_NOTIFY_TYPE_LEAVE to its primary router and to the channel.
+        The channel key MUST also be re-generated when leaving the channel
+        and distribute it to all clients still currently on the channel.
+        The key MUST NOT be re-generated if the SILC_CMODE_PRIVKEY mode
+        is set.
+
+        Reply messages to the command:
+
+        Max Arguments:  2
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+
+        The <Channel ID> is the ID of left channel.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_BAD_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+
+
+   25   SILC_COMMAND_USERS
+
+        Max Arguments:  2
+            Arguments:  (1) [<Channel ID>]  (2) [<channel name>]
+
+        This command is used to list user names currently on the requested
+        channel; either the argument <Channel ID> or the <channel name>.
+        One of these arguments must be present.  The server MUST resolve
+        the joined clients and reply with a lists of users on the channel
+        and with list of user modes on the channel.
+
+        If the requested channel is a private or secret channel, this
+        command MUST NOT send the list of users, except if the sender is
+        on the channel, or the sender is a server.  Otherwise, error is
+        returned to the sender.
+
+        Reply messages to the command:
+
+        Max Arguments:  5
+            Arguments:  (1) <Status Payload>  (2) <Channel ID>
+                        (3) <list count>      (4) <Client ID list>
+                        (5) <client mode list>
+
+        This command replies with the Channel ID of the requested channel
+        Client ID list of the users on the channel and list of their modes.
+        The Client ID list has Client ID's of all users in the list.  The
+        <Client ID list> is formed by adding Client ID's one after another.
+        The <client mode list> is formed by adding client's user modes on
+        the channel one after another (4 bytes (32 bits) each).  The <list
+        count> of length of 4 bytes (32 bits), tells the number of entries
+        in the lists.  Both lists MUST have equal number of entries.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_BAD_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+
+
+   26   SILC_COMMAND_GETKEY
+
+        Max Arguments:  1
+            Arguments:  (1) <ID Payload>
+
+        This command is used to fetch the public key of the client or
+        server indicated by the <ID Payload>.  The public key is fetched
+        from the server where to the client is connected.
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>      (2) <ID Payload>
+                        (3) [<Public Key Payload>]
+
+        This command replies with the client's or server's ID and with
+        the <Public Key Payload>.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+
+
+   27   SILC_COMMAND_SERVICE
+
+        Max Arguments:  256
+            Arguments:  (1) [<service name>]    (2) [<auth payload>]
+                        (n) [...]
+
+        This command is used to negotiate a service agreement with a
+        remote server.  If this command is given without arguments it
+        MAY return the service list, if it is publicly available.  The
+        <service name> is a service specific identifier, and the
+        <auth payload> MAY be used to authenticate the requester to the
+        remote service.  The authentication to a service may be based
+        on previous agreement with the requester and the service
+        provider.  The command MAY also take additional service
+        specific arguments.
+
+        This document does not specify any services.  How the services
+        are configured and put available in a server is also out of
+        scope of this document.
+
+        This command MAY be used by client to start using some service
+        in a server, but it also MAY be used by server to negotiate
+        to start using a service in some other server or router.
+
+        After the negotiation is done both of the parties need to know
+        from the service identifier how the service can be used.  The
+        service can be considered to be a protocol which both of the
+        parties need to support.
+
+        Reply messages to the command:
+
+        Max Arguments:  256
+            Arguments:  (1) <Status Payload>      (2) [<service list>]
+                        (3) [<service name>]      (n) [...]
+
+
+        This command MAY reply with the <service list> when command is
+        given without arguments, and the list is a comma separated list
+        of service identifiers.  The <service name> is the service that
+        the sender requested and this is provided when the server has
+        accepted the sender to use the <service name>.  The command
+        reply MAY also have additional service specific arguments.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_SERVICE
+            SILC_STATUS_ERR_AUTH_FAILED
+            SILC_STATUS_ERR_PERM_DENIED
+
+
+
+   28 - 199
+
+        Currently undefined commands.
+
+
+   200 - 254
+
+        These commands are reserved for private use and will not be defined
+        in this document.
+
+
+   255  SILC_COMMAND_MAX
+
+        Reserved command.  This must not be sent.
+.in 3
+
+
+.ti 0
+2.4 SILC Command Status Payload
+
+Command Status Payload is sent in command reply messages to indicate
+the status of the command.  The payload is one of argument in the
+command thus this is the data area in Command Argument Payload described
+in [SILC2].  The payload is only 2 bytes in length.  The following
+diagram represents the Command Status Payload (fields are always in
+MSB first order).
+
+
+.in 21
+.nf
+                     1
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Status    |     Error     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 6:  SILC Command Status Payload
+
+
+.in 6
+o Status (1 byte) - Indicates the status message type,
+  error, start of list, entry of list or end of list.
+
+o Error (1 byte) - Indicates the error if the Status
+  field is some list status, which means there are list
+  of errors.
+.in 3
+
+The values in Status and Error fields are set according
+the following rules:
+
+.in 6
+o If there is single reply and error has not occurred
+  then Status field includes value SILC_STATUS_OK, and
+  the Error field MUST be ignored (and set to zero
+  value).
+
+o If there is single error, then Status field includes
+  one of the error values, and the Error field MUST be
+  ignored (and set to zero value).
+
+o If there will be multiple successful command replies
+  then Status field includes SILC_STATUS_LIST_START,
+  SILC_STATUS_LIST_ITEM or SILC_STATUS_LIST_END value,
+  and Error field is set to SILC_STATUS_OK.
+
+o If there are multiple error replies then Status field
+  includes SILC_STATUS_LIST_START, SILC_STATUS_LIST_ITEM
+  or SILC_STATUS_LIST_END value, and the Error field
+  includes the error value.
+.in 3
+
+This way it is possible to send single successful or
+single error reply, but also multiple successful and
+multiple error replies.  Note that it is possible to
+send both list of successful replies and list of error
+replies at the same time, however in this case the
+list of error replies MUST be sent after the successful
+replies.  This way the recipient may ignore the multiple
+errors if it wishes to do so.  Also note that in this
+case the successful and error replies belong to the
+same list.
+
+All Status messages are described in the next section.
+
+
+.ti 0
+3 SILC Status Types
+
+Status messages are returned in SILC protocol in command reply
+packet and in notify packet.  The SILC_PACKET_COMMAND_REPLY is
+the command reply packet and status types are sent inside the
+Status Payload as one of command reply argument, as defined in
+previous sections.  For SILC_PACKET_NOTIFY packet they can be sent
+as defined in [SILC2] for SILC_NOTIFY_TYPE_ERROR type.  The same
+types defined in this section are used in both cases.
+
+When returning status messages in the command reply message they
+indicate whether the command was executed without errors.  If error
+occurred the status indicates which error occurred.
+
+When sending status messages in SILC_NOTIFY_TYPE_ERROR notify type
+they always send some error status.  Usually they are sent to
+indicate that error occurred while processing some SILC packet.
+Please see the [SILC1] and [SILC2] for more information sending
+status types in SILC_NOTIFY_TYPE_ERROR notify.
+
+The Status Types are only numeric values and the receiver must
+convert the numeric values into human readable messages if this
+is desired in the application.
+
+List of all defined status types:
+
+.in 0
+   Generic status messages:
+
+   0    SILC_STATUS_OK
+
+        Ok status.  Everything went Ok.  The status payload maybe
+        safely ignored in this case.
+
+   1    SILC_STATUS_LIST_START
+
+        Start of the list.  There will be several command replies and
+        this reply is the start of the list.
+
+   2    SILC_STATUS_LIST_ITEM
+
+        Item in the list.  This is one of the item in the list but not the
+        first or last one.
+
+   3    SILC_STATUS_LIST_END
+
+        End of the list.  There were several command replies and this
+        reply is the last of the list.  There won't be other replies
+        belonging to this list after this one.
+
+   4 - 9
+
+        Currently undefined and has been reserved for the future.
+
+
+   Error status message:
+
+
+
+   10   SILC_STATUS_ERR_NO_SUCH_NICK
+
+        "No such nickname".  Requested nickname does not exist.
+
+   11   SILC_STATUS_ERR_NO_SUCH_CHANNEL
+
+        "No such channel".  Requested channel name does not exist.
+
+   12   SILC_STATUS_ERR_NO_SUCH_SERVER
+
+        "No such server".  Requested server name does not exist.
+
+   13   SILC_STATUS_ERR_INCOMPLETE_INFORMATION
+
+        "Incomplete registration information".  Information remote
+        sent was incomplete.
+
+   14   SILC_STATUS_ERR_NO_RECIPIENT
+
+        "No recipient given".  Command required recipient which was
+        not provided.
+
+   15   SILC_STATUS_ERR_UNKNOWN_COMMAND
+
+        "Unknown command".  Command sent to server is unknown by the
+        server.
+
+   16   SILC_STATUS_ERR_WILDCARDS
+
+        "Wildcards cannot be used".  Wildcards were provided but they
+        weren't permitted.
+
+   17   SILC_STATUS_ERR_NO_CLIENT_ID
+
+        "No Client ID given".  Client ID were expected as command
+        parameter but were not found.
+
+   18   SILC_STATUS_ERR_NO_CHANNEL_ID
+
+        "No Channel ID given".  Channel ID were expected as command
+        parameter but were not found.
+
+   19   SILC_STATUS_ERR_NO_SERVER_ID
+
+        "No Serve ID given".  Server ID were expected as command
+        parameter but were not found.
+
+   20   SILC_STATUS_ERR_BAD_CLIENT_ID
+
+        "Bad Client ID".  Client ID provided were erroneous.
+
+   21   SILC_STATUS_ERR_BAD_CHANNEL_ID
+
+        "Bad Channel ID".  Channel ID provided were erroneous.
+
+   22   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+
+        "No such Client ID".  Client ID provided does not exist.
+        The unknown Client ID MUST be provided as next argument
+        in the reply.
+
+   23   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+
+        "No such Channel ID".  Channel ID provided does not exist.
+        The unknown Channel ID MUST be provided as next argument
+        in the reply.
+
+   24   SILC_STATUS_ERR_NICKNAME_IN_USE
+
+        "Nickname already exists".  Nickname created could not be
+        registered because number of same nicknames were already set to
+        maximum.  This is not expected to happen in real life but is
+        possible to occur.
+
+   25   SILC_STATUS_ERR_NOT_ON_CHANNEL
+
+        "You are not on that channel".  The command were specified for
+        channel user is not currently on.
+
+   26   SILC_STATUS_ERR_USER_NOT_ON_CHANNEL
+
+        "They are not on channel".  The requested target client is not
+        on requested channel.
+
+   27   SILC_STATUS_ERR_USER_ON_CHANNEL
+
+        "User already on channel".  User were invited on channel they
+        already are on.
+
+   28   SILC_STATUS_ERR_NOT_REGISTERED
+
+        "You have not registered".  User executed command that requires
+        the client to be registered on the server before it may be
+        executed.
+
+   29   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+
+        "Not enough parameters".  Command requires more parameters
+        than provided.
+
+   30   SILC_STATUS_ERR_TOO_MANY_PARAMS
+
+        "Too many parameters".  Too many parameters were provided
+        for the command.
+
+   31   SILC_STATUS_ERR_PERM_DENIED
+
+        "Permission denied".  Generic permission denied error status
+        to indicate disallowed access.
+
+   32   SILC_STATUS_ERR_BANNED_FROM_SERVER
+
+        "You are banned from this server".  The client tried to register
+        on server that has explicitly denied this host to connect.
+
+   33   SILC_STATUS_ERR_BAD_PASSWORD
+
+        "Cannot join channel. Incorrect password".  Password provided for
+        channel were not accepted.
+
+   34   SILC_STATUS_ERR_CHANNEL_IS_FULL
+
+        "Cannot join channel. Channel is full".  The channel is full
+        and client cannot be joined to it.
+
+   35   SILC_STATUS_ERR_NOT_INVITED
+
+        "Cannot join channel. You have not been invited".  The channel
+        is invite only channel and client has not been invited.
+
+   36   SILC_STATUS_ERR_BANNED_FROM_CHANNEL
+
+        "Cannot join channel. You have been banned".  The client has
+        been banned from the channel.
+
+   37   SILC_STATUS_ERR_UNKNOWN_MODE
+
+        "Unknown mode".  Mode provided by the client were unknown to
+        the server.
+
+   38   SILC_STATUS_ERR_NOT_YOU
+
+        "Cannot change mode for other users".  User tried to change
+        someone else's mode.
+
+   39   SILC_STATUS_ERR_NO_CHANNEL_PRIV
+
+        "Permission denied. You are not channel operator".  Command may
+        be executed only by channel operator.
+
+   40   SILC_STATUS_ERR_NO_CHANNEL_FOPRIV
+
+        "Permission denied. You are not channel founder".  Command may
+        be executed only by channel operator.
+
+   41   SILC_STATUS_ERR_NO_SERVER_PRIV
+
+        "Permission denied. You are not server operator".  Command may
+        be executed only by server operator.
+
+   42   SILC_STATUS_ERR_NO_ROUTER_PRIV
+
+        "Permission denied. You are not SILC operator".  Command may be
+        executed only by router (SILC) operator.
+
+   43   SILC_STATUS_ERR_BAD_NICKNAME
+
+        "Bad nickname".  Nickname requested contained illegal characters
+        or were malformed.
+
+   44   SILC_STATUS_ERR_BAD_CHANNEL
+
+        "Bad channel name".  Channel requested contained illegal characters
+        or were malformed.
+
+   45   SILC_STATUS_ERR_AUTH_FAILED
+
+        "Authentication failed".  The authentication data sent as
+        argument were wrong and thus authentication failed.
+
+   46   SILC_STATUS_ERR_UNKOWN_ALGORITHM
+
+        "The algorithm was not supported."  The server does not support the
+        requested algorithm.
+
+   47   SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+
+        "No such Server ID".  Server ID provided does not exist.
+        The unknown Server ID MUST be provided as next argument
+        in the reply.
+
+   48   SILC_STATUS_ERR_RESOURCE_LIMIT
+
+        "No more resources available".  This can mean that server cannot
+        or will not accept something due to resource limitations.
+
+   49   SILC_STATUS_ERR_NO_SUCH_SERVICE
+
+        "Service does not exist".  Requested service identifier is
+        unknown.
+
+   50   SILC_STATUS_ERR_NOT_AUTHENTICATED
+
+        "You have not been authenticated".  Remote connection is not
+        authenticated even though it is supposed to be.
+
+   51   SILC_STATUS_ERR_BAD_SERVER_ID
+
+        "Server ID is not valid".  Provided server ID is not valid.
+
+   52   SILC_STATUS_ERR_KEY_EXCHANGE_FAILED
+
+        "Key exchange failed".  Key Exchange protocol failed.
+
+   53   SILC_STATUS_ERR_BAD_VERSION
+
+        "Bad version".  Protocol or software version mismatch.
+
+   54   SILC_STATUS_ERR_TIMEDOUT
+
+        "Operation timed out".  Operation or service request timed
+        out, and thus was not processed.
+
+   55   SILC_STATUS_ERR_UNSUPPORTED_PUBLIC_KEY
+
+        "Unsupported public key type".  The public key or certificate
+        type is not supported in this implementation.
+
+   56   SILC_STATUS_ERR_OPERATION_ALLOWED
+
+        "Operation is not allowed".  A operation, for example a command,
+        is not allowed or it's execution is not allowed.
+
+.in 3
+
+
+
+.ti 0
+4 Security Considerations
+
+Security is central to the design of this protocol, and these security
+considerations permeate the specification.  Common security considerations
+such as keeping private keys truly private and using adequate lengths for
+symmetric and asymmetric keys must be followed in order to maintain the
+security of this protocol.
+
+
+.ti 0
+5 References
+
+[SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
+             Protocol Specification", Internet Draft, May 2002.
+
+[SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
+             May 2002.
+
+[SILC3]      Riikonen, P., "SILC Key Exchange and Authentication
+             Protocols", Internet Draft, May 2002.
+
+[IRC]        Oikarinen, J., and Reed D., "Internet Relay Chat Protocol",
+             RFC 1459, May 1993.
+
+[IRC-ARCH]   Kalt, C., "Internet Relay Chat: Architecture", RFC 2810,
+             April 2000.
+
+[IRC-CHAN]   Kalt, C., "Internet Relay Chat: Channel Management", RFC
+             2811, April 2000.
+
+[IRC-CLIENT] Kalt, C., "Internet Relay Chat: Client Protocol", RFC
+             2812, April 2000.
+
+[IRC-SERVER] Kalt, C., "Internet Relay Chat: Server Protocol", RFC
+             2813, April 2000.
+
+[SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol",
+             Internet Draft.
+
+[PGP]        Callas, J., et al, "OpenPGP Message Format", RFC 2440,
+             November 1998.
+
+[SPKI]       Ellison C., et al, "SPKI Certificate Theory", RFC 2693,
+             September 1999.
+
+[PKIX-Part1] Housley, R., et al, "Internet X.509 Public Key
+             Infrastructure, Certificate and CRL Profile", RFC 2459,
+             January 1999.
+
+[Schneier]   Schneier, B., "Applied Cryptography Second Edition",
+             John Wiley & Sons, New York, NY, 1996.
+
+[Menezes]    Menezes, A., et al, "Handbook of Applied Cryptography",
+             CRC Press 1997.
+
+[OAKLEY]     Orman, H., "The OAKLEY Key Determination Protocol",
+             RFC 2412, November 1998.
+
+[ISAKMP]     Maughan D., et al, "Internet Security Association and
+             Key Management Protocol (ISAKMP)", RFC 2408, November
+             1998.
+
+[IKE]        Harkins D., and Carrel D., "The Internet Key Exchange
+             (IKE)", RFC 2409, November 1998.
+
+[HMAC]       Krawczyk, H., "HMAC: Keyed-Hashing for Message
+             Authentication", RFC 2104, February 1997.
+
+[PKCS1]      Kalinski, B., and Staddon, J., "PKCS #1 RSA Cryptography
+             Specifications, Version 2.0", RFC 2437, October 1998.
+
+[RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
+             Requirement Levels", BCP 14, RFC 2119, March 1997.
+
+[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 2279, January 1998.
+
+[ATTRS]      Riikonen, P., "User Online Presence and Information
+             Attributes", Internet Draft, May 2002.
+
+
+.ti 0
+6 Author's Address
+
+.nf
+Pekka Riikonen
+Snellmaninkatu 34 A 15
+70100 Kuopio
+Finland
+
+EMail: priikone@iki.fi
+
+
+.ti 0
+Appendix A
+
+This appendix defines the usage of the <Requested Attributes> argument in
+the SILC_COMMAND_WHOIS command.  The attributes are defined in [ATTRS],
+and may be used to request additional information about the user.  Since
+the information that may be requested using the attributes is something
+that server cannot deliver to the sender, it is possible to send the WHOIS
+command directly to the destination client whom will then provide the
+requested attributes.  This requires the servers to relay the WHOIS
+command to the client, and it requires capability for handling the WHOIS
+command in the client end.
+
+The <Requested Attributes> MAY include several attributes that are
+requested.  The format and encoding of the <Requested Attributes> is as
+defined in [ATTRS].  When <Requested Attributes> argument is set the
+server MAY process the attributes to see whether it can narrow down
+the WHOIS search, for example when searching with a nickname.  The
+normal servers MUST process the WHOIS command as normal WHOIS command,
+that is to send the command directly to the router.  The router MAY
+process the attributes, but it MUST send the command to the server
+that owns the requested client.
+
+The server that owns the client and receives the command MUST check
+whether the client is detached from the network.  If it is detached,
+that is the user mode has the SILC_UMODE_DETACHED mode set, it SHOULD
+process the attributes and provide as many of the requested attributes
+as possible and then send reply back to the sender.  If the client is
+active in the network it MUST send the command to the client for
+processing.
+
+The client receiving WHOIS command SHOULD check whether the
+<Requested Attributes> argument is set.  If it is not set then the
+WHOIS command SHOULD be discarded.  The client processes the requested
+attributes and SHOULD reply to each of the requested attribute with
+either valid value, or with an indication that the requested attribute
+is not known or supported.  This is to be done as defined in [ATTRS].
+The client always MUST send a reply to the command when some attributes
+were requested.  The client MAY also add additional attributes to the
+reply even if they were not requested.  The client MAY also digitally
+sign the attributes with ATTRIBUTE_USER_DIGITAL_SIGNATURE as defined
+in [ATTRS].  Then the client sends the reply back to the sender of
+the command.  The command reply that client assembles does not need
+to include any other argument but the <Status Payload> (1), and the
+<Attributes> (11).  The server receiving reply from client MUST allow
+this sort of command reply for WHOIS command.
+
+The information received from the client MAY be cached in the
+server's end.  The caching may be desired for example if the client
+can be detached from the network.  This way the server is then able
+to provide at least partial information for a requester.  The
+server MAY also process the command reply and verify whether the
+attributes provided in the reply are actually valid.  If it can do
+this, and verify that they indeed are valid values it MAY append
+a digital signature at the end of the attributes with the
+ATTRIBUTE_SERVER_DIGITAL_SIGNATURE as defined in [ATTRS].  The
+server then MUST provide valid WHOIS command reply to the sender
+of the command.   Other servers and routers that receive the command
+reply en route to the original sender MAY also cache the information.
+
+The client which receives the command reply to the WHOIS command
+SHOULD verify the ATTRIBUTE_USER_DIGITAL_SIGNATURE and the
+ATTRIBUTE_SERVER_DIGITAL_SIGNATURE if they are provided.
+
+
+.ti 0
+Full Copyright Statement
+
+Copyright (C) The Internet Society (2003). All Rights Reserved.
+
+This document and translations of it may be copied and furnished to
+others, and derivative works that comment on or otherwise explain it
+or assist in its implementation may be prepared, copied, published
+and distributed, in whole or in part, without restriction of any
+kind, provided that the above copyright notice and this paragraph are
+included on all such copies and derivative works. However, this
+document itself may not be modified in any way, such as by removing
+the copyright notice or references to the Internet Society or other
+Internet organizations, except as needed for the purpose of
+developing Internet standards in which case the procedures for
+copyrights defined in the Internet Standards process must be
+followed, or as required to translate it into languages other than
+English.
+
+The limited permissions granted above are perpetual and will not be
+revoked by the Internet Society or its successors or assigns.
+
+This document and the information contained herein is provided on an
+"AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.

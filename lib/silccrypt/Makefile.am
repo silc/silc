@@ -73,3 +73,10 @@ endif
 EXTRA_DIST = *.h tests
 
 include $(top_srcdir)/Makefile.defines.in
+
+# Workaround a bug in GCC 2.x which causes memory exhaustion
+# when compiling sha1 with optimizations on UltraSPARC.
+#
+@FIX_SHA1@sha1.lo:
+@FIX_SHA1@	$(LTCOMPILE) -O0 -c -o $@ `test -f 'sha1.c' || echo '$(srcdir)/'`sha1.c
+@FIX_SHA1@

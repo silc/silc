@@ -3,7 +3,43 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
+Project: "all"=".\all.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsilc
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsilcclient
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsilc_static
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsilcclient_static
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "libsilc"=".\libsilc\libsilc.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "libsilc_static"=".\libsilc_static\libsilc_static.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -23,6 +59,24 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsilc
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "libsilcclient_static"=".\libsilcclient_static\libsilcclient_static.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsilc_static
+    End Project Dependency
 }}}
 
 ###############################################################################

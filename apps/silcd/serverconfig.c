@@ -303,6 +303,10 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   else if (!strcmp(name, "qos_limit_usec")) {
     config->param.qos_limit_usec = *(SilcUInt32 *)val;
   }
+  else if (!strcmp(name, "debug_string")) {
+    CONFIG_IS_DOUBLE(config->debug_string);
+    config->debug_string = (*(char *)val ? strdup((char *) val) : NULL);
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -460,7 +464,7 @@ SILC_CONFIG_CALLBACK(fetch_pkcs)
   SERVER_CONFIG_DEBUG(("Received PKCS type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
   if (type == SILC_CONFIG_ARG_BLOCK) {
-    /* check the temporary struct's fields */
+    /* Check the temporary struct's fields */
     if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
     if (!tmp->name) {
@@ -498,7 +502,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   SERVER_CONFIG_DEBUG(("Received SERVERINFO type=%d name=\"%s\" (val=%x)",
 		       type, name, context));
 
-  /* if there isn't the main struct alloc it */
+  /* If there isn't the main struct alloc it */
   if (!server_info)
     config->server_info = server_info = (SilcServerConfigServerInfo *)
 		silc_calloc(1, sizeof(*server_info));
@@ -594,7 +598,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     char *file_tmp = (char *) val;
     CONFIG_IS_DOUBLE(server_info->public_key);
 
-    /* try to load specified file, if fail stop config parsing */
+    /* Try to load specified file, if fail stop config parsing */
     if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
 				   SILC_PKCS_FILE_PEM))
       if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
@@ -604,10 +608,21 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
       }
   }
   else if (!strcmp(name, "privatekey")) {
+    struct stat st;
     char *file_tmp = (char *) val;
     CONFIG_IS_DOUBLE(server_info->private_key);
 
-    /* try to load specified file, if fail stop config parsing */
+    /* Check the private key file permissions. */
+    if ((stat(file_tmp, &st)) != -1) {
+      if ((st.st_mode & 0777) != 0600) {
+	SILC_SERVER_LOG_ERROR(("Wrong permissions in private key "
+			      "file \"%s\".  The permissions must be "
+			      "0600.", file_tmp));
+        return SILC_CONFIG_ESILENT;
+      }
+    }
+
+    /* Try to load specified file, if fail stop config parsing */
     if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
 				    "", 0, SILC_PKCS_FILE_BIN))
       if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
@@ -621,7 +636,7 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   return SILC_CONFIG_OK;
 
  got_err:
-  /* here we need to check if tmp exists because this function handles
+  /* Here we need to check if tmp exists because this function handles
    * misc data (multiple fields and single-only fields) */
   if (tmp) {
     silc_free(tmp->server_ip);
@@ -973,6 +988,10 @@ SILC_CONFIG_CALLBACK(fetch_server)
     /* check the temporary struct's fields */
     if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
+    if (!tmp->host) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
 
     /* the temporary struct is ok, append it to the list */
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->servers);
@@ -1036,6 +1055,10 @@ SILC_CONFIG_CALLBACK(fetch_router)
   if (type == SILC_CONFIG_ARG_BLOCK) {
     if (!tmp) /* discard empty sub-blocks */
       return SILC_CONFIG_OK;
+    if (!tmp->host) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
 
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->routers);
     config->tmp = NULL;
@@ -1146,6 +1169,7 @@ static const SilcConfigTable table_general[] = {
   { "qos_bytes_limit",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "qos_limit_sec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "qos_limit_usec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "debug_string",    		SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1518,6 +1542,7 @@ void silc_server_config_destroy(SilcServerConfig config)
 
   /* Destroy general config stuff */
   silc_free(config->module_path);
+  silc_free(config->debug_string);
   silc_free(config->param.version_protocol);
   silc_free(config->param.version_software);
   silc_free(config->param.version_software_vendor);

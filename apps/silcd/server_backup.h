@@ -1,10 +1,10 @@
 /*
 
-  server_backup.h 
+  server_backup.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2002 Pekka Riikonen
+  Copyright (C) 2001 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,13 +21,12 @@
 #define SERVER_BACKUP_H
 
 /* Backup resuming protocol types */
-#define SILC_SERVER_BACKUP_START            1
-#define SILC_SERVER_BACKUP_START_GLOBAL     2
-#define SILC_SERVER_BACKUP_CONNECTED        3
-#define SILC_SERVER_BACKUP_ENDING           4
-#define SILC_SERVER_BACKUP_RESUMED          5
-#define SILC_SERVER_BACKUP_RESUMED_GLOBAL   6
-#define SILC_SERVER_BACKUP_REPLACED         20
+#define SILC_SERVER_BACKUP_START          1   /* Start protocol */
+#define SILC_SERVER_BACKUP_CONNECTED      2   /* Connected to primary */
+#define SILC_SERVER_BACKUP_ENDING         3   /* Giving up as primary */
+#define SILC_SERVER_BACKUP_RESUMED        4   /* Primary is back online */
+#define SILC_SERVER_BACKUP_REPLACED       20  /* Primary has been replaced */
+#define SILC_SERVER_BACKUP_START_USE      21  /* Start use backup as primary */
 
 /* Adds the `backup_server' to be one of our backup router. This can be
    called multiple times to set multiple backup routers. The `replacing' is
@@ -37,9 +36,9 @@
 void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
 			    const char *ip, int port, bool local);
 
-/* Returns backup router for IP and port in `replacing' or NULL if there
+/* Returns backup router for IP and port in `server_id' or NULL if there
    does not exist backup router. */
-SilcServerEntry silc_server_backup_get(SilcServer server, 
+SilcServerEntry silc_server_backup_get(SilcServer server,
 				       SilcServerID *server_id);
 
 /* Deletes the backup server `server_entry'. */
@@ -54,7 +53,7 @@ void silc_server_backup_free(SilcServer server);
    by backup router indicated by the `server'. If the router connects at
    a later time we can check whether it has been replaced by an backup
    router. */
-void silc_server_backup_replaced_add(SilcServer server, 
+void silc_server_backup_replaced_add(SilcServer server,
 				     SilcServerID *server_id,
 				     SilcServerEntry server_entry);
 
@@ -70,11 +69,11 @@ bool silc_server_backup_replaced_get(SilcServer server,
 void silc_server_backup_replaced_del(SilcServer server,
 				     SilcServerEntry server_entry);
 
-/* Broadcast the received packet indicated by `packet' to all of our backup 
-   routers. All router wide information is passed using broadcast packets. 
+/* Broadcast the received packet indicated by `packet' to all of our backup
+   routers. All router wide information is passed using broadcast packets.
    That is why all backup routers need to get this data too. It is expected
    that the caller already knows that the `packet' is broadcast packet. */
-void silc_server_backup_broadcast(SilcServer server, 
+void silc_server_backup_broadcast(SilcServer server,
 				  SilcSocketConnection sender,
 				  SilcPacketContext *packet);
 
@@ -111,11 +110,24 @@ void silc_server_backup_send_dest(SilcServer server,
 				  bool force_send,
 				  bool local);
 
+/* Send the START_USE indication to remote connection.  If `failure' is
+   TRUE then this sends SILC_PACKET_FAILURE.  Otherwise it sends
+   SILC_PACKET_RESUME_ROUTER. */
+void silc_server_backup_send_start_use(SilcServer server,
+				       SilcSocketConnection sock,
+				       bool failure);
+
+/* Send the REPLACED indication to remote router.  This is send by the
+   primary router (remote router) of the primary router that came back
+   online.  This is not sent by backup router or any other server. */
+void silc_server_backup_send_replaced(SilcServer server,
+				      SilcSocketConnection sock);
+
 /* Processes incoming RESUME_ROUTER packet. This can give the packet
    for processing to the protocol handler or allocate new protocol if
    start command is received. */
-void silc_server_backup_resume_router(SilcServer server, 
-				      SilcSocketConnection sock, 
+void silc_server_backup_resume_router(SilcServer server,
+				      SilcSocketConnection sock,
 				      SilcPacketContext *packet);
 
 /* Constantly tries to reconnect to a primary router indicated by the

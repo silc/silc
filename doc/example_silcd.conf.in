@@ -157,6 +157,10 @@ General {
 	#qos_bytes_limit = 2048;
 	#qos_limit_sec = 0;
 	#qos_limit_usec = 500000;
+
+	# Debug string.  Debug string can be set to print debugging from
+	# the running server.  The debug is redirected to stderr.
+	# debug_string = "";
 };
 
 #
@@ -242,7 +246,8 @@ ServerInfo {
 # are redirected on the less important ones, thus setting a valid logging
 # file for "Info" will ensure logging for all channels, while setting
 # logging file for "Errors" will ensure logging for channels "Errors"
-# and "Fatals"
+# and "Fatals".  If only, for example, "Info" is set then all logs go to
+# that file (like in example below).
 #
 Logging {
 	# Use timestamp in the logging files? (Usually it is a good idea,
@@ -266,26 +271,26 @@ Logging {
 	# Informational messages
 	Info {
 		File = "@LOGSDIR@/silcd.log";
-		Size = "50k";
+		Size = "100k";
 	};
 
 	# Warning messages
-	Warnings {
-		File = "@LOGSDIR@/silcd_warnings.log";
-		Size = "50k";
-	};
+	#Warnings {
+	#	File = "@LOGSDIR@/silcd_warnings.log";
+	#	Size = "50k";
+	#};
 
 	# Error messages
-	Errors {
-		File = "@LOGSDIR@/silcd_errors.log";
-		Size = "50k";
-	};
+	#Errors {
+	#	File = "@LOGSDIR@/silcd_errors.log";
+	#	Size = "50k";
+	#};
 
 	# Fatal messages
-	Fatals {
-		File = "@LOGSDIR@/silcd_fatals.log";
-		Size = "50k";
-	};
+	#Fatals {
+	#	File = "@LOGSDIR@/silcd_fatals.log";
+	#	Size = "50k";
+	#};
 };
 
 #
@@ -448,7 +453,8 @@ Admin {
 # If server connections are configured it means that this server is
 # router server.  Normal servers must not configure server connections.
 # Thus, if this server is not router do not configure this section.  If
-# your server is router, this must be configured.
+# your server is router, this must be configured.  The Host (mandatory)
+# specifies the remote server.
 #
 # The authentication data is specified by Passphrase and/or PublicKey.
 # If both are provided then both password and public key based authentication
@@ -474,9 +480,9 @@ ServerConnection {
 # For normal servers only one entry maybe configured to this section.  It
 # must be the router this server will be connected to.  For router servers,
 # this section includes all configured router connections.  The first
-# configured connection is the primary route.  The Host specifies the
-# remote hostname or IP address.  The Port specifies the remote port to
-# connect when Initiator is true.  When Initiator is false the Port
+# configured connection is the primary route.  The Host (mandatory) specifies
+# the remote hostname or IP address.  The Port specifies the remote port
+# to connect when Initiator is true.  When Initiator is false the Port
 # specifies the local port (listener port).
 #
 # The authentication data is specified by Passphrase and/or PublicKey.
