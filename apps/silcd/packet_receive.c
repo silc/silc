@@ -3192,9 +3192,6 @@ void silc_server_resume_client(SilcServer server,
     }
     silc_hash_table_list_reset(&htl);
 
-    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			    ("Your session is successfully resumed"));
-
   } else if (sock->type != SILC_SOCKET_TYPE_CLIENT) {
     /* Server or router sent this to us to notify that that a client has
        been resumed. */
