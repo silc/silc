@@ -50,9 +50,6 @@ typedef struct {
   SilcUInt32 retry_count;
   SilcUInt32 retry_timeout;
 
-  /* Back pointer to server */
-  SilcServer server;
-
   SilcServerConnectRouterCallback callback;
   void *callback_context;
 } *SilcServerConnection;

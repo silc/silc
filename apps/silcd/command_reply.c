@@ -66,7 +66,6 @@ void silc_server_command_reply_process(SilcServer server,
   SilcServerCommandReplyContext ctx;
   SilcCommandPayload payload;
   SilcCommand command;
-  SilcUInt16 ident;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -85,13 +84,12 @@ void silc_server_command_reply_process(SilcServer server,
   ctx->sock = silc_socket_dup(sock);
   ctx->payload = payload;
   ctx->args = silc_command_get_args(ctx->payload);
-  ident = silc_command_get_ident(ctx->payload);
+  ctx->ident = silc_command_get_ident(ctx->payload);
       
   /* Check for pending commands and mark to be exeucted */
   ctx->callbacks = 
-    silc_server_command_pending_check(server, ctx, 
-				      silc_command_get(ctx->payload), 
-				      ident, &ctx->callbacks_count);
+    silc_server_command_pending_check(server, silc_command_get(ctx->payload), 
+				      ctx->ident, &ctx->callbacks_count);
 
   /* Execute command reply */
   command = silc_command_get(ctx->payload);

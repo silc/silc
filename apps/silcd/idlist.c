@@ -90,13 +90,13 @@ void silc_idlist_del_data(void *entry)
 
 SILC_TASK_CALLBACK_GLOBAL(silc_idlist_purge)
 {
+  SilcServer server = app_context;
   SilcIDListPurge i = (SilcIDListPurge)context;
 
   SILC_LOG_DEBUG(("Purging cache"));
 
   silc_idcache_purge(i->cache);
-  silc_schedule_task_add(i->schedule, 0, 
-			 silc_idlist_purge,
+  silc_schedule_task_add(server->schedule, 0, silc_idlist_purge,
 			 (void *)i, i->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 }

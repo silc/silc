@@ -146,16 +146,10 @@ struct SilcServerStruct {
 #endif
 };
 
-/* Server's heartbeat context */
-typedef struct {
-  SilcServer server;
-} *SilcServerHBContext;
-
 /* Failure context. This is allocated when failure packet is received.
    Failure packets are processed with timeout and data is saved in this
    structure. */
 typedef struct {
-  SilcServer server;
   SilcSocketConnection sock;
   SilcUInt32 failure;
 } *SilcServerFailureContext;

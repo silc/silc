@@ -541,8 +541,8 @@ void silc_server_backup_resume_router(SilcServer server,
 
 SILC_TASK_CALLBACK(silc_server_backup_connect_to_router)
 {
+  SilcServer server = app_context;
   SilcServerConnection sconn = (SilcServerConnection)context;
-  SilcServer server = sconn->server;
   int sock;
   const char *server_ip;
 
@@ -578,7 +578,6 @@ void silc_server_backup_reconnect(SilcServer server,
   SilcServerConnection sconn;
 
   sconn = silc_calloc(1, sizeof(*sconn));
-  sconn->server = server;
   sconn->remote_host = strdup(ip);
   sconn->remote_port = port;
   sconn->callback = callback;

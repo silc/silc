@@ -1,3 +1,25 @@
+Mon Sep 16 12:02:54 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added 'app_context' to silc_schedule_init.  It is an
+	  application specific context that is delivered to application
+	  in task callback functions.  Affected files are
+	  lib/silcutil/silcutil.[ch].
+
+Sun Sep 15 22:16:19 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for removing explicitly added client connections
+	  in rehash and closing the client connections if they were
+	  unconfigured in the rehash.  Affected file silcd/server.c.
+
+	* Added support for aborting automatically pending commands
+	  that never receives the reply (to avoid memory leaks).
+	  Added also silc_server_command_pending_timed to set the
+	  specific timeout for pending command.  Affected files are
+	  silcd/command[_reply].[ch].
+
+	* Added SILC_STATUS_ERR_TIMEDOUT status.  Updated protocol
+	  specs and lib/silccore/silcstatus.h.
+
 Sun Sep 15 12:25:10 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the silc_get_time to accept time value as argument

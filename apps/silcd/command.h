@@ -61,12 +61,12 @@ typedef struct {
 /* Structure holding pending commands. If command is pending it will be
    executed after command reply has been received and executed. */
 typedef struct SilcServerCommandPendingStruct {
-  SilcServer server;
   SilcCommand reply_cmd;
   SilcUInt16 ident;
   unsigned int reply_check : 8;
   SilcCommandCb callback;
   void *context;
+  SilcTask timeout;
   struct SilcServerCommandPendingStruct *next;
 } SilcServerCommandPending;
 
@@ -111,12 +111,17 @@ bool silc_server_command_pending(SilcServer server,
 				 SilcUInt16 ident,
 				 SilcCommandCb callback,
 				 void *context);
+bool silc_server_command_pending_timed(SilcServer server,
+				       SilcCommand reply_cmd,
+				       SilcUInt16 ident,
+				       SilcCommandCb callback,
+				       void *context,
+				       SilcUInt16 timeout);
 void silc_server_command_pending_del(SilcServer server,
 				     SilcCommand reply_cmd,
 				     SilcUInt16 ident);
 SilcServerCommandPendingCallbacks
 silc_server_command_pending_check(SilcServer server,
-				  SilcServerCommandReplyContext ctx,
 				  SilcCommand command, 
 				  SilcUInt16 ident,
 				  SilcUInt32 *callbacks_count);
