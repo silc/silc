@@ -20,7 +20,7 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#includd "silcschedule_i.h"
+#include "silcschedule_i.h"
 
 /* Our "select()" for WIN32. This mimics the behaviour of select() system
    call. It does not call the Winsock's select() though. Its functions
@@ -65,10 +65,13 @@ int silc_select(SilcScheduleFd fds, uint32 fds_count, struct timeval *timeout)
       continue;
 
     if (fds[i].events & SILC_TASK_READ)
-      handles[nhandles++] = (HANDLE)i;
+      handles[nhandles++] = (HANDLE)fds[i].fd;
 
-    if (fds[i].events & SILC_TASK_WRITE)
+    /* If writing then just set the bit and return */
+    if (fds[i].events & SILC_TASK_WRITE) {
+      fds[i].revents = SILC_TASK_WRITE;
       return 1;
+    }
 
     fds[i].revents = 0;
   }
@@ -140,8 +143,7 @@ int silc_select(SilcScheduleFd fds, uint32 fds_count, struct timeval *timeout)
 
     /* Give the wait another try */
    goto retry;
-  } else if (ready >= WAIT_OBJECT_0 && ready < WAIT_OBJECT_0 + nhandles &&
-	     readfds) {
+  } else if (ready >= WAIT_OBJECT_0 && ready < WAIT_OBJECT_0 + nhandles) {
     /* Some other event, like SOCKET or something. */
 
     /* Go through all fds even though only one was set. This is to avoid

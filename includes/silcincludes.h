@@ -176,8 +176,10 @@ typedef unsigned long uint32;
 typedef signed long int32;
 #else
 #if SILC_SIZEOF_LONG_LONG >= 4
+#ifndef WIN32
 typedef unsigned long long uint32;
 typedef signed long long int32;
+#endif
 #endif
 #endif
 #endif
@@ -187,8 +189,10 @@ typedef unsigned long uint64;
 typedef signed long int64;
 #else
 #if SILC_SIZEOF_LONG_LONG >= 8
+#ifndef WIN32
 typedef unsigned long long uint64;
 typedef signed long long int64;
+#endif
 #else
 typedef uint32 uint64;
 typedef int32 int64;

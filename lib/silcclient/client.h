@@ -282,7 +282,7 @@ void silc_client_remove_from_channels(SilcClient client,
 void silc_client_replace_from_channels(SilcClient client, 
 				       SilcClientConnection conn,
 				       SilcClientEntry old,
-				       SilcClientEntry new);
+				       SilcClientEntry newclient);
 void silc_client_process_failure(SilcClient client,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);

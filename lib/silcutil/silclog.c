@@ -95,6 +95,9 @@ void silc_log_output(const char *filename, uint32 maxsize,
       break;
     }
 
+  if (!filename)
+    filename = " ";
+
   /* Purge the log file if the max size is defined. */
   if (maxsize) {
     fp = fopen(filename, "r");
