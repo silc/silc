@@ -137,6 +137,9 @@ static void silc_log_checksize(SilcLog log)
   if (!(log->fp = fopen(log->filename, "w")))
     SILC_LOG_WARNING(("Couldn't reopen logfile %s for type \"%s\": %s",
 		      log->filename, log->typename, strerror(errno)));
+#ifdef HAVE_CHMOD
+  chmod(log->filename, 0600);
+#endif /* HAVE_CHMOD */
 }
 
 /* Reset a logging channel (close and reopen) */
@@ -279,6 +282,9 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
 	      filename, strerror(errno));
       return FALSE;
     }
+#ifdef HAVE_CHMOD
+    chmod(filename, 0600);
+#endif /* HAVE_CHMOD */
   }
 
   /* clean the logging channel */

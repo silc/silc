@@ -6,6 +6,8 @@ Fri Apr  1 18:52:47 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed username handling in command reply.  Affected file
 	  silcd/command_reply.c.
 
+	* Log files are now 0600.  Affected file lib/silcutil/silclog.c.
+
 Thu Mar 31 22:34:22 CEST 2005  Patrik Weiskircher <pat@icore.at>
 
 	* Added new define SILC_MACOSX, if __APPLE__ and __MACH__ is defined.

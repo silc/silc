@@ -15,9 +15,6 @@ TODO for SILC Client 1.0 branch
 TODO for SILC Server 1.0
 ========================
 
- o The log files should be opened with silc_file* routines to make
-   sure they are 0600.
-
  o BUG: silc_idlist_del_client had been called but sock->user_data remained
    and pointed to invalid pointer.  Where it was called is not known.
 
