@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/19 07:04:37  priikone
+ * 	Added version detection support to SKE. Minor bugfixes.
+ *
  * Revision 1.5  2000/07/10 05:34:22  priikone
  * 	Added mp binary encoding as protocols defines.
  *
@@ -229,6 +232,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
    Key Exchange 1 Payload. */
 
 SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
+					 SilcPublicKey public_key,
 					 SilcSKESendPacketCb send_packet,
 					 void *context)
 {
@@ -236,6 +240,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   SilcBuffer payload_buf;
   SilcInt x, e;
   SilcSKEOnePayload *payload;
+  unsigned int pk_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -260,6 +265,9 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   /* Encode the result to Key Exchange 1 Payload. */
   payload = silc_calloc(1, sizeof(*payload));
   payload->e = e;
+  payload->pk_data = silc_pkcs_public_key_encode(public_key, &pk_len);
+  payload->pk_len = pk_len;
+  payload->pk_type = SILC_SKE_PK_TYPE_SILC;
   status = silc_ske_payload_one_encode(ske, payload, &payload_buf);
   if (status != SILC_SKE_STATUS_OK) {
     silc_mp_clear(&x);
@@ -395,6 +403,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 
 SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
+				       char *version,
 				       SilcBuffer start_payload,
 				       SilcSKECb callback,
 				       void *context)
@@ -418,7 +427,8 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 
   /* Parse and select the security properties from the payload */
   payload = silc_calloc(1, sizeof(*payload));
-  status = silc_ske_select_security_properties(ske, payload, remote_payload);
+  status = silc_ske_select_security_properties(ske, version,
+					       payload, remote_payload);
   if (status != SILC_SKE_STATUS_OK)
     goto err;
 
@@ -714,6 +724,7 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status,
 
 SilcSKEStatus 
 silc_ske_assemble_security_properties(SilcSKE ske,
+				      char *version,
 				      SilcSKEStartPayload **return_payload)
 {
   SilcSKEStartPayload *rp;
@@ -731,6 +742,10 @@ silc_ske_assemble_security_properties(SilcSKE ske,
   rp->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(unsigned char));
   rp->cookie_len = SILC_SKE_COOKIE_LEN;
   memcpy(rp->cookie, "1234567890123456", SILC_SKE_COOKIE_LEN);
+
+  /* Put version */
+  rp->version = strdup(version);
+  rp->version_len = strlen(version);
 
   /* Get supported Key Exhange groups */
   rp->ke_grp_list = silc_ske_get_supported_groups();
@@ -754,6 +769,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
   rp->comp_alg_len = 0;
 
   rp->len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN + 
+    2 + rp->version_len +
     2 + rp->ke_grp_len + 2 + rp->pkcs_alg_len + 
     2 + rp->enc_alg_len + 2 + rp->hash_alg_len + 
     2 + rp->comp_alg_len;
@@ -768,6 +784,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
 
 SilcSKEStatus 
 silc_ske_select_security_properties(SilcSKE ske,
+				    char *version,
 				    SilcSKEStartPayload *payload,
 				    SilcSKEStartPayload *remote_payload)
 {
@@ -782,10 +799,16 @@ silc_ske_select_security_properties(SilcSKE ske,
   /* Flags are returned unchanged. */
   payload->flags = rp->flags;
 
-  /* XXX Cookie check?? */
+  /* Take cookie */
   payload->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(unsigned char));
   payload->cookie_len = SILC_SKE_COOKIE_LEN;
   memcpy(payload->cookie, rp->cookie, SILC_SKE_COOKIE_LEN);
+
+  /* XXX Do version check */
+
+  /* Put our version to our reply */
+  payload->version = strdup(version);
+  payload->version_len = strlen(version);
 
   /* Get supported Key Exchange groups */
   cp = rp->ke_grp_list;
@@ -1045,6 +1068,7 @@ silc_ske_select_security_properties(SilcSKE ske,
 #endif
 
   payload->len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN + 
+    2 + payload->version_len + 
     2 + payload->ke_grp_len + 2 + payload->pkcs_alg_len + 
     2 + payload->enc_alg_len + 2 + payload->hash_alg_len + 
     2 + payload->comp_alg_len;

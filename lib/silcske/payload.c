@@ -22,6 +22,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/19 07:04:37  priikone
+ * 	Added version detection support to SKE. Minor bugfixes.
+ *
  * Revision 1.4  2000/07/10 05:34:22  priikone
  * 	Added mp binary encoding as protocols defines.
  *
@@ -71,6 +74,9 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
 		     SILC_STR_UI_SHORT(payload->len),
 		     SILC_STR_UI_XNSTRING(payload->cookie, 
 					  payload->cookie_len),
+		     SILC_STR_UI_SHORT(payload->version_len),
+		     SILC_STR_UI_XNSTRING(payload->version, 
+					  payload->version_len),
 		     SILC_STR_UI_SHORT(payload->ke_grp_len),
 		     SILC_STR_UI_XNSTRING(payload->ke_grp_list,
 					  payload->ke_grp_len),
@@ -122,6 +128,8 @@ silc_ske_payload_start_decode(SilcSKE ske,
 		       SILC_STR_UI_CHAR(&payload->flags),
 		       SILC_STR_UI_SHORT(&payload->len),
 		       SILC_STR_UI_XNSTRING(&buf, SILC_SKE_COOKIE_LEN),
+		       SILC_STR_UI16_NSTRING_ALLOC(&payload->version,
+						   &payload->version_len),
 		       SILC_STR_UI_SHORT(&payload->ke_grp_len),
 		       SILC_STR_END);
 
@@ -143,7 +151,7 @@ silc_ske_payload_start_decode(SilcSKE ske,
     goto err;
   }
 
-  len2 = len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN + 2;
+  len2 = len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN + 2 + payload->version_len + 2;
   silc_buffer_pull(buffer, len);
 
   /* Copy cookie from payload */
@@ -259,6 +267,8 @@ void silc_ske_payload_start_free(SilcSKEStartPayload *payload)
   if (payload) {
     if (payload->cookie)
       silc_free(payload->cookie);
+    if (payload->version)
+      silc_free(payload->version);
     if (payload->ke_grp_list)
       silc_free(payload->ke_grp_list);
     if (payload->pkcs_alg_list)
@@ -291,15 +301,21 @@ SilcSKEStatus silc_ske_payload_one_encode(SilcSKE ske,
 
   /* Encode the integer into binary data */
   e_str = silc_mp_mp2bin(&payload->e, &e_len);
+  if (!e_str)
+    return SILC_SKE_STATUS_ERROR;
 
   /* Allocate channel payload buffer. The length of the buffer
      is 2 + e. */
-  buf = silc_buffer_alloc(e_len + 2);
-  silc_buffer_pull_tail(buf, e_len + 2);
+  buf = silc_buffer_alloc(e_len + 2 + payload->pk_len + 2 + 2);
+  silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));
 
   /* Encode the payload */
   silc_buffer_format(buf, 
-		     SILC_STR_UI_SHORT(e_len + 2),
+		     SILC_STR_UI_SHORT(payload->pk_len),
+		     SILC_STR_UI_SHORT(payload->pk_type),
+		     SILC_STR_UI_XNSTRING(payload->pk_data, 
+					  payload->pk_len),
+		     SILC_STR_UI_SHORT(e_len),
 		     SILC_STR_UI_XNSTRING(e_str, e_len),
 		     SILC_STR_END);
 
@@ -321,6 +337,7 @@ SilcSKEStatus silc_ske_payload_one_decode(SilcSKE ske,
 {
   SilcSKEOnePayload *payload;
   SilcSKEStatus status = SILC_SKE_STATUS_ERROR;
+  unsigned char *e;
   unsigned short e_len;
 
   SILC_LOG_DEBUG(("Decoding Key Exchange 1 Payload"));
@@ -329,35 +346,40 @@ SilcSKEStatus silc_ske_payload_one_decode(SilcSKE ske,
 
   payload = silc_calloc(1, sizeof(*payload));
 
-  memset(buf, 0, sizeof(buf));
-
-  /* Parse the payload */
   silc_buffer_unformat(buffer,
-		       SILC_STR_UI_SHORT(&e_len),
+		       SILC_STR_UI_SHORT(&payload->pk_len),
+		       SILC_STR_UI_SHORT(&payload->pk_type),
 		       SILC_STR_END);
 		       
-  if (e_len < 1) {
-    status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
+  if (payload->pk_len < 5) {
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
 
-  if (e_len != buffer->len) {
-    status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
-    goto err;
-  }
-
-  /* Length includes the length field length as well. Remove it. */
-  e_len -= 2;
-
+  silc_buffer_pull(buffer, 2 + 2);
   silc_buffer_unformat(buffer,
-		       SILC_STR_UI_SHORT(NULL),
-		       SILC_STR_UI_XNSTRING(&buf, e_len),
+		       SILC_STR_UI_XNSTRING_ALLOC(&payload->pk_data,
+						  payload->pk_len),
+		       SILC_STR_UI16_NSTRING_ALLOC(&e, &e_len),
 		       SILC_STR_END);
+
+  if (e_len < 3) {
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
+    goto err;
+  }
+
+  silc_buffer_push(buffer, 2 + 2);
+
+  if (payload->pk_len + 2 + 2 + 2 + e_len != buffer->len) {
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
+    goto err;
+  }
 
   /* Decode the HEX string to integer */
   silc_mp_init(&payload->e);
-  silc_mp_bin2mp(buf, e_len, &payload->e);
-  memset(buf, 0, sizeof(buf));
+  silc_mp_bin2mp(e, e_len, &payload->e);
+  memset(e, 0, sizeof(e_len));
+  silc_free(e);
 
   /* Return the payload */
   *return_payload = payload;
@@ -366,7 +388,6 @@ SilcSKEStatus silc_ske_payload_one_decode(SilcSKE ske,
 
  err:
   silc_free(payload);
-
   return status;
 }
 
@@ -375,6 +396,8 @@ SilcSKEStatus silc_ske_payload_one_decode(SilcSKE ske,
 void silc_ske_payload_one_free(SilcSKEOnePayload *payload)
 {
   if (payload) {
+    if (payload->pk_data)
+      silc_free(payload->pk_data);
     silc_free(payload);
   }
 }
@@ -408,13 +431,13 @@ SilcSKEStatus silc_ske_payload_two_encode(SilcSKE ske,
 
   /* Encode the payload */
   silc_buffer_format(buf, 
-		     SILC_STR_UI_SHORT(payload->pk_len + 4),
+		     SILC_STR_UI_SHORT(payload->pk_len),
 		     SILC_STR_UI_SHORT(payload->pk_type),
 		     SILC_STR_UI_XNSTRING(payload->pk_data, 
 					  payload->pk_len),
-		     SILC_STR_UI_SHORT(f_len + 2),
+		     SILC_STR_UI_SHORT(f_len),
 		     SILC_STR_UI_XNSTRING(f_str, f_len),
-		     SILC_STR_UI_SHORT(payload->sign_len + 2),
+		     SILC_STR_UI_SHORT(payload->sign_len),
 		     SILC_STR_UI_XNSTRING(payload->sign_data, 
 					  payload->sign_len),
 		     SILC_STR_END);
@@ -437,6 +460,7 @@ SilcSKEStatus silc_ske_payload_two_decode(SilcSKE ske,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_ERROR;
   SilcSKETwoPayload *payload;
+  unsigned char *f;
   unsigned short f_len;
   unsigned int tot_len = 0, len2;
 
@@ -456,65 +480,44 @@ SilcSKEStatus silc_ske_payload_two_decode(SilcSKE ske,
 		       SILC_STR_END);
 
   if (payload->pk_len < 5) {
-    status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
 
-  tot_len += payload->pk_len;
+  tot_len += payload->pk_len + 4;
 
-  payload->pk_len -= 4;
   silc_buffer_pull(buffer, 4);
   silc_buffer_unformat(buffer,
-		       SILC_STR_UI_XNSTRING(&buf, payload->pk_len),
-		       SILC_STR_UI_SHORT(&f_len),
+		       SILC_STR_UI_XNSTRING_ALLOC(&payload->pk_data,
+						  payload->pk_len),
+		       SILC_STR_UI16_NSTRING_ALLOC(&f, &f_len),
+		       SILC_STR_UI16_NSTRING_ALLOC(&payload->sign_data, 
+						   &payload->sign_len),
 		       SILC_STR_END);
+
+  tot_len += f_len + 2;
+  tot_len += payload->sign_len + 2;
 
   if (f_len < 3) {
-    status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
-
-  tot_len += f_len;
-
-  payload->pk_data = silc_calloc(payload->pk_len + 1, 
-				 sizeof(unsigned char));
-  memcpy(payload->pk_data, buf, payload->pk_len);
-  memset(buf, 0, sizeof(buf));
-
-  f_len -= 2;
-  silc_buffer_pull(buffer, payload->pk_len + 2);
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_XNSTRING(&buf, f_len),
-		       SILC_STR_UI_SHORT(&payload->sign_len),
-		       SILC_STR_END);
 
   if (payload->sign_len < 3) {
-    status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
 
-  tot_len += payload->sign_len;
-
   if (tot_len != len2) {
-    status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
   
   /* Decode the HEX string to integer */
   silc_mp_init(&payload->f);
-  silc_mp_bin2mp(buf, f_len, &payload->f);
-  memset(buf, 0, sizeof(buf));
-
-  payload->sign_len -= 2;
-  silc_buffer_pull(buffer, f_len + 2);
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_XNSTRING(&buf, payload->sign_len),
-		       SILC_STR_END);
-
-  payload->sign_data = silc_calloc(payload->sign_len + 1, 
-				 sizeof(unsigned char));
-  memcpy(payload->sign_data, buf, payload->sign_len);
-  memset(buf, 0, sizeof(buf));
+  silc_mp_bin2mp(f, f_len, &payload->f);
+  memset(f, 0, sizeof(f_len));
+  silc_free(f);
 
   /* Return the payload */
   *return_payload = payload;
@@ -527,7 +530,6 @@ SilcSKEStatus silc_ske_payload_two_decode(SilcSKE ske,
   if (payload->sign_data)
     silc_free(payload->sign_data);
   silc_free(payload);
-
   return status;
 }
 

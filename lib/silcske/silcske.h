@@ -150,6 +150,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
 					 SilcSKECb callback,
 					 void *context);
 SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
+					 SilcPublicKey public_key,
 					 SilcSKESendPacketCb send_packet,
 					 void *context);
 SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
@@ -160,6 +161,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 					void *context);
 SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
+				       char *version,
 				       SilcBuffer start_payload,
 				       SilcSKECb callback,
 				       void *context);
@@ -185,9 +187,11 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status,
 			     void *context);
 SilcSKEStatus 
 silc_ske_assemble_security_properties(SilcSKE ske,
+				      char *version,
 				      SilcSKEStartPayload **return_payload);
 SilcSKEStatus 
 silc_ske_select_security_properties(SilcSKE ske,
+				    char *version,
 				    SilcSKEStartPayload *payload,
 				    SilcSKEStartPayload *remote_payload);
 SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n, 

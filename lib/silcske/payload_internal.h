@@ -29,6 +29,9 @@ typedef struct {
   unsigned char *cookie;
   unsigned short cookie_len;
 
+  unsigned char *version;
+  unsigned short version_len;
+
   unsigned short ke_grp_len;
   unsigned char *ke_grp_list;
 
@@ -47,6 +50,10 @@ typedef struct {
 
 /* SILC Key Exchange 1 Payload */
 typedef struct {
+  unsigned short pk_len;
+  unsigned char *pk_data;
+  unsigned short pk_type;
+
   SilcInt e;
 } SilcSKEOnePayload;
 
