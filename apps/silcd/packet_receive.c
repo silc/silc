@@ -278,6 +278,9 @@ void silc_server_notify(SilcServer server,
 
     client->data.registered = FALSE;
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+    server->stat.clients--;
+    if (server->server_type == SILC_ROUTER)
+      server->stat.cell_clients--;
     break;
 
   case SILC_NOTIFY_TYPE_TOPIC_SET:

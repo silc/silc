@@ -1635,13 +1635,17 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     SILC_GET32_MSB(mode, client_mode_list->data);
 
     /* Check if we have this client cached already. */
-    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
-					 (void *)client_id, 
-					 NULL, NULL, 
-					 silc_hash_client_id_compare, NULL,
-					 &id_cache)) {
-      /* No we don't have it, query it from the server. Assemble argument
-	 table that will be sent fr the IDENTIFY command later. */
+    id_cache = NULL;
+    silc_idcache_find_by_id_one_ext(conn->client_cache, 
+				    (void *)client_id, 
+				    NULL, NULL, 
+				    silc_hash_client_id_compare, NULL,
+				    &id_cache);
+
+    if (!id_cache || !((SilcClientEntry)id_cache->context)->username) {
+      /* No we don't have it (or it is incomplete in information), query
+	 it from the server. Assemble argument table that will be sent
+	 for the IDENTIFY command later. */
       res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
 			      (res_argc + 1));
       res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
