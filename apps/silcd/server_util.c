@@ -1642,16 +1642,16 @@ void silc_server_kill_client(SilcServer server,
     SILC_OPER_STATS_UPDATE(remote_client, server, SILC_UMODE_SERVER_OPERATOR);
     SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
 
+    if (remote_client->data.public_key)
+      silc_hash_table_del_by_context(server->pk_hash,
+                                     remote_client->data.public_key,
+                                     remote_client);
+
     if (SILC_IS_LOCAL(remote_client)) {
       server->stat.my_clients--;
       silc_schedule_task_del_by_context(server->schedule, remote_client);
       silc_idlist_del_data(remote_client);
     }
-
-    if (remote_client->data.public_key)
-      silc_hash_table_del_by_context(server->pk_hash,
-                                     remote_client->data.public_key,
-                                     remote_client);
 
     /* Remove remote client */
     silc_idlist_del_data(remote_client);
