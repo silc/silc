@@ -145,6 +145,19 @@ TODO/bugs In SILC Libraries
    in separately.
 
 
+TODO In SILC Protocol
+=====================
+
+ o pp-03 draft:
+
+	o Add SILC_MESSAGE_FLAG_SIGNED flag that indicates that the
+	  messages is signed with the senders private key and thus can
+	  be verified with its public key.  This is especially handy
+	  feature when sending privat messages without having negotiated
+	  private keys, thus the servers decrypts and re-ecnrypts the
+	  messages.  Other applications exists as well.
+
+
 TODO After 1.0
 ==============
 
