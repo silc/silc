@@ -141,10 +141,10 @@ struct SilcSKEStruct {
 
   /* Random number x, 1 < x < q. This is the secret exponent
      used in Diffie Hellman computations. */
-  SilcInt *x;
+  SilcMPInt *x;
   
   /* The secret shared key */
-  SilcInt *KEY;
+  SilcMPInt *KEY;
   
   /* The hash value HASH of the key exchange */
   unsigned char *hash;
@@ -224,9 +224,9 @@ silc_ske_select_security_properties(SilcSKE ske,
 				    char *version,
 				    SilcSKEStartPayload *payload,
 				    SilcSKEStartPayload *remote_payload);
-SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n, 
+SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt n, 
 				  uint32 len, 
-				  SilcInt *rnd);
+				  SilcMPInt *rnd);
 SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
 				 unsigned char *return_hash,
 				 uint32 *return_hash_len,

@@ -1,10 +1,10 @@
 /*
 
-  groups_internal.h
+  mp_gmp.h
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,25 +18,11 @@
 
 */
 
-#ifndef GROUPS_INTERNAL_H
-#define GROUPS_INTERNAL_H
+#ifndef MP_GMP_H
+#define MP_GMP_H
 
-/* Diffie Hellman Group. Defines the group name, prime, largest prime 
-   factor (group order) and generator. */
-struct SilcSKEDiffieHellmanGroupDefStruct {
-  int number;
-  char *name;
-  char *group;
-  char *group_order;
-  char *generator;
-};
+#include <gmp.h>
 
-struct SilcSKEDiffieHellmanGroupStruct {
-  int number;
-  char *name;
-  SilcMPInt group;
-  SilcMPInt group_order;
-  SilcMPInt generator;
-};
+#define SILC_MP_INT MP_INT
 
 #endif

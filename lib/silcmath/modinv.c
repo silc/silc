@@ -23,7 +23,7 @@
 
 /* Table for finding multiplicative inverse */
 typedef struct {
-  SilcInt x;
+  SilcMPInt x;
 } ModInv;
 
 #define plus1 	(i == 2 ? 0 : i + 1)
@@ -47,11 +47,11 @@ typedef struct {
    not needed by the algorithm so it does not have to be included.)
 */
 
-void silc_mp_modinv(SilcInt *inv, SilcInt *a, SilcInt *n)
+void silc_mp_modinv(SilcMPInt *inv, SilcMPInt *a, SilcMPInt *n)
 {
   int i;
-  SilcInt y;
-  SilcInt x;
+  SilcMPInt y;
+  SilcMPInt x;
   
   ModInv g[3];
   ModInv v[3];
@@ -59,11 +59,15 @@ void silc_mp_modinv(SilcInt *inv, SilcInt *a, SilcInt *n)
   /* init MP vars */
   silc_mp_init(&y);
   silc_mp_init(&x);
-  silc_mp_init_set_ui(&v[0].x, 0L);	       	/* v(0) = 0 */
-  silc_mp_init_set_ui(&v[1].x, 1L);	       	/* v(1) = 1 */
+  silc_mp_init(&v[0].x);
+  silc_mp_init(&v[1].x);
+  silc_mp_set_ui(&v[0].x, 0L);	       	/* v(0) = 0 */
+  silc_mp_set_ui(&v[1].x, 1L);	       	/* v(1) = 1 */
   silc_mp_init(&v[2].x);
-  silc_mp_init_set(&g[0].x, n);			/* g(0) = n */
-  silc_mp_init_set(&g[1].x, a);			/* g(1) = a */
+  silc_mp_init(&g[0].x);
+  silc_mp_init(&g[1].x);
+  silc_mp_set(&g[0].x, n);     		/* g(0) = n */
+  silc_mp_set(&g[1].x, a);	       	/* g(1) = a */
   silc_mp_init(&g[2].x);
   
   i = 1;
@@ -86,12 +90,12 @@ void silc_mp_modinv(SilcInt *inv, SilcInt *a, SilcInt *n)
   /* clear the vars */
   memset(&g, 0, sizeof(g));
   memset(&v, 0, sizeof(v));
-  silc_mp_clear(&y);
-  silc_mp_clear(&x);
-  silc_mp_clear(&g[0].x);
-  silc_mp_clear(&g[1].x);
-  silc_mp_clear(&g[2].x);
-  silc_mp_clear(&v[0].x);
-  silc_mp_clear(&v[1].x);
-  silc_mp_clear(&v[2].x);
+  silc_mp_uninit(&y);
+  silc_mp_uninit(&x);
+  silc_mp_uninit(&g[0].x);
+  silc_mp_uninit(&g[1].x);
+  silc_mp_uninit(&g[2].x);
+  silc_mp_uninit(&v[0].x);
+  silc_mp_uninit(&v[1].x);
+  silc_mp_uninit(&v[2].x);
 }

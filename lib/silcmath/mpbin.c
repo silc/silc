@@ -25,25 +25,26 @@
    must be free'd by the caller. If `len' is provided the destination
    buffer is allocated that large. If zero then the size is approximated. */
 
-unsigned char *silc_mp_mp2bin(SilcInt *val, uint32 len,
+unsigned char *silc_mp_mp2bin(SilcMPInt *val, uint32 len,
 			      uint32 *ret_len)
 {
   int i;
   uint32 size;
   unsigned char *ret;
-  SilcInt tmp;
+  SilcMPInt tmp;
 
   size = (len ? len : ((silc_mp_sizeinbase(val, 2) + 7) / 8));
   ret = silc_calloc(size, sizeof(*ret));
   
-  silc_mp_init_set(&tmp, val);
+  silc_mp_init(&tmp);
+  silc_mp_set(&tmp, val);
 
   for (i = size; i > 0; i--) {
     ret[i - 1] = (unsigned char)(silc_mp_get_ui(&tmp) & 0xff);
-    silc_mp_fdiv_q_2exp(&tmp, &tmp, 8);
+    silc_mp_div_2exp(&tmp, &tmp, 8);
   }
 
-  silc_mp_clear(&tmp);
+  silc_mp_uninit(&tmp);
 
   if (ret_len)
     *ret_len = size;
@@ -54,27 +55,28 @@ unsigned char *silc_mp_mp2bin(SilcInt *val, uint32 len,
 /* Samve as above but does not allocate any memory.  The encoded data is
    returned into `dst' and it's length to the `ret_len'. */
 
-void silc_mp_mp2bin_noalloc(SilcInt *val, unsigned char *dst,
+void silc_mp_mp2bin_noalloc(SilcMPInt *val, unsigned char *dst,
 			    uint32 dst_len)
 {
   int i;
   uint32 size = dst_len;
-  SilcInt tmp;
+  SilcMPInt tmp;
 
-  silc_mp_init_set(&tmp, val);
+  silc_mp_init(&tmp);
+  silc_mp_set(&tmp, val);
 
   for (i = size; i > 0; i--) {
     dst[i - 1] = (unsigned char)(silc_mp_get_ui(&tmp) & 0xff);
-    silc_mp_fdiv_q_2exp(&tmp, &tmp, 8);
+    silc_mp_div_2exp(&tmp, &tmp, 8);
   }
 
-  silc_mp_clear(&tmp);
+  silc_mp_uninit(&tmp);
 }
 
 /* Decodes binary data into MP integer. The integer sent as argument
    must be initialized. */
 
-void silc_mp_bin2mp(unsigned char *data, uint32 len, SilcInt *ret)
+void silc_mp_bin2mp(unsigned char *data, uint32 len, SilcMPInt *ret)
 {
   int i;
 

@@ -118,7 +118,7 @@ extern SilcPKCSObject silc_default_pkcs[];
 
    Now we wouldn't have to send the SilcRng object since the primes are 
    provided as arguments. To send them as void * they could actually be 
-   used as in anyway for real (MP_INT (SilcInt) or even something else 
+   used as in anyway for real (MP_INT (SilcMPInt) or even something else 
    (the pointer could be kludged to be something else in the module))
    (Plus, the SilcRng object management in prime generation would be
    simpler and better what it is now (in silcprimegen.c, that is)).

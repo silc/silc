@@ -57,7 +57,7 @@ typedef struct {
   unsigned char *pk_data;
   uint16 pk_type;
 
-  SilcInt x;
+  SilcMPInt x;
 
   uint16 sign_len;
   unsigned char *sign_data;

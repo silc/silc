@@ -18,18 +18,25 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-if SILC_BUILD_GMP
-SUBDIRS = gmp
+if SILC_MP_NSS_MPI
+SUBDIRS = mpi
 else
 SUBDIRS =
 endif
 
 noinst_LIBRARIES = libsilcmath.a
 
+if SILC_MP_NSS_MPI
+MP_SOURCE = mp_mpi.c
+else
+MP_SOURCE = mp_gmp.c
+endif
+
 libsilcmath_a_SOURCES = \
 	silcprimegen.c \
 	modinv.c \
-	mpbin.c
+	mpbin.c \
+	$(MP_SOURCE)
 
 EXTRA_DIST = *.h
 

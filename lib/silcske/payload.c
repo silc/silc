@@ -347,7 +347,7 @@ void silc_ske_payload_ke_free(SilcSKEKEPayload *payload)
   if (payload) {
     if (payload->pk_data)
       silc_free(payload->pk_data);
-    silc_mp_clear(&payload->x);
+    silc_mp_uninit(&payload->x);
     if (payload->sign_data)
       silc_free(payload->sign_data);
     silc_free(payload);

@@ -538,44 +538,25 @@ if test "x$socks" = "x5"; then
   AC_DEFINE(Rgethostbyname, SOCKSgethostbyname)
 fi
 
-# GMP Library checking
-AC_MSG_CHECKING(whether to compile GMP)
-AC_ARG_WITH(gmp,
-[  --with-gmp              Build the GMP in the SILC source tree],
-[ case "${withval}" in
-  yes) 
-    AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval = xyes)
-    AC_MSG_RESULT(yes)
-    ;;
-  *)
-    AC_CHECK_HEADER(gmp.h,
-      AC_CHECK_LIB(gmp, __gmpz_init,
-        AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval = yes)
-        LIBS="$LIBS -L/usr/lib -L/usr/local/lib -lgmp"
-        AC_MSG_RESULT(GMP will not be compiled),
-        AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval != yes)
-        AC_MSG_RESULT(GMP will be compiled)
-      ),
-      AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval != yes)
-      AC_MSG_RESULT(GMP will be compiled)
-    )
-    ;;
-esac ], [
-  AC_CHECK_HEADER(gmp.h,
-    AC_CHECK_LIB(gmp, __gmpz_init,
-      build_gmp=false
-      AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
-      LIBS="$LIBS -L/usr/lib -L/usr/local/lib -lgmp"
-      AC_MSG_RESULT(GMP will not be compiled),
-      build_gmp=true
-      AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
-      AC_MSG_RESULT(GMP will be compiled)
-    ),
-    build_gmp=true
-    AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
-    AC_MSG_RESULT(GMP will be compiled)
+#
+# MP library checking. First check whether system has GMP. If it has that
+# then use it. If not then compile the MPI library in the source tree.
+#
+mp_gmp=false
+AC_CHECK_HEADER(gmp.h,
+  AC_CHECK_LIB(gmp, __gmpz_init,
+    mp_gmp=true
+    AC_DEFINE(SILC_MP_GMP)
+    LIBS="$LIBS -L/usr/lib -L/usr/local/lib -lgmp"
+    AC_MSG_RESULT(Using GMP as MP library)
   )
-])
+)
+AM_CONDITIONAL(SILC_MP_GMP, test x$mp_gmp = xtrue)
+if test x$mp_gmp = xfalse; then
+  AM_CONDITIONAL(SILC_MP_NSS_MPI, test x$mp_gmp = xfalse)
+  AC_DEFINE(SILC_MP_NSS_MPI)
+  AC_MSG_RESULT(Using NSS MPI as MP library)
+fi
 
 AC_ARG_WITH(silcd-config-file,
 [  --with-silcd-config-file[=PATH]
@@ -588,7 +569,6 @@ AC_ARG_WITH(silcd-config-file,
 #
 AC_CONFIG_SUBDIRS(irssi)
 AC_CONFIG_SUBDIRS(lib/dotconf)
-AC_CONFIG_SUBDIRS(lib/silcmath/gmp)
 AC_CONFIG_SUBDIRS(lib/trq)
 #AC_CONFIG_SUBDIRS(lib/zlib)
 

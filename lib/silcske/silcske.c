@@ -71,11 +71,11 @@ void silc_ske_free(SilcSKE ske)
     if (ske->pk)
       silc_free(ske->pk);
     if (ske->x) {
-      silc_mp_clear(ske->x);
+      silc_mp_uninit(ske->x);
       silc_free(ske->x);
     }
     if (ske->KEY) {
-      silc_mp_clear(ske->KEY);
+      silc_mp_uninit(ske->KEY);
       silc_free(ske->KEY);
     }
     if (ske->hash)
@@ -228,7 +228,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
-  SilcInt *x, e;
+  SilcMPInt *x, e;
   SilcSKEKEPayload *payload;
   uint32 pk_len;
 
@@ -242,7 +242,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 			silc_mp_sizeinbase(&ske->prop->group->group_order, 2),
 			x);
   if (status != SILC_SKE_STATUS_OK) {
-    silc_mp_clear(x);
+    silc_mp_uninit(x);
     silc_free(x);
     ske->status = status;
     return status;
@@ -252,8 +252,8 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 
   /* Do the Diffie Hellman computation, e = g ^ x mod p */
   silc_mp_init(&e);
-  silc_mp_powm(&e, &ske->prop->group->generator, x, 
-	       &ske->prop->group->group);
+  silc_mp_pow_mod(&e, &ske->prop->group->generator, x, 
+		  &ske->prop->group->group);
 
   /* Encode the result to Key Exchange Payload. */
 
@@ -266,9 +266,9 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   if (public_key) {
     payload->pk_data = silc_pkcs_public_key_encode(public_key, &pk_len);
     if (!payload->pk_data) {
-      silc_mp_clear(x);
+      silc_mp_uninit(x);
       silc_free(x);
-      silc_mp_clear(&e);
+      silc_mp_uninit(&e);
       silc_free(payload);
       ske->status = SILC_SKE_STATUS_OK;
       return ske->status;
@@ -303,9 +303,9 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 
   status = silc_ske_payload_ke_encode(ske, payload, &payload_buf);
   if (status != SILC_SKE_STATUS_OK) {
-    silc_mp_clear(x);
+    silc_mp_uninit(x);
     silc_free(x);
-    silc_mp_clear(&e);
+    silc_mp_uninit(&e);
     silc_free(payload->pk_data);
     silc_free(payload);
     ske->status = status;
@@ -413,7 +413,7 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
   silc_ske_payload_ke_free(payload);
   ske->ke2_payload = NULL;
 
-  silc_mp_clear(ske->KEY);
+  silc_mp_uninit(ske->KEY);
   silc_free(ske->KEY);
   ske->KEY = NULL;
 
@@ -465,7 +465,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcSKEKEPayload *payload;
-  SilcInt *KEY;
+  SilcMPInt *KEY;
   SKEInitiatorFinish finish;
 
   SILC_LOG_DEBUG(("Start"));
@@ -490,7 +490,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   /* Compute the shared secret key */
   KEY = silc_calloc(1, sizeof(*KEY));
   silc_mp_init(KEY);
-  silc_mp_powm(KEY, &payload->x, ske->x, &ske->prop->group->group);
+  silc_mp_pow_mod(KEY, &payload->x, ske->x, &ske->prop->group->group);
   ske->KEY = KEY;
 
   finish = silc_calloc(1, sizeof(*finish));
@@ -518,7 +518,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   silc_ske_payload_ke_free(payload);
   ske->ke2_payload = NULL;
 
-  silc_mp_clear(ske->KEY);
+  silc_mp_uninit(ske->KEY);
   silc_free(ske->KEY);
   ske->KEY = NULL;
 
@@ -694,7 +694,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
 {
   SKEResponderPhaseII finish = (SKEResponderPhaseII)context;
   SilcSKEKEPayload *recv_payload, *send_payload;
-  SilcInt *x, f;
+  SilcMPInt *x, f;
 
   recv_payload = ske->ke1_payload;
 
@@ -776,7 +776,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
 			silc_mp_sizeinbase(&ske->prop->group->group_order, 2),
 			x);
   if (status != SILC_SKE_STATUS_OK) {
-    silc_mp_clear(x);
+    silc_mp_uninit(x);
     silc_free(x);
     ske->status = status;
     if (finish->callback)
@@ -789,8 +789,8 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
 
   /* Do the Diffie Hellman computation, f = g ^ x mod p */
   silc_mp_init(&f);
-  silc_mp_powm(&f, &ske->prop->group->generator, x, 
-	       &ske->prop->group->group);
+  silc_mp_pow_mod(&f, &ske->prop->group->generator, x, 
+		  &ske->prop->group->group);
   
   /* Save the results for later processing */
   send_payload = silc_calloc(1, sizeof(*send_payload));
@@ -896,7 +896,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
-  SilcInt *KEY;
+  SilcMPInt *KEY;
   unsigned char hash[32], sign[1024], *pk;
   uint32 hash_len, sign_len, pk_len;
 
@@ -907,8 +907,8 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   /* Compute the shared secret key */
   KEY = silc_calloc(1, sizeof(*KEY));
   silc_mp_init(KEY);
-  silc_mp_powm(KEY, &ske->ke1_payload->x, ske->x, 
-	       &ske->prop->group->group);
+  silc_mp_pow_mod(KEY, &ske->ke1_payload->x, ske->x, 
+		  &ske->prop->group->group);
   ske->KEY = KEY;
 
   if (public_key && private_key) {
@@ -963,7 +963,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   return status;
 
  err:
-  silc_mp_clear(ske->KEY);
+  silc_mp_uninit(ske->KEY);
   silc_free(ske->KEY);
   ske->KEY = NULL;
   silc_ske_payload_ke_free(ske->ke2_payload);
@@ -1460,9 +1460,9 @@ silc_ske_select_security_properties(SilcSKE ske,
 /* Creates random number such that 1 < rnd < n and at most length
    of len bits. The rnd sent as argument must be initialized. */
 
-SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n, 
+SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt n, 
 				  uint32 len, 
-				  SilcInt *rnd)
+				  SilcMPInt *rnd)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   unsigned char *string;

@@ -195,18 +195,20 @@ static uint32 primetable[] =
    If argument verbose is TRUE this will display some status information
    about the progress of generation. */
 
-int silc_math_gen_prime(SilcInt *prime, uint32 bits, int verbose)
+int silc_math_gen_prime(SilcMPInt *prime, uint32 bits, int verbose)
 {
   unsigned char *numbuf;
   uint32 i, b, k;
   uint32 *spmods;
-  SilcInt r, base, tmp, tmp2, oprime;
+  SilcMPInt r, base, tmp, tmp2, oprime;
 
   silc_mp_init(&r);
-  silc_mp_init_set_ui(&base, 2);
+  silc_mp_init(&base);
   silc_mp_init(&tmp);
   silc_mp_init(&tmp2);
   silc_mp_init(&oprime);
+
+  silc_mp_set_ui(&base, 2);
 
   SILC_LOG_DEBUG(("Generating new prime"));
 
@@ -225,7 +227,7 @@ int silc_math_gen_prime(SilcInt *prime, uint32 bits, int verbose)
 
   /* Number could be even number, so we'll make it odd. */
   silc_mp_set_ui(&tmp, 1);
-  silc_mp_ior(prime, prime, &tmp);		/* OR operator */
+  silc_mp_or(prime, prime, &tmp);		/* OR operator */
 
   /* Init modulo table with the prime candidate and the primes
      in the primetable. */
@@ -263,7 +265,7 @@ int silc_math_gen_prime(SilcInt *prime, uint32 bits, int verbose)
     /* Does the prime pass the Fermat's prime test.
      * r = 2 ^ p mod p, if r == 2, then p is probably a prime. 
      */
-    silc_mp_powm(&r, &base, &oprime, &oprime);
+    silc_mp_pow_mod(&r, &base, &oprime, &oprime);
     if (silc_mp_cmp_ui(&r, 2) != 0) {
       if (verbose) {
 	printf(".");
@@ -289,11 +291,11 @@ int silc_math_gen_prime(SilcInt *prime, uint32 bits, int verbose)
   }
 
   silc_free(spmods);
-  silc_mp_clear(&r);
-  silc_mp_clear(&base);
-  silc_mp_clear(&tmp);
-  silc_mp_clear(&tmp2);
-  silc_mp_clear(&oprime);
+  silc_mp_uninit(&r);
+  silc_mp_uninit(&base);
+  silc_mp_uninit(&tmp);
+  silc_mp_uninit(&tmp2);
+  silc_mp_uninit(&oprime);
 
   return TRUE;
 }
@@ -301,14 +303,15 @@ int silc_math_gen_prime(SilcInt *prime, uint32 bits, int verbose)
 /* Performs primality testings for given number. Returns TRUE if the 
    number is probably a prime. */
 
-int silc_math_prime_test(SilcInt *p)
+int silc_math_prime_test(SilcMPInt *p)
 {
-  SilcInt r, base, tmp;
+  SilcMPInt r, base, tmp;
   int i, ret = 0;
   
   silc_mp_init(&r);
   silc_mp_init(&tmp);
-  silc_mp_init_set_ui(&base, 2);
+  silc_mp_init(&base);
+  silc_mp_set_ui(&base, 2);
   
   SILC_LOG_DEBUG(("Testing probability of prime"));
 
@@ -325,13 +328,13 @@ int silc_math_prime_test(SilcInt *p)
   /* Does the prime pass the Fermat's prime test.
    * r = 2 ^ p mod p, if r == 2, then p is probably a prime.
    */
-  silc_mp_powm(&r, &base, p, p);
+  silc_mp_pow_mod(&r, &base, p, p);
   if (silc_mp_cmp_ui(&r, 2) != 0)
     ret = -1;
 
-  silc_mp_clear(&r);
-  silc_mp_clear(&tmp);
-  silc_mp_clear(&base);
+  silc_mp_uninit(&r);
+  silc_mp_uninit(&tmp);
+  silc_mp_uninit(&base);
   
   if (ret)
     return FALSE;

@@ -50,13 +50,13 @@ typedef struct SilcDHStruct *SilcDH;
 /* Diffie Hellman context. This includes the DH parameters including the
    negotiated key material. */
 struct SilcDHStruct {
-  SilcInt *g;             /* Global base (generator) */
-  SilcInt *p;		  /* Global prime (modulus, prime) */
-  SilcInt *lpf;		  /* Largest prime factor (prime) */
-  SilcInt *my_x;       	  /* x, My private value (random) */
-  SilcInt *my_y;       	  /* y, My public value (y = g ^ x mod p) */
-  SilcInt *your_y;	  /* y', Your public value (y' = g ^ x' mod p) */
-  SilcInt *z;		  /* The computed secret key (z = y' ^ x mod p) */
+  SilcMPInt *g;             /* Global base (generator) */
+  SilcMPInt *p;		  /* Global prime (modulus, prime) */
+  SilcMPInt *lpf;		  /* Largest prime factor (prime) */
+  SilcMPInt *my_x;       	  /* x, My private value (random) */
+  SilcMPInt *my_y;       	  /* y, My public value (y = g ^ x mod p) */
+  SilcMPInt *your_y;	  /* y', Your public value (y' = g ^ x' mod p) */
+  SilcMPInt *z;		  /* The computed secret key (z = y' ^ x mod p) */
 
   SilcRng rng;		  /* RNG */
 };
@@ -65,7 +65,7 @@ struct SilcDHStruct {
  *
  * SYNOPSIS
  *    
- *    SilcDH silc_dh_alloc(SilcRng rng, SilcInt *g, SilcInt *p, SilcInt *lpf);
+ *    SilcDH silc_dh_alloc(SilcRng rng, SilcMPInt *g, SilcMPInt *p, SilcMPInt *lpf);
  * 
  * DESCRIPTION
  *
@@ -78,7 +78,7 @@ struct SilcDHStruct {
  *    on error or allocated SilcDH context on success. 
  *
  ***/
-SilcDH silc_dh_alloc(SilcRng rng, SilcInt *g, SilcInt *p, SilcInt *lpf);
+SilcDH silc_dh_alloc(SilcRng rng, SilcMPInt *g, SilcMPInt *p, SilcMPInt *lpf);
 
 /****f* silccrypt/SilcDH/silc_dh_free
  *
@@ -98,7 +98,7 @@ void silc_dh_free(SilcDH dh);
  *
  * SYNOPSIS
  *
- *    int silc_dh_generate_private(SilcDH dh, SilcInt **x);
+ *    int silc_dh_generate_private(SilcDH dh, SilcMPInt **x);
  *
  * DESCRIPTION
  *
@@ -108,13 +108,13 @@ void silc_dh_free(SilcDH dh);
  *    the `x' is NULL. The returned `x' must no be freed by the caller. 
  *
  ***/
-int silc_dh_generate_private(SilcDH dh, SilcInt **x);
+int silc_dh_generate_private(SilcDH dh, SilcMPInt **x);
 
 /****f* silccrypt/SilcDH/silc_dh_compute_public
  *
  * SYNOPSIS
  *
- *    int silc_dh_compute_public(SilcDH dh, SilcInt **y);
+ *    int silc_dh_compute_public(SilcDH dh, SilcMPInt **y);
  *
  * DESCRIPTION
  *
@@ -124,13 +124,13 @@ int silc_dh_generate_private(SilcDH dh, SilcInt **x);
  *    freed by the caller. 
  *
  ***/
-int silc_dh_compute_public(SilcDH dh, SilcInt **y);
+int silc_dh_compute_public(SilcDH dh, SilcMPInt **y);
 
 /****f* silccrypt/SilcDH/silc_dh_remote_public
  *
  * SYNOPSIS
  *
- *    int silc_dh_compute_public(SilcDH dh, SilcInt **y);
+ *    int silc_dh_compute_public(SilcDH dh, SilcMPInt **y);
  *
  * DESCRIPTION
  *
@@ -139,13 +139,13 @@ int silc_dh_compute_public(SilcDH dh, SilcInt **y);
  *    on error. 
  *
  ***/
-int silc_dh_set_remote_public(SilcDH dh, SilcInt *y);
+int silc_dh_set_remote_public(SilcDH dh, SilcMPInt *y);
 
 /****f* silccrypt/SilcDH/silc_dh_compute_key
  *
  * SYNOPSIS
  *
- *    int silc_dh_compute_key(SilcDH dh, SilcInt **z);
+ *    int silc_dh_compute_key(SilcDH dh, SilcMPInt **z);
  *
  * DESCRIPTION
  *
@@ -155,7 +155,7 @@ int silc_dh_set_remote_public(SilcDH dh, SilcInt *y);
  *    freed by the caller. 
  *
  ***/
-int silc_dh_compute_key(SilcDH dh, SilcInt **z);
+int silc_dh_compute_key(SilcDH dh, SilcMPInt **z);
 
 /****f* silccrypt/SilcDH/silc_dh_remote_public
  *

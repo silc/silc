@@ -24,17 +24,17 @@
 /* RSA Keys, includes both Private and Public key */
 typedef struct {
   int bits;			/* bits in key */
-  SilcInt p;			/* prime p */
-  SilcInt q;			/* prime q */
-  SilcInt n;			/* modulus */
-  SilcInt e;			/* public exponent */
-  SilcInt d;			/* private exponent */
+  SilcMPInt p;			/* prime p */
+  SilcMPInt q;			/* prime q */
+  SilcMPInt n;			/* modulus */
+  SilcMPInt e;			/* public exponent */
+  SilcMPInt d;			/* private exponent */
 } RsaKey;
 
 void rsa_generate_keys(RsaKey *key, uint32 bits, 
-		       SilcInt *p, SilcInt *q);
+		       SilcMPInt *p, SilcMPInt *q);
 void rsa_clear_keys(RsaKey *key);
-void rsa_en_de_crypt(SilcInt *cm, SilcInt *mc, 
-		     SilcInt *expo, SilcInt *modu);
+void rsa_en_de_crypt(SilcMPInt *cm, SilcMPInt *mc, 
+		     SilcMPInt *expo, SilcMPInt *modu);
 
 #endif

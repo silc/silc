@@ -30,6 +30,11 @@
 #undef SILC_SIZEOF_CHAR
 #undef SILC_SIZEOF_VOID_P
 
+/* MP library */
+#undef SILC_MP_GMP
+#undef SILC_MP_NSS_MPI
+
+/* Redefs for SOCKS5 library */
 /* macros/curses checks */
 #undef HAS_CURSES
 #undef USE_SUNOS_CURSES
@@ -39,7 +44,6 @@
 #undef NO_COLOR_CURSES
 #undef SCO_FLAVOR
 
-/* Redefs for SOCKS5 library */
 #undef SOCKS
 #undef SOCKS5
 #undef Rconnect

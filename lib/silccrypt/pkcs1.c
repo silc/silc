@@ -313,8 +313,8 @@ RSA_DecodeOneBlock(unsigned char *data,
 SILC_PKCS_API_ENCRYPT(pkcs1)
 {
   RsaKey *key = (RsaKey *)context;
-  SilcInt mp_tmp;
-  SilcInt mp_dst;
+  SilcMPInt mp_tmp;
+  SilcMPInt mp_dst;
   unsigned char *padded;
   uint32 padded_len, len = key->bits / 8;
 
@@ -323,8 +323,10 @@ SILC_PKCS_API_ENCRYPT(pkcs1)
 		       RSA_BlockPublic, src, src_len))
     return FALSE;
 
-  silc_mp_init_set_ui(&mp_tmp, 0);
-  silc_mp_init_set_ui(&mp_dst, 0);
+  silc_mp_init(&mp_tmp);
+  silc_mp_init(&mp_dst);
+  silc_mp_set_ui(&mp_tmp, 0);
+  silc_mp_set_ui(&mp_dst, 0);
 
   /* Data to MP */
   silc_mp_bin2mp(padded, padded_len, &mp_tmp);
@@ -338,8 +340,8 @@ SILC_PKCS_API_ENCRYPT(pkcs1)
 
   memset(padded, 0, padded_len);
   silc_free(padded);
-  silc_mp_clear(&mp_tmp);
-  silc_mp_clear(&mp_dst);
+  silc_mp_uninit(&mp_tmp);
+  silc_mp_uninit(&mp_dst);
 
   return TRUE;
 }
@@ -347,13 +349,15 @@ SILC_PKCS_API_ENCRYPT(pkcs1)
 SILC_PKCS_API_DECRYPT(pkcs1)
 {
   RsaKey *key = (RsaKey *)context;
-  SilcInt mp_tmp;
-  SilcInt mp_dst;
+  SilcMPInt mp_tmp;
+  SilcMPInt mp_dst;
   unsigned char *padded, *unpadded;
   uint32 padded_len;
 
-  silc_mp_init_set_ui(&mp_tmp, 0);
-  silc_mp_init_set_ui(&mp_dst, 0);
+  silc_mp_init(&mp_tmp);
+  silc_mp_init(&mp_dst);
+  silc_mp_set_ui(&mp_tmp, 0);
+  silc_mp_set_ui(&mp_dst, 0);
 
   /* Data to MP */
   silc_mp_bin2mp(src, src_len, &mp_tmp);
@@ -370,8 +374,8 @@ SILC_PKCS_API_DECRYPT(pkcs1)
   if (!unpadded) {
     memset(padded, 0, padded_len);
     silc_free(padded);
-    silc_mp_clear(&mp_tmp);
-    silc_mp_clear(&mp_dst);
+    silc_mp_uninit(&mp_tmp);
+    silc_mp_uninit(&mp_dst);
     return FALSE;
   }
 
@@ -383,8 +387,8 @@ SILC_PKCS_API_DECRYPT(pkcs1)
   memset(unpadded, 0, padded_len);
   silc_free(padded);
   silc_free(unpadded);
-  silc_mp_clear(&mp_tmp);
-  silc_mp_clear(&mp_dst);
+  silc_mp_uninit(&mp_tmp);
+  silc_mp_uninit(&mp_dst);
 
   return TRUE;
 }
@@ -392,8 +396,8 @@ SILC_PKCS_API_DECRYPT(pkcs1)
 SILC_PKCS_API_SIGN(pkcs1)
 {
   RsaKey *key = (RsaKey *)context;
-  SilcInt mp_tmp;
-  SilcInt mp_dst;
+  SilcMPInt mp_tmp;
+  SilcMPInt mp_dst;
   unsigned char *padded;
   uint32 padded_len;
   uint32 len = key->bits / 8;
@@ -403,8 +407,10 @@ SILC_PKCS_API_SIGN(pkcs1)
 		       src, src_len))
     return FALSE;
 
-  silc_mp_init_set_ui(&mp_tmp, 0);
-  silc_mp_init_set_ui(&mp_dst, 0);
+  silc_mp_init(&mp_tmp);
+  silc_mp_init(&mp_dst);
+  silc_mp_set_ui(&mp_tmp, 0);
+  silc_mp_set_ui(&mp_dst, 0);
 
   /* Data to MP */
   silc_mp_bin2mp(padded, len, &mp_tmp);
@@ -418,8 +424,8 @@ SILC_PKCS_API_SIGN(pkcs1)
 
   memset(padded, 0, padded_len);
   silc_free(padded);
-  silc_mp_clear(&mp_tmp);
-  silc_mp_clear(&mp_dst);
+  silc_mp_uninit(&mp_tmp);
+  silc_mp_uninit(&mp_dst);
 
   return TRUE;
 }
@@ -428,13 +434,15 @@ SILC_PKCS_API_VERIFY(pkcs1)
 {
   RsaKey *key = (RsaKey *)context;
   int ret = TRUE;
-  SilcInt mp_tmp2;
-  SilcInt mp_dst;
+  SilcMPInt mp_tmp2;
+  SilcMPInt mp_dst;
   unsigned char *verify, *unpadded;
   uint32 verify_len, len = key->bits / 8;
 
-  silc_mp_init_set_ui(&mp_tmp2, 0);
-  silc_mp_init_set_ui(&mp_dst, 0);
+  silc_mp_init(&mp_tmp2);
+  silc_mp_init(&mp_dst);
+  silc_mp_set_ui(&mp_tmp2, 0);
+  silc_mp_set_ui(&mp_dst, 0);
 
   /* Format the signature into MP int */
   silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
@@ -451,8 +459,8 @@ SILC_PKCS_API_VERIFY(pkcs1)
   if (!unpadded) {
     memset(verify, 0, verify_len);
     silc_free(verify);
-    silc_mp_clear(&mp_tmp2);
-    silc_mp_clear(&mp_dst);
+    silc_mp_uninit(&mp_tmp2);
+    silc_mp_uninit(&mp_dst);
     return FALSE;
   }
 
@@ -464,8 +472,8 @@ SILC_PKCS_API_VERIFY(pkcs1)
   memset(unpadded, 0, verify_len);
   silc_free(verify);
   silc_free(unpadded);
-  silc_mp_clear(&mp_tmp2);
-  silc_mp_clear(&mp_dst);
+  silc_mp_uninit(&mp_tmp2);
+  silc_mp_uninit(&mp_dst);
 
   return ret;
 }

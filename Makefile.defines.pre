@@ -47,7 +47,7 @@ INCLUDES = $(ADD_INCLUDES) \
 	-I$(silc_top_srcdir)/lib/silccore \
 	-I$(silc_top_srcdir)/lib/silccrypt \
         -I$(silc_top_srcdir)/lib/silcmath \
-        -I$(silc_top_srcdir)/lib/silcmath/gmp \
+        -I$(silc_top_srcdir)/lib/silcmath/mpi \
 	-I$(silc_top_srcdir)/lib/silcske \
 	-I$(silc_top_srcdir)/lib/silcsim \
 	-I$(silc_top_srcdir)/lib/silcutil \
