@@ -20,7 +20,9 @@ EXTRA_DIST = \
 	irssi.spec \
 	irssi.spec.in \
 	$(conf_DATA) \
-	irssi-config.in
+	irssi-config.in \
+	Makefile.defines.in \
+	Makefile.defines_int.in
 
 ## make rpms
 rpm: Makefile

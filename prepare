@@ -121,7 +121,7 @@ echo "#define SILC_PROTOCOL_VERSION_STRING \"SILC-1.0-$version\"" >>$file
 
 # preparing irssi
 cd irssi
-sh autogen.sh 2>/dev/null 1>/dev/null
+sh autogen.sh
 cd ..
 file=irssi/irssi-version.h.in
 version_date=`date +%Y%m%d`

@@ -996,6 +996,9 @@ if test "x$want_ipv6" = "xyes"; then
 	AC_DEFINE(HAVE_IPV6)
 fi
 
+INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"
+AC_SUBST(INCLUDE_DEFINES_INT)
+
 AC_OUTPUT(
 Makefile
 src/Makefile
@@ -1077,4 +1080,3 @@ if test "x$want_perl" = "xyes"; then
 	fi
 fi
 echo "Install prefix ............. : $prefix"
-

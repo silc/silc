@@ -396,6 +396,8 @@ AC_CONFIG_SUBDIRS(lib/trq)
 SILC_TOP_SRCDIR=`pwd`
 AC_SUBST(SILC_TOP_SRCDIR)
 AC_SUBST(LIBS)
+INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"
+AC_SUBST(INCLUDE_DEFINES_INT)
 
 #
 # Makefile outputs
