@@ -1,3 +1,40 @@
+Sun Feb  3 17:20:52 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the file transfer's key agreement payload to include
+	  zero port also if the hostname is NULL because it could not
+	  be bound.  
+
+	  Call file transfer monitor callback now also if error occurs
+	  during key agreement protocol.
+
+	  Changed the silc_client_file_send interface to return the
+	  SilcClientFileError instead of session id.  The session ID
+	  is returned into pointer provided as argument.
+
+	  Check that the file exists locally before sending the
+	  file transfer request at all.
+
+	  Affected file lib/silcclient/client_ftp.c, silcapi.h.
+
+	* Added SILC_CLIENT_FILE_KEY_AGREEMENT_FAILED file transfer
+	  error than can occur while key agreement protocol.  Affected
+	  file lib/silcclient/silcapi.h.
+
+	* Fixed the event_mode CMODE handler to not crash when mode
+	  is changed and +k mode is set in the channel.  Affected file
+	  irssi/src/silc/core/silc-channels.c.
+
+	* Fixed SILC_LOG_ERROR to give out Error and not Warning, and
+	  SILC_LOG_WARNING to give out Warning and not Error.  Affected
+	  file lib/silcutil/silclog.c.
+
+	* Fixed the channel message payload decryption in the function
+	  silc_channel_message_payload_decrypt to not modify the original
+	  buffer before it is verified that the message decrypted
+	  correctly.  Otherwise, next time it is called with correct
+	  channel key it won't encrypt since the payload is corrupted.
+	  Affected file lib/silccore/silcchannel.c.
+
 Sun Feb  3 11:46:12 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not constantly resize the window.  A fix patch by cras.

@@ -236,42 +236,59 @@ struct SilcChannelMessagePayloadStruct {
   unsigned char *iv;
 };
 
-/* Decrypts the channel message payload. */
+/* Decrypts the channel message payload. First push the IV out of the
+   packet. The IV is used in the decryption process. Then decrypt the
+   message. After decyprtion, take the MAC from the decrypted packet, 
+   compute MAC and compare the MACs.  If they match, the decryption was
+   successful and we have the channel message ready to be displayed. */
 
-int silc_channel_message_payload_decrypt(unsigned char *data,
-					 size_t data_len,
-					 SilcCipher cipher,
-					 SilcHmac hmac)
+bool silc_channel_message_payload_decrypt(unsigned char *data,
+					  size_t data_len,
+					  SilcCipher cipher,
+					  SilcHmac hmac)
 {
   uint32 iv_len, mac_len;
   unsigned char *end, *mac, mac2[32];
+  unsigned char *dst, iv[SILC_CIPHER_MAX_IV_SIZE];
 
-  /* Decrypt the channel message. First push the IV out of the packet.
-     The IV is used in the decryption process. Then decrypt the message.
-     After decyprtion, take the MAC from the decrypted packet, compute MAC
-     and compare the MACs.  If they match, the decryption was successfull
-     and we have the channel message ready to be displayed. */
+  /* Push the IV out of the packet, and copy the IV since we do not want
+     to modify the original data buffer. */
   end = data + data_len;
-
-  /* Push the IV out of the packet */
   iv_len = silc_cipher_get_block_len(cipher);
+  memcpy(iv, end - iv_len, iv_len);
+
+  /* Allocate destination decryption buffer since we do not want to modify
+     the original data buffer, since we might want to call this function 
+     many times for same payload. */
+  if (hmac)
+    dst = silc_calloc(data_len - iv_len, sizeof(*dst));
+  else
+    dst = data;
 
   /* Decrypt the channel message */
-  silc_cipher_decrypt(cipher, data, data, data_len - iv_len, (end - iv_len));
+  silc_cipher_decrypt(cipher, data, dst, data_len - iv_len, iv);
 
-  /* Take the MAC */
   if (hmac) {
+    /* Take the MAC */
+    end = dst + (data_len - iv_len);
     mac_len = silc_hmac_len(hmac);
-    mac = (end - iv_len - mac_len);
+    mac = (end - mac_len);
 
     /* Check the MAC of the message */
     SILC_LOG_DEBUG(("Checking channel message MACs"));
-    silc_hmac_make(hmac, data, (data_len - iv_len - mac_len), mac2, &mac_len);
+    silc_hmac_make(hmac, dst, (data_len - iv_len - mac_len), mac2, &mac_len);
     if (memcmp(mac, mac2, mac_len)) {
       SILC_LOG_DEBUG(("Channel message MACs does not match"));
+      silc_free(dst);
       return FALSE;
     }
     SILC_LOG_DEBUG(("MAC is Ok"));
+
+    /* Now copy the decrypted data into the buffer since it is verified
+       it decrypted correctly. */
+    memcpy(data, dst, data_len - iv_len);
+    memset(dst, 0, data_len - iv_len);
+    silc_free(dst);
   }
 
   return TRUE;

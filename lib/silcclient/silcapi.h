@@ -1862,6 +1862,7 @@ typedef enum {
   SILC_CLIENT_FILE_ALREADY_STARTED,
   SILC_CLIENT_FILE_NO_SUCH_FILE,
   SILC_CLIENT_FILE_PERMISSION_DENIED,
+  SILC_CLIENT_FILE_KEY_AGREEMENT_FAILED,
 } SilcClientFileError;
 /***/
 
@@ -1907,14 +1908,16 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *
  * SYNOPSIS
  *
- *    uint32 silc_client_file_send(SilcClient client,
- *                                 SilcClientConnection conn,
- *                                 SilcClientFileMonitor monitor,
- *                                 void *monitor_context,
- *                                 const char *local_ip,
- *                                 uint32 local_port,
- *                                 SilcClientEntry client_entry,
- *                                 const char *filepath);
+ *    SilcClientFileError 
+ *    silc_client_file_send(SilcClient client,
+ *                          SilcClientConnection conn,
+ *                          SilcClientFileMonitor monitor,
+ *                          void *monitor_context,
+ *                          const char *local_ip,
+ *                          uint32 local_port,
+ *                          SilcClientEntry client_entry,
+ *                          const char *filepath);
+ *                          uint32 *session_id);
  *
  * DESCRIPTION
  *
@@ -1924,12 +1927,10 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *    the file.  The `monitor' callback will be called to monitor the
  *    transmission of the file.
  *
- *    This returns a file session ID for the file transmission.  It can
- *    be used to close the session (and abort the file transmission) by
- *    calling the silc_client_file_close function.  The session ID is
- *    also returned in the `monitor' callback. This returns 0 if the
- *    file indicated by the `filepath' is being transmitted to the remote
- *    client indicated by the `client_entry', already.
+ *    This returns a file session ID for the file transmission to the
+ *    `session_id' pointer..  It can be used to close the session (and
+ *    abort the file transmission) by calling the silc_client_file_close
+ *    function.  The session ID is also returned in the `monitor' callback. 
  *
  *    If the `local_ip' is provided then this will try to bind the 
  *    listener for key exchange protocol to that IP.  If `local_port' is
@@ -1945,14 +1946,16 @@ typedef void (*SilcClientFileMonitor)(SilcClient client,
  *    session.
  *
  ***/
-uint32 silc_client_file_send(SilcClient client,
-			     SilcClientConnection conn,
-			     SilcClientFileMonitor monitor,
-			     void *monitor_context,
-			     const char *local_ip,
-			     uint32 local_port,
-			     SilcClientEntry client_entry,
-			     const char *filepath);
+SilcClientFileError 
+silc_client_file_send(SilcClient client,
+		      SilcClientConnection conn,
+		      SilcClientFileMonitor monitor,
+		      void *monitor_context,
+		      const char *local_ip,
+		      uint32 local_port,
+		      SilcClientEntry client_entry,
+		      const char *filepath,
+		      uint32 *session_id);
 
 /****f* silcclient/SilcClientAPI/silc_client_file_receive
  *

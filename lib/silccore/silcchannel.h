@@ -263,10 +263,10 @@ uint32 silc_channel_get_mode(SilcChannelPayload payload);
  *
  * SYNOPSIS
  *
- *    int silc_channel_message_payload_decrypt(unsigned char *data,
- *                                             size_t data_len,
- *                                             SilcCipher cipher,
- *                                             SilcHmac hmac);
+ *    bool silc_channel_message_payload_decrypt(unsigned char *data,
+ *                                              size_t data_len,
+ *                                              SilcCipher cipher,
+ *                                              SilcHmac hmac);
  *
  * DESCRIPTION
  *
@@ -285,10 +285,10 @@ uint32 silc_channel_get_mode(SilcChannelPayload payload);
  *    not verified.
  *
  ***/
-int silc_channel_message_payload_decrypt(unsigned char *data,
-					 size_t data_len,
-					 SilcCipher cipher,
-					 SilcHmac hmac);
+bool silc_channel_message_payload_decrypt(unsigned char *data,
+					  size_t data_len,
+					  SilcCipher cipher,
+					  SilcHmac hmac);
 
 /****f* silccore/SilcChannelAPI/silc_channel_message_payload_parse
  *

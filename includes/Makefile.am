@@ -28,7 +28,8 @@ include_HEADERS = \
 	silcincludes.h \
 	silcwin32.h \
 	version.h \
-	version_internal.h
+	version_internal.h \
+	silcdefs.h
 endif
 
 EXTRA_DIST = \

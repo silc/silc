@@ -30,9 +30,6 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o Rewrite the channel's user list thingy and cross list it to the
-   Client entry.
-
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
@@ -51,6 +48,10 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Assure that server is allowed to connect only once to router.  Meaning
+   if server connection is established already, same connection cannot be
+   established again.
+
  o If server send CUMODE_CHANGE notify (like setting founder) to router
    and router does not have founder on channel (founder is left or there's
    no founder on channel at all), the router will accept the server's
@@ -58,16 +59,11 @@ TODO/bugs In SILC Server
 
  o Make the normal server save user counts with LIST command reply.
 
+ o Add hashed passwords to silcd.conf file.
+
  o The router should check for validity of received notify packets from
    servers (after all buggy servers may send notify that is actually
    something that should have not been sent).
-
- o Add hashed passwords to silcd.conf file.
-
- o Backup router related issues
-
- 	o Channel user mode changes are notified unnecessarely when
-	  switching to backup router on router crash.
 
  o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
@@ -75,6 +71,11 @@ TODO/bugs In SILC Server
    and process them without any timeouts.  THis must be employed because
    each JOIN command will create and distribute the new channel key
    to everybody on the channel.
+
+ o Backup router related issues
+
+ 	o Channel user mode changes are notified unnecessarely when
+	  switching to backup router on router crash.
 
  o New configuration file format must be added.  The following
    tasks relates closely to this as well and must be done at the same time
@@ -317,6 +318,8 @@ least could be done.
 
  o Add SilcAsyncOperation to utility library.  Any function that takes
    callback as an argument must return SilcAsyncOperation.
+
+ o Add DSS support.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
 

@@ -69,6 +69,13 @@ remove:
 	-rm -rf libsilc.a
 	-rm -rf libsilcclient.a
 
+if SILC_DIST_TOOLKIT
+install-exec-hook:
+	-mkdir -p $(libdir)
+	-$(INSTALL) libsilc.a $(libdir)/
+	-$(INSTALL) libsilcclient.a $(libdir)/
+endif
+
 if SILC_DIST_WIN32DLL
 # WIN32 DLL generation
 silc.dll: libsilc.a

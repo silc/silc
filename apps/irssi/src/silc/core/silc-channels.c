@@ -245,7 +245,7 @@ static void event_topic(SILC_SERVER_REC *server, va_list va)
   char userhost[256];
   SilcIdType idtype;
 
-  idtype = va_arg(va, int);
+  idtype = va_arg(va, SilcIdType);
   entry = va_arg(va, void *);
   topic = va_arg(va, char *);
   channel = va_arg(va, SilcChannelEntry);
@@ -344,9 +344,11 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
   channel = va_arg(va, SilcChannelEntry);
 
   mode = silc_client_chmode(modei, 
-			    channel->channel_key->cipher->name,
-			    silc_hmac_get_name(channel->hmac));
-  
+			    channel->channel_key ? 
+			    channel->channel_key->cipher->name : "",
+			    channel->hmac ? 
+			    silc_hmac_get_name(channel->hmac) : "");
+
   chanrec = silc_channel_find_entry(server, channel);
   if (chanrec != NULL) {
     g_free_not_null(chanrec->mode);

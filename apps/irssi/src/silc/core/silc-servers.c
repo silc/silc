@@ -583,6 +583,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   FtpSession ftp;
   char *local_ip = NULL;
   uint32 local_port = 0;
+  uint32 session_id;
 
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
@@ -642,22 +643,34 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     if (argc >= 6)
       local_port = atoi(argv[5]);
 
-    ftp = silc_calloc(1, sizeof(*ftp));
-    ftp->session_id = 
+    ret = 
       silc_client_file_send(silc_client, conn, silc_client_file_monitor, 
 			    server, local_ip, local_port, 
-			    client_entry, argv[2]);
+			    client_entry, argv[2], &session_id);
+    if (ret == SILC_CLIENT_FILE_OK) {
+      ftp = silc_calloc(1, sizeof(*ftp));
+      ftp->session_id = session_id;
 
-    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
-		       SILCTXT_FILE_SEND, client_entry->nickname,
-		       argv[2]);
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_FILE_SEND, client_entry->nickname,
+			 argv[2]);
 
-    ftp->client_entry = client_entry;
-    ftp->filepath = strdup(argv[2]);
-    ftp->conn = conn;
-    ftp->send = TRUE;
-    silc_dlist_add(server->ftp_sessions, ftp);
-    server->current_session = ftp;
+      ftp->client_entry = client_entry;
+      ftp->filepath = strdup(argv[2]);
+      ftp->conn = conn;
+      ftp->send = TRUE;
+      silc_dlist_add(server->ftp_sessions, ftp);
+      server->current_session = ftp;
+    } else {
+      if (ret == SILC_CLIENT_FILE_ALREADY_STARTED)
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_FILE_ALREADY_STARTED,
+			   client_entry->nickname);
+      if (ret == SILC_CLIENT_FILE_NO_SUCH_FILE)
+	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_FILE_ERROR_NO_SUCH_FILE, 
+			   client_entry->nickname, argv[2]);
+    }
 
     break;
 

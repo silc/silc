@@ -69,6 +69,11 @@ doc-install:
 	$(INSTALL_DATA) $(srcdir)/INSTALL $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/TODO $(docdir)/
 
+toolkit-install:
+	-mkdir -p $(docdir)/toolkit/
+	-$(INSTALL_DATA) $(srcdir)/doc/toolkit/silc* $(docdir)/toolkit
+	-$(INSTALL_DATA) $(srcdir)/doc/toolkit/index* $(docdir)/toolkit
+
 examples-install:
 	-mkdir -p $(docdir)/examples/
 	$(INSTALL_DATA) $(srcdir)/doc/examples/README $(docdir)/examples/
@@ -89,5 +94,9 @@ etc-install:
 if SILC_DIST_CLIENT
 install-data-hook: install-dirs sim-install doc-install etc-install
 else
+if SILC_DIST_TOOLKIT
+install-data-hook: install-dirs generate-server-key sim-install doc-install toolkit-install examples-install etc-install
+else
 install-data-hook: install-dirs generate-server-key sim-install doc-install examples-install etc-install
+endif
 endif

@@ -955,8 +955,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      return;
 	    }
 	  } else {
-	    SILC_LOG_DEBUG(("No configuration for remote connection"));
-	    SILC_LOG_ERROR(("Remote connection not configured"));
+	    SILC_LOG_DEBUG(("No configuration for remote client connection"));
+	    SILC_LOG_ERROR(("Remote client connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    silc_free(auth_data);
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -1017,8 +1017,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      return;
 	    }
 	  } else {
-	    SILC_LOG_DEBUG(("No configuration for remote connection"));
-	    SILC_LOG_ERROR(("Remote connection not configured"));
+	    SILC_LOG_DEBUG(("No configuration for remote server connection"));
+	    SILC_LOG_ERROR(("Remote server connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 
@@ -1079,8 +1079,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      return;
 	    }
 	  } else {
-	    SILC_LOG_DEBUG(("No configuration for remote connection"));
-	    SILC_LOG_ERROR(("Remote connection not configured"));
+	    SILC_LOG_DEBUG(("No configuration for remote router connection"));
+	    SILC_LOG_ERROR(("Remote router connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    silc_free(auth_data);
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;

@@ -43,8 +43,8 @@ typedef struct SilcLogStruct *SilcLog;
 /* These are the known logging channels */
 static struct SilcLogStruct silclogs[SILC_LOG_MAX] = {
   {NULL, NULL, 0, "Info", SILC_LOG_INFO, NULL, NULL},
-  {NULL, NULL, 0, "Error", SILC_LOG_ERROR, NULL, NULL},
   {NULL, NULL, 0, "Warning", SILC_LOG_WARNING, NULL, NULL},
+  {NULL, NULL, 0, "Error", SILC_LOG_ERROR, NULL, NULL},
   {NULL, NULL, 0, "Fatal", SILC_LOG_FATAL, NULL, NULL},
 };
 
@@ -344,18 +344,22 @@ void silc_log_output_debug(char *file, char *function,
 {
   if (!silc_debug)
     goto end;
+
   if (silc_log_debug_string &&
-	!silc_string_regex_match(silc_log_debug_string, file) &&
-	!silc_string_regex_match(silc_log_debug_string, function))
+      !silc_string_regex_match(silc_log_debug_string, file) &&
+      !silc_string_regex_match(silc_log_debug_string, function))
     goto end;
+
   if (silc_log_debug_cb) {
     if ((*silc_log_debug_cb)(file, function, line, string,
 			     silc_log_debug_context))
       goto end;
   }
+
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
   fflush(stderr);
-end:
+
+ end:
   silc_free(string);
 }
 
@@ -371,10 +375,12 @@ void silc_log_output_hexdump(char *file, char *function,
 
   if (!silc_debug_hexdump)
     goto end;
+
   if (silc_log_debug_string &&
-	!silc_string_regex_match(silc_log_debug_string, file) &&
-	!silc_string_regex_match(silc_log_debug_string, function))
+      !silc_string_regex_match(silc_log_debug_string, file) &&
+      !silc_string_regex_match(silc_log_debug_string, function))
     goto end;
+
   if (silc_log_hexdump_cb) {
     if ((*silc_log_hexdump_cb)(file, function, line, data_in, len, string,
 			       silc_log_hexdump_context))
@@ -382,7 +388,6 @@ void silc_log_output_hexdump(char *file, char *function,
   }
 
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
-  silc_free(string);
 
   k = 0;
   pos = 0;
@@ -438,9 +443,8 @@ void silc_log_output_hexdump(char *file, char *function,
     if (count < 16)
       break;
   }
-  return;
 
-end:
+ end:
   silc_free(string);
 }
 

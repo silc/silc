@@ -656,6 +656,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       silc_client_get_clients_by_list(client, conn, list_count, client_id_list,
 				      silc_client_join_get_users, 
 				      channel_entry);
+
       break;
     }
 
