@@ -60,7 +60,7 @@ Commands:
       The receiver may use the hostname to start the
       key agreement.  If the <port> is also provided your
       key agreement protocol server is bound to that
-      port.  Note that it cannot be privileged port (<1023).
+      port.  Note that it cannot be privileged port (<1024).
       If the <hostname> and <port> is not provided then
       the receiver will never initiate the key agreement.
       In this case you may start the key agreement after
