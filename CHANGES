@@ -1,3 +1,9 @@
+Sun Jul  7 13:10:01 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added yet more checks that client is not expired on global
+	  list if it is on channels.  Affected file is
+	  silcd/command_reply.c.
+
 Sat Jul  6 11:45:11 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged c0ffee's MIME signal patch which adds support for

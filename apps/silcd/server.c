@@ -4610,7 +4610,7 @@ void silc_server_save_users_on_channel(SilcServer server,
     if (!client) {
       /* If router did not find such Client ID in its lists then this must
 	 be bogus client or some router in the net is buggy. */
-      if (server->server_type == SILC_ROUTER) {
+      if (server->server_type != SILC_SERVER) {
 	silc_free(client_id);
 	continue;
       }

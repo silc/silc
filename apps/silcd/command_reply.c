@@ -210,8 +210,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     client = silc_idlist_add_client(server->global_list, nick, 
 				    strdup(username), 
 				    strdup(realname), client_id, 
-				    cmd->sock->user_data, NULL, 
-				    time(NULL) + 300);
+				    cmd->sock->user_data, NULL, 0);
     if (!client) {
       SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
       return FALSE;
@@ -250,7 +249,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     /* Create new cache entry */
     silc_idcache_add(global ? server->global_list->clients :
 		     server->local_list->clients, nick, client->id, 
-		     client, 0, &cache); 
+		     client, 0, NULL); 
     silc_free(client_id);
   }
 
@@ -268,11 +267,16 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
       silc_server_save_user_channels(server, cmd->sock, client, NULL, NULL);
     }
 
-    if (cache)
-      /* If client is global and is not on any channel then add that we'll
-	 expire the entry after a while. */
-      if (global && !silc_hash_table_count(client->channels))
+    /* If client is global and is not on any channel then add that we'll
+       expire the entry after a while. */
+    if (global) {
+      silc_idlist_find_client_by_id(server->global_list, client->id,
+				    FALSE, &cache);
+      if (!silc_hash_table_count(client->channels))
 	cache->expire = time(NULL) + 300;
+      else
+	cache->expire = 0;
+    }
   }
 
   if (fingerprint && flen == sizeof(client->data.fingerprint))
@@ -491,8 +495,8 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	 global. */
       client = silc_idlist_add_client(server->global_list, nick, 
 				      info ? strdup(info) : NULL, NULL,
-				      client_id, cmd->sock->user_data, NULL,
-				      time(NULL) + 300);
+				      client_id, cmd->sock->user_data,
+				      NULL, time(NULL) + 300);
       if (!client) {
 	SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
 	goto error;
@@ -526,16 +530,22 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
       
       if (name) {
-	/* If client is global and is not on any channel then add that we'll
-	   expire the entry after a while. */
-	if (global && !silc_hash_table_count(client->channels) &&
-	    server->server_type == SILC_SERVER)
-	  expire = time(NULL) + 300;
-
 	/* Add new cache entry */
 	silc_idcache_add(global ? server->global_list->clients :
 			 server->local_list->clients, nick, client->id, 
 			 client, expire, NULL);
+      }
+
+      /* If client is global and is not on any channel then add that we'll
+         expire the entry after a while. */
+      if (global && server->server_type == SILC_SERVER) {
+	SilcIDCacheEntry cache = NULL;
+        silc_idlist_find_client_by_id(server->global_list, client->id,
+				      FALSE, &cache);
+        if (!silc_hash_table_count(client->channels))
+	  cache->expire = time(NULL) + 300;
+        else
+	  cache->expire = 0;
       }
 
       silc_free(client_id);
