@@ -1,3 +1,8 @@
+Tue Mar 19 12:32:43 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_rng_get_byte_fast function in to the
+	  lib/silccrypt/silcrng.[ch].
+
 Mon Mar 18 21:00:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added macro SILC_PACKET_DATALEN which can be used during
