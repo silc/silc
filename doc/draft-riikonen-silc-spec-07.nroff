@@ -866,7 +866,7 @@ the command request but server is allowed to send command reply packet
 to client even if client has not requested the command.  Client MAY
 choose to ignore the command reply.
 
-It is expected that some of the commands may be miss-used by clients
+It is expected that some of the commands may be misused by clients
 resulting various problems on the server side.  Every implementation
 SHOULD assure that commands may not be executed more than once, say,
 in two (2) seconds.  However, to keep response rate up, allowing for
@@ -874,7 +874,7 @@ example five (5) commands before limiting is allowed.  It is RECOMMENDED
 that commands such as SILC_COMMAND_NICK, SILC_COMMAND_JOIN,
 SILC_COMMAND_LEAVE and SILC_COMMAND_KILL SHOULD be limited in all cases
 as they require heavy operations.  This should be sufficient to prevent
-the miss-use of commands.
+the misuse of commands.
 
 SILC commands are described in [SILC4].
 
