@@ -137,11 +137,12 @@ typedef struct SilcServerConfigSectionServerConnectionStruct {
 } SilcServerConfigSectionServerConnection;
 
 /* Holds all configured denied connections from config file */
-typedef struct {
+typedef struct SilcServerConfigSectionDenyConnectionStruct {
   char *host;
-  char *time;
   char *comment;
   uint16 port;
+  struct SilcServerConfigSectionDenyConnectionStruct *next;
+  struct SilcServerConfigSectionDenyConnectionStruct *prev;
 } SilcServerConfigSectionDenyConnection;
 
 /* Holds motd file */
@@ -273,6 +274,8 @@ bool silc_server_config_is_primary_route(SilcServerConfig config);
 SilcServerConfigSectionAdminConnection *
 silc_server_config_find_admin(SilcServerConfig config,
 			      char *host, char *username, char *nickname);
-void silc_server_config_print();
+SilcServerConfigSectionDenyConnection *
+silc_server_config_denied_conn(SilcServerConfig config, char *host,
+			       int port);
 
 #endif

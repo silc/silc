@@ -54,7 +54,7 @@ SilcServerConfigSection silc_server_config_sections[] = {
   { "[AdminConnection]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_CONNECTION, 5 },
   { "[DenyConnection]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION, 4 },
+    SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION, 3 },
   { "[motd]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_MOTD, 1 },
   
@@ -1041,8 +1041,39 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       break;
 
     case SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION:
-      /* Not implemented yet */
+
+      SILC_SERVER_CONFIG_LIST_ALLOC(config->denied);
+
+      /* Get host */
+      ret = silc_config_get_token(line, &config->denied->host);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	/* Any host */
+	config->denied->host = strdup("*");
+	fprintf(stderr, "warning: %s:%d: Denying all connections",
+		config->filename, pc->linenum);
+      }
+
+      /* Get port */
+      ret = silc_config_get_token(line, &tmp);
+      if (ret < 0)
+	break;
+      if (ret == 0) {
+	/* Any port */
+	config->denied->port = 0;
+      } else {
+	config->denied->port = atoi(tmp);
+	silc_free(tmp);
+      }
+
+      /* Get comment */
+      ret = silc_config_get_token(line, &config->denied->comment);
+      if (ret < 0)
+	break;
+
       check = TRUE;
+      checkmask |= (1L << pc->section->type);
       break;
 
     case SILC_CONFIG_SERVER_SECTION_TYPE_MOTD:
@@ -1447,7 +1478,7 @@ silc_server_config_find_client_conn(SilcServerConfig config,
     if (silc_string_compare(client->host, host))
       match = TRUE;
 
-    if (port && client->port != port)
+    if (port && client->port && client->port != port)
       match = FALSE;
 
     if (match)
@@ -1485,7 +1516,7 @@ silc_server_config_find_server_conn(SilcServerConfig config,
     if (silc_string_compare(serv->host, host))
       match = TRUE;
 
-    if (port && serv->port != port)
+    if (port && serv->port && serv->port != port)
       match = FALSE;
 
     if (match)
@@ -1522,7 +1553,7 @@ silc_server_config_find_router_conn(SilcServerConfig config,
     if (silc_string_compare(serv->host, host))
       match = TRUE;
 
-    if (port && serv->port != port)
+    if (port && serv->port && serv->port != port)
       match = FALSE;
 
     if (match)
@@ -1593,4 +1624,40 @@ silc_server_config_find_admin(SilcServerConfig config,
     return NULL;
 
   return admin;
+}
+
+/* Returns the Denied connection configuration by host and port. */
+
+SilcServerConfigSectionDenyConnection *
+silc_server_config_denied_conn(SilcServerConfig config, char *host,
+			       int port)
+{
+  int i;
+  SilcServerConfigSectionDenyConnection *deny = NULL;
+  bool match = FALSE;
+
+  if (!host)
+    return NULL;
+
+  if (!config->denied)
+    return NULL;
+
+  deny = config->denied;
+  for (i = 0; deny; i++) {
+    if (silc_string_compare(deny->host, host))
+      match = TRUE;
+
+    if (port && deny->port && deny->port != port)
+      match = FALSE;
+
+    if (match)
+      break;
+
+    deny = deny->next;
+  }
+
+  if (!deny)
+    return NULL;
+
+  return deny;
 }

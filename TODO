@@ -46,8 +46,6 @@ TODO/bugs In SILC Server
    hash tables should replace the lists.  Thus, the ID cache should be
    rewritten to use hash tables internally.
 
- o [DenyConnection] config section is not implemented.
-
  o The backup router support described in the protocol specification
    should be done at some point.
 

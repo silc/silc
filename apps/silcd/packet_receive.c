@@ -956,7 +956,7 @@ void silc_server_notify_list(SilcServer server,
   SilcBuffer buffer;
   uint16 len;
 
-  SILC_LOG_DEBUG(("Processing New Notify List"));
+  SILC_LOG_DEBUG(("Processing Notify List"));
 
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       packet->src_id_type != SILC_ID_SERVER)

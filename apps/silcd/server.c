@@ -948,6 +948,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   SilcServerKEInternalContext *proto_ctx;
   int sock, port;
   void *cconfig, *sconfig, *rconfig;
+  SilcServerConfigSectionDenyConnection *deny;
 
   SILC_LOG_DEBUG(("Accepting new connection"));
 
@@ -1003,10 +1004,26 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
      later when outgoing data is available. */
   SILC_REGISTER_CONNECTION_FOR_IO(sock);
 
+  port = server->sockets[fd]->port; /* Listenning port */
+
+  /* Check whether this connection is denied to connect to us. */
+  deny = silc_server_config_denied_conn(server->config, newsocket->ip, port);
+  if (!deny)
+    deny = silc_server_config_denied_conn(server->config, newsocket->hostname,
+					  port);
+  if (deny) {
+    /* The connection is denied */
+    silc_server_disconnect_remote(server, newsocket, deny->comment ?
+				  deny->comment :
+				  "Server closed connection: "
+				  "Connection refused");
+    server->stat.conn_failures++;
+    return;
+  }
+
   /* Check whether we have configred this sort of connection at all. We
      have to check all configurations since we don't know what type of
      connection this is. */
-  port = server->sockets[fd]->port; /* Listenning port */
   if (!(cconfig = silc_server_config_find_client_conn(server->config,
 						      newsocket->ip, port)))
     cconfig = silc_server_config_find_client_conn(server->config,

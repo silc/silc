@@ -1,3 +1,13 @@
+Sun Apr 29 13:33:41 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented the [DenyConnectin] config section in the server.
+	  Added silc_server_config_denied_conn to check whether incoming
+	  connection is denied.  Affected file silcd/serverconfig.[ch].
+
+	* Do not check the ports when checking the incoming configuration
+	  data if the port is 0, meaning any.  Affected file is
+	  silcd/serverconfig.c.
+
 Fri Apr 20 18:58:43 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed buffer overflow in silc_string_compare in the file
