@@ -192,6 +192,7 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 
 void *silc_schedule_wakeup_init(void *queue)
 {
+#ifdef SILC_THREADS
   SilcWin32Wakeup wakeup;
 
   wakeup = silc_calloc(1, sizeof(*wakeup));
@@ -213,8 +214,9 @@ void *silc_schedule_wakeup_init(void *queue)
   }
 
   return (void *)wakeup;
-#endif
+#else
   return NULL;
+#endif
 }
 
 /* Uninitializes the system specific wakeup. */

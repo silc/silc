@@ -66,6 +66,10 @@ extern uint32 log_warning_size;
 extern uint32 log_error_size;
 extern uint32 log_fatal_size;
 
+#ifdef WIN32
+#define __FUNCTION__ ""
+#endif
+
 /* Log macros. */
 #define SILC_LOG_INFO(fmt) (silc_log_output(log_info_file, \
                                            log_info_size, \

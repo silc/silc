@@ -29,6 +29,11 @@
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
 
+#ifdef WIN32
+#define strcasecmp strcmp
+#define strncasecmp strncmp
+#endif
+
 #undef inline
 #define inline __inline
 
