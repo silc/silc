@@ -22,9 +22,12 @@
 #define CLIENTINCLUDES_H
 
 #include <curses.h>
-#include <paths.h>
 #include <sys/param.h>
 #include <pwd.h>
+
+#ifdef HAVE_PATHS_H
+#include <paths.h>
+#endif
 
 /* Generic includes */
 #include "silcincludes.h"

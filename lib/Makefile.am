@@ -29,8 +29,10 @@ SUBDIRS = \
 CLEANFILES = libsilc.a
 DISTCLEANFILES = libsilc.a
 
-all: 	libsilc.a
+all:  libsilc.a
 
 libsilc.a:
 	find . -type f -name *.o | xargs $(AR) cru libsilc.a
 	ranlib libsilc.a
+#	find . -type f -name *.o -maxdepth 2 | xargs $(AR) cru libsilc.a
+#	ranlib libsilc.a

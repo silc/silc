@@ -20,4 +20,4 @@
 
 #include "serverincludes.h"
 
-const char server_version[] = "14072000";
+const char server_version[] = "18072000";

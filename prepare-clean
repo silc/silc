@@ -29,7 +29,7 @@ make distclean
 rm -f includes/stamp-*
 rm -f includes/silcconfig.*
 rm -f Makefile.in
-rm -f doc/draft-riikonen*.txt
+rm -f doc/draft-*.txt
 rm -f doc/Makefile.in
 rm -f includes/Makefile.in
 rm -f lib/Makefile.in

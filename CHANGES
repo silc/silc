@@ -1,3 +1,10 @@
+Mon Jul 17 23:33:26 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Mainly small bugfixes on core library.  Fixed some debugging
+	  logging and buffer overflow in silclog.c.
+
+	* Updated config.sub and config.guess on the distribution tree.
+
 Sat Jul 15 15:33:48 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added command lagging support in server. Client may execute

@@ -136,16 +136,8 @@ file.  The actual distribution is created by simply giving,
 
 	make dist
 
+Note there are other files in the sources that has version information 
+as well that currently needs to be updated by hand.
 
-Information About CVS Repository
-================================
-
-SILC CVS repository resides in silc.pspt.fi (193.166.51.47) in a 2 Gb
-SCSI harddrive.  The repository is backuped every morning at 06:00 EEST.
-The entire repository is backuped and the backup is distributed to at
-least two independent machines and the backup is recorded into tapes,
-as well.  There are always week's of backups in hand in case they are
-needed.  Every week the "lastweek's" backups are removed and "this weeks"
-backups are saved.
 
 $Id$

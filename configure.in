@@ -33,7 +33,7 @@ case "$target" in
     ;;
 esac
 
-AM_INIT_AUTOMAKE(silc, 14072000)
+AM_INIT_AUTOMAKE(silc, 18072000)
 AC_PREREQ(2.3)
 AM_CONFIG_HEADER(includes/silcdefs.h)
 
@@ -68,7 +68,7 @@ AC_HEADER_STAT
 AC_CHECK_HEADERS(unistd.h string.h getopt.h errno.h fcntl.h assert.h)
 AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h)
 AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h netdb.h)
-AC_CHECK_HEADERS(pwd.h grp.h termcap.h)
+AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
 AC_CHECK_HEADERS(ncurses.h signal.h ctype.h)
 AC_CHECK_HEADERS(arpa/inet.h sys/mman.h)
 
@@ -114,9 +114,9 @@ AC_ARG_ENABLE(debug,
     ;;
   *)
     AC_MSG_RESULT(no)
-    CFLAGS="-O2 $CFLAGS"
+    CFLAGS="-O2 -g $CFLAGS"
     ;;
-esac ], CFLAGS="-O2 $CFLAGS"
+esac ], CFLAGS="-O2 -g $CFLAGS"
         AC_MSG_RESULT(no))
 
 
