@@ -131,6 +131,7 @@ static int silc_server_is_registered(SilcServer server,
 
   silc_server_command_send_status_reply(cmd, command,
 					SILC_STATUS_ERR_NOT_REGISTERED);
+  silc_server_command_free(cmd);
   return FALSE;
 }
 
