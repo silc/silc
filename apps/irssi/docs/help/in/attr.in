@@ -28,6 +28,9 @@ value.  Deleting all added information for a option is done as follows:
 
     ATTR -del <option>
 
+You can see your current attributing by giving the ATTR without any 
+arguments.
+
 The following options to ATTR command are available:
 
   allow
