@@ -1,3 +1,12 @@
+Thu Feb 15 14:24:32 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new function silc_server_remove_clients_by_server to
+	  remove all client entries from ID list when the server connection
+	  is lost.  In this case it is also important to invalidate all
+	  client entires as they hold the invalid server entry.  This
+	  fixes fatal bug when server has lost connection and will reconnect
+	  again.
+
 Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Made some sanity checks to silc_server_daemonise like to check

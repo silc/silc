@@ -92,6 +92,8 @@ void silc_server_free_sock_user_data(SilcServer server,
 				     SilcSocketConnection sock);
 int silc_server_channel_has_global(SilcChannelEntry channel);
 int silc_server_channel_has_local(SilcChannelEntry channel);
+int silc_server_remove_clients_by_server(SilcServer server, 
+					 SilcServerEntry entry);
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
 				      SilcClientEntry client);

@@ -1821,6 +1821,18 @@ void silc_server_free_sock_user_data(SilcServer server,
 				   FALSE : TRUE, user_data->id, 
 				   SILC_ID_CLIENT_LEN, SILC_ID_CLIENT);
 
+      /* Then also free all client entries that this server owns as
+	 they will become invalid now as well. */
+      silc_server_remove_clients_by_server(server, user_data);
+
+      /* If this was our primary router connection then we're lost to
+	 the outside world. */
+      if (server->server_type == SILC_SERVER && server->router == user_data) {
+	server->id_entry->router = NULL;
+	server->router = NULL;
+	server->standalone = TRUE;
+      }
+
       /* Free the server entry */
       silc_idlist_del_data(user_data);
       silc_idlist_del_server(server->local_list, user_data);
@@ -1841,6 +1853,70 @@ void silc_server_free_sock_user_data(SilcServer server,
   }
 
   sock->user_data = NULL;
+}
+
+/* This function is used to remove all client entries by the server `entry'.
+   This is called when the connection is lost to the server. In this case
+   we must invalidate all the client entries owned by the server `entry'. */
+
+int silc_server_remove_clients_by_server(SilcServer server, 
+					 SilcServerEntry entry)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry client = NULL;
+
+  if (silc_idcache_find_by_id(server->local_list->clients, 
+			      SILC_ID_CACHE_ANY, SILC_ID_CLIENT, &list)) {
+
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	client = (SilcClientEntry)id_cache->context;
+	
+	if (client->router != entry) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
+
+	/* Remove the client entry */
+	silc_server_remove_from_channels(server, NULL, client);
+	silc_idlist_del_client(server->local_list, client);
+
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+  
+  if (silc_idcache_find_by_id(server->global_list->clients, 
+			      SILC_ID_CACHE_ANY, SILC_ID_CLIENT, &list)) {
+
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	client = (SilcClientEntry)id_cache->context;
+	
+	if (client->router != entry) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
+
+	/* Remove the client entry */
+	silc_server_remove_from_channels(server, NULL, client);
+	silc_idlist_del_client(server->global_list, client);
+
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+  
+  return TRUE;
 }
 
 /* Checks whether given channel has global users.  If it does this returns
