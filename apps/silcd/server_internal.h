@@ -57,7 +57,6 @@ typedef struct {
 } SilcServerStatistics;
 
 typedef struct {
-  void *id_entry;
   SilcSocketConnection sock;
 
   /* Remote host name and port */

@@ -1,3 +1,21 @@
+Sat Feb 24 23:45:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* DIE command was renamed to SHUTDOWN.  Updated the both code
+	  and protocol specs.
+
+	* Defined SILC_UMODE_NONE, SILC_UMODE_SERVER_OPERATOR and
+	  SILC_UMODE_ROUTER_OPERATOR modes into lib/silccore/silcmode.h.
+
+	* Implemented CONNECT, CLOSE and SHUTDOWN commands to the server
+	  side.
+
+	* Added function silc_server_create_connection function to create
+	  connection to remote router.  My server implementation actually
+	  does not allow router to connect to normal server (it expects
+	  that normal server always initiates the connection to the router)
+	  so the CONNECT command is only good for connecting to another
+	  router.
+
 Sat Feb 24 16:03:45 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added SILC_NOTIFY_TYPE_KICKED to indicate that the client

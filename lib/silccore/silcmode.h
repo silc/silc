@@ -39,4 +39,9 @@
 #define SILC_CHANNEL_UMODE_CHANFO     0x0001 /* channel founder */
 #define SILC_CHANNEL_UMODE_CHANOP     0x0002 /* channel operator */
 
+/* SILC modes */
+#define SILC_UMODE_NONE               0x0000 /* Normal SILC user */
+#define SILC_UMODE_SERVER_OPERATOR    0x0001 /* Server operator */
+#define SILC_UMODE_ROUTER_OPERATOR    0x0002 /* Router (SILC) operator */
+
 #endif

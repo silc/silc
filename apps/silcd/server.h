@@ -87,6 +87,8 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context);
 void silc_server_packet_parse_type(SilcServer server, 
 				   SilcSocketConnection sock,
 				   SilcPacketContext *packet);
+void silc_server_create_connection(SilcServer server,
+				   char *remote_host, unsigned int port);
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock);
 void silc_server_free_client_data(SilcServer server, 

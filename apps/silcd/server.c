@@ -622,7 +622,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       /* Allocate connection object for hold connection specific stuff. */
       sconn = silc_calloc(1, sizeof(*sconn));
       sconn->server = server;
-      sconn->remote_host = server->config->routers->host;
+      sconn->remote_host = strdup(server->config->routers->host);
       sconn->remote_port = server->config->routers->port;
 
       silc_task_register(server->timeout_queue, fd, 
@@ -652,7 +652,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 	/* Allocate connection object for hold connection specific stuff. */
 	sconn = silc_calloc(1, sizeof(*sconn));
 	sconn->server = server;
-	sconn->remote_host = ptr->host;
+	sconn->remote_host = strdup(ptr->host);
 	sconn->remote_port = ptr->port;
 
 	silc_task_register(server->timeout_queue, fd, 
@@ -870,8 +870,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 
  out:
   /* Free the temporary connection data context */
-  if (sconn)
+  if (sconn) {
+    silc_free(sconn->remote_host);
     silc_free(sconn);
+  }
 
   /* Free the protocol object */
   silc_protocol_free(protocol);
@@ -1750,6 +1752,25 @@ void silc_server_packet_parse_type(SilcServer server,
     break;
   }
   
+}
+
+/* Creates connection to a remote router. */
+
+void silc_server_create_connection(SilcServer server,
+				   char *remote_host, unsigned int port)
+{
+  SilcServerConnection sconn;
+
+  /* Allocate connection object for hold connection specific stuff. */
+  sconn = silc_calloc(1, sizeof(*sconn));
+  sconn->server = server;
+  sconn->remote_host = strdup(remote_host);
+  sconn->remote_port = port;
+
+  silc_task_register(server->timeout_queue, 0, 
+		     silc_server_connect_router,
+		     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
+		     SILC_TASK_PRI_NORMAL);
 }
 
 /* Closes connection to socket connection */
