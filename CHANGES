@@ -3,6 +3,9 @@ Wed Apr  6 16:56:53 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 	* Added some better error messages.  Affected file
 	  silcd/command_reply.c and packet_receive.c.
 
+	* Handle error in WATCH command propely on backup router.
+	  Affected file silcd/command.c.
+
 Wed Apr  6 09:10:31 CEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added pkg-config .pc file creation for silc core library

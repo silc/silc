@@ -4112,6 +4112,7 @@ SILC_SERVER_CMD_FUNC(watch)
   unsigned char hash[16], *tmp,  *pk, *nick;
   SilcClientEntry client;
   SilcClientID *client_id = NULL;
+  SilcUInt16 old_ident;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WATCH, cmd, 1, 3);
 
@@ -4119,7 +4120,6 @@ SILC_SERVER_CMD_FUNC(watch)
     if (!cmd->pending) {
       /* Send the command to router */
       SilcBuffer tmpbuf;
-      SilcUInt16 old_ident;
 
       /* If backup receives this from primary, handle it locally */
       if (server->server_type == SILC_BACKUP_ROUTER &&
@@ -4146,17 +4146,19 @@ SILC_SERVER_CMD_FUNC(watch)
       silc_buffer_free(tmpbuf);
       goto out;
     } else {
-      if (!context2)
+      SilcServerCommandReplyContext reply = context2;
+      SilcStatus status;
+
+      if (!reply)
         goto out;
 
-      /* Backup router handles the WATCH command also. */
-      if (server->server_type != SILC_BACKUP_ROUTER) {
-	/* Received reply from router, just send same data to the client. */
-	SilcServerCommandReplyContext reply = context2;
-	SilcStatus status;
+      silc_command_get_status(reply->payload, &status, NULL);
 
+      /* Backup router handles the WATCH command also. */
+      if (server->server_type != SILC_BACKUP_ROUTER ||
+	  SILC_STATUS_IS_ERROR(status)) {
+	/* Received reply from router, just send same data to the client. */
 	SILC_LOG_DEBUG(("Received reply to WATCH from router"));
-	silc_command_get_status(reply->payload, &status, NULL);
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH, status,
 					      0);
 	goto out;
@@ -4384,11 +4386,13 @@ SILC_SERVER_CMD_FUNC(watch)
   /* Distribute the watch list to backup routers too */
   if (server->backup) {
     SilcBuffer tmpbuf;
+    old_ident = silc_command_get_ident(cmd->payload);
     silc_command_set_ident(cmd->payload, ++server->cmd_ident);
     tmpbuf = silc_command_payload_encode_payload(cmd->payload);
     silc_server_backup_send(server, cmd->sock->user_data, SILC_PACKET_COMMAND,
 			    cmd->packet->flags, tmpbuf->data, tmpbuf->len,
 			    FALSE, TRUE);
+    silc_command_set_ident(cmd->payload, old_ident);
     silc_buffer_free(tmpbuf);
   }
 
