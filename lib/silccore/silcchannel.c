@@ -109,8 +109,9 @@ SilcDList silc_channel_payload_parse_list(const unsigned char *payload,
     if (ret == -1)
       goto err;
 
-    if ((newp->name_len < 1 || newp->name_len > buffer.len) ||
-	(newp->id_len < 1 || newp->id_len > buffer.len)) {
+    if ((newp->name_len < 1 || newp->name_len > buffer.len - 8) ||
+	(newp->id_len < 1 || newp->id_len > buffer.len - 8) ||
+	(newp->id_len + newp->name_len > buffer.len - 8)) {
       SILC_LOG_ERROR(("Incorrect channel payload in packet, packet dropped"));
       goto err;
     }

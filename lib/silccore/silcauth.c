@@ -510,7 +510,7 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
 							 &newp->hostname_len),
 			     SILC_STR_UI_INT(&newp->port),
 			     SILC_STR_END);
-  if (ret == -1) {
+  if (ret == -1 || newp->hostname_len > buffer.len - 6) {
     silc_free(newp);
     return NULL;
   }

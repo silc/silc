@@ -299,7 +299,7 @@ SilcDList silc_attribute_payload_parse(const unsigned char *payload,
     if (ret == -1)
       goto err;
 
-    if (newp->data_len > buffer.len) {
+    if (newp->data_len > buffer.len - 4) {
       SILC_LOG_ERROR(("Incorrect attribute payload in list"));
       goto err;
     }
@@ -619,7 +619,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 	silc_buffer_unformat(&buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&pk->type, &len),
 			     SILC_STR_END);
-      if (res == -1)
+      if (res == -1 || len > buffer.len - 2)
 	break;
       pk->data = silc_memdup(payload->data + 2 + len,
 			     payload->data_len - 2 - len);

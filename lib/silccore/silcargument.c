@@ -71,15 +71,12 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
 			       SILC_STR_UI_SHORT(&p_len),
 			       SILC_STR_UI_CHAR(&arg_type),
 			       SILC_STR_END);
-    if (ret == -1)
+    if (ret == -1 || p_len > buffer.len - 3)
       goto err;
-    
+
     newp->argv_lens[i] = p_len;
     newp->argv_types[i] = arg_type;
 
-    if (p_len > buffer.len - 3)
-      break;
-    
     /* Get argument data */
     silc_buffer_pull(&buffer, 3);
     ret = silc_buffer_unformat(&buffer,
