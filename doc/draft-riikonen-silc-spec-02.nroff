@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XX April 2001
+.ds RH 26 April 2001
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-02.txt                          XX April 2001
-Expires: XX October 2001
+draft-riikonen-silc-spec-02.txt                          26 April 2001
+Expires: 26 October 2001
 
 .in 3
 
@@ -118,13 +118,13 @@ Table of Contents
   4.4 Channel Key Generation .................................... 34
   4.5 Private Message Sending and Reception ..................... 34
   4.6 Private Message Key Generation ............................ 35
-  4.7 Channel Message Sending and Reception ..................... 36
+  4.7 Channel Message Sending and Reception ..................... 35
   4.8 Session Key Regeneration .................................. 36
   4.9 Command Sending and Reception ............................. 37
   4.10 Closing Connection ....................................... 37
 5 Security Considerations ....................................... 38
 6 References .................................................... 38
-7 Author's Address .............................................. 40
+7 Author's Address .............................................. 39
 
 
 
@@ -920,7 +920,7 @@ to client and there are some commands that server must not send.
 Note that the command reply is usually sent only after client has sent
 the command request but server is allowed to send command reply packet
 to client even if client has not requested the command.  Client MAY,
-choose ignore the command reply.
+choose to ignore the command reply.
 
 It is expected that some of the commands may be miss-used by clients
 resulting various problems on the server side.  Every implementation
@@ -970,7 +970,7 @@ Channel key is also known by the routers and all servers that has clients
 on the channel.  However, channels MAY have channel private keys that
 are entirely local setting for the client.  All clients on the channel
 MUST know the channel private key before hand to be able to talk on the
-channel.  In this case, no server or router knows the key for channel.
+channel.  In this case, no server or router know the key for channel.
 
 Server shares secret symmetric session key with router which is
 established by the SILC Key Exchange Protocol.  Every packet passed from
@@ -1125,7 +1125,7 @@ SILC Key Exchange protocol is described in detail in [SILC3].
 
 Authentication is done after key exchange protocol has been successfully
 completed.  The purpose of authentication is to authenticate for example
-client connecting to the server.  However, Usually clients are accepted
+client connecting to the server.  However, usually clients are accepted
 to connect to server without explicit authentication.  Servers are
 required use authentication protocol when connecting.  The authentication
 may be based on passphrase (pre-shared-secret) or public key.  The
@@ -1172,7 +1172,7 @@ The format of the Authentication Payload is as follows:
 |                                                               |
 ~                       Authentication Data                     ~
 |                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
  
 .ce
@@ -1182,7 +1182,7 @@ Figure 5:  Authentication Payload
 .in 6
 o Payload Length (2 bytes) - Length of the entire payload.
 
-o Authentication Type (2) - The method of the authentication.
+o Authentication Method (2) - The method of the authentication.
   The authentication methods are defined in [SILC2] in the
   Connection Auth Request Payload.  The NONE authentication
   method SHOULD NOT be used.
@@ -1297,7 +1297,7 @@ dss        DSS  (OPTIONAL)
 
 DSS is described in [Menezes].  The RSA MUST be implemented according
 PKCS #1 [PKCS1].  The mandatory PKCS #1 implementation in SILC MUST be
-compliant to either PKCS #1 version 1.5 or newer with the the following
+compliant to either PKCS #1 version 1.5 or newer with the following
 notes: The signature encoding is always in same format as the encryption
 encoding regardless of the PKCS #1 version.  The signature with appendix
 (with hash algorithm OID in the data) MUST NOT be used in the SILC.  The
@@ -1540,7 +1540,7 @@ are described in [SILC2] and [SILC3].
 This section describes the procedure when client connects to SILC server.
 When client connects to server the server MUST perform IP address lookup
 and reverse IP address lookup to assure that the origin host really is
-who it claims to be.  Client, host, connecting to server MUST have 
+who it claims to be.  Client, host, connecting to server SHOULD have 
 both valid IP address and fully qualified domain name (FQDN).
 
 After that the client and server performs SILC Key Exchange protocol
@@ -1679,12 +1679,12 @@ the router has.
 4.3 Joining to a Channel
 
 This section describes the procedure when client joins to a channel.
-Client may join to channel by sending command SILC_COMMAND_JOIN to the
+Client joins to channel by sending command SILC_COMMAND_JOIN to the
 server.  If the receiver receiving join command is normal server the
 server MUST check its local list whether this channel already exists
 locally.  This would indicate that some client connected to the server
 has already joined to the channel.  If this is case the client is
-joined to the client, new channel key is created and information about
+joined to the channel, new channel key is created and information about
 newly joined channel is sent to the router.  The router is informed
 by sending SILC_NOTIFY_TYPE_JOIN notify type.  The notify type MUST
 also be sent to the local clients on the channel.  The new channel key
@@ -1788,13 +1788,6 @@ MAY also send SILC_COMMAND_WHOIS command to receive the Client ID.
 If the sender has received earlier a private message from the receiver
 it should have cached the Client ID from the SILC Packet Header.
 
-Receiver of a private message SHOULD NOT explicitly trust the nickname
-that it receives in the Private Message Payload, described in [SILC2].
-Implementations could resolve the nickname from server, as described
-previously, and compare the received Client ID and the SILC Packet
-Header's Client ID.  The nickname in the payload is merely provided
-to be displayed for end user.
-
 See [SILC2] for description of private message encryption and decryption
 process.
 
@@ -1802,7 +1795,7 @@ process.
 .ti 0
 4.6 Private Message Key Generation
 
-Private message MAY be protected by the key generated by theclient.
+Private message MAY be protected by the key generated by the client.
 The key may be generated and sent to the other client by sending packet
 SILC_PACKET_PRIVATE_MESSAGE_KEY which travels through the network
 and is secured by session keys.  After that the private message key
@@ -1878,6 +1871,8 @@ After both parties has regenerated the session key, both MUST send
 SILC_PACKET_REKEY_DONE packet to each other.  These packets are still
 secured with the old key.  After these packets, the subsequent packets
 MUST be protected with the new key.
+
+
 
 
 .ti 0
@@ -2018,11 +2013,6 @@ should have a forum to discuss the cell management issues.
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
 
-
-
-
-
-
 .ti 0
 7 Author's Address
 
@@ -2034,4 +2024,4 @@ Finland
 
 EMail: priikone@poseidon.pspt.fi
 
-This Internet-Draft expires XX October 2001 
+This Internet-Draft expires 26 October 2001 
