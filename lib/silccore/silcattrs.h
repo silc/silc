@@ -177,23 +177,48 @@ typedef enum {
 } SilcAttributeDevice;
 /***/
 
+/****f* silccore/SilcAttributesAPI/silc_attribute_payload_alloc
+ *
+ * SYNOPSIS
+ *
+ *    SilcAttributesPayload
+ *    silc_attribute_payload_alloc(SilcAttribute attribute,
+ *                                 SilcAttributeFlags flags,
+ *                                 void *object,
+ *                                 SilcUInt32 object_size);
+ *
+ * DESCRIPTION
+ *
+ *    Allocates and encodes the attribute indicated by `attribute' and
+ *    returns pointer to the attribute.
+ *
+ *    The `object' must always be the same data type as defined with
+ *    SilcAttribute (see the comments) for all attributes.
+ *
+ ***/
+SilcAttributePayload silc_attribute_payload_alloc(SilcAttribute attribute,
+						  SilcAttributeFlags flags,
+						  void *object,
+						  SilcUInt32 object_size);
+
 /****f* silccore/SilcAttributesAPI/silc_attribute_payload_parse
  *
  * SYNOPSIS
  *
- *    SilcAttributePayload
+ *    SilcDList
  *    silc_attribute_payload_parse(const unsigned char *payload,
  *                                 SilcUInt32 payload_len);
  *
  * DESCRIPTION
  *
- *    Parses one attribute payload sent as argument and saves it to
- *    SilcAttributePayload context.  The new allocated context is returned.
+ *    Parses list of Attribute payloads returning list of payloads.
+ *    One entry in the returned list is SilcAttributesPayload.  You
+ *    can produce such a list with silc_attribute_payload_encode
+ *    function.
  *
  ***/
-SilcAttributePayload
-silc_attribute_payload_parse(const unsigned char *payload,
-			     SilcUInt32 payload_len);
+SilcDList silc_attribute_payload_parse(const unsigned char *payload,
+				       SilcUInt32 payload_len);
 
 /****f* silccore/SilcAttributesAPI/silc_attribute_payload_encode
  *
@@ -212,7 +237,8 @@ silc_attribute_payload_parse(const unsigned char *payload,
  *    was reallocated.  If `attrs' is NULL for first attribute this
  *    allocates the buffer and returns it.  This can be called multiple
  *    times to add multiple attributes to the `attrs' buffer.  The `flags'
- *    indicates the validity of the added attribute.
+ *    indicates the validity of the added attribute.  Returns NULL on
+ *    error.
  *
  *    The `object' must always be the same data type as defined with
  *    SilcAttribute (see the comments) for all attributes.
@@ -224,25 +250,32 @@ SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
 					 void *object,
 					 SilcUInt32 object_size);
 
-/****f* silccore/SilcAttributesAPI/silc_attribute_payload_parse_list
+/****f* silccore/SilcAttributesAPI/silc_attribute_payload_encode_data
  *
  * SYNOPSIS
  *
- *    SilcDList
- *    silc_attribute_payload_parse_list(const unsigned char *payload,
- *                                      SilcUInt32 payload_len);
+ *    SilcBuffer
+ *    silc_attribute_payload_encode_data(SilcBuffer attrs,
+ *                                       SilcAttribute attribute,
+ *                                       SilcAttributeFlags flags,
+ *                                       const unsigned char *data,
+ *                                       SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
- *    Parses list of Attribute payloads returning list of payloads. This
- *    is equivalent to the silc_attribute_payload_parse except that the
- *    `buffer' now includes multiple Attribute Payloads one after the other.
- *    You can produce such a list with silc_attribute_payload_encode
- *    function.
+ *    Same function as silc_attribute_payload_encode except the attribute
+ *    is already encoded into `data' of `data_len' bytes in length.
+ *    Encodes the attribute into the `attrs' buffer and returns pointer
+ *    to the buffer, which may be different in case the buffer was
+ *    reallocated.  If `attrs' is NULL for first attribute this allocates
+ *    the buffer and returns it.  Returns NULL on error.
  *
  ***/
-SilcDList silc_attribute_payload_parse_list(const unsigned char *payload,
-					    SilcUInt32 payload_len);
+SilcBuffer silc_attribute_payload_encode_data(SilcBuffer attrs,
+					      SilcAttribute attribute,
+					      SilcAttributeFlags flags,
+					      const unsigned char *data,
+					      SilcUInt32 data_len);
 
 /****f* silccore/SilcAttributesAPI/silc_attribute_payload_free
  *
@@ -424,24 +457,24 @@ typedef struct {
  * SYNOPSIS
  *
  *    bool silc_attribute_get_object(SilcAttributePayload payload,
- *                                   SilcAttribute attribute,
  *                                   void **object,
  *                                   SilcUInt32 object_size);
  *
  * DESCRIPTION
  *
- *    Returns the already parsed attribute object by the attribute type
- *    indicated by `attribute'.  Copies the data into the `object' which
+ *    Returns the already parsed attribute object from the payload
+ *    indicated by `payload'.  Copies the data into the `object' which
  *    must be sent as argument (and must be of correct type and size).
  *    The `object_size' indicates the size of the `*object' sent.
  *    Returns TRUE if the `attribute' attribute was found and FALSE
  *    if such attribute is not present in the `payload', or the `object_size'
  *    is not sufficient.  See the definition of SilcAttribute for the
  *    list of attributes and the required object types for attributes.
+ *    You can use silc_attribute_get_attribute to get the SilcAttribute
+ *    type from the `payload'.
  *
  ***/
 bool silc_attribute_get_object(SilcAttributePayload payload,
-			       SilcAttribute attribute,
 			       void **object, SilcUInt32 object_size);
 
 #endif /* SILCATTRS_H */

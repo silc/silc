@@ -35,62 +35,22 @@ struct SilcAttributePayloadStruct {
   unsigned char *data;
 };
 
-/* Parse one attribute payload */
+/* Internal routine for encoding a attribute */
 
-SilcAttributePayload
-silc_attribute_payload_parse(const unsigned char *payload,
-			     SilcUInt32 payload_len)
+static unsigned char *
+silc_attribute_payload_encode_int(SilcAttribute attribute,
+				  SilcAttributeFlags flags,
+				  void *object,
+				  SilcUInt32 object_size,
+				  SilcUInt32 *ret_len)
 {
-  SilcBufferStruct buffer;
-  SilcAttributePayload newp;
-  int ret;
-
-  SILC_LOG_DEBUG(("Parsing attribute payload"));
-
-  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
-  newp = silc_calloc(1, sizeof(*newp));
-  if (!newp)
-    return NULL;
-
-  /* Parse the Attribute Payload. */
-  ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_CHAR(&newp->attribute),
-			     SILC_STR_UI_CHAR(&newp->flags),
-			     SILC_STR_UI16_NSTRING_ALLOC(&newp->data, 
-							 &newp->data_len),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto err;
-
-  if (newp->data_len > buffer.len - 4) {
-    SILC_LOG_ERROR(("Incorrect attribute payload"));
-    goto err;
-  }
-
-  return newp;
-
- err:
-  silc_attribute_payload_free(newp);
-  return NULL;
-}
-
-/* Encode one attribute payload to buffer */
-
-SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
-					 SilcAttribute attribute,
-					 SilcAttributeFlags flags,
-					 void *object,
-					 SilcUInt32 object_size)
-{
-  SilcBuffer buffer, tmpbuf = NULL;
-  unsigned char tmp[4], *str = NULL;
+  SilcBuffer tmpbuf = NULL;
+  unsigned char tmp[4], *str = NULL, *ret;
   int len;
-
-  SILC_LOG_DEBUG(("Encoding Attribute Payload"));
 
   /* Encode according to attribute type */
   if (flags & SILC_ATTRIBUTE_FLAG_VALID) {
-    if (!object || !object_size)
+    if (!object && !object_size)
       return NULL;
 
     switch (attribute) {
@@ -112,6 +72,8 @@ SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
 	SILC_PUT16_MSB(len, str + 4);
 	memcpy(str + 6, service->address, len);
 	str[6 + len] = service->status;
+	object = str;
+	object_size = 7 + len;
       }
       break;
 
@@ -174,6 +136,8 @@ SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
 			   SILC_STR_UI16_STRING(geo->altitude),
 			   SILC_STR_UI16_STRING(geo->accuracy),
 			   SILC_STR_END);
+	object = tmpbuf->data;
+	object_size = tmpbuf->len;
       }
       break;
 
@@ -197,6 +161,8 @@ SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
 			   SILC_STR_UI16_STRING(dev->model),
 			   SILC_STR_UI16_STRING(dev->language),
 			   SILC_STR_END);
+	object = tmpbuf->data;
+	object_size = tmpbuf->len;
       }
       break;
 
@@ -215,6 +181,8 @@ SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
 			   SILC_STR_UI16_STRING(pk->type),
 			   SILC_STR_UI_XNSTRING(pk->data, pk->data_len),
 			   SILC_STR_END);
+	object = tmpbuf->data;
+	object_size = tmpbuf->len;
       }
       break;
 
@@ -233,41 +201,53 @@ SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
       return NULL;
       break;
     }
+
+    ret = silc_memdup(object, object_size);
+
+    if (tmpbuf)
+      silc_buffer_free(tmpbuf);
+    silc_free(str);
+
+    if (ret_len)
+      *ret_len = object_size;
+
+    return ret;
   }
 
-  buffer = attrs;
-  len = 4 + object_size;
+  return NULL;
+}
 
-  if (!buffer) {
-    buffer = silc_buffer_alloc_size(len);
-  } else {
-    buffer = silc_buffer_realloc(buffer,
-				 (buffer ? buffer->truelen + len : len));
-    silc_buffer_pull_tail(buffer, (buffer->end - buffer->data));
+/* Allocates attribute payload and encodes the attribute there */
+
+SilcAttributePayload silc_attribute_payload_alloc(SilcAttribute attribute,
+						  SilcAttributeFlags flags,
+						  void *object,
+						  SilcUInt32 object_size)
+{
+  SilcAttributePayload attr;
+
+  attr = silc_calloc(1, sizeof(*attr));
+  if (!attr)
+    return NULL;
+
+  attr->attribute = attribute;
+  attr->flags = flags;
+  attr->data =
+    silc_attribute_payload_encode_int(attribute, flags, object,
+				      object_size,
+				      (SilcUInt32 *)&attr->data_len);
+  if (!attr->data) {
+    silc_free(attr);
+    return NULL;
   }
 
-  silc_buffer_format(buffer, 
-		     SILC_STR_UI_CHAR(attribute),
-		     SILC_STR_UI_CHAR(flags),
-		     SILC_STR_UI_SHORT((SilcUInt16)object_size),
-		     SILC_STR_UI_XNSTRING(object, object_size),
-		     SILC_STR_END);
-
-  silc_buffer_pull(buffer, len);
-  if (buffer)
-    silc_buffer_push(buffer, buffer->data - buffer->head);
-
-  if (tmpbuf)
-    silc_buffer_free(tmpbuf);
-  silc_free(str);
-
-  return buffer;
+  return attr;
 }
 
 /* Parse list of payloads */
 
-SilcDList silc_attribute_payload_parse_list(const unsigned char *payload,
-					    SilcUInt32 payload_len)
+SilcDList silc_attribute_payload_parse(const unsigned char *payload,
+				       SilcUInt32 payload_len)
 {
   SilcBufferStruct buffer;
   SilcDList list;
@@ -310,6 +290,53 @@ SilcDList silc_attribute_payload_parse_list(const unsigned char *payload,
  err:
   silc_attribute_payload_list_free(list);
   return NULL;
+}
+
+/* Encode one attribute payload to buffer */
+
+SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
+					 SilcAttribute attribute,
+					 SilcAttributeFlags flags,
+					 void *object,
+					 SilcUInt32 object_size)
+{
+  object = silc_attribute_payload_encode_int(attribute, flags, object,
+					     object_size, &object_size);
+  attrs = silc_attribute_payload_encode_data(attrs, attribute, flags,
+					     (const unsigned char *)object,
+					     object_size);
+  silc_free(object);
+  return attrs;
+}
+
+/* Encoded the attribute data directly to buffer */
+
+SilcBuffer silc_attribute_payload_encode_data(SilcBuffer attrs,
+					      SilcAttribute attribute,
+					      SilcAttributeFlags flags,
+					      const unsigned char *data,
+					      SilcUInt32 data_len)
+{
+  SilcBuffer buffer = attrs;
+  int len;
+
+  len = 4 + data_len;
+  buffer = silc_buffer_realloc(buffer,
+			       (buffer ? buffer->truelen + len : len));
+  if (!buffer)
+    return NULL;
+  silc_buffer_pull(buffer, buffer->len);
+  silc_buffer_pull_tail(buffer, len);
+  silc_buffer_format(buffer, 
+		     SILC_STR_UI_CHAR(attribute),
+		     SILC_STR_UI_CHAR(flags),
+		     SILC_STR_UI_SHORT((SilcUInt16)data_len),
+		     SILC_STR_UI_XNSTRING(data, data_len),
+		     SILC_STR_END);
+  if (buffer)
+    silc_buffer_push(buffer, buffer->data - buffer->head);
+
+  return buffer;
 }
 
 /* Free Attribute Payload */
@@ -362,17 +389,15 @@ const unsigned char *silc_attribute_get_data(SilcAttributePayload payload,
 /* Return parsed attribute object */
 
 bool silc_attribute_get_object(SilcAttributePayload payload,
-			       SilcAttribute attribute,
 			       void **object, SilcUInt32 object_size)
 {
   SilcUInt16 len;
   bool ret = FALSE;
 
-  if (!attribute || payload->attribute != attribute || !object || !(*object) ||
-      payload->flags & SILC_ATTRIBUTE_FLAG_INVALID)
+  if (!object || !(*object) ||  payload->flags & SILC_ATTRIBUTE_FLAG_INVALID)
     return FALSE;
 
-  switch (attribute) {
+  switch (payload->attribute) {
   case SILC_ATTRIBUTE_USER_INFO:
     SILC_NOT_IMPLEMENTED("SILC_ATTRIBUTE_USER_INFO");
     break;
