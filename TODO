@@ -65,6 +65,8 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Topic notifications seem to go double times occasionally to a channel.
+
  o Backup router related issues
 
  	o Channel user mode changes are notified unnecessarely when

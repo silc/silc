@@ -1564,9 +1564,13 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     SILC_LOG_DEBUG(("Premature EOF from connection %d", sock->sock));
     SILC_SET_DISCONNECTING(sock);
 
-    if (sock->user_data)
-      silc_server_free_sock_user_data(server, sock, NULL);
-    else if (server->router_conn && server->router_conn->sock == sock &&
+    if (sock->user_data) {
+      char tmp[128];
+      if (silc_socket_get_error(sock, tmp, sizeof(tmp) - 1))
+	silc_server_free_sock_user_data(server, sock, tmp);
+      else
+	silc_server_free_sock_user_data(server, sock, NULL);
+    } else if (server->router_conn && server->router_conn->sock == sock &&
 	     !server->router && server->standalone)
       silc_schedule_task_add(server->schedule, 0, 
 			     silc_server_connect_to_router, 
@@ -3711,6 +3715,8 @@ void silc_server_save_users_on_channel(SilcServer server,
   SilcIDCacheEntry cache;
   bool global;
 
+  SILC_LOG_DEBUG(("Start"));
+
   for (i = 0; i < user_count; i++) {
     /* Client ID */
     SILC_GET16_MSB(idp_len, user_list->data + 2);
@@ -3916,9 +3922,13 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
    it using WHOIS command. */
 
 SilcClientEntry silc_server_get_client_resolve(SilcServer server,
-					       SilcClientID *client_id)
+					       SilcClientID *client_id,
+					       bool *resolved)
 {
   SilcClientEntry client;
+
+  if (resolved)
+    *resolved = FALSE;
 
   client = silc_idlist_find_client_by_id(server->local_list, client_id,
 					 TRUE, NULL);
@@ -3949,6 +3959,10 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
 			    buffer->data, buffer->len, FALSE);
     silc_buffer_free(idp);
     silc_buffer_free(buffer);
+
+    if (resolved)
+      *resolved = TRUE;
+
     return NULL;
   }
 

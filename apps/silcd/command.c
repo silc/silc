@@ -2429,6 +2429,7 @@ SILC_SERVER_CMD_FUNC(invite)
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (tmp) {
     char invite[512];
+    bool resolve;
 
     dest_id = silc_id_payload_parse_id(tmp, len);
     if (!dest_id) {
@@ -2438,11 +2439,12 @@ SILC_SERVER_CMD_FUNC(invite)
     }
 
     /* Get the client entry */
-    dest = silc_server_get_client_resolve(server, dest_id);
+    dest = silc_server_get_client_resolve(server, dest_id, &resolve);
     if (!dest) {
-      if (server->server_type != SILC_SERVER) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-				     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
+      if (server->server_type != SILC_SERVER || !resolve) {
+	silc_server_command_send_status_reply(
+					cmd, SILC_COMMAND_INVITE,
+					SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
 	goto out;
       }
       
@@ -2981,6 +2983,7 @@ static void silc_server_command_join_channel(SilcServer server,
   uint16 ident = silc_command_get_ident(cmd->payload);
   char check[512], check2[512];
   bool founder = FALSE;
+  bool resolve;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -2991,10 +2994,17 @@ static void silc_server_command_join_channel(SilcServer server,
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     client = (SilcClientEntry)sock->user_data;
   } else {
-    client = silc_server_get_client_resolve(server, client_id);
+    client = silc_server_get_client_resolve(server, client_id, &resolve);
     if (!client) {
       if (cmd->pending)
 	goto out;
+
+      if (!resolve) {
+	silc_server_command_send_status_reply(
+					 cmd, SILC_COMMAND_JOIN,
+					 SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	goto out;
+      }
 
       /* The client info is being resolved. Reprocess this packet after
 	 receiving the reply to the query. */
@@ -3316,16 +3326,8 @@ SILC_SERVER_CMD_FUNC(join)
 					     channel_name, NULL);
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
-    /* If this is coming from client the Client ID in the command packet must
-       be same as the client's ID. */
-    if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
-      SilcClientEntry entry = (SilcClientEntry)cmd->sock->user_data;
-      if (!SILC_ID_CLIENT_COMPARE(entry->id, client_id)) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-	goto out;
-      }
-    }
+    SilcClientEntry entry = (SilcClientEntry)cmd->sock->user_data;
+    client_id = silc_id_dup(entry->id, SILC_ID_CLIENT);
 
     if (!channel || channel->disabled) {
       /* Channel not found */
@@ -3336,8 +3338,9 @@ SILC_SERVER_CMD_FUNC(join)
 	channel = silc_server_create_new_channel(server, server->id, cipher, 
 						 hmac, channel_name, TRUE);
 	if (!channel) {
-	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-		   			SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+	  silc_server_command_send_status_reply(
+					 cmd, SILC_COMMAND_JOIN,
+					 SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	  goto out;
 	}
 	
@@ -3443,7 +3446,8 @@ SILC_SERVER_CMD_FUNC(join)
       create_key = FALSE;	/* Router returned the key already */
     }
 
-    if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS)
+    if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS &&
+	!silc_hash_table_count(channel->user_list))
       created = TRUE;
   }
 

@@ -212,8 +212,12 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 
 	/* Remove the client entry */
 	silc_server_remove_clients_channels(server, NULL, client, channels);
-	client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
-	id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+	if (!server_signoff) {
+	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+	} else {
+	  silc_idlist_del_client(server->local_list, client);
+	}
 	server->stat.clients--;
 	if (server->server_type == SILC_ROUTER)
 	  server->stat.cell_clients--;
@@ -268,8 +272,12 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 
 	/* Remove the client entry */
 	silc_server_remove_clients_channels(server, NULL, client, channels);
-	client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
-	id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+	if (!server_signoff) {
+	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+	} else {
+	  silc_idlist_del_client(server->global_list, client);
+	}
 	server->stat.clients--;
 	if (server->server_type == SILC_ROUTER)
 	  server->stat.cell_clients--;

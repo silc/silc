@@ -46,6 +46,7 @@ int silc_socket_write(SilcSocketConnection sock)
 	return -2;
       }
       SILC_LOG_DEBUG(("Cannot write to socket: %s", strerror(errno)));
+      sock->sock_error = errno;
       return -1;
     }
 
@@ -81,6 +82,7 @@ int silc_socket_read(SilcSocketConnection sock)
       return -2;
     }
     SILC_LOG_DEBUG(("Cannot read from socket: %d:%s", fd, strerror(errno)));
+    sock->sock_error = errno;
     return -1;
   }
 
@@ -102,4 +104,22 @@ int silc_socket_read(SilcSocketConnection sock)
   SILC_LOG_DEBUG(("Read %d bytes", len));
 
   return len;
+}
+
+/* Returns human readable socket error message */
+
+bool silc_socket_get_error(SilcSocketConnection sock, char *error,
+			   uint32 error_len)
+{
+  char *err;
+
+  if (!sock->sock_error)
+    return FALSE;
+
+  err = strerror(sock->sock_error);
+  if (strlen(err) > error_len)
+    return FALSE;
+
+  memset(error, 0, error_len);
+  memcpy(error, err, strlen(err));
 }

@@ -2231,6 +2231,8 @@ void silc_server_new_channel(SilcServer server,
       channel->mode = silc_channel_get_mode(payload);
 
       /* Send the new channel key to the server */
+      id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+      id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
       chk = silc_channel_key_payload_encode(id_len, id,
 					    strlen(channel->channel_key->
 						   cipher->name),
@@ -2277,8 +2279,8 @@ void silc_server_new_channel(SilcServer server,
 	/* Send to the channel */
 	silc_server_send_channel_key(server, sock, channel, FALSE);
 	id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
-	id_len = SILC_ID_CHANNEL_LEN;
-	
+	id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
+
 	/* Send to the server */
 	chk = silc_channel_key_payload_encode(id_len, id,
 					      strlen(channel->channel_key->

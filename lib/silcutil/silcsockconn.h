@@ -179,6 +179,7 @@ struct SilcSocketConnectionStruct {
   void *user_data;
   SilcProtocol protocol;
   uint32 flags;
+  uint8 sock_error;
   int users;
 
   char *hostname;
@@ -312,6 +313,23 @@ int silc_socket_read(SilcSocketConnection sock);
  *
  ***/
 int silc_socket_write(SilcSocketConnection sock);
+
+/****f* silcutil/SilcSocketConnectionAPI/silc_socket_get_error
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_socket_get_error(SilcSocketConnection sock, char *error,
+ *                               uint32 error_len);
+ *
+ * DESCRIPTION
+ *
+ *    Returns human readable error message into the `error' buffer if
+ *    the socket is int error status.  Returns TRUE if error message was
+ *    written into the buffer and FALSE if there is not socket error.
+ *
+ ***/
+bool silc_socket_get_error(SilcSocketConnection sock, char *error,
+			   uint32 error_len);
 
 /****f* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionHBCb
  *
