@@ -10,6 +10,9 @@ Mon Jul  9 18:28:34 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed the configure.in.pre to detect the pthread correctly
 	  on various systems.
 
+	* Fixed a deadlock in silc_task_queue_wakeup in the file
+	  lib/silcutil/silctask.c.
+
 Mon Jul  9 13:40:03 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new function silc_schedule_wakeup that is used in

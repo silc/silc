@@ -55,9 +55,7 @@ void silc_task_queue_free(SilcTaskQueue queue)
 
 void silc_task_queue_wakeup(SilcTaskQueue queue)
 {
-  silc_mutex_lock(queue->lock);
   silc_schedule_wakeup(queue->schedule);
-  silc_mutex_unlock(queue->lock);
 }
 
 /* Adds a non-timeout task into the task queue. This function is used
