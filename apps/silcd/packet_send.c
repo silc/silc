@@ -1207,3 +1207,12 @@ void silc_server_send_set_mode(SilcServer server,
 
   silc_buffer_free(packet);
 }
+
+/* Send the heartbeat packet. */
+
+void silc_server_send_heartbeat(SilcServer server,
+				SilcSocketConnection sock)
+{
+  silc_server_packet_send(server, sock, SILC_PACKET_HEARTBEAT, 0,
+			  NULL, 0, FALSE);
+}

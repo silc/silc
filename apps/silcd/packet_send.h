@@ -148,5 +148,7 @@ void silc_server_send_set_mode(SilcServer server,
 			       int broadcast,
 			       int mode_type, unsigned int mode_mask,
 			       unsigned int argc, ...);
+void silc_server_send_heartbeat(SilcServer server,
+				SilcSocketConnection sock);
 
 #endif

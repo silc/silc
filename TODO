@@ -153,6 +153,10 @@ TODO In SILC Server
 TODO In SILC Libraries
 ======================
 
+ o Rewrite the task system.  I made it too complex and too "neat" and
+   it really should be rewritten.  We don't need priorities really, one
+   priority is enough.  This will simplify a lot the task system.
+
  o Implement PFS (Perfect Forward Secrecy) flag in SKE (and in client and
    server, actually).  If PFS is set, re-key must cause new key exchange.
    This is required by the SILC protocol.

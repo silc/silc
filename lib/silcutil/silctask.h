@@ -332,7 +332,6 @@ typedef SilcTaskQueueObject *SilcTaskQueue;
 #define SILC_TASK_CALLBACK(func) \
 static void func(void *qptr, int type, void *context, int fd)
 
-
 /* Prototypes */
 void silc_task_queue_alloc(SilcTaskQueue *new, int valid);
 void silc_task_queue_free(SilcTaskQueue old);

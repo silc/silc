@@ -766,7 +766,15 @@ List of SILC Packet types are defined as follows.
           Payload of the packet:  See section 2.3.27 Set Mode Payload
 
 
-     32 - 199
+     32   SILC_PACKET_HEARTBEAT
+
+          This packet is used by clients, servers and routers to keep the
+          connection alive.  It is recommended that all servers implement
+          keepalive actions and perform it to both direction in a link.
+          This packet does not have a payload.
+
+
+     33 - 199
 
          Currently undefined commands.
 

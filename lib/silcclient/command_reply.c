@@ -709,20 +709,20 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
 			    "Ping reply from %s: %d second%s", 
 			    conn->ping[i].dest_name, diff, 
 			    diff == 1 ? "" : "s");
-
+      
       conn->ping[i].start_time = 0;
       silc_free(conn->ping[i].dest_id);
       conn->ping[i].dest_id = NULL;
       silc_free(conn->ping[i].dest_name);
       conn->ping[i].dest_name = NULL;
-
-      /* Notify application */
-      COMMAND_REPLY((ARGS));
       break;
     }
   }
 
   silc_free(id);
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS));
 
   /* Execute any pending command callbacks */
   SILC_CLIENT_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_PING);

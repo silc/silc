@@ -106,11 +106,6 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac,
 {
   unsigned char mac[32];
 
-  if (cipher) {
-    SILC_LOG_DEBUG(("Encrypting packet, cipher %s, len %d (%d)", 
-		    cipher->cipher->name, len, len - 2));
-  }
-
   /* Compute HMAC. This assumes that HMAC is created from the entire
      data area thus this uses the length found in buffer, not the length
      sent as argument. */
@@ -122,9 +117,12 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac,
 
   /* Encrypt the data area of the packet. 2 bytes of the packet
      are not encrypted. */
-  if (cipher)
+  if (cipher) {
+    SILC_LOG_DEBUG(("Encrypting packet, cipher %s, len %d (%d)", 
+		    cipher->cipher->name, len, len - 2));
     cipher->cipher->encrypt(cipher->context, buffer->data + 2, 
 			    buffer->data + 2, len - 2, cipher->iv);
+  }
 
   /* Pull the HMAC into the visible data area in the buffer */
   if (hmac)

@@ -21,6 +21,10 @@
 #ifndef SILCSOCKCONN_H
 #define SILCSOCKCONN_H
 
+/* Forward declarations */
+typedef struct SilcSocketConnectionStruct *SilcSocketConnection;
+typedef struct SilcSocketConnectionHB *SilcSocketConnectionHB;
+
 /* Socket types. These identifies the socket connection. */
 typedef enum {
   SILC_SOCKET_TYPE_UNKNOWN = 0,
@@ -35,6 +39,12 @@ typedef enum {
 #define SILC_SF_OUTBUF_PENDING 2
 #define SILC_SF_DISCONNECTING 3
 #define SILC_SF_DISCONNECTED 4
+
+/* Heartbeat callback function. This is the function in the application
+   that this library will call when it is time to send the keepalive
+   packet SILC_PACKET_HEARTBEAT. */
+typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
+					 void *context);
 
 /* 
    SILC Socket Connection object.
@@ -91,8 +101,12 @@ typedef enum {
        inbuf buffer and outgoing data after encryption is put to the outbuf
        buffer.
 
+  SilcSocketConnectionHB hb
+
+       The heartbeat context.  If NULL, heartbeat is not performed.
+
 */
-typedef struct {
+struct SilcSocketConnectionStruct {
   int sock;
   SilcSocketType type;
   void *user_data;
@@ -105,9 +119,19 @@ typedef struct {
 
   SilcBuffer inbuf;
   SilcBuffer outbuf;
-} SilcSocketConnectionObject;
 
-typedef SilcSocketConnectionObject *SilcSocketConnection;
+  SilcSocketConnectionHB hb;
+};
+
+/* Heartbeat context */
+struct SilcSocketConnectionHB {
+  unsigned long heartbeat;
+  SilcSocketConnectionHBCb hb_callback;
+  void *hb_context;
+  void *timeout_queue;
+  SilcTask hb_task;
+  SilcSocketConnection sock;
+};
 
 /* Macros */
 
@@ -136,5 +160,10 @@ typedef SilcSocketConnectionObject *SilcSocketConnection;
 void silc_socket_alloc(int sock, SilcSocketType type, void *user_data,
 		       SilcSocketConnection *new_socket);
 void silc_socket_free(SilcSocketConnection sock);
+void silc_socket_set_heartbeat(SilcSocketConnection sock, 
+			       unsigned long heartbeat,
+			       void *hb_context,
+			       SilcSocketConnectionHBCb hb_callback,
+			       void *timeout_queue);
 
 #endif

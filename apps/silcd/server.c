@@ -557,6 +557,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   silc_socket_alloc(sock, SILC_SOCKET_TYPE_UNKNOWN, NULL, &newsocket);
   server->sockets[sock] = newsocket;
   newsocket->hostname = strdup(sconn->remote_host);
+  newsocket->ip = strdup(sconn->remote_host);
   newsocket->port = sconn->remote_port;
   sconn->sock = newsocket;
 
@@ -783,6 +784,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   SilcSocketConnection sock = ctx->sock;
   SilcServerEntry id_entry;
   SilcBuffer packet;
+  SilcServerHBContext hb_context;
   unsigned char *id_string;
 
   SILC_LOG_DEBUG(("Start"));
@@ -848,6 +850,15 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   server->id_entry->router = id_entry;
   server->router = id_entry;
   server->router->data.registered = TRUE;
+
+  /* Perform keepalive. The `hb_context' will be freed automatically
+     when finally calling the silc_socket_free function. XXX hardcoded 
+     timeout!! */
+  hb_context = silc_calloc(1, sizeof(*hb_context));
+  hb_context->server = server;
+  silc_socket_set_heartbeat(sock, 600, hb_context,
+			    silc_server_perform_heartbeat,
+			    server->timeout_queue);
 
  out:
   /* Free the temporary connection data context */
@@ -1042,6 +1053,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     (SilcServerConnAuthInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
   SilcSocketConnection sock = ctx->sock;
+  SilcServerHBContext hb_context;
   void *id_entry = NULL;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1159,6 +1171,15 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
   /* Connection has been fully established now. Everything is ok. */
   SILC_LOG_DEBUG(("New connection authenticated"));
+
+  /* Perform keepalive. The `hb_context' will be freed automatically
+     when finally calling the silc_socket_free function. XXX hardcoded 
+     timeout!! */
+  hb_context = silc_calloc(1, sizeof(*hb_context));
+  hb_context->server = server;
+  silc_socket_set_heartbeat(sock, 600, hb_context,
+			    silc_server_perform_heartbeat,
+			    server->timeout_queue);
 
   silc_protocol_free(protocol);
   if (ctx->packet)
@@ -1717,6 +1738,13 @@ void silc_server_packet_parse_type(SilcServer server,
     silc_server_set_mode(server, sock, packet);
     break;
 
+  case SILC_PACKET_HEARTBEAT:
+    /*
+     * Received heartbeat.
+     */
+    SILC_LOG_DEBUG(("Heartbeat packet"));
+    break;
+
   default:
     SILC_LOG_ERROR(("Incorrect packet type %d, packet dropped", type));
     break;
@@ -1961,7 +1989,7 @@ void silc_server_remove_from_channels(SilcServer server,
 {
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
-  SilcBuffer chidp, clidp;
+  SilcBuffer clidp;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1975,40 +2003,45 @@ void silc_server_remove_from_channels(SilcServer server,
   silc_list_start(client->channels);
   while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {
     channel = chl->channel;
-    chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
 
-    /* Remove from list */
+    /* Remove channel from client's channel list */
     silc_list_del(client->channels, chl);
 
-    /* If this client is last one on the channel the channel
-       is removed all together. */
-    if (silc_list_count(channel->user_list) < 2) {
-
-      /* However, if the channel has marked global users then the 
-	 channel is not created locally, and this does not remove the
-	 channel globally from SILC network, in this case we will
-	 notify that this client has left the channel. */
-      if (channel->global_users)
-	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-					   SILC_NOTIFY_TYPE_SIGNOFF, 1,
-					   clidp->data, clidp->len);
-      
-      silc_idlist_del_channel(server->local_list, channel);
+    /* Remove channel if there is no users anymore */
+    if (server->server_type == SILC_ROUTER &&
+	silc_list_count(channel->user_list) < 2) {
+      if (!silc_idlist_del_channel(server->local_list, channel))
+	silc_idlist_del_channel(server->global_list, channel);
       server->stat.my_channels--;
       continue;
     }
 
-    /* Remove from list */
+    /* Remove client from channel's client list */
     silc_list_del(channel->user_list, chl);
     silc_free(chl);
     server->stat.my_chanclients--;
+
+    /* If there is not at least one local user on the channel then we don't
+       need the channel entry anymore, we can remove it safely. */
+    if (server->server_type == SILC_SERVER &&
+	!silc_server_channel_has_local(channel)) {
+      /* Notify about leaving client if this channel has global users. */
+      if (channel->global_users)
+	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+					   SILC_NOTIFY_TYPE_SIGNOFF, 1,
+					   clidp->data, clidp->len);
+
+      if (!silc_idlist_del_channel(server->local_list, channel))
+	silc_idlist_del_channel(server->global_list, channel);
+      server->stat.my_channels--;
+      continue;
+    }
 
     /* Send notify to channel about client leaving SILC and thus
        the entire channel. */
     silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 				       SILC_NOTIFY_TYPE_SIGNOFF, 1,
 				       clidp->data, clidp->len);
-    silc_buffer_free(chidp);
   }
 
   silc_buffer_free(clidp);
@@ -2043,25 +2076,20 @@ int silc_server_remove_from_one_channel(SilcServer server,
 
     ch = chl->channel;
 
-    /* Remove from list */
+    /* Remove channel from client's channel list */
     silc_list_del(client->channels, chl);
 
-    /* If this client is last one on the channel the channel
-       is removed all together. */
-    if (silc_list_count(channel->user_list) < 2) {
-      /* Notify about leaving client if this channel has global users. */
-      if (notify && channel->global_users)
-	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-					   SILC_NOTIFY_TYPE_LEAVE, 1,
-					   clidp->data, clidp->len);
-      
-      silc_idlist_del_channel(server->local_list, channel);
+    /* Remove channel if there is no users anymore */
+    if (server->server_type == SILC_ROUTER &&
+	silc_list_count(channel->user_list) < 2) {
+      if (!silc_idlist_del_channel(server->local_list, channel))
+	silc_idlist_del_channel(server->global_list, channel);
       silc_buffer_free(clidp);
       server->stat.my_channels--;
       return FALSE;
     }
 
-    /* Remove from list */
+    /* Remove client from channel's client list */
     silc_list_del(channel->user_list, chl);
     silc_free(chl);
     server->stat.my_chanclients--;
@@ -2072,11 +2100,18 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	!silc_server_channel_has_global(channel))
       channel->global_users = FALSE;
 
-    /* If tehre is not at least one local user on the channel then we don't
+    /* If there is not at least one local user on the channel then we don't
        need the channel entry anymore, we can remove it safely. */
     if (server->server_type == SILC_SERVER &&
 	!silc_server_channel_has_local(channel)) {
-      silc_idlist_del_channel(server->local_list, channel);
+      /* Notify about leaving client if this channel has global users. */
+      if (notify && channel->global_users)
+	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+					   SILC_NOTIFY_TYPE_LEAVE, 1,
+					   clidp->data, clidp->len);
+
+      if (!silc_idlist_del_channel(server->local_list, channel))
+	silc_idlist_del_channel(server->global_list, channel);
       silc_buffer_free(clidp);
       server->stat.my_channels--;
       return FALSE;
@@ -2308,4 +2343,20 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
     silc_channel_key_payload_free(payload);
 
   return channel;
+}
+
+/* Heartbeat callback. This function is set as argument for the
+   silc_socket_set_heartbeat function. The library will call this function
+   at the set time interval. */
+
+void silc_server_perform_heartbeat(SilcSocketConnection sock,
+				   void *hb_context)
+{
+  SilcServerHBContext hb = (SilcServerHBContext)hb_context;
+
+  SILC_LOG_DEBUG(("Sending heartbeat to %s (%s)", sock->hostname,
+		  sock->ip));
+
+  /* Send the heartbeat */
+  silc_server_send_heartbeat(hb->server, sock);
 }

@@ -117,5 +117,7 @@ void silc_server_create_channel_key(SilcServer server,
 SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 					      SilcBuffer key_payload,
 					      SilcChannelEntry channel);
+void silc_server_perform_heartbeat(SilcSocketConnection sock,
+				   void *hb_context);
 
 #endif

@@ -2819,7 +2819,7 @@ SILC_SERVER_CMD_FUNC(leave)
       silc_server_packet_send(server, 
 			      cmd->server->router->connection,
 			      SILC_PACKET_CHANNEL_KEY, 0, packet->data,
-			      packet->len, TRUE);
+			      packet->len, FALSE);
   } else {
 
   }

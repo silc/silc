@@ -496,7 +496,7 @@ SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
 			SilcCipher channel_key);
-void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry);
+int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry);
 SilcChannelEntry
 silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,
 				 SilcIDCacheEntry *ret_entry);

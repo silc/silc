@@ -151,6 +151,57 @@ SilcTask silc_task_add(SilcTaskQueue queue, SilcTask new,
   return new;
 }
 
+#if 0
+void dump_tasks(SilcTaskQueue queue)
+{
+  SilcTask first, prev;
+
+  if (!queue->task)
+    return;
+
+  first = queue->task;
+
+  fprintf(stderr, "\nqueue->task:\t%p\t%d\n", queue->task,
+	  queue->task->timeout.tv_sec);
+
+  prev = first->prev;
+  while (1) {
+    if (first == prev)
+      break;
+
+    fprintf(stderr, "task       :\t%p\t%d\n", prev, prev->timeout.tv_sec);
+
+    prev = prev->prev;
+  }
+  fprintf(stderr, "\n");
+}
+#endif
+
+/* Return the timeout task with smallest timeout. */
+
+static SilcTask silc_task_get_first(SilcTaskQueue queue, SilcTask first)
+{
+  SilcTask prev, task;
+
+  prev = first->prev;
+
+  if (first == prev)
+    return first;
+
+  task = first;
+  while (1) {
+    if (first == prev)
+      break;
+
+    if (silc_task_timeout_compare(&prev->timeout, &task->timeout))
+      task = prev;
+
+    prev = prev->prev;
+  }
+
+  return task;
+}
+
 /* Adds a timeout task into the task queue. This function is used by
    silc_task_register function. Returns a pointer to the registered 
    task. Timeout tasks are sorted by their timeout value in ascending
@@ -316,6 +367,10 @@ SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask new,
     return NULL;
   }
 
+#if 0
+  dump_tasks(queue);
+#endif
+
   return new;
 }
 
@@ -443,12 +498,17 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
       if (prev == old && next == old)
 	queue->task = NULL;
       if (queue->task == old)
-	queue->task = next;
+	queue->task = silc_task_get_first(queue, next);
+      /*queue->task = next;*/
+      
+#if 0
+      dump_tasks(queue);
+#endif
 
       silc_free(old);
       return TRUE;
     }
-    old = old->next;
+    old = old->prev;
 
     if (old == first)
       return FALSE;

@@ -850,6 +850,13 @@ void silc_client_packet_parse_type(SilcClient client,
       break;
     }
 
+  case SILC_PACKET_HEARTBEAT:
+    /*
+     * Received heartbeat packet
+     */
+    SILC_LOG_DEBUG(("Heartbeat packet"));
+    break;
+
   default:
     SILC_LOG_DEBUG(("Incorrect packet type %d, packet dropped", type));
     break;
@@ -1387,6 +1394,20 @@ void silc_client_notify_by_server(SilcClient client,
     client_entry = silc_idlist_get_client_by_id(client, conn, client_id, TRUE);
     if (!client_entry) {
       SilcPacketContext *p = silc_packet_context_dup(packet);
+      p->context = (void *)client;
+      p->sock = sock;
+      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT, 
+				  silc_client_notify_by_server_pending, p);
+      goto out;
+    }
+
+    /* If nickname or username hasn't been resolved, do so */
+    if (!client_entry->nickname || !client_entry->username) {
+      SilcPacketContext *p = silc_packet_context_dup(packet);
+      SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+      silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, 
+			       SILC_IDLIST_IDENT, 1, 
+			       3, idp->data, idp->len);
       p->context = (void *)client;
       p->sock = sock;
       silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT, 

@@ -17,20 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.3  2001/02/11 14:09:34  priikone
- * 	Code auditing weekend results and fixes committing.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -61,6 +48,55 @@ void silc_socket_free(SilcSocketConnection sock)
   if (sock) {
     silc_buffer_free(sock->inbuf);
     silc_buffer_free(sock->outbuf);
+    if (sock->hb) {
+      silc_task_unregister(sock->hb->timeout_queue, sock->hb->hb_task);
+      silc_free(sock->hb->hb_context);
+      silc_free(sock->hb);
+    }
+
+    memset(sock, 'F', sizeof(*sock));
     silc_free(sock);
   }
+}
+
+/* Internal timeout callback to perform heartbeat */
+
+SILC_TASK_CALLBACK(silc_socket_heartbeat)
+{
+  SilcSocketConnectionHB hb = (SilcSocketConnectionHB)context;
+
+  if (!hb->heartbeat)
+    return;
+
+  if (hb->hb_callback)
+    hb->hb_callback(hb->sock, hb->hb_context);
+
+  hb->hb_task = silc_task_register(hb->timeout_queue, hb->sock->sock, 
+				   silc_socket_heartbeat,
+				   context, hb->heartbeat, 0,
+				   SILC_TASK_TIMEOUT,
+				   SILC_TASK_PRI_LOW);
+}
+
+/* Sets the heartbeat timeout and prepares the socket for performing
+   heartbeat in `heartbeat' intervals (seconds). */
+
+void silc_socket_set_heartbeat(SilcSocketConnection sock, 
+			       unsigned long heartbeat,
+			       void *hb_context,
+			       SilcSocketConnectionHBCb hb_callback,
+			       void *timeout_queue)
+{
+  SilcSocketConnectionHB hb = silc_calloc(1, sizeof(*hb));
+
+  hb->heartbeat = heartbeat;
+  hb->hb_context = hb_context;
+  hb->hb_callback = hb_callback;
+  hb->timeout_queue = timeout_queue;
+  hb->sock = sock;
+  hb->hb_task = silc_task_register(timeout_queue, sock->sock, 
+				   silc_socket_heartbeat,
+				   (void *)hb, heartbeat, 0,
+				   SILC_TASK_TIMEOUT,
+				   SILC_TASK_PRI_LOW);
 }

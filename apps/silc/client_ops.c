@@ -49,7 +49,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  char *sender, char *channel_name, char *msg)
 {
   /* Message from client */
-  if (!strcmp(conn->current_channel->channel_name, channel_name))
+  if (conn && !strcmp(conn->current_channel->channel_name, channel_name))
     silc_print(client, "<%s> %s", sender, msg);
   else
     silc_print(client, "<%s:%s> %s", sender, channel_name, msg);

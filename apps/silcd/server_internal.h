@@ -144,6 +144,11 @@ struct SilcServerStruct {
 #endif
 };
 
+/* Server's heartbeat context */
+typedef struct {
+  SilcServer server;
+} *SilcServerHBContext;
+
 /* Macros */
 
 /* Registers generic task for file descriptor for reading from network and

@@ -504,15 +504,16 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 
 /* Free channel entry.  This free's everything. */
 
-void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
+int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
   if (entry) {
     SilcChannelClientEntry chl;
 
     /* Remove from cache */
     if (entry->id)
-      silc_idcache_del_by_id(id_list->channels, SILC_ID_CHANNEL, 
-			     (void *)entry->id);
+      if (!silc_idcache_del_by_id(id_list->channels, SILC_ID_CHANNEL, 
+				  (void *)entry->id))
+	return FALSE;
 
     /* Free data */
     if (entry->channel_name)
@@ -535,6 +536,8 @@ void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
       silc_free(chl);
     }
   }
+
+  return TRUE;
 }
 
 /* Finds channel by channel name. Channel names are unique and they

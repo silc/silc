@@ -1,3 +1,70 @@
+Thu Feb 15 20:07:37 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new packet type SILC_PACKET_HEARTBEAT that is used to
+	  send keepalive packets.  The packet can be sent by clients, 
+	  servers and routers.
+
+	  Added function silc_socket_set_heartbeat into the file
+	  lib/silccore/silcsockconn.[ch] to set the heartbeat timeout.
+	  If not set, the heartbeat is not performed.  The actual 
+	  heartbeat is implemented in the low level socket connection
+	  library.  However, application is responsible of actually
+	  sending the packet.
+
+	  Added silc_server_send_heartbeat to send the actual heartbeat
+	  packet into silcd/packet_send.[ch].  Server now performs
+	  keepalive with all connections.
+
+	* Added silc_task_get_first function into lib/silcutil/silctask.c
+	  to return the timeout task with shortest timeout.  There was a bug
+	  in task unregistration that caused problems.  TODO has been
+	  updated to include that task system must be rewritten.
+
+	* The client library will now resolve the client information when
+	  receiving JOIN notify from server for client that we know but
+	  have incomplete information.
+
+	* Rewrote parts of silc_server_remove_from_channels and
+	  silc_server_remove_from_one_channel as they did not remove the
+	  channel in some circumstances even though they should've.
+
+	* Encryption problem encountered in server:
+
+	  The LEAVE command used to send the Channel Key packet to the
+	  router immediately after generating it.  However, the code
+	  had earlier sent Remove Channel user packet but not immediately,
+	  ie. it was put to queue.  The order of packets in the router
+	  was that Channel Key packet was first and Remove Channel User
+	  packet was second, even though they were encrypted in the
+	  reverse order.  For this reason, MAC check failed.  Now, this
+	  is fixed by not sending the Channel Key packet immediately but
+	  putting it to queue.  However, this is more fundamental problem:
+	  packets that are in queue should actually not be encrypted 
+	  because packets that are sent immediately gets encrypted
+	  actually with wrong IV (and thus MAC check fails).  So, packets
+	  that are in queue should be encrypted when they are sent to
+	  the wire and not when they put to the queue.
+
+	  However, the problem is that the current system has not been
+	  designed to work that way.  Instead, the packet is encrypted
+	  as soon as possible and left to the queue.  The queue is then
+	  just purged into wire.  There won't be any fixes for this
+	  any time soon.  So, the current semantic for packet sending
+	  is as follows:
+
+	  o If you send packet to remote host and do not force the send
+	  (the packet will be in queue) then all subsequent packets to the
+	  same remote host must also be put to the queue.  Only after the
+	  queue has been purged is it safe again to force the packet
+	  send immediately.
+
+	  o If you send all packets immediately then it safe to send
+	  any of subsequent packets through the queue, however, after
+	  the first packet is put to queue then any subsequent packets
+	  must also be put to the queue.
+
+	  Follow these rules and everything works fine.
+
 Thu Feb 15 14:24:32 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new function silc_server_remove_clients_by_server to
