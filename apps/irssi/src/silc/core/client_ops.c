@@ -558,9 +558,9 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       snprintf(buf, sizeof(buf) - 1, "%s@%s",
 	       client_entry->username, client_entry->hostname);
     signal_emit("message part", 5, server, channel->channel_name,
-		client_entry->nickname,  client_entry->username ? 
+	 	client_entry->nickname,  client_entry->username ? 
 		buf : "", client_entry->nickname);
-    
+
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
       nickrec = silc_nicklist_find(chanrec, client_entry);
@@ -580,15 +580,20 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     tmp = va_arg(va, char *);
     
     silc_server_free_ftp(server, client_entry);
-    
-    memset(buf, 0, sizeof(buf));
-    if (client_entry->username)
-      snprintf(buf, sizeof(buf) - 1, "%s@%s",
-	       client_entry->username, client_entry->hostname);
-    signal_emit("message quit", 4, server, client_entry->nickname,
-		client_entry->username ? buf : "", 
-		tmp ? tmp : "");
-    
+
+    /* Print only if we have the nickname.  If this cliente has just quit
+       when we were only resolving it, it is possible we don't have the
+       nickname. */
+    if (client_entry->nickname) {
+      memset(buf, 0, sizeof(buf));
+      if (client_entry->username)
+        snprintf(buf, sizeof(buf) - 1, "%s@%s",
+		 client_entry->username, client_entry->hostname);
+      signal_emit("message quit", 4, server, client_entry->nickname,
+		  client_entry->username ? buf : "", 
+		  tmp ? tmp : "");
+    }
+
     list1 = nicklist_get_same_unique(SERVER(server), client_entry);
     for (list_tmp = list1; list_tmp != NULL; list_tmp = 
 	   list_tmp->next->next) {
