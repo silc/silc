@@ -591,6 +591,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					 SilcChannelEntry channel,
 					 void *sender, 
 					 SilcIdType sender_type,
+					 void *sender_entry,
 					 unsigned char *data,
 					 uint32 data_len,
 					 int force_send)
@@ -660,7 +661,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
     if (client) {
 
       /* If sender is one on the channel do not send it the packet. */
-      if (!found && !SILC_ID_CLIENT_COMPARE(client->id, sender)) {
+      if (!found && sender_type == SILC_ID_CLIENT &&
+	  !SILC_ID_CLIENT_COMPARE(client->id, sender)) {
 	found = TRUE;
 	continue;
       }
@@ -688,6 +690,13 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	sock = (SilcSocketConnection)client->router->connection;
 	idata = (SilcIDListData)client->router;
 
+	/* Do not send to the sender. Check first whether the true
+	   sender's router is same as this client's router. Also check
+	   if the sender socket is the same as this client's router
+	   socket. */
+	if (sender_entry && 
+	    ((SilcClientEntry)sender_entry)->router == client->router)
+	  continue;
 	if (sender_sock && sock == sender_sock)
 	  continue;
 
