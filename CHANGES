@@ -7,6 +7,10 @@ Sat Oct 18 11:55:33 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 	  before calling notify client operation.  Affected file is
 	  lib/silcclient/client_notify.c.
 
+	* Unregister QoS tasks when deleting the socket connection.
+	  Affected files lib/silcutil/silcsockconn.[ch],
+	  unix/silcunixsockconn.c.
+
 Tue Oct 14 18:24:53 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Save old channel keys in list to allow more rapid change
