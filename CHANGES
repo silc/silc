@@ -8,6 +8,13 @@ Mon Nov 18 18:58:26 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  library to avoid memory leaks.  Affected files are
 	  irssi/src/silc/core/silc-core.c and silc-servers.c.
 
+	* Deprecated the No Reply flag in SKE protocol and introduced
+	  "IV Included" flag which can be used to indicate that the IV
+	  is included in the ciphertext.  This makes it possible to use
+	  SILC on unreliable transport, such as UDP which may cause
+	  packet reordering and losses.  Updated protocol specs, did
+	  not implement yet.
+
 Sun Nov 17 15:50:57 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the MPI implementation of silc_mp_sizeinbase to return
