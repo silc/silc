@@ -60,6 +60,8 @@ void silc_client_send_private_message(SilcClient client,
 				       client_entry->hmac_send,
 				       client->rng, NULL, client->private_key,
 				       client->sha1hash);
+  if (!buffer)
+    return;
 
   /* If we don't have private message specific key then private messages
      are just as any normal packet thus call normal packet sending.  If

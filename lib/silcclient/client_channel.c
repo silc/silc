@@ -111,6 +111,8 @@ void silc_client_send_channel_message(SilcClient client,
   payload = silc_message_payload_encode(flags, data, data_len, TRUE, FALSE,
 					cipher, hmac, client->rng, NULL,
 					client->private_key, client->sha1hash);
+  if (!payload)
+    return;
 
   /* Get data used in packet header encryption, keys and stuff. */
   cipher = conn->internal->send_key;
