@@ -1,5 +1,5 @@
 #
-#  Makefile.defines.in
+#  Makefile.defines.pre
 #
 #  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 #
@@ -19,7 +19,8 @@
 #
 # This file is intended to include all common compilation defines for the
 # SILC source tree.  All Makefile.ams in the SILC source tree are expected
-# to include this file (Makefile.defines).
+# to include this file (Makefile.defines).  Also this file may be included
+# in any external project that is included in the SILC source tree.
 #
 # Add following to your Makefile.am:
 #
