@@ -21,7 +21,7 @@
 
 <br />
 <div align="center">
-<table width="900" bgcolor="#000000" cellpadding="1" cellspacing="0" border="0">
+<table width="90%" bgcolor="#000000" cellpadding="1" cellspacing="0" border="0">
  <tr>
   <td>
     <table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0">
@@ -31,7 +31,7 @@
         <tr>
 	<td valign="top"><font face="Helvetica,Arial,Sans-serif">
 	<table width="100%" bgcolor="#e2e2e2" cellpadding="1" cellspacing="0" border="0" align="left">
-	<tr><td valign="top"><font face="Helvetica,Arial,Sans-serif">
+	<tr><td valign="top"><font size="2"face="Helvetica,Arial,Sans-serif">
 <?php
 require "$dest/index.tmpl";
 ?>
