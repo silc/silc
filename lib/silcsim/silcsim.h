@@ -34,8 +34,13 @@ typedef enum {
    is that the symbols are resolved as they are loaded. However, if
    system doesn't support this we have no other choice but to do it lazy
    thus experience some overhead when using the symbol first time. */
+#if defined(RTLD_NOW)
 #define SILC_SIM_FLAGS RTLD_NOW
-/*#define SILC_SIM_FLAGS RTLD_LAZY */
+#elif defined(RTLD_NOW)
+#define SILC_SIM_FLAGS RTLD_LAZY
+#else
+#define SILC_SIM_FLAGS 0
+#endif
 
 /* Prototypes */
 SilcSim silc_sim_alloc(SilcSimType type, const char *libname, 
