@@ -114,20 +114,20 @@ bool silc_message_payload_decrypt(unsigned char *data,
   SILC_GET16_MSB(len, dec + totlen);
   totlen += 2 + len;
   if (totlen + iv_len + mac_len + 2 > data_len) {
-    memset(dec, 0, data_len);
+    memset(dec, 0, data_len - iv_len - mac_len);
     silc_free(dec);
     return FALSE;
   }
   SILC_GET16_MSB(len, dec + totlen);
   totlen += 2 + len;
   if (totlen + iv_len + mac_len > data_len) {
-    memset(dec, 0, data_len);
+    memset(dec, 0, data_len - iv_len - mac_len);
     silc_free(dec);
     return FALSE;
   }
 
   memcpy(data, dec, totlen);
-  memset(dec, 0, data_len);
+  memset(dec, 0, data_len - iv_len - mac_len);
   silc_free(dec);
 
   return TRUE;
