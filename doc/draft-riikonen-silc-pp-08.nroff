@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 4 February 2004
+.ds RH 11 February 2004
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-08.txt                            4 February 2004
-Expires: 4 August 2004
+draft-riikonen-silc-pp-08.txt                           11 February 2004
+Expires: 11 August 2004
 
 .in 3
 
@@ -1492,11 +1492,11 @@ certificates sent inside arguments are actually Public Key Payloads.
       to the clients which are joined on the channel which mode was
       changed.  This packet is destined to the channel.
 
-      Max Arguments:  7
-          Arguments:  (1) <ID Payload>      (2) <mode mask>
-                      (3) [<cipher>]        (4) <[hmac>]
-                      (5) [<passphrase>]    (6) [<founder public key>]
-                      (7) [<channel pubkey>]
+      Max Arguments:  8
+          Arguments:  (1) <ID Payload>       (2) <mode mask>
+                      (3) [<cipher>]         (4) <[hmac>]
+                      (5) [<passphrase>]     (6) [<founder public key>]
+                      (7) [<channel pubkey>] (8) [<user limit>]
 
       The <ID Payload> is the ID (usually Client ID but it can be
       Server ID as well when the router is enforcing channel mode
@@ -1511,7 +1511,8 @@ certificates sent inside arguments are actually Public Key Payloads.
       channel was set.  All routers and servers that receive the packet
       MUST save the founder's public key so that the founder can
       reclaim the channel founder rights back for the channel on any
-      server in the network.
+      server in the network.  The <user limit> argument is present when
+      the user limit was set or changed on the channel.
 
       The <channel pubkey> is an Argument List Payload and it is used
       to add and/or remove channel public keys from the channel.  Also,

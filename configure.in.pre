@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2003 Pekka Riikonen
+#  Copyright (C) 2000 - 2004 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -1144,6 +1144,7 @@ lib/silcutil/win32/Makefile
 lib/silcutil/beos/Makefile
 lib/silcutil/os2/Makefile
 lib/silcutil/epoc/Makefile
+lib/silcutil/tests/Makefile
 lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
 doc/example_silcd.conf

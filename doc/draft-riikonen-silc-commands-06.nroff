@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 4 February 2004
+.ds RH 11 February 2004
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-06.txt                      4 February 2004
-Expires: 4 August 2004
+draft-riikonen-silc-commands-06.txt                     11 February 2004
+Expires: 11 August 2004
 
 .in 3
 
@@ -997,7 +997,7 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  16
+        Max Arguments:  17
             Arguments:  (1) <Status Payload>        (2) <channel>
                         (3) <Channel ID>            (4) <Client ID>
                         (5) <channel mode mask>     (6) <created>
@@ -1006,6 +1006,7 @@ List of all defined commands in SILC follows.
                         (11) [<hmac>]               (12) <list count>
                         (13) <Client ID list>       (14) <client mode list>
                         (15) [<founder pubkey>]     (16) [<channel pubkeys>]
+                        (17) [<user limit>]
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
@@ -1014,6 +1015,7 @@ List of all defined commands in SILC follows.
         which tells all the modes set on the channel.  If the channel
         is created the mode mask is zero (0) and <created> is 0x01.
         If ban mask and/or invite list is set they are sent as well.
+        The <user limit> is the user limit on the channel, if one is set.
 
         The <list count>, <Client ID list> and <client mode list> are
         the clients currently on the channel and their modes on the
@@ -1480,22 +1482,23 @@ List of all defined commands in SILC follows.
         to all clients on the channel by sending the notify type
         SILC_NOTIFY_TYPE_CMODE_CHANGE.  The notify type MUST also be sent
         to the server's primary router.  If the <channel mode mask> was
-        not provided this command returns the mode mask, founder key
-        and channel public key list to the client.
+        not provided this command returns the mode mask, founder key,
+        channel public key list and the current user limit to the client.
 
         Reply messages to the command:
 
-        Max Arguments:  5
+        Max Arguments:  6
             Arguments:  (1) <Status Payload>    (2) <Channel ID>
                         (3) <channel mode mask> (4) [<founder pubkey>]
-                        (5) [<channel pubkeys>]
+                        (5) [<channel pubkeys>] (6) [<user limit>]
 
         This command replies with the changed channel mode mask that
         client MUST keep locally.  It may also return the channel
         founder's public key if it is set.  It may also return list of
         channel public keys when the list was altered.  The <channel
         pubkeys> is Argument List Payload and each argument includes
-        one public key.
+        one public key.  The <user limit> is the current user limit
+        on the channel, if one is set.
 
         Status messages:
 
@@ -1786,9 +1789,9 @@ List of all defined commands in SILC follows.
 
    22   SILC_COMMAND_WATCH
 
-        Max Arguments:  3
+        Max Arguments:  4
             Arguments:  (1) <Client ID>       (2) [<add nickname>]
-                        (3) [<del nickname>]
+                        (3) [<del nickname>]  (4) [<public key>]
 
         This command is used to set up a watch for <add nickname>
         nickname.  When a user in the network appears with the
@@ -1800,14 +1803,26 @@ List of all defined commands in SILC follows.
 
         The <del nickname> is a nickname that has been previously
         added to watch list and is now removed from it.  Notifications
-        for that nickname will not be delivered anymore.
+        for that nickname will not be delivered anymore.  The nickname
+        set to watch MUST NOT include any wildcards.  Note also that a
+        nickname may match several users since nicknames are not unique.
+        Implementations MAY set limits for how many nicknames client
+        can watch.
+
+        OPTIONALLY this command may also be set to watch clients' actions
+        in the network using their public key or certificate.  The
+        <public key> MAY be present, and it is an Argument List Payload
+        where each argument is a Public Key Payload including public key
+        to be added or removed from the watch list.  To To add a public
+        key to watch list the argument type is 0x00, and the argument is
+        the public key.  To remove a public key from watch list list the
+        argument type is 0x01, and the argument is the public key to be
+        removed from the list.  An implementation MAY limit the number of
+        public keys that can be set on the watch list.  Implementation MAY
+        add and remove multiple public keys at the same time by including
+        multiple arguments to the <public key> Argument List Payload.
 
         The <Client ID> is the Client ID of the sender of this command.
-
-        The nickname set to watch MUST NOT include any wildcards.
-        Note also that a nickname may match several users since
-        nicknames are not unique.  Implementations MAY set limits
-        for how many nicknames client can watch.
 
         When normal server receives this command from client it
         MUST send it to its router.  Router will process the command

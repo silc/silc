@@ -15,6 +15,13 @@ TODO for SILC Client 1.0 branch
 TODO for SILC Server 1.0
 ========================
 
+ o stringprep (RFC3454) for UTF-8 strings + all other UTF-8 string things.
+
+ o <user limit> to CMODE_CHANGE notify, and JOIN and CMODE command 
+   replies.
+
+ o Public key support to WATCH command.
+
  o Check that founder key is distributed ok during backup resuming.
 
  o Testing

@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 4 February 2004
+.ds RH 11 February 2004
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-08.txt                          4 February 2004
-Expires: 4 August 2004
+draft-riikonen-silc-spec-08.txt                         11 February 2004
+Expires: 11 August 2004
 
 .in 3
 
@@ -114,7 +114,7 @@ Table of Contents
   3.11 SILC Public Key .......................................... 29
   3.12 SILC Version Detection ................................... 31
   3.13 UTF-8 Strings in SILC .................................... XXXX
-      3.13.1 UTF-8 Nicknames and Channel Names .................. XXXX
+      3.13.1 UTF-8 Identifier Strings ........................... XXXX
   3.14 Backup Routers ........................................... 31
       3.14.1 Switching to Backup Router ......................... 33
       3.14.2 Resuming Primary Router ............................ 34
@@ -506,17 +506,13 @@ o Random number or counter - Random number to further
   possible to have 2^8 same nicknames from the same
   server IP address.
 
-o MD5 hash - MD5 hash value of the lowercase nickname is
+o MD5 hash - MD5 hash value of the case folded nickname is
   truncated taking 88 bits from the start of the hash value.
   This hash value is used to search the user's Client ID
-  from the ID lists.  Note that the nickname MUST be in
-  lowercase format before computing the hash value.  Since
-  nicknames are UTF-8 encoded, some characters cannot be
-  converted to lower case.  All upper case characters that
-  has a lowercase alternative in the Unicode standard MUST
-  be converted to lowercase.  Note that the conversion MUST
-  be done without regard to the current system character
-  subset to ensure interoperability.
+  from the ID lists.  Note that the nickname MUST be prepared
+  using the stringprep [RFC3454] profile described in the
+  Appendix A before computing the MD5 hash.  See also the
+  section 3.13.1 for more information.
 
 .in 3
 Collisions could occur when more than 2^8 clients using same nickname
@@ -1633,7 +1629,7 @@ SILC-1.2-2.4.5 Vendor Limited
 
 By default all strings that are sent in SILC protocol MUST be UTF-8
 [RFC3269] encoded, unless otherwise defined.  This means that any string
-sent inside, for example, command, command reply, notify or any packet
+sent inside for example, command, command reply, notify or any packet
 payload is UTF-8 encoded.  Also nicknames, channel names, server names,
 and hostnames are UTF-8 encoded.  This definition does not affect
 messages sent in SILC, as the Message Payload provides its own mechanism
@@ -1646,16 +1642,7 @@ marked in the Unicode standard as control codes, noncharacters,
 reserved or private range characters, or any other illegal Unicode
 characters.  Also the BOM (Byte-Order Mark) MUST NOT be used as byte
 order signature in UTF-8 encoded strings.  A string containing these
-characters MUST be treated as malformed UTF-8 encoding.  See the
-Appendix A for list of prohibited characters.
-
-Because of these limitations on the UTF-8 encoded strings the
-implementation may need to have access to full Unicode implementation
-to be able to validate the contents of the strings.  This is especially
-important in server implementation because server must verify that,
-for example, nicknames does not include any prohibited characters.
-Server also need to have the capability to convert character case from
-upper case to lower case characters, when applicable.
+characters MUST be treated as malformed UTF-8 encoding.
 
 The Unicode standard defines that malformed sequences shall be signalled
 by replacing the sequence with a replacement character.  Even though,
@@ -1669,8 +1656,7 @@ with SILC_COMMAND_NICK command, implementation is able to send error
 indication back to the command sender.  It must be noted that on server
 implementation if a character sequence is merely outside of current
 character subset, but is otherwise valid character, it MUST NOT be
-replaced by a replacement character.  Server SHOULD inspect the UTF-8
-strings without regard to current system character subset.
+replaced by a replacement character.
 
 On user interface where UTF-8 strings are displayed the implementation
 is RECOMMENDED to escape any character that it is unable to render
@@ -1681,35 +1667,40 @@ if it does not cause practical problems to the implementation.
 
 
 .ti 0
-3.13.1 UTF-8 Nicknames and Channel Names
+3.13.1 UTF-8 Identifier Strings
 
-The nicknames and channel names are also UTF-8 encoded in SILC protocol.
-As these strings may be used as message destination indicator on the
-user interface certain additional limitations has been imposed to them.
-In addition of general UTF-8 string limitations described in previous
-section, the UTF-8 encoded nickname and channel name strings MUST NOT
-include any characters that has been marked in the Unicode standard as
-space characters, line and paragraph separators, mathematical symbol
-characters (with exception of US-ASCII mathematical symbol characters),
-currency symbol characters, or any other symbol characters (with
-execption of CJK and other similar symbols), special characters or tags.
-In addition nicknames and channel names MUST NOT include commas (','),
-'@', '!' or any wildcard characters.  See the Appendix A and Appendix B
-for list of prohibited characters.
+Identifier strings are special strings in SILC protocol that require
+more careful processing, than the general UTF-8 strings described in the
+previous section.  These strings include the nicknames, channel names,
+server names, hostnames and some other identifier strings.  These strings
+are prepared using the stringprep [RFC3454] standard.  The Appendix A
+defines the stringprep profile for SILC identifier strings and conforming
+implementation MUST use the profile to prepare any identifier string.
 
-This definition means that these strings generally may only include
-letters, numbers, most punctuation characters and some other characters.
-For practical reasons most symbol characters and many other special
-characters are prohibited.  Conforming implementation MUST treat
-strings with prohibited characters as malformed strings.
+The stringprep profile describes how identifier strings are prepared,
+what characters they may includes, and which characters are prohibited.
+Identifier strings with prohibited characters MUST be treated as
+malformed strings.
 
-The length of a nickname string in SILC MUST NOT exceed 128 bytes.
-The length of a channel name string in SILC MUST NOT exceed 256 bytes.
-Since these strings are UTF-8 encoded the length of one character
-may be longer than one byte.  This means that the character length
-of these strings may be shorter than the maximum length of the string
-in bytes.  The minimum length of these strings MUST be at least one
-character, which may be one byte or more in length.
+Because of the profile the identifier strings in SILC may generally
+include only letters, numbers, most punctuation characters, and some
+other characters.  For practical reasons most symbol characters and
+many other special characters are prohibited.  All identifier strings
+are case folded and comparing the identifier strings MUST be done as
+caseless matching.  Also, identifier strings may not include any
+commas (','), '@', '!' or any wildcard characters, as defined in the
+stringprep profile in Appendix A.
+
+In general, the identifier strings does not have a maximum length.
+However, the length of a nickname string MUST NOT exceed 128 bytes, and
+the length of a channel name string MUST NOT exceed 256 bytes.  Since
+these strings are UTF-8 encoded the length of one character may be
+longer than one byte.  This means that the character length of these
+strings may be shorter than the maximum length of the string in bytes.
+The minimum length of an identifier string MUST be at least one character,
+which may be one byte or more in length.  Implementation MAY limit the
+maximum length of an identifier string, with exception of the nickname
+and channel name strings which has the explicit length definition.
 
 
 .ti 0
@@ -2647,6 +2638,9 @@ should have a forum to discuss the cell management issues.
              (v3): UTF-8 String Representation of Distinguished Names",
              RFC 2253, December 1997.
 
+[RFC3454]    Hoffman, P., et al., "Preparation of Internationalized
+             Strings ("stringprep")", RFC 3454, December 2002.
+
 
 .ti 0
 7 Author's Address
@@ -2663,60 +2657,72 @@ EMail: priikone@iki.fi
 .ti 0
 Appendix A
 
-This appendix lists the generally prohibited characters in UTF-8 encoded
-strings in SILC.  The characters listed in this appendix MUST NOT appear
-in any UTF-8 encoded string.  When a new version of Unicode standard
-defines new characters that are marked into the same category as the
-characters listed in this appendix they are also prohibited.  Implementor
-SHOULD NOT trust the following list but should verify the actual list of
-characters from the Unicode standard.
+This appendix defines the stringprep [RFC3454] profile for string
+identifiers in SILC protocol.  Compliant implementation MUST use this
+profile to prepare the identifier strings in the SILC protocol.  The
+profile defines the following as required by [RFC3454].
 
-Control codes
-0000-001F 007F-009F
+- Intended applicability of the profile:  the following identifiers in
+  the SILC Protocol;  nicknames, channel names, usernames, server names,
+  hostnames, service names, algorithm names and other security property
+  names [SILC3], and SILC Public Key name.
 
-Noncharacters
-FDD0-FDEF
-0FFFE-0FFFF 1FFFE-1FFFF 2FFFE-2FFFF 3FFFE-3FFFF 4FFFE-4FFFF
-5FFFE-5FFFF 6FFFE-6FFFF 7FFFE-7FFFF 8FFFE-8FFFF 9FFFE-9FFFF
-AFFFE-AFFFF BFFFE-BFFFF CFFFE-CFFFF DFFFE-DFFFF EFFFE-EFFFF
-FFFFE-FFFFF 10FFFE-10FFFF
+- The character repertoire that is the input and output to
+  stringprep:  Unicode 3.2 with the list of unassigned code points
+  being the Table A.1, as defined in [RFC3454].
 
-Surrogate codes
-D800-DFFF
+- The mapping tables used:  the following tables are used, in order,
+  as defined in [RFC3454].
 
-Private characters
-E000-F8FF F0000-FFFFD 100000-10FFFD
+    Table B.1
+    Table B.2
 
-BOM as signature
-FEFF
+  The mandatory case folding is done using the Table B.2 which includes
+  the characters for the normalization form KC.
 
-Replacement character
-FFFD
+- The Unicode normalization used:  the Unicode normalization form
+  KC is used, as defined in [RFC3454].
+
+- The prohibited characters as output:  the following tables are used
+  to prohibit characters, as defined in [RFC3454];
+
+    Table C.1.1
+    Table C.1.2
+    Table C.2.1
+    Table C.2.2
+    Table C.3
+    Table C.4
+    Table C.5
+    Table C.6
+    Table C.7
+    Table C.8
+    Table C.9
+
+- Additional prohibited characters as output:  in addition, the following
+  tables are used to prohibit characters, as defined in this document;
+
+    Appendix B
+
+- The bidirectional string testing used:  bidirectional string testing
+  is ignored in this profile.
+
+This profile is to be maintained in the IANA registry for stringprep
+profiles.  The name of this profile is "silc-identifier-prep" and this
+document defines the profile.  This document defines the first version of
+this profile.
 
 
-.ti 0
 Appendix B
 
-This appendix lists additional prohibited characters in UTF-8 encoded
-nickname and channel name strings.  The characters listed in this
-appendix MUST NOT appear in UTF-8 encoded nickname and channel name
-strings.  When a new version of Unicode standard defines new characters
-that are marked into the same category as the characters listed in this
-appendix they are also prohibited.  Implementor SHOULD NOT trust the
-following list but should verify the actual list of characters from
-the Unicode standard.
+This appendix defines additional prohibited characters in the identifier
+strings as defined in the stringprep profile in Appendix A.  Note that
+the prohibited character tables listed in the Appendix A may include some
+of the same characters listed in this appendix as well.
 
 Reserved US-ASCII characters
 0021 002A 002C 003F 0040
 
-Space characters
-0020 00A0 1680 180E 2000-200B 202F 205F 3000
-
-Line and paragraph separators
-2028 2029
-
-Symbol characters and other symbol like characters (with execption of
-CJK and other similar symbols)
+Symbol characters and other symbol like characters
 00A2-00A9 00AC 00AE 00AF 00B0 00B1 00B4 00B6 00B8 00D7 00F7
 02C2-02C5 02D2-02FF 0374 0375 0384 0385 03F6 0482 060E 060F
 06E9 06FD 06FE 09F2 09F3 09FA 0AF1 0B70 0BF3-0BFA 0E3F
@@ -2731,12 +2737,8 @@ CJK and other similar symbols)
 312D-3130 318F 31B8-31FF 321D-321F 3244-325F 327C-327E
 32B1-32BF 32CC-32CF 32FF 3377-337A 33DE-33DF 33FF 4DB6-4DFF
 9FA6-9FFF A48D-A48F A4A2-A4A3 A4B4 A4C1 A4C5 A4C7-ABFF
-D7A4-D7FF FA2E-FAFF FFE0-FFEE FFFC 10000-1007F 100080-100FF
+D7A4-D7FF FA2E-FAFF FFE0-FFEE FFFC 10000-1007F 10080-100FF
 10100-1013F 1D000-1D0FF 1D100-1D1FF 1D300-1D35F 1D400-1D7FF
-
-Specials and tags
-FFF0-FFFF
-E0000-E007F
 
 Other characters
 E0100-E01EF
