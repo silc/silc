@@ -17,14 +17,6 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
- *
- *
- */
 
 #include "silcincludes.h"
 #include "none.h"

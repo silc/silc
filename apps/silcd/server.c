@@ -2235,6 +2235,12 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 
   /* If processing failed the connection is closed. */
   if (!ret) {
+    /* On packet processing errors we may close our primary router 
+       connection but won't become primary router if we are the backup
+       since this is local error condition. */
+    if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
+      server->backup_noswitch = TRUE;
+
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock, NULL);
     silc_server_close_connection(server, sock);
@@ -2340,6 +2346,7 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
   SilcServer server = (SilcServer)context;
   SilcSocketConnection sock = parser_context->sock;
   SilcIDListData idata = (SilcIDListData)sock->user_data;
+  bool ret;
 
   if (idata)
     idata->psn_receive = parser_context->packet->sequence + 1;
@@ -2360,14 +2367,29 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
        the idata->receive_key might have become valid in the last packet
        and we want to call this processor with valid cipher. */
     if (idata)
-      silc_packet_receive_process(sock, server->server_type == SILC_ROUTER ?
+      ret = silc_packet_receive_process(
+				  sock, server->server_type == SILC_ROUTER ?
 				  TRUE : FALSE, idata->receive_key,
 				  idata->hmac_receive, idata->psn_receive,
 				  silc_server_packet_parse, server);
     else
-      silc_packet_receive_process(sock, server->server_type == SILC_ROUTER ?
+      ret = silc_packet_receive_process(
+				  sock, server->server_type == SILC_ROUTER ?
 				  TRUE : FALSE, NULL, NULL, 0,
 				  silc_server_packet_parse, server);
+
+    if (!ret) {
+      /* On packet processing errors we may close our primary router 
+         connection but won't become primary router if we are the backup
+         since this is local error condition. */
+      if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
+	server->backup_noswitch = TRUE;
+
+      if (sock->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+      silc_server_close_connection(server, sock);
+    }
+
     return FALSE;
   }
 
@@ -3077,7 +3099,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  sock->type != SILC_SOCKET_TYPE_ROUTER)
 	backup_router = NULL;
 
-      if (server->server_shutdown)
+      if (server->server_shutdown || server->backup_noswitch)
       	backup_router = NULL;
 
       /* If this was our primary router connection then we're lost to
@@ -3202,6 +3224,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 				  server->server_name,
 				  server->router->server_name));
       }
+      server->backup_noswitch = FALSE;
 
       /* Free the server entry */
       silc_server_backup_del(server, user_data);

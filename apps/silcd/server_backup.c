@@ -444,7 +444,7 @@ void silc_server_backup_resume_router(SilcServer server,
 			     SILC_STR_UI_CHAR(&session),
 			     SILC_STR_END);
   if (ret < 0) {
-    SILC_LOG_DEBUG(("Malformed packet received"));
+    SILC_LOG_ERROR(("Malformed resume router packet received"));
     return;
   }
   
@@ -492,7 +492,7 @@ void silc_server_backup_resume_router(SilcServer server,
       return;
     }
 
-    SILC_LOG_DEBUG(("Bad resume router packet"));
+    SILC_LOG_ERROR(("Bad resume router packet RESUMED %d", type));
     return;
   }
 
@@ -528,6 +528,7 @@ void silc_server_backup_resume_router(SilcServer server,
     proto_ctx->start = time(0);
 
     SILC_LOG_DEBUG(("Starting backup resuming protocol as responder"));
+    SILC_LOG_INFO(("Starting backup resuming protocol"));
 
     /* Run the backup resuming protocol */
     silc_protocol_alloc(SILC_PROTOCOL_SERVER_BACKUP,
@@ -577,6 +578,8 @@ void silc_server_backup_reconnect(SilcServer server,
 {
   SilcServerConnection sconn;
 
+  SILC_LOG_INFO(("Attempting to reconnect to primary router"));
+
   sconn = silc_calloc(1, sizeof(*sconn));
   sconn->remote_host = strdup(ip);
   sconn->remote_port = port;
@@ -600,6 +603,7 @@ SILC_TASK_CALLBACK(silc_server_backup_connected_later)
   SilcSocketConnection sock = proto_ctx->sock;
 
   SILC_LOG_DEBUG(("Starting backup resuming protocol as initiator"));
+  SILC_LOG_INFO(("Starting backup resuming protocol"));
 
   /* Run the backup resuming protocol */
   silc_protocol_alloc(SILC_PROTOCOL_SERVER_BACKUP,
@@ -869,7 +873,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
       /* We should have received START or START_GLOBAL packet */
       if (ctx->type != SILC_SERVER_BACKUP_START &&
 	  ctx->type != SILC_SERVER_BACKUP_START_GLOBAL) {
-	SILC_LOG_DEBUG(("Bad resume router packet"));
+	SILC_LOG_ERROR(("Bad resume router packet START %d", ctx->type));
 	break;
       }
 
@@ -923,7 +927,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
       /* We should have received CONNECTED packet */
       if (ctx->type != SILC_SERVER_BACKUP_CONNECTED) {
-	SILC_LOG_DEBUG(("Bad resume router packet"));
+	SILC_LOG_ERROR(("Bad resume router packet CONNECTED %d", ctx->type));
 	break;
       }
 
@@ -955,7 +959,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
       /* We should have been received ENDING packet */
       if (ctx->type != SILC_SERVER_BACKUP_ENDING) {
-	SILC_LOG_DEBUG(("Bad resume router packet"));
+	SILC_LOG_ERROR(("Bad resume router packet ENDING %d", ctx->type));
 	break;
       }
 
@@ -1084,7 +1088,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	 router. */
       if (ctx->type != SILC_SERVER_BACKUP_RESUMED &&
 	  ctx->type != SILC_SERVER_BACKUP_RESUMED_GLOBAL) {
-	SILC_LOG_DEBUG(("Bad resume router packet"));
+	SILC_LOG_ERROR(("Bad resume router packet RESUMED %d", ctx->type));
 	break;
       }
 
@@ -1157,6 +1161,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
   case SILC_PROTOCOL_STATE_FAILURE:
     /* Protocol has ended, call the final callback */
+    SILC_LOG_ERROR(("Error during backup resume: received Failure"));
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
     else

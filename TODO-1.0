@@ -116,6 +116,8 @@ least could be done.
 	  SIGNOFF of notify at all (using SIGNOFF takes the idea about
 	  SERVER_SIGNOFF away entirely).
 
+	o See also ~/silcserver
+
  o Add SilcAsyncOperation to utility library.  Any function that takes
    callback as an argument must/should return SilcAsyncOperation (see 
    ~/silcasync).

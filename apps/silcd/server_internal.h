@@ -85,6 +85,8 @@ struct SilcServerStruct {
   unsigned int backup_router  : 1;   /* Set if this is backup router */
   unsigned int backup_primary : 1;   /* Set if we've switched our primary
 				        router to a backup router. */
+  unsigned int backup_noswitch: 1;   /* Set if we've won't switch to 
+					become primary (we are backup) */
   unsigned int wait_backup    : 1;   /* Set if we are waiting for backup
 				        router to connect to us. */
   unsigned int server_shutdown: 1;   /* Set when shutting down */
