@@ -77,6 +77,9 @@ void silc_socket_free(SilcSocketConnection sock)
       silc_free(sock->hb);
     }
 
+    silc_free(sock->ip);
+    silc_free(sock->hostname);
+
     memset(sock, 'F', sizeof(*sock));
     silc_free(sock);
   }
