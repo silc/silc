@@ -31,6 +31,14 @@ least could be done.
  o OpenPGP certificate support, allowing the use of PGP public keys
    in SILC.
 
+ o SILC PKCS (silcpkcs.h) reorganizing when other PK supports added.
+   Move the SILC Public Key routines away from the crypto library into
+   the core library (silccore).  silc_pkcs_public/private_key_* routines
+   to silc_public/private_key_* routines.  The silc_public_key_* routines
+   should also automatically handle SILC Public Keys, and other keys
+   and certificates as well.  Add fe. silcpk.h into silccore.  It should
+   also include the Public Key Payload encoding and decoding routines.
+
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Zip API must be
    defined.
