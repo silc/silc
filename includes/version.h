@@ -31,6 +31,7 @@ typedef unsigned char SilcVersion;
 
 /* SILC version string */
 const char *silc_version = SILC_VERSION_STRING;
+const char *silc_dist_version = SILC_DIST_VERSION_STRING;
 const char *silc_version_string = SILC_PROTOCOL_VERSION_STRING;
 const char *silc_name = SILC_NAME;
 const char *silc_fullname = "Secure Internet Live Conferencing";

@@ -115,7 +115,8 @@ int main(int argc, char **argv)
 	  break;
 	case 'V':
 	  printf("SILCd Secure Internet Live Conferencing daemon, "
-		 "version %s\n", silc_version);
+		 "version %s (base: SILC Toolkit %s)\n",
+                 silc_dist_version, silc_version);
 	  printf("(c) 1997 - 2001 Pekka Riikonen "
 		 "<priikone@poseidon.pspt.fi>\n");
 	  exit(0);

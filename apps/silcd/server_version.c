@@ -21,4 +21,4 @@
 #include "serverincludes.h"
 #include "version_internal.h"
 
-const char *server_version = SILC_VERSION_STRING;
+const char *server_version = SILC_DIST_VERSION_STRING;
