@@ -6,6 +6,8 @@ Mon Oct 28 21:23:39 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  always Client ID, others are not allowed.  Affected file
 	  silcd/server_query.c.
 
+	* Merged latest changes from irssi.org CVS.
+
 Sun Oct 27 11:44:32 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged c0ffee's /set heartbeat patch to Irssi SILC client.
