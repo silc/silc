@@ -332,10 +332,10 @@ typedef bool (*SilcPacketParserCallback)(SilcPacketParserContext
  *
  * SOURCE
  */
-#define SILC_PACKET_LENGTH(__packet, __ret_truelen, __ret_paddedlen)	\
-do {									\
-  SILC_GET16_MSB((__ret_truelen), (__packet)->data);			\
-  (__ret_paddedlen) = (__ret_truelen) + (__packet)->data[4];		\
+#define SILC_PACKET_LENGTH(__packetdata, __ret_truelen, __ret_paddedlen) \
+do {									 \
+  SILC_GET16_MSB((__ret_truelen), (__packetdata));			 \
+  (__ret_paddedlen) = (__ret_truelen) + (__packetdata)[4];		 \
 } while(0)
 /***/
 
@@ -375,12 +375,12 @@ do {									\
  *
  * SOURCE
  */
-#define SILC_PACKET_PADLEN(__packetlen, __blocklen, __padlen)		   \
-do {									   \
-  __padlen = (SILC_PACKET_DEFAULT_PADLEN - (__packetlen) %		   \
-	      ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN)); \
-  if (__padlen < 8)							   \
-    __padlen = ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN); \
+#define SILC_PACKET_PADLEN(__packetlen, __blocklen, __padlen)		    \
+do {									    \
+  __padlen = (SILC_PACKET_DEFAULT_PADLEN - (__packetlen) %		    \
+	      ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN));  \
+  if (__padlen < 8)							    \
+    __padlen += ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN); \
 } while(0)
 /***/
 

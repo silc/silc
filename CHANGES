@@ -1,3 +1,12 @@
+Mon Nov 11 19:32:00 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added Encrypt-Then-MAC order to SILC packet MAC generation.
+	  Deprecated the old Encrypt-And-MAC order.  Updated protocol
+	  specs and implemented.
+
+	* Added Encrypt-Then-MAC order to Channel Message Payload MAC
+	  generation.  Updated specs and implemented.
+
 Sun Nov 10 12:20:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for rekey before 2^32 sequence number wraps.

@@ -180,7 +180,8 @@ void silc_server_packet_send_dest(SilcServer server,
     cipher = idata->send_key;
     hmac = idata->hmac_send;
     sequence = idata->psn_send++;
-    block_len = silc_cipher_get_block_len(cipher);
+    if (cipher)
+      block_len = silc_cipher_get_block_len(cipher);
 
     /* Check for mandatory rekey */
     if (sequence == SILC_SERVER_REKEY_THRESHOLD)
@@ -758,9 +759,8 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
       return FALSE;
     }
 
-    memcpy(iv, data + (data_len - iv_len), iv_len);
-    silc_channel_message_payload_encrypt(data, data_len - iv_len - mac_len,
-					 data_len, iv, iv_len,
+    memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
+    silc_channel_message_payload_encrypt(data, data_len - iv_len, iv, iv_len,
 					 channel->channel_key, channel->hmac);
   }
 
@@ -938,7 +938,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 
 	  /* Decrypt the channel message (we don't check the MAC) */
 	  silc_channel_message_payload_decrypt(tmp, data_len,
-					       channel->channel_key, NULL);
+					       channel->channel_key,
+					       channel->hmac, FALSE);
 
 	  /* Now re-encrypt and send it to the router */
 	  silc_server_packet_send_srcdest(server, sock,

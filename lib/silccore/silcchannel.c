@@ -225,58 +225,38 @@ SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload)
 bool silc_channel_message_payload_decrypt(unsigned char *data,
 					  size_t data_len,
 					  SilcCipher cipher,
-					  SilcHmac hmac)
+					  SilcHmac hmac,
+					  bool check_mac)
 {
   SilcUInt32 iv_len, mac_len;
-  unsigned char *end, *mac, mac2[32];
-  unsigned char *dst, iv[SILC_CIPHER_MAX_IV_SIZE];
+  unsigned char *mac, mac2[32];
 
-  /* Push the IV out of the packet, and copy the IV since we do not want
-     to modify the original data buffer. */
-  end = data + data_len;
+  mac_len = silc_hmac_len(hmac);
   iv_len = silc_cipher_get_block_len(cipher);
-  memcpy(iv, end - iv_len, iv_len);
 
-  /* Allocate destination decryption buffer since we do not want to modify
-     the original data buffer, since we might want to call this function 
-     many times for same payload. */
-  if (hmac) {
-    dst = silc_calloc(data_len - iv_len, sizeof(*dst));
-    if (!dst)
-      return FALSE;
-  } else {
-    dst = data;
-  }
+  if (data_len < mac_len)
+    return FALSE;
 
-  /* Decrypt the channel message */
-  silc_cipher_decrypt(cipher, data, dst, data_len - iv_len, iv);
-
-  if (hmac) {
+  if (check_mac) {
     /* Take the MAC */
-    end = dst + (data_len - iv_len);
-    mac_len = silc_hmac_len(hmac);
-    mac = (end - mac_len);
+    mac = data + (data_len - mac_len);
 
     /* Check the MAC of the message */
-    SILC_LOG_DEBUG(("Checking channel message MACs"));
+    SILC_LOG_DEBUG(("Checking channel message MAC"));
     silc_hmac_init(hmac);
-    silc_hmac_update(hmac, dst, (data_len - iv_len - mac_len));
-    silc_hmac_update(hmac, data + (data_len - iv_len), iv_len);
+    silc_hmac_update(hmac, data, data_len - mac_len);
     silc_hmac_final(hmac, mac2, &mac_len);
     if (memcmp(mac, mac2, mac_len)) {
-      SILC_LOG_DEBUG(("Channel message MACs does not match"));
-      silc_free(dst);
+      SILC_LOG_DEBUG(("Channel message MAC does not match"));
       return FALSE;
     }
     SILC_LOG_DEBUG(("MAC is Ok"));
-
-    /* Now copy the decrypted data into the buffer since it is verified
-       it decrypted correctly. */
-    memcpy(data, dst, data_len - iv_len);
-    memset(dst, 0, data_len - iv_len);
-    silc_free(dst);
   }
 
+  /* Decrypt the channel message */
+  silc_cipher_decrypt(cipher, data, data,
+		      data_len - iv_len - mac_len,
+		      data + (data_len - iv_len - mac_len));
   return TRUE;
 }
 
@@ -300,7 +280,7 @@ silc_channel_message_payload_parse(unsigned char *payload,
 
   /* Decrypt the payload */
   ret = silc_channel_message_payload_decrypt(buffer.data, buffer.len,
-					     cipher, hmac);
+					     cipher, hmac, TRUE);
   if (ret == FALSE)
     return NULL;
 
@@ -318,8 +298,8 @@ silc_channel_message_payload_parse(unsigned char *payload,
 							 &newp->data_len),
 			     SILC_STR_UI16_NSTRING_ALLOC(&newp->pad, 
 							 &newp->pad_len),
-			     SILC_STR_UI_XNSTRING(&newp->mac, mac_len),
 			     SILC_STR_UI_XNSTRING(&newp->iv, iv_len),
+			     SILC_STR_UI_XNSTRING(&newp->mac, mac_len),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
@@ -350,7 +330,6 @@ silc_channel_message_payload_parse(unsigned char *payload,
 
 bool silc_channel_message_payload_encrypt(unsigned char *data,
 					  SilcUInt32 data_len,
-					  SilcUInt32 true_len,
 					  unsigned char *iv,
 					  SilcUInt32 iv_len,
 					  SilcCipher cipher,
@@ -360,24 +339,19 @@ bool silc_channel_message_payload_encrypt(unsigned char *data,
   SilcUInt32 mac_len;
   SilcBufferStruct buf;
 
-  /* Compute the MAC of the channel message data */
+  /* Encrypt payload of the packet. This is encrypted with the channel key. */
+  silc_cipher_encrypt(cipher, data, data, data_len - iv_len, iv);
+
+  /* Compute the MAC of the encrypted channel message data */
   silc_hmac_init(hmac);
   silc_hmac_update(hmac, data, data_len);
-  silc_hmac_update(hmac, iv, iv_len);
   silc_hmac_final(hmac, mac, &mac_len);
 
   /* Put rest of the data to the payload */
-  silc_buffer_set(&buf, data, true_len);
+  silc_buffer_set(&buf, data, data_len + mac_len);
   silc_buffer_pull(&buf, data_len);
-  silc_buffer_format(&buf, 
-		     SILC_STR_UI_XNSTRING(mac, mac_len),
-		     SILC_STR_UI_XNSTRING(iv, iv_len),
-		     SILC_STR_END);
+  silc_buffer_put(&buf, mac, mac_len);
 
-  /* Encrypt payload of the packet. This is encrypted with the channel key. */
-  silc_cipher_encrypt(cipher, data, data, true_len - iv_len, iv);
-
-  memset(mac, 0, sizeof(mac));
   return TRUE;
 }
 
@@ -406,11 +380,11 @@ SilcBuffer silc_channel_message_payload_encode(SilcMessageFlags flags,
      since it is not encrypted. */
   mac_len = silc_hmac_len(hmac);
   data_len = SILC_CHANNEL_MESSAGE_DATALEN(data_len, mac_len + iv_len);
-  len = 6 + data_len + mac_len;
+  len = 6 + data_len;
   pad_len = SILC_CHANNEL_MESSAGE_PAD(len);
 
   /* Allocate channel payload buffer */
-  len += pad_len + iv_len;
+  len += pad_len + iv_len + mac_len;
   buffer = silc_buffer_alloc(len);
   if (!buffer)
     return NULL;
@@ -423,20 +397,20 @@ SilcBuffer silc_channel_message_payload_encode(SilcMessageFlags flags,
   }
 
   /* Encode the Channel Message Payload */
-  silc_buffer_pull_tail(buffer, 6 + data_len + pad_len);
+  silc_buffer_pull_tail(buffer, 6 + data_len + pad_len + iv_len);
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_SHORT(flags),
 		     SILC_STR_UI_SHORT(data_len),
 		     SILC_STR_UI_XNSTRING(data, data_len),
 		     SILC_STR_UI_SHORT(pad_len),
 		     SILC_STR_UI_XNSTRING(pad, pad_len),
+		     SILC_STR_UI_XNSTRING(iv, iv_len),
 		     SILC_STR_END);
 
   memset(pad, 0, sizeof(pad));
 
   if (!silc_channel_message_payload_encrypt(buffer->data, buffer->len,
-					    buffer->truelen, iv, iv_len,
-					    cipher, hmac)) {
+					    iv, iv_len, cipher, hmac)) {
     silc_buffer_free(buffer);
     return NULL;
   }

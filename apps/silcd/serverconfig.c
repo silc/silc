@@ -1250,11 +1250,11 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
 
   /* alloc a config object */
   config_new = silc_calloc(1, sizeof(*config_new));
-  config_new->refcount = 1;
   if (!config_new)
     return NULL;
 
   /* general config defaults */
+  config_new->refcount = 1;
   config_new->logging_timestamp = TRUE;
 
   /* obtain a config file object */

@@ -80,23 +80,6 @@ int silc_packet_send(SilcSocketConnection sock, bool force_send)
 void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
 			 SilcBuffer buffer, SilcUInt32 len)
 {
-  unsigned char mac[32];
-  SilcUInt32 mac_len;
-
-  /* Compute HMAC. This assumes that HMAC is created from the entire
-     data area thus this uses the length found in buffer, not the length
-     sent as argument. */
-  if (hmac) {
-    unsigned char psn[4];
-
-    silc_hmac_init(hmac);
-    SILC_PUT32_MSB(sequence, psn);
-    silc_hmac_update(hmac, psn, 4);
-    silc_hmac_update(hmac, buffer->data, buffer->len);
-    silc_hmac_final(hmac, mac, &mac_len);
-    silc_buffer_put_tail(buffer, mac, mac_len);
-    memset(mac, 0, sizeof(mac));
-  }
 
   /* Encrypt the data area of the packet. */
   if (cipher) {
@@ -106,9 +89,23 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
 			silc_cipher_get_iv(cipher));
   }
 
-  /* Pull the HMAC into the visible data area in the buffer */
-  if (hmac)
+  /* Compute HMAC. This assumes that MAC is computed from the entire
+     data area thus this uses the length found in buffer, not the length
+     sent as argument. */
+  if (hmac) {
+    unsigned char mac[32], psn[4];
+    SilcUInt32 mac_len;
+
+    silc_hmac_init(hmac);
+    SILC_PUT32_MSB(sequence, psn);
+    silc_hmac_update(hmac, psn, 4);
+    silc_hmac_update(hmac, buffer->data, buffer->len);
+    silc_hmac_final(hmac, mac, &mac_len);
+
+    /* Put MAC and pull the it into the visible data area in the buffer */
+    silc_buffer_put_tail(buffer, mac, mac_len);
     silc_buffer_pull_tail(buffer, mac_len);
+  }
 }
 
 /* Assembles a new packet to be ready for send out. */
@@ -258,6 +255,11 @@ bool silc_packet_send_prepare(SilcSocketConnection sock,
 static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac, 
 			       SilcUInt32 sequence, SilcBuffer buffer, 
 			       bool normal);
+static bool silc_packet_check_mac(SilcHmac hmac,
+				  const unsigned char *data,
+				  SilcUInt32 data_len,
+				  const unsigned char *packet_mac,
+				  SilcUInt32 sequence);
 
 /* Receives packet from network and reads the data into connection's
    incoming data buffer. If the data was read directly this returns the
@@ -304,8 +306,10 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 				 void *parser_context)
 {
   SilcPacketParserContext *parse_ctx;
-  int packetlen, paddedlen, mac_len = 0;
+  int packetlen, paddedlen, mac_len = 0, ret, block_len;
   bool cont = TRUE;
+  unsigned char tmp[SILC_PACKET_MIN_HEADER_LEN], *header;
+  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
 
   /* Do not process for disconnected connection */
   if (SILC_IS_DISCONNECTED(sock))
@@ -325,27 +329,49 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
       return TRUE;
     }
 
-    /* Decrypt first 16 bytes of the packet */
-    if (!SILC_IS_INBUF_PENDING(sock) && cipher)
-      silc_cipher_decrypt(cipher, sock->inbuf->data, sock->inbuf->data, 
-			  SILC_PACKET_MIN_HEADER_LEN,
-			  silc_cipher_get_iv(cipher));
+    /* Decrypt first block of the packet to get the length field out */
+    if (cipher) {
+      block_len = silc_cipher_get_block_len(cipher);
+      memcpy(iv, silc_cipher_get_iv(cipher), block_len);
+      silc_cipher_decrypt(cipher, sock->inbuf->data, tmp, block_len, iv);
+      header = tmp;
+    } else {
+      block_len = SILC_PACKET_MIN_HEADER_LEN;
+      header = sock->inbuf->data;
+    }
 
     /* Get packet lenght and full packet length with padding */
-    SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
+    SILC_PACKET_LENGTH(header, packetlen, paddedlen);
 
     /* Sanity checks */
     if (packetlen < SILC_PACKET_MIN_LEN) {
-      SILC_LOG_ERROR(("Received invalid packet, dropped"));
+      SILC_LOG_ERROR(("Received too short packet"));
+      memset(header, 0, sizeof(header));
       silc_buffer_clear(sock->inbuf);
       return FALSE;
     }
 
     if (sock->inbuf->len < paddedlen + mac_len) {
-      SILC_LOG_DEBUG(("Received partial packet, waiting for the rest"
-		      "(%d < %d)", sock->inbuf->len, paddedlen + mac_len));
+      SILC_LOG_DEBUG(("Received partial packet, waiting for the rest "
+		      "(%d bytes)", paddedlen + mac_len - sock->inbuf->len));
       SILC_SET_INBUF_PENDING(sock);
+      memset(tmp, 0, sizeof(tmp));
       return TRUE;
+    }
+
+    /* Check MAC of the packet */
+    if (!silc_packet_check_mac(hmac, sock->inbuf->data, paddedlen,
+			       sock->inbuf->data + paddedlen, sequence)) {
+      SILC_LOG_WARNING(("Packet MAC check failed %s:%d [%s] [%s]", 
+			sock->hostname, sock->port,
+			silc_get_packet_name(header[3]),
+			(sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+			 sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+			 sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+			 "Router")));
+      memset(tmp, 0, sizeof(tmp));
+      silc_buffer_clear(sock->inbuf);
+      return FALSE;
     }
 
     SILC_UNSET_INBUF_PENDING(sock);
@@ -353,45 +379,45 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     if (!parse_ctx)
       return FALSE;
     parse_ctx->packet = silc_packet_context_alloc();
-    parse_ctx->packet->buffer = silc_buffer_alloc(paddedlen + mac_len);
-    parse_ctx->packet->type = sock->inbuf->data[3];
-    parse_ctx->packet->padlen = sock->inbuf->data[4];
+    parse_ctx->packet->buffer = silc_buffer_alloc_size(paddedlen);
+    parse_ctx->packet->type = header[3];
+    parse_ctx->packet->padlen = header[4];
     parse_ctx->packet->sequence = sequence++;
     parse_ctx->sock = sock;
     parse_ctx->context = parser_context;
 
-    silc_buffer_pull_tail(parse_ctx->packet->buffer, 
-			  SILC_BUFFER_END(parse_ctx->packet->buffer));
-    silc_buffer_put(parse_ctx->packet->buffer, sock->inbuf->data, 
-    		    paddedlen + mac_len);
-
-    SILC_LOG_HEXDUMP(("Incoming packet (%d) (%dB decrypted), len %d", 
-		      sequence - 1, SILC_PACKET_MIN_HEADER_LEN, 
-		      paddedlen + mac_len),
-		     sock->inbuf->data, paddedlen + mac_len);
-
     /* Check whether this is normal or special packet */
     if (local_is_router) {
-      if (sock->inbuf->data[3] == SILC_PACKET_PRIVATE_MESSAGE &&
-	  (sock->inbuf->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY))
+      if (header[3] == SILC_PACKET_PRIVATE_MESSAGE &&
+	  (header[2] & SILC_PACKET_FLAG_PRIVMSG_KEY))
 	parse_ctx->normal = FALSE;
-      else if (sock->inbuf->data[3] != SILC_PACKET_CHANNEL_MESSAGE || 
-	       (sock->inbuf->data[3] == SILC_PACKET_CHANNEL_MESSAGE &&
+      else if (header[3] != SILC_PACKET_CHANNEL_MESSAGE || 
+	       (header[3] == SILC_PACKET_CHANNEL_MESSAGE &&
 		sock->type == SILC_SOCKET_TYPE_ROUTER))
 	parse_ctx->normal = TRUE;
     } else {
-      if (sock->inbuf->data[3] == SILC_PACKET_PRIVATE_MESSAGE &&
-	  (sock->inbuf->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY))
+      if (header[3] == SILC_PACKET_PRIVATE_MESSAGE &&
+	  (header[2] & SILC_PACKET_FLAG_PRIVMSG_KEY))
 	parse_ctx->normal = FALSE;
-      else if (sock->inbuf->data[3] != SILC_PACKET_CHANNEL_MESSAGE)
+      else if (header[3] != SILC_PACKET_CHANNEL_MESSAGE)
 	parse_ctx->normal = TRUE;
     }
 
-    /* Decrypt rest of the packet */
-    if (cipher)
-      if (silc_packet_decrypt(cipher, hmac, parse_ctx->packet->sequence, 
-			      parse_ctx->packet->buffer, 
-			      parse_ctx->normal) == -1) {
+    SILC_LOG_HEXDUMP(("Incoming packet (%d) len %d",
+		      sequence - 1, paddedlen + mac_len),
+		     sock->inbuf->data, paddedlen + mac_len);
+
+    /* Put the decrypted part, and rest of the encrypted data, and decrypt */
+    silc_buffer_put(parse_ctx->packet->buffer, header, block_len);
+    silc_buffer_pull(parse_ctx->packet->buffer, block_len);
+    silc_buffer_put(parse_ctx->packet->buffer, sock->inbuf->data + block_len,
+		    paddedlen - block_len);
+    if (cipher) {
+      silc_cipher_set_iv(cipher, iv);
+      ret = silc_packet_decrypt(cipher, hmac, parse_ctx->packet->sequence, 
+				parse_ctx->packet->buffer, 
+				parse_ctx->normal);
+      if (ret < 0) {
 	SILC_LOG_WARNING(("Packet decryption failed %s:%d [%s] [%s]", 
 			  sock->hostname, sock->port,
 			  silc_get_packet_name(parse_ctx->packet->type),
@@ -399,10 +425,18 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 			   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 			   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 			   "Router")));
+	memset(tmp, 0, sizeof(tmp));
 	silc_packet_context_free(parse_ctx->packet);
 	silc_free(parse_ctx);
 	return FALSE;
       }
+    }
+    silc_buffer_push(parse_ctx->packet->buffer, block_len);
+
+    SILC_LOG_HEXDUMP(("Fully decrypted packet, len %d",
+		      parse_ctx->packet->buffer->len), 
+		     parse_ctx->packet->buffer->data,
+		     parse_ctx->packet->buffer->len);
 
     /* Pull the packet from inbuf thus we'll get the next one
        in the inbuf. */
@@ -410,6 +444,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 
     /* Call the parser */
     cont = (*parser)(parse_ctx, parser_context);
+    memset(tmp, 0, sizeof(tmp));
   }
 
   if (cont == FALSE && sock->inbuf->len > 0)
@@ -420,11 +455,13 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
   return TRUE;
 }
 
-/* Checks MAC in the packet. Returns TRUE if MAC is Ok. This is called
-   after packet has been totally decrypted and parsed. */
+/* Checks MAC in the packet. Returns TRUE if MAC is Ok. */
 
-static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer,
-				 SilcUInt32 sequence)
+static bool silc_packet_check_mac(SilcHmac hmac,
+				  const unsigned char *data,
+				  SilcUInt32 data_len,
+				  const unsigned char *packet_mac,
+				  SilcUInt32 sequence)
 {
   /* Check MAC */
   if (hmac) {
@@ -434,123 +471,26 @@ static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer,
     SILC_LOG_DEBUG(("Verifying MAC"));
 
     /* Compute HMAC of packet */
-
-    memset(mac, 0, sizeof(mac));
     silc_hmac_init(hmac);
     SILC_PUT32_MSB(sequence, psn);
     silc_hmac_update(hmac, psn, 4);
-    silc_hmac_update(hmac, buffer->data, buffer->len);
+    silc_hmac_update(hmac, data, data_len);
     silc_hmac_final(hmac, mac, &mac_len);
 
-    /* Compare the HMAC's (buffer->tail has the packet's HMAC) */
-    if (memcmp(buffer->tail, mac, mac_len)) {
+    /* Compare the MAC's */
+    if (memcmp(packet_mac, mac, mac_len)) {
       SILC_LOG_ERROR(("MAC failed"));
       return FALSE;
     }
     
     SILC_LOG_DEBUG(("MAC is Ok"));
-    memset(mac, 0, sizeof(mac));
   }
   
   return TRUE;
 }
 
-/* Decrypts rest of the packet (after decrypting just the SILC header).
-   After calling this function the packet is ready to be parsed by calling 
-   silc_packet_parse. If everything goes without errors this returns TRUE,
-   if packet is malformed this returns FALSE. */
-
-static int silc_packet_decrypt_rest(SilcCipher cipher, SilcHmac hmac,
-				    SilcBuffer buffer)
-{
-  if (cipher) {
-
-    /* Pull MAC from packet before decryption */
-    if (hmac) {
-      if ((buffer->len - silc_hmac_len(hmac)) > SILC_PACKET_MIN_LEN) {
-	silc_buffer_push_tail(buffer, silc_hmac_len(hmac));
-      } else {
-	SILC_LOG_ERROR(("Bad MAC length in packet, packet dropped"));
-	return FALSE;
-      }
-    }
-
-    SILC_LOG_DEBUG(("Decrypting rest of the packet"));
-
-    /* Decrypt rest of the packet */
-    silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
-    silc_cipher_decrypt(cipher, buffer->data, buffer->data, buffer->len, 
-			silc_cipher_get_iv(cipher));
-    silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN);
-
-    SILC_LOG_HEXDUMP(("Fully decrypted packet, len %d", buffer->len),
-		     buffer->data, buffer->len);
-  }
-
-  return TRUE;
-}
-
-/* Decrypts rest of the SILC Packet header that has been decrypted partly
-   already. This decrypts the padding of the packet also. After calling 
-   this function the packet is ready to be parsed by calling function 
-   silc_packet_parse. This is used in special packet reception (protocol
-   defines the way of decrypting special packets). */
-
-static int silc_packet_decrypt_rest_special(SilcCipher cipher,
-					    SilcHmac hmac,
-					    SilcBuffer buffer)
-{
-  /* Decrypt rest of the header plus padding */
-  if (cipher) {
-    SilcUInt16 len;
-
-    /* Pull MAC from packet before decryption */
-    if (hmac) {
-      if ((buffer->len - silc_hmac_len(hmac)) > SILC_PACKET_MIN_LEN) {
-	silc_buffer_push_tail(buffer, silc_hmac_len(hmac));
-      } else {
-	SILC_LOG_ERROR(("Bad MAC length in packet, packet dropped"));
-	return FALSE;
-      }
-    }
-  
-    SILC_LOG_DEBUG(("Decrypting rest of the header"));
-
-    /* padding length + src id len + dst id len + header length - 16
-       bytes already decrypted, gives the rest of the encrypted packet */
-    len = (((SilcUInt8)buffer->data[4] + (SilcUInt8)buffer->data[6] + 
-	   (SilcUInt8)buffer->data[7] + SILC_PACKET_HEADER_LEN) -
-	   SILC_PACKET_MIN_HEADER_LEN);
-
-    silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
-    if (len > buffer->len) {
-      SILC_LOG_ERROR(("Garbage in header of packet, bad packet length, "
-		      "packet dropped"));
-      return FALSE;
-    }
-    silc_cipher_decrypt(cipher, buffer->data, buffer->data, len,
-			silc_cipher_get_iv(cipher));
-    silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN);
-    SILC_LOG_HEXDUMP(("packet, len %d", buffer->len), 
-		     buffer->data, buffer->len);
-  }
-
-  return TRUE;
-}
-
-/* Decrypts a packet. This assumes that typical SILC packet is the
-   packet to be decrypted and thus checks for normal and special SILC
-   packets and can handle both of them. This also computes and checks
-   the HMAC of the packet. If any other special or customized decryption
-   processing is required this function cannot be used. This returns
-   -1 on error, 0 when packet is normal packet and 1 when the packet
-   is special and requires special processing. 
-
-   The `check_packet' is a callback funtion that this function will 
-   call.  The callback relates to the checking whether the packet is
-   normal packet or special packet and how it should be processed.  If
-   the callback return TRUE the packet is normal and FALSE if the packet
-   is special and requires special procesing. */
+/* Decrypts SILC packet.  Handles both normal and special packet decryption.
+   Return 0 when packet is normal and 1 when it it special, -1 on error. */
 
 static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 			       SilcUInt32 sequence, SilcBuffer buffer, 
@@ -559,24 +499,38 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
   /* If the packet type is not any special type lets decrypt rest
      of the packet here. */
   if (normal == TRUE) {
-    /* Normal packet, decrypt rest of the packet */
-    if (!silc_packet_decrypt_rest(cipher, hmac, buffer))
-      return -1;
-
-    /* Check MAC */
-    if (!silc_packet_check_mac(hmac, buffer, sequence))
-      return -1;
-
+    if (cipher) {
+      /* Decrypt rest of the packet */
+      SILC_LOG_DEBUG(("Decrypting the packet"));
+      silc_cipher_decrypt(cipher, buffer->data, buffer->data, buffer->len, 
+			  silc_cipher_get_iv(cipher));
+    }
     return 0;
-  } else {
-    /* Packet requires special handling, decrypt rest of the header.
-       This only decrypts. */
-    if (!silc_packet_decrypt_rest_special(cipher, hmac, buffer))
-      return -1;
 
-    /* Check MAC */
-    if (!silc_packet_check_mac(hmac, buffer, sequence))
-      return -1;
+  } else {
+    /* Decrypt rest of the header plus padding */
+    if (cipher) {
+      SilcUInt16 len;
+      int block_len = silc_cipher_get_block_len(cipher);
+
+      SILC_LOG_DEBUG(("Decrypting the header"));
+
+      /* padding length + src id len + dst id len + header length - 16
+	 bytes already decrypted, gives the rest of the encrypted packet */
+      silc_buffer_push(buffer, block_len);
+      len = (((SilcUInt8)buffer->data[4] + (SilcUInt8)buffer->data[6] + 
+	      (SilcUInt8)buffer->data[7] + SILC_PACKET_HEADER_LEN) -
+	     block_len);
+
+      if (len > buffer->len) {
+	SILC_LOG_ERROR(("Garbage in header of packet, bad packet length, "
+			"packet dropped"));
+	return -1;
+      }
+      silc_buffer_pull(buffer, block_len);
+      silc_cipher_decrypt(cipher, buffer->data, buffer->data, len,
+			  silc_cipher_get_iv(cipher));
+    }
 
     return 1;
   }

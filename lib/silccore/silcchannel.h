@@ -284,14 +284,14 @@ SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload);
  *    For example server might need to call this directly in some 
  *    circumstances. The `cipher' is used to decrypt the payload.
  *
- *    If the `hmac' is no provided then the MAC of the channel message is
- *    not verified.
+ *    If `check_mac' is FALSE then MAC is not verified.
  *
  ***/
 bool silc_channel_message_payload_decrypt(unsigned char *data,
 					  size_t data_len,
 					  SilcCipher cipher,
-					  SilcHmac hmac);
+					  SilcHmac hmac,
+					  bool check_mac);
 
 /****f* silccore/SilcChannelAPI/silc_channel_message_payload_parse
  *
@@ -325,7 +325,6 @@ silc_channel_message_payload_parse(unsigned char *payload,
  *
  *    bool silc_channel_message_payload_encrypt(unsigned char *data,
  *                                              SilcUInt32 data_len,
- *                                              SilcUInt32 true_len,
  *                                              unsigned char *iv,
  *                                              SilcUInt32 iv_len,
  *                                              SilcCipher cipher,
@@ -335,9 +334,8 @@ silc_channel_message_payload_parse(unsigned char *payload,
  *
  *    This function is used to encrypt the Channel Messsage Payload which is
  *    the `data' and `data_len'.  The `data_len' is the data length which is
- *    used to create MAC out of.  The `true_len' is the true length of `data'
- *    message payload and is used assemble rest of the packet after MAC
- *    creation. The `true_len' length packet will then be encrypted.
+ *    used to create MAC out of.  The `data' MUST have additional space
+ *    after `data_len' bytes for the MAC which is appended to the data.
  *
  *    This is usually used by the Channel Message interface itself but can
  *    be called by the appliation if separate encryption process is required.
@@ -347,7 +345,6 @@ silc_channel_message_payload_parse(unsigned char *payload,
  ***/
 bool silc_channel_message_payload_encrypt(unsigned char *data,
 					  SilcUInt32 data_len,
-					  SilcUInt32 true_len,
 					  unsigned char *iv,
 					  SilcUInt32 iv_len,
 					  SilcCipher cipher,

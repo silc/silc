@@ -232,7 +232,7 @@ protocol.  The data payload area is always encrypted.
 
 The last part of SILC packet is the packet MAC that assures the
 integrity of the packet.  See the section 2.6 Packet MAC Generation
-for more information.  If compsession is used the compsession is
+for more information.  If compression is used the compsession is
 always applied before encryption.
 
 All fields in all packet payloads are always in MSB (most significant
@@ -1592,12 +1592,11 @@ o Error Message (variable length) - Human readable error
 .ti 0
 2.3.9 Channel Message Payload
 
-Channel messages are the most common messages sent in the SILC.
-Channel Message Payload is used to send message to channels.  These
-messages can only be sent if client has joined to some channel.
-Even though this packet is the most common in SILC it is still
-special packet.  Some special handling on sending and reception
-of channel message is required.
+Channel Message Payload is used to send message to channels, a group
+of users.  These messages can only be sent if client has joined to
+some channel.  Even though this packet is very common in SILC it
+is still special packet.  Some special handling on sending and
+reception of channel message is required.
 
 Padding MUST be applied into this payload since the payload is
 encrypted separately from other parts of the packet with the
@@ -1645,11 +1644,11 @@ represents the Channel Message Payload.
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-~                              MAC                              ~
+~                       Initial Vector *                        ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-~                       Initial Vector *                        ~
+~                              MAC *                            ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
@@ -1749,27 +1748,24 @@ o Padding (variable length) - The padding that MUST be
   applied because this payload is encrypted separately from
   other parts of the packet.
 
-o MAC (variable length) - The MAC computed from the
-  Message Flags, Message Length, Message Data, Padding Length,
-  Padding and Initial Vector fields in that order.  This
-  protects the integrity of the plaintext channel message.
-  The receiver can verify from the MAC whether the message
-  decrypted correctly.  Also, if more than one private key
-  has been set for the channel, the receiver can verify which
-  of the keys decrypted the message correctly.  Note that,
-  this field is encrypted and MUST be added to the padding
-  calculation.
-
 o Initial Vector (variable length) - The initial vector
   that has been used in packet encryption.  It needs to be
-  used in the packet decryption as well.  What this field
-  includes is implementation issue.  However, it is 
-  RECOMMENDED that it would be random data, or perhaps
-  a timestamp.  It is NOT RECOMMENDED to use zero (0) as an
-  initial vector.  This field is not encrypted.  This field
-  is not included into the padding calculation.  Length
-  of this field equals the cipher's block size.  This field
-  is, however authenticated.
+  used in the packet decryption as well.  Contents of this
+  field depends on the encryption algorithm and mode.  This
+  field is not encrypted, is not included in padding
+  calculation and its length equals to cipher's block size.
+  This field is authenticated by the channel message MAC.
+
+o MAC (variable length) - The MAC computed from the
+  Message Flags, Message Length, Message Data, Padding Length,
+  Padding and Initial Vector fields in that order.  The MAC
+  is computed after the payload is encrypted.  This is so
+  called Encrypt-Then-MAC order; first encrypt, then compute
+  MAC from ciphertext.  The MAC protects the integrity of
+  the channel message.  Also, if more than one private key
+  has been set for the channel, the receiver can verify which
+  of the keys must be used in decryption.  This field is not
+  encrypted.
 .in 3
 
 
@@ -1893,6 +1889,8 @@ The payload may only be sent with SILC_PACKET_PRIVATE_MESSAGE
 packet.  It MUST NOT be sent in any other packet type.  The following 
 diagram represents the Private Message Payload.
 
+(*) indicates that the field is not encrypted.
+
 
 .in 5
 .nf
@@ -1910,7 +1908,7 @@ diagram represents the Private Message Payload.
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-~                              MAC                              ~
+~                              MAC *                            ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
@@ -1942,13 +1940,15 @@ o Padding (variable length) - This field is present only
 
 o MAC (variable length) - This field is present only when
   the private message payload is encrypted with private
-  message key. The MAC is computed from the Message Flags,
+  message key.  The MAC is computed from the Message Flags,
   Message Data Length, Message Data and Padding fields in
-  that order.  The MAC protects the integrity of the channel
+  that order.  The MAC protects the integrity of the private
   message.  The MAC is computed after encryption from the
-  ciphertext.  Note that, this field is not encrypted and
-  thus not included in the padding calculation.  When encrypted
-  with normal session keys, this field MUST NOT be included.
+  ciphertext.  This is so called Encrypt-Then-MAC order;
+  first encrypt, then compute MAC from ciphertext.  Note that,
+  this field is not encrypted and thus not included in the
+  padding calculation.  When encrypted with normal session
+  keys, this field MUST NOT be included.
 .in 3
 
 
@@ -2723,23 +2723,18 @@ of the message.
 Data integrity of a packet is protected by including a message
 authentication code (MAC) at the end of the packet.  The MAC is computed
 from shared secret MAC key, that is established by the SILC Key Exchange
-protocol, from packet sequence number, and from the original contents
-of the packet.  The MAC is always computed before the packet is
-encrypted, although after it is compressed if compression is used.
+protocol, from packet sequence number, and from the encrypted packet
+data.  The MAC is always computed after packet is encrypted.  This is
+so called Encrypt-Then-MAC order; packet is first encrypted, then MAC
+is computed from the encrypted data.
 
 The MAC is computed from entire packet.  Every bit of data in the packet,
 including SILC Packet Header is used in the MAC computing.  This way
 the entire packet becomes authenticated.
 
-If the packet is special packet MAC is computed from the entire packet
-but part of the packet may be encrypted before the MAC is computed.
-This is case, for example, with channel messages where the message data
-is encrypted with key that server may not now.  In this case the MAC
-has been computed from the encrypted data.
-
 Hence, packet's MAC generation is as follows:
 
-  mac = MAC(key, sequence number | SILC packet)
+  mac = MAC(key, sequence number | Encrypted SILC packet)
 
 The MAC key is negotiated during the SKE protocol.  The sequence number
 is a 32 bit MSB first value starting from zero for first packet and
@@ -2822,10 +2817,9 @@ channel it will be Channel ID.
 
 If the sender wants to compress the packet it MUST apply the
 compression now.  Sender MUST also compute the padding as described
-in above sections.  Then sender MUST compute the MAC of the packet.
-
-Then sender MUST encrypt the packet as has been described in above
-sections according whether the packet is normal packet or special
+in above sections.  Then sender MUST encrypt the packet as has been
+described in above sections according whether the packet is normal
+packet or special packet.  Then sender MUST compute the MAC of the
 packet.  The computed MAC MUST NOT be encrypted.
 
 
