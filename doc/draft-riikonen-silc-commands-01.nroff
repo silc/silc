@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 25 April 2001
+.ds RH 22 July 2001
 .ds CH
 .na
 .hy 0
@@ -16,14 +16,14 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-00.txt                      25 April 2001
-Expires: 25 October 2001
+draft-riikonen-silc-commands-01.txt                       22 July 2001
+Expires: 22 January 2002
 
 .in 3
 
 .ce 2
 SILC Commands
-<draft-riikonen-silc-commands-00.txt>
+<draft-riikonen-silc-commands-01.txt>
 
 .ti 0
 Status of this Memo
@@ -79,7 +79,7 @@ Table of Contents
       2.3.1 SILC Command Status Payload ......................... 32
       2.3.2 SILC Command Status List ............................ 32
 3 Security Considerations ....................................... 37
-4 References .................................................... 37
+4 References .................................................... 38
 5 Author's Address .............................................. 39
 
 
@@ -1912,10 +1912,10 @@ security of this protocol.
 
 .nf
 Pekka Riikonen
-Kasarmikatu 11 A4
-70110 Kuopio
+Snellmanninkatu 34 A 15
+70100 Kuopio
 Finland
 
-EMail: priikone@poseidon.pspt.fi
+EMail: priikone@silcnet.org
 
 This Internet-Draft expires 25 October 2001 

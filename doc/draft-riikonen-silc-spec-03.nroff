@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 22 July 2001
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-03.txt                                    XXX
-Expires: XXX
+draft-riikonen-silc-spec-03.txt                           22 July 2001
+Expires: 22 January 2002
 
 .in 3
 
@@ -124,7 +124,7 @@ Table of Contents
   4.10 Closing Connection ....................................... 37
 5 Security Considerations ....................................... 38
 6 References .................................................... 38
-7 Author's Address .............................................. 39
+7 Author's Address .............................................. 40
 
 
 
@@ -2016,15 +2016,19 @@ should have a forum to discuss the cell management issues.
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
 
+
+
+
+
 .ti 0
 7 Author's Address
 
 .nf
 Pekka Riikonen
-Kasarmikatu 11 A4
-70110 Kuopio
+Snellmanninkatu 34 A 15
+70100 Kuopio
 Finland
 
-EMail: priikone@poseidon.pspt.fi
+EMail: priikone@silcnet.org
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 22 January 2002

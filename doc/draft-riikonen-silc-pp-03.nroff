@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 22 July 2001
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-03.txt                                      XXX
-Expires: XXX
+draft-riikonen-silc-pp-03.txt                             22 July 2001
+Expires: 22 January 2001
 
 .in 3
 
@@ -1733,14 +1733,6 @@ packet.  It MUST NOT be sent in any other packet type.  The following
 diagram represents the Private Message Payload.
 
 
-
-
-
-
-
-
-
-
 .in 5
 .nf
                      1                   2                   3
@@ -2699,10 +2691,10 @@ security of this protocol.
 
 .nf
 Pekka Riikonen
-Kasarmikatu 11 A4
-70110 Kuopio
+Snellmanninkatu 34 A 15
+70100 Kuopio
 Finland
 
-EMail: priikone@poseidon.pspt.fi
+EMail: priikone@silcnet.org
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 22 January 2002
