@@ -623,11 +623,12 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Check whether nickname changed at all.  It is possible that nick
-       change notify is received but nickname didn't changed, only the
+       change notify is received but nickname didn't change, only the
        ID changes.  Check whether the hashes in the Client ID match, if
        they do nickname didn't change. */
-    if (SILC_ID_COMPARE_HASH(client_entry->id, client_id)) {
-      /* Nickname didn't change. Update only the ID */
+    if (SILC_ID_COMPARE_HASH(client_entry->id, client_id) &&
+	!strcmp(tmp, client_entry->nickname)) {
+      /* Nickname didn't change.  Update only Client ID. */
       silc_idcache_del_by_context(conn->internal->client_cache,
 				  client_entry);
       silc_free(client_entry->id);
