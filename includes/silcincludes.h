@@ -34,8 +34,16 @@
 #endif
 #endif
 
+#if defined(__EPOC32__)
+#define SILC_EPOC
+#endif
+
 #ifdef SILC_WIN32
 #include "silcwin32.h"
+#endif
+
+#ifdef SILC_EPOC
+#include "silcepoc.h"
 #endif
 
 #ifndef DLLAPI
