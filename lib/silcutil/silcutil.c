@@ -731,12 +731,7 @@ char *silc_get_username()
 {
   char *logname = NULL;
   
-  if (!getenv("LOGNAME")) {
-    fprintf(stderr, "Error: environment variable $LOGNAME not set\n");
-    return NULL;
-  }
-
-  logname = strdup(getenv("LOGNAME"));
+  logname = getenv("LOGNAME");
   if (!logname) {
     logname = getlogin();
     if (!logname) {
@@ -748,11 +743,11 @@ char *silc_get_username()
 	return NULL;
       }
       
-      logname = strdup(pw->pw_name);
+      logname = pw->pw_name;
     }
   }
   
-  return logname;
+  return strdup(logname);
 }                          
 
 /* Returns the real name of ther user. */
