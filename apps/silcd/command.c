@@ -4686,6 +4686,19 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
   silc_free(q);
 }
 
+SILC_TASK_CALLBACK(silc_server_command_detach_timeout)
+{
+  QuitInternal q = (QuitInternal)context;
+  SilcClientEntry client = (SilcClientEntry)q->sock;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (client->mode & SILC_UMODE_DETACHED)
+    silc_server_free_client_data(q->server, NULL, client, TRUE,
+				 "Detach timeout");
+  silc_free(q);
+}
+
 /* Server side of DETACH command.  Detached the client from the network
    by closing the connection but preserving the session. */
 
@@ -4695,6 +4708,12 @@ SILC_SERVER_CMD_FUNC(detach)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   QuitInternal q;
+
+  if (server->config->detach_disabled) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_DETACH,
+					  SILC_STATUS_ERR_UNKNOWN_COMMAND);
+    goto out;
+  }
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
@@ -4714,6 +4733,16 @@ SILC_SERVER_CMD_FUNC(detach)
   q->sock = cmd->sock;
   silc_schedule_task_add(server->schedule, 0, silc_server_command_detach_cb,
 			 q, 0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+
+  if (server->config->detach_timeout) {
+    q = silc_calloc(1, sizeof(*q));
+    q->server = server;
+    q->sock = (void *)client;
+    silc_schedule_task_add(server->schedule, 0, 
+			   silc_server_command_detach_timeout,
+			   q, server->config->detach_timeout * 60,
+			   0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+  }
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_DETACH,
