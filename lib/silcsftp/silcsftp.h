@@ -911,7 +911,7 @@ typedef enum {
 } SilcSFTPMonitors;
 /***/
 
-/****s* silcsftp/SilcSFTPAPI/SilcSFTP
+/****s* silcsftp/SilcSFTPAPI/SilcSFTPMonitorData
  *
  * NAME
  * 
@@ -938,7 +938,7 @@ typedef struct {
 } *SilcSFTPMonitorData, SilcSFTPMonitorDataStruct;
 /***/
 
-/****f* silcsftp/SilcSFTPAPI/silc_sftp_server_set_monitor
+/****f* silcsftp/SilcSFTPAPI/SilcSFTPMonitor
  *
  * SYNOPSIS
  *

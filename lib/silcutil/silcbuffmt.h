@@ -18,6 +18,17 @@
 
 */
 
+/****h* silcutil/SilcBufferFormatAPI
+ *
+ * DESCRIPTION
+ *
+ *    SILC Buffer Format API provides a few functions for formatting
+ *    various different data types into a buffer, and retrieving
+ *    various data from buffer into specific data types.  It is usefull
+ *    to format for example packets and later unformat them.
+ *
+ ***/
+
 #ifndef SILCBUFFMT_H
 #define SILCBUFFMT_H
 
@@ -244,7 +255,7 @@ int silc_buffer_format(SilcBuffer dst, ...);
  ***/
 int silc_buffer_unformat(SilcBuffer src, ...);
 
-/****f* silcutil/SilcBufferFormatAPI/silc_buffer_format
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_format_vp
  *
  * SYNOPSIS
  *
@@ -258,7 +269,7 @@ int silc_buffer_unformat(SilcBuffer src, ...);
  ***/
 int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
 
-/****f* silcutil/SilcBufferFormatAPI/silc_buffer_unformat
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_unformat_vp
  *
  * SYNOPSIS
  *

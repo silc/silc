@@ -366,7 +366,7 @@ void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
  ***/
 void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, uint32 exp);
 
-/****f* silcmath/SilcMPAPI/silc_mp_div_2exp
+/****f* silcmath/SilcMPAPI/silc_mp_div_2exp_qr
  *
  * SYNOPSIS
  *
@@ -692,7 +692,7 @@ void silc_mp_and(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  ***/
 void silc_mp_or(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
 
-/****f* silcmath/SilcMPAPI/silc_mp_or
+/****f* silcmath/SilcMPAPI/silc_mp_xor
  *
  * SYNOPSIS
  *

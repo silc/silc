@@ -23,7 +23,7 @@
  * DESCRIPTION
  *
  * Implementation of the Notify Payload. Notify Payload is used usually
- * servers to send different kind of important notify messages to other
+ * by servers to send different kind of important notify messages to other
  * servers and to clients.
  *
  ***/
