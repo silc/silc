@@ -33,6 +33,16 @@ S: Skinnarilankatu 28 E 2
 S: 53850 Lappeenranta
 S: Finland
 
+N: Jochen "c0ffee" Eisinger
+E: jochen@penguin-breeder.org
+W: http://penguin-breeder.org/
+D: various patches to the SILC client
+D: maintainer of the SILC plugin
+D: patch for multiple network interfaces to the SILC server
+S: Haslacher Str. 45
+S: 79115 Freiburg
+S: Germany
+
 N: Giovanni Giacobbi
 E: giovanni@giacobbi.net
 E: johnny@themnemonic.org
