@@ -275,11 +275,11 @@ void silc_config_close(SilcConfigFile *file)
   if (file) {
     /* XXX FIXME: this check could probably be removed later */
     SilcUInt32 my_len = (SilcUInt32) (strchr(file->base, EOF) - file->base);
-    SILC_CONFIG_DEBUG(("file=0x%x name=\"%s\" level=%d line=%lu", 
-		       (SilcUInt32) file,
-			file->filename, file->level, file->line));
+    SILC_CONFIG_DEBUG(("file=0x%x name=\"%s\" level=%d line=%lu",
+		       (SilcUInt32) file, file->filename, file->level,
+		       file->line));
     if (my_len != file->len) {
-      fprintf(stderr, 
+      fprintf(stderr,
 	      "FATAL ERROR: saved len and current len does not match!\n");
       abort();
     }
@@ -366,11 +366,16 @@ char *silc_config_read_current_line(SilcConfigFile *file)
 
 /* (Private) destroy a SilcConfigEntity */
 
-static void silc_config_destroy(SilcConfigEntity ent)
+static void silc_config_destroy(SilcConfigEntity ent, bool destroy_opts)
 {
   SilcConfigOption *oldopt, *nextopt;
   SILC_CONFIG_DEBUG(("Freeing config entity [ent=0x%x] [opts=0x%x]",
 			(SilcUInt32) ent, (SilcUInt32) ent->opts));
+
+  /* if she wants to preserve options just free the object struct */
+  if (!destroy_opts)
+    goto skip_sect;
+
   for (oldopt = ent->opts; oldopt; oldopt = nextopt) {
     nextopt = oldopt->next;
     memset(oldopt->name, 'F', strlen(oldopt->name) + 1);
@@ -378,6 +383,8 @@ static void silc_config_destroy(SilcConfigEntity ent)
     memset(oldopt, 'F', sizeof(*oldopt));
     silc_free(oldopt);
   }
+
+ skip_sect:
   memset(ent, 'F', sizeof(*ent));
   silc_free(ent);
 }
@@ -644,7 +651,9 @@ int silc_config_main(SilcConfigEntity ent)
    * destroyed. */
  main_cleanup:
   if ((file->level != 0) || (file->included != TRUE))
-    silc_config_destroy(ent);
+    silc_config_destroy(ent, TRUE);
+  else
+    silc_config_destroy(ent, FALSE);
 
  main_end:
   return ret;
