@@ -97,7 +97,8 @@ void silc_server_packet_send(SilcServer server,
     return;
 
   /* If entry is disabled do not sent anything. */
-  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED) ||
+  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
+       type != SILC_PACKET_HEARTBEAT) ||
       sock->user_data == server->id_entry) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;

@@ -4815,17 +4815,17 @@ SILC_SERVER_CMD_FUNC(kick)
 				     idp->data, idp->len);
   silc_buffer_free(idp);
 
+  /* Send KICKED notify to primary route */
+  silc_server_send_notify_kicked(server, SILC_PRIMARY_ROUTE(server),
+				 SILC_BROADCAST(server), channel,
+				 target_client->id, client->id, comment);
+
   /* Remove the client from the channel. If the channel does not exist
      after removing the client then the client kicked itself off the channel
      and we don't have to send anything after that. */
   if (!silc_server_remove_from_one_channel(server, NULL, channel, 
 					   target_client, FALSE))
     goto out;
-
-  /* Send KICKED notify to primary route */
-  silc_server_send_notify_kicked(server, SILC_PRIMARY_ROUTE(server),
-				 SILC_BROADCAST(server), channel,
-				 target_client->id, client->id, comment);
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Re-generate channel key */

@@ -1408,8 +1408,9 @@ UTF-8 [RFC2279] encoded.
 
       The <Old Channel ID> is the channel's old ID and the <New
       Channel ID> is the new one that MUST replace the old one.
-
-
+      Server which receives this from router MUST re-announce the
+      channel to the router by sending SILC_PACKET_NEW_CHANNEL packet
+      with the new Channel ID.
 
 
 11    SILC_NOTIFY_TYPE_SERVER_SIGNOFF

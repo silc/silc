@@ -1915,6 +1915,12 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	if (backup_local)
 	  ctx->conn_type = SILC_SOCKET_TYPE_SERVER;
 	new_server->server_type = SILC_BACKUP_ROUTER;
+
+	/* Remove the backup waiting with timeout */
+	silc_schedule_task_add(server->schedule, 0,
+			       silc_server_backup_router_wait,
+			       (void *)server, 5, 0,
+			       SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
       }
 
       /* Statistics */
@@ -2149,6 +2155,11 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 
   /* If entry is disabled ignore what we got. */
   if (ret != SILC_PACKET_RESUME_ROUTER &&
+      idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
+    SILC_LOG_DEBUG(("Connection is disabled"));
+    goto out;
+  }
+  if (ret != SILC_PACKET_HEARTBEAT &&
       idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     goto out;
@@ -3696,6 +3707,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
       if (!channel) {
 	SILC_LOG_ERROR(("Received key for non-existent channel %s",
 			silc_id_render(id, SILC_ID_CHANNEL)));
+	assert(FALSE);
 	goto out;
       }
     }

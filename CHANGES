@@ -1,3 +1,19 @@
+Thu Jun 27 16:54:33 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Allow heartbeat packets to go disabled connections anyway.
+	  Affected files silcd/server.c and silcd/packet_send.c.
+
+	* Do not broadcast New Channel packets with List flag set
+	  in the packet to backup routers.  The router must check
+	  for the correctness of the packets before sending them.
+	  It is possible that router will have enforce Channel ID
+	  change and this would cause desync in the backup router.
+	  Affected file silcd/packet_receive.c.
+
+	* Remove SILC_PACKET_FLAG_LIST from the temp packets that
+	  are handled in list parsing.  They are not list packets
+	  anymore.  Affected file silcd/packet_receive.c.
+
 Thu Jun 27 11:27:07 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Stop waiting for backup router through the timeout, not

@@ -2779,7 +2779,7 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
      data buffer, which we will here now fetch from the original buffer. */
   new_id = silc_packet_context_alloc();
   new_id->type = SILC_PACKET_NEW_ID;
-  new_id->flags = packet->flags;
+  new_id->flags = packet->flags & (~SILC_PACKET_FLAG_LIST);
   new_id->src_id = packet->src_id;
   new_id->src_id_len = packet->src_id_len;
   new_id->src_id_type = packet->src_id_type;
@@ -2909,13 +2909,15 @@ void silc_server_new_channel(SilcServer server,
 	  !SILC_ID_COMPARE(channel_id, server->id, server->id->ip.data_len)) {
 	SilcChannelID *tmp;
 	SILC_LOG_DEBUG(("Forcing the server to change Channel ID"));
-	
 	if (silc_id_create_channel_id(server, server->id, server->rng, &tmp)) {
 	  silc_server_send_notify_channel_change(server, sock, FALSE, 
 						 channel_id, tmp);
 	  silc_free(channel_id);
-	  channel_id = tmp;
+	  silc_free(tmp);
 	}
+
+	/* Wait that server re-announces this channel */
+	return;
       }
 
       /* Create the channel with the provided Channel ID */
@@ -3052,6 +3054,24 @@ void silc_server_new_channel(SilcServer server,
     }
   }
 
+  /* If the sender of this packet is server and we are router we need to
+     broadcast this packet to other routers in the network. Broadcast
+     this list packet instead of multiple New Channel packets. */
+  if (server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received New Channel packet"));
+    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
+			    packet->type, 
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
+			    packet->buffer->data, 
+			    packet->buffer->len, FALSE);
+    silc_server_backup_send(server, sock->user_data, 
+			    packet->type, packet->flags,
+			    packet->buffer->data, packet->buffer->len, 
+			    FALSE, TRUE);
+  }
+
   silc_channel_payload_free(payload);
 }
 
@@ -3073,29 +3093,11 @@ void silc_server_new_channel_list(SilcServer server,
       server->server_type == SILC_SERVER)
     return;
 
-  /* If the sender of this packet is server and we are router we need to
-     broadcast this packet to other routers in the network. Broadcast
-     this list packet instead of multiple New Channel packets. */
-  if (server->server_type == SILC_ROUTER &&
-      sock->type == SILC_SOCKET_TYPE_SERVER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received New Channel List packet"));
-    silc_server_packet_send(server, SILC_PRIMARY_ROUTE(server),
-			    packet->type, 
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			    packet->buffer->data, 
-			    packet->buffer->len, FALSE);
-    silc_server_backup_send(server, sock->user_data, 
-			    packet->type, packet->flags,
-			    packet->buffer->data, packet->buffer->len, 
-			    FALSE, TRUE);
-  }
-
   /* Make copy of the original packet context, except for the actual
      data buffer, which we will here now fetch from the original buffer. */
   new = silc_packet_context_alloc();
   new->type = SILC_PACKET_NEW_CHANNEL;
-  new->flags = packet->flags;
+  new->flags = packet->flags & (~SILC_PACKET_FLAG_LIST);
   new->src_id = packet->src_id;
   new->src_id_len = packet->src_id_len;
   new->src_id_type = packet->src_id_type;
