@@ -1937,6 +1937,7 @@ static int silc_server_command_bad_chars(char *nick)
   for (i = 0; i < strlen(nick); i++) {
     if (!isascii(nick[i]))
       return TRUE;
+    if (nick[i] <= 32) return TRUE;
     if (nick[i] == ' ') return TRUE;
     if (nick[i] == '\\') return TRUE;
     if (nick[i] == '\"') return TRUE;
