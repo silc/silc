@@ -1359,7 +1359,7 @@ Also, all ID's sent in arguments are sent inside ID Payload.
       server that are on channels must be removed from the channel.
 
       Max Arguments:  2000
-          Arguments:  (1) <Server ID>   (n) [<Client ID>   [...]
+          Arguments:  (1) <Server ID>   (n) [<Client ID>]   [...]
 
       The <Server ID> is the server's ID.  The rest of the arguments
       are the Client ID's of the client's which are coming from this

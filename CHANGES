@@ -1,3 +1,23 @@
+Mon Oct 29 17:43:04 EST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a crash in silc_client_ftp_free_sessions and
+	  silc_client_ftp_session_free_client.  Affected file
+	  lib/silcclient/client_ftp.c.
+
+	* Added `disabled' field in the SilcChannelEntry in the server
+	  to indicate if the server entry is disabled.  Affected file
+	  silcd/idlist.h, silcd/command[_reply].c.
+
+	* SILC server adds now /var/run/silcd.pid everytime it is
+	  started.  Affected file silcd/silcd.c.
+
+	* Added silc_server_packet_send_clients to send a packet to
+	  the provided table of client entries.  Affected file
+	  silcd/packet_send.[ch].
+
+	* Fixed a crash in client resolving in client_prvmsg.c in 
+	  client library.  Affected file lib/silcclient/client_prvmsg.c.
+
 Sun Oct 28 18:46:27 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SilcClietFileError enum to indicate error in

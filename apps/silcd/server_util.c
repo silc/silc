@@ -97,7 +97,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
 	SilcChannelClientEntry chl2;
 	SilcHashTableList htl2;
 
-	channel->id = NULL;
+	channel->disabled = TRUE;
 
 	silc_hash_table_list(channel->user_list, &htl2);
 	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
@@ -182,7 +182,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	}
 
 	if (client->router != entry) {
-	  if (server_signoff && client->connection) {
+	  if (server_signoff) {
 	    clients = silc_realloc(clients, 
 				   sizeof(*clients) * (clients_c + 1));
 	    clients[clients_c] = client;
@@ -275,7 +275,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 
   /* Send the SERVER_SIGNOFF notify */
   if (server_signoff) {
-    SilcBuffer args;
+    SilcBuffer args, not;
 
     /* Send SERVER_SIGNOFF notify to our primary router */
     if (!server->standalone && server->router &&
@@ -291,17 +291,18 @@ bool silc_server_remove_clients_by_server(SilcServer server,
       silc_buffer_free(args);
     }
 
+    /* Send to local clients */
     args = silc_argument_payload_encode(argc, argv, argv_lens,
 					argv_types);
-    /* Send to local clients */
-    for (i = 0; i < clients_c; i++) {
-      silc_server_send_notify_args(server, clients[i]->connection,
-				   FALSE, SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
-				   argc, args);
-    }
+    not = silc_notify_payload_encode_args(SILC_NOTIFY_TYPE_SERVER_SIGNOFF, 
+					  argc, args);
+    silc_server_packet_send_clients(server, clients, clients_c,
+				    SILC_PACKET_NOTIFY, 0, FALSE,
+				    not->data, not->len, FALSE);
 
     silc_free(clients);
     silc_buffer_free(args);
+    silc_buffer_free(not);
     for (i = 0; i < argc; i++)
       silc_free(argv[i]);
     silc_free(argv);

@@ -93,8 +93,6 @@ TODO/bugs In SILC Server
 
 	o silcd/serverid.c and its routines supports only IPv4.
 
- o Add perhaps /var/run/silcd.pid for PID information for the server.
-
  o New configuration file format must be added.  The new one will be
    done using the dotconf config library (lib/dotconf).  The following
    tasks relates closely to this as well and must be done at the same time
@@ -117,6 +115,16 @@ TODO/bugs In SILC Server
 
 TODO/bugs In SILC Libraries
 ===========================
+
+ o Optimizations to lib/silcsftp
+
+	o Do not allocate new req for every client request.  Use
+	  preallocated requests and recycle them.
+
+	o Use SilcList instead of SilcDList for requests.  It is faster.
+
+	o Do not allocate new buffer for every packet.  Use preallocated
+	  buffer and reallocate only if necessary.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be

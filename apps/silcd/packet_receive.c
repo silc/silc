@@ -2165,9 +2165,6 @@ void silc_server_new_channel(SilcServer server,
 	 We also create a new key for the channel. */
       SilcBuffer users = NULL, users_modes = NULL;
 
-      if (!channel->id)
-	channel->id = silc_id_dup(channel_id, SILC_ID_CHANNEL);
-
       if (!SILC_ID_CHANNEL_COMPARE(channel_id, channel->id)) {
 	/* They don't match, send CHANNEL_CHANGE notify to the server to
 	   force the ID change. */
