@@ -1,0 +1,429 @@
+<?xml version="1.0"?>
+<GTK-Interface>
+
+<project>
+  <name>Silcer</name>
+  <program_name>silcer</program_name>
+  <directory></directory>
+  <source_directory>src</source_directory>
+  <pixmaps_directory>pixmaps</pixmaps_directory>
+  <language>C</language>
+  <gnome_support>True</gnome_support>
+  <gettext_support>True</gettext_support>
+  <use_widget_names>True</use_widget_names>
+  <gnome_help_support>True</gnome_help_support>
+</project>
+
+<widget>
+  <class>GnomeApp</class>
+  <name>SilcerMainDlg</name>
+  <visible>False</visible>
+  <title>Silcer</title>
+  <type>GTK_WINDOW_TOPLEVEL</type>
+  <position>GTK_WIN_POS_NONE</position>
+  <modal>False</modal>
+  <default_width>600</default_width>
+  <default_height>400</default_height>
+  <allow_shrink>True</allow_shrink>
+  <allow_grow>True</allow_grow>
+  <auto_shrink>True</auto_shrink>
+  <enable_layout_config>True</enable_layout_config>
+
+  <widget>
+    <class>GnomeDock</class>
+    <child_name>GnomeApp:dock</child_name>
+    <name>dock1</name>
+    <allow_floating>True</allow_floating>
+    <child>
+      <padding>0</padding>
+      <expand>True</expand>
+      <fill>True</fill>
+    </child>
+
+    <widget>
+      <class>GnomeDockItem</class>
+      <name>dockitem2</name>
+      <border_width>2</border_width>
+      <placement>GNOME_DOCK_TOP</placement>
+      <band>0</band>
+      <position>0</position>
+      <offset>0</offset>
+      <locked>False</locked>
+      <exclusive>False</exclusive>
+      <never_floating>False</never_floating>
+      <never_vertical>False</never_vertical>
+      <never_horizontal>False</never_horizontal>
+      <shadow_type>GTK_SHADOW_OUT</shadow_type>
+
+      <widget>
+	<class>GtkMenuBar</class>
+	<name>SilcerMainDlgMenuBar</name>
+	<shadow_type>GTK_SHADOW_OUT</shadow_type>
+
+	<widget>
+	  <class>GtkMenuItem</class>
+	  <name>silcer2</name>
+	  <signal>
+	    <name>activate</name>
+	    <handler>on_silcer2_activate</handler>
+	    <last_modification_time>Fri, 16 Nov 2001 19:37:56 GMT</last_modification_time>
+	  </signal>
+	  <label>_Silcer</label>
+	  <right_justify>False</right_justify>
+
+	  <widget>
+	    <class>GtkMenu</class>
+	    <name>silcer2_menu</name>
+
+	    <widget>
+	      <class>GtkPixmapMenuItem</class>
+	      <name>dfghdfh1</name>
+	      <label>dfghdfh</label>
+	      <right_justify>False</right_justify>
+	      <stock_icon>GNOME_STOCK_MENU_SAVE</stock_icon>
+	    </widget>
+	  </widget>
+	</widget>
+      </widget>
+    </widget>
+
+    <widget>
+      <class>GnomeDockItem</class>
+      <name>dockitem1</name>
+      <border_width>1</border_width>
+      <placement>GNOME_DOCK_TOP</placement>
+      <band>1</band>
+      <position>0</position>
+      <offset>0</offset>
+      <locked>False</locked>
+      <exclusive>True</exclusive>
+      <never_floating>False</never_floating>
+      <never_vertical>True</never_vertical>
+      <never_horizontal>False</never_horizontal>
+      <shadow_type>GTK_SHADOW_OUT</shadow_type>
+
+      <widget>
+	<class>GtkHBox</class>
+	<name>hbox3</name>
+	<border_width>1</border_width>
+	<homogeneous>False</homogeneous>
+	<spacing>4</spacing>
+
+	<widget>
+	  <class>GtkToolbar</class>
+	  <name>SilcerMainDlgToolbar</name>
+	  <orientation>GTK_ORIENTATION_HORIZONTAL</orientation>
+	  <type>GTK_TOOLBAR_ICONS</type>
+	  <space_size>8</space_size>
+	  <space_style>GTK_TOOLBAR_SPACE_LINE</space_style>
+	  <relief>GTK_RELIEF_NONE</relief>
+	  <tooltips>True</tooltips>
+	  <child>
+	    <padding>0</padding>
+	    <expand>False</expand>
+	    <fill>False</fill>
+	  </child>
+
+	  <widget>
+	    <class>GtkButton</class>
+	    <child_name>Toolbar:button</child_name>
+	    <name>button1</name>
+	    <label>button1</label>
+	    <stock_pixmap>GNOME_STOCK_PIXMAP_NEW</stock_pixmap>
+	  </widget>
+
+	  <widget>
+	    <class>GtkButton</class>
+	    <child_name>Toolbar:button</child_name>
+	    <name>button2</name>
+	    <label>button2</label>
+	    <stock_pixmap>GNOME_STOCK_PIXMAP_OPEN</stock_pixmap>
+	    <child>
+	      <new_group>True</new_group>
+	    </child>
+	  </widget>
+
+	  <widget>
+	    <class>GtkButton</class>
+	    <child_name>Toolbar:button</child_name>
+	    <name>SMainHistory</name>
+	    <width>30</width>
+	    <height>30</height>
+	    <label>_History</label>
+	    <stock_pixmap>GNOME_STOCK_PIXMAP_INDEX</stock_pixmap>
+	    <child>
+	      <new_group>True</new_group>
+	    </child>
+	  </widget>
+	</widget>
+
+	<widget>
+	  <class>GtkHBox</class>
+	  <name>hbox5</name>
+	  <border_width>1</border_width>
+	  <homogeneous>False</homogeneous>
+	  <spacing>3</spacing>
+	  <child>
+	    <padding>0</padding>
+	    <expand>True</expand>
+	    <fill>True</fill>
+	  </child>
+
+	  <widget>
+	    <class>GtkLabel</class>
+	    <name>label6</name>
+	    <label>_Topic:</label>
+	    <justify>GTK_JUSTIFY_CENTER</justify>
+	    <wrap>False</wrap>
+	    <xalign>0.5</xalign>
+	    <yalign>0.5</yalign>
+	    <xpad>0</xpad>
+	    <ypad>0</ypad>
+	    <default_focus_target>SMainTopicEntry</default_focus_target>
+	    <child>
+	      <padding>0</padding>
+	      <expand>False</expand>
+	      <fill>False</fill>
+	    </child>
+	  </widget>
+
+	  <widget>
+	    <class>GtkEntry</class>
+	    <name>SMainTopicEntry</name>
+	    <can_focus>True</can_focus>
+	    <editable>True</editable>
+	    <text_visible>True</text_visible>
+	    <text_max_length>0</text_max_length>
+	    <text></text>
+	    <child>
+	      <padding>5</padding>
+	      <expand>True</expand>
+	      <fill>True</fill>
+	    </child>
+	  </widget>
+	</widget>
+      </widget>
+    </widget>
+
+    <widget>
+      <class>GtkNotebook</class>
+      <child_name>GnomeDock:contents</child_name>
+      <name>SilcerMainDlgTab</name>
+      <can_focus>True</can_focus>
+      <show_tabs>True</show_tabs>
+      <show_border>True</show_border>
+      <tab_pos>GTK_POS_TOP</tab_pos>
+      <scrollable>False</scrollable>
+      <tab_hborder>2</tab_hborder>
+      <tab_vborder>2</tab_vborder>
+      <popup_enable>False</popup_enable>
+
+      <widget>
+	<class>GtkFrame</class>
+	<child_name>GnomeDock:contents</child_name>
+	<name>frame1</name>
+	<label_xalign>0</label_xalign>
+	<shadow_type>GTK_SHADOW_OUT</shadow_type>
+
+	<widget>
+	  <class>GtkVBox</class>
+	  <child_name>GnomeDock:contents</child_name>
+	  <name>vbox3</name>
+	  <border_width>4</border_width>
+	  <homogeneous>False</homogeneous>
+	  <spacing>8</spacing>
+
+	  <widget>
+	    <class>GtkHBox</class>
+	    <name>hbox1</name>
+	    <visible>False</visible>
+	    <homogeneous>False</homogeneous>
+	    <spacing>8</spacing>
+	    <child>
+	      <padding>0</padding>
+	      <expand>False</expand>
+	      <fill>False</fill>
+	    </child>
+
+	    <widget>
+	      <class>GnomePixmap</class>
+	      <name>pixmap1</name>
+	      <filename>glade-groupchat-menu.xpm</filename>
+	      <child>
+		<padding>0</padding>
+		<expand>False</expand>
+		<fill>True</fill>
+	      </child>
+	    </widget>
+
+	    <widget>
+	      <class>GtkLabel</class>
+	      <name>label3</name>
+	      <label></label>
+	      <justify>GTK_JUSTIFY_CENTER</justify>
+	      <wrap>False</wrap>
+	      <xalign>0</xalign>
+	      <yalign>0.5</yalign>
+	      <xpad>0</xpad>
+	      <ypad>0</ypad>
+	      <child>
+		<padding>0</padding>
+		<expand>True</expand>
+		<fill>True</fill>
+	      </child>
+	    </widget>
+
+	    <widget>
+	      <class>GtkLabel</class>
+	      <name>label4</name>
+	      <label>0 users</label>
+	      <justify>GTK_JUSTIFY_CENTER</justify>
+	      <wrap>False</wrap>
+	      <xalign>0.5</xalign>
+	      <yalign>0.5</yalign>
+	      <xpad>0</xpad>
+	      <ypad>0</ypad>
+	      <child>
+		<padding>0</padding>
+		<expand>False</expand>
+		<fill>False</fill>
+	      </child>
+	    </widget>
+	  </widget>
+
+	  <widget>
+	    <class>GtkHPaned</class>
+	    <name>hpaned1</name>
+	    <handle_size>7</handle_size>
+	    <gutter_size>8</gutter_size>
+	    <child>
+	      <padding>0</padding>
+	      <expand>True</expand>
+	      <fill>True</fill>
+	    </child>
+
+	    <widget>
+	      <class>GtkVPaned</class>
+	      <name>vpaned1</name>
+	      <handle_size>7</handle_size>
+	      <gutter_size>8</gutter_size>
+	      <child>
+		<shrink>True</shrink>
+		<resize>True</resize>
+	      </child>
+
+	      <widget>
+		<class>GtkHBox</class>
+		<name>SilcerMainDlgOutputBox</name>
+		<homogeneous>False</homogeneous>
+		<spacing>0</spacing>
+		<child>
+		  <shrink>True</shrink>
+		  <resize>True</resize>
+		</child>
+
+		<widget>
+		  <class>Placeholder</class>
+		</widget>
+
+		<widget>
+		  <class>Placeholder</class>
+		</widget>
+	      </widget>
+
+	      <widget>
+		<class>GtkScrolledWindow</class>
+		<name>scrolledwindow1</name>
+		<height>40</height>
+		<hscrollbar_policy>GTK_POLICY_NEVER</hscrollbar_policy>
+		<vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
+		<hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
+		<vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
+		<child>
+		  <shrink>True</shrink>
+		  <resize>False</resize>
+		</child>
+
+		<widget>
+		  <class>GtkText</class>
+		  <name>SilcerMainDlgInputBox</name>
+		  <can_default>True</can_default>
+		  <has_default>True</has_default>
+		  <can_focus>True</can_focus>
+		  <has_focus>True</has_focus>
+		  <editable>True</editable>
+		  <text></text>
+		</widget>
+	      </widget>
+	    </widget>
+
+	    <widget>
+	      <class>GtkVBox</class>
+	      <name>vbox4</name>
+	      <width>120</width>
+	      <homogeneous>False</homogeneous>
+	      <spacing>8</spacing>
+	      <child>
+		<shrink>True</shrink>
+		<resize>False</resize>
+	      </child>
+
+	      <widget>
+		<class>GtkScrolledWindow</class>
+		<name>scrolledwindow2</name>
+		<hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
+		<vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
+		<hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
+		<vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
+		<child>
+		  <padding>0</padding>
+		  <expand>True</expand>
+		  <fill>True</fill>
+		</child>
+
+		<widget>
+		  <class>GtkCList</class>
+		  <name>clist1</name>
+		  <can_focus>True</can_focus>
+		  <columns>1</columns>
+		  <column_widths>80</column_widths>
+		  <selection_mode>GTK_SELECTION_BROWSE</selection_mode>
+		  <show_titles>True</show_titles>
+		  <shadow_type>GTK_SHADOW_IN</shadow_type>
+
+		  <widget>
+		    <class>GtkLabel</class>
+		    <child_name>CList:title</child_name>
+		    <name>label5</name>
+		    <label>0 users</label>
+		    <justify>GTK_JUSTIFY_CENTER</justify>
+		    <wrap>False</wrap>
+		    <xalign>0.5</xalign>
+		    <yalign>0.5</yalign>
+		    <xpad>0</xpad>
+		    <ypad>0</ypad>
+		  </widget>
+		</widget>
+	      </widget>
+	    </widget>
+	  </widget>
+	</widget>
+      </widget>
+
+      <widget>
+	<class>GtkLabel</class>
+	<child_name>Notebook:tab</child_name>
+	<name>SilcerMainDlgTabLabel1</name>
+	<label></label>
+	<justify>GTK_JUSTIFY_CENTER</justify>
+	<wrap>False</wrap>
+	<xalign>0.5</xalign>
+	<yalign>0.5</yalign>
+	<xpad>0</xpad>
+	<ypad>0</ypad>
+      </widget>
+    </widget>
+  </widget>
+</widget>
+
+</GTK-Interface>
