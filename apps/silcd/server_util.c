@@ -1772,6 +1772,12 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   return ret;
 }
 
+static void silc_server_inviteban_dummy_dest(void *key, void *context,
+					     void *user_context)
+{
+  /* Nothing */
+}
+
 /* Process invite or ban information */
 
 void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
@@ -1797,7 +1803,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	char *string = NULL;
 	silc_hash_table_find(list, (void *)1,
 			     NULL, (void **)&string);
-	silc_hash_table_del(list, (void *)1);
+	silc_hash_table_del_ext(list, (void *)1, NULL, NULL, NULL, NULL,
+				silc_server_inviteban_dummy_dest, NULL);
 	if (!string)
 	  string = silc_calloc(len + 2, sizeof(*string));
 	else
