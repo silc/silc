@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2001 Pekka Riikonen
+#  Copyright (C) 2000 - 2002Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,11 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 COMMONDIRS = lib irssi silc silcd doc includes
-SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
-DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
+
+# Sub directories defined by "distributions" file, and can be overridden
+# with ./configure, which substitutes these variables.
+SUBDIRS = @SILC_DIST_SUBDIRS@
+DIST_SUBDIRS = @SILC_DIST_SUBDIRS@
 
 include $(top_srcdir)/Makefile.defines.in
 
