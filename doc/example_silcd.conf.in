@@ -183,37 +183,43 @@ ServerInfo {
 # There are only four defined channels allowed for defining (see below).
 # The log channels have an importance value, and most important channels
 # are redirected on the less important ones, thus setting a valid logging
-# file for "infologfile" will ensure logging for all channels, while setting
-# logging file for "errorlogfile" will ensure logging for channels "error"
-# and "fatal"
+# file for "Info" will ensure logging for all channels, while setting
+# logging file for "Errors" will ensure logging for channels "Errors"
+# and "Fatals"
 #
 Logging {
-	#
 	# If QuickLogs is true, then the logging files will be updated
 	# real-time. This causes a bit more CPU and HDD activity, but
-	# reduces memory usage. (if unsure say true).
+	# reduces memory usage.  By default it is false and log files are
+	# written with FlushDelay timeout.
 	#
-	QuickLogs = false;
+	#QuickLogs = true;
 
-	#
-	# (Only if QuickLogs is false)
-	# FlushDelay tells log files update delay in case you have chosen
-	# buffering output.
+	# FlushDelay tells log files update delay (seconds) in case you 
+	# have chosen buffering output.  This setting has effect only if
+	# the QuickLogs is false.
 	#
 	FlushDelay = 180;
 
+	# Informational messages
 	Info {
 		File = "@LOGSDIR@/silcd.log";
 		Size = "50k";
 	};
+
+	# Warning messages
 	Warnings {
 		File = "@LOGSDIR@/silcd_warnings.log";
 		Size = "50k";
 	};
+
+	# Error messages
 	Errors {
 		File = "@LOGSDIR@/silcd_errors.log";
 		Size = "50k";
 	};
+
+	# Fatal messages
 	Fatals {
 		File = "@LOGSDIR@/silcd_fatals.log";
 		Size = "50k";
@@ -293,9 +299,9 @@ ConnectionParams {
 #
 # Configured client connections.
 #
-# The "host" defines the incoming IP address or hostname of the client.
+# The "Host" defines the incoming IP address or hostname of the client.
 # If it is omitted all hosts will match this client connection.  The
-# "param" is optional and can be used to set specific connection parameters
+# "Params" is optional and can be used to set specific connection parameters
 # for this connection.
 #
 # The authentication data is specified by Passphrase and/or PublicKey.
