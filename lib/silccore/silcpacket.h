@@ -129,9 +129,6 @@ typedef struct {
   unsigned short truelen;
   unsigned short padlen;
 
-  /* For padding generation */
-  SilcRng rng;
-
   /* Back pointers */
   void *context;
   SilcSocketConnection sock;

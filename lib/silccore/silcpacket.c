@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -209,7 +209,7 @@ void silc_packet_assemble(SilcPacketContext *ctx)
 
   /* Get random padding */
 #if 1
-  for (i = 0; i < ctx->padlen; i++) tmppad[i] = silc_rng_get_byte(ctx->rng);
+  for (i = 0; i < ctx->padlen; i++) tmppad[i] = silc_rng_global_get_byte();
 #else
   /* XXX: For testing - to be removed */
   memset(tmppad, 65, sizeof(tmppad));
