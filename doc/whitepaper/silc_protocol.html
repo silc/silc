@@ -93,6 +93,28 @@ protocol has been designed from the day one security in mind and it
 shows in the protocol design.
 <p>
 
+Generally it is assumed that the SILC Network is trusted.  This means
+that clients can fully trust the servers and routers in the SILC Network.
+In real life this is not always possible.  In the Internet it is possible
+that some server or router would get compromised by a malicious
+cracker.  However, if the SILC Network is closed network, for example
+inside a orgranization the assumption generally is true.  The SILC
+protocol is secure even if the end users consider the network
+untrusted, and provides several ways to still have secure conversation
+on the SILC Network.
+<p>
+
+The packets in the SILC network are always encrypted.  It is not possible
+to send unencrypted messages in SILC.  This assures that end user cannot
+even accidently send unencrypted messages while thinking that it is
+encrypted.  This is the problem of most other chat protocols that provide
+so called plugin encryption.  They are not secure by default but try
+to provide security by applying external security protocol such as PGP
+or SSL.  In these cases the security is achieved usually by encrypting the
+data while key management and other security issues are left out, leaving
+the implementation vulnerable to various security problems.
+<p>
+
 The network topology is also different to various other chat protocol,
 like for example IRC.  IRC has tree style network where SILC has so
 called cellular network.  A cell consists of a router, servers and clients.
@@ -110,16 +132,7 @@ two cells that both has several servers, and backup routers and several
 clients.  Clients can connect to server and routers if they want to.
 The following sections will describe the entities of the SILC Network
 in greater detail.
-
-Generally it is assumed that the SILC Network is trusted.  This means
-that clients can fully trust the servers and routers in the SILC Network.
-Now, in real life this is not always possible.  In the Internet it is
-possible that some server or router would get compromised by a malicious
-cracker.  However, if the SILC Network is closed network, for example
-inside a orgranization the assumption generally is true.  The SILC
-protocol copes very well that the end user might consider the network
-untrusted and provides several ways to still have secure conversation
-on the SILC Network.
+<p>
 
 
 <p><br>
@@ -831,6 +844,14 @@ Hash Message Authentication Code.  Also called as keyed hash function.
 It is a secret key authentication algorithm which proves that the message
 is not modified and that the HMAC was computed by the sender of the
 message.
+<p>
+
+- Key management
+<p>
+Key management is a set of processes and mechanisms which support key
+exchange and maintainance of current keying relationships between parties,
+including replacing older keys with new keys as necessary, by executing
+rekey.
 <p>
 
 - Man-in-the-middle attack
