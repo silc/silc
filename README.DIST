@@ -68,6 +68,7 @@ Packaging the distribution
 After the distribution is prepared, configured and compiled it can be 
 packaged with the following commands:
 
+	make -C doc dist-hook
 	make dist
 	make dist-bzip
 
