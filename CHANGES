@@ -7,6 +7,17 @@ Fri Mar 29 10:41:07 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed memory leaks from config object.  Affected files are
 	  silcd/serverconfig.[ch].
 
+	* Added support for adding new connections to the server in rehash.
+	  After rehash they take effect.
+
+	  Added support for changing the maximum allowed connections in
+	  rehash.  The number can grow but going smaller is not supported.
+
+	  Added function silc_server_num_sockets_by_remote to the
+	  silcd/server_util.[ch].
+
+	  Affected files are silcd/server.c, and silcd/serverconfig.[ch].
+
 Fri Mar 29 03:26:12 CET 2002 Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Added preliminary checking during config parsing for a valid
