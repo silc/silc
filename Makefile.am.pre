@@ -50,7 +50,9 @@ install-dirs:
 	-mkdir -p $(logsdir)
 
 generate-server-key:
-	-$(sbindir)/silcd -C $(etcdir)
+	-@if test '!' -f $(etcdir)/silcd.pub ; then \
+	  $(sbindir)/silcd -C $(etcdir)	\
+	fi
 
 sim-install:
 	-cp -fR $(srcdir)/lib/silcsim/modules/*.so $(modulesdir)/

@@ -1,3 +1,8 @@
+Tue Jun 19 13:40:09 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* make install generates new server keys only if there is not
+	  keys already.
+
 Mon Jun 18 18:49:07 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Set SILC_MESSAGE_FLAG_NOREPLY when sending the away message.

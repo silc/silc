@@ -106,6 +106,9 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
+ o The timeout calculation can go negative at least on BSD, so rewrite
+   in in lib/silcutil/silcschdule.c.
+
  o Incomplete IPv6 support:
 
 	o All network routines in lib/silcutil/silcnet.[ch] does not
