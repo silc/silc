@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -70,6 +70,12 @@ extern "C" {
 #define SILC_SIZEOF_SHORT @SILC_SIZEOF_SHORT@
 #define SILC_SIZEOF_CHAR @SILC_SIZEOF_CHAR@
 #define SILC_SIZEOF_VOID_P @SILC_SIZEOF_VOID_P@
+
+/* Compilation time defines, for third-party software */
+@__SILC_HAVE_PTHREAD@
+@__SILC_HAVE_SIM@
+@__SILC_HAVE_LIBIDN@
+@__SILC_ENABLE_DEBUG@
 
 #if defined(HAVE_SILCDEFS_H)
 /* Automatically generated configuration header */

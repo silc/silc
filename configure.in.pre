@@ -3,12 +3,11 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2004 Pekka Riikonen
+#  Copyright (C) 2000 - 2005 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
+#  the Free Software Foundation; version 2 of the License.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -187,9 +186,11 @@ AC_CHECK_HEADERS(dlfcn.h,
       ])
    ])
 
+__SILC_HAVE_SIM=""
 AM_CONDITIONAL(SILC_SIM, test x$sim_support = xtrue)
 if test x$sim_support = xtrue; then
   AC_MSG_RESULT(Enabled SIM support.)
+  __SILC_HAVE_SIM="#define __SILC_HAVE_SIM 1"
 else
   AC_MSG_RESULT(No SIM support found.)
 fi
@@ -276,6 +277,7 @@ fi
 #
 AC_MSG_CHECKING(whether to enable debugging)
 summary_debug="no"
+__SILC_ENABLE_DEBUG=""
 AC_ARG_ENABLE(debug,
   [  --enable-debug          enable debugging],
   [
@@ -284,6 +286,7 @@ AC_ARG_ENABLE(debug,
         AC_MSG_RESULT(yes)
         AC_DEFINE(SILC_DEBUG)
 	summary_debug="yes"
+        __SILC_ENABLE_DEBUG="#define __SILC_ENABLE_DEBUG 1"
         ;;
       *)
         AC_MSG_RESULT(no)
@@ -838,6 +841,10 @@ if test x$check_libidn = xtrue; then
     done
 fi
 
+__SILC_HAVE_LIBIDN=""
+if test x$has_libidn = xtrue; then
+  __SILC_HAVE_LIBIDN="#define __SILC_HAVE_LIBIDN 1"
+fi
 
 # iconv support
 #
@@ -1112,6 +1119,7 @@ else
   has_threads=false
 fi
 
+__SILC_HAVE_PTHREAD=""
 AM_CONDITIONAL(SILC_THREADS, test x$has_threads = xtrue)
 if test x$has_threads = xtrue; then
   CFLAGS="$CFLAGS -D_REENTRANT"
@@ -1142,6 +1150,7 @@ if test x$has_threads = xtrue; then
   AC_CHECK_FUNC(pthread_create)
   AC_DEFINE(SILC_HAVE_PTHREAD)
   AC_DEFINE(SILC_THREADS)
+  __SILC_HAVE_PTHREAD="#define __SILC_HAVE_PTHEAD 1"
 fi
 
 # Native WIN32 compilation under cygwin
@@ -1261,6 +1270,11 @@ AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
 
 # Included configure scripts
 AD_INCLUDE_CONFIGURE
+
+AC_SUBST(__SILC_HAVE_PTHREAD)
+AC_SUBST(__SILC_HAVE_SIM)
+AC_SUBST(__SILC_HAVE_LIBIDN)
+AC_SUBST(__SILC_ENABLE_DEBUG)
 
 #
 # Makefile outputs

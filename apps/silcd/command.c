@@ -994,6 +994,13 @@ SILC_SERVER_CMD_FUNC(topic)
       goto out;
     }
 
+    if (!silc_utf8_valid(tmp, strlen(tmp))) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					    0);
+      goto out;
+    }
+
     /* See whether the client is on channel and has rights to change topic */
     if (!silc_server_client_on_channel(client, channel, &chl)) {
       tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);

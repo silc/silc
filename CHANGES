@@ -4,6 +4,10 @@ Thu Mar 31 08:52:06 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 	  server names in client library.  Affected files in
 	  lib/silcclient/.
 
+	* Added __SILC_HAVE_PTHREAD, __SILC_HAVE_SIM, __SILC_HAVE_LIBIDN,
+	  and __SILC_ENABLE_DEBUG to include/silcclient.h for third-party
+	  software to check how Toolkit has been compiled.
+
 Wed Mar 30 22:16:35 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_utf8_str[n]casecmp into lib/silcutil/silcutf8.[ch].

@@ -43,18 +43,6 @@ TODO for SILC Server 1.0
 TODO/bugs In SILC Libraries
 ===========================
 
- o Stringprep checks to the Client Library.
-
- o Add following defines in silcincludes.h and silcclient.h for 
-   third-party software:
-
-	__SILC_LIBSILC_HAVE_PTHREAD
-	__SILC_LIBSILC_HAVE_SIM
-        __SILC_LIBSILC_ENABLE_DEBUG
-	__SILC_LIBSILCCLIENT_HAVE_PTHREAD
-	__SILC_LIBSILCCLIENT_HAVE_SIM
-        __SILC_LIBSILCCLIENT_ENABLE_DEBUG
-
  o Test cases for all payload encoding and decoding routins in lib/silccore/
 
  o Test cases for math library routines in lib/silcmath/
