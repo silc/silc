@@ -7,42 +7,43 @@
 .ds LF Riikonen
 .ds RF FORMFEED[Page %]
 .ds CF
-.ds LH Internet Draft
+.ds LH INTERNET-DRAFT
 .ds RH 28 June 2000
-.ds CH Key Exchange and Authentication
+.ds CH
 .na
 .hy 0
 .in 0
 .nf
 Network Working Group                                      P. Riikonen
-Internet-Draft
+INTERNET-DRAFT
 draft-riikonen-silc-ke-auth-00.txt                        28 June 2000
 Expires: 28 Jan 2001
 
 .in 3
 
-.ce
+.ce 2
 SILC Key Exchange and Authentication Protocols
+<draft-riikonen-silc-ke-auth-00.txt>
 
 .ti 0
 Status of this Memo
 
-This document is an Internet-Draft.  Internet-Drafts are working
-documents of the Internet Engineering Task Force (IETF), its areas,
-and its working groups.  Note that other groups may also distribute
-working documents as Internet-Drafts.
+This document is an Internet-Draft and is in full conformance with
+all provisions of Section 10 of RFC 2026.  Internet-Drafts are
+working documents of the Internet Engineering Task Force (IETF), its
+areas, and its working groups.  Note that other groups may also
+distribute working documents as Internet-Drafts.
 
-Internet-Drafts are draft documents valid for a maximum of six
-months and may be updated, replaced, or obsoleted by other 
-documents at any time. It is inappropriate to use Internet-Drafts  
-as reference material or to cite them other than as 
-``work in progress.''
+Internet-Drafts are draft documents valid for a maximum of six months
+and may be updated, replaced, or obsoleted by other documents at any
+time.  It is inappropriate to use Internet-Drafts as reference
+material or to cite them other than as "work in progress."
 
-To learn the current status of any Internet-Draft, please check the
-``1id-abstracts.txt'' listing contained in the Internet-Drafts
-Shadow Directories on ftp.is.co.za (Africa), nic.nordu.net (Europe),
-munnari.oz.au (Pacific Rim), ds.internic.net (US East Coast), or
-ftp.isi.edu (US West Coast).
+The list of current Internet-Drafts can be accessed at
+http://www.ietf.org/ietf/1id-abstracts.txt
+
+The list of Internet-Draft Shadow Directories can be accessed at
+http://www.ietf.org/shadow.html
 
 The distribution of this memo is unlimited.
 
@@ -1036,3 +1037,6 @@ Kasarmikatu 11 A4
 Finland
 
 EMail: priikone@poseidon.pspt.fi
+
+This Internet-Draft expires 28 Jan 2001 
+
