@@ -114,7 +114,7 @@ SILC_LOG_DEBUG* scripts.  Warning is due here:  The debugging produced
 by both cilent and server is very heavy, thus it is common to test
 the programs as follows:
 
-	./silc -f configfile 2>log
+	./silc -d -f configfile 2>log
 	./silcd -f configfile 2>log
 
 

@@ -1,3 +1,9 @@
+Thu Nov  2 16:28:01 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Renamed configure.in to configure.in.pre and made ./prepare
+	  script to automatically add correct version string to
+	  configure.in which it creates from configure.in.pre.
+
 Wed Nov  1 17:21:26 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* NAMES command reply now shows users mode with the nickname when
