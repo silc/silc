@@ -2714,11 +2714,12 @@ Hence, packet's MAC generation is as follows:
 The MAC key is negotiated during the SKE protocol.  The sequence number
 is a 32 bit MSB first value starting from zero for first packet and
 increasing for subsequent packets, finally wrapping after 2^32 packets.
-The value is never reset, not even after rekey has been performed.  Note
-that the sequence number is incremented only when MAC is computed for a
-packet.  If packet is not encrypted and MAC is not computed then the
-sequence number is not incremented.  Hence, the sequence number is zero
-for first encrypted packet.
+The value is never reset, not even after rekey has been performed.
+However, rekey SHOULD be performed before the sequence number repeats
+from zero.  Note that the sequence number is incremented only when MAC is 
+computed for a packet.  If packet is not encrypted and MAC is not computed 
+then the sequence number is not incremented.  Hence, the sequence number 
+is zero for first encrypted packet.
 
 See [SILC1] for defined and allowed MAC algorithms.
 
