@@ -31,6 +31,15 @@ struct SilcSocketConnectionHBStruct {
   SilcSocketConnection sock;
 };
 
+/* Internal async host lookup context. */
+typedef struct {
+  SilcSocketHostLookupCb callback;
+  void *context;
+  void *timeout_queue;
+  SilcSocketConnection sock;
+  bool port;
+} *SilcSocketHostLookup;
+
 /* Allocates a new socket connection object. The allocated object is 
    returned to the new_socket argument. */
 
@@ -117,6 +126,9 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
 			       void *timeout_queue)
 {
 
+  if (!timeout_queue)
+    return;
+
   if (sock->hb) {
     silc_task_unregister(sock->hb->timeout_queue, sock->hb->hb_task);
     silc_free(sock->hb->hb_context);
@@ -134,4 +146,91 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
                                          (void *)sock->hb, heartbeat, 0,
                                          SILC_TASK_TIMEOUT,
                                          SILC_TASK_PRI_LOW);
+}
+
+/* Finishing timeout callback that will actually call the user specified
+   host lookup callback. This is executed back in the calling thread and
+   not in the lookup thread. */
+
+SILC_TASK_CALLBACK(silc_socket_host_lookup_finish)
+{
+  SilcSocketHostLookup lookup = (SilcSocketHostLookup)context;
+
+  SILC_UNSET_HOST_LOOKUP(lookup->sock);
+
+  /* If the reference counter is 1 we know that we are the only one
+     holding the socket and it thus is considered freed. The lookup
+     is cancelled also and we will not call the final callback. */
+  if (lookup->sock->users == 1) {
+    SILC_LOG_DEBUG(("Async host lookup was cancelled"));
+    silc_free(lookup);
+    silc_socket_free(lookup->sock);
+    return;
+  }
+
+  SILC_LOG_DEBUG(("Async host lookup finished"));
+
+  silc_socket_free(lookup->sock);
+
+  /* Call the final callback. */
+  if (lookup->callback)
+    lookup->callback(lookup->sock, lookup->context);
+
+  silc_free(lookup);
+}
+
+/* The thread function that performs the actual lookup. */
+
+static void *silc_socket_host_lookup_start(void *context)
+{
+  SilcSocketHostLookup lookup = (SilcSocketHostLookup)context;
+  SilcSocketConnection sock = lookup->sock;
+
+  if (lookup->port)
+    sock->port = silc_net_get_remote_port(sock->sock);
+
+  silc_net_check_host_by_sock(sock->sock, &sock->hostname, &sock->ip);  
+  if (!sock->hostname && sock->ip)
+    sock->hostname = strdup(sock->ip);
+
+  silc_task_register(lookup->timeout_queue, sock->sock,
+		     silc_socket_host_lookup_finish, lookup, 0, 1,
+		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+
+  return NULL;
+}
+
+/* Performs asynchronous host name and IP address lookups for the
+   specified socket connection. This may be called when the socket
+   connection is created and the full IP address and fully qualified
+   domain name information is desired. The `callback' with `context'
+   will be called after the lookup is performed. The `timeout_queue'
+   is the application's scheduler timeout queue which the lookup
+   routine needs. If the socket connection is freed during
+   the lookup the library will automatically cancel the lookup and
+   the `callback' will not be called. */
+
+void silc_socket_host_lookup(SilcSocketConnection sock,
+			     bool port_lookup,
+			     SilcSocketHostLookupCb callback,
+			     void *context,
+			     void *timeout_queue)
+{
+  SilcSocketHostLookup lookup;
+
+  SILC_LOG_DEBUG(("Performing async host lookup"));
+
+  if (!timeout_queue)
+    return;
+
+  lookup = silc_calloc(1, sizeof(*lookup));
+  lookup->sock = silc_socket_dup(sock);	/* Increase reference counter */
+  lookup->callback = callback;
+  lookup->context = context;
+  lookup->timeout_queue = timeout_queue;
+  lookup->port = port_lookup;
+
+  SILC_SET_HOST_LOOKUP(sock);
+
+  silc_thread_create(silc_socket_host_lookup_start, lookup, FALSE);
 }

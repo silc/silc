@@ -104,7 +104,7 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   /* Find the address from list */
   for (i = 0; dest->h_addr_list[i]; i++)
     if (!memcmp(dest->h_addr_list[i], &remote.sin_addr, 
-	       sizeof(struct in_addr)))
+		sizeof(struct in_addr)))
       break;
   if (!dest->h_addr_list[i])
     return FALSE;

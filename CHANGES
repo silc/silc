@@ -1,3 +1,9 @@
+Mon Jul  9 00:24:45 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added new function silc_socket_host_lookup to perform
+	  asynchronous IP and FQDN lookups for the socket connection.
+	  Affected files lib/silcutil/silcsockconn.[ch].
+
 Sun Jul  8 18:44:53 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_MUTEX_DEFINE to define the mutex on environments

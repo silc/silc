@@ -93,28 +93,12 @@ typedef enum {
 /***/
 
 /* Socket flags */
-#define SILC_SF_NONE 0
-#define SILC_SF_INBUF_PENDING 1
-#define SILC_SF_OUTBUF_PENDING 2
-#define SILC_SF_DISCONNECTING 3
-#define SILC_SF_DISCONNECTED 4
-
-/****f* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionHBCb
- *
- * SYNOPSIS
- *
- *    typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
- *                                             void *context);
- *
- * DESCRIPTION
- *
- *    Heartbeat callback function. This is the function in the application
- *    that this library will call when it is time to send the keepalive
- *    packet SILC_PACKET_HEARTBEAT.
- *
- ***/
-typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
-					 void *context);
+#define SILC_SF_NONE             0
+#define SILC_SF_INBUF_PENDING    1
+#define SILC_SF_OUTBUF_PENDING   2
+#define SILC_SF_DISCONNECTING    3
+#define SILC_SF_DISCONNECTED     4
+#define SILC_SF_HOST_LOOKUP      5
 
 /****s* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionStruct
  *
@@ -223,16 +207,19 @@ struct SilcSocketConnectionStruct {
 #define SILC_SET_INBUF_PENDING(x) SF_SET((x), SILC_SF_INBUF_PENDING)
 #define SILC_SET_DISCONNECTING(x) SF_SET((x), SILC_SF_DISCONNECTING)
 #define SILC_SET_DISCONNECTED(x) SF_SET((x), SILC_SF_DISCONNECTED)
+#define SILC_SET_HOST_LOOKUP(x) SF_SET((x), SILC_SF_HOST_LOOKUP)
 #define SILC_UNSET_OUTBUF_PENDING(x) SF_UNSET((x), SILC_SF_OUTBUF_PENDING)
 #define SILC_UNSET_INBUF_PENDING(x) SF_UNSET((x), SILC_SF_INBUF_PENDING)
 #define SILC_UNSET_DISCONNECTING(x) SF_UNSET((x), SILC_SF_DISCONNECTING)
 #define SILC_UNSET_DISCONNECTED(x) SF_UNSET((x), SILC_SF_DISCONNECTED)
+#define SILC_UNSET_HOST_LOOKUP(x) SF_UNSET((x), SILC_SF_HOST_LOOKUP)
 
 /* Checking for flags */
 #define SILC_IS_OUTBUF_PENDING(x) SF_IS((x), SILC_SF_OUTBUF_PENDING)
 #define SILC_IS_INBUF_PENDING(x) SF_IS((x), SILC_SF_INBUF_PENDING)
 #define SILC_IS_DISCONNECTING(x) SF_IS((x), SILC_SF_DISCONNECTING)
 #define SILC_IS_DISCONNECTED(x) SF_IS((x), SILC_SF_DISCONNECTED)
+#define SILC_IS_HOST_LOOKUP(x) SF_IS((x), SILC_SF_HOST_LOOKUP)
 
 /* Prototypes */
 
@@ -321,6 +308,23 @@ int silc_socket_read(SilcSocketConnection sock);
  ***/
 int silc_socket_write(SilcSocketConnection sock);
 
+/****f* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionHBCb
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
+ *                                             void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Heartbeat callback function. This is the function in the application
+ *    that this library will call when it is time to send the keepalive
+ *    packet SILC_PACKET_HEARTBEAT.
+ *
+ ***/
+typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
+					 void *context);
+
 /****f* silcutil/SilcSocketConnectionAPI/silc_socket_set_heartbeat
  *
  * SYNOPSIS
@@ -347,5 +351,56 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
 			       void *timeout_queue);
+
+/****f* silcutil/SilcSocketConnectionAPI/SilcSocketHostLookupCb
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcSocketHostLookupCb)(SilcSocketConnection sock,
+ *                                           void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Asynchronous host lookup callback function that will be called
+ *    when the lookup is performed.
+ *
+ ***/
+typedef void (*SilcSocketHostLookupCb)(SilcSocketConnection sock,
+				       void *context);
+
+/****f* silcutil/SilcSocketConnectionAPI/silc_socket_host_lookup
+ *
+ * SYNOPSIS
+ *
+ *    void silc_socket_host_lookup(SilcSocketConnection sock,
+ *                                 SilcSocketHostLookupCb callback,
+ *                                 void *context,
+ *                                 void *timeout_queue);
+ *
+ * DESCRIPTION
+ *
+ *    Performs asynchronous host name and IP address lookups for the
+ *    specified socket connection. This may be called when the socket
+ *    connection is created and the full IP address and fully qualified
+ *    domain name information is desired. The `callback' with `context'
+ *    will be called after the lookup is performed. The `timeout_queue'
+ *    is the application's scheduler timeout queue which the lookup
+ *    routine needs. If the socket connection is freed during the
+ *    lookup the library will automatically cancel the lookup and
+ *    the `callback' will not be called.
+ *
+ *    If `port_lookup' is TRUE then the remote port of the socket 
+ *    connection is resolved. After the information is resolved they
+ *    are accessible using sock->ip and sock->hostname pointers. Note
+ *    that if the both IP and FQDN could not be resolved the sock->hostname
+ *    includes the IP address of the remote host. The resolved port is 
+ *    available in sock->port.
+ *
+ ***/
+void silc_socket_host_lookup(SilcSocketConnection sock,
+			     bool port_lookup,
+			     SilcSocketHostLookupCb callback,
+			     void *context,
+			     void *timeout_queue);
 
 #endif
