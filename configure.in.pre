@@ -844,6 +844,8 @@ fi
 __SILC_HAVE_LIBIDN=""
 if test x$has_libidn = xtrue; then
   __SILC_HAVE_LIBIDN="#define __SILC_HAVE_LIBIDN 1"
+else
+  AC_MSG_ERROR(Could not locate libidn.  GNU Libidn is required to compile SILC)
 fi
 
 # iconv support
