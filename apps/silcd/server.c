@@ -3062,9 +3062,9 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
    but also to re-generate new key for channel. If `key_len' is provided
    it is the bytes of the key length. */
 
-int silc_server_create_channel_key(SilcServer server, 
-				   SilcChannelEntry channel,
-				   uint32 key_len)
+bool silc_server_create_channel_key(SilcServer server, 
+				    SilcChannelEntry channel,
+				    uint32 key_len)
 {
   int i;
   unsigned char channel_key[32], hash[32];
@@ -3074,7 +3074,7 @@ int silc_server_create_channel_key(SilcServer server,
 
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
     SILC_LOG_DEBUG(("Channel has private keys, will not generate new key"));
-    return TRUE;
+    return FALSE;
   }
 
   if (!channel->channel_key)
