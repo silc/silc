@@ -1737,6 +1737,25 @@ static void silc_server_command_join_channel(SilcServer server,
       goto out;
     }
 
+    if (auth && auth_len && !client->data.public_key) {
+      if (cmd->pending == 2)
+	goto out;
+
+      /* We must retrieve the detached client's public key by sending
+	 GETKEY command. Reprocess this packet after receiving the key */
+      clidp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+      silc_server_send_command(server, cmd->sock,
+			       SILC_COMMAND_GETKEY, ++server->cmd_ident,
+			       1, 1, clidp->data, clidp->len);
+      silc_buffer_free(clidp);
+      silc_server_command_pending(server, SILC_COMMAND_GETKEY,
+				  server->cmd_ident,
+				  silc_server_command_join, 
+				  silc_server_command_dup(cmd));
+      cmd->pending = 2;
+      goto out;
+    }
+
     cmd->pending = FALSE;
   }
 

@@ -13,6 +13,11 @@ Wed Nov  6 17:18:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed silc_get_input to NULL-terminate the returned input.
 	  Affected file lib/silcutil/silcutil.c.
 
+	* Resolve the client's public key in JOIN command if the
+	  founder auth data is being requested but we don't know the
+	  client's public key.  Affected file silcd/command.c.
+	  Bug #53.
+
 Mon Nov  4 16:02:59 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Print notify for server opers when backup router comes
