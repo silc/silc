@@ -1015,7 +1015,7 @@ int silc_verify_public_key(SilcClient client,
 		  "server" : "client");
 
   if (pk_type != SILC_SKE_PK_TYPE_SILC) {
-    silc_say(client, conn, "We don't support %s key type %d", 
+    silc_say(client, conn, "We don't support %s public key type %d", 
 	     entity, pk_type);
     return FALSE;
   }
@@ -1024,19 +1024,29 @@ int silc_verify_public_key(SilcClient client,
   if (!pw)
     return FALSE;
 
-  /* Replace all whitespaces with `_'. */
-  fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
-  for (i = 0; i < strlen(fingerprint); i++)
-    if (fingerprint[i] == ' ')
-      fingerprint[i] = '_';
-
   memset(filename, 0, sizeof(filename));
   memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "%skey_%s.pub", entity, fingerprint);
-  snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
-	   pw->pw_dir, entity, file);
-  silc_free(fingerprint);
 
+  if (conn_type == SILC_SOCKET_TYPE_SERVER ||
+      conn_type == SILC_SOCKET_TYPE_ROUTER) {
+    snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
+	     conn->sock->hostname, conn->sock->port);
+    snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
+	     pw->pw_dir, entity, file);
+  } else {
+    /* Replace all whitespaces with `_'. */
+    fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+    for (i = 0; i < strlen(fingerprint); i++)
+      if (fingerprint[i] == ' ')
+	fingerprint[i] = '_';
+    
+    snprintf(file, sizeof(file) - 1, "%skey_%s.pub", entity, fingerprint);
+    snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
+	     pw->pw_dir, entity, file);
+    silc_free(fingerprint);
+  }
+
+  /* Take fingerprint of the public key */
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
 
   /* Check whether this key already exists */

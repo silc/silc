@@ -36,6 +36,91 @@
 #include "silcincludes.h"
 #include "blowfish.h"
 
+/* 
+ * SILC Crypto API for Blowfish
+ */
+
+/* Sets the key for the cipher. */
+
+SILC_CIPHER_API_SET_KEY(blowfish)
+{
+  blowfish_set_key((BlowfishContext *)context, (unsigned char *)key, keylen);
+  return TRUE;
+}
+
+/* Sets the string as a new key for the cipher. The string is first
+   hashed and then used as a new key. */
+
+SILC_CIPHER_API_SET_KEY_WITH_STRING(blowfish)
+{
+  /*  unsigned char key[md5_hash_len];
+  SilcMarsContext *ctx = (SilcMarsContext *)context;
+
+  make_md5_hash(string, &key);
+  memcpy(&ctx->key, mars_set_key(&key, keylen), keylen);
+  memset(&key, 'F', sizeoof(key));
+  */
+
+  return 1;
+}
+
+/* Returns the size of the cipher context. */
+
+SILC_CIPHER_API_CONTEXT_LEN(blowfish)
+{
+  return sizeof(BlowfishContext);
+}
+
+/* Encrypts with the cipher in CBC mode. Source and destination buffers
+   maybe one and same. */
+
+SILC_CIPHER_API_ENCRYPT_CBC(blowfish)
+{
+  uint32 tiv[4];
+  int i;
+
+  SILC_CBC_GET_IV(tiv, iv);
+
+  SILC_CBC_ENC_PRE(tiv, src);
+  blowfish_encrypt((BlowfishContext *)context, tiv, tiv, 16);
+  SILC_CBC_ENC_POST(tiv, dst, src);
+
+  for (i = 16; i < len; i += 16) {
+    SILC_CBC_ENC_PRE(tiv, src);
+    blowfish_encrypt((BlowfishContext *)context, tiv, tiv, 16);
+    SILC_CBC_ENC_POST(tiv, dst, src);
+  }
+
+  SILC_CBC_PUT_IV(tiv, iv);
+
+  return TRUE;
+}
+
+/* Decrypts with the cipher in CBC mode. Source and destination buffers
+   maybe one and same. */
+
+SILC_CIPHER_API_DECRYPT_CBC(blowfish)
+{
+  uint32 tmp[4], tmp2[4], tiv[4];
+  int i;
+
+  SILC_CBC_GET_IV(tiv, iv);
+
+  SILC_CBC_DEC_PRE(tmp, src);
+  blowfish_decrypt((BlowfishContext *)context, tmp, tmp2, 16);
+  SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
+
+  for (i = 16; i < len; i += 16) {
+    SILC_CBC_DEC_PRE(tmp, src);
+    blowfish_decrypt((BlowfishContext *)context, tmp, tmp2, 16);
+    SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
+  }
+  
+  SILC_CBC_PUT_IV(tiv, iv);
+  
+  return TRUE;
+}
+
 static u32 bf_pbox[16 + 2] =
 {
     0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344,

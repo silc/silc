@@ -57,8 +57,7 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o Some of the ciphers in lib/silccrypt does not implement the SILC
-   Crypto API correctly.
+ o IPv6 support for ID's and into the code.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
@@ -66,7 +65,8 @@ TODO/bugs In SILC Libraries
    not in distribution), but it is not used yet, and it requires some
    tweaking on the Makefiles (we want static lib not shared).
 
- o IPv6 support for ID's and into the code.
+ o The CAST cipher is not compiled currently due to compilation errors;
+   check those.  Cast is in lib/silccrypt/cast.c.
 
 
 TODO After 1.0

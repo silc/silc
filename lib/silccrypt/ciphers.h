@@ -23,8 +23,10 @@
 
 #include "none.h"
 #include "mars.h"
+#include "rc5.h"
 #include "rc6.h"
 #include "twofish.h"
 #include "aes.h"
+#include "blowfish.h"
 
 #endif

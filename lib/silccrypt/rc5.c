@@ -41,6 +41,95 @@
 #include "silcincludes.h"
 #include "rc5.h"
 
+/* 
+ * SILC Crypto API for RC5
+ */
+
+/* Sets the key for the cipher. */
+
+SILC_CIPHER_API_SET_KEY(aes)
+{
+  uint32 k[8];
+
+  SILC_GET_WORD_KEY(key, k, keylen);
+  rc5_set_key((RC5Context *)context, k, keylen);
+
+  return TRUE;
+}
+
+/* Sets the string as a new key for the cipher. The string is first
+   hashed and then used as a new key. */
+
+SILC_CIPHER_API_SET_KEY_WITH_STRING(aes)
+{
+  /*  unsigned char key[md5_hash_len];
+  SilcMarsContext *ctx = (SilcMarsContext *)context;
+
+  make_md5_hash(string, &key);
+  memcpy(&ctx->key, mars_set_key(&key, keylen), keylen);
+  memset(&key, 'F', sizeoof(key));
+  */
+
+  return 1;
+}
+
+/* Returns the size of the cipher context. */
+
+SILC_CIPHER_API_CONTEXT_LEN(aes)
+{
+  return sizeof(RC5Context);
+}
+
+/* Encrypts with the cipher in CBC mode. Source and destination buffers
+   maybe one and same. */
+
+SILC_CIPHER_API_ENCRYPT_CBC(aes)
+{
+  uint32 tiv[4];
+  int i;
+
+  SILC_CBC_GET_IV(tiv, iv);
+
+  SILC_CBC_ENC_PRE(tiv, src);
+  rc5_encrypt((RC5Context *)context, tiv, tiv);
+  SILC_CBC_ENC_POST(tiv, dst, src);
+
+  for (i = 16; i < len; i += 16) {
+    SILC_CBC_ENC_PRE(tiv, src);
+    rc5_encrypt((RC5Context *)context, tiv, tiv);
+    SILC_CBC_ENC_POST(tiv, dst, src);
+  }
+
+  SILC_CBC_PUT_IV(tiv, iv);
+
+  return TRUE;
+}
+
+/* Decrypts with the cipher in CBC mode. Source and destination buffers
+   maybe one and same. */
+
+SILC_CIPHER_API_DECRYPT_CBC(aes)
+{
+  uint32 tmp[4], tmp2[4], tiv[4];
+  int i;
+
+  SILC_CBC_GET_IV(tiv, iv);
+
+  SILC_CBC_DEC_PRE(tmp, src);
+  rc5_decrypt((RC5Context *)context, tmp, tmp2);
+  SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
+
+  for (i = 16; i < len; i += 16) {
+    SILC_CBC_DEC_PRE(tmp, src);
+    rc5_decrypt((RC5Context *)context, tmp, tmp2); 
+    SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
+  }
+  
+  SILC_CBC_PUT_IV(tiv, iv);
+  
+  return TRUE;
+}
+
 /* RC5 encryption */
 #define RC5E(i, A, B)				\
 		A = A ^ B;			\
@@ -57,16 +146,13 @@
 
 /* Sets RC5 key */
 
-int rc5_set_key(RC5Context *ctx, char *key, int key_len)
+int rc5_set_key(RC5Context *ctx, const uint32 in_key[], int key_len)
 {
-	u32 *in_key = (u32 *)key;
 	u32 i, j, k, A, B, L[c];
 	u32 *out_key = ctx->out_key;
 
 	if (key_len < b || key_len > (2 * b))
 		return -1;
-
-	//	key_len *= 8;
 
 	/* init L */
 	for (i = 0; i < key_len / w; i++)

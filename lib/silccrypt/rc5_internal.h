@@ -36,7 +36,7 @@ typedef struct {
 } RC5Context;
 
 /* Prototypes */
-int rc5_set_key(RC5Context *ctx, char *key, int key_len);
+int rc5_set_key(RC5Context *ctx, const uint32 in_key[], int key_len);
 int rc5_encrypt(RC5Context *ctx, u32 *in, u32 *out);
 int rc5_decrypt(RC5Context *ctx, u32 *in, u32 *out);
 

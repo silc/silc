@@ -7,6 +7,9 @@ Wed May  2 20:50:49 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  than the new one.  For now, the client keys are saved with the
 	  new filename format.  The affected file silc/client_ops.c.
 
+	* Implemented the Cipher API for the rest of the ciphers that
+	  did not implement it or implemented it the wrong way.
+
 Wed May  2 13:31:26 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Register default ciphers and stuff when using the -S option

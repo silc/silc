@@ -22,7 +22,6 @@ noinst_LIBRARIES = libsilccrypt.a
 
 libsilccrypt_a_SOURCES = \
 	none.c \
-	blowfish.c \
 	rc5.c \
 	rc6.c \
 	mars.c \

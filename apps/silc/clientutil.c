@@ -357,7 +357,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   }
 
   if (!silc_pkcs_is_supported(pkcs_name)) {
-    fprintf(stderr, "Unsupported PKCS `%s'", pkcs_name);
+    fprintf(stderr, "Unknown PKCS `%s'", pkcs_name);
     return FALSE;
   }
 

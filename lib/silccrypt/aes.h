@@ -17,20 +17,6 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2001/02/26 17:32:08  priikone
- * 	updates.
- *
- * Revision 1.2  2000/10/02 18:31:46  priikone
- * 	Added rijndael (AES) to cipher list.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Importet from internal CVS/Added Log headers.
- *
- *
- */
 
 #ifndef RIJNDAEL_H
 #define RIJNDAEL_H
@@ -46,6 +32,5 @@ SILC_CIPHER_API_SET_KEY_WITH_STRING(aes);
 SILC_CIPHER_API_CONTEXT_LEN(aes);
 SILC_CIPHER_API_ENCRYPT_CBC(aes);
 SILC_CIPHER_API_DECRYPT_CBC(aes);
-
 
 #endif

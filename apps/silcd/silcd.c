@@ -138,6 +138,10 @@ int main(int argc, char **argv)
 
   if (opt_create_keypair == TRUE) {
     /* Create new key pair and exit */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
     silc_server_create_key_pair(opt_pkcs, opt_bits, opt_keypath,
 				NULL, NULL, NULL);
     exit(0);
