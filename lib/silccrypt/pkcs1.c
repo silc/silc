@@ -256,6 +256,9 @@ RSA_DecodeOneBlock(unsigned char *data,
     if (blockType != bt)
       return NULL;
 
+    if (modulusLen < 2 + 1)
+      return NULL;
+
     dp += 2;
 
     switch (blockType) {
