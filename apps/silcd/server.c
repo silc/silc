@@ -2003,7 +2003,8 @@ void silc_server_free_client_data(SilcServer server,
 
   /* If there is pending outgoing data for the client then purge it
      to the network before removing the client entry. */
-  if (SILC_IS_OUTBUF_PENDING(sock) && (SILC_IS_DISCONNECTED(sock) == FALSE)) {
+  if (sock && SILC_IS_OUTBUF_PENDING(sock) && 
+      (SILC_IS_DISCONNECTED(sock) == FALSE)) {
     server->stat.packets_sent++;
 
     if (sock->outbuf->data - sock->outbuf->head)

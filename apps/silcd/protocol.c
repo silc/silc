@@ -143,6 +143,9 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
 
+  SILC_LOG_INFO(("%s (%s) is version %s", ske->sock->hostname,
+		 ske->sock->ip, version));
+
   /* Check for initial version string */
   if (!strstr(version, "SILC-1.0-"))
     status = SILC_SKE_STATUS_BAD_VERSION;

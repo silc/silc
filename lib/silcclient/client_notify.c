@@ -663,6 +663,8 @@ void silc_client_notify_by_server(SilcClient client,
     client->ops->notify(client, conn, type, client_entry, tmp);
 
     if (client_entry != conn->local_entry) {
+      /* Remove client from all channels */
+      silc_client_remove_from_channels(client, conn, client_entry);
       silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
 			     client_entry->id);
       if (client_entry->nickname)

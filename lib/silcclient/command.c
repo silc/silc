@@ -792,21 +792,6 @@ SILC_CLIENT_CMD_FUNC(kill)
   /* Notify application */
   COMMAND;
 
-  /* Remove the client entry to be killed */
-  silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
-			 target->id);
-  if (target->nickname)
-    silc_free(target->nickname);
-  if (target->server)
-    silc_free(target->server);
-  if (target->id)
-    silc_free(target->id);
-  if (target->send_key)
-    silc_cipher_free(target->send_key);
-  if (target->receive_key)
-    silc_cipher_free(target->receive_key);
-  silc_free(target);
-
  out:
   if (nickname)
     silc_free(nickname);
