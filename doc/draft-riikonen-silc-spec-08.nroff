@@ -134,7 +134,9 @@ Table of Contents
 5 Security Considerations ....................................... 47
 6 References .................................................... 48
 7 Author's Address .............................................. 50
-8 Full Copyright Statement ...................................... 50
+Appendix A ...................................................... XXXX
+Appendix B ...................................................... XXXX
+Full Copyright Statement ........................................ XXXX
 
 .ti 0
 List of Figures
@@ -510,9 +512,11 @@ o MD5 hash - MD5 hash value of the lowercase nickname is
   from the ID lists.  Note that the nickname MUST be in
   lowercase format before computing the hash value.  Since
   nicknames are UTF-8 encoded, some characters cannot be
-  converted to lower case.  All characters that has a
-  lowercase alternative in the Unicode standard MUST be
-  converted to lowercase.
+  converted to lower case.  All upper case characters that
+  has a lowercase alternative in the Unicode standard MUST
+  be converted to lowercase.  Note that the conversion MUST
+  be done without regard to the current system character
+  subset to ensure interoperability.
 
 .in 3
 Collisions could occur when more than 2^8 clients using same nickname
@@ -1634,15 +1638,16 @@ payload is UTF-8 encoded.  Also nicknames, channel names, server names,
 and hostnames are UTF-8 encoded.  This definition does not affect
 messages sent in SILC, as the Message Payload provides its own mechanism
 to indicate whether a message is UTF-8 text message, data message, which
-might use its own character encoding, or pure binary message [SILC2].
+may use its own character encoding, or pure binary message [SILC2].
 
 Certain limitations are imposed on the UTF-8 encoded strings in SILC.
 The UTF-8 encoded strings MUST NOT include any characters that are
-marked in the Unicode standard as control codes, Unicode noncharacters,
+marked in the Unicode standard as control codes, noncharacters,
 reserved or private range characters, or any other illegal Unicode
 characters.  Also the BOM (Byte-Order Mark) MUST NOT be used as byte
 order signature in UTF-8 encoded strings.  A string containing these
-characters MUST be treated as malformed UTF-8 encoding.
+characters MUST be treated as malformed UTF-8 encoding.  See the
+Appendix A for list of prohibited characters.
 
 Because of these limitations on the UTF-8 encoded strings the
 implementation may need to have access to full Unicode implementation
@@ -1652,22 +1657,20 @@ for example, nicknames does not include any prohibited characters.
 Server also need to have the capability to convert character case from
 upper case to lower case characters, when applicable.
 
-The ISO 10646 defines that malformed sequences shall be signalled
+The Unicode standard defines that malformed sequences shall be signalled
 by replacing the sequence with a replacement character.  Even though,
 in case of SILC these strings may not be malformed UTF-8 encodings
 they MUST be treated as malformed strings.  Implementation MAY use
-a replacement character, however, the ISO 10646 defined character is
-prohibited with nicknames and channel names in SILC.  Implementation
-MAY use some other replacement character or the ISO 10646 defined
-character when it is applicable.  It is, however, RECOMMENDED that an
-error is returned instead of using replacement character if it is
-possible.  For example, when setting a nickname with SILC_COMMAND_NICK
-command, implementation is able to send error indication back to the
-command sender.  It must be noted that on server implementation if
-a character sequence is merely outside of current character subset,
-but is otherwise valid character, it MUST NOT be replaced by a
-replacement character.  Server SHOULD inspect the UTF-8 strings without
-regard to current system character subset.
+a replacement character, however, the character Unicode standard defines
+MUST NOT be used, but another character must be chosen.  It is, however,
+RECOMMENDED that an error is returned instead of using replacement
+character if it is possible.  For example, when setting a nickname
+with SILC_COMMAND_NICK command, implementation is able to send error
+indication back to the command sender.  It must be noted that on server
+implementation if a character sequence is merely outside of current
+character subset, but is otherwise valid character, it MUST NOT be
+replaced by a replacement character.  Server SHOULD inspect the UTF-8
+strings without regard to current system character subset.
 
 On user interface where UTF-8 strings are displayed the implementation
 is RECOMMENDED to escape any character that it is unable to render
@@ -1682,20 +1685,21 @@ if it does not cause practical problems to the implementation.
 
 The nicknames and channel names are also UTF-8 encoded in SILC protocol.
 As these strings may be used as message destination indicator on the
-user interface certain additional limitations has been imposed to it.
+user interface certain additional limitations has been imposed to them.
 In addition of general UTF-8 string limitations described in previous
 section, the UTF-8 encoded nickname and channel name strings MUST NOT
 include any characters that has been marked in the Unicode standard as
-space (white space) characters, line and paragraph separators,
-mathematical symbol characters (with exception of US-ASCII mathematical
-symbol characters), currency symbol characters, or any other symbol
-characters, special characters or tags.  In addition nicknames and
-channel names MUST NOT include commas (','), '@', '!' or any wildcard
-characters.
+space characters, line and paragraph separators, mathematical symbol
+characters (with exception of US-ASCII mathematical symbol characters),
+currency symbol characters, or any other symbol characters (with
+execption of CJK and other similar symbols), special characters or tags.
+In addition nicknames and channel names MUST NOT include commas (','),
+'@', '!' or any wildcard characters.  See the Appendix A and Appendix B
+for list of prohibited characters.
 
 This definition means that these strings generally may only include
 letters, numbers, most punctuation characters and some other characters.
-For practical reasons all symbol characters and many other special
+For practical reasons most symbol characters and many other special
 characters are prohibited.  Conforming implementation MUST treat
 strings with prohibited characters as malformed strings.
 
@@ -2657,7 +2661,89 @@ EMail: priikone@iki.fi
 
 
 .ti 0
-8 Full Copyright Statement
+Appendix A
+
+This appendix lists the generally prohibited characters in UTF-8 encoded
+strings in SILC.  The characters listed in this appendix MUST NOT appear
+in any UTF-8 encoded string.  When a new version of Unicode standard
+defines new characters that are marked into the same category as the
+characters listed in this appendix they are also prohibited.  Implementor
+SHOULD NOT trust the following list but should verify the actual list of
+characters from the Unicode standard.
+
+Control codes
+0000-001F 007F-009F
+
+Noncharacters
+FDD0-FDEF
+0FFFE-0FFFF 1FFFE-1FFFF 2FFFE-2FFFF 3FFFE-3FFFF 4FFFE-4FFFF
+5FFFE-5FFFF 6FFFE-6FFFF 7FFFE-7FFFF 8FFFE-8FFFF 9FFFE-9FFFF
+AFFFE-AFFFF BFFFE-BFFFF CFFFE-CFFFF DFFFE-DFFFF EFFFE-EFFFF
+FFFFE-FFFFF 10FFFE-10FFFF
+
+Surrogate codes
+D800-DFFF
+
+Private characters
+E000-F8FF F0000-FFFFD 100000-10FFFD
+
+BOM as signature
+FEFF
+
+Replacement character
+FFFD
+
+
+.ti 0
+Appendix B
+
+This appendix lists additional prohibited characters in UTF-8 encoded
+nickname and channel name strings.  The characters listed in this
+appendix MUST NOT appear in UTF-8 encoded nickname and channel name
+strings.  When a new version of Unicode standard defines new characters
+that are marked into the same category as the characters listed in this
+appendix they are also prohibited.  Implementor SHOULD NOT trust the
+following list but should verify the actual list of characters from
+the Unicode standard.
+
+Reserved US-ASCII characters
+0021 002A 002C 003F 0040
+
+Space characters
+0020 00A0 1680 180E 2000-200B 202F 205F 3000
+
+Line and paragraph separators
+2028 2029
+
+Symbol characters and other symbol like characters (with execption of
+CJK and other similar symbols)
+00A2-00A9 00AC 00AE 00AF 00B0 00B1 00B4 00B6 00B8 00D7 00F7
+02C2-02C5 02D2-02FF 0374 0375 0384 0385 03F6 0482 060E 060F
+06E9 06FD 06FE 09F2 09F3 09FA 0AF1 0B70 0BF3-0BFA 0E3F
+0F01-0F03 0F13-0F17 0F1A-0F1F 0F34 0F36 0F38 0FBE 0FBF
+0FC0-0FC5 0FC7-0FCF 17DB 1940 19E0-19FF 1FBD 1FBF-1FC1
+1FCD-1FCF 1FDD-1FDF 1FED-1FEF 1FFD 1FFE 2044 2052 207A-207C
+208A-208C 20A0-20B1 2100-214F 2150-218F 2190-21FF 2200-22FF
+2300-23FF 2400-243F 2440-245F 2460-24FF 2500-257F 2580-259F
+25A0-25FF 2600-26FF 2700-27BF 27C0-27EF 27F0-27FF 2800-28FF
+2900-297F 2980-29FF 2A00-2AFF 2B00-2BFF 2E9A 2EF4-2EFF
+2FF0-2FFF 303B-303D 3040 3095-3098 309F-30A0 30FF-3104
+312D-3130 318F 31B8-31FF 321D-321F 3244-325F 327C-327E
+32B1-32BF 32CC-32CF 32FF 3377-337A 33DE-33DF 33FF 4DB6-4DFF
+9FA6-9FFF A48D-A48F A4A2-A4A3 A4B4 A4C1 A4C5 A4C7-ABFF
+D7A4-D7FF FA2E-FAFF FFE0-FFEE FFFC 10000-1007F 100080-100FF
+10100-1013F 1D000-1D0FF 1D100-1D1FF 1D300-1D35F 1D400-1D7FF
+
+Specials and tags
+FFF0-FFFF
+E0000-E007F
+
+Other characters
+E0100-E01EF
+
+
+.ti 0
+Full Copyright Statement
 
 Copyright (C) The Internet Society (2003). All Rights Reserved.
 
