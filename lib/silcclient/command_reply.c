@@ -1092,10 +1092,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
 	channel->clients[k].client->nickname = 
 	  silc_calloc(strlen(nickname) + 8, sizeof(*channel->clients[k].
 						   client->nickname));
+	snprintf(t, sizeof(t), "[%d]", c++);
+	strncat(channel->clients[k].client->nickname, t, strlen(t));
 	strncat(channel->clients[k].client->nickname, nickname, 
 		strlen(nickname));
-	snprintf(t, sizeof(t), " [%d]", c++);
-	strncat(channel->clients[k].client->nickname, t, strlen(t));
       }
     }
 
@@ -1105,10 +1105,19 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   name_list = NULL;
   len1 = 0;
   for (k = 0; k < channel->clients_count; k++) {
-    char *n = channel->clients[k].client->nickname;
+    char *m, *n = channel->clients[k].client->nickname;
     len2 = strlen(n);
     len1 += len2;
-    name_list = silc_realloc(name_list, sizeof(*name_list) * (len1 + 1));
+
+    name_list = silc_realloc(name_list, sizeof(*name_list) * (len1 + 3));
+
+    m = silc_client_chumode_char(channel->clients[k].mode);
+    if (m) {
+      memcpy(name_list + (len1 - len2), m, strlen(m));
+      len1 += strlen(m);
+      silc_free(m);
+    }
+
     memcpy(name_list + (len1 - len2), n, len2);
     name_list[len1] = 0;
     

@@ -1,5 +1,13 @@
 Wed Nov  1 17:21:26 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
+	* NAMES command reply now shows users mode with the nickname when
+	  joining to channel.
+
+	* Moved silc_client_ch[u]mode[_char] functions from 
+	  silc/clientutil.[ch] to lib/silcclient/client.[ch].  Though, that
+	  place sucks, they are utility functions and should be in some
+	  other file.
+
 	* Fixed some unsigned int's to unsigned short's.  Patch by cras.
 
 	* Fixed contrib/getopt*.[ch] to not require config.h.  Patch by

@@ -288,4 +288,8 @@ void silc_client_replace_from_channels(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry old,
 				       SilcClientEntry new);
+char *silc_client_chmode(unsigned int mode);
+char *silc_client_chumode(unsigned int mode);
+char *silc_client_chumode_char(unsigned int mode);
+
 #endif

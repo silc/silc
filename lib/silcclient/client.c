@@ -2079,3 +2079,80 @@ void silc_client_replace_from_channels(SilcClient client,
 
   silc_idcache_list_free(list);
 }
+
+/* Parses mode mask and returns the mode as string. */
+
+char *silc_client_chmode(unsigned int mode)
+{
+  char string[20];
+
+  if (!mode)
+    return NULL;
+
+  memset(string, 0, sizeof(string));
+
+  if (mode & SILC_CHANNEL_MODE_PRIVATE)
+    strncat(string, "p", 1);
+
+  if (mode & SILC_CHANNEL_MODE_SECRET)
+    strncat(string, "s", 1);
+
+  if (mode & SILC_CHANNEL_MODE_PRIVKEY)
+    strncat(string, "k", 1);
+
+  if (mode & SILC_CHANNEL_MODE_INVITE)
+    strncat(string, "i", 1);
+
+  if (mode & SILC_CHANNEL_MODE_TOPIC)
+    strncat(string, "t", 1);
+
+  if (mode & SILC_CHANNEL_MODE_ULIMIT)
+    strncat(string, "l", 1);
+
+  if (mode & SILC_CHANNEL_MODE_PASSPHRASE)
+    strncat(string, "a", 1);
+
+  /* Rest of mode is ignored */
+
+  return strdup(string);
+}
+
+/* Parses channel user mode mask and returns te mode as string */
+
+char *silc_client_chumode(unsigned int mode)
+{
+  char string[4];
+
+  if (!mode)
+    return NULL;
+
+  memset(string, 0, sizeof(string));
+
+  if (mode & SILC_CHANNEL_UMODE_CHANFO)
+    strncat(string, "f", 1);
+
+  if (mode & SILC_CHANNEL_UMODE_CHANOP)
+    strncat(string, "o", 1);
+
+  return strdup(string);
+}
+
+/* Parses channel user mode and returns it as special mode character. */
+
+char *silc_client_chumode_char(unsigned int mode)
+{
+  char string[4];
+
+  if (!mode)
+    return NULL;
+
+  memset(string, 0, sizeof(string));
+
+  if (mode & SILC_CHANNEL_UMODE_CHANFO)
+    strncat(string, "*", 1);
+
+  if (mode & SILC_CHANNEL_UMODE_CHANOP)
+    strncat(string, "@", 1);
+
+  return strdup(string);
+}
