@@ -2503,12 +2503,11 @@ void silc_server_remove_from_channels(SilcServer server,
     channel = chl->channel;
 
     /* Remove channel from client's channel list */
-    silc_hash_table_del_by_context(client->channels, channel, chl);
+    silc_hash_table_del(client->channels, channel);
 
     /* Remove channel if there is no users anymore */
     if (server->server_type == SILC_ROUTER &&
 	silc_hash_table_count(channel->user_list) < 2) {
-      server->stat.my_channels--;
 
       if (channel->rekey)
 	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
@@ -2522,21 +2521,22 @@ void silc_server_remove_from_channels(SilcServer server,
 
 	silc_hash_table_list(channel->user_list, &htl2);
 	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
-	  silc_hash_table_del_by_context(chl2->client->channels, channel, chl);
-	  silc_hash_table_del_by_context(channel->user_list, 
-					 chl2->client, chl);
+	  silc_hash_table_del(chl2->client->channels, channel);
+	  silc_hash_table_del(channel->user_list, chl2->client);
 	  silc_free(chl2);
 	}
 	continue;
       }
 
+      /* Remove the channel entry */
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
+      server->stat.my_channels--;
       continue;
     }
 
     /* Remove client from channel's client list */
-    silc_hash_table_del_by_context(channel->user_list, chl->client, chl);
+    silc_hash_table_del(channel->user_list, chl->client);
     silc_free(chl);
     server->stat.my_chanclients--;
 
@@ -2571,14 +2571,14 @@ void silc_server_remove_from_channels(SilcServer server,
 
 	silc_hash_table_list(channel->user_list, &htl2);
 	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
-	  silc_hash_table_del_by_context(chl2->client->channels, channel, chl);
-	  silc_hash_table_del_by_context(channel->user_list, 
-					 chl2->client, chl);
+	  silc_hash_table_del(chl2->client->channels, channel);
+	  silc_hash_table_del(channel->user_list, chl2->client);
 	  silc_free(chl2);
 	}
 	continue;
       }
 
+      /* Remove the channel entry */
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
       server->stat.my_channels--;
@@ -2622,7 +2622,6 @@ int silc_server_remove_from_one_channel(SilcServer server,
 					SilcClientEntry client,
 					int notify)
 {
-  SilcChannelEntry ch;
   SilcChannelClientEntry chl;
   SilcBuffer clidp;
 
@@ -2637,10 +2636,9 @@ int silc_server_remove_from_one_channel(SilcServer server,
      the channel's user list. */
 
   clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-  ch = chl->channel;
 
   /* Remove channel from client's channel list */
-  silc_hash_table_del_by_context(client->channels, chl->channel, chl);
+  silc_hash_table_del(client->channels, chl->channel);
 
   /* Remove channel if there is no users anymore */
   if (server->server_type == SILC_ROUTER &&
@@ -2655,7 +2653,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
   }
 
   /* Remove client from channel's client list */
-  silc_hash_table_del_by_context(channel->user_list, chl->client, chl);
+  silc_hash_table_del(channel->user_list, chl->client);
   silc_free(chl);
   server->stat.my_chanclients--;
   
@@ -2689,14 +2687,14 @@ int silc_server_remove_from_one_channel(SilcServer server,
       
       silc_hash_table_list(channel->user_list, &htl2);
       while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
-	silc_hash_table_del_by_context(chl2->client->channels, channel, chl);
-	silc_hash_table_del_by_context(channel->user_list, 
-				       chl2->client, chl);
+	silc_hash_table_del(chl2->client->channels, channel);
+	silc_hash_table_del(channel->user_list, chl2->client);
 	silc_free(chl2);
       }
       return FALSE;
     }
 
+    /* Remove the channel entry */
     if (!silc_idlist_del_channel(server->local_list, channel))
       silc_idlist_del_channel(server->global_list, channel);
     server->stat.my_channels--;

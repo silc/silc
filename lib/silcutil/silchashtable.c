@@ -723,17 +723,24 @@ void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size)
   SilcHashTableEntry *table, e, tmp;
   uint32 table_size, size_index;
 
+  if (new_size)
+    silc_hash_table_primesize(new_size, &size_index);
+  else
+    silc_hash_table_primesize(ht->entry_count, &size_index);
+
+  if (size_index == ht->table_size)
+    return;
+
+  SILC_HT_DEBUG(("Rehashing"));
+
   /* Take old hash table */
   table = ht->table;
   table_size = ht->table_size;
 
   /* Allocate new table */
-  ht->table = silc_calloc(new_size ? silc_hash_table_primesize(new_size,
-							       &size_index) :
-			  silc_hash_table_primesize(ht->entry_count,
-						    &size_index),
-			  sizeof(*ht->table));
+  ht->table = silc_calloc(primesize[size_index], sizeof(*ht->table));
   ht->table_size = size_index;
+  ht->entry_count = 0;
 
   /* Rehash */
   for (i = 0; i < primesize[table_size]; i++) {
@@ -762,6 +769,14 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
   SilcHashTableEntry *table, e, tmp;
   uint32 table_size, size_index;
 
+  if (new_size)
+    silc_hash_table_primesize(new_size, &size_index);
+  else
+    silc_hash_table_primesize(ht->entry_count, &size_index);
+
+  if (size_index == ht->table_size)
+    return;
+
   SILC_HT_DEBUG(("Rehashing"));
 
   /* Take old hash table */
@@ -769,11 +784,7 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
   table_size = ht->table_size;
 
   /* Allocate new table */
-  ht->table = silc_calloc(new_size ? silc_hash_table_primesize(new_size,
-							       &size_index) :
-			  silc_hash_table_primesize(ht->entry_count,
-						    &size_index),
-			  sizeof(*ht->table));
+  ht->table = silc_calloc(primesize[size_index], sizeof(*ht->table));
   ht->table_size = size_index;
   ht->entry_count = 0;
 

@@ -1,3 +1,13 @@
+Tue May 22 22:23:49 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Do not rehash if the new size is same as the old size of the
+	  hash table, in the silc_hash_table_rehash*.  The affected file
+	  lib/silcutil/silchashtable.c.
+
+	* Replaced hash_table_del_by_context calls from the server
+	  (when channel->user_list and client->channels) to the
+	  hash_table_del as it is sufficient and faster.
+
 Tue May 22 17:27:16 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_hash_table_list, silc_hash_table_get and the

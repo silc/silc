@@ -587,7 +587,7 @@ static void silc_idlist_del_channel_foreach(void *key, void *context,
 
   /* Remove the context from the client's channel hash table as that
      table and channel's user_list hash table share this same context. */
-  silc_hash_table_del_by_context(chl->client->channels, chl->channel, chl);
+  silc_hash_table_del(chl->client->channels, chl->channel);
   silc_free(chl);
 }
 
