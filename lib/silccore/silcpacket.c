@@ -389,12 +389,15 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
       if (silc_packet_decrypt(cipher, hmac, parse_ctx->packet->sequence, 
 			      parse_ctx->packet->buffer, 
 			      parse_ctx->normal) == -1) {
-	SILC_LOG_WARNING(("Packet decryption failed %s:%d [%s]", 
+	SILC_LOG_WARNING(("Packet decryption failed %s:%d [%s] [%s]", 
 			  sock->hostname, sock->port,
+			  silc_get_packet_name(parse_ctx->packet->type),
 			  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
 			   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 			   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 			   "Router")));
+	silc_packet_context_free(parse_ctx->packet);
+	silc_free(parse_ctx);
 	return FALSE;
       }
 

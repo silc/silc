@@ -115,6 +115,11 @@ do {									\
   (sock->protocol && sock->protocol->protocol && 			\
    sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)
 
+/* Check whether backup resuming protocol is active */
+#define SILC_SERVER_IS_BACKUP(sock)					\
+  (sock->protocol && sock->protocol->protocol && 			\
+   sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_BACKUP)
+
 /* Output an error message wether to stderr or LOG_ERROR if we are in the
    background. */
 #define SILC_SERVER_LOG_ERROR(fmt) silc_server_stderr(silc_format fmt)

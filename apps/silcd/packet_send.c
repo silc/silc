@@ -168,7 +168,8 @@ void silc_server_packet_send_dest(SilcServer server,
     return;
   }
 
-  SILC_LOG_DEBUG(("Sending %s packet", silc_get_packet_name(type)));
+  SILC_LOG_DEBUG(("Sending %s packet (forced=%s)",
+		  silc_get_packet_name(type), force_send ? "yes" : "no"));
 
   if (dst_id) {
     dst_id_data = silc_id_id2str(dst_id, dst_id_type);
@@ -881,6 +882,20 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	if (gone)
 	  continue;
 	gone = TRUE;
+
+	/* If we are backup router and remote is our primary router and
+	   we are currently doing backup resuming protocol we must not
+	   re-encrypt message with session key. */
+	if (server->backup_router && SILC_SERVER_IS_BACKUP(sock) &&
+	    SILC_PRIMARY_ROUTE(server) == sock) {
+	  silc_server_packet_send_to_channel_real(server, sock, &packetdata,
+						  idata->send_key,
+						  idata->hmac_send,
+						  idata->psn_send++,
+						  data, data_len, TRUE,
+						  force_send);
+	  continue;
+	}
 
 	SILC_LOG_DEBUG(("Remote is router, encrypt with session key"));
 

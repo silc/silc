@@ -4410,6 +4410,9 @@ void silc_server_announce_get_channels(SilcServer server,
 	  silc_server_announce_get_channel_topic(server, channel,
 						 &(*channel_topics)[i]);
 	  (*channel_users_modes_c)++;
+
+	  silc_free(cid);
+
 	  i++;
 	}
 

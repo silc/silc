@@ -131,6 +131,9 @@ void silc_server_notify(SilcServer server,
      */
     SILC_LOG_DEBUG(("JOIN notify"));
 
+    if (channel_id)
+      silc_free(channel_id);
+
     /* Get Channel ID */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp)
@@ -303,6 +306,7 @@ void silc_server_notify(SilcServer server,
       }
     }
     silc_free(client_id);
+    silc_free(channel_id);
 
     /* Check if on channel */
     if (!silc_server_client_on_channel(client, channel, NULL))
@@ -546,8 +550,8 @@ void silc_server_notify(SilcServer server,
 	  goto out;
 	}
       }
-      silc_free(client_id);
     }
+    silc_free(client_id);
 
     if (!channel_id) {
       channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
@@ -798,8 +802,8 @@ void silc_server_notify(SilcServer server,
 	    goto out;
 	  }
 	}
-	silc_free(client_id);
       }
+      silc_free(client_id);
 
       if (!channel_id) {
 	channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
@@ -2089,7 +2093,7 @@ void silc_server_channel_key(SilcServer server,
   SilcChannelEntry channel;
 
   if (packet->src_id_type != SILC_ID_SERVER ||
-      (server->server_type == SILC_ROUTER &&
+      (server->server_type == SILC_ROUTER && !server->backup_router &&
        sock->type == SILC_SOCKET_TYPE_ROUTER))
     return;
 
@@ -2904,8 +2908,11 @@ void silc_server_new_channel(SilcServer server,
       channel = 
 	silc_idlist_add_channel(server->global_list, strdup(channel_name), 
 				0, channel_id, sock->user_data, NULL, NULL, 0);
-      if (!channel)
+      if (!channel) {
+	silc_channel_payload_free(payload);
+	silc_free(channel_id);
 	return;
+      }
       channel->disabled = TRUE;    /* Disabled until someone JOINs */
 
       server->stat.channels++;
@@ -2944,6 +2951,7 @@ void silc_server_new_channel(SilcServer server,
 	if (silc_id_create_channel_id(server, server->id, server->rng, &tmp)) {
 	  silc_server_send_notify_channel_change(server, sock, FALSE, 
 						 channel_id, tmp);
+	  silc_channel_payload_free(payload);
 	  silc_free(channel_id);
 	  silc_free(tmp);
 	}
@@ -2984,6 +2992,7 @@ void silc_server_new_channel(SilcServer server,
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
 			      chk->data, chk->len, FALSE);
       silc_buffer_free(chk);
+      silc_free(id);
     } else {
       /* The channel exist by that name, check whether the ID's match.
 	 If they don't then we'll force the server to use the ID we have.
@@ -2998,6 +3007,8 @@ void silc_server_new_channel(SilcServer server,
 	SILC_LOG_DEBUG(("Forcing the server to change Channel ID"));
 	silc_server_send_notify_channel_change(server, sock, FALSE, 
 					       channel_id, channel->id);
+	silc_channel_payload_free(payload);
+	silc_free(channel_id);
 
 	/* Wait that server re-announces this channel */
 	return;
@@ -3025,8 +3036,11 @@ void silc_server_new_channel(SilcServer server,
       if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
 
 	if (silc_hash_table_count(channel->user_list)) {
-	  if (!silc_server_create_channel_key(server, channel, 0))
+	  if (!silc_server_create_channel_key(server, channel, 0)) {
+	    silc_channel_payload_free(payload);
+	    silc_free(channel_id);
 	    return;
+	  }
 
 	  /* Send to the channel */
 	  silc_server_send_channel_key(server, sock, channel, FALSE);
