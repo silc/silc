@@ -6,7 +6,7 @@
 <OL>
 <FONT SIZE="+3">SILC Client Library</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
-<PRE>
+<PRE><FONT FACE="Helvetica,Arial,Sans-serif">
 SILC Client Library is SILC Client implementation without the actual user 
 interface. The library uses common and core components of SILC protocol from
 lib/silccore library and normal utility routines from lib/silcutil library.
@@ -23,6 +23,7 @@ it wants.  The library is entirely transparent to the user interface and
 it does not include any user interface specific issues such as window
 handling or item handling on the screen etc.  These does not interest
 the library.
+</FONT>
 </PRE>
 
 <LI><A HREF="silcapi.html">SILC Client API</A>
