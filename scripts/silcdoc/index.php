@@ -26,12 +26,6 @@
   <td>
     <table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0">
      <tr>
-      <td bgcolor="#e2e2e2">
-        <br /><a href="index.php?page=news"><img src="img/silc.gif" width="700" height="100" alt=" SILC Secure Internet Live Conferencing " border="0" /></a>
-      </td>
-     </tr>
-     <tr><td bgcolor="#000000" height="1"></td></tr>
-     <tr>
       <td>
         <table width="100%" bgcolor="#e2e2e2" cellpadding="10" cellspacing="0" border="0">
         <tr><td><font face="Helvetica,Arial,Sans-serif">
