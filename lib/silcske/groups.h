@@ -36,5 +36,6 @@ SilcSKEStatus silc_ske_get_group_by_number(int number,
 SilcSKEStatus silc_ske_get_group_by_name(const char *name,
 					 SilcSKEDiffieHellmanGroup *ret);
 char *silc_ske_get_supported_groups();
+int silc_ske_group_get_number(SilcSKEDiffieHellmanGroup group);
 
 #endif

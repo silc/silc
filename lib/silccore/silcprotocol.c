@@ -144,3 +144,14 @@ void silc_protocol_execute_final(void *qptr, int type,
 
   protocol->final_callback(qptr, 0, context, fd);
 }
+
+/* Cancels the execution of the next state of the protocol. */
+
+void silc_protocol_cancel(void *qptr, void *context)
+{
+  SilcProtocol protocol = (SilcProtocol)context;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  silc_task_unregister_by_callback(qptr, protocol->protocol->callback);
+}

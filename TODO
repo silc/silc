@@ -56,12 +56,6 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o Implement PFS (Perfect Forward Secrecy) flag in SKE (and in client and
-   server, actually).  If PFS is set, re-key must cause new key exchange.
-   This is required by the SILC protocol.
-
- o Re-key in general is actually missing (from everywhere) and must be done.
-
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be
    defined.  zlib package is already included into the lib dir (in CVS,

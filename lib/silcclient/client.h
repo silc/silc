@@ -32,6 +32,18 @@ typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
 #include "command.h"
 #include "silcapi.h"
 
+/* Generic rekey context for connections */
+typedef struct {
+  /* Current sending encryption key, provided for re-key. The `pfs'
+     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
+  unsigned char *send_enc_key;
+  uint32 enc_key_len;
+  int ske_group;
+  bool pfs;
+  uint32 timeout;
+  void *context;
+} *SilcClientRekey;
+
 /* Connection structure used in client to associate all the important
    connection specific data to this structure. */
 struct SilcClientConnectionStruct {
@@ -74,8 +86,6 @@ struct SilcClientConnectionStruct {
   SilcCipher send_key;
   SilcCipher receive_key;
   SilcHmac hmac;
-  unsigned char *hmac_key;
-  uint32 hmac_key_len;
   SilcHash hash;
 
   /* Client ID and Channel ID cache. Messages transmitted in SILC network
@@ -106,6 +116,9 @@ struct SilcClientConnectionStruct {
 
   /* Set away message */
   SilcClientAway *away;
+
+  /* Re-key context */
+  SilcClientRekey rekey;
 
   /* Pointer back to the SilcClient. This object is passed to the application
      and the actual client object is accesible through this pointer. */

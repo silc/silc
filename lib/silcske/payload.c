@@ -196,7 +196,8 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
   if (!payload)
     return SILC_SKE_STATUS_ERROR;
 
-  if (ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL &&
+  if (ske->start_payload && 
+      ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL &&
       !payload->sign_data) {
     SILC_LOG_DEBUG(("Signature data is missing"));
     return SILC_SKE_STATUS_ERROR;
@@ -273,7 +274,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
     goto err;
   }
 
-  if (payload->pk_len < 5) {
+  if (payload->pk_type == 0) {
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
@@ -302,7 +303,8 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
     goto err;
   }
 
-  if ((ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) &&
+  if (ske->start_payload && 
+      (ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) &&
       (payload->sign_len < 3 || !payload->sign_data)) {
     SILC_LOG_DEBUG(("The signature data is missing - both parties are "
 		    "required to do authentication"));

@@ -81,7 +81,6 @@ typedef struct {
   bool responder;		    /* TRUE if we are receiving party */
   bool pfs;			    /* TRUE if PFS is to be used */
   SilcSKE ske;			    /* Defined if PFS is used */
-  SilcSKEKeyMaterial *keymat;	    /* Defined if PFS is used */
   SilcPacketContext *packet;
 } SilcClientRekeyInternalContext;
 

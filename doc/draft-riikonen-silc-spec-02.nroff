@@ -1787,6 +1787,13 @@ and the protocol results to new key material.  See [SILC3] for more
 information.  After the SILC_PACKET_REKEY packet is sent the sender
 will perform the SKE protocol.
 
+If PFS flag was set the resulted key material is processed as described
+in the section Processing the Key Material in [SILC3].  The difference
+with re-key in the processing is that the initial data for the hash 
+function is just the resulted key material and not the HASH as it
+is not computed at all with re-key.  Other than that, the key processing
+it equivalent to normal SKE negotiation.
+
 If PFS flag was not set, which is the default case, then re-key is done
 without executing SKE protocol.  In this case, the new key is created by
 providing the current sending encryption key to the SKE protocol's key

@@ -124,5 +124,6 @@ void silc_protocol_execute(void *qptr, int type,
 			   long secs, long usecs);
 void silc_protocol_execute_final(void *qptr, int type, 
 				 void *context, int fd);
+void silc_protocol_cancel(void *qptr, void *context);
 
 #endif

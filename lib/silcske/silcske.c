@@ -263,20 +263,22 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   payload->x = e;
 
   /* Get public key */
-  payload->pk_data = silc_pkcs_public_key_encode(public_key, &pk_len);
-  if (!payload->pk_data) {
-    silc_mp_clear(x);
-    silc_free(x);
-    silc_mp_clear(&e);
-    silc_free(payload);
-    ske->status = SILC_SKE_STATUS_OK;
-    return ske->status;
+  if (public_key) {
+    payload->pk_data = silc_pkcs_public_key_encode(public_key, &pk_len);
+    if (!payload->pk_data) {
+      silc_mp_clear(x);
+      silc_free(x);
+      silc_mp_clear(&e);
+      silc_free(payload);
+      ske->status = SILC_SKE_STATUS_OK;
+      return ske->status;
+    }
+    payload->pk_len = pk_len;
   }
-  payload->pk_len = pk_len;
   payload->pk_type = SILC_SKE_PK_TYPE_SILC;
 
   /* Compute signature data if we are doing mutual authentication */
-  if (ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
+  if (private_key && ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
     unsigned char hash[32], sign[1024];
     uint32 hash_len, sign_len;
 
@@ -357,12 +359,14 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   silc_mp_powm(KEY, &payload->x, ske->x, &ske->prop->group->group);
   ske->KEY = KEY;
 
-  SILC_LOG_DEBUG(("Verifying public key"));
-
-  if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
-				   &public_key)) {
-    status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
-    goto err;
+  if (payload->pk_data) {
+    SILC_LOG_DEBUG(("Verifying public key"));
+    
+    if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
+				     &public_key)) {
+      status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+      goto err;
+    }
   }
 
   if (verify_key) {
@@ -370,37 +374,39 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 			   payload->pk_type, verify_context);
     if (status != SILC_SKE_STATUS_OK)
       goto err;
-  }  
 
-  SILC_LOG_DEBUG(("Public key is authentic"));
-
-  /* Compute the hash value */
-  status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
-  if (status != SILC_SKE_STATUS_OK)
-    goto err;
-
-  ske->hash = silc_calloc(hash_len, sizeof(unsigned char));
-  memcpy(ske->hash, hash, hash_len);
-  ske->hash_len = hash_len;
-
-  SILC_LOG_DEBUG(("Verifying signature (HASH_i)"));
-
-  /* Verify signature */
-  silc_pkcs_public_key_data_set(ske->prop->pkcs, public_key->pk, 
-				public_key->pk_len);
-  if (silc_pkcs_verify(ske->prop->pkcs, payload->sign_data, 
-		       payload->sign_len, hash, hash_len) == FALSE) {
-
-    SILC_LOG_DEBUG(("Signature don't match"));
-
-    status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
-    goto err;
+    SILC_LOG_DEBUG(("Public key is authentic"));
   }
 
-  SILC_LOG_DEBUG(("Signature is Ok"));
+  if (payload->pk_data) {
+    /* Compute the hash value */
+    status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
+    if (status != SILC_SKE_STATUS_OK)
+      goto err;
 
-  silc_pkcs_public_key_free(public_key);
-  memset(hash, 'F', hash_len);
+    ske->hash = silc_calloc(hash_len, sizeof(unsigned char));
+    memcpy(ske->hash, hash, hash_len);
+    ske->hash_len = hash_len;
+
+    SILC_LOG_DEBUG(("Verifying signature (HASH)"));
+
+    /* Verify signature */
+    silc_pkcs_public_key_data_set(ske->prop->pkcs, public_key->pk, 
+				  public_key->pk_len);
+    if (silc_pkcs_verify(ske->prop->pkcs, payload->sign_data, 
+			 payload->sign_len, hash, hash_len) == FALSE) {
+      
+      SILC_LOG_DEBUG(("Signature don't match"));
+      
+      status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
+      goto err;
+    }
+
+    SILC_LOG_DEBUG(("Signature is Ok"));
+    
+    silc_pkcs_public_key_free(public_key);
+    memset(hash, 'F', hash_len);
+  }
 
   /* Call the callback. */
   if (callback)
@@ -585,12 +591,10 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
 }
 
 /* This function receives the Key Exchange Payload from the initiator.
-   After processing the payload this then selects random number x,
-   such that 1 < x < q and computes f = g ^ x mod p. This then puts
-   the result f to a Key Exchange Payload which is later processed
-   in ske_responder_finish function. The callback function should
-   not touch the payload (it should merely call the ske_responder_finish
-   function). */
+   This also performs the mutual authentication if required. Then, this 
+   function first generated a random number x, such that 1 < x < q
+   and computes f = g ^ x mod p. This then puts the result f to a Key
+   Exchange Payload. */
 
 SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
 					 SilcBuffer ke_payload,
@@ -616,7 +620,8 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
 
   /* Verify the received public key and verify the signature if we are
      doing mutual authentication. */
-  if (ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
+  if (ske->start_payload && 
+      ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
     SilcPublicKey public_key = NULL;
     unsigned char hash[32];
     uint32 hash_len;
@@ -645,7 +650,7 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
     if (status != SILC_SKE_STATUS_OK)
       return status;
 
-    SILC_LOG_DEBUG(("Verifying signature"));
+    SILC_LOG_DEBUG(("Verifying signature (HASH_i)"));
     
     /* Verify signature */
     silc_pkcs_public_key_data_set(ske->prop->pkcs, public_key->pk, 
@@ -698,9 +703,9 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
   return status;
 }
 
-/* This function computes the secret shared key KEY = e ^ x mod p, and, 
-   a hash value to be signed and sent to the other end. This then
-   encodes Key Exchange Payload and sends it to the other end. */
+/* This functions generates the secret key KEY = e ^ x mod p, and, a hash
+   value to be signed and sent to the other end. This then encodes Key
+   Exchange Payload and sends it to the other end. */
 
 SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 					SilcPublicKey public_key,
@@ -717,11 +722,6 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!public_key || !private_key) {
-    status = SILC_SKE_STATUS_ERROR;
-    goto err;
-  }
-
   SILC_LOG_DEBUG(("Computing KEY = e ^ x mod p"));
 
   /* Compute the shared secret key */
@@ -731,40 +731,42 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
 	       &ske->prop->group->group);
   ske->KEY = KEY;
 
-  SILC_LOG_DEBUG(("Getting public key"));
+  if (public_key && private_key) {
+    SILC_LOG_DEBUG(("Getting public key"));
+    
+    /* Get the public key */
+    pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+    if (!pk) {
+      status = SILC_SKE_STATUS_ERROR;
+      goto err;
+    }
+    ske->ke2_payload->pk_data = pk;
+    ske->ke2_payload->pk_len = pk_len;
+    
+    SILC_LOG_DEBUG(("Computing HASH value"));
+    
+    /* Compute the hash value */
+    memset(hash, 0, sizeof(hash));
+    status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
+    if (status != SILC_SKE_STATUS_OK)
+      goto err;
 
-  /* Get the public key */
-  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
-  if (!pk) {
-    status = SILC_SKE_STATUS_ERROR;
-    goto err;
+    ske->hash = silc_calloc(hash_len, sizeof(unsigned char));
+    memcpy(ske->hash, hash, hash_len);
+    ske->hash_len = hash_len;
+    
+    SILC_LOG_DEBUG(("Signing HASH value"));
+    
+    /* Sign the hash value */
+    silc_pkcs_private_key_data_set(ske->prop->pkcs, private_key->prv, 
+				   private_key->prv_len);
+    silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len);
+    ske->ke2_payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
+    memcpy(ske->ke2_payload->sign_data, sign, sign_len);
+    memset(sign, 0, sizeof(sign));
+    ske->ke2_payload->sign_len = sign_len;
   }
-  ske->ke2_payload->pk_data = pk;
-  ske->ke2_payload->pk_len = pk_len;
   ske->ke2_payload->pk_type = pk_type;
-
-  SILC_LOG_DEBUG(("Computing HASH value"));
-
-  /* Compute the hash value */
-  memset(hash, 0, sizeof(hash));
-  status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
-  if (status != SILC_SKE_STATUS_OK)
-    goto err;
-
-  ske->hash = silc_calloc(hash_len, sizeof(unsigned char));
-  memcpy(ske->hash, hash, hash_len);
-  ske->hash_len = hash_len;
-
-  SILC_LOG_DEBUG(("Signing HASH value"));
-
-  /* Sign the hash value */
-  silc_pkcs_private_key_data_set(ske->prop->pkcs, private_key->prv, 
-				 private_key->prv_len);
-  silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len);
-  ske->ke2_payload->sign_data = silc_calloc(sign_len, sizeof(unsigned char));
-  memcpy(ske->ke2_payload->sign_data, sign, sign_len);
-  memset(sign, 0, sizeof(sign));
-  ske->ke2_payload->sign_len = sign_len;
 
   /* Encode the Key Exchange Payload */
   status = silc_ske_payload_ke_encode(ske, ske->ke2_payload,

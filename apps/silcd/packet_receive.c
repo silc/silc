@@ -2036,6 +2036,7 @@ void silc_server_rekey(SilcServer server,
 {
   SilcProtocol protocol;
   SilcServerRekeyInternalContext *proto_ctx;
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -2045,6 +2046,7 @@ void silc_server_rekey(SilcServer server,
   proto_ctx->server = (void *)server;
   proto_ctx->sock = sock;
   proto_ctx->responder = TRUE;
+  proto_ctx->pfs = idata->rekey->pfs;
       
   /* Perform rekey protocol. Will call the final callback after the
      protocol is over. */
@@ -2052,6 +2054,7 @@ void silc_server_rekey(SilcServer server,
 		      &protocol, proto_ctx, silc_server_rekey_final);
   sock->protocol = protocol;
 
-  /* Run the protocol */
-  protocol->execute(server->timeout_queue, 0, protocol, sock->sock, 0, 0);
+  if (proto_ctx->pfs == FALSE)
+    /* Run the protocol */
+    protocol->execute(server->timeout_queue, 0, protocol, sock->sock, 0, 0);
 }

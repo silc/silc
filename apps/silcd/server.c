@@ -3688,8 +3688,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     silc_protocol_cancel(server->timeout_queue, protocol);
     silc_protocol_free(protocol);
     sock->protocol = NULL;
-    if (ctx->keymat)
-      silc_ske_free_key_material(ctx->keymat);
     if (ctx->packet)
       silc_packet_context_free(ctx->packet);
     if (ctx->ske)
@@ -3707,8 +3705,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   /* Cleanup */
   silc_protocol_free(protocol);
   sock->protocol = NULL;
-  if (ctx->keymat)
-    silc_ske_free_key_material(ctx->keymat);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
   if (ctx->ske)

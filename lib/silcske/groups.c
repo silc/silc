@@ -160,3 +160,10 @@ char *silc_ske_get_supported_groups()
 
   return list;
 }
+
+/* Returns the number of the `group'. */
+
+int silc_ske_group_get_number(SilcSKEDiffieHellmanGroup group)
+{
+  return group->number;
+}

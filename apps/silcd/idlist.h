@@ -40,6 +40,18 @@ typedef struct {
   uint32 key_len;
 } *SilcServerChannelRekey;
 
+/* Generic rekey context for connections */
+typedef struct {
+  /* Current sending encryption key, provided for re-key. The `pfs'
+     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
+  unsigned char *send_enc_key;
+  uint32 enc_key_len;
+  int ske_group;
+  bool pfs;
+  uint32 timeout;
+  void *context;
+} *SilcServerRekey;
+
 /*
    Generic ID list data structure.
 
@@ -58,11 +70,8 @@ typedef struct {
   SilcCipher send_key;
   SilcCipher receive_key;
 
-  /* Current sending encryption key, provided for re-key. The `pfs'
-     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
-  unsigned char *send_enc_key;
-  uint32 enc_key_len;
-  bool pfs;
+  /* Re-key context */
+  SilcServerRekey rekey;
 
   /* Hash selected in the SKE protocol, NULL if not needed at all */
   SilcHash hash;
@@ -106,7 +115,7 @@ typedef struct {
        Logical name of the server. There is no limit of the length of the
        server name. This is usually the same name as defined in DNS.
 
-   int server_type
+   uint8 server_type
 
        Type of the server. SILC_SERVER or SILC_ROUTER are the possible
        choices for this.
@@ -147,7 +156,7 @@ struct SilcServerEntryStruct {
   SilcIDListDataStruct data;
 
   char *server_name;
-  int server_type;
+  uint8 server_type;
   SilcServerID *id;
   char *server_info;
   char *motd;
@@ -257,7 +266,7 @@ typedef struct SilcChannelClientEntryStruct {
        nickname. Nickname is not relevant information that would need to be 
        saved as plain.
 
-   int mode
+   uint32 mode
 
        Client's mode.  Client maybe for example server operator or
        router operator (SILC operator).
@@ -300,7 +309,7 @@ struct SilcClientEntryStruct {
   char *username;
   char *userinfo;
   SilcClientID *id;
-  int mode;
+  uint32 mode;
 
   long last_command;
   uint8 fast_command;

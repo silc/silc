@@ -402,6 +402,15 @@ two SILC clients.  In normal case, where client is connecting to the
 server or server is connecting to the router the Mutual Authentication
 flag is not necessary.
 
+When performing re-key with PFS selected this is the only payload that
+is sent in the SKE protocol.  The Key Exchange Start Payload is not sent
+at all.  However, this payload does not have all the fields present.
+In re-key with PFS the public key and a possible signature data should
+not be present.  If they are present they must be ignored.  The only
+field that is present is the public data that is used to create the
+new key material.  In the re-key the Mutual Authentication flag must
+also be ignored.
+
 This payload is sent inside SILC_PACKET_KEY_EXCHANGE_1 and inside
 SILC_PACKET_KEY_EXCHANGE_2 packet types.  The initiator uses the 
 SILC_PACKET_KEY_EXCHANGE_1 and the responder the latter.
