@@ -45,6 +45,8 @@ TODO/bugs In SILC Server
 
 	o Testing
 
+ o Close unconfigured client connections in rehash.
+
  o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
    seconds.  Now it is possible to accept n incoming JOIN commands

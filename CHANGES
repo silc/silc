@@ -1,3 +1,12 @@
+Wed Jun 26 10:38:11 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a bug in silc_string_regexify which did not add '^'
+	  at the start of each string, and thus the matching was
+	  not explicit.  For example ban list iikone@*!*@* would
+	  match also "priikone", which is wrong, it would have to be
+	  *iikone@*!*@* to match also "priikone".  Affected
+	  file lib/silcutil/unix/silcunixutil.c.
+
 Tue Jun 25 18:47:39 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Enable all local server connections before updating client

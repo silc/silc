@@ -38,30 +38,32 @@ char *silc_string_regexify(const char *string)
 
   len = strlen(string);
   count = 4;
-  for (i = 0; i < len; i++)
+  for (i = 0; i < len; i++) {
     if (string[i] == '*' || string[i] == '?')
-      count++;
+      count++;			/* Will add '.' */
+    if (string[i] == ',')
+      count += 2;		/* Will add '|' and '^' */
+  }
 
-  regex = silc_calloc(len + count, sizeof(*regex));
+  regex = silc_calloc(len + count + 1, sizeof(*regex));
 
   count = 0;
-  regex[count] = '(';
-  count++;
+  regex[count++] = '(';
+  regex[count++] = '^';
 
   for (i = 0; i < len; i++) {
     if (string[i] == '*' || string[i] == '?') {
       regex[count] = '.';
       count++;
     } else if (string[i] == ',') {
-      if (i + 1 == len)
+      if (i + 2 == len)
 	continue;
-      regex[count] = '|';
-      count++;
+      regex[count++] = '|';
+      regex[count++] = '^';
       continue;
     }
 
-    regex[count] = string[i];
-    count++;
+    regex[count++] = string[i];
   }
 
   regex[count++] = ')';
