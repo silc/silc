@@ -4877,13 +4877,19 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
 SILC_TASK_CALLBACK(silc_server_command_detach_timeout)
 {
   QuitInternal q = (QuitInternal)context;
-  SilcClientEntry client = (SilcClientEntry)q->sock;
+  SilcClientID *client_id = (SilcClientID *)q->sock;
+  SilcClientEntry client;
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (client->mode & SILC_UMODE_DETACHED)
+  client = silc_idlist_find_client_by_id(q->server->local_list, client_id,
+					 FALSE, NULL);
+
+  if (client && client->mode & SILC_UMODE_DETACHED)
     silc_server_free_client_data(q->server, NULL, client, TRUE,
 				 "Detach timeout");
+
+  silc_free(client_id);
   silc_free(q);
 }
 
@@ -4899,8 +4905,7 @@ SILC_SERVER_CMD_FUNC(detach)
 
   if (server->config->detach_disabled) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_DETACH,
-					  SILC_STATUS_ERR_UNKNOWN_COMMAND,
-					  0);
+					  SILC_STATUS_ERR_UNKNOWN_COMMAND, 0);
     goto out;
   }
 
@@ -4933,7 +4938,7 @@ SILC_SERVER_CMD_FUNC(detach)
   if (server->config->detach_timeout) {
     q = silc_calloc(1, sizeof(*q));
     q->server = server;
-    q->sock = (void *)client;
+    q->sock = silc_id_dup(client->id, SILC_ID_CLIENT);
     silc_schedule_task_add(server->schedule, 0, 
 			   silc_server_command_detach_timeout,
 			   q, server->config->detach_timeout * 60,

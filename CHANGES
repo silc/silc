@@ -1,3 +1,9 @@
+Tue Jun  4 18:36:05 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed detach timeout handling to use Client ID and not
+	  the actual client entry which may be freed in the callback.
+	  Affected file silcd/command.c.
+
 Thu May 30 15:53:45 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged c0ffee's multiple interface support patch.
