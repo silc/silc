@@ -4,6 +4,9 @@ Sun Jan  9 14:28:51 CET 2005  Pekka Riikonen <priikone@silcnet.org>
 	  deleted.  Affected files silcd/command.c, server.c,
 	  server_util.c.
 
+	* Close socket when connecting to router fails.  Affected
+	  file silcd/server.c.
+
 Tue Jan  4 13:06:26 CET 2005  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Adopt configuration toolchain to current auto-tools.

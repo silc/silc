@@ -944,7 +944,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
   }
   sconn->retry_count++;
   sconn->retry_timeout = sconn->retry_timeout +
-    silc_rng_get_rn32(server->rng) % SILC_SERVER_RETRY_RANDOMIZER;
+    (silc_rng_get_rn32(server->rng) % SILC_SERVER_RETRY_RANDOMIZER);
 
   /* If we've reached max retry count, give up. */
   if ((sconn->retry_count > param->reconnect_count) &&
@@ -969,29 +969,29 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
-/* callback for async connection to remote router */
-
+/* Callback for async connection to remote router */
+      
 SILC_TASK_CALLBACK(silc_server_connection_established)
-{
+{ 
   SilcServer server = app_context;
   SilcServerConnection sconn = (SilcServerConnection)context;
   int sock = fd;
   int opt = EINVAL, optlen = sizeof(opt);
-
+    
   silc_schedule_task_del_by_fd(server->schedule, sock);
   silc_schedule_unset_listen_fd(server->schedule, sock);
-
-  if (silc_net_get_socket_opt(sock, SOL_SOCKET, SO_ERROR, &opt, &optlen) ||
-      (opt != 0)) {
+  
+  silc_net_get_socket_opt(sock, SOL_SOCKET, SO_ERROR, &opt, &optlen);
+  if (opt != 0) {
     SILC_LOG_ERROR(("Could not connect to router %s:%d: %s",
-		    sconn->remote_host, sconn->remote_port,
-		    strerror(opt)));
-    if (!sconn->no_reconnect)
+		    sconn->remote_host, sconn->remote_port, strerror(opt)));
+    silc_net_close_connection(sock);
+    if (!sconn->no_reconnect) {
       silc_schedule_task_add(server->schedule, 0,
 			     silc_server_connect_to_router_retry,
-			     context, 0, 1, SILC_TASK_TIMEOUT,
+			     context, 1, 0, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
-    else {
+    } else {
       silc_server_config_unref(&sconn->conn);
       silc_free(sconn->remote_host);
       silc_free(sconn->backup_replace_ip);
@@ -999,13 +999,14 @@ SILC_TASK_CALLBACK(silc_server_connection_established)
     }
     return;
   }
-
+                 
   SILC_LOG_DEBUG(("Connection to router %s:%d established", sconn->remote_host,
-		  sconn->remote_port));
-
+		 sconn->remote_port));
+  
   /* Continue with key exchange protocol */
   silc_server_start_key_exchange(server, sconn, sock);
-}
+}   
+    
 /* Generic routine to use connect to a router. */
 
 SILC_TASK_CALLBACK(silc_server_connect_router)
@@ -1049,12 +1050,12 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not connect to router %s:%d",
 		    sconn->remote_host, sconn->remote_port));
-    if (!sconn->no_reconnect)
+    if (!sconn->no_reconnect) {
       silc_schedule_task_add(server->schedule, 0,
 			     silc_server_connect_to_router_retry,
-			     context, 0, 1, SILC_TASK_TIMEOUT,
+			     context, 1, 0, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
-    else {
+    } else {
       silc_server_config_unref(&sconn->conn);
       silc_free(sconn->remote_host);
       silc_free(sconn->backup_replace_ip);
@@ -1221,7 +1222,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     if (!sconn->no_reconnect) {
       silc_schedule_task_add(server->schedule, 0,
 			     silc_server_connect_to_router_retry,
-			     sconn, 0, 1, SILC_TASK_TIMEOUT,
+			     sconn, 1, 0, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
       return;
     }
@@ -1264,7 +1265,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     if (!sconn->no_reconnect) {
       silc_schedule_task_add(server->schedule, 0,
 			     silc_server_connect_to_router_retry,
-			     sconn, 0, 1, SILC_TASK_TIMEOUT,
+			     sconn, 1, 0, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
       return;
     }
@@ -1399,7 +1400,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
     if (!sconn->no_reconnect) {
       silc_schedule_task_add(server->schedule, 0,
 			     silc_server_connect_to_router_retry,
-			     sconn, 0, 1, SILC_TASK_TIMEOUT,
+			     sconn, 1, 0, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
       goto out2;
     }
