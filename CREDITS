@@ -31,8 +31,9 @@ N: Pekka Riikonen
 E: priikone@silcnet.org
 E: priikone@ssh.com
 P: 1024/A924ED4F AD 82 53 2D 84 FF C7 D1  FF 63 19 0E 1A 78 9F 8A  A9 24 ED 4F
-D: Protocol architet
+D: Protocol architect
 D: Main developer
+D: SILCNet coordinator and administrator
 S: Snellmanninkatu 34 A 15
 S: 70100 Kuopio
 S: Finland
@@ -50,9 +51,11 @@ N: Lubomir Sedlacik
 E: salo@Xtrmntr.org
 W: http://Xtrmntr.org
 P: 1024/7E3B70E2 DB EC 8B EC 9A 90 EC EC  0F EF 71 6E 59 CE B7 0B  7E 3B 70 E2
-D: webpage
+D: web pages
 D: configure.in bugfixes
-S: A.Hlinku 59/83
+D: NetBSD and Solaris packages
+D: project server administrator
+D: mirrors coordinator
 S: 92101 Piestany
 S: Slovakia
 
@@ -76,6 +79,7 @@ N: Tamas SZERB
 E: toma@rulez.org
 P: 1024D/69C0FA93 D75C E26A 13D7 56EA 4808  38C6 3ED7 0955 69C0 FA93
 D: bugfixes
+D: Debian packages
 D: wannabe
 S: Arnyas ut 38-40/H
 S: 1121 Budapest
