@@ -183,6 +183,8 @@ New pair of keys will be created.  Please, answer to following questions.\n\
       while (TRUE) {
 	printf("\n");
 	pass2 = silc_get_input("Retype private key passphrase: ", TRUE);
+	if (!pass2)
+	  pass2 = strdup("");
 	if (!strcmp(pass, pass2))
 	  break;
 	fprintf(stderr, "\nPassphrases do not match");
@@ -401,6 +403,8 @@ bool silc_change_private_key_passphrase(const char *prv_filename,
       while (TRUE) {
 	printf("\n");
 	pass2 = silc_get_input("Retype new passphrase: ", TRUE);
+	if (!pass2)
+	  pass2 = strdup("");
 	if (!strcmp(pass, pass2))
 	  break;
 	fprintf(stderr, "\nPassphrases do not match");
