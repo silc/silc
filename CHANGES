@@ -1,3 +1,9 @@
+Wed Nov 14 00:18:08 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the silc_idcache_list_* routines to really support
+	  the dynamic list.  Fixes a crash.  Affected file is
+	  lib/silccore/silcidcache.c.
+
 Tue Nov 13 00:49:17 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Update conn->local_entry->nickname after giving NICK
