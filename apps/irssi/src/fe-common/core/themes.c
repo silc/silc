@@ -128,9 +128,9 @@ static const char *fgcolorformats = "nkrgybmpcwKRGYBMPCW";
 static const char *bgcolorformats = "n01234567";
 
 #define IS_FGCOLOR_FORMAT(c) \
-        ((c) != '\0' && strchr(fgcolorformats, c) != NULL)
+        ((c) != '\0' && strchr(fgcolorformats, (c)) != NULL)
 #define IS_BGCOLOR_FORMAT(c) \
-        ((c) != '\0' && strchr(bgcolorformats, c) != NULL)
+        ((c) != '\0' && strchr(bgcolorformats, (c)) != NULL)
 
 /* append "variable" part in $variable, ie. not the contents of the variable */
 static void theme_format_append_variable(GString *str, const char **format)
@@ -413,9 +413,9 @@ static char *theme_format_compress_colors(THEME_REC *theme, const char *format)
 			if (IS_OLD_FORMAT(*format, last_fg, last_bg)) {
 				/* active color set again */
 			} else if (IS_FGCOLOR_FORMAT(*format) &&
-				   (*format != 'n' || format[2] == 'n') &&
 				   format[1] == '%' &&
-				   IS_FGCOLOR_FORMAT(format[2])) {
+				   IS_FGCOLOR_FORMAT(format[2]) &&
+				   (*format != 'n' || format[2] == 'n')) {
 				/* two fg colors in a row. bg colors are
 				   so rare that we don't bother checking
 				   them */

@@ -322,6 +322,12 @@ int silc_client_start_key_exchange(SilcClient client,
   /* Allocate new socket connection object */
   silc_socket_alloc(fd, SILC_SOCKET_TYPE_SERVER, (void *)conn, &conn->sock);
 
+  /* Sometimes when doing quick reconnects the new socket may be same as
+     the old one and there might be pending stuff for the old socket. 
+     If new one is same then those pending sutff might cause problems.
+     Make sure they do not do that. */
+  silc_schedule_task_del_by_fd(client->schedule, fd);
+
   conn->nickname = strdup(client->username);
   conn->sock->hostname = conn->remote_host;
   conn->sock->ip = strdup(conn->remote_host);
@@ -1177,7 +1183,6 @@ void silc_client_close_connection(SilcClient client,
 	SILC_PROTOCOL_CLIENT_CONNECTION_AUTH) {
       sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
       silc_protocol_execute_final(sock->protocol, client->schedule);
-      sock->protocol = NULL;
       /* The application will recall this function with these protocols
 	 (the ops->connect client operation). */
       return;
@@ -1230,11 +1235,9 @@ void silc_client_close_connection(SilcClient client,
     if (conn->server_cache)
       silc_idcache_del_all(conn->server_cache);
 
-    /* Free data */
+    /* Free data (my ID is freed in above silc_client_del_client) */
     if (conn->remote_host)
       silc_free(conn->remote_host);
-    if (conn->local_id)
-      silc_free(conn->local_id);
     if (conn->local_id_data)
       silc_free(conn->local_id_data);
     if (conn->send_key)

@@ -188,6 +188,11 @@ void silc_connect(SilcClient client, SilcClientConnection conn, int success)
 {
   SILC_SERVER_REC *server = conn->context;
 
+  if (!server && !success) {
+    silc_client_close_connection(client, NULL, conn);
+    return;
+  }
+
   if (success) {
     server->connected = TRUE;
     signal_emit("event connected", 1, server);

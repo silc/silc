@@ -268,7 +268,9 @@ typedef struct {
 
   /* Called to indicate that connection was either successfully established
      or connecting failed.  This is also the first time application receives
-     the SilcClientConnection objecet which it should save somewhere. */
+     the SilcClientConnection objecet which it should save somewhere.
+     If the `success' is FALSE the application must always call the function
+     silc_client_close_connection. */
   void (*connect)(SilcClient client, SilcClientConnection conn, int success);
 
   /* Called to indicate that connection was disconnected to the server. */

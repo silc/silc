@@ -4,6 +4,26 @@ Wed Jul 25 18:43:54 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  does not have it defined.  Affected files are
 	  lib/silcutil/[unix/win32]/silc[unix/win32]net.c.
 
+	* Fixed buffer overflow from Irssi SILC Client.  Affected
+	  file irssi/src/fe-common/core/themes.c.
+
+	* Fixed double free in client library in the file
+	  lib/silcclient/client.c when disconnecting from server.
+
+	* Applied double free patch from cras to Irssi SILC client.
+	  Affected files irssi/src/core/[modules/expandos].c
+
+	* Fixed the disconnection handling to Irssi SILC Client.
+	  The application must call silc_client_close_connection
+	  in ops->connect client operation in case of failure of
+	  the connection.  Affected file is
+	  irssi/src/silc/core/client_ops.c.
+
+	* Do not set sock->protocol to NULL in the function
+	  silc_client_close_connection after executing the protocol's
+	  final callback since the sock might not be valid anymore.
+	  Affected file lib/silcclient/client.c.
+
 Wed Jul 25 16:04:35 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not enable SILC_THREADS if the linking with libpthread
