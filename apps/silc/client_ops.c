@@ -318,7 +318,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
       break;
 
-    case SILC_COMMAND_NAMES:
+    case SILC_COMMAND_USERS:
       silc_list_start(conn->current_channel->clients);
       while ((chu = silc_list_get(conn->current_channel->clients)) 
 	     != SILC_LIST_END) {

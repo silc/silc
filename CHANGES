@@ -1,3 +1,25 @@
+Tue Jan 30 00:05:05 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Renames NAMES command to USERS command.  The NAMES was named that
+	  due to historical reasons.  Now it is renamed.  Also, rewrote
+	  parts of the USERS command.  The nickname list is not sent anymore
+	  by the server.  Only Client ID and mode lists are sent in the USERS
+	  command.  Changed this also to the protocol specification.
+
+	  The client now resolves the names and stuff after it receives
+	  the USERS list from the server when joining to the channel.
+
+	* WHOIS and IDENTIFY commands has been changed to support multiple
+	  Client ID's per command.  One can now search for multiple users
+	  in the network by sending only one WHOIS or IDENTIFY command.
+	  Changed the code and the protocol specifications.
+
+	* Remove silc_server_command_identify_parse and changed that IDENTIFY
+	  uses silc_server_command_whois_parse to parse the request. */
+
+	* If normal server, do not parse the WHOIS and IDENTIFY requests
+	  before sending it to the router.  Saves some time.
+
 Sun Jan 28 16:19:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed JOIN command on client library.  Wrong number of arguments

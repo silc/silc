@@ -62,7 +62,7 @@ SilcClientCommandReply silc_command_reply_list[] =
   SILC_CLIENT_CMD_REPLY(die, DIE),
   SILC_CLIENT_CMD_REPLY(silcoper, SILCOPER),
   SILC_CLIENT_CMD_REPLY(leave, LEAVE),
-  SILC_CLIENT_CMD_REPLY(names, NAMES),
+  SILC_CLIENT_CMD_REPLY(users, USERS),
 
   { NULL, 0 },
 };
@@ -967,10 +967,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
   silc_client_command_reply_free(cmd);
 }
 
-/* Reply to NAMES command. Received list of client names on the channel 
-   we requested. */
+/* Reply to USERS command. Received list of client ID's and theirs modes
+   on the channel we requested. */
 
-SILC_CLIENT_CMD_REPLY_FUNC(names)
+SILC_CLIENT_CMD_REPLY_FUNC(users)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
@@ -982,8 +982,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   unsigned char *tmp;
+  unsigned int tmp_len;
+  int i, k, len1, len2, list_count;
+  unsigned char **res_argv = NULL;
+  unsigned int *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
   char *name_list, *cp;
-  int i, k, len1, len2, list_count = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -997,66 +1000,42 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   }
 
   /* Get channel ID */
-  tmp = silc_argument_get_arg_type(cmd->args, 2, &len1);
-  if (!tmp) {
-    cmd->client->ops->say(cmd->client, conn, 
-			  "Cannot Channel ID: Bad reply packet");
-    COMMAND_REPLY_ERROR;
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (!tmp)
     goto out;
-  }
-  channel_id = silc_id_payload_parse_id(tmp, len1);
+  channel_id = silc_id_payload_parse_id(tmp, tmp_len);
 
-  /* Get the name list of the channel */
-  name_list = silc_argument_get_arg_type(cmd->args, 3, &len1);
-  if (!name_list) {
-    cmd->client->ops->say(cmd->client, conn, 
-			  "Cannot get user list: Bad reply packet");
-    COMMAND_REPLY_ERROR;
+  /* Get the list count */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+  if (!tmp)
     goto out;
-  }
+  SILC_GET32_MSB(list_count, tmp);
 
   /* Get Client ID list */
-  tmp = silc_argument_get_arg_type(cmd->args, 4, &len2);
-  if (!tmp) {
-    cmd->client->ops->say(cmd->client, conn, 
-			  "Cannot get user list: Bad reply packet");
-    COMMAND_REPLY_ERROR;
+  tmp = silc_argument_get_arg_type(cmd->args, 4, &tmp_len);
+  if (!tmp)
     goto out;
-  }
 
-  client_id_list = silc_buffer_alloc(len2);
-  silc_buffer_pull_tail(client_id_list, len2);
-  silc_buffer_put(client_id_list, tmp, len2);
+  client_id_list = silc_buffer_alloc(tmp_len);
+  silc_buffer_pull_tail(client_id_list, tmp_len);
+  silc_buffer_put(client_id_list, tmp, tmp_len);
 
   /* Get client mode list */
-  tmp = silc_argument_get_arg_type(cmd->args, 5, &len2);
-  if (!tmp) {
-    cmd->client->ops->say(cmd->client, conn, 
-			  "Cannot get user list: Bad reply packet");
-    COMMAND_REPLY_ERROR;
+  tmp = silc_argument_get_arg_type(cmd->args, 5, &tmp_len);
+  if (!tmp)
     goto out;
-  }
 
-  client_mode_list = silc_buffer_alloc(len2);
-  silc_buffer_pull_tail(client_mode_list, len2);
-  silc_buffer_put(client_mode_list, tmp, len2);
+  client_mode_list = silc_buffer_alloc(tmp_len);
+  silc_buffer_pull_tail(client_mode_list, tmp_len);
+  silc_buffer_put(client_mode_list, tmp, tmp_len);
 
-  /* Get the channel name */
+  /* Get channel entry */
   if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				   SILC_ID_CHANNEL, &id_cache)) {
+                                   SILC_ID_CHANNEL, &id_cache)) {
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
   channel = (SilcChannelEntry)id_cache->context;
-
-  /* Remove commas from list */
-  for (i = 0; i < len1; i++)
-    if (name_list[i] == ',') {
-      name_list[i] = ' ';
-      list_count++;
-    }
-  list_count++;
 
   /* Remove old client list from channel. */
   silc_list_start(channel->clients);
@@ -1065,52 +1044,67 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
     silc_free(chu);
   }
 
-  /* Cache the received name list, client ID's and modes. This cache expires
+  /* Cache the received Client ID's and modes. This cache expires
      whenever server sends notify message to channel. It means two things;
-     some user has joined or leaved the channel. */
-  cp = name_list;
+     some user has joined or leaved the channel. XXX! */
   for (i = 0; i < list_count; i++) {
-    int nick_len = strcspn(name_list, " ");
     unsigned short idp_len;
     unsigned int mode;
-    char *nickname = silc_calloc(nick_len + 1, sizeof(*nickname));
     SilcClientID *client_id;
     SilcClientEntry client;
 
-    memcpy(nickname, name_list, nick_len);
+    /* Client ID */
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
     client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
     silc_buffer_pull(client_id_list, idp_len);
-    
+
+    /* Mode */
     SILC_GET32_MSB(mode, client_mode_list->data);
     silc_buffer_pull(client_mode_list, 4);
 
     /* Check if we have this client cached already. */
     if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
 				     SILC_ID_CLIENT, &id_cache)) {
-      client = silc_calloc(1, sizeof(*client));
-      client->id = client_id;
-      silc_parse_nickname(nickname, &client->nickname, &client->server, 
-			  &client->num);
-      silc_free(nickname);
-
-      /* Add client to cache */
-      silc_idcache_add(conn->client_cache, client->nickname, SILC_ID_CLIENT,
-		       client_id, (void *)client, TRUE);
+      /* No we don't have it, query it from the server. Assemble argument
+	 table that will be sent fr the IDENTIFY command later. */
+      res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
+			      (res_argc + 1));
+      res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
+				   (res_argc + 1));
+      res_argv_types = silc_realloc(res_argv_types, sizeof(*res_argv_types) *
+				    (res_argc + 1));
+      res_argv[res_argc] = client_id_list->data;
+      res_argv_lens[res_argc] = idp_len;
+      res_argv_types[res_argc] = res_argc + 3;
+      res_argc++;
     } else {
+      /* Found the client, join it to the channel */
       client = (SilcClientEntry)id_cache->context;
+      chu = silc_calloc(1, sizeof(*chu));
+      chu->client = client;
+      chu->mode = mode;
+      silc_list_add(channel->clients, chu);
+
       silc_free(client_id);
-      silc_free(nickname);
       id_cache = NULL;
     }
+  }
 
-    chu = silc_calloc(1, sizeof(*chu));
-    chu->client = client;
-    chu->mode = mode;
-    silc_list_add(channel->clients, chu);
+  /* Query the client information from server if the list included clients
+     that we don't know about. */
+  if (res_argc) {
+#if 0
+    SilcBuffer res_cmd;
 
-    name_list += nick_len + 1;
+    res_cmd = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
+					  res_argc, res_argv, res_argv_lens,
+					  res_argv_types, 0);
+    silc_client_packet_send(cmd->client, cmd->conn->sock,
+			    SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
+			    buffer->data, buffer->len, TRUE);
+    goto out;
+#endif
   }
 
   name_list = cp;

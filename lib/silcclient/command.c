@@ -56,7 +56,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(silcoper, SILCOPER, "SILOPER",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER, 2),
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", SILC_CF_LAG | SILC_CF_REG, 2),
-  SILC_CLIENT_CMD(names, NAMES, "NAMES", SILC_CF_LAG | SILC_CF_REG, 2),
+  SILC_CLIENT_CMD(users, USERS, "USERS", SILC_CF_LAG | SILC_CF_REG, 2),
 
   { NULL, 0, NULL, 0, 0 },
 };
@@ -1164,10 +1164,10 @@ SILC_CLIENT_CMD_FUNC(leave)
   silc_client_command_free(cmd);
 }
 
-/* Command NAMES. Requests the names of the clients joined on requested
+/* Command USERS. Requests the USERS of the clients joined on requested
    channel. */
 
-SILC_CLIENT_CMD_FUNC(names)
+SILC_CLIENT_CMD_FUNC(users)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
@@ -1182,7 +1182,7 @@ SILC_CLIENT_CMD_FUNC(names)
   }
 
   if (cmd->argc != 2) {
-    cmd->client->ops->say(cmd->client, conn, "Usage: /NAMES <channel>");
+    cmd->client->ops->say(cmd->client, conn, "Usage: /USERS <channel>");
     COMMAND_ERROR;
     goto out;
   }
@@ -1213,9 +1213,9 @@ SILC_CLIENT_CMD_FUNC(names)
     goto out;
   }
 
-  /* Send NAMES command to the server */
+  /* Send USERS command to the server */
   idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_NAMES, 0, 1, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 0, 1, 
 					  1, idp->data, idp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
@@ -1230,8 +1230,8 @@ SILC_CLIENT_CMD_FUNC(names)
   /* XXX this is kludge and should be removed after pending command reply 
      support is added. Currently only commands may be pending not command
      replies. */
-  silc_client_command_pending(SILC_COMMAND_NAMES, 
-			      silc_client_command_names, NULL);
+  silc_client_command_pending(SILC_COMMAND_USERS, 
+			      silc_client_command_users, NULL);
 
   /* Notify application */
   COMMAND;
