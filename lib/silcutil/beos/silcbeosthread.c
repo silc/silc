@@ -16,6 +16,7 @@
   GNU General Public License for more details.
 
 */
+/* I used Apache's APR code as a reference here. */
 /* $Id$ */
 
 #include "silcincludes.h"
