@@ -2252,6 +2252,9 @@ void silc_server_remove_from_channels(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
+  if (!client || !client->id)
+    return;
+
   clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
   /* Remove the client from all channels. The client is removed from
