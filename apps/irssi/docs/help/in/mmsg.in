@@ -28,13 +28,13 @@ Settings
   mime_default_encoding - encoding to use if none specified
   mime_temp_dir         - where to store temporary files
 
-  mime_database		- Mailcap files defining MIME handlers
+  mime_database	        - Mailcap files defining MIME handlers
   mime_unlink_tempfiles - whether to keep temporary files
   mime_verbose          - Turn on status messages
-  mime_exec_param	- additional parameters to pass to /EXEC
+  mime_exec_param       - additional parameters to pass to /EXEC
 
 Examples
 
-/MMSG Foobar smiley.gif image/gif binary
-/MMSG -channel silc silc.patch text/x-patch 7bit
-/MMSG -sign * boing.mp3 audio/mpeg
+  /MMSG Foobar smiley.gif image/gif binary
+  /MMSG -channel silc silc.patch text/x-patch 7bit
+  /MMSG -sign * boing.mp3 audio/mpeg
