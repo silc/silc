@@ -572,6 +572,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 typedef struct {
   SilcClientEntry **clients;
   SilcUInt32 *clients_count;
+  bool found;
 } *SilcServerPublicKeyUser, SilcServerPublicKeyUserStruct;
 
 void silc_server_public_key_hash_foreach(void *key, void *context,
@@ -583,6 +584,8 @@ void silc_server_public_key_hash_foreach(void *key, void *context,
   /* Nothing was found, just return */
   if (!context)
     return;
+
+  uc->found = TRUE;
 
   (*uc->clients) = silc_realloc((*uc->clients),
                                 sizeof((**uc->clients)) *
@@ -620,8 +623,6 @@ void silc_server_query_check_attributes(SilcServer server,
     switch (attribute) {
 
       case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
-	found = TRUE;
-
 	SILC_LOG_DEBUG(("Finding clients by public key attribute"));
 
 	if (!silc_attribute_get_object(attr, &pk, sizeof(pk)))
@@ -642,10 +643,14 @@ void silc_server_query_check_attributes(SilcServer server,
 
 	  usercontext.clients = clients;
 	  usercontext.clients_count = clients_count;
+	  usercontext.found = FALSE;
 
 	  silc_hash_table_find_foreach(server->pk_hash, publickey,
 	                               silc_server_public_key_hash_foreach,
 	                               &usercontext);
+
+	  if (usercontext.found == TRUE) 
+	    found = TRUE;
 	} else {
 	  for (i = 0; i < *clients_count; i++) {
 	    entry = (*clients)[i];
@@ -656,6 +661,8 @@ void silc_server_query_check_attributes(SilcServer server,
 	    if (!silc_hash_table_find_by_context(server->pk_hash, publickey,
 		                                 entry, NULL))
 	      (*clients)[i] = NULL;
+	    else
+	      found = TRUE;
 	  }
 	}
 	silc_free(pk.type);
@@ -668,7 +675,6 @@ void silc_server_query_check_attributes(SilcServer server,
   if (!found && !query->nickname && !query->ids) {
     silc_server_query_send_error(server, query,
                                  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
-    silc_server_query_free(query);
   }
 }
 

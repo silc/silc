@@ -1,3 +1,9 @@
+Sat Dec 20 00:44:47 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* fixed a bug in the whois using attributes function where no 
+	  error was sent if no nickname and client id but the attributes were
+	  given to whois. Affected file silcd/server_query.c
+
 Tue Dec 16 21:34:59 CET 2003  Patrik Weiskircher <pat@icore.at>
 
 	* remove public key from public key hashtable on detach. Affected
