@@ -797,7 +797,7 @@ SILC_CLIENT_CMD_FUNC(invite)
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
-  silc_buffer_free(args),
+  silc_buffer_free(args);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
