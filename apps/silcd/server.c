@@ -3547,7 +3547,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
 {
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
-  SilcBuffer chidp, clidp;
+  SilcBuffer chidp, clidp, csidp;
   SilcBuffer tmp;
   int len;
   unsigned char mode[4], *fkey = NULL;
@@ -3557,16 +3557,16 @@ void silc_server_announce_get_channel_users(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  csidp = silc_id_payload_encode(server->id, SILC_ID_SERVER);
 
   /* CMODE notify */
-  clidp = silc_id_payload_encode(server->id, SILC_ID_SERVER);
   SILC_PUT32_MSB(channel->mode, mode);
   hmac = channel->hmac ? (char *)silc_hmac_get_name(channel->hmac) : NULL;
   if (channel->founder_key)
     fkey = silc_pkcs_public_key_encode(channel->founder_key, &fkey_len);
   tmp = 
     silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CMODE_CHANGE,
-				       6, clidp->data, clidp->len,
+				       6, csidp->data, csidp->len,
 				       mode, sizeof(mode),
 				       NULL, 0,
 				       hmac, hmac ? strlen(hmac) : 0,
@@ -3585,7 +3585,6 @@ void silc_server_announce_get_channel_users(SilcServer server,
   silc_buffer_put(*channel_modes, tmp->data, tmp->len);
   silc_buffer_pull(*channel_modes, len);
   silc_buffer_free(tmp);
-  silc_buffer_free(clidp);
   silc_free(fkey);
 
   /* Now find all users on the channel */
@@ -3615,8 +3614,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO && channel->founder_key)
       fkey = silc_pkcs_public_key_encode(channel->founder_key, &fkey_len);
     tmp = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_CUMODE_CHANGE,
-					     4, clidp->data, clidp->len,
-					     mode, 4,
+					     4, csidp->data, csidp->len,
+					     mode, sizeof(mode),
 					     clidp->data, clidp->len,
 					     fkey, fkey_len);
     len = tmp->len;
@@ -3636,6 +3635,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
   }
   silc_hash_table_list_reset(&htl);
   silc_buffer_free(chidp);
+  silc_buffer_free(csidp);
 }
 
 /* Returns assembled packets for all channels and users on those channels
