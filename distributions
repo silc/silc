@@ -13,6 +13,16 @@
 #
 # _<name>_SUBDIRS			Subdirs for the distribution
 # _<name>_SUBIDRS_<dir>                 Subdirs under <dir>
+# _<name>_DISTLABEL                     Preprocessor label
+#
+# The _SUBDIRS define all the subdirectories that the Makefile should
+# traverse.  The _SUBDIRS_<dir> defines a subdirectories in the 
+# subdirectory <dir>.  The _DISTLABEL defines a preprocessor label
+# that can be used in the source code like `#ifdef SILC_DIST_CLIENT' to
+# define code only for the specific distribution.  The label can also be
+# used in the Makefiles by `if SILC_DIST_CLIENT' to define something in
+# the Makefile only for the specific distribution.
+#
 #
 # NOTE: For now this supports only one sublevel of the directories.
 #       Also make sure that the <dir> directory includes Makefile.am.pre
@@ -28,15 +38,20 @@
 #
 # _xyz_SUBDIRS=lib irssi doc includes
 # _xyz_SUBDIRS_lib=$(SUBDIRS)
+# _xyz_DISTLABEL=SILC_DIST_XYZ
 #
 # To prepare the distribution give command ./prepare xyz 1.0.4
 #
 
 _toolkit_SUBDIRS=lib irssi silc silcd doc includes
 _toolkit_SUBDIRS_lib=$(SUBDIRS)
+_toolkit_DISTLABEL=SILC_DIST_TOOLKIT
 
 _client_SUBDIRS=lib irssi doc includes
 _client_SUBDIRS_lib=$(SUBDIRS)
+_client_DISTLABEL=SILC_DIST_CLIENT
 
 _server_SUBDIRS=lib silcd doc includes
 _server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf
+_server_DISTLABEL=SILC_DIST_SERVER
+

@@ -46,6 +46,11 @@ AC_ARG_PROGRAM
 AC_PROG_LN_S
 AC_SUBST(LN_S)
 
+# Distribution definition. ./prepare will automatically add here a correct
+# value. Do not edit!
+AC_DEFINE(SILC_DIST_DEFINE)
+AM_CONDITIONAL(SILC_DIST_DEFINE, test xtrue = xtrue)
+
 # XXX
 # Compiler flags
 if test "$GCC"; then

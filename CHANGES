@@ -1,3 +1,10 @@
+Thu May 31 13:57:33 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new distribution feature, DISTLABEL.  Every distribution
+	  can define own preprocessor label that can be used in the
+	  source code.  For example: #ifdef SILC_DIST_CLIENT.  Affected
+	  file distributions, acconfig.h.pre and prepare.
+
 Tue May 29 22:16:40 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added Makefile.defines_int to include the actual definitions

@@ -56,3 +56,5 @@
 #undef Rdup2
 #undef Rfclose
 #undef Rgethostbyname
+
+/* SILC distribution definitions (leave this at the end of file) */
