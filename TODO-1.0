@@ -152,3 +152,5 @@ least could be done.
 	o Something needs to be thought to the logging globals as well, 
 	  like silc_debug etc.  They won't work on EPOC.  Perhaps logging
 	  and debugging is to be disabled on EPOC.
+
+ o Check whether we can fully comply with RFC 2779.

@@ -215,9 +215,9 @@ Hence, the MIME Header in the message payload may be as follows:
 
 .in 8
 .nf
-MIME-Version: 1.0
-Content-Type: discrete/composite
-Content-Transfer-Encoding: binary
+MIME-Version: 1.0\\r
+Content-Type: discrete/composite\\r
+Content-Transfer-Encoding: binary\\r
 .in 3
 
 The Content-Transfer-Encoding field behaves as defined in [RFC2045] and 

@@ -11,5 +11,10 @@ modes are available:
     s        Unset server operator privileges
     r        Unset router operator privileges
     g        Set/unset to be gone (or use /AWAY command)
+    i        Set/unset to be indisposed
+    b        Set/unset to be busy
+    p        Set/unset to await paging
+    h        Set/unset to be hyper active
+    t        Set/unset to be actually robot
 
 See also: CMODE, CUMODE, AWAY

@@ -71,15 +71,20 @@
  *
  * DESCRIPTION
  *
- *    SILC User modes. These indicate the status of the client in the
- *    SILC network.
+ *    SILC User modes. These indicate the status and presence of the client
+ *    in the SILC network.
  *
  * SOURCE
  */
-#define SILC_UMODE_NONE                0x0000 /* Normal SILC user */
-#define SILC_UMODE_SERVER_OPERATOR     0x0001 /* Server operator */
-#define SILC_UMODE_ROUTER_OPERATOR     0x0002 /* Router (SILC) operator */
-#define SILC_UMODE_GONE                0x0004 /* Client is gone */
+#define SILC_UMODE_NONE                0x00000000 /* Normal SILC user */
+#define SILC_UMODE_SERVER_OPERATOR     0x00000001 /* Server operator */
+#define SILC_UMODE_ROUTER_OPERATOR     0x00000002 /* Router (SILC) operator */
+#define SILC_UMODE_GONE                0x00000004 /* Client is gone */
+#define SILC_UMODE_INDISPOSED          0x00000008 /* Client is indisposed */
+#define SILC_UMODE_BUSY                0x00000010 /* Client is busy */
+#define SILC_UMODE_PAGE                0x00000020 /* Client requests paging */
+#define SILC_UMODE_HYPER               0x00000040 /* Client is hyper active */
+#define SILC_UMODE_ROBOT               0x00000080 /* Client is really robot */
 /***/
 
 #endif

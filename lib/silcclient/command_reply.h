@@ -32,6 +32,7 @@ struct SilcClientCommandReplyContextStruct {
   SilcSocketConnection sock;
   SilcCommandPayload payload;
   SilcCommandStatus status;
+  SilcCommandStatus error;
   SilcArgumentPayload args;
   SilcPacketContext *packet;
 

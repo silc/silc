@@ -884,12 +884,22 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	if ((mode & SILC_UMODE_SERVER_OPERATOR) ||
 	    (mode & SILC_UMODE_ROUTER_OPERATOR)) {
 	  strcat(buf, (mode & SILC_UMODE_SERVER_OPERATOR) ?
-		 "Server Operator " :
+		 "Server Operator" :
 		 (mode & SILC_UMODE_ROUTER_OPERATOR) ?
-		 "SILC Operator " : "[Unknown mode] ");
+		 "SILC Operator" : "[Unknown mode]");
 	}
 	if (mode & SILC_UMODE_GONE)
-	  strcat(buf, "away");
+	  strcat(buf, " away");
+	if (mode & SILC_UMODE_INDISPOSED)
+	  strcat(buf, " indisposed");
+	if (mode & SILC_UMODE_BUSY)
+	  strcat(buf, " busy");
+	if (mode & SILC_UMODE_PAGE)
+	  strcat(buf, " page to reach");
+	if (mode & SILC_UMODE_HYPER)
+	  strcat(buf, " hyper active");
+	if (mode & SILC_UMODE_ROBOT)
+	  strcat(buf, " robot");
 
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			   SILCTXT_WHOIS_MODES, buf);
@@ -1179,8 +1189,18 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	mode = silc_client_chumode_char(chu->mode);
 	if (e->mode & SILC_UMODE_GONE)
 	  strcat(stat, "G");
-	else
+	else if (e->mode & SILC_UMODE_INDISPOSED)
+	  strcat(stat, "I");
+	else if (e->mode & SILC_UMODE_BUSY)
+	  strcat(stat, "B");
+	else if (e->mode & SILC_UMODE_PAGE)
+	  strcat(stat, "P");
+	else if (e->mode & SILC_UMODE_HYPER)
 	  strcat(stat, "H");
+	else if (e->mode & SILC_UMODE_ROBOT)
+	  strcat(stat, "R");
+	else
+	  strcat(stat, "A");
 	if (mode)
 	  strcat(stat, mode);
 

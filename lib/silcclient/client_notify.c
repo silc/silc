@@ -55,11 +55,8 @@ static void silc_client_notify_by_server_pending(void *context, void *context2)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (reply) {
-    SilcCommandStatus status = silc_command_get_status(reply->payload);
-    if (status != SILC_STATUS_OK)
-      goto out;
-  }
+  if (reply && !silc_command_get_status(reply->payload, NULL, NULL))
+    goto out;
 
   silc_client_notify_by_server(res->context, res->sock, res->packet);
 

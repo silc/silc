@@ -304,9 +304,18 @@ bool silc_channel_message_payload_decrypt(unsigned char *data,
     silc_hmac_update(hmac, data + (data_len - iv_len), iv_len);
     silc_hmac_final(hmac, mac2, &mac_len);
     if (memcmp(mac, mac2, mac_len)) {
+#if 1
+      /* Backwards support for old mac checking, remove in 1.0 */
+      silc_hmac_make(hmac, dst, (data_len - iv_len - mac_len), mac2, &mac_len);
+      if (memcmp(mac, mac2, mac_len)) {
+#endif
+
       SILC_LOG_DEBUG(("Channel message MACs does not match"));
       silc_free(dst);
       return FALSE;
+#if 1
+      }
+#endif
     }
     SILC_LOG_DEBUG(("MAC is Ok"));
 

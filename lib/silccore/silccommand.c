@@ -82,7 +82,8 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
 
   silc_buffer_pull(&buffer, SILC_COMMAND_PAYLOAD_LEN);
   if (args_num) {
-    newp->args = silc_argument_payload_parse(buffer.data, buffer.len, args_num);
+    newp->args = silc_argument_payload_parse(buffer.data, buffer.len, 
+					     args_num);
     if (!newp->args) {
       silc_free(newp);
       return NULL;
@@ -271,6 +272,7 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
 SilcBuffer 
 silc_command_reply_payload_encode_va(SilcCommand cmd, 
 				     SilcCommandStatus status,
+				     SilcCommandStatus error,
 				     SilcUInt16 ident,
 				     SilcUInt32 argc, ...)
 {
@@ -278,7 +280,8 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
   SilcBuffer buffer;
 
   va_start(ap, argc);
-  buffer = silc_command_reply_payload_encode_vap(cmd, status, ident, argc, ap);
+  buffer = silc_command_reply_payload_encode_vap(cmd, status, error,
+						 ident, argc, ap);
   va_end(ap);
 
   return buffer;
@@ -287,6 +290,7 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
 SilcBuffer 
 silc_command_reply_payload_encode_vap(SilcCommand cmd, 
 				      SilcCommandStatus status,
+				      SilcCommandStatus error,
 				      SilcUInt16 ident, SilcUInt32 argc, 
 				      va_list ap)
 {
@@ -315,7 +319,8 @@ silc_command_reply_payload_encode_vap(SilcCommand cmd,
     return NULL;
   }
 
-  SILC_PUT16_MSB(status, status_data);
+  status_data[0] = status;
+  status_data[1] = error;
   argv[0] = silc_memdup(status_data, sizeof(status_data));
   if (!argv[0]) {
     silc_free(argv_types);
@@ -388,19 +393,45 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload)
 
 /* Return command status */
 
-SilcCommandStatus silc_command_get_status(SilcCommandPayload payload)
+bool silc_command_get_status(SilcCommandPayload payload, 
+			     SilcCommandStatus *status,
+			     SilcCommandStatus *error)
 {
   unsigned char *tmp;
-  SilcCommandStatus status;
+  SilcUInt32 tmp_len;
 
   if (!payload->args)
     return 0;
-  tmp = silc_argument_get_arg_type(payload->args, 1, NULL);
-  if (!tmp)
+  tmp = silc_argument_get_arg_type(payload->args, 1, &tmp_len);
+  if (!tmp || tmp_len != 2)
     return 0;
 
-  SILC_GET16_MSB(status, tmp);
-  return status;
+  /* Check for 1.0 protocol version which didn't have `error' */
+  if (tmp[0] == 0 && tmp[1] != 0) {
+    /* Protocol 1.0 version */
+    SilcCommandStatus s;
+    SILC_GET16_MSB(s, tmp);
+    if (status)
+      *status = s;
+    if (error)
+      *error = 0;
+    if (s >= SILC_STATUS_ERR_NO_SUCH_NICK && error)
+      *error = s;
+    return (s < SILC_STATUS_ERR_NO_SUCH_NICK);
+  }
+
+  /* Take both status and possible error */
+  if (status)
+    *status = (SilcCommandStatus)tmp[0];
+  if (error)
+    *error = (SilcCommandStatus)tmp[1];
+
+  /* If single error occurred have the both `status' and `error' indicate
+     the error value for convenience. */
+  if (tmp[0] >= SILC_STATUS_ERR_NO_SUCH_NICK && error)
+    *error = tmp[0];
+
+  return (tmp[0] < SILC_STATUS_ERR_NO_SUCH_NICK && tmp[1] == SILC_STATUS_OK);
 }
 
 /* Function to set identifier to already allocated Command Payload. Command

@@ -162,7 +162,7 @@ typedef unsigned char SilcCommand;
  *
  * NAME
  * 
- *    typedef SilcUInt16 SilcCommandStatus;
+ *    typedef SilcUInt8 SilcCommandStatus;
  *
  * DESCRIPTION
  *
@@ -172,7 +172,7 @@ typedef unsigned char SilcCommand;
  *
  * SOURCE
  */
-typedef SilcUInt16 SilcCommandStatus;
+typedef SilcUInt8 SilcCommandStatus;
 
 /* Command Status messages */
 #define SILC_STATUS_OK                      0
@@ -324,20 +324,35 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
  *    SilcBuffer 
  *    silc_command_reply_payload_encode_va(SilcCommand cmd, 
  *                                         SilcCommandStatus status,
+ *                                         SilcCommandStatus error,
  *                                         SilcUInt16 ident,
  *                                         SilcUInt32 argc, ...);
  *
  * DESCRIPTION
  *
  *    Same as silc_command_payload_encode_va except that this is used to 
- *    encode strictly command reply packets. The command status message
- *    to be returned is sent as extra argument to this function. The `argc'
- *    must not count `status' as on argument.
+ *    encode strictly command reply packets.  The `argc' must not count 
+ *    `status' and `error' as arguments.  The `status' includes the
+ *    command reply status.  If single reply will be sent then it includes
+ *    SILC_STATUS_OK if error did not occur.  It includes an error value
+ *    if error did occur.  In this case `error' field is ignored.  If
+ *    there will be multiple successful command replies then the `status'
+ *    includes a list value and `error' is ignored.  If there will
+ *    multiple error replies the `status' includes a list value, and
+ *    the `error' includes an error value.  Thus, the `error' value is
+ *    specified only if there will be list of errors.
+ *
+ * NOTES
+ *
+ *    Protocol defines that it is possible to send both list of successful
+ *    and list of error replies at the same time, as long as the error
+ *    replies are sent after the successful replies.
  *
  ***/
 SilcBuffer 
 silc_command_reply_payload_encode_va(SilcCommand cmd, 
 				     SilcCommandStatus status,
+				     SilcCommandStatus error,
 				     SilcUInt16 ident,
 				     SilcUInt32 argc, ...);
 
@@ -348,6 +363,7 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
  *    SilcBuffer 
  *    silc_command_reply_payload_encode_vap(SilcCommand cmd, 
  *                                          SilcCommandStatus status,
+ *                                          SilcCommandStatus error,
  *                                          SilcUInt16 ident, SilcUInt32 argc,
  *                                          va_list ap);
  *
@@ -360,6 +376,7 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
 SilcBuffer 
 silc_command_reply_payload_encode_vap(SilcCommand cmd, 
 				      SilcCommandStatus status,
+				      SilcCommandStatus error,
 				      SilcUInt16 ident, SilcUInt32 argc, 
 				      va_list ap);
 
@@ -423,15 +440,23 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload);
  *
  * SYNOPSIS
  *
- *    SilcCommandStatus silc_command_get_status(SilcCommandPayload payload);
+ *    bool silc_command_get_status(SilcCommandPayload payload, 
+ *                                 SilcCommandStatus *status,
+ *                                 SilcCommandStatus *error);
  *
  * DESCRIPTION
  *
- *    Returns the SilcCommandStatus from command reply payload's argument 
- *    payload.  Status can be returned only from command reply payload.
+ *    This function returns the command reply status into `status' and
+ *    error status, if error occurred into the `error'.  The function
+ *    returns TRUE if command reply status is not error, and FALSE if
+ *    error occurred.  In this case the `error' will include the actual
+ *    error status.  The `status' can be in this case some list value
+ *    which indicates that there will be list of errors.
  *
  ***/
-SilcCommandStatus silc_command_get_status(SilcCommandPayload payload);
+bool silc_command_get_status(SilcCommandPayload payload, 
+			     SilcCommandStatus *status,
+			     SilcCommandStatus *error);
 
 /****f* silccore/SilcCommandAPI/silc_command_set_ident
  *

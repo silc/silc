@@ -1466,11 +1466,11 @@ void silc_server_private_message(SilcServer server,
 					  client_id, SILC_ID_CLIENT,
 					  SILC_COMMAND_IDENTIFY,
 					  SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 
-					  0, 1, 2, idp->data, idp->len);
+					  0, 0, 1, 2, idp->data, idp->len);
       silc_free(client_id);
     } else {
       silc_server_send_command_reply(server, sock, SILC_COMMAND_IDENTIFY,
-				     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 
+				     SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0,
 				     0, 1, 2, idp->data, idp->len);
     }
 

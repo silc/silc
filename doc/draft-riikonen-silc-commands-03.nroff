@@ -984,7 +984,7 @@ List of all defined commands in SILC follows.
 
               No specific mode for client.  This is the initial
               setting when new client is created.  The client is
-              normal client now.
+              normal client and is present in the network.
 
 
            0x00000001    SILC_UMODE_SERVER_OPERATOR
@@ -1009,6 +1009,44 @@ List of all defined commands in SILC follows.
 
               Marks that the user is not currently present in the
               SILC Network.  Client MAY set and unset this mode.
+
+
+           0x00000008    SILC_UMODE_INDISPOSED
+
+              Marks that the user is currently indisposed and may
+              not be able to receive any messages, and that user may
+              not be present in the network.  Client MAY set and
+              unset this mode.
+
+
+           0x00000010    SILC_UMODE_BUSY
+
+              Marks that the user is currently busy and may not
+              want to receive any messages, and that user may not
+              be present in the network.  Client MAY set and unset
+              this mode.
+
+
+           0x00000020    SILC_UMODE_PAGE
+
+              User is not currently present or is unable to receive
+              messages, and prefers to be paged in some mechanism
+              if the user needs to be reached.  Client MAY set and
+              unset this mode.
+
+
+           0x00000040    SILC_UMODE_HYPER
+
+              Marks that the user is hyper active and is eager to
+              receive and send messages.   Client MAY set and unset
+              this mode.
+
+
+           0x00000080    SILC_UMODE_ROBOT
+
+              Marks that the client is actually a robot program.
+              Client MAY set and unset this mode.
+
 
         Reply messages to the command:
 
@@ -1625,7 +1663,7 @@ represents the Command Status Payload (field is always in MSB order).
                      1
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Status Message         |
+|     Status    |     Error     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
@@ -1634,9 +1672,48 @@ Figure 6:  SILC Command Status Payload
 
 
 .in 6
-o Status Message (2 bytes) - Indicates the status message.
-  All Status messages are described in the next section.
+o Status (1 byte) - Indicates the status message type,
+  error, start of list, entry of list or end of list.
+
+o Error (1 byte) - Indicates the error if the Status
+  field is some list status, which means there are list
+  of errors.
 .in 3
+
+The values in Status and Error fields are set according
+the following rules:
+
+.in 6
+o If there is single reply and error has not occurred
+  then Status field includes value SILC_STATUS_OK, and
+  the Error field MUST be ignored (and set to zero
+  value).
+
+o If there is single error, then Status field includes
+  one of the error values, and the Error field MUST be
+  ignored (and set to zero value).
+
+o If there will be multiple successful command replies
+  then Status field includes SILC_STATUS_LIST_START, 
+  SILC_STATUS_LIST_ITEM or SILC_STATUS_LIST_END value,
+  and Error field is set to SILC_STATUS_OK.
+
+o If there are multiple error replies then Status field
+  includes SILC_STATUS_LIST_START, SILC_STATUS_LIST_ITEM
+  or SILC_STATUS_LIST_END value, and the Error field
+  includes the error value.
+.in 3
+
+This way it is possible to send single successful or
+single error reply, but also multiple successful and
+multiple error replies.  Note that it is possible to
+send both list of successful replies and list of error
+replies at the same time, however in this case the
+list of error replies MUST be sent after the successful
+replies.  This way the recipient may ignore the multiple
+errors if it wishes to do so.
+
+All Status messages are described in the next section.
 
 
 .ti 0

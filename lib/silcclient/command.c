@@ -322,8 +322,9 @@ SILC_CLIENT_CMD_FUNC(nick_change)
   SilcClientConnection conn = cmd->conn;
   SilcClientCommandReplyContext reply = 
     (SilcClientCommandReplyContext)context2;
-  SilcCommandStatus status = silc_command_get_status(reply->payload);
+  SilcCommandStatus status;
 
+  silc_command_get_status(reply->payload, &status, NULL);
   if (status == SILC_STATUS_OK) {
     /* Set the nickname */
     silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
@@ -748,8 +749,9 @@ SILC_CLIENT_CMD_FUNC(kill_remove)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientCommandReplyContext reply = 
     (SilcClientCommandReplyContext)context2;
-  SilcCommandStatus status = silc_command_get_status(reply->payload);
+  SilcCommandStatus status;
 
+  silc_command_get_status(reply->payload, &status, NULL);
   if (status == SILC_STATUS_OK) {
     /* Remove with timeout */
     silc_schedule_task_add(cmd->client->schedule, cmd->conn->sock->sock,
@@ -1140,6 +1142,36 @@ SILC_CLIENT_CMD_FUNC(umode)
 	mode |= SILC_UMODE_GONE;
       else
 	mode &= ~SILC_UMODE_GONE;
+      break;
+    case 'i':
+      if (add)
+	mode |= SILC_UMODE_INDISPOSED;
+      else
+	mode &= ~SILC_UMODE_INDISPOSED;
+      break;
+    case 'b':
+      if (add)
+	mode |= SILC_UMODE_BUSY;
+      else
+	mode &= ~SILC_UMODE_BUSY;
+      break;
+    case 'p':
+      if (add)
+	mode |= SILC_UMODE_PAGE;
+      else
+	mode &= ~SILC_UMODE_PAGE;
+      break;
+    case 'h':
+      if (add)
+	mode |= SILC_UMODE_HYPER;
+      else
+	mode &= ~SILC_UMODE_HYPER;
+      break;
+    case 't':
+      if (add)
+	mode |= SILC_UMODE_ROBOT;
+      else
+	mode &= ~SILC_UMODE_ROBOT;
       break;
     default:
       COMMAND_ERROR;
@@ -2070,10 +2102,11 @@ SILC_CLIENT_CMD_FUNC(getkey)
       } else {
 	SilcClientCommandReplyContext reply = 
 	  (SilcClientCommandReplyContext)context2;
-	SilcCommandStatus status = silc_command_get_status(reply->payload);
-	
+	SilcCommandStatus error;
+
 	/* If nickname was not found, then resolve the server. */
-	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	silc_command_get_status(reply->payload, NULL, &error);
+	if (error == SILC_STATUS_ERR_NO_SUCH_NICK) {
 	  /* This sends the IDENTIFY command to resolve the server. */
 	  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, 
 				       NULL, NULL,
@@ -2091,11 +2124,11 @@ SILC_CLIENT_CMD_FUNC(getkey)
 
 	/* If server was not found, then we've resolved both nickname and
 	   server and did not find anybody. */
-	if (status == SILC_STATUS_ERR_NO_SUCH_SERVER) {
+	if (error == SILC_STATUS_ERR_NO_SUCH_SERVER) {
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
 	     silc_client_command_status_message(SILC_STATUS_ERR_NO_SUCH_NICK));
 	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
-           silc_client_command_status_message(status));
+           silc_client_command_status_message(error));
 	  COMMAND_ERROR;
 	  goto out;
 	}

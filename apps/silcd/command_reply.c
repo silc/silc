@@ -23,26 +23,14 @@
 #include "server_internal.h"
 #include "command_reply.h"
 
-/* All functions that call the COMMAND_CHECK_STATUS or the
-   COMMAND_CHECK_STATUS_LIST macros must have out: goto label. */
+/* All functions that call the COMMAND_CHECK_STATUS macros must have
+   out: goto label. */
 
-#define COMMAND_CHECK_STATUS						  \
-do {									  \
-  SILC_LOG_DEBUG(("Start"));						  \
-  SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL)); \
-  if (status != SILC_STATUS_OK)						  \
-    goto out;								  \
-} while(0)
-
-#define COMMAND_CHECK_STATUS_LIST					  \
-do {									  \
-  SILC_LOG_DEBUG(("Start"));						  \
-  SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL)); \
-  if (status != SILC_STATUS_OK &&					  \
-      status != SILC_STATUS_LIST_START &&				  \
-      status != SILC_STATUS_LIST_ITEM &&				  \
-      status != SILC_STATUS_LIST_END)					  \
-    goto out;								  \
+#define COMMAND_CHECK_STATUS					\
+do {								\
+  SILC_LOG_DEBUG(("Start"));					\
+  if (!silc_command_get_status(cmd->payload, &status, &error))	\
+    goto out;							\
 } while(0)
 
 /* Server command reply list. Not all commands have reply function as
@@ -256,9 +244,9 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
 
-  COMMAND_CHECK_STATUS_LIST;
+  COMMAND_CHECK_STATUS;
 
   if (!silc_server_command_reply_whois_save(cmd))
     goto out;
@@ -273,7 +261,7 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
  out:
   /* If we received notify for invalid ID we'll remove the ID if we
      have it cached. */
-  if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID &&
+  if (error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID &&
       cmd->sock->type == SILC_SOCKET_TYPE_ROUTER) {
     SilcClientEntry client;
     SilcUInt32 tmp_len;
@@ -392,9 +380,9 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
 SILC_SERVER_CMD_REPLY_FUNC(whowas)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
 
-  COMMAND_CHECK_STATUS_LIST;
+  COMMAND_CHECK_STATUS;
 
   if (!silc_server_command_reply_whowas_save(cmd))
     goto out;
@@ -617,9 +605,9 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
 
-  COMMAND_CHECK_STATUS_LIST;
+  COMMAND_CHECK_STATUS;
 
   if (!silc_server_command_reply_identify_save(cmd))
     goto out;
@@ -634,7 +622,7 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
  out:
   /* If we received notify for invalid ID we'll remove the ID if we
      have it cached. */
-  if (status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID &&
+  if (error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID &&
       cmd->sock->type == SILC_SOCKET_TYPE_ROUTER) {
     SilcClientEntry client;
     SilcUInt32 tmp_len;
@@ -666,7 +654,7 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
   SilcServerEntry entry;
   SilcServerID *server_id;
   SilcUInt32 tmp_len;
@@ -723,7 +711,7 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
   SilcServerEntry entry = NULL;
   SilcServerID *server_id;
   SilcUInt32 tmp_len;
@@ -772,7 +760,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
   SilcIDCacheEntry cache = NULL;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
   SilcChannelID *id;
   SilcClientID *client_id = NULL;
   SilcChannelEntry entry;
@@ -974,7 +962,7 @@ SILC_SERVER_CMD_REPLY_FUNC(stats)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
   unsigned char *tmp;
   SilcUInt32 tmp_len;
   SilcBufferStruct buf;
@@ -1012,7 +1000,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
   SilcChannelEntry channel;
   SilcChannelID *channel_id = NULL;
   SilcBuffer client_id_list;
@@ -1101,7 +1089,7 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
   SilcClientEntry client = NULL;
   SilcServerEntry server_entry = NULL;
   SilcClientID *client_id = NULL;
@@ -1186,7 +1174,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
 {
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
-  SilcCommandStatus status;
+  SilcCommandStatus status, error;
   SilcChannelID *channel_id = NULL;
   SilcChannelEntry channel;
   SilcIDCacheEntry cache;
@@ -1195,7 +1183,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   SilcUInt32 usercount = 0;
   bool global_list = FALSE;
 
-  COMMAND_CHECK_STATUS_LIST;
+  COMMAND_CHECK_STATUS;
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   channel_id = silc_id_payload_parse_id(tmp, len, NULL);

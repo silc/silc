@@ -1720,6 +1720,7 @@ void silc_server_send_command_reply(SilcServer server,
 				    SilcSocketConnection sock,
 				    SilcCommand command, 
 				    SilcCommandStatus status,
+				    SilcCommandStatus error,
 				    SilcUInt16 ident,
 				    SilcUInt32 argc, ...)
 {
@@ -1728,8 +1729,8 @@ void silc_server_send_command_reply(SilcServer server,
 
   va_start(ap, argc);
 
-  packet = silc_command_reply_payload_encode_vap(command, status, ident, 
-						 argc, ap);
+  packet = silc_command_reply_payload_encode_vap(command, status, error,
+						 ident, argc, ap);
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
 			  packet->data, packet->len, TRUE);
   silc_buffer_free(packet);
@@ -1745,6 +1746,7 @@ void silc_server_send_dest_command_reply(SilcServer server,
 					 SilcIdType dst_id_type,
 					 SilcCommand command, 
 					 SilcCommandStatus status,
+					 SilcCommandStatus error,
 					 SilcUInt16 ident,
 					 SilcUInt32 argc, ...)
 {
@@ -1753,8 +1755,8 @@ void silc_server_send_dest_command_reply(SilcServer server,
 
   va_start(ap, argc);
 
-  packet = silc_command_reply_payload_encode_vap(command, status, ident, 
-						 argc, ap);
+  packet = silc_command_reply_payload_encode_vap(command, status, error,
+						 ident, argc, ap);
   silc_server_packet_send_dest(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
 			       dst_id, dst_id_type, packet->data, 
 			       packet->len, TRUE);

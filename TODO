@@ -106,18 +106,6 @@ Current protocol version is 1.0.  However, it is far from being perfect,
 and needs to include additional features.  Following protocol TODO entries
 describe new stuff to be added to protocol versions 1.x.
 
- 1. Re-define the Status Payload: it is now 16 bits, split it into two
-    8 bits fields.  First field includes status types from 0 - 9 and
-    10 - n *if* it is not an list of errors.  If it is list of errors then
-    the first field includes 1, 2 and/or 3, and the second field includes
-    the error status 10 - n.  This way it is possible to send multiple
-    errors (list of errors) and we have a way to tell the receiver that
-    there will be other errors as well.  The second field is used only
-    if there is list of errors.  If normal status, or normal (single)
-    error status the second field is set to zero, and must be ignored.
-    Hence, the status works same way as now except for list of errors.
-    To be included in protocol version 1.1.
-
  2. Define that WHOIS and IDENTIFY commands must send list of errors
     if multiple Client ID (or Channel ID and Server ID for IDENTIFY) was
     requested and was not found.  Each unfound entry must cause an error
@@ -137,9 +125,6 @@ describe new stuff to be added to protocol versions 1.x.
 
  17. Cell wide channel founder support, and permanent channels when
      founder mode set.
-
- 18. Describe the SSH public key, X509, OpenPGP and SPKI certificates
-     encoding format in SKE (from their respective definitions).
 
  o Inviting and banning by public key should be made possible.  To be
    included in protocol version 1.2.

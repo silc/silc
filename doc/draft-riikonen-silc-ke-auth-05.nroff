@@ -483,7 +483,9 @@ o Public Key Type (2 bytes) - The public key (or certificate)
   be closed immediately.
 
 o Public Key (or certificate) (variable length) - The
-  public key or certificate.
+  public key or certificate.  The public key or certificate
+  in this field is encoded in the manner as defined in their
+  respective definitions;  see previous field.
 
 o Public Data Length (2 bytes) - The length of the Public Data
   field, not including any other field.
@@ -823,6 +825,7 @@ are defined:
 10  SILC_SKE_STATUS_BAD_VERSION
 
     Provided version string was not acceptable.
+
 
 11  SILC_SKE_STATUS_INVALID_COOKIE
 

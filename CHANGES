@@ -1,3 +1,13 @@
+Mon Apr  8 23:57:32 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Redefined the Status Payload to include now two 8 bit fields,
+	  instead of one 16 bit field.  This now makes it possible to
+	  send list of errors.  Updated the protocol specs and the code
+	  in core library, client library and server.  Protocol TODO #1.
+	  Affected files are lib/silccore/silccommand.[ch],
+	  lib/silcclient/command_reply.[ch], silcd/command.c,
+	  silcd/command_reply.c and silcd/packet_receive.[ch].
+
 Mon Apr  8 19:57:40 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Added config parse status SILC_CONFIG_EPRINTLINE, this status
@@ -15,6 +25,15 @@ Mon Apr  8 19:57:40 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Drop root privileges when started in foreground.  Don't drop them
 	  if debugging also.  Affected file is silcd/silcd.c.
+
+Mon Apr  8 17:00:41 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added more IM-like features by introducing new user modes
+	  for setting various presence information.  Added new modes:
+	  INDISPOSED, BUSY, PAGE, HYPER and ROBOT.  Updated protocol
+          specs and code.  Protocol TODO #19. Affected files are 
+          lib/silccore/silcmode.h, irssi/src/silc/core/client_ops.c,
+	  irssi/docs/help/in/umode.in and lib/silcclient/command.c.
 
 Sun Apr  7 17:07:59 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
