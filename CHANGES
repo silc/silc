@@ -7,6 +7,13 @@ Thu Mar 29 19:10:28 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added SILC_MESSAGE_FLAG_REQUEST message flag as generic request
 	  flag.  It can be used to send message requests.
 
+	* Fixed the WHOIS and IDENTIFY send reply function to really
+	  check whether to send list or just one entry.  Affected file
+	  silcd/command.c.
+
+	* Cleaned up the LEAVE command's channel key distribution.  The
+	  affected file silcd/command.c.
+
 Thu Mar 29 12:26:25 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented the RESTART command in the client.
