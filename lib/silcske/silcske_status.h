@@ -65,7 +65,7 @@ typedef enum {
   SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH,	       /* Payload includes garbage */
 
   /* Other internal status types */
-  SILC_SKE_STATUS_FREED,		       /* Internal libary status */
+  SILC_SKE_STATUS_FREED,		       /* Internal library status */
 } SilcSKEStatus;
 /***/
 

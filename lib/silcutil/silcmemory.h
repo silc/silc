@@ -58,7 +58,7 @@ void *silc_malloc(size_t size);
  * DESCRIPTION
  *
  *    Allocates memory of for an array of `items' elements of `size' bytes
- *    and returns pointer to the allocated memory area.  The memory are is
+ *    and returns pointer to the allocated memory area.  The memory area is
  *    also zeroed.  Free the memory by calling silc_free.
  *
  ***/

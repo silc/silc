@@ -86,6 +86,11 @@ TODO/bugs In SILC Libraries
  o SILC RNG does not implement random seed files, and they should be
    implemented.
 
+ o The SilcSocketConnection in the SFTP interface is actually redundant
+   and should perhaps be removed.  The application can save it in the
+   context it provides, which is delivered by SFTP libary to all 
+   callback functions.
+
 
 TODO in Toolkit Documentation
 =============================

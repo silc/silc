@@ -23,3 +23,7 @@ directory, and give make there:
 	make
 
 This will compile only the libraries, and nothing else.
+
+To install the compiled Toolkit into your system give the command:
+
+	make install
