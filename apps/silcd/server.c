@@ -2241,6 +2241,9 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     /* Do not send data to disconnected connection */
     if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
       SILC_LOG_DEBUG(("Disconnected socket connection, cannot send"));
+      SILC_SET_CONNECTION_FOR_INPUT(server->schedule, fd);
+      SILC_UNSET_OUTBUF_PENDING(sock);
+      silc_buffer_clear(sock->outbuf);
       return;
     }
 
@@ -2397,6 +2400,11 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   int ret;
 
+  if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
+    SILC_LOG_DEBUG(("Connection is disconnected"));
+    goto out;
+  }
+
   server->stat.packets_received++;
 
   /* Parse the packet */
@@ -2473,6 +2481,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 
  out:
   silc_packet_context_free(packet);
+  silc_socket_free(parse_ctx->sock);
   silc_free(parse_ctx);
 }
 
@@ -2487,6 +2496,13 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   bool ret;
 
+  if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
+    SILC_LOG_DEBUG(("Connection is disconnected"));
+    silc_socket_free(parser_context->sock);
+    silc_free(parser_context);
+    return FALSE;
+  }
+
   if (idata)
     idata->psn_receive = parser_context->packet->sequence + 1;
 
@@ -2497,8 +2513,16 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
   if (sock->protocol && sock->protocol->protocol &&
       (sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE ||
        sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)) {
+    silc_socket_dup(sock);
     silc_server_packet_parse_real(server->schedule, server, 0, sock->sock,
 				  parser_context);
+
+    if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
+      SILC_LOG_DEBUG(("Connection is disconnected"));
+      silc_socket_free(sock);
+      return FALSE;
+    }
+    silc_socket_free(sock);
 
     /* Reprocess data since we'll return FALSE here.  This is because
        the idata->receive_key might have become valid in the last packet
@@ -2547,8 +2571,6 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
     silc_server_packet_parse_real(server->schedule, server, 0, sock->sock,
 				  parser_context);
     break;
-  default:
-    return TRUE;
   }
 
   return TRUE;
@@ -5356,6 +5378,14 @@ SILC_TASK_CALLBACK(silc_server_rekey_timeout)
     silc_ske_free(ctx->ske);
   silc_socket_free(sock);
   silc_free(ctx);
+
+  /* Disconnect since we failed to rekey, the keys are probably wrong. */
+  silc_server_disconnect_remote(server, sock,
+				SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
+
+  /* Reconnect */
+  if (sock->type != SILC_SOCKET_TYPE_CLIENT)
+    silc_server_create_connections(server);
 }
 
 /* A timeout callback for the re-key. We will be the initiator of the
@@ -5418,7 +5448,10 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
     silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_rekey_timeout,
 			   proto_ctx,
-			   server->config->key_exchange_timeout, 0,
+			   (idata->rekey->timeout >
+			    server->config->key_exchange_timeout ?
+			    idata->rekey->timeout :
+			    server->config->key_exchange_timeout * 4), 0,
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 

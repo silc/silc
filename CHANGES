@@ -1,3 +1,24 @@
+Thu Oct 30 20:23:40 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Check that packet queue purging was successful.  Affected
+	  files lib/silcclient/client.c and silcd/packet_send.c.  Related
+	  to MAC failed errors.
+
+	* Do not clear the inbuf even if it is empty if QoS was applied
+	  to it.  Otherwise the QoS data is cleared and MAC failed error
+	  will occur.  Affected file lib/silccore/silcpacket.c.
+
+	* Use the rekey period time as rekey protocol timeout value.
+	  If the rekey does not succeed during the rekey period there's
+	  something very wrong, and we most likely end up with wrong keys,
+	  do graceful reconnect then.   Affected file silcd/server.c.
+
+	* Take reference of the socket in the parser context, as it's
+	  possible to have the parsers in queue after the socket is
+	  disconnected and this may cause crash.  Affected files are
+	  lib/silccore/silcpacket.c, lib/silcclient/client.c and
+	  silcd/server.c.
+
 Thu Oct 30 17:01:01 EET 2003 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed KICK command reply sending, it sent to replies.
@@ -7,7 +28,7 @@ Wed Oct 30 14:06:52 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Finish the silc-mime.pl script. It now supports MIME type
 	  guessing using magic files, signing data messages, executing
-	  MIME handlers in background. Affected files 
+	  MIME handlers in background. Affected files
 	  irssi/scripts/silc-mime.pl and irssi/docs/help/in/mmsg.in
 
 	* Changed MIME signal handler to make things easier for the perl
@@ -28,7 +49,7 @@ Sun Oct 26 21:19:02 EET 2003 Pekka Riikonen <priikone@silcnet.org>
 
 Fri Oct 24 21:24:12 CEST 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
-	* Fixed race condition between silc_client_init and 
+	* Fixed race condition between silc_client_init and
           my_silc_scheduler. Affected file irssi/src/silc/core/silc-core.c
 
 Fri Oct 24 16:43:40 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
@@ -46,20 +67,20 @@ Thu Oct 21 09:43:17 CEST 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
         * Modified the MIME parsing to allow \n and \r\n as delimiters.
 	  Affected files lib/silcutil/silcstrutil.c
-	
+
 	* Cleaned up the escape/unescape functions for correctness and
 	  speed. Affected file irssi/src/silc/core/client_ops.c
 
 	* Removed handling for data messages with Content-Type: text/*,
 	  moved parsing of MIME headers to the signal handler, added
-	  support for signing and verifying data messages. Affected 
+	  support for signing and verifying data messages. Affected
 	  files are irssi/docs/signals.txt, irssi/src/silc/core/client_ops.c,
 	  irssi/src/silc/core/silc-{servers,channels}.c
 
 	* Added a perl script for handling data messages based on
-	  information read from Mailcap files. New file 
+	  information read from Mailcap files. New file
 	  irssi/scripts/silc-mime.pl
-	
+
 Mon Oct 20 16:08:22 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new SILC_MESSAGE_FLAG_ACK that can  be used to

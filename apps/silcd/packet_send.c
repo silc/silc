@@ -35,7 +35,7 @@ int silc_server_packet_send_real(SilcServer server,
   int ret;
 
   /* If disconnecting, ignore the data */
-  if (SILC_IS_DISCONNECTING(sock))
+  if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock))
     return -1;
 
   /* Send the packet */
@@ -98,7 +98,7 @@ void silc_server_packet_send(SilcServer server,
   idata = (SilcIDListData)sock->user_data;
 
   /* If disconnecting, ignore the data */
-  if (SILC_IS_DISCONNECTING(sock))
+  if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock))
     return;
 
   /* If entry is disabled do not sent anything.  Allow hearbeat and
@@ -162,7 +162,7 @@ void silc_server_packet_send_dest(SilcServer server,
   int block_len = 0;
 
   /* If disconnecting, ignore the data */
-  if (!sock || SILC_IS_DISCONNECTING(sock))
+  if (!sock || SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock))
     return;
 
   idata = (SilcIDListData)sock->user_data;
@@ -2003,17 +2003,30 @@ void silc_server_send_connection_auth_request(SilcServer server,
 }
 
 /* Purge the outgoing packet queue to the network if there is data. This
-   function can be used to empty the packet queue. It is guaranteed that
-   after this function returns the outgoing data queue is empty. */
+   function can be used to empty the packet queue. */
 
 void silc_server_packet_queue_purge(SilcServer server,
 				    SilcSocketConnection sock)
 {
   if (sock && SILC_IS_OUTBUF_PENDING(sock) &&
       !(SILC_IS_DISCONNECTING(sock)) && !(SILC_IS_DISCONNECTED(sock))) {
+    int ret;
+
     SILC_LOG_DEBUG(("Purging outgoing queue"));
+
     server->stat.packets_sent++;
-    silc_packet_send(sock, TRUE);
+    ret = silc_packet_send(sock, TRUE);
+    if (ret == -2) {
+      if (sock->outbuf && sock->outbuf->len > 0) {
+	/* Couldn't send all data, put the queue back up, we'll send
+	   rest later. */
+	SILC_SET_CONNECTION_FOR_OUTPUT(server->schedule, sock->sock);
+	SILC_SET_OUTBUF_PENDING(sock);
+	return;
+      }
+    }
+
+    /* Purged all data */
     SILC_UNSET_OUTBUF_PENDING(sock);
     SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
     silc_buffer_clear(sock->outbuf);

@@ -1042,6 +1042,7 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
 
   if (ret == SILC_PACKET_NONE) {
     silc_packet_context_free(packet);
+    silc_socket_free(parser_context->sock);
     silc_free(parser_context);
     return FALSE;
   }
@@ -1056,8 +1057,6 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
 
     /* Parse the incoming packet type */
     silc_client_packet_parse_type(client, sock, packet);
-    silc_packet_context_free(packet);
-    silc_free(parser_context);
 
     /* Reprocess the buffer since we'll return FALSE. This is because
        the `conn->internal->receive_key' might have become valid by processing
@@ -1071,12 +1070,17 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
       silc_packet_receive_process(sock, FALSE, NULL, NULL, 0,
 				  silc_client_packet_parse, client);
 
+    silc_packet_context_free(packet);
+    silc_socket_free(parser_context->sock);
+    silc_free(parser_context);
+
     return FALSE;
   }
 
   /* Parse the incoming packet type */
   silc_client_packet_parse_type(client, sock, packet);
   silc_packet_context_free(packet);
+  silc_socket_free(parser_context->sock);
   silc_free(parser_context);
   return TRUE;
 }
@@ -1495,8 +1499,21 @@ void silc_client_packet_queue_purge(SilcClient client,
 				    SilcSocketConnection sock)
 {
   if (sock && SILC_IS_OUTBUF_PENDING(sock) &&
-      (SILC_IS_DISCONNECTED(sock) == FALSE)) {
-    silc_packet_send(sock, TRUE);
+      !(SILC_IS_DISCONNECTED(sock))) {
+    int ret;
+
+    ret = silc_packet_send(sock, TRUE);
+    if (ret == -2) {
+      if (sock->outbuf && sock->outbuf->len > 0) {
+	/* Couldn't send all data, put the queue back up, we'll send
+	   rest later. */
+	SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(client->schedule, sock->sock);
+	SILC_SET_OUTBUF_PENDING(sock);
+	return;
+      }
+    }
+
+    /* Purged all data */
     SILC_UNSET_OUTBUF_PENDING(sock);
     SILC_CLIENT_SET_CONNECTION_FOR_INPUT(client->schedule, sock->sock);
     silc_buffer_clear(sock->outbuf);

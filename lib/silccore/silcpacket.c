@@ -387,7 +387,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     parse_ctx->packet->type = (SilcPacketType)header[3];
     parse_ctx->packet->padlen = (SilcUInt8)header[4];
     parse_ctx->packet->sequence = sequence++;
-    parse_ctx->sock = sock;
+    parse_ctx->sock = silc_socket_dup(sock);
     parse_ctx->context = parser_context;
 
     /* Check whether this is normal or special packet */
@@ -458,7 +458,12 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     memset(tmp, 0, sizeof(tmp));
   }
 
+  /* Don't clear buffer if pending data is in the buffer */
   if (cont == FALSE && sock->inbuf->len > 0)
+    return TRUE;
+
+  /* Don't clear buffer if QoS data exists in the buffer */
+  if (sock->qos && sock->qos->data_len > 0)
     return TRUE;
 
   SILC_LOG_DEBUG(("Clearing inbound buffer"));
@@ -491,6 +496,9 @@ static bool silc_packet_check_mac(SilcHmac hmac,
     /* Compare the MAC's */
     if (memcmp(packet_mac, mac, mac_len)) {
       SILC_LOG_ERROR(("MAC failed"));
+#if 1
+      abort();
+#endif
       return FALSE;
     }
 
