@@ -1,3 +1,20 @@
+Tue Jul 18 20:41:20 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added AWAY command to client.  When away message is set and
+	  client receives a private message packet the client automatically
+	  replies to the sender with the away message.
+
+	* Fixed a bug in lib/silcmath/mpbin.c: silc_mp_mp2bin.  This
+	  bug seemed to be the cause of recent problems when compiling
+	  with gcc-2.95.
+
+	* Added version detection support to SKE protocol specification
+	  and added the new changes to the SKE implementation as well.
+	  There were other minor changes in the SKE protocol as well.
+
+	  Many changes in lib/silcske/silcske.[ch] and in
+	  lib/silcske/payload.[ch].
+
 Mon Jul 17 23:33:26 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Mainly small bugfixes on core library.  Fixed some debugging
