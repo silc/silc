@@ -3,8 +3,6 @@
 <br />&nbsp;<br />
 
 README file from packages: <a href="docs/README" class="normal">README</a>
-<br />
-Coding Style in SILC source tree: <a href="docs/CodingStyle" class="normal">CodingStyle</a>
 <br />&nbsp;<br />
 Software manual: <i>Coming later</i>
 
@@ -35,6 +33,16 @@ include references to all interfaces.
 
 <br />&nbsp;<br />&nbsp;<br />
 
+<b>Coding Conventions</b>
+<br />&nbsp;<br />
+If you would like to submit code to the SILC Project we would like you to 
+first check out these coding conventions.  They are here for the benefit 
+of all who read the code and is involved in the development of the SILC.
+<br />&nbsp;<br />
+<a href="docs/CodingStyle" class="normal">CodingStyle</a>
+
+<br />&nbsp;<br />&nbsp;<br />
+
 <b><big>SILC Protocol Documentation</big></b>
 <br />&nbsp;<br />
 
@@ -55,7 +63,7 @@ reading the protocol specifications.
 <b>SILC Protocol Internet Drafts</b>
 <br />&nbsp;<br />
 SILC Protocol is documented and four Internet Drafts exist. These 
-Internet Drafts are also available from
+Internet Drafts are also available from the
 <a href="http://www.ietf.org/" class="normal">IETF</a>.
 <br />&nbsp;<br />
 

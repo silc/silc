@@ -72,7 +72,7 @@ want to try out one of following servers:
 - <samp class="highlight">silc.ytti.fi</samp> (Finland)<br />
 - <samp class="highlight">silc.peelo.com</samp> (Finland)<br />
 - <samp class="highlight">silc.debolaz.com</samp> (Norway)<br />
-- <samp class="highlight">silc.highertechnology.com</samp> (USA)<br />
+- <samp class="highlight">s.slash0.net</samp> (USA)<br />
 - <samp class="highlight">silc.silcnet.org on port 707</samp>
 
 <br />&nbsp;<br />

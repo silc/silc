@@ -60,12 +60,30 @@ client. The package includes the new Irssi-SILC client.
  </tr>
  <tr>
   <td class="sources">&nbsp;Sources</td>
+  <td class="sources">&nbsp;deb-src (<a href="txt/debian.release.txt" class="normal">release notes</a>)</td>
+  <td class="sources" align="center"><?php echo $Latest_DEB_Client_src; ?></td>
+  <td class="sources" align="right"><?php echo div(FileSizeDEB("client",$Latest_DEB_Client_Base,$Latest_DEB_Client_src),1024); ?> kB&nbsp;</td>
+  <td class="sources" align="center"><a href="download/client/deb/<?php echo $Latest_DEB_Client_Base; ?>/" class="normal">HTTP</a></td>
+  <td class="sources" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/client/deb/<?php echo $Latest_DEB_Client_Base; ?>/" class="normal">FTP</a></td>
+  <td class="sources" align="center"><a href="download/client/deb/<?php echo $Latest_DEB_Client_Base."/silc-client_".$Latest_DEB_Client_src; ?>_i386.changes" class="normal">MD5</a></td>
+ </tr>
+ <tr>
+  <td class="sources">&nbsp;Sources</td>
   <td class="sources">&nbsp;NetBSD pkgsrc</td>
   <td class="sources" align="center"><?php echo $Latest_NetBSD_Client_src; ?></td>
   <td class="sources" align="right"><?php echo div(FileSize("download/client/netbsd/pkgsrc/silc-client-".$Latest_NetBSD_Client_src.".tar.gz"),1024); ?> kB&nbsp;</td>
   <td class="sources" align="center"><a href="download/client/netbsd/pkgsrc/silc-client-<?php echo $Latest_NetBSD_Client_src; ?>.tar.gz" class="normal">HTTP</a></td>
   <td class="sources" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/client/netbsd/pkgsrc/silc-client-<?php echo $Latest_NetBSD_Client_src; ?>.tar.gz" class="normal">FTP</a></td>
   <td class="sources" align="center"><a href="download/client/netbsd/pkgsrc/silc-client-<?php echo $Latest_NetBSD_Client_src; ?>.tar.gz.md5" class="normal">MD5</a></td>
+ </tr>
+ <tr>
+  <td class="sources">&nbsp;Sources</td>
+  <td class="sources">&nbsp;OpenBSD ports</td>
+  <td class="sources" align="center"><?php echo $Latest_OpenBSD_Client_src; ?></td>
+  <td class="sources" align="right"><?php echo div(FileSize("download/client/openbsd/ports/silc-client-".$Latest_OpenBSD_Client_src.".tar.gz"),1024); ?> kB&nbsp;</td>
+  <td class="sources" align="center"><a href="download/client/openbsd/ports/silc-client-<?php echo $Latest_OpenBSD_Client_src; ?>.tar.gz" class="normal">HTTP</a></td>
+  <td class="sources" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/client/openbsd/ports/silc-client-<?php echo $Latest_OpenBSD_Client_src; ?>.tar.gz" class="normal">FTP</a></td>
+  <td class="sources" align="center"><a href="download/client/openbsd/ports/silc-client-<?php echo $Latest_OpenBSD_Client_src; ?>.tar.gz.md5" class="normal">MD5</a></td>
  </tr>
  <tr>
   <td class="binaries">&nbsp;Binaries</td>
@@ -75,6 +93,15 @@ client. The package includes the new Irssi-SILC client.
   <td class="binaries"  align="center"><a href="download/client/rpm/i386/silc-client-<?php echo $Latest_RPM_Client; ?>.i386.rpm" class="normal">HTTP</a></td>
   <td class="binaries" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/client/rpm/i386/silc-client-<?php echo $Latest_RPM_Client; ?>.i386.rpm" class="normal">FTP</a></td>
   <td class="binaries"  align="center"><a href="download/client/rpm/i386/silc-client-<?php echo $Latest_RPM_Client; ?>.i386.rpm.md5" class="normal">MD5</a></td>
+ </tr>
+ <tr>
+  <td class="binaries">&nbsp;Binaries</td>
+  <td class="binaries">&nbsp;Debian GNU/Linux i386 (<a href="txt/debian.release.txt" class="normal">release notes</a>)</td>
+  <td class="binaries" align="center"><?php echo $Latest_DEB_Client; ?></td>
+  <td class="binaries" align="right"><?php echo div(FileSize("download/client/deb/".$Latest_DEB_Client_Base."/silc-client_".$Latest_DEB_Client."_i386.deb"),1024); ?> kB&nbsp;</td>
+  <td class="binaries"  align="center"><a href="download/client/deb/<?php echo $Latest_DEB_Client_Base."/silc-client_".$Latest_DEB_Client ?>_i386.deb" class="normal">HTTP</a></td>
+  <td class="binaries" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/client/deb/<?php echo $Latest_DEB_Client_Base."/silc-client_".$Latest_DEB_Client ?>_i386.deb" class="normal">FTP</a></td>
+  <td class="binaries" align="center"><a href="download/client/deb/<?php echo $Latest_DEB_Client_Base."/silc-client_".$Latest_DEB_Client; ?>_i386.changes" class="normal">MD5</a></td>
  </tr>
  <tr>
   <td class="binaries">&nbsp;Binaries</td>
@@ -158,12 +185,30 @@ contact <a href="mailto:priikone at silcnet.org" class="normal">me</a> now.
  </tr>
  <tr>
   <td class="sources">&nbsp;Sources</td>
+  <td class="sources">&nbsp;deb-src (<a href="txt/debian.release.txt" class="normal">release notes</a>)</td>
+  <td class="sources" align="center"><?php echo $Latest_DEB_Server_src; ?></td>
+  <td class="sources" align="right"><?php echo div(FileSizeDEB("server",$Latest_DEB_Server_Base,$Latest_DEB_Server_src),1024); ?> kB&nbsp;</td>
+  <td class="sources" align="center"><a href="download/server/deb/<?php echo $Latest_DEB_Server_Base; ?>/" class="normal">HTTP</a></td>
+  <td class="sources" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/server/deb/<?php echo $Latest_DEB_Server_Base; ?>/" class="normal">FTP</a></td>
+  <td class="sources" align="center"><a href="download/server/deb/<?php echo $Latest_DEB_Server_Base."/silc-server_".$Latest_DEB_Server; ?>_i386.changes" class="normal">MD5</a></td>
+ </tr>
+ <tr>
+  <td class="sources">&nbsp;Sources</td>
   <td class="sources">&nbsp;NetBSD pkgsrc</td>
   <td class="sources" align="center"><?php echo $Latest_NetBSD_Server_src; ?></td>
   <td class="sources" align="right"><?php echo div(FileSize("download/server/netbsd/pkgsrc/silc-server-".$Latest_NetBSD_Server_src.".tar.gz"),1024); ?> kB&nbsp;</td>
   <td class="sources" align="center"><a href="download/server/netbsd/pkgsrc/silc-server-<?php echo $Latest_NetBSD_Server_src; ?>.tar.gz" class="normal">HTTP</a></td>
   <td class="sources" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/server/netbsd/pkgsrc/silc-server-<?php echo $Latest_NetBSD_Server_src; ?>.tar.gz" class="normal">FTP</a></td>
   <td class="sources" align="center"><a href="download/server/netbsd/pkgsrc/silc-server-<?php echo $Latest_NetBSD_Server_src; ?>.tar.gz.md5" class="normal">MD5</a></td>
+ </tr>
+ <tr>
+  <td class="sources">&nbsp;Sources</td>
+  <td class="sources">&nbsp;OpenBSD ports</td>
+  <td class="sources" align="center"><?php echo $Latest_OpenBSD_Server_src; ?></td>
+  <td class="sources" align="right"><?php echo div(FileSize("download/server/openbsd/ports/silc-server-".$Latest_OpenBSD_Server_src.".tar.gz"),1024); ?> kB&nbsp;</td>
+  <td class="sources" align="center"><a href="download/server/openbsd/ports/silc-server-<?php echo $Latest_OpenBSD_Server_src; ?>.tar.gz" class="normal">HTTP</a></td>
+  <td class="sources" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/server/openbsd/ports/silc-server-<?php echo $Latest_OpenBSD_Server_src; ?>.tar.gz" class="normal">FTP</a></td>
+  <td class="sources" align="center"><a href="download/server/openbsd/ports/silc-server-<?php echo $Latest_OpenBSD_Server_src; ?>.tar.gz.md5" class="normal">MD5</a></td>
  </tr>
  <tr>
   <td class="binaries">&nbsp;Binaries</td>
@@ -174,6 +219,15 @@ contact <a href="mailto:priikone at silcnet.org" class="normal">me</a> now.
   <td class="binaries" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/server/rpm/i386/silc-server-<?php echo $Latest_RPM_Server; ?>.i386.rpm" class="normal">FTP</a></td>
   <td class="binaries" align="center"><a href="download/server/rpm/i386/silc-server-<?php echo $Latest_RPM_Server; ?>.i386.rpm.md5" class="normal">MD5</a></td>
 </tr>
+ <tr>
+  <td class="binaries">&nbsp;Binaries</td>
+  <td class="binaries">&nbsp;Debian GNU/Linux i386 (<a href="txt/debian.release.txt" class="normal">release notes</a>)</td>
+  <td class="binaries" align="center"><?php echo $Latest_DEB_Server; ?></td>
+  <td class="binaries" align="right"><?php echo div(FileSize("download/server/deb/".$Latest_DEB_Server_Base."/silc-server_".$Latest_DEB_Server."_i386.deb"),1024); ?> kB&nbsp;</td>
+  <td class="binaries"  align="center"><a href="download/server/deb/<?php echo $Latest_DEB_Server_Base."/silc-server_".$Latest_DEB_Server ?>_i386.deb" class="normal">HTTP</a></td>
+  <td class="binaries" align="center"><a href="ftp://<?php echo $FTP_Site.$FTP_Root ?>/server/deb/<?php echo $Latest_DEB_Server_Base."/silc-server_".$Latest_DEB_Server ?>_i386.deb" class="normal">FTP</a></td>
+  <td class="binaries" align="center"><a href="download/server/deb/<?php echo $Latest_DEB_Server_Base."/silc-server_".$Latest_DEB_Server; ?>_i386.changes" class="normal">MD5</a></td>
+ </tr>
  <tr>
   <td colspan="7" class="text">
 &nbsp;<br />

@@ -31,8 +31,8 @@
 // 
 
 // Read neccessary stuff if accessible
-  if (Is_Readable("config.php")) include("config.php");
-  if (Is_Readable("mirror.php")) include("mirror.php");
+  if (@Is_Readable("config.php")) include("config.php");
+  if (@Is_Readable("mirror.php")) include("mirror.php");
 
 ?>
 <?xml version="1.0" encoding="iso-8859-1"?>
@@ -70,11 +70,11 @@
 
   // find out release dates from release archive files
   $Date_Toolkit = date("l dS of F Y H:i:s",
-                  filemtime("download/silc-toolkit-".$Latest_Toolkit.".tar.gz"));
+                  filemtime("download/toolkit/sources/silc-toolkit-".$Latest_Toolkit.".tar.gz"));
   $Date_Client  = date("l dS of F Y H:i:s",
-                  filemtime("download/silc-client-".$Latest_Client.".tar.gz"));
+                  filemtime("download/client/sources/silc-client-".$Latest_Client.".tar.gz"));
   $Date_Server  = date("l dS of F Y H:i:s",
-                  filemtime("download/silc-server-".$Latest_Server.".tar.gz"));
+                  filemtime("download/server/sources/silc-server-".$Latest_Server.".tar.gz"));
 
   // remove possibly dangerous characters, only alphanumerical characters are passed
   function Filter($input) {
@@ -87,7 +87,7 @@
   }
 
   $pass = 0;
-  if (Is_Readable("html/".Filter($page).".php")) {
+  if (@Is_Readable("html/".Filter($page).".php")) {
     echo $page;
     $pass = 1;
   }
@@ -104,43 +104,50 @@
 
 <table width="700" cellpadding="1" cellspacing="0" border="0">
  <tr>
-  <td class="black">
+  <td class="outline">
     <table width="100%" cellpadding="0" cellspacing="0" border="0">
      <tr>
-      <td class="white">
+      <td class="links">
         <img src="img/silc.gif" width="700" height="100" alt=" " />
       </td>
      </tr>
      <tr>
-      <td class="white" align="center">
+      <td class="links" align="center">
         <table cellspacing="3" cellpadding="10" border="0">
-        <tr><td valign="top" class="white">
+        <tr><td valign="top" class="links">
         <b>General</b><br />
-        <small class="black">o</small> <a href="?page=news" class="normal">SILC News</a><br />
-        <small class="black">o</small> <a href="?page=about" class="normal">About the SILC</a><br />
-        <small class="black">o</small> <a href="?page=history" class="normal">History of SILC</a><br />
-        <small class="black">o</small> <a href="?page=contribute" class="normal">Contributing</a><br />
-        <small class="black">o</small> <a href="?page=lists" class="normal">SILC Mailing Lists</a><br />
-        </td><td valign="top" class="white">
+        <small class="normal">o</small> <a href="?page=news" class="normal">SILC News</a><br />
+        <small class="normal">o</small> <a href="?page=about" class="normal">About the SILC</a><br />
+        <small class="normal">o</small> <a href="?page=history" class="normal">History of SILC</a><br />
+        <small class="normal">o</small> <a href="?page=contact" class="normal">Contact Us</a><br />
+        <small class="normal">o</small> <a href="?page=lists" class="normal">SILC Mailing Lists</a><br />
+        </td><td valign="top" class="links">
         <b>Documentation</b><br />
-        <small class="black">o</small> <a href="?page=docs" class="normal">SILC Documentation</a><br />
-        <small class="black">o</small> <a href="?page=whitepaper" class="normal">SILC White Paper</a><br />
-        <small class="black">o</small> <a href="?page=faq" class="normal">SILC FAQ</a><br />
-        <small class="black">o</small> <a href="?page=features" class="normal">SILC Features</a><br />
-        <small class="black">o</small> <a href="?page=todo" class="normal">TODO List</a><br />
-        </td><td valign="top" class="white">
+        <small class="normal">o</small> <a href="?page=docs" class="normal">SILC Documentation</a><br />
+        <small class="normal">o</small> <a href="?page=whitepaper" class="normal">SILC White Paper</a><br />
+        <small class="normal">o</small> <a href="?page=faq" class="normal">SILC FAQ</a><br />
+        <small class="normal">o</small> <a href="?page=features" class="normal">SILC Features</a><br />
+        <small class="normal">o</small> <a href="?page=todo" class="normal">TODO List</a><br />
+        </td><td valign="top" class="links">
         <b>Software</b><br />
-        <small class="black">o</small> <a href="?page=download" class="normal">Download SILC</a><br />
-        <small class="black">o</small> <a href="?page=mirrors" class="normal">Mirrors Worldwide</a><br />
-        <small class="black">o</small> <a href="?page=cvs" class="normal">Anonymous CVS Access</a><br />
-        <small class="black">o</small> <a href="txt/changes.txt" class="normal">ChangeLog</a><br />
-        <small class="black">o</small> <a href="?page=copying" class="normal">The General Public License (GPL)</a><br />
+        <small class="normal">o</small> <a href="?page=download" class="normal">Download SILC</a><br />
+        <small class="normal">o</small> <a href="?page=mirrors" class="normal">Mirrors Worldwide</a><br />
+        <small class="normal">o</small> <a href="?page=cvs" class="normal">Anonymous CVS</a><br />
+        <small class="normal">o</small> <a href="txt/changes.txt" class="normal">ChangeLog</a><br />
+        <small class="normal">o</small> <a href="?page=copying" class="normal">Licensing</a><br />
+        </td><td valign="top" class="links">
+        <b>Community</b><br />
+        <small class="normal">o</small> <a href="?page=servers" class="normal">Server List</a><br />
+        <small class="normal">o</small> <a href="?page=contribute" class="normal">Contributing</a><br />
+        <small class="normal">o</small> <a href="?page=help" class="normal">Help</a><br />
+        <small class="normal">o</small> <a href="?page=links" class="normal">Links</a><br />
+        <small class="normal">o</small> <a href="txt/credits.txt" class="normal">Credits</a><br />
         </td></tr></table>
       </td>
      </tr>
-     <tr><td class="blackline"></td></tr>
+     <tr><td class="line"></td></tr>
      <tr>
-      <td class="<?php if($pass == 1 && $page == "whitepaper") $color="whitetext"; else $color="greytext"; echo $color; ?>">
+      <td class="<?php if($pass == 1 && $page == "whitepaper") $color="whitepaper"; else $color="text"; echo $color; ?>">
         <table width="100%" cellpadding="10" cellspacing="0" border="0">
         <tr><td class="<?php echo $color; ?>">
 <?php
@@ -162,6 +169,9 @@
       case "linux": $img = "penguin.gif";
                     $alt = "( penguin powered - IMAGE )";
                     break;
+      case "sun":   $img = "sun.png";
+                    $alt = "( powered by Sun - IMAGE )";
+                    break;
     }
     echo "<tr>";
     echo "<td align=\"right\" valign=\"bottom\">";
@@ -178,7 +188,7 @@
   </td>
  </tr>
 </table>
-<small class="blue">
+<small class="highlight">
 webpage by
 <a href="mailto:salo at silcnet.org" class="small">salo at silcnet.org</a> | 
 <?php

@@ -20,6 +20,47 @@ described in that document.
 There is anonymous CVS acccess for those who want to participate the
 development process. See the <a href="?page=cvs" class="normal">CVS page.</a>
 
+<br />&nbsp;<br />&nbsp;<br />
+<b>Submitting Patches to Mailing List</b>
+<br />&nbsp;<br />
+Please follow these instructions when you are submitting a patch to the 
+silc-devel mailing list.
+
+<br />&nbsp;<br />
+ <table cellspacing="2" cellpadding="0" border="0">
+<tr><td valign="top"> - </td><td>
+Use the unified output format for the diff (diff -u)
+</td></tr>
+<tr><td valign="top"> - </td><td>
+Use diff, not cvs diff
+</td></tr>
+<tr><td valign="top"> - </td><td>
+Send the patch to the mailing list, and add those people that should know
+about it on CC:
+</td></tr>
+<tr><td valign="top"> - </td><td>
+Submit ready patches. If they are not ready then sending them to
+people who are involved in the development is preferred. The patch might 
+face several round trips so sending patches which are ready is preffered
+</td></tr>
+<tr><td valign="top"> - </td><td>
+Include the patch in the body of the email or attach it
+</td></tr>
+<tr><td valign="top"> - </td><td>
+Send separate patches for every bugfix or feature
+</td></tr>
+<tr><td valign="top"> - </td><td>
+If you think that your work is benefical to the development of the
+SILC and would like to be listed in the CREDITS file in SILC packages, you
+can submit patches for the CREDITS file too. Nobody will be added there
+without a patch, this way those who don't want to see their name there 
+won't get there
+</td></tr>
+<tr><td valign="top"> - </td><td>
+Do not submit bugs ;)
+</td></tr>
+</table>
+
 <br />&nbsp;<br />
 <b><big>Support</big></b>
 <br />&nbsp;<br />

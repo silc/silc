@@ -108,7 +108,9 @@
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f4_60" class="normal">
 4.6 Why SILC server runs on privileged port 706?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f4_70" class="normal">
-4.7 I see [Unknown] in the log file, what does it mean?</a>
+4.7 I see [Unknown] in the log file, what does it mean?</a><br />
+ &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f4_80" class="normal">
+4.8 How can I generate a new server key pair?</a>
 
 <br />&nbsp;<br />
 <a href="#f5_0" class="normal">5. Toolkit Questions</a><br />
@@ -742,6 +744,24 @@ means that the connection was not authenticated yet, and it is not known
 whether the connection was a client, server or router.  There will appear
 [Client], [Server] or [Router] if the connection is authenticated at that
 point.
+<br />&nbsp;<br />
+
+<a name="f4_80"></a>
+<samp class="highlight">Q: How can I generate a new server key pair?</samp><br />
+A: You can generate a new key pair using the silcd command with the -C 
+option.  When SILC Server is installed a key pair is generated 
+automatically for you.  However, it is suggested that you check the 
+information found in that key and generate a new key pair if the 
+information is incorrect.  You can check the information of your public 
+key by giving command: <samp class="highlight">silc -S file.pub</samp>.
+<br />&nbsp;<br />
+If you want to generate a new key pair then you can give for example 
+command: <samp class="highlight">
+silcd -C . --identifier="UN=silc-oper, HN=silc.silcnet.org, RN=SILC Router 
+Admin, E=silc-oper@silcnet.org, O=SILC Project, C=SK"</samp>. This will 
+create the key pair to current directory, with the specified identifier.  
+Please, give the --help option to the silcd to see usage help for the -C 
+and --identifier options.
 <br />&nbsp;<br />
 
 
