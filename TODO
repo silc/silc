@@ -37,12 +37,6 @@ TODO/bugs In SILC Server
    own resolver stuff (through scheduler, if possible without writing
    too much own stuff) or use threads.
 
- o The ID List must be optimized.  When the lists grow the searching
-   becomes a lot slower and is some cases the lists are searched many
-   times, like with channel messages (twice at least).  Some sort of
-   hash tables should replace the lists.  Thus, the ID cache should be
-   rewritten to use hash tables internally.
-
  o The backup router support described in the protocol specification
    should be done at some point.
 
@@ -75,9 +69,6 @@ TODO/bugs In SILC Libraries
 	  support IPv6.
 	o silc_id_render supports only IPv4 based ID's in the file
 	  lib/silcutil/silcutil.c.
-
- o All the ID Cache routines has not been implemented in
-   lib/silccore/idcache.c.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be

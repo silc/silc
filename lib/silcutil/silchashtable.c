@@ -17,7 +17,13 @@
   GNU General Public License for more details.
 
 */
-/* Implementation of collision resistant hash table. */
+/* Implementation of collision resistant hash table. This is a hash table
+   that provides a reliable (what you add stays there, and duplicate keys
+   are allowed) with as fast reference to the key as possible. If duplicate
+   keys are a lot in the hash table the lookup gets slower of course. 
+   However, this is reliable and no data is lost at any point. If you know
+   that you never have duplicate keys then this is as fast as any simple
+   hash table. */
 /* $Id$ */
 
 #include "silcincludes.h"
@@ -27,7 +33,10 @@
 #define SILC_HASH_TABLE_SIZE 3
 
 /* Produce the index by hashing the key */
-#define SILC_HASH_TABLE_HASH (ht->hash(key) % primesize[ht->table_size])
+#define SILC_HASH_TABLE_HASH \
+  (ht->hash(key, ht->hash_user_context) % primesize[ht->table_size])
+#define SILC_HASH_TABLE_HASH_F(f, c) \
+  ((f)(key, (c)) % primesize[ht->table_size])
 
 /* One entry in the hash table. Includes the key and the associated
    context. The `next' pointer is non-NULL if two (or more) different
@@ -47,6 +56,9 @@ struct SilcHashTableStruct {
   SilcHashFunction hash;
   SilcHashCompare compare;
   SilcHashDestructor destructor;
+  void *hash_user_context;
+  void *compare_user_context;
+  void *destructor_user_context;
 };
 
 /* Prime sizes for the hash table. The size of the table will always
@@ -75,7 +87,8 @@ static uint32 silc_hash_table_primesize(uint32 size, uint32 *index)
   return primesize[i - 1];
 }
 
-/* Internal routine to find entry in the hash table by `key'. */
+/* Internal routine to find entry in the hash table by `key'. Returns
+   the previous entry (if exists) as well. */
 
 static inline SilcHashTableEntry *
 silc_hash_table_find_internal(SilcHashTable ht, void *key,
@@ -85,7 +98,8 @@ silc_hash_table_find_internal(SilcHashTable ht, void *key,
 
   entry = &ht->table[SILC_HASH_TABLE_HASH];
   if (ht->compare) {
-    while (*entry && ht->compare((*entry)->key, key) == FALSE) {
+    while (*entry && ht->compare((*entry)->key, key, ht->compare_user_context)
+	   == FALSE) {
       prev = *entry;
       entry = &(*entry)->next;
     }
@@ -100,6 +114,180 @@ silc_hash_table_find_internal(SilcHashTable ht, void *key,
   return entry;
 }
 
+/* Internal routine to find entry in the hash table by `key' and `context'.
+   Returns the previous entry (if exists) as well. */
+
+static inline SilcHashTableEntry *
+silc_hash_table_find_internal_context(SilcHashTable ht, void *key,
+				      void *context,
+				      SilcHashTableEntry *prev_entry)
+{
+  SilcHashTableEntry *entry, prev = NULL;
+
+  entry = &ht->table[SILC_HASH_TABLE_HASH];
+  if (ht->compare) {
+    while (*entry && ht->compare((*entry)->key, key, ht->compare_user_context)
+	   == FALSE && (*entry)->context != context) {
+      prev = *entry;
+      entry = &(*entry)->next;
+    }
+  } else {
+    while (*entry && (*entry)->key != key && (*entry)->context != context) {
+      prev = *entry;
+      entry = &(*entry)->next;
+    }
+  }
+
+  *prev_entry = prev;
+  return entry;
+}
+
+/* Internal routine to find entry in the hash table by `key'. */
+
+static inline SilcHashTableEntry *
+silc_hash_table_find_internal_simple(SilcHashTable ht, void *key,
+				     SilcHashFunction hash,
+				     void *hash_user_context,
+				     SilcHashCompare compare,
+				     void *compare_user_context)
+{
+  SilcHashTableEntry *entry;
+
+  if (hash)
+    entry = &ht->table[SILC_HASH_TABLE_HASH_F(hash, hash_user_context)];
+  else
+    entry = &ht->table[SILC_HASH_TABLE_HASH];
+  if (compare) {
+    while (*entry && !compare((*entry)->key, key, compare_user_context))
+      entry = &(*entry)->next;
+  } else if (ht->compare) {
+      while (*entry && !ht->compare((*entry)->key, key, 
+				    ht->compare_user_context))
+	entry = &(*entry)->next;
+  } else {
+    while (*entry && (*entry)->key != key)
+      entry = &(*entry)->next;
+  }
+
+  return entry;
+}
+
+/* Internal routine to find all keys by `key'. This may return multiple
+   entries if multiple entries with same key exists. */
+
+static inline bool
+silc_hash_table_find_internal_all(SilcHashTable ht, void *key, 
+				  SilcHashTableEntry **entries, 
+				  uint32 *count)
+{
+  SilcHashTableEntry *entry;
+
+  *entries = NULL;
+  *count = 0;
+
+  entry = &ht->table[SILC_HASH_TABLE_HASH];
+  if (ht->compare) {
+    while (*entry) {
+      if (ht->compare((*entry)->key, key, ht->compare_user_context)) {
+	*entries = silc_realloc(*entries, sizeof(**entries) * (*count + 1));
+	(*entries)[*count] = *entry;
+	(*count)++;
+      }
+      entry = &(*entry)->next;
+    }
+  } else {
+    while (*entry) {
+      if ((*entry)->key == key) {
+	*entries = silc_realloc(*entries, sizeof(**entries) * (*count + 1));
+	(*entries)[*count] = *entry;
+	(*count)++;
+      }
+      entry = &(*entry)->next;
+    }
+  }
+
+  return *entries ? TRUE : FALSE;
+}
+
+/* Internal routine to find all keys by `key'. This may return multiple
+   entries if multiple entries with same key exists. With specific
+   hash and comparison functions. */
+
+static inline bool
+silc_hash_table_find_internal_all_ext(SilcHashTable ht, void *key, 
+				      SilcHashTableEntry **entries, 
+				      uint32 *count,
+				      SilcHashFunction hash,
+				      void *hash_user_context,
+				      SilcHashCompare compare,
+				      void *compare_user_context)
+{
+  SilcHashTableEntry *entry;
+
+  *entries = NULL;
+  *count = 0;
+
+  entry = &ht->table[SILC_HASH_TABLE_HASH];
+  if (compare) {
+    while (*entry) {
+      if (compare((*entry)->key, key, compare_user_context)) {
+	*entries = silc_realloc(*entries, sizeof(**entries) * (*count + 1));
+	(*entries)[*count] = *entry;
+	(*count)++;
+      }
+      entry = &(*entry)->next;
+    }
+  } else {
+    while (*entry) {
+      if ((*entry)->key == key) {
+	*entries = silc_realloc(*entries, sizeof(**entries) * (*count + 1));
+	(*entries)[*count] = *entry;
+	(*count)++;
+      }
+      entry = &(*entry)->next;
+    }
+  }
+
+  return *entries ? TRUE : FALSE;
+}
+
+/* Internal routine to add new key to the hash table */
+
+static inline void
+silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
+			     SilcHashFunction hash, 
+			     void *hash_user_context)
+{
+  SilcHashTableEntry *entry;
+  uint32 index = (hash ? SILC_HASH_TABLE_HASH : 
+		  SILC_HASH_TABLE_HASH_F(hash, hash_user_context));
+
+  entry = &ht->table[index];
+  if (*entry) {
+    /* The entry exists already. We have a collision, add it to the
+       list to avoid collision. */
+    SilcHashTableEntry e, tmp;
+
+    e = *entry;
+    tmp = e->next;
+    while (tmp) {
+      e = tmp;
+      tmp = tmp->next;
+    }
+
+    e->next = silc_calloc(1, sizeof(*e->next));
+    e->next->key = key;
+    e->next->context = context;
+    ht->entry_count++;
+  } else {
+    /* New key */
+    *entry = silc_calloc(1, sizeof(**entry));
+    (*entry)->key = key;
+    (*entry)->context = context;
+    ht->entry_count++;
+  }
+}
+
 /* Allocates new hash table and returns it.  If the `table_size' is not
    zero then the hash table size is the size provided. If zero then the
    default size will be used. Note that if the `table_size' is provided
@@ -110,8 +298,11 @@ silc_hash_table_find_internal(SilcHashTable ht, void *key,
 
 SilcHashTable silc_hash_table_alloc(uint32 table_size, 
 				    SilcHashFunction hash,
+				    void *hash_user_context,
 				    SilcHashCompare compare,
-				    SilcHashDestructor destructor)
+				    void *compare_user_context,
+				    SilcHashDestructor destructor,
+				    void *destructor_user_context)
 {
   SilcHashTable ht;
   uint32 size_index = SILC_HASH_TABLE_SIZE;
@@ -128,6 +319,9 @@ SilcHashTable silc_hash_table_alloc(uint32 table_size,
   ht->hash = hash;
   ht->compare = compare;
   ht->destructor = destructor;
+  ht->hash_user_context = hash_user_context;
+  ht->compare_user_context = compare_user_context;
+  ht->destructor_user_context = destructor_user_context;
 
   return ht;
 }
@@ -144,7 +338,7 @@ void silc_hash_table_free(SilcHashTable ht)
     e = ht->table[i];
     while (e) {
       if (ht->destructor)
-	ht->destructor(e->key, e->context);
+	ht->destructor(e->key, e->context, ht->destructor_user_context);
       tmp = e;
       e = e->next;
       silc_free(tmp);
@@ -178,33 +372,15 @@ uint32 silc_hash_table_count(SilcHashTable ht)
 
 void silc_hash_table_add(SilcHashTable ht, void *key, void *context)
 {
-  SilcHashTableEntry *entry;
-  uint32 index = SILC_HASH_TABLE_HASH;
+  silc_hash_table_add_internal(ht, key, context, NULL, NULL);
+}
 
-  entry = &ht->table[index];
-  if (*entry) {
-    /* The entry exists already. We have a collision, add it to the
-       list to avoid collision. */
-    SilcHashTableEntry e, tmp;
+/* Same as above but with specific hash function and user context. */
 
-    e = *entry;
-    tmp = e->next;
-    while (tmp) {
-      e = tmp;
-      tmp = tmp->next;
-    }
-
-    e->next = silc_calloc(1, sizeof(*e->next));
-    e->next->key = key;
-    e->next->context = context;
-    ht->entry_count++;
-  } else {
-    /* New key */
-    *entry = silc_calloc(1, sizeof(**entry));
-    (*entry)->key = key;
-    (*entry)->context = context;
-    ht->entry_count++;
-  }
+void silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
+			     SilcHashFunction hash, void *hash_user_context)
+{
+  silc_hash_table_add_internal(ht, key, context, hash, hash_user_context);
 }
 
 /* Same as above but if the `key' already exists in the hash table
@@ -222,7 +398,8 @@ void silc_hash_table_replace(SilcHashTable ht, void *key, void *context)
     /* The entry exists already. We have a collision, replace the old
        key and context. */
     if (ht->destructor)
-      ht->destructor((*entry)->key, (*entry)->context);
+      ht->destructor((*entry)->key, (*entry)->context, 
+		     ht->destructor_user_context);
   } else {
     /* New key */
     *entry = silc_calloc(1, sizeof(**entry));
@@ -257,7 +434,41 @@ bool silc_hash_table_del(SilcHashTable ht, void *key)
     prev->next = e->next;
 
   if (ht->destructor)
-    ht->destructor(e->key, e->context);
+    ht->destructor(e->key, e->context, ht->destructor_user_context);
+  silc_free(e);
+
+  ht->entry_count--;
+
+  return TRUE;
+}
+
+/* Same as above but verifies that the context associated with the `key'
+   matches the `context'. This is handy to use with hash tables that may
+   have duplicate keys. In that case the `context' may be used to check
+   whether the correct entry is being deleted. */
+
+bool silc_hash_table_del_by_context(SilcHashTable ht, void *key, 
+				    void *context)
+{
+  SilcHashTableEntry *entry, prev, e;
+
+  entry = silc_hash_table_find_internal_context(ht, key, context, &prev);
+  if (*entry == NULL)
+    return FALSE;
+
+  e = *entry;
+
+  if (!prev && e->next)
+    *entry = e->next;
+  if (!prev && e->next == NULL)
+    *entry = NULL;
+  if (prev)
+    prev->next = NULL;
+  if (prev && e->next)
+    prev->next = e->next;
+
+  if (ht->destructor)
+    ht->destructor(e->key, e->context, ht->destructor_user_context);
   silc_free(e);
 
   ht->entry_count--;
@@ -274,9 +485,10 @@ bool silc_hash_table_del(SilcHashTable ht, void *key)
 bool silc_hash_table_find(SilcHashTable ht, void *key,
 			  void **ret_key, void **ret_context)
 {
-  SilcHashTableEntry *entry, prev;
+  SilcHashTableEntry *entry;
 
-  entry = silc_hash_table_find_internal(ht, key, &prev);
+  entry = silc_hash_table_find_internal_simple(ht, key, NULL, NULL,
+					       NULL, NULL);
   if (*entry == NULL)
     return FALSE;
 
@@ -286,6 +498,138 @@ bool silc_hash_table_find(SilcHashTable ht, void *key,
     *ret_context = (*entry)->context;
 
   return TRUE;
+}
+
+/* As the hash table is collision resistant it is possible to save duplicate
+   keys to the hash table. This function can be used to return all keys
+   and contexts from the hash table that are found using the `key'. */
+
+bool silc_hash_table_find_all(SilcHashTable ht, void *key,
+			      void ***ret_keys, void ***ret_contexts,
+			      unsigned int *ret_count)
+{
+  SilcHashTableEntry *entries;
+  uint32 count;
+  int i;
+
+  if (!silc_hash_table_find_internal_all(ht, key, &entries, &count))
+    return FALSE;
+
+  if (ret_keys)
+    *ret_keys = silc_calloc(count, sizeof(**ret_keys));
+  if (ret_contexts)
+    *ret_contexts = silc_calloc(count, sizeof(**ret_contexts));
+  if (ret_count)
+    *ret_count = count;
+
+  if (ret_keys && ret_count) {
+    for (i = 0; i < count; i++) {
+      (*ret_keys)[i] = entries[i]->key;
+      (*ret_contexts)[i] = entries[i]->context;
+    }
+  } else if (ret_keys && !ret_contexts) {
+    for (i = 0; i < count; i++) 
+      (*ret_keys)[i] = entries[i]->key;
+  } else if (!ret_keys && ret_contexts) {
+    for (i = 0; i < count; i++)
+      (*ret_contexts)[i] = entries[i]->context;
+  }
+
+  silc_free(entries);
+
+  return TRUE;
+}
+
+/* Same as above but with specified hash and comparison functions. */
+
+bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
+			      void **ret_key, void **ret_context,
+			      SilcHashFunction hash, 
+			      void *hash_user_context,
+			      SilcHashCompare compare, 
+			      void *compare_user_context)
+{
+  SilcHashTableEntry *entry;
+
+  entry = silc_hash_table_find_internal_simple(ht, key,
+					       hash, hash_user_context,
+					       compare, compare_user_context);
+  if (*entry == NULL)
+    return FALSE;
+
+  if (ret_key)
+    *ret_key = (*entry)->key;
+  if (ret_context)
+    *ret_context = (*entry)->context;
+
+  return TRUE;
+}
+
+/* Same as above but with specified hash and comparison functions. */
+
+bool silc_hash_table_find_all_ext(SilcHashTable ht, void *key,
+				  void ***ret_keys, void ***ret_contexts,
+				  unsigned int *ret_count,
+				  SilcHashFunction hash, 
+				  void *hash_user_context,
+				  SilcHashCompare compare, 
+				  void *compare_user_context)
+{
+  SilcHashTableEntry *entries;
+  uint32 count;
+  int i;
+
+  if (!silc_hash_table_find_internal_all_ext(ht, key, &entries, &count,
+					     hash, hash_user_context,
+					     compare, compare_user_context))
+    return FALSE;
+
+  if (ret_keys)
+    *ret_keys = silc_calloc(count, sizeof(**ret_keys));
+  if (ret_contexts)
+    *ret_contexts = silc_calloc(count, sizeof(**ret_contexts));
+  if (ret_count)
+    *ret_count = count;
+
+  if (ret_keys && ret_count) {
+    for (i = 0; i < count; i++) {
+      (*ret_keys)[i] = entries[i]->key;
+      (*ret_contexts)[i] = entries[i]->context;
+    }
+  } else if (ret_keys && !ret_contexts) {
+    for (i = 0; i < count; i++)
+      (*ret_keys)[i] = entries[i]->key;
+  } else if (!ret_keys && ret_contexts) {
+    for (i = 0; i < count; i++)
+      (*ret_contexts)[i] = entries[i]->context;
+  }
+
+  silc_free(entries);
+
+  return TRUE;
+}
+
+/* Traverse all entrys in the hash table and call the `foreach' for
+   every entry with the `user_context' context. */
+
+void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
+			     void *user_context)
+{
+  SilcHashTableEntry e, tmp;
+  int i;
+
+  if (!foreach)
+    return;
+
+  for (i = 0; i < primesize[ht->table_size]; i++) {
+    e = ht->table[i];
+    while (e) {
+      /* Entry may become invalid inside the `foreach' */
+      tmp = e->next;
+      foreach(e->key, e->context, user_context);
+      e = tmp;
+    }
+  }
 }
 
 /* Rehashs the hash table. The size of the new hash table is provided

@@ -771,7 +771,7 @@ char *silc_get_real_name()
 
 /* Basic has function to hash strings. May be used with the SilcHashTable. */
 
-uint32 silc_hash_string(void *key)
+uint32 silc_hash_string(void *key, void *user_context)
 {
   char *s = (char *)key;
   uint32 h = 0, g;
@@ -790,61 +790,101 @@ uint32 silc_hash_string(void *key)
 
 /* Basic hash function to hash integers. May be used with the SilcHashTable. */
 
-uint32 silc_hash_uint(void *key)
+uint32 silc_hash_uint(void *key, void *user_context)
 {
   return *(uint32 *)key;
 }
 
 /* Basic hash funtion to hash pointers. May be used with the SilcHashTable. */
 
-uint32 silc_hash_ptr(void *key)
+uint32 silc_hash_ptr(void *key, void *user_context)
 {
   return (uint32)key;
 }
 
-/* Hash a Server ID. */
+/* Hash a ID. The `user_context' is the ID type. */
 
-uint32 silc_hash_server_id(void *key)
+uint32 silc_hash_id(void *key, void *user_context)
 {
-  SilcServerID *id = (SilcServerID *)key;
-  int i;
-  uint32 h;
+  SilcIdType id_type = (SilcIdType)(uint32)user_context;
+  uint32 h = 0;
 
-  h = id->port * id->rnd;
-  for (i = 0; i < id->ip.data_len; i++)
-    h ^= id->ip.data[i];
+  switch (id_type) {
+  case SILC_ID_CLIENT:
+    {
+      SilcClientID *id = (SilcClientID *)key;
+      int i;
+      uint32 h;
+      
+      h = id->rnd;
+      for (i = 0; i < sizeof(id->hash); i++)
+	h ^= id->hash[i];
+      for (i = 0; i < id->ip.data_len; i++)
+	h ^= id->ip.data[i];
+      
+      return h;
+    }
+    break;
+  case SILC_ID_SERVER:
+    {
+      SilcServerID *id = (SilcServerID *)key;
+      int i;
+      uint32 h;
+      
+      h = id->port * id->rnd;
+      for (i = 0; i < id->ip.data_len; i++)
+	h ^= id->ip.data[i];
+      
+      return h;
+    }
+    break;
+  case SILC_ID_CHANNEL:
+    {
+      SilcChannelID *id = (SilcChannelID *)key;
+      int i;
+      uint32 h;
+      
+      h = id->port * id->rnd;
+      for (i = 0; i < id->ip.data_len; i++)
+	h ^= id->ip.data[i];
+      
+      return h;
+    }
+    break;
+  default:
+    break;
+  }
 
   return h;
 }
 
-/* Hash a Client ID. */
+/* Hash binary data. The `user_context' is the data length. */
 
-uint32 silc_hash_client_id(void *key)
+uint32 silc_hash_data(void *key, void *user_context)
 {
-  SilcClientID *id = (SilcClientID *)key;
+  uint32 len = (uint32)user_context, h = 0;
+  unsigned char *data = (unsigned char *)key;
   int i;
-  uint32 h;
 
-  h = id->rnd;
-  for (i = 0; i < sizeof(id->hash); i++)
-    h ^= id->hash[i];
-  for (i = 0; i < id->ip.data_len; i++)
-    h ^= id->ip.data[i];
+  h = (data[0] * data[len - 1] + 1) * len;
+  for (i = 0; i < len; i++)
+    h ^= data[i];
 
   return h;
 }
 
-/* Hash a Channel ID. */
+/* Compares two ID's. May be used as SilcHashTable comparison function. */
 
-uint32 silc_hash_channel_id(void *key)
+bool silc_hash_id_compare(void *key1, void *key2, void *user_context)
 {
-  SilcChannelID *id = (SilcChannelID *)key;
-  int i;
-  uint32 h;
+  SilcIdType id_type = (SilcIdType)(uint32)user_context;
+  return SILC_ID_COMPARE_TYPE(key1, key2, id_type);
+}
 
-  h = id->port * id->rnd;
-  for (i = 0; i < id->ip.data_len; i++)
-    h ^= id->ip.data[i];
+/* Compares binary data. May be used as SilcHashTable comparison function. */
 
-  return h;
+bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
+{
+  uint32 len = (uint32)user_context;
+  return !memcmp(key1, key2, len);
 }

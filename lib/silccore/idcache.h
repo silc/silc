@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2000 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,17 +27,16 @@
    This is one entry in the SILC ID Cache system. Contents of this is
    allocated outside the ID cache system, however, all the fields are 
    filled with ID cache utility functions. The ID cache system does not
-   allocate any of these fields nor free them.
+   allocate any of these fields nor free them. The system assumes that
+   the type of the ID in a specific ID Cache context are of the same
+   type.  One should not mix different types of ID's (eg. Client ID and
+   Server ID) to the same ID Cache context.
 
    unsigned char *data
    uint32 data_len;
 
       The data that is usually used to find the data from the cache.
       For example for Client ID's this is nickname.
-
-   SilcIdType type
-
-      Type of the ID.
 
    void *id
 
@@ -58,7 +57,6 @@
 typedef struct {
   unsigned char *data;
   uint32 data_len;
-  SilcIdType type;
   void *id;
   uint32 expire;
   void *context;
@@ -83,34 +81,29 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
 #define SILC_ID_CACHE_EXPIRE_DEF (time(NULL) + SILC_ID_CACHE_EXPIRE)
 
 /* Prototypes */
-SilcIDCache silc_idcache_alloc(uint32 count,
+SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
 			       SilcIDCacheDestructor destructor);
 void silc_idcache_free(SilcIDCache cache);
-void silc_idcache_sort_by_data(SilcIDCache cache);
-int silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data, 
-			      SilcIDCacheList *ret);
-int silc_idcache_find_by_data_one(SilcIDCache cache, unsigned char *data,
+bool silc_idcache_add(SilcIDCache cache, unsigned char *data, 
+		      uint32 data_len, void *id, void *context, int expire);
+bool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old);
+bool silc_idcache_del_by_id(SilcIDCache cache, void *id);
+bool silc_idcache_del_all(SilcIDCache cache);
+bool silc_idcache_purge(SilcIDCache cache);
+bool silc_idcache_purge_by_context(SilcIDCache cache, void *context);
+bool silc_idcache_get_all(SilcIDCache cache, SilcIDCacheList *ret);
+bool silc_idcache_find_by_id(SilcIDCache cache, void *id, 
+			     SilcIDCacheEntry *ret);
+bool silc_idcache_find_by_context(SilcIDCache cache, void *context, 
 				  SilcIDCacheEntry *ret);
-int silc_idcache_find_by_data_loose(SilcIDCache cache, unsigned char *data, 
-				    SilcIDCacheList *ret);
-int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
-			    SilcIDCacheList *ret);
-int silc_idcache_find_by_id_one(SilcIDCache cache, void *id, SilcIdType type, 
-				SilcIDCacheEntry *ret);
-int silc_idcache_find_by_context(SilcIDCache cache, void *context, 
-				 SilcIDCacheEntry *ret);
-int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
-		     uint32 data_len, SilcIdType id_type, void *id, 
-		     void *context, int sort, int expire);
-int silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old);
-int silc_idcache_del_by_data(SilcIDCache cache, unsigned char *data);
-int silc_idcache_del_by_id(SilcIDCache cache, SilcIdType type, void *id);
-int silc_idcache_del_all(SilcIDCache cache);
-int silc_idcache_purge(SilcIDCache cache);
-int silc_idcache_purge_by_context(SilcIDCache cache, void *context);
+bool silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data, 
+			       unsigned int data_len, SilcIDCacheList *ret);
+bool silc_idcache_find_by_data_one(SilcIDCache cache, unsigned char *data,
+				   unsigned int data_len, 
+				   SilcIDCacheEntry *ret);
 int silc_idcache_list_count(SilcIDCacheList list);
-int silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret);
-int silc_idcache_list_next(SilcIDCacheList list, SilcIDCacheEntry *ret);
+bool silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret);
+bool silc_idcache_list_next(SilcIDCacheList list, SilcIDCacheEntry *ret);
 void silc_idcache_list_free(SilcIDCacheList list);
 
 #endif

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2000 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,8 @@
 #include "idcache.h"
 
 /* Static prototypes */
-static int silc_idcache_sorter(const void *a, const void *b);
+static void silc_idcache_destructor(void *key, void *context,
+				    void *user_context);
 static SilcIDCacheList silc_idcache_list_alloc();
 static void silc_idcache_list_add(SilcIDCacheList list, 
 				  SilcIDCacheEntry cache);
@@ -37,29 +38,17 @@ static void silc_idcache_list_add(SilcIDCacheList list,
 
    Fields are as follows:
 
-   SilcIDCacheEntry cache
+   SilcHashTable id_table
 
-       Table of the cache entries allocated by silc_idcache_add function.
-       This table is reallocated when new entry is added into the cache.
+       Hash table using the ID as the key.
 
-   uint32 cache_count
+   SilcHashTable data_table
 
-       Number of cache entries in the cache.
+       Hash table using the data as the key.
 
-   int sorted
+   SilcHashTable context_table
 
-       Boolean value to indicate whether the cache is sorted or not. If
-       cache is not sorted the fast access (described next) cannot be used.
-       Sorting can be done by calling sorting function or when adding new
-       entries to the cache.
-
-   int fast_access[];
-
-       Table to provide fast access into the cache by index. When searching
-       by data this table is used to get the index to the first occurence
-       of that data (or part of the data) in the cache. Purpose of this
-       is to provide faster access to the cache when searching by data.
-       This is updated by silc_idcache_add and sorting functions.
+       Hash table using the context as the key.
 
    SilcIDCacheDestructor destructor
 
@@ -68,13 +57,17 @@ static void silc_idcache_list_add(SilcIDCacheList list,
        because the library will do it automatically. The appliation, however,
        is responsible of freeing any data in the entry.
 
+   SilcIdType id_type
+
+       Indicates the type of the ID's this cache holds.
+
 */
 struct SilcIDCacheStruct {
-  SilcIDCacheEntry cache;
-  uint32 cache_count;
-  int sorted;
-  int fast_access[256];
+  SilcHashTable id_table;
+  SilcHashTable data_table;
+  SilcHashTable context_table;
   SilcIDCacheDestructor destructor;
+  SilcIdType type;
 };
 
 /* 
@@ -100,9 +93,11 @@ struct SilcIDCacheListStruct {
 };
 
 /* Allocates new ID cache object. The initial amount of allocated entries
-   can be sent as argument. If `count' is 0 the system uses default values. */
+   can be sent as argument. If `count' is 0 the system uses default values. 
+   The `id_type' defines the types of the ID's that will be saved to the
+   cache. */
 
-SilcIDCache silc_idcache_alloc(uint32 count,
+SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
 			       SilcIDCacheDestructor destructor)
 {
   SilcIDCache cache;
@@ -110,10 +105,18 @@ SilcIDCache silc_idcache_alloc(uint32 count,
   SILC_LOG_DEBUG(("Allocating new cache"));
 
   cache = silc_calloc(1, sizeof(*cache));
-  cache->cache = silc_calloc(count ? count : 5, sizeof(*cache->cache));
-  cache->cache_count = count ? count : 5;
-  memset(cache->fast_access, -1, sizeof(cache->fast_access));
+  cache->id_table = silc_hash_table_alloc(count, silc_hash_id, 
+					  (void *)(uint32)id_type,
+					  silc_hash_id_compare, 
+					  (void *)(uint32)id_type, 
+					  silc_idcache_destructor, NULL);
+  cache->data_table = silc_hash_table_alloc(count, silc_hash_data, NULL,
+					    silc_hash_data_compare, NULL, 
+					    NULL, NULL);
+  cache->context_table = silc_hash_table_alloc(count, silc_hash_ptr, NULL,
+					       NULL, NULL, NULL, NULL);
   cache->destructor = destructor;
+  cache->type = id_type;
 
   return cache;
 }
@@ -123,96 +126,227 @@ SilcIDCache silc_idcache_alloc(uint32 count,
 void silc_idcache_free(SilcIDCache cache)
 {
   if (cache) {
-    silc_free(cache->cache);
+    silc_hash_table_free(cache->id_table);
+    silc_hash_table_free(cache->data_table);
+    silc_hash_table_free(cache->context_table);
     silc_free(cache);
   }
 }
 
-/* qsort() sorter function. */
+/* Add new entry to the cache. */
 
-static int silc_idcache_sorter(const void *a, const void *b)
+bool silc_idcache_add(SilcIDCache cache, unsigned char *data, 
+		      uint32 data_len, void *id, void *context, int expire)
 {
-  SilcIDCacheEntry a1, b1;
+  SilcIDCacheEntry c;
+  uint32 curtime = time(NULL);
 
-  a1 = (SilcIDCacheEntry)a;
-  b1 = (SilcIDCacheEntry)b;
-  
-  if (!a1->data && !b1->data)
-    return 0;
+  SILC_LOG_DEBUG(("Adding cache entry"));
 
-  if (!a1->data)
-    return -1;
+  /* See if entry with this ID already exists. */
+  if (silc_hash_table_find(cache->id_table, id, NULL, NULL))
+    return FALSE;
 
-  if (!b1->data)
-    return 1;
+  /* Allocate new cache entry */
+  c = silc_calloc(1, sizeof(*c));
+  c->data = data;
+  c->data_len = data_len;
+  c->id = id;
+  c->expire = (expire ? (curtime + SILC_ID_CACHE_EXPIRE) : 0);
+  c->context = context;
 
-  return a1->data[0] - b1->data[0];
-}
+  /* Add the new entry to the hash tables */
 
-/* Sorts given cache by data. After sorting this updates the fast access
-   table that can be used to access the cache faster. */
+  silc_hash_table_add(cache->id_table, id, c);
+  if (data)
+    silc_hash_table_add_ext(cache->data_table, data, c,
+			    silc_hash_data, (void *)data_len);
+  if (context)
+    silc_hash_table_add(cache->context_table, context, c);
 
-void silc_idcache_sort_by_data(SilcIDCache cache)
-{
-  int i;
-
-  qsort(cache->cache, cache->cache_count, 
-	sizeof(*cache->cache), silc_idcache_sorter);
-
-  memset(cache->fast_access, -1, sizeof(cache->fast_access));
-
-  /* Update the fast access table (this of course takes its own time when
-     the cache is very large). */
-  for (i = 0; i < cache->cache_count; i++) {
-    if (cache->cache[i].data &&
-	cache->fast_access[(int)cache->cache[i].data[0]] == -1)
-      cache->fast_access[(int)cache->cache[i].data[0]] = i;
+  /* See whether we have time to rehash the tables */
+  if ((silc_hash_table_count(cache->id_table) * 2) >
+      silc_hash_table_size(cache->id_table)) {
+    silc_hash_table_rehash(cache->id_table, 0);
+    silc_hash_table_rehash(cache->data_table, 0);
+    silc_hash_table_rehash(cache->context_table, 0);
   }
 
-  cache->sorted = TRUE;
+  return TRUE;
+}
+
+/* Destructor for the ID Cache entry */
+
+static void silc_idcache_destructor(void *key, void *context,
+				    void *user_context)
+{
+  silc_free(context);
+}
+
+/* Delete cache entry from cache. */
+
+bool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old)
+{
+  bool ret;
+
+  ret = silc_hash_table_del_by_context(cache->data_table, old->data,
+				       old->context);
+  ret = silc_hash_table_del(cache->context_table, old->context);
+  ret = silc_hash_table_del(cache->id_table, old->id);
+
+  return ret;
+}
+
+/* Deletes ID cache entry by ID. */
+
+bool silc_idcache_del_by_id(SilcIDCache cache, void *id)
+{
+  bool ret;
+  SilcIDCacheEntry c;
+
+  if (!silc_hash_table_find(cache->id_table, id, NULL, (void *)&c))
+    return FALSE;
+
+  ret = silc_hash_table_del_by_context(cache->data_table, c->data,
+				       c->context);
+  ret = silc_hash_table_del(cache->context_table, c->context);
+  ret = silc_hash_table_del(cache->id_table, c->id);
+
+  return ret;
+}
+
+/* Deletes all ID entries from cache. Free's memory as well. */
+
+bool silc_idcache_del_all(SilcIDCache cache)
+{
+  silc_hash_table_free(cache->id_table);
+  silc_hash_table_free(cache->data_table);
+  silc_hash_table_free(cache->context_table);
+  return TRUE;
+}
+
+/* Foreach callback fro silc_idcache_purge. */
+
+static void silc_idcache_purge_foreach(void *key, void *context,
+				       void *user_context)
+{
+  SilcIDCache cache = (SilcIDCache)user_context;
+  uint32 curtime = time(NULL);
+  SilcIDCacheEntry c = (SilcIDCacheEntry)context;
+
+  if (c->expire && c->expire < curtime) {
+    /* Call the destructor */
+    if (cache->destructor)
+      cache->destructor(cache, c);
+
+    /* Delete the entry */
+    silc_idcache_del(cache, c);
+  }
+}
+
+/* Purges the cache by removing expired cache entires. Note that this
+   may be very slow operation. */
+
+bool silc_idcache_purge(SilcIDCache cache)
+{
+  silc_hash_table_foreach(cache->id_table, silc_idcache_purge_foreach, cache);
+  return TRUE;
+}
+
+/* Purges the specific entry by context. */
+
+bool silc_idcache_purge_by_context(SilcIDCache cache, void *context)
+{
+  SilcIDCacheEntry entry;
+
+  if (!silc_hash_table_find(cache->context_table, context, NULL, 
+			    (void *)&entry))
+    return FALSE;
+
+  /* Call the destructor */
+  if (cache->destructor)
+    cache->destructor(cache, entry);
+  
+  return silc_idcache_del(cache, entry);
+}
+
+/* Callback that is called by the hash table routine when traversing
+   all entrys in the hash table. */
+
+static void silc_idcache_get_all_foreach(void *key, void *context,
+					 void *user_context)
+{
+  SilcIDCacheList list = (SilcIDCacheList)user_context;
+  silc_idcache_list_add(list, (SilcIDCacheEntry)context);
+}
+
+/* Returns all cache entrys from the ID cache to the `ret' ID Cache List. */
+
+bool silc_idcache_get_all(SilcIDCache cache, SilcIDCacheList *ret)
+{
+  SilcIDCacheList list;
+
+  if (!ret)
+    return TRUE;
+
+  list = silc_idcache_list_alloc();
+  silc_hash_table_foreach(cache->id_table, silc_idcache_get_all_foreach, list);
+
+  if (silc_idcache_list_count(list) == 0) {
+    silc_idcache_list_free(list);
+    return FALSE;
+  }
+
+  *ret = list;
+
+  return TRUE;
+}
+
+/* Find ID Cache entry by ID. */
+
+bool silc_idcache_find_by_id(SilcIDCache cache, void *id, 
+			     SilcIDCacheEntry *ret)
+{
+  return silc_hash_table_find(cache->id_table, id, NULL, (void *)ret);
+}
+
+/* Finds cache entry by context. */
+
+bool silc_idcache_find_by_context(SilcIDCache cache, void *context, 
+				  SilcIDCacheEntry *ret)
+{
+  return silc_hash_table_find(cache->context_table, context, NULL, 
+			      (void *)ret);
 }
 
 /* Find ID Cache entry by data. The data maybe anything that must
    match exactly. Returns list of cache entries. */
 
-int silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data, 
-			      SilcIDCacheList *ret)
+bool silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data, 
+			       unsigned int data_len, SilcIDCacheList *ret)
 {
-  int i;
   SilcIDCacheList list;
+  void **contexts;
+  unsigned int count;
+  int i;
 
-  if (!cache || !cache->cache || !data)
+  if (!silc_hash_table_find_all_ext(cache->data_table, data, NULL, &contexts,
+				    &count, silc_hash_data, (void *)data_len,
+				    silc_hash_data_compare, (void *)data_len))
     return FALSE;
+
+  if (!ret) {
+    silc_free(contexts);
+    return TRUE;
+  }
 
   list = silc_idcache_list_alloc();
 
-  if (cache->sorted)
-    i = cache->fast_access[(int)data[0]];
-  else
-    i = 0;
+  for (i = 0; i < count; i++)
+    silc_idcache_list_add(list, (SilcIDCacheEntry)contexts[i]);
+  silc_free(contexts);
 
-  if (i == -1)
-    i = 0;
-
-  for (i = i; i < cache->cache_count; i++) {
-    if (cache->sorted && cache->cache[i].data &&
-	cache->cache[i].data[0] != data[0])
-      break;
-
-    if (cache->cache[i].data && 
-	!memcmp(cache->cache[i].data, data, cache->cache[i].data_len))
-      silc_idcache_list_add(list, &(cache->cache[i]));
-  }
-
-  if (!silc_idcache_list_count(list)) {
-    silc_idcache_list_free(list);
-    return FALSE;
-  }
-
-  if (ret)
-    *ret = list;
-  else
-    silc_idcache_list_free(list);
+  *ret = list;
 
   return TRUE;
 }
@@ -220,347 +354,20 @@ int silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data,
 /* Find ID Cache entry by data. The data maybe anything that must
    match exactly. Returns one cache entry. */
 
-int silc_idcache_find_by_data_one(SilcIDCache cache, unsigned char *data,
-				  SilcIDCacheEntry *ret)
-{
-  int i;
-
-  if (!cache || !cache->cache || !data)
-    return FALSE;
-
-  if (cache->sorted)
-    i = cache->fast_access[(int)data[0]];
-  else
-    i = 0;
-
-  if (i == -1)
-    i = 0;
-
-  for (i = i; i < cache->cache_count; i++)
-    if (cache->cache[i].data && 
-	!memcmp(cache->cache[i].data, data, cache->cache[i].data_len)) {
-      if (ret)
-	*ret = &(cache->cache[i]);
-      return TRUE;
-    }
-
-  return FALSE;
-}
-
-/* Find ID Cache entry by data, loosely. The data don't have to be 100%
-   match. This ignores data case-sensitivity when searching with this
-   function. Returns list of cache entries. */
-
-int silc_idcache_find_by_data_loose(SilcIDCache cache, unsigned char *data, 
-				    SilcIDCacheList *ret)
-{
-  int i, c;
-  SilcIDCacheList list;
-
-  if (!cache || !cache->cache || !data)
-    return FALSE;
-
-  list = silc_idcache_list_alloc();
-
-  c = tolower((int)data[0]);
-
-  if (cache->sorted)
-    i = cache->fast_access[c];
-  else
-    i = 0;
-
-  if (i == -1)
-    i = 0;
-
-  for (i = i; i < cache->cache_count; i++) {
-    if (cache->sorted && cache->cache[i].data &&
-	cache->cache[i].data[0] != (char)c)
-      break;
-    
-    if (cache->cache[i].data && 
-	!strcasecmp(cache->cache[i].data, data))
-      silc_idcache_list_add(list, &(cache->cache[i]));
-  }
-
-  if (cache->sorted) {
-    c = toupper((int)data[0]);
-    i = cache->fast_access[c];
-
-    for (i = i; i < cache->cache_count; i++) {
-      if (cache->sorted && cache->cache[i].data &&
-	  cache->cache[i].data[0] != (char)c)
-	break;
-
-      if (cache->cache[i].data && 
-	  !strcasecmp(cache->cache[i].data, data))
-	silc_idcache_list_add(list, &(cache->cache[i]));
-    }
-  }
-    
-  if (!silc_idcache_list_count(list)) {
-    silc_idcache_list_free(list);
-    return FALSE;
-  }
-
-  if (ret)
-    *ret = list;
-  else
-    silc_idcache_list_free(list);
-
-  return TRUE;
-}
-
-/* Find ID Cache entry by ID. Returns list of cache entries. If `id' is
-   SILC_ID_CACHE_ANY this returns all ID's of type `type'. */
-
-int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
-			    SilcIDCacheList *ret)
-{
-  int i;
-  SilcIDCacheList list;
-
-  if (!cache || !cache->cache || !id)
-    return FALSE;
-
-  list = silc_idcache_list_alloc();
-
-  if (id != SILC_ID_CACHE_ANY) {
-    for (i = 0; i < cache->cache_count; i++)
-      if (cache->cache[i].id && SILC_ID_COMPARE_TYPE(cache->cache[i].id, 
-						     id, type))
-	silc_idcache_list_add(list, &(cache->cache[i]));
-  } else {
-    for (i = 0; i < cache->cache_count; i++)
-      if (cache->cache[i].id && cache->cache[i].type == type)
-	silc_idcache_list_add(list, &(cache->cache[i]));
-  }
-
-  if (!silc_idcache_list_count(list)) {
-    silc_idcache_list_free(list);
-    return FALSE;
-  }
-
-  if (ret)
-    *ret = list;
-  else
-    silc_idcache_list_free(list);
-
-  return TRUE;
-}
-
-/* Find ID Cache entry by ID. Returns one cache entry. */
-
-int silc_idcache_find_by_id_one(SilcIDCache cache, void *id, SilcIdType type, 
-				SilcIDCacheEntry *ret)
-{
-  int i;
-
-  if (!cache || !cache->cache || !id)
-    return FALSE;
-
-  for (i = 0; i < cache->cache_count; i++)
-    if (cache->cache[i].id && SILC_ID_COMPARE_TYPE(cache->cache[i].id, 
-						   id, type)) {
-      if (ret)
-	*ret = &(cache->cache[i]);
-      return TRUE;
-    }
-
-  return FALSE;
-}
-
-/* Finds cache entry by context. */
-
-int silc_idcache_find_by_context(SilcIDCache cache, void *context, 
-				 SilcIDCacheEntry *ret)
-{
-  int i;
-
-  if (!cache || !cache->cache || !context)
-    return FALSE;
-
-  for (i = 0; i < cache->cache_count; i++)
-    if (cache->cache[i].context && cache->cache[i].context == context) {
-      if (ret)
-	*ret = &(cache->cache[i]);
-      return TRUE;
-    }
-
-  return FALSE;
-}
-
-/* Add new entry to the cache. Returns TRUE or FALSE. If `sort' is TRUE
-   then the cache is sorted after the new entry has been added. The
-   cache must be sorted in order for the fast access feature to work,
-   however, it is not mandatory. */
-
-int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
-		     uint32 data_len, SilcIdType id_type, void *id, 
-		     void *context, int sort, int expire)
-{
-  int i;
-  uint32 count;
-  uint32 curtime = time(NULL);
-  SilcIDCacheEntry c;
-
-  if (!cache || !cache->cache)
-    return FALSE;
-
-  SILC_LOG_DEBUG(("Adding cache entry"));
-
-  c = cache->cache;
-  count = cache->cache_count;
-
-  if (c == NULL) {
-    c = silc_calloc(5, sizeof(*c));
-    count = 5;
-  }
-
-  /* See if it exists already */
-  /* XXX this slows down this function. */
-  if (silc_idcache_find_by_id(cache, id, id_type, NULL))
-    return FALSE;
-
-  for (i = 0; i < count; i++) {
-    if (c[i].data == NULL && c[i].id == NULL) {
-      c[i].data = data;
-      c[i].data_len = data_len;
-      c[i].type = id_type;
-      c[i].id = id;
-      c[i].expire = (expire ? (curtime + SILC_ID_CACHE_EXPIRE) : 0);
-      c[i].context = context;
-      break;
-    }
-  }
-
-  if (i == count) {
-    c = silc_realloc(c, sizeof(*c) * (count + 5));
-    for (i = count; i < count + 5; i++) {
-      c[i].data = NULL;
-      c[i].id = NULL;
-    }
-    c[count].data = data;
-    c[count].data_len = data_len;
-    c[count].type = id_type;
-    c[count].id = id;
-    c[count].expire = (expire ? (curtime + SILC_ID_CACHE_EXPIRE) : 0);
-    c[count].context = context;
-    count += 5;
-  }
-
-  cache->cache = c;
-  cache->cache_count = count;
-  cache->sorted = sort;
-
-  if (sort)
-    silc_idcache_sort_by_data(cache);
-
-  return TRUE;
-}
-
-/* Delete cache entry from cache. */
-/* XXX */
-
-int silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old)
-{
-
-  return TRUE;
-}
-
-/* XXX */
-
-int silc_idcache_del_by_data(SilcIDCache cache, unsigned char *data)
-{
-
-  return TRUE;
-}
-
-/* Deletes ID cache entry by ID. */
-
-int silc_idcache_del_by_id(SilcIDCache cache, SilcIdType type, void *id)
-{
-  int i;
-
-  if (!cache || !cache->cache || !id)
-    return FALSE;
-
-  for (i = 0; i < cache->cache_count; i++)
-    if (cache->cache[i].id && SILC_ID_COMPARE_TYPE(cache->cache[i].id, 
-						   id, type)) {
-      cache->cache[i].id = NULL;
-      cache->cache[i].data = NULL;
-      cache->cache[i].type = 0;
-      cache->cache[i].context = NULL;
-      return TRUE;
-    }
-
-  return FALSE;
-}
-
-/* Deletes all ID entries from cache. Free's memory as well. */
-
-int silc_idcache_del_all(SilcIDCache cache)
-{
-  if (!cache || !cache->cache)
-    return FALSE;
-
-  silc_free(cache->cache);
-  cache->cache = NULL;
-  cache->cache_count = 0;
-
-  return TRUE;
-}
-
-/* Purges the cache by removing expired cache entires. This does not
-   free any memory though. */
-
-int silc_idcache_purge(SilcIDCache cache)
+bool silc_idcache_find_by_data_one(SilcIDCache cache, unsigned char *data,
+				   unsigned int data_len, 
+				   SilcIDCacheEntry *ret)
 {
   SilcIDCacheEntry c;
-  uint32 curtime = time(NULL);
-  int i;
 
-  if (!cache || !cache->cache)
+  if (!silc_hash_table_find_ext(cache->data_table, data, NULL, (void *)&c,
+				silc_hash_data, (void *)data_len,
+				silc_hash_data_compare, (void *)data_len))
     return FALSE;
 
-  c = cache->cache;
+  if (ret)
+    *ret = c;
 
-  for (i = 0; i < cache->cache_count; i++) {
-    if (c[i].data && c[i].expire && c[i].expire < curtime) {
-
-      /* Call the destructor */
-      if (cache->destructor)
-	cache->destructor(cache, &c[i]);
-
-      c[i].id = NULL;
-      c[i].data = NULL;
-      c[i].type = 0;
-      c[i].expire = 0;
-      c[i].context = NULL;
-    }
-  }
-
-  return TRUE;
-}
-
-/* Purges the specific entry by context. */
-
-int silc_idcache_purge_by_context(SilcIDCache cache, void *context)
-{
-  SilcIDCacheEntry entry;
-
-  if (!silc_idcache_find_by_context(cache, context, &entry))
-    return FALSE;
-
-  /* Call the destructor */
-  if (cache->destructor)
-    cache->destructor(cache, entry);
-  
-  entry->id = NULL;
-  entry->data = NULL;
-  entry->type = 0;
-  entry->expire = 0;
-  entry->context = NULL;
   return TRUE;
 }
 
@@ -627,7 +434,7 @@ int silc_idcache_list_count(SilcIDCacheList list)
 
 /* Returns first entry from the ID cache list. */
 
-int silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret)
+bool silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret)
 {
   list->pos = 0;
 
@@ -642,7 +449,7 @@ int silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret)
 
 /* Returns next entry from the ID cache list. */
 
-int silc_idcache_list_next(SilcIDCacheList list, SilcIDCacheEntry *ret)
+bool silc_idcache_list_next(SilcIDCacheList list, SilcIDCacheEntry *ret)
 {
   int dyn = FALSE;
   list->pos++;

@@ -1,3 +1,45 @@
+Thu May 17 18:15:12 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new function silc_hash_table_find_all to return all keys
+	  in the hash table by the specified key.  As the hash table is
+	  collision resistant it also makes it possible to have several
+	  duplicate keys in the hash table.  This function may be used to
+	  find all of the keys from the hash.
+
+	  Added user_context arguments to the SilcHashFunction,
+	  SilcHashCompare and SilcHashDestructor to deliver user specified
+	  context.
+
+	  Added new fuctions silc_hash_table_find[_all]_ext to do
+	  extended lookup with specified hash and compare functions and
+	  specified user contexts.
+
+	  Added new function silc_hash_table_add_ext to add the key
+	  with specified hash function and user context.
+
+	  Added new function silc_hash_table_foreach to traverse all
+	  entrys in the hash table.  Added SilcHashForeach callback
+	  function.
+
+	  Added new function silc_hash_table_del_by_context to delete
+	  the entry only if the context associated with the key matches.
+
+	  Affected files are lib/silcutil/silchashtable.[ch].
+
+	* Removed silc_hash_[server/client/channel]_id and added just
+	  silc_hash_id to the lib/silcutil/silcutil.[ch].  Added also
+	  silc_hash_id_compare to compare two ID's using as the hash table
+	  comparison function.  Added also silc_hash_data to hash
+	  binary data and silc_hash_data_compare to compare it.
+
+	* Removed silc_idlist_find_client_by_hash as it is not needed
+	  anymore.  Affected file silcd/idlist.[ch].
+
+	* Rewrote the entire ID Cache system (in lib/silccore/idcache.[ch])
+	  to use internally the SilcHashTable.  The new ID Cache is a lot
+	  faster than the old one.  Some of the ID Cache interface was also
+	  rewritten and obsolete and stupid functions were removed.
+
 Wed May 16 23:03:30 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added entry_count field to the SilcHashTable to keep the number

@@ -3105,7 +3105,7 @@ static void silc_server_announce_get_servers(SilcServer server,
   SilcBuffer idp;
 
   /* Go through all clients in the list */
-  if (silc_idcache_find_by_id(id_list->clients, SILC_ID_CACHE_ANY, 
+  if (silc_idcache_find_by_id(id_list->servers, SILC_ID_CACHE_ANY, 
 			      SILC_ID_SERVER, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {

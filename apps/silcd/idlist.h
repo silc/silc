@@ -559,9 +559,6 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 				    SilcClientEntry **clients,
 				    uint32 *clients_count);
 SilcClientEntry
-silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
-				SilcHash md5hash, SilcIDCacheEntry *ret_entry);
-SilcClientEntry
 silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 			      SilcIDCacheEntry *ret_entry);
 SilcClientEntry
