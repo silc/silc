@@ -8,7 +8,7 @@ Howto Checkout Source Tree
 Be sure to set the CVSROOT environment variable first or use -d option
 of CVS.  I suggest setting CVSROOT environment variable.
 
-	export CVSROOT=:pserver:anoncvs@silc.pspt.fi:/silc
+	export CVSROOT=:pserver:silccvs@silc.pspt.fi:/silc
 
 
 Checkout of SILC source tree, and to bemore specific, SILC trunk, give,
@@ -17,7 +17,7 @@ Checkout of SILC source tree, and to bemore specific, SILC trunk, give,
 
 or
 
-	cvs -d :pserver:anoncvs@silc.pspt.fi:/silc co silc
+	cvs -d :pserver:silccvs@silc.pspt.fi:/silc co silc
 
 
 CVS will ask password.  The password for anonymous (read access) CVS is

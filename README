@@ -114,6 +114,8 @@ TODO file for more information.]
 
  o Supports data compression with GZIP to improve performance.
 
+ o Supports SOCKS4 and SOCKS5 firewall traversal protocols.
+
  o SIM (SILC Module) support.  Support for loading of shared objects at 
    run-time that provides new and extended features to both SILC client
    and server.  These can provide extra ciphers and extra features to
