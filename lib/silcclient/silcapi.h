@@ -2,7 +2,7 @@
 
   silcapi.h
   
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
   
   Copyright (C) 2000 - 2001 Pekka Riikonen
   
@@ -351,6 +351,25 @@ typedef struct {
 } SilcClientOperations;
 /***/
 
+/****f* silcclient/SilcClientAPI/SilcNicknameFormatParse
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcNicknameFormatParse)(const char *nickname,
+ *                                            char **ret_nickname);
+ *
+ * DESCRIPTION
+ *
+ *    A callback function provided by the application for the library in
+ *    SilcClientParams structure. This function parses the formatted
+ *    nickname string `nickname' and returns the true nickname to the
+ *    `ret_nickname' pointer. The library can call this function at
+ *    any time.
+ *
+ ***/
+typedef void (*SilcNicknameFormatParse)(const char *nickname,
+					char **ret_nickname);
+
 /****s* silcclient/SilcClientAPI/SilcClientParams
  *
  * NAME
@@ -381,6 +400,56 @@ typedef struct {
      in this time interval we'll assume the reply will not come at all. 
      If set to zero, the default value (2 seconds) will be used. */
   unsigned int connauth_request_secs;
+
+  /* Nickname format string. This can be used to order the client library
+     to save the nicknames in the library in a certain format. Since 
+     nicknames are not unique in SILC it is possible to have multiple same
+     nicknames. Using this format string it is possible to order the library
+     to separate the multiple same nicknames from each other. The format
+     types are defined below and they can appear in any order in the format
+     string. If this is NULL then default format is used which is the
+     default nickname without anything else. The string MUST be NULL
+     terminated.
+     
+     Following format types are available:
+     
+     %n  nickname      - the real nickname returned by the server (mandatory)
+     %h  hostname      - the stripped hostname of the client
+     %H  full hostname - the full hostname of the client
+     %s  server name   - the server name the client is connected
+     %S  full server   - the full server name the client is connected
+     %a  number        - ascending number in case there are several
+                         same nicknames (fe. nick@host and nick@host2)
+
+     Example format strings: "%n@%h%a"   (fe. nick@host, nick@host2)
+                             "%a!%n@%s"  (fe. nick@server, 2!nick@server)
+			     "%n@%H"     (fe. nick@host.domain.com)
+
+     By default this format is employed to the nicknames by the libary
+     only when there appears multiple same nicknames. If the library has
+     only one nickname cached the nickname is saved as is and without the
+     defined format. If you want always to save the nickname in the defined
+     format set the boolean field `nickname_force_format' to value TRUE.
+  */
+  char nickname_format[32];
+
+  /* If this is set to TRUE then the `nickname_format' is employed to all
+     saved nicknames even if there are no multiple same nicknames in the 
+     cache. By default this is FALSE, which means that the `nickname_format'
+     is employed only if the library will receive a nickname that is
+     already saved in the cache. It is recommended to leave this to FALSE
+     value. */
+  bool nickname_force_format;
+
+  /* A callback function provided by the application for the library to
+     parse the nickname from the formatted nickname string. Even though
+     the libary formats the nicknames the application knows generally the
+     format better so this function should be provided for the library
+     if the application sets the `nickname_format' field. The library
+     will call this to get the true nickname from the provided formatted
+     nickname string whenever it needs the true nickname. */
+  SilcNicknameFormatParse nickname_parse;
+
 } SilcClientParams;
 /***/
 
@@ -583,12 +652,13 @@ void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
  *    directly if application is performing its own connecting and does not
  *    use the connecting provided by this library. This function is normally
  *    used only if the application performed the connecting outside the
- *    library. The library however may use this internally.
+ *    library. The library however may use this internally. Returns FALSE
+ *    if the key exchange could not be started.
  *
  ***/
-int silc_client_start_key_exchange(SilcClient client,
-			           SilcClientConnection conn,
-                                   int fd);
+bool silc_client_start_key_exchange(SilcClient client,
+				    SilcClientConnection conn,
+				    int fd);
 
 /****f* silcclient/SilcClientAPI/silc_client_close_connection
  *
@@ -718,8 +788,8 @@ typedef void (*SilcGetClientCallback)(SilcClient client,
  *
  *    void silc_client_get_clients(SilcClient client,
  *                                 SilcClientConnection conn,
- *                                 char *nickname,
- *                                 char *server,
+ *                                 const char *nickname,
+ *                                 const char *server,
  *                                 SilcGetClientCallback completion,
  *                                 void *context);
  *
@@ -740,8 +810,8 @@ typedef void (*SilcGetClientCallback)(SilcClient client,
  ***/
 void silc_client_get_clients(SilcClient client,
 			     SilcClientConnection conn,
-			     char *nickname,
-			     char *server,
+			     const char *nickname,
+			     const char *server,
 			     SilcGetClientCallback completion,
 			     void *context);
 
@@ -751,21 +821,26 @@ void silc_client_get_clients(SilcClient client,
  *
  *    SilcClientEntry *silc_client_get_clients_local(SilcClient client,
  *                                                   SilcClientConnection conn,
- *                                                   char *nickname,
- *                                                   char *server,
+ *                                                   const char *nickname,
+ *                                                   const char *format,
  *                                                   uint32 *clients_count);
  *
  * DESCRIPTION
  *
  *    Same as silc_client_get_clients function but does not resolve anything
- *    from the server.  This checks local cache and returns all clients from
- *    the local cache. 
+ *    from the server. This checks local cache and returns all matching
+ *    clients from the local cache. If none was found this returns NULL.
+ *    The `nickname' is the real nickname of the client, and the `format'
+ *    is the formatted nickname to find exact match from multiple found
+ *    entries. The format must be same as given in the SilcClientParams
+ *    structure to the client library. If the `format' is NULL all found
+ *    clients by `nickname' are returned.
  *
  ***/
 SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 					       SilcClientConnection conn,
-					       char *nickname,
-					       char *server,
+					       const char *nickname,
+					       const char *format,
 					       uint32 *clients_count);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_clients_by_list

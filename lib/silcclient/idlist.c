@@ -2,9 +2,9 @@
 
   idlist.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -74,8 +74,8 @@ static void silc_client_get_client_destructor(void *context)
 
 void silc_client_get_clients(SilcClient client,
 			     SilcClientConnection conn,
-			     char *nickname,
-			     char *server,
+			     const char *nickname,
+			     const char *server,
 			     SilcGetClientCallback completion,
 			     void *context)
 {
@@ -111,13 +111,19 @@ void silc_client_get_clients(SilcClient client,
 			      (void *)i);
 }
 
-/* Same as above function but does not resolve anything from the server.
-   This checks local cache and returns all clients from the cache. */
+/* Same as silc_client_get_clients function but does not resolve anything
+   from the server. This checks local cache and returns all matching
+   clients from the local cache. If none was found this returns NULL.
+   The `nickname' is the real nickname of the client, and the `format'
+   is the formatted nickname to find exact match from multiple found
+   entries. The format must be same as given in the SilcClientParams
+   structure to the client library. If the `format' is NULL all found
+   clients by `nickname' are returned. */
 
 SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 					       SilcClientConnection conn,
-					       char *nickname,
-					       char *server,
+					       const char *nickname,
+					       const char *format,
 					       uint32 *clients_count)
 {
   SilcIDCacheEntry id_cache;
@@ -127,7 +133,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   bool found = FALSE;
 
   /* Find ID from cache */
-  if (!silc_idcache_find_by_name(conn->client_cache, nickname, &list))
+  if (!silc_idcache_find_by_name(conn->client_cache, (char *)nickname, &list))
     return NULL;
 
   if (!silc_idcache_list_count(list)) {
@@ -138,7 +144,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   clients = silc_calloc(silc_idcache_list_count(list), sizeof(*clients));
   *clients_count = silc_idcache_list_count(list);
 
-  if (!server) {
+  if (!format) {
     /* Take all without any further checking */
     silc_idcache_list_first(list, &id_cache);
     while (id_cache) {
@@ -152,9 +158,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
     silc_idcache_list_first(list, &id_cache);
     while (id_cache) {
       entry = (SilcClientEntry)id_cache->context;
-      
-      if (entry->server && 
-	  strncasecmp(server, entry->server, strlen(server))) {
+      if (strcasecmp(entry->nickname, format)) {
 	if (!silc_idcache_list_next(list, &id_cache)) {
 	  break;
 	} else {
@@ -358,17 +362,17 @@ void silc_client_get_clients_by_list(SilcClient client,
 
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
-				       char *nickname,
-				       char *server,
-				       uint32 num,
-				       int query)
+				       const char *nickname,
+				       const char *format,
+				       bool query)
 {
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list = NULL;
   SilcClientEntry entry = NULL;
 
   /* Find ID from cache */
-  if (!silc_idcache_find_by_name(conn->client_cache, nickname, &list)) {
+  if (!silc_idcache_find_by_name(conn->client_cache, (char *)nickname, 
+				 &list)) {
   identify:
 
     if (query) {
@@ -397,7 +401,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
     return NULL;
   }
 
-  if (!server && !num) {
+  if (!format) {
     /* Take first found cache entry */
     if (!silc_idcache_list_first(list, &id_cache))
       goto identify;
@@ -406,22 +410,20 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   } else {
     /* Check multiple cache entries for match */
     silc_idcache_list_first(list, &id_cache);
-    entry = (SilcClientEntry)id_cache->context;
-    
-    while (entry) {
-      if (server && entry->server && 
-	  !strncasecmp(server, entry->server, strlen(server)))
-	break;
-      
-      if (num && entry->num == num)
-	break;
+    while (id_cache) {
+      entry = (SilcClientEntry)id_cache->context;
 
-      if (!silc_idcache_list_next(list, &id_cache)) {
-	entry = NULL;
-	break;
+      if (strcasecmp(entry->nickname, format)) {
+	if (!silc_idcache_list_next(list, &id_cache)) {
+	  entry = NULL;
+	  break;
+	} else {
+	  entry = NULL;
+	  continue;
+	}
       }
 
-      entry = (SilcClientEntry)id_cache->context;
+      break;
     }
 
     /* If match weren't found, request it */
@@ -525,6 +527,78 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 			      silc_client_get_client_by_id_destructor,
 			      silc_client_command_get_client_by_id_callback, 
 			      (void *)i);
+}
+
+/* Creates new client entry and adds it to the ID cache. Returns pointer
+   to the new entry. */
+
+SilcClientEntry
+silc_client_add_client(SilcClient client, SilcClientConnection conn,
+		       char *nickname, char *username, 
+		       char *userinfo, SilcClientID *id, uint32 mode)
+{
+  SilcClientEntry client_entry;
+  char *nick = NULL;
+
+  /* Save the client infos */
+  client_entry = silc_calloc(1, sizeof(*client_entry));
+  client_entry->id = id;
+  silc_parse_userfqdn(nickname, &nick, &client_entry->server);
+  silc_parse_userfqdn(username, &client_entry->username, 
+		      &client_entry->hostname);
+  if (userinfo)
+    client_entry->realname = strdup(userinfo);
+  client_entry->mode = mode;
+  if (nick)
+    client_entry->nickname = strdup(nick);
+
+  /* Format the nickname */
+  silc_client_nickname_format(client, conn, client_entry);
+  
+  /* Add client to cache, the non-formatted nickname is saved to cache */
+  if (!silc_idcache_add(conn->client_cache, nick, client_entry->id, 
+			(void *)client_entry, FALSE)) {
+    silc_free(client_entry->nickname);
+    silc_free(client_entry->username);
+    silc_free(client_entry->hostname);
+    silc_free(client_entry->server);
+    silc_free(client_entry);
+    return NULL;
+  }
+
+  return client_entry;
+}
+
+/* Updates the `client_entry' with the new information sent as argument. */
+
+void silc_client_update_client(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcClientEntry client_entry,
+			       const char *nickname,
+			       const char *username,
+			       const char *userinfo,
+			       uint32 mode)
+{
+  char *nick = NULL;
+
+  if (!client_entry->username && username)
+    silc_parse_userfqdn(username, &client_entry->username, 
+			&client_entry->hostname);
+  if (!client_entry->realname && userinfo)
+    client_entry->realname = strdup(userinfo);
+  if (!client_entry->nickname && nickname) {
+    silc_parse_userfqdn(nickname, &nick, &client_entry->server);
+    client_entry->nickname = strdup(nick);
+    silc_client_nickname_format(client, conn, client_entry);
+  }
+  client_entry->mode = mode;
+
+  if (nick) {
+    /* Remove the old cache entry and create a new one */
+    silc_idcache_del_by_context(conn->client_cache, client_entry);
+    silc_idcache_add(conn->client_cache, nick, client_entry->id, 
+		     client_entry, FALSE);
+  }
 }
 
 /* Deletes the client entry and frees all memory. */
@@ -750,4 +824,133 @@ bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
   silc_free(server->server_id);
   silc_free(server);
   return ret;
+}
+
+/* Formats the nickname of the client specified by the `client_entry'.
+   If the format is specified by the application this will format the
+   nickname and replace the old nickname in the client entry. If the
+   format string is not specified then this function has no effect. */
+
+void silc_client_nickname_format(SilcClient client, 
+				 SilcClientConnection conn,
+				 SilcClientEntry client_entry)
+{
+  char *cp;
+  char *newnick = NULL;
+  int i, off = 0, len;
+  SilcClientEntry *clients;
+  uint32 clients_count;
+
+  if (!client->params->nickname_format[0])
+    return;
+
+  if (!client_entry->nickname)
+    return;
+
+  /* Get all clients with same nickname. Do not perform the formatting
+     if there aren't any clients with same nickname unless the application
+     is forcing us to do so. */
+  clients = silc_client_get_clients_local(client, conn,
+					  client_entry->nickname, NULL,
+					  &clients_count);
+  if (!clients && !client->params->nickname_force_format)
+    return;
+
+  cp = client->params->nickname_format;
+  while (*cp) {
+    if (*cp == '%') {
+      cp++;
+      continue;
+    }
+
+    switch(*cp) {
+    case 'n':
+      /* Nickname */
+      if (!client_entry->nickname)
+	break;
+      len = strlen(client_entry->nickname);
+      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
+      memcpy(&newnick[off], client_entry->nickname, len);
+      off += len;
+      break;
+    case 'h':
+      /* Stripped hostname */
+      if (!client_entry->hostname)
+	break;
+      len = strcspn(client_entry->hostname, ".");
+      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
+      memcpy(&newnick[off], client_entry->hostname, len);
+      off += len;
+      break;
+    case 'H':
+      /* Full hostname */
+      if (!client_entry->hostname)
+	break;
+      len = strlen(client_entry->hostname);
+      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
+      memcpy(&newnick[off], client_entry->hostname, len);
+      off += len;
+      break;
+    case 's':
+      /* Stripped server name */
+      if (!client_entry->server)
+	break;
+      len = strcspn(client_entry->server, ".");
+      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
+      memcpy(&newnick[off], client_entry->server, len);
+      off += len;
+      break;
+    case 'S':
+      /* Full server name */
+      if (!client_entry->server)
+	break;
+      len = strlen(client_entry->server);
+      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
+      memcpy(&newnick[off], client_entry->server, len);
+      off += len;
+      break;
+    case 'a':
+      /* Ascending number */
+      {
+	char tmp[6];
+	int num, max = 1;
+
+	if (clients_count == 1)
+	  break;
+
+	for (i = 0; i < clients_count; i++) {
+	  if (strncmp(clients[i]->nickname, newnick, off))
+	    continue;
+	  if (strlen(clients[i]->nickname) <= off)
+	    continue;
+	  num = atoi(&clients[i]->nickname[off]);
+	  if (num > max)
+	    max = num;
+	}
+	
+	memset(tmp, 0, sizeof(tmp));
+	snprintf(tmp, sizeof(tmp) - 1, "%d", ++max);
+	len = strlen(tmp);
+	newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
+	memcpy(&newnick[off], tmp, len);
+	off += len;
+      }
+      break;
+    default:
+      /* Some other character in the string */
+      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + 1));
+      memcpy(&newnick[off], cp, 1);
+      off++;
+      break;
+    }
+
+    cp++;
+  }
+
+  newnick = silc_realloc(newnick, sizeof(*newnick) * (off + 1));
+  newnick[off] = 0;
+
+  silc_free(client_entry->nickname);
+  client_entry->nickname = newnick;
+  silc_free(clients);
 }

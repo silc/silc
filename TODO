@@ -17,8 +17,11 @@ TODO/bugs in Irssi SILC client
  o The QUIT command should wait for servers disconnection (at least for
    a while) before exiting the application.
 
- o The JOIN commands HELP is generated from Irssi IRCs JOIN help and
+ o The JOIN command's HELP is generated from Irssi IRCs JOIN help and
    the syntax is not same in SILC.  This must be fixed.
+
+ o With USERS command to a channel user is not joined the name of the
+   channel is printed as garbled.
 
  o Add PERL scripting support from Irssi CVS.
 
@@ -33,19 +36,20 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o The client library must manage somehow when receiving client that has
-   same nickname, same server, same username but different Client ID than
-   what we have in the cache.  It is now assumed that they are different
-   client but it might not be.  It should at least number the clients
-   using the client->num so that they can be accessed from the user
-   interface separately or it could just remove the old client unless
-   it is on some channels.
+ o JOIN command's argument handling is buggy.  See the XXX in the code.
 
 
 TODO/bugs In SILC Server
 ========================
 
  o Add perhaps /var/run/silcd.pid for PID information for the server.
+
+ o Add a timeout to handling incmoing JOIN commands.  It should be 
+   enforced that JOIN command is executed only once in a second or two
+   seconds.  Now it is possible to accept n incoming JOIN commands
+   and process them without any timeouts.  THis must be employed because
+   each JOIN command will create and distribute the new channel key
+   to everybody on the channel.
 
  o Incomplete IPv6 support:
 

@@ -2,7 +2,7 @@
 
   client.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
@@ -60,11 +60,17 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
   if (params)
     memcpy(new_client->params, params, sizeof(*params));
 
+  if (!new_client->params->task_max)
+    new_client->params->task_max = 200;
+
   if (!new_client->params->rekey_secs)
     new_client->params->rekey_secs = 3600;
 
   if (!new_client->params->connauth_request_secs)
     new_client->params->connauth_request_secs = 2;
+
+  new_client->params->
+    nickname_format[sizeof(new_client->params->nickname_format) - 1] = 0;
 
   return new_client;
 }
@@ -142,6 +148,12 @@ void silc_client_run(SilcClient client)
   silc_schedule(client->schedule);
 }
 
+static void silc_client_entry_destructor(SilcIDCache cache,
+					 SilcIDCacheEntry entry)
+{
+  silc_free(entry->name);
+}
+
 /* Allocates and adds new connection to the client. This adds the allocated
    connection to the connection table and returns a pointer to it. A client
    can have multiple connections to multiple servers. Every connection must
@@ -161,7 +173,8 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
   conn = silc_calloc(1, sizeof(*conn));
 
   /* Initialize ID caches */
-  conn->client_cache = silc_idcache_alloc(0, SILC_ID_CLIENT, NULL);
+  conn->client_cache = silc_idcache_alloc(0, SILC_ID_CLIENT, 
+					  silc_client_entry_destructor);
   conn->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
   conn->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
   conn->client = client;
@@ -318,9 +331,9 @@ int silc_client_connect_to_server(SilcClient client, int port,
    used only if the application performed the connecting outside the library.
    The library however may use this internally. */
 
-int silc_client_start_key_exchange(SilcClient client,
-			           SilcClientConnection conn,
-                                   int fd)
+bool silc_client_start_key_exchange(SilcClient client,
+				    SilcClientConnection conn,
+				    int fd)
 {
   SilcProtocol protocol;
   SilcClientKEInternalContext *proto_ctx;
@@ -357,7 +370,7 @@ int silc_client_start_key_exchange(SilcClient client,
 		      silc_client_connect_to_server_second);
   if (!protocol) {
     client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		     "Error: Could not start authentication protocol");
+		     "Error: Could not start key exchange protocol");
     return FALSE;
   }
   conn->sock->protocol = protocol;
@@ -1369,18 +1382,15 @@ void silc_client_receive_new_id(SilcClient client,
     conn->local_entry = silc_calloc(1, sizeof(*conn->local_entry));
 
   conn->local_entry->nickname = conn->nickname;
-  if (!conn->local_entry->username) {
-    conn->local_entry->username = 
-      silc_calloc(strlen(client->username) + strlen(client->hostname) + 1,
-		  sizeof(conn->local_entry->username));
-    sprintf(conn->local_entry->username, "%s@%s", client->username,
-	    client->hostname);
-  }
+  if (!conn->local_entry->username)
+    conn->local_entry->username = strdup(client->username);
+  if (!conn->local_entry->hostname)
+    conn->local_entry->hostname = strdup(client->hostname);
   conn->local_entry->server = strdup(conn->remote_host);
   conn->local_entry->id = conn->local_id;
   
   /* Put it to the ID cache */
-  silc_idcache_add(conn->client_cache, conn->nickname, conn->local_id, 
+  silc_idcache_add(conn->client_cache, strdup(conn->nickname), conn->local_id, 
 		   (void *)conn->local_entry, FALSE);
 
   /* Issue INFO command to fetch the real server name and server information

@@ -257,43 +257,13 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 				       silc_hash_client_id_compare, NULL,
 				       &id_cache)) {
     SILC_LOG_DEBUG(("Adding new client entry"));
-
-    client_entry = silc_calloc(1, sizeof(*client_entry));
-    client_entry->id = client_id;
-    silc_parse_nickname(nickname, &client_entry->nickname, 
-			&client_entry->server, &client_entry->num);
-    client_entry->username = strdup(username);
-    if (realname)
-      client_entry->realname = strdup(realname);
-    client_entry->mode = mode;
-    
-    /* Add client to cache */
-    silc_idcache_add(conn->client_cache, client_entry->nickname,
-		     client_id, (void *)client_entry, FALSE);
+    client_entry = 
+      silc_client_add_client(cmd->client, conn, nickname, username, realname,
+			     client_id, mode);
   } else {
     client_entry = (SilcClientEntry)id_cache->context;
-    if (client_entry->nickname)
-      silc_free(client_entry->nickname);
-    if (client_entry->server)
-      silc_free(client_entry->server);
-    if (client_entry->username)
-      silc_free(client_entry->username);
-    if (client_entry->realname)
-      silc_free(client_entry->realname);
-    client_entry->mode = mode;
-
-    SILC_LOG_DEBUG(("Updating client entry"));
-
-    silc_parse_nickname(nickname, &client_entry->nickname, 
-			&client_entry->server, &client_entry->num);
-    client_entry->username = strdup(username);
-    if (realname)
-      client_entry->realname = strdup(realname);
-
-    /* Remove the old cache entry and create a new one */
-    silc_idcache_del_by_context(conn->client_cache, client_entry);
-    silc_idcache_add(conn->client_cache, client_entry->nickname, 
-		     client_entry->id, client_entry, FALSE);
+    silc_client_update_client(cmd->client, conn, client_entry, 
+			      nickname, username, realname, mode);
     silc_free(client_id);
   }
 
@@ -477,38 +447,13 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 					 silc_hash_client_id_compare, NULL,
 					 &id_cache)) {
       SILC_LOG_DEBUG(("Adding new client entry"));
-      
-      client_entry = silc_calloc(1, sizeof(*client_entry));
-      client_entry->id = silc_id_dup(client_id, id_type);
-      silc_parse_nickname(name, &client_entry->nickname, 
-			  &client_entry->server, &client_entry->num);
-      if (info)
-	client_entry->username = strdup(info);
-      
-      /* Add client to cache */
-      silc_idcache_add(conn->client_cache, client_entry->nickname,
-		       client_entry->id, (void *)client_entry, FALSE);
+      client_entry = 
+	silc_client_add_client(cmd->client, conn, name, info, NULL,
+			       silc_id_dup(client_id, id_type), 0);
     } else {
       client_entry = (SilcClientEntry)id_cache->context;
-      if (client_entry->nickname)
-	silc_free(client_entry->nickname);
-      if (client_entry->server)
-	silc_free(client_entry->server);
-      if (info && client_entry->username)
-	silc_free(client_entry->username);
-      
-      SILC_LOG_DEBUG(("Updating client entry"));
-      
-      silc_parse_nickname(name, &client_entry->nickname, 
-			  &client_entry->server, &client_entry->num);
-      
-      if (info)
-	client_entry->username = strdup(info);
-      
-      /* Remove the old cache entry and create a new one */
-      silc_idcache_del_by_context(conn->client_cache, client_entry);
-      silc_idcache_add(conn->client_cache, client_entry->nickname, 
-		       client_entry->id, client_entry, FALSE);
+      silc_client_update_client(cmd->client, conn, client_entry, 
+				name, info, NULL, 0);
     }
 
     /* Notify application */
@@ -1142,10 +1087,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 					 silc_hash_client_id_compare, NULL,
 					 &id_cache)) {
       /* No, we don't have it, add entry for it. */
-      client_entry = silc_calloc(1, sizeof(*client_entry));
-      client_entry->id = silc_id_dup(client_id, SILC_ID_CLIENT);
-      silc_idcache_add(conn->client_cache, NULL, client_entry->id, 
-		       (void *)client_entry, FALSE);
+      client_entry = 
+	silc_client_add_client(cmd->client, conn, NULL, NULL, NULL,
+			       silc_id_dup(client_id, SILC_ID_CLIENT), 0);
     } else {
       /* Yes, we have it already */
       client_entry = (SilcClientEntry)id_cache->context;

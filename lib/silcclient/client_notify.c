@@ -190,7 +190,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Get channel entry */
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				 &id_cache))
+				     &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;

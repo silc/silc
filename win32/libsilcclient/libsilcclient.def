@@ -153,3 +153,6 @@ EXPORTS
 	silc_idlist_get_channel_by_id @ 136 ; 
 	silc_idlist_get_client @ 137 ; 
 	silc_client_abort_key_agreement @ 138 ; 
+	silc_client_set_away_message @ 139 ; 
+	silc_client_request_authentication_method @ 140 ; 
+

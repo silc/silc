@@ -203,8 +203,8 @@ static void silc_rng_get_soft_noise(SilcRng rng)
 #ifdef HAVE_GETPID
   silc_rng_xor(rng, getpid(), 1);
 #ifdef HAVE_GETPGID
-  silc_rng_xor(rng, getpgid(getpid() << 8), 2);
-  silc_rng_xor(rng, getpgid(getpid() << 8), 3);
+  silc_rng_xor(rng, getpgid(getpid()) << 8, 2);
+  silc_rng_xor(rng, getpgid(getpid()) << 8, 3);
 #endif
   silc_rng_xor(rng, getgid(), 4);
 #endif
@@ -212,7 +212,7 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, getpgrp(), 5);
 #endif
 #ifdef HAVE_GETSID
-  silc_rng_xor(rng, getsid(getpid() << 16), 6);
+  silc_rng_xor(rng, getsid(getpid()) << 16, 6);
 #endif
   silc_rng_xor(rng, times(&ptime), 7);
   silc_rng_xor(rng, ptime.tms_utime, 8);
@@ -229,13 +229,13 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, clock() << 4, pos++);
 #ifndef SILC_WIN32
 #ifdef HAVE_GETPGID
-  silc_rng_xor(rng, getpgid(getpid() << 8), pos++);
+  silc_rng_xor(rng, getpgid(getpid()) << 8, pos++);
 #endif
 #ifdef HAVE_GETPGRP
   silc_rng_xor(rng, getpgrp(), pos++);
 #endif
 #ifdef HAVE_SETSID
-  silc_rng_xor(rng, getsid(getpid() << 16), pos++);
+  silc_rng_xor(rng, getsid(getpid()) << 16, pos++);
 #endif
   silc_rng_xor(rng, times(&ptime), pos++);
   silc_rng_xor(rng, ptime.tms_utime, pos++);

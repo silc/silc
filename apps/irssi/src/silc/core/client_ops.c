@@ -333,9 +333,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   switch(command) {
   case SILC_COMMAND_WHOIS:
     {
-      char buf[1024], *nickname, *username, *realname;
+      char buf[1024], *nickname, *username, *realname, *nick;
       uint32 idle, mode;
       SilcBuffer channels;
+      SilcClientEntry client_entry;
       
       if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
 	  status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
@@ -353,7 +354,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       if (!success)
 	return;
       
-      (void)va_arg(vp, SilcClientEntry);
+      client_entry = va_arg(vp, SilcClientEntry);
       nickname = va_arg(vp, char *);
       username = va_arg(vp, char *);
       realname = va_arg(vp, char *);
@@ -361,9 +362,14 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       mode = va_arg(vp, uint32);
       idle = va_arg(vp, uint32);
       
+      silc_parse_userfqdn(nickname, &nick, NULL);
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
-			 SILCTXT_WHOIS_USERINFO, nickname, username, 
-			 realname);
+			 SILCTXT_WHOIS_USERINFO, nickname, 
+			 client_entry->username, client_entry->hostname,
+			 nick, client_entry->nickname);
+      printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_WHOIS_REALNAME, realname);
+      silc_free(nick);
 
       if (channels) {
 	SilcDList list = silc_channel_payload_parse_list(channels);

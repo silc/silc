@@ -51,7 +51,8 @@ FORMAT_REC fecommon_silc_formats[] = {
 	/* WHOIS, WHOWAS and USERS (alias WHO) messages */
 	{ NULL, "Who Queries", 0 },
 
-	{ "whois", "{nick $0} {nickhost $1}%: realname : $2", 3, { 0, 0, 0 } },
+	{ "whois", "{nick $0} {nickhost $1@$2}%: nickname : $3 ($4)", 5, { 0, 0, 0, 0, 0 } },
+	{ "whois_realname", " realname : $0", 1, { 0 } },
 	{ "whois_channels", " channels : $0", 1, { 0 } },
 	{ "whois_modes", " modes    : $0", 1, { 0 } },
 	{ "whois_idle", " idle     : $0", 1, { 0 } },

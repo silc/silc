@@ -61,6 +61,7 @@ static void silc_send_channel(SILC_SERVER_REC *server,
 typedef struct {
   char *nick;
   char *msg;
+  SILC_SERVER_REC *server;
 } PRIVMSG_REC;
 
 /* Callback function that sends the private message if the client was
@@ -73,18 +74,39 @@ static void silc_send_msg_clients(SilcClient client,
 				  void *context)
 {
   PRIVMSG_REC *rec = context;
+  SILC_SERVER_REC *server = rec->server;
   SilcClientEntry target;
-  
-  if (clients_count == 0) {
+  char *nickname = NULL;
+
+  if (!clients_count) {
     printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s", rec->nick);
   } else {
-    target = clients[0]; /* FIXME: not a good idea :) */
-    
+    if (clients_count > 1) {
+      silc_parse_userfqdn(rec->nick, &nickname, NULL);
+
+      /* Find the correct one. The rec->nick might be a formatted nick
+	 so this will find the correct one. */
+      clients = silc_client_get_clients_local(silc_client, server->conn, 
+					      nickname, rec->nick, 
+					      &clients_count);
+      if (!clients) {
+	printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s", 
+		  rec->nick);
+	silc_free(nickname);
+	goto out;
+      }
+      silc_free(nickname);
+    }
+
+    target = clients[0];
+
+    /* Send the private message */
     silc_client_send_private_message(client, conn, target, 0,
 				     rec->msg, strlen(rec->msg),
 				     TRUE);
   }
   
+ out:
   g_free(rec->nick);
   g_free(rec->msg);
   g_free(rec);
@@ -93,33 +115,36 @@ static void silc_send_msg_clients(SilcClient client,
 static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg)
 {
   PRIVMSG_REC *rec;
-  SilcClientEntry client_entry;
-  uint32 num = 0;
-  char *nickname = NULL, *serv = NULL;
-  
-  if (!silc_parse_nickname(nick, &nickname, &serv, &num)) {
+  SilcClientEntry *clients;
+  uint32 clients_count;
+  char *nickname = NULL;
+
+  if (!silc_parse_userfqdn(nick, &nickname, NULL)) {
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_BAD_NICK, nick);
     return;
   }
 
   /* Find client entry */
-  client_entry = silc_idlist_get_client(silc_client, server->conn, 
-					nickname, serv, num, FALSE);
-  if (!client_entry) {
+  clients = silc_client_get_clients_local(silc_client, server->conn, 
+					  nickname, nick, &clients_count);
+  silc_free(nickname);
+
+  if (!clients) {
     rec = g_new0(PRIVMSG_REC, 1);
     rec->nick = g_strdup(nick);
     rec->msg = g_strdup(msg);
+    rec->server = server;
 
     /* Could not find client with that nick, resolve it from server. */
     silc_client_get_clients(silc_client, server->conn,
-			    nickname, serv, silc_send_msg_clients, rec);
+			    nickname, NULL, silc_send_msg_clients, rec);
     return;
   }
 
   /* Send the private message directly */
-  silc_client_send_private_message(silc_client, server->conn, client_entry, 0,
-				   msg, strlen(msg), TRUE);
+  silc_client_send_private_message(silc_client, server->conn, 
+				   clients[0], 0, msg, strlen(msg), TRUE);
 }
 
 static int isnickflag_func(char flag)
@@ -252,20 +277,20 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 
 /* SYNTAX: BAN <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]] */
 /* SYNTAX: CMODE <channel> +|-<modes> [{ <arguments>}] */
-/* SYNTAX: CUMODE <channel> +|-<modes> <nickname>[@<server>] [-pubkey|<passwd>] */
+/* SYNTAX: CUMODE <channel> +|-<modes> <nickname>[@<hostname>] [-pubkey|<passwd>] */
 /* SYNTAX: GETKEY <nickname or server name> */
-/* SYNTAX: INVITE <channel> [<nickname>[@server>] */
+/* SYNTAX: INVITE <channel> [<nickname>[@hostname>] */
 /* SYNTAX: INVITE <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]] */
 /* SYNTAX: KEY MSG <nickname> set|unset|list|agreement|negotiate [<arguments>] */
 /* SYNTAX: KEY CHANNEL <channel> set|unset|list|agreement|negotiate [<arguments>] */
-/* SYNTAX: KICK <channel> <nickname>[@<server>] [<comment>] */
-/* SYNTAX: KILL <channel> <nickname>[@<server>] [<comment>] */
+/* SYNTAX: KICK <channel> <nickname>[@<hostname>] [<comment>] */
+/* SYNTAX: KILL <channel> <nickname>[@<hostname>] [<comment>] */
 /* SYNTAX: OPER <username> [-pubkey] */
 /* SYNTAX: SILCOPER <username> [-pubkey] */
 /* SYNTAX: TOPIC <channel> [<topic>] */
 /* SYNTAX: UMODE +|-<modes> */
-/* SYNTAX: WHOIS <nickname>[@<server>] [<count>] */
-/* SYNTAX: WHOWAS <nickname>[@<server>] [<count>] */
+/* SYNTAX: WHOIS <nickname>[@<hostname>] [<count>] */
+/* SYNTAX: WHOWAS <nickname>[@<hostname>] [<count>] */
 /* SYNTAX: CLOSE <server> [<port>] */
 /* SYNTAX: SHUTDOWN */
 /* SYNTAX: MOTD [<server>] */

@@ -203,11 +203,18 @@ void silc_core_init(void)
   args_register(options);
 }
 
+static void silc_nickname_format_parse(const char *nickname,
+				       char **ret_nickname)
+{
+  silc_parse_userfqdn(nickname, ret_nickname, NULL);
+}
+
 /* Finalize init. Called from src/fe-text/silc.c */
 
 void silc_core_init_finish(void)
 {
   CHAT_PROTOCOL_REC *rec;
+  SilcClientParams params;
 
   if (opt_create_keypair == TRUE) {
     /* Create new key pair and exit */
@@ -270,8 +277,13 @@ void silc_core_init_finish(void)
   settings_add_str("server", "alternate_nick", NULL);
   silc_init_userinfo();
 
+  /* Initialize client parameters */
+  memset(&params, 0, sizeof(params));
+  strcat(params.nickname_format, "%n@%h%a");
+  params.nickname_parse = silc_nickname_format_parse;
+
   /* Allocate SILC client */
-  silc_client = silc_client_alloc(&ops, NULL, NULL, silc_version_string);
+  silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);
 
   /* Load local config file */
   silc_config = silc_client_config_alloc(SILC_CLIENT_HOME_CONFIG_FILE);

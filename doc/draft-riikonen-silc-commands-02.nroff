@@ -389,7 +389,7 @@ List of all defined commands in SILC follows.
         Reply messages to the command:
 
         Max Arguments:  4
-            Arguments:  (1) <Status Payload>   (2) <Client ID>
+            Arguments:  (1) <Status Payload>   (2) <ID Payload>
                         (3) [<entity's name>]  (4) [<info>]
 
         This command may reply with several command reply messages to form
@@ -399,7 +399,7 @@ List of all defined commands in SILC follows.
         one reply the status is set to normal STATUS_OK.
 
         When querying clients the <entity's name> must include the client's
-        nickname in the following format: nickname>[@server].  The
+        nickname in the following format: nickname[@server].  The
         <info> must include the client's username and host in the following
         format: username@host.
 

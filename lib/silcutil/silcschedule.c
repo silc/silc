@@ -200,6 +200,9 @@ SilcSchedule silc_schedule_init(int max_tasks)
   silc_task_queue_alloc(&schedule->timeout_queue);
   silc_task_queue_alloc(&schedule->generic_queue);
 
+  if (!max_tasks)
+    max_tasks = 200;
+
   /* Initialize the scheduler */
   schedule->fd_list = silc_calloc(max_tasks, sizeof(*schedule->fd_list));
   schedule->max_fd = max_tasks;

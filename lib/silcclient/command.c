@@ -549,8 +549,8 @@ SILC_CLIENT_CMD_FUNC(invite)
   SilcClientEntry client_entry = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, clidp, chidp;
-  uint32 num = 0, type = 0;
-  char *nickname = NULL, *server = NULL, *name;
+  uint32 type = 0;
+  char *nickname = NULL, *name;
   char *invite = NULL;
 
   if (!cmd->conn) {
@@ -591,21 +591,16 @@ SILC_CLIENT_CMD_FUNC(invite)
   /* Parse the typed nickname. */
   if (cmd->argc == 3) {
     if (cmd->argv[2][0] != '+' && cmd->argv[2][0] != '-') {
-      if (!silc_parse_nickname(cmd->argv[2], &nickname, &server, &num)) {
-	cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-			      "Bad nickname");
-	COMMAND_ERROR;
-	goto out;
-      }
-      
+      if (client->params->nickname_parse)
+	client->params->nickname_parse(cmd->argv[2], &nickname);
+      else
+	nickname = strdup(cmd->argv[2]);
+
       /* Find client entry */
       client_entry = silc_idlist_get_client(client, conn, nickname, 
-					    server, num, TRUE);
+					    cmd->argv[2], TRUE);
       if (!client_entry) {
-	if (nickname)
-	  silc_free(nickname);
-	if (server)
-	  silc_free(server);
+	silc_free(nickname);
 	
 	if (cmd->pending) {
 	  COMMAND_ERROR;
@@ -660,10 +655,7 @@ SILC_CLIENT_CMD_FUNC(invite)
   COMMAND;
 
  out:
-  if (nickname)
-    silc_free(nickname);
-  if (server)
-    silc_free(server);
+  silc_free(nickname);
   silc_client_command_free(cmd);
 }
 
@@ -731,11 +723,11 @@ SILC_CLIENT_CMD_FUNC(quit)
 SILC_CLIENT_CMD_FUNC(kill)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClient client = cmd->client;
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer, idp;
   SilcClientEntry target;
-  uint32 num = 0;
-  char *nickname = NULL, *server = NULL;
+  char *nickname = NULL;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -751,20 +743,16 @@ SILC_CLIENT_CMD_FUNC(kill)
   }
 
   /* Parse the typed nickname. */
-  if (!silc_parse_nickname(cmd->argv[1], &nickname, &server, &num)) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-			  "Bad nickname");
-    COMMAND_ERROR;
-    goto out;
-  }
+  if (client->params->nickname_parse)
+    client->params->nickname_parse(cmd->argv[1], &nickname);
+  else
+    nickname = strdup(cmd->argv[1]);
 
   /* Get the target client */
   target = silc_idlist_get_client(cmd->client, conn, nickname, 
-				  server, num, TRUE);
+				  cmd->argv[1], TRUE);
   if (!target) {
     silc_free(nickname);
-    if (server)
-      silc_free(server);
 
     if (cmd->pending) {
       COMMAND_ERROR;
@@ -801,10 +789,7 @@ SILC_CLIENT_CMD_FUNC(kill)
   COMMAND;
 
  out:
-  if (nickname)
-    silc_free(nickname);
-  if (server)
-    silc_free(server);
+  silc_free(nickname);
   silc_client_command_free(cmd);
 }
 
@@ -1330,6 +1315,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 SILC_CLIENT_CMD_FUNC(cumode)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClient client = cmd->client;
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
   SilcChannelUser chu;
@@ -1337,8 +1323,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
   SilcBuffer buffer, clidp, chidp, auth = NULL;
   unsigned char *name, *cp, modebuf[4];
   uint32 mode = 0, add, len;
-  char *nickname = NULL, *server = NULL;
-  uint32 num = 0;
+  char *nickname = NULL;
   int i;
 
   if (!cmd->conn) {
@@ -1376,16 +1361,17 @@ SILC_CLIENT_CMD_FUNC(cumode)
   }
 
   /* Parse the typed nickname. */
-  if (!silc_parse_nickname(cmd->argv[3], &nickname, &server, &num)) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "Bad nickname");
-    COMMAND_ERROR;
-    goto out;
-  }
+  if (client->params->nickname_parse)
+    client->params->nickname_parse(cmd->argv[3], &nickname);
+  else
+    nickname = strdup(cmd->argv[3]);
 
   /* Find client entry */
-  client_entry = silc_idlist_get_client(cmd->client, conn, 
-					nickname, server, num, TRUE);
+  client_entry = silc_idlist_get_client(cmd->client, conn, nickname,
+					cmd->argv[3], TRUE);
   if (!client_entry) {
+    silc_free(nickname);
+
     if (cmd->pending) {
       COMMAND_ERROR;
       goto out;
@@ -1486,10 +1472,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
   COMMAND;
 
  out:
-  if (nickname)
-    silc_free(nickname);
-  if (server)
-    silc_free(server);
+  silc_free(nickname);
   silc_client_command_free(cmd);
 }
 
@@ -1498,14 +1481,14 @@ SILC_CLIENT_CMD_FUNC(cumode)
 SILC_CLIENT_CMD_FUNC(kick)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClient client = cmd->client;
   SilcClientConnection conn = cmd->conn;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, idp, idp2;
   SilcClientEntry target;
   char *name;
-  uint32 num = 0;
-  char *nickname = NULL, *server = NULL;
+  char *nickname = NULL;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1550,16 +1533,14 @@ SILC_CLIENT_CMD_FUNC(kick)
   channel = (SilcChannelEntry)id_cache->context;
 
   /* Parse the typed nickname. */
-  if (!silc_parse_nickname(cmd->argv[2], &nickname, &server, &num)) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-			  "Bad nickname");
-    COMMAND_ERROR;
-    goto out;
-  }
+  if (client->params->nickname_parse)
+    client->params->nickname_parse(cmd->argv[2], &nickname);
+  else
+    nickname = strdup(cmd->argv[2]);
 
   /* Get the target client */
   target = silc_idlist_get_client(cmd->client, conn, nickname, 
-				  server, num, FALSE);
+				  cmd->argv[2], FALSE);
   if (!target) {
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 			  "No such client: %s",
@@ -1591,10 +1572,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   COMMAND;
 
  out:
-  if (nickname)
-    silc_free(nickname);
-  if (server)
-    silc_free(server);
+  silc_free(nickname);
   silc_client_command_free(cmd);
 }
 
@@ -2059,8 +2037,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
   SilcClient client = cmd->client;
   SilcClientEntry client_entry = NULL;
   SilcServerEntry server_entry = NULL;
-  uint32 num = 0;
-  char *nickname = NULL, *server = NULL;
+  char *nickname = NULL;
   SilcBuffer idp, buffer;
 
   if (!cmd->conn) {
@@ -2077,18 +2054,17 @@ SILC_CLIENT_CMD_FUNC(getkey)
   }
 
   /* Parse the typed nickname. */
-  if (!silc_parse_nickname(cmd->argv[1], &nickname, &server, &num)) {
-    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO, "Bad nickname");
-    COMMAND_ERROR;
-    goto out;
-  }
+  if (client->params->nickname_parse)
+    client->params->nickname_parse(cmd->argv[1], &nickname);
+  else
+    nickname = strdup(cmd->argv[1]);
 
   /* Find client entry */
-  client_entry = silc_idlist_get_client(client, conn, nickname, server, num,
+  client_entry = silc_idlist_get_client(client, conn, nickname, cmd->argv[1],
 					FALSE);
   if (!client_entry) {
     /* Check whether user requested server actually */
-    server_entry = silc_client_get_server(client, conn, nickname);
+    server_entry = silc_client_get_server(client, conn, cmd->argv[1]);
 
     if (!server_entry) {
       /* No. what ever user wants we don't have it, so resolve it. We
@@ -2096,7 +2072,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
 	 bound to be wrong. */
 
       /* This will send the IDENTIFY command */
-      silc_idlist_get_client(client, conn, nickname, server, num, TRUE);
+      silc_idlist_get_client(client, conn, nickname, cmd->argv[1], TRUE);
       silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
 				  conn->cmd_ident,  
 				  silc_client_command_destructor,
@@ -2106,7 +2082,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
       /* This sends the INFO command to resolve the server. */
       silc_client_send_command(client, conn, SILC_COMMAND_INFO,
 			       ++conn->cmd_ident, 1, 
-			       1, nickname, strlen(nickname));
+			       1, cmd->argv[1], cmd->argv_lens[1]);
       silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
 				  conn->cmd_ident,  
 				  silc_client_command_destructor,
@@ -2114,6 +2090,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
 				  silc_client_command_dup(cmd));
 
       cmd->pending = 1;
+      silc_free(nickname);
       return;
     }
 
@@ -2133,5 +2110,6 @@ SILC_CLIENT_CMD_FUNC(getkey)
   COMMAND;
 
  out:
+  silc_free(nickname);
   silc_client_command_free(cmd);
 }

@@ -355,51 +355,30 @@ unsigned char *silc_decode_pem(unsigned char *pem, uint32 pem_len,
   return data;
 }
 
-/* Parse nickname string. The format may be <num>!<nickname>@<server> to
-   support multiple same nicknames. The <num> is the final unifier if same
-   nickname is on same server. Note, this is only local format and server
-   does not know anything about these. */
+/* Parse userfqdn string which is in user@fqdn format */
 
-int silc_parse_nickname(char *string, char **nickname, char **server,
-			uint32 *num)
+bool silc_parse_userfqdn(const char *string, char **left, char **right)
 {
   uint32 tlen;
 
   if (!string)
     return FALSE;
 
-  if (strchr(string, '!')) {
-    char *tmp;
-    tlen = strcspn(string, "!");
-    tmp = silc_calloc(tlen + 1, sizeof(*tmp));
-    memcpy(tmp, string, tlen);
-
-    if (num)
-      *num = atoi(tmp);
-
-    silc_free(tmp);
-
-    if (tlen >= strlen(string))
-      return FALSE;
-
-    string += tlen + 1;
-  }
-
   if (strchr(string, '@')) {
     tlen = strcspn(string, "@");
     
-    if (nickname) {
-      *nickname = silc_calloc(tlen + 1, sizeof(char));
-      memcpy(*nickname, string, tlen);
+    if (left) {
+      *left = silc_calloc(tlen + 1, sizeof(char));
+      memcpy(*left, string, tlen);
     }
     
-    if (server) {
-      *server = silc_calloc((strlen(string) - tlen) + 1, sizeof(char));
-      memcpy(*server, string + tlen + 1, strlen(string) - tlen - 1);
+    if (right) {
+      *right = silc_calloc((strlen(string) - tlen) + 1, sizeof(char));
+      memcpy(*right, string + tlen + 1, strlen(string) - tlen - 1);
     }
   } else {
-    if (nickname)
-      *nickname = strdup(string);
+    if (left)
+      *left = strdup(string);
   }
 
   return TRUE;

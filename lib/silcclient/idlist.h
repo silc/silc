@@ -2,9 +2,9 @@
 
   idlist.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@
    they are used. */
 typedef struct {
   char *nickname;		/* nickname */
-  char *username;		/* username[@host] */
+  char *username;		/* username */
+  char *hostname;		/* hostname */
   char *server;			/* SILC server name */
   char *realname;		/* Realname (userinfo) */
   uint32 num;
@@ -91,17 +92,30 @@ typedef struct {
 /* Prototypes. These are used only by the library. Application should not
    call these directly. */
 
+SilcClientEntry
+silc_client_add_client(SilcClient client, SilcClientConnection conn,
+		       char *nickname, char *username, 
+		       char *userinfo, SilcClientID *id, uint32 mode);
+void silc_client_update_client(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcClientEntry client_entry,
+			       const char *nickname,
+			       const char *username,
+			       const char *userinfo,
+			       uint32 mode);
 void silc_client_del_client_entry(SilcClient client, 
 				  SilcClientEntry client_entry);
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
-				       char *nickname,
-				       char *server,
-				       uint32 num,
-				       int query);
+				       const char *nickname,
+				       const char *format,
+				       bool query);
 SilcChannelEntry silc_idlist_get_channel_by_id(SilcClient client,
 					       SilcClientConnection conn,
 					       SilcChannelID *channel_id,
 					       int query);
+void silc_client_nickname_format(SilcClient client, 
+				 SilcClientConnection conn,
+				 SilcClientEntry client_entry);
 
 #endif

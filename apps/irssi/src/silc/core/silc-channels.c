@@ -794,8 +794,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   SilcClientConnection conn = server->conn;
   SilcClientEntry client_entry = NULL;
   SilcChannelEntry channel_entry = NULL;
-  uint32 num = 0;
-  char *nickname = NULL, *serv = NULL, *tmp;
+  char *nickname = NULL, *tmp;
   int command = 0, port = 0, type = 0;
   char *hostname = NULL;
   KeyInternal internal = NULL;
@@ -836,7 +835,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       nickname = "*";
     } else {
       /* Parse the typed nickname. */
-      if (!silc_parse_nickname(argv[2], &nickname, &serv, &num)) {
+      if (!silc_parse_userfqdn(argv[2], &nickname, NULL)) {
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
 	return;
@@ -844,7 +843,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       
       /* Find client entry */
       client_entry = silc_idlist_get_client(silc_client, conn, nickname, 
-					    serv, num, TRUE);
+					    argv[2], TRUE);
       if (!client_entry) {
 	KeyGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
@@ -868,10 +867,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 
     if (argv[2][0] == '*') {
       if (!conn->current_channel) {
-	if (nickname)
-	  silc_free(nickname);
-	if (serv)
-	  silc_free(serv);
+	silc_free(nickname);
 	cmd_return_error(CMDERR_NOT_JOINED);
       }
       name = conn->current_channel->channel_name;
@@ -881,10 +877,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 
     channel_entry = silc_client_get_channel(silc_client, conn, name);
     if (!channel_entry) {
-      if (nickname)
-	silc_free(nickname);
-      if (serv)
-	silc_free(serv);
+      silc_free(nickname);
       cmd_return_error(CMDERR_NOT_JOINED);
     }
   }
@@ -1170,10 +1163,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   }
 
  out:
-  if (nickname)
-    silc_free(nickname);
-  if (serv)
-    silc_free(serv);
+  silc_free(nickname);
 }
 
 /* Lists locally saved client and server public keys. */

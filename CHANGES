@@ -1,3 +1,61 @@
+Thu Sep  6 12:47:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Renamed function silc_parse_nickname to silc_parse_userfqdn
+	  to generally parse user@fqdn format strings.  Affected file
+	  lib/silcutil/silcutil.c.
+
+	* Added nickname_format and nickname_force_format fields to the
+	  SilcClientParams structure.  The first one defines the format
+	  for the nicknames that the library will enforce if the receives
+	  multiple same nicknames.  The second one is boolean value and
+	  can be used to force the library to always enforce the format
+	  to the nicknames regardles whether there are multiple nicknames
+	  or not.  This configurable formatting was employed to flexibly
+	  support accessing multiple nicknames from the user interface.
+	  The userinterface can now set the nicknames to what ever format
+	  they prefer.  Affected file lib/silcclient/silcapi.h.
+
+	  Added function silc_client_nickname_format to the file
+	  lib/silcclient/idlist.c.  It performs the nickname formatting.
+
+	  Added new field `hostname´ to the SilcClientEntry context.
+	  It holds the hostname of the client.  Affected file is
+	  lib/silcclient/idlist.h.
+
+	* Irssi SILC Client sets the nicknames in nick@hostn format.
+	  Fe. priikone@otaku, priikone@otaku2 etc.  Affected file
+	  irssi/src/silc/core/silc-core.c.
+
+	  The WHOIS printing now also shows both the real nickname and
+	  the formatted nickname so that user knows how to access the
+	  user if there are multiple same nicknames cached.  Affected
+	  file irssi/src/silc/core/client_ops.c.  Changed the WHOIS
+	  printing formatting too to take the hostname now as a separate
+	  argument.  The Affected file is
+	  irssi/src/fe-common/silc/modules-formats.[ch].
+
+	* Changed the silc_client_get_clients_local to accept the formatted
+	  nickname as argument.  It accepts the real nickname too but the
+	  formatted nickname can be used to find the true entry from 
+	  multiple entries.  Affected file lib/silcclient/silcapi.h and
+	  lib/silcclient/idlist.c.
+
+	* Added nickname_format_parse field to the SilcClientParams.
+	  It is a callback function provided by the application to parse
+	  the nickname out of the formatted nickname string. The library
+	  calls it to get the nickname from the formatted string. Since
+	  the application generally knows better the format of the nickname
+	  string it parses it instead of the library, even though library
+	  encodes the formatted string.  If the callback function is not
+	  provided then the library will use the string as is.  The
+	  affected file is lib/silcclient/silcapi.h.
+
+	* All the nickname strings passed to the client library in 
+	  commands are now expected to be formatted nickname strings.
+	  If the command does not support the formatted nickname string
+	  it will assume that the sent string is the actual nickname.
+	  Affected file lib/silcclient/command.c.
+
 Tue Sep  4 22:31:28 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added public key authentication support to OPER and SILCOPER
