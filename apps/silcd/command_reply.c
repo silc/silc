@@ -530,11 +530,19 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 
     SILC_LOG_DEBUG(("Received channel information"));
 
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
-					     channel_id, NULL);
-    if (!channel)
-      channel = silc_idlist_find_channel_by_id(server->global_list, channel_id,
-					       NULL);
+    if (name) {
+      channel = silc_idlist_find_channel_by_name(server->local_list, 
+						 name, NULL);
+      if (!channel)
+	channel = silc_idlist_find_channel_by_name(server->global_list, 
+						   name, NULL);
+    } else {
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
+					       channel_id, NULL);
+      if (!channel)
+	channel = silc_idlist_find_channel_by_id(server->global_list, 
+						 channel_id, NULL);
+    }
     if (!channel) {
       /* If router did not find such Channel ID in its lists then this must
 	 be bogus channel or some router in the net is buggy. */
@@ -1108,11 +1116,11 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
     SILC_GET32_MSB(usercount, tmp);
 
   /* Add the channel entry if we do not have it already */
-  channel = silc_idlist_find_channel_by_id(server->local_list, 
-					   channel_id, NULL);
+  channel = silc_idlist_find_channel_by_name(server->local_list, 
+					     name, NULL);
   if (!channel)
-    channel = silc_idlist_find_channel_by_id(server->global_list, 
-					     channel_id, NULL);
+    channel = silc_idlist_find_channel_by_name(server->global_list, 
+					       name, NULL);
   if (!channel) {
     /* If router did not find such Channel ID in its lists then this must
        be bogus channel or some router in the net is buggy. */
@@ -1121,8 +1129,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
     
     channel = silc_idlist_add_channel(server->global_list, strdup(name),
 				      SILC_CHANNEL_MODE_NONE, channel_id, 
-				      server->router, 
-				      NULL, NULL);
+				      server->router, NULL, NULL);
     if (!channel)
       goto out;
     channel_id = NULL;

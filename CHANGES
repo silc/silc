@@ -7,6 +7,10 @@ Sun Dec  2 23:29:07 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	  from router.  Fixes a bug in WHOIS and IDENTIFY.  Affected 
 	  file silcd/command.c.
 
+	* Search channel by name (if possible) rather than by ID
+	  in IDENTIFY command's command reply.  Affected file is
+	  silcd/command_reply.c.
+
 Sun Dec  2 13:48:46 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Distribute to the channel passphrase in CMODE_CHANGE notify.

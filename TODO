@@ -1,6 +1,9 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o Setting /away prints server/router operator modes as well.
+   Print modes that was just set only.
+
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
    keys is not possible because changing the key is not possible by the
@@ -35,6 +38,16 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
+
+ o The LIST command reply should empty the global list because
+   it is possible there stay channels that does not exist anymore.
+   Empty it and put channels that server does not know about to 
+   global list.
+
+ o Make the silc_server_command_pending_error_check function to
+   take all arguments it received and put them to the reply it is 
+   sending.  Otherwise for example WHOIS on normal server for bogus
+   nickname does not print anything in the client.
 
  o Backup router related issues
 
