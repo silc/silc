@@ -515,14 +515,14 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	/* Check nickname */
 	tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
 				    SILC_STRING_UTF8, 128, &tmp_len);
-	silc_free(query->nickname);
 	if (!tmp) {
-	  silc_server_query_add_error(server, query, 1, 1,
-				      SILC_STATUS_ERR_BAD_NICKNAME);
-	  query->nickname = NULL;
-	} else {
-	  query->nickname = tmp;
+	  silc_server_query_send_error(server, query,
+				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
+	  silc_server_query_free(query);
+	  return;
 	}
+	silc_free(query->nickname);
+	query->nickname = tmp;
       }
 
       /* Try get server name */
@@ -531,11 +531,13 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	/* Check server name */
 	tmp = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8,
 				    256, &tmp_len);
-	if (!tmp)
-	  silc_server_query_add_error(server, query, 1, 1,
-				      SILC_STATUS_ERR_BAD_SERVER);
-	else
-	  query->server_name = tmp;
+	if (!tmp) {
+	  silc_server_query_send_error(server, query,
+				       SILC_STATUS_ERR_BAD_SERVER, 0);
+	  silc_server_query_free(query);
+	  return;
+	}
+	query->server_name = tmp;
       }
 
       /* Get channel name */
@@ -544,11 +546,13 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	/* Check channel name */
 	tmp = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8,
 				    256, &tmp_len);
-	if (!tmp)
-	  silc_server_query_add_error(server, query, 1, 1,
-				      SILC_STATUS_ERR_BAD_SERVER);
-	else
-	  query->channel_name = tmp;
+	if (!tmp) {
+	  silc_server_query_send_error(server, query,
+				       SILC_STATUS_ERR_BAD_CHANNEL, 0);
+	  silc_server_query_free(query);
+	  return;
+	}
+	query->channel_name = tmp;
       }
 
       if (!query->nickname && !query->server_name && !query->channel_name) {

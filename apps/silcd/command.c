@@ -696,7 +696,7 @@ SILC_SERVER_CMD_FUNC(nick)
   client->id = new_id;
 
   silc_free(client->nickname);
-  client->nickname = nick;
+  client->nickname = strdup(nick);
 
   /* Update client cache */
   silc_idcache_add(server->local_list->clients, nickc,
@@ -2567,6 +2567,7 @@ SILC_SERVER_CMD_FUNC(join)
   silc_free(client_id);
 
  out:
+  silc_free(channel_namec);
   silc_server_command_free(cmd);
 }
 
