@@ -250,6 +250,25 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     }
     break;
 
+  case SILC_NOTIFY_TYPE_KILLED:
+    client_entry = va_arg(vp, SilcClientEntry);
+    tmp = va_arg(vp, char *);
+    channel_entry = va_arg(vp, SilcChannelEntry);
+
+    if (client_entry == conn->local_entry) {
+      snprintf(message, sizeof(message), 
+	       "You have been killed from the SILC Network %s%s%s", 
+	       tmp ? "(" : "", tmp ? tmp : "", tmp ? ")" : "");
+    } else {
+      snprintf(message, sizeof(message), 
+	       "%s%s%s has been killed from the SILC Network %s%s%s", 
+	       client_entry->nickname, 
+	       client_entry->server ? "@" : "",
+	       client_entry->server ? client_entry->server : "",
+	       tmp ? "(" : "", tmp ? tmp : "", tmp ? ")" : "");
+    }
+    break;
+
   default:
     break;
   }

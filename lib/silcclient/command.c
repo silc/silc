@@ -54,7 +54,7 @@ SilcClientCommand silc_command_list[] =
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 3),
   SILC_CLIENT_CMD(shutdown, SHUTDOWN, "SHUTDOWN",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 1),
-  SILC_CLIENT_CMD(silcoper, SILCOPER, "SILOPER",
+  SILC_CLIENT_CMD(silcoper, SILCOPER, "SILCOPER",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER, 3),
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(users, USERS, "USERS", SILC_CF_LAG | SILC_CF_REG, 2),
@@ -334,7 +334,7 @@ SILC_CLIENT_CMD_FUNC(identify)
   buffer = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
 				       cmd->argc - 1, ++cmd->argv,
 				       ++cmd->argv_lens, ++cmd->argv_types,
-				       0);
+				       ++conn->cmd_ident);
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
@@ -528,7 +528,7 @@ SILC_CLIENT_CMD_FUNC(invite)
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 0,
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
 				silc_client_command_destructor,
 				silc_client_command_invite, 
 				silc_client_command_dup(cmd));
@@ -564,6 +564,10 @@ SILC_CLIENT_CMD_FUNC(invite)
   COMMAND;
 
  out:
+  if (nickname)
+    silc_free(nickname);
+  if (server)
+    silc_free(server);
   silc_client_command_free(cmd);
 }
 
@@ -625,8 +629,96 @@ SILC_CLIENT_CMD_FUNC(quit)
   silc_client_command_free(cmd);
 }
 
+/* Command KILL. Router operator can use this command to remove an client
+   fromthe SILC Network. */
+
 SILC_CLIENT_CMD_FUNC(kill)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer, idp;
+  SilcClientEntry target;
+  unsigned int num = 0;
+  char *nickname = NULL, *server = NULL;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    cmd->client->ops->say(cmd->client, conn, 
+			  "Usage: /KILL <nickname> [<comment>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Parse the typed nickname. */
+  if (!silc_parse_nickname(cmd->argv[1], &nickname, &server, &num)) {
+    cmd->client->ops->say(cmd->client, conn, "Bad nickname");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Get the target client */
+  target = silc_idlist_get_client(cmd->client, conn, nickname, 
+				  server, num, TRUE);
+  if (!target) {
+    silc_free(nickname);
+    if (server)
+      silc_free(server);
+
+    /* Client entry not found, it was requested thus mark this to be
+       pending command. */
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				conn->cmd_ident,  
+				silc_client_command_destructor,
+				silc_client_command_kill, 
+				silc_client_command_dup(cmd));
+    cmd->pending = 1;
+    return;
+  }
+
+  /* Send the KILL command to the server */
+  idp = silc_id_payload_encode(target->id, SILC_ID_CLIENT);
+  if (cmd->argc == 2)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_KILL, 0, 1, 
+					    1, idp->data, idp->len);
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_KILL, 0, 2, 
+					    1, idp->data, idp->len,
+					    2, cmd->argv[2], 
+					    strlen(cmd->argv[2]));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_buffer_free(idp);
+
+  /* Notify application */
+  COMMAND;
+
+  /* Remove the client entry to be killed */
+  silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
+			 target->id);
+  if (target->nickname)
+    silc_free(target->nickname);
+  if (target->server)
+    silc_free(target->server);
+  if (target->id)
+    silc_free(target->id);
+  if (target->send_key)
+    silc_cipher_free(target->send_key);
+  if (target->receive_key)
+    silc_cipher_free(target->receive_key);
+  silc_free(target);
+
+ out:
+  if (nickname)
+    silc_free(nickname);
+  if (server)
+    silc_free(server);
+  silc_client_command_free(cmd);
 }
 
 /* Command INFO. Request information about specific server. If specific
@@ -1091,7 +1183,8 @@ SILC_CLIENT_CMD_FUNC(cumode)
   if (!client_entry) {
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(conn, SILC_COMMAND_CUMODE, 0,  
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				conn->cmd_ident,  
 				silc_client_command_destructor,
 				silc_client_command_cumode, 
 				silc_client_command_dup(cmd));
@@ -1165,6 +1258,10 @@ SILC_CLIENT_CMD_FUNC(cumode)
   COMMAND;
 
  out:
+  if (nickname)
+    silc_free(nickname);
+  if (server)
+    silc_free(server);
   silc_client_command_free(cmd);
 }
 
@@ -1190,7 +1287,7 @@ SILC_CLIENT_CMD_FUNC(kick)
 
   if (cmd->argc < 3) {
     cmd->client->ops->say(cmd->client, conn, 
-			  "Usage: /KICK <channel> <client> [<comment>]");
+			  "Usage: /KICK <channel> <nickname> [<comment>]");
     COMMAND_ERROR;
     goto out;
   }
@@ -1261,6 +1358,10 @@ SILC_CLIENT_CMD_FUNC(kick)
   COMMAND;
 
  out:
+  if (nickname)
+    silc_free(nickname);
+  if (server)
+    silc_free(server);
   silc_client_command_free(cmd);
 }
 
@@ -1642,7 +1743,8 @@ SILC_CLIENT_CMD_FUNC(users)
   if (!cmd->pending) {
     /* Send USERS command to the server */
     idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 0, 1, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 
+					    ++conn->cmd_ident, 1, 
 					    1, idp->data, idp->len);
     silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, 
 			    NULL, 0, NULL, NULL, buffer->data, 
@@ -1653,7 +1755,7 @@ SILC_CLIENT_CMD_FUNC(users)
     /* Register pending callback which will recall this command callback with
        same context and reprocesses the command. When reprocessing we actually
        display the information on the screen. */
-    silc_client_command_pending(conn, SILC_COMMAND_USERS, 0, 
+    silc_client_command_pending(conn, SILC_COMMAND_USERS, conn->cmd_ident, 
 				silc_client_command_destructor,
 				silc_client_command_users, 
 				silc_client_command_dup(cmd));

@@ -1149,14 +1149,15 @@ void silc_server_send_notify_to_channel(SilcServer server,
   silc_buffer_free(packet);
 }
 
-/* Send notify message to all clients the client has joined. It is quaranteed
+/* Send notify message to all channels the client has joined. It is quaranteed
    that the message is sent only once to a client (ie. if a client is joined
    on two same channel it will receive only one notify message). Also, this
    sends only to local clients (locally connected if we are server, and to
-   local servers if we are router). */
+   local servers if we are router). If `sender' is provided the packet is
+   not sent to that client at all. */
 
 void silc_server_send_notify_on_channels(SilcServer server,
-					 SilcSocketConnection sender,
+					 SilcClientEntry sender,
 					 SilcClientEntry client,
 					 SilcNotifyType type,
 					 unsigned int argc, ...)
@@ -1204,6 +1205,9 @@ void silc_server_send_notify_on_channels(SilcServer server,
     while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
       c = chl2->client;
       
+      if (sender && c == sender)
+	continue;
+
       /* Check if we have sent the packet to this client already */
       for (k = 0; k < sent_clients_count; k++)
 	if (sent_clients[k] == c)
@@ -1226,9 +1230,6 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	sock = (SilcSocketConnection)c->router->connection;
 	idata = (SilcIDListData)c->router;
 	
-	if (sender && sock == sender)
-	  continue;
-
 	packetdata.dst_id = silc_id_id2str(c->router->id, SILC_ID_SERVER);
 	packetdata.dst_id_len = SILC_ID_SERVER_LEN;
 	packetdata.dst_id_type = SILC_ID_SERVER;
@@ -1264,9 +1265,6 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	sock = (SilcSocketConnection)c->connection;
 	idata = (SilcIDListData)c;
 	
-	if (sender && sock == sender)
-	  continue;
-
 	packetdata.dst_id = silc_id_id2str(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_len = SILC_ID_CLIENT_LEN;
 	packetdata.dst_id_type = SILC_ID_CLIENT;
@@ -1426,17 +1424,19 @@ void silc_server_send_heartbeat(SilcServer server,
 			  NULL, 0, FALSE);
 }
 
-/* Routine used to send (relay, route) key agreement packets to some 
-   destination. */
+/* Generic function to relay packet we've received. This is used to relay
+   packets to a client but generally can be used to other purposes as well. */
 
-void silc_server_send_key_agreement(SilcServer server,
-				    SilcSocketConnection dst_sock,
-				    SilcCipher cipher,
-				    SilcHmac hmac,
-				    SilcPacketContext *packet)
+void silc_server_relay_packet(SilcServer server,
+			      SilcSocketConnection dst_sock,
+			      SilcCipher cipher,
+			      SilcHmac hmac,
+			      SilcPacketContext *packet,
+			      int force_send)
 {
   silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		   + packet->dst_id_len + packet->padlen);
+
   silc_packet_send_prepare(dst_sock, 0, 0, packet->buffer->len);
   silc_buffer_put(dst_sock->outbuf, packet->buffer->data, packet->buffer->len);
   
@@ -1444,48 +1444,8 @@ void silc_server_send_key_agreement(SilcServer server,
   silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, packet->buffer->len);
   
   /* Send the packet */
-  silc_server_packet_send_real(server, dst_sock, FALSE);
-}
+  silc_server_packet_send_real(server, dst_sock, force_send);
 
-/* Routine used to send (relay, route) private message key packets to some 
-   destination. */
-
-void silc_server_send_private_message_key(SilcServer server,
-					  SilcSocketConnection dst_sock,
-					  SilcCipher cipher,
-					  SilcHmac hmac,
-					  SilcPacketContext *packet)
-{
-  silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
+  silc_buffer_pull(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		   + packet->dst_id_len + packet->padlen);
-  silc_packet_send_prepare(dst_sock, 0, 0, packet->buffer->len);
-  silc_buffer_put(dst_sock->outbuf, packet->buffer->data, packet->buffer->len);
-  
-  /* Re-encrypt packet */
-  silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, packet->buffer->len);
-  
-  /* Send the packet */
-  silc_server_packet_send_real(server, dst_sock, FALSE);
-}
-
-/* Routine used to relay notify packets to a client. The notify packets
-   may be destined directly to a client and this routine is used to do
-   that. */
-
-void silc_server_packet_relay_notify(SilcServer server,
-				     SilcSocketConnection dst_sock,
-				     SilcCipher cipher,
-				     SilcHmac hmac,
-				     SilcPacketContext *packet)
-{
-  silc_buffer_push(packet->buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
-		   + packet->dst_id_len + packet->padlen);
-  silc_packet_send_prepare(dst_sock, 0, 0, packet->buffer->len);
-  silc_buffer_put(dst_sock->outbuf, packet->buffer->data, packet->buffer->len);
-  
-  /* Re-encrypt packet */
-  silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, packet->buffer->len);
-  
-  /* Send the packet */
-  silc_server_packet_send_real(server, dst_sock, FALSE);
 }

@@ -96,7 +96,9 @@ void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock);
 void silc_server_free_client_data(SilcServer server, 
 				  SilcSocketConnection sock,
-				  SilcClientEntry client, char *signoff);
+				  SilcClientEntry client, 
+				  int notify,
+				  char *signoff);
 void silc_server_free_sock_user_data(SilcServer server, 
 				     SilcSocketConnection sock);
 int silc_server_channel_has_global(SilcChannelEntry channel);
@@ -155,5 +157,9 @@ void silc_server_save_users_on_channel(SilcServer server,
 				       SilcBuffer user_list,
 				       SilcBuffer mode_list,
 				       unsigned int user_count);
+SilcSocketConnection silc_server_get_client_route(SilcServer server,
+						  unsigned char *id_data,
+						  unsigned int id_len,
+						  SilcIDListData *idata);
 
 #endif

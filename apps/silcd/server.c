@@ -1293,7 +1293,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     server->stat.packets_sent++;
 
     if (sock->outbuf->data - sock->outbuf->head)
-      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
+     silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
 
     ret = silc_server_packet_send_real(server, sock, TRUE);
 
@@ -1973,19 +1973,41 @@ SILC_TASK_CALLBACK(silc_server_free_client_data_timeout)
 
 void silc_server_free_client_data(SilcServer server, 
 				  SilcSocketConnection sock,
-				  SilcClientEntry client, char *signoff)
+				  SilcClientEntry client, 
+				  int notify,
+				  char *signoff)
 {
   FreeClientInternal i = silc_calloc(1, sizeof(*i));
 
+  /* If there is pending outgoing data for the client then purge it
+     to the network before removing the client entry. */
+  if (SILC_IS_OUTBUF_PENDING(sock) && (SILC_IS_DISCONNECTED(sock) == FALSE)) {
+    server->stat.packets_sent++;
+
+    if (sock->outbuf->data - sock->outbuf->head)
+     silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
+
+    silc_server_packet_send_real(server, sock, TRUE);
+
+    SILC_SET_CONNECTION_FOR_INPUT(sock->sock);
+    SILC_UNSET_OUTBUF_PENDING(sock);
+    silc_buffer_clear(sock->outbuf);
+  }
+
   /* Send SIGNOFF notify to routers. */
-  if (!server->standalone && server->router)
+  if (notify && !server->standalone && server->router)
     silc_server_send_notify_signoff(server, server->router->connection,
 				    server->server_type == SILC_SERVER ?
 				    FALSE : TRUE, client->id, 
 				    SILC_ID_CLIENT_LEN, signoff);
 
   /* Remove client from all channels */
-  silc_server_remove_from_channels(server, sock, client, TRUE, signoff, TRUE);
+  if (notify)
+    silc_server_remove_from_channels(server, NULL, client, 
+				     TRUE, signoff, TRUE);
+  else
+    silc_server_remove_from_channels(server, NULL, client, 
+				     FALSE, NULL, FALSE);
 
   /* We will not delete the client entry right away. We will take it
      into history (for WHOWAS command) for 5 minutes */
@@ -2017,7 +2039,7 @@ void silc_server_free_sock_user_data(SilcServer server,
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry user_data = (SilcClientEntry)sock->user_data;
-      silc_server_free_client_data(server, sock, user_data, NULL);
+      silc_server_free_client_data(server, sock, user_data, TRUE, NULL);
       break;
     }
   case SILC_SOCKET_TYPE_SERVER:
@@ -3078,4 +3100,77 @@ void silc_server_save_users_on_channel(SilcServer server,
       silc_list_add(client->channels, chl);
     }
   }
+}
+
+/* Lookups route to the client indicated by `id' client ID. The connection
+   object and internal data object is returned. Returns NULL if route
+   could not be found to the client. */
+
+SilcSocketConnection silc_server_get_client_route(SilcServer server,
+						  unsigned char *id_data,
+						  unsigned int id_len,
+						  SilcIDListData *idata)
+{
+  SilcClientID *id;
+  SilcClientEntry client;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Decode destination Client ID */
+  id = silc_id_str2id(id_data, id_len, SILC_ID_CLIENT);
+  if (!id) {
+    SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
+    return NULL;
+  }
+
+  /* If the destination belongs to our server we don't have to route
+     the packet anywhere but to send it to the local destination. */
+  client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
+  if (client) {
+    silc_free(id);
+
+    if (client && client->data.registered == FALSE)
+      return NULL;
+
+    /* If we are router and the client has router then the client is in
+       our cell but not directly connected to us. */
+    if (server->server_type == SILC_ROUTER && client->router) {
+      /* We are of course in this case the client's router thus the real
+	 "router" of the client is the server who owns the client. Thus
+	 we will send the packet to that server. */
+      *idata = (SilcIDListData)client->router;
+      return client->router->connection;
+    }
+
+    /* Seems that client really is directly connected to us */
+    *idata = (SilcIDListData)client;
+    return client->connection;
+  }
+
+  /* Destination belongs to someone not in this server. If we are normal
+     server our action is to send the packet to our router. */
+  if (server->server_type == SILC_SERVER && !server->standalone) {
+    silc_free(id);
+    *idata = (SilcIDListData)server->router;
+    return server->router->connection;
+  }
+
+  /* We are router and we will perform route lookup for the destination 
+     and send the packet to fastest route. */
+  if (server->server_type == SILC_ROUTER && !server->standalone) {
+    /* Check first that the ID is valid */
+    client = silc_idlist_find_client_by_id(server->global_list, id, NULL);
+    if (client) {
+      SilcSocketConnection dst_sock;
+
+      dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
+
+      silc_free(id);
+      *idata = (SilcIDListData)dst_sock->user_data;
+      return dst_sock;
+    }
+  }
+
+  silc_free(id);
+  return NULL;
 }

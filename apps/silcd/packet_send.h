@@ -182,7 +182,7 @@ void silc_server_send_notify_to_channel(SilcServer server,
 					SilcNotifyType type,
 					unsigned int argc, ...);
 void silc_server_send_notify_on_channels(SilcServer server,
-					 SilcSocketConnection sender,
+					 SilcClientEntry sender,
 					 SilcClientEntry client,
 					 SilcNotifyType type,
 					 unsigned int argc, ...);
@@ -207,20 +207,11 @@ void silc_server_send_command(SilcServer server,
 			      unsigned int argc, ...);
 void silc_server_send_heartbeat(SilcServer server,
 				SilcSocketConnection sock);
-void silc_server_send_key_agreement(SilcServer server,
-				    SilcSocketConnection dst_sock,
-				    SilcCipher cipher,
-				    SilcHmac hmac,
-				    SilcPacketContext *packet);
-void silc_server_send_private_message_key(SilcServer server,
-					  SilcSocketConnection dst_sock,
-					  SilcCipher cipher,
-					  SilcHmac hmac,
-					  SilcPacketContext *packet);
-void silc_server_packet_relay_notify(SilcServer server,
-				     SilcSocketConnection dst_sock,
-				     SilcCipher cipher,
-				     SilcHmac hmac,
-				     SilcPacketContext *packet);
+void silc_server_relay_packet(SilcServer server,
+			      SilcSocketConnection dst_sock,
+			      SilcCipher cipher,
+			      SilcHmac hmac,
+			      SilcPacketContext *packet,
+			      int force_send);
 
 #endif

@@ -144,7 +144,7 @@ struct SilcSocketConnectionHB {
 /* Generic manipulation of flags */
 #define SF_SET(x, f) (x)->flags |= (1L << (f))
 #define SF_UNSET(x, f) (x)->flags &= ~(1L << (f))
-#define SF_IS(x, f) (x)->flags & (1L << (f))
+#define SF_IS(x, f) ((x)->flags & (1L << (f)))
 
 /* Setting/Unsetting flags */
 #define SILC_SET_OUTBUF_PENDING(x) SF_SET((x), SILC_SF_OUTBUF_PENDING)

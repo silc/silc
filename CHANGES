@@ -1,3 +1,48 @@
+Mon Mar 19 16:13:07 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_server_get_client_route to resolve the route to
+	  the client indicated by the client ID.  Affected file is
+	  silcd/server.[ch].
+
+	* Added silc_server_relay_packet as general function to relay
+	  packet to arbitrary destination.  This deprecates functions
+	  like _send_private_message_key, _relay_notify etc.  Affected
+	  file is silcd/packet_send.[ch].
+
+	  Removed silc_server_send_key_agreement, 
+	  silc_server_send_private_message_key and
+	  silc_server_packet_relay_notify functions from the file
+	  silcd/packet_send.[ch].
+
+	* Updated TODO.
+
+	* Implemented the SILC_NOTIFY_TYPE_KILLED notify handling in the
+	  server.  Affected file silcd/packet_receive.[ch].
+
+	* Implemented the KILL command to the client.  Implemented the
+	  SILC_NOTIFY_TYPE_KILLED notify handling in the client library.
+	  Affected files lib/silcclient/command[_reply].c and
+	  lib/silcclient/client_notify.c.  Implemented the KILL notify
+	  printing in the user inteface.
+
+	* Fixed a lot silc_parse_nick memory leaks from the client
+	  library in the file lib/silcclient/command.c.
+
+	* Changed the silc_server_send_notify_on_channels's `sender'
+	  argument from SilcSocketConnection to SilcClientEntry to 
+	  check the sender as entry and not as connection object and not
+	  to send to the client provided as argument.  The affected file
+	  is silcd/packet_send.[ch].
+
+	* The notify packets that are destined directly to the client used
+	  to not to be processed by the server.  Now changed that and the
+	  server processes all notify packets.  After relaying the packet
+	  to the client the notify packet is processed in the server.
+
+	* The silc_server_free_client_data now checks whether there is
+	  pending outgoing traffic for the client and purges the data to
+	  the network before removing the client entry.
+
 Sun Mar 18 21:02:47 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added SILC_NOTIFY_TYPE_KILLED notify type.  It is sent when
@@ -16,7 +61,7 @@ Sun Mar 18 21:02:47 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  whereto relay the notify.  Affected file is 
 	  silcd/packet_receive.[ch].
 
-	* Implemented KILL command to the server.
+	* Implemented the KILL command to the server.
 
 	* Updated TODO.
 

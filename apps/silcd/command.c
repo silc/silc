@@ -1965,7 +1965,7 @@ SILC_TASK_CALLBACK(silc_server_command_quit_cb)
   /* Free all client specific data, such as client entry and entires
      on channels this client may be on. */
   silc_server_free_client_data(q->server, q->sock, q->sock->user_data,
-			       q->signoff);
+			       TRUE, q->signoff);
   q->sock->user_data = NULL;
 
   /* Close the connection on our side */
@@ -2021,16 +2021,19 @@ SILC_SERVER_CMD_FUNC(kill)
   SilcClientEntry remote_client;
   SilcClientID *client_id;
   unsigned char *tmp, *comment;
-  unsigned int tmp_len;
-  SilcBuffer idp;
+  unsigned int tmp_len, tmp_len2;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_KILL, cmd, 1, 2);
 
   if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
 
-  if (server->server_type != SILC_ROUTER)
+  /* KILL command works only on router */
+  if (server->server_type != SILC_ROUTER) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
+					  SILC_STATUS_ERR_NO_ROUTER_PRIV);
     goto out;
+  }
 
   /* Check whether client has the permissions. */
   if (!(client->mode & SILC_UMODE_ROUTER_OPERATOR)) {
@@ -2067,27 +2070,32 @@ SILC_SERVER_CMD_FUNC(kill)
   }
 
   /* Get comment */
-  comment = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  comment = silc_argument_get_arg_type(cmd->args, 2, &tmp_len2);
+  if (tmp_len2 > 128)
+    comment = NULL;
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_KILL,
 					SILC_STATUS_OK);
 
+  /* Send the KILL notify packets. First send it to the channel, then
+     to our primary router and then directly to the client who is being
+     killed right now. */
+
   /* Send KILLED notify to the channels. It is not sent to the client
      as it will be sent differently destined directly to the client and not
      to the channel. */
-  idp = silc_id_payload_encode(remote_client->id, SILC_ID_CLIENT);
-  silc_server_send_notify_on_channels(server, remote_client->connection, 
+  silc_server_send_notify_on_channels(server, remote_client, 
 				      remote_client, SILC_NOTIFY_TYPE_KILLED,
 				      comment ? 2 : 1,
-				      idp->data, idp->len,
-				      comment, comment ? strlen(comment) : 0);
-  silc_buffer_free(idp);
+				      tmp, tmp_len,
+				      comment, comment ? tmp_len2 : 0);
 
-  /* Remove the client from all channels. This generates new keys to the
-     channels as well. */
-  silc_server_remove_from_channels(server, NULL, remote_client, FALSE, 
-				   NULL, TRUE);
+  /* Send KILLED notify to primary route */
+  if (!server->standalone)
+    silc_server_send_notify_killed(server, server->router->connection, TRUE,
+				   remote_client->id, SILC_ID_CLIENT_LEN,
+				   comment);
 
   /* Send KILLED notify to the client directly */
   silc_server_send_notify_killed(server, remote_client->connection ? 
@@ -2096,13 +2104,23 @@ SILC_SERVER_CMD_FUNC(kill)
 				 remote_client->id, SILC_ID_CLIENT_LEN,
 				 comment);
 
-  /* Send KILLED notify to primary route */
-  if (!server->standalone)
-    silc_server_send_notify_killed(server, server->router->connection,
-				   server->server_type == SILC_ROUTER ?
-				   TRUE : FALSE,
-				   remote_client->id, SILC_ID_CLIENT_LEN,
-				   comment);
+  /* Remove the client from all channels. This generates new keys to the
+     channels as well. */
+  silc_server_remove_from_channels(server, NULL, remote_client, FALSE, 
+				   NULL, TRUE);
+
+  /* Remove the client entry, If it is locally connected then we will also
+     disconnect the client here */
+  if (remote_client->data.registered && remote_client->connection) {
+    /* Remove locally conneted client */
+    SilcSocketConnection sock = remote_client->connection;
+    silc_server_free_client_data(server, sock, remote_client, FALSE, NULL);
+    silc_server_close_connection(server, sock);
+  } else {
+    /* Remove remote client */
+    if (!silc_idlist_del_client(server->global_list, remote_client))
+      silc_idlist_del_client(server->local_list, remote_client);
+  }
 
  out:
   silc_server_command_free(cmd);
@@ -3873,7 +3891,7 @@ SILC_SERVER_CMD_FUNC(users)
 
   /* Send reply */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_USERS,
-						SILC_STATUS_OK, 0, 4,
+						SILC_STATUS_OK, ident, 4,
 						2, channel_id, channel_id_len,
 						3, lc, 4,
 						4, client_id_list->data,

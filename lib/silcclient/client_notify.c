@@ -410,6 +410,7 @@ void silc_client_notify_by_server(SilcClient client,
       silc_cipher_free(client_entry->send_key);
     if (client_entry->receive_key)
       silc_cipher_free(client_entry->receive_key);
+    silc_free(client_entry);
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
@@ -597,8 +598,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find Client entry */
-    client_entry = 
-      silc_client_get_client_by_id(client, conn, client_id);
+    client_entry = silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -633,6 +633,51 @@ void silc_client_notify_by_server(SilcClient client,
       silc_cipher_free(channel->channel_key);
       silc_free(channel);
     }
+    break;
+
+  case SILC_NOTIFY_TYPE_KILLED:
+    /*
+     * A client (maybe me) was killed from the network.
+     */
+
+    /* Get Client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+
+    /* Find Client entry */
+    client_entry = silc_client_get_client_by_id(client, conn, client_id);
+    if (!client_entry)
+      goto out;
+
+    /* Get comment */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+
+    /* Notify application. The channel entry is sent last as this notify
+       is for channel but application don't know it from the arguments
+       sent by server. */
+    client->ops->notify(client, conn, type, client_entry, tmp);
+
+    if (client_entry != conn->local_entry) {
+      silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
+			     client_entry->id);
+      if (client_entry->nickname)
+	silc_free(client_entry->nickname);
+      if (client_entry->server)
+	silc_free(client_entry->server);
+      if (client_entry->id)
+	silc_free(client_entry->id);
+      if (client_entry->send_key)
+	silc_cipher_free(client_entry->send_key);
+      if (client_entry->receive_key)
+	silc_cipher_free(client_entry->receive_key);
+      silc_free(client_entry);
+    }
+
     break;
     
   default:

@@ -27,99 +27,6 @@
 
 extern char *server_version;
 
-/* Check whereto relay the received notify packet that was destined
-   to a client. */
-
-static void 
-silc_server_packet_process_relay_notify(SilcServer server,
-					SilcSocketConnection sock,
-					SilcPacketContext *packet)
-{
-  SilcClientID *id;
-  SilcServerEntry router;
-  SilcSocketConnection dst_sock;
-  SilcClientEntry client;
-  SilcIDListData idata;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Decode destination Client ID */
-  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CLIENT);
-  if (!id) {
-    SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
-    return;
-  }
-
-  /* If the destination belongs to our server we don't have to route
-     the packet anywhere but to send it to the local destination. */
-  client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
-  if (client) {
-    /* It exists, now deliver the packet to the destination */
-    dst_sock = (SilcSocketConnection)client->connection;
-
-    /* If we are router and the client has router then the client is in
-       our cell but not directly connected to us. */
-    if (server->server_type == SILC_ROUTER && client->router) {
-      /* We are of course in this case the client's router thus the real
-	 "router" of the client is the server who owns the client. Thus
-	 we will send the packet to that server. */
-      router = (SilcServerEntry)client->router;
-      idata = (SilcIDListData)router;
-      silc_server_packet_relay_notify(server, router->connection,
-				      idata->send_key,
-				      idata->hmac,
-				      packet);
-      silc_free(id);
-      return;
-    }
-
-    /* Seems that client really is directly connected to us */
-    idata = (SilcIDListData)client;
-    silc_server_packet_relay_notify(server, dst_sock, 
-				    idata->send_key,
-				    idata->hmac, packet);
-    silc_free(id);
-    return;
-  }
-
-  /* Destination belongs to someone not in this server. If we are normal
-     server our action is to send the packet to our router. */
-  if (server->server_type == SILC_SERVER && !server->standalone) {
-    router = server->router;
-
-    /* Send to primary route */
-    if (router) {
-      dst_sock = (SilcSocketConnection)router->connection;
-      idata = (SilcIDListData)router;
-      silc_server_packet_relay_notify(server, dst_sock, 
-				      idata->send_key,
-				      idata->hmac, packet);
-    }
-    silc_free(id);
-    return;
-  }
-
-  /* We are router and we will perform route lookup for the destination 
-     and send the packet to fastest route. */
-  if (server->server_type == SILC_ROUTER && !server->standalone) {
-    /* Check first that the ID is valid */
-    client = silc_idlist_find_client_by_id(server->global_list, id, NULL);
-    if (client) {
-      dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
-      router = (SilcServerEntry)dst_sock->user_data;
-      idata = (SilcIDListData)router;
-
-      /* Get fastest route and send packet. */
-      if (router)
-	silc_server_packet_relay_notify(server, dst_sock, 
-					idata->send_key,
-					idata->hmac, packet);
-      silc_free(id);
-      return;
-    }
-  }
-}
-
 /* Received notify packet. Server can receive notify packets from router. 
    Server then relays the notify messages to clients if needed. */
 
@@ -145,11 +52,22 @@ void silc_server_notify(SilcServer server,
       packet->src_id_type != SILC_ID_SERVER)
     return;
 
-  /* If the packet is destined directly to a client, then we don't
-     process the packet at all but just relay it to the client. */
-  if (packet->dst_id_type == SILC_ID_CLIENT) {
-    silc_server_packet_process_relay_notify(server, sock, packet);
+  if (!packet->dst_id)
     return;
+
+  /* If the packet is destined directly to a client then relay the packet
+     before processing it. */
+  if (packet->dst_id_type == SILC_ID_CLIENT) {
+    SilcIDListData idata;
+    SilcSocketConnection dst_sock;
+
+    /* Get the route to the client */
+    dst_sock = silc_server_get_client_route(server, packet->dst_id,
+					    packet->dst_id_len, &idata);
+    if (dst_sock)
+      /* Relay the packet */
+      silc_server_relay_packet(server, dst_sock, idata->send_key,
+			       idata->hmac, packet, TRUE);
   }
 
   /* If we are router and this packet is not already broadcast packet
@@ -639,13 +557,65 @@ void silc_server_notify(SilcServer server,
     break;
 
   case SILC_NOTIFY_TYPE_KILLED:
-    /* 
-     * Distribute the notify to local clients on channels
-     */
+    {
+      /* 
+       * Distribute the notify to local clients on channels
+       */
+      unsigned char *id;
+      unsigned int id_len;
     
-    SILC_LOG_DEBUG(("KILLED notify"));
+      SILC_LOG_DEBUG(("KILLED notify"));
       
-    break;
+      /* Get client ID */
+      id = silc_argument_get_arg_type(args, 1, &id_len);
+      if (!id)
+	goto out;
+      client_id = silc_id_payload_parse_id(id, id_len);
+      if (!client_id)
+	goto out;
+
+      /* If the the client is not in local list we check global list */
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client) {
+	client = silc_idlist_find_client_by_id(server->global_list, 
+					       client_id, NULL);
+	if (!client) {
+	  silc_free(client_id);
+	  goto out;
+	}
+      }
+      silc_free(client_id);
+
+      /* If the client is one of ours, then close the connection to the
+	 client now. This removes the client from all channels as well. */
+      if (packet->dst_id_type == SILC_ID_CLIENT && client->data.registered &&
+	  client->connection) {
+	sock = client->connection;
+	silc_server_free_client_data(server, NULL, client, FALSE, NULL);
+	silc_server_close_connection(server, sock);
+	break;
+      }
+
+      /* Get comment */
+      tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+      if (tmp_len > 128)
+	tmp = NULL;
+
+      /* Send the notify to local clients on the channels except to the
+	 client who is killed. */
+      silc_server_send_notify_on_channels(server, client, client,
+					  SILC_NOTIFY_TYPE_KILLED, 
+					  tmp ? 2 : 1,
+					  id, id_len, 
+					  tmp, tmp_len);
+
+      /* Remove the client from all channels */
+      silc_server_remove_from_channels(server, NULL, client, FALSE, NULL, 
+				       FALSE);
+
+      break;
+    }
 
     /* Ignore rest of the notify types for now */
   case SILC_NOTIFY_TYPE_NONE:
@@ -722,10 +692,7 @@ void silc_server_private_message(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet)
 {
-  SilcClientID *id;
-  SilcServerEntry router;
   SilcSocketConnection dst_sock;
-  SilcClientEntry client;
   SilcIDListData idata;
 
   SILC_LOG_DEBUG(("Start"));
@@ -737,82 +704,15 @@ void silc_server_private_message(SilcServer server,
   if (!packet->dst_id)
     return;
 
-  /* Decode destination Client ID */
-  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CLIENT);
-  if (!id) {
-    SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
+  /* Get the route to the client */
+  dst_sock = silc_server_get_client_route(server, packet->dst_id,
+					  packet->dst_id_len, &idata);
+  if (!dst_sock)
     return;
-  }
 
-  /* If the destination belongs to our server we don't have to route
-     the message anywhere but to send it to the local destination. */
-  client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
-  if (client) {
-    /* It exists, now deliver the message to the destination */
-    dst_sock = (SilcSocketConnection)client->connection;
-
-    /* If we are router and the client has router then the client is in
-       our cell but not directly connected to us. */
-    if (server->server_type == SILC_ROUTER && client->router) {
-      /* We are of course in this case the client's router thus the real
-	 "router" of the client is the server who owns the client. Thus
-	 we will send the packet to that server. */
-      router = (SilcServerEntry)client->router;
-      idata = (SilcIDListData)router;
-
-      silc_server_send_private_message(server, router->connection,
-				       idata->send_key,
-				       idata->hmac,
-				       packet);
-      silc_free(id);
-      return;
-    }
-
-    /* Seems that client really is directly connected to us */
-    idata = (SilcIDListData)client;
-    silc_server_send_private_message(server, dst_sock, 
-				     idata->send_key,
-				     idata->hmac, packet);
-    silc_free(id);
-    return;
-  }
-
-  /* Destination belongs to someone not in this server. If we are normal
-     server our action is to send the packet to our router. */
-  if (server->server_type == SILC_SERVER && !server->standalone) {
-    router = server->router;
-
-    /* Send to primary route */
-    if (router) {
-      dst_sock = (SilcSocketConnection)router->connection;
-      idata = (SilcIDListData)router;
-      silc_server_send_private_message(server, dst_sock, 
-				       idata->send_key,
-				       idata->hmac, packet);
-    }
-    silc_free(id);
-    return;
-  }
-
-  /* We are router and we will perform route lookup for the destination 
-     and send the message to fastest route. */
-  if (server->server_type == SILC_ROUTER && !server->standalone) {
-    /* Check first that the ID is valid */
-    client = silc_idlist_find_client_by_id(server->global_list, id, NULL);
-    if (client) {
-      dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
-      router = (SilcServerEntry)dst_sock->user_data;
-      idata = (SilcIDListData)router;
-
-      /* Get fastest route and send packet. */
-      if (router)
-	silc_server_send_private_message(server, dst_sock, 
-					 idata->send_key,
-					 idata->hmac, packet);
-      silc_free(id);
-      return;
-    }
-  }
+  /* Send the private message */
+  silc_server_send_private_message(server, dst_sock, idata->send_key,
+				   idata->hmac, packet);
 }
 
 /* Received private message key packet.. This packet is never for us. It is to
@@ -824,10 +724,7 @@ void silc_server_private_message_key(SilcServer server,
 				     SilcSocketConnection sock,
 				     SilcPacketContext *packet)
 {
-  SilcClientID *id;
-  SilcServerEntry router;
   SilcSocketConnection dst_sock;
-  SilcClientEntry client;
   SilcIDListData idata;
 
   SILC_LOG_DEBUG(("Start"));
@@ -839,81 +736,15 @@ void silc_server_private_message_key(SilcServer server,
   if (!packet->dst_id)
     return;
 
-  /* Decode destination Client ID */
-  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CLIENT);
-  if (!id) {
-    SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
+  /* Get the route to the client */
+  dst_sock = silc_server_get_client_route(server, packet->dst_id,
+					  packet->dst_id_len, &idata);
+  if (!dst_sock)
     return;
-  }
 
-  /* If the destination belongs to our server we don't have to route
-     the message anywhere but to send it to the local destination. */
-  client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
-  if (client) {
-    /* It exists, now deliver the message to the destination */
-    dst_sock = (SilcSocketConnection)client->connection;
-
-    /* If we are router and the client has router then the client is in
-       our cell but not directly connected to us. */
-    if (server->server_type == SILC_ROUTER && client->router) {
-      /* We are of course in this case the client's router thus the real
-	 "router" of the client is the server who owns the client. Thus
-	 we will send the packet to that server. */
-      router = (SilcServerEntry)client->router;
-      idata = (SilcIDListData)router;
-      silc_server_send_private_message_key(server, router->connection,
-					   idata->send_key,
-					   idata->hmac,
-					   packet);
-      silc_free(id);
-      return;
-    }
-
-    /* Seems that client really is directly connected to us */
-    idata = (SilcIDListData)client;
-    silc_server_send_private_message_key(server, dst_sock, 
-					 idata->send_key,
-					 idata->hmac, packet);
-    silc_free(id);
-    return;
-  }
-
-  /* Destination belongs to someone not in this server. If we are normal
-     server our action is to send the packet to our router. */
-  if (server->server_type == SILC_SERVER && !server->standalone) {
-    router = server->router;
-
-    /* Send to primary route */
-    if (router) {
-      dst_sock = (SilcSocketConnection)router->connection;
-      idata = (SilcIDListData)router;
-      silc_server_send_private_message_key(server, dst_sock, 
-					   idata->send_key,
-					   idata->hmac, packet);
-    }
-    silc_free(id);
-    return;
-  }
-
-  /* We are router and we will perform route lookup for the destination 
-     and send the packet to fastest route. */
-  if (server->server_type == SILC_ROUTER && !server->standalone) {
-    /* Check first that the ID is valid */
-    client = silc_idlist_find_client_by_id(server->global_list, id, NULL);
-    if (client) {
-      dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
-      router = (SilcServerEntry)dst_sock->user_data;
-      idata = (SilcIDListData)router;
-
-      /* Get fastest route and send packet. */
-      if (router)
-	silc_server_send_private_message_key(server, dst_sock, 
-					     idata->send_key,
-					     idata->hmac, packet);
-      silc_free(id);
-      return;
-    }
-  }
+  /* Relay the packet */
+  silc_server_relay_packet(server, dst_sock, idata->send_key,
+			   idata->hmac, packet, FALSE);
 }
 
 /* Processes incoming command reply packet. The command reply packet may
@@ -1771,10 +1602,7 @@ void silc_server_key_agreement(SilcServer server,
 			       SilcSocketConnection sock,
 			       SilcPacketContext *packet)
 {
-  SilcClientID *id;
-  SilcServerEntry router;
   SilcSocketConnection dst_sock;
-  SilcClientEntry client;
   SilcIDListData idata;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1786,79 +1614,13 @@ void silc_server_key_agreement(SilcServer server,
   if (!packet->dst_id)
     return;
 
-  /* Decode destination Client ID */
-  id = silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CLIENT);
-  if (!id) {
-    SILC_LOG_ERROR(("Could not decode destination Client ID, dropped"));
+  /* Get the route to the client */
+  dst_sock = silc_server_get_client_route(server, packet->dst_id,
+					  packet->dst_id_len, &idata);
+  if (!dst_sock)
     return;
-  }
 
-  /* If the destination belongs to our server we don't have to route
-     the packet anywhere but to send it to the local destination. */
-  client = silc_idlist_find_client_by_id(server->local_list, id, NULL);
-  if (client) {
-    /* It exists, now deliver the packet to the destination */
-    dst_sock = (SilcSocketConnection)client->connection;
-
-    /* If we are router and the client has router then the client is in
-       our cell but not directly connected to us. */
-    if (server->server_type == SILC_ROUTER && client->router) {
-      /* We are of course in this case the client's router thus the real
-	 "router" of the client is the server who owns the client. Thus
-	 we will send the packet to that server. */
-      router = (SilcServerEntry)client->router;
-      idata = (SilcIDListData)router;
-      silc_server_send_key_agreement(server, router->connection,
-				     idata->send_key,
-				     idata->hmac,
-				     packet);
-      silc_free(id);
-      return;
-    }
-
-    /* Seems that client really is directly connected to us */
-    idata = (SilcIDListData)client;
-    silc_server_send_key_agreement(server, dst_sock, 
-				   idata->send_key,
-				   idata->hmac, packet);
-    silc_free(id);
-    return;
-  }
-
-  /* Destination belongs to someone not in this server. If we are normal
-     server our action is to send the packet to our router. */
-  if (server->server_type == SILC_SERVER && !server->standalone) {
-    router = server->router;
-
-    /* Send to primary route */
-    if (router) {
-      dst_sock = (SilcSocketConnection)router->connection;
-      idata = (SilcIDListData)router;
-      silc_server_send_key_agreement(server, dst_sock, 
-				     idata->send_key,
-				     idata->hmac, packet);
-    }
-    silc_free(id);
-    return;
-  }
-
-  /* We are router and we will perform route lookup for the destination 
-     and send the packet to fastest route. */
-  if (server->server_type == SILC_ROUTER && !server->standalone) {
-    /* Check first that the ID is valid */
-    client = silc_idlist_find_client_by_id(server->global_list, id, NULL);
-    if (client) {
-      dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
-      router = (SilcServerEntry)dst_sock->user_data;
-      idata = (SilcIDListData)router;
-
-      /* Get fastest route and send packet. */
-      if (router)
-	silc_server_send_key_agreement(server, dst_sock, 
-				       idata->send_key,
-				       idata->hmac, packet);
-      silc_free(id);
-      return;
-    }
-  }
+  /* Relay the packet */
+  silc_server_relay_packet(server, dst_sock, idata->send_key,
+			   idata->hmac, packet, FALSE);
 }
