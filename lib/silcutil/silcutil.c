@@ -395,9 +395,12 @@ char *silc_id_render(void *id, SilcUInt16 type)
       SilcServerID *server_id = (SilcServerID *)id;
       if (server_id->ip.data_len > 4) {
 #ifdef HAVE_IPV6
-	struct in6_addr ipv6;
-	memmove(&ipv6, server_id->ip.data, sizeof(ipv6));
-	if (!inet_ntop(AF_INET6, &ipv6, tmp, sizeof(tmp)))
+	struct sockaddr_in6 ipv6;
+	memset(&ipv6, 0, sizeof(ipv6));
+	ipv6.sin6_family = AF_INET6;
+	memmove(&ipv6.sin6_addr, server_id->ip.data, sizeof(ipv6.sin6_addr));
+	if (!getnameinfo((struct sockaddr *)&ipv6, sizeof(ipv6),
+			 tmp, sizeof(tmp), NULL, 0, NI_NUMERICHOST))
 	  strcat(rid, tmp);
 #endif
       } else {
@@ -420,9 +423,12 @@ char *silc_id_render(void *id, SilcUInt16 type)
       SilcClientID *client_id = (SilcClientID *)id;
       if (client_id->ip.data_len > 4) {
 #ifdef HAVE_IPV6
-	struct in6_addr ipv6;
-	memmove(&ipv6, client_id->ip.data, sizeof(ipv6));
-	if (!inet_ntop(AF_INET6, &ipv6, tmp, sizeof(tmp)))
+	struct sockaddr_in6 ipv6;
+	memset(&ipv6, 0, sizeof(ipv6));
+	ipv6.sin6_family = AF_INET6;
+	memmove(&ipv6.sin6_addr, client_id->ip.data, sizeof(ipv6.sin6_addr));
+	if (!getnameinfo((struct sockaddr *)&ipv6, sizeof(ipv6),
+			 tmp, sizeof(tmp), NULL, 0, NI_NUMERICHOST))
 	  strcat(rid, tmp);
 #endif
       } else {
@@ -446,9 +452,12 @@ char *silc_id_render(void *id, SilcUInt16 type)
       SilcChannelID *channel_id = (SilcChannelID *)id;
       if (channel_id->ip.data_len > 4) {
 #ifdef HAVE_IPV6
-	struct in6_addr ipv6;
-	memmove(&ipv6, channel_id->ip.data, sizeof(ipv6));
-	if (!inet_ntop(AF_INET6, &ipv6, tmp, sizeof(tmp)))
+	struct sockaddr_in6 ipv6;
+	memset(&ipv6, 0, sizeof(ipv6));
+	ipv6.sin6_family = AF_INET6;
+	memmove(&ipv6.sin6_addr, channel_id->ip.data, sizeof(ipv6.sin6_addr));
+	if (!getnameinfo((struct sockaddr *)&ipv6, sizeof(ipv6),
+			 tmp, sizeof(tmp), NULL, 0, NI_NUMERICHOST))
 	  strcat(rid, tmp);
 #endif
       } else {

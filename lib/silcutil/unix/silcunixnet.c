@@ -321,11 +321,25 @@ bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
     memcpy(bin, (unsigned char *)&tmp.s_addr, 4);
 #ifdef HAVE_IPV6
   } else {
+    struct addrinfo hints, *ai;
+    SilcSockaddr *s;
+
     /* IPv6 address */
     if (bin_len < 16)
       return FALSE;
 
-    ret = inet_pton(AF_INET6, addr, &bin);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET6;
+    if (getaddrinfo(addr, NULL, &hints, &ai))
+      return FALSE;
+
+    if (ai) {
+      s = (SilcSockaddr *)ai->ai_addr;
+      memcpy(bin, &s->sin6.sin6_addr, sizeof(s->sin6.sin6_addr));
+      freeaddrinfo(ai);
+    }
+
+    ret = TRUE;
 #endif /* HAVE_IPV6 */
   }
 

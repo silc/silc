@@ -281,12 +281,34 @@ void silc_net_gethostbyaddr_async(const char *addr,
 
 bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 {
-  struct sockaddr_in remote;
-  struct hostent *dest;
-  char *host_ip = NULL;
-  char host_name[1024];
+  char host[1024];
   int rval, len;
-  int i;
+
+#ifdef HAVE_IPV6
+  struct sockaddr_storage remote;
+  char s[NI_MAXHOST];
+
+  *hostname = NULL;
+  *ip = NULL;
+
+  SILC_LOG_DEBUG(("Resolving remote hostname and IP address"));
+
+  memset(&remote, 0, sizeof(remote));
+  memset(&s, 0, sizeof(s));
+  len = sizeof(remote);
+  rval = getpeername(sock, (struct sockaddr *)&remote, &len);
+  if (rval < 0)
+    return FALSE;
+
+  if (getnameinfo((struct sockaddr *)&remote, len, s, sizeof(s), NULL, 0,
+		  NI_NUMERICHOST))
+    return FALSE;
+
+  *ip = silc_memdup(s, strlen(s));
+  if (*ip == NULL)
+    return FALSE;
+#else
+  struct sockaddr_in remote;
 
   *hostname = NULL;
   *ip = NULL;
@@ -303,41 +325,26 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   if (!host_ip)
     return FALSE;
 
-  *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
-  memcpy(*ip, host_ip, strlen(host_ip));
+  *ip = silc_memdup(host_ip, strlen(host_ip));
+  if (*ip == NULL)
+    return FALSE;
+#endif
 
   /* Get host by address */
-  dest = gethostbyaddr((char *)&remote.sin_addr, 
-		       sizeof(struct in_addr), AF_INET);
-  if (!dest)
+  if (!silc_net_gethostbyaddr(*ip, host, sizeof(host)))
     return FALSE;
 
-  /* Get same host by name to see that the remote host really is
-     the who it says it is */
-  memset(host_name, 0, sizeof(host_name));
-  memcpy(host_name, dest->h_name, strlen(dest->h_name));
-
-  *hostname = silc_calloc(strlen(host_name) + 1, sizeof(char));
-  memcpy(*hostname, host_name, strlen(host_name));
+  *hostname = silc_memdup(host, strlen(host));
   SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
 
-  dest = gethostbyname(host_name);
-  if (!dest)
+  /* Reverse */
+  if (!silc_net_gethostbyname(*hostname, TRUE, host, sizeof(host)))
     return FALSE;
 
-  /* Find the address from list */
-  for (i = 0; dest->h_addr_list[i]; i++)
-    if (!memcmp(dest->h_addr_list[i], &remote.sin_addr, 
-		sizeof(struct in_addr)))
-      break;
-  if (!dest->h_addr_list[i])
+  if (strcmp(*ip, host))
     return FALSE;
 
-  silc_free(*ip);
-  *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
-  memcpy(*ip, host_ip, strlen(host_ip));
   SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
-
   return TRUE;
 }
 
@@ -346,12 +353,34 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 
 bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
 {
-  struct sockaddr_in local;
-  struct hostent *dest;
-  char *host_ip = NULL;
-  char host_name[1024];
+  char host[1024];
   int rval, len;
-  int i;
+
+#ifdef HAVE_IPV6
+  struct sockaddr_storage local;
+  char s[NI_MAXHOST];
+
+  *hostname = NULL;
+  *ip = NULL;
+
+  SILC_LOG_DEBUG(("Resolving local hostname and IP address"));
+
+  memset(&local, 0, sizeof(local));
+  memset(&s, 0, sizeof(s));
+  len = sizeof(local);
+  rval = getsockname(sock, (struct sockaddr *)&local, &len);
+  if (rval < 0)
+    return FALSE;
+
+  if (getnameinfo((struct sockaddr *)&local, len, s, sizeof(s), NULL, 0,
+		  NI_NUMERICHOST))
+    return FALSE;
+
+  *ip = silc_memdup(s, strlen(s));
+  if (*ip == NULL)
+    return FALSE;
+#else
+  struct sockaddr_in local;
 
   *hostname = NULL;
   *ip = NULL;
@@ -368,41 +397,26 @@ bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
   if (!host_ip)
     return FALSE;
 
-  *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
-  memcpy(*ip, host_ip, strlen(host_ip));
+  *ip = silc_memdup(host_ip, strlen(host_ip));
+  if (*ip == NULL)
+    return FALSE;
+#endif
 
   /* Get host by address */
-  dest = gethostbyaddr((char *)&local.sin_addr, 
-		       sizeof(struct in_addr), AF_INET);
-  if (!dest)
+  if (!silc_net_gethostbyaddr(*ip, host, sizeof(host)))
     return FALSE;
 
-  /* Get same host by name to see that the local host really is
-     the who it says it is */
-  memset(host_name, 0, sizeof(host_name));
-  memcpy(host_name, dest->h_name, strlen(dest->h_name));
-
-  *hostname = silc_calloc(strlen(host_name) + 1, sizeof(char));
-  memcpy(*hostname, host_name, strlen(host_name));
+  *hostname = silc_memdup(host, strlen(host));
   SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
 
-  dest = gethostbyname(host_name);
-  if (!dest)
+  /* Reverse */
+  if (!silc_net_gethostbyname(*hostname, TRUE, host, sizeof(host)))
     return FALSE;
 
-  /* Find the address from list */
-  for (i = 0; dest->h_addr_list[i]; i++)
-    if (!memcmp(dest->h_addr_list[i], &local.sin_addr, 
-	       sizeof(struct in_addr)))
-      break;
-  if (!dest->h_addr_list[i])
+  if (strcmp(*ip, host))
     return FALSE;
 
-  silc_free(*ip);
-  *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
-  memcpy(*ip, host_ip, strlen(host_ip));
   SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
-
   return TRUE;
 }
 
@@ -421,7 +435,7 @@ SilcUInt16 silc_net_get_remote_port(int sock)
     return 0;
 
   if (getnameinfo((struct sockaddr *)&remote, len, NULL, 0, s, sizeof(s),
-      NI_NUMERICSERV))
+		  NI_NUMERICSERV))
     return 0;
   
   return atoi(s);
@@ -453,7 +467,7 @@ SilcUInt16 silc_net_get_local_port(int sock)
     return 0;
 
   if (getnameinfo((struct sockaddr *)&local, len, NULL, 0, s, sizeof(s),
-      NI_NUMERICSERV))
+		  NI_NUMERICSERV))
     return 0;
   
   return atoi(s);

@@ -1,3 +1,15 @@
+Wed Mar 13 21:38:26 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the silc_net_check_[host/local]_by_sock to support
+	  IPv6 bound sockets as well.  Now they can return IPv6 addresses
+	  as well.  Affected file lib/silcutil/silcnet.c.
+
+	* Fixed silc_net_addr2bin to correctly convert IPv6 addresses.
+	  Affected lib/silcutil/unix/silcunixnet.c.
+
+	* Fixed ID rendering (at least on some platforms, not NetBSD)
+	  for IPv6 addresses.  Affected file lib/silcutil/silcutil.c.
+
 Tue Mar 12 17:58:59 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_hash_public_key and silc_hash_public_key_compare

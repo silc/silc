@@ -48,8 +48,6 @@ TODO/bugs In SILC Server
 
 	o Add rehashing support.
 
- o IPv6 support problems.
-
  o If server send CUMODE_CHANGE notify (like setting founder) to router
    and router does not have founder on channel (founder is left or there's
    no founder on channel at all), the router will accept the server's
