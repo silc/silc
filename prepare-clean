@@ -27,6 +27,9 @@ echo "Cleaning entire SILC source tree..."
 echo "All errors and warnings may be safely ignored."
 gmake clean -k
 gmake distclean -k
+rm -f ltmain.sh
+rm -f ltconfig
+rm -f ltcf*
 rm -f Makefile.am
 rm -f Makefile.defines
 rm -f Makefile.defines.in

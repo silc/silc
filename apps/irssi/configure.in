@@ -25,6 +25,8 @@ if test "x$enable_static" = "xno"; then
 	AC_ERROR([Don't give --disable-static option to configure])
 fi
 
+AC_CONFIG_AUX_DIR(.)
+
 #${CONFIG_SHELL-/bin/sh} $ac_aux_dir/ltconfig --no-reexec \
 #$libtool_flags --disable-static --output=libtool-shared --no-verify
 #$ac_aux_dir/ltmain.sh $lt_target \
