@@ -7,8 +7,8 @@
 .ds LF Riikonen
 .ds RF FORMFEED[Page %]
 .ds CF
-.ds LH INTERNET-DRAFT
-.ds RH 13 September 2000
+.ds LH Internet-Draft
+.ds RH 6 October 2000
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-ke-auth-01.txt                   13 September 2000
-Expires: 13 May 2001
+draft-riikonen-silc-ke-auth-01.txt                      6 October 2000
+Expires: 6 Jun 2001
 
 .in 3
 
@@ -111,7 +111,7 @@ Figure 4:  Connection Auth Payload
 
 This memo describes two protocols used in the Secure Internet Live
 Conferencing (SILC) protocol specified in the Secure Internet Live
-Conferencing, Protocol Specification internet-draft [SILC1].  The
+Conferencing, Protocol Specification Internet-Draft [SILC1].  The
 SILC Key Exchange (SKE) protocol provides secure key exchange between
 two parties resulting into shared secret key material.  The protocol
 is based on Diffie Hellman key exchange algorithm and its functionality
@@ -213,6 +213,7 @@ by the responder.
 Following diagram represents the Key Exchange Start Payload.  The lists
 mentioned below are always comma (`,') separated and the list must
 not include spaces (` ').
+
 
 
 
@@ -591,6 +592,7 @@ each other.  After this both parties will start using the new keys.
 
 
 
+
 .ti 0
 2.3 Processing the Key Material
 
@@ -755,7 +757,7 @@ Following status types are defined:
 .in 6
 0   SILC_SKE_STATUS_OK
 
-    Protocol were exeucted succesfully.
+    Protocol were executed successfully.
 
 
 1   SILC_SKE_STATUS_ERROR
@@ -973,7 +975,7 @@ Following status types are defined:
 
 0   SILC_AUTH_OK
 
-    Protocol was executed succesfully.
+    Protocol was executed successfully.
 
 
 1   SILC_AUTH_FAILED
@@ -1026,7 +1028,7 @@ considerations permeate the specification.
              Key Management Protocol (ISAKMP)", RFC 2408, November
              1998.
 
-[IKE]        Harkins D., and Carrel D., "The Internet Key Exhange
+[IKE]        Harkins D., and Carrel D., "The Internet Key Exchange
              (IKE)", RFC 2409, November 1998.
 
 [HMAC]       Krawczyk, H., "HMAC: Keyed-Hashing for Message
@@ -1044,5 +1046,5 @@ Finland
 
 EMail: priikone@poseidon.pspt.fi
 
-This Internet-Draft expires 13 May 2001 
+This Internet-Draft expires 6 Jun 2001 
 
