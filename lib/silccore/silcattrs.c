@@ -256,7 +256,7 @@ SilcAttributePayload silc_attribute_payload_alloc(SilcAttribute attribute,
   attr->data =
     silc_attribute_payload_encode_int(attribute, flags, object,
 				      object_size, &tmp_len);
-  attr->data_len = (SilcUInt32)tmp_len;
+  attr->data_len = (SilcUInt16)tmp_len;
   if (!attr->data) {
     silc_free(attr);
     return NULL;
