@@ -962,7 +962,7 @@ void silc_server_send_motd(SilcServer server,
   if (server->config && server->config->motd && 
       server->config->motd->motd_file) {
 
-    motd = silc_file_read(server->config->motd->motd_file, &motd_len);
+    motd = silc_file_readfile(server->config->motd->motd_file, &motd_len);
     if (!motd)
       return;
 

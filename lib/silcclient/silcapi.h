@@ -344,10 +344,19 @@ typedef struct {
      silc_client_perform_key_agreement). If TRUE is returned also the
      `completion' and `context' arguments must be set by the application. */
   int (*key_agreement)(SilcClient client, SilcClientConnection conn,
-		       SilcClientEntry client_entry, char *hostname,
-		       int port,
-		       SilcKeyAgreementCallback *completion,
+		       SilcClientEntry client_entry, const char *hostname,
+		       uint16 port, SilcKeyAgreementCallback *completion,
 		       void **context);
+
+  /* Notifies application that file transfer protocol session is being
+     requested by the remote client indicated by the `client_entry' from
+     the `hostname' and `port'. The `session_id' is the file transfer
+     session and it can be used to either accept or reject the file
+     transfer request, by calling the silc_client_file_receive or
+     silc_client_file_close, respectively. */
+  void (*ftp)(SilcClient client, SilcClientConnection conn,
+	      SilcClientEntry client_entry, uint32 session_id,
+	      const char *hostname, uint16 port);
 } SilcClientOperations;
 /***/
 
@@ -1755,5 +1764,131 @@ silc_client_request_authentication_method(SilcClient client,
 					  SilcClientConnection conn,
 					  SilcConnectionAuthRequest callback,
 					  void *context);
+
+typedef enum {
+  SILC_CLIENT_FILE_MONITOR_SEND,
+  SILC_CLIENT_FILE_MONITOR_RECEIVE,
+  SILC_CLIENT_FILE_MONITOR_GET,
+  SILC_CLIENT_FILE_MONITOR_PUT,
+  SILC_CLIENT_FILE_MONITOR_CLOSE,
+} SilcClientMonitorStatus;
+
+/****f* silcclient/SilcClientAPI/silc_client_file_receive
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcClientFileMonitor)(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcClientMonitorStatus status,
+ *                                          uint64 offset,
+ *                                          uint64 filesize,
+ *                                          SilcClientEntry client_entry,
+ *                                          uint32 session_id,
+ *                                          const char *filepath,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Monitor callback that is called during the file transmission to
+ *    monitor the transmission process.  The `status' indicates the current
+ *    monitoring process.  The `offset' is the currently transmitted amount
+ *    of total `filesize'.  The `client_entry' indicates the remote client,
+ *    and the transmission session ID is the `session_id'.  The filename
+ *    being transmitted is indicated by the `filepath'.
+ *
+ ***/
+typedef void (*SilcClientFileMonitor)(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcClientMonitorStatus status,
+				      uint64 offset,
+				      uint64 filesize,
+				      SilcClientEntry client_entry,
+				      uint32 session_id,
+				      const char *filepath,
+				      void *context);
+
+/****f* silcclient/SilcClientAPI/silc_client_file_send
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_file_send(SilcClient client,
+ *                               SilcClientConnection conn,
+ *                               SilcClientFileMonitor monitor,
+ *                               void *monitor_context,
+ *                               SilcClientEntry client_entry,
+ *                               const char *filepath);
+ *
+ * DESCRIPTION
+ *
+ *    Sends a file indicated by the `filepath' to the remote client 
+ *    indicated by the `client_entry'.  This will negotiate a secret key
+ *    with the remote client before actually starting the transmission of
+ *    the file.  The `monitor' callback will be called to monitor the
+ *    transmission of the file.
+ *
+ *    This returns a file session ID for the file transmission.  It can
+ *    be used to close the session (and abort the file transmission) by
+ *    calling the silc_client_file_close function.  The session ID is
+ *    also returned in the `monitor' callback. This returns 0 if the
+ *    file indicated by the `filepath' is being transmitted to the remote
+ *    client indicated by the `client_entry', already.
+ *
+ ***/
+uint32 silc_client_file_send(SilcClient client,
+			     SilcClientConnection conn,
+			     SilcClientFileMonitor monitor,
+			     void *monitor_context,
+			     SilcClientEntry client_entry,
+			     const char *filepath);
+
+/****f* silcclient/SilcClientAPI/silc_client_file_receive
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_client_file_receive(SilcClient client,
+ *                                  SilcClientConnection conn,
+ *                                  SilcClientFileMonitor monitor,
+ *                                  void *monitor_context,
+ *                                  SilcClientEntry client_entry,
+ *                                  uint32 session_id);
+ *
+ * DESCRIPTION
+ *
+ *    Receives a file from a client indicated by the `client_entry'.  The
+ *    `session_id' indicates the file transmission session and it has been
+ *    received in the `ftp' client operation function.  This will actually
+ *    perform the key agreement protocol with the remote client before
+ *    actually starting the file transmission.  The `monitor' callback
+ *    will be called to monitor the transmission.
+ *
+ ***/
+bool silc_client_file_receive(SilcClient client,
+			      SilcClientConnection conn,
+			      SilcClientFileMonitor monitor,
+			      void *monitor_context,
+			      SilcClientEntry client_entry,
+			      uint32 session_id);
+
+/****f* silcclient/SilcClientAPI/silc_client_file_close
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_client_file_close(SilcClient client,
+ *                                SilcClientConnection conn,
+ *                                uint32 session_id);
+ *
+ * DESCRIPTION
+ *
+ *    Closes file transmission session indicated by the `session_id'.
+ *    If file transmission is being conducted it will be aborted
+ *    automatically. This function is also used to close the session
+ *    after successful file transmission. This function can be used
+ *    also to reject incoming file transmission request.  Returns TRUE
+ *    if the session was closed and FALSE if such session does not exist.
+ *
+ ***/
+bool silc_client_file_close(SilcClient client,
+			    SilcClientConnection conn,
+			    uint32 session_id);
 
 #endif

@@ -1,3 +1,10 @@
+Sun Oct 21 20:21:02 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Renamed silc_file_read and silc_file_write to functions
+	  silc_file_readfile and silc_file_writefile.  Added function
+	  silc_file_open and silc_file_close.  Affected files 
+	  lib/silcutil/silcutil.[ch].
+
 Thu Oct 18 20:58:13 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Resolve the client info when received private message or

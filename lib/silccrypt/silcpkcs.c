@@ -882,7 +882,7 @@ static int silc_pkcs_save_public_key_internal(char *filename,
 		     SILC_STR_END);
 
   /* Save into file */
-  if (silc_file_write(filename, buf->data, buf->len)) {
+  if (silc_file_writefile(filename, buf->data, buf->len)) {
     silc_buffer_free(buf);
     return FALSE;
   }
@@ -945,7 +945,7 @@ static int silc_pkcs_save_private_key_internal(char *filename,
 		     SILC_STR_END);
 
   /* Save into a file */
-  if (silc_file_write_mode(filename, buf->data, buf->len, 0600)) {
+  if (silc_file_writefile_mode(filename, buf->data, buf->len, 0600)) {
     silc_buffer_free(buf);
     return FALSE;
   }
@@ -990,7 +990,7 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
   unsigned char *cp, *old, *data, byte;
   uint32 i, data_len, len;
 
-  old = data = silc_file_read(filename, &data_len);
+  old = data = silc_file_readfile(filename, &data_len);
   if (!data)
     return FALSE;
 
@@ -1043,7 +1043,7 @@ int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
   unsigned char *cp, *old, *data, byte;
   uint32 i, data_len, len;
 
-  old = data = silc_file_read(filename, &data_len);
+  old = data = silc_file_readfile(filename, &data_len);
   if (!data)
     return FALSE;
 

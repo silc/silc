@@ -26,6 +26,7 @@ libsilcclient_a_SOURCES = \
 	client_notify.c \
 	client_prvmsg.c \
 	client_channel.c \
+	client_ftp.c	\
 	command.c \
 	command_reply.c \
 	idlist.c \

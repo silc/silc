@@ -25,16 +25,97 @@
 
 #include "silcincludes.h"
 
+/* Opens a file indicated by the filename `filename' with flags indicated
+   by the `flags'. */
+
+int silc_file_open(const char *filename, int flags)
+{
+  int fd;
+
+  fd = open(filename, flags);
+
+  return fd;
+}
+
+/* Reads data from file descriptor `fd' to `buf'. */
+
+int silc_file_read(int fd, unsigned char *buf, uint32 buf_len)
+{
+  return read(fd, (void *)buf, buf_len);
+}
+
+/* Writes `buffer' of length of `len' to file descriptor `fd. */
+
+int silc_file_write(int fd, const char *buffer, uint32 len)
+{
+  return write(fd, (const void *)buffer, len);
+}
+
+/* Closes file descriptor */
+
+int silc_file_close(int fd)
+{
+  return close(fd);
+}
+
+/* Writes a buffer to the file. */
+
+int silc_file_writefile(const char *filename, const char *buffer, uint32 len)
+{
+  int fd;
+        
+  if ((fd = creat(filename, 0644)) == -1) {
+    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
+		    strerror(errno)));
+    return -1;
+  }
+  
+  if ((write(fd, buffer, len)) == -1) {
+    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
+    close(fd);
+    return -1;
+  }
+
+  close(fd);
+  
+  return 0;
+}
+
+/* Writes a buffer to the file.  If the file is created specific mode is
+   set to the file. */
+
+int silc_file_writefile_mode(const char *filename, const char *buffer, 
+			     uint32 len, int mode)
+{
+  int fd;
+        
+  if ((fd = creat(filename, mode)) == -1) {
+    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
+		    strerror(errno)));
+    return -1;
+  }
+  
+  if ((write(fd, buffer, len)) == -1) {
+    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
+    close(fd);
+    return -1;
+  }
+
+  close(fd);
+  
+  return 0;
+}
+
 /* Reads a file to a buffer. The allocated buffer is returned. Length of
    the file read is returned to the return_len argument. */
 
-char *silc_file_read(const char *filename, uint32 *return_len)
+char *silc_file_readfile(const char *filename, uint32 *return_len)
 {
   int fd;
   char *buffer;
   int filelen;
 
-  fd = open(filename, O_RDONLY);
+  fd = silc_file_open(filename, O_RDONLY);
   if (fd < 0) {
     if (errno == ENOENT)
       return NULL;
@@ -75,54 +156,6 @@ char *silc_file_read(const char *filename, uint32 *return_len)
     *return_len = filelen;
 
   return buffer;
-}
-
-/* Writes a buffer to the file. */
-
-int silc_file_write(const char *filename, const char *buffer, uint32 len)
-{
-  int fd;
-        
-  if ((fd = creat(filename, 0644)) == -1) {
-    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
-		    strerror(errno)));
-    return -1;
-  }
-  
-  if ((write(fd, buffer, len)) == -1) {
-    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
-    close(fd);
-    return -1;
-  }
-
-  close(fd);
-  
-  return 0;
-}
-
-/* Writes a buffer to the file.  If the file is created specific mode is
-   set to the file. */
-
-int silc_file_write_mode(const char *filename, const char *buffer, 
-			 uint32 len, int mode)
-{
-  int fd;
-        
-  if ((fd = creat(filename, mode)) == -1) {
-    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
-		    strerror(errno)));
-    return -1;
-  }
-  
-  if ((write(fd, buffer, len)) == -1) {
-    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
-    close(fd);
-    return -1;
-  }
-
-  close(fd);
-  
-  return 0;
 }
 
 /* Gets line from a buffer. Stops reading when a newline or EOF occurs.

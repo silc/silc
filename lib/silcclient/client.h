@@ -27,6 +27,7 @@ typedef struct SilcClientConnectionStruct *SilcClientConnection;
 typedef struct SilcClientPingStruct SilcClientPing;
 typedef struct SilcClientAwayStruct SilcClientAway;
 typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
+typedef struct SilcClientFtpSessionStruct *SilcClientFtpSession;
 
 #include "idlist.h"
 #include "command.h"
@@ -134,6 +135,11 @@ struct SilcClientConnectionStruct {
 
   /* Authentication request context. */
   SilcClientConnAuthRequest connauth;
+
+  /* File transmission sessions */
+  SilcDList ftp_sessions;
+  uint32 next_session_id;
+  SilcClientFtpSession active_session;
 
   /* Pointer back to the SilcClient. This object is passed to the application
      and the actual client object is accesible through this pointer. */

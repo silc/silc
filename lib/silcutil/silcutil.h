@@ -22,10 +22,14 @@
 #define SILCUTIL_H
 
 /* Prototypes */
-char *silc_file_read(const char *filename, uint32 *return_len);
-int silc_file_write(const char *filename, const char *buffer, uint32 len);
-int silc_file_write_mode(const char *filename, const char *buffer, 
-			 uint32 len, int mode);
+int silc_file_open(const char *filename, int flags);
+int silc_file_read(int fd, unsigned char *buf, uint32 buf_len);
+int silc_file_write(int fd, const char *buffer, uint32 len);
+int silc_file_close(int fd);
+char *silc_file_readfile(const char *filename, uint32 *return_len);
+int silc_file_writefile(const char *filename, const char *buffer, uint32 len);
+int silc_file_writefile_mode(const char *filename, const char *buffer, 
+			     uint32 len, int mode);
 int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin);
 int silc_check_line(char *buf);
 char *silc_get_time();

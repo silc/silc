@@ -1172,8 +1172,7 @@ void silc_failure(SilcClient client, SilcClientConnection conn,
 
 int silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		       SilcClientEntry client_entry, char *hostname,
-		       int port,
-		       SilcKeyAgreementCallback *completion,
+		       uint16 port, SilcKeyAgreementCallback *completion,
 		       void **context)
 {
   char portstr[12];

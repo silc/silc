@@ -29,7 +29,7 @@ void silc_config_open(char *filename, SilcBuffer *ret_buffer)
   char *buffer;
   uint32 filelen;
 
-  buffer = silc_file_read(filename, &filelen);
+  buffer = silc_file_readfile(filename, &filelen);
   if (buffer == NULL)
     return;
 

@@ -311,7 +311,7 @@ void silc_client_get_clients_by_list(SilcClient client,
 
       if (entry) {
 	if (entry->status & SILC_CLIENT_STATUS_RESOLVING) {
-	  client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
+	  entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 	  silc_free(client_id);
 	  silc_buffer_pull(client_id_list, idp_len);
 	  continue;

@@ -357,7 +357,7 @@ void silc_client_send_key_agreement(SilcClient client,
   silc_client_packet_send(client, sock, SILC_PACKET_KEY_AGREEMENT,
 			  client_entry->id, SILC_ID_CLIENT, NULL, NULL,
 			  buffer->data, buffer->len, FALSE);
-  silc_free(buffer);
+  silc_buffer_free(buffer);
 }
 
 static int 

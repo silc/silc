@@ -183,6 +183,7 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
   conn->remote_port = port;
   conn->context = context;
   conn->pending_commands = silc_dlist_init();
+  conn->ftp_sessions = silc_dlist_init();
 
   /* Add the connection to connections table */
   for (i = 0; i < client->conns_count; i++)
@@ -207,9 +208,16 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
 
   for (i = 0; i < client->conns_count; i++)
     if (client->conns[i] == conn) {
+
+      silc_idcache_free(conn->client_cache);
+      silc_idcache_free(conn->channel_cache);
+      silc_idcache_free(conn->server_cache);
       if (conn->pending_commands)
 	silc_dlist_uninit(conn->pending_commands);
+      silc_free(conn->remote_host);
+      silc_dlist_uninit(conn->ftp_sessions);
       silc_free(conn);
+
       client->conns[i] = NULL;
     }
 }
@@ -1719,32 +1727,4 @@ silc_client_request_authentication_method(SilcClient client,
 			   silc_client_request_authentication_method_timeout,
 			   conn, client->params->connauth_request_secs, 0,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-}
-
-/* Called when file transfer packet is received. This will parse the
-   packet and give it to the file transfer protocol. */
-
-void silc_client_ftp(SilcClient client,
-		     SilcSocketConnection sock,
-		     SilcPacketContext *packet)
-{
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  uint8 type;
-  int ret;
-
-  /* Parse the payload */
-  ret = silc_buffer_unformat(packet->buffer,
-			     SILC_STR_UI_CHAR(&type),
-			     SILC_STR_END);
-  if (ret == -1)
-    return;
-
-  /* We support only type number 1 (== SFTP) */
-  if (type != 1)
-    return;
-
-  silc_buffer_pull(packet->buffer, 1);
-
-  /* Give it to the file transfer protocol processor. */
-  //silc_sftp_client_receive_process(xxx, sock, packet);
 }

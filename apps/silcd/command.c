@@ -3424,7 +3424,7 @@ SILC_SERVER_CMD_FUNC(motd)
     if (server->config && server->config->motd && 
 	server->config->motd->motd_file) {
       /* Send motd */
-      motd = silc_file_read(server->config->motd->motd_file, &motd_len);
+      motd = silc_file_readfile(server->config->motd->motd_file, &motd_len);
       if (!motd)
 	goto out;
       

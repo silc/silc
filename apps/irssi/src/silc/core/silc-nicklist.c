@@ -53,6 +53,9 @@ SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
 SILC_NICK_REC *silc_nicklist_find(SILC_CHANNEL_REC *channel,
 				  SilcClientEntry client)
 {
+  if (!client || !client->nickname)
+    return NULL;
+
   return (SILC_NICK_REC *)nicklist_find_unique(CHANNEL(channel),
 					       client->nickname, client);
 }
