@@ -1,3 +1,8 @@
+Wed Feb 18 02:46:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed error handling in resuming data processing.  Affected
+	  files are lib/silcclient/client_resume.c and client.c.
+
 Tue Feb 17 19:34:30 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed silc_client_send_private_message to return TRUE correctly.

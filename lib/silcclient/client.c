@@ -587,8 +587,7 @@ SILC_TASK_CALLBACK(silc_client_connect_failure_auth)
     (SilcClientConnAuthInternalContext *)context;
   SilcClient client = (SilcClient)ctx->client;
 
-  client->internal->ops->connected(client, ctx->sock->user_data,
-				   SILC_CLIENT_CONN_ERROR_AUTH);
+  client->internal->ops->connected(client, ctx->sock->user_data, ctx->status);
   silc_free(ctx);
 }
 
@@ -789,6 +788,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     SILC_LOG_DEBUG(("Error during authentication protocol"));
+    ctx->status = SILC_CLIENT_CONN_ERROR_AUTH;
     goto err;
   }
 
@@ -800,12 +800,15 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     unsigned char *old_id;
     SilcUInt16 old_id_len;
 
-    if (!silc_client_process_detach_data(client, conn, &old_id, &old_id_len))
+    if (!silc_client_process_detach_data(client, conn, &old_id, &old_id_len)) {
+      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
       goto err;
+    }
 
     old_client_id = silc_id_str2id(old_id, old_id_len, SILC_ID_CLIENT);
     if (!old_client_id) {
       silc_free(old_id);
+      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
       goto err;
     }
 
@@ -818,6 +821,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     if (!auth) {
       silc_free(old_client_id);
       silc_free(old_id);
+      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
       goto err;
     }
 
