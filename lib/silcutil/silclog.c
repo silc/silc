@@ -488,11 +488,15 @@ void silc_log_reset_debug_callbacks()
 void silc_log_set_debug_string(const char *debug_string)
 {
   char *string;
+  int len;
   if ((strchr(debug_string, '(') && strchr(debug_string, ')')) ||
       strchr(debug_string, '$'))
     string = strdup(debug_string);
   else
     string = silc_string_regexify(debug_string);
-  strncpy(silc_log_debug_string, string, strlen(string));
+  len = strlen(string);
+  if (len >= sizeof(silc_log_debug_string))
+    len = sizeof(silc_log_debug_string) - 1;
+  strncpy(silc_log_debug_string, string, len);
   silc_free(string);
 }
