@@ -1265,8 +1265,14 @@ SILC_SERVER_CMD_FUNC(invite)
       }
 
       /* Now add or delete the information. */
-      silc_server_inviteban_process(server, channel->invite_list,
-				    (SilcUInt8)atype[0], args);
+      if (!silc_server_inviteban_process(server, channel->invite_list,
+					 (SilcUInt8)atype[0], args)) {
+	silc_server_command_send_status_reply(
+				    cmd, SILC_COMMAND_INVITE,
+				    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+				    0);
+	goto out;
+      }
     }
     silc_argument_payload_free(args);
   }
@@ -3839,6 +3845,7 @@ SILC_SERVER_CMD_FUNC(kick)
       silc_argument_payload_encode_one(NULL, target_idp, target_idp_len, 3);
     SilcArgumentPayload args =
       silc_argument_payload_parse(ab->data, ab->len, 1);
+
     silc_server_inviteban_process(server, channel->invite_list, 1, args);
     silc_buffer_free(ab);
     silc_argument_payload_free(args);
@@ -4611,8 +4618,14 @@ SILC_SERVER_CMD_FUNC(ban)
       }
 
       /* Now add or delete the information. */
-      silc_server_inviteban_process(server, channel->ban_list,
-				    (SilcUInt8)atype[0], args);
+      if (!silc_server_inviteban_process(server, channel->ban_list,
+					 (SilcUInt8)atype[0], args)) {
+	silc_server_command_send_status_reply(
+				      cmd, SILC_COMMAND_BAN,
+				      SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+				      0);
+	goto out;
+      }
     }
     silc_argument_payload_free(args);
   }

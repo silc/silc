@@ -18,10 +18,11 @@ TODO for SILC Server 1.0
  o BUG: silc_idlist_del_client had been called but sock->user_data remained
    and pointed to invalid pointer.  Where it was called is not known.
 
- o Check for valid ban strings.  Check ban string notifying.
-
  o Basic UTF-8 stringprep profile that makes sure UTF-8 strings are
    as defined in spec-08 section 3.13.
+
+ o Server sometimes connects more than once to router and keeps
+   connecting even though connection exists.
 
  o Testing
 

@@ -1879,6 +1879,8 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   SilcBuffer entry, idp = NULL, pkp = NULL;
   bool ret = FALSE;
 
+  SILC_LOG_DEBUG(("Matching invite/ban"));
+
   if (type < 1 || type > 3 || !check)
     return FALSE;
 
@@ -1928,7 +1930,7 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 
 /* Process invite or ban information */
 
-void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
+bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 				   SilcUInt8 action, SilcArgumentPayload args)
 {
   unsigned char *tmp;
@@ -1946,68 +1948,42 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {
       if (type == 1) {
-	/* Invite string.  Get the old invite string from hash table
-	   and append this at the end of the existing one. */
-	if (!silc_hash_table_find(list, (void *)1, NULL, (void *)&tmp2)) {
-	  tmp2 = silc_calloc(1, sizeof(*tmp2));
-	  silc_hash_table_add(list, (void *)1, tmp2);
+	/* Check validity of the string */
+	if (!silc_utf8_valid(tmp, len) || !len) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
 	}
 
-	/* Check that the string is not part of invite string already */
-	if (action == 0x00) {
-	  if (silc_string_match(tmp2->data, tmp))
+	/* Check if the string is added already */
+	silc_hash_table_list(list, &htl);
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
+	  if (type == 1 && silc_string_match(tmp2->data, tmp)) {
+	    tmp = NULL;
 	    break;
-
-	  if (len) {
-	    if (tmp[len - 1] == ',')
-	      tmp[len - 1] = '\0';
-	    silc_buffer_strformat(tmp2, tmp, SILC_STRFMT_END);
-	    silc_buffer_strformat(tmp2, ",", SILC_STRFMT_END);
 	  }
-	} else {
-	  /* Announced list.  Check each entry in the list */
-	  unsigned char e[256];
-	  char *start, *end, *n, *rtmp;
-	  int i, k;
+	}
+	silc_hash_table_list_reset(&htl);
 
-	  rtmp = silc_memdup(tmp, len);
-	  for (i = 0, k = 0; i < len; i++) {
-	    if (tmp[i] != ',')
-	      continue;
-
-	    memset(e, 0, sizeof(e));
-	    silc_strncat(e, sizeof(e), tmp + k, i - k);
-	    if (!silc_string_match(tmp2->data, e)) {
-	      k = i + 1;
-	      continue;
-	    }
-
-	    /* Matches.  Delete it since we have it already */
-	    start = strstr(rtmp, e);
-	    if (start && strlen(start) >= (i - k)) {
-	      end = start + (i - k);
-	      n = silc_calloc(strlen(rtmp) - (i - k), sizeof(*n));
-	      strncat(n, rtmp, start - rtmp);
-	      if (strlen(end) > 1)
-		strncat(n, end + 1, ((rtmp + strlen(rtmp)) - end) - 1);
-	      silc_free(rtmp);
-	      rtmp = n;
-	    }
-
-	    k = i + 1;
-	  }
-
-	  /* Save the part that we didn't already have. */
-	  if (strlen(rtmp) > 1) {
-	    silc_buffer_strformat(tmp2, rtmp, SILC_STRFMT_END);
-	    silc_buffer_strformat(tmp2, ",", SILC_STRFMT_END);
-	  }
-	  silc_free(rtmp);
+	if (tmp) {
+	  /* Add the string to hash table */
+	  tmp2 = silc_buffer_alloc_size(len + 1);
+	  if (tmp[len - 1] == ',')
+	    tmp[len - 1] = '\0';
+	  silc_buffer_put(tmp2, tmp, len);
+	  silc_hash_table_add(list, (void *)1, tmp2);
 	}
 
       } else if (type == 2) {
 	/* Public key.  Check first if the public key is already on the
 	   list and ignore it if it is, otherwise, add it to hash table. */
+	SilcPublicKey pk;
+
+	/* Verify validity of the public key */
+	if (!silc_pkcs_public_key_payload_decode(tmp, len, &pk)) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
+	silc_pkcs_public_key_free(pk);
 
 	/* Check if the public key is in the list already */
 	silc_hash_table_list(list, &htl);
@@ -2057,32 +2033,32 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {
       if (type == 1) {
-	/* Invite string.  Get the old string from hash table and delete
-	   the requested string. */
-	char *string = NULL, *start, *end, *n;
+	/* Check validity of the string */
+	if (!silc_utf8_valid(tmp, len)) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
 
-	if (silc_hash_table_find(list, (void *)1, NULL, (void *)&tmp2)) {
-	  string = tmp2->head;
-	  if (tmp2->truelen && !strncmp(string, tmp, tmp2->truelen - 1)) {
-	    /* Delete entire string */
-	    silc_hash_table_del(list, (void *)1);
-	  } else if (tmp2->truelen) {
-	    /* Delete part of the string */
-	    start = strstr(string, tmp);
-	    if (start && strlen(start) >= len) {
-	      end = start + len;
-	      n = silc_calloc(strlen(string) - len, sizeof(*n));
-	      strncat(n, string, start - string);
-	      if (strlen(end) > 1)
-		strncat(n, end + 1, ((string + strlen(string)) - end) - 1);
-	      silc_free(tmp2->head);
-	      silc_buffer_set(tmp2, n, strlen(n));
-	    }
+	/* Delete from the list */
+	silc_hash_table_list(list, &htl);
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
+	  if (type == 1 && silc_string_match(tmp2->data, tmp)) {
+	    silc_hash_table_del_by_context(list, (void *)1, tmp2);
+	    break;
 	  }
 	}
+	silc_hash_table_list_reset(&htl);
 
       } else if (type == 2) {
 	/* Public key. */
+	SilcPublicKey pk;
+
+	/* Verify validity of the public key */
+	if (!silc_pkcs_public_key_payload_decode(tmp, len, &pk)) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
+	silc_pkcs_public_key_free(pk);
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
@@ -2111,6 +2087,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
       tmp = silc_argument_get_next_arg(args, &type, &len);
     }
   }
+
+  return TRUE;
 }
 
 /* Destructor for invite and ban list entrys */

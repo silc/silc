@@ -1168,15 +1168,16 @@ void silc_server_notify(SilcServer server,
       if (!iargs)
 	goto out;
 
-      if (action != 0x01 && !channel->invite_list)
+      if (!channel->invite_list)
 	channel->invite_list =
 	  silc_hash_table_alloc(0, silc_hash_ptr,
 				NULL, NULL, NULL,
 				silc_server_inviteban_destruct, channel, TRUE);
 
       /* Proces the invite action */
-      silc_server_inviteban_process(server, channel->invite_list, action,
-				    iargs);
+      if (!silc_server_inviteban_process(server, channel->invite_list, action,
+					 iargs))
+	goto out;
       silc_argument_payload_free(iargs);
 
       /* If we are router we must send this notify to our local servers on
@@ -1787,15 +1788,16 @@ void silc_server_notify(SilcServer server,
       if (!iargs)
 	goto out;
 
-      if (action != 0x01 && !channel->ban_list)
+      if (!channel->ban_list)
 	channel->ban_list =
 	  silc_hash_table_alloc(0, silc_hash_ptr,
 				NULL, NULL, NULL,
 				silc_server_inviteban_destruct, channel, TRUE);
 
       /* Proces the ban action */
-      silc_server_inviteban_process(server, channel->ban_list, action,
-				    iargs);
+      if (!silc_server_inviteban_process(server, channel->ban_list, action,
+					 iargs))
+	goto out;
       silc_argument_payload_free(iargs);
 
       /* If we are router we must send this notify to our local servers on
