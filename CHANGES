@@ -15,6 +15,9 @@ Tue Jun 18 17:14:52 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  calling the "disconnect" client operation.  Affected file
 	  lib/silcclient/client.c.
 
+	* Handle local errors correctly during resuming.  Affected
+	  file lib/silcclient/client.c.
+
 Tue Jun 18 10:26:27 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* The log file is not dupped internally anymore in

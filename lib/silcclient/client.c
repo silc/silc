@@ -654,21 +654,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     SILC_LOG_DEBUG(("Error during authentication protocol"));
-    silc_protocol_free(protocol);
-    if (ctx->auth_data)
-      silc_free(ctx->auth_data);
-    if (ctx->ske)
-      silc_ske_free(ctx->ske);
-    if (ctx->dest_id)
-      silc_free(ctx->dest_id);
-    conn->sock->protocol = NULL;
-    silc_socket_free(ctx->sock);
-
-    /* Notify application of failure */
-    silc_schedule_task_add(client->schedule, ctx->sock->sock,
-			   silc_client_connect_failure, ctx,
-			   0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-    return;
+    goto err;
   }
 
   if (conn->params.detach_data) {
@@ -680,12 +666,12 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     SilcUInt16 old_id_len;
 
     if (!silc_client_process_detach_data(client, conn, &old_id, &old_id_len))
-      return;
+      goto err;
 
     old_client_id = silc_id_str2id(old_id, old_id_len, SILC_ID_CLIENT);
     if (!old_client_id) {
       silc_free(old_id);
-      return;
+      goto err;
     }
 
     /* Generate authentication data that server will verify */
@@ -696,7 +682,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     if (!auth) {
       silc_free(old_client_id);
       silc_free(old_id);
-      return;
+      goto err;
     }
 
     packet = silc_buffer_alloc_size(2 + old_id_len + auth->len);
@@ -751,13 +737,27 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   silc_protocol_free(protocol);
-  if (ctx->auth_data)
-    silc_free(ctx->auth_data);
+  silc_free(ctx->auth_data);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
   silc_socket_free(ctx->sock);
   silc_free(ctx);
   conn->sock->protocol = NULL;
+  return;
+
+ err:
+  silc_protocol_free(protocol);
+  silc_free(ctx->auth_data);
+  silc_free(ctx->dest_id);
+  if (ctx->ske)
+    silc_ske_free(ctx->ske);
+  conn->sock->protocol = NULL;
+  silc_socket_free(ctx->sock);
+
+  /* Notify application of failure */
+  silc_schedule_task_add(client->schedule, ctx->sock->sock,
+			 silc_client_connect_failure, ctx,
+			 0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* Internal routine that sends packet or marks packet to be sent. This
