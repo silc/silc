@@ -479,6 +479,7 @@ struct SilcChannelEntryStruct {
 
   /* All users on this channel */
   SilcHashTable user_list;
+  uint32 user_count;
 
   /* Pointer to the router */
   SilcServerEntry router;

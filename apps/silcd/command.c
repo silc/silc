@@ -2165,7 +2165,7 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
       memset(usercount, 0, sizeof(usercount));
     } else {
       topic = entry->topic;
-      users = silc_hash_table_count(entry->user_list);
+      users = entry->user_count;
       SILC_PUT32_MSB(users, usercount);
     }
 
@@ -3187,6 +3187,7 @@ static void silc_server_command_join_channel(SilcServer server,
   chl->channel = channel;
   silc_hash_table_add(channel->user_list, client, chl);
   silc_hash_table_add(client->channels, channel, chl);
+  channel->user_count++;
 
   /* Get users on the channel */
   silc_server_get_users_on_channel(server, channel, &user_list, &mode_list,

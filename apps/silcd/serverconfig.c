@@ -779,15 +779,6 @@ SILC_CONFIG_CALLBACK(fetch_deny)
     CONFIG_IS_DOUBLE(tmp->host);
     tmp->host = (*(char *)val ? strdup((char *) val) : strdup("*"));
   }
-  else if (!strcmp(name, "port")) {
-    int port = *(int *)val;
-    if ((port <= 0) || (port > 65535)) {
-      fprintf(stderr, "Invalid port number!\n");
-      got_errno = SILC_CONFIG_ESILENT; 
-      goto got_err;
-    }
-    tmp->port = (uint16) port;
-  }
   else if (!strcmp(name, "reason")) {
     CONFIG_IS_DOUBLE(tmp->reason);
     tmp->reason = strdup((char *) val);
@@ -948,6 +939,17 @@ SILC_CONFIG_CALLBACK(fetch_router)
     tmp->backup_replace_ip = (*(char *)val ? strdup((char *) val) :
 			      strdup("*"));
   }
+  else if (!strcmp(name, "backupport")) {
+    int port = *(int *)val;
+    if ((port <= 0) || (port > 65535)) {
+      fprintf(stderr, "Invalid port number!\n");
+      return SILC_CONFIG_ESILENT;
+    }
+    tmp->backup_replace_port = (uint16) port;
+  }
+  else if (!strcmp(name, "backuplocal")) {
+    tmp->backup_local = *(bool *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -1081,7 +1083,6 @@ static const SilcConfigTable table_admin[] = {
 
 static const SilcConfigTable table_deny[] = {
   { "host",		SILC_CONFIG_ARG_STRE,	fetch_deny,	NULL },
-  { "port",		SILC_CONFIG_ARG_INT,	fetch_deny,	NULL },
   { "reason",		SILC_CONFIG_ARG_STR,	fetch_deny,	NULL },
   { 0, 0, 0, 0 }
 };
@@ -1106,7 +1107,7 @@ static const SilcConfigTable table_routerconn[] = {
   { "initiator",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
   { "backuphost",	SILC_CONFIG_ARG_STRE,	fetch_router,	NULL },
   { "backupport",	SILC_CONFIG_ARG_INT,	fetch_router,	NULL },
-  { "localbackup",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
+  { "backuplocal",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1597,22 +1598,16 @@ silc_server_config_find_admin(SilcServer server, char *host, char *user,
   return admin;
 }
 
-/* Returns the denied connection configuration entry by host and port. */
+/* Returns the denied connection configuration entry by host. */
 
 SilcServerConfigDeny *
-silc_server_config_find_denied(SilcServer server, char *host, uint16 port)
+silc_server_config_find_denied(SilcServer server, char *host)
 {
   SilcServerConfig config = server->config;
   SilcServerConfigDeny *deny;
 
   /* make sure we have a value for the matching parameters */
-  if (!config || !port) {
-    SILC_LOG_WARNING(("Bogus: config_find_denied(config=0x%08x, "
-		      "host=0x%08x \"%s\", port=%hu)",
-		      (uint32) config, (uint32) host, host, port));
-    return NULL;
-  }
-  if (!host)
+  if (!config || !host)
     return NULL;
 
   for (deny = config->denied; deny; deny = deny->next) {

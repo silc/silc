@@ -5,6 +5,18 @@
 # configuration possibilities and may not actually give any sensible
 # configuration.  For real life example see the examples/ directory.
 #
+# Most of the settings in this file are optional.  If some setting is
+# mandatory it is mentioned separately.  If some setting is omitted it means
+# that its builtin default value will be used.  Boolean values, that is
+# setting something on or off, is done by setting either "true" or "false"
+# value, respectively.
+#
+# The ServerInfo section is mandatory section.  Other sections are optional.
+# However, if General section is defined it must be defined before the
+# ConnectionParams sections.  On the other hand, the ConnectionParams section
+# must be defined before Client, ServerConnection or RouterConnection 
+# sections.  Other sections can be in free order.
+#
 
 #
 # Include global algorithms from the "silcalgs.conf" file. This file
@@ -38,7 +50,7 @@ General {
 	#require_reverse_lookup = true;
 
 	# Maximum number of incoming connections allowed to this server.
-	# If more attempt to connet they will be refused.
+	# If more attempt to connect they will be refused.
 	connections_max = 1000;
 
 	# Maximum number of incoming connections allowed per single host.
@@ -98,7 +110,7 @@ General {
 	#conn_auth_timeout = 60;
 
 	# Channel key rekey interval (seconds). How often channel key is
-	# regenerated. Note that channel key regenerated also always when
+	# regenerated. Note that channel key is regenerated also always when
  	# someone joins or leaves the channel.
 	#channel_rekey_secs = 3600;
 
@@ -293,7 +305,7 @@ ConnectionParams {
 # required.
 #
 # Next example connection will match to all incoming client connections,
-# and no authentication is required
+# and no authentication is required.
 #
 Client {
 	#Host = "10.1.*";
@@ -371,7 +383,7 @@ ServerConnection {
 # option to the IP address of the router that the backup router will
 # replace if it becomes unavailable.  Set also the router's port to the
 # "BackupPort" option.  For normal connection leave both commented. If this
-# backup router is in our cell then set the "LocalBackup" option to true.
+# backup router is in our cell then set the "BackupLocal" option to true.
 # If the backup router is in other cell then set it to false.
 #
 RouterConnection {
@@ -384,7 +396,7 @@ RouterConnection {
 	Initiator = true;
 	#BackupHost = "10.2.1.6";
 	#BackupPort = 706;
-	#LocalBackup = true;
+	#BackupLocal = true;
 };
 
 #
@@ -392,12 +404,11 @@ RouterConnection {
 #
 # These connections are denied to connect to our server.
 #
-# The "Reason" field is mandatory, while the "Host" and "Port" fields can be
-# omitted to match everything.
+# The "Reason" field is mandatory, while the "Host" field can be omitted to 
+# match everything.
 #
 #Deny {
 #	Host = "10.2.1.99";
-#	Port = 706;
 #	Reason = "Go away spammer";
 #};
 #Deny {

@@ -277,7 +277,7 @@ static bool mem_del_handle(MemFS fs, MemFSFileHandle handle)
   if (fs->handles[handle->handle] == handle) {
     fs->handles[handle->handle] = NULL;
     if (handle->fd != -1)
-      close(handle->fd);
+      silc_file_close(handle->fd);
     silc_free(handle);
     return TRUE;
   }
@@ -514,9 +514,9 @@ void mem_open(void *context, SilcSFTP sftp,
     flags |= O_APPEND;
 
   /* Attempt to open the file for real. */
-  fd = open(entry->data + 7, flags, 
-	    (attrs->flags & SILC_SFTP_ATTR_PERMISSIONS ?
-	     attrs->permissions : 0600));
+  fd = silc_file_open_mode(entry->data + 7, flags, 
+			   (attrs->flags & SILC_SFTP_ATTR_PERMISSIONS ?
+			    attrs->permissions : 0600));
   if (fd == -1) {
     (*callback)(sftp, silc_sftp_map_errno(errno), NULL, callback_context);
     return;
@@ -538,7 +538,7 @@ void mem_close(void *context, SilcSFTP sftp,
   int ret;
 
   if (h->fd != -1) {
-    ret = close(h->fd);
+    ret = silc_file_close(h->fd);
     if (ret == -1) {
       (*callback)(sftp, silc_sftp_map_errno(errno), NULL, NULL, 
 		  callback_context);
@@ -568,7 +568,7 @@ void mem_read(void *context, SilcSFTP sftp,
   lseek(h->fd, (off_t)offset, SEEK_SET);
 
   /* Attempt to read */
-  ret = read(h->fd, data, len);
+  ret = silc_file_read(h->fd, data, len);
   if (ret <= 0) {
     if (!ret)
       (*callback)(sftp, SILC_SFTP_STATUS_EOF, NULL, 0, callback_context);
@@ -599,7 +599,7 @@ void mem_write(void *context, SilcSFTP sftp,
   lseek(h->fd, (off_t)offset, SEEK_SET);
 
   /* Attempt to write */
-  ret = write(h->fd, data, data_len);
+  ret = silc_file_write(h->fd, data, data_len);
   if (ret <= 0) {
     (*callback)(sftp, silc_sftp_map_errno(errno), NULL, NULL, 
 		callback_context);
@@ -699,7 +699,7 @@ void mem_readdir(void *context, SilcSFTP sftp,
   SilcSFTPAttributes attrs;
   int i;
   char long_name[256];
-  unsigned long filesize = 0;
+  uint64 filesize = 0;
   char *date;
   struct stat stats;
 
@@ -730,18 +730,13 @@ void mem_readdir(void *context, SilcSFTP sftp,
       *strrchr(date, ':') = '\0';
 
     if (!entry->directory)
-#ifndef SILC_WIN32
-		if (!lstat(entry->data + 7, &stats))
-#else
-		if (!stat(entry->data + 7, &stats))
-#endif
-			filesize = stats.st_size;
+      filesize = silc_file_size(entry->data + 7);
 
     /* Long name format is:
        drwx------   1   324210 Apr  8 08:40 mail/
        1234567890 123 12345678 123456789012 */
     snprintf(long_name, sizeof(long_name) - 1,
-	     "%c%c%c%c------ %3d %8lu %12s %s%s",
+	     "%c%c%c%c------ %3d %8llu %12s %s%s",
 	     (entry->directory ? 'd' : '-'),
 	     ((entry->perm & SILC_SFTP_FS_PERM_READ) ? 'r' : '-'),
 	     ((entry->perm & SILC_SFTP_FS_PERM_WRITE) ? 'w' : '-'),
@@ -800,7 +795,7 @@ void mem_stat(void *context, SilcSFTP sftp,
   struct stat stats;
 
   if (!path || !strlen(path))
-    path = (const char *)strdup("/");
+    path = (const char *)DIR_SEPARATOR;
 
   /* Find such directory */
   entry = mem_find_entry_path(fs->root, path);
@@ -850,7 +845,7 @@ void mem_lstat(void *context, SilcSFTP sftp,
   struct stat stats;
 
   if (!path || !strlen(path))
-    path = (const char *)strdup("/");
+    path = (const char *)DIR_SEPARATOR;
 
   /* Find such directory */
   entry = mem_find_entry_path(fs->root, path);
@@ -984,7 +979,7 @@ void mem_realpath(void *context, SilcSFTP sftp,
   SilcSFTPName name;
 
   if (!path || !strlen(path))
-    path = (const char *)strdup("/");
+    path = (const char *)DIR_SEPARATOR;
 
   realpath = mem_expand_path(fs->root, path);
   if (!realpath) {

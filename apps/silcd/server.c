@@ -1041,9 +1041,9 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   port = server->sockets[server->sock]->port; /* Listenning port */
 
   /* Check whether this connection is denied to connect to us. */
-  deny = silc_server_config_find_denied(server, sock->ip, port);
+  deny = silc_server_config_find_denied(server, sock->ip);
   if (!deny)
-    deny = silc_server_config_find_denied(server, sock->hostname, port);
+    deny = silc_server_config_find_denied(server, sock->hostname);
   if (deny) {
     /* The connection is denied */
     SILC_LOG_INFO(("Connection %s (%s) is denied", 
@@ -2642,6 +2642,7 @@ void silc_server_remove_from_channels(SilcServer server,
 
     /* Remove client from channel's client list */
     silc_hash_table_del(channel->user_list, chl->client);
+    channel->user_count--;
 
     /* If there is no global users on the channel anymore mark the channel
        as local channel. Do not check if the removed client is local client. */
@@ -2679,6 +2680,7 @@ void silc_server_remove_from_channels(SilcServer server,
 	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
 	  silc_hash_table_del(chl2->client->channels, channel);
 	  silc_hash_table_del(channel->user_list, chl2->client);
+	  channel->user_count--;
 	  silc_free(chl2);
 	}
 	silc_hash_table_list_reset(&htl2);
@@ -2766,6 +2768,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
 
   /* Remove client from channel's client list */
   silc_hash_table_del(channel->user_list, chl->client);
+  channel->user_count--;
   
   /* If there is no global users on the channel anymore mark the channel
      as local channel. Do not check if the client is local client. */
@@ -2802,6 +2805,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
       while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
 	silc_hash_table_del(chl2->client->channels, channel);
 	silc_hash_table_del(channel->user_list, chl2->client);
+	channel->user_count--;
 	silc_free(chl2);
       }
       silc_hash_table_list_reset(&htl2);
@@ -3880,6 +3884,7 @@ void silc_server_save_users_on_channel(SilcServer server,
       chl->channel = channel;
       silc_hash_table_add(channel->user_list, chl->client, chl);
       silc_hash_table_add(client->channels, chl->channel, chl);
+      channel->user_count++;
     }
   }
 }

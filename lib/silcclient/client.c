@@ -1525,12 +1525,15 @@ void silc_client_receive_new_id(SilcClient client,
     conn->local_entry->username = strdup(client->username);
   if (!conn->local_entry->hostname)
     conn->local_entry->hostname = strdup(client->hostname);
-  conn->local_entry->server = strdup(conn->remote_host);
+  if (!conn->local_entry->server)
+    conn->local_entry->server = strdup(conn->remote_host);
   conn->local_entry->id = conn->local_id;
   conn->local_entry->valid = TRUE;
-  conn->local_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, 
-						      NULL, NULL,
-						      NULL, NULL, NULL, TRUE);
+  if (!conn->local_entry->channels)
+    conn->local_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, 
+							NULL, NULL,
+							NULL, NULL, NULL, 
+							TRUE);
 
   /* Put it to the ID cache */
   silc_idcache_add(conn->client_cache, strdup(conn->nickname), conn->local_id, 
@@ -1575,6 +1578,7 @@ void silc_client_remove_from_channels(SilcClient client,
     silc_hash_table_del(chu->channel->user_list, chu->client);
     silc_free(chu);
   }
+
   silc_hash_table_list_reset(&htl);
 }
 

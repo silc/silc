@@ -332,15 +332,14 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     client_entry = va_arg(va, SilcClientEntry);
     client_entry2 = va_arg(va, SilcClientEntry);
     
-    nicklist_rename_unique(SERVER(server),
-			   client_entry, client_entry->nickname,
-			   client_entry2, client_entry2->nickname);
-    
     memset(userhost, 0, sizeof(userhost));
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
 	     client_entry2->username, client_entry2->hostname);
+    nicklist_rename_unique(SERVER(server),
+			   client_entry, client_entry->nickname,
+			   client_entry2, client_entry2->nickname);
     signal_emit("message nick", 4, server, client_entry2->nickname, 
-		client_entry2->nickname, userhost);
+		client_entry->nickname, userhost);
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
@@ -460,8 +459,8 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     if (client_entry == conn->local_entry) {
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED_YOU, 
-			 client_entry2->nickname,
-			 channel->channel_name, tmp ? tmp : "");
+			 channel->channel_name, client_entry2->nickname,
+			 tmp ? tmp : "");
       if (chanrec) {
 	chanrec->kicked = TRUE;
 	channel_destroy((CHANNEL_REC *)chanrec);
@@ -469,9 +468,8 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     } else {
       printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED, 
-			 client_entry->nickname,
-			 client_entry2->nickname,
-			 channel->channel_name, tmp ? tmp : "");
+			 client_entry->nickname, channel->channel_name, 
+			 client_entry2->nickname, tmp ? tmp : "");
 
       if (chanrec) {
 	SILC_NICK_REC *nickrec = silc_nicklist_find(chanrec, client_entry);
@@ -1033,7 +1031,6 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       nicklist_rename_unique(SERVER(server),
 			     server->conn->local_entry, server->nick,
 			     client, client->nickname);
-      
       signal_emit("message own_nick", 4, server, server->nick, old, "");
       g_free(old);
       break;

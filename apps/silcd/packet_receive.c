@@ -228,6 +228,7 @@ void silc_server_notify(SilcServer server,
     silc_hash_table_add(channel->user_list, client, chl);
     silc_hash_table_add(client->channels, channel, chl);
     silc_free(client_id);
+    channel->user_count++;
 
     break;
 

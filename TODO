@@ -50,8 +50,6 @@ TODO/bugs In SILC Server
    no founder on channel at all), the router will accept the server's
    founder mode change, even though it perhaps should not do that.
 
- o Make the normal server save user counts with LIST command reply.
-
  o The router should check for validity of received notify packets from
    servers (after all buggy servers may send notify that is actually
    something that should have not been sent).
@@ -84,9 +82,6 @@ TODO/bugs In SILC Libraries
 
  o Rewrite the lib/silcsim/silcsim.h.  The SilcSimContext should be
    private and silc_sim_alloc should take necessary arguments.
-
- o lib/silcsftp/sftp_fs_memory.c use directly open(), close() etc. 
-   routines.  Change to use silc_file_* routines.
 
  o SILC RNG does not implement random seed files, and they should be
    implemented.

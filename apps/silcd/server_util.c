@@ -71,6 +71,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
 
     /* Remove client from channel's client list */
     silc_hash_table_del(channel->user_list, chl->client);
+    channel->user_count--;
 
     /* If there is no global users on the channel anymore mark the channel
        as local channel. Do not check if the removed client is local client. */
@@ -103,6 +104,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
 	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
 	  silc_hash_table_del(chl2->client->channels, channel);
 	  silc_hash_table_del(channel->user_list, chl2->client);
+	  channel->user_count--;
 	  silc_free(chl2);
 	}
 	silc_hash_table_list_reset(&htl2);

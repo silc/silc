@@ -109,7 +109,6 @@ typedef struct SilcServerConfigAdminStruct {
 /* Holds all configured denied connections from config file */
 typedef struct SilcServerConfigDenyStruct {
   char *host;
-  uint16 port;
   char *reason;
   struct SilcServerConfigDenyStruct *next;
 } SilcServerConfigDeny;
@@ -194,7 +193,7 @@ SilcServerConfigAdmin *
 silc_server_config_find_admin(SilcServer server, char *host, char *user, 
 			      char *nick);
 SilcServerConfigDeny *
-silc_server_config_find_denied(SilcServer server, char *host, uint16 port);
+silc_server_config_find_denied(SilcServer server, char *host);
 SilcServerConfigServer *
 silc_server_config_find_server_conn(SilcServer server, char *host);
 SilcServerConfigRouter *

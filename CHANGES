@@ -1,3 +1,24 @@
+Sun Feb 17 15:52:30 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added `user_count' to the SilcChannelEntry which now tells the
+	  number of users on the channel.  The user count is now saved
+	  in normal server of global channels as well.  Affected files
+	  silcd/server.c, idlist.h, packet_receive.c and command.c.
+
+	* Splitted lib/silcutil/silcutil.[ch] into silcfileutil.[ch] to
+	  include file utility functions.
+
+	* Fixed the lib/silcsftp/sftp_fs_memory.c to use silcutil routines
+	  instead of calling directly OS routines.
+
+	* Fixed NICK change printing in Irssi SILC Client. Fixed
+	  KICKED notify printing in Irssi SILC Client.  Affected file
+	  irssi/src/silc/core/client_ops.c.
+
+	* Fixed a NICK change bug in client library, to not recreate the
+	  client_entry->channels hash table everytime nick is changed.
+	  Affected file lib/silcclient/client.c.
+
 Sun Feb 17 10:10:14 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* ROBOdoc documented the lib/silcske/silcske.h, and improved

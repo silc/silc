@@ -13,6 +13,7 @@
 @LINK=silcschedule.html:SILC Schedule API
 @LINK=silcsockconn.html:SILC Socket Connection API
 @LINK=silcprotocol.html:SILC Protocol API
+@LINK=silcfileutil.html:SILC File Util API
 @LINK=silcutil.html:SILC Util API
 @LINK=silczip.html:SILC Zip API
 @LINK=silclist.html:SILC List API

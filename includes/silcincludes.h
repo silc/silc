@@ -266,6 +266,7 @@ typedef uint32 * void *;
 #include "silcbufutil.h"
 #include "silcbuffmt.h"
 #include "silcnet.h"
+#include "silcfileutil.h"
 #include "silcutil.h"
 #include "silcconfig.h"
 #include "silcprotocol.h"

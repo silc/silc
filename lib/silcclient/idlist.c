@@ -722,6 +722,8 @@ static void silc_client_del_channel_foreach(void *key, void *context,
 {
   SilcChannelUser chu = (SilcChannelUser)context;
 
+  SILC_LOG_DEBUG(("Start"));
+
   /* Remove the context from the client's channel hash table as that
      table and channel's user_list hash table share this same context. */
   silc_hash_table_del(chu->client->channels, chu->channel);
@@ -734,6 +736,8 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 			     SilcChannelEntry channel)
 {
   bool ret = silc_idcache_del_by_context(conn->channel_cache, channel);
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* Free all client entrys from the users list. The silc_hash_table_free
      will free all the entries so they are not freed at the foreach 

@@ -1201,6 +1201,8 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
       cache->expire = time(NULL) + 60;
   }
 
+  channel->user_count = usercount;
+
   if (topic) {
     silc_free(channel->topic);
     channel->topic = strdup(topic);
