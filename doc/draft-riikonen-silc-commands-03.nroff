@@ -1946,8 +1946,8 @@ List of all defined commands in SILC follows.
 Command Status Payload is sent in command reply messages to indicate
 the status of the command.  The payload is one of argument in the
 command thus this is the data area in Command Argument Payload described
-in [SILC2].  The payload is only 2 bytes in length.  The following
-diagram represents the Command Status Payload (fields are always in
+in [SILC2].  The payload is only 2 bytes of length.  The following
+diagram represents the Command Status Payload (field is always in
 MSB first order).
 
 
