@@ -42,6 +42,10 @@ typedef struct {
   char *text;
   SilcInt32 lposx;
   SilcInt32 lposy;
+  char *alat;
+  char *alon;
+  char *blat;
+  char *blon;
 
   SilcInt16 r;
   SilcInt16 g;

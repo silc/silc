@@ -237,7 +237,7 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_server)
   SilcMap map = context;
   int retval = SILC_CONFIG_OK;
 
-  if (!map->bitmap) {
+  if (!map->loadmap.loadmap) {
     fprintf(stderr, "You must call loadmap command before server command\n");
     return SILC_CONFIG_ESILENT;
   }
@@ -366,19 +366,8 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_loadmap)
 
     SILC_LOG_DEBUG(("loadmap: file: %s", filename));
 
-    /* Destroy old bitmap if loadmaped */
-    silc_free(map->bitmap);
-    map->bitmap = NULL;
-
-    /* Execute directly if there are no connections */
-    if (map->conns_num == 0) {
-      /* Load the bitmap image */
-      if (!silc_map_load_ppm(map, filename))
-	retval = SILC_CONFIG_ESILENT;
-    } else {
-      map->loadmap.filename = strdup(filename);
-      map->loadmap.writemap = TRUE;
-    }
+    map->loadmap.filename = strdup(filename);
+    map->loadmap.loadmap = TRUE;
 
     /* Cleanup */
     silc_free(filename);
@@ -408,15 +397,8 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_writemap)
 
     SILC_LOG_DEBUG(("writemap: file: %s", filename));
 
-    /* Execute directly if there are no connections */
-    if (map->conns_num == 0) {
-      /* Writemap the map */
-      if (!silc_map_write_ppm(map, filename))
-	retval = SILC_CONFIG_ESILENT;
-    } else {
-      map->writemap.filename = strdup(filename);
-      map->writemap.writemap = TRUE;
-    }
+    map->writemap.filename = strdup(filename);
+    map->writemap.writemap = TRUE;
 
     /* Cleanup */
     silc_free(filename);
@@ -454,9 +436,9 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_writemaphtml)
     map->writemaphtml[i].filename = filename;
     map->writemaphtml[i].text = text;
     if (lon)
-      map->writemaphtml[i].x = silc_map_lon2x(map, lon);
+      map->writemaphtml[i].alon = strdup(lon);
     if (lat)
-      map->writemaphtml[i].y = silc_map_lat2y(map, lat);
+      map->writemaphtml[i].alat = strdup(lat);
     map->writemaphtml[i].writemaphtml = TRUE;
     map->writemaphtml_count++;
 
@@ -585,8 +567,8 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_cut)
 	i = map->cut_count;
 	map->cut = silc_realloc(map->cut, sizeof(*map->cut) * (i + 1));
 	map->cut[i].filename = strdup(filename);
-	map->cut[i].x = silc_map_lon2x(map, lon);
-	map->cut[i].y = silc_map_lat2y(map, lat);
+	map->cut[i].alon = strdup(lon);
+	map->cut[i].alat = strdup(lat);
 	map->cut[i].width = width;
 	map->cut[i].height = height;
 	map->cut[i].cut = TRUE;
@@ -599,8 +581,8 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_cut)
 
       silc_dlist_add(curr_conn->commands, cmd);
       cmd->filename = strdup(filename);
-      cmd->x = silc_map_lon2x(map, lon);
-      cmd->y = silc_map_lat2y(map, lat);
+      cmd->alon = strdup(lon);
+      cmd->alat = strdup(lat);
       cmd->width = width;
       cmd->height = height;
       cmd->cut = TRUE;
@@ -676,8 +658,8 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_rectangle)
       cmd->lr = lr;
       cmd->lg = lg;
       cmd->lb = lb;
-      cmd->x = silc_map_lon2x(map, lon);
-      cmd->y = silc_map_lat2y(map, lat);
+      cmd->alon = strdup(lon);
+      cmd->alat = strdup(lat);
       cmd->text = text ? strdup(text) : NULL;
       cmd->lposx = lposx;
       cmd->lposy = lposy;
@@ -766,8 +748,8 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_circle)
       cmd->lr = lr;
       cmd->lg = lg;
       cmd->lb = lb;
-      cmd->x = silc_map_lon2x(map, lon);
-      cmd->y = silc_map_lat2y(map, lat);
+      cmd->alon = strdup(lon);
+      cmd->alat = strdup(lat);
       cmd->text = text ? strdup(text) : NULL;
       cmd->lposx = lposx;
       cmd->lposy = lposy;
@@ -854,10 +836,10 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_line)
       cmd->r = r;
       cmd->g = g;
       cmd->b = b;
-      cmd->x = silc_map_lon2x(map, lon);
-      cmd->y = silc_map_lat2y(map, lat);
-      cmd->x2 = silc_map_lon2x(map, lon2);
-      cmd->y2 = silc_map_lat2y(map, lat2);
+      cmd->alon = strdup(lon);
+      cmd->alat = strdup(lat);
+      cmd->blon = strdup(lon2);
+      cmd->blat = strdup(lat2);
       cmd->width = width;
       cmd->draw_line = TRUE;
       cmd->color_set = color_set;
@@ -931,8 +913,8 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_text)
       cmd->r = r;
       cmd->g = g;
       cmd->b = b;
-      cmd->x = silc_map_lon2x(map, lon);
-      cmd->y = silc_map_lat2y(map, lat);
+      cmd->alon = strdup(lon);
+      cmd->alat = strdup(lat);
       cmd->text = text ? strdup(text) : NULL;
       cmd->draw_text = TRUE;
       cmd->color_set = color_set;

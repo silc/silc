@@ -30,20 +30,29 @@
 
 bool silc_map_load_ppm(SilcMap map, const char *filename)
 {
-  FILE *fp;
+  int fd;
   char type[3];
-  int ret, retval = TRUE;
+  unsigned char header[80];
+  int ret, retval = TRUE, i;
 
   SILC_LOG_DEBUG(("Load PPM '%s'", filename));
 
-  fp = fopen(filename, "r");
-  if (!fp) {
-    fprintf(stderr, "fopen: %s: %s\n", strerror(errno), filename);
+  fd = open(filename, O_RDONLY, 0600);
+  if (fd < 0) {
+    fprintf(stderr, "open: %s: %s\n", strerror(errno), filename);
+    return FALSE;
+  }
+
+  /* Read file header */
+  memset(header, 0, sizeof(header));
+  ret = read(fd, (void *)header, sizeof(header) - 1);
+  if (ret < 0) {
+    fprintf(stderr, "read: %s: %s\n", strerror(errno), filename);
     return FALSE;
   }
 
   /* Read width and height */
-  ret = fscanf(fp, "%s %ld %ld %ld ", type,
+  ret = sscanf(header, "%s %ld %ld %ld\n", type,
 	       (unsigned long *)&map->width,
 	       (unsigned long *)&map->height,
 	       (unsigned long *)&map->maxcolor);
@@ -53,18 +62,23 @@ bool silc_map_load_ppm(SilcMap map, const char *filename)
     goto out;
   }
 
+  for (i = sizeof(header) - 1; i >= 0; i--)
+    if (header[i] == '\n' || header[i] == ' ')
+      break;
+  lseek(fd, i + 1, SEEK_SET);
+
   /* Read the picture */
   map->bitmap_size = map->width * 3 * map->height;
   map->bitmap = silc_malloc(map->bitmap_size);
-  ret = fread(map->bitmap, map->bitmap_size, 1, fp);
+  ret = read(fd, map->bitmap, map->bitmap_size);
   if (ret < 0) {
-    fprintf(stderr, "fread: %s\n", strerror(errno));
+    fprintf(stderr, "read: %s\n", strerror(errno));
     retval = FALSE;
     goto out;
   }
 
  out:
-  fclose(fp);
+  close(fd);
   return retval;
 }
 
@@ -72,26 +86,29 @@ bool silc_map_load_ppm(SilcMap map, const char *filename)
 
 bool silc_map_write_ppm(SilcMap map, const char *filename)
 {
-  FILE *fp;
+  int fd;
   int retval = TRUE;
+  char header[80];
 
   SILC_LOG_DEBUG(("Write PPM '%s'", filename));
 
-  fp = fopen(filename, "w+");
-  if (!fp) {
-    fprintf(stderr, "fopen: %s: %s\n", strerror(errno), filename);
+  fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0600);
+  if (fd < 0) {
+    fprintf(stderr, "open: %s: %s\n", strerror(errno), filename);
     return FALSE;
   }
 
   /* Write the header */
-  fprintf(fp, "P6 %ld %ld %ld\n",
+  memset(header, 0, sizeof(header));
+  snprintf(header, sizeof(header) - 1, "P6 %ld %ld %ld\n",
 	  (unsigned long)map->width,
 	  (unsigned long)map->height,
 	  (unsigned long)map->maxcolor);
+  write(fd, header, strlen(header));
 
   /* Write the bitmap */
-  fwrite(map->bitmap, map->bitmap_size, 1, fp);
-  fclose(fp);
+  write(fd, map->bitmap, map->bitmap_size);
+  close(fd);
 
   return retval;
 }

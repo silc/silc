@@ -373,6 +373,10 @@ bool silc_map_writemaphtml(SilcMap map)
 
   for (i = 0; i < map->writemaphtml_count; i++) {
     c = &map->writemaphtml[i];
+    if (c->alon && c->alat) {
+      c->x = silc_map_lon2x(map, c->alon);
+      c->y = silc_map_lat2y(map, c->alat);
+    }
 
     /* Open for writing */
     fp = fopen(c->filename, "w+");
@@ -408,6 +412,11 @@ bool silc_map_writemaphtml(SilcMap map)
       /* Print the positions of various items on the map into the map file */
       silc_dlist_start(mapconn->commands);
       while ((cmd = silc_dlist_get(mapconn->commands)) != SILC_LIST_END) {
+	if (cmd->alon && cmd->alat) {
+	  cmd->x = silc_map_lon2x(map, cmd->alon);
+	  cmd->y = silc_map_lat2y(map, cmd->alat);
+	}
+
 	if (cmd->draw_text) {
 	  w = strlen(cmd->text) * 5;
 	  h = map->font.height - 2;

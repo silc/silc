@@ -41,28 +41,28 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
   SilcInt16 r, g, b, lr, lg, lb;
   int i;
 
+  map->conn_num++;
+
   SILC_LOG_DEBUG(("Processing the data from server (%d/%d)",
 		  map->conn_num, map->conns_num));
 
-  map->conn_num++;
   if (map->conn_num != map->conns_num)
     return;
 
   /* Load the map image to be processed */
-  if (!map->bitmap) {
-    if (!map->loadmap.loadmap || !map->loadmap.filename) {
-      silc_schedule_task_add(map->client->schedule, 0,
-			     silc_map_process_done, map, 0, 1,
-			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-      return;
-    }
+  silc_free(map->bitmap);
+  if (!map->loadmap.loadmap || !map->loadmap.filename) {
+    silc_schedule_task_add(map->client->schedule, 0,
+			   silc_map_process_done, map, 0, 1,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    return;
+  }
 
-    if (!silc_map_load_ppm(map, map->loadmap.filename)) {
-      silc_schedule_task_add(map->client->schedule, 0,
-			     silc_map_process_done, map, 0, 1,
-			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-      return;
-    }
+  if (!silc_map_load_ppm(map, map->loadmap.filename)) {
+    silc_schedule_task_add(map->client->schedule, 0,
+			   silc_map_process_done, map, 0, 1,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    return;
   }
 
   /* Now process all received data one by one */
@@ -80,6 +80,15 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
     /* Execute the map commands */
     silc_dlist_start(mapconn->commands);
     while ((cmd = silc_dlist_get(mapconn->commands)) != SILC_LIST_END) {
+      if (cmd->alon && cmd->alat) {
+	cmd->x = silc_map_lon2x(map, cmd->alon);
+	cmd->y = silc_map_lat2y(map, cmd->alat);
+	if (cmd->blon && cmd->blat) {
+	  cmd->x2 = silc_map_lon2x(map, cmd->blon);
+	  cmd->y2 = silc_map_lat2y(map, cmd->blat);
+	}
+      }
+
       if (cmd->cut) {
 	if (silc_map_cut(map, cmd->x, cmd->y, cmd->width,
 		         cmd->height, &ret_map)) {
@@ -150,7 +159,6 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
     /* Write uptime reliability data */
     if (map->writerel.writerel)
       silc_map_writerel(map, mapconn);
-
   }
 
   SILC_LOG_DEBUG(("All connections processed"));
@@ -159,6 +167,10 @@ void silc_map_process_data(SilcMap map, SilcMapConnection mapconn)
   if (map->writemap.writemap)
     silc_map_write_ppm(map, map->writemap.filename);
   for (i = 0; i < map->cut_count; i++) {
+    if (map->cut[i].alon && map->cut[i].alat) {
+      map->cut[i].x = silc_map_lon2x(map, map->cut[i].alon);
+      map->cut[i].y = silc_map_lat2y(map, map->cut[i].alat);
+    }
     if (silc_map_cut(map, map->cut[i].x, map->cut[i].y, map->cut[i].width,
 		     map->cut[i].height, &ret_map)) {
       silc_map_write_ppm(ret_map, map->cut[i].filename);
