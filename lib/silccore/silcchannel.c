@@ -172,8 +172,8 @@ void silc_channel_payload_list_free(SilcDList list)
   while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
     silc_free(entry->channel_name);
     silc_free(entry->channel_id);
-    silc_free(entry);
     silc_dlist_del(list, entry);
+    silc_free(entry);
   }
 
   silc_dlist_uninit(list);
