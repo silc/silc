@@ -1518,7 +1518,8 @@ void silc_client_get_channel_resolve(SilcClient client,
  * DESCRIPTION
  *
  *    Finds channel entry by the channel name. Returns the entry or NULL
- *    if it was not found.
+ *    if the entry was not found.  This checks the local cache and does
+ *    not resolve anything from server.
  *
  ***/
 SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
