@@ -29,6 +29,6 @@ libsilcsftp_a_SOURCES = 	\
 include_HEADERS =	\
 	silcsftp.h
 
-EXTRA_DIST = *.h
+EXTRA_DIST = *.h tests
 
 include $(top_srcdir)/Makefile.defines.in
