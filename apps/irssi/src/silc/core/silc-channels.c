@@ -1023,12 +1023,192 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   silc_free(nickname);
 }
 
-/* Lists locally saved client and server public keys. */
+void silc_list_key(const char *pub_filename, int verbose)
+{
+  SilcPublicKey public_key;
+  SilcPublicKeyIdentifier ident;
+  char *fingerprint, *babbleprint;
+  unsigned char *pk;
+  SilcUInt32 pk_len;
+  SilcPKCS pkcs;
+  SilcUInt32 key_len = 0;
+  int is_server_key = (strstr(pub_filename, "serverkeys") != NULL);
 
+  if (silc_pkcs_load_public_key((char *)pub_filename, &public_key,
+                                SILC_PKCS_FILE_PEM) == FALSE)
+    if (silc_pkcs_load_public_key((char *)pub_filename, &public_key,
+                                  SILC_PKCS_FILE_BIN) == FALSE) {
+      printformat_module("fe-common/silc", NULL, NULL,
+                         MSGLEVEL_CRAP, SILCTXT_LISTKEY_LOADPUB,
+                         pub_filename);
+      return;
+    }
+
+  ident = silc_pkcs_decode_identifier(public_key->identifier);
+     
+  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+  babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
+  
+  if (silc_pkcs_alloc(public_key->name, &pkcs)) {
+    key_len = silc_pkcs_public_key_set(pkcs, public_key);
+    silc_pkcs_free(pkcs);
+  }
+
+  printformat_module("fe-common/silc", NULL, NULL,
+                     MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_FILE,
+                     pub_filename);
+
+  if (verbose)
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_ALG,
+                       public_key->name);
+  if (key_len && verbose)
+    printformat_module("fe-common/silc", NULL, NULL,
+                        MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_BITS,
+                        (unsigned int)key_len);
+  if (ident->realname && (!is_server_key || verbose))
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_RN,
+                       ident->realname);
+  if (ident->username && verbose)
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_UN,
+                       ident->username);
+  if (ident->host && (is_server_key || verbose))
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_HN,
+                       ident->host);
+  if (ident->email && verbose)
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_EMAIL,
+                       ident->email);
+  if (ident->org && verbose)
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_ORG,
+                       ident->org);
+  if (ident->country && verbose)
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_C,
+                       ident->country);
+
+  if (verbose) {
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_FINGER,
+                       fingerprint);
+    printformat_module("fe-common/silc", NULL, NULL,
+                       MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_BABL,
+                       babbleprint);
+  }
+
+  silc_free(fingerprint);
+  silc_free(babbleprint);
+  silc_free(pk);
+  silc_pkcs_public_key_free(public_key);
+  silc_pkcs_free_identifier(ident);
+
+}
+
+
+void silc_list_keys_in_dir(const char *dirname, const char *where)
+{
+  DIR *dir;
+  struct dirent *entry;
+
+  dir = opendir(dirname);
+
+  if (dir == NULL)
+	  cmd_return_error(CMDERR_ERRNO);
+
+  printformat_module("fe-common/silc", NULL, NULL,
+                     MSGLEVEL_CRAP, SILCTXT_LISTKEY_LIST,
+                     where);
+
+  rewinddir(dir);
+
+  while ((entry = readdir(dir)) != NULL) {
+    /* try to open everything that isn't a directory */
+    struct stat buf;
+    char filename[256];
+
+    snprintf(filename, sizeof(filename) - 1, "%s/%s", dirname, entry->d_name);
+    if (!stat(filename, &buf) && S_ISREG(buf.st_mode))
+      silc_list_key(filename, FALSE);
+  }
+
+  closedir(dir);
+}
+
+void silc_list_file(const char *filename)
+{
+
+  char path[256];
+  struct stat buf;
+
+  snprintf(path, sizeof(path) - 1, "%s", filename);
+  if (!stat(path, &buf) && S_ISREG(buf.st_mode))
+    goto list_key;
+
+  snprintf(path, sizeof(path) - 1, "%s/%s", get_irssi_dir(), filename);
+  if (!stat(path, &buf) && S_ISREG(buf.st_mode))
+    goto list_key;
+
+  snprintf(path,sizeof(path) - 1, "%s/clientkeys/%s", get_irssi_dir(),
+	   filename);
+  if (!stat(path, &buf) && S_ISREG(buf.st_mode))
+    goto list_key;
+  
+  snprintf(path,sizeof(path) - 1, "%s/serverkeys/%s", get_irssi_dir(),
+	   filename);
+  if (!stat(path, &buf) && S_ISREG(buf.st_mode))
+    goto list_key;
+
+  return;
+
+list_key:
+
+  silc_list_key(path, TRUE);
+
+}
+
+/* Lists locally saved client and server public keys. */
 static void command_listkeys(const char *data, SILC_SERVER_REC *server,
 			     WI_ITEM_REC *item)
 {
+  GHashTable *optlist;
+  char *filename;
+  void *free_arg;
+  char dirname[256];
 
+  if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS |
+		      PARAM_FLAG_GETREST, "listkeys", &optlist,
+		      &filename))
+    return;
+
+  if (*filename != '\0') {
+
+    silc_list_file(filename);
+
+  } else {
+    int clients, servers;
+
+    clients = (g_hash_table_lookup(optlist, "clients") != NULL);
+    servers = (g_hash_table_lookup(optlist, "servers") != NULL);
+
+    if (!(clients || servers))
+      clients = servers = 1;
+
+    if (servers) {
+      snprintf(dirname, sizeof(dirname) - 1, "%s/serverkeys", get_irssi_dir());
+      silc_list_keys_in_dir(dirname, "server");
+    }
+
+    if (clients) {
+      snprintf(dirname, sizeof(dirname) - 1, "%s/clientkeys", get_irssi_dir());
+      silc_list_keys_in_dir(dirname, "client");
+    }
+  }
+  cmd_params_free(free_arg);
 }
 
 void silc_channels_init(void)
@@ -1045,7 +1225,9 @@ void silc_channels_init(void)
   command_bind_silc("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   command_bind_silc("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
   command_bind_silc("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
-/*  command_bind_silc("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys); */
+  command_bind("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys); 
+
+  command_set_options("listkeys", "clients servers");
 
   silc_nicklist_init();
 }
@@ -1064,7 +1246,7 @@ void silc_channels_deinit(void)
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
   command_unbind("away", (SIGNAL_FUNC) command_away);
   command_unbind("key", (SIGNAL_FUNC) command_key);
-/*  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys); */
+  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys);
 
   silc_nicklist_deinit();
 }

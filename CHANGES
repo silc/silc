@@ -1,3 +1,11 @@
+Thu Oct 30 21:23:24 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Add a /LISTKEYS command which lists the locally cached
+	  client and server keys.  Affected files 
+	  irssi/src/fe-common/module-formats.[ch],
+	  irssi/src/silc/core/silc-{channels,servers}.c
+	  irssi/docs/help/in/listkeys.in
+
 Thu Oct 30 20:23:40 EET 2003 Pekka Riikonen <priikone@silcnet.org>
 
 	* Check that packet queue purging was successful.  Affected

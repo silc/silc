@@ -447,6 +447,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: STATS */
 /* SYNTAX: ATTR [<-del> <option> [{ <value>}]] */
 /* SYNTAX: SMSG [<-channel>] <target> <message> */
+/* SYNTAX: LISTKEYS [-servers] [-clients] [<public key file>] */
 
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)

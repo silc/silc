@@ -213,6 +213,22 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "attr_extension",            " Extension          : $0", 1, { 0 } },
 	{ "attr_save", "Would you like to save the attributes (y/n)?", 0 },
 	{ "attr_saved", "Requested Attributes located in {hilight $0}", 1, { 0 } },
+	/* Public Key Information */
+	{ NULL, "Public Key Information", 0},
+
+        { "lstkey_file", "Public key file    : $0", 1, { 0 } },
+        { "lstkey_alg", "Algorithm          : $0", 1, { 0 } },
+        { "lstkey_bits", "Key length (bits)  : $0", 1, { 1 } },
+        { "lstkey_rn", "Real name          : $0", 1, { 0 } },
+        { "lstkey_un", "Username           : $0", 1, { 0 } },
+        { "lstkey_hn", "Hostname           : $0", 1, { 0 } },
+        { "lstkey_email", "Email              : $0", 1, { 0 } },
+        { "lstkey_org", "Organization       : $0", 1, { 0 } },
+        { "lstkey_c", "Country            : $0", 1, { 0 } },
+        { "lstkey_finger", "Fingerprint (SHA1) : $0", 1, { 0 } },
+        { "lstkey_babl", "Babbelprint (SHA1) : $0", 1, { 0 } },
+        { "lstkey_loadpub", "Could not load public key file `$0'", 1, { 0 } },
+	{ "lstkey_list", "Stored {hilight $0} public keys:", 1, { 0 } },
 
 	{ NULL, NULL, 0 }
 };
