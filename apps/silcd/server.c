@@ -1628,8 +1628,10 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 
   /* If entry is disabled ignore what we got. */
   if (ret != SILC_PACKET_RESUME_ROUTER &&
-      idata && idata->status & SILC_IDLIST_STATUS_DISABLED)
+      idata && idata->status & SILC_IDLIST_STATUS_DISABLED) {
+    SILC_LOG_DEBUG(("Connection is disabled"));
     goto out;
+  }
 
   if (ret == SILC_PACKET_NONE)
     goto out;
@@ -2485,9 +2487,9 @@ void silc_server_remove_from_channels(SilcServer server,
 	silc_hash_table_count(channel->user_list) < 2) {
       if (channel->rekey)
 	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
-      if (!silc_idlist_del_channel(server->local_list, channel))
-	silc_idlist_del_channel(server->global_list, channel);
+      if (silc_idlist_del_channel(server->local_list, channel))
       server->stat.my_channels--;
+	silc_idlist_del_channel(server->global_list, channel);
       continue;
     }
 

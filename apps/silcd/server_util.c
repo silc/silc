@@ -469,7 +469,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 	      silc_server_update_clients_by_real_server(server, from, client,
 							local, id_cache);
 	    if (!client->router)
-	      client->router = to;
+	      client->router = from; /* on local list put old from */
 	  } else {
 	    client->router = to;
 	  }

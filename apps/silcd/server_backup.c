@@ -1091,15 +1091,16 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 			 server->router->server_name));
 	  SILC_LOG_DEBUG(("Switching back to primary router %s",
 			  server->router->server_name));
+	  idata = (SilcIDListData)server->router;
+	  idata->status &= ~SILC_IDLIST_STATUS_DISABLED;
 	} else {
 	  SILC_LOG_INFO(("Resuming the use of router %s",
 			 router->server_name));
 	  SILC_LOG_DEBUG(("Resuming the use of router %s",
 			  router->server_name));
+	  idata = (SilcIDListData)router;
+	  idata->status &= ~SILC_IDLIST_STATUS_DISABLED;
 	}
-
-	idata = (SilcIDListData)server->router;
-	idata->status &= ~SILC_IDLIST_STATUS_DISABLED;
 
 	/* Update the client entries of the backup router to the new 
 	   router */

@@ -1806,8 +1806,10 @@ static void silc_server_new_id_real(SilcServer server,
     router = sock->user_data;
 
     if (server_entry->server_type == SILC_BACKUP_ROUTER && 
-	id_type == SILC_ID_SERVER)
+	id_type == SILC_ID_SERVER) {
       id_list = server->global_list;
+      router_sock = server->router ? server->router->connection : sock;
+    }
   } else {
     void *sender_id = silc_id_str2id(packet->src_id, packet->src_id_len,
 				     packet->src_id_type);

@@ -1,3 +1,19 @@
+Mon Oct 15 17:42:55 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Allow backup router to announce servers.  All servers
+	  announced by backup router are added to the global list
+	  automatically.  Update hte server's socket to our primary
+	  router also when backup router announces a server.
+	  Affected file silcd/packet_receive.c.
+
+	* Do not update the client->router in the function
+	  silc_server_udpate_clients_by_server if the client is on
+	  global list.  We might fail to find any specific server
+	  for locally connected clients and local cell clients.  They
+	  should still use the `from' and not `to' as client->router.
+	  This fixes backup router resuming protocol.  Affected file
+	  silcd/server_util.c.
+
 Sun Oct 14 18:28:22 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Assure that router cannot reroute the same channel message
