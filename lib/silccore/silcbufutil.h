@@ -64,9 +64,30 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
   sb_new = silc_buffer_alloc(sb->truelen);
   silc_buffer_pull_tail(sb_new, SILC_BUFFER_END(sb_new));
   silc_buffer_put(sb_new, sb->head, sb->truelen);
-  sb_new->data = sb_new->head + sb->len;
-  sb_new->tail = sb_new->head + (sb->end - sb->tail);
+  sb_new->data = sb_new->head + (sb->data - sb->head);
+  sb_new->tail = sb_new->data + sb->len;
   sb_new->len = sb->len;
+
+  return sb_new;
+}
+
+/* Reallocates buffer. Old data is saved into the new buffer. Returns
+   new SilcBuffer pointer. The buffer is exact clone of the old one
+   except that there is now more space at the end of buffer. */
+
+extern inline
+SilcBuffer silc_buffer_realloc(SilcBuffer sb, unsigned int newsize)
+{
+  SilcBuffer sb_new;
+
+  sb_new = silc_buffer_alloc(newsize);
+  silc_buffer_pull_tail(sb_new, SILC_BUFFER_END(sb_new));
+  silc_buffer_put(sb_new, sb->head, sb->truelen);
+  sb_new->data = sb_new->head + (sb->data - sb->head);
+  sb_new->tail = sb_new->data + sb->len;
+  sb_new->len = sb->len;
+
+  silc_buffer_free(sb);
 
   return sb_new;
 }
@@ -78,6 +99,7 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
 void silc_buffer_clear(SilcBuffer sb);
 SilcBuffer silc_buffer_copy(SilcBuffer sb);
 SilcBuffer silc_buffer_clone(SilcBuffer sb);
+SilcBuffer silc_buffer_realloc(SilcBuffer sb, unsigned int newsize);
 #endif
 
 #endif
