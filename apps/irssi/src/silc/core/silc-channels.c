@@ -225,70 +225,68 @@ static void event_nick(SILC_SERVER_REC *server, va_list va)
 
 static void event_cmode(SILC_SERVER_REC *server, va_list va)
 {
-  SILC_CHANNEL_REC *chanrec;
-  SilcClientEntry client;
-  SilcChannelEntry channel;
-  char *mode;
-  uint32 modei;
+	SILC_CHANNEL_REC *chanrec;
+	SilcClientEntry client;
+	SilcChannelEntry channel;
+	char *mode;
 
-  client = va_arg(va, SilcClientEntry);
-  modei = va_arg(va, uint32);
-  channel = va_arg(va, SilcChannelEntry);
-  mode = silc_client_chmode(modei, channel);
-  
-  chanrec = silc_channel_find_entry(server, channel);
-  if (chanrec != NULL) {
-    g_free_not_null(chanrec->mode);
-    chanrec->mode = g_strdup(mode == NULL ? "" : mode);
-    signal_emit("channel mode changed", 1, chanrec);
-  }
-  
-  /*signal_emit("message mode", 5, server, chanrec->name,
-    client->nickname, client->username, mode);*/
-  printtext(server, channel->channel_name, MSGLEVEL_MODES,
-	    "mode/%s [%s] by %s", channel->channel_name, mode,
-	    client->nickname);
-  
-  g_free(mode);
+	client = va_arg(va, SilcClientEntry);
+	mode = silc_client_chmode(va_arg(va, unsigned int));
+	channel = va_arg(va, SilcChannelEntry);
+
+	chanrec = silc_channel_find_entry(server, channel);
+	if (chanrec != NULL) {
+		g_free_not_null(chanrec->mode);
+		chanrec->mode = g_strdup(mode == NULL ? "" : mode);
+		signal_emit("channel mode changed", 1, chanrec);
+	}
+
+	/*signal_emit("message mode", 5, server, chanrec->name,
+		    client->nickname, client->username, mode);*/
+	printtext(server, channel->channel_name, MSGLEVEL_MODES,
+		  "mode/%s [%s] by %s", channel->channel_name, mode,
+		  client->nickname);
+
+	g_free(mode);
 }
 
 static void event_cumode(SILC_SERVER_REC *server, va_list va)
 {
-  SILC_CHANNEL_REC *chanrec;
-  SilcClientEntry client, destclient;
-  SilcChannelEntry channel;
-  int mode;
-  char *modestr;
-  
-  client = va_arg(va, SilcClientEntry);
-  mode = va_arg(va, uint32);
-  destclient = va_arg(va, SilcClientEntry);
-  channel = va_arg(va, SilcChannelEntry);
-  
-  modestr = silc_client_chumode(mode);
-  chanrec = silc_channel_find_entry(server, channel);
-  if (chanrec != NULL) {
-    SILC_NICK_REC *nick;
-    
-    if (destclient == server->conn->local_entry) {
-      chanrec->chanop =
-	(mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
-    }
-    
-    nick = silc_nicklist_find(chanrec, client);
-    if (nick != NULL) {
-      nick->op = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
-      signal_emit("nick mode changed", 2, chanrec, nick);
-    }
-  }
-  
-  /*signal_emit("message mode", 5, server, chanrec->name,
-    client->nickname, client->username, modestr);*/
-  printtext(server, channel->channel_name, MSGLEVEL_MODES,
-	    "mode/%s [%s] by %s", channel->channel_name, modestr,
-	    client->nickname);
-  
-  g_free(modestr);
+	SILC_CHANNEL_REC *chanrec;
+	SilcClientEntry client, destclient;
+	SilcChannelEntry channel;
+        int mode;
+	char *modestr;
+
+	client = va_arg(va, SilcClientEntry);
+	mode = va_arg(va, unsigned int);
+	destclient = va_arg(va, SilcClientEntry);
+	channel = va_arg(va, SilcChannelEntry);
+
+	modestr = silc_client_chumode(mode);
+	chanrec = silc_channel_find_entry(server, channel);
+	if (chanrec != NULL) {
+		SILC_NICK_REC *nick;
+
+		if (destclient == server->conn->local_entry) {
+			chanrec->chanop =
+				(mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
+		}
+
+		nick = silc_nicklist_find(chanrec, client);
+		if (nick != NULL) {
+                        nick->op = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
+			signal_emit("nick mode changed", 2, chanrec, nick);
+		}
+	}
+
+	/*signal_emit("message mode", 5, server, chanrec->name,
+		    client->nickname, client->username, modestr);*/
+	printtext(server, channel->channel_name, MSGLEVEL_MODES,
+		  "mode/%s [%s] by %s", channel->channel_name, modestr,
+		  client->nickname);
+
+	g_free(modestr);
 }
 
 static void command_part(const char *data, SILC_SERVER_REC *server,

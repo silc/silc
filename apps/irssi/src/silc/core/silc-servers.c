@@ -46,14 +46,14 @@ void silc_servers_reconnect_deinit(void);
 static void silc_send_channel(SILC_SERVER_REC *server,
 			      char *channel, char *msg)
 {
-  SILC_CHANNEL_REC *rec;
-  
-  rec = silc_channel_find(server, channel);
-  if (rec == NULL)
-    return;
-  
-  silc_client_send_channel_message(silc_client, server->conn, rec->entry, 
-				   NULL, 0, msg, strlen(msg), TRUE);
+        SILC_CHANNEL_REC *rec;
+
+	rec = silc_channel_find(server, channel);
+	if (rec == NULL)
+		return;
+
+	silc_client_send_channel_message(silc_client, server->conn,
+                                         rec->entry, msg, strlen(msg), TRUE);
 }
 
 typedef struct {
@@ -64,38 +64,38 @@ typedef struct {
 static void silc_send_msg_clients(SilcClient client,
 				  SilcClientConnection conn,
 				  SilcClientEntry *clients,
-				  uint32 clients_count,
+				  unsigned int clients_count,
 				  void *context)
 {
-  PRIVMSG_REC *rec = context;
-  SilcClientEntry target;
-  
-  if (clients_count == 0) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
-	      "Unknown nick: %s", rec->nick);
-  } else {
-    target = clients[0]; /* FIXME: not a good idea :) */
-    
-    silc_client_send_private_message(client, conn, target, 0,
-				     rec->msg, strlen(rec->msg),
-				     TRUE);
-  }
-  
-  g_free(rec->nick);
-  g_free(rec->msg);
-  g_free(rec);
+	PRIVMSG_REC *rec = context;
+	SilcClientEntry target;
+
+	if (clients_count == 0) {
+		printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+			  "Unknown nick: %s", rec->nick);
+	} else {
+		target = clients[0]; /* FIXME: not a good idea :) */
+
+		silc_client_send_private_message(client, conn, target,
+						 rec->msg, strlen(rec->msg),
+						 TRUE);
+	}
+
+        g_free(rec->nick);
+        g_free(rec->msg);
+        g_free(rec);
 }
 
 static void silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg)
 {
-  PRIVMSG_REC *rec;
-  
-  rec = g_new0(PRIVMSG_REC, 1);
-  rec->nick = g_strdup(nick);
-  rec->msg = g_strdup(msg);
-  
-  silc_client_get_clients(silc_client, server->conn,
-			  nick, "", silc_send_msg_clients, rec);
+	PRIVMSG_REC *rec;
+
+	rec = g_new0(PRIVMSG_REC, 1);
+	rec->nick = g_strdup(nick);
+	rec->msg = g_strdup(msg);
+
+	silc_client_get_clients(silc_client, server->conn,
+				nick, "", silc_send_msg_clients, rec);
 }
 
 static int isnickflag_func(char flag)
@@ -155,17 +155,17 @@ static void sig_connected(SILC_SERVER_REC *server)
 
 static void sig_disconnected(SILC_SERVER_REC *server)
 {
-  if (!IS_SILC_SERVER(server) || server->conn == NULL)
-    return;
-  
-  if (server->conn->sock != NULL) {
-    silc_client_close_connection(silc_client, NULL, server->conn);
-    
-    /* SILC closes the handle */
-    g_io_channel_unref(net_sendbuffer_handle(server->handle));
-    net_sendbuffer_destroy(server->handle, FALSE);
-    server->handle = NULL;
-  }
+	if (!IS_SILC_SERVER(server) || server->conn == NULL)
+		return;
+
+	if (server->conn->sock != NULL) {
+		silc_client_close_connection(silc_client, server->conn);
+
+                /* SILC closes the handle */
+		g_io_channel_unref(net_sendbuffer_handle(server->handle));
+		net_sendbuffer_destroy(server->handle, FALSE);
+                server->handle = NULL;
+	}
 }
 
 SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn)
@@ -219,9 +219,9 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 void silc_command_exec(SILC_SERVER_REC *server,
 		       const char *command, const char *args)
 {
-	uint32 argc = 0;
+	unsigned int argc = 0;
 	unsigned char **argv;
-	uint32 *argv_lens, *argv_types;
+	unsigned int *argv_lens, *argv_types;
 	char *data, *tmpcmd;
 	SilcClientCommand *cmd;
 	SilcClientCommandContext ctx;
