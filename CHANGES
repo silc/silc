@@ -1,3 +1,8 @@
+Mon Jun 11 18:07:24 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Merged a long nickname (127 characters long) crash bugfix from
+	  Irssi CVS tree.  Affected file irssi/src/core/misc.c.
+
 Sun Jun 10 16:08:35 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added the server's public key sving and verification to the
