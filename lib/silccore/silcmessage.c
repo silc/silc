@@ -67,8 +67,8 @@ bool silc_message_payload_decrypt(unsigned char *data,
 				  SilcHmac hmac,
 				  bool check_mac)
 {
-  SilcUInt32 mac_len, iv_len = 0;
-  SilcUInt16 len, totlen;
+  SilcUInt32 mac_len, iv_len = 0, block_len;
+  SilcUInt16 len, totlen, dlen;
   unsigned char mac[32], *ivp, *dec;
   
   mac_len = silc_hmac_len(hmac);
@@ -94,17 +94,26 @@ bool silc_message_payload_decrypt(unsigned char *data,
     SILC_LOG_DEBUG(("MAC is Ok"));
   }
 
+  /* Decrypt the entire buffer into allocated decryption buffer, since we
+     do not reliably know its encrypted length (it may include unencrypted
+     data at the end). */
+
   /* Get pointer to the IV */
   ivp = (iv_len ? data + (data_len - iv_len - mac_len) :
 	 silc_cipher_get_iv(cipher));
 
-  /* Decrypt the entire buffer into allocated decryption buffer.  Then
-     use only the Message Payload and don't touch data after that, since
-     it may not be even encrypted (it may include signature payload).
-     Since we do not reliably know how long the Message Payload is we 
-     decrypt entire data buffer. */
-  dec = silc_malloc(data_len - iv_len - mac_len);
-  silc_cipher_decrypt(cipher, data, dec, data_len - iv_len - mac_len, ivp);
+  /* Allocate buffer for decryption.  Since there might be unencrypted
+     data at the end, it might not be multiple by block size, make it so. */
+  block_len = silc_cipher_get_block_len(cipher);
+  dlen = data_len - iv_len - mac_len;
+  if (dlen & (block_len - 1))
+    dlen += SILC_MESSAGE_PAD(dlen);
+  if (dlen > data_len - iv_len - mac_len)
+    dlen -= block_len;
+  dec = silc_malloc(dlen);
+
+  /* Decrypt */
+  silc_cipher_decrypt(cipher, data, dec, dlen, ivp);
 
   /* Now verify the true length of the payload and copy the decrypted
      part over the original data.  First get data length, and then padding
@@ -114,20 +123,20 @@ bool silc_message_payload_decrypt(unsigned char *data,
   SILC_GET16_MSB(len, dec + totlen);
   totlen += 2 + len;
   if (totlen + iv_len + mac_len + 2 > data_len) {
-    memset(dec, 0, data_len - iv_len - mac_len);
+    memset(dec, 0, dlen);
     silc_free(dec);
     return FALSE;
   }
   SILC_GET16_MSB(len, dec + totlen);
   totlen += 2 + len;
   if (totlen + iv_len + mac_len > data_len) {
-    memset(dec, 0, data_len - iv_len - mac_len);
+    memset(dec, 0, dlen);
     silc_free(dec);
     return FALSE;
   }
 
   memcpy(data, dec, totlen);
-  memset(dec, 0, data_len - iv_len - mac_len);
+  memset(dec, 0, dlen);
   silc_free(dec);
 
   return TRUE;

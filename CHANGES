@@ -1,3 +1,9 @@
+Wed Dec  4 18:29:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Calculate the correct length for signed messages before
+	  encrypting, it must be multiple by block size.  Affected
+	  file lib/silccore/silcmessage.c.
+
 Tue Dec  3 23:26:55 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed founder key sending in CMODE command in client.
