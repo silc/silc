@@ -30,10 +30,10 @@
 /* Our working struct -- at the moment we keep it private, but this could
  * change in the future */
 struct SilcLogStruct {
-  char *filename;
+  char filename[256];
   FILE *fp;
   SilcUInt32 maxsize;
-  char *typename;
+  const char *typename;
   SilcLogType type;
   SilcLogCb cb;
   void *context;
@@ -43,10 +43,10 @@ typedef struct SilcLogStruct *SilcLog;
 /* These are the known logging channels.  We initialize this struct with most
  * of the fields set to NULL, because we'll fill in those values at runtime. */
 static struct SilcLogStruct silclogs[SILC_LOG_MAX] = {
-  {NULL, NULL, 0, "Info", SILC_LOG_INFO, NULL, NULL},
-  {NULL, NULL, 0, "Warning", SILC_LOG_WARNING, NULL, NULL},
-  {NULL, NULL, 0, "Error", SILC_LOG_ERROR, NULL, NULL},
-  {NULL, NULL, 0, "Fatal", SILC_LOG_FATAL, NULL, NULL},
+  {"", NULL, 0, "Info", SILC_LOG_INFO, NULL, NULL},
+  {"", NULL, 0, "Warning", SILC_LOG_WARNING, NULL, NULL},
+  {"", NULL, 0, "Error", SILC_LOG_ERROR, NULL, NULL},
+  {"", NULL, 0, "Fatal", SILC_LOG_FATAL, NULL, NULL},
 };
 
 /* If TRUE, log files will be flushed for each log input */
@@ -143,7 +143,7 @@ static bool silc_log_reset(SilcLog log)
     fflush(log->fp);
     fclose(log->fp);
   }
-  if (!log->filename) return FALSE;
+  if (!log->filename[0]) return FALSE;
   if (!(log->fp = fopen(log->filename, "a+"))) {
     SILC_LOG_WARNING(("Couldn't reset logfile %s for type \"%s\": %s",
 		      log->filename, log->typename, strerror(errno)));
@@ -178,7 +178,7 @@ SILC_TASK_CALLBACK(silc_log_fflush_callback)
 
 void silc_log_output(SilcLogType type, char *string)
 {
-  char *typename = NULL;
+  const char *typename = NULL;
   FILE *fp;
   SilcLog log;
 
@@ -272,16 +272,18 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
   }
 
   /* clean the logging channel */
-  if (log->filename) {
+  if (strlen(log->filename)) {
     if (log->fp)
       fclose(log->fp);
-    silc_free(log->filename);
-    log->filename = NULL;
+    memset(log->filename, 0, sizeof(log->filename));
     log->fp = NULL;
   }
 
   if (fp) {
-    log->filename = strdup(filename);
+    memset(log->filename, 0, sizeof(log->filename));
+    strncpy(log->filename, filename,
+	    strlen(filename) < sizeof(log->filename) ? strlen(filename) :
+	    sizeof(log->filename) - 1);
     log->fp = fp;
     log->maxsize = maxsize;
   }

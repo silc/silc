@@ -1319,11 +1319,6 @@ void silc_server_config_destroy(SilcServerConfig config)
   silc_free(config->logging_errors);
   silc_free(config->logging_fatals);
 
-  silc_log_set_file(SILC_LOG_INFO, NULL, 0, NULL);
-  silc_log_set_file(SILC_LOG_WARNING, NULL, 0, NULL);
-  silc_log_set_file(SILC_LOG_ERROR, NULL, 0, NULL);
-  silc_log_set_file(SILC_LOG_FATAL, NULL, 0, NULL);
-
   /* Destroy the ServerInfo struct */
   if (config->server_info) {
     register SilcServerConfigServerInfo *si = config->server_info;
