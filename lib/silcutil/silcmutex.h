@@ -31,8 +31,6 @@
 #ifndef SILCMUTEX_H
 #define SILCMUTEX_H
 
-#if defined(SILC_THREADS)
-
 /****s* silcutil/SilcMutexAPI/SilcMutex
  *
  * NAME
@@ -134,15 +132,5 @@ void silc_mutex_lock(SilcMutex mutex);
  *
  ***/
 void silc_mutex_unlock(SilcMutex mutex);
-
-#else
-
-#define SILC_MUTEX_DEFINE(name)
-#define silc_mutex_alloc(mutex) (void)0
-#define silc_mutex_free(mutex) (void)0
-#define silc_mutex_lock(mutex) (void)0
-#define silc_mutex_unlock(mutex) (void)0
-
-#endif         /* SILC_THREADS */
 
 #endif

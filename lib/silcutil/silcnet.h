@@ -419,8 +419,6 @@ char *silc_net_localhost(void);
  ***/
 char *silc_net_localip(void);
 
-#if defined(SILC_WIN32)
-
 /****f* silcutil/SilcNetAPI/silc_net_win32_init
  *
  * SYNOPSIS
@@ -436,6 +434,10 @@ char *silc_net_localip(void);
  *    the silc_net_win32_uninit when exiting the application.  Returns
  *    FALSE on error.  The network will not work if this function returns
  *    FALSE.
+ *
+ * NOTES
+ *
+ *    This routines is available only on Win32 platform.
  *
  ***/
 bool silc_net_win32_init(void);
@@ -453,9 +455,11 @@ bool silc_net_win32_init(void);
  *    is usually called when the application is exiting.  After calling
  *    this function the SILC Net API routines will not work anymore.
  *
+ * NOTES
+ *
+ *    This routines is available only on Win32 platform.
+ *
  ***/
 void silc_net_win32_uninit(void);
-
-#endif
 
 #endif

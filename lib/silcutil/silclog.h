@@ -236,11 +236,38 @@ extern DLLAPI bool silc_debug_hexdump;
 
 /* Macros */
 
-#if defined(SILC_WIN32)
+#if defined(WIN32)
 #ifndef __FUNCTION__
 #define __FUNCTION__ ""
 #endif
 #endif
+
+/****d* silcutil/SilcLogAPI/SILC_ENABLE_DEBUG
+ *
+ * NAME
+ *
+ *    #define SILC_ENABLE_DEBUG
+ *
+ * DESCRIPTION
+ *
+ *    Use this macro to enable the debugging in your application.  If
+ *    SILC was compiled with debugging enabled, this macro enables it.
+ *    Use this macro in your application's main header, or in place where
+ *    you need to enable the debugging.
+ *
+ * NOTES
+ *
+ *    You still can control the debugging with silc_debug variable, on
+ *    whether to actually print the debugging or not.  This macro is
+ *    used to enable debugging, not to say it is printed or not.
+ *
+ * SOURCE
+ */
+#define SILC_ENABLE_DEBUG	\
+  #ifndef SILC_DEBUG		\
+  #define SILC_DEBUG 1		\
+  #endif SILC_DEBUG		\
+/***/
 
 /****d* silcutil/SilcLogAPI/SILC_LOG_INFO
  *
