@@ -633,6 +633,7 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 			    buffer->data, buffer->len, FALSE);
   }
 
+#if 0
   /* If the packet is originated from the one who sent it to us we know
      that the ID belongs to our cell, unless the sender was router. */
   tmpid = silc_id_str2id(packet->src_id, SILC_ID_SERVER);
@@ -651,6 +652,15 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
   }
 
   silc_free(tmpid);
+#endif
+
+  if (sock->type == SILC_SOCKET_TYPE_SERVER)
+    id_list = server->local_list;
+  else
+    id_list = server->global_list;
+
+  router_sock = sock;
+  router = sock->user_data;
 
   switch(id_type) {
   case SILC_ID_CLIENT:
@@ -662,6 +672,12 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
     /* Add the client to our local list. We are router and we keep
        cell specific local database of all clients in the cell. */
     silc_idlist_add_client(id_list, NULL, NULL, NULL, id, router, router_sock);
+
+    /* Add route cache for this ID */
+    silc_server_route_add(silc_server_route_hash(
+			  ((SilcClientID *)id)->ip.s_addr,
+			  server->id->port), ((SilcClientID *)id)->ip.s_addr,
+			  router);
     break;
 
   case SILC_ID_SERVER:
@@ -673,6 +689,13 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
     /* Add the server to our local list. We are router and we keep
        cell specific local database of all servers in the cell. */
     silc_idlist_add_server(id_list, NULL, 0, id, router, router_sock);
+
+    /* Add route cache for this ID */
+    silc_server_route_add(silc_server_route_hash(
+			  ((SilcServerID *)id)->ip.s_addr,
+			  ((SilcServerID *)id)->port), 
+			  ((SilcServerID *)id)->ip.s_addr,
+			  router);
     break;
 
   case SILC_ID_CHANNEL:

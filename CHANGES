@@ -1,3 +1,7 @@
+Thu Dec 14 15:55:35 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Add route cache for received ID for fast routing.
+
 Sun Dec 10 23:52:00 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Minor typo fixes on command reply handling on server.
