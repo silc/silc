@@ -1,7 +1,11 @@
-Thu Mar 28 20:58:42 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+Thu Mar 28 22:51:15 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed silc_net_gethostbyaddr to correctly resolve by
 	  address.  Affected file lib/silcutil/silcnet.c.
+
+	* Fixed the notify relaying to client.  The HMAC to be used
+	  with relayed packets ws wrong and caused decryption failure
+	  at the client end.  Affected file is silcd/packet_receive.c.
 
 Thu Mar 28 19:02:05 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 

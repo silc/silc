@@ -1785,10 +1785,9 @@ void silc_server_relay_packet(SilcServer server,
     return;
   }
   silc_buffer_put((SilcBuffer)&p, packet->buffer->data, packet->buffer->len);
-  
+
   /* Re-encrypt packet */
-  silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&p,
-		      packet->buffer->len);
+  silc_packet_encrypt(cipher, hmac, sequence, (SilcBuffer)&p, p.len);
   
   /* Send the packet */
   silc_server_packet_send_real(server, dst_sock, force_send);
