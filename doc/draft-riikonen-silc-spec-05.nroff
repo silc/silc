@@ -883,7 +883,7 @@ established by the SILC Key Exchange Protocol, described in [SILC3].
 Every packet sent from client to server, with exception of packets for
 channels, are encrypted with this session key.
 
-Channels has their own key that are shared by every client on the channel.
+Channels has a channel key that are shared by every client on the channel.
 However, the channel keys are cell specific thus one cell does not know
 the channel key of the other cell, even if that key is for same channel.
 Channel key is also known by the routers and all servers that has clients
@@ -966,9 +966,10 @@ Example:  Private message from client to another client on different
           message delivery key with each other and that is used in 
           the message encryption.
 
-o Client 1. sends encrypted packet to its server.  The packet is
-  encrypted with the private message delivery key shared between
-  clients.
+o Client 1. sends encrypted packet to its server.  The packet header
+  is encrypted with the session key shared between the client and
+  server, and the private message is encrypted with the private
+  message delivery key shared between clients.
 
 o Server determines the destination of the packet and sends the 
   packet to the router.
@@ -1093,10 +1094,10 @@ Figure 5:  Authentication Payload
 .in 6
 o Payload Length (2 bytes) - Length of the entire payload.
 
-o Authentication Method (2) - The method of the authentication.
-  The authentication methods are defined in [SILC2] in the
-  Connection Auth Request Payload.  The NONE authentication
-  method SHOULD NOT be used.
+o Authentication Method (2 bytes) - The method of the
+  authentication.  The authentication methods are defined
+  in [SILC2] in the Connection Auth Request Payload.  The NONE 
+  authentication method SHOULD NOT be used.
 
 o Public Data Length (2 bytes) - Indicates the length of
   the Public Data field.
@@ -1425,7 +1426,7 @@ software version = <major>[.<minor>[.<build or vendor string>]]
 Protocol version MAY provide both major and minor version.  Currently
 implementations MUST set the protocol version and accept at least the 
 protocol version as SILC-1.1-<software version>.  If new protocol version 
-causes in compatibilities with older version the the <minor> versio number 
+causes incompatibilities with older version the <minor> version number 
 MUST be incremented.  The <major> is incremented if new protocol version 
 is fully incompatible.
 

@@ -157,7 +157,9 @@ static inline
 void silc_buffer_free(SilcBuffer sb)
 {
   if (sb) {
+#ifdef SILC_DEBUG
     memset(sb->head, 'F', sb->truelen);
+#endif
     silc_free(sb->head);
     silc_free(sb);
   }

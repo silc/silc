@@ -82,7 +82,7 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
  *
  * DESCRIPTION
  *
- *    String encoding definitions used with the UTF-8 encoding and the
+ *    String encoding definitions used with the UTF-8 encoding and
  *    decoding functions.
  *
  * SOURCE
