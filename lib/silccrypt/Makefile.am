@@ -24,7 +24,6 @@ libsilccrypt_la_SOURCES = \
 	none.c \
 	rc5.c \
 	rc6.c \
-	mars.c \
 	md5.c \
 	aes.c \
 	rsa.c \
@@ -46,7 +45,6 @@ include_HEADERS =	\
 	cast.h		\
 	ciphers_def.h	\
 	ciphers.h	\
-	mars.h		\
 	md5.h		\
 	none.h		\
 	pkcs1.h		\
