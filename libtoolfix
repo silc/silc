@@ -4,16 +4,16 @@
 #
 # This script fixes the fundamental problem of libtool: it is not 
 # configurable in run-time.  This changes the libtool so that it becomes
-# more generic and configurable in run-time.  It is possible to specify
-# how the libtool should behave by environment variables.
+# more generic and configurable in run-time.
 #
-# Environment variables:
+# New command line options to libtool:
 #
-# LIBTOOL_ENABLE_SHARED
-# LIBTOOL_ENABLE_STATIC
+# --libtool-enable-shared	Enable shared library compilation
+# --libtool-enable-static	Enable static library compilation
+# --libtool-disable-shared	Disable shared library compilation
+# --libtool-disable-static	Disable static library compilation
 #
-# Set either to "yes" or "no" value.  "no" is equivalent to being disabled.
-# If environment variables are not given then the default settings apply.
+# If options are omitted the default libtool configuration will apply.
 #
 
 # Sanity checks
@@ -26,20 +26,37 @@ fi
 sed '/^# ltmain\.sh/q' ./libtool >./libtool.tmp
 
 # Put our wrapper to the new libtool.  This allows the run-time
-# configuration of the libtool.  This could include a lot of other
-# things like command line arguments too.
+# configuration of the libtool.
+ltmain=`pwd`/ltmain.sh
 cat << EOF >> ./libtool.tmp
-if test "\$LIBTOOL_ENABLE_SHARED" != ""; then
-  build_libtool_libs=\$LIBTOOL_ENABLE_SHARED
+args=\`echo \$*\`
+cargs=\`echo \$* | sed -e '/--libtool-enable-shared/s///' -e '/--libtool-enable-static/s///' -e '/--libtool-disable-shared/s///' -e '/--libtool-disable-static/s///'\`
+for i in \$args
+do
+  if test "\$i" == "--libtool-enable-shared"; then
+    build_libtool_libs=yes
+    fast_install=yes
+    continue
+  fi
+  if test "\$i" == "--libtool-disable-shared"; then
+    build_libtool_libs=no
+    continue
+  fi
+  if test "\$i" == "--libtool-enable-static"; then
+    build_old_libs=yes
+    continue
+  fi
+  if test "\$i" == "--libtool-disable-static"; then
+    build_old_libs=no
+    continue
+  fi
+done
+if test "\$cargs" = ""; then
+  cargs="--silent"
 fi
-if test "\$LIBTOOL_ENABLE_STATIC" != ""; then
-  build_old_libs=\$LIBTOOL_ENABLE_STATIC
-fi
+. $ltmain \$cargs
 EOF
 
-# Do a trick with the ltmain.sh to make these settings valid
-ltmain=`pwd`/ltmain.sh
-echo ". $ltmain" >> ./libtool.tmp
 mv -f ./libtool.tmp ./libtool
 chmod +x ./libtool
 

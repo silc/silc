@@ -52,14 +52,10 @@ if SILC_SIM
 all: $(SIM_CIPHER_OBJS) $(SIM_HASH_OBJS)
 endif
 
-# Libtool to compile always SIM as shared library
-LIBTOOL_ENABLE_SHARED=yes
-LIBTOOL_ENABLE_STATIC=no
-
 $(SIM_CIPHER_OBJS):
 	@if test '!' -f lib$*.la ; then \
 	  $(LIBTOOL) --mode=link $(CCLD) -rpath $(silc_modulesdir) \
-		../silccrypt/$*.lo -o lib$*.la; \
+		../silccrypt/$*.lo -o lib$*.la --libtool-enable-shared; \
 	  cd $(srcdir) && $(LN_S) -f $(srcdir)/.libs/lib$*.so \
 		$(srcdir)/$*.sim.so; \
 	fi
@@ -67,7 +63,7 @@ $(SIM_CIPHER_OBJS):
 $(SIM_HASH_OBJS):
 	@if test '!' -f lib$*.la ; then \
 	  $(LIBTOOL) --mode=link $(CCLD) -rpath $(silc_modulesdir) \
-		../silccrypt/$*.lo -o lib$*.la; \
+		../silccrypt/$*.lo -o lib$*.la --libtool-enable-shared; \
 	  cd $(srcdir) && $(LN_S) -f $(srcdir)/.libs/lib$*.so \
 		$(srcdir)/$*.sim.so; \
 	fi

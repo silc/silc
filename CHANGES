@@ -4,6 +4,10 @@ Thu Dec  5 16:35:23 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  to ignore signatures in messages.  Affected files are
 	  irssi/src/silc/core/client_ops.c, silc-core.c.
 
+	* Fixed the libtoolfix to use command line options instead of
+	  environment variables.  They didn't work as expected.  Now,
+	  the libtool is fully run-time configurable.
+
 Wed Dec  4 21:08:52 CET 2002  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Verify signature payload for signed messages. Affected files

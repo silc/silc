@@ -20,9 +20,6 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 noinst_LTLIBRARIES = libsilccrypt.la
 
-# Compile silccrypt always as shared library since silcsim will need it.
-LIBTOOL_ENABLE_SHARED=yes
-
 libsilccrypt_la_SOURCES = \
 	none.c \
 	rc5.c \
@@ -40,6 +37,9 @@ libsilccrypt_la_SOURCES = \
 	silcrng.c \
 	silcpkcs.c \
 	pkcs1.c
+
+# Tell libtool to compile silccrypt as shared since silcsim will need it.
+CFLAGS = --libtool-enable-shared
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -64,6 +64,6 @@ include_HEADERS =	\
 	twofish.h
 endif
 
-EXTRA_DIST = *.h
+EXTRA_DIST = *.h tests
 
 include $(top_srcdir)/Makefile.defines.in
