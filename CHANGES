@@ -1,3 +1,9 @@
+Fri Aug 30 08:57:33 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed fingerprint checking to check for entirely empty
+	  fingerprint instead of two first bytes when determining
+	  if it is set.  Bug #18.  Affected file silcd/command.c.
+
 Sun Aug 25 08:02:04 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
 
 	* Conditionalize non-gcc compiler optimizations for various

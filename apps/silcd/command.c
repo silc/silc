@@ -742,7 +742,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char nh[256], uh[256];
   unsigned char idle[4], mode[4];
-  unsigned char *fingerprint;
+  unsigned char *fingerprint, fempty[20];
   SilcSocketConnection hsock;
 
   if (nickname) {
@@ -763,6 +763,8 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       return;
     }
   }
+
+  memset(fempty, 0, sizeof(fempty));
 
   /* Start processing found clients. */
   status = SILC_STATUS_OK;
@@ -817,7 +819,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       channels = silc_server_get_client_channel_list(server, entry, TRUE, 
 						     TRUE, &umode_list);
 
-    if (entry->data.fingerprint[0] != 0 && entry->data.fingerprint[1] != 0)
+    if (memcmp(entry->data.fingerprint, fempty, sizeof(fempty)))
       fingerprint = entry->data.fingerprint;
     else
       fingerprint = NULL;
