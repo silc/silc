@@ -914,6 +914,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 				    SILC_ROUTER, ctx->dest_id, NULL, sock);
   if (!id_entry) {
     silc_free(ctx->dest_id);
+    SILC_LOG_ERROR(("Cannot add new server entry to cache"));
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Authentication failed");
     goto out;
@@ -1035,7 +1036,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
      later when outgoing data is available. */
   SILC_REGISTER_CONNECTION_FOR_IO(sock->sock);
 
-  SILC_LOG_INFO(("Incoming connection from %s (%s)", sock->hostname,
+  SILC_LOG_INFO(("Incoming connection s (%s)", sock->hostname,
 		 sock->ip));
 
   port = server->sockets[server->sock]->port; /* Listenning port */
@@ -1323,6 +1324,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (conn->param) {
 	if (conn->param->connections_max &&
 	    server->stat.my_clients >= conn->param->connections_max) {
+	  SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
+			 sock->hostname, sock->ip));
 	  silc_server_disconnect_remote(server, sock, 
 					"Server closed connection: "
 					"Server is full, try again later");
@@ -1334,6 +1337,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       }
 
       if (num_sockets > max_per_host) {
+	SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
+		       sock->hostname, sock->ip));
 	silc_server_disconnect_remote(server, sock, 
 				      "Server closed connection: "
 				      "Too many connections from your host");
@@ -1342,7 +1347,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       }
 
       SILC_LOG_DEBUG(("Remote host is client"));
-      SILC_LOG_INFO(("Connection from %s (%s) is client", sock->hostname,
+      SILC_LOG_INFO(("Connection s (%s) is client", sock->hostname,
 		     sock->ip));
 
       /* Add the client to the client ID cache. The nickname and Client ID
@@ -1417,6 +1422,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  /* Check for maximum connections limit */
 	  if (sconn->param->connections_max &&
 	      server->stat.my_servers >= sconn->param->connections_max) {
+	    SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
+			   sock->hostname, sock->ip));
 	    silc_server_disconnect_remote(server, sock, 
 					  "Server closed connection: "
 					  "Server is full, try again later");
@@ -1433,6 +1440,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       }
 
       if (num_sockets > max_per_host) {
+	SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
+		       sock->hostname, sock->ip));
 	silc_server_disconnect_remote(server, sock, 
 				      "Server closed connection: "
 				      "Too many connections from your host");
@@ -1444,7 +1453,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 		      ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
 		      "server" : (backup_router ? 
 				  "backup router" : "router")));
-      SILC_LOG_INFO(("Connection from %s (%s) is %s", sock->hostname,
+      SILC_LOG_INFO(("Connection s (%s) is %s", sock->hostname,
 		     sock->ip, ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
 		     "server" : (backup_router ? 
 				 "backup router" : "router")));
@@ -1664,7 +1673,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   /* If connection is disconnecting or disconnected we will ignore
      what we read. */
   if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
-    SILC_LOG_DEBUG(("Ignoring read data from disonnected connection"));
+    SILC_LOG_DEBUG(("Ignoring read data from disconnected connection"));
     return;
   }
 
@@ -2843,6 +2852,9 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
 
   if (!sock)
     return;
+
+  SILC_LOG_ERROR(("No response from %s (%s), Connection timeout",
+		  sock->hostname, sock->ip));
 
   /* If we have protocol active we must assure that we call the protocol's
      final callback so that all the memory is freed. */
