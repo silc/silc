@@ -3107,8 +3107,11 @@ void silc_server_create_channel_key(SilcServer server,
     channel->rekey->channel = channel;
     channel->rekey->key_len = key_len;
 
+#if 0
+    /* XXX Now this cannot be a good thing */
     silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_channel_key_rekey);
+#endif
     silc_schedule_task_add(server->schedule, 0, 
 		       silc_server_channel_key_rekey,
 		       (void *)channel->rekey, 3600, 0,
